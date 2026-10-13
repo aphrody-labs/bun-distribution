@@ -109,3 +109,19 @@
 	path = crates/craft-ui
 	url = bun-forge:aphrody-dev/bun-crate-craft-ui.git
 	branch = os
+[submodule "crates/deckcraft-matroska"]
+	path = crates/deckcraft-matroska
+	url = bun-forge:aphrody-dev/bun-crate-deckcraft-matroska.git
+	branch = os
+[submodule "crates/pdfcraft-compare"]
+	path = crates/pdfcraft-compare
+	url = bun-forge:aphrody-dev/bun-crate-pdfcraft-compare.git
+	branch = os
+[submodule "crates/cadcraft-color"]
+	path = crates/cadcraft-color
+	url = bun-forge:aphrody-dev/bun-crate-cadcraft-color.git
+	branch = os
+[submodule "crates/gridcraft-pdf"]
+	path = crates/gridcraft-pdf
+	url = bun-forge:aphrody-dev/bun-crate-gridcraft-pdf.git
+	branch = os

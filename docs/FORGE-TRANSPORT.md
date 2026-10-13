@@ -41,6 +41,17 @@ under its existing workspace ownership contract; configuring transport does
 not authorize replacing active submodule work. CI uses the separately owned
 runner transport documented in `CI-TRANSPORT.md`.
 
+On Windows, `scripts/setup.ts` invokes the committed transport helper before
+initializing submodules. It removes `GIT_SSH` and `GIT_SSH_COMMAND` only from
+that qualification child's environment, requires the helper's successful
+post-configuration proof, then reads the validated repository-local
+`core.sshCommand`. Setup passes that value as `GIT_SSH_COMMAND` only to the
+submodule-update process so that newly cloned child repositories inherit the
+same transport. No override value is printed and the parent environment and
+global SSH configuration stay unchanged. Linux and CI retain the protected
+transport already supplied by their Infra owner. The full setup has not been
+run as part of this source change while the runtime release checkout is active.
+
 After writing, `configure` checks the generated effective `ssh -G` routing and
 performs another private branch lookup through the actual repository-local
 `core.sshCommand`, without a command-line override. Environment SSH overrides

@@ -9,6 +9,10 @@ members = [
     "crates/craft-ui",
     "crates/craft-fonts",
     "crates/craft-fonts-tests",
+    "crates/deckcraft-matroska",
+    "crates/pdfcraft-compare",
+    "crates/cadcraft-color",
+    "crates/gridcraft-pdf",
 ]
 
 [workspace.package]
@@ -26,6 +30,10 @@ craft-cms = { path = "crates/craft-cms" }
 craft-print = { path = "crates/craft-print" }
 craft-quit = { path = "crates/craft-quit" }
 craft-ui = { path = "crates/craft-ui" }
+deckcraft-matroska = { path = "crates/deckcraft-matroska" }
+pdfcraft-compare = { path = "crates/pdfcraft-compare" }
+cadcraft-color = { path = "crates/cadcraft-color" }
+gridcraft-pdf = { path = "crates/gridcraft-pdf" }
 anyhow = { version = "=1.0.104", default-features = false }
 base64 = { version = "=0.23.1", default-features = false }
 chrono = { version = "=0.4.45", default-features = false }

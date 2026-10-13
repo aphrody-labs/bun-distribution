@@ -276,6 +276,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc652a48c352aef3ea3aed32080501cf3ef6ed5da78602a020c991775b0aff04"
 
 [[package]]
+name = "cadcraft-color"
+version = "1.4.4"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "calloop"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -693,6 +700,10 @@ name = "data-url"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be1e0bca6c3637f992fc1cc7cbc52a78c1ef6db076dbf1059c4323d6a2048376"
+
+[[package]]
+name = "deckcraft-matroska"
+version = "1.4.4"
 
 [[package]]
 name = "der"
@@ -1377,6 +1388,10 @@ dependencies = [
  "thiserror 2.0.21",
  "windows",
 ]
+
+[[package]]
+name = "gridcraft-pdf"
+version = "1.4.4"
 
 [[package]]
 name = "guillotiere"
@@ -2552,6 +2567,10 @@ dependencies = [
  "smallvec",
  "windows-link",
 ]
+
+[[package]]
+name = "pdfcraft-compare"
+version = "1.4.4"
 
 [[package]]
 name = "pem"

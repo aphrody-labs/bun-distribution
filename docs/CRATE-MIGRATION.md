@@ -81,3 +81,33 @@ The root lockfile still contains older *transitive* releases constrained by othe
 The five migrated crates declare the workspace versions above directly; this batch does not patch
 those upstream semver ranges or claim that every transitive dependency in the full product lockfile
 is on the same release.
+
+## Independent Craft library batch
+
+Four self-contained product crates were split from their immutable source pins into dedicated private Gitea repositories. The split commit tree was checked against the source crate-prefix tree. Root Cargo membership and shared dependency declarations are centralized separately; this batch does not edit root manifests or locks.
+
+| Crate | Source pin and prefix | Split commit | Root dependency |
+|---|---|---|---|
+| `deckcraft-matroska` | DeckCraft `1660982e58ee48fd9f9bef6dc2620d78ada04613`, `crates/matroska` | `4fafa1e454df18f72baaf1f01fc0a00afc363a50` | none |
+| `pdfcraft-compare` | PdfCraft `7437bde378f43856eada40af25b983812e615e8a`, `crates/compare` | `1e3fd4405fd3268b511ce738d1a55497fb3d399e` | none |
+| `cadcraft-color` | CADCraft `00c7613f1af3c73f7157fa91d9fe2635c6f23c06`, `crates/color` | `28bf2b1c25926aca9f63abeeccc4e1b70e22a445` | root `serde` |
+| `gridcraft-pdf` | GridCraft `84acf6293b1dc1fc09837524e035d674eb4d6741`, `crates/pdf` | `379d3266749b03ffd031b208d337612cfcc4504f` | none |
+
+Each flat manifest points to the root workspace, inherits version 1.4.4, edition and Rust version, and declares the upstream `MIT OR Apache-2.0` expression locally because the distribution root is MIT. Package lint tables preserve the source workspace's effective Rust and Clippy rules; extra DeckCraft/CADCraft/GridCraft allowances are not added to the global workspace. Repository metadata points to each new canonical source. `LICENSE-MIT`, `LICENSE-APACHE`, `NOTICE` and `ATTRIBUTION.md` are copied byte-for-byte from the corresponding source pin. The Adobe AFM metrics permission and attribution comment remains intact in `gridcraft-pdf/src/metrics.rs`.
+
+Root integration now includes all four crates in the twelve-member Cargo
+workspace. Each crate has a shared path dependency declaration; only
+`cadcraft-color` needs the existing root serde version. Locked metadata and
+root formatting pass on native Windows. The full offline feature graph resolves
+526 package identities against the unchanged 514-package vendor source snapshot.
+Compilation, Clippy and tests remain pending the release owner's native window.
+
+| Crate | Pinned forge `os` revision after root formatting |
+|---|---|
+| `deckcraft-matroska` | `0b81b6f11085ad571f6705bfbb940b48e1a2eeae` |
+| `pdfcraft-compare` | `28ab78b38b9062f5cd47d6289a19b1262eb0ed74` |
+| `cadcraft-color` | `c3734c8787556b2bac99de433af9ffab84555cdd` |
+| `gridcraft-pdf` | `dd5f4656384ee36ebaf37a073f4d2e875d8b9c6f` |
+
+Formatting commits preserve each original split history. The license/notice
+files and Adobe permission comment remain byte-identical to their source pins.
