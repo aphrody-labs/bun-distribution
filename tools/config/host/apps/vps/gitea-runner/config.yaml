@@ -13,6 +13,7 @@ runner:
     - aphrody-bun-linux:docker://sha256:0d1de271d32fdaf226b683c3178667d469194fc7a724bd8c60dda8ecbb1c5eec
   envs:
     BUN_EXECUTABLE: /usr/local/bin/bun
+    GIT_SSH_COMMAND: ssh -F /run/aphrody/git-ssh/config
     PATH: /usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.cargo/bin
   action_shallow_clone: true
   idle_cleanup_interval: 0s
@@ -20,9 +21,17 @@ container:
   network: aphrody_default
   privileged: false
   force_pull: false
-  options: --cpus=2 --memory=8g --pids-limit=512 --volume=${APHRODY_HOST_HOME}/.bun/bin/bun:/usr/local/bin/bun:ro
+  options: >-
+    --cpus=2 --memory=8g --pids-limit=512
+    --volume=/home/ubuntu/.bun/bin/bun:/usr/local/bin/bun:ro
+    --volume=/home/ubuntu/.aphrody/secrets/gitea/bun-os-crate-runner:/run/aphrody/git-ssh/identity:ro
+    --volume=/home/ubuntu/apps/gitea-runner/ssh/config:/run/aphrody/git-ssh/config:ro
+    --volume=/home/ubuntu/apps/gitea-runner/ssh/known_hosts:/run/aphrody/git-ssh/known_hosts:ro
   valid_volumes:
-    - ${APHRODY_HOST_HOME}/.bun/bin/bun:ro
+    - /home/ubuntu/.bun/bin/bun:ro
+    - /home/ubuntu/.aphrody/secrets/gitea/bun-os-crate-runner:ro
+    - /home/ubuntu/apps/gitea-runner/ssh/config:ro
+    - /home/ubuntu/apps/gitea-runner/ssh/known_hosts:ro
   sweep: true
 cache:
   enabled: false
