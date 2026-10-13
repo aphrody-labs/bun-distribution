@@ -24,7 +24,7 @@
     "fmt:all": "bun fmt --write -c bun-format.json src container factory infra packages/package-converter/src",
     "fmt:check": "bun fmt --check -c bun-format.json src container factory infra packages/package-converter/src",
     "format:check": "bun run fmt:check",
-    "migrate": "bun n2b . --aggressive --ignore 'node_modules/**' --ignore 'out/**' --ignore '.git/**' --jobs 2 --agent --report json",
+    "migrate": "aphrody n2b . --aggressive --ignore 'node_modules/**' --ignore 'out/**' --ignore '.git/**' --jobs 2 --agent --report json",
     "factory": "bun factory/ubuntu.ts",
     "packages": "bun packages/package-converter/src/cli.ts",
     "apt:build": "bun src/build-apt.ts"

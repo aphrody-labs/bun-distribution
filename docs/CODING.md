@@ -18,8 +18,8 @@ Debian packaging uses explicit files and dependencies, extension-free installed
 commands, separate configuration and artifacts, short symlinks, minimal permissions
 and checked command status.
 
-Use Bun-native APIs and commands. Run aggressive `bun n2b` across the OS
-workspace and review findings that require a manual decision. Run `bun check`,
+Use Bun-native APIs and commands. Use `aphrody n2b` as the migration owner;
+review aggressive findings before accepting any source change. Run `bun check`,
 `bun lint` and `bun fmt` directly. Confirm technical choices in primary sources.
 
 References:

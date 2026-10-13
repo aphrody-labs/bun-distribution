@@ -13,8 +13,9 @@ installed executable. Never hardcode a workstation checkout path in code.
 
 Follow Linux kernel, Debian, COSMIC and Bun upstream conventions; read
 docs/CODING.md. Use the installed Aphrody Bun runtime and its native tools.
-Confirm APIs in primary sources. Use bun n2b for migration review and
-native bun check, bun lint and bun fmt for authorized gates. Do not invoke
+Use the Aphrody CLI's `aphrody n2b` owner for migration review; do not invoke
+`bun n2b`. Confirm APIs in primary sources. Use native bun check, bun lint
+and bun fmt for authorized gates. Do not invoke
 separate OXC, TypeScript, Node or Python commands for this workflow.
 
 Use native Windows on the owner workstation; never start WSL there.
