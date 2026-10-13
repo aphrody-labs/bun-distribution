@@ -13,6 +13,17 @@ test("product web serves the selected artifact on loopback without checkout defa
     const args = ["--root", root, "--port", "0"];
     expect(webOptions(args, {}).hostname).toBe("127.0.0.1");
     expect(webOptions(args, { APHRODY_SITE_BIND: "[::1]:3100" }).hostname).toBe("::1");
+    expect(
+      webOptions([], {
+        APHRODY_APP_UI_ROOT: root,
+        APHRODY_SITE_BIND: "127.0.0.1:9000",
+        PORT: "8000",
+      }),
+    ).toEqual({
+      staticRoot: root,
+      hostname: "127.0.0.1",
+      port: 9000,
+    });
     expect(() => webOptions(["--root", root, "--port", "65536"], {})).toThrow("port");
     expect(() => webOptions(["--unknown"], {})).toThrow();
     server = await startWeb(args, {});
