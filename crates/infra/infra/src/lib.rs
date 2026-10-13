@@ -13,6 +13,7 @@ pub mod catalog;
 pub mod cli;
 pub mod devenv;
 pub mod drive;
+pub mod gitea;
 pub mod layout;
 pub mod lifecycle;
 pub mod local_ai;

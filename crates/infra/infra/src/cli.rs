@@ -270,6 +270,22 @@ enum CommandKind {
         #[command(subcommand)]
         command: crate::secrets::SecretsCommand,
     },
+    /// Idempotent provisioning of the Bun OS repositories on the owned Gitea forge.
+    Gitea {
+        #[command(subcommand)]
+        command: GiteaCommand,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum GiteaCommand {
+    /// Ensure declared repositories, Actions, account key and VPS deploy keys exist.
+    Provision {
+        #[arg(long)]
+        apply: bool,
+        #[arg(long)]
+        json: bool,
+    },
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
@@ -2423,6 +2439,20 @@ async fn run_cli(cli: Cli) -> Result<()> {
         CommandKind::Secrets { command } => {
             run.action("secrets", "exec", json!({ "command": format!("{:?}", command) }));
             command.execute(&root)
+        },
+        CommandKind::Gitea { command: GiteaCommand::Provision { apply, json: as_json } } => {
+            let report = crate::gitea::provision(&root, *apply)?;
+            run.action(
+                "gitea.provision",
+                if *apply { "applied" } else { "planned" },
+                json!(&report),
+            );
+            if *as_json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            } else {
+                println!("{}", serde_json::to_string(&report)?);
+            }
+            Ok(())
         },
     };
     match result {

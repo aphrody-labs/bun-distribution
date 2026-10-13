@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "owner": "aphrody-dev",
+  "branch": "os",
+  "private": true,
+  "actions": true,
+  "apiUrl": "http://127.0.0.1:29020/api/v1",
+  "tokenFile": "/home/ubuntu/.aphrody/config/gitea.env",
+  "tokenVariable": "GITEA_TOKEN_OWNER",
+  "bunExecutable": "/home/ubuntu/.bun/bin/bun-1.4.4",
+  "runnerKey": "/home/ubuntu/.aphrody/secrets/gitea/bun-os-crate-runner",
+  "repositories": [
+    { "name": "bun-distribution", "mirror": true, "upstream": "https://github.com/aphrody-labs/bun-distribution.git" },
+    { "name": "bun-crate-craft-fonts", "mirror": false },
+    { "name": "bun-crate-craft-fonts-tests", "mirror": false },
+    { "name": "bun-crate-craft-atomic", "mirror": false }
+  ]
+}
