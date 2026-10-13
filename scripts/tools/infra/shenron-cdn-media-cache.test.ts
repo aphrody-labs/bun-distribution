@@ -10,7 +10,7 @@ test("only public media overrides the existing owned host cache rule", () => {
   expect(rule.expression).not.toContain('".webp"');
   expect(rule.expression).not.toContain('"/api/"');
   expect(rule.expression).not.toContain('"/media/"');
-  expect(rule.action_parameters).toEqual({ cache: false, origin_range_requests: { mode: "off" } });
+  expect(rule.action_parameters).toEqual({ cache: false });
   expect(rule.enabled).toBe(true);
   expect(() => nativeMediaCacheRule("true")).toThrow("canonical host expression");
 });

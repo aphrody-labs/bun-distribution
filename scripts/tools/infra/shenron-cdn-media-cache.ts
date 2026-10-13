@@ -23,7 +23,7 @@ export function nativeMediaCacheRule(ownedHostExpression: string) {
     expression: `${ownedHostExpression} and (${paths}) and (${media})`,
     enabled: true,
     action: "set_cache_settings",
-    action_parameters: { cache: false, origin_range_requests: { mode: "off" } },
+    action_parameters: { cache: false },
   };
 }
 
