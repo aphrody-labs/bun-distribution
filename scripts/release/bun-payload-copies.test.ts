@@ -1,20 +1,25 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import { resolve } from "node:path";
+import { dirname, relative, resolve } from "node:path";
+import { checkoutPath } from "@aphrody/paths";
 
 const root = resolve(import.meta.dir, "../..");
 const copies = [
-  ["tools/config/bun-forge.json", "packages/engine/yolo/src/cli/forge/defaults.json"],
-  ["crates/ai/agent-home/sync-contract.json", "packages/google/google/src/sync-contract.json"],
+  [
+    resolve(root, "tools/config/bun-forge.json"),
+    resolve(dirname(Bun.resolveSync("@aphrody/yolo-cli/forge", import.meta.dir)), "defaults.json"),
+  ],
+  [
+    resolve(root, "crates/ai/agent-home/sync-contract.json"),
+    resolve(dirname(Bun.resolveSync("@aphrody/google/api", import.meta.dir)), "sync-contract.json"),
+  ],
   ...["x-graphql-catalog.json", "gryphon-graphql-catalog.json", "x-policy.json"].map((name) => [
-    `crates/web/x/data/${name}`,
-    `packages/web/x/data/${name}`,
+    checkoutPath("bun", "packages/web/rust/crates/x/data", name),
+    Bun.resolveSync(`@aphrody/web-source/packages/x/data/${name}`, import.meta.dir),
   ]),
 ];
 for (const [source, packaged] of copies) {
-  test(`packaged config preserves canonical owner: ${source}`, async () => {
-    expect(await Bun.file(resolve(root, packaged!)).json()).toEqual(
-      await Bun.file(resolve(root, source!)).json(),
-    );
+  test(`packaged config preserves canonical owner: ${relative(root, source!)}`, async () => {
+    expect(await Bun.file(packaged!).json()).toEqual(await Bun.file(source!).json());
   });
 }
