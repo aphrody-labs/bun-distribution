@@ -165,7 +165,7 @@ crate gitlinks. This qualifies the standalone server and its recorded inputs;
 Rust compilation of the new crates remains pending. Deployment remains false,
 and the installed binary retains its earlier identity.
 
-## Current twenty-four-crate candidate
+## Previous twenty-four-crate candidate
 
 `build/staging/server-4b8-24crates.exe` was compiled and executed from source
 `ad2474ddcb7b1590108515211aafa6f477788062`, with runtime
@@ -175,3 +175,20 @@ All fifteen HTTP gates pass. Its embedded snapshot contains 124 sources,
 including all 24 flat crate gitlinks, and 16 application identities. This
 qualifies the standalone server inputs; deployment remains false, the installed
 binary remains unchanged, and Rust qualification is recorded separately.
+
+## Current twenty-five-crate candidate
+
+`build/staging/server-4b8-25crates.exe` was compiled and executed from source
+`f964e89b894ecac675e5eee35ba3c7a9c36d0035`, with runtime
+`4b8dee0bc69d2c290111001f2249e63e1dc95b70`. Its SHA-256 is
+`85d8f3008cb5360563272067f84b666b575fc03a01d5fd1d3cb0f88ef75230a4`.
+The standalone executable is 193815040 bytes; all fifteen HTTP gates pass.
+Its committed crate catalog includes the canonical Jev submodule alongside
+the previous 24 owners. The recorded receipt has `compiled:true`,
+`executed:true`, `deployed:false` for this JavaScript server.
+
+This does not qualify a full Rust build, native application deployment, or
+replacement of the installed product binary. The previous installation and
+service-activation review rejections remain in effect; neither action was
+retried. The public forge and Gitea API remain accessible; the prepared product
+route still returns 404 until its activation gate is resolved.

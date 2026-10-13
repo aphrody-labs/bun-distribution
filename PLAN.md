@@ -102,7 +102,7 @@
 - [ ] Qualify an offline native build before enabling vendor replacement in
       the active Cargo configuration. Runtime/vendor migrations remain open.
 - [x] Add automatic standalone binary verification with fifteen HTTP checks.
-      The Windows staging candidate from `ad2474dd` passes with runtime
+      The Windows staging candidate from `f964e89b` passes with runtime
       `4b8dee0bc69d2c290111001f2249e63e1dc95b70`.
 - [ ] Replace the installed binary and activate the Infra product service.
       Automatic approval review rejected both actions; deployment stays false.
