@@ -128,7 +128,7 @@ export function searchEnvironment(module: string, owner: string): string {
 export function buildCommand(artifact: string, publicAssets = false): string[] {
   return [
     "bun",
-    "m3/packages/app-ui/build.ts",
+    "../material/packages/app-ui/build.ts",
     "--out",
     artifact,
     ...(publicAssets ? ["--public-assets"] : []),
@@ -139,9 +139,9 @@ export function prerequisiteCommands(): string[][] {
   return [
     ["bun", "--cwd", "crates/tauri/aphrody-tauri-api", "../build-js.ts"],
     ["bun", "--cwd", "crates/tauri/aphrody-tauri-plugin-dialog", "../build-js.ts"],
-    ["bun", "m3/scripts/fonts-sync.ts", "--quiet"],
-    ["bun", "m3/scripts/fonts-sync.ts", "--check", "--quiet"],
-    ["bun", "--cwd", "m3/packages/identity", "scripts/sprite.ts"],
+    ["bun", "../material/packages/m3/scripts/fonts-sync.ts", "--quiet"],
+    ["bun", "../material/packages/m3/scripts/fonts-sync.ts", "--check", "--quiet"],
+    ["bun", "--cwd", "../material/packages/identity", "scripts/sprite.ts"],
   ];
 }
 export function declarationCommand(path: string): string {

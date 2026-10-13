@@ -9,10 +9,7 @@
 import { cp, mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 
-import {
-  nativeThemeColorRoles,
-  parseNativeThemeExport,
-} from "../../../../../../m3/packages/m3-tokens/src/native-theme.ts";
+import { nativeThemeColorRoles, parseNativeThemeExport } from "@aphrody/m3-tokens/native-theme";
 
 const here = import.meta.dir;
 const m3 = join(here, "../../../../m3/packages");

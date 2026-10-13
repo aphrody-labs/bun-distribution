@@ -49,7 +49,7 @@ describe("yolo package commands", () => {
     expect(isPackageCommand("toString")).toBe(false);
   });
 
-  it("every command and tool names an owner module that exports its runner", async () => {
+  it("every command and tool has a qualified owner runner or standalone CLI", async () => {
     const runners: [string, PackageRunner][] = [
       ...Object.entries(PACKAGE_COMMANDS),
       ...Object.entries(M3_TOOLS).map(([tool, runner]): [string, PackageRunner] => [
@@ -57,9 +57,18 @@ describe("yolo package commands", () => {
         runner,
       ]),
     ];
-    for (const [name, { module, run }] of runners) {
+    for (const [name, { module, run, script }] of runners) {
       const path = join(root, module);
       expect(existsSync(path), `${name}: ${module}`).toBe(true);
+      if (script) {
+        const result = Bun.spawnSync([process.execPath, path, "--help"], {
+          cwd: root,
+          windowsHide: true,
+        });
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout.toString()).toContain("aphrody-scaffold");
+        continue;
+      }
       // oxlint-disable-next-line no-await-in-loop -- one owner module at a time keeps failures attributable.
       const loaded = (await import(path)) as Record<string, unknown>;
       expect(typeof loaded[run], `${name}: ${module} exports ${run}`).toBe("function");

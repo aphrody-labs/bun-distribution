@@ -25,6 +25,8 @@ export interface PackageRunner {
    * lets the process live on its handles and ends it only on failure. Other commands end the process on return.
    */
   readonly keepAlive?: boolean;
+  /** Standalone owner CLI with no import-safe runner. */
+  readonly script?: boolean;
 }
 
 export interface PackageCommand extends PackageRunner {
@@ -71,8 +73,9 @@ export const M3_TOOLS = {
     summary: "Website or bundle to a Tauri 3 app: probe | plan | convert | parity [web-to-tauri]",
   },
   scaffold: {
-    module: "../bun/packages/web/rust/integrations/m3/packages/scaffold/src/cli.ts",
+    module: "../material/packages/m3/packages/scaffold/src/cli.ts",
     run: "runScaffold",
+    script: true,
     summary: "The single project scaffolder: list | example | new [aphrody-scaffold]",
   },
 } as const satisfies Record<string, PackageRunner>;
@@ -216,6 +219,13 @@ export async function runPackageCommand(
       `yolo ${label}: ${module} is missing under ${root}; run inside an Aphrody checkout or set YOLO_APHRODY_ROOT`,
     );
     return 127;
+  }
+  if (resolved.script) {
+    return await Bun.spawn([process.execPath, path, ...resolved.args], {
+      cwd: root,
+      windowsHide: true,
+      stdio: ["inherit", "inherit", "inherit"],
+    }).exited;
   }
   const owner = (
     name === "forge" ? await import("./cli/forge/main.ts") : await import(pathToFileURL(path).href)

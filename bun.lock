@@ -10,6 +10,8 @@
         "@neon/env": "^1.4.7",
       },
       "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+        "@aphrody/m3-tokens": "workspace:*",
         "@aphrody/paths": "workspace:*",
         "@aphrody/web-source": "workspace:*",
         "@aphrody/web-test": "workspace:*",
@@ -113,19 +115,6 @@
         "@aphrody/shell-web": "1.4.4",
         "@aphrody/update": "1.4.4",
         "@aphrody/webos-wasm": "1.4.4",
-      },
-    },
-    "../bun/packages/web/rust/integrations/m3/packages/scaffold": {
-      "name": "@aphrody/scaffold",
-      "version": "1.4.4",
-      "bin": {
-        "aphrody-scaffold": "./src/cli.ts",
-      },
-      "dependencies": {
-        "@aphrody/web-source": "workspace:*",
-      },
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
       },
     },
     "../bun/packages/web/rust/integrations/m3/packages/web-to-tauri": {
@@ -802,6 +791,13 @@
         "react-dom",
       ],
     },
+    "../material/packages/m3/packages/scaffold": {
+      "name": "@aphrody/scaffold",
+      "version": "1.0.0-canary",
+      "bin": {
+        "aphrody-scaffold": "./src/cli.ts",
+      },
+    },
     "../material/packages/material-design-icons": {
       "name": "@aphrody/material-design-icons",
       "version": "1.4.5",
@@ -1466,7 +1462,7 @@
 
     "@aphrody/runtime-sdk": ["@aphrody/runtime-sdk@workspace:packages/engine/runtime"],
 
-    "@aphrody/scaffold": ["@aphrody/scaffold@workspace:../bun/packages/web/rust/integrations/m3/packages/scaffold"],
+    "@aphrody/scaffold": ["@aphrody/scaffold@workspace:../material/packages/m3/packages/scaffold"],
 
     "@aphrody/shell-web": ["@aphrody/shell-web@workspace:packages/shell/web"],
 

@@ -25,7 +25,7 @@
       "../bun/packages/bun-m3",
       "../bun/packages/web/rust/packages/*",
       "../bun/packages/web/rust/integrations/m3/packages/web-to-tauri",
-      "../bun/packages/web/rust/integrations/m3/packages/scaffold",
+      "../material/packages/m3/packages/scaffold",
       "../bun/packages/bun-google/aphrody/packages/google"
     ],
     "catalog": {
@@ -271,6 +271,8 @@
     "@neon/env": "^1.4.7"
   },
   "devDependencies": {
+    "@aphrody/m3-config": "workspace:*",
+    "@aphrody/m3-tokens": "workspace:*",
     "@aphrody/paths": "workspace:*",
     "@aphrody/web-source": "workspace:*",
     "@aphrody/web-test": "workspace:*",

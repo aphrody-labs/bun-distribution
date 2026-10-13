@@ -364,7 +364,7 @@ test("Bun prerequisites and builds execute the exact selected runtime without ch
     expect(runtimeCommand(prerequisite)[0]).toBe(process.execPath);
   expect(runtimeCommand(buildCommand("C:/artifact"))).toEqual([
     process.execPath,
-    "m3/packages/app-ui/build.ts",
+    "../material/packages/app-ui/build.ts",
     "--out",
     "C:/artifact",
   ]);
@@ -380,9 +380,9 @@ test("clean builds prepare identity through its canonical owner, without setup h
   expect(prerequisiteCommands()).toEqual([
     ["bun", "--cwd", "crates/tauri/aphrody-tauri-api", "../build-js.ts"],
     ["bun", "--cwd", "crates/tauri/aphrody-tauri-plugin-dialog", "../build-js.ts"],
-    ["bun", "m3/scripts/fonts-sync.ts", "--quiet"],
-    ["bun", "m3/scripts/fonts-sync.ts", "--check", "--quiet"],
-    ["bun", "--cwd", "m3/packages/identity", "scripts/sprite.ts"],
+    ["bun", "../material/packages/m3/scripts/fonts-sync.ts", "--quiet"],
+    ["bun", "../material/packages/m3/scripts/fonts-sync.ts", "--check", "--quiet"],
+    ["bun", "--cwd", "../material/packages/identity", "scripts/sprite.ts"],
   ]);
   expect(prerequisiteCommands().flat()).not.toContain("install");
 });
@@ -425,7 +425,7 @@ const config: ReleaseConfig = {
 test("public assets flag reaches the real owner build and binds artifact provenance", () => {
   expect(buildCommand("C:/artifact", true)).toEqual([
     "bun",
-    "m3/packages/app-ui/build.ts",
+    "../material/packages/app-ui/build.ts",
     "--out",
     "C:/artifact",
     "--public-assets",

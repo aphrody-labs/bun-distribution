@@ -12,10 +12,13 @@
  */
 import { Glob } from "bun";
 import { resolve, join } from "node:path";
-import { m3BunBuild } from "../../../m3/packages/m3-config/bun-build.ts";
+import { m3BunBuild } from "@aphrody/m3-config/bun-build";
 
 const REPO_ROOT = resolve(import.meta.dir, "../../..");
-const UI_ROOT = join(REPO_ROOT, "packages", "ui");
+const UI_ROOT = join(
+  resolve(process.env.APHRODY_MATERIAL_CHECKOUT ?? join(REPO_ROOT, "..", "material")),
+  "packages",
+);
 
 interface PackageBuildTarget {
   name: string;
@@ -85,12 +88,19 @@ async function discoverUiTargets(targetName?: string): Promise<PackageBuildTarge
   return targets;
 }
 
-export async function buildUiPackages(options: {
-  targetPackage?: string;
-  minify?: boolean;
-} = {}): Promise<{ total: number; successful: number; failed: number }> {
+export async function buildUiPackages(
+  options: {
+    targetPackage?: string;
+    minify?: boolean;
+  } = {},
+): Promise<{ total: number; successful: number; failed: number }> {
   const { targetPackage, minify = false } = options;
   const targets = await discoverUiTargets(targetPackage);
+  if (targets.length === 0) {
+    throw new Error(
+      `No UI build target found under ${UI_ROOT}${targetPackage ? ` for ${targetPackage}` : ""}`,
+    );
+  }
 
   console.log(`[ui-build] Discovered ${targets.length} UI build target(s)...`);
   let successful = 0;
@@ -128,6 +138,8 @@ export async function buildUiPackages(options: {
 if (import.meta.main) {
   const { targetPackage, minify } = parseArgs(process.argv.slice(2));
   const result = await buildUiPackages({ targetPackage, minify });
-  console.log(`\n[ui-build] Completed: ${result.successful}/${result.total} packages built successfully.`);
+  console.log(
+    `\n[ui-build] Completed: ${result.successful}/${result.total} packages built successfully.`,
+  );
   process.exit(result.failed === 0 ? 0 : 1);
 }
