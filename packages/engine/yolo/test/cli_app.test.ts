@@ -11,7 +11,7 @@ import {
 } from "../src/index";
 
 const rootDir = resolve(import.meta.dir, "../../../..");
-// These tests read the Bun fork checkout (APHRODY_BUN_CHECKOUT, else C:/bun on Windows); skipped when absent.
+// These tests read the configured or workspace-sibling Bun fork checkout; skipped when absent.
 const haveBunFork = bunCheckout() !== undefined;
 const cliPkgPath = resolve(rootDir, "packages/engine/yolo/package.json");
 const cliEntryPath = resolve(rootDir, "packages/engine/yolo/src/index.ts");

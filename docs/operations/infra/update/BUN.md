@@ -116,7 +116,7 @@ commit of the fork). Its own `APHRODY.md` lists what Aphrody consumes.
 - Upstream merges: the fork's `bun scripts/aphrody/sync-upstream.ts` (workflow `aphrody-upstream-sync.yml`, every
   6 hours). Drift report: `yolo update sources forks` (`tools/config/update/forks.json`).
 - Docs: the MCP `bun_docs_*` tools read `docs/` of the fork checkout; `bun run docs:bun:update` pins its commit in `docs/reference/upstream-bun/SOURCE.json` (versioned download fallback) and copies `LICENSE.md`.
-- Source checkout: `APHRODY_BUN_CHECKOUT`, else `C:\bun` on Windows.
+- Source checkout: `APHRODY_BUN_CHECKOUT`, else the sibling Bun checkout discovered from the selected Aphrody workspace.
 
 ## Held packages
 

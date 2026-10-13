@@ -17,8 +17,8 @@ to Cloudflare as the static assets of the Worker `aphrody-app` (`packages/bun-cl
 
 ## Rules
 
-- The Bun of Aphrody is the fork [aphrody-labs/bun](https://github.com/aphrody-labs/bun) (local checkout
-  `APHRODY_BUN_CHECKOUT`, else `C:\bun` on Windows). Any change to Bun itself (runtime, built-in modules,
+- The Bun of Aphrody is the fork [aphrody-labs/bun](https://github.com/aphrody-labs/bun) (checkout selected by
+  `APHRODY_BUN_CHECKOUT`, or discovered as a sibling of the selected Aphrody workspace). Any change to Bun itself (runtime, built-in modules,
   `bun:*` APIs, bundler, package manager, types, build scripts) lands in the fork as a commit on `main`, with a
   test under `test/js/first_party/` or `test/internal/`. Its own [APHRODY.md](https://github.com/aphrody-labs/bun/blob/main/APHRODY.md)
   lists what Aphrody consumes from it.

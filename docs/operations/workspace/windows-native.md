@@ -13,7 +13,7 @@ Un compte SSH ou une observation historique ne donne pas une autorité globale.
 | Fonction | Propriétaire et destination |
 | --- | --- |
 | Sources Aphrody | Checkout courant ou `APHRODY_WORKSPACE` ; ici `C:\src\aphrody` |
-| Fork Bun | Checkout sélectionné avec `APHRODY_BUN_CHECKOUT` ; ici `C:\bun` ; les modifications runtime restent dans le fork |
+| Fork Bun | Checkout sélectionné avec `APHRODY_BUN_CHECKOUT` ou découvert comme frère du workspace ; ici `C:\src\bun` ; les modifications runtime restent dans le fork |
 | Développement | Outils natifs de l'hôte choisi, avec leurs aides actuelles |
 | Builds | Hôte natif, fabrique SSH ou Docker qualifié ; verrous et sccache conservés. Fabrique SSH actuelle : `vps` |
 | Qualification Linux locale | Docker ou hôte Linux natif ; exemples locaux Alpine 3.24 et Ubuntu 26.04, ressources bornées et caches nommés |
