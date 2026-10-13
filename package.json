@@ -1,0 +1,39 @@
+{
+  "name": "@aphrody/bun-libraries",
+  "version": "1.4.4",
+  "private": true,
+  "license": "MIT",
+  "workspaces": [
+    "packages/workspace",
+    "apps/desktop"
+  ],
+  "type": "module",
+  "scripts": {
+    "setup": "bun packages/workspace/src/cli.ts sync && bun install --frozen-lockfile",
+    "doctor": "bun packages/workspace/src/cli.ts doctor",
+    "catalog": "bun packages/workspace/src/cli.ts list",
+    "status": "bun packages/workspace/src/cli.ts status",
+    "sync": "bun packages/workspace/src/cli.ts sync",
+    "dev": "bun run --cwd apps/desktop dev",
+    "build": "bun run --cwd apps/desktop build",
+    "desktop:dev": "bun run --cwd apps/desktop desktop:dev",
+    "desktop:build": "bun run --cwd apps/desktop desktop:build",
+    "typecheck": "bun run --bun node_modules/@typescript/native-preview/bin/tsgo --noEmit -p tsconfig.json",
+    "lint": "bun run --bun node_modules/oxlint/bin/oxlint packages/workspace/src apps/desktop scripts",
+    "format:check": "bun run --bun node_modules/oxfmt/bin/oxfmt --check packages/workspace/src apps/desktop scripts package.json aphrody.config.json tsconfig.json",
+    "check": "bun scripts/quality.ts",
+    "workspace": "bun packages/workspace/src/cli.ts",
+    "frontend:dev": "bun run --cwd libraries/artcraft/frontend dev",
+    "frontend:build": "bun run --cwd libraries/artcraft/frontend build"
+  },
+  "devDependencies": {
+    "@aphrody/bun-types": "file:toolchains/bun/packages/bun-types",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
+    "oxfmt": "0.72.0",
+    "oxlint": "1.87.0"
+  },
+  "engines": {
+    "bun": "=1.4.4"
+  },
+  "packageManager": "bun@1.4.4"
+}
