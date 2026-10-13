@@ -2,9 +2,11 @@
 import { expect, test } from "bun:test";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { win32 } from "node:path";
 import { tmpdir } from "node:os";
 import {
   encodedCommand,
+  resolveExternalLocks,
   selectHost,
   validateRequest,
   workerScript,
@@ -125,9 +127,28 @@ test("Windows transport encodes public source without shell interpolation", () =
   expect(encodedCommand(hosts[2]!, source)).toStartWith("bun -e '");
 });
 
+test("external locks resolve through each Windows host checkout", () => {
+  const locks = ["$APHRODY_BUN_CHECKOUT/build/chromium/setup.lock"];
+  expect(resolveExternalLocks(locks, "C:/src/bun", win32)).toEqual([
+    "C:\\src\\bun\\build\\chromium\\setup.lock",
+  ]);
+  expect(() => resolveExternalLocks(locks, undefined, win32)).toThrow(
+    "APHRODY_BUN_CHECKOUT is required",
+  );
+  expect(() => resolveExternalLocks(locks, "relative/bun", win32)).toThrow(
+    "APHRODY_BUN_CHECKOUT is required",
+  );
+});
+
 test("worker preserves stale and foreign leases, requests and dirty source", () => {
-  const script = workerScript(hosts[1]!, build, "fingerprint");
+  const host = {
+    ...hosts[1]!,
+    externalLocks: ["$APHRODY_BUN_CHECKOUT/build/chromium/setup.lock"],
+  };
+  const script = workerScript(host, build, "fingerprint");
   expect(script).toContain("fs.openSync(lease,'wx',384)");
+  expect(script).toContain("process.env.APHRODY_BUN_CHECKOUT");
+  expect(script).toContain("resolveExternalLocks(host.externalLocks||[]");
   expect(script).toContain("Remote request already exists; reconcile status, never replay");
   expect(script).toContain("Source pin differs");
   expect(script).toContain("Source checkout dirty; preserved");

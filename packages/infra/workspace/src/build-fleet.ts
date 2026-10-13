@@ -39,6 +39,20 @@ export type FleetReadiness = {
   diskGiB?: number;
 };
 
+export function resolveExternalLocks(
+  locks: string[],
+  checkout: string | undefined,
+  pathApi: { isAbsolute: (path: string) => boolean; join: (...paths: string[]) => string },
+): string[] {
+  const marker = "$APHRODY_BUN_CHECKOUT/";
+  return locks.map((lock) => {
+    if (!lock.startsWith(marker)) return lock;
+    if (!checkout || !pathApi.isAbsolute(checkout))
+      throw Error("APHRODY_BUN_CHECKOUT is required on this Windows host");
+    return pathApi.join(checkout, lock.slice(marker.length));
+  });
+}
+
 async function resolveLocalHost(host: FleetHost, workspaceRoot: string): Promise<FleetHost> {
   const marker = "$APHRODY_BUN_CHECKOUT/";
   const locks = host.externalLocks ?? [];
@@ -61,11 +75,11 @@ async function resolveLocalHost(host: FleetHost, workspaceRoot: string): Promise
     throw new Error("The configured Bun checkout is unavailable for its native build lock");
   return {
     ...host,
-    externalLocks: locks.map((lock) =>
-      lock.startsWith(marker) ? join(checkout, lock.slice(marker.length)) : lock,
-    ),
+    externalLocks: resolveExternalLocks(locks, checkout, { isAbsolute, join }),
   };
 }
+
+const externalLockResolverSource = resolveExternalLocks.toString();
 
 function digest(value: unknown) {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -199,6 +213,7 @@ async function execute(host: FleetHost, javascript: string, seconds = 60) {
 
 const readinessScript = `(async()=>{
  const os=await import('node:os'), fs=await import('node:fs'), path=await import('node:path');
+ ${externalLockResolverSource}
  const home=os.homedir(), lease=path.join(home,'.aphrody','build-fleet','heavy.lock');
  let free=os.freemem(), load=os.loadavg()[0]/os.availableParallelism();
  if(process.platform==='win32') {
@@ -215,7 +230,7 @@ export async function inspectFleet(hosts: FleetHost[]): Promise<FleetReadiness[]
       try {
         const source = readinessScript.replace(
           "busy:fs.existsSync(lease)",
-          `busy:fs.existsSync(lease)||${JSON.stringify(host.externalLocks ?? [])}.some(p=>fs.existsSync(p))`,
+          `busy:fs.existsSync(lease)||resolveExternalLocks(${JSON.stringify(host.externalLocks ?? [])},process.env.APHRODY_BUN_CHECKOUT,path).some(p=>fs.existsSync(p))`,
         );
         const result = await execute(host, source, 30);
         if (result.exitCode !== 0)
@@ -238,6 +253,7 @@ export function workerScript(
   validateRequest(request);
   return `(async()=>{
  const fs=await import('node:fs'), path=await import('node:path'), os=await import('node:os');
+ ${externalLockResolverSource}
  ${processIdentitySource}
  const r=${JSON.stringify(request)}, host=${JSON.stringify(host)}, fingerprint=${JSON.stringify(fingerprint)};
  if(process.platform!==host.os)throw Error('Host OS changed');
@@ -258,7 +274,7 @@ export function workerScript(
   let exitCode=0;
   if(r.kind==='build') {
     if(!host.heavy)throw Error('Production host forbids heavy build');
-    if((host.externalLocks||[]).some(p=>fs.existsSync(p)))throw Error('Existing owner build lock is present; preserved');
+    if(resolveExternalLocks(host.externalLocks||[],process.env.APHRODY_BUN_CHECKOUT,path).some(p=>fs.existsSync(p)))throw Error('Existing owner build lock is present; preserved');
     if(fs.realpathSync(r.workspace)!==path.resolve(r.workspace))throw Error('Source path resolves elsewhere');
     for(const directory of ['build/debug','build/release','build-native-release'])if(fs.existsSync(path.join(r.workspace,directory,'.build.lock')))throw Error('Native owner factory lease present; preserved');
     const capture=async(args)=>{const p=Bun.spawn(args,{cwd:r.workspace,stdout:'pipe',stderr:'pipe',windowsHide:true});const out=await new Response(p.stdout).text();const err=await new Response(p.stderr).text();if(await p.exited!==0)throw Error(err);return out.trim()};

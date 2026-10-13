@@ -17,7 +17,7 @@
       "reserveGiB": 4,
       "maxJobs": 2,
       "heavy": true,
-      "externalLocks": ["C:/bun/build/chromium/setup.lock"]
+      "externalLocks": ["$APHRODY_BUN_CHECKOUT/build/chromium/setup.lock"]
     },
     { "id": "vps", "os": "linux", "local": false, "reserveGiB": 4, "maxJobs": 6, "heavy": true },
     { "id": "dbfr", "os": "linux", "local": false, "reserveGiB": 8, "maxJobs": 1, "heavy": false }
