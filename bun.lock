@@ -24,6 +24,7 @@
         "@aphrody/web-source": "workspace:*",
         "@aphrody/web-test": "workspace:*",
         "@aphrody/workspace": "workspace:*",
+        "@aphrody/yolo-cli": "workspace:*",
         "@aphrody/yolo-core": "workspace:*",
         "@happy-dom/global-registrator": "catalog:",
         "@types/bun": "catalog:",
