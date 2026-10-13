@@ -52,7 +52,7 @@ export interface AssetPlan {
   reference: AssetReference;
   files: Map<string, string>;
 }
-const maxAssetBytes = 256 * 1024 * 1024;
+const maxAssetBytes = 128 * 1024 * 1024;
 
 export function validateAssetReference(
   value: unknown,
