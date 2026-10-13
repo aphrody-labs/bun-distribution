@@ -18,3 +18,9 @@ only to first-party material.
 
 Finish by qualifying the integrated setup and workspace, committing precise
 owned paths on branch `os`, and pushing after verifying remote ancestry.
+
+Every product Rust crate is a pinned Git submodule directly under
+`crates/<package-name>`, sharing the root Cargo workspace, version, dependency
+table and nightly toolchain. The root owns `build`, `target`, `node_modules`
+and `install`. Aphrody Infra provisions declared forge repositories and
+machine identities idempotently; credentials remain in protected secret stores.

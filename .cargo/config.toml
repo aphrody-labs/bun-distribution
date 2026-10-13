@@ -1,5 +1,7 @@
 [build]
 target-dir = "target"
+build-dir = "build/rust"
+jobs = 1
 
 [install]
 root = "install"
