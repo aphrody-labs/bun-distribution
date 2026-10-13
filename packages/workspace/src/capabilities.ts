@@ -54,6 +54,11 @@ export function appCapabilityFor(appId: string): AppCapability | undefined {
   return entry ? { ...entry } : undefined;
 }
 
+export function appCapabilityForLibrary(libraryId: string): AppCapability | undefined {
+  const capability = capabilities.find(entry => entry.libraryId === libraryId);
+  return capability ? { ...capability } : undefined;
+}
+
 export function appCapabilities(config: Pick<Config, "modules" | "priorities">): AppCapability[] {
   const engines = new Set(config.modules.filter(module => module.role === "engine").map(module => module.id));
   for (const id of engines) {
@@ -84,7 +89,7 @@ export function appHostnamesForLibrary(
   libraryId: string,
   config: Pick<Config, "modules" | "priorities" | "deployment">,
 ): string[] {
-  const capability = capabilities.find(entry => entry.libraryId === libraryId);
+  const capability = appCapabilityForLibrary(libraryId);
   if (!capability) throw new Error(`Unknown application library: ${libraryId}`);
   const primary = appHostname(capability.id, config);
   const alias = `${libraryId}.${config.deployment!.domain}`;
