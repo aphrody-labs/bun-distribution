@@ -26,6 +26,7 @@ test("public fallback strips inbound authentication and preserves range conditio
     "proxy_set_header Range $http_range",
     "proxy_set_header If-Range $http_if_range",
     "proxy_intercept_errors off",
+    "proxy_cache off",
     "Accept-Encoding identity",
   ])
     expect(result).toContain(expected);

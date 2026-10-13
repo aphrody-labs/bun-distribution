@@ -14,6 +14,7 @@ export function publicCdnFallback(name: string, upstream: string): string {
   if ($uri ~* "\\.(?:sql|sqlite|db|env|jsonl|pem|key|toml|ya?ml|ini|log|bak)$") { return 404; }
   proxy_pass ${upstream};
   proxy_http_version 1.1;
+  proxy_cache off;
   proxy_pass_request_headers off;
   proxy_pass_request_body off;
   proxy_set_header Host $host;
