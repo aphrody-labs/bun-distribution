@@ -8,7 +8,7 @@ jobs:
     steps:
       - uses: builtin:checkout
         with:
-          submodules: recursive
+          submodules: true
           fetch-depth: 1
           persist-credentials: false
       - name: Runtime
