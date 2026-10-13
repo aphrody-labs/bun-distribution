@@ -1,6 +1,25 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import { qualifiedAcknowledgement, converged } from "./shenron-sqlite-sync-pipeline";
+import {
+  qualifiedAcknowledgement,
+  converged,
+  olderStandaloneSnapshots,
+} from "./shenron-sqlite-sync-pipeline";
+test("rotation retains the latest qualified snapshot and every unrelated protected file", () => {
+  const current = "bot-20261013-164741.db.gz";
+  expect(
+    olderStandaloneSnapshots(
+      [
+        "bot-20261013-162013.db.gz",
+        current,
+        "bot-20261014-000000.db.gz",
+        "shenron_site.dump",
+        ".snapshot-incomplete",
+      ],
+      current,
+    ),
+  ).toEqual(["bot-20261013-162013.db.gz"]);
+});
 test("pins the deployed canonical backup producer to current owner source", async () => {
   const config = await Bun.file(
     new URL("../../../tools/config/host/shenron/sqlite-sync.json", import.meta.url),

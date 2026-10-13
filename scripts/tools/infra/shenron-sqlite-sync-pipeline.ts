@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { chmodSync, readdirSync, statSync } from "node:fs";
+import { chmodSync, existsSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 
 interface Config {
@@ -35,6 +35,10 @@ export function converged(report: any): boolean {
     report.totals?.failed === 0 &&
     report.totals?.planned === 0
   );
+}
+export function olderStandaloneSnapshots(names: string[], current: string): string[] {
+  if (!/^bot-\d{8}-\d{6}\.db\.gz$/.test(current)) throw Error("Canonical snapshot name required");
+  return names.filter((name) => /^bot-\d{8}-\d{6}\.db\.gz$/.test(name) && name < current);
 }
 function childOutput(args: string[], milliseconds = 30000): Promise<string> {
   return (async () => {
@@ -234,6 +238,14 @@ export async function runPipeline(root: string, configuration: string): Promise<
     ),
   );
   if (!converged(readback)) throw Error("Canonical replica did not converge");
+  const rotation = `import{readdirSync,existsSync,unlinkSync}from"node:fs";const older=${olderStandaloneSnapshots.toString()};const root=${JSON.stringify(offsite)},current=${JSON.stringify(name)};const receipt=await Bun.file(root+"/"+current+".offsite-verified").json();if(receipt.sha256!==${JSON.stringify(hash)}||receipt.sqliteIntegrity!=="ok")throw Error("Verified latest backup required");for(const n of older(readdirSync(root),current)){for(const suffix of["",".sha256",".offsite-verified"]){const p=root+"/"+n+suffix;if(existsSync(p))unlinkSync(p)}}`;
+  await remote(`timeout 20 ${quote(remoteBun)} -e ${quote(rotation)}`);
+  for (const previous of olderStandaloneSnapshots(readdirSync(backup), name)) {
+    for (const suffix of ["", ".sha256", ".offsite-verified"]) {
+      const path = join(backup, previous + suffix);
+      if (existsSync(path)) unlinkSync(path);
+    }
+  }
   const result = {
     checkedAt: new Date().toISOString(),
     sourceService: config.sourceService,
