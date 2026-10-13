@@ -28,6 +28,8 @@ export interface ProcessOptions extends ProcessLimits {
   stdout?: "capture" | "discard" | "inherit";
   stderr?: "capture" | "discard" | "inherit";
   env?: Record<string, string | undefined>;
+  /** Forward terminal interrupts to interactive children and await their exit. */
+  forwardSignals?: boolean;
   /** Record the owned child without implementing another process manager. */
   onStart?: (pid: number) => void | Promise<void>;
   /** Receive bounded raw output from captured or discarded streams. */
@@ -89,7 +91,8 @@ export async function runProcess(argv: string[], cwd: string, options: ProcessOp
     options.maxOutputBytes < 1 ||
     (options.signal !== undefined && !(options.signal instanceof AbortSignal)) ||
     (options.onStart !== undefined && typeof options.onStart !== "function") ||
-    (options.onOutput !== undefined && typeof options.onOutput !== "function")
+    (options.onOutput !== undefined && typeof options.onOutput !== "function") ||
+    (options.forwardSignals !== undefined && typeof options.forwardSignals !== "boolean")
   ) {
     throw new ProcessError("INVALID_OPTIONS", "Invalid native process options.");
   }
@@ -181,12 +184,26 @@ export async function runProcess(argv: string[], cwd: string, options: ProcessOp
     failure ??= new ProcessError(code, message);
     void stopTree();
   };
-  const interrupt = () => fail("INTERRUPTED", "The native process was interrupted.");
+  const interrupt = (signal: "SIGINT" | "SIGTERM") => {
+    if (options.forwardSignals && child.exitCode === null) {
+      try {
+        if (process.platform === "win32") child.kill(signal);
+        else process.kill(-child.pid, signal);
+        return;
+      } catch {
+        // If forwarding fails, tear down the owned tree below.
+      }
+    }
+    fail("INTERRUPTED", "The native process was interrupted.");
+  };
+  const sigint = () => interrupt("SIGINT");
+  const sigterm = () => interrupt("SIGTERM");
+  const abort = () => fail("INTERRUPTED", "The native process was interrupted.");
   const timer = setTimeout(() => fail("TIMEOUT", "The native process exceeded its deadline."), options.timeoutMs);
-  process.once("SIGINT", interrupt);
-  process.once("SIGTERM", interrupt);
-  options.signal?.addEventListener("abort", interrupt, { once: true });
-  if (options.signal?.aborted) interrupt();
+  process.on("SIGINT", sigint);
+  process.on("SIGTERM", sigterm);
+  options.signal?.addEventListener("abort", abort, { once: true });
+  if (options.signal?.aborted) abort();
 
   const stage = async <T>(task: () => T | Promise<T>): Promise<T> => {
     if (reads.signal.aborted) throw failure;
@@ -274,9 +291,9 @@ export async function runProcess(argv: string[], cwd: string, options: ProcessOp
     throw failure;
   } finally {
     clearTimeout(timer);
-    process.removeListener("SIGINT", interrupt);
-    process.removeListener("SIGTERM", interrupt);
-    options.signal?.removeEventListener("abort", interrupt);
+    process.removeListener("SIGINT", sigint);
+    process.removeListener("SIGTERM", sigterm);
+    options.signal?.removeEventListener("abort", abort);
     job?.close();
   }
 }

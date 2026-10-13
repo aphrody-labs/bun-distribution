@@ -10,7 +10,7 @@ retain its errors, limits and qualification.
 | Checkout discovery and native artifact discovery | Workspace | Checkout tools and source adapters |
 | Bun provenance | Workspace `runtime.ts` | Tools and compiled app manifests |
 | Content digests | Workspace `hash.ts` | App payloads and shared R2 assets |
-| Child lifetime, cancellation and captured output | Workspace `process.ts` | Cargo tools and native video transport |
+| Child lifetime, cancellation, interactive signals and captured output | Workspace `process.ts` | Cargo tools, native video transport and standalone app launchers |
 | Video project, timeline and commands | FilmCraft Rust library | Typed Bun video adapter |
 | Media decoding and encoding | Native Bun.Video owner | Bun media consumers |
 | Shared Rust primitives | Craft library owners | Native library engines |
@@ -27,7 +27,10 @@ retain its errors, limits and qualification.
 
 The video process module translates workspace errors into its public video
 errors. It has no child management implementation. Captured and discarded
-streams share an output cap; interactive build output retains inherited streams.
+streams share an output cap; interactive children may inherit streams and
+forward terminal signals through the shared process owner. The Ubuntu factory's
+detached Docker engine is a separate finite service whose launcher receipt owns
+its PID, log, socket and data root.
 Source adapters use one native binary discovery API and retain their own protocol
 and version checks. Compiled apps use verified manifests without Cargo or Git.
 

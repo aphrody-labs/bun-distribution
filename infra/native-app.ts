@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 import { chmod, link, lstat, mkdir, unlink } from "node:fs/promises";
 import { delimiter, join } from "node:path";
+import { runProcess } from "@aphrody/bun-workspace/process";
 import { contentIdentity, identity } from "../src/distribution.ts";
 import type { NativeLaunchContract } from "./app-build.ts";
 
@@ -99,8 +100,7 @@ async function main() {
     return;
   }
   const selected = await materialize(contract);
-  const child = Bun.spawn([selected.backend, ...Bun.argv.slice(2)], {
-    cwd: process.cwd(),
+  const result = await runProcess([selected.backend, ...Bun.argv.slice(2)], process.cwd(), {
     env: {
       ...Bun.env,
       PATH: selected.directory + delimiter + (Bun.env.PATH ?? ""),
@@ -108,21 +108,14 @@ async function main() {
         ? { LD_LIBRARY_PATH: selected.directory + delimiter + (Bun.env.LD_LIBRARY_PATH ?? "") }
         : {}),
     },
+    timeoutMs: 43_200_000,
+    maxOutputBytes: 1,
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",
-    windowsHide: true,
+    forwardSignals: true,
   });
-  const interrupt = () => child.kill("SIGINT"),
-    terminate = () => child.kill("SIGTERM");
-  process.on("SIGINT", interrupt);
-  process.on("SIGTERM", terminate);
-  try {
-    process.exitCode = await child.exited;
-  } finally {
-    process.off("SIGINT", interrupt);
-    process.off("SIGTERM", terminate);
-  }
+  process.exitCode = result.code;
 }
 if (import.meta.main)
   main().catch(error => {
