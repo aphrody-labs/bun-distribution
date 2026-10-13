@@ -110,7 +110,7 @@ describe("Yolo canonical CLI and native capability owners", () => {
     expect(pkg.name).toBe("@aphrody/yolo-cli");
     expect(pkg.bin.yolo).toBe("./src/index.ts");
     expect(pkg.dependencies).toEqual({
-      "@aphrody/runtime-sdk": "workspace:*",
+      "@aphrody/runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4",
       "@aphrody/workspace": "workspace:*",
       "@aphrody/yolo-core": "workspace:*",
     });
