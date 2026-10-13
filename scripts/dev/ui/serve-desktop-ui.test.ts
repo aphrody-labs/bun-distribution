@@ -3,7 +3,7 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { appServerProxy } from "../../../m3/packages/app-ui/backend";
+import { appServerProxy } from "@aphrody/app-ui/backend";
 import { startDesktopUiServer } from "./serve-desktop-ui";
 
 let directory: string;

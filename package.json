@@ -271,7 +271,9 @@
     "@neon/env": "^1.4.7"
   },
   "devDependencies": {
+    "@aphrody/app-ui": "workspace:*",
     "@aphrody/google": "workspace:*",
+    "@aphrody/m3": "workspace:*",
     "@aphrody/m3-config": "workspace:*",
     "@aphrody/m3-tokens": "workspace:*",
     "@aphrody/os": "workspace:*",

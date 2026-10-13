@@ -4,8 +4,8 @@ import { existsSync } from "node:fs";
 import { realpath } from "node:fs/promises";
 import { extname, relative, resolve, sep } from "node:path";
 import { parseArgs } from "node:util";
-import { serveM3 } from "../../../m3/packages/m3/src/server";
-import { appServerProxy, isLoopbackHost } from "../../../m3/packages/app-ui/backend";
+import { serveM3 } from "@aphrody/m3/server";
+import { appServerProxy, isLoopbackHost } from "@aphrody/app-ui/backend";
 
 const UI_DIST = resolve(import.meta.dir, "../../../crates/ui/app/ui-dist");
 
@@ -26,7 +26,7 @@ export async function startDesktopUiServer(options: DesktopUiServerOptions = {})
   if (!isLoopbackHost(host)) throw new Error("The desktop UI must bind to a loopback address.");
   const root = await realpath(uiDist);
   const index = resolve(root, "index.html");
-  if (!existsSync(index)) throw new Error("Build m3/packages/app-ui before serving its UI.");
+  if (!existsSync(index)) throw new Error("Build @aphrody/app-ui before serving its UI.");
 
   return serveM3({
     hostname: host,
