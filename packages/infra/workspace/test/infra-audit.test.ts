@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import { mkdtemp, mkdir, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -36,7 +36,11 @@ test("host roles exclude retired/staged services and do not expect VPS applicati
 test("observations drain stdout/stderr and retain a failing command's evidence", async () => {
   const result = await observeCommand(
     "fixture",
-    ["bash", "-c", "printf evidence; printf failure >&2; exit 7"],
+    [
+      process.execPath,
+      "-e",
+      'process.stdout.write("evidence"); process.stderr.write("failure"); process.exit(7)',
+    ],
     import.meta.dir,
   );
   expect(result.exitCode).toBe(7);
@@ -44,6 +48,26 @@ test("observations drain stdout/stderr and retain a failing command's evidence",
   expect(result.stderr).toBe("failure");
   expect(result.startedAt).toMatch(/^\d{4}-/);
 });
+
+test.skipIf(process.platform !== "win32")(
+  "observations resolve local executables with the Windows PATH delimiter",
+  async () => {
+    const root = await mkdtemp(join(tmpdir(), "infra-audit-path-"));
+    try {
+      const executable = "aphrody-audit-fixture.cmd";
+      const bin = join(root, "node_modules", ".bin");
+      await mkdir(bin, { recursive: true });
+      await writeFile(join(bin, executable), "@echo off\r\necho local-bin\r\n");
+      const command = process.env.ComSpec;
+      expect(command).toBeTruthy();
+      const result = await observeCommand("local-bin", [command!, "/d", "/c", executable], root);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout.trim()).toBe("local-bin");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  },
+);
 
 test("an unavailable program records an explicit failure", async () => {
   const result = await observeCommand(
@@ -204,8 +228,8 @@ test("source inventory parses actual TS/TSX syntax without executing adapters", 
       "export const View = () => <div />;",
     );
     await Bun.write(
-      join(root, "scripts/tools/fixture.sh"),
-      `#!/bin/bash\ntouch '${join(root, "executed")}'\n`,
+      join(root, "scripts/tools/fixture.ts"),
+      `await Bun.write(${JSON.stringify(join(root, "executed"))}, "executed");\n`,
     );
     const result = await sourceInventory(root);
     expect(result.infraSources.find((source) => source.path.endsWith("invalid.ts"))?.syntax).toBe(

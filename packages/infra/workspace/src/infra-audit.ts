@@ -3,7 +3,7 @@
 /* eslint-disable no-await-in-loop -- Serialize bounded runtime probes and retain ordered private evidence. */
 import { TOML, Transpiler } from "bun";
 import { chmod, mkdir, realpath } from "node:fs/promises";
-import { basename, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { basename, delimiter, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { discoverMonorepoGatePlan, executeMonorepoGate, type GateCheck } from "./monorepo-gate.ts";
 import { loadFleet } from "./fleet.ts";
 import { pipelineCatalog } from "./pipeline-catalog.ts";
@@ -188,7 +188,7 @@ export async function observeCommand(
       killSignal: "SIGKILL",
       env: {
         ...process.env,
-        PATH: `${join(cwd, "node_modules/.bin")}:${process.env.PATH ?? ""}`,
+        PATH: `${join(cwd, "node_modules/.bin")}${delimiter}${process.env.PATH ?? ""}`,
         APHRODY_NO_BUILD: "1",
         APHRODY_INFRA_BUILD_FROM_SOURCE: "0",
         APHRODY_NATIVE_TEST_ROOT: "",
