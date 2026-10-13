@@ -111,3 +111,43 @@ Compilation, Clippy and tests remain pending the release owner's native window.
 
 Formatting commits preserve each original split history. The license/notice
 files and Adobe permission comment remain byte-identical to their source pins.
+
+## Aphrody protocol and AI primitive batch
+
+Eight crates were extracted from Aphrody source commit
+`3187d795e84ff88da67f53f12be1add715ad73b2` using history-preserving subtree
+splits. Each split tree was checked against the corresponding source prefix.
+The child manifests inherit version, edition and Rust version from the Bun OS
+workspace, keep the source `Apache-2.0` license locally, point repository
+metadata at the private Gitea source, and reproduce the effective source Rust
+and Clippy lints locally because the distribution root does not define those
+workspace lint tables. Each child contains a byte-identical copy of the
+Apache license from the pinned Aphrody tree.
+
+| Crate | Source prefix | Split commit | Root dependency |
+|---|---|---|---|
+| `aphrody-a2a` | `crates/contracts/a2a` | `647214015bb8ea6dbb9ecb7656f09f42cb51c3fc` | base64, chrono, serde, serde_json, thiserror, uuid |
+| `aphrody-agent-proto` | `crates/contracts/agent-proto` | `bf96dfe4371a6f9fceddb566937f4c75a5881470` | serde, serde_json, thiserror, uuid, pretty_assertions (dev) |
+| `aphrody-app-protocol` | `crates/contracts/app-protocol` | `85d54a052d80137218f3c78b38957ce51b7632b1` | serde, serde_json, pretty_assertions (dev) |
+| `aphrody-toolcall` | `crates/ai/toolcall` | `a60aaa3982cddf1be485e6988092a7606157f03c` | serde, serde_json, async-trait, thiserror, pretty_assertions (dev) |
+| `aphrody-patch` | `crates/ai/patch` | `89ad5615a6d23d3185bb533d0f63a83289179852` | similar, thiserror, pretty_assertions/tempfile (dev) |
+| `aphrody-toolcall-repair` | `crates/ai/toolcall-repair` | `acc8ba251cd3819d3374026562587e6569d2c777` | serde, serde_json, thiserror, regex, proptest/pretty_assertions (dev), aphrody-patch |
+| `aphrody-translate-core` | `crates/ai/translate-core` | `fc600936dc3d9edac57d4e0ebf7072678d429d64` | regex |
+| `aphrody-http-error` | `crates/ai/http-error` | `547866967471097fde3cfb3ae157cfa9d4320502` | axum, serde, serde_json, tokio (dev) |
+
+The source `schemars` dependency was omitted from `aphrody-toolcall`: an
+exhaustive search of the pinned crate found no code, feature, API, or document
+usage of it; the only remaining mention is explanatory prose. The shared
+dependency declaration for `aphrody-patch` is required by
+`aphrody-toolcall-repair`. Features are enabled at the use site where the
+root's shared dependency disables defaults, preserving source defaults and
+the source's wasm UUID/chrono behavior. The app-protocol fixtures retain their
+upstream Codex provenance and `FIXTURES_REV`; toolcall-repair keeps its paired
+input/expected-output fixtures unchanged. This records source extraction and
+manifest intent only; it does not claim native compile, Clippy, or test gates.
+
+The integrated 20-member root passes locked offline metadata with all features
+(559 identities: 20 product crates and 539 remote source packages), root Rust
+formatting, TypeScript checking of 111 files, lint and formatting. Child forge
+refs match the formatted local heads; Apache notices and fixture trees remain
+unchanged. Native compilation, Clippy and tests for this batch remain pending.

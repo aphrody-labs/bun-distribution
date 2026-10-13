@@ -54,11 +54,11 @@ and [Cargo source replacement](https://doc.rust-lang.org/cargo/reference/source-
 
 ## Qualified snapshot
 
-The 2026-10-13 snapshot contains 12 root members and 514 remote packages
-(513 registry packages plus the Git-pinned winprint source). Offline metadata
-with all root features resolves exactly the 526 lockfile package identities.
+The 2026-10-13 snapshot contains 20 root members and 539 remote packages
+(538 registry packages plus the Git-pinned winprint source). Offline metadata
+with all root features resolves exactly the 559 lockfile package identities.
 Cargo nightly-2026-09-15 is recorded in the generated inventory. Source content
-is 658422334 bytes across 27526 checksum-listed files. Manifest, notice and
+is 671263538 bytes across 28472 checksum-listed files. Manifest, notice and
 declared license files are independently checked; full compilation remains
 pending. The active source configuration, root toolchain, source lock and Git
 module ledger hashes are recorded and unchanged by this lot.

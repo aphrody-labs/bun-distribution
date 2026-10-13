@@ -125,3 +125,35 @@
 	path = crates/gridcraft-pdf
 	url = bun-forge:aphrody-dev/bun-crate-gridcraft-pdf.git
 	branch = os
+[submodule "crates/aphrody-a2a"]
+	path = crates/aphrody-a2a
+	url = bun-forge:aphrody-dev/bun-crate-aphrody-a2a.git
+	branch = os
+[submodule "crates/aphrody-agent-proto"]
+	path = crates/aphrody-agent-proto
+	url = bun-forge:aphrody-dev/bun-crate-aphrody-agent-proto.git
+	branch = os
+[submodule "crates/aphrody-app-protocol"]
+	path = crates/aphrody-app-protocol
+	url = bun-forge:aphrody-dev/bun-crate-aphrody-app-protocol.git
+	branch = os
+[submodule "crates/aphrody-toolcall"]
+	path = crates/aphrody-toolcall
+	url = bun-forge:aphrody-dev/bun-crate-aphrody-toolcall.git
+	branch = os
+[submodule "crates/aphrody-patch"]
+	path = crates/aphrody-patch
+	url = bun-forge:aphrody-dev/bun-crate-aphrody-patch.git
+	branch = os
+[submodule "crates/aphrody-toolcall-repair"]
+	path = crates/aphrody-toolcall-repair
+	url = bun-forge:aphrody-dev/bun-crate-aphrody-toolcall-repair.git
+	branch = os
+[submodule "crates/aphrody-translate-core"]
+	path = crates/aphrody-translate-core
+	url = bun-forge:aphrody-dev/bun-crate-aphrody-translate-core.git
+	branch = os
+[submodule "crates/aphrody-http-error"]
+	path = crates/aphrody-http-error
+	url = bun-forge:aphrody-dev/bun-crate-aphrody-http-error.git
+	branch = os

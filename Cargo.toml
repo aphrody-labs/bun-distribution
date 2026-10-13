@@ -13,6 +13,14 @@ members = [
     "crates/pdfcraft-compare",
     "crates/cadcraft-color",
     "crates/gridcraft-pdf",
+    "crates/aphrody-a2a",
+    "crates/aphrody-agent-proto",
+    "crates/aphrody-app-protocol",
+    "crates/aphrody-toolcall",
+    "crates/aphrody-patch",
+    "crates/aphrody-toolcall-repair",
+    "crates/aphrody-translate-core",
+    "crates/aphrody-http-error",
 ]
 
 [workspace.package]
@@ -22,6 +30,9 @@ license = "MIT"
 repository = "https://github.com/aphrody-labs/bun-distribution"
 rust-version = "1.97"
 authors = ["aphrody-dev <contact@aphrody.com>"]
+homepage = "https://aphrody.app"
+keywords = ["aphrody", "bun", "runtime", "protocol", "workspace"]
+categories = ["development-tools", "api-bindings", "web-programming"]
 
 [workspace.dependencies]
 craft-atomic = { path = "crates/craft-atomic" }
@@ -34,7 +45,17 @@ deckcraft-matroska = { path = "crates/deckcraft-matroska" }
 pdfcraft-compare = { path = "crates/pdfcraft-compare" }
 cadcraft-color = { path = "crates/cadcraft-color" }
 gridcraft-pdf = { path = "crates/gridcraft-pdf" }
+aphrody-a2a = { path = "crates/aphrody-a2a", version = "=1.4.4" }
+aphrody-agent-proto = { path = "crates/aphrody-agent-proto", version = "=1.4.4" }
+aphrody-app-protocol = { path = "crates/aphrody-app-protocol", version = "=1.4.4" }
+aphrody-toolcall = { path = "crates/aphrody-toolcall", version = "=1.4.4" }
+aphrody-patch = { path = "crates/aphrody-patch", version = "=1.4.4" }
+aphrody-toolcall-repair = { path = "crates/aphrody-toolcall-repair", version = "=1.4.4" }
+aphrody-translate-core = { path = "crates/aphrody-translate-core", version = "=1.4.4" }
+aphrody-http-error = { path = "crates/aphrody-http-error", version = "=1.4.4" }
 anyhow = { version = "=1.0.104", default-features = false }
+async-trait = { version = "=0.1.92", default-features = false }
+axum = { version = "=0.8.9", default-features = false }
 base64 = { version = "=0.23.1", default-features = false }
 chrono = { version = "=0.4.45", default-features = false }
 dirs = { version = "=7.0.0", default-features = false }
@@ -51,6 +72,8 @@ moxcms = "=0.9.1"
 objc2 = { version = "=0.6.5", default-features = false }
 objc2-app-kit = { version = "=0.3.2", default-features = false }
 png = { version = "=0.18.1", default-features = false }
+pretty_assertions = { version = "=1.4.1", default-features = false }
+proptest = { version = "=1.12.0", default-features = false }
 rayon = { version = "=1.12.0", default-features = false }
 regex = { version = "=1.13.1", default-features = false }
 reqwest = { version = "=0.13.5", default-features = false }
@@ -60,6 +83,7 @@ rustix = { version = "=1.1.5", default-features = false }
 serde = { version = "=1.0.229", default-features = false, features = ["derive", "std"] }
 serde_json = { version = "=1.0.154", default-features = false, features = ["std"] }
 sha2 = { version = "=0.11.1", default-features = false }
+similar = { version = "=3.2.0", default-features = false }
 tempfile = { version = "=3.27.0", default-features = false, features = ["getrandom"] }
 thiserror = { version = "=2.0.21", default-features = false }
 toml_edit = { version = "=0.25.17", default-features = false, features = ["display", "parse"] }
