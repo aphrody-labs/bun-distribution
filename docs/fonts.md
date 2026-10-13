@@ -11,8 +11,10 @@ The source project is `aphrody-labs/craft-fonts`. Its content was integrated
 from the pinned source revision `3d9ab3a132ed0eff457e424226a435a901da30d3`.
 The workspace integration branch `os` at
 `f1bfd5fd75f24619cad085230c7290f17ee7821e` remains published in that repository
-to preserve the source-side Cargo integration history. The Bun OS root owns the
-active integrated workspace copy; no submodule checkout is needed for builds.
+to preserve the source-side Cargo integration history. Each crate is now a
+pinned Git submodule in the Bun OS root workspace, with its own preserved
+split history on the private forge. `just setup` initializes these checkouts;
+their manifests inherit the single parent Cargo workspace and nightly toolchain.
 
 Font embedding is optional. Set `CRAFT_FONTS_DIR` to a checkout containing
 `fonts/manifest.txt` for runtime lookup, or enable the crate's `embed` feature to
