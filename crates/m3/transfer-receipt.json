@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "source-transferred-formatted-prior-compile-qualified",
+  "status": "source-transferred-and-retired",
   "sourceOwner": {
     "repository": "https://github.com/aphrody-labs/aphrody",
     "revision": "96e732f1c17591389e5bb6d2dc51cb9596edff72",
@@ -361,10 +361,12 @@
         "gate": "native",
         "command": "check --locked --offline --package aphrody-m3 --lib --target x86_64-pc-windows-msvc",
         "exitCode": 0,
-        "startedAt": "2026-10-13T11:16:39.240Z",
+        "startedAt": "2026-10-13T11:16:39.24Z",
         "completedAt": "2026-10-13T11:17:23.717Z",
         "boundSeconds": 240,
-        "diagnostics": ["    Finished `dev` profile [unoptimized + debuginfo] target(s) in 42.51s"]
+        "diagnostics": [
+          "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 42.51s"
+        ]
       },
       {
         "gate": "noNative",
@@ -373,7 +375,9 @@
         "startedAt": "2026-10-13T11:17:23.718Z",
         "completedAt": "2026-10-13T11:17:31.759Z",
         "boundSeconds": 240,
-        "diagnostics": ["    Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.27s"]
+        "diagnostics": [
+          "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.27s"
+        ]
       },
       {
         "gate": "wasm",
@@ -382,7 +386,9 @@
         "startedAt": "2026-10-13T11:17:31.759Z",
         "completedAt": "2026-10-13T11:18:09.298Z",
         "boundSeconds": 240,
-        "diagnostics": ["    Finished `dev` profile [unoptimized + debuginfo] target(s) in 35.72s"]
+        "diagnostics": [
+          "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 35.72s"
+        ]
       }
     ],
     "limits": [
@@ -435,9 +441,10 @@
     "headersPreserved": true
   },
   "retirement": {
-    "oldSourceRemoved": false,
-    "consumerMigrationQualified": false,
-    "publicationQualified": false
+    "oldSourceRemoved": true,
+    "consumerMigrationQualified": true,
+    "publicationQualified": false,
+    "qualification": "Aphrody source retirement is committed and pushed. Metadata confirms no local aphrody-m3 and the Material Git owner is the sole dependency. No fresh build or tests were run after retirement."
   },
   "registryObservedAt": "2026-10-13T11:13:10.967Z",
   "registryTransitiveAudit": [
@@ -447,7 +454,9 @@
       "dependenciesAPI": "https://crates.io/api/v1/crates/aphrody-svg/1.0.0-canary.1/dependencies",
       "normalTokenRequirement": "^1.0.0-canary.1",
       "tokenOptional": true,
-      "tokenFeatures": ["std"]
+      "tokenFeatures": [
+        "std"
+      ]
     },
     {
       "name": "aphrody-sprite-sheet",
@@ -500,7 +509,7 @@
       "manifest_path": "C:\\Users\\aphro\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\aphrody-taffy-0.12.1\\Cargo.toml"
     }
   ],
-  "completedAt": "2026-10-13T11:20:05.760Z",
+  "completedAt": "2026-10-13T11:20:05.76Z",
   "lockfileSnapshot": {
     "path": "Cargo.lock",
     "sha256": "38ba0c63834d0464da74c4eea0f3533647c4abe3f658fe357988a8b10b155703",
@@ -510,5 +519,13 @@
       "path": "crates/m3-tokens",
       "registryOrGitSource": false
     }
+  },
+  "retiredBy": {
+    "repository": "https://github.com/aphrody-labs/aphrody",
+    "revision": "450dbdc906afcf2a7e57c00efb63671573a5daf8",
+    "paths": [
+      "crates/ui/m3"
+    ],
+    "evidence": "Aphrody Cargo metadata --locked resolved no local aphrody-m3 package and all checked consumers use the Material owner."
   }
 }

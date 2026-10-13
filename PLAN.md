@@ -14,7 +14,7 @@
       adapter from the M3 token workspace.
 - [x] Migrate the Aphrody Rust consumers to the pinned Material revision; locked metadata and scoped native Windows consumer checks pass.
 - [ ] Complete themed component coverage and cross-platform desktop qualification.
-- [ ] Remove the remaining Aphrody source directory. Its crate is excluded from the Aphrody Cargo workspace and all checked consumers use this owner, but the duplicate directory remains physically present.
+- [x] Remove the retired Aphrody M3 source directories after transfer receipt, consumer metadata and content ownership were verified (Aphrody `450dbdc906`).
 - [ ] Route web dynamic-color APIs through the qualified native binding.
 
 ## Consolidation gates
