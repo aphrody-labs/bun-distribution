@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Aphrody M3 — integration plan
 
 [GOAL.md](GOAL.md) owns the requested scope. [AGENTS.md](AGENTS.md) owns local
@@ -8,15 +9,15 @@ remain authoritative for native runtime and installed hosts.
 
 ## One framework, explicit owners
 
-| Surface | Owner |
-| --- | --- |
-| Plugin, theme modules, Bun web build and `m3` CLI | `packages/m3` |
-| App API/file server, executable compiler and deployment configuration | `packages/m3-bun` |
-| Shared `Bun.build` preset and workspace build cache | `packages/m3-config`, `scripts/build.ts` |
-| Tokens, themes and renderer adapters | M3 packages; canonical native token contract in Aphrody `crates/ui/m3-tokens` |
-| Package build/test orchestration | `scripts/yolo.ts`, existing `$YOLO_ROOT/bin/yolo` |
-| Minimal web example / adaptive UI and API consumer | `apps/web` / `apps/showcase` |
-| Native artifacts and installed desktop/mobile hosts | Aphrody integrator and declared build factory |
+| Surface                                                               | Owner                                                                                |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Plugin, theme modules, Bun web build and `m3` CLI                     | `packages/m3`; OS theme implementation is the `aphrody-m3-os-themes` owner submodule |
+| App API/file server, executable compiler and deployment configuration | `packages/m3-bun`                                                                    |
+| Shared `Bun.build` preset and workspace build cache                   | `packages/m3-config`, `scripts/build.ts`                                             |
+| Tokens, themes and renderer adapters                                  | M3 packages; canonical native token contract in Aphrody `crates/ui/m3-tokens`        |
+| Package build/test orchestration                                      | `scripts/yolo.ts`, existing `$YOLO_ROOT/bin/yolo`                                    |
+| Minimal web example / adaptive UI and API consumer                    | `apps/web` / `apps/showcase`                                                         |
+| Native artifacts and installed desktop/mobile hosts                   | Aphrody integrator and declared build factory                                        |
 
 See the [framework guide](docs/guides/FRAMEWORK.md),
 [Bun application guide](docs/guides/M3-BUN.md),
