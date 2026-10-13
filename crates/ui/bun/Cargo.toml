@@ -35,6 +35,6 @@ serde_json.workspace = true
 ts-rs.workspace = true
 
 [build-dependencies]
-# build.rs verifies the Material Symbols files against m3/packages/m3-fonts/fonts.lock.json.
+# build.rs verifies the Material Symbols files against Material's packages/m3-fonts/fonts.lock.json.
 serde_json.workspace = true
 sha2.workspace = true

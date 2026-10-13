@@ -12,7 +12,7 @@
 //! native renderers and WASM targets need neither filesystem IO nor HTTP to draw an icon.
 //!
 //! The bytes come from `material-symbols@0.44.8`, pinned once in
-//! `m3/packages/m3-fonts/fonts.lock.json` and synced by `bun m3/scripts/fonts-sync.ts`; `build.rs`
+//! `packages/m3-fonts/fonts.lock.json` and synced by Material's `packages/m3/scripts/fonts-sync.ts`; `build.rs`
 //! verifies them before embedding. A build without them (see [`available`]) still compiles and
 //! reports [`SvgError::FontsUnavailable`].
 

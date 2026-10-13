@@ -27,12 +27,12 @@ la conversion des interfaces ; les étapes intermédiaires ont un statut explici
 | --- | --- |
 | Bun, API natives Bun, runtime JavaScript générique | Fork Bun, session Claude et propriétaires du fork |
 | Next.js, Turbopack, adaptateurs de bundling/framework génériques | Fork Bun ; conserver provenance et propriétaires upstream |
-| Tailwind, Base UI et code générique de ces dépendances | Fork Bun ; le design produit et les tokens M3 restent Aphrody |
+| Tailwind, Base UI et code générique de ces dépendances | Fork Bun ; Material owns the shared M3 design and tokens |
 | Tauri et code générique d'intégration des hôtes desktop | Fork Bun ; écrans et commandes métier restent Aphrody |
 | Obscura, V8 et moteurs web génériques | Fork Bun ; adaptateurs produit consomment le SDK qualifié |
 | OS, kernel, shell et terminal génériques | Fork Bun ; identité des crates, ABI et artefacts conservée |
 | API, IA, cloud, HTTP, MCP métier | Aphrody, propriétaires Rust existants |
-| M3, web UI et app UI du produit | Aphrody, contrats partagés et cible Rust native/WASM |
+| M3, web UI et app UI | Material repository (`@aphrody/m3-*`, `@aphrody/app-ui`); Aphrody consumes the published package and pinned crate interfaces |
 | WebOS de démonstration du runtime | `packages/bun-webos` (not in repo) dans le fork, relais OS/Claude |
 | Site produit, documentation, templates et branding Aphrody | Aphrody, cible serveur Rust et composants M3 Rust |
 
@@ -52,14 +52,14 @@ Obscura/JSC et conserver le runtime desktop CEF jusqu'à remplacement qualifié.
 ## État constaté et sources de travail
 
 - [Plan Aphrody](../../../PLAN.md) : ABI, permissions, ressources et propriétaires.
-- [Plan M3](../../../m3/PLAN.md) et [guide du framework](../../../m3/docs/guides/FRAMEWORK.md).
-- `m3/packages/m3/src/app/scan.ts` reconnaît déjà les conventions App Router ;
+- [Material plan](https://github.com/aphrody-labs/material/blob/main/PLAN.md) and framework guide own M3 changes.
+- `packages/m3/src/app/scan.ts` in the Material checkout recognizes App Router conventions;
   parallel routes et intercepting routes y sont explicitement ignorées.
 - `m3/packages/m3/src/app/server.ts` et `m3/packages/m3-bun` exécutent aujourd'hui
   le serveur Bun ; ils ne prouvent aucune cible serveur Rust existante.
 - `m3/packages/m3-next-migrate` et `m3/packages/m3-codemods` possèdent déjà
   l'analyse Next et les transformations : étendre ces propriétaires.
-- `crates/ui/m3-tokens` possède le contrat natif des tokens. Réutiliser les
+- `crates/m3-tokens` in Material owns the native token contract. Reuse the
   propriétaires UI, API, IA, Infra et MCP, sans reconstruire leurs moteurs.
 - Le catalogue `tools/config/service-catalog.json` déclare notamment les fonts
   et downloads en Bun, le web API en Bun, et certains endpoints déjà en Rust.

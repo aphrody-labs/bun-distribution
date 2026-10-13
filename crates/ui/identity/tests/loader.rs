@@ -205,8 +205,12 @@ fn svg_en_sortie_svg_teinte_et_assaini() {
 }
 
 fn dossier_polices() -> Option<PathBuf> {
-    let d = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../m3/packages/m3-fonts/fonts/upstream/material-symbols");
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).ancestors().nth(3)?;
+    let material = std::env::var_os("APHRODY_MATERIAL_CHECKOUT")
+        .filter(|path| !path.is_empty())
+        .map(PathBuf::from)
+        .unwrap_or_else(|| workspace.parent().expect("Aphrody workspace parent").join("material"));
+    let d = material.join("packages/m3-fonts/fonts/upstream/material-symbols");
     d.join("material-symbols-outlined.woff2").is_file().then_some(d)
 }
 
@@ -223,7 +227,7 @@ fn reference(fichier: &str) -> String {
 #[test]
 fn glyphes_fideles_au_svg_de_google() {
     let Some(loader) = POLICES.as_ref() else {
-        eprintln!("polices Material Symbols absentes : bun m3/scripts/fonts-sync.ts");
+        eprintln!("polices Material Symbols absentes : bun packages/m3/scripts/fonts-sync.ts");
         return;
     };
     for (spec, fichier) in [
@@ -259,7 +263,7 @@ fn glyphes_fideles_au_svg_de_google() {
 #[test]
 fn glyphes_styles_axes_et_inconnus() {
     let Some(loader) = POLICES.as_ref() else {
-        eprintln!("polices Material Symbols absentes : bun m3/scripts/fonts-sync.ts");
+        eprintln!("polices Material Symbols absentes : bun packages/m3/scripts/fonts-sync.ts");
         return;
     };
     let svg = |spec: &str| {

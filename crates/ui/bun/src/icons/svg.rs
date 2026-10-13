@@ -105,7 +105,7 @@ impl core::fmt::Display for SvgError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::FontsUnavailable => f.write_str(
-                "Material Symbols fonts are not embedded: run `bun m3/scripts/fonts-sync.ts` or set \
+                "Material Symbols fonts are not embedded: from Material run `bun packages/m3/scripts/fonts-sync.ts` or set \
                  APHRODY_SYMBOLS_DIR, then rebuild aphrody-bun",
             ),
             Self::Woff2(msg) => write!(f, "WOFF2 decode failed: {msg}"),

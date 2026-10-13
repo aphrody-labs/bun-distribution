@@ -519,19 +519,6 @@
           ]
         },
         {
-          "name": "aphrody-m3-tokens",
-          "path": "crates/ui/m3-tokens",
-          "description": "Material Design 3 baseline design tokens: color roles, type scale, elevation, motion.",
-          "bins": [],
-          "features": [
-            "default",
-            "embedded-fonts",
-            "image",
-            "serde",
-            "std"
-          ]
-        },
-        {
           "name": "aphrody-mcp",
           "path": "crates/ai/mcp",
           "description": "aphrody-mcp — unified Rust MCP stdio server. Pure Rust.",
@@ -10313,7 +10300,7 @@
     "aphrodyRepos": 2,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 200,
+    "crates": 199,
     "binaries": 36,
     "bunPackages": 72,
     "pythonPackages": 10,

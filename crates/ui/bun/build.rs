@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Locates the Material Symbols files that `src/icons` embeds.
 //!
-//! They have a single owner: `m3/packages/m3-fonts/fonts.lock.json` pins `material-symbols@0.44.8`
-//! and `bun m3/scripts/fonts-sync.ts` writes its files, verified by SHA-256, into the git-ignored
-//! `m3/packages/m3-fonts/fonts/upstream/material-symbols/`. `APHRODY_SYMBOLS_DIR` names another
+//! They have a single owner: Material's `packages/m3-fonts/fonts.lock.json` pins `material-symbols@0.44.8`
+//! and `bun packages/m3/scripts/fonts-sync.ts` writes its files, verified by SHA-256, into the git-ignored
+//! `packages/m3-fonts/fonts/upstream/material-symbols/`. `APHRODY_SYMBOLS_DIR` names another
 //! directory with the same files (a packaged crate has no workspace around it).
 //!
 //! With every file present and matching its pin, the build sets `cfg(aphrody_symbols)` and
@@ -37,10 +37,15 @@ struct Pin {
 fn main() {
     println!("cargo::rustc-check-cfg=cfg(aphrody_symbols)");
     println!("cargo::rerun-if-env-changed=APHRODY_SYMBOLS_DIR");
+    println!("cargo::rerun-if-env-changed=APHRODY_MATERIAL_CHECKOUT");
 
     let manifest = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("set by cargo"));
     let workspace = manifest.ancestors().nth(3).expect("crates/ui/bun sits three levels down");
-    let fonts_package = workspace.join("m3/packages/m3-fonts");
+    let material = env::var_os("APHRODY_MATERIAL_CHECKOUT")
+        .filter(|path| !path.is_empty())
+        .map(PathBuf::from)
+        .unwrap_or_else(|| workspace.parent().expect("Aphrody workspace parent").join("material"));
+    let fonts_package = material.join("packages/m3-fonts");
     let lock = fonts_package.join("fonts.lock.json");
     let explicit =
         env::var_os("APHRODY_SYMBOLS_DIR").filter(|dir| !dir.is_empty()).map(PathBuf::from);
@@ -70,7 +75,7 @@ fn main() {
         },
         Err(reason) => {
             println!(
-                "cargo::warning=Material Symbols not embedded ({reason}); run `bun m3/scripts/fonts-sync.ts` \
+                "cargo::warning=Material Symbols not embedded ({reason}); from the Material checkout run `bun packages/m3/scripts/fonts-sync.ts` \
                  or set APHRODY_SYMBOLS_DIR, then rebuild"
             );
         },

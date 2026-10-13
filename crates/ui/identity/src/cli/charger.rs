@@ -14,7 +14,7 @@ charger — une image ou une icône vers PNG ou SVG
 SOURCE : fichier (PNG, JPEG, WebP, GIF, SVG, ICO), URL https://cdn.aphrody.com/…, ou
 symbol:<nom>?style=outlined|rounded|sharp&fill=0..1&wght=100..700&grad=-25..200&opsz=20..48.
 Sans -o, le SVG va sur la sortie standard ; un PNG exige -o. Polices des glyphes :
-APHRODY_SYMBOLS_DIR, sinon m3/packages/m3-fonts/fonts/upstream/material-symbols, sinon le CDN.
+APHRODY_SYMBOLS_DIR, sinon packages/m3-fonts/fonts/upstream/material-symbols du checkout Material, sinon le CDN.
 ";
 
 /// Entry point of `aphrody identity charger`. `args[0]` is the program name.

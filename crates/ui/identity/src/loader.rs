@@ -507,7 +507,7 @@ impl Loader {
     }
 
     /// Le chargeur de [`load`] : polices dans `APHRODY_SYMBOLS_DIR`, sinon celles synchronisées
-    /// dans le dépôt (`m3/packages/m3-fonts/fonts/upstream/material-symbols`), et le
+    /// dans le dépôt Material (`packages/m3-fonts/fonts/upstream/material-symbols`), et le
     /// téléchargement HTTPS avec la feature `net`.
     #[must_use]
     pub fn from_env() -> Self {
@@ -515,8 +515,17 @@ impl Loader {
         let mut loader = Self::new();
         #[cfg(feature = "fs")]
         {
-            let depot = Path::new(env!("CARGO_MANIFEST_DIR"))
-                .join("../../../m3/packages/m3-fonts/fonts/upstream/material-symbols");
+            let workspace = Path::new(env!("CARGO_MANIFEST_DIR"))
+                .ancestors()
+                .nth(3)
+                .expect("identity crate is three directories below its workspace root");
+            let material = std::env::var_os("APHRODY_MATERIAL_CHECKOUT")
+                .filter(|path| !path.is_empty())
+                .map(PathBuf::from)
+                .unwrap_or_else(|| {
+                    workspace.parent().expect("Aphrody workspace parent").join("material")
+                });
+            let depot = material.join("packages/m3-fonts/fonts/upstream/material-symbols");
             let dossier = std::env::var_os("APHRODY_SYMBOLS_DIR")
                 .filter(|d| !d.is_empty())
                 .map(PathBuf::from)

@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Build the creator.aphrody.com page from the Aphrody M3 sources: static tokens (m3-tokens.css), the colour scheme
+ * Build the creator.aphrody.com page from the shared Material packages: static tokens (m3-tokens.css), the colour scheme
  * of the logo seed (theme.json, the Rust `fidelity` export of aphrody-m3-tokens, kept current by its
  * creator_theme_golden test), the Google Sans Flex brand face of m3-fonts.
  * Output: packages/infra/product/site/dist (build output, not versioned).
@@ -27,7 +27,7 @@ export async function schemeCss(path = THEME): Promise<string> {
   const file = Bun.file(path);
   if (!(await file.exists()))
     throw new Error(
-      `${path} is missing; generate it with APHRODY_UPDATE_TOKENS=1 cargo test -p aphrody-m3-tokens --test creator_theme_golden`,
+      `${path} is missing; from the Material checkout, run APHRODY_UPDATE_TOKENS=1 cargo test --manifest-path crates/m3-tokens/Cargo.toml --test creator_theme_golden`,
     );
   const theme = parseNativeThemeExport(await file.json());
   if (theme.seed !== SEED || theme.variant !== "fidelity")

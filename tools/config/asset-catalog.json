@@ -25,18 +25,18 @@
     },
     {
       "scope": "os",
-      "repo": "aphrody",
-      "path": "crates/ui/m3-tokens/fonts",
+      "repo": "material",
+      "path": "crates/m3-tokens/fonts",
       "mount": "fonts",
       "owns": "UI fonts and their OFL notices, published under the historical /s/os/fonts/ paths.",
       "exclude": []
     },
     {
       "scope": "os",
-      "repo": "aphrody",
-      "path": "m3/packages/m3-fonts/fonts/web",
+      "repo": "material",
+      "path": "packages/m3-fonts/fonts/web",
       "mount": "fonts/web",
-      "owns": "WOFF2 web subsets of the M3 fonts (m3/packages/m3-fonts/src/fonts.css), referenced by hashed URL from aphrody-fonts.css; their OFL notices are the ones of /s/os/fonts/.",
+      "owns": "WOFF2 web subsets of the M3 fonts (packages/m3-fonts/src/fonts.css), referenced by hashed URL from aphrody-fonts.css; their OFL notices are the ones of /s/os/fonts/.",
       "exclude": []
     },
     {

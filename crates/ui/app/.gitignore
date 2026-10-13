@@ -17,7 +17,7 @@
 /ui-dist/fonts/*.partial-*
 /ui-dist/fonts/icon.svg
 
-# Staged by build.rs from ui-dist.manifest (canonical sources: m3/packages/assets, m3/packages/m3-fonts); never committed twice.
+# Staged by build.rs from ui-dist.manifest (canonical sources: material/packages/assets and packages/m3-fonts); never committed twice.
 /ui-dist/fonts/Album-20.png
 /ui-dist/fonts/Album.png
 /ui-dist/fonts/Album_Light.png

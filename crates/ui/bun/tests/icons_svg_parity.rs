@@ -34,7 +34,7 @@ fn assert_pixel_perfect(name: &str, fixture_file: &str, axes: Axes) {
 #[test]
 #[cfg_attr(
     not(aphrody_symbols),
-    ignore = "Material Symbols not embedded: run `bun m3/scripts/fonts-sync.ts`"
+    ignore = "Material Symbols not embedded: from Material run `bun packages/m3/scripts/fonts-sync.ts`"
 )]
 fn close_is_pixel_perfect() {
     assert_pixel_perfect("close", "close_default.svg", Axes::default());
@@ -43,7 +43,7 @@ fn close_is_pixel_perfect() {
 #[test]
 #[cfg_attr(
     not(aphrody_symbols),
-    ignore = "Material Symbols not embedded: run `bun m3/scripts/fonts-sync.ts`"
+    ignore = "Material Symbols not embedded: run `bun packages/m3/scripts/fonts-sync.ts`"
 )]
 fn home_is_pixel_perfect() {
     assert_pixel_perfect("home", "home_default.svg", Axes::default());
@@ -52,7 +52,7 @@ fn home_is_pixel_perfect() {
 #[test]
 #[cfg_attr(
     not(aphrody_symbols),
-    ignore = "Material Symbols not embedded: run `bun m3/scripts/fonts-sync.ts`"
+    ignore = "Material Symbols not embedded: run `bun packages/m3/scripts/fonts-sync.ts`"
 )]
 fn search_is_pixel_perfect() {
     assert_pixel_perfect("search", "search_default.svg", Axes::default());
@@ -61,7 +61,7 @@ fn search_is_pixel_perfect() {
 #[test]
 #[cfg_attr(
     not(aphrody_symbols),
-    ignore = "Material Symbols not embedded: run `bun m3/scripts/fonts-sync.ts`"
+    ignore = "Material Symbols not embedded: run `bun packages/m3/scripts/fonts-sync.ts`"
 )]
 fn settings_is_pixel_perfect() {
     assert_pixel_perfect("settings", "settings_default.svg", Axes::default());
@@ -70,7 +70,7 @@ fn settings_is_pixel_perfect() {
 #[test]
 #[cfg_attr(
     not(aphrody_symbols),
-    ignore = "Material Symbols not embedded: run `bun m3/scripts/fonts-sync.ts`"
+    ignore = "Material Symbols not embedded: run `bun packages/m3/scripts/fonts-sync.ts`"
 )]
 fn favorite_default_is_pixel_perfect() {
     assert_pixel_perfect("favorite", "favorite_default.svg", Axes::default());
@@ -79,7 +79,7 @@ fn favorite_default_is_pixel_perfect() {
 #[test]
 #[cfg_attr(
     not(aphrody_symbols),
-    ignore = "Material Symbols not embedded: run `bun m3/scripts/fonts-sync.ts`"
+    ignore = "Material Symbols not embedded: run `bun packages/m3/scripts/fonts-sync.ts`"
 )]
 fn favorite_fill1_is_pixel_perfect() {
     assert_pixel_perfect("favorite", "favorite_fill1.svg", Axes { fill: 1.0, ..Axes::default() });
@@ -88,7 +88,7 @@ fn favorite_fill1_is_pixel_perfect() {
 #[test]
 #[cfg_attr(
     not(aphrody_symbols),
-    ignore = "Material Symbols not embedded: run `bun m3/scripts/fonts-sync.ts`"
+    ignore = "Material Symbols not embedded: run `bun packages/m3/scripts/fonts-sync.ts`"
 )]
 fn unknown_icon_name_returns_none() {
     assert!(
@@ -100,7 +100,7 @@ fn unknown_icon_name_returns_none() {
 #[test]
 #[cfg_attr(
     not(aphrody_symbols),
-    ignore = "Material Symbols not embedded: run `bun m3/scripts/fonts-sync.ts`"
+    ignore = "Material Symbols not embedded: run `bun packages/m3/scripts/fonts-sync.ts`"
 )]
 fn icon_names_are_sorted_and_nonempty() {
     let names: Vec<&str> = bun_rs::icons::icon_names(Style::Outlined).collect();
