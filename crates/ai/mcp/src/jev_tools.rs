@@ -91,31 +91,10 @@ async fn decide_with_router(
 ) -> String {
     match router.decide(request).await {
         Ok(decision) => {
-            let selections = match minimum_confidence {
-                Some(threshold) => {
-                    match aphrody_jev::confident_choices(request, &decision.response, threshold) {
-                        Ok(choices) => Some(serde_json::json!(choices)),
-                        Err(error) => return error_json(&error.to_string()),
-                    }
-                },
-                None => None,
-            };
-            let mut output = serde_json::json!({
-            "served_by": decision.served_by.to_string(),
-            "latency_ms": u64::try_from(decision.latency.as_millis()).unwrap_or(u64::MAX),
-            "failover": decision.failover.map(|f| serde_json::json!({
-                "from": f.from.to_string(),
-                "to": f.to.to_string(),
-                "reason": f.reason,
-            })),
-            "model": decision.response.model,
-            "answers": decision.response.answers,
-            "usage": decision.response.usage,
-            });
-            if let Some(selections) = selections {
-                output["selections"] = selections;
+            match aphrody_jev::decision_output(request, &decision, minimum_confidence) {
+                Ok(output) => output.to_string(),
+                Err(error) => error_json(&error.to_string()),
             }
-            output.to_string()
         },
         Err(error) => error_json(&error.to_string()),
     }

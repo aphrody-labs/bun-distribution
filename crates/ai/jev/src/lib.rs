@@ -40,7 +40,9 @@ use std::{
 
 #[cfg(feature = "server")]
 pub use cli::cli_main;
-pub use decision::{confident_choice, confident_choices, validate_confidence_threshold};
+pub use decision::{
+    confident_choice, confident_choices, decision_output, validate_confidence_threshold,
+};
 pub use native::NativeEngine;
 pub use rag::{GuardPolicy, PassageVerdict, filter_and_rerank, judge_passages};
 use serde::Deserialize;

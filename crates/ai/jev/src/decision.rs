@@ -1,7 +1,33 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Confidence-gated candidate selection shared by backend consumers.
 
-use crate::{Answer, JevError, Request, Response, check_request, check_response};
+use crate::{Answer, Decision, JevError, Request, Response, check_request, check_response};
+
+/// Format backend evidence and raw answers for agent and MCP consumers.
+///
+/// # Errors
+/// Invalid confidence policy or malformed answers when selection is requested.
+pub fn decision_output(
+    request: &Request,
+    decision: &Decision,
+    minimum_confidence: Option<f64>,
+) -> Result<serde_json::Value, JevError> {
+    let mut output = serde_json::json!({
+        "served_by": decision.served_by.to_string(),
+        "latency_ms": u64::try_from(decision.latency.as_millis()).unwrap_or(u64::MAX),
+        "failover": decision.failover.as_ref().map(|failover| serde_json::json!({
+            "from": failover.from.to_string(), "to": failover.to.to_string(), "reason": failover.reason,
+        })),
+        "model": decision.response.model,
+        "answers": decision.response.answers,
+        "usage": decision.response.usage,
+    });
+    if let Some(threshold) = minimum_confidence {
+        output["selections"] =
+            serde_json::json!(confident_choices(request, &decision.response, threshold)?);
+    }
+    Ok(output)
+}
 
 /// Validate a caller's confidence threshold before starting inference.
 ///

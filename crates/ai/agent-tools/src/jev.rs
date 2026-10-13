@@ -23,6 +23,8 @@ struct DecideArgs {
     questions: BTreeMap<String, Question>,
     #[serde(default)]
     model: Option<String>,
+    #[serde(default)]
+    minimum_confidence: Option<f64>,
 }
 
 /// Answers typed questions about a state with the Jev decision models.
@@ -67,20 +69,19 @@ impl ToolExecutor for JevDecideTool {
             model: args.model.unwrap_or_else(|| DEFAULT_MODEL.to_owned()),
             questions: args.questions,
         };
+        if let Some(threshold) = args.minimum_confidence {
+            aphrody_jev::validate_confidence_threshold(threshold).map_err(|error| {
+                ToolError::InvalidArguments { tool: JEV_TOOL.into(), message: error.to_string() }
+            })?;
+        }
         match self.router.decide(&request).await {
             Ok(decision) => {
-                let body = serde_json::json!({
-                    "served_by": decision.served_by.to_string(),
-                    "latency_ms": u64::try_from(decision.latency.as_millis()).unwrap_or(u64::MAX),
-                    "failover": decision.failover.map(|f| serde_json::json!({
-                        "from": f.from.to_string(),
-                        "to": f.to.to_string(),
-                        "reason": f.reason,
-                    })),
-                    "model": decision.response.model,
-                    "answers": decision.response.answers,
-                    "usage": decision.response.usage,
-                });
+                let body =
+                    aphrody_jev::decision_output(&request, &decision, args.minimum_confidence)
+                        .map_err(|error| ToolError::InvalidArguments {
+                            tool: JEV_TOOL.into(),
+                            message: error.to_string(),
+                        })?;
                 Ok(ToolOutput::ok(body.to_string()))
             },
             Err(error @ JevError::InvalidRequest(_)) => Err(ToolError::InvalidArguments {
@@ -96,9 +97,10 @@ fn definition() -> ToolDefinition {
     let mut properties = BTreeMap::new();
     properties.insert(
         "state".into(),
-        JsonSchema::string(Some(
-            "Content to judge: text, or a JSON-encoded object/array for structured state.".into(),
-        )),
+        JsonSchema {
+            description: Some("Content to judge: text or structured JSON state.".into()),
+            ..JsonSchema::default()
+        },
     );
     properties.insert(
         "questions".into(),
@@ -107,6 +109,12 @@ fn definition() -> ToolDefinition {
     properties.insert(
         "model".into(),
         JsonSchema::string(Some(format!("Model id, default `{DEFAULT_MODEL}`."))),
+    );
+    properties.insert(
+        "minimum_confidence".into(),
+        JsonSchema::number(Some(
+            "Optional Choice confidence threshold in [0, 1]; lower confidence abstains.".into(),
+        )),
     );
     ToolDefinition::new(
         JEV_TOOL,
@@ -165,6 +173,41 @@ mod tests {
             .await
             .unwrap_err();
         assert!(matches!(error, ToolError::InvalidArguments { .. }), "{error}");
+    }
+
+    #[tokio::test]
+    async fn rejects_invalid_confidence_before_calling_the_backend() {
+        let tool = JevDecideTool::new(unreachable_router());
+        let result = tool.handle(json!({"state":{"fixture":true},"questions":{"q":{"type":"noul","instructions":"Fixture?"}},"minimum_confidence":1.1})).await;
+        assert!(matches!(result, Err(ToolError::InvalidArguments { .. })));
+    }
+
+    #[tokio::test]
+    async fn agent_selection_preserves_structured_state_and_raw_answers() {
+        use axum::{Json, Router, routing::post};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        let app = Router::new().route("/v1/systemone", post(|Json(input): Json<serde_json::Value>| async move {
+            assert_eq!(input["state"], json!({"fixture":true}));
+            Json(json!({"model":"fixture","answers":{"tool":{"type":"choice","choice":"read","confidence":0.7,"probabilities":{"read":0.7,"search":0.3}}}}))
+        }));
+        let task = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+        let router = JevRouter::new(
+            None,
+            None,
+            Some(Endpoint::local(&base, None).unwrap()),
+            RoutingPolicy::default(),
+        )
+        .unwrap();
+        let tool = JevDecideTool::new(Arc::new(router));
+        for (threshold, selected) in [(0.8, serde_json::Value::Null), (0.6, json!("read"))] {
+            let output = tool.handle(json!({"state":{"fixture":true},"questions":{"tool":{"type":"choice","instructions":"Select a tool","criteria":{"read":"Read","search":"Search"}}},"minimum_confidence":threshold})).await.unwrap();
+            assert!(!output.is_error);
+            let value: serde_json::Value = serde_json::from_str(&output.content).unwrap();
+            assert_eq!(value["selections"]["tool"], selected);
+            assert_eq!(value["answers"]["tool"]["confidence"], 0.7);
+        }
+        task.abort();
     }
 
     #[tokio::test]
