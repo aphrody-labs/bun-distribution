@@ -30,6 +30,12 @@ foreign origins and cross-site requests remain denied. Forwarded headers do
 not establish a trusted origin. With no configured public origin, the local
 application policy continues to compare Origin with the request URL origin.
 
+Compiled application servers read the same optional public-origin setting.
+The Infra application unit template supplies `https://app-%i.aphrody.app`,
+matching all fourteen configured canonical application domains. Invalid origin
+configuration is rejected before application data initialization. This source
+qualification does not compile, install or activate a native application.
+
 Compilation uses the shared Bun artifact compiler, the exact configured host
 runtime pin, committed input sources, and a 30-second bounded child process.
 Unrelated concurrent work remains untouched and does not block compilation.

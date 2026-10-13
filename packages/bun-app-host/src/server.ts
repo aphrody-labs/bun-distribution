@@ -12,7 +12,7 @@ import {
   type VideoCommand,
 } from "@aphrody/bun-video-project";
 
-import { authenticateRequest, responseHeaders as headers } from "./transport.ts";
+import { authenticateRequest, responseHeaders as headers, validatePublicOrigin } from "./transport.ts";
 const reply = (value: unknown, status = 200) =>
   new Response(stringifyNativeJSON(value), {
     status,
@@ -54,6 +54,7 @@ export async function startApp(manifest: AppManifest, runtime: AppRuntime): Prom
     throw new Error("Invalid application bind address.");
   const token = Bun.env.APHRODY_APP_TOKEN;
   if (!token || token.length < 32) throw new Error("Inject the application token from its protected store.");
+  const publicOrigin = validatePublicOrigin(Bun.env.APHRODY_APP_ORIGIN);
   await mkdir(runtime.appDataDir, { recursive: true });
   const dataRoot = await realpath(runtime.appDataDir);
   const containedPath = async (value: unknown, output = false): Promise<string> => {
@@ -94,7 +95,7 @@ export async function startApp(manifest: AppManifest, runtime: AppRuntime): Prom
       const url = new URL(request.url);
       if (request.method === "GET" && url.pathname === "/healthz")
         return reply({ status: "ready", app: manifest.app.id, runtime: runtime.runtime.version });
-      const denied = authenticateRequest(request, token);
+      const denied = authenticateRequest(request, token, { publicOrigin });
       if (denied) return denied;
       if (request.method === "GET" && url.pathname === "/api/catalog")
         return reply({
