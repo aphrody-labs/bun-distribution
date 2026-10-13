@@ -320,7 +320,8 @@ recovery was performed by this batch.
 | APT owner main | 745fc126218c7cb3df48b22bbc7c7098fa2f7966, normal push/ref verified |
 | Earlier Material/os | ce47e50324ce4053c4fcd08be59db55254e231f7, source of public ABI 2 WASM |
 | Final Material/os | 1e65a503420e4a8962b8ceaa18819eedbc280454, normal push/ref verified |
-| Bun OS report/consolidation | Pending root commit/push; obtain final identity from Git log |
+| Bun OS source consolidation | 2e413aa6d9c9f5cd6eeb6773c7b903c3929b3edb, normal push/ref verified |
+| Final reporting update | This report's Git revision; publication checked after commit |
 | Original Aphrody consumers | Migration deferred; unqualified manifest changes reverted |
 | Registry token crate | Local package only; publication not qualified |
 | Native apps/control/forge | Not deployed |
@@ -329,6 +330,13 @@ This report belongs to the consolidation batch. Its commit identity is obtained
 from the repository's Git log, rather than embedding a self-referential SHA.
 Ignored out receipts contain local/VPS execution evidence and are not silently
 published with documentation.
+
+The source batch contains 65 files and 11621 inserted lines. Material's final
+consolidation contains 39 changed files, 7860 inserted and 24 removed lines.
+Both were committed as aphrody-dev <contact@aphrody.com> and pushed normally.
+Material's concurrent untracked submodule work was retained. Original Aphrody
+consumer changes from this batch were reverted; unrelated concurrent changes
+and protected stores were excluded from staging.
 
 ## Unresolved objective
 

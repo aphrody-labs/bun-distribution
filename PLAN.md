@@ -34,10 +34,11 @@
 - [x] Prepare Komodo/FerretDB/PostgreSQL/Forgejo/Runner deployment profile with
       six immutable image pins and static Compose validation.
 - [x] Consolidate the accurate session report and qualification boundaries.
+- [x] Commit/push the owned OS source batch and verify its remote ref (2e413aa6).
+- [x] Review the supplied Rust crate catalog against primary sources.
 
 ## Remaining requirements
 
-- [ ] Commit/push the owned OS consolidation batch; obtain final SHA from Git log.
 - [ ] Migrate original Material consumers through the published Material owner;
       the three unqualified Aphrody manifest changes were reverted, originals retained.
 - [ ] Qualify the richer Material WASM facade after final source/format changes.

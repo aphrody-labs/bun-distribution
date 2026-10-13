@@ -138,3 +138,9 @@
 The [session report](docs/SESSION-REPORT-2026-10-13.md) holds exact artifact
 and receipt references. Consolidation commit identities belong to Git log.
 The full OS objective, performance measurements and 9937-389B remain incomplete.
+
+The OS source consolidation was committed/pushed normally at
+2e413aa6d9c9f5cd6eeb6773c7b903c3929b3edb; the remote os ref was independently
+read back. The final report update records that delivery and the public APT
+artifact. Material/os 1e65a503 is independently published. Author identity is
+aphrody-dev <contact@aphrody.com>. Concurrent submodule work remained unstaged.
