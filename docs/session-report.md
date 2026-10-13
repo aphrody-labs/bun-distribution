@@ -247,6 +247,12 @@ entry. `app-video.aphrody.app` and `filmcraft.aphrody.app` remain the app hosts.
 The Cloudflare attachments were read-only inspected and were not changed; this
 does not qualify public HTTP behavior or application deployment.
 
+Cloudflare API readback also confirms 50 DNS records, all 14 canonical app
+hosts present with Worker routes to `aphrody-app`, and 18 enabled Worker custom
+domains for the library aliases and product hosts. The complete DNS page reports
+50/50 records. This is provider configuration evidence, not an HTTP or
+application-health check.
+
 ## Published batches
 
 All owned commits use `aphrody-dev <contact@aphrody.com>`, precise staged paths,

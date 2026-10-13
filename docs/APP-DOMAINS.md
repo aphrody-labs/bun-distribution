@@ -49,7 +49,7 @@ custom domains. APT, desktop, the apex, and `www` also use enabled custom domain
 with previews disabled. `video.aphrody.app` remains an R2 custom domain and is
 not an application alias.
 
-Live Cloudflare readback on 2026-10-13 found 49 DNS records, all 14 canonical
+Live Cloudflare readback on 2026-10-13 found 50 DNS records, all 14 canonical
 Worker routes, and 18 enabled Worker custom domains (14 library aliases plus
 APT, desktop, the apex, and `www`). A native HTTPS HEAD check returned 200 for
 the apex, all 14 canonical hosts, all 14 aliases, APT, and desktop; `www`
