@@ -24,7 +24,6 @@ export interface BuildFactoryConfig {
   windowsFactory?: {
     host: string;
     target: string;
-    workspaceRoot: string;
     enabled: boolean;
     nativeArchitectures: string[];
     crossArchitectures: string[];

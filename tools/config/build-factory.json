@@ -6,7 +6,6 @@
   "windowsFactory": {
     "host": "omar-pc",
     "target": "windows-x64",
-    "workspaceRoot": "C:/aphrody",
     "enabled": true,
     "nativeArchitectures": ["x64"],
     "crossArchitectures": ["arm64"],
