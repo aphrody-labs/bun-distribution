@@ -78,7 +78,8 @@ pub fn provision(root: &Path, apply: bool, repository: Option<&str>) -> Result<R
                     != Some("https://github.com/aphrody-labs/bun-distribution.git")
         })
         || plan.repositories.iter().filter(|r| !r.mirror).any(|r| {
-            !r.name.starts_with("bun-crate-") || r.private.unwrap_or(plan.private) != plan.private
+            !(r.name.starts_with("bun-crate-") || r.name.starts_with("bun-package-"))
+                || r.private.unwrap_or(plan.private) != plan.private
         })
     {
         bail!("plan Gitea hors périmètre autorisé");

@@ -140,6 +140,21 @@
       "name": "bun-crate-aphrody-jev",
       "mirror": false,
       "private": true
+    },
+    {
+      "name": "bun-package-paths",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-package-ovh",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-package-kernel-client",
+      "mirror": false,
+      "private": true
     }
   ]
 }
