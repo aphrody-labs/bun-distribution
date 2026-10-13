@@ -10,9 +10,10 @@ import {
   mkdtempSync,
   mkdirSync,
 } from "node:fs";
-import { join, resolve, relative, sep, posix, isAbsolute } from "node:path";
+import { join, resolve, relative, sep, posix } from "node:path";
 import { tmpdir } from "node:os";
 import { parseArgs } from "node:util";
+import { canonicalBunInputs } from "@aphrody/product/build-inputs";
 
 const repository = resolve(import.meta.dir, "../..");
 const serverSource = "packages/infra/product/src/downloads/server.ts";
@@ -77,45 +78,7 @@ export function releasePlan(config: ReleaseConfig, revision: string) {
     nativeRpc: false,
   };
 }
-export function canonicalBunInputs(checkout: string, revision: string) {
-  if (!/^[a-f0-9]{40}$/.test(revision)) throw new Error("Exact Bun source revision required");
-  const checkoutRoot = realpathSync(checkout);
-  const ownedFile = (path: string) => {
-    const file = join(checkoutRoot, path);
-    const inside = relative(checkoutRoot, realpathSync(file));
-    if (inside.startsWith(".." + sep) || isAbsolute(inside) || !lstatSync(file).isFile())
-      throw new Error("Canonical Bun source file escapes the checkout");
-    return file;
-  };
-  const receiptFile = ownedFile("packages/web/rust/transfer-receipt.json");
-  const receipt = JSON.parse(readFileSync(receiptFile, "utf8")) as {
-    schemaVersion: number;
-    sourceCommit: string;
-    files: { source: string; destination: string; sha256: string }[];
-  };
-  const entry = receipt.files.find((file) => file.source === "crates/web/site/data/docs.json");
-  if (
-    receipt.schemaVersion !== 1 ||
-    !entry ||
-    entry.destination !== "packages/web/rust/crates/site/data/docs.json" ||
-    !/^[a-f0-9]{64}$/.test(entry.sha256) ||
-    !/^[a-f0-9]{40}$/.test(receipt.sourceCommit)
-  )
-    throw new Error("Canonical Bun documentation transfer receipt required");
-  const docs = ownedFile("packages/web/rust/crates/site/data/docs.json");
-  if (sha(readFileSync(docs)) !== entry.sha256)
-    throw new Error("Bun documentation transfer checksum mismatch");
-  const search = ownedFile("packages/bun-google/src/search.ts");
-  return {
-    revision,
-    transferSourceCommit: receipt.sourceCommit,
-    transferSha256: sha(readFileSync(receiptFile)),
-    docs: { path: entry.destination, sha256: entry.sha256 },
-    search: { path: "packages/bun-google/src/search.ts", sha256: sha(readFileSync(search)) },
-    docsFile: docs,
-    searchFile: search,
-  };
-}
+export { canonicalBunInputs } from "@aphrody/product/build-inputs";
 
 export function searchEnvironment(module: string, owner: string): string {
   if (

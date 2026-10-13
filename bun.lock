@@ -279,6 +279,7 @@
       "devDependencies": {
         "@aphrody/m3": "workspace:*",
         "@aphrody/m3-config": "workspace:*",
+        "@aphrody/product": "workspace:*",
         "@types/d3": "catalog:",
         "@types/prismjs": "catalog:",
         "@types/react": "catalog:",
