@@ -26,6 +26,10 @@ pub(crate) struct JevDecideRequest {
     pub(crate) questions: BTreeMap<String, serde_json::Value>,
     #[schemars(description = "Model id; defaults to jev-latest.")]
     pub(crate) model: Option<String>,
+    #[schemars(
+        description = "Optional Choice confidence threshold in [0, 1]; below it selections abstain without removing raw answers."
+    )]
+    pub(crate) minimum_confidence: Option<f64>,
 }
 
 fn router() -> Result<&'static Arc<JevRouter>, String> {
@@ -46,6 +50,12 @@ fn configured_router(
 
 /// Run one decision and render the result (or error) as JSON text.
 pub(crate) async fn jev_decide(request: JevDecideRequest) -> String {
+    if let Some(threshold) = request.minimum_confidence
+        && let Err(error) = aphrody_jev::validate_confidence_threshold(threshold)
+    {
+        return error_json(&error.to_string());
+    }
+    let minimum_confidence = request.minimum_confidence;
     let questions = match request
         .questions
         .into_iter()
@@ -59,17 +69,38 @@ pub(crate) async fn jev_decide(request: JevDecideRequest) -> String {
         Ok(questions) => questions,
         Err(error) => return error_json(&error),
     };
-    let router = match router() {
-        Ok(router) => router,
-        Err(error) => return error_json(&error),
-    };
     let request = Request {
         state: request.state,
         model: request.model.unwrap_or_else(|| DEFAULT_MODEL.to_owned()),
         questions,
     };
-    match router.decide(&request).await {
-        Ok(decision) => serde_json::json!({
+    if let Err(error) = aphrody_jev::check_request(&request) {
+        return error_json(&error.to_string());
+    }
+    let router = match router() {
+        Ok(router) => router,
+        Err(error) => return error_json(&error),
+    };
+    decide_with_router(&request, minimum_confidence, router).await
+}
+
+async fn decide_with_router(
+    request: &Request,
+    minimum_confidence: Option<f64>,
+    router: &JevRouter,
+) -> String {
+    match router.decide(request).await {
+        Ok(decision) => {
+            let selections = match minimum_confidence {
+                Some(threshold) => {
+                    match aphrody_jev::confident_choices(request, &decision.response, threshold) {
+                        Ok(choices) => Some(serde_json::json!(choices)),
+                        Err(error) => return error_json(&error.to_string()),
+                    }
+                },
+                None => None,
+            };
+            let mut output = serde_json::json!({
             "served_by": decision.served_by.to_string(),
             "latency_ms": u64::try_from(decision.latency.as_millis()).unwrap_or(u64::MAX),
             "failover": decision.failover.map(|f| serde_json::json!({
@@ -80,8 +111,12 @@ pub(crate) async fn jev_decide(request: JevDecideRequest) -> String {
             "model": decision.response.model,
             "answers": decision.response.answers,
             "usage": decision.response.usage,
-        })
-        .to_string(),
+            });
+            if let Some(selections) = selections {
+                output["selections"] = selections;
+            }
+            output.to_string()
+        },
         Err(error) => error_json(&error.to_string()),
     }
 }
@@ -95,6 +130,66 @@ mod tests {
     use serde_json::json;
 
     use super::*;
+
+    #[tokio::test]
+    async fn empty_questions_are_rejected_before_backend_configuration() {
+        let out = jev_decide(JevDecideRequest {
+            state: json!("synthetic fixture"),
+            questions: BTreeMap::new(),
+            model: None,
+            minimum_confidence: None,
+        })
+        .await;
+        let output: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert!(output["error"].as_str().unwrap().contains("at least one question"));
+    }
+
+    #[tokio::test]
+    async fn confidence_threshold_is_rejected_before_router_initialization() {
+        let out = jev_decide(JevDecideRequest {
+            state: json!("synthetic fixture"),
+            questions: BTreeMap::new(),
+            model: None,
+            minimum_confidence: Some(f64::NAN),
+        })
+        .await;
+        let output: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert!(output["error"].as_str().unwrap().contains("confidence threshold"));
+    }
+
+    #[tokio::test]
+    async fn mcp_selections_share_the_http_policy_and_preserve_raw_answers() {
+        use axum::{Json, Router, routing::post};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        let app = Router::new().route("/v1/systemone", post(|| async {
+            Json(json!({"model":"fixture","answers":{"tool":{"type":"choice","choice":"read","confidence":0.7,"probabilities":{"read":0.7,"search":0.3}}}}))
+        }));
+        let task = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+        let router = JevRouter::new(
+            None,
+            None,
+            Some(aphrody_jev::Endpoint::local(&base, None).unwrap()),
+            aphrody_jev::RoutingPolicy::default(),
+        )
+        .unwrap();
+        let request = Request::new("synthetic routing fixture").question(
+            "tool",
+            Question::choice("Select a tool", [("read", "Read"), ("search", "Search")]),
+        );
+        for (threshold, selected) in [(0.8, serde_json::Value::Null), (0.6, json!("read"))] {
+            let output: serde_json::Value =
+                serde_json::from_str(&decide_with_router(&request, Some(threshold), &router).await)
+                    .unwrap();
+            assert!(output.get("selections").is_some());
+            assert_eq!(output["selections"]["tool"], selected);
+            assert_eq!(output["answers"]["tool"]["confidence"], 0.7);
+        }
+        let output: serde_json::Value =
+            serde_json::from_str(&decide_with_router(&request, None, &router).await).unwrap();
+        assert!(output.get("selections").is_none());
+        task.abort();
+    }
 
     #[test]
     fn unavailable_configuration_can_recover_without_rebuilding_a_valid_router() {
@@ -124,6 +219,7 @@ mod tests {
                 json!({ "type": "free", "instructions": "x" }),
             )]),
             model: None,
+            minimum_confidence: None,
         })
         .await;
         let value: serde_json::Value = serde_json::from_str(&out).unwrap();

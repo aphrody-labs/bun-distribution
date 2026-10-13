@@ -29,6 +29,10 @@ The authenticated HTTP backend uses the same policy with
 answers and usage fields and adds `selections` only when requested. Invalid or
 repeated thresholds return the usual 422 error envelope before inference.
 
+The canonical MCP `aphrody_jev_decide` accepts the same optional
+`minimum_confidence` field and returns the same `selections`. Its validation
+and selection use this Rust owner; no separate MCP or decision engine is added.
+
 This implements the abstention pattern described by
 [Jev Workflows](https://github.com/integrate-your-mind/jev-codex-plugin/blob/f67f0f35df13cbc0556539e6f86fe14e2c04d6f8/README.md)
 in the existing Rust owner, without another SDK dependency or MCP server.

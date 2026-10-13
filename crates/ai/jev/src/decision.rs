@@ -3,7 +3,11 @@
 
 use crate::{Answer, JevError, Request, Response, check_request, check_response};
 
-pub(crate) fn check_threshold(threshold: f64) -> Result<(), JevError> {
+/// Validate a caller's confidence threshold before starting inference.
+///
+/// # Errors
+/// Non-finite values or values outside `[0, 1]`.
+pub fn validate_confidence_threshold(threshold: f64) -> Result<(), JevError> {
     if threshold.is_finite() && (0.0..=1.0).contains(&threshold) {
         Ok(())
     } else {
@@ -15,7 +19,7 @@ pub(crate) fn parse_threshold(value: &str) -> Result<f64, JevError> {
     let threshold = value
         .parse::<f64>()
         .map_err(|_| JevError::InvalidRequest("confidence threshold must be a number".into()))?;
-    check_threshold(threshold)?;
+    validate_confidence_threshold(threshold)?;
     Ok(threshold)
 }
 
@@ -29,7 +33,7 @@ pub fn confident_choices<'a>(
     response: &'a Response,
     minimum_confidence: f64,
 ) -> Result<std::collections::BTreeMap<&'a str, Option<&'a str>>, JevError> {
-    check_threshold(minimum_confidence)?;
+    validate_confidence_threshold(minimum_confidence)?;
     check_request(request)?;
     check_response(request, response)?;
     Ok(response
@@ -59,7 +63,7 @@ pub fn confident_choice<'a>(
     name: &str,
     minimum_confidence: f64,
 ) -> Result<Option<&'a str>, JevError> {
-    check_threshold(minimum_confidence)?;
+    validate_confidence_threshold(minimum_confidence)?;
     check_request(request)?;
     check_response(request, response)?;
     match response.answers.get(name) {
