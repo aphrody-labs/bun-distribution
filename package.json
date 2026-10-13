@@ -270,8 +270,8 @@
     "web:build": "bun run m3/packages/app-ui/build.ts",
     "web:start": "bun run m3/packages/app-ui/site.ts",
     "web:os": "bun run m3/packages/app-ui/webos.ts",
-    "aphrody": "bun run bin/aphrody.ts",
-    "cli": "bun run bin/aphrody.ts"
+    "aphrody": "bun run scripts/dev/cli/aphrody.ts",
+    "cli": "bun run scripts/dev/cli/aphrody.ts"
   },
   "dependencies": {
     "@aphrody/ovh": "workspace:*",

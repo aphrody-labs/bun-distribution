@@ -8,7 +8,7 @@
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-const rootDir = resolve(import.meta.dir, "..");
+const rootDir = resolve(import.meta.dir, "../../..");
 const yoloEntry = join(rootDir, "packages/engine/yolo/src/index.ts");
 
 // Dispatcher commands the Bun fork does not serve: `rename` adds the Aphrody preset to `bun rename`,
@@ -19,10 +19,10 @@ export const RELAY_COMMANDS: ReadonlySet<string> = new Set(["bench", "rename", "
 
 const norm = (path: string) => resolve(path).replaceAll("\\", "/").toLowerCase();
 
-/** True for this script, its bin/ wrappers and any TypeScript entry: running one of them would recurse. */
+/** True for this script, its wrappers and any TypeScript entry: running one of them would recurse. */
 export function isLauncher(candidate: string, root = rootDir): boolean {
   const path = norm(candidate);
-  return path.startsWith(`${norm(join(root, "bin"))}/`) || path.endsWith(".ts");
+  return path.startsWith(`${norm(join(root, "scripts/dev/cli"))}/`) || path.endsWith(".ts");
 }
 
 /** APHRODY_BIN, then target/release, then PATH without the launchers, then the user install, then target/debug. */
@@ -68,7 +68,7 @@ async function main(args: string[]): Promise<number> {
   }
   const rust = resolveRustAphrody();
   if (rust === null) {
-    // A checkout without the native build (factory, cloud session) keeps the Bun-owned commands of `bin/yolo`.
+    // A checkout without the native build (factory, cloud session) keeps the Bun-owned dispatcher commands.
     console.error(
       "aphrody: native binary not found (set APHRODY_BIN or run `cargo build --release -p aphrody`); using the Bun dispatcher.",
     );

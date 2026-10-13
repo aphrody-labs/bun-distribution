@@ -190,7 +190,7 @@ factory profile revision:
       *) echo 'Unknown profile: expected core, bun, desktop, browser, python, tooling or upstream.' >&2; exit 64 ;;
     esac
     [[ "$2" =~ ^[0-9a-f]{40}$ ]] || { echo 'Factory revision must be a full Git SHA.' >&2; exit 64; }
-    exec ./bin/aphrody ops build-factory run --repo yolo --revision "$2" "${source_scope[@]}" -- just "$recipe"
+    exec ./scripts/dev/cli/aphrody ops build-factory run --repo yolo --revision "$2" "${source_scope[@]}" -- just "$recipe"
 
 # Install the forked Tauri CLI (`cargo tauri`) from the Bun fork.
 install-cli:

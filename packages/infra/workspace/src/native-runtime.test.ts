@@ -7,7 +7,7 @@ import { join, resolve } from "node:path";
 import { acquireNativeRuntime, runNativeRuntime } from "./native-runtime.ts";
 
 const consumer = resolve(import.meta.dir, "../../../..");
-const yolo = resolve(consumer, "bin/yolo");
+const yolo = resolve(consumer, "scripts/dev/cli/yolo");
 const bunCheckout = process.env["APHRODY_BUN_CHECKOUT"];
 const target = "x86_64-unknown-linux-gnu";
 const nativeHome = join(homedir(), ".yolo/runtime", target);

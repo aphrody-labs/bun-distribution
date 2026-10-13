@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
 import { resolve } from "node:path";
-import { RELAY_COMMANDS, isLauncher, resolveRustAphrody } from "../../../../bin/aphrody.ts";
+import {
+  RELAY_COMMANDS,
+  isLauncher,
+  resolveRustAphrody,
+} from "../../../../scripts/dev/cli/aphrody.ts";
 
 const root = resolve(import.meta.dir, "../../../..");
 
@@ -34,14 +38,16 @@ test("the Rust aphrody commands and the Bun fork commands never go to yolo", () 
 });
 
 test("the launcher and its wrappers are never resolved as the native binary", () => {
-  expect(isLauncher(resolve(root, "bin/aphrody.ts"), root)).toBe(true);
-  expect(isLauncher(resolve(root, "bin/aphrody"), root)).toBe(true);
-  expect(isLauncher(resolve(root, "bin/aphrody.cmd"), root)).toBe(true);
+  expect(isLauncher(resolve(root, "scripts/dev/cli/aphrody.ts"), root)).toBe(true);
+  expect(isLauncher(resolve(root, "scripts/dev/cli/aphrody"), root)).toBe(true);
+  expect(isLauncher(resolve(root, "scripts/dev/cli/aphrody.cmd"), root)).toBe(true);
+  expect(isLauncher(resolve(root, "scripts/dev/cli/yolo"), root)).toBe(true);
+  expect(isLauncher(resolve(root, "scripts/dev/cli/yolo.cmd"), root)).toBe(true);
   expect(isLauncher(resolve(root, "target/release/aphrody"), root)).toBe(false);
 
   const resolved = resolveRustAphrody(root, {
-    APHRODY_BIN: resolve(root, "bin/aphrody.ts"),
-    PATH: resolve(root, "bin"),
+    APHRODY_BIN: resolve(root, "scripts/dev/cli/aphrody.cmd"),
+    PATH: resolve(root, "scripts/dev/cli"),
     HOME: resolve(root, "does-not-exist"),
     LOCALAPPDATA: resolve(root, "does-not-exist"),
   });

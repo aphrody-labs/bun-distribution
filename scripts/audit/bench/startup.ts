@@ -153,10 +153,10 @@ export async function runStartupBenchmark(
     bun?: string;
   } = {},
 ) {
-  const root = resolve(options.repository ?? join(import.meta.dir, "../.."));
+  const root = resolve(options.repository ?? join(import.meta.dir, "../../.."));
   const bun = realpathSync(options.bun ?? Bun.which("bun") ?? process.execPath);
   const installed = resolve(options.installedYolo ?? join(homedir(), ".yolo/bin/yolo"));
-  const launcher = join(root, "bin/yolo");
+  const launcher = join(root, "scripts/dev/cli/yolo");
   const cwd = mkdtempSync(join(tmpdir(), "yolo-startup-"));
   const env = {
     PATH: [dirname(bun), "/usr/bin", "/bin"].join(process.platform === "win32" ? ";" : ":"),
@@ -297,13 +297,10 @@ export async function runStartupBenchCli(args: readonly string[]): Promise<numbe
 }
 
 if (import.meta.main) {
-  void runStartupBenchCli(Bun.argv.slice(2)).then(
-    (code) => {
-      process.exitCode = code;
-    },
-    (error: unknown) => {
-      console.error(error instanceof Error ? error.message : String(error));
-      process.exitCode = 2;
-    },
-  );
+  try {
+    process.exitCode = await runStartupBenchCli(Bun.argv.slice(2));
+  } catch (error: unknown) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 2;
+  }
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
-# Deprecated name of `aphrody` (bin/aphrody.ts): same arguments, same exit code.
+# Deprecated name of `aphrody`: same arguments, same exit code.
 set -e
 echo "yolo: deprecated, use \`aphrody $*\`" >&2
 exec bun run "$(dirname "$0")/aphrody.ts" "$@"

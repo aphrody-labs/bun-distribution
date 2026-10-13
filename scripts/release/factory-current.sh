@@ -10,7 +10,7 @@ factory_yolo_wrapper=${YOLO_CARGO_WRAPPER:-/home/ubuntu/aphrody/scripts/build/ru
 test -x "$factory_yolo_wrapper" || { echo "Missing declared Cargo owner wrapper" >&2; exit 2; }
 
 bun install --frozen-lockfile
-./bin/aphrody verify --only whitespace,typecheck,lint,fmt-check,rust-fmt,docs --json
+./scripts/dev/cli/aphrody verify --only whitespace,typecheck,lint,fmt-check,rust-fmt,docs --json
 "$factory_yolo_wrapper" check --locked -p yolo-runtime -p yolo-core
 "$factory_yolo_wrapper" test --locked -p yolo-runtime -p yolo-core
 "$factory_yolo_wrapper" clippy --locked -p yolo-runtime -p yolo-core --all-targets -- -D warnings
