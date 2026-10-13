@@ -3,7 +3,6 @@ import { lstat, mkdir, open, realpath, unlink } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { hostname } from "node:os";
 import { isBuiltin } from "node:module";
-import type { compileStandaloneApp } from "../../bun-libraries/packages/artifacts/src/compiler.ts";
 import { appCapabilityForLibrary, appHostnamesForLibrary } from "@aphrody/bun-workspace/capabilities";
 import { loadConfig as loadLibraryConfig } from "@aphrody/bun-workspace";
 import { runProcess } from "@aphrody/bun-workspace/process";
@@ -635,7 +634,19 @@ async function compileWorker(planPath: string, output: string) {
   const compilerPath = inside(plan.compiler.checkout, join(plan.compiler.checkout, plan.compiler.path));
   if ((await identity(compilerPath)).sha256 !== plan.compiler.sha256)
     throw new Error("Shared compiler changed after planning");
-  const compilerModule = (await import(compilerPath)) as { compileStandaloneApp: typeof compileStandaloneApp };
+  const compilerModule = (await import(compilerPath)) as {
+    compileStandaloneApp: (options: {
+      entrypoint: string;
+      target: Bun.Build.CompileTarget;
+      executablePath: string;
+      outfile: string;
+      assets: string[];
+      define: Record<string, string>;
+      onInput: (path: string) => Promise<void>;
+    }) => Promise<{
+      metafile?: Awaited<ReturnType<typeof Bun.build>>["metafile"];
+    }>;
+  };
   const result = await compilerModule.compileStandaloneApp({
     entrypoint: plan.entrypoint,
     target,

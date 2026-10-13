@@ -2,17 +2,25 @@
 
 ## Workspace fusion, 2026-10-13
 
-- Aphrody's 71 checkout entries were moved to C:/src/aphrody on the same volume.
-  HEAD f9bcd3b5eb1f9cb14df7917a7ce3adfd79cd99cf and concurrent Git status were
-  identical before/after. The former C:/aphrody directory is empty but still
-  held by a Windows process; no source copy or old-path junction remains there.
-- APHRODY_ROOT now selects the moved checkout. Both Aphrody Windows services
-  are stopped and disabled. Codex's Aphrody plugin was disabled to prevent new
-  launches; existing clients were observed retrying MCP launches and were stopped
-  by exact executable identity. Provider stores and authentication were retained.
+- The selected Aphrody checkout is C:/src/aphrody. On 2026-10-13 it contains
+  concurrent modified and untracked work and is one commit ahead of origin; do
+  not reset or relocate it. A distinct C:/aphrody directory containing `var`
+  remains and its ACL owner is BUILTIN Administrators. The selected checkout's
+  .git owner is also BUILTIN Administrators; SetOwner by aphro was denied.
+- A fresh 2026-10-13 process inventory found no Aphrody-named processes. The
+  Aphrody MCP HTTP and hub-tunnel scheduled tasks are disabled. Other Omar and
+  protected audit tasks remain enabled. Do not claim the stale former directory
+  was emptied or its ACL corrected. Provider stores and authentication remain
+  protected.
 - C:/src/bun is temporarily a junction to C:/bun during the concurrent exclusive
   Bun Git batch. This preserves sibling Cargo dependencies; it is not a physical
   Bun relocation or completed workspace consolidation.
+- C:/bun remains the physical Bun worktree; C:/src/bun resolves through a
+  junction. The 2026-10-13 audit found active Bun video and episode-studio
+  processes, attached worktrees, an ahead commit and untracked video work. Bun
+  path dependencies under Aphrody still resolve through the junction, so removal
+  or physical relocation requires a separate consumer/path migration after those
+  active jobs release the checkout.
 - Bun Libraries main 8ece107 owns bounded process lifetime, raw output callbacks,
   PID callbacks, shared output limits and streamed SHA-256 with exact file length.
   Distribution and both Ubuntu/native-target factories now import those owners
@@ -39,9 +47,17 @@
 - Native bun check passed for 59 library and 30 distribution files. Scoped native
   lint/format and git diff whitespace gates passed. No tests, remote factory
   execution, desktop launch or deployed app qualification were performed here.
-- Standalone artifact and deployment ownership migrations remain open; use the
-  qualified Bun Libraries artifact package and Aphrody Infra rather than treating
-  a declared ownership table as a completed migration.
+- Bun OS commit ce0fbb0ba3dc048ebb0add00f78206050b7ca36b delegates standalone
+  compilation to Bun Libraries' `@aphrody/bun-artifacts/compiler`. Plans record
+  the Bun Libraries checkout, clean-repo revision and compiler source SHA-256;
+  the compile receipt and release staging carry the pin. Distribution input
+  policy, native contracts, source proofs, ABI checks, locks and receipts remain
+  in Bun OS. Bun OS native check (36 files), lint and format passed; commit was
+  pushed and verified on origin/os. An APT Windows plan reported compiler
+  revision 090786e140523ce4faf66038785dca45a209207b and source hash
+  5162f75486c6ee7097a1a229561b2f04fd319826b92dcae3aa7fc1feb8a3b3ad, but stayed
+  blocked by the configured runtime snapshot checksum mismatch. No app binary
+  was built or executed.
 
 ## Owners and execution
 
