@@ -288,6 +288,10 @@
       [
         "Private AI backend parity",
         "Unify native CLI and Cloudflare site backend dispatch, sessions and capability discovery. Verify each available CLI AI operation through both clients, including failures, streaming, cancellation and automation. Native-only operations require a qualified private execution target; never expose the unauthenticated loopback app-server or synchronize protected provider histories. Current Cloudflare prompt endpoint remains partial."
+      ],
+      [
+        "Jev native consolidation",
+        "Install the Jev Codex plugin and inventory Jev SDKs and leading community projects, then consolidate their capabilities into the existing Rust aphrody-jev owner and canonical aphrody-mcp, preserving licences and pinned provenance. Qualify typed decisions, routing, validation, local inference, failure diagnosis, completion evidence and CLI/site contracts. Verified upstream references are in tools/config/upstream-sources.json; references and plugin installation do not prove source fusion or deployed parity."
       ]
     ],
     "success": [
@@ -360,6 +364,11 @@
             "2026-10-08",
             "Headless terminal engine `aphrody-term` added (VT parser, cell grid, portable-pty, plain-text scraping); `ComputerEnvironment::Terminal` wired into `aphrody-agent-tools` and `scrape_text` into `WebTerminal`. 2026-10-09 audit: throughput figures were unmeasured and removed; the v86/container2wasm `wasm_guest` adapter was a mock and was deleted; input actions now require a PTY and error without one.",
             "Checks reported by the authoring agent were not reproduced; no GPU renderer exists in this crate."
+          ],
+          [
+            "2026-10-13",
+            "Jev Codex reference plugin building-with-typesafe-jev 0.3.0 installed and enabled. Nine upstreams pinned with verified licence metadata in upstream-sources.json. Native Windows Jev source tests: 28 passed across unit, native, RAG, router and HTTP server suites; two additional executable-entrypoint probes passed. CLI help and invalid commands no longer initialize a backend. Strict all-target Clippy passed in the same native validation context.",
+            "Validation uses the canonical production source through a temporary standalone manifest resolving the declared dependencies; it does not qualify the root lockfile, installed CLI or live provider inference. The full workspace is blocked by Bun Tauri kuchikiki 0.8.8-speedreader versus local CEF 0.8.9-speedreader. Community source fusion and CLI/site parity remain open. The installed canonical MCP advertises aphrody_jev_decide but its synthetic probe reports no Jev backend configured."
           ]
         ]
       },

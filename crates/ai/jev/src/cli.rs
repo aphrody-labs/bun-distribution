@@ -44,6 +44,13 @@ pub fn cli_main(args: Vec<OsString>) -> i32 {
 }
 
 async fn run(args: Vec<String>) -> Result<(), String> {
+    if args.iter().any(|arg| arg == "--help" || arg == "-h") {
+        println!("{USAGE}");
+        return Ok(());
+    }
+    if !matches!(args.first().map(String::as_str), Some("serve" | "decide")) {
+        return Err(USAGE.into());
+    }
     let router = Arc::new(JevRouter::from_env().map_err(|e| e.to_string())?);
     match args.first().map(String::as_str) {
         Some("serve") => {
@@ -87,5 +94,21 @@ async fn run(args: Vec<String>) -> Result<(), String> {
             Ok(())
         },
         _ => Err(USAGE.into()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[tokio::test]
+    async fn help_does_not_initialize_a_backend() {
+        for flag in ["--help", "-h"] {
+            assert!(super::run(vec![flag.into()]).await.is_ok());
+        }
+    }
+
+    #[tokio::test]
+    async fn invalid_commands_report_usage_before_backend_discovery() {
+        assert_eq!(super::run(Vec::new()).await, Err(super::USAGE.into()));
+        assert_eq!(super::run(vec!["unknown".into()]).await, Err(super::USAGE.into()));
     }
 }

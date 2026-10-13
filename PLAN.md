@@ -69,6 +69,7 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 | Known failures | `web:verify`, 4 `packages/engine/yolo` tests (`libaphrody_ffi` absent), `aphrody infra validate` |
 | Context-dependent routing | Resolve checkout, toolchain and build host from the current context. Retire automatic WSL use on the current Windows workstation; qualify native, SSH and Docker routes independently. |
 | Private AI backend parity | Unify native CLI and Cloudflare site backend dispatch, sessions and capability discovery. Verify each available CLI AI operation through both clients, including failures, streaming, cancellation and automation. Native-only operations require a qualified private execution target; never expose the unauthenticated loopback app-server or synchronize protected provider histories. Current Cloudflare prompt endpoint remains partial. |
+| Jev native consolidation | Install the Jev Codex plugin and inventory Jev SDKs and leading community projects, then consolidate their capabilities into the existing Rust aphrody-jev owner and canonical aphrody-mcp, preserving licences and pinned provenance. Qualify typed decisions, routing, validation, local inference, failure diagnosis, completion evidence and CLI/site contracts. Verified upstream references are in tools/config/upstream-sources.json; references and plugin installation do not prove source fusion or deployed parity. |
 
 ## Success
 
