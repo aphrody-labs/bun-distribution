@@ -26,6 +26,9 @@
     "packages": "bun packages/package-converter/src/cli.ts",
     "apt:build": "bun src/build-apt.ts"
   },
+  "dependencies": {
+    "@aphrody/bun-workspace": "file:../bun-libraries/packages/workspace"
+  },
   "devDependencies": {
     "@aphrody/bun-types": "1.4.4"
   },

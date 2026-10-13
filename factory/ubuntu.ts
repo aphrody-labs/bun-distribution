@@ -1,6 +1,8 @@
 #!/usr/bin/env bun
 import { chmod, mkdir, open, realpath, stat, statfs, unlink } from "node:fs/promises";
 import { isAbsolute, join, relative, resolve } from "node:path";
+import { runProcess } from "@aphrody/bun-workspace/process";
+import { hashFile } from "@aphrody/bun-workspace/hash";
 
 interface FactoryProfile {
   schemaVersion: 1;
@@ -83,9 +85,7 @@ async function command(args: string[], job: string, step: string, timeout = 1200
   const [output, error] = await Promise.all([open(stdoutPath, "w"), open(stderrPath, "w")]);
   let code: number;
   try {
-    const child = Bun.spawn({
-      cmd: args,
-      cwd: job,
+    const child = await runProcess(args, job, {
       env: {
         ...Bun.env,
         TMPDIR: join(job, "tmp"),
@@ -95,19 +95,31 @@ async function command(args: string[], job: string, step: string, timeout = 1200
         DOCKER_CONFIG: join(job, "docker-config"),
       },
       stdin: "ignore",
-      stdout: output.fd,
-      stderr: error.fd,
-      timeout,
+      stdout: "discard",
+      stderr: "discard",
+      timeoutMs: timeout,
+      maxOutputBytes: 128 * 1024 * 1024,
+      onOutput: async (channel, bytes) => {
+        const file = channel === "stdout" ? output : error;
+        let offset = 0;
+        while (offset < bytes.byteLength) {
+          const { bytesWritten } = await file.write(bytes.subarray(offset));
+          if (bytesWritten === 0) throw new Error("Factory log write made no progress");
+          offset += bytesWritten;
+        }
+      },
+      onStart: async pid => {
+        await Bun.write(
+          join(job, "status.json"),
+          JSON.stringify(
+            { schemaVersion: 1, status: "running", step, pid: process.pid, activeChildPid: pid, jobPath: job },
+            null,
+            2,
+          ) + "\n",
+        );
+      },
     });
-    await Bun.write(
-      join(job, "status.json"),
-      JSON.stringify(
-        { schemaVersion: 1, status: "running", step, pid: process.pid, activeChildPid: child.pid, jobPath: job },
-        null,
-        2,
-      ) + "\n",
-    );
-    code = await child.exited;
+    code = child.code;
   } finally {
     await Promise.all([output.close(), error.close()]);
   }
@@ -117,10 +129,8 @@ async function command(args: string[], job: string, step: string, timeout = 1200
 async function artifactProof(root: string, path: string) {
   const resolved = owned(root, await realpath(path));
   await sameDevice(root, resolved);
-  const file = Bun.file(resolved),
-    hasher = new Bun.CryptoHasher("sha256");
-  for await (const chunk of file.stream()) hasher.update(chunk);
-  return { path: resolved, bytes: (await stat(resolved)).size, sha256: hasher.digest("hex") };
+  const bytes = Bun.file(resolved).size;
+  return { path: resolved, bytes, sha256: await hashFile(resolved, { expectedBytes: bytes }) };
 }
 function perlString(value: string) {
   return "'" + value.replaceAll("\\", "\\\\").replaceAll("'", "\\'") + "'";

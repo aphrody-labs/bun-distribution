@@ -1,5 +1,27 @@
 # Bun OS plan
 
+## Active fusion batch
+
+- [x] Stop the inventoried local Aphrody executables; disable Codex's Aphrody
+      plugin relaunch without changing provider authentication or raw sessions.
+- [x] Move all 71 Aphrody checkout entries to the selected src workspace;
+      verify identical Git HEAD and status, update the user APHRODY_ROOT.
+- [x] Route distribution commands and Ubuntu factory jobs through the shared
+      Bun Libraries process owner, including deadlines, process trees and logs.
+- [x] Route distribution and Ubuntu artifact hashing through the shared hash owner.
+- [ ] Identify any remaining provider relaunchers and remove the empty locked
+      former directory once its holder releases it.
+- [ ] Physically relocate Bun after its concurrent exclusive Git batch ends;
+      the src junction currently preserves sibling dependency resolution.
+- [ ] Migrate standalone compilation/assets to Bun Libraries' existing owners.
+- [ ] Align application catalog and deployment with native Aphrody Infra;
+      retire the unapplied duplicate forge/control-plane recipe.
+- [ ] Complete Material consumer migration through qualified published packages.
+- [ ] Commit and push each qualified ownership batch with precise paths.
+
+The following distribution receipts and remaining requirements are historical;
+the current owner request is the workspace fusion above.
+
 ## Delivered evidence
 
 - [x] Resolve and isolate distribution, runtime, Material and APT owners.

@@ -25,12 +25,11 @@ existing host lock. The Ubuntu factory keeps its state, socket, logs and
 temporary files on its qualified build filesystem. Preserve active Shenron
 restoration, services, sources, unpushed work and protected data.
 
-The latest owner request authorizes an accurate session report followed by
-consolidation commits and normal pushes of our owned paths. It does not
-resume unrelated convergence work. During documentation preparation, do not
-start builds, tests, deletions or commits. Native heavy work and local cleanup
-remain subject to the explicit coordination hold; read the current owner
-message before launching another job.
+The current objective unifies Bun OS, Bun Libraries, Aphrody and the Bun fork
+in the selected src workspace. Consolidate infrastructure, builds, factories,
+quality gates, documentation, plugins, sites, domains, distribution and owners.
+Reuse qualified implementations; preserve repository histories and concurrent
+work. The earlier reporting-only phase and temporary resource hold have ended.
 
 Keep authentication, raw provider sessions, cookies, databases, model weights
 and protected .local stores isolated. Do not synchronize provider stores or
@@ -42,9 +41,12 @@ public edge owner for the application domains. Preserve the homepage, www,
 existing services and R2 custom domains. A DNS/HTTPS response qualifies routing;
 it does not qualify an independently deployed native application.
 
-Reuse capability owners: exportPinnedSources for source export, buildApp for
-app compilation, the canonical bun-cloudflare client for R2/authentication,
-shared identity/contentIdentity for content, and package-converter ABI helpers.
+Reuse capability owners: exportPinnedSources for source export, the qualified
+artifact package for standalone apps, the canonical bun-cloudflare client for
+R2/authentication, and package-converter ABI helpers. Shared process lifetimes
+and streamed hashes come from @aphrody/bun-workspace. Native Aphrody Infra owns
+hosts, services, control-plane deployment and app activation. Existing adapters
+remain until their replacement preserves their contracts and passes its gates.
 Keep target/runtime and ABI versions distinct. Qualify source, binary, package,
 desktop, image, WASM, performance and publication independently.
 Do not add or run tests unless the owner requests them.

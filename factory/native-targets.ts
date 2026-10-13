@@ -4,6 +4,8 @@ import { mkdir, open, lstat, realpath, statfs, unlink } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { readLock } from "../src/distribution.ts";
 import { abi } from "../packages/package-converter/src/abi.ts";
+import { runProcess } from "@aphrody/bun-workspace/process";
+import { hashFile } from "@aphrody/bun-workspace/hash";
 
 interface Step {
   cmd?: string[];
@@ -80,48 +82,25 @@ async function run(
   log?: string,
   env?: Record<string, string>,
 ): Promise<string> {
-  const chunks: Uint8Array[] = [];
-  let bytes = 0;
   const writer = log ? await open(log, "wx") : undefined;
   let writes = Promise.resolve();
-  await using child = Bun.spawn({
-    cmd,
-    cwd,
-    env: { ...Bun.env, ...env },
-    stdin: "ignore",
-    stdout: "pipe",
-    stderr: "pipe",
-    timeout,
-    windowsHide: true,
-  });
-  const consume = async (stream: ReadableStream<Uint8Array>, stdout: boolean) => {
-    for await (const chunk of stream) {
-      bytes += chunk.length;
-      if (bytes > (log ? 32 * 1024 * 1024 : 1024 * 1024)) {
-        child.kill();
-        throw new Error("Factory command log exceeds byte limit");
-      }
-      if (writer) {
-        writes = writes.then(() => writer.writeFile(chunk));
-        await writes;
-      }
-      if (stdout && !log) chunks.push(chunk);
-    }
-  };
   try {
-    const results = await Promise.allSettled([consume(child.stdout, true), consume(child.stderr, false), child.exited]);
-    for (const result of results) if (result.status === "rejected") throw result.reason;
-    const status = results[2]!;
-    if (status.status !== "fulfilled" || status.value !== 0)
-      throw new Error(`Factory command failed: ${cmd[0]}${log ? `; log: ${log}` : ""}`);
-    const length = chunks.reduce((total, chunk) => total + chunk.length, 0);
-    const data = new Uint8Array(length);
-    let offset = 0;
-    for (const chunk of chunks) {
-      data.set(chunk, offset);
-      offset += chunk.length;
-    }
-    return new TextDecoder().decode(data).trim();
+    const result = await runProcess(cmd, cwd, {
+      env: { ...Bun.env, ...env },
+      stdin: "ignore",
+      stdout: log ? "discard" : "capture",
+      stderr: "discard",
+      timeoutMs: timeout,
+      maxOutputBytes: log ? 32 * 1024 * 1024 : 1024 * 1024,
+      onOutput: writer
+        ? async (_channel, bytes) => {
+            writes = writes.then(() => writer.writeFile(bytes));
+            await writes;
+          }
+        : undefined,
+    });
+    if (result.code !== 0) throw new Error(`Factory command failed: ${cmd[0]}${log ? `; log: ${log}` : ""}`);
+    return result.stdout.trim();
   } finally {
     await writer?.close();
   }
@@ -142,14 +121,8 @@ async function cleanPin(source: string, revision: string) {
 async function digest(path: string) {
   const file = Bun.file(path);
   if (!(await file.exists()) || file.size === 0) throw new Error(`Missing or empty native artifact: ${path}`);
-  const hash = new Bun.CryptoHasher("sha256");
-  let bytes = 0;
-  for await (const chunk of file.stream()) {
-    hash.update(chunk);
-    bytes += chunk.length;
-  }
-  if (bytes !== file.size) throw new Error("Native artifact changed during hashing");
-  return { bytes, sha256: hash.digest("hex") };
+  const bytes = file.size;
+  return { bytes, sha256: await hashFile(path, { expectedBytes: bytes }) };
 }
 
 export async function nativePlan(id: string, flags: Record<string, string>): Promise<NativePlan> {

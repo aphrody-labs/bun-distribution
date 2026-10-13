@@ -1,5 +1,20 @@
 # Owner objective
 
+## Active request: workspace fusion
+
+Consolidate Bun OS, Bun Libraries, Aphrody and the Bun fork in the selected
+src workspace. Stop local Aphrody processes and relocate its checkout without
+changing Git state or copying implementations. Reassign actual imports, builds,
+configuration and consumers to their capability owners: Bun for the runtime/SDK,
+Material for M3, Bun Libraries for library adapters and shared artifact/process/
+hash contracts, Aphrody Infra for hosts/services/deployment, and Bun OS for
+distribution assembly and Ubuntu/package recipes. Preserve concurrent work.
+
+The requirements below describe the previous distribution objective and its
+qualification boundaries; they are historical context, not a new work queue.
+
+## Distribution context
+
 Build an OS distribution with Bun as its application kernel, the COSMIC
 desktop from cosmic-epoch, a cross-platform libcosmic fork, and an edition
 of the owner reference “9937-389B”. Deliver Docker and WASM targets.

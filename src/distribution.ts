@@ -1,4 +1,6 @@
 import { exportPinnedSources, type SourceExportOptions } from "../factory/source-export.ts";
+import { hashStream } from "@aphrody/bun-workspace/hash";
+import { runProcess } from "@aphrody/bun-workspace/process";
 import { mkdir, lstat, copyFile, open, unlink, cp } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve, relative, isAbsolute } from "node:path";
@@ -82,20 +84,11 @@ export async function command(cmd: string[], cwd = packageRoot, timeout = 120_00
       console.error(`Ignoring missing ${name} for this factory command`);
     }
   }
-  await using child = Bun.spawn({
-    cmd,
-    cwd,
+  const { stdout, stderr, code } = await runProcess(cmd, cwd, {
     env,
-    stdout: "pipe",
-    stderr: "pipe",
-    windowsHide: true,
-    timeout,
+    timeoutMs: timeout,
+    maxOutputBytes: 128 * 1024 * 1024,
   });
-  const [stdout, stderr, code] = await Promise.all([
-    new Response(child.stdout).text(),
-    new Response(child.stderr).text(),
-    child.exited,
-  ]);
   if (code !== 0) throw new Error(`${cmd[0]} failed (${code}): ${(stderr || stdout).slice(-3000)}`);
   return stdout.trim();
 }
@@ -151,9 +144,10 @@ export async function identity(path: string) {
 }
 
 export async function contentIdentity(blob: Blob) {
-  const hash = new Bun.CryptoHasher("sha256");
-  for await (const chunk of blob.stream()) hash.update(chunk);
-  return { bytes: blob.size, sha256: hash.digest("hex") };
+  return {
+    bytes: blob.size,
+    sha256: await hashStream(blob.stream(), { maxBytes: blob.size, expectedBytes: blob.size }),
+  };
 }
 
 export async function plan(profile: Profile, target: Target, config: Config = {}) {

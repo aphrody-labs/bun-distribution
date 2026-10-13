@@ -1,5 +1,29 @@
 # Project decisions and session evidence
 
+## Workspace fusion, 2026-10-13
+
+- Aphrody's 71 checkout entries were moved to C:/src/aphrody on the same volume.
+  HEAD f9bcd3b5eb1f9cb14df7917a7ce3adfd79cd99cf and concurrent Git status were
+  identical before/after. The former C:/aphrody directory is empty but still
+  held by a Windows process; no source copy or old-path junction remains there.
+- APHRODY_ROOT now selects the moved checkout. Both Aphrody Windows services
+  are stopped and disabled. Codex's Aphrody plugin was disabled to prevent new
+  launches; existing clients were observed retrying MCP launches and were stopped
+  by exact executable identity. Provider stores and authentication were retained.
+- C:/src/bun is temporarily a junction to C:/bun during the concurrent exclusive
+  Bun Git batch. This preserves sibling Cargo dependencies; it is not a physical
+  Bun relocation or completed workspace consolidation.
+- Bun Libraries main 8ece107 owns bounded process lifetime, raw output callbacks,
+  PID callbacks, shared output limits and streamed SHA-256 with exact file length.
+  Distribution and both Ubuntu/native-target factories now import those owners
+  instead of implementing their own subprocess lifecycle and streaming hashes.
+- Native bun check passed for 59 library and 30 distribution files. Scoped native
+  lint/format and git diff whitespace gates passed. No tests, remote factory
+  execution, desktop launch or deployed app qualification were performed here.
+- Standalone artifact and deployment ownership migrations remain open; use the
+  qualified Bun Libraries artifact package and Aphrody Infra rather than treating
+  a declared ownership table as a completed migration.
+
 ## Owners and execution
 
 - The selected distribution checkout was isolated from the canonical Bun runtime.

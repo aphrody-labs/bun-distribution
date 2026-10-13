@@ -36,6 +36,6 @@ selected executable. Choose fresh artifact outputs and the existing host lock.
 Do not treat a snapshot's reported release URL as archive authentication or
 as a build from the distribution's locked runtime revision.
 
-Inspect permissions, running jobs, storage and the latest coordination hold
+Inspect permissions, running jobs, storage and current coordination
 before starting a factory operation. Never start workstation WSL, confuse
 the VPS with the local MCP context, or delete protected .local/provider stores.
