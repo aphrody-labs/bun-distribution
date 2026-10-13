@@ -43,7 +43,7 @@ activation. Native engines are compiled separately by their existing owner.
 | Route | Owner | Authentication |
 | --- | --- | --- |
 | `GET /healthz` | App host process | Public |
-| `GET /api/v1/sources` | Workspace modules and distribution source lock | Bearer |
+| `GET /api/v1/sources` | Workspace modules, distribution source lock and committed crate gitlinks | Bearer |
 | `GET /api/v1/apps` | Infra app inventory and workspace hostnames | Bearer |
 | `GET /api/v1/status` | App host runtime and catalog snapshot | Bearer |
 | `GET /api/v1/owners` | Explicit API ownership map | Bearer |
@@ -56,6 +56,14 @@ return 405. Responses disable caching and MIME sniffing.
 
 Sources carry their pinned revision and source license when known. A null
 license refers callers to the source owner; it is not a license grant. Catalog
+entries `crate:<package>` describe every root `crates/*` gitlink at the captured
+source commit, using its exact Git tree revision and the URL parsed by Git from
+that commit's `.gitmodules`. They remain distinct from historical module import
+revisions. `.gitmodules` and `Cargo.toml` are committed compiler inputs with raw
+SHA-256 proofs, and root HEAD must remain unchanged during catalog capture.
+Crate licenses are null when no source proof is included; private forge URLs
+declare source ownership without asserting anonymous access. No crate checkout
+or native engine is added to the server's compiled source graph. Catalog
 qualification values preserve the declared app inventory. Snapshot observation
 and source revision are distinct from current process readiness or a fresh
 native/deployment qualification. All Aphrody Labs mirror progress remains with

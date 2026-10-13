@@ -156,6 +156,8 @@ export async function verifyProduct(
       if (generated !== 1) throw new Error("Product receipt requires exactly one generated entry proof.");
       for (const path of [
         "package.json",
+        ".gitmodules",
+        "Cargo.toml",
         "aphrody.config.json",
         "sources.lock.json",
         "infra/apps.json",
