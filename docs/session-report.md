@@ -118,15 +118,21 @@ packaging. Pins and digests are in
 
 ### Runtime boundary
 
-Windows uses owned Bun 1.4.4 revision
-`2ae8fc65fba1d05c423a2433b1195835109942b6`; Linux uses separately qualified owned
-Bun 1.4.4 revision `dfde053a3045d6076ad315b6f63160c4ced71513`. Their release
-provenance and executable digests are checked. The pinned Tauri SDK source is
+Earlier Windows standalone artifacts use Bun 1.4.4 revision
+`2ae8fc65fba1d05c423a2433b1195835109942b6`; Linux uses separately qualified
+Bun 1.4.4 revision `dfde053a3045d6076ad315b6f63160c4ced71513`. New Windows
+plans use revision `c62d01d81506a8b78b1d39b44d17edc81b4a6355` and the selected
+runtime's SHA-256 `f85c2517fc4eca8a4e82c15f3897ae39376ab8b9f338eee1bae5f383cc27a52a`.
+That runtime exposes `Bun.Video` with `available: true`, decoder `filmcraft` and
+backend `system`. API presence and app plans do not qualify media behavior or a
+standalone binary. The pinned Tauri SDK source remains
 `939c835adf6479bc1014da3843cda4ae29851dbd`.
 
-These installed runtimes do not expose native `Bun.Video`. The parallel native
-Bun owner retains its separate runtime/API qualification. This session's
-standalone FilmCraft bridge does not qualify that JSC API or media output accuracy.
+The FilmCraft Windows x64 plan is prepared against clean Bun Libraries revision
+`7b5816ac06631bdc6ff772fb1f52c4cd7e66e8e6`; 13 other library apps and APT also
+prepare. The desktop server remains blocked by missing web assets, native
+engine ownership and external catalog context. No app binary was built or
+deployed by this planning pass.
 
 ## Infrastructure and assets
 

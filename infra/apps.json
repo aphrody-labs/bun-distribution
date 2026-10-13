@@ -5,6 +5,9 @@
     "libraries": "../../bun-libraries",
     "material": "../../material"
   },
+  "ownerPins": {
+    "bunLibraries": "7b5816ac06631bdc6ff772fb1f52c4cd7e66e8e6"
+  },
   "storage": {
     "assets": {
       "bucket": "aphrody-assets",
@@ -341,8 +344,8 @@
   "runtimeSnapshots": {
     "windows-x64": {
       "path": "$BUN_INSTALL/bin/bun.exe",
-      "sha256": "a6f79203a9601914e86479f103c7f695330d54442169566f64e29328440d9c89",
-      "revision": "2ae8fc65fba1d05c423a2433b1195835109942b6",
+      "sha256": "f85c2517fc4eca8a4e82c15f3897ae39376ab8b9f338eee1bae5f383cc27a52a",
+      "revision": "c62d01d81506a8b78b1d39b44d17edc81b4a6355",
       "version": "1.4.4",
       "qualificationReceipt": "../out/runtime-current/windows-x64.json"
     }

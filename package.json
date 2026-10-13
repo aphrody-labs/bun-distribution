@@ -49,7 +49,7 @@
     "desktop:build": "bun run --cwd apps/desktop desktop:build",
     "frontend:dev": "bun run --cwd libraries/artcraft/frontend dev",
     "frontend:build": "bun run --cwd libraries/artcraft/frontend build",
-    "video": "bun packages/video/src/cli.ts",
+    "video": "bun ../bun-libraries/packages/video/src/cli.ts",
     "assets": "bun packages/workspace/src/assets-cli.ts",
     "artifacts": "bun packages/artifacts/src/cli.ts",
     "video:build": "bun packages/workspace/src/cli.ts build filmcraft",
@@ -57,7 +57,7 @@
     "apps:build": "bun scripts/build-apps.ts build"
   },
   "dependencies": {
-    "@aphrody/bun-workspace": "workspace:*"
+    "@aphrody/bun-workspace": "file:../bun-libraries/packages/workspace"
   },
   "devDependencies": {
     "@aphrody/bun-types": "1.4.4"

@@ -1,5 +1,5 @@
 {
-  "name": "@aphrody/bun-artifacts",
+  "name": "@aphrody/bun-os-artifacts",
   "version": "1.4.4",
   "private": true,
   "description": "Independent Aphrody applications built with Bun",
@@ -15,7 +15,8 @@
     "./types": "./src/types.ts"
   },
   "dependencies": {
-    "@aphrody/bun-workspace": "workspace:*"
+    "@aphrody/bun-workspace": "file:../../../bun-libraries/packages/workspace",
+    "@aphrody/bun-app-host": "file:../../../bun-libraries/packages/app-host"
   },
   "engines": {
     "bun": "=1.4.4"

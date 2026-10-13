@@ -11,6 +11,9 @@
     ".": "./src/convert.ts",
     "./metadata": "./src/metadata.ts"
   },
+  "dependencies": {
+    "@aphrody/bun-workspace": "file:../../../bun-libraries/packages/workspace"
+  },
   "engines": {
     "bun": ">=1.4.4"
   }

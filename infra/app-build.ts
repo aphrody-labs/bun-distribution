@@ -64,7 +64,15 @@ export interface AppEntry {
 export interface AppInventory extends AssetInventory {
   targets: AppTarget[];
   apps: AppEntry[];
+  ownerPins?: { bunLibraries?: string };
   runtimeSnapshots?: Partial<Record<AppTarget, RuntimeSnapshot>>;
+}
+export interface OwnerWorkspace {
+  repository: "aphrody-labs/bun-libraries";
+  checkout: string;
+  expectedRevision: string;
+  revision: string;
+  clean: boolean;
 }
 export interface EmbeddedNativeFile {
   path: string;
@@ -94,6 +102,7 @@ export interface AppPlan {
   outputRoot: string;
   status: "prepared" | "blocked";
   reasons: string[];
+  ownerWorkspace?: OwnerWorkspace;
   buildOwner?: { repository: "aphrody-labs/bun-libraries"; capability: string };
   compiler?: {
     repository: "aphrody-labs/bun-libraries";
@@ -317,6 +326,36 @@ export async function planApp(configPath: string, appId: string, target: AppTarg
   const artifactRoot = await workspace(configPath, config, "libraries");
   const libraryRoot = ownsNativeBuild ? artifactRoot : undefined;
   const root = libraryRoot ?? (await workspace(configPath, config, app.entrypointWorkspace ?? app.workspace));
+  const reasons: string[] = [];
+  const expectedLibraryRevision = config.ownerPins?.bunLibraries;
+  let ownerWorkspace: OwnerWorkspace | undefined;
+  try {
+    if (!expectedLibraryRevision || !/^[a-f0-9]{40}$/.test(expectedLibraryRevision))
+      throw new Error("A full Bun Libraries source revision pin is required");
+    const [revision, status, origin] = await Promise.all([
+      command(["git", "rev-parse", "HEAD"], artifactRoot),
+      command(["git", "status", "--porcelain=v1", "--untracked-files=all", "--ignore-submodules=none"], artifactRoot),
+      command(["git", "remote", "get-url", "origin"], artifactRoot),
+    ]);
+    const clean = status === "";
+    ownerWorkspace = {
+      repository: "aphrody-labs/bun-libraries",
+      checkout: artifactRoot,
+      expectedRevision: expectedLibraryRevision,
+      revision,
+      clean,
+    };
+    if (
+      !/^(?:https:\/\/github\.com\/aphrody-labs\/bun-libraries|git@github\.com:aphrody-labs\/bun-libraries)(?:\.git)?$/.test(
+        origin,
+      )
+    )
+      throw new Error("Bun Libraries workspace is outside its capability owner");
+    if (revision !== expectedLibraryRevision) throw new Error("Bun Libraries workspace revision differs from its pin");
+    if (!clean) throw new Error("Bun Libraries workspace has uncommitted or untracked source changes");
+  } catch (error) {
+    reasons.push(error instanceof Error ? error.message : "Bun Libraries workspace revision is unavailable");
+  }
   let resolvedHostnames: string[];
   let librarySourceRevision: string | undefined;
   let resolvedSource = app.source;
@@ -350,7 +389,6 @@ export async function planApp(configPath: string, appId: string, target: AppTarg
     hostnames: resolvedHostnames,
   };
   let entrypoint = inside(root, resolve(root, ownsNativeBuild ? "scripts/build-apps.ts" : app.entrypoint));
-  const reasons: string[] = [];
   let compiler: AppPlan["compiler"] | undefined;
   try {
     const compilerPath = inside(artifactRoot, join(artifactRoot, "packages/artifacts/src/compiler.ts"));
@@ -382,7 +420,23 @@ export async function planApp(configPath: string, appId: string, target: AppTarg
   else entrypoint = inside(root, await realpath(entrypoint));
   if (protectedInput(entrypoint)) reasons.push("Entrypoint points to a protected store");
   if (app.externalContext?.length) reasons.push("Unresolved external context: " + app.externalContext.join(", "));
-  const assets = await collectAssets(configPath, [app.id]);
+  let assets: AssetPlan;
+  try {
+    assets = await collectAssets(configPath, [app.id]);
+  } catch (error) {
+    reasons.push(
+      error instanceof Error ? `Asset inventory unavailable: ${error.message}` : "Asset inventory unavailable",
+    );
+    assets = {
+      schemaVersion: 1,
+      kind: "app-asset-plan",
+      configSHA256: (await identity(configPath)).sha256,
+      storage: config.storage.assets,
+      objects: [],
+      apps: [{ id: app.id, assets: [] }],
+      qualification: { uploaded: false, publicDelivery: false },
+    };
+  }
   let runtime: AppPlan["runtime"],
     nativeFiles: EmbeddedNativeFile[] = [],
     nativeEvidence: unknown;
@@ -419,6 +473,7 @@ export async function planApp(configPath: string, appId: string, target: AppTarg
     outputRoot: resolve(dirname(configPath), config.build?.outputRoot ?? "../../build/bun-os-apps"),
     status: reasons.length ? "blocked" : "prepared",
     reasons,
+    ...(ownerWorkspace ? { ownerWorkspace } : {}),
     ...(capability
       ? {
           buildOwner: {
@@ -439,6 +494,27 @@ function reasonsForMissingOwner(appId: string): never {
   throw new Error("Bun Libraries has no native application capability for " + appId);
 }
 
+async function inspectOwnerWorkspace(checkout: string, expectedRevision: string): Promise<OwnerWorkspace> {
+  const [revision, status, origin] = await Promise.all([
+    command(["git", "rev-parse", "HEAD"], checkout),
+    command(["git", "status", "--porcelain=v1", "--untracked-files=all", "--ignore-submodules=none"], checkout),
+    command(["git", "remote", "get-url", "origin"], checkout),
+  ]);
+  if (
+    !/^(?:https:\/\/github\.com\/aphrody-labs\/bun-libraries|git@github\.com:aphrody-labs\/bun-libraries)(?:\.git)?$/.test(
+      origin,
+    )
+  )
+    throw new Error("Bun Libraries workspace is outside its capability owner");
+  return {
+    repository: "aphrody-labs/bun-libraries",
+    checkout,
+    expectedRevision,
+    revision,
+    clean: status === "",
+  };
+}
+
 function record(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -451,6 +527,9 @@ async function buildLibraryApp(configPath: string, appId: string, target: AppTar
   const plan = await planApp(configPath, appId, target);
   if (plan.status !== "prepared" || !plan.runtime) throw new Error(plan.reasons.join("; "));
   const libraryRoot = await workspace(configPath, config, "libraries");
+  const currentOwnerWorkspace = await inspectOwnerWorkspace(libraryRoot, plan.ownerWorkspace!.expectedRevision);
+  if (!currentOwnerWorkspace.clean || currentOwnerWorkspace.revision !== plan.ownerWorkspace!.revision)
+    throw new Error("Bun Libraries workspace changed after app planning; plan the build again");
   const libraryConfig = await loadLibraryConfig(libraryRoot);
   if (
     libraryConfig.runtime.version !== plan.runtime.version ||
