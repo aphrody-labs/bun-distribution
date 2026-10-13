@@ -12,13 +12,13 @@ const cli = resolve(import.meta.dir, "../../../../packages/engine/yolo/src/index
 
 describe("CLI start-up", () => {
   it("version prints the same line and JSON through the lazy entry", () => {
-    const text = Bun.spawnSync(["bun", cli, "version"], {
+    const text = Bun.spawnSync([process.execPath, cli, "version"], {
       windowsHide: true,
       stdout: "pipe",
     }).stdout.toString();
     expect(text).toMatch(/^yolo \S+ \(\S+, Bun \S+\)\n$/);
     const json = JSON.parse(
-      Bun.spawnSync(["bun", cli, "version", "--json"], {
+      Bun.spawnSync([process.execPath, cli, "version", "--json"], {
         windowsHide: true,
         stdout: "pipe",
       }).stdout.toString(),
@@ -29,7 +29,7 @@ describe("CLI start-up", () => {
   });
 
   it("an unknown command still prints the help and exits 1", () => {
-    const run = Bun.spawnSync(["bun", cli, "no-such-command"], {
+    const run = Bun.spawnSync([process.execPath, cli, "no-such-command"], {
       windowsHide: true,
       stdout: "pipe",
       stderr: "pipe",

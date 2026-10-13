@@ -5,7 +5,7 @@
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve, posix } from "node:path";
-import { firstPartyManifests } from "../../packages/infra/update/src/manifests.ts";
+import { firstPartyManifests } from "@aphrody/update/manifests";
 
 type Manifest = {
   name: string;
