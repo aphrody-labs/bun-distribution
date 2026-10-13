@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Read-only DNS parity audit: declared records vs each authoritative nameserver set. No credentials, no provider writes. */
 import { promises as dns } from "node:dns";
+import { dirname, join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 type Record = {
   name: string;
@@ -10,14 +12,110 @@ type Record = {
   content?: string;
   priority?: number;
   data?: { priority: number; weight: number; port: number; target: string };
+  proxied?: boolean;
 };
 type Declared = {
-  registrar: { nameServers: string[] };
-  dns: { zone: string; nameServers: string[]; records: Record[] };
+  registrar?: { nameServers: string[] };
+  dns: { zone: string; zoneId: string; nameServers: string[]; records: Record[] };
+  applications?: { id: string; hostname: string; alias: string }[];
+  productDomains?: { id: string; hostname: string; owner: string }[];
+  worker?: { owner: string; name: string; routes: string[]; customDomains: string[] };
 };
 
 const path = process.argv[2] ?? "tools/config/cloudflare/aphrody.com.json";
-const declared: Declared = JSON.parse(await Bun.file(path).text());
+const manifestPath = resolve(path);
+const declared: Declared = JSON.parse(await Bun.file(manifestPath).text());
+if (declared.applications) {
+  const aphrodyRoot = resolve(dirname(manifestPath), "../../..");
+  const bunOsRoot = resolve(aphrodyRoot, "../bun-os");
+  const capabilitiesPath = join(bunOsRoot, "packages/bun-workspace/src/capabilities.ts");
+  const configPath = join(bunOsRoot, "aphrody.config.json");
+  const distributionAppsPath = join(bunOsRoot, "infra/apps.json");
+  if (!(await Bun.file(capabilitiesPath).exists()))
+    throw new Error("Bun OS capability owner is unavailable");
+  const capabilities = await import(pathToFileURL(capabilitiesPath).href);
+  const config = JSON.parse(await Bun.file(configPath).text());
+  const expectedApplications = capabilities
+    .appCapabilities(config)
+    .map((app: { id: string; libraryId: string }) => {
+      const hostname = capabilities.appHostname(app.id, config);
+      const alias = capabilities
+        .appHostnamesForLibrary(app.libraryId, config)
+        .find((host: string) => host !== hostname);
+      if (!alias) throw new Error(`Application alias missing for ${app.id}`);
+      return { id: app.id, hostname, alias };
+    });
+  if (JSON.stringify(declared.applications) !== JSON.stringify(expectedApplications))
+    throw new Error("Application hostnames differ from the Bun OS capability owner");
+
+  const distributionApps = JSON.parse(await Bun.file(distributionAppsPath).text()).apps as {
+    id: string;
+    hostname?: string;
+  }[];
+  const expectedProductDomains = distributionApps
+    .filter((app) => app.hostname)
+    .map((app) => ({ id: app.id, hostname: app.hostname, owner: "bun-os" }));
+  const actualProductDomains = (declared.productDomains ?? []).filter(
+    (domain) => domain.owner === "bun-os",
+  );
+  if (JSON.stringify(actualProductDomains) !== JSON.stringify(expectedProductDomains))
+    throw new Error("Product hostnames differ from the Bun OS distribution owner");
+
+  const expectedRoutes = expectedApplications.map(
+    (app: { hostname: string }) => `${app.hostname}/*`,
+  );
+  if (
+    JSON.stringify(declared.worker?.routes?.toSorted()) !==
+    JSON.stringify(expectedRoutes.toSorted())
+  )
+    throw new Error("Worker routes differ from the application hostnames");
+  const expectedCustomDomains = [
+    declared.dns.zone,
+    `www.${declared.dns.zone}`,
+    ...expectedApplications.map((app: { alias: string }) => app.alias),
+    ...expectedProductDomains.map((app) => app.hostname),
+  ];
+  if (
+    JSON.stringify(declared.worker?.customDomains?.toSorted()) !==
+    JSON.stringify(expectedCustomDomains.toSorted())
+  )
+    throw new Error("Worker custom domains differ from product and application hostnames");
+
+  const workerConfigPath = resolve(aphrodyRoot, "../bun/packages/web/cloudflare/wrangler.jsonc");
+  if (!(await Bun.file(workerConfigPath).exists()))
+    throw new Error("Bun Worker configuration is unavailable");
+  const workerConfig = Bun.JSONC.parse(await Bun.file(workerConfigPath).text()) as {
+    name: string;
+    routes: { pattern: string; custom_domain?: boolean; zone_id?: string }[];
+  };
+  if (workerConfig.name !== declared.worker?.name)
+    throw new Error("Bun Worker name differs from the domain owner");
+  const configuredRoutes = workerConfig.routes.filter(
+    (route: { custom_domain?: boolean }) => !route.custom_domain,
+  );
+  const configuredCustomDomains = workerConfig.routes
+    .filter((route: { custom_domain?: boolean }) => route.custom_domain)
+    .map((route: { pattern: string }) => route.pattern);
+  const expectedConfiguredRoutes = expectedRoutes.map(
+    (pattern: string) => `${pattern}:${declared.dns.zoneId}`,
+  );
+  const actualConfiguredRoutes = configuredRoutes.map(
+    (route: { pattern: string; zone_id?: string }) => `${route.pattern}:${route.zone_id}`,
+  );
+  if (
+    JSON.stringify(actualConfiguredRoutes.toSorted()) !==
+    JSON.stringify(expectedConfiguredRoutes.toSorted())
+  )
+    throw new Error("Bun Worker routes differ from the Aphrody Infra domain contract");
+  if (
+    JSON.stringify(configuredCustomDomains.toSorted()) !==
+    JSON.stringify(expectedCustomDomains.toSorted())
+  )
+    throw new Error("Bun Worker custom domains differ from the Aphrody Infra domain contract");
+  console.log(
+    `source owners: ${expectedApplications.length} Bun OS capabilities, ${expectedProductDomains.length} Bun OS product domains, ${workerConfig.routes.length} Bun Worker routes`,
+  );
+}
 const strip = (v: string) => v.replace(/\.$/, "");
 const sorted = (xs: unknown[]) => JSON.stringify(xs.map((x) => JSON.stringify(x)).toSorted());
 
@@ -56,14 +154,20 @@ const query = async (server: string, name: string, type: string): Promise<string
   }
 };
 
-const sets = { registrar: declared.registrar.nameServers, cloudflare: declared.dns.nameServers };
+const sets = {
+  ...(declared.registrar ? { registrar: declared.registrar.nameServers } : {}),
+  cloudflare: declared.dns.nameServers,
+};
 const live = (await dns.resolveNs(declared.dns.zone).catch(() => [] as string[]))
   .toSorted()
   .join(",");
 const is = (s: string[]) => s.toSorted().join(",") === live;
-console.log(
-  `delegation (system resolver): ${is(sets.cloudflare) ? "cloudflare" : is(sets.registrar) ? "registrar" : `unknown(${live || "none"})`}`,
-);
+const delegation = is(sets.cloudflare)
+  ? "cloudflare"
+  : declared.registrar && is(sets.registrar ?? [])
+    ? "registrar"
+    : `unknown(${live || "none"})`;
+console.log(`delegation (system resolver): ${delegation}`);
 
 const checks = await Promise.all(
   Object.entries(sets).map(async ([label, hosts]) => {
@@ -71,9 +175,10 @@ const checks = await Promise.all(
     const diffsOf = await Promise.all(
       [...groups].map(async ([key, rs]) => {
         const [name = "", type = ""] = key.split("\u0000");
-        const want = expectedOf(rs);
+        const proxied = rs.every((record) => record.proxied);
+        const want = proxied ? "proxied DNS answer" : expectedOf(rs);
         const got = await Promise.all(servers.map((s) => query(s, name, type)));
-        const bad = got.filter((g) => g !== want);
+        const bad = got.filter((g) => (proxied ? g.startsWith("ERR:") : g !== want));
         return bad.length
           ? `DIFF ${label} ${type} ${name} want=${want} got=${bad.join(" | ")}`
           : null;
