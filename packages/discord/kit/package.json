@@ -16,7 +16,7 @@
       "import": "./dist/index.mjs"
     },
     "./rest": {
-      "types": "./dist/rest.d.mts",
+      "types": "./src/rest.ts",
       "bun": "./src/rest.ts",
       "import": "./dist/rest.mjs"
     },
@@ -29,7 +29,7 @@
       "import": "./dist/messaging.mjs"
     },
     "./lab": {
-      "types": "./dist/lab/ai-lab.d.mts",
+      "types": "./src/lab/ai-lab.ts",
       "bun": "./src/lab/ai-lab.ts",
       "import": "./dist/lab/ai-lab.mjs"
     },
