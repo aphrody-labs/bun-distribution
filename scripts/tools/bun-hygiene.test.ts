@@ -64,6 +64,8 @@ test("the newest runtime release older than the minimum age is selected", () => 
   expect(isNewer("aphrody-v1.4.3-aphrody.1", "aphrody-v1.4.3-aphrody.3")).toBe(false);
   expect(isNewer("aphrody-v1.4.3-aphrody.3", "aphrody-v1.4.3-aphrody.3")).toBe(false);
   expect(isNewer("aphrody-v1.4.3-aphrody.1", "aphrody-v1.4.3")).toBe(true);
+  expect(isNewer("aphrody-v1.4.3-aphrody.4", "aphrody-v1.4.4")).toBe(false);
+  expect(isNewer("aphrody-v1.4.4-aphrody.1", "aphrody-v1.4.4")).toBe(true);
 });
 
 test("checksums are matched on the exact asset name", () => {

@@ -108,9 +108,10 @@ describe("yolo create", () => {
     }
     const pkg = JSON.parse(readFileSync(join(sandbox, "demo-app/package.json"), "utf8"));
     expect(pkg.name).toBe("demo-app");
-    expect(pkg.dependencies["@aphrody/runtime-sdk"]).toMatch(
-      new RegExp(`^file:${rootDir.replaceAll("\\", "/")}/packages/(engine/)?runtime$`),
-    );
+    expect(pkg.dependencies["@aphrody/runtime-sdk"]).toBe("npm:@aphrody/bun-runtime-sdk@1.4.4");
+    expect(pkg.devDependencies.typescript).toBeUndefined();
+    expect(pkg.scripts.typecheck).toBe("bun check --noEmit");
+    expect(pkg.scripts.lint).toBe("bun lint src scripts test");
   });
 
   it("applies features in order: web replaces home.ts, desktop adds Tauri and icons", async () => {
@@ -152,9 +153,7 @@ describe("yolo create", () => {
     }
     // the dev dependencies of the base template survive the merge, and the tsconfig compiles TSX
     expect(pkg.devDependencies["@types/bun"]).toBeDefined();
-    expect(pkg.dependencies["@aphrody/runtime-sdk"]).toMatch(
-      new RegExp(`^file:${rootDir.replaceAll("\\", "/")}/packages/(engine/)?runtime$`),
-    );
+    expect(pkg.dependencies["@aphrody/runtime-sdk"]).toBe("npm:@aphrody/bun-runtime-sdk@1.4.4");
     const tsconfig = JSON.parse(readFileSync(join(sandbox, "react-app/tsconfig.json"), "utf8"));
     expect(tsconfig.compilerOptions.jsx).toBe("react-jsx");
   });

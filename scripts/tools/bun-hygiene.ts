@@ -63,7 +63,9 @@ const runtimeParts = (t: string) =>
 /** `aphrody-vX.Y.Z-aphrody.N` is newer than `current` (a non-runtime current tag is always older). */
 export function isNewer(tag: string, current: string): boolean {
   const next = runtimeParts(tag);
-  const now = runtimeParts(current);
+  // A modern native build reports the base version without the historical fork suffix.
+  const base = /^aphrody-v(\d+)\.(\d+)\.(\d+)$/.exec(current);
+  const now = runtimeParts(current) ?? (base ? base.slice(1).map(Number) : undefined);
   if (!next) return false;
   if (!now) return true;
   const diff = next.map((n, i) => n - (now[i] ?? 0)).find((d) => d !== 0);
