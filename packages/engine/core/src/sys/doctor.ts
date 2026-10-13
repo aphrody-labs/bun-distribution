@@ -2,10 +2,11 @@
  * Environment diagnostics and stack maturation toolchain verification.
  */
 import { existsSync } from "node:fs";
-import { delimiter, join } from "node:path";
+import { delimiter, join, resolve } from "node:path";
 import { hostTarget, loadArtifact, runtimeHome } from "@aphrody/runtime-sdk/src/artifact.ts";
 import { list } from "@aphrody/runtime-sdk/src/release.ts";
 import { isCompiled, yoloHome, yoloVersion } from "../vfs/home";
+import { templatesRoot } from "../scaffold/create";
 
 export interface DoctorComponent {
   readonly label: string;
@@ -74,12 +75,16 @@ export function collectDoctorReport(): DoctorReport {
 
   const components: DoctorComponent[] = [];
   for (const [path, label, required] of [
-    ["m3/templates/stack.toml", "templates (yolo create)", true],
+    [join(templatesRoot(home), "stack.toml"), "templates (yolo create)", true],
     ["packages/engine/runtime/package.json", "runtime SDK", true],
     ["packages/engine/python/pyproject.toml", "Python package (uv / maturin)", sourceInstallation],
-    ["m3/templates/desktop/src-tauri/icons", "desktop scaffold icons (templates)", false],
+    [
+      join(templatesRoot(home), "desktop/src-tauri/icons"),
+      "desktop scaffold icons (templates)",
+      false,
+    ],
   ] as const) {
-    const exists = existsSync(join(home, path));
+    const exists = existsSync(resolve(home, path));
     if (!exists && required) okStatus = false;
     components.push({ label, path, exists, required });
   }

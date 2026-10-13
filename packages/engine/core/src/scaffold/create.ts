@@ -1,17 +1,18 @@
 /**
  * `yolo create <dir>`: scaffolds an Aphrody stack project from the versioned templates in
- * `m3/templates/` (layers and versions are described by `m3/templates/stack.toml`).
+ * Material (layers and versions are described by its templates/stack.toml).
  *
  *   yolo create my-app [--with web|react,desktop] [--framework hono|elysia] [--yolo-path <checkout>]
  *
  * The composition is Bun's: `bun create aphrody/<template>[+<template>...] <dir>` (aphrody-labs/bun,
  * src/js/eval/toolchain.ts) applies the layers in order, substitutes `__NAME__`, `__IDENT__` and
  * `__YOLO__`, renames `gitignore` and refuses two templates of one `exclusive` group. The templates
- * stay here, their only source.
+ * remain with their Material and Bun owners.
  */
 import { cpSync, existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
+import { checkoutRoot } from "@aphrody/paths";
 
 export interface StackTemplate {
   readonly path: string;
@@ -29,9 +30,18 @@ export interface StackManifest {
   readonly template: Readonly<Record<string, StackTemplate>>;
 }
 
+/** Source checkouts consume Material; installed distributions retain their asset layout. */
+export function templatesRoot(rootDir: string): string {
+  if (!existsSync(join(rootDir, "Cargo.toml"))) return resolve(rootDir, "m3/templates");
+  return join(
+    checkoutRoot("material", { ...process.env, APHRODY_WORKSPACE_ROOT: rootDir }),
+    "packages/m3/templates",
+  );
+}
+
 export async function loadStack(rootDir: string): Promise<StackManifest> {
   return Bun.TOML.parse(
-    await Bun.file(resolve(rootDir, "m3/templates/stack.toml")).text(),
+    await Bun.file(join(templatesRoot(rootDir), "stack.toml")).text(),
   ) as StackManifest;
 }
 
@@ -65,8 +75,18 @@ export interface CreateOptions {
  * canonical source is @aphrody/web-source (integrations/m3/templates: the web and react pages).
  */
 function stageTemplates(rootDir: string): { dir: string; cleanup(): void } {
-  const own = resolve(rootDir, "m3/templates");
-  const web = resolve(rootDir, "node_modules/@aphrody/web-source/integrations/m3/templates");
+  const own = templatesRoot(rootDir);
+  let web: string;
+  try {
+    web = resolve(
+      dirname(
+        Bun.resolveSync("@aphrody/web-source/integrations/m3/templates/web/src/home.ts", rootDir),
+      ),
+      "../..",
+    );
+  } catch {
+    return { dir: own, cleanup() {} };
+  }
   if (!existsSync(web)) return { dir: own, cleanup() {} };
   const staged = mkdtempSync(join(tmpdir(), "yolo-create-templates-"));
   const dir = join(staged, "m3", "templates");
@@ -85,10 +105,13 @@ export async function createProject(options: CreateOptions): Promise<string[]> {
   }
 }
 
-async function createFromTemplates(options: CreateOptions, templatesDir: string): Promise<string[]> {
+async function createFromTemplates(
+  options: CreateOptions,
+  templatesDir: string,
+): Promise<string[]> {
   const proc = Bun.spawn(
     [
-      Bun.which("bun") ?? process.execPath,
+      process.execPath,
       "create",
       `aphrody/${options.features.join("+")}`,
       options.target,
