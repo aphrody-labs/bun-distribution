@@ -115,6 +115,26 @@
       "name": "bun-crate-aphrody-http-error",
       "mirror": false,
       "private": true
+    },
+    {
+      "name": "bun-crate-aphrody-guard",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-aphrody-subsystem",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-aphrody-proc",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-aphrody-config",
+      "mirror": false,
+      "private": true
     }
   ]
 }
