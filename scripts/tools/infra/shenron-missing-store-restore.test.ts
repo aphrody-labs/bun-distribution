@@ -22,7 +22,7 @@ test("validates both backed-up databases without writes and refuses existing liv
         // Consistent on-disk snapshots can retain WAL header bytes.
         snapshot[18] = 2;
         snapshot[19] = 2;
-        const bytes = Bun.gzipSync(snapshot);
+        const bytes = Bun.gzipSync(new Uint8Array(snapshot));
         db.close();
         const key = `server/data/${name}.gz`;
         await Bun.write(join(source, key), bytes);
