@@ -199,9 +199,9 @@ test("no-build excludes Cargo compilation, arbitrary adapters, unsafe test hooks
       {
         ...packages[0]!,
         scripts: {
-          typecheck: "bun check --noEmit",
-          lint: "oxlint src",
-          "format:check": "oxfmt --check src",
+          typecheck: "bun check",
+          lint: "bun lint src",
+          "format:check": "bun fmt --check src",
           test: "bun test",
           build: "next build",
           pretypecheck: "cargo build",
@@ -232,6 +232,17 @@ test("no-build excludes Cargo compilation, arbitrary adapters, unsafe test hooks
   expect(
     plan.checks.every((check) => !(check.command[0] === "bun" && check.command[1] === "run")),
   ).toBe(true);
+  expect(plan.checks.find((check) => check.name === "@owner/app: lint")!.command).toEqual([
+    "bun",
+    "lint",
+    "src",
+  ]);
+  expect(plan.checks.find((check) => check.name === "@owner/app: format")!.command).toEqual([
+    "bun",
+    "fmt",
+    "--check",
+    "src",
+  ]);
   expect(plan.deferred!.some((check) => check.script === "next build")).toBe(true);
   expect(plan.deferred!.some((check) => check.script === "bun test")).toBe(true);
   expect((await executeMonorepoGate(plan, async () => 0)).passed).toBe(false);

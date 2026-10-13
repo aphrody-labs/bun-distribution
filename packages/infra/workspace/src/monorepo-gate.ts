@@ -184,10 +184,8 @@ export function noBuildScriptReason(check: GateCheck): string | undefined {
   const script = check.script?.trim();
   if (!script) return "Only reviewed package leaf commands are executed in no-build mode";
   if (/^bun check\b[\w\s./:@=,-]*$/.test(script)) return undefined;
-  if (/^(?:bunx --bun |bun --bun |bunx |bun )?(?:tsc|tsgo)\b[\w\s./:@=,-]*$/.test(script))
-    return undefined;
-  if (/^oxlint\b[\w\s./:@=,*-]*$/.test(script)) return undefined;
-  if (/^oxfmt --check\b[\w\s./:@=,*-]*$/.test(script)) return undefined;
+  if (/^bun lint\b[\w\s./:@=,*-]*$/.test(script)) return undefined;
+  if (/^bun fmt --check\b[\w\s./:@=,*-]*$/.test(script)) return undefined;
   // These suites are fixture-based. The native artifact integration test is opt-in.
   if (
     /packages[/\\]infra[/\\](?:workspace|ovh|sql)$/.test(check.cwd) &&
@@ -231,12 +229,8 @@ export function restrictToNoBuild(plan: MonorepoGatePlan): MonorepoGatePlan {
   for (const check of checks)
     if (check.script) {
       check.command = check.script.trim().split(/\s+/);
-      if (/\b(?:tsc|tsgo)\b/.test(check.script) && !check.command.includes("--noEmit"))
+      if (/^bun check\b/.test(check.script) && !check.command.includes("--noEmit"))
         check.command.push("--noEmit");
-      if (check.command[0] === "bunx") {
-        // Global tools (oxlint, oxfmt, tsc, tsgo) run directly, never through bunx.
-        check.command = check.command.slice(1).filter((arg) => arg !== "--bun");
-      }
     }
   return { ...plan, checks, deferred, noBuild: true };
 }
