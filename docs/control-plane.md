@@ -103,14 +103,16 @@ The MongoDB password file is 0640 with container group 999 so its unprivileged
 process can read the exact mount; the host parent directory stays private.
 Runner registration is a private 0600 file in its 0700 data directory.
 
-The [CI receipt](../infra/control/qualification.json) records real Gitea
-[run 5](https://git.aphrody.app/aphrody-labs/bun-libraries/actions/runs/5): all
-seven source qualification steps passed at `c742e3a50f6880897f2aa55135b2986188f230f0`.
-Native types checked 57 files; runtime identity matched the Linux pin, frozen
-installation, lint, formatting and the application plan passed. No native
-builds or tests ran. Checkout initializes configured first-level submodules.
-Only the qualified Bun file is allowed as a read-only host mount; its directory
-is selected through `GITHUB_PATH` before the remaining gates.
+The [historical CI receipt](../infra/control/qualification.json) records
+pre-consolidation Gitea [run 5](https://git.aphrody.app/aphrody-labs/bun-libraries/actions/runs/5)
+from the former Bun Libraries repository. It records source qualification at
+`c742e3a50f6880897f2aa55135b2986188f230f0`; it does not establish current CI
+ownership or qualification for Bun OS.
+In that run, native types checked 57 files; runtime identity matched the Linux
+pin, frozen installation, lint, formatting and the application plan passed. No
+native builds or tests ran. Checkout initialized configured first-level
+submodules. Only the qualified Bun file was allowed as a read-only host mount;
+its directory was selected through `GITHUB_PATH` before the remaining gates.
 
 All 18 Git mirrors are private and populated: the root repository, 16 library
 forks and the Bun SDK. GitHub origins and histories remain intact; LFS payloads
