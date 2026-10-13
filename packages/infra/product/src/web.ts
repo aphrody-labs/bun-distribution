@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { findWorkspaceRoot } from "@aphrody/paths";
+import { checkoutRoot, findWorkspaceRoot } from "@aphrody/paths";
 
 export function webOptions(args: string[], env: NodeJS.ProcessEnv = process.env) {
   const { values } = parseArgs({
@@ -34,9 +34,9 @@ export async function startWeb(args: string[], env: NodeJS.ProcessEnv = process.
 
 export async function main(args: string[]): Promise<number> {
   const [action = "start", ...rest] = args;
-  if (args.includes("--help") || action === "help") {
+  if ((args.includes("--help") && action !== "cloudflare") || action === "help") {
     console.log(
-      "aphrody-product web start [--host HOST] [--port PORT] [--root DIR]\naphrody-product web public\naphrody-product web os",
+      "aphrody-product web start [--host HOST] [--port PORT] [--root DIR]\naphrody-product web public\naphrody-product web os\naphrody-product web cloudflare <wrangler arguments>",
     );
     return 0;
   }
@@ -53,6 +53,13 @@ export async function main(args: string[]): Promise<number> {
     const server = startPublicServer();
     console.log(`Aphrody public: ${server.url}`);
     return 0;
+  }
+  if (action === "cloudflare") {
+    const { wrangler } = await import("@aphrody/bun-cloudflare/wrangler");
+    const cwd = join(checkoutRoot("bun"), "packages/web/cloudflare");
+    if (!(await Bun.file(join(cwd, "wrangler.jsonc")).exists()))
+      throw new Error("Canonical Cloudflare worker configuration is missing");
+    return wrangler(rest.length ? rest : ["--help"], { cwd }).exited;
   }
   if (action !== "start") throw new Error(`Unknown web action: ${action}`);
   const server = await startWeb(rest);

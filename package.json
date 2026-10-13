@@ -299,7 +299,8 @@
     "axios": "^1.20.0",
     "next": "file:third_party/next-fork/next-16.5.0-canary.5-dac376c6fe-80cae9ab.tgz",
     "qs": "^6.16.0",
-    "undici": "^7.30.0"
+    "undici": "^7.30.0",
+    "zod-to-json-schema": "3.25.2"
   },
   "engines": {
     "bun": ">=1.4.4"

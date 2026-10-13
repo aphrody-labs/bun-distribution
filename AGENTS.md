@@ -50,6 +50,12 @@ capabilities and Material owns shared framework/UI packages. Consolidate product
 entrypoints, releases and routes here; retire separate implementations after
 consumer and host qualification. A source move alone is not deployment proof.
 
+Deployment directive 2026-10-13: Aphrody and Bun public sites, applications and
+distribution target Cloudflare, reusing the existing `aphrody-app` Worker and R2
+resources. Product commands consume the Bun Cloudflare package; retire SSH/Nginx
+publication paths after verified Cloudflare cutover. Preserve protected stores,
+provider authentication and DBFR authority during the migration.
+
 Owner directive (2026-10-13): Aphrody is the product repository. Google, M3,
 Obscura and Tauri framework/runtime/SDK sources belong outside Aphrody, in Bun
 or Material. Consume package, registry crate or pinned Git interfaces; retire

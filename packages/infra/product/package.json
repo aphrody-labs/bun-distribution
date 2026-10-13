@@ -50,6 +50,7 @@
     "stage": "bun ../../../scripts/release/stage-setup.ts"
   },
   "dependencies": {
+    "@aphrody/bun-cloudflare": "1.4.4",
     "@aphrody/m3-fonts": "workspace:*",
     "@aphrody/m3-tokens": "workspace:*",
     "@aphrody/paths": "workspace:*",

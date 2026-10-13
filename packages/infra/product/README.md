@@ -14,6 +14,8 @@ bun packages/infra/product/src/cli.ts admin verifier
 bun packages/infra/product/src/cli.ts creator --help
 bun packages/infra/product/src/cli.ts web start --root /path/to/ui-dist --port 3000
 bun packages/infra/product/src/cli.ts web os
+bun packages/infra/product/src/cli.ts web cloudflare --help
+bun packages/infra/product/src/cli.ts web cloudflare deploy --dry-run
 ```
 
 Les API sont réutilisables sans démarrer de CLI à l’import :
