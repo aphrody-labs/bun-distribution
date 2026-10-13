@@ -15,9 +15,6 @@
     "./process": "./src/process.ts",
     "./runtime": "./src/runtime.ts"
   },
-  "dependencies": {
-    "@aphrody/bun-os-workspace": "workspace:*"
-  },
   "engines": {
     "bun": "1.4.4"
   }

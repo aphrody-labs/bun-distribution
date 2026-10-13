@@ -25,6 +25,11 @@ context prevents an independent build.
 | Shared object plans                                      | `infra/assets.ts`                                        |
 | Edge and public catalog                                  | The edge/catalog capability owner                        |
 
+`@aphrody/bun-workspace` is the single implementation owner for workspace,
+runtime, process, hashing, capability and asset APIs. The older
+`@aphrody/bun-os-workspace` package is a compatibility facade over that owner;
+dependency direction stays one way, from the facade to `bun-workspace`.
+
 ## Configuration
 
 A build uses the selected native runtime binary or an explicit target snapshot.

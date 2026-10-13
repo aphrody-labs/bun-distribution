@@ -62,9 +62,6 @@
       "bin": {
         "aphrody-bun": "./src/cli.ts",
       },
-      "dependencies": {
-        "@aphrody/bun-os-workspace": "workspace:*",
-      },
     },
     "packages/package-converter": {
       "name": "@bun-os/package-converter",
