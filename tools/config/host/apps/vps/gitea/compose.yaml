@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: Apache-2.0
+services:
+  gitea:
+    image: docker.gitea.com/gitea:28.1.0@sha256:f505a0d3a41323b786e05942fc7a4075e07ae7c169fd9485649aa55ee543a21a
+    container_name: aphrody-gitea
+    restart: unless-stopped
+    init: true
+    cpus: 1.0
+    mem_limit: 1g
+    pids_limit: 256
+    environment:
+      USER_UID: "1000"
+      USER_GID: "1000"
+      GITEA__DEFAULT__APP_NAME: Aphrody / Bun
+      GITEA__database__DB_TYPE: sqlite3
+      GITEA__server__DOMAIN: git.aphrody.app
+      GITEA__server__ROOT_URL: https://git.aphrody.app/
+      GITEA__server__SSH_DOMAIN: git.aphrody.app
+      GITEA__server__SSH_PORT: "29022"
+      GITEA__security__INSTALL_LOCK: "true"
+      GITEA__service__DISABLE_REGISTRATION: "true"
+      GITEA__service__REQUIRE_SIGNIN_VIEW: "true"
+      GITEA__repository__DEFAULT_PRIVATE: private
+      GITEA__actions__ENABLED: "true"
+      GITEA__actions__DEFAULT_ACTIONS_URL: self
+      GITEA__actions__ENDLESS_TASK_TIMEOUT: 12h
+      GITEA__log__LEVEL: Warn
+    ports:
+      - "127.0.0.1:29020:3000"
+      - "127.0.0.1:29022:22"
+    volumes:
+      - ./data:/data
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"

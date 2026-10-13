@@ -25,6 +25,18 @@ export function hostAppFiles(
       join(layout.apps, "aphrody", "compose.yaml"),
     ],
   ];
+  if (host === "vps") {
+    for (const app of ["gitea", "komodo", "gitea-runner"]) {
+      files.push([
+        join(repo, "tools/config/host/apps/vps", app, "compose.yaml"),
+        join(layout.apps, app, "compose.yaml"),
+      ]);
+    }
+    files.push([
+      join(repo, "tools/config/host/apps/vps/gitea-runner/config.yaml"),
+      join(layout.apps, "gitea-runner/config.yaml"),
+    ]);
+  }
   if (host === "dbfr") {
     files.push([
       join(layout.src, "bun", "scripts/aphrody/deploy/docker/compose.yaml"),

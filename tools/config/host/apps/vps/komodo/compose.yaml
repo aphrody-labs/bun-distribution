@@ -1,0 +1,82 @@
+# SPDX-License-Identifier: Apache-2.0
+services:
+  komodo-mongo:
+    image: docker.io/library/mongo:8.0.32@sha256:d0d926f94df099bff534b7ee5b5986458131a22489dfff8664509af0c1e2ca9c
+    container_name: aphrody-komodo-mongo
+    restart: unless-stopped
+    init: true
+    cpus: 0.5
+    mem_limit: 1g
+    pids_limit: 128
+    environment:
+      # MongoDB's supported per-thread allocator path for this host's Linux 7.0 kernel.
+      GLIBC_TUNABLES: glibc.pthread.rseq=1
+      MONGO_INITDB_ROOT_USERNAME: aphrody
+      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo-password
+    volumes:
+      - ./data/mongo:/data/db
+      - ${HOME}/.aphrody/secrets/control/mongo-password:/run/secrets/mongo-password:ro
+    networks: [komodo-private]
+    logging: &bounded-log
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+  komodo:
+    image: ghcr.io/moghtech/komodo-core:2.3.3@sha256:bca73d0eee143066228fb9b80c38a5a2726e573ad2758f7aa92b5c91a8aef1c7
+    container_name: aphrody-komodo-core
+    restart: unless-stopped
+    init: true
+    cpus: 0.5
+    mem_limit: 768m
+    pids_limit: 128
+    depends_on: [komodo-mongo]
+    environment:
+      KOMODO_HOST: https://deploy.aphrody.app
+      KOMODO_LOCAL_AUTH: "true"
+      KOMODO_INIT_ADMIN_USERNAME: aphrody-dev
+      KOMODO_INIT_ADMIN_PASSWORD_FILE: /run/secrets/admin-password
+      KOMODO_DISABLE_USER_REGISTRATION: "true"
+      KOMODO_DISABLE_LOCAL_USER_REGISTRATION: "true"
+      KOMODO_DISABLE_OIDC_USER_REGISTRATION: "true"
+      KOMODO_JWT_SECRET_FILE: /run/secrets/jwt-secret
+      KOMODO_WEBHOOK_SECRET_FILE: /run/secrets/webhook-secret
+      KOMODO_DATABASE_ADDRESS: komodo-mongo:27017
+      KOMODO_DATABASE_USERNAME: aphrody
+      KOMODO_DATABASE_PASSWORD_FILE: /run/secrets/mongo-password
+    ports: ["127.0.0.1:29021:9120"]
+    volumes:
+      - ./data/keys:/config/keys
+      - ${HOME}/.aphrody/secrets/control/komodo-admin-password:/run/secrets/admin-password:ro
+      - ${HOME}/.aphrody/secrets/control/komodo-jwt-secret:/run/secrets/jwt-secret:ro
+      - ${HOME}/.aphrody/secrets/control/komodo-webhook-secret:/run/secrets/webhook-secret:ro
+      - ${HOME}/.aphrody/secrets/control/mongo-password:/run/secrets/mongo-password:ro
+    networks: [komodo-private, komodo-egress]
+    logging: *bounded-log
+  komodo-periphery:
+    image: ghcr.io/moghtech/komodo-periphery:2.3.3@sha256:fa3f1a641a265216066676950d5eecdf506955a7bafe2f01996135ae93115cd5
+    container_name: aphrody-komodo-periphery
+    restart: unless-stopped
+    init: true
+    cpus: 0.25
+    mem_limit: 256m
+    pids_limit: 128
+    profiles: [control-agents]
+    environment:
+      PERIPHERY_ROOT_DIRECTORY: /etc/komodo
+      PERIPHERY_CORE_PUBLIC_KEYS: file:/run/secrets/core-public-key
+      PERIPHERY_DISABLE_TERMINALS: "true"
+      PERIPHERY_DISABLE_CONTAINER_TERMINALS: "true"
+      PERIPHERY_LOG_LEVEL: warn
+    volumes:
+      - ./data/periphery:/etc/komodo
+      - ./data/periphery/keys:/config/keys
+      - ${HOME}/.aphrody/secrets/control/komodo-core-public-key:/run/secrets/core-public-key:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${HOME}/apps:${HOME}/apps:ro
+    networks: [komodo-private, komodo-egress]
+    logging: *bounded-log
+networks:
+  komodo-private:
+    internal: true
+  komodo-egress: {}
