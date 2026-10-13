@@ -6,8 +6,8 @@ import { productCatalog } from "./build.ts";
 import { startProduct } from "./product.ts";
 import { verifyProduct } from "./verify.ts";
 
-if (import.meta.main) {
-  const [action = "help", root = repositoryRoot, receipt] = Bun.argv.slice(2);
+export async function runProductCLI(args: readonly string[]): Promise<void> {
+  const [action = "help", root = repositoryRoot, receipt] = args;
   if (action === "help" || action === "--help")
     console.log("Aphrody / Bun server: cli.ts serve [ROOT] | verify [BINARY] [RECEIPT] | --version");
   else if (action === "--version") console.log("Aphrody / Bun server 1.4.4");
@@ -26,3 +26,5 @@ if (import.meta.main) {
     console.log(JSON.stringify(await verifyProduct(binary, receipt ? resolve(receipt) : binary + ".json")));
   } else throw new Error("Use serve, verify or --version.");
 }
+
+if (import.meta.main) await runProductCLI(Bun.argv.slice(2));

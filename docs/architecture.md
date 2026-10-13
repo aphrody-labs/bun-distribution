@@ -4,6 +4,7 @@
 flowchart TD
   UI[Aphrody shell] --> SDK[Bun Tauri v3 / CEF]
   UI --> Backend[Bun backend]
+  Product[Standalone product API] --> Workspace
   Backend --> Workspace[Native library orchestration]
   Workspace --> Sources[Pinned library submodules]
   Backend --> Video[Typed video adapter]
@@ -18,11 +19,17 @@ flowchart TD
   Infra[Aphrody Infra] --> Apps
   Infra --> Control[Rust deployment controller]
   Forge[Git forge and runner] --> Factory
+  Infra --> Forge
+  Forge --> Portal[source.aphrody.app]
+  Sources --> Crates[Flat pinned crates / root Cargo workspace]
 ```
 
 - `apps/desktop`: Aphrody shell, built and served by Bun.
-- `packages/workspace`: app identity, config, provenance, source coverage,
-  native execution, asset manifests and the app transport.
+- `packages/bun-workspace`: app identity, config, provenance, source coverage,
+  native execution, asset manifests and shared process ownership.
+- `packages/workspace`: OS CLI and adapters consuming that shared owner.
+- `packages/bun-app-host`: product server, common authenticated API transport,
+  standalone compilation and executable qualification.
 - `packages/bun-video-project`: exact JSON, bounded native operations and runtime availability.
 - `packages/bun-artifacts`: target manifests, standalone compilation and verified
   native payload extraction.
@@ -51,4 +58,12 @@ Provider credentials, sessions, datasets and model weights remain isolated.
 
 Aphrody Infra owns host, service, route and activation policy. Komodo actuates
 deployment; Gitea and its runner host Git and execute the same Bun factory.
+The root `bun-os` CLI routes `server` commands to the same app-host CLI owner.
+Just coordinates setup, shared quality, Cargo, apps, product server and vendor
+without implementing another build pipeline. The root owns `node_modules`,
+`target`, `build` and `install`.
+
 Source, artifact, CI and public service qualification are recorded separately.
+The complete 239-repository Labs inventory and resumable mirror admission live
+in Aphrody Infra. The embedded product catalog is a pinned distribution
+snapshot, not a claim that every mirror or native application is qualified.
