@@ -13,6 +13,8 @@
       },
       "devDependencies": {
         "@aphrody/bun-types": "1.4.4",
+        "@types/node": "catalog:",
+        "undici-types": "catalog:",
       },
     },
     "apps/desktop": {
@@ -82,8 +84,14 @@
       },
     },
   },
+  "overrides": {
+    "@types/node": "catalog:",
+    "undici-types": "catalog:",
+  },
   "catalog": {
     "@aphrody/tauri": "file:toolchains/bun/packages/bun-tauri",
+    "@types/node": "26.6.5",
+    "undici-types": "8.11.2",
   },
   "packages": {
     "@aphrody/bun-app-host": ["@aphrody/bun-app-host@workspace:packages/bun-app-host"],
@@ -109,7 +117,5 @@
     "undici-types": ["undici-types@8.11.2", "", {}, "sha512-iMVNmWZ0leK/goS6eXMizSzmm9CDWtyphwbaCms3DNLqRxDL+mMoNVcZMTyyVgXP0N+Z8neAMzDoUOUJL8veKg=="],
 
     "@aphrody/bun-desktop/@aphrody/tauri": ["@aphrody/tauri@file:toolchains/bun/packages/bun-tauri", {}],
-
-    "@types/node/undici-types": ["undici-types@8.9.0", "", {}, "sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg=="],
   }
 }

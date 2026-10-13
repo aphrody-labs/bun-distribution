@@ -67,10 +67,18 @@
     "@aphrody/bun-app-host": "workspace:*"
   },
   "catalog": {
-    "@aphrody/tauri": "file:toolchains/bun/packages/bun-tauri"
+    "@aphrody/tauri": "file:toolchains/bun/packages/bun-tauri",
+    "@types/node": "26.6.5",
+    "undici-types": "8.11.2"
   },
   "devDependencies": {
-    "@aphrody/bun-types": "1.4.4"
+    "@aphrody/bun-types": "1.4.4",
+    "@types/node": "catalog:",
+    "undici-types": "catalog:"
+  },
+  "overrides": {
+    "@types/node": "catalog:",
+    "undici-types": "catalog:"
   },
   "engines": {
     "bun": "=1.4.4"
