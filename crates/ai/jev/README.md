@@ -13,6 +13,11 @@ candidates, invalid thresholds and malformed answers remain errors. The response
 and its distributions are retained; selection does not execute an action or grant
 permissions.
 
+`aphrody jev decide --minimum-confidence 0.8 < request.json` uses the same policy.
+Its JSON adds `selections` for Choice questions: a candidate name or `null` for
+abstention. Raw answers and distributions remain present. Without the option,
+the existing output shape is unchanged; invalid options fail before inference.
+
 This implements the abstention pattern described by
 [Jev Workflows](https://github.com/integrate-your-mind/jev-codex-plugin/blob/f67f0f35df13cbc0556539e6f86fe14e2c04d6f8/README.md)
 in the existing Rust owner, without another SDK dependency or MCP server.

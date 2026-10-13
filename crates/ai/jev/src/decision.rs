@@ -3,6 +3,40 @@
 
 use crate::{Answer, JevError, Request, Response, check_request, check_response};
 
+pub(crate) fn check_threshold(threshold: f64) -> Result<(), JevError> {
+    if threshold.is_finite() && (0.0..=1.0).contains(&threshold) {
+        Ok(())
+    } else {
+        Err(JevError::InvalidRequest("confidence threshold must be within [0, 1]".into()))
+    }
+}
+
+/// Select all Choice answers after validating the batch once; `None` means abstention.
+/// Non-Choice answers remain available in the original response.
+///
+/// # Errors
+/// Invalid thresholds or malformed requests/responses.
+pub fn confident_choices<'a>(
+    request: &Request,
+    response: &'a Response,
+    minimum_confidence: f64,
+) -> Result<std::collections::BTreeMap<&'a str, Option<&'a str>>, JevError> {
+    check_threshold(minimum_confidence)?;
+    check_request(request)?;
+    check_response(request, response)?;
+    Ok(response
+        .answers
+        .iter()
+        .filter_map(|(name, answer)| match answer {
+            Answer::Choice { choice, confidence, .. } => Some((
+                name.as_str(),
+                (*confidence >= minimum_confidence).then_some(choice.as_str()),
+            )),
+            _ => None,
+        })
+        .collect())
+}
+
 /// Return a validated candidate, or abstain below the caller's confidence threshold.
 ///
 /// This does not execute an action or grant permissions. The caller retains the
@@ -17,9 +51,7 @@ pub fn confident_choice<'a>(
     name: &str,
     minimum_confidence: f64,
 ) -> Result<Option<&'a str>, JevError> {
-    if !minimum_confidence.is_finite() || !(0.0..=1.0).contains(&minimum_confidence) {
-        return Err(JevError::InvalidRequest("confidence threshold must be within [0, 1]".into()));
-    }
+    check_threshold(minimum_confidence)?;
     check_request(request)?;
     check_response(request, response)?;
     match response.answers.get(name) {
@@ -66,6 +98,8 @@ mod tests {
         assert_eq!(confident_choice(&request, &response, "tool", 0.8).unwrap(), Some("read"));
         assert_eq!(confident_choice(&request, &response, "tool", 0.9).unwrap(), None);
         assert_eq!(response, original);
+        assert_eq!(confident_choices(&request, &response, 0.8).unwrap()["tool"], Some("read"));
+        assert_eq!(confident_choices(&request, &response, 0.9).unwrap()["tool"], None);
     }
 
     #[test]

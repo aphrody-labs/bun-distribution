@@ -18,7 +18,19 @@ use crate::{
     server::{ServerState, app},
 };
 
-const USAGE: &str = "usage: aphrody-jev serve [--bind ADDR] | aphrody-jev decide < request.json";
+const USAGE: &str = "usage: aphrody-jev serve [--bind ADDR] | aphrody-jev decide [--minimum-confidence 0..1] < request.json";
+
+fn decision_threshold(args: &[String]) -> Result<Option<f64>, String> {
+    match args {
+        [] => Ok(None),
+        [flag, value] if flag == "--minimum-confidence" => {
+            let threshold = value.parse::<f64>().map_err(|error| error.to_string())?;
+            crate::decision::check_threshold(threshold).map_err(|error| error.to_string())?;
+            Ok(Some(threshold))
+        },
+        _ => Err(USAGE.into()),
+    }
+}
 
 /// Entry point of the former `aphrody-jev` binary, now reached through the `aphrody`
 /// multi-call binary. `args[0]` is the program name (argv convention). Returns the process exit
@@ -51,6 +63,8 @@ async fn run(args: Vec<String>) -> Result<(), String> {
     if !matches!(args.first().map(String::as_str), Some("serve" | "decide")) {
         return Err(USAGE.into());
     }
+    let minimum_confidence =
+        if args[0] == "decide" { decision_threshold(&args[1..])? } else { None };
     let router = Arc::new(JevRouter::from_env().map_err(|e| e.to_string())?);
     match args.first().map(String::as_str) {
         Some("serve") => {
@@ -84,12 +98,24 @@ async fn run(args: Vec<String>) -> Result<(), String> {
             std::io::stdin().read_to_string(&mut input).map_err(|e| e.to_string())?;
             let request: Request = serde_json::from_str(&input).map_err(|e| e.to_string())?;
             let decision = router.decide(&request).await.map_err(|e| e.to_string())?;
-            let out = serde_json::json!({
+            let selections = minimum_confidence
+                .map(|threshold| {
+                    crate::confident_choices(&request, &decision.response, threshold)
+                        .map_err(|error| error.to_string())
+                        .and_then(|choices| {
+                            serde_json::to_value(choices).map_err(|error| error.to_string())
+                        })
+                })
+                .transpose()?;
+            let mut out = serde_json::json!({
                 "served_by": decision.served_by.to_string(),
                 "latency_ms": u64::try_from(decision.latency.as_millis()).unwrap_or(u64::MAX),
                 "failover": decision.failover.map(|f| f.reason),
                 "response": decision.response,
             });
+            if let Some(selections) = selections {
+                out["selections"] = selections;
+            }
             println!("{out}");
             Ok(())
         },
@@ -99,6 +125,21 @@ async fn run(args: Vec<String>) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn decision_options_reject_invalid_values_and_unknown_flags() {
+        assert_eq!(super::decision_threshold(&[]).unwrap(), None);
+        assert_eq!(
+            super::decision_threshold(&["--minimum-confidence".into(), "0.8".into()]).unwrap(),
+            Some(0.8)
+        );
+        for value in ["NaN", "inf", "-1", "1.1", "invalid"] {
+            assert!(
+                super::decision_threshold(&["--minimum-confidence".into(), value.into()]).is_err()
+            );
+        }
+        assert!(super::decision_threshold(&["--minimum-confidence".into()]).is_err());
+        assert!(super::decision_threshold(&["--unknown".into(), "0.8".into()]).is_err());
+    }
     #[tokio::test]
     async fn help_does_not_initialize_a_backend() {
         for flag in ["--help", "-h"] {
