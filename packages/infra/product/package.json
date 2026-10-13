@@ -35,7 +35,8 @@
     "./train": "./src/admin/lib/train.ts",
     "./doctor": "./src/admin/lib/doctor.ts",
     "./wireguard": "./src/admin/lib/wireguard.ts",
-    "./desktop": "./src/shared/desktop.ts"
+    "./desktop": "./src/shared/desktop.ts",
+    "./web": "./src/web.ts"
   },
   "publishConfig": {
     "access": "public"

@@ -28,7 +28,7 @@ export async function main(argv: string[]): Promise<number> {
   }
   if (command === "--help" || command === "-h" || command === "help") {
     console.log(
-      `Aphrody ${VERSION}\n\naphrody-product setup [--oui] [--roles admin,createur] [--simuler]\naphrody-product admin <commande>\naphrody-product creator <commande>\naphrody-product mise-a-jour [--check]\n\nSans argument : installation et réparation d’Aphrody.`,
+      `Aphrody ${VERSION}\n\naphrody-product setup [--oui] [--roles admin,createur] [--simuler]\naphrody-product admin <commande>\naphrody-product creator <commande>\naphrody-product web start|os [--help]\naphrody-product mise-a-jour [--check]\n\nSans argument : installation et réparation d’Aphrody.`,
     );
     return 0;
   }

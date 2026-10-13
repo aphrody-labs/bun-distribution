@@ -1,15 +1,19 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Aphrody
 
-Un seul produit Bun réunit l’installation, l’administration et les outils créateur.
-`Aphrody-Setup.exe` contient les trois modules. L’interface canonique reste celle
-d’Aphrody, dans `m3/packages/app-ui` et `crates/ui/app` ; ses routes administrateur
-et créateur utilisent ce même exécutable avec le protocole `aphrody.kit/1`.
+Un seul produit Aphrody possède les parcours d’installation, d’administration,
+de création et les entrées web. Le propriétaire est `@aphrody/product` ; les
+capacités runtime viennent du fork Bun et l’UI partagée de Material
+(`@aphrody/app-ui`). L’application native reste dans `crates/ui/app` ; ses routes
+administrateur et créateur utilisent le protocole `aphrody.kit/1`.
+L’unification des publications et domaines est encore en cours.
 
 ```sh
 bun packages/infra/product/src/cli.ts setup --oui --roles admin,createur --simuler
 bun packages/infra/product/src/cli.ts admin verifier
 bun packages/infra/product/src/cli.ts creator --help
+bun packages/infra/product/src/cli.ts web start --root /path/to/ui-dist --port 3000
+bun packages/infra/product/src/cli.ts web os
 ```
 
 Les API sont réutilisables sans démarrer de CLI à l’import :
@@ -18,6 +22,7 @@ Les API sont réutilisables sans démarrer de CLI à l’import :
 import { buildAccessPack, install, stepsFor } from "@aphrody/product";
 import { validateRequest } from "@aphrody/product/train";
 import { parseAccessPack } from "@aphrody/product/access";
+import { startWeb } from "@aphrody/product/web";
 ```
 
 Les noms historiques `aphrody-setup`, `aphrody-omar` et `creator-kit` sélectionnent
