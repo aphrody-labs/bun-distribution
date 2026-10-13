@@ -5,15 +5,28 @@ The existing graph/eval contracts remain application-owned. Bun/Rust owns
 inference, response validation, confidence selection and child cancellation.
 """
 
-from typing import Any, Protocol
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Protocol
+
+from pydantic import JsonValue
+
+if TYPE_CHECKING:
+    from bun_yolo import Options, Question, Result
 
 from .contracts import DecisionInput, JevResponse
 
 
 class NativeClient(Protocol):
     async def inspect_async(
-        self, state: Any, questions: Any, **options: Any
-    ) -> Any: ...
+        self,
+        state: JsonValue,
+        questions: dict[str, Question],
+        *,
+        model: str | None = None,
+        minimum_confidence: float | None = None,
+        options: Options | None = None,
+    ) -> Result: ...
 
 
 class BunTransport:

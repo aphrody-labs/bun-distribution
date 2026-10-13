@@ -63,12 +63,49 @@ test ne recherche ni ne copie un moteur. Son fournisseur synthétique passe
 réellement par `bun:yolo`/Rust et les pipes du superviseur natif. L'absence d'une
 preuve ABI/binaire reste un gate en attente, même si les fixtures passent.
 
+## Host TypeScript et portée SDK
+
+`BunDecisionBridge` dans `decision/bridge.ts` emprunte un `PythonAsync` déjà
+qualifié. L'appelant fournit explicitement le dossier du SDK installé, le SHA-256
+du manifeste, le chemin du binaire Bun, son SHA-256 et sa révision. Le bridge
+capture cette configuration et transporte un JSON `aphrody.yolo.bun-bridge/1`
+borné à 1 MiB ; un deuxième appel simultané échoue `ERR_DECISION_BUSY`.
+
+```typescript
+import { BunDecisionBridge } from "./decision/bridge";
+
+await using bridge = new BunDecisionBridge(python, {
+  runtime: { directory: sdkDirectory, manifestSha256 },
+  bun: { executable: bunExecutable, sha256: bunSha256, revision: bunRevision },
+  provider: { kind: "jev", baseURL: providerURL, model: selectedModel },
+});
+const proposalJSON = await bridge.decideJson(inputJSON);
+```
+
+`native_bridge.decide_bun_json` vérifie les pins avant activation, ouvre un
+`Runtime(max_operations=1)` de l'unique SDK, puis injecte le client dans le même
+Agent et Graph. La méthode synchrone `Yolo.inspect` tourne dans le worker du
+host `PythonAsync` existant ; aucun deuxième exécuteur Python n'est créé. Le
+superviseur natif borne son attente à la deadline restante, arrête et joint le
+processus avant fermeture du `Runtime`. `close()` du bridge refuse les nouveaux
+appels et rejoint celui en cours ; il ne ferme pas le host emprunté et n'ajoute
+pas de primitive d'annulation. L'API indépendante `Yolo.inspect_async` conserve
+son annulation native et ses gates.
+
+Le gate `decision-native-bridge-host.test.ts` vérifie un SDK installé hors
+checkout, deux décisions successives dans un seul host, l'usage nul/fourni,
+l'abstention Rust, le rejet d'un SHA invalide, un fournisseur loopback silencieux
+et la reprise du host après deadline/nettoyage. La qualification Windows x64 et
+ses pins sont dans le [reçu de qualification du bridge](../../operations/workspace/bun-yolo-bridge-2026-10-14.md).
+L'installation d'une wheel publiée, les modèles et la production restent des
+gates distincts.
+
 ## Références encore non basculées
 
 | Référence | État et condition |
 | --- | --- |
 | `decision/workflow.py:decide_json` appelé sans `bun_client` | Conserve le endpoint privé explicite `APHRODY_YOLO_DECISION_ENDPOINT` et son token de service ; aucune bascule automatique à partir d'une variable d'environnement. |
-| `decision/bridge.ts` et `tests/decision-bridge.test.ts` | Le host CPython appelle encore le helper JSON sans client SDK emprunté. Injection/lifetime de ce host à qualifier après les gates Bun + ABI1.6. |
+| `decision/bridge.ts:decideJson` et `tests/decision-bridge.test.ts` | Le chemin HTTP explicite reste disponible et testé. Le nouveau `BunDecisionBridge` propose la portée SDK qualifiée ; aucune sélection globale ou activation de service n'est effectuée. |
 | `decision/backend.py:JevHTTP` | Transport privé optionnel conservé, avec ses tests d'authentification, TLS et refus de redirection. |
 | `decision/typesafe.py:TypeSafeClient`, `AsyncTypeSafeClient` | Alias du vrai SDK TypeSafe HTTP encore conservés ; primitives et réponses publiques diffèrent de la façade brute Bun. Leur remplacement exige un gate de compatibilité, sans fabriquer l'usage absent. |
 | `decision/typesafe.py:comparison_client` | Client comparatif optionnel amont conservé ; aucune qualification de modèle ou migration de son moteur revendiquée. |
@@ -77,3 +114,25 @@ preuve ABI/binaire reste un gate en attente, même si les fixtures passent.
 
 Les données étiquetées, exports train et résultats d'évaluation restent chez
 l'appelant. Ni corpus, secrets, poids ni sessions ne sont déplacés par ce lot.
+
+## Propriétaires Rust encore dupliqués
+
+Audit du checkout Aphrody `1db198803bf286aa3281c91dd0c13e58abaae282` et de
+`crates/aphrody-jev` dans Bun : les huit fichiers source communs divergent après
+normalisation CRLF/LF. Bun sépare maintenant le protocole sans transport des
+features facultatives `client` et `server`. Son `Response.usage: Option<Usage>`
+conserve l'usage inconnu ; l'ancien crate Aphrody utilise encore `Usage` et
+`completion.usage.unwrap_or_default()`. Cette différence interdit une simple
+substitution de chemin suivie d'une qualification globale.
+
+| Consommateur | Propriétaire actuel et gate de remplacement |
+| --- | --- |
+| `Cargo.toml:aphrody-jev`, `crates/ai/jev` | Copie locale encore référencée par le workspace, claim actif `repo-minimal-layout`. Remplacer par un pin publiable du crate canonique Bun après les gates de compatibilité ; aucun chemin absolu entre checkouts. |
+| `crates/ai/mcp/src/jev_tools.rs` | Dépendance directe, route `aphrody_jev_decide`, `JevRouter`, validation et abstention du crate local. Qualifier le client canonique, les erreurs et les configurations de fournisseur ; garder la logique MCP applicative. |
+| `crates/ai/agent-tools/src/jev.rs` | `JevDecideTool` emprunte `Arc<JevRouter>` et le seuil local. Qualifier l'usage nullable et l'identité des propositions avec la feature canonique `client`. |
+| `crates/ai/agent-runtime/src/tools.rs` | Consomme `JevDecideTool` en production ; `aphrody-jev` est une dépendance de tests directe. Rejouer les gates d'enregistrement/cache d'outils et de routing après bascule. |
+| `crates/ai/http-error/src/lib.rs` | Référence documentaire au serveur ; aucune dépendance ou moteur Jev à retirer ici. |
+
+Cet audit ne modifie ni ne retire le crate Rust détenu par l'autre claim. Le
+bridge Python/TypeScript qualifié n'est pas une preuve de bascule des clients
+Rust, de la route privée `/v1/systemone` ou des alias SDK TypeSafe.

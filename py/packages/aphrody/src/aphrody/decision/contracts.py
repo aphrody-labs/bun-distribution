@@ -1,10 +1,22 @@
 # SPDX-License-Identifier: Apache-2.0
 """Versioned application contracts; authority remains with the action executor."""
 
+from __future__ import annotations
+
 import json
-from typing import Annotated, Literal, Self
+from typing import TYPE_CHECKING, Annotated, Literal, Self, TypedDict
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
+
+if TYPE_CHECKING:
+    from bun_yolo import Question
+
+
+class JevRequest(TypedDict):
+    state: dict[str, JsonValue]
+    model: str
+    questions: dict[str, Question]
+
 
 Name = Annotated[
     str, Field(min_length=1, max_length=128, pattern=r"^[a-zA-Z0-9_.:-]+$")
@@ -38,7 +50,7 @@ class DecisionInput(Contract):
             raise ValueError("action IDs must be unique")
         return self
 
-    def jev_request(self) -> dict[str, JsonValue]:
+    def jev_request(self) -> JevRequest:
         return {
             "state": {"goal": self.goal, "observations": self.observations},
             "model": self.model,
