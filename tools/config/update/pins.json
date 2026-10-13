@@ -3,17 +3,35 @@
   "note": "Bun follows the releases of the Aphrody fork aphrody-labs/bun (tags aphrody-v<base>-aphrody.<n>; the pin is the upstream base version). Every hardcoded tool version, grouped by tool. Each target is a file (or glob) and a regex with exactly one capture group holding the version. `yolo update pins check` fails when targets disagree; `pins apply` rewrites them all. The first target is the source of truth.",
   "tools": {
     "bun": {
-      "latest": { "github": "aphrody-labs/bun", "stripTag": "^aphrody-v|-aphrody[.][0-9]+$" },
+      "latest": {
+        "github": "aphrody-labs/bun",
+        "stripTag": "^aphrody-v|-aphrody[.][0-9]+$"
+      },
       "targets": [
         {
           "file": "tools/config/system-packages.json",
           "re": "\"bun\": \\{\\s*\"version\": \"(\\d+\\.\\d+\\.\\d+)\""
         },
-        { "file": "tools/config/system-packages.json", "re": "\"-Version\",\\s*\"(\\d+\\.\\d+\\.\\d+)\"" },
-        { "file": "package.json", "re": "\"packageManager\": \"bun@(\\d+\\.\\d+\\.\\d+)\"" },
-        { "file": "tools/config/host/toolchain.json", "re": "\"bun\": \"(\\d+\\.\\d+\\.\\d+)\"" },
-        { "glob": "tools/config/container/**/Dockerfile", "re": "ARG BUN_VERSION=(\\d+\\.\\d+\\.\\d+)" },
-        { "glob": ".github/workflows/*.yml", "re": "aphrody/install\\.sh \\| bash -s (\\d+\\.\\d+\\.\\d+)" },
+        {
+          "file": "tools/config/system-packages.json",
+          "re": "\"-Version\",\\s*\"(\\d+\\.\\d+\\.\\d+)\""
+        },
+        {
+          "file": "package.json",
+          "re": "\"packageManager\": \"bun@(\\d+\\.\\d+\\.\\d+)\""
+        },
+        {
+          "file": "tools/config/host/toolchain.json",
+          "re": "\"bun\": \"(\\d+\\.\\d+\\.\\d+)\""
+        },
+        {
+          "glob": "tools/config/container/**/Dockerfile",
+          "re": "ARG BUN_VERSION=(\\d+\\.\\d+\\.\\d+)"
+        },
+        {
+          "glob": ".github/workflows/*.yml",
+          "re": "aphrody/install\\.sh \\| bash -s (\\d+\\.\\d+\\.\\d+)"
+        },
         {
           "file": "docs/reference/web/web/BUILD-WINDOWS.md",
           "re": "aphrody/install\\.(?:sh \\| bash -s|ps1\\)\\)\\)\\) -Version) (\\d+\\.\\d+\\.\\d+)"
@@ -22,8 +40,14 @@
           "glob": "{package.json,config/*/package.json,apps/**/package.json,packages/**/package.json,crates/**/package.json}",
           "re": "\"bun\": \">=(\\d+\\.\\d+\\.\\d+)\""
         },
-        { "file": "docs/plans/workspace/PLAN.md", "re": "utilise Bun (\\d+\\.\\d+\\.\\d+)" },
-        { "file": "docs/reference/workspace/CLI.md", "re": "Bun `(\\d+\\.\\d+\\.\\d+)`" },
+        {
+          "file": "docs/plans/workspace/PLAN.md",
+          "re": "utilise Bun (\\d+\\.\\d+\\.\\d+)"
+        },
+        {
+          "file": "docs/reference/workspace/CLI.md",
+          "re": "Bun `(\\d+\\.\\d+\\.\\d+)`"
+        },
         {
           "file": "docs/reference/workspace/CLI.md",
           "re": "\\| `bun` \\| (\\d+\\.\\d+\\.\\d+) \\|"
@@ -35,14 +59,23 @@
       ]
     },
     "uv": {
-      "latest": { "pypi": "uv", "github": "astral-sh/uv" },
+      "latest": {
+        "pypi": "uv",
+        "github": "astral-sh/uv"
+      },
       "targets": [
         {
           "file": "tools/config/system-packages.json",
           "re": "\"uv\": \\{\\s*\"version\": \"(\\d+\\.\\d+\\.\\d+)\""
         },
-        { "file": "docs/reference/workspace/CLI.md", "re": "uv `(\\d+\\.\\d+\\.\\d+)`" },
-        { "file": "docs/reference/workspace/CLI.md", "re": "uvx? (\\d+\\.\\d+\\.\\d+) \\(x86_64" },
+        {
+          "file": "docs/reference/workspace/CLI.md",
+          "re": "uv `(\\d+\\.\\d+\\.\\d+)`"
+        },
+        {
+          "file": "docs/reference/workspace/CLI.md",
+          "re": "uvx? (\\d+\\.\\d+\\.\\d+) \\(x86_64"
+        },
         {
           "file": "docs/reference/workspace/TOOLS.md",
           "re": "uvx? (\\d+\\.\\d+\\.\\d+).*x86_64"
@@ -51,14 +84,25 @@
           "file": "py/pyproject.toml",
           "re": "required-version = \"(?:>=|==)(\\d+\\.\\d+\\.\\d+)\""
         },
-        { "file": "py/README.md", "re": "Requires uv (\\d+\\.\\d+\\.\\d+)" }
+        {
+          "file": "py/README.md",
+          "re": "Requires uv (\\d+\\.\\d+\\.\\d+)"
+        }
       ]
     },
     "rust": {
-      "latest": { "github": "rust-lang/rust" },
+      "latest": {
+        "github": "rust-lang/rust"
+      },
       "targets": [
-        { "file": "rust-toolchain.toml", "re": "channel = \"(\\d+\\.\\d+\\.\\d+)\"" },
-        { "file": "tools/config/system-packages.json", "re": "\"channel\": \"(\\d+\\.\\d+\\.\\d+)\"" },
+        {
+          "file": "rust-toolchain.toml",
+          "re": "channel = \"(\\d+\\.\\d+\\.\\d+)\""
+        },
+        {
+          "file": "tools/config/system-packages.json",
+          "re": "\"channel\": \"(\\d+\\.\\d+\\.\\d+)\""
+        },
         {
           "file": "docs/operations/workspace/rust-toolchains-and-cross-builds.md",
           "re": "épingle Rust `(\\d+\\.\\d+\\.\\d+)`"
@@ -67,41 +111,30 @@
           "file": "docs/reference/infra/SYSTEM-PREREQUISITES.md",
           "re": "\\(`(\\d+\\.\\d+\\.\\d+)`, le même"
         },
-        { "file": "docs/reference/workspace/CLI.md", "re": "Rust/Cargo `(\\d+\\.\\d+\\.\\d+)`" },
-        { "file": "docs/reference/workspace/CLI.md", "re": "cargo (\\d+\\.\\d+\\.\\d+) \\(" },
-        { "file": "docs/reference/workspace/CLI.md", "re": "rustc (\\d+\\.\\d+\\.\\d+) \\(" }
+        {
+          "file": "docs/reference/workspace/CLI.md",
+          "re": "Rust/Cargo `(\\d+\\.\\d+\\.\\d+)`"
+        },
+        {
+          "file": "docs/reference/workspace/CLI.md",
+          "re": "cargo (\\d+\\.\\d+\\.\\d+) \\("
+        },
+        {
+          "file": "docs/reference/workspace/CLI.md",
+          "re": "rustc (\\d+\\.\\d+\\.\\d+) \\("
+        }
       ]
     },
     "nushell": {
-      "latest": { "crate": "nu-protocol" },
+      "latest": {
+        "crate": "nu-protocol"
+      },
       "targets": [
         {
           "file": "Cargo.toml",
           "re": "^nu-[a-z-]+ = \\{ version = \"(\\d+\\.\\d+\\.\\d+)\"",
           "multiline": true
         }
-      ]
-    },
-    "oxlint": {
-      "latest": { "npm": "oxlint" },
-      "targets": [
-        { "file": "package.json", "re": "\"oxlint\": \"(\\d+\\.\\d+\\.\\d+)\"" },
-        { "file": "docs/reference/workspace/CLI.md", "re": "oxlint (\\d+\\.\\d+\\.\\d+)" }
-      ]
-    },
-    "oxfmt": {
-      "latest": { "npm": "oxfmt" },
-      "targets": [
-        { "file": "package.json", "re": "\"oxfmt\": \"(\\d+\\.\\d+\\.\\d+)\"" },
-        { "file": "docs/reference/workspace/CLI.md", "re": "oxfmt (\\d+\\.\\d+\\.\\d+)" }
-      ]
-    },
-    "typescript": {
-      "latest": { "npm": "typescript" },
-      "targets": [
-        { "file": "package.json", "re": "\"typescript\": \"(\\d+\\.\\d+\\.\\d+)\"" },
-        { "file": "docs/reference/workspace/CLI.md", "re": "TypeScript `(\\d+\\.\\d+\\.\\d+)`" },
-        { "file": "docs/plans/workspace/PLAN.md", "re": "TypeScript (\\d+\\.\\d+\\.\\d+)" }
       ]
     }
   }

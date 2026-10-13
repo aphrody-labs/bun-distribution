@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Toolchain module: installed vs pinned vs latest for bun, uv, rust, nushell, oxlint, oxfmt, typescript,
+ * Toolchain module: installed vs pinned vs latest for bun, uv, rust and nushell,
  * and installation of an exact version. Pins are rewritten through ./pins.ts.
  */
 import { Ctx } from "./context.ts";
@@ -20,9 +20,6 @@ export function installed(c: Ctx, tool: string): string | undefined {
     uv: ["uv", ["--version"]],
     rust: ["rustc", ["--version"]],
     nushell: ["nu", ["--version"]],
-    oxlint: ["bun", ["x", "oxlint", "--version"]],
-    oxfmt: ["bun", ["x", "oxfmt", "--version"]],
-    typescript: ["bun", ["x", "tsc", "--version"]],
   };
   const spec = cmds[tool];
   if (!spec) return undefined;
@@ -87,7 +84,7 @@ export function install(c: Ctx, tool: string, version: string): boolean {
     case "nushell":
       return run("cargo", ["binstall", "-y", `nu@${version}`]);
     default:
-      return true; // oxlint, oxfmt, typescript come from the Bun catalog (bun install)
+      return false; // Unsupported tools have no qualified installer.
   }
 }
 

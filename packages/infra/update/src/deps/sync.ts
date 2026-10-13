@@ -400,7 +400,7 @@ async function fix(c: Ctx, applyFixes: boolean, record = false): Promise<number>
   const targets = consumerTargets(c, ids);
   let output = "";
   for (const d of targets.bun) {
-    const r = c.run("bun", ["--bun", "tsc", "--noEmit", "-p", join(d, "tsconfig.json")]);
+    const r = c.run("bun", ["check", "--noEmit", "-p", join(d, "tsconfig.json")]);
     output += `\n# ${d}\n${r.stdout}${r.stderr}`;
   }
   if (targets.cargo.length) {
