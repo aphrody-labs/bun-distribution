@@ -46,7 +46,19 @@
     },
     "mountUnit": "home-ubuntu-build-apps-gitea-native\\x2dstorage.mount",
     "lfsRequirement": "qualified-before-apply",
-    "runnerRequirement": "online-presence-after-clone",
+    "runnerRequirement": "org-runner-active-or-idle-after-clone",
+    "runnerScope": "organization-only",
+    "runnerApiObservation": {
+      "apiVersion": "28.1.0",
+      "openApiVersion": "28.1.0",
+      "organizationEndpoint": "/api/v1/orgs/{org}/actions/runners",
+      "organizationEndpointStatus": 200,
+      "organizationRunnerCount": 0,
+      "instanceEndpoint": "/api/v1/admin/actions/runners",
+      "instanceEndpointStatus": 403,
+      "instanceRunnerStatus": "unavailable-with-scoped-token",
+      "checkedAt": "2026-10-14T00:57:23+02:00"
+    },
     "runnerJobQualification": "not-run"
   },
   "batches": {

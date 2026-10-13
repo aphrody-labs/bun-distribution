@@ -135,6 +135,11 @@
       "name": "bun-crate-aphrody-config",
       "mirror": false,
       "private": true
+    },
+    {
+      "name": "bun-crate-aphrody-jev",
+      "mirror": false,
+      "private": true
     }
   ]
 }

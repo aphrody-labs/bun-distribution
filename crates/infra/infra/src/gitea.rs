@@ -45,11 +45,23 @@ pub struct Report {
 }
 
 /// Plan by default; apply uses the VPS-local protected credential and runner key.
-pub fn provision(root: &Path, apply: bool) -> Result<Report> {
+pub fn provision(root: &Path, apply: bool, repository: Option<&str>) -> Result<Report> {
     let config = root.join("tools/config/host/apps/vps/gitea/bun-os-repositories.json");
     let plan: Plan = serde_json::from_slice(
         &fs::read(&config).with_context(|| format!("lecture {}", config.display()))?,
     )?;
+    if let Some(repository) = repository {
+        if !valid_repo(repository) {
+            bail!("nom de dépôt Gitea invalide");
+        }
+    }
+    let mut plan = plan;
+    if let Some(repository) = repository {
+        plan.repositories.retain(|r| r.name == repository);
+        if plan.repositories.len() != 1 {
+            bail!("dépôt Gitea absent du plan autorisé");
+        }
+    }
     if plan.repositories.is_empty() || plan.repositories.iter().any(|r| !valid_repo(&r.name)) {
         bail!("liste de dépôts Gitea invalide");
     }
@@ -280,6 +292,8 @@ struct NativeStorage {
     mount_unit: String,
     lfs_requirement: String,
     runner_requirement: String,
+    runner_scope: String,
+    instance_runner_status: String,
     runner_job_qualification: String,
 }
 
@@ -324,7 +338,7 @@ pub struct MirrorReport {
     pub repositories: Vec<String>,
     pub visibility: &'static str,
     pub capacity_free_kib: Option<u64>,
-    pub runner_online: Option<bool>,
+    pub organization_runner_available: Option<bool>,
     pub runner_job_qualification: &'static str,
 }
 
@@ -367,7 +381,9 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
         || catalog.native_storage.mount_unit
             != r"home-ubuntu-build-apps-gitea-native\x2dstorage.mount"
         || catalog.native_storage.lfs_requirement != "qualified-before-apply"
-        || catalog.native_storage.runner_requirement != "online-presence-after-clone"
+        || catalog.native_storage.runner_requirement != "org-runner-active-or-idle-after-clone"
+        || catalog.native_storage.runner_scope != "organization-only"
+        || catalog.native_storage.instance_runner_status != "unavailable-with-scoped-token"
         || catalog.native_storage.runner_job_qualification != "not-run"
         || !valid_repo(batch)
     {
@@ -448,7 +464,7 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
         repositories: entries.iter().map(|entry| entry.name.clone()).collect(),
         visibility: "match-source",
         capacity_free_kib: None,
-        runner_online: None,
+        organization_runner_available: None,
         runner_job_qualification: "not-run",
     };
     if !apply {
@@ -482,6 +498,8 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
             "directoryMode": catalog.native_storage.directory_mode,
             "lfsRequirement": catalog.native_storage.lfs_requirement,
             "runnerRequirement": catalog.native_storage.runner_requirement,
+            "runnerScope": catalog.native_storage.runner_scope,
+            "instanceRunnerStatus": catalog.native_storage.instance_runner_status,
             "runnerJobQualification": catalog.native_storage.runner_job_qualification
         },
         "repositories": entries.iter().map(|entry| serde_json::json!({
@@ -589,7 +607,7 @@ if(nativeEntry){{
  if(!Array.isArray(orgRepos)||orgRepos.length>1||orgRepos.some(item=>item.name!==d.nativeStorage.repository))bad('Gitea native organization contains repositories outside its declared scope');
 }}
 let free=null;
-let runnerOnline=null;
+let organizationRunnerAvailable=null;
 function admitNativeStorage(repo){{
  const s=d.nativeStorage;
  if(repo.name!==s.repository||repo.sizeKiB!==s.repositorySizeKiB||s.owner!=='aphrody-labs-native'||s.containerPath!=='/data/git/repositories/aphrody-labs-native')bad('Gitea native storage scope rejected');
@@ -630,8 +648,8 @@ const owner=repo.targetOwner||d.owner;const path='/repos/'+owner+'/'+repo.name;c
  if(!sameRefs(sourceNow,expected)||!sameRefs(targetNow,expected))bad('Gitea mirror refs diverge; repository remains private: '+repo.name);
  if(owner===d.nativeStorage.owner){{
   const [,runnerList]=await req('GET','/orgs/'+owner+'/actions/runners');
-  runnerOnline=Array.isArray(runnerList.runners)&&runnerList.runners.some(runner=>!runner.disabled&&runner.status==='online');
-  if(!runnerOnline)bad('Gitea native repository is cloned, but no online organization runner is available');
+  organizationRunnerAvailable=Array.isArray(runnerList.runners)&&runnerList.runners.some(runner=>!runner.disabled&&['active','idle'].includes(runner.status));
+  if(!organizationRunnerAvailable)bad('Gitea native repository is cloned, but no active or idle organization runner is available');
   // API presence is not a Cargo/Bun workflow execution; the receipt keeps that qualification pending.
  }}
  const publishPayload={{private:repo.visibility==='private',archived:repo.archived}};
@@ -645,7 +663,7 @@ const owner=repo.targetOwner||d.owner;const path='/repos/'+owner+'/'+repo.name;c
  const anonymous=await fetch(d.publicBaseUrl+'/api/v1/repos/'+owner+'/'+repo.name,{{signal:AbortSignal.timeout(10000)}});
  if((repo.visibility==='private'&&anonymous.status!==404)||(repo.visibility==='public'&&anonymous.status!==200))bad('Gitea anonymous visibility mismatch: '+repo.name);
 }}
-console.log(JSON.stringify({{owner:d.owner,repositories:d.repositories.map(x=>x.name),freeKiB:free,runnerOnline,runnerJobQualification:'not-run',verified:true}}));
+console.log(JSON.stringify({{owner:d.owner,repositories:d.repositories.map(x=>x.name),freeKiB:free,organizationRunnerAvailable,runnerJobQualification:'not-run',verified:true}}));
 BUN
 "#
     );
@@ -695,7 +713,8 @@ BUN
             let remote: serde_json::Value = serde_json::from_slice(&output.stdout)
                 .context("réponse Gitea distante invalide")?;
             report.capacity_free_kib = remote.get("freeKiB").and_then(serde_json::Value::as_u64);
-            report.runner_online = remote.get("runnerOnline").and_then(serde_json::Value::as_bool);
+            report.organization_runner_available =
+                remote.get("organizationRunnerAvailable").and_then(serde_json::Value::as_bool);
             if remote.get("runnerJobQualification").and_then(serde_json::Value::as_str)
                 != Some("not-run")
             {

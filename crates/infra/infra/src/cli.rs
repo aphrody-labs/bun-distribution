@@ -283,6 +283,9 @@ enum GiteaCommand {
     Provision {
         #[arg(long)]
         apply: bool,
+        /// Restrict provisioning to one repository declared in the plan.
+        #[arg(long)]
+        repository: Option<String>,
         #[arg(long)]
         json: bool,
     },
@@ -2450,8 +2453,10 @@ async fn run_cli(cli: Cli) -> Result<()> {
             run.action("secrets", "exec", json!({ "command": format!("{:?}", command) }));
             command.execute(&root)
         },
-        CommandKind::Gitea { command: GiteaCommand::Provision { apply, json: as_json } } => {
-            let report = crate::gitea::provision(&root, *apply)?;
+        CommandKind::Gitea {
+            command: GiteaCommand::Provision { apply, repository, json: as_json },
+        } => {
+            let report = crate::gitea::provision(&root, *apply, repository.as_deref())?;
             run.action(
                 "gitea.provision",
                 if *apply { "applied" } else { "planned" },
