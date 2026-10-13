@@ -15,7 +15,7 @@
 		"strict": true,
 		"skipLibCheck": true,
 		"target": "ESNext",
-		"types": []
+		"types": ["bun"]
 	},
 	"include": ["src/**/*.ts"]
 }
