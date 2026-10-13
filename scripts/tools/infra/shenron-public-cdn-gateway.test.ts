@@ -48,6 +48,11 @@ test("public fallback admits catalog video and audio paths without broadening pr
     "/sfx/official/nimbus.mp3",
     "/media/episodes/beerus-01/optimized-720p.mp4",
     "/wiki/chapter/cover.webp",
+    "/dragonball-super/317db92a510fb5ceb09df63a579fc53de75e9d17b0c34fa28c18f07369a68218.webp",
+    "/publications/archive-dragon-ball/index.json",
+    "/publications/archive-dragon-ball/objects/8103ad36038a74ccb9d3b60a93cbdaa712f5463afe584acd041a98cf18fa861e.md",
+    "/wasm/shenron_re_bg.1abeadb164523a44.wasm",
+    "/manifest.webmanifest",
   ])
     expect(allowed.test(path)).toBe(true);
   for (const path of [
@@ -56,6 +61,10 @@ test("public fallback admits catalog video and audio paths without broadening pr
     "/wiki/hidden.sqlite",
     "/api/public/video.mp4",
     "/sfx/official/nimbus.mp3/secret",
+    "/publications/archive-dragon-ball/private/index.json",
+    "/publications/archive-dragon-ball/objects/short.md",
+    "/dragonball-super/private.webp",
+    "/wasm/other.wasm",
   ])
     expect(allowed.test(path)).toBe(false);
   expect(result).toContain("proxy_set_header Range $http_range");
