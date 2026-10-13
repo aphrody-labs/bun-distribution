@@ -1,5 +1,16 @@
 # Project decisions and session evidence
 
+## Shared app asset store — 2026-10-14
+
+Moved the only shared asset inputs from the retired Bun Libraries checkout to
+the Bun OS owner's canonical `.local/assets/`: `manifest.json` (SHA-256
+`36a1b825dfeb20e209f022d65f928db8510cd1035cfaf746cbf29e480625a4bc`) and
+`reference.json` (SHA-256
+`f6c0f6e9a332839e95fb403a7c9eb5eab3343b6529ae39da834a3e8a8754cda1`). Bun
+parsed both files after the same-volume move and verified their hashes; the old
+asset directory is absent. The Bun OS build/docs already resolve the reference
+from this owner path. No app build or tests ran.
+
 ## Runtime source preflight — 2026-10-13
 
 - The distribution plan now inspects Bun's selected checkout with bounded Git

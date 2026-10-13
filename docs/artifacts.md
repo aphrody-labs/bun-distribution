@@ -71,14 +71,7 @@ digest, source/runtime pins and shared asset reference. Hostnames come from the
 canonical deployment configuration. Publishing a manifest does not qualify DNS,
 TLS, a native host or application operations.
 
-The library owner's pinned [Bun Libraries session report](https://github.com/aphrody-labs/bun-libraries/blob/15cd85a497dbd7d9e07e4e01aad08109f04fdea8/docs/session-report.md)
-qualifies Linux x64 FilmCraft and Generation native engines and standalone
-artifacts. Bun OS consumes those as owner-provided native inputs; they do not
-set the separate `infra/apps.json` distribution or activation qualifications.
-Linux x64 video and generation passed compilation, extraction and artifact
-verification with the separately verified runtime pin. Windows video has a
-qualified native engine; its standalone executable remains unqualified.
-Remaining engines and targets require their own build and execution receipts.
+For application build qualification, see the canonical [Bun OS session report](session-report.md). Library source and native engine ownership remain with their pinned repositories; distribution and activation qualifications are maintained separately.
 No tests are added.
 
 ## Artifact verification
