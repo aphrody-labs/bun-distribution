@@ -32,6 +32,18 @@
     "repositorySizeKiB": 57002469,
     "rootReserveKiB": 20971520,
     "dataReserveKiB": 8388608,
+    "organizationBootstrap": {
+      "status": "verified",
+      "username": "aphrody-labs-native",
+      "visibility": "public",
+      "createdByThisApply": true,
+      "repositoryCount": 0,
+      "verifiedAt": "2026-10-13T22:57:23Z",
+      "clonePerformed": false,
+      "storageChanged": false,
+      "runnerJobQualification": "not-run",
+      "lfsQualification": "unchanged"
+    },
     "mountUnit": "home-ubuntu-build-apps-gitea-native\\x2dstorage.mount",
     "lfsRequirement": "qualified-before-apply",
     "runnerRequirement": "online-presence-after-clone",
