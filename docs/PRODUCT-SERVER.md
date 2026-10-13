@@ -107,3 +107,9 @@ the installed binary retains the earlier runtime
 An earlier review also rejected service activation. Neither this candidate
 qualification nor the source portal's HTTPS readiness proves that the product
 service or its public proxy routes have been activated.
+
+A later invocation through `bun-os server verify` correctly refused this
+candidate after the concurrent canonical owner changed
+`packages/bun-workspace/src/process.ts`. The eleven passing gates above remain
+evidence for the recorded source snapshot; they do not qualify the subsequent
+working source. Rebuilding against the final committed owner inputs is required.

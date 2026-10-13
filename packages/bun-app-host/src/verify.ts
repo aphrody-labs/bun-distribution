@@ -151,7 +151,7 @@ export async function verifyProduct(
           (await command(["git", "hash-object", "--path=" + gitPath, path])) !== input.gitBlob ||
           (await hashFile(path, { signal: deadline.signal })) !== input.sha256
         )
-          throw new Error("Product input differs from its committed source proof.");
+          throw new Error("Product input differs from its committed source proof: " + gitPath);
       }
       if (generated !== 1) throw new Error("Product receipt requires exactly one generated entry proof.");
       for (const path of [
