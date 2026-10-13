@@ -1,5 +1,5 @@
 [package]
-workspace = "../../../.."
+workspace = "../.."
 name = "craft-fonts"
 description = "The Crafting Apps' shared font assets: the manifest, finding a craft-fonts checkout, and loading or embedding the fonts."
 version.workspace = true
