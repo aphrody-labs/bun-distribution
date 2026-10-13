@@ -40,7 +40,6 @@
     "catalog": "bun packages/workspace/src/cli.ts list",
     "status": "bun packages/workspace/src/cli.ts status",
     "sync": "bun packages/workspace/src/cli.ts sync",
-    "migrate": "aphrody n2b . --aggressive --ignore 'node_modules/**' --ignore 'out/**' --ignore '.git/**' --jobs 2 --agent --report json",
     "factory": "bun factory/ubuntu.ts",
     "packages": "bun packages/package-converter/src/cli.ts",
     "apt:build": "bun src/build-apt.ts",
@@ -60,16 +59,11 @@
     "workspace:manifests": "bun scripts/workspace-manifests.ts"
   },
   "dependencies": {
-    "@aphrody/tauri": "catalog:",
-    "@aphrody/bun-workspace": "workspace:*",
+    "@aphrody/bun-app-host": "workspace:*",
     "@aphrody/bun-artifacts": "workspace:*",
     "@aphrody/bun-video-project": "workspace:*",
-    "@aphrody/bun-app-host": "workspace:*"
-  },
-  "catalog": {
-    "@aphrody/tauri": "file:toolchains/bun/packages/bun-tauri",
-    "@types/node": "26.6.5",
-    "undici-types": "8.11.2"
+    "@aphrody/bun-workspace": "workspace:*",
+    "@aphrody/tauri": "catalog:"
   },
   "devDependencies": {
     "@aphrody/bun-types": "1.4.4",
@@ -83,5 +77,10 @@
   "engines": {
     "bun": "=1.4.4"
   },
-  "packageManager": "bun@1.4.4"
+  "packageManager": "bun@1.4.4",
+  "catalog": {
+    "@aphrody/tauri": "file:toolchains/bun/packages/bun-tauri",
+    "@types/node": "26.6.5",
+    "undici-types": "8.11.2"
+  }
 }
