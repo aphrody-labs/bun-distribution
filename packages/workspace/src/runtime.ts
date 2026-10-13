@@ -4,6 +4,16 @@ export interface RuntimePin {
   revision: string;
 }
 
+export type RuntimeTarget =
+  | "windows-x64"
+  | "windows-arm64"
+  | "linux-x64"
+  | "linux-arm64"
+  | "linux-x64-musl"
+  | "linux-arm64-musl"
+  | "darwin-x64"
+  | "darwin-arm64";
+
 export interface RuntimeFacts {
   version: string;
   revision: string;
@@ -19,6 +29,30 @@ export interface Runtime extends RuntimeFacts {
 }
 
 const revisionPattern = /^[0-9a-f]{40}$/;
+
+export function nativeRuntimeTarget(): RuntimeTarget | undefined {
+  const platform = process.platform === "win32" ? "windows" : process.platform;
+  const architecture = process.arch;
+  const libc =
+    platform === "linux" &&
+    !(process.report?.getReport() as { header?: { glibcVersionRuntime?: string } } | undefined)?.header
+      ?.glibcVersionRuntime
+      ? "-musl"
+      : "";
+  const target = `${platform}-${architecture}${libc}`;
+  return [
+    "windows-x64",
+    "windows-arm64",
+    "linux-x64",
+    "linux-arm64",
+    "linux-x64-musl",
+    "linux-arm64-musl",
+    "darwin-x64",
+    "darwin-arm64",
+  ].includes(target)
+    ? (target as RuntimeTarget)
+    : undefined;
+}
 
 export function currentRuntimeFacts(): RuntimeFacts {
   const release = process.release as typeof process.release & { sourceUrl?: string };

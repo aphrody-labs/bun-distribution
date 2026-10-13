@@ -17,22 +17,22 @@ files and 1,659 TypeScript files**. All declared members and explicit targets
 exist. This replaces the earlier catalog-only view; it does not establish that
 every engine, GUI or provider works.
 
-| Application | Library owner | Qualification |
-| --- | --- | --- |
-| Video | FilmCraft | Windows native CLI; Linux standalone executable |
-| Generation | Existing Artcraft router | Linux standalone executable and offline operations |
-| Images | Photocraft | Source present; native app not built |
-| Vectors | Vectorcraft | Source present; native app not built |
-| Compositing | Effectcraft | Source present; native app not built |
-| Photo processing | Lightcraft | Source present; native app not built |
-| PDF | PDFcraft | Source present; native app not built |
-| Documents | Wordcraft | Source present; native app not built |
-| Audio | Soundcraft | Source present; native app not built |
-| Layout | Designcraft | Source present; native app not built |
-| CAD | CADcraft | Source present; native app not built |
-| Slides | Deckcraft | Source present; native app not built |
-| Tables | Gridcraft | Source present; native app not built |
-| Interface layouts | Figcraft | Source present; native app not built |
+| Application       | Library owner            | Qualification                                      |
+| ----------------- | ------------------------ | -------------------------------------------------- |
+| Video             | FilmCraft                | Windows native CLI; Linux standalone executable    |
+| Generation        | Existing Artcraft router | Linux standalone executable and offline operations |
+| Images            | Photocraft               | Source present; native app not built               |
+| Vectors           | Vectorcraft              | Source present; native app not built               |
+| Compositing       | Effectcraft              | Source present; native app not built               |
+| Photo processing  | Lightcraft               | Source present; native app not built               |
+| PDF               | PDFcraft                 | Source present; native app not built               |
+| Documents         | Wordcraft                | Source present; native app not built               |
+| Audio             | Soundcraft               | Source present; native app not built               |
+| Layout            | Designcraft              | Source present; native app not built               |
+| CAD               | CADcraft                 | Source present; native app not built               |
+| Slides            | Deckcraft                | Source present; native app not built               |
+| Tables            | Gridcraft                | Source present; native app not built               |
+| Interface layouts | Figcraft                 | Source present; native app not built               |
 
 Craft libraries and fonts remain shared library owners rather than separate apps.
 The root creates no replacement Rust crate for their existing implementations.
@@ -119,15 +119,16 @@ packaging. Pins and digests are in
 ### Runtime boundary
 
 Earlier Windows standalone artifacts use Bun 1.4.4 revision
-`2ae8fc65fba1d05c423a2433b1195835109942b6`; Linux uses separately qualified
-Bun 1.4.4 revision `dfde053a3045d6076ad315b6f63160c4ced71513`. New Windows
-builds now pin the selected Aphrody Bun 1.4.4 revision
+`2ae8fc65fba1d05c423a2433b1195835109942b6`. Linux x64 uses separately
+qualified Bun 1.4.4 revision `dfde053a3045d6076ad315b6f63160c4ced71513`.
+New Windows builds use the selected Aphrody Bun 1.4.4 revision
 `c62d01d81506a8b78b1d39b44d17edc81b4a6355`; the local executable reports SHA-256
 `f85c2517fc4eca8a4e82c15f3897ae39376ab8b9f338eee1bae5f383cc27a52a`. The
 selected runtime exposes `Bun.Video` with `available: true`, decoder `filmcraft`
 and backend `system`. API presence and source gates do not qualify media decoding,
-codec profiles, output accuracy or old standalone artifacts. The pinned Tauri SDK
-source is `939c835adf6479bc1014da3843cda4ae29851dbd`.
+codec profiles, output accuracy or old standalone artifacts. The Linux x64
+runtime reports no native video provider. The pinned Tauri SDK source is
+`939c835adf6479bc1014da3843cda4ae29851dbd`.
 
 ## Infrastructure and assets
 
@@ -139,13 +140,13 @@ scheduled renewal.
 The canonical Aphrody Infra catalogs own **59 services and 36 routes**; source,
 Compose and nginx validation passed. The existing VPS app layout hosts:
 
-| Service | Live qualification |
-| --- | --- |
-| Gitea 28.1.0 | Private admin authenticated; install locked; signup disabled; HTTPS login 200 |
-| Komodo 2.3.3 | Rust deployment controller; private admin authenticated; HTTPS 200 |
-| Periphery 2.3.3 | Persisted, pinned SPKI keys; connected state `Ok` |
-| Gitea Runner 5.0.0 | Registered and online; one trusted job; bounded CPU/memory/time |
-| MongoDB 8.0.32 | Private persistent database; official Linux rseq configuration applied |
+| Service            | Live qualification                                                            |
+| ------------------ | ----------------------------------------------------------------------------- |
+| Gitea 28.1.0       | Private admin authenticated; install locked; signup disabled; HTTPS login 200 |
+| Komodo 2.3.3       | Rust deployment controller; private admin authenticated; HTTPS 200            |
+| Periphery 2.3.3    | Persisted, pinned SPKI keys; connected state `Ok`                             |
+| Gitea Runner 5.0.0 | Registered and online; one trusted job; bounded CPU/memory/time               |
+| MongoDB 8.0.32     | Private persistent database; official Linux rseq configuration applied        |
 
 Credentials and registration remain in protected host stores. Existing workloads
 and DBFR were preserved. Komodo actuates the existing Infra desired state; the
@@ -215,21 +216,23 @@ bounded batch, audio, GIF and MP4 remux operations while FilmCraft retains its
 project and timeline contract. Bun OS records the observed executable digest
 and verifies the shared Bun Libraries source revision before planning. Media
 fixture behavior and the downloaded runtime archive checksum remain unqualified.
+Linux selects its separately qualified runtime pin and reports no `Bun.Video`
+provider; runtime identity and native feature availability are target-specific.
 
 ## Published batches
 
 All owned commits use `aphrody-dev <contact@aphrody.com>`, precise staged paths,
 fresh remote ancestry checks and normal pushes.
 
-| Repository | Published batch |
-| --- | --- |
-| Bun libraries | `7cadab6`: pinned monorepo; `4500d36`: video/native migration; `31d5ef5`: owners and standalone factory; `b5534d6`: verifier, generation pin and admission worker |
-| Artcraft | `f8dae6c`: Bun frontend migration; `9c4ed82`: existing router's native CLI |
-| FilmCraft | `87b8451`: reviewed Bun-native tooling; Rust engine retained upstream source |
-| EffectCraft | `e5beea9`: Bun-native helper tooling |
-| Bun SDK | `939c835`: compatible explicit type imports/exports |
-| Bun internal n2b | `f56596e`: bounded scanner/AST guards; `176fa03`: English report labels |
-| Aphrody Infra | `ca161f5`: live control plane; `432af04` and `f9bcd3b`: runner runtime/admission; `9d11aa1`: canonical app activation source |
+| Repository       | Published batch                                                                                                                                                   |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bun libraries    | `7cadab6`: pinned monorepo; `4500d36`: video/native migration; `31d5ef5`: owners and standalone factory; `b5534d6`: verifier, generation pin and admission worker |
+| Artcraft         | `f8dae6c`: Bun frontend migration; `9c4ed82`: existing router's native CLI                                                                                        |
+| FilmCraft        | `87b8451`: reviewed Bun-native tooling; Rust engine retained upstream source                                                                                      |
+| EffectCraft      | `e5beea9`: Bun-native helper tooling                                                                                                                              |
+| Bun SDK          | `939c835`: compatible explicit type imports/exports                                                                                                               |
+| Bun internal n2b | `f56596e`: bounded scanner/AST guards; `176fa03`: English report labels                                                                                           |
+| Aphrody Infra    | `ca161f5`: live control plane; `432af04` and `f9bcd3b`: runner runtime/admission; `9d11aa1`: canonical app activation source                                      |
 
 Detailed migrations, ownership and qualification are recorded in
 [migration](migration.md), [owners](owners.md), [artifacts](artifacts.md) and

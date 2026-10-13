@@ -17,10 +17,12 @@ import {
   loadConfig,
   repositoryRoot,
   resolveModuleBinary,
+  runtimePinFor,
   runProcess,
   type Config,
   type RuntimeFacts,
   type RuntimePin,
+  type RuntimeTarget,
 } from "../packages/workspace/src/index.ts";
 import { validateAssetReference, type AssetReference } from "../packages/workspace/src/assets.ts";
 import {
@@ -344,9 +346,10 @@ export async function main(args = Bun.argv.slice(2)): Promise<number> {
   const root = resolve(values.root ?? repositoryRoot);
   const config = await loadConfig(root);
   const target = values.target ? parseArtifactTarget(values.target) : nativeHostTarget();
+  const runtimeTarget = target.slice(4) as RuntimeTarget;
   const expectedRuntime = values["runtime-pin"]
     ? runtimePin(await readJSON(resolve(root, values["runtime-pin"])))
-    : config.runtime;
+    : runtimePinFor(config, runtimeTarget);
   const mode = values.mode ?? "native";
   const host = values.host ?? hostname();
   if (!["native", "ssh", "docker"].includes(mode) || !/^[A-Za-z0-9._-]{1,128}$/.test(host))

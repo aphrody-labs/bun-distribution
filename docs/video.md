@@ -10,15 +10,15 @@ the parallel native codec owner.
 
 ## Owners
 
-| Capability | Owner |
-| --- | --- |
-| Project loading, schemas 1–15 and atomic saves | filmcraft-format |
-| Exact time and rational frame rates | filmcraft-time |
-| Container probing and codecs | filmcraft-codecs / filmcraft-media |
-| Editing and command validation | filmcraft-engine |
-| Rendering and export | filmcraft-render / filmcraft-export |
-| Native Bun metadata and frame API | Bun.Video |
-| Typed process boundary | @aphrody/bun-video-project |
+| Capability                                     | Owner                               |
+| ---------------------------------------------- | ----------------------------------- |
+| Project loading, schemas 1–15 and atomic saves | filmcraft-format                    |
+| Exact time and rational frame rates            | filmcraft-time                      |
+| Container probing and codecs                   | filmcraft-codecs / filmcraft-media  |
+| Editing and command validation                 | filmcraft-engine                    |
+| Rendering and export                           | filmcraft-render / filmcraft-export |
+| Native Bun metadata and frame API              | Bun.Video                           |
+| Typed process boundary                         | @aphrody/bun-video-project          |
 
 The adapter calls the existing headless CLI with structured arguments and JSON.
 It adds output limits, cancellation and typed operations. Rust retains project
@@ -54,3 +54,5 @@ decoding, transformed frames, bounded frame batches, PCM audio, GIF and MP4
 remux to that runtime. FilmCraft remains the owner of projects, timelines,
 commands and rendering workflows. API availability does not qualify individual
 codecs or media output accuracy. See [qualification](qualification.md).
+The current Linux x64 runtime reports no native video provider, so the same
+adapter reports unavailable there until that target includes and qualifies it.

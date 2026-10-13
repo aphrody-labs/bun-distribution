@@ -11,6 +11,10 @@ The current Windows runtime pin is Bun 1.4.4 revision
 binary reported `Bun.Video.available === true`, decoder `filmcraft`, and backend
 `system`; `bun run check` passed on the library workspace. This checks the API
 surface and source gates only. No media fixture was decoded in this qualification.
+Linux x64 uses the separately qualified 1.4.4 revision
+`dfde053a3045d6076ad315b6f63160c4ced71513`; the VPS runtime reports no native
+`Bun.Video` provider. Runtime pins are selected by target, and provider presence
+remains a runtime capability rather than a workspace-wide assumption.
 
 Passed:
 

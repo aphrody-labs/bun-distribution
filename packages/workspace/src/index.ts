@@ -1,5 +1,13 @@
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import { assertRuntimeFacts, currentRuntimeFacts, runtimeFromFacts, type Runtime, type RuntimePin } from "./runtime.ts";
+import {
+  assertRuntimeFacts,
+  currentRuntimeFacts,
+  nativeRuntimeTarget,
+  runtimeFromFacts,
+  type Runtime,
+  type RuntimePin,
+  type RuntimeTarget,
+} from "./runtime.ts";
 import { runProcess } from "./process.ts";
 import { inspectModuleCoverage, type ModuleCoverage } from "./coverage.ts";
 
@@ -21,6 +29,7 @@ export {
   type Runtime,
   type RuntimeFacts,
   type RuntimePin,
+  type RuntimeTarget,
 } from "./runtime.ts";
 
 /** Resolve from this checkout; no workstation or host path is embedded. */
@@ -47,6 +56,7 @@ export interface Module {
 export interface Config {
   schemaVersion: 1;
   runtime: RuntimePin;
+  runtimeTargets?: Partial<Record<RuntimeTarget, RuntimePin>>;
   modules: Module[];
   priorities?: string[];
   desktop: Record<string, unknown> & { source?: Source };
@@ -177,6 +187,29 @@ export async function loadConfig(root = repositoryRoot): Promise<Config> {
   ) {
     throw new Error("aphrody.config.json: Aphrody Bun 1.4.4 and full revision required.");
   }
+  if (value.runtimeTargets !== undefined) {
+    if (!object(value.runtimeTargets)) throw new Error("aphrody.config.json: invalid target runtime pins.");
+    for (const [target, pin] of Object.entries(value.runtimeTargets)) {
+      if (
+        ![
+          "windows-x64",
+          "windows-arm64",
+          "linux-x64",
+          "linux-arm64",
+          "linux-x64-musl",
+          "linux-arm64-musl",
+          "darwin-x64",
+          "darwin-arm64",
+        ].includes(target) ||
+        !object(pin) ||
+        pin.version !== "1.4.4" ||
+        pin.repository !== "aphrody-labs/bun" ||
+        typeof pin.revision !== "string" ||
+        !revisionPattern.test(pin.revision)
+      )
+        throw new Error(`aphrody.config.json: invalid runtime pin for ${target}.`);
+    }
+  }
   if (!Array.isArray(value.modules) || !object(value.desktop)) {
     throw new Error("aphrody.config.json: modules and desktop required.");
   }
@@ -276,13 +309,20 @@ export async function loadConfig(root = repositoryRoot): Promise<Config> {
   return value as unknown as Config;
 }
 
-export function inspectRuntime(config: Config): Runtime {
-  return runtimeFromFacts(config.runtime, currentRuntimeFacts());
+export function runtimePinFor(config: Config, target = nativeRuntimeTarget()): RuntimePin {
+  if (!target) return config.runtime;
+  const pin = config.runtimeTargets?.[target];
+  if (!pin) throw new Error(`No Bun runtime pin is declared for ${target}.`);
+  return pin;
 }
 
-/** All commands require the declared release fork; SHA drift is explicit. */
-export function assertRuntime(config: Config, allowRevisionDrift = false): Runtime {
-  return assertRuntimeFacts(config.runtime, currentRuntimeFacts(), allowRevisionDrift);
+export function inspectRuntime(config: Config, target = nativeRuntimeTarget()): Runtime {
+  return runtimeFromFacts(runtimePinFor(config, target), currentRuntimeFacts());
+}
+
+/** All commands require the host-target release fork; SHA drift is explicit. */
+export function assertRuntime(config: Config, allowRevisionDrift = false, target = nativeRuntimeTarget()): Runtime {
+  return assertRuntimeFacts(runtimePinFor(config, target), currentRuntimeFacts(), allowRevisionDrift);
 }
 
 /** Compiled sidecars must use a separate, verified Bun executable. */
@@ -323,7 +363,7 @@ export async function resolveBunExecutable(config: Config, options: ExecutionOpt
   ) {
     throw new Error("Native Bun returned invalid provenance metadata.");
   }
-  assertRuntimeFacts(config.runtime, {
+  assertRuntimeFacts(runtimePinFor(config), {
     version: facts.version,
     revision: facts.revision,
     sourceUrl: facts.sourceUrl as string | null,
