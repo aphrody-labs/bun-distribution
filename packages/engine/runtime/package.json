@@ -40,7 +40,7 @@
     "access": "public"
   },
   "scripts": {
-    "test": "bun test test/runtime_sdk.test.ts test/runtime-ffi.test.ts test/runtime_release.test.ts test/ffi.test.ts test/privilege.test.ts test/gpu.test.ts",
+    "test": "bun test test/runtime_sdk.test.ts test/runtime-ffi.test.ts test/runtime_release.test.ts test/ffi.test.ts test/privilege.test.ts test/gpu.test.ts test/python-native.test.ts",
     "typecheck": "bun check -p tsconfig.json --noEmit"
   },
   "dependencies": {

@@ -386,11 +386,19 @@ describe.skipIf(!supported)("yolo py with the vu runtime", () => {
       checked: "quick",
       artifact: dir,
     });
-    const nativeVersion = Bun.spawnSync([process.execPath, "--version"], { windowsHide: true })
-      .stdout.toString()
-      .trim();
-    expect(report.uvVersion).toBe(process.platform === "win32" ? nativeVersion : "uv 0.12.23");
-    expect(report.ruffVersion).toBe(process.platform === "win32" ? nativeVersion : "ruff 0.16.10");
+    // The fork dispatches uv.exe and ruff.exe by argv0; their version is not Bun's version.
+    for (const [tool, reported] of [
+      ["uv", report.uvVersion],
+      ["ruff", report.ruffVersion],
+    ] as const) {
+      const executable = join(dir, vuExecutable(tool));
+      const result = Bun.spawnSync([executable, "--version"], {
+        windowsHide: true,
+        env: { PATH: "/usr/bin" },
+      });
+      expect(result.exitCode).toBe(0);
+      expect(reported).toBe(result.stdout.toString().trim().split("\n")[0]);
+    }
   });
 });
 
