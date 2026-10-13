@@ -212,11 +212,6 @@
       "scope": "local",
       "reason": "Imported autopilot interpolates shell values into Python source; factor or retire."
     },
-    "scripts/tools/ai/scripts/bench-python-surface.ts": {
-      "count": 2,
-      "scope": "local",
-      "reason": "Benchmark of the Python surface itself."
-    },
     "scripts/tools/infra/prepare-aphrody-data-contract.sh": {
       "count": 1,
       "scope": "host",
