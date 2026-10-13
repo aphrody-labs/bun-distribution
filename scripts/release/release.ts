@@ -12,6 +12,7 @@
  * this natively, so each target gets its own executable and library.
  *
  *   bun run scripts/release/release.ts [--out dist/release]
+ *   bun run scripts/release/release.ts --check-inputs  validates source inputs without packaging
  *
  * `YOLO_BINARY=<path to the bun-forge artifact `yolo`>` packages that single executable (the fork engine with the CLI
  * compiled onto it) and adds its aliases `bun` and `vu` (symlinks, selected by argv0); without it the CLI is compiled
@@ -28,15 +29,39 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { checkoutRoot } from "@aphrody/paths";
 import { hostTarget, verifyArtifact } from "@aphrody/runtime-sdk/artifact";
 import { COMPILE_FLAGS } from "./compile-flags";
 import { toolingAsset } from "./tooling-asset";
 
 const root = resolve(import.meta.dir, "../..");
+const cliEntry = Bun.resolveSync("@aphrody/yolo-cli/cli", import.meta.dir);
+const cliRoot = resolve(dirname(cliEntry), "..");
+const sdkRoot = resolve(
+  dirname(Bun.resolveSync("@aphrody/runtime-sdk/artifact", import.meta.dir)),
+  "..",
+);
+const templates = join(
+  checkoutRoot("material", { ...process.env, APHRODY_WORKSPACE_ROOT: root }),
+  "packages/m3/templates",
+);
 const outIndex = Bun.argv.indexOf("--out");
 const outRoot = resolve(root, outIndex > 0 ? (Bun.argv[outIndex + 1] as string) : "dist/release");
-const version = readFileSync(join(root, "packages/engine/yolo/VERSION"), "utf8").trim();
+const version = readFileSync(join(cliRoot, "VERSION"), "utf8").trim();
+if (!Bun.semver.satisfies(version, "*")) throw new Error("Invalid release version");
+for (const input of [
+  cliEntry,
+  join(sdkRoot, "LICENSE-APACHE"),
+  join(templates, "stack.toml"),
+  ...["install.sh", "install.ps1"].map((file) => join(cliRoot, file)),
+]) {
+  if (!existsSync(input)) throw new Error(`Missing release source input: ${input}`);
+}
+if (Bun.argv.includes("--check-inputs")) {
+  console.log("Release source inputs OK (package CLI, SDK and configured Material templates).");
+  process.exit(0);
+}
 const target = hostTarget();
 const windows = target.includes("windows");
 const dir = join(outRoot, version);
@@ -83,14 +108,14 @@ if (prebuilt) {
   }
 } else {
   await run([
-    "bun",
+    process.execPath,
     "build",
     "--compile",
     ...COMPILE_FLAGS,
     ...(tooling?.flags ?? []),
     "--define",
     `YOLO_VERSION=${JSON.stringify(version)}`,
-    "packages/engine/yolo/src/index.ts",
+    cliEntry,
     "--outfile",
     exe,
   ]);
@@ -98,16 +123,16 @@ if (prebuilt) {
 
 // 2. data next to it: runtime artifact, SDK, templates
 cpSync(artifactDir, join(stage, "artifact"), { recursive: true });
-cpSync(join(root, "packages/engine/runtime"), join(stage, "packages/engine/runtime"), {
+cpSync(sdkRoot, join(stage, "packages/engine/runtime"), {
   recursive: true,
   filter: (src) => !src.includes("node_modules"),
 });
-cpSync(join(root, "m3/templates"), join(stage, "m3/templates"), {
+cpSync(templates, join(stage, "m3/templates"), {
   recursive: true,
   filter: (src) => !src.endsWith("awesome-audit.json"),
 });
 writeFileSync(join(stage, "VERSION"), `${version}\n`);
-cpSync(join(root, "packages/engine/runtime/LICENSE-APACHE"), join(stage, "LICENSE"));
+cpSync(join(sdkRoot, "LICENSE-APACHE"), join(stage, "LICENSE"));
 mkdirSync(join(stage, "LICENSES"));
 cpSync(
   join(root, "docs/reference/upstream-bun/LICENSE.md"),
@@ -149,7 +174,7 @@ await run(["tar", "-czf", join(dir, crates), "-C", crateStage, "."]);
 
 // 4. installers, checksums, provenance
 for (const script of ["install.sh", "install.ps1"])
-  cpSync(join(root, "packages/engine/yolo", script), join(dir, script));
+  cpSync(join(cliRoot, script), join(dir, script));
 const files = readdirSync(dir)
   .filter((f) => f !== "SHA256SUMS" && f !== "release.json")
   .toSorted();
