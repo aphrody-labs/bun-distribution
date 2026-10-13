@@ -863,7 +863,7 @@
       "publicProxy": "nginx",
       "staged": true,
       "required": false,
-      "note": "Unified Bun OS read-only catalog API. Linux x86-64 binary compiled/executed at root1e5c6435;7 localHTTP checks pass, install SHA matches. Existing Infra lifecycle and source.aphrody.app ingress own activation. Protected bearer provisioned; candidate unit/nginx syntax pass. Automatic tool review rejected grouped unit/snippet installation and service activation before execution (blocked by policy). Staged/unrequired; no Nginx reload or deployment qualification. /api/product/v1/ preserves Gitea /api/v1/."
+      "note": "Unified Bun OS read-only catalog API. Linux x86-64 binary compiled/executed at root1eedaa8;9 localHTTP checks pass, install SHA matches. Existing Infra lifecycle and source.aphrody.app ingress own activation. Protected bearer provisioned; candidate unit/nginx syntax pass. Automatic tool review rejected grouped unit/snippet installation and service activation before execution (blocked by policy). Staged/unrequired; no Nginx reload or deployment qualification. /api/product/v1/ preserves Gitea /api/v1/."
     }
   ],
   "policies": {

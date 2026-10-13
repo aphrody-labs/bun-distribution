@@ -4,17 +4,18 @@ Aphrody Infra owns this one staged service through the existing service catalog,
 systemd supervisor and source forge ingress. Gitea remains the only forge.
 
 Qualified on 2026-10-13: the canonical Git checkout `~/src/bun-os` is root
-revision `1e5c6435ffdb13d1aff8db1eb432033df00fd3af`, bootstrapped from the
-public GitHub source while its canonical Gitea mirror resynchronized. Anonymous mirror refs were then
-verified equal, and origin now selects the existing public loopback Gitea mirror. No archive,
+revision `1eedaa8ca51c06790eaae7c4bfee8e35cfce25a5`, bootstrapped from the
+public GitHub source while its canonical Gitea mirror resynchronized. The latest source was fetched from GitHub with ancestor verification and
+a fast-forward update. The canonical mirror is temporarily private while it
+resynchronizes this revision; public equivalence remains to be verified. No archive,
 Rust build or recursive submodule setup was used. Filtered frozen Bun installation
 selects only the server SDK graph; the unrelated Tauri checkout remains lazy.
 
 The installed Linux runtime is `/home/ubuntu/.bun/bin/bun-1.4.4`, revision
 `dfde053a3045d6076ad315b6f63160c4ced71513`. The real ELF x86-64 server
 compiled under the shared Bun compiler, executed `--version`, and passed
-seven local HTTP contract checks. SHA-256:
-`9daadd110d9c4792ebf6e1bb3fb03d13902a336ed8ab5b920d3a2091c20b6649`.
+nine local HTTP contract checks. SHA-256:
+`f0c8aa2fc325af2896a76590639dbc41b38ac4bc995f071fac2dd07d2f28a1ac`.
 Its receipt is `~/src/bun-os/build/apps/bun-os-server.json`, with executed=true
 and deployed=false. The temporary probe process was stopped after qualification.
 
@@ -40,3 +41,8 @@ Infra service start before execution, with reason `blocked by policy`. No
 equivalent activation retry was attempted. The actual unit is inactive; route
 inclusion and service activation remain pending. Prepared files and the installed
 binary are not deployment proof.
+
+The current ELF artifact is 154165944 bytes. The fresh candidate passed runtime
+and API qualification before replacing the unique canonical build and install
+binaries. Both hashes match the receipt. Owned generated staging entries were
+removed after verification; no previous binary or rollback archive is retained.

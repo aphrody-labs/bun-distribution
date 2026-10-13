@@ -15,9 +15,11 @@
     "checkout": "/home/ubuntu/src/bun-os",
     "recursiveSubmodules": false,
     "bootstrapBackend": "https://github.com/aphrody-labs/bun-distribution.git",
-    "observedRevision": "1e5c6435ffdb13d1aff8db1eb432033df00fd3af",
+    "observedRevision": "1eedaa8ca51c06790eaae7c4bfee8e35cfce25a5",
     "currentBackend": "http://127.0.0.1:29020/aphrody-dev/bun-distribution.git",
-    "mirrorAlignedRevision": "1e5c6435ffdb13d1aff8db1eb432033df00fd3af"
+    "mirrorAlignedRevision": "1e5c6435ffdb13d1aff8db1eb432033df00fd3af",
+    "effectiveRefreshBackend": "https://github.com/aphrody-labs/bun-distribution.git",
+    "mirrorState": "private-during-resync"
   },
   "build": {
     "runtime": "/home/ubuntu/.bun/bin/bun-1.4.4",
@@ -27,7 +29,7 @@
     "output": "/home/ubuntu/src/bun-os/build/apps/bun-os-server",
     "cargo": false,
     "qualificationReceipt": "/home/ubuntu/src/bun-os/build/apps/bun-os-server.json",
-    "sha256": "9daadd110d9c4792ebf6e1bb3fb03d13902a336ed8ab5b920d3a2091c20b6649",
+    "sha256": "f0c8aa2fc325af2896a76590639dbc41b38ac4bc995f071fac2dd07d2f28a1ac",
     "install": {
       "frozenLockfile": true,
       "ignoreScripts": true,
@@ -37,7 +39,8 @@
         "@aphrody/bun-workspace",
         "@aphrody/bun-os-workspace"
       ]
-    }
+    },
+    "bytes": 154165944
   },
   "ingress": {
     "owner": "existing-source-forge-vhost",
@@ -55,8 +58,8 @@
     "serviceActivated": false,
     "publicRouteActivated": false,
     "http": {
-      "passed": 7,
-      "total": 7
+      "total": 9,
+      "passed": 9
     },
     "tokenProvisioned": true,
     "secretContract": "SECURE: 1/1",
