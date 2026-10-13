@@ -447,7 +447,7 @@ export async function main(args = Bun.argv.slice(2)): Promise<number> {
     }
     report.complete = report.results.every(result => result.status === "built");
     await writeJSON(reportPath, report);
-  }
+  } else if (values.report) await writeJSON(reportPath, report);
   console.log(JSON.stringify(report, null, 2));
   return action === "build" && !report.complete ? 1 : 0;
 }
