@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { inspectCargoWorkspace, loadConfig, runNative } from "../packages/workspace/src/index.ts";
+import { inspectCargoWorkspace, loadConfig, runNative } from "@aphrody/bun-workspace";
 
 const [action = "metadata"] = Bun.argv.slice(2);
 const config = await loadConfig();

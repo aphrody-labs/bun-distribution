@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { runProcess } from "../packages/workspace/src/process.ts";
+import { runProcess } from "@aphrody/bun-workspace/process";
 
 /** The platform wrapper owns admission only; this shared owner controls child lifetime. */
 async function main(): Promise<number> {

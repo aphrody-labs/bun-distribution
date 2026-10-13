@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /** Inspect immutable Git manifests before migrating flat crate ownership. */
 import { dirname, resolve } from "node:path";
-import { runProcess } from "../packages/bun-workspace/src/process.ts";
+import { runProcess } from "@aphrody/bun-workspace/process";
 
 type Manifest = {
   package?: { name?: string; version?: string | { workspace: boolean } };

@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { resolve } from "node:path";
-import { runProcess } from "../packages/workspace/src/process.ts";
+import { runProcess } from "@aphrody/bun-workspace/process";
 
 const root = resolve(import.meta.dir, "..");
 for (const check of ["typecheck", "lint", "format:check"]) {

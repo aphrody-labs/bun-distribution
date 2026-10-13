@@ -2,7 +2,7 @@
 /** Retire redundant workspace installs after proving the root package owner. */
 import { lstat, readdir, realpath, rm } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import { runProcess } from "../packages/bun-workspace/src/process.ts";
+import { runProcess } from "@aphrody/bun-workspace/process";
 
 const root = resolve(import.meta.dir, "..");
 const product = await Bun.file(join(root, "package.json")).json();

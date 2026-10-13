@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import { resolve } from "node:path";
-import { runProcess } from "../packages/workspace/src/process.ts";
-import { inspectCargoWorkspace, loadConfig } from "../packages/workspace/src/index.ts";
+import { inspectCargoWorkspace, loadConfig } from "@aphrody/bun-workspace";
+import { runProcess } from "@aphrody/bun-workspace/process";
 
 const root = resolve(import.meta.dir, "..");
 const env = {

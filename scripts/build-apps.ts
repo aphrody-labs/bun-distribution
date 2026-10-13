@@ -23,8 +23,8 @@ import {
   type RuntimeFacts,
   type RuntimePin,
   type RuntimeTarget,
-} from "../packages/workspace/src/index.ts";
-import { validateAssetReference, type AssetReference } from "../packages/workspace/src/assets.ts";
+} from "@aphrody/bun-workspace";
+import { validateAssetReference, type AssetReference } from "@aphrody/bun-workspace/assets";
 import {
   buildAppArtifact,
   hostMatchesTarget,
