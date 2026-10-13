@@ -12,6 +12,7 @@ Group={user}
 WorkingDirectory={app_root}
 Environment=HOST=127.0.0.1
 Environment=PORT={port}
+Environment=APHRODY_APP_ORIGIN=https://app-%i.aphrody.app
 Environment=APHRODY_APP_DATA={state_root}/apps/%i/data
 Environment=APHRODY_ARTIFACT_CACHE={state_root}/cache/apps/%i
 EnvironmentFile={state_root}/secrets/apps/%i.env
