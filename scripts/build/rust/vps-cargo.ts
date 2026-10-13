@@ -23,7 +23,7 @@ import { $ } from "bun";
 import { mkdir, rm } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { basename, dirname, join, posix, resolve } from "node:path";
-import { factoryTransientShell } from "../../../packages/infra/workspace/src/build-factory-cleanup.ts";
+import { factoryTransientShell } from "@aphrody/workspace/src/build-factory-cleanup.ts";
 
 export type Forward = { bind: string; to: string; purpose?: string };
 /** An external repository built through the tunnel (`--repo <name>`). */

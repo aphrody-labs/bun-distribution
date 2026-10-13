@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, renameSync, rmSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { yoloHome } from "../vfs/home";
 import { readGitHead } from "./status";
+import { checkoutRoot } from "@aphrody/paths";
 
 export interface BunApiDomain {
   readonly id: "web_api" | "server" | "react" | "css" | "img" | "json" | "markdown";
@@ -67,11 +68,11 @@ async function writeTrackedCatalog(
   }
 }
 
-/** Bun fork checkout (aphrody-labs/bun): `APHRODY_BUN_CHECKOUT`, else `C:/bun` on Windows; undefined when absent. */
+/** Configured Bun checkout or the current workspace's sibling; undefined when absent. */
 export function bunCheckout(
   env: Record<string, string | undefined> = process.env,
 ): string | undefined {
-  const dir = env.APHRODY_BUN_CHECKOUT || (process.platform === "win32" ? "C:/bun" : undefined);
+  const dir = checkoutRoot("bun", env);
   return dir && existsSync(resolve(dir, "docs")) ? resolve(dir) : undefined;
 }
 

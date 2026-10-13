@@ -10,7 +10,7 @@
 import { copyFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { KernelClient } from "../../../../packages/os/kernel-client/src/index.ts";
+import { KernelClient } from "@aphrody/os";
 
 export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 
@@ -81,10 +81,12 @@ export async function withKernel<T>(
     while (!client) {
       if (server.exitCode !== null) throw new Error(`kernel exited with ${server.exitCode}`);
       try {
+        // oxlint-disable-next-line no-await-in-loop -- each connection probe depends on the previous attempt.
         client = await KernelClient.connect(endpoint, `live-${label}`, 2_000);
       } catch (error) {
         if (Date.now() > deadline)
           throw new Error(`kernel did not answer on ${endpoint}`, { cause: error });
+        // oxlint-disable-next-line no-await-in-loop -- bound retries against the same live server process.
         await Bun.sleep(250);
       }
     }

@@ -2,7 +2,7 @@
 // Collecte l'instantané du réseau depuis le hub vps : WireGuard (handshakes, adresses publiques), ports TCP des
 // membres, tunnel inverse d'Omar, faits des hôtes Linux (vps local, dbfr par SSH) et bloc NET_LIVE_* poussé par le
 // PC propriétaire. Aucun secret n'est lu : `wg show` est limité aux sous-commandes sans clé privée.
-import { LINUX_SCRIPT, parseKv } from "../../../../packages/engine/core/src/host/net-facts.ts";
+import { LINUX_SCRIPT, parseKv } from "@aphrody/yolo-core/src/host/net-facts.ts";
 import { parseContainers, type HostSnap, type MemberSnap, type Snapshot } from "./protocol.ts";
 
 export interface MemberCfg {

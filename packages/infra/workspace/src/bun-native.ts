@@ -118,12 +118,10 @@ export async function stageNativeConsumer(packageRoot: string, staging: string):
     seen.set(pkg.name, source);
     await cp(join(source, "src"), join(destination, "src"), { recursive: true });
     await copyFile(join(source, "package.json"), join(destination, "package.json"));
-    // Paths is a published compatibility facade over Workspace's canonical owner.
-    // Build that facade for the isolated consumer instead of relying on checkout siblings.
+    // Build the Paths package from its own source for the isolated consumer.
     if (pkg.name === "@aphrody/paths") {
       const entrypoint = join(source, "src/index.ts");
-      const owner = join(source, "../workspace/src/paths.ts");
-      const inputs = [entrypoint, owner].map((path) => ({
+      const inputs = [entrypoint].map((path) => ({
         path: relative(source, path).replaceAll(sep, "/"),
         sha256: new Bun.CryptoHasher("sha256").update(readFileSync(path)).digest("hex"),
       }));

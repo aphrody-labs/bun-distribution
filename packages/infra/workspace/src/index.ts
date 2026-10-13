@@ -77,4 +77,4 @@ export {
   renderDocumentationAgentIndex,
 } from "./documentation.ts";
 
-export * from "./paths.ts";
+export * from "@aphrody/paths";

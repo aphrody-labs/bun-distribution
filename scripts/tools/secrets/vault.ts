@@ -12,7 +12,7 @@ import {
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { randomBytes, createHash } from "node:crypto";
-import { googleApi } from "../../../../bun/packages/bun-google/aphrody/packages/google/src/api.ts";
+import { googleApi } from "@aphrody/google/api";
 
 const home = homedir();
 const store = join(home, ".aphrody/private/container-vault");

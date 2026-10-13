@@ -8,22 +8,22 @@
 // ADJACENT lists near-misses that are not equivalents; MITIGATIONS lists building blocks (existence only).
 //   bun scripts/audit/engine-equivalence.ts [--write]
 import { $ } from "bun";
-import { homedir } from "node:os";
-import { join } from "node:path";
+import { join, posix } from "node:path";
+import { checkoutRoot } from "@aphrody/paths";
 import { obscuraSourceRoot } from "@aphrody/web-source/integrations/scripts/tools/web/obscura-sources.ts";
 
 const ROOT = join(import.meta.dir, "../..");
-// The Bun fork checkout (aphrody-labs/bun): APHRODY_BUN_CHECKOUT, else C:/bun on Windows, else ~/bun.
-const BUN_CHECKOUT =
-  process.env.APHRODY_BUN_CHECKOUT ??
-  (process.platform === "win32" ? "C:/bun" : join(homedir(), "bun"));
+const BUN_CHECKOUT = checkoutRoot("bun");
 const BUN_SRC = join(BUN_CHECKOUT, "src");
 const OBSCURA_ROOT = obscuraSourceRoot(ROOT);
 const OBSCURA = join(OBSCURA_ROOT, "obscura-js/src");
 const OBSCURA_JS = join(OBSCURA_ROOT, "obscura-js/js");
-const WEBKIT_PREBUILT =
-  "/home/ubuntu/build/cache/bun-forge/build-cache/webkit-5718a6ec579b9836-lto/include";
-const VPS_JSC = `${WEBKIT_PREBUILT}/JavaScriptCore ${WEBKIT_PREBUILT}/wtf`;
+const WEBKIT_PREBUILT = process.env.APHRODY_WEBKIT_INCLUDE;
+if (!WEBKIT_PREBUILT)
+  throw new Error(
+    "Set APHRODY_WEBKIT_INCLUDE to the qualified build host's WebKit include directory",
+  );
+const VPS_JSC = [posix.join(WEBKIT_PREBUILT, "JavaScriptCore"), posix.join(WEBKIT_PREBUILT, "wtf")];
 
 interface Capability {
   id: string;
@@ -213,7 +213,7 @@ async function hits(symbol: string, where: Where): Promise<number> {
           ? BUN_SRC
           : where === "shim"
             ? join(BUN_SRC, "jsc/bindings/v8")
-            : VPS_JSC;
+            : VPS_JSC.map(shellQuote).join(" ");
   const out =
     where === "jsc"
       ? await $`aphrody infra ssh exec --host vps ${`rg -F -c --no-messages -e ${shellQuote(symbol)} ${dir}`}`

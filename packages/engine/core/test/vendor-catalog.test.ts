@@ -11,9 +11,23 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { generateBunCatalog } from "../../core/src/vendor/catalog";
+import { bunCheckout, generateBunCatalog } from "../../core/src/vendor/catalog";
 
 const roots: string[] = [];
+test("Bun checkout discovery follows the relocated workspace and configured owner", () => {
+  const parent = mkdtempSync(join(tmpdir(), "yolo-relocated-checkouts-"));
+  roots.push(parent);
+  const workspace = join(parent, "aphrody");
+  const bun = join(parent, "bun");
+  mkdirSync(workspace);
+  mkdirSync(join(bun, "docs"), { recursive: true });
+  expect(bunCheckout({ APHRODY_WORKSPACE_ROOT: workspace })).toBe(bun);
+  const configured = join(parent, "custom-bun");
+  mkdirSync(join(configured, "docs"), { recursive: true });
+  expect(bunCheckout({ APHRODY_WORKSPACE_ROOT: workspace, APHRODY_BUN_CHECKOUT: configured })).toBe(
+    configured,
+  );
+});
 afterEach(() => roots.splice(0).forEach((root) => rmSync(root, { recursive: true, force: true })));
 const sourceRevision = "0123456789abcdef0123456789abcdef01234567";
 function fixture() {

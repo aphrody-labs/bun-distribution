@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { stageNativeConsumer } from "../src/bun-native.ts";
 
-test("isolated Paths facade runs canonical Workspace code with source and output provenance", async () => {
+test("isolated Paths package runs its source owner with source and output provenance", async () => {
   const root = await mkdtemp(join(tmpdir(), "aphrody-native-paths-facade-"));
   try {
     const source = join(import.meta.dir, "../../paths");
@@ -41,7 +41,7 @@ test("isolated Paths facade runs canonical Workspace code with source and output
     );
     expect(provenance.inputs).toEqual(
       await Promise.all(
-        ["src/index.ts", "../workspace/src/paths.ts"].map(async (path) => ({
+        ["src/index.ts"].map(async (path) => ({
           path,
           sha256: createHash("sha256")
             .update(await readFile(join(source, path)))
@@ -59,7 +59,7 @@ test("isolated Paths facade runs canonical Workspace code with source and output
   }
 });
 
-test("SDK staging refuses a Paths facade without its canonical owner", async () => {
+test("SDK staging refuses a Paths package with an obsolete checkout import", async () => {
   const root = await mkdtemp(join(tmpdir(), "aphrody-native-paths-missing-"));
   try {
     const source = join(root, "paths");
@@ -69,7 +69,7 @@ test("SDK staging refuses a Paths facade without its canonical owner", async () 
       join(source, "src/index.ts"),
       'export * from "../../workspace/src/paths.ts";\n',
     );
-    await expect(stageNativeConsumer(source, join(root, "isolated"))).rejects.toThrow("ENOENT");
+    await expect(stageNativeConsumer(source, join(root, "isolated"))).rejects.toThrow();
     expect(
       existsSync(join(root, "isolated/node_modules/@aphrody/paths/source-provenance.json")),
     ).toBe(false);

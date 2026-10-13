@@ -6,7 +6,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { hostLayout, type HostLayout } from "../../../packages/engine/core/src/host/layout.ts";
+import { hostLayout, type HostLayout } from "@aphrody/yolo-core/src/host/layout.ts";
 
 const REPO = join(import.meta.dir, "..", "..", "..");
 export const HOSTS = ["vps", "dbfr"] as const;

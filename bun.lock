@@ -10,11 +10,15 @@
         "@neon/env": "^1.4.7",
       },
       "devDependencies": {
+        "@aphrody/google": "workspace:*",
         "@aphrody/m3-config": "workspace:*",
         "@aphrody/m3-tokens": "workspace:*",
+        "@aphrody/os": "workspace:*",
         "@aphrody/paths": "workspace:*",
         "@aphrody/web-source": "workspace:*",
         "@aphrody/web-test": "workspace:*",
+        "@aphrody/workspace": "workspace:*",
+        "@aphrody/yolo-core": "workspace:*",
         "@happy-dom/global-registrator": "catalog:",
         "@types/bun": "catalog:",
         "@types/node": "catalog:",
@@ -955,6 +959,7 @@
       "name": "@aphrody/yolo-core",
       "version": "1.4.4",
       "dependencies": {
+        "@aphrody/paths": "workspace:*",
         "@aphrody/runtime-sdk": "workspace:*",
         "@oxc-project/types": "catalog:",
       },
