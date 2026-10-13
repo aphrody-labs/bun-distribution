@@ -1,5 +1,14 @@
 # Project decisions
 
+## App hostname ownership
+
+- `packages/workspace/src/capabilities.ts` is the canonical mapping from each
+  library capability to `app-<capability>.aphrody.app`, with the library name
+  retained as an alias. Bun OS consumes this mapping when planning all 14
+  library application builds; those duplicate hostname values were removed
+  from its `infra/apps.json`. APT and the Bun Libraries desktop keep their own
+  product-specific hosts. Existing Cloudflare records and routes were not changed.
+
 - Created in the selected C:\src workspace on 2026-10-13.
 - Authored text is concise English. Identity belongs to Aphrody and Bun.
 - Imported sources are libraries. The shell exposes capabilities and headless

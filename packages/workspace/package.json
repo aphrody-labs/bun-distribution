@@ -9,6 +9,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./assets": "./src/assets.ts",
+    "./capabilities": "./src/capabilities.ts",
     "./hash": "./src/hash.ts",
     "./process": "./src/process.ts",
     "./runtime": "./src/runtime.ts"

@@ -78,3 +78,17 @@ export function appHostname(
     throw new Error(`Invalid application hostname: ${capabilityId}`);
   return `${label}.${config.deployment.domain}`;
 }
+
+/** Canonical app host plus the library-name DNS alias already used by clients. */
+export function appHostnamesForLibrary(
+  libraryId: string,
+  config: Pick<Config, "modules" | "priorities" | "deployment">,
+): string[] {
+  const capability = capabilities.find(entry => entry.libraryId === libraryId);
+  if (!capability) throw new Error(`Unknown application library: ${libraryId}`);
+  const primary = appHostname(capability.id, config);
+  const alias = `${libraryId}.${config.deployment!.domain}`;
+  if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.[a-z0-9.-]+$/.test(alias))
+    throw new Error(`Invalid application hostname alias: ${libraryId}`);
+  return [...new Set([primary, alias])];
+}
