@@ -12,6 +12,7 @@ import {
 } from "@aphrody/bun-workspace";
 import { nativeRuntimeTarget } from "@aphrody/bun-workspace/runtime";
 import { apiOwners } from "./product.ts";
+import { validateSnapshot } from "./source-portal.ts";
 
 interface InputProof {
   path: string;
@@ -161,7 +162,9 @@ export async function verifyProduct(
         "aphrody.config.json",
         "sources.lock.json",
         "infra/apps.json",
+        "infra/source-portal.json",
         "packages/bun-app-host/src/product.ts",
+        "packages/bun-app-host/src/source-portal.ts",
         "packages/bun-app-host/src/transport.ts",
       ]) {
         if (!seen.has(join(root, path))) throw new Error("Product receipt omits a canonical source owner input.");
@@ -192,6 +195,7 @@ export async function verifyProduct(
     const publicOrigin = "https://source.aphrody.app";
     const cases = [
       { path: "/healthz", status: 200, auth: false },
+      { path: "/api/v1/public-sources", status: 200, auth: false },
       { path: "/api/v1/apps", status: 401, auth: false },
       { path: "/api/v1/sources", status: 401, auth: false },
       { path: "/api/v1/status", status: 401, auth: false },
@@ -305,6 +309,15 @@ export async function verifyProduct(
                 throw new Error("Product source catalog differs.");
               if (probe.status === 200 && probe.path === "/api/v1/apps" && !Array.isArray(value.apps))
                 throw new Error("Product application catalog differs.");
+              if (probe.status === 200 && probe.path === "/api/v1/public-sources") {
+                const publicSnapshot = validateSnapshot(value);
+                const expected = validateSnapshot(await Bun.file(join(root, "infra/source-portal.json")).json());
+                if (
+                  JSON.stringify(publicSnapshot) !== JSON.stringify(expected) ||
+                  JSON.stringify(value) !== JSON.stringify(publicSnapshot)
+                )
+                  throw new Error("Product public source snapshot differs from its minimal committed input.");
+              }
               if (
                 probe.status === 200 &&
                 probe.path === "/api/v1/owners" &&

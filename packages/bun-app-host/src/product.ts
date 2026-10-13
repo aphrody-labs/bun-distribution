@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 import { authenticateRequest, jsonReply, validatePublicOrigin } from "./transport.ts";
+import { validateSnapshot, type PortalSnapshot } from "./source-portal.ts";
 
 export interface ProductCatalog {
   schemaVersion: 1;
@@ -7,6 +8,7 @@ export interface ProductCatalog {
   version: string;
   observedAt: string;
   sourceRevision: string;
+  sourcePortal?: PortalSnapshot;
   sources: {
     id: string;
     path: string;
@@ -38,10 +40,13 @@ export function productHandler(
 ): (request: Request) => Response {
   if (token.length < 32) throw new Error("Inject the application token from its protected store.");
   const publicOrigin = validatePublicOrigin(options.publicOrigin);
+  const sourcePortal = catalog.sourcePortal ? validateSnapshot(catalog.sourcePortal) : undefined;
   return request => {
     const path = new URL(request.url).pathname;
     if (request.method === "GET" && path === "/healthz")
       return jsonReply({ status: "ready", product: catalog.product, version: catalog.version });
+    if (request.method === "GET" && path === "/api/v1/public-sources")
+      return sourcePortal ? jsonReply(sourcePortal) : jsonReply({ error: "Public source snapshot unavailable." }, 503);
     const denied = authenticateRequest(request, token, { publicOrigin });
     if (denied) return denied;
     if (request.method !== "GET") return jsonReply({ error: "Method not allowed." }, 405);

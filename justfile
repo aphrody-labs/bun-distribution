@@ -30,6 +30,15 @@ packages-plan selection:
 packages-build selection:
     bun run packages:build --package "{{selection}}"
 
+source-plan:
+    bun run source:plan
+
+source-refresh:
+    bun run source:refresh
+
+source-verify:
+    bun run source:verify
+
 # Run the product through its canonical app-host owner.
 server-serve:
     bun packages/bun-app-host/src/cli.ts serve

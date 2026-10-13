@@ -17,6 +17,7 @@ import {
 } from "@aphrody/bun-workspace";
 import { compileStandaloneApp } from "@aphrody/bun-artifacts/compiler";
 import type { ProductCatalog } from "./product.ts";
+import { validateSnapshot } from "./source-portal.ts";
 import { verifyProduct } from "./verify.ts";
 
 async function command(args: string[], root: string): Promise<string> {
@@ -105,6 +106,7 @@ export async function productCatalog(root: string): Promise<ProductCatalog> {
     version: metadata.version,
     observedAt: new Date().toISOString(),
     sourceRevision,
+    sourcePortal: validateSnapshot(await Bun.file(join(root, "infra/source-portal.json")).json()),
     sources: [
       ...config.modules.map(module => ({
         id: module.id,
@@ -161,6 +163,7 @@ async function build(root: string, output: string): Promise<void> {
     "aphrody.config.json",
     "sources.lock.json",
     "infra/apps.json",
+    "infra/source-portal.json",
     "packages/bun-app-host/package.json",
     "packages/bun-app-host/src/build.ts",
     "packages/bun-app-host/src/verify.ts",

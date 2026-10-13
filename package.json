@@ -58,6 +58,9 @@
     "apps:build": "bun scripts/build-apps.ts build",
     "packages:plan": "bun scripts/build-packages.ts plan",
     "packages:build": "bun scripts/build-packages.ts build",
+    "source:plan": "bun scripts/source-portal.ts plan",
+    "source:refresh": "bun scripts/source-portal.ts refresh && bun fmt --write -c bun-format.json infra/source-portal.json",
+    "source:verify": "bun scripts/source-portal.ts verify --live",
     "workspace:manifests": "bun scripts/workspace-manifests.ts"
   },
   "dependencies": {

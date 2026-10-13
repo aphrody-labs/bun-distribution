@@ -60,7 +60,8 @@ activation. Native engines are compiled separately by their existing owner.
 | Route | Owner | Authentication |
 | --- | --- | --- |
 | `GET /healthz` | App host process | Public |
-| `GET /api/v1/sources` | Workspace modules, distribution source lock and committed crate gitlinks | Bearer |
+| `GET /api/v1/public-sources` | Minimal snapshot of anonymously visible forge repositories | Public |
+| `GET /api/v1/sources` | Workspace modules, distribution source lock and committed crate/package gitlinks | Bearer |
 | `GET /api/v1/apps` | Infra app inventory and workspace hostnames | Bearer |
 | `GET /api/v1/status` | App host runtime and catalog snapshot | Bearer |
 | `GET /api/v1/owners` | Explicit API ownership map | Bearer |
@@ -70,6 +71,14 @@ catalog mutations, and returns no cookies, secrets, provider sessions, local
 absolute paths or raw host configuration. Private repository entries are only
 available after authentication. Unknown routes return 404; authenticated writes
 return 405. Responses disable caching and MIME sniffing.
+
+The public source snapshot is refreshed through `bun run source:refresh`
+using the anonymous forge API with bounded pagination. Its validator
+reconstructs only public owner/name/URL/branch/mirror/observation fields. It
+contains no private repository names and certifies visibility at observation
+time, not complete mirror contents or current deployment. Use `verify --live`
+for a fresh comparison. This route stays in the existing product server and
+does not activate the staged public reverse proxy.
 
 Sources carry their pinned revision and source license when known. A null
 license refers callers to the source owner; it is not a license grant. Catalog
