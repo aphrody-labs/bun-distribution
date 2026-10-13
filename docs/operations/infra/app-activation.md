@@ -28,13 +28,15 @@ doctor qualification is required. Catalog capability, host and listener bind
 the receipt without maintaining a second application registry.
 
 Library capability aliases share their canonical service ID in the route
-catalog. Activation switches every hostname for that service together. Before
-an alias can receive production traffic, both DNS and the origin certificate
-must include its name. The live zone has the existing `video.aphrody.app` alias
-but no `filmcraft.aphrody.app` record; the currently installed
-`aphrody-control` certificate covers the 14 `app-*` hosts plus `git` and
-`deploy`, not library aliases. Keep those aliases staged until DNS, certificate
-renewal and live HTTPS qualification pass.
+catalog. Activation switches every hostname for that service together. On
+2026-10-13 the active Cloudflare `aphrody.app` zone contained all 32 expected
+proxied names: the 14 `app-*` hosts, 14 library aliases, `video`, `git`,
+`source` and `deploy`. Public HTTPS GETs to
+`filmcraft.aphrody.app/healthz` and `app-video.aphrody.app/healthz` returned
+HTTP 404. DNS presence and a public HTTPS response do not qualify app health,
+origin certificate coverage or activation; keep the service staged until its
+origin certificate, loopback health and routed HTTPS health are separately
+qualified.
 
 One `aphrody-app@.service` template runs every qualified application. App tokens
 are created through the existing Infra secret owner in the protected app store;
