@@ -7,7 +7,7 @@ import { buildWasmPackage, type PackOptions, type Packer, type ToolRunner } from
 
 const directories: string[] = [];
 afterEach(async () => {
-  await Promise.all(directories.splice(0).map(dir => rm(dir, { recursive: true, force: true })));
+  await Promise.all(directories.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
 });
 
 type Mode = "success" | "fetch-failure" | "pack-failure" | "larger";
@@ -20,7 +20,7 @@ async function fixture(mode: Mode = "success") {
   const calls: string[][] = [];
   const packed: PackOptions[] = [];
   const artifacts: boolean[] = [];
-  const run: ToolRunner = async command => {
+  const run: ToolRunner = async (command) => {
     calls.push(command);
     const value = (flag: string) => command[command.indexOf(flag) + 1]!;
     if (command.includes("fetch")) {
@@ -30,7 +30,7 @@ async function fixture(mode: Mode = "success") {
     }
     return { exitCode: 0, stdout: "" };
   };
-  const pack: Packer = async options => {
+  const pack: Packer = async (options) => {
     packed.push(options);
     artifacts.push(await Bun.file(options.artifact).exists());
     if (mode === "pack-failure") throw new Error("wasm-opt produced an invalid module");
@@ -46,8 +46,11 @@ async function fixture(mode: Mode = "success") {
 describe("WASM release package", () => {
   test("cloud sessions build with cargo-serial, then bun:wasm packages the artifact", async () => {
     const f = await fixture();
-    const result = await buildWasmPackage({ crate: "command-wasm", out: f.out }, { ...f, env: { APHRODY_CLOUD: "1" } });
-    const cargo = f.calls.find(command => command.includes("build"))!;
+    const result = await buildWasmPackage(
+      { crate: "command-wasm", out: f.out },
+      { ...f, env: { APHRODY_CLOUD: "1" } },
+    );
+    const cargo = f.calls.find((command) => command.includes("build"))!;
     expect(cargo[0]).toBe(join(f.root, "scripts/build/rust/cargo-serial.sh"));
     expect(cargo).toContain("--locked");
     expect(cargo).toContain("wasm-release");
@@ -55,7 +58,13 @@ describe("WASM release package", () => {
       {
         crate: join(f.root, "Cargo.toml"),
         package: "command-wasm",
-        artifact: join(f.root, "target", "wasm32-unknown-unknown", "wasm-release", "command_wasm.wasm"),
+        artifact: join(
+          f.root,
+          "target",
+          "wasm32-unknown-unknown",
+          "wasm-release",
+          "command_wasm.wasm",
+        ),
         outdir: f.out,
         name: "command_wasm",
         target: "web",
@@ -77,8 +86,11 @@ describe("WASM release package", () => {
 
   test("the factory build is locked, its checksum-verified fetch (exit 3) is packaged, then removed", async () => {
     const f = await fixture();
-    await buildWasmPackage({ crate: "command-wasm", out: f.out }, { ...f, env: {}, platform: "linux" });
-    const cargo = f.calls.find(command => command.includes("run"))!;
+    await buildWasmPackage(
+      { crate: "command-wasm", out: f.out },
+      { ...f, env: {}, platform: "linux" },
+    );
+    const cargo = f.calls.find((command) => command.includes("run"))!;
     expect(cargo[0]).toBe("bun");
     expect(cargo).toContain("--locked");
     expect(f.artifacts).toEqual([true]);
@@ -95,11 +107,16 @@ describe("WASM release package", () => {
 
   test("Windows hosts run locked Cargo directly", async () => {
     const f = await fixture();
-    await buildWasmPackage({ crate: "command-wasm", out: f.out }, { ...f, env: {}, platform: "win32" });
-    const cargo = f.calls.find(command => command[0] === "cargo")!;
+    await buildWasmPackage(
+      { crate: "command-wasm", out: f.out },
+      { ...f, env: {}, platform: "win32" },
+    );
+    const cargo = f.calls.find((command) =>
+      command.some((arg) => arg.endsWith("cargo-serial.ts")),
+    )!;
     expect(cargo).toContain("--locked");
     expect(cargo).toContain("wasm-release");
-    expect(f.calls.some(command => command.includes("fetch"))).toBe(false);
+    expect(f.calls.some((command) => command.includes("fetch"))).toBe(false);
   });
 
   test("--manifest-path builds a crate outside the root workspace into the repository target", async () => {
@@ -109,11 +126,12 @@ describe("WASM release package", () => {
       { crate: "dragon-pixel-wasm", out: f.out, manifestPath: manifest },
       { ...f, env: {}, platform: "win32" },
     );
-    const cargo = f.calls.find(command => command[0] === "cargo")!;
-    expect(cargo.slice(cargo.indexOf("--manifest-path"), cargo.indexOf("--manifest-path") + 2)).toEqual([
-      "--manifest-path",
-      manifest,
-    ]);
+    const cargo = f.calls.find((command) =>
+      command.some((arg) => arg.endsWith("cargo-serial.ts")),
+    )!;
+    expect(
+      cargo.slice(cargo.indexOf("--manifest-path"), cargo.indexOf("--manifest-path") + 2),
+    ).toEqual(["--manifest-path", manifest]);
     expect(cargo.slice(-2)).toEqual(["--target-dir", join(f.root, "target")]);
     expect(f.packed[0]!.crate).toBe(join(f.root, manifest));
     expect(f.packed[0]!.artifact).toBe(
@@ -124,10 +142,14 @@ describe("WASM release package", () => {
   test("--manifest-path through the VPS keeps the remote target directory", async () => {
     const f = await fixture();
     await buildWasmPackage(
-      { crate: "dragon-pixel-wasm", out: f.out, manifestPath: "crates/web/dragon-pixel-wasm/Cargo.toml" },
+      {
+        crate: "dragon-pixel-wasm",
+        out: f.out,
+        manifestPath: "crates/web/dragon-pixel-wasm/Cargo.toml",
+      },
       { ...f, env: {}, platform: "linux" },
     );
-    const cargo = f.calls.find(command => command.includes("build"))!;
+    const cargo = f.calls.find((command) => command.includes("build"))!;
     expect(cargo).toContain("--manifest-path");
     expect(cargo).not.toContain("--target-dir");
   });
@@ -163,13 +185,18 @@ describe("WASM release package", () => {
   test("packaging errors propagate", async () => {
     const f = await fixture("pack-failure");
     await expect(
-      buildWasmPackage({ crate: "command-wasm", out: f.out, skipCargo: true }, { ...f, env: { APHRODY_CLOUD: "1" } }),
+      buildWasmPackage(
+        { crate: "command-wasm", out: f.out, skipCargo: true },
+        { ...f, env: { APHRODY_CLOUD: "1" } },
+      ),
     ).rejects.toThrow("wasm-opt produced an invalid module");
   });
 
   test("rejects names that are not package names and outputs that are not package directories", async () => {
     const f = await fixture();
-    await expect(buildWasmPackage({ crate: "../x", out: f.out }, f)).rejects.toThrow("only letters");
+    await expect(buildWasmPackage({ crate: "../x", out: f.out }, f)).rejects.toThrow(
+      "only letters",
+    );
     await expect(buildWasmPackage({ crate: "command-wasm", out: f.root }, f)).rejects.toThrow(
       "output must be a package directory",
     );
