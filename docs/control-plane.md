@@ -30,6 +30,7 @@ owned. No local Windows build or WSL is part of this deployment.
 | Git forge | 29020 | source.aphrody.app (canonical); git.aphrody.app (legacy alias) |
 | Deployment | 29021 | deploy.aphrody.app |
 | Git SSH | 29022 | Private tunnel only |
+| Product API (staged) | 29030 | source.aphrody.app/api/product/v1/ |
 
 The Gitea vhost uses a Cloudflare Origin CA certificate for
 `source.aphrody.app` and `git.aphrody.app`, issued from a CSR generated on the
@@ -114,10 +115,21 @@ native builds or tests ran. Checkout initialized configured first-level
 submodules. Only the qualified Bun file was allowed as a read-only host mount;
 its directory was selected through `GITHUB_PATH` before the remaining gates.
 
-All 18 Git mirrors are private and populated: the root repository, 16 library
-forks and the Bun SDK. GitHub origins and histories remain intact; LFS payloads
-were not copied. The large Bun mirror completed server-side after its bounded
-client timed out; the receipt reflects the live repository inventory.
+The historical receipt covers an initial set of 18 private mirrors. The
+current Infra mirror catalog inventories all 239 Aphrody Labs repositories
+with source visibility preserved (205 public, 34 private). Migration is ongoing:
+complete Git refs, archived flags and LFS payloads have separate gates. Consult
+`tools/config/host/apps/vps/gitea/aphrody-labs-mirrors.json` in the configured
+Aphrody checkout for the canonical per-repository state. This documentation
+does not qualify all 239 mirrors or transfer their write authority.
+
+The root product server has a standalone Windows staging candidate with 15
+HTTP gates passing; see [product server](PRODUCT-SERVER.md). Infra reserves
+loopback port 29030 and `/api/product/v1/` for the product API, leaving Gitea
+on its existing routes. The unit specifies the public HTTPS origin and a
+protected environment file. Product installation and activation were rejected
+by automatic approval review; the service and ingress remain inactive.
+
 Native application builds and authenticated engine operations retain separate
 qualification.
 The owner's first video build restored its existing sccache temporary directory
