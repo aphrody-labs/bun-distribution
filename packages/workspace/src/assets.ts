@@ -53,6 +53,7 @@ export interface AssetPlan {
   files: Map<string, string>;
 }
 const maxAssetBytes = 128 * 1024 * 1024;
+const maxContentObjectBytes = 256 * 1024 * 1024;
 
 export function validateAssetReference(
   value: unknown,
@@ -222,7 +223,7 @@ export async function publishContentObject(
     !/^[0-9a-f]{64}$/.test(expected.sha256) ||
     !Number.isSafeInteger(expected.bytes) ||
     expected.bytes <= 0 ||
-    expected.bytes > maxAssetBytes ||
+    expected.bytes > maxContentObjectBytes ||
     !/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(storage.bucket) ||
     storage.prefix !== "objects/sha256/" ||
     new URL(storage.origin).protocol !== "https:"
@@ -232,7 +233,7 @@ export async function publishContentObject(
   if (
     !file.size ||
     file.size !== expected.bytes ||
-    (await hashFile(path, { maxBytes: maxAssetBytes })) !== expected.sha256
+    (await hashFile(path, { maxBytes: maxContentObjectBytes })) !== expected.sha256
   )
     throw new Error("Content changed after asset planning.");
   const endpoint = Bun.env.R2_ENDPOINT ?? Bun.env.AWS_ENDPOINT_URL_S3;
