@@ -6,7 +6,7 @@ set -euo pipefail
 factory_yolo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$factory_yolo_root"
 factory_yolo_sha=$(git rev-parse HEAD)
-factory_yolo_wrapper=${YOLO_CARGO_WRAPPER:-/home/ubuntu/aphrody/scripts/build/rust/cargo-serial.sh}
+factory_yolo_wrapper=${YOLO_CARGO_WRAPPER:-$factory_yolo_root/scripts/build/rust/cargo-serial.sh}
 test -x "$factory_yolo_wrapper" || { echo "Missing declared Cargo owner wrapper" >&2; exit 2; }
 
 bun install --frozen-lockfile

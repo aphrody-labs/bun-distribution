@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Cloud/WSL readiness check: one line per item, exit 1 when a required item is missing.
+// Native/cloud readiness check: one line per item, fail missing or mismatched requirements.
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -27,26 +27,28 @@ const pin = /"packageManager":\s*"bun@([^"]+)"/.exec(
 const sshConfig = existsSync(join(home, ".ssh/config"))
   ? readFileSync(join(home, ".ssh/config"), "utf8")
   : "";
-const checks: [name: string, value: string | null, required: boolean][] = [
+const bunVersion = out([process.execPath, "--version"]);
+const dispatcher = (): string | null => {
+  try {
+    return existsSync(Bun.resolveSync("@aphrody/yolo-cli/cli", import.meta.dir))
+      ? "package available (run via bun)"
+      : null;
+  } catch {
+    return null;
+  }
+};
+const checks: [name: string, value: string | null, required: boolean, qualified?: boolean][] = [
   [
     "bun",
-    out(["bun", "--version"]) === pin
-      ? pin!
-      : out(["bun", "--version"]) && `${out(["bun", "--version"])} (pin ${pin})`,
+    bunVersion === pin ? pin! : bunVersion && `${bunVersion} (pin ${pin})`,
     true,
+    bunVersion === pin,
   ],
   ["rustc", out(["rustc", "--version"]), true],
   ["cargo", out(["cargo", "--version"]), true],
-  ["uv", out(["uv", "--version"]), true],
+  ["uv", out([process.execPath, "uv", "--version"]), true],
   ["aphrody", out(["aphrody", "--version"]), false],
-  [
-    "yolo",
-    out(["yolo", "--version"]) ??
-      (existsSync(join(root, "packages/engine/yolo/src/index.ts"))
-        ? "source available (run via bun)"
-        : null),
-    false,
-  ],
+  ["yolo", out(["yolo", "--version"]) ?? dispatcher(), false],
   [
     "git push remote",
     out(["git", "remote", "get-url", "--push", "workspace"]) ??
@@ -63,19 +65,16 @@ checks.push([
     ? "initialized"
     : "uninitialized (run bun scripts/dev/cloud-agent-home.ts --apply)",
   false,
+  agentHomeReady,
 ]);
 
-for (const alias of ["vps", "dbfr", "wsl"]) {
+for (const alias of ["vps", "dbfr"]) {
   if (!new RegExp(`^Host ${alias}$`, "m").test(sshConfig)) {
-    const optional = standalone || alias === "wsl";
     checks.push([
       `ssh ${alias}`,
-      alias === "wsl"
-        ? "not configured (optional)"
-        : standalone
-          ? "not configured (optional in standalone cloud)"
-          : null,
-      !optional,
+      standalone ? "not configured (optional in standalone cloud)" : null,
+      !standalone,
+      false,
     ]);
     continue;
   }
@@ -86,8 +85,8 @@ for (const alias of ["vps", "dbfr", "wsl"]) {
   checks.push([`ssh ${alias}`, ok ? "reachable" : null, !standalone]);
 }
 let failed = 0;
-for (const [name, value, required] of checks) {
-  const ok = value !== null && value !== "";
+for (const [name, value, required, qualified = true] of checks) {
+  const ok = qualified && value !== null && value !== "";
   if (!ok && required) failed++;
   console.log(`${ok ? "ok  " : required ? "FAIL" : "warn"} ${name}: ${value ?? "missing"}`);
 }
