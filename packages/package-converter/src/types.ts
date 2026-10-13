@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: MIT
+import { hashContent } from "@aphrody/bun-workspace/hash";
+
 export type Ecosystem = "debian" | "ubuntu" | "cosmic" | "alpm" | "msys2" | "mingw" | "cygwin";
 export type InputFormat = "deb" | "deb822" | "pkginfo" | "srcinfo" | "cygwin" | "alpm-archive" | "source-archive";
 export type Fields = Record<string, string[]>;
@@ -69,7 +71,7 @@ export const LIMITS: Limits = {
 };
 
 export const decoder = new TextDecoder("utf-8", { fatal: true });
-export const sha256 = (data: Uint8Array) => new Bun.CryptoHasher("sha256").update(data).digest("hex");
+export const sha256 = hashContent;
 
 export function safePath(value: string): string {
   if (value.startsWith("/") || /[\\:\0\r\n]/.test(value)) throw new Error(`Unsafe archive path: ${value}`);
