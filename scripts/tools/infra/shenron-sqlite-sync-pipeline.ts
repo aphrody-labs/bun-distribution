@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { chmodSync, readdirSync, statSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 
 interface Config {
   schemaVersion: number;
@@ -9,6 +9,7 @@ interface Config {
   backupDirectory: string;
   offsiteDirectory: string;
   backupScript: string;
+  producerSha256: string;
   replicaExecutable: string;
 }
 const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
@@ -40,12 +41,21 @@ function childOutput(args: string[], milliseconds = 30000): Promise<string> {
     const child = Bun.spawn(args, { stdout: "pipe", stderr: "pipe", stdin: "ignore" });
     const watchdog = setTimeout(() => child.kill(), milliseconds);
     try {
-      const [stdout, , code] = await Promise.all([
+      const [stdout, stderr, code] = await Promise.all([
         new Response(child.stdout).text(),
         new Response(child.stderr).text(),
         child.exited,
       ]);
-      if (code !== 0) throw Error(`Infra stage failed: ${args[1] ?? args[0]} (exit ${code})`);
+      if (code !== 0) {
+        const cause = stderr
+          .split("\n")
+          .find((line) => /^(?:error:|[A-Za-z]+Error:)/.test(line))
+          ?.replace(/postgres(?:ql)?:\/\/\S+/gi, "<DATABASE_URL>")
+          .slice(0, 300);
+        throw Error(
+          `Infra stage failed: ${args[1] ?? args[0]} (exit ${code})${cause ? `: ${cause}` : ""}`,
+        );
+      }
       return stdout;
     } finally {
       clearTimeout(watchdog);
@@ -91,6 +101,7 @@ export async function runPipeline(root: string, configuration: string): Promise<
         "env",
         `SHENRON_SQLITE_SYNC_HELD=${lock}`,
         process.execPath,
+        "--no-env-file",
         import.meta.path,
         root,
         configuration,
@@ -107,14 +118,35 @@ export async function runPipeline(root: string, configuration: string): Promise<
       .exitCode === 0
   )
     throw Error("Real parent-held SQLite writer lease required");
+  const peer = JSON.parse(
+    await childOutput([
+      "sudo",
+      "-n",
+      "-u",
+      basename(home),
+      process.execPath,
+      "ssh",
+      "config",
+      "-F",
+      join(home, ".ssh/config"),
+      config.offsiteHost,
+    ]),
+  );
+  const identity = peer.identityFiles?.find((path: string) => path.startsWith(home + "/"));
+  if (!identity || peer.user !== basename(home))
+    throw Error("Owner SSH catalogue identity unavailable");
   const sshOptions = [
     "--native",
+    "-i",
+    identity,
     "-F",
     join(home, ".ssh/config"),
     "-o",
     "ConnectTimeout=15",
     "-o",
     "BatchMode=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
     "-o",
     `UserKnownHostsFile=${join(home, ".ssh/known_hosts")}`,
   ];
@@ -132,13 +164,19 @@ export async function runPipeline(root: string, configuration: string): Promise<
   const remoteBun = (await remote("command -v bun")).trim();
   if (!remoteBun.startsWith(home + "/") || /\s/.test(remoteBun))
     throw Error("Qualified off-host runtime path required");
+  const producer = "/usr/local/libexec/aphrody-infra/backup-shenron-sqlite.sh";
+  if (
+    new Bun.CryptoHasher("sha256").update(await Bun.file(producer).bytes()).digest("hex") !==
+    config.producerSha256
+  )
+    throw Error("Qualified canonical SQLite producer pin differs");
   await childOutput(
     [
       "env",
       `SHENRON_SQLITE_SRC=${source}`,
       `SHENRON_SQLITE_BACKUP_DIR=${backup}`,
       "bash",
-      join(root, config.backupScript),
+      producer,
     ],
     90000,
   );

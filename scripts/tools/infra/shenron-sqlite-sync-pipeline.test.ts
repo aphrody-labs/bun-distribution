@@ -1,6 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
 import { qualifiedAcknowledgement, converged } from "./shenron-sqlite-sync-pipeline";
+test("pins the deployed canonical backup producer to current owner source", async () => {
+  const config = await Bun.file(
+    new URL("../../../tools/config/host/shenron/sqlite-sync.json", import.meta.url),
+  ).json();
+  const source = (
+    await Bun.file(new URL("./backup-shenron-sqlite.sh", import.meta.url)).text()
+  ).replaceAll("\r\n", "\n");
+  expect(config.producerSha256).toBe(new Bun.CryptoHasher("sha256").update(source).digest("hex"));
+});
 test("requires checksum, SQLite integrity and a fresh completed off-host receipt", () => {
   const now = Date.now(),
     hash = "a".repeat(64);
