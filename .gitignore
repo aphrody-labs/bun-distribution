@@ -7,6 +7,7 @@
 /packages/*/*/target/
 /apps/*/*/target/
 **/*.rs.bk
+*.rmeta
 
 # Bun, TypeScript, and frontend outputs. Package-specific exceptions remain in
 # their own .gitignore files (for example, the tracked drive-server dist shell).
