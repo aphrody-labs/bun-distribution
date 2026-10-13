@@ -121,15 +121,24 @@ export async function findWorkspace(options: WorkspaceDiscoveryOptions = {}): Pr
   const configured = options.root ?? Bun.env.APHRODY_ROOT;
   if (configured !== undefined) {
     const root = resolve(configured);
-    if (!(await Bun.file(join(root, "aphrody.config.json")).exists())) {
+    if (await Bun.file(join(root, "aphrody.config.json")).exists()) return root;
+    if (options.root !== undefined) {
       throw new Error("APHRODY_ROOT must contain aphrody.config.json.");
     }
-    return root;
+    const configuredName = basename(root).toLowerCase();
+    if (configuredName === "aphrody" && (await Bun.file(join(root, "../bun-libraries/aphrody.config.json")).exists())) {
+      return resolve(root, "../bun-libraries");
+    }
   }
   for (const start of options.starts ?? [process.cwd(), import.meta.dir]) {
     let cursor = resolve(start);
     for (;;) {
       if (await Bun.file(join(cursor, "aphrody.config.json")).exists()) return cursor;
+      const cursorName = basename(cursor).toLowerCase();
+      if (cursorName === "bun-libraries" || cursorName === "bun_libraries") {
+        const siblingAphrody = join(dirname(cursor), "aphrody");
+        if (await Bun.file(join(siblingAphrody, "aphrody.config.json")).exists()) return siblingAphrody;
+      }
       const parent = dirname(cursor);
       if (parent === cursor) break;
       cursor = parent;
