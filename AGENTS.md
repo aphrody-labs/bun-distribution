@@ -19,6 +19,12 @@ workspace while imported crates still belong to nested workspaces; migrate
 their manifests and references in controlled batches before removing those
 boundaries. Keep upstream license notices intact.
 
+The owner's current contract is flat Git submodules for every product Rust
+crate in `crates/<package-name>`, inherited from one root Cargo workspace and
+nightly toolchain. Provision declared forge repositories and access through
+the Aphrody Infra owner, with credentials in protected secret stores. The
+font crates implement this contract; remaining owners require real migration.
+
 Preserve protected `.local` stores, credentials, sessions, databases, model
 weights and concurrent work. Bound long commands and serialize native builds.
 Use Cloudflare MCP for account/domain mutations. Do not add or run tests unless

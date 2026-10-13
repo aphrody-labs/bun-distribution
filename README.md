@@ -49,9 +49,13 @@ pinned below `toolchains/bun/`. App builds and shared assets use the
 `@aphrody/bun-artifacts` and `@aphrody/bun-workspace` owners.
 Shared Craft font assets, licenses and optional embedding are integrated under
 `fonts/` and `crates/craft-fonts`; see [font ownership and provenance](docs/fonts.md).
+The two font crates are pinned private forge submodules under the flat
+`crates/` directory. See [crate ownership](docs/crate-submodules.md) for the
+shared nightly, workspace and access contract.
 
-The root owns one Bun `node_modules` and configures Cargo's shared `target` and
-`install` locations. The runtime's existing build and vendored dependency
+The root owns one Bun `node_modules`, the nightly toolchain, Cargo intermediate
+outputs in `build/rust`, and shared `target` and `install` locations.
+The runtime's existing build and vendored dependency
 trees have not yet been migrated into root-owned locations. Rust source
 repositories still declare independent Cargo workspaces; the root Cargo
 workspace migration is tracked in [PLAN.md](PLAN.md) and is incomplete until
