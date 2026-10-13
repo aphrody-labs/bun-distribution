@@ -14,11 +14,15 @@ layout; they are not current checkout instructions.
 
 ## Active roots and workspaces
 
-`py/` owns Python implementation (fused into this repository on 2026-10-05). `../iecode`
-owns game-domain implementation. `~/src` is a legacy source archive,
-kept intact while migration consumers are qualified. The canonical UI framework is the [`m3/` submodule](../../../m3/README.md),
-with the product app at `m3/packages/app-ui`. The separate `aphrody-ui`
-checkout is retired. [M3 location](M3-LOCATION.md) defines this boundary.
+`py/` owns Python application sources; native Python runtime and binding
+infrastructure belong to Bun. `../iecode` owns game-domain implementation.
+The sibling Material checkout owns the M3 framework, `libm3`, tokens, shared
+controls and `@aphrody/app-ui`. Aphrody consumes its pinned crate and package
+interfaces. Aphrody retains product-specific UI and host integration in its
+app-specific `crates/ui` modules and `packages/infra/product`. The local `m3/`
+directory is not a Git submodule or framework source owner; it currently
+contains one generated Bun catalog file. [M3 location](M3-LOCATION.md) defines
+this boundary.
 
 The root [Cargo manifest](../../../Cargo.toml) and
 [Bun manifest](../../../package.json) define active members. Explicit exclusions
@@ -37,7 +41,8 @@ history under `upstream/`.
 | CLI | [crates/infra/aphrody](../../../crates/infra/aphrody): argument handling, configuration and invocation of owner libraries |
 | OS and Shell | `crates/os`, `packages/os`, `crates/shell`: system capabilities, kernel, process supervision, jobs and shell facilities |
 | Infra | `crates/infra`, [workspace orchestrator](../../../packages/infra/workspace): inventories, topology, qualification and operations |
-| UI | `crates/ui`, `m3/packages`: rendering, tokens, components and presentation |
+| Aphrody UI | `crates/ui/app`, `crates/ui/drive`, `crates/ui/identity`, `crates/ui/render`, `packages/infra/product`: product presentation and host integration |
+| Material UI | sibling Material checkout: M3, `libm3`, tokens, shared controls and `@aphrody/app-ui`; consumed through pinned interfaces |
 | AI and Web | `crates/ai`, `packages/ai`, `crates/web`, `packages/web`: model clients, inference, RAG and web capabilities |
 | Koharu and Discord | Domain libraries; applications own startup, credentials and product behavior |
 | RG and Shenron | `iecode/packages/rg`, `iecode/apps/rg`, `shenron:packages`, `shenron:apps`: domain rules, application contracts and product consumers |

@@ -52,8 +52,8 @@
       "role": "Aphrody UI application integration: product layouts, renderers, canvas, Aphrody Drive and native app wiring. Material framework, controls, tokens and shared app-ui belong to Material; Bun system UI and SDK integrations belong to Bun.",
       "source": "https://github.com/aphrody-labs/aphrody",
       "production": true,
-      "monorepoPaths": "crates/ui, m3/packages",
-      "note": "Domain of the aphrody monorepo since 2026-10-01; the former split repository was deleted after a verified backup (~/.aphrody/private/backups/github/aphrody-labs-2026-10-01)."
+      "monorepoPaths": "crates/ui/app, crates/ui/drive, crates/ui/identity, crates/ui/render, packages/infra/product",
+      "note": "Aphrody owns application integration and host wiring. Shared M3 framework, libm3, tokens, controls and @aphrody/app-ui are owned by Material and consumed through pinned package/crate interfaces."
     },
     {
       "id": "aphrody-web",

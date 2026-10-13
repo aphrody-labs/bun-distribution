@@ -1,56 +1,28 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- docs-links: external-paths — backtick paths in this dated document name files of the repository at the time it records (Shenron and Koharu moved to aphrody-labs/shenron on 2026-10-05), not of this checkout. -->
-# M3 at the product repository root
+# Material ownership and Aphrody integration
 
-Owner decision: 2026-10-05. Aphrody mounts the private `aphrody-m3` Git
-submodule at `m3/`. The old `design/aphrody-m3/` source path is retired.
+Owner decision, 2026-10-13: Material is the canonical source owner for the
+shared Material 3 framework. Aphrody owns product-specific integration and
+consumes Material's pinned package and crate interfaces.
 
-| Path | Responsibility |
-| --- | --- |
-| `m3/packages/app-ui` | Product UI and native/backend client contracts |
-| `m3/packages/*` | Shared framework, components, themes and product UI libraries |
-| `m3/packages/app-ui/showcase/*` | Framework examples and showcase |
-| `m3/forks/*` | Pinned upstream forks, with their history and notices |
-| `crates/ui/*` | Native Aphrody hosts, rendering and token contracts |
-| `packages/infra/workspace` | Workspace and build orchestration |
-
-The UI framework is product code, so it does not live under a design-document
-category. M3 keeps its package names, exports, remote and history. The Git
-submodule's historical internal name is metadata; its worktree path is `m3`.
-Other repositories keep their independently pinned consumer checkouts.
-
-Workspaces, imports, build paths and current documentation follow the new path.
-Historical migration receipts retain the paths they actually measured. No
-compatibility symlink or second copy of the product source is required.
-
-## Product and backend boundaries
-
-The owner refocused this batch on M3, Aphrody applications and Shenron on
-2026-10-05. The earlier workers are stopped.
-
-| Surface | Source owner | Actual boundary |
+| Capability | Source owner | Aphrody boundary |
 | --- | --- | --- |
-| Aphrody App | `crates/ui/app` | Native Tauri host, windows and typed IPC |
-| App UI | `m3/packages/app-ui` | Shared M3 presentation; IPC on desktop, RPC/SSE on web |
-| App server | `crates/ai/app-server` | Sessions, turns, tool discovery and optional RAG RPC |
-| Aphrody AI | `crates/ai/*` | Shared model, agent, inference and RAG libraries |
-| Shenron Site | `apps/shenron/site` + `m3/packages/shenron-ui` | Product pages and `GET /api/chat` |
-| Shenron backend | `apps/shenron/bot` + `packages/shenron/pipeline` | Domain sessions, grounded answers and Aphrody clients |
-| Crawl | `crates/web/web-crawl` | Shared crawl implementation, consumed through Web owners |
-| RAG | `crates/ai/rag` + `rag-core` | Retrieval and storage contracts; each domain retains its stores |
+| Tokens, themes and `libm3` adapters | Material | Consume the pinned `aphrody-m3-tokens` crate and Material exports. |
+| Shared controls and `@aphrody/app-ui` | Material | Depend on `@aphrody/app-ui` from the selected sibling Material checkout. |
+| Native app and product UI integration | Aphrody | `crates/ui/app`, `crates/ui/drive`, `crates/ui/identity`, `crates/ui/render`, `packages/infra/product`. |
+| Runtime and system UI/SDK integration | Bun | Use Bun's runtime and SDK interfaces; framework source stays with its capability owner. |
 
-The desktop broker embeds the app-server through Tokio duplex streams. The
-browser host uses the existing M3 server and forwards `/rpc`, `/events`,
-`/notifications`, `/health` and `/healthz` to the native loopback backend.
-Frontend code starts no backend subprocess and supplies no simulated backend.
+The root Cargo manifest pins `aphrody-m3-tokens` to the Material Git repository
+at revision `229a767493818a5dd9f92451b4a99699894a1865`. The Bun workspace
+resolves `@aphrody/app-ui` through `../material/packages/app-ui`. Checkout paths
+are selected from the current workspace or explicit configuration.
 
-Shenron Site keeps its session-aware backend route. With `RAG_BACKEND=aphrody`,
-stateless chat uses the shared Aphrody compute client; requests with a session
-keep the bot's conversation lifecycle. This source wiring does not establish
-live crawl, model or database readiness. Native desktop Shenron access currently
-retains its explicit availability gate in `crates/ui/app/src/shenron.rs`.
+The local `m3/` directory is not a Git submodule and contains no canonical
+Material source. Its only current file is the generated Bun catalog at
+`m3/packages/app-ui/src/generated/bun-catalog.ts`; preserve it until its
+generator and consumers are reconciled. Do not add framework changes there.
 
-The installed CLI qualification acknowledged initialization and ten tools, with
-no registered MCP servers in an isolated profile. Its Aphrody/RAG extension is
-disabled. No model turn, crawl or protected index was executed. Backend health,
-compiled features and usable domain data must remain distinct in the UI.
+Material's `AGENTS.md`, `PLAN.md` and `MEMORY.md` own framework placement,
+integration and dated qualification evidence. Source presence and a pinned
+dependency do not by themselves qualify package publication, a displayed UI or
+deployment.
