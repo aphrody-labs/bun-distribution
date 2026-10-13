@@ -1,6 +1,6 @@
 # Independent applications
 
-`packages/artifacts` builds one Aphrody application executable per configured
+`packages/bun-artifacts` builds one Aphrody application executable per configured
 capability and target. The workspace owns capability IDs, runtime provenance,
 SHA-256, native builds, shared assets and deployment. The artifact package owns
 embedding, manifests and extraction.
@@ -23,7 +23,7 @@ serialized native owner. Generation now has the existing router's `artcraft-cli`
 JSONL binary; its Linux native build and offline operations are qualified.
 
 ```sh
-bun packages/artifacts/src/cli.ts build video \
+bun packages/bun-artifacts/src/cli.ts build video \
   --target bun-windows-x64 --bun /qualified/bun.exe \
   --runtime-pin /qualified/runtime-pin.json \
   --native /qualified/filmcraft-cli.exe \
@@ -32,7 +32,7 @@ bun packages/artifacts/src/cli.ts build video \
 ```
 
 Paths are caller-selected; the example does not identify a workstation location.
-Outputs default to ignored `packages/artifacts/dist`. Builds require a fresh
+Outputs default to ignored `build/apps`. Builds require a fresh
 output file. The output receipt contains the executable digest and manifest.
 
 ## Runtime
@@ -80,7 +80,7 @@ No tests are added.
 ## Artifact verification
 
 ```sh
-bun packages/artifacts/src/cli.ts verify \
+bun packages/bun-artifacts/src/cli.ts verify \
   --build-report .local/builds/report.json --app video
 ```
 

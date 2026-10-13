@@ -23,14 +23,6 @@
         "@aphrody/tauri": "file:../../toolchains/bun/packages/bun-tauri",
       },
     },
-    "packages/artifacts": {
-      "name": "@aphrody/bun-os-artifacts",
-      "version": "1.4.4",
-      "dependencies": {
-        "@aphrody/bun-app-host": "workspace:*",
-        "@aphrody/bun-workspace": "workspace:*",
-      },
-    },
     "packages/bun-app-host": {
       "name": "@aphrody/bun-app-host",
       "version": "1.4.4",
@@ -80,13 +72,6 @@
         "@aphrody/bun-workspace": "workspace:*",
       },
     },
-    "packages/video": {
-      "name": "@aphrody/bun-os-video-compat",
-      "version": "1.4.4",
-      "dependencies": {
-        "@aphrody/bun-video-project": "workspace:*",
-      },
-    },
     "packages/workspace": {
       "name": "@aphrody/bun-os-workspace",
       "version": "1.4.4",
@@ -102,10 +87,6 @@
     "@aphrody/bun-artifacts": ["@aphrody/bun-artifacts@workspace:packages/bun-artifacts"],
 
     "@aphrody/bun-desktop": ["@aphrody/bun-desktop@workspace:apps/desktop"],
-
-    "@aphrody/bun-os-artifacts": ["@aphrody/bun-os-artifacts@workspace:packages/artifacts"],
-
-    "@aphrody/bun-os-video-compat": ["@aphrody/bun-os-video-compat@workspace:packages/video"],
 
     "@aphrody/bun-os-workspace": ["@aphrody/bun-os-workspace@workspace:packages/workspace"],
 

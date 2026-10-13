@@ -9,13 +9,11 @@
   },
   "workspaces": [
     "apps/desktop",
-    "packages/artifacts",
     "packages/bun-app-host",
     "packages/bun-artifacts",
     "packages/bun-video-project",
     "packages/bun-workspace",
     "packages/package-converter",
-    "packages/video",
     "packages/workspace"
   ],
   "type": "module",

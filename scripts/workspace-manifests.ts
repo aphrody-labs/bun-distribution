@@ -18,8 +18,6 @@ for (const entry of [{ path: "package.json", manifest: product }, ...entries]) {
       if (names.has(name)) entry.manifest[field][name] = "workspace:*";
     }
   }
-  if (["@aphrody/bun-os-artifacts", "@aphrody/bun-os-video-compat"].includes(entry.manifest.name))
-    delete entry.manifest.bin;
 }
 product.workspaces = paths.map(path => path.replace(/\/package\.json$/, ""));
 const roots = "src container factory infra packages apps/desktop scripts";

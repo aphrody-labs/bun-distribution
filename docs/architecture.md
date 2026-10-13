@@ -23,15 +23,15 @@ flowchart TD
 - `apps/desktop`: Aphrody shell, built and served by Bun.
 - `packages/workspace`: app identity, config, provenance, source coverage,
   native execution, asset manifests and the app transport.
-- `packages/video`: exact JSON, bounded native operations and runtime availability.
-- `packages/artifacts`: target manifests, standalone compilation and verified
+- `packages/bun-video-project`: exact JSON, bounded native operations and runtime availability.
+- `packages/bun-artifacts`: target manifests, standalone compilation and verified
   native payload extraction.
 - `libraries/*`: 16 independent open source forks.
 - `toolchains/bun`: pinned SDK and runtime types.
 
-Each library retains its history, licenses and Cargo workspace. Existing
-dependency SHA pins remain unchanged. No global Cargo workspace or implicit
-dependency override is created.
+Imported libraries retain their history and licenses. The root Cargo workspace
+owns the migrated flat crate submodules and common dependencies. Remaining
+nested Cargo workspaces are migrated in qualified batches.
 
 The shell exposes capabilities and headless inspection. Library sources do not
 define product branding. GUI binaries are not launch targets.
