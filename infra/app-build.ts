@@ -3,7 +3,10 @@ import { lstat, mkdir, open, realpath, unlink } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { hostname } from "node:os";
 import { isBuiltin } from "node:module";
-import { appCapabilityForLibrary, appHostnamesForLibrary } from "@aphrody/bun-workspace/capabilities";
+import {
+  appCapabilityForLibrary,
+  appHostnamesForLibrary,
+} from "@aphrody/bun-workspace/capabilities";
 import { loadConfig as loadLibraryConfig } from "@aphrody/bun-workspace";
 import { runProcess } from "@aphrody/bun-workspace/process";
 import { command, identity, packageRoot, type RuntimeReceipt } from "../src/distribution.ts";
@@ -124,8 +127,14 @@ export async function executableABI(path: string, target: AppTarget, library = f
   if (actual.architecture !== expected || actual.bits !== 64)
     throw new Error("Executable architecture differs from its target");
   if (target === "windows-x64") {
-    if (actual.format !== "pe" || actual.runtime !== "windows" || (library ? !actual.library : !actual.executable))
-      throw new Error("Windows target needs a qualified native PE artifact; alternate runtimes remain distinct");
+    if (
+      actual.format !== "pe" ||
+      actual.runtime !== "windows" ||
+      (library ? !actual.library : !actual.executable)
+    )
+      throw new Error(
+        "Windows target needs a qualified native PE artifact; alternate runtimes remain distinct",
+      );
     return actual;
   }
   if (actual.format !== "elf") throw new Error("Linux target needs ELF artifact evidence");
@@ -133,7 +142,9 @@ export async function executableABI(path: string, target: AppTarget, library = f
 }
 async function snapshot(configPath: string, config: AppInventory, target: AppTarget) {
   const selected = config.runtimeSnapshots?.[target];
-  const path = await realpath(selected ? resolve(dirname(configPath), selected.path) : process.execPath);
+  const path = await realpath(
+    selected ? resolve(dirname(configPath), selected.path) : process.execPath,
+  );
   if (protectedInput(path)) throw new Error("Runtime snapshot points to a protected store");
   const digest = await identity(path);
   await executableABI(path, target);
@@ -155,13 +166,17 @@ async function snapshot(configPath: string, config: AppInventory, target: AppTar
     );
     if (
       !/^[a-f0-9]{40}$/.test(metadata.revision) ||
-      !String(metadata.sourceUrl).startsWith("https://github.com/aphrody-labs/bun/releases/download/") ||
+      !String(metadata.sourceUrl).startsWith(
+        "https://github.com/aphrody-labs/bun/releases/download/",
+      ) ||
       metadata.revision !== Bun.revision ||
-      (selected && (selected.revision !== metadata.revision || selected.version !== metadata.version))
+      (selected &&
+        (selected.revision !== metadata.revision || selected.version !== metadata.version))
     )
       throw new Error("The selected runtime and compiler provenance do not agree");
     const after = await identity(path);
-    if (after.sha256 !== digest.sha256) throw new Error("Runtime changed during metadata qualification");
+    if (after.sha256 !== digest.sha256)
+      throw new Error("Runtime changed during metadata qualification");
     return {
       path,
       ...digest,
@@ -188,7 +203,9 @@ async function snapshot(configPath: string, config: AppInventory, target: AppTar
     !receipt.qualification?.passed ||
     !receipt.qualification.gates.includes("native-runtime")
   )
-    throw new Error("Cross-target snapshot receipt does not match its exact bytes, target and compiler");
+    throw new Error(
+      "Cross-target snapshot receipt does not match its exact bytes, target and compiler",
+    );
   return {
     path,
     ...digest,
@@ -201,7 +218,8 @@ async function nativeArtifacts(configPath: string, app: AppEntry, target: AppTar
   const source = app.source;
   if (!source) throw new Error("Native artifact source metadata is missing");
   const descriptor = app.native.artifactsByTarget?.[target];
-  if (!app.native.binary) throw new Error("No native executable capability owner is configured for this app");
+  if (!app.native.binary)
+    throw new Error("No native executable capability owner is configured for this app");
   if (!descriptor) throw new Error("Native backend has no qualified artifact descriptor");
   if (!source.revision || descriptor.sourceRevision !== source.revision)
     throw new Error("Native source pin mismatch");
@@ -242,7 +260,9 @@ async function nativeArtifacts(configPath: string, app: AppEntry, target: AppTar
     !receipt.qualification.gates?.includes("native-backend") ||
     !receipt.qualification.gates?.includes("native-dependency-closure")
   )
-    throw new Error("Native backend needs a matching source, artifact and dependency qualification receipt");
+    throw new Error(
+      "Native backend needs a matching source, artifact and dependency qualification receipt",
+    );
   const dependencies = files
     .slice(1)
     .map(({ name, sha256, bytes, role, abi, minimumGlibc }) => ({
@@ -280,7 +300,9 @@ async function nativeArtifacts(configPath: string, app: AppEntry, target: AppTar
     (descriptor.abi && receipt.abi !== descriptor.abi) ||
     (descriptor.minimumGlibc && receipt.minimumGlibc !== descriptor.minimumGlibc)
   )
-    throw new Error("Native dependency closure or ABI version differs from its qualified producer receipt");
+    throw new Error(
+      "Native dependency closure or ABI version differs from its qualified producer receipt",
+    );
   return {
     files,
     evidence: {
@@ -292,21 +314,28 @@ async function nativeArtifacts(configPath: string, app: AppEntry, target: AppTar
     },
   };
 }
-export async function planApp(configPath: string, appId: string, target: AppTarget): Promise<AppPlan> {
+export async function planApp(
+  configPath: string,
+  appId: string,
+  target: AppTarget,
+): Promise<AppPlan> {
   configPath = resolve(configPath);
   const config = (await readInventory(configPath)) as AppInventory;
-  const app = config.apps.find(app => app.id === appId);
+  const app = config.apps.find((app) => app.id === appId);
   if (!app || !config.targets.includes(target)) throw new Error("Unknown app or target");
   const ownsNativeBuild = app.workspace === "libraries" && app.kind === "native-cli";
-  const libraryRoot = ownsNativeBuild ? await workspace(configPath, config, "libraries") : undefined;
-  const root = libraryRoot ?? (await workspace(configPath, config, app.entrypointWorkspace ?? app.workspace));
+  const libraryRoot = ownsNativeBuild
+    ? await workspace(configPath, config, "libraries")
+    : undefined;
+  const root =
+    libraryRoot ?? (await workspace(configPath, config, app.entrypointWorkspace ?? app.workspace));
   let resolvedHostnames: string[];
   let librarySourceRevision: string | undefined;
   let resolvedSource = app.source;
   if (ownsNativeBuild) {
     const libraryConfig = await loadLibraryConfig(libraryRoot!);
     const capability = appCapabilityForLibrary(app.id);
-    const module = libraryConfig.modules.find(module => module.id === app.id);
+    const module = libraryConfig.modules.find((module) => module.id === app.id);
     resolvedHostnames = appHostnamesForLibrary(app.id, libraryConfig);
     if (!capability || !module?.binary) reasonsForMissingOwner(app.id);
     if (!module.fork || !module.path || !module.license || !module.revision)
@@ -321,7 +350,8 @@ export async function planApp(configPath: string, appId: string, target: AppTarg
     if (app.hostname && !resolvedHostnames.includes(app.hostname))
       throw new Error("Configured application hostname differs from the library owner");
   } else {
-    if (!resolvedSource) throw new Error("A source record is required for non-library applications");
+    if (!resolvedSource)
+      throw new Error("A source record is required for non-library applications");
     if (!app.hostname) throw new Error("A hostname is required for non-library applications");
     resolvedHostnames = [app.hostname];
   }
@@ -332,12 +362,16 @@ export async function planApp(configPath: string, appId: string, target: AppTarg
     hostname: resolvedHostnames[0]!,
     hostnames: resolvedHostnames,
   };
-  let entrypoint = inside(root, resolve(root, ownsNativeBuild ? "scripts/build-apps.ts" : app.entrypoint));
+  let entrypoint = inside(
+    root,
+    resolve(root, ownsNativeBuild ? "scripts/build-apps.ts" : app.entrypoint),
+  );
   const reasons: string[] = [];
   if (!(await Bun.file(entrypoint).exists())) reasons.push("Configured entrypoint is absent");
   else entrypoint = inside(root, await realpath(entrypoint));
   if (protectedInput(entrypoint)) reasons.push("Entrypoint points to a protected store");
-  if (app.externalContext?.length) reasons.push("Unresolved external context: " + app.externalContext.join(", "));
+  if (app.externalContext?.length)
+    reasons.push("Unresolved external context: " + app.externalContext.join(", "));
   const assets = await collectAssets(configPath, [app.id]);
   let runtime: AppPlan["runtime"],
     nativeFiles: EmbeddedNativeFile[] = [],
@@ -398,11 +432,17 @@ function record(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-async function buildLibraryApp(configPath: string, appId: string, target: AppTarget, requestedOutput?: string) {
+async function buildLibraryApp(
+  configPath: string,
+  appId: string,
+  target: AppTarget,
+  requestedOutput?: string,
+) {
   const config = (await readInventory(configPath)) as AppInventory;
-  const app = config.apps.find(entry => entry.id === appId);
+  const app = config.apps.find((entry) => entry.id === appId);
   const capability = appCapabilityForLibrary(appId);
-  if (!app || app.kind !== "native-cli" || !capability) throw new Error("No Bun Libraries app owner is configured");
+  if (!app || app.kind !== "native-cli" || !capability)
+    throw new Error("No Bun Libraries app owner is configured");
   const plan = await planApp(configPath, appId, target);
   if (plan.status !== "prepared" || !plan.runtime) throw new Error(plan.reasons.join("; "));
   const libraryRoot = await workspace(configPath, config, "libraries");
@@ -414,7 +454,12 @@ async function buildLibraryApp(configPath: string, appId: string, target: AppTar
     throw new Error("Bun Libraries and distribution runtime pins differ");
   const output = resolve(
     requestedOutput ??
-      join(packageRoot, "../../build/bun-os-apps", appId, new Date().toISOString().replace(/[:.]/g, "")),
+      join(
+        packageRoot,
+        "../../build/bun-os-apps",
+        appId,
+        new Date().toISOString().replace(/[:.]/g, ""),
+      ),
   );
   try {
     await lstat(output);
@@ -484,11 +529,18 @@ async function buildLibraryApp(configPath: string, appId: string, target: AppTar
   });
   await Bun.write(join(output, "logs/build.stdout"), result.stdout);
   await Bun.write(join(output, "logs/build.stderr"), result.stderr);
-  const reportValue: unknown = (await Bun.file(join(libraryRoot, reportRelative)).json()) as unknown;
+  const reportValue: unknown = (await Bun.file(
+    join(libraryRoot, reportRelative),
+  ).json()) as unknown;
   if (!record(reportValue) || reportValue.complete !== true || !Array.isArray(reportValue.results))
     throw new Error("Bun Libraries artifact build did not produce a complete report");
   const built = reportValue.results[0];
-  if (!record(built) || built.appId !== capability.id || built.status !== "built" || built.extraction !== "qualified")
+  if (
+    !record(built) ||
+    built.appId !== capability.id ||
+    built.status !== "built" ||
+    built.extraction !== "qualified"
+  )
     throw new Error("Bun Libraries did not qualify the standalone application artifact");
   if (!record(built.artifact)) throw new Error("Bun Libraries artifact receipt is incomplete");
   const artifact = built.artifact;
@@ -504,7 +556,11 @@ async function buildLibraryApp(configPath: string, appId: string, target: AppTar
   )
     throw new Error("Bun Libraries artifact identity or runtime receipt is invalid");
   const runtime = manifest.runtime;
-  if (typeof runtime.version !== "string" || typeof runtime.revision !== "string" || typeof runtime.sha256 !== "string")
+  if (
+    typeof runtime.version !== "string" ||
+    typeof runtime.revision !== "string" ||
+    typeof runtime.sha256 !== "string"
+  )
     throw new Error("Bun Libraries runtime receipt is invalid");
   if (
     runtime.version !== plan.runtime.version ||
@@ -532,7 +588,7 @@ async function buildLibraryApp(configPath: string, appId: string, target: AppTar
   for await (const chunk of artifactFile.stream()) artifactHash.update(chunk);
   if (artifactHash.digest("hex") !== artifact.sha256)
     throw new Error("Bun Libraries artifact file hash differs from its manifest");
-  const nativeFiles = (manifest.native as unknown[]).map(file => {
+  const nativeFiles = (manifest.native as unknown[]).map((file) => {
     if (
       !record(file) ||
       typeof file.path !== "string" ||
@@ -590,9 +646,11 @@ async function buildLibraryApp(configPath: string, appId: string, target: AppTar
 }
 async function compileWorker(planPath: string, output: string) {
   const plan = (await Bun.file(planPath).json()) as AppPlan;
-  if (plan.status !== "prepared" || !plan.runtime) throw new Error("Prepared app plan and runtime snapshot required");
+  if (plan.status !== "prepared" || !plan.runtime)
+    throw new Error("Prepared app plan and runtime snapshot required");
   const current = await planApp(plan.configPath, plan.app.id, plan.target);
-  if (JSON.stringify(current) !== JSON.stringify(plan)) throw new Error("App inputs changed before compilation");
+  if (JSON.stringify(current) !== JSON.stringify(plan))
+    throw new Error("App inputs changed before compilation");
   const proofs = new Map<string, { bytes: number; sha256: string }>();
   const contract: NativeLaunchContract = {
     appId: plan.app.id,
@@ -600,7 +658,9 @@ async function compileWorker(planPath: string, output: string) {
     files: plan.nativeFiles.map(({ path: _path, ...file }) => file),
   };
   const outfile = join(output, plan.app.id + (plan.target === "windows-x64" ? ".exe" : ""));
-  const target = (plan.target === "macos-arm64" ? "bun-darwin-arm64" : "bun-" + plan.target) as Bun.Build.CompileTarget;
+  const target = (
+    plan.target === "macos-arm64" ? "bun-darwin-arm64" : "bun-" + plan.target
+  ) as Bun.Build.CompileTarget;
   const result = await Bun.build({
     entrypoints: [plan.entrypoint],
     target: "bun",
@@ -616,8 +676,8 @@ async function compileWorker(planPath: string, output: string) {
       executablePath: plan.runtime.path,
       outfile,
       assets: [
-        ...plan.nativeFiles.map(file => file.path),
-        ...plan.assets.objects.flatMap(object => object.sources.slice(0, 1)),
+        ...plan.nativeFiles.map((file) => file.path),
+        ...plan.assets.objects.flatMap((object) => object.sources.slice(0, 1)),
       ],
       autoloadDotenv: false,
       autoloadBunfig: false,
@@ -628,8 +688,9 @@ async function compileWorker(planPath: string, output: string) {
       {
         name: "app-input-proof",
         setup(build) {
-          build.onLoad({ filter: /.*/, namespace: "file" }, async args => {
-            if (protectedInput(args.path)) throw new Error("Bundler input points to a protected store");
+          build.onLoad({ filter: /.*/, namespace: "file" }, async (args) => {
+            if (protectedInput(args.path))
+              throw new Error("Bundler input points to a protected store");
             proofs.set(args.path, await identity(args.path));
             return undefined;
           });
@@ -637,14 +698,22 @@ async function compileWorker(planPath: string, output: string) {
       },
     ],
   });
-  if (!result.success || !result.metafile) throw new Error("Native compile failed or emitted no source graph");
+  if (!result.success || !result.metafile)
+    throw new Error("Native compile failed or emitted no source graph");
   const unresolved = Object.values(result.metafile.inputs)
-    .flatMap(input => input.imports)
-    .filter(item => item.external && !item.path.startsWith("bun:") && item.path !== "bun" && !isBuiltin(item.path));
+    .flatMap((input) => input.imports)
+    .filter(
+      (item) =>
+        item.external &&
+        !item.path.startsWith("bun:") &&
+        item.path !== "bun" &&
+        !isBuiltin(item.path),
+    );
   if (unresolved.length) throw new Error("Compiled app still has external JavaScript imports");
-  const provenPaths = new Set([...proofs.keys()].map(path => resolve(path)));
+  const provenPaths = new Set([...proofs.keys()].map((path) => resolve(path)));
   for (const path of Object.keys(result.metafile.inputs)) {
-    if (path.startsWith("<") || path.startsWith("bun:") || path === "bun" || isBuiltin(path)) continue;
+    if (path.startsWith("<") || path.startsWith("bun:") || path === "bun" || isBuiltin(path))
+      continue;
     if (!provenPaths.has(resolve(plan.cwd, path)))
       throw new Error("Bundler source graph lacks an input checksum proof");
   }
@@ -657,7 +726,7 @@ async function compileWorker(planPath: string, output: string) {
   }
   for (const input of [
     ...plan.nativeFiles,
-    ...plan.assets.objects.map(object => ({ path: object.sources[0]!, ...object })),
+    ...plan.assets.objects.map((object) => ({ path: object.sources[0]!, ...object })),
   ]) {
     const after = await identity(input.path);
     if (after.sha256 !== input.sha256 || after.bytes !== input.bytes)
@@ -698,14 +767,21 @@ async function compileWorker(planPath: string, output: string) {
   await Bun.write(join(output, "receipt.json"), JSON.stringify(receipt, null, 2) + "\n");
   return receipt;
 }
-export async function buildApp(configPath: string, appId: string, target: AppTarget, requestedOutput?: string) {
+export async function buildApp(
+  configPath: string,
+  appId: string,
+  target: AppTarget,
+  requestedOutput?: string,
+) {
   const config = (await readInventory(configPath)) as AppInventory,
-    selected = config.apps.find(app => app.id === appId);
-  if (selected?.kind === "native-cli") return buildLibraryApp(configPath, appId, target, requestedOutput);
+    selected = config.apps.find((app) => app.id === appId);
+  if (selected?.kind === "native-cli")
+    return buildLibraryApp(configPath, appId, target, requestedOutput);
   const plan = await planApp(configPath, appId, target);
   if (plan.status !== "prepared") throw new Error(plan.reasons.join("; "));
   const output = resolve(
-    requestedOutput ?? join(plan.outputRoot, target, appId, new Date().toISOString().replace(/[:.]/g, "")),
+    requestedOutput ??
+      join(plan.outputRoot, target, appId, new Date().toISOString().replace(/[:.]/g, "")),
   );
   try {
     await lstat(output);
@@ -728,7 +804,15 @@ export async function buildApp(configPath: string, appId: string, target: AppTar
   try {
     const planPath = join(output, "plan.json");
     await Bun.write(planPath, JSON.stringify(plan, null, 2) + "\n");
-    const args = [process.execPath, import.meta.path, "_compile", "--plan", planPath, "--out", output];
+    const args = [
+      process.execPath,
+      import.meta.path,
+      "_compile",
+      "--plan",
+      planPath,
+      "--out",
+      output,
+    ];
     const lock = resolve(dirname(configPath), config.build.sharedHeavyLock);
     if (config.build.lockKind === "exclusive-file") {
       heavyPath = lock;
@@ -758,7 +842,7 @@ export async function buildApp(configPath: string, appId: string, target: AppTar
         stderr: "discard",
         timeoutMs: timeout,
         maxOutputBytes: 128 * 1024 * 1024,
-        onStart: async pid => {
+        onStart: async (pid) => {
           childPid = pid;
           await Bun.write(
             join(output, "status.json"),
@@ -803,7 +887,8 @@ export async function buildApp(configPath: string, appId: string, target: AppTar
           2,
         ) + "\n",
       );
-      if (result.code !== 0) throw new Error("Bounded app compilation failed; inspect its owned logs");
+      if (result.code !== 0)
+        throw new Error("Bounded app compilation failed; inspect its owned logs");
     } finally {
       await Promise.all([stdout.close(), stderr.close()]);
     }
@@ -811,7 +896,8 @@ export async function buildApp(configPath: string, appId: string, target: AppTar
   } finally {
     if (heavy) {
       await heavy.close();
-      if ((await Bun.file(heavyPath!).text()).startsWith(process.pid + "\n")) await unlink(heavyPath!);
+      if ((await Bun.file(heavyPath!).text()).startsWith(process.pid + "\n"))
+        await unlink(heavyPath!);
     }
     await factoryLock.close();
     if ((await Bun.file(join(packageRoot, ".factory.lock")).text()).trim() === token)
@@ -826,7 +912,7 @@ export async function stageAppRelease(configPath: string, receiptPath: string) {
     receipt.kind !== "app-build" ||
     receipt.status !== "complete" ||
     !receipt.qualification?.binaryBuilt ||
-    !config.apps.some(app => app.id === receipt.appId)
+    !config.apps.some((app) => app.id === receipt.appId)
   )
     throw new Error("An actual app build receipt is required");
   const digest = await identity(receipt.artifact.path);
@@ -842,7 +928,11 @@ export async function stageAppRelease(configPath: string, receiptPath: string) {
     artifact: {
       ...digest,
       objectKey: config.storage.artifacts.prefix + digest.sha256,
-      url: config.storage.artifacts.origin.replace(/\/$/, "") + "/" + config.storage.artifacts.prefix + digest.sha256,
+      url:
+        config.storage.artifacts.origin.replace(/\/$/, "") +
+        "/" +
+        config.storage.artifacts.prefix +
+        digest.sha256,
     },
     runtime: {
       version: receipt.runtime.version,
@@ -872,7 +962,11 @@ async function main() {
       continue;
     }
     const value = args[++index];
-    if (!["--config", "--target", "--out", "--plan", "--receipt"].includes(arg) || !value || values[arg])
+    if (
+      !["--config", "--target", "--out", "--plan", "--receipt"].includes(arg) ||
+      !value ||
+      values[arg]
+    )
       throw new Error("Invalid app build option");
     values[arg] = value;
   }
@@ -880,7 +974,8 @@ async function main() {
     await compileWorker(resolve(values["--plan"]!), resolve(values["--out"]!));
     return;
   }
-  if (!values["--config"] || positional.length !== 1) throw new Error("Explicit config and one app required");
+  if (!values["--config"] || positional.length !== 1)
+    throw new Error("Explicit config and one app required");
   const config = resolve(values["--config"]),
     id = positional[0]!;
   if (action === "release") {
@@ -903,7 +998,7 @@ async function main() {
   console.log(JSON.stringify(result, null, 2));
 }
 if (import.meta.main)
-  main().catch(error => {
+  main().catch((error) => {
     console.error(error instanceof Error ? error.message : "App build failed");
     process.exitCode = 1;
   });
