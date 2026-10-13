@@ -979,6 +979,7 @@
       "name": "@aphrody/runtime-sdk",
       "version": "1.4.4",
       "dependencies": {
+        "@aphrody/bun-runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4",
         "@aphrody/web-source": "workspace:*",
       },
     },
