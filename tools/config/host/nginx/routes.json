@@ -237,13 +237,6 @@
       "vhost": "nginx/aphrody/control.aphrody.app.conf"
     },
     {
-      "host": "video.aphrody.app",
-      "service": "aphrody-app-video",
-      "upstream": "static:503",
-      "probePath": "/health",
-      "vhost": "nginx/aphrody/control.aphrody.app.conf"
-    },
-    {
       "host": "artcraft.aphrody.app",
       "service": "aphrody-app-generation",
       "upstream": "static:503",
