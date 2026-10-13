@@ -52,7 +52,26 @@ def stage(release, artifact, previous=None):
     if "gateway" not in compose.get("services", {}):
         raise ValueError("assembled gateway required")
     volumes = compose["services"]["gateway"].setdefault("volumes", [])
-    target_mount = "/srv/shenron-cdn/_next"
+    public_mounts = [
+        volume
+        for volume in volumes
+        if isinstance(volume, dict)
+        and isinstance(volume.get("target"), str)
+        and volume["target"].endswith("/shenron-cdn/site")
+    ]
+    if len(public_mounts) != 1:
+        raise ValueError("exactly one gateway public CDN mount required")
+    public_mount = public_mounts[0]
+    public_target = pathlib.PurePosixPath(public_mount["target"])
+    if (
+        not public_target.is_absolute()
+        or ".." in public_target.parts
+        or public_mount.get("type") != "bind"
+        or public_mount.get("source") != str(release / "public")
+        or public_mount.get("read_only") is not True
+    ):
+        raise ValueError("qualified gateway public CDN bind mount required")
+    target_mount = str(public_target.parent / "_next")
     if any(volume.get("target") == target_mount for volume in volumes):
         raise ValueError("gateway chunk mount already declared")
     sources = [

@@ -50,11 +50,26 @@ class CdnStageTests(unittest.TestCase):
             finally:
                 os.umask(previous_umask)
 
-    def setup_tree(self, base):
+    def setup_tree(self, base, cdn_root="/srv/shenron-cdn"):
         release = base / ("docker-" + "a" * 40)
         release.mkdir()
         (release / "compose.yaml").write_text(
-            json.dumps({"services": {"gateway": {"volumes": []}}})
+            json.dumps(
+                {
+                    "services": {
+                        "gateway": {
+                            "volumes": [
+                                {
+                                    "type": "bind",
+                                    "source": str(release / "public"),
+                                    "target": cdn_root + "/site",
+                                    "read_only": True,
+                                }
+                            ]
+                        }
+                    }
+                }
+            )
         )
         artifact = base / "artifact"
         (artifact / "site").mkdir(parents=True)
@@ -82,12 +97,65 @@ class CdnStageTests(unittest.TestCase):
             )
             volume = json.loads((release / "compose.yaml").read_text())["services"][
                 "gateway"
-            ]["volumes"][0]
+            ]["volumes"][-1]
             self.assertEqual(volume["target"], "/srv/shenron-cdn/_next")
             self.assertTrue(volume["read_only"])
             self.assertFalse(receipt["activated"])
             for relative, sha in receipt["files"].items():
                 self.assertEqual(stage.digest(release / relative), sha)
+
+    def test_current_host_context_uses_declared_cdn_root(self):
+        with tempfile.TemporaryDirectory() as directory:
+            release, artifact, previous = self.setup_tree(
+                pathlib.Path(directory), "/home/ubuntu/apps/shenron-cdn"
+            )
+            stage.stage(release, artifact, previous)
+            volumes = json.loads((release / "compose.yaml").read_text())["services"][
+                "gateway"
+            ]["volumes"]
+            self.assertEqual(
+                volumes[-1]["target"], "/home/ubuntu/apps/shenron-cdn/_next"
+            )
+            self.assertTrue(volumes[-1]["read_only"])
+
+    def test_missing_ambiguous_or_unqualified_public_mount_refused_before_write(self):
+        for case in (
+            "missing",
+            "ambiguous",
+            "wrong_source",
+            "writable",
+            "relative",
+            "traversal",
+            "duplicate_chunks",
+        ):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
+                release, artifact, _previous = self.setup_tree(pathlib.Path(directory))
+                compose_path = release / "compose.yaml"
+                compose = json.loads(compose_path.read_text())
+                volumes = compose["services"]["gateway"]["volumes"]
+                if case == "missing":
+                    volumes.clear()
+                elif case == "ambiguous":
+                    volumes.append(
+                        dict(volumes[0], target="/home/ubuntu/apps/shenron-cdn/site")
+                    )
+                elif case == "wrong_source":
+                    volumes[0]["source"] = str(artifact / "site")
+                elif case == "writable":
+                    volumes[0]["read_only"] = False
+                elif case == "relative":
+                    volumes[0]["target"] = "relative/shenron-cdn/site"
+                elif case == "traversal":
+                    volumes[0]["target"] = "/srv/../shenron-cdn/site"
+                else:
+                    volumes.append({"target": "/srv/shenron-cdn/_next"})
+                compose_path.write_text(json.dumps(compose))
+                before = compose_path.read_bytes()
+                with self.assertRaises(ValueError):
+                    stage.stage(release, artifact)
+                self.assertEqual(compose_path.read_bytes(), before)
+                self.assertFalse((release / "public").exists())
+                self.assertFalse((release / "cdn").exists())
 
     def test_modified_previous_chunk_refused_before_write(self):
         with tempfile.TemporaryDirectory() as directory:
