@@ -153,7 +153,7 @@ activation review rejections remain in effect; no replacement command was
 retried and the deployed flag remains false. The canonical installed binary
 therefore keeps its earlier identity stated above.
 
-## Current twenty-crate candidate
+## Previous twenty-crate candidate
 
 `build/staging/server-4b8-20crates.exe` was compiled and executed from source
 `51ee0193b2ec3a5afecd610e2194e4356ea9a6d1`, with runtime
@@ -164,3 +164,14 @@ the loopback HTTP upstream. The embedded catalog includes all twenty committed
 crate gitlinks. This qualifies the standalone server and its recorded inputs;
 Rust compilation of the new crates remains pending. Deployment remains false,
 and the installed binary retains its earlier identity.
+
+## Current twenty-four-crate candidate
+
+`build/staging/server-4b8-24crates.exe` was compiled and executed from source
+`ad2474ddcb7b1590108515211aafa6f477788062`, with runtime
+`4b8dee0bc69d2c290111001f2249e63e1dc95b70`. Its SHA-256 is
+`5772bdd31e0474adbe7188cd59b7a1bab6d91114560662d8daee03d22e771d2f`.
+All fifteen HTTP gates pass. Its embedded snapshot contains 124 sources,
+including all 24 flat crate gitlinks, and 16 application identities. This
+qualifies the standalone server inputs; deployment remains false, the installed
+binary remains unchanged, and Rust qualification is recorded separately.
