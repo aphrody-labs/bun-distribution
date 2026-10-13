@@ -4,11 +4,11 @@ import { mkdir, mkdtemp, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { appServerProxy } from "@aphrody/app-ui/backend";
-import { startDesktopUiServer } from "./serve-desktop-ui";
+import { startProductUiServer } from "../src/web-server.ts";
 
 let directory: string;
 let uiDist: string;
-let server: Awaited<ReturnType<typeof startDesktopUiServer>> | undefined;
+let server: Awaited<ReturnType<typeof startProductUiServer>> | undefined;
 let upstream: ReturnType<typeof Bun.serve> | undefined;
 
 beforeEach(async () => {
@@ -32,7 +32,7 @@ async function request(path: string, init?: RequestInit) {
 }
 
 test("serves the built app unchanged, preserves SPA reloads and reports missing endpoints/assets", async () => {
-  server = await startDesktopUiServer({ port: 0, uiDist });
+  server = await startProductUiServer({ port: 0, uiDist });
   expect(await (await request("/")).text()).toBe('<!doctype html><div id="root"></div>');
   const page = await request("/settings/appearance");
   expect(await page.text()).toBe('<!doctype html><div id="root"></div>');
@@ -65,7 +65,7 @@ test("forwards exact RPC and approval frames with real upstream errors and healt
       );
     },
   });
-  server = await startDesktopUiServer({
+  server = await startProductUiServer({
     port: 0,
     uiDist,
     backendUrl: upstream.url.href,
@@ -101,7 +101,7 @@ test("streams backend SSE bytes and query without synthesizing notifications", a
       );
     },
   });
-  server = await startDesktopUiServer({
+  server = await startProductUiServer({
     port: 0,
     uiDist,
     backendUrl: upstream.url.href,
@@ -117,14 +117,44 @@ test("a stopped backend is an error, never a ready or successful operation", asy
   const target = upstream.url.href;
   upstream.stop(true);
   upstream = undefined;
-  server = await startDesktopUiServer({ port: 0, uiDist, backendUrl: target });
+  server = await startProductUiServer({ port: 0, uiDist, backendUrl: target });
   expect((await request("/health")).status).toBe(502);
   expect((await request("/rpc", { method: "POST", body: "{}" })).status).toBe(502);
 });
 
+test("authenticates browser origin before forwarding RPC to the native backend", async () => {
+  const origins: (string | null)[] = [];
+  upstream = Bun.serve({
+    port: 0,
+    hostname: "127.0.0.1",
+    fetch(req) {
+      origins.push(req.headers.get("origin"));
+      return Response.json({ result: { initialized: true } });
+    },
+  });
+  server = await startProductUiServer({ port: 0, uiDist, backendUrl: upstream.url.href });
+  const response = await request("/rpc", {
+    method: "POST",
+    body: "{}",
+    headers: { Origin: server.url.origin },
+  });
+  expect(response.status).toBe(200);
+  expect(origins).toEqual([upstream.url.origin]);
+  const blocked: HeadersInit[] = [
+    { Origin: "https://example.com" },
+    { Origin: server.url.origin, "Sec-Fetch-Site": "cross-site" },
+    { Host: "example.com" },
+  ];
+  const denied = await Promise.all(
+    blocked.map((headers) => request("/rpc", { method: "POST", body: "{}", headers })),
+  );
+  expect(denied.map((denial) => denial.status)).toEqual([403, 403, 403]);
+  expect(origins).toHaveLength(1);
+});
+
 test("keeps static files within the build and backend access on loopback", async () => {
   await symlink(directory, join(uiDist, "escape"));
-  server = await startDesktopUiServer({ port: 0, uiDist });
+  server = await startProductUiServer({ port: 0, uiDist });
   expect((await request("/..%2Foutside.txt")).status).toBe(403);
   await Bun.write(join(uiDist, "private.txt"), "fixture");
   const escaped = "/escape/ui/private.txt";
@@ -133,7 +163,7 @@ test("keeps static files within the build and backend access on loopback", async
   await Bun.write(join(directory, "outside.txt"), "outside fixture");
   await symlink(join(directory, "outside.txt"), join(uiDist, "outside.txt"));
   expect((await request("/outside.txt")).status).toBe(403);
-  await expect(startDesktopUiServer({ port: 0, host: "0.0.0.0", uiDist })).rejects.toThrow(
+  await expect(startProductUiServer({ port: 0, host: "0.0.0.0", uiDist })).rejects.toThrow(
     "loopback",
   );
   expect(() => appServerProxy("https://example.com")).toThrow("loopback");

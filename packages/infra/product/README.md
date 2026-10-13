@@ -8,6 +8,12 @@ capacités runtime viennent du fork Bun et l’UI partagée de Material
 administrateur et créateur utilisent le protocole `aphrody.kit/1`.
 L’unification des publications et domaines est encore en cours.
 
+`web start` sert l’UI et relaie le protocole RPC, les événements et les notifications
+vers le même app-server natif que la CLI (`127.0.0.1:8787` par défaut,
+`--backend` ou `APHRODY_APP_SERVER_URL` pour le choisir). Ce serveur privé reste
+limité au loopback. L’IA est un backend et un automatiseur, jamais un produit public.
+Le Worker Cloudflare ne dispose pas encore de la parité complète avec ce backend.
+
 `web cloudflare deploy` prépare les assets publics Aphrody et Bun avec les builders
 du checkout Bun sélectionné, puis utilise le Worker existant. `--dry-run` prépare
 et valide le paquet sans le publier. `--assets DIR` utilise un artifact déjà préparé.

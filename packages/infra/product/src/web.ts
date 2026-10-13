@@ -10,6 +10,7 @@ export function webOptions(args: string[], env: NodeJS.ProcessEnv = process.env)
       host: { type: "string" },
       port: { type: "string" },
       root: { type: "string" },
+      backend: { type: "string" },
     },
   });
   const bind = env.APHRODY_SITE_BIND ? new URL(`http://${env.APHRODY_SITE_BIND}`) : undefined;
@@ -19,6 +20,9 @@ export function webOptions(args: string[], env: NodeJS.ProcessEnv = process.env)
     throw new Error("Invalid Aphrody web port");
   const configuredRoot = values.root || env.APHRODY_APP_UI_ROOT;
   return {
+    ...((values.backend ?? env.APHRODY_APP_SERVER_URL)
+      ? { backendUrl: values.backend ?? env.APHRODY_APP_SERVER_URL }
+      : {}),
     staticRoot: configuredRoot
       ? resolve(configuredRoot)
       : resolve(findWorkspaceRoot(undefined, env), "crates/ui/app/ui-dist"),
@@ -28,15 +32,16 @@ export function webOptions(args: string[], env: NodeJS.ProcessEnv = process.env)
 }
 
 export async function startWeb(args: string[], env: NodeJS.ProcessEnv = process.env) {
-  const { serveM3Site } = await import("@aphrody/web/site");
-  return serveM3Site(webOptions(args, env));
+  const { startProductUiServer } = await import("./web-server.ts");
+  const { staticRoot, hostname, port, backendUrl } = webOptions(args, env);
+  return startProductUiServer({ uiDist: staticRoot, host: hostname, port, backendUrl });
 }
 
 export async function main(args: string[]): Promise<number> {
   const [action = "start", ...rest] = args;
   if ((args.includes("--help") && action !== "cloudflare") || action === "help") {
     console.log(
-      "aphrody-product web start [--host HOST] [--port PORT] [--root DIR]\naphrody-product web public\naphrody-product web os\naphrody-product web cloudflare <wrangler arguments>",
+      "aphrody-product web start [--host HOST] [--port PORT] [--root DIR] [--backend LOOPBACK_ORIGIN]\naphrody-product web public\naphrody-product web os\naphrody-product web cloudflare <wrangler arguments>",
     );
     return 0;
   }

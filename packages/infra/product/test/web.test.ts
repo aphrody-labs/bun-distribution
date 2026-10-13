@@ -4,6 +4,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { startWeb, webOptions } from "../src/web.ts";
+import { appServerProxy } from "@aphrody/app-ui/backend";
 
 test("product web serves the selected artifact on loopback without checkout defaults", async () => {
   const root = await mkdtemp(join(tmpdir(), "aphrody-product-web-"));
@@ -26,6 +27,9 @@ test("product web serves the selected artifact on loopback without checkout defa
     });
     expect(() => webOptions(["--root", root, "--port", "65536"], {})).toThrow("port");
     expect(() => webOptions(["--unknown"], {})).toThrow();
+    expect(appServerProxy()["/rpc"]).toBe(
+      process.env.APHRODY_APP_SERVER_URL ?? "http://127.0.0.1:8787",
+    );
     server = await startWeb(args, {});
     const response = await fetch(server.url);
     expect(response.status).toBe(200);

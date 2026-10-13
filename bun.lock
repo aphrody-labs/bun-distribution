@@ -1019,7 +1019,9 @@
         "creator-kit": "src/cli.ts",
       },
       "dependencies": {
+        "@aphrody/app-ui": "workspace:*",
         "@aphrody/bun-cloudflare": "1.4.4",
+        "@aphrody/m3": "workspace:*",
         "@aphrody/m3-fonts": "workspace:*",
         "@aphrody/m3-tokens": "workspace:*",
         "@aphrody/paths": "workspace:*",
