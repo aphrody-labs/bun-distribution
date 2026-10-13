@@ -1,0 +1,1118 @@
+{
+  "schemaVersion": 1,
+  "repositories": [
+    {
+      "id": "bun",
+      "repository": "aphrody-labs/bun",
+      "revision": "c209b95eb0dcc964745f4684f127abb83cbe2697",
+      "mount": "sources/bun",
+      "gitlinks": [
+        {
+          "path": "packages/aphrody-migrated/m3/aphrody-m3",
+          "repository": "aphrody-labs/aphrody-m3",
+          "revision": "fdf56a5622888fbc51d8b870fbf4dbdb26c6798c"
+        }
+      ]
+    },
+    {
+      "id": "bun/packages/aphrody-migrated/m3/aphrody-m3",
+      "repository": "aphrody-labs/aphrody-m3",
+      "revision": "fdf56a5622888fbc51d8b870fbf4dbdb26c6798c",
+      "mount": "sources/bun/packages/aphrody-migrated/m3/aphrody-m3",
+      "parent": "bun",
+      "submodulePath": "packages/aphrody-migrated/m3/aphrody-m3",
+      "gitlinks": [
+        {
+          "path": "forks/fonts",
+          "repository": "aphrody-labs/fonts",
+          "revision": "9710da1eacb3be272583c3224dcb70f9da6eadbb"
+        },
+        {
+          "path": "forks/material-color-utilities",
+          "repository": "aphrody-labs/material-color-utilities",
+          "revision": "51f0744f9cfbbef63f45c1058c2a883c5656b0fe"
+        },
+        {
+          "path": "forks/material-design-icons",
+          "repository": "aphrody-labs/material-design-icons",
+          "revision": "737e3324305806514d7909874fa1818ae1808232"
+        },
+        {
+          "path": "forks/material-web",
+          "repository": "aphrody-labs/material-web",
+          "revision": "a06811ee5dad1a670d99e5faf14cdf7082a70a10"
+        }
+      ]
+    },
+    {
+      "id": "bun/packages/aphrody-migrated/m3/aphrody-m3/forks/fonts",
+      "repository": "aphrody-labs/fonts",
+      "revision": "9710da1eacb3be272583c3224dcb70f9da6eadbb",
+      "mount": "sources/bun/packages/aphrody-migrated/m3/aphrody-m3/forks/fonts",
+      "parent": "bun/packages/aphrody-migrated/m3/aphrody-m3",
+      "submodulePath": "forks/fonts",
+      "gitlinks": []
+    },
+    {
+      "id": "bun/packages/aphrody-migrated/m3/aphrody-m3/forks/material-color-utilities",
+      "repository": "aphrody-labs/material-color-utilities",
+      "revision": "51f0744f9cfbbef63f45c1058c2a883c5656b0fe",
+      "mount": "sources/bun/packages/aphrody-migrated/m3/aphrody-m3/forks/material-color-utilities",
+      "parent": "bun/packages/aphrody-migrated/m3/aphrody-m3",
+      "submodulePath": "forks/material-color-utilities",
+      "gitlinks": []
+    },
+    {
+      "id": "bun/packages/aphrody-migrated/m3/aphrody-m3/forks/material-design-icons",
+      "repository": "aphrody-labs/material-design-icons",
+      "revision": "737e3324305806514d7909874fa1818ae1808232",
+      "mount": "sources/bun/packages/aphrody-migrated/m3/aphrody-m3/forks/material-design-icons",
+      "parent": "bun/packages/aphrody-migrated/m3/aphrody-m3",
+      "submodulePath": "forks/material-design-icons",
+      "gitlinks": []
+    },
+    {
+      "id": "bun/packages/aphrody-migrated/m3/aphrody-m3/forks/material-web",
+      "repository": "aphrody-labs/material-web",
+      "revision": "a06811ee5dad1a670d99e5faf14cdf7082a70a10",
+      "mount": "sources/bun/packages/aphrody-migrated/m3/aphrody-m3/forks/material-web",
+      "parent": "bun/packages/aphrody-migrated/m3/aphrody-m3",
+      "submodulePath": "forks/material-web",
+      "gitlinks": []
+    },
+    {
+      "id": "material",
+      "repository": "aphrody-labs/material",
+      "revision": "1e65a503420e4a8962b8ceaa18819eedbc280454",
+      "mount": "sources/material",
+      "gitlinks": [
+        {
+          "path": "packages/app-ui",
+          "repository": "aphrody-labs/aphrody-app-ui",
+          "revision": "e53a9a75e8dc171794de9322c2ffb0fec3aa2ed2"
+        },
+        {
+          "path": "packages/assets",
+          "repository": "aphrody-labs/aphrody-assets",
+          "revision": "e0fbe34fe07e45ef83e1fb48735cdd0f1ce34b7f"
+        },
+        {
+          "path": "packages/canvas",
+          "repository": "aphrody-labs/aphrody-canvas",
+          "revision": "d0e6e7a92b25e19b896d45f9d9d243b453a5d261"
+        },
+        {
+          "path": "packages/eslint-plugin-m3",
+          "repository": "aphrody-labs/aphrody-eslint-plugin-m3",
+          "revision": "8abad2d98a63dae07e89b0a9af3aff0446022b82"
+        },
+        {
+          "path": "packages/identity",
+          "repository": "aphrody-labs/aphrody-identity",
+          "revision": "6e4e6d1ebba2ff6ee9046f5a945fe0b6faa68ab1"
+        },
+        {
+          "path": "packages/m3",
+          "repository": "aphrody-labs/aphrody-m3",
+          "revision": "b6e01a8df4da20314757c5505b224f553c68483d"
+        },
+        {
+          "path": "packages/m3-ai",
+          "repository": "aphrody-labs/aphrody-m3-ai",
+          "revision": "b13889cdfa178cad84a876bf22ebcbd31a35c129"
+        },
+        {
+          "path": "packages/m3-baseui",
+          "repository": "aphrody-labs/aphrody-m3-baseui",
+          "revision": "6f5d315d1c9b907144db96fedd9b33d82629506a"
+        },
+        {
+          "path": "packages/m3-bun",
+          "repository": "aphrody-labs/aphrody-m3-bun",
+          "revision": "0460fc7533c8ef4fac4ffa3c3a673969831f4f8a"
+        },
+        {
+          "path": "packages/m3-codemods",
+          "repository": "aphrody-labs/aphrody-m3-codemods",
+          "revision": "6d4585b147cf5eba688c300666332b9e2c42a6e5"
+        },
+        {
+          "path": "packages/m3-config",
+          "repository": "aphrody-labs/aphrody-m3-config",
+          "revision": "6e5edd98b630bcb0618bceebc6add028673ed0e2"
+        },
+        {
+          "path": "packages/m3-design",
+          "repository": "aphrody-labs/aphrody-m3-design",
+          "revision": "1c7ccf99ef5ec4e38e07532f92472bc0d197eb0d"
+        },
+        {
+          "path": "packages/m3-explorer",
+          "repository": "aphrody-labs/aphrody-m3-explorer",
+          "revision": "0ea7310d3f93cef0a9f5e35824bfc69700ace5e6"
+        },
+        {
+          "path": "packages/m3-fonts",
+          "repository": "aphrody-labs/aphrody-m3-fonts",
+          "revision": "e1d24a2e2c8f14c3e71a210f1af6ef8e1ae25db9"
+        },
+        {
+          "path": "packages/m3-forms",
+          "repository": "aphrody-labs/aphrody-m3-forms",
+          "revision": "7c957c6a60d6478719632e35d53667626c6fa8da"
+        },
+        {
+          "path": "packages/m3-front",
+          "repository": "aphrody-labs/aphrody-m3-front",
+          "revision": "9863e27db98edab821af944be0cd2a0045e463e4"
+        },
+        {
+          "path": "packages/m3-icons",
+          "repository": "aphrody-labs/aphrody-m3-icons",
+          "revision": "b04ebc5f37b31b37d49001f732b4a5d2f4cdb91c"
+        },
+        {
+          "path": "packages/m3-mcp",
+          "repository": "aphrody-labs/aphrody-m3-mcp",
+          "revision": "e517e372ae84a5c5257f809a19c072ad456cc0d8"
+        },
+        {
+          "path": "packages/m3-motion",
+          "repository": "aphrody-labs/aphrody-m3-motion",
+          "revision": "30dce381c3b0c790165ecae061d1d0f406134296"
+        },
+        {
+          "path": "packages/m3-next",
+          "repository": "aphrody-labs/aphrody-m3-next",
+          "revision": "43f22d2ba0da4fb4991da03d71c61fcb1c928fea"
+        },
+        {
+          "path": "packages/m3-next-example",
+          "repository": "aphrody-labs/aphrody-m3-next-example",
+          "revision": "86a13a1055552c96c9bfd7184cf3503c675eb1ea"
+        },
+        {
+          "path": "packages/m3-next-migrate",
+          "repository": "aphrody-labs/aphrody-m3-next-migrate",
+          "revision": "a9730fc7e8ddb2ed25aa76b003a246daa72da6b0"
+        },
+        {
+          "path": "packages/m3-next-tauri-example",
+          "repository": "aphrody-labs/aphrody-m3-next-tauri-example",
+          "revision": "1270fc6b0b1ac29df2cdd69a73f4d606c40180d0"
+        },
+        {
+          "path": "packages/m3-os-themes",
+          "repository": "aphrody-labs/aphrody-m3-os-themes",
+          "revision": "a218bd6db5327603e503d46ebe1ee6804959c351"
+        },
+        {
+          "path": "packages/m3-primitives",
+          "repository": "aphrody-labs/aphrody-m3-primitives",
+          "revision": "91d8e1f21058d93475d692206e52c9b3dc7eabf1"
+        },
+        {
+          "path": "packages/m3-react",
+          "repository": "aphrody-labs/aphrody-m3-react",
+          "revision": "246c99380be475fdd5b22d48a483fbb1771f46a2"
+        },
+        {
+          "path": "packages/m3-reader",
+          "repository": "aphrody-labs/aphrody-m3-reader",
+          "revision": "85edb4fa74f5f552f8b72593143cd386ae30ba0f"
+        }
+      ],
+      "branch": "os"
+    },
+    {
+      "id": "material/packages/app-ui",
+      "repository": "aphrody-labs/aphrody-app-ui",
+      "revision": "e53a9a75e8dc171794de9322c2ffb0fec3aa2ed2",
+      "mount": "sources/material/packages/app-ui",
+      "parent": "material",
+      "submodulePath": "packages/app-ui",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/assets",
+      "repository": "aphrody-labs/aphrody-assets",
+      "revision": "e0fbe34fe07e45ef83e1fb48735cdd0f1ce34b7f",
+      "mount": "sources/material/packages/assets",
+      "parent": "material",
+      "submodulePath": "packages/assets",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/canvas",
+      "repository": "aphrody-labs/aphrody-canvas",
+      "revision": "d0e6e7a92b25e19b896d45f9d9d243b453a5d261",
+      "mount": "sources/material/packages/canvas",
+      "parent": "material",
+      "submodulePath": "packages/canvas",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/eslint-plugin-m3",
+      "repository": "aphrody-labs/aphrody-eslint-plugin-m3",
+      "revision": "8abad2d98a63dae07e89b0a9af3aff0446022b82",
+      "mount": "sources/material/packages/eslint-plugin-m3",
+      "parent": "material",
+      "submodulePath": "packages/eslint-plugin-m3",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/identity",
+      "repository": "aphrody-labs/aphrody-identity",
+      "revision": "6e4e6d1ebba2ff6ee9046f5a945fe0b6faa68ab1",
+      "mount": "sources/material/packages/identity",
+      "parent": "material",
+      "submodulePath": "packages/identity",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3",
+      "repository": "aphrody-labs/aphrody-m3",
+      "revision": "b6e01a8df4da20314757c5505b224f553c68483d",
+      "mount": "sources/material/packages/m3",
+      "parent": "material",
+      "submodulePath": "packages/m3",
+      "gitlinks": [
+        {
+          "path": "forks/fonts",
+          "repository": "aphrody-labs/fonts",
+          "revision": "9710da1eacb3be272583c3224dcb70f9da6eadbb"
+        },
+        {
+          "path": "forks/material-color-utilities",
+          "repository": "aphrody-labs/material-color-utilities",
+          "revision": "51f0744f9cfbbef63f45c1058c2a883c5656b0fe"
+        },
+        {
+          "path": "forks/material-design-icons",
+          "repository": "aphrody-labs/material-design-icons",
+          "revision": "737e3324305806514d7909874fa1818ae1808232"
+        },
+        {
+          "path": "forks/material-web",
+          "repository": "aphrody-labs/material-web",
+          "revision": "a06811ee5dad1a670d99e5faf14cdf7082a70a10"
+        }
+      ]
+    },
+    {
+      "id": "material/packages/m3/forks/fonts",
+      "repository": "aphrody-labs/fonts",
+      "revision": "9710da1eacb3be272583c3224dcb70f9da6eadbb",
+      "mount": "sources/material/packages/m3/forks/fonts",
+      "parent": "material/packages/m3",
+      "submodulePath": "forks/fonts",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3/forks/material-color-utilities",
+      "repository": "aphrody-labs/material-color-utilities",
+      "revision": "51f0744f9cfbbef63f45c1058c2a883c5656b0fe",
+      "mount": "sources/material/packages/m3/forks/material-color-utilities",
+      "parent": "material/packages/m3",
+      "submodulePath": "forks/material-color-utilities",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3/forks/material-design-icons",
+      "repository": "aphrody-labs/material-design-icons",
+      "revision": "737e3324305806514d7909874fa1818ae1808232",
+      "mount": "sources/material/packages/m3/forks/material-design-icons",
+      "parent": "material/packages/m3",
+      "submodulePath": "forks/material-design-icons",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3/forks/material-web",
+      "repository": "aphrody-labs/material-web",
+      "revision": "a06811ee5dad1a670d99e5faf14cdf7082a70a10",
+      "mount": "sources/material/packages/m3/forks/material-web",
+      "parent": "material/packages/m3",
+      "submodulePath": "forks/material-web",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-ai",
+      "repository": "aphrody-labs/aphrody-m3-ai",
+      "revision": "b13889cdfa178cad84a876bf22ebcbd31a35c129",
+      "mount": "sources/material/packages/m3-ai",
+      "parent": "material",
+      "submodulePath": "packages/m3-ai",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-baseui",
+      "repository": "aphrody-labs/aphrody-m3-baseui",
+      "revision": "6f5d315d1c9b907144db96fedd9b33d82629506a",
+      "mount": "sources/material/packages/m3-baseui",
+      "parent": "material",
+      "submodulePath": "packages/m3-baseui",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-bun",
+      "repository": "aphrody-labs/aphrody-m3-bun",
+      "revision": "0460fc7533c8ef4fac4ffa3c3a673969831f4f8a",
+      "mount": "sources/material/packages/m3-bun",
+      "parent": "material",
+      "submodulePath": "packages/m3-bun",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-codemods",
+      "repository": "aphrody-labs/aphrody-m3-codemods",
+      "revision": "6d4585b147cf5eba688c300666332b9e2c42a6e5",
+      "mount": "sources/material/packages/m3-codemods",
+      "parent": "material",
+      "submodulePath": "packages/m3-codemods",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-config",
+      "repository": "aphrody-labs/aphrody-m3-config",
+      "revision": "6e5edd98b630bcb0618bceebc6add028673ed0e2",
+      "mount": "sources/material/packages/m3-config",
+      "parent": "material",
+      "submodulePath": "packages/m3-config",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-design",
+      "repository": "aphrody-labs/aphrody-m3-design",
+      "revision": "1c7ccf99ef5ec4e38e07532f92472bc0d197eb0d",
+      "mount": "sources/material/packages/m3-design",
+      "parent": "material",
+      "submodulePath": "packages/m3-design",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-explorer",
+      "repository": "aphrody-labs/aphrody-m3-explorer",
+      "revision": "0ea7310d3f93cef0a9f5e35824bfc69700ace5e6",
+      "mount": "sources/material/packages/m3-explorer",
+      "parent": "material",
+      "submodulePath": "packages/m3-explorer",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-fonts",
+      "repository": "aphrody-labs/aphrody-m3-fonts",
+      "revision": "e1d24a2e2c8f14c3e71a210f1af6ef8e1ae25db9",
+      "mount": "sources/material/packages/m3-fonts",
+      "parent": "material",
+      "submodulePath": "packages/m3-fonts",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-forms",
+      "repository": "aphrody-labs/aphrody-m3-forms",
+      "revision": "7c957c6a60d6478719632e35d53667626c6fa8da",
+      "mount": "sources/material/packages/m3-forms",
+      "parent": "material",
+      "submodulePath": "packages/m3-forms",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-front",
+      "repository": "aphrody-labs/aphrody-m3-front",
+      "revision": "9863e27db98edab821af944be0cd2a0045e463e4",
+      "mount": "sources/material/packages/m3-front",
+      "parent": "material",
+      "submodulePath": "packages/m3-front",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-icons",
+      "repository": "aphrody-labs/aphrody-m3-icons",
+      "revision": "b04ebc5f37b31b37d49001f732b4a5d2f4cdb91c",
+      "mount": "sources/material/packages/m3-icons",
+      "parent": "material",
+      "submodulePath": "packages/m3-icons",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-mcp",
+      "repository": "aphrody-labs/aphrody-m3-mcp",
+      "revision": "e517e372ae84a5c5257f809a19c072ad456cc0d8",
+      "mount": "sources/material/packages/m3-mcp",
+      "parent": "material",
+      "submodulePath": "packages/m3-mcp",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-motion",
+      "repository": "aphrody-labs/aphrody-m3-motion",
+      "revision": "30dce381c3b0c790165ecae061d1d0f406134296",
+      "mount": "sources/material/packages/m3-motion",
+      "parent": "material",
+      "submodulePath": "packages/m3-motion",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-next",
+      "repository": "aphrody-labs/aphrody-m3-next",
+      "revision": "43f22d2ba0da4fb4991da03d71c61fcb1c928fea",
+      "mount": "sources/material/packages/m3-next",
+      "parent": "material",
+      "submodulePath": "packages/m3-next",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-next-example",
+      "repository": "aphrody-labs/aphrody-m3-next-example",
+      "revision": "86a13a1055552c96c9bfd7184cf3503c675eb1ea",
+      "mount": "sources/material/packages/m3-next-example",
+      "parent": "material",
+      "submodulePath": "packages/m3-next-example",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-next-migrate",
+      "repository": "aphrody-labs/aphrody-m3-next-migrate",
+      "revision": "a9730fc7e8ddb2ed25aa76b003a246daa72da6b0",
+      "mount": "sources/material/packages/m3-next-migrate",
+      "parent": "material",
+      "submodulePath": "packages/m3-next-migrate",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-next-tauri-example",
+      "repository": "aphrody-labs/aphrody-m3-next-tauri-example",
+      "revision": "1270fc6b0b1ac29df2cdd69a73f4d606c40180d0",
+      "mount": "sources/material/packages/m3-next-tauri-example",
+      "parent": "material",
+      "submodulePath": "packages/m3-next-tauri-example",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-os-themes",
+      "repository": "aphrody-labs/aphrody-m3-os-themes",
+      "revision": "a218bd6db5327603e503d46ebe1ee6804959c351",
+      "mount": "sources/material/packages/m3-os-themes",
+      "parent": "material",
+      "submodulePath": "packages/m3-os-themes",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-primitives",
+      "repository": "aphrody-labs/aphrody-m3-primitives",
+      "revision": "91d8e1f21058d93475d692206e52c9b3dc7eabf1",
+      "mount": "sources/material/packages/m3-primitives",
+      "parent": "material",
+      "submodulePath": "packages/m3-primitives",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-react",
+      "repository": "aphrody-labs/aphrody-m3-react",
+      "revision": "246c99380be475fdd5b22d48a483fbb1771f46a2",
+      "mount": "sources/material/packages/m3-react",
+      "parent": "material",
+      "submodulePath": "packages/m3-react",
+      "gitlinks": []
+    },
+    {
+      "id": "material/packages/m3-reader",
+      "repository": "aphrody-labs/aphrody-m3-reader",
+      "revision": "85edb4fa74f5f552f8b72593143cd386ae30ba0f",
+      "mount": "sources/material/packages/m3-reader",
+      "parent": "material",
+      "submodulePath": "packages/m3-reader",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch",
+      "repository": "aphrody-labs/cosmic-epoch",
+      "revision": "cfa498958dc8aeac73aa911cbd318c01e47ac957",
+      "mount": "sources/cosmic-epoch",
+      "gitlinks": [
+        {
+          "path": "cosmic-app-library",
+          "repository": "aphrody-labs/cosmic-app-library",
+          "revision": "1107375789e3f60e120b6dc5b81379771ecaa811"
+        },
+        {
+          "path": "cosmic-applets",
+          "repository": "aphrody-labs/cosmic-applets",
+          "revision": "406d1b7d627138fdf4078f654268d3d8774e50f1"
+        },
+        {
+          "path": "cosmic-bg",
+          "repository": "aphrody-labs/cosmic-bg",
+          "revision": "91d525b7310f5a497c9fd09a25d2710eb9f8a6f7"
+        },
+        {
+          "path": "cosmic-comp",
+          "repository": "aphrody-labs/cosmic-comp",
+          "revision": "41497b42d9744d9963c4c6d17e8add49489b45ee"
+        },
+        {
+          "path": "cosmic-edit",
+          "repository": "aphrody-labs/cosmic-edit",
+          "revision": "fb850179fb0b5597f043ae1891761c5b639fc270"
+        },
+        {
+          "path": "cosmic-files",
+          "repository": "aphrody-labs/cosmic-files",
+          "revision": "ac5cef76fa60b5a329bfda3d30825489ec28af53"
+        },
+        {
+          "path": "cosmic-greeter",
+          "repository": "aphrody-labs/cosmic-greeter",
+          "revision": "98df07df93df1cb091c95451f7162dca1a2ae2dd"
+        },
+        {
+          "path": "cosmic-icons",
+          "repository": "aphrody-labs/cosmic-icons",
+          "revision": "f1a282a0822aed1f0083dd2ab2e6c65bd5b401eb"
+        },
+        {
+          "path": "cosmic-idle",
+          "repository": "aphrody-labs/cosmic-idle",
+          "revision": "21e983c63e75640ab0055495e768a5c616742c19"
+        },
+        {
+          "path": "cosmic-initial-setup",
+          "repository": "aphrody-labs/cosmic-initial-setup",
+          "revision": "8b025bc9eec4844d8c01fb238e5298b3db920b3f"
+        },
+        {
+          "path": "cosmic-launcher",
+          "repository": "aphrody-labs/cosmic-launcher",
+          "revision": "03195ddb097c6ad83c4072917d60d900b8bd944f"
+        },
+        {
+          "path": "cosmic-monitor",
+          "repository": "aphrody-labs/cosmic-monitor",
+          "revision": "a79ce9e7d2259a82150d56978fb7a094bd4ec2f0"
+        },
+        {
+          "path": "cosmic-notifications",
+          "repository": "aphrody-labs/cosmic-notifications",
+          "revision": "1e4c1f11fdcae273d6954fd0bfc54749a6145267"
+        },
+        {
+          "path": "cosmic-osd",
+          "repository": "aphrody-labs/cosmic-osd",
+          "revision": "9b14ee017fb8fdb7d03d73da597cf17b89d890f7"
+        },
+        {
+          "path": "cosmic-osk",
+          "repository": "aphrody-labs/cosmic-osk",
+          "revision": "1b7ec698b79d248d6a59ff426f453fc7ce3edc91"
+        },
+        {
+          "path": "cosmic-panel",
+          "repository": "aphrody-labs/cosmic-panel",
+          "revision": "3ce6ce1cec97669f91e809962d9446aaefe8a06e"
+        },
+        {
+          "path": "cosmic-player",
+          "repository": "aphrody-labs/cosmic-player",
+          "revision": "900453787f999ec151b8d58683923e3110b727e1"
+        },
+        {
+          "path": "cosmic-protocols",
+          "repository": "aphrody-labs/cosmic-protocols",
+          "revision": "c0cff4db14c37ed954983158e4055aa94c7741d9"
+        },
+        {
+          "path": "cosmic-randr",
+          "repository": "aphrody-labs/cosmic-randr",
+          "revision": "85efc7febb99876094cf90af6dbce0927ad8cca7"
+        },
+        {
+          "path": "cosmic-screenshot",
+          "repository": "aphrody-labs/cosmic-screenshot",
+          "revision": "07e27587eb387ecf38cb4692ccbf25ad20760d22"
+        },
+        {
+          "path": "cosmic-session",
+          "repository": "aphrody-labs/cosmic-session",
+          "revision": "8093b59bb1262b0612d814e6540ba936303f735a"
+        },
+        {
+          "path": "cosmic-settings",
+          "repository": "aphrody-labs/cosmic-settings",
+          "revision": "58aeb65244b8830880e8b6ced89dcd25663f20b1"
+        },
+        {
+          "path": "cosmic-settings-daemon",
+          "repository": "aphrody-labs/cosmic-settings-daemon",
+          "revision": "9e4ae69fc175191f15789d35423806ea0f093c9d"
+        },
+        {
+          "path": "cosmic-sound-theme",
+          "repository": "aphrody-labs/cosmic-sound-theme",
+          "revision": "bf5335fe1af0cb3bee83e1ad2371410ee434658d"
+        },
+        {
+          "path": "cosmic-store",
+          "repository": "aphrody-labs/cosmic-store",
+          "revision": "c7b36a2fdccf1ce88944793af67c3664413ee560"
+        },
+        {
+          "path": "cosmic-term",
+          "repository": "aphrody-labs/cosmic-term",
+          "revision": "c3457869b1a05487412a1c0a7dd44371888d93f3"
+        },
+        {
+          "path": "cosmic-text",
+          "repository": "aphrody-labs/cosmic-text",
+          "revision": "f1a3461f3e8df67d2bbcfafb8bc61dc7aee5b2a6"
+        },
+        {
+          "path": "cosmic-viewer",
+          "repository": "aphrody-labs/cosmic-viewer",
+          "revision": "77ba62deb7027217efab1999e90670f3c89c5a02"
+        },
+        {
+          "path": "cosmic-wallpapers",
+          "repository": "aphrody-labs/cosmic-wallpapers",
+          "revision": "da595bba495cb8fc57f26505621fc25000218349"
+        },
+        {
+          "path": "cosmic-workspaces-epoch",
+          "repository": "aphrody-labs/cosmic-workspaces-epoch",
+          "revision": "cb953ea0e6fb45ac8f62f9c52f1347c971388e03"
+        },
+        {
+          "path": "iced",
+          "repository": "aphrody-labs/iced",
+          "revision": "e03ca50ed8838d3ec8392e32a68ce59634517945"
+        },
+        {
+          "path": "libcosmic",
+          "repository": "aphrody-labs/libcosmic",
+          "revision": "dbc62f2d899cdbfbe43d170689ddc0290db663f4"
+        },
+        {
+          "path": "pop-launcher",
+          "repository": "aphrody-labs/launcher",
+          "revision": "8a09fa50a9fbbe66a97afe3865b5e61dd1d0432c"
+        },
+        {
+          "path": "xdg-desktop-portal-cosmic",
+          "repository": "aphrody-labs/xdg-desktop-portal-cosmic",
+          "revision": "9d35e6300b69cf06da723a502a9a56604a022786"
+        }
+      ]
+    },
+    {
+      "id": "cosmic-epoch/cosmic-app-library",
+      "repository": "aphrody-labs/cosmic-app-library",
+      "revision": "1107375789e3f60e120b6dc5b81379771ecaa811",
+      "mount": "sources/cosmic-epoch/cosmic-app-library",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-app-library",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-applets",
+      "repository": "aphrody-labs/cosmic-applets",
+      "revision": "406d1b7d627138fdf4078f654268d3d8774e50f1",
+      "mount": "sources/cosmic-epoch/cosmic-applets",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-applets",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-bg",
+      "repository": "aphrody-labs/cosmic-bg",
+      "revision": "91d525b7310f5a497c9fd09a25d2710eb9f8a6f7",
+      "mount": "sources/cosmic-epoch/cosmic-bg",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-bg",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-comp",
+      "repository": "aphrody-labs/cosmic-comp",
+      "revision": "41497b42d9744d9963c4c6d17e8add49489b45ee",
+      "mount": "sources/cosmic-epoch/cosmic-comp",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-comp",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-edit",
+      "repository": "aphrody-labs/cosmic-edit",
+      "revision": "fb850179fb0b5597f043ae1891761c5b639fc270",
+      "mount": "sources/cosmic-epoch/cosmic-edit",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-edit",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-files",
+      "repository": "aphrody-labs/cosmic-files",
+      "revision": "ac5cef76fa60b5a329bfda3d30825489ec28af53",
+      "mount": "sources/cosmic-epoch/cosmic-files",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-files",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-greeter",
+      "repository": "aphrody-labs/cosmic-greeter",
+      "revision": "98df07df93df1cb091c95451f7162dca1a2ae2dd",
+      "mount": "sources/cosmic-epoch/cosmic-greeter",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-greeter",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-icons",
+      "repository": "aphrody-labs/cosmic-icons",
+      "revision": "f1a282a0822aed1f0083dd2ab2e6c65bd5b401eb",
+      "mount": "sources/cosmic-epoch/cosmic-icons",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-icons",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-idle",
+      "repository": "aphrody-labs/cosmic-idle",
+      "revision": "21e983c63e75640ab0055495e768a5c616742c19",
+      "mount": "sources/cosmic-epoch/cosmic-idle",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-idle",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-initial-setup",
+      "repository": "aphrody-labs/cosmic-initial-setup",
+      "revision": "8b025bc9eec4844d8c01fb238e5298b3db920b3f",
+      "mount": "sources/cosmic-epoch/cosmic-initial-setup",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-initial-setup",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-launcher",
+      "repository": "aphrody-labs/cosmic-launcher",
+      "revision": "03195ddb097c6ad83c4072917d60d900b8bd944f",
+      "mount": "sources/cosmic-epoch/cosmic-launcher",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-launcher",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-monitor",
+      "repository": "aphrody-labs/cosmic-monitor",
+      "revision": "a79ce9e7d2259a82150d56978fb7a094bd4ec2f0",
+      "mount": "sources/cosmic-epoch/cosmic-monitor",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-monitor",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-notifications",
+      "repository": "aphrody-labs/cosmic-notifications",
+      "revision": "1e4c1f11fdcae273d6954fd0bfc54749a6145267",
+      "mount": "sources/cosmic-epoch/cosmic-notifications",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-notifications",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-osd",
+      "repository": "aphrody-labs/cosmic-osd",
+      "revision": "9b14ee017fb8fdb7d03d73da597cf17b89d890f7",
+      "mount": "sources/cosmic-epoch/cosmic-osd",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-osd",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-osk",
+      "repository": "aphrody-labs/cosmic-osk",
+      "revision": "1b7ec698b79d248d6a59ff426f453fc7ce3edc91",
+      "mount": "sources/cosmic-epoch/cosmic-osk",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-osk",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-panel",
+      "repository": "aphrody-labs/cosmic-panel",
+      "revision": "3ce6ce1cec97669f91e809962d9446aaefe8a06e",
+      "mount": "sources/cosmic-epoch/cosmic-panel",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-panel",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-player",
+      "repository": "aphrody-labs/cosmic-player",
+      "revision": "900453787f999ec151b8d58683923e3110b727e1",
+      "mount": "sources/cosmic-epoch/cosmic-player",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-player",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-protocols",
+      "repository": "aphrody-labs/cosmic-protocols",
+      "revision": "c0cff4db14c37ed954983158e4055aa94c7741d9",
+      "mount": "sources/cosmic-epoch/cosmic-protocols",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-protocols",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-randr",
+      "repository": "aphrody-labs/cosmic-randr",
+      "revision": "85efc7febb99876094cf90af6dbce0927ad8cca7",
+      "mount": "sources/cosmic-epoch/cosmic-randr",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-randr",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-screenshot",
+      "repository": "aphrody-labs/cosmic-screenshot",
+      "revision": "07e27587eb387ecf38cb4692ccbf25ad20760d22",
+      "mount": "sources/cosmic-epoch/cosmic-screenshot",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-screenshot",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-session",
+      "repository": "aphrody-labs/cosmic-session",
+      "revision": "8093b59bb1262b0612d814e6540ba936303f735a",
+      "mount": "sources/cosmic-epoch/cosmic-session",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-session",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-settings",
+      "repository": "aphrody-labs/cosmic-settings",
+      "revision": "58aeb65244b8830880e8b6ced89dcd25663f20b1",
+      "mount": "sources/cosmic-epoch/cosmic-settings",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-settings",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-settings-daemon",
+      "repository": "aphrody-labs/cosmic-settings-daemon",
+      "revision": "9e4ae69fc175191f15789d35423806ea0f093c9d",
+      "mount": "sources/cosmic-epoch/cosmic-settings-daemon",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-settings-daemon",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-sound-theme",
+      "repository": "aphrody-labs/cosmic-sound-theme",
+      "revision": "bf5335fe1af0cb3bee83e1ad2371410ee434658d",
+      "mount": "sources/cosmic-epoch/cosmic-sound-theme",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-sound-theme",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-store",
+      "repository": "aphrody-labs/cosmic-store",
+      "revision": "c7b36a2fdccf1ce88944793af67c3664413ee560",
+      "mount": "sources/cosmic-epoch/cosmic-store",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-store",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-term",
+      "repository": "aphrody-labs/cosmic-term",
+      "revision": "c3457869b1a05487412a1c0a7dd44371888d93f3",
+      "mount": "sources/cosmic-epoch/cosmic-term",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-term",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-text",
+      "repository": "aphrody-labs/cosmic-text",
+      "revision": "f1a3461f3e8df67d2bbcfafb8bc61dc7aee5b2a6",
+      "mount": "sources/cosmic-epoch/cosmic-text",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-text",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-viewer",
+      "repository": "aphrody-labs/cosmic-viewer",
+      "revision": "77ba62deb7027217efab1999e90670f3c89c5a02",
+      "mount": "sources/cosmic-epoch/cosmic-viewer",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-viewer",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-wallpapers",
+      "repository": "aphrody-labs/cosmic-wallpapers",
+      "revision": "da595bba495cb8fc57f26505621fc25000218349",
+      "mount": "sources/cosmic-epoch/cosmic-wallpapers",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-wallpapers",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/cosmic-workspaces-epoch",
+      "repository": "aphrody-labs/cosmic-workspaces-epoch",
+      "revision": "cb953ea0e6fb45ac8f62f9c52f1347c971388e03",
+      "mount": "sources/cosmic-epoch/cosmic-workspaces-epoch",
+      "parent": "cosmic-epoch",
+      "submodulePath": "cosmic-workspaces-epoch",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/iced",
+      "repository": "aphrody-labs/iced",
+      "revision": "e03ca50ed8838d3ec8392e32a68ce59634517945",
+      "mount": "sources/cosmic-epoch/iced",
+      "parent": "cosmic-epoch",
+      "submodulePath": "iced",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/libcosmic",
+      "repository": "aphrody-labs/libcosmic",
+      "revision": "dbc62f2d899cdbfbe43d170689ddc0290db663f4",
+      "mount": "sources/cosmic-epoch/libcosmic",
+      "parent": "cosmic-epoch",
+      "submodulePath": "libcosmic",
+      "gitlinks": [
+        {
+          "path": "cosmic-icons",
+          "repository": "pop-os/cosmic-icons",
+          "revision": "343c007f37cd71716e68f01c43ecf2764b7f7c47"
+        },
+        {
+          "path": "iced",
+          "repository": "pop-os/iced",
+          "revision": "a31e6c6f837e4c4d0cdb790df50883bee01ea558"
+        }
+      ]
+    },
+    {
+      "id": "cosmic-epoch/libcosmic/cosmic-icons",
+      "repository": "pop-os/cosmic-icons",
+      "revision": "343c007f37cd71716e68f01c43ecf2764b7f7c47",
+      "mount": "sources/cosmic-epoch/libcosmic/cosmic-icons",
+      "parent": "cosmic-epoch/libcosmic",
+      "submodulePath": "cosmic-icons",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/libcosmic/iced",
+      "repository": "pop-os/iced",
+      "revision": "a31e6c6f837e4c4d0cdb790df50883bee01ea558",
+      "mount": "sources/cosmic-epoch/libcosmic/iced",
+      "parent": "cosmic-epoch/libcosmic",
+      "submodulePath": "iced",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/pop-launcher",
+      "repository": "aphrody-labs/launcher",
+      "revision": "8a09fa50a9fbbe66a97afe3865b5e61dd1d0432c",
+      "mount": "sources/cosmic-epoch/pop-launcher",
+      "parent": "cosmic-epoch",
+      "submodulePath": "pop-launcher",
+      "gitlinks": []
+    },
+    {
+      "id": "cosmic-epoch/xdg-desktop-portal-cosmic",
+      "repository": "aphrody-labs/xdg-desktop-portal-cosmic",
+      "revision": "9d35e6300b69cf06da723a502a9a56604a022786",
+      "mount": "sources/cosmic-epoch/xdg-desktop-portal-cosmic",
+      "parent": "cosmic-epoch",
+      "submodulePath": "xdg-desktop-portal-cosmic",
+      "gitlinks": []
+    },
+    {
+      "id": "libcosmic",
+      "repository": "aphrody-labs/libcosmic",
+      "revision": "7f715bc5d2d383a070fd8c760aa52c5627df96b6",
+      "mount": "sources/libcosmic",
+      "gitlinks": [
+        {
+          "path": "cosmic-icons",
+          "repository": "pop-os/cosmic-icons",
+          "revision": "343c007f37cd71716e68f01c43ecf2764b7f7c47"
+        },
+        {
+          "path": "iced",
+          "repository": "pop-os/iced",
+          "revision": "a31e6c6f837e4c4d0cdb790df50883bee01ea558"
+        }
+      ],
+      "branch": "os"
+    },
+    {
+      "id": "libcosmic/cosmic-icons",
+      "repository": "pop-os/cosmic-icons",
+      "revision": "343c007f37cd71716e68f01c43ecf2764b7f7c47",
+      "mount": "sources/libcosmic/cosmic-icons",
+      "parent": "libcosmic",
+      "submodulePath": "cosmic-icons",
+      "gitlinks": []
+    },
+    {
+      "id": "libcosmic/iced",
+      "repository": "pop-os/iced",
+      "revision": "a31e6c6f837e4c4d0cdb790df50883bee01ea558",
+      "mount": "sources/libcosmic/iced",
+      "parent": "libcosmic",
+      "submodulePath": "iced",
+      "gitlinks": []
+    },
+    {
+      "id": "linux",
+      "repository": "aphrody-labs/linux",
+      "revision": "47f637c546bf4bb274c7149815ed66d748e4f325",
+      "mount": "sources/linux",
+      "gitlinks": [],
+      "branch": "aphrody-bun"
+    },
+    {
+      "id": "wsl",
+      "repository": "aphrody-labs/WSL",
+      "revision": "341f1ddf76f089ff6351590b03f92bad30041725",
+      "mount": "sources/wsl",
+      "gitlinks": [],
+      "branch": "master"
+    },
+    {
+      "id": "wslg",
+      "repository": "aphrody-labs/wslg",
+      "revision": "6942bb534b537302a7a22617261d9274db3cfa37",
+      "mount": "sources/wslg",
+      "gitlinks": [],
+      "branch": "main"
+    },
+    {
+      "id": "wsl-kernel",
+      "repository": "aphrody-labs/WSL2-Linux-Kernel",
+      "revision": "e5043002ed6f0b0eb17a0fb9efafa794045853ed",
+      "mount": "sources/wsl-kernel",
+      "gitlinks": [],
+      "branch": "aphrody-wsl-6.18"
+    },
+    {
+      "id": "apt",
+      "repository": "aphrody-labs/apt",
+      "revision": "745fc126218c7cb3df48b22bbc7c7098fa2f7966",
+      "mount": "sources/apt",
+      "branch": "main",
+      "gitlinks": []
+    }
+  ]
+}

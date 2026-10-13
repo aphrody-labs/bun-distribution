@@ -1,0 +1,598 @@
+{
+  "schemaVersion": 1,
+  "minimumFreeBytes": 53687091200,
+  "jobs": 2,
+  "targets": [
+    {
+      "id": "linux-aphrody-bun",
+      "sourceId": "linux",
+      "revision": "47f637c546bf4bb274c7149815ed66d748e4f325",
+      "branch": "aphrody-bun",
+      "host": "linux",
+      "architecture": "x64",
+      "abi": "linux-kernel",
+      "license": "GPL-2.0-only",
+      "ownerFiles": [
+        "Makefile",
+        "drivers/misc/Kconfig",
+        "Documentation/kbuild/kbuild.rst",
+        "Documentation/rust/quick-start.rst",
+        "scripts/rust_is_available.sh"
+      ],
+      "tools": [
+        "git",
+        "make",
+        "gcc",
+        "g++",
+        "ld",
+        "bison",
+        "flex",
+        "perl",
+        "pkg-config",
+        "clang",
+        "clang++",
+        "ld.lld",
+        "llvm-ar",
+        "llvm-nm",
+        "llvm-strip",
+        "llvm-objcopy",
+        "llvm-objdump",
+        "llvm-readelf",
+        "rustc",
+        "bindgen"
+      ],
+      "pkgConfig": ["openssl", "libelf"],
+      "requirements": [
+        "An explicit x86_64 kernel configuration with CONFIG_BUN_ACCEL=y or m",
+        "Kernel toolchain and optional configuration dependencies supplied by the host",
+        "LLVM toolchain, matching Rust standard library sources and libclang for bindgen; source rustavailable guard must succeed"
+      ],
+      "steps": [
+        {
+          "copy": "{kernelConfig}",
+          "to": "{out}/build/.config"
+        },
+        {
+          "cmd": [
+            "make",
+            "-C",
+            "{source}",
+            "O={out}/build",
+            "ARCH=x86",
+            "LLVM=1",
+            "RUSTC=rustc",
+            "BINDGEN=bindgen",
+            "rustavailable"
+          ],
+          "timeoutMs": 30000
+        },
+        {
+          "cmd": [
+            "make",
+            "-C",
+            "{source}",
+            "O={out}/build",
+            "ARCH=x86",
+            "olddefconfig",
+            "LLVM=1",
+            "RUSTC=rustc",
+            "BINDGEN=bindgen"
+          ],
+          "timeoutMs": 300000,
+          "checkKernelConfig": true
+        },
+        {
+          "cmd": [
+            "make",
+            "-C",
+            "{source}",
+            "O={out}/build",
+            "ARCH=x86",
+            "-j2",
+            "bzImage",
+            "modules",
+            "LLVM=1",
+            "RUSTC=rustc",
+            "BINDGEN=bindgen"
+          ],
+          "timeoutMs": 14400000
+        },
+        {
+          "cmd": [
+            "make",
+            "-C",
+            "{source}",
+            "O={out}/build",
+            "ARCH=x86",
+            "INSTALL_MOD_PATH={out}/modules",
+            "modules_install",
+            "LLVM=1",
+            "RUSTC=rustc",
+            "BINDGEN=bindgen"
+          ],
+          "timeoutMs": 1800000
+        },
+        {
+          "cmd": [
+            "make",
+            "-C",
+            "{source}",
+            "O={out}/build",
+            "ARCH=x86",
+            "INSTALL_HDR_PATH={out}/headers",
+            "headers_install",
+            "LLVM=1",
+            "RUSTC=rustc",
+            "BINDGEN=bindgen"
+          ],
+          "timeoutMs": 300000
+        }
+      ],
+      "artifacts": ["build/arch/x86/boot/bzImage", "build/vmlinux", "build/.config"],
+      "unqualified": [
+        "Boot on the selected physical/virtual host",
+        "/dev/bun_accel permissions and runtime integration",
+        "ARM64 needs its own owner configuration and recipe"
+      ]
+    },
+    {
+      "id": "wsl-windows",
+      "sourceId": "wsl",
+      "revision": "341f1ddf76f089ff6351590b03f92bad30041725",
+      "host": "win32",
+      "architecture": "x64",
+      "abi": "msvc-ucrt",
+      "license": "MIT",
+      "ownerFiles": ["CMakeLists.txt", ".vsconfig", "cmake/FindLINUXBUILD.cmake", "doc/docs/dev-loop.md"],
+      "tools": ["git", "cmake", "dotnet"],
+      "pkgConfig": [],
+      "requirements": [
+        "Visual Studio 2022 v143 workloads declared by .vsconfig",
+        "Windows SDK 10.0.26100.0",
+        "Developer Mode or equivalent permission to create build links",
+        "Pinned NuGet packages, LinuxSDK and native Clang guest-helper cross compiler"
+      ],
+      "steps": [
+        {
+          "cmd": [
+            "cmake",
+            "-S",
+            "{source}",
+            "-B",
+            "{out}/build",
+            "-G",
+            "Visual Studio 17 2022",
+            "-A",
+            "x64",
+            "-DCMAKE_SYSTEM_VERSION=10.0.26100.0",
+            "-DCMAKE_BUILD_TYPE=Release"
+          ],
+          "timeoutMs": 1800000
+        },
+        {
+          "cmd": ["cmake", "--build", "{out}/build", "--config", "Release", "--parallel", "2"],
+          "timeoutMs": 14400000
+        }
+      ],
+      "artifacts": ["build/bin/x64/Release/wsl.exe"],
+      "unqualified": [
+        "Installer/package signing",
+        "Windows service and WSL1/WSL2 execution",
+        "No deployment, WSL startup or registration is performed by this recipe"
+      ]
+    },
+    {
+      "id": "wslg-system",
+      "sourceId": "wslg",
+      "revision": "6942bb534b537302a7a22617261d9274db3cfa37",
+      "host": "linux",
+      "architecture": "x64",
+      "abi": "gnu-glibc",
+      "license": "MIT",
+      "ownerFiles": ["Dockerfile", "CONTRIBUTING.md", "build-and-export.sh"],
+      "tools": ["git", "docker", "go"],
+      "pkgConfig": [],
+      "externalSources": [
+        {
+          "path": "vendor/FreeRDP",
+          "repository": "https://github.com/microsoft/FreeRDP-mirror",
+          "buildArg": "FREERDP_COMMIT"
+        },
+        {
+          "path": "vendor/weston",
+          "repository": "https://github.com/microsoft/weston-mirror",
+          "buildArg": "WESTON_COMMIT"
+        },
+        {
+          "path": "vendor/pulseaudio",
+          "repository": "https://github.com/microsoft/PulseAudio-mirror",
+          "buildArg": "PULSEAUDIO_COMMIT"
+        },
+        {
+          "path": "vendor/mesa",
+          "repository": "https://gitlab.freedesktop.org/mesa/mesa",
+          "buildArg": "MESA_VERSION"
+        },
+        {
+          "path": "vendor/DirectX-Headers-1.0",
+          "repository": "https://github.com/microsoft/DirectX-Headers",
+          "buildArg": "DIRECTX_HEADERS_VERSION"
+        }
+      ],
+      "requirements": [
+        "Five separately pinned vendor Git sources; this WSLg source has no gitlinks",
+        "An immutable Azure Linux base image digest and explicit WSLg version",
+        "A live Linux Docker daemon on the selected factory",
+        "Network access to the pinned hcsshim tar2ext4 v0.13.0 module"
+      ],
+      "steps": [
+        {
+          "cmd": [
+            "docker",
+            "build",
+            "--file",
+            "{source}/Dockerfile",
+            "--tag",
+            "{image}",
+            "--build-arg",
+            "MARINER_IMAGE={baseImage}",
+            "--build-arg",
+            "WSLG_ARCH=x86_64",
+            "--build-arg",
+            "WSLG_VERSION={version}",
+            "--build-arg",
+            "WSLG_COMMIT={revision}",
+            "--build-arg",
+            "DIRECTX_HEADERS_VERSION={DIRECTX_HEADERS_VERSION}",
+            "--build-arg",
+            "FREERDP_COMMIT={FREERDP_COMMIT}",
+            "--build-arg",
+            "MESA_VERSION={MESA_VERSION}",
+            "--build-arg",
+            "PULSEAUDIO_COMMIT={PULSEAUDIO_COMMIT}",
+            "--build-arg",
+            "WESTON_COMMIT={WESTON_COMMIT}",
+            "{source}"
+          ],
+          "timeoutMs": 14400000
+        },
+        {
+          "cmd": ["docker", "create", "--name", "{container}", "{image}"],
+          "timeoutMs": 60000
+        },
+        {
+          "cmd": ["docker", "export", "--output", "{out}/system_x64.tar", "{container}"],
+          "timeoutMs": 1800000
+        },
+        {
+          "cmd": [
+            "go",
+            "run",
+            "github.com/Microsoft/hcsshim/cmd/tar2ext4@v0.13.0",
+            "-vhd",
+            "-i",
+            "{out}/system_x64.tar",
+            "-o",
+            "{out}/system_x64.vhd"
+          ],
+          "timeoutMs": 1800000
+        },
+        {
+          "cmd": ["docker", "rm", "{container}"],
+          "timeoutMs": 60000
+        }
+      ],
+      "artifacts": ["system_x64.tar", "system_x64.vhd"],
+      "unqualified": [
+        "Windows RDP plugin built by its separate Visual Studio owner",
+        "WSL host/system-distro integration and GPU/audio behavior",
+        "Azure Linux owner image is not an Ubuntu rootfs"
+      ]
+    },
+    {
+      "id": "wsl-kernel",
+      "sourceId": "wsl-kernel",
+      "revision": "e5043002ed6f0b0eb17a0fb9efafa794045853ed",
+      "branch": "aphrody-wsl-6.18",
+      "host": "linux",
+      "architecture": "x64",
+      "abi": "linux-kernel",
+      "license": "GPL-2.0-only",
+      "ownerFiles": [
+        "Makefile",
+        "Microsoft/config-wsl",
+        "Microsoft/scripts/gen_artifacts_vhdx.sh",
+        "README.md",
+        "Documentation/rust/quick-start.rst",
+        "scripts/rust_is_available.sh",
+        "Microsoft/aphrody-wsl.config",
+        "arch/x86/configs/aphrody_wsl_defconfig",
+        "drivers/misc/Kconfig"
+      ],
+      "tools": [
+        "git",
+        "make",
+        "gcc",
+        "g++",
+        "ld",
+        "bison",
+        "flex",
+        "perl",
+        "pkg-config",
+        "pahole",
+        "cpio",
+        "rsync",
+        "mke2fs",
+        "qemu-img",
+        "bash",
+        "clang",
+        "clang++",
+        "ld.lld",
+        "llvm-ar",
+        "llvm-nm",
+        "llvm-strip",
+        "llvm-objcopy",
+        "llvm-objdump",
+        "llvm-readelf",
+        "rustc",
+        "bindgen"
+      ],
+      "pkgConfig": ["openssl", "libelf"],
+      "requirements": [
+        "Pinned arch/x86/configs/aphrody_wsl_defconfig with CONFIG_RUST=y and CONFIG_BUN_ACCEL=y",
+        "Host kernel build dependencies from the owner README",
+        "Space for modules, UAPI headers, perf and an ext4/VHDX artifact",
+        "LLVM toolchain, matching Rust standard library sources and libclang for bindgen; source rustavailable guard must succeed"
+      ],
+      "steps": [
+        {
+          "copy": "{source}/arch/x86/configs/aphrody_wsl_defconfig",
+          "to": "{out}/build/.config"
+        },
+        {
+          "cmd": [
+            "make",
+            "-C",
+            "{source}",
+            "O={out}/build",
+            "ARCH=x86",
+            "LLVM=1",
+            "RUSTC=rustc",
+            "BINDGEN=bindgen",
+            "rustavailable"
+          ],
+          "timeoutMs": 30000
+        },
+        {
+          "cmd": [
+            "make",
+            "-C",
+            "{source}",
+            "O={out}/build",
+            "ARCH=x86",
+            "olddefconfig",
+            "LLVM=1",
+            "RUSTC=rustc",
+            "BINDGEN=bindgen"
+          ],
+          "timeoutMs": 300000,
+          "checkKernelConfig": true
+        },
+        {
+          "cmd": [
+            "make",
+            "-C",
+            "{source}",
+            "O={out}/build",
+            "ARCH=x86",
+            "-j2",
+            "bzImage",
+            "modules",
+            "LLVM=1",
+            "RUSTC=rustc",
+            "BINDGEN=bindgen"
+          ],
+          "timeoutMs": 14400000
+        },
+        {
+          "cmd": [
+            "make",
+            "-C",
+            "{source}",
+            "O={out}/build",
+            "ARCH=x86",
+            "INSTALL_MOD_PATH={out}/modules",
+            "modules_install",
+            "LLVM=1",
+            "RUSTC=rustc",
+            "BINDGEN=bindgen"
+          ],
+          "timeoutMs": 1800000
+        },
+        {
+          "cmd": [
+            "make",
+            "-C",
+            "{source}",
+            "O={out}/build",
+            "ARCH=x86",
+            "INSTALL_HDR_PATH={out}/headers",
+            "headers_install",
+            "LLVM=1",
+            "RUSTC=rustc",
+            "BINDGEN=bindgen"
+          ],
+          "timeoutMs": 300000
+        },
+        {
+          "cmd": [
+            "make",
+            "-C",
+            "{source}/tools/perf",
+            "O={out}/perf-build",
+            "-j2",
+            "NO_JEVENTS=1",
+            "NO_JVMTI=1",
+            "NO_LIBTRACEEVENT=1",
+            "install",
+            "DESTDIR={out}/perf",
+            "prefix=/",
+            "LLVM=1",
+            "RUSTC=rustc",
+            "BINDGEN=bindgen"
+          ],
+          "timeoutMs": 1800000
+        },
+        {
+          "cmd": [
+            "make",
+            "--no-print-directory",
+            "-s",
+            "-C",
+            "{source}",
+            "O={out}/build",
+            "kernelrelease",
+            "LLVM=1",
+            "RUSTC=rustc",
+            "BINDGEN=bindgen"
+          ],
+          "capture": "kernelRelease",
+          "timeoutMs": 60000
+        },
+        {
+          "cmd": [
+            "bash",
+            "{source}/Microsoft/scripts/gen_artifacts_vhdx.sh",
+            "{out}/modules",
+            "{out}/headers",
+            "{out}/perf",
+            "{kernelRelease}",
+            "{out}/modules.vhdx"
+          ],
+          "timeoutMs": 1800000
+        }
+      ],
+      "artifacts": ["build/arch/x86/boot/bzImage", "build/vmlinux", "modules.vhdx"],
+      "unqualified": [
+        "The selected Windows WSL kernel boot and modules mount",
+        "No .wslconfig mutation or WSL startup",
+        "ARM64 requires a separate configuration"
+      ]
+    },
+    {
+      "id": "apt-gnu",
+      "sourceId": "apt",
+      "revision": "745fc126218c7cb3df48b22bbc7c7098fa2f7966",
+      "host": "linux",
+      "architecture": "x64",
+      "abi": "gnu-glibc",
+      "license": "GPL-2.0-or-later",
+      "ownerFiles": ["CMakeLists.txt", "apt-pkg/CMakeLists.txt", "debian/control", "README.md"],
+      "tools": ["git", "cmake", "ninja", "g++", "perl", "triehash", "grep", "awk", "pkg-config", "dpkg-architecture"],
+      "pkgConfig": ["openssl", "zlib", "liblzma", "liblz4", "libzstd", "libxxhash"],
+      "requirements": [
+        "C++23 toolchain",
+        "Berkeley DB, bzip2, Iconv and large-file headers/libraries",
+        "Perl Dpkg module and trusted Debian package/source metadata"
+      ],
+      "steps": [
+        {
+          "cmd": [
+            "cmake",
+            "-S",
+            "{source}",
+            "-B",
+            "{out}/build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DWITH_DOC=OFF",
+            "-DWITH_TESTS=OFF",
+            "-DUSE_NLS=OFF",
+            "-DCMAKE_INSTALL_PREFIX=/usr"
+          ],
+          "timeoutMs": 300000
+        },
+        {
+          "cmd": ["cmake", "--build", "{out}/build", "--parallel", "2"],
+          "timeoutMs": 7200000
+        },
+        {
+          "cmd": ["cmake", "--install", "{out}/build"],
+          "env": {
+            "DESTDIR": "{out}/stage"
+          },
+          "timeoutMs": 300000
+        }
+      ],
+      "artifacts": ["stage/usr/bin/apt", "stage/usr/bin/apt-get", "stage/usr/bin/apt-cache"],
+      "unqualified": [
+        "Archive trust/signature verification workload",
+        "Trusted dpkg transactions against an explicit target root",
+        "The GNU binaries are not Windows PE artifacts"
+      ]
+    },
+    {
+      "id": "apt-windows-msvc",
+      "sourceId": "apt",
+      "revision": "745fc126218c7cb3df48b22bbc7c7098fa2f7966",
+      "host": "win32",
+      "architecture": "x64",
+      "abi": "msvc-ucrt",
+      "license": "GPL-2.0-or-later",
+      "ownerFiles": [
+        "CMakeLists.txt",
+        "CMake/FindLFS.cmake",
+        "apt-pkg/CMakeLists.txt",
+        "apt-pkg/contrib/fileutl.cc",
+        "apt-pkg/contrib/mmap.cc",
+        "apt-pkg/deb/dpkgpm.cc"
+      ],
+      "tools": ["git", "cmake", "ninja"],
+      "pkgConfig": [],
+      "portRequired": true,
+      "requirements": [
+        "Port CMake POSIX statfs/endian/signal/LFS checks, Perl/Dpkg/id commands, grep/awk generators and GNU version scripts to native Windows generators and DLL exports",
+        "Implement UCRT 64-bit file offsets, Win32 locking/mapping/process/pipes, Unicode paths and socket/event operations in the APT owners",
+        "Supply MSVC/UCRT builds of Iconv, Berkeley DB, OpenSSL, zlib, bzip2, liblzma, lz4, zstd and xxhash through an explicit CMake toolchain",
+        "Supply native signature verifier and a separately ported package-transaction backend; Linux dpkg and ELF payloads are not Windows executables",
+        "Compile and qualify libapt-pkg plus apt.exe from the ported revision; the Bun conversion frontend is a separate artifact"
+      ],
+      "steps": [
+        {
+          "cmd": [
+            "bun",
+            "msvc",
+            "--arch",
+            "x64",
+            "exec",
+            "--",
+            "cmake",
+            "-S",
+            "{source}",
+            "-B",
+            "{out}/build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_TOOLCHAIN_FILE={windowsToolchain}",
+            "-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL",
+            "-DWITH_DOC=OFF",
+            "-DWITH_TESTS=OFF",
+            "-DUSE_NLS=OFF"
+          ],
+          "timeoutMs": 300000
+        },
+        {
+          "cmd": ["bun", "msvc", "--arch", "x64", "exec", "--", "cmake", "--build", "{out}/build", "--parallel", "2"],
+          "timeoutMs": 7200000
+        }
+      ],
+      "artifacts": ["build/bin/apt.exe"],
+      "unqualified": [
+        "This pinned official APT revision has no native UCRT/MSVC port",
+        "Proposed Windows steps stay non-executable until the source owner implements and pins that port"
+      ]
+    }
+  ]
+}

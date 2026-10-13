@@ -1,0 +1,192 @@
+{
+  "schemaVersion": 1,
+  "kind": "deployment-component-profile",
+  "catalog": "./apps.json",
+  "compose": "./compose.yaml",
+  "status": "prepared-not-deployed",
+  "verifiedAt": "2026-10-13",
+  "owners": {
+    "desiredState": "./apps.json",
+    "deploymentExecutor": "Komodo Core and Periphery",
+    "sourceAndWorkflows": "Forgejo and Forgejo Runner",
+    "appBuilds": "Existing native Bun app and factory owners",
+    "sourceExports": "../factory/source-export.ts",
+    "edge": "Cloudflare MCP and the existing Bun edge adapter",
+    "sharedAssets": "The content-addressed R2 owner referenced by ./apps.json"
+  },
+  "images": {
+    "komodo-core": {
+      "environment": "KOMODO_CORE_IMAGE",
+      "reference": "ghcr.io/moghtech/komodo-core:2.3.3@sha256:bca73d0eee143066228fb9b80c38a5a2726e573ad2758f7aa92b5c91a8aef1c7",
+      "release": "2.3.3",
+      "sourceRevision": "780ac68b992094a9fccd5fffb760e0c84fd3c3d1",
+      "source": "https://github.com/moghtech/komodo/releases/tag/v2.3.3",
+      "platforms": ["linux/amd64", "linux/arm64"]
+    },
+    "komodo-periphery": {
+      "environment": "KOMODO_PERIPHERY_IMAGE",
+      "reference": "ghcr.io/moghtech/komodo-periphery:2.3.3@sha256:fa3f1a641a265216066676950d5eecdf506955a7bafe2f01996135ae93115cd5",
+      "release": "2.3.3",
+      "sourceRevision": "780ac68b992094a9fccd5fffb760e0c84fd3c3d1",
+      "source": "https://github.com/moghtech/komodo/releases/tag/v2.3.3",
+      "platforms": ["linux/amd64", "linux/arm64"]
+    },
+    "ferretdb": {
+      "environment": "FERRETDB_IMAGE",
+      "reference": "ghcr.io/ferretdb/ferretdb:2.7.0@sha256:5706414241eb84f0515512c37b46db0f1b1eac9e5ceb7e4c2523211c184b1985",
+      "release": "2.7.0",
+      "source": "https://github.com/FerretDB/FerretDB/releases/tag/v2.7.0",
+      "platforms": ["linux/amd64", "linux/arm64"],
+      "stateOwner": "1000:1000"
+    },
+    "postgres-documentdb": {
+      "environment": "POSTGRES_DOCUMENTDB_IMAGE",
+      "reference": "ghcr.io/ferretdb/postgres-documentdb:17-0.107.0-ferretdb-2.7.0@sha256:2386795ec2aa7ae559304361979f1dc5708d383ee9020ae63dadc2940dfe58f7",
+      "release": "0.107.0-ferretdb-2.7.0",
+      "postgresVersion": "17.6",
+      "source": "https://github.com/FerretDB/documentdb/releases/tag/v0.107.0-ferretdb-2.7.0",
+      "platforms": ["linux/amd64", "linux/arm64"],
+      "stateOwner": "999:999"
+    },
+    "forgejo": {
+      "environment": "FORGEJO_IMAGE",
+      "reference": "codeberg.org/forgejo/forgejo:15.0.10-rootless@sha256:6ffebd9ab9ee9f6677e3523fa60debd9de630ff2a226fa681d6cc0c7ba541d77",
+      "release": "15.0.10",
+      "support": "LTS",
+      "supportEnds": "2027-07-15",
+      "source": "https://forgejo.org/releases/",
+      "platforms": ["linux/amd64", "linux/arm64", "linux/arm/v6"],
+      "stateOwner": "1000:1000"
+    },
+    "forgejo-runner": {
+      "environment": "FORGEJO_RUNNER_IMAGE",
+      "reference": "code.forgejo.org/forgejo/runner:13.2.0@sha256:ca3d5eea46004789a175d1369eec6829d3ea9bfbe2011a06625b4bdaa55f7552",
+      "release": "13.2.0",
+      "source": "https://forgejo.org/2026-08-runner-release-v13/",
+      "platforms": ["linux/amd64", "linux/arm64"],
+      "stateOwner": "1000:1000"
+    }
+  },
+  "database": {
+    "backend": "FerretDB 2 with PostgreSQL DocumentDB",
+    "components": ["ferretdb", "postgres-documentdb"],
+    "contract": "https://github.com/moghtech/komodo/blob/v2.3.3/compose/ferretdb.compose.yaml",
+    "authentication": "SCRAM-SHA-256",
+    "credentialOwner": "Isolated runtime secret files",
+    "freshInstance": true,
+    "reuseExistingDatabase": false,
+    "mongodbExcluded": {
+      "reason": "The observed host kernel is in MongoDB's unsupported 6.19 through 7.0.13 range",
+      "contract": "https://www.mongodb.com/docs/manual/release-notes/8.0/"
+    }
+  },
+  "execution": {
+    "controlLanguage": "Rust",
+    "firstServerName": "managed-apps",
+    "firstServerNameEnvironment": "KOMODO_SERVER_NAME",
+    "deploymentContextEnvironment": "DEPLOYMENT_DOCKER_CONTEXT",
+    "deploymentSocketEnvironment": "DEPLOYMENT_DOCKER_SOCKET",
+    "runnerSocketEnvironment": "CI_DOCKER_SOCKET",
+    "stateRootEnvironment": "DEPLOYMENT_STATE_ROOT",
+    "managedAppRootEnvironment": "DEPLOYMENT_MANAGED_ROOT",
+    "stateLocation": "Explicitly qualified persistent subdirectory of the host's build-disk ~/apps root",
+    "separatePersistentDeploymentDaemon": true,
+    "separateRunnerDaemon": true,
+    "reuseFactoryDaemon": false,
+    "reuseGlobalDaemon": false,
+    "publicAgentListener": false,
+    "defaultGlobalUpdateOrBackupProcedures": false,
+    "sourceAuthority": "Existing GitHub fork ownership and histories remain canonical",
+    "providerAuthenticationSynchronization": false
+  },
+  "routes": {
+    "owner": "./apps.json",
+    "controlRole": "deploy",
+    "forgeRole": "git",
+    "actionsRole": "ci",
+    "komodoLoopbackPort": 19120,
+    "forgejoLoopbackPort": 19300,
+    "forgejoSshLoopbackPort": 19222,
+    "runnerHasHttpService": false,
+    "actionsRouteBackend": "Forgejo Actions UI"
+  },
+  "runner": {
+    "composeProfile": "ci",
+    "minimumDockerVersion": "25.0.0",
+    "ipv6DockerFixVersion": "28.0.1",
+    "configFileEnvironment": "FORGEJO_RUNNER_CONFIG_FILE",
+    "configuration": {
+      "log": { "level": "info", "job_level": "info" },
+      "runner": {
+        "capacity": 1,
+        "timeout": "45m",
+        "shutdown_timeout": "1m",
+        "fetch_timeout": "30s",
+        "fetch_interval": "30s",
+        "labels": ["bun:docker://${BUN_JOB_IMAGE}"]
+      },
+      "cache": { "enabled": false },
+      "container": {
+        "privileged": false,
+        "valid_volumes": [],
+        "docker_host": "-",
+        "force_pull": false,
+        "force_rebuild": false
+      },
+      "server": {
+        "connections": {
+          "aphrody": {
+            "url": "${FORGEJO_PUBLIC_URL}",
+            "uuid": "${FORGEJO_RUNNER_UUID}",
+            "token_url": "file:/run/secrets/forgejo_runner_token"
+          }
+        }
+      }
+    },
+    "jobImageEnvironment": "BUN_JOB_IMAGE",
+    "jobImageRequirement": "Immutable OCI reference with a qualified exact Aphrody Bun runtime and required native build owners",
+    "javascriptActionsCompatibility": "Not qualified; Bun shell workflows do not imply Node action compatibility",
+    "registration": "Forgejo UI/API UUID and isolated token file; no deprecated GITEA variables"
+  },
+  "secrets": {
+    "root": "DEPLOYMENT_SECRETS_ROOT",
+    "databaseUsername": "DEPLOYMENT_DATABASE_USERNAME_FILE",
+    "databasePassword": "DEPLOYMENT_DATABASE_PASSWORD_FILE",
+    "ferretdbPostgresqlUri": "FERRETDB_POSTGRESQL_URI_FILE",
+    "komodoBootstrapPassword": "KOMODO_ADMIN_PASSWORD_FILE",
+    "komodoJwt": "KOMODO_JWT_SECRET_FILE",
+    "komodoWebhook": "KOMODO_WEBHOOK_SECRET_FILE",
+    "forgejoRunnerToken": "FORGEJO_RUNNER_TOKEN_FILE",
+    "valuesInCatalog": false
+  },
+  "qualification": {
+    "ociIndexDigestAndManifestBytesVerified": true,
+    "imageLayersPulled": false,
+    "liveServiceExecution": false,
+    "runtimeBackendCompatibility": false,
+    "persistentDockerContextsQualified": false,
+    "forgeAndRunnerRegistered": false,
+    "cloudflareHttpsRouting": false,
+    "factoryOverlapAllowed": false,
+    "observedHost": {
+      "target": "vps",
+      "observedAt": "2026-10-13T10:13:45.389Z",
+      "architecture": "x64",
+      "kernel": "7.0.0-38-generic",
+      "avx": true,
+      "rootFreeBytes": 133501100032,
+      "buildFreeBytes": 127031021568,
+      "buildFreeInodes": 17583894
+    },
+    "activationGates": [
+      "Factory heavy jobs have terminal receipts and the shared heavy lock is available",
+      "Resolve one desired-state catalog and fresh isolated persistent data paths",
+      "Qualify distinct persistent deployment and CI Docker contexts, sockets and data roots",
+      "Verify image layers, native platform, executable identities and directory/secret ownership",
+      "Provide actual secret files, first admin account and registered runner UUID/token",
+      "Qualify PostgreSQL, DocumentDB, FerretDB, Komodo and authenticated Periphery readiness",
+      "Qualify Forgejo health, Git SSH/HTTPS and Bun job execution",
+      "Activate public Cloudflare routes only after the authenticated origin gates pass"
+    ]
+  }
+}

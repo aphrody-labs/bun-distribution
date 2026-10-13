@@ -1,0 +1,25 @@
+# The allowlist accepts an assembled distribution only.
+**
+!Dockerfile
+!.dockerignore
+!distribution.json
+!sources.receipt.json
+!container/
+!container/**
+!runtime/
+!runtime/bun
+!runtime/bun-cosmic
+!runtime/*.json
+!sources/
+!sources/**
+!wasm/
+!wasm/**
+# Sources are exported from Git's tracked inventory by the staging owner.
+# Preserve tracked fixture paths, including node_modules, PEM and dotenv files.
+# Provider stores and Git administration are never distribution source.
+**/.git
+**/.git/**
+**/.codex/sessions
+**/.codex/sessions/**
+**/.claude/projects
+**/.claude/projects/**

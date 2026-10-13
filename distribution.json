@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "name": "Bun OS",
+  "version": "1.4.4-dev",
+  "runtimeKernel": "aphrody-labs/bun",
+  "hostKernels": ["linux", "windows", "darwin"],
+  "desktop": "aphrody-labs/cosmic-epoch",
+  "toolkit": "aphrody-labs/libcosmic",
+  "material": "aphrody-labs/material",
+  "branches": { "bun": "os", "material": "os", "libcosmic": "os", "cosmic-epoch": "os" },
+  "profiles": {
+    "full": {
+      "description": "Complete Bun fork and Material sources, COSMIC desktop and applications, GPU renderer",
+      "renderer": "wgpu",
+      "helperFeatures": ["gpu"],
+      "materialFeatures": ["cosmic-wgpu"],
+      "sources": "complete",
+      "desktopApplications": "complete"
+    },
+    "perf": {
+      "description": "Same complete source distribution, demand-loaded runtime and software GUI without optional engines",
+      "renderer": "tiny-skia",
+      "helperFeatures": [],
+      "materialFeatures": ["cosmic"],
+      "sources": "complete",
+      "desktopApplications": "core"
+    }
+  },
+  "targets": {
+    "linux-x64": {
+      "rust": "x86_64-unknown-linux-gnu",
+      "abi": "gnu",
+      "libc": "glibc",
+      "desktop": "cosmic-session",
+      "container": true
+    },
+    "linux-arm64": {
+      "rust": "aarch64-unknown-linux-gnu",
+      "abi": "gnu",
+      "libc": "glibc",
+      "desktop": "cosmic-session",
+      "container": true
+    },
+    "windows-x64": { "rust": "x86_64-pc-windows-msvc", "abi": "msvc", "libc": "ucrt", "desktop": "winit", "container": false },
+    "macos-arm64": { "rust": "aarch64-apple-darwin", "abi": "darwin", "libc": "libSystem", "desktop": "winit", "container": false },
+    "wasm": { "rust": "wasm32-unknown-unknown", "abi": "none", "libc": "none", "desktop": "browser", "container": false }
+  },
+  "unresolvedRequirements": ["Identify the owner reference 9937-389B"],
+  "qualification": "development"
+}

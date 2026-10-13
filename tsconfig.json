@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": true,
+    "strict": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "skipLibCheck": true,
+    "types": ["@aphrody/bun-types"]
+  },
+  "include": [
+    "src/**/*.ts",
+    "container/**/*.ts",
+    "factory/**/*.ts",
+    "packages/package-converter/src/**/*.ts",
+    "infra/**/*.ts"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "@aphrody/bun-os",
+  "version": "1.4.4",
+  "private": true,
+  "description": "Bun OS source assembly and full/perf distribution factory",
+  "license": "MIT",
+  "bin": {
+    "bun-os": "src/cli.ts"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/distribution.ts"
+  },
+  "scripts": {
+    "plan": "bun src/cli.ts plan",
+    "sources": "bun src/cli.ts sources",
+    "stage": "bun src/cli.ts stage",
+    "wasm": "bun src/cli.ts wasm",
+    "image": "bun src/cli.ts image",
+    "typecheck": "bun check -p tsconfig.json --threads=2 --no-pretty",
+    "lint:all": "bun lint --deny-warnings src container factory infra packages/package-converter/src",
+    "fmt:all": "bun fmt --write -c bun-format.json src container factory infra packages/package-converter/src",
+    "fmt:check": "bun fmt --check -c bun-format.json src container factory infra packages/package-converter/src",
+    "migrate": "bun n2b . --aggressive --ignore 'node_modules/**' --ignore 'out/**' --ignore '.git/**' --jobs 2 --agent --report json",
+    "factory": "bun factory/ubuntu.ts",
+    "packages": "bun packages/package-converter/src/cli.ts",
+    "apt:build": "bun src/build-apt.ts"
+  },
+  "devDependencies": {
+    "@aphrody/bun-types": "1.4.4"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

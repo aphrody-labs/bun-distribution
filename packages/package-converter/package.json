@@ -1,0 +1,17 @@
+{
+  "name": "@bun-os/package-converter",
+  "version": "1.4.4",
+  "private": true,
+  "license": "MIT",
+  "bin": {
+    "package-converter": "src/cli.ts"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/convert.ts",
+    "./metadata": "./src/metadata.ts"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

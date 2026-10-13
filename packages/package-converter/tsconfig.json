@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": true
+  },
+  "include": ["src/**/*.ts"]
+}

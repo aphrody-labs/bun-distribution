@@ -1,0 +1,454 @@
+{
+  "schemaVersion": 1,
+  "baseDomain": "aphrody.app",
+  "cloudflare": {
+    "accountId": "ca22c1a51a145f919b54afa18d936516",
+    "zoneId": "f4dab237b9811435da6fee0b5b3438d4",
+    "worker": "aphrody-app"
+  },
+  "workspaces": {
+    "os": "..",
+    "libraries": "../../bun-libraries",
+    "material": "../../material"
+  },
+  "storage": {
+    "assets": {
+      "bucket": "aphrody-assets",
+      "origin": "https://assets.aphrody.app",
+      "prefix": "objects/sha256/"
+    },
+    "artifacts": {
+      "bucket": "aphrody-dist",
+      "origin": "https://dist.aphrody.app",
+      "prefix": "objects/sha256/"
+    }
+  },
+  "targets": ["windows-x64", "linux-x64", "linux-arm64", "macos-arm64"],
+  "apps": [
+    {
+      "id": "filmcraft",
+      "hostname": "filmcraft.aphrody.app",
+      "kind": "native-cli",
+      "workspace": "libraries",
+      "entrypoint": "infra/native-app.ts",
+      "entrypointWorkspace": "os",
+      "source": {
+        "repository": "aphrody-labs/filmcraft",
+        "revision": "87b845138e2cecf43e97e2c2e011b820a6e70ecd",
+        "path": "libraries/filmcraft",
+        "license": "MIT OR Apache-2.0"
+      },
+      "native": {
+        "required": true,
+        "binary": "filmcraft-cli",
+        "cargoPackage": "filmcraft-cli",
+        "manifestPath": "Cargo.toml"
+      },
+      "assetRoots": [],
+      "qualification": {
+        "nativeBackend": false,
+        "standaloneBinary": false,
+        "deployed": false
+      }
+    },
+    {
+      "id": "artcraft",
+      "hostname": "artcraft.aphrody.app",
+      "kind": "native-cli",
+      "workspace": "libraries",
+      "entrypoint": "infra/native-app.ts",
+      "entrypointWorkspace": "os",
+      "source": {
+        "repository": "aphrody-labs/artcraft",
+        "revision": "f8dae6cec51cc84c8b565132db2c7471fad96148",
+        "path": "libraries/artcraft",
+        "license": "MIT OR Apache-2.0"
+      },
+      "native": {
+        "required": true,
+        "binary": null,
+        "cargoPackage": "artcraft_client",
+        "manifestPath": "Cargo.toml"
+      },
+      "assetRoots": [],
+      "qualification": {
+        "nativeBackend": false,
+        "standaloneBinary": false,
+        "deployed": false
+      }
+    },
+    {
+      "id": "photocraft",
+      "hostname": "photocraft.aphrody.app",
+      "kind": "native-cli",
+      "workspace": "libraries",
+      "entrypoint": "infra/native-app.ts",
+      "entrypointWorkspace": "os",
+      "source": {
+        "repository": "aphrody-labs/photocraft",
+        "revision": "6f85054288a564f9fbbccb99268ffdb34e581584",
+        "path": "libraries/photocraft",
+        "license": "MIT OR Apache-2.0"
+      },
+      "native": {
+        "required": true,
+        "binary": "photocraft-cli",
+        "cargoPackage": "photocraft-cli",
+        "manifestPath": "Cargo.toml"
+      },
+      "assetRoots": [],
+      "qualification": {
+        "nativeBackend": false,
+        "standaloneBinary": false,
+        "deployed": false
+      }
+    },
+    {
+      "id": "vectorcraft",
+      "hostname": "vectorcraft.aphrody.app",
+      "kind": "native-cli",
+      "workspace": "libraries",
+      "entrypoint": "infra/native-app.ts",
+      "entrypointWorkspace": "os",
+      "source": {
+        "repository": "aphrody-labs/vectorcraft",
+        "revision": "0d0ea352df99044589a7ce0efc7004f7a5b6b7c0",
+        "path": "libraries/vectorcraft",
+        "license": "MIT OR Apache-2.0"
+      },
+      "native": {
+        "required": true,
+        "binary": "vectorcraft-cli",
+        "cargoPackage": "vectorcraft-cli",
+        "manifestPath": "Cargo.toml"
+      },
+      "assetRoots": [],
+      "qualification": {
+        "nativeBackend": false,
+        "standaloneBinary": false,
+        "deployed": false
+      }
+    },
+    {
+      "id": "effectcraft",
+      "hostname": "effectcraft.aphrody.app",
+      "kind": "native-cli",
+      "workspace": "libraries",
+      "entrypoint": "infra/native-app.ts",
+      "entrypointWorkspace": "os",
+      "source": {
+        "repository": "aphrody-labs/effectcraft",
+        "revision": "e5beea940ed245dc8e6c9293d6f7717b6c3f2724",
+        "path": "libraries/effectcraft",
+        "license": "MIT OR Apache-2.0"
+      },
+      "native": {
+        "required": true,
+        "binary": "effectcraft-cli",
+        "cargoPackage": "effectcraft-cli",
+        "manifestPath": "Cargo.toml"
+      },
+      "assetRoots": [],
+      "qualification": {
+        "nativeBackend": false,
+        "standaloneBinary": false,
+        "deployed": false
+      }
+    },
+    {
+      "id": "lightcraft",
+      "hostname": "lightcraft.aphrody.app",
+      "kind": "native-cli",
+      "workspace": "libraries",
+      "entrypoint": "infra/native-app.ts",
+      "entrypointWorkspace": "os",
+      "source": {
+        "repository": "aphrody-labs/lightcraft",
+        "revision": "b3d392b4994ee99dc389890f006600769d0c4ff5",
+        "path": "libraries/lightcraft",
+        "license": "MIT OR Apache-2.0"
+      },
+      "native": {
+        "required": true,
+        "binary": "lightcraft-cli",
+        "cargoPackage": "lightcraft-cli",
+        "manifestPath": "Cargo.toml"
+      },
+      "assetRoots": [],
+      "qualification": {
+        "nativeBackend": false,
+        "standaloneBinary": false,
+        "deployed": false
+      }
+    },
+    {
+      "id": "pdfcraft",
+      "hostname": "pdfcraft.aphrody.app",
+      "kind": "native-cli",
+      "workspace": "libraries",
+      "entrypoint": "infra/native-app.ts",
+      "entrypointWorkspace": "os",
+      "source": {
+        "repository": "aphrody-labs/pdfcraft",
+        "revision": "7437bde378f43856eada40af25b983812e615e8a",
+        "path": "libraries/pdfcraft",
+        "license": "MIT OR Apache-2.0"
+      },
+      "native": {
+        "required": true,
+        "binary": "pdfcraft-cli",
+        "cargoPackage": "pdfcraft-cli",
+        "manifestPath": "Cargo.toml"
+      },
+      "assetRoots": [],
+      "qualification": {
+        "nativeBackend": false,
+        "standaloneBinary": false,
+        "deployed": false
+      }
+    },
+    {
+      "id": "wordcraft",
+      "hostname": "wordcraft.aphrody.app",
+      "kind": "native-cli",
+      "workspace": "libraries",
+      "entrypoint": "infra/native-app.ts",
+      "entrypointWorkspace": "os",
+      "source": {
+        "repository": "aphrody-labs/wordcraft",
+        "revision": "159b84f54c74e9e82fb3109b758ae7dd6f4e3ab0",
+        "path": "libraries/wordcraft",
+        "license": "MIT OR Apache-2.0"
+      },
+      "native": {
+        "required": true,
+        "binary": "wordcraft-cli",
+        "cargoPackage": "wordcraft-cli",
+        "manifestPath": "Cargo.toml"
+      },
+      "assetRoots": [],
+      "qualification": {
+        "nativeBackend": false,
+        "standaloneBinary": false,
+        "deployed": false
+      }
+    },
+    {
+      "id": "soundcraft",
+      "hostname": "soundcraft.aphrody.app",
+      "kind": "native-cli",
+      "workspace": "libraries",
+      "entrypoint": "infra/native-app.ts",
+      "entrypointWorkspace": "os",
+      "source": {
+        "repository": "aphrody-labs/soundcraft",
+        "revision": "6cf896e76c0ec82a11bf2494f209cfe7c8507f74",
+        "path": "libraries/soundcraft",
+        "license": "MIT OR Apache-2.0"
+      },
+      "native": {
+        "required": true,
+        "binary": "soundcraft-cli",
+        "cargoPackage": "soundcraft-cli",
+        "manifestPath": "Cargo.toml"
+      },
+      "assetRoots": [],
+      "qualification": {
+        "nativeBackend": false,
+        "standaloneBinary": false,
+        "deployed": false
+      }
+    },
+    {
+      "id": "designcraft",
+      "hostname": "designcraft.aphrody.app",
+      "kind": "native-cli",
+      "workspace": "libraries",
+      "entrypoint": "infra/native-app.ts",
+      "entrypointWorkspace": "os",
+      "source": {
+        "repository": "aphrody-labs/designcraft",
+        "revision": "e862e0a613c0793c6fea7cfd37ad4145ed6cf686",
+        "path": "libraries/designcraft",
+        "license": "MIT OR Apache-2.0"
+      },
+      "native": {
+        "required": true,
+        "binary": "designcraft-cli",
+        "cargoPackage": "designcraft-cli",
+        "manifestPath": "Cargo.toml"
+      },
+      "assetRoots": [],
+      "qualification": {
+        "nativeBackend": false,
+        "standaloneBinary": false,
+        "deployed": false
+      }
+    },
+    {
+      "id": "cadcraft",
+      "hostname": "cadcraft.aphrody.app",
+      "kind": "native-cli",
+      "workspace": "libraries",
+      "entrypoint": "infra/native-app.ts",
+      "entrypointWorkspace": "os",
+      "source": {
+        "repository": "aphrody-labs/cadcraft",
+        "revision": "00c7613f1af3c73f7157fa91d9fe2635c6f23c06",
+        "path": "libraries/cadcraft",
+        "license": "MIT OR Apache-2.0"
+      },
+      "native": {
+        "required": true,
+        "binary": "cadcraft-cli",
+        "cargoPackage": "cadcraft-cli",
+        "manifestPath": "Cargo.toml"
+      },
+      "assetRoots": [],
+      "qualification": {
+        "nativeBackend": false,
+        "standaloneBinary": false,
+        "deployed": false
+      }
+    },
+    {
+      "id": "deckcraft",
+      "hostname": "deckcraft.aphrody.app",
+      "kind": "native-cli",
+      "workspace": "libraries",
+      "entrypoint": "infra/native-app.ts",
+      "entrypointWorkspace": "os",
+      "source": {
+        "repository": "aphrody-labs/deckcraft",
+        "revision": "1660982e58ee48fd9f9bef6dc2620d78ada04613",
+        "path": "libraries/deckcraft",
+        "license": "MIT OR Apache-2.0"
+      },
+      "native": {
+        "required": true,
+        "binary": "deckcraft-cli",
+        "cargoPackage": "deckcraft-cli",
+        "manifestPath": "Cargo.toml"
+      },
+      "assetRoots": [],
+      "qualification": {
+        "nativeBackend": false,
+        "standaloneBinary": false,
+        "deployed": false
+      }
+    },
+    {
+      "id": "gridcraft",
+      "hostname": "gridcraft.aphrody.app",
+      "kind": "native-cli",
+      "workspace": "libraries",
+      "entrypoint": "infra/native-app.ts",
+      "entrypointWorkspace": "os",
+      "source": {
+        "repository": "aphrody-labs/gridcraft",
+        "revision": "84acf6293b1dc1fc09837524e035d674eb4d6741",
+        "path": "libraries/gridcraft",
+        "license": "MIT OR Apache-2.0"
+      },
+      "native": {
+        "required": true,
+        "binary": "gridcraft-cli",
+        "cargoPackage": "gridcraft-cli",
+        "manifestPath": "Cargo.toml"
+      },
+      "assetRoots": [],
+      "qualification": {
+        "nativeBackend": false,
+        "standaloneBinary": false,
+        "deployed": false
+      }
+    },
+    {
+      "id": "figcraft",
+      "hostname": "figcraft.aphrody.app",
+      "kind": "native-cli",
+      "workspace": "libraries",
+      "entrypoint": "infra/native-app.ts",
+      "entrypointWorkspace": "os",
+      "source": {
+        "repository": "aphrody-labs/figcraft",
+        "revision": "e56856f4016c76fbc862ac2fb4fd3fb43a68f396",
+        "path": "libraries/figcraft",
+        "license": "MIT OR Apache-2.0"
+      },
+      "native": {
+        "required": true,
+        "binary": "figcraft-cli",
+        "cargoPackage": "figcraft-cli",
+        "manifestPath": "Cargo.toml"
+      },
+      "assetRoots": [],
+      "qualification": {
+        "nativeBackend": false,
+        "standaloneBinary": false,
+        "deployed": false
+      }
+    },
+    {
+      "id": "apt",
+      "hostname": "apt.aphrody.app",
+      "kind": "bun-cli",
+      "workspace": "os",
+      "entrypoint": "src/apt.ts",
+      "entrypointWorkspace": "os",
+      "source": {
+        "repository": "aphrody-labs/bun-distribution",
+        "path": ".",
+        "license": "MIT"
+      },
+      "native": {
+        "required": false
+      },
+      "assetRoots": [],
+      "qualification": {
+        "nativeBackend": false,
+        "standaloneBinary": true,
+        "deployed": false
+      }
+    },
+    {
+      "id": "desktop",
+      "hostname": "desktop.aphrody.app",
+      "kind": "bun-server",
+      "workspace": "libraries",
+      "entrypoint": "apps/desktop/server.ts",
+      "entrypointWorkspace": "libraries",
+      "source": {
+        "repository": "aphrody-labs/bun-libraries",
+        "path": "apps/desktop",
+        "license": "MIT"
+      },
+      "native": {
+        "required": true,
+        "binary": null
+      },
+      "assetRoots": ["apps/desktop/web"],
+      "qualification": {
+        "nativeBackend": false,
+        "standaloneBinary": false,
+        "deployed": false
+      },
+      "externalContext": ["workspace-catalog", "qualified-native-engines"]
+    }
+  ],
+  "build": {
+    "outputRoot": "../../build/bun-os-apps",
+    "timeoutSeconds": 600,
+    "sharedHeavyLock": "../../../bun/build/cargo-serial/.build.lock",
+    "lockKind": "exclusive-file"
+  },
+  "runtimeSnapshots": {
+    "windows-x64": {
+      "path": "../../../bun/build/release/bun.exe",
+      "sha256": "a6f79203a9601914e86479f103c7f695330d54442169566f64e29328440d9c89",
+      "revision": "2ae8fc65fba1d05c423a2433b1195835109942b6",
+      "version": "1.4.4",
+      "qualificationReceipt": "../out/runtime-current/windows-x64.json"
+    }
+  }
+}
