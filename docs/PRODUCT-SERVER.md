@@ -121,3 +121,18 @@ candidate after the concurrent canonical owner changed
 `packages/bun-workspace/src/process.ts`. The eleven passing gates above remain
 evidence for the recorded source snapshot; they do not qualify the subsequent
 working source. Rebuilding against the final committed owner inputs is required.
+
+## Current twelve-crate candidate
+
+`build/staging/server-7416-12crates.exe` was compiled and executed from source
+`dcd16d9beac0c86bd5d4ba4f61094f22f461abe9`, with runtime
+`7416b3a1c88dd4d429b93a0c4ed98866c9329735`. Its SHA-256 is
+`d805ece584204f707fa500d45336b8e657f6f1afc6f26f2c3fc5f316dc5127d6`.
+All eleven HTTP gates pass. The catalog records all twelve committed crate
+gitlinks alongside the distribution sources. Git module declarations and root
+Cargo membership are included in its committed-input proofs.
+
+This is the current qualified staging candidate. The earlier installation and
+activation review rejections remain in effect; no replacement command was
+retried and the deployed flag remains false. The canonical installed binary
+therefore keeps its earlier identity stated above.
