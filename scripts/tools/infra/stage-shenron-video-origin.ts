@@ -129,7 +129,7 @@ if (import.meta.main) {
     return match[1]!;
   };
   const [poster, posterSha256, video, videoSha256] = args.length
-    ? args
+    ? [args[0]!, args[1]!, args[2]!, args[3]!]
     : [
         join(stage, "poster.webp"),
         await expected("poster"),
