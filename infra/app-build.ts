@@ -3,6 +3,8 @@ import { lstat, mkdir, open, realpath, unlink } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import { hostname } from "node:os";
 import { isBuiltin } from "node:module";
+import { appHostnamesForLibrary } from "@aphrody/bun-workspace/capabilities";
+import { loadConfig as loadLibraryConfig } from "@aphrody/bun-workspace";
 import { command, identity, packageRoot, type RuntimeReceipt } from "../src/distribution.ts";
 import { inspectLinuxABI } from "../src/elf.ts";
 import { abi } from "../packages/package-converter/src/abi.ts";
@@ -44,7 +46,8 @@ export interface NativeArtifact extends NativeDependency {
 export interface AppEntry {
   id: string;
   kind: "native-cli" | "bun-cli" | "bun-server";
-  hostname: string;
+  hostname?: string;
+  hostnames?: string[];
   workspace: string;
   entrypoint: string;
   entrypointWorkspace?: string;
@@ -79,6 +82,7 @@ export interface AppPlan {
   configPath: string;
   configSHA256: string;
   app: AppEntry;
+  hostnames: string[];
   target: AppTarget;
   cwd: string;
   entrypoint: string;
@@ -279,6 +283,18 @@ export async function planApp(configPath: string, appId: string, target: AppTarg
   const app = config.apps.find(app => app.id === appId);
   if (!app || !config.targets.includes(target)) throw new Error("Unknown app or target");
   const root = await workspace(configPath, config, app.entrypointWorkspace ?? app.workspace);
+  let resolvedHostnames: string[];
+  if (app.workspace === "libraries" && app.kind === "native-cli") {
+    const libraryRoot = await workspace(configPath, config, "libraries");
+    const libraryConfig = await loadLibraryConfig(libraryRoot);
+    resolvedHostnames = appHostnamesForLibrary(app.id, libraryConfig);
+    if (app.hostname && !resolvedHostnames.includes(app.hostname))
+      throw new Error("Configured application hostname differs from the library owner");
+  } else {
+    if (!app.hostname) throw new Error("A hostname is required for non-library applications");
+    resolvedHostnames = [app.hostname];
+  }
+  const resolvedApp = { ...app, hostname: resolvedHostnames[0]!, hostnames: resolvedHostnames };
   let entrypoint = inside(root, resolve(root, app.entrypoint));
   const reasons: string[] = [];
   if (!(await Bun.file(entrypoint).exists())) reasons.push("Configured entrypoint is absent");
@@ -308,7 +324,8 @@ export async function planApp(configPath: string, appId: string, target: AppTarg
     kind: "app-build-plan",
     configPath,
     configSHA256: (await identity(configPath)).sha256,
-    app,
+    app: resolvedApp,
+    hostnames: resolvedHostnames,
     target,
     cwd: root,
     entrypoint,

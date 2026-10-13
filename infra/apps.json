@@ -27,7 +27,6 @@
   "apps": [
     {
       "id": "filmcraft",
-      "hostname": "filmcraft.aphrody.app",
       "kind": "native-cli",
       "workspace": "libraries",
       "entrypoint": "infra/native-app.ts",
@@ -53,7 +52,6 @@
     },
     {
       "id": "artcraft",
-      "hostname": "artcraft.aphrody.app",
       "kind": "native-cli",
       "workspace": "libraries",
       "entrypoint": "infra/native-app.ts",
@@ -79,7 +77,6 @@
     },
     {
       "id": "photocraft",
-      "hostname": "photocraft.aphrody.app",
       "kind": "native-cli",
       "workspace": "libraries",
       "entrypoint": "infra/native-app.ts",
@@ -105,7 +102,6 @@
     },
     {
       "id": "vectorcraft",
-      "hostname": "vectorcraft.aphrody.app",
       "kind": "native-cli",
       "workspace": "libraries",
       "entrypoint": "infra/native-app.ts",
@@ -131,7 +127,6 @@
     },
     {
       "id": "effectcraft",
-      "hostname": "effectcraft.aphrody.app",
       "kind": "native-cli",
       "workspace": "libraries",
       "entrypoint": "infra/native-app.ts",
@@ -157,7 +152,6 @@
     },
     {
       "id": "lightcraft",
-      "hostname": "lightcraft.aphrody.app",
       "kind": "native-cli",
       "workspace": "libraries",
       "entrypoint": "infra/native-app.ts",
@@ -183,7 +177,6 @@
     },
     {
       "id": "pdfcraft",
-      "hostname": "pdfcraft.aphrody.app",
       "kind": "native-cli",
       "workspace": "libraries",
       "entrypoint": "infra/native-app.ts",
@@ -209,7 +202,6 @@
     },
     {
       "id": "wordcraft",
-      "hostname": "wordcraft.aphrody.app",
       "kind": "native-cli",
       "workspace": "libraries",
       "entrypoint": "infra/native-app.ts",
@@ -235,7 +227,6 @@
     },
     {
       "id": "soundcraft",
-      "hostname": "soundcraft.aphrody.app",
       "kind": "native-cli",
       "workspace": "libraries",
       "entrypoint": "infra/native-app.ts",
@@ -261,7 +252,6 @@
     },
     {
       "id": "designcraft",
-      "hostname": "designcraft.aphrody.app",
       "kind": "native-cli",
       "workspace": "libraries",
       "entrypoint": "infra/native-app.ts",
@@ -287,7 +277,6 @@
     },
     {
       "id": "cadcraft",
-      "hostname": "cadcraft.aphrody.app",
       "kind": "native-cli",
       "workspace": "libraries",
       "entrypoint": "infra/native-app.ts",
@@ -313,7 +302,6 @@
     },
     {
       "id": "deckcraft",
-      "hostname": "deckcraft.aphrody.app",
       "kind": "native-cli",
       "workspace": "libraries",
       "entrypoint": "infra/native-app.ts",
@@ -339,7 +327,6 @@
     },
     {
       "id": "gridcraft",
-      "hostname": "gridcraft.aphrody.app",
       "kind": "native-cli",
       "workspace": "libraries",
       "entrypoint": "infra/native-app.ts",
@@ -365,7 +352,6 @@
     },
     {
       "id": "figcraft",
-      "hostname": "figcraft.aphrody.app",
       "kind": "native-cli",
       "workspace": "libraries",
       "entrypoint": "infra/native-app.ts",

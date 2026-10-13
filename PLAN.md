@@ -9,6 +9,8 @@
 - [x] Route distribution commands and Ubuntu factory jobs through the shared
       Bun Libraries process owner, including deadlines, process trees and logs.
 - [x] Route distribution and Ubuntu artifact hashing through the shared hash owner.
+- [x] Make Bun Libraries the hostname owner for the 14 library applications;
+      retain each bare library domain as an alias and keep DNS records in place.
 - [ ] Identify any remaining provider relaunchers and remove the empty locked
       former directory once its holder releases it.
 - [ ] Physically relocate Bun after its concurrent exclusive Git batch ends;
