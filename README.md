@@ -50,8 +50,12 @@ a manifest line and an attribution row, and the tests check it.
 ## Develop
 
 ```sh
-cargo test --workspace                       # all font assertions
-cargo test -p craft-fonts --features embed   # the embedded bytes match the files
+cargo test --manifest-path ../../Cargo.toml -p craft-fonts -p craft-fonts-tests
+cargo test --manifest-path ../../Cargo.toml -p craft-fonts --features embed
 ```
 
 Code is MIT OR Apache-2.0 (`LICENSE-MIT`, `LICENSE-APACHE`); each font keeps its own licence.
+
+The `os` integration branch belongs to the parent Bun OS Cargo workspace.
+Use it as `libraries/craft-fonts` in that checkout. Package names, source paths,
+font assets, attribution, and licenses retain their existing owners.
