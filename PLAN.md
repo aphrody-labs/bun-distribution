@@ -85,6 +85,29 @@
 - [ ] Commit the integrated batch and push branch `os` after remote ancestry
       verification.
 
+## Product/server and offline sources — 2026-10-13
+
+- [x] Root Cargo owns eight flat pinned crate submodules, shared direct
+      dependencies, one nightly and one target/build/install configuration.
+      The five most recent crates have metadata/format gates; their native
+      compilation remains pending while the release owner holds build slots.
+- [x] Commit the root Cargo vendor snapshot: 514 dependency source packages,
+      522 full-graph identities including eight product crates. Locked offline
+      metadata passes. Preserve exact source bytes and license notices.
+- [ ] Qualify an offline native build before enabling vendor replacement in
+      the active Cargo configuration. Runtime/vendor migrations remain open.
+- [x] Add automatic standalone binary verification with eleven HTTP checks.
+      The Windows staging candidate from `efa6ccb6` passes with runtime
+      `d2ff37699e391e8e271fc877e9bcc81cdc49fa82`.
+- [ ] Replace the installed binary and activate the Infra product service.
+      Automatic approval review rejected both actions; deployment stays false.
+      See `docs/PRODUCT-SERVER.md` for distinct candidate/installed identities.
+- [x] Expose the same server, crate inventory and vendor tools through Just.
+- [x] Qualify HTTPS on the canonical `source.aphrody.app` forge portal.
+- [ ] Complete all 239 source mirrors, including private and archived owners,
+      with full ref/visibility checks and actual storage reservations. DBFR
+      remains reserved for production; temporary storage is not mirror capacity.
+
 ## Constraints
 
 The workspace integration does not by itself qualify a distribution image,
