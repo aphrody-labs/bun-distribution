@@ -181,3 +181,37 @@ skrifa defaults and the resolved source version. All direct dependencies of
 the 24 members use workspace inheritance. Imported Apache license bytes
 match Git blob `d9a10c0d8e868ebf8da0b3dc95bb0be634c34bfe` and SHA-256
 `a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9`.
+
+## Bun Jev owner
+
+`aphrody-jev` is integrated from the immutable Bun checkout pin
+`ac6832f65bf9921d33aa0d31cc72b3fa714ed20a`, prefix `crates/aphrody-jev`.
+The prefix has one source-history commit; its split root tree is
+`3da6e84c6227e1bafdb122efd57ab9d563fb6f91`, with split commit
+`ffeaa77f36197f081603ec93a9a1ad4631dcc35d`. The extracted tree preserves all
+21 tracked files, including `LICENSE-APACHE`, `LICENSE-BUN-MIT.md` and `NOTICE`.
+The child integration commit changes only its manifest to inherit the root
+workspace version, edition and MSRV while preserving the dual license.
+
+The workspace pins `futures` to `=0.3.34`, matching the immutable Bun owner's
+workspace version; this records reuse of that pin and does not assert that it
+is the latest registry release. Serde, serde_json, reqwest, rustls, Tokio,
+tracing, URL, Axum and thiserror inherit the root dependencies. HTTPS uses the
+Bun owner's reqwest `rustls-no-provider` path with rustls ring; `client` and
+`server` remain optional crate features. The workspace dependency disables
+features by default so consumers enable `client` only where needed.
+
+The response contract preserves `usage: null` when token accounting is
+unavailable; an explicit zero remains a reported measurement. Existing
+Aphrody `agent-tools` and MCP adapters remain protected consumer paths and are
+not duplicated in this root batch. The forge `os` pin is
+`be4a36bd503c79d98619ad39c8b2d0fbc36632eb`. Cargo formatting and complete
+locked metadata with all features pass: 25 root members and 568 identities,
+including 543 remote sources. No pre-existing locked version changed.
+
+Native Windows `cargo check --locked --offline -p aphrody-jev --all-features`
+passes through the serialized owner (25.80 seconds after cache preparation).
+The protocol test build ended before a test result was produced; tests and
+the full root build remain unqualified. The updated vendor verifies 543 remote
+sources, 671768402 bytes and 28572 checksum-listed files. Active Cargo source
+replacement remains disabled.

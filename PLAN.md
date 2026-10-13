@@ -87,13 +87,17 @@
 
 ## Product/server and offline sources — 2026-10-13
 
-- [x] Root Cargo owns twenty-four flat pinned crate submodules, shared direct
+- [x] Root Cargo owns twenty-five flat pinned crate submodules, shared direct
       dependencies, one nightly and one target/build/install configuration.
-      Locked offline `cargo check --workspace --all-features` passes for all
-      24 members. Full build, new-crate tests and Clippy remain pending; see
+      Locked offline `cargo check --workspace --all-features` passed for the
+      previous 24-member snapshot. Full build, new-crate tests and Clippy remain pending; see
       `docs/NATIVE-QUALIFICATION.md` for the observed launcher interruption.
-- [x] Commit the root Cargo vendor snapshot: 540 dependency source packages,
-      564 full-graph identities including twenty-four product crates. Locked offline
+- [x] Add the canonical Bun Jev owner with its history, nullable token usage,
+      shared direct dependencies and optional client/server features. Its
+      locked offline all-feature check passes; protected Aphrody adapters
+      remain pending consumer migration.
+- [x] Commit the root Cargo vendor snapshot: 543 dependency source packages,
+      568 full-graph identities including twenty-five product crates. Locked offline
       metadata passes. Preserve exact source bytes and license notices.
 - [ ] Qualify an offline native build before enabling vendor replacement in
       the active Cargo configuration. Runtime/vendor migrations remain open.

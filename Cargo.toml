@@ -25,6 +25,7 @@ members = [
     "crates/aphrody-subsystem",
     "crates/aphrody-proc",
     "crates/aphrody-config",
+    "crates/aphrody-jev",
 ]
 
 [workspace.package]
@@ -63,6 +64,7 @@ aphrody-guard = { path = "crates/aphrody-guard", version = "=1.4.4" }
 aphrody-subsystem = { path = "crates/aphrody-subsystem", version = "=1.4.4" }
 aphrody-proc = { path = "crates/aphrody-proc", version = "=1.4.4" }
 aphrody-config = { path = "crates/aphrody-config", version = "=1.4.4" }
+aphrody-jev = { path = "crates/aphrody-jev", version = "=1.4.4", default-features = false }
 anyhow = { version = "=1.0.104", default-features = false }
 async-trait = { version = "=0.1.92", default-features = false }
 axum = { version = "=0.8.9", default-features = false }
@@ -74,6 +76,7 @@ egui = { version = "=0.36.2", default-features = false }
 egui_extras = { version = "=0.36.2", default-features = false }
 egui_kittest = { version = "=0.36.2", default-features = false }
 getrandom = { version = "=0.4.3", default-features = false }
+futures = { version = "=0.3.34", default-features = false, features = ["std", "async-await"] }
 image = { version = "=0.25.10", default-features = false }
 libc = { version = "=0.2.190", default-features = false }
 log = { version = "=0.4.34", default-features = false }

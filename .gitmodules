@@ -173,3 +173,7 @@
 	path = crates/aphrody-config
 	url = bun-forge:aphrody-dev/bun-crate-aphrody-config.git
 	branch = os
+[submodule "crates/aphrody-jev"]
+	path = crates/aphrody-jev
+	url = bun-forge:aphrody-dev/bun-crate-aphrody-jev.git
+	branch = os

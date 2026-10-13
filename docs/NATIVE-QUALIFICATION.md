@@ -48,3 +48,26 @@ Vendor compilation and active source replacement remain false. Tests and
 Clippy for the newly imported crates remain pending. Neither a Cargo check nor
 the separately qualified standalone JavaScript server establishes delivery of
 all native applications, an OS image, or production deployment.
+
+## Jev integration
+
+The next snapshot adds `aphrody-jev` from the canonical Bun prefix with its
+history and dual-license notices. The private forge branch `os` is pinned at
+`be4a36bd503c79d98619ad39c8b2d0fbc36632eb`; the child is clean and its refs
+were read back through the root's qualified SSH transport.
+
+Complete locked metadata and vendor verification now resolve 25 root members
+and 568 identities, including 543 remote sources. Existing locked versions
+are unchanged. The scoped native command below returned exit 0, with Cargo
+reporting completion in 25.80 seconds after cache preparation:
+
+```sh
+cargo --config build/vendor/cargo-config.toml check --locked --offline -p aphrody-jev --all-features
+```
+
+This checks both optional client and server paths, including the nullable usage
+contract and the selected ring TLS provider. A subsequent protocol test build
+terminated before producing a test result. It does not count as executed or
+passing tests. Source compilation proof, full workspace build, protected
+Aphrody consumer migration and production activation remain separate pending
+gates. The new build-proof owner reports `compiled:false` and `buildProof:missing`.

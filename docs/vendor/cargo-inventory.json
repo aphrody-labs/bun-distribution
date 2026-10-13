@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
-  "observedAt": "2026-10-13T22:23:44.108Z",
-  "lockSHA256": "85bbe01a673f19c365ccad433f63bb120a479886ac8484429d1b2ea9c604e5b2",
-  "manifestSHA256": "cf689021bdf92dc75e2062b3108f44cd94bd3303f5c6c701b2991e165ae3ed5d",
+  "observedAt": "2026-10-13T23:11:06.451Z",
+  "lockSHA256": "88921868de7e85e121342f1dd3438c20e5a8c37482defa7b386eba5eef26c34f",
+  "manifestSHA256": "b3233de1fcb61e1efe0f9091b7954084d9a3bf6c099e3bce21b43bf4fe2e937b",
   "toolchainChannel": "nightly-2026-09-15",
   "toolchainSHA256": "e93446be76d3d27ebbd0b7682d615d0de0a350059e6e33e18bd1330340954a1a",
   "cargoVersion": "cargo 1.100.0-nightly (7941be6fb 2026-09-11)",
   "sourceLockSHA256": "ea3adf94c50a9552555c7cc41dda016882de203a1dd70ffda1c68da305912632",
-  "gitmodulesSHA256": "6c85db2f36a5ba51d1444dff7b1e7c56621e037cad17ced612eafc145d01d255",
+  "gitmodulesSHA256": "e52636cbdb32fffcae956679660f869d9de61bfa3dacd8b0449aa6302470e793",
   "activeConfigSHA256": "42e04ea9049614191a47680a9a678243a9f398537736f941c89854ae23285832",
-  "memberCount": 24,
-  "packageCount": 540,
-  "sourceBytes": 671331989,
-  "sourceFiles": 28483,
+  "memberCount": 25,
+  "packageCount": 543,
+  "sourceBytes": 671768402,
+  "sourceFiles": 28572,
   "packages": [
     {
       "name": "accesskit",
@@ -2369,6 +2369,26 @@
       "manifestSHA256": "84508fee5e8b314e18c1fab6d601975bff0b0897b9dbfe1fbf1451efe71a4449"
     },
     {
+      "name": "futures",
+      "version": "0.3.34",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "license": "MIT OR Apache-2.0",
+      "licenseFile": null,
+      "directory": "futures-0.3.34",
+      "archiveSHA256": "9a31d2a3fbaaeb2af2368bbdd904aa8e812d3c04a1ee10d3171f52d556e5d0a3",
+      "notices": [
+        {
+          "path": "LICENSE-APACHE",
+          "sha256": "275c491d6d1160553c32fd6127061d7f9606c3ea25abfad6ca3f6ed088785427"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sha256": "6652c868f35dfe5e8ef636810a4e576b9d663f3a17fb0f5613ad73583e1b88fd"
+        }
+      ],
+      "manifestSHA256": "ed245fd7a5b103cd4729754fee28518e2e6618287bef273c4f41efee645f991b"
+    },
+    {
       "name": "futures-channel",
       "version": "0.3.34",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
@@ -2427,6 +2447,26 @@
         }
       ],
       "manifestSHA256": "c42a07cdf88ac680f96f75df035d3193a449eec157d75b1c9e9024a05848654b"
+    },
+    {
+      "name": "futures-macro",
+      "version": "0.3.34",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "license": "MIT OR Apache-2.0",
+      "licenseFile": null,
+      "directory": "futures-macro-0.3.34",
+      "archiveSHA256": "9fb9654ba8355388abeb8dcb4fc62f511300867002afc858860463bdd9fe0c44",
+      "notices": [
+        {
+          "path": "LICENSE-APACHE",
+          "sha256": "275c491d6d1160553c32fd6127061d7f9606c3ea25abfad6ca3f6ed088785427"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sha256": "6652c868f35dfe5e8ef636810a4e576b9d663f3a17fb0f5613ad73583e1b88fd"
+        }
+      ],
+      "manifestSHA256": "fdb87996803b9b64594a0849d2b396f2581d79451adb8f1b91ed56da8c9421c3"
     },
     {
       "name": "futures-sink",
@@ -2894,6 +2934,26 @@
         }
       ],
       "manifestSHA256": "067da5f6334526ce5f080909e5c271dd0968ab4198a65eea51d93b242febb48a"
+    },
+    {
+      "name": "httpdate",
+      "version": "1.0.3",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "license": "MIT OR Apache-2.0",
+      "licenseFile": null,
+      "directory": "httpdate-1.0.3",
+      "archiveSHA256": "df3b46402a9d5adb4c86a0cf463f42e19994e3ee891101b1841f30a545cb49a9",
+      "notices": [
+        {
+          "path": "LICENSE-APACHE",
+          "sha256": "4d10fe5f3aa176b05b229a248866bad70b834c173f1252a814ff4748d8a13837"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sha256": "934887691e05d69d7c86ad3f2c360980fa30c15b035e351f3c9865e99da4debc"
+        }
+      ],
+      "manifestSHA256": "d1adbc974f706b302bc844ce7b6d6323d30a1689b9e3bf53ab78ba0bb09a9ed9"
     },
     {
       "name": "hybrid-array",
@@ -9926,6 +9986,7 @@
     "manifestsAndNoticesVerified": true,
     "compiled": false,
     "activeSourceReplacement": false,
+    "buildProof": "missing",
     "scope": "root product Cargo workspace only"
   }
 }
