@@ -18,6 +18,10 @@ jobs:
           submodules: true
           fetch-depth: 0
           persist-credentials: false
+      - name: Select runtime
+        run: |
+          "$BUN_EXECUTABLE" --revision
+          printf '%s\n' "${BUN_EXECUTABLE%/*}" >> "$GITHUB_PATH"
       - name: Install
         run: bun install --frozen-lockfile
       - name: Check

@@ -13,7 +13,8 @@ jobs:
           persist-credentials: false
       - name: Runtime
         run: |
-          bun -e 'import { assertRuntimeFacts, currentRuntimeFacts } from "./packages/workspace/src/runtime.ts"; console.log(JSON.stringify(assertRuntimeFacts(await Bun.file("infra/runtime-pins/linux-x64.json").json(), currentRuntimeFacts())));'
+          "$BUN_EXECUTABLE" -e 'import { assertRuntimeFacts, currentRuntimeFacts } from "./packages/workspace/src/runtime.ts"; console.log(JSON.stringify(assertRuntimeFacts(await Bun.file("infra/runtime-pins/linux-x64.json").json(), currentRuntimeFacts())));'
+          printf '%s\n' "${BUN_EXECUTABLE%/*}" >> "$GITHUB_PATH"
       - name: Install
         run: bun install --frozen-lockfile
       - name: Check
