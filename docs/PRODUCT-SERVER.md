@@ -132,7 +132,7 @@ candidate after the concurrent canonical owner changed
 evidence for the recorded source snapshot; they do not qualify the subsequent
 working source. Rebuilding against the final committed owner inputs is required.
 
-## Current twelve-crate candidate
+## Previous twelve-crate candidate
 
 `build/staging/server-7416-12crates.exe` was compiled and executed from source
 `dcd16d9beac0c86bd5d4ba4f61094f22f461abe9`, with runtime
@@ -142,7 +142,19 @@ All eleven HTTP gates pass. The catalog records all twelve committed crate
 gitlinks alongside the distribution sources. Git module declarations and root
 Cargo membership are included in its committed-input proofs.
 
-This is the current qualified staging candidate. The earlier installation and
+This records the previously qualified staging candidate. The earlier installation and
 activation review rejections remain in effect; no replacement command was
 retried and the deployed flag remains false. The canonical installed binary
 therefore keeps its earlier identity stated above.
+
+## Current twenty-crate candidate
+
+`build/staging/server-4b8-20crates.exe` was compiled and executed from source
+`51ee0193b2ec3a5afecd610e2194e4356ea9a6d1`, with runtime
+`4b8dee0bc69d2c290111001f2249e63e1dc95b70`. Its SHA-256 is
+`762c27d8485f200e4897b2c10994602d1af7030f2171b5afe8b8f15de630b1bc`.
+All fifteen HTTP gates pass, including the configured public HTTPS origin over
+the loopback HTTP upstream. The embedded catalog includes all twenty committed
+crate gitlinks. This qualifies the standalone server and its recorded inputs;
+Rust compilation of the new crates remains pending. Deployment remains false,
+and the installed binary retains its earlier identity.
