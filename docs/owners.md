@@ -3,6 +3,13 @@
 One implementation owns each concept. Surfaces bind that implementation and
 retain its errors, limits and qualification.
 
+The unified Bun Libraries session report records the source inventory,
+per-library owners, native Bun quality commands, app artifact contract and
+qualification boundaries at commit
+[`15cd85a`](https://github.com/aphrody-labs/bun-libraries/blob/15cd85a497dbd7d9e07e4e01aad08109f04fdea8/docs/session-report.md).
+Treat it as integration history; current owner declarations in this workspace
+and each pinned source repository govern subsequent changes.
+
 | Concept                                                   | Owner                                                                                              | Consumers                                                                             |
 | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | Source pins and library roles                             | Bun OS `aphrody.config.json` / `sources.lock.json`                                                 | Workspace, desktop, app packaging                                                     |
