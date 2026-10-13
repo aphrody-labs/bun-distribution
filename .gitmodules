@@ -89,3 +89,23 @@
 	path = crates/craft-atomic
 	url = bun-forge:aphrody-dev/bun-crate-craft-atomic.git
 	branch = os
+[submodule "crates/craft-settings"]
+	path = crates/craft-settings
+	url = bun-forge:aphrody-dev/bun-crate-craft-settings.git
+	branch = os
+[submodule "crates/craft-cms"]
+	path = crates/craft-cms
+	url = bun-forge:aphrody-dev/bun-crate-craft-cms.git
+	branch = os
+[submodule "crates/craft-print"]
+	path = crates/craft-print
+	url = bun-forge:aphrody-dev/bun-crate-craft-print.git
+	branch = os
+[submodule "crates/craft-quit"]
+	path = crates/craft-quit
+	url = bun-forge:aphrody-dev/bun-crate-craft-quit.git
+	branch = os
+[submodule "crates/craft-ui"]
+	path = crates/craft-ui
+	url = bun-forge:aphrody-dev/bun-crate-craft-ui.git
+	branch = os

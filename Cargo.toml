@@ -2,6 +2,11 @@
 resolver = "3"
 members = [
     "crates/craft-atomic",
+    "crates/craft-settings",
+    "crates/craft-cms",
+    "crates/craft-print",
+    "crates/craft-quit",
+    "crates/craft-ui",
     "crates/craft-fonts",
     "crates/craft-fonts-tests",
 ]
@@ -16,24 +21,44 @@ authors = ["aphrody-dev <contact@aphrody.com>"]
 
 [workspace.dependencies]
 craft-atomic = { path = "crates/craft-atomic" }
+craft-settings = { path = "crates/craft-settings" }
+craft-cms = { path = "crates/craft-cms" }
+craft-print = { path = "crates/craft-print" }
+craft-quit = { path = "crates/craft-quit" }
+craft-ui = { path = "crates/craft-ui" }
 anyhow = { version = "=1.0.104", default-features = false }
 base64 = { version = "=0.23.1", default-features = false }
 chrono = { version = "=0.4.45", default-features = false }
+dirs = { version = "=7.0.0", default-features = false }
+dispatch2 = { version = "=0.3.1", default-features = false }
+egui = { version = "=0.36.2", default-features = false }
+egui_extras = { version = "=0.36.2", default-features = false }
+egui_kittest = { version = "=0.36.2", default-features = false }
 getrandom = { version = "=0.4.3", default-features = false }
 image = { version = "=0.25.10", default-features = false }
 libc = { version = "=0.2.190", default-features = false }
 log = { version = "=0.4.34", default-features = false }
+miniz_oxide = { version = "=0.9.1", default-features = false, features = ["with-alloc"] }
+moxcms = "=0.9.1"
+objc2 = { version = "=0.6.5", default-features = false }
+objc2-app-kit = { version = "=0.3.2", default-features = false }
 png = { version = "=0.18.1", default-features = false }
+rayon = { version = "=1.12.0", default-features = false }
 regex = { version = "=1.13.1", default-features = false }
 reqwest = { version = "=0.13.5", default-features = false }
+roxmltree = { version = "=0.21.1", default-features = false, features = ["positions", "std"] }
 rustls = { version = "=0.23.45", default-features = false }
 rustix = { version = "=1.1.5", default-features = false }
-serde = { version = "=1.0.229", default-features = false }
-serde_json = { version = "=1.0.154", default-features = false }
+serde = { version = "=1.0.229", default-features = false, features = ["derive", "std"] }
+serde_json = { version = "=1.0.154", default-features = false, features = ["std"] }
 sha2 = { version = "=0.11.1", default-features = false }
-tempfile = { version = "=3.27.0", default-features = false }
+tempfile = { version = "=3.27.0", default-features = false, features = ["getrandom"] }
 thiserror = { version = "=2.0.21", default-features = false }
+toml_edit = { version = "=0.25.17", default-features = false, features = ["display", "parse"] }
 tokio = { version = "=1.53.2", default-features = false }
 tracing = { version = "=0.1.44", default-features = false }
 url = { version = "=2.5.8", default-features = false }
 uuid = { version = "=1.28.0", default-features = false }
+winsafe = { version = "=0.0.29", default-features = false }
+winprint = { git = "https://github.com/storytold/winprint.rs", rev = "5f80b9baf6b58937c401656634e42d33f00ddf49", default-features = false }
+muda = { version = "=0.21.2", default-features = false }
