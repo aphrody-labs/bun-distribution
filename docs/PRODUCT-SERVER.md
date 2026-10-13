@@ -14,6 +14,7 @@ From the root checkout:
 bun packages/bun-app-host/src/cli.ts serve
 bun packages/bun-app-host/src/build.ts catalog
 bun packages/bun-app-host/src/build.ts build
+bun packages/bun-app-host/src/cli.ts verify build/apps/bun-os-server
 ```
 
 Infra injects `APHRODY_APP_TOKEN` from its protected store; it must have at
@@ -59,3 +60,31 @@ qualification values preserve the declared app inventory. Snapshot observation
 and source revision are distinct from current process readiness or a fresh
 native/deployment qualification. All Aphrody Labs mirror progress remains with
 Aphrody Infra; this source lock is not an inventory of every mirror.
+
+## Automated binary qualification
+
+`@aphrody/bun-app-host/verify` exports `verifyProduct(binary, receiptPath,
+{root, timeoutMs})`. The CLI exposes `verify [BINARY] [RECEIPT]` for the local
+target host. Builder `build` invokes this owner after compilation, sharing the
+30-second overall build deadline; it leaves `executed=false` if qualification
+fails. A direct verification has its own maximum 30-second deadline.
+
+Verification validates receipt shape, the artifact SHA-256, configured target
+runtime provenance, committed input Git blobs and exact working-byte hashes.
+It requires the recorded source commit to be an ancestor of the current root;
+source HEAD, inputs, receipt and binary must stay unchanged during the gate.
+Generated entry proofs are restricted to the owner staging path. An entry that
+was already removed after compilation does not require a regenerated copy.
+
+The shared process owner runs `--version`, then an isolated temporary loopback
+server on a dynamically allocated port. Eleven HTTP gates cover readiness,
+anonymous denials, authenticated catalogs/status/owner identities, unknown
+paths, denied writes and origin rejection. Responses are bounded and never
+printed; the ephemeral bearer is generated in memory and passed only through
+the child environment, never arguments or disk. Both success and failure close
+the owned process tree. No service or proxy is activated by verification.
+
+Only passing gates and unchanged source/artifact proofs set `executed=true` and
+record the HTTP count. Existing deployment qualification is preserved. The
+CLI prints only source/runtime/artifact identities and gate totals; it never
+dumps private catalog responses or the bearer.

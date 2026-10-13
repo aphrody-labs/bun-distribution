@@ -17,6 +17,7 @@ import {
 } from "@aphrody/bun-workspace";
 import { compileStandaloneApp } from "@aphrody/bun-artifacts/compiler";
 import type { ProductCatalog } from "./product.ts";
+import { verifyProduct } from "./verify.ts";
 
 async function command(args: string[], root: string): Promise<string> {
   const result = await runProcess(args, root, { timeoutMs: 15000, maxOutputBytes: 1048576 });
@@ -95,6 +96,7 @@ async function build(root: string, output: string): Promise<void> {
     "infra/apps.json",
     "packages/bun-app-host/package.json",
     "packages/bun-app-host/src/build.ts",
+    "packages/bun-app-host/src/verify.ts",
     "packages/bun-artifacts/package.json",
     "packages/bun-artifacts/src/compiler.ts",
     "packages/bun-workspace/package.json",
@@ -188,6 +190,7 @@ if (import.meta.main) {
   else if (action === "catalog") console.log(JSON.stringify(await productCatalog(root), null, 2));
   else if (action === "compile-worker") await build(root, output);
   else if (action === "build") {
+    const startedAt = Date.now();
     const result = await runProcess([process.execPath, import.meta.path, "compile-worker", root, output], root, {
       timeoutMs: 30000,
       maxOutputBytes: 1048576,
@@ -195,5 +198,10 @@ if (import.meta.main) {
       stderr: "inherit",
     });
     process.exitCode = result.code;
+    if (result.code === 0) {
+      const remaining = 30000 - (Date.now() - startedAt);
+      if (remaining < 1) throw new Error("Product build qualification deadline exceeded.");
+      console.log(JSON.stringify(await verifyProduct(output, output + ".json", { root, timeoutMs: remaining })));
+    }
   } else throw new Error("Use build or catalog.");
 }

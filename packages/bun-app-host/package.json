@@ -10,12 +10,14 @@
   "exports": {
     ".": "./src/server.ts",
     "./product": "./src/product.ts",
-    "./transport": "./src/transport.ts"
+    "./transport": "./src/transport.ts",
+    "./verify": "./src/verify.ts"
   },
   "scripts": {
     "serve": "bun src/cli.ts serve",
     "build": "bun src/build.ts build",
-    "catalog": "bun src/build.ts catalog"
+    "catalog": "bun src/build.ts catalog",
+    "verify": "bun src/cli.ts verify"
   },
   "dependencies": {
     "@aphrody/bun-artifacts": "workspace:*",
