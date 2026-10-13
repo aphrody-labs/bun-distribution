@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createHandler, documentSeo } from "../../src/downloads/server";
+import { createHandler, documentSeo } from "@aphrody/product/downloads";
 
 test("document summaries use article prose and escape markup while preserving existing metadata", async () => {
   const source =

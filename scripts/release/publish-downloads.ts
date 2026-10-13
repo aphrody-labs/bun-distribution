@@ -1602,7 +1602,7 @@ export function downloadsHostPlan(cfg: DownloadsConfig) {
   const steps = [
     `target ${cfg.host.target}: preflight cataloged ${service.unit}, native nginx and valid ${cfg.site.certName} certificate`,
     `create ${rootDir}/{releases,app} owned by ubuntu`,
-    `upload packages/infra/workspace/src/downloads/server.ts -> ${rootDir}/app/server.ts`,
+    `upload packages/infra/product/src/downloads/server.ts -> ${rootDir}/app/server.ts`,
     `restart ${service.unit}; require loopback /health; native nginx -t/reload`,
   ];
   return { preflight, setup, activate, steps };
@@ -1620,7 +1620,7 @@ export async function hostCommands(cfg: DownloadsConfig, apply: boolean, io = re
   await io.remote(cfg, hostPlan.setup);
   await io.put(
     cfg,
-    join(root, "packages/infra/workspace/src/downloads/server.ts"),
+    join(root, "packages/infra/product/src/downloads/server.ts"),
     `${rootDir}/app/server.ts`,
   );
   await io.remote(cfg, hostPlan.activate);

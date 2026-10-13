@@ -15,7 +15,7 @@ import { tmpdir } from "node:os";
 import { parseArgs } from "node:util";
 
 const repository = resolve(import.meta.dir, "../..");
-const serverSource = "packages/infra/workspace/src/downloads/server.ts";
+const serverSource = "packages/infra/product/src/downloads/server.ts";
 const sha = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 const quote = (value: string) => "'" + value.replaceAll("'", "'\\''") + "'";
 export interface ReleaseConfig {

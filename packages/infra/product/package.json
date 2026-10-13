@@ -36,7 +36,8 @@
     "./doctor": "./src/admin/lib/doctor.ts",
     "./wireguard": "./src/admin/lib/wireguard.ts",
     "./desktop": "./src/shared/desktop.ts",
-    "./web": "./src/web.ts"
+    "./web": "./src/web.ts",
+    "./downloads": "./src/downloads/server.ts"
   },
   "publishConfig": {
     "access": "public"

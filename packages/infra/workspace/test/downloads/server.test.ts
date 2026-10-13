@@ -11,7 +11,7 @@ import {
   resolveSiteFile,
   serverOptions,
   siteOptions,
-} from "../../src/downloads/server";
+} from "@aphrody/product/downloads";
 
 test("cloud ingress and relocated downloads honor configuration and reject invalid ports", () => {
   expect(serverOptions({ DOWNLOADS_ROOT: tmpdir(), PORT: "8080", HOST: "0.0.0.0" })).toEqual({
