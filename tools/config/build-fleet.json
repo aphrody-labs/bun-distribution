@@ -8,7 +8,7 @@
       "reserveGiB": 4,
       "maxJobs": 4,
       "heavy": true,
-      "externalLocks": ["C:/bun/build/chromium/setup.lock"]
+      "externalLocks": ["C:/src/bun/build/chromium/setup.lock"]
     },
     {
       "id": "omar",
