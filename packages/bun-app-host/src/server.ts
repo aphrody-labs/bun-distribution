@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 import { mkdir, realpath } from "node:fs/promises";
-import { timingSafeEqual } from "node:crypto";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import type { AppManifest, AppRuntime } from "@aphrody/bun-artifacts/types";
-import { hashContent, runProcess } from "@aphrody/bun-workspace";
+import { runProcess } from "@aphrody/bun-workspace";
 import {
   createVideoLibrary,
   VideoLibraryError,
@@ -13,7 +12,7 @@ import {
   type VideoCommand,
 } from "@aphrody/bun-video-project";
 
-const headers = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
+import { authenticateRequest, responseHeaders as headers } from "./transport.ts";
 const reply = (value: unknown, status = 200) =>
   new Response(stringifyNativeJSON(value), {
     status,
@@ -55,7 +54,6 @@ export async function startApp(manifest: AppManifest, runtime: AppRuntime): Prom
     throw new Error("Invalid application bind address.");
   const token = Bun.env.APHRODY_APP_TOKEN;
   if (!token || token.length < 32) throw new Error("Inject the application token from its protected store.");
-  const tokenDigest = new TextEncoder().encode(hashContent(token));
   await mkdir(runtime.appDataDir, { recursive: true });
   const dataRoot = await realpath(runtime.appDataDir);
   const containedPath = async (value: unknown, output = false): Promise<string> => {
@@ -96,17 +94,8 @@ export async function startApp(manifest: AppManifest, runtime: AppRuntime): Prom
       const url = new URL(request.url);
       if (request.method === "GET" && url.pathname === "/healthz")
         return reply({ status: "ready", app: manifest.app.id, runtime: runtime.runtime.version });
-      const authorization = request.headers.get("Authorization");
-      if (
-        !authorization?.startsWith("Bearer ") ||
-        !timingSafeEqual(new TextEncoder().encode(hashContent(authorization.slice(7))), tokenDigest)
-      )
-        return reply({ error: "Authentication required." }, 401);
-      if (
-        request.headers.get("Sec-Fetch-Site") === "cross-site" ||
-        (request.headers.get("Origin") && request.headers.get("Origin") !== url.origin)
-      )
-        return reply({ error: "Origin denied." }, 403);
+      const denied = authenticateRequest(request, token);
+      if (denied) return denied;
       if (request.method === "GET" && url.pathname === "/api/catalog")
         return reply({
           identity: manifest.identity,
@@ -122,7 +111,9 @@ export async function startApp(manifest: AppManifest, runtime: AppRuntime): Prom
         if (request.method === "GET" && url.pathname === "/api/help") {
           const result = await runProcess([runtime.nativeBinary, "--help"], runtime.cwd, limits);
           if (result.code) return reply({ error: "Native help failed." }, 502);
-          return new Response(result.stdout, { headers: { ...headers, "Content-Type": "text/plain; charset=utf-8" } });
+          return new Response(result.stdout, {
+            headers: { ...headers, "Content-Type": "text/plain; charset=utf-8" },
+          });
         }
         if (video && request.method === "POST" && url.pathname === "/api/video") {
           const value = parseNativeJSON<NativeObject>(await request.text());

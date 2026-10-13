@@ -3,9 +3,19 @@
   "version": "1.4.4",
   "private": true,
   "license": "MIT",
+  "bin": {
+    "aphrody-server": "./src/cli.ts"
+  },
   "type": "module",
   "exports": {
-    ".": "./src/server.ts"
+    ".": "./src/server.ts",
+    "./product": "./src/product.ts",
+    "./transport": "./src/transport.ts"
+  },
+  "scripts": {
+    "serve": "bun src/cli.ts serve",
+    "build": "bun src/build.ts build",
+    "catalog": "bun src/build.ts catalog"
   },
   "dependencies": {
     "@aphrody/bun-artifacts": "workspace:*",
