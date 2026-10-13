@@ -2,7 +2,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { checkCatalog } from "../../packages/engine/core/src/host/index.ts";
+import { checkCatalog } from "@aphrody/yolo-core/host";
 
 const root = resolve(import.meta.dir, "../..");
 const host = join(root, "tools/config/host");

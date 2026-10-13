@@ -1058,6 +1058,9 @@
         "@typescript/typescript6": "catalog:",
         "ts-morph": "catalog:",
       },
+      "devDependencies": {
+        "@aphrody/yolo-cli": "workspace:*",
+      },
     },
     "packages/interop/native": {
       "name": "@aphrody/bun",

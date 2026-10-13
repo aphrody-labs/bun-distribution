@@ -22,7 +22,8 @@
     "./forge/glibc": "./src/cli/forge/glibc.ts",
     "./plugin": "./src/cli/plugin/index.ts",
     "./plugin/generator": "./src/cli/plugin/generator.ts",
-    "./plugin/schema": "./src/cli/plugin/schema.ts"
+    "./plugin/schema": "./src/cli/plugin/schema.ts",
+    "./cli": "./src/index.ts"
   },
   "publishConfig": {
     "access": "public",

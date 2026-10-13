@@ -133,7 +133,7 @@ describe("unified documentation", () => {
       const result = Bun.spawnSync(
         [
           process.execPath,
-          join(import.meta.dir, "../../../../packages/engine/yolo/src/index.ts"),
+          Bun.resolveSync("@aphrody/yolo-cli/cli", import.meta.dir),
           "ops",
           ...args,
           "--root",

@@ -7,7 +7,7 @@ import { optimizationPrompt } from "../src/optimize.ts";
 import { withoutPath, writeBunCommand } from "./fixtures/bun-command.ts";
 
 // `yolo optimize` is the only command line of this module.
-const yolo = join(import.meta.dir, "../../../../packages/engine/yolo/src/index.ts");
+const yolo = Bun.resolveSync("@aphrody/yolo-cli/cli", import.meta.dir);
 
 test("requires a bounded task", () => {
   expect(() => optimizationPrompt("  ")).toThrow("bounded");

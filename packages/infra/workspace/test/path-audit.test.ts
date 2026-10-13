@@ -35,7 +35,7 @@ test("the Workspace operation advertises the path-audit command", () => {
   const output = Bun.spawnSync(
     [
       process.execPath,
-      join(import.meta.dir, "../../../../packages/engine/yolo/src/index.ts"),
+      Bun.resolveSync("@aphrody/yolo-cli/cli", import.meta.dir),
       "ops",
       "path-audit",
       "--help",
