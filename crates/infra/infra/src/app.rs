@@ -284,18 +284,39 @@ fn sudo(root: &Path, program: &str, args: &[String]) -> Result<String> {
 }
 
 fn route(root: &Path, hostname: &str, port: u16) -> Result<(NginxConfig, String)> {
+    let routes: Value =
+        serde_json::from_str(&text(&root.join("tools/config/host/nginx/routes.json"))?)?;
+    let views = routes["routes"].as_array().context("Invalid canonical ingress views")?;
+    let service = views
+        .iter()
+        .find(|view| view["host"] == hostname)
+        .and_then(|view| view["service"].as_str())
+        .context("Application ingress is not declared")?;
+    let hostnames = views
+        .iter()
+        .filter(|view| view["service"].as_str() == Some(service))
+        .filter_map(|view| view["host"].as_str().map(str::to_owned))
+        .collect::<Vec<_>>();
+    ensure!(
+        hostnames.iter().any(|candidate| candidate == hostname),
+        "Application ingress aliases are not declared"
+    );
     let mut model: NginxConfig = serde_json::from_str(&text(&root.join(ROUTE_MODEL))?)?;
     let index = model
         .servers
         .iter()
         .position(|server| {
             server.ssl_certificate.is_some()
-                && server.server_names.iter().any(|name| name == hostname)
+                && server.server_names.iter().any(|name| hostnames.contains(name))
         })
         .context("Application ingress is not declared")?;
     let mut app = model.servers[index].clone();
-    app.server_names = vec![hostname.into()];
-    model.servers[index].server_names.retain(|name| name != hostname);
+    app.server_names.retain(|name| hostnames.contains(name));
+    ensure!(
+        app.server_names.len() == hostnames.len(),
+        "Application TLS ingress does not contain every declared hostname"
+    );
+    model.servers[index].server_names.retain(|name| !hostnames.contains(name));
     if model.servers[index].server_names.is_empty() {
         model.servers.remove(index);
     }
@@ -339,12 +360,13 @@ fn activate_catalog(
     let routes_path = root.join("tools/config/host/nginx/routes.json");
     let mut routes: Value = serde_json::from_str(&text(&routes_path)?)?;
     let views = routes["routes"].as_array_mut().context("Invalid canonical ingress views")?;
-    let selected = views
-        .iter_mut()
-        .find(|view| view["host"] == plan.hostname && view["service"] == plan.id)
-        .context("Application ingress view is not declared")?;
-    selected["upstream"] = json!(format!("127.0.0.1:{}", plan.port));
-    selected["probePath"] = json!("/healthz");
+    let mut matched = false;
+    for view in views.iter_mut().filter(|view| view["service"] == plan.id) {
+        view["upstream"] = json!(format!("127.0.0.1:{}", plan.port));
+        view["probePath"] = json!("/healthz");
+        matched = true;
+    }
+    ensure!(matched, "Application ingress view is not declared");
     atomic_file(&catalog_path, &serde_json::to_vec_pretty(&catalog)?)?;
     atomic_file(&routes_path, &serde_json::to_vec_pretty(&routes)?)?;
     atomic_file(&root.join(ROUTE_MODEL), &serde_json::to_vec_pretty(model)?)?;

@@ -230,6 +230,111 @@
       "vhost": "nginx/aphrody/control.aphrody.app.conf"
     },
     {
+      "host": "filmcraft.aphrody.app",
+      "service": "aphrody-app-video",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "video.aphrody.app",
+      "service": "aphrody-app-video",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "artcraft.aphrody.app",
+      "service": "aphrody-app-generation",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "photocraft.aphrody.app",
+      "service": "aphrody-app-images",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "vectorcraft.aphrody.app",
+      "service": "aphrody-app-vectors",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "effectcraft.aphrody.app",
+      "service": "aphrody-app-compositing",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "lightcraft.aphrody.app",
+      "service": "aphrody-app-photo-processing",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "pdfcraft.aphrody.app",
+      "service": "aphrody-app-pdf",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "wordcraft.aphrody.app",
+      "service": "aphrody-app-documents",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "soundcraft.aphrody.app",
+      "service": "aphrody-app-audio",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "designcraft.aphrody.app",
+      "service": "aphrody-app-layout",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "cadcraft.aphrody.app",
+      "service": "aphrody-app-cad",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "deckcraft.aphrody.app",
+      "service": "aphrody-app-slides",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "gridcraft.aphrody.app",
+      "service": "aphrody-app-tables",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "figcraft.aphrody.app",
+      "service": "aphrody-app-interface-layouts",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
       "host": "git.aphrody.app",
       "service": "aphrody-forge",
       "upstream": "127.0.0.1:29020",

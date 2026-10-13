@@ -374,6 +374,11 @@
             "2026-10-13",
             "Aphrody M3 token consumers now resolve the Material Git owner at 229a767493818a5dd9f92451b4a99699894a1865. The old crate is excluded from Aphrody Cargo membership; native Windows locked metadata and scoped checks passed for app, Bun UI, identity, M3, M3 reproduce and SVG. Active fonts and CDN catalogs now point to Material. Aphrody processes were stopped, the native hub-tunnel task disabled, and the selected checkout is already under C:/src/aphrody.",
             "The duplicate source directory remains on disk because recursive removal was rejected by host policy. The .git directory owner remains BUILTIN Administrators; this session is not elevated. Tests were not run. Bun lint/fmt passed for the changed creator page; Bun check reaches existing type errors in Material's pinned MCU fork."
+          ],
+          [
+            "2026-10-13",
+            "Aphrody Infra now declares and activates every Bun Libraries capability hostname together by service ID: 14 canonical app hosts, 14 library aliases, and the existing video alias. Capability parity, Infra catalog validation, rustfmt, JSON formatting and a locked Windows cargo check for aphrody-infra pass.",
+            "Live Cloudflare has no filmcraft.aphrody.app record; the origin certificate covers only the 14 app-* hosts plus git and deploy, not aliases. DNS and certificate changes and live alias activation remain pending."
           ]
         ]
       },
