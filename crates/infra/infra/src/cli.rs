@@ -531,6 +531,7 @@ struct Target {
 }
 
 struct Run {
+    root: PathBuf,
     dir: PathBuf,
     actions: Vec<Value>,
 }
@@ -553,7 +554,7 @@ impl Run {
             "evidence": []
         });
         fs::write(dir.join("manifest.json"), serde_json::to_vec_pretty(&manifest)?)?;
-        Ok(Self { dir, actions: Vec::new() })
+        Ok(Self { root: root.to_path_buf(), dir, actions: Vec::new() })
     }
 
     fn action(&mut self, name: &str, status: &str, detail: impl Into<Value>) {
@@ -590,9 +591,9 @@ fn command(root: &Path, program: &str, args: &[&str]) -> Result<String> {
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_owned())
 }
 
-/// The cross-host target matrix lives in `$APHRODY_ROOT/tools/config/host/inventory/targets.json`.
-fn load_matrix() -> Result<Matrix> {
-    let path = validate::host_config_root().join("inventory/targets.json");
+/// Use the same selected source root as the run, including explicit `--root`.
+fn load_matrix(root: &Path) -> Result<Matrix> {
+    let path = root.join("tools/config/host/inventory/targets.json");
     let bytes = fs::read(&path).with_context(|| format!("manifest absent: {}", path.display()))?;
     serde_json::from_slice(&bytes).with_context(|| format!("{} invalide", path.display()))
 }
@@ -668,7 +669,7 @@ fn local_target(target: &Target) -> Value {
 }
 
 fn status(target_id: Option<&str>, as_json: bool, run: &mut Run) -> Result<()> {
-    let matrix = load_matrix()?;
+    let matrix = load_matrix(&run.root)?;
     let targets: Vec<Value> = selected(&matrix, target_id)?.into_iter().map(|target| {
         let result = if matches!(target.id.as_str(), "windows-local" | "nie-local-data" | "nie-repo") {
             local_target(target)
@@ -1047,7 +1048,7 @@ fn doctor(root: &Path, as_json: bool, strict: bool, run: &mut Run) -> Result<()>
         })
         .unwrap_or_else(|| json!({ "configPresent": false }));
     let source_sync = user_unit_check("aphrody-source-sync.service");
-    let matrix = load_matrix()?;
+    let matrix = load_matrix(&run.root)?;
     let failures =
         tools.iter().any(|tool| {
             !tool["available"].as_bool().unwrap_or(false)
@@ -1075,7 +1076,7 @@ fn doctor(root: &Path, as_json: bool, strict: bool, run: &mut Run) -> Result<()>
 }
 
 fn sync(root: &Path, target_id: Option<&str>, apply: bool, run: &mut Run) -> Result<()> {
-    let matrix = load_matrix()?;
+    let matrix = load_matrix(&run.root)?;
     let targets = selected(&matrix, target_id)?;
     for target in targets {
         let detail = json!({ "target": target.id, "mode": if apply { "apply" } else { "plan" }, "policy": "preserve-dirty-worktrees" });
@@ -1351,7 +1352,7 @@ fn dev_env_local(root: &Path, host: &str, apply: bool, run: &mut Run) -> Result<
 }
 
 fn dev_env(root: &Path, target_id: Option<&str>, apply: bool, run: &mut Run) -> Result<()> {
-    let matrix = load_matrix()?;
+    let matrix = load_matrix(&run.root)?;
     let targets = selected(&matrix, target_id)?;
     for target in targets {
         let (host, program, args): (&str, &str, Vec<&str>) = match target.id.as_str() {
@@ -1440,7 +1441,7 @@ fn deploy(
     if stack == DeployStack::App {
         bail!("Application deployment uses the native catalog-bound owner");
     }
-    let matrix = load_matrix()?;
+    let matrix = load_matrix(&run.root)?;
     let _ = selected(&matrix, Some(target))?;
     let adapter = std::env::var(stack.adapter_env()).unwrap_or_else(|_| stack.adapter().to_owned());
     let detail = json!({ "target": target, "stack": stack, "release": release, "releaseRoot": stack.release_root(), "mode": if apply { "apply" } else { "plan" }, "adapter": adapter, "requires": stack.requires() });
