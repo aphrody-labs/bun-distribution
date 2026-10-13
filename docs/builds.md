@@ -9,7 +9,7 @@ bun scripts/build-apps.ts plan --target bun-linux-x64
 bun scripts/build-apps.ts build --app video --target bun-linux-x64 \
   --bun /qualified/bun --runtime-pin /qualified/runtime-pin.json \
   --host vps --mode ssh --shared-assets .local/assets/reference.json \
-  --output .local/apps --report .local/builds/linux-video.json
+  --output build/apps --report .local/builds/linux-video.json
 ```
 
 Use the host's qualified Aphrody Bun executable to run the factory. A runtime pin
@@ -32,7 +32,7 @@ Native hosts build their own targets; cross target engine compilation requires
 separate native qualification and supplied artifact receipts.
 
 Builds use fresh output files inside the selected checkout. Results default to
-`.local/apps/<target>/<app>/aphrody-<app>`, with native and app manifests beside
+`build/apps/<target>/<app>/aphrody-<app>`, with native and app manifests beside
 the binary. `--report` persists progress after every application. Aphrody Infra
 owns activation and replacement of previously qualified deployed artifacts.
 

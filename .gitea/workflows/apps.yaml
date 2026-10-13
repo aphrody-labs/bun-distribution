@@ -32,4 +32,4 @@ jobs:
         run: bun run format:check
       - name: Build apps
         if: ${{ github.event_name == 'workflow_dispatch' && (inputs.build == true || inputs.build == 'true') }}
-        run: bun scripts/build-apps.ts build --target bun-linux-x64 --bun "$BUN_EXECUTABLE" --runtime-pin infra/runtime-pins/linux-x64.json --host vps --mode docker --shared-assets infra/shared-assets.json --output .local/apps --report .local/builds/linux-x64.json
+        run: bun scripts/build-apps.ts build --target bun-linux-x64 --bun "$BUN_EXECUTABLE" --runtime-pin infra/runtime-pins/linux-x64.json --host vps --mode docker --shared-assets infra/shared-assets.json --output build/apps --report .local/builds/linux-x64.json
