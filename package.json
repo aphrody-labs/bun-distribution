@@ -275,7 +275,7 @@
     "@aphrody/os": "workspace:*",
     "@aphrody/paths": "workspace:*",
     "@aphrody/product": "workspace:*",
-    "@aphrody/runtime-sdk": "workspace:*",
+    "@aphrody/runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4",
     "@aphrody/update": "workspace:*",
     "@aphrody/web-source": "workspace:*",
     "@aphrody/web-test": "workspace:*",

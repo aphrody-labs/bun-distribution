@@ -19,7 +19,7 @@
         "@aphrody/os": "workspace:*",
         "@aphrody/paths": "workspace:*",
         "@aphrody/product": "workspace:*",
-        "@aphrody/runtime-sdk": "workspace:*",
+        "@aphrody/runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4",
         "@aphrody/update": "workspace:*",
         "@aphrody/web-source": "workspace:*",
         "@aphrody/web-test": "workspace:*",
@@ -955,7 +955,7 @@
       "version": "1.4.4",
       "dependencies": {
         "@aphrody/bun": "workspace:*",
-        "@aphrody/runtime-sdk": "workspace:*",
+        "@aphrody/runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4",
         "@discordjs/rest": "catalog:",
         "discord-api-types": "catalog:",
         "discord.js": "catalog:",
@@ -971,7 +971,7 @@
       "version": "1.4.4",
       "dependencies": {
         "@aphrody/paths": "workspace:*",
-        "@aphrody/runtime-sdk": "workspace:*",
+        "@aphrody/runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4",
         "@oxc-project/types": "catalog:",
       },
     },
@@ -989,7 +989,7 @@
         "yolo": "./src/index.ts",
       },
       "dependencies": {
-        "@aphrody/runtime-sdk": "workspace:*",
+        "@aphrody/runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4",
         "@aphrody/workspace": "workspace:*",
         "@aphrody/yolo-core": "workspace:*",
       },
@@ -1051,7 +1051,7 @@
         "@aphrody/a2a": "workspace:*",
         "@aphrody/os": "workspace:*",
         "@aphrody/paths": "workspace:*",
-        "@aphrody/runtime-sdk": "workspace:*",
+        "@aphrody/runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4",
         "@aphrody/timeline": "workspace:*",
         "@aphrody/update": "workspace:*",
         "@aphrody/web-source": "workspace:*",
@@ -4171,6 +4171,8 @@
 
     "@aphrody/bun-webview-page/@types/bun": ["@aphrody/bun-types@file:../bun/packages/bun-types", { "dependencies": { "@types/node": "*", "undici-types": "*" } }],
 
+    "@aphrody/discord-kit/@aphrody/runtime-sdk": ["@aphrody/bun-runtime-sdk@1.4.4", "", {}, "sha512-9Lb6HmdM3o255d4HTvpG9B7AkagHmTBhIpF914riIsQKEvkFG67ayLXtSKFrquBw07LOry1p1iPAGETwba98ag=="],
+
     "@aphrody/google/@ai-sdk/google-vertex": ["@ai-sdk/google-vertex@5.0.101", "", { "dependencies": { "@ai-sdk/anthropic": "4.0.71", "@ai-sdk/google": "4.0.87", "@ai-sdk/openai-compatible": "3.0.62", "@ai-sdk/provider": "4.0.21", "@ai-sdk/provider-utils": "5.0.53", "google-auth-library": "^10.6.2" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-Lgi1Y2SuO1te3eWBsOqCoOvV+EDH1+K8r6OrNTMMexZd2Npyj6gPLODCn4bAwZeLA92lOm8zwCAqACOUEib+eQ=="],
 
     "@aphrody/google/ai": ["ai@7.0.127", "", { "dependencies": { "@ai-sdk/gateway": "4.0.103", "@ai-sdk/provider": "4.0.21", "@ai-sdk/provider-utils": "5.0.53" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-JNsNPk4ZvRGEJuqdVo2lYFkm7uAuf3p/RwKFWn1Wh/+IK3U1RyFWw2GXoFnhzqNfxEuj7XJB4WpIUhl1sHToWg=="],
@@ -4200,6 +4202,12 @@
     "@aphrody/material-web/@aphrody/bun": ["@aphrody/bun@3.3.0", "", {}, "sha512-c8I7Z46smj/oq3cAVsq9OfogN/uMYgVfskqF9ugAMr1MD0LQdtDevcAAMk7nUSzCvVV0eUtOdErkmk53gyiuVw=="],
 
     "@aphrody/material-web/@aphrody/canvas": ["@aphrody/canvas@1.0.9-aphrody.2", "", { "optionalDependencies": { "@napi-rs/canvas-android-arm64": "1.0.9", "@napi-rs/canvas-darwin-arm64": "1.0.9", "@napi-rs/canvas-darwin-x64": "1.0.9", "@napi-rs/canvas-linux-arm-gnueabihf": "1.0.9", "@napi-rs/canvas-linux-arm64-gnu": "1.0.9", "@napi-rs/canvas-linux-arm64-musl": "1.0.9", "@napi-rs/canvas-linux-riscv64-gnu": "1.0.9", "@napi-rs/canvas-linux-x64-gnu": "1.0.9", "@napi-rs/canvas-linux-x64-musl": "1.0.9", "@napi-rs/canvas-win32-arm64-msvc": "1.0.9", "@napi-rs/canvas-win32-x64-msvc": "1.0.9" }, "peerDependencies": { "@aphrody/bun": "^3.3.0" }, "optionalPeers": ["@aphrody/bun"] }, "sha512-wqBG4tPIMC03Q/idVdYOevm0gsR0orMv8PvBn9eaN8gGOOIczKKALh/fmKOrXkygD0h26Tbw2ZgmhXXk2RVwRA=="],
+
+    "@aphrody/workspace/@aphrody/runtime-sdk": ["@aphrody/bun-runtime-sdk@1.4.4", "", {}, "sha512-9Lb6HmdM3o255d4HTvpG9B7AkagHmTBhIpF914riIsQKEvkFG67ayLXtSKFrquBw07LOry1p1iPAGETwba98ag=="],
+
+    "@aphrody/yolo-cli/@aphrody/runtime-sdk": ["@aphrody/bun-runtime-sdk@1.4.4", "", {}, "sha512-9Lb6HmdM3o255d4HTvpG9B7AkagHmTBhIpF914riIsQKEvkFG67ayLXtSKFrquBw07LOry1p1iPAGETwba98ag=="],
+
+    "@aphrody/yolo-core/@aphrody/runtime-sdk": ["@aphrody/bun-runtime-sdk@1.4.4", "", {}, "sha512-9Lb6HmdM3o255d4HTvpG9B7AkagHmTBhIpF914riIsQKEvkFG67ayLXtSKFrquBw07LOry1p1iPAGETwba98ag=="],
 
     "@aws-crypto/sha1-browser/@smithy/util-utf8": ["@smithy/util-utf8@2.3.0", "", { "dependencies": { "@smithy/util-buffer-from": "^2.2.0", "tslib": "^2.6.2" } }, "sha512-R8Rdn8Hy72KKcebgLiv8jQcQkXoLMOGGv5uI1/k0l+snqkOzQ1R0ChUBCxWMlBsFMekWjq0wRudIweFs7sKT5A=="],
 
