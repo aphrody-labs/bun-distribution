@@ -43,6 +43,8 @@
     },
     "aphrody": {
       "role": "single-product",
+      "productOwner": "@aphrody/product",
+      "web": { "platform": "cloudflare", "worker": "aphrody-app", "ui": "@aphrody/app-ui", "entrypoint": "@aphrody/product/web", "deploymentQualification": "pending" },
       "ai": {
         "role": "private-backend-and-automation",
         "publicProduct": false,
@@ -88,8 +90,8 @@
         ],
         "deployment": "cloudflare-with-qualified-private-native-execution-for-host-capabilities"
       },
-      "desktop": { "runtime": "tauri-v2", "package": "aphrody-app", "sourceRepo": "aphrody-ui", "ui": "@aphrody/app-ui", "sidecars": ["sd-daemon", "aphrody"], "modules": ["agent (aphrody app-server over stdio)", "drive (aphrody-drive plugin + sd-daemon; the Spacedrive drive/apps/tauri host was removed 2026-09-26)", "models", "identity (pet and pixel pipeline, ex-Inacord)", "browser", "terminal", "systemd", "infra", "windows", "settings"] },
-      "gameFeatures": "opt-in aphrody-mcp nie.* only; disabled in the root build until NIE is integrated; aphrody-ui never depends on ../nie"
+      "desktop": { "runtime": "tauri-runtime-cef", "package": "aphrody-app", "sourceRepo": "aphrody", "sourcePath": "crates/ui/app", "ui": "@aphrody/app-ui", "sidecars": ["sd-daemon", "aphrody"], "modules": ["agent (aphrody app-server over stdio)", "drive (aphrody-drive plugin + sd-daemon; the Spacedrive drive/apps/tauri host was removed 2026-09-26)", "models", "identity (pet and pixel pipeline, ex-Inacord)", "browser", "terminal", "systemd", "infra", "windows", "settings"] },
+      "gameFeatures": "opt-in aphrody-mcp nie.* only; disabled in the root build until NIE is integrated; Aphrody desktop never imports IECODE sources through sibling paths"
     }
   },
   "deduplication": {

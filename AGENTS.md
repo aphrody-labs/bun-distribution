@@ -20,7 +20,7 @@ provider authentication and raw histories in their protected stores.
 
 Read [PLAN.md](PLAN.md) and [MEMORY.md](MEMORY.md). PLAN owns the active
 architecture and queue; MEMORY owns dated evidence. Aphrody owns products and
-Rust/Bun capabilities; Yolo produces the precompiled runtime/SDK. IECODE retains its
+application integration; Bun produces the precompiled runtime/SDK. IECODE retains its
 repository, store and authority. By owner directive of 2026-10-05 `py/` is fused into
 Aphrody. The owner directive of 2026-10-09 moves native Python ownership (PyO3,
 CPython hosting, uv, Ruff and vu) to the Bun fork; Python application sources
@@ -28,9 +28,11 @@ remain in Aphrody. The `aphrody-rust` binding is built from the pinned fork,
 with its module/ABI identities preserved; see [the Python/Bun plan](docs/plans/python-bun/PLAN.md). The Python
 runtime `vu` follows the Bun/Yolo precedent ([plan](docs/plans/vu/PLAN.md)).
 
-Product positioning (owner directive of 2026-10-06): the runtimes (the Bun fork, `vu`, Yolo) are
-the real Aphrody products. Aphrody AI is a backend serving the apps; M3 and app-ui are
-frameworks, not products. Prioritise, document and release accordingly.
+Product positioning (owner directive of 2026-10-13, superseding 2026-10-06):
+Aphrody is one product with CLI, browser and desktop surfaces. Bun supplies the
+runtime and SDK; Material supplies M3 and app-ui frameworks. Aphrody AI is the
+private backend and automation service shared by these surfaces, never a public
+product. Prioritise, document and release accordingly.
 
 Bun is our fork [aphrody-labs/bun](docs/reference/upstream-bun/APHRODY-FORK.md) (checkout selected by `APHRODY_BUN_CHECKOUT` or the current workspace): every Bun change (runtime, built-ins, types, bundler, package manager) lands there as a
 commit with its test, never as a patch, vendored tree or Rust copy in Aphrody. The only copy of the Bun docs is

@@ -8,19 +8,6 @@ exclude = [
   "crates/os/kernel/comps/drive",
   "crates/tauri/aphrody-tauri-api",
   "crates/tauri/aphrody-tauri-runtime",
-  "crates/tauri/aphrody-tauri-plugin-barcode-scanner",
-  "crates/tauri/aphrody-tauri-plugin-biometric",
-  "crates/tauri/aphrody-tauri-plugin-cli",
-  "crates/tauri/aphrody-tauri-plugin-geolocation",
-  "crates/tauri/aphrody-tauri-plugin-haptics",
-  "crates/tauri/aphrody-tauri-plugin-http",
-  "crates/tauri/aphrody-tauri-plugin-nfc",
-  "crates/tauri/aphrody-tauri-plugin-positioner",
-  "crates/tauri/aphrody-tauri-plugin-shell",
-  "crates/tauri/aphrody-tauri-plugin-sql",
-  "crates/tauri/aphrody-tauri-plugin-stronghold",
-  "crates/tauri/aphrody-tauri-plugin-upload",
-  "crates/tauri/aphrody-tauri-plugin-websocket",
   "crates/web/dragon-pixel-core",
   "crates/web/dragon-pixel-server",
   "crates/web/dragon-pixel-wasm",
@@ -38,7 +25,7 @@ description = "aphrody \u2014 the ultimate cross-platform CLI (Linux/Windows/WAS
 categories = ["command-line-utilities", "development-tools", "web-programming"]
 keywords = ["cli", "cross-platform", "rust", "linux", "wasm"]
 [workspace.dependencies]
-tauri-build = { package = "aphrody-tauri-build", path = "../../bun/packages/bun-tauri/crates/aphrody-tauri-build", version = "1.4.4" }
+tauri-build = { package = "aphrody-tauri-build", path = "../bun/packages/bun-tauri/crates/aphrody-tauri-build", version = "1.4.4" }
 aphrody-web-source = { path = "../bun/packages/web/rust", version = "1.4.4" }
 node-semver = "2.2.0"
 pep440_rs = "0.7.3"
@@ -420,9 +407,9 @@ grass = "0.13"
 aphrody-drive = { path = "crates/ui/drive", version = "1.4.4" }
 tokio-util = { version = "0.7", features = ["io"] }
 swift-rs = { version = "1.0" }
-tauri-plugin = { package = "aphrody-tauri-plugin", path = "../../bun/packages/bun-tauri/crates/aphrody-tauri-plugin", version = "1.4.4" }
-tauri-utils = { package = "aphrody-tauri-utils", path = "../../bun/packages/bun-tauri/crates/aphrody-tauri-utils", version = "1.4.4" }
-tauri-runtime = { package = "aphrody-tauri-runtime", path = "../../bun/packages/bun-tauri/crates/aphrody-tauri-runtime", version = "1.4.4" }
+tauri-plugin = { package = "aphrody-tauri-plugin", path = "../bun/packages/bun-tauri/crates/aphrody-tauri-plugin", version = "1.4.4" }
+tauri-utils = { package = "aphrody-tauri-utils", path = "../bun/packages/bun-tauri/crates/aphrody-tauri-utils", version = "1.4.4" }
+tauri-runtime = { package = "aphrody-tauri-runtime", path = "../bun/packages/bun-tauri/crates/aphrody-tauri-runtime", version = "1.4.4" }
 [workspace.lints.rust]
 unsafe_op_in_unsafe_fn = "deny"
 unused_must_use = "deny"
