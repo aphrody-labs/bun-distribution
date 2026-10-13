@@ -3,7 +3,7 @@
   "runtime": {
     "version": "1.4.4",
     "repository": "aphrody-labs/bun",
-    "revision": "2ae8fc65fba1d05c423a2433b1195835109942b6"
+    "revision": "c62d01d81506a8b78b1d39b44d17edc81b4a6355"
   },
   "desktop": {
     "package": "@aphrody/tauri",

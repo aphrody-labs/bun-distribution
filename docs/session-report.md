@@ -118,15 +118,16 @@ packaging. Pins and digests are in
 
 ### Runtime boundary
 
-Windows uses owned Bun 1.4.4 revision
-`2ae8fc65fba1d05c423a2433b1195835109942b6`; Linux uses separately qualified owned
-Bun 1.4.4 revision `dfde053a3045d6076ad315b6f63160c4ced71513`. Their release
-provenance and executable digests are checked. The pinned Tauri SDK source is
-`939c835adf6479bc1014da3843cda4ae29851dbd`.
-
-These installed runtimes do not expose native `Bun.Video`. The parallel native
-Bun owner retains its separate runtime/API qualification. This session's
-standalone FilmCraft bridge does not qualify that JSC API or media output accuracy.
+Earlier Windows standalone artifacts use Bun 1.4.4 revision
+`2ae8fc65fba1d05c423a2433b1195835109942b6`; Linux uses separately qualified
+Bun 1.4.4 revision `dfde053a3045d6076ad315b6f63160c4ced71513`. New Windows
+builds now pin the selected Aphrody Bun 1.4.4 revision
+`c62d01d81506a8b78b1d39b44d17edc81b4a6355`; the local executable reports SHA-256
+`f85c2517fc4eca8a4e82c15f3897ae39376ab8b9f338eee1bae5f383cc27a52a`. The
+selected runtime exposes `Bun.Video` with `available: true`, decoder `filmcraft`
+and backend `system`. API presence and source gates do not qualify media decoding,
+codec profiles, output accuracy or old standalone artifacts. The pinned Tauri SDK
+source is `939c835adf6479bc1014da3843cda4ae29851dbd`.
 
 ## Infrastructure and assets
 
@@ -201,9 +202,19 @@ link was retained. No alternate source implementation remains in those files.
 Both native Bun quality aggregates pass: Bun Libraries checks 60 files; Bun OS
 checks 108 files. Bun installs in both checkouts pass offline with a frozen
 lockfile. No tests, native builds, DNS changes, app activation, or deployment
-were run in this consolidation batch. The Bun OS app-build plan still needs an
-explicit clean Bun Libraries revision pin before it can claim reproducible
-cross-repository application builds.
+were run in this consolidation batch. Bun OS now requires and verifies a clean,
+explicit Bun Libraries revision pin; each owner commit must advance that pin.
+
+## Runtime owner alignment — 2026-10-13
+
+Bun Libraries and Bun OS now select the same Windows runtime revision,
+`c62d01d81506a8b78b1d39b44d17edc81b4a6355`. The local runtime reports
+`Bun.Video.available === true`, decoder `filmcraft` and backend `system`. The
+canonical video adapter exposes Bun-owned metadata, transformed frame/RGBA,
+bounded batch, audio, GIF and MP4 remux operations while FilmCraft retains its
+project and timeline contract. Bun OS records the observed executable digest
+and verifies the shared Bun Libraries source revision before planning. Media
+fixture behavior and the downloaded runtime archive checksum remain unqualified.
 
 ## Published batches
 

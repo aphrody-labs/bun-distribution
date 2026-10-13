@@ -47,8 +47,10 @@ the pinned library through the native workspace owner. API calls do not build
 the engine implicitly. Save destinations are explicit; protected provider
 stores, captures and datasets are outside this integration.
 
-The parallel Bun session owns native codec internalization. The installed
-`1.4.4` runtime at `2ae8fc65fba1d05c423a2433b1195835109942b6` currently has no
-Bun.Video API. The adapter reports this and does not substitute an unqualified
-provider. Native availability alone does not qualify codecs, video encoding or
-frame accuracy. See [qualification](qualification.md).
+The selected Bun 1.4.4 runtime at
+`c62d01d81506a8b78b1d39b44d17edc81b4a6355` exposes `Bun.Video` with its
+FilmCraft decoder and system image backend. The typed adapter delegates media
+decoding, transformed frames, bounded frame batches, PCM audio, GIF and MP4
+remux to that runtime. FilmCraft remains the owner of projects, timelines,
+commands and rendering workflows. API availability does not qualify individual
+codecs or media output accuracy. See [qualification](qualification.md).

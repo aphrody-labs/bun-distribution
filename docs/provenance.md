@@ -32,8 +32,12 @@ Fair-source services, unlicensed prototypes, archived sources, datasets and
 model repositories are excluded. Future frontend distribution must apply its
 source NOTICE, which identifies restricted assets.
 
-Our runtime is Bun 1.4.4 at `2ae8fc65fba1d05c423a2433b1195835109942b6`.
-Its declared sourceUrl belongs to our fork; this does not verify an archive hash.
+The configured Windows runtime is Bun 1.4.4 at
+`c62d01d81506a8b78b1d39b44d17edc81b4a6355`. The selected local executable
+reported the Aphrody release URL and SHA-256
+`f85c2517fc4eca8a4e82c15f3897ae39376ab8b9f338eee1bae5f383cc27a52a`.
+This local digest does not authenticate the downloaded release archive. Linux
+runtime pins remain target-specific and separately qualified.
 The SDK uses published commit `939c835adf6479bc1014da3843cda4ae29851dbd`.
 It contains our Tauri v3 alpha.4 fork, versioned 1.4.4. The npm SDK was unavailable,
 so JS and Rust resolve the pinned source. Native CLI: `aphrody tauri`.

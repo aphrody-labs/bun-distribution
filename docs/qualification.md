@@ -4,6 +4,14 @@ Native Windows, 2026-10-13. Bun 1.4.4 fork revision
 `2ae8fc65fba1d05c423a2433b1195835109942b6`; SDK commit
 `939c835adf6479bc1014da3843cda4ae29851dbd`.
 
+## Current runtime pin
+
+The current Windows runtime pin is Bun 1.4.4 revision
+`c62d01d81506a8b78b1d39b44d17edc81b4a6355`. On this workstation its selected
+binary reported `Bun.Video.available === true`, decoder `filmcraft`, and backend
+`system`; `bun run check` passed on the library workspace. This checks the API
+surface and source gates only. No media fixture was decoded in this qualification.
+
 Passed:
 
 - Fork creation and Git submodule initialization: 16 library sources plus SDK.
