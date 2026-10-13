@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
 members = [
+    "crates/craft-atomic",
     "crates/craft-fonts",
     "crates/craft-fonts-tests",
 ]
@@ -14,6 +15,7 @@ rust-version = "1.97"
 authors = ["aphrody-dev <contact@aphrody.com>"]
 
 [workspace.dependencies]
+craft-atomic = { path = "crates/craft-atomic" }
 anyhow = { version = "=1.0.104", default-features = false }
 base64 = { version = "=0.23.1", default-features = false }
 chrono = { version = "=0.4.45", default-features = false }
@@ -25,6 +27,7 @@ png = { version = "=0.18.1", default-features = false }
 regex = { version = "=1.13.1", default-features = false }
 reqwest = { version = "=0.13.5", default-features = false }
 rustls = { version = "=0.23.45", default-features = false }
+rustix = { version = "=1.1.5", default-features = false }
 serde = { version = "=1.0.229", default-features = false }
 serde_json = { version = "=1.0.154", default-features = false }
 sha2 = { version = "=0.11.1", default-features = false }

@@ -45,8 +45,17 @@
 - [x] Pin the root nightly to `nightly-2026-09-15`; serialize jobs and route
       Cargo intermediate outputs to `build/rust`, artifacts to `target`.
 - [ ] Apply the same per-crate Git ownership to all remaining product owners.
+- [x] Extract `craft-atomic` with its source history and exact code licenses,
+      pin its forge `os` revision, and inherit Rustix 1.1.5 from the root.
+      Native Windows qualification passes: 18 tests, Clippy and formatting.
 - [ ] Deliver idempotent forge identities/repositories and runner credentials
       through Aphrody Infra and protected secret stores.
+- [x] Deliver the first Infra provisioning batch (`aphrody/main` `bae198e935`):
+      distribution mirror and three private crate repositories, two successful
+      applications, protected runner key and a dedicated secrets contract.
+- [ ] Self-host all Aphrody Labs repositories: complete inventory 239,
+      preserve 205 public and 34 private visibility states, admit mirror jobs
+      against real host storage and qualify the canonical source portal.
 
 - [ ] Migrate Rust crate manifests and workspace inheritance out of the 16
       nested library workspaces and the Bun runtime workspace into one root

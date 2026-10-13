@@ -85,3 +85,7 @@
 	path = crates/craft-fonts-tests
 	url = bun-forge:aphrody-dev/bun-crate-craft-fonts-tests.git
 	branch = os
+[submodule "crates/craft-atomic"]
+	path = crates/craft-atomic
+	url = bun-forge:aphrody-dev/bun-crate-craft-atomic.git
+	branch = os
