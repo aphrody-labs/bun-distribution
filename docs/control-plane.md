@@ -31,10 +31,13 @@ owned. No local Windows build or WSL is part of this deployment.
 | Deployment | 29021 | deploy.aphrody.app |
 | Git SSH | 29022 | Private tunnel only |
 
-`source.aphrody.app` must be present in the active TLS certificate before its
-HTTPS route is deployed. The currently observed `aphrody-control` certificate
-covers the existing 14 `app-*` names, `git.aphrody.app` and
-`deploy.aphrody.app`; it does not cover `source.aphrody.app` or a wildcard.
+The Gitea vhost uses a Cloudflare Origin CA certificate for
+`source.aphrody.app` and `git.aphrody.app`, issued from a CSR generated on the
+VPS. Its private key stays in the VPS protected secret directory. Cloudflare
+proxies the public hostnames with Full (strict); the Origin CA certificate is
+for Cloudflare-to-origin TLS and is not browser-trusted for direct origin
+access. The shared `aphrody-control` certificate remains assigned to the
+unrelated app and deployment vhosts.
 
 This table describes canonical reservations. Application slots stay staged,
 without a container or systemd unit, until a verified native artifact qualifies.
