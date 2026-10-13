@@ -187,3 +187,8 @@ The OS source consolidation was committed/pushed normally at
 read back. The final report update records that delivery and the public APT
 artifact. Material/os 1e65a503 is independently published. Author identity is
 aphrody-dev <contact@aphrody.com>. Concurrent submodule work remained unstaged.
+## Shared asset publication owner, 2026-10-13
+
+- Bun Libraries `@aphrody/bun-workspace/assets` now exposes `publishContentObject`: a 256 MiB bounded content hash, content-addressed key validation, conditional `If-None-Match` PUT, immutable cache headers, and streamed remote checksum verification. The font planner retains its 128 MiB limit.
+- Bun OS `infra/assets.ts` delegates upload and verification while preserving its scoped app inventory, plan receipt, `objects/sha256/` key and configured public asset origin. Native check, lint and format passed in Bun OS and Bun Libraries root. No tests or live R2 operations were run.
+- Bun Libraries commits `b21ee14`, `bf91d0b`, `5f43bb9`, `774e4c9` are on `main`; consumer commit `87d101c` is on Bun OS `os`.

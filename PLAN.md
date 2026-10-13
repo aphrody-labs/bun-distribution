@@ -22,7 +22,8 @@
       former directory once its holder releases it.
 - [ ] Physically relocate Bun after its concurrent exclusive Git batch ends;
       the src junction currently preserves sibling dependency resolution.
-- [ ] Migrate standalone compilation/assets to Bun Libraries' existing owners.
+- [ ] Migrate standalone compilation to Bun Libraries' artifact build owner.
+- [x] Delegate content-object hashing, conditional R2 writes, and remote checksum verification to Bun Libraries `@aphrody/bun-workspace/assets`; retain Bun OS scoped inventory, plan schema, and configured public asset domain.
 - [ ] Qualify native Windows app execution from the delegated builder before
       retiring its unused native-app launcher and descriptor helpers.
 - [ ] Align application catalog and deployment with native Aphrody Infra;
