@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-13",
+  "scope": "Owner Windows SSH access to vps and dbfr",
+  "local": {
+    "service": "WireGuardTunnel$aphrody",
+    "state": "Running",
+    "startup": "Automatic",
+    "recoverySeconds": [5, 5, 60],
+    "recoveryResetSeconds": 86400,
+    "interface": "aphrody",
+    "address": "10.200.77.4",
+    "allowedIPs": "10.200.77.0/24",
+    "targetedBootAuditFindings": 0
+  },
+  "hosts": {
+    "vps": {"address": "10.200.77.1", "sshSocket": "enabled/active", "wg1": "enabled/active", "sshdConfigValid": true},
+    "dbfr": {"address": "10.200.77.3", "sshSocket": "enabled/active", "wg1": "enabled/active", "sshdConfigValid": true}
+  },
+  "validation": {
+    "mcpBothHosts": true,
+    "openSSHBothHosts": true,
+    "freshConnectionsAfterTunnelRestart": true,
+    "fullRebootTested": false
+  }
+}

@@ -2,6 +2,15 @@
 
 # Aphrody Infra plan
 
+## 2026-10-13 — Accès SSH Windows persistant
+
+Le tunnel du propriétaire démarre désormais par `WireGuardTunnel$aphrody`,
+service Windows Automatic avec reprise sur panne déclaré dans le catalogue.
+MCP et OpenSSH réussissent vers vps et dbfr après redémarrage contrôlé du
+tunnel ; les sockets SSH et wg1 des serveurs sont enabled/active.
+Preuves et limite du test sans reboot complet :
+[accès SSH](../../operations/infra/ssh-recovery-2026-10-13.md).
+
 > Contexte courant (2026-10-09) : développement et builds selon l'hôte, la cible et les ressources disponibles ; aucun produit n'est réservé à un poste. Voir le [contexte](../../operations/workspace/windows-native.md).
 
 
