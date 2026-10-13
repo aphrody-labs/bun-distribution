@@ -1,5 +1,5 @@
 [package]
-workspace = "../../../.."
+workspace = "../.."
 name = "craft-fonts-tests"
 description = "Assertions on the fonts themselves: checksums, licences, names, script coverage and vertical-text support."
 version.workspace = true
@@ -14,7 +14,7 @@ craft-fonts = { path = "../craft-fonts" }
 
 [dev-dependencies]
 skrifa = "0.48"
-sha2 = "0.11"
+sha2 = { workspace = true, default-features = true }
 
 [lints.rust]
 unsafe_code = "forbid"
