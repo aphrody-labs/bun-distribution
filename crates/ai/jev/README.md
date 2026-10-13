@@ -4,6 +4,19 @@
 `aphrody-jev` sends typed Jev decisions to TypeSafe SaaS or a compatible
 gateway, and can use local jeff or aphrody inference as a fallback.
 
+## Native decision policy
+
+Rust consumers share `aphrody_jev::confident_choice(&request, &response,
+"tool", 0.8)`. It validates the request and response, returns the supplied Choice
+candidate at or above the threshold, and returns `None` below it. Unknown
+candidates, invalid thresholds and malformed answers remain errors. The response
+and its distributions are retained; selection does not execute an action or grant
+permissions.
+
+This implements the abstention pattern described by
+[Jev Workflows](https://github.com/integrate-your-mind/jev-codex-plugin/blob/f67f0f35df13cbc0556539e6f86fe14e2c04d6f8/README.md)
+in the existing Rust owner, without another SDK dependency or MCP server.
+
 ## Vercel AI Gateway
 
 Vercel AI Gateway exposes TypeSafe's `systemone` API. Jev is listed as free
