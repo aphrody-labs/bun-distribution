@@ -76,12 +76,12 @@
         "commandline": "cmd.exe /d /s /c \"set APHRODY_ROOT=%CD%&&C:\\Users\\aphro\\AppData\\Local\\aphrody\\bin\\aphrody.exe shell start\"",
         "guid": "{a1b2c3d4-e5f6-7890-abcd-ef1234567890}",
         "hidden": false,
-        "icon": "C:\\aphrody\\crates\\ui\\identity\\assets\\brand\\favicon.ico",
+        "icon": "C:\\src\\aphrody\\crates\\ui\\identity\\assets\\brand\\favicon.ico",
         "name": "Aphrody Shell",
         "tabTitle": "aphrody"
       },
       {
-        "commandline": "C:\\Users\\aphro\\.bun\\bin\\bun.exe C:\\aphrody\\tools\\config\\host\\windows\\terminal\\bun-shell.ts",
+        "commandline": "C:\\Users\\aphro\\.bun\\bin\\bun.exe C:\\src\\aphrody\\tools\\config\\host\\windows\\terminal\\bun-shell.ts",
         "guid": "{c3d4e5f6-a7b8-9012-cdef-123456789012}",
         "hidden": false,
         "icon": "C:\\Users\\aphro\\.bun\\bin\\bun.exe",
