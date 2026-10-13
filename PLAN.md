@@ -89,8 +89,9 @@
 
 - [x] Root Cargo owns twenty-four flat pinned crate submodules, shared direct
       dependencies, one nightly and one target/build/install configuration.
-      The twenty-one most recent crates have metadata/format gates; their native
-      compilation remains pending while the release owner holds build slots.
+      Locked offline `cargo check --workspace --all-features` passes for all
+      24 members. Full build, new-crate tests and Clippy remain pending; see
+      `docs/NATIVE-QUALIFICATION.md` for the observed launcher interruption.
 - [x] Commit the root Cargo vendor snapshot: 540 dependency source packages,
       564 full-graph identities including twenty-four product crates. Locked offline
       metadata passes. Preserve exact source bytes and license notices.

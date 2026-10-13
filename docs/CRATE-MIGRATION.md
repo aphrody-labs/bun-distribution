@@ -171,7 +171,9 @@ the source-effective local lint policy.
 public canonical environment-variable names. It does not copy runtime values
 or the source checkout's external local configuration file. Root formatting
 and locked offline metadata with all features pass for 24 members and 564
-package identities. Native compile, Clippy and test gates remain pending.
+package identities. Locked offline Cargo check with all features passes for
+all 24 members. Full build, Clippy and new-crate tests remain pending; see
+[native qualification](NATIVE-QUALIFICATION.md).
 
 The updated font pilot also inherits the root MSRV; fonts tests inherit
 `craft-fonts` and exact `skrifa =0.48.0` from the workspace, preserving
