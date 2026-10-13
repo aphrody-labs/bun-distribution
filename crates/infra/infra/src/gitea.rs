@@ -364,7 +364,7 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
         || catalog.native_storage.mount_unit
             != r"home-ubuntu-build-apps-gitea-native\x2dstorage.mount"
         || catalog.native_storage.lfs_requirement != "qualified-before-apply"
-        || catalog.native_storage.runner_requirement != "qualified-before-apply"
+        || catalog.native_storage.runner_requirement != "qualified-after-clone"
         || !valid_repo(batch)
     {
         bail!("catalogue de miroirs hors contrat autorisé");
@@ -389,7 +389,6 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
                     || entry.size_kib != Some(catalog.native_storage.repository_size_kib)
                     || !entry.source_qualification.as_ref().is_some_and(|q| {
                         matches!(q.lfs_status.as_deref(), Some("not-applicable" | "verified"))
-                            && q.runner_status.as_deref() == Some("qualified")
                     })))
             || (entry.name == catalog.native_storage.repository
                 && target_owner != catalog.native_storage.owner)
@@ -568,12 +567,20 @@ function sameRefs(left,right){{const a=Object.keys(left).sort(),b=Object.keys(ri
 const org=await req('GET','/orgs/aphrody-labs');if(org[1].username!=='aphrody-labs')bad('Gitea organization missing or unauthorized');
 if(org[1].visibility!=='public')await req('PATCH','/orgs/aphrody-labs',{{visibility:'public'}});
 if((await req('GET','/orgs/aphrody-labs'))[1].visibility!=='public')bad('Gitea organization is not publicly readable');
-const free=Number((await Bun.$`df -Pk /home/ubuntu/apps/gitea/data | tail -n 1`.text()).trim().split(/\s+/)[3]);
-if(!Number.isFinite(free)||free<8*1024*1024)bad('Gitea storage admission below 8 GiB');
 const nativeEntry=d.repositories.find(repo=>repo.targetOwner===d.nativeStorage.owner);
 if(nativeEntry){{
+ const owner=d.nativeStorage.owner;
+ const [,nativeOrg]=await req('GET','/orgs/'+owner,undefined,true);
+ if(!nativeOrg)await req('POST','/orgs',{{username:owner,visibility:'public'}});
+ const [,verifiedOrg]=await req('GET','/orgs/'+owner);
+ if(verifiedOrg.username!==owner||verifiedOrg.visibility!=='public')bad('Gitea native organization provision failed');
+ const [,orgRepos]=await req('GET','/orgs/'+owner+'/repos?limit=2&page=1');
+ if(!Array.isArray(orgRepos)||orgRepos.length>1||orgRepos.some(item=>item.name!==d.nativeStorage.repository))bad('Gitea native organization contains repositories outside its declared scope');
+}}
+let free=null;
+function admitNativeStorage(repo){{
  const s=d.nativeStorage;
- if(nativeEntry.name!==s.repository||nativeEntry.sizeKiB!==s.repositorySizeKiB||s.owner!=='aphrody-labs-native'||s.containerPath!=='/data/git/repositories/aphrody-labs-native')bad('Gitea native storage scope rejected');
+ if(repo.name!==s.repository||repo.sizeKiB!==s.repositorySizeKiB||s.owner!=='aphrody-labs-native'||s.containerPath!=='/data/git/repositories/aphrody-labs-native')bad('Gitea native storage scope rejected');
  const check=Bun.spawnSync(['docker','exec','aphrody-gitea','sh','-ec','p="$1"; test -d "$p"; data_device=$(stat -c %d /data); repo_device=$(stat -c %d "$p"); test "$data_device" != "$repo_device"; set -- $(df -Pk "$p" | tail -n 1); root_free="$4"; set -- $(df -Pk /data | tail -n 1); data_free="$4"; printf "%s %s" "$root_free" "$data_free"','native-storage',s.containerPath],{{timeout:10000}});
  if(check.exitCode!==0)bad('Gitea native storage mount is absent or shares the /data filesystem');
  const [rootFree,dataFree]=check.stdout.toString().trim().split(/\s+/).map(Number);
@@ -587,17 +594,12 @@ const owner=repo.targetOwner||d.owner;const path='/repos/'+owner+'/'+repo.name;c
  if(!metadataResponse.ok)bad('GitHub repository identity unavailable: '+repo.name);
  const metadata=await metadataResponse.json();
  if(metadata.full_name!=='aphrody-labs/'+repo.name||metadata.private!==(repo.visibility==='private')||metadata.archived!==repo.archived||(repo.refs.length&&metadata.default_branch!==repo.defaultBranch)||(owner===d.nativeStorage.owner&&metadata.size!==d.nativeStorage.repositorySizeKiB))bad('GitHub repository policy changed: '+repo.name);
- if(owner===d.nativeStorage.owner&&(!['not-applicable','verified'].includes(repo.lfsStatus)||repo.runnerStatus!=='qualified'))bad('Gitea native repository LFS or runner status is not qualified');
+ if(owner===d.nativeStorage.owner&&(!['not-applicable','verified'].includes(repo.lfsStatus)||repo.lfsApplicable&&repo.lfsStatus!=='verified'))bad('Gitea native repository LFS status is not qualified');
  if(!sameRefs(gitRefs(repo.sourceUrl,sourceAuth),expected))bad('GitHub source ref set moved or incomplete: '+repo.name);
- if(owner===d.nativeStorage.owner){{
-  const [,nativeOrg]=await req('GET','/orgs/'+owner,undefined,true);
-  if(!nativeOrg)await req('POST','/orgs',{{username:owner,visibility:'public'}});
-  const [,verifiedOrg]=await req('GET','/orgs/'+owner);
-  if(verifiedOrg.username!==owner||verifiedOrg.visibility!=='public')bad('Gitea native organization provision failed');
-  const [,orgRepos]=await req('GET','/orgs/'+owner+'/repos?limit=2&page=1');
-  if(!Array.isArray(orgRepos)||orgRepos.length>1||orgRepos.some(item=>item.name!==s.repository))bad('Gitea native organization contains repositories outside its declared scope');
- }}
+ free=Number((await Bun.$`df -Pk /home/ubuntu/apps/gitea/data | tail -n 1`.text()).trim().split(/\s+/)[3]);
+ if(!Number.isFinite(free)||free<8*1024*1024)bad('Gitea storage admission below 8 GiB');
  const isMirror=!repo.archived;
+ if(owner===d.nativeStorage.owner)admitNativeStorage(repo);
  if(status===404){{
   await req('POST','/repos/migrate',{{clone_addr:repo.sourceUrl,repo_name:repo.name,repo_owner:owner,service:'github',auth_token:repo.visibility==='private'?githubToken:undefined,mirror:isMirror,lfs:repo.lfsApplicable,private:true,mirror_interval:d.mirrorInterval}});
  }}else if(current.mirror!==isMirror||current.original_url!==repo.sourceUrl)bad('Existing Gitea repository conflicts with source policy: '+repo.name);
@@ -613,6 +615,10 @@ const owner=repo.targetOwner||d.owner;const path='/repos/'+owner+'/'+repo.name;c
  const targetUrl='http://127.0.0.1:29020/'+owner+'/'+repo.name+'.git';
  const sourceNow=gitRefs(repo.sourceUrl,sourceAuth),targetNow=gitRefs(targetUrl,'Authorization: token '+token);
  if(!sameRefs(sourceNow,expected)||!sameRefs(targetNow,expected))bad('Gitea mirror refs diverge; repository remains private: '+repo.name);
+ if(owner===d.nativeStorage.owner){{
+  const [,runnerList]=await req('GET','/orgs/'+owner+'/actions/runners');
+  if(!Array.isArray(runnerList.runners)||!runnerList.runners.some(runner=>!runner.disabled&&runner.status==='online'))bad('Gitea native repository is cloned, but no online organization runner is qualified');
+ }}
  const publishPayload={{private:repo.visibility==='private',archived:repo.archived}};
  if(repo.archived){{
   if(isMirror)bad('archived source cannot be a pull mirror');

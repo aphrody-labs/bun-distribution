@@ -34,7 +34,7 @@
     "dataReserveKiB": 8388608,
     "mountUnit": "home-ubuntu-build-apps-gitea-native\\x2dstorage.mount",
     "lfsRequirement": "qualified-before-apply",
-    "runnerRequirement": "qualified-before-apply"
+    "runnerRequirement": "qualified-after-clone"
   },
   "batches": {
     "wave-1": [

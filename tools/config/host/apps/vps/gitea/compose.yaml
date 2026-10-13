@@ -34,7 +34,11 @@ services:
     volumes:
       - ./data:/data
       - ./native-storage-guard.sh:/usr/local/bin/gitea-native-storage-guard:ro
-      - native_storage:/data/git/repositories/aphrody-labs-native
+      - type: volume
+        source: native_storage
+        target: /data/git/repositories/aphrody-labs-native
+        volume:
+          nocopy: true
     logging:
       driver: json-file
       options:
