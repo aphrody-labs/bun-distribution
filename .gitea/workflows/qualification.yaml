@@ -1,0 +1,25 @@
+name: Aphrody / Bun qualification
+on:
+  workflow_dispatch:
+jobs:
+  source:
+    runs-on: aphrody-bun-linux
+    timeout-minutes: 10
+    steps:
+      - uses: builtin:checkout
+        with:
+          submodules: recursive
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Runtime
+        run: bun agent-plugin doctor --json
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Check
+        run: bun run typecheck
+      - name: Lint
+        run: bun run lint
+      - name: Format
+        run: bun run format:check
+      - name: Application plan
+        run: bun run apps:plan
