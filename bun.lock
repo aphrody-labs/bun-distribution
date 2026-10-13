@@ -1014,6 +1014,10 @@
         "aphrody-setup": "src/cli.ts",
         "creator-kit": "src/cli.ts",
       },
+      "dependencies": {
+        "@aphrody/m3-fonts": "workspace:*",
+        "@aphrody/m3-tokens": "workspace:*",
+      },
     },
     "packages/infra/sql": {
       "name": "@aphrody/sql",

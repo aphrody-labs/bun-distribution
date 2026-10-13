@@ -8,11 +8,11 @@
  */
 import { cp, mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { nativeThemeColorRoles, parseNativeThemeExport } from "@aphrody/m3-tokens/native-theme";
 
 const here = import.meta.dir;
-const m3 = join(here, "../../../../m3/packages");
 /** Source colour of the logo (QuantizerCelebi + Score of material-color-utilities on assets/icon-256.png). */
 export const SEED = "#951ae2";
 const THEME = join(here, "theme.json");
@@ -63,7 +63,9 @@ ${declarations(dark)}
 export async function build(outDir = join(here, "dist")): Promise<string> {
   await rm(outDir, { recursive: true, force: true });
   await mkdir(join(outDir, "fonts"), { recursive: true });
-  const tokens = await Bun.file(join(m3, "m3-tokens/src/m3-tokens.css")).text();
+  const tokens = await Bun.file(
+    fileURLToPath(import.meta.resolve("@aphrody/m3-tokens/m3-tokens.css")),
+  ).text();
   const scheme = await schemeCss();
   const font = `@font-face {
   font-family: "Google Sans Flex";
@@ -75,7 +77,7 @@ export async function build(outDir = join(here, "dist")): Promise<string> {
 `;
   await Bun.write(join(outDir, "theme.css"), `${font}\n${tokens}\n${scheme}`);
   await cp(
-    join(m3, "m3-fonts/fonts/web/GoogleSansFlex-latin.woff2"),
+    fileURLToPath(import.meta.resolve("@aphrody/m3-fonts/fonts/web/GoogleSansFlex-latin.woff2")),
     join(outDir, "fonts/GoogleSansFlex-latin.woff2"),
   );
   await Promise.all(

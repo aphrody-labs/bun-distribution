@@ -28,10 +28,7 @@ export const SITE = {
 
 const repo = resolve(import.meta.dir, "../..");
 const appDir = join(repo, "packages/infra/product");
-import {
-  build as buildPage,
-  SEED,
-} from "../../packages/infra/product/resources/creator/site/build.ts";
+import { build as buildPage, SEED } from "@aphrody/product/creator/site";
 import { brandExe } from "./windows-exe.ts";
 const TARGET = {
   platform: "windows-x64",

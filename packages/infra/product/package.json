@@ -14,7 +14,11 @@
     "src",
     "README.md",
     "!src/**/*.test.ts",
-    "resources/creator/glossaries"
+    "resources/creator/glossaries",
+    "resources/creator/site/build.ts",
+    "resources/creator/site/theme.json",
+    "resources/creator/site/src",
+    "resources/creator/site/assets"
   ],
   "type": "module",
   "exports": {
@@ -25,6 +29,7 @@
     "./admin/context": "./src/admin/lib/context.ts",
     "./admin/guide": "./src/admin/guide.ts",
     "./creator": "./src/creator/cli.ts",
+    "./creator/site": "./resources/creator/site/build.ts",
     "./access": "./src/admin/lib/profile.ts",
     "./access-pack": "./src/admin/access.ts",
     "./train": "./src/admin/lib/train.ts",
@@ -40,6 +45,10 @@
     "test": "bun test test",
     "typecheck": "bun check --noEmit -p tsconfig.json",
     "stage": "bun ../../../scripts/release/stage-setup.ts"
+  },
+  "dependencies": {
+    "@aphrody/m3-fonts": "workspace:*",
+    "@aphrody/m3-tokens": "workspace:*"
   },
   "engines": {
     "bun": ">=1.4.4"
