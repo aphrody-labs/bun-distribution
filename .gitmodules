@@ -73,11 +73,6 @@
 	url = https://github.com/aphrody-labs/figcraft.git
 	branch = main
 	shallow = true
-[submodule "libraries/craft-fonts"]
-	path = libraries/craft-fonts
-	url = https://github.com/aphrody-labs/craft-fonts.git
-	branch = main
-	shallow = true
 [submodule "toolchains/bun"]
 	path = toolchains/bun
 	url = https://github.com/aphrody-labs/bun.git

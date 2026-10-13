@@ -13,7 +13,7 @@
     },
     "apps/desktop": {
       "name": "@aphrody/bun-desktop",
-      "version": "0.1.0",
+      "version": "1.4.4",
       "dependencies": {
         "@aphrody/bun-video-project": "workspace:*",
         "@aphrody/bun-workspace": "workspace:*",
@@ -22,7 +22,7 @@
     },
     "packages/artifacts": {
       "name": "@aphrody/bun-artifacts",
-      "version": "0.1.0",
+      "version": "1.4.4",
       "bin": {
         "aphrody-artifacts": "./src/cli.ts",
       },
@@ -39,7 +39,7 @@
     },
     "packages/video": {
       "name": "@aphrody/bun-video-project",
-      "version": "0.1.0",
+      "version": "1.4.4",
       "bin": {
         "aphrody-video": "./src/cli.ts",
       },
@@ -49,7 +49,7 @@
     },
     "packages/workspace": {
       "name": "@aphrody/bun-workspace",
-      "version": "0.1.0",
+      "version": "1.4.4",
       "bin": {
         "aphrody-bun": "./src/cli.ts",
       },

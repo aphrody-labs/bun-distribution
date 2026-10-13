@@ -30,7 +30,7 @@ function moduleState(module: ModuleStatus): string {
   if (!module.initialized) return "not initialized";
   if (!module.revisionMatches) return "revision differs";
   if (!module.clean) return "modified";
-  return "pinned, clean";
+  return module.sourceKind === "workspace" ? "workspace, clean" : "pinned, clean";
 }
 
 async function main(): Promise<number> {

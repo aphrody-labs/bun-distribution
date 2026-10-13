@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { runProcess } from "../packages/workspace/src/process.ts";
 
 const root = resolve(import.meta.dir, "..");
-for (const check of ["typecheck", "lint:all", "fmt:check"]) {
+for (const check of ["typecheck", "lint", "format:check"]) {
   const result = await runProcess([process.execPath, "run", "--bun", check], root, {
     timeoutMs: 300_000,
     maxOutputBytes: 64 * 1024 * 1024,

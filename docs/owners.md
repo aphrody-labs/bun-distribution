@@ -18,7 +18,12 @@ retain its errors, limits and qualification.
 | App payload extraction and manifest verification | Artifact package | Standalone Bun apps |
 | Hosts, services, boot and deployment authority | Native Aphrody Infra | App deployment adapter and controller |
 | Git forge and workflow execution | Deployed forge and runner | First party Bun shell workflows |
-| DNS and R2 resources | Cloudflare | Aphrody Infra and app release configuration |
+| DNS and R2 desired state | Aphrody Infra | Cloudflare API and app release configuration |
+| Live DNS records, proxy and object storage | Cloudflare | Aphrody Infra control and Bun Libraries asset contracts |
+| Distribution profiles, OS images and package conversion | Bun OS | Qualified Bun runtime, APT sources and Bun Libraries artifacts |
+| Debian APT source and package-manager implementation | Official APT fork | Bun OS distro build and conversion adapter |
+| M3 tokens, shared components and `libm3` | Material | Aphrody and Bun app UI consumers |
+| Product routes, sites and app activation policy | Aphrody Infra | Bun Libraries app capability manifest |
 
 The video process module translates workspace errors into its public video
 errors. It has no child management implementation. Captured and discarded
@@ -42,3 +47,15 @@ The Windows wrapper owns only its native admission mutex. Its worker delegates
 argv, streams, deadlines and child teardown to the same workspace process core.
 The Bun Cargo source owner retains its own checkout lock; the active host build
 slot remains serialized by owner coordination.
+Bun OS assembles distribution inputs, images and package conversions; it does
+not own a second APT implementation. Package/source conversion and generated
+installers must preserve the upstream package identity and license metadata.
+Material owns the transferred M3 Rust components and tokens. The nested Bun
+M3 source submodule is a remaining consolidation item: audit consumers and source
+history before removing it.
+
+Aphrody Infra declares and actuates desired DNS, host, route and app lifecycle
+state. Cloudflare's live records/R2 and application health require direct
+qualification; a checked-in hostname or successful source build is not live
+activation evidence. Bun Libraries owns app identity, host naming, shared asset
+manifests and artifact verification consumed by the Infra adapter.

@@ -3,7 +3,7 @@
   "runtime": {
     "version": "1.4.4",
     "repository": "aphrody-labs/bun",
-    "revision": "2ae8fc65fba1d05c423a2433b1195835109942b6"
+    "revision": "f54a341270501b3b77ea3dc4a728f33fa44810db"
   },
   "desktop": {
     "package": "@aphrody/tauri",
@@ -299,11 +299,13 @@
     },
     {
       "id": "craft-fonts",
-      "path": "libraries/craft-fonts",
+      "path": "crates/craft-fonts",
+      "sourceKind": "workspace",
+      "cargoPackages": ["craft-fonts", "craft-fonts-tests"],
       "upstream": "storytold/craft-fonts",
       "fork": "aphrody-labs/craft-fonts",
-      "branch": "main",
-      "revision": "3d9ab3a132ed0eff457e424226a435a901da30d3",
+      "branch": "os",
+      "revision": "f1bfd5fd75f24619cad085230c7290f17ee7821e",
       "upstreamRevision": "3d9ab3a132ed0eff457e424226a435a901da30d3",
       "license": "MIT OR Apache-2.0",
       "kind": "library",

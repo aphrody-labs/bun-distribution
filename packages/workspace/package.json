@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/bun-workspace",
-  "version": "0.1.0",
+  "version": "1.4.4",
   "private": true,
   "bin": {
     "aphrody-bun": "./src/cli.ts"

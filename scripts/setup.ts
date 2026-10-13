@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import { resolve } from "node:path";
 import { runProcess } from "../packages/workspace/src/process.ts";
+import { inspectCargoWorkspace, loadConfig } from "../packages/workspace/src/index.ts";
 
 const root = resolve(import.meta.dir, "..");
 const env = {
@@ -23,3 +24,5 @@ async function run(argv: string[]): Promise<void> {
 
 await run(["git", "submodule", "update", "--init", "--depth", "1"]);
 await run([process.execPath, "install", "--frozen-lockfile"]);
+const cargo = await inspectCargoWorkspace(await loadConfig(root), { root, timeoutMs: 60_000 });
+console.log(`Cargo workspace: ${cargo.packageNames.length} packages in ${cargo.workspaceRoot}`);

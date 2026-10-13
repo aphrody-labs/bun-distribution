@@ -47,6 +47,8 @@ artifact compiler, package converter, and desktop application. Library source
 projects are pinned below `libraries/`; the Bun runtime and Tauri SDK source are
 pinned below `toolchains/bun/`. App builds and shared assets use the
 `@aphrody/bun-artifacts` and `@aphrody/bun-workspace` owners.
+Shared Craft font assets, licenses and optional embedding are integrated under
+`fonts/` and `crates/craft-fonts`; see [font ownership and provenance](docs/fonts.md).
 
 The root owns one Bun `node_modules` and configures Cargo's shared `target` and
 `install` locations. The runtime's existing build and vendored dependency

@@ -11,6 +11,14 @@
   check passed after the library update: 35-file typecheck, lint and format.
   Bun Libraries main is pushed at 89731c4; no tests or builds were run.
 
+## Shared check command names, 2026-10-13
+
+Bun OS `scripts/quality.ts` invokes `typecheck`, `lint` and `format:check`,
+matching Bun Libraries. Its package manifest exposes `lint`, `format` and
+`format:check` over OS-owned paths. Native `bun run check` passed: typecheck on
+91 files, lint and format. Root Cargo metadata resolved `craft-fonts` and
+`craft-fonts-tests`; `cargo check --locked` passed on Windows. Tests were not
+run. The batch joins the active Bun OS merge and awaits its integration commit.
 ## Workspace fusion, 2026-10-13
 
 - The selected Aphrody checkout is C:/src/aphrody. On 2026-10-13 it contains

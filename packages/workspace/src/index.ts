@@ -40,6 +40,8 @@ export interface Module {
   description: string;
   binary?: string;
   cargoPackage?: string;
+  cargoPackages?: string[];
+  sourceKind?: "workspace" | "submodule";
   manifestPath?: string;
   protocol?: "cli" | "cli-json" | "jsonl" | "mcp-stdio";
 }
@@ -68,6 +70,7 @@ export interface Source {
 }
 
 export interface ModuleStatus {
+  sourceKind: "workspace" | "submodule";
   id: string;
   path: string;
   initialized: boolean;
@@ -247,6 +250,7 @@ export async function loadConfig(root = repositoryRoot): Promise<Config> {
       !entry.license ||
       typeof entry.description !== "string" ||
       entry.kind !== "library" ||
+      (entry.sourceKind !== undefined && !["workspace", "submodule"].includes(String(entry.sourceKind))) ||
       (entry.role !== undefined && !["engine", "shared", "fonts"].includes(String(entry.role)))
     ) {
       throw new Error(`Invalid library metadata: ${entry.id}`);
@@ -255,6 +259,15 @@ export async function loadConfig(root = repositoryRoot): Promise<Config> {
       if (entry[key] !== undefined && (typeof entry[key] !== "string" || !/^[a-zA-Z0-9_-]+$/.test(entry[key]))) {
         throw new Error(`Invalid Cargo name: ${entry.id}.${key}`);
       }
+    }
+    if (
+      entry.cargoPackages !== undefined &&
+      (!Array.isArray(entry.cargoPackages) ||
+        entry.cargoPackages.length === 0 ||
+        entry.cargoPackages.some(name => typeof name !== "string" || !/^[a-zA-Z0-9_-]+$/.test(name)) ||
+        new Set(entry.cargoPackages).size !== entry.cargoPackages.length)
+    ) {
+      throw new Error(`Invalid Cargo package group: ${entry.id}`);
     }
     if (entry.binary !== undefined && (entry.role !== "engine" || entry.binary !== `${entry.id}-cli`)) {
       throw new Error(`Only an explicit headless engine CLI is allowed: ${entry.id}`);
@@ -376,7 +389,7 @@ interface Pin {
 }
 
 function pinnedSources(config: Config): Pin[] {
-  const pins: Pin[] = [...config.modules];
+  const pins: Pin[] = config.modules.filter(module => module.sourceKind !== "workspace");
   if (config.desktop.source) {
     pins.push({
       id: "bun-sdk",
@@ -435,6 +448,7 @@ export async function listModuleStatus(config: Config, root = repositoryRoot): P
     const library = config.modules.find(entry => entry.id === module.id);
     const hasHeadlessBinary = library?.role === "engine" && library.binary === `${module.id}-cli`;
     const status: ModuleStatus = {
+      sourceKind: "submodule",
       id: module.id,
       path: module.path,
       initialized: false,
@@ -476,6 +490,42 @@ export async function listModuleStatus(config: Config, root = repositoryRoot): P
               ? "Cargo manifest missing."
               : "Revision differs from catalog.";
       }
+    } catch (error) {
+      status.error = error instanceof Error ? error.message : String(error);
+    }
+    result.push(status);
+  }
+  for (const module of config.modules.filter(entry => entry.sourceKind === "workspace")) {
+    const status: ModuleStatus = {
+      sourceKind: "workspace",
+      id: module.id,
+      path: module.path,
+      initialized: false,
+      revision: null,
+      expectedRevision: module.revision,
+      indexRevision: null,
+      pointerMatches: true,
+      revisionMatches: false,
+      clean: null,
+      launchable: false,
+      launchReason: "Library has no headless CLI.",
+    };
+    try {
+      status.initialized = await Bun.file(
+        checkoutPath(root, `${module.path}/${module.manifestPath ?? "Cargo.toml"}`),
+      ).exists();
+      status.revision = await git(["rev-parse", "HEAD"], root);
+      // An imported source is qualified by its preserved ancestor, rather than a gitlink.
+      const ancestry = await command(["git", "merge-base", "--is-ancestor", module.revision, status.revision], root);
+      if (ancestry.code > 1) throw new Error(`Imported source history is unavailable: ${module.id}`);
+      status.revisionMatches = ancestry.code === 0;
+      status.clean = (await git(["status", "--porcelain=v1", "--ignore-submodules=all"], root)) === "";
+      const headless = module.role === "engine" && module.binary === `${module.id}-cli`;
+      status.launchable = headless && status.initialized && status.revisionMatches;
+      if (headless)
+        status.launchReason = status.launchable
+          ? "Workspace CLI; native build may be required."
+          : "Imported source history differs.";
     } catch (error) {
       status.error = error instanceof Error ? error.message : String(error);
     }
@@ -562,6 +612,7 @@ interface CargoModule {
   directory: string;
   manifest: string;
   cargoPackage: string | null;
+  cargoPackages: string[];
   binary: string | null;
 }
 
@@ -570,6 +621,44 @@ export async function resolveCargoModule(module: Module, root = repositoryRoot):
     throw new Error(`Only an explicit headless engine CLI is allowed: ${module.id}`);
   }
   const directory = checkoutPath(root, module.path);
+  const rootManifest = join(root, "Cargo.toml");
+  if (await Bun.file(rootManifest).exists()) {
+    const workspace = Bun.TOML.parse(await Bun.file(rootManifest).text()) as {
+      workspace?: { members?: string[] };
+    };
+    const prefix = `${relative(root, directory).replaceAll("\\", "/")}/`;
+    const members =
+      workspace.workspace?.members?.filter(member =>
+        module.sourceKind === "workspace" ? true : member.startsWith(prefix),
+      ) ?? [];
+    if (members.length) {
+      const cargoPackages: string[] = [];
+      for (const member of members) {
+        const memberManifest = checkoutPath(root, `${member}/Cargo.toml`);
+        const value = Bun.TOML.parse(await Bun.file(memberManifest).text()) as { package?: { name?: string } };
+        if (!value.package?.name) throw new Error(`Cargo member lacks a package name: ${member}`);
+        if (
+          module.sourceKind !== "workspace" ||
+          (module.cargoPackages ?? [module.cargoPackage]).includes(value.package.name)
+        ) {
+          cargoPackages.push(value.package.name);
+        }
+      }
+      if (module.cargoPackages?.some(name => !cargoPackages.includes(name)))
+        throw new Error(`Cargo package group is incomplete: ${module.id}`);
+      if (!cargoPackages.length) throw new Error(`No root Cargo packages belong to the library: ${module.id}`);
+      if (module.cargoPackage && !cargoPackages.includes(module.cargoPackage)) {
+        throw new Error(`Cargo package is outside its library: ${module.id}`);
+      }
+      return {
+        directory: module.sourceKind === "workspace" ? root : directory,
+        manifest: rootManifest,
+        cargoPackage: module.cargoPackage ?? null,
+        cargoPackages,
+        binary: module.binary ?? null,
+      };
+    }
+  }
   const manifest = checkoutPath(directory, module.manifestPath ?? "Cargo.toml");
   if (!(await Bun.file(manifest).exists())) throw new Error(`Cargo manifest missing: ${module.id}`);
   const value = Bun.TOML.parse(await Bun.file(manifest).text()) as {
@@ -578,7 +667,7 @@ export async function resolveCargoModule(module: Module, root = repositoryRoot):
   const cargoPackage = module.cargoPackage ?? value.package?.name ?? null;
   if (!cargoPackage && module.binary) throw new Error(`cargoPackage required for the headless CLI: ${module.id}`);
   const binary = module.binary ?? null;
-  return { directory, manifest, cargoPackage, binary };
+  return { directory, manifest, cargoPackage, cargoPackages: [], binary };
 }
 
 /** Discover an existing checkout artifact. Builds and native protocol validation stay explicit. */
@@ -648,6 +737,8 @@ async function runNativeResult(
     ...Bun.env,
     ...options.env,
     CARGO_BUILD_JOBS: "1",
+    CARGO_TARGET_DIR: join(root, "target"),
+    CARGO_INSTALL_ROOT: join(root, "install"),
   };
   // Preserve valid owner wrappers; an unavailable sccache path must not break builds.
   if (env.RUSTC_WRAPPER && !Bun.which(env.RUSTC_WRAPPER)) {
@@ -730,6 +821,83 @@ async function serializedCargo(
   return runNativeResult(config, argv, { root, cwd, timeoutMs }, captureStdout);
 }
 
+export interface CargoWorkspaceReport {
+  version: string;
+  bunPackageNames: string[];
+  workspaceRoot: string;
+  targetDirectory: string;
+  packageNames: string[];
+}
+
+/** Verify the actual Cargo owner and output path through the native admission wrapper. */
+export async function inspectCargoWorkspace(
+  config: Config,
+  options: ExecutionOptions = {},
+): Promise<CargoWorkspaceReport> {
+  const root = resolve(options.root ?? repositoryRoot);
+  const product = (await Bun.file(join(root, "package.json")).json()) as { version?: string; workspaces?: string[] };
+  const manifest = Bun.TOML.parse(await Bun.file(join(root, "Cargo.toml")).text()) as {
+    workspace?: { package?: { version?: string } };
+  };
+  if (!product.version || manifest.workspace?.package?.version !== product.version)
+    throw new Error("Bun and Cargo product versions differ.");
+  const bunPackageNames: string[] = [];
+  for (const member of product.workspaces ?? []) {
+    const entry = (await Bun.file(checkoutPath(root, `${member}/package.json`)).json()) as {
+      name?: string;
+      version?: string;
+    };
+    if (!entry.name || entry.version !== product.version)
+      throw new Error(`Bun workspace package version differs: ${member}`);
+    bunPackageNames.push(entry.name);
+  }
+  const result = await serializedCargo(
+    config,
+    ["metadata", "--locked", "--no-deps", "--format-version", "1", "--manifest-path", join(root, "Cargo.toml")],
+    root,
+    root,
+    options.timeoutMs ?? shortDeadline,
+    true,
+  );
+  if (result.code !== 0) throw new Error("Root Cargo workspace metadata failed.");
+  const value: unknown = JSON.parse(result.stdout);
+  if (
+    !object(value) ||
+    typeof value.workspace_root !== "string" ||
+    typeof value.target_directory !== "string" ||
+    resolve(value.workspace_root) !== root ||
+    resolve(value.target_directory) !== join(root, "target") ||
+    !Array.isArray(value.workspace_members) ||
+    !Array.isArray(value.packages)
+  ) {
+    throw new Error("Cargo workspace or target directory differs from the product root.");
+  }
+  const members = new Set(value.workspace_members);
+  const packageNames: string[] = [];
+  for (const entry of value.packages) {
+    if (!object(entry) || !members.has(entry.id)) continue;
+    if (
+      typeof entry.name !== "string" ||
+      typeof entry.manifest_path !== "string" ||
+      entry.version !== product.version
+    ) {
+      throw new Error("Cargo workspace member lacks its package identity.");
+    }
+    checkoutPath(root, relative(root, entry.manifest_path));
+    packageNames.push(entry.name);
+  }
+  if (packageNames.length !== members.size || packageNames.length === 0) {
+    throw new Error("Cargo workspace membership is incomplete.");
+  }
+  return {
+    version: product.version,
+    bunPackageNames: bunPackageNames.sort(),
+    workspaceRoot: root,
+    targetDirectory: join(root, "target"),
+    packageNames: packageNames.sort(),
+  };
+}
+
 export async function cargoModule(
   config: Config,
   id: string,
@@ -743,7 +911,9 @@ export async function cargoModule(
   const cargo = await resolveCargoModule(module, root);
   const flags = [action, "--locked", "--manifest-path", cargo.manifest];
   if (cargo.cargoPackage) flags.push("--package", cargo.cargoPackage);
-  else flags.push("--workspace");
+  else if (cargo.cargoPackages.length) {
+    for (const name of cargo.cargoPackages) flags.push("--package", name);
+  } else flags.push("--workspace");
   if (action === "run") {
     if (!cargo.binary) throw new Error(`Library has no headless CLI: ${id}`);
     flags.push("--bin", cargo.binary, "--", ...args);
