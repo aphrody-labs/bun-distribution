@@ -3,13 +3,13 @@
   "runtime": {
     "version": "1.4.4",
     "repository": "aphrody-labs/bun",
-    "revision": "cb64a09ae6dd618efc300c39b9b03ccfa861cac2"
+    "revision": "d2ff37699e391e8e271fc877e9bcc81cdc49fa82"
   },
   "runtimeTargets": {
     "windows-x64": {
       "version": "1.4.4",
       "repository": "aphrody-labs/bun",
-      "revision": "cb64a09ae6dd618efc300c39b9b03ccfa861cac2"
+      "revision": "d2ff37699e391e8e271fc877e9bcc81cdc49fa82"
     },
     "linux-x64": {
       "version": "1.4.4",
