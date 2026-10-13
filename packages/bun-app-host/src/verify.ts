@@ -189,6 +189,7 @@ export async function verifyProduct(
     let completed = false;
     let passed = 0;
     let probeFailure: unknown;
+    const publicOrigin = "https://source.aphrody.app";
     const cases = [
       { path: "/healthz", status: 200, auth: false },
       { path: "/api/v1/apps", status: 401, auth: false },
@@ -201,6 +202,10 @@ export async function verifyProduct(
       { path: "/api/v1/apps", status: 405, auth: true, method: "POST" },
       { path: "/missing", status: 404, auth: true },
       { path: "/api/v1/apps", status: 403, auth: true, origin: "https://foreign.invalid" },
+      { path: "/api/v1/status", status: 200, auth: true, origin: publicOrigin, proxy: true },
+      { path: "/api/v1/status", status: 401, auth: false, origin: publicOrigin, proxy: true },
+      { path: "/api/v1/status", status: 403, auth: true, origin: publicOrigin, crossSite: true },
+      { path: "/api/v1/status", status: 403, auth: true, origin: "https://foreign.invalid", proxy: true },
     ];
     try {
       await runProcess([binary], root, {
@@ -209,7 +214,14 @@ export async function verifyProduct(
         signal: stop.signal,
         stdout: "discard",
         stderr: "discard",
-        env: { ...Bun.env, BUN_BE_BUN: undefined, HOST: "127.0.0.1", PORT: "0", APHRODY_APP_TOKEN: token },
+        env: {
+          ...Bun.env,
+          BUN_BE_BUN: undefined,
+          HOST: "127.0.0.1",
+          PORT: "0",
+          APHRODY_APP_TOKEN: token,
+          APHRODY_APP_ORIGIN: publicOrigin,
+        },
         onOutput: async (channel, chunk) => {
           if (channel !== "stdout" || probing) return;
           output += decoder.decode(chunk, { stream: true });
@@ -223,6 +235,12 @@ export async function verifyProduct(
               const headers: Record<string, string> = {};
               if (probe.auth) headers.Authorization = "Bearer " + token;
               if (probe.origin) headers.Origin = probe.origin;
+              if (probe.proxy) {
+                headers.Host = "source.aphrody.app";
+                headers["X-Forwarded-Proto"] = "https";
+                headers["X-Forwarded-For"] = "127.0.0.1";
+              }
+              if (probe.crossSite) headers["Sec-Fetch-Site"] = "cross-site";
               const response = await fetch(new URL(probe.path, base), {
                 method: probe.method ?? "GET",
                 headers,

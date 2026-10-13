@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-import { authenticateRequest, jsonReply } from "./transport.ts";
+import { authenticateRequest, jsonReply, validatePublicOrigin } from "./transport.ts";
 
 export interface ProductCatalog {
   schemaVersion: 1;
@@ -31,13 +31,18 @@ export const apiOwners = {
 } as const;
 
 /** Read-only product API. The snapshot does not imply live native qualification. */
-export function productHandler(catalog: ProductCatalog, token: string): (request: Request) => Response {
+export function productHandler(
+  catalog: ProductCatalog,
+  token: string,
+  options: { publicOrigin?: string } = {},
+): (request: Request) => Response {
   if (token.length < 32) throw new Error("Inject the application token from its protected store.");
+  const publicOrigin = validatePublicOrigin(options.publicOrigin);
   return request => {
     const path = new URL(request.url).pathname;
     if (request.method === "GET" && path === "/healthz")
       return jsonReply({ status: "ready", product: catalog.product, version: catalog.version });
-    const denied = authenticateRequest(request, token);
+    const denied = authenticateRequest(request, token, { publicOrigin });
     if (denied) return denied;
     if (request.method !== "GET") return jsonReply({ error: "Method not allowed." }, 405);
     switch (path) {
@@ -77,7 +82,7 @@ export function productHandler(catalog: ProductCatalog, token: string): (request
 
 export function startProduct(
   catalog: ProductCatalog,
-  options: { port?: number; hostname?: string; token?: string } = {},
+  options: { port?: number; hostname?: string; token?: string; publicOrigin?: string } = {},
 ) {
   const port = options.port ?? Number(Bun.env.PORT ?? 3000);
   const hostname = options.hostname ?? Bun.env.HOST ?? "127.0.0.1";
@@ -90,6 +95,6 @@ export function startProduct(
     hostname,
     maxRequestBodySize: 1048576,
     idleTimeout: 60,
-    fetch: productHandler(catalog, token),
+    fetch: productHandler(catalog, token, { publicOrigin: options.publicOrigin ?? Bun.env.APHRODY_APP_ORIGIN }),
   });
 }

@@ -8,7 +8,23 @@ export function jsonReply(value: unknown, status = 200): Response {
 }
 
 /** One authentication and origin policy for product and native app transports. */
-export function authenticateRequest(request: Request, token: string): Response | undefined {
+export function validatePublicOrigin(value?: string): string | undefined {
+  if (value === undefined) return;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.origin !== value || url.username || url.password)
+      throw new Error("Invalid origin.");
+    return url.origin;
+  } catch {
+    throw new Error("Product public origin must be an HTTPS origin without a path or credentials.");
+  }
+}
+
+export function authenticateRequest(
+  request: Request,
+  token: string,
+  options: { publicOrigin?: string } = {},
+): Response | undefined {
   if (token.length < 32) throw new Error("Inject the application token from its protected store.");
   const authorization = request.headers.get("Authorization");
   if (
@@ -20,9 +36,10 @@ export function authenticateRequest(request: Request, token: string): Response |
   )
     return jsonReply({ error: "Authentication required." }, 401);
   const url = new URL(request.url);
+  const origin = validatePublicOrigin(options.publicOrigin) ?? url.origin;
   if (
     request.headers.get("Sec-Fetch-Site") === "cross-site" ||
-    (request.headers.get("Origin") && request.headers.get("Origin") !== url.origin)
+    (request.headers.get("Origin") && request.headers.get("Origin") !== origin)
   )
     return jsonReply({ error: "Origin denied." }, 403);
 }

@@ -22,6 +22,14 @@ least 32 characters. `HOST` defaults to loopback and `PORT` to 3000.
 The CLI does not accept a secret argument. The compiled executable embeds the
 sanitized catalog and runs without Git, Cargo or the source checkout.
 
+For the staged HTTPS reverse proxy, Infra sets the non-secret
+`APHRODY_APP_ORIGIN=https://source.aphrody.app`. Only an explicit HTTPS origin
+without a path, query, fragment or credentials is accepted. Authenticated
+requests with that Origin remain valid over the HTTP loopback upstream;
+foreign origins and cross-site requests remain denied. Forwarded headers do
+not establish a trusted origin. With no configured public origin, the local
+application policy continues to compare Origin with the request URL origin.
+
 Compilation uses the shared Bun artifact compiler, the exact configured host
 runtime pin, committed input sources, and a 30-second bounded child process.
 Unrelated concurrent work remains untouched and does not block compilation.
@@ -85,9 +93,11 @@ Generated entry proofs are restricted to the owner staging path. An entry that
 was already removed after compilation does not require a regenerated copy.
 
 The shared process owner runs `--version`, then an isolated temporary loopback
-server on a dynamically allocated port. Eleven HTTP gates cover readiness,
+server on a dynamically allocated port. Fifteen HTTP gates cover readiness,
 anonymous denials, authenticated catalogs/status/owner identities, unknown
-paths, denied writes and origin rejection. Responses are bounded and never
+paths, denied writes and origin rejection, plus the configured public HTTPS
+origin over the HTTP proxy upstream, anonymous denial and cross-site/foreign
+origin rejection. Responses are bounded and never
 printed; the ephemeral bearer is generated in memory and passed only through
 the child environment, never arguments or disk. Both success and failure close
 the owned process tree. No service or proxy is activated by verification.
