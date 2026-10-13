@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "workspaces": {
     "os": "..",
-    "libraries": "..",
+    "os": "..",
     "material": "../../material"
   },
   "storage": {
@@ -22,7 +22,7 @@
     {
       "id": "filmcraft",
       "kind": "native-cli",
-      "workspace": "libraries",
+      "workspace": "os",
       "entrypoint": "infra/native-app.ts",
       "entrypointWorkspace": "os",
       "native": {
@@ -41,7 +41,7 @@
     {
       "id": "artcraft",
       "kind": "native-cli",
-      "workspace": "libraries",
+      "workspace": "os",
       "entrypoint": "infra/native-app.ts",
       "entrypointWorkspace": "os",
       "native": {
@@ -60,7 +60,7 @@
     {
       "id": "photocraft",
       "kind": "native-cli",
-      "workspace": "libraries",
+      "workspace": "os",
       "entrypoint": "infra/native-app.ts",
       "entrypointWorkspace": "os",
       "native": {
@@ -79,7 +79,7 @@
     {
       "id": "vectorcraft",
       "kind": "native-cli",
-      "workspace": "libraries",
+      "workspace": "os",
       "entrypoint": "infra/native-app.ts",
       "entrypointWorkspace": "os",
       "native": {
@@ -98,7 +98,7 @@
     {
       "id": "effectcraft",
       "kind": "native-cli",
-      "workspace": "libraries",
+      "workspace": "os",
       "entrypoint": "infra/native-app.ts",
       "entrypointWorkspace": "os",
       "native": {
@@ -117,7 +117,7 @@
     {
       "id": "lightcraft",
       "kind": "native-cli",
-      "workspace": "libraries",
+      "workspace": "os",
       "entrypoint": "infra/native-app.ts",
       "entrypointWorkspace": "os",
       "native": {
@@ -136,7 +136,7 @@
     {
       "id": "pdfcraft",
       "kind": "native-cli",
-      "workspace": "libraries",
+      "workspace": "os",
       "entrypoint": "infra/native-app.ts",
       "entrypointWorkspace": "os",
       "native": {
@@ -155,7 +155,7 @@
     {
       "id": "wordcraft",
       "kind": "native-cli",
-      "workspace": "libraries",
+      "workspace": "os",
       "entrypoint": "infra/native-app.ts",
       "entrypointWorkspace": "os",
       "native": {
@@ -174,7 +174,7 @@
     {
       "id": "soundcraft",
       "kind": "native-cli",
-      "workspace": "libraries",
+      "workspace": "os",
       "entrypoint": "infra/native-app.ts",
       "entrypointWorkspace": "os",
       "native": {
@@ -193,7 +193,7 @@
     {
       "id": "designcraft",
       "kind": "native-cli",
-      "workspace": "libraries",
+      "workspace": "os",
       "entrypoint": "infra/native-app.ts",
       "entrypointWorkspace": "os",
       "native": {
@@ -212,7 +212,7 @@
     {
       "id": "cadcraft",
       "kind": "native-cli",
-      "workspace": "libraries",
+      "workspace": "os",
       "entrypoint": "infra/native-app.ts",
       "entrypointWorkspace": "os",
       "native": {
@@ -231,7 +231,7 @@
     {
       "id": "deckcraft",
       "kind": "native-cli",
-      "workspace": "libraries",
+      "workspace": "os",
       "entrypoint": "infra/native-app.ts",
       "entrypointWorkspace": "os",
       "native": {
@@ -250,7 +250,7 @@
     {
       "id": "gridcraft",
       "kind": "native-cli",
-      "workspace": "libraries",
+      "workspace": "os",
       "entrypoint": "infra/native-app.ts",
       "entrypointWorkspace": "os",
       "native": {
@@ -269,7 +269,7 @@
     {
       "id": "figcraft",
       "kind": "native-cli",
-      "workspace": "libraries",
+      "workspace": "os",
       "entrypoint": "infra/native-app.ts",
       "entrypointWorkspace": "os",
       "native": {
@@ -311,9 +311,9 @@
       "id": "desktop",
       "hostname": "desktop.aphrody.app",
       "kind": "bun-server",
-      "workspace": "libraries",
+      "workspace": "os",
       "entrypoint": "apps/desktop/server.ts",
-      "entrypointWorkspace": "libraries",
+      "entrypointWorkspace": "os",
       "source": {
         "repository": "aphrody-labs/bun-distribution",
         "path": "apps/desktop",

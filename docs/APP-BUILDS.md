@@ -1,9 +1,10 @@
 # Standalone application builds
 
 `infra/apps.json` inventories distribution targets and product-specific inputs.
-Library source modules remain pinned under `libraries/`; their capability IDs,
-Rust build recipes, standalone artifacts and canonical application hosts use
-this Bun OS workspace's shared package and setup graph. One root lockfile and
+Every application resolves through the single `os` workspace root. Library
+source modules remain pinned under `libraries/` as inputs within that workspace;
+their capability IDs, Rust build recipes, standalone artifacts and canonical
+application hosts use the shared package and setup graph. One root lockfile and
 one `build/` directory serve all application builds. An unresolved external
 context prevents an independent build.
 

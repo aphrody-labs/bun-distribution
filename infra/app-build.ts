@@ -324,8 +324,8 @@ export async function planApp(configPath: string, appId: string, target: AppTarg
   const config = (await readInventory(configPath)) as AppInventory;
   const app = config.apps.find(app => app.id === appId);
   if (!app || !config.targets.includes(target)) throw new Error("Unknown app or target");
-  const ownsNativeBuild = app.workspace === "libraries" && app.kind === "native-cli";
-  const artifactRoot = await workspace(configPath, config, "libraries");
+  const ownsNativeBuild = app.workspace === "os" && app.kind === "native-cli";
+  const artifactRoot = await workspace(configPath, config, "os");
   const libraryRoot = ownsNativeBuild ? artifactRoot : undefined;
   const root = libraryRoot ?? (await workspace(configPath, config, app.entrypointWorkspace ?? app.workspace));
   const reasons: string[] = [];
@@ -515,7 +515,7 @@ async function buildLibraryApp(configPath: string, appId: string, target: AppTar
   if (!app || app.kind !== "native-cli" || !capability) throw new Error("No Bun OS app owner is configured");
   const plan = await planApp(configPath, appId, target);
   if (plan.status !== "prepared" || !plan.runtime) throw new Error(plan.reasons.join("; "));
-  const libraryRoot = await workspace(configPath, config, "libraries");
+  const libraryRoot = await workspace(configPath, config, "os");
   const currentOwnerWorkspace = await inspectOwnerWorkspace(libraryRoot, plan.ownerWorkspace!.expectedRevision);
   if (!currentOwnerWorkspace.clean || currentOwnerWorkspace.revision !== plan.ownerWorkspace!.revision)
     throw new Error("Bun OS workspace changed after app planning; plan the build again");
