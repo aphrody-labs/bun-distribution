@@ -1,5 +1,6 @@
 [install]
 linker = "isolated"
+globalStore = true
 hoist = false
 # react-selecto 1.26 imports the first two without declaring them, swiper 14 imports react (phantom dependencies).
 publicHoistPattern = ["@daybrush/utils", "framework-utils", "react", "react-dom"]

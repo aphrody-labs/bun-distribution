@@ -21,7 +21,7 @@
     "generate:check": "bun scripts/generate-types.ts --check",
     "typecheck": "bun check --noEmit",
     "test": "bun test",
-    "lint": "oxlint src test scripts"
+    "lint": "bun lint src test scripts"
   },
   "devDependencies": {
     "@types/bun": "catalog:"

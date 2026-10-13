@@ -62,7 +62,7 @@
   },
   "scripts": {
     "build": "bun build src/index.ts src/bun.ts src/hooks/index.ts --target bun --packages external --outdir dist",
-    "lint": "oxlint src tests",
+    "lint": "bun lint src tests",
     "typecheck": "bun check --noEmit",
     "test": "bun test",
     "test:integration": "bun test ./tests/integration",

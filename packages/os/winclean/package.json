@@ -25,7 +25,7 @@
   },
   "scripts": {
     "build": "bun build src/index.ts --target bun --packages external --outdir dist",
-    "lint": "oxlint src test",
+    "lint": "bun lint src test",
     "typecheck": "bun check --noEmit -p .",
     "test": "bun test"
   },

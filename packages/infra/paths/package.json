@@ -20,7 +20,7 @@
   "scripts": {
     "build": "bun build.ts",
     "prepack": "bun run build",
-    "lint": "oxlint src test",
+    "lint": "bun lint src test",
     "test": "bun test test",
     "typecheck": "bun check --noEmit --target esnext --module preserve --moduleResolution bundler --allowImportingTsExtensions --types bun src/index.ts"
   },
