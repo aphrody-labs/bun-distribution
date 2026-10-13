@@ -6,6 +6,7 @@ export interface Library {
   initialized: boolean;
   inspectable: boolean;
   inspectReason?: string;
+  priority?: boolean;
 }
 
 export interface Inspection {
@@ -21,6 +22,7 @@ export interface Catalog {
   runtime: { version: string; repository: string };
   inspections: Inspection[];
   session?: string;
+  video?: { nativeAvailable: boolean };
 }
 
 const capabilities: Record<string, [string, string]> = {

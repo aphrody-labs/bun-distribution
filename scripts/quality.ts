@@ -1,10 +1,11 @@
 #!/usr/bin/env bun
+import { resolve } from "node:path";
 
 const checks = ["doctor", "typecheck", "lint", "format:check"];
 for (const check of checks) {
   const controller = new AbortController();
   const child = Bun.spawn([process.execPath, "run", "--bun", check], {
-    cwd: Bun.fileURLToPath(new URL("../", import.meta.url)),
+    cwd: resolve(import.meta.dir, ".."),
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",

@@ -12,17 +12,35 @@
     "source": {
       "path": "toolchains/bun",
       "repository": "aphrody-labs/bun",
-      "revision": "c209b95eb0dcc964745f4684f127abb83cbe2697"
+      "revision": "939c835adf6479bc1014da3843cda4ae29851dbd"
     }
   },
   "modules": [
+    {
+      "id": "filmcraft",
+      "path": "libraries/filmcraft",
+      "upstream": "storytold/filmcraft",
+      "fork": "aphrody-labs/filmcraft",
+      "branch": "main",
+      "revision": "87b845138e2cecf43e97e2c2e011b820a6e70ecd",
+      "upstreamRevision": "cee1feb185e675a108f78067f71ad86a640ace3d",
+      "license": "MIT OR Apache-2.0",
+      "kind": "library",
+      "description": "Video",
+      "manifestPath": "Cargo.toml",
+      "binaries": ["filmcraft-cli"],
+      "stars": 11833,
+      "binary": "filmcraft-cli",
+      "cargoPackage": "filmcraft-cli",
+      "role": "engine"
+    },
     {
       "id": "artcraft",
       "path": "libraries/artcraft",
       "upstream": "storytold/artcraft",
       "fork": "aphrody-labs/artcraft",
       "branch": "main",
-      "revision": "e8de597d0bb13be2ed12c1085fd84dcc1c913f27",
+      "revision": "f8dae6cec51cc84c8b565132db2c7471fad96148",
       "upstreamRevision": "d4e4ac69bbd93d237eaf5d0260bc6a5ff3a5e373",
       "license": "MIT OR Apache-2.0",
       "kind": "library",
@@ -69,30 +87,12 @@
       "role": "engine"
     },
     {
-      "id": "filmcraft",
-      "path": "libraries/filmcraft",
-      "upstream": "storytold/filmcraft",
-      "fork": "aphrody-labs/filmcraft",
-      "branch": "main",
-      "revision": "cee1feb185e675a108f78067f71ad86a640ace3d",
-      "upstreamRevision": "cee1feb185e675a108f78067f71ad86a640ace3d",
-      "license": "MIT OR Apache-2.0",
-      "kind": "library",
-      "description": "Video",
-      "manifestPath": "Cargo.toml",
-      "binaries": ["filmcraft-cli"],
-      "stars": 11833,
-      "binary": "filmcraft-cli",
-      "cargoPackage": "filmcraft-cli",
-      "role": "engine"
-    },
-    {
       "id": "effectcraft",
       "path": "libraries/effectcraft",
       "upstream": "storytold/effectcraft",
       "fork": "aphrody-labs/effectcraft",
       "branch": "main",
-      "revision": "470ea7a3af82ee1dd1d2f86c777fe6891bd0c37b",
+      "revision": "e5beea940ed245dc8e6c9293d6f7717b6c3f2724",
       "upstreamRevision": "470ea7a3af82ee1dd1d2f86c777fe6891bd0c37b",
       "license": "MIT OR Apache-2.0",
       "kind": "library",
@@ -296,5 +296,6 @@
       "stars": 296,
       "role": "fonts"
     }
-  ]
+  ],
+  "priorities": ["filmcraft"]
 }

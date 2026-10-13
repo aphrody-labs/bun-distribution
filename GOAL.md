@@ -1,8 +1,9 @@
 # Goal
 
-Create and publish an Aphrody/Bun monorepo with selected Storytold repositories
-as open source libraries in Git submodules. Use our Bun 1.4.4 runtime and pinned
-Bun Tauri v3 integration. Preserve Rust owners and source licenses.
+Prioritize the FilmCraft source library for Bun video integration. Reuse its
+Rust project, media and export owners through a bounded typed Bun adapter.
+Preserve exact timeline integers, native ownership, Aphrody/Bun identity and
+explicit runtime qualification. Existing source forks remain independent.
 
-Deliver pinned forks, portable library commands, the Aphrody shell, Bun frontend
-tooling and explicit build qualification.
+Use native Bun quality commands, migrate JavaScript with aggressive n2b, and
+improve its internal Rust owner for bounded large monorepo scans.

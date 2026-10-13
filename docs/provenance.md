@@ -34,6 +34,6 @@ source NOTICE, which identifies restricted assets.
 
 Our runtime is Bun 1.4.4 at `2ae8fc65fba1d05c423a2433b1195835109942b6`.
 Its declared sourceUrl belongs to our fork; this does not verify an archive hash.
-The SDK uses published commit `c209b95eb0dcc964745f4684f127abb83cbe2697`.
+The SDK uses published commit `939c835adf6479bc1014da3843cda4ae29851dbd`.
 It contains our Tauri v3 alpha.4 fork, versioned 1.4.4. The npm SDK was unavailable,
 so JS and Rust resolve the pinned source. Native CLI: `aphrody tauri`.

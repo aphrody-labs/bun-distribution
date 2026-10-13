@@ -11,3 +11,19 @@
 - [x] Apply current Linux, Debian, COSMIC and Bun upstream conventions.
 - [x] Complete scoped type, lint, format and build checks.
 - [x] Publish the modified library and prepare the verified monorepo branch.
+
+## Video priority
+
+- [x] Audit FilmCraft format, media, time, CLI and export contracts.
+- [x] Coordinate native Bun.Video ownership with the parallel Bun session.
+- [x] Add bounded native library inspection, probing, editing and export APIs.
+- [x] Preserve exact i64/u64 JSON and timeline ticks.
+- [x] Surface video priority and native availability in the Aphrody shell.
+- [x] Complete scoped gates and publish the integration.
+
+## Native tooling
+
+- [x] Replace external quality packages with native Bun commands.
+- [x] Apply aggressive n2b to authored code and review its recommendations.
+- [x] Complete aggressive library and SDK migration through their owners.
+- [x] Patch the internal n2b owner for large monorepos through a subagent.

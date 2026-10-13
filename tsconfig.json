@@ -9,8 +9,15 @@
     "skipLibCheck": true,
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
-    "noEmit": true
+    "noEmit": true,
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": true
   },
-  "include": ["packages/workspace/src/**/*.ts", "apps/desktop/**/*.ts", "scripts/**/*.ts"],
+  "include": [
+    "packages/workspace/src/**/*.ts",
+    "apps/desktop/**/*.ts",
+    "scripts/**/*.ts",
+    "packages/video/src/**/*.ts"
+  ],
   "exclude": ["node_modules", "toolchains", "apps/desktop/dist", "apps/desktop/src-tauri"]
 }

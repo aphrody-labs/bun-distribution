@@ -1,7 +1,7 @@
 import { basename, isAbsolute, join, relative, resolve, sep } from "node:path";
 
 /** Resolve from this checkout; no workstation or host path is embedded. */
-export const repositoryRoot = Bun.fileURLToPath(new URL("../../../", import.meta.url));
+export const repositoryRoot = resolve(import.meta.dir, "../../..");
 
 export interface Module {
   id: string;
@@ -24,6 +24,7 @@ export interface Config {
   schemaVersion: 1;
   runtime: { version: string; repository: string; revision: string };
   modules: Module[];
+  priorities?: string[];
   desktop: Record<string, unknown> & { source?: Source };
 }
 
@@ -169,6 +170,12 @@ export async function loadConfig(root = repositoryRoot): Promise<Config> {
       if (typeof entry.manifestPath !== "string") throw new Error(`Invalid manifest: ${entry.id}`);
       checkoutPath(modulePath, entry.manifestPath);
     }
+  }
+  if (
+    value.priorities !== undefined &&
+    (!Array.isArray(value.priorities) || value.priorities.some(id => typeof id !== "string" || !ids.has(id)))
+  ) {
+    throw new Error("Priorities must reference catalog libraries.");
   }
   return value as unknown as Config;
 }

@@ -6,12 +6,16 @@ flowchart TD
   UI --> Backend[Bun backend]
   Backend --> Workspace[Native library orchestration]
   Workspace --> Sources[Pinned library submodules]
+  Backend --> Video[Typed video adapter]
+  Video --> Headless[Native video CLI]
+  Video --> NativeVideo[Bun.Video when available]
   Sources --> Rust[Existing Rust engines and headless CLIs]
   Sources --> Shared[Shared libraries and fonts]
 ```
 
 - `apps/desktop`: Aphrody shell, built and served by Bun.
 - `packages/workspace`: config, provenance, source state and native execution.
+- `packages/video`: exact JSON, bounded native operations and runtime availability.
 - `libraries/*`: 16 independent open source forks.
 - `toolchains/bun`: pinned SDK and runtime types.
 

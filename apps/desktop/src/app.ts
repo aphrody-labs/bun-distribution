@@ -127,6 +127,12 @@ function libraryIcon(library: Library): HTMLDivElement {
   node.append(svg(categories.find(item => item.id === category(library))!.path));
   return node;
 }
+function libraryState(library: Library): string {
+  if (latest(library.id)?.state === "running") return "Inspecting";
+  if (!library.initialized) return "Source unavailable";
+  if (library.priority) return "Priority";
+  return library.inspectable ? "CLI available" : "Library source";
+}
 function card(library: Library): HTMLElement {
   const node = document.createElement("article");
   node.className = "app-card";
@@ -135,14 +141,7 @@ function card(library: Library): HTMLElement {
   top.append(libraryIcon(library));
   const status = document.createElement("span");
   status.className = "app-state";
-  status.textContent =
-    latest(library.id)?.state === "running"
-      ? "Inspecting"
-      : !library.initialized
-        ? "Source unavailable"
-        : library.inspectable
-          ? "CLI available"
-          : "Library source";
+  status.textContent = libraryState(library);
   top.append(status);
   const title = document.createElement("h3");
   title.textContent = library.title;
@@ -197,7 +196,9 @@ function render() {
     const title = document.createElement("h2");
     title.textContent = "Aphrody";
     const description = document.createElement("p");
-    description.textContent = "Native libraries. Bun orchestration. One local workspace.";
+    description.textContent = catalog.video?.nativeAvailable
+      ? "Video first. Native media and exact timelines."
+      : "Video first. Native Bun video is not available in this binary.";
     copy.append(title, description);
     const mark = document.createElement("div");
     mark.className = "featured-mark";

@@ -5,7 +5,8 @@
   "license": "MIT",
   "workspaces": [
     "packages/workspace",
-    "apps/desktop"
+    "apps/desktop",
+    "packages/video"
   ],
   "type": "module",
   "scripts": {
@@ -18,19 +19,19 @@
     "build": "bun run --cwd apps/desktop build",
     "desktop:dev": "bun run --cwd apps/desktop desktop:dev",
     "desktop:build": "bun run --cwd apps/desktop desktop:build",
-    "typecheck": "bun run --bun node_modules/@typescript/native-preview/bin/tsgo --noEmit -p tsconfig.json",
-    "lint": "bun run --bun node_modules/oxlint/bin/oxlint packages/workspace/src apps/desktop scripts",
-    "format:check": "bun run --bun node_modules/oxfmt/bin/oxfmt --check packages/workspace/src apps/desktop scripts package.json aphrody.config.json tsconfig.json",
+    "typecheck": "bun check -p tsconfig.json --threads 2 --no-pretty",
+    "lint": "bun lint --deny-warnings packages/workspace/src packages/video/src apps/desktop scripts",
+    "format:check": "bun fmt --config bunfmt.json --check packages/workspace/src packages/video/src apps/desktop/build.ts apps/desktop/dev.ts apps/desktop/native.ts apps/desktop/server.ts apps/desktop/shared.ts apps/desktop/src/app.ts apps/desktop/package.json scripts/quality.ts package.json aphrody.config.json tsconfig.json bunfmt.json",
     "check": "bun scripts/quality.ts",
     "workspace": "bun packages/workspace/src/cli.ts",
     "frontend:dev": "bun run --cwd libraries/artcraft/frontend dev",
-    "frontend:build": "bun run --cwd libraries/artcraft/frontend build"
+    "frontend:build": "bun run --cwd libraries/artcraft/frontend build",
+    "video": "bun packages/video/src/cli.ts",
+    "video:build": "bun packages/workspace/src/cli.ts build filmcraft",
+    "fmt": "bun fmt --config bunfmt.json --write packages/workspace/src packages/video/src apps/desktop/build.ts apps/desktop/dev.ts apps/desktop/native.ts apps/desktop/server.ts apps/desktop/shared.ts apps/desktop/src/app.ts apps/desktop/package.json scripts/quality.ts package.json aphrody.config.json tsconfig.json bunfmt.json"
   },
   "devDependencies": {
-    "@aphrody/bun-types": "file:toolchains/bun/packages/bun-types",
-    "@typescript/native-preview": "7.0.0-dev.20260707.2",
-    "oxfmt": "0.72.0",
-    "oxlint": "1.87.0"
+    "@aphrody/bun-types": "file:toolchains/bun/packages/bun-types"
   },
   "engines": {
     "bun": "=1.4.4"

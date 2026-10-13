@@ -1,5 +1,5 @@
 import { buildDesktop } from "./build.ts";
 
 const output = await buildDesktop();
-process.env.APHRODY_WEB_ROOT = output + "/web";
+Bun.env.APHRODY_WEB_ROOT = output + "/web";
 await import("./server.ts");

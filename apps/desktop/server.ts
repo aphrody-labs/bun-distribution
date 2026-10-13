@@ -2,10 +2,11 @@ import { dirname, join, resolve } from "node:path";
 import { serveForTauri } from "@aphrody/tauri/server";
 import { assertRuntime, listModuleStatus, loadConfig, runModule } from "@aphrody/bun-workspace";
 import { capabilityFor, type Catalog, type Inspection } from "./shared.ts";
+import { nativeVideoCapabilities } from "@aphrody/bun-video-project/native";
 
 async function findWorkspace(): Promise<string> {
-  if (process.env.APHRODY_ROOT) {
-    const root = resolve(process.env.APHRODY_ROOT);
+  if (Bun.env.APHRODY_ROOT) {
+    const root = resolve(Bun.env.APHRODY_ROOT);
     if (!(await Bun.file(join(root, "aphrody.config.json")).exists())) {
       throw new Error("APHRODY_ROOT must contain aphrody.config.json.");
     }
@@ -28,7 +29,7 @@ const config = await loadConfig(root);
 assertRuntime(config);
 const session = crypto.randomUUID();
 const inspections = new Map<string, Inspection>();
-const staticRoot = process.env.APHRODY_WEB_ROOT ? resolve(process.env.APHRODY_WEB_ROOT) : join(import.meta.dir, "web");
+const staticRoot = Bun.env.APHRODY_WEB_ROOT ? resolve(Bun.env.APHRODY_WEB_ROOT) : join(import.meta.dir, "web");
 const headers = {
   "Cache-Control": "no-store",
   "X-Content-Type-Options": "nosniff",
@@ -45,12 +46,14 @@ async function catalog(): Promise<Catalog> {
   const statuses = await listModuleStatus(config, root);
   return {
     runtime: { version: config.runtime.version, repository: config.runtime.repository },
+    video: { nativeAvailable: nativeVideoCapabilities().available },
     libraries: config.modules
       .filter(module => module.kind === "library")
       .map(module => {
         const status = statuses.find(item => item.id === module.id);
         return {
           id: module.id,
+          priority: config.priorities?.includes(module.id) ?? false,
           ...capabilityFor(module.id),
           license: module.license,
           initialized: status?.initialized ?? false,
@@ -64,7 +67,7 @@ async function catalog(): Promise<Catalog> {
 }
 
 const server = serveForTauri({
-  port: process.env.PORT ? Number(process.env.PORT) : 0,
+  port: Bun.env.PORT ? Number(Bun.env.PORT) : 0,
   maxRequestBodySize: 1024,
   async fetch(request) {
     const url = new URL(request.url);

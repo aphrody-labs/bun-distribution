@@ -12,6 +12,7 @@
     "desktop:build": "bun native.ts build"
   },
   "dependencies": {
+    "@aphrody/bun-video-project": "workspace:*",
     "@aphrody/bun-workspace": "workspace:*",
     "@aphrody/tauri": "file:../../toolchains/bun/packages/bun-tauri"
   },

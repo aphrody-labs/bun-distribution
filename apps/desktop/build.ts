@@ -1,6 +1,7 @@
 import { join, resolve } from "node:path";
 import { loadConfig, assertRuntime, repositoryRoot } from "@aphrody/bun-workspace";
 import { capabilityFor, type Catalog } from "./shared.ts";
+import { nativeVideoCapabilities } from "@aphrody/bun-video-project/native";
 
 export const desktopRoot = import.meta.dir;
 
@@ -9,10 +10,12 @@ export async function buildDesktop() {
   assertRuntime(config);
   const catalog: Catalog = {
     runtime: { version: config.runtime.version, repository: config.runtime.repository },
+    video: { nativeAvailable: nativeVideoCapabilities().available },
     libraries: config.modules
       .filter(module => module.kind === "library")
       .map(module => ({
         id: module.id,
+        priority: config.priorities?.includes(module.id) ?? false,
         ...capabilityFor(module.id),
         license: module.license,
         initialized: false,
