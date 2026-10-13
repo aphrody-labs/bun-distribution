@@ -219,6 +219,19 @@ fixture behavior and the downloaded runtime archive checksum remain unqualified.
 Linux selects its separately qualified runtime pin and reports no `Bun.Video`
 provider; runtime identity and native feature availability are target-specific.
 
+## Unified workspace inventory — 2026-10-13
+
+Bun OS commit `8e3920d` removes the duplicate `libraries` workspace identity
+from its app inventory. All 16 application entries now resolve through the
+single `os` workspace; pinned third-party source modules remain inputs under
+`libraries/`. Aphrody Infra's route catalog contains all 28 canonical and alias
+hosts derived from the 14 library capabilities. This verifies source catalog
+parity only; it does not establish live DNS, application health or activation.
+
+The current Bun OS native `bun check`, `bun lint` and `bun fmt --check` gates
+pass. A Bun-native inventory check validates all 16 app workspace references.
+No tests, native builds or deployments were run for this slice.
+
 ## Published batches
 
 All owned commits use `aphrody-dev <contact@aphrody.com>`, precise staged paths,
