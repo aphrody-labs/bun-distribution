@@ -178,7 +178,7 @@ console.log(JSON.stringify({{owner:d.owner,repositories:d.repositories.map(x=>x.
 BUN
 "#
     );
-    let output = Command::new("ssh")
+    let mut child = Command::new("ssh")
         .no_window()
         .args([
             "-o",
@@ -197,22 +197,34 @@ BUN
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .and_then(|mut child| {
-            use std::io::Write;
-            child.stdin.take().expect("stdin piped").write_all(script.as_bytes())?;
-            child.wait_with_output()
-        })
         .context("ssh vps indisponible")?;
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        let diagnostics: Vec<_> = stderr.lines().rev().take(8).collect();
-        let diagnostic = diagnostics.into_iter().rev().collect::<Vec<_>>().join(" | ");
-        bail!(
-            "provisionnement Gitea refusé ou échoué (code {}, diagnostic: {})",
-            output.status,
-            diagnostic
-        );
+    {
+        use std::io::Write;
+        child.stdin.take().context("stdin ssh absent")?.write_all(script.as_bytes())?;
     }
+    let start = std::time::Instant::now();
+    let output = loop {
+        if let Some(status) = child.try_wait()? {
+            let output = child.wait_with_output()?;
+            if !status.success() {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                let diagnostics: Vec<_> = stderr.lines().rev().take(8).collect();
+                let diagnostic = diagnostics.into_iter().rev().collect::<Vec<_>>().join(" | ");
+                bail!(
+                    "provisionnement Gitea refusé ou échoué (code {}, diagnostic: {})",
+                    status,
+                    diagnostic
+                );
+            }
+            break output;
+        }
+        if start.elapsed() > std::time::Duration::from_secs(120) {
+            child.kill().context("arrêt ssh après délai dépassé")?;
+            let _ = child.wait();
+            bail!("provisionnement Gitea dépassant la limite de 120 secondes");
+        }
+        std::thread::sleep(std::time::Duration::from_millis(200));
+    };
     let _: serde_json::Value =
         serde_json::from_slice(&output.stdout).context("réponse Gitea distante invalide")?;
     report.applied = true;
@@ -222,7 +234,7 @@ BUN
 fn valid_repo(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 100
-        && value.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+        && value.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
 }
 
 #[derive(Debug, Deserialize)]
@@ -248,6 +260,8 @@ struct MirrorCatalog {
 #[serde(rename_all = "camelCase")]
 struct MirrorEntry {
     name: String,
+    #[serde(default)]
+    target_owner: Option<String>,
     source_url: String,
     visibility: String,
     archived: bool,
@@ -263,6 +277,8 @@ struct SourceQualification {
     #[serde(rename = "sha")]
     head: String,
     refs: Vec<String>,
+    #[serde(default, rename = "refShas")]
+    ref_shas: std::collections::BTreeMap<String, String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -310,7 +326,11 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
             .iter()
             .find(|repo| &repo.name == name)
             .context("dépôt absent du catalogue")?;
-        if entry.visibility != "public"
+        let target_owner = entry.target_owner.as_deref().unwrap_or(&catalog.target_owner);
+        if !matches!(target_owner, "aphrody-labs" | "aphrody-dev")
+            || (target_owner == "aphrody-dev" && entry.name != "bun-distribution")
+            || (entry.name == "bun-distribution" && target_owner != "aphrody-dev")
+            || entry.visibility != "public"
             || entry.archived
             || entry.admission != batch
             || entry.source_url != format!("https://github.com/aphrody-labs/{}.git", entry.name)
@@ -320,9 +340,30 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
         }
         let qualification =
             entry.source_qualification.as_ref().context("qualification de source absente")?;
-        if qualification.head.len() != 40
-            || !qualification.head.bytes().all(|b| b.is_ascii_hexdigit())
-            || qualification.refs != [format!("refs/heads/{}", entry.default_branch)]
+        let default_ref = format!("refs/heads/{}", entry.default_branch);
+        let valid_sha =
+            |sha: &str| sha.len() == 40 && sha.bytes().all(|byte| byte.is_ascii_hexdigit());
+        let unique_refs: std::collections::BTreeSet<_> =
+            qualification.refs.iter().map(String::as_str).collect();
+        let invalid_ref = qualification.refs.iter().any(|reference| {
+            !(reference.starts_with("refs/heads/") || reference.starts_with("refs/tags/"))
+                || reference.contains("..")
+                || reference.ends_with('/')
+        });
+        let incomplete_ref_shas = if qualification.ref_shas.is_empty() {
+            qualification.refs != [default_ref.clone()]
+        } else {
+            qualification.ref_shas.len() != qualification.refs.len()
+                || qualification.refs.iter().any(|reference| {
+                    qualification.ref_shas.get(reference).is_none_or(|sha| !valid_sha(sha))
+                })
+                || qualification.ref_shas.get(&default_ref) != Some(&qualification.head)
+        };
+        if !valid_sha(&qualification.head)
+            || !qualification.refs.contains(&default_ref)
+            || unique_refs.len() != qualification.refs.len()
+            || invalid_ref
+            || incomplete_ref_shas
         {
             bail!("qualification de source invalide");
         }
@@ -350,10 +391,12 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
         "actions": catalog.actions_enabled,
         "repositories": entries.iter().map(|entry| serde_json::json!({
             "name": entry.name,
+            "targetOwner": entry.target_owner.as_deref().unwrap_or(&catalog.target_owner),
             "sourceUrl": entry.source_url,
             "defaultBranch": entry.default_branch,
             "head": entry.source_qualification.as_ref().map(|q| q.head.as_str()),
             "refs": entry.source_qualification.as_ref().map(|q| &q.refs),
+            "refShas": entry.source_qualification.as_ref().map(|q| &q.ref_shas),
         })).collect::<Vec<_>>(),
     });
     let encoded = base64::Engine::encode(
@@ -412,25 +455,33 @@ async function req(method,path,payload,missing=false){{
  if(!r.ok)bad('Gitea API request failed: '+method+' '+path+' ('+r.status+')');
  if(r.status===204)return [r.status,null];try{{return [r.status,await r.json()]}}catch{{bad('Gitea API response invalid')}}
 }}
+function gitRefs(url,authToken){{
+ const env=authToken?{{...process.env,GIT_CONFIG_COUNT:'1',GIT_CONFIG_KEY_0:'http.extraheader',GIT_CONFIG_VALUE_0:'Authorization: token '+authToken}}:process.env;
+ const result=Bun.spawnSync(['git','ls-remote','--refs',url],{{timeout:12000,env}});
+ if(result.exitCode!==0)bad('Gitea mirror ref query failed');
+ const refs={{}};for(const line of result.stdout.toString().trim().split(String.fromCharCode(10)).filter(Boolean)){{const [sha,ref]=line.trim().split(/\s+/);refs[ref]=sha;}}
+ return refs;
+}}
+function sameRefs(left,right){{const a=Object.keys(left).sort(),b=Object.keys(right).sort();return a.length===b.length&&a.every((key,index)=>key===b[index]&&left[key]===right[key]);}}
 const org=await req('GET','/orgs/aphrody-labs');if(org[1].username!=='aphrody-labs')bad('Gitea organization missing or unauthorized');
 if(org[1].visibility!=='public')await req('PATCH','/orgs/aphrody-labs',{{visibility:'public'}});
 if((await req('GET','/orgs/aphrody-labs'))[1].visibility!=='public')bad('Gitea organization is not publicly readable');
 const free=Number((await Bun.$`df -Pk /home/ubuntu/apps/gitea/data | tail -n 1`.text()).trim().split(/\s+/)[3]);
 if(!Number.isFinite(free)||free<8*1024*1024)bad('Gitea storage admission below 8 GiB');
 for(const repo of d.repositories){{
- const path='/repos/'+d.owner+'/'+repo.name;const [status,current]=await req('GET',path,undefined,true);
+const owner=repo.targetOwner||d.owner;const path='/repos/'+owner+'/'+repo.name;const [status,current]=await req('GET',path,undefined,true);
+ const expected=Object.keys(repo.refShas||{{}}).length?repo.refShas:{{['refs/heads/'+repo.defaultBranch]:repo.head}};
+ if(!sameRefs(gitRefs(repo.sourceUrl),expected))bad('GitHub source ref set moved or incomplete: '+repo.name);
  if(status===404){{
-  await req('POST','/repos/migrate',{{clone_addr:repo.sourceUrl,repo_name:repo.name,repo_owner:d.owner,service:'git',mirror:true,private:true,mirror_interval:d.mirrorInterval}});
+  await req('POST','/repos/migrate',{{clone_addr:repo.sourceUrl,repo_name:repo.name,repo_owner:owner,service:'git',mirror:true,private:true,mirror_interval:d.mirrorInterval}});
  }}else if(!current.mirror||current.original_url!==repo.sourceUrl)bad('Existing Gitea repository conflicts with source policy: '+repo.name);
  else if(!current.private)await req('PATCH',path,{{private:true}});
  const before=(await req('GET',path))[1];if(before.has_actions!==true)await req('PATCH',path,{{has_actions:true}});
  await req('POST',path+'/mirror-sync');
  const info=await req('GET',path);if(!info[1].mirror||info[1].private!==true||info[1].original_url!==repo.sourceUrl||info[1].default_branch!==repo.defaultBranch||info[1].has_actions!==true)bad('Gitea mirror policy verification failed: '+repo.name);
- if(repo.head){{
-  const branches=await req('GET',path+'/branches?limit=50&page=1');
-  const branch=branches[1].find(x=>x.name===repo.defaultBranch);if(!branch||branch.commit.id!==repo.head)bad('Source branch SHA mismatch: '+repo.name);
-  const tags=await req('GET',path+'/tags?limit=50&page=1');if(tags[1].length!==0)bad('Source tag set mismatch: '+repo.name);
- }}
+ const targetUrl='http://127.0.0.1:29020/'+owner+'/'+repo.name+'.git';
+ const sourceNow=gitRefs(repo.sourceUrl),targetNow=gitRefs(targetUrl,token);
+ if(!sameRefs(sourceNow,expected)||!sameRefs(targetNow,expected))bad('Gitea mirror refs diverge; repository remains private: '+repo.name);
  await req('PATCH',path,{{private:false}});
  const published=await req('GET',path);if(!published[1].mirror||published[1].private!==false||published[1].original_url!==repo.sourceUrl||published[1].default_branch!==repo.defaultBranch||published[1].has_actions!==true)bad('Gitea public mirror verification failed: '+repo.name);
 }}
