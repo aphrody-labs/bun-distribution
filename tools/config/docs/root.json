@@ -378,7 +378,12 @@
           [
             "2026-10-13",
             "Aphrody Infra now declares and activates every Bun Libraries capability hostname together by service ID: 14 canonical app hosts, 14 library aliases, and the existing video alias. Capability parity, Infra catalog validation, rustfmt, JSON formatting and a locked Windows cargo check for aphrody-infra pass.",
-            "Live Cloudflare has no filmcraft.aphrody.app record; the origin certificate covers only the 14 app-* hosts plus git and deploy, not aliases. DNS and certificate changes and live alias activation remain pending."
+            "At that earlier check, Live Cloudflare had no filmcraft.aphrody.app record; the origin certificate covered only the 14 app-* hosts plus git and deploy, not aliases. DNS and certificate changes and live alias activation were pending."
+          ],
+          [
+            "2026-10-13",
+            "A fresh Cloudflare MCP read shows 14 proxied app-* A records, git/deploy A records, and proxied AAAA records for apt, desktop and filmcraft. filmcraft and app-video resolve through Cloudflare and pass public TLS verification; GET /healthz returns 404 on both hosts.",
+            "DNS and edge TLS presence do not qualify app activation or origin certificate SAN coverage. The origin certificate was not rechecked and no DNS or certificate mutation was made."
           ]
         ]
       },
