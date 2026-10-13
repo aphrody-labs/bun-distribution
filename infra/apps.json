@@ -340,7 +340,7 @@
   },
   "runtimeSnapshots": {
     "windows-x64": {
-      "path": "../../bun/build/release/bun.exe",
+      "path": "$BUN_INSTALL/bin/bun.exe",
       "sha256": "a6f79203a9601914e86479f103c7f695330d54442169566f64e29328440d9c89",
       "revision": "2ae8fc65fba1d05c423a2433b1195835109942b6",
       "version": "1.4.4",

@@ -27,10 +27,12 @@ entrypoints. An unresolved external context prevents an independent build.
 ## Configuration
 
 A build uses the selected native runtime binary or an explicit target snapshot.
-The snapshot pins its path, SHA256, version and revision. Cross-target snapshots
-also require a matching native target receipt with the `native-runtime` gate.
-The compiler and snapshot revisions must agree. Runtime metadata reports its
-source URL; archive authentication is a separate qualification.
+A native runtime path may use `$BUN_INSTALL/<relative-path>` so a mutable Bun
+build output is not mistaken for the pinned compiler snapshot. The snapshot pins
+its resolved path, SHA256, version and revision. Cross-target snapshots also
+require a matching native target receipt with the `native-runtime` gate. The
+compiler and snapshot revisions must agree. Runtime metadata reports its source
+URL; archive authentication is a separate qualification.
 
 The optional `build` object declares `outputRoot`, `timeoutSeconds`,
 `sharedHeavyLock` and `lockKind`. Output paths are relative to the catalog.

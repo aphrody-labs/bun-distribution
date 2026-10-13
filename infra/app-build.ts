@@ -116,6 +116,16 @@ export interface AppPlan {
   assets: AssetPlan;
   qualification: { binaryBuilt: false; deployed: false };
 }
+function runtimePath(configPath: string, path: string | undefined): string {
+  if (!path) return process.execPath;
+  const installRelative = /^\$BUN_INSTALL[\\/](.+)$/.exec(path);
+  if (installRelative) {
+    const install = Bun.env.BUN_INSTALL?.trim();
+    if (!install) throw new Error("BUN_INSTALL is required by the configured runtime snapshot");
+    return resolve(install, installRelative[1]!);
+  }
+  return resolve(dirname(configPath), path);
+}
 export function nativeTarget(): AppTarget | undefined {
   if (process.platform === "win32" && process.arch === "x64") return "windows-x64";
   if (process.platform === "linux" && ["x64", "arm64"].includes(process.arch))
@@ -140,7 +150,7 @@ export async function executableABI(path: string, target: AppTarget, library = f
 }
 async function snapshot(configPath: string, config: AppInventory, target: AppTarget) {
   const selected = config.runtimeSnapshots?.[target];
-  const path = await realpath(selected ? resolve(dirname(configPath), selected.path) : process.execPath);
+  const path = await realpath(runtimePath(configPath, selected?.path));
   if (protectedInput(path)) throw new Error("Runtime snapshot points to a protected store");
   const digest = await identity(path);
   await executableABI(path, target);
