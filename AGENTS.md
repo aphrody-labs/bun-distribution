@@ -44,6 +44,14 @@ Keep private repositories, credentials, domain conversations and data private.
 
 ## Architecture
 
+Owner directive (2026-10-13): Aphrody is the product repository. Google, M3,
+Obscura and Tauri framework/runtime/SDK sources belong outside Aphrody, in Bun
+or Material. Consume package, registry crate or pinned Git interfaces; retire
+migrated duplicate sources after consumer qualification. Remaining local sources
+are open migration work, not capability ownership. Resolve checkout paths from
+configuration or the current workspace. Imports across packages/repositories
+use package/crate identities; internal module imports may remain relative.
+
 Follow PLAN's ABI, ownership, permissions, panic/unwind and compatibility
 contracts. Preserve V8 until required Obscura/JSC parity. The desktop app has one
 runtime, `tauri-runtime-cef` (CEF + tauri-winit + GTK 4; no wry, tao or system
@@ -51,13 +59,14 @@ WebView). Remote pages receive no implicit privileged Bun/host access.
 
 Workspace/Infra owns orchestration, inventories, factories, release and hosts.
 Reuse existing capability owners; no competing stack or copied Yolo engine.
-UI is canonical in `m3/packages/app-ui` and `crates/ui/*`.
+Material owns `@aphrody/app-ui` and the M3 framework. Aphrody keeps application
+glue; shared M3 and Tauri framework sources are external.
 
 ## Ownership map
 
 - Rust: `crates/<domain>/<crate>`; general CLI: `crates/infra/aphrody`.
 - Bun: `packages/<domain>/<package>`; installation/admin/creator are modules of `packages/infra/product`.
-- No first-party `apps/` or `community/` tree: fold product surfaces into their capability owner; UI stays in `m3/packages/app-ui`.
+- No first-party `apps/` or `community/` tree: fold product surfaces into their product owner; consume shared UI from Material packages.
 - Docs: `docs/<category>/<domain>`; scripts: `scripts/{audit,build,dev,migration,release,tools}`.
 - Infra: `tools/config/host/` (`inventory/`, `systemd/`, `nginx/`, `rg/`, `nie/`, Shenron host plane); live
   audits: `scripts/audit/live*`. Shenron and Koharu source live in `aphrody-labs/shenron`.

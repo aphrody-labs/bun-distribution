@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 200 crates, 36 binaries, 73 Bun packages, 10 uv packages, 777 CLI commands, 334 MCP tools.
+Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 200 crates, 36 binaries, 72 Bun packages, 10 uv packages, 777 CLI commands, 334 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -150,7 +150,7 @@ Canonical Rust/Bun monorepo
 | `simdutf` | crates/native/simdutf | Unicode validation and transcoding at billions of characters per second |  |  |
 | `yolo-runtime` | crates/engine/yolo-runtime | Versioned C ABI of the precompiled YOLO native runtime (first slice: system stats and cancellable benchmark) |  | browser, cuda, default, gpu |
 
-### Bun packages (39)
+### Bun packages (38)
 
 | Package | Path | Description | Bin |
 | --- | --- | --- | --- |
@@ -184,7 +184,6 @@ Canonical Rust/Bun monorepo
 | `@aphrody/shell-web` | packages/shell/web |  |  |
 | `@aphrody/sql` | packages/infra/sql | Shared Bun database mechanics for Aphrody: env/URL resolution, Bun.SQL and Redis factories, bun:sqlite open policy with optional sqlite-vec |  |
 | `@aphrody/update` | packages/infra/update | Unified update pipeline: tool pins, dependency sync, Cargo lock refresh, user systemd units and dev-env checks |  |
-| `@aphrody/webos-wasm` | packages/web/webos-wasm |  |  |
 | `@aphrody/winclean` | packages/os/winclean | Kernel-backed Bun client for the unified Aphrody OS WinClean catalog (166 tools). |  |
 | `@aphrody/workspace` | packages/infra/workspace | Cross-monorepo workspace orchestrator, gates, audits, migration tools and operations |  |
 | `@aphrody/yolo-cli` | packages/engine/yolo | Yolo command line on Bun: workspace operations, documentation generation, code scan/rename/parse, plugin and forge commands | `yolo` |

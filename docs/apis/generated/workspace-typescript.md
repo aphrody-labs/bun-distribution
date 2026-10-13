@@ -28,7 +28,7 @@ export function createInfraClient(baseUrl = "http://127.0.0.1:8787"): InfraApiCl
 
 ## Source: packages/infra/workspace/src/index.ts
 
-SHA-256: `628fa52faae4ca26c1410adafa9813c0bf2242891e305327a5bc6ad337abf1aa`
+SHA-256: `195a62e3f8b0b2956ad09eca4ff5444099dbe749b5aff5743387e98c54774380`
 
 ### Source line 1
 
@@ -423,5 +423,5 @@ export { runDocumentation, buildDocumentationManifest, renderDocumentationAgentI
 ### Source line 80
 
 ```typescript
-export * from "./paths.ts";
+export * from "@aphrody/paths";
 ```

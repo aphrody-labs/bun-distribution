@@ -8,10 +8,10 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 
 | Owner | Scope |
 | --- | --- |
-| Aphrody | Products, workflows, UI, integrations |
-| Bun fork (`aphrody-labs/bun`) | Precompiled runtime and SDK (CLI, aliases `bun`, `vu`); yolo is absorbed and is no longer an owner |
+| Aphrody | Product workflows, application glue, integration and delivery; no duplicated runtime/framework SDK sources |
+| Bun fork (`aphrody-labs/bun`) | Precompiled runtime and SDK, Google, Obscura and Tauri capabilities; yolo is absorbed and is no longer an owner |
 | Workspace/Infra | Orchestration, inventories, factories, release, hosts |
-| `m3/packages/app-ui`, `crates/ui/*` | Canonical UI |
+| Material packages | M3 framework, shared UI and `@aphrody/app-ui`; Aphrody consumes package interfaces |
 | Bun fork `bun-python-host` | Pinned native owner of the `aphrody-rust` Python binding; Python applications remain in Aphrody |
 | IECODE | Separate repository, store and authority |
 | Kernel | `aphrody-kernel`: minimal TCB + subsystems; Linux/Asterinas/kernel32 provide the rest |
@@ -49,7 +49,7 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 
 | Item | Closure |
 | --- | --- |
-| Monorepo consolidation | Fold thin crates/packages into their owner (gates: clippy `-D warnings`, scoped tests on the VPS); root layout aligned on Tauri `dev`, Obscura and Bun `main` (`crates/ packages/ docs/ scripts/ tools/ vendor/ assets/ examples/ bench/ test/ patches/`); absorb `apps/ config/ data/ bin/ m3/ plugins/ py/` |
+| Monorepo consolidation | Aphrody is the product repository. Retire all migrated Google, M3, Obscura and Tauri framework/SDK sources in favor of Bun or Material. Remove duplicate files, packages and legacy directories after consumer gates; preserve unique work, provider stores, assets, licences and provenance. Replace cross-package/repository source imports by package, registry crate or pinned Git interfaces; resolve checkout paths from the current context. Internal module imports remain relative. Runtime, package/artifact and product behavior are qualified separately. |
 | Single MCP | `aphrody-mcp` is the only MCP server; `m3-mcp` becomes an alias; same-purpose tools merged. The client goes through `mcp-launch.ts`: remote mode on 127.0.0.1:24889 (tunnel to the VPS hub, systemd), local stdio fallback. The kernel subcommand alias of the MCP server is removed. |
 | Kernel and shell | Target in `docs/plans/os-kernel/PLAN.md` (Asterinas `ostd`/`kernel/{core,comps,libs}`, Linux subsystems); replace hand-made coreutils/Nushell by `uutils`, `eza`, `sudo-rs` or Bun Shell |
 | CLI purge | Group AI capabilities under aphrody ai; orient top-level commands around real native capability owners. Qualify parser, dispatch, truthful errors and CLI/FFI/MCP/kernel parity before retiring compatibility paths. No fake execution/session success. |

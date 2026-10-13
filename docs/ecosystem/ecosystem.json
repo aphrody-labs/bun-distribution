@@ -1420,12 +1420,6 @@
           "bins": []
         },
         {
-          "name": "@aphrody/webos-wasm",
-          "path": "packages/web/webos-wasm",
-          "description": "",
-          "bins": []
-        },
-        {
           "name": "@aphrody/winclean",
           "path": "packages/os/winclean",
           "description": "Kernel-backed Bun client for the unified Aphrody OS WinClean catalog (166 tools).",
@@ -10321,7 +10315,7 @@
     "sharedRepos": 0,
     "crates": 200,
     "binaries": 36,
-    "bunPackages": 73,
+    "bunPackages": 72,
     "pythonPackages": 10,
     "cliBinaries": 34,
     "cliCommands": 777,
