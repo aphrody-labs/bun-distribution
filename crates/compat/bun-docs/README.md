@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Offline Bun documentation
 
 `aphrody-bun-docs` indexes the Markdown and MDX pages of `docs/` in the Bun fork
@@ -11,8 +12,8 @@ Corpus resolution, in order:
 
 1. `APHRODY_BUN_DOCS`: an explicit docs directory. An invalid override returns an error instead
    of silently selecting a different corpus.
-2. `docs/` of the fork checkout: `APHRODY_BUN_CHECKOUT`, else `C:/bun` on Windows (used when it
-   holds `docs.json`).
+2. `docs/` of the fork checkout: `APHRODY_BUN_CHECKOUT`, else the `bun/` sibling of
+   `APHRODY_WORKSPACE_ROOT` or `APHRODY_ROOT` (used when it holds `docs.json`).
 3. A portable bundle at `<executable-directory>/bun-docs`.
 4. An installation bundle at `<installation-prefix>/share/aphrody/bun/docs`.
 5. The user data bundle at `$XDG_DATA_HOME/aphrody/bun/docs` (`$HOME/.local/share` by default;
