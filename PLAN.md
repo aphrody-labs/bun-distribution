@@ -40,6 +40,20 @@
       unqualified until runner access and target runtime are wired.
 ## Still required for full consolidation
 
+- [x] Integrate the four library SDK owners into flat root Bun packages;
+      internal dependencies use `workspace:*`. Remove superseded artifact
+      and video adapters after reference checks. Root quality passes on
+      107 files; seven Bun packages share version 1.4.4 and one lockfile.
+- [x] Preserve the complete imported Libraries SDK source history through
+      `7b5816ac06631bdc6ff772fb1f52c4cd7e66e8e6` in the parent ancestry.
+- [x] Compile and execute the Windows standalone product API server from
+      `dc7b3b67d92c8e8d29567e63b1952617444a5ab8`. Health and authenticated
+      status/apps return 200; anonymous source catalog returns 401. Its
+      SHA-256 is `0aa964312f88242a5fc58ed441c15490c4c73e227894ec7aad93454d1e93cd34`.
+      Linux service deployment remains a separate gate.
+- [x] Inspect immutable Cargo source manifests and dependency identities,
+      reporting collisions and declared workspace members before migration.
+
 - [x] Convert the font pilot into two private, pinned Git submodules directly
       under `crates/`, preserving split histories, licenses and asset tests.
 - [x] Pin the root nightly to `nightly-2026-09-15`; serialize jobs and route
