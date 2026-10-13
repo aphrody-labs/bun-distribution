@@ -40,6 +40,7 @@ export async function main(argv: string[]): Promise<number> {
     return (await import("./setup/cli.ts")).main(["mise-a-jour", ...rest.slice(1)]);
   }
   if (command === "interne") return (await import("./admin/cli.ts")).guarded(argv);
+  if (command === "web") return (await import("./web.ts")).main(rest);
   if (command === "admin") return (await import("./admin/cli.ts")).guarded(rest);
   if (command === "creator") return (await import("./creator/cli.ts")).guarded(rest);
   return (await import("./setup/cli.ts")).main(command === "setup" ? rest : argv);

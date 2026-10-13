@@ -48,7 +48,10 @@
   },
   "dependencies": {
     "@aphrody/m3-fonts": "workspace:*",
-    "@aphrody/m3-tokens": "workspace:*"
+    "@aphrody/m3-tokens": "workspace:*",
+    "@aphrody/paths": "workspace:*",
+    "@aphrody/web": "workspace:*",
+    "@aphrody/web-source": "workspace:*"
   },
   "engines": {
     "bun": ">=1.4.4"

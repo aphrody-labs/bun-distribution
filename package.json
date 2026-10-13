@@ -258,10 +258,10 @@
     "audit:product-residue": "bun scripts/audit/workspace/product-residue.ts",
     "packages:audit": "bun scripts/release/bun-packages.ts audit",
     "packages:install": "bun scripts/release/install-bun-packages.ts",
-    "web:dev": "bun run --watch ../material/packages/app-ui/site.ts",
+    "web:dev": "bun run --watch packages/infra/product/src/cli.ts web start",
     "web:build": "bun run ../material/packages/app-ui/build.ts",
-    "web:start": "bun run ../material/packages/app-ui/site.ts",
-    "web:os": "bun run ../material/packages/app-ui/webos.ts",
+    "web:start": "bun run packages/infra/product/src/cli.ts web start",
+    "web:os": "bun run packages/infra/product/src/cli.ts web os",
     "aphrody": "bun run scripts/dev/cli/aphrody.ts",
     "cli": "bun run scripts/dev/cli/aphrody.ts"
   },

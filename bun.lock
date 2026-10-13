@@ -1017,6 +1017,9 @@
       "dependencies": {
         "@aphrody/m3-fonts": "workspace:*",
         "@aphrody/m3-tokens": "workspace:*",
+        "@aphrody/paths": "workspace:*",
+        "@aphrody/web": "workspace:*",
+        "@aphrody/web-source": "workspace:*",
       },
     },
     "packages/infra/sql": {
