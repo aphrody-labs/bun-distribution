@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@aphrody/paths": "workspace:*",
-    "@aphrody/runtime-sdk": "workspace:*",
+    "@aphrody/bun-runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4",
     "@aphrody/update": "workspace:*",
     "@aphrody/web-source": "workspace:*"
   },

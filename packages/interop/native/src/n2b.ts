@@ -5,4 +5,4 @@ export type {
   ScanNodeProjectOptions,
   NodeProjectFinding,
   NodeProjectReport,
-} from "@aphrody/runtime-sdk/tooling";
+} from "@aphrody/bun-runtime-sdk/tooling";

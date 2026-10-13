@@ -1067,8 +1067,8 @@
       "name": "@aphrody/bun",
       "version": "1.4.4",
       "dependencies": {
+        "@aphrody/bun-runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4",
         "@aphrody/paths": "workspace:*",
-        "@aphrody/runtime-sdk": "workspace:*",
         "@aphrody/update": "workspace:*",
         "@aphrody/web-source": "workspace:*",
       },
@@ -1380,6 +1380,8 @@
     "@aphrody/bun-plugin-svelte": ["@aphrody/bun-plugin-svelte@0.0.6-aphrody.3", "", { "peerDependencies": { "svelte": "^5" } }, "sha512-vFDgu1prr9NFUgIVNQWE49qWIkfaG47SKc2MGoqT2gOrcDBjN9EwAp+JqBN4eJQTvUqjv4ZFgJ7QlXpJtzwbGA=="],
 
     "@aphrody/bun-plugin-yaml": ["@aphrody/bun-plugin-yaml@0.0.1-aphrody.3", "", { "dependencies": { "js-yaml": "^4.1.0" } }, "sha512-h9rtkv7Gxtovfu0laSwU1ww8uEprV9n80mpy+7cGa9QQ131vktTuty/4YLiugZIBFkBFtXvciJcypa8QCy+2BQ=="],
+
+    "@aphrody/bun-runtime-sdk": ["@aphrody/bun-runtime-sdk@1.4.4", "", {}, "sha512-9Lb6HmdM3o255d4HTvpG9B7AkagHmTBhIpF914riIsQKEvkFG67ayLXtSKFrquBw07LOry1p1iPAGETwba98ag=="],
 
     "@aphrody/bun-webview-page": ["@aphrody/bun-webview-page@workspace:../bun/packages/bun-webview-page"],
 

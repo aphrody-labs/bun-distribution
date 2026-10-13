@@ -10,7 +10,7 @@ import {
   nativeLibraryLoaded,
   resolveNativeLibraryPath,
 } from "./src/library";
-import { probeNativeTooling } from "@aphrody/runtime-sdk/tooling";
+import { probeNativeTooling } from "@aphrody/bun-runtime-sdk/tooling";
 import { findNewlinesUtf16, scanNodeProject } from "./src/n2b";
 import { runAphrodyCaptured } from "./src/cli";
 import { formatSource, lintSource, minifySource } from "./src/oxc";
