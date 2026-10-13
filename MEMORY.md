@@ -22,6 +22,20 @@ parsed both receipts and verified the path and artifact identity. Its pinned
 runtime is `2ae8fc65fba1d05c423a2433b1195835109942b6`; the receipt still marks
 app behavior and deployment false. No build or tests ran.
 
+## Retired Bun Libraries checkout residue — 2026-10-14
+
+Compared the five remaining desktop source differences against the Bun OS
+owner: all are intentional unified-workspace adaptations for shared build
+outputs, root versioning and catalog dependency ownership. The old checkout
+still contains ignored one-off ArtCraft qualification scripts and n2b reports;
+they were retained pending an explicit evidence review. Its 151,040-byte
+ArtCraft router archive and file listing are also still present. All 33 archive
+entries resolve in the current ArtCraft submodule, and the archive's differing
+router CLI is superseded there; automatic approval review rejected removal, so
+both files remain untouched. Empty `var/mirror` also remains because the same
+review rejected the combined cleanup operation. The checkout is not yet safe
+to retire wholesale. No tests or builds ran.
+
 ## Runtime source preflight — 2026-10-13
 
 - The distribution plan now inspects Bun's selected checkout with bounded Git
