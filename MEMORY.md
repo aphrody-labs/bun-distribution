@@ -1,5 +1,16 @@
 # Material integration evidence
 
+13 October 2026: the reduced private OS-theme copy in `aphrody-m3` was replaced
+by its shared `aphrody-m3-os-themes` owner at `27b36bd`; framework commit
+`393d397` now resolves the same Windows, GNOME, COSMIC and Chromium sources as
+the Material desktop packages. The validated native `ThemeExport` adapter has
+one implementation in `aphrody-m3/packages/m3-tokens`; the top-level token
+package re-exports it. The CLI uses the neutral M3 baseline by default and
+accepts a product seed from the host. Native colors remain owned by the Rust
+token crate. Bun lint/fmt and the five-export import probe passed. The focused
+type check stops in the pinned MCU source checkout on its own `verbatimModuleSyntax`
+and unused-parameter errors; no tests were run.
+
 13 October 2026: the owned libm3 and libm3-wasm sources moved from the
 distribution checkout into this workspace on branch os. Concurrent package
 submodule work remains with its authors. The previous scalar WASM build

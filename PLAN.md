@@ -9,6 +9,9 @@
 - [x] Expose those component models from libm3's std facade.
 - [x] Resolve one token owner across direct and transitive registry dependencies.
 - [x] Disable unrelated Cargo submodule acquisition and document explicit web bootstrap.
+- [x] Consolidate Windows, GNOME, COSMIC and Chromium theme generators under
+      the shared `aphrody-m3-os-themes` package owner; use one Rust theme export
+      adapter from the M3 token workspace.
 - [ ] Finish source-consumer lock migration to the published Material revision.
 - [ ] Complete themed component coverage and cross-platform desktop qualification.
 - [ ] Retire the old source paths after publishing and migrating consumer pins.
