@@ -12,7 +12,8 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
       - name: Runtime
-        run: bun agent-plugin doctor --json
+        run: |
+          bun -e 'import { assertRuntimeFacts, currentRuntimeFacts } from "./packages/workspace/src/runtime.ts"; console.log(JSON.stringify(assertRuntimeFacts(await Bun.file("infra/runtime-pins/linux-x64.json").json(), currentRuntimeFacts())));'
       - name: Install
         run: bun install --frozen-lockfile
       - name: Check
