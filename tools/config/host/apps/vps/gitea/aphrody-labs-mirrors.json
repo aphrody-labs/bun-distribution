@@ -26,6 +26,41 @@
       "aphrody-m3-bun",
       "aphrody-identity",
       "aphrody-app-ui"
+    ],
+    "wave-2": [
+      "aphrody-m3-next-example",
+      "aphrody-m3-next-tauri-example",
+      "aphrody-m3-tailwind",
+      "aphrody-m3-theme",
+      "aphrody-m3-tokens"
+    ],
+    "wave-3": [
+      "aphrody-material-design-icons",
+      "aphrody-rg-ui",
+      "aphrody-scaffold",
+      "fixture-hello-m3",
+      "aphrody-a2a"
+    ],
+    "wave-4": [
+      "aphrody-bun",
+      "aphrody-cli-wasm",
+      "aphrody-discord-kit",
+      "aphrody-doc-ai",
+      "aphrody-drive-client"
+    ],
+    "wave-5": [
+      "aphrody-os",
+      "aphrody-ovh",
+      "aphrody-paths",
+      "aphrody-product",
+      "aphrody-rag-core"
+    ],
+    "wave-6": [
+      "aphrody-runtime-sdk",
+      "aphrody-shell-web",
+      "aphrody-sql",
+      "aphrody-update",
+      "aphrody-webos-wasm"
     ]
   },
   "initialExistingMirrors": [
@@ -2204,7 +2239,15 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-m3-next-example.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-m3-next-example",
-      "admission": "queued-storage-admission"
+      "admission": "wave-2",
+      "sourceQualification": {
+        "sha": "86a13a1055552c96c9bfd7184cf3503c675eb1ea",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "files": 1,
+        "blobBytes": 67
+      }
     },
     {
       "name": "aphrody-m3-next-migrate",
@@ -2228,7 +2271,15 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-m3-next-tauri-example.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-m3-next-tauri-example",
-      "admission": "queued-storage-admission"
+      "admission": "wave-2",
+      "sourceQualification": {
+        "sha": "1270fc6b0b1ac29df2cdd69a73f4d606c40180d0",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "files": 1,
+        "blobBytes": 79
+      }
     },
     {
       "name": "aphrody-m3-os-themes",
@@ -2296,7 +2347,15 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-m3-tailwind.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-m3-tailwind",
-      "admission": "queued-storage-admission"
+      "admission": "wave-2",
+      "sourceQualification": {
+        "sha": "3c908e0f486d791ee2c8991277c0a5479d53b1a7",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "files": 1,
+        "blobBytes": 59
+      }
     },
     {
       "name": "aphrody-m3-theme",
@@ -2308,7 +2367,15 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-m3-theme.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-m3-theme",
-      "admission": "queued-storage-admission"
+      "admission": "wave-2",
+      "sourceQualification": {
+        "sha": "dbd880d287d2452554b650816c907920bc7f1bf1",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "files": 1,
+        "blobBytes": 53
+      }
     },
     {
       "name": "aphrody-m3-tokens",
@@ -2320,7 +2387,15 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-m3-tokens.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-m3-tokens",
-      "admission": "queued-storage-admission"
+      "admission": "wave-2",
+      "sourceQualification": {
+        "sha": "57bb29b4c1791bf57952b85e6c114d2b068dfa52",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "files": 1,
+        "blobBytes": 55
+      }
     },
     {
       "name": "aphrody-material-design-icons",
@@ -2332,7 +2407,15 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-material-design-icons.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-material-design-icons",
-      "admission": "queued-storage-admission"
+      "admission": "wave-3",
+      "sourceQualification": {
+        "sha": "acf43692ca4ec6ed74c2a15aa0c4057a461f846c",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "files": 1,
+        "blobBytes": 79
+      }
     },
     {
       "name": "aphrody-rg-ui",
@@ -2344,7 +2427,15 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-rg-ui.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-rg-ui",
-      "admission": "queued-storage-admission"
+      "admission": "wave-3",
+      "sourceQualification": {
+        "sha": "ca0ad561c17e23749ee082591a465efb83e3f933",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "files": 1,
+        "blobBytes": 47
+      }
     },
     {
       "name": "aphrody-scaffold",
@@ -2356,7 +2447,15 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-scaffold.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-scaffold",
-      "admission": "queued-storage-admission"
+      "admission": "wave-3",
+      "sourceQualification": {
+        "sha": "c45dace90474a30db8ce0819c0de0ebdd7d03e7a",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "files": 1,
+        "blobBytes": 53
+      }
     },
     {
       "name": "fixture-hello-m3",
@@ -2368,7 +2467,15 @@
       "sourceUrl": "https://github.com/aphrody-labs/fixture-hello-m3.git",
       "targetOwner": "aphrody-labs",
       "targetName": "fixture-hello-m3",
-      "admission": "queued-storage-admission"
+      "admission": "wave-3",
+      "sourceQualification": {
+        "sha": "ce77e78ac364272be15e4cba984440dfad869114",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "files": 1,
+        "blobBytes": 53
+      }
     },
     {
       "name": "aphrody-a2a",
@@ -2380,7 +2487,15 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-a2a.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-a2a",
-      "admission": "queued-storage-admission"
+      "admission": "wave-3",
+      "sourceQualification": {
+        "sha": "abeb44170a60674d366238b413134cd8b3431452",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "files": 1,
+        "blobBytes": 43
+      }
     },
     {
       "name": "aphrody-bun",
@@ -2392,7 +2507,15 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-bun.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-bun",
-      "admission": "queued-storage-admission"
+      "admission": "wave-4",
+      "sourceQualification": {
+        "sha": "37494ab5d0ff152b5e5c805e4b2c68c8a242b57a",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "files": 1,
+        "blobBytes": 43
+      }
     },
     {
       "name": "aphrody-cli-wasm",
@@ -2404,7 +2527,15 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-cli-wasm.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-cli-wasm",
-      "admission": "queued-storage-admission"
+      "admission": "wave-4",
+      "sourceQualification": {
+        "sha": "846e7fddb24bcc8c994a8f9152a770272daa840b",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "files": 1,
+        "blobBytes": 53
+      }
     },
     {
       "name": "aphrody-discord-kit",
@@ -2416,7 +2547,15 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-discord-kit.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-discord-kit",
-      "admission": "queued-storage-admission"
+      "admission": "wave-4",
+      "sourceQualification": {
+        "sha": "f5faf53f834b28603ac7773d4866c2a1a96330bd",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "files": 1,
+        "blobBytes": 59
+      }
     },
     {
       "name": "aphrody-doc-ai",
@@ -2428,7 +2567,15 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-doc-ai.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-doc-ai",
-      "admission": "queued-storage-admission"
+      "admission": "wave-4",
+      "sourceQualification": {
+        "sha": "0137c01b0b51fbefc5e15b141babe64bfba8ccfb",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "files": 1,
+        "blobBytes": 49
+      }
     },
     {
       "name": "aphrody-drive-client",
@@ -2440,7 +2587,15 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-drive-client.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-drive-client",
-      "admission": "queued-storage-admission"
+      "admission": "wave-4",
+      "sourceQualification": {
+        "sha": "b4487bfb08b6edda5d2e67018c1a8e86e959adb8",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "files": 1,
+        "blobBytes": 61
+      }
     },
     {
       "name": "aphrody-os",
@@ -2452,7 +2607,15 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-os.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-os",
-      "admission": "queued-storage-admission"
+      "admission": "wave-5",
+      "sourceQualification": {
+        "sha": "88bff9341eb6e6a5d3c8f08411858830f57b9c5a",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "files": 1,
+        "blobBytes": 41
+      }
     },
     {
       "name": "aphrody-ovh",
@@ -2464,7 +2627,15 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-ovh.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-ovh",
-      "admission": "queued-storage-admission"
+      "admission": "wave-5",
+      "sourceQualification": {
+        "sha": "7aeb94542429a93a408538deea4fd31d08341c1c",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "files": 1,
+        "blobBytes": 43
+      }
     },
     {
       "name": "aphrody-paths",
@@ -2476,7 +2647,15 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-paths.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-paths",
-      "admission": "queued-storage-admission"
+      "admission": "wave-5",
+      "sourceQualification": {
+        "sha": "23e3fe8eeab795adb9aef6f051aa3149fa07342a",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "files": 1,
+        "blobBytes": 47
+      }
     },
     {
       "name": "aphrody-product",
@@ -2488,7 +2667,15 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-product.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-product",
-      "admission": "queued-storage-admission"
+      "admission": "wave-5",
+      "sourceQualification": {
+        "sha": "0847eb048bc5f36ce687fb4c3b05a7fe6a9358ba",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "files": 1,
+        "blobBytes": 51
+      }
     },
     {
       "name": "aphrody-rag-core",
@@ -2500,7 +2687,15 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-rag-core.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-rag-core",
-      "admission": "queued-storage-admission"
+      "admission": "wave-5",
+      "sourceQualification": {
+        "sha": "12523506571efbb4fe4dce7b90cc3b8305e26195",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "files": 1,
+        "blobBytes": 53
+      }
     },
     {
       "name": "aphrody-runtime-sdk",
@@ -2512,7 +2707,14 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-runtime-sdk.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-runtime-sdk",
-      "admission": "queued-storage-admission"
+      "admission": "wave-6",
+      "sourceQualification": {
+        "sha": "8949b10aff3838c4f736b177a24d20c55f9f7444",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "lfsApplicable": false
+      }
     },
     {
       "name": "aphrody-shell-web",
@@ -2524,7 +2726,14 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-shell-web.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-shell-web",
-      "admission": "queued-storage-admission"
+      "admission": "wave-6",
+      "sourceQualification": {
+        "sha": "478435d489a97c3451a8bfc177037e9814a07634",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "lfsApplicable": false
+      }
     },
     {
       "name": "aphrody-sql",
@@ -2536,7 +2745,14 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-sql.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-sql",
-      "admission": "queued-storage-admission"
+      "admission": "wave-6",
+      "sourceQualification": {
+        "sha": "8ea256fdcc08a9dcc63aa09c01521530b58cd28c",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "lfsApplicable": false
+      }
     },
     {
       "name": "aphrody-update",
@@ -2548,7 +2764,14 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-update.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-update",
-      "admission": "queued-storage-admission"
+      "admission": "wave-6",
+      "sourceQualification": {
+        "sha": "f78ea8485589b0f09334a19e5ec28f65b18c1ba1",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "lfsApplicable": false
+      }
     },
     {
       "name": "aphrody-webos-wasm",
@@ -2560,7 +2783,14 @@
       "sourceUrl": "https://github.com/aphrody-labs/aphrody-webos-wasm.git",
       "targetOwner": "aphrody-labs",
       "targetName": "aphrody-webos-wasm",
-      "admission": "queued-storage-admission"
+      "admission": "wave-6",
+      "sourceQualification": {
+        "sha": "c1d20f1f59cdc0289940a0cdcda671018dce30a7",
+        "refs": [
+          "refs/heads/main"
+        ],
+        "lfsApplicable": false
+      }
     },
     {
       "name": "aphrody-winclean",
@@ -2930,9 +3160,17 @@
       "defaultBranch": "os",
       "sizeKiB": 641,
       "sourceUrl": "https://github.com/aphrody-labs/bun-distribution.git",
-      "targetOwner": "aphrody-labs",
+      "targetOwner": "aphrody-dev",
       "targetName": "bun-distribution",
-      "admission": "already-mirrored"
+      "admission": "already-mirrored",
+      "sourceQualification": {
+        "sha": "1e5c6435ffdb13d1aff8db1eb432033df00fd3af",
+        "refs": [
+          "refs/heads/os"
+        ],
+        "files": null,
+        "blobBytes": null
+      }
     },
     {
       "name": "typesafe-sdk-js",
@@ -2960,7 +3198,7 @@
     }
   ],
   "qualification": {
-    "qualifiedAt": "2026-10-13T19:15:00.710Z",
+    "qualifiedAt": "2026-10-13T19:36:24.406Z",
     "inventory": {
       "total": 239,
       "public": 205,
@@ -2971,6 +3209,18 @@
         "wave-1": 5,
         "queued-private-auth": 30,
         "queued-storage-admission": 180,
+        "queued-archived-review": 5
+      },
+      "currentAdmissionCounts": {
+        "already-mirrored": 19,
+        "wave-1": 5,
+        "wave-2": 5,
+        "wave-3": 5,
+        "wave-4": 5,
+        "wave-5": 5,
+        "wave-6": 5,
+        "queued-private-auth": 30,
+        "queued-storage-admission": 155,
         "queued-archived-review": 5
       }
     },
@@ -3034,31 +3284,384 @@
       "actionsEnabledOnly": [
         "bun-libraries"
       ],
-      "note": "Other existing mirrors were not changed to enable Actions."
+      "note": "Other existing mirrors were not changed to enable Actions.",
+      "organizationVisibility": "public",
+      "anonymousProbe": {
+        "origin": "https://source.aphrody.app",
+        "organization": 200,
+        "repoList": 200,
+        "visiblePublicRepos": 47,
+        "privateReposListed": 0,
+        "privateDivergentBun": 404
+      }
     },
     "externalUserMirror": {
       "name": "bun-distribution",
       "owner": "aphrody-dev",
       "branch": "os",
-      "private": true,
+      "private": false,
       "actionsEnabled": true,
-      "expectedSourceSha": "ba705957669d8ff31ebb07dd73ce554d66350367",
-      "observedGitHubSourceSha": "a9b531fd98f6d3b69c001c3b8c0baee2cdb1e898",
-      "observedGiteaSha": "65c32d8125f647d67bc6506d4688b11f77a3a960",
-      "status": "divergent-private-no-mutation",
-      "note": "Source SHA differs from coordinator expected SHA; all refs not qualified."
+      "refs": [
+        "refs/heads/os"
+      ],
+      "tags": 0,
+      "sourceSha": "1e5c6435ffdb13d1aff8db1eb432033df00fd3af",
+      "giteaSha": "1e5c6435ffdb13d1aff8db1eb432033df00fd3af",
+      "mirror": true,
+      "defaultBranch": "os",
+      "sourceUrl": "https://github.com/aphrody-labs/bun-distribution.git",
+      "lfsApplicable": false,
+      "lfsAttributesRules": "No LFS filter rules; only text/eol attributes",
+      "status": "aligned-public",
+      "lastMirrorSync": "success"
     },
     "storage": {
-      "freeKiB": 76011792,
-      "freeGiB": 72.4,
+      "freeKiB": 75002624,
+      "freeGiB": 71.5,
       "declaredTotalGiB": 106.1,
-      "admission": "Further large mirrors remain queued pending storage admission."
+      "admission": "Continue in batches sized to live free space; no purchase or purge."
     },
     "runtimeProvenance": {
       "executable": "/home/ubuntu/.bun/bin/bun-1.4.4",
       "version": "1.4.4",
       "revision": "dfde053a3045d6076ad315b6f63160c4ced71513",
       "sourceUrl": "https://github.com/aphrody-labs/bun/releases/download/bun-v1.4.4/bun-linux-x64-full.zip"
+    },
+    "wave2": {
+      "status": "qualified",
+      "repositories": [
+        {
+          "name": "aphrody-m3-next-example",
+          "sha": "86a13a1055552c96c9bfd7184cf3503c675eb1ea",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "files": 1,
+          "blobBytes": 67,
+          "lfsApplicable": false
+        },
+        {
+          "name": "aphrody-m3-next-tauri-example",
+          "sha": "1270fc6b0b1ac29df2cdd69a73f4d606c40180d0",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "files": 1,
+          "blobBytes": 79,
+          "lfsApplicable": false
+        },
+        {
+          "name": "aphrody-m3-tailwind",
+          "sha": "3c908e0f486d791ee2c8991277c0a5479d53b1a7",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "files": 1,
+          "blobBytes": 59,
+          "lfsApplicable": false
+        },
+        {
+          "name": "aphrody-m3-theme",
+          "sha": "dbd880d287d2452554b650816c907920bc7f1bf1",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "files": 1,
+          "blobBytes": 53,
+          "lfsApplicable": false
+        },
+        {
+          "name": "aphrody-m3-tokens",
+          "sha": "57bb29b4c1791bf57952b85e6c114d2b068dfa52",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "files": 1,
+          "blobBytes": 55,
+          "lfsApplicable": false
+        }
+      ],
+      "allPublic": true,
+      "allUnarchived": true,
+      "allSingleBranch": true,
+      "defaultBranch": "main",
+      "preAdmissionFreeKiB": 94057332,
+      "verifiedAt": "2026-10-13T19:37:30.332Z"
+    },
+    "wave3": {
+      "status": "qualified",
+      "repositories": [
+        {
+          "name": "aphrody-material-design-icons",
+          "sha": "acf43692ca4ec6ed74c2a15aa0c4057a461f846c",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "files": 1,
+          "blobBytes": 79,
+          "lfsApplicable": false
+        },
+        {
+          "name": "aphrody-rg-ui",
+          "sha": "ca0ad561c17e23749ee082591a465efb83e3f933",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "files": 1,
+          "blobBytes": 47,
+          "lfsApplicable": false
+        },
+        {
+          "name": "aphrody-scaffold",
+          "sha": "c45dace90474a30db8ce0819c0de0ebdd7d03e7a",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "files": 1,
+          "blobBytes": 53,
+          "lfsApplicable": false
+        },
+        {
+          "name": "fixture-hello-m3",
+          "sha": "ce77e78ac364272be15e4cba984440dfad869114",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "files": 1,
+          "blobBytes": 53,
+          "lfsApplicable": false
+        },
+        {
+          "name": "aphrody-a2a",
+          "sha": "abeb44170a60674d366238b413134cd8b3431452",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "files": 1,
+          "blobBytes": 43,
+          "lfsApplicable": false
+        }
+      ],
+      "allPublic": true,
+      "allUnarchived": true,
+      "allSingleBranch": true,
+      "defaultBranch": "main",
+      "verifiedAt": "2026-10-13T19:38:43.842Z"
+    },
+    "wave4": {
+      "status": "qualified",
+      "repositories": [
+        {
+          "name": "aphrody-bun",
+          "sha": "37494ab5d0ff152b5e5c805e4b2c68c8a242b57a",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "files": 1,
+          "blobBytes": 43,
+          "lfsApplicable": false
+        },
+        {
+          "name": "aphrody-cli-wasm",
+          "sha": "846e7fddb24bcc8c994a8f9152a770272daa840b",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "files": 1,
+          "blobBytes": 53,
+          "lfsApplicable": false
+        },
+        {
+          "name": "aphrody-discord-kit",
+          "sha": "f5faf53f834b28603ac7773d4866c2a1a96330bd",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "files": 1,
+          "blobBytes": 59,
+          "lfsApplicable": false
+        },
+        {
+          "name": "aphrody-doc-ai",
+          "sha": "0137c01b0b51fbefc5e15b141babe64bfba8ccfb",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "files": 1,
+          "blobBytes": 49,
+          "lfsApplicable": false
+        },
+        {
+          "name": "aphrody-drive-client",
+          "sha": "b4487bfb08b6edda5d2e67018c1a8e86e959adb8",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "files": 1,
+          "blobBytes": 61,
+          "lfsApplicable": false
+        }
+      ],
+      "allPublic": true,
+      "allUnarchived": true,
+      "allSingleBranch": true,
+      "defaultBranch": "main",
+      "verifiedAt": "2026-10-13T19:39:24.031Z"
+    },
+    "wave5": {
+      "status": "qualified",
+      "repositories": [
+        {
+          "name": "aphrody-os",
+          "sha": "88bff9341eb6e6a5d3c8f08411858830f57b9c5a",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "files": 1,
+          "blobBytes": 41,
+          "lfsApplicable": false
+        },
+        {
+          "name": "aphrody-ovh",
+          "sha": "7aeb94542429a93a408538deea4fd31d08341c1c",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "files": 1,
+          "blobBytes": 43,
+          "lfsApplicable": false
+        },
+        {
+          "name": "aphrody-paths",
+          "sha": "23e3fe8eeab795adb9aef6f051aa3149fa07342a",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "files": 1,
+          "blobBytes": 47,
+          "lfsApplicable": false
+        },
+        {
+          "name": "aphrody-product",
+          "sha": "0847eb048bc5f36ce687fb4c3b05a7fe6a9358ba",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "files": 1,
+          "blobBytes": 51,
+          "lfsApplicable": false
+        },
+        {
+          "name": "aphrody-rag-core",
+          "sha": "12523506571efbb4fe4dce7b90cc3b8305e26195",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "files": 1,
+          "blobBytes": 53,
+          "lfsApplicable": false
+        }
+      ],
+      "allPublic": true,
+      "allUnarchived": true,
+      "allSingleBranch": true,
+      "defaultBranch": "main",
+      "verifiedAt": "2026-10-13T19:40:29.835Z"
+    },
+    "wave6": {
+      "status": "qualified",
+      "repositories": [
+        {
+          "name": "aphrody-runtime-sdk",
+          "sha": "8949b10aff3838c4f736b177a24d20c55f9f7444",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "lfsApplicable": false,
+          "targetOwner": "aphrody-labs",
+          "targetPrivate": false,
+          "anonymousStatus": 200
+        },
+        {
+          "name": "aphrody-shell-web",
+          "sha": "478435d489a97c3451a8bfc177037e9814a07634",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "lfsApplicable": false,
+          "targetOwner": "aphrody-labs",
+          "targetPrivate": false,
+          "anonymousStatus": 200
+        },
+        {
+          "name": "aphrody-sql",
+          "sha": "8ea256fdcc08a9dcc63aa09c01521530b58cd28c",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "lfsApplicable": false,
+          "targetOwner": "aphrody-labs",
+          "targetPrivate": false,
+          "anonymousStatus": 200
+        },
+        {
+          "name": "aphrody-update",
+          "sha": "f78ea8485589b0f09334a19e5ec28f65b18c1ba1",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "lfsApplicable": false,
+          "targetOwner": "aphrody-labs",
+          "targetPrivate": false,
+          "anonymousStatus": 200
+        },
+        {
+          "name": "aphrody-webos-wasm",
+          "sha": "c1d20f1f59cdc0289940a0cdcda671018dce30a7",
+          "refs": [
+            "refs/heads/main"
+          ],
+          "tags": 0,
+          "lfsApplicable": false,
+          "targetOwner": "aphrody-labs",
+          "targetPrivate": false,
+          "anonymousStatus": 200
+        }
+      ],
+      "metadataSource": "existing complete inventory; live git ls-remote refs and raw .gitattributes (GitHub API quota exhausted)",
+      "allPublic": true,
+      "allUnarchived": true,
+      "allSingleBranch": true,
+      "defaultBranch": "main",
+      "allMirrors": true,
+      "allRefsAligned": true,
+      "allTagsAligned": true,
+      "allActionsEnabled": true,
+      "verifiedAt": "2026-10-13T19:48:14Z"
     }
   }
 }

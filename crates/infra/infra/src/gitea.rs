@@ -31,6 +31,8 @@ struct Repository {
     name: String,
     mirror: bool,
     upstream: Option<String>,
+    #[serde(default)]
+    private: Option<bool>,
 }
 
 #[derive(Debug, Serialize)]
@@ -63,7 +65,9 @@ pub fn provision(root: &Path, apply: bool) -> Result<Report> {
                 || r.upstream.as_deref()
                     != Some("https://github.com/aphrody-labs/bun-distribution.git")
         })
-        || plan.repositories.iter().filter(|r| !r.mirror).any(|r| !r.name.starts_with("bun-crate-"))
+        || plan.repositories.iter().filter(|r| !r.mirror).any(|r| {
+            !r.name.starts_with("bun-crate-") || r.private.unwrap_or(plan.private) != plan.private
+        })
     {
         bail!("plan Gitea hors périmètre autorisé");
     }
@@ -89,7 +93,7 @@ pub fn provision(root: &Path, apply: bool) -> Result<Report> {
     let data = serde_json::json!({
         "owner":plan.owner,"branch":plan.branch,"private":plan.private,"actions":plan.actions,
         "apiUrl":plan.api_url,"tokenFile":plan.token_file,"tokenVariable":plan.token_variable,"bunExecutable":plan.bun_executable,
-        "runnerKey":plan.runner_key,"repositories":plan.repositories.iter().map(|r| serde_json::json!({"name":r.name,"mirror":r.mirror,"upstream":r.upstream})).collect::<Vec<_>>(),
+        "runnerKey":plan.runner_key,"repositories":plan.repositories.iter().map(|r| serde_json::json!({"name":r.name,"mirror":r.mirror,"upstream":r.upstream,"private":r.private.unwrap_or(plan.private)})).collect::<Vec<_>>(),
         "accountKey":account_key.trim()
     });
     let encoded = base64::Engine::encode(
@@ -135,16 +139,40 @@ async function ensureDeployKey(path,key) {{
  if(found.read_only)await req('PATCH',path+'/keys/'+found.id,{{read_only:false}});
 }}
 const identity=await req('GET','/user'); if(identity[1].login!==d.owner)bad('Gitea token owner mismatch');
+function sourceRefs(url){{
+ const result=Bun.spawnSync(['git','ls-remote','--refs',url],{{timeout:12000}});
+ if(result.exitCode!==0)bad('Gitea upstream ref query failed');
+ return result.stdout.toString().trim().split('\n').filter(Boolean).map(line=>{{const [sha,ref]=line.trim().split(/\s+/);return {{ref,sha}};}}).sort((a,b)=>a.ref.localeCompare(b.ref));
+}}
+async function syncAndQualifyMirror(path,repo,privateState){{
+ if(repo.upstream!=='https://github.com/aphrody-labs/bun-distribution.git')bad('Gitea mirror upstream is outside the approved source');
+ const upstream=sourceRefs(repo.upstream);
+ if(upstream.length!==1||upstream[0].ref!=='refs/heads/'+d.branch)bad('Gitea mirror upstream ref set is not the qualified default branch');
+ const [status,current]=await req('GET',path,undefined,true);
+ if(status===404){{
+  await req('POST','/repos/migrate',{{clone_addr:repo.upstream,repo_name:repo.name,repo_owner:d.owner,service:'git',mirror:true,private:true,mirror_interval:'8h'}});
+ }}else if(!current.mirror||current.original_url!==repo.upstream)bad('Existing Gitea mirror conflicts with upstream');
+ const existing=(await req('GET',path))[1];if(!existing.private)await req('PATCH',path,{{private:true}});
+ const before=(await req('GET',path))[1];if(before.has_actions!==d.actions)await req('PATCH',path,{{has_actions:d.actions}});
+ await req('POST',path+'/mirror-sync');
+ const branches=await req('GET',path+'/branches?limit=50&page=1');
+ const tags=await req('GET',path+'/tags?limit=50&page=1');
+ if(branches[1].length!==1||branches[1][0].name!==d.branch||branches[1][0].commit.id!==upstream[0].sha||tags[1].length!==0)bad('Gitea mirror refs diverge; repository remains private');
+ const currentUpstream=sourceRefs(repo.upstream);if(currentUpstream.length!==upstream.length||currentUpstream[0].ref!==upstream[0].ref||currentUpstream[0].sha!==upstream[0].sha)bad('Gitea upstream moved during synchronization; repository remains private');
+ const synced=(await req('GET',path))[1];if(!synced.mirror||synced.private!==true||synced.original_url!==repo.upstream||synced.default_branch!==d.branch||synced.has_actions!==d.actions)bad('Gitea private mirror verification failed');
+ if(!privateState)await req('PATCH',path,{{private:false}});
+ const published=(await req('GET',path))[1];if(!published.mirror||published.private!==privateState||published.original_url!==repo.upstream||published.default_branch!==d.branch||published.has_actions!==d.actions)bad('Gitea mirror visibility postcondition failed');
+}}
 const keyPath=d.runnerKey; await Bun.$`mkdir -p ${{keyPath.slice(0,keyPath.lastIndexOf('/'))}} && chmod 700 ${{keyPath.slice(0,keyPath.lastIndexOf('/'))}}`;
 if(!(await Bun.file(keyPath).exists())){{const p=Bun.spawnSync(['ssh-keygen','-q','-t','ed25519','-N','','-C','bun-os-crate-runner','-f',keyPath],{{timeout:15000}});if(p.exitCode!==0)bad('VPS runner key generation failed');}}
 else if(!(await Bun.file(keyPath+'.pub').exists())){{const p=Bun.spawnSync(['ssh-keygen','-y','-f',keyPath],{{timeout:15000}});if(p.exitCode!==0)bad('VPS runner public key repair failed');await Bun.write(keyPath+'.pub',p.stdout);}}
 await Bun.$`chmod 600 ${{keyPath}}`;
 const runner=(await Bun.file(keyPath+'.pub').text()).trim(); await ensureAccountKey(d.accountKey);
 for(const repo of d.repositories){{
- const path='/repos/'+d.owner+'/'+repo.name; const [status]=await req('GET',path,undefined,true);
- if(status===404){{if(repo.mirror){{await req('POST','/repos/migrate',{{clone_addr:repo.upstream,repo_name:repo.name,repo_owner:d.owner,service:'git',mirror:true,private:d.private,mirror_interval:'8h'}});}}else{{await req('POST','/user/repos',{{name:repo.name,private:d.private,default_branch:d.branch,auto_init:false}});}}}}
- await req('PATCH',path,{{private:d.private,has_actions:d.actions}});
- if(repo.mirror)await req('POST',path+'/mirror-sync'); else await ensureDeployKey(path,runner);
+ const path='/repos/'+d.owner+'/'+repo.name; const targetPrivate=repo.private??d.private; const [status]=await req('GET',path,undefined,true);
+ if(repo.mirror){{await syncAndQualifyMirror(path,repo,targetPrivate);continue;}}
+ if(status===404)await req('POST','/user/repos',{{name:repo.name,private:targetPrivate,default_branch:d.branch,auto_init:false}});
+ await req('PATCH',path,{{private:targetPrivate,has_actions:d.actions}});await ensureDeployKey(path,runner);
 }}
 console.log(JSON.stringify({{owner:d.owner,repositories:d.repositories.map(x=>x.name),actions:d.actions,account_key:'present',runner_key:'present'}}));
 BUN
@@ -290,13 +318,13 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
         {
             bail!("entrée de miroir non admissible");
         }
-        if let Some(qualification) = &entry.source_qualification {
-            if qualification.head.len() != 40
-                || !qualification.head.bytes().all(|b| b.is_ascii_hexdigit())
-                || qualification.refs != [format!("refs/heads/{}", entry.default_branch)]
-            {
-                bail!("qualification de source invalide");
-            }
+        let qualification =
+            entry.source_qualification.as_ref().context("qualification de source absente")?;
+        if qualification.head.len() != 40
+            || !qualification.head.bytes().all(|b| b.is_ascii_hexdigit())
+            || qualification.refs != [format!("refs/heads/{}", entry.default_branch)]
+        {
+            bail!("qualification de source invalide");
         }
         entries.push(entry);
     }
@@ -385,21 +413,26 @@ async function req(method,path,payload,missing=false){{
  if(r.status===204)return [r.status,null];try{{return [r.status,await r.json()]}}catch{{bad('Gitea API response invalid')}}
 }}
 const org=await req('GET','/orgs/aphrody-labs');if(org[1].username!=='aphrody-labs')bad('Gitea organization missing or unauthorized');
+if(org[1].visibility!=='public')await req('PATCH','/orgs/aphrody-labs',{{visibility:'public'}});
+if((await req('GET','/orgs/aphrody-labs'))[1].visibility!=='public')bad('Gitea organization is not publicly readable');
 const free=Number((await Bun.$`df -Pk /home/ubuntu/apps/gitea/data | tail -n 1`.text()).trim().split(/\s+/)[3]);
 if(!Number.isFinite(free)||free<8*1024*1024)bad('Gitea storage admission below 8 GiB');
 for(const repo of d.repositories){{
  const path='/repos/'+d.owner+'/'+repo.name;const [status,current]=await req('GET',path,undefined,true);
  if(status===404){{
-  await req('POST','/repos/migrate',{{clone_addr:repo.sourceUrl,repo_name:repo.name,repo_owner:d.owner,service:'git',mirror:true,private:false,mirror_interval:d.mirrorInterval}});
- }}else if(!current.mirror||current.original_url!==repo.sourceUrl||current.private!==false)bad('Existing Gitea repository conflicts with source policy: '+repo.name);
+  await req('POST','/repos/migrate',{{clone_addr:repo.sourceUrl,repo_name:repo.name,repo_owner:d.owner,service:'git',mirror:true,private:true,mirror_interval:d.mirrorInterval}});
+ }}else if(!current.mirror||current.original_url!==repo.sourceUrl)bad('Existing Gitea repository conflicts with source policy: '+repo.name);
+ else if(!current.private)await req('PATCH',path,{{private:true}});
  const before=(await req('GET',path))[1];if(before.has_actions!==true)await req('PATCH',path,{{has_actions:true}});
  await req('POST',path+'/mirror-sync');
- const info=await req('GET',path);if(!info[1].mirror||info[1].private!==false||info[1].original_url!==repo.sourceUrl||info[1].default_branch!==repo.defaultBranch||info[1].has_actions!==true)bad('Gitea mirror policy verification failed: '+repo.name);
+ const info=await req('GET',path);if(!info[1].mirror||info[1].private!==true||info[1].original_url!==repo.sourceUrl||info[1].default_branch!==repo.defaultBranch||info[1].has_actions!==true)bad('Gitea mirror policy verification failed: '+repo.name);
  if(repo.head){{
   const branches=await req('GET',path+'/branches?limit=50&page=1');
   const branch=branches[1].find(x=>x.name===repo.defaultBranch);if(!branch||branch.commit.id!==repo.head)bad('Source branch SHA mismatch: '+repo.name);
   const tags=await req('GET',path+'/tags?limit=50&page=1');if(tags[1].length!==0)bad('Source tag set mismatch: '+repo.name);
  }}
+ await req('PATCH',path,{{private:false}});
+ const published=await req('GET',path);if(!published[1].mirror||published[1].private!==false||published[1].original_url!==repo.sourceUrl||published[1].default_branch!==repo.defaultBranch||published[1].has_actions!==true)bad('Gitea public mirror verification failed: '+repo.name);
 }}
 console.log(JSON.stringify({{owner:d.owner,repositories:d.repositories.map(x=>x.name),visibility:'public',freeKiB:free,verified:true}}));
 BUN

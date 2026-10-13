@@ -10,9 +10,51 @@
   "bunExecutable": "/home/ubuntu/.bun/bin/bun-1.4.4",
   "runnerKey": "/home/ubuntu/.aphrody/secrets/gitea/bun-os-crate-runner",
   "repositories": [
-    { "name": "bun-distribution", "mirror": true, "upstream": "https://github.com/aphrody-labs/bun-distribution.git" },
-    { "name": "bun-crate-craft-fonts", "mirror": false },
-    { "name": "bun-crate-craft-fonts-tests", "mirror": false },
-    { "name": "bun-crate-craft-atomic", "mirror": false }
+    {
+      "name": "bun-crate-craft-fonts",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-craft-fonts-tests",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-craft-atomic",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-craft-cms",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-craft-print",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-craft-quit",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-craft-settings",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-craft-ui",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-distribution",
+      "mirror": true,
+      "upstream": "https://github.com/aphrody-labs/bun-distribution.git",
+      "private": false
+    }
   ]
 }
