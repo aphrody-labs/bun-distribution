@@ -22,6 +22,17 @@
   as canonical host and retains each library name as a DNS alias; no Cloudflare
   records were changed. The standalone compiler's child process, deadline, output
   cap, PID receipt and logs also route through the shared Bun Libraries process API.
+- Native library builds now delegate to Bun Libraries' `scripts/build-apps.ts`
+  and `@aphrody/bun-artifacts`; APT and the desktop server keep their separate
+  distribution entrypoint builds. Filmcraft built for Windows x64 from capability
+  `video`: PE x64, 212555776 bytes, SHA-256
+  `3882d6b68c65cb54861e786d2dbd2e1976ffb81d52ebc8232c2b1c32e5990691`;
+  extraction doctor qualified. Native execution, app behavior, public asset
+  delivery and deployment remain unqualified. The adapter verifies SDK owner,
+  manifest identity, source revision, runtime pin, host, target and artifact hash.
+- The delegated app inventory exposed ArtCraft pinned to a stale revision and
+  an obsolete `artcraft_client` without a binary. It now matches Bun Libraries'
+  pinned `artcraft_router` and `artcraft-cli` at revision 9c4ed82a.
 - Bun Libraries hostname owner is published at 980caaf; Bun OS consumer mapping is
   published at 8b2a148. A native filmcraft plan resolved both video hostnames and
   correctly stayed blocked because no native backend artifact receipt was qualified.

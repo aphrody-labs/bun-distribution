@@ -14,11 +14,17 @@
       keep its multi-algorithm streaming archive verifier with the parser.
 - [x] Make Bun Libraries the hostname owner for the 14 library applications;
       retain each bare library domain as an alias and keep DNS records in place.
+- [x] Delegate all 14 native library app builds to Bun Libraries' native engine
+      builder and standalone artifact SDK; APT and desktop use the distribution adapter.
+- [x] Reconcile the stale ArtCraft distribution source pin and native executable/
+      Cargo owner to Bun Libraries' current pinned router CLI.
 - [ ] Identify any remaining provider relaunchers and remove the empty locked
       former directory once its holder releases it.
 - [ ] Physically relocate Bun after its concurrent exclusive Git batch ends;
       the src junction currently preserves sibling dependency resolution.
 - [ ] Migrate standalone compilation/assets to Bun Libraries' existing owners.
+- [ ] Qualify native Windows app execution from the delegated builder before
+      retiring its unused native-app launcher and descriptor helpers.
 - [ ] Align application catalog and deployment with native Aphrody Infra;
       retire the unapplied duplicate forge/control-plane recipe.
 - [ ] Complete Material consumer migration through qualified published packages.

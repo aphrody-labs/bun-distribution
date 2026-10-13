@@ -1,17 +1,17 @@
 # Standalone application builds
 
-`infra/apps.json` inventories actual apps and their capability owners.
-Paths resolve from that catalog. Native CLI apps use their existing Rust
-executable; the Bun wrapper embeds qualified backend bytes. Bun CLI/server
-apps use their configured entrypoints. An unresolved external context or
-missing native executable prevents an independent build.
+`infra/apps.json` inventories distribution targets and product-specific inputs.
+Library capability IDs, native Rust engine builds, standalone artifacts and
+canonical application hosts belong to Bun Libraries. Bun OS delegates its 14
+library builds there. APT and the desktop server retain their configured Bun
+entrypoints. An unresolved external context prevents an independent build.
 
 ## Owners
 
 | Capability                                               | Owner                                                                       |
 | -------------------------------------------------------- | --------------------------------------------------------------------------- |
-| Compilation and embedded files                           | Native `Bun.build`, `compile.assets`, `Bun.embeddedFiles`                   |
-| Native application artifacts                             | `@aphrody/bun-artifacts` in Bun Libraries                                   |
+| Library engine builds and standalone artifacts           | `scripts/build-apps.ts` and `@aphrody/bun-artifacts` in Bun Libraries       |
+| APT and desktop compilation                              | Native `Bun.build`, `compile.assets`, `Bun.embeddedFiles`                   |
 | Library capability names and canonical application hosts | `@aphrody/bun-workspace/capabilities` in Bun Libraries                      |
 | Child process ownership, deadlines and output capture    | `@aphrody/bun-workspace/process` in Bun Libraries                           |
 | Streamed file identity                                   | `@aphrody/bun-workspace/hash` in Bun Libraries                              |
@@ -19,7 +19,7 @@ missing native executable prevents an independent build.
 | R2 object authentication                                 | Canonical `createR2Client` and `loadCloudflareEnvironment`                  |
 | Distribution-specific and embedded byte identity         | Thin `src/distribution.ts` adapter over the shared Bun Libraries hash owner |
 | Executable headers                                       | Package converter `abi` and the GNU loader gate in `src/elf.ts`             |
-| Application orchestration                                | `infra/app-build.ts`                                                        |
+| Distribution app orchestration                           | `infra/app-build.ts`, delegating library builds to Bun Libraries            |
 | Shared object plans                                      | `infra/assets.ts`                                                           |
 | Edge and public catalog                                  | The edge/catalog capability owner                                           |
 

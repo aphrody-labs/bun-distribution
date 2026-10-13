@@ -58,14 +58,14 @@
       "entrypointWorkspace": "os",
       "source": {
         "repository": "aphrody-labs/artcraft",
-        "revision": "f8dae6cec51cc84c8b565132db2c7471fad96148",
+        "revision": "9c4ed82af5278b7e8374e2093f53fc2af50937be",
         "path": "libraries/artcraft",
         "license": "MIT OR Apache-2.0"
       },
       "native": {
         "required": true,
-        "binary": null,
-        "cargoPackage": "artcraft_client",
+        "binary": "artcraft-cli",
+        "cargoPackage": "artcraft_router",
         "manifestPath": "Cargo.toml"
       },
       "assetRoots": [],
