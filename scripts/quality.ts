@@ -1,22 +1,15 @@
 #!/usr/bin/env bun
 import { resolve } from "node:path";
+import { runProcess } from "../packages/workspace/src/process.ts";
 
 const checks = ["doctor", "typecheck", "lint", "format:check"];
 for (const check of checks) {
-  const controller = new AbortController();
-  const child = Bun.spawn([process.execPath, "run", "--bun", check], {
-    cwd: resolve(import.meta.dir, ".."),
+  const child = await runProcess([process.execPath, "run", "--bun", check], resolve(import.meta.dir, ".."), {
+    timeoutMs: 120_000,
+    maxOutputBytes: 64 * 1024 * 1024,
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",
-    windowsHide: true,
-    signal: controller.signal,
   });
-  const timer = setTimeout(() => controller.abort(), 120_000);
-  try {
-    const code = await child.exited;
-    if (code !== 0) process.exit(code);
-  } finally {
-    clearTimeout(timer);
-  }
+  if (child.code !== 0) process.exit(child.code);
 }

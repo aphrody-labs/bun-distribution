@@ -56,7 +56,7 @@ Unix binaries omit `.exe`. Native builds are serialized and bounded.
 Each native, SSH or Docker target needs its own toolchain and permissions.
 Standalone applications expose their complete engine with `--native` and
 require no checkout, Git or Cargo. Their HTTP binding requires a protected
-application token. Generation currently has no standalone native CLI.
+application token. Generation reuses the existing router's JSONL native CLI.
 
 ## Frontend library tooling
 
@@ -70,5 +70,6 @@ tests remain source references; our desktop uses Bun Tauri v3.
 
 [Architecture](docs/architecture.md), [provenance](docs/provenance.md),
 [style](docs/style.md), [migration](docs/migration.md), [qualification](docs/qualification.md).
+The [session report](docs/session-report.md) records publication and remaining gates.
 Source licenses and notices apply.
 JavaScript builds do not qualify native engines, CEF, installers or providers.

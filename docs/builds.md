@@ -25,8 +25,8 @@ SHA-256, and builds a standalone Bun executable through the artifact package.
 Native extraction is qualified with `--doctor`; business operations retain
 separate qualification. No tests run.
 
-All 14 capabilities appear in plans. Generation has no standalone engine CLI
-and reports `OWNER_UNAVAILABLE`. Builds continue across application failures;
+All 14 capabilities appear in plans. Generation reuses `artcraft_router` and its
+`artcraft-cli` JSONL binary. Builds continue across application failures;
 the report records each stage and exits unsuccessfully if any selected app fails.
 Native hosts build their own targets; cross target engine compilation requires
 separate native qualification and supplied artifact receipts.

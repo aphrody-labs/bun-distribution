@@ -35,13 +35,29 @@ are recorded in `infra/releases/video-linux-x64.json`.
 
 The control plane has authenticated Git/Komodo administration, connected
 Periphery, an online runner and HTTPS on both domains; see
-[control plane](control-plane.md). CI execution and app activation retain their
-own qualification. The Windows app compile was cancelled at the disk floor
+[control plane](control-plane.md). Gitea run 5 passed its seven source checks;
+all 18 Git mirrors are complete. App activation retains its own qualification.
+The Windows app compile was cancelled at the disk floor
 before producing an executable.
 
-Not qualified: other Rust engines, media decoding, rendering, export accuracy,
-native Bun.Video, CEF windows, installers, provider access, signing and CI
-execution. No tests were added or run. Upstream launcher specifications retain
+Generation reuses the existing Rust router. Its Linux x64 native check and release
+build passed; the 19,181,336-byte engine exposes 14 methods. Version, doctor,
+model discovery and an offline image draft passed without provider credentials.
+Paid generation and other targets remain unqualified.
+
+The Linux Generation standalone is 173,388,472 bytes. Compiled doctor, canonical
+artifact verification, native version/discovery and offline draft passed from a
+source-free working directory. Its receipt is
+`infra/releases/generation-linux-x64.json`.
+
+Canonical Infra app activation is published as Rust source. Formatting passes;
+its VPS Cargo gate stops before compilation because the sibling Bun checkout
+lacks `packages/web/rust/Cargo.toml`. The installed CLI is unchanged and app
+ingress remains staged. The source's readiness probe is not live-qualified.
+
+Not qualified: remaining Rust engines, media decoding, rendering, export accuracy,
+native Bun.Video, CEF windows, installers, provider access and signing.
+No tests were added or run. Upstream launcher specifications retain
 their original frontend expectations.
 
 The source migration covers JavaScript build and development tooling. Rust

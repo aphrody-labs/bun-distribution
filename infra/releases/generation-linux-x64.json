@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "identity": "Aphrody / Bun",
+  "app": "generation",
+  "target": "bun-linux-x64",
+  "sourceRevision": "9c4ed82af5278b7e8374e2093f53fc2af50937be",
+  "runtimeRevision": "dfde053a3045d6076ad315b6f63160c4ced71513",
+  "size": 173388472,
+  "sha256": "2dd04040d666d2a8172b9e66a80477ceaecb33b1cf879473ea29a99a48ba88df",
+  "manifestSha256": "c146175d72a88ea7dab6f010edd0adb6cd2d0c906ce3560dc5187716600920f7",
+  "nativeSha256": "06e8a4efda4fcfadee002eb1f3357ebcfbba7682adf0d04051039d3940968d03",
+  "qualification": {
+    "host": "vps",
+    "mode": "ssh",
+    "payloadIntegrity": true,
+    "sourceFreeStartup": true,
+    "nativeVersion": "0.0.1",
+    "discoveredMethods": 14,
+    "offlineDraft": true
+  },
+  "sharedAssets": {
+    "sha256": "36a1b825dfeb20e209f022d65f928db8510cd1035cfaf746cbf29e480625a4bc",
+    "url": "https://assets.aphrody.app/manifests/sha256/36a1b825dfeb20e209f022d65f928db8510cd1035cfaf746cbf29e480625a4bc.json"
+  }
+}

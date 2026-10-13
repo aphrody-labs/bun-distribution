@@ -30,10 +30,17 @@
 
 ## Unified deployment
 
-- [ ] Consolidate shared concepts into their existing capability owners.
+- [x] Consolidate shared concepts into their existing capability owners.
 - [x] Create app subdomains through Cloudflare MCP and retain active R2 domains.
 - [ ] Package independent apps with verified Aphrody Bun and native engines.
 - [x] Reference one content-addressed asset manifest across apps.
-- [ ] Prepare canonical Infra services, routes and release workflows.
-- [ ] Deploy the Rust controller and self-hosted forge/runner on the VPS.
+- [x] Prepare canonical Infra services, routes and release workflows.
+- [x] Deploy the Rust controller and self-hosted forge/runner on the VPS.
 - [ ] Qualify artifacts, domains and services separately; publish owned changes.
+
+## Delivery status
+
+- Linux Video and Generation standalones are built and qualified.
+- Remaining app/target builds and public app activation need their own receipts.
+- Git/Komodo HTTPS, Periphery and runner registration are qualified.
+- Source publication and CI execution are recorded in docs/session-report.md.

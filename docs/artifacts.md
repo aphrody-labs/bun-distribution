@@ -71,10 +71,11 @@ digest, source/runtime pins and shared asset reference. Hostnames come from the
 canonical deployment configuration. Publishing a manifest does not qualify DNS,
 TLS, a native host or application operations.
 
-Linux x64 video has passed compilation, extraction and artifact verification with
-its separately verified runtime pin. Windows video has a qualified native engine;
-its standalone executable remains unqualified. Other engines and targets require
-their own build and execution receipts. No tests are added.
+Linux x64 video and generation passed compilation, extraction and artifact
+verification with the separately verified runtime pin. Windows video has a
+qualified native engine; its standalone executable remains unqualified.
+Remaining engines and targets require their own build and execution receipts.
+No tests are added.
 
 ## Artifact verification
 
