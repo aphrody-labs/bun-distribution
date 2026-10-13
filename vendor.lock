@@ -9,7 +9,7 @@
     {
       "name": "plugins-workspace",
       "sha": "7e44012db3c1ef7896158484a7afc626b04c691a"
-    },
+    }
   ],
   "crates": [
     {
@@ -147,6 +147,6 @@
       "source": "tauri",
       "from": "crates/tauri-runtime-cef",
       "dir": "crates/tauri/aphrody-tauri-runtime-cef"
-    },
+    }
   ]
 }
