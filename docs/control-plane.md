@@ -64,8 +64,10 @@ memory and logs. Its pinned existing build image receives the qualified native
 Linux Bun binary at `/usr/local/bin/bun` as a read-only mount, with
 `BUN_EXECUTABLE` set to that path. Jobs use the `aphrody-bun-linux` label.
 Runner and Gitea allow at most 720 minutes per job; capacity stays one, with
-two CPUs and 8 GiB per job. Repository Actions stay disabled during mirror
-initialization and the owner's native factory job. Linux and Windows runtime
+two CPUs and 8 GiB per job. Library and SDK mirror Actions stay disabled. The
+root mirror admits manual source qualification; its factory workflow remains
+disabled until native host admission is ready. Native builds additionally
+require an explicit dispatch input. Linux and Windows runtime
 revisions and artifacts retain separate qualification.
 
 ## Qualification
@@ -88,8 +90,21 @@ The MongoDB password file is 0640 with container group 999 so its unprivileged
 process can read the exact mount; the host parent directory stays private.
 Runner registration is a private 0600 file in its 0700 data directory.
 
-Git mirroring is a separate bounded operation. Native application builds,
-authenticated engine operations and CI job execution require their own receipts.
+The [CI receipt](../infra/control/qualification.json) records real Gitea
+[run 5](https://git.aphrody.app/aphrody-labs/bun-libraries/actions/runs/5): all
+seven source qualification steps passed at `c742e3a50f6880897f2aa55135b2986188f230f0`.
+Native types checked 57 files; runtime identity matched the Linux pin, frozen
+installation, lint, formatting and the application plan passed. No native
+builds or tests ran. Checkout initializes configured first-level submodules.
+Only the qualified Bun file is allowed as a read-only host mount; its directory
+is selected through `GITHUB_PATH` before the remaining gates.
+
+All 18 Git mirrors are private and populated: the root repository, 16 library
+forks and the Bun SDK. GitHub origins and histories remain intact; LFS payloads
+were not copied. The large Bun mirror completed server-side after its bounded
+client timed out; the receipt reflects the live repository inventory.
+Native application builds and authenticated engine operations retain separate
+qualification.
 The owner's first video build restored its existing sccache temporary directory
 `~/build/cache/sccache/control-plane-tmp` before native job admission; the control
 plane deployment did not run Cargo or tests.
