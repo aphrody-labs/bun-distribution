@@ -20,7 +20,7 @@ services:
       GITEA__server__SSH_PORT: "29022"
       GITEA__security__INSTALL_LOCK: "true"
       GITEA__service__DISABLE_REGISTRATION: "true"
-      GITEA__service__REQUIRE_SIGNIN_VIEW: "true"
+      GITEA__service__REQUIRE_SIGNIN_VIEW: "false"
       GITEA__repository__DEFAULT_PRIVATE: private
       GITEA__actions__ENABLED: "true"
       GITEA__actions__DEFAULT_ACTIONS_URL: self
