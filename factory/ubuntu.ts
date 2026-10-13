@@ -261,10 +261,8 @@ async function fetchSources(job: string, root: string, profile: FactoryProfile, 
     return { stdout, stderr, code };
   }
   async function hash(path: string) {
-    const f = Bun.file(path);
-    const hasher = new Bun.CryptoHasher("sha256");
-    for await (const chunk of f.stream()) hasher.update(chunk);
-    return { path, bytes: (await stat(path)).size, sha256: hasher.digest("hex") };
+    const bytes = (await stat(path)).size;
+    return { path, bytes, sha256: await hashFile(path, { expectedBytes: bytes }) };
   }
   function field(text: string, name: string) {
     return text.match(new RegExp("^" + name + ":\\s*(.*)$", "m"))?.[1]?.trim();

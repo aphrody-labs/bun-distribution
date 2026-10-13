@@ -10,6 +10,8 @@
       Bun Libraries process owner; app compilation also uses its bounded process,
       deadline, output and PID callbacks.
 - [x] Route distribution and Ubuntu artifact hashing through the shared hash owner.
+- [x] Route Ubuntu signed release and source archive hashing through the shared
+      file hash owner, preserving the byte-count receipt and size-change check.
 - [x] Route package converter SHA-256 content identities through the same hash owner;
       keep its multi-algorithm streaming archive verifier with the parser.
 - [x] Make Bun Libraries the hostname owner for the 14 library applications;
