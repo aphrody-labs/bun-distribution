@@ -7,7 +7,8 @@
 - [x] Move all 71 Aphrody checkout entries to the selected src workspace;
       verify identical Git HEAD and status, update the user APHRODY_ROOT.
 - [x] Route distribution commands and Ubuntu factory jobs through the shared
-      Bun Libraries process owner, including deadlines, process trees and logs.
+      Bun Libraries process owner; app compilation also uses its bounded process,
+      deadline, output and PID callbacks.
 - [x] Route distribution and Ubuntu artifact hashing through the shared hash owner.
 - [x] Make Bun Libraries the hostname owner for the 14 library applications;
       retain each bare library domain as an alias and keep DNS records in place.

@@ -5,6 +5,7 @@ import { hostname } from "node:os";
 import { isBuiltin } from "node:module";
 import { appHostnamesForLibrary } from "@aphrody/bun-workspace/capabilities";
 import { loadConfig as loadLibraryConfig } from "@aphrody/bun-workspace";
+import { runProcess } from "@aphrody/bun-workspace/process";
 import { command, identity, packageRoot, type RuntimeReceipt } from "../src/distribution.ts";
 import { inspectLinuxABI } from "../src/elf.ts";
 import { abi } from "../packages/package-converter/src/abi.ts";
@@ -493,9 +494,8 @@ export async function buildApp(configPath: string, appId: string, target: AppTar
       open(join(output, "logs/compile.stderr"), "w"),
     ]);
     try {
-      const child = Bun.spawn({
-        cmd: args,
-        cwd: plan.cwd,
+      let childPid: number | undefined;
+      const result = await runProcess(args, plan.cwd, {
         env: {
           ...Bun.env,
           TMPDIR: join(output, "tmp"),
@@ -504,36 +504,39 @@ export async function buildApp(configPath: string, appId: string, target: AppTar
           BUN_RUNTIME_TRANSPILER_CACHE_PATH: join(output, "tmp/transpiler"),
         },
         stdin: "ignore",
-        stdout: stdout.fd,
-        stderr: stderr.fd,
-        windowsHide: true,
-        timeout,
+        stdout: "discard",
+        stderr: "discard",
+        timeoutMs: timeout,
+        maxOutputBytes: 128 * 1024 * 1024,
+        onStart: async pid => {
+          childPid = pid;
+          await Bun.write(
+            join(output, "status.json"),
+            JSON.stringify(
+              { status: "running", pid: process.pid, childPid, output, appId, target, deadlineSeconds: timeout / 1000 },
+              null,
+              2,
+            ) + "\n",
+          );
+        },
+        onOutput: async (channel, bytes) => {
+          const file = channel === "stdout" ? stdout : stderr;
+          let offset = 0;
+          while (offset < bytes.byteLength) {
+            const { bytesWritten } = await file.write(bytes.subarray(offset));
+            if (bytesWritten === 0) throw new Error("App build log write made no progress");
+            offset += bytesWritten;
+          }
+        },
       });
       await Bun.write(
         join(output, "status.json"),
         JSON.stringify(
           {
-            status: "running",
+            status: result.code === 0 ? "complete" : "failed",
+            exitCode: result.code,
             pid: process.pid,
-            childPid: child.pid,
-            output,
-            appId,
-            target,
-            deadlineSeconds: timeout / 1000,
-          },
-          null,
-          2,
-        ) + "\n",
-      );
-      const code = await child.exited;
-      await Bun.write(
-        join(output, "status.json"),
-        JSON.stringify(
-          {
-            status: code === 0 ? "complete" : "failed",
-            exitCode: code,
-            pid: process.pid,
-            childPid: child.pid,
+            childPid,
             output,
             appId,
             target,
@@ -542,7 +545,7 @@ export async function buildApp(configPath: string, appId: string, target: AppTar
           2,
         ) + "\n",
       );
-      if (code !== 0) throw new Error("Bounded app compilation failed; inspect its owned logs");
+      if (result.code !== 0) throw new Error("Bounded app compilation failed; inspect its owned logs");
     } finally {
       await Promise.all([stdout.close(), stderr.close()]);
     }

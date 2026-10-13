@@ -17,6 +17,14 @@
   PID callbacks, shared output limits and streamed SHA-256 with exact file length.
   Distribution and both Ubuntu/native-target factories now import those owners
   instead of implementing their own subprocess lifecycle and streaming hashes.
+- Bun OS app planning now reads the pinned Bun Libraries capability configuration
+  for 14 native application hostnames. The shared owner emits `app-<capability>`
+  as canonical host and retains each library name as a DNS alias; no Cloudflare
+  records were changed. The standalone compiler's child process, deadline, output
+  cap, PID receipt and logs also route through the shared Bun Libraries process API.
+- Bun Libraries hostname owner is published at 980caaf; Bun OS consumer mapping is
+  published at 8b2a148. A native filmcraft plan resolved both video hostnames and
+  correctly stayed blocked because no native backend artifact receipt was qualified.
 - Native bun check passed for 59 library and 30 distribution files. Scoped native
   lint/format and git diff whitespace gates passed. No tests, remote factory
   execution, desktop launch or deployed app qualification were performed here.
