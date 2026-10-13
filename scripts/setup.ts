@@ -21,5 +21,5 @@ async function run(argv: string[]): Promise<void> {
   if (result.code !== 0) process.exit(result.code);
 }
 
-await run(["git", "submodule", "update", "--init", "--recursive", "--depth", "1"]);
+await run(["git", "submodule", "update", "--init", "--depth", "1"]);
 await run([process.execPath, "install", "--frozen-lockfile"]);

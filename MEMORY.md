@@ -294,3 +294,23 @@ aphrody-dev <contact@aphrody.com>. Concurrent submodule work remained unstaged.
   sibling and sequence filenames. Failed operations retain structured results.
 - Paths remain checkout-relative under the selected C:\src workspace. Native
   owners are resolved from live tools and configuration after workspace changes.
+
+## Unified workspace integration, 2026-10-13
+
+- Bun OS and Bun Libraries were merged into the `os` branch at C:/src/bun-os.
+  The 16 library repositories and Bun runtime remain revision-pinned Git
+  submodules, preserving their history and license notices.
+- The root Bun workspace includes the OS package converter, shared workspace,
+  video and artifacts packages, and desktop app. One root `bun.lock` was
+  regenerated with Bun 1.4.4. `bun run check` passed: typecheck covered 89
+  files, then native lint and format checks completed successfully.
+- `bun run setup` initializes root submodules and uses a frozen root Bun install.
+  Recursive M3 asset checkout exhausted the workstation's free disk; the setup
+  was changed to leave nested pinned submodules lazy. The failed Material icon
+  checkout remains deinitialized; its locked gitlink was not changed.
+- `.cargo/config.toml` routes Cargo outputs/install root to the shared root
+  directories, but the imported repositories still declare independent Cargo
+  workspaces. A single Cargo workspace is not yet delivered.
+- The root license applies to first-party files. Imported projects retain their
+  own license and notice files. Do not remove source submodules until consumers,
+  histories, and license files have been migrated and verified.

@@ -1,7 +1,7 @@
 # Native Bun migration
 
 Quality commands are native `bun check`, `bun lint` and `bun fmt`. Root tooling
-uses the pinned fork and bunfmt.json. The native checker covers 59 authored
+uses the pinned fork and bun-format.json. The native checker covers 59 authored
 files; the imported frontend covers 1,479 files.
 
 Aggressive n2b ran across the 16 library inputs and the SDK with two workers.

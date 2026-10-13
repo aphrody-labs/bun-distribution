@@ -11,7 +11,7 @@ licenses and owner conventions. These references govern authored code.
 | Sources/builds | Independent dependencies, exact revisions, preserved notices and non-interactive builds | [Debian Policy](https://www.debian.org/doc/debian-policy/ch-source.html) |
 
 Use guard clauses and shared cleanup. Comments explain ownership constraints.
-.editorconfig, bunfmt.json and rustfmt enforce formatting. JavaScript gates use
+.editorconfig, bun-format.json and rustfmt enforce formatting. JavaScript gates use
 `bun check`, `bun lint` and `bun fmt` through the native runtime.
 
 Reviewed through `aphrody docs`, `aphrody awesome` and scoped remote
