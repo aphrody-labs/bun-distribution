@@ -1,5 +1,16 @@
 # Project decisions and session evidence
 
+## Shared quality owner, 2026-10-13
+
+- Bun Libraries commit 89731c4 aligns its check/lint/format runner with the
+  shared bounded process owner and removes the separate `doctor` phase from the
+  quality aggregate. Its native check passed: 60-file typecheck, lint and format.
+  The gate exposed formatter drift in `packages/workspace/src/assets.ts`; native
+  `bun fmt` corrected it in the same focused batch.
+- Bun OS consumes Bun Libraries as a local workspace dependency. Its native
+  check passed after the library update: 35-file typecheck, lint and format.
+  Bun Libraries main is pushed at 89731c4; no tests or builds were run.
+
 ## Workspace fusion, 2026-10-13
 
 - The selected Aphrody checkout is C:/src/aphrody. On 2026-10-13 it contains

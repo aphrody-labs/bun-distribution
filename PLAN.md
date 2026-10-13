@@ -33,6 +33,9 @@
       source library hostnames from Bun Libraries, and use Aphrody Infra's host,
       route and app-activation owners. Remove the unapplied duplicate
       Forgejo/FerretDB profile; preserve its dated pins in the session report.
+- [x] Align Bun Libraries' native quality runner with its shared process owner;
+      correct formatter drift in the shared asset owner and verify both library
+      and distribution check/lint/format gates.
 - [ ] Complete Material consumer migration through qualified published packages.
 - [ ] Commit and push each qualified ownership batch with precise paths.
 
