@@ -1086,11 +1086,13 @@ function downloadsHandler(root: string): (request: Request) => Promise<Response>
   };
 }
 
+export function startPublicServer(env: Record<string, string | undefined> = process.env) {
+  const { root, port, hostname } = serverOptions(env);
+  const handler = createHandler(root, siteOptions(root, env));
+  return Bun.serve({ port, hostname, idleTimeout: 120, fetch: handler });
+}
+
 if (import.meta.main) {
-  const { root, port, hostname } = serverOptions();
-  const handler = createHandler(root, siteOptions(root));
-  const server = Bun.serve({ port, hostname, idleTimeout: 120, fetch: handler });
-  console.log(
-    `aphrody-downloads listening on http://${server.hostname}:${server.port} (root ${root})`,
-  );
+  const server = startPublicServer();
+  console.log(`Aphrody public listening on http://${server.hostname}:${server.port}`);
 }

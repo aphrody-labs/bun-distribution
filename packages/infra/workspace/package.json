@@ -86,7 +86,6 @@
     "@aphrody/a2a": "workspace:*",
     "@aphrody/os": "workspace:*",
     "@aphrody/paths": "workspace:*",
-    "@aphrody/product": "workspace:*",
     "@aphrody/runtime-sdk": "workspace:*",
     "@aphrody/timeline": "workspace:*",
     "@aphrody/update": "workspace:*",

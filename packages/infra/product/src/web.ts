@@ -36,7 +36,7 @@ export async function main(args: string[]): Promise<number> {
   const [action = "start", ...rest] = args;
   if (args.includes("--help") || action === "help") {
     console.log(
-      "aphrody-product web start [--host HOST] [--port PORT] [--root DIR]\naphrody-product web os",
+      "aphrody-product web start [--host HOST] [--port PORT] [--root DIR]\naphrody-product web public\naphrody-product web os",
     );
     return 0;
   }
@@ -45,6 +45,13 @@ export async function main(args: string[]): Promise<number> {
       await import("@aphrody/web-source/integrations/m3/packages/app-ui/webos.ts");
     const server = await startForkWebOS();
     console.log(`Aphrody WebOS: ${server.url}`);
+    return 0;
+  }
+  if (action === "public") {
+    if (rest.length) throw new Error("Public server uses DOWNLOADS_* and SITE_* configuration");
+    const { startPublicServer } = await import("./downloads/server.ts");
+    const server = startPublicServer();
+    console.log(`Aphrody public: ${server.url}`);
     return 0;
   }
   if (action !== "start") throw new Error(`Unknown web action: ${action}`);
