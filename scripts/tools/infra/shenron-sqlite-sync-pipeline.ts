@@ -219,8 +219,17 @@ export async function runPipeline(root: string, configuration: string): Promise<
   chmodSync(`${snapshot}.offsite-verified`, 0o600);
   const sync = JSON.parse(
     await childOutput(
-      ["docker", "exec", service.container, config.replicaExecutable, "--replica-sync"],
-      180000,
+      [
+        "docker",
+        "exec",
+        service.container,
+        "timeout",
+        "--kill-after=10s",
+        "180",
+        config.replicaExecutable,
+        "--replica-sync",
+      ],
+      200000,
     ),
   );
   if (!sync.ok || sync.totals?.failed !== 0) throw Error("Canonical replica write failed");
@@ -230,11 +239,14 @@ export async function runPipeline(root: string, configuration: string): Promise<
         "docker",
         "exec",
         service.container,
+        "timeout",
+        "--kill-after=10s",
+        "180",
         config.replicaExecutable,
         "--replica-sync",
         "--dry-run",
       ],
-      180000,
+      200000,
     ),
   );
   if (!converged(readback)) throw Error("Canonical replica did not converge");
