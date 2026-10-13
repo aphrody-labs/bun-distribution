@@ -8,6 +8,10 @@ capacités runtime viennent du fork Bun et l’UI partagée de Material
 administrateur et créateur utilisent le protocole `aphrody.kit/1`.
 L’unification des publications et domaines est encore en cours.
 
+`web cloudflare deploy` prépare les assets publics Aphrody et Bun avec les builders
+du checkout Bun sélectionné, puis utilise le Worker existant. `--dry-run` prépare
+et valide le paquet sans le publier. `--assets DIR` utilise un artifact déjà préparé.
+
 ```sh
 bun packages/infra/product/src/cli.ts setup --oui --roles admin,createur --simuler
 bun packages/infra/product/src/cli.ts admin verifier

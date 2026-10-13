@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { join, resolve } from "node:path";
+import { resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { checkoutRoot, findWorkspaceRoot } from "@aphrody/paths";
+import { findWorkspaceRoot } from "@aphrody/paths";
 
 export function webOptions(args: string[], env: NodeJS.ProcessEnv = process.env) {
   const { values } = parseArgs({
@@ -55,11 +55,7 @@ export async function main(args: string[]): Promise<number> {
     return 0;
   }
   if (action === "cloudflare") {
-    const { wrangler } = await import("@aphrody/bun-cloudflare/wrangler");
-    const cwd = join(checkoutRoot("bun"), "packages/web/cloudflare");
-    if (!(await Bun.file(join(cwd, "wrangler.jsonc")).exists()))
-      throw new Error("Canonical Cloudflare worker configuration is missing");
-    return wrangler(rest.length ? rest : ["--help"], { cwd }).exited;
+    return (await import("./cloudflare.ts")).main(rest);
   }
   if (action !== "start") throw new Error(`Unknown web action: ${action}`);
   const server = await startWeb(rest);
