@@ -52,7 +52,7 @@ export interface AssetPlan {
   reference: AssetReference;
   files: Map<string, string>;
 }
-const maxAssetBytes = 128 * 1024 * 1024;
+const maxAssetBytes = 256 * 1024 * 1024;
 
 export function validateAssetReference(
   value: unknown,
@@ -235,23 +235,45 @@ export async function publishContentObject(
     (await hashFile(path, { maxBytes: maxAssetBytes })) !== expected.sha256
   )
     throw new Error("Content changed after asset planning.");
+  const endpoint = Bun.env.R2_ENDPOINT ?? Bun.env.AWS_ENDPOINT_URL_S3;
+  const endpointUrl = endpoint ? new URL(endpoint) : undefined;
+  if (
+    !endpointUrl ||
+    endpointUrl.protocol !== "https:" ||
+    !/^[a-z0-9]+\.r2\.cloudflarestorage\.com$/.test(endpointUrl.hostname)
+  )
+    throw new Error("R2 endpoint must be injected from the protected environment.");
   const objectKey = storage.prefix + expected.sha256;
   const object = client.file(objectKey);
   let created = false;
-  if (await object.exists()) {
-    const metadata = await object.stat();
-    if (
-      metadata.size !== expected.bytes ||
-      (await hashStream(object.stream(), { maxBytes: expected.bytes })) !== expected.sha256
-    )
-      throw new Error("Existing immutable R2 asset differs from its content key.");
-  } else {
-    signal.throwIfAborted();
-    await object.write(file, { type: file.type || "application/octet-stream", retry: 1 });
-    if ((await hashStream(object.stream(), { maxBytes: expected.bytes })) !== expected.sha256)
-      throw new Error("Uploaded R2 asset failed content verification.");
-    created = true;
-  }
+  const put = await fetch(
+    object.presign({ method: "PUT", expiresIn: 60, type: file.type || "application/octet-stream" }),
+    {
+      method: "PUT",
+      body: file,
+      signal,
+      redirect: "error",
+      headers: {
+        "If-None-Match": "*",
+        "Content-Type": file.type || "application/octet-stream",
+        "Cache-Control": "public, max-age=31536000, immutable",
+      },
+    },
+  );
+  await put.body?.cancel();
+  if (!put.ok && put.status !== 412) throw new Error("R2 conditional content write failed.");
+  created = put.status !== 412;
+  const verified = await fetch(object.presign({ method: "GET", expiresIn: 60 }), {
+    signal,
+    redirect: "error",
+  });
+  if (!verified.ok || !verified.body) throw new Error("R2 content verification failed.");
+  const digest = await hashStream(verified.body, {
+    maxBytes: expected.bytes,
+    expectedBytes: expected.bytes,
+  });
+  if (digest !== expected.sha256)
+    throw new Error("Published R2 asset does not match its content address.");
   return {
     ...expected,
     objectKey,
