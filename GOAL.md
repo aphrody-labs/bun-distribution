@@ -24,3 +24,11 @@ Every product Rust crate is a pinned Git submodule directly under
 table and nightly toolchain. The root owns `build`, `target`, `node_modules`
 and `install`. Aphrody Infra provisions declared forge repositories and
 machine identities idempotently; credentials remain in protected secret stores.
+
+Self-host every Aphrody Labs source repository through the existing Infra and
+forge owners. Preserve upstream histories, branch identities, public/private
+visibility, and protected stores. The canonical source portal is
+`https://source.aphrody.app`, backed by the existing forge server and API.
+Qualify standalone product binaries, server routes, and one orchestration
+owner separately from source mirror and configuration delivery. Mirror jobs
+must be resumable and admitted against actual host capacity.
