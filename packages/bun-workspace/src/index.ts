@@ -112,7 +112,7 @@ export interface ModuleBinaryOptions extends ExecutionOptions {
   signal?: AbortSignal;
 }
 
-interface CommandResult {
+export interface CommandResult {
   code: number;
   stdout: string;
   stderr: string;
@@ -760,7 +760,7 @@ export async function resolveModuleBinary(
 }
 
 /** Serialize a native build owner, including the Tauri CLI, without a shell. */
-async function runNativeResult(
+export async function runNativeResult(
   config: Config,
   nativeArguments: string[],
   options: NativeExecutionOptions = {},

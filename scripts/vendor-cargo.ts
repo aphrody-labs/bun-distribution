@@ -3,6 +3,7 @@
 import { mkdir, readdir, stat } from "node:fs/promises";
 import { basename, isAbsolute, join, relative, resolve } from "node:path";
 import { hashFile, loadConfig, repositoryRoot, runNative, runProcess } from "@aphrody/bun-workspace";
+import { cargoBuildQualification } from "./cargo-build-proof.ts";
 
 interface LockedPackage {
   name: string;
@@ -232,6 +233,7 @@ async function verify(): Promise<void> {
   if (JSON.stringify(directories) !== JSON.stringify(records.map(pkg => pkg.directory).sort()))
     throw new Error("Vendor contains unowned packages outside the locked graph.");
   await unchanged(inputs);
+  const buildQualification = await cargoBuildQualification();
   const receipt = {
     schemaVersion: 1,
     observedAt: new Date().toISOString(),
@@ -251,8 +253,7 @@ async function verify(): Promise<void> {
     qualification: {
       cargoMetadataOffline: true,
       manifestsAndNoticesVerified: true,
-      compiled: false,
-      activeSourceReplacement: false,
+      ...buildQualification,
       scope: "root product Cargo workspace only",
     },
   };
@@ -264,8 +265,7 @@ async function verify(): Promise<void> {
       bytes,
       files,
       memberCount: inputs.members.length,
-      compiled: false,
-      activeSourceReplacement: false,
+      ...buildQualification,
     }),
   );
 }
