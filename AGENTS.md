@@ -42,12 +42,14 @@ public edge owner for the application domains. Preserve the homepage, www,
 existing services and R2 custom domains. A DNS/HTTPS response qualifies routing;
 it does not qualify an independently deployed native application.
 
-Reuse capability owners: exportPinnedSources for source export, the qualified
-artifact package for standalone apps, the canonical bun-cloudflare client for
-R2/authentication, and package-converter ABI helpers. Shared process lifetimes
-and streamed hashes come from @aphrody/bun-workspace. Native Aphrody Infra owns
-hosts, services, control-plane deployment and app activation. Existing adapters
-remain until their replacement preserves their contracts and passes its gates.
+Reuse capability owners: Bun OS owns `exportPinnedSources` because its Git/LFS
+acquisition, staged tree integrity and source receipts are distribution
+contracts. Bun Libraries owns the qualified artifact package and shared process
+lifetimes and streamed hashes. The canonical `bun-cloudflare` client owns
+R2/authentication, and package-converter owns ABI helpers. Native Aphrody Infra
+owns hosts, services, control-plane deployment and app activation. Existing
+adapters remain until their replacement preserves their contracts and passes
+its gates.
 Keep target/runtime and ABI versions distinct. Qualify source, binary, package,
 desktop, image, WASM, performance and publication independently.
 Do not add or run tests unless the owner requests them.
