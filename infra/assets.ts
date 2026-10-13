@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 import { lstat, mkdir, readdir, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { identity } from "../src/distribution.ts";
+import { publishContentObject } from "@aphrody/bun-workspace/assets";
+import { runtimeCheckout } from "../src/distribution.ts";
 import { pathToFileURL } from "node:url";
-import { contentIdentity, identity, runtimeCheckout } from "../src/distribution.ts";
 
 export interface AssetStorage {
   bucket: string;
@@ -185,31 +187,6 @@ export async function r2Owner(config: AssetInventory, bucket: string): Promise<B
   const owner = (await import(pathToFileURL(ownerPath).href)) as CloudflareDataOwner;
   return owner.createR2Client({ bucket, env: await owner.loadCloudflareEnvironment() });
 }
-async function remoteBytes(response: Response, expected: number): Promise<Uint8Array<ArrayBuffer>> {
-  if (!response.ok || !response.body) throw new Error("R2 object verification failed");
-  const chunks: Uint8Array[] = [],
-    reader = response.body.getReader();
-  let bytes = 0;
-  try {
-    for (;;) {
-      const next = await reader.read();
-      if (next.done) break;
-      bytes += next.value.byteLength;
-      if (bytes > expected || bytes > MAX_OBJECT_BYTES) throw new Error("R2 object length exceeds its pinned identity");
-      chunks.push(next.value);
-    }
-  } finally {
-    await reader.cancel().catch(() => {});
-  }
-  if (bytes !== expected) throw new Error("R2 object length differs from its pinned identity");
-  const result = new Uint8Array(bytes);
-  let offset = 0;
-  for (const chunk of chunks) {
-    result.set(chunk, offset);
-    offset += chunk.length;
-  }
-  return result;
-}
 export async function putContentObject(
   client: Bun.S3Client,
   storage: AssetStorage,
@@ -219,42 +196,15 @@ export async function putContentObject(
 ) {
   if (protectedInput(path) || !/^[a-f0-9]{64}$/.test(expected.sha256) || expected.bytes > MAX_OBJECT_BYTES)
     throw new Error("Invalid scoped content object input");
-  const digest = await identity(path);
-  if (digest.sha256 !== expected.sha256 || digest.bytes !== expected.bytes)
-    throw new Error("Content changed after planning");
-  const body = await Bun.file(path).bytes();
-  if (body.byteLength !== expected.bytes || (await contentIdentity(new Blob([body]))).sha256 !== expected.sha256)
-    throw new Error("Content changed while reading");
-  const objectKey = storage.prefix + expected.sha256,
-    object = client.file(objectKey);
-  const response = await fetch(object.presign({ method: "PUT", expiresIn: 60, type: "application/octet-stream" }), {
-    method: "PUT",
-    body,
-    signal,
-    redirect: "error",
-    headers: {
-      "If-None-Match": "*",
-      "Content-Type": "application/octet-stream",
-      "Cache-Control": "public, max-age=31536000, immutable",
-    },
-  });
-  await response.body?.cancel();
-  if (!response.ok && response.status !== 412) throw new Error("R2 conditional object write failed");
-  const verified = await remoteBytes(
-    await fetch(object.presign({ method: "GET", expiresIn: 60 }), {
-      signal,
-      redirect: "error",
-    }),
-    expected.bytes,
-  );
-  if ((await contentIdentity(new Blob([verified]))).sha256 !== expected.sha256)
-    throw new Error("Existing R2 object does not match its content address");
+  if (storage.prefix !== "objects/sha256/" || !storage.origin.startsWith("https://"))
+    throw new Error("Invalid content-addressed asset storage.");
+  const object = await publishContentObject(client, storage, path, expected, signal);
   return {
     ...expected,
-    objectKey,
-    created: response.status !== 412,
-    checksumVerified: true as const,
-    url: storage.origin.replace(/\/$/, "") + "/" + objectKey,
+    objectKey: object.objectKey,
+    created: object.created,
+    checksumVerified: object.checksumVerified,
+    url: object.url,
   };
 }
 export async function uploadAssets(configPath: string, planPath: string) {
