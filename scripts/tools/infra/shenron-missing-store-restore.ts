@@ -48,7 +48,14 @@ export async function restoreMissingStores(
       const bytes = Bun.gunzipSync(compressed);
       if (bytes.length > 64 * 1024 * 1024)
         throw Error("Restore scope exceeds small runtime store limit");
-      const check = Database.deserialize(bytes, { readonly: true });
+      // SQLite deserialize cannot open WAL headers; normalize a validation copy only.
+      // https://sqlite.org/c3ref/deserialize.html
+      const validationBytes = bytes.slice();
+      if (validationBytes[18] === 2 && validationBytes[19] === 2) {
+        validationBytes[18] = 1;
+        validationBytes[19] = 1;
+      }
+      const check = Database.deserialize(validationBytes, { readonly: true });
       let tables: { name: string; rows: number }[] = [];
       try {
         const result = check.query("PRAGMA quick_check").get() as { quick_check: string };

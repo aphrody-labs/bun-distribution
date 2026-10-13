@@ -18,7 +18,11 @@ test("validates both backed-up databases without writes and refuses existing liv
       ["memory.sqlite", "conversations.sqlite"].map(async (name) => {
         const db = new Database(":memory:");
         db.exec("CREATE TABLE preserved (value TEXT); INSERT INTO preserved VALUES ('existing');");
-        const bytes = Bun.gzipSync(db.serialize());
+        const snapshot = db.serialize();
+        // Consistent on-disk snapshots can retain WAL header bytes.
+        snapshot[18] = 2;
+        snapshot[19] = 2;
+        const bytes = Bun.gzipSync(snapshot);
         db.close();
         const key = `server/data/${name}.gz`;
         await Bun.write(join(source, key), bytes);
@@ -32,6 +36,19 @@ test("validates both backed-up databases without writes and refuses existing liv
     const report = await restoreMissingStores(source, target, { uid: 1000, gid: 1000 });
     expect(report.apply).toBeFalse();
     expect(report.stores).toHaveLength(2);
+    expect(await Bun.file(join(target, "memory.sqlite")).exists()).toBeFalse();
+    const invalid = Bun.gzipSync(new TextEncoder().encode("invalid database"));
+    files["server/data/memory.sqlite.gz"] = new Bun.CryptoHasher("sha256")
+      .update(invalid)
+      .digest("hex");
+    await Bun.write(join(source, "server/data/memory.sqlite.gz"), invalid);
+    await Bun.write(
+      join(source, "VERIFIED.json"),
+      JSON.stringify({ kind: "shenron-container-backup", files }),
+    );
+    await expect(
+      restoreMissingStores(source, target, { uid: 1000, gid: 1000 }, true),
+    ).rejects.toThrow();
     expect(await Bun.file(join(target, "memory.sqlite")).exists()).toBeFalse();
     await Bun.write(join(target, "memory.sqlite"), "must remain");
     await expect(
