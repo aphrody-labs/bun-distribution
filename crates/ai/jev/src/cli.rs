@@ -24,8 +24,8 @@ fn decision_threshold(args: &[String]) -> Result<Option<f64>, String> {
     match args {
         [] => Ok(None),
         [flag, value] if flag == "--minimum-confidence" => {
-            let threshold = value.parse::<f64>().map_err(|error| error.to_string())?;
-            crate::decision::check_threshold(threshold).map_err(|error| error.to_string())?;
+            let threshold =
+                crate::decision::parse_threshold(value).map_err(|error| error.to_string())?;
             Ok(Some(threshold))
         },
         _ => Err(USAGE.into()),

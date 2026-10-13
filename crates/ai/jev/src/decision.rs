@@ -11,6 +11,14 @@ pub(crate) fn check_threshold(threshold: f64) -> Result<(), JevError> {
     }
 }
 
+pub(crate) fn parse_threshold(value: &str) -> Result<f64, JevError> {
+    let threshold = value
+        .parse::<f64>()
+        .map_err(|_| JevError::InvalidRequest("confidence threshold must be a number".into()))?;
+    check_threshold(threshold)?;
+    Ok(threshold)
+}
+
 /// Select all Choice answers after validating the batch once; `None` means abstention.
 /// Non-Choice answers remain available in the original response.
 ///

@@ -18,7 +18,7 @@ use std::{collections::HashSet, sync::Arc};
 
 use axum::{
     Json, Router,
-    extract::State,
+    extract::{RawQuery, State},
     http::{HeaderMap, StatusCode, header::AUTHORIZATION},
     response::{IntoResponse, Response as HttpResponse},
     routing::{get, post},
@@ -90,10 +90,35 @@ async fn models(State(state): State<ServerState>, headers: HeaderMap) -> HttpRes
 async fn systemone(
     State(state): State<ServerState>,
     headers: HeaderMap,
+    RawQuery(query): RawQuery,
     body: axum::body::Bytes,
 ) -> HttpResponse {
     if let Some(denied) = denied(&state, &headers) {
         return denied;
+    }
+    let mut minimum_confidence = None;
+    for (name, value) in
+        url::form_urlencoded::parse(query.as_deref().unwrap_or_default().as_bytes())
+    {
+        if name == "minimum_confidence" {
+            if minimum_confidence.is_some() {
+                return error(
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                    "invalid_request_error",
+                    "duplicate confidence threshold",
+                );
+            }
+            match crate::decision::parse_threshold(&value) {
+                Ok(threshold) => minimum_confidence = Some(threshold),
+                Err(error_value) => {
+                    return error(
+                        StatusCode::UNPROCESSABLE_ENTITY,
+                        "invalid_request_error",
+                        error_value.to_string(),
+                    );
+                },
+            }
+        }
     }
     let request: Request = match serde_json::from_slice(&body) {
         Ok(request) => request,
@@ -102,7 +127,25 @@ async fn systemone(
         },
     };
     match state.router.decide(&request).await {
-        Ok(decision) => Json(decision.response).into_response(),
+        Ok(decision) => {
+            let Some(threshold) = minimum_confidence else {
+                return Json(decision.response).into_response();
+            };
+            let selections = match crate::confident_choices(&request, &decision.response, threshold)
+            {
+                Ok(selections) => selections,
+                Err(error_value) => {
+                    return error(
+                        StatusCode::BAD_GATEWAY,
+                        "upstream_error",
+                        error_value.to_string(),
+                    );
+                },
+            };
+            let mut output = json!(decision.response);
+            output["selections"] = json!(selections);
+            Json(output).into_response()
+        },
         Err(JevError::InvalidRequest(message)) => {
             error(StatusCode::UNPROCESSABLE_ENTITY, "invalid_request_error", message)
         },

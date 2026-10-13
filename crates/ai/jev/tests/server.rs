@@ -2,7 +2,13 @@
 //! The Jev-compatible server: auth envelope, validation and routing.
 #![cfg(feature = "server")]
 
-use std::{collections::HashSet, sync::Arc};
+use std::{
+    collections::HashSet,
+    sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    },
+};
 
 use aphrody_jev::{
     Endpoint, JevRouter, RoutingPolicy,
@@ -84,4 +90,66 @@ async fn valid_request_is_served_and_invalid_one_is_422() {
     assert_eq!(bad.status(), 422);
     let body: Value = bad.json().await.unwrap();
     assert_eq!(body["detail"]["error_type"], "invalid_request_error");
+}
+
+#[tokio::test]
+async fn confidence_policy_preserves_auth_and_rejects_invalid_thresholds_before_inference() {
+    let hits = Arc::new(AtomicUsize::new(0));
+    let count = hits.clone();
+    let upstream = spawn(Router::new().route("/v1/systemone", post(move || {
+        let count = count.clone();
+        async move {
+            count.fetch_add(1, Ordering::SeqCst);
+            Json(json!({"model":"fixture","answers":{"tool":{"type":"choice","choice":"read","confidence":0.7,"probabilities":{"read":0.7,"search":0.3}}}}))
+        }
+    }))).await;
+    let router = JevRouter::new(
+        None,
+        None,
+        Some(Endpoint::local(&upstream, None).unwrap()),
+        RoutingPolicy::default(),
+    )
+    .unwrap();
+    let base = spawn(app(ServerState::new(
+        Arc::new(router),
+        HashSet::from(["devkey".to_owned()]),
+        "fixture",
+    )))
+    .await;
+    let client = reqwest::Client::new();
+    let request = json!({"state":"synthetic fixture","model":"fixture","questions":{"tool":{"type":"choice","instructions":"Select a tool","criteria":{"read":"Read","search":"Search"}}}});
+    let denied = client
+        .post(format!("{base}/v1/systemone?minimum_confidence=NaN"))
+        .json(&request)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(denied.status(), 401);
+    for (threshold, selected) in [("0.8", Value::Null), ("0.6", json!("read"))] {
+        let response = client
+            .post(format!("{base}/v1/systemone?minimum_confidence={threshold}"))
+            .bearer_auth("devkey")
+            .json(&request)
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), 200);
+        let output: Value = response.json().await.unwrap();
+        assert!(output.get("selections").is_some());
+        assert_eq!(output["selections"]["tool"], selected);
+        assert_eq!(output["answers"]["tool"]["confidence"], 0.7);
+    }
+    for query in ["NaN", "invalid", "-1", "1.1", "0.8&minimum_confidence=0.6"] {
+        let response = client
+            .post(format!("{base}/v1/systemone?minimum_confidence={query}"))
+            .bearer_auth("devkey")
+            .json(&request)
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), 422);
+        let output: Value = response.json().await.unwrap();
+        assert_eq!(output["detail"]["error_type"], "invalid_request_error");
+    }
+    assert_eq!(hits.load(Ordering::SeqCst), 2);
 }

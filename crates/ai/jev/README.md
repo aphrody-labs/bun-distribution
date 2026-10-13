@@ -18,6 +18,11 @@ Its JSON adds `selections` for Choice questions: a candidate name or `null` for
 abstention. Raw answers and distributions remain present. Without the option,
 the existing output shape is unchanged; invalid options fail before inference.
 
+The authenticated HTTP backend uses the same policy with
+`POST /v1/systemone?minimum_confidence=0.8`. It keeps the compatible model,
+answers and usage fields and adds `selections` only when requested. Invalid or
+repeated thresholds return the usual 422 error envelope before inference.
+
 This implements the abstention pattern described by
 [Jev Workflows](https://github.com/integrate-your-mind/jev-codex-plugin/blob/f67f0f35df13cbc0556539e6f86fe14e2c04d6f8/README.md)
 in the existing Rust owner, without another SDK dependency or MCP server.
