@@ -10,12 +10,13 @@ toolchain, `build/rust`, `target`, `node_modules`, and `install`. Use `just setu
 `just check`, and `just test`. Setup initializes direct submodules without
 recursively fetching unrelated upstream asset repositories.
 
-The root currently contains 28 flat crate owners, including the four CADCraft
-foundation crates: `cadcraft-color`, `cadcraft-geom`, `cadcraft-doc` and
-`cadcraft-constraints`. Every crate tracks its forge `os` branch. The CADCraft
-consumer workspace resolves 14 edges to these root owners in version 1.4.4;
-its other 12 members still require migration. Source histories, licenses and
-notices remain with each component. Licensed font assets remain in `fonts/`.
+The root currently contains 29 flat crate owners, including the five CADCraft
+crates `cadcraft-color`, `cadcraft-geom`, `cadcraft-doc`,
+`cadcraft-constraints` and `cadcraft-dxf`. Every crate tracks its forge `os`
+branch. The CADCraft consumer workspace resolves its migrated edges to these
+root owners in version 1.4.4; 11 other members remain to migrate. Source
+histories, licenses and notices remain with each component. Licensed font
+assets remain in `fonts/`.
 
 Forge access uses `bun-forge` through the private VPS transport. Aphrody Infra
 owns provisioned repositories and machine identities; private credentials

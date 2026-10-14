@@ -43,6 +43,15 @@
 
 ## Still required for full consolidation
 
+### CADCraft DXF owner — 2026-10-14
+
+- [x] Split `cadcraft-dxf` from CADCraft's `crates/dxf` history, retain its
+      license notices, publish its private forge `os` owner, and redirect the
+      CADCraft consumer to the flat root crate.
+- [x] Pass locked offline root metadata and `cadcraft-dxf` check, then pass the
+      complete root Rust format check.
+- [ ] Migrate the remaining 11 CADCraft workspace members.
+
 ### Cargo source-owner inventory — 2026-10-14
 
 - [x] Rebuild the manifest inventory from the 41 declared pinned source owners at

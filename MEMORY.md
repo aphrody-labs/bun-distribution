@@ -18,7 +18,7 @@ normalization with native execution. Vendor verification reports compiled true
 and valid proof; global source replacement, nested runtime/application builds
 and OS images remain unqualified. No tests ran. See docs/NATIVE-QUALIFICATION.md.
 
-## CADCraft flat foundations — 2026-10-14
+## CADCraft flat foundations and DXF — 2026-10-14
 
 The root contains 28 Cargo members, including geometry, document and constraints
 source histories split from CADCraft 00c7613f1af3c73f7157fa91d9fe2635c6f23c06.
@@ -27,10 +27,21 @@ nightly and exact shared versions; locked offline check and root Rust format
 pass. The source consumer branch os at 421652b27081ef984ebb1c86c80b4e0d34f6211a
 redirects 14 edges to the root version 1.4.4 and retires 49 original tracked
 files after confirming no ignored, untracked or concurrent content there.
-Source Cargo metadata passes with 12 remaining members; their application build
-and tests were not run. The 543 external sources are unchanged and vendor
-metadata/notices qualify against the new 571-package root graph. No full
-product build or active vendor source replacement is implied.
+Source Cargo metadata passes with 12 members remaining before the DXF migration;
+their application build and tests were not run. The 543 external sources are
+unchanged and vendor metadata/notices qualify against the 571-package root graph
+before DXF. The DXF history is split from CADCraft
+421652b27081ef984ebb1c86c80b4e0d34f6211a (`crates/dxf`) at
+92817364e6ee09aea7560925cbe039353182a450. Its private forge `os` branch is at
+2fb064dc24dd17ee08850ee339a3fcb966edbadc with byte-identical MIT, Apache,
+NOTICE and attribution files. CADCraft consumer branch `os` is at
+d9f215e852e193fe2c4d1c8702e36abc410468c4. Locked offline metadata resolves
+479 CADCraft packages with one `cadcraft-dxf`. It redirects to the root owner
+and removes the five old tracked files. Eleven CADCraft members remain. Root
+locked offline metadata resolves 566 packages, `cargo check --locked --offline
+-p cadcraft-dxf` and root `cargo fmt --all -- --check` pass. Tests, Clippy, the
+full CADCraft application build, active vendor replacement and product release
+remain unqualified.
 
 Aphrody Infra 138026e3034e9342d581355476ba6e26820b0545 owns the shared Bun forge
 provisioner consumed by its Rust interface. Three named private repositories

@@ -56,6 +56,25 @@ remain unqualified. CADCraft's remaining consumer workspace has 12 members;
 its 14 foundation edges target the root's exact version 1.4.4. Its full native
 application build and tests were not run.
 
+## CADCraft DXF reader — 2026-10-14
+
+`cadcraft-dxf` is split from CADCraft source revision
+`421652b27081ef984ebb1c86c80b4e0d34f6211a`, prefix `crates/dxf`. The split
+commit is `92817364e6ee09aea7560925cbe039353182a450`; its tree exactly matches
+the source prefix. The private forge `os` branch is at
+`2fb064dc24dd17ee08850ee339a3fcb966edbadc`; it retains the source-license
+import commit `0b16386136b048fde06b6bab4b9cd73bdedbdde9` and the Bun OS
+workspace integration. The CADCraft consumer branch `os` is at
+`d9f215e852e193fe2c4d1c8702e36abc410468c4`. `LICENSE-MIT`,
+`LICENSE-APACHE`, `NOTICE` and `ATTRIBUTION.md` match the source root byte for
+byte. The CADCraft consumer switches to the root owner and removes the five
+old tracked files. `encoding_rs` uses the source-compatible root pin `0.8.35`.
+Locked offline metadata resolves all 479 CADCraft packages with exactly one
+`cadcraft-dxf` owner.
+Root locked offline metadata resolves 566 packages, `cargo check --locked
+--offline -p cadcraft-dxf` passes, and root `cargo fmt --all -- --check` passes
+after formatting the imported files. Tests were not run.
+
 The subsequent complete root build with all features succeeds for all 28
 members and supplies 28 hashed final artifacts. The revalidated vendor receipt
 now reports `compiled: true` and `buildProof: valid`; this remains scoped to
