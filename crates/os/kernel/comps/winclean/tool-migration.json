@@ -174,7 +174,7 @@
   ],
   "owner_rules": [
     {
-      "owner": "aphrody-re",
+      "owner": "bun-re",
       "prefixes": [
         "analyze_pe",
         "aob_scan",

@@ -549,7 +549,7 @@ mod tests {
         );
         assert_eq!(
             lookup("binary_entropy_map").map(|entry| entry.owner.as_str()),
-            Some("aphrody-re")
+            Some("bun-re")
         );
         assert_eq!(
             lookup("computer_capture_screen").map(|entry| entry.dispatch),

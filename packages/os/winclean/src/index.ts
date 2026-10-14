@@ -4,6 +4,7 @@ import { KernelClient } from "@aphrody/os";
 import { GeneratedTools, type ToolArgsMap, type ToolName } from "./generated";
 import { TOOL_CATALOG } from "./catalog";
 import { ToolResult } from "./result";
+import { callBunWindows } from "./bun-windows";
 
 export * from "./generated";
 export * from "./result";
@@ -17,12 +18,13 @@ export interface ToolInfo {
 
 /** Local kernel-backed WinClean client. */
 export class Winclean extends GeneratedTools implements Disposable {
-  readonly path = "kernel://aphrody-os";
+  readonly path: string;
   #clientPromise: Promise<KernelClient> | undefined;
   #closed = false;
 
   private constructor(readonly endpoint?: string) {
     super();
+    this.path = endpoint ? "kernel://aphrody-os" : "bun:windows+kernel://aphrody-os";
   }
 
   static open(endpoint?: string): Winclean {
@@ -45,8 +47,17 @@ export class Winclean extends GeneratedTools implements Disposable {
   async call(name: string, args?: Record<string, unknown>): Promise<ToolResult>;
   async call(name: string, args: object = {}): Promise<ToolResult> {
     if (this.#closed) throw new Error("Winclean client is closed");
-    const client = await this.#client();
     try {
+      if (!this.endpoint) {
+        const native = await callBunWindows(name, args as Record<string, unknown>);
+        if (native.handled) {
+          return new ToolResult(name, {
+            structuredContent: native.value,
+            content: [{ type: "text", text: JSON.stringify(native.value) }],
+          });
+        }
+      }
+      const client = await this.#client();
       const value = await client.call(name, args as Record<string, any>);
       return new ToolResult(name, {
         structuredContent: value,
