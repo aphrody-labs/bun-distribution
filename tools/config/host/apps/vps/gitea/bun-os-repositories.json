@@ -190,6 +190,11 @@
       "name": "bun-crate-cadcraft-render",
       "mirror": false,
       "private": true
+    },
+    {
+      "name": "bun-crate-cadcraft-io",
+      "mirror": false,
+      "private": true
     }
   ]
 }
