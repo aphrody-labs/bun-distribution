@@ -275,6 +275,44 @@
       "pairs": "aphrody-self-update-dbfr.service"
     },
     {
+      "service": "shenron-sync",
+      "unit": "shenron-sync.service",
+      "path": "systemd/shenron/shenron-sync.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "scope": "user"
+    },
+    {
+      "service": "shenron-sync",
+      "unit": "shenron-sync.timer",
+      "path": "systemd/shenron/shenron-sync.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "scope": "user",
+      "pairs": "shenron-sync.service"
+    },
+    {
+      "service": "shenron-auto-deploy",
+      "unit": "shenron-auto-deploy.service",
+      "path": "systemd/shenron/shenron-auto-deploy.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "scope": "user"
+    },
+    {
+      "service": "shenron-auto-deploy",
+      "unit": "shenron-auto-deploy.timer",
+      "path": "systemd/shenron/shenron-auto-deploy.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "scope": "user",
+      "pairs": "shenron-auto-deploy.service"
+    },
+    {
       "service": "shenron-cdn-sync",
       "unit": "shenron-cdn-sync.service",
       "path": "systemd/shenron/shenron-cdn-sync.service",

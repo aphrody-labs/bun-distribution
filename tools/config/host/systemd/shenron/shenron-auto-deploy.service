@@ -1,0 +1,20 @@
+[Unit]
+Description=Shenron automatic qualified build and sealed DBFR deployment
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/src/aphrody
+Environment=PATH=%h/.bun/bin:%h/.cargo/bin:%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=%h/.bun/bin/bun-1.4.4 %h/src/aphrody/scripts/release/shenron-auto-deploy.ts deploy
+SuccessExitStatus=75
+UMask=0077
+TimeoutStartSec=6h
+TimeoutStopSec=120s
+KillMode=control-group
+Nice=15
+CPUQuota=600%
+MemoryHigh=20G
+MemoryMax=24G
+IOWeight=10
+
