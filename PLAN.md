@@ -85,6 +85,21 @@
 - [ ] Commit the integrated batch and push branch `os` after remote ancestry
       verification.
 
+## ArtCraft root Bun workspace — 2026-10-14
+
+- [x] Register the ArtCraft frontend root and its 61 package manifests in the
+      canonical Bun OS workspace. The generated root lock covers 1,287 package
+      identities and passes a frozen-lockfile dry run.
+- [x] Route ArtCraft install, development and build commands through the root
+      Bun workspace and lockfile.
+- [ ] Complete a physical frozen install and frontend build on a qualified host.
+      Only lock resolution has run; workstation free space was 546 MB afterward,
+      and the full installation footprint has not been measured.
+- [ ] Reconcile the ArtCraft submodule's nested `bun.lock` and legacy style
+      configuration after the root installation and frontend gates qualify.
+- [ ] Migrate ArtCraft lint, formatting and typecheck into the unified native
+      Bun quality gates without changing generated or imported assets blindly.
+
 ## Product/server and offline sources — 2026-10-13
 
 - [x] Root Cargo owns twenty-five flat pinned crate submodules, shared direct

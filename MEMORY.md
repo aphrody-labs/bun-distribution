@@ -1,5 +1,17 @@
 # Project decisions and session evidence
 
+## ArtCraft root workspace — 2026-10-14
+
+The Bun OS root now registers the ArtCraft frontend and 61 local package
+manifests, bringing its 1,287-package graph into the root `bun.lock`. Frontend
+install, dev and build commands route through the root workspace. A frozen
+lockfile dry run passes, and the root native quality aggregate passes on 122
+files. The actual frontend install/build remain unqualified: only 546 MB was
+free after lock resolution, and full install size is unmeasured. Applying root
+lint/format to the imported frontend reports extensive style and generated-file
+drift; its check cannot resolve Vite/Vitest before dependencies are installed.
+Keep that quality scope separate until capacity and source migration qualify.
+
 ## Shared app asset store — 2026-10-14
 
 Moved the only shared asset inputs from the retired Bun Libraries checkout to

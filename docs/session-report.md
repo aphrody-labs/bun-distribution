@@ -273,6 +273,18 @@ Detailed migrations, ownership and qualification are recorded in
 [migration](migration.md), [owners](owners.md), [artifacts](artifacts.md) and
 [control plane](control-plane.md). The reporting commit is recorded in Git history.
 
+## ArtCraft root workspace follow-up — 2026-10-14
+
+The Bun OS root now includes the ArtCraft frontend and its 61 local package
+manifests. Its scripts use the root Bun workspace; the root `bun.lock` resolves
+1,287 package identities and passes a frozen-lockfile dry run. The root native
+quality aggregate passes on 122 files. The physical frontend install and build
+remain unqualified: 546 MB was free after lock resolution, and the full install
+footprint is unmeasured. Root lint and formatting report extensive style and
+generated-source drift in ArtCraft; its typecheck cannot resolve Vite/Vitest
+until dependencies are installed. The nested lock and legacy style
+configuration remain open migration work.
+
 ## Remaining qualification
 
 - Twelve other native app executables and additional target/architecture builds.

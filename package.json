@@ -17,7 +17,13 @@
     "packages/ovh",
     "packages/package-converter",
     "packages/paths",
-    "packages/workspace"
+    "packages/workspace",
+    "libraries/artcraft/frontend",
+    "libraries/artcraft/frontend/apps/artcraft",
+    "libraries/artcraft/frontend/libs/*",
+    "libraries/artcraft/frontend/libs/analytics/*",
+    "libraries/artcraft/frontend/libs/components/*",
+    "libraries/artcraft/frontend/libs/state/*"
   ],
   "type": "module",
   "exports": {
@@ -51,8 +57,9 @@
     "build": "bun run --cwd apps/desktop build",
     "desktop:dev": "bun run --cwd apps/desktop desktop:dev",
     "desktop:build": "bun run --cwd apps/desktop desktop:build",
-    "frontend:dev": "bun run --cwd libraries/artcraft/frontend dev",
-    "frontend:build": "bun run --cwd libraries/artcraft/frontend build",
+    "frontend:dev": "bun run --filter @frontend/source dev",
+    "frontend:build": "bun run --filter @frontend/source build",
+    "frontend:install": "bun install --filter @frontend/source --frozen-lockfile",
     "video": "bun packages/bun-video-project/src/cli.ts",
     "assets": "bun packages/bun-workspace/src/assets-cli.ts",
     "artifacts": "bun packages/bun-artifacts/src/cli.ts",
