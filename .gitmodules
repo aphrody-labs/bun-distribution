@@ -217,3 +217,7 @@
 	path = crates/cadcraft-render
 	url = bun-forge:aphrody-dev/bun-crate-cadcraft-render.git
 	branch = os
+[submodule "crates/cadcraft-io"]
+	path = crates/cadcraft-io
+	url = bun-forge:aphrody-dev/bun-crate-cadcraft-io.git
+	branch = os

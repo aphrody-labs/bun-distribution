@@ -18,6 +18,7 @@ members = [
     "crates/cadcraft-dxf",
     "crates/cadcraft-dwg",
     "crates/cadcraft-fonts",
+    "crates/cadcraft-io",
     "crates/cadcraft-render",
     "crates/gridcraft-pdf",
     "crates/aphrody-a2a",
@@ -64,6 +65,7 @@ cadcraft-constraints = { path = "crates/cadcraft-constraints", version = "=1.4.4
 cadcraft-dxf = { path = "crates/cadcraft-dxf", version = "=1.4.4" }
 cadcraft-dwg = { path = "crates/cadcraft-dwg", version = "=1.4.4" }
 cadcraft-fonts = { path = "crates/cadcraft-fonts", version = "=1.4.4" }
+cadcraft-io = { path = "crates/cadcraft-io", version = "=1.4.4" }
 cadcraft-render = { path = "crates/cadcraft-render", version = "=1.4.4" }
 gridcraft-pdf = { path = "crates/gridcraft-pdf", version = "=1.4.4" }
 aphrody-a2a = { path = "crates/aphrody-a2a", version = "=1.4.4" }
@@ -105,6 +107,7 @@ objc2-app-kit = { version = "=0.3.2", default-features = false }
 png = { version = "=0.18.1", default-features = false }
 pretty_assertions = { version = "=1.4.1", default-features = false }
 proptest = { version = "=1.12.0", default-features = false }
+quick-xml = "=0.41.0"
 rayon = { version = "=1.12.0", default-features = false }
 regex = { version = "=1.13.1", default-features = false }
 reqwest = { version = "=0.13.5", default-features = false }

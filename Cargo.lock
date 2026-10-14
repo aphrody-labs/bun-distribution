@@ -638,6 +638,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "cadcraft-io"
+version = "1.4.4"
+dependencies = [
+ "cadcraft-color",
+ "cadcraft-doc",
+ "cadcraft-dwg",
+ "cadcraft-dxf",
+ "cadcraft-fonts",
+ "cadcraft-geom",
+ "cadcraft-render",
+ "miniz_oxide 0.9.1",
+ "quick-xml",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "cadcraft-render"
 version = "1.4.4"
 dependencies = [
