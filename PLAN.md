@@ -219,3 +219,5 @@ license and notice with its source. Do not force-push.
 - [ ] Qualify the full root product build before activating vendor source replacement.
 
 - [x] Re-run complete frozen setup after releasing the shared native build mutex: 71 Bun members, 28 Cargo members, no nested installation; final vendor verification passes against the indexed source pins.
+
+- [x] Qualify the complete 28-member root Rust build offline with all features and 28 hashed final artifacts; vendor verification revalidates the receipt inside the native owner.

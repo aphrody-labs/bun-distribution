@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "observedAt": "2026-10-14T04:01:07.998Z",
+  "observedAt": "2026-10-14T04:13:05.896Z",
   "lockSHA256": "713eaac65fd5d0f798abf6d4902a27616490922836f94e0babc5d2077c43c7a4",
   "manifestSHA256": "2ec44b1bd40024e89def48cb1bcd89c4c0ba4267a7ed7df466e1b5cdbf265220",
   "toolchainChannel": "nightly-2026-09-15",
@@ -9984,9 +9984,10 @@
   "qualification": {
     "cargoMetadataOffline": true,
     "manifestsAndNoticesVerified": true,
-    "compiled": false,
+    "compiled": true,
     "activeSourceReplacement": false,
-    "buildProof": "missing",
+    "buildProof": "valid",
+    "receiptSHA256": "0d1ec47cd7038a37190190f9a3fe1f5c936fbd8a6c59737366297d03936db10d",
     "scope": "root product Cargo workspace only"
   }
 }

@@ -56,6 +56,11 @@ remain unqualified. CADCraft's remaining consumer workspace has 12 members;
 its 14 foundation edges target the root's exact version 1.4.4. Its full native
 application build and tests were not run.
 
+The subsequent complete root build with all features succeeds for all 28
+members and supplies 28 hashed final artifacts. The revalidated vendor receipt
+now reports `compiled: true` and `buildProof: valid`; this remains scoped to
+the current root Rust workspace (see [native qualification](NATIVE-QUALIFICATION.md)).
+
 ## craft-libs batch
 
 The five crates below are independent Git submodules and members of the single root Cargo

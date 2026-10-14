@@ -72,7 +72,9 @@ scripts, Bun/Cargo/rustc binaries and hashed build flags. Subsequent input or
 artifact changes invalidate it. Parent commits that change only unrelated
 documentation do not invalidate the source key; Git ancestry is still checked.
 No credential values are recorded. A successful check is separate from this
-full build proof. The current build evidence remains missing.
+full build proof. The current 28-member build receipt validates successfully.
+The receipt and execution owner share Rust cache-wrapper normalization, so
+validation binds the effective compiler environment in either calling context.
 
 ## Scope and upstream integrity
 
@@ -88,14 +90,15 @@ and [Cargo source replacement](https://doc.rust-lang.org/cargo/reference/source-
 
 ## Qualified snapshot
 
-The 2026-10-14 snapshot contains 25 root members and 543 remote packages
+The 2026-10-14 snapshot contains 28 root members and 543 remote packages
 (542 registry packages plus the Git-pinned winprint source). Offline metadata
-with all root features resolves exactly the 568 lockfile package identities.
+with all root features resolves exactly the 571 lockfile package identities.
 Cargo nightly-2026-09-15 is recorded in the generated inventory. Source content
 is 671768402 bytes across 28572 checksum-listed files. Manifest, notice and
-declared license files are independently checked. Locked offline Cargo check
-passed for the previous 24-member snapshot and the newly imported Jev crate;
-a full successful build remains pending (see
-[native qualification](../NATIVE-QUALIFICATION.md)). The active source
-configuration, root toolchain, source lock and Git
-module ledger hashes are recorded and unchanged by this lot.
+declared license files are independently checked. The complete root Cargo check
+and offline build with all features pass, producing 28 hashed final artifacts
+(see [native qualification](../NATIVE-QUALIFICATION.md)). Source replacement is
+supplied explicitly to this root build; global activation remains pending
+compatibility qualification of the nested library and runtime workspaces.
+The active source configuration, toolchain, source lock and Git module ledger
+hashes are recorded in the inventory.

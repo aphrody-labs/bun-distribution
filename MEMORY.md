@@ -1,3 +1,14 @@
+## Root all-feature build qualified — 2026-10-14
+
+All 28 root Rust members compile offline with all features from the common
+vendor. The receipt at source defaa2161fed89ae1a0d9dcf84e91947d1318926
+contains 28 hashed final artifacts and revalidates inside the vendor owner.
+Cargo build-script executables and intermediate metadata are excluded from
+final artifact coverage. Receipt capture shares effective Rust cache-wrapper
+normalization with native execution. Vendor verification reports compiled true
+and valid proof; global source replacement, nested runtime/application builds
+and OS images remain unqualified. No tests ran. See docs/NATIVE-QUALIFICATION.md.
+
 ## CADCraft flat foundations — 2026-10-14
 
 The root contains 28 Cargo members, including geometry, document and constraints
