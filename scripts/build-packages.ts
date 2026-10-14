@@ -73,12 +73,12 @@ async function workspaceMemberPaths(root: string, patterns: string[]): Promise<S
       continue;
     }
     for await (const manifest of manifestGlob.scan({ cwd: root, onlyFiles: true })) {
-      included.add(manifest.slice(0, -"/package.json".length));
+      included.add(manifest.replaceAll("\\", "/").slice(0, -"/package.json".length));
     }
   }
   for (const pattern of excluded) {
     for await (const manifest of pattern.scan({ cwd: root, onlyFiles: true })) {
-      included.delete(manifest.slice(0, -"/package.json".length));
+      included.delete(manifest.replaceAll("\\", "/").slice(0, -"/package.json".length));
     }
   }
   return included;

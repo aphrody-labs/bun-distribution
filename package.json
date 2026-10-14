@@ -13,7 +13,10 @@
     "packages/bun-artifacts",
     "packages/bun-video-project",
     "packages/bun-workspace",
+    "packages/kernel-client",
+    "packages/ovh",
     "packages/package-converter",
+    "packages/paths",
     "packages/workspace"
   ],
   "type": "module",

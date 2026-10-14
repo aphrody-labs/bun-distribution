@@ -177,3 +177,15 @@
 	path = crates/aphrody-jev
 	url = bun-forge:aphrody-dev/bun-crate-aphrody-jev.git
 	branch = os
+[submodule "packages/paths"]
+	path = packages/paths
+	url = bun-forge:aphrody-dev/bun-package-paths.git
+	branch = os
+[submodule "packages/ovh"]
+	path = packages/ovh
+	url = bun-forge:aphrody-dev/bun-package-ovh.git
+	branch = os
+[submodule "packages/kernel-client"]
+	path = packages/kernel-client
+	url = bun-forge:aphrody-dev/bun-package-kernel-client.git
+	branch = os

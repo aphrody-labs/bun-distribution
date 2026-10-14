@@ -65,6 +65,20 @@
         "aphrody-bun": "./src/cli.ts",
       },
     },
+    "packages/kernel-client": {
+      "name": "@aphrody/os",
+      "version": "1.4.4",
+      "devDependencies": {
+        "@aphrody/bun-workspace": "workspace:*",
+      },
+    },
+    "packages/ovh": {
+      "name": "@aphrody/ovh",
+      "version": "1.4.4",
+      "devDependencies": {
+        "@aphrody/bun-workspace": "workspace:*",
+      },
+    },
     "packages/package-converter": {
       "name": "@bun-os/package-converter",
       "version": "1.4.4",
@@ -72,6 +86,13 @@
         "package-converter": "src/cli.ts",
       },
       "dependencies": {
+        "@aphrody/bun-workspace": "workspace:*",
+      },
+    },
+    "packages/paths": {
+      "name": "@aphrody/paths",
+      "version": "1.4.4",
+      "devDependencies": {
         "@aphrody/bun-workspace": "workspace:*",
       },
     },
@@ -107,6 +128,12 @@
     "@aphrody/bun-video-project": ["@aphrody/bun-video-project@workspace:packages/bun-video-project"],
 
     "@aphrody/bun-workspace": ["@aphrody/bun-workspace@workspace:packages/bun-workspace"],
+
+    "@aphrody/os": ["@aphrody/os@workspace:packages/kernel-client"],
+
+    "@aphrody/ovh": ["@aphrody/ovh@workspace:packages/ovh"],
+
+    "@aphrody/paths": ["@aphrody/paths@workspace:packages/paths"],
 
     "@aphrody/tauri": ["@aphrody/tauri@file:toolchains/bun/packages/bun-tauri", {}],
 
