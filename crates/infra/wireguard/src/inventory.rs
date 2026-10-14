@@ -17,7 +17,8 @@ pub const INVENTORY_PATH: &str = "tools/config/host/wireguard/aphrody-tunnel.jso
 
 /// The declared tunnel compiled into the binary, used when no checkout is at hand (an operator
 /// PC running only the installed `aphrody`).
-pub const EMBEDDED: &str = include_str!("../../../../tools/config/host/wireguard/aphrody-tunnel.json");
+pub const EMBEDDED: &str =
+    include_str!("../../../../tools/config/host/wireguard/aphrody-tunnel.json");
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -223,6 +224,8 @@ mod tests {
         assert_eq!(embedded.id_of_address(&embedded.hub.address.clone()), Some("vps"));
         let omar: Vec<_> = embedded.services_of("omar").iter().map(|s| s.id.clone()).collect();
         assert!(omar.contains(&"vnc-omar".to_owned()), "{omar:?}");
+        let vps: Vec<_> = embedded.reachable("vps").iter().map(|s| s.id.clone()).collect();
+        assert!(vps.contains(&"device-portal-aphro-pc".to_owned()), "{vps:?}");
         assert!(Inventory::discover(Some(Path::new("/nonexistent"))).is_ok());
     }
 

@@ -21,12 +21,13 @@ use std::path::{Path, PathBuf};
 const FOLDER: &str = "\\Aphrody\\";
 const DESCRIPTION: &str = "Aphrody always-online (aphrody infra remote always-online)";
 /// Reverse forwards opened on the hub loopback: `hub port -> target on this PC`.
-const REVERSE: [(u16, &str, u16); 5] = [
+const REVERSE: [(u16, &str, u16); 6] = [
     (22010, "127.0.0.1", 22),
     (28795, "{address}", 8795),
     (28793, "127.0.0.1", 8793),
     (22011, "127.0.0.1", 2222),
     (25900, "{address}", 5900),
+    (25080, "127.0.0.1", 50080),
 ];
 
 /// Choices of the operator.
@@ -462,7 +463,7 @@ mod tests {
         assert_eq!(desktop.principal, Principal::Interactive);
         assert!(desktop.action.is_headless());
         assert!(desktop.action.arguments.as_deref().unwrap().ends_with(
-            "infra remote serve --bind 10.200.77.10:8795 --vnc-allow 10.200.77.4,10.200.77.10"
+            "infra remote serve --bind 10.200.77.10:8795 --vnc-allow 10.200.77.4,10.200.77.3,10.200.77.1,10.200.77.10"
         ));
         assert_eq!(mcp.principal, Principal::S4U);
         assert_eq!(
@@ -474,6 +475,7 @@ mod tests {
         let ssh = reverse.action.arguments.as_deref().unwrap();
         assert!(ssh.contains("-R 127.0.0.1:28795:10.200.77.10:8795"), "{ssh}");
         assert!(ssh.contains("-R 127.0.0.1:22011:127.0.0.1:2222"), "{ssh}");
+        assert!(ssh.contains("-R 127.0.0.1:25080:127.0.0.1:50080"), "{ssh}");
         assert!(ssh.ends_with(" omar@51.77.147.152"), "{ssh}");
         assert!(wsl.action.is_headless());
         assert!(plan.tasks.iter().all(|t| t.settings.restart && t.highest));

@@ -267,6 +267,16 @@
       "caveat": "aphrody-mcp http (WinClean computer_* tools) on 127.0.0.1:8793 of the owner PC, published on 10.200.77.4:8793 by netsh portproxy; bearer APHRODY_MCP_HTTP_TOKEN from <aphrody home>/private/mcp-http.env."
     },
     {
+      "id": "device-portal-aphro-pc",
+      "host": "windows",
+      "address": "10.200.77.4",
+      "port": 50080,
+      "proto": "tcp",
+      "expose": "peer-listener",
+      "auth": "wireguard-peer",
+      "caveat": "Windows Device Portal is reachable only through the private mesh. The durable fallback is vps:127.0.0.1:25080 through the aphro-pc reverse SSH task; it must never bind a public VPS address."
+    },
+    {
       "id": "remote-desktop-vps",
       "host": "vps",
       "address": "10.200.77.1",
@@ -319,6 +329,7 @@
       "remote-desktop-aphro-pc",
       "vnc-aphro-pc",
       "mcp-http-aphro-pc",
+      "device-portal-aphro-pc",
       "remote-desktop-dbfr",
       "vnc-dbfr",
       "mcp-http-dbfr",
@@ -361,6 +372,7 @@
       "ssh-omar",
       "ssh-omar-wsl",
       "mcp-http-aphro-pc",
+      "device-portal-aphro-pc",
       "mcp-http-omar",
       "ssh-dbfr",
       "remote-desktop-omar",

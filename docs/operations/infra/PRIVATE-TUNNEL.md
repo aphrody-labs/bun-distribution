@@ -312,6 +312,11 @@ failure): `Aphrody Remote Desktop` (`aphrody infra remote serve --bind 10.200.77
 `10.200.77.4:8793` by `netsh portproxy`) and `Aphrody WG aphro-pc`. From Omar: `aphrody infra remote open aphro-pc`,
 `vnc://10.200.77.4:5900`, MCP `http://10.200.77.4:8793/mcp` with the bearer token handed over out of band.
 
+The owner workstation's Windows Device Portal stays on port 50080. The VPS reaches it directly at
+`http://10.200.77.4:50080` while wg1 is healthy, and through the durable loopback-only reverse SSH fallback at
+`http://127.0.0.1:25080`. The `\Aphrody\Aphrody Device Portal Tunnel` logon task owns that fallback; no public VPS
+listener is permitted.
+
 Omar's PC also runs a WSL2 Ubuntu with its native OpenSSH: `ssh-omar-wsl` (`10.200.77.10:2222`, WSL networking
 `mirrored`, no WireGuard inside WSL). Windows OpenSSH keeps port 22; setup and compatibility rules in
 [OMAR-REMOTE-CONTROL.md](OMAR-REMOTE-CONTROL.md) section 2.9.

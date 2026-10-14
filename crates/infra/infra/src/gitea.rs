@@ -22,9 +22,8 @@ pub struct Report {
 pub fn provision(root: &Path, apply: bool, repository: Option<&str>) -> Result<Report> {
     let client = include_str!("../../../../scripts/tools/infra/gitea-provision.ts");
     let remote_program = include_str!("../../../../scripts/tools/infra/gitea-provision-remote.ts");
-    let mut command = Command::new("bun");
+    let mut command = Command::new("bun").no_window();
     command
-        .no_window()
         .current_dir(root)
         .args(["-e", client, "--", "--root"])
         .arg(root)
