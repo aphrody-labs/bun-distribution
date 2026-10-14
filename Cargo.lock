@@ -674,10 +674,9 @@ dependencies = [
 
 [[package]]
 name = "cadcraft-mcp"
-version = "0.6.2"
+version = "1.4.4"
 dependencies = [
  "cadcraft-engine",
- "cadcraft-io",
  "cadcraft-render",
  "log",
  "serde_json",

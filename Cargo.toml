@@ -23,7 +23,7 @@ cadcraft-render = { path = "../../crates/cadcraft-render", version = "=1.4.4" }
 cadcraft-io = { path = "../../crates/cadcraft-io", version = "=1.4.4" }
 cadcraft-engine = { path = "../../crates/cadcraft-engine", version = "=1.4.4" }
 cadcraft-ui-egui = { path = "crates/ui-egui" }
-cadcraft-mcp = { path = "crates/mcp" }
+cadcraft-mcp = { path = "../../crates/cadcraft-mcp", version = "=1.4.4" }
 
 # foundation
 thiserror = "2"
