@@ -12,10 +12,16 @@ Its source remains with that existing owner during flat crate migration.
 - The existing Gitea service, Cloudflare connector mesh, Nginx and certificate
   renewal owners are reused. Public ingress and protected credentials are preserved.
 
-No WARP client is installed or enrolled on the workstation. Windows elevation
-and sufficient disk space are required to complete the browser connection through
-Cloudflare. Peer `.10` is not observed reachable. Configuration of the whole route
-does not qualify every host or an actual WARP client connection.
+Windows delivery is recorded in
+[a61d18a6d4](https://github.com/aphrody-labs/aphrody/commit/a61d18a6d4).
+Native WinClean and Windows UAC reclaimed old generated caches and expanded C:
+to all allocatable SSD space, with 131.7 GB free at qualification. The B: SUBST
+alias was removed; `C:\bun` source and current runtime outputs were preserved.
+Cloudflare One Client 2026.8.2110.0 is installed and enrolled in `aphrody-labs`.
+WARP reported Connected/unstable and private Source access failed; disconnecting
+WARP restored HTTP 200 over the existing WireGuard path. It remains disconnected.
+Private hostname DNS and native TLS pass. Peer `.10` remains unobserved reachable.
+The configured whole subnet does not establish successful WARP client routing.
 
 This delivery does not activate the Bun OS product server or its pending API
 route. Those activation boundaries remain separate from forge authentication.
