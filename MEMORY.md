@@ -86,9 +86,17 @@ passes locked offline metadata. Root `rstar` 0.12.2 is shared; locked metadata
 resolves 584 packages, engine check and root Rust format pass. Tests were not
 run.
 
-The refreshed inventory at root revision `068053a8e247edb9621c782a33d2c12e5b9dfac4`
-reports 50 pinned sources, 856 Cargo packages, 555 declared workspace crates,
-34 flat owners and 521 remaining declared crates. The CADCraft owners have no
+The MCP server history is split from CADCraft
+`e9842fac1cf85e8205d036de9f1eb8c873e06786` at `crates/mcp`
+(`315641f5c83a0bec16fb5c383ed3a75e44abf6fb`). Its private forge `os` branch
+is `f270867625e262cab5872bed061e0e007dbb113b`; CADCraft consumer branch
+`1451a5592bb581fddeb332091cd2136e8a32515a` removes eight tracked files and
+passes locked offline metadata. Root metadata resolves 585 packages, the MCP
+check and Rust format pass; an unused IO edge was removed. Tests were not run.
+
+The refreshed inventory at root revision `1fd0e2b4301d499e04aaef9fa33c6c6d9fd11e90`
+reports 51 pinned sources, 856 Cargo packages, 555 declared workspace crates,
+35 flat owners and 520 remaining declared crates. The CADCraft owners have no
 package-name collisions.
 
 Aphrody Infra 138026e3034e9342d581355476ba6e26820b0545 owns the shared Bun forge

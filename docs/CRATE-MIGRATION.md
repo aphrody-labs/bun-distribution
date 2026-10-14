@@ -146,6 +146,20 @@ and removes the original 244 tracked files. The root owns exact `rstar`
 resolves 479 packages; root metadata resolves 584, the engine check and
 complete root Rust format check pass. Tests were not run.
 
+## CADCraft MCP server — 2026-10-14
+
+`cadcraft-mcp` is split from CADCraft revision
+`e9842fac1cf85e8205d036de9f1eb8c873e06786`, prefix `crates/mcp`, at
+`315641f5c83a0bec16fb5c383ed3a75e44abf6fb`; the split tree matches its source
+prefix. Its private forge `os` branch is
+`f270867625e262cab5872bed061e0e007dbb113b`, with exact MIT, Apache, NOTICE and
+attribution files. CADCraft consumer branch `os` at
+`1451a5592bb581fddeb332091cd2136e8a32515a` redirects to the root owner and
+removes the original 8 tracked files. An unused direct `cadcraft-io` edge was
+removed. Locked offline CADCraft metadata resolves 479 packages; root metadata
+resolves 585, the MCP crate check and complete root Rust format check pass.
+Tests were not run.
+
 The subsequent complete root build with all features succeeds for all 28
 members and supplies 28 hashed final artifacts. The revalidated vendor receipt
 now reports `compiled: true` and `buildProof: valid`; this remains scoped to

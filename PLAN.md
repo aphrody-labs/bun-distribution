@@ -87,12 +87,22 @@
 - [ ] Migrate the remaining 6 declared CADCraft workspace members; `xtask`
       remains a separate name-collision decision.
 
+### CADCraft MCP owner — 2026-10-14
+
+- [x] Split and publish `cadcraft-mcp` with its source history and notices;
+      redirect CADCraft to the root owner and remove its unused `cadcraft-io`
+      dependency.
+- [x] Pass locked offline CADCraft metadata, `cadcraft-mcp` root check, and the
+      complete root Rust format check.
+- [ ] Migrate the remaining 5 declared CADCraft workspace members; `xtask`
+      remains a separate name-collision decision.
+
 ### Cargo source-owner inventory — 2026-10-14
 
 - [x] Refresh the ignored inventory at root revision
-      `068053a8e247edb9621c782a33d2c12e5b9dfac4`: 50 pinned sources, 856 Cargo
-      packages, 555 declared workspace crates, 34 flat root Git owners, and
-      521 remaining declared crates. All source checkouts were available.
+      `1fd0e2b4301d499e04aaef9fa33c6c6d9fd11e90`: 51 pinned sources, 856 Cargo
+      packages, 555 declared workspace crates, 35 flat root Git owners, and
+      520 remaining declared crates. All source checkouts were available.
 - [ ] Resolve the 11 remaining package-name collisions before flattening nested members;
       collisions include already extracted Craft crates and repeated workspace
       utility names such as `xtask` and `app`.
