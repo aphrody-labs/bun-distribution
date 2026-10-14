@@ -215,6 +215,11 @@
       "name": "bun-crate-cadcraft-cli",
       "mirror": false,
       "private": true
+    },
+    {
+      "name": "bun-crate-cadcraft",
+      "mirror": false,
+      "private": true
     }
   ]
 }
