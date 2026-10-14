@@ -11,7 +11,7 @@ check:
     bun run cargo:check
 
 test:
-    bun test packages/workspace/src/cargo.test.ts
+    bun test packages/bun-workspace/test/cargo.test.ts
     bun run cargo:test
 
 metadata:

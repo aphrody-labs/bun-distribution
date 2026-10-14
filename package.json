@@ -17,7 +17,6 @@
     "packages/ovh",
     "packages/package-converter",
     "packages/paths",
-    "packages/workspace",
     "libraries/artcraft/frontend",
     "libraries/artcraft/frontend/apps/artcraft",
     "libraries/artcraft/frontend/libs/*",

@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { resolveCargoModule, type Module } from "./index.ts";
+import { resolveCargoModule, type Module } from "../src/index.ts";
 
 const fixtures: string[] = [];
 const module: Module = {

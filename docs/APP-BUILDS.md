@@ -10,26 +10,25 @@ context prevents an independent build.
 
 ## Owners
 
-| Capability                                               | Owner                                                    |
-| -------------------------------------------------------- | -------------------------------------------------------- |
-| Library engine builds and standalone artifacts           | `scripts/build-apps.ts`, `@aphrody/bun-artifacts`         |
-| Shared Bun standalone compiler                           | `@aphrody/bun-artifacts/compiler`                        |
-| App source policy, native contracts and release receipts | `infra/app-build.ts`                                     |
-| Library capability names and canonical application hosts | `@aphrody/bun-workspace/capabilities`                    |
-| Child process ownership, deadlines and output capture    | `@aphrody/bun-workspace/process`                         |
-| Streamed file identity                                   | `@aphrody/bun-workspace/hash`                            |
-| Cloudflare control and credentials                       | Runtime `packages/bun-cloudflare`; domain changes use MCP |
-| R2 object authentication                                 | `createR2Client` and `loadCloudflareEnvironment`          |
+| Capability                                               | Owner                                                            |
+| -------------------------------------------------------- | ---------------------------------------------------------------- |
+| Library engine builds and standalone artifacts           | `scripts/build-apps.ts`, `@aphrody/bun-artifacts`                |
+| Shared Bun standalone compiler                           | `@aphrody/bun-artifacts/compiler`                                |
+| App source policy, native contracts and release receipts | `infra/app-build.ts`                                             |
+| Library capability names and canonical application hosts | `@aphrody/bun-workspace/capabilities`                            |
+| Child process ownership, deadlines and output capture    | `@aphrody/bun-workspace/process`                                 |
+| Streamed file identity                                   | `@aphrody/bun-workspace/hash`                                    |
+| Cloudflare control and credentials                       | Runtime `packages/bun-cloudflare`; domain changes use MCP        |
+| R2 object authentication                                 | `createR2Client` and `loadCloudflareEnvironment`                 |
 | Distribution and embedded byte identity                  | `src/distribution.ts` adapter over `@aphrody/bun-workspace/hash` |
-| Executable headers                                       | Package converter `abi` and GNU loader gate in `src/elf.ts` |
-| Distribution app orchestration                           | `infra/app-build.ts`                                     |
-| Shared object plans                                      | `infra/assets.ts`                                        |
-| Edge and public catalog                                  | The edge/catalog capability owner                        |
+| Executable headers                                       | Package converter `abi` and GNU loader gate in `src/elf.ts`      |
+| Distribution app orchestration                           | `infra/app-build.ts`                                             |
+| Shared object plans                                      | `infra/assets.ts`                                                |
+| Edge and public catalog                                  | The edge/catalog capability owner                                |
 
-`@aphrody/bun-workspace` is the single implementation owner for workspace,
-runtime, process, hashing, capability and asset APIs. The older
-`@aphrody/bun-os-workspace` package is a compatibility facade over that owner;
-dependency direction stays one way, from the facade to `bun-workspace`.
+`@aphrody/bun-workspace` is the single implementation owner for shared
+workspace, runtime, process, hashing, capability and asset APIs. Product
+adapters import that owner directly.
 
 ## Configuration
 

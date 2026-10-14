@@ -1,5 +1,17 @@
 # Project decisions and session evidence
 
+## Shared workspace owner — 2026-10-14
+
+The source-reference audit found no product imports from
+`@aphrody/bun-os-workspace`; all modules were re-exports, with one unused
+`startApp` re-export. Removed the compatibility package and moved its existing
+Cargo-routing tests to `packages/bun-workspace/test/`. `just test` now points
+there, and the standalone product compiler fingerprints
+`packages/bun-workspace/src/index.ts` instead of the deleted package manifest.
+Root lock regeneration and the frozen-lockfile dry run pass; the native quality
+aggregate passes on 113 files. The tests and standalone product compiler build
+were not run.
+
 ## ArtCraft root workspace — 2026-10-14
 
 The Bun OS root now registers the ArtCraft frontend and 61 local package
@@ -91,6 +103,7 @@ matching Bun Libraries. Its package manifest exposes `lint`, `format` and
 91 files, lint and format. Root Cargo metadata resolved `craft-fonts` and
 `craft-fonts-tests`; `cargo check --locked` passed on Windows. Tests were not
 run. The batch joins the active Bun OS merge and awaits its integration commit.
+
 ## Workspace fusion, 2026-10-13
 
 - The selected Aphrody checkout is C:/src/aphrody. On 2026-10-13 it contains
@@ -314,6 +327,7 @@ The OS source consolidation was committed/pushed normally at
 read back. The final report update records that delivery and the public APT
 artifact. Material/os 1e65a503 is independently published. Author identity is
 aphrody-dev <contact@aphrody.com>. Concurrent submodule work remained unstaged.
+
 ## Shared asset publication owner, 2026-10-13
 
 - Bun Libraries `@aphrody/bun-workspace/assets` now exposes `publishContentObject`: a 256 MiB bounded content hash, content-addressed key validation, conditional `If-None-Match` PUT, immutable cache headers, and streamed remote checksum verification. The font planner retains its 128 MiB limit.

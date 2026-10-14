@@ -25,9 +25,8 @@ flowchart TD
 ```
 
 - `apps/desktop`: Aphrody shell, built and served by Bun.
-- `packages/bun-workspace`: app identity, config, provenance, source coverage,
-  native execution, asset manifests and shared process ownership.
-- `packages/workspace`: OS CLI and adapters consuming that shared owner.
+- `packages/bun-workspace`: shared CLI, app identity, config, provenance,
+  source coverage, native execution, asset manifests and process ownership.
 - `packages/bun-app-host`: product server, common authenticated API transport,
   standalone compilation and executable qualification.
 - `packages/bun-video-project`: exact JSON, bounded native operations and runtime availability.

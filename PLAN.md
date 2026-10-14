@@ -38,6 +38,7 @@
 - [x] Qualify the font Git-submodule batch under the root nightly: 12 Rust
       tests and 4 workspace routing tests pass. A remote CI build remains
       unqualified until runner access and target runtime are wired.
+
 ## Still required for full consolidation
 
 - [x] Integrate the four library SDK owners into flat root Bun packages;
@@ -99,6 +100,18 @@
       configuration after the root installation and frontend gates qualify.
 - [ ] Migrate ArtCraft lint, formatting and typecheck into the unified native
       Bun quality gates without changing generated or imported assets blindly.
+
+## Shared workspace owner — 2026-10-14
+
+- [x] Retire the unused `@aphrody/bun-os-workspace` re-export facade after a
+      source-reference audit; all product consumers already import
+      `@aphrody/bun-workspace` directly.
+- [x] Move the existing Cargo-routing tests under the canonical package and
+      update the product build fingerprint to cover its implementation source.
+- [x] Regenerate the root lock; frozen-lockfile dry run and root native quality
+      gates pass after facade removal.
+- [ ] Requalify the standalone product compiler. The existing tests were moved
+      but not run.
 
 ## Product/server and offline sources — 2026-10-13
 

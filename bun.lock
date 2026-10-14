@@ -533,14 +533,6 @@
         "@aphrody/bun-workspace": "workspace:*",
       },
     },
-    "packages/workspace": {
-      "name": "@aphrody/bun-os-workspace",
-      "version": "1.4.4",
-      "dependencies": {
-        "@aphrody/bun-app-host": "workspace:*",
-        "@aphrody/bun-workspace": "workspace:*",
-      },
-    },
   },
   "overrides": {
     "@types/node": "catalog:",
@@ -563,8 +555,6 @@
     "@aphrody/bun-artifacts": ["@aphrody/bun-artifacts@workspace:packages/bun-artifacts"],
 
     "@aphrody/bun-desktop": ["@aphrody/bun-desktop@workspace:apps/desktop"],
-
-    "@aphrody/bun-os-workspace": ["@aphrody/bun-os-workspace@workspace:packages/workspace"],
 
     "@aphrody/bun-types": ["@aphrody/bun-types@1.4.4", "", { "dependencies": { "@types/node": "*", "undici-types": "*" } }, "sha512-DIqOZplh9uy2ywEYYMCalX3nWZO6+n2Dg7/hJubGTyDKxOzRkml7HNtf0i4sG1E/LdLlB/bUcRDtZd0ZQemW1w=="],
 

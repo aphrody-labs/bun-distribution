@@ -170,7 +170,7 @@ async function build(root: string, output: string): Promise<void> {
     "packages/bun-artifacts/package.json",
     "packages/bun-artifacts/src/compiler.ts",
     "packages/bun-workspace/package.json",
-    "packages/workspace/package.json",
+    "packages/bun-workspace/src/index.ts",
   ])
     await proveInput(join(root, path));
   const config = await loadConfig(root);

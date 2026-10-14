@@ -258,15 +258,15 @@ application-health check.
 All owned commits use `aphrody-dev <contact@aphrody.com>`, precise staged paths,
 fresh remote ancestry checks and normal pushes.
 
-| Repository       | Published batch                                                                                                                                                   |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Bun OS           | `8e3920d`: unified app workspace; `5f8a84a`: unique workspace keys                                                                  |
-| Bun libraries    | `7cadab6`: pinned monorepo; `4500d36`: video/native migration; `31d5ef5`: owners and standalone factory; `b5534d6`: verifier, generation pin and admission worker |
-| Artcraft         | `f8dae6c`: Bun frontend migration; `9c4ed82`: existing router's native CLI                                                                                        |
-| FilmCraft        | `87b8451`: reviewed Bun-native tooling; Rust engine retained upstream source                                                                                      |
-| EffectCraft      | `e5beea9`: Bun-native helper tooling                                                                                                                              |
-| Bun SDK          | `939c835`: compatible explicit type imports/exports                                                                                                               |
-| Bun internal n2b | `f56596e`: bounded scanner/AST guards; `176fa03`: English report labels                                                                                           |
+| Repository       | Published batch                                                                                                                                                          |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Bun OS           | `8e3920d`: unified app workspace; `5f8a84a`: unique workspace keys                                                                                                       |
+| Bun libraries    | `7cadab6`: pinned monorepo; `4500d36`: video/native migration; `31d5ef5`: owners and standalone factory; `b5534d6`: verifier, generation pin and admission worker        |
+| Artcraft         | `f8dae6c`: Bun frontend migration; `9c4ed82`: existing router's native CLI                                                                                               |
+| FilmCraft        | `87b8451`: reviewed Bun-native tooling; Rust engine retained upstream source                                                                                             |
+| EffectCraft      | `e5beea9`: Bun-native helper tooling                                                                                                                                     |
+| Bun SDK          | `939c835`: compatible explicit type imports/exports                                                                                                                      |
+| Bun internal n2b | `f56596e`: bounded scanner/AST guards; `176fa03`: English report labels                                                                                                  |
 | Aphrody Infra    | `ca161f5`: live control plane; `432af04` and `f9bcd3b`: runner runtime/admission; `9d11aa1`: canonical app activation source; `4ad6bae`: remove R2 host from app ingress |
 
 Detailed migrations, ownership and qualification are recorded in
@@ -284,6 +284,13 @@ footprint is unmeasured. Root lint and formatting report extensive style and
 generated-source drift in ArtCraft; its typecheck cannot resolve Vite/Vitest
 until dependencies are installed. The nested lock and legacy style
 configuration remain open migration work.
+
+The unused `@aphrody/bun-os-workspace` compatibility package was then removed
+after a current source-reference audit found no product consumers. Its existing
+Cargo-routing tests moved into `@aphrody/bun-workspace`; the product compiler
+now fingerprints the canonical implementation source. The regenerated root
+lock passes a frozen-lockfile dry run and root quality passes on 113 files.
+The tests and standalone product compiler build were not run.
 
 ## Remaining qualification
 
