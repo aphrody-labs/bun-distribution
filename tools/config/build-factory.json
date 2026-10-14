@@ -63,9 +63,9 @@
     "cleanup": "existing-infra-allowlist-only"
   },
   "repositories": {
-    "bun-os": "/home/ubuntu/src/bun-os",
+    "bun-os": "/home/ubuntu/builds/bun-os-factory/sources/bun",
     "aphrody": "/home/ubuntu/src/aphrody",
-    "yolo": "/home/ubuntu/src/bun",
+    "yolo": "/home/ubuntu/src/yolo",
     "iecode": "/home/ubuntu/src/iecode"
   },
   "next": {
