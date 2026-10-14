@@ -1,62 +1,69 @@
-# Transport des sous-modules privés en CI
+# Private submodule transport in CI
 
-Le runner existant `aphrody-gitea-runner` 5.0.0 utilise le réseau
-`aphrody_default` et la même instance Gitea que la forge publique. Les jobs
-`aphrody-bun-linux` résolvent `bun-forge` vers `gitea:22` ; le port
-`127.0.0.1:29022` appartient à l'hôte VPS, pas au conteneur du job.
+The existing `aphrody-gitea-runner` 5.0.0 uses the `aphrody_default` network
+and the same Gitea instance as the public forge. Jobs on `aphrody-bun-linux`
+resolve `bun-forge` to `gitea:22`; port `127.0.0.1:29022` belongs to the VPS
+host, not the job container.
 
-## Propriétaire et fichiers
+## Owner and files
 
-La source Infra est
+The Infra source of truth is
 `tools/config/host/apps/vps/gitea-runner/{config.yaml,ssh/config,ssh/known_hosts}`
-dans le dépôt Aphrody. Le déploiement existant du runner est
-`/home/ubuntu/apps/gitea-runner`. Les deux fichiers SSH publics doivent y être
-installés sous `ssh/`, avec leur contenu source exact, avant toute admission
-d'un job utilisant cette configuration. Leur réinstallation est idempotente.
-Le compose, l'image du runner et son inscription restent ceux de l'instance
-existante.
+in the Aphrody repository. The existing runner deployment is
+`/home/ubuntu/apps/gitea-runner`. Install the two public SSH files there under
+`ssh/`, preserving their source contents, before admitting a job that uses this
+configuration. Reinstalling them is idempotent. Keep the existing Compose
+definition, runner image and registration.
 
-La clé reste exclusivement dans
-`/home/ubuntu/.aphrody/secrets/gitea/bun-os-crate-runner`, propriétaire `ubuntu`,
-mode `0600`, répertoire `0700`. Elle est montée directement en lecture seule
-dans les jobs à `/run/aphrody/git-ssh/identity`. Aucun contenu de clé n'entre
-dans Git, les variables du workflow, les arguments de processus ou les logs.
-Les chemins sources des bind mounts sont résolus par le daemon Docker du VPS ;
-la clé n'a pas à être copiée ni montée dans le conteneur du runner.
+Keep the key only at
+`/home/ubuntu/.aphrody/secrets/gitea/bun-os-crate-runner`, owned by `ubuntu`,
+with mode `0600` and a `0700` parent directory. Mount it read-only into jobs at
+`/run/aphrody/git-ssh/identity`. Never put key contents in Git, workflow
+variables, process arguments or logs. The VPS Docker daemon resolves bind-mount
+source paths; the key does not need to be copied into or mounted in the runner
+container.
 
-Le fichier SSH impose une seule identité, ED25519 et la vérification stricte
-de l'hôte. `GIT_SSH_COMMAND` sélectionne ce fichier avant `builtin:checkout`.
-Les volumes autorisés sont les seuls fichiers nécessaires, en lecture seule.
-L'alias est générique : les autorisations proviennent des deploy keys des
-dépôts privés, ce qui permet d'ajouter des gitlinks sans modifier le transport.
+The SSH configuration selects one identity, requires ED25519 and verifies the
+host strictly. `GIT_SSH_COMMAND` selects this configuration before
+`builtin:checkout`. Allow only the required files as read-only volumes. The
+alias is generic; each private repository's deploy key grants access, so adding
+private gitlinks does not require changing the transport.
 
-## Qualification effectuée
+## Qualification performed
 
-Le 13 octobre 2026, la clé publique présentée par le port loopback VPS 29022
-et celle du conteneur Gitea sur `aphrody_default:22` ont toutes deux donné :
+On 2026-10-13, the public key presented by VPS loopback port 29022 and by the
+Gitea container at `aphrody_default:22` produced the same fingerprint:
 
 ```text
 SHA256:M48ORSUT/TU1sYsWPunaXwQliH0bUVRviGx7m4gWOAs
 ```
 
-Le fichier `known_hosts` contient cette clé publique, sous l'alias
-`bun-forge`. Les permissions du secret existant ont été vérifiées sans lire
-son contenu. La version et le schéma de configuration proviennent du binaire
-`gitea-runner` 5.0.0 réellement installé.
+The `known_hosts` file contains that public key under the `bun-forge` alias.
+The existing secret's permissions were checked without reading its contents.
+The installed `gitea-runner` binary reported version 5.0.0 and supplied the
+configuration schema used here.
 
-Cette livraison prépare les sources. Aucun redémarrage du runner, activation
-Compose ou lancement de job n'a été effectué. La lecture des dépôts privés
-depuis un vrai job reste à qualifier après installation de ces fichiers par
-le propriétaire Infra. Il faut notamment vérifier la présence de `git` et
-`ssh` dans l'image de job épinglée, les droits de lecture de la clé dans le
-job et les autorisations de chaque gitlink privé, sans afficher la clé.
+This change prepares the source configuration only. The runner was not
+restarted, Compose was not activated, and no job was launched. Private-repository
+checkout from an actual job remains unqualified until Infra installs these
+files. Qualification must confirm `git` and `ssh` in the pinned job image,
+read-only key access from the job, and authorization for every private gitlink,
+without displaying the key.
 
-## Workflow produit
+## Live deployment status
 
-Les push sur `main` et `os` exécutent les contrôles source. Le checkout utilise
-les sous-modules directs et conserve les révisions épinglées. L'installation
-emploie `bun install --frozen-lockfile`, puis le propriétaire
-`scripts/node-modules.ts` finalise l'installation partagée.
-Les builds natifs restent limités au dispatch explicite avec `build=true`,
-après admission de l'hôte. Cette préparation ne qualifie ni un job complet ni
-un build natif.
+A read-only check through Aphrody Infra on 2026-10-13 found no deployed `ssh/`
+directory or public SSH files under `/home/ubuntu/apps/gitea-runner`. The
+deployed runner configuration also lacks the three job mount paths declared by
+the source configuration. The expected secret file and directory permissions
+were present. Source changes have not been installed or reloaded, so a
+successful local plan or source check does not qualify private submodule access
+from the runner.
+
+## Product workflow
+
+Pushes to `main` and `os` run source checks. Checkout uses direct submodules and
+retains their pinned revisions. Installation runs `bun install --frozen-lockfile`
+followed by the shared-install owner `scripts/node-modules.ts`. Native builds
+remain limited to an explicit dispatch with `build=true`, after host admission.
+This preparation does not qualify a complete job or a native build.
