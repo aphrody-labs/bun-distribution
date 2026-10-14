@@ -155,6 +155,21 @@
       "name": "bun-package-kernel-client",
       "mirror": false,
       "private": true
+    },
+    {
+      "name": "bun-crate-cadcraft-geom",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-cadcraft-doc",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-cadcraft-constraints",
+      "mirror": false,
+      "private": true
     }
   ]
 }
