@@ -9,7 +9,7 @@ import { inspectLinuxABI } from "./elf.ts";
 
 export const packageRoot = resolve(import.meta.dir, "..");
 export function materialCheckout(config: Config = {}): string {
-  const checkout = resolve(config.checkouts?.material ?? join(packageRoot, "../material"));
+  const checkout = resolve(config.checkouts?.material ?? join(packageRoot, "libraries/material"));
   if (
     !existsSync(join(checkout, "crates/libm3/Cargo.toml")) ||
     !existsSync(join(checkout, "crates/m3-tokens/Cargo.toml"))
@@ -20,14 +20,15 @@ export function materialCheckout(config: Config = {}): string {
 export function runtimeCheckout(config: Config = {}): string {
   const explicitCheckout = config.checkouts?.bun;
   const configured = explicitCheckout ?? Bun.env.APHRODY_BUN_CHECKOUT;
-  const workspaceCheckout = resolve(packageRoot, "../bun");
+  const workspaceCheckout = resolve(packageRoot, "toolchains/bun");
   if (configured) {
     const root = resolve(configured);
     if (!existsSync(join(root, "scripts/build.ts")))
       throw new Error("Configured Bun checkout has no native build owner");
     if (!explicitCheckout && existsSync(join(workspaceCheckout, "scripts/build.ts"))) {
       try {
-        if (realpathSync.native(root) === realpathSync.native(workspaceCheckout)) return workspaceCheckout;
+        if (realpathSync.native(root) === realpathSync.native(workspaceCheckout))
+          return workspaceCheckout;
       } catch {
         // Keep the explicit checkout when its physical path cannot be resolved.
       }
@@ -37,12 +38,18 @@ export function runtimeCheckout(config: Config = {}): string {
   if (existsSync(join(workspaceCheckout, "scripts/build.ts"))) return workspaceCheckout;
   let root = dirname(process.execPath);
   for (let depth = 0; depth < 8; depth++) {
-    if (existsSync(join(root, "scripts/build.ts")) && existsSync(join(root, "src/runtime/Cargo.toml"))) return root;
+    if (
+      existsSync(join(root, "scripts/build.ts")) &&
+      existsSync(join(root, "src/runtime/Cargo.toml"))
+    )
+      return root;
     const parent = dirname(root);
     if (parent === root) break;
     root = parent;
   }
-  throw new Error("Configure checkouts.bun or APHRODY_BUN_CHECKOUT; no runtime checkout could be resolved");
+  throw new Error(
+    "Configure checkouts.bun or APHRODY_BUN_CHECKOUT; no runtime checkout could be resolved",
+  );
 }
 export type Profile = "full" | "perf";
 export type Target = "linux-x64" | "linux-arm64" | "windows-x64" | "macos-arm64" | "wasm";
@@ -73,10 +80,14 @@ async function inspectLockedCheckout(checkout: string, revision: string) {
         timeoutMs: 15_000,
         maxOutputBytes: 4096,
       }),
-      runProcess(["git", "status", "--porcelain=v1", "--untracked-files=all", "--ignore-submodules=none"], checkout, {
-        timeoutMs: 15_000,
-        maxOutputBytes: 1024 * 1024,
-      }),
+      runProcess(
+        ["git", "status", "--porcelain=v1", "--untracked-files=all", "--ignore-submodules=none"],
+        checkout,
+        {
+          timeoutMs: 15_000,
+          maxOutputBytes: 1024 * 1024,
+        },
+      ),
     ]);
     if (head.code !== 0 || status.code !== 0) throw new Error("checkout inspection failed");
     const checkoutRevision = head.stdout.trim();
@@ -106,7 +117,8 @@ function cargoOwner(config: Config): string[] {
   if (config.cargoCommand?.length) return config.cargoCommand;
   const checkout = runtimeCheckout(config);
   const wrapper = join(checkout, "scripts/build/rust/cargo-serial.ts");
-  if (!existsSync(wrapper)) throw new Error("Configure the serialized native Cargo owner in cargoCommand");
+  if (!existsSync(wrapper))
+    throw new Error("Configure the serialized native Cargo owner in cargoCommand");
   return [process.execPath, wrapper];
 }
 export interface RuntimeReceipt {
@@ -121,7 +133,11 @@ export interface RuntimeReceipt {
   qualification: { passed: boolean; gates: string[] };
 }
 
-export async function command(cmd: string[], cwd = packageRoot, timeout = 120_000): Promise<string> {
+export async function command(
+  cmd: string[],
+  cwd = packageRoot,
+  timeout = 120_000,
+): Promise<string> {
   const env = { ...Bun.env };
   for (const name of ["RUSTC_WRAPPER", "RUSTC_WORKSPACE_WRAPPER"]) {
     const wrapper = env[name];
@@ -142,7 +158,12 @@ export async function command(cmd: string[], cwd = packageRoot, timeout = 120_00
 function contained(root: string, path: string): string {
   const result = resolve(root, path);
   const rel = relative(root, result);
-  if (!rel || rel === ".." || rel.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`) || isAbsolute(rel))
+  if (
+    !rel ||
+    rel === ".." ||
+    rel.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`) ||
+    isAbsolute(rel)
+  )
     throw new Error(`Path must be inside the artifact root: ${path}`);
   return result;
 }
@@ -154,21 +175,28 @@ export async function readLock(): Promise<SourceLock> {
   const seen = new Set<string>();
   const mounts = new Set<string>();
   for (const source of lock.repositories) {
-    if (!/^[\w.-]+\/[\w.-]+$/.test(source.repository) || !/^[a-f0-9]{40}$/.test(source.revision) || seen.has(source.id))
+    if (
+      !/^[\w.-]+\/[\w.-]+$/.test(source.repository) ||
+      !/^[a-f0-9]{40}$/.test(source.revision) ||
+      seen.has(source.id)
+    )
       throw new Error(`Invalid source identity: ${source.id}`);
     contained(packageRoot, source.mount);
     if (!source.mount.startsWith("sources/") || mounts.has(source.mount))
       throw new Error(`Invalid source mount: ${source.mount}`);
-    if (source.parent && !seen.has(source.parent)) throw new Error(`Parent must precede source: ${source.id}`);
+    if (source.parent && !seen.has(source.parent))
+      throw new Error(`Parent must precede source: ${source.id}`);
     seen.add(source.id);
     mounts.add(source.mount);
   }
   for (const source of lock.repositories) {
-    if (!Array.isArray(source.gitlinks)) throw new Error(`Missing verified gitlink inventory: ${source.id}`);
-    const children = lock.repositories.filter(item => item.parent === source.id);
-    if (children.length !== source.gitlinks.length) throw new Error(`Incomplete submodule assembly: ${source.id}`);
+    if (!Array.isArray(source.gitlinks))
+      throw new Error(`Missing verified gitlink inventory: ${source.id}`);
+    const children = lock.repositories.filter((item) => item.parent === source.id);
+    if (children.length !== source.gitlinks.length)
+      throw new Error(`Incomplete submodule assembly: ${source.id}`);
     for (const link of source.gitlinks) {
-      const child = children.find(item => item.submodulePath === link.path);
+      const child = children.find((item) => item.submodulePath === link.path);
       if (
         !child ||
         child.revision !== link.revision ||
@@ -185,7 +213,8 @@ export async function readLock(): Promise<SourceLock> {
 
 export async function identity(path: string) {
   const stat = await lstat(path);
-  if (!stat.isFile() || stat.isSymbolicLink()) throw new Error(`Expected a regular artifact: ${path}`);
+  if (!stat.isFile() || stat.isSymbolicLink())
+    throw new Error(`Expected a regular artifact: ${path}`);
   return contentIdentity(Bun.file(path));
 }
 
@@ -199,7 +228,7 @@ export async function contentIdentity(blob: Blob) {
 export async function plan(profile: Profile, target: Target, config: Config = {}) {
   const manifest = await Bun.file(join(packageRoot, "distribution.json")).json();
   const sources = await readLock();
-  const runtimeSource = sources.repositories.find(source => source.id === "bun")!;
+  const runtimeSource = sources.repositories.find((source) => source.id === "bun")!;
   const runtime = runtimeCheckout(config);
   return {
     ...manifest,
@@ -238,7 +267,9 @@ export async function plan(profile: Profile, target: Target, config: Config = {}
 /** Full pinned source export stays with one factory owner. */
 export async function assembleSources(output: string, config: Config) {
   if (!config.sourceExport?.estimates)
-    throw new Error("Configure sourceExport.estimates from the source-owner byte and inode inventory");
+    throw new Error(
+      "Configure sourceExport.estimates from the source-owner byte and inode inventory",
+    );
   return exportPinnedSources(output, {
     ...config.sourceExport,
     lock: await readLock(),
@@ -255,12 +286,14 @@ export async function stageRuntime(
 ) {
   const receipt: RuntimeReceipt = await Bun.file(receiptPath).json();
   const lock = await readLock();
-  const source = lock.repositories.find(item => item.id === "bun")!;
+  const source = lock.repositories.find((item) => item.id === "bun")!;
   const digest = await identity(binary);
   const linux = target === "linux-x64" || target === "linux-arm64";
   const expectedABI = linux ? "gnu" : target === "windows-x64" ? "msvc" : "darwin";
   if (receipt.abi !== expectedABI) throw new Error(`Runtime ABI must be ${expectedABI}`);
-  const binaryABI = linux ? await inspectLinuxABI(binary, target === "linux-x64" ? "x64" : "arm64") : undefined;
+  const binaryABI = linux
+    ? await inspectLinuxABI(binary, target === "linux-x64" ? "x64" : "arm64")
+    : undefined;
   if (
     receipt.schemaVersion !== 1 ||
     receipt.repository !== "aphrody-labs/bun" ||
@@ -279,7 +312,7 @@ export async function stageRuntime(
   if (
     !sourcesReceipt.complete ||
     JSON.stringify(sourcesReceipt.repositories.map((s: Source) => [s.id, s.revision])) !==
-      JSON.stringify(lock.repositories.map(s => [s.id, s.revision]))
+      JSON.stringify(lock.repositories.map((s) => [s.id, s.revision]))
   )
     throw new Error("Stage requires a complete source assembly matching the source lock");
   const contents = await sourceIntegrity(join(output, "sources"));
@@ -343,18 +376,29 @@ export async function buildWasm(output: string, config: Config) {
     const artifact = join(targetDir, "wasm32-unknown-unknown/release/libm3_wasm.wasm");
     const digest = await identity(artifact);
     const magic = await Bun.file(artifact).slice(0, 8).bytes();
-    if (magic.length !== 8 || magic[0] !== 0 || magic[1] !== 97 || magic[2] !== 115 || magic[3] !== 109)
+    if (
+      magic.length !== 8 ||
+      magic[0] !== 0 ||
+      magic[1] !== 97 ||
+      magic[2] !== 115 ||
+      magic[3] !== 109
+    )
       throw new Error("Missing valid WASM artifact");
     await mkdir(join(output, "wasm"), { recursive: true });
     await copyFile(artifact, join(output, "wasm/libm3.wasm"));
     const sourceFiles = [];
     for (const path of ["Cargo.toml", "Cargo.lock"])
       sourceFiles.push({ path, ...(await identity(join(material, path))) });
-    for await (const path of new Bun.Glob("crates/{m3-tokens,m3,libm3,libm3-wasm}/**/*.{rs,toml}").scan({
+    for await (const path of new Bun.Glob(
+      "crates/{m3-tokens,m3,libm3,libm3-wasm}/**/*.{rs,toml}",
+    ).scan({
       cwd: material,
       onlyFiles: true,
     }))
-      sourceFiles.push({ path: path.replaceAll("\\", "/"), ...(await identity(join(material, path))) });
+      sourceFiles.push({
+        path: path.replaceAll("\\", "/"),
+        ...(await identity(join(material, path))),
+      });
     sourceFiles.sort((a, b) => a.path.localeCompare(b.path));
     const receipt = {
       schemaVersion: 1,
@@ -362,7 +406,10 @@ export async function buildWasm(output: string, config: Config) {
       sourceRepository: "aphrody-labs/material",
       sourceRevision: await command(["git", "rev-parse", "HEAD"], material),
       sourceDirty: Boolean(
-        await command(["git", "status", "--porcelain", "--", "Cargo.toml", "Cargo.lock", "crates"], material),
+        await command(
+          ["git", "status", "--porcelain", "--", "Cargo.toml", "Cargo.lock", "crates"],
+          material,
+        ),
       ),
       sourceFiles,
       target: "wasm32-unknown-unknown",
@@ -379,9 +426,12 @@ export async function buildWasm(output: string, config: Config) {
 }
 
 export async function buildImage(output: string, profile: Profile, target: Target, tag: string) {
-  if (target !== "linux-x64" && target !== "linux-arm64") throw new Error("Docker images require a Linux target");
+  if (target !== "linux-x64" && target !== "linux-arm64")
+    throw new Error("Docker images require a Linux target");
   if (target === "linux-arm64")
-    throw new Error("The COSMIC package lock currently covers amd64; ARM64 needs its own verified package inventory");
+    throw new Error(
+      "The COSMIC package lock currently covers amd64; ARM64 needs its own verified package inventory",
+    );
   const receipt = await Bun.file(join(output, "distribution.json")).json();
   if (receipt.profile !== profile || receipt.target !== target)
     throw new Error("Image profile and target must match the staged artifact");

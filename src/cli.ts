@@ -22,7 +22,7 @@ const usage = `Bun OS factory
   wasm --out DIR [--config FILE]
   image --out DIR --profile full|perf --target linux-x64|linux-arm64 --tag TAG
 
-Config: { "checkouts": { "material": "../material", "cosmic-epoch": "../cosmic" } }
+Config: { "checkouts": { "material": "libraries/material", "bun": "toolchains/bun", "cosmic-epoch": "../cosmic" } }
 Checkout paths resolve relative to the config file. Bun resolves from explicit configuration or the installed executable.
 Sources contain committed, pinned files and every locked submodule; protected stores are never copied.
 WASM builds libm3's portable API. Native Bun/JSC and the Linux compositor require their native targets.`;
@@ -51,9 +51,12 @@ try {
       process.exit(0);
     }
     if (positionals.length !== 1) throw new Error("Expected one factory command");
-    if (values.profile !== "full" && values.profile !== "perf") throw new Error("Unknown distribution profile");
+    if (values.profile !== "full" && values.profile !== "perf")
+      throw new Error("Unknown distribution profile");
     const profile: Profile = values.profile;
-    if (!["linux-x64", "linux-arm64", "windows-x64", "macos-arm64", "wasm"].includes(values.target!))
+    if (
+      !["linux-x64", "linux-arm64", "windows-x64", "macos-arm64", "wasm"].includes(values.target!)
+    )
       throw new Error("Unknown target");
     const target = values.target as Target;
     const required = (name: "out" | "runtime" | "receipt" | "material" | "tag") => {
@@ -68,10 +71,13 @@ try {
       for (const [id, path] of Object.entries(config.checkouts ?? {}))
         config.checkouts![id] = resolve(file, "..", path);
       if (config.sourceExport) {
-        if (config.sourceExport.cache) config.sourceExport.cache = resolve(file, "..", config.sourceExport.cache);
+        if (config.sourceExport.cache)
+          config.sourceExport.cache = resolve(file, "..", config.sourceExport.cache);
         for (const [id, path] of Object.entries(config.sourceExport.repositories ?? {}))
           config.sourceExport.repositories![id] = resolve(file, "..", path);
-        config.sourceExport.protectedRoots = config.sourceExport.protectedRoots?.map(path => resolve(file, "..", path));
+        config.sourceExport.protectedRoots = config.sourceExport.protectedRoots?.map((path) =>
+          resolve(file, "..", path),
+        );
       }
     }
     let result: unknown;
@@ -83,7 +89,8 @@ try {
         result = await assembleSources(resolve(required("out")), config);
         break;
       case "stage":
-        if (target === "wasm") throw new Error("Use the wasm command for the portable library target");
+        if (target === "wasm")
+          throw new Error("Use the wasm command for the portable library target");
         await stageRuntime(
           resolve(required("out")),
           resolve(required("runtime")),

@@ -225,3 +225,20 @@
 	path = crates/cadcraft-engine
 	url = bun-forge:aphrody-dev/bun-crate-cadcraft-engine.git
 	branch = os
+[submodule "libraries/material"]
+	path = libraries/material
+	url = https://github.com/aphrody-labs/material.git
+	branch = os
+[submodule "sources/aphrody"]
+	path = sources/aphrody
+	url = https://github.com/aphrody-labs/aphrody.git
+	branch = main
+[submodule "packages/shenron-config"]
+	path = packages/shenron-config
+	url = https://github.com/aphrody-labs/shenron-config.git
+	branch = main
+[submodule "sources/iecode"]
+	path = sources/iecode
+	url = https://github.com/aphrody-labs/iecode.git
+	branch = main
+	shallow = true
