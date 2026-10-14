@@ -51,9 +51,13 @@ fn civil_from_days(z: i64) -> (i64, u32, u32) {
 
 pub fn run(root: &Path) -> Result<(), String> {
     let catalog = std::fs::read_to_string(root.join("xtask/data/menu-catalog.txt")).map_err(|e| format!("menu catalog: {e}"))?;
+    let bun_os_root = root.parent().and_then(Path::parent).ok_or("CADCraft workspace is not nested under Bun OS")?;
+    let cli_manifest = bun_os_root.join("crates/cadcraft-cli/Cargo.toml");
     let out = Command::new(std::env::var("CARGO").unwrap_or_else(|_| "cargo".into()))
-        .current_dir(root)
-        .args(["run", "-q", "-p", "cadcraft-cli", "--", "commands"])
+        .current_dir(bun_os_root)
+        .args(["run", "-q", "--manifest-path"])
+        .arg(cli_manifest)
+        .args(["--", "commands"])
         .output()
         .map_err(|e| format!("cadcraft-cli: {e}"))?;
     let cmds: serde_json::Value = serde_json::from_slice(&out.stdout).map_err(|e| format!("commands JSON: {e}"))?;
