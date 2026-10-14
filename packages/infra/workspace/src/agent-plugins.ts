@@ -337,11 +337,11 @@ export async function pluginOperation(args: Args, runner: Runner = runCommand): 
       ];
       let formatting: Json = { status: "planned" };
       if (args.apply) {
-        const binary = Bun.which("oxfmt");
-        if (!binary) throw new Error("Oxfmt is required for preparation");
         const result = runner(
           [
-            binary,
+            process.execPath,
+            "fmt",
+            "--write",
             ...plugins(args.store).map((p) => p.path),
             join(args.store, ".agents/plugins/marketplace.json"),
             join(args.store, ".claude-plugin/marketplace.json"),

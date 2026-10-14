@@ -74,7 +74,7 @@ export async function updateMain(config: UpdateConfig, home: string): Promise<bo
     await invoke([process.execPath, "test", ...tests], staging);
     await invoke(
       [
-        "bun",
+        process.execPath,
         "check",
         "--noEmit",
         "--strict",
@@ -95,8 +95,8 @@ export async function updateMain(config: UpdateConfig, home: string): Promise<bo
       ],
       staging,
     );
-    await invoke(["bun", "lint", "--deny-warnings", ...sources, ...tests], staging);
-    await invoke(["bun", "fmt", "--check", ...sources, ...tests], staging);
+    await invoke([process.execPath, "lint", "--deny-warnings", ...sources, ...tests], staging);
+    await invoke([process.execPath, "fmt", "--check", ...sources, ...tests], staging);
     const output = `${config.bundle}.next`;
     await invoke(
       [process.execPath, "build", sources[0]!, "--target", "bun", "--outfile", output],

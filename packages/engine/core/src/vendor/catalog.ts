@@ -32,20 +32,18 @@ const withoutTimestamps = (text: string): string =>
   text.replace(/^ \* Timestamp: .*$/m, "").replace(/generatedAt: "[^"]*"/, "");
 
 /**
- * The catalog is tracked and checked by `fmt-check`: formatted with pinned oxfmt.
+ * The catalog is tracked and checked with Bun's native `fmt` command.
  */
 async function writeTrackedCatalog(
   targetPath: string,
   content: string,
   rootDir: string,
 ): Promise<void> {
-  const formatter = Bun.which("oxfmt");
-  if (!formatter) throw new Error("Installed global oxfmt is required to generate the Bun catalog");
   const draft = targetPath.replace(/\.ts$/, `.${crypto.randomUUID()}.draft.ts`);
   mkdirSync(dirname(targetPath), { recursive: true });
   try {
     await Bun.write(draft, content);
-    const formatted = Bun.spawnSync([formatter, draft], {
+    const formatted = Bun.spawnSync([process.execPath, "fmt", "--write", draft], {
       windowsHide: true,
       cwd: rootDir,
       stdout: "ignore",
@@ -54,7 +52,7 @@ async function writeTrackedCatalog(
     });
     if (formatted.exitCode !== 0)
       throw new Error(
-        `Installed oxfmt failed to format the Bun catalog (exit ${formatted.exitCode}): ${formatted.stderr.toString().slice(0, 2048)}`,
+        `Bun fmt failed to format the Bun catalog (exit ${formatted.exitCode}): ${formatted.stderr.toString().slice(0, 2048)}`,
       );
     const next = await Bun.file(draft).text();
     const previous = existsSync(targetPath) ? await Bun.file(targetPath).text() : "";

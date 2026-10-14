@@ -145,9 +145,12 @@ capability owners where they exist: the Aphrody MCP tools, the single Rust CLI `
 Bun CLI `yolo` (`yolo ops`, `yolo workspace`, `yolo update`…) and Bun. Python stays product code under
 `py/`, run through `uv`. For JavaScript and TypeScript, quality and migration commands must invoke
 Bun's native `bun check`, `bun lint`, `bun fmt` and `bun n2b` directly. Do not route them through
-package scripts, shell/process wrappers, `bunx`, standalone OXC, `tsgo`/`tsc`, ESLint, Prettier or
-external n2b binaries. Package scripts may expose these same native commands with package-local paths
-and configuration. Keep process spawning for application behavior and artifact-producing builds only.
+package scripts, shells, `bunx`, standalone OXC, `tsgo`/`tsc`, ESLint, Prettier or external n2b
+binaries. Package scripts may expose these same native commands with package-local paths and
+configuration. A first-party owner may invoke the exact current Bun executable with `check`, `lint` or
+`fmt` only when it must qualify an isolated staging worktree or format a unique generated draft; this
+invokes Bun's native CLI directly, without a shell or external backend. Keep other process spawning
+for application behavior and artifact-producing builds only.
 Remote hosts go through
 `aphrody infra ssh` or the MCP `infra_exec`; `vps-cargo` transports the native worktree to the SSH build host.
 Subagents follow the same owners: [agent tooling brief](docs/operations/agent-tooling.md) (skills, MCP tools,
@@ -189,8 +192,10 @@ locks, resource limits and shared sccache; deployment hosts require their own
 declared build allocation before receiving build jobs.
 
 Bun/TS: scoped native `bun check`, `bun lint` and `bun fmt` commands plus meaningful Bun tests;
-migrations use `bun n2b` directly. Do not insert a shell, package runner, subprocess backend, `bunx`,
-standalone OXC or TypeScript compiler between the command and Bun.
+migrations use `bun n2b` directly. Do not insert a shell, package runner, external subprocess backend,
+`bunx`, standalone OXC or TypeScript compiler between the command and Bun. A first-party owner may invoke
+`process.execPath` with Bun's native subcommand only to check an isolated staging worktree or format a
+unique generated draft.
 Rust: scoped check/test/strict Clippy. Docs: content/links, integrity, whitespace
 and consistency gate; no engine compilation. Run once per batch, repeat only
 after relevant changes or unresolved failures. Report failed/skipped checks.
