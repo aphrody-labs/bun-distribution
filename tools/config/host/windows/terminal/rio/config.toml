@@ -1,18 +1,13 @@
-# Rio 0.5.28 (raphamorim/rio): Aphrody terminal configuration.
-# Installed with themes/ into %RIO_CONFIG_HOME% or %USERPROFILE%\AppData\Local\rio by
-# `bun tools/config/host/windows/terminal/install.ts`. Themes come from `aphrody identity terminal-theme`.
+# Native Rio with the embedded Material 3 theme and the packaged Bun Shell.
 
-theme = "aphrody-m3"
+theme = "m3"
+line-height = 1.2
+enable-all-features = true
 confirm-before-quit = false
-working-dir = "C:\\aphrody"
-
-[adaptive-theme]
-dark = "aphrody-m3"
-light = "aphrody-m3-light"
 
 [shell]
-program = "C:\\Users\\aphro\\AppData\\Local\\aphrody\\bin\\aphrody.exe"
-args = ["shell", "start"]
+program = "rio-shell"
+args = []
 
 [fonts]
 family = "Cascadia Code"
@@ -29,12 +24,10 @@ backend = "Webgpu"
 [cursor]
 shape = "beam"
 
-# run() is lowercased and split on spaces by Rio: no quoted paths (8.3 names instead) and no
-# upper-case flags, hence `tmux attach || tmux new` rather than `tmux new -A`.
 [bindings]
 keys = [
   { key = "a", with = "control | alt", action = "CreateTab" },
-  { key = "b", with = "control | alt", action = "run(C:\\PROGRA~1\\Rio\\rio.exe -e C:\\Users\\aphro\\.bun\\bin\\bun.exe C:\\aphrody\\tools\\config\\host\\windows\\terminal\\bun-shell.ts)" },
-  { key = "v", with = "control | alt", action = "run(C:\\PROGRA~1\\Rio\\rio.exe -e C:\\PROGRA~1\\OpenSSH\\ssh.exe -t vps tmux attach -t wt || tmux new -s wt)" },
-  { key = "f", with = "control | alt", action = "run(C:\\PROGRA~1\\Rio\\rio.exe -e C:\\PROGRA~1\\OpenSSH\\ssh.exe -t dbfr tmux attach -t wt || tmux new -s wt)" },
+  { key = "b", with = "control | alt", action = "run(rio -e rio-shell)" },
+  { key = "v", with = "control | alt", action = "run(rio -e ssh -t vps tmux attach -t wt || tmux new -s wt)" },
+  { key = "f", with = "control | alt", action = "run(rio -e ssh -t dbfr tmux attach -t wt || tmux new -s wt)" },
 ]

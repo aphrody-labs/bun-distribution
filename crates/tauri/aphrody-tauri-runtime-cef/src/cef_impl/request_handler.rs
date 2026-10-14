@@ -10,7 +10,7 @@ use std::{
 
 use cef::{rc::*, *};
 use dioxus_debug_cell::RefCell;
-use html5ever::{LocalName, interface::QualName, ns};
+use html5ever::{LocalName, interface::QualName, namespace_url, ns};
 use http::{
   HeaderMap, HeaderName, HeaderValue,
   header::{CONTENT_SECURITY_POLICY, CONTENT_TYPE, ORIGIN},

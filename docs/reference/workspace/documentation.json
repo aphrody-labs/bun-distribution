@@ -26,8 +26,8 @@
     {
       "path": "AGENTS.md",
       "title": "Aphrody repository instructions",
-      "sha256": "4fe501bed00542d8dde92ee5bad072e359c2768f6398f0b900eadf5341560ec2",
-      "bytes": 12980,
+      "sha256": "c3cc7e5e27bf4b666f63e58064f977025b3f382bef5531616be2500915e05384",
+      "bytes": 14099,
       "domain": "",
       "status": "historical",
       "visibility": "private",
@@ -76,8 +76,8 @@
     {
       "path": "PLAN.md",
       "title": "Plan",
-      "sha256": "50680a37e8e6b5844b50ce808446f13bc43f6cc0399036864639dc2ada162a9e",
-      "bytes": 8869,
+      "sha256": "6953e6ada3273ca02db9595290477b4ee647ffa2bfadf6651992ace38803393d",
+      "bytes": 10408,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -86,8 +86,8 @@
     {
       "path": "README.md",
       "title": "Aphrody",
-      "sha256": "4bcadac6d8ca9fdf7a3d593f3966974b55b53d8588581ef3b015b83ad612a71c",
-      "bytes": 7810,
+      "sha256": "15aa2d68a3d7db9fd3fe612a09a17c9b7aa9b6d577c979032ca462cd3df901bb",
+      "bytes": 7853,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -216,8 +216,8 @@
     {
       "path": "crates/ai/jev/README.md",
       "title": "aphrody-jev",
-      "sha256": "e2733fdbfd2eddbce2657c419bd513591e78c37a6e2a135411a887e223f47dca",
-      "bytes": 1798,
+      "sha256": "88ede62974b9c8ec1d92b337fa601f933a6c382b051869cf929f13d0c8055fad",
+      "bytes": 3662,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -266,8 +266,8 @@
     {
       "path": "crates/compat/bun-docs/README.md",
       "title": "Offline Bun documentation",
-      "sha256": "5c7648adc1dc071c2b6be46acb0019cf105c9ba04553b65d64b71d6b777910a9",
-      "bytes": 1861,
+      "sha256": "e6ddb57d2a41f7a2adb73752b221b0acb70084f5b5e604beafa70d82687e2528",
+      "bytes": 1907,
       "domain": "compat",
       "status": "canonical",
       "visibility": "private",
@@ -1516,8 +1516,8 @@
     {
       "path": "crates/ui/app/README.md",
       "title": "aphrody-app — Aphrody Tauri desktop host",
-      "sha256": "cde69b65e4101161b5d61cf8f345b05472fb3e2857a2f7de1d08e54fedb4566a",
-      "bytes": 5209,
+      "sha256": "c6aad19c50d663bc52484bb78a9651ce8a0339b29b0663d3b711714cc7c42ca2",
+      "bytes": 5236,
       "domain": "ui",
       "status": "canonical",
       "visibility": "private",
@@ -1536,8 +1536,8 @@
     {
       "path": "crates/ui/identity/README.md",
       "title": "aphrody-identity",
-      "sha256": "de77e1f6f39c0e9d6b3a9add7e0d9be306af0eefe26986b6f984b4aae86e614a",
-      "bytes": 7903,
+      "sha256": "ea130cf5f7e631defe987a39c7335aead9c3791824f72da96012634c0621dbe3",
+      "bytes": 7921,
       "domain": "ui",
       "status": "canonical",
       "visibility": "private",
@@ -1582,16 +1582,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "crates/ui/identity/docs/toolchain-image-2026.md"
-    },
-    {
-      "path": "crates/ui/m3-tokens/README.md",
-      "title": "m3-tokens",
-      "sha256": "c0ad9270b7551d23eee8c70104a817632a03b79e670ed0e18f5bb92b746d113c",
-      "bytes": 3297,
-      "domain": "ui",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/ui/m3-tokens/README.md"
     },
     {
       "path": "crates/ui/render/README.md",
@@ -1676,8 +1666,8 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "2e7e661e5c0e9c8633338c62485d45374267db5ecd07d9a63a5ed64571d99022",
-      "bytes": 7687,
+      "sha256": "a4e21acac6e9c553cd1938866462e146e79f0c2f4213019f2e5d9a5f0b10fb07",
+      "bytes": 7810,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -1746,7 +1736,7 @@
     {
       "path": "docs/apis/generated/infra-rust.md",
       "title": "Source reference: infra-rust",
-      "sha256": "96f6f020d00b2ec4338588abdd5df6b13461107a1c12c3a298f96e68ced8a6fa",
+      "sha256": "8b5facec7674e2bc83497e607c8e81deeda9ab4f3401d7382ffd665c56fd927e",
       "bytes": 2762,
       "domain": "generated",
       "status": "generated",
@@ -2006,8 +1996,8 @@
     {
       "path": "docs/architecture/workspace/ARCHITECTURE.md",
       "title": "Workspace architecture",
-      "sha256": "45011e91c5ce7f04807b2947d15d7c8162a94d5e6eb5af1bf93dd2aae2e5cbbc",
-      "bytes": 6275,
+      "sha256": "d36ba4154ecbcc3e992951e373148c9ca7f46b42289911890fca99a55abeb6f6",
+      "bytes": 6686,
       "domain": "workspace",
       "status": "historical",
       "visibility": "private",
@@ -2025,11 +2015,11 @@
     },
     {
       "path": "docs/architecture/workspace/M3-LOCATION.md",
-      "title": "M3 at the product repository root",
-      "sha256": "b1e0de653486c3dfe9dfbccc6d057cca31ccaaff8f1d9495f201175d033773da",
-      "bytes": 3456,
+      "title": "Material ownership and Aphrody integration",
+      "sha256": "fce00609fb19047fcc304665e252de33e1123ee7d3e1d715a5834043fff5111e",
+      "bytes": 1753,
       "domain": "workspace",
-      "status": "historical",
+      "status": "canonical",
       "visibility": "private",
       "canonical": "docs/architecture/workspace/M3-LOCATION.md"
     },
@@ -2136,8 +2126,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "a49ec8b8fe9353450b73ebd0d4a0c45a3656b77bf401b64c96bd390443dde1b8",
-      "bytes": 53291,
+      "sha256": "d51a0c50e82ad0db2c9a18d75e068e7c5cd40c5fc851691405e7dd9fd1993a31",
+      "bytes": 52981,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -2456,7 +2446,7 @@
     {
       "path": "docs/operations/bun-packages.md",
       "title": "Packages Bun : installation et release",
-      "sha256": "3fff45299ea8551afb6c30e0eedbc19163cd72b52dfedb3ccb709f101c42eeca",
+      "sha256": "7fa5c6a54aaf5380480733a812101d9bf97bf9dd699ab4e6601d6c44b8b64923",
       "bytes": 20965,
       "domain": "",
       "status": "canonical",
@@ -2512,6 +2502,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/cloud/CONTEXT-HANDOFF.md"
+    },
+    {
+      "path": "docs/operations/cloudflare-one-client-windows.md",
+      "title": "Client Cloudflare One Windows",
+      "sha256": "9cc0defd859123b8358eb7f687d7ea9be3d860aa10de2def6482fce9afb8565f",
+      "bytes": 4033,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/cloudflare-one-client-windows.md"
     },
     {
       "path": "docs/operations/container/CONTAINER.md",
@@ -2596,8 +2596,8 @@
     {
       "path": "docs/operations/infra/BUILD-FACTORY.md",
       "title": "VPS build factory and DBFR Shenron runtime",
-      "sha256": "691b4422ae23005441268c25b6a864a587cf76d43d855c598aabbb14da32bd0b",
-      "bytes": 19543,
+      "sha256": "e77e7cdfd1bbc2f906a41adbb0784a9edb26f6e6dd78ba1f050da7ccbeeb9580",
+      "bytes": 19547,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -2646,8 +2646,8 @@
     {
       "path": "docs/operations/infra/DOWNLOADS.md",
       "title": "Aphrody downloads: site, publisher and GitHub releases",
-      "sha256": "29e3440ef34dadb345335af04c7d519ce7b238bb710e56967f3fa09c59a06e98",
-      "bytes": 9806,
+      "sha256": "f2b0b2806cacc82a0cd3372ee48964d8a818cc6c974dee96bf42769ecec56ddc",
+      "bytes": 9835,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -2726,8 +2726,8 @@
     {
       "path": "docs/operations/infra/MCP-A2A.md",
       "title": "MCP et A2A persistants sur le VPS",
-      "sha256": "8402a48e42dfcf8e99610ce9c39b3e9ae04ce86c5604b9515af8bbfa86499c85",
-      "bytes": 35182,
+      "sha256": "e6b476729a0e332fa886bcabfa2af635114ff6b0dd69b2c1e706e7fc76f53105",
+      "bytes": 35307,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -2886,8 +2886,8 @@
     {
       "path": "docs/operations/infra/UPDATE.md",
       "title": "Update pipeline (yolo update)",
-      "sha256": "b6ff5c539fe3d2e3e390612d5f819ee935ff636f35f7d9576f74ef7d9c456eea",
-      "bytes": 11126,
+      "sha256": "991e46f6281616d4a357a4df55f354439184113212964a122f4018e14f245188",
+      "bytes": 11147,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -2924,6 +2924,16 @@
       "canonical": "docs/operations/infra/aphrody-data-plane-2026-10-09.md"
     },
     {
+      "path": "docs/operations/infra/app-activation.md",
+      "title": "Native application activation",
+      "sha256": "44a08fb74133d453cecc51ec6071d23d7b7b568da97095d9d02a0d71be58c111",
+      "bytes": 2891,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/app-activation.md"
+    },
+    {
       "path": "docs/operations/infra/build-factory-async-install.md",
       "title": "Detached build and verified installation",
       "sha256": "4ef20668e898325815c4f410659a968bc5f56c0b752d38671253cf54abfc9412",
@@ -2956,8 +2966,8 @@
     {
       "path": "docs/operations/infra/cutover-resume-2026-10-10.md",
       "title": "Domain cutover resumption, 2026-10-10",
-      "sha256": "1c7ec7c2dc68182a65db01bc1ac653acb17887458648805c220e5cebb42a4199",
-      "bytes": 17192,
+      "sha256": "8d011d26b2747641b5ba6dae7c45f0988ca715151e5af54024c7701519fe749d",
+      "bytes": 17394,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -3026,8 +3036,8 @@
     {
       "path": "docs/operations/infra/native-site-vps.md",
       "title": "Site produit Rust : VPS, port 80",
-      "sha256": "10717119456714558473339709849005791c6de2fa39dd840a46ab9ac9ce62c0",
-      "bytes": 6269,
+      "sha256": "46ea2ea77ac2179162439537d7beadccdc6be93e10fa30a817c1bf05438ff531",
+      "bytes": 6332,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -3044,6 +3054,16 @@
       "canonical": "docs/operations/infra/native-sudo-rs-20261007.md"
     },
     {
+      "path": "docs/operations/infra/omar-ssh-recovery-2026-10-13.md",
+      "title": "SSH direct persistant vers Omar",
+      "sha256": "d049e52c56a4e08d695205c2530c5e5d5244de9487a7b00825d4e7fcb321ba31",
+      "bytes": 2169,
+      "domain": "infra",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/omar-ssh-recovery-2026-10-13.md"
+    },
+    {
       "path": "docs/operations/infra/ovh-protected-2026-10-09.md",
       "title": "Protected native OVH audit, 2026-10-09",
       "sha256": "ded66c44327b968fcc8f0f3013adc8001586ab266a9f3bee2e30b2f3487a26b8",
@@ -3056,8 +3076,8 @@
     {
       "path": "docs/operations/infra/public-webos-2026-10-11.md",
       "title": "Public Bun WebOS static release",
-      "sha256": "7cc0e5c60ed38384315d8d2479c259fbad455abf53aab4f9eeb70c536e558315",
-      "bytes": 9386,
+      "sha256": "f31cc604f2a9a6680e9c8f11b8bc15b582c50f1c15ac00be8081b658d3b4c6c4",
+      "bytes": 9655,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -3084,6 +3104,36 @@
       "canonical": "docs/operations/infra/r2-native-install-2026-10-09.md"
     },
     {
+      "path": "docs/operations/infra/repair-global-paths.md",
+      "title": "Réparer les chemins globaux Windows",
+      "sha256": "089982cac8a75006abea9cab4f1cad0abf0f31bcbe6da1bd5a54116f6ddd84e5",
+      "bytes": 2431,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/repair-global-paths.md"
+    },
+    {
+      "path": "docs/operations/infra/source-origin-ca-renewal.md",
+      "title": "Certificat Origin CA de Gitea",
+      "sha256": "384063df015ed0d0da83364497efaf35fc03113eaae596a082aeac8fad26557a",
+      "bytes": 2222,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/source-origin-ca-renewal.md"
+    },
+    {
+      "path": "docs/operations/infra/source-tunnel-auth.md",
+      "title": "Source tunnel authentication",
+      "sha256": "c8402c4521196bf8e056792b9cdc40f961a7cbf1f90f54bc84946950bbb8592d",
+      "bytes": 3660,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/source-tunnel-auth.md"
+    },
+    {
       "path": "docs/operations/infra/srv-reclaim-20261007.md",
       "title": "VPS factory reclamation, 2026-10-07",
       "sha256": "0afc47053f95b5ada63a55f9d5dbaef2a801d193d91a29bed6b50703af46a2b6",
@@ -3092,6 +3142,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/infra/srv-reclaim-20261007.md"
+    },
+    {
+      "path": "docs/operations/infra/ssh-recovery-2026-10-13.md",
+      "title": "Accès SSH persistant du poste Windows",
+      "sha256": "59ef1487238258be4214391bdbba8d38c710c80265ade68b0478562466a9004f",
+      "bytes": 2444,
+      "domain": "infra",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/ssh-recovery-2026-10-13.md"
     },
     {
       "path": "docs/operations/infra/supabase-wsl-docker.md",
@@ -3106,8 +3166,8 @@
     {
       "path": "docs/operations/infra/update/BUN.md",
       "title": "Bun and npm updates (yolo update bun)",
-      "sha256": "ce91889e50e951ab7d739b1a04070c692def3b8b5461680e083a91361402403d",
-      "bytes": 15560,
+      "sha256": "b07891cad6e0585f0333395c858d70a14a9e70cf8be05b5f97deedcffb2520fe",
+      "bytes": 15621,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -3146,8 +3206,8 @@
     {
       "path": "docs/operations/infra/vps-bun-cleanup-2026-10-11.md",
       "title": "VPS : inventaire Bun et nettoyage contrôlé",
-      "sha256": "74edd91766c75bc2f4242318290eb2805eac0ae770e6c1421a6083776a2627f4",
-      "bytes": 7477,
+      "sha256": "fed303663407b315b285df583edcd46cf5c627f378175a045469fa374f10dfbc",
+      "bytes": 8566,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -3192,6 +3252,26 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/release/DISTRIBUTION.md"
+    },
+    {
+      "path": "docs/operations/source-private-dns-windows.md",
+      "title": "Source private DNS on native Windows",
+      "sha256": "2d970d13d385548454dff1c98739e22747d8a6eab34c43932c82f68e10e43aa0",
+      "bytes": 2934,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/source-private-dns-windows.md"
+    },
+    {
+      "path": "docs/operations/windows-ssd-reallocation.md",
+      "title": "Réallocation du SSD Windows",
+      "sha256": "1916cda27c03b549ecc7e87ddac6117275a5318080d5dd87a621aba83eaddc5b",
+      "bytes": 2177,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/windows-ssd-reallocation.md"
     },
     {
       "path": "docs/operations/workspace/HISTORY.md",
@@ -3242,6 +3322,16 @@
       "status": "historical",
       "visibility": "private",
       "canonical": "docs/operations/workspace/build-fleet-2026-10-11.md"
+    },
+    {
+      "path": "docs/operations/workspace/bun-yolo-bridge-2026-10-14.md",
+      "title": "Bridge Bun Yolo et host CPython — 2026-10-14",
+      "sha256": "2cd4e423a181752bf2b4809aed4ecb9ea5eece92095fdfcab265dd63515497b4",
+      "bytes": 3799,
+      "domain": "workspace",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/workspace/bun-yolo-bridge-2026-10-14.md"
     },
     {
       "path": "docs/operations/workspace/buv-gpu-cuda134-2026-10-10.md",
@@ -3554,14 +3644,34 @@
       "canonical": "docs/operations/workspace/timeline-release-2026-10-10.md"
     },
     {
+      "path": "docs/operations/workspace/toolchain-retirement-2026-10-13.md",
+      "title": "Windows toolchain retirement — 2026-10-13",
+      "sha256": "65ccb1c9ee1e2d4af6e662c435fe610b47928e45f1f5b41334ed65e727fbee42",
+      "bytes": 3255,
+      "domain": "workspace",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/workspace/toolchain-retirement-2026-10-13.md"
+    },
+    {
       "path": "docs/operations/workspace/windows-native.md",
       "title": "Contexte de développement, build et déploiement",
-      "sha256": "5a66a756dc866e35c81d79730fa3477cac1ae5ad1c1c698301ca869606ae9c91",
-      "bytes": 6270,
+      "sha256": "83bfcf256a42cc282b5ffd4cfca9386e29e17c4497841add27e2171d9a4d6e55",
+      "bytes": 6318,
       "domain": "workspace",
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/workspace/windows-native.md"
+    },
+    {
+      "path": "docs/operations/workspace/yolo-python-host-2026-10-13.md",
+      "title": "Yolo native Python host — 2026-10-13",
+      "sha256": "956df1969638c490af794355ab909e4151e1cc246fbe1b80dcd9721220518e88",
+      "bytes": 2610,
+      "domain": "workspace",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/workspace/yolo-python-host-2026-10-13.md"
     },
     {
       "path": "docs/plans/agent-home-pipeline/PLAN.md",
@@ -3796,8 +3906,8 @@
     {
       "path": "docs/plans/desktop-web/INVENTORY.md",
       "title": "Single CEF runtime: inventory of wry, tao, GTK3 and WebKitGTK references",
-      "sha256": "0132eb6bf2b02afe7a63ea38c35dd4abbd1999af45b7cea233f2657888df042e",
-      "bytes": 37977,
+      "sha256": "a3465eea79f1d8765277dc239eceb44fdf7851d67ec729e50dba851e2a21eb3b",
+      "bytes": 38001,
       "domain": "desktop-web",
       "status": "canonical",
       "visibility": "private",
@@ -3886,10 +3996,10 @@
     {
       "path": "docs/plans/infra/PLAN.md",
       "title": "Aphrody Infra plan",
-      "sha256": "6d0cea70378721970c86339b126888b2a9940255a0802709e90639aabed664ca",
-      "bytes": 31217,
+      "sha256": "c794d8d49c389fdaf59ac14714b8c237b1a8366ac2ba6b351f4ad91d64147d21",
+      "bytes": 31991,
       "domain": "infra",
-      "status": "historical",
+      "status": "canonical",
       "visibility": "private",
       "canonical": "docs/plans/infra/PLAN.md"
     },
@@ -3926,8 +4036,8 @@
     {
       "path": "docs/plans/m3-native-rust/PLAN.md",
       "title": "Aphrody en Rust natif et M3 pour Rust/Bun",
-      "sha256": "422e2208c110aa02ddaaa9edd7f280032ed528fc87a5d8c4ce38015a4fe80f93",
-      "bytes": 17694,
+      "sha256": "73d9526123c14768f70f8fd0d964fe47a4d0c3950d36293665966fa92cc90a32",
+      "bytes": 17774,
       "domain": "m3-native-rust",
       "status": "canonical",
       "visibility": "private",
@@ -4102,6 +4212,26 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/plans/x-bun-import/PLAN.md"
+    },
+    {
+      "path": "docs/plans/yolo-decision/BUN-CUTOVER.md",
+      "title": "Consommateurs Python du Bun Yolo natif",
+      "sha256": "edaa02a812d1cd760ffe054c439ff4bb6ffe93d3438f8617aa7fcd3a6766cb7c",
+      "bytes": 9433,
+      "domain": "yolo-decision",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/plans/yolo-decision/BUN-CUTOVER.md"
+    },
+    {
+      "path": "docs/plans/yolo-decision/PLAN.md",
+      "title": "Yolo : modèle de décision privé",
+      "sha256": "27cc9af220a82b3b4be9c9bbe1b92d143d9cbc056069eb505058ab749019b1ea",
+      "bytes": 8007,
+      "domain": "yolo-decision",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/plans/yolo-decision/PLAN.md"
     },
     {
       "path": "docs/plans/yolo-fork-unified/PLAN.md",
@@ -4806,8 +4936,8 @@
     {
       "path": "docs/reference/ai/PITFALLS.md",
       "title": "Pitfalls",
-      "sha256": "a2a4a936cc5210a65abf71e45426f825dc86f6f87bb39f50ec1530ec11f7de0e",
-      "bytes": 12802,
+      "sha256": "2a4176802d288af42c4502cc1759c15ccf2e2e41cdf7f37e66450af64e755961",
+      "bytes": 12810,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -5126,7 +5256,7 @@
     {
       "path": "docs/reference/ai/cargo/SKILLS.md",
       "title": "Agent Skills — Ecosystem & Centralization",
-      "sha256": "f859b2c299a622a750ab0c7116cbaea01945d3b2e4662b8bbbd88a235c535e6c",
+      "sha256": "d3942b8e1d18fe4e867fcd163ede0d9aa7ffebca211ef81fb6fd10a436145745",
       "bytes": 11622,
       "domain": "ai",
       "status": "canonical",
@@ -5816,8 +5946,8 @@
     {
       "path": "docs/reference/infra/UPSTREAMS.md",
       "title": "Upstreams",
-      "sha256": "fca710c52684ad97caef879efb688df3e7f38313a24312264269b6edb5a06df9",
-      "bytes": 10365,
+      "sha256": "b39f53a3bdf9e99fe7944b9d34a4aaec69144f2a4d1911bf6a508592766c9016",
+      "bytes": 13942,
       "domain": "infra",
       "status": "notice",
       "visibility": "private",
@@ -5836,8 +5966,8 @@
     {
       "path": "docs/reference/infra/ops/ASSET-CDN.md",
       "title": "Shared asset CDN — cdn.aphrody.com",
-      "sha256": "44379a4c468793365edd6f8c73e9b0edb87448cc71e08a170acddd64ae889ba3",
-      "bytes": 6893,
+      "sha256": "17acdcc96a8da4f94dacc2bd4c107df9c5f8ae7f9f089735ec0650eea9a1a56c",
+      "bytes": 6889,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -6306,8 +6436,8 @@
     {
       "path": "docs/reference/upstream-bun/APHRODY-FORK.md",
       "title": "Bun in Aphrody: the aphrody-labs/bun fork",
-      "sha256": "ada47b30c236f5c255237144ab608e6712c61a0df7fd02382ade592214a76359",
-      "bytes": 8566,
+      "sha256": "e359639040809ebfe10c2764ea38199f1013f3e44a47d3b7a87a5220e78c57d8",
+      "bytes": 8608,
       "domain": "upstream-bun",
       "status": "imported",
       "visibility": "private",
@@ -6416,8 +6546,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "9428c1a7e054fa61e252fae11d446e4f7b9521f0cb601ab8f186c4a41a5848d3",
-      "bytes": 35947,
+      "sha256": "a0f246d2ceae0db858129cdb7d2b5872a18dedf91edcfa5fff2eb14bd4d090da",
+      "bytes": 35248,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",
@@ -7176,8 +7306,8 @@
     {
       "path": "packages/infra/product/README.md",
       "title": "Aphrody",
-      "sha256": "a3ecfbcfeff2e3c3003cf7d6c3358a5b8824de89accf68bcaeb032068d0c30cd",
-      "bytes": 2181,
+      "sha256": "62d463cedf9e4d7ffdf9725807366f5a4836867cb40e2215a4401bcadbec003c",
+      "bytes": 2991,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -7652,6 +7782,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "tools/config/host/aphrody-os/VPS-TUNING.md"
+    },
+    {
+      "path": "tools/config/host/apps/vps/bun-os-server.README.md",
+      "title": "Bun OS product API service",
+      "sha256": "92941e2e4b36375619dd49e67e30b3e27150084365928b4ffa77568e00154e5f",
+      "bytes": 3102,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "tools/config/host/apps/vps/bun-os-server.README.md"
     },
     {
       "path": "tools/config/host/apps/vps/google-us-egress/README.md",

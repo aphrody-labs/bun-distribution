@@ -88,10 +88,9 @@ impl HostLayout {
 
     /// The retired prefix `path` starts with (path-boundary aware).
     pub fn retired_prefix(&self, path: &str) -> Option<&str> {
-        self.retired
-            .iter()
-            .map(|(from, _)| from.as_str())
-            .find(|from| path == *from || path.strip_prefix(from).is_some_and(|r| r.starts_with('/')))
+        self.retired.iter().map(|(from, _)| from.as_str()).find(|from| {
+            path == *from || path.strip_prefix(from).is_some_and(|r| r.starts_with('/'))
+        })
     }
 }
 

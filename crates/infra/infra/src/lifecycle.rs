@@ -3,9 +3,9 @@
 //!
 //! Controls systemd units or Docker containers locally or remotely through transparent SSH dispatch.
 
-use aphrody_proc::NoWindow as _;
 use crate::catalog::load_service_catalog;
 use anyhow::{Context, Result, bail};
+use aphrody_proc::NoWindow as _;
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
@@ -70,7 +70,10 @@ fn container_command(action: ServiceAction, container: &str) -> Option<Vec<Strin
     Some(argv)
 }
 
-pub(crate) fn run_on_target(target_id: &str, argv: &[String]) -> std::io::Result<std::process::Output> {
+pub(crate) fn run_on_target(
+    target_id: &str,
+    argv: &[String],
+) -> std::io::Result<std::process::Output> {
     if is_local_target(target_id) {
         Command::new(&argv[0]).no_window().args(&argv[1..]).output()
     } else {
@@ -161,9 +164,13 @@ pub fn execute_lifecycle(
 
         if action == ServiceAction::Journal {
             let out = if is_local {
-                Command::new("journalctl").no_window().args(["-u", &unit, "-n", "30", "--no-pager"]).output()?
+                Command::new("journalctl")
+                    .no_window()
+                    .args(["-u", &unit, "-n", "30", "--no-pager"])
+                    .output()?
             } else {
-                Command::new("ssh").no_window()
+                Command::new("ssh")
+                    .no_window()
                     .args([
                         "-o",
                         "BatchMode=yes",
@@ -184,7 +191,8 @@ pub fn execute_lifecycle(
         }
 
         let (code, output) = if is_local {
-            let out = Command::new("systemctl").no_window()
+            let out = Command::new("systemctl")
+                .no_window()
                 .args([cmd_str, &unit])
                 .output()
                 .with_context(|| format!("exécution de systemctl {cmd_str} {unit}"))?;
@@ -193,7 +201,8 @@ pub fn execute_lifecycle(
                 String::from_utf8_lossy(&out.stdout).trim().to_string(),
             )
         } else {
-            let out = Command::new("ssh").no_window()
+            let out = Command::new("ssh")
+                .no_window()
                 .args([
                     "-o",
                     "BatchMode=yes",
@@ -281,7 +290,8 @@ pub fn get_service_statuses(
             continue;
         };
         let (active, state) = if is_local {
-            let out = Command::new("systemctl").no_window().args(["is-active", &unit]).output().ok();
+            let out =
+                Command::new("systemctl").no_window().args(["is-active", &unit]).output().ok();
             match out {
                 Some(o) => {
                     let s = String::from_utf8_lossy(&o.stdout).trim().to_string();
@@ -290,7 +300,8 @@ pub fn get_service_statuses(
                 None => (false, "unknown".to_string()),
             }
         } else {
-            let out = Command::new("ssh").no_window()
+            let out = Command::new("ssh")
+                .no_window()
                 .args(["-o", "BatchMode=yes", target_id, &format!("systemctl is-active {}", unit)])
                 .output()
                 .ok();

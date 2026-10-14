@@ -43,17 +43,17 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | guides | [ai](guides/ai/) | 7 | - |
 | guides | [discord](guides/discord/) | 2 | - |
 | guides | [workspace](guides/workspace/) | 8 | [Parcours Workspace Aphrody](guides/workspace/README.md) |
-| operations | [(files)](operations/) | 9 | - |
+| operations | [(files)](operations/) | 12 | - |
 | operations | [agent-tooling](operations/agent-tooling/) | 1 | - |
 | operations | [ai](operations/ai/) | 5 | - |
 | operations | [bun-1.4.4](operations/bun-1.4.4/) | 2 | [Bun 1.4.4 alignment dossier](operations/bun-1.4.4/README.md) |
 | operations | [cloud](operations/cloud/) | 4 | - |
 | operations | [container](operations/container/) | 2 | - |
 | operations | [discord](operations/discord/) | 2 | [Discord Operations Runbooks & Guides](operations/discord/README.md) |
-| operations | [infra](operations/infra/) | 59 | - |
+| operations | [infra](operations/infra/) | 65 | - |
 | operations | [os](operations/os/) | 1 | - |
 | operations | [release](operations/release/) | 1 | - |
-| operations | [workspace](operations/workspace/) | 39 | - |
+| operations | [workspace](operations/workspace/) | 42 | - |
 | plans | [agent-home-pipeline](plans/agent-home-pipeline/) | 1 | [Agent home, one database, one pipeline, one RAG](plans/agent-home-pipeline/PLAN.md) |
 | plans | [ai](plans/ai/) | 19 | [Delivery plan](plans/ai/PLAN.md) |
 | plans | [compat](plans/compat/) | 1 | [PLAN — aphrody-compat](plans/compat/PLAN.md) |
@@ -74,6 +74,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [vu](plans/vu/) | 7 | [`vu`: the Aphrody Python runtime](plans/vu/PLAN.md) |
 | plans | [workspace](plans/workspace/) | 2 | [Aphrody — FFI unique et consolidation Rust, Python, Bun](plans/workspace/PLAN.md) |
 | plans | [x-bun-import](plans/x-bun-import/) | 2 | [`@aphrody/x`: a thin Bun import over `aphrody-x`](plans/x-bun-import/PLAN.md) |
+| plans | [yolo-decision](plans/yolo-decision/) | 2 | [Yolo : modèle de décision privé](plans/yolo-decision/PLAN.md) |
 | plans | [yolo-fork-unified](plans/yolo-fork-unified/) | 1 | [yolo et le fork Bun : un seul produit runtime](plans/yolo-fork-unified/PLAN.md) |
 | products | [ai](products/ai/) | 14 | [Aphrody AI](products/ai/README.md) |
 | products | [compat](products/compat/) | 2 | [Aphrody Compat](products/compat/README.md) |
@@ -109,4 +110,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
 | omar (outside the category layout) | [(files)](omar/) | 1 | - |
 
-Total: 589 files.
+Total: 603 files.

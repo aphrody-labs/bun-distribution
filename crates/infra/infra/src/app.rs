@@ -91,8 +91,8 @@ fn execute(program: &str, args: &[String], cwd: &Path, seconds: u32) -> Result<S
         cfg!(target_os = "linux"),
         "Application activation requires its qualified Linux execution host"
     );
-    let mut command = Command::new("timeout");
-    command.no_window().args(["--kill-after=5s", &format!("{seconds}s"), program]);
+    let mut command = Command::new("timeout").no_window();
+    command.args(["--kill-after=5s", &format!("{seconds}s"), program]);
     command
         .args(args)
         .current_dir(cwd)

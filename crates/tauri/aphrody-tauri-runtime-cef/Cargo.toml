@@ -40,8 +40,8 @@ cef-dll-sys = { version = "=152.3.0", default-features = false }
 dirs = "6"
 dioxus-debug-cell = "0.1"
 http = { workspace = true }
-kuchiki = { package = "kuchikiki", version = "0.8.9-speedreader" }
-html5ever = "0.35"
+kuchiki = { package = "kuchikiki", version = "0.8.8-speedreader" }
+html5ever = "0.29"
 log = { workspace = true }
 raw-window-handle = "0.6"
 serde = { workspace = true, features = ["derive"] }

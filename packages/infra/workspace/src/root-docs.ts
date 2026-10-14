@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 type Pair = [string, string];
 type Row = [string, string, string];
-/** `public` sections are also rendered on aphrody.com (C:\bun packages/web/site/collect.ts reads them). */
+/** Public sections are also rendered on aphrody.com by the selected Bun checkout's site collector. */
 type Section = { id: string; title: string; public?: boolean; body: string[] };
 type Data = {
   readme: {

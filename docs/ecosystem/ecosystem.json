@@ -495,17 +495,6 @@
           "features": []
         },
         {
-          "name": "aphrody-m3",
-          "path": "crates/ui/m3",
-          "description": "Rust Material 3 component and layout contracts for Aphrody.",
-          "bins": [],
-          "features": [
-            "default",
-            "native-render",
-            "wasm"
-          ]
-        },
-        {
           "name": "aphrody-m3-reproduce",
           "path": "crates/ui/m3-reproduce",
           "description": "Reproduce a site in Material 3: seed colors, fonts, shapes and a component tree from a screenshot or a crawl, emitted as an @aphrody/m3 app scaffold.",
@@ -10300,7 +10289,7 @@
     "aphrodyRepos": 2,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 199,
+    "crates": 198,
     "binaries": 36,
     "bunPackages": 72,
     "pythonPackages": 10,

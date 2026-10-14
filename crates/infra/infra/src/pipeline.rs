@@ -3,8 +3,8 @@
 //!
 //! Orchestrates declared Rust and Bun validation stages from tools/config/pipeline.json.
 
-use aphrody_proc::NoWindow as _;
 use anyhow::{Context, Result, bail};
+use aphrody_proc::NoWindow as _;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
