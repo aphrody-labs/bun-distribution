@@ -107,11 +107,28 @@ if (declared.applications) {
     JSON.stringify(expectedConfiguredRoutes.toSorted())
   )
     throw new Error("Bun Worker routes differ from the Aphrody Infra domain contract");
-  if (
-    JSON.stringify(configuredCustomDomains.toSorted()) !==
-    JSON.stringify(expectedCustomDomains.toSorted())
-  )
-    throw new Error("Bun Worker custom domains differ from the Aphrody Infra domain contract");
+  const expectedCustomDomainSet = new Set(expectedCustomDomains);
+  const configuredCustomDomainSet = new Set(configuredCustomDomains);
+  const missingCustomDomains = expectedCustomDomains.filter(
+    (hostname) => !configuredCustomDomainSet.has(hostname),
+  );
+  const unexpectedCustomDomains = configuredCustomDomains.filter(
+    (hostname) => !expectedCustomDomainSet.has(hostname),
+  );
+  if (missingCustomDomains.length || unexpectedCustomDomains.length)
+    throw new Error(
+      [
+        "Bun Worker custom domains differ from the Aphrody Infra domain contract.",
+        missingCustomDomains.length
+          ? `Missing: ${missingCustomDomains.toSorted().join(", ")}`
+          : undefined,
+        unexpectedCustomDomains.length
+          ? `Unexpected: ${unexpectedCustomDomains.toSorted().join(", ")}`
+          : undefined,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    );
   console.log(
     `source owners: ${expectedApplications.length} Bun OS capabilities, ${expectedProductDomains.length} Bun OS product domains, ${workerConfig.routes.length} Bun Worker routes`,
   );
