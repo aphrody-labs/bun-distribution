@@ -185,6 +185,11 @@
       "name": "bun-crate-cadcraft-fonts",
       "mirror": false,
       "private": true
+    },
+    {
+      "name": "bun-crate-cadcraft-render",
+      "mirror": false,
+      "private": true
     }
   ]
 }
