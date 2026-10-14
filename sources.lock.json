@@ -4,7 +4,7 @@
     {
       "id": "bun",
       "repository": "aphrody-labs/bun",
-      "revision": "f0f2891ea743ce4d32596b0b32670fbb81155842",
+      "revision": "340fb35a079f3e4a449455fe3283476e92e8b24a",
       "mount": "sources/bun",
       "gitlinks": [
         {
