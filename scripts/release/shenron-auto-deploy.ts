@@ -35,6 +35,28 @@ export function syncDecision(branch: string, status: string, fastForward: boolea
   return "fast-forward";
 }
 
+/** Current Shenron tracks its fork archives; no historical vendor bootstrap is needed. */
+export async function verifyVendor(work: string): Promise<void> {
+  const directory = join(work, "vendor/next-fork");
+  const manifest = await Bun.file(join(directory, "manifest.json")).json();
+  if (
+    manifest.schemaVersion !== 1 ||
+    !Array.isArray(manifest.packages) ||
+    !manifest.packages.length
+  )
+    throw new Error("Invalid Next fork archive manifest");
+  for (const entry of manifest.packages) {
+    if (
+      typeof entry.archive !== "string" ||
+      !/^[\w.-]+\.tgz$/.test(entry.archive) ||
+      !/^[a-f0-9]{64}$/.test(entry.sha256)
+    )
+      throw new Error("Invalid Next fork archive identity");
+    if (!matches(join(directory, entry.archive), entry.sha256))
+      throw new Error(`Next fork archive digest differs: ${entry.archive}`);
+  }
+}
+
 function command(args: string[], cwd = config.source, inherited = false): string {
   console.log(new Date().toISOString(), args[0], args[1] ?? "");
   const p = Bun.spawnSync(args, {
@@ -215,7 +237,7 @@ async function buildDeploy() {
       throw new Error("Build worktree contains changes; preserved");
     git(["checkout", "--detach", sha], work);
   }
-  command([config.bun, "scripts/build/prepare-vendor.ts", "--init"], work, true);
+  await verifyVendor(work);
   git(["submodule", "update", "--init", "--", "packages/config"], work);
   command([config.bun, "install", "--frozen-lockfile"], work, true);
   native(sha, work);

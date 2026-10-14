@@ -1,5 +1,12 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
+Correction du 2026-10-14 : le checkout Shenron actuel suit les archives Next dans
+`vendor/next-fork/`. Le service vérifie leurs SHA-256 contre le manifeste avant
+l'installation gelée ; il n'appelle plus le script retiré `prepare-vendor.ts`.
+Les cinq tests ciblés passent (synchronisation et intégrité des archives).
+Une attente du verrou de factory (code 75) est réessayée par le timer et ne prouve
+pas un déploiement terminé.
+
 # Synchronisation et déploiement automatiques de Shenron
 
 La demande propriétaire du 14 octobre 2026 autorise le suivi automatique de

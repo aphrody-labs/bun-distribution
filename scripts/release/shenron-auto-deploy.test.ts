@@ -3,8 +3,39 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { verifyVendor } from "./shenron-auto-deploy";
 
 const temporary: string[] = [];
+test("tracked Next fork archives are verified without a removed bootstrap script", async () => {
+  const root = mkdtempSync(join(tmpdir(), "shenron-vendor-"));
+  temporary.push(root);
+  const archive = join(root, "vendor/next-fork/next.tgz");
+  await Bun.write(archive, "qualified fixture");
+  const manifest = join(root, "vendor/next-fork/manifest.json");
+  await Bun.write(
+    manifest,
+    JSON.stringify({
+      schemaVersion: 1,
+      packages: [
+        {
+          archive: "next.tgz",
+          sha256: new Bun.CryptoHasher("sha256").update("qualified fixture").digest("hex"),
+        },
+      ],
+    }),
+  );
+  await verifyVendor(root);
+  await Bun.write(archive, "altered");
+  await expect(verifyVendor(root)).rejects.toThrow("digest differs");
+  await Bun.write(
+    manifest,
+    JSON.stringify({
+      schemaVersion: 1,
+      packages: [{ archive: "../escape.tgz", sha256: "a".repeat(64) }],
+    }),
+  );
+  await expect(verifyVendor(root)).rejects.toThrow("Invalid Next fork archive identity");
+});
 afterEach(() => {
   for (const path of temporary.splice(0)) rmSync(path, { recursive: true, force: true });
 });
