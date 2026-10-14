@@ -205,7 +205,7 @@ service-activation review rejections remain in effect; neither action was
 retried. The public forge and Gitea API remain accessible; the prepared product
 route still returns 404 until its activation gate is resolved.
 
-## Current public-source candidate, 2026-10-14
+## Previous public-source candidate, 2026-10-14
 
 `build/staging/server-4b8-public-sources.exe` was compiled and executed from
 source `a1e5915dd7d5fa804460bb05dd3971d6c2062d78`, with runtime
@@ -220,3 +220,19 @@ It describes visible repositories rather than completeness of their Git/LFS
 contents. The executable remains `compiled:true`, `executed:true`,
 `deployed:false`. Installation, service activation and public product ingress
 remain unqualified; the earlier automatic review rejections were not retried.
+
+## Current ten-package candidate, 2026-10-14
+
+`build/staging/server-4b8-10packages.exe` was compiled and executed from source
+`f4e72088c1e4cf0255cbd0ec9956ac64fb33ed3b`, with runtime
+`4b8dee0bc69d2c290111001f2249e63e1dc95b70`. Its SHA-256 is
+`c78f78b0330a18cb51ff50d70145a3659f76ad8068acd5dc062707845069a5c4`;
+the executable is 193850880 bytes. All sixteen HTTP gates pass. Its source
+catalog includes the 25 flat Rust gitlinks and the three flat JavaScript package
+gitlinks; the anonymous source snapshot still contains 180 public repositories.
+
+These package Git pins are catalog data; package implementations and native
+engines are not implicitly bundled or executed. Their JavaScript compilation
+receipts and the 543-source vendor checksum qualification remain separate.
+The product executable is `compiled:true`, `executed:true`, `deployed:false`.
+The previous installation and service review rejections remain in effect.
