@@ -10,7 +10,7 @@ factory, in addition to the SSH VPS factory. The Windows factory is scoped to
 Windows native builds, packaging and smoke checks; x64 is native-qualified and
 ARM64 is a cross-build until tested on native ARM hardware. Run one heavy build
 at a time, preserve 6 GiB RAM and 20 GiB free disk, and do not enable automatic
-cleanup. The local checkout is `C:/aphrody`.
+cleanup. The local checkout is `C:/src/aphrody`.
 
 The SSH VPS remains the serialized Rust/Bun/Linux and multi-platform factory,
 with its shared lock and pinned-source checks. Use native SSH execution through

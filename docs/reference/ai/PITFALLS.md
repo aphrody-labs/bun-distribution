@@ -56,7 +56,7 @@ repository's docs.
 - **Linux verification from a Windows host.** Use the local Docker container
   `aphrody/build-linux:26.04` (Ubuntu 26.04, glibc 2.43; Dockerfile
   [linux.Dockerfile](https://github.com/aphrody-labs/bun/blob/main/scripts/aphrody/linux.Dockerfile) in the Bun fork), e.g.
-  `bun C:/bun/scripts/aphrody/tmux.ts run <job> --linux --cwd C:/aphrody -- "<cmd>"`
+  `bun C:/src/bun/scripts/aphrody/tmux.ts run <job> --linux --cwd C:/src/aphrody -- "<cmd>"`
   (`--cpus 6 --memory 6g`, never the VPS). Keep a named volume for `CARGO_TARGET_DIR`
   so Linux artifacts never mix with the Windows target directory.
 
