@@ -101,6 +101,64 @@ Aphrody remains the product/application integration owner according to its own
 current instructions. Do not move application/product capabilities into Bun OS
 unless an explicit current owner directive says to do so.
 
+## Distribution product direction
+
+Treat Bun OS as a real Linux distribution assembled by `bun-distribution`, not
+as a renamed Arch installation and not as a Bun application layered onto an
+unowned host image.
+
+The current owner direction is to use the **Arch Linux family/model as the
+primary distribution reference**, subject to repository-local validation before
+irreversible implementation. The reason is the fit with a fast-moving Rust,
+kernel, Mesa/Vulkan, LLVM/Clang, WebKit/JSC and gaming stack. Preserve Bun OS
+identity, its own package/build/qualification policy and its own release cadence.
+
+Produce at least two compositions from the same source/build graph:
+
+- **Bun OS Server** — minimal, headless, fast and hardened, with an operational
+  philosophy similar to Alpine/Debian minimal systems. Keep glibc as a supported
+  primary option where compatibility requires it and retain Alpine/musl as a
+  distinct qualification target rather than pretending libc differences are
+  transparent.
+- **Bun OS Desktop/Gaming** — glibc-oriented desktop/gaming composition with a
+  modern graphics stack. Research and integrate only qualified components needed
+  for Mesa/Vulkan, GPU drivers, Steam/Proton, Gamescope and the selected Bun OS
+  desktop/session. Keep gaming dependencies out of the server composition.
+
+Before finalizing implementation choices, use **GitHub MCP and Context7 rather
+than generic web search** to deeply study current primary sources for:
+
+- **CachyOS** — kernel/toolchain/package optimization, CPU targeting, scheduler
+  choices, performance build infrastructure and server/desktop differentiation;
+- **ChimeraOS** — reproducible distribution/image construction, immutable or
+  image-based system design, update/rollback strategy, package composition and
+  gaming appliance architecture;
+- **SteamOS** — Arch-family gaming composition, Steam/Proton/Gamescope session,
+  graphics/driver integration, system/update boundaries and recovery model;
+- **Arch Linux** — package/build conventions, pacman/libalpm, repository
+  metadata, bootstrap/rootfs construction and rolling-release implications;
+- **COSMIC/System76** where useful — Rust component ownership, workspace/build
+  organization and desktop integration patterns.
+
+Do not copy these distributions wholesale. Produce a comparison matrix of
+relevant mechanisms, licenses, update models, build systems, package managers,
+immutability/rollback choices, kernel/toolchain policies and gaming integration.
+For each mechanism explicitly decide: `adopt`, `adapt`, or `reject`, with
+repository evidence.
+
+Then finish the Bun OS architecture plan and implement the highest-value
+compatible pieces through the existing root build graph.
+
+The final distribution pipeline should converge on:
+
+`pinned sources -> root workspace graph -> toolchains -> kernel/system/runtime -> profile composition -> rootfs/image/package -> qualification -> signed/hashed release -> update/rollback`
+
+Discover and reuse existing Bun OS package conversion, APT/APK/ALPM metadata,
+container, factory, source-integrity and receipt implementations before adding
+new owners. If Arch becomes the selected primary base, make pacman/libalpm and
+Arch package/repository handling first-class without deleting Debian/Alpine
+qualification paths that provide useful portability evidence.
+
 ## Git submodules
 
 Keep independent source projects as pinned Git submodules where that preserves
