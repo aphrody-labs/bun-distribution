@@ -16,7 +16,8 @@ bun scripts/vendor-cargo.ts prepare
 bun scripts/vendor-cargo.ts verify
 ```
 
-Each action is serialized by `runNative` and bounded to 30 seconds. Plan
+Each action is serialized by `runNative`. Plan is bounded to 30 seconds;
+prepare and verification have a 180-second limit. Plan
 captures the root manifest/lock and each flat member manifest. It inventories
 cached compressed registry archives before downloads. Prepare requires that
 exact snapshot and runs `cargo vendor --locked --versioned-dirs --no-delete`
@@ -56,6 +57,10 @@ Plan reads and hashes sources within 30 seconds. Status reports `missing`,
 runs Cargo directly under the native mutex with a 300-second deadline, and
 requires exit 0, Cargo's successful `build-finished` message and hashed artifacts
 for every root member. It builds offline with the lockfile and all features.
+Cargo also emits `.rmeta` paths beneath the configured `build/rust` intermediate
+directory. These metadata files are excluded from the receipt; each member must
+still supply a final artifact beneath `target`, whose bytes are hashed. Other
+artifact locations remain rejected.
 Capture phases each have a separate 30-second deadline. Run this command as a
 bounded background build on an admitted host; partial Cargo outputs stay in
 the shared cache and do not produce a successful receipt.

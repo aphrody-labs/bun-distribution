@@ -362,12 +362,15 @@ async function build(): Promise<void> {
     );
     if (!member) continue;
     if (!message.filenames.length) continue;
-    completedMembers.add(member.name);
     for (const filename of message.filenames) {
       const file = await realpath(filename);
       const path = relative(repositoryRoot, file).replaceAll("\\", "/");
+      // Cargo also reports metadata from the root's configured intermediate build directory.
+      // Only final target artifacts establish a completed member in the release receipt.
+      if (path.startsWith("build/rust/") && path.endsWith(".rmeta")) continue;
       if (!path.startsWith("target/") || path.split("/").includes(".."))
         throw new Error("Cargo artifact leaves the root target owner.");
+      completedMembers.add(member.name);
       outputs.set(path, { member: member.name, path, sha256: await hashFile(file, { signal: bound.signal }) });
     }
   }
