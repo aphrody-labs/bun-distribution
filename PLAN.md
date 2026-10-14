@@ -101,15 +101,21 @@
       The native ArtCraft compiler emitted 33 artifacts into root-owned
       `build/frontend/artcraft` using Bun 1.4.4 revision `4b8dee0bc`.
       Browser execution, desktop/native runtime and deployment remain unqualified.
-- [ ] Reconcile the ArtCraft submodule's nested `bun.lock` and legacy style
-      configuration after the root installation and frontend gates qualify.
+- [x] Retire ArtCraft's tracked nested `bun.lock` and obsolete frontend tool
+      configurations. Its `os` source pin uses the shared root dependency catalog.
 - [ ] Migrate ArtCraft lint, formatting and typecheck into the unified native
       Bun quality gates without changing generated or imported assets blindly.
+- [x] Replace direct external frontend checkers with `bun check`, `bun lint`
+      and `bun fmt`; align 62 manifests to version 1.4.4. Native app checking
+      passes on 1,479 files after React 19, Panels 4, Konva 10 and Tailwind 4
+      consumer migrations. Frontend lint returns zero errors with existing
+      warnings; complete formatting and legacy test migration remain pending.
 - [x] Preserve imported ArtCraft workspace patterns when regenerating flat
       first-party manifests. Expand all 71 root members in the install audit.
 - [ ] Align ArtCraft dependency versions before retiring its nested installs:
-      the root `signals-react` 3.12.0 differs from the app's 2.3.0. The read-only
-      install plan refuses removal and does not claim a single physical install.
+      manifests and root lock now agree on `signals-react` 3.12.0, but the
+      app's obsolete 2.3.0 install remains until the committed build and source
+      gates qualify its retirement. The default strict audit refuses removal.
 
 ## Shared workspace owner — 2026-10-14
 

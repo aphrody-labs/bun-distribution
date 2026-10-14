@@ -11,7 +11,7 @@
 [submodule "libraries/artcraft"]
 	path = libraries/artcraft
 	url = https://github.com/aphrody-labs/artcraft.git
-	branch = main
+	branch = os
 	shallow = true
 [submodule "libraries/filmcraft"]
 	path = libraries/filmcraft

@@ -6,8 +6,20 @@ import { runProcess } from "@aphrody/bun-workspace/process";
 const root = resolve(import.meta.dir, "..");
 const deadline = performance.now() + 30_000;
 const args = Bun.argv.slice(2);
-if (args.some(arg => arg !== "--plan")) throw new Error("Usage: bun scripts/node-modules.ts [--plan]");
 const planOnly = args.includes("--plan");
+const retireAligned = args.includes("--retire-aligned");
+let buildReceipt: string | undefined;
+for (let index = 0; index < args.length; index++) {
+  if (args[index] === "--plan" || args[index] === "--retire-aligned") continue;
+  if (args[index] === "--build-receipt" && !buildReceipt && args[index + 1]) {
+    buildReceipt = args[++index];
+    continue;
+  }
+  throw new Error(
+    "Usage: bun scripts/node-modules.ts [--plan] [--retire-aligned --build-receipt build/frontend/<output>/build-receipt.json]",
+  );
+}
+if (buildReceipt && !retireAligned) throw new Error("A build receipt requires --retire-aligned.");
 const product = await Bun.file(join(root, "package.json")).json();
 if (!Array.isArray(product.workspaces) || product.workspaces.some((value: unknown) => typeof value !== "string"))
   throw new Error("Root workspaces must be string patterns.");
@@ -139,6 +151,327 @@ interface InstallProof {
   packages?: number;
   files?: number;
   reason?: string;
+}
+const retirementMembers = new Set([
+  "apps/desktop",
+  "libraries/artcraft/frontend",
+  "libraries/artcraft/frontend/apps/artcraft",
+]);
+async function git(argv: string[], cwd = root): Promise<string> {
+  const result = await runProcess(["git", ...argv], cwd, {
+    timeoutMs: 15_000,
+    maxOutputBytes: 2 * 1024 * 1024,
+    stderr: "discard",
+  });
+  if (result.code !== 0) throw new Error("Retirement Git provenance gate failed.");
+  return result.stdout;
+}
+async function hashFile(path: string): Promise<string> {
+  const digest = new Bun.CryptoHasher("sha256");
+  for await (const chunk of Bun.file(path).stream()) {
+    if (performance.now() > deadline) throw new Error("Retirement proof exceeded its 30 second budget.");
+    digest.update(chunk);
+  }
+  return digest.digest("hex");
+}
+async function proveConsumer(member: string, lock: any): Promise<Set<string>> {
+  const label = relative(root, member).replaceAll("\\", "/");
+  const consumer = await Bun.file(join(member, "package.json")).json();
+  const locked = lock.workspaces?.[label];
+  if (!locked || locked.name !== consumer.name || locked.version !== consumer.version || consumer.version !== "1.4.4")
+    throw new Error("Consumer manifest is not aligned with the root lockfile.");
+  const known = new Set<string>();
+  for (const section of ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"]) {
+    for (const [name, requested] of Object.entries(consumer[section] ?? {})) {
+      known.add(name);
+      if (locked[section]?.[name] !== requested) throw new Error("Consumer declaration differs from lockfile.");
+      const canonical = join(root, "node_modules", name);
+      assertWithin(await realpath(canonical));
+      const physical = await Bun.file(join(canonical, "package.json")).json();
+      if (physical.name !== name) throw new Error("Shared physical dependency identity differs.");
+      const expected = requested === "catalog:" ? product.catalog?.[name] : requested;
+      if (typeof expected !== "string") throw new Error("Shared dependency catalog entry missing.");
+      if (expected.startsWith("workspace:")) {
+        if (physical.version !== "1.4.4") throw new Error("Shared workspace dependency version differs.");
+      } else if (expected.startsWith("file:")) {
+        const source = await Bun.file(join(root, expected.slice(5), "package.json")).json();
+        if (source.name !== name || source.version !== physical.version)
+          throw new Error("Shared file dependency owner differs.");
+      } else if (!expected.startsWith("github:") && !Bun.semver.satisfies(physical.version, expected))
+        throw new Error("Shared physical dependency is not the declared aligned version.");
+      const lockedIdentity = lock.packages?.[name]?.[0];
+      if (
+        !expected.startsWith("workspace:") &&
+        !expected.startsWith("file:") &&
+        !expected.startsWith("github:") &&
+        lockedIdentity !== `${name}@${physical.version}`
+      )
+        throw new Error("Shared dependency differs from root package lock identity.");
+      if (
+        expected.startsWith("github:") &&
+        (typeof lockedIdentity !== "string" || !lockedIdentity.startsWith(`${name}@github:`))
+      )
+        throw new Error("Git dependency lacks its immutable root lock identity.");
+    }
+  }
+  return known;
+}
+async function proveBuild(): Promise<void> {
+  if (!buildReceipt) throw new Error("Aligned retirement requires a fresh build receipt.");
+  const path = resolve(root, buildReceipt);
+  const label = relative(root, path).replaceAll("\\", "/");
+  if (!label.startsWith("build/frontend/") || !label.endsWith("/build-receipt.json") || !(await regularPath(path)))
+    throw new Error("Unsafe or missing frontend receipt.");
+  const receipt = await Bun.file(path).json();
+  if (
+    receipt.schemaVersion !== 1 ||
+    receipt.action !== "build" ||
+    receipt.status !== "success" ||
+    receipt.compiled !== true ||
+    receipt.sourcePinsUnchangedDuringBuild !== true ||
+    receipt.runtime?.version !== Bun.version ||
+    receipt.runtime?.revision !== Bun.revision ||
+    receipt.artifactsBuilt < 1 ||
+    receipt.output !== relative(root, dirname(path)).replaceAll("\\", "/")
+  )
+    throw new Error("Frontend receipt is not a qualified current build.");
+  const head = (await git(["rev-parse", "HEAD"])).trim();
+  const child = (await git(["rev-parse", "HEAD"], join(root, "libraries/artcraft"))).trim();
+  if (
+    !/^[0-9a-f]{40}$/.test(receipt.sources?.rootGitHead ?? "") ||
+    receipt.sources.artcraftGitPin !== child ||
+    !(await git(["ls-tree", head, "libraries/artcraft"])).includes(`160000 commit ${child}\t`)
+  )
+    throw new Error("Frontend receipt does not match the committed ArtCraft gitlink.");
+  await git(["merge-base", "--is-ancestor", receipt.sources.rootGitHead, head]);
+  await git(["diff", "--exit-code", "HEAD", "--", "frontend"], join(root, "libraries/artcraft"));
+  if (
+    (
+      await git(["ls-files", "--others", "--exclude-standard", "--", "frontend"], join(root, "libraries/artcraft"))
+    ).trim()
+  )
+    throw new Error("Uncommitted frontend source files exist.");
+  for (const file of ["package.json", "bun.lock"]) {
+    const committed = await git(["show", `HEAD:${file}`]);
+    if (Bun.CryptoHasher.hash("sha256", committed, "hex") !== (await hashFile(join(root, file))))
+      throw new Error("Root dependency inputs are not committed unchanged.");
+  }
+  if (receipt.sources.bunLockSHA256 !== (await hashFile(join(root, "bun.lock"))))
+    throw new Error("Build receipt lockfile has changed.");
+  const lock = Bun.JSONC.parse(await Bun.file(join(root, "bun.lock")).text()) as Record<string, any>;
+  for (const member of members) await proveConsumer(member, lock);
+  const files: { path: string; bytes: number; sha256: string }[] = [];
+  async function walk(directory: string): Promise<void> {
+    if (!(await regularPath(directory))) throw new Error("Built artifact path missing.");
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      const current = join(directory, entry.name);
+      if (current === path) continue;
+      if (!(await regularPath(current))) throw new Error("Built artifact missing.");
+      if (entry.isDirectory()) await walk(current);
+      else if (entry.isFile())
+        files.push({
+          path: relative(dirname(path), current).replaceAll("\\", "/"),
+          bytes: (await lstat(current)).size,
+          sha256: await hashFile(current),
+        });
+      else throw new Error("Nonregular built artifact refused.");
+      if (files.length > 100_000) throw new Error("Artifact receipt bounds exceeded.");
+    }
+  }
+  await walk(dirname(path));
+  files.sort((a, b) => a.path.localeCompare(b.path));
+  const digest = new Bun.CryptoHasher("sha256");
+  for (const file of files) digest.update(`${file.path}\0${file.bytes}\0${file.sha256}\n`);
+  if (
+    receipt.artifactTree?.files !== files.length ||
+    receipt.artifactTree.bytes !== files.reduce((sum, file) => sum + file.bytes, 0) ||
+    receipt.artifactTree.sha256 !== digest.digest("hex")
+  )
+    throw new Error("Frontend artifact tree differs from its build receipt.");
+  if ((await git(["rev-parse", "HEAD"])).trim() !== head) throw new Error("Root HEAD changed during build proof.");
+  if (
+    (await git(["rev-parse", "HEAD"], join(root, "libraries/artcraft"))).trim() !== child ||
+    receipt.sources.bunLockSHA256 !== (await hashFile(join(root, "bun.lock")))
+  )
+    throw new Error("Source pin or root lock changed during build proof.");
+}
+async function qualifyAligned(member: string): Promise<{ links: string[]; snapshot: string; packages: number }> {
+  const label = relative(root, member).replaceAll("\\", "/");
+  if (!retirementMembers.has(label) || !members.has(member))
+    throw new Error("Aligned retirement is limited to the three declared known installs.");
+  const directory = join(member, "node_modules");
+  if (!(await regularPath(directory)) || directory === join(root, "node_modules"))
+    throw new Error("Unsafe nested install root.");
+  const owner = label.startsWith("libraries/artcraft/") ? join(root, "libraries/artcraft") : root;
+  const ownerPath = relative(owner, directory).replaceAll("\\", "/");
+  if ((await git(["ls-files", "--", ownerPath], owner)).trim())
+    throw new Error("Nested install contains Git-tracked paths.");
+  await git(["check-ignore", "--quiet", ownerPath], owner);
+  const lock = Bun.JSONC.parse(await Bun.file(join(root, "bun.lock")).text()) as Record<string, any>;
+  const known = await proveConsumer(member, lock);
+  // The immutable original frontend manifests identify removed tooling; they do not authorize source deletion.
+  if (owner !== root) {
+    const anchor = "2134266d638094b8aac37d3fe7b190123bd46bc6";
+    await git(["merge-base", "--is-ancestor", anchor, "HEAD"], owner);
+    const oldManifest = JSON.parse(
+      await git(["show", `${anchor}:${relative(owner, join(member, "package.json")).replaceAll("\\", "/")}`], owner),
+    );
+    for (const section of ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"])
+      for (const name of Object.keys(oldManifest[section] ?? {})) known.add(name);
+  }
+  const links: string[] = [];
+  const metadata: string[] = [];
+  let packages = 0;
+  async function walk(path: string): Promise<void> {
+    assertWithin(path);
+    if (performance.now() > deadline || metadata.length > 100_000)
+      throw new Error("Old install inventory exceeded bounds.");
+    const item = await lstat(path);
+    const local = relative(directory, path).replaceAll("\\", "/");
+    if (/(?:^|\/)(?:\.git|\.local|secrets|cookies|external|\.env(?:\..*)?)(?:\/|$)/.test(local))
+      throw new Error("Protected install entry refused.");
+    if (item.isSymbolicLink()) {
+      assertWithin(await realpath(path));
+      links.push(path);
+      metadata.push(`link\0${local}`);
+      return;
+    }
+    if (item.isDirectory()) {
+      metadata.push(`dir\0${local}`);
+      for (const entry of await readdir(path)) await walk(join(path, entry));
+    } else if (item.isFile()) metadata.push(`file\0${local}\0${item.size}\0${item.mtimeMs}`);
+    else throw new Error("Nonregular old install entry refused.");
+  }
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.name === ".bin") {
+      await walk(path);
+      continue;
+    }
+    if (entry.name.startsWith(".")) throw new Error("Unknown old install store metadata refused.");
+    const scope = await lstat(path);
+    if (entry.name.startsWith("@") && (!scope.isDirectory() || scope.isSymbolicLink()))
+      throw new Error("Reparse or nonregular scope directory refused.");
+    const candidates = entry.name.startsWith("@")
+      ? (await readdir(path)).map(name => ({ name: `${entry.name}/${name}`, path: join(path, name) }))
+      : [{ name: entry.name, path }];
+    for (const pkg of candidates) {
+      if (!known.has(pkg.name) && !lock.packages?.[pkg.name]) throw new Error("Unknown old installed package refused.");
+      if ((await lstat(pkg.path)).isSymbolicLink()) assertWithin(await realpath(pkg.path));
+      const manifestMetadata = await lstat(join(pkg.path, "package.json"));
+      if (manifestMetadata.isSymbolicLink() || !manifestMetadata.isFile())
+        throw new Error("Old package manifest is not a regular metadata file.");
+      const identity = await Bun.file(join(pkg.path, "package.json")).json();
+      if (
+        identity.name !== pkg.name ||
+        typeof identity.version !== "string" ||
+        !Bun.semver.satisfies(identity.version, "*")
+      )
+        throw new Error("Old package identity invalid.");
+      await walk(pkg.path);
+      packages++;
+    }
+  }
+  metadata.sort();
+  return { links: links.sort(), snapshot: Bun.CryptoHasher.hash("sha256", metadata.join("\n"), "hex"), packages };
+}
+if (retireAligned) {
+  try {
+    await proveBuild();
+    const proofs = [];
+    for (const label of retirementMembers) {
+      const member = join(root, label);
+      if (!(await regularPath(join(member, "node_modules")))) continue;
+      proofs.push({ member: label, ...(await qualifyAligned(member)) });
+    }
+    if (planOnly) {
+      console.log(
+        JSON.stringify(
+          {
+            action: "retire-aligned-plan",
+            changed: false,
+            ready: true,
+            installs: proofs.map(({ member, packages, links, snapshot }) => ({
+              member,
+              packages,
+              links: links.length,
+              snapshot,
+            })),
+          },
+          null,
+          2,
+        ),
+      );
+      process.exit(0);
+    }
+    for (const proof of proofs) {
+      await proveBuild();
+      const directory = join(root, proof.member, "node_modules");
+      const current = await qualifyAligned(join(root, proof.member));
+      if (current.snapshot !== proof.snapshot) throw new Error("Old install changed before retirement.");
+      for (const link of current.links) {
+        if (process.platform === "win32") {
+          const result = await runProcess(
+            [
+              "powershell.exe",
+              "-NoProfile",
+              "-NonInteractive",
+              "-Command",
+              "& { param([string]$target) Remove-Item -LiteralPath $target -Force -ErrorAction Stop }",
+              link,
+            ],
+            root,
+            { timeoutMs: 15_000, maxOutputBytes: 4096 },
+          );
+          if (result.code !== 0) throw new Error("Old link-only retirement failed.");
+        } else await rm(link);
+      }
+      async function refuseRemainingLinks(path: string): Promise<void> {
+        if (!(await regularPath(path))) throw new Error("Old install path changed during retirement.");
+        for (const entry of await readdir(path, { withFileTypes: true })) {
+          const child = join(path, entry.name);
+          if (!(await regularPath(child))) throw new Error("Old entry changed.");
+          if (entry.isDirectory()) await refuseRemainingLinks(child);
+        }
+      }
+      await refuseRemainingLinks(directory);
+      await proveBuild();
+      if (process.platform === "win32") {
+        const result = await runProcess(
+          [
+            "powershell.exe",
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            "& { param([string]$target) Remove-Item -LiteralPath $target -Recurse -ErrorAction Stop }",
+            directory,
+          ],
+          root,
+          { timeoutMs: 30_000, maxOutputBytes: 4096 },
+        );
+        if (result.code !== 0) throw new Error("Aligned nested install retirement failed.");
+      } else await rm(directory, { recursive: true });
+    }
+    console.log(
+      JSON.stringify({
+        action: "retire-aligned",
+        changed: proofs.length > 0,
+        retired: proofs.map(proof => proof.member),
+      }),
+    );
+    process.exit(0);
+  } catch (error) {
+    if (!planOnly) throw error;
+    console.log(
+      JSON.stringify({
+        action: "retire-aligned-plan",
+        changed: false,
+        ready: false,
+        reason: error instanceof Error ? error.message : "Retirement proof failed.",
+      }),
+    );
+    process.exit(0);
+  }
 }
 const inventory: InstallProof[] = [];
 for (const member of [...members].sort()) {

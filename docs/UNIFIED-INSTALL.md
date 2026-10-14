@@ -1,9 +1,10 @@
 # Unified Bun dependency install
 
 The product root owns `bun.lock`, hoisted installation and shared `node_modules`.
-ArtCraft's 61 tracked frontend manifests are registered by root workspace patterns.
-Its tracked historical `frontend/bun.lock` still exists; root commands use the root
-lockfile. Do not infer a physically complete install from lock resolution or a dry run.
+ArtCraft's source manifest and 61 descendant manifests are registered by root
+workspace patterns. The owner retired the historical frontend lockfile and unused
+PostCSS configuration; root commands use the root lockfile. Do not infer a physically
+complete install from lock resolution or a dry run.
 
 ```sh
 bun scripts/node-modules.ts --plan
@@ -47,3 +48,41 @@ It refuses existing outputs, escapes and reparse paths. Upstream's direct comman
 still defaults to its historical `frontend/apps/artcraft/dist`; product commands
 use the root wrapper. No source compiler was copied or replaced.
 Protected `external/`, `secrets/` and provider configuration must remain untouched.
+
+## Explicit retirement after aligned builds
+
+```sh
+bun scripts/node-modules.ts --retire-aligned --plan --build-receipt build/frontend/<qualified-output>/build-receipt.json
+```
+
+This distinct mode permits intentional old/new version changes only for
+`apps/desktop/node_modules`, `libraries/artcraft/frontend/node_modules` and
+`libraries/artcraft/frontend/apps/artcraft/node_modules`. Its plan never removes
+files. The default mode retains its byte-for-byte comparison.
+
+Retirement requires a successful compiled receipt from the existing frontend owner,
+the current runtime identity, unchanged committed root dependency inputs, current
+committed ArtCraft gitlink and frontend sources, and the exact current lock SHA256.
+The complete built artifact tree is rehashed against its receipt. Every declared
+workspace consumer is checked against root lock declarations and shared installed
+dependency versions. A root provenance commit may remain an ancestor after unrelated
+commits; the ArtCraft pin, lock and artifacts must still match exactly.
+
+Old installs must be ignored and contain no Git-index files in their actual owner.
+Known obsolete dependency names are qualified from the immutable original ArtCraft
+manifests at `2134266d638094b8aac37d3fe7b190123bd46bc6`, which must remain an ancestor.
+Unknown package/store entries, protected paths and nonregular metadata block the plan.
+Old package trees are inventoried through regular metadata, without following links.
+Allowed links must resolve inside the root, and their targets are never deletion
+targets. Each old tree's metadata snapshot is checked again before retirement.
+
+After explicit execution authorization and a passing plan, omission of `--plan`
+removes qualified links individually with native literal-path deletion without
+recursion. A further scan refuses remaining reparse points before recursive deletion
+of the exact qualified nested directory. Build proof is revalidated before this
+final removal. Root `node_modules`, `build/apps`, server staging, binaries,
+`install/bin`, protected stores and source targets are never candidates.
+
+The source preparation ran no retirement. Until a fresh receipt passes these gates,
+the mode reports `ready: false`; neither source implementation nor prior compilation
+is a claim that one physical install has already been achieved.
