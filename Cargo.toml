@@ -22,6 +22,7 @@ members = [
     "crates/cadcraft-io",
     "crates/cadcraft-mcp",
     "crates/cadcraft-render",
+    "crates/cadcraft-ui-egui",
     "crates/gridcraft-pdf",
     "crates/aphrody-a2a",
     "crates/aphrody-agent-proto",
@@ -71,6 +72,7 @@ cadcraft-fonts = { path = "crates/cadcraft-fonts", version = "=1.4.4" }
 cadcraft-io = { path = "crates/cadcraft-io", version = "=1.4.4" }
 cadcraft-mcp = { path = "crates/cadcraft-mcp", version = "=1.4.4" }
 cadcraft-render = { path = "crates/cadcraft-render", version = "=1.4.4" }
+cadcraft-ui-egui = { path = "crates/cadcraft-ui-egui", version = "=1.4.4" }
 gridcraft-pdf = { path = "crates/gridcraft-pdf", version = "=1.4.4" }
 aphrody-a2a = { path = "crates/aphrody-a2a", version = "=1.4.4" }
 aphrody-agent-proto = { path = "crates/aphrody-agent-proto", version = "=1.4.4" }
@@ -96,6 +98,7 @@ dispatch2 = { version = "=0.3.1", default-features = false }
 egui = { version = "=0.36.2", default-features = false }
 egui_extras = { version = "=0.36.2", default-features = false }
 egui_kittest = { version = "=0.36.2", default-features = false }
+egui-wgpu = "=0.36.2"
 encoding_rs = "=0.8.35"
 getrandom = { version = "=0.4.3", default-features = false }
 futures = { version = "=0.3.34", default-features = false, features = ["std", "async-await"] }
@@ -106,6 +109,7 @@ log = { version = "=0.4.34", default-features = false }
 lyon_tessellation = "=1.0.22"
 miniz_oxide = { version = "=0.9.1", default-features = false, features = ["with-alloc"] }
 moxcms = "=0.9.1"
+naga = { version = "=30.0.1", default-features = false }
 objc2 = { version = "=0.6.5", default-features = false }
 objc2-app-kit = { version = "=0.3.2", default-features = false }
 png = { version = "=0.18.1", default-features = false }
