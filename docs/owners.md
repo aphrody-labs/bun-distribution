@@ -47,7 +47,10 @@ Source adapters use one native binary discovery API and retain their own protoco
 and version checks. Compiled apps use verified manifests without Cargo or Git.
 
 The source doctor checks tracked implementation, Cargo workspace members and
-native target paths. On 2026-10-13 the 16 library checkouts contain 423 Cargo
+native target paths. Dirty checkout state is reported separately from pin and
+coverage failures, so active owner work remains visible without being overwritten
+or treated as a missing source. Release and artifact builders still require
+exact target runtime pins. On 2026-10-13 the 16 library checkouts contain 423 Cargo
 packages, 11,528 Rust files and 1,659 TypeScript files. No declared workspace
 member or declared library/binary target is missing. Source coverage does not
 prove operational support.
