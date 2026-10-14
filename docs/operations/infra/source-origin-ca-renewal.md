@@ -1,8 +1,13 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Certificat Origin CA de Gitea
 
-Le vhost Gitea `source.aphrody.app` / `git.aphrody.app` utilise le même
-certificat Cloudflare Origin CA. Sa clé privée reste sur le VPS dans le store
+Depuis le 14 octobre 2026, seul le vhost `git.aphrody.app` utilise ce
+certificat Cloudflare Origin CA. `source.aphrody.app` utilise le certificat
+Let's Encrypt `/etc/letsencrypt/live/source.aphrody.app/`, renouvelé par le
+timer Certbot existant et son hook Nginx ; voir
+[l'authentification du tunnel](source-tunnel-auth.md).
+La clé privée Origin CA reste sur le VPS dans le store
 protégé `/home/ubuntu/.aphrody/secrets/tls/source-origin/`.
 
 ## Inspection
@@ -37,4 +42,4 @@ aphrody infra ssh exec --host vps -- /usr/local/libexec/aphrody/source-origin-ca
 Codes de sortie : `0` sain, `1` renouvellement dû, `2` certificat invalide ou
 inspection impossible. Aucun résultat de ce script ne prouve à lui seul que le
 certificat est servi par Nginx ; vérifier ensuite la configuration et le TLS
-avec SNI pour les deux noms.
+avec SNI pour chaque nom et son propriétaire de certificat actuel.
