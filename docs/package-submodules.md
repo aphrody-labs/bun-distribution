@@ -30,7 +30,17 @@ No package test or live OVH/kernel operation was executed. The standalone
 product server's earlier sixteen HTTP gates qualify its recorded source,
 not these package operations or a later distribution snapshot.
 
-The builder refuses existing output directories, so subsequent compilation
-requires an explicit owner-controlled output lifecycle. This first build does
-not establish incremental rebuild or deployment qualification. Remaining source
+The root builder validates the complete output tree before replacing or reusing
+it. Receipts version 2 bind sources, exports, manifests, lock/config files,
+builder/process owners and the actual runtime binary. Unknown files or symlinks
+refuse replacement. Recompilation uses an exclusive package lease and a bounded
+worker; previous owned outputs are removed only after the new output switch
+passes its checks.
+
+On 2026-10-14, `just packages-build paths,ovh,kernel-client` successfully
+replaced the three version-1 outputs with version-2 receipts. Repeating the
+same command returned `reused` for all three with `compiledThisRun:false`,
+preserving the original compilation observation. The output root contains
+only the three canonical package directories after successful cleanup.
+Neither build establishes package execution or deployment. Remaining source
 packages and nested workspaces are still migration work.
