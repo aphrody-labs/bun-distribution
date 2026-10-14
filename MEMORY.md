@@ -24,6 +24,15 @@ lint/format to the imported frontend reports extensive style and generated-file
 drift; its check cannot resolve Vite/Vitest before dependencies are installed.
 Keep that quality scope separate until capacity and source migration qualify.
 
+## ArtCraft Bun style pilot — 2026-10-14
+
+Published `artcraft` commit `2134266` and advanced the Bun OS gitlink. The
+dependency-free `frontend/libs/api-enums` package now uses the root Bun format
+and no longer requests unused Bun, Node or Vite ambient types or the removed
+TypeScript `baseUrl` option. Native `bun check` passes on 18 files; scoped
+`bun lint` and `bun fmt --check` pass. Tests and the full frontend install/build
+were not run. The rest of Artcraft still needs a deliberate style migration.
+
 ## Shared app asset store — 2026-10-14
 
 Moved the only shared asset inputs from the retired Bun Libraries checkout to

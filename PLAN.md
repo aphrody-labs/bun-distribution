@@ -93,6 +93,8 @@
       identities and passes a frozen-lockfile dry run.
 - [x] Route ArtCraft install, development and build commands through the root
       Bun workspace and lockfile.
+- [x] Align the dependency-free `api-enums` package with the root Bun formatter;
+      its native check passes on 18 files, with lint and format checks green.
 - [ ] Complete a physical frozen install and frontend build on a qualified host.
       Only lock resolution has run; workstation free space was 546 MB afterward,
       and the full installation footprint has not been measured.

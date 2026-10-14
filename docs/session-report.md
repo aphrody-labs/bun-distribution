@@ -285,6 +285,11 @@ generated-source drift in ArtCraft; its typecheck cannot resolve Vite/Vitest
 until dependencies are installed. The nested lock and legacy style
 configuration remain open migration work.
 
+The first style migration is published in Artcraft `2134266`: its dependency-free
+`api-enums` package uses the root Bun formatter, drops unused ambient type
+packages and the removed `baseUrl` option, and passes native check on 18 files,
+lint and format. Tests and the full frontend build were not run.
+
 The unused `@aphrody/bun-os-workspace` compatibility package was then removed
 after a current source-reference audit found no product consumers. Its existing
 Cargo-routing tests moved into `@aphrody/bun-workspace`; the product compiler
