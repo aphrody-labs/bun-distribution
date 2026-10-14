@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/*", "apps/*", "xtask"]
+members = ["apps/*", "xtask"]
 # default-members
 
 [workspace.package]
@@ -22,7 +22,7 @@ cadcraft-fonts = { path = "../../crates/cadcraft-fonts", version = "=1.4.4" }
 cadcraft-render = { path = "../../crates/cadcraft-render", version = "=1.4.4" }
 cadcraft-io = { path = "../../crates/cadcraft-io", version = "=1.4.4" }
 cadcraft-engine = { path = "../../crates/cadcraft-engine", version = "=1.4.4" }
-cadcraft-ui-egui = { path = "crates/ui-egui" }
+cadcraft-ui-egui = { path = "../../crates/cadcraft-ui-egui", version = "=1.4.4" }
 cadcraft-mcp = { path = "../../crates/cadcraft-mcp", version = "=1.4.4" }
 
 # foundation
