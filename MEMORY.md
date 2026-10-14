@@ -60,6 +60,17 @@ both files remain untouched. Empty `var/mirror` also remains because the same
 review rejected the combined cleanup operation. The checkout is not yet safe
 to retire wholesale. No tests or builds ran.
 
+## Bun Libraries source-history audit — 2026-10-14
+
+The current `C:\src\bun-libraries` checkout is on `main` at `520418c` with a
+clean tracked worktree. The requested source-report commit `15cd85a` is an
+ancestor of the unified Bun OS `os` branch. The only newer Libraries commit,
+`520418c`, replaces its session report with a link to Bun OS's canonical report;
+that source document is already present in Bun OS, so the redirect-only commit
+has no separate implementation to migrate. Ignored `.local`, `node_modules`,
+desktop outputs and icon assets remain untouched. This verifies the merged
+source/history boundary, not safe removal of the old checkout or its local data.
+
 ## Runtime source preflight — 2026-10-13
 
 - The distribution plan now inspects Bun's selected checkout with bounded Git
