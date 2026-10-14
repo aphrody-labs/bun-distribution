@@ -186,7 +186,7 @@
       "upstream": "storytold/soundcraft",
       "fork": "aphrody-labs/soundcraft",
       "branch": "main",
-      "revision": "6cf896e76c0ec82a11bf2494f209cfe7c8507f74",
+      "revision": "7e68f4ec0e3f9510d743604309bb3c92081f9db7",
       "upstreamRevision": "6cf896e76c0ec82a11bf2494f209cfe7c8507f74",
       "license": "MIT OR Apache-2.0",
       "kind": "library",
