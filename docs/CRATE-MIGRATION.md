@@ -132,6 +132,23 @@ pins. Locked offline metadata resolves 479 CADCraft packages; root metadata
 resolves 580, the IO crate check and complete root Rust format check pass.
 Tests were not run.
 
+## CADCraft CLI — 2026-10-14
+
+`cadcraft-cli` is split from CADCraft revision
+`7966d9d6758f805985092ec8f68c53bbe35b727d`, prefix `apps/cadcraft-cli`, with
+history-preserving split `97e1f5ccfd1e558c6a8a2a2d602580c94ff5a8b4` and tree
+`e7949e5f317ad078ad2199649c763932b80e57bb`. Its private forge `os` branch is
+`559b99d8c2d6012d8f62b68b15d5fbdca9cee7b0`; CADCraft consumer branch `os` is
+`837073bb37aacc8c6b143c7e5886961b7335998f`. The consumer removes the original
+five tracked CLI files, updates its lockfile, and routes the parity command to
+the root CLI manifest. The binary inherits root
+version, edition, MSRV, shared crate dependencies and lint policy; source tests
+remain with its history.
+
+Locked offline CADCraft metadata resolves 468 packages and three members. Root
+metadata resolves 594 packages. The CLI crate check and complete root Rust
+format check pass; tests were not run.
+
 ## CADCraft engine — 2026-10-14
 
 `cadcraft-engine` is split from CADCraft revision
@@ -175,8 +192,6 @@ Locked offline CADCraft metadata resolves 470 packages and four declared
 members. Root metadata resolves 593 packages; the UI crate check and complete
 root Rust format check pass. The check reports a recursion-depth warning in
 `gpu.rs`; tests and full application builds were not run.
-Tests were not run.
-
 The subsequent complete root build with all features succeeds for all 28
 members and supplies 28 hashed final artifacts. The revalidated vendor receipt
 now reports `compiled: true` and `buildProof: valid`; this remains scoped to

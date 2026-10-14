@@ -94,10 +94,10 @@ is `f270867625e262cab5872bed061e0e007dbb113b`; CADCraft consumer branch
 passes locked offline metadata. Root metadata resolves 585 packages, the MCP
 check and Rust format pass; an unused IO edge was removed. Tests were not run.
 
-The refreshed inventory at root revision `c7f42accc9f712dc5a46978f3295ddbaaa3ff778`
-reports 52 pinned sources, 856 Cargo packages, 555 declared workspace crates,
-36 flat owners and 519 remaining declared crates. The 12 migrated CADCraft
-library owners have no package-name collisions; four app/tool members remain.
+The refreshed inventory at root revision `c0cfa5ecc0d898055be7d7e43384379b18f3a761`
+reports 53 pinned sources, 856 Cargo packages, 555 declared workspace crates,
+37 flat owners and 518 remaining declared crates. The 13 migrated CADCraft
+owners have no package-name collisions; three app/tool members remain.
 
 The UI crate history was split from CADCraft `1451a5592bb581fddeb332091cd2136e8a32515a`
 at `crates/ui-egui` (`a1f85460e2dea27021c90d7f129c4d4c048a76ce`) and published
@@ -105,6 +105,13 @@ as private owner `e069e194f6a0adce7e5fcdd968ef0cf8f5973656`. The CADCraft consum
 pin is `7966d9d6758f805985092ec8f68c53bbe35b727d`. Locked offline metadata
 resolves 470 packages; the root check and format pass. UI check has a remaining
 recursion-depth warning; app builds and tests remain unqualified.
+
+The CLI package history was split from CADCraft `7966d9d6758f805985092ec8f68c53bbe35b727d`
+at `apps/cadcraft-cli` (`97e1f5ccfd1e558c6a8a2a2d602580c94ff5a8b4`) and
+published as private owner `559b99d8c2d6012d8f62b68b15d5fbdca9cee7b0`.
+CADCraft consumer pin `837073bb37aacc8c6b143c7e5886961b7335998f` removes five
+source files, updates its lockfile, and routes parity to the root manifest. Root metadata resolves 594 packages;
+the CLI check and root formatting pass. Tests remain unrun.
 
 Aphrody Infra 138026e3034e9342d581355476ba6e26820b0545 owns the shared Bun forge
 provisioner consumed by its Rust interface. Three named private repositories
