@@ -1,20 +1,20 @@
 # Upstream conventions
 
-Use concise English and Aphrody/Bun identity. Imported sources retain their
-licenses and owner conventions. These references govern authored code.
+Identité Aphrody/Bun concise. Les sources importées gardent leurs licences et
+conventions. Ces références gouvernent le code écrit dans ce dépôt.
 
-| Scope | Rules | Source |
-| --- | --- | --- |
-| TypeScript | Two spaces, 120 columns, trailing commas, minimal arrow parentheses | [Bun formatter](https://github.com/oven-sh/bun/blob/main/.prettierrc) |
-| Rust | Stable rustfmt, explicit ownership and cleanup, imports grouped per module | [Kernel Rust](https://docs.kernel.org/rust/coding-guidelines.html), [COSMIC](https://github.com/pop-os/libcosmic/blob/master/rustfmt.toml) |
-| C | Kernel tabs and braces, shallow control flow, focused functions | [Linux kernel](https://docs.kernel.org/process/coding-style.html) |
-| Sources/builds | Independent dependencies, exact revisions, preserved notices and non-interactive builds | [Debian Policy](https://www.debian.org/doc/debian-policy/ch-source.html) |
+| Périmètre      | Règles                                                                                   | Source                                                                                                                                     |
+| -------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| TypeScript     | Deux espaces, 120 colonnes, virgules finales, parenthèses minimales pour les flèches     | `bun fmt` natif et `bunfmt.json`                                                                                                           |
+| Rust           | rustfmt stable, ownership et nettoyage explicites, imports groupés par module            | [Kernel Rust](https://docs.kernel.org/rust/coding-guidelines.html), [COSMIC](https://github.com/pop-os/libcosmic/blob/master/rustfmt.toml) |
+| C              | Tabs et accolades kernel, flux de contrôle court, fonctions ciblées                      | [Linux kernel](https://docs.kernel.org/process/coding-style.html)                                                                          |
+| Sources/builds | Dépendances indépendantes, révisions exactes, notices conservées, builds non interactifs | [Debian Policy](https://www.debian.org/doc/debian-policy/ch-source.html)                                                                   |
 
-Use guard clauses and shared cleanup. Comments explain ownership constraints.
-.editorconfig, bunfmt.json and rustfmt enforce formatting. JavaScript gates use
-`bun check`, `bun lint` and `bun fmt` through the native runtime.
+Utilise les retours anticipés et le nettoyage partagé. Les commentaires
+expliquent les contraintes d’ownership. `.editorconfig`, `bunfmt.json` et
+rustfmt imposent le formatage. Les contrôles JavaScript utilisent directement
+`bun check`, `bun lint`, `bun fmt` et `bun n2b` du runtime natif.
 
-Reviewed through `aphrody docs`, `aphrody awesome` and scoped remote
-`aphrody git ingest`. Local ingestion is owned by Bun MCP in this runtime.
-This language-specific mapping does not certify Debian packages or reproducible
-native binaries.
+Références examinées avec `aphrody docs`, `aphrody awesome` et l’ingestion Git
+distante ciblée. L’ingestion locale appartient au MCP Bun de ce runtime. Cette
+convention ne certifie ni les paquets Debian ni les binaires natifs reproductibles.

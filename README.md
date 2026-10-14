@@ -20,7 +20,10 @@ through `bun msvc`. Paths resolve from the checkout.
 git clone https://github.com/aphrody-labs/bun-libraries.git
 cd bun-libraries
 bun run setup
-bun run check
+bun check -p tsconfig.json --threads 2 --no-pretty
+bun lint --deny-warnings packages/workspace/src packages/video/src packages/artifacts/src apps/desktop scripts
+bun fmt --config bunfmt.json --check packages/workspace/src packages/video/src packages/artifacts/src apps/desktop scripts package.json tsconfig.json bunfmt.json
+bun n2b --dry-run --report=json
 ```
 
 `aphrody.config.json` and Git submodule pointers pin the same commits.
@@ -33,7 +36,7 @@ bun run catalog                          # library inventory
 bun run status --json                     # pinned source state
 bun run dev                              # local Aphrody shell
 bun run build                            # Bun frontend/backend build
-bun run fmt                              # native Bun formatting
+bun fmt --write                          # native Bun formatting
 bun run desktop:dev                      # native Bun Tauri shell
 bun run desktop:build                    # native bundle and Bun sidecar
 bun run workspace run photocraft --help  # headless library inspection
@@ -73,3 +76,10 @@ tests remain source references; our desktop uses Bun Tauri v3.
 The [session report](docs/session-report.md) records publication and remaining gates.
 Source licenses and notices apply.
 JavaScript builds do not qualify native engines, CEF, installers or providers.
+
+## Native quality gates
+
+Run `bun check`, `bun lint`, `bun fmt` and `bun n2b` directly. They are built into
+our Bun runtime and need no package installation. Do not route these gates
+through subprocess wrappers, `bunx`, standalone Oxc, tsgo/tsc, ESLint, Prettier
+or external n2b packages. Use `bun fmt --write` to apply formatting.
