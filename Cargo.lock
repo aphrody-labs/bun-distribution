@@ -605,7 +605,7 @@ dependencies = [
 
 [[package]]
 name = "cadcraft-dwg"
-version = "0.6.2"
+version = "1.4.4"
 dependencies = [
  "acadrust",
 ]
