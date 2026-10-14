@@ -78,12 +78,21 @@
 - [ ] Migrate the remaining 7 declared CADCraft workspace members; `xtask`
       remains a separate name-collision decision.
 
+### CADCraft engine owner — 2026-10-14
+
+- [x] Split `cadcraft-engine` with history and notices, provision its private
+      forge owner, and redirect CADCraft to the root crate.
+- [x] Pin `rstar` 0.12.2 in the root dependency table; locked offline metadata,
+      `cadcraft-engine` check, and complete Rust format check pass.
+- [ ] Migrate the remaining 6 declared CADCraft workspace members; `xtask`
+      remains a separate name-collision decision.
+
 ### Cargo source-owner inventory — 2026-10-14
 
 - [x] Refresh the ignored inventory at root revision
-      `d4327317c4ebfee97530f454960e59ccb8ba22fb`: 49 pinned sources, 856 Cargo
-      packages, 555 declared workspace crates, 33 flat root Git owners, and
-      522 remaining declared crates. All source checkouts were available.
+      `068053a8e247edb9621c782a33d2c12e5b9dfac4`: 50 pinned sources, 856 Cargo
+      packages, 555 declared workspace crates, 34 flat root Git owners, and
+      521 remaining declared crates. All source checkouts were available.
 - [ ] Resolve the 11 remaining package-name collisions before flattening nested members;
       collisions include already extracted Craft crates and repeated workspace
       utility names such as `xtask` and `app`.

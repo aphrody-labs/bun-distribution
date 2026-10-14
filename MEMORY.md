@@ -77,9 +77,18 @@ packages. Root locked offline metadata resolves 580 packages, the IO crate
 check and root Rust format pass. Root pins `miniz_oxide` 0.9.1 and
 `quick-xml` 0.41.0 for this owner. Tests were not run.
 
-The refreshed inventory at root revision `d4327317c4ebfee97530f454960e59ccb8ba22fb`
-reports 49 pinned sources, 856 Cargo packages, 555 declared workspace crates,
-33 flat owners and 522 remaining declared crates. The CADCraft owners have no
+The engine history is split from CADCraft
+`9b4966200834de9810e76f134596712eb3b70a72` at `crates/engine`
+(`c757465de70d1ff6fe17ead04e07340ea97efa59`). Its private forge `os` branch
+is `f90b4f5b0a237a2614fa0ca1969c7e7d8684fcb9`; the source consumer branch
+`e9842fac1cf85e8205d036de9f1eb8c873e06786` removes 244 tracked files and
+passes locked offline metadata. Root `rstar` 0.12.2 is shared; locked metadata
+resolves 584 packages, engine check and root Rust format pass. Tests were not
+run.
+
+The refreshed inventory at root revision `068053a8e247edb9621c782a33d2c12e5b9dfac4`
+reports 50 pinned sources, 856 Cargo packages, 555 declared workspace crates,
+34 flat owners and 521 remaining declared crates. The CADCraft owners have no
 package-name collisions.
 
 Aphrody Infra 138026e3034e9342d581355476ba6e26820b0545 owns the shared Bun forge

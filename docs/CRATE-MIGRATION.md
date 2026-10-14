@@ -132,6 +132,20 @@ pins. Locked offline metadata resolves 479 CADCraft packages; root metadata
 resolves 580, the IO crate check and complete root Rust format check pass.
 Tests were not run.
 
+## CADCraft engine — 2026-10-14
+
+`cadcraft-engine` is split from CADCraft revision
+`9b4966200834de9810e76f134596712eb3b70a72`, prefix `crates/engine`, at
+`c757465de70d1ff6fe17ead04e07340ea97efa59`; the split tree matches its source
+prefix. Its private forge `os` branch is
+`f90b4f5b0a237a2614fa0ca1969c7e7d8684fcb9`, with exact MIT, Apache, NOTICE and
+attribution files. CADCraft consumer branch `os` at
+`e9842fac1cf85e8205d036de9f1eb8c873e06786` redirects the engine dependency
+and removes the original 244 tracked files. The root owns exact `rstar`
+0.12.2 with default features disabled. Locked offline CADCraft metadata
+resolves 479 packages; root metadata resolves 584, the engine check and
+complete root Rust format check pass. Tests were not run.
+
 The subsequent complete root build with all features succeeds for all 28
 members and supplies 28 hashed final artifacts. The revalidated vendor receipt
 now reports `compiled: true` and `buildProof: valid`; this remains scoped to
