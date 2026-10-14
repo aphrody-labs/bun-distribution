@@ -1,5 +1,14 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
+## Bun OS consolidation goal
+
+For work touching Bun OS distribution/workspace consolidation, read
+[`docs/agent-goals/bun-os-consolidation.md`](docs/agent-goals/bun-os-consolidation.md).
+The canonical execution owner is `aphrody-labs/bun-distribution`; this local
+copy exists so Codex discovers the cross-repository contract without duplicating
+runtime or product ownership. Repository evidence and newer explicit owner
+directives still take precedence.
+
 # Aphrody repository instructions
 
 **Before any code change, read [START-HERE.md](START-HERE.md)** (team, rules, hosts, tunnel, remote control,
