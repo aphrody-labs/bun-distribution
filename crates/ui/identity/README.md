@@ -110,5 +110,5 @@ aphrody-labs/bun) importe `symbol:home` et les `.ico`.
 
 ```sh
 bun scripts/build/rust/cargo-serial.ts --msvc test -p aphrody-identity   # Windows natif, depuis la racine
-cd m3/packages/identity && bun test src && bun run typecheck
+cd m3/packages/identity && bun test src && bun check -p tsconfig.json --noEmit
 ```

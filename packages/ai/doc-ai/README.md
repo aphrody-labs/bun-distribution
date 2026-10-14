@@ -42,7 +42,7 @@ template so the pipeline stays runnable offline and in CI.
 ## Develop
 
 ```bash
-bun run build        # tsc -> dist
-bun run typecheck    # tsc --noEmit (typecheck:fast = tsgo)
+bun run build # Bun-native build
+bun run typecheck # Bun-native bun check
 bun run test         # bun test
 ```

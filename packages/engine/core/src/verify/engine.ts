@@ -47,13 +47,13 @@ export const GATES: readonly Gate[] = [
   },
   {
     id: "typecheck",
-    title: "TypeScript 7 (tsc --noEmit)",
-    command: ["tsc", "--noEmit"],
+    title: "Bun native type check",
+    command: ["bun", "check", "packages/", "scripts/", "test/", "m3/packages/"],
     surfaces: TS,
   },
   {
     id: "lint",
-    title: "bun lint (oxlint + n2b)",
+    title: "Bun native lint",
     command: [
       "bun",
       "lint",
@@ -64,12 +64,10 @@ export const GATES: readonly Gate[] = [
       "m3/packages/",
     ],
     surfaces: TS,
-    // the root package.json has a `lint` script: within it, `bun lint` is Bun's command, not the script
-    env: { npm_lifecycle_event: "lint" },
   },
   {
     id: "fmt-check",
-    title: "bun fmt --check (oxfmt)",
+    title: "Bun native format check",
     command: [
       "bun",
       "fmt",

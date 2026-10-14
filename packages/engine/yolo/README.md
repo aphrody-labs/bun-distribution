@@ -18,4 +18,4 @@ binary. Commands load on demand; `yolo help` lists them and `docs/cli/HELP.md` h
 Every command takes `--json` (strict schema) or `--md` where it reports. Sources: `src/index.ts`
 (dispatch and help) and one module per command; shared logic lives in `@aphrody/yolo-core`.
 
-Scripts: `bun run test` (the CLI suites under `test/`), `bun run typecheck`.
+Scripts: `bun test` (the CLI suites under `test/`), `bun check -p tsconfig.json --noEmit`.

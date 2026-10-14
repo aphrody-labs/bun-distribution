@@ -37,5 +37,5 @@ Git) l'exe, son archive de mise à jour, `SHA256SUMS` et `aphrody-setup.manifest
 `scripts/release/publish-downloads.ts release` publie. L'exe est compilé par Bun, marqué de l'icône pet
 (`crates/ui/identity/assets/brand/favicon.ico`) par rcedit sous Wine, et **non signé**.
 
-Développement : `bun test`, `tsgo --noEmit -p tsconfig.json`. Non testé sur un vrai Windows : installeur NSIS de l'app
+Développement : `bun test`, `bun check --noEmit -p tsconfig.json`. Non testé sur un vrai Windows : installeur NSIS de l'app
 (pas encore produit), `claude plugin` et `claude mcp` réels, raccourcis, UAC.

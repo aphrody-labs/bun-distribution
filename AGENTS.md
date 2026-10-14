@@ -134,9 +134,12 @@ Python (`uv`), shell utilities and any installed CLI directly, without a hook or
 capability owners where they exist: the Aphrody MCP tools, the single Rust CLI `aphrody` (multi-call:
 `aphrody infra`, `aphrody ovh`, `aphrody kernel`… ; former names such as `aphrody-infra` are links), the
 Bun CLI `yolo` (`yolo ops`, `yolo workspace`, `yolo update`…) and Bun. Python stays product code under
-`py/`, run through `uv`. For JavaScript and TypeScript use Bun's native `bun check`, `bun lint` and
-`bun fmt` commands or the scoped package scripts. Do not call standalone OXC or TypeScript compiler
-binaries. Remote hosts go through
+`py/`, run through `uv`. For JavaScript and TypeScript, quality and migration commands must invoke
+Bun's native `bun check`, `bun lint`, `bun fmt` and `bun n2b` directly. Do not route them through
+package scripts, shell/process wrappers, `bunx`, standalone OXC, `tsgo`/`tsc`, ESLint, Prettier or
+external n2b binaries. Package scripts may expose these same native commands with package-local paths
+and configuration. Keep process spawning for application behavior and artifact-producing builds only.
+Remote hosts go through
 `aphrody infra ssh` or the MCP `infra_exec`; `vps-cargo` transports the native worktree to the SSH build host.
 Subagents follow the same owners: [agent tooling brief](docs/operations/agent-tooling.md) (skills, MCP tools,
 `aphrody`/`yolo` commands).
@@ -157,8 +160,9 @@ run unless `--apply`, and every apply takes a checksum-verified backup first.
 
 ## Builds and validation
 
-Bun gates (root `package.json`): `bun run bun:check`, `typecheck`, `lint`,
-`format:check`, `test` (all via `@aphrody/workspace`); web: `web:verify`.
+Bun gates use native `bun check`, `bun lint`, `bun fmt --check` and `bun n2b` for type,
+lint, format and migration work. `bun run typecheck` may aggregate package-local scripts only when
+each invokes `bun check` directly. Tests use `bun test`; web: `web:verify`.
 
 Claude cloud session (`CLAUDE_CODE_REMOTE=true` or `APHRODY_CLOUD=1`, set by
 `.claude/hooks/session-start.sh`): the session is the build host. Cargo and Git run directly, Cargo through
@@ -175,7 +179,9 @@ Docker and other qualified native hosts are valid build contexts. Honor factory
 locks, resource limits and shared sccache; deployment hosts require their own
 declared build allocation before receiving build jobs.
 
-Bun/TS: scoped `bun check`, `bun lint` and `bun fmt` plus meaningful Bun tests.
+Bun/TS: scoped native `bun check`, `bun lint` and `bun fmt` commands plus meaningful Bun tests;
+migrations use `bun n2b` directly. Do not insert a shell, package runner, subprocess backend, `bunx`,
+standalone OXC or TypeScript compiler between the command and Bun.
 Rust: scoped check/test/strict Clippy. Docs: content/links, integrity, whitespace
 and consistency gate; no engine compilation. Run once per batch, repeat only
 after relevant changes or unresolved failures. Report failed/skipped checks.

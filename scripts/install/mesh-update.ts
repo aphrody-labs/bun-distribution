@@ -72,10 +72,9 @@ export async function updateMain(config: UpdateConfig, home: string): Promise<bo
     for (const path of [...sources, ...tests])
       if (!existsSync(join(staging, path))) throw new Error("main lacks the complete mesh release");
     await invoke([process.execPath, "test", ...tests], staging);
-    const typeRoots = join(root, "node_modules", "@types");
     await invoke(
       [
-        process.execPath,
+        "bun",
         "check",
         "--noEmit",
         "--strict",
@@ -88,7 +87,7 @@ export async function updateMain(config: UpdateConfig, home: string): Promise<bo
         "bundler",
         "--allowImportingTsExtensions",
         "--typeRoots",
-        typeRoots,
+        join(root, "node_modules", "@types"),
         "--types",
         "bun,node",
         ...sources,
@@ -96,11 +95,8 @@ export async function updateMain(config: UpdateConfig, home: string): Promise<bo
       ],
       staging,
     );
-    const lint = Bun.which("oxlint");
-    const format = Bun.which("oxfmt");
-    if (!lint || !format) throw new Error("main update requires qualified lint/format tools");
-    await invoke([lint, "--deny-warnings", ...sources, ...tests], staging);
-    await invoke([format, "--check", ...sources, ...tests], staging);
+    await invoke(["bun", "lint", "--deny-warnings", ...sources, ...tests], staging);
+    await invoke(["bun", "fmt", "--check", ...sources, ...tests], staging);
     const output = `${config.bundle}.next`;
     await invoke(
       [process.execPath, "build", sources[0]!, "--target", "bun", "--outfile", output],

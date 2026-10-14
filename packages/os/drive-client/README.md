@@ -122,8 +122,8 @@ This client uses the same architecture as the Swift client:
 bun install
 
 # Check the package and bundle its main entry points (published exports remain TypeScript sources)
-bun run typecheck
-bun run lint
+bun check --noEmit
+bun lint src tests
 bun run build
 
 # Unit tests (src/**/__tests__)

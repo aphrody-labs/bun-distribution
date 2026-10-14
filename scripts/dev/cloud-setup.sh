@@ -103,10 +103,8 @@ fi
 # `sd` is required by the workspace code-edit tests; it is small, so compile it when no prebuilt binary is served.
 have sd || run cargo install sd --locked
 
-step "Bun lint and format tools (workspace gates)"
-if have bun || (( dry == 1 )); then
-  have oxlint && have oxfmt || run bun add -g oxlint oxfmt
-fi
+step "Bun-native type, lint and format commands"
+have bun || (( dry == 1 ))
 
 step "repository dependencies"
 if [[ -f "$root/bun.lock" ]] && (have bun || (( dry == 1 ))); then

@@ -130,6 +130,6 @@ existing tests cover these contracts.
 
 ```sh
 bun test                              # in packages/infra/sql (no network)
-tsgo -p tsconfig.json --noEmit
-oxlint -c ../../../.oxlintrc.json src test
+bun check -p tsconfig.json --noEmit
+bun lint -c ../../../.oxlintrc.json src test
 ```

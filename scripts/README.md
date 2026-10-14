@@ -34,9 +34,10 @@ bun scripts/<category>/<domain>/<script>.ts [args]
   ```
 - **Workspace gate verification**:
   ```bash
-  bun run bun:check
-  bun run typecheck
-  bun run lint
+  bun check packages/infra/workspace/src packages/infra/workspace/test
+  bun check -p packages/infra/workspace/tsconfig.json
+  bun lint packages/infra/workspace/src packages/infra/workspace/test
+  bun fmt --check packages/infra/workspace/src packages/infra/workspace/test
   ```
 - **Remote Cargo builds (from WSL)**:
   ```bash

@@ -28,13 +28,17 @@ Execution context (2026-10-09): develop and build on any qualified native, SSH o
 | What exists (crate, command, MCP tool) | skill `aphrody:ecosystem`, `aphrody scan manifests`, `yolo scan --json` |
 | Search, replace, rename across files | `yolo workspace code-edit search\|replace\|rename` (`--engine ast --lang rust\|ts`), `yolo rename` |
 | AST and tokens of one file | `yolo parse <file> --json` |
-| Bun gates | `bun run bun:check`, `typecheck`, `lint`, `format:check`, `test` (root `package.json`) |
+| Bun type check | `bun check <paths>` (or `bun check -p <tsconfig>` for one package) |
+| Bun lint | `bun lint <paths>` |
+| Bun format | `bun fmt --check <paths>` / `bun fmt <paths>` |
+| Node to Bun migration | `bun n2b <path> --dry-run` then the selected native Bun migration mode |
+| Bun tests | `bun test <paths>` |
 | Declared quality stages | `aphrody infra quality <stage> --repo aphrody --run`, `aphrody infra pipeline`, `aphrody infra workflow <stage>` |
 | Cargo on the selected context | Native scoped gates, qualified Docker or `bun scripts/build/rust/vps-cargo.ts run -- <cargo args>` for an allocated SSH factory; preserve locks and sccache |
 | Cargo in a cloud session | `scripts/build/rust/cargo-serial.sh <cargo args>` |
 | Hosts, services, probes | `aphrody infra ssh exec\|status\|logs`, `aphrody infra service`, `aphrody infra probe`, `yolo host … --host vps\|dbfr` |
 | Factory build of pushed main | `yolo ship` |
-| Node to Bun | `aphrody n2b`, `yolo n2b --dry-run --json` |
+| Node to Bun | `bun n2b` |
 | Docs | `yolo docs <query>` (Bun), `aphrody docs search`, MCP `docs_auto_search` |
 | Git and GitHub | `aphrody git inspect\|api\|repo\|search`, `aphrody infra git` |
 | Web fetch and crawl | `aphrody web`, MCP `universal_web_fetch` |
@@ -82,4 +86,4 @@ Execution context (2026-10-09): develop and build on any qualified native, SSH o
   - Give rust-analyzer flycheck its own target directory (`initializationOptions`
     `{"cargo":{"targetDir":true},"check":{"workspace":false}}` in the aphrody plugin's `lspServers`). Its
     `cargo check --workspace` holds the build lock and stalls agent commands for 30 to 66 s.
-  - Compare `tsc --noEmit -p` with `tsgo --noEmit -p` (time and diagnostics).
+  - Use Bun-native `bun check`; do not invoke external TypeScript compilers as quality gates.

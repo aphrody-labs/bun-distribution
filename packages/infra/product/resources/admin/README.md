@@ -30,5 +30,5 @@ installée, sinon le menu console (`--console` ou `APHRODY_KIT_CONSOLE=1` force 
 
 ## Développement
 
-`bun test`, `tsgo --noEmit -p tsconfig.json` dans ce dossier. Le moteur de mise à jour, le journal de crash et les arguments viennent de `../creator-kit/src/lib`. Les scripts distants sont dans `src/remote/*.sh` (testés pour de vrai avec `sh`).
+`bun test`, `bun check --noEmit -p tsconfig.json` dans ce dossier. Le moteur de mise à jour, le journal de crash et les arguments viennent de `../creator-kit/src/lib`. Les scripts distants sont dans `src/remote/*.sh` (testés pour de vrai avec `sh`).
 Non testé sur un vrai Windows : winget, UAC, `wireguard /installtunnelservice`, raccourcis, presse-papiers, connexion GitHub, aphrody/yolo Windows (non publiés au 2026-10-06).

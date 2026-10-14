@@ -20,8 +20,8 @@ Firefox (version 140 ou plus) :
 2. **Charger un module complémentaire temporaire…** et choisir `manifest.json`. Le chargement disparaît au
    redémarrage de Firefox ; une installation durable demande une signature Mozilla (AMO).
 
-Optionnel avec `web-ext` : `bunx web-ext run -s . --target=firefox-desktop` (ou `--target=chromium`),
-`bunx web-ext lint -s .`, `bunx web-ext build -s .`.
+Optionnel avec `web-ext` installé localement : `web-ext run -s . --target=firefox-desktop` (ou `--target=chromium`),
+`web-ext lint -s .`, `web-ext build -s .`.
 
 ## Utilisation
 
@@ -53,7 +53,7 @@ Optionnel avec `web-ext` : `bunx web-ext run -s . --target=firefox-desktop` (ou 
 | Élément                                                                    | État                                                                                                                                                                                                            |
 | :------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Manifest                                                                   | `web-ext lint` (addons-linter) : 0 erreur, 1 avertissement (Firefox Android non déclaré, volontaire)                                                                                                            |
-| Logique pure (`src/core.js`)                                               | `bun test` : 32 tests ; `oxlint` et `oxfmt --check` propres                                                                                                                                                     |
+| Logique pure (`src/core.js`)                                               | `bun test` : 32 tests ; `bun lint .` et `bun fmt --check .` propres                                                                                                                                             |
 | Chargement réel Chromium 153 (Chrome for Testing, headless, Playwright)    | OK : injection sur une vraie page chaîne et une vraie page vidéo, sélecteur de groupes, stockage, apprentissage handle / identifiant, navigation SPA vidéo → chaîne, popup (groupes, export / import, réglages) |
 | Pas de boucle de mutation                                                  | OK : page au repos, zéro changement DOM provoqué par l'extension                                                                                                                                                |
 | Flux et liste (filtre, Shorts, vues, tri, ordre CSS)                       | OK **sur un DOM simulé** (balisage synthétique servi à l'URL YouTube), pas sur le vrai flux                                                                                                                     |
@@ -96,8 +96,8 @@ Tous sont dans la table `selectors`, en tête de `src/content.js`. Statut :
 
 ```sh
 bun test                                  # logique pure
-bun $(which oxlint) -c ../../../../../.oxlintrc.json .
-bun $(which oxfmt) --check .
+bun lint -c ../../../../../.oxlintrc.json .
+bun fmt --check .
 bun tools/make-icons.ts                   # régénère icons/*.png
 ```
 

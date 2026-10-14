@@ -187,7 +187,7 @@ Not reproduced: the hub's bespoke task record (`target`, `description`, `resultM
 
 ```sh
 bun test                 # fake A2A agent (both bindings) + real Rust server when `aphrody` is on PATH
-bun run typecheck && bun run lint && bun run generate:check
+bun check --noEmit && bun lint src test scripts && bun scripts/generate-types.ts --check
 ```
 
 - `test/fake-agent.ts` is an in-process agent (card, JSON-RPC, REST, SSE, push configs).

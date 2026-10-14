@@ -125,5 +125,5 @@ Voir [docs-video-translate.md](docs-video-translate.md).
 
 ```
 bun test                                   # dans packages/infra/product
-tsgo --noEmit -p packages/infra/product/tsconfig.json
+bun check --noEmit -p packages/infra/product/tsconfig.json
 ```

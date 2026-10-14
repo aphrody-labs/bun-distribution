@@ -69,3 +69,9 @@ toute écriture.
   dans les liens du dépôt.
 - Garder le frontmatter YAML valide et limité aux métadonnées consommées.
 - Ne pas transformer une note de session ou une hypothèse en règle durable.
+
+## Commandes qualité Bun
+
+- Lancer les contrôles TypeScript avec `bun check`, le lint avec `bun lint`, le formatage avec `bun fmt` et les migrations Node vers Bun avec `bun n2b`, directement.
+- Ne pas utiliser de wrapper shell/processus, `bunx`, OXC autonome, `tsgo`/`tsc`, ESLint, Prettier ou binaire n2b externe pour ces tâches.
+- Les scripts de package peuvent exposer ces mêmes commandes Bun natives avec leurs chemins et configurations locales.
