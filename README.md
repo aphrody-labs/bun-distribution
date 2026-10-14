@@ -21,6 +21,19 @@ directories. Nested submodules remain pinned but are fetched only when their
 owning component requires them. Run `bun run workspace --help` for library
 inventory and capability commands.
 
+ArtCraft's physical frozen installation and frontend compilation pass on native
+Windows. Nested install retirement still requires dependency alignment; inspect
+`just install-plan` and [install qualification](docs/UNIFIED-INSTALL.md).
+
+```sh
+bun run frontend:build
+```
+
+This delegates to the existing ArtCraft compiler with a fresh output under
+`build/frontend/artcraft`. For a later build, select a fresh root output with
+`bun run frontend:build --output build/frontend/<name>`. Browser execution,
+desktop binaries and deployment require their own qualification.
+
 ## Distribution factory
 
 ```sh

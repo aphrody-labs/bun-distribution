@@ -23,6 +23,12 @@ apps-plan:
 apps-build:
     bun run apps:build
 
+frontend-build:
+    bun run frontend:build
+
+install-plan:
+    bun scripts/node-modules.ts --plan
+
 # Select imported packages explicitly; all outputs belong to build/packages.
 packages-plan selection:
     bun run packages:plan --package "{{selection}}"

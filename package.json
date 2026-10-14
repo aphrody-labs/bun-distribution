@@ -57,7 +57,7 @@
     "desktop:dev": "bun run --cwd apps/desktop desktop:dev",
     "desktop:build": "bun run --cwd apps/desktop desktop:build",
     "frontend:dev": "bun run --filter @frontend/source dev",
-    "frontend:build": "bun run --filter @frontend/source build",
+    "frontend:build": "bun scripts/build-frontend.ts build",
     "frontend:install": "bun install --filter @frontend/source --frozen-lockfile",
     "video": "bun packages/bun-video-project/src/cli.ts",
     "assets": "bun packages/bun-workspace/src/assets-cli.ts",

@@ -95,13 +95,21 @@
       Bun workspace and lockfile.
 - [x] Align the dependency-free `api-enums` package with the root Bun formatter;
       its native check passes on 18 files, with lint and format checks green.
-- [ ] Complete a physical frozen install and frontend build on a qualified host.
-      Only lock resolution has run; workstation free space was 546 MB afterward,
-      and the full installation footprint has not been measured.
+- [x] Complete the native Windows physical frozen install: 1,152 packages
+      installed with lifecycle scripts disabled; the root lock hash remained
+      `c7a89dc908a99c205c9ab5544e8b7b2532f2d3e388d5507931d654cfbba962a5`.
+      The native ArtCraft compiler emitted 33 artifacts into root-owned
+      `build/frontend/artcraft` using Bun 1.4.4 revision `4b8dee0bc`.
+      Browser execution, desktop/native runtime and deployment remain unqualified.
 - [ ] Reconcile the ArtCraft submodule's nested `bun.lock` and legacy style
       configuration after the root installation and frontend gates qualify.
 - [ ] Migrate ArtCraft lint, formatting and typecheck into the unified native
       Bun quality gates without changing generated or imported assets blindly.
+- [x] Preserve imported ArtCraft workspace patterns when regenerating flat
+      first-party manifests. Expand all 71 root members in the install audit.
+- [ ] Align ArtCraft dependency versions before retiring its nested installs:
+      the root `signals-react` 3.12.0 differs from the app's 2.3.0. The read-only
+      install plan refuses removal and does not claim a single physical install.
 
 ## Shared workspace owner — 2026-10-14
 

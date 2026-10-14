@@ -12,6 +12,12 @@ type Manifest = {
   target?: Record<string, Manifest>;
 };
 const root = resolve(import.meta.dir, "..");
+if (process.argv.slice(2).some(value => value === "--help" || value === "-h")) {
+  console.log(
+    "Usage: bun scripts/crate-inventory.ts [owner=checkout ...]\nInspect pinned crate manifests; write .local/crate-inventory.json without changing sources.",
+  );
+  process.exit(0);
+}
 const extraSources = process.argv.slice(2).map(value => {
   const separator = value.indexOf("=");
   if (separator < 1) throw new Error("Source argument must be owner=checkout");

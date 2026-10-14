@@ -20,7 +20,11 @@ for (const entry of [{ path: "package.json", manifest: product }, ...entries]) {
     }
   }
 }
-product.workspaces = paths.map(path => path.replace(/\/package\.json$/, ""));
+// Imported owners remain registered without rewriting their source manifests.
+const importedMembers: string[] = (product.workspaces ?? []).filter(
+  (member: string) => !member.startsWith("packages/") && !member.startsWith("apps/"),
+);
+product.workspaces = [...new Set([...paths.map(path => path.replace(/\/package\.json$/, "")), ...importedMembers])];
 const roots = "src container factory infra packages apps/desktop scripts";
 product.scripts.lint = `bun lint --deny-warnings ${roots}`;
 product.scripts.format = `bun fmt --write -c bun-format.json --ignore-pattern '**/*.html' ${roots}`;
