@@ -321,8 +321,12 @@ export function runtimePinFor(config: Config, target = nativeRuntimeTarget()): R
   return pin;
 }
 
-export function inspectRuntime(config: Config, target = nativeRuntimeTarget()): Runtime {
-  return runtimeFromFacts(runtimePinFor(config, target), currentRuntimeFacts());
+export function inspectRuntime(config: Config, target = nativeRuntimeTarget(), allowRevisionDrift = false): Runtime {
+  const expected = runtimePinFor(config, target);
+  if (!allowRevisionDrift) return runtimeFromFacts(expected, currentRuntimeFacts());
+  const runtime = runtimeFromFacts(config.runtime, currentRuntimeFacts());
+  runtime.revisionMatches = runtime.recognizedFork && runtime.versionMatches;
+  return runtime;
 }
 
 /** All commands require the declared release fork; SHA drift is explicit. */

@@ -14,7 +14,7 @@ import {
 
 const help = `Aphrody Bun 1.4.4
 
-  aphrody-bun doctor [--json]       Runtime, tools and pinned library sources
+  aphrody-bun doctor [--json]       Development runtime, tools and pinned library sources
   aphrody-bun list [--json]         Library source catalog
   aphrody-bun status [--json]       Revisions and local changes
   aphrody-bun sync                 Initialize pinned sources from a clean checkout
@@ -22,7 +22,7 @@ const help = `Aphrody Bun 1.4.4
   aphrody-bun check <id>            Check a native library owner
   aphrody-bun build <id>            Build a native library owner in release mode
 
-Native builds are serialized. The catalog pins the Aphrody Bun runtime.`;
+Native builds are serialized. Release and application builds enforce their target-specific Bun pin.`;
 
 function moduleState(module: ModuleStatus): string {
   if (module.error) return "error";
@@ -68,7 +68,9 @@ async function main(): Promise<number> {
     }
     case "doctor": {
       if (args.some(arg => arg !== "--json")) throw new Error("Usage: aphrody-bun doctor [--json]");
-      const runtime = inspectRuntime(config);
+      // The installed runtime is a development tool; release receipts remain
+      // pinned to the target-specific distribution revision below.
+      const runtime = inspectRuntime(config, undefined, true);
       const externalBun = await resolveBunExecutable(config).then(
         executable => ({ executable, error: null }),
         (error: unknown) => ({
@@ -86,16 +88,19 @@ async function main(): Promise<number> {
       };
       const modules = await listModuleStatus(config);
       const coverage = await inspectSourceCoverage(config);
+      const sourceFailures = modules.filter(
+        module =>
+          module.error ||
+          !module.pointerMatches ||
+          (module.sourceKind === "submodule" && !module.initialized) ||
+          (module.sourceKind === "submodule" && !module.revisionMatches),
+      );
       const ok =
         runtime.recognizedFork &&
         runtime.versionMatches &&
-        runtime.revisionMatches &&
         Boolean(tools.bun && tools.git && tools.cargo && tools.rustc) &&
         Boolean(process.platform === "win32" ? tools.powershell : tools.flock) &&
-        modules.every(
-          module =>
-            !module.error && module.initialized && module.pointerMatches && module.revisionMatches && module.clean,
-        ) &&
+        sourceFailures.length === 0 &&
         coverage.every(
           module => !module.errors.length && !module.missingWorkspaceMembers.length && !module.missingTargets.length,
         );
@@ -108,18 +113,35 @@ async function main(): Promise<number> {
         externalBun,
         tools,
         modules,
+        sourceFailures: sourceFailures.map(module => ({
+          id: module.id,
+          path: module.path,
+          error: module.error,
+          initialized: module.initialized,
+          pointerMatches: module.pointerMatches,
+          revisionMatches: module.revisionMatches,
+        })),
         coverage,
       };
       if (json) console.log(JSON.stringify(report, null, 2));
       else {
         console.log(
-          `Bun ${runtime.version}+${runtime.revision}: ${runtime.recognizedFork && runtime.versionMatches && runtime.revisionMatches ? "pinned fork" : "runtime differs"}`,
+          `Bun ${runtime.version}+${runtime.revision}: ${runtime.recognizedFork && runtime.versionMatches ? "supported development fork" : "runtime differs"}`,
         );
         console.log(`Git/Cargo/Rust: ${tools.git && tools.cargo && tools.rustc ? "available" : "tool missing"}`);
         console.log(`Native Bun: ${externalBun.executable ? "verified" : externalBun.error}`);
         console.log(
           `Library sources: ${modules.filter(module => module.initialized && module.pointerMatches && module.revisionMatches && module.clean).length}/${modules.length} pinned, clean`,
         );
+        const dirty = modules.filter(module => module.initialized && module.clean === false);
+        console.log(
+          `Dirty sources: ${dirty.length ? dirty.map(module => module.id).join(", ") : "none"} (reported; not modified)`,
+        );
+        for (const module of sourceFailures) {
+          console.error(
+            `Source pin: ${module.id}: ${module.error ?? (!module.initialized ? "not initialized" : "pin differs")}`,
+          );
+        }
         console.log(
           `Implementation: ${coverage.reduce((sum, module) => sum + module.cargoPackages, 0)} Cargo packages; ${coverage.reduce((sum, module) => sum + module.rustSources, 0)} Rust sources; ${coverage.reduce((sum, module) => sum + module.typescriptSources, 0)} TypeScript sources`,
         );
