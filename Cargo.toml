@@ -96,7 +96,7 @@ aphrody-jev = { path = "crates/ai/jev", version = "1.4.4", features = [] }
 aphrody-jobs = { path = "crates/os/kernel/comps/jobs", version = "1.4.4", features = [] }
 aphrody-kernel = { path = "crates/os/kernel/core", version = "1.4.4", default-features = false, features = [] }
 aphrody-llama-server = { path = "crates/ai/llama-server", version = "1.4.4", features = [] }
-aphrody-m3-tokens = { git = "https://github.com/aphrody-labs/material", rev = "229a767493818a5dd9f92451b4a99699894a1865", version = "1.4.4", features = [] }
+aphrody-m3-tokens = { git = "https://github.com/aphrody-labs/material", rev = "e858361dfd2597b067eea56d471ff4caab7442f8", version = "1.4.4", features = [] }
 aphrody-mcp = { path = "crates/ai/mcp", version = "1.4.4" }
 aphrody-mcp-client = { path = "crates/ai/mcp-client", version = "1.4.4", features = [] }
 aphrody-memory = { path = "crates/ai/memory", version = "1.4.4", features = [] }
