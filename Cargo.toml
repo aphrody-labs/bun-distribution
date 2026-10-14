@@ -16,6 +16,7 @@ members = [
     "crates/cadcraft-doc",
     "crates/cadcraft-constraints",
     "crates/cadcraft-dxf",
+    "crates/cadcraft-dwg",
     "crates/gridcraft-pdf",
     "crates/aphrody-a2a",
     "crates/aphrody-agent-proto",
@@ -59,6 +60,7 @@ cadcraft-geom = { path = "crates/cadcraft-geom", version = "=1.4.4" }
 cadcraft-doc = { path = "crates/cadcraft-doc", version = "=1.4.4" }
 cadcraft-constraints = { path = "crates/cadcraft-constraints", version = "=1.4.4" }
 cadcraft-dxf = { path = "crates/cadcraft-dxf", version = "=1.4.4" }
+cadcraft-dwg = { path = "crates/cadcraft-dwg", version = "=1.4.4" }
 gridcraft-pdf = { path = "crates/gridcraft-pdf", version = "=1.4.4" }
 aphrody-a2a = { path = "crates/aphrody-a2a", version = "=1.4.4" }
 aphrody-agent-proto = { path = "crates/aphrody-agent-proto", version = "=1.4.4" }
@@ -73,6 +75,7 @@ aphrody-subsystem = { path = "crates/aphrody-subsystem", version = "=1.4.4" }
 aphrody-proc = { path = "crates/aphrody-proc", version = "=1.4.4" }
 aphrody-config = { path = "crates/aphrody-config", version = "=1.4.4" }
 aphrody-jev = { path = "crates/aphrody-jev", version = "=1.4.4", default-features = false }
+acadrust = "=0.6.3"
 anyhow = { version = "=1.0.104", default-features = false }
 async-trait = { version = "=0.1.92", default-features = false }
 axum = { version = "=0.8.9", default-features = false }

@@ -52,6 +52,14 @@
       complete root Rust format check.
 - [ ] Migrate the remaining 11 CADCraft workspace members.
 
+### CADCraft DWG owner — 2026-10-14
+
+- [x] Split `cadcraft-dwg`, preserve its history and MPL dependency notice,
+      provision the private forge owner, and redirect CADCraft to the flat
+      root crate.
+- [x] Pass locked offline metadata, `cadcraft-dwg` check, and root Rust format.
+- [ ] Migrate the remaining 10 CADCraft workspace members.
+
 ### Cargo source-owner inventory — 2026-10-14
 
 - [x] Refresh the ignored inventory at root revision

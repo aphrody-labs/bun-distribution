@@ -43,6 +43,15 @@ locked offline metadata resolves 566 packages, `cargo check --locked --offline
 full CADCraft application build, active vendor replacement and product release
 remain unqualified.
 
+The DWG bridge history is split from CADCraft `d9f215e852e193fe2c4d1c8702e36abc410468c4`
+at `crates/dwg` (`4bd80fdfcded4cc1d063607515053e53f789e731`). Its private
+forge branch is `8c7012f1b2d3d54d6907b32296e2bab43ee99520`; the consumer branch
+is `88e15b5b11e3b844b6dfff97a0210daa3ae73051`. `acadrust` remains a separate,
+unmodified MPL-2.0 dependency at the exact source version 0.6.3. Locked offline
+metadata resolves 479 CADCraft packages; root metadata resolves 572 packages,
+the DWG crate check and root format pass. Ten CADCraft workspace members
+remain; tests and full product qualification are unclaimed.
+
 The refreshed inventory at root revision `69d7a14d884d320353c1500d1038e0e5a17d9a4d`
 reports 45 pinned sources, 856 Cargo packages, 555 declared workspace crates,
 29 flat owners and 526 remaining declared crates. The new `cadcraft-dxf` owner

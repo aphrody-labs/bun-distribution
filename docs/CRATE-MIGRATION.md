@@ -75,6 +75,21 @@ Root locked offline metadata resolves 566 packages, `cargo check --locked
 --offline -p cadcraft-dxf` passes, and root `cargo fmt --all -- --check` passes
 after formatting the imported files. Tests were not run.
 
+## CADCraft DWG bridge — 2026-10-14
+
+`cadcraft-dwg` is split from CADCraft source revision
+`d9f215e852e193fe2c4d1c8702e36abc410468c4`, prefix `crates/dwg`. The split
+commit is `4bd80fdfcded4cc1d063607515053e53f789e731`; its tree matches the
+source prefix. The private forge `os` branch is at
+`8c7012f1b2d3d54d6907b32296e2bab43ee99520`, preserving the source licenses,
+NOTICE and attribution. The CADCraft consumer branch `os` is at
+`88e15b5b11e3b844b6dfff97a0210daa3ae73051`; it redirects the dependency and
+removes the two old tracked DWG files. `acadrust` remains an unmodified,
+separate MPL-2.0 dependency pinned to the source's exact `0.6.3` version.
+Locked offline metadata resolves 479 CADCraft packages. Root locked offline
+metadata resolves 572 packages, `cargo check --locked --offline -p cadcraft-dwg`
+passes, and the complete root Rust format check passes. Tests were not run.
+
 The subsequent complete root build with all features succeeds for all 28
 members and supplies 28 hashed final artifacts. The revalidated vendor receipt
 now reports `compiled: true` and `buildProof: valid`; this remains scoped to
