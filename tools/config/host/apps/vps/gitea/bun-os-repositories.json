@@ -210,6 +210,11 @@
       "name": "bun-crate-cadcraft-ui-egui",
       "mirror": false,
       "private": true
+    },
+    {
+      "name": "bun-crate-cadcraft-cli",
+      "mirror": false,
+      "private": true
     }
   ]
 }
