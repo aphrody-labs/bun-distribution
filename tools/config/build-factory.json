@@ -35,6 +35,19 @@
     "heavyJobs": 1,
     "frozenLockfile": true
   },
+  "ui": {
+    "enabled": true,
+    "classes": ["shenron-ui-reuse"],
+    "lockPath": "/home/ubuntu/build/locks/ui.lock",
+    "workRoot": "/home/ubuntu/build/artifacts/ui/jobs",
+    "maxJobs": 1,
+    "memoryGiB": 12,
+    "cpus": 4,
+    "reserveMemoryGiB": 8,
+    "reserveDiskGiB": 20,
+    "scratchGiB": 12,
+    "timeoutSeconds": 5400
+  },
   "local": {
     "allowed": ["help", "plan", "inventory", "source-edit", "scoped-static-check"],
     "heavyExecution": "remote"
