@@ -19,7 +19,7 @@ cadcraft-color = { path = "../../crates/cadcraft-color", version = "=1.4.4" }
 cadcraft-doc = { path = "../../crates/cadcraft-doc", version = "=1.4.4" }
 cadcraft-constraints = { path = "../../crates/cadcraft-constraints", version = "=1.4.4" }
 cadcraft-fonts = { path = "../../crates/cadcraft-fonts", version = "=1.4.4" }
-cadcraft-render = { path = "crates/render" }
+cadcraft-render = { path = "../../crates/cadcraft-render", version = "=1.4.4" }
 cadcraft-io = { path = "crates/io" }
 cadcraft-engine = { path = "crates/engine" }
 cadcraft-ui-egui = { path = "crates/ui-egui" }
