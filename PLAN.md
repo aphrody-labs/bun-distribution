@@ -162,6 +162,16 @@
 - [ ] Audit and migrate other consumers of the same UI capability in a
       separate batch; this pilot changes the Soundcraft consumer only.
 
+## Development runtime and source doctor — 2026-10-14
+
+- [x] Keep the installed Bun development-tool check distinct from target-specific
+      runtime pins used by release and application artifact builders.
+- [x] Report dirty pinned checkouts without treating concurrent owner changes as
+      absent source; retain fatal results for missing or mismatched pins and
+      incomplete package coverage.
+- [x] Verify the doctor, root Bun-native quality gates, complete live source
+      portal snapshot and Aphrody-owned domain/DNS parity. Code: `1e9df354c`.
+
 ## Product/server and offline sources — 2026-10-13
 
 - [x] Root Cargo owns twenty-five flat pinned crate submodules, shared direct
