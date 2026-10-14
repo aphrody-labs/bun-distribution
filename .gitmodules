@@ -201,3 +201,7 @@
 	path = crates/cadcraft-constraints
 	url = bun-forge:aphrody-dev/bun-crate-cadcraft-constraints.git
 	branch = os
+[submodule "crates/cadcraft-dxf"]
+	path = crates/cadcraft-dxf
+	url = bun-forge:aphrody-dev/bun-crate-cadcraft-dxf.git
+	branch = os

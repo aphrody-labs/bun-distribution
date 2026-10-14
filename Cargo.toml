@@ -15,6 +15,7 @@ members = [
     "crates/cadcraft-geom",
     "crates/cadcraft-doc",
     "crates/cadcraft-constraints",
+    "crates/cadcraft-dxf",
     "crates/gridcraft-pdf",
     "crates/aphrody-a2a",
     "crates/aphrody-agent-proto",
@@ -57,6 +58,7 @@ cadcraft-color = { path = "crates/cadcraft-color", version = "=1.4.4" }
 cadcraft-geom = { path = "crates/cadcraft-geom", version = "=1.4.4" }
 cadcraft-doc = { path = "crates/cadcraft-doc", version = "=1.4.4" }
 cadcraft-constraints = { path = "crates/cadcraft-constraints", version = "=1.4.4" }
+cadcraft-dxf = { path = "crates/cadcraft-dxf", version = "=1.4.4" }
 gridcraft-pdf = { path = "crates/gridcraft-pdf", version = "=1.4.4" }
 aphrody-a2a = { path = "crates/aphrody-a2a", version = "=1.4.4" }
 aphrody-agent-proto = { path = "crates/aphrody-agent-proto", version = "=1.4.4" }
@@ -81,6 +83,7 @@ dispatch2 = { version = "=0.3.1", default-features = false }
 egui = { version = "=0.36.2", default-features = false }
 egui_extras = { version = "=0.36.2", default-features = false }
 egui_kittest = { version = "=0.36.2", default-features = false }
+encoding_rs = "=0.8.35"
 getrandom = { version = "=0.4.3", default-features = false }
 futures = { version = "=0.3.34", default-features = false, features = ["std", "async-await"] }
 image = { version = "=0.25.10", default-features = false }
