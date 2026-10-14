@@ -20,6 +20,7 @@ members = [
     "crates/cadcraft-dwg",
     "crates/cadcraft-fonts",
     "crates/cadcraft-io",
+    "crates/cadcraft-mcp",
     "crates/cadcraft-render",
     "crates/gridcraft-pdf",
     "crates/aphrody-a2a",
@@ -68,6 +69,7 @@ cadcraft-dxf = { path = "crates/cadcraft-dxf", version = "=1.4.4" }
 cadcraft-dwg = { path = "crates/cadcraft-dwg", version = "=1.4.4" }
 cadcraft-fonts = { path = "crates/cadcraft-fonts", version = "=1.4.4" }
 cadcraft-io = { path = "crates/cadcraft-io", version = "=1.4.4" }
+cadcraft-mcp = { path = "crates/cadcraft-mcp", version = "=1.4.4" }
 cadcraft-render = { path = "crates/cadcraft-render", version = "=1.4.4" }
 gridcraft-pdf = { path = "crates/gridcraft-pdf", version = "=1.4.4" }
 aphrody-a2a = { path = "crates/aphrody-a2a", version = "=1.4.4" }
