@@ -10,6 +10,36 @@ const UNIT = "/etc/systemd/system/shenron-cdn-origin.service";
 const SERVICE = "shenron-cdn-origin.service";
 const digest = (bytes: Uint8Array | string) =>
   new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
+export class OriginNotReadyError extends Error {}
+/** Scheduled retries absorb a cold service socket; integrity errors remain terminal. */
+export async function originReadiness<T>(
+  probe: (signal: AbortSignal) => Promise<T>,
+  budgetMs = 15000,
+  schedule: (callback: () => void, delay: number) => unknown = setTimeout,
+  now: () => number = Date.now,
+): Promise<T> {
+  if (!Number.isSafeInteger(budgetMs) || budgetMs < 100 || budgetMs > 15000)
+    throw Error("Bounded origin readiness deadline required");
+  const started = now(),
+    signal = AbortSignal.timeout(budgetMs);
+  let delay = 100;
+  async function attempt(): Promise<T> {
+    try {
+      return await probe(signal);
+    } catch (error) {
+      if (
+        !(error instanceof OriginNotReadyError) ||
+        signal.aborted ||
+        budgetMs - (now() - started) <= delay
+      )
+        throw error;
+      await new Promise<void>((complete) => schedule(complete, delay));
+      delay = Math.min(delay * 2, 1500);
+      return attempt();
+    }
+  }
+  return attempt();
+}
 type Configuration = Record<string, unknown> & {
   inventoryPath: string;
   inventorySha256: string;
@@ -185,24 +215,33 @@ export function nativeOriginInventoryPorts(): OriginInventoryPorts {
     },
     async attest(config) {
       const codeSha256 = digest(await guarded(CODE));
-      await Promise.all(
-        ["https://cdn.dragonballfr.com", "https://origin-cdn.dragonballfr.com"].map(
-          async (origin) => {
-            const r = await fetch(origin + "/.well-known/shenron-cdn-origin.json", {
-              credentials: "omit",
-              redirect: "error",
-              signal: AbortSignal.timeout(10000),
-              headers: { "Cache-Control": "no-cache" },
-            });
-            if (!r.ok) throw Error("Native CDN attestation unavailable");
-            const actual = await r.json();
-            if (
-              actual.manifestPrefix !== config.manifestPrefix ||
-              actual.inventorySha256 !== config.inventorySha256 ||
-              actual.codeSha256 !== codeSha256
-            )
-              throw Error("Native CDN attestation differs");
-          },
+      await originReadiness(async (signal) =>
+        Promise.all(
+          ["https://cdn.dragonballfr.com", "https://origin-cdn.dragonballfr.com"].map(
+            async (origin) => {
+              let r: Response;
+              try {
+                r = await fetch(origin + "/.well-known/shenron-cdn-origin.json", {
+                  credentials: "omit",
+                  redirect: "error",
+                  signal: AbortSignal.any([signal, AbortSignal.timeout(10000)]),
+                  headers: { "Cache-Control": "no-cache" },
+                });
+              } catch {
+                throw new OriginNotReadyError("Native CDN socket is warming");
+              }
+              if ([502, 503, 504].includes(r.status))
+                throw new OriginNotReadyError("Native CDN service is warming");
+              if (!r.ok) throw Error("Native CDN attestation unavailable");
+              const actual = await r.json();
+              if (
+                actual.manifestPrefix !== config.manifestPrefix ||
+                actual.inventorySha256 !== config.inventorySha256 ||
+                actual.codeSha256 !== codeSha256
+              )
+                throw Error("Native CDN attestation differs");
+            },
+          ),
         ),
       );
     },

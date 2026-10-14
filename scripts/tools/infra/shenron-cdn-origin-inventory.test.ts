@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
 import {
+  originReadiness,
+  OriginNotReadyError,
   activateOriginInventory,
   type OriginInventoryPins,
   type OriginInventoryPorts,
@@ -108,4 +110,64 @@ test("CAS is checked again immediately before replacement", async () => {
   };
   await expect(activateOriginInventory(path, pins, f.ports, true)).rejects.toThrow("Concurrent");
   expect(f.calls).not.toContain("restart");
+});
+
+test("a delayed restart reaches attestation without another pointer write or restart", async () => {
+  const f = fixture();
+  let clock = 0,
+    calls = 0;
+  const delays: number[] = [];
+  f.ports.attest = async () => {
+    await originReadiness(
+      async () => {
+        calls++;
+        if (calls < 3) throw new OriginNotReadyError("warming");
+      },
+      15000,
+      (callback, delay) => {
+        delays.push(delay);
+        clock += delay;
+        callback();
+      },
+      () => clock,
+    );
+  };
+  expect((await activateOriginInventory(path, pins, f.ports, true)).writes).toBe(1);
+  expect(f.calls.filter((call) => call === "write")).toHaveLength(1);
+  expect(f.calls.filter((call) => call === "restart")).toHaveLength(1);
+  expect(delays).toEqual([100, 200]);
+  expect(calls).toBe(3);
+});
+test("readiness has a finite deadline and never retries an integrity failure", async () => {
+  let clock = 0,
+    calls = 0;
+  await expect(
+    originReadiness(
+      async () => {
+        calls++;
+        throw new OriginNotReadyError("warming");
+      },
+      350,
+      (callback, delay) => {
+        clock += delay;
+        callback();
+      },
+      () => clock,
+    ),
+  ).rejects.toThrow("warming");
+  expect(clock).toBe(300);
+  expect(calls).toBe(3);
+  let retries = 0;
+  await expect(
+    originReadiness(
+      async () => {
+        throw Error("SHA differs");
+      },
+      15000,
+      () => {
+        retries++;
+      },
+    ),
+  ).rejects.toThrow("SHA differs");
+  expect(retries).toBe(0);
 });
