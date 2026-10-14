@@ -63,7 +63,16 @@
     "privateSourceAuthenticationVerifiedPeers": ["10.200.77.3", "10.200.77.4"],
     "publicIdentitySpoofDenied": true,
     "unreachablePeer": "10.200.77.10",
-    "warpClientEnrolled": false,
+    "windowsPrivateDnsApplied": true,
+    "windowsNativeTlsVerified": true,
+    "warpClientInstalled": true,
+    "warpClientVersion": "2026.8.2110.0",
+    "warpClientService": "CloudflareWARP",
+    "warpClientServiceState": "Running/Automatic",
+    "warpClientEnrolled": true,
+    "warpClientOrganization": "aphrody-labs",
+    "warpClientConnected": false,
+    "warpClientConnectionIssue": "Connected but unstable; Source private HTTPS failed until WARP disconnect restored direct WireGuard access",
     "clientEndToEndVerified": false
   }
 }

@@ -32,10 +32,16 @@ subsequent qualification passes without another container recreation; the
 original failure cause is not proven.
 
 Cloudflare route, profile, organization, enrollment policy and DNS rules were
-applied through the Cloudflare MCP API and read back. No WARP device is enrolled;
-client traffic through Cloudflare is not yet verified. The Windows client is
-absent, local administration is unavailable, and disk capacity is insufficient
-for installation. Peer `.10` did not respond to the observed connectivity probes.
+applied through the Cloudflare MCP API and read back. The Windows device is enrolled;
+client traffic through Cloudflare is not yet verified. Cloudflare One Client
+2026.8.2110.0 is installed and its signed service is Running/Automatic. Native
+Windows UAC authority was qualified through WinClean. Disk cleanup and SSD
+reallocation passed; C: had 131,708,145,664 bytes free at final qualification.
+The SSO registration completed asynchronously: managed=true and organization
+`aphrody-labs`. WARP subsequently reported Connected but unstable, and private
+Source HTTPS failed. Disconnecting WARP restored ordinary hostname HTTP 200
+immediately. WARP is left disconnected pending coexistence qualification.
+Peer `.10` did not respond to connectivity probes.
 The whole CIDR is routed; every peer is not claimed reachable.
 
 ## Owned activation helpers
@@ -48,4 +54,6 @@ source Compose storage migration or the pending product API include.
 reuses the existing certificate owner.
 [`source-private-dns.ps1`](../../../tools/config/host/windows/source-private-dns.ps1)
 provides an alternative direct WireGuard hosts mapping only after real Windows
-elevation, route and TLS qualification; it has not been applied.
+elevation, route and TLS qualification. It was applied: ordinary hostname
+resolution returns `10.200.77.1`, and `/user/settings` returns HTTP 200 with
+native TLS verification. This proves the direct WireGuard path.
