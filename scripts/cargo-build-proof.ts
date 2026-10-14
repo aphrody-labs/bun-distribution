@@ -2,7 +2,14 @@
 // SPDX-License-Identifier: MIT
 import { lstat, realpath } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
-import { hashFile, loadConfig, repositoryRoot, runNativeResult, runProcess } from "@aphrody/bun-workspace";
+import {
+  hashFile,
+  loadConfig,
+  normalizeRustCacheEnvironment,
+  repositoryRoot,
+  runNativeResult,
+  runProcess,
+} from "@aphrody/bun-workspace";
 
 const receiptPath = join(repositoryRoot, "build/vendor/cargo-build-receipt.json");
 const overridePath = join(repositoryRoot, "build/vendor/cargo-config.toml");
@@ -146,6 +153,7 @@ export async function activeCargoSourceReplacement(): Promise<boolean> {
 }
 
 async function capture(bound: Deadline): Promise<Inputs> {
+  const buildEnvironment = normalizeRustCacheEnvironment(Bun.env);
   const rootRevision = await inspect(["git", "rev-parse", "HEAD"], bound);
   const rootManifest = Bun.TOML.parse(await Bun.file(join(repositoryRoot, "Cargo.toml")).text()) as {
     workspace: { members: string[] };
@@ -193,7 +201,7 @@ async function capture(bound: Deadline): Promise<Inputs> {
     if (executable) files["native-tool:" + name] = await hashFile(executable, { signal: bound.signal });
   }
   for (const name of ["RUSTC_WRAPPER", "RUSTC_WORKSPACE_WRAPPER"]) {
-    const value = Bun.env[name];
+    const value = buildEnvironment[name];
     const executable = value && Bun.which(value);
     if (executable) files["native-wrapper:" + name] = await hashFile(executable, { signal: bound.signal });
   }
@@ -210,13 +218,13 @@ async function capture(bound: Deadline): Promise<Inputs> {
     });
   }
   const environment: Record<string, string> = {};
-  for (const name of Object.keys(Bun.env).sort()) {
+  for (const name of Object.keys(buildEnvironment).sort()) {
     if (
       /^(RUSTFLAGS|CARGO_ENCODED_RUSTFLAGS|RUSTC|RUSTC_WRAPPER|RUSTC_WORKSPACE_WRAPPER|CARGO_BUILD_TARGET|CARGO_BUILD_RUSTFLAGS|CARGO_TARGET_[A-Z0-9_]+_(LINKER|RUSTFLAGS)|CC|CXX|AR|CFLAGS|CXXFLAGS|LDFLAGS|PATH|LIB|INCLUDE|LIBPATH)$/.test(
         name,
       )
     )
-      environment[name] = digest(Bun.env[name]);
+      environment[name] = digest(buildEnvironment[name]);
   }
   const vendor = await tree(join(repositoryRoot, "vendor/cargo"), bound);
   if ((await inspect(["git", "rev-parse", "HEAD"], bound)) !== rootRevision)

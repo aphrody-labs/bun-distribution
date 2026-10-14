@@ -763,6 +763,19 @@ export async function resolveModuleBinary(
   throw new Error(`Native CLI missing: ${id}; build its existing library owner.`);
 }
 
+/** Resolve the effective optional Rust cache wrapper before execution or proof capture. */
+export function normalizeRustCacheEnvironment(
+  environment: Record<string, string | undefined>,
+): Record<string, string | undefined> {
+  const env = { ...environment };
+  if (env.RUSTC_WRAPPER && !Bun.which(env.RUSTC_WRAPPER)) {
+    const sccache = Bun.which("sccache");
+    if (sccache) env.RUSTC_WRAPPER = sccache;
+    else delete env.RUSTC_WRAPPER;
+  }
+  return env;
+}
+
 /** Serialize a native build owner, including the Tauri CLI, without a shell. */
 export async function runNativeResult(
   config: Config,
@@ -780,13 +793,14 @@ export async function runNativeResult(
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > runDeadline) {
     throw new Error("Invalid native deadline; maximum 12 hours.");
   }
-  const env: Record<string, string | undefined> = {
+  const requestedEnv: Record<string, string | undefined> = {
     ...Bun.env,
     ...options.env,
     CARGO_BUILD_JOBS: "1",
     CARGO_TARGET_DIR: join(root, "target"),
     CARGO_INSTALL_ROOT: join(root, "install"),
   };
+  const env = normalizeRustCacheEnvironment(requestedEnv);
   const toolchainFile = Bun.file(join(root, "rust-toolchain.toml"));
   if (await toolchainFile.exists()) {
     const toolchain = Bun.TOML.parse(await toolchainFile.text()) as {
@@ -795,15 +809,8 @@ export async function runNativeResult(
     if (!toolchain.toolchain?.channel) throw new Error("Root Rust toolchain channel is missing.");
     env.RUSTUP_TOOLCHAIN = toolchain.toolchain.channel;
   }
-  // Preserve valid owner wrappers; an unavailable sccache path must not break builds.
-  if (env.RUSTC_WRAPPER && !Bun.which(env.RUSTC_WRAPPER)) {
-    const sccache = Bun.which("sccache");
-    if (sccache) env.RUSTC_WRAPPER = sccache;
-    else {
-      delete env.RUSTC_WRAPPER;
-      console.error("Optional Rust cache unavailable; using a direct build.");
-    }
-  }
+  if (requestedEnv.RUSTC_WRAPPER && !env.RUSTC_WRAPPER)
+    console.error("Optional Rust cache unavailable; using a direct build.");
   if (options.serialize === false) {
     return command(nativeArguments, cwd, timeoutMs, true, env, captureStdout);
   }
