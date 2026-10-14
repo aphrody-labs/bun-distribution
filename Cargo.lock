@@ -565,17 +565,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cadcraft-cli"
-version = "0.6.2"
-dependencies = [
- "cadcraft-engine",
- "cadcraft-io",
- "cadcraft-mcp",
- "cadcraft-render",
- "serde_json",
-]
-
-[[package]]
 name = "cadcraft-color"
 version = "1.4.4"
 dependencies = [
@@ -670,16 +659,6 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.21",
-]
-
-[[package]]
-name = "cadcraft-mcp"
-version = "1.4.4"
-dependencies = [
- "cadcraft-engine",
- "cadcraft-render",
- "log",
- "serde_json",
 ]
 
 [[package]]
