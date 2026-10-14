@@ -32,7 +32,7 @@ files). During concurrent installation, two ArtCraft nested installs appeared:
 `libraries/artcraft/frontend/node_modules` is blocked by a reparse/symbolic link;
 the app's nested install is blocked by a different `@preact/signals-react` identity.
 The observed plan reports `ready: false` and `changed: false`. No cleanup was run.
-Qualification has a 30 second budget; timeout blocks it. This observation does not
+That audit used a 30 second budget; timeout blocked it. This observation does not
 prove frontend execution or build success.
 
 `bun pm untrusted` reports blocked ArtCraft `prepare: husky` plus SWC, core-js,
@@ -87,7 +87,9 @@ The source preparation ran no retirement. Until a fresh receipt passes these gat
 the mode reports `ready: false`; neither source implementation nor prior compilation
 is a claim that one physical install has already been achieved.
 
-The default audit has a 30 second budget. Aligned retirement has a bounded
+The default audit has a 120 second budget after a full setup exceeded its
+original 30 second limit while comparing the identical desktop dependency.
+Every path and byte comparison remains required. Aligned retirement has a bounded
 180 second budget because it repeatedly rehashes the complete frontend artifact
 tree and proves all consumers. The initial 30 second application attempt timed
 out in build proof; all three nested install roots remained present afterward.
@@ -108,3 +110,15 @@ Its receipt pins root `28f3a5cf739d12afe063d32578399d269bce4402`, ArtCraft
 Browser execution and deployment remain false. Automatic approval review rejected
 retirement of the earlier generated frontend output directories (`blocked by
 policy`); those outputs are preserved and no alternate removal was attempted.
+
+## Final foundation setup boundary — 2026-10-14
+
+The current root indexes the CADCraft os consumer commit and all three new flat
+crate pins. Frozen Bun installation and the setup's retirement of the regenerated
+identical desktop package pass. The final independent plan reports 71 members,
+no nested installs and ready true. After the existing Windows build finished, full `bun run setup` passed
+with 28 Cargo members and the frozen shared Bun install. Vendor verification was
+repeated against the final source pins and confirms 543 external packages,
+28,572 source files and 671,768,402 bytes. Scoped locked compilation and source
+consumer metadata also pass. A full product build, browser execution and active
+vendor source replacement remain separate unqualified gates.

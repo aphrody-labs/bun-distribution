@@ -206,3 +206,16 @@ The workspace integration does not by itself qualify a distribution image,
 desktop binary, native app, production deployment, or locked runtime build.
 Preserve active Bun checkout/processes and protected stores. Keep each imported
 license and notice with its source. Do not force-push.
+
+## CADCraft foundations and shared forge owner — 2026-10-14
+
+- [x] Split and publish geometry, document and constraints histories as flat forge submodules; retain licenses and notices, reuse the existing color owner.
+- [x] Inherit the root version 1.4.4 and shared dependency versions, preserving serde rc and JSON float-roundtrip features.
+- [x] Redirect 14 CADCraft consumer edges to the four root foundations and retire their 49 original tracked files after native root compilation and source metadata qualification.
+- [x] Qualify locked offline native checks for the three new crates and color, root Rust formatting and native Bun quality.
+- [x] Refresh vendor qualification for 28 root members, 571 locked packages and 543 external sources; increase bounded prepare/verify deadlines to 180 seconds.
+- [x] Deliver one shared Bun execution owner through Aphrody Infra and provision each of the three private forge repositories with verified workstation and runner access.
+- [ ] Migrate the remaining 12 CADCraft source members and qualify their complete application build.
+- [ ] Qualify the full root product build before activating vendor source replacement.
+
+- [x] Re-run complete frozen setup after releasing the shared native build mutex: 71 Bun members, 28 Cargo members, no nested installation; final vendor verification passes against the indexed source pins.

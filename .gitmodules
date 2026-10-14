@@ -51,7 +51,7 @@
 [submodule "libraries/cadcraft"]
 	path = libraries/cadcraft
 	url = https://github.com/aphrody-labs/cadcraft.git
-	branch = main
+	branch = os
 	shallow = true
 [submodule "libraries/deckcraft"]
 	path = libraries/deckcraft
@@ -188,4 +188,16 @@
 [submodule "packages/kernel-client"]
 	path = packages/kernel-client
 	url = bun-forge:aphrody-dev/bun-package-kernel-client.git
+	branch = os
+[submodule "crates/cadcraft-geom"]
+	path = crates/cadcraft-geom
+	url = bun-forge:aphrody-dev/bun-crate-cadcraft-geom.git
+	branch = os
+[submodule "crates/cadcraft-doc"]
+	path = crates/cadcraft-doc
+	url = bun-forge:aphrody-dev/bun-crate-cadcraft-doc.git
+	branch = os
+[submodule "crates/cadcraft-constraints"]
+	path = crates/cadcraft-constraints
+	url = bun-forge:aphrody-dev/bun-crate-cadcraft-constraints.git
 	branch = os

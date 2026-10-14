@@ -4,7 +4,7 @@ import { lstat, readdir, realpath, rm } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { runProcess } from "@aphrody/bun-workspace/process";
 const root = resolve(import.meta.dir, "..");
-const qualificationBudgetMs = Bun.argv.includes("--retire-aligned") ? 180_000 : 30_000;
+const qualificationBudgetMs = Bun.argv.includes("--retire-aligned") ? 180_000 : 120_000;
 const deadline = performance.now() + qualificationBudgetMs;
 const args = Bun.argv.slice(2);
 const planOnly = args.includes("--plan");

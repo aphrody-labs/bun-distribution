@@ -549,6 +549,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "cadcraft-constraints"
+version = "1.4.4"
+dependencies = [
+ "cadcraft-doc",
+ "cadcraft-geom",
+ "serde",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "cadcraft-doc"
+version = "1.4.4"
+dependencies = [
+ "cadcraft-color",
+ "cadcraft-geom",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "cadcraft-geom"
+version = "1.4.4"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "calloop"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

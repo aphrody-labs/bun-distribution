@@ -1,3 +1,23 @@
+## CADCraft flat foundations — 2026-10-14
+
+The root contains 28 Cargo members, including geometry, document and constraints
+source histories split from CADCraft 00c7613f1af3c73f7157fa91d9fe2635c6f23c06.
+The existing color owner is reused. All four foundations compile with the root
+nightly and exact shared versions; locked offline check and root Rust format
+pass. The source consumer branch os at 421652b27081ef984ebb1c86c80b4e0d34f6211a
+redirects 14 edges to the root version 1.4.4 and retires 49 original tracked
+files after confirming no ignored, untracked or concurrent content there.
+Source Cargo metadata passes with 12 remaining members; their application build
+and tests were not run. The 543 external sources are unchanged and vendor
+metadata/notices qualify against the new 571-package root graph. No full
+product build or active vendor source replacement is implied.
+
+Aphrody Infra 138026e3034e9342d581355476ba6e26820b0545 owns the shared Bun forge
+provisioner consumed by its Rust interface. Three named private repositories
+were created and read back with Actions, account and writable runner keys;
+credentials remain in protected stores. Native Bun types/lint/format and Rust
+parse/format pass for the source owner. The native Infra CLI was not rebuilt.
+
 # Project decisions and session evidence
 
 ## Shared workspace owner — 2026-10-14
@@ -429,3 +449,15 @@ aphrody-dev <contact@aphrody.com>. Concurrent submodule work remained unstaged.
 - The root license applies to first-party files. Imported projects retain their
   own license and notice files. Do not remove source submodules until consumers,
   histories, and license files have been migrated and verified.
+
+## Final foundation setup boundary — 2026-10-14
+
+The current root indexes the CADCraft os consumer commit and all three new flat
+crate pins. Frozen Bun installation and the setup's retirement of the regenerated
+identical desktop package pass. The final independent plan reports 71 members,
+no nested installs and ready true. After the existing Windows build finished, full `bun run setup` passed
+with 28 Cargo members and the frozen shared Bun install. Vendor verification was
+repeated against the final source pins and confirms 543 external packages,
+28,572 source files and 671,768,402 bytes. Scoped locked compilation and source
+consumer metadata also pass. A full product build, browser execution and active
+vendor source replacement remain separate unqualified gates.

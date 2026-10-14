@@ -12,6 +12,9 @@ members = [
     "crates/deckcraft-matroska",
     "crates/pdfcraft-compare",
     "crates/cadcraft-color",
+    "crates/cadcraft-geom",
+    "crates/cadcraft-doc",
+    "crates/cadcraft-constraints",
     "crates/gridcraft-pdf",
     "crates/aphrody-a2a",
     "crates/aphrody-agent-proto",
@@ -51,6 +54,9 @@ craft-ui = { path = "crates/craft-ui", version = "=1.4.4" }
 deckcraft-matroska = { path = "crates/deckcraft-matroska", version = "=1.4.4" }
 pdfcraft-compare = { path = "crates/pdfcraft-compare", version = "=1.4.4" }
 cadcraft-color = { path = "crates/cadcraft-color", version = "=1.4.4" }
+cadcraft-geom = { path = "crates/cadcraft-geom", version = "=1.4.4" }
+cadcraft-doc = { path = "crates/cadcraft-doc", version = "=1.4.4" }
+cadcraft-constraints = { path = "crates/cadcraft-constraints", version = "=1.4.4" }
 gridcraft-pdf = { path = "crates/gridcraft-pdf", version = "=1.4.4" }
 aphrody-a2a = { path = "crates/aphrody-a2a", version = "=1.4.4" }
 aphrody-agent-proto = { path = "crates/aphrody-agent-proto", version = "=1.4.4" }

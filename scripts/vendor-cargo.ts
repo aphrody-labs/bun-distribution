@@ -284,7 +284,7 @@ if (import.meta.main) {
     const config = await loadConfig();
     process.exitCode = await runNative(config, [process.execPath, import.meta.path, action, "--worker"], {
       root: repositoryRoot,
-      timeoutMs: 30000,
+      timeoutMs: action === "plan" ? 30_000 : 180_000,
     });
   }
 }
