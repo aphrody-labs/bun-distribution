@@ -26,6 +26,8 @@ const importedMembers: string[] = (product.workspaces ?? []).filter(
 );
 product.workspaces = [...new Set([...paths.map(path => path.replace(/\/package\.json$/, "")), ...importedMembers])];
 const roots = "src container factory infra packages apps/desktop scripts";
+product.scripts.check = "bun check -p tsconfig.json --threads=2 --no-pretty";
+product.scripts.n2b = "bun n2b";
 product.scripts.lint = `bun lint --deny-warnings ${roots}`;
 product.scripts.format = `bun fmt --write -c bun-format.json --ignore-pattern '**/*.html' ${roots}`;
 product.scripts["format:check"] = `bun fmt --check -c bun-format.json --ignore-pattern '**/*.html' ${roots}`;

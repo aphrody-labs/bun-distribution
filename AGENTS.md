@@ -15,7 +15,11 @@ work, repository history, first-party attribution, and every imported license
 and notice. Keep product documentation and collaboration in English.
 
 Use Bun 1.4.4 and native Bun APIs for JavaScript and TypeScript. Use the native
-quality commands in `package.json`; use Rust's serialized wrapper for Cargo.
+quality commands directly: `bun check`, `bun lint`, `bun fmt` and `bun n2b`.
+Do not route these commands through subprocess backends, `bunx`, standalone
+OXC tools, `tsgo`/`tsc`, ESLint, Prettier or external n2b. Fix native Bun
+failures in place instead of adding a fallback. Use Rust's serialized wrapper
+for Cargo.
 Do not start WSL on the workstation. Resolve paths from this checkout or
 explicit configuration, never a hard-coded workstation path.
 

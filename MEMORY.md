@@ -1,3 +1,12 @@
+## Native Bun quality commands — 2026-10-14
+
+Root type checking, lint, formatting, and migration now call Bun's native
+`bun check`, `bun lint`, `bun fmt`, and `bun n2b` commands directly. The
+TypeScript check, lint, and format gates pass on the root-owned paths. A direct
+workspace-wide `bun n2b` dry run scanned imported Rust/vendor trees, found five
+scanner errors and many existing findings, and made no changes; keep its
+existing baseline distinct from the passing quality gates.
+
 ## Root all-feature build qualified — 2026-10-14
 
 All 28 root Rust members compile offline with all features from the common

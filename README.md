@@ -12,8 +12,15 @@ Requires Bun 1.4.4, Git, and the native toolchains for the targets being built.
 
 ```sh
 bun run setup
-bun run check
+bun check -p tsconfig.json --threads=2 --no-pretty
+bun lint --deny-warnings src container factory infra packages apps/desktop scripts
+bun fmt --check -c bun-format.json --ignore-pattern '**/*.html' src container factory infra packages apps/desktop scripts
+bun n2b
 ```
+
+Type checking, lint, formatting and Node-to-Bun migration use Bun's native
+commands directly. They do not invoke external checker binaries or wrapper
+scripts.
 
 `setup` initializes the root locked submodules, installs the single Bun
 workspace from `bun.lock`, and selects the shared Cargo `target` and `install`

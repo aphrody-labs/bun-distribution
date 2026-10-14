@@ -9,6 +9,8 @@
 - [x] Provide one `bun run setup` entry point for recursive submodule setup and
       frozen Bun installation.
 - [x] Consolidate formatting configuration and root quality commands.
+- [x] Replace the quality subprocess runner with direct Bun check/lint/fmt
+      commands; expose native n2b without an external backend.
 - [x] Configure shared Cargo build and install destinations and ignore rules.
 - [x] Preserve first-party attribution and imported licenses/notices.
 

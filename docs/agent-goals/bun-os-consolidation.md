@@ -239,7 +239,6 @@ Inspect and consolidate existing owners such as:
 - `src/cli.ts`
 - `packages/bun-workspace`
 - `scripts/setup.ts`
-- `scripts/quality.ts`
 - `factory/`
 - `justfile`
 
