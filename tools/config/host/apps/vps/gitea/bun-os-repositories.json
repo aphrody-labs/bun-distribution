@@ -170,6 +170,11 @@
       "name": "bun-crate-cadcraft-constraints",
       "mirror": false,
       "private": true
+    },
+    {
+      "name": "bun-crate-cadcraft-dxf",
+      "mirror": false,
+      "private": true
     }
   ]
 }
