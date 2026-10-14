@@ -41,6 +41,24 @@
 
 ## Still required for full consolidation
 
+### Cargo source-owner inventory — 2026-10-14
+
+- [x] Rebuild the manifest inventory from the 41 declared pinned source owners at
+      `31d1dbddf81017c2899eec24e24639c727153cd4`: 857 Cargo packages, of which
+      556 are declared members across the owner workspaces, 25 have flat root
+      Git owners, and 531 remain in nested owners. All source checkouts were
+      available for inspection.
+- [ ] Resolve the 12 package-name collisions before flattening nested members;
+      collisions include already extracted Craft crates and repeated workspace
+      utility names such as `xtask` and `app`.
+- [ ] Migrate remaining package owners in batches: pin each source crate directly
+      under `crates/<package-name>`, preserve license/history, redirect consumers
+      to the root workspace dependency, then update Cargo metadata/lock and run
+      the serialized native target check for that batch.
+- [ ] Use `.local/crate-inventory.json` as the refreshed local inventory receipt;
+      its counts describe declared manifests and membership, not build or runtime
+      qualification.
+
 - [x] Integrate the four library SDK owners into flat root Bun packages;
       internal dependencies use `workspace:*`. Remove superseded artifact
       and video adapters after reference checks. Root quality passes on
