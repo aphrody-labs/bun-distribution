@@ -68,12 +68,22 @@
       locked offline metadata, crate check, and root Rust format pass.
 - [ ] Migrate the remaining 9 CADCraft workspace members.
 
+### CADCraft renderer and IO owners — 2026-10-14
+
+- [x] Split `cadcraft-render` and `cadcraft-io` from their CADCraft histories,
+      preserve source notices, provision private forge owners, and redirect the
+      consumer workspace to the flat root crates.
+- [x] Pass locked offline CADCraft metadata, `cadcraft-io` root check, and the
+      complete root Rust format check. Tests were not run.
+- [ ] Migrate the remaining 7 declared CADCraft workspace members; `xtask`
+      remains a separate name-collision decision.
+
 ### Cargo source-owner inventory — 2026-10-14
 
 - [x] Refresh the ignored inventory at root revision
-      `75deec911e79a08f212c236cb8b1db5fef3c85f9`: 47 pinned sources, 856 Cargo
-      packages, 555 declared workspace crates, 31 flat root Git owners, and
-      524 remaining declared crates. All source checkouts were available.
+      `d4327317c4ebfee97530f454960e59ccb8ba22fb`: 49 pinned sources, 856 Cargo
+      packages, 555 declared workspace crates, 33 flat root Git owners, and
+      522 remaining declared crates. All source checkouts were available.
 - [ ] Resolve the 11 remaining package-name collisions before flattening nested members;
       collisions include already extracted Craft crates and repeated workspace
       utility names such as `xtask` and `app`.

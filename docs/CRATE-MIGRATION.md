@@ -108,6 +108,30 @@ Locked offline metadata resolves 479 CADCraft packages. Root metadata resolves
 574 packages, `cargo check --locked --offline -p cadcraft-fonts` passes, and
 the root Rust format check passes. Tests were not run.
 
+## CADCraft renderer — 2026-10-14
+
+`cadcraft-render` is split from CADCraft revision
+`533857d44f193c709fe66a650605e53d5d0f8ed0`, prefix `crates/render`, at
+`21f71a0d7fbff82a6f6dae1885f09037b6a93433`; the split tree matches the source
+prefix. Its private forge `os` branch is `3bc0d98ea0ff384d8ab46f76ed7da2dc6cef39d7`, with exact MIT, Apache,
+NOTICE and attribution files. CADCraft consumer branch `os` redirects the
+dependency and removes the original 37 tracked files. Root locked offline
+metadata resolves 579 packages and `cargo check --locked --offline
+-p cadcraft-render` passes.
+
+## CADCraft IO — 2026-10-14
+
+`cadcraft-io` is split from CADCraft revision
+`79eba098b8754170835ff3538203cf8294e2e1ac`, prefix `crates/io`, at
+`e31d3f3aced049dd4c5a7a59f34e2b8714376ea8`; its tree matches the source
+prefix. The private forge `os` branch is `7d9497ecc8775b4c597ec2fe8ffa1b7fee9e1c9b`, with exact MIT, Apache,
+NOTICE and attribution files. CADCraft consumer branch `os` at
+`9b4966200834de9810e76f134596712eb3b70a72` redirects to the root owner and removes the original 65 tracked
+files. The IO owner uses the root `miniz_oxide` 0.9.1 and `quick-xml` 0.41.0
+pins. Locked offline metadata resolves 479 CADCraft packages; root metadata
+resolves 580, the IO crate check and complete root Rust format check pass.
+Tests were not run.
+
 The subsequent complete root build with all features succeeds for all 28
 members and supplies 28 hashed final artifacts. The revalidated vendor receipt
 now reports `compiled: true` and `buildProof: valid`; this remains scoped to

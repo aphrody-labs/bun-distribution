@@ -62,10 +62,25 @@ external. Locked offline CADCraft metadata resolves 479 packages; root
 metadata resolves 574, crate check and root format pass. Nine CADCraft members
 remain; tests and full product qualification are unclaimed.
 
-The refreshed inventory at root revision `75deec911e79a08f212c236cb8b1db5fef3c85f9`
-reports 47 pinned sources, 856 Cargo packages, 555 declared workspace crates,
-31 flat owners and 524 remaining declared crates. The new CADCraft owners have
-no package-name collisions.
+The renderer history is split from CADCraft `533857d44f193c709fe66a650605e53d5d0f8ed0`
+at `crates/render` (`21f71a0d7fbff82a6f6dae1885f09037b6a93433`). Its private
+forge `os` branch is `3bc0d98`; root locked offline metadata resolves 579
+packages and its native check passes. CADCraft branch `os` redirects its
+consumer and retires 37 tracked files.
+
+The IO history is split from CADCraft `79eba098b8754170835ff3538203cf8294e2e1ac`
+at `crates/io` (`e31d3f3aced049dd4c5a7a59f34e2b8714376ea8`); its private
+forge `os` branch is `7d9497ecc8775b4c597ec2fe8ffa1b7fee9e1c9b`. CADCraft `os` at
+`9b4966200834de9810e76f134596712eb3b70a72` redirects the
+consumer, removes 65 files, and passes locked offline metadata with 479
+packages. Root locked offline metadata resolves 580 packages, the IO crate
+check and root Rust format pass. Root pins `miniz_oxide` 0.9.1 and
+`quick-xml` 0.41.0 for this owner. Tests were not run.
+
+The refreshed inventory at root revision `d4327317c4ebfee97530f454960e59ccb8ba22fb`
+reports 49 pinned sources, 856 Cargo packages, 555 declared workspace crates,
+33 flat owners and 522 remaining declared crates. The CADCraft owners have no
+package-name collisions.
 
 Aphrody Infra 138026e3034e9342d581355476ba6e26820b0545 owns the shared Bun forge
 provisioner consumed by its Rust interface. Three named private repositories
