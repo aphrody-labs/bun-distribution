@@ -149,6 +149,19 @@
 - [ ] Requalify the standalone product compiler. The existing tests were moved
       but not run.
 
+## Soundcraft UI source owner — 2026-10-14
+
+- [x] Migrate the Soundcraft consumer from the upstream `storytold/craft-libs`
+      pin to the pinned `aphrody-labs/craft-libs` owner revision
+      `e9546e191dd62f2bc1d61eca45dbdc2f1b3c1d8e`. The native Windows serialized
+      `cargo check --locked -p soundcraft` passed against that source.
+- [x] Push Soundcraft consumer commit `7e68f4ec0e3f9510d743604309bb3c92081f9db7`
+      and Bun OS integration commit `e053c4e7b8bdfe286b4fd3337f8c8d467b1223e1`.
+      The root module pin records the fork revision and retains the upstream
+      baseline in `upstreamRevision`.
+- [ ] Audit and migrate other consumers of the same UI capability in a
+      separate batch; this pilot changes the Soundcraft consumer only.
+
 ## Product/server and offline sources — 2026-10-13
 
 - [x] Root Cargo owns twenty-five flat pinned crate submodules, shared direct
