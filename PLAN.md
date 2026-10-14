@@ -60,6 +60,14 @@
 - [x] Pass locked offline metadata, `cadcraft-dwg` check, and root Rust format.
 - [ ] Migrate the remaining 10 CADCraft workspace members.
 
+### CADCraft font owner — 2026-10-14
+
+- [x] Split `cadcraft-fonts`, preserve source history and licenses, publish the
+      private forge owner, and redirect CADCraft to the flat root crate.
+- [x] Align its `skrifa` features with source defaults and root version 0.48;
+      locked offline metadata, crate check, and root Rust format pass.
+- [ ] Migrate the remaining 9 CADCraft workspace members.
+
 ### Cargo source-owner inventory — 2026-10-14
 
 - [x] Refresh the ignored inventory at root revision

@@ -17,6 +17,7 @@ members = [
     "crates/cadcraft-constraints",
     "crates/cadcraft-dxf",
     "crates/cadcraft-dwg",
+    "crates/cadcraft-fonts",
     "crates/gridcraft-pdf",
     "crates/aphrody-a2a",
     "crates/aphrody-agent-proto",
@@ -61,6 +62,7 @@ cadcraft-doc = { path = "crates/cadcraft-doc", version = "=1.4.4" }
 cadcraft-constraints = { path = "crates/cadcraft-constraints", version = "=1.4.4" }
 cadcraft-dxf = { path = "crates/cadcraft-dxf", version = "=1.4.4" }
 cadcraft-dwg = { path = "crates/cadcraft-dwg", version = "=1.4.4" }
+cadcraft-fonts = { path = "crates/cadcraft-fonts", version = "=1.4.4" }
 gridcraft-pdf = { path = "crates/gridcraft-pdf", version = "=1.4.4" }
 aphrody-a2a = { path = "crates/aphrody-a2a", version = "=1.4.4" }
 aphrody-agent-proto = { path = "crates/aphrody-agent-proto", version = "=1.4.4" }
@@ -89,6 +91,7 @@ egui_kittest = { version = "=0.36.2", default-features = false }
 encoding_rs = "=0.8.35"
 getrandom = { version = "=0.4.3", default-features = false }
 futures = { version = "=0.3.34", default-features = false, features = ["std", "async-await"] }
+harfrust = "=0.12.0"
 image = { version = "=0.25.10", default-features = false }
 libc = { version = "=0.2.190", default-features = false }
 log = { version = "=0.4.34", default-features = false }
@@ -118,6 +121,7 @@ tokio = { version = "=1.53.2", default-features = false }
 tracing = { version = "=0.1.44", default-features = false }
 url = { version = "=2.5.8", default-features = false }
 uuid = { version = "=1.28.0", default-features = false }
+unicode-bidi = "=0.3.18"
 windows = { version = "=0.62.2", default-features = false }
 winsafe = { version = "=0.0.29", default-features = false }
 winprint = { git = "https://github.com/storytold/winprint.rs", rev = "5f80b9baf6b58937c401656634e42d33f00ddf49", default-features = false }

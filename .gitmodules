@@ -209,3 +209,7 @@
 	path = crates/cadcraft-dwg
 	url = bun-forge:aphrody-dev/bun-crate-cadcraft-dwg.git
 	branch = os
+[submodule "crates/cadcraft-fonts"]
+	path = crates/cadcraft-fonts
+	url = bun-forge:aphrody-dev/bun-crate-cadcraft-fonts.git
+	branch = os

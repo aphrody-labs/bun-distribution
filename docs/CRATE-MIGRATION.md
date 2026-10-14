@@ -90,6 +90,24 @@ Locked offline metadata resolves 479 CADCraft packages. Root locked offline
 metadata resolves 572 packages, `cargo check --locked --offline -p cadcraft-dwg`
 passes, and the complete root Rust format check passes. Tests were not run.
 
+## CADCraft font layout — 2026-10-14
+
+`cadcraft-fonts` is split from CADCraft source revision
+`88e15b5b11e3b844b6dfff97a0210daa3ae73051`, prefix `crates/fonts`. The split
+commit is `ddb2e5b0db66a8fc6e5be24331a905b7f758d233`; its tree matches the
+source prefix. The private forge `os` branch is at
+`ae107d5ba70f0b2ac10dadbdb7d5ba1a18acb4c1`, retaining the source license
+import at `680006dcda26f88fb84cd6ec15250c5176801ddf` and workspace integration
+at `c00471e3872302529d57f698de386044ce10da5f`. CADCraft consumer branch `os` is at
+`533857d44f193c709fe66a650605e53d5d0f8ed0`; it redirects the dependency and
+retires the original 12 tracked files. The crate uses root `skrifa 0.48.0`
+with the source default `std` and `autohint_shaping` features, plus exact
+`harfrust 0.12.0` and `unicode-bidi 0.3.18` pins. Its optional font input stays
+external; with no `CRAFT_FONTS_DIR`, the build emits an empty font catalog.
+Locked offline metadata resolves 479 CADCraft packages. Root metadata resolves
+574 packages, `cargo check --locked --offline -p cadcraft-fonts` passes, and
+the root Rust format check passes. Tests were not run.
+
 The subsequent complete root build with all features succeeds for all 28
 members and supplies 28 hashed final artifacts. The revalidated vendor receipt
 now reports `compiled: true` and `buildProof: valid`; this remains scoped to

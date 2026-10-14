@@ -52,6 +52,16 @@ metadata resolves 479 CADCraft packages; root metadata resolves 572 packages,
 the DWG crate check and root format pass. Ten CADCraft workspace members
 remain; tests and full product qualification are unclaimed.
 
+The font-layout source history is split from CADCraft
+`88e15b5b11e3b844b6dfff97a0210daa3ae73051` at `crates/fonts`
+(`ddb2e5b0db66a8fc6e5be24331a905b7f758d233`). Its private forge branch is
+`ae107d5ba70f0b2ac10dadbdb7d5ba1a18acb4c1`; the consumer branch is
+`533857d44f193c709fe66a650605e53d5d0f8ed0`. It uses root `skrifa 0.48.0`
+with `std` and `autohint_shaping`; the optional font asset input remains
+external. Locked offline CADCraft metadata resolves 479 packages; root
+metadata resolves 574, crate check and root format pass. Nine CADCraft members
+remain; tests and full product qualification are unclaimed.
+
 The refreshed inventory at root revision `dceda086f7a0b5cd0ffeb0f8696f723a9ae34d8c`
 reports 46 pinned sources, 856 Cargo packages, 555 declared workspace crates,
 30 flat owners and 525 remaining declared crates. The new CADCraft owners have
