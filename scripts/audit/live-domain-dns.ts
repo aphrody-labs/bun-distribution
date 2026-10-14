@@ -170,23 +170,33 @@ const delegation = is(sets.cloudflare)
 console.log(`delegation (system resolver): ${delegation}`);
 
 const checks = await Promise.all(
-  Object.entries(sets).map(async ([label, hosts]) => {
-    const servers = await serversOf(hosts);
-    const diffsOf = await Promise.all(
-      [...groups].map(async ([key, rs]) => {
-        const [name = "", type = ""] = key.split("\u0000");
-        const proxied = rs.every((record) => record.proxied);
-        const want = proxied ? "proxied DNS answer" : expectedOf(rs);
-        const got = await Promise.all(servers.map((s) => query(s, name, type)));
-        const bad = got.filter((g) => (proxied ? g.startsWith("ERR:") : g !== want));
-        return bad.length
-          ? `DIFF ${label} ${type} ${name} want=${want} got=${bad.join(" | ")}`
-          : null;
-      }),
-    );
-    console.log(`${label}: ${groups.size} record sets checked on ${servers.length} servers`);
-    return diffsOf.filter((d): d is string => d !== null);
-  }),
+  Object.entries(sets)
+    .filter(
+      ([, hosts]) =>
+        hosts.toSorted().join(",") !== declared.dns.nameServers.toSorted().join(",") ||
+        !sets.registrar,
+    )
+    .map(async ([label, hosts]) => {
+      const servers = await serversOf(hosts);
+      const diffsOf = await Promise.all(
+        [...groups].map(async ([key, rs]) => {
+          const [name = "", type = ""] = key.split("\u0000");
+          const proxied = rs.every((record) => record.proxied);
+          const want = proxied ? "proxied DNS answer" : expectedOf(rs);
+          const got = await Promise.all(
+            servers.map((s) =>
+              proxied ? query(s, name, type === "CNAME" ? "A" : type) : query(s, name, type),
+            ),
+          );
+          const bad = got.filter((g) => (proxied ? g.startsWith("ERR:") : g !== want));
+          return bad.length
+            ? `DIFF ${label} ${type} ${name} want=${want} got=${bad.join(" | ")}`
+            : null;
+        }),
+      );
+      console.log(`${label}: ${groups.size} record sets checked on ${servers.length} servers`);
+      return diffsOf.filter((d): d is string => d !== null);
+    }),
 );
 const diffLines = checks.flat();
 for (const line of diffLines) console.log(line);
