@@ -53,7 +53,7 @@
       "upstream": "storytold/artcraft",
       "fork": "aphrody-labs/artcraft",
       "branch": "os",
-      "revision": "f9fdb62380157e963fd0804e6dc68ceb9592843b",
+      "revision": "c59fbda7e6fbd84d6b4f3720a0cca9492c645f45",
       "upstreamRevision": "d4e4ac69bbd93d237eaf5d0260bc6a5ff3a5e373",
       "license": "MIT OR Apache-2.0",
       "kind": "library",

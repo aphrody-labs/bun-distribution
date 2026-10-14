@@ -86,3 +86,8 @@ final removal. Root `node_modules`, `build/apps`, server staging, binaries,
 The source preparation ran no retirement. Until a fresh receipt passes these gates,
 the mode reports `ready: false`; neither source implementation nor prior compilation
 is a claim that one physical install has already been achieved.
+
+The default audit has a 30 second budget. Aligned retirement has a bounded
+180 second budget because it repeatedly rehashes the complete frontend artifact
+tree and proves all consumers. The initial 30 second application attempt timed
+out in build proof; all three nested install roots remained present afterward.

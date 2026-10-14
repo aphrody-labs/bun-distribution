@@ -4,7 +4,8 @@ import { lstat, readdir, realpath, rm } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { runProcess } from "@aphrody/bun-workspace/process";
 const root = resolve(import.meta.dir, "..");
-const deadline = performance.now() + 30_000;
+const qualificationBudgetMs = Bun.argv.includes("--retire-aligned") ? 180_000 : 30_000;
+const deadline = performance.now() + qualificationBudgetMs;
 const args = Bun.argv.slice(2);
 const planOnly = args.includes("--plan");
 const retireAligned = args.includes("--retire-aligned");
@@ -29,7 +30,8 @@ function assertWithin(path: string): void {
     throw new Error("Workspace path is outside the product root.");
 }
 async function regularPath(path: string): Promise<boolean> {
-  if (performance.now() > deadline) throw new Error("Nested install qualification exceeded its 30 second budget.");
+  if (performance.now() > deadline)
+    throw new Error(`Nested install qualification exceeded its ${qualificationBudgetMs / 1000} second budget.`);
   assertWithin(path);
   let current = root;
   for (const part of ["", ...relative(root, resolve(path)).split(sep).filter(Boolean)]) {
@@ -169,7 +171,8 @@ async function git(argv: string[], cwd = root): Promise<string> {
 async function hashFile(path: string): Promise<string> {
   const digest = new Bun.CryptoHasher("sha256");
   for await (const chunk of Bun.file(path).stream()) {
-    if (performance.now() > deadline) throw new Error("Retirement proof exceeded its 30 second budget.");
+    if (performance.now() > deadline)
+      throw new Error(`Retirement proof exceeded its ${qualificationBudgetMs / 1000} second budget.`);
     digest.update(chunk);
   }
   return digest.digest("hex");
@@ -321,6 +324,8 @@ async function qualifyAligned(member: string): Promise<{ links: string[]; snapsh
   }
   const links: string[] = [];
   const metadata: string[] = [];
+  const binNames = new Set<string>();
+  let binDirectory: string | undefined;
   let packages = 0;
   async function walk(path: string): Promise<void> {
     assertWithin(path);
@@ -345,7 +350,7 @@ async function qualifyAligned(member: string): Promise<{ links: string[]; snapsh
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name);
     if (entry.name === ".bin") {
-      await walk(path);
+      binDirectory = path;
       continue;
     }
     if (entry.name.startsWith(".")) throw new Error("Unknown old install store metadata refused.");
@@ -368,9 +373,18 @@ async function qualifyAligned(member: string): Promise<{ links: string[]; snapsh
         !Bun.semver.satisfies(identity.version, "*")
       )
         throw new Error("Old package identity invalid.");
+      if (typeof identity.bin === "string") binNames.add(pkg.name.split("/").at(-1)!);
+      else for (const name of Object.keys(identity.bin ?? {})) binNames.add(name);
       await walk(pkg.path);
       packages++;
     }
+  }
+  if (binDirectory) {
+    for (const entry of await readdir(binDirectory)) {
+      const name = entry.replace(/\.(?:bunx|exe|cmd|ps1)$/, "");
+      if (!binNames.has(name)) throw new Error("Unknown old command shim refused.");
+    }
+    await walk(binDirectory);
   }
   metadata.sort();
   return { links: links.sort(), snapshot: Bun.CryptoHasher.hash("sha256", metadata.join("\n"), "hex"), packages };
