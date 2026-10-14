@@ -97,3 +97,22 @@ de qualification restent dans [PLAN.md](../../../PLAN.md) et
 concurrents restent distingués des correctifs qualifiés dans
 [le reçu d'audit](agy-audit-2026-10-09.md). Le CLI Windows installé a passé
 127 tests Rust, Clippy strict et les checks des consommateurs CLI/FFI.
+
+## État vérifié du poste — 2026-10-14
+
+- Les checkouts actifs Aphrody, Bun OS, Material et APT sont sous `C:\src`.
+  Le checkout Bun est exposé par `C:\src\bun`, jonction vers `C:\bun` ;
+  gardez cette jonction tant que des sessions ChatGPT ouvrent le dépôt physique.
+- La racine `C:\src\aphrody` appartient à `APHRODY\aphro`. Les répertoires
+  descendants échantillonnés `.git`, `crates`, `packages`, `scripts`, `tools`
+  et `var` appartiennent encore à `BUILTIN\Administrateurs`. Le jeton courant
+  ne peut pas réattribuer ces objets sans les privilèges Windows de prise de
+  possession et de restauration ; ne prétendez pas que le changement est fait.
+- Les sept répertoires de runs sont dans
+  `C:\src\aphrody\var\runs-legacy-20261014`. `C:\aphrody\var` est vide et
+  conservé. Les variables utilisateur `APHRODY_ROOT`,
+  `APHRODY_MONOREPO_ROOT` et `APHRODY_PY_ROOT` résolvent sous `C:\src`.
+- Aucun processus autonome `aphrody.exe` ou `aphrody-mcp` n'a été trouvé.
+  Les MCP Bun, les builds du fork, les processus Shenron et WireGuard restent
+  des propriétaires ou usages distincts ; ne les arrêtez pas comme processus
+  Aphrody.
