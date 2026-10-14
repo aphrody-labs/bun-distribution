@@ -319,12 +319,13 @@ aphrody-dev <contact@aphrody.com>. Concurrent submodule work remained unstaged.
 
 ## App hostname ownership
 
-- `packages/workspace/src/capabilities.ts` is the canonical mapping from each
+- `packages/bun-workspace/src/capabilities.ts` is the canonical mapping from each
   library capability to `app-<capability>.aphrody.app`, with the library name
-  retained as an alias. Bun OS consumes this mapping when planning all 14
-  library application builds; those duplicate hostname values were removed
-  from its `infra/apps.json`. APT and the Bun Libraries desktop keep their own
-  product-specific hosts. Existing Cloudflare records and routes were not changed.
+  retained as an alias. The legacy `packages/workspace` capability export is a
+  compatibility facade. Bun OS consumes the canonical mapping when planning
+  all 14 library application builds; duplicate hostnames were removed from
+  `infra/apps.json`. APT and the Bun Libraries desktop keep product-specific
+  hosts. Existing Cloudflare records and routes were not changed.
 
 ## Cloudflare inventory reconciliation
 
