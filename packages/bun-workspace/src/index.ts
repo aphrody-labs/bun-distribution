@@ -896,13 +896,31 @@ export async function inspectCargoWorkspace(
   if (!product.version || manifest.workspace?.package?.version !== product.version)
     throw new Error("Bun and Cargo product versions differ.");
   const bunPackageNames: string[] = [];
+  const bunManifests = new Set<string>();
   for (const member of product.workspaces ?? []) {
-    const entry = (await Bun.file(checkoutPath(root, `${member}/package.json`)).json()) as {
+    const pattern = member.replaceAll("\\", "/").replace(/\/$/, "");
+    checkoutPath(root, `${pattern}/package.json`);
+    if (pattern.includes("**")) throw new Error("Recursive Bun workspace patterns are not product members.");
+    let matched = false;
+    for await (const path of new Bun.Glob(`${pattern}/package.json`).scan({
+      cwd: root,
+      onlyFiles: true,
+      followSymlinks: false,
+    })) {
+      bunManifests.add(checkoutPath(root, path));
+      matched = true;
+    }
+    if (!matched) throw new Error(`Bun workspace pattern has no package manifests: ${member}`);
+  }
+  for (const path of [...bunManifests].sort()) {
+    const entry = (await Bun.file(path).json()) as {
       name?: string;
       version?: string;
     };
     if (!entry.name || entry.version !== product.version)
-      throw new Error(`Bun workspace package version differs: ${member}`);
+      throw new Error(`Bun workspace package version differs: ${relative(root, path)}`);
+    if (bunPackageNames.includes(entry.name))
+      throw new Error(`Duplicate Bun workspace package identity: ${entry.name}`);
     bunPackageNames.push(entry.name);
   }
   const result = await serializedCargo(

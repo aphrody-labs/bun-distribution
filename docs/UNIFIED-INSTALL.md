@@ -91,3 +91,10 @@ The default audit has a 30 second budget. Aligned retirement has a bounded
 180 second budget because it repeatedly rehashes the complete frontend artifact
 tree and proves all consumers. The initial 30 second application attempt timed
 out in build proof; all three nested install roots remained present afterward.
+
+The subsequent aligned retirement passed for all three directories. A full frozen
+reinstallation recreated only the identical desktop file dependency; the root setup
+finalizer removed it. After correcting workspace glob expansion in the Cargo/Bun
+inspector, `bun run setup` completed and qualified 71 Bun members and 25 Cargo
+members. The final read-only plan reported `nestedInstalls: []` and `ready: true`.
+Root types/lint/format and the 1,479-file frontend app typecheck passed.

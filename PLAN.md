@@ -130,10 +130,12 @@
       warnings; complete formatting and legacy test migration remain pending.
 - [x] Preserve imported ArtCraft workspace patterns when regenerating flat
       first-party manifests. Expand all 71 root members in the install audit.
-- [ ] Align ArtCraft dependency versions before retiring its nested installs:
-      manifests and root lock now agree on `signals-react` 3.12.0, but the
-      app's obsolete 2.3.0 install remains until the committed build and source
-      gates qualify its retirement. The default strict audit refuses removal.
+- [x] Align ArtCraft dependency versions and retire its obsolete nested installs
+      after checking committed source pins, the root lock and compiled artifacts.
+      The full setup passes: 71 Bun members, 25 Cargo members, and no member
+      `node_modules` after the shared install finalizer. Reinstallation recreates
+      the redundant desktop file dependency; the setup finalizer removes that
+      proven identical copy. Root metadata expands workspace globs correctly.
 
 ## Shared workspace owner — 2026-10-14
 
