@@ -16,9 +16,9 @@ exception is the ArtCraft brand in `docs/brand/`: ArtCraft trademarks, not open 
 Generated-in-code assets are original and have no file to list:
 - the UI icon set (`crates/ui-egui/src/icons.rs`);
 - the "CADCraft Stroke" single-stroke drafting font (`crates/fonts/src/stroke.rs`);
-- the standard linetype and hatch-pattern libraries (`crates/doc/src/library.rs`; industry-common
+- the standard linetype and hatch-pattern libraries (`../../crates/cadcraft-doc/src/library.rs`; industry-common
   names, our own dash/spacing values);
-- the colour index palette, generated from its structure (`crates/color/src/lib.rs`);
+- the colour index palette, generated from its structure (`../../crates/cadcraft-color/src/lib.rs`);
 - the sample drawings (`crates/engine/src/sample.rs`).
 
 | Asset | Author | Source | Licence | Notes |

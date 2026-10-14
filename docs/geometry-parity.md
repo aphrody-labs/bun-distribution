@@ -4,8 +4,8 @@
 
 CAD users trust numbers: a trimmed endpoint, an offset, an intersection or an area is either right
 to the last displayed digit or the tool is unusable for production drawings. This document
-audits CADCraft's geometry kernel (`crates/geom`, the curve code in `crates/engine/src/cmd`,
-`crates/constraints`) curve by curve against what AutoCAD users rely on. Snaps and tracking are
+audits CADCraft's geometry kernel (`../../crates/cadcraft-geom`, the curve code in `crates/engine/src/cmd`,
+`../../crates/cadcraft-constraints`) curve by curve against what AutoCAD users rely on. Snaps and tracking are
 in [ui-parity.md](ui-parity.md); dimension and hatch behaviour in [gaps.md](gaps.md).
 
 **Headline (estimated): geometry ≈ 40% (weighted below: 41%), of which the constraint solver ≈ 50%.** Everything built
@@ -114,7 +114,7 @@ lines are scanline families clipped against the tessellated loops (`render/src/h
 
 ## Constraint solver (≈ 50%)
 
-| Item | AutoCAD | CADCraft (`crates/constraints`) |
+| Item | AutoCAD | CADCraft (`../../crates/cadcraft-constraints`) |
 |---|---|---|
 | Geometric constraints (12) | coincident, collinear, concentric, fix, parallel, perpendicular, horizontal, vertical, tangent, smooth (G2), symmetric, equal | all 12; Smooth is G2 (common point, tangent and curvature, `curves.rs`) between a spline and a line, arc, elliptical arc, polyline segment or spline; between two non-spline curves it stays tangency |
 | Dimensional constraints | linear, horizontal, vertical, aligned, angular, radial, diameter; dynamic and annotational; reference | distance (aligned/horizontal/vertical), angular, radius, diameter; parameters and expressions (`expr.rs`) |

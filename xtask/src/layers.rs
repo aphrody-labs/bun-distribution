@@ -317,7 +317,7 @@ mod tests {
         let meta: Value = serde_json::from_str(
             r#"{"packages":[
                 {"name":"cadcraft-doc","dependencies":[
-                    {"name":"cadcraft-geom","kind":null,"path":"/x/crates/geom"},
+                    {"name":"cadcraft-geom","kind":null,"path":"/x/crates/cadcraft-geom"},
                     {"name":"serde","kind":null},
                     {"name":"proptest","kind":"dev"}]},
                 {"name":"cadcraft-geom","dependencies":[]}

@@ -12,12 +12,12 @@ repository = "https://github.com/storytold/cadcraft"
 
 [workspace.dependencies]
 # internal
-cadcraft-geom = { path = "crates/geom" }
+cadcraft-geom = { path = "../../crates/cadcraft-geom", version = "=1.4.4" }
 cadcraft-dxf = { path = "crates/dxf" }
 cadcraft-dwg = { path = "crates/dwg" }
-cadcraft-color = { path = "crates/color" }
-cadcraft-doc = { path = "crates/doc" }
-cadcraft-constraints = { path = "crates/constraints" }
+cadcraft-color = { path = "../../crates/cadcraft-color", version = "=1.4.4" }
+cadcraft-doc = { path = "../../crates/cadcraft-doc", version = "=1.4.4" }
+cadcraft-constraints = { path = "../../crates/cadcraft-constraints", version = "=1.4.4" }
 cadcraft-fonts = { path = "crates/fonts" }
 cadcraft-render = { path = "crates/render" }
 cadcraft-io = { path = "crates/io" }
