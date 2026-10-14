@@ -195,6 +195,11 @@
       "name": "bun-crate-cadcraft-io",
       "mirror": false,
       "private": true
+    },
+    {
+      "name": "bun-crate-cadcraft-engine",
+      "mirror": false,
+      "private": true
     }
   ]
 }
