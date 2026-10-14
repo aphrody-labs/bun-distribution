@@ -66,7 +66,7 @@ Bun OS assembles distribution inputs, images and package conversions; it does
 not own a second APT implementation. Package/source conversion and generated
 installers must preserve the upstream package identity and license metadata.
 Material owns the transferred M3 Rust components and tokens. Bun OS pins Bun
-`1fa01eb7e746b1007d22de6ae7e889f251e207ed` from `origin/main` and Material
+`f0f2891ea743ce4d32596b0b32670fbb81155842` from `origin/main` and Material
 `e858361dfd2597b067eea56d471ff4caab7442f8` from `origin/os`; both source trees
 pin M3 to `393d397037dace7a13eb2bee29e43a3a67d176f8`. The source lock includes
 the M3 themes gitlink in both complete source graphs. Native M3 builds remain
