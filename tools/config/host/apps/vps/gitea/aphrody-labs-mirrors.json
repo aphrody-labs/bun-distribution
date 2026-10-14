@@ -45139,15 +45139,15 @@
       "targetName": "bun-distribution",
       "admission": "wave-14",
       "sourceQualification": {
-        "sha": "4a737b4ab442c059466669d98914e79baeb1c070",
+        "sha": "f1ad8a5336d3e0d0aa63d4d18af51cb0439be744",
         "refs": [
           "refs/heads/os"
         ],
         "refShas": {
-          "refs/heads/os": "4a737b4ab442c059466669d98914e79baeb1c070"
+          "refs/heads/os": "f1ad8a5336d3e0d0aa63d4d18af51cb0439be744"
         },
         "lfsApplicable": false,
-        "verifiedAt": "2026-10-13T23:27:50Z"
+        "verifiedAt": "2026-10-14T00:04:12Z"
       },
       "lfsApplicable": false
     },
@@ -45362,9 +45362,10 @@
       "branch": "os",
       "private": false,
       "actionsEnabled": true,
-      "sourceSnapshotQualifiedSha": "4a737b4ab442c059466669d98914e79baeb1c070",
-      "latestSourceObservedSha": "4a737b4ab442c059466669d98914e79baeb1c070",
-      "targetObservedSha": "4a737b4ab442c059466669d98914e79baeb1c070",
+      "sourceSnapshotQualifiedSha": "f1ad8a5336d3e0d0aa63d4d18af51cb0439be744",
+      "latestSourceObservedSha": "f4e72088c1e4cf0255cbd0ec9956ac64fb33ed3b",
+      "targetObservedSha": "f1ad8a5336d3e0d0aa63d4d18af51cb0439be744",
+      "latestSourceDeltaPending": "f4e72088c1e4cf0255cbd0ec9956ac64fb33ed3b: newer source commit observed after the qualified snapshot; target was not resynchronized",
       "sourceRefs": [
         "refs/heads/os"
       ],
@@ -45376,9 +45377,9 @@
       "defaultBranch": "os",
       "sourceUrl": "https://github.com/aphrody-labs/bun-distribution.git",
       "lfsStatus": "not rechecked at current refs; prior qualified snapshot f4765b9 had no filter=lfs; repository catalog lfsApplicable=false",
-      "status": "refs-and-visibility-qualified",
+      "status": "snapshot-qualified-latest-delta-pending",
       "anonymousStatus": 200,
-      "lastChecked": "2026-10-13T23:27:50Z",
+      "lastChecked": "2026-10-14T00:04:12Z",
       "publicCutover": true
     },
     "storage": {
@@ -46645,7 +46646,7 @@
         "private": 34
       },
       "archived": 5,
-      "qualificationScope": "Counts are repository-level recorded source snapshots and pending qualifications; the other qualified repositories were not refreshed simultaneously in this pass."
+      "qualificationScope": "Counts are repository-level recorded source snapshots and pending qualifications; the other qualified repositories were not refreshed simultaneously in this pass. bun-distribution remains snapshot-qualified at f1ad8a5336d3e0d0aa63d4d18af51cb0439be744; newer source f4e72088c is pending and is not included as a live-aligned claim."
     },
     "existingMirrorsRequalification": {
       "verifiedAt": "2026-10-13T22:20:41Z",
