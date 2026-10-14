@@ -62,9 +62,9 @@ external. Locked offline CADCraft metadata resolves 479 packages; root
 metadata resolves 574, crate check and root format pass. Nine CADCraft members
 remain; tests and full product qualification are unclaimed.
 
-The refreshed inventory at root revision `dceda086f7a0b5cd0ffeb0f8696f723a9ae34d8c`
-reports 46 pinned sources, 856 Cargo packages, 555 declared workspace crates,
-30 flat owners and 525 remaining declared crates. The new CADCraft owners have
+The refreshed inventory at root revision `75deec911e79a08f212c236cb8b1db5fef3c85f9`
+reports 47 pinned sources, 856 Cargo packages, 555 declared workspace crates,
+31 flat owners and 524 remaining declared crates. The new CADCraft owners have
 no package-name collisions.
 
 Aphrody Infra 138026e3034e9342d581355476ba6e26820b0545 owns the shared Bun forge
