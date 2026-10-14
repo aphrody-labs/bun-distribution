@@ -56,4 +56,12 @@ describe("declared UI factory allocation", () => {
       qualifyUiAllocation({ ...factory, ui: undefined } as unknown as UiFactory, capacity),
     ).toThrow();
   });
+  test("refuses missing capacity fields and an unknown native budget", () => {
+    expect(() => qualifyUiAllocation(factory, {} as typeof capacity)).toThrow(
+      "Unknown factory capacity",
+    );
+    expect(() => qualifyUiAllocation({ ...factory, rust: { maxJobs: NaN } }, capacity)).toThrow(
+      "Native allocation is unknown",
+    );
+  });
 });

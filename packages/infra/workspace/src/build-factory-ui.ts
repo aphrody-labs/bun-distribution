@@ -70,7 +70,13 @@ export function qualifyUiAllocation(factory: UiFactory, capacity: UiCapacity): U
     ui.timeoutSeconds > 7200
   )
     throw Error("UI allocation exceeds its bounded reuse class");
-  for (const value of Object.values(capacity))
+  if (
+    !Number.isSafeInteger(factory.rust?.maxJobs) ||
+    factory.rust.maxJobs < 1 ||
+    factory.rust.maxJobs > 6
+  )
+    throw Error("Native allocation is unknown");
+  for (const value of [capacity.availableMemoryGiB, capacity.availableDiskGiB, capacity.cores])
     if (!Number.isFinite(value) || value < 0) throw Error("Unknown factory capacity");
   if (
     capacity.availableMemoryGiB < ui.memoryGiB + ui.reserveMemoryGiB ||
