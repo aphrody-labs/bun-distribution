@@ -51,6 +51,7 @@ test("public fallback admits catalog video and audio paths without broadening pr
     "/dragonball-super/317db92a510fb5ceb09df63a579fc53de75e9d17b0c34fa28c18f07369a68218.webp",
     "/publications/archive-dragon-ball/index.json",
     "/publications/archive-dragon-ball/objects/8103ad36038a74ccb9d3b60a93cbdaa712f5463afe584acd041a98cf18fa861e.md",
+    "/publications/manga-catalogue/objects/66de6ae9569c8cab8284d64cf7f0a9d1ba41515b8c7a19a7e303612e00c3a584.json",
     "/wasm/shenron_re_bg.1abeadb164523a44.wasm",
     "/manifest.webmanifest",
   ])
@@ -63,6 +64,9 @@ test("public fallback admits catalog video and audio paths without broadening pr
     "/sfx/official/nimbus.mp3/secret",
     "/publications/archive-dragon-ball/private/index.json",
     "/publications/archive-dragon-ball/objects/short.md",
+    "/publications/archive-dragon-ball/objects/66de6ae9569c8cab8284d64cf7f0a9d1ba41515b8c7a19a7e303612e00c3a584.json",
+    "/publications/manga-catalogue/objects/short.json",
+    "/publications/manga-catalogue/private/66de6ae9569c8cab8284d64cf7f0a9d1ba41515b8c7a19a7e303612e00c3a584.json",
     "/dragonball-super/private.webp",
     "/wasm/other.wasm",
   ])

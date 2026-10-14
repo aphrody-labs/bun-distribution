@@ -9,7 +9,7 @@ export function publicCdnFallback(name: string, upstream: string): string {
     throw Error("Qualified loopback upstream required");
   return `location ${name} {
   if ($request_method !~ "^(GET|HEAD)$") { return 405; }
-  if ($uri !~* "^/(?:assets/.+|(?:wiki|dbz|adn|media)/.+\\.(?:avif|gif|jpe?g|png|svg|webp|mp4|webm|mp3|m4a|ogg|wav)|sfx/.+\\.(?:mp3|m4a|ogg|wav)|dragonball-super/[a-f0-9]{64}\\.(?:avif|gif|jpe?g|png|svg|webp|ico)|publications/[a-z0-9-]+/(?:index\\.json|objects/[a-f0-9]{64}\\.(?:md|png|jpe?g|webp|avif|svg))|wasm/shenron_re_bg\\.[a-f0-9]{16}\\.wasm|manifest\\.webmanifest)$") { return 404; }
+  if ($uri !~* "^/(?:assets/.+|(?:wiki|dbz|adn|media)/.+\\.(?:avif|gif|jpe?g|png|svg|webp|mp4|webm|mp3|m4a|ogg|wav)|sfx/.+\\.(?:mp3|m4a|ogg|wav)|dragonball-super/[a-f0-9]{64}\\.(?:avif|gif|jpe?g|png|svg|webp|ico)|publications/manga-catalogue/objects/[a-f0-9]{64}\\.json|publications/[a-z0-9-]+/(?:index\\.json|objects/[a-f0-9]{64}\\.(?:md|png|jpe?g|webp|avif|svg))|wasm/shenron_re_bg\\.[a-f0-9]{16}\\.wasm|manifest\\.webmanifest)$") { return 404; }
   if ($uri ~* "(?:^|/)(?:api|_objects|_migration|private|manifests|cookies|node_modules)(?:/|$)") { return 404; }
   if ($uri ~* "\\.(?:sql|sqlite|db|env|jsonl|pem|key|toml|ya?ml|ini|log|bak)$") { return 404; }
   proxy_pass ${upstream};
