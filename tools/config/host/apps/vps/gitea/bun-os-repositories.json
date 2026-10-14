@@ -205,6 +205,11 @@
       "name": "bun-crate-cadcraft-mcp",
       "mirror": false,
       "private": true
+    },
+    {
+      "name": "bun-crate-cadcraft-ui-egui",
+      "mirror": false,
+      "private": true
     }
   ]
 }
