@@ -98,3 +98,13 @@ finalizer removed it. After correcting workspace glob expansion in the Cargo/Bun
 inspector, `bun run setup` completed and qualified 71 Bun members and 25 Cargo
 members. The final read-only plan reported `nestedInstalls: []` and `ready: true`.
 Root types/lint/format and the 1,479-file frontend app typecheck passed.
+
+The post-cleanup build in `build/frontend/artcraft-integrated` passes with all
+dependencies resolved from the shared installation: 33 compiled artifacts,
+256 files, 43,923,921 bytes, tree SHA256
+`4f9252e19479d2d9678a9c3d3a863c62fb568013b178027f5351a699cd4b7d5c`.
+Its receipt pins root `28f3a5cf739d12afe063d32578399d269bce4402`, ArtCraft
+`c59fbda7e6fbd84d6b4f3720a0cca9492c645f45` and the current lockfile.
+Browser execution and deployment remain false. Automatic approval review rejected
+retirement of the earlier generated frontend output directories (`blocked by
+policy`); those outputs are preserved and no alternate removal was attempted.
