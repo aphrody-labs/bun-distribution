@@ -154,7 +154,7 @@ aphrody-web-index = { path = "../bun/packages/web/rust/crates/web-index", versio
 aphrody-web-service = { path = "../bun/packages/web/rust/crates/web-service", version = "1.4.4", features = [] }
 aphrody-site = { path = "../bun/packages/web/rust/crates/site", version = "1.4.4" }
 aphrody-x = { path = "../bun/packages/web/rust/crates/x", version = "1.4.4", features = [] }
-aphrody-winclean = { path = "crates/os/kernel/comps/winclean", version = "1.4.4", features = [] }
+aphrody-winclean = { package = "bun-windows-winclean", path = "../bun/packages/bun-windows-winclean", version = "1.4.4", features = [] }
 aphrody-yolo = { path = "crates/infra/yolo", version = "1.4.4" }
 arc-swap = "1.9.2"
 assert_cmd = { version = "2", features = [] }

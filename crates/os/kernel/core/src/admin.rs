@@ -59,7 +59,18 @@ impl SystemSubsystem for AdminSubsystem {
 }
 
 fn call_rust(tool: &str, arguments: Value) -> Result<Value, SubsystemError> {
-    aphrody_winclean::dispatch::call_rust(tool, arguments)
+    aphrody_winclean::dispatch::call_rust(tool, arguments).map_err(|error| match error {
+        aphrody_winclean::SubsystemError::UnknownTool(message) => {
+            SubsystemError::UnknownTool(message)
+        },
+        aphrody_winclean::SubsystemError::InvalidArguments(message) => {
+            SubsystemError::InvalidArguments(message)
+        },
+        aphrody_winclean::SubsystemError::Failed(message) => SubsystemError::Failed(message),
+        aphrody_winclean::SubsystemError::Unavailable(message) => {
+            SubsystemError::Unavailable(message)
+        },
+    })
 }
 
 #[cfg(test)]

@@ -662,9 +662,9 @@ dependencies = [
  "aphrody-toolcall",
  "aphrody-web-service",
  "aphrody-web-source",
- "aphrody-winclean",
  "async-trait",
  "base64 0.23.1",
+ "bun-windows-winclean",
  "libc",
  "obscura-net",
  "pretty_assertions",
@@ -706,7 +706,7 @@ name = "aphrody-app"
 version = "1.4.4"
 dependencies = [
  "aphrody-app-server",
- "aphrody-capture",
+ "aphrody-capture 1.4.4",
  "aphrody-diagnostics",
  "aphrody-drive",
  "aphrody-fsindex",
@@ -879,6 +879,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-capture"
+version = "1.4.4"
+source = "git+https://github.com/aphrody-labs/aphrody.git?rev=631434e1aa92291f417a09ee19c41056527402b4#631434e1aa92291f417a09ee19c41056527402b4"
+dependencies = [
+ "image",
+ "thiserror 2.0.21",
+ "windows 0.62.2",
+]
+
+[[package]]
 name = "aphrody-certificates"
 version = "1.4.4"
 dependencies = [
@@ -982,11 +992,11 @@ dependencies = [
  "aphrody-web-frames",
  "aphrody-web-service",
  "aphrody-web-source",
- "aphrody-winclean",
  "aphrody-x",
  "aphrody-yolo",
  "async-trait",
- "bun-re",
+ "bun-re 1.0.0-canary",
+ "bun-windows-winclean",
  "bytes",
  "chrono",
  "clap",
@@ -1518,8 +1528,8 @@ dependencies = [
  "aphrody-subsystem",
  "aphrody-toolchains",
  "aphrody-web-source",
- "aphrody-winclean",
  "async-trait",
+ "bun-windows-winclean",
  "chrono",
  "clap",
  "gix",
@@ -1637,7 +1647,7 @@ dependencies = [
  "aphrody-a2a-server",
  "aphrody-agent-home",
  "aphrody-backend",
- "aphrody-capture",
+ "aphrody-capture 1.4.4",
  "aphrody-config",
  "aphrody-firefly",
  "aphrody-gemini-runtime",
@@ -1671,11 +1681,11 @@ dependencies = [
  "aphrody-web-extract",
  "aphrody-web-service",
  "aphrody-web-source",
- "aphrody-winclean",
  "aphrody-x",
  "axum",
  "base64 0.23.1",
- "bun-re",
+ "bun-re 1.0.0-canary",
+ "bun-windows-winclean",
  "chrono",
  "clap",
  "criterion",
@@ -2202,7 +2212,7 @@ name = "aphrody-remote-desktop"
 version = "1.4.4"
 dependencies = [
  "anyhow",
- "aphrody-capture",
+ "aphrody-capture 1.4.4",
  "aphrody-secrets",
  "aphrody-wireguard",
  "axum",
@@ -3228,7 +3238,7 @@ dependencies = [
 name = "aphrody-vision"
 version = "1.4.4"
 dependencies = [
- "aphrody-capture",
+ "aphrody-capture 1.4.4",
  "aphrody-models",
  "aphrody-ocr-core",
  "aphrody-ocr-vlm",
@@ -3392,35 +3402,6 @@ dependencies = [
 [[package]]
 name = "aphrody-web-source"
 version = "1.4.4"
-
-[[package]]
-name = "aphrody-winclean"
-version = "1.4.4"
-dependencies = [
- "aphrody-capture",
- "aphrody-fsindex",
- "aphrody-proc",
- "aphrody-subsystem",
- "aphrody-web-source",
- "base64 0.23.1",
- "bun-re",
- "image",
- "ort",
- "pollster 1.0.1",
- "reqwest 0.13.5",
- "rusqlite",
- "rustls",
- "serde",
- "serde_json",
- "sha2 0.11.0",
- "sysinfo 0.39.6",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "uiautomation",
- "vigem-rust",
- "windows 0.62.2",
-]
 
 [[package]]
 name = "aphrody-wireguard"
@@ -4965,6 +4946,53 @@ dependencies = [
  "walkdir",
  "yara-x",
  "zerocopy",
+]
+
+[[package]]
+name = "bun-re"
+version = "1.4.4"
+dependencies = [
+ "aes 0.9.3",
+ "crc32fast",
+ "flate2",
+ "goblin 0.10.7",
+ "hex",
+ "iced-x86",
+ "md-5 0.11.0",
+ "memchr",
+ "regex",
+ "serde",
+ "serde_json",
+ "sha1 0.11.0",
+ "sha2 0.11.0",
+ "thiserror 2.0.21",
+ "walkdir",
+ "zerocopy",
+]
+
+[[package]]
+name = "bun-windows-winclean"
+version = "1.4.4"
+dependencies = [
+ "aphrody-capture 1.4.4 (git+https://github.com/aphrody-labs/aphrody.git?rev=631434e1aa92291f417a09ee19c41056527402b4)",
+ "aphrody-proc",
+ "base64 0.23.1",
+ "bun-re 1.4.4",
+ "image",
+ "ort",
+ "pollster 1.0.1",
+ "reqwest 0.13.5",
+ "rusqlite",
+ "rustls",
+ "serde",
+ "serde_json",
+ "sha2 0.11.0",
+ "sysinfo 0.39.6",
+ "tempfile",
+ "thiserror 2.0.21",
+ "uiautomation",
+ "vigem-rust",
+ "windows 0.62.2",
 ]
 
 [[package]]
