@@ -94,10 +94,17 @@ is `f270867625e262cab5872bed061e0e007dbb113b`; CADCraft consumer branch
 passes locked offline metadata. Root metadata resolves 585 packages, the MCP
 check and Rust format pass; an unused IO edge was removed. Tests were not run.
 
-The refreshed inventory at root revision `1fd0e2b4301d499e04aaef9fa33c6c6d9fd11e90`
-reports 51 pinned sources, 856 Cargo packages, 555 declared workspace crates,
-35 flat owners and 520 remaining declared crates. The CADCraft owners have no
-package-name collisions.
+The refreshed inventory at root revision `c7f42accc9f712dc5a46978f3295ddbaaa3ff778`
+reports 52 pinned sources, 856 Cargo packages, 555 declared workspace crates,
+36 flat owners and 519 remaining declared crates. The 12 migrated CADCraft
+library owners have no package-name collisions; four app/tool members remain.
+
+The UI crate history was split from CADCraft `1451a5592bb581fddeb332091cd2136e8a32515a`
+at `crates/ui-egui` (`a1f85460e2dea27021c90d7f129c4d4c048a76ce`) and published
+as private owner `e069e194f6a0adce7e5fcdd968ef0cf8f5973656`. The CADCraft consumer
+pin is `7966d9d6758f805985092ec8f68c53bbe35b727d`. Locked offline metadata
+resolves 470 packages; the root check and format pass. UI check has a remaining
+recursion-depth warning; app builds and tests remain unqualified.
 
 Aphrody Infra 138026e3034e9342d581355476ba6e26820b0545 owns the shared Bun forge
 provisioner consumed by its Rust interface. Three named private repositories

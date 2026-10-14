@@ -158,6 +158,23 @@ attribution files. CADCraft consumer branch `os` at
 removes the original 8 tracked files. An unused direct `cadcraft-io` edge was
 removed. Locked offline CADCraft metadata resolves 479 packages; root metadata
 resolves 585, the MCP crate check and complete root Rust format check pass.
+
+## CADCraft egui UI — 2026-10-14
+
+`cadcraft-ui-egui` is split from CADCraft revision
+`1451a5592bb581fddeb332091cd2136e8a32515a`, prefix `crates/ui-egui`, with
+history-preserving split `a1f85460e2dea27021c90d7f129c4d4c048a76ce`. Its tree
+matches the pinned source prefix. The private forge owner is at
+`e069e194f6a0adce7e5fcdd968ef0cf8f5973656`; CADCraft `os` redirects the
+consumer at `7966d9d6758f805985092ec8f68c53bbe35b727d`. The consumer workspace
+removes the old nested crate and narrows its member glob to apps and `xtask`.
+The build script reads contributor data from the pinned CADCraft source
+submodule, avoiding a second copy.
+
+Locked offline CADCraft metadata resolves 470 packages and four declared
+members. Root metadata resolves 593 packages; the UI crate check and complete
+root Rust format check pass. The check reports a recursion-depth warning in
+`gpu.rs`; tests and full application builds were not run.
 Tests were not run.
 
 The subsequent complete root build with all features succeeds for all 28

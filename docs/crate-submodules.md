@@ -10,12 +10,13 @@ toolchain, `build/rust`, `target`, `node_modules`, and `install`. Use `just setu
 `just check`, and `just test`. Setup initializes direct submodules without
 recursively fetching unrelated upstream asset repositories.
 
-The root currently contains 35 flat crate owners, including the eleven CADCraft
+The root currently contains 36 flat crate owners, including the twelve CADCraft
 crates `cadcraft-color`, `cadcraft-geom`, `cadcraft-doc`,
 `cadcraft-constraints`, `cadcraft-dxf`, `cadcraft-dwg`, `cadcraft-fonts`,
-`cadcraft-render`, `cadcraft-io`, `cadcraft-engine` and `cadcraft-mcp`.
+`cadcraft-render`, `cadcraft-io`, `cadcraft-engine`, `cadcraft-mcp` and
+`cadcraft-ui-egui`.
 Every crate tracks its forge `os` branch. The CADCraft consumer workspace
-resolves its migrated edges to these root owners in version 1.4.4; 5 other
+resolves its migrated edges to these root owners in version 1.4.4; 4 other
 members remain to migrate. Source histories, licenses and notices remain with
 each component. Licensed font assets remain in `fonts/`.
 

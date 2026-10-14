@@ -97,12 +97,22 @@
 - [ ] Migrate the remaining 5 declared CADCraft workspace members; `xtask`
       remains a separate name-collision decision.
 
+### CADCraft UI owner — 2026-10-14
+
+- [x] Split `cadcraft-ui-egui` with its source history and license notices,
+      redirect the CADCraft consumer, and preserve contributor metadata from
+      the pinned source submodule.
+- [x] Pass locked offline CADCraft metadata, the root crate check and root Rust
+      formatting. A recursion-depth warning in `gpu.rs` remains.
+- [ ] Migrate the remaining 4 declared CADCraft workspace members; `xtask`
+      remains a separate name-collision decision.
+
 ### Cargo source-owner inventory — 2026-10-14
 
 - [x] Refresh the ignored inventory at root revision
-      `1fd0e2b4301d499e04aaef9fa33c6c6d9fd11e90`: 51 pinned sources, 856 Cargo
-      packages, 555 declared workspace crates, 35 flat root Git owners, and
-      520 remaining declared crates. All source checkouts were available.
+      `c7f42accc9f712dc5a46978f3295ddbaaa3ff778`: 52 pinned sources, 856 Cargo
+      packages, 555 declared workspace crates, 36 flat root Git owners, and
+      519 remaining declared crates. All source checkouts were available.
 - [ ] Resolve the 11 remaining package-name collisions before flattening nested members;
       collisions include already extracted Craft crates and repeated workspace
       utility names such as `xtask` and `app`.
