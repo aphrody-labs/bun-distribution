@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-//! WinClean catalog re-exported over `aphrody-mcp` (feature `winclean`).
+//! Bun Windows WinClean SDK catalog re-exported over `aphrody-mcp` (feature `winclean`).
 //!
 //! The 166 tools of the in-process `aphrody-winclean` crate are advertised next to the
 //! built-in tools and
-//! dispatched in-process through [`aphrody_winclean`]: no `Winclean.Mcp.exe`
+//! dispatched in-process through [`aphrody_winclean`]: no second MCP process
 //! child, no second stdio server. The tool list comes from the catalog embedded
-//! in `aphrody-winclean`, so `tools/list` never loads the DLL; the first
-//! `tools/call` does. A built-in aphrody tool always wins a name clash.
+//! and no duplicated Aphrody implementation. A built-in Aphrody tool always
+//! wins a name clash.
 
 use rmcp::model::{CallToolRequestParams, CallToolResult, ContentBlock, Tool};
 
@@ -78,8 +78,7 @@ mod tests {
 
     #[cfg(windows)]
     #[tokio::test]
-    async fn call_round_trips_through_the_dll() {
-        // Skip on hosts where the native runtime is not installed.
+    async fn call_round_trips_through_the_bun_sdk() {
         if aphrody_winclean::Winclean::load().is_err() {
             return;
         }
@@ -88,7 +87,7 @@ mod tests {
                 .unwrap();
         let result = call(&request).await;
         assert_ne!(result.is_error, Some(true), "{result:?}");
-        let text = serde_json::to_string(&result.content).unwrap();
-        assert!(text.contains("buildNumber"));
+        let structured = result.structured_content.expect("structured WinClean result");
+        assert!(structured.get("BuildNumber").is_some(), "{structured}");
     }
 }
