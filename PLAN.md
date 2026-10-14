@@ -63,9 +63,9 @@
 ### Cargo source-owner inventory — 2026-10-14
 
 - [x] Refresh the ignored inventory at root revision
-      `69d7a14d884d320353c1500d1038e0e5a17d9a4d`: 45 pinned sources, 856 Cargo
-      packages, 555 declared workspace crates, 29 flat root Git owners, and
-      526 remaining declared crates. All source checkouts were available.
+      `dceda086f7a0b5cd0ffeb0f8696f723a9ae34d8c`: 46 pinned sources, 856 Cargo
+      packages, 555 declared workspace crates, 30 flat root Git owners, and
+      525 remaining declared crates. All source checkouts were available.
 - [ ] Resolve the 11 remaining package-name collisions before flattening nested members;
       collisions include already extracted Craft crates and repeated workspace
       utility names such as `xtask` and `app`.

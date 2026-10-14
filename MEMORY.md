@@ -52,10 +52,10 @@ metadata resolves 479 CADCraft packages; root metadata resolves 572 packages,
 the DWG crate check and root format pass. Ten CADCraft workspace members
 remain; tests and full product qualification are unclaimed.
 
-The refreshed inventory at root revision `69d7a14d884d320353c1500d1038e0e5a17d9a4d`
-reports 45 pinned sources, 856 Cargo packages, 555 declared workspace crates,
-29 flat owners and 526 remaining declared crates. The new `cadcraft-dxf` owner
-has no package-name collision.
+The refreshed inventory at root revision `dceda086f7a0b5cd0ffeb0f8696f723a9ae34d8c`
+reports 46 pinned sources, 856 Cargo packages, 555 declared workspace crates,
+30 flat owners and 525 remaining declared crates. The new CADCraft owners have
+no package-name collisions.
 
 Aphrody Infra 138026e3034e9342d581355476ba6e26820b0545 owns the shared Bun forge
 provisioner consumed by its Rust interface. Three named private repositories
