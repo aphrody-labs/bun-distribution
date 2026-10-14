@@ -354,9 +354,11 @@ async function build(): Promise<void> {
       success?: boolean;
       manifest_path?: string;
       filenames?: string[];
+      target?: { kind?: string[] };
     };
     if (message.reason === "build-finished" && message.success === true) finished = true;
     if (message.reason !== "compiler-artifact" || !message.manifest_path || !Array.isArray(message.filenames)) continue;
+    if (message.target?.kind?.includes("custom-build")) continue;
     const member = before.members.find(
       member => resolve(message.manifest_path!) === join(repositoryRoot, member.path, "Cargo.toml"),
     );

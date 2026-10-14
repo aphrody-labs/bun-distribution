@@ -57,8 +57,9 @@ Plan reads and hashes sources within 30 seconds. Status reports `missing`,
 runs Cargo directly under the native mutex with a 300-second deadline, and
 requires exit 0, Cargo's successful `build-finished` message and hashed artifacts
 for every root member. It builds offline with the lockfile and all features.
-Cargo also emits `.rmeta` paths beneath the configured `build/rust` intermediate
-directory. These metadata files are excluded from the receipt; each member must
+Cargo also emits build-script executables and `.rmeta` paths beneath the
+configured `build/rust` intermediate directory. These intermediate outputs are
+excluded from the receipt; each member must
 still supply a final artifact beneath `target`, whose bytes are hashed. Other
 artifact locations remain rejected.
 Capture phases each have a separate 30-second deadline. Run this command as a
