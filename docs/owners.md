@@ -23,7 +23,7 @@ and each pinned source repository govern subsequent changes.
 | Shared Rust primitives and native libraries                                                        | Their pinned Craft source owners                                                                                 | Bun OS library engines                                                                |
 | Licensed font sources                                                                              | Pinned Craft font owner                                                                                          | Bun OS shared asset manifest and native engines                                       |
 | App payload extraction and manifest verification                                                   | Bun OS `packages/bun-artifacts`                                                                                  | Standalone Bun apps                                                                   |
-| Distribution and app-build admission | Bun OS distribution and factory owners; lock admission in `infra/app-build.ts` | Runtime, APT and product artifacts; shared lock in `infra/apps.json` |
+| Distribution and app-build admission                                                               | Bun OS distribution and factory owners; lock admission in `infra/app-build.ts`                                   | Runtime, APT and product artifacts; shared lock in `infra/apps.json`                  |
 | Package and source conversion                                                                      | Bun OS `packages/package-converter` / `src/apt.ts`                                                               | Winget and Bun package outputs; source package identity and license metadata          |
 | Debian APT implementation                                                                          | Official APT fork, pinned by Bun OS                                                                              | Bun OS distro build and conversion adapter; no second APT implementation in consumers |
 | Hosts, services, boot and deployment authority                                                     | Aphrody Infra in `aphrody`                                                                                       | Bun OS deployment adapter and controller                                              |
@@ -65,9 +65,22 @@ slot remains serialized by owner coordination.
 Bun OS assembles distribution inputs, images and package conversions; it does
 not own a second APT implementation. Package/source conversion and generated
 installers must preserve the upstream package identity and license metadata.
-Material owns the transferred M3 Rust components and tokens. The nested Bun
-M3 source submodule is a remaining consolidation item: audit consumers and source
-history before removing it.
+Material owns the transferred M3 Rust components and tokens. Bun's pinned
+runtime source still contains a nested M3 gitlink, so Bun OS preserves that
+gitlink in complete source exports while keeping the native M3 build routed
+through the Material checkout. The gitlink must not be removed from an export
+without a corresponding Bun source migration.
+
+The current pins are not revision-aligned: Bun OS locks Bun at
+`c209b95eb0dcc964745f4684f127abb83cbe2697`, whose locked M3 gitlink is
+`fdf56a5622888fbc51d8b870fbf4dbdb26c6798c`; its Material pin
+`e858361dfd2597b067eea56d471ff4caab7442f8` points M3 to
+`393d397037dace7a13eb2bee29e43a3a67d176f8`; current Material `origin/main`
+`68dd86618368efe9f55a23928eb06ac45bf75863` points M3 to
+`b6e01a8df4da20314757c5505b224f553c68483d`. Refresh these source pins as one
+provenance-checked batch after validating the selected runtime and Material
+consumer revisions. Until then, distribution source export remains complete
+and identifies each owner's independent revision.
 
 Aphrody Infra declares and actuates desired DNS, host, route and app lifecycle
 state. Cloudflare's live records/R2 and application health require direct
