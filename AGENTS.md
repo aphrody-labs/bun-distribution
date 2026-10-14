@@ -1,5 +1,14 @@
 # Bun OS workspace
 
+## Bun OS consolidation goal
+
+Before workspace, Cargo/Bun ownership, build-factory, packaging, cache, target,
+qualification or release changes, read
+[`docs/agent-goals/bun-os-consolidation.md`](docs/agent-goals/bun-os-consolidation.md).
+It is the active owner execution goal for consolidating this repository as the
+canonical Bun OS distribution workspace. Repository evidence and newer explicit
+owner directives still take precedence.
+
 This checkout is the unified Aphrody/Bun product workspace. Read `GOAL.md`,
 `PLAN.md`, `MEMORY.md` and `START-HERE.md` before changes. Preserve concurrent
 work, repository history, first-party attribution, and every imported license
