@@ -17,9 +17,14 @@ web/source consumers explicitly run `git submodule update --init --recursive
 Material Git URL and exact revision as their other Material dependencies.
 
 Use native Windows on the owner workstation; never start WSL. Resolve checkout
-paths from configuration or the selected workspace. Use native Bun check, lint,
-fmt and n2b commands. Run heavy Cargo commands through the configured serialized
-native owner with explicit time bounds. Do not run tests unless requested.
+paths from configuration or the selected workspace. Type checks, lint, format,
+and Node-to-Bun migration must run through the Bun runtime's native commands:
+`bun check`, `bun lint`, `bun fmt`, and `bun n2b`, invoked directly. Do not route
+these gates through subprocess backends, `bunx`, standalone Oxc binaries,
+`tsc`/`tsgo`, ESLint, Prettier, or external n2b. Package scripts and CI must
+preserve this contract. Run heavy Cargo commands through the configured
+serialized native owner with explicit time bounds. Do not run tests unless
+requested.
 
 Retain licenses and exact source pins. Keep provider authentication, cookies,
 raw sessions and other protected data in their isolated stores. Stage only

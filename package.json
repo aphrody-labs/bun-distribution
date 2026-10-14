@@ -3,11 +3,16 @@
   "version": "1.4.4",
   "private": true,
   "description": "Monorepo indépendant de composants, tokens, thèmes et outils Material Design 3.",
-  "workspaces": ["packages/*"],
-  "packageManager": "bun@1.4.4",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "check": "bun check --noEmit packages/*/src/**/*.ts",
+    "check": "bun check --noEmit --lib ESNext,DOM packages/libm3/src/wasm.ts",
+    "lint": "bun lint --deny-warnings packages/libm3/src",
+    "fmt": "bun fmt --check packages/libm3/src",
+    "n2b": "bun n2b --quiet",
     "test": "bun test packages/*/test",
     "list": "bun scripts/list-packages.ts"
-  }
+  },
+  "packageManager": "bun@1.4.4"
 }

@@ -52,8 +52,16 @@ git submodule update --init --recursive --checkout
 ```powershell
 bun install
 bun run list
-bun test
+bun check
+bun lint
+bun fmt
+bun n2b
 ```
+
+These four quality and migration commands use Bun's native implementations
+directly. Do not add subprocess-backed linters or formatters, `bunx`, standalone
+Oxc tools, TypeScript compiler binaries, ESLint, Prettier, or an external n2b
+backend to workspace scripts or CI.
 
 Cargo application roots must patch the registry token dependency to the same
 Material Git URL and exact revision used by `libm3` or `aphrody-m3`. Patches in
