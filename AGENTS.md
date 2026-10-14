@@ -3,8 +3,7 @@
 This checkout is the unified Aphrody/Bun product workspace. Read `GOAL.md`,
 `PLAN.md`, `MEMORY.md` and `START-HERE.md` before changes. Preserve concurrent
 work, repository history, first-party attribution, and every imported license
-and notice. Product documentation is in English; replies follow the owner's
-language.
+and notice. Keep product documentation and collaboration in English.
 
 Use Bun 1.4.4 and native Bun APIs for JavaScript and TypeScript. Use the native
 quality commands in `package.json`; use Rust's serialized wrapper for Cargo.

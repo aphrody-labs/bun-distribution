@@ -811,10 +811,83 @@ async function compileWorker(planPath: string, output: string) {
   await Bun.write(join(output, "receipt.json"), JSON.stringify(receipt, null, 2) + "\n");
   return receipt;
 }
+
+async function buildLibraryAppUnderLocks(
+  configPath: string,
+  appId: string,
+  target: AppTarget,
+  requestedOutput?: string,
+) {
+  const config = (await readInventory(configPath)) as AppInventory;
+  if (!config.build?.sharedHeavyLock || !config.build.lockKind)
+    throw new Error("Configure the existing host heavy lock owner");
+  const timeoutSeconds = Math.min(Math.max(config.build.timeoutSeconds ?? 600, 2_580), 43_200);
+  if (!Number.isSafeInteger(timeoutSeconds)) throw new Error("Invalid finite native app deadline");
+  const output = resolve(
+    requestedOutput ?? join(packageRoot, "build/apps", appId, new Date().toISOString().replace(/[:.]/g, "")),
+  );
+  const factoryLockPath = join(packageRoot, ".factory.lock");
+  const factoryLock = await open(factoryLockPath, "wx");
+  const token = JSON.stringify({ pid: process.pid, operation: "native-app-build", appId, target, output });
+  await factoryLock.writeFile(token + "\n");
+  let heavy: Awaited<ReturnType<typeof open>> | undefined;
+  let heavyPath: string | undefined;
+  try {
+    try {
+      await lstat(output);
+      throw new Error("Choose a fresh app output directory");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+    await mkdir(join(output, "logs"), { recursive: true });
+    const args = [
+      process.execPath,
+      import.meta.path,
+      "_library",
+      appId,
+      "--config",
+      resolve(configPath),
+      "--target",
+      target,
+      "--out",
+      output,
+    ];
+    const lock = resolve(dirname(configPath), config.build.sharedHeavyLock);
+    if (config.build.lockKind === "exclusive-file") {
+      heavyPath = lock;
+      heavy = await open(lock, "wx");
+      await heavy.writeFile(process.pid + "\nnative-app-build " + appId + "\n" + hostname() + "\n");
+    } else {
+      if (process.platform !== "linux" || !Bun.which("flock"))
+        throw new Error("Selected host has no native flock owner");
+      args.unshift("flock", "-n", lock);
+    }
+    const result = await runProcess(args, packageRoot, {
+      env: { ...Bun.env },
+      stdin: "ignore",
+      stdout: "capture",
+      stderr: "capture",
+      timeoutMs: timeoutSeconds * 1000,
+      maxOutputBytes: 128 * 1024 * 1024,
+    });
+    await Bun.write(join(output, "logs/build.stdout"), result.stdout);
+    await Bun.write(join(output, "logs/build.stderr"), result.stderr);
+    if (result.code !== 0) throw new Error("Bounded native app build failed; inspect its owned logs");
+    return Bun.file(join(output, "receipt.json")).json();
+  } finally {
+    if (heavy) {
+      await heavy.close();
+      if ((await Bun.file(heavyPath!).text()).startsWith(process.pid + "\n")) await unlink(heavyPath!);
+    }
+    await factoryLock.close();
+    if ((await Bun.file(factoryLockPath).text()).trim() === token) await unlink(factoryLockPath);
+  }
+}
+
 export async function buildApp(configPath: string, appId: string, target: AppTarget, requestedOutput?: string) {
   const config = (await readInventory(configPath)) as AppInventory,
     selected = config.apps.find(app => app.id === appId);
-  if (selected?.kind === "native-cli") return buildLibraryApp(configPath, appId, target, requestedOutput);
+  if (selected?.kind === "native-cli") return buildLibraryAppUnderLocks(configPath, appId, target, requestedOutput);
   const plan = await planApp(configPath, appId, target);
   if (plan.status !== "prepared") throw new Error(plan.reasons.join("; "));
   const output = resolve(
@@ -992,6 +1065,18 @@ async function main() {
   }
   if (action === "_compile") {
     await compileWorker(resolve(values["--plan"]!), resolve(values["--out"]!));
+    return;
+  }
+  if (action === "_library") {
+    if (!values["--config"] || !values["--target"] || !values["--out"] || positional.length !== 1)
+      throw new Error("Native app worker needs an explicit app, config, target and output");
+    const result = await buildLibraryApp(
+      resolve(values["--config"]),
+      positional[0]!,
+      values["--target"] as AppTarget,
+      resolve(values["--out"]),
+    );
+    console.log(JSON.stringify(result));
     return;
   }
   if (!values["--config"] || positional.length !== 1) throw new Error("Explicit config and one app required");
