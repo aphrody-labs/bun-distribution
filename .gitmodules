@@ -233,3 +233,7 @@
 	path = crates/cadcraft-ui-egui
 	url = bun-forge:aphrody-dev/bun-crate-cadcraft-ui-egui.git
 	branch = os
+[submodule "crates/cadcraft-cli"]
+	path = crates/cadcraft-cli
+	url = bun-forge:aphrody-dev/bun-crate-cadcraft-cli.git
+	branch = os

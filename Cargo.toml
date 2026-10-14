@@ -11,6 +11,7 @@ members = [
     "crates/craft-fonts-tests",
     "crates/deckcraft-matroska",
     "crates/pdfcraft-compare",
+    "crates/cadcraft-cli",
     "crates/cadcraft-color",
     "crates/cadcraft-geom",
     "crates/cadcraft-doc",
