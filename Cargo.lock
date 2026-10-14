@@ -657,7 +657,7 @@ dependencies = [
 
 [[package]]
 name = "cadcraft-io"
-version = "0.6.2"
+version = "1.4.4"
 dependencies = [
  "cadcraft-color",
  "cadcraft-doc",
@@ -666,7 +666,7 @@ dependencies = [
  "cadcraft-fonts",
  "cadcraft-geom",
  "cadcraft-render",
- "miniz_oxide 0.8.9",
+ "miniz_oxide 0.9.1",
  "quick-xml",
  "serde",
  "serde_json",
