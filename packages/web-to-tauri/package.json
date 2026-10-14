@@ -34,7 +34,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "typecheck": "tsgo -p tsconfig.json --noEmit",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
     "test": "bun test"
   },
   "dependencies": {

@@ -38,8 +38,8 @@
   },
   "scripts": {
     "build": "tsup && tsc -p tsconfig.build.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "oxlint src test",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
+    "lint": "bun lint src test",
     "test": "bun test test/",
     "demo": "bun run src/cli.ts",
     "generate:expressive": "bun scripts/generate-expressive.ts"

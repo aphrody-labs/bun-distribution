@@ -13,7 +13,7 @@
   },
   "scripts": {
     "test": "bun run scripts/run-fixtures.ts && bun test ./test",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "bun check -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "jscodeshift": "^17.3.0"

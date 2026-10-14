@@ -28,8 +28,8 @@
   },
   "scripts": {
     "test": "bun test test/",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "oxlint src test"
+    "typecheck": "bun check -p tsconfig.json --noEmit",
+    "lint": "bun lint src test"
   },
   "dependencies": {
     "@aphrody/m3-tokens": "workspace:*",

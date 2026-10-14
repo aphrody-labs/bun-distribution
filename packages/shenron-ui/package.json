@@ -41,6 +41,47 @@
     "./*": "./src/components/*.tsx",
     "./use-focus-trap": "./src/reader/use-focus-trap.ts"
   },
+  "scripts": {
+    "type-check": "bun check --noEmit",
+    "lint": "bun lint",
+    "test": "bun test",
+    "tokens": "bun scripts/generate-tokens.ts",
+    "tokens:check": "bun scripts/generate-tokens.ts --check",
+    "css:equivalence": "bun scripts/check-css-equivalence.ts",
+    "assets:check": "bun scripts/sync-assets.ts --check",
+    "assets:sync": "bun scripts/sync-assets.ts",
+    "build:check": "bun scripts/production-check.ts",
+    "portability:check": "bun scripts/check-portability.ts",
+    "typecheck": "bun check -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@aphrody/m3-reader": "workspace:*",
+    "@base-ui/react": "catalog:",
+    "@tanstack/react-query": "catalog:",
+    "class-variance-authority": "catalog:",
+    "clsx": "catalog:",
+    "lucide-react": "catalog:",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "tailwind-merge": "catalog:"
+  },
+  "devDependencies": {
+    "@shenron/config": "workspace:*",
+    "@tailwindcss/postcss": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "postcss": "8.5.28",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tailwindcss": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  },
   "shenron": {
     "runtime": {
       ".": "pure",
@@ -77,46 +118,5 @@
       "./*": "react",
       "./use-focus-trap": "react"
     }
-  },
-  "scripts": {
-    "type-check": "tsc --noEmit",
-    "lint": "oxlint -c ../.oxlintrc.json",
-    "test": "bun test",
-    "tokens": "bun scripts/generate-tokens.ts",
-    "tokens:check": "bun scripts/generate-tokens.ts --check",
-    "css:equivalence": "bun scripts/check-css-equivalence.ts",
-    "assets:check": "bun scripts/sync-assets.ts --check",
-    "assets:sync": "bun scripts/sync-assets.ts",
-    "build:check": "bun scripts/production-check.ts",
-    "portability:check": "bun scripts/check-portability.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
-  },
-  "dependencies": {
-    "@base-ui/react": "catalog:",
-    "@tanstack/react-query": "catalog:",
-    "class-variance-authority": "catalog:",
-    "clsx": "catalog:",
-    "lucide-react": "catalog:",
-    "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1",
-    "tailwind-merge": "catalog:",
-    "@aphrody/m3-reader": "workspace:*"
-  },
-  "peerDependencies": {
-    "react": "catalog:",
-    "react-dom": "catalog:"
-  },
-  "devDependencies": {
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "postcss": "8.5.28",
-    "@tailwindcss/postcss": "catalog:",
-    "tailwindcss": "catalog:",
-    "@shenron/config": "workspace:*"
-  },
-  "engines": {
-    "bun": ">=1.4.2"
   }
 }

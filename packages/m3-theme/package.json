@@ -1,7 +1,7 @@
 {
   "name": "@aphrody/m3-theme",
-  "private": true,
   "version": "3.3.3",
+  "private": true,
   "description": "Canonical Material 3 fusion sheets: tokens.css (M3 + shadcn/ui + Tailwind v4 aliases), tailwind.css (every M3 system token as a Tailwind v4 utility) and spaceui.css (the SpaceUI themes rebuilt as M3 dynamic schemes, with SpaceUI compatibility aliases).",
   "keywords": [
     "design-tokens",
@@ -59,12 +59,12 @@
     "access": "public"
   },
   "scripts": {
-    "generate": "bun run generate.ts && oxfmt tokens.css tailwind.css spaceui.css",
+    "generate": "bun run generate.ts && bun fmt --write tokens.css tailwind.css spaceui.css",
     "build": "bun ../../scripts/build.ts build --only $npm_package_name",
-    "lint": "oxlint",
-    "fmt": "oxfmt .",
-    "typecheck": "tsc --noEmit",
-    "typecheck:fast": "tsc --noEmit",
+    "lint": "bun lint",
+    "fmt": "bun fmt .",
+    "typecheck": "bun check --noEmit",
+    "typecheck:fast": "bun check --noEmit",
     "generate:fusion": "bun run generate",
     "test": "bun test",
     "fixture:mcu": "bun run scripts/mcu-fixture.ts"

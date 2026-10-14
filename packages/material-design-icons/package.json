@@ -12,7 +12,7 @@
   },
   "scripts": {
     "test": "bun test",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
     "icons:ico": "bun scripts/svg-to-ico.ts",
     "icons:sync": "bun scripts/sync-catalogue.ts",
     "icons:check": "bun scripts/sync-catalogue.ts --check",

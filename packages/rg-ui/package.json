@@ -21,11 +21,11 @@
     "registry": "https://registry.npmjs.org"
   },
   "scripts": {
-    "lint": "oxlint src",
-    "type-check": "bun --bun tsc --noEmit",
+    "lint": "bun lint src",
+    "type-check": "bun check --noEmit",
     "test": "bun test test",
     "tokens": "bun scripts/generer-tokens.ts",
-    "typecheck": "bun --bun tsc --noEmit"
+    "typecheck": "bun check --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "catalog:",

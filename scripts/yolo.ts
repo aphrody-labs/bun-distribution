@@ -12,7 +12,7 @@
 //                               docs/reports/PERF.md; `bench:check` fails past docs/reports/perf-budget.json + 10%
 //   install:theme               packages/m3-os-themes CLI (dry-run unless --apply)
 // yolo's web|desktop|tauri commands act on $YOLO_HOME/apps/web, so YOLO_HOME is pointed at this repository.
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
@@ -40,15 +40,6 @@ const EXCLUDED = [
   "@aphrody/nie-ui",
 ];
 const ALL = ["--filter", "*", ...EXCLUDED.flatMap((name) => ["--filter", `!${name}`])];
-
-/** Lint scope: m3 packages (not the nested app submodules), apps and scripts. */
-const lintPaths = (): string[] => [
-  ...readdirSync(join(REPO, "packages"))
-    .filter((d) => d.startsWith("m3"))
-    .map((d) => `packages/${d}`),
-  "apps",
-  "scripts",
-];
 
 const bun = (cwd: string, ...args: string[]): Step => ({ cmd: ["bun", ...args], cwd });
 
@@ -85,9 +76,9 @@ export function plan(task: string, rest: string[] = []): Step[] {
         bun(REPO, "scripts/check-links.ts"),
       ];
     case "lint":
-      return [yolo("version", "--json"), { cmd: ["oxlint", ...lintPaths()], cwd: REPO }];
+      return [bun(REPO, "lint", "packages", "apps", "scripts")];
     case "typecheck":
-      return [yolo("version", "--json"), bun(REPO, "scripts/build.ts", "typecheck")];
+      return [bun(REPO, "check", "packages", "apps", "scripts")];
     case "bench":
       return [bun(REPO, "scripts/bench/run.ts", ...rest)];
     case "bench:check":

@@ -5,20 +5,20 @@ Tailwind v4, build tooling and OS theme installers. Yolo orchestrates build, ser
 
 ## Package map
 
-| Layer | Package | Role |
-| --- | --- | --- |
-| Tokens | `@aphrody/m3-tokens` | `--md-sys-*` tokens, Material You roles from a seed, window classes (width and height), emphasized type, Expressive springs, directional shapes |
-| Theme | `@aphrody/m3-theme` | Fusion sheets: M3 + shadcn + Tailwind aliases, SpaceUI schemes, React/Tauri providers |
-| Front | `@aphrody/m3-front` | Framework-agnostic: `<m3-theme>`, lazy `material-web` registration, window-class observer |
-| React | `@aphrody/m3-react` | `@lit/react` wrappers for every `md-*` element, adaptive hooks, transitions, form state |
-| Base UI | `@aphrody/m3-baseui` | Base UI parts (fork in `forks/base-ui`) styled with M3 tokens |
-| Tailwind | `@aphrody/m3-tailwind` | Tailwind v4 CSS-first `@theme` generated from the tokens (`preset.css`) |
-| Framework | `@aphrody/m3` | `m3` CLI, Bun plugin, `serveM3`, `buildM3`, `M3App`, `m3.config.ts` |
-| Bun application | `@aphrody/m3-bun` | Build, serve, compile, package and deployment configuration for an app's UI and API |
-| Shared | `m3-config`, `m3-fonts`, `m3-icons`, `m3-motion`, `m3-primitives`, `m3-forms`, `m3-ai`, `m3-explorer`, `m3-design`, `m3-next`, `m3-next-migrate`, `m3-codemods`, `m3-reader`, `m3-mcp`, `material-design-icons`, `scaffold` | Build presets, assets, behaviour, migrations, MCP |
-| OS | `@aphrody/m3-os-themes` | Windows 11, GNOME, COSMIC and Chromium theme generators and installers |
-| Web example | `apps/web` (`@aphrody/m3-web`) | App selected by the root Yolo build, serve and compile commands |
-| Showcase | `apps/showcase` (`@aphrody/m3-showcase`) | Adaptive mobile, desktop and TV package demos, with a Bun API |
+| Layer           | Package                                                                                                                                                                                                                     | Role                                                                                                                                            |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tokens          | `@aphrody/m3-tokens`                                                                                                                                                                                                        | `--md-sys-*` tokens, Material You roles from a seed, window classes (width and height), emphasized type, Expressive springs, directional shapes |
+| Theme           | `@aphrody/m3-theme`                                                                                                                                                                                                         | Fusion sheets: M3 + shadcn + Tailwind aliases, SpaceUI schemes, React/Tauri providers                                                           |
+| Front           | `@aphrody/m3-front`                                                                                                                                                                                                         | Framework-agnostic: `<m3-theme>`, lazy `material-web` registration, window-class observer                                                       |
+| React           | `@aphrody/m3-react`                                                                                                                                                                                                         | `@lit/react` wrappers for every `md-*` element, adaptive hooks, transitions, form state                                                         |
+| Base UI         | `@aphrody/m3-baseui`                                                                                                                                                                                                        | Base UI parts (fork in `forks/base-ui`) styled with M3 tokens                                                                                   |
+| Tailwind        | `@aphrody/m3-tailwind`                                                                                                                                                                                                      | Tailwind v4 CSS-first `@theme` generated from the tokens (`preset.css`)                                                                         |
+| Framework       | `@aphrody/m3`                                                                                                                                                                                                               | `m3` CLI, Bun plugin, `serveM3`, `buildM3`, `M3App`, `m3.config.ts`                                                                             |
+| Bun application | `@aphrody/m3-bun`                                                                                                                                                                                                           | Build, serve, compile, package and deployment configuration for an app's UI and API                                                             |
+| Shared          | `m3-config`, `m3-fonts`, `m3-icons`, `m3-motion`, `m3-primitives`, `m3-forms`, `m3-ai`, `m3-explorer`, `m3-design`, `m3-next`, `m3-next-migrate`, `m3-codemods`, `m3-reader`, `m3-mcp`, `material-design-icons`, `scaffold` | Build presets, assets, behaviour, migrations, MCP                                                                                               |
+| OS              | `@aphrody/m3-os-themes`                                                                                                                                                                                                     | Windows 11, GNOME, COSMIC and Chromium theme generators and installers                                                                          |
+| Web example     | `apps/web` (`@aphrody/m3-web`)                                                                                                                                                                                              | App selected by the root Yolo build, serve and compile commands                                                                                 |
+| Showcase        | `apps/showcase` (`@aphrody/m3-showcase`)                                                                                                                                                                                    | Adaptive mobile, desktop and TV package demos, with a Bun API                                                                                   |
 
 Forks (`forks/`): `tailwindcss`, `base-ui`, `material-web`, `material-color-utilities`, `material-design-icons`.
 Shared dependency versions live in the root `workspaces.catalog`; the lockfile pins their resolved versions.
@@ -30,16 +30,16 @@ Root scripts run [scripts/yolo.ts](../../scripts/yolo.ts), which invokes `$YOLO_
 `YOLO_ROOT` defaults to `$HOME/yolo`; inspect this entry point's live help for Yolo commands.
 The wrapper sets `YOLO_HOME` to this repository, so Yolo's `web|desktop|tauri` commands select `apps/web`.
 
-| Script | Runs |
-| --- | --- |
-| `bun run build` | `yolo web build` (apps/web `build` = `m3 build`), then `scripts/build.ts build --no-apps` for the default package scope |
-| `bun run serve` | `yolo web dev` (apps/web `dev` = `m3 dev`, HMR) |
-| `bun run compile` | `yolo tauri build`, then apps/web `compile` (`m3 compile`, delegated to `@aphrody/m3-bun` for the executable) |
-| `bun run test` | Yolo preflight (`yolo version --json`), the root script suites, then workspace `test` scripts in parallel, followed by export, asset and documentation link checks |
-| `bun run lint` | Yolo preflight, then `oxlint` over `packages/m3*`, apps and scripts |
-| `bun run typecheck` | Yolo preflight, then `scripts/build.ts typecheck` with its default scope and cache |
-| `bun run bench` / `bun run bench:check` | Benchmark harness / performance budgets; see the limitations below |
-| `bun run install:theme -- <args>` | the `m3-os-themes` CLI (dry-run unless `--apply`) |
+| Script                                  | Runs                                                                                                                                                               |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `bun run build`                         | `yolo web build` (apps/web `build` = `m3 build`), then `scripts/build.ts build --no-apps` for the default package scope                                            |
+| `bun run serve`                         | `yolo web dev` (apps/web `dev` = `m3 dev`, HMR)                                                                                                                    |
+| `bun run compile`                       | `yolo tauri build`, then apps/web `compile` (`m3 compile`, delegated to `@aphrody/m3-bun` for the executable)                                                      |
+| `bun run test`                          | Yolo preflight (`yolo version --json`), the root script suites, then workspace `test` scripts in parallel, followed by export, asset and documentation link checks |
+| `bun run lint`                          | Bun's native linter over packages, apps and scripts                                                                                                                |
+| `bun run typecheck`                     | Bun's native checker over packages, apps and scripts                                                                                                               |
+| `bun run bench` / `bun run bench:check` | Benchmark harness / performance budgets; see the limitations below                                                                                                 |
+| `bun run install:theme -- <args>`       | the `m3-os-themes` CLI (dry-run unless `--apply`)                                                                                                                  |
 
 The pipeline's default scope is package names matching `@*/m3*` and workspace members under `apps/`.
 Package builds with a `build.config.ts` use the shared `Bun.build` preset, followed by declaration emission
@@ -47,12 +47,8 @@ when `tsconfig.build.json` exists. Members without a build config are reported a
 scripts may use a different build path. App builds run their declared `build` script after packages.
 The root build's `--no-apps` prevents this final app stage, including `apps/showcase`.
 
-Typechecking opts in through each member's `typecheck` script, but the pipeline currently executes
-`tsc -p tsconfig.json --noEmit` rather than that script. Alternate configs or multi-command scripts are
-therefore not included by this gate. Non-M3 members such as `scaffold`, `canvas`, assets, identity,
-AG-UI and material-design-icons are outside the default pipeline and `packages/m3*` lint scope.
-Use their declared scripts for their additional checks. To run an uncached pipeline check or select
-a member explicitly, call `bun scripts/build.ts typecheck --no-cache --only <name>` directly;
+Package type checks use their declared `bun check` scripts. The root native checker covers packages,
+apps and scripts. The build pipeline still emits declarations for packages with `tsconfig.build.json`.
 the root task wrapper currently forwards extra arguments only for benchmarks and theme installation.
 
 Workspace tests include the apps and nested `packages/m3-next/examples/*` members. The root manifest

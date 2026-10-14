@@ -1,7 +1,7 @@
 {
   "name": "@aphrody/m3-icons",
-  "private": true,
   "version": "3.3.3",
+  "private": true,
   "description": "Material Symbols icons for @aphrody/m3: pixel-perfect inline SVG rendered from the aphrody-bun icons module (variable fonts), no icon font shipped at runtime.",
   "license": "Apache-2.0",
   "author": "aphrody-code",
@@ -44,7 +44,7 @@
   },
   "scripts": {
     "build": "bun ../../scripts/build.ts build --only $npm_package_name",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
     "test": "bun test"
   },
   "dependencies": {

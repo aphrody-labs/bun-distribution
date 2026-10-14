@@ -3,7 +3,7 @@
 //
 // Generates `index.ts` in each asset folder, exporting every asset of the folder. Raster folders
 // export default-imported URLs; SVG folders export React components (lazy-loaded in the
-// `LAZY_FOLDERS`). Missing folders are skipped. The output is formatted with oxfmt.
+// `LAZY_FOLDERS`). Missing folders are skipped. Run `bun fmt` to check the output.
 //
 //   bun run gen            # every folder
 //   bun run gen -- icons   # only the listed folders
@@ -126,14 +126,5 @@ const written = (
     ...folders.map(([f, lazy]) => generate(f, lazy)),
     ...(only.size === 0 || only.has("svgs/ext/Extras") ? [generateBeardedUrls()] : []),
   ])
-).filter(
-  (f): f is string => f !== null,
-);
-if (written.length > 0) {
-  const fmt = Bun.spawnSync(["oxfmt", ...written], {
-    stdout: "inherit",
-    stderr: "inherit",
-  });
-  if (!fmt.success) process.exit(fmt.exitCode ?? 1);
-}
+).filter((f): f is string => f !== null);
 console.log(`generated ${written.length} index file(s)`);

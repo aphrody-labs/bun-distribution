@@ -12,12 +12,13 @@
   "scripts": {
     "dev": "m3 dev",
     "build": "bun run build.ts",
-    "check": "oxlint --config .oxlintrc.json src/app.tsx && tsc --noEmit",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "check": "bun lint src/app.tsx && bun check --noEmit",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
     "test": "bun test src",
     "brand": "bun run scripts/brand-theme.ts"
   },
   "dependencies": {
+    "@aphrody/api": "workspace:*",
     "@aphrody/assets": "workspace:*",
     "@aphrody/drive-client": "workspace:*",
     "@aphrody/identity": "workspace:*",
@@ -29,6 +30,7 @@
     "@aphrody/m3-primitives": "workspace:*",
     "@aphrody/m3-theme": "workspace:*",
     "@aphrody/m3-tokens": "workspace:*",
+    "@aphrody/plugin-dialog": "workspace:*",
     "@dnd-kit/core": "catalog:",
     "@dnd-kit/sortable": "catalog:",
     "@dnd-kit/utilities": "catalog:",
@@ -36,6 +38,7 @@
     "@mkkellogg/gaussian-splats-3d": "^0.4.7",
     "@phosphor-icons/react": "^2.1.0",
     "@react-three/fiber": "^9.4.2",
+    "@shenron/config": "workspace:*",
     "@shenron/ui": "workspace:*",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-table": "catalog:",
@@ -54,10 +57,7 @@
     "react-router-dom": "^6.20.1",
     "react-selecto": "^1.26.3",
     "three": "catalog:",
-    "zustand": "catalog:",
-    "@shenron/config": "workspace:*",
-    "@aphrody/api": "workspace:*",
-    "@aphrody/plugin-dialog": "workspace:*"
+    "zustand": "catalog:"
   },
   "devDependencies": {
     "@aphrody/m3": "workspace:*",

@@ -5,9 +5,9 @@
   "description": "The one Bun-native tool for M3 apps: a single Bun plugin and the m3-bun CLI that build, minify, serve (HMR), compile to one executable, package and generate deploy configs (Docker, systemd, nginx, Vercel, Fly.io, Cloudflare, Coolify, VS Code, Windows, minimal Linux image). One Bun file server serves the UI and the API from one process.",
   "keywords": [
     "bun",
-    "material-3",
     "compile",
-    "deploy"
+    "deploy",
+    "material-3"
   ],
   "license": "Apache-2.0",
   "author": "aphrody-code",
@@ -19,6 +19,11 @@
   "bin": {
     "m3-bun": "./bin/m3-bun.ts"
   },
+  "files": [
+    "src",
+    "bin",
+    "client.d.ts"
+  ],
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -35,13 +40,8 @@
       "types": "./client.d.ts"
     }
   },
-  "files": [
-    "src",
-    "bin",
-    "client.d.ts"
-  ],
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
     "test": "bun test",
     "m3-bun": "bun bin/m3-bun.ts"
   },

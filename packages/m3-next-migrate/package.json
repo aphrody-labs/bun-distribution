@@ -103,12 +103,12 @@
   },
   "scripts": {
     "build": "bun ../../scripts/build.ts build --only $npm_package_name",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
     "test": "bun test ./test/ && bun test --preload @aphrody/m3-config/test/dom ./test-dom/"
   },
   "dependencies": {
-    "react": "catalog:",
-    "@aphrody/scaffold": "workspace:*"
+    "@aphrody/scaffold": "workspace:*",
+    "react": "catalog:"
   },
   "engines": {
     "bun": ">=1.4.2"

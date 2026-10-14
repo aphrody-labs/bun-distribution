@@ -48,7 +48,7 @@
   },
   "scripts": {
     "gen": "bun scripts/generate.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun check --noEmit",
     "test": "bun test"
   },
   "devDependencies": {

@@ -25,8 +25,8 @@
   "scripts": {
     "generate": "bun scripts/generate.ts",
     "test": "bun test ./test/",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "oxlint src test scripts"
+    "typecheck": "bun check -p tsconfig.json --noEmit",
+    "lint": "bun lint src test scripts"
   },
   "dependencies": {
     "@aphrody/m3-tokens": "workspace:*"

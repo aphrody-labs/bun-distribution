@@ -84,7 +84,7 @@
   },
   "scripts": {
     "build": "bun ../../scripts/build.ts build --only $npm_package_name",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
     "test": "bun ../../scripts/fonts-sync.ts --quiet && bun test"
   },
   "dependencies": {
@@ -94,16 +94,16 @@
     "@aphrody/m3-react": "workspace:*",
     "@aphrody/m3-theme": "workspace:*",
     "@aphrody/material-web": "catalog:",
+    "@aphrody/scaffold": "workspace:*",
     "@tailwindcss/node": "catalog:",
     "@tailwindcss/oxide": "catalog:",
-    "motion": "catalog:",
-    "@aphrody/scaffold": "workspace:*"
+    "motion": "catalog:"
   },
   "devDependencies": {},
   "peerDependencies": {
+    "@aphrody/m3-bun": "workspace:*",
     "react": ">=18.0.0",
-    "react-dom": ">=18.0.0",
-    "@aphrody/m3-bun": "workspace:*"
+    "react-dom": ">=18.0.0"
   },
   "peerDependenciesMeta": {
     "react": {

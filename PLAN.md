@@ -39,8 +39,8 @@ bun test ./packages/m3/qualification/check.test.ts
 The root test task includes script tests, workspace package tests and integrity
 gates. Its package exclusions and the narrower default build/lint/typecheck
 scopes are documented in the framework guide. Qualify an affected package with
-its own declared scripts when the root scope does not cover it. Run oxlint and
-oxfmt on owned TypeScript files; use content/link/whitespace checks for documents.
+its own declared scripts when the root scope does not cover it. Use native Bun
+`bun lint` and `bun fmt` on owned TypeScript files; use content/link/whitespace checks for documents.
 
 Build, executable smoke and native installation are separate gates. Do not
 rebuild or overwrite another active batch's outputs, install dependencies,

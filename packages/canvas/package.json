@@ -1,9 +1,15 @@
 {
   "name": "@aphrody/canvas",
-  "private": true,
   "version": "1.0.9-aphrody.2",
+  "private": true,
   "description": "Aphrody native Skia canvas facade over the pinned upstream @napi-rs/canvas runtime",
-  "type": "module",
+  "keywords": [
+    "aphrody",
+    "bun",
+    "canvas",
+    "material-design-3",
+    "skia"
+  ],
   "license": "MIT",
   "author": "aphrody-code",
   "repository": {
@@ -11,34 +17,6 @@
     "url": "git+https://github.com/aphrody-labs/aphrody-m3.git",
     "directory": "packages/canvas"
   },
-  "keywords": [
-    "aphrody",
-    "canvas",
-    "skia",
-    "material-design-3",
-    "bun"
-  ],
-  "exports": {
-    ".": {
-      "types": "./index.d.ts",
-      "default": "./index.ts"
-    },
-    "./site": {
-      "types": "./site.d.ts",
-      "default": "./site.ts"
-    },
-    "./browser": {
-      "types": "./site.d.ts",
-      "default": "./site.ts"
-    },
-    "./package.json": "./package.json"
-  },
-  "main": "./index.ts",
-  "types": "./index.d.ts",
-  "sideEffects": [
-    "./index.ts",
-    "./vendor/*.js"
-  ],
   "files": [
     "index.ts",
     "index.d.ts",
@@ -54,14 +32,36 @@
     "vendor/LICENSE",
     "vendor/UPSTREAM.md"
   ],
+  "type": "module",
+  "sideEffects": [
+    "./index.ts",
+    "./vendor/*.js"
+  ],
+  "main": "./index.ts",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.ts"
+    },
+    "./site": {
+      "types": "./site.d.ts",
+      "default": "./site.ts"
+    },
+    "./browser": {
+      "types": "./site.d.ts",
+      "default": "./site.ts"
+    },
+    "./package.json": "./package.json"
+  },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.types.json",
+    "typecheck": "bun check --noEmit && bun check --noEmit -p tsconfig.types.json",
     "test": "bun test",
-    "lint": "oxlint -c .oxlintrc.json --no-ignore index.ts site.ts scripts/vendor-upstream.ts index.test.ts native.test.ts vendor.test.ts types.check.ts",
-    "format:check": "oxfmt --config .oxfmtrc.json --check index.ts index.d.ts site.ts site.d.ts scripts/vendor-upstream.ts index.test.ts native.test.ts vendor.test.ts types.check.ts",
+    "lint": "bun lint index.ts site.ts scripts/vendor-upstream.ts index.test.ts native.test.ts vendor.test.ts types.check.ts",
+    "format:check": "bun fmt --config .oxfmtrc.json --check index.ts index.d.ts site.ts site.d.ts scripts/vendor-upstream.ts index.test.ts native.test.ts vendor.test.ts types.check.ts",
     "vendor": "bun scripts/vendor-upstream.ts",
     "vendor:check": "bun scripts/vendor-upstream.ts --check",
     "prepack": "bun scripts/vendor-upstream.ts --check"

@@ -70,8 +70,8 @@
   "scripts": {
     "generate": "bun run generate.ts",
     "build": "bun ../../scripts/build.ts build --only $npm_package_name",
-    "typecheck": "tsc --noEmit",
-    "typecheck:fast": "tsc --noEmit",
+    "typecheck": "bun check --noEmit",
+    "typecheck:fast": "bun check --noEmit",
     "test": "bun test"
   },
   "dependencies": {

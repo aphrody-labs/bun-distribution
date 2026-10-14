@@ -10,7 +10,7 @@
   "scripts": {
     "start": "bun src/server.ts",
     "test": "bun test",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "bun check --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@aphrody/m3-os-themes": "workspace:*",

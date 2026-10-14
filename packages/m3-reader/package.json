@@ -1,16 +1,16 @@
 {
   "name": "@aphrody/m3-reader",
-  "private": true,
   "version": "3.3.3",
+  "private": true,
   "description": "Material 3 manga and illustrated book readers for React",
   "license": "Apache-2.0",
-  "type": "module",
   "files": [
     "dist",
     "src",
     "styles.css",
     "dragon-ball.css"
   ],
+  "type": "module",
   "sideEffects": [
     "*.css"
   ],
@@ -37,9 +37,9 @@
   },
   "scripts": {
     "build": "bun ../../scripts/build.ts build --only $npm_package_name",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun check --noEmit",
     "test": "bun test",
-    "typecheck:fast": "tsc --noEmit"
+    "typecheck:fast": "bun check --noEmit"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.13",

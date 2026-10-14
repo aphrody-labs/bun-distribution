@@ -1,7 +1,7 @@
 {
   "name": "@aphrody/m3-explorer",
-  "private": true,
   "version": "3.3.3",
+  "private": true,
   "description": "Material Design 3 file-management components (tag pill, inline rename, file thumb, grid item): the SpaceUI (@spacedrive/explorer) set rebuilt on @aphrody/m3-primitives.",
   "keywords": [
     "material-3",
@@ -34,8 +34,8 @@
   },
   "scripts": {
     "build": "bun ../../scripts/build.ts build --only $npm_package_name",
-    "typecheck": "tsc --noEmit",
-    "typecheck:fast": "tsc --noEmit",
+    "typecheck": "bun check --noEmit",
+    "typecheck:fast": "bun check --noEmit",
     "test": "bun test"
   },
   "dependencies": {
