@@ -315,9 +315,9 @@
       "unit": "shenron-manga-workers.service",
       "host": "vps",
       "sourceRepo": "shenron",
-      "workingDirectory": "/home/ubuntu/src/bun",
+      "workingDirectory": "/home/ubuntu/src/shenron",
       "public": false,
-      "note": "Sixteen continuous recursive manga discovery workers launched through source Bun bd with a detached supervisor and persistent private SQLite frontier. The owner authorizes the 12-vCPU factory capacity with a 20-GiB memory ceiling and headroom for concurrent qualified jobs. Existing mullvad network namespace supplies Japan egress. Native Bun VPN daemon qualification is separate. Public progress is a sanitized projection; captures and credentials remain private."
+      "note": "Sixteen continuous recursive manga discovery workers use qualified installed Bun1.4.4 revision dfde053a3045d6076ad315b6f63160c4ced71513 with a detached supervisor and persistent private SQLite frontier. The private runtime-capabilities.json explicitly quarantines unavailable anonymous Google search while direct publisher acquisition and native private indexing continue; no challenged provider is bypassed. The owner authorizes the 12-vCPU factory capacity with a 20-GiB memory ceiling and headroom for concurrent qualified jobs. Existing mullvad namespace supplies Japan egress. Public progress is sanitized; captures and credentials remain private."
     },
     {
       "id": "shenron-site",

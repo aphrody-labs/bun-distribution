@@ -1,12 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 [Unit]
-Description=Continuous source Bun manga discovery and recursive indexing workers
+Description=Continuous manga discovery and indexing with qualified Bun capability ports
 Wants=network-online.target
 Requires=aphrody-mullvad-netns.service
 After=network-online.target aphrody-mullvad-netns.service
 ConditionPathExists=/run/netns/mullvad
 ConditionPathExists=/etc/netns/mullvad/resolv.conf
 ConditionPathExists=/home/ubuntu/src/shenron/scripts/ops/manga-source-pool.ts
+ConditionPathExists=/home/ubuntu/.bun/bin/bun-1.4.4
+ConditionPathExists=/home/ubuntu/.aphrody/profiles/dbfr/jobs/manga-source-pool/runtime-capabilities.json
 StartLimitIntervalSec=30min
 StartLimitBurst=10
 
@@ -14,12 +16,12 @@ StartLimitBurst=10
 Type=forking
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/home/ubuntu/src/bun
+WorkingDirectory=/home/ubuntu/src/shenron
 Environment=PATH=/home/ubuntu/.bun/bin:/home/ubuntu/.cargo/bin:/home/ubuntu/.local/bin:/usr/local/bin:/usr/bin:/bin
 NetworkNamespacePath=/run/netns/mullvad
 BindReadOnlyPaths=/etc/netns/mullvad/resolv.conf:/etc/resolv.conf
 PIDFile=/home/ubuntu/.aphrody/profiles/dbfr/jobs/manga-source-pool/pool.pid
-ExecStart=/home/ubuntu/.bun/bin/bun run bd -n -j2 /home/ubuntu/src/shenron/scripts/ops/manga-source-pool.ts --job /home/ubuntu/.aphrody/profiles/dbfr/jobs/manga-source-pool --daemon --pid-file /home/ubuntu/.aphrody/profiles/dbfr/jobs/manga-source-pool/pool.pid --workers 16 --interval-ms 60000 --reconcile-ms 3600000 --public-progress-file /var/www/aphrody-status/manga-source-pool.json
+ExecStart=/home/ubuntu/.bun/bin/bun-1.4.4 /home/ubuntu/src/shenron/scripts/ops/manga-source-pool.ts --job /home/ubuntu/.aphrody/profiles/dbfr/jobs/manga-source-pool --daemon --pid-file /home/ubuntu/.aphrody/profiles/dbfr/jobs/manga-source-pool/pool.pid --workers 16 --interval-ms 60000 --reconcile-ms 3600000 --capabilities-file /home/ubuntu/.aphrody/profiles/dbfr/jobs/manga-source-pool/runtime-capabilities.json --public-progress-file /var/www/aphrody-status/manga-source-pool.json
 Restart=always
 RestartSec=30s
 TimeoutStartSec=10min
