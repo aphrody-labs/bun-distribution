@@ -81,6 +81,13 @@ passent par les writers et contrôles éditoriaux de Shenron.
    seize workers réels, progression de la file et reçu d'egress japonais.
    Contrôler la projection publique séparément de la progression privée.
 
+Le démarrage peut attendre jusqu'à deux heures le verrou du build source canonique.
+Cette attente évite les cycles de redémarrage de dix minutes pendant un build
+qui progresse lentement en IO. Le délai ne prouve aucune activité des Workers.
+Pour appliquer uniquement ce changement, relire le plan, vérifier l'unité,
+installer le fichier du catalogue et recharger systemd ; ne relancer que notre
+unité si elle attend encore sans `MainPID`, jamais le propriétaire du build.
+
 La commande de contrôle du catalogue est
 `aphrody infra service status --id shenron-manga-workers --target vps`.
 Le rollback arrête et désactive uniquement `shenron-manga-workers.service` ;

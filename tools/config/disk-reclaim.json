@@ -9,6 +9,13 @@
     "system steps run through sudo -n: docker prunes only unreferenced images older than 7 days and the build cache (never containers or volumes); absolute system paths must sit below a non-protected root and never under /home, /root, /etc, /boot, /var/lib/docker, /var/lib/postgresql, /var/lib/mysql or /home/ubuntu/apps/shenron/shared"
   ],
   "targets": {
+    "vps-manga-build-cache": {
+      "sshAlias": "vps",
+      "paths": [],
+      "system": {
+        "docker": true
+      }
+    },
     "vps": {
       "sshAlias": "vps",
       "paths": [
