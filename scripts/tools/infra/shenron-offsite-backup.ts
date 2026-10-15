@@ -2,7 +2,7 @@
 // Off-host copy of the DBFR container snapshots (backup-shenron-container.py, shenron-container-backup.timer):
 // PostgreSQL custom dump, Redis RDB and the live SQLite stores, one directory per snapshot.
 //
-//   bun scripts/tools/infra/shenron-offsite-backup.ts [--dest <dir>] [--restore-check]
+//   bun scripts/tools/infra/shenron-offsite-backup.ts [--dest <dir>] [--restore-check] [--all-snapshots]
 //
 // Lists the published snapshots on DBFR (root-owned, read with `sudo -n`), copies the newest one unless it is
 // already verified locally (raw `ssh cat`, streamed and hashed against its VERIFIED.json), then writes
@@ -37,6 +37,15 @@ export function stampTime(name: string): number | null {
 
 export function remoteRoot(remoteHome: string): string {
   return `${remoteHome.replace(/\/+$/, "")}/apps/shenron/shared/backups/container`;
+}
+
+/** Published snapshots in chronological order; normal runs only transfer the newest, seed runs transfer all. */
+export function snapshotsToCopy(listing: string, all: boolean): string[] {
+  const snapshots = listing
+    .split(/\r?\n/)
+    .filter((name) => stampTime(name) !== null)
+    .toSorted();
+  return all ? snapshots : snapshots.slice(-1);
 }
 
 /** Parses a snapshot VERIFIED.json strictly: relative names without `..`, SHA-256 digests, the PostgreSQL dump. */
@@ -264,21 +273,21 @@ export async function main(argv = Bun.argv.slice(2)): Promise<number> {
     host,
     `sudo -n find ${quote(root)} -mindepth 1 -maxdepth 1 -type d -name '2*Z' -printf '%f\\n'`,
   );
-  const remote = listing
-    .split(/\r?\n/)
-    .filter((name) => stampTime(name) !== null)
-    .toSorted();
+  const remote = snapshotsToCopy(listing, true);
   if (remote.length === 0) throw new Error(`no published container snapshot on ${host}`);
   const newest = remote.at(-1)!;
-  const local = join(dest, newest);
+  const selected = snapshotsToCopy(remote.join("\n"), argv.includes("--all-snapshots"));
   let pulled = 0;
-  if (existsSync(local) && (await verifyLocal(local))) log(`verified-existing=${newest}`);
-  else {
-    rmSync(local, { recursive: true, force: true });
-    const bytes = await pull(host, root, newest, dest);
-    log(`transferred=${newest} bytes=${bytes}`);
-    console.log(`Off-host snapshot verified: ${newest} (${bytes} bytes).`);
-    pulled = 1;
+  for (const snapshot of selected) {
+    const local = join(dest, snapshot);
+    if (existsSync(local) && (await verifyLocal(local))) log(`verified-existing=${snapshot}`);
+    else {
+      rmSync(local, { recursive: true, force: true });
+      const bytes = await pull(host, root, snapshot, dest);
+      log(`transferred=${snapshot} bytes=${bytes}`);
+      console.log(`Off-host snapshot verified: ${snapshot} (${bytes} bytes).`);
+      pulled++;
+    }
   }
   if (argv.includes("--restore-check")) {
     const report = await restoreCheck(join(dest, newest));
