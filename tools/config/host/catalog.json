@@ -275,6 +275,14 @@
       "pairs": "aphrody-self-update-dbfr.service"
     },
     {
+      "service": "shenron-manga-workers",
+      "unit": "shenron-manga-workers.service",
+      "path": "systemd/shenron/shenron-manga-workers.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
       "service": "shenron-sync",
       "unit": "shenron-sync.service",
       "path": "systemd/shenron/shenron-sync.service",

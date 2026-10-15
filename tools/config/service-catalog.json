@@ -308,6 +308,18 @@
       "retiredAt": "2026-10-09"
     },
     {
+      "id": "shenron-manga-workers",
+      "application": "shenron",
+      "kind": "systemd-worker",
+      "runtime": "bun",
+      "unit": "shenron-manga-workers.service",
+      "host": "vps",
+      "sourceRepo": "shenron",
+      "workingDirectory": "/home/ubuntu/src/bun",
+      "public": false,
+      "note": "Eight continuous recursive manga discovery workers launched through source Bun bd with a detached supervisor and persistent private SQLite frontier. Existing mullvad network namespace supplies Japan egress. Native Bun VPN daemon qualification is separate. Public progress is a sanitized projection; captures and credentials remain private."
+    },
+    {
       "id": "shenron-site",
       "application": "shenron",
       "kind": "next-bun-http",
