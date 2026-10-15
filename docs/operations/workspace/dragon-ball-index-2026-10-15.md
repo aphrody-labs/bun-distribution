@@ -489,3 +489,20 @@ est déjà revendiquée par `.coord/claims/codex-shueisha-preview-capture.json` 
 aucun captureur ni sortie privée de ce propriétaire n’a été modifié ou lancé.
 La campagne wiki a aussi un claim actif sur son inventaire et ses propositions ;
 aucune proposition ni écriture publique n’a été ajoutée ici.
+
+### Contrôle bibliographique ciblé — 18:05 UTC
+
+Une nouvelle lecture des deux API publiques retrouve exactement 110 volumes
+incomplets : 107 sans pages listées et 3 aperçus. Parmi ces 110, 107 ont un
+ISBN déclaré et trois n’en ont pas (ID 719, 720, 802). Le catalogue officiel
+Shueisha identifie le Broly roman japonais sous ISBN `978-4-08-321475-2`
+([fiche officielle](https://www.shueisha.co.jp/books/items/contents.html?isbn=978-4-08-321475-2)), mais
+c’est une autre édition que l’entrée française de l’API ; aucune fusion
+d’identités n’a été faite. Pour l’entrée « Résurrection de F - Roman du film »,
+la fiche officielle [Glénat](https://www.glenat.com/glenat-manga/dragon-ball-z-la-resurrection-de-f-9782344017708/) retrouvée porte sur l’anime-comics papier
+`978-2-344-01770-8`, pas sur un roman ; cet ISBN n’a pas été attribué à l’entrée.
+Enfin, Shueisha donne pour [`ネコマジン カラー版`](https://books.shueisha.co.jp/items/contents.html?jdcn=08873825873825325501) un identifiant de livre
+numérique (`jdcn=08873825873825325501`) et distingue la version couleur
+numérique de l’édition papier ; l’ISBN papier `978-4-08-873-825-3` n’a donc
+pas été injecté comme ISBN de cette autre édition. Ces contrôles aident à
+qualifier les notices, mais ne fournissent aucune planche manga manquante.
