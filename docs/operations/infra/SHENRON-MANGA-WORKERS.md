@@ -54,3 +54,19 @@ nécessaire pour reprendre le service.
 
 L'activation et la permanence réelle se prouvent sur l'hôte ; la présence de
 cette unité dans Git n'est pas une preuve de déploiement ni de travail effectué.
+
+## État vérifié le 15 octobre 2026 à 12 h 48 UTC
+
+L'unité est installée sur `vps-203bea89`, activée au démarrage et en cours de
+démarrage (`enabled`, `activating/start`). Le lanceur source attend le verrou
+du build Bun existant, propriétaire PID `3756265` ; aucun second build n'a été
+lancé par cette installation. Le PID de contrôle est `3796733`, son wrapper
+source `3796740`. Aucun superviseur ni huit workers source opérationnels ne
+sont encore attestés à cette observation (`MainPID=0`).
+
+La qualification du code Shenron `9911a5fe` compte cinq tests et 52 assertions,
+dont huit Workers réels avec le runtime installé ; le contrôle natif des
+476 fichiers est vert. Cette preuve ne remplace pas les reçus du runtime source.
+La session `manga-workers-infra-start` et les fichiers privés
+`infra-service-start.log` / `infra-service-start.exit` suivent l'action Infra ;
+un timeout d'observation SSH n'autorise pas le redémarrage du job existant.
