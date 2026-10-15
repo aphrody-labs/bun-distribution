@@ -3,7 +3,74 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { verifyVendor } from "./shenron-auto-deploy";
+import {
+  probe,
+  verifyVendor,
+  qualifyRuntime,
+  qualifyCompiledRuntimes,
+  runtimeEvidence,
+} from "./shenron-auto-deploy";
+
+const nativeEvidence = {
+  version: "1.4.4+fixture",
+  revision: "a".repeat(40),
+  sourceUrl: "https://github.com/aphrody-labs/bun/releases/download/fixture/bun.zip",
+  features: { yolo: true, crawl: true, curl: true, vectorIndex: true },
+};
+test("runtime hash is checked before execution and evidence binds provenance and all native fixtures", async () => {
+  const root = mkdtempSync(join(tmpdir(), "shenron-runtime-pin-"));
+  temporary.push(root);
+  const binary = join(root, "bun");
+  await Bun.write(binary, "pinned runtime fixture");
+  const sha = new Bun.CryptoHasher("sha256").update("pinned runtime fixture").digest("hex");
+  let calls = 0;
+  const run = async (args: string[], env: Record<string, string | undefined>) => {
+    calls++;
+    expect(args[0]).toBe(binary);
+    expect(env.BUN_BE_BUN).toBe("1");
+    return JSON.stringify(nativeEvidence);
+  };
+  expect(
+    await qualifyRuntime(binary, sha, { revision: nativeEvidence.revision }, run),
+  ).toMatchObject({ sha256: sha, size: 22, ...nativeEvidence });
+  await expect(qualifyRuntime(binary, "0".repeat(64), {}, run)).rejects.toThrow("digest differs");
+  expect(calls).toBe(1);
+  expect(() =>
+    runtimeEvidence(
+      JSON.stringify({ ...nativeEvidence, features: { ...nativeEvidence.features, curl: false } }),
+    ),
+  ).toThrow("differs");
+  expect(() =>
+    runtimeEvidence(JSON.stringify(nativeEvidence), { revision: "b".repeat(40) }),
+  ).toThrow("differs");
+});
+test("both compiled product runtimes must pass the same isolated fixtures before promotion", async () => {
+  const paths: string[] = [];
+  const run = async (args: string[]) => {
+    expect(args).toContain("none");
+    expect(args).toContain("BUN_BE_BUN=1");
+    paths.push(args[args.indexOf("--entrypoint") + 1]!);
+    return JSON.stringify(nativeEvidence);
+  };
+  expect(
+    Object.keys(
+      await qualifyCompiledRuntimes(
+        "sha256:" + "a".repeat(64),
+        { revision: nativeEvidence.revision },
+        run,
+      ),
+    ),
+  ).toEqual(["shenron-server", "shenron-bot"]);
+  expect(paths).toEqual(["/usr/local/bin/shenron-server", "/usr/local/bin/shenron-bot"]);
+  let calls = 0;
+  await expect(
+    qualifyCompiledRuntimes("image", {}, async () => {
+      calls++;
+      if (calls === 2) throw Error("bot fixture failed");
+      return JSON.stringify(nativeEvidence);
+    }),
+  ).rejects.toThrow("bot fixture failed");
+});
 
 const temporary: string[] = [];
 test("tracked Next fork archives are verified without a removed bootstrap script", async () => {
@@ -160,4 +227,29 @@ test("sync refuses divergent history without discarding the local commit", async
   expect(git(f.source, "rev-parse", "origin/main")).toBe(upstream);
   expect(git(f.source, "status", "--porcelain")).toBe("");
   expect(await Bun.file(join(f.source, "local.txt")).text()).toBe("committed local work\n");
+});
+
+test.each(["stdout", "stderr"])(
+  "runtime probe bounds %s before waiting for exit",
+  async (stream) => {
+    await expect(
+      probe(
+        [
+          process.execPath,
+          "-e",
+          `process.${stream}.write('x'.repeat(20_000));setInterval(()=>{},1000)`,
+        ],
+        process.env,
+        1000,
+      ),
+    ).rejects.toThrow("Native runtime qualification failed");
+  },
+);
+test("runtime probe kills a stalled runtime and accepts bounded output", async () => {
+  await expect(
+    probe([process.execPath, "-e", "setInterval(()=>{},1000)"], process.env, 25),
+  ).rejects.toThrow("Native runtime qualification failed");
+  expect(await probe([process.execPath, "-e", "console.log('bounded')"], process.env)).toBe(
+    "bounded\n",
+  );
 });
