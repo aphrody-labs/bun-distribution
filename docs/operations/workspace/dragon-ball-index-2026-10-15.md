@@ -805,3 +805,16 @@ Le reçu public du pool manga observé à 22:46:34 UTC indique toujours 329 volu
 6 503 terminées et une capacité de recherche indisponible. Aucun des 110 volumes
 n'est qualifié comme complet par ces nombres. Le pool reste en exécution sous
 son propriétaire Shenron ; aucune tâche n'a été dupliquée ou relancée ici.
+
+## Sources de lecture licenciées — vérification du 2026-10-15
+
+Les catalogues éditeurs confirment une voie d'accès licenciée pour une partie
+de la série : [VIZ liste les chapitres de Dragon Ball et Dragon Ball Z](https://www.viz.com/shonenjump/chapters/dragon-ball)
+avec le premier chapitre gratuit et les suivants réservés à l'abonnement ou à
+l'achat du volume ; [MANGA Plus indique l'accès par abonnement à l'histoire](https://mangaplus.shueisha.co.jp/titles/100011)
+avec des chapitres et pages exclus. Ces offres sont des pistes de lecture
+officielles, pas des exports d'images utilisables pour remplir le CDN.
+Elles ne démontrent ni la correspondance d'édition, la pagination ni la
+couverture des 110 notices absentes ou partielles. Aucun accès payant n'a été
+acheté ou utilisé, aucune page n'a été téléchargée et aucun droit de
+redistribution n'a été présumé.
