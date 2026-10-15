@@ -506,3 +506,29 @@ numérique (`jdcn=08873825873825325501`) et distingue la version couleur
 numérique de l’édition papier ; l’ISBN papier `978-4-08-873-825-3` n’a donc
 pas été injecté comme ISBN de cette autre édition. Ces contrôles aident à
 qualifier les notices, mais ne fournissent aucune planche manga manquante.
+
+## Complément RAG — source officielle Ultra God Mission (2026-10-15)
+
+Le binaire courant `aphrody web dragon-ball index --help` expose maintenant
+`--catalogue` répétable. Une invocation sans sortie explicite sur le dossier du
+crawl s’est arrêtée sur son verrou ; un crawl distinct était effectivement actif
+(PID 764682) sur ce dossier. Aucun verrou n’a été forcé et aucun fichier de ce
+job n’a été modifié.
+
+Pour ajouter une source vérifiée sans toucher au crawl, le profil privé
+`workspace-shenron` a reçu une notice courte dérivée de la page officielle
+[Dragon Ball Official Site — Ultra God Mission!!!!, volume 1](https://en.dragon-ball-official.com/news/01_1524.html).
+Réponse HTTP 200, corps reçu 44 252 octets, SHA-256
+`dcf4e1d0dfe4c60773eb883141d542a2b897fae6f262edd0cff242f40cec4e4b`.
+La notice Markdown privée est indexée par
+`aphrody home index ... --profile shenron --state /home/ubuntu/.aphrody/workspace-shenron` :
+1 fichier ajouté, 1 document extrait, 2 chunks, 0 erreur. Une recherche native
+RAG sur « Ultra God Mission Aeos Super Space-Time Tournament Jiren Hit » retrouve
+la source et ses deux chunks. Le reçu JSONL conserve les métadonnées mais n’est
+pas lui-même extractible par l’indexeur ; l’indexation utilise la notice Markdown.
+
+Cette source officielle confirme le contexte manga du Super Space-Time Tournament
+et le rôle d’Aeos. Elle ne prouve pas la parenthèse « Toki Toki City » attachée à
+la fiche publique Shenron `tournaments/11`. Aucune modification wiki, copie de
+page intégrale ou publication publique n’a été faite. Le dossier source privé
+est `/home/ubuntu/.aphrody/workspace-shenron/private/web/official-source-addendum-20261015/`.
