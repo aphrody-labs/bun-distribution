@@ -174,3 +174,29 @@ projection avait examiné 861 entrées, en mis 2 108 en quarantaine, et n'avait
 émis aucun bundle ni écriture publique. DBFR ne comptait aucun candidat,
 handoff ou tâche de publication à 14:15 ; aucun tome supplémentaire n'est donc
 qualifié comme complet.
+
+## Actualisation — 2026-10-15 à 14:57 UTC
+
+La supervision privée Shenron a exécuté une passe `once` sur DBFR à 14:56:50
+UTC. Le reçu expurgé signale un état `partial`, sans candidat nouvellement traité,
+avec 6 propositions approuvées, 90 bloquées, 10 647 complètes, 3 quarantainées
+et 8 rejetées. La passe suivante est planifiée à 20:56:41 UTC. Une lecture
+SQLite au même moment montrait aussi des lignes remplacées et une quatrième ligne
+quarantainée, d’où une différence entre le résumé du superviseur et les statuts
+bruts de la file ; aucune modification manuelle des décisions n’a été faite.
+
+L’export immuable des six propositions possède des reçus de writer déjà établis
+pour cinq identifiants : section 13087 (`g2gznhxpwvrc3crbgxf5av27`), databooks
+27 (`e8fk0pwtdaslbg8ynokn2mky`) et 23 (`g5xr7741sl9n1j8pfdxifvaz`), et
+media work 15 (`rhzefsejmp41q4vutd577rbo`) ainsi que section 13090
+(`iwymmeepzp3uda70u0u6jiqm`). La page publique de cette dernière a aussi été
+relue en HTTP 200 à 14:36:48. Les reçus résident dans le store DBFR protégé ;
+aucune écriture n’a été rejouée.
+
+La preuve disponible ne couvre pas Dragon Ball SD (`media_works/7`) : aucun
+reçu correspondant n’a été trouvé. Les routes d’API publiques et admin renvoient
+403 depuis la session Infra actuelle, donc ce champ ne peut pas être marqué
+publié ou confirmé. Les éléments disponibles ne permettent pas de qualifier les
+90 propositions bloquées ; les corrections wiki restent partielles. Le timer
+est actif et conserve ses limites de 4 workers / 20 candidats, sans publication
+automatique.
