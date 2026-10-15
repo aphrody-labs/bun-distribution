@@ -253,3 +253,15 @@ test("runtime probe kills a stalled runtime and accepts bounded output", async (
     "bounded\n",
   );
 });
+
+test("canonical auto-deploy configuration requires exact runtime qualification pins", async () => {
+  const configuration = await Bun.file(
+    join(import.meta.dir, "../../tools/config/shenron-auto-deploy.json"),
+  ).json();
+  expect(configuration.runtimeSha256).toMatch(/^[a-f0-9]{64}$/);
+  expect(configuration.runtimeExpected.version).toMatch(/^\d+\.\d+\.\d+/);
+  expect(configuration.runtimeExpected.revision).toMatch(/^[a-f0-9]{40}$/);
+  expect(configuration.runtimeExpected.sourceUrl).toStartWith(
+    "https://github.com/aphrody-labs/bun/releases/download/",
+  );
+});
