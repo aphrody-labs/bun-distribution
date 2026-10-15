@@ -46,6 +46,35 @@ and `ssh <alias>` work as on the owner machine.
 - Hosts change only through Infra's catalog: plan before apply. Publication and `omar`/WireGuard apply are authorised (owner directive 2026-10-07);
   keep the plan-before-apply order and the data rules.
 
+### Current factory budget and storage (2026-10-15)
+
+Native Infra verified `vps` as `vps-203bea89`: 12 allocated CPUs, 45.93 GiB RAM.
+The owner authorizes 12 build jobs and 12 linker threads. The factory declares
+8 GiB memory reserve, 32 GiB disk reserve and 1 GiB available memory per job.
+Every admitted build measures execution-host affinity, Linux `MemAvailable`
+and free space on its actual cache and artifact filesystems after taking the
+heavy and source locks. Generic Cargo defaults stay bounded by the host's
+available CPUs; explicit job counts are no longer capped at six.
+
+`/home/ubuntu/build/storage` is the shared artifact pool, with about 479 GiB
+available at verification. Use its `cache`, `artifacts` and `transient`
+directories for the Aphrody factory. The older `/home/ubuntu/src` and
+`/home/ubuntu/build` filesystem had about 3 GiB free and can fill independently.
+Reuse existing source checkouts, including `/home/ubuntu/src/bun`; the absent
+`/home/ubuntu/builds/bun-os-factory/sources/bun` is not a build source.
+Historical outputs and protected stores are preserved, not relocated by this
+configuration update.
+
+Native Infra verified `dbfr` as `vps-6732365f`: 6 CPUs and about 11.40 GiB RAM.
+Its production allocation remains separate, with the configured three-job
+ceiling and its own memory/disk admission. A factory refusal is retried only
+after capacity changes; it does not authorize bypassing reserves.
+
+Invoke `aphrody infra ssh exec --host vps|dbfr` from `/home/ubuntu`; its relative
+`var/runs` receipts then use the root filesystem. Recheck host identity and both
+filesystems before applying a plan. Coordinate heavy work through
+`/home/ubuntu/build/locks/heavy.lock`; no second heavy build is started here.
+
 ## Verify
 
 `bun scripts/dev/cloud-doctor.ts` prints one line per check (Bun pin, Rust, uv, `aphrody`, `yolo`, SSH aliases, remote

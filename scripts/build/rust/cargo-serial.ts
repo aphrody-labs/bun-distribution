@@ -12,7 +12,7 @@
  * Usage: bun scripts/build/rust/cargo-serial.ts [--msvc] <cargo arguments...>
  */
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { availableParallelism, tmpdir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 
 const HEAVY = new Set([
@@ -99,10 +99,10 @@ export function planCargo(args: readonly string[], msvc: boolean, env: Env): Car
   const heavy = command !== undefined && HEAVY.has(command);
   const helpOnly = args.includes("--help") || args.includes("-h");
   if (args.some((arg) => /^(-j\d*|--jobs(=.*)?)$/.test(arg)))
-    throw new UsageError("Do not override Cargo job count; set APHRODY_CARGO_JOBS=1..6 instead");
+    throw new UsageError("Do not override Cargo job count; set APHRODY_CARGO_JOBS=1..1024 instead");
   const jobsText = env.APHRODY_CARGO_JOBS ?? (msvc ? (env.CARGO_BUILD_JOBS ?? "4") : "6");
-  if (!/^[1-6]$/.test(jobsText))
-    throw new UsageError("APHRODY_CARGO_JOBS must be an integer from 1 through 6");
+  if (!/^[1-9][0-9]{0,3}$/.test(jobsText) || Number(jobsText) > 1024)
+    throw new UsageError("APHRODY_CARGO_JOBS must be an integer from 1 through 1024");
   const waitText = env.APHRODY_CARGO_LOCK_TIMEOUT_SECS ?? "1800";
   if (!/^\d+$/.test(waitText))
     throw new UsageError("APHRODY_CARGO_LOCK_TIMEOUT_SECS must be an integer");
@@ -162,6 +162,7 @@ export function planCargo(args: readonly string[], msvc: boolean, env: Env): Car
     next.GIT_CONFIG_COUNT = String(count + 1);
   }
   if (heavy) {
+    next.APHRODY_CARGO_JOBS = jobsText;
     next.CARGO_BUILD_JOBS = jobsText;
     // sccache refuses every compile while CARGO_INCREMENTAL is set; the opt-in unsets it so the profile
     // default keeps workspace members incremental while sccache still caches dependencies.
@@ -170,6 +171,12 @@ export function planCargo(args: readonly string[], msvc: boolean, env: Env): Car
     next.CARGO_TERM_COLOR = "never";
   }
   return { heavy, helpOnly, jobs: Number(jobsText), waitSeconds: Number(waitText), env: next };
+}
+
+/** Call after acquiring the host's mutex, immediately before starting Cargo. */
+export function admitCargoJobs(plan: CargoPlan, cpus = availableParallelism()): void {
+  if (!Number.isSafeInteger(cpus) || cpus < 1 || plan.jobs > cpus)
+    throw new UsageError("Cargo jobs exceed the executing host's available CPUs");
 }
 
 /** The Workspace build-factory owner decides whether heavy Cargo belongs to the factory. */
@@ -355,7 +362,10 @@ export async function main(argv: readonly string[], baseEnv: Env = process.env):
     console.error("APHRODY_LOCAL_CARGO=1 is only for an explicitly selected scoped diagnostic.");
     return 64;
   }
-  return withWindowsMutex(plan.waitSeconds, () => runCargo(args, plan.env));
+  return withWindowsMutex(plan.waitSeconds, () => {
+    admitCargoJobs(plan);
+    return runCargo(args, plan.env);
+  });
 }
 
 if (import.meta.main) {

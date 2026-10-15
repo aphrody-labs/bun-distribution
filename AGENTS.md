@@ -178,7 +178,7 @@ each invokes `bun check` directly. Tests use `bun test`; web: `web:verify`.
 
 Claude cloud session (`CLAUDE_CODE_REMOTE=true` or `APHRODY_CLOUD=1`, set by
 `.claude/hooks/session-start.sh`): the session is the build host. Cargo and Git run directly, Cargo through
-`scripts/build/rust/cargo-serial.sh` (jobs = CPU count, max 6); no hook, no factory routing. Bun is pinned to
+`scripts/build/rust/cargo-serial.sh` (generic default = min(6, available CPUs), explicit jobs checked against execution-host affinity); no hook, no factory routing. Bun is pinned to
 `packageManager`; `scripts/dev/cloud-setup.sh` adds Rust, uv, Graphify and the build tools in the background.
 Observed limits (2026-10-05): 4 CPU, 15 GB RAM, about 30 GB disk, so scoped `-p <crate>` gates; full-workspace and
 engine (V8, Tauri, WebKit) builds go to the VPS factory. The cloud and the local sessions exchange state through
@@ -190,6 +190,22 @@ Select scoped Cargo gates for the actual host and target. Native Windows can use
 Docker and other qualified native hosts are valid build contexts. Honor factory
 locks, resource limits and shared sccache; deployment hosts require their own
 declared build allocation before receiving build jobs.
+
+Factory budgets are host-specific. Measured on 2026-10-15 through native Infra:
+`vps` has 12 allocated CPUs and 45.93 GiB RAM; the owner authorizes 12 Cargo jobs
+and 12 linker threads, with 8 GiB memory and 32 GiB disk reserves. Admission
+rechecks affinity, Linux `MemAvailable` and cache/artifact free space under the
+existing `/home/ubuntu/build/locks/heavy.lock` and source lock. `dbfr` has 6 CPUs
+and about 11.40 GiB RAM, serves production and retains its separate three-job
+ceiling; the VPS allocation never applies to it.
+
+Use `/home/ubuntu/build/storage` for heavy caches, artifacts and transient files.
+Its shared pool still had about 479 GiB available on 2026-10-15 while the older
+source/build filesystem had about 3 GiB. Check both before execution. Existing
+source checkouts and protected data stay in place; the canonical Bun checkout
+is `/home/ubuntu/src/bun`. Run `aphrody infra ssh exec` from `/home/ubuntu` so
+its relative `var/runs` receipts do not fill the source filesystem. Plan before
+apply and recheck each host's identity through the native Infra catalog.
 
 Bun/TS: scoped native `bun check`, `bun lint` and `bun fmt` commands plus meaningful Bun tests;
 migrations use `bun n2b` directly. Do not insert a shell, package runner, external subprocess backend,

@@ -7,19 +7,19 @@
   "remoteSession": "vps-cargo",
   "remoteWorkspace": "/home/ubuntu/build/wsl/aphrody",
   "remoteSeed": "/home/ubuntu/src/aphrody",
-  "remoteTargetDir": "/home/ubuntu/build/cache/cargo/aphrody-wsl",
+  "remoteTargetDir": "/home/ubuntu/build/storage/cache/cargo/aphrody-wsl",
   "remoteLockDir": "/home/ubuntu/build/locks",
   "remoteHeavyLock": "/home/ubuntu/build/locks/heavy.lock",
-  "remoteLogDir": "/home/ubuntu/build/artifacts/wsl",
+  "remoteLogDir": "/home/ubuntu/build/storage/artifacts/wsl",
   "remoteEnv": {
     "APHRODY_BUILD_HOST": "vps",
     "CARGO_INCREMENTAL": "0",
     "CARGO_NET_GIT_FETCH_WITH_CLI": "true",
-    "SCCACHE_DIR": "/home/ubuntu/build/cache/sccache",
-    "BUN_INSTALL_CACHE_DIR": "/home/ubuntu/build/cache/bun",
-    "CEF_PATH": "/home/ubuntu/build/cache/cef"
+    "SCCACHE_DIR": "/home/ubuntu/build/storage/cache/sccache",
+    "BUN_INSTALL_CACHE_DIR": "/home/ubuntu/build/storage/cache/bun",
+    "CEF_PATH": "/home/ubuntu/build/storage/cache/cef"
   },
-  "jobs": 6,
+  "jobs": 12,
   "desktopSysCrates": ["gdk4-sys", "gtk4-sys"],
   "forwards": {
     "remote": [
@@ -42,7 +42,7 @@
     "vu": {
       "root": "../vu",
       "remoteWorkspace": "/home/ubuntu/build/wsl/vu",
-      "remoteTargetDir": "/home/ubuntu/build/cache/cargo/vu-wsl",
+      "remoteTargetDir": "/home/ubuntu/build/storage/cache/cargo/vu-wsl",
       "snapshotRef": "refs/vu/snapshot",
       "cargoSerial": "/home/ubuntu/build/wsl/aphrody/scripts/build/rust/cargo-serial.sh"
     },
@@ -50,7 +50,7 @@
       "root": "../shenron",
       "remoteWorkspace": "/home/ubuntu/build/wsl/shenron",
       "remoteSeed": "",
-      "remoteTargetDir": "/home/ubuntu/build/cache/cargo/shenron-wsl",
+      "remoteTargetDir": "/home/ubuntu/build/storage/cache/cargo/shenron-wsl",
       "snapshotRef": "refs/shenron/snapshot",
       "cargoSerial": "/home/ubuntu/build/wsl/aphrody/scripts/build/rust/cargo-serial.sh"
     },
@@ -58,7 +58,7 @@
       "root": "../shenron",
       "remoteWorkspace": "/home/ubuntu/build/wsl/shenron",
       "remoteSeed": "",
-      "remoteTargetDir": "/home/ubuntu/build/cache/cargo/shenron-wsl",
+      "remoteTargetDir": "/home/ubuntu/build/storage/cache/cargo/shenron-wsl",
       "snapshotRef": "refs/shenron/snapshot",
       "cargoSerial": "/home/ubuntu/build/wsl/aphrody/scripts/build/rust/cargo-serial.sh"
     },
@@ -66,7 +66,7 @@
       "root": "../shenron",
       "remoteWorkspace": "/home/ubuntu/build/wsl/shenron",
       "remoteSeed": "",
-      "remoteTargetDir": "/home/ubuntu/build/cache/cargo/shenron-wsl",
+      "remoteTargetDir": "/home/ubuntu/build/storage/cache/cargo/shenron-wsl",
       "snapshotRef": "refs/shenron/snapshot",
       "cargoSerial": "/home/ubuntu/build/wsl/aphrody/scripts/build/rust/cargo-serial.sh"
     }
@@ -99,7 +99,20 @@
         "SCCACHE_CACHE_SIZE": "8G",
         "APHRODY_BUILD_HOST": "dbfr",
         "CEF_PATH": ""
+      },
+      "remoteTransientRoot": "/home/ubuntu/build/transient",
+      "resources": {
+        "reserveMemoryGiB": 4,
+        "reserveDiskGiB": 20,
+        "memoryPerJobGiB": 1
       }
     }
-  }
+  },
+  "maxJobs": 12,
+  "resources": {
+    "reserveMemoryGiB": 8,
+    "reserveDiskGiB": 32,
+    "memoryPerJobGiB": 1
+  },
+  "remoteTransientRoot": "/home/ubuntu/build/storage/transient"
 }

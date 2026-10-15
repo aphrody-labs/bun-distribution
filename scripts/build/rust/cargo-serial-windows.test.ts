@@ -4,7 +4,13 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { cargoSubcommand, planCargo, routeSccacheWrapper, UsageError } from "./cargo-serial.ts";
+import {
+  admitCargoJobs,
+  cargoSubcommand,
+  planCargo,
+  routeSccacheWrapper,
+  UsageError,
+} from "./cargo-serial.ts";
 
 const windowsTest = test.skipIf(process.platform !== "win32");
 const fixtures: string[] = [];
@@ -114,8 +120,8 @@ test("the plan bounds jobs, refuses overrides and isolates the target directory"
   const base = { PATH: "", RUSTC_WRAPPER: "" };
   expect(() => planCargo(["check", "-j8"], false, base)).toThrow(UsageError);
   expect(() => planCargo(["check", "--jobs=2"], false, base)).toThrow("APHRODY_CARGO_JOBS");
-  expect(() => planCargo(["check"], false, { ...base, APHRODY_CARGO_JOBS: "7" })).toThrow(
-    "1 through 6",
+  expect(() => planCargo(["check"], false, { ...base, APHRODY_CARGO_JOBS: "1025" })).toThrow(
+    "1 through 1024",
   );
   expect(() =>
     planCargo(["check", "--target-dir", "x"], false, {
@@ -126,6 +132,7 @@ test("the plan bounds jobs, refuses overrides and isolates the target directory"
   const heavy = planCargo(["check", "-p", "x"], false, { ...base, APHRODY_CARGO_JOBS: "2" });
   expect(heavy.heavy).toBe(true);
   expect(heavy.env.CARGO_BUILD_JOBS).toBe("2");
+  expect(heavy.env.APHRODY_CARGO_JOBS).toBe("2");
   expect(heavy.env.CARGO_INCREMENTAL).toBe("0");
   // An explicit empty wrapper is a deliberate opt-out and survives.
   expect(heavy.env.RUSTC_WRAPPER).toBe("");
@@ -138,6 +145,19 @@ test("the plan bounds jobs, refuses overrides and isolates the target directory"
   const light = planCargo(["fetch", "--locked"], false, base);
   expect(light.heavy).toBe(false);
   expect(light.env.CARGO_BUILD_JOBS).toBeUndefined();
+});
+
+test("fresh Cargo admission respects each execution host's affinity", () => {
+  for (const jobs of [12, 16, 24]) {
+    const plan = planCargo(["check"], true, {
+      PATH: "",
+      RUSTC_WRAPPER: "",
+      APHRODY_CARGO_JOBS: String(jobs),
+    });
+    expect(() => admitCargoJobs(plan, jobs)).not.toThrow();
+    expect(() => admitCargoJobs(plan, 6)).toThrow("available CPUs");
+    expect(() => admitCargoJobs(plan, NaN)).toThrow("available CPUs");
+  }
 });
 
 test("the MSVC context appends the private Git alias to inherited process configuration", () => {

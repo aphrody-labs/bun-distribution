@@ -24,6 +24,10 @@ import { mkdir, rm } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { basename, dirname, join, posix, resolve } from "node:path";
 import { factoryTransientShell } from "@aphrody/workspace/src/build-factory-cleanup.ts";
+import {
+  factoryResourceAdmissionProgram,
+  factoryResourcePolicy,
+} from "@aphrody/workspace/src/build-factory.ts";
 
 export type Forward = { bind: string; to: string; purpose?: string };
 /** An external repository built through the tunnel (`--repo <name>`). */
@@ -57,6 +61,8 @@ export type VpsCargoConfig = {
   jobs: number;
   /** Largest `--jobs` the host accepts (a production host stays below its core count). */
   maxJobs?: number;
+  resources?: { reserveMemoryGiB?: number; reserveDiskGiB?: number; memoryPerJobGiB?: number };
+  remoteTransientRoot?: string;
   /**
    * False when the host has no GTK 4 development libraries (the CEF desktop runtime; a production server keeps a minimum
    * surface, tools/config/system-packages.json): packages that need them stay on the primary host. Default true.
@@ -523,6 +529,16 @@ export function remoteRunScript(
   cargoArgs: readonly string[],
   jobs: number | "auto",
 ): string {
+  const selectedJobs = cargoJobsSetting(String(jobs), config);
+  const policy = factoryResourcePolicy({
+    rust: { maxJobs: selectedJobs === "auto" ? (config.maxJobs ?? config.jobs) : selectedJobs },
+    resources: config.resources,
+  });
+  const admission = factoryResourceAdmissionProgram(
+    policy,
+    { cache: config.remoteTargetDir, artifacts: config.remoteLogDir },
+    { autoJobs: jobs === "auto", reportJobs: true },
+  );
   const log = `${config.remoteLogDir}/${job}.log`;
   const exit = `${config.remoteLogDir}/${job}.exit`;
   const env = Object.entries({
@@ -540,7 +556,7 @@ export function remoteRunScript(
     `export PATH="$HOME/.bun/bin:$HOME/.cargo/bin:$HOME/.local/bin:$PATH"`,
     // The shared checkout is moved to the job snapshot only once this job holds the factory lock: another session may
     // have synced its own snapshot while this job waited, and building then would compile the wrong tree.
-    `exec env ${env.join(" ")} flock --close ${shellQuote(config.remoteHeavyLock)} bash -c ${shellQuote(`set -euo pipefail; git checkout -q -f ${sha} || { echo "checkout moved away from ${sha}" >&2; exit 2; }; ${factoryTransientShell(posix.resolve(posix.dirname(config.remoteHeavyLock), "../transient")).join("; ")}; "$@"`)} bash ${shellQuote(config.cargoSerial ?? "scripts/build/rust/cargo-serial.sh")} ${cargoArgs.map(shellQuote).join(" ")}`,
+    `exec env ${env.join(" ")} flock --close ${shellQuote(config.remoteHeavyLock)} flock --close ${shellQuote(posix.join(config.remoteLockDir, `${posix.basename(config.remoteWorkspace)}.source.lock`))} bash -c ${shellQuote(`set -euo pipefail; git checkout -q -f ${sha} || { echo "checkout moved away from ${sha}" >&2; exit 2; }; mkdir -p -- ${shellQuote(config.remoteTargetDir)}; ${factoryTransientShell(config.remoteTransientRoot ?? posix.resolve(posix.dirname(config.remoteHeavyLock), "../transient")).join("; ")}; factory_jobs=$(bun --no-env-file -e ${shellQuote(admission)}); export APHRODY_CARGO_JOBS="$factory_jobs" CARGO_BUILD_JOBS="$factory_jobs"; "$@"`)} bash ${shellQuote(config.cargoSerial ?? "scripts/build/rust/cargo-serial.sh")} ${cargoArgs.map(shellQuote).join(" ")}`,
   ].join("; ");
   const window = `bash -c ${shellQuote(`(${body}) > ${log} 2>&1; echo $? > ${exit}`)}`;
   const session = shellQuote(config.remoteSession);
@@ -859,10 +875,12 @@ export function cargoJobsSetting(
   requested: string | undefined,
   config: Pick<VpsCargoConfig, "jobs" | "maxJobs" | "host">,
 ): number | "auto" {
+  const limit = config.maxJobs ?? config.jobs;
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 1024)
+    throw new Error("Host maxJobs must be an integer from 1 through 1024");
   if (requested === "auto") return "auto";
-  const limit = Math.min(6, config.maxJobs ?? 6);
   const jobs = Number(requested ?? Math.min(config.jobs, limit));
-  if (!Number.isInteger(jobs) || jobs < 1 || jobs > limit)
+  if (!Number.isSafeInteger(jobs) || jobs < 1 || jobs > limit)
     throw new Error(`--jobs must be 1..${limit}, or auto, on ${config.host}`);
   return jobs;
 }

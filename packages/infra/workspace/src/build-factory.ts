@@ -107,6 +107,27 @@ export function admitFactoryResources(
   return { policy, observed };
 }
 
+/** Generated for the execution host; measurements happen only when its locks are held. */
+export function factoryResourceAdmissionProgram(
+  policy: ReturnType<typeof factoryResourcePolicy>,
+  paths: { cache: string; artifacts: string },
+  options: { autoJobs?: boolean; reportJobs?: boolean } = {},
+): string {
+  return String.raw`
+const {availableParallelism}=await import('node:os');
+const {statfs}=await import('node:fs/promises');
+const memory=await Bun.file('/proc/meminfo').text();
+const available=/^MemAvailable:\s+(\d+)\s+kB$/m.exec(memory)?.[1];
+if(!available)throw Error('Build factory available memory unknown');
+const cpus=availableParallelism();
+const policy=${JSON.stringify(policy)};
+${options.autoJobs ? "policy.jobs=Math.min(policy.jobs,cpus);" : ""}
+const disks=await Promise.all(${JSON.stringify([paths.cache, paths.artifacts])}.map(async path=>{const s=await statfs(path);return Number(s.bavail)*Number(s.bsize)/1073741824}));
+(${admitFactoryResources.toString()})(policy,{cpus,availableMemoryGiB:Number(available)/1048576,cacheDiskGiB:disks[0],artifactDiskGiB:disks[1]});
+${options.reportJobs ? "console.log(policy.jobs);" : ""}
+`;
+}
+
 /** Builds share the heavy lock and hold their source lock; Cargo retains its owner lock. */
 export function buildFactoryPlan(
   config: BuildFactoryConfig,
@@ -182,7 +203,7 @@ export function buildFactoryPlan(
         )
       : []),
     // Execute the same admission owner natively; planning never substitutes controller capacity.
-    `bun --no-env-file -e ${shellQuote(String.raw`const {availableParallelism}=await import('node:os');const {statfs}=await import('node:fs/promises');const memory=await Bun.file('/proc/meminfo').text();const available=/^MemAvailable:\s+(\d+)\s+kB$/m.exec(memory)?.[1];if(!available)throw Error('Build factory available memory unknown');const disks=await Promise.all(${JSON.stringify([cache, artifacts])}.map(async path=>{const s=await statfs(path);return Number(s.bavail)*Number(s.bsize)/1073741824}));(${admitFactoryResources.toString()})(${JSON.stringify(resources)},{cpus:availableParallelism(),availableMemoryGiB:Number(available)/1048576,cacheDiskGiB:disks[0],artifactDiskGiB:disks[1]});`)}`,
+    `bun --no-env-file -e ${shellQuote(factoryResourceAdmissionProgram(resources, { cache, artifacts }))}`,
     `${config.cleanup ? "" : "exec "}env ${environment.map(shellQuote).join(" ")} ${command.map(shellQuote).join(" ")}`,
   ].join("\n");
   // The supervisor owns the descriptor; long-lived cache daemons must not inherit it.

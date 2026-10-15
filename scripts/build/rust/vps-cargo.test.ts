@@ -37,15 +37,20 @@ const SHA = "0123456789abcdef0123456789abcdef01234567";
 
 describe("vps-cargo", () => {
   test("explicit auto job selection reaches every CPU on the remote host", () => {
-    expect(cargoJobsSetting(undefined, config)).toBe(6);
+    expect(cargoJobsSetting(undefined, config)).toBe(12);
     expect(cargoJobsSetting("3", config)).toBe(3);
     expect(cargoJobsSetting("auto", config)).toBe("auto");
-    expect(() => cargoJobsSetting("7", config)).toThrow("--jobs must be 1..6, or auto");
-    expect(() => cargoJobsSetting("1.5", config)).toThrow("--jobs must be 1..6, or auto");
+    expect(cargoJobsSetting("12", config)).toBe(12);
+    expect(() => cargoJobsSetting("13", config)).toThrow("--jobs must be 1..12, or auto");
+    expect(() => cargoJobsSetting("1.5", config)).toThrow("--jobs must be 1..12, or auto");
 
     const script = remoteRunScript(config, SHA, "all-cpus", ["check", "-p", "aphrody"], "auto");
     expect(script).toContain("APHRODY_CARGO_JOBS=auto");
     expect(script).toContain("flock --close /home/ubuntu/build/locks/heavy.lock");
+    expect(script).toContain("aphrody.source.lock");
+    expect(script).toContain("MemAvailable:");
+    expect(script).toContain("policy.jobs=Math.min(policy.jobs,cpus)");
+    expect(script).toContain("CARGO_BUILD_JOBS=");
   });
 
   test("quotes only what needs quoting", () => {
@@ -116,7 +121,7 @@ describe("vps-cargo", () => {
     expect(script).toContain("flock --close /home/ubuntu/build/locks/heavy.lock");
     expect(script).toContain("checkout moved away from");
     expect(script).toContain("umask 022; cd ");
-    expect(script).toContain('exit "$(cat /home/ubuntu/build/artifacts/wsl/job-1.exit)"');
+    expect(script).toContain(`exit "$(cat ${config.remoteLogDir}/job-1.exit)"`);
   });
 
   test("an external repository gets its own checkout, ref, target directory and the shared locks", async () => {
@@ -127,7 +132,7 @@ describe("vps-cargo", () => {
     expect(vu.remoteHeavyLock).toBe(config.remoteHeavyLock);
     const script = remoteRunScript(vu, SHA, "job-2", ["build", "--release", "-p", "vu"], 2);
     expect(script).toContain("cd /home/ubuntu/build/wsl/vu");
-    expect(script).toContain("CARGO_TARGET_DIR=/home/ubuntu/build/cache/cargo/vu-wsl");
+    expect(script).toContain("CARGO_TARGET_DIR=/home/ubuntu/build/storage/cache/cargo/vu-wsl");
     expect(script).toContain("flock --close /home/ubuntu/build/locks/heavy.lock");
     expect(script).toContain(
       "/home/ubuntu/build/wsl/aphrody/scripts/build/rust/cargo-serial.sh build --release -p vu",
