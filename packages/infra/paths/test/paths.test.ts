@@ -1,10 +1,44 @@
 // SPDX-License-Identifier: Apache-2.0
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { expect, test } from "bun:test";
 import { checkoutRoot, findWorkspaceRoot, moduleDirectory, portablePath } from "../src/index.ts";
+
+test("a Bun workspace consumer resolves and bundles the canonical source while Node keeps dist", async () => {
+  const root = mkdtempSync(join(tmpdir(), "aphrody-paths-bun-consumer-"));
+  try {
+    const owner = join(import.meta.dir, "..");
+    const scope = join(root, "node_modules/@aphrody");
+    mkdirSync(scope, { recursive: true });
+    symlinkSync(owner, join(scope, "paths"), process.platform === "win32" ? "junction" : "dir");
+    const manifest = JSON.parse(readFileSync(join(owner, "package.json"), "utf8"));
+    expect(manifest.files).toContain("src");
+    expect(manifest.exports["."].default).toBe("./dist/index.js");
+    expect(Bun.resolveSync("@aphrody/paths", root)).toBe(realpathSync(join(owner, "src/index.ts")));
+    const entry = join(root, "entry.ts");
+    writeFileSync(entry, 'export { checkoutRoot, portablePath } from "@aphrody/paths";');
+    const result = await Bun.build({ entrypoints: [entry], target: "bun", format: "esm" });
+    expect(result.success).toBe(true);
+    const output = join(root, "consumer.mjs");
+    await Bun.write(output, result.outputs[0]!);
+    const consumer = await import(pathToFileURL(output).href);
+    const checkout = join(root, "selected-bun");
+    expect(consumer.checkoutRoot("bun", { APHRODY_BUN_CHECKOUT: checkout })).toBe(checkout);
+    expect(consumer.portablePath("packages\\web")).toBe("packages/web");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 test("finds a workspace from a nested source file using all root markers", () => {
   const root = mkdtempSync(join(tmpdir(), "aphrody-paths-"));
