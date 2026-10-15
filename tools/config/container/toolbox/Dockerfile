@@ -9,7 +9,7 @@ ARG BASE=ghcr.io/aphrody-labs/bun:1.4.3-aphrody.3
 FROM ${BASE}
 USER root
 COPY --chmod=0755 aphrody /usr/local/bin/aphrody
-RUN for alias in aphrody-mcp aphrody-embed aphrody-infra; do ln -s aphrody "/usr/local/bin/$alias"; done \
+RUN --network=none for alias in aphrody-mcp aphrody-embed aphrody-infra; do ln -s aphrody "/usr/local/bin/$alias"; done \
  && aphrody --version
 USER 1000:1000
 ENV PATH=/usr/local/bin:/usr/bin:/bin
