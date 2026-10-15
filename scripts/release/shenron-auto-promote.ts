@@ -3,16 +3,18 @@
 import { mkdirSync, readdirSync, lstatSync, copyFileSync, rmSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { activeDeployment, deploymentSelection } from "./shenron-deployment-identity.ts";
 
 const infra = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const config = await Bun.file(join(infra, "tools/config/shenron-auto-deploy.json")).json();
 const [sha, image, work, job, previous] = process.argv.slice(2);
+const selection = deploymentSelection(sha ?? "", config);
 if (
   !/^[a-f0-9]{40}$/.test(sha ?? "") ||
   !/^sha256:[a-f0-9]{64}$/.test(image ?? "") ||
-  !/^[a-f0-9]{40}$/.test(previous ?? "") ||
+  !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(previous ?? "") ||
   work !== config.worktree ||
-  job !== join(config.artifacts, sha!)
+  job !== join(config.artifacts, selection.id)
 )
   throw new Error("Invalid promotion identity");
 const env = { ...process.env, APHRODY_SSH_COMMAND_TIMEOUT_SECS: "1800" };
@@ -65,8 +67,11 @@ for (const name of [
   "prepare-shenron-auto-release.py",
   "stage-shenron-cdn.py",
   "seal-shenron-docker-release.py",
+  "shenron_deployment_identity.py",
 ])
   copyFileSync(join(infra, "scripts/release", name), join(upload, name));
+if (selection.deployment)
+  await Bun.write(join(upload, "deployment.json"), JSON.stringify(selection.deployment) + "\n");
 const checksums: Record<string, string> = {};
 await Promise.all(
   readdirSync(upload).map(async (name) => {
@@ -74,7 +79,7 @@ await Promise.all(
   }),
 );
 await Bun.write(join(upload, "checksums.json"), JSON.stringify(checksums) + "\n");
-const destination = `/tmp/shenron-auto-${sha}`;
+const destination = `/tmp/shenron-auto-${selection.id}`;
 remote(
   js(`require("node:fs").mkdirSync(${JSON.stringify(destination)},{recursive:true,mode:0o700})`),
 );
@@ -103,17 +108,21 @@ remote(
   true,
 );
 const activePath = remote(`readlink -f ${config.remoteRoot}/current`);
-if (
-  activePath
-    .split("/")
-    .pop()
-    ?.replace(/^docker-/, "") !== previous
-)
+const activeIdentity = activeDeployment(
+  JSON.parse(
+    remote(
+      js(
+        `const release=${JSON.stringify(activePath)};const m=await Bun.file(release+'/release.json').json();console.log(JSON.stringify({release,commit:m.commit,deployment:m.deployment}));`,
+      ),
+    ),
+  ),
+);
+if (activeIdentity.id !== previous)
   throw new Error("Production changed during build; candidate preserved");
 remote(`sudo -n docker image load --input ${destination}/image.tar`, true);
 const remoteImage = remote(`sudo -n docker image inspect -f '{{.Id}}' ${image}`);
 if (remoteImage !== image) throw new Error("Loaded image differs");
-const release = `${config.remoteRoot}/releases/docker-${sha}`;
+const release = `${config.remoteRoot}/releases/${selection.releaseName}`;
 const prepare = [
   "sudo",
   "-n",
@@ -130,6 +139,7 @@ const prepare = [
   image!,
   "--artifact",
   `${destination}/cdn`,
+  ...(selection.deployment ? ["--deployment", `${destination}/deployment.json`] : []),
 ]
   .map(quote)
   .join(" ");
@@ -160,6 +170,7 @@ await Bun.write(
   JSON.stringify(
     {
       commit: sha,
+      deploymentId: selection.id,
       image,
       previous,
       release,

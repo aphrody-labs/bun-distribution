@@ -11,6 +11,11 @@ import {
 } from "@aphrody/workspace/src/build-factory.ts";
 import { factoryTransientShell } from "@aphrody/workspace/src/build-factory-cleanup.ts";
 import {
+  activeDeployment,
+  deploymentIsCurrent,
+  deploymentSelection,
+} from "./shenron-deployment-identity.ts";
+import {
   runSourceControllerLoop,
   startSourceControllerWorker,
   type ControllerWorker,
@@ -309,14 +314,11 @@ function remote(args: string): string {
     args,
   ]);
 }
-function active(): string {
-  const p = remote(`readlink -f ${config.remoteRoot}/current`);
-  const sha = p
-    .split("/")
-    .pop()
-    ?.replace(/^docker-/, "");
-  if (!sha || !/^[a-f0-9]{40}$/.test(sha)) throw new Error("Invalid active remote release");
-  return sha;
+function active() {
+  const code = `const fs=await import('node:fs/promises');const release=await fs.realpath(${JSON.stringify(config.remoteRoot + "/current")});const m=await Bun.file(release+'/release.json').json();console.log(JSON.stringify({release,commit:m.commit,deployment:m.deployment}));`;
+  return activeDeployment(
+    JSON.parse(remote("bun --no-env-file -e '" + code.replaceAll("'", "'\\''") + "'")),
+  );
 }
 function native(sha: string, work: string) {
   const n = config.nativeCache;
@@ -397,14 +399,14 @@ async function buildDeploy() {
   )
     throw new Error("Source checkout changed before build");
   const previous = active();
-  // Release identity is the Shenron commit; runtime-only changes need a future composite identity.
-  if (previous === sha) {
-    await state("current", { commit: sha });
+  const selection = deploymentSelection(sha, config);
+  if (deploymentIsCurrent(previous, selection)) {
+    await state("current", { commit: sha, deploymentId: selection.id });
     return;
   }
-  await state("building", { commit: sha, previous });
+  await state("building", { commit: sha, deploymentId: selection.id, previous: previous.id });
   const work = config.worktree,
-    job = join(config.artifacts, sha);
+    job = join(config.artifacts, selection.id);
   mkdirSync(dirname(work), { recursive: true });
   mkdirSync(job, { recursive: true, mode: 0o700 });
   mkdirSync(factory.cacheRoot, { recursive: true });
@@ -482,14 +484,14 @@ async function buildDeploy() {
       "--build-arg",
       `SHENRON_REVISION=${sha}`,
       "-t",
-      `localhost/shenron:${sha}`,
+      `localhost/shenron:${selection.id}`,
       ".",
     ],
     work,
     true,
   );
   command(
-    ["docker", "run", "--rm", "--network", "none", `localhost/shenron:${sha}`, "version"],
+    ["docker", "run", "--rm", "--network", "none", `localhost/shenron:${selection.id}`, "version"],
     work,
     true,
   );
@@ -502,14 +504,14 @@ async function buildDeploy() {
       "none",
       "--entrypoint",
       "/usr/local/bin/shenron-bot",
-      `localhost/shenron:${sha}`,
+      `localhost/shenron:${selection.id}`,
       "--smoke",
     ],
     work,
     true,
   );
   const image = command(
-    ["docker", "image", "inspect", "-f", "{{.Id}}", `localhost/shenron:${sha}`],
+    ["docker", "image", "inspect", "-f", "{{.Id}}", `localhost/shenron:${selection.id}`],
     work,
   );
   if (runtime) {
@@ -522,7 +524,7 @@ async function buildDeploy() {
       mode: 0o600,
     });
   }
-  await state("built", { commit: sha, previous, image });
+  await state("built", { commit: sha, deploymentId: selection.id, previous: previous.id, image });
   // Promotion uses the same sealed Infra adapter as manual Shenron releases.
   command(
     [
@@ -532,16 +534,23 @@ async function buildDeploy() {
       image,
       work,
       job,
-      previous,
+      previous.id,
     ],
     work,
     true,
   );
-  if (active() !== sha) throw new Error("Remote active commit differs after promotion");
+  if (!deploymentIsCurrent(active(), selection))
+    throw new Error("Remote deployment identity differs after promotion");
   const health = await fetch(`${config.site}/api/health`, { signal: AbortSignal.timeout(20000) });
   if (!health.ok || (await health.json()).status !== "ok")
     throw new Error("Public health probe failed");
-  await state("deployed", { commit: sha, previous, image, health: "ok" });
+  await state("deployed", {
+    commit: sha,
+    deploymentId: selection.id,
+    previous: previous.id,
+    image,
+    health: "ok",
+  });
 }
 
 if (import.meta.main) {
@@ -567,7 +576,8 @@ if (import.meta.main) {
         );
       const sha = await sync();
       if (!sha) process.exitCode = 75;
-      else if (active() === sha) await state("current", { commit: sha });
+      else if (deploymentIsCurrent(active(), deploymentSelection(sha, config)))
+        await state("current", { commit: sha, deploymentId: deploymentSelection(sha, config).id });
       else {
         mkdirSync(dirname(config.lock), { recursive: true });
         if (!factory.cleanup || config.lock !== factory.lockPath)

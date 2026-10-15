@@ -11,6 +11,7 @@ import re
 import shutil
 import subprocess
 import sys
+from shenron_deployment_identity import deployment, release_name, require_release_name
 
 
 def require(value, message):
@@ -91,7 +92,8 @@ def prepare(args):
         not args.previous.is_symlink(), "previous must be a resolved release directory"
     )
     previous = args.previous.resolve(strict=True)
-    release = root / "releases" / ("docker-" + args.commit)
+    selected = deployment(json.loads(args.deployment.read_text()) if args.deployment else None, args.commit)
+    release = root / "releases" / release_name(args.commit, selected)
     require(previous.parent == root / "releases", "previous outside release root")
     require(not release.exists() and not release.is_symlink(), "fresh release required")
     regular(previous / "release.json", previous)
@@ -105,10 +107,7 @@ def prepare(args):
     )
     old_commit = manifest.get("commit", "")
     require(re.fullmatch(r"[a-f0-9]{40}", old_commit), "invalid previous commit")
-    require(
-        previous.name in (old_commit, "docker-" + old_commit),
-        "previous identity mismatch",
-    )
+    require_release_name(previous.name, old_commit, manifest.get("deployment"))
     files = manifest.get("files", {})
     require(
         isinstance(files, dict) and {"compose.yaml", "deploy.env"} <= files.keys(),
@@ -254,6 +253,8 @@ def prepare(args):
         "--gateway-commit",
         images["gateway"]["commit"],
     ]
+    if args.deployment:
+        command += ["--deployment", str(args.deployment)]
     for role, identity in images.items():
         if role != "gateway":
             command += ["--service-image", role, identity["id"], identity["commit"]]
@@ -272,6 +273,7 @@ def main():
     parser.add_argument("--root", type=pathlib.Path, required=True)
     parser.add_argument("--previous", type=pathlib.Path, required=True)
     parser.add_argument("--commit", required=True)
+    parser.add_argument("--deployment", type=pathlib.Path)
     parser.add_argument("--image-id", required=True)
     parser.add_argument("--artifact", type=pathlib.Path, required=True)
     here = pathlib.Path(__file__).resolve().parent

@@ -12,6 +12,7 @@ import sqlite3
 import subprocess
 import sys
 import tempfile
+from shenron_deployment_identity import require_release_name
 
 
 class DeploymentError(Exception):
@@ -142,10 +143,10 @@ def verify(release, root, rollback=False):
         and re.fullmatch(r"[a-f0-9]{40}", revision),
         "invalid Docker release identity",
     )
-    require(
-        release.name in (revision, "docker-" + revision),
-        "release name differs from commit",
-    )
+    try:
+        require_release_name(release.name, revision, manifest.get("deployment"))
+    except ValueError:
+        require(False, "release source/runtime identity differs")
     require(
         set(manifest.get("files", {})) >= {"compose.yaml", "deploy.env"}
         and all(

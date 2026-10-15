@@ -10,6 +10,71 @@ import {
   qualifyCompiledRuntimes,
   runtimeEvidence,
 } from "./shenron-auto-deploy";
+import {
+  activeDeployment,
+  deploymentIsCurrent,
+  deploymentSelection,
+} from "./shenron-deployment-identity";
+
+test("a runtime-only change builds a distinct deployment without changing the Shenron Git commit", () => {
+  const commit = "a".repeat(40);
+  const config = {
+    deploymentIdentity: "source-runtime-v1",
+    runtimeSha256: "b".repeat(64),
+    runtimeExpected: {
+      version: "1.4.5",
+      revision: "c".repeat(40),
+      sourceUrl:
+        "https://github.com/aphrody-labs/bun/releases/download/bun-v1.4.5/bun-linux-x64-full.zip",
+    },
+  };
+  const expected = deploymentSelection(commit, config);
+  const active = activeDeployment({
+    release: "/fixture/" + expected.releaseName,
+    commit,
+    deployment: expected.deployment,
+  });
+  expect(deploymentIsCurrent(active, deploymentSelection(commit, config))).toBe(true);
+  for (const change of [
+    { runtimeSha256: "d".repeat(64) },
+    { runtimeExpected: { ...config.runtimeExpected, revision: "d".repeat(40) } },
+    { runtimeExpected: { ...config.runtimeExpected, version: "1.4.6" } },
+    {
+      runtimeExpected: {
+        ...config.runtimeExpected,
+        sourceUrl: config.runtimeExpected.sourceUrl.replace("full.zip", "other.zip"),
+      },
+    },
+  ]) {
+    const changed = deploymentSelection(commit, { ...config, ...change });
+    expect(changed.commit).toBe(commit);
+    expect(changed.id).not.toBe(expected.id);
+    expect(changed.releaseName).not.toBe(expected.releaseName);
+    expect(deploymentIsCurrent(active, changed)).toBe(false);
+  }
+  const legacy = activeDeployment({ release: "/fixture/docker-" + commit, commit });
+  expect(deploymentIsCurrent(legacy, deploymentSelection(commit, {}))).toBe(true);
+  expect(deploymentIsCurrent(legacy, expected)).toBe(false);
+  expect(() =>
+    activeDeployment({ ...active, deployment: { ...expected.deployment!, id: "0".repeat(64) } }),
+  ).toThrow();
+  expect(() => activeDeployment({ ...active, release: legacy.release })).toThrow();
+  expect(() =>
+    activeDeployment({
+      ...active,
+      deployment: {
+        ...expected.deployment!,
+        runtime: { ...expected.deployment!.runtime, extra: "unsealed" },
+      } as typeof expected.deployment,
+    }),
+  ).toThrow("identity differs");
+  expect(() => deploymentSelection(commit, { ...config, runtimeSha256: "invalid" })).toThrow(
+    "exact qualified",
+  );
+  expect(() =>
+    deploymentSelection(commit, { ...config, runtimeSha256: config.runtimeSha256 + "\n" }),
+  ).toThrow("exact qualified");
+});
 
 const nativeEvidence = {
   version: "1.4.4+fixture",
@@ -142,7 +207,15 @@ async function fixture() {
   git(root, "clone", origin, source);
   const initial = git(source, "rev-parse", "HEAD");
   const config = join(root, "config.json");
-  await Bun.write(config, JSON.stringify({ source, state, bun: process.execPath }));
+  await Bun.write(
+    config,
+    JSON.stringify({
+      source,
+      state,
+      bun: process.execPath,
+      runtimeExpected: { version: Bun.version },
+    }),
+  );
   return {
     source,
     publisher,

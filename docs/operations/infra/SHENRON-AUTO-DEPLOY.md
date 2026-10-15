@@ -58,6 +58,24 @@ reçoit pas cette allocation. Le runtime reste lié à son SHA-256 et à sa
 provenance déclarés ; la version attendue suit ces pins lors d'une prochaine
 release qualifiée.
 
+Le contrat optionnel `deploymentIdentity: "source-runtime-v1"` compare ensemble
+le commit Shenron et les pins Bun (SHA-256 du binaire, version, révision et URL
+de provenance). À source Shenron identique, un runtime différent déclenche donc
+un nouveau build ; une identité identique conserve le saut du build. Le tag
+Docker et le dossier d'artefacts utilisent ce digest. Le dossier de release
+`docker-<commit-Shenron>-<digest>` et son reçu public `deployment` sont vérifiés
+par les mêmes propriétaires de préparation, de scellement et d'activation.
+Le champ `commit` et les labels OCI conservent le vrai commit Shenron.
+
+Ce mode doit être activé avec les pins d'un runtime qualifié et l'adaptateur
+correspondant installé sur DBFR. Le paquet canonique
+`scripts/tools/install-vps-adapter.sh --stack shenron` inclut désormais le module
+`shenron_deployment_identity.py`, dont le hash figure dans le manifeste scellé
+de source puis dans `ADAPTER.json`. Sans ce mode explicite, le contrat historique
+reste valide. Cette évolution source ne change ni les pins concrets de la
+configuration ni les services actifs ; leur avancée reste une étape distincte,
+avec plan Infra, comparaison de l'état initial et relecture des preuves.
+
 ```sh
 systemctl --user status shenron-sync.timer shenron-auto-deploy.timer
 systemctl --user start shenron-sync.service

@@ -6,6 +6,7 @@ import json
 import os
 import pathlib
 import stat
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -228,6 +229,49 @@ class CdnStageTests(unittest.TestCase):
             with patch.object(sys, "argv", args), self.assertRaises(SystemExit):
                 seal.main()
             self.assertFalse((release / "release.json").exists())
+
+    def test_seal_consumes_factory_runtime_identity_and_refuses_changed_pins(self):
+        identity_module = pathlib.Path(__file__).with_name("shenron-deployment-identity.ts").resolve()
+        config = {
+            "deploymentIdentity": "source-runtime-v1",
+            "runtimeSha256": "b" * 64,
+            "runtimeExpected": {
+                "version": "1.4.5",
+                "revision": "c" * 40,
+                "sourceUrl": "https://github.com/aphrody-labs/bun/releases/download/fixture/bun.zip",
+            },
+        }
+        selected = json.loads(subprocess.check_output([
+            os.environ.get("SHENRON_BUN_EXECUTABLE", "bun"), "--no-env-file", "-e",
+            "import {deploymentSelection} from " + json.dumps(str(identity_module)) + ";"
+            "console.log(JSON.stringify(deploymentSelection(" + json.dumps("a" * 40) + "," + json.dumps(config) + ")));",
+        ], text=True, timeout=20))
+        for changed in (False, True):
+            with self.subTest(changed=changed), tempfile.TemporaryDirectory() as directory:
+                base = pathlib.Path(directory)
+                legacy, _artifact, _previous = self.setup_tree(base)
+                release = legacy.rename(base / selected["releaseName"])
+                (release / "deploy.env").write_text("# public config")
+                vfs = base / "public-vfs"
+                vfs.write_text("public")
+                receipt = json.loads(json.dumps(selected["deployment"]))
+                if changed:
+                    receipt["runtime"]["sha256"] = "d" * 64
+                identity = base / "deployment.json"
+                identity.write_text(json.dumps(receipt))
+                args = ["seal", str(release), "--commit", "a" * 40,
+                        "--image-id", "sha256:" + "e" * 64, "--public-vfs", str(vfs),
+                        "--deployment", str(identity)]
+                with patch.object(sys, "argv", args):
+                    if changed:
+                        with self.assertRaises(SystemExit):
+                            seal.main()
+                        self.assertFalse((release / "release.json").exists())
+                    else:
+                        seal.main()
+                        manifest = json.loads((release / "release.json").read_text())
+                        self.assertEqual(manifest["commit"], "a" * 40)
+                        self.assertEqual(manifest["deployment"], receipt)
 
 
 if __name__ == "__main__":

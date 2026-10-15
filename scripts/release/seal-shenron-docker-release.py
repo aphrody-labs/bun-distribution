@@ -7,6 +7,7 @@ import hashlib
 import json
 import pathlib
 import re
+from shenron_deployment_identity import deployment, require_release_name
 
 
 def digest(path):
@@ -18,6 +19,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("release", type=pathlib.Path)
     parser.add_argument("--commit", required=True)
+    parser.add_argument("--deployment", type=pathlib.Path)
     parser.add_argument("--image-id", required=True)
     parser.add_argument("--public-vfs", required=True, type=pathlib.Path)
     parser.add_argument("--gateway-image-id")
@@ -44,8 +46,11 @@ def main():
     ):
         parser.error("invalid immutable gateway identity")
     release = args.release.resolve(strict=True)
-    if release.name not in (args.commit, "docker-" + args.commit):
-        parser.error("release directory must match commit")
+    try:
+        selected = deployment(json.loads(args.deployment.read_text()) if args.deployment else None, args.commit)
+        require_release_name(release.name, args.commit, selected)
+    except ValueError as error:
+        parser.error(str(error))
     files = {}
     for path in release.rglob("*"):
         relative = path.relative_to(release).as_posix()
@@ -76,6 +81,8 @@ def main():
             "sha256": digest(args.public_vfs),
         },
     }
+    if selected:
+        manifest["deployment"] = selected
     if args.gateway_image_id:
         manifest["images"] = {
             "gateway": {"id": args.gateway_image_id, "commit": args.gateway_commit}

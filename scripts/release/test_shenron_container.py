@@ -3,6 +3,7 @@
 
 import importlib.util
 import json
+import hashlib
 import os
 import pathlib
 import sqlite3
@@ -95,6 +96,27 @@ class ContainerDeploymentTests(unittest.TestCase):
         (release / "release.json").write_text(json.dumps(manifest))
         self.releases.append((release, manifest))
         return release
+
+    def test_runtime_release_suffix_preserves_the_real_source_revision(self):
+        release = self.release("a")
+        manifest = self.releases[-1][1]
+        runtime = {"sha256": "b" * 64, "version": "1.4.5", "revision": "c" * 40,
+                   "sourceUrl": "https://github.com/aphrody-labs/bun/releases/download/bun-v1.4.5/bun-linux-x64-full.zip"}
+        fields = ["shenron-source-runtime/v1", manifest["commit"], *runtime.values()]
+        identity = hashlib.sha256("\n".join(fields).encode()).hexdigest()
+        manifest["deployment"] = {"schema": fields[0], "id": identity, "commit": manifest["commit"], "runtime": runtime}
+        renamed = release.with_name(release.name + "-" + identity)
+        release.rename(renamed)
+        self.releases[-1] = (renamed, manifest)
+        (renamed / "release.json").write_text(json.dumps(manifest))
+        adapter.verify(renamed, self.root)
+        self.assertEqual(manifest["commit"], "a" * 40)
+        self.calls.clear()
+        manifest["deployment"]["runtime"]["sha256"] = "d" * 64
+        (renamed / "release.json").write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(adapter.DeploymentError, "source/runtime identity"):
+            adapter.verify(renamed, self.root)
+        self.assertEqual(self.calls, [])
 
     def command(self, args):
         self.calls.append(args)
@@ -286,7 +308,7 @@ class ContainerDeploymentTests(unittest.TestCase):
             adapter.allowed_mount("bot", root, release, self.root, manifest)
         )
 
-    def test_gateway_nginx_mount_tolerates_extra_vhosts_only_for_rollback(self):
+    def test_gateway_nginx_mount_allows_managed_vhosts_and_sealed_rollback(self):
         release = self.release("a")
         nginx = release / "nginx"
         nginx.mkdir()
@@ -295,6 +317,10 @@ class ContainerDeploymentTests(unittest.TestCase):
         manifest["files"]["nginx/00.conf"] = adapter.file_digest(nginx / "00.conf")
         (nginx / "zz-extra.conf").write_text("b")
         mount = {"source": str(nginx), "target": "/etc/nginx/conf.d", "read_only": True}
+        self.assertTrue(
+            adapter.allowed_mount("gateway", mount, release, self.root, manifest)
+        )
+        (nginx / "unmanaged.conf").write_text("c")
         self.assertFalse(
             adapter.allowed_mount("gateway", mount, release, self.root, manifest)
         )
@@ -302,6 +328,9 @@ class ContainerDeploymentTests(unittest.TestCase):
             adapter.allowed_mount("gateway", mount, release, self.root, manifest, True)
         )
         (nginx / "00.conf").unlink()
+        self.assertFalse(
+            adapter.allowed_mount("gateway", mount, release, self.root, manifest)
+        )
         self.assertFalse(
             adapter.allowed_mount("gateway", mount, release, self.root, manifest, True)
         )
