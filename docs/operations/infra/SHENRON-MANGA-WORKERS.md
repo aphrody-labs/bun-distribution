@@ -27,7 +27,12 @@ isolé, lorsqu'il est déconnecté faute de compte/device, ne constitue pas une
 preuve de connexion japonaise native.
 
 `progress.json` est privé ; `public-progress.json` est la projection expurgée
-destinée au statut public. Les captures brutes et les secrets ne sont pas des
+destinée au statut public. L'option `--public-progress-file` écrit uniquement
+cette projection, atomiquement en mode 0644, dans
+`/var/www/aphrody-status/manga-source-pool.json`. Infra crée ce dossier public
+en mode 0755, propriétaire `ubuntu`. Le serveur CDN existant sert exclusivement
+ce fichier à `https://cdn.aphrody.com/status/manga-source-pool.json`, sans cache
+et sans accès au dossier privé des jobs. Les captures brutes et les secrets ne sont pas des
 artefacts publics. Une découverte ne constitue ni une publication, ni une
 preuve de planches disponibles, ni une indexation complète. Les médias publiés
 passent par les writers et contrôles éditoriaux de Shenron.
@@ -39,6 +44,7 @@ passent par les writers et contrôles éditoriaux de Shenron.
 2. Relire l'unité du catalogue, `systemd-analyze verify`, les limites et le
    dossier PID privé. Consigner la commande d'installation et le rollback
    avant toute modification d'hôte.
+   Vérifier aussi `nginx -t` avant rechargement de l'unique route publique.
 3. Par `aphrody infra ssh exec --host vps`, installer uniquement cette unité
    du catalogue dans `/etc/systemd/system`, puis `daemon-reload` et
    `enable --now shenron-manga-workers.service`.
@@ -51,6 +57,12 @@ La commande de contrôle du catalogue est
 Le rollback arrête et désactive uniquement `shenron-manga-workers.service` ;
 il conserve la file, les données et le namespace partagé. Aucune purge n'est
 nécessaire pour reprendre le service.
+
+Avant le premier démarrage réel du pool, le statut public initial indique
+`state=degraded`, `runtimeState=waiting_source_build`, zéro worker actif et
+des compteurs inconnus à `null`. Son horodatage correspond à une observation
+réelle du service. Il ne prétend pas connaître une file qui n'a pas encore été
+ouverte. Les snapshots ultérieurs proviennent exclusivement du pool qualifié.
 
 L'activation et la permanence réelle se prouvent sur l'hôte ; la présence de
 cette unité dans Git n'est pas une preuve de déploiement ni de travail effectué.
