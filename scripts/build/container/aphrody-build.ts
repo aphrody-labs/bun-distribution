@@ -6,6 +6,7 @@
  *
  *   bun scripts/build/container/aphrody-build.ts image                 # build + tag (versioned, latest)
  *   bun scripts/build/container/aphrody-build.ts run [options] -- CMD   # run CMD on a bind-mounted checkout
+ *   bun scripts/build/container/aphrody-build.ts source-job plan|apply --config PRIVATE --plan PRIVATE [--plan-sha256 HASH]
  *
  * `run` options:
  *   --repo DIR            checkout to mount (default: this repository); mounted at the same absolute path
@@ -26,6 +27,7 @@
  */
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { sourceJobCli } from "./shenron-source-job.ts";
 
 export const IMAGE = "aphrody-build";
 export const BUILD_GID = 1500;
@@ -63,7 +65,11 @@ export function readPins(toolchain: string, packageJson: string, cargoLock: stri
     (JSON.parse(packageJson) as { packageManager?: string }).packageManager ?? "",
   );
   const bun = bunMatch?.[1];
-  const bunRelease = bun ? (bunMatch?.[2] ? `aphrody-v${bun}${bunMatch[2]}` : `bun-v${bun}`) : undefined;
+  const bunRelease = bun
+    ? bunMatch?.[2]
+      ? `aphrody-v${bun}${bunMatch[2]}`
+      : `bun-v${bun}`
+    : undefined;
   const wasmBindgen = /\[\[package\]\]\r?\nname = "wasm-bindgen"\r?\nversion = "([^"]+)"/.exec(
     cargoLock,
   )?.[1];
@@ -296,9 +302,10 @@ if (import.meta.main) {
   const [command, ...rest] = process.argv.slice(2);
   if (command === "image") await image();
   else if (command === "run") run(rest);
+  else if (command === "source-job") await sourceJobCli(rest);
   else {
     console.error(
-      "usage: aphrody-build.ts image | run [--repo DIR] [--target-volume NAME] [--env NAME]… [--host-network] [--no-lock] -- CMD…",
+      "usage: aphrody-build.ts image | run [--repo DIR] [--target-volume NAME] [--env NAME]… [--host-network] [--no-lock] -- CMD… | source-job plan|apply --config PRIVATE --plan PRIVATE [--plan-sha256 HASH]",
     );
     process.exit(64);
   }

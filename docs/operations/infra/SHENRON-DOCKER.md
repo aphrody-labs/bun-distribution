@@ -210,6 +210,78 @@ Le rollback restaure les fichiers sauvegardés et recharge systemd, sans effacer
 le profil privé ni modifier le timer. Cette provision ne démarre aucun job du
 bot et n'active pas Canon ; ces opérations exigent le runtime qualifié.
 
+## Collecte VPN dans un enfant privé
+
+Le bot DBFR utilise le réseau hôte : il reste contrôleur et ne lance jamais le
+daemon VPN dans son propre espace réseau. Le propriétaire de jobs existant
+[`aphrody-build.ts`](../../../scripts/build/container/aphrody-build.ts) expose
+le mode fini `source-job`, typé `shenron-source-vpn`. Son contrat et ses bornes
+vivent dans
+[`shenron-source-job.ts`](../../../scripts/build/container/shenron-source-job.ts).
+Le contrôleur Infra exécute ce mode sur l'hôte explicite du plan, via le tunnel
+existant ; aucun service, timer, socket Docker ou accès SSH n'est ajouté au bot.
+
+La configuration privée désigne `vps` ou `dbfr`, l'ID immuable de l'image bot
+déjà qualifiée, le runtime complet et son SHA, ainsi que `pipeline.mjs` et son
+SHA. Ce bundle est produit par le build canonique du bot Shenron et livré avec
+son reçu dans `/usr/local/lib/shenron/`. Pas de seconde fabrique d'image.
+Le mode monte ces artefacts en lecture seule et ne reçoit pas `DATABASE_URL`,
+de profil SQL ou de fichier d'environnement de production. Les seuls montages
+mutables sont le volume privé de collecte et l'état privé du daemon ; le
+sous-dossier de credentials du pipeline est masqué dans l'enfant.
+
+`dataRoot` correspond côté DBFR à
+`/home/ubuntu/apps/shenron/shared/bot/data/source-pipeline`, monté dans l'enfant
+sur `/app/data/source-pipeline`. La configuration du pipeline est `config.json`
+dans ce volume, impose `collectionIsolation: "required"` et garde ses chemins
+d'entrée, policy, jobs et crawl dans ce volume logique. Si Search est présent,
+son `cookieJar` est `/job/google-cookies.json`, projection en lecture seule du
+jar canonique privé de cet hôte. Préserver un jar différent sur l'autre hôte.
+Les profils S3 et SQL restent réservés au contrôleur après la collecte.
+
+La configuration désigne aussi un `vpnStateRoot` privé distinct, un répertoire
+de ressources avec `relays.json` et son SHA, et une échéance de 1 000 à 900 000 ms.
+Les chemins doivent être absolus, privés, sans symlink ni injection d'options
+de montage. Le cache de relais officiel préparé le15octobre2026 sur les deux
+hôtes réside dans
+`~/.aphrody/private/vpn-isolated-20261015/resources/relays.json` ; son reçu
+sépare validation structurelle, parseur Rust et vérification Sigsum. Ne pas
+qualifier le fichier vide de `vendor/mullvad/dist-assets/relays/relays.json`.
+
+Créer un plan neuf, puis appliquer uniquement son hash exact :
+
+```sh
+bun scripts/build/container/aphrody-build.ts source-job plan --config /private/source-job.json --plan /private/source-job-plan.json
+bun scripts/build/container/aphrody-build.ts source-job apply --config /private/source-job.json --plan /private/source-job-plan.json --plan-sha256 SHA256_DU_PLAN
+```
+
+Le plan épingle les artefacts, le jar, la configuration, l'identité de la
+machine, ses namespaces, son résolveur et sa route par défaut. Le mode crée un
+conteneur privé bridge, jamais host, avec deux CPU, mémoire et swap bornés à
+1 024 Mio, 128 processus et `/dev/net/tun`. Ces limites demandent une mesure réelle
+du crawl complet avant activation ; les fixtures ne qualifient pas son pic
+mémoire. Le daemon root possède seul son firewall ; la collecte tourne en
+UID1000. Ses chemins settings/cache/resources/RPC sont explicites et séparés.
+`TALPID_DNS_MODULE=static-file` force le backend qui écrit en place dans le
+résolveur Docker privé ; le backup Mullvad reste dans le filesystem éphémère
+du conteneur, sans montage de `/etc` ou du D-Bus hôte.
+
+Le compte est lu dans le keyring OS `bun-vpn`/`mullvad-account` et fourni au RPC
+par `bun vpn login --stdin`, jamais en argument ou dans un fichier intermédiaire.
+Avant collecte, vérifier état connecté, sortie Mullvad officielle et TLS Google.
+La collecte appelle uniquement `collectSourcePipeline`, puis publie un reçu
+privé avec les hashes du propriétaire Shenron. Le contrôleur valide ce reçu
+avant son propre plan/apply/verify SQL, CAS et RAG, hors du VPN. Un reçu de
+collecte ne signifie pas que toutes les sources ou la livraison sont complètes.
+
+Le verrou et les labels plan/instance empêchent un teardown d'un conteneur
+étranger. Annulation et échéance provoquent TERM puis KILL bornés, arrêt du
+conteneur et relecture des invariants réseau hôte. Une activation exige encore
+le runtime natif qualifié, le parseur Rust des relais, le bundle producteur,
+la mesure en conteneur et le branchement du port de collecte par le contrôleur
+existant. Les namespaces Japon et Google-US déjà actifs sur VPS gardent leur
+propriétaire WireGuard ; ne pas y superposer un daemon Mullvad.
+
 ## Builds on the VPS: the `aphrody-build` image
 
 Shenron's Rust, WASM, Bun install and bot steps run in Aphrody's single VPS build image
