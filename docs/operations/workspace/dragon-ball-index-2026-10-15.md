@@ -749,3 +749,36 @@ copie locale privée de métadonnées, distincte de l’état d’activation du 
 sur 176 liens locaux cassés et 175 chemins de code morts (1 597 chemins vérifiés
 dans 573 documents) ; le reçu présent ne figure plus parmi les erreurs après
 remplacement des chemins vers le checkout Bun externe par des liens de commit.
+
+## Build CLI et index incrémental des crates Bun — 2026-10-15 à 22:40 UTC
+
+Le fork Bun a livré l'adaptateur de catalogue des crates sur `origin/main` au
+commit `d2b92866563b640da4197edc88b337cca2da09a8`. Il valide le schéma,
+l'identité du dépôt, la révision source, les manifestes et les champs de
+couverture avant de produire les fiches de navigation et leur synthèse. Les
+gates du lot passent : 73 tests du crate `aphrody-web-crawl`, Clippy strict,
+`rustfmt` ciblé et contrôle des espaces. Les fiches relient chaque manifeste
+à la révision Bun source épinglée `1988e4bae7b374810cacda67d52dfd08e26ea6b7`.
+
+Le CLI Aphrody a été compilé en release depuis le commit `8ab5fe233` dans le
+worktree de build détaché réservé à ce lot, avec le verrou `heavy`, l'admission
+de ressources du factory et 12 jobs Cargo. La compilation `--locked -p aphrody`
+a réussi (`exitCode=0`, terminée à 22:39:46 UTC) ; le SHA-256 du binaire est
+`bf00050567c1158deb44a12d43cc5a237f0f870b01dc80b5ebc9a200f6d1a387`. Le
+checkout canonique du VPS avait avancé et contenait des modifications
+concurrentes ; elles ont été préservées, sans les inclure dans ce build.
+
+Ce binaire a indexé hors ligne le catalogue local de 237 crates dans le profil
+privé `aphrody` : 238 documents matérialisés et indexés (237 fiches plus la
+synthèse), 239 chunks, zéro erreur. Une requête RAG retrouve la fiche
+`bun_browser_crawl` et ses liens Cargo épinglés. Aucune collecte réseau n'a eu
+lieu pendant l'indexation et aucun résultat n'a été publié. Cette livraison
+rend les métadonnées des crates consultables ; elle ne signifie pas que les
+237 crates ont été construites ou testées. Le snapshot producteur conserve sa
+limite déclarée de couverture de fichiers incomplète.
+
+La disponibilité des 110 tomes incomplets et les lacunes éditoriales du wiki
+restent sous Shenron. Les preuves déjà consignées indiquent qu'aucune pagination
+intégrale n'est qualifiée et que les champs wiki restants requièrent des sources
+éditoriales. Cette étape n'a acquis aucun tome, modifié aucune fiche wiki et
+n'effectué aucune publication.
