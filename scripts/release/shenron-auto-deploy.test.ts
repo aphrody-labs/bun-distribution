@@ -327,6 +327,26 @@ test("runtime probe kills a stalled runtime and accepts bounded output", async (
   );
 });
 
+test.each(["yolo", "curl", "crawl", "vector-index", "untrusted-secret"])(
+  "runtime probe reports only a recognized fixture failure stage [%s]",
+  async (stage) => {
+    const failure = JSON.stringify({ schema: "shenron-runtime-failure/v1", stage });
+    const command = `console.error('private-child-diagnostic');console.error(${JSON.stringify(failure)});process.exit(1)`;
+    const error = await probe([process.execPath, "-e", command], process.env).then(
+      () => {
+        throw new Error("Fixture unexpectedly passed");
+      },
+      (reason) => reason as Error,
+    );
+    expect(error.message).toBe(
+      "Native runtime qualification failed" +
+        (stage === "untrusted-secret" ? "" : ` (stage: ${stage})`),
+    );
+    expect(error.message).not.toContain("private-child-diagnostic");
+    expect(error.message).not.toContain("untrusted-secret");
+  },
+);
+
 test("canonical auto-deploy configuration requires exact runtime qualification pins", async () => {
   const configuration = await Bun.file(
     join(import.meta.dir, "../../tools/config/shenron-auto-deploy.json"),
