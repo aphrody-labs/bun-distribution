@@ -5,23 +5,6 @@
   "proxy": "nginx",
   "services": [
     {
-      "id": "shenron-manga-source-worker",
-      "application": "shenron",
-      "kind": "background-worker",
-      "runtime": "bun",
-      "unit": "shenron-manga-source-worker.service",
-      "host": "vps",
-      "sourceRepo": "shenron",
-      "workingDirectory": "/home/ubuntu/.aphrody/profiles/dbfr/jobs/manga-source-worker",
-      "public": false,
-      "required": false,
-      "capabilities": [
-        "recursive-public-source-collection",
-        "private-source-index"
-      ],
-      "note": "Owner request 2026-10-15: permanent factory manga discovery/collection. Bun supervises bounded native Aphrody campaigns, existing Japan network namespace, per-host delay/robots, persistent frontiers, daily request and storage quotas. Captures and index stay private; qualified media publication belongs to the Shenron publication worker and canonical writers. No crawler on the production host."
-    },
-    {
       "id": "aphrody-bun-os",
       "application": "aphrody",
       "kind": "docker",
