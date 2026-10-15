@@ -41,10 +41,13 @@ process.exitCode = await child.exited;
   const sccache = join(bin, "sccache");
   await Bun.write(sccache, "#!/bin/sh\nexit 0\n");
   chmodSync(sccache, 0o700);
+  const nproc = join(bin, "nproc");
+  await Bun.write(nproc, '#!/bin/sh\nprintf "%s\\n" "${APHRODY_TEST_CPU_COUNT:-12}"\n');
+  chmodSync(nproc, 0o700);
   const cargo = join(bin, "cargo");
   await Bun.write(
     cargo,
-    '#!/bin/sh\nprintf "fixture-cargo:%s\\n" "$*"\nprintf "fixture-incremental:%s\\n" "${CARGO_INCREMENTAL-unset}"\n',
+    '#!/bin/sh\nprintf "fixture-cargo:%s\\n" "$*"\nprintf "fixture-incremental:%s\\n" "${CARGO_INCREMENTAL-unset}"\nprintf "fixture-jobs:%s\\n" "$CARGO_BUILD_JOBS"\n',
   );
   chmodSync(cargo, 0o700);
   return Bun.spawnSync(["bash", wrapper, "check", "-p", "fixture"], {
@@ -112,4 +115,20 @@ linuxTest("heavy Cargo forces non-incremental builds unless the opt-in unsets it
   const loop = await run("vps", false, { CARGO_INCREMENTAL: "0", APHRODY_CARGO_INCREMENTAL: "1" });
   expect(loop.stdout.toString()).toContain("fixture-incremental:unset");
   expect(loop.exitCode).toBe(0);
+});
+
+linuxTest("explicit auto uses every available CPU and retains serialization", async () => {
+  const result = await run("dbfr", false, { APHRODY_CARGO_JOBS: "auto" });
+  expect(result.exitCode).toBe(0);
+  expect(result.stdout.toString()).toContain("fixture-jobs:12");
+  expect(result.stderr.toString()).toContain("[cargo-serial] waiting for");
+});
+
+linuxTest("auto refuses an invalid CPU probe before starting Cargo", async () => {
+  const result = await run("dbfr", false, {
+    APHRODY_CARGO_JOBS: "auto",
+    APHRODY_TEST_CPU_COUNT: "invalid",
+  });
+  expect(result.exitCode).toBe(64);
+  expect(result.stdout.toString()).not.toContain("fixture-cargo");
 });
