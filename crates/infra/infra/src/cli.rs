@@ -422,7 +422,7 @@ enum DeployStack {
 }
 
 impl DeployStack {
-    /// Directory below which the stack's releases (or bundles) live on the VPS (`~/apps/<app>/releases/`).
+    /// Directory below which qualified hosts keep stack releases or bundles.
     fn release_root(self) -> String {
         let layout = &*crate::layout::HOST_LAYOUT;
         match self {
@@ -1416,18 +1416,24 @@ fn release_path_is_valid(release: &str, stack: DeployStack) -> bool {
     })
 }
 
-/// `ssh` arguments running `adapter release` as root on the vps, never prompting.
-fn remote_adapter_args<'a>(adapter: &'a str, release: &'a str) -> [&'a str; 7] {
-    ["-o", "BatchMode=yes", "vps", "sudo", "-n", adapter, release]
+fn deploy_target_is_supported(target: &str, stack: DeployStack) -> bool {
+    stack != DeployStack::App
+        && (target == "vps" || (target == "dbfr" && stack == DeployStack::Shenron))
+}
+
+/// `ssh` arguments running the selected host's adapter as root, never prompting.
+fn remote_adapter_args<'a>(target: &'a str, adapter: &'a str, release: &'a str) -> [&'a str; 7] {
+    ["-o", "BatchMode=yes", target, "sudo", "-n", adapter, release]
 }
 
 /// Select the existing adapter's compute mode without activating the full stack.
 fn remote_stack_adapter_args<'a>(
+    target: &'a str,
     stack: DeployStack,
     adapter: &'a str,
     release: &'a str,
 ) -> Vec<&'a str> {
-    let mut args = remote_adapter_args(adapter, release).to_vec();
+    let mut args = remote_adapter_args(target, adapter, release).to_vec();
     if stack == DeployStack::AphrodyCompute {
         args.insert(args.len() - 1, "--compute-only");
     }
@@ -1451,14 +1457,12 @@ fn deploy(
     run.action("deploy", if apply { "delegated" } else { "planned" }, detail.clone());
     println!("{}", serde_json::to_string_pretty(&detail)?);
     if apply {
-        let release = release.context("--release est obligatoire avec --apply")?;
-        // The only installed adapters (scripts/tools/install-vps-adapter.sh) live on the vps; never
-        // silently route another target's deploy there.
-        if target != "vps" {
+        if !deploy_target_is_supported(target, stack) {
             bail!(
-                "déploiement refusé: aucun adaptateur installé pour la cible {target} (seule vps)"
+                "déploiement refusé: adaptateur non qualifié pour la cible {target} et la pile {stack:?}"
             );
         }
+        let release = release.context("--release est obligatoire avec --apply")?;
         if !release_path_is_valid(release, stack) {
             bail!("release refusée: chemin hors de la racine de la pile ou contenant '.'/'..'");
         }
@@ -1466,9 +1470,9 @@ fn deploy(
         // attestation) and rolls its stack back on failure.
         let output = Command::new("ssh")
             .no_window()
-            .args(remote_stack_adapter_args(stack, &adapter, release))
+            .args(remote_stack_adapter_args(target, stack, &adapter, release))
             .output()
-            .context("ssh vps indisponible")?;
+            .with_context(|| format!("ssh {target} indisponible"))?;
         if !output.status.success() {
             bail!("déploiement distant échoué: {}", String::from_utf8_lossy(&output.stderr).trim());
         }
@@ -2665,7 +2669,7 @@ mod tests {
         assert_eq!(DeployStack::Aphrody.adapter(), "/usr/local/sbin/aphrody-infra-deploy-aphrody");
         assert!(DeployStack::Aphrody.requires().iter().any(|item| item.contains("SMOKE.json")));
         assert_eq!(
-            remote_adapter_args("/usr/local/sbin/x", "/home/ubuntu/apps/rg/releases/a"),
+            remote_adapter_args("vps", "/usr/local/sbin/x", "/home/ubuntu/apps/rg/releases/a"),
             [
                 "-o",
                 "BatchMode=yes",
@@ -2716,7 +2720,7 @@ mod tests {
         assert!(release_path_is_valid(release, compute));
         assert!(!release_path_is_valid("/home/ubuntu/apps/shenron/releases/a", compute));
         assert_eq!(
-            remote_stack_adapter_args(compute, compute.adapter(), release),
+            remote_stack_adapter_args("vps", compute, compute.adapter(), release),
             [
                 "-o",
                 "BatchMode=yes",
@@ -2732,10 +2736,87 @@ mod tests {
             [DeployStack::Aphrody, DeployStack::Shenron, DeployStack::Rg, DeployStack::Bundle]
         {
             assert_eq!(
-                remote_stack_adapter_args(stack, stack.adapter(), release),
-                remote_adapter_args(stack.adapter(), release)
+                remote_stack_adapter_args("vps", stack, stack.adapter(), release),
+                remote_adapter_args("vps", stack.adapter(), release)
             );
         }
+    }
+
+    #[test]
+    fn deploy_targets_preserve_vps_stacks_and_isolate_dbfr_shenron() {
+        let stacks = [
+            DeployStack::App,
+            DeployStack::Aphrody,
+            DeployStack::AphrodyCompute,
+            DeployStack::Shenron,
+            DeployStack::Rg,
+            DeployStack::Bundle,
+        ];
+        for stack in stacks {
+            assert_eq!(deploy_target_is_supported("vps", stack), stack != DeployStack::App);
+            assert_eq!(deploy_target_is_supported("dbfr", stack), stack == DeployStack::Shenron);
+            for target in ["", "omar", "aphro-pc", "unknown", "dbfr;reboot"] {
+                assert!(!deploy_target_is_supported(target, stack));
+            }
+        }
+
+        let release = "/home/ubuntu/apps/shenron/releases/docker-qualified";
+        assert!(release_path_is_valid(release, DeployStack::Shenron));
+        assert!(!release_path_is_valid(
+            "/srv/shenron/releases/docker-qualified",
+            DeployStack::Shenron
+        ));
+        assert!(!release_path_is_valid(
+            "/home/ubuntu/apps/shenron/releases/../current",
+            DeployStack::Shenron
+        ));
+        let adapter = DeployStack::Shenron.adapter();
+        let dbfr = remote_stack_adapter_args("dbfr", DeployStack::Shenron, adapter, release);
+        assert_eq!(dbfr, ["-o", "BatchMode=yes", "dbfr", "sudo", "-n", adapter, release]);
+        let vps = remote_stack_adapter_args("vps", DeployStack::Shenron, adapter, release);
+        assert_eq!(vps, ["-o", "BatchMode=yes", "vps", "sudo", "-n", adapter, release]);
+        assert_eq!(&dbfr[3..], &vps[3..]);
+        assert!(!dbfr.contains(&"vps"));
+        assert!(!vps.contains(&"dbfr"));
+
+        let parsed = Cli::try_parse_from([
+            "aphrody-infra",
+            "deploy",
+            "--target",
+            "dbfr",
+            "--stack",
+            "shenron",
+        ])
+        .unwrap();
+        assert!(matches!(
+            parsed.command,
+            CommandKind::Deploy { target, stack: DeployStack::Shenron, .. } if target == "dbfr"
+        ));
+    }
+
+    #[test]
+    fn deploy_plans_preserve_unqualified_targets_but_apply_rejects_before_ssh() {
+        let fixture = tempfile::tempdir().unwrap();
+        let root = fixture.path();
+        fs::create_dir_all(root.join("tools/config/host/inventory")).unwrap();
+        fs::write(
+            root.join("tools/config/host/inventory/targets.json"),
+            r#"{"schemaVersion":1,"generatedAt":"fixture","targets":[{"id":"dbfr","kind":"host","os":"linux"}]}"#,
+        )
+        .unwrap();
+        let mut run = Run::start(root, "deploy fixture").unwrap();
+        assert!(deploy("dbfr", DeployStack::Aphrody, None, false, &mut run).is_ok());
+        assert!(deploy("dbfr", DeployStack::Shenron, None, false, &mut run).is_ok());
+        let error = deploy(
+            "dbfr",
+            DeployStack::Aphrody,
+            Some("/home/ubuntu/apps/aphrody/releases/fixture"),
+            true,
+            &mut run,
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("adaptateur non qualifié"));
+        assert!(!run.actions.iter().any(|action| action["name"] == "deploy.remote"));
     }
 
     #[test]

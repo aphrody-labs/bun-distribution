@@ -16,6 +16,7 @@ const env: Record<string, string | undefined> = {
   ...process.env,
   PATH: "/home/ubuntu/.bun/bin:/home/ubuntu/.cargo/bin:/home/ubuntu/.local/bin:/usr/local/bin:/usr/bin:/bin",
   SHENRON_BUN_EXECUTABLE: config.bun,
+  SHENRON_COMPILE_BUN: config.bun,
   SHENRON_CARGO_REMOTE: "off",
   APHRODY_BUILD_HOST: "vps",
   APHRODY_CARGO_SERIAL: join(infra, "scripts/build/rust/cargo-serial.sh"),
@@ -27,6 +28,163 @@ const env: Record<string, string | undefined> = {
   APHRODY_FACTORY_RESOURCE: "/home/ubuntu/build/transient",
   APHRODY_FACTORY_LOCK_PATH: config.lock,
 };
+
+export interface RuntimeExpectation {
+  version?: string;
+  revision?: string;
+  sourceUrl?: string;
+}
+export interface RuntimeEvidence {
+  version: string;
+  revision: string;
+  sourceUrl: string;
+  features: { yolo: boolean; crawl: boolean; curl: boolean; vectorIndex: boolean };
+}
+export const runtimeFixture = `
+const {mkdtemp,rm}=await import('node:fs/promises');
+const {tmpdir}=await import('node:os');const {join}=await import('node:path');
+const check=(value)=>{if(!value)throw Error('Native runtime fixture failed')};
+const root=await mkdtemp(join(tmpdir(),'shenron-runtime-'));
+let server;const watchdog=setTimeout(()=>process.exit(1),20000);
+try {
+  const y=await import('bun:yolo');
+  const request={state:'public fixture',questions:{valid:y.noul('Valid?'),route:y.choice('Route?',{yes:'Yes',no:'No'}),support:y.score('Support?',['No','Yes'])}};
+  const provider=y.code(()=>({model:'fixture',answers:{valid:{type:'noul',noul:0.5},route:{type:'choice',choice:'yes',confidence:0.8,probabilities:{yes:0.9,no:0.1}},support:{type:'score',score:1,confidence:1,legend:{0:'No',1:'Yes'},probabilities:{0:0,1:1}}},usage:null}));
+  const result=await y.decide(request,{provider});check(result.valid===false&&result.route==='yes'&&result.support===1);
+  const inspected=await y.inspect(request,{provider});check(y.selections(request,inspected,0.99).route===null);
+  check(Bun.Curl?.available&&Bun.Crawl?.available&&Bun.VectorIndex?.available);
+  server=Bun.serve({hostname:'127.0.0.1',port:0,fetch(req){return new URL(req.url).pathname==='/robots.txt'?new Response('User-agent: *\\nAllow: /\\n'):new Response('<html><title>Fixture</title><body>public fixture</body></html>',{headers:{'content-type':'text/html'}})}});
+  const response=await Bun.Curl.request(server.url.href,{timeout:5000,maxBytes:4096});check(response.status===200&&(await response.body.text()).includes('public fixture'));
+  const crawl=await Bun.Crawl.run({action:'run',store:join(root,'crawl'),seed:server.url.href,maxRequests:1,concurrency:1,timeout:10000,allowPrivate:true});check(crawl.owner==='bun_browser_crawl'&&crawl.pages>=1);
+  const path=join(root,'vectors.idx');let index=new Bun.VectorIndex(path,{dimensions:2,metric:'l2'});
+  try{index.add(1n,[0,0]);index.add(9007199254740993n,[1,0]);const filtered=index.search([0,0],1,{allowedKeys:[9007199254740993n]})[0];check(filtered?.key===9007199254740993n&&filtered.score===-1);index.save()}finally{index.close()}
+  index=new Bun.VectorIndex(path,{dimensions:2,metric:'l2'});try{check(index.count===2&&index.search([0,0],1)[0]?.key===1n)}finally{index.close()}
+  console.log(JSON.stringify({version:Bun.version,revision:Bun.revision,sourceUrl:process.release.sourceUrl,features:{yolo:true,crawl:true,curl:true,vectorIndex:true}}));
+}finally{clearTimeout(watchdog);if(server)await server.stop(true);await rm(root,{recursive:true,force:true})}
+`;
+type RuntimeProbe = (
+  args: string[],
+  environment: Record<string, string | undefined>,
+) => Promise<string>;
+async function readProbeOutput(stream: ReadableStream<Uint8Array>): Promise<string> {
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      // Each read depends on the preceding chunk and its byte budget.
+      // eslint-disable-next-line no-await-in-loop
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > 16_384) throw new Error("Native runtime qualification output exceeded limit");
+      chunks.push(value);
+    }
+    return new TextDecoder().decode(Buffer.concat(chunks));
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+export async function probe(
+  args: string[],
+  environment: Record<string, string | undefined>,
+  timeoutMs = 30_000,
+): Promise<string> {
+  const child = Bun.spawn(args, {
+    env: environment,
+    stdout: "pipe",
+    stderr: "pipe",
+    signal: AbortSignal.timeout(timeoutMs),
+    killSignal: "SIGKILL",
+  });
+  try {
+    const [stdout, , status] = await Promise.all([
+      readProbeOutput(child.stdout),
+      readProbeOutput(child.stderr),
+      child.exited,
+    ]);
+    if (status !== 0) throw new Error("Native runtime qualification failed");
+    return stdout;
+  } catch {
+    child.kill("SIGKILL");
+    await child.exited;
+    throw new Error("Native runtime qualification failed");
+  }
+}
+export function runtimeEvidence(
+  output: string,
+  expected: RuntimeExpectation = {},
+): RuntimeEvidence {
+  const result = JSON.parse(output) as RuntimeEvidence;
+  if (
+    !result ||
+    typeof result.version !== "string" ||
+    typeof result.revision !== "string" ||
+    typeof result.sourceUrl !== "string" ||
+    !result.sourceUrl.startsWith("https://github.com/aphrody-labs/bun/releases/download/") ||
+    !result.features ||
+    ["yolo", "crawl", "curl", "vectorIndex"].some(
+      (key) => result.features[key as keyof RuntimeEvidence["features"]] !== true,
+    ) ||
+    Object.entries(expected).some(
+      ([key, value]) => result[key as keyof RuntimeExpectation] !== value,
+    )
+  )
+    throw new Error("Runtime provenance or fixture evidence differs");
+  return result;
+}
+export async function qualifyRuntime(
+  binary: string,
+  expectedSha256: string,
+  expected: RuntimeExpectation = {},
+  run: RuntimeProbe = probe,
+) {
+  if (!/^[a-f0-9]{64}$/.test(expectedSha256) || !matches(binary, expectedSha256))
+    throw new Error("Pinned Bun runtime digest differs");
+  const evidence = runtimeEvidence(
+    await run([binary, "-e", runtimeFixture], { ...env, BUN_BE_BUN: "1" }),
+    expected,
+  );
+  return {
+    schema: "shenron-runtime-qualification/v1",
+    binary,
+    sha256: expectedSha256,
+    size: Bun.file(binary).size,
+    ...evidence,
+  };
+}
+export async function qualifyCompiledRuntimes(
+  image: string,
+  expected: RuntimeExpectation,
+  run: RuntimeProbe = probe,
+) {
+  const qualify = async (binary: string) =>
+    runtimeEvidence(
+      await run(
+        [
+          "docker",
+          "run",
+          "--rm",
+          "--network",
+          "none",
+          "--env",
+          "BUN_BE_BUN=1",
+          "--entrypoint",
+          "/usr/local/bin/" + binary,
+          image,
+          "-e",
+          runtimeFixture,
+        ],
+        env,
+      ),
+      expected,
+    );
+  return {
+    "shenron-server": await qualify("shenron-server"),
+    "shenron-bot": await qualify("shenron-bot"),
+  };
+}
 
 export function syncDecision(branch: string, status: string, fastForward: boolean): string {
   if (branch !== "main") return "branch-not-main";
@@ -193,7 +351,7 @@ function native(sha: string, work: string) {
       [mcp, "shenron-mcp"],
       [ffi, "libshenron_ffi.so"],
       [re, "libshenron_re.so"],
-    ]) {
+    ] as const) {
       copyFileSync(from, join(out, name));
       chmodSync(join(out, name), 0o755);
     }
@@ -222,6 +380,7 @@ async function buildDeploy() {
   )
     throw new Error("Source checkout changed before build");
   const previous = active();
+  // Release identity is the Shenron commit; runtime-only changes need a future composite identity.
   if (previous === sha) {
     await state("current", { commit: sha });
     return;
@@ -231,6 +390,13 @@ async function buildDeploy() {
     job = join(config.artifacts, sha);
   mkdirSync(dirname(work), { recursive: true });
   mkdirSync(job, { recursive: true, mode: 0o700 });
+  const runtime = config.runtimeSha256
+    ? await qualifyRuntime(config.bun, config.runtimeSha256, config.runtimeExpected)
+    : undefined;
+  if (runtime)
+    await Bun.write(join(job, "runtime.json"), JSON.stringify(runtime, null, 2) + "\n", {
+      mode: 0o600,
+    });
   if (!existsSync(join(work, ".git"))) git(["worktree", "add", "--detach", work, sha]);
   else {
     if (git(["status", "--porcelain", "--untracked-files=normal"], work))
@@ -316,6 +482,16 @@ async function buildDeploy() {
     ["docker", "image", "inspect", "-f", "{{.Id}}", `localhost/shenron:${sha}`],
     work,
   );
+  if (runtime) {
+    const compiled = await qualifyCompiledRuntimes(image, {
+      version: runtime.version,
+      revision: runtime.revision,
+      sourceUrl: runtime.sourceUrl,
+    });
+    await Bun.write(join(job, "compiled-runtimes.json"), JSON.stringify(compiled, null, 2) + "\n", {
+      mode: 0o600,
+    });
+  }
   await state("built", { commit: sha, previous, image });
   // Promotion uses the same sealed Infra adapter as manual Shenron releases.
   command(

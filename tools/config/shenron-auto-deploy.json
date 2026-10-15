@@ -16,5 +16,11 @@
     "mcpSha256": "908e1942ea83d20f899f99bff1e9de6746add0d52f8c2e07245e98fd997d9554",
     "ffiSha256": "707c3d8b0ff76878e802a3c10c6b109bdbc084cfffb0211e837c6f9150309b79",
     "reSha256": "ea93a17103ae641203a7f8ddd3a0560d71ae64dff0080db1831d9272e326244f"
+  },
+  "runtimeSha256": "890af6a675e1dc58b15a15777c53de3b2e82668690c9be5f6e87ec690246ac0e",
+  "runtimeExpected": {
+    "version": "1.4.4",
+    "revision": "dfde053a3045d6076ad315b6f63160c4ced71513",
+    "sourceUrl": "https://github.com/aphrody-labs/bun/releases/download/bun-v1.4.4/bun-linux-x64-full.zip"
   }
 }
