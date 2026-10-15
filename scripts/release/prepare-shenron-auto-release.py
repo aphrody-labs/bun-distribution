@@ -58,6 +58,30 @@ def load_stage(path):
     return module
 
 
+def public_preview_json_guards(text):
+    """Extend only the two existing public CDN guards in a fresh sealed release."""
+    old = r"publications/manga-catalogue/objects/[a-f0-9]{64}\.json"
+    new = r"publications/(?:manga-catalogue|shueisha-official-previews)/objects/[a-f0-9]{64}\.json"
+    guarded = False
+    depth = 0
+    lines = []
+    for line in text.splitlines(keepends=True):
+        if re.match(r"\s*location\s", line):
+            guarded = bool(
+                re.match(r"\s*location\s+@(?:cdn_worker|cdn_public_origin)\s*\{", line)
+            )
+            depth = 0
+        if guarded and "if ($uri !~*" in line:
+            require(old in line or new in line, "unrecognized public CDN path guard")
+            line = line.replace(old, new)
+        lines.append(line)
+        if guarded:
+            depth += line.count("{") - line.count("}")
+            if depth <= 0:
+                guarded = False
+    return "".join(lines)
+
+
 def prepare(args):
     require(re.fullmatch(r"[a-f0-9]{40}", args.commit), "invalid commit")
     require(re.fullmatch(r"sha256:[a-f0-9]{64}", args.image_id), "invalid image ID")
@@ -183,6 +207,13 @@ def prepare(args):
                 name not in new_chunks or new_chunks[name] == sha,
                 "immutable chunk collision",
             )
+    nginx_updates = {}
+    for name in files:
+        if name.startswith("nginx/") and name.endswith((".conf", ".inc")):
+            before = (previous / name).read_text()
+            after = public_preview_json_guards(before)
+            if after != before:
+                nginx_updates[name] = after
     # Retain configuration provenance, which never grants access to private stores.
     result = {
         "release": str(release),
@@ -191,6 +222,7 @@ def prepare(args):
         "publicFiles": len(files),
         "apply": args.apply,
         "activated": False,
+        "publicPreviewJsonGuardFiles": sorted(nginx_updates),
     }
     if not args.apply:
         return result
@@ -200,7 +232,10 @@ def prepare(args):
             continue
         target = release / name
         target.parent.mkdir(parents=True, exist_ok=True, mode=0o755)
-        shutil.copyfile(previous / name, target)
+        if name in nginx_updates:
+            target.write_text(nginx_updates[name])
+        else:
+            shutil.copyfile(previous / name, target)
         target.chmod(0o644)
     (release / "compose.yaml").write_text(json.dumps(compose, indent=2) + "\n")
     stage.stage(release, artifact, previous)
