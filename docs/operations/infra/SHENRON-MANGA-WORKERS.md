@@ -6,13 +6,18 @@ Le catalogue Infra possède `shenron-manga-workers.service` sur la fabrique VPS.
 Shenron possède `scripts/ops/manga-source-pool.ts` ; Bun fournit le runtime,
 les Workers et les capacités natives. Aucun nouveau checkout n'est créé.
 
-Le service lance huit workers par `bun run bd -n -j2` depuis
+Le service lance seize workers par `bun run bd -n -j2` depuis
 `/home/ubuntu/src/bun`. Le mode `-n` réutilise le binaire source déjà construit ;
 il ne qualifie pas les modifications ultérieures du checkout. Le lanceur détache
 le superviseur et écrit `pool.pid`, puis rend le verrou du build. systemd suit
 ce PID avec `Type=forking`, arrête tout le groupe et reprend après une panne.
 La file SQLite et les checkpoints restent dans le dossier privé
 `/home/ubuntu/.aphrody/profiles/dbfr/jobs/manga-source-pool`.
+La directive propriétaire du 15 octobre 2026 ouvre les douze vCPU de la fabrique
+(`CPUQuota=1200%`), avec `MemoryHigh=16G`, `MemoryMax=20G` et 2048 tâches au plus.
+Elle conserve de la marge pour les autres jobs qualifiés et n'alloue pas
+artificiellement de mémoire. Les limites ne changent pas le parallélisme des
+builds ni les processus appartenant à d'autres sessions.
 
 ## Réseau et données
 
@@ -49,7 +54,7 @@ passent par les writers et contrôles éditoriaux de Shenron.
    du catalogue dans `/etc/systemd/system`, puis `daemon-reload` et
    `enable --now shenron-manga-workers.service`.
 4. Vérifier `is-enabled`, `is-active`, `MainPID`, namespace du superviseur,
-   huit workers réels, progression de la file et reçu d'egress japonais.
+   seize workers réels, progression de la file et reçu d'egress japonais.
    Contrôler la projection publique séparément de la progression privée.
 
 La commande de contrôle du catalogue est

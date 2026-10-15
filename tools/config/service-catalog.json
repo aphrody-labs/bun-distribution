@@ -317,7 +317,7 @@
       "sourceRepo": "shenron",
       "workingDirectory": "/home/ubuntu/src/bun",
       "public": false,
-      "note": "Eight continuous recursive manga discovery workers launched through source Bun bd with a detached supervisor and persistent private SQLite frontier. Existing mullvad network namespace supplies Japan egress. Native Bun VPN daemon qualification is separate. Public progress is a sanitized projection; captures and credentials remain private."
+      "note": "Sixteen continuous recursive manga discovery workers launched through source Bun bd with a detached supervisor and persistent private SQLite frontier. The owner authorizes the 12-vCPU factory capacity with a 20-GiB memory ceiling and headroom for concurrent qualified jobs. Existing mullvad network namespace supplies Japan egress. Native Bun VPN daemon qualification is separate. Public progress is a sanitized projection; captures and credentials remain private."
     },
     {
       "id": "shenron-site",
