@@ -8,6 +8,7 @@ saveTextLockfile = true
 minimumReleaseAge = 259200
 # Owner-published forks use exact pins. Security fixes (next, nodemailer, undici) and Tauri v3 alphas must track the Rust crates in real time (tools/config/update, tauri sync).
 minimumReleaseAgeExcludes = [
+  "@aphrody/typesafe-sdk",
   "@aphrody/bun-cloudflare",
   "@cloudflare/workers-types",
   "@aphrody/base-ui",

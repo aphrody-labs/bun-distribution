@@ -5,6 +5,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  cargoJobsSetting,
   cargoSelection,
   desktopOffenders,
   desktopRequirements,
@@ -35,6 +36,18 @@ const config = await loadConfig();
 const SHA = "0123456789abcdef0123456789abcdef01234567";
 
 describe("vps-cargo", () => {
+  test("explicit auto job selection reaches every CPU on the remote host", () => {
+    expect(cargoJobsSetting(undefined, config)).toBe(6);
+    expect(cargoJobsSetting("3", config)).toBe(3);
+    expect(cargoJobsSetting("auto", config)).toBe("auto");
+    expect(() => cargoJobsSetting("7", config)).toThrow("--jobs must be 1..6, or auto");
+    expect(() => cargoJobsSetting("1.5", config)).toThrow("--jobs must be 1..6, or auto");
+
+    const script = remoteRunScript(config, SHA, "all-cpus", ["check", "-p", "aphrody"], "auto");
+    expect(script).toContain("APHRODY_CARGO_JOBS=auto");
+    expect(script).toContain("flock --close /home/ubuntu/build/locks/heavy.lock");
+  });
+
   test("quotes only what needs quoting", () => {
     expect(shellQuote("clippy")).toBe("clippy");
     expect(shellQuote("-D warnings")).toBe("'-D warnings'");

@@ -18,6 +18,8 @@
       "crates/tauri/aphrody-tauri-plugin-*",
       "../bun/packages/web/rust",
       "../bun/packages/web",
+      "../bun/packages/bun-plugin-neon",
+      "../bun/packages/bun-types",
       "../bun/packages/bun-next",
       "../bun/packages/bun-webview-page",
       "../bun/packages/bun-google",

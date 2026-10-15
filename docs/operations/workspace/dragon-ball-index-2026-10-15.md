@@ -174,3 +174,108 @@ projection avait examiné 861 entrées, en mis 2 108 en quarantaine, et n'avait
 émis aucun bundle ni écriture publique. DBFR ne comptait aucun candidat,
 handoff ou tâche de publication à 14:15 ; aucun tome supplémentaire n'est donc
 qualifié comme complet.
+
+## Actualisation — 2026-10-15 à 14:57 UTC
+
+La supervision privée Shenron a exécuté une passe `once` sur DBFR à 14:56:50
+UTC. Le reçu expurgé signale un état `partial`, sans candidat nouvellement traité,
+avec 6 propositions approuvées, 90 bloquées, 10 647 complètes, 3 quarantainées
+et 8 rejetées. La passe suivante est planifiée à 20:56:41 UTC. Une lecture
+SQLite au même moment montrait aussi des lignes remplacées et une quatrième ligne
+quarantainée, d’où une différence entre le résumé du superviseur et les statuts
+bruts de la file ; aucune modification manuelle des décisions n’a été faite.
+
+L’export immuable des six propositions possède des reçus de writer déjà établis
+pour cinq identifiants : section 13087 (`g2gznhxpwvrc3crbgxf5av27`), databooks
+27 (`e8fk0pwtdaslbg8ynokn2mky`) et 23 (`g5xr7741sl9n1j8pfdxifvaz`), et
+media work 15 (`rhzefsejmp41q4vutd577rbo`) ainsi que section 13090
+(`iwymmeepzp3uda70u0u6jiqm`). La page publique de cette dernière a aussi été
+relue en HTTP 200 à 14:36:48. Les reçus résident dans le store DBFR protégé ;
+aucune écriture n’a été rejouée.
+
+La preuve disponible ne couvre pas Dragon Ball SD (`media_works/7`) : aucun
+reçu correspondant n’a été trouvé. Les routes d’API publiques et admin renvoient
+403 depuis la session Infra actuelle, donc ce champ ne peut pas être marqué
+publié ou confirmé. Les éléments disponibles ne permettent pas de qualifier les
+90 propositions bloquées ; les corrections wiki restent partielles. Le timer
+est actif et conserve ses limites de 4 workers / 20 candidats, sans publication
+automatique.
+
+## Actualisation — 2026-10-15 à 15:00 UTC
+
+Le dépôt Shenron `origin/main` apporte depuis le précédent relevé les preuves
+suivantes : 84 fiches wiki distinctes écrites, dont 78 textes relus exactement
+sur le site public ; six articles de comédiens attendent encore le correctif
+d’affichage de l’image commune. Un lot séparé de sept corrections a ses backups,
+CAS, relectures et révisions signées vérifiés. Ces 84 fiches incluent les
+corrections précédentes : elles ne doivent pas être additionnées aux reçus
+ponctuels déjà listés ici. Dix corrections lexicales de Fû ne comptent pas comme
+fiches. Le détecteur de champs manquants mesure mal certains synopsis originaux
+restés nuls malgré un texte français public. Sources des reçus détaillés dans le
+store Shenron protégé et docs/reference/root/REPRISE.md de son origin/main.
+
+Le worker manga est toujours vivant (PID 4167233, démarré à 14:33:55). Reçu
+expurgé du VPS à 14:57:03 : 329 tomes, 219 lecteurs complets, 110 sans lecteur,
+1 169 assets vérifiés, 5 574 tâches terminées, 52 470 en attente, deux actives,
+106 échouées, 296 refusées par robots, deux bloquées par le fournisseur et une
+capacité search indisponible. Ces compteurs décrivent l’acquisition d’assets,
+pas la validation d’un tome complet ni une publication. Le publisher DBFR reste
+suspendu à l’image API exposant `readerExtent` ; aucune intégrale nouvelle n’est
+annoncée.
+
+## Correction de preuve — Dragon Ball SD, 2026-10-15 à 15:02 UTC
+
+La lecture authentifiée du writer DBFR et de l’historique a depuis confirmé que
+`media_works/7` possède un `synopsisFr` non nul, révision
+`as2gz1i96bjhpr8xl9bkzfx2` du 15 octobre à 13:29:13 UTC. L’index public
+`/wiki/manga` répond 200 et contient le titre Dragon Ball SD et ce synopsis.
+La page détail `/wiki/manga/7` répond 404 ; cela ne contredit pas la présence du
+texte dans l’index. Le synopsis public diffère de la proposition immuable
+examinée dans le relevé de 14:57 : aucun PATCH n’a été effectué pendant cette
+vérification et la proposition n’a pas été rejouée. Cette preuve authentifiée
+remplace la mention précédente indiquant que la publication de `media_works/7`
+ne pouvait être confirmée.
+
+## Réconciliation des propositions bloquées — 2026-10-15 à 15:01 UTC
+
+Une relecture authentifiée, sans mutation, des 90 entrées `blocked` de la file
+wiki sur DBFR a obtenu 90 réponses administratives HTTP 200. Au moment de cette
+lecture, 27 avaient toutes les cibles de leur proposition déjà renseignées
+(4 œuvres, 18 databooks et 5 fiches de comédiens) : leur statut de file est
+périmé, mais cette vérification n’a pas réécrit la base SQLite. Quarante-huit
+autres ont déjà `synopsisFr` renseigné, tandis que le champ générique `synopsis`
+reste nul ; ces champs ne sont pas interchangeables et ne sont pas comptés
+comme deux synopsis français manquants.
+
+Les 15 candidats dont toutes les cibles sont encore vides sont sept épisodes,
+deux combats, un tournoi et cinq sections de statistiques de Vegeta. Les cinq
+sections concernent le power scaling, désactivé conformément à la doctrine ;
+elles ne sont pas complétées par extrapolation. Cette vérification n’est pas un
+nouvel inventaire complet du wiki et ne change pas le décompte global.
+
+## Actualisation — 2026-10-15 à 15:05 UTC
+
+Le reçu d’acquisition public du VPS à 15:04:05 UTC compte toujours 329 tomes,
+219 lecteurs complets et 110 sans lecteur. Le worker est vivant et a terminé
+5 836 tâches ; il possède 1 328 assets vérifiés, avec 52 209 tâches en attente,
+107 en échec, 296 refusées par robots, deux bloquées par le fournisseur et une
+capacité de recherche indisponible. Aucun de ces assets n’est assimilé à un tome
+complet. DBFR `/api/health` répond 200, mais le catalogue public tronqué à la
+lecture ne démontre pas de nouvelle extent de lecteur ni publication.
+
+Le dépôt Shenron contient un changement non commité sous propriétaire dans son
+manifest bibliographique et deux tests : l’ISBN japonais officiel de DBS 24 est
+associé à l’identifiant historique 147, tandis que le preview Shueisha est
+explicitement d’une page et incomplet. Les tests ciblés passent (14 tests,
+40 assertions) et `git diff --check` est propre. Cette édition précise ne
+qualifie pas un tome entier. Les fichiers ont des changements locaux préexistants
+dans Shenron; ce reçu ne les intègre ni ne les publie.
+
+Le binaire Aphrody installé a été recontrôlé :
+`aphrody web dragon-ball index --help` n’expose toujours pas `--catalogue`.
+Le source correspondant est livré dans le fork Bun, mais ce binaire n’a pas été
+reconstruit ou activé. Sur l’hôte, le volume `/home/ubuntu/build` est à 98 %
+(7 Gio libres), tandis que deux builds Bun sont actifs et que le test Shenron
+source tourne en 12 jobs. Je n’ai pas lancé de build Aphrody concurrent ni
+contourné le verrou partagé. Le volume `/home/ubuntu/build/storage` a 549 Gio
+libres, mais cette capacité ne rend pas qualifié le chemin de build courant.

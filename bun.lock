@@ -84,9 +84,30 @@
         "react-server-dom-parcel",
       ],
     },
+    "../bun/packages/bun-plugin-neon": {
+      "name": "@aphrody/bun-plugin-neon",
+      "version": "1.4.4",
+      "dependencies": {
+        "@neondatabase/serverless": "1.2.0",
+      },
+      "devDependencies": {
+        "@aphrody/bun-types": "workspace:*",
+      },
+      "peerDependencies": {
+        "@aphrody/bun-types": ">=1.4.4",
+      },
+    },
     "../bun/packages/bun-tauri": {
       "name": "@aphrody/tauri",
       "version": "1.4.4",
+    },
+    "../bun/packages/bun-types": {
+      "name": "@aphrody/bun-types",
+      "version": "1.4.4",
+      "dependencies": {
+        "@types/node": "*",
+        "undici-types": "*",
+      },
     },
     "../bun/packages/bun-webview-page": {
       "name": "@aphrody/bun-webview-page",
@@ -99,6 +120,10 @@
     "../bun/packages/web": {
       "name": "@aphrody/web",
       "version": "1.4.4",
+      "dependencies": {
+        "@aphrody/bun-plugin-neon": "workspace:*",
+        "@aphrody/typesafe-sdk": "0.6.2",
+      },
     },
     "../bun/packages/web/rust": {
       "name": "@aphrody/web-source",
@@ -141,7 +166,6 @@
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
         "@types/bun": "npm:@aphrody/bun-types@1.4.4",
-        "typescript": "7.0.2",
       },
       "peerDependencies": {
         "@aphrody/scaffold": "1.4.4",
@@ -198,7 +222,6 @@
       "version": "1.4.4",
       "devDependencies": {
         "@types/bun": "npm:@aphrody/bun-types@1.4.4",
-        "typescript": "7.0.2",
       },
     },
     "../bun/packages/web/rust/packages/x": {
@@ -282,6 +305,7 @@
         "@aphrody/m3": "workspace:*",
         "@aphrody/m3-config": "workspace:*",
         "@aphrody/product": "workspace:*",
+        "@types/bun": "npm:@aphrody/bun-types@1.4.4",
         "@types/d3": "catalog:",
         "@types/prismjs": "catalog:",
         "@types/react": "catalog:",
@@ -719,14 +743,14 @@
     },
     "../material/packages/m3-reader": {
       "name": "@aphrody/m3-reader",
-      "version": "1.4.5",
+      "version": "3.3.12",
       "dependencies": {
-        "@tanstack/react-virtual": "catalog:",
-        "lucide-react": "catalog:",
-        "swiper": "catalog:",
+        "@tanstack/react-virtual": "3.14.13",
+        "lucide-react": "1.49.0",
+        "swiper": "14.3.0",
       },
       "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
+        "@aphrody/m3-config": "3.3.11",
       },
       "peerDependencies": {
         "react": ">=18.0.0",
@@ -1359,6 +1383,8 @@
 
     "@aphrody/bun-plugin-n2b-win32-x64-msvc": ["@aphrody/bun-plugin-n2b-win32-x64-msvc@0.7.0", "", { "os": "win32", "cpu": "x64" }, "sha512-yg3W7ExWi3oWIBqcQR46HD8tBLK0Sw0u4pISr9VbfQXLqJmUS0ODOc+OhcAvBzp/Py5xo/G0ITz4wAifNmojZg=="],
 
+    "@aphrody/bun-plugin-neon": ["@aphrody/bun-plugin-neon@workspace:../bun/packages/bun-plugin-neon"],
+
     "@aphrody/bun-plugin-oxc": ["@aphrody/bun-plugin-oxc@0.2.0", "", { "optionalDependencies": { "@aphrody/bun-plugin-oxc-darwin-arm64": "0.2.0", "@aphrody/bun-plugin-oxc-darwin-x64": "0.2.0", "@aphrody/bun-plugin-oxc-linux-arm64-gnu": "0.2.0", "@aphrody/bun-plugin-oxc-linux-arm64-musl": "0.2.0", "@aphrody/bun-plugin-oxc-linux-x64-gnu": "0.2.0", "@aphrody/bun-plugin-oxc-linux-x64-musl": "0.2.0", "@aphrody/bun-plugin-oxc-win32-arm64-msvc": "0.2.0", "@aphrody/bun-plugin-oxc-win32-x64-msvc": "0.2.0" } }, "sha512-SKyyFLMfelTJZpuaX/yl0w4YJRDIratECQBhipT9AmMDvw4sgLb55RCMORV+gVd9nMvrU9T16ifNAvxwi+dQHw=="],
 
     "@aphrody/bun-plugin-oxc-darwin-arm64": ["@aphrody/bun-plugin-oxc-darwin-arm64@0.2.0", "", { "os": "darwin", "cpu": "arm64" }, "sha512-V+Wgfz32KsrKi84WF/QniClA52Fj3cLjPqlmbaVDAprFvw8/vJvo9uExMPHOvEiMVDSG+4Q3yKQW6UrINQmgoA=="],
@@ -1382,6 +1408,8 @@
     "@aphrody/bun-plugin-yaml": ["@aphrody/bun-plugin-yaml@0.0.1-aphrody.3", "", { "dependencies": { "js-yaml": "^4.1.0" } }, "sha512-h9rtkv7Gxtovfu0laSwU1ww8uEprV9n80mpy+7cGa9QQ131vktTuty/4YLiugZIBFkBFtXvciJcypa8QCy+2BQ=="],
 
     "@aphrody/bun-runtime-sdk": ["@aphrody/bun-runtime-sdk@1.4.4", "", {}, "sha512-9Lb6HmdM3o255d4HTvpG9B7AkagHmTBhIpF914riIsQKEvkFG67ayLXtSKFrquBw07LOry1p1iPAGETwba98ag=="],
+
+    "@aphrody/bun-types": ["@aphrody/bun-types@workspace:../bun/packages/bun-types"],
 
     "@aphrody/bun-webview-page": ["@aphrody/bun-webview-page@workspace:../bun/packages/bun-webview-page"],
 
@@ -1512,6 +1540,8 @@
     "@aphrody/tauri": ["@aphrody/tauri@workspace:../bun/packages/bun-tauri"],
 
     "@aphrody/timeline": ["@aphrody/timeline@workspace:../bun/packages/web/rust/packages/timeline"],
+
+    "@aphrody/typesafe-sdk": ["@aphrody/typesafe-sdk@0.6.2", "", {}, "sha512-Pnj7gUKWCcTjztzmMBVLX7FNGJVlJKfrwuE3pLDnjGABlZHW7/wb6SakGllIAz65Qjx7+oYd+MYxWbxEpGyVRw=="],
 
     "@aphrody/update": ["@aphrody/update@workspace:packages/infra/update"],
 
@@ -2084,6 +2114,8 @@
     "@neon/env": ["@neon/env@1.5.3", "", { "dependencies": { "@neon/config": "1.8.6", "yargs": "^18.0.0", "zod": "^4.4.3" }, "optionalDependencies": { "@napi-rs/keyring": "1.3.0" }, "bin": { "neon-env": "dist/cli.js" } }, "sha512-WWUB6xgOYs84DS995jZ9ZRDy52+C9QPYr4COncyZUMm6ifetulzcZl++A7oCb0jcBsDvrwSKVYf5DaLLqQsXfA=="],
 
     "@neon/sdk": ["@neon/sdk@7.0.1", "", {}, "sha512-Zyo84tVyK3cO/vkREgFSPZ0llGoWNgcbbz38/UkqyqKN/Ky6huHibTCyvnlnBV1aeWnJhEhg9W0HIylE6sCS0g=="],
+
+    "@neondatabase/serverless": ["@neondatabase/serverless@1.2.0", "", {}, "sha512-tnaqgixUengZQNd9ZrS3ytQfamJzLKY8QxgqWQTNHHtB+KrFQWk77JTbbpg4RD+J3qE4eO2lVytvGDX5Kj6FdQ=="],
 
     "@next/env": ["@next/env@third_party/next-fork/next-env-16.5.0-canary.5-dac376c6fe-f32e63fa.tgz", {}, "sha512-9ZjrwtU6JrvjcSMX65ReicaahIIbMTtd3RAqm3Yfz8PDLiFXBIDwZJiTjIffbC/TOiaxnsTw/C6p7v56IA7Rpg=="],
 
@@ -3421,7 +3453,7 @@
 
     "lru-cache": ["lru-cache@11.5.3", "", {}, "sha512-U4N8FgzmWxc8k1VH8Kr6lQg18U7Fjvby6wXHVRX/ZZ7IwWbRMgrRbP0Wrb5q5NVinryp4SQampHKdvtecItxUg=="],
 
-    "lucide-react": ["lucide-react@1.52.0", "", { "peerDependencies": { "@types/react": "*", "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" }, "optionalPeers": ["@types/react"] }, "sha512-TUgPtl5ZI9WgxOcbu4ckaC5B3l1qxPQrCMgb6OfUB9owx/OvSJfcf93SMgUWAxRw5/1XDfh9uI5F5iNGXCcGDQ=="],
+    "lucide-react": ["lucide-react@1.49.0", "", { "peerDependencies": { "@types/react": "*", "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" }, "optionalPeers": ["@types/react"] }, "sha512-ApfaNM4/7jBrVopqLJ84Jz8TMQ1Q1JeZ1PmKh25aeS3E1FTVcMkSh1bEQB7dfzdIrwXRP8p3z4AJjTIHHb5IIA=="],
 
     "lz-string": ["lz-string@1.5.0", "", { "bin": { "lz-string": "bin/bin.js" } }, "sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ=="],
 
@@ -4169,13 +4201,21 @@
 
     "@ai-sdk/google-vertex/google-auth-library": ["google-auth-library@10.9.1", "", { "dependencies": { "base64-js": "^1.3.0", "ecdsa-sig-formatter": "^1.0.11", "gaxios": "^7.1.4", "gcp-metadata": "8.1.2", "google-logging-utils": "1.1.3", "jws": "^4.0.0" } }, "sha512-i1ydyHrqcIxXkWh/uBmVkzCvIuq5yiK2ATndIe5XxKholrG/MTYP9xGYka4sQhrbIAgGjL2B6NOE7rFaiF3fXw=="],
 
-    "@aphrody/bun-webview-page/@types/bun": ["@aphrody/bun-types@file:../bun/packages/bun-types", { "dependencies": { "@types/node": "*", "undici-types": "*" } }],
+    "@aphrody/agent-browser/@types/bun": ["@aphrody/bun-types@workspace:../bun/packages/bun-types"],
+
+    "@aphrody/app-ui/@types/bun": ["@aphrody/bun-types@workspace:../bun/packages/bun-types"],
+
+    "@aphrody/bun-webview-page/@types/bun": ["@aphrody/bun-types@workspace:../bun/packages/bun-types"],
 
     "@aphrody/discord-kit/@aphrody/runtime-sdk": ["@aphrody/bun-runtime-sdk@1.4.4", "", {}, "sha512-9Lb6HmdM3o255d4HTvpG9B7AkagHmTBhIpF914riIsQKEvkFG67ayLXtSKFrquBw07LOry1p1iPAGETwba98ag=="],
+
+    "@aphrody/fuzzy/@types/bun": ["@aphrody/bun-types@workspace:../bun/packages/bun-types"],
 
     "@aphrody/google/@ai-sdk/google-vertex": ["@ai-sdk/google-vertex@5.0.101", "", { "dependencies": { "@ai-sdk/anthropic": "4.0.71", "@ai-sdk/google": "4.0.87", "@ai-sdk/openai-compatible": "3.0.62", "@ai-sdk/provider": "4.0.21", "@ai-sdk/provider-utils": "5.0.53", "google-auth-library": "^10.6.2" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-Lgi1Y2SuO1te3eWBsOqCoOvV+EDH1+K8r6OrNTMMexZd2Npyj6gPLODCn4bAwZeLA92lOm8zwCAqACOUEib+eQ=="],
 
     "@aphrody/google/ai": ["ai@7.0.127", "", { "dependencies": { "@ai-sdk/gateway": "4.0.103", "@ai-sdk/provider": "4.0.21", "@ai-sdk/provider-utils": "5.0.53" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-JNsNPk4ZvRGEJuqdVo2lYFkm7uAuf3p/RwKFWn1Wh/+IK3U1RyFWw2GXoFnhzqNfxEuj7XJB4WpIUhl1sHToWg=="],
+
+    "@aphrody/identity/@types/bun": ["@aphrody/bun-types@workspace:../bun/packages/bun-types"],
 
     "@aphrody/m3/@aphrody/bun": ["@aphrody/bun@3.3.4", "", { "dependencies": { "@aphrody/media": "0.1.0", "@aphrody/runtime-sdk": "0.1.0", "@aphrody/update": "0.1.0" } }, "sha512-Oj3viwyAZIpaNFlDQwVcxzlIBaU6iTBJLuUmlj5Jhb4pWlGzWRSZIHgfSbX99hDikmUX9btwSReUCgGz/dt7yw=="],
 
@@ -4195,6 +4235,8 @@
 
     "@aphrody/m3-os-themes/@aphrody/bun": ["@aphrody/bun@3.3.4", "", { "dependencies": { "@aphrody/media": "0.1.0", "@aphrody/runtime-sdk": "0.1.0", "@aphrody/update": "0.1.0" } }, "sha512-Oj3viwyAZIpaNFlDQwVcxzlIBaU6iTBJLuUmlj5Jhb4pWlGzWRSZIHgfSbX99hDikmUX9btwSReUCgGz/dt7yw=="],
 
+    "@aphrody/m3-reader/@aphrody/m3-config": ["@aphrody/m3-config@3.3.11", "", { "dependencies": { "@happy-dom/global-registrator": "^20.14.5", "element-internals-polyfill": "^3.0.2" } }, "sha512-OIG5ovi4qkO9E795T58kk8ffFp0ztAlGx5ZcKMj6k0rHb866xT6GDqJo3CXPcpaXlJH/jp1j88xv1t/D8pKMcw=="],
+
     "@aphrody/m3-tailwind/@aphrody/bun": ["@aphrody/bun@3.3.4", "", { "dependencies": { "@aphrody/media": "0.1.0", "@aphrody/runtime-sdk": "0.1.0", "@aphrody/update": "0.1.0" } }, "sha512-Oj3viwyAZIpaNFlDQwVcxzlIBaU6iTBJLuUmlj5Jhb4pWlGzWRSZIHgfSbX99hDikmUX9btwSReUCgGz/dt7yw=="],
 
     "@aphrody/m3-theme/@aphrody/bun": ["@aphrody/bun@3.3.4", "", { "dependencies": { "@aphrody/media": "0.1.0", "@aphrody/runtime-sdk": "0.1.0", "@aphrody/update": "0.1.0" } }, "sha512-Oj3viwyAZIpaNFlDQwVcxzlIBaU6iTBJLuUmlj5Jhb4pWlGzWRSZIHgfSbX99hDikmUX9btwSReUCgGz/dt7yw=="],
@@ -4203,7 +4245,19 @@
 
     "@aphrody/material-web/@aphrody/canvas": ["@aphrody/canvas@1.0.9-aphrody.2", "", { "optionalDependencies": { "@napi-rs/canvas-android-arm64": "1.0.9", "@napi-rs/canvas-darwin-arm64": "1.0.9", "@napi-rs/canvas-darwin-x64": "1.0.9", "@napi-rs/canvas-linux-arm-gnueabihf": "1.0.9", "@napi-rs/canvas-linux-arm64-gnu": "1.0.9", "@napi-rs/canvas-linux-arm64-musl": "1.0.9", "@napi-rs/canvas-linux-riscv64-gnu": "1.0.9", "@napi-rs/canvas-linux-x64-gnu": "1.0.9", "@napi-rs/canvas-linux-x64-musl": "1.0.9", "@napi-rs/canvas-win32-arm64-msvc": "1.0.9", "@napi-rs/canvas-win32-x64-msvc": "1.0.9" }, "peerDependencies": { "@aphrody/bun": "^3.3.0" }, "optionalPeers": ["@aphrody/bun"] }, "sha512-wqBG4tPIMC03Q/idVdYOevm0gsR0orMv8PvBn9eaN8gGOOIczKKALh/fmKOrXkygD0h26Tbw2ZgmhXXk2RVwRA=="],
 
+    "@aphrody/qr/@types/bun": ["@aphrody/bun-types@workspace:../bun/packages/bun-types"],
+
+    "@aphrody/timeline/@types/bun": ["@aphrody/bun-types@workspace:../bun/packages/bun-types"],
+
+    "@aphrody/web-test/@types/bun": ["@aphrody/bun-types@workspace:../bun/packages/bun-types"],
+
+    "@aphrody/web-to-tauri/@types/bun": ["@aphrody/bun-types@workspace:../bun/packages/bun-types"],
+
+    "@aphrody/webos-wasm/@types/bun": ["@aphrody/bun-types@workspace:../bun/packages/bun-types"],
+
     "@aphrody/workspace/@aphrody/runtime-sdk": ["@aphrody/bun-runtime-sdk@1.4.4", "", {}, "sha512-9Lb6HmdM3o255d4HTvpG9B7AkagHmTBhIpF914riIsQKEvkFG67ayLXtSKFrquBw07LOry1p1iPAGETwba98ag=="],
+
+    "@aphrody/x/@types/bun": ["@aphrody/bun-types@workspace:../bun/packages/bun-types"],
 
     "@aphrody/yolo-cli/@aphrody/runtime-sdk": ["@aphrody/bun-runtime-sdk@1.4.4", "", {}, "sha512-9Lb6HmdM3o255d4HTvpG9B7AkagHmTBhIpF914riIsQKEvkFG67ayLXtSKFrquBw07LOry1p1iPAGETwba98ag=="],
 
