@@ -4,6 +4,11 @@ import { existsSync, mkdirSync, copyFileSync, chmodSync, readFileSync } from "no
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
+import {
+  runSourceControllerLoop,
+  startSourceControllerWorker,
+  type ControllerWorker,
+} from "./shenron-source-controller";
 
 const infra = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const config = JSON.parse(
@@ -515,14 +520,25 @@ async function buildDeploy() {
 }
 
 if (import.meta.main) {
+  let sourceController: ControllerWorker | undefined;
   try {
     const mode = process.argv[2];
     if (Bun.version !== "1.4.4") throw new Error("Bun 1.4.4 is required");
-    if (mode === "sync") {
+    if (mode === "source-controller") {
+      if (!config.sourceCollection)
+        throw new Error("No qualified source controller profile configured");
+      await runSourceControllerLoop(config.sourceCollection);
+    } else if (mode === "sync") {
       if (!(await sync())) process.exitCode = 75;
     } else if (mode === "sync-source") {
       if (!(await syncSource())) process.exitCode = 75;
     } else if (mode === "deploy") {
+      if (config.sourceCollection)
+        sourceController = await startSourceControllerWorker(
+          config.bun,
+          fileURLToPath(import.meta.url),
+          env,
+        );
       const sha = await sync();
       if (!sha) process.exitCode = 75;
       else if (active() === sha) await state("current", { commit: sha });
@@ -562,5 +578,14 @@ if (import.meta.main) {
     await state("failed", { error: String(error) });
     console.error(String(error));
     process.exitCode = 1;
+  } finally {
+    if (sourceController) {
+      try {
+        await sourceController.stop();
+      } catch {
+        await state("failed", { error: "source-controller-lifecycle" });
+        process.exitCode = 1;
+      }
+    }
   }
 }
