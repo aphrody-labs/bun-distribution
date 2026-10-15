@@ -598,3 +598,41 @@ précédents n’autorisent pas à lire/indexer son répertoire partagé pendant
 l’écriture. Les rapports individuels de source ne sont pas utilisés comme
 compteur global; le run entier n’est pas terminé. Aucun nouvel index RAG ni
 publication wiki/manga n’est revendiqué.
+
+## Reprise de l’index local Bun — 2026-10-15 à 20:59 UTC
+
+Le checkout fork `/home/ubuntu/src/bun` est sur `main`, avec
+`3182a79486` (`origin/main`) pour la préservation de la preuve de couverture.
+Ce changement conserve dans l’index les champs de pagination et d’étendue du
+lecteur (`listedPages`, `hasListedPages`, `readerExtent`) et les totaux de
+couverture. Les tests ciblés précédemment exécutés sur le lot passent : test
+unitaire, `cargo test --locked -p aphrody-web-crawl --lib` (70 réussis) et
+Clippy strict. Le binaire Aphrody reconstruit depuis ce snapshot expose
+`--catalogue`.
+
+Une nouvelle indexation hors ligne utilise ce binaire et les trois snapshots
+immuables : catalogue manga (329 notices, 925 chapitres), couverture (329
+entrées, 110 absentes ou partielles) et inventaire CDN public (112 718 notices
+d’assets, 1 175 sidecars). À 20:59:23 UTC, le run est toujours actif après
+9 min 18 s et a écrit 18 253 documents dans
+`/home/ubuntu/build/storage/artifacts/dragon-ball-index-20261015T201308Z/indexed-fork-qualified`.
+Le volume dédié conserve 444 Gio libres; le processus consomme environ 19 Mio
+RSS. Aucun reçu final n’est encore disponible : ce nombre intermédiaire ne
+prouve ni l’ingestion complète des trois snapshots ni l’intégrité du run achevé.
+Le résultat est une collection locale privée de métadonnées et de références,
+pas une acquisition de planches.
+
+La réponse de couverture capturée à 20:13:46 UTC contient 329 volumes, 222
+avec pages répertoriées et 53 304 pages répertoriées. Elle marque les 222
+étendues comme aperçu ou inconnues, avec zéro étendue `full`,
+`assetAvailabilityVerified=false`, `fullEditionPaginationVerified=false` et
+`complete=false`. Les 110 IDs manquants/partiels demeurent inchangés. Les
+assets Arale observés dans l’inventaire sont uniquement des métadonnées de
+chemins ; aucune vérification HTTP, correspondance exacte d’édition ou
+pagination intégrale n’a été faite. Les 110 tomes ne sont donc pas complétés.
+
+Les propositions et auteurs wiki restent sous le propriétaire Shenron et ses
+claims actifs; aucun champ wiki ni publication n’a été modifié dans cette
+reprise. Les travaux simultanés sur le build Bun Windows et les chemins
+Aphrody ont été laissés intacts. L’index fork est livré sur `origin/main`; le
+présent reçu décrit un run toujours en cours, et non un résultat final.
