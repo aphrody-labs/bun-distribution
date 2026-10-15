@@ -49,6 +49,16 @@ fournit pas de structure de pages. Cette sérialisation partielle ne prouve pas
 la complétude du tome relié ; aucun nouveau tome complet n'est annoncé.
 Le reçu d'acquisition et les références restent dans le store privé.
 
+Correction de mesure à 20:01 UTC : le point d'accès de couverture est
+`https://dragonballfr.com/api/manga/coverage` (HTTP 200), et non une route
+`/api/public/manga/coverage`. Sa réponse déclare 329 tomes, 222 avec pages
+listées et 53 304 pages listées ; les 222 se répartissent en trois aperçus
+(`readerExtent=preview`) et 219 étendues inconnues, aucun `full`. La réponse
+indique `assetAvailabilityVerified=false`,
+`fullEditionPaginationVerified=false` et `complete=false`. Elle énumère toujours
+110 lecteurs absents ou partiels. Ainsi, « pages listées » n'est pas synonyme de
+lecteur complet, et les 219 entrées ne sont pas qualifiées comme intégrales.
+
 Le wiki compte 10 754 fiches. Le snapshot éditorial présenté dans l'actualisation
 ci-dessous a été corrigé après relecture : il portait sur 83 fiches et 131
 champs manquants, pas 86 fiches. Sept corrections antérieures étaient déjà
@@ -108,8 +118,8 @@ tomes, 219 lecteurs complets, 52 220 pages de catalogue et zéro média vérifi�
 Le worker accepte 16 tâches en parallèle et en exécutait quatre, avec 1 316
 tâches en attente, 176 terminées, trois échouées, 64 refusées par robots et une
 tâche sans capacité requise. Le service de publication manga DBFR est actif ;
-`/api/health` répond 200, tandis que
-`/api/manga/coverage` répond encore 404. À 13:58 UTC, la file canonique du
+`/api/health` répond 200. La disponibilité de la route de couverture n'avait pas
+été testée correctement dans ce relevé. À 13:58 UTC, la file canonique du
 publisher ne contenait aucun bundle qualifié, candidat ou handoff ; le dernier
 reçu de projection indiquait zéro émission et zéro écriture publique. Les 110
 tomes restent donc sans lecteur complet public. Les 31 pages Jump+ de Yamcha
