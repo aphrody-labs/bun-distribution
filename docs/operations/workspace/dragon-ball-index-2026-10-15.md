@@ -532,3 +532,32 @@ et le rôle d’Aeos. Elle ne prouve pas la parenthèse « Toki Toki City » att
 la fiche publique Shenron `tournaments/11`. Aucune modification wiki, copie de
 page intégrale ou publication publique n’a été faite. Le dossier source privé
 est `/home/ubuntu/.aphrody/workspace-shenron/private/web/official-source-addendum-20261015/`.
+
+## État live et reprise — 2026-10-15 à 19:49 UTC
+
+L’API publique du catalogue indique toujours 329 notices : 222 avec pages
+listées, 107 sans pages et les trois aperçus 147, 619 et 620. Le reçu de
+progression du pool à 19:48:51 compte 53 304 pages listées et 1 995 assets
+vérifiés, mais zéro worker actif, 51 544 tâches en attente, 6 503 terminées,
+111 en échec, 296 refus robots, deux blocages fournisseur et une capacité de
+recherche indisponible. Ces assets vérifiés ne suffisent pas à qualifier les
+110 éditions sans lecteur complet; aucun compteur de tâches ne vaut preuve de
+complétude d’un tome.
+
+Le crawl officiel distinct est toujours en cours (PID 1094602, lancé depuis
+19:43 UTC) sur son dossier privé. Je ne l’ai ni relancé ni indexé pendant son
+écriture. Les routes publiques testées `/api/public/manga/catalog` et
+`/api/public/manga/coverage` répondent 404 sur le serveur DBFR; la couverture
+reste établie par le statut public existant et le reçu du pool.
+
+La fiche publique `db_episodes#875` (`DBS_BEERUS`, épisode 1) répond HTTP 200;
+`synopsis_fr` reste nul et la source officielle déclarée est
+`https://dragonball-super.com/en/index.html#story`. Le writer canonique Shenron
+demande une approbation éditoriale indépendante, un manifeste revu, un backup
+PostgreSQL vérifié et l’application CAS. La session Gemini disponible n’a pas
+pu s’authentifier (`SNlM0e token not found`); aucune approbation n’a été
+fabriquée et aucun PATCH n’a été envoyé. La campagne wiki demeure partielle.
+
+La situation est donc inchangée sur le fond : l’index RAG privé est complet au
+sens de son run réussi, mais ni les 110 tomes incomplets ni toutes les lacunes
+wiki ne sont complétés ou publiés.
