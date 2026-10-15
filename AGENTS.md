@@ -203,9 +203,14 @@ Use `/home/ubuntu/build/storage` for heavy caches, artifacts and transient files
 Its shared pool still had about 479 GiB available on 2026-10-15 while the older
 source/build filesystem had about 3 GiB. Check both before execution. Existing
 source checkouts and protected data stay in place; the canonical Bun checkout
-is `/home/ubuntu/src/bun`. Run `aphrody infra ssh exec` from `/home/ubuntu` so
-its relative `var/runs` receipts do not fill the source filesystem. Plan before
-apply and recheck each host's identity through the native Infra catalog.
+is `/home/ubuntu/src/bun`. For remote SSH operations, run
+`aphrody infra --root /home/ubuntu ssh exec --host vps|dbfr ...` from
+`/home/ubuntu` so receipts use `/home/ubuntu/var/runs` on the root filesystem.
+A command-scoped `APHRODY_INFRA_ROOT=/home/ubuntu` is equivalent; changing the
+working directory alone does not pin the Infra root. The same override is
+qualified for native `ssh sftp` listings. Do not export it globally: other Infra
+commands use the selected root for their source catalogs.
+Plan before apply and recheck each host's identity through the native Infra catalog.
 
 Bun/TS: scoped native `bun check`, `bun lint` and `bun fmt` commands plus meaningful Bun tests;
 migrations use `bun n2b` directly. Do not insert a shell, package runner, external subprocess backend,

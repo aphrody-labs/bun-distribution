@@ -70,9 +70,23 @@ Its production allocation remains separate, with the configured three-job
 ceiling and its own memory/disk admission. A factory refusal is retried only
 after capacity changes; it does not authorize bypassing reserves.
 
-Invoke `aphrody infra ssh exec --host vps|dbfr` from `/home/ubuntu`; its relative
-`var/runs` receipts then use the root filesystem. Recheck host identity and both
-filesystems before applying a plan. Coordinate heavy work through
+Invoke `aphrody infra --root /home/ubuntu ssh exec --host vps|dbfr ...` from
+`/home/ubuntu`. A command-scoped `APHRODY_INFRA_ROOT=/home/ubuntu` is equivalent.
+The native owner in `crates/infra/infra/src/cli.rs` writes receipts below the
+selected Infra root as `var/runs/<epoch>-<PID>`; working directory alone does
+not pin that root. Do not export the override globally: the same root also
+selects source catalogs for other Infra commands.
+
+Verified on 2026-10-15 at 22:23 UTC with the installed CLI and one `hostname`
+command: VPS identity was `vps-203bea89`, and the successful receipt was
+`/home/ubuntu/var/runs/1792102996-1776829/manifest.json`. This qualifies the root
+filesystem destination for SSH receipts; it does not relocate earlier runs.
+At 22:25 UTC the same override also qualified native `ssh sftp` with a direct
+listing of `/home/ubuntu/.bun/bin`, recorded successfully in
+`/home/ubuntu/var/runs/1792103144-1785922/manifest.json`. No file content or
+transfer was requested.
+Recheck host identity and both filesystems before applying a plan. Coordinate
+heavy work through
 `/home/ubuntu/build/locks/heavy.lock`; no second heavy build is started here.
 
 ## Verify
