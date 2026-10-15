@@ -312,7 +312,7 @@ export function sourceJobArgs(plan: SourceJobPlan, name: string): string[] {
     "--mount",
     `type=bind,src=${c.bundle.path},dst=/job/pipeline.mjs,readonly`,
     "--mount",
-    `type=bind,src=${c.resources.path},dst=/job/resources,readonly`,
+    `type=bind,src=${join(c.resources.path, "relays.json")},dst=/job/resources/relays.json,readonly`,
     "--mount",
     `type=bind,src=${c.vpnStateRoot},dst=/job/vpn`,
     "--mount",

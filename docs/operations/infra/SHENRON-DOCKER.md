@@ -265,6 +265,9 @@ UID1000. Ses chemins settings/cache/resources/RPC sont explicites et séparés.
 `TALPID_DNS_MODULE=static-file` force le backend qui écrit en place dans le
 résolveur Docker privé ; le backup Mullvad reste dans le filesystem éphémère
 du conteneur, sans montage de `/etc` ou du D-Bus hôte.
+Seul le fichier `relays.json` épinglé est monté dans `/job/resources` ; son
+dossier privé hôte ne doit jamais être monté en entier. Les autorités TLS et
+clés Sigsum du client Linux sont embarquées par le propriétaire Mullvad.
 
 Le compte est lu dans le keyring OS `bun-vpn`/`mullvad-account` et fourni au RPC
 par `bun vpn login --stdin`, jamais en argument ou dans un fichier intermédiaire.

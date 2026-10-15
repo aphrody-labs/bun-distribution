@@ -124,6 +124,18 @@ test("typed source job grants only private child capabilities and never mounts d
   expect(args.at(-1)).not.toContain("Bun.file(path).bytes()");
   expect(args).toContain("/app/data/source-pipeline/credentials:ro,nosuid,nodev,noexec,mode=000");
 });
+test("only the pinned relay file is exposed even when its private parent contains other data", async () => {
+  const f = await fixture();
+  await fixtureFile(join(f.config.resources.path, "unrelated-private.json"), "private fixture");
+  const plan = await planSourceJob(f.config, { run: f.run });
+  const args = sourceJobArgs(plan, "shenron-source-vpn-" + "b".repeat(16));
+  const mounts = args.filter((_, index) => args[index - 1] === "--mount");
+  expect(mounts).toContain(
+    `type=bind,src=${join(f.config.resources.path, "relays.json")},dst=/job/resources/relays.json,readonly`,
+  );
+  expect(mounts.some((mount) => mount.includes(`src=${f.config.resources.path},`))).toBe(false);
+  expect(mounts.some((mount) => mount.includes("unrelated-private"))).toBe(false);
+});
 test("collection uses stdin login, UID1000 and finite teardown without claiming full pipeline success", async () => {
   const f = await fixture(),
     plan = await planSourceJob(f.config, { run: f.run });
