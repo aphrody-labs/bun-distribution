@@ -645,6 +645,23 @@
       "ownerRepo": "aphrody",
       "targetHost": "dbfr",
       "pairs": "shenron-cloudflare-s3-renew.service"
+    },
+    {
+      "service": "shenron-wiki-proposals",
+      "unit": "shenron-wiki-proposals.service",
+      "path": "systemd/shenron/shenron-wiki-proposals.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "shenron-wiki-proposals-timer",
+      "unit": "shenron-wiki-proposals.timer",
+      "path": "systemd/shenron/shenron-wiki-proposals.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr",
+      "pairs": "shenron-wiki-proposals.service"
     }
   ],
   "scheduledTasks": [

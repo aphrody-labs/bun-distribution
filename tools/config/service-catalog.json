@@ -900,6 +900,30 @@
       "workingDirectory": "/home/ubuntu/.aphrody/profiles/dbfr/jobs/manga-source-pool",
       "public": false,
       "note": "Timer transfers bounded sealed acquisition subsets from the existing source pool to DBFR; no credentials or raw corpus cross hosts."
+    },
+    {
+      "id": "shenron-wiki-proposals",
+      "application": "shenron",
+      "kind": "systemd-worker",
+      "runtime": "bun",
+      "unit": "shenron-wiki-proposals.service",
+      "host": "dbfr",
+      "sourceRepo": "shenron",
+      "workingDirectory": "/home/ubuntu/.aphrody/profiles/dbfr/jobs/wiki-completion-20261015",
+      "public": false,
+      "note": "Private proposal-only six-hour supervisor: canonical protected read inventory, exact implementation smoke, at most four independent Codex runners and twenty candidates per pass; bounded transport retries only, immutable approved exports, no automatic editorial publication."
+    },
+    {
+      "id": "shenron-wiki-proposals-timer",
+      "application": "shenron",
+      "kind": "systemd-timer",
+      "runtime": "bun",
+      "unit": "shenron-wiki-proposals.timer",
+      "host": "dbfr",
+      "sourceRepo": "shenron",
+      "workingDirectory": "/home/ubuntu/.aphrody/profiles/dbfr/jobs/wiki-completion-20261015",
+      "public": false,
+      "note": "Private proposal-only six-hour supervisor: canonical protected read inventory, exact implementation smoke, at most four independent Codex runners and twenty candidates per pass; bounded transport retries only, immutable approved exports, no automatic editorial publication."
     }
   ],
   "policies": {
