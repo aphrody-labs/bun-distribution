@@ -280,7 +280,7 @@ source tourne en 12 jobs. Je n’ai pas lancé de build Aphrody concurrent ni
 contourné le verrou partagé. Le volume `/home/ubuntu/build/storage` a 549 Gio
 libres, mais cette capacité ne rend pas qualifié le chemin de build courant.
 
-## Actualisation — 2026-10-15 à 15:46 UTC
+## Actualisation — 2026-10-15 à 16:41 UTC
 
 Le `main` local est aligné sur `origin/main` au commit
 `8fe0645e6909bf0e61e8373f2d148de8e0f5752f`. Le binaire Aphrody installé a
@@ -289,20 +289,31 @@ encore été vérifié ; `aphrody web dragon-ball index --help` ne présente pas
 `bcf03c2fae8d54f6657dbe3ac5df14807c8ba7af`.
 
 J’ai préparé deux worktrees propres isolés et synchronisé leur source exacte sur
-le VPS. Le build ciblé n’a pas atteint la compilation. Le premier lancement a
-échoué car le chemin `../bun` du workspace n’avait pas encore reçu son snapshot ;
-le dépôt secondaire a ensuite été synchronisé et vérifié au commit Bun indiqué
-ci-dessus. Les deux essais suivants ont échoué dès l’appel à Cargo avec
-`no such command: cargo`. Le diagnostic a localisé l’échec dans le wrapper
-actuel de l’usine : sous `flock` et `nice`, le shim `~/.cargo/bin/cargo` de
-rustup ne résout pas `cargo`, alors que `cargo --version` passe directement
-depuis la même session SSH. Le verrou lourd était libre au dernier contrôle ;
-le VPS a 12 CPU, 24 Gio de mémoire disponibles, 527 Gio libres sur
-`/home/ubuntu/build/storage`, mais seulement 2,1 Gio libres sur le volume de
-build déclaré `/home/ubuntu/build` (100 %). Le target isolé avait été placé sur
-le volume de stockage, mais cette route n’est pas déclarée dans le build-factory.
-Je n’ai ni lancé Cargo hors de son wrapper, ni contourné le verrou, ni modifié
-le checkout ou les jobs concurrents.
+le VPS. Le premier build a échoué avant compilation, car le chemin `../bun` du
+workspace n’avait pas encore reçu son snapshot ; le dépôt secondaire a ensuite
+été synchronisé et vérifié au commit Bun indiqué ci-dessus. Trois invocations
+ont échoué immédiatement avec `no such command: cargo` : l’interface
+`vps-cargo run` attend directement les arguments Cargo, et les appels initiaux
+avaient répété le mot `cargo`. La commande correctement formée,
+`vps-cargo run --jobs auto -- build --release -p aphrody --features index
+--locked`, a compilé les dépendances et les crates Bun/Aphrody avec 12 jobs.
+Après un scan initial lent du cache Git partagé, elle a échoué avec code 101 sur
+le module transféré `crates/os/kernel/core/src/gcs.rs` :
+`aphrody-web-source::module!` refuse ce chemin car le fichier correspondant
+manque dans `packages/web/rust/integrations/` du fork Bun piné. Les références
+`crate::gcs` échouent ensuite en cascade. Pourtant,
+`packages/web/rust/transfer-receipt.json` possède l’entrée source/destination
+de ce fichier ; la réconciliation est incomplète dans le commit Bun
+`bcf03c2fae8d54f6657dbe3ac5df14807c8ba7af`. Le binaire complet n’a donc pas été
+produit.
+
+Au relevé VPS suivant : 12 CPU, 19 Gio de mémoire disponibles, 515 Gio libres
+sur `/home/ubuntu/build/storage`, mais 2,2 Gio libres sur le volume déclaré
+`/home/ubuntu/build` (100 %) et swap saturé. Le linker du build Bun partagé
+attendait le stockage depuis plus de 31 minutes et des lectures Git/ext4 étaient
+bloquées. Les verrous Cargo sont désormais libres et les snapshots distants
+restent isolés sur les révisions attendues. Je n’ai ni contourné les verrous, ni
+modifié les jobs ou caches concurrents.
 
 Gates locaux sur worktree pruné : `cargo metadata --no-deps --format-version 1
 --locked` passe ; `bun check` ne démarre pas, car `@types/bun` et `@types/node`
@@ -320,3 +331,46 @@ public, avec six profils de comédiens attendant le correctif d’affichage et d
 candidats bloqués non documentables. Je n’ai fait aucune nouvelle écriture
 éditoriale ou mutation de publication. Les deux claims d’intégration affichent
 `released`; le claim d’activation Shenron reste détenu par son propriétaire.
+
+## Actualisation — 2026-10-15 à 17:03 UTC
+
+Le source Bun nécessaire à l’intégration, après restauration exacte de la
+source GCS transférée (SHA-256
+`5ac01afcbe07fddfc8e60af17a4535db40b70dd35d7c908988f4d93b629b8a17`), est
+commité et poussé sur `aphrody-labs/bun/main` en `6f1c9a1ccc2039e57d0a46b6234b65d87db61b04`.
+Le build release ciblé Aphrody a réussi par l’usine déclarée, avec 12 jobs :
+
+```sh
+bun scripts/build/rust/vps-cargo.ts run --jobs auto \
+  --config /home/ubuntu/aphrody-build/dragonball/vps-cargo.json -- \
+  build --release -p aphrody --features index --locked
+```
+
+Le build a terminé en 8 min 43 s. Il reste des avertissements non bloquants
+existants (exigence semver avec métadonnées, documentation/commentaires et
+fonction inutilisés). L’artefact
+`/home/ubuntu/aphrody-build/dragonball/aphrody-bin/aphrody` et le binaire
+installé `~/.local/share/aphrody/bin/aphrody` ont tous deux le SHA-256
+`18c1816a12d14f1117291b82bdd2836a83be5ce9f605b55d2144ed5a6eac68f5`.
+L’installation a conservé l’ancien binaire et évité l’activation du démarrage
+(`self install --keep-legacy --no-boot`). L’aide du binaire installé expose
+`--catalogue`. Le test hors ligne d’un catalogue synthétique `shenron-manga-cdn/v1`
+a matérialisé et indexé deux documents sans erreur, avec les titres, ISBN et
+empreinte attendus ; il ne lit ni ne republie de corpus privé ou de médias.
+
+Le test Rust ciblé de `aphrody-web-source`, lancé via le même factory avec
+`--locked`, a ensuite passé après la libération des verrous partagés : 3 tests
+unitaires de source, 5 tests de catalogue, 2 tests consommateur et 2 doctests
+(dont un compile-fail), zéro échec. Il a compilé `aphrody-web-source` et
+`catalogue_index` en profil release.
+
+Le reçu public du worker sur le VPS observé à 17:03:08 UTC indique 329 volumes,
+222 lisibles et 107 sans lecteur complet, 53 304 pages listées et 1 995 assets
+vérifiés ; la recherche est toujours indisponible. Le worker est `running`, avec
+16 workers configurés (aucun actif à cet instant), 51 544 tâches en attente,
+6 503 terminées, 111 en échec, 296 refusées par robots et deux bloquées par le
+fournisseur. Ces assets ne prouvent pas l’intégralité d’un volume. DBFR
+`/api/health` répond 200 et `/wiki/manga` répond avec sa page HTML publique ;
+cela ne constitue ni un audit exhaustif des fiches ni une confirmation du nombre
+total d’entrées exactes. Aucune donnée wiki/manga éditoriale n’a été écrite ou
+publiée dans cette actualisation.
