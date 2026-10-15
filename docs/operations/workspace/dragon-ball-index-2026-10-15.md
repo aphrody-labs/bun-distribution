@@ -585,6 +585,6 @@ aucune capacité fictive ni retry n’a été injecté.
 Le crawl orchestré par le PID 2930486 demeure vivant. Son processus enfant
 travaille actuellement sur la source Toei `dragon`; les rapports des rounds
 précédents n’autorisent pas à lire/indexer son répertoire partagé pendant
-l’écriture. Le round 4 rapporte 94 244 documents cumulés et 38 documents pour
-la source `toei-dragon_super`; le run entier n’est pas terminé. Aucun nouvel
-index RAG ni publication wiki/manga n’est revendiqué.
+l’écriture. Les rapports individuels de source ne sont pas utilisés comme
+compteur global; le run entier n’est pas terminé. Aucun nouvel index RAG ni
+publication wiki/manga n’est revendiqué.
