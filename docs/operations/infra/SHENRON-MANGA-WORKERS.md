@@ -17,6 +17,8 @@ La file SQLite et les checkpoints restent dans le dossier privé
 ## Réseau et données
 
 `NetworkNamespacePath=/run/netns/mullvad` réutilise la sortie Tokyo existante.
+Le bind en lecture seule du résolveur `/etc/netns/mullvad/resolv.conf` évite
+d'utiliser le stub DNS de l'hôte, inaccessible dans ce namespace réseau.
 Avant installation, vérifier que `aphrody-mullvad-netns.service` est actif et
 que les crawls déjà lancés restent vivants ; ne pas recréer le namespace ni
 changer les clés, les routes ou le relais partagé pour installer les workers.

@@ -5,6 +5,7 @@ Wants=network-online.target
 Requires=aphrody-mullvad-netns.service
 After=network-online.target aphrody-mullvad-netns.service
 ConditionPathExists=/run/netns/mullvad
+ConditionPathExists=/etc/netns/mullvad/resolv.conf
 ConditionPathExists=/home/ubuntu/src/shenron/scripts/ops/manga-source-pool.ts
 StartLimitIntervalSec=30min
 StartLimitBurst=10
@@ -16,6 +17,7 @@ Group=ubuntu
 WorkingDirectory=/home/ubuntu/src/bun
 Environment=PATH=/home/ubuntu/.bun/bin:/home/ubuntu/.cargo/bin:/home/ubuntu/.local/bin:/usr/local/bin:/usr/bin:/bin
 NetworkNamespacePath=/run/netns/mullvad
+BindReadOnlyPaths=/etc/netns/mullvad/resolv.conf:/etc/resolv.conf
 PIDFile=/home/ubuntu/.aphrody/profiles/dbfr/jobs/manga-source-pool/pool.pid
 ExecStart=/home/ubuntu/.bun/bin/bun run bd -n -j2 /home/ubuntu/src/shenron/scripts/ops/manga-source-pool.ts --job /home/ubuntu/.aphrody/profiles/dbfr/jobs/manga-source-pool --daemon --pid-file /home/ubuntu/.aphrody/profiles/dbfr/jobs/manga-source-pool/pool.pid --workers 8 --interval-ms 60000 --reconcile-ms 3600000
 Restart=always
