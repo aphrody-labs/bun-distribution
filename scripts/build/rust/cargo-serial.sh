@@ -54,29 +54,32 @@ if [[ "$help_only" == false && -f "$factory_config" && ( "${APHRODY_BUILD_HOST:-
     fi
 fi
 
-default_jobs=6
-if [[ "${CLAUDE_CODE_REMOTE:-}" == true || "${APHRODY_CLOUD:-0}" == 1 || "${CI:-}" == true || "${GITHUB_ACTIONS:-}" == true || "${CODESPACES:-}" == true || -n "${GITPOD_WORKSPACE_ID:-}" || -f /.dockerenv ]]; then
-    default_jobs="$(nproc 2>/dev/null || echo 4)"
-    if ((default_jobs > 6)); then default_jobs=6; fi
+# This is the execution host's affinity, never the controller's or a different host's budget.
+available_cpus="$(nproc 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
+if [[ ! "$available_cpus" =~ ^[1-9][0-9]*$ ]]; then
+    echo "Cannot determine the executing host's available CPUs" >&2
+    exit 64
 fi
+default_jobs=6
+if ((available_cpus < default_jobs)); then default_jobs="$available_cpus"; fi
 jobs="${APHRODY_CARGO_JOBS:-$default_jobs}"
 if [[ "$jobs" == auto ]]; then
     # Explicit operator request: use every CPU available to this process.
     # Keep the factory lease and shared Cargo lock; concurrent owners retain them.
-    jobs="$(nproc 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
-    if [[ ! "$jobs" =~ ^[1-9][0-9]*$ ]]; then
-        echo "Cannot determine the available CPU count for APHRODY_CARGO_JOBS=auto" >&2
-        exit 64
-    fi
-elif [[ ! "$jobs" =~ ^[1-6]$ ]]; then
-    echo "APHRODY_CARGO_JOBS must be an integer from 1 through 6, or auto for all available CPUs" >&2
+    jobs="$available_cpus"
+elif [[ ! "$jobs" =~ ^[1-9][0-9]{0,3}$ ]] || ((jobs > 1024)); then
+    echo "APHRODY_CARGO_JOBS must be an integer from 1 through 1024, or auto for all available CPUs" >&2
+    exit 64
+fi
+if ((jobs > available_cpus)); then
+    echo "Cargo jobs exceed the executing host's available CPUs" >&2
     exit 64
 fi
 
 for arg in "$@"; do
     case "$arg" in
         -j|--jobs|-j[0-9]*|--jobs=*)
-            echo "Do not override Cargo job count; set APHRODY_CARGO_JOBS=1..6 or auto instead" >&2
+            echo "Do not override Cargo job count; set APHRODY_CARGO_JOBS=1..1024 or auto instead" >&2
             exit 64
             ;;
     esac

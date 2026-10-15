@@ -523,7 +523,7 @@ test("Yolo shares factory caches while preserving its canonical packaging target
   expect(plan.workspace).toBe(declared.repositories.yolo!);
   expect(plan.transport.slice(0, 4)).toEqual(["ssh", "exec", "--host", "vps"]);
   expect(plan.transport[5]).not.toContain("CARGO_TARGET_DIR=");
-  expect(plan.transport[5]).toContain("SCCACHE_DIR=/home/ubuntu/build/cache/sccache");
+  expect(plan.transport[5]).toContain(`SCCACHE_DIR=${declared.cacheRoot}/sccache`);
   expect(plan.transport[5]).toContain("git rev-parse HEAD");
   expect(plan.transport[5]).toContain("git status --porcelain");
   expect(plan.transport[5]).toContain("flock --close -- /home/ubuntu/build/locks/heavy.lock");
@@ -539,7 +539,7 @@ test("factory requires pinned clean source policy and bounded compiler jobs", ()
     buildFactoryPlan({ ...config, enabled: false }, "aphrody", revision, ["bun"]),
   ).toThrow("enabled");
   expect(() =>
-    buildFactoryPlan({ ...config, rust: { maxJobs: 7 } }, "aphrody", revision, ["bun"]),
+    buildFactoryPlan({ ...config, rust: { maxJobs: 1025 } }, "aphrody", revision, ["bun"]),
   ).toThrow("between");
   expect(() => buildFactoryPlan(config, "aphrody", revision, [])).toThrow("owner command");
   expect(() =>
@@ -589,7 +589,13 @@ test.skipIf(process.platform === "win32")(
         ...config,
         repositories: { yolo: root },
         lockPath: join(root, "locks/heavy.lock"),
+        cacheRoot: join(root, "locks/cache"),
+        artifactRoot: join(root, "locks/artifacts"),
+        rust: { maxJobs: 1 },
+        resources: { reserveMemoryGiB: 1, reserveDiskGiB: 1, memoryPerJobGiB: 1 },
       };
+      await mkdir(fixtureConfig.cacheRoot);
+      await mkdir(fixtureConfig.artifactRoot);
       const literal = "name'$(echo should-not-expand)`echo literal`";
       const plan = buildFactoryPlan(fixtureConfig, "yolo", await git("rev-parse", "HEAD"), [
         "bash",
@@ -728,6 +734,136 @@ test.skipIf(process.platform === "win32")(
       held.kill();
       await held.exited;
       await rm(f.root, { recursive: true, force: true });
+    }
+  },
+);
+
+test("factory admits twelve declared jobs only against fresh host reserves", async () => {
+  const { factoryResourcePolicy, admitFactoryResources } = await import("../src/build-factory");
+  const twelve = {
+    ...config,
+    rust: { maxJobs: 12 },
+    resources: { reserveMemoryGiB: 8, reserveDiskGiB: 32, memoryPerJobGiB: 1 },
+  };
+  const policy = factoryResourcePolicy(twelve);
+  const available = {
+    cpus: 12,
+    availableMemoryGiB: 27.86,
+    cacheDiskGiB: 488,
+    artifactDiskGiB: 488,
+  };
+  expect(admitFactoryResources(policy, available)).toEqual({ policy, observed: available });
+  for (const change of [
+    { cpus: 6 },
+    { availableMemoryGiB: 19.9 },
+    { cacheDiskGiB: 31.9 },
+    { artifactDiskGiB: 31.9 },
+    { cpus: NaN },
+    { availableMemoryGiB: Infinity },
+    { cacheDiskGiB: -1 },
+  ])
+    expect(() => admitFactoryResources(policy, { ...available, ...change })).toThrow();
+  const plan = buildFactoryPlan(twelve, "aphrody", revision, ["bun", "build"]);
+  expect(plan.transport[5]).toContain("CARGO_BUILD_JOBS=12");
+  expect(plan.transport[5]).toContain("availableParallelism()");
+  expect(plan.transport[5]).toContain("MemAvailable:");
+  expect(plan.transport[5]).toContain("statfs(path)");
+  expect(plan.transport[5]).toContain("heavy.lock");
+  expect(plan.serialized).toBe(true);
+  expect(factoryResourcePolicy(config)).toEqual({
+    jobs: 6,
+    reserveMemoryGiB: 4,
+    reserveDiskGiB: 20,
+    memoryPerJobGiB: 1,
+  });
+  expect(() => factoryResourcePolicy({ ...twelve, resources: { reserveMemoryGiB: NaN } })).toThrow(
+    "reserve",
+  );
+});
+
+test.skipIf(process.platform !== "linux")(
+  "fresh resource refusal runs inside owner locks before any build command",
+  async () => {
+    const root = await mkdtemp(join(tmpdir(), "factory-admission-"));
+    try {
+      const source = join(root, "source");
+      await mkdir(source);
+      const git = async (...args: string[]) => {
+        const child = Bun.spawn(["git", ...args], { cwd: source, stdout: "pipe", stderr: "pipe" });
+        const [text, error, code] = await Promise.all([
+          new Response(child.stdout).text(),
+          new Response(child.stderr).text(),
+          child.exited,
+        ]);
+        if (code !== 0) throw Error(error);
+        return text.trim();
+      };
+      await git("init", "--quiet");
+      await git("config", "user.name", "fixture");
+      await git("config", "user.email", "fixture@localhost");
+      await writeFile(join(source, "source.txt"), "fixture");
+      await git("add", "source.txt");
+      await git("commit", "--quiet", "-m", "fixture");
+      const declared = {
+        ...config,
+        cacheRoot: join(root, "cache"),
+        artifactRoot: join(root, "artifacts"),
+        lockPath: join(root, "locks/heavy.lock"),
+        repositories: { aphrody: source },
+        rust: { maxJobs: 1 },
+        resources: { reserveMemoryGiB: 1024, reserveDiskGiB: 1, memoryPerJobGiB: 1 },
+      };
+      for (const path of [declared.cacheRoot, declared.artifactRoot, join(root, "locks")])
+        // Each parent is independent; no build starts until the complete fixture exists.
+        // eslint-disable-next-line no-await-in-loop
+        await mkdir(path);
+      const marker = join(root, "owner-ran");
+      const plan = buildFactoryPlan(declared, "aphrody", await git("rev-parse", "HEAD"), [
+        process.execPath,
+        "-e",
+        `await Bun.write(${JSON.stringify(marker)},'unexpected')`,
+      ]);
+      const child = Bun.spawn(["bash", "-c", plan.transport[5]!], {
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      const [stdout, stderr, status] = await Promise.all([
+        new Response(child.stdout).text(),
+        new Response(child.stderr).text(),
+        child.exited,
+      ]);
+      expect(stdout).toBe("");
+      expect(stderr).toContain("host capacity cannot preserve");
+      expect(status).not.toBe(0);
+      expect(await Bun.file(marker).exists()).toBe(false);
+      // The same generated command must admit a small real job, not merely reject everything.
+      const admitted = buildFactoryPlan(
+        { ...declared, resources: { reserveMemoryGiB: 1, reserveDiskGiB: 1, memoryPerJobGiB: 1 } },
+        "aphrody",
+        await git("rev-parse", "HEAD"),
+        [
+          process.execPath,
+          "-e",
+          `await Bun.write(${JSON.stringify(marker)},JSON.stringify({jobs:process.env.CARGO_BUILD_JOBS,ownerJobs:process.env.APHRODY_CARGO_JOBS}));`,
+        ],
+      );
+      const accepted = Bun.spawn(["bash", "-c", admitted.transport[5]!], {
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      const [acceptedOut, acceptedErr, acceptedStatus] = await Promise.all([
+        new Response(accepted.stdout).text(),
+        new Response(accepted.stderr).text(),
+        accepted.exited,
+      ]);
+      expect({ stdout: acceptedOut, stderr: acceptedErr, status: acceptedStatus }).toEqual({
+        stdout: "",
+        stderr: "",
+        status: 0,
+      });
+      expect(await Bun.file(marker).json()).toEqual({ jobs: "1", ownerJobs: "1" });
+    } finally {
+      await rm(root, { recursive: true, force: true });
     }
   },
 );

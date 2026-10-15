@@ -11,7 +11,7 @@ afterEach(() => {
   for (const path of fixtures.splice(0)) rmSync(path, { recursive: true, force: true });
 });
 
-async function run(host: string, held = false, extra: Record<string, string> = {}) {
+async function run(host: string, held = false, extra: Record<string, string | undefined> = {}) {
   const root = mkdtempSync(join(tmpdir(), "aphrody-cargo-routing-"));
   fixtures.push(root);
   const wrapper = join(root, "scripts/build/rust/cargo-serial.sh");
@@ -129,6 +129,25 @@ linuxTest("auto refuses an invalid CPU probe before starting Cargo", async () =>
     APHRODY_CARGO_JOBS: "auto",
     APHRODY_TEST_CPU_COUNT: "invalid",
   });
+  expect(result.exitCode).toBe(64);
+  expect(result.stdout.toString()).not.toContain("fixture-cargo");
+});
+
+linuxTest("twelve explicit jobs reach Cargo under the inherited VPS lease", async () => {
+  const result = await run("vps", true, { APHRODY_CARGO_JOBS: "12" });
+  expect(result.exitCode).toBe(0);
+  expect(result.stdout.toString()).toContain("fixture-jobs:12");
+  expect(result.stdout.toString()).toContain("fixture-shared-cache-prewarm");
+  expect(result.stderr.toString()).toContain("[cargo-serial] waiting for");
+});
+
+linuxTest.each([
+  { APHRODY_CARGO_JOBS: "12", APHRODY_TEST_CPU_COUNT: "6" },
+  { APHRODY_CARGO_JOBS: "1025" },
+  { APHRODY_CARGO_JOBS: "0" },
+  { APHRODY_CARGO_JOBS: "1.5" },
+])("explicit jobs refuse unavailable affinity and invalid counts before Cargo: %j", async (env) => {
+  const result = await run("dbfr", false, env);
   expect(result.exitCode).toBe(64);
   expect(result.stdout.toString()).not.toContain("fixture-cargo");
 });

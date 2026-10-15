@@ -39,6 +39,7 @@ export interface BuildFactoryConfig {
   lockPath: string;
   repositories: Record<string, string>;
   rust: { maxJobs: number };
+  resources?: { reserveMemoryGiB?: number; reserveDiskGiB?: number; memoryPerJobGiB?: number };
   commandTimeoutSeconds?: number;
   /** Local activation of built binaries (defaults: ~/.local/bin, ~/.local/lib/aphrody). */
   install?: unknown;
@@ -62,6 +63,50 @@ function sourceLockPath(config: BuildFactoryConfig, repository: string): string 
   return posix.join(posix.dirname(config.lockPath), `${repository}.source.lock`);
 }
 
+export function factoryResourcePolicy(config: Pick<BuildFactoryConfig, "rust" | "resources">) {
+  const policy = {
+    jobs: config.rust.maxJobs,
+    reserveMemoryGiB: config.resources?.reserveMemoryGiB ?? 4,
+    reserveDiskGiB: config.resources?.reserveDiskGiB ?? 20,
+    memoryPerJobGiB: config.resources?.memoryPerJobGiB ?? 1,
+  };
+  if (!Number.isSafeInteger(policy.jobs) || policy.jobs < 1 || policy.jobs > 1024)
+    throw new Error("Build factory rust.maxJobs must be between 1 and 1024");
+  for (const value of [policy.reserveMemoryGiB, policy.reserveDiskGiB, policy.memoryPerJobGiB])
+    if (!Number.isFinite(value) || value < 1 || value > 1024)
+      throw new Error("Invalid build factory resource reserve");
+  return policy;
+}
+
+/** Fresh measurements belong to the executing host, after its kernel leases are held. */
+export function admitFactoryResources(
+  policy: ReturnType<typeof factoryResourcePolicy>,
+  observed: {
+    cpus: number;
+    availableMemoryGiB: number;
+    cacheDiskGiB: number;
+    artifactDiskGiB: number;
+  },
+) {
+  if (
+    !Number.isSafeInteger(observed.cpus) ||
+    observed.cpus < 1 ||
+    [observed.availableMemoryGiB, observed.cacheDiskGiB, observed.artifactDiskGiB].some(
+      (value) => !Number.isFinite(value) || value < 0,
+    )
+  )
+    throw new Error("Build factory host resource measurements are unavailable");
+  if (
+    policy.jobs > observed.cpus ||
+    observed.availableMemoryGiB < policy.reserveMemoryGiB + policy.jobs * policy.memoryPerJobGiB ||
+    Math.min(observed.cacheDiskGiB, observed.artifactDiskGiB) < policy.reserveDiskGiB
+  )
+    throw new Error(
+      "Build factory host capacity cannot preserve its declared CPU, memory or disk reserves",
+    );
+  return { policy, observed };
+}
+
 /** Builds share the heavy lock and hold their source lock; Cargo retains its owner lock. */
 export function buildFactoryPlan(
   config: BuildFactoryConfig,
@@ -81,12 +126,7 @@ export function buildFactoryPlan(
     throw new Error(`Unknown build factory repository: ${repository}`);
   if (!/^[a-f0-9]{40}$/.test(revision)) throw new Error("A full pinned Git revision is required");
   if (!command.length || !command[0]) throw new Error("An owner command is required after --");
-  if (
-    !Number.isSafeInteger(config.rust.maxJobs) ||
-    config.rust.maxJobs < 1 ||
-    config.rust.maxJobs > 6
-  )
-    throw new Error("Build factory rust.maxJobs must be between 1 and 6");
+  const resources = factoryResourcePolicy(config);
   const commandTimeoutSeconds = config.commandTimeoutSeconds ?? 21600;
   if (
     !Number.isSafeInteger(commandTimeoutSeconds) ||
@@ -102,6 +142,7 @@ export function buildFactoryPlan(
   const environment = [
     "APHRODY_BUILD_HOST=vps",
     `APHRODY_CARGO_JOBS=${config.rust.maxJobs}`,
+    `CARGO_BUILD_JOBS=${config.rust.maxJobs}`,
     "CARGO_INCREMENTAL=0",
     "CARGO_NET_GIT_FETCH_WITH_CLI=true",
     `APHRODY_CARGO_LOCK_DIR=${posix.dirname(lock)}`,
@@ -140,6 +181,8 @@ export function buildFactoryPlan(
           config.cleanup.privilegeBinary,
         )
       : []),
+    // Execute the same admission owner natively; planning never substitutes controller capacity.
+    `bun --no-env-file -e ${shellQuote(String.raw`const {availableParallelism}=await import('node:os');const {statfs}=await import('node:fs/promises');const memory=await Bun.file('/proc/meminfo').text();const available=/^MemAvailable:\s+(\d+)\s+kB$/m.exec(memory)?.[1];if(!available)throw Error('Build factory available memory unknown');const disks=await Promise.all(${JSON.stringify([cache, artifacts])}.map(async path=>{const s=await statfs(path);return Number(s.bavail)*Number(s.bsize)/1073741824}));(${admitFactoryResources.toString()})(${JSON.stringify(resources)},{cpus:availableParallelism(),availableMemoryGiB:Number(available)/1048576,cacheDiskGiB:disks[0],artifactDiskGiB:disks[1]});`)}`,
     `${config.cleanup ? "" : "exec "}env ${environment.map(shellQuote).join(" ")} ${command.map(shellQuote).join(" ")}`,
   ].join("\n");
   // The supervisor owns the descriptor; long-lived cache daemons must not inherit it.

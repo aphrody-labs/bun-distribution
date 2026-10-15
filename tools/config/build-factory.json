@@ -17,15 +17,15 @@
   },
   "executionOnlyTargets": [],
   "workspaceRoot": "/home/ubuntu/src/aphrody",
-  "cacheRoot": "/home/ubuntu/build/cache",
-  "artifactRoot": "/home/ubuntu/build/artifacts",
+  "cacheRoot": "/home/ubuntu/build/storage/cache",
+  "artifactRoot": "/home/ubuntu/build/storage/artifacts",
   "lockPath": "/home/ubuntu/build/locks/heavy.lock",
   "hostEnvironment": {
     "name": "APHRODY_BUILD_HOST",
     "value": "vps"
   },
   "rust": {
-    "maxJobs": 6,
+    "maxJobs": 12,
     "serialized": true,
     "wrapper": "scripts/build/rust/cargo-serial.sh",
     "incremental": false,
@@ -39,7 +39,7 @@
     "enabled": true,
     "classes": ["shenron-ui-reuse"],
     "lockPath": "/home/ubuntu/build/locks/ui.lock",
-    "workRoot": "/home/ubuntu/build/artifacts/ui/jobs",
+    "workRoot": "/home/ubuntu/build/storage/artifacts/ui/jobs",
     "maxJobs": 1,
     "memoryGiB": 12,
     "cpus": 4,
@@ -76,7 +76,7 @@
     "cleanup": "existing-infra-allowlist-only"
   },
   "repositories": {
-    "bun-os": "/home/ubuntu/builds/bun-os-factory/sources/bun",
+    "bun-os": "/home/ubuntu/src/bun",
     "aphrody": "/home/ubuntu/src/aphrody",
     "yolo": "/home/ubuntu/src/yolo",
     "iecode": "/home/ubuntu/src/iecode"
@@ -89,34 +89,13 @@
     "maxOldSpaceSizeMiB": 8192
   },
   "cleanup": {
-    "transientRoot": "/home/ubuntu/build/transient",
+    "transientRoot": "/home/ubuntu/build/storage/transient",
     "privilegeBinary": "/usr/bin/sudo-rs",
-    "retiredOutputs": [
-      {
-        "path": "/home/ubuntu/build/cache/cargo/obscura-fork",
-        "terminalReceipt": "/home/ubuntu/build/artifacts/wsl/obscura-fork-check.log.exit",
-        "reason": "Terminal native fork-check target; no live job or mounted container may use it"
-      },
-      {
-        "path": "/home/ubuntu/build/cache/cargo/vu-uv",
-        "terminalReceipt": "/home/ubuntu/build/wsl/vu/receipts/7c3db189-2026-10-05T21-13-26-131Z.json",
-        "reason": "Terminal qualified vu build intermediates; runtime artifacts and source receipts retained"
-      },
-      {
-        "path": "/home/ubuntu/build/cache/cargo/vu-ruff",
-        "terminalReceipt": "/home/ubuntu/build/wsl/vu/receipts/7c3db189-2026-10-05T21-13-26-131Z.json",
-        "reason": "Terminal qualified vu build intermediates; runtime artifacts and source receipts retained"
-      },
-      {
-        "path": "/home/ubuntu/build/cache/cargo/vu-wsl",
-        "terminalReceipt": "/home/ubuntu/build/wsl/vu/receipts/7c3db189-2026-10-05T21-13-26-131Z.json",
-        "reason": "Terminal qualified vu build intermediates; runtime artifacts and source receipts retained"
-      },
-      {
-        "path": "/home/ubuntu/build/cache/cargo/aphrody",
-        "terminalReceipt": "/home/ubuntu/build/artifacts/factory-jobs/downloads-aphrody-windows-x86_64-5bf7eed5a/exit.json",
-        "reason": "Terminal 2026-10-06 Aphrody Linux/Windows packaging intermediates; deployed/rollback binaries, artifact receipts, source and shared caches retained"
-      }
-    ]
+    "retiredOutputs": []
+  },
+  "resources": {
+    "reserveMemoryGiB": 8,
+    "reserveDiskGiB": 32,
+    "memoryPerJobGiB": 1
   }
 }
