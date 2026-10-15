@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
 
-import { expired, parseVerified, remoteRoot, stampTime } from "./shenron-offsite-backup.ts";
+import { parseVerified, remoteRoot, stampTime } from "./shenron-offsite-backup.ts";
 
 const sum = "a".repeat(64);
 
@@ -16,7 +16,10 @@ test("snapshot names are parsed as UTC timestamps", () => {
 });
 
 test("VERIFIED.json is parsed strictly", () => {
-  const ok = { kind: "shenron-container-backup", files: { "shenron_site.dump": sum, "bot/data/bot.db.gz": sum } };
+  const ok = {
+    kind: "shenron-container-backup",
+    files: { "shenron_site.dump": sum, "bot/data/bot.db.gz": sum },
+  };
   expect(parseVerified(JSON.stringify(ok)).files["bot/data/bot.db.gz"]).toBe(sum);
   const bad =
     (files: Record<string, unknown>, kind = "shenron-container-backup") =>
@@ -27,18 +30,7 @@ test("VERIFIED.json is parsed strictly", () => {
   expect(bad({ "a/../b": sum })).toThrow("unexpected path");
   expect(bad({ "redis.rdb": "nothex" })).toThrow("malformed digest");
   expect(bad({}, "other")).toThrow("not a shenron-container-backup");
-  expect(() => parseVerified(JSON.stringify({ kind: "shenron-container-backup", files: {} }))).toThrow(
-    "no PostgreSQL dump",
-  );
-});
-
-test("rotation keeps only the verified newest snapshot", () => {
-  const names = [
-    "20261001T030000000000Z",
-    "20261020T030000000000Z",
-    "pull-status.log",
-    ".20261029T030000000000Z.partial",
-  ];
-  expect(expired(names, "20261020T030000000000Z")).toEqual(["20261001T030000000000Z"]);
-  expect(expired(["20261020T030000000000Z"], "20261020T030000000000Z")).toEqual([]);
+  expect(() =>
+    parseVerified(JSON.stringify({ kind: "shenron-container-backup", files: {} })),
+  ).toThrow("no PostgreSQL dump");
 });

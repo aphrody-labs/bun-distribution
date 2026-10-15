@@ -27,43 +27,31 @@
       "host": "vps",
       "cadence": "daily",
       "priority": "critical",
-      "owns": [
-        "shenron-container-offsite-copy",
-        "shenron-restore-verification"
-      ],
+      "owns": ["shenron-container-offsite-copy", "shenron-restore-verification"],
       "unit": "shenron-offsite-backup.timer",
-      "destination": "/home/ubuntu/build/archive/dbfr/backups/shenron",
-      "retention": "rotation 1: the newest snapshot, kept once verified and restored; older ones deleted"
+      "destination": "/mnt/aphrody-storage/disk500/archive/dbfr/backups/shenron",
+      "retention": "preserve all verified snapshots until the owner resolves the conflicting one/two/three-copy policies"
     },
     {
       "id": "infra-sync",
       "host": "dbfr",
       "cadence": "on-demand-or-hourly",
       "priority": "deferred",
-      "owns": [
-        "replication-checksums",
-        "asset-manifest"
-      ]
+      "owns": ["replication-checksums", "asset-manifest"]
     },
     {
       "id": "infra-cleanup",
       "host": "vps",
       "cadence": "daily",
       "priority": "low",
-      "owns": [
-        "journal-retention",
-        "release-retention",
-        "temporary-files"
-      ]
+      "owns": ["journal-retention", "release-retention", "temporary-files"]
     },
     {
       "id": "shenron-backup",
       "host": "vps",
       "cadence": "daily",
       "priority": "low",
-      "owns": [
-        "shenron-sqlite-local-cache"
-      ],
+      "owns": ["shenron-sqlite-local-cache"],
       "desiredState": "stopped-after-dbfr-cutover",
       "supersededBy": "shenron-container-backup"
     },
@@ -72,19 +60,14 @@
       "host": "vps",
       "cadence": "daily",
       "priority": "critical",
-      "owns": [
-        "rg-postgresql",
-        "rg-storage-objects"
-      ]
+      "owns": ["rg-postgresql", "rg-storage-objects"]
     },
     {
       "id": "rg-infra-monitor",
       "host": "vps",
       "cadence": "every-60-seconds",
       "priority": "low",
-      "owns": [
-        "stack-observation"
-      ]
+      "owns": ["stack-observation"]
     },
     {
       "id": "shenron-cloudflare-audit",
@@ -92,9 +75,7 @@
       "cadence": "daily",
       "priority": "low",
       "unit": "shenron-cloudflare-audit.timer",
-      "owns": [
-        "shenron-cloudflare-read-only-reconciliation"
-      ],
+      "owns": ["shenron-cloudflare-read-only-reconciliation"],
       "mutationPolicy": "read-only; no DNS, worker deploy, R2 copy or tunnel config mutation"
     },
     {
@@ -103,9 +84,7 @@
       "cadence": "every-10-minutes",
       "priority": "low",
       "unit": "shenron-cloudflare-s3-renew.timer",
-      "owns": [
-        "shenron-scoped-r2-s3-credential"
-      ],
+      "owns": ["shenron-scoped-r2-s3-credential"],
       "mutationPolicy": "temporary scoped credential renewal only; no DNS, worker deploy, R2 objects or tunnel mutation"
     }
   ],

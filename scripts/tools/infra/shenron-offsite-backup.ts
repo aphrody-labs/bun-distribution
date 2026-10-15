@@ -8,16 +8,15 @@
 // already verified locally (raw `ssh cat`, streamed and hashed against its VERIFIED.json), then writes
 // `.offsite-verified`. `--restore-check` restores its PostgreSQL dump into a disposable
 // pgvector/pgvector:0.8.1-pg18 container, checks the SQLite copies with `PRAGMA quick_check`, and writes
-// `.restore-verified`. Rotation 1: only once the newest copy is verified (and restored, with --restore-check) are
-// all other local snapshots deleted. Fails when the newest DBFR snapshot is older than 36 h (stalled producer). Runs daily on the VPS
+// `.restore-verified`. Existing local snapshots are preserved as rollback evidence while the owner resolves the
+// conflicting retention policies. Fails when the newest DBFR snapshot is older than 36 h (stalled producer). Runs daily on the VPS
 // (tools/config/host/systemd/shenron/shenron-offsite-backup.{service,timer}).
 //
-// Environment: SHENRON_OFFSITE_DIR (default ~/build/archive/dbfr/backups/shenron), SHENRON_OFFSITE_HOST (SSH alias,
+// Environment: SHENRON_OFFSITE_DIR (default /mnt/aphrody-storage/disk500/archive/dbfr/backups/shenron), SHENRON_OFFSITE_HOST (SSH alias,
 // default dbfr), SHENRON_REMOTE_HOME (default: the remote $HOME).
 // oxlint-disable no-await-in-loop -- one SSH transfer at a time bounds DBFR load and local disk writes.
 import { Database } from "bun:sqlite";
-import { appendFileSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync } from "node:fs";
-import { homedir } from "node:os";
+import { appendFileSync, existsSync, mkdirSync, renameSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 export type Verified = { files: Record<string, string> };
@@ -57,11 +56,6 @@ export function parseVerified(text: string): Verified {
   return { files };
 }
 
-/** Snapshot directories to delete once `kept` (the newest, verified) is in place: every other snapshot. */
-export function expired(names: string[], kept: string): string[] {
-  return names.filter(name => stampTime(name) !== null && name !== kept);
-}
-
 const quote = (value: string) => `'${value.replaceAll("'", `'\\''`)}'`;
 
 async function run(cmd: string[], stdin?: Blob): Promise<string> {
@@ -99,7 +93,10 @@ async function fetchRemote(host: string, remote: string, partial: string) {
   }
   await writer.end();
   const code = await proc.exited;
-  if (code !== 0) throw new Error(`transfer of ${remote} failed: ${(await new Response(proc.stderr).text()).trim()}`);
+  if (code !== 0)
+    throw new Error(
+      `transfer of ${remote} failed: ${(await new Response(proc.stderr).text()).trim()}`,
+    );
   return { sha256: hasher.digest("hex"), size };
 }
 
@@ -175,7 +172,11 @@ export async function restoreCheck(dir: string) {
       });
       // The entrypoint restarts the server once after initdb; require the final server.
       const init = Bun.spawnSync(["docker", "logs", name], { stdout: "pipe", stderr: "pipe" });
-      if (ready.exitCode === 0 && /init process complete/.test(String(init.stderr) + String(init.stdout))) break;
+      if (
+        ready.exitCode === 0 &&
+        /init process complete/.test(String(init.stderr) + String(init.stdout))
+      )
+        break;
       if (Date.now() > deadline) throw new Error("restore PostgreSQL did not become ready");
       await Bun.sleep(1000);
     }
@@ -219,7 +220,7 @@ export async function restoreCheck(dir: string) {
   mkdirSync(scratch, { recursive: true, mode: 0o700 });
   try {
     const { files } = parseVerified(await Bun.file(join(dir, "VERIFIED.json")).text());
-    for (const file of Object.keys(files).filter(f => /\.(db|sqlite)\.gz$/.test(f))) {
+    for (const file of Object.keys(files).filter((f) => /\.(db|sqlite)\.gz$/.test(f))) {
       const plain = join(scratch, file.replaceAll("/", "_").replace(/\.gz$/, ""));
       const gunzip = Bun.spawn(["gzip", "-dc", join(dir, ...file.split("/"))], {
         stdout: Bun.file(plain),
@@ -227,7 +228,9 @@ export async function restoreCheck(dir: string) {
       if ((await gunzip.exited) !== 0) throw new Error(`gzip -d failed for ${file}`);
       const db = new Database(plain, { readonly: true });
       try {
-        sqlite[file] = String((db.query("PRAGMA quick_check").get() as Record<string, unknown>)["quick_check"]);
+        sqlite[file] = String(
+          (db.query("PRAGMA quick_check").get() as Record<string, unknown>)["quick_check"],
+        );
       } finally {
         db.close();
       }
@@ -247,9 +250,10 @@ export async function main(argv = Bun.argv.slice(2)): Promise<number> {
   const dest =
     (at >= 0 ? argv[at + 1] : undefined) ??
     process.env.SHENRON_OFFSITE_DIR ??
-    join(homedir(), "build", "archive", "dbfr", "backups", "shenron");
+    "/mnt/aphrody-storage/disk500/archive/dbfr/backups/shenron";
   const host = process.env.SHENRON_OFFSITE_HOST ?? "dbfr";
-  const remoteHome = process.env.SHENRON_REMOTE_HOME ?? (await ssh(host, 'printf %s "$HOME"')).trim();
+  const remoteHome =
+    process.env.SHENRON_REMOTE_HOME ?? (await ssh(host, 'printf %s "$HOME"')).trim();
   if (!remoteHome.startsWith("/")) throw new Error("remote home is not an absolute path");
   const root = remoteRoot(remoteHome);
   mkdirSync(dest, { recursive: true, mode: 0o700 });
@@ -262,8 +266,8 @@ export async function main(argv = Bun.argv.slice(2)): Promise<number> {
   );
   const remote = listing
     .split(/\r?\n/)
-    .filter(name => stampTime(name) !== null)
-    .sort();
+    .filter((name) => stampTime(name) !== null)
+    .toSorted();
   if (remote.length === 0) throw new Error(`no published container snapshot on ${host}`);
   const newest = remote.at(-1)!;
   const local = join(dest, newest);
@@ -281,22 +285,23 @@ export async function main(argv = Bun.argv.slice(2)): Promise<number> {
     log(`restore-verified=${newest} ${JSON.stringify(report)}`);
     console.log(`Restore check ${newest}: ${JSON.stringify(report)}`);
   }
-  for (const name of expired(readdirSync(dest), newest)) {
-    rmSync(join(dest, name), { recursive: true, force: true });
-    log(`pruned=${name}`);
-  }
+  // Preserve historical verified snapshots until the owner resolves the conflicting
+  // one/two/three-copy retention policies. Never delete backup evidence implicitly.
   const ageHours = (Date.now() - stampTime(newest)!) / 3_600_000;
   log(`complete pulled=${pulled} newest=${newest} age=${ageHours.toFixed(1)}h`);
   console.log(`Off-host Shenron snapshot kept: ${newest} (pulled ${pulled}).`);
-  if (ageHours > STALE_HOURS) throw new Error(`newest DBFR snapshot ${newest} is ${ageHours.toFixed(0)} h old`);
+  if (ageHours > STALE_HOURS)
+    throw new Error(`newest DBFR snapshot ${newest} is ${ageHours.toFixed(0)} h old`);
   return 0;
 }
 
 if (import.meta.main) {
   main().then(
-    code => process.exit(code),
+    (code) => process.exit(code),
     (error: unknown) => {
-      console.error(`shenron-offsite-backup: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(
+        `shenron-offsite-backup: ${error instanceof Error ? error.message : String(error)}`,
+      );
       process.exit(1);
     },
   );
