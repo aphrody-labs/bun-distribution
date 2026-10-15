@@ -156,3 +156,21 @@ build debug précédent utilisait douze. Le volume dédié libre ne justifie pas
 contourner le verrou de build. Le binaire `aphrody web dragon-ball index --help`
 installé ne reconnaît toujours pas `--catalogue` ; sa reconstruction,
 installation et activation restent à qualifier.
+
+## Actualisation — 2026-10-15 à 14:15 UTC
+
+Le correctif de préservation des BOM est livré dans Shenron `813d11d3`, intégré
+sur `origin/main` (`f60ff727`). Les gates locales de son lot sont vertes : 19 tests,
+121 assertions, vérification native sur six fichiers, lint et format. Un test
+reconstruit 57 reçus en retrouvant exactement leur SHA-256 avec le BOM conservé ;
+13 différences restent inexpliquées et quarantainées. Aucun reçu privé n'a été
+réécrit et le service manga n'a pas été redémarré : l'activation du changement
+dans le processus déjà lancé n'est pas prouvée.
+
+Le statut public observé à 14:15:04 indique 329 tomes, 219 lecteurs, 110 sans
+lecteur et 74 médias vérifiés dans le collecteur. À 14:14:43, le pool actif avait
+terminé 2 380 tâches avec quatre workers actifs et 11 157 tâches en file. La
+projection avait examiné 861 entrées, en mis 2 108 en quarantaine, et n'avait
+émis aucun bundle ni écriture publique. DBFR ne comptait aucun candidat,
+handoff ou tâche de publication à 14:15 ; aucun tome supplémentaire n'est donc
+qualifié comme complet.
