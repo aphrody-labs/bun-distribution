@@ -41,6 +41,29 @@ en 12 lectures parallèles a également relu 4 178 manifestes Cargo, soit
 Aucune suppression de stores, aucun déplacement de cache partagé ou arrêt de
 build concurrent n'a été effectué.
 
+## Index du catalogue Rust Bun — 2026-10-15
+
+Le catalogue local des crates Bun a aussi été indexé dans le profil isolé
+`aphrody`, sans le mélanger au profil DBFR :
+`/home/ubuntu/.aphrody/workspaces/aphrody/bun-graph/rust-crate-catalog.json`.
+La source est épinglée à `aphrody-labs/bun` révision
+`1988e4bae7b374810cacda67d52dfd08e26ea6b7` et à Bun 1.4.4 (`dfde053a`).
+L'index rapproche 237/237 manifestes Cargo de 129 snapshots de domaines ;
+1 032 artefacts exportés ont passé les vérifications de taille et SHA-256.
+L'index Aphrody a ajouté 1 273 fichiers, produit 388 documents, 2 245 chunks,
+1 292 nœuds et 2 173 arêtes, sans erreur. Une requête RAG retrouve la fiche
+de synthèse du catalogue.
+
+Cette indexation rend le catalogue des crates consultable, mais ne complète pas
+l'index Dragon Ball lui-même et ne qualifie pas les 237 crates en build ou test.
+Le producteur signale une couverture de fichiers incomplète : 13 692 fichiers
+parsés nativement, 7 543 non résolus, 4 273 disponibles seulement comme
+métadonnées, 149 erreurs de parse, 11 collisions d'identifiants,
+168 468 appels non résolus et 99 exports tronqués. La base SQLite de graphe et
+les artefacts restent privés dans le home Aphrody. Il n'y a pas eu de nouveau
+commit Bun dans ce lot : le checkout Bun avait des changements concurrents
+étrangers à cette demande.
+
 ## Données et limites observées
 
 L'API publique confirme 329 tomes, 219 lisibles et 110 sans lecteur. La collecte
