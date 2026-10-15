@@ -64,6 +64,30 @@ les artefacts restent privés dans le home Aphrody. Il n'y a pas eu de nouveau
 commit Bun dans ce lot : le checkout Bun avait des changements concurrents
 étrangers à cette demande.
 
+## Index wiki public — 2026-10-15
+
+Une capture paginée en lecture seule de l'API publique
+`/api/public/wiki/categories` puis `/api/public/wiki/{category}` a observé
+21 catégories et 2 014 fiches à `2026-10-15T21:49:32Z`. Le snapshot JSON privé
+fait 10 145 802 octets (SHA-256
+`2ac1849a1158981a2f2d133a1205054d7f091e7e995360fd5c183c496da31183`).
+Les totaux annoncés ont été comparés sur chaque page ; toute variation pendant
+la capture aurait interrompu l'export. Le snapshot a été projeté avec
+`aphrody web dragon-ball index` dans un corpus neuf du profil `aphrody` :
+2 014 documents indexés, 5 483 chunks, 4 028 nœuds et 2 014 arêtes, zéro
+erreur. Une requête RAG retrouve la fiche publique de Vegeta. L'état Aphrody
+compte ensuite sept sources, 2 528 documents et 8 334 chunks, incluant l'index
+des crates décrit ci-dessus.
+
+Un détecteur simple des champs de prose vides a signalé 58 fiches parmi ces
+2 014 lignes publiques (55 épisodes, deux combats et un tournoi). C'est une
+mesure indicative : elle ne contrôle pas les schémas complets de chaque
+catégorie et ne prouve pas que ces champs sont tous requis ou éditorialement
+documentables. Cette API ne couvre que les catégories publiques listées ; elle
+ne représente pas à elle seule l'inventaire complet de 10 754 fiches de l'API
+admin. Aucun texte éditorial n'a été écrit ni publié. Les corrections restent
+sous l'administration et les writers Shenron.
+
 ## Données et limites observées
 
 L'API publique confirme 329 tomes, 219 lisibles et 110 sans lecteur. La collecte
