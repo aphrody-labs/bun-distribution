@@ -279,3 +279,44 @@ reconstruit ou activé. Sur l’hôte, le volume `/home/ubuntu/build` est à 98 
 source tourne en 12 jobs. Je n’ai pas lancé de build Aphrody concurrent ni
 contourné le verrou partagé. Le volume `/home/ubuntu/build/storage` a 549 Gio
 libres, mais cette capacité ne rend pas qualifié le chemin de build courant.
+
+## Actualisation — 2026-10-15 à 15:46 UTC
+
+Le `main` local est aligné sur `origin/main` au commit
+`8fe0645e6909bf0e61e8373f2d148de8e0f5752f`. Le binaire Aphrody installé a
+encore été vérifié ; `aphrody web dragon-ball index --help` ne présente pas
+`--catalogue`. Le source Rust correspondant reste sur le fork Bun au commit
+`bcf03c2fae8d54f6657dbe3ac5df14807c8ba7af`.
+
+J’ai préparé deux worktrees propres isolés et synchronisé leur source exacte sur
+le VPS. Le build ciblé n’a pas atteint la compilation. Le premier lancement a
+échoué car le chemin `../bun` du workspace n’avait pas encore reçu son snapshot ;
+le dépôt secondaire a ensuite été synchronisé et vérifié au commit Bun indiqué
+ci-dessus. Les deux essais suivants ont échoué dès l’appel à Cargo avec
+`no such command: cargo`. Le diagnostic a localisé l’échec dans le wrapper
+actuel de l’usine : sous `flock` et `nice`, le shim `~/.cargo/bin/cargo` de
+rustup ne résout pas `cargo`, alors que `cargo --version` passe directement
+depuis la même session SSH. Le verrou lourd était libre au dernier contrôle ;
+le VPS a 12 CPU, 24 Gio de mémoire disponibles, 527 Gio libres sur
+`/home/ubuntu/build/storage`, mais seulement 2,1 Gio libres sur le volume de
+build déclaré `/home/ubuntu/build` (100 %). Le target isolé avait été placé sur
+le volume de stockage, mais cette route n’est pas déclarée dans le build-factory.
+Je n’ai ni lancé Cargo hors de son wrapper, ni contourné le verrou, ni modifié
+le checkout ou les jobs concurrents.
+
+Gates locaux sur worktree pruné : `cargo metadata --no-deps --format-version 1
+--locked` passe ; `bun check` ne démarre pas, car `@types/bun` et `@types/node`
+ne sont pas installés. `bun install --frozen-lockfile --offline` est impossible
+dans ce snapshot incomplet : dix workspaces Material externes requis manquent.
+La source Rust transférée avait déjà ses gates ciblés verts dans le reçu de
+livraison initial ; cette tentative n’ajoute donc pas une qualification du
+binaire CLI complet. `aphrody --help` n’a pas été installé ni activé.
+
+Les données manga/wiki demeurent sous le propriétaire Shenron. Le dernier reçu
+disponible ici reste celui de 15:05 UTC : 329 tomes, 219 lecteurs complets, 110
+sans lecteur public ; les assets collectés ne sont pas des intégrales. Le relevé
+wiki antérieur compte 84 fiches écrites dont 78 textes exactement relus en
+public, avec six profils de comédiens attendant le correctif d’affichage et des
+candidats bloqués non documentables. Je n’ai fait aucune nouvelle écriture
+éditoriale ou mutation de publication. Les deux claims d’intégration affichent
+`released`; le claim d’activation Shenron reste détenu par son propriétaire.
