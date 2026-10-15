@@ -48,11 +48,10 @@ fournit pas de structure de pages. Cette sérialisation partielle ne prouve pas
 la complétude du tome relié ; aucun nouveau tome complet n'est annoncé.
 Le reçu d'acquisition et les références restent dans le store privé.
 
-Le wiki compte 10 754 fiches, dont 108 champs à compléter dans la queue fraîche.
-Sept propositions disposent de citations officielles ; les 11 URL sources
-ont été requalifiées depuis DBFR. Leur application attend la release serveur
-compatible avec les snapshots et comparaisons optimistes du writer existant.
-Aucun PATCH n'a été effectué au moment de cet audit.
+Le wiki compte 10 754 fiches. Le snapshot éditorial présenté dans l'actualisation
+ci-dessous a été corrigé après relecture : il portait sur 83 fiches et 131
+champs manquants, pas 86 fiches. Sept corrections antérieures étaient déjà
+publiées ; le relevé du writer a établi leurs révisions historiques.
 
 L'image `b90f81052ef4ec7947dfea4f597eecf4f77e4811` a ensuite été construite.
 Le smoke historique a échoué car `docker0` est absent ; la même image immuable
@@ -120,10 +119,40 @@ La source de l'index catalogue reste livrée sur le fork Bun, avec ses gates Rus
 verts. En revanche, `aphrody web dragon-ball index --help` depuis le binaire
 installé n'expose que `--output`, `--profile`, `--state` et `--json` ; il ne
 reconnaît pas encore `--catalogue`. Le binaire complet n'a donc pas été reconstruit,
-installé ni activé après le commit de source. À 13:57 UTC, le build partagé Bun
-était toujours en cours avec 12 jobs ; la fabrique n'avait que 2,9 Gio libres.
-Aucun deuxième build Cargo n'a été lancé pendant cette compilation.
+installé ni activé après le commit de source. Aucun build CLI séparé n'a été
+lancé pendant les compilations Bun partagées. Le stockage dédié
+`/home/ubuntu/build/storage` dispose de 492 Gio libres sur un volume de 492 Gio ;
+`/home/ubuntu/build` n'en a que 3,4 Gio.
 
 Les comptes de progression manga et l'inventaire wiki restent des observations
 datées. Les sources privées, propositions, médias et détails d'identification
 des tomes demeurent dans le store Shenron protégé.
+
+## Actualisation — 2026-10-15 à 14:07 UTC
+
+Le writer wiki a appliqué à `media_works/14` une correction du synopsis français
+avec backup, snapshot frais, CAS et relecture indépendante. La révision
+`eex86twbniakbab3oqq6e0e1` est visible sur l'API publique (HTTP 200). Au relevé
+GET seul de 14:07:15, il reste 77 fiches avec 125 champs manquants : 55 épisodes
+(103 champs), six databooks, neuf sections, deux combats, un tournoi et quatre
+comédiens. L'œuvre est complète. D'autres writers ont aussi complété cinq
+databooks depuis le précédent snapshot ; leurs écritures n'ont pas été rejouées
+ni écrasées. Le serveur `b90f8105` reste actif et son claim d'activation demeure
+chez son propriétaire. L'inventaire ne prouve pas que les 77 fiches soient
+documentables : les candidats sans source ou avec données en conflit restent
+non modifiés.
+
+Le statut expurgé du worker manga public observé à 14:05:41 compte 329 tomes,
+219 avec lecteur, 110 sans lecteur, 53 220 pages listées et zéro média vérifié.
+Le pool configuré pour seize workers en exécutait cinq ; 1 316 tâches étaient
+terminées, 2 470 en attente, 74 en échec et 279 refusées par robots. Le publisher
+DBFR est actif, mais son état relevé à 14:04:59 n'avait aucun bundle, candidat
+ou handoff qualifié ; la dernière projection indiquait zéro émission et écriture
+publique. Il n'existe toujours pas de galerie complète associée à une édition
+exacte pour les 110 tomes. Les 31 pages Jump+ de Yamcha ne forment pas un tome.
+
+À 14:05 UTC, un build release Bun partagé était actif avec quatre jobs ; le
+build debug précédent utilisait douze. Le volume dédié libre ne justifie pas de
+contourner le verrou de build. Le binaire `aphrody web dragon-ball index --help`
+installé ne reconnaît toujours pas `--catalogue` ; sa reconstruction,
+installation et activation restent à qualifier.
