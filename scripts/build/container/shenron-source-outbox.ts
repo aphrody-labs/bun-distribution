@@ -7,6 +7,7 @@ import { join } from "node:path";
 import {
   applySourceJob,
   planSourceJob,
+  validSourceCollectionReceipt,
   type SourceJobConfig,
   type SourceJobPlan,
   type SourceJobPorts,
@@ -160,8 +161,11 @@ export async function drainSourceOutbox(
             fence.ownerConfigSha256 !== expectedConfigSha256 ||
             replay.stage !== "collection-only" ||
             replay.pipelineComplete !== false ||
-            replay.collection.schema !== "shenron-source-collection/v1" ||
-            replay.collection.configSha256 !== value.configSha256
+            !validSourceCollectionReceipt(
+              replay.collection,
+              String(fence.collectionSchema ?? "shenron-source-collection/v1"),
+              value.configSha256,
+            )
           )
             throw new Error("Source result replay binding differs");
           await save(responsePath, {
@@ -194,6 +198,7 @@ export async function drainSourceOutbox(
           requestSha256: request.sha256,
           ownerConfigSha256: expectedConfigSha256,
           planSha256,
+          collectionSchema: plan.collectionSchema ?? "shenron-source-collection/v1",
           at: new Date().toISOString(),
         });
         const cancelled = new AbortController();
@@ -224,8 +229,11 @@ export async function drainSourceOutbox(
         if (
           result.stage !== "collection-only" ||
           result.pipelineComplete !== false ||
-          result.collection.schema !== "shenron-source-collection/v1" ||
-          result.collection.configSha256 !== value.configSha256
+          !validSourceCollectionReceipt(
+            result.collection,
+            plan.collectionSchema ?? "shenron-source-collection/v1",
+            value.configSha256,
+          )
         )
           throw new Error("Source worker returned an invalid handoff");
         const response = {

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+/* eslint-disable no-await-in-loop -- Each private fixture mutation must complete before its request is drained. */
 import { afterEach, expect, test } from "bun:test";
 import { chmod, mkdir, mkdtemp, readdir, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -11,7 +12,7 @@ afterEach(async () => {
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 const sha = (value: string) => new Bun.CryptoHasher("sha256").update(value).digest("hex");
-async function fixture() {
+async function fixture(batchMode = false) {
   const root = await mkdtemp(join(tmpdir(), "shenron-outbox-"));
   roots.push(root);
   const dataRoot = join(root, "data");
@@ -59,16 +60,41 @@ async function fixture() {
     hostRouteSha256: pin,
     hostIdentitySha256: pin,
     googleJarSha256: pin,
+    collectionSchema: batchMode ? "shenron-source-collection/v2" : "shenron-source-collection/v1",
   };
   let applies = 0;
   const collection = {
-    schema: "shenron-source-collection/v1",
+    schema: batchMode ? "shenron-source-collection/v2" : "shenron-source-collection/v1",
     configSha256,
     pinnedConfigPath: "/app/data/source-pipeline/pinned.json",
     pinnedConfigSha256: sha("pinned"),
     collectionSha256: sha("collection"),
     artifactsSha256: sha("artifacts"),
     revisionIdentity: sha("revision"),
+    ...(batchMode
+      ? {
+          collectionPath: "/app/data/source-pipeline/revision/batch-collections/0-1.json",
+          artifactOnly: true,
+          complete: false,
+          deliveryAuthorized: false,
+          batch: {
+            sourceSha256: sha("source"),
+            manifestPath: "/app/data/source-pipeline/revision/membership.json",
+            manifestSha256: sha("membership"),
+            batchReceiptPath: "/app/data/source-pipeline/revision/batch.json",
+            batchReceiptSha256: sha("batch"),
+            exportPath: "/app/data/source-pipeline/revision/export.jsonl",
+            exportSha256: sha("export"),
+            validationPath: "/app/data/source-pipeline/revision/validation.json",
+            validationSha256: sha("validation"),
+            cursor: 0,
+            nextCursor: 1,
+            totalDocuments: 2,
+            exportComplete: false,
+            validationComplete: true,
+          },
+        }
+      : {}),
   };
   const ports = {
     plan: async () => plan,
@@ -93,6 +119,8 @@ async function fixture() {
     requestId,
     requestPath,
     ports,
+    collection,
+    plan,
     applies: () => applies,
   };
 }
@@ -110,6 +138,67 @@ test("fixed profile drains one bounded request with saved plan and canonical col
   expect((await stat(responsePath)).mode & 0o777).toBe(0o600);
   expect(await Bun.file(join(f.control, "jobs", f.requestId, "plan.json")).exists()).toBe(true);
   expect((await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status).toBe("idle");
+  expect(f.applies()).toBe(1);
+});
+test("v2 outbox keeps the strict v1 request and replays the saved artifact-only handoff", async () => {
+  const f = await fixture(true);
+  expect(Object.keys(f.request).toSorted()).toEqual([
+    "configPath",
+    "configSha256",
+    "requestId",
+    "schema",
+  ]);
+  expect((await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status).toBe("complete");
+  const responsePath = join(f.control, "responses", f.requestId + ".json");
+  const response = await Bun.file(responsePath).json();
+  expect(response.schema).toBe("shenron-source-response/v1");
+  expect(response.collection).toEqual(f.collection);
+  expect(response.collection).toMatchObject({
+    artifactOnly: true,
+    complete: false,
+    deliveryAuthorized: false,
+  });
+  await rm(responsePath);
+  expect((await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status).toBe("complete");
+  expect((await Bun.file(responsePath).json()).collection).toEqual(response.collection);
+  expect(f.applies()).toBe(1);
+  const fence = await Bun.file(join(f.control, "jobs", f.requestId, "started.json")).json();
+  expect(fence.collectionSchema).toBe("shenron-source-collection/v2");
+});
+test("v2 outbox refuses schema drift and malformed references without a successful response", async () => {
+  for (const mutate of [
+    (f: Awaited<ReturnType<typeof fixture>>) => {
+      f.collection.schema = "shenron-source-collection/v1";
+    },
+    (f: Awaited<ReturnType<typeof fixture>>) => {
+      f.collection.batch!.manifestSha256 = "invalid";
+    },
+    (f: Awaited<ReturnType<typeof fixture>>) => {
+      f.collection.batch!.exportPath = "/app/data/escape.jsonl";
+    },
+    (f: Awaited<ReturnType<typeof fixture>>) => {
+      f.collection.deliveryAuthorized = true;
+    },
+  ]) {
+    const f = await fixture(true);
+    mutate(f);
+    expect((await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status).toBe("failed");
+    const responsePath = join(f.control, "responses", f.requestId + ".json");
+    expect((await Bun.file(responsePath).json()).status).toBe("failed");
+    await rm(responsePath);
+    expect((await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status).toBe("failed");
+    expect(f.applies()).toBe(1);
+  }
+  const f = await fixture(true);
+  await drainSourceOutbox(f.configPath, f.ownerSha, f.ports);
+  await rm(join(f.control, "responses", f.requestId + ".json"));
+  const resultPath = join(f.control, "jobs", f.requestId, "result.json");
+  const saved = await Bun.file(resultPath).json();
+  saved.collection.batch.validationSha256 = "invalid";
+  await Bun.write(resultPath, JSON.stringify(saved));
+  await expect(drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).rejects.toThrow(
+    "replay binding differs",
+  );
   expect(f.applies()).toBe(1);
 });
 test("arbitrary execution fields and stale config pins fail before collection", async () => {

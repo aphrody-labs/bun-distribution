@@ -28,6 +28,7 @@ export interface SourceJobPlan {
   hostRouteSha256: string;
   hostIdentitySha256: string;
   googleJarSha256: string;
+  collectionSchema?: "shenron-source-collection/v1" | "shenron-source-collection/v2";
 }
 export interface SourceJobResult {
   code: number;
@@ -48,6 +49,93 @@ const logicalRoot = "/app/data/source-pipeline";
 function inside(root: string, path: string) {
   const child = relative(root, path);
   return !!child && !isAbsolute(child) && child !== ".." && !child.startsWith("../");
+}
+function sourceCollectionSchema(source: Record<string, unknown>) {
+  if (source.batchCollection === undefined) return "shenron-source-collection/v1" as const;
+  const batch = source.batchCollection as Record<string, unknown> | null;
+  const crawl = source.crawl as { mode?: unknown } | undefined;
+  if (
+    !batch ||
+    typeof batch !== "object" ||
+    Array.isArray(batch) ||
+    batch.version !== 1 ||
+    batch.maxBatchesPerCycle !== 1 ||
+    typeof batch.snapshotSha256 !== "string" ||
+    !validSha(batch.snapshotSha256) ||
+    !Number.isSafeInteger(batch.batchSize) ||
+    Number(batch.batchSize) < 1 ||
+    Number(batch.batchSize) > 100000 ||
+    Number(batch.batchSize) > Number(source.maxDocuments ?? 10000) ||
+    Object.keys(batch).some(
+      (key) => !["version", "snapshotSha256", "batchSize", "maxBatchesPerCycle"].includes(key),
+    ) ||
+    (crawl && crawl.mode !== "attach")
+  )
+    throw Error("Explicit immutable source batch collection required");
+  return "shenron-source-collection/v2" as const;
+}
+/** Transport validation only; the pinned Shenron owner verifies document membership and projections. */
+export function validSourceCollectionReceipt(
+  receipt: Record<string, unknown>,
+  expectedSchema: string,
+  configSha256: string,
+) {
+  if (
+    receipt.schema !== expectedSchema ||
+    receipt.configSha256 !== configSha256 ||
+    typeof receipt.pinnedConfigPath !== "string" ||
+    !inside(logicalRoot, receipt.pinnedConfigPath) ||
+    ![
+      receipt.pinnedConfigSha256,
+      receipt.collectionSha256,
+      receipt.artifactsSha256,
+      receipt.revisionIdentity,
+    ].every((pin) => typeof pin === "string" && validSha(pin))
+  )
+    return false;
+  if (expectedSchema === "shenron-source-collection/v1") return true;
+  if (
+    expectedSchema !== "shenron-source-collection/v2" ||
+    receipt.artifactOnly !== true ||
+    receipt.complete !== false ||
+    receipt.deliveryAuthorized !== false
+  )
+    return false;
+  const batch = receipt.batch as Record<string, unknown> | undefined;
+  if (
+    !batch ||
+    typeof batch !== "object" ||
+    Array.isArray(batch) ||
+    ![
+      batch.sourceSha256,
+      batch.manifestSha256,
+      batch.batchReceiptSha256,
+      batch.exportSha256,
+      batch.validationSha256,
+    ].every((pin) => typeof pin === "string" && validSha(pin)) ||
+    ![batch.cursor, batch.nextCursor, batch.totalDocuments].every(Number.isSafeInteger) ||
+    Number(batch.cursor) < 0 ||
+    Number(batch.nextCursor) < Number(batch.cursor) ||
+    Number(batch.nextCursor) > Number(batch.totalDocuments) ||
+    Number(batch.nextCursor) - Number(batch.cursor) > 100000 ||
+    (Number(batch.totalDocuments) > 0 && Number(batch.nextCursor) === Number(batch.cursor)) ||
+    typeof batch.exportComplete !== "boolean" ||
+    typeof batch.validationComplete !== "boolean"
+  )
+    return false;
+  return [
+    receipt.collectionPath,
+    batch.manifestPath,
+    batch.batchReceiptPath,
+    batch.exportPath,
+    batch.validationPath,
+  ].every(
+    (path) =>
+      typeof path === "string" &&
+      isAbsolute(path) &&
+      resolve(path) === path &&
+      inside(logicalRoot, path),
+  );
 }
 async function protectedPath(path: string, directory: boolean, privateMode = true) {
   if (!isAbsolute(path) || resolve(path) !== path || /[:,\n\r\0]/.test(path))
@@ -213,6 +301,15 @@ async function verifyInputs(config: SourceJobConfig) {
     throw new Error("Source job config paths must stay in its private logical volume");
   if (source.search && source.search.cookieJar !== "/job/google-cookies.json")
     throw new Error("Source job Search must use its protected read-only jar");
+  if (sourceCollectionSchema(source) === "shenron-source-collection/v2") {
+    const input = join(config.dataRoot, relative(logicalRoot, source.input));
+    await protectedPath(input, false);
+    if (
+      (await lstat(input)).size > 1024 ** 3 ||
+      (await fileSha(input)) !== source.batchCollection.snapshotSha256
+    )
+      throw Error("Source batch input must be an immutable pinned snapshot");
+  }
   for (const input of [
     config.runtime.path,
     config.bundle.path,
@@ -246,6 +343,7 @@ export async function planSourceJob(
     hostRouteSha256: sha(hostRoute),
     hostIdentitySha256: await fileSha("/etc/machine-id"),
     googleJarSha256: await fileSha(config.googleJar),
+    collectionSchema: sourceCollectionSchema(await Bun.file(config.pipelineConfig).json()),
   };
 }
 /** Only this typed job receives the capabilities required by its embedded VPN daemon. */
@@ -382,6 +480,11 @@ export async function applySourceJob(
   await verifyInputs(plan.config);
   if ((await fileSha(plan.config.pipelineConfig)) !== plan.pipelineConfigSha256)
     throw new Error("Source job config changed after plan");
+  if (
+    sourceCollectionSchema(await Bun.file(plan.config.pipelineConfig).json()) !==
+    (plan.collectionSchema ?? "shenron-source-collection/v1")
+  )
+    throw Error("Source collection protocol changed since plan");
   const run = ports.run ?? sourceJobRun;
   if (
     (await readlink("/proc/self/ns/net")) !== plan.hostNetns ||
@@ -494,21 +597,41 @@ export async function applySourceJob(
       throw new Error("Source collection receipt exceeds budget");
     const receipt = (await Bun.file(receiptPath).json()) as Record<string, unknown>;
     if (
-      receipt.schema !== "shenron-source-collection/v1" ||
-      receipt.configSha256 !== plan.pipelineConfigSha256 ||
-      typeof receipt.pinnedConfigPath !== "string" ||
-      !inside(logicalRoot, receipt.pinnedConfigPath) ||
-      typeof receipt.pinnedConfigSha256 !== "string" ||
-      !validSha(receipt.pinnedConfigSha256)
+      !validSourceCollectionReceipt(
+        receipt,
+        plan.collectionSchema ?? "shenron-source-collection/v1",
+        plan.pipelineConfigSha256,
+      )
     )
       throw new Error("Source collection receipt is invalid");
     const pinnedConfig = join(
       plan.config.dataRoot,
-      relative(logicalRoot, receipt.pinnedConfigPath),
+      relative(logicalRoot, receipt.pinnedConfigPath as string),
     );
     await protectedPath(pinnedConfig, false);
     if ((await fileSha(pinnedConfig)) !== receipt.pinnedConfigSha256)
       throw new Error("Source collection config receipt differs");
+    if (receipt.schema === "shenron-source-collection/v2") {
+      const batch = receipt.batch as Record<string, string>;
+      const source = await Bun.file(plan.config.pipelineConfig).json();
+      if (
+        batch.sourceSha256 !== source.batchCollection.snapshotSha256 ||
+        Number(batch.nextCursor) - Number(batch.cursor) > source.batchCollection.batchSize
+      )
+        throw Error("Versioned collection snapshot or range differs");
+      for (const [logical, expected] of [
+        [receipt.collectionPath, receipt.collectionSha256],
+        [batch.manifestPath, batch.manifestSha256],
+        [batch.batchReceiptPath, batch.batchReceiptSha256],
+        [batch.exportPath, batch.exportSha256],
+        [batch.validationPath, batch.validationSha256],
+      ]) {
+        const path = join(plan.config.dataRoot, relative(logicalRoot, logical as string));
+        await protectedPath(path, false);
+        if ((await lstat(path)).size > 1024 ** 3 || (await fileSha(path)) !== expected)
+          throw Error("Versioned collection artifact hash differs");
+      }
+    }
     return {
       collected: true,
       stage: "collection-only" as const,

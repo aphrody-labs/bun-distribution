@@ -9,6 +9,7 @@ import {
   planSourceJob,
   sourceJobArgs,
   sourceJobRun,
+  validSourceCollectionReceipt,
   type SourceJobConfig,
   type SourceJobPorts,
 } from "./shenron-source-job.ts";
@@ -18,12 +19,13 @@ afterEach(async () => {
   for (const root of roots.splice(0)) await rm(root, { recursive: true, force: true });
 });
 const hash = (value: string) => new Bun.CryptoHasher("sha256").update(value).digest("hex");
+const artifactPath = (name: string) => "/app/data/source-pipeline/" + name;
 async function fixtureFile(path: string, content: string, mode = 0o600) {
   await Bun.write(path, content);
   await chmod(path, mode);
   return path;
 }
-async function fixture() {
+async function fixture(batchMode = false) {
   const root = await mkdtemp(join(tmpdir(), "aphrody-source-vpn-"));
   roots.push(root);
   for (const part of ["data", "vpn", "resources"]) await mkdir(join(root, part), { mode: 0o700 });
@@ -51,12 +53,24 @@ async function fixture() {
         input: "/app/data/source-pipeline/input.jsonl",
         policy: "/app/data/source-pipeline/policy.json",
         job: "/app/data/source-pipeline/jobs",
+        ...(batchMode
+          ? {
+              maxDocuments: 1,
+              batchCollection: {
+                version: 1,
+                snapshotSha256: hash("fixture snapshot"),
+                batchSize: 1,
+                maxBatchesPerCycle: 1,
+              },
+            }
+          : {}),
       }),
     ),
     googleJar: await file(join(root, "cookies.json"), "[]"),
     timeoutMs: 10000,
   };
   await file(join(root, "resources/relays.json"), "relay fixture");
+  if (batchMode) await file(join(config.dataRoot, "input.jsonl"), "fixture snapshot");
   const calls: { args: string[]; stdin?: Uint8Array }[] = [];
   let running = false;
   let ownership = "";
@@ -91,7 +105,7 @@ async function fixture() {
       const code = args.at(-1)!;
       const destination = JSON.parse(/const path=("[^"]+")/.exec(code)![1]!) as string;
       const pinned = await file(join(config.dataRoot, "pinned.json"), "pinned collection fixture");
-      const receipt = {
+      const receipt: Record<string, unknown> = {
         schema: "shenron-source-collection/v1",
         configSha256: hash(await Bun.file(config.pipelineConfig).text()),
         pinnedConfigPath: "/app/data/source-pipeline/pinned.json",
@@ -100,6 +114,44 @@ async function fixture() {
         artifactsSha256: "3".repeat(64),
         revisionIdentity: "4".repeat(64),
       };
+      if (batchMode) {
+        const artifacts: Record<string, string> = {};
+        for (const name of [
+          "collection.json",
+          "membership.json",
+          "batch.json",
+          "export.jsonl",
+          "validation.json",
+        ]) {
+          const body = "fixture " + name;
+          await file(join(config.dataRoot, name), body);
+          artifacts[name] = hash(body);
+        }
+        Object.assign(receipt, {
+          schema: "shenron-source-collection/v2",
+          artifactOnly: true,
+          complete: false,
+          deliveryAuthorized: false,
+          collectionPath: artifactPath("collection.json"),
+          collectionSha256: artifacts["collection.json"],
+          batch: {
+            sourceSha256: hash("fixture snapshot"),
+            manifestPath: artifactPath("membership.json"),
+            manifestSha256: artifacts["membership.json"],
+            batchReceiptPath: artifactPath("batch.json"),
+            batchReceiptSha256: artifacts["batch.json"],
+            exportPath: artifactPath("export.jsonl"),
+            exportSha256: artifacts["export.jsonl"],
+            validationPath: artifactPath("validation.json"),
+            validationSha256: artifacts["validation.json"],
+            cursor: 0,
+            nextCursor: 1,
+            totalDocuments: 2,
+            exportComplete: false,
+            validationComplete: true,
+          },
+        });
+      }
       await file(join(config.dataRoot, destination.split("/").at(-1)!), JSON.stringify(receipt));
     }
     return { code: 0, stdout: "" };
@@ -123,6 +175,75 @@ test("typed source job grants only private child capabilities and never mounts d
   expect(args.at(-1)).toContain("Bun.file(path).stream()");
   expect(args.at(-1)).not.toContain("Bun.file(path).bytes()");
   expect(args).toContain("/app/data/source-pipeline/credentials:ro,nosuid,nodev,noexec,mode=000");
+});
+
+test("v2 isolated job keeps VPN and resources contracts and verifies every handoff artifact hash", async () => {
+  const f = await fixture(true);
+  const plan = await planSourceJob(f.config, { run: f.run });
+  expect(plan.collectionSchema).toBe("shenron-source-collection/v2");
+  const result = await applySourceJob(plan, hash(JSON.stringify(plan)), {
+    run: f.run,
+    account: async () => "1234567890123456",
+  });
+  expect(result).toMatchObject({
+    stage: "collection-only",
+    pipelineComplete: false,
+    collection: {
+      schema: "shenron-source-collection/v2",
+      artifactOnly: true,
+      complete: false,
+      deliveryAuthorized: false,
+    },
+  });
+  expect(f.calls.some((call) => call.args.includes("login"))).toBe(true);
+  expect(f.calls.some((call) => call.args.includes("connect"))).toBe(true);
+  const containerArgs = sourceJobArgs(plan, "shenron-source-vpn-" + "c".repeat(16));
+  expect(containerArgs).not.toContain("host");
+  expect(containerArgs).not.toContain("DATABASE_URL");
+  expect(containerArgs).toContain("--cap-drop");
+  const receipt = result.collection;
+  expect(
+    validSourceCollectionReceipt(
+      receipt,
+      "shenron-source-collection/v1",
+      plan.pipelineConfigSha256,
+    ),
+  ).toBe(false);
+  expect(
+    validSourceCollectionReceipt(
+      { ...receipt, deliveryAuthorized: true },
+      "shenron-source-collection/v2",
+      plan.pipelineConfigSha256,
+    ),
+  ).toBe(false);
+  const badRun: NonNullable<SourceJobPorts["run"]> = async (args, options) => {
+    const output = await f.run(args, options);
+    if (args[1] === "exec" && args.includes("-e"))
+      await fixtureFile(join(f.config.dataRoot, "validation.json"), "drift");
+    return output;
+  };
+  await expect(
+    applySourceJob(plan, hash(JSON.stringify(plan)), {
+      run: badRun,
+      account: async () => "1234567890123456",
+    }),
+  ).rejects.toThrow("artifact hash differs");
+});
+
+test("v2 source plan refuses mutable input and invalid cycle budgets before launching a child", async () => {
+  const f = await fixture(true);
+  await fixtureFile(join(f.config.dataRoot, "input.jsonl"), "changed snapshot");
+  await expect(planSourceJob(f.config, { run: f.run })).rejects.toThrow(
+    "immutable pinned snapshot",
+  );
+  expect(f.calls.some((call) => call.args[1] === "run")).toBe(false);
+  await fixtureFile(join(f.config.dataRoot, "input.jsonl"), "fixture snapshot");
+  const config = await Bun.file(f.config.pipelineConfig).json();
+  config.batchCollection.maxBatchesPerCycle = 2;
+  await fixtureFile(f.config.pipelineConfig, JSON.stringify(config));
+  await expect(planSourceJob(f.config, { run: f.run })).rejects.toThrow(
+    "immutable source batch collection",
+  );
 });
 test("only the pinned relay file is exposed even when its private parent contains other data", async () => {
   const f = await fixture();
