@@ -235,3 +235,20 @@ examinée dans le relevé de 14:57 : aucun PATCH n’a été effectué pendant c
 vérification et la proposition n’a pas été rejouée. Cette preuve authentifiée
 remplace la mention précédente indiquant que la publication de `media_works/7`
 ne pouvait être confirmée.
+
+## Réconciliation des propositions bloquées — 2026-10-15 à 15:01 UTC
+
+Une relecture authentifiée, sans mutation, des 90 entrées `blocked` de la file
+wiki sur DBFR a obtenu 90 réponses administratives HTTP 200. Au moment de cette
+lecture, 27 avaient toutes les cibles de leur proposition déjà renseignées
+(4 œuvres, 18 databooks et 5 fiches de comédiens) : leur statut de file est
+périmé, mais cette vérification n’a pas réécrit la base SQLite. Quarante-huit
+autres ont déjà `synopsisFr` renseigné, tandis que le champ générique `synopsis`
+reste nul ; ces champs ne sont pas interchangeables et ne sont pas comptés
+comme deux synopsis français manquants.
+
+Les 15 candidats dont toutes les cibles sont encore vides sont sept épisodes,
+deux combats, un tournoi et cinq sections de statistiques de Vegeta. Les cinq
+sections concernent le power scaling, désactivé conformément à la doctrine ;
+elles ne sont pas complétées par extrapolation. Cette vérification n’est pas un
+nouvel inventaire complet du wiki et ne change pas le décompte global.
