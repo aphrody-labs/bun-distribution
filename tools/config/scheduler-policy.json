@@ -4,6 +4,20 @@
   "principle": "one-scheduler-per-data-class",
   "timers": [
     {
+      "id": "shenron-manga-source-worker",
+      "host": "vps",
+      "cadence": "continuous-bounded-cycles",
+      "priority": "low",
+      "unit": "shenron-manga-source-worker.service",
+      "owns": [
+        "shenron-manga-source-discovery",
+        "shenron-manga-native-crawl-frontiers",
+        "shenron-manga-private-source-index"
+      ],
+      "mutationPolicy": "Factory only. Public HTTPS sources, robots, Japan namespace unchanged, daily request/storage quotas. No editorial SQL/Redis writes or automatic training; public reader delivery remains with qualified canonical publication.",
+      "ownerAuthorization": "Explicit continuous 24/7 recursive manga completion request on 2026-10-15"
+    },
+    {
       "id": "shenron-container-backup",
       "host": "dbfr",
       "cadence": "daily",
