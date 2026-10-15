@@ -521,7 +521,7 @@ export function remoteRunScript(
   sha: string,
   job: string,
   cargoArgs: readonly string[],
-  jobs: number,
+  jobs: number | "auto",
 ): string {
   const log = `${config.remoteLogDir}/${job}.log`;
   const exit = `${config.remoteLogDir}/${job}.exit`;
@@ -853,7 +853,19 @@ async function fetchArtifact(
 }
 
 const USAGE =
-  "usage: vps-cargo <tunnel up|down|status | sync [--pull] | run [--jobs N] [--pull] -- <cargo args> | logs <job> | fetch --bin <name> [--profile p] [--dest d] | attach> [--host <name|auto>] [--repo <name>]";
+  "usage: vps-cargo <tunnel up|down|status | sync [--pull] | run [--jobs N|auto] [--pull] -- <cargo args> | logs <job> | fetch --bin <name> [--profile p] [--dest d] | attach> [--host <name|auto>] [--repo <name>]";
+
+export function cargoJobsSetting(
+  requested: string | undefined,
+  config: Pick<VpsCargoConfig, "jobs" | "maxJobs" | "host">,
+): number | "auto" {
+  if (requested === "auto") return "auto";
+  const limit = Math.min(6, config.maxJobs ?? 6);
+  const jobs = Number(requested ?? Math.min(config.jobs, limit));
+  if (!Number.isInteger(jobs) || jobs < 1 || jobs > limit)
+    throw new Error(`--jobs must be 1..${limit}, or auto, on ${config.host}`);
+  return jobs;
+}
 
 export async function main(argv: readonly string[]): Promise<number> {
   if (argv[0] === "--help" || argv[0] === "-h" || argv[0] === "help") {
@@ -876,10 +888,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       const separator = rest.indexOf("--");
       if (separator < 0 || separator === rest.length - 1) throw new Error(USAGE);
       const options = rest.slice(0, separator);
-      const limit = Math.min(6, config.maxJobs ?? 6);
-      const jobs = Number(flag(options, "--jobs") ?? Math.min(config.jobs, limit));
-      if (!Number.isInteger(jobs) || jobs < 1 || jobs > limit)
-        throw new Error(`--jobs must be 1..${limit} on ${config.host}`);
+      const jobs = cargoJobsSetting(flag(options, "--jobs"), config);
       const sha = await sync(config, options.includes("--pull"), root);
       const job = `${new Date().toISOString().replaceAll(/[:.]/g, "-")}-${sha.slice(0, 12)}`;
       console.log(`job ${job} (attach: bun scripts/build/rust/vps-cargo.ts attach)`);
