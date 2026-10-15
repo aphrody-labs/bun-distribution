@@ -87,3 +87,43 @@ son installation et son activation ne sont pas qualifiés par ce lot.
 Les preuves détaillées et les snapshots éditoriaux restent dans les rapports
 privés Shenron. Les décomptes ci-dessus décrivent l'observation datée, pas une
 complétude des mangas, du wiki, du crawl, du runtime installé ou du site actif.
+
+## Actualisation — 2026-10-15 à 13:58 UTC
+
+Le serveur Shenron `b90f8105` est actif et `/api/health` répond 200. La
+relecture du writer a confirmé sept corrections déjà publiées, avec leurs sept
+révisions historiques exactes ; aucun PATCH supplémentaire n'a été envoyé.
+L'inventaire complet récent compte 10 754 fiches et 86 fiches avec 131 champs
+encore manquants, contre 108 fiches au relevé précédent. Les manques touchent
+55 épisodes (103 champs), une œuvre, 11 databooks, neuf sections, deux combats,
+un tournoi et quatre comédiens. Quatre synopsis sont présents dans l'API
+publique et la description du databook 40 apparaît sur sa page. Les notices des
+comédiens ne figurent pas dans le résumé staff. Reçu privé de vérification après
+release : SHA-256
+`c025aa003227fceea04f3e80208672b4fe9037954418ee6a791f6be80c5dd2b8`.
+
+Le worker manga tourne sur le VPS depuis 13:55:40 UTC (PID 4051905, aucun
+redémarrage). Le reçu de progression public observé à 13:56:40 UTC compte 329
+tomes, 219 lecteurs complets, 52 220 pages de catalogue et zéro média vérifié.
+Le worker accepte 16 tâches en parallèle et en exécutait quatre, avec 1 316
+tâches en attente, 176 terminées, trois échouées, 64 refusées par robots et une
+tâche sans capacité requise. Le service de publication manga DBFR est actif ;
+`/api/health` répond 200, tandis que
+`/api/manga/coverage` répond encore 404. À 13:58 UTC, la file canonique du
+publisher ne contenait aucun bundle qualifié, candidat ou handoff ; le dernier
+reçu de projection indiquait zéro émission et zéro écriture publique. Les 110
+tomes restent donc sans lecteur complet public. Les 31 pages Jump+ de Yamcha
+déjà vérifiées ne constituent pas un tome complet. Les tâches terminées ou les
+pages listées ne sont pas comptées comme ressources manga acquises.
+
+La source de l'index catalogue reste livrée sur le fork Bun, avec ses gates Rust
+verts. En revanche, `aphrody web dragon-ball index --help` depuis le binaire
+installé n'expose que `--output`, `--profile`, `--state` et `--json` ; il ne
+reconnaît pas encore `--catalogue`. Le binaire complet n'a donc pas été reconstruit,
+installé ni activé après le commit de source. À 13:57 UTC, le build partagé Bun
+était toujours en cours avec 12 jobs ; la fabrique n'avait que 2,9 Gio libres.
+Aucun deuxième build Cargo n'a été lancé pendant cette compilation.
+
+Les comptes de progression manga et l'inventaire wiki restent des observations
+datées. Les sources privées, propositions, médias et détails d'identification
+des tomes demeurent dans le store Shenron protégé.
