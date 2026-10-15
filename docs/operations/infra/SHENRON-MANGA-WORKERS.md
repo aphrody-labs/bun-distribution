@@ -166,3 +166,47 @@ doit masquer cette limite.
 Le reçu privé `manga-source-pool/operator-active-runtime-proof-20261015140837691.json`
 conserve la participation cgroup actuelle. Les reçus précédents restent des
 observations historiques, et ne remplacent pas cette relecture du processus.
+
+## Rechargement des sources vérifié le 15 octobre 2026 à 15 h 30 UTC
+
+Root a livré les deux fichiers du lot Shenron
+`efb921af69b27296edba293edecb3a68b925fc3e` par staging SFTP, comparaison des
+SHA avant remplacement et sauvegardes relues. La projection récupère uniquement
+les reçus UTF-8 à BOM dont les octets originaux sont encore vérifiables ; les
+23 reçus EUC-JP non récupérables restent refusés. Les tests du lot rapportent
+21 tests, 140 assertions et 264 reçus originaux inchangés, dont 241
+reconstructions exactes. Ce relevé documentaire ne rejoue pas ces tests.
+
+L'adapter catalogue `service restart --target vps` avait échoué en conservant
+l'ancien PID `4167233`. L'action réussie de root, vers 15 h 23 UTC, est :
+
+```sh
+aphrody infra ssh service --host vps --action restart shenron-manga-workers.service --json
+```
+
+La relecture indépendante confirme `enabled`, `active/running`,
+`MainPID=140289` et un démarrage systemd à 15 h 23 min 00 s. Les reçus
+`workers.json` et `ready.json` attestent 16 workers et la même révision Bun
+`dfde053a3045d6076ad315b6f63160c4ced71513` à 15 h 23 min 02 s. Le reçu
+d'egress indique Japan/Tokyo à 15 h 23 min 02,210 s ; il atteste la sortie
+existante, pas un nouveau tunnel Bun VPN.
+
+La relecture SHA confirme la projection
+`9364a6d1b7b96c46f4d8f182717ea367982b0c76d6b64dde1d58b5b3903de86e`
+et le test BOM
+`178a49d7f02af675b7f3eee47075630cbbfeafefc3fae9fa8aa229b59c260a09`.
+Les deux sauvegardes correspondent aux SHA avant remplacement du plan.
+Les reçus privés `plan.json` et `source-applied.json` du job
+`root-pool-source-reload-20261015` séparent le remplacement à 15 h 20 min 36 s
+du redémarrage ultérieur ; `serviceRestarted:false` dans le second décrit
+uniquement cet instant intermédiaire.
+
+Root a observé à 15 h 25 min 08 s `projected=3966`, `changed=241`,
+`indexed=241`, `emitted=0` et `publicWrites=0`. Le cycle relu à
+15 h 28 min 06,071 s conserve `projected=3966`, avec `changed=0`,
+`index=null`, `emitted=0`, `quarantined=3989` et aucune écriture publique ou
+éditoriale. Ces deux cycles ne sont pas des compteurs cumulatifs de pages.
+Aucun nouveau tome complet n'est démontré. L'observation expurgée et les SHA
+des preuves sont dans
+[l'inventaire daté](../../../tools/config/host/inventory/shenron-manga-workers-source-reload-2026-10-15.json).
+Ce lot documentaire ne change ni unité, catalogue, service, données ni namespace.

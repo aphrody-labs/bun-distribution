@@ -2,6 +2,18 @@
 
 # Aphrody Infra plan
 
+## 2026-10-15 — Rechargement du pool manga Shenron
+
+Le lot source Shenron `efb921af` a été installé par root avec staging SFTP,
+CAS et sauvegardes des deux fichiers, puis le seul service
+`shenron-manga-workers.service` a été redémarré via Infra SSH. Relecture :
+`enabled`, `active/running`, PID `140289`, 16 workers prêts et egress Tokyo
+à 15 h 23 min 02 s UTC. Le cycle de reprise observé par root a réindexé 241
+documents ; le cycle suivant relu ne présente aucun changement ni candidat
+émis. Aucune publication de pages ou complétude de tome n'est établie.
+Voir les [preuves datées du pool](../../operations/infra/SHENRON-MANGA-WORKERS.md#rechargement-des-sources-vérifié-le-15-octobre-2026-à-15-h-30-utc)
+et l'[inventaire expurgé](../../../tools/config/host/inventory/shenron-manga-workers-source-reload-2026-10-15.json).
+
 ## 2026-10-13 — Accès SSH Windows persistant
 
 Le tunnel du propriétaire démarre désormais par `WireGuardTunnel$aphrody`,
