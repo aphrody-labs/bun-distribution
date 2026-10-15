@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Index Dragon Ball et complétude Shenron — 2026-10-15
 
 ## Demande et propriétaires
@@ -396,3 +397,60 @@ celui de SDBH (`11`) est également déjà renseigné. Aucune de ces opérations
 obsolètes n’a été réappliquée. L’export immuable et la file restent préservés ;
 les corrections futures nécessitent un snapshot neuf et une nouvelle revue
 indépendante.
+
+## Actualisation — 2026-10-15 à 17:31 UTC
+
+Le pool manga tournait à environ 93 % d’un cœur avec 456 Mio résidents
+(pic historique 1,4 Gio), sous son plafond déclaré de 12 cœurs et 20 Gio. Il
+avait 16 workers configurés, zéro tâche active, 51 544 en attente et 6 503
+terminées. Le CPU élevé malgré l’absence d’activité justifiait une correction
+du polling, pas une hausse artificielle de mémoire.
+
+Shenron `c23af7334560415973d61f51a6ce16569f1c308b` arrête maintenant le scan
+des slots dès que `claim()` ne trouve plus de tâche éligible : la file SQLite
+était interrogée jusqu’à 16 fois par tour sans qu’un slot supplémentaire
+puisse rendre une tâche réclamable. Le correctif a passé 23 tests ciblés et
+187 assertions, `bun check`, `bun fmt --check` et `bun lint` sur le fichier
+(avertissements existants du fichier, aucune erreur). Les mêmes portes ont
+été rejouées sur le VPS après fast-forward ; le SHA des octets déployés a été
+comparé avec le commit.
+
+Le seul service manga, `shenron-manga-workers.service`, a redémarré via Infra.
+Le nouveau PID 602749 a écrit `ready.json` et `workers.json` pour 16 workers,
+avec le runtime Bun 1.4.4 qualifié (`dfde053a…`). Le statut public confirme
+`activeWorkers=0`, `running=0`, 51 544 en file et `search=unavailable`.
+Une mesure courte immédiatement après le démarrage oscillait entre 65 et 84 %
+d’un cœur, donc elle ne suffit pas à revendiquer un gain comparatif durable ;
+la récupération du pool et les lectures SQLite restent à profiler. Limites
+systemd inchangées : `CPUQuota=1200%`, `MemoryHigh=16G`, `MemoryMax=20G`.
+
+L’API publique est toujours à 329 volumes, 222 avec lecteur complet et 107
+sans lecteur complet ; les 3 aperçus connus gardent leur statut partiel,
+soit 110 volumes manquants ou partiels. Le worker ne constitue pas une preuve
+de complétude. La recherche Google reste bloquée par la réponse anonyme vide ;
+aucun retry ni contournement n’a été fait. Les propositions wiki restent
+partielles : plusieurs approuvées sont déjà présentes sous un autre texte et
+les sources officielles manquent pour les éléments encore vides ; aucune
+écriture wiki n’a été ajoutée dans ce lot.
+
+## Index RAG terminé — 2026-10-15
+
+La génération locale du catalogue Dragon Ball s’est achevée dans le profil
+`workspace-shenron`. Le run 17 est `succeeded` : 85 828 documents indexés,
+89 802 chunks, 0 erreur et 0 document inchangé. Le run graphe 18 a aussi
+réussi : 85 828 fichiers scannés et hachés, 171 656 nœuds, 85 828 arêtes,
+0 erreur. Les entrées provenaient de quatre exports locaux fournis à
+`aphrody web dragon-ball index --catalogue` (catalogue Shenron, épisodes
+Toei, statistiques Jump et actualités officielles). Les fichiers et la base
+restent dans le profil privé Shenron ; les compteurs décrivent cet index
+privé et ne signifient pas que les contenus manga manquants ont été acquis,
+ni qu’ils sont publiquement lisibles.
+
+La porte `bun run docs:check` a été exécutée et échoue sur des artefacts
+documentaires préexistants obsolètes (`STATE.md`, `llms.txt`, README racine,
+`docs/README.md`, `documentation.json` et quatre fichiers `docs/ecosystem`),
+ainsi qu’un groupe de doublons exacts conservé. Le reçu passe
+`git diff --check`. Son commit n’a pas été créé dans cette session : le
+fichier partagé `.git/index.lock`, vide et sans processus propriétaire
+visible, bloque toujours toute mise à jour de l’index Git. Les changements
+concurrents sous `packages/infra/paths/` sont préservés.
