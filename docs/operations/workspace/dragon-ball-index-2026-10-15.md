@@ -222,3 +222,16 @@ capacité search indisponible. Ces compteurs décrivent l’acquisition d’asse
 pas la validation d’un tome complet ni une publication. Le publisher DBFR reste
 suspendu à l’image API exposant `readerExtent` ; aucune intégrale nouvelle n’est
 annoncée.
+
+## Correction de preuve — Dragon Ball SD, 2026-10-15 à 15:02 UTC
+
+La lecture authentifiée du writer DBFR et de l’historique a depuis confirmé que
+`media_works/7` possède un `synopsisFr` non nul, révision
+`as2gz1i96bjhpr8xl9bkzfx2` du 15 octobre à 13:29:13 UTC. L’index public
+`/wiki/manga` répond 200 et contient le titre Dragon Ball SD et ce synopsis.
+La page détail `/wiki/manga/7` répond 404 ; cela ne contredit pas la présence du
+texte dans l’index. Le synopsis public diffère de la proposition immuable
+examinée dans le relevé de 14:57 : aucun PATCH n’a été effectué pendant cette
+vérification et la proposition n’a pas été rejouée. Cette preuve authentifiée
+remplace la mention précédente indiquant que la publication de `media_works/7`
+ne pouvait être confirmée.
