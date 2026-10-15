@@ -5,6 +5,12 @@ import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import {
+  factoryResourceAdmissionProgram,
+  factoryResourcePolicy,
+  type BuildFactoryConfig,
+} from "@aphrody/workspace/src/build-factory.ts";
+import { factoryTransientShell } from "@aphrody/workspace/src/build-factory-cleanup.ts";
+import {
   runSourceControllerLoop,
   startSourceControllerWorker,
   type ControllerWorker,
@@ -17,6 +23,9 @@ const config = JSON.parse(
     "utf8",
   ),
 );
+const factoryPath = join(infra, "tools/config/build-factory.json");
+const factory = JSON.parse(readFileSync(factoryPath, "utf8")) as BuildFactoryConfig;
+const resources = factoryResourcePolicy(factory);
 const env: Record<string, string | undefined> = {
   ...process.env,
   PATH: "/home/ubuntu/.bun/bin:/home/ubuntu/.cargo/bin:/home/ubuntu/.local/bin:/usr/local/bin:/usr/bin:/bin",
@@ -25,13 +34,14 @@ const env: Record<string, string | undefined> = {
   SHENRON_CARGO_REMOTE: "off",
   APHRODY_BUILD_HOST: "vps",
   APHRODY_CARGO_SERIAL: join(infra, "scripts/build/rust/cargo-serial.sh"),
-  APHRODY_CARGO_TARGET_DIR: "/home/ubuntu/build/cache/cargo/shenron",
-  CARGO_TARGET_DIR: "/home/ubuntu/build/cache/cargo/shenron",
-  APHRODY_CARGO_JOBS: "2",
-  CARGO_BUILD_JOBS: "2",
+  APHRODY_CARGO_TARGET_DIR: join(factory.cacheRoot, "cargo/shenron"),
+  CARGO_TARGET_DIR: join(factory.cacheRoot, "cargo/shenron"),
+  SCCACHE_DIR: join(factory.cacheRoot, "sccache"),
+  BUN_INSTALL_CACHE_DIR: join(factory.cacheRoot, "bun"),
+  UV_CACHE_DIR: join(factory.cacheRoot, "uv"),
+  APHRODY_CARGO_JOBS: String(resources.jobs),
+  CARGO_BUILD_JOBS: String(resources.jobs),
   CARGO_INCREMENTAL: "0",
-  APHRODY_FACTORY_RESOURCE: "/home/ubuntu/build/transient",
-  APHRODY_FACTORY_LOCK_PATH: config.lock,
 };
 
 export interface RuntimeExpectation {
@@ -378,6 +388,8 @@ function native(sha: string, work: string) {
   chmodSync(join(work, "dist/mcp/linux-x64/shenron-mcp"), 0o755);
 }
 async function buildDeploy() {
+  if (config.lock !== factory.lockPath)
+    throw new Error("Deployment must use the factory heavy lock");
   const sha = git(["rev-parse", "HEAD"]);
   if (
     git(["branch", "--show-current"]) !== "main" ||
@@ -395,6 +407,19 @@ async function buildDeploy() {
     job = join(config.artifacts, sha);
   mkdirSync(dirname(work), { recursive: true });
   mkdirSync(job, { recursive: true, mode: 0o700 });
+  mkdirSync(factory.cacheRoot, { recursive: true });
+  await probe(
+    [
+      config.bun,
+      "--no-env-file",
+      "-e",
+      factoryResourceAdmissionProgram(resources, {
+        cache: factory.cacheRoot,
+        artifacts: config.artifacts,
+      }),
+    ],
+    env,
+  );
   const runtime = config.runtimeSha256
     ? await qualifyRuntime(config.bun, config.runtimeSha256, config.runtimeExpected)
     : undefined;
@@ -523,7 +548,8 @@ if (import.meta.main) {
   let sourceController: ControllerWorker | undefined;
   try {
     const mode = process.argv[2];
-    if (Bun.version !== "1.4.4") throw new Error("Bun 1.4.4 is required");
+    const expectedVersion = config.runtimeExpected?.version ?? "1.4.4";
+    if (Bun.version !== expectedVersion) throw new Error(`Bun ${expectedVersion} is required`);
     if (mode === "source-controller") {
       if (!config.sourceCollection)
         throw new Error("No qualified source controller profile configured");
@@ -544,6 +570,8 @@ if (import.meta.main) {
       else if (active() === sha) await state("current", { commit: sha });
       else {
         mkdirSync(dirname(config.lock), { recursive: true });
+        if (!factory.cleanup || config.lock !== factory.lockPath)
+          throw new Error("Deployment requires the canonical factory resource policy");
         const child = Bun.spawn(
           [
             "flock",
@@ -553,6 +581,23 @@ if (import.meta.main) {
             "--conflict-exit-code",
             "75",
             config.lock,
+            "flock",
+            "--exclusive",
+            "--close",
+            join(config.state, "source.lock"),
+            "bash",
+            "-c",
+            [
+              "set -euo pipefail",
+              ...factoryTransientShell(
+                factory.cleanup.transientRoot,
+                "docker",
+                config.lock,
+                factory.cleanup.privilegeBinary,
+              ),
+              '"$@"',
+            ].join("\n"),
+            "shenron-build",
             config.bun,
             fileURLToPath(import.meta.url),
             "build-deploy",
@@ -569,6 +614,7 @@ if (import.meta.main) {
           config.bun,
           join(infra, "packages/infra/workspace/src/build-factory-cleanup.ts"),
           "--held",
+          factoryPath,
         ],
         infra,
       );

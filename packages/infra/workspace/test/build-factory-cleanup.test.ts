@@ -20,6 +20,7 @@ import {
   withFactoryResource,
   prewarmFactorySccache,
   factoryLeaseHeld,
+  inheritedFactoryResourceHeld,
 } from "../src/build-factory-cleanup.ts";
 import type { BuildFactoryConfig } from "../src/build-factory.ts";
 // The transient shell, leases and cleanup run on the Linux factory host: procfs, flock(1), sudo and /proc/locks.
@@ -285,6 +286,39 @@ linuxTest("resource markers cannot impersonate an inherited heavy lock", async (
     },
   );
   expect(inherited.exitCode).toBe(0);
+});
+
+linuxTest("pooled transient storage reuses only its declared stable kernel lease", async () => {
+  const f = fixture();
+  const pool = posix.join(f.root, "storage");
+  const transient = posix.join(pool, "transient");
+  mkdirSync(pool);
+  mkdirSync(posix.join(f.root, "locks"));
+  const config: BuildFactoryConfig = {
+    ...f.config,
+    cacheRoot: posix.join(pool, "cache"),
+    artifactRoot: posix.join(pool, "artifacts"),
+    cleanup: { transientRoot: transient, retiredOutputs: [], privilegeBinary: "/usr/bin/sudo" },
+  };
+  await withFactoryResource(
+    config,
+    async () => {
+      expect(inheritedFactoryResourceHeld(config)).toBe(true);
+      expect(inheritedFactoryResourceHeld()).toBe(false);
+      expect(
+        inheritedFactoryResourceHeld({ ...config, lockPath: posix.join(f.root, "other.lock") }),
+      ).toBe(false);
+      await withFactoryResource(
+        config,
+        async () => {
+          expect(inheritedFactoryResourceHeld(config)).toBe(true);
+        },
+        f.docker,
+      );
+    },
+    f.docker,
+  );
+  expect(Bun.spawnSync(["flock", "--nonblock", config.lockPath, "true"]).exitCode).toBe(0);
 });
 
 linuxTest(

@@ -333,16 +333,21 @@ export function factoryLeaseHeld(lockPath: string, directOwner?: number): boolea
   }
 }
 
-export function inheritedFactoryResourceHeld(): boolean {
+export function inheritedFactoryResourceHeld(config?: BuildFactoryConfig): boolean {
   const root = process.env.APHRODY_FACTORY_RESOURCE;
   const lock = process.env.APHRODY_FACTORY_LOCK_PATH;
+  let declaredLayout = false;
+  if (config?.cleanup) {
+    validateFactoryCleanup(config, config.cleanup);
+    declaredLayout = config.cleanup.transientRoot === root && config.lockPath === lock;
+  }
   return (
     !!root &&
     !!lock &&
     posix.isAbsolute(root) &&
     posix.normalize(root) === root &&
     root.endsWith("/transient") &&
-    lock === posix.join(posix.dirname(root), "locks/heavy.lock") &&
+    (declaredLayout || lock === posix.join(posix.dirname(root), "locks/heavy.lock")) &&
     factoryLeaseHeld(lock)
   );
 }
@@ -358,7 +363,7 @@ export async function withFactoryResource<T>(
   const root = config.cleanup.transientRoot;
   if (
     process.env.APHRODY_FACTORY_RESOURCE === root &&
-    (inheritedFactoryResourceHeld() ||
+    (inheritedFactoryResourceHeld(config) ||
       factoryLeaseHeld(config.lockPath, localLeases.get(config.lockPath)))
   )
     return body();
@@ -463,7 +468,7 @@ export async function withFactoryResource<T>(
 
 /** Persistent sccache control-plane metadata must never retain a job's disposable lease. */
 export async function prewarmFactorySccache(config: BuildFactoryConfig, binary = "sccache") {
-  const inheritedLease = inheritedFactoryResourceHeld();
+  const inheritedLease = inheritedFactoryResourceHeld(config);
   if (!inheritedLease && !factoryLeaseHeld(config.lockPath, localLeases.get(config.lockPath)))
     throw new Error("Shared sccache startup requires the actual factory heavy lease");
   // Secondary hosts inherit their own proven lease and persistent cache root.
@@ -526,7 +531,10 @@ async function resourceMain() {
   const sccacheOnly = configPath === "--sccache";
   if (sccacheOnly) [configPath, ...command] = command;
   if (configPath === "--held") {
-    process.exitCode = inheritedFactoryResourceHeld() ? 0 : 1;
+    const config = command[0]
+      ? ((await Bun.file(command[0]).json()) as BuildFactoryConfig)
+      : undefined;
+    process.exitCode = inheritedFactoryResourceHeld(config) ? 0 : 1;
     return;
   }
   if (!configPath || (!sccacheOnly && command.length === 0))

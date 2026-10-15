@@ -45,7 +45,7 @@ esac
 # the actual kernel FLOCK and process ancestry before reusing the heavy lease.
 if [[ "$help_only" == false && -f "$factory_config" && ( "${APHRODY_BUILD_HOST:-}" == vps || -n "${APHRODY_FACTORY_RESOURCE:-}" ) ]]; then
     resource_owner="$source_root/packages/infra/workspace/src/build-factory-cleanup.ts"
-    if ! bun "$resource_owner" --held; then
+    if ! bun "$resource_owner" --held "$factory_config"; then
         if [[ "${APHRODY_BUILD_HOST:-}" != vps ]]; then
             echo "Factory resource marker has no inherited heavy lock" >&2
             exit 64

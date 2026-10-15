@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "source": "/home/ubuntu/src/shenron",
-  "worktree": "/home/ubuntu/build/transient/shenron-auto-deploy",
+  "worktree": "/home/ubuntu/build/storage/artifacts/shenron-auto-deploy/worktree",
   "state": "/home/ubuntu/.local/state/shenron-auto-deploy",
-  "artifacts": "/home/ubuntu/build/artifacts/shenron-auto-deploy",
+  "artifacts": "/home/ubuntu/build/storage/artifacts/shenron-auto-deploy",
   "lock": "/home/ubuntu/build/locks/heavy.lock",
   "bun": "/home/ubuntu/.bun/bin/bun-1.4.4",
   "targetHost": "dbfr",

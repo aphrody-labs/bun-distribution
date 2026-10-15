@@ -47,6 +47,17 @@ Les états privés sont sous `~/.local/state/shenron-auto-deploy/` ; les journau
 restent dans journald. Une unité activée ne prouve pas un déploiement réussi :
 `deploy.json`, l'état systemd et le `current` distant sont les preuves séparées.
 
+Depuis le 15 octobre 2026, le build réutilise le budget de la factory Infra :
+12 jobs sur VPS, avec admission fraîche de l'affinité CPU, de `MemAvailable` et
+du disque sous les verrous lourd et source. Les caches et artefacts utilisent
+`/home/ubuntu/build/storage` ; le worktree persistant est sous
+`artifacts/shenron-auto-deploy/worktree`, hors du répertoire temporaire nettoyé
+par la factory. Aucun ancien worktree ni cache n'est supprimé par ce changement.
+L'unité VPS permet 12 CPU, avec `MemoryHigh=32G` et `MemoryMax=37G` ; DBFR ne
+reçoit pas cette allocation. Le runtime reste lié à son SHA-256 et à sa
+provenance déclarés ; la version attendue suit ces pins lors d'une prochaine
+release qualifiée.
+
 ```sh
 systemctl --user status shenron-sync.timer shenron-auto-deploy.timer
 systemctl --user start shenron-sync.service
