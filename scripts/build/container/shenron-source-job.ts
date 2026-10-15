@@ -253,7 +253,7 @@ export function sourceJobArgs(plan: SourceJobPlan, name: string): string[] {
   const c = plan.config;
   if (!/^shenron-source-vpn-[a-f0-9]{16}$/.test(name))
     throw new Error("Invalid owned source container identity");
-  const guard = `import{readlink,lstat}from"node:fs/promises";if(await readlink("/proc/self/ns/net")===${JSON.stringify(plan.hostNetns)}||await readlink("/proc/self/ns/mnt")===${JSON.stringify(plan.hostMountns)})throw Error("VPN namespace isolation missing");try{await lstat("/run/dbus/system_bus_socket");throw Error("Host DBus must not be mounted");}catch(e){if(e.code!=="ENOENT")throw e;}const pins=${JSON.stringify(
+  const guard = `import{readlink,lstat}from"node:fs/promises";setTimeout(()=>process.exit(124),${(c.timeoutMs ?? 900000) + 60000});if(await readlink("/proc/self/ns/net")===${JSON.stringify(plan.hostNetns)}||await readlink("/proc/self/ns/mnt")===${JSON.stringify(plan.hostMountns)})throw Error("VPN namespace isolation missing");try{await lstat("/run/dbus/system_bus_socket");throw Error("Host DBus must not be mounted");}catch(e){if(e.code!=="ENOENT")throw e;}const pins=${JSON.stringify(
     [
       ["/job/runtime", c.runtime.sha256],
       ["/job/pipeline.mjs", c.bundle.sha256],
@@ -305,6 +305,8 @@ export function sourceJobArgs(plan: SourceJobPlan, name: string): string[] {
     "/tmp:rw,nosuid,nodev,size=128m",
     "--tmpfs",
     `${logicalRoot}/credentials:ro,nosuid,nodev,noexec,mode=000`,
+    "--tmpfs",
+    `${logicalRoot}/control:ro,nosuid,nodev,noexec,mode=000`,
     "--mount",
     `type=bind,src=${c.runtime.path},dst=/job/runtime,readonly`,
     "--mount",
@@ -524,6 +526,13 @@ export async function applySourceJob(
   }
 }
 export async function sourceJobCli(args: string[]) {
+  if (args[0] === "drain") {
+    if (args.length !== 5 || args[1] !== "--config" || args[3] !== "--config-sha256")
+      throw new Error("source-job drain --config PRIVATE --config-sha256 HASH");
+    const { drainSourceOutbox } = await import("./shenron-source-outbox.ts");
+    console.log(JSON.stringify(await drainSourceOutbox(args[2]!, args[4]!)));
+    return;
+  }
   const [action, flag, configPath, planFlag, planPath, hashFlag, planHash] = args;
   if (
     !["plan", "apply"].includes(action ?? "") ||

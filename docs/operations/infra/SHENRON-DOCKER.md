@@ -278,9 +278,71 @@ Le verrou et les labels plan/instance empêchent un teardown d'un conteneur
 étranger. Annulation et échéance provoquent TERM puis KILL bornés, arrêt du
 conteneur et relecture des invariants réseau hôte. Une activation exige encore
 le runtime natif qualifié, le parseur Rust des relais, le bundle producteur,
-la mesure en conteneur et le branchement du port de collecte par le contrôleur
-existant. Les namespaces Japon et Google-US déjà actifs sur VPS gardent leur
+la mesure en conteneur et la configuration protégée du contrôleur existant.
+Les namespaces Japon et Google-US déjà actifs sur VPS gardent leur
 propriétaire WireGuard ; ne pas y superposer un daemon Mullvad.
+
+### Transport du bot vers la fabrique existante
+
+Le timer utilisateur VPS `shenron-auto-deploy.timer` déclenche un service
+oneshot toutes les deux minutes après sa fin. Le volume privé DBFR n'est pas
+monté sur VPS. L'option `sourceCollection` de la configuration existante de la
+fabrique contient uniquement `host: "dbfr"` et les références `runtime`,
+`owner`, `jobConfig`, chacune avec chemin absolu et SHA-256. L'option reste
+absente avant qualification ; aucune activation n'est implicite.
+
+Le service existant supervise un enfant `source-controller` pendant ses builds
+bloquants, sans second timer ni second service. Cet enfant traite au plus une
+requête à la fois et attend deux minutes entre les passages. Il utilise le
+propriétaire SSH Infra existant pour exécuter sur DBFR l'artefact propriétaire
+fixe et vérifié, sous UID1000 pour accéder au keyring OS de cet utilisateur.
+Il n'accepte aucun chemin d'exécutable, image, flag privilégié ou commande
+depuis les messages du bot. Une commande distante vérifie les hashes avant
+`source-job drain --config PRIVATE --config-sha256 HASH`. Au terme du build,
+le parent demande l'arrêt après la requête courante, rejoint l'enfant avec une
+échéance bornée, puis termine son groupe de processus si nécessaire.
+
+Le callback du bot écrit uniquement dans
+`/app/data/source-pipeline/control/requests/UUID.json`, mode0600 :
+
+```json
+{
+  "schema": "shenron-source-request/v1",
+  "requestId": "UUID",
+  "configPath": "/app/data/source-pipeline/config.json",
+  "configSha256": "SHA256_DE_LA_CONFIGURATION"
+}
+```
+
+Le contrôleur lit ce même chemin via
+`/home/ubuntu/apps/shenron/shared/bot/data/source-pipeline/control` sur DBFR.
+Les sous-dossiers sont mode 0700, UID 1000, sans symlink. Les requêtes sont
+bornées à 4096 octets et 128 fichiers en attente ; les réponses à 65536 octets.
+Le mutex SQLite natif privé libère son verrou à la mort d'un processus ; il
+ne remplace pas la queue ni les checkpoints du crawler canonique.
+
+Le profil privilégié approuvé reste hors du volume du bot. Pour chaque
+requête, le contrôleur vérifie son hash, construit et conserve un nouveau
+plan du job typé, écrit une barrière de démarrage, puis exécute la collecte.
+Le journal privé `control/jobs/UUID` conserve requête, plan, barrière et résultat.
+Un résultat sauvegardé est rejoué sans nouvelle collecte ; une barrière seule
+produit `ERR_SOURCE_JOB_STATE_UNCERTAIN`, jamais une relance aveugle.
+Un message privé malformé est déplacé intact dans un journal de rejet avec
+un code fixe sans contenu exposé ; le tick suivant peut traiter une requête
+valide. Un ancien message déjà répondu rejoint son journal. Les objets de
+fichiers non sûrs et les dépassements du budget global bloquent le traitement.
+
+La réponse atomique `control/responses/UUID.json`, mode 0600, lie `requestId`,
+`configSha256`, `status` et le reçu `collection` du propriétaire Shenron.
+`status: "complete"` signifie seulement que le transport de collecte a réussi ;
+le contrôleur applicatif conserve les gates de complétude des sources et de
+livraison. Les erreurs exposent uniquement
+`ERR_SOURCE_JOB_COLLECTION_FAILED` ou `ERR_SOURCE_JOB_STATE_UNCERTAIN`.
+Le bot valide les pins puis supprime uniquement ses messages consommés.
+L'annulation supprime sa requête ; le watcher propriétaire annule le job
+actif et détruit son enfant privé. Le conteneur possède aussi une échéance
+autonome pour ne pas survivre indéfiniment à une rupture SSH. Le sous-dossier
+`control`, comme `credentials`, est masqué dans l'enfant VPN.
 
 ## Builds on the VPS: the `aphrody-build` image
 
