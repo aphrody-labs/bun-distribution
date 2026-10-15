@@ -374,3 +374,25 @@ fournisseur. Ces assets ne prouvent pas l’intégralité d’un volume. DBFR
 cela ne constitue ni un audit exhaustif des fiches ni une confirmation du nombre
 total d’entrées exactes. Aucune donnée wiki/manga éditoriale n’a été écrite ou
 publiée dans cette actualisation.
+
+## Actualisation — 2026-10-15 à 17:16 UTC
+
+Le reçu public du worker observé à 17:15:13 UTC conserve 329 volumes, 222
+lisibles, 1 995 assets vérifiés et `search: unavailable`; sa prochaine
+réconciliation est planifiée à 18:15:13. Le processus tourne sous une limite de
+12 cœurs et 20 Gio, sans throttling CPU observé, avec environ 373 Mio de mémoire
+utilisée. Au relevé, la progression indique zéro worker actif et zéro tâche en
+cours malgré 51 544 tâches en attente. La capacité CPU/mémoire est donc déjà
+déclarée par l’unité, mais l’absence de recherche reste une limite de couverture ;
+il n’y a pas de justification à allouer de la mémoire artificielle.
+
+La tentative de planification d’un manifeste wiki approuvé a été refusée avant
+toute mutation, car le snapshot administratif avait changé. Une relecture
+authentifiée confirme que plusieurs propositions correspondantes ont déjà été
+remplies ou remplacées : les notices `db_databooks/23` et `/27`, Jaco (`15`),
+et les sections Vegeta `13087` et `13090` contiennent les textes approuvés ; le
+synopsis de Dragon Ball SD (`media_works/7`) a une autre formulation actuelle ;
+celui de SDBH (`11`) est également déjà renseigné. Aucune de ces opérations
+obsolètes n’a été réappliquée. L’export immuable et la file restent préservés ;
+les corrections futures nécessitent un snapshot neuf et une nouvelle revue
+indépendante.
