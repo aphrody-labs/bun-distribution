@@ -876,6 +876,30 @@
       "staged": true,
       "required": false,
       "note": "Unified Bun OS read-only catalog API. Linux x86-64 binary compiled/executed at root1eedaa8;9 localHTTP checks pass, install SHA matches. Existing Infra lifecycle and source.aphrody.app ingress own activation. Protected bearer provisioned; candidate unit/nginx syntax pass. Automatic tool review rejected grouped unit/snippet installation and service activation before execution (blocked by policy). Staged/unrequired; no Nginx reload or deployment qualification. /api/product/v1/ preserves Gitea /api/v1/."
+    },
+    {
+      "id": "shenron-manga-publication",
+      "application": "shenron",
+      "kind": "systemd-worker",
+      "runtime": "bun",
+      "unit": "shenron-manga-publication.service",
+      "host": "dbfr",
+      "sourceRepo": "shenron",
+      "workingDirectory": "/home/ubuntu/.aphrody/private/shenron/manga-publication",
+      "public": false,
+      "note": "Consumes sealed acquired manga with exact edition identity, private provenance, canonical editorial CAS, fresh complete backup, public CDN activation and production replica readback. Empty queue means waiting for source scans."
+    },
+    {
+      "id": "shenron-manga-handoff",
+      "application": "shenron",
+      "kind": "systemd-worker",
+      "runtime": "bun",
+      "unit": "shenron-manga-handoff.service",
+      "host": "vps",
+      "sourceRepo": "shenron",
+      "workingDirectory": "/home/ubuntu/.aphrody/profiles/dbfr/jobs/manga-source-pool",
+      "public": false,
+      "note": "Timer transfers bounded sealed acquisition subsets from the existing source pool to DBFR; no credentials or raw corpus cross hosts."
     }
   ],
   "policies": {
