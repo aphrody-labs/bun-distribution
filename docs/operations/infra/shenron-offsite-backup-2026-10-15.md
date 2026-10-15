@@ -30,6 +30,13 @@ The service then returned failure because this source snapshot was 112.4 hours
 old, beyond its 36-hour freshness limit. This is a successful copy and restore,
 but not a fresh scheduled backup. The offsite timer remains disabled.
 
+The VPS `aphrody-selfheal.timer` was also restarting this failed oneshot while
+its freshness guard was correctly reporting the stale source. Commit
+`4f3f1fbf0` excludes both Shenron backup oneshots from generic failed-service
+restarts; the updated unit passed `systemd-analyze verify`, was installed from
+the declared source, and systemd was reloaded. The general self-heal timer stays
+active.
+
 ## Remaining producer blocker
 
 DBFR has one published snapshot and 13 unpublished `.snapshot-*` staging
