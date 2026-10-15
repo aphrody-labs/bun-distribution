@@ -200,3 +200,25 @@ publié ou confirmé. Les éléments disponibles ne permettent pas de qualifier 
 90 propositions bloquées ; les corrections wiki restent partielles. Le timer
 est actif et conserve ses limites de 4 workers / 20 candidats, sans publication
 automatique.
+
+## Actualisation — 2026-10-15 à 15:00 UTC
+
+Le dépôt Shenron `origin/main` apporte depuis le précédent relevé les preuves
+suivantes : 84 fiches wiki distinctes écrites, dont 78 textes relus exactement
+sur le site public ; six articles de comédiens attendent encore le correctif
+d’affichage de l’image commune. Un lot séparé de sept corrections a ses backups,
+CAS, relectures et révisions signées vérifiés. Ces 84 fiches incluent les
+corrections précédentes : elles ne doivent pas être additionnées aux reçus
+ponctuels déjà listés ici. Dix corrections lexicales de Fû ne comptent pas comme
+fiches. Le détecteur de champs manquants mesure mal certains synopsis originaux
+restés nuls malgré un texte français public. Sources des reçus détaillés dans le
+store Shenron protégé et docs/reference/root/REPRISE.md de son origin/main.
+
+Le worker manga est toujours vivant (PID 4167233, démarré à 14:33:55). Reçu
+expurgé du VPS à 14:57:03 : 329 tomes, 219 lecteurs complets, 110 sans lecteur,
+1 169 assets vérifiés, 5 574 tâches terminées, 52 470 en attente, deux actives,
+106 échouées, 296 refusées par robots, deux bloquées par le fournisseur et une
+capacité search indisponible. Ces compteurs décrivent l’acquisition d’assets,
+pas la validation d’un tome complet ni une publication. Le publisher DBFR reste
+suspendu à l’image API exposant `readerExtent` ; aucune intégrale nouvelle n’est
+annoncée.
