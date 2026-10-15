@@ -169,6 +169,47 @@ latest store back under a clean shutdown before resuming host units. Ordinary
 release rollback should reuse the same qualified container-owned state. The
 adapter does not automatically reverse this protected-data conversion.
 
+## Grant S3 temporaire du bot
+
+Sur `dbfr`, le service existant `shenron-cloudflare-s3-renew.service` reste
+l'unique émetteur, déclenché par son timer de dix minutes. Son propriétaire
+déclaratif est
+[`shenron-cloudflare-s3-renew.service`](../../../tools/config/host/systemd/shenron/shenron-cloudflare-s3-renew.service).
+Le jeton Cloudflare parent reste dans `LoadCredential`, et le profil émetteur
+`/etc/aphrody/cloudflare/shenron-s3.json` reste root:root, mode0400.
+
+L'artefact Shenron `deploy/cloudflare/cli/s3-profile.ts` du commit
+`59c80cf0d67c44837483623eff15be7e56b2afb3` a pour SHA-256
+`310007a22600a8a803e6b071b06dd71c90236e51cc3625934df9d6d240c9ade2`.
+Il projette uniquement le grant temporaire `object-read-write`, limité aux
+préfixes `_objects/` et `_migration/`, vers
+`/home/ubuntu/apps/shenron/shared/bot/data/source-pipeline/credentials/s3.json`.
+Les dossiers `source-pipeline` et `credentials` sont UID1000:GID1000, mode0700 ;
+le fichier est mode0400. Le remplacement est atomique après application des
+permissions et de l'identité. Le répertoire parent du montage conserve ses
+permissions existantes ; il ne constitue pas la frontière de confiance privée.
+
+Dans le conteneur UID1000, la configuration du pipeline utilise
+`store.profile=/app/data/source-pipeline/credentials/s3.json` et
+`store.consumerProfileRoot=/app/data/source-pipeline/credentials`.
+Cette configuration est privée et son hash appartient au plan du pipeline.
+Ne pas monter le profil root ni transmettre le jeton parent au bot.
+L'absence de `store.sdkModule` sélectionne le fournisseur Curl natif qualifié ;
+une capacité manquante reste une erreur explicite.
+
+Avant application par Infra, vérifier le SHA de l'artefact, sauvegarder le
+script et l'unité précédents, vérifier les chemins sans symlink et créer les
+deux dossiers privés. Le sandbox conserve `ProtectSystem=strict` et autorise
+uniquement le répertoire `credentials` supplémentaire dans `ReadWritePaths`.
+Après application, relire le grant comme UID1000 dans le bot, vérifier portée,
+expiration et mode sans afficher les clés, puis relancer le même service pour
+qualifier le remplacement atomique. Le plan et les reçus privés du déploiement
+du15octobre2026 se trouvent dans
+`/etc/aphrody/cloudflare/operations/consumer-projection-59c80cf0/`.
+Le rollback restaure les fichiers sauvegardés et recharge systemd, sans effacer
+le profil privé ni modifier le timer. Cette provision ne démarre aucun job du
+bot et n'active pas Canon ; ces opérations exigent le runtime qualifié.
+
 ## Builds on the VPS: the `aphrody-build` image
 
 Shenron's Rust, WASM, Bun install and bot steps run in Aphrody's single VPS build image
