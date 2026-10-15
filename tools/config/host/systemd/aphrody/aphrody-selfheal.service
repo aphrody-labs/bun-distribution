@@ -11,7 +11,7 @@ ExecStart=/bin/bash -c '\
   for u in $(systemctl --failed --no-legend --plain | awk "{print \\$1}"); do \
     if [ "$(systemctl show -p LoadState --value "$u")" = not-found ]; then systemctl reset-failed "$u"; continue; fi; \
     case "$u" in \
-      shenron-cdn-sync.service|*.timer|*.mount|*.socket) continue ;; \
+      shenron-cdn-sync.service|shenron-container-backup.service|shenron-offsite-backup.service|*.timer|*.mount|*.socket) continue ;; \
       aphrody-*.service|shenron-*.service|nie-*.service|rg-*.service) echo "restart $u"; systemctl reset-failed "$u"; systemctl restart "$u" ;; \
     esac; \
   done; \
