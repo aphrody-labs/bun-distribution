@@ -136,3 +136,33 @@ pas à cause d'un délai d'observation. Il reste activé et en attente du build
 source existant ; le nouveau PID de contrôle est `3833867`. Le build partagé
 et le daemon VPN natif isolé sont restés vivants. Cette publication du statut
 ne démontre ni huit workers source opérationnels ni la complétude des médias.
+
+## Runtime installé actif, vérifié le 15 octobre 2026 à 14 h 08 UTC
+
+L'unité effective est `active/running`, `MainPID=4051905`, sans redémarrage
+automatique, après démarrage à 13 h 55 min 38 s. Elle utilise temporairement
+`/home/ubuntu/.bun/bin/bun-1.4.4`, révision
+`dfde053a3045d6076ad315b6f63160c4ced71513`. Le lancement source reste la cible
+du catalogue ; le build source partagé est encore actif. Cette observation
+qualifie exclusivement le runtime installé.
+
+`workers.json` atteste les 16 accusés de disponibilité avant `ready.json` ;
+le superviseur compte 40 threads à cette observation. La présence effective
+du PID dans `/system.slice/shenron-manga-workers.service` et dans son fichier
+`cgroup.procs` a été relue. Les plafonds effectifs sont `cpu.max=1200000 100000`
+(12 CPU), `memory.high=17179869184`, `memory.max=21474836480` et `pids.max=2048`.
+Le namespace réseau du PID correspond au namespace Tokyo existant. Cela ne
+prouve pas un tunnel natif Bun VPN.
+
+Le pool possède désormais la projection publique ; aucun lanceur manuel de
+bootstrap n'est actif ni planifié. Son garde refuse l'écriture si le pool
+possède un PID vivant ou si le service a un `MainPID`. Le GET public répond
+200 et `no-store`, avec `state=running`, 16 workers initialisés et cinq tâches
+occupées au relevé. Le nombre de tâches terminées ne mesure ni des pages
+publiées ni des tomes complets. La recherche est déclarée `unavailable` car le
+runtime installé ne supporte pas le CLI requis ; aucune boucle de retry ne
+doit masquer cette limite.
+
+Le reçu privé `manga-source-pool/operator-active-runtime-proof-20261015140837691.json`
+conserve la participation cgroup actuelle. Les reçus précédents restent des
+observations historiques, et ne remplacent pas cette relecture du processus.
