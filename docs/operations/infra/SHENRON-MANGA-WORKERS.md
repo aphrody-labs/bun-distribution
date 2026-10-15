@@ -82,3 +82,21 @@ dont huit Workers réels avec le runtime installé ; le contrôle natif des
 La session `manga-workers-infra-start` et les fichiers privés
 `infra-service-start.log` / `infra-service-start.exit` suivent l'action Infra ;
 un timeout d'observation SSH n'autorise pas le redémarrage du job existant.
+
+## Statut public vérifié le 15 octobre 2026 à 12 h 57 UTC
+
+La route exacte `https://cdn.aphrody.com/status/manga-source-pool.json` répond
+200 avec `Content-Type: application/json` et `Cache-Control: no-store`.
+Le snapshot initial, âgé de 36 secondes au contrôle, indique l'attente du build,
+zéro worker actif et des compteurs non connus à `null`. La vérification refuse
+les clés inattendues et les chemins ou noms de secrets privés. `/status/` et
+`/status/progress.json` répondent 404 ; POST sur le fichier répond 403 ; la
+santé CDN existante répond toujours 200.
+
+Le répertoire public appartient à `ubuntu` en mode 0755, le fichier en 0644.
+Nginx a passé son contrôle de syntaxe avant rechargement. Le service a été
+redémarré une seule fois pour prendre son nouvel argument de projection publique,
+pas à cause d'un délai d'observation. Il reste activé et en attente du build
+source existant ; le nouveau PID de contrôle est `3833867`. Le build partagé
+et le daemon VPN natif isolé sont restés vivants. Cette publication du statut
+ne démontre ni huit workers source opérationnels ni la complétude des médias.
