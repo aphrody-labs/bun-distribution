@@ -454,3 +454,38 @@ ainsi qu’un groupe de doublons exacts conservé. Le reçu passe
 fichier partagé `.git/index.lock`, vide et sans processus propriétaire
 visible, bloque toujours toute mise à jour de l’index Git. Les changements
 concurrents sous `packages/infra/paths/` sont préservés.
+
+## Complément et correction de livraison — 2026-10-15 à 18:00 UTC
+
+Correction : le reçu a depuis été committé et poussé sur `main` par
+`d00029296941df7bc8c7a0439b9786922cd89a3f` ; son SHA distant a été relu. Le
+verrou orphelin avait pu être retiré après vérification de son âge, de son
+contenu vide et de l’absence de détenteur. Le commit n’inclut que ce document.
+
+La couverture publique relue à 18:00:22 donne 329 notices : 222 avec des pages
+listées, 107 sans page listée, et trois volumes qui ne sont que des aperçus
+(147, 619, 620). Les 107 se répartissent en 90 notices hors SOSH sans pages
+listées — ARALE 33, DBGT_ANIME_COMICS 3, DBS_ANIME_COMICS 3,
+DB_LIGHT_NOVELS 3, DB_SD 23, JACO 3, NEKOMAJIN 3, SDBH 19 — et 17 fiches
+SOSH (702–718) sans page. La couverture précise que l’intégralité de la
+pagination et la disponibilité des assets ne sont pas vérifiées ; ces nombres
+ne prouvent donc pas que les 222 lecteurs listés soient complets.
+
+À 18:00, le pool de collecte restait actif avec 16 workers configurés, zéro
+tâche active, 51 544 en file, 6 503 terminées, 111 en échec/reprise, 296
+refus robots, deux blocages de fournisseur et une capacité de recherche
+indisponible. Le reçu de projection compte 3 966 documents projetés, zéro
+candidat émis, zéro écriture publique et zéro écriture éditoriale. Les 3 989
+quarantaines se répartissent entre 3 498 identités édition/ISBN exactes
+insuffisantes, 468 galeries natives ordonnées absentes et 23 empreintes de
+capture différentes. Cela exclut une publication sûre par les writers
+canoniques à partir des candidats actuels.
+
+La page de [Shueisha pour Dragon Ball SD 10](https://www.shueisha.co.jp/books/items/contents.html?isbn=978-4-08-883767-3)
+confirme le titre, 192 pages imprimées, l’ISBN et un lien officiel « essai ».
+Ce lien mène à un aperçu éditeur et n’établit ni l’accès aux 192 pages ni une
+pagination exploitable pour les autres éditions. La capture d’aperçus publics
+est déjà revendiquée par `.coord/claims/codex-shueisha-preview-capture.json` ;
+aucun captureur ni sortie privée de ce propriétaire n’a été modifié ou lancé.
+La campagne wiki a aussi un claim actif sur son inventaire et ses propositions ;
+aucune proposition ni écriture publique n’a été ajoutée ici.
