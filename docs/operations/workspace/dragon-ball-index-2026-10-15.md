@@ -7,7 +7,8 @@
 Enrichir `aphrody web dragon-ball index` avec les exports du catalogue Shenron,
 puis compléter les 110 tomes manquants et les lacunes du wiki. Le produit
 Aphrody conserve l'intégration ; les sources Rust Web transférées restent dans
-le fork Bun, sous `packages/web/rust`. Les données éditoriales et lecteurs sont
+[le fork Bun](https://github.com/aphrody-labs/bun/tree/2b27e9d8fb40329245cd18f35bfb7080cea1a8b9/packages/web/rust).
+Les données éditoriales et lecteurs sont
 administrés par Shenron et ses writers existants.
 
 La commande d'indexation accepte les catalogues publics locaux par l'option
@@ -309,12 +310,12 @@ avaient répété le mot `cargo`. La commande correctement formée,
 `vps-cargo run --jobs auto -- build --release -p aphrody --features index
 --locked`, a compilé les dépendances et les crates Bun/Aphrody avec 12 jobs.
 Après un scan initial lent du cache Git partagé, elle a échoué avec code 101 sur
-le module transféré `crates/os/kernel/core/src/gcs.rs` :
+le module GCS transféré :
 `aphrody-web-source::module!` refuse ce chemin car le fichier correspondant
-manque dans `packages/web/rust/integrations/` du fork Bun piné. Les références
-`crate::gcs` échouent ensuite en cascade. Pourtant,
-`packages/web/rust/transfer-receipt.json` possède l’entrée source/destination
-de ce fichier ; la réconciliation est incomplète dans le commit Bun
+manque dans [la zone d’intégration du fork Bun à ce commit](https://github.com/aphrody-labs/bun/tree/bcf03c2fae8d54f6657dbe3ac5df14807c8ba7af/packages/web/rust/integrations).
+Les références `crate::gcs` échouent ensuite en cascade. Pourtant,
+[le reçu de transfert](https://github.com/aphrody-labs/bun/blob/bcf03c2fae8d54f6657dbe3ac5df14807c8ba7af/packages/web/rust/transfer-receipt.json)
+possède l’entrée source/destination de ce fichier ; la réconciliation est incomplète dans le commit Bun
 `bcf03c2fae8d54f6657dbe3ac5df14807c8ba7af`. Le binaire complet n’a donc pas été
 produit.
 
@@ -460,9 +461,9 @@ La porte `bun run docs:check` a été exécutée et échoue sur des artefacts
 documentaires préexistants obsolètes (`STATE.md`, `llms.txt`, README racine,
 `docs/README.md`, `documentation.json` et quatre fichiers `docs/ecosystem`),
 ainsi qu’un groupe de doublons exacts conservé. Le reçu passe
-`git diff --check`. Son commit n’a pas été créé dans cette session : le
-fichier partagé `.git/index.lock`, vide et sans processus propriétaire
-visible, bloque toujours toute mise à jour de l’index Git. Les changements
+`git diff --check`. Son commit n’a pas été créé dans cette session : un verrou
+Git partagé, vide et sans processus propriétaire visible, bloque toujours
+toute mise à jour de l’index Git. Les changements
 concurrents sous `packages/infra/paths/` sont préservés.
 
 ## Complément et correction de livraison — 2026-10-15 à 18:00 UTC
@@ -495,8 +496,8 @@ La page de [Shueisha pour Dragon Ball SD 10](https://www.shueisha.co.jp/books/it
 confirme le titre, 192 pages imprimées, l’ISBN et un lien officiel « essai ».
 Ce lien mène à un aperçu éditeur et n’établit ni l’accès aux 192 pages ni une
 pagination exploitable pour les autres éditions. La capture d’aperçus publics
-est déjà revendiquée par `.coord/claims/codex-shueisha-preview-capture.json` ;
-aucun captureur ni sortie privée de ce propriétaire n’a été modifié ou lancé.
+est déjà revendiquée par un claim actif dans Shenron ; aucun captureur ni sortie
+privée de ce propriétaire n’a été modifié ou lancé.
 La campagne wiki a aussi un claim actif sur son inventaire et ses propositions ;
 aucune proposition ni écriture publique n’a été ajoutée ici.
 
@@ -636,3 +637,68 @@ claims actifs; aucun champ wiki ni publication n’a été modifié dans cette
 reprise. Les travaux simultanés sur le build Bun Windows et les chemins
 Aphrody ont été laissés intacts. L’index fork est livré sur `origin/main`; le
 présent reçu décrit un run toujours en cours, et non un résultat final.
+
+## Index incrémental qualifié — 2026-10-15 à 21:38 UTC
+
+Le fork Bun a livré `2b27e9d8fb` (`origin/main`) dans le crate propriétaire
+[aphrody-web-crawl et son indexeur catalogue](https://github.com/aphrody-labs/bun/blob/2b27e9d8fb40329245cd18f35bfb7080cea1a8b9/packages/web/rust/crates/web-crawl/src/dragon_ball/catalogue_index.rs).
+Les sidecars d’assets manga publics sont
+agrégés par série et volume : nombre d’assets, octets, nombre d’images WebP
+numérotées, bornes et continuité des numéros depuis un. Les notices conservent
+explicitement `assetAvailabilityVerified`, `fullEditionPaginationVerified`,
+`rightsVerified`, `editionMatchVerified`, `languageVerified`,
+`contentIdentityVerified`, `readerEligible` et `canonical_eligible` à `false`.
+Le parseur ne télécharge ni ne copie de planches. Les propriétés de projection
+et le test des trous de séquence sont couverts par les gates Rust du crate.
+
+Sur le snapshot du lot, `cargo test --locked -p aphrody-web-crawl
+-p aphrody-web-source` passe 85 tests au total (71 tests web-crawl, 3 tests
+source, 7 tests catalogue, 2 tests consommateurs et 2 doctests). `cargo clippy
+--locked -p aphrody-web-crawl --all-targets -- -D warnings`, le `rustfmt`
+ciblé et `git diff --check` passent. Le CLI a ensuite été reconstruit depuis
+Aphrody avec `cargo build --locked -p aphrody`, `CARGO_BUILD_JOBS=12` et le
+cache de build du factory ; la compilation se termine en 8 min 12 s. Le fork a
+avancé sur `main` à `88090ecfe2` après le commit d’indexation ; ce commit
+ultérieur porte sur le worker de release Windows et les fichiers Rust
+d’indexation restent au commit qualifié ci-dessus.
+
+Le premier run hors ligne sur les trois snapshots, avec l’ancien binaire, a
+indexé 114 302 documents et 114 455 chunks sans erreur en 27 min 28 s. Le run
+incrémental avec le nouveau binaire prend 375,39 s : 114 455 fichiers scannés
+et hachés, 153 nouveaux documents ajoutés et indexés, 114 302 conservés depuis
+le cache, 153 chunks ajoutés, zéro refus, fichier illisible ou erreur. L’état
+RAG final contient 114 455 documents, 114 608 chunks et 114 455 fichiers.
+Les catégories projetées sont 112 718 assets, un index d’inventaire, 925
+chapitres, 658 notices volume/couverture et 153 résumés d’assets par volume.
+Une recherche `aphrody home query` retrouve directement le résumé d’ARALE vol.
+1 : 193 chemins `.webp` numérotés 1–193 et 13 729 204 octets déclarés.
+
+L’archive privée du corpus et de la base est
+`/home/ubuntu/build/storage/artifacts/dragon-ball-index-20261015T201308Z/indexed-fork-full-20261015.tar.zst`
+(116 Mo, 875 898 880 octets décompressés). `zstd -t` passe ; SHA-256 :
+`58c50cebd5b413026e23d80b21db97d7b8d5a8cd3df4cd2d51d5f72964917252`.
+Les snapshots d’entrée ont pour SHA-256 `4402d06f…13630c9` (catalogue, 329
+publications et 925 chapitres), `d1249aff…03cb99` (couverture, observée à
+20:13:46 UTC) et `135f1f35…5f5e0b` (inventaire CDN, révision
+`89c5af72…e94762b2`).
+
+Le candidat ARALE vol. 1 recoupe la notice catalogue 601, dont 193 pages sont
+listées avec `readerExtent=unknown`. Cette égalité de dénombrement ne prouve
+pas que les fichiers soient disponibles, appartiennent à la même édition ou
+forment sa pagination intégrale ; tous les indicateurs de qualification du
+résumé restent faux. À 21:38:09, le suivi du pool lit toujours 329 volumes,
+222 lisibles, 110 manquants ou partiels, 1 995 assets vérifiés et 53 304 pages
+listées. Le pool a 51 544 tâches en attente, zéro worker actif et la capacité
+de recherche déclarée `unavailable`. Le catalogue de couverture garde
+`complete=false`, `assetAvailabilityVerified=false` et
+`fullEditionPaginationVerified=false` ; aucun des 110 tomes n’est complété par
+ce lot.
+
+Les claims de complétion wiki et de writer Shenron restent aux propriétaires
+existants. Le crawl privé poursuivait ses propres sources ; je n’ai modifié ni
+ses sorties ni ses propositions et n’ai rien publié. L’index qualifié est une
+copie locale privée de métadonnées, distincte de l’état d’activation du site.
+`git diff --check` passe. `bun run docs:check-links` échoue au niveau du dépôt
+sur 176 liens locaux cassés et 175 chemins de code morts (1 597 chemins vérifiés
+dans 573 documents) ; le reçu présent ne figure plus parmi les erreurs après
+remplacement des chemins vers le checkout Bun externe par des liens de commit.
