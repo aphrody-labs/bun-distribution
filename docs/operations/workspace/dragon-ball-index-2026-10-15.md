@@ -561,3 +561,30 @@ fabriquée et aucun PATCH n’a été envoyé. La campagne wiki demeure partiell
 La situation est donc inchangée sur le fond : l’index RAG privé est complet au
 sens de son run réussi, mais ni les 110 tomes incomplets ni toutes les lacunes
 wiki ne sont complétés ou publiés.
+
+## Reprise du writer et du crawl — 2026-10-15 à 19:55 UTC
+
+Une nouvelle lecture protégée de l’API admin a alimenté une base de campagne
+distincte, sans rejouer la file existante : 10 757 cibles, 10 692 complètes,
+64 candidates en attente et une candidate bloquée après la découverte officielle.
+Le test ciblé portait sur l’épisode 1 de l’arc UGM; le runner n’a trouvé aucune
+citation officielle qualifiable pour son synopsis et n’a produit ni brouillon,
+ni approbation, ni écriture. Les autres lacunes fraîches sont surtout des
+synopsis d’épisodes SDBH/DBZ Kai, deux articles de combats et des sections de
+statistiques Vegeta; elles restent soumises à la preuve exacte propre à leur
+support et continuité. L’inventaire n’est pas une complétion.
+
+Le pool manga a été relu à 19:53:57 : toujours 329 notices, 222 avec pages
+listées, 110 manquantes ou partielles, 53 304 pages listées et 1 995 assets
+vérifiés. Les 16 workers configurés restent à zéro actif, avec 51 544 tâches
+en attente. Le fichier privé de capacité désactive Google pour le motif
+`bun-search-cli-unsupported`; les tâches de recherche restent en quarantaine,
+sans retry. Réactiver ce propriétaire exige un correctif qualifié du worker;
+aucune capacité fictive ni retry n’a été injecté.
+
+Le crawl orchestré par le PID 2930486 demeure vivant. Son processus enfant
+travaille actuellement sur la source Toei `dragon`; les rapports des rounds
+précédents n’autorisent pas à lire/indexer son répertoire partagé pendant
+l’écriture. Le round 4 rapporte 94 244 documents cumulés et 38 documents pour
+la source `toei-dragon_super`; le run entier n’est pas terminé. Aucun nouvel
+index RAG ni publication wiki/manga n’est revendiqué.
