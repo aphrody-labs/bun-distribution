@@ -782,3 +782,26 @@ restent sous Shenron. Les preuves déjà consignées indiquent qu'aucune paginat
 intégrale n'est qualifiée et que les champs wiki restants requièrent des sources
 éditoriales. Cette étape n'a acquis aucun tome, modifié aucune fiche wiki et
 n'effectué aucune publication.
+
+## Actualisation de l'index wiki public — 2026-10-15 à 22:45 UTC
+
+Une nouvelle capture paginée en lecture seule a contrôlé les 21 catégories,
+leurs totaux et chaque page avec détection des doublons, puis a revalidé
+l'inventaire des catégories après la collecte. Le snapshot contient toujours
+2 014 fiches et 10 141 719 octets, SHA-256
+`0d6b2c2a51b6a538fd2372b1c65ccb636d63c22f974374d4fd0bc71273b9c8f1` ; il a
+été observé à `2026-10-15T22:45:15.931Z`. L'API a imposé des réponses HTTP 429
+pendant la capture ; la reprise à débit réduit a fini sans abandonner de page.
+
+Le binaire release Aphrody a indexé le snapshot dans un nouveau corpus privé du
+profil `aphrody` : 2 014 documents, 5 541 chunks, 4 028 nœuds, 2 014 arêtes et
+zéro erreur. La recherche RAG retrouve un document du snapshot à son horodatage
+et sa révision de source. Cette actualisation confirme la couverture complète
+de l'API publique paginée au moment de la capture ; elle ne complète pas les
+champs absents des fiches privées/admin et n'apporte aucune correction wiki.
+
+Le reçu public du pool manga observé à 22:46:34 UTC indique toujours 329 volumes,
+222 lisibles, 110 manquants ou partiels, 51 543 tâches en file, une active,
+6 503 terminées et une capacité de recherche indisponible. Aucun des 110 volumes
+n'est qualifié comme complet par ces nombres. Le pool reste en exécution sous
+son propriétaire Shenron ; aucune tâche n'a été dupliquée ou relancée ici.
