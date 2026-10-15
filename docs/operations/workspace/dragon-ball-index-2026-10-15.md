@@ -252,3 +252,30 @@ deux combats, un tournoi et cinq sections de statistiques de Vegeta. Les cinq
 sections concernent le power scaling, désactivé conformément à la doctrine ;
 elles ne sont pas complétées par extrapolation. Cette vérification n’est pas un
 nouvel inventaire complet du wiki et ne change pas le décompte global.
+
+## Actualisation — 2026-10-15 à 15:05 UTC
+
+Le reçu d’acquisition public du VPS à 15:04:05 UTC compte toujours 329 tomes,
+219 lecteurs complets et 110 sans lecteur. Le worker est vivant et a terminé
+5 836 tâches ; il possède 1 328 assets vérifiés, avec 52 209 tâches en attente,
+107 en échec, 296 refusées par robots, deux bloquées par le fournisseur et une
+capacité de recherche indisponible. Aucun de ces assets n’est assimilé à un tome
+complet. DBFR `/api/health` répond 200, mais le catalogue public tronqué à la
+lecture ne démontre pas de nouvelle extent de lecteur ni publication.
+
+Le dépôt Shenron contient un changement non commité sous propriétaire dans son
+manifest bibliographique et deux tests : l’ISBN japonais officiel de DBS 24 est
+associé à l’identifiant historique 147, tandis que le preview Shueisha est
+explicitement d’une page et incomplet. Les tests ciblés passent (14 tests,
+40 assertions) et `git diff --check` est propre. Cette édition précise ne
+qualifie pas un tome entier. Les fichiers ont des changements locaux préexistants
+dans Shenron; ce reçu ne les intègre ni ne les publie.
+
+Le binaire Aphrody installé a été recontrôlé :
+`aphrody web dragon-ball index --help` n’expose toujours pas `--catalogue`.
+Le source correspondant est livré dans le fork Bun, mais ce binaire n’a pas été
+reconstruit ou activé. Sur l’hôte, le volume `/home/ubuntu/build` est à 98 %
+(7 Gio libres), tandis que deux builds Bun sont actifs et que le test Shenron
+source tourne en 12 jobs. Je n’ai pas lancé de build Aphrody concurrent ni
+contourné le verrou partagé. Le volume `/home/ubuntu/build/storage` a 549 Gio
+libres, mais cette capacité ne rend pas qualifié le chemin de build courant.
