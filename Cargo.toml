@@ -1,5 +1,5 @@
 [workspace]
-exclude = ["apps/aphrody-drive", "apps/pdfcraft/vendor", "apps/figcraft/plugins"]
+exclude = ["toolchains/bun", "apps/aphrody-drive", "apps/pdfcraft/vendor", "apps/figcraft/plugins"]
 resolver = "3"
 members = [
   "crates/aphrody-svg",
@@ -514,6 +514,42 @@ keywords = ["aphrody", "bun", "runtime", "protocol", "workspace"]
 categories = ["development-tools", "api-bindings", "web-programming"]
 
 [workspace.dependencies]
+tracing-subscriber = { version = "0.3.22", features = ["env-filter","fmt","json","regex","registry"] }
+aphrody-command = { path = "crates/aphrody-command", version = "1.4.4", features = [] }
+aphrody-agent-home = { path = "crates/aphrody-agent-home", version = "1.4.4", features = [] }
+aphrody-bun = { path = "crates/aphrody-bun", version = "1.4.4" }
+aphrody-n2b-core = { version = "=0.7.0", features = [] }
+memchr = { version = "2" }
+aphrody-oxc-bridge = { version = "=0.2.0" }
+aphrody-llama-server = { path = "crates/aphrody-llama-server", version = "1.4.4", features = [] }
+aphrody-model-client = { path = "crates/aphrody-model-client", version = "1.4.4", features = [] }
+aphrody-models = { path = "crates/aphrody-models", version = "1.4.4", features = [] }
+aphrody-rag-core = { path = "crates/aphrody-rag-core", version = "1.4.4", features = [] }
+rookie-cookies = { version = "=0.6.0" }
+yolo-runtime = { path = "crates/yolo-runtime", version = "1.4.4" }
+bun-python-host = { git = "https://github.com/aphrody-labs/bun", rev = "84a5f33140cef2a63088d8484e84c0a2e5aba785", version = "0.1.0" }
+mimalloc = { version = "0.1", default-features = false, features = [] }
+aphrody-backend = { path = "crates/aphrody-backend", version = "1.4.4", features = [] }
+libm = { version = "0.2.16" }
+filmcraft-engine = { path = "crates/filmcraft-engine" }
+filmcraft-ui-egui = { path = "crates/filmcraft-ui-egui" }
+filmcraft-media = { path = "crates/filmcraft-media" }
+filmcraft-codecs = { path = "crates/filmcraft-codecs" }
+filmcraft-frame = { path = "crates/filmcraft-frame" }
+filmcraft-color = { path = "crates/filmcraft-color" }
+filmcraft-isobmff = { path = "crates/filmcraft-isobmff" }
+filmcraft-format = { path = "crates/filmcraft-format" }
+filmcraft-time = { path = "crates/filmcraft-time" }
+soundcraft-engine = { path = "crates/soundcraft-engine" }
+soundcraft-ui-egui = { path = "crates/soundcraft-ui-egui" }
+soundcraft-playback = { path = "crates/soundcraft-playback" }
+soundcraft-model = { path = "crates/soundcraft-model" }
+aphrody-web-extract = { path = "toolchains/bun/packages/web/rust/crates/web-extract" }
+aphrody-web-index = { path = "toolchains/bun/packages/web/rust/crates/web-index" }
+aphrody-gemini-web = { path = "toolchains/bun/packages/bun-google/aphrody/crates/gemini-web" }
+aphrody-x = { path = "toolchains/bun/packages/web/rust/crates/x" }
+obscura-dom = { path = "toolchains/bun/packages/web/rust/crates/obscura-dom" }
+obscura-net = { path = "toolchains/bun/packages/web/rust/crates/obscura-net" }
 craft-fonts = { path = "crates/craft-fonts", version = "=1.4.4" }
 craft-fonts-tests = { path = "crates/craft-fonts-tests", version = "=1.4.4" }
 craft-atomic = { path = "crates/craft-atomic", version = "=1.4.4" }
