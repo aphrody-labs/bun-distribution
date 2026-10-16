@@ -15,7 +15,10 @@ work, repository history, first-party attribution, and every imported license
 and notice. Keep product documentation and collaboration in English.
 
 Owner direction (2026-10-16): integrate Bun Libraries and Aphrody only;
-Shenron, IECODE and Android stay outside absorption. Aphrody retains AI
+Shenron and IECODE stay outside absorption. Android is absorbed (owner
+reversal, 2026-10-16): `apps/bun-android`, `apps/java-ffi`,
+`crates/android-native`, `packages/bun-android`, `packages/android-pipeline`
+and `packages/android-web` are its single owners. Aphrody retains AI
 (models, agents, memory, A2A, MCP) and infrastructure (hosts, deployment,
 services, pipelines, cloud). Merge product members into one root `crates/`,
 `packages/` and `apps/`, one direct child per member. Nested source imports

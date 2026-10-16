@@ -21,12 +21,15 @@
     "packages/achillea-core",
     "packages/achillea-types",
     "packages/ag-ui",
+    "packages/android-pipeline",
+    "packages/android-web",
     "packages/aphrody-bun",
     "packages/app-ui",
     "packages/artcraft-frontend",
     "packages/assets",
     "packages/azalee",
     "packages/bun-app-host",
+    "packages/bun-android",
     "packages/bun-artifacts",
     "packages/bun-engine",
     "packages/bun-video-project",
@@ -190,6 +193,7 @@
     ".": "./src/distribution.ts"
   },
   "scripts": {
+    "android": "bun packages/bun-android/src/cli.ts",
     "setup": "bun scripts/setup.ts",
     "cargo:metadata": "bun scripts/cargo.ts metadata",
     "cargo:fmt": "bun scripts/cargo.ts fmt",

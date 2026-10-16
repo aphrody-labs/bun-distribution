@@ -1,0 +1,18 @@
+{
+  "name": "@aphrody/bun-android",
+  "version": "1.4.4",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "bun-android": "./src/cli.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./plugin": "./src/plugin.ts",
+    "./types": "./src/types.ts"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

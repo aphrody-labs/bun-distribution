@@ -57,6 +57,28 @@
 
 ## Selected source integration and flat layout — 2026-10-16
 
+- [x] Owner reversal (2026-10-16): Android is absorbed; the earlier
+      "Android outside absorption" rule is cancelled. Imported from
+      `aphrody-labs/bun-engine-android` (MIT, sibling `android` checkout):
+      `crates/android-native` (JNI + embedded Bun bridge), `apps/java-ffi`,
+      `apps/bun-android` (former `apps/android` Compose app),
+      `packages/android-pipeline`, `packages/android-web`. The
+      `bun-engine` Android copies are older duplicates of these owners; the
+      `rea` JADX provider stays in `packages/re`. `apps/java-latest`
+      (non-Android Java smoke) and `docs-sync` were not imported.
+- [x] `packages/bun-android`: `bun android build|install|run|exec|logcat|devices|doctor|ndk`
+      (SDK/NDK/Gradle/JDK discovery, NDK install through sdkmanager, NDK
+      Cargo linkers, MSVC host env), manifest and `android-asset:` loaders.
+- [x] `bun build --compile --target=bun-android-arm64|bun-android-x64`
+      parses as the existing `linux-*-android` (bionic, ELF `.bun` section)
+      target in `toolchains/bun`.
+- [ ] Publish Android base runtimes (`bun-linux-*-android` tarballs) and a
+      `libbun.so` exporting `bun_main`; until then pass
+      `--compile-executable-path` / `BUN_COMPILE_TARGET_TARBALL_URL` and
+      `bun android build --libbun <abi>=<path>`.
+- [ ] Repair the root Cargo resolution (serde_json pin conflict) so
+      `bun android build` can build `android-native` inside the workspace.
+
 - [x] Apply the owner's narrowed scope: Bun Libraries and Aphrody only.
       Shenron, IECODE and Android are outside absorption. Preserve the 85
       existing distribution pins and add the Aphrody source: 86 mounts,

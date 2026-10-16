@@ -1,0 +1,16 @@
+[package]
+name = "android-native"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+jni = { version = "0.22.4", default-features = false }
+
+[target.'cfg(target_os = "android")'.dependencies]
+ndk = { version = "0.9.0", default-features = false }
+android_logger = { version = "0.15.1", default-features = false }
+log = "0.4.34"

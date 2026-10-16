@@ -1,0 +1,127 @@
+//! JNI library for `com.aphrody.android.NativeBridge`.
+
+use jni::sys::{JNIEnv, jclass, jint};
+
+/// C ABI entry point shared with Bun FFI.
+#[unsafe(no_mangle)]
+pub extern "C" fn android_add(left: i32, right: i32) -> i32 {
+    left.saturating_add(right)
+}
+
+/// Add two Java integers, saturating on overflow.
+///
+/// Neither JNI pointer is dereferenced; the JVM owns both pointers.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_aphrody_android_NativeBridge_add(
+    _env: *mut JNIEnv,
+    _class: jclass,
+    left: jint,
+    right: jint,
+) -> jint {
+    #[cfg(target_os = "android")]
+    initialize_android_logging();
+    android_add(left, right)
+}
+
+#[cfg(target_os = "android")]
+fn initialize_android_logging() {
+    android_logger::init_once(
+        android_logger::Config::default()
+            .with_max_level(log::LevelFilter::Info)
+            .with_tag("AphrodyRust"),
+    );
+    // Exercise an NDK-owned object, including its native allocation and release.
+    let configuration = ndk::configuration::Configuration::new();
+    log::info!("Rust JNI bridge loaded; configuration: {configuration:?}");
+}
+
+/// Embedded Bun runtime loaded from `libbun.so` packaged in the APK.
+///
+/// The runtime library must export `bun_main(argc, argv) -> c_int`.
+#[cfg(unix)]
+mod bun_runtime {
+    use std::ffi::{CStr, CString, c_char, c_int, c_void};
+
+    unsafe extern "C" {
+        fn dlopen(filename: *const c_char, flag: c_int) -> *mut c_void;
+        fn dlsym(handle: *mut c_void, symbol: *const c_char) -> *mut c_void;
+        fn dlerror() -> *const c_char;
+    }
+
+    const RTLD_NOW: c_int = 2;
+    pub const NOT_LOADED: i32 = -127;
+    pub const NO_ENTRY: i32 = -126;
+
+    type BunMain = unsafe extern "C" fn(c_int, *const *const c_char) -> c_int;
+
+    fn last_error() -> String {
+        // SAFETY: dlerror returns null or a thread-local NUL-terminated string.
+        let error = unsafe { dlerror() };
+        if error.is_null() {
+            String::from("unknown dlopen error")
+        } else {
+            // SAFETY: non-null result of dlerror is a valid C string.
+            unsafe { CStr::from_ptr(error) }.to_string_lossy().into_owned()
+        }
+    }
+
+    pub fn run(args: &[String]) -> Result<i32, (i32, String)> {
+        let library = c"libbun.so";
+        // SAFETY: valid NUL-terminated library name.
+        let handle = unsafe { dlopen(library.as_ptr(), RTLD_NOW) };
+        if handle.is_null() {
+            return Err((NOT_LOADED, last_error()));
+        }
+        // SAFETY: handle is a live dlopen handle, symbol name is NUL-terminated.
+        let symbol = unsafe { dlsym(handle, c"bun_main".as_ptr()) };
+        if symbol.is_null() {
+            return Err((NO_ENTRY, last_error()));
+        }
+        // SAFETY: libbun.so exports bun_main with the BunMain signature.
+        let entry: BunMain = unsafe { std::mem::transmute(symbol) };
+        let owned: Vec<CString> = std::iter::once("bun".to_owned())
+            .chain(args.iter().cloned())
+            .map(|arg| CString::new(arg.replace('\0', "")).unwrap_or_default())
+            .collect();
+        let mut argv: Vec<*const c_char> = owned.iter().map(|arg| arg.as_ptr()).collect();
+        argv.push(std::ptr::null());
+        let argc = c_int::try_from(owned.len()).unwrap_or(c_int::MAX);
+        // SAFETY: argv holds argc valid C strings followed by a null terminator.
+        Ok(unsafe { entry(argc, argv.as_ptr()) })
+    }
+}
+
+/// Run the embedded Bun runtime with `script` and return its exit code.
+///
+/// Negative codes report a missing `libbun.so` (-127) or `bun_main` (-126).
+#[cfg(unix)]
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_aphrody_android_BunRuntime_nativeRun(
+    env: *mut JNIEnv,
+    _class: jclass,
+    script: jni::sys::jstring,
+) -> jint {
+    if env.is_null() || script.is_null() {
+        return -1;
+    }
+    // SAFETY: the JVM passes a valid JNIEnv and a live jstring for this call.
+    let script = unsafe {
+        let functions = &(**env).v1_1;
+        let (get, release) = (functions.GetStringUTFChars, functions.ReleaseStringUTFChars);
+        let chars = get(env, script, std::ptr::null_mut());
+        if chars.is_null() {
+            return -1;
+        }
+        let value = std::ffi::CStr::from_ptr(chars).to_string_lossy().into_owned();
+        release(env, script, chars);
+        value
+    };
+    match bun_runtime::run(&[script]) {
+        Ok(code) => code,
+        Err((code, _message)) => {
+            #[cfg(target_os = "android")]
+            log::error!("Bun runtime unavailable: {_message}");
+            code
+        }
+    }
+}

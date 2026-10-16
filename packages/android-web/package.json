@@ -1,0 +1,24 @@
+{
+  "name": "@aphrody/android-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun run scripts/build.ts",
+    "dev": "bun run scripts/serve.ts",
+    "android:doctor": "bun ../bun-android/src/cli.ts doctor",
+    "android:devices": "bun ../bun-android/src/cli.ts devices",
+    "android:install": "bun ../bun-android/src/cli.ts install",
+    "android:logcat": "bun ../bun-android/src/cli.ts logcat",
+    "android:sdk": "bun ../bun-android/src/cli.ts ndk",
+    "test": "bun test",
+    "ffi": "bun run scripts/ffi.ts"
+  },
+  "dependencies": {
+    "@aphrody/tauri": "workspace:*",
+    "@aphrody/bun-android": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

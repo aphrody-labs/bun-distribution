@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM"],
+    "module": "Preserve",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "types": ["bun"],
+    "noEmit": true
+  },
+  "include": [
+    "src",
+    "scripts",
+    "tests",
+    "../../node_modules/@aphrody/tauri/js/api/global.d.ts"
+  ]
+}

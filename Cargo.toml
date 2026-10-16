@@ -2,6 +2,7 @@
 exclude = ["apps/aphrody-model-view", "toolchains/bun", "apps/aphrody-drive", "apps/pdfcraft/vendor", "apps/figcraft/plugins"]
 resolver = "3"
 members = [
+  "crates/android-native",
   "crates/aphrody-svg",
   "crates/aphrody-aarch64",
   "crates/aphrody-switch",
