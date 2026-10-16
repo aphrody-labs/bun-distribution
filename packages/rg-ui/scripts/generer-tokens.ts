@@ -22,6 +22,8 @@
  * Usage : `bun packages/rg-ui/scripts/generer-tokens.ts` (réécrit `src/tokens.ts`).
  */
 
+import { fileURLToPath } from "node:url";
+
 // ─── Analyse CSS ───────────────────────────────────────────────────────────
 
 export interface BlocCss {
@@ -63,7 +65,7 @@ export function analyserBlocs(css: string): BlocCss[] {
           blocs.push({
             selecteurs: prelude
               .split(",")
-              .map((s) => s.trim())
+              .map(s => s.trim())
               .filter(Boolean),
             declarations: analyserDeclarations(contenu),
           });
@@ -111,9 +113,7 @@ function analyserDeclarations(corps: string): Map<string, string> {
 
 /** Encodage gamma sRGB d'une composante linéaire (0-1). */
 function versSrgb(canal: number): number {
-  return canal <= 0.0031308
-    ? 12.92 * canal
-    : 1.055 * canal ** (1 / 2.4) - 0.055;
+  return canal <= 0.0031308 ? 12.92 * canal : 1.055 * canal ** (1 / 2.4) - 0.055;
 }
 
 function borner(v: number, min: number, max: number): number {
@@ -131,19 +131,13 @@ function octet(canal: number): string {
  * (matrices de Björn Ottosson). L accepte `0-1` ou un pourcentage.
  */
 export function oklchVersHex(valeur: string): string | null {
-  const correspondance =
-    /^oklch\(\s*([^\s]+)\s+([^\s]+)\s+([^\s)]+)\s*\)$/i.exec(valeur.trim());
+  const correspondance = /^oklch\(\s*([^\s]+)\s+([^\s]+)\s+([^\s)]+)\s*\)$/i.exec(valeur.trim());
   if (!correspondance) return null;
   const [, brutL, brutC, brutH] = correspondance;
-  const L = brutL!.endsWith("%")
-    ? Number.parseFloat(brutL!) / 100
-    : Number.parseFloat(brutL!);
-  const C = brutC!.endsWith("%")
-    ? (Number.parseFloat(brutC!) / 100) * 0.4
-    : Number.parseFloat(brutC!);
+  const L = brutL!.endsWith("%") ? Number.parseFloat(brutL!) / 100 : Number.parseFloat(brutL!);
+  const C = brutC!.endsWith("%") ? (Number.parseFloat(brutC!) / 100) * 0.4 : Number.parseFloat(brutC!);
   const H = Number.parseFloat(brutH!);
-  if (!Number.isFinite(L) || !Number.isFinite(C) || !Number.isFinite(H))
-    return null;
+  if (!Number.isFinite(L) || !Number.isFinite(C) || !Number.isFinite(H)) return null;
 
   const radians = (H * Math.PI) / 180;
   const a = C * Math.cos(radians);
@@ -177,16 +171,10 @@ export function normaliserCouleur(valeur: string): string {
  * Résout `var(--x)` en cascadant `local` (le bloc du thème) puis `base`
  * (`:root`). Les cycles sont coupés au bout de 12 sauts.
  */
-export function resoudreVar(
-  valeur: string,
-  local: Map<string, string>,
-  base: Map<string, string>,
-): string {
+export function resoudreVar(valeur: string, local: Map<string, string>, base: Map<string, string>): string {
   let courante = valeur;
   for (let saut = 0; saut < 12; saut++) {
-    const correspondance = /^var\(\s*(--[\w-]+)\s*(?:,\s*([^)]*))?\)$/.exec(
-      courante.trim(),
-    );
+    const correspondance = /^var\(\s*(--[\w-]+)\s*(?:,\s*([^)]*))?\)$/.exec(courante.trim());
     if (!correspondance) return courante;
     const reference = correspondance[1]!;
     const secours = correspondance[2];
@@ -212,10 +200,7 @@ export interface TokensExtraits {
   marque: Record<string, string>;
   marquesTierces: Record<string, string>;
   formes: Record<string, number>;
-  themes: Record<
-    NomTheme,
-    { md3: Record<string, string>; shadcn: Record<string, string> }
-  >;
+  themes: Record<NomTheme, { md3: Record<string, string>; shadcn: Record<string, string> }>;
 }
 
 const PREFIXE_MD3 = "--md-sys-color-";
@@ -269,39 +254,33 @@ export function extraireTokens(css: string): TokensExtraits {
 
   const theme = new Map<string, string>();
   for (const bloc of blocs) {
-    if (!bloc.selecteurs.some((s) => s.startsWith("@theme"))) continue;
+    if (!bloc.selecteurs.some(s => s.startsWith("@theme"))) continue;
     for (const [nom, valeur] of bloc.declarations) theme.set(nom, valeur);
   }
 
   const marque: Record<string, string> = {};
   for (const [nom, valeur] of racine) {
     if (!nom.startsWith(PREFIXE_MARQUE)) continue;
-    marque[versCamel(nom.slice(PREFIXE_MARQUE.length))] = normaliserCouleur(
-      resoudreVar(valeur, racine, racine),
-    );
+    marque[versCamel(nom.slice(PREFIXE_MARQUE.length))] = normaliserCouleur(resoudreVar(valeur, racine, racine));
   }
 
   const marquesTierces: Record<string, string> = {};
   for (const nom of ["--color-discord", "--color-patreon", "--color-twitch"]) {
     const valeur = theme.get(nom);
-    if (valeur)
-      marquesTierces[versCamel(nom.slice("--color-".length))] =
-        normaliserCouleur(valeur);
+    if (valeur) marquesTierces[versCamel(nom.slice("--color-".length))] = normaliserCouleur(valeur);
   }
 
   const formes: Record<string, number> = {};
   for (const [nom, valeur] of theme) {
     if (!nom.startsWith(PREFIXE_FORME)) continue;
     const nombre = Number.parseFloat(valeur);
-    if (Number.isFinite(nombre))
-      formes[versCamel(nom.slice(PREFIXE_FORME.length))] = nombre;
+    if (Number.isFinite(nombre)) formes[versCamel(nom.slice(PREFIXE_FORME.length))] = nombre;
   }
 
   const themes = {} as TokensExtraits["themes"];
   for (const nom of NOMS_THEMES) {
-    const bloc = blocs.find((b) => b.selecteurs.includes(`.${nom}`));
-    if (!bloc)
-      throw new Error(`[tokens] thème « ${nom} » introuvable dans styles.css`);
+    const bloc = blocs.find(b => b.selecteurs.includes(`.${nom}`));
+    if (!bloc) throw new Error(`[tokens] thème « ${nom} » introuvable dans styles.css`);
     // Cascade réelle : `.theme-x` est posé sur <html>, donc `:root` s'applique
     // aussi et fournit les rôles que le thème ne redéclare pas (scrim, shadow…).
     const fusion = new Map<string, string>([...racine, ...bloc.declarations]);
@@ -309,18 +288,14 @@ export function extraireTokens(css: string): TokensExtraits {
     const md3: Record<string, string> = {};
     for (const [cle, valeur] of fusion) {
       if (!cle.startsWith(PREFIXE_MD3)) continue;
-      md3[versCamel(cle.slice(PREFIXE_MD3.length))] = normaliserCouleur(
-        resoudreVar(valeur, fusion, racine),
-      );
+      md3[versCamel(cle.slice(PREFIXE_MD3.length))] = normaliserCouleur(resoudreVar(valeur, fusion, racine));
     }
 
     const shadcn: Record<string, string> = {};
     for (const role of ROLES_SHADCN) {
       const valeur = fusion.get(`--${role}`);
       if (valeur === undefined) continue;
-      shadcn[versCamel(role)] = normaliserCouleur(
-        resoudreVar(valeur, fusion, racine),
-      );
+      shadcn[versCamel(role)] = normaliserCouleur(resoudreVar(valeur, fusion, racine));
     }
 
     themes[nom] = { md3, shadcn };
@@ -331,28 +306,23 @@ export function extraireTokens(css: string): TokensExtraits {
 
 // ─── Rendu du module TypeScript ────────────────────────────────────────────
 
-function litteral(
-  valeur: Record<string, string | number>,
-  indentation: string,
-): string {
+function litteral(valeur: Record<string, string | number>, indentation: string): string {
   const lignes = Object.entries(valeur).map(([cle, v]) =>
-    typeof v === "number"
-      ? `${indentation}\t${cle}: ${v},`
-      : `${indentation}\t${cle}: "${v}",`,
+    typeof v === "number" ? `${indentation}\t${cle}: ${v},` : `${indentation}\t${cle}: "${v}",`,
   );
   return `{\n${lignes.join("\n")}\n${indentation}}`;
 }
 
-export function rendreModule(tokens: TokensExtraits): string {
+export async function rendreModule(tokens: TokensExtraits): Promise<string> {
   const themes = NOMS_THEMES.map(
-    (nom) =>
+    nom =>
       `\t"${nom}": {\n\t\tmd3: ${litteral(tokens.themes[nom].md3, "\t\t")},\n\t\tshadcn: ${litteral(
         tokens.themes[nom].shadcn,
         "\t\t",
       )},\n\t},`,
   ).join("\n");
 
-  return `/* GÉNÉRÉ — ne pas éditer à la main.
+  const source = `/* GÉNÉRÉ — ne pas éditer à la main.
  * Source : packages/rg-ui/src/styles.css
  * Régénérer : bun packages/rg-ui/scripts/generer-tokens.ts
  *
@@ -368,7 +338,7 @@ export function rendreModule(tokens: TokensExtraits): string {
 
 /** Les 5 thèmes unifiés, tels que posés en classe sur \`<html>\`. */
 export const NOMS_THEMES = [
-${NOMS_THEMES.map((n) => `\t"${n}",`).join("\n")}
+${NOMS_THEMES.map(n => `\t"${n}",`).join("\n")}
 ] as const;
 
 export type NomTheme = (typeof NOMS_THEMES)[number];
@@ -403,12 +373,35 @@ export function shadcn(nom: NomTheme): RolesShadcn {
 	return THEMES[nom].shadcn;
 }
 `;
+  const formatter = Bun.spawn(
+    [
+      process.execPath,
+      "fmt",
+      "--config",
+      fileURLToPath(new URL("../../../bun-format.json", import.meta.url)),
+      `--stdin-filepath=${fileURLToPath(new URL("../src/tokens.ts", import.meta.url))}`,
+    ],
+    {
+      cwd: fileURLToPath(new URL("../../../", import.meta.url)),
+      stdin: new Blob([source]),
+      stdout: "pipe",
+      stderr: "pipe",
+      timeout: 10000,
+    },
+  );
+  const [formatted, error, code] = await Promise.all([
+    new Response(formatter.stdout).text(),
+    new Response(formatter.stderr).text(),
+    formatter.exited,
+  ]);
+  if (code !== 0) throw new Error(`Native token formatting failed (${code}): ${error}`);
+  return formatted;
 }
 
 if (import.meta.main) {
   const cheminCss = new URL("../src/styles.css", import.meta.url);
   const cheminSortie = new URL("../src/tokens.ts", import.meta.url);
   const css = await Bun.file(cheminCss).text();
-  await Bun.write(cheminSortie, rendreModule(extraireTokens(css)));
+  await Bun.write(cheminSortie, await rendreModule(extraireTokens(css)));
   console.log(`tokens=ok source=${cheminCss} sortie=${cheminSortie}`);
 }

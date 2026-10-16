@@ -1,4 +1,4 @@
 {
-  "extends": "@shenron/config/tsconfig/react.json",
+  "extends": "../rg-config/tsconfig-nextjs.json",
   "include": ["src/**/*", "test/**/*", "scripts/**/*"]
 }

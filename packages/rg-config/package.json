@@ -13,6 +13,7 @@
     "eslint-base.mjs",
     "eslint-nextjs.mjs",
     "oxlintrc.json",
+    "public-urls.ts",
     "tailwind-preset.ts",
     "rg-m3.json",
     "tsconfig-base.json",
@@ -22,6 +23,7 @@
   ],
   "type": "module",
   "exports": {
+    "./public-urls": "./public-urls.ts",
     "./tsconfig-base.json": "./tsconfig-base.json",
     "./tsconfig-nextjs.json": "./tsconfig-nextjs.json",
     "./tsconfig-bun.json": "./tsconfig-bun.json",

@@ -12,6 +12,7 @@
     "./capabilities": "./src/capabilities.ts",
     "./coverage": "./src/coverage.ts",
     "./hash": "./src/hash.ts",
+    "./guards": "./src/guards.ts",
     "./process": "./src/process.ts",
     "./runtime": "./src/runtime.ts",
     "./automation": "./src/automation/index.ts",
@@ -19,6 +20,11 @@
   },
   "engines": {
     "bun": "1.4.4"
+  },
+  "bunos": {
+    "runtime": {
+      "./guards": "server"
+    }
   },
   "license": "MIT AND Apache-2.0",
   "dependencies": {

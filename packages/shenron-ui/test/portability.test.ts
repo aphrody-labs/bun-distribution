@@ -2,11 +2,7 @@
 import { describe, expect, test } from "bun:test";
 import { fileURLToPath } from "node:url";
 
-import {
-  checkNoEscapingImports,
-  checkPackageRuntimes,
-  listExportEntries,
-} from "@shenron/config/guards";
+import { checkNoEscapingImports, checkPackageRuntimes, listExportEntries } from "@aphrody/bun-workspace/guards";
 
 const pkgDir = fileURLToPath(new URL("..", import.meta.url));
 const WRAPPERS = [
@@ -44,10 +40,8 @@ const WRAPPERS = [
 
 describe("@shenron/ui portability", () => {
   test("every wrapper is exported with the react class", () => {
-    const entries = listExportEntries(pkgDir).filter((e) => e.key === "./*");
-    expect(entries.map((e) => e.subpath.slice(2)).sort()).toEqual(
-      [...WRAPPERS].sort(),
-    );
+    const entries = listExportEntries(pkgDir).filter(e => e.key === "./*");
+    expect(entries.map(e => e.subpath.slice(2)).sort()).toEqual([...WRAPPERS].sort());
     for (const e of entries) expect(e.runtime).toBe("react");
   });
 

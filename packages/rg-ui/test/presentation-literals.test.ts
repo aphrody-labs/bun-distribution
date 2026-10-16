@@ -30,12 +30,9 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import * as ts from "@typescript/typescript6";
 
-const REPO_ROOT = resolve(import.meta.dir, "../../../..");
-const WEBSITE_SRC = join(REPO_ROOT, "apps/rg/website/src");
-const BASELINE_PATH = join(
-  import.meta.dir,
-  "presentation-literals-baseline.json",
-);
+const REPO_ROOT = resolve(import.meta.dir, "../../..");
+const WEBSITE_SRC = join(REPO_ROOT, "apps/rg-website/src");
+const BASELINE_PATH = join(import.meta.dir, "presentation-literals-baseline.json");
 
 const CATEGORIES = [
   "rawColorLiteral",
@@ -77,18 +74,14 @@ const ALLOWLIST: readonly AllowRule[] = [
       "arbitraryTextPx",
       "inlineFontFamily",
     ],
-    matches: (path) =>
-      path === "apps/rg/website/src/app/globals.css" ||
-      path === "apps/website/src/app/globals.css",
-    reason:
-      "point d'entrée canonique des variables CSS et déclarations de fontes de l'app",
+    matches: path => path === "apps/rg-website/src/app/globals.css",
+    reason: "point d'entrée canonique des variables CSS et déclarations de fontes de l'app",
   },
   {
     categories: ALL_CATEGORIES,
-    matches: (path) =>
+    matches: path =>
       /(?:^|\/)(?:opengraph-image|twitter-image)\.tsx$/u.test(path) ||
-      path.startsWith("apps/rg/website/src/app/api/og/") ||
-      path.startsWith("apps/website/src/app/api/og/"),
+      path.startsWith("apps/rg-website/src/app/api/og/"),
     reason: "rendus bitmap sociaux autonomes, sans cascade CSS du document",
   },
 ];
@@ -102,15 +95,9 @@ const PALETTE_UTILITY =
 const ARBITRARY_COLOR_UTILITY =
   /(?:^|\s)(?:[\w-]+:)*(?:bg|text|border|from|via|to|fill|stroke|ring|outline|divide|caret|accent|decoration)-\[(?:#[\da-f]|(?:rgba?|hsla?|oklch|oklab|lab|lch|color-mix)\s*\(|color:)/giu;
 
-const ARBITRARY_TEXT_PX =
-  /(?:^|\s)(?:[\w-]+:)*text-\[(?:\d*\.)?\d+px\](?=$|\s)/giu;
+const ARBITRARY_TEXT_PX = /(?:^|\s)(?:[\w-]+:)*text-\[(?:\d*\.)?\d+px\](?=$|\s)/giu;
 const CSS_FONT_FAMILY = /\bfont-family\s*:/giu;
-const UI_TEXT_ATTRIBUTES = new Set([
-  "alt",
-  "aria-label",
-  "placeholder",
-  "title",
-]);
+const UI_TEXT_ATTRIBUTES = new Set(["alt", "aria-label", "placeholder", "title"]);
 
 function emptyCounts(): Counts {
   return {
@@ -128,14 +115,13 @@ function countMatches(value: string, pattern: RegExp): number {
 }
 
 function isAllowed(path: string, category: Category): boolean {
-  return ALLOWLIST.some(
-    (rule) => rule.categories.includes(category) && rule.matches(path),
-  );
+  return ALLOWLIST.some(rule => rule.categories.includes(category) && rule.matches(path));
 }
 
 function listSourceFiles(directory: string): string[] {
   const files: string[] = [];
   for (const entry of readdirSync(directory).sort()) {
+    if (entry === "__tests__" || /\.(?:test|spec)\.tsx$/.test(entry)) continue;
     const absolute = join(directory, entry);
     if (statSync(absolute).isDirectory()) {
       files.push(...listSourceFiles(absolute));
@@ -169,13 +155,7 @@ function analyseCss(source: string): Counts {
 
 function analyseTsx(source: string, path: string): Counts {
   const counts = emptyCounts();
-  const file = ts.createSourceFile(
-    path,
-    source,
-    ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.TSX,
-  );
+  const file = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const presentationStrings: string[] = [];
 
   const visit = (node: ts.Node): void => {
@@ -189,10 +169,7 @@ function analyseTsx(source: string, path: string): Counts {
       presentationStrings.push(node.text);
     }
 
-    if (
-      ts.isPropertyAssignment(node) &&
-      node.name.getText(file) === "fontFamily"
-    ) {
+    if (ts.isPropertyAssignment(node) && node.name.getText(file) === "fontFamily") {
       counts.inlineFontFamily += 1;
     }
 
@@ -203,8 +180,7 @@ function analyseTsx(source: string, path: string): Counts {
     if (
       ts.isJsxExpression(node) &&
       node.expression &&
-      (ts.isStringLiteral(node.expression) ||
-        ts.isNoSubstitutionTemplateLiteral(node.expression)) &&
+      (ts.isStringLiteral(node.expression) || ts.isNoSubstitutionTemplateLiteral(node.expression)) &&
       textHasLanguage(node.expression.text)
     ) {
       counts.jsxUiText += 1;
@@ -227,10 +203,7 @@ function analyseTsx(source: string, path: string): Counts {
   for (const value of presentationStrings) {
     counts.rawColorLiteral += countMatches(value, RAW_COLOR);
     counts.paletteColorUtility += countMatches(value, PALETTE_UTILITY);
-    counts.arbitraryColorUtility += countMatches(
-      value,
-      ARBITRARY_COLOR_UTILITY,
-    );
+    counts.arbitraryColorUtility += countMatches(value, ARBITRARY_COLOR_UTILITY);
     counts.arbitraryTextPx += countMatches(value, ARBITRARY_TEXT_PX);
     counts.inlineFontFamily += countMatches(value, CSS_FONT_FAMILY);
   }
@@ -243,9 +216,7 @@ function currentCounts(): Counts {
   for (const absolute of listSourceFiles(WEBSITE_SRC)) {
     const path = relative(REPO_ROOT, absolute).replaceAll("\\", "/");
     const source = readFileSync(absolute, "utf8");
-    const perFile = absolute.endsWith(".css")
-      ? analyseCss(source)
-      : analyseTsx(source, path);
+    const perFile = absolute.endsWith(".css") ? analyseCss(source) : analyseTsx(source, path);
 
     for (const category of CATEGORIES) {
       if (!isAllowed(path, category)) total[category] += perFile[category];
@@ -266,13 +237,11 @@ describe("ratchet des littéraux de présentation", () => {
   test("aucune catégorie n'augmente par rapport à la baseline", async () => {
     const baseline = (await Bun.file(BASELINE_PATH).json()) as Baseline;
     expect(baseline.schemaVersion).toBe(1);
-    expect(baseline.scope).toMatch(
-      /^apps\/(?:rg\/)?website\/src\/\*\*\/\*\.\{tsx,css\}$/,
-    );
+    expect(baseline.scope).toMatch(/^apps\/rg-website\/src\/\*\*\/\*\.\{tsx,css\}$/);
     expect(Object.keys(baseline.counts).sort()).toEqual([...CATEGORIES].sort());
 
     const current = currentCounts();
-    const increases = CATEGORIES.flatMap((category) => {
+    const increases = CATEGORIES.flatMap(category => {
       const before = baseline.counts[category];
       const after = current[category];
       return after > before

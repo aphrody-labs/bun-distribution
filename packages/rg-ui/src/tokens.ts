@@ -24,14 +24,10 @@ export const NOMS_THEMES = [
 export type NomTheme = (typeof NOMS_THEMES)[number];
 
 /** Rôles de couleur Material Design 3 résolus pour un thème donné. */
-export type RolesMd3 = Readonly<
-  Record<keyof (typeof THEMES)["theme-roy"]["md3"], string>
->;
+export type RolesMd3 = Readonly<Record<keyof (typeof THEMES)["theme-roy"]["md3"], string>>;
 
 /** Rôles shadcn (pont MD3 → shadcn) résolus pour un thème donné. */
-export type RolesShadcn = Readonly<
-  Record<keyof (typeof THEMES)["theme-roy"]["shadcn"], string>
->;
+export type RolesShadcn = Readonly<Record<keyof (typeof THEMES)["theme-roy"]["shadcn"], string>>;
 
 /** Couleurs de marque Rose Griffon — identiques dans les 5 thèmes. */
 export const MARQUE = {

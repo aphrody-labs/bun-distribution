@@ -1,0 +1,21 @@
+{
+	"name": "@fixture/clean",
+	"private": true,
+	"type": "module",
+	"exports": {
+		"./pure": "./src/pure.ts",
+		"./server": "./src/server.ts",
+		"./env": "./src/env.ts",
+		"./items/*": "./src/items/*.ts",
+		"./preset.json": "./preset.json"
+	},
+	"shenron": {
+		"runtime": {
+			"./pure": "pure",
+			"./server": "server",
+			"./env": "pure",
+			"./items/*": "pure",
+			"./preset.json": "json"
+		}
+	}
+}

@@ -43,24 +43,20 @@ describe("conversion oklch → sRGB", () => {
 describe("analyse de styles.css", () => {
   test("isole le bloc :root sans confondre avec :root.theme-roy", () => {
     const blocs = analyserBlocs(css);
-    const racines = blocs.filter((b) => b.selecteurs.includes(":root"));
+    const racines = blocs.filter(b => b.selecteurs.includes(":root"));
     expect(racines.length).toBe(1);
-    expect(racines[0]!.declarations.get("--rg-marine")).toBe(
-      "oklch(0.2 0.05 264)",
-    );
+    expect(racines[0]!.declarations.get("--rg-marine")).toBe("oklch(0.2 0.05 264)");
   });
 
   test("ne remonte pas les blocs @keyframes comme des jeux de tokens", () => {
     const blocs = analyserBlocs(css);
-    expect(
-      blocs.some((b) => b.selecteurs.some((s) => s === "from" || s === "to")),
-    ).toBe(false);
+    expect(blocs.some(b => b.selecteurs.some(s => s === "from" || s === "to"))).toBe(false);
   });
 
   test("descend dans @layer base pour trouver les thèmes", () => {
     const blocs = analyserBlocs(css);
     for (const nom of NOMS_THEMES) {
-      expect(blocs.some((b) => b.selecteurs.includes(`.${nom}`))).toBe(true);
+      expect(blocs.some(b => b.selecteurs.includes(`.${nom}`))).toBe(true);
     }
   });
 });
@@ -70,9 +66,7 @@ describe("résolution des var()", () => {
 
   test("cascade local puis :root", () => {
     expect(resoudreVar("var(--a)", new Map(), base)).toBe("#111111");
-    expect(resoudreVar("var(--a)", new Map([["--a", "#222222"]]), base)).toBe(
-      "#222222",
-    );
+    expect(resoudreVar("var(--a)", new Map([["--a", "#222222"]]), base)).toBe("#222222");
   });
 
   test("suit une chaîne d'indirections", () => {
@@ -92,9 +86,7 @@ describe("résolution des var()", () => {
   });
 
   test("utilise la valeur de repli", () => {
-    expect(resoudreVar("var(--inconnu, #abcdef)", new Map(), new Map())).toBe(
-      "#abcdef",
-    );
+    expect(resoudreVar("var(--inconnu, #abcdef)", new Map(), new Map())).toBe("#abcdef");
   });
 });
 
@@ -117,13 +109,10 @@ describe("tokens exposés", () => {
     const valeurs = [
       ...Object.values(MARQUE),
       ...Object.values(MARQUES_TIERCES),
-      ...NOMS_THEMES.flatMap((n) => [
-        ...Object.values(THEMES[n].md3),
-        ...Object.values(THEMES[n].shadcn),
-      ]),
+      ...NOMS_THEMES.flatMap(n => [...Object.values(THEMES[n].md3), ...Object.values(THEMES[n].shadcn)]),
     ];
-    expect(valeurs.filter((v) => v.includes("oklch"))).toEqual([]);
-    expect(valeurs.filter((v) => v.includes("var("))).toEqual([]);
+    expect(valeurs.filter(v => v.includes("oklch"))).toEqual([]);
+    expect(valeurs.filter(v => v.includes("var("))).toEqual([]);
   });
 
   test("les thèmes unifiés exposent les mêmes rôles MD3", () => {
@@ -141,11 +130,7 @@ describe("tokens exposés", () => {
     // thèmes Azalée de `--chart-*`.
     const blocs = analyserBlocs(css);
     const varsDuTheme = (nom: string) =>
-      [
-        ...(blocs
-          .find((b) => b.selecteurs.includes(`.${nom}`))
-          ?.declarations.keys() ?? []),
-      ].sort();
+      [...(blocs.find(b => b.selecteurs.includes(`.${nom}`))?.declarations.keys() ?? [])].sort();
 
     const reference = varsDuTheme(NOMS_THEMES[0]!);
     expect(reference.length).toBe(68);
@@ -189,9 +174,7 @@ describe("tokens exposés", () => {
   });
 
   test("le pont shadcn est résolu, pas laissé en référence", () => {
-    expect(THEMES["theme-azalee-dark"].shadcn.card).toBe(
-      THEMES["theme-azalee-dark"].md3.surfaceContainerLow,
-    );
+    expect(THEMES["theme-azalee-dark"].shadcn.card).toBe(THEMES["theme-azalee-dark"].md3.surfaceContainerLow);
   });
 
   test("l'échelle de formes reprend les 7 corners M3", () => {
@@ -216,7 +199,7 @@ describe("tokens exposés", () => {
 describe("non-dérive", () => {
   test("src/tokens.ts est bien la projection de styles.css", async () => {
     const committe = await Bun.file(CHEMIN_TOKENS).text();
-    expect(rendreModule(extraireTokens(css))).toBe(committe);
+    expect(await rendreModule(extraireTokens(css))).toBe(committe);
   });
 
   test("le module généré reste pur (aucun import)", async () => {

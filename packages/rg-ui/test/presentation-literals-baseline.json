@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "scope": "apps/rg/website/src/**/*.{tsx,css}",
+  "scope": "apps/rg-website/src/**/*.{tsx,css}",
   "counts": {
     "rawColorLiteral": 1020,
     "paletteColorUtility": 2171,

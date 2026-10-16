@@ -78,6 +78,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@rosegriffon/config": "workspace:*",
     "@types/bun": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
