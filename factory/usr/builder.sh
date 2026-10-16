@@ -60,7 +60,7 @@ log "images"
 mkfs.erofs -z"${EROFS_COMPRESSION}" -T0 --all-root "$out/usr.erofs" "$root/usr" >/dev/null
 mksquashfs "$root/usr" "$out/usr.squashfs" -comp "${SQUASHFS_COMPRESSION}" -all-root -noappend -quiet
 if [ "${VERITY}" = 1 ]; then
-  veritysetup format "$out/usr.erofs" "$out/usr.erofs.verity" | awk '/Root hash/{print $3}' >"$out/usr.erofs.roothash"
+  veritysetup format --root-hash-file="$out/usr.erofs.roothash" "$out/usr.erofs" "$out/usr.erofs.verity" >"$out/usr.erofs.verity.txt"
 fi
 log "rootfs tarball"
 tar --zstd --xattrs --acls --numeric-owner -C "$root" -cf "$out/rootfs.tar.zst" .
