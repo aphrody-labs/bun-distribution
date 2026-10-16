@@ -1,0 +1,9 @@
+"$schema" = "schemas/schema.json"
+
+[default]
+description = """
+Lets the frontend read the state of the Bun server and send it HTTP requests.
+Restarting it (`allow-bun-restart`) is not granted by default.
+"""
+
+permissions = ["allow-bun-info", "allow-bun-request"]

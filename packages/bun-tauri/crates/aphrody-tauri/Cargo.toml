@@ -1,0 +1,223 @@
+[package]
+name = "aphrody-tauri"
+version = "1.4.4"
+description = "Make tiny, secure apps for all desktop platforms with Tauri"
+exclude = ["/test", "/.scripts", "CHANGELOG.md", "/target"]
+links = "Tauri"
+authors = ["Tauri Programme within The Commons Conservancy"]
+homepage = "https://tauri.app/"
+repository = "https://github.com/aphrody-labs/bun"
+categories = ["gui", "web-programming"]
+license = "Apache-2.0 OR MIT"
+edition = "2024"
+rust-version = "1.95"
+
+[package.metadata.docs.rs]
+no-default-features = true
+features = [
+  "unstable",
+  "custom-protocol",
+  "tray-icon",
+  "devtools",
+  "image-png",
+  "protocol-asset",
+  "test",
+  "specta",
+  "dynamic-acl",
+  "isolation",
+  # the default target is Linux, where the GTK APIs are only available with a GTK version selected
+  "gtk4",
+]
+default-target = "x86_64-unknown-linux-gnu"
+targets = [
+  "x86_64-pc-windows-msvc",
+  "x86_64-unknown-linux-gnu",
+  "x86_64-apple-darwin",
+  "x86_64-linux-android",
+  "x86_64-apple-ios",
+]
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["reqwest"]
+build = ["tauri-build"]
+development = ["quickcheck_macros"]
+
+[lib]
+name = "tauri"
+
+[dependencies]
+serde_json = { workspace = true, features = ["raw_value"] }
+serde = { workspace = true, features = ["derive", "rc"] }
+tokio = { version = "1", features = [
+  "rt",
+  "rt-multi-thread",
+  "sync",
+  "fs",
+  "io-util",
+] }
+uuid = { workspace = true, optional = true, features = ["v4"] }
+url = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tauri-runtime = { version = "~1.4.4", path = "../aphrody-tauri-runtime", package = "aphrody-tauri-runtime" }
+tauri-macros = { version = "~1.4.4", path = "../aphrody-tauri-macros", package = "aphrody-tauri-macros" }
+tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["resources"] }
+getrandom = "0.3"
+serde_repr = "0.1"
+http = { workspace = true }
+dirs = { workspace = true }
+percent-encoding = "2"
+raw-window-handle = { version = "0.6", features = ["std"] }
+glob = { workspace = true }
+mime = "0.3"
+data-url = { version = "0.3", optional = true }
+serialize-to-javascript = "0.1.2"
+image = { version = "0.25", default-features = false, optional = true }
+http-range = { version = "0.1", optional = true }
+tracing = { workspace = true, optional = true }
+heck = "0.5"
+log = { workspace = true }
+dunce = { workspace = true }
+specta = { version = "^2.0.0-rc.25", optional = true, default-features = false, features = [
+  "function",
+  "derive",
+  "std",
+] }
+# WARNING: cookie::Cookie is re-exported so bumping this is a breaking change, documented to be done as a minor bump
+cookie = { workspace = true }
+
+# dev server proxy
+bytes = { workspace = true, features = ["serde"] }
+reqwest = { version = "0.13", default-features = false, features = [
+  "json",
+  "stream",
+] }
+rustls = { version = "0.23", default-features = false, features = [
+  "ring",
+], optional = true }
+
+# desktop
+[target.'cfg(any(target_os = "linux", target_os = "dragonfly", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "windows", target_os = "macos"))'.dependencies]
+muda = { version = "0.20", default-features = false, features = ["serde"] }
+tray-icon = { version = "0.25", default-features = false, features = [
+  "serde",
+], optional = true }
+
+# linux
+[target.'cfg(any(target_os = "linux", target_os = "dragonfly", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))'.dependencies]
+gtk4 = { package = "gtk4", version = "0.11.4", optional = true }
+
+# darwin
+[target.'cfg(target_vendor = "apple")'.dependencies]
+objc2 = "0.6"
+
+# macOS
+[target.'cfg(target_os = "macos")'.dependencies]
+embed_plist = "1.2"
+plist = "1"
+objc2-foundation = { version = "0.3.2", default-features = false, features = [
+  "std",
+  "NSData",
+  "NSEnumerator",
+  "NSThread",
+] }
+objc2-app-kit = { version = "0.3.2", default-features = false, features = [
+  "std",
+  "NSApplication",
+  "NSColor",
+  "NSResponder",
+  "NSView",
+  "NSWindow",
+  "NSImage",
+] }
+objc2-web-kit = { version = "0.3.2", default-features = false, features = [
+  "objc2-app-kit",
+  "WKWebView",
+  "WKWebViewConfiguration",
+  "WKUserContentController",
+] }
+window-vibrancy = "0.8.1"
+
+# windows
+[target."cfg(windows)".dependencies]
+webview2-com = { version = "0.39", optional = true }
+window-vibrancy = "0.8.1"
+windows = { version = "0.62", features = [
+  "Win32_Foundation",
+  "Win32_UI",
+  "Win32_UI_WindowsAndMessaging",
+  "Win32_System_LibraryLoader",
+  "Win32_Graphics_Gdi",
+] }
+
+# android
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21"
+
+# UIKit, i.e. iOS/tvOS/watchOS/visionOS
+[target.'cfg(all(target_vendor = "apple", not(target_os = "macos")))'.dependencies]
+libc = { workspace = true }
+swift-rs = { workspace = true }
+objc2-ui-kit = { version = "0.3.2", default-features = false, features = [
+  "UIApplication",
+  "UIResponder",
+  "UIView",
+] }
+
+[build-dependencies]
+glob = { workspace = true }
+heck = "0.5"
+tauri-build = { version = "1.4.4", path = "../aphrody-tauri-build", package = "aphrody-tauri-build", default-features = false }
+tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["build-2"] }
+
+[dev-dependencies]
+proptest = { workspace = true }
+quickcheck = "1.0.3"
+quickcheck_macros = "1.0.0"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+tauri = { path = ".", package = "aphrody-tauri", default-features = false, version = "1.4.4" }
+tokio = { workspace = true, features = ["full"] }
+cargo_toml = "1.0"
+http-range = "0.1.5"
+
+[features]
+default = ["compression", "common-controls-v6", "dynamic-acl"]
+unstable = []
+common-controls-v6 = [
+  "tray-icon?/muda-common-controls-v6",
+  "muda/common-controls-v6",
+]
+# the Linux tray backend is ksni (pure D-Bus StatusNotifierItem), which does not require a GTK version
+# to be selected; libappindicator (GTK3) is not offered.
+tray-icon = ["dep:tray-icon", "tray-icon?/ksni"]
+tracing = ["dep:tracing", "tauri-macros/tracing"]
+test = []
+compression = ["tauri-macros/compression", "tauri-utils/compression"]
+gtk4 = ["dep:gtk4", "muda/gtk4"]
+linux-libxdo = ["tray-icon?/muda-libxdo", "muda/libxdo"]
+isolation = ["tauri-utils/isolation", "tauri-macros/isolation", "uuid"]
+custom-protocol = ["tauri-macros/custom-protocol"]
+# TODO: Remove these flags in v3 and/or enable them by default behind a mobile flag https://github.com/tauri-apps/tauri/issues/12384
+native-tls = ["reqwest/native-tls"]
+native-tls-vendored = ["reqwest/native-tls-vendored"]
+rustls-tls = ["reqwest/rustls-no-provider", "dep:rustls"]
+# the runtime crate (e.g. `tauri-runtime-cef`) must also enable its `devtools` feature
+devtools = ["tauri-runtime/devtools"]
+process-relaunch-dangerous-allow-symlink-macos = [
+  "tauri-utils/process-relaunch-dangerous-allow-symlink-macos",
+]
+webview-data-url = ["data-url", "tauri-utils/html-manipulation-2"]
+protocol-asset = ["http-range"]
+config-json5 = ["tauri-macros/config-json5"]
+config-toml = ["tauri-macros/config-toml"]
+image-ico = ["image/ico"]
+image-png = ["image/png"]
+dynamic-acl = []
+specta = ["dep:specta"]
+
+[lints.clippy]
+collapsible_if = "allow"
+redundant_clone = "warn"
+assigning_clones = "warn"
+or_fun_call = "warn"

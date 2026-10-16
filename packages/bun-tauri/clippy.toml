@@ -1,0 +1,4 @@
+# Standalone Tauri does not link the Bun runtime crates required by the root configuration.
+disallowed-macros = [
+  { path = "std::dbg", reason = "remove debug output before commit" },
+]

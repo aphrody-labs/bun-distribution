@@ -1,0 +1,12 @@
+{
+  "name": "{% package_name %}",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    {% if v1 %}"@tauri-apps/cli": "^1"{% endif %}
+  }
+}

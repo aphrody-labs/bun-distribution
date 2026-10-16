@@ -1,0 +1,18 @@
+{
+  "upstream-api-generation": 3,
+  "upstream": {
+    "cli.js": "3.0.0-alpha.4",
+    "tauri": "3.0.0-alpha.4",
+    "tauri-build": "3.0.0-alpha.3",
+    "tauri-plugin": "3.0.0-alpha.3",
+    "tauri-runtime-cef": "3.0.0-alpha.5"
+  },
+  "cli.js": {
+    "version": "1.4.4",
+    "node": ">= 10.0.0"
+  },
+  "tauri": "1.4.4",
+  "tauri-build": "1.4.4",
+  "tauri-plugin": "1.4.4",
+  "tauri-runtime-cef": "1.4.4"
+}

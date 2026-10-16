@@ -1,0 +1,26 @@
+[package]
+name = "app"
+version = "0.1.0"
+description = "A Tauri App"
+authors = ["you"]
+license = ""
+repository = ""
+edition = "2024"
+rust-version = "1.95"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "app_lib"
+crate-type = ["rlib"]
+
+[build-dependencies]
+tauri-build = {{  tauri_build_dep  }}
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+tauri = {{  tauri_dep  }}
+tauri-runtime-cef = {{  tauri_runtime_cef_dep  }}
+tauri-plugin-log = {{  tauri_plugin_log_dep  }}

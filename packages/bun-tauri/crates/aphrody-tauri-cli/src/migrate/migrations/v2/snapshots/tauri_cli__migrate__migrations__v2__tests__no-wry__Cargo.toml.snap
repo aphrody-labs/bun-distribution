@@ -1,0 +1,15 @@
+---
+source: crates/aphrody-tauri-cli/src/migrate/migrations/v2/mod.rs
+assertion_line: 165
+expression: contents
+---
+[package]
+name = "app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tauri = { version = "1.4.4", default-features = false, features = ["test", "devtools"] , package = "aphrody-tauri" }
+
+[features]
+devtools = ["tauri/devtools"]

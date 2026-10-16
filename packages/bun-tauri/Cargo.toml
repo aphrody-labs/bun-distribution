@@ -1,0 +1,79 @@
+# Tauri fork of aphrody (aphrody-labs/aphrody@55652e3f56, crates/tauri + crates/ui) merged into one
+# separate Cargo workspace: the core crates keep their names, every plugin lives in tauri-plugin-aphrody.
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.97"
+repository = "https://github.com/aphrody-labs/bun"
+authors = ["aphrody-code"]
+
+[workspace.dependencies]
+tauri = { version = "=1.4.4", path = "crates/aphrody-tauri", package = "aphrody-tauri", default-features = false, features = ["compression"] }
+tauri-runtime = { version = "1.4.4", path = "crates/aphrody-tauri-runtime", package = "aphrody-tauri-runtime" }
+tauri-runtime-cef = { version = "=1.4.4", path = "crates/aphrody-tauri-runtime-cef", package = "aphrody-tauri-runtime-cef" }
+tauri-plugin = { version = "=1.4.4", path = "crates/aphrody-tauri-plugin", package = "aphrody-tauri-plugin" }
+tauri-utils = { version = "1.4.4", path = "crates/aphrody-tauri-utils", package = "aphrody-tauri-utils" }
+anyhow = "1.0.104"
+axum = { version = "0.8", default-features = false, features = ["json", "query", "tokio", "http1", "http2"] }
+bytes = "1.12.1"
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4.6.6", features = ["derive", "env", "color"] }
+clap_complete = "4"
+colored = "3"
+cookie = "=0.18.2"
+dirs = "7.0.0"
+dunce = "1.0.5"
+flate2 = "1.1.10"
+futures-util = "0.3"
+glob = "0.3"
+hex = "0.4"
+http = "1"
+ignore = "0.4"
+image = "0.25.10"
+libc = "0.2.189"
+log = "0.4.34"
+memchr = "2"
+notify = "8"
+notify-debouncer-full = "0.6"
+once_cell = "1"
+open = "5.4.3"
+pretty_assertions = "1"
+proc-macro2 = "1.0.107"
+proptest = "1"
+quote = "1.0.47"
+rand = "0.10.2"
+rayon = "1.12.0"
+regex = "1.11"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+schemars = { version = "1.2.2", features = ["derive", "chrono04", "indexmap2", "uuid1"] }
+semver = "1"
+serde = { version = "1.0.229", default-features = false, features = ["derive", "std"] }
+serde_json = "1.0.151"
+sha1 = "0.11.0"
+sha2 = "0.11.0"
+swift-rs = "1.0"
+sys-locale = "0.3.2"
+tar = "0.4.46"
+tempfile = "3.27.0"
+thiserror = "2.0.20"
+time = { version = "0.3", features = ["macros", "formatting", "parsing", "serde"] }
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util"] }
+toml = "1.1.5"
+toml_edit = "0.25.15"
+tracing = "0.1.44"
+url = { version = "2.5.8", features = ["serde"] }
+uuid = { version = "1.26.0", features = ["v4", "v7", "serde"] }
+walkdir = "2.5.0"
+which = "8"
+
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
+[profile.test]
+debug = "line-tables-only"

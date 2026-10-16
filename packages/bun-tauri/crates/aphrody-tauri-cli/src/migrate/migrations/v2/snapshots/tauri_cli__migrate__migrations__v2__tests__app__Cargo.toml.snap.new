@@ -1,0 +1,39 @@
+---
+source: crates/aphrody-tauri-cli/src/migrate/migrations/v2/mod.rs
+assertion_line: 165
+expression: contents
+---
+[package]
+name = "app"
+version = "0.1.0"
+description = "A Tauri App"
+edition = "2021"
+
+[lib]
+name = "app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "1.4.4", features = [] , package = "aphrody-tauri-build" }
+
+[dependencies]
+# the core crate
+tauri = { version = "1.4.4", features = ["tray-icon", "tracing"] , package = "aphrody-tauri" }
+tauri-runtime-cef = { package = "aphrody-tauri-runtime-cef", version = "1.4.4", features = ["devtools"] }
+tauri-plugin-opener = { package = "aphrody-tauri-plugin-opener", version = "1.4.4" }
+tauri-plugin-log = { version = "1.4.4", features = ["colored"] , package = "aphrody-tauri-plugin-log" }
+tauri-plugin-community = "0.3" # not an official plugin
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+log = "0.4"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-updater = { package = "aphrody-tauri-plugin-updater", version = "1.4.4" }
+tauri-plugin-window-state = { package = "aphrody-tauri-plugin-window-state", version = "1.4.4" }
+
+[dev-dependencies]
+tauri = { version = "1.4.4", features = ["test"] , package = "aphrody-tauri" }
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]
+debug-tools = ["tauri-runtime-cef/devtools", "log/std"]
