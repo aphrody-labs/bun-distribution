@@ -13,16 +13,7 @@ import { useModePageRestoration } from "./use-mode-page-restoration";
  * URL resolution and chapter persistence are supplied by the host.
  */
 
-import {
-  type ReactElement,
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { type ReactElement, type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
@@ -66,12 +57,7 @@ export type MangaReaderProps = {
   apiPageHref?: (page: number) => string | null;
   resolveAssetUrl?: (path: string) => string;
   resolveMirrorUrl?: (url: string) => string | null;
-  renderChapterLink?: (props: {
-    href: string;
-    children: ReactNode;
-    className: string;
-    ariaLabel: string;
-  }) => ReactNode;
+  renderChapterLink?: (props: { href: string; children: ReactNode; className: string; ariaLabel: string }) => ReactNode;
 };
 
 const LG_BREAKPOINT = 1024; // Tailwind `lg`
@@ -111,12 +97,9 @@ export function MangaReader({
   const [mode, setMode] = useState<ViewMode>("paged");
   const [dir, setDir] = useState<"rtl" | "ltr">(direction);
   const [spread, setSpread] = useState(false);
-  const [current, setCurrent] = useState(() =>
-    Math.max(0, Math.min(pages.length - 1, initialPage - 1)),
-  );
+  const [current, setCurrent] = useState(() => Math.max(0, Math.min(pages.length - 1, initialPage - 1)));
   const { isFullscreen, toggleFullscreen } = useFullscreen(containerRef);
-  const { swiperRef, handleSwiper, handleSlideChange } =
-    useSwiperSync(setCurrent);
+  const { swiperRef, handleSwiper, handleSlideChange } = useSwiperSync(setCurrent);
 
   const isLarge = useIsLargeScreen();
   // Double-page seulement effective sur grand écran (lisibilité mobile).
@@ -136,10 +119,7 @@ export function MangaReader({
   }, [current, mode]);
 
   // Résolution des URL absolues une seule fois (les chemins sont stables).
-  const urls = useMemo(
-    () => pages.map(resolveAssetUrl),
-    [pages, resolveAssetUrl],
-  );
+  const urls = useMemo(() => pages.map(resolveAssetUrl), [pages, resolveAssetUrl]);
   const total = urls.length;
   const baseId = useId();
 
@@ -147,23 +127,19 @@ export function MangaReader({
   useEffect(() => {
     if (urls.length === 0) return;
     // 1. Précharge la page courante, la précédente (retour arrière) et les 3 suivantes
-    const indices = [
-      current,
-      current - 1,
-      current + 1,
-      current + 2,
-      current + 3,
-    ];
+    const indices = [current, current - 1, current + 1, current + 2, current + 3];
     for (const idx of indices) {
       if (idx >= 0 && idx < urls.length) {
+        const url = urls[idx];
+        if (url === undefined) continue;
         const img = new Image();
-        img.src = urls[idx];
+        img.src = url;
       }
     }
 
     // 2. Précharge les 3 premières pages du chapitre suivant en arrière-plan
     if (nextPages && nextPages.length > 0) {
-      nextPages.slice(0, 3).forEach((page) => {
+      nextPages.slice(0, 3).forEach(page => {
         const img = new Image();
         img.src = resolveAssetUrl(page);
       });
@@ -171,7 +147,7 @@ export function MangaReader({
 
     // 3. Précharge les 3 dernières pages du chapitre précédent en arrière-plan (si l'utilisateur veut revenir en arrière)
     if (prevPages && prevPages.length > 0) {
-      prevPages.slice(-3).forEach((page) => {
+      prevPages.slice(-3).forEach(page => {
         const img = new Image();
         img.src = resolveAssetUrl(page);
       });
@@ -202,26 +178,13 @@ export function MangaReader({
     count: total,
     getScrollElement: () => scrollParentRef.current,
     // Estimation ~ hauteur viewport ; remplacée par la mesure réelle.
-    estimateSize: () =>
-      typeof window === "undefined" ? 900 : window.innerHeight,
+    estimateSize: () => (typeof window === "undefined" ? 900 : window.innerHeight),
     overscan: 3,
   });
 
   // Synchronise le compteur en mode vertical sur la page la plus visible.
-  const restoring = useModePageRestoration(
-    mode,
-    current,
-    scrollParentRef,
-    virtualizer,
-    containerRef,
-  );
-  useVerticalScrollSync(
-    mode,
-    scrollParentRef,
-    virtualizer,
-    setCurrent,
-    restoring,
-  );
+  const restoring = useModePageRestoration(mode, current, scrollParentRef, virtualizer, containerRef);
+  useVerticalScrollSync(mode, scrollParentRef, virtualizer, setCurrent, restoring);
 
   useEffect(() => {
     onPageChange?.(current + 1);
@@ -232,8 +195,7 @@ export function MangaReader({
 
   const goPrevPage = useCallback(() => {
     if (mode === "paged") swiperRef.current?.slidePrev();
-    else
-      virtualizer.scrollToIndex(Math.max(0, current - 1), { align: "start" });
+    else virtualizer.scrollToIndex(Math.max(0, current - 1), { align: "start" });
   }, [mode, current, swiperRef, virtualizer]);
 
   const goNextPage = useCallback(() => {
@@ -244,9 +206,7 @@ export function MangaReader({
       });
   }, [mode, current, total, swiperRef, virtualizer]);
 
-  const counter = total
-    ? `${Math.min(current + 1, total)} / ${total}`
-    : "0 / 0";
+  const counter = total ? `${Math.min(current + 1, total)} / ${total}` : "0 / 0";
 
   return (
     <div
@@ -286,9 +246,7 @@ export function MangaReader({
           {/* Toggle mode lecture */}
           <button
             type="button"
-            className={
-              mode === "paged" ? "m3-reader-btn-active" : "m3-reader-btn"
-            }
+            className={mode === "paged" ? "m3-reader-btn-active" : "m3-reader-btn"}
             onClick={() => setMode("paged")}
             aria-pressed={mode === "paged"}
             aria-label="Mode de lecture paginé"
@@ -298,9 +256,7 @@ export function MangaReader({
           </button>
           <button
             type="button"
-            className={
-              mode === "vertical" ? "m3-reader-btn-active" : "m3-reader-btn"
-            }
+            className={mode === "vertical" ? "m3-reader-btn-active" : "m3-reader-btn"}
             onClick={() => setMode("vertical")}
             aria-pressed={mode === "vertical"}
             aria-label="Mode de lecture vertical (webtoon)"
@@ -313,17 +269,11 @@ export function MangaReader({
           <button
             type="button"
             className={dir === "rtl" ? "m3-reader-btn-active" : "m3-reader-btn"}
-            onClick={() => setDir((d) => (d === "rtl" ? "ltr" : "rtl"))}
+            onClick={() => setDir(d => (d === "rtl" ? "ltr" : "rtl"))}
             aria-label={
-              dir === "rtl"
-                ? "Sens de lecture manga (droite vers gauche)"
-                : "Sens de lecture BD (gauche vers droite)"
+              dir === "rtl" ? "Sens de lecture manga (droite vers gauche)" : "Sens de lecture BD (gauche vers droite)"
             }
-            title={
-              dir === "rtl"
-                ? "Sens manga (droite→gauche)"
-                : "Sens BD (gauche→droite)"
-            }
+            title={dir === "rtl" ? "Sens manga (droite→gauche)" : "Sens BD (gauche→droite)"}
           >
             <MoveHorizontal size={13} aria-hidden />
             {dir === "rtl" ? "RTL" : "LTR"}
@@ -333,17 +283,13 @@ export function MangaReader({
           <button
             type="button"
             className={useSpread ? "m3-reader-btn-active" : "m3-reader-btn"}
-            onClick={() => setSpread((s) => !s)}
+            onClick={() => setSpread(s => !s)}
             disabled={mode !== "paged" || !isLarge}
             aria-pressed={useSpread}
             aria-label="Affichage double-page (grand écran)"
             title="Double-page (grand écran)"
           >
-            {useSpread ? (
-              <Columns2 size={13} aria-hidden />
-            ) : (
-              <Square size={13} aria-hidden />
-            )}
+            {useSpread ? <Columns2 size={13} aria-hidden /> : <Square size={13} aria-hidden />}
             Double
           </button>
 
@@ -352,16 +298,10 @@ export function MangaReader({
             type="button"
             className="m3-reader-btn"
             onClick={toggleFullscreen}
-            aria-label={
-              isFullscreen ? "Quitter le plein écran" : "Activer le plein écran"
-            }
+            aria-label={isFullscreen ? "Quitter le plein écran" : "Activer le plein écran"}
             title={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
           >
-            {isFullscreen ? (
-              <Minimize2 size={13} aria-hidden />
-            ) : (
-              <Maximize2 size={13} aria-hidden />
-            )}
+            {isFullscreen ? <Minimize2 size={13} aria-hidden /> : <Maximize2 size={13} aria-hidden />}
           </button>
 
           {/* Navigation chapitres */}
@@ -378,12 +318,7 @@ export function MangaReader({
                 ariaLabel: "Chapitre précédent",
               })
             ) : (
-              <a
-                href={prevHref}
-                className="m3-reader-btn"
-                aria-label="Chapitre précédent"
-                title="Chapitre précédent"
-              >
+              <a href={prevHref} className="m3-reader-btn" aria-label="Chapitre précédent" title="Chapitre précédent">
                 <ChevronLeft size={13} aria-hidden /> Préc.
               </a>
             )
@@ -405,12 +340,7 @@ export function MangaReader({
                 ariaLabel: "Chapitre suivant",
               })
             ) : (
-              <a
-                href={nextHref}
-                className="m3-reader-btn"
-                aria-label="Chapitre suivant"
-                title="Chapitre suivant"
-              >
+              <a href={nextHref} className="m3-reader-btn" aria-label="Chapitre suivant" title="Chapitre suivant">
                 Suiv. <ChevronRight size={13} aria-hidden />
               </a>
             )
@@ -447,11 +377,7 @@ export function MangaReader({
               onSlideChange={handleSlideChange}
             >
               {urls.map((url, i) => (
-                <SwiperSlide
-                  key={url}
-                  zoom
-                  className="flex items-center justify-center"
-                >
+                <SwiperSlide key={url} zoom className="flex items-center justify-center">
                   {/* `swiper-zoom-container` requis par le module Zoom (pan/pinch). */}
                   <div className="swiper-zoom-container flex h-full w-full max-w-full items-center justify-center">
                     <img
@@ -474,11 +400,7 @@ export function MangaReader({
               onClick={goPrevPage}
               className="absolute top-1/2 left-3 z-10 -translate-y-1/2 rounded-lg border-2 border-[var(--reader-outline)] bg-[var(--reader-surface)]/85 p-2.5 text-[var(--reader-accent)] shadow-[3px_3px_0px_#000] transition-all hover:bg-[var(--reader-accent)] hover:text-[var(--reader-on-accent)] hover:scale-105 active:translate-y-[calc(-50%+1px)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--reader-accent)]"
             >
-              {dir === "rtl" ? (
-                <ChevronRight size={22} aria-hidden />
-              ) : (
-                <ChevronLeft size={22} aria-hidden />
-              )}
+              {dir === "rtl" ? <ChevronRight size={22} aria-hidden /> : <ChevronLeft size={22} aria-hidden />}
             </button>
             <button
               type="button"
@@ -486,11 +408,7 @@ export function MangaReader({
               onClick={goNextPage}
               className="absolute top-1/2 right-3 z-10 -translate-y-1/2 rounded-lg border-2 border-[var(--reader-outline)] bg-[var(--reader-surface)]/85 p-2.5 text-[var(--reader-accent)] shadow-[3px_3px_0px_#000] transition-all hover:bg-[var(--reader-accent)] hover:text-[var(--reader-on-accent)] hover:scale-105 active:translate-y-[calc(-50%+1px)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--reader-accent)]"
             >
-              {dir === "rtl" ? (
-                <ChevronLeft size={22} aria-hidden />
-              ) : (
-                <ChevronRight size={22} aria-hidden />
-              )}
+              {dir === "rtl" ? <ChevronLeft size={22} aria-hidden /> : <ChevronRight size={22} aria-hidden />}
             </button>
           </>
         ) : (
@@ -510,7 +428,7 @@ export function MangaReader({
                 position: "relative",
               }}
             >
-              {virtualizer.getVirtualItems().map((vi) => (
+              {virtualizer.getVirtualItems().map(vi => (
                 <div
                   key={`${baseId}-${vi.key}`}
                   data-index={vi.index}
@@ -521,9 +439,7 @@ export function MangaReader({
                   <img
                     src={urls[vi.index]}
                     alt={`${title} — page ${vi.index + 1}`}
-                    loading={
-                      Math.abs(vi.index - current) <= 1 ? "eager" : "lazy"
-                    }
+                    loading={Math.abs(vi.index - current) <= 1 ? "eager" : "lazy"}
                     draggable={false}
                     className="h-auto w-full max-w-3xl object-contain border-y md:border-2 border-[var(--reader-outline)]/40 shadow-[0_4px_12px_rgba(0,0,0,0.8)]"
                     onError={handleImageError}
@@ -574,11 +490,9 @@ export function MangaReader({
       {mode === "paged" && total > SHOW_STRIP_MAX && (
         <form
           className="z-10 flex items-center justify-center gap-3 border-t-2 border-[var(--reader-outline)] bg-[var(--reader-surface)] px-4 py-3"
-          onSubmit={(e) => {
+          onSubmit={e => {
             e.preventDefault();
-            const field = e.currentTarget.elements.namedItem(
-              "goto",
-            ) as HTMLInputElement | null;
+            const field = e.currentTarget.elements.namedItem("goto") as HTMLInputElement | null;
             const val = Number(field?.value);
             if (!Number.isFinite(val)) return;
             const i = Math.min(Math.max(val - 1, 0), total - 1);
@@ -602,9 +516,7 @@ export function MangaReader({
             defaultValue={current + 1}
             className="w-20 rounded-md border-2 border-[var(--reader-outline)] bg-[var(--reader-surface)] px-2.5 py-1 text-center text-[18px] font-extrabold tabular-nums text-[var(--reader-accent)] shadow-[2px_2px_0px_#000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--reader-accent)]"
           />
-          <span className="text-[18px] font-bold tabular-nums text-[var(--reader-on-surface)]/70">
-            / {total}
-          </span>
+          <span className="text-[18px] font-bold tabular-nums text-[var(--reader-on-surface)]/70">/ {total}</span>
           <button type="submit" className="m3-reader-btn-active !py-1 !px-3.5">
             OK
           </button>

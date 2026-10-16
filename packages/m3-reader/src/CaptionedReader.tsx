@@ -16,27 +16,10 @@ import { useModePageRestoration } from "./use-mode-page-restoration";
 
 import type React from "react";
 import type { ReactNode } from "react";
-import {
-  type ReactElement,
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { type ReactElement, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useFocusTrap } from "./use-focus-trap";
-import {
-  BookOpen,
-  ChevronLeft,
-  ChevronRight,
-  Maximize2,
-  Minimize2,
-  ScrollText,
-  X,
-  ZoomIn,
-} from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight, Maximize2, Minimize2, ScrollText, X, ZoomIn } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Mousewheel, Virtual, Zoom } from "swiper/modules";
 
@@ -86,10 +69,7 @@ export type CaptionedReaderProps = {
   resolveAssetUrl?: (path: string) => string;
   imageSrc?: (url: string, width: number) => string;
   imageSrcSet?: (url: string, widths: number[]) => string | null;
-  loadTranscriptions?: (
-    pages: number[],
-    signal: AbortSignal,
-  ) => Promise<Record<string, string>>;
+  loadTranscriptions?: (pages: number[], signal: AbortSignal) => Promise<Record<string, string>>;
   renderTranscription?: (transcription: ReaderTranscription) => ReactNode;
   preloadCount?: number;
 };
@@ -108,27 +88,19 @@ type ResolvedPage = {
 function pageNumber(p: CaptionedReaderPage, fallback: number): number {
   const raw = p.number as unknown;
   if (typeof raw === "number" && Number.isFinite(raw)) return Math.trunc(raw);
-  if (
-    typeof raw === "string" &&
-    String(raw).trim() &&
-    Number.isFinite(Number(raw))
-  ) {
+  if (typeof raw === "string" && String(raw).trim() && Number.isFinite(Number(raw))) {
     return Math.trunc(Number(raw));
   }
   return fallback;
 }
 
-function resolvePages(
-  pages: CaptionedReaderPage[],
-  resolveAssetUrl: (path: string) => string,
-): ResolvedPage[] {
+function resolvePages(pages: CaptionedReaderPage[], resolveAssetUrl: (path: string) => string): ResolvedPage[] {
   const out: ResolvedPage[] = [];
   for (let i = 0; i < pages.length; i++) {
     const p = pages[i];
-    const img =
-      typeof p.image === "string" && p.image.trim() ? p.image.trim() : null;
-    const text =
-      typeof p.text === "string" && p.text.trim() ? p.text.trim() : null;
+    if (!p) continue;
+    const img = typeof p.image === "string" && p.image.trim() ? p.image.trim() : null;
+    const text = typeof p.text === "string" && p.text.trim() ? p.text.trim() : null;
     const aDuTexte = p.aDuTexte === true || text !== null;
     // Une planche sans image ET sans transcription est un emplacement vide
     // réservé côté studio : elle ne se montre pas au public.
@@ -182,16 +154,16 @@ function useTextesPlanches(
   }, [loadTranscriptions, items, current, charges]);
 
   useEffect(() => {
-    const aCharger = manquants.filter((n) => !demandes.current.has(n));
+    const aCharger = manquants.filter(n => !demandes.current.has(n));
     if (aCharger.length === 0) return;
     for (const n of aCharger) demandes.current.add(n);
     const stop = new AbortController();
     loadTranscriptions!(aCharger, stop.signal)
-      .then((textes) => ({ textes }))
+      .then(textes => ({ textes }))
       .then((d: { textes?: Record<string, string> }) => {
         const recus = Object.entries(d.textes ?? {});
         if (recus.length === 0) return undefined;
-        setCharges((prec) => {
+        setCharges(prec => {
           const suiv = new Map(prec);
           for (const [n, t] of recus) suiv.set(Number(n), t);
           return suiv;
@@ -226,25 +198,20 @@ export function CaptionedReader({
   const lightboxRef = useRef<HTMLDivElement>(null);
   const baseId = useId();
 
-  const items = useMemo(
-    () => resolvePages(pages, resolveAssetUrl),
-    [pages, resolveAssetUrl],
-  );
+  const items = useMemo(() => resolvePages(pages, resolveAssetUrl), [pages, resolveAssetUrl]);
   const total = items.length;
 
   const [mode, setMode] = useState<ViewMode>("vertical");
   const [current, setCurrent] = useState(0);
   const { isFullscreen, toggleFullscreen } = useFullscreen(containerRef);
-  const { swiperRef, handleSwiper, handleSlideChange } =
-    useSwiperSync(setCurrent);
+  const { swiperRef, handleSwiper, handleSlideChange } = useSwiperSync(setCurrent);
   /** Lightbox plein écran sur la planche courante (indépendant du mode). */
   const [lightbox, setLightbox] = useState(false);
 
   const textesCharges = useTextesPlanches(loadTranscriptions, items, current);
   /** Le texte d'une planche : celui de la fiche, sinon celui chargé après coup. */
   const texteDe = useCallback(
-    (p: ResolvedPage | undefined): string | null =>
-      p ? (p.text ?? textesCharges.get(p.number) ?? null) : null,
+    (p: ResolvedPage | undefined): string | null => (p ? (p.text ?? textesCharges.get(p.number) ?? null) : null),
     [textesCharges],
   );
   useFocusTrap(lightboxRef, lightbox, () => setLightbox(false));
@@ -283,10 +250,7 @@ export function CaptionedReader({
   const virtualizer = useVirtualizer({
     count: total,
     getScrollElement: () => scrollParentRef.current,
-    estimateSize: () =>
-      typeof window === "undefined"
-        ? 1100
-        : Math.round(window.innerHeight * 0.95),
+    estimateSize: () => (typeof window === "undefined" ? 1100 : Math.round(window.innerHeight * 0.95)),
     // Marge de préchargement réglée sur les capacités : 4 planches rendent le
     // défilement continu sur un scan de 1 à 2 Mo, mais les précharger sur un
     // mobile en 2G dépense des données pour des pages qu'on ne verra
@@ -307,20 +271,8 @@ export function CaptionedReader({
   );
   // oxlint-enable react-hooks/exhaustive-deps
 
-  const restoring = useModePageRestoration(
-    mode,
-    current,
-    scrollParentRef,
-    virtualizer,
-    containerRef,
-  );
-  useVerticalScrollSync(
-    mode,
-    scrollParentRef,
-    virtualizer,
-    setCurrent,
-    restoring,
-  );
+  const restoring = useModePageRestoration(mode, current, scrollParentRef, virtualizer, containerRef);
+  useVerticalScrollSync(mode, scrollParentRef, virtualizer, setCurrent, restoring);
 
   // Navigation clavier des planches.
   //
@@ -338,8 +290,7 @@ export function CaptionedReader({
     const onKey = (e: KeyboardEvent) => {
       const cible = e.target as HTMLElement | null;
       const tag = cible?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || cible?.isContentEditable)
-        return;
+      if (tag === "INPUT" || tag === "TEXTAREA" || cible?.isContentEditable) return;
       switch (e.key) {
         case "Escape":
           if (lightbox) setLightbox(false);
@@ -414,9 +365,7 @@ export function CaptionedReader({
 
   const currentItem = items[current];
   const currentNum = currentItem?.number ?? current + 1;
-  const counter = total
-    ? `n°${currentNum} · ${Math.min(current + 1, total)}/${total}`
-    : "0 / 0";
+  const counter = total ? `n°${currentNum} · ${Math.min(current + 1, total)}/${total}` : "0 / 0";
   const currentText = texteDe(currentItem);
   const currentImage = currentItem?.imageUrl ?? null;
 
@@ -448,13 +397,9 @@ export function CaptionedReader({
         ) : currentItem?.aDuTexte ? (
           // La planche PORTE une transcription : dire « aucune description »
           // pendant qu'elle arrive ferait croire à une lacune du corpus.
-          <p className="text-[18px] italic text-[var(--reader-on-surface)]/50">
-            Chargement de la transcription…
-          </p>
+          <p className="text-[18px] italic text-[var(--reader-on-surface)]/50">Chargement de la transcription…</p>
         ) : (
-          <p className="text-[18px] italic text-[var(--reader-on-surface)]/50">
-            Aucune description pour cette page.
-          </p>
+          <p className="text-[18px] italic text-[var(--reader-on-surface)]/50">Aucune description pour cette page.</p>
         )}
       </div>
     </div>
@@ -481,9 +426,7 @@ export function CaptionedReader({
         <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:ml-0 sm:gap-2">
           <button
             type="button"
-            className={
-              mode === "vertical" ? "m3-reader-btn-active" : "m3-reader-btn"
-            }
+            className={mode === "vertical" ? "m3-reader-btn-active" : "m3-reader-btn"}
             onClick={() => setMode("vertical")}
             aria-pressed={mode === "vertical"}
             aria-label="Mode vertical (planche + texte)"
@@ -494,9 +437,7 @@ export function CaptionedReader({
           </button>
           <button
             type="button"
-            className={
-              mode === "paged" ? "m3-reader-btn-active" : "m3-reader-btn"
-            }
+            className={mode === "paged" ? "m3-reader-btn-active" : "m3-reader-btn"}
             onClick={() => setMode("paged")}
             aria-pressed={mode === "paged"}
             aria-label="Mode paginé"
@@ -520,18 +461,10 @@ export function CaptionedReader({
               type="button"
               className="m3-reader-btn"
               onClick={toggleFullscreen}
-              aria-label={
-                isFullscreen
-                  ? "Quitter le plein écran"
-                  : "Activer le plein écran"
-              }
+              aria-label={isFullscreen ? "Quitter le plein écran" : "Activer le plein écran"}
               title={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
             >
-              {isFullscreen ? (
-                <Minimize2 size={14} aria-hidden />
-              ) : (
-                <Maximize2 size={14} aria-hidden />
-              )}
+              {isFullscreen ? <Minimize2 size={14} aria-hidden /> : <Maximize2 size={14} aria-hidden />}
             </button>
           )}
         </div>
@@ -576,15 +509,10 @@ export function CaptionedReader({
                         >
                           <img
                             src={imageSrc(item.imageUrl, 1080)}
-                            srcSet={
-                              imageSrcSet(item.imageUrl, [828, 1080, 1920]) ||
-                              undefined
-                            }
+                            srcSet={imageSrcSet(item.imageUrl, [828, 1080, 1920]) || undefined}
                             sizes="(min-width: 1024px) 900px, 100vw"
                             alt={`${title} — page ${item.number}`}
-                            loading={
-                              Math.abs(i - current) <= 1 ? "eager" : "lazy"
-                            }
+                            loading={Math.abs(i - current) <= 1 ? "eager" : "lazy"}
                             draggable={false}
                             className="max-h-full max-w-full object-contain transition-opacity group-hover:opacity-95"
                           />
@@ -658,7 +586,7 @@ export function CaptionedReader({
                 position: "relative",
               }}
             >
-              {virtualizer.getVirtualItems().map((vi) => {
+              {virtualizer.getVirtualItems().map(vi => {
                 const item = items[vi.index];
                 if (!item) return null;
                 return (
@@ -682,25 +610,16 @@ export function CaptionedReader({
                         >
                           <img
                             src={imageSrc(item.imageUrl, 1080)}
-                            srcSet={
-                              imageSrcSet(item.imageUrl, [828, 1080, 1920]) ||
-                              undefined
-                            }
+                            srcSet={imageSrcSet(item.imageUrl, [828, 1080, 1920]) || undefined}
                             sizes="(min-width: 768px) 768px, 100vw"
                             alt={`${title} — page ${item.number}`}
                             // Trois planches de part et d'autre chargées d'avance :
                             // avec une seule, tourner la page laissait un rectangle
                             // vide le temps du téléchargement d'un scan de 1 à 2 Mo.
-                            loading={
-                              Math.abs(vi.index - current) <= 3
-                                ? "eager"
-                                : "lazy"
-                            }
+                            loading={Math.abs(vi.index - current) <= 3 ? "eager" : "lazy"}
                             // `high` sur la planche courante : le navigateur la sert
                             // avant les voisines préchargées.
-                            fetchPriority={
-                              vi.index === current ? "high" : "auto"
-                            }
+                            fetchPriority={vi.index === current ? "high" : "auto"}
                             decoding="async"
                             draggable={false}
                             className="h-auto w-full rounded-sm bg-[var(--reader-surface)] object-contain shadow-[0_0_24px_rgba(0,0,0,0.45)] transition-[transform,box-shadow] duration-300 ease-out will-change-transform group-hover:scale-[1.015] group-hover:shadow-[0_0_60px_rgba(0,0,0,0.75)] group-focus-visible:scale-[1.015] motion-reduce:transform-none motion-reduce:transition-none"
@@ -780,17 +699,13 @@ export function CaptionedReader({
       {mode === "paged" && total > SHOW_STRIP_MAX && (
         <form
           className="z-10 flex items-center justify-center gap-3 border-t-2 border-[var(--reader-outline)] bg-[var(--reader-surface)] px-4 py-3"
-          onSubmit={(e) => {
+          onSubmit={e => {
             e.preventDefault();
-            const field = e.currentTarget.elements.namedItem(
-              "goto",
-            ) as HTMLInputElement | null;
+            const field = e.currentTarget.elements.namedItem("goto") as HTMLInputElement | null;
             const wanted = Number(field?.value);
             if (!Number.isFinite(wanted)) return;
             // Cherche d'abord par numéro éditorial, sinon par position 1-based.
-            const byNumber = items.findIndex(
-              (it) => it.number === Math.trunc(wanted),
-            );
+            const byNumber = items.findIndex(it => it.number === Math.trunc(wanted));
             if (byNumber >= 0) goTo(byNumber);
             else goTo(Math.trunc(wanted) - 1);
           }}
@@ -842,7 +757,7 @@ export function CaptionedReader({
             <button
               type="button"
               className="m3-reader-btn ml-auto"
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 setLightbox(false);
               }}
@@ -854,7 +769,7 @@ export function CaptionedReader({
           {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- simple arrêt de propagation : empêche la fermeture par clic sur le fond, sans action clavier propre */}
           <div
             className="relative flex min-h-0 flex-1 items-center justify-center p-2 sm:p-4"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
             onTouchStart={onTouchStart}
             onTouchEnd={onTouchEnd}
           >

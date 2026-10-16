@@ -1,11 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from "react";
-import {
-  CollectionReader,
-  MangaReader,
-  DatabookReader,
-  type ReaderCollectionEdition,
-} from "@aphrody/m3-reader";
+import { CollectionReader, MangaReader, CaptionedReader, type ReaderCollectionEdition } from "@aphrody/m3-reader";
 // oxlint-disable-next-line import/no-unassigned-import -- reader styles provide the portable reader layout and reduced-motion rules
 import "@aphrody/m3-reader/styles.css";
 import { Card, Page, Section } from "../components/ui.tsx";
@@ -50,7 +45,7 @@ export default function Reader({ adaptive }: PageProps) {
     >
       <Section title="Reader mode">
         <div className="flex gap-3">
-          {(["manga", "notes"] as const).map((value) => (
+          {(["manga", "notes"] as const).map(value => (
             <button
               key={value}
               type="button"
@@ -85,11 +80,7 @@ export default function Reader({ adaptive }: PageProps) {
                   onPageChange={setPage}
                 />
               ) : (
-                <DatabookReader
-                  key={chapter.id}
-                  pages={NOTES}
-                  title={chapter.label}
-                />
+                <CaptionedReader key={chapter.id} pages={NOTES} title={chapter.label} />
               )
             }
           />
