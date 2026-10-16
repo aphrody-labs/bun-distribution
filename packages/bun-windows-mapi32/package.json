@@ -10,6 +10,9 @@
     "index.d.ts"
   ],
   "dependencies": {
-    "@aphrody/bun-windows-win32": "1.4.4"
+    "@aphrody/bun-windows-win32": "workspace:*"
+  },
+  "engines": {
+    "bun": "=1.4.4"
   }
 }

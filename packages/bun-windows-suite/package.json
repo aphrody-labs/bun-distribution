@@ -16,7 +16,8 @@
   ],
   "scripts": {
     "test": "bun test ./test",
-    "check": "bun check --noEmit"
+    "check": "bun check --noEmit",
+    "typecheck": "bun check -p tsconfig.json --noEmit"
   },
   "peerDependencies": {
     "@aphrody/bun-dotnet": ">=1.4.4"
@@ -27,6 +28,6 @@
     }
   },
   "engines": {
-    "bun": ">=1.4.4"
+    "bun": "=1.4.4"
   }
 }

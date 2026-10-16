@@ -6,6 +6,14 @@ layout discovery checks both apps/ and packages/, with two regression tests and
 31 assertions, without weakening declaration errors. The pre-admission snapshot
 reports 382 physical gaps: 375 generated Windows packages and seven other owners.
 
+The 375 generated Windows members are now admitted: 556 declared members and
+557 root lock workspace entries, with 375 verified local workspace links and
+368 shared Win32 metadata edges using workspace dependencies. Offline frozen
+installation passes with lifecycle scripts disabled; root and Windows-suite
+native checks and ten contract tests pass. No SDK payload or license changed,
+and no DLL execution was performed. Seven physical owners remain unadmitted;
+do not hide their UI/type configuration or upstream monorepo boundaries.
+
 Nine first-party lint diagnostics are corrected. Full native lint still fails
 the warning-denying gate: 4,293 warnings, zero errors, 7,967 files. Storage path
 guards now distinguish the remote POSIX destination from local host state paths

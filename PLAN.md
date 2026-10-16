@@ -10,9 +10,13 @@
       startup, sparse arrays, host-script compatibility and Storage validation.
       Full native lint reports 4,293 warnings and zero errors across 7,967 files;
       the warning-denying product gate remains incomplete.
-- [ ] Complete physical Bun member admission. The pre-admission inventory has
-      382 gaps, including 375 generated Windows packages with complete entries,
-      unique identities and retained licenses. Source presence is not admission.
+- [x] Admit 375 generated Windows packages into the root workspace and lock,
+      retaining their payloads and licenses. All 375 resolve through local
+      workspace links; offline frozen installation, native root/suite checks
+      and ten contract tests pass. DLL execution was not qualified.
+- [ ] Complete the seven remaining physical Bun admissions. The current root
+      has 556 members; UI migrations and the two upstream monorepo source
+      owners require deliberate consumer and ownership qualification.
 - [ ] Qualify Storage private-directory permissions on an admitted host. The
       existing suite passes 19 tests on Windows; one POSIX-mode privacy check
       fails closed. No real Storage migration was performed.

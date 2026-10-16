@@ -3,5 +3,8 @@
   "version": "1.4.4",
   "description": "Re-exports bun:winrt (Windows Runtime projection) for the bun:windows WinRT families",
   "license": "MIT",
-  "main": "index.js"
+  "main": "index.js",
+  "engines": {
+    "bun": "=1.4.4"
+  }
 }
