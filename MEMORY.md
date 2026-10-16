@@ -54,12 +54,26 @@ The existing MSYS2-packages cym source is published at
 9e0da9cbaf3423eb669ec36ea029fbffa82c4948. It takes explicit installation,
 source and workspace roots; plan/doctor do not create links or sync sources.
 The root CLI owns msys2 plan/doctor/lock and local-config path resolution.
+The same factory DAG includes all 66 vendor owners, 43 unique Arch source
+dependencies and 45 immutable reference pins; its current plan has 312 nodes
+and 909 edges, with no duplicate identities or executed child commands.
 Installed metadata locks contain sorted package/source identities and hashes,
 with signature/archive/build qualification explicitly false. Native selected
 type, lint and format gates pass; source-only inspection and the real 100-package,
 29-source lock pass. Claude's review was invoked through native Aphrody A2A;
 the HTTP reply failed 401 and its read-only review was returned through the
-native invocation and .coord. Authentication repair is tracked separately.
+native invocation and .coord. The plugin's explicit token-file environment
+mapping subsequently repaired hub authentication: /peers returns 200, and
+native A2A accepted envelope env-9ee34ea2 for claude-windows from codex-windows.
+No provider session or credential value was copied into this repository.
+
+Canonical Aphrody MCP initialize, ping, tools/list (331 tools) and a real
+read-only bun_docs_list call pass. Codex 0.162.1 displays `unknown` when its
+mcpServerStatus/list response lacks runtime_status; the upstream app-server
+omits runtime status when the request has no threadId. This is a client status
+boundary, separate from MCP transport or A2A authentication. The configured
+plugin and its managed cache now explicitly forward the existing protected
+APHRODY_A2A_TOKEN_FILE path; secret contents stay in their original store.
 
 Cym 1.0.0-8 was built by its existing package owner and installed through native
 pacman. Qp/Qlp identity/payload checks, Q/Qkk (zero altered files), installed

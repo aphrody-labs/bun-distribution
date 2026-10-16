@@ -7,25 +7,10 @@ import {
   runtimeFromFacts,
 } from "../../packages/bun-workspace/src/index.ts";
 import { inspectMsys2Sources, type Msys2SourceOptions } from "../arch/msys2.ts";
-import {
-  desktopABIs,
-  desktopSourceCapabilities,
-  msys2DesktopConfig,
-  type Msys2DesktopABI,
-} from "./config.ts";
-import {
-  captureMsys2DesktopLock,
-  inspectMsys2DesktopLock,
-  type Msys2Inspection,
-} from "./lock.ts";
+import { desktopABIs, desktopSourceCapabilities, msys2DesktopConfig, type Msys2DesktopABI } from "./config.ts";
+import { captureMsys2DesktopLock, inspectMsys2DesktopLock, type Msys2Inspection } from "./lock.ts";
 
-export {
-  desktopABIs,
-  desktopSourceCapabilities,
-  msys2DesktopConfig,
-  captureMsys2DesktopLock,
-  inspectMsys2DesktopLock,
-};
+export { desktopABIs, desktopSourceCapabilities, msys2DesktopConfig, captureMsys2DesktopLock, inspectMsys2DesktopLock };
 export type { Msys2DesktopABI, Msys2Inspection };
 export type { Msys2DesktopPackageLock } from "./lock.ts";
 
@@ -45,43 +30,29 @@ interface DesktopDiagnostic {
 
 function inside(root: string, path: string) {
   const local = relative(resolve(root), resolve(path));
-  return (
-    local === "" ||
-    (!isAbsolute(local) && local !== ".." && !local.startsWith(`..${sep}`))
-  );
+  return local === "" || (!isAbsolute(local) && local !== ".." && !local.startsWith(`..${sep}`));
 }
 
 function legacyTransitions(inspection: Msys2Inspection) {
   const manifest = inspection.capabilities.cym.manifest;
-  const sources: unknown[] = Array.isArray(manifest.sources)
-    ? manifest.sources
-    : [];
-  return sources.flatMap((source) => {
-    if (
-      !isObject(source) ||
-      typeof source.name !== "string" ||
-      typeof source.path !== "string"
-    )
-      return [];
+  const sources: unknown[] = Array.isArray(manifest.sources) ? manifest.sources : [];
+  return sources.flatMap(source => {
+    if (!isObject(source) || typeof source.name !== "string" || typeof source.path !== "string") return [];
     const registered = inspection.registeredSources.find(
-      (item) => item.id === source.name || item.id === `cachyos-${source.name}`,
+      item => item.id === source.name || item.id === `cachyos-${source.name}`,
     );
-    const view = inspection.cachyos.find((item) => item.name === source.name);
-    const repository = inspection.repositories.find(
-      (repo) => repo.path === registered?.path || repo.path === view?.path,
-    );
+    const view = inspection.cachyos.find(item => item.name === source.name);
+    const repository = inspection.repositories.find(repo => repo.path === registered?.path || repo.path === view?.path);
     return [
       {
         name: source.name,
         declaredSourcePath: source.path,
         canonicalView: registered?.path ?? view?.path ?? null,
-        resolvedCheckout:
-          repository?.resolvedPath ?? view?.resolvedPath ?? null,
+        resolvedCheckout: repository?.resolvedPath ?? view?.resolvedPath ?? null,
         revision: repository?.head ?? null,
         role: repository?.role ?? null,
         clean: repository?.cleanTracked ?? null,
-        action:
-          "Use the registered vendor owner; do not copy sources or create another junction during planning",
+        action: "Use the registered vendor owner; do not copy sources or create another junction during planning",
         manifestRewriteApplied: manifest.schema === 2,
       },
     ];
@@ -93,19 +64,13 @@ export async function planMsys2Desktop(options: Msys2DesktopOptions = {}) {
   const root = resolve(options.root ?? repositoryRoot);
   const sourceRoot = resolve(
     root,
-    options.sourceRoot ??
-      Bun.env.APHRODY_MSYS2_SOURCE_ROOT ??
-      msys2DesktopConfig.sourceRoot,
+    options.sourceRoot ?? Bun.env.APHRODY_MSYS2_SOURCE_ROOT ?? msys2DesktopConfig.sourceRoot,
   );
   const abi = options.abi ?? msys2DesktopConfig.defaultABI;
   if (!(abi in desktopABIs)) throw new Error("Unknown MSYS2 Desktop ABI.");
-  const inspection =
-    options.inspection ??
-    (await inspectMsys2Sources({ ...options, sourceRoot }));
+  const inspection = options.inspection ?? (await inspectMsys2Sources({ ...options, sourceRoot }));
   if (resolve(inspection.sourceRoot).toLowerCase() !== sourceRoot.toLowerCase())
-    throw new Error(
-      "Inspection sourceRoot differs from selected Desktop sourceRoot.",
-    );
+    throw new Error("Inspection sourceRoot differs from selected Desktop sourceRoot.");
   const target = desktopABIs[abi];
   const config = await loadConfig(root);
   const expectedRuntime = target.productTarget
@@ -113,43 +78,25 @@ export async function planMsys2Desktop(options: Msys2DesktopOptions = {}) {
     : config.runtime;
   const runtime = runtimeFromFacts(expectedRuntime, currentRuntimeFacts());
   const vendorRoot = resolve(root, msys2DesktopConfig.sourceRoot);
-  const sourceCapabilities = desktopSourceCapabilities.map((capability) => {
-    const source = inspection.registeredSources.find(
-      (source) => source.id === capability.id,
-    );
-    const repo =
-      source &&
-      inspection.repositories.find((repo) => repo.path === source.path);
+  const sourceCapabilities = desktopSourceCapabilities.map(capability => {
+    const source = inspection.registeredSources.find(source => source.id === capability.id);
+    const repo = source && inspection.repositories.find(repo => repo.path === source.path);
     return {
       ...capability,
       path: source?.path ?? null,
       revision: repo?.head ?? null,
       available: Boolean(repo?.git && repo.head && !repo.error),
       dirty: repo?.cleanTracked === false,
-      pinMatches:
-        repo?.rootMatches?.some(
-          (match) => match.pinMatches && !match.roleConflict,
-        ) ?? false,
+      pinMatches: repo?.rootMatches?.some(match => match.pinMatches && !match.roleConflict) ?? false,
     };
   });
   const packages = inspection.pacman.packages;
   const requiredHostPackages = ["pacman", "msys2-runtime", "cachyos-msys2"];
-  const missingHostPackages = requiredHostPackages.filter(
-    (name) => !packages.some((pkg) => pkg.name === name),
-  );
-  const nativePackages = target.packagePrefix
-    ? packages.filter((pkg) => pkg.name.startsWith(target.packagePrefix))
-    : [];
-  const metadataLock =
-    inspection.pacman.packagesCode === 0
-      ? captureMsys2DesktopLock(inspection, abi)
-      : null;
-  const brokenViews = inspection.cachyos.filter(
-    (entry) => entry.type === "link" && !entry.resolvedPath,
-  );
-  const unmergedSources = inspection.repositories
-    .filter((repo) => repo.unmerged)
-    .map((repo) => repo.path);
+  const missingHostPackages = requiredHostPackages.filter(name => !packages.some(pkg => pkg.name === name));
+  const nativePackages = target.packagePrefix ? packages.filter(pkg => pkg.name.startsWith(target.packagePrefix)) : [];
+  const metadataLock = inspection.pacman.packagesCode === 0 ? captureMsys2DesktopLock(inspection, abi) : null;
+  const brokenViews = inspection.cachyos.filter(entry => entry.type === "link" && !entry.resolvedPath);
+  const unmergedSources = inspection.repositories.filter(repo => repo.unmerged).map(repo => repo.path);
   const legacy = legacyTransitions(inspection);
   return {
     schemaVersion: 1,
@@ -178,10 +125,8 @@ export async function planMsys2Desktop(options: Msys2DesktopOptions = {}) {
       implementation: inspection.capabilities.cym.implementation,
       transitions: legacy,
       commandsExecuted: [],
-      sourcePlanReadOnlyContract:
-        inspection.capabilities.cym.manifest.schema === 2,
-      installedBinarySourceParity:
-        inspection.capabilities.cym.installedBinarySourceParity,
+      sourcePlanReadOnlyContract: inspection.capabilities.cym.manifest.schema === 2,
+      installedBinarySourceParity: inspection.capabilities.cym.installedBinarySourceParity,
       reason:
         inspection.capabilities.cym.manifest.schema === 2
           ? "Schema 2 cym source delegates pure Desktop inspection to this owner; installed executable parity needs a separate receipt"
@@ -189,10 +134,10 @@ export async function planMsys2Desktop(options: Msys2DesktopOptions = {}) {
     },
     issues: {
       vendorRegistrationPending: !inside(vendorRoot, sourceRoot),
-      brokenViews: brokenViews.map((entry) => entry.path),
+      brokenViews: brokenViews.map(entry => entry.path),
       unmergedSources,
-      sourceDiagnostics: inspection.repositories.flatMap((repo) =>
-        (repo.diagnostics ?? []).map((detail) => ({ path: repo.path, detail })),
+      sourceDiagnostics: inspection.repositories.flatMap(repo =>
+        (repo.diagnostics ?? []).map(detail => ({ path: repo.path, detail })),
       ),
     },
     boundaries: {
@@ -226,15 +171,12 @@ export async function doctorMsys2Desktop(options: Msys2DesktopOptions = {}) {
     {
       id: "native-host",
       state: plan.host.nativeMsys2Detected ? "pass" : "blocked",
-      detail:
-        "MSYS2 runtime/package metadata must come from the explicitly selected native Windows installation",
+      detail: "MSYS2 runtime/package metadata must come from the explicitly selected native Windows installation",
     },
     {
       id: "host-packages",
       state: plan.installed.missingHostPackages.length ? "blocked" : "pass",
-      detail:
-        plan.installed.missingHostPackages.join(", ") ||
-        "Native pacman/runtime/cym package metadata present",
+      detail: plan.installed.missingHostPackages.join(", ") || "Native pacman/runtime/cym package metadata present",
     },
     {
       id: "vendor-owner",
@@ -245,46 +187,36 @@ export async function doctorMsys2Desktop(options: Msys2DesktopOptions = {}) {
     {
       id: "source-views",
       state: plan.issues.brokenViews.length ? "blocked" : "pass",
-      detail:
-        plan.issues.brokenViews.join(", ") ||
-        "No dangling Cachy source view observed",
+      detail: plan.issues.brokenViews.join(", ") || "No dangling Cachy source view observed",
     },
     {
       id: "source-conflicts",
       state: plan.issues.unmergedSources.length ? "blocked" : "pass",
-      detail:
-        plan.issues.unmergedSources.join(", ") ||
-        "No unmerged source index observed",
+      detail: plan.issues.unmergedSources.join(", ") || "No unmerged source index observed",
     },
     {
       id: "desktop-sources",
-      state: plan.sourceCapabilities.every((source) => source.available)
-        ? "pass"
-        : "blocked",
+      state: plan.sourceCapabilities.every(source => source.available) ? "pass" : "blocked",
       detail:
         plan.sourceCapabilities
-          .filter((source) => !source.available)
-          .map((source) => source.id)
+          .filter(source => !source.available)
+          .map(source => source.id)
           .join(", ") || "Canonical Desktop source owners available",
     },
     {
       id: "source-diagnostics",
       state: plan.issues.sourceDiagnostics.length ? "blocked" : "pass",
       detail:
-        plan.issues.sourceDiagnostics
-          .map((item) => `${item.path}: ${item.detail}`)
-          .join("; ") || "No Git object-store diagnostics observed",
+        plan.issues.sourceDiagnostics.map(item => `${item.path}: ${item.detail}`).join("; ") ||
+        "No Git object-store diagnostics observed",
     },
     {
       id: "bun-runtime-pin",
       state:
-        plan.runtime.recognizedFork &&
-        plan.runtime.versionMatches &&
-        plan.runtime.revisionMatches
+        plan.runtime.recognizedFork && plan.runtime.versionMatches && plan.runtime.revisionMatches
           ? "pass"
           : "input-required",
-      detail:
-        "Development runtime presence is separate from a release-pinned executable receipt",
+      detail: "Development runtime presence is separate from a release-pinned executable receipt",
     },
     {
       id: "target-toolchain",
@@ -296,9 +228,7 @@ export async function doctorMsys2Desktop(options: Msys2DesktopOptions = {}) {
     diagnostics.push({
       id: "metadata-lock",
       state:
-        plan.lockComparison.valid &&
-        !plan.lockComparison.packageDrift &&
-        !plan.lockComparison.sourceDrift
+        plan.lockComparison.valid && !plan.lockComparison.packageDrift && !plan.lockComparison.sourceDrift
           ? "pass"
           : "blocked",
       detail: plan.lockComparison.reason,
@@ -310,11 +240,8 @@ export async function doctorMsys2Desktop(options: Msys2DesktopOptions = {}) {
     sourceRoot: plan.sourceRoot,
     diagnostics,
     metadataReady: diagnostics
-      .filter(
-        (item) =>
-          item.id !== "target-toolchain" && item.id !== "bun-runtime-pin",
-      )
-      .every((item) => item.state === "pass"),
+      .filter(item => item.id !== "target-toolchain" && item.id !== "bun-runtime-pin")
+      .every(item => item.state === "pass"),
     installedPackageCount: plan.installed.packageCount,
     sourceCount: plan.inspection.repositories.length,
     packageLock: plan.installed.metadataLock,

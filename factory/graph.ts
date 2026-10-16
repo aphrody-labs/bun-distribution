@@ -88,6 +88,26 @@ interface SourceLock {
   repositories: { id: string; repository: string; revision: string; mount: string; parent?: string }[];
 }
 
+interface VendorSourceOwner {
+  path: string;
+  revision: string;
+  origin: string;
+  initialized: boolean;
+}
+
+interface VendorSourceRegistry {
+  rootGitOwners: VendorSourceOwner[];
+}
+
+interface ArchSourceReference {
+  id: string;
+  repository: string;
+  revision: string;
+  referenceRevision?: string;
+  checkoutRevision?: string;
+  mount: string;
+}
+
 interface NativeCatalog {
   targets: {
     id: string;
@@ -116,6 +136,7 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
   const native = await read<NativeCatalog>("factory/native-targets.json");
   const applications = await read<AppCatalog>("infra/apps.json");
   const product = await read<BunManifest>("package.json");
+  const vendorSources = await read<VendorSourceRegistry>("vendor/sources.json");
   const cargo = Bun.TOML.parse(await Bun.file(join(root, "Cargo.toml")).text()) as {
     workspace: { members: string[] };
   };
@@ -182,6 +203,69 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
       ],
     });
   }
+  if (!Array.isArray(vendorSources.rootGitOwners) || !Array.isArray(factoryArch.sources.sources))
+    throw new Error("Vendor Git owners and Arch source references are missing.");
+  const archReferences = (factoryArch.sources.sources as ArchSourceReference[]).map(source => ({
+    id: source.id,
+    repository: source.repository,
+    mount: source.mount,
+    revision: source.revision,
+    referenceRevision: source.referenceRevision ?? source.revision,
+    checkoutRevision: source.checkoutRevision,
+  }));
+  const vendorIds = new Map<string, string>();
+  for (const source of vendorSources.rootGitOwners) {
+    if (
+      !/^[A-Za-z0-9._-]+$/.test(source.path) ||
+      !/^[a-f0-9]{40}$/.test(source.revision) ||
+      typeof source.origin !== "string" ||
+      !source.origin ||
+      typeof source.initialized !== "boolean"
+    )
+      throw new Error("Invalid flat vendor Git owner.");
+    const path = `vendor/${source.path}`;
+    const key = path.toLowerCase();
+    if (vendorIds.has(key)) throw new Error(`Duplicate vendor source owner: ${path}`);
+    const id = `vendor:${source.path}`;
+    vendorIds.set(key, id);
+    add({
+      id,
+      kind: "source",
+      owner: source.origin,
+      catalog: "vendor/sources.json rootGitOwners",
+      path,
+      dependsOn: ["workspace:sources"],
+      state: source.initialized ? "source-only" : "blocked",
+      reasons: [
+        source.initialized
+          ? "Registry declares an initialized source checkout; Git state and artifact qualification are not inspected by this plan."
+          : "Lazy source owner is registered but uninitialized; no checkout, fetch or build is started by this plan.",
+      ],
+      metadata: {
+        checkoutRevision: source.revision,
+        initialized: source.initialized,
+        remotes: { origin: source.origin },
+        sourceOnly: true,
+        lazy: !source.initialized,
+        references: archReferences.filter(reference => reference.mount === path),
+      },
+      requiredReceipts: [
+        await receipt(
+          "factory/source-export.ts + existing Git owner",
+          "Exact checkout and reference revisions, complete Git/object/source closure, licenses and preserved worktree state",
+        ),
+      ],
+    });
+  }
+  const archSourceOwners = [
+    ...new Set(
+      archReferences.map(source => {
+        const id = vendorIds.get(source.mount.toLowerCase());
+        if (!id) throw new Error(`Arch source has no registered vendor owner: ${source.mount}`);
+        return id;
+      }),
+    ),
+  ];
   const sourceIds = new Set(sources.repositories.map(source => source.id));
   const runtime = add({
     id: "toolchain:bun",
@@ -473,7 +557,7 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
       catalog: "factory/profile.json + factory/arch/index.ts",
       dependsOn: [
         ...stage.dependsOn.map(archId),
-        ...(stage.id === "arch:sources" ? ["workspace:sources"] : []),
+        ...(stage.id === "arch:sources" ? ["workspace:sources", ...archSourceOwners] : []),
         ...(stage.id === "arch:payload" ? ["toolchain:bun"] : []),
       ],
       state: "blocked",
@@ -485,6 +569,7 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
         releaseProfile: options.profile,
         composition,
         input: "inputs.factoryArch",
+        ...(stage.id === "arch:sources" ? { sourceReferences: archReferences } : {}),
       },
       requiredReceipts: [
         await receipt(

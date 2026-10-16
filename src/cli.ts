@@ -3,16 +3,8 @@ import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { runProductCLI } from "../packages/bun-app-host/src/cli.ts";
 import { inspectSourceWorkspace } from "./source-workspace.ts";
-import {
-  compositions,
-  planArchDistribution,
-  type Composition,
-} from "../factory/arch/index.ts";
-import {
-  buildArchRootfs,
-  planArchFactory,
-  validateArchPackageLock,
-} from "../factory/arch/pacman.ts";
+import { compositions, planArchDistribution, type Composition } from "../factory/arch/index.ts";
+import { buildArchRootfs, planArchFactory, validateArchPackageLock } from "../factory/arch/pacman.ts";
 import { resolveArchLock } from "../factory/arch/resolve.ts";
 import { planFactoryGraph } from "../factory/graph.ts";
 import { inspectMsys2Sources } from "../factory/arch/msys2.ts";
@@ -93,40 +85,18 @@ try {
       process.exit(0);
     }
     if (positionals.length !== (positionals[0] === "msys2" ? 2 : 1))
-      throw new Error(
-        "Expected one factory command, or msys2 plan|doctor|lock",
-      );
-    if (values.profile !== "full" && values.profile !== "perf")
-      throw new Error("Unknown distribution profile");
+      throw new Error("Expected one factory command, or msys2 plan|doctor|lock");
+    if (values.profile !== "full" && values.profile !== "perf") throw new Error("Unknown distribution profile");
     const profile: Profile = values.profile;
-    if (
-      ![
-        "linux-x64",
-        "linux-arm64",
-        "windows-x64",
-        "macos-arm64",
-        "wasm",
-      ].includes(values.target!)
-    )
+    if (!["linux-x64", "linux-arm64", "windows-x64", "macos-arm64", "wasm"].includes(values.target!))
       throw new Error("Unknown target");
     const target = values.target as Target;
-    const required = (
-      name:
-        | "out"
-        | "runtime"
-        | "receipt"
-        | "material"
-        | "tag"
-        | "root"
-        | "lock"
-        | "snapshot",
-    ) => {
+    const required = (name: "out" | "runtime" | "receipt" | "material" | "tag" | "root" | "lock" | "snapshot") => {
       const value = values[name];
       if (!value) throw new Error(`Missing --${name}`);
       return value;
     };
-    if (!compositions.includes(values.composition as Composition))
-      throw new Error("Unknown composition");
+    if (!compositions.includes(values.composition as Composition)) throw new Error("Unknown composition");
     const composition = values.composition as Composition;
     let config: Config = {};
     if (values.config) {
@@ -135,37 +105,19 @@ try {
       for (const [id, path] of Object.entries(config.checkouts ?? {}))
         config.checkouts![id] = resolve(file, "..", path);
       if (config.msys2)
-        for (const key of [
-          "sourceRoot",
-          "installationRoot",
-          "pacmanPath",
-          "home",
-        ] as const)
-          if (config.msys2[key])
-            config.msys2[key] = resolve(file, "..", config.msys2[key]);
+        for (const key of ["sourceRoot", "installationRoot", "pacmanPath", "home"] as const)
+          if (config.msys2[key]) config.msys2[key] = resolve(file, "..", config.msys2[key]);
       if (config.sourceExport) {
-        if (config.sourceExport.cache)
-          config.sourceExport.cache = resolve(
-            file,
-            "..",
-            config.sourceExport.cache,
-          );
-        for (const [id, path] of Object.entries(
-          config.sourceExport.repositories ?? {},
-        ))
+        if (config.sourceExport.cache) config.sourceExport.cache = resolve(file, "..", config.sourceExport.cache);
+        for (const [id, path] of Object.entries(config.sourceExport.repositories ?? {}))
           config.sourceExport.repositories![id] = resolve(file, "..", path);
-        config.sourceExport.protectedRoots =
-          config.sourceExport.protectedRoots?.map((path) =>
-            resolve(file, "..", path),
-          );
+        config.sourceExport.protectedRoots = config.sourceExport.protectedRoots?.map(path => resolve(file, "..", path));
       }
     }
     let result: unknown;
     const msys2Options = {
       ...config.msys2,
-      ...(values["msys-source-root"]
-        ? { sourceRoot: values["msys-source-root"] }
-        : {}),
+      ...(values["msys-source-root"] ? { sourceRoot: values["msys-source-root"] } : {}),
       ...(values["msys-home"] ? { home: values["msys-home"] } : {}),
       ...(values["msys-root"] ? { installationRoot: values["msys-root"] } : {}),
       ...(values["msys-pacman"] ? { pacmanPath: values["msys-pacman"] } : {}),
@@ -175,9 +127,7 @@ try {
         const options = {
           ...msys2Options,
           abi: values.abi as Msys2DesktopABI | undefined,
-          ...(values.lock
-            ? { packageLock: await Bun.file(resolve(values.lock)).json() }
-            : {}),
+          ...(values.lock ? { packageLock: await Bun.file(resolve(values.lock)).json() } : {}),
         };
         if (positionals[1] === "plan") result = await planMsys2Desktop(options);
         else if (positionals[1] === "doctor") {
@@ -188,11 +138,7 @@ try {
           const plan = await planMsys2Desktop(options);
           result = captureMsys2DesktopLock(plan.inspection, plan.abi);
         } else throw new Error("Unknown MSYS2 action");
-        if (values.out)
-          await Bun.write(
-            resolve(values.out),
-            `${JSON.stringify(result, null, 2)}\n`,
-          );
+        if (values.out) await Bun.write(resolve(values.out), `${JSON.stringify(result, null, 2)}\n`);
         break;
       }
       case "graph":
@@ -209,36 +155,25 @@ try {
           result = await inspectMsys2Sources(msys2Options);
           break;
         }
-        if (!["docker", "native"].includes(values.executor!))
-          throw new Error("Unknown factory executor");
+        if (!["docker", "native"].includes(values.executor!)) throw new Error("Unknown factory executor");
         const distribution = await planArchDistribution({
           target,
           composition,
           snapshot: values.snapshot,
         });
         if (values.action === "resolve") {
-          if (target !== "linux-x64")
-            throw new Error(
-              "Arch resolution currently supports Linux x86_64 only",
-            );
+          if (target !== "linux-x64") throw new Error("Arch resolution currently supports Linux x86_64 only");
           result = await resolveArchLock({
             root: required("root"),
             snapshot: required("snapshot"),
             composition,
             packages: distribution.requestedPackages,
           });
-        } else if (
-          values.action === "rootfs" ||
-          (values.action === "plan" && values.lock)
-        ) {
-          const lock = validateArchPackageLock(
-            await Bun.file(resolve(required("lock"))).json(),
-          );
+        } else if (values.action === "rootfs" || (values.action === "plan" && values.lock)) {
+          const lock = validateArchPackageLock(await Bun.file(resolve(required("lock"))).json());
           if (lock.composition !== composition || target !== lock.target)
             throw new Error("Lock target/composition mismatch");
-          const factoryProfile = await Bun.file(
-            resolve(packageRoot, "factory/profile.json"),
-          ).json();
+          const factoryProfile = await Bun.file(resolve(packageRoot, "factory/profile.json")).json();
           const options = {
             root: required("root"),
             lock,
@@ -266,10 +201,7 @@ try {
         result = await assembleSources(resolve(required("out")), config);
         break;
       case "stage":
-        if (target === "wasm")
-          throw new Error(
-            "Use the wasm command for the portable library target",
-          );
+        if (target === "wasm") throw new Error("Use the wasm command for the portable library target");
         await stageRuntime(
           resolve(required("out")),
           resolve(required("runtime")),
@@ -280,12 +212,7 @@ try {
         result = { staged: true, profile, target };
         break;
       case "rootfs-stage":
-        result = await stageArchRootfs(
-          resolve(required("out")),
-          resolve(required("receipt")),
-          target,
-          composition,
-        );
+        result = await stageArchRootfs(resolve(required("out")), resolve(required("receipt")), target, composition);
         break;
       case "wasm":
         result = await buildWasm(resolve(required("out")), config);
@@ -301,9 +228,7 @@ try {
         );
         break;
       default:
-        throw new Error(
-          `Unknown command ${positionals[0]}; run ${packageRoot}/src/cli.ts --help`,
-        );
+        throw new Error(`Unknown command ${positionals[0]}; run ${packageRoot}/src/cli.ts --help`);
     }
     console.log(JSON.stringify(result, null, 2));
   }

@@ -23,6 +23,17 @@ the user's Home. Preserve dirty/unmerged sources, Git alternates and notices;
 relocation requires Git identity, index and resolved-path read-back. Do not
 import provider state, credentials, raw sessions, cookies or databases.
 
+The completed source move retains 29 physical owners and 94 contained
+dependencies. Root Git registers 66 unique vendor owners, including 37 lazy
+Arch sources; six shared sources replace duplicate mount registrations.
+All 45 Arch reference pins remain distinct from selected checkout revisions.
+The root factory DAG represents all 66 owners and 43 unique Arch source edges;
+it keeps the 45 reference pins as metadata rather than duplicating physical
+source nodes. This is a read-only dependency plan, not an executable build.
+Twelve moved repositories still use the external Bun Engine Git administration
+store and retain active consumer junctions. Preserve that store until its owner
+can migrate it independently; a root gitlink does not move Git administration.
+
 The adapter takes explicit options and the existing inspector's
 `APHRODY_MSYS2_SOURCE_ROOT`, `APHRODY_MSYS2_ROOT` and `APHRODY_MSYS2_HOME`
 configuration. No machine-specific installation or Home path belongs in the
@@ -100,7 +111,10 @@ evidence even when the target remains unqualified.
 
 `vendor/msys2-packages/cachyos-msys2/cym.ts` remains the CLI implementation;
 its PKGBUILD compiles TypeScript with Bun. The installed `cym.exe` is a separate
-artifact and must remain unchanged until its replacement passes qualification.
+artifact. Package release 8 passed its archive identity/payload checks and was
+installed through native pacman. Installed help/plan and package integrity
+read-back pass; the inventory remains 100 and the other 99 packages and existing
+configuration remain unchanged. This qualifies the CLI cutover, not Desktop.
 Do not introduce another runner, process manager, Cargo wrapper or private
 desktop workspace.
 
@@ -114,7 +128,12 @@ registry, and delegates Desktop inspection and bounded processes to root APIs.
 Its `--help` works without selecting an installation or workspace. The inherited
 `pipeline plan`/`validate` called `linkSources()` before inspection; that source
 mutation has been removed. `link` now validates the flat source bindings without
-creating duplicate junctions. This does not qualify the older installed binary.
+creating duplicate junctions. The installed release now uses this contract.
+
+Eight valid old CachyOS junctions remain under the installed source-view root:
+automatic approval review rejected their removal (`blocked by policy`). The
+inspector reports those views separately from canonical vendor repositories,
+so they cannot create duplicate or external paths in the metadata lock.
 
 Explicit synchronization, packaging and publishing retain their existing
 commands and permission boundaries. Synchronization fetches registered,
