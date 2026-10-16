@@ -88,7 +88,7 @@
     "test": "bun ../../scripts/m3/fonts-sync.ts --quiet && bun test"
   },
   "dependencies": {
-    "@aphrody/bun": "^3.3.0",
+    "@aphrody/bun": "workspace:*",
     "@aphrody/m3-fonts": "workspace:*",
     "@aphrody/m3-motion": "workspace:*",
     "@aphrody/m3-react": "workspace:*",

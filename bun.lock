@@ -3711,7 +3711,7 @@
         "m3": "./bin/m3.ts",
       },
       "dependencies": {
-        "@aphrody/bun": "^3.3.0",
+        "@aphrody/bun": "workspace:*",
         "@aphrody/m3-fonts": "workspace:*",
         "@aphrody/m3-motion": "workspace:*",
         "@aphrody/m3-react": "workspace:*",

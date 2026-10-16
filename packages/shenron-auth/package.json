@@ -19,7 +19,8 @@
     "./agent-keys": "./src/agent-keys.ts",
     "./next": "./src/next.ts",
     "./hono": "./src/hono.ts",
-    "./client": "./src/client.ts"
+    "./client": "./src/client.ts",
+    "./rate-limit": "./src/rate-limit.ts"
   },
   "scripts": {
     "typecheck": "bun check -p tsconfig.json --noEmit",
@@ -81,7 +82,8 @@
       "./agent-keys": "server",
       "./next": "next",
       "./hono": "hono",
-      "./client": "react"
+      "./client": "react",
+      "./rate-limit": "bun"
     }
   }
 }

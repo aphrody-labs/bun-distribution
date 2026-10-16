@@ -70,6 +70,7 @@ const EXPECTED: Record<string, string> = {
   "./next": "next",
   "./hono": "hono",
   "./client": "react",
+  "./rate-limit": "bun",
 };
 
 const sources = () =>

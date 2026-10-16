@@ -1,3 +1,23 @@
+## Consolidated source delivery — 2026-10-16
+
+Current product doctrine integrates AI, Infra and Workspace in Bun OS without
+an exclusion for Shenron. Historical boundaries remain evidence, not current
+product policy. The existing pure redirect guard now belongs to
+`@rosegriffon/auth/redirect`; five consumers retain the same behavior and the
+website passes native checking on 1,567 files. Shared Auth also owns its
+historical rate-limit implementation, retaining provenance and unresolved site
+license coverage without claiming actual Redis, DB or session qualification.
+
+M3 selects the canonical binding workspace. The WASM factory uses the root
+serialized Cargo owner and App UI diagnoses missing generated glue before UI
+imports. Scoped contracts pass 26 tests/71 assertions. Real native FFI and
+WebOS artifacts remain absent; injected ports do not qualify them. Existing
+website lint warnings and the ongoing serialized runtime build remain visible.
+The M3 manifest/lock workspace edge is aligned without other lock drift, but
+native lock regeneration and frozen replay fail on runtime-sdk and OXC types
+catalog resolution. Its old nested installed binding remains untouched and
+still shadows the root owner; installation is not qualified.
+
 ## Current integration checkpoint — 2026-10-16
 
 The root now declares 562 members and both inventories cover 547 physical

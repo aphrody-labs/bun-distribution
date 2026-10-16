@@ -1,10 +1,12 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Parcours Workspace Aphrody
 
-Le [plan racine](../../PLAN.md) définit l’architecture active ; les
-[règles du dépôt](../../AGENTS.md) définissent l’exécution. Yolo produit
-le runtime et le SDK ; Aphrody conserve les workflows et contrats produit.
-Workspace/Infra reste le propriétaire de l’orchestration et de la fabrique.
+The [root plan](../../../../PLAN.md) and [repository rules](../../../../AGENTS.md)
+define one Bun OS product, including runtime, AI, UI, Infra, Workspace and the
+imported application domains. Capability owners are implementation boundaries,
+not separate products or exclusions from integration. The root owns shared
+orchestration and the factory; source presence does not prove completed
+migration, activation or host-specific deployment qualification.
 
 | Besoin | Référence canonique | Portée |
 | --- | --- | --- |

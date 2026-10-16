@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-// Lazy bridge to `@aphrody/bun`. Importing that package opens the `bun_rs` native library, so it
-// is only loaded when a sheet is generated or a `.scss` file is compiled: a dev server or build
-// that uses neither never needs the Rust library.
+// Lazy bridge to the canonical @aphrody/bun binding owner. Its m3Css function delegates to
+// bun_rs_m3_css in aphrody-ffi; Rust's aphrody-m3-tokens owns every dynamic sheet.
+// No baseline stylesheet or TypeScript palette can replace that native request contract.
 
-/** The sheets `crates/ui/m3-tokens` exports through `m3Css`. */
+/** The sheets `crates/aphrody-m3-tokens` exports through `m3Css`. */
 export type M3Sheet = "tokens" | "tailwind" | "spaceui" | "scheme";
 
 /** Arguments of `m3Css` in `@aphrody/bun` (the Rust token exporter behind FFI). */
@@ -21,11 +21,7 @@ export type M3CssFn = (config: M3CssConfig) => string;
 /** The subset of `@aphrody/bun` this package uses. `m3Css` is declared optional: older builds lack it. */
 interface AphrodyBunModule {
   m3Css?: M3CssFn;
-  sassRustPlugin?: (options?: {
-    loadPaths?: string[];
-    style?: "expanded" | "compressed";
-    quiet?: boolean;
-  }) => {
+  sassRustPlugin?: (options?: { loadPaths?: string[]; style?: "expanded" | "compressed"; quiet?: boolean }) => {
     name: string;
     setup(build: unknown): void;
   };
@@ -47,14 +43,14 @@ export async function defaultM3Css(): Promise<M3CssFn> {
   const mod = await loadAphrodyBun();
   if (typeof mod.m3Css !== "function") {
     throw new Error(
-      "@aphrody/m3: this build of @aphrody/bun does not export m3Css (rebuild crates/ui/bun)",
+      "@aphrody/m3: the canonical @aphrody/bun owner must expose m3Css backed by a qualified aphrody-ffi artifact (crates/aphrody-ffi, bun_rs_m3_css). No static theme fallback is supported.",
     );
   }
   return mod.m3Css;
 }
 
 /**
- * Scheme variant in the spelling `crates/ui/m3-tokens` expects (`tonal-spot`), from either
+ * Scheme variant in the spelling `crates/aphrody-m3-tokens` expects (`tonal-spot`), from either
  * the kebab-case name or the camelCase `SchemeVariant` of `@aphrody/m3-theme/react` (`tonalSpot`).
  */
 export function normalizeVariant(variant: string): string {
@@ -68,8 +64,7 @@ export function cssRequest(
 ): M3CssConfig {
   const config: M3CssConfig = { sheet };
   if (theme.seed !== undefined) config.seed = theme.seed;
-  if (theme.variant !== undefined)
-    config.variant = normalizeVariant(theme.variant);
+  if (theme.variant !== undefined) config.variant = normalizeVariant(theme.variant);
   if (theme.contrast !== undefined) config.contrast = theme.contrast;
   if (theme.dark !== undefined) config.dark = theme.dark;
   return config;

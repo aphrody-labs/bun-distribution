@@ -123,9 +123,9 @@ some individual file errors; it is not a substitute for N2B's strict traversal.
 | Linting | Native Oxc default source rule set and semantic analysis | No project traversal/config/third-party plugin API or type-aware project service exposed; no complete oxlint CLI parity claim |
 | Minification | Native Oxc minifier and code generator | Default options; no project bundling contract |
 | Transpile, bundle, test and dependencies | Existing Bun APIs and owner workflows | Oxc does not replace `Bun.build`, `Bun.Transpiler`, Bun tests or package management |
-| TypeScript type checking | Installed global TypeScript compiler | Parser success does not prove TypeScript type correctness |
-| Repository inventory and watch | Feature-gated Yolo mapper/polyglot | Aphrody retains its CLI, kernel/git orchestration and product policy |
-| UI, media and product integration | Aphrody canonical product crates/packages | `crates/ui/bun` contains product UI/render resources; its name does not make it a second Bun engine |
+| TypeScript type checking | Native `bun check` owner | No external compiler backend; parser success does not prove TypeScript type correctness |
+| Repository inventory and watch | Feature-gated mapper/polyglot capability | Bun OS owns the unified CLI, Git orchestration and product policy; capability boundaries are not separate products |
+| UI, media and product integration | Canonical Bun OS crates/packages | Shared implementation owners do not imply completed source migration or runtime qualification |
 | Python, desktop, browser and compiler engines | Existing uv/PyO3, Tauri, Obscura and Bun/Next owners | This lot does not deliver their future builtin absorption or shared WebView/allocator integration |
 
 The canonical report schema is

@@ -1,5 +1,27 @@
 # Integration plan
 
+## Consolidated source delivery — 2026-10-16
+
+- Current ownership documentation no longer reserves AI to a separate Aphrody
+  product or excludes Shenron from integration. Infra and Workspace are Bun OS
+  capabilities; historical receipts do not establish completed migrations.
+- Move the existing pure return-URL guard into `@rosegriffon/auth/redirect`
+  and migrate its five consumers without changing redirect semantics.
+  Website native checking passes on 1,567 files.
+- Restore the historical auth rate-limit implementation under its canonical
+  shared owner. Preserve source provenance without inferring historical site
+  license coverage or claiming a live Redis/session integration.
+- Select the canonical M3 binding workspace and correct WASM factory root,
+  serialized Cargo routing and App UI prerequisite diagnostics. The scoped
+  contracts pass 26 tests/71 assertions; injected native/Redis ports are not
+  native artifact or service qualification. Existing website lint warnings
+  remain. The active native runtime compilation is preserved.
+- The M3 manifest and lock workspace edge agree, with no other lock changes.
+  Native regeneration and frozen replay currently fail resolving catalog
+  references for `@aphrody/runtime-sdk` and `@oxc-project/types`. M3 still
+  resolves its old generated nested binding installation; it was not removed.
+  This batch is source delivery, not a qualified dependency installation.
+
 ## Current integration checkpoint — 2026-10-16
 
 - Root membership is now 562, with 547 physical inventory entries. The genuine

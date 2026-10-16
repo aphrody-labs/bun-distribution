@@ -1,3 +1,4 @@
+// Source owner moved from apps/rg-website/src/lib/achillea/auth-session.ts.
 /**
  * Garde d'URL de retour après authentification Achilléa.
  *
@@ -25,7 +26,7 @@ const LONGUEUR_MAX = 2048;
  * supplémentaire ; un espace la tronque. Les deux sont refusés au même endroit.
  */
 const caracteresInterdits = (value: string) =>
-  Array.from(value).some(char => {
+  Array.from(value).some((char) => {
     const code = char.charCodeAt(0);
     return code <= 0x20 || code === 0x7f;
   });
@@ -54,7 +55,10 @@ export function safeReturnUrl(valeur: unknown, repli = "/achillea"): string {
   // Dernier filet : sur une base bidon, une URL résolue qui change d'origine
   // trahit un absolu déguisé.
   try {
-    return new URL(valeur, "https://achillea.invalid").origin === "https://achillea.invalid" ? valeur : repli;
+    return new URL(valeur, "https://achillea.invalid").origin ===
+      "https://achillea.invalid"
+      ? valeur
+      : repli;
   } catch {
     return repli;
   }

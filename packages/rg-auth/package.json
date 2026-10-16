@@ -10,7 +10,8 @@
     ".": "./src/index.ts",
     "./server": "./src/server.ts",
     "./elysia": "./src/elysia.ts",
-    "./achillea-session": "./src/achillea-session.ts"
+    "./achillea-session": "./src/achillea-session.ts",
+    "./redirect": "./src/redirect.ts"
   },
   "publishConfig": {
     "access": "public",

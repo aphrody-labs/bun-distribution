@@ -5104,7 +5104,7 @@
     "kind": "package",
     "workspace": true,
     "private": false,
-    "exports": 4,
+    "exports": 5,
     "bin": []
   },
   {
@@ -5350,7 +5350,7 @@
     "kind": "package",
     "workspace": true,
     "private": true,
-    "exports": 15,
+    "exports": 16,
     "bin": []
   },
   {

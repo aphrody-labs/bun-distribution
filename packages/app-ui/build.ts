@@ -7,8 +7,7 @@ import { undeclaredDependencies } from "./undeclared-deps";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
-import { ProductSearchHome } from "./src/routes/product/ProductSearchHome";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
 import { publicFontUrl, renderPublicStylesheet } from "@aphrody/m3-fonts";
@@ -53,6 +52,18 @@ if (import.meta.main) {
   const docsFile = canonicalBunInputs(bunCheckout, bunRevision).docsFile;
   if (Bun.env.APP_UI_DOCS_CATALOG && resolve(Bun.env.APP_UI_DOCS_CATALOG) !== resolve(docsFile))
     throw new Error("APP_UI_DOCS_CATALOG must match the canonical Bun transfer receipt");
+  // Check both outputs before bundling imports the generated wasm-bindgen glue.
+  // This build does not start a competing native compiler implicitly.
+  const webosPackage = dirname(dirname(fileURLToPath(import.meta.resolve("@aphrody/webos-wasm"))));
+  const webosWasm = join(webosPackage, "wasm", WEBOS_WASM_NAME);
+  const webosGlue = join(dirname(webosWasm), "aphrody_webos_wasm.js");
+  for (const artifact of [webosGlue, webosWasm]) {
+    if (!(await Bun.file(artifact).exists()))
+      throw new Error(
+        `Missing WebOS build artifact ${artifact}; run bun run --cwd "${dirname(dirname(webosWasm))}" build:wasm through the serialized native build owner before building App UI`,
+      );
+  }
+  const { ProductSearchHome } = await import("./src/routes/product/ProductSearchHome");
   const started = performance.now();
   const result = await buildM3({
     entry: config.entry,
@@ -67,10 +78,7 @@ if (import.meta.main) {
     plugins: [m3Bun({ theme: config.theme, root: config.root, configDir: config.dir }), undeclaredDependencies],
     cwd: config.dir,
   });
-  // The Rust WebAssembly backend of the browser OS (packages/web/webos-wasm) ships next to app.js.
-  const webosWasm = fileURLToPath(import.meta.resolve(`@aphrody/webos-wasm/wasm/${WEBOS_WASM_NAME}`));
-  if (!(await Bun.file(webosWasm).exists()))
-    throw new Error("missing " + webosWasm + ": run `bun run build:wasm` in packages/web/webos-wasm");
+  // The Rust WebAssembly backend ships next to app.js.
   await Bun.write(join(result.outdir, "wasm", WEBOS_WASM_NAME), Bun.file(webosWasm));
   const bytes = result.outputs.reduce((sum, output) => sum + output.bytes, 0);
   let shell = await Bun.file(`${result.outdir}/index.html`).text();

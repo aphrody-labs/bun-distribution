@@ -7,11 +7,14 @@
  */
 
 export { achilleaApiUrl, createAchilleaClient } from "./client";
-export { safeReturnUrl } from "./auth-session";
+export { safeReturnUrl } from "@rosegriffon/auth/redirect";
 export { badgeVariant, toneClassName } from "./tone";
 export type { BadgeVariant, Tone } from "./tone";
 export { AchilleaAuthProvider, useAchilleaAuth } from "./auth-context";
-export type { AchilleaAuthContextType, AchilleaAuthStatus } from "./auth-context";
+export type {
+  AchilleaAuthContextType,
+  AchilleaAuthStatus,
+} from "./auth-context";
 export {
   clampParallax,
   canSpawnFx,

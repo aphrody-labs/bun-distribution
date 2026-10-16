@@ -4,10 +4,11 @@
 **Statut :** contrat opérationnel, synchronisé depuis
 `niers/docs/WORKFLOW-UNIFIE.md` le 2026-09-07.
 
-Ce document décrit comment passer d'une demande à une preuve reproductible. Il
-ne fusionne pas les produits : Aphrody reste le site d'outils, `nie` le jeu et
-`niers` le socle d'analyse ; l'ancien explorateur Inacord (Tauri) est retiré,
-ses fonctions pet/pixel vivent désormais dans `aphrody-app` (aphrody-ui).
+This workflow describes reproducible execution within the unified Bun OS
+product. Historical capability names and application domains do not define
+separate products or exclusions from integration. Source owners, imported
+licenses and host-specific deployment permissions remain explicit; this
+workflow does not itself qualify physical migration or production activation.
 
 ## 1. Principe directeur
 

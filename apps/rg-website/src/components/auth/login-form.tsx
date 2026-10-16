@@ -1,12 +1,20 @@
 "use client";
 
-import { ArrowLeft, KeyRound, Loader2, Lock, LogIn, Mail, UserPlus } from "lucide-react";
+import {
+  ArrowLeft,
+  KeyRound,
+  Loader2,
+  Lock,
+  LogIn,
+  Mail,
+  UserPlus,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button, Input, PatreonIcon } from "@rosegriffon/ui";
 import { authClient } from "@/lib/auth-client";
-import { safeReturnUrl } from "@/lib/achillea/auth-session";
+import { safeReturnUrl } from "@rosegriffon/auth/redirect";
 
 type AuthMode = "login" | "signup" | "forgot-password";
 type OAuthProvider = "discord" | "google" | "patreon";
@@ -29,19 +37,28 @@ async function requeteEmailAuth(
     error?: { message?: string };
   } | null;
   if (!reponse.ok) {
-    throw new Error(resultat?.message ?? resultat?.error?.message ?? "L'authentification a échoué.");
+    throw new Error(
+      resultat?.message ??
+        resultat?.error?.message ??
+        "L'authentification a échoué.",
+    );
   }
 }
 
 async function sessionEstDisponible(): Promise<boolean> {
   for (let tentative = 0; tentative < TENTATIVES_SESSION; tentative += 1) {
-    const reponse = await fetch("/api/auth/get-session?disableCookieCache=true", {
-      credentials: "include",
-      cache: "no-store",
-      headers: { Accept: "application/json" },
-    });
+    const reponse = await fetch(
+      "/api/auth/get-session?disableCookieCache=true",
+      {
+        credentials: "include",
+        cache: "no-store",
+        headers: { Accept: "application/json" },
+      },
+    );
     if (!reponse.ok) {
-      await new Promise<void>(resolve => setTimeout(resolve, DELAI_SESSION_MS));
+      await new Promise<void>((resolve) =>
+        setTimeout(resolve, DELAI_SESSION_MS),
+      );
       continue;
     }
 
@@ -52,7 +69,7 @@ async function sessionEstDisponible(): Promise<boolean> {
     if (payload?.user || payload?.data?.user) {
       return true;
     }
-    await new Promise<void>(resolve => setTimeout(resolve, DELAI_SESSION_MS));
+    await new Promise<void>((resolve) => setTimeout(resolve, DELAI_SESSION_MS));
   }
   return false;
 }
@@ -108,7 +125,9 @@ export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
         if (error) {
           toast.error(error.message || "Erreur lors de l'envoi.");
         } else {
-          toast.success("Si un compte existe avec cet email, tu recevras un lien de réinitialisation.");
+          toast.success(
+            "Si un compte existe avec cet email, tu recevras un lien de réinitialisation.",
+          );
         }
         return;
       }
@@ -159,7 +178,8 @@ export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
       }
     } catch (error: unknown) {
       console.error("Auth error:", error);
-      const errorMessage = error instanceof Error ? error.message : "Une erreur est survenue";
+      const errorMessage =
+        error instanceof Error ? error.message : "Une erreur est survenue";
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -183,7 +203,9 @@ export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
               <svg className="size-5 mr-3" viewBox="0 0 24 24" fill="#5865F2">
                 <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z" />
               </svg>
-              <span className="type-label-large flex-1 text-left">Continuer avec Discord</span>
+              <span className="type-label-large flex-1 text-left">
+                Continuer avec Discord
+              </span>
             </Button>
 
             <Button
@@ -193,7 +215,9 @@ export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
               disabled={loading}
             >
               <PatreonIcon className="mr-3 size-5" />
-              <span className="type-label-large flex-1 text-left">Continuer avec Patreon</span>
+              <span className="type-label-large flex-1 text-left">
+                Continuer avec Patreon
+              </span>
             </Button>
 
             <Button
@@ -220,7 +244,9 @@ export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
                   d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
                 />
               </svg>
-              <span className="type-label-large flex-1 text-left">Continuer avec Google</span>
+              <span className="type-label-large flex-1 text-left">
+                Continuer avec Google
+              </span>
             </Button>
           </div>
 
@@ -230,7 +256,9 @@ export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
               <span className="w-full border-t border-outline-variant" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-surface-container-lowest px-4 type-label-medium text-on-surface-variant">ou</span>
+              <span className="bg-surface-container-lowest px-4 type-label-medium text-on-surface-variant">
+                ou
+              </span>
             </div>
           </div>
         </>
@@ -254,7 +282,9 @@ export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
           <div className="mx-auto size-12 rounded-2xl bg-error-container flex items-center justify-center">
             <KeyRound className="size-6 text-on-error-container" />
           </div>
-          <h3 className="type-title-large text-on-surface font-bold">Mot de passe oublié</h3>
+          <h3 className="type-title-large text-on-surface font-bold">
+            Mot de passe oublié
+          </h3>
           <p className="type-body-medium text-on-surface-variant">
             Entre ton adresse email pour recevoir un lien de réinitialisation.
           </p>
@@ -266,7 +296,10 @@ export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
         <div className="space-y-4">
           {mode === "signup" && (
             <div className="relative">
-              <label htmlFor="name" className="type-body-small text-on-surface-variant mb-2 block">
+              <label
+                htmlFor="name"
+                className="type-body-small text-on-surface-variant mb-2 block"
+              >
                 Nom d&apos;utilisateur
               </label>
               <div className="relative group">
@@ -276,7 +309,7 @@ export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
                   placeholder="Ton pseudo"
                   className="h-14 pl-4 pr-4 rounded-xl border border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 type-body-large text-on-surface placeholder:text-on-surface-variant/60"
                   value={name}
-                  onChange={e => setName(e.target.value)}
+                  onChange={(e) => setName(e.target.value)}
                   disabled={loading}
                 />
               </div>
@@ -284,7 +317,10 @@ export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
           )}
 
           <div className="relative">
-            <label htmlFor="email" className="type-body-small text-on-surface-variant mb-2 block">
+            <label
+              htmlFor="email"
+              className="type-body-small text-on-surface-variant mb-2 block"
+            >
               Adresse e-mail
             </label>
             <div className="relative group">
@@ -295,7 +331,7 @@ export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
                 placeholder="exemple@email.com"
                 className="h-14 pl-12 pr-4 rounded-xl border border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 type-body-large text-on-surface placeholder:text-on-surface-variant/60"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
                 required
               />
@@ -305,7 +341,10 @@ export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
           {needsPassword && (
             <div className="relative">
               <div className="flex items-center justify-between mb-2">
-                <label htmlFor="password" className="type-body-small text-on-surface-variant">
+                <label
+                  htmlFor="password"
+                  className="type-body-small text-on-surface-variant"
+                >
                   Mot de passe
                 </label>
                 {mode === "login" && (
@@ -326,7 +365,7 @@ export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
                   placeholder="••••••••"
                   className="h-14 pl-12 pr-4 rounded-xl border border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 type-body-large text-on-surface placeholder:text-on-surface-variant/60"
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
                   required
                 />
@@ -371,7 +410,9 @@ export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
               onClick={() => setMode(mode === "signup" ? "login" : "signup")}
               className="w-full text-center type-body-small text-primary hover:underline transition-all"
             >
-              {mode === "signup" ? "Déjà un compte ? Se connecter" : "Pas encore de compte ? S'inscrire"}
+              {mode === "signup"
+                ? "Déjà un compte ? Se connecter"
+                : "Pas encore de compte ? S'inscrire"}
             </button>
           </div>
         )}

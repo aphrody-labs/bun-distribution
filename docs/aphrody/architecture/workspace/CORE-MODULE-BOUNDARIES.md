@@ -2,6 +2,12 @@
 
 # Cœur Yolo, modules Bun et fournisseurs natifs
 
+> Current authority: the [root plan](../../../../PLAN.md) defines one Bun OS
+> product, including AI, UI, Infra, Workspace and imported application domains.
+> The dated decisions below preserve historical evidence; their former
+> Yolo/Aphrody product split is not current ownership doctrine. Source migration
+> and host-specific deployment qualification must still be demonstrated.
+
 > Path reconciliation (2026-10-07): `vendor/obscura` (not in repo) → `crates/web/obscura`. Original dated observations below retain their historical scope.
 
 Décision du 2026-10-04, issue de l’examen des manifestes, points d’entrée et
