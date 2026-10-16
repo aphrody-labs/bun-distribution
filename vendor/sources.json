@@ -1,0 +1,849 @@
+{
+  "schema": 1,
+  "sources": {
+    "msys2-packages": {
+      "origin": "https://github.com/aphrody-labs/MSYS2-packages.git",
+      "upstream": "https://github.com/msys2/MSYS2-packages.git",
+      "path": "msys2-packages"
+    },
+    "mingw-packages": {
+      "origin": "https://github.com/aphrody-labs/MINGW-packages.git",
+      "upstream": "https://github.com/msys2/MINGW-packages.git",
+      "path": "mingw-packages"
+    },
+    "msys2-runtime": {
+      "origin": "https://github.com/aphrody-labs/msys2-runtime.git",
+      "upstream": "https://github.com/msys2/msys2-runtime.git",
+      "path": "msys2-runtime"
+    },
+    "msys2-installer": {
+      "origin": "https://github.com/aphrody-labs/msys2-installer.git",
+      "upstream": "https://github.com/msys2/msys2-installer.git",
+      "path": "msys2-installer"
+    },
+    "cygwin-upstream": {
+      "origin": "https://cygwin.com/git/newlib-cygwin.git",
+      "path": "newlib-cygwin"
+    },
+    "wine": {
+      "path": "wine-cachyos",
+      "origin": "https://github.com/aphrody-labs/wine-cachyos.git",
+      "upstream": "https://github.com/CachyOS/wine-cachyos.git"
+    },
+    "linux": {
+      "path": "linux-cachyos",
+      "origin": "https://github.com/aphrody-labs/linux-cachyos.git",
+      "upstream": "https://github.com/CachyOS/linux-cachyos.git"
+    },
+    "bash": {
+      "origin": "https://github.com/aphrody-labs/bash.git",
+      "upstream": "https://git.savannah.gnu.org/git/bash.git",
+      "path": "bash"
+    },
+    "git": {
+      "origin": "https://github.com/aphrody-labs/git.git",
+      "upstream": "https://github.com/git/git.git",
+      "path": "git",
+      "localState": "not-present"
+    },
+    "powershell": {
+      "origin": "https://github.com/aphrody-labs/PowerShell.git",
+      "upstream": "https://github.com/PowerShell/PowerShell.git",
+      "path": "powershell"
+    },
+    "proton": {
+      "path": "proton-cachyos",
+      "origin": "https://github.com/aphrody-labs/proton-cachyos.git",
+      "upstream": "https://github.com/CachyOS/proton-cachyos.git"
+    },
+    "kernel-patches": {
+      "path": "kernel-patches",
+      "origin": "https://github.com/aphrody-labs/kernel-patches.git",
+      "upstream": "https://github.com/CachyOS/kernel-patches.git"
+    },
+    "cachyos-wiki": {
+      "path": "wiki",
+      "origin": "https://github.com/aphrody-labs/wiki.git",
+      "upstream": "https://github.com/CachyOS/wiki.git"
+    },
+    "chwd": {
+      "path": "chwd",
+      "origin": "https://github.com/aphrody-labs/chwd.git",
+      "upstream": "https://github.com/CachyOS/chwd.git"
+    },
+    "pkg-manage-util": {
+      "path": "pkg-manage-util",
+      "origin": "https://github.com/aphrody-labs/pkg-manage-util.git",
+      "upstream": "https://github.com/CachyOS/pkg-manage-util.git"
+    },
+    "open-gpu-kernel-modules": {
+      "path": "open-gpu-kernel-modules",
+      "origin": "https://github.com/aphrody-labs/open-gpu-kernel-modules.git",
+      "upstream": "https://github.com/CachyOS/open-gpu-kernel-modules.git"
+    },
+    "omarchy-pkgs": {
+      "path": "omarchy-pkgs",
+      "origin": "https://github.com/omacom/omarchy-pkgs.git",
+      "upstream": "https://github.com/omacom/omarchy-pkgs.git"
+    },
+    "omarchy": {
+      "path": "omarchy",
+      "origin": "https://github.com/omacom/omarchy.git",
+      "upstream": "https://github.com/omacom/omarchy.git"
+    },
+    "steam-runtime": {
+      "origin": "https://github.com/aphrody-labs/steam-runtime.git",
+      "upstream": "https://github.com/ValveSoftware/steam-runtime.git",
+      "path": "steam-runtime"
+    },
+    "dxvk": {
+      "origin": "https://github.com/aphrody-labs/dxvk.git",
+      "upstream": "https://github.com/doitsujin/dxvk.git",
+      "path": "dxvk"
+    },
+    "vkd3d-proton": {
+      "origin": "https://github.com/aphrody-labs/vkd3d-proton.git",
+      "upstream": "https://github.com/HansKristian-Work/vkd3d-proton.git",
+      "path": "vkd3d-proton"
+    },
+    "gamescope": {
+      "origin": "https://github.com/aphrody-labs/gamescope.git",
+      "upstream": "https://github.com/ValveSoftware/gamescope.git",
+      "path": "gamescope"
+    },
+    "wgpu": {
+      "origin": "https://github.com/aphrody-labs/wgpu.git",
+      "upstream": "https://github.com/gfx-rs/wgpu.git",
+      "path": "wgpu"
+    },
+    "winit": {
+      "origin": "https://github.com/aphrody-labs/winit.git",
+      "upstream": "https://github.com/rust-windowing/winit.git",
+      "path": "winit"
+    },
+    "bevy": {
+      "origin": "https://github.com/aphrody-labs/bevy.git",
+      "upstream": "https://github.com/bevyengine/bevy.git",
+      "path": "bevy"
+    },
+    "panda3ds": {
+      "origin": "https://github.com/Panda3DS-emu/Panda3DS.git",
+      "upstream": "https://github.com/Panda3DS-emu/Panda3DS.git",
+      "path": "panda3ds",
+      "localState": "not-present"
+    },
+    "libctru": {
+      "path": "libctru",
+      "origin": "https://github.com/aphrody-labs/libctru.git",
+      "upstream": "https://github.com/devkitPro/libctru.git"
+    },
+    "ctru-rs": {
+      "path": "ctru-rs",
+      "origin": "https://github.com/aphrody-labs/ctru-rs.git",
+      "upstream": "https://github.com/rust3ds/ctru-rs.git"
+    },
+    "citra": {
+      "origin": "https://github.com/citra-emu/citra.git",
+      "upstream": "https://github.com/citra-emu/citra.git",
+      "status": "unavailable",
+      "httpStatus": 404,
+      "checkedAt": "2026-10-14",
+      "path": "citra",
+      "localState": "not-present"
+    },
+    "3dmoo": {
+      "origin": "https://github.com/plutooo/3dmoo.git",
+      "upstream": "https://github.com/plutooo/3dmoo.git",
+      "path": "3dmoo",
+      "localState": "not-present"
+    },
+    "corgi3ds": {
+      "origin": "https://github.com/PSI-Rockin/Corgi3DS.git",
+      "upstream": "https://github.com/PSI-Rockin/Corgi3DS.git",
+      "path": "corgi3ds",
+      "localState": "not-present"
+    },
+    "dynarmic": {
+      "origin": "https://github.com/merryhime/dynarmic.git",
+      "upstream": "https://github.com/merryhime/dynarmic.git",
+      "status": "unavailable",
+      "httpStatus": 404,
+      "checkedAt": "2026-10-14",
+      "path": "dynarmic",
+      "localState": "not-present"
+    },
+    "pcsx-redux": {
+      "origin": "https://github.com/grumpycoders/pcsx-redux.git",
+      "upstream": "https://github.com/grumpycoders/pcsx-redux.git",
+      "path": "pcsx-redux",
+      "localState": "not-present"
+    },
+    "skyemu": {
+      "origin": "https://github.com/skylersaleh/SkyEmu.git",
+      "upstream": "https://github.com/skylersaleh/SkyEmu.git",
+      "path": "skyemu",
+      "localState": "not-present"
+    },
+    "nanoboyadvance": {
+      "origin": "https://github.com/nba-emu/NanoBoyAdvance.git",
+      "upstream": "https://github.com/nba-emu/NanoBoyAdvance.git",
+      "path": "nanoboyadvance",
+      "localState": "not-present"
+    },
+    "dust": {
+      "path": "dust",
+      "origin": "https://github.com/aphrody-labs/dust.git",
+      "upstream": "https://github.com/kelpsyberry/dust.git"
+    },
+    "felix86": {
+      "origin": "https://github.com/OFFTKP/felix86.git",
+      "upstream": "https://github.com/OFFTKP/felix86.git",
+      "path": "felix86",
+      "localState": "not-present"
+    },
+    "chonkystation": {
+      "origin": "https://github.com/liuk7071/ChonkyStation.git",
+      "upstream": "https://github.com/liuk7071/ChonkyStation.git",
+      "path": "chonkystation",
+      "localState": "not-present"
+    },
+    "chonkystation3": {
+      "origin": "https://github.com/liuk7071/ChonkyStation3.git",
+      "upstream": "https://github.com/liuk7071/ChonkyStation3.git",
+      "path": "chonkystation3",
+      "localState": "not-present"
+    },
+    "melonds": {
+      "path": "melonds",
+      "origin": "https://github.com/melonDS-emu/melonDS.git",
+      "upstream": "https://github.com/melonDS-emu/melonDS.git"
+    },
+    "kaizen": {
+      "origin": "https://github.com/SimoneN64/Kaizen.git",
+      "upstream": "https://github.com/SimoneN64/Kaizen.git",
+      "status": "unavailable",
+      "httpStatus": 404,
+      "checkedAt": "2026-10-14",
+      "path": "kaizen",
+      "localState": "not-present"
+    },
+    "shadps4": {
+      "origin": "https://github.com/shadps4-emu/shadPS4.git",
+      "upstream": "https://github.com/shadps4-emu/shadPS4.git",
+      "path": "shadps4",
+      "localState": "not-present"
+    },
+    "tanuki3ds": {
+      "origin": "https://github.com/burhanr13/Tanuki3DS.git",
+      "upstream": "https://github.com/burhanr13/Tanuki3DS.git",
+      "path": "tanuki3ds",
+      "localState": "not-present"
+    },
+    "proton-valve": {
+      "path": "proton",
+      "origin": "https://github.com/aphrody-labs/Proton.git",
+      "role": "Independent upstream source reference; CachyOS Proton remains the selected compatibility owner"
+    },
+    "buzz": {
+      "path": "buzz",
+      "origin": "https://github.com/aphrody-labs/buzz.git",
+      "localState": "not-initialized"
+    },
+    "cachyos-builder-dashboard-reference": {
+      "path": "cachyos-builder-dashboard-reference",
+      "origin": "https://github.com/aphrody-labs/cachyos-builder-dashboard-reference.git",
+      "localState": "not-initialized"
+    },
+    "cachyos-devtools": {
+      "path": "cachyos-devtools",
+      "origin": "https://github.com/aphrody-labs/cachyos-devtools.git",
+      "localState": "not-initialized"
+    },
+    "cachyos-linux": {
+      "path": "cachyos-linux",
+      "origin": "https://github.com/aphrody-labs/cachyos-linux.git",
+      "localState": "not-initialized"
+    },
+    "cachyos-pkgbuilds": {
+      "path": "cachyos-pkgbuilds",
+      "origin": "https://github.com/aphrody-labs/cachyos-pkgbuilds.git",
+      "localState": "not-initialized"
+    },
+    "cachyos-repo-manage-util": {
+      "path": "cachyos-repo-manage-util",
+      "origin": "https://github.com/aphrody-labs/cachyos-repo-manage-util.git",
+      "localState": "not-initialized"
+    },
+    "chimeraos": {
+      "path": "chimeraos",
+      "origin": "https://github.com/aphrody-labs/chimeraos.git",
+      "localState": "not-initialized"
+    },
+    "chimeraos-chimera": {
+      "path": "chimeraos-chimera",
+      "origin": "https://github.com/aphrody-labs/chimeraos-chimera.git",
+      "localState": "not-initialized"
+    },
+    "chimeraos-device-quirks": {
+      "path": "chimeraos-device-quirks",
+      "origin": "https://github.com/aphrody-labs/chimeraos-device-quirks.git",
+      "localState": "not-initialized"
+    },
+    "chimeraos-flathub-proxy": {
+      "path": "chimeraos-flathub-proxy",
+      "origin": "https://github.com/aphrody-labs/chimeraos-flathub-proxy.git",
+      "localState": "not-initialized"
+    },
+    "chimeraos-gamescope-session": {
+      "path": "chimeraos-gamescope-session",
+      "origin": "https://github.com/aphrody-labs/chimeraos-gamescope-session.git",
+      "localState": "not-initialized"
+    },
+    "chimeraos-gamescope-session-steam": {
+      "path": "chimeraos-gamescope-session-steam",
+      "origin": "https://github.com/aphrody-labs/chimeraos-gamescope-session-steam.git",
+      "localState": "not-initialized"
+    },
+    "chimeraos-install-media": {
+      "path": "chimeraos-install-media",
+      "origin": "https://github.com/aphrody-labs/chimeraos-install-media.git",
+      "localState": "not-initialized"
+    },
+    "flea": {
+      "path": "flea",
+      "origin": "https://github.com/aphrody-labs/flea.git",
+      "localState": "not-initialized"
+    },
+    "frzr": {
+      "path": "frzr",
+      "origin": "https://github.com/aphrody-labs/frzr.git",
+      "localState": "not-initialized"
+    },
+    "gliff": {
+      "path": "gliff",
+      "origin": "https://github.com/aphrody-labs/gliff.git",
+      "localState": "not-initialized"
+    },
+    "herdr": {
+      "path": "herdr",
+      "origin": "https://github.com/aphrody-labs/herdr.git",
+      "localState": "not-initialized"
+    },
+    "hyprland-preview-share-picker": {
+      "path": "hyprland-preview-share-picker",
+      "origin": "https://github.com/aphrody-labs/hyprland-preview-share-picker.git",
+      "localState": "not-initialized"
+    },
+    "inputplumber": {
+      "path": "inputplumber",
+      "origin": "https://github.com/aphrody-labs/inputplumber.git",
+      "localState": "not-initialized"
+    },
+    "localsend": {
+      "path": "localsend",
+      "origin": "https://github.com/aphrody-labs/localsend.git",
+      "localState": "not-initialized"
+    },
+    "m1n1-aurora": {
+      "path": "m1n1-aurora",
+      "origin": "https://github.com/aphrody-labs/m1n1-aurora.git",
+      "localState": "not-initialized"
+    },
+    "nvidia-kernels": {
+      "path": "nvidia-kernels",
+      "origin": "https://github.com/aphrody-labs/nvidia-kernels.git",
+      "localState": "not-initialized"
+    },
+    "ogc-kernel-packages": {
+      "path": "ogc-kernel-packages",
+      "origin": "https://github.com/aphrody-labs/ogc-kernel-packages.git",
+      "localState": "not-initialized"
+    },
+    "ogc-linux": {
+      "path": "ogc-linux",
+      "origin": "https://github.com/aphrody-labs/ogc-linux.git",
+      "localState": "not-initialized"
+    },
+    "omacharts": {
+      "path": "omacharts",
+      "origin": "https://github.com/aphrody-labs/omacharts.git",
+      "localState": "not-initialized"
+    },
+    "omarchy-task-manager": {
+      "path": "omarchy-task-manager",
+      "origin": "https://github.com/aphrody-labs/omarchy-task-manager.git",
+      "localState": "not-initialized"
+    },
+    "omatrack": {
+      "path": "omatrack",
+      "origin": "https://github.com/aphrody-labs/omatrack.git",
+      "localState": "not-initialized"
+    },
+    "opengamepadui": {
+      "path": "opengamepadui",
+      "origin": "https://github.com/aphrody-labs/opengamepadui.git",
+      "localState": "not-initialized"
+    },
+    "pacman": {
+      "path": "pacman",
+      "origin": "https://github.com/aphrody-labs/pacman.git",
+      "localState": "not-initialized"
+    },
+    "powerstation": {
+      "path": "powerstation",
+      "origin": "https://github.com/aphrody-labs/powerstation.git",
+      "localState": "not-initialized"
+    },
+    "qmk-hid": {
+      "path": "qmk-hid",
+      "origin": "https://github.com/aphrody-labs/qmk-hid.git",
+      "localState": "not-initialized"
+    },
+    "rustdesk": {
+      "path": "rustdesk",
+      "origin": "https://github.com/aphrody-labs/rustdesk.git",
+      "localState": "not-initialized"
+    },
+    "strata": {
+      "path": "strata",
+      "origin": "https://github.com/aphrody-labs/strata.git",
+      "localState": "not-initialized"
+    },
+    "tensaku": {
+      "path": "tensaku",
+      "origin": "https://github.com/aphrody-labs/tensaku.git",
+      "localState": "not-initialized"
+    },
+    "ttfx": {
+      "path": "ttfx",
+      "origin": "https://github.com/aphrody-labs/ttfx.git",
+      "localState": "not-initialized"
+    },
+    "tzupdate": {
+      "path": "tzupdate",
+      "origin": "https://github.com/aphrody-labs/tzupdate.git",
+      "localState": "not-initialized"
+    },
+    "walker": {
+      "path": "walker",
+      "origin": "https://github.com/aphrody-labs/walker.git",
+      "localState": "not-initialized"
+    }
+  },
+  "references": {
+    "3dbrew": {
+      "url": "https://www.3dbrew.org/wiki/Main_Page",
+      "description": "Nintendo 3DS hardware and system documentation"
+    },
+    "gbatek": {
+      "url": "https://www.problemkaputt.de/gbatek.htm#3dsreference",
+      "description": "GBA, Nintendo DS and Nintendo 3DS hardware and file format reference"
+    }
+  },
+  "layout": "flat-vendor",
+  "workspace": "aphrody-labs/bun-distribution",
+  "owner": "Bun OS root source graph",
+  "installation": {
+    "sourceRootIndependent": true,
+    "environment": "APHRODY_MSYS2_ROOT",
+    "packageManager": "native pacman"
+  },
+  "rootGitOwners": [
+    {
+      "path": "bash",
+      "revision": "9c465866b7d849378369ef700cbe2965aa9691e3",
+      "origin": "https://github.com/aphrody-labs/bash.git",
+      "initialized": true
+    },
+    {
+      "path": "bevy",
+      "revision": "c8d199b192a1b173746f7a160d259c4db8ab7789",
+      "origin": "https://github.com/aphrody-labs/bevy.git",
+      "initialized": true
+    },
+    {
+      "path": "buzz",
+      "revision": "f87c10895ea35a9a2cea629fef1d7532a3fecbc5",
+      "origin": "https://github.com/aphrody-labs/buzz.git",
+      "initialized": false
+    },
+    {
+      "path": "cachyos-builder-dashboard-reference",
+      "revision": "cd648ede9ebcdef479e7eee81e09572807b6c0dd",
+      "origin": "https://github.com/aphrody-labs/cachyos-builder-dashboard-reference.git",
+      "initialized": false
+    },
+    {
+      "path": "cachyos-devtools",
+      "revision": "8f0d146f8aaeba77a52fbe5db48f1e21b28d8551",
+      "origin": "https://github.com/aphrody-labs/cachyos-devtools.git",
+      "initialized": false
+    },
+    {
+      "path": "cachyos-linux",
+      "revision": "b0ce79ee33ddd93d513f77341167956e1355758e",
+      "origin": "https://github.com/aphrody-labs/cachyos-linux.git",
+      "initialized": false
+    },
+    {
+      "path": "cachyos-pkgbuilds",
+      "revision": "a2e6c4392d397bed2df7134200dda558f2452af6",
+      "origin": "https://github.com/aphrody-labs/cachyos-pkgbuilds.git",
+      "initialized": false
+    },
+    {
+      "path": "cachyos-repo-manage-util",
+      "revision": "824f2033bcec4b0fb2232976a4fc6037577a6164",
+      "origin": "https://github.com/aphrody-labs/cachyos-repo-manage-util.git",
+      "initialized": false
+    },
+    {
+      "path": "chimeraos",
+      "revision": "89b58ba69f52b4723a7bff472b9445b8b220c91f",
+      "origin": "https://github.com/aphrody-labs/chimeraos.git",
+      "initialized": false
+    },
+    {
+      "path": "chimeraos-chimera",
+      "revision": "11bb351abd46c2a0f9e9bec5bad56d7f7fbd07f4",
+      "origin": "https://github.com/aphrody-labs/chimeraos-chimera.git",
+      "initialized": false
+    },
+    {
+      "path": "chimeraos-device-quirks",
+      "revision": "ee8e66690eb460ec8b13b56eabb7388298e0972f",
+      "origin": "https://github.com/aphrody-labs/chimeraos-device-quirks.git",
+      "initialized": false
+    },
+    {
+      "path": "chimeraos-flathub-proxy",
+      "revision": "9977ef98f99ef5b9fbcf42e44516a64cf23b13ec",
+      "origin": "https://github.com/aphrody-labs/chimeraos-flathub-proxy.git",
+      "initialized": false
+    },
+    {
+      "path": "chimeraos-gamescope-session",
+      "revision": "73d2da84ace7f41006a0f85bd2fdb19ef593a464",
+      "origin": "https://github.com/aphrody-labs/chimeraos-gamescope-session.git",
+      "initialized": false
+    },
+    {
+      "path": "chimeraos-gamescope-session-steam",
+      "revision": "1a3fdb7fa15a4bba7204bef69702b7a10a297828",
+      "origin": "https://github.com/aphrody-labs/chimeraos-gamescope-session-steam.git",
+      "initialized": false
+    },
+    {
+      "path": "chimeraos-install-media",
+      "revision": "8a4f21f677f941dd8611679d7c667c5be8d0b049",
+      "origin": "https://github.com/aphrody-labs/chimeraos-install-media.git",
+      "initialized": false
+    },
+    {
+      "path": "chwd",
+      "revision": "2d963e942bbd4551698bfdd7de7b533139347c78",
+      "origin": "https://github.com/aphrody-labs/chwd.git",
+      "initialized": true
+    },
+    {
+      "path": "ctru-rs",
+      "revision": "6b578230b3cd3cbc1eeb0dd71bbb8d7e3b12f21e",
+      "origin": "https://github.com/aphrody-labs/ctru-rs.git",
+      "initialized": true
+    },
+    {
+      "path": "dust",
+      "revision": "76d79f25e4ea3ce355c4ac868f5ac9a233e64b89",
+      "origin": "https://github.com/aphrody-labs/dust.git",
+      "initialized": true
+    },
+    {
+      "path": "dxvk",
+      "revision": "a78a467cadb22bee928904290cf8e7921b121851",
+      "origin": "https://github.com/aphrody-labs/dxvk.git",
+      "initialized": true
+    },
+    {
+      "path": "flea",
+      "revision": "1de9d97983602d36108bd1f1d734cbdef47ee4e1",
+      "origin": "https://github.com/aphrody-labs/flea.git",
+      "initialized": false
+    },
+    {
+      "path": "frzr",
+      "revision": "4d15ebe4fdff0925691f6a1c2766af0c5ca26314",
+      "origin": "https://github.com/aphrody-labs/frzr.git",
+      "initialized": false
+    },
+    {
+      "path": "gamescope",
+      "revision": "2b5cf191d1047d6895516a834de8a72ac1c342f3",
+      "origin": "https://github.com/aphrody-labs/gamescope.git",
+      "initialized": true
+    },
+    {
+      "path": "gliff",
+      "revision": "089662fd59ebcedb047eea22fd983d66b4216d73",
+      "origin": "https://github.com/aphrody-labs/gliff.git",
+      "initialized": false
+    },
+    {
+      "path": "herdr",
+      "revision": "065ef9d6a531c49fb8bee7e818ef837065b21ee9",
+      "origin": "https://github.com/aphrody-labs/herdr.git",
+      "initialized": false
+    },
+    {
+      "path": "hyprland-preview-share-picker",
+      "revision": "211b7890ed3332f4d1bb1f1a96999e18874a9c3c",
+      "origin": "https://github.com/aphrody-labs/hyprland-preview-share-picker.git",
+      "initialized": false
+    },
+    {
+      "path": "inputplumber",
+      "revision": "d951ef9df713a3ad3a88645a8c07b79ea5592274",
+      "origin": "https://github.com/aphrody-labs/inputplumber.git",
+      "initialized": false
+    },
+    {
+      "path": "kernel-patches",
+      "revision": "17bb0bb818d283d0dc6e0280a2e9d5b95e66808b",
+      "origin": "https://github.com/aphrody-labs/kernel-patches.git",
+      "initialized": true
+    },
+    {
+      "path": "libctru",
+      "revision": "9b55eda44cf80b971503991e0c78f9bc8fe50425",
+      "origin": "https://github.com/aphrody-labs/libctru.git",
+      "initialized": true
+    },
+    {
+      "path": "linux-cachyos",
+      "revision": "5a14cc870dbe958da0fe3fff96d0df6561b8b064",
+      "origin": "https://github.com/aphrody-labs/linux-cachyos.git",
+      "initialized": true
+    },
+    {
+      "path": "localsend",
+      "revision": "af0416be50770a97760f7070684bc667b759a15c",
+      "origin": "https://github.com/aphrody-labs/localsend.git",
+      "initialized": false
+    },
+    {
+      "path": "m1n1-aurora",
+      "revision": "06a4601a351ebfd1abb6abba9a44c34e40d94776",
+      "origin": "https://github.com/aphrody-labs/m1n1-aurora.git",
+      "initialized": false
+    },
+    {
+      "path": "melonds",
+      "revision": "906e9ebb27da8c6a715cd7abab4abfe8a8d29427",
+      "origin": "https://github.com/melonDS-emu/melonDS.git",
+      "initialized": true
+    },
+    {
+      "path": "mingw-packages",
+      "revision": "a70671f323aef4bf735c271ca9f96f193ef79fb3",
+      "origin": "https://github.com/aphrody-labs/MINGW-packages.git",
+      "initialized": true
+    },
+    {
+      "path": "msys2-installer",
+      "revision": "cab3ac77dd72651a5dcfe16cb327abc2fa529121",
+      "origin": "https://github.com/aphrody-labs/msys2-installer.git",
+      "initialized": true
+    },
+    {
+      "path": "msys2-packages",
+      "revision": "9e0da9cbaf3423eb669ec36ea029fbffa82c4948",
+      "origin": "https://github.com/aphrody-labs/MSYS2-packages.git",
+      "initialized": true
+    },
+    {
+      "path": "msys2-runtime",
+      "revision": "3ea87a506e64e841dc0b8ee50ed61999c8fed26c",
+      "origin": "https://github.com/aphrody-labs/msys2-runtime.git",
+      "initialized": true
+    },
+    {
+      "path": "newlib-cygwin",
+      "revision": "80df0a2b5d6b5faf5c382807810c86e06915e03e",
+      "origin": "https://sourceware.org/git/newlib-cygwin.git",
+      "initialized": true
+    },
+    {
+      "path": "nvidia-kernels",
+      "revision": "dd99802c8b0c384169bb36293c9517fa67238e47",
+      "origin": "https://github.com/aphrody-labs/nvidia-kernels.git",
+      "initialized": false
+    },
+    {
+      "path": "ogc-kernel-packages",
+      "revision": "170127c4226d4cc7747b4a4e07167cdb6ea7166b",
+      "origin": "https://github.com/aphrody-labs/ogc-kernel-packages.git",
+      "initialized": false
+    },
+    {
+      "path": "ogc-linux",
+      "revision": "2e50781f1e2e536ec33e167733edc9de71c153b0",
+      "origin": "https://github.com/aphrody-labs/ogc-linux.git",
+      "initialized": false
+    },
+    {
+      "path": "omacharts",
+      "revision": "4c273d56dc887624eaaa6a1dd2e17ea796eb7678",
+      "origin": "https://github.com/aphrody-labs/omacharts.git",
+      "initialized": false
+    },
+    {
+      "path": "omarchy",
+      "revision": "84cfb93959f4fe0bbb71de71593b36647d2ba78d",
+      "origin": "https://github.com/aphrody-labs/omarchy.git",
+      "initialized": true
+    },
+    {
+      "path": "omarchy-pkgs",
+      "revision": "9093fafb7bcb7eb2a770122bfae5676444b8339f",
+      "origin": "https://github.com/aphrody-labs/omarchy-pkgs.git",
+      "initialized": true
+    },
+    {
+      "path": "omarchy-task-manager",
+      "revision": "c6bdbc971dddcb0f20ef4b97379f624d5271612a",
+      "origin": "https://github.com/aphrody-labs/omarchy-task-manager.git",
+      "initialized": false
+    },
+    {
+      "path": "omatrack",
+      "revision": "cd3fcdda3f8e15fda73288f6cf3803164138a7e4",
+      "origin": "https://github.com/aphrody-labs/omatrack.git",
+      "initialized": false
+    },
+    {
+      "path": "open-gpu-kernel-modules",
+      "revision": "b4816d9b2feae9250d97b8a5d59f762f6e8d2eaa",
+      "origin": "https://github.com/aphrody-labs/open-gpu-kernel-modules.git",
+      "initialized": true
+    },
+    {
+      "path": "opengamepadui",
+      "revision": "0db5812f21e98d0a5ac70bb1b5a674f2f369c22c",
+      "origin": "https://github.com/aphrody-labs/opengamepadui.git",
+      "initialized": false
+    },
+    {
+      "path": "pacman",
+      "revision": "4056cd687f6379e61e7decb9b66e9b57cb3949a9",
+      "origin": "https://github.com/aphrody-labs/pacman.git",
+      "initialized": false
+    },
+    {
+      "path": "pkg-manage-util",
+      "revision": "8b49ff7e5490eacba3a7830263c1f7b4fc7114ba",
+      "origin": "https://github.com/aphrody-labs/pkg-manage-util.git",
+      "initialized": true
+    },
+    {
+      "path": "powershell",
+      "revision": "cf5765391c7c78914d5316f0b8105fa652456cc4",
+      "origin": "https://github.com/aphrody-labs/PowerShell.git",
+      "initialized": true
+    },
+    {
+      "path": "powerstation",
+      "revision": "f5145850eb649707811648b372eaf1f1066b439d",
+      "origin": "https://github.com/aphrody-labs/powerstation.git",
+      "initialized": false
+    },
+    {
+      "path": "proton",
+      "revision": "bc896217ffcd67f892f952b010f898fe7bd0f0a1",
+      "origin": "https://github.com/aphrody-labs/Proton.git",
+      "initialized": true
+    },
+    {
+      "path": "proton-cachyos",
+      "revision": "c75a016add0e855ff571943c86e2830f13e1b59d",
+      "origin": "https://github.com/aphrody-labs/proton-cachyos.git",
+      "initialized": true
+    },
+    {
+      "path": "qmk-hid",
+      "revision": "8f02fe5e34e27dc60260ee564e86a11f2dc7ca87",
+      "origin": "https://github.com/aphrody-labs/qmk-hid.git",
+      "initialized": false
+    },
+    {
+      "path": "rustdesk",
+      "revision": "fada664df7a294d1d1a9ca3e7cd3637069122f17",
+      "origin": "https://github.com/aphrody-labs/rustdesk.git",
+      "initialized": false
+    },
+    {
+      "path": "steam-runtime",
+      "revision": "8cb6d88c6c4467e76a1176d4815f6dac0eb9cd24",
+      "origin": "https://github.com/aphrody-labs/steam-runtime.git",
+      "initialized": true
+    },
+    {
+      "path": "strata",
+      "revision": "0a086aa3bdb251842a1e8413e2a6b35970d0b409",
+      "origin": "https://github.com/aphrody-labs/strata.git",
+      "initialized": false
+    },
+    {
+      "path": "tensaku",
+      "revision": "4bcd8339bc22e74bd81c9f3efdfdfcbcf461db70",
+      "origin": "https://github.com/aphrody-labs/tensaku.git",
+      "initialized": false
+    },
+    {
+      "path": "ttfx",
+      "revision": "112ebb310b848d8f1251a5c2919a9cd5a5c78e18",
+      "origin": "https://github.com/aphrody-labs/ttfx.git",
+      "initialized": false
+    },
+    {
+      "path": "tzupdate",
+      "revision": "8cf0f0bf0e7196a680bd44b7d918d7f874f9ede9",
+      "origin": "https://github.com/aphrody-labs/tzupdate.git",
+      "initialized": false
+    },
+    {
+      "path": "vkd3d-proton",
+      "revision": "0bb64c56c8f0dcc11ecc0f6c56e00e4f7bd8d506",
+      "origin": "https://github.com/aphrody-labs/vkd3d-proton.git",
+      "initialized": true
+    },
+    {
+      "path": "walker",
+      "revision": "a515085fd39fae80acc086c8fbfd9b7771a9a11d",
+      "origin": "https://github.com/aphrody-labs/walker.git",
+      "initialized": false
+    },
+    {
+      "path": "wgpu",
+      "revision": "60036cdc0ad979c96ec8277df41ec35b098502f6",
+      "origin": "https://github.com/aphrody-labs/wgpu.git",
+      "initialized": true
+    },
+    {
+      "path": "wiki",
+      "revision": "1803ac4541cf46059b37f8005b1211791e3a8bb3",
+      "origin": "https://github.com/aphrody-labs/wiki.git",
+      "initialized": true
+    },
+    {
+      "path": "wine-cachyos",
+      "revision": "f80ddae9e217f2bad68455891371fa0f524451e7",
+      "origin": "https://github.com/aphrody-labs/wine-cachyos.git",
+      "initialized": true
+    },
+    {
+      "path": "winit",
+      "revision": "f0a83481c233c714d061356305f89bace0106f39",
+      "origin": "https://github.com/aphrody-labs/winit.git",
+      "initialized": true
+    }
+  ]
+}

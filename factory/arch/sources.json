@@ -23,9 +23,12 @@
       "defaultBranch": "master",
       "forkSource": "CachyOS/CachyOS-PKGBUILDS",
       "repository": "aphrody-labs/cachyos-pkgbuilds",
-      "mount": "forks/cachyos-pkgbuilds",
+      "mount": "vendor/cachyos-pkgbuilds",
       "checkoutRevision": "a2e6c4392d397bed2df7134200dda558f2452af6",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "a2e6c4392d397bed2df7134200dda558f2452af6",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "4a8d2ec8509d0da7d5fd5293f42251ea99d5ea3c",
@@ -38,9 +41,12 @@
       "defaultBranch": "master",
       "forkSource": "CachyOS/linux-cachyos",
       "repository": "aphrody-labs/linux-cachyos",
-      "mount": "forks/linux-cachyos",
-      "checkoutRevision": "4a8d2ec8509d0da7d5fd5293f42251ea99d5ea3c",
-      "sourceExportReady": false
+      "mount": "vendor/linux-cachyos",
+      "checkoutRevision": "5a14cc870dbe958da0fe3fff96d0df6561b8b064",
+      "sourceExportReady": false,
+      "referenceRevision": "4a8d2ec8509d0da7d5fd5293f42251ea99d5ea3c",
+      "checkoutMatchesReference": false,
+      "initialized": true
     },
     {
       "revision": "b0ce79ee33ddd93d513f77341167956e1355758e",
@@ -53,9 +59,12 @@
       "defaultBranch": "7.0/cachy",
       "forkSource": "torvalds/linux",
       "repository": "aphrody-labs/cachyos-linux",
-      "mount": "forks/cachyos-linux",
+      "mount": "vendor/cachyos-linux",
       "checkoutRevision": "b0ce79ee33ddd93d513f77341167956e1355758e",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "b0ce79ee33ddd93d513f77341167956e1355758e",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "17bb0bb818d283d0dc6e0280a2e9d5b95e66808b",
@@ -68,10 +77,13 @@
       "defaultBranch": "master",
       "forkSource": "CachyOS/kernel-patches",
       "repository": "aphrody-labs/kernel-patches",
-      "mount": "forks/kernel-patches",
+      "mount": "vendor/kernel-patches",
       "checkoutRevision": "17bb0bb818d283d0dc6e0280a2e9d5b95e66808b",
       "sourceExportReady": false,
-      "previousRegistration": "aphrody-labs/cachyos-kernel-patches"
+      "previousRegistration": "aphrody-labs/cachyos-kernel-patches",
+      "referenceRevision": "17bb0bb818d283d0dc6e0280a2e9d5b95e66808b",
+      "checkoutMatchesReference": true,
+      "initialized": true
     },
     {
       "revision": "8f0d146f8aaeba77a52fbe5db48f1e21b28d8551",
@@ -84,9 +96,12 @@
       "defaultBranch": "master",
       "forkSource": "archlinux/devtools",
       "repository": "aphrody-labs/cachyos-devtools",
-      "mount": "forks/cachyos-devtools",
+      "mount": "vendor/cachyos-devtools",
       "checkoutRevision": "8f0d146f8aaeba77a52fbe5db48f1e21b28d8551",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "8f0d146f8aaeba77a52fbe5db48f1e21b28d8551",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "927a956671108268d252523d6a0764e7cff6d969",
@@ -99,10 +114,13 @@
       "defaultBranch": "develop",
       "forkSource": "CachyOS/pkg-manage-util",
       "repository": "aphrody-labs/pkg-manage-util",
-      "mount": "forks/pkg-manage-util",
-      "checkoutRevision": "927a956671108268d252523d6a0764e7cff6d969",
+      "mount": "vendor/pkg-manage-util",
+      "checkoutRevision": "8b49ff7e5490eacba3a7830263c1f7b4fc7114ba",
       "sourceExportReady": false,
-      "previousRegistration": "aphrody-labs/cachyos-pkg-manage-util"
+      "previousRegistration": "aphrody-labs/cachyos-pkg-manage-util",
+      "referenceRevision": "927a956671108268d252523d6a0764e7cff6d969",
+      "checkoutMatchesReference": false,
+      "initialized": true
     },
     {
       "revision": "824f2033bcec4b0fb2232976a4fc6037577a6164",
@@ -115,9 +133,12 @@
       "defaultBranch": "develop",
       "forkSource": "CachyOS/repo-manage-util",
       "repository": "aphrody-labs/cachyos-repo-manage-util",
-      "mount": "forks/cachyos-repo-manage-util",
+      "mount": "vendor/cachyos-repo-manage-util",
       "checkoutRevision": "824f2033bcec4b0fb2232976a4fc6037577a6164",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "824f2033bcec4b0fb2232976a4fc6037577a6164",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "cd648ede9ebcdef479e7eee81e09572807b6c0dd",
@@ -130,9 +151,12 @@
       "defaultBranch": "main",
       "forkSource": "CachyOS/builder-dashboard",
       "repository": "aphrody-labs/cachyos-builder-dashboard-reference",
-      "mount": "forks/cachyos-builder-dashboard-reference",
+      "mount": "vendor/cachyos-builder-dashboard-reference",
       "checkoutRevision": "cd648ede9ebcdef479e7eee81e09572807b6c0dd",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "cd648ede9ebcdef479e7eee81e09572807b6c0dd",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "89b58ba69f52b4723a7bff472b9445b8b220c91f",
@@ -145,9 +169,12 @@
       "defaultBranch": "master",
       "forkSource": "ChimeraOS/chimeraos",
       "repository": "aphrody-labs/chimeraos",
-      "mount": "forks/chimeraos",
+      "mount": "vendor/chimeraos",
       "checkoutRevision": "89b58ba69f52b4723a7bff472b9445b8b220c91f",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "89b58ba69f52b4723a7bff472b9445b8b220c91f",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "4d15ebe4fdff0925691f6a1c2766af0c5ca26314",
@@ -160,9 +187,12 @@
       "defaultBranch": "master",
       "forkSource": "ChimeraOS/frzr",
       "repository": "aphrody-labs/frzr",
-      "mount": "forks/frzr",
+      "mount": "vendor/frzr",
       "checkoutRevision": "4d15ebe4fdff0925691f6a1c2766af0c5ca26314",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "4d15ebe4fdff0925691f6a1c2766af0c5ca26314",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "11bb351abd46c2a0f9e9bec5bad56d7f7fbd07f4",
@@ -175,9 +205,12 @@
       "defaultBranch": "master",
       "forkSource": "ChimeraOS/chimera",
       "repository": "aphrody-labs/chimeraos-chimera",
-      "mount": "forks/chimeraos-chimera",
+      "mount": "vendor/chimeraos-chimera",
       "checkoutRevision": "11bb351abd46c2a0f9e9bec5bad56d7f7fbd07f4",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "11bb351abd46c2a0f9e9bec5bad56d7f7fbd07f4",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "73d2da84ace7f41006a0f85bd2fdb19ef593a464",
@@ -190,9 +223,12 @@
       "defaultBranch": "main",
       "forkSource": "ChimeraOS/gamescope-session",
       "repository": "aphrody-labs/chimeraos-gamescope-session",
-      "mount": "forks/chimeraos-gamescope-session",
+      "mount": "vendor/chimeraos-gamescope-session",
       "checkoutRevision": "73d2da84ace7f41006a0f85bd2fdb19ef593a464",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "73d2da84ace7f41006a0f85bd2fdb19ef593a464",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "1a3fdb7fa15a4bba7204bef69702b7a10a297828",
@@ -205,9 +241,12 @@
       "defaultBranch": "main",
       "forkSource": "ChimeraOS/gamescope-session-steam",
       "repository": "aphrody-labs/chimeraos-gamescope-session-steam",
-      "mount": "forks/chimeraos-gamescope-session-steam",
+      "mount": "vendor/chimeraos-gamescope-session-steam",
       "checkoutRevision": "1a3fdb7fa15a4bba7204bef69702b7a10a297828",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "1a3fdb7fa15a4bba7204bef69702b7a10a297828",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "ee8e66690eb460ec8b13b56eabb7388298e0972f",
@@ -220,9 +259,12 @@
       "defaultBranch": "main",
       "forkSource": "ChimeraOS/device-quirks",
       "repository": "aphrody-labs/chimeraos-device-quirks",
-      "mount": "forks/chimeraos-device-quirks",
+      "mount": "vendor/chimeraos-device-quirks",
       "checkoutRevision": "ee8e66690eb460ec8b13b56eabb7388298e0972f",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "ee8e66690eb460ec8b13b56eabb7388298e0972f",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "8a4f21f677f941dd8611679d7c667c5be8d0b049",
@@ -235,9 +277,12 @@
       "defaultBranch": "master",
       "forkSource": "ChimeraOS/install-media",
       "repository": "aphrody-labs/chimeraos-install-media",
-      "mount": "forks/chimeraos-install-media",
+      "mount": "vendor/chimeraos-install-media",
       "checkoutRevision": "8a4f21f677f941dd8611679d7c667c5be8d0b049",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "8a4f21f677f941dd8611679d7c667c5be8d0b049",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "5a053e8cd15043760d68b24954efbec73b425c8f",
@@ -250,10 +295,13 @@
       "defaultBranch": "gamescope-plus",
       "forkSource": "ValveSoftware/steamos-compositor",
       "repository": "aphrody-labs/gamescope",
-      "mount": "forks/gamescope",
-      "checkoutRevision": "5a053e8cd15043760d68b24954efbec73b425c8f",
+      "mount": "vendor/gamescope",
+      "checkoutRevision": "2b5cf191d1047d6895516a834de8a72ac1c342f3",
       "sourceExportReady": false,
-      "previousRegistration": "aphrody-labs/chimeraos-gamescope"
+      "previousRegistration": "aphrody-labs/chimeraos-gamescope",
+      "referenceRevision": "5a053e8cd15043760d68b24954efbec73b425c8f",
+      "checkoutMatchesReference": false,
+      "initialized": true
     },
     {
       "revision": "9977ef98f99ef5b9fbcf42e44516a64cf23b13ec",
@@ -266,9 +314,12 @@
       "defaultBranch": "main",
       "forkSource": "ChimeraOS/flathub-proxy",
       "repository": "aphrody-labs/chimeraos-flathub-proxy",
-      "mount": "forks/chimeraos-flathub-proxy",
+      "mount": "vendor/chimeraos-flathub-proxy",
       "checkoutRevision": "9977ef98f99ef5b9fbcf42e44516a64cf23b13ec",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "9977ef98f99ef5b9fbcf42e44516a64cf23b13ec",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "170127c4226d4cc7747b4a4e07167cdb6ea7166b",
@@ -281,9 +332,12 @@
       "defaultBranch": "main",
       "forkSource": "OpenGamingCollective/kernel-packages",
       "repository": "aphrody-labs/ogc-kernel-packages",
-      "mount": "forks/ogc-kernel-packages",
+      "mount": "vendor/ogc-kernel-packages",
       "checkoutRevision": "170127c4226d4cc7747b4a4e07167cdb6ea7166b",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "170127c4226d4cc7747b4a4e07167cdb6ea7166b",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "d951ef9df713a3ad3a88645a8c07b79ea5592274",
@@ -296,9 +350,12 @@
       "defaultBranch": "main",
       "forkSource": "ShadowBlip/InputPlumber",
       "repository": "aphrody-labs/inputplumber",
-      "mount": "forks/inputplumber",
+      "mount": "vendor/inputplumber",
       "checkoutRevision": "d951ef9df713a3ad3a88645a8c07b79ea5592274",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "d951ef9df713a3ad3a88645a8c07b79ea5592274",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "f5145850eb649707811648b372eaf1f1066b439d",
@@ -311,9 +368,12 @@
       "defaultBranch": "main",
       "forkSource": "ShadowBlip/PowerStation",
       "repository": "aphrody-labs/powerstation",
-      "mount": "forks/powerstation",
+      "mount": "vendor/powerstation",
       "checkoutRevision": "f5145850eb649707811648b372eaf1f1066b439d",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "f5145850eb649707811648b372eaf1f1066b439d",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "0db5812f21e98d0a5ac70bb1b5a674f2f369c22c",
@@ -326,9 +386,12 @@
       "defaultBranch": "main",
       "forkSource": "ShadowBlip/OpenGamepadUI",
       "repository": "aphrody-labs/opengamepadui",
-      "mount": "forks/opengamepadui",
+      "mount": "vendor/opengamepadui",
       "checkoutRevision": "0db5812f21e98d0a5ac70bb1b5a674f2f369c22c",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "0db5812f21e98d0a5ac70bb1b5a674f2f369c22c",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "2e50781f1e2e536ec33e167733edc9de71c153b0",
@@ -341,9 +404,12 @@
       "defaultBranch": "main",
       "forkSource": "gregkh/linux",
       "repository": "aphrody-labs/ogc-linux",
-      "mount": "forks/ogc-linux",
+      "mount": "vendor/ogc-linux",
       "checkoutRevision": "2e50781f1e2e536ec33e167733edc9de71c153b0",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "2e50781f1e2e536ec33e167733edc9de71c153b0",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "51bfd1dbaa1b5f790e19623faf2745945d40c796",
@@ -356,9 +422,12 @@
       "defaultBranch": "quattro",
       "forkSource": "omacom/omarchy",
       "repository": "aphrody-labs/omarchy",
-      "mount": "forks/omarchy",
-      "checkoutRevision": "51bfd1dbaa1b5f790e19623faf2745945d40c796",
-      "sourceExportReady": false
+      "mount": "vendor/omarchy",
+      "checkoutRevision": "84cfb93959f4fe0bbb71de71593b36647d2ba78d",
+      "sourceExportReady": false,
+      "referenceRevision": "51bfd1dbaa1b5f790e19623faf2745945d40c796",
+      "checkoutMatchesReference": false,
+      "initialized": true
     },
     {
       "revision": "a97afe08808ad81290792e9f9823c761be3a5f86",
@@ -371,9 +440,12 @@
       "defaultBranch": "master",
       "forkSource": "omacom/omarchy-pkgs",
       "repository": "aphrody-labs/omarchy-pkgs",
-      "mount": "forks/omarchy-pkgs",
-      "checkoutRevision": "a97afe08808ad81290792e9f9823c761be3a5f86",
-      "sourceExportReady": false
+      "mount": "vendor/omarchy-pkgs",
+      "checkoutRevision": "9093fafb7bcb7eb2a770122bfae5676444b8339f",
+      "sourceExportReady": false,
+      "referenceRevision": "a97afe08808ad81290792e9f9823c761be3a5f86",
+      "checkoutMatchesReference": false,
+      "initialized": true
     },
     {
       "revision": "c668141e9c42b13c80c9ca4ea108e11708c5e8a5",
@@ -386,9 +458,12 @@
       "defaultBranch": "quattro",
       "forkSource": "omacom/omarchy",
       "repository": "aphrody-labs/omarchy",
-      "mount": "forks/omarchy",
-      "checkoutRevision": "51bfd1dbaa1b5f790e19623faf2745945d40c796",
-      "sourceExportReady": false
+      "mount": "vendor/omarchy",
+      "checkoutRevision": "84cfb93959f4fe0bbb71de71593b36647d2ba78d",
+      "sourceExportReady": false,
+      "referenceRevision": "c668141e9c42b13c80c9ca4ea108e11708c5e8a5",
+      "checkoutMatchesReference": false,
+      "initialized": true
     },
     {
       "revision": "f87c10895ea35a9a2cea629fef1d7532a3fecbc5",
@@ -401,9 +476,12 @@
       "defaultBranch": "main",
       "forkSource": "block/buzz",
       "repository": "aphrody-labs/buzz",
-      "mount": "forks/buzz",
+      "mount": "vendor/buzz",
       "checkoutRevision": "f87c10895ea35a9a2cea629fef1d7532a3fecbc5",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "f87c10895ea35a9a2cea629fef1d7532a3fecbc5",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "1de9d97983602d36108bd1f1d734cbdef47ee4e1",
@@ -416,9 +494,12 @@
       "defaultBranch": "main",
       "forkSource": "thisisgm/flea",
       "repository": "aphrody-labs/flea",
-      "mount": "forks/flea",
+      "mount": "vendor/flea",
       "checkoutRevision": "1de9d97983602d36108bd1f1d734cbdef47ee4e1",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "1de9d97983602d36108bd1f1d734cbdef47ee4e1",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "089662fd59ebcedb047eea22fd983d66b4216d73",
@@ -431,9 +512,12 @@
       "defaultBranch": "main",
       "forkSource": "omacom/gliff",
       "repository": "aphrody-labs/gliff",
-      "mount": "forks/gliff",
+      "mount": "vendor/gliff",
       "checkoutRevision": "089662fd59ebcedb047eea22fd983d66b4216d73",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "089662fd59ebcedb047eea22fd983d66b4216d73",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "065ef9d6a531c49fb8bee7e818ef837065b21ee9",
@@ -446,9 +530,12 @@
       "defaultBranch": "master",
       "forkSource": "herdrdev/herdr",
       "repository": "aphrody-labs/herdr",
-      "mount": "forks/herdr",
+      "mount": "vendor/herdr",
       "checkoutRevision": "065ef9d6a531c49fb8bee7e818ef837065b21ee9",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "065ef9d6a531c49fb8bee7e818ef837065b21ee9",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "211b7890ed3332f4d1bb1f1a96999e18874a9c3c",
@@ -461,9 +548,12 @@
       "defaultBranch": "master",
       "forkSource": "WhySoBad/hyprland-preview-share-picker",
       "repository": "aphrody-labs/hyprland-preview-share-picker",
-      "mount": "forks/hyprland-preview-share-picker",
+      "mount": "vendor/hyprland-preview-share-picker",
       "checkoutRevision": "211b7890ed3332f4d1bb1f1a96999e18874a9c3c",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "211b7890ed3332f4d1bb1f1a96999e18874a9c3c",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "af0416be50770a97760f7070684bc667b759a15c",
@@ -476,9 +566,12 @@
       "defaultBranch": "main",
       "forkSource": "localsend/localsend",
       "repository": "aphrody-labs/localsend",
-      "mount": "forks/localsend",
+      "mount": "vendor/localsend",
       "checkoutRevision": "af0416be50770a97760f7070684bc667b759a15c",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "af0416be50770a97760f7070684bc667b759a15c",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "06a4601a351ebfd1abb6abba9a44c34e40d94776",
@@ -491,9 +584,12 @@
       "defaultBranch": "main",
       "forkSource": "AsahiLinux/m1n1",
       "repository": "aphrody-labs/m1n1-aurora",
-      "mount": "forks/m1n1-aurora",
+      "mount": "vendor/m1n1-aurora",
       "checkoutRevision": "06a4601a351ebfd1abb6abba9a44c34e40d94776",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "06a4601a351ebfd1abb6abba9a44c34e40d94776",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "4c273d56dc887624eaaa6a1dd2e17ea796eb7678",
@@ -506,9 +602,12 @@
       "defaultBranch": "main",
       "forkSource": "jorgemanrubia/omacharts",
       "repository": "aphrody-labs/omacharts",
-      "mount": "forks/omacharts",
+      "mount": "vendor/omacharts",
       "checkoutRevision": "4c273d56dc887624eaaa6a1dd2e17ea796eb7678",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "4c273d56dc887624eaaa6a1dd2e17ea796eb7678",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "c6bdbc971dddcb0f20ef4b97379f624d5271612a",
@@ -521,9 +620,12 @@
       "defaultBranch": "main",
       "forkSource": "tcballard/omarchy-task-manager",
       "repository": "aphrody-labs/omarchy-task-manager",
-      "mount": "forks/omarchy-task-manager",
+      "mount": "vendor/omarchy-task-manager",
       "checkoutRevision": "c6bdbc971dddcb0f20ef4b97379f624d5271612a",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "c6bdbc971dddcb0f20ef4b97379f624d5271612a",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "cd3fcdda3f8e15fda73288f6cf3803164138a7e4",
@@ -536,9 +638,12 @@
       "defaultBranch": "main",
       "forkSource": "y4b9vb7nk9-debug/omatrack",
       "repository": "aphrody-labs/omatrack",
-      "mount": "forks/omatrack",
+      "mount": "vendor/omatrack",
       "checkoutRevision": "cd3fcdda3f8e15fda73288f6cf3803164138a7e4",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "cd3fcdda3f8e15fda73288f6cf3803164138a7e4",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "8f02fe5e34e27dc60260ee564e86a11f2dc7ca87",
@@ -551,9 +656,12 @@
       "defaultBranch": "main",
       "forkSource": "FrameworkComputer/qmk_hid",
       "repository": "aphrody-labs/qmk-hid",
-      "mount": "forks/qmk-hid",
+      "mount": "vendor/qmk-hid",
       "checkoutRevision": "8f02fe5e34e27dc60260ee564e86a11f2dc7ca87",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "8f02fe5e34e27dc60260ee564e86a11f2dc7ca87",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "fada664df7a294d1d1a9ca3e7cd3637069122f17",
@@ -566,9 +674,12 @@
       "defaultBranch": "master",
       "forkSource": "rustdesk/rustdesk",
       "repository": "aphrody-labs/rustdesk",
-      "mount": "forks/rustdesk",
+      "mount": "vendor/rustdesk",
       "checkoutRevision": "fada664df7a294d1d1a9ca3e7cd3637069122f17",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "fada664df7a294d1d1a9ca3e7cd3637069122f17",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "0a086aa3bdb251842a1e8413e2a6b35970d0b409",
@@ -581,9 +692,12 @@
       "defaultBranch": "main",
       "forkSource": "lgse/strata",
       "repository": "aphrody-labs/strata",
-      "mount": "forks/strata",
+      "mount": "vendor/strata",
       "checkoutRevision": "0a086aa3bdb251842a1e8413e2a6b35970d0b409",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "0a086aa3bdb251842a1e8413e2a6b35970d0b409",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "4bcd8339bc22e74bd81c9f3efdfdfcbcf461db70",
@@ -596,9 +710,12 @@
       "defaultBranch": "main",
       "forkSource": "Satty-org/Satty",
       "repository": "aphrody-labs/tensaku",
-      "mount": "forks/tensaku",
+      "mount": "vendor/tensaku",
       "checkoutRevision": "4bcd8339bc22e74bd81c9f3efdfdfcbcf461db70",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "4bcd8339bc22e74bd81c9f3efdfdfcbcf461db70",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "112ebb310b848d8f1251a5c2919a9cd5a5c78e18",
@@ -611,9 +728,12 @@
       "defaultBranch": "master",
       "forkSource": "omacom/ttfx",
       "repository": "aphrody-labs/ttfx",
-      "mount": "forks/ttfx",
+      "mount": "vendor/ttfx",
       "checkoutRevision": "112ebb310b848d8f1251a5c2919a9cd5a5c78e18",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "112ebb310b848d8f1251a5c2919a9cd5a5c78e18",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "8cf0f0bf0e7196a680bd44b7d918d7f874f9ede9",
@@ -626,9 +746,12 @@
       "defaultBranch": "master",
       "forkSource": "cdown/tzupdate",
       "repository": "aphrody-labs/tzupdate",
-      "mount": "forks/tzupdate",
+      "mount": "vendor/tzupdate",
       "checkoutRevision": "8cf0f0bf0e7196a680bd44b7d918d7f874f9ede9",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "8cf0f0bf0e7196a680bd44b7d918d7f874f9ede9",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "a515085fd39fae80acc086c8fbfd9b7771a9a11d",
@@ -641,9 +764,12 @@
       "defaultBranch": "master",
       "forkSource": "abenz1267/walker",
       "repository": "aphrody-labs/walker",
-      "mount": "forks/walker",
+      "mount": "vendor/walker",
       "checkoutRevision": "a515085fd39fae80acc086c8fbfd9b7771a9a11d",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "a515085fd39fae80acc086c8fbfd9b7771a9a11d",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "revision": "2439016d2e8d3a0d8aebcd243f29604a91f201c9",
@@ -656,9 +782,12 @@
       "defaultBranch": "7.0/cachy",
       "forkSource": "torvalds/linux",
       "repository": "aphrody-labs/cachyos-linux",
-      "mount": "forks/cachyos-linux",
+      "mount": "vendor/cachyos-linux",
       "checkoutRevision": "b0ce79ee33ddd93d513f77341167956e1355758e",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "2439016d2e8d3a0d8aebcd243f29604a91f201c9",
+      "checkoutMatchesReference": false,
+      "initialized": false
     },
     {
       "revision": "dd99802c8b0c384169bb36293c9517fa67238e47",
@@ -671,9 +800,12 @@
       "defaultBranch": "main",
       "forkSource": "NVIDIA/NV-Kernels",
       "repository": "aphrody-labs/nvidia-kernels",
-      "mount": "forks/nvidia-kernels",
+      "mount": "vendor/nvidia-kernels",
       "checkoutRevision": "dd99802c8b0c384169bb36293c9517fa67238e47",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "dd99802c8b0c384169bb36293c9517fa67238e47",
+      "checkoutMatchesReference": true,
+      "initialized": false
     },
     {
       "id": "pacman",
@@ -683,9 +815,12 @@
       "pinVerified": true,
       "forkParent": "CachyOS/pacman",
       "role": "common-pacman-libalpm-source",
-      "mount": "forks/pacman",
+      "mount": "vendor/pacman",
       "checkoutRevision": "4056cd687f6379e61e7decb9b66e9b57cb3949a9",
-      "sourceExportReady": false
+      "sourceExportReady": false,
+      "referenceRevision": "4056cd687f6379e61e7decb9b66e9b57cb3949a9",
+      "checkoutMatchesReference": true,
+      "initialized": false
     }
   ],
   "nativeSourceViews": {
@@ -703,5 +838,8 @@
       "aphrody-labs/chimeraos-gamescope"
     ],
     "reason": "Fresh unreferenced duplicates replaced by verified existing canonical owners; GitHub DELETE returned 403 because the current credential lacks delete_repo scope"
-  }
+  },
+  "layout": "flat-vendor",
+  "physicalSourceOwners": 29,
+  "registeredSourceOwners": 66
 }

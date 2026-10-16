@@ -1,5 +1,31 @@
 # Integration plan
 
+## MSYS2 vendor and Desktop integration — 2026-10-16
+
+- [x] Move 29 physical MSYS2 source owners into flat `vendor/`, retaining 94
+      contained dependencies, licenses, source HEADs and semantic Git indexes.
+- [x] Register 66 unique vendor Git owners: 29 moved checkouts and 37 lazy
+      Arch owners. Coalesce six shared owners and preserve all 45 reference pins
+      separately from selected checkout revisions.
+- [x] Preserve 12 active Bun Engine consumer views and rebind three incoming Git
+      alternates; verify zero broken Git pointers or linked worktrees.
+- [x] Publish the existing cym owner's source/runtime/workspace separation and
+      pure plan/doctor contract. Add root `msys2 plan|doctor|lock` orchestration,
+      native ABI boundaries and deterministic installed-metadata locks.
+- [x] Apply the MSYS2 review fixes: optional pacman, guarded links/Home, strict
+      package identity parsing and registry-scoped source inspection.
+- [x] Install cym 1.0.0-8 through native pacman after archive identity/payload
+      checks; verify zero altered files, help/plan, unchanged configuration and
+      the other 99 installed packages.
+- [ ] Retire eight obsolete source junctions. Automatic approval review rejected
+      their removal with `blocked by policy`; the valid views remain in place.
+      Twelve active Bun Engine consumer views and external Git stores stay required.
+- [ ] Resolve the existing Linux recipe merge with its source owner; its ten
+      unmerged paths and missing object alternate remain preserved. A bounded
+      connectivity probe did not establish object completeness.
+- [ ] Qualify native Desktop toolchains, graphics artifacts and activation;
+      metadata inspection and a compiled CLI are separate from that release.
+
 ## Arch distribution assembly — 2026-10-16
 
 - [x] Stop the previous runtime build and local migration loop before reassessment.

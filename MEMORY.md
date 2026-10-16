@@ -5,7 +5,8 @@ pacman/libalpm as the primary Linux package manager, and one root factory.
 The three agents delivered exhaustive custom recipe/package catalogs,
 upstream kernel/Rust source identities, build tools, SDK/library metadata and
 license boundaries. The root provisioned/read back 45 immutable references
-across 43 Aphrody Labs forks and registered their Git owners under forks/.
+across 43 Aphrody Labs forks; their Git owners now share flat vendor/ with
+the existing MSYS2 sources, without duplicated source owners.
 Checkout initialization, nested gitlink/LFS closure and source export remain
 separate gates. External Rust projects retain their own locks/workspaces;
 they are not silently added to the product Cargo graph.
@@ -32,14 +33,44 @@ Docker resolution uses a job-owned network because the VPS default docker0
 bridge is absent; it never resets the shared daemon. The existing heavy lock
 is shared with other build owners and is never stolen.
 
-The owner supplied MSYS2 source and Home contexts. The read-only inspector
-reports 43 declarations, 26 source views, 25 Git checkouts and 100 native
-pacman packages. Seven broken CachyOS junctions now target the existing flat
-Bun Engine crate owners; ten pre-existing Linux recipe conflicts and a missing
-Git alternate remain preserved. These MSYS2 binaries do not qualify Linux
+The owner supplied MSYS2 source and Home contexts. All 29 physical owners moved
+into flat vendor/, retaining 94 nested dependencies and protected Home stores.
+The canonical vendor registry declares 81 sources (including absent/lazy owners),
+and root Git registers 66 unique owners: 29 physical and 37 lazy Arch sources.
+Six previous Arch mounts share moved owners; all 45 reference revisions remain
+distinct from actual checkout revisions. The inspector reads 29 repositories
+and 100 native pacman packages, tolerates source-only hosts and excludes Cargo's
+vendor snapshot. Twelve active Bun Engine consumer junctions and eight existing
+CachyOS views resolve; three incoming Git alternates were rebound. Zero linked
+worktrees or broken Git pointers were found. Ten pre-existing Linux recipe
+conflicts and a missing Git alternate remain preserved; a bounded connectivity
+probe exceeded its output limit and does not prove object completeness.
+These MSYS2 binaries do not qualify Linux
 glibc artifacts. Three newly created duplicate forks were removed from the
 source graph in favor of existing canonical owners; remote deletion is pending
 because GitHub rejects DELETE without the delete_repo credential scope.
+
+The existing MSYS2-packages cym source is published at
+9e0da9cbaf3423eb669ec36ea029fbffa82c4948. It takes explicit installation,
+source and workspace roots; plan/doctor do not create links or sync sources.
+The root CLI owns msys2 plan/doctor/lock and local-config path resolution.
+Installed metadata locks contain sorted package/source identities and hashes,
+with signature/archive/build qualification explicitly false. Native selected
+type, lint and format gates pass; source-only inspection and the real 100-package,
+29-source lock pass. Claude's review was invoked through native Aphrody A2A;
+the HTTP reply failed 401 and its read-only review was returned through the
+native invocation and .coord. Authentication repair is tracked separately.
+
+Cym 1.0.0-8 was built by its existing package owner and installed through native
+pacman. Qp/Qlp identity/payload checks, Q/Qkk (zero altered files), installed
+help/plan and source/payload hash read-back pass. The inventory remains 100;
+only cym's package release changed, while its configuration and pacman.conf
+remain byte-identical. The previous package archive was retired after the
+switch. Removing the eight obsolete /usr/src/cachyos junctions was rejected
+by automatic approval review (`blocked by policy`), so these valid views remain.
+The twelve active Bun Engine consumers and their external Git administration
+are required and must be preserved. Task recovery metadata is retained until
+the remaining retirement is permitted; it is not a published relocation API.
 
 ## Flat member migration — 2026-10-16
 
