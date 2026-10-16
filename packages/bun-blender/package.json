@@ -5,12 +5,14 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "bun-blender": "./src/cli.ts"
+    "bun-blender": "./src/cli.ts",
+    "bun-blender-mcp": "./src/mcp.ts"
   },
   "exports": {
     ".": "./src/index.ts",
     "./plugin": "./src/plugin.ts",
-    "./ffi": "./src/ffi.ts"
+    "./ffi": "./src/ffi.ts",
+    "./mcp": "./src/mcp.ts"
   },
   "engines": {
     "bun": ">=1.4.4"

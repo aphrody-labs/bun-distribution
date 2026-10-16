@@ -2,7 +2,11 @@ import { dirname, join } from "node:path";
 import type { BlenderInstall } from "./types.ts";
 
 const SEARCH_ROOTS: Record<string, string[]> = {
-  win32: ["C:/Program Files/Blender Foundation"],
+  win32: [
+    `${Bun.env.LOCALAPPDATA ?? ""}/Programs`,
+    "C:/src/blender-build",
+    "C:/Program Files/Blender Foundation",
+  ],
   darwin: ["/Applications"],
   linux: ["/opt", "/usr/local"],
 };
@@ -29,7 +33,7 @@ async function candidates(): Promise<string[]> {
   if (which) out.push(which);
   const pattern =
     process.platform === "win32"
-      ? "Blender*/blender.exe"
+      ? "{Blender*,bin}/blender.exe"
       : "[Bb]lender*/blender";
   for (const root of SEARCH_ROOTS[process.platform] ?? []) {
     for (const hit of (await scan(pattern, root)).reverse())
