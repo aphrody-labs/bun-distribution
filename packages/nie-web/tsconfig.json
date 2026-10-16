@@ -1,0 +1,5 @@
+{
+  "extends": "../nie-ui/tsconfig.base.json",
+  "include": ["src/**/*.ts", "audit/**/*.ts", "release/**/*.ts", "tools/**/*.ts"],
+  "exclude": ["node_modules", "dist", "build"]
+}

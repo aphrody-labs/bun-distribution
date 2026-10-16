@@ -270,7 +270,7 @@ export class Ui {
       case EmuToUi.MessageType.ExportSave: {
         this.files.storeSaveToStorage(this.saveFilename!, message.buffer.slice().buffer, this.gameTitle!);
         if (message.triggerDownload) {
-          const file = new Blob([message.buffer], {
+          const file = new Blob([message.buffer.slice()], {
             type: "application/octet-stream;charset=utf-8",
           });
           const a = document.createElement("a");
@@ -314,8 +314,8 @@ export class Ui {
         }
         const buffer = this.audio.createBuffer(2, message.l.length, inputSampleRate);
         if (buffer.copyToChannel) {
-          buffer.copyToChannel(message.l, 0);
-          buffer.copyToChannel(message.r, 1);
+          buffer.copyToChannel(message.l as Float32Array<ArrayBuffer>, 0);
+          buffer.copyToChannel(message.r as Float32Array<ArrayBuffer>, 1);
         } else {
           buffer.getChannelData(0).set(message.l);
           buffer.getChannelData(1).set(message.r);

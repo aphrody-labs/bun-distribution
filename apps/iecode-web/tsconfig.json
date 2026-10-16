@@ -1,0 +1,8 @@
+{
+  "extends": "../../packages/nie-ui/tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["bun", "@webgpu/types"]
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["node_modules", "pkg", "wii/pkg"]
+}

@@ -147,7 +147,7 @@ const child = Bun.spawn(
 );
 const stderr = new Response(child.stderr).text();
 try {
-  const result = await Promise.race([report, child.exited.then(code => ({ error: `Browser exited: ${code}` }))]);
+  const result = await Promise.race([report, child.exited.then((code): BrowserReport => ({ error: `Browser exited: ${code}` }))]);
   if (result.error) throw new Error(result.error);
   if (result.frames !== "3") throw new Error(`Expected 3 core frames: ${JSON.stringify(result)}`);
   // Independent native soft-renderer test verifies RGB6 62 for RGB5 maximum.

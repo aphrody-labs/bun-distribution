@@ -1,5 +1,5 @@
 import { InputBits } from "../message";
-import { TouchControls, Touch, TouchArea } from "./touch_controls";
+import { TouchControls, type Touch, TouchArea } from "./touch_controls";
 
 const keyToInputBit: { [key: string]: number } = {
   w: InputBits.R,

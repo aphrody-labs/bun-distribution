@@ -9,7 +9,7 @@ class FpsLimiter {
   private limit_!: number | null;
   private timeout!: number;
   private expectedTimeoutTime!: number;
-  private timeoutId: number | undefined;
+  private timeoutId: ReturnType<typeof setTimeout> | undefined;
   private handleTimeoutCallback: () => void;
 
   constructor(
