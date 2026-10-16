@@ -7,6 +7,7 @@
     "dist",
     "src",
     "styles.css",
+    "dragon-ball.css",
     "!src/**/*.test.*"
   ],
   "type": "module",
@@ -25,6 +26,7 @@
       "default": "./src/index.ts"
     },
     "./styles.css": "./styles.css",
+    "./dragon-ball.css": "./dragon-ball.css",
     "./use-focus-trap": {
       "types": "./src/use-focus-trap.ts",
       "default": "./src/use-focus-trap.ts"
@@ -58,6 +60,8 @@
   "bunos": {
     "runtime": {
       "./source": "react",
+      "./styles.css": "css",
+      "./dragon-ball.css": "css",
       "./use-focus-trap": "react"
     }
   }

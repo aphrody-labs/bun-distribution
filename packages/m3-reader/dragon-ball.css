@@ -1,0 +1,76 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Shenron's live --dbz-* palette drives the reader, including /admin/design overrides. */
+.m3-reader--dragon-ball.m3-reader,
+.m3-reader--dragon-ball .m3-reader {
+  --reader-surface: var(--dbz-bg, #0a0a0a);
+  --reader-on-surface: var(--dbz-blue-light, #cdcdcd);
+  --reader-accent: var(--dbz-orange, #e78220);
+  --reader-on-accent: #0a0a0a;
+  --reader-outline: var(--dbz-border, #2a2a26);
+  --reader-card: var(--dbz-card, #141410);
+  --reader-accent-pressed: var(--dbz-orange-dark, #c46f1b);
+  --reader-blue: var(--dbz-blue, #1e244d);
+  --reader-yellow: var(--dbz-yellow, #fefd03);
+  --reader-red: var(--dbz-red, #f10c3b);
+  --reader-ember: var(--dbz-ember, var(--reader-accent));
+  --reader-ki: var(--dbz-ki, #4ba8ff);
+  --reader-amber: var(--dbz-amber, #ffd23f);
+  color-scheme: dark;
+  font-family: var(--font-sans, system-ui, sans-serif);
+}
+.m3-reader--dragon-ball .m3-reader-container,
+.m3-reader--dragon-ball .m3-reader-collection {
+  border: 2px solid var(--reader-outline);
+  box-shadow: 4px 4px 0 #000;
+}
+.m3-reader--dragon-ball .m3-reader-hud {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 0 2px 0 #000;
+}
+.m3-reader--dragon-ball .m3-reader-btn,
+.m3-reader--dragon-ball .m3-reader-btn-active {
+  border-radius: var(--radius, 0.5rem);
+  box-shadow: 2px 2px 0 #000;
+  text-transform: uppercase;
+}
+.m3-reader--dragon-ball .m3-reader-btn:active,
+.m3-reader--dragon-ball .m3-reader-btn-active:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #000;
+}
+.m3-reader--dragon-ball .m3-reader-btn-active:hover {
+  background: var(--reader-accent-pressed);
+}
+.m3-reader--dragon-ball .m3-reader-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform: skewX(-12.3deg);
+  border: 2px solid #000;
+  border-radius: 0.25rem;
+  color: var(--reader-on-accent);
+  box-shadow: 2px 2px 0 #000;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.m3-reader--dragon-ball .m3-reader-badge > * {
+  transform: skewX(12.3deg);
+}
+.m3-reader--dragon-ball .m3-reader-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--reader-accent) #050505;
+}
+.m3-reader--dragon-ball .m3-reader-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.m3-reader--dragon-ball .m3-reader-scroll::-webkit-scrollbar-thumb {
+  background: var(--reader-accent);
+  border: 1px solid #000;
+  border-radius: 2px;
+}
+.m3-reader--dragon-ball .m3-reader-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--reader-yellow);
+}
