@@ -17,9 +17,33 @@
 - [x] Admit RE through its existing two CLI and two library entries. Native
       entry checking covers 20 files, local exports resolve and offline frozen
       installation passes without changing existing dependency versions.
-- [ ] Complete the six remaining physical Bun admissions. The current root
-      has 557 members; UI migrations and the two upstream monorepo source
-      owners require deliberate consumer and ownership qualification.
+- [ ] Complete the four remaining physical Bun admissions. The current root
+      has 557 members; admin UI, RG UI, Shenron UI and M3 showcase still need
+      deliberate consumer and ownership qualification.
+- [x] Move 3,370 byte-identical Base UI and Tailwind source files into their
+      explicit `vendor/` owners, preserving imported history, pins and licenses.
+      Native root checking passes on 328 files. Installed catalog consumers are
+      unchanged; leaf/Cargo migration, complete upstream history and native
+      source artifacts remain unqualified.
+- [x] Repair shared RG configuration aliases to the admitted flat source
+      owners, retaining the installed UI dependency rather than shadowing it
+      with an unadmitted source tree. Two tests and 19 assertions pass.
+- [x] Repair M3 showcase tooling paths, direct dependency declarations and
+      product version. Scoped lint and formatting pass; its native type gate
+      remains red (768 errors versus 772), with stale installed source views,
+      missing source APIs and an absent native shell owner still unresolved.
+- [x] Restore the preserved public URL contract under RG Config and transfer
+      its read-only portability guards to Bun Workspace, migrating consumers.
+      Runtime classes are explicit and opt-in, not universal FFI restrictions.
+      The scoped suite passes 91 tests and 277 assertions; RG UI checking
+      passes on 110 files. Shenron UI checking remains red with 62 errors;
+      the production presentation ratchet still exceeds its unchanged text
+      baseline by eight literals. No UI package admission is claimed.
+- [x] Share the product inventory collector and regenerate both UI outputs.
+      All 545 physical entries agree; four unadmitted UI roots report false
+      membership. The fixture regression passes 12 assertions; native source
+      checking covers three files. Full lint remains at 4,292 warnings and
+      zero errors across 8,005 files, so strict product lint is still red.
 - [x] Reject obsolete reset-state setters and stale tournament-note requests,
       including reversed same-owner refreshes. Five tests and 25 assertions
       pass, with native checking on 61 files. Preserve the necessary dependency

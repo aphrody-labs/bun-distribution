@@ -1,5 +1,38 @@
 ## Unified product stabilization — 2026-10-16
 
+Base UI and Tailwind upstream monorepo sources now live under vendor/. All
+3,370 moved tracked files retain identical SHA-256 values, including licenses,
+UPSTREAM pins and nested locks. The source inventory records imported-upstream
+ownership and root import ancestry, not a fabricated gitlink or completed
+upstream-history migration. Installed catalog consumers remain unchanged.
+Native root checking passes on 328 files; four physical UI owners remain
+unadmitted. Full native lint still reports 4,292 warnings and zero errors,
+now across 8,005 files; the warning-denying gate remains red.
+
+Shared RG config aliases resolve the actual admitted flat packages; rootDir
+resolves this checkout. Two tests and 19 assertions pass. Local unadmitted RG UI
+does not replace its distinct installed dependency. M3 showcase tooling and
+dependency declarations are corrected without claiming app admission: its
+native check improves from 772 to 768 errors and remains red. No native build
+or stale-installation cleanup was performed by these batches.
+
+Historical Apache-2.0 public URL contracts are owned by RG Config; the closed
+read-only portability guards and fixtures are owned by Bun Workspace. Their
+consumers use these exports, not a revived configuration package. Guards use
+declared flat root members and explicit bunos.runtime classes, accepting old
+shenron.runtime inputs for compatibility. They are an opt-in portable contract,
+not a universal ban on Bun OS native or FFI capabilities. Ninety-one scoped
+tests and 277 assertions pass; RG UI types pass on 110 files. Shenron UI still
+has 62 real type errors. The restored production presentation scan excludes
+test sources but keeps all baseline counts; eight additional UI text literals
+still fail its ratchet. These UI sources remain unadmitted.
+
+The two generated UI inventories now share one collector and independently
+write their own outputs. Their 545 physical flat entries agree; the four
+unadmitted UI roots correctly report workspace=false. A fixture regression
+passes 12 assertions and native checking covers three files. Vendor upstream
+roots are source owners, not product members hidden by an exclusion.
+
 Root type checking passes on 327 files. The imported Cargo adapter now shares
 canonical native admission; its 11 tests and 72 assertions pass. Physical Bun
 layout discovery checks both apps/ and packages/, with two regression tests and
