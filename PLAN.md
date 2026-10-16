@@ -8,15 +8,26 @@
       tests pass with 31 assertions; declaration gaps remain fatal.
 - [x] Correct nine lint diagnostics in six first-party files, preserving worker
       startup, sparse arrays, host-script compatibility and Storage validation.
-      Full native lint reports 4,293 warnings and zero errors across 7,967 files;
+      Full native lint reports 4,292 warnings and zero errors across 7,969 files;
       the warning-denying product gate remains incomplete.
 - [x] Admit 375 generated Windows packages into the root workspace and lock,
       retaining their payloads and licenses. All 375 resolve through local
       workspace links; offline frozen installation, native root/suite checks
       and ten contract tests pass. DLL execution was not qualified.
-- [ ] Complete the seven remaining physical Bun admissions. The current root
-      has 556 members; UI migrations and the two upstream monorepo source
+- [x] Admit RE through its existing two CLI and two library entries. Native
+      entry checking covers 20 files, local exports resolve and offline frozen
+      installation passes without changing existing dependency versions.
+- [ ] Complete the six remaining physical Bun admissions. The current root
+      has 557 members; UI migrations and the two upstream monorepo source
       owners require deliberate consumer and ownership qualification.
+- [x] Reject obsolete reset-state setters and stale tournament-note requests,
+      including reversed same-owner refreshes. Five tests and 25 assertions
+      pass, with native checking on 61 files. Preserve the necessary dependency
+      in `finally`; its remaining native memo-dependency warning is reproduced.
+- [ ] Qualify native lock generation with the newer runtime. The installed
+      runtime still fails two existing catalog resolutions. RE's two local
+      workspace records were repaired without existing-record drift and then
+      verified by native offline frozen installation; this is not a generator fix.
 - [ ] Qualify Storage private-directory permissions on an admitted host. The
       existing suite passes 19 tests on Windows; one POSIX-mode privacy check
       fails closed. No real Storage migration was performed.

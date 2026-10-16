@@ -14,8 +14,22 @@ native checks and ten contract tests pass. No SDK payload or license changed,
 and no DLL execution was performed. Seven physical owners remain unadmitted;
 do not hide their UI/type configuration or upstream monorepo boundaries.
 
+RE is subsequently admitted through its two CLI and two library entries:
+557 members, six remaining physical gaps, native entry checking on 20 files,
+local export resolution and offline frozen installation pass. Native lock
+generation still fails two existing catalog resolutions. Only RE's two local
+lock records were added deterministically, with all existing records unchanged;
+native frozen replay qualifies that lock, not a repair of the runtime generator.
+
+Reset-state setters now belong to an immutable scope generation. Old setters
+cannot overwrite a newer owner or a later A-B-A scope. Tournament notes reset
+with their owner and ignore superseded requests and unmount completions. Five
+regressions pass with 25 assertions; explicit native checking covers 61 files.
+The actual loading dependency in finally remains present despite a reproduced
+native memo-dependency warning. No rule was disabled or provider contacted.
+
 Nine first-party lint diagnostics are corrected. Full native lint still fails
-the warning-denying gate: 4,293 warnings, zero errors, 7,967 files. Storage path
+the warning-denying gate: 4,292 warnings, zero errors, 7,969 files. Storage path
 guards now distinguish the remote POSIX destination from local host state paths
 and resolve this checkout correctly. Its tests improve from 14/6 to 19/1 on
 Windows; the remaining POSIX permission check stays fail-closed. No production

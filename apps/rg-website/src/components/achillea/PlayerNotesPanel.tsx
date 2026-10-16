@@ -3,8 +3,8 @@
 import { useResetState } from "@/hooks/use-reset-state";
 
 import { useId } from "react";
-import { useEffect, useState, useMemo } from "react";
-import { createAchilleaClient } from "@/lib/achillea";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { createAchilleaClient } from "@/lib/achillea/client";
 import type { PlayerNote } from "@rosegriffon/achillea-types/domain/player-note";
 import { PlayerNoteCategory, PlayerNoteSeverity } from "@rosegriffon/achillea-types/enums/eventEnums";
 import {
@@ -67,7 +67,7 @@ export function PlayerNotesPanel({
 }: PlayerNotesPanelProps) {
   const controlId = useId();
 
-  const [notes, setNotes] = useState<PlayerNote[]>([]);
+  const [notes, setNotes] = useResetState<PlayerNote[]>([], tournamentId);
   const [loading, setLoading] = useResetState<boolean>(true, tournamentId);
   const [error, setError] = useResetState<string | null>(null, tournamentId);
 
@@ -96,30 +96,44 @@ export function PlayerNotesPanel({
     [],
   );
 
-  const loadNotes = async () => {
-    try {
-      const res = await client.playerNotes.list({
-        tournamentId: tournamentId ?? undefined,
-        pageSize: 100,
-      });
-      if (res.ok) {
-        setNotes(res.value.data ?? []);
-      } else {
-        setError(res.detail || "Impossible de charger les signalements.");
+  const requests = useRef<{ load: (() => Promise<void>) | null; latest: number }>({ load: null, latest: 0 });
+  const loadNotes = useCallback(
+    async function loadCurrentNotes(): Promise<void> {
+      if (requests.current.load !== loadCurrentNotes) return;
+      const request = ++requests.current.latest;
+      const isCurrent = () => requests.current.load === loadCurrentNotes && requests.current.latest === request;
+      try {
+        const res = await client.playerNotes.list({
+          tournamentId: tournamentId ?? undefined,
+          pageSize: 100,
+        });
+        if (!isCurrent()) return;
+        if (res.ok) {
+          setNotes(res.value.data ?? []);
+        } else {
+          setError(res.detail || "Impossible de charger les signalements.");
+        }
+      } catch {
+        if (isCurrent()) setError("Erreur de connexion avec le service des notes.");
+      } finally {
+        if (isCurrent()) setLoading(false);
       }
-    } catch {
-      setError("Erreur de connexion avec le service des notes.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [client, requests, tournamentId, setNotes, setError, setLoading],
+  );
 
   useEffect(() => {
+    const currentRequests = requests.current;
+    currentRequests.load = loadNotes;
     const timer = setTimeout(() => {
       void loadNotes();
     }, 0);
-    return () => clearTimeout(timer);
-  }, [tournamentId]);
+    return () => {
+      clearTimeout(timer);
+      currentRequests.load = null;
+      currentRequests.latest++;
+    };
+  }, [loadNotes, requests]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
