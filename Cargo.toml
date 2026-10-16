@@ -3,6 +3,12 @@ exclude = ["apps/aphrody-model-view", "toolchains/bun", "apps/aphrody-drive", "a
 resolver = "3"
 members = [
   "crates/aphrody-svg",
+  "crates/aphrody-aarch64",
+  "crates/aphrody-switch",
+  "crates/aphrody-wii",
+  "crates/aphrody-wii-image",
+  "crates/bun-engine-core",
+  "crates/bun-engine-nds",
   "crates/aphrody-sprite-sheet",
   "crates/aphrody-softraster",
   "crates/aphrody-render",
