@@ -3,7 +3,7 @@ import type { JsonValue } from "../../../src/domain/jsonValue.js";
 import { compareWebCaptures } from "../../../src/domain/webCaptureDiff.js";
 import { compareWebCapturesInputSchema } from "../../../src/domain/webCaptureDiffSchemas.js";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import { CdpBrowserProvider } from "../../../src/browser/CdpBrowserProvider.js";
 import { inspectWebPageInputSchema } from "../../../src/domain/browserObservation.js";

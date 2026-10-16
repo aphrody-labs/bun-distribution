@@ -1,6 +1,6 @@
 import * as t from "@babel/types";
-import { fc, it } from "@fast-check/vitest";
-import { describe, expect } from "vitest";
+import { fc, it } from "../../../tests/support/fastCheckIt.js";
+import { describe, expect } from "../../../tests/support/bunTest.js";
 
 import {
   analyzeJavaScriptSemantics,

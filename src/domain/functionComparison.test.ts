@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 
 import { FUNCTION_COMPARISON_EXAMPLE } from "../contracts/functionComparisonExample.js";
 import { enhancedInputSchemas } from "../contracts/enhancedInputs.js";

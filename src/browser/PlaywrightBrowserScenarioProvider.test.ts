@@ -1,6 +1,6 @@
 // Fake-backed composition coverage; real browser verification lives in
 // `npm run verify:browser`.
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "../../tests/support/bunTest.js";
 
 import type { BrowserScenarioSessionPort } from "./BrowserScenarioSessionPort.js";
 import { PlaywrightBrowserScenarioProvider } from "./PlaywrightBrowserScenarioProvider.js";

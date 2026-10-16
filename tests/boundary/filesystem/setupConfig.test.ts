@@ -1,6 +1,6 @@
 import { lstat, readFile, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 

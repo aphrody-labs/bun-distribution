@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../../support/bunTest.js";
 
 import { KunaQueryWork } from "../../../../src/kuna/KunaQueryWork.js";
 import { KunaRunSlots } from "../../../../src/kuna/KunaRunSlots.js";

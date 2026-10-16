@@ -5,7 +5,7 @@ import {
   type SpawnOptionsWithoutStdio,
 } from "node:child_process";
 
-import { test as base } from "vitest";
+import { test as base } from "../bunTest.js";
 
 const SHUTDOWN_GRACE_MS = 1_000;
 

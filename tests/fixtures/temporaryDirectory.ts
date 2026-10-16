@@ -2,7 +2,7 @@ import { mkdtemp, realpath } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { onTestFinished } from "vitest";
+import { onTestFinished } from "../support/bunTest.js";
 
 import { removeTestWorkspace } from "../support/workspace/workspaceFixture.js";
 

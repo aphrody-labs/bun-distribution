@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { readFile, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { join } from "node:path";
-import { expect, it } from "vitest";
+import { expect, it } from "../../../support/bunTest.js";
 import { z } from "zod";
 import {
   jsonValueSchema,

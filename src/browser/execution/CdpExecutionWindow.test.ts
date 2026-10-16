@@ -1,4 +1,4 @@
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../../tests/support/bunTest.js";
 import { CdpExecutionWindow } from "./CdpExecutionWindow.js";
 
 it("settles an already lost transport without arming a timer that cannot resolve", async () => {

@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import type { StdioServerHandle } from "@modelcontextprotocol/server/stdio";
 import pino from "pino";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { createManagedBinarySession } from "../../../src/composition/binary.js";
 import { MCP_SHUTDOWN_FAILED } from "../../../src/main/messages.js";

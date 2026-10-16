@@ -8,7 +8,7 @@ import {
 } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { expect, onTestFinished } from "vitest";
+import { expect, onTestFinished } from "../../support/bunTest.js";
 import { AndroidAnalysisService } from "../../../src/application/android/AndroidAnalysisService.js";
 import { createAndroidAnalysisProvider } from "../../../src/composition/android.js";
 import { ProviderCleanupError } from "../../../src/domain/providerCleanupError.js";

@@ -2,7 +2,7 @@ import { parseMcpToolError } from "../../fixtures/mcpToolError.js";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { McpServer } from "@modelcontextprotocol/server";
-import { afterEach, expect } from "vitest";
+import { afterEach, expect } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import type { BinarySessionPort } from "../../../src/application/binary/BinarySessionPort.js";

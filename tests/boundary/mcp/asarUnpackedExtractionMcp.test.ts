@@ -2,7 +2,7 @@ import { readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { ArtifactProvider } from "../../../src/artifacts/ArtifactProvider.js";

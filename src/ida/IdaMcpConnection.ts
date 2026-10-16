@@ -285,8 +285,11 @@ const readBoundedResponseText = async (
 };
 
 const diagnosticFetch =
-  (redactor: IdaDiagnosticRedactor): typeof fetch =>
-  async (input, init) => {
+  (redactor: IdaDiagnosticRedactor) =>
+  async (
+    input: string | Request | URL,
+    init?: RequestInit,
+  ): Promise<Response> => {
     const response = await fetch(input, init);
     const readText = response.text.bind(response);
     let safeBody: string | undefined;

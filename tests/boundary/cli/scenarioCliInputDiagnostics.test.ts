@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
-import { describe, expect } from "vitest";
+import { describe, expect } from "../../support/bunTest.js";
 
 import { cliTest } from "../../support/cli/cliFixture.js";
 

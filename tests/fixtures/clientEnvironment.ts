@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { vi } from "../support/bunTest.js";
 
 import { PRODUCT_IDENTITY } from "../../src/identity.js";
 

@@ -1,7 +1,7 @@
 import { readdir, rename } from "node:fs/promises";
 import { join } from "node:path";
 
-import { afterEach, expect, it as test, vi } from "vitest";
+import { afterEach, expect, it as test, vi } from "../../../support/bunTest.js";
 
 import { spawnOwnedProviderProcess } from "../../../../src/process/ProviderProcess.js";
 import { run, session } from "./kunaSessionFixture.js";

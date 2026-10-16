@@ -1,7 +1,7 @@
 import { readFile, symlink } from "node:fs/promises";
 import { join } from "node:path";
 
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../support/bunTest.js";
 
 vi.mock("node:fs", async (importOriginal) => {
   const original = await importOriginal<typeof import("node:fs")>();

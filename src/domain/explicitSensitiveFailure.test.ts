@@ -1,5 +1,5 @@
 import { AnalysisAccessDeniedError } from "./analysisErrorCore.js";
-import { expect, it } from "vitest";
+import { expect, it } from "../../tests/support/bunTest.js";
 import {
   AnalysisInputError,
   AnalysisCapabilityUnavailableError,

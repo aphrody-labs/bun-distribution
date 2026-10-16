@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 
 import { dylibResolutionInputSchema } from "./apple/dylibResolution.js";
 import { processScenarioSchema } from "./process/processScenario.js";

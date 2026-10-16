@@ -1,4 +1,4 @@
-import { it } from "vitest";
+import { it } from "../../support/bunTest.js";
 
 import { inspectBundleKeyedArchive } from "../../../src/artifacts/apple/KeyedArchiveReader.js";
 import { parseEvidence } from "../../../src/domain/evidence.js";

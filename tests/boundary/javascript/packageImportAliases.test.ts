@@ -5,7 +5,7 @@ import { dirname, join, relative } from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import {

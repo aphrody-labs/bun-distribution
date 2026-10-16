@@ -3,7 +3,7 @@ import { chmod, mkdir, readdir, truncate, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { build } from "plist";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { ArtifactProvider } from "../../../src/artifacts/ArtifactProvider.js";
 import { ArtifactReaderFailure } from "../../../src/artifacts/ArtifactReader.js";

@@ -1,5 +1,5 @@
 import { parseMcpToolError } from "../../fixtures/mcpToolError.js";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 import { EnhancedTools } from "../../../src/application/EnhancedTools.js";
 import { connectGhidraMcp, sessionEvidence } from "./ghidraMcpHarness.js";
 import { functionDossierSchema } from "../../../src/domain/hopperValues.js";

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { expect } from "vitest";
+import { expect } from "../support/bunTest.js";
 
 import { keyedArchiveResultSchema } from "../../src/domain/apple/keyedArchive.js";
 import { createTestTempDirectory } from "./temporaryDirectory.js";

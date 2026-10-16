@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 import { normalizeWorkflowRun } from "../../../scripts/ci/workflow-run.mjs";
 

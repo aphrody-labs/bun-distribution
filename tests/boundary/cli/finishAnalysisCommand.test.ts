@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { finishAnalysisCommand } from "../../../src/cli/finishAnalysisCommand.js";
 import { AnalysisOutputError } from "../../../src/domain/analysisErrorCore.js";

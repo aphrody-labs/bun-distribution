@@ -1,4 +1,9 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import {
+  beforeAll,
+  describe,
+  expect,
+  it,
+} from "../../tests/support/bunTest.js";
 import { createMessage, generateKey, readPrivateKey, sign } from "openpgp";
 
 import { verifyDetachedPgpSignature } from "./DetachedPgpSignature.js";

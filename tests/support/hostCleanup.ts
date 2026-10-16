@@ -1,4 +1,4 @@
-import { expect } from "vitest";
+import { expect } from "./bunTest.js";
 
 import type { ProcessCaptureError } from "../../src/process/capture/ProcessCaptureError.js";
 

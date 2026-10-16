@@ -1,7 +1,7 @@
 import { chmod, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { expect, it as test } from "vitest";
+import { expect, it as test } from "../../tests/support/bunTest.js";
 
 import { createTestTempDirectory } from "../../tests/fixtures/temporaryDirectory.js";
 import { AnalysisCapabilityUnavailableError } from "../domain/analysisErrorCore.js";

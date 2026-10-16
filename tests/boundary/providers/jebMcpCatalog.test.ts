@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { createStreamableHttpJebMcpConnection } from "../../../src/jeb/JebMcpConnection.js";

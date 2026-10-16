@@ -3,7 +3,7 @@ import { chmod, mkdir, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { ArtifactProvider } from "../../../src/artifacts/ArtifactProvider.js";

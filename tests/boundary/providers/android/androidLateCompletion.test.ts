@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../../support/bunTest.js";
 
 import { AndroidAnalysisService } from "../../../../src/application/android/AndroidAnalysisService.js";
 import { AnalysisCancelledError } from "../../../../src/domain/analysisErrorCore.js";

@@ -6,7 +6,7 @@ import type {
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../support/bunTest.js";
 import { z } from "zod";
 import {
   createTestWorkspace,

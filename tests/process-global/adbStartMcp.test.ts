@@ -1,5 +1,5 @@
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
-import { expect, it, onTestFinished, vi } from "vitest";
+import { expect, it, onTestFinished, vi } from "../support/bunTest.js";
 
 import { AdbProvider } from "../../src/adb/AdbProvider.js";
 import { parseEvidence } from "../../src/domain/evidence.js";

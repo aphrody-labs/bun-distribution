@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../support/bunTest.js";
 
 import { compareManagedMembers } from "../../../../src/domain/managed/managedMemberComparison.js";
 import { inspectManagedMembersBytes } from "../../../../src/dotnet/ManagedMemberInspector.js";

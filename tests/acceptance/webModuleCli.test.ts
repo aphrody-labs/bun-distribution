@@ -1,7 +1,7 @@
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { expect, onTestFinished } from "vitest";
+import { expect, onTestFinished } from "../support/bunTest.js";
 import { createWebModuleTraceService } from "../../src/composition/webModules.js";
 import { createServer } from "../../src/server/createServer.js";
 import { createTestBinarySession } from "../fixtures/binarySession.js";

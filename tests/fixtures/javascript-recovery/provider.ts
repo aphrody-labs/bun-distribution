@@ -1,7 +1,7 @@
 import { access, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { expect, onTestFinished } from "vitest";
+import { expect, onTestFinished } from "../../support/bunTest.js";
 import { JavaScriptRecoveryService } from "../../../src/application/javascript/JavaScriptRecoveryService.js";
 import { createJavaScriptRecoveryProvider } from "../../../src/composition/javascriptRecovery.js";
 import { spawnOwnedProviderProcess } from "../../../src/process/ProviderProcess.js";

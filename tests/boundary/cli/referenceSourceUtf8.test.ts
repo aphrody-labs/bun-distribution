@@ -8,7 +8,7 @@ import {
 } from "node:fs/promises";
 import { join } from "node:path";
 
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 
 import { historicalSourceGraphSchema } from "../../../src/domain/referenceSourceGraph.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

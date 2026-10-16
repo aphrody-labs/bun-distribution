@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { access, chmod, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../tests/support/bunTest.js";
 import { createTestTempDirectory } from "../../tests/fixtures/temporaryDirectory.js";
 import { WabtArtifactProvider } from "./WabtArtifactProvider.js";
 import { wasmArtifactSchema } from "../domain/wasm/wasmArtifact.js";

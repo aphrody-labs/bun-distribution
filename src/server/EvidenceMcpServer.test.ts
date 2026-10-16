@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import { z } from "zod";
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 
 import { err, ok } from "../domain/result.js";
 import { ProviderCleanupError } from "../domain/providerCleanupError.js";

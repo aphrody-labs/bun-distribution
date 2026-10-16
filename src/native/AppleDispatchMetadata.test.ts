@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 import { machoWithPropertyAttributes } from "../../tests/fixtures/objcPropertyMacho.js";
 import { decodeAppleDispatchMetadata } from "./AppleDispatchMetadata.js";
 

@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { parse } from "yaml";
 import { z } from "zod";
 

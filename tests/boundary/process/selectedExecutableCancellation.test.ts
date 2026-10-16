@@ -1,5 +1,5 @@
 import { open, stat, type FileHandle } from "node:fs/promises";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { observeSelectedExecutable } from "../../../src/process/capture/ProcessCaptureLifecycle.js";
 
 it("cancels after real metadata IO without creating an already-aborted stream or leaking the file handle", async () => {

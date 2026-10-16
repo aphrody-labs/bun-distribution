@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "../../tests/support/bunTest.js";
 
 import { createTestTempDirectory } from "../../tests/fixtures/temporaryDirectory.js";
 import { ELECTRON_FUSE_STATE_BYTES } from "../domain/electron/electronFuses.js";

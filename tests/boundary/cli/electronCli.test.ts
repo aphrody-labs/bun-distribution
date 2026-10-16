@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 

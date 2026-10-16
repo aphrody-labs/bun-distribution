@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../tests/support/bunTest.js";
 import { signatureIdentity } from "./managedMemberSignatureIdentity.js";
 
 type Signature = Parameters<typeof signatureIdentity>[0];

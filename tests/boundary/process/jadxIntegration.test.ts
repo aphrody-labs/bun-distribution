@@ -1,4 +1,4 @@
-import { expect, it as test, vi } from "vitest";
+import { expect, it as test, vi } from "../../support/bunTest.js";
 import { access, readFile, truncate, writeFile } from "node:fs/promises";
 import { parseBinaryTarget } from "../../../src/application/BinaryTargetResolver.js";
 import { AndroidAnalysisService } from "../../../src/application/android/AndroidAnalysisService.js";

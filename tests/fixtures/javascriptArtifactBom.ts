@@ -9,7 +9,7 @@ import {
   parse as parseHtml,
   type DefaultTreeAdapterTypes,
 } from "parse5";
-import { expect } from "vitest";
+import { expect } from "../support/bunTest.js";
 
 import type { JavaScriptSourceRange } from "../../src/domain/javascript/javascriptStaticAnalysisTypes.js";
 import type { JavaScriptApplicationGraph } from "../../src/domain/javascript/javascriptApplicationGraph.js";

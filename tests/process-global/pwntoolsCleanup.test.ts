@@ -7,7 +7,7 @@ import {
   expect,
   it,
   onTestFinished,
-} from "vitest";
+} from "../support/bunTest.js";
 
 import { PwntoolsLayoutProvider } from "../../src/native/pwntools/PwntoolsLayoutProvider.js";
 import { PrivateRuntimeRoot } from "../../src/process/PrivateRuntimeRoot.js";

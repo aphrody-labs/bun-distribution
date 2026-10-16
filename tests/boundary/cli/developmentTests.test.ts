@@ -8,7 +8,7 @@ import {
 } from "node:fs/promises";
 import { join } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import { execFileOutput } from "../../../src/process/ExecFileOutput.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
@@ -70,7 +70,7 @@ const fixture = async () => {
   await writeFile(join(root, "src/value.ts"), "export const value = 1;\n");
   await writeFile(
     join(root, "src/value.test.ts"),
-    'import { expect, it } from "vitest"; import { writeFileSync } from "node:fs"; import { value } from "./value.js"; it("checks the selected source", () => { expect(value).toBe(1); writeFileSync("selected.txt", String(value)); });\n',
+    'import { expect, it } from "../../support/bunTest.js"; import { writeFileSync } from "node:fs"; import { value } from "./value.js"; it("checks the selected source", () => { expect(value).toBe(1); writeFileSync("selected.txt", String(value)); });\n',
   );
   await git(root, "init", "--quiet", "-b", "main");
   await git(root, "add", ".");
@@ -188,7 +188,7 @@ describe("development test runner exact selection", () => {
     const decomposed = composed.normalize("NFD");
     await writeFile(
       join(root, "src", composed),
-      'import { it } from "vitest"; it("checks the selected Unicode path", () => {});\n',
+      'import { it } from "../../support/bunTest.js"; it("checks the selected Unicode path", () => {});\n',
     );
     const selected = join(root, "src", decomposed);
     try {
@@ -219,7 +219,7 @@ describe("development test runner exact selection", () => {
       await mkdir(join(root, "src", "nested", "src"), { recursive: true });
       await writeFile(
         join(root, "src", "nested", "src", "value.test.ts"),
-        'import { it } from "vitest"; it("must not run", () => { throw new Error("unselected nested test ran"); });\n',
+        'import { it } from "../../support/bunTest.js"; it("must not run", () => { throw new Error("unselected nested test ran"); });\n',
       );
       const result = await testCommand(root, mode, "src/value.test.ts");
       expect(result.stdout).toContain("1 passed");
@@ -232,7 +232,7 @@ describe("development test runner exact selection", () => {
     const root = await fixture();
     await writeFile(
       join(root, "src", "excluded.test.ts"),
-      'import { it } from "vitest"; it("excluded", () => {});\n',
+      'import { it } from "../../support/bunTest.js"; it("excluded", () => {});\n',
     );
     await writeFile(
       join(root, "vitest.config.mjs"),
@@ -252,7 +252,7 @@ describe("development test runner exact selection", () => {
     const root = await fixture();
     await writeFile(
       join(root, "src", "failure.test.ts"),
-      'import { it } from "vitest"; it("selected failure", () => { throw new Error("selected regression"); });\n',
+      'import { it } from "../../support/bunTest.js"; it("selected failure", () => { throw new Error("selected regression"); });\n',
     );
     await expect(
       testCommand(root, "focused", "src/value.test.ts", "src/failure.test.ts"),
@@ -349,7 +349,7 @@ describe("development test runner public CLI", () => {
     await writeFile(join(root, "src/value.ts"), "export const value = 2;\n");
     await writeFile(
       join(root, "src/value.test.ts"),
-      'import { expect, it } from "vitest"; import { value } from "./value.js"; it("checks current source", () => expect(value).toBe(2));\n',
+      'import { expect, it } from "../../support/bunTest.js"; import { value } from "./value.js"; it("checks current source", () => expect(value).toBe(2));\n',
     );
     await git(root, "add", "src");
     await commit(root, "regression fix");

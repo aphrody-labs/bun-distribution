@@ -1,4 +1,4 @@
-import { onTestFinished } from "vitest";
+import { onTestFinished } from "./bunTest.js";
 import type { AnalysisClient } from "../../src/application/AnalysisProvider.js";
 import { ArtifactProvider } from "../../src/artifacts/ArtifactProvider.js";
 import type { BinaryTarget } from "../../src/domain/binaryTargetTypes.js";

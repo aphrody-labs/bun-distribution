@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 import { SqliteDatabaseService } from "./SqliteDatabaseService.js";
 import { AnalysisCapabilityUnavailableError } from "../../domain/analysisErrorCore.js";
 import { err } from "../../domain/result.js";

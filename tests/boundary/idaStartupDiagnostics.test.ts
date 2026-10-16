@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../support/bunTest.js";
 import { createIdaMcpConnection } from "../../src/ida/IdaMcpConnection.js";
 
 const launcherEnvironment = (): Readonly<Record<string, string>> => {

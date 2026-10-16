@@ -3,7 +3,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { afterEach, describe, expect, it } from "vitest";
+import {
+  afterEach,
+  describe,
+  expect,
+  it,
+} from "../../tests/support/bunTest.js";
 
 import { CdpCaptureCompleteness } from "./CdpCaptureCompleteness.js";
 import { captureFrames } from "./CdpElectronInspection.js";

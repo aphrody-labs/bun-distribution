@@ -3,7 +3,7 @@ import { access, chmod, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import {

@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 import type { ElectronFuseReport } from "../../domain/electron/electronFuses.js";
 import { AnalysisOutputError } from "../../domain/analysisErrorCore.js";
 import { parseEvidence } from "../../domain/evidence.js";

@@ -1,6 +1,6 @@
 import { STDIO_DEFAULT_MAX_BUFFER_SIZE } from "@modelcontextprotocol/server";
 import { rm } from "node:fs/promises";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "../../support/bunTest.js";
 import { createIdaTarget, RecordingIdaMcp } from "../../fixtures/idaMcp.js";
 import { IdaSessionClient } from "../../../src/ida/IdaSessionClient.js";
 import {

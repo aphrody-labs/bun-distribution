@@ -1,7 +1,7 @@
 import { chmod, mkdir, realpath, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { expect, it as test } from "vitest";
+import { expect, it as test } from "../tests/support/bunTest.js";
 
 import { createSystemDoctorHost } from "./doctorRuntime.js";
 import { DOCTOR_PROVIDER_IDS } from "./application/DoctorProviderIds.js";

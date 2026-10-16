@@ -1,6 +1,6 @@
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import { McpServer } from "@modelcontextprotocol/server";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { CutterBridgeService } from "../../../src/cutter/CutterBridgeService.js";
 import { registerCutterTools } from "../../../src/server/registerCutterTools.js";

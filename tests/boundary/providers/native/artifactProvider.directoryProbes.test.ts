@@ -2,7 +2,7 @@ import { mkdir, symlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 import { createPackageWithOptions } from "@electron/asar";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../../fixtures/temporaryDirectory.js";
 import { createDirectAnalysis } from "../../../../src/composition/directAnalysis.js";

@@ -1,6 +1,6 @@
 import { parseConfig } from "../../../src/config/parseConfig.js";
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
-import { describe, expect, it, onTestFinished } from "vitest";
+import { describe, expect, it, onTestFinished } from "../../support/bunTest.js";
 
 import type { AnalysisOperationPort } from "../../../src/application/AnalysisProvider.js";
 import { runDirectAnalysis } from "../../../src/application/DirectAnalysis.js";

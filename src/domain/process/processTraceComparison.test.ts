@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../tests/support/bunTest.js";
 import { jsonValueSchema } from "../jsonValue.js";
 import { parseProcessCapture } from "./processCaptureParsing.js";
 import type { ProcessTraceSpecification } from "./processTraceSpecification.js";

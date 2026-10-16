@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 import { BinaryLayoutService } from "./BinaryLayoutService.js";
 import {
   binaryLayoutFixture,

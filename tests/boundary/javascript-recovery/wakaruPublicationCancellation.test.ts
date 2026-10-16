@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { access, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Readable } from "node:stream";
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../support/bunTest.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 
 const publicationCancellation = vi.hoisted(() => ({

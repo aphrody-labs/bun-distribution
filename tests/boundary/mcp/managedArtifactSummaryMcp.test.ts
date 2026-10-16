@@ -2,7 +2,7 @@ import { writeFile, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../support/bunTest.js";
 import { composeBinarySession } from "../../../src/application/binary/BinarySessionComposition.js";
 import { AnalysisProviderRegistry } from "../../../src/application/binary/AnalysisProviderRegistry.js";
 import { inspectAnalysisView } from "../../../src/application/analysisView/AnalysisViewService.js";

@@ -1,4 +1,4 @@
-import { describe, expect, it, onTestFinished } from "vitest";
+import { describe, expect, it, onTestFinished } from "../../support/bunTest.js";
 import { CdpWebRuntimeProvider } from "../../../src/browser/execution/CdpWebRuntimeProvider.js";
 import { observeWebExecutionInputSchema } from "../../../src/domain/webExecution.js";
 import { inspectWebEventListenersInputSchema } from "../../../src/domain/webEventListeners.js";

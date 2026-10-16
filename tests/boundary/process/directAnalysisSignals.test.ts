@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { access, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../support/bunTest.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 
 it.skipIf(process.platform === "win32").each([

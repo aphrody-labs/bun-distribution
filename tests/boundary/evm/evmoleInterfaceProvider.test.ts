@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { access, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../support/bunTest.js";
 import { z } from "zod";
 import { projectAnalysisError } from "../../../src/domain/analysisErrorProjection.js";
 import { evmInterfaceSchema } from "../../../src/domain/evm/evmInterface.js";

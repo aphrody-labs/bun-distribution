@@ -3,7 +3,7 @@ import { truncate, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { NODE_CAPTURE_PROCESS_MEMORY_LIMIT_BYTES } from "../../../src/browser/history/CaptureRelease.js";
 import { WEB_NETWORK_CAPTURE_LIMITS } from "../../../src/domain/webNetworkCapture.js";

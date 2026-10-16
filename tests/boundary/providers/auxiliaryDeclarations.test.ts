@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { auxiliaryAnalysisProviderDeclarations } from "../../../src/composition/auxiliaryAnalysisProviders.js";
 import { LazyAnalysisProvider } from "../../../src/application/binary/LazyAnalysisProvider.js";

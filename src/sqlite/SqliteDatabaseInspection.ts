@@ -117,7 +117,9 @@ const missingSelectedTable = (name: string): SqliteInspectionFailure =>
 // SQLite folds only ASCII letters when matching virtual/shadow table names.
 const sqliteIdentifierKey = (name: string): string =>
   name.replace(/[A-Z]/g, (letter) => letter.toLowerCase());
-const textEncoding = (encoding: DatabaseEncoding): string =>
+const textEncoding = (
+  encoding: DatabaseEncoding,
+): "utf-8" | "utf-16le" | "utf-16be" =>
   encoding === "UTF-8"
     ? "utf-8"
     : encoding === "UTF-16le"

@@ -15,7 +15,7 @@ import {
 } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 import { dirname, join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 
 import {

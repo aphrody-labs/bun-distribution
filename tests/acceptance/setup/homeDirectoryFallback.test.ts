@@ -3,7 +3,7 @@ import { userInfo } from "node:os";
 import { isAbsolute, join, relative, sep } from "node:path";
 import { parse } from "jsonc-parser";
 
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 import { cliTest } from "../../support/cli/cliFixture.js";

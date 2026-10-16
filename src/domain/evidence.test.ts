@@ -1,5 +1,5 @@
-import { fc, it } from "@fast-check/vitest";
-import { describe, expect } from "vitest";
+import { fc, it } from "../../tests/support/fastCheckIt.js";
+import { describe, expect } from "../../tests/support/bunTest.js";
 
 import { createAnalysisProfile } from "./analysisProfile.js";
 import type { BinaryTarget } from "./binaryTargetTypes.js";

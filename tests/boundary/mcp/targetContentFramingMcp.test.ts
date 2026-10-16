@@ -3,7 +3,7 @@ import type {
   CallToolResult,
   ServerContext,
 } from "@modelcontextprotocol/server";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "../../support/bunTest.js";
 
 import { createTestBinarySession } from "../../fixtures/binarySession.js";
 import { observed } from "../../fixtures/analysisExecution.js";

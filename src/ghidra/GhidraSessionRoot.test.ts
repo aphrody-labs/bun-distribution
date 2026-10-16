@@ -1,5 +1,5 @@
 import { join, resolve, sep } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 
 import { ghidraSessionRoot } from "./GhidraSessionRoot.js";
 

@@ -7,7 +7,7 @@ import {
   Uint8ArrayWriter,
   ZipWriter,
 } from "@zip.js/zip.js";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import { fragmentInventoryEvidence } from "../../fixtures/artifactEvidence.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

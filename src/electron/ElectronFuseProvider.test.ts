@@ -2,7 +2,7 @@ import { resolveElectronFuseTarget } from "./ElectronFusePath.js";
 import { RegularFileChangedError } from "../filesystem/RegularFile.js";
 import { mkdir, symlink, writeFile, truncate, rename } from "node:fs/promises";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 
 import { createTestTempDirectory } from "../../tests/fixtures/temporaryDirectory.js";
 import {

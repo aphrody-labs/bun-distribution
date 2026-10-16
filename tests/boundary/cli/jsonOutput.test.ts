@@ -5,7 +5,7 @@ import { Writable } from "node:stream";
 import { Cli, Formatter } from "incur";
 import { estimateTokenCount } from "tokenx";
 import { parse as parseYaml } from "yaml";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import { writeJsonOutput } from "../../../src/cli/jsonOutput.js";
 import {

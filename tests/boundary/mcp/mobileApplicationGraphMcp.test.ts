@@ -8,7 +8,7 @@ import {
   Uint8ArrayWriter,
   ZipWriter,
 } from "@zip.js/zip.js";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it } from "../../support/bunTest.js";
 
 import { createDirectAnalysis } from "../../../src/composition/directAnalysis.js";
 import { parseEvidence } from "../../../src/domain/evidence.js";

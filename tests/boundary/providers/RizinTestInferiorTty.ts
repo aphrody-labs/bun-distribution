@@ -1,4 +1,4 @@
-import { afterAll } from "vitest";
+import { afterAll } from "../../support/bunTest.js";
 import { spawn } from "@lydell/node-pty";
 import { RizinDebugSessionManager } from "../../../src/rizin/RizinDebugSessionManager.js";
 import { stopOwnedDebuggerProcess } from "../../../src/process/ownedDebuggerSession.js";

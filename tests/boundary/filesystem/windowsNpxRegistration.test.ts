@@ -6,7 +6,7 @@ import {
   StdioClientTransport,
   getDefaultEnvironment,
 } from "@modelcontextprotocol/client/stdio";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { z } from "zod";
 import { configureClientConfiguration } from "../../../src/application/SetupClientConfiguration.js";
 import { readClientRegistrationStatuses } from "../../../src/application/ClientRegistrationStatus.js";

@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 
 import { WebSocket, WebSocketServer } from "ws";
-import { expect, it, onTestFinished, vi } from "vitest";
+import { expect, it, onTestFinished, vi } from "../../support/bunTest.js";
 
 import { CdpTargetSessionOwner } from "../../../src/browser/CdpTargetSessionOwner.js";
 import type { CdpConnection } from "../../../src/browser/CdpConnection.js";

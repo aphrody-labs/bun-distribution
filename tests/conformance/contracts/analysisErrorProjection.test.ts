@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import { ProcessCaptureError } from "../../../src/process/capture/ProcessCaptureError.js";
 import { analysisErrorProjectionSchema } from "../../../src/contracts/errorSchemas.js";

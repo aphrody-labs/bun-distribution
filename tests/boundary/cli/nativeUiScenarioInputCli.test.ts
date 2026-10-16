@@ -1,4 +1,4 @@
-import { describe, expect } from "vitest";
+import { describe, expect } from "../../support/bunTest.js";
 
 import { cliTest } from "../../support/cli/cliFixture.js";
 import type { TestCli } from "../../support/cli/cliFixture.js";

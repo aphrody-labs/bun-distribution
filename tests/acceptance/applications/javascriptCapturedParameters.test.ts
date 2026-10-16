@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 
 import { parseEvidence } from "../../../src/domain/evidence.js";
 import { createApplicationMcpHarness } from "../../fixtures/applicationMcpHarness.js";

@@ -3,7 +3,7 @@ import { lstat, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import {
   classifyAndHashRoot,

@@ -1,5 +1,5 @@
 import { Cli } from "incur";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { registerSignalCommands } from "../../../src/cli/signalCommands.js";
 import { silentLogger } from "../../../src/logger.js";
 import { createEvidence } from "../../../src/domain/evidence.js";

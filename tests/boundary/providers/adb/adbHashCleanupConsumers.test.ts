@@ -1,6 +1,12 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { afterEach, expect, onTestFinished, test, vi } from "vitest";
+import {
+  afterEach,
+  expect,
+  onTestFinished,
+  test,
+  vi,
+} from "../../../support/bunTest.js";
 
 import { AdbProvider } from "../../../../src/adb/AdbProvider.js";
 import { OwnedFileHandle } from "../../../../src/filesystem/OwnedFileHandle.js";

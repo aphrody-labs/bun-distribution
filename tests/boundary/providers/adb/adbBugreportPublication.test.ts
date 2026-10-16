@@ -9,7 +9,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
-import { afterEach, expect, test, vi } from "vitest";
+import { afterEach, expect, test, vi } from "../../../support/bunTest.js";
 
 import { AdbProvider } from "../../../../src/adb/AdbProvider.js";
 import { projectAnalysisError } from "../../../../src/domain/analysisErrorProjection.js";
@@ -173,7 +173,7 @@ test("retains final and producer paths when digest verification is cancelled", a
       "node:fs/promises",
     );
   vi.mocked(copyFile).mockImplementationOnce(async (...args) => {
-    await actualCopy.copyFile(...args);
+    await (actualCopy.copyFile as (...a: any[]) => any)(...args);
     controller.abort();
   });
   const result = await f.provider.execute(f.request, {

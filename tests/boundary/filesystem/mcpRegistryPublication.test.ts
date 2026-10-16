@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { registryPublicationState } from "../../../.github/actions/publish-mcp/registry-state.mjs";
 
 const server = {

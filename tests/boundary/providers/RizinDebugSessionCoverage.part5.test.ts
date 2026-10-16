@@ -1,4 +1,4 @@
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it } from "../../support/bunTest.js";
 import { createRizinCoverageHarness } from "./RizinDebugSessionCoverage.fixtures.js";
 
 const { cleanup, makeProvider, start } = createRizinCoverageHarness();

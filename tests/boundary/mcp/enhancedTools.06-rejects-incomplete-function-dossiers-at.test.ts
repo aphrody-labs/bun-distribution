@@ -1,5 +1,5 @@
 import { parseMcpToolError } from "../../fixtures/mcpToolError.js";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "../../support/bunTest.js";
 
 import { functionDossierSchema } from "../../../src/domain/hopperValues.js";
 import { ghidraFunctionDossier } from "../../../src/domain/ghidraValues.fixture.js";

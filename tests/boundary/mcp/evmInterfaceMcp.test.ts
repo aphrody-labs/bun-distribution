@@ -5,7 +5,7 @@ import {
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import { createHash } from "node:crypto";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { expect, it, onTestFinished, vi } from "vitest";
+import { expect, it, onTestFinished, vi } from "../../support/bunTest.js";
 import { EvmInterfaceService } from "../../../src/application/evm/EvmInterfaceService.js";
 import { WasmArtifactService } from "../../../src/application/wasm/WasmArtifactService.js";
 import { toolContract } from "../../../src/contracts/toolContracts.js";

@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 import { javaScriptAnalysisResourceControlsSchema } from "./javascriptAnalysisResourceControls.js";
 
 it("keeps omitted operational choices absent and validates explicit semantic budgets", () => {

@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 it.skipIf(process.platform !== "win32")(
   "retains guardian cleanup ownership through more than 100 transient failures",

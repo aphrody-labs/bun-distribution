@@ -1,5 +1,5 @@
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test } from "../../support/bunTest.js";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { z } from "zod";
 

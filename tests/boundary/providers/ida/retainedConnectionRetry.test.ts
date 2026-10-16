@@ -2,7 +2,12 @@ import { createHash } from "node:crypto";
 import { mkdir, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { describe, expect, it, onTestFinished } from "vitest";
+import {
+  describe,
+  expect,
+  it,
+  onTestFinished,
+} from "../../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../../fixtures/temporaryDirectory.js";
 

@@ -1,6 +1,6 @@
 import { access, mkdir, readFile, writeFile, rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 import { parse } from "jsonc-parser";
 import { PRODUCT_IDENTITY } from "../../../src/identity.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

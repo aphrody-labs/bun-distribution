@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 import { parseExecutableHeader } from "./binaryTarget.js";
 
 const header = (little: boolean, bits: 32 | 64 = 32): Buffer => {

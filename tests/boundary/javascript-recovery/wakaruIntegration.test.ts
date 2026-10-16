@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { access, mkdir, open, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { promisify } from "node:util";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "../../support/bunTest.js";
 import { SafeOutputTree } from "../../../src/artifacts/SafeOutputTree.js";
 import { SafeOutputTreeCreationFailure } from "../../../src/artifacts/SafeOutputTreeCreationFailure.js";
 import { javascriptRecoveryResultSchema } from "../../../src/domain/javascript/javascriptRecovery.js";

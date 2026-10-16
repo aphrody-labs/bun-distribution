@@ -6,7 +6,7 @@ import { randomUUID } from "node:crypto";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import {
   ProviderProcessSupervisor,

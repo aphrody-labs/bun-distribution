@@ -1,7 +1,13 @@
 import { createHash } from "node:crypto";
 import { lstat, open, readFile, rm, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
-import { afterEach, expect, onTestFinished, test, vi } from "vitest";
+import {
+  afterEach,
+  expect,
+  onTestFinished,
+  test,
+  vi,
+} from "../../../support/bunTest.js";
 
 import { AdbProvider } from "../../../../src/adb/AdbProvider.js";
 import {
@@ -163,7 +169,7 @@ test("closes retained snapshot handles before removing their runtime root", asyn
   });
   const originalOpen = actualFs.open;
   vi.mocked(open).mockImplementation(async (...args) => {
-    const handle = await originalOpen(...args);
+    const handle = await (originalOpen as (...a: any[]) => any)(...args);
     const path = String(args[0]);
     const isSource = path === f.source;
     const isSnapshot = path.startsWith(`${runtimePath}/`);
@@ -237,7 +243,7 @@ test("retries the same retained snapshot owner before removing its root", async 
     });
   vi.mocked(open).mockImplementation(async (...args) => {
     const path = String(args[0]);
-    const handle = await actualFs.open(...args);
+    const handle = await (actualFs.open as (...a: any[]) => any)(...args);
     if (path === f.source || path === snapshotPath)
       rawHandles.set(path, handle);
     return handle;
@@ -320,7 +326,7 @@ test.each([
     const controller = new AbortController();
     let sourceCloseAttempts = 0;
     vi.mocked(open).mockImplementation(async (...args) => {
-      const handle = await actualFs.open(...args);
+      const handle = await (actualFs.open as (...a: any[]) => any)(...args);
       if (String(args[0]) !== f.source) return handle;
       const close = handle.close.bind(handle);
       handle.read = (async () => {

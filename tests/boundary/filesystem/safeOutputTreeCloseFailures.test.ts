@@ -4,7 +4,13 @@ import { join } from "node:path";
 import { Readable } from "node:stream";
 
 import { TextReader, Uint8ArrayWriter, ZipWriter } from "@zip.js/zip.js";
-import { describe, expect, it, onTestFinished, vi } from "vitest";
+import {
+  describe,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from "../../support/bunTest.js";
 
 const injectedFilesystemFailures = vi.hoisted(() => ({
   closeNext: false,

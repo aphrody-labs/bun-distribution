@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from "vitest";
+import { beforeEach, expect, it, vi } from "../support/bunTest.js";
 import { WindowsPrivateRuntime } from "../../src/windows/WindowsPrivateRuntime.js";
 import { PrivateRuntimeRootUnavailableError } from "../../src/process/PrivateRuntimeRootUnavailableError.js";
 

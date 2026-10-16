@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import { McpServer } from "@modelcontextprotocol/server";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { toolContract } from "../../../src/contracts/toolContracts.js";

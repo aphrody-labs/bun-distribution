@@ -1,6 +1,6 @@
 import { win32 } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../support/bunTest.js";
 
 import { resolveWindowsProviderExecutable } from "../../src/composition/resolveWindowsProviderExecutable.js";
 import { createReverseEngineeringCommandPort } from "../../src/composition/reverseEngineering.js";

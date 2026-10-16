@@ -1,5 +1,10 @@
 import { rm } from "node:fs/promises";
-import { afterEach, describe, expect, it } from "vitest";
+import {
+  afterEach,
+  describe,
+  expect,
+  it,
+} from "../../tests/support/bunTest.js";
 import {
   createIdaTarget,
   RecordingIdaMcp,

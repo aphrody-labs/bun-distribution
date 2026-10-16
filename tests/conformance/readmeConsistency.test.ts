@@ -1,7 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../support/bunTest.js";
 import { PRODUCT_IDENTITY } from "../../src/identity.js";
 
 const jsonExamples = (content: string): unknown[] =>

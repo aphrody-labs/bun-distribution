@@ -1,6 +1,6 @@
 import { basename, dirname, join, sep } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 
 import {
   CLAUDE_DESKTOP_PACKAGE_FAMILY,

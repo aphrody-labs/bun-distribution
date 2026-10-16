@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 
 import canonicalize from "canonicalize";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../tests/support/bunTest.js";
 
 import { EvidenceLedger } from "./EvidenceLedger.js";
 import { createEvidence } from "../../domain/evidence.js";

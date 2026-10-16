@@ -1,5 +1,5 @@
 import { setImmediate } from "node:timers/promises";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../tests/support/bunTest.js";
 import { completeJavaScriptAnalysisSteps } from "./JavaScriptAnalysisControl.js";
 
 describe("JavaScript cooperative computation lifecycle", () => {

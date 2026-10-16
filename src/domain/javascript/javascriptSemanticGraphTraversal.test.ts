@@ -3,7 +3,7 @@ import {
   semanticGraphTestEvidence,
   unknownSemanticGraphTestEvidence,
 } from "../../../tests/support/javascriptSemanticGraphFixture.js";
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 
 import {
   JAVASCRIPT_SEMANTIC_NODE_KINDS,

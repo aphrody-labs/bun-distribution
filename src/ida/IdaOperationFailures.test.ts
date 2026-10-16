@@ -1,6 +1,11 @@
 import { rm, stat } from "node:fs/promises";
 import { dirname } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import {
+  afterEach,
+  describe,
+  expect,
+  it,
+} from "../../tests/support/bunTest.js";
 import { z } from "zod";
 import {
   createIdaTarget,

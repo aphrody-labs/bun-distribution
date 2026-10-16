@@ -8,7 +8,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
+import {
+  afterEach,
+  describe,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from "../../tests/support/bunTest.js";
 import * as nativeLoader from "../windows/WindowsNativeLoader.js";
 import { WINDOWS_NATIVE_AUTHORITY_UNAVAILABLE_REASON } from "../process/WindowsAuthority.js";
 import { fixtureDosLoadImage } from "./GhidraLoadImage.fixture.js";

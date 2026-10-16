@@ -3,7 +3,7 @@ import { copyFile } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
-import { describe, expect } from "vitest";
+import { describe, expect } from "../../support/bunTest.js";
 
 import { demangleSwiftSchema } from "../../../src/domain/native/nativeInspection.js";
 import { evidenceResultOf } from "../../../src/contracts/toolOutputSchemaPrimitives.js";

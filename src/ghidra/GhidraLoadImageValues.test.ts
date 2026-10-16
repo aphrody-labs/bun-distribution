@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 import { createHash } from "node:crypto";
 import { attestGhidraDosLoadImage } from "./GhidraLoadImageValues.js";
 import { fixtureDosLoadImage } from "./GhidraLoadImage.fixture.js";

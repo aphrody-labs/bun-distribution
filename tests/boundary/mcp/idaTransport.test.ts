@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { inspect } from "node:util";
 import { ProtocolError } from "@modelcontextprotocol/client";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it } from "../../support/bunTest.js";
 import { constants } from "node:buffer";
 import { IdaDiagnosticResourceError } from "../../../src/ida/IdaDiagnosticWriter.js";
 import { createIdaDiagnosticRedactor } from "../../../src/ida/IdaDiagnosticRedactor.js";

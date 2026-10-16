@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { access } from "node:fs/promises";
 
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../support/bunTest.js";
 
 import { GhidraClient } from "../../../src/ghidra/GhidraClient.js";
 import { HopperClient } from "../../../src/hopper/HopperClient.js";

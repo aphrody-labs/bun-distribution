@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { toolContract } from "../../../src/contracts/toolContracts.js";

@@ -2,7 +2,7 @@ import { parseMcpToolError } from "../../fixtures/mcpToolError.js";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { NativeMacOSProvider } from "../../../src/native/NativeMacOSProvider.js";
 import {
   machoImage,

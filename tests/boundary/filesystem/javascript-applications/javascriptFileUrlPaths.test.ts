@@ -3,7 +3,7 @@ import { dirname, join, relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { parseExpression } from "@babel/parser";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../../fixtures/temporaryDirectory.js";
 import { javascriptApplicationAnalysisResultSchema } from "../../../../src/domain/javascript/javascriptApplicationAnalysis.js";

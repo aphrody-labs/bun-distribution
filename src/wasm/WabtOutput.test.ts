@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { expect, it } from "vitest";
+import { expect, it } from "../../tests/support/bunTest.js";
 import { parseWabtOutput } from "./WabtOutput.js";
 import { parseWabtWat } from "./WabtWat.js";
 import { associateWasmGlue } from "./WasmGlueAdapter.js";

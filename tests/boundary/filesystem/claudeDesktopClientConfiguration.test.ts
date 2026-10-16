@@ -8,7 +8,14 @@ import {
 } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "../../support/bunTest.js";
 
 import { CLAUDE_DESKTOP_PACKAGE_FAMILY } from "../../../src/application/ClaudeDesktopConfigLocation.js";
 import { readClientRegistrationStatuses } from "../../../src/application/ClientRegistrationStatus.js";

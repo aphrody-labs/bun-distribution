@@ -2,7 +2,7 @@ import { readFile, rm } from "node:fs/promises";
 
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { expect, onTestFinished } from "vitest";
+import { expect, onTestFinished } from "./bunTest.js";
 import { z } from "zod";
 
 import { toolContract } from "../../src/contracts/toolContracts.js";

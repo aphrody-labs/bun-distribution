@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import { xcodeIbtoolAvailable } from "../../fixtures/ibtool.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

@@ -9,7 +9,7 @@ import {
   it,
   onTestFinished,
   vi,
-} from "vitest";
+} from "../support/bunTest.js";
 
 import { BinaryLayoutService } from "../../src/application/binaryDiagnostics/BinaryLayoutService.js";
 import { createCli } from "../../src/cli.js";

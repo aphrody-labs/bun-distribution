@@ -4,7 +4,7 @@ import {
   STDIO_DEFAULT_MAX_BUFFER_SIZE,
   type CallToolResult,
 } from "@modelcontextprotocol/server";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { AnalysisInputError } from "../../../src/domain/analysisErrorCore.js";

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { normalizeHistoricalSourceParseFailures } from "../../../src/application/ReferenceSourceImport.js";
 import { historicalSourceGraphSchema } from "../../../src/domain/referenceSourceGraph.js";

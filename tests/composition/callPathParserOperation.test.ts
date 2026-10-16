@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../support/bunTest.js";
 import { z } from "zod";
 
 import { createAnalysisExecution } from "../../src/application/AnalysisProvider.js";

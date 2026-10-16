@@ -10,7 +10,7 @@ import {
 import { dirname, join, matchesGlob } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, expect, it } from "../../support/bunTest.js";
 import { parse } from "yaml";
 import { z } from "zod";
 

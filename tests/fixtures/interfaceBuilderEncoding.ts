@@ -4,7 +4,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
-import { expect } from "vitest";
+import { expect } from "../support/bunTest.js";
 import { z } from "zod";
 
 import { analyzeInterfaceBuilderBundle } from "../../src/artifacts/apple/InterfaceBuilderAnalysis.js";

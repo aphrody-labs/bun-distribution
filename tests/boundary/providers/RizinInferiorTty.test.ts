@@ -10,7 +10,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawn } from "@lydell/node-pty";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "../../support/bunTest.js";
 
 import {
   assertRizinProcessStartTimeStable,

@@ -2,7 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { createPackage } from "@electron/asar";
-import { expect, it, onTestFinished, vi } from "vitest";
+import { expect, it, onTestFinished, vi } from "../../support/bunTest.js";
 
 import { AsarArtifactReader } from "../../../src/artifacts/AsarArtifactReader.js";
 import { ArtifactResourceScope } from "../../../src/artifacts/ArtifactResourceScope.js";

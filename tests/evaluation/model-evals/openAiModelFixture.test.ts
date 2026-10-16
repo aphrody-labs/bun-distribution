@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { createOpenAiModelFixture } from "../../../scripts/verify/clients/model-fixture.mjs";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

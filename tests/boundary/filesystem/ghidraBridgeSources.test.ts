@@ -12,7 +12,7 @@ import {
 } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { parse as parseYaml } from "yaml";
 import { z } from "zod";
 

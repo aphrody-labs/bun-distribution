@@ -1,5 +1,5 @@
 import type { FileHandle } from "node:fs/promises";
-import { expect } from "vitest";
+import { expect } from "../support/bunTest.js";
 import type { Result } from "../../src/domain/result.js";
 import type { AnalysisError } from "../../src/domain/analysisErrorBase.js";
 

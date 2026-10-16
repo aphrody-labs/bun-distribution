@@ -1,7 +1,7 @@
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import { resolve } from "node:path";
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 
 import { parseMcpToolError } from "../../fixtures/mcpToolError.js";
 import { workspaceCliTest as test } from "../../support/cli/workspaceCliFixture.js";

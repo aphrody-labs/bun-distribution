@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawn as spawnPty } from "@lydell/node-pty";
 
-import { expect, it, onTestFinished, vi } from "vitest";
+import { expect, it, onTestFinished, vi } from "../../support/bunTest.js";
 
 import {
   closeOwnedDebuggerSessions,

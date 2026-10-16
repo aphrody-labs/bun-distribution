@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import { packageSetupSupport } from "../../../scripts/verify-package-discovery.mjs";
 import { parseLinuxDistribution } from "../../../src/application/LinuxHopper.js";

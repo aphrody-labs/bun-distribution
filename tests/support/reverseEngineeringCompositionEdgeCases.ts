@@ -1,6 +1,6 @@
 import { rm, truncate, writeFile } from "node:fs/promises";
 
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "./bunTest.js";
 
 import { TestReverseEngineeringService as ReverseEngineeringService } from "./reverseEngineeringService.js";
 import {

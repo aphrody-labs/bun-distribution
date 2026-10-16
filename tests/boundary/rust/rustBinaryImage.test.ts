@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { fat } from "../../../src/domain/binaryTarget.fixture.js";
 import {
   createRustImage,

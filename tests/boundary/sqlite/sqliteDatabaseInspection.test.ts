@@ -1,6 +1,10 @@
 import { DatabaseSync } from "node:sqlite";
 import { readFile, writeFile } from "node:fs/promises";
-import { expect, it as nativeTest, onTestFinished } from "vitest";
+import {
+  expect,
+  it as nativeTest,
+  onTestFinished,
+} from "../../support/bunTest.js";
 import { SQLITE_NATIVE_LIMITS_AVAILABLE } from "../../fixtures/sqlite/database.js";
 import { inspectSqliteDatabaseSnapshot } from "../../../src/sqlite/SqliteDatabaseInspection.js";
 import { SqliteInspectionFailure } from "../../../src/sqlite/SqliteDatabaseLimits.js";

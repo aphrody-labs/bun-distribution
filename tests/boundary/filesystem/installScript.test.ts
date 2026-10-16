@@ -12,7 +12,7 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 
 import { spawn as spawnPty } from "@lydell/node-pty";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 

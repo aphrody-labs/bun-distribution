@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 import { analyzeJavaScriptSemantics } from "./javascriptSemanticAnalysis.js";
 
 it.each([

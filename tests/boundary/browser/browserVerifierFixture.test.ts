@@ -1,5 +1,5 @@
 import { createConnection } from "node:net";
-import { it, expect } from "vitest";
+import { it, expect } from "../../support/bunTest.js";
 import { startBrowserVerifierSite } from "../../../scripts/fixtures/browser-verifier-site.mjs";
 
 it("closes an accepted HTTP socket that has not sent request headers", async () => {

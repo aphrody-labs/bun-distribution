@@ -2,7 +2,7 @@ import { readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { TextReader, Uint8ArrayWriter, ZipWriter } from "@zip.js/zip.js";
-import { expect } from "vitest";
+import { expect } from "../support/bunTest.js";
 
 import {
   artifactExtractionResultSchema,

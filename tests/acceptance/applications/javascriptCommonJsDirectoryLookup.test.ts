@@ -4,7 +4,7 @@ import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 
 import type { JavaScriptApplicationGraph } from "../../../src/domain/javascript/javascriptApplicationGraph.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

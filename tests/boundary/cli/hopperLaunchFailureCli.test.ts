@@ -1,6 +1,6 @@
 import { chmod, copyFile, rm } from "node:fs/promises";
 
-import { describe, expect } from "vitest";
+import { describe, expect } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { workspaceCliTest } from "../../support/cli/workspaceCliFixture.js";

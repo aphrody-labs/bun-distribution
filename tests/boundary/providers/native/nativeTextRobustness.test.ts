@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../../support/bunTest.js";
 
 import { parseOtoolLoadCommands } from "../../../../src/native/parsers/otool.js";
 import { parsePlistJson } from "../../../../src/native/parsers/plist.js";

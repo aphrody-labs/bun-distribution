@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "../../tests/support/bunTest.js";
 
 const nativeCall = vi.hoisted(() => vi.fn());
 

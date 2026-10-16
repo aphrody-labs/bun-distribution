@@ -1,5 +1,5 @@
 import { parse } from "@babel/parser";
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 
 import { fingerprintJavaScriptAst } from "./javascriptAstFingerprint.js";
 import { analyzeJavaScriptStaticSource } from "./javascriptStaticAnalysis.js";

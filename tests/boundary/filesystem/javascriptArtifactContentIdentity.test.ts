@@ -2,7 +2,7 @@ import { lstat, mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { createPackage } from "@electron/asar";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import { scanArtifactInventory } from "../../fixtures/artifactInventory.js";
 import { readJavaScriptArtifactFiles } from "../../support/javascriptApplicationScope.js";

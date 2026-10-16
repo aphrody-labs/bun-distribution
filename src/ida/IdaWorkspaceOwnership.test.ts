@@ -1,6 +1,11 @@
 import { chmod, readdir, realpath, rm, symlink } from "node:fs/promises";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import {
+  afterEach,
+  describe,
+  expect,
+  it,
+} from "../../tests/support/bunTest.js";
 import {
   createIdaTarget,
   RecordingIdaMcp,

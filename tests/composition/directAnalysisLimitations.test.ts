@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../support/bunTest.js";
 import { parseConfig } from "../../src/config/parseConfig.js";
 import { runDirectAnalysis } from "../../src/application/DirectAnalysis.js";
 import { createAnalysisExecution } from "../../src/application/AnalysisProvider.js";

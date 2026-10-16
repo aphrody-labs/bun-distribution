@@ -4,7 +4,7 @@ import { once } from "node:events";
 import { access, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { expect, it } from "vitest";
+import { expect, it } from "../../../support/bunTest.js";
 
 import { AnalysisCancelledError } from "../../../../src/domain/analysisErrorCore.js";
 import { ProviderCleanupError } from "../../../../src/domain/providerCleanupError.js";

@@ -7,7 +7,14 @@ import {
 } from "node:fs/promises";
 import { join } from "node:path";
 
-import { afterEach, beforeEach, expect, it, onTestFinished, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from "../../support/bunTest.js";
 
 import { ArtifactResourceScope } from "../../../src/artifacts/ArtifactResourceScope.js";
 import { importReferenceSource } from "../../../src/application/ReferenceSourceImport.js";
@@ -32,8 +39,12 @@ beforeEach(async () => {
     await vi.importActual<typeof import("node:fs/promises")>(
       "node:fs/promises",
     );
-  openMock.mockImplementation((...args) => actual.open(...args));
-  opendirMock.mockImplementation((...args) => actual.opendir(...args));
+  openMock.mockImplementation((...args) =>
+    (actual.open as (...a: any[]) => any)(...args),
+  );
+  opendirMock.mockImplementation((...args) =>
+    (actual.opendir as (...a: any[]) => any)(...args),
+  );
 });
 
 afterEach(() => {
@@ -54,7 +65,7 @@ it("preserves admission EIO and retains an invalidated failed-close owner", asyn
   let closeCalls = 0;
 
   openMock.mockImplementation(async (...args) => {
-    const handle = await actual.open(...args);
+    const handle = await (actual.open as (...a: any[]) => any)(...args);
     vi.spyOn(handle, "stat").mockRejectedValueOnce(statFailure);
     const close = handle.close.bind(handle);
     vi.spyOn(handle, "close").mockImplementation(async () => {
@@ -127,9 +138,9 @@ const assertSourceCleanupRetry = async (enclosingGit: boolean) => {
   let sourceHandle: FileHandle | undefined;
 
   openMock.mockImplementation(async (...args) => {
-    if (args[0] !== file) return actual.open(...args);
+    if (args[0] !== file) return (actual.open as (...a: any[]) => any)(...args);
     openCalls += 1;
-    const handle = await actual.open(...args);
+    const handle = await (actual.open as (...a: any[]) => any)(...args);
     sourceHandle = handle;
     const close = handle.close.bind(handle);
     vi.spyOn(handle, "close").mockImplementation(async () => {
@@ -214,7 +225,7 @@ it("preserves a directory read failure when closing that directory also fails", 
   let closeCalls = 0;
 
   opendirMock.mockImplementation(async (...args) => {
-    const directory = await actual.opendir(...args);
+    const directory = await (actual.opendir as (...a: any[]) => any)(...args);
     const read = directory.read.bind(directory);
     vi.spyOn(directory, "read").mockImplementation(async () => {
       if (readCalls++ > 0) throw readFailure;
@@ -282,7 +293,7 @@ it("keeps cancelled traversal typed when native directory close rejects after in
   let openedPath: string | undefined;
 
   opendirMock.mockImplementation(async (...args) => {
-    const directory = await actual.opendir(...args);
+    const directory = await (actual.opendir as (...a: any[]) => any)(...args);
     openedPath = String(args[0]);
     const read = directory.read.bind(directory);
     vi.spyOn(directory, "read").mockImplementation(async () => {

@@ -7,7 +7,7 @@ import { EventEmitter } from "node:events";
 import { Socket } from "node:net";
 
 import pino from "pino";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "../../tests/support/bunTest.js";
 
 import { ok } from "../domain/result.js";
 import type { BridgeLaunch } from "./BridgeLauncher.js";

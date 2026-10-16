@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 
 import { BrowserObservationError } from "../../domain/browserObservationError.js";
 import {

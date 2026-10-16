@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 
 import { browserScenarioBrowserSchema } from "../domain/browserScenarioValues.js";
 import { firmwareInputSchemas } from "../domain/firmware/firmwareAnalysis.js";

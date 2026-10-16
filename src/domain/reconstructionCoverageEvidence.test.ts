@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../tests/support/bunTest.js";
 
 import { createEvidence, type Evidence } from "./evidence.js";
 import { createEvidenceBundle } from "./evidenceBundle.js";

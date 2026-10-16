@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../tests/support/bunTest.js";
 import { webSourceOffset } from "./webSourcePosition.js";
 
 it("uses UTF-16 columns and actual JavaScript line terminators", () => {

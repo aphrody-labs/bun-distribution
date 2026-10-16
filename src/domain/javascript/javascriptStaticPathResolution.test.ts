@@ -2,7 +2,7 @@ import { posix } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { parseExpression } from "@babel/parser";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../tests/support/bunTest.js";
 
 import { analyzeJavaScriptStaticSource } from "./javascriptStaticAnalysis.js";
 import { parserPluginsForPath } from "./javascriptSourceParser.js";

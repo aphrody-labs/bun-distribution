@@ -1,4 +1,4 @@
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../support/bunTest.js";
 
 import { snapshotRoots } from "../../../src/process/capture/FilesystemSnapshot.js";
 import { prepareProcessCapture } from "../../../src/process/capture/ProcessCaptureLifecycle.js";

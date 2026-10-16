@@ -1,7 +1,7 @@
 import { chmod, mkdir, realpath, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { expect, it as test } from "vitest";
+import { expect, it as test } from "../../support/bunTest.js";
 
 import { inspectJadxProvider } from "../../../src/android/JadxDoctor.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

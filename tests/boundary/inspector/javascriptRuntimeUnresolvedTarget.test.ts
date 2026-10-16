@@ -2,7 +2,7 @@ import { rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { expect, test } from "vitest";
+import { expect, test } from "../../support/bunTest.js";
 
 import { analyzeJavaScriptApplication } from "../../support/javascriptApplicationScope.js";
 import { createJavaScriptRuntimeObservationEvidence } from "../../../src/application/javascript/JavaScriptRuntimeObservationEvidence.js";

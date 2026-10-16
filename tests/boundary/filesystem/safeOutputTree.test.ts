@@ -15,7 +15,7 @@ import {
 import { join } from "node:path";
 import { Readable } from "node:stream";
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 
@@ -75,7 +75,7 @@ describe("safe artifact output file identity admission", () => {
           this: typeof prototypeHandle,
           ...args
         ) {
-          return originalStat.apply(this, args);
+          return originalStat.apply(this, args as never);
         })
         .mockRejectedValueOnce(new Error("injected file identity failure"));
 

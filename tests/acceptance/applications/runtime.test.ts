@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { CATALOG_IDENTITY } from "../../../src/catalogIdentity.js";

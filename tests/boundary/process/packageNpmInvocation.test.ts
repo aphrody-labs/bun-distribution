@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 const execute = promisify(execFile);
 

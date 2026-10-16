@@ -1,5 +1,5 @@
-import { fc, it } from "@fast-check/vitest";
-import { describe, expect, vi } from "vitest";
+import { fc, it } from "../../tests/support/fastCheckIt.js";
+import { describe, expect, vi } from "../../tests/support/bunTest.js";
 
 import { inspectManagedArtifactBytes } from "./ManagedArtifactInspector.js";
 import { inspectManagedMembersBytes } from "./ManagedMemberInspector.js";

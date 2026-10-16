@@ -1,7 +1,7 @@
 import { cp, mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterAll, expect, it } from "vitest";
+import { afterAll, expect, it } from "../../support/bunTest.js";
 import { z } from "zod";
 import { parse } from "yaml";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

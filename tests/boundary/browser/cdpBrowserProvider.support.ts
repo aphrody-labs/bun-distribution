@@ -1,4 +1,4 @@
-import { afterEach } from "vitest";
+import { afterEach } from "../../support/bunTest.js";
 
 import type { FakeCdpBrowser } from "../../fixtures/fakeCdpBrowser.js";
 

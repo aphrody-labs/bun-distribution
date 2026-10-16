@@ -1,5 +1,5 @@
 import pino from "pino";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "../support/bunTest.js";
 
 import { parseCliJsonInput } from "../../src/cliJsonInput.js";
 import { logCliCommand } from "../../src/cliLogging.js";

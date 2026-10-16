@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../support/bunTest.js";
 
 import {
   createWindowsOwnedCommand,

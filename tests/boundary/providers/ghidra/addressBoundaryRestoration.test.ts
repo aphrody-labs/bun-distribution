@@ -1,5 +1,5 @@
 import type { Client } from "@modelcontextprotocol/client";
-import { expect, it } from "vitest";
+import { expect, it } from "../../../support/bunTest.js";
 
 import { verifyGhidraAddressBoundaries } from "../../../../scripts/lib/real-ghidra-address-boundaries.mjs";
 

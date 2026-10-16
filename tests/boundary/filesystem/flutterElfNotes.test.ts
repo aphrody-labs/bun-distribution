@@ -1,6 +1,6 @@
 import { open, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../support/bunTest.js";
 import { readElfBuildIds } from "../../../src/flutter/ElfBuildId.js";
 import {
   appendElfRanges,

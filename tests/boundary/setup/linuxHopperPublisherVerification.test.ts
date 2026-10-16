@@ -20,7 +20,7 @@ import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 
 import { createMessage, generateKey, readPrivateKey, sign } from "openpgp";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "../../support/bunTest.js";
 
 import {
   LinuxHopperPublisher,

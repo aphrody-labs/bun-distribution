@@ -1,7 +1,7 @@
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 
 import { FridaScriptLoadCancelledError } from "./FridaInstrumentationPort.js";
 import type { FridaInstrumentationPort } from "./FridaInstrumentationPort.js";

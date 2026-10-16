@@ -1,4 +1,4 @@
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 import { parseEvidence } from "../../../src/domain/evidence.js";
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import { composeBinarySession } from "../../../src/application/binary/BinarySessionComposition.js";

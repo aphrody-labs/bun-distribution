@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { build } from "plist";
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { createBinarySession } from "../../../src/composition/binary.js";

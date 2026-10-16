@@ -1,5 +1,5 @@
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it } from "../../support/bunTest.js";
 
 import { toolContract } from "../../../src/contracts/toolContracts.js";
 import { AnalysisCancelledError } from "../../../src/domain/analysisErrorCore.js";

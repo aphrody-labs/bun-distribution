@@ -1,7 +1,7 @@
 import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "../../../support/bunTest.js";
 
 import { ArtifactResourceScope } from "../../../../src/artifacts/ArtifactResourceScope.js";
 import type { FileCloseResourceOwner } from "../../../../src/application/AnalysisProvider.js";

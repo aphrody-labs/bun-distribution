@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../tests/support/bunTest.js";
 import { parseWabtWat } from "./WabtWat.js";
 
 it("resolves imported index spaces and decoded escaped names without depending on body/type numbering", () => {

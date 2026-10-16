@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { createCli } from "../../../src/cli.js";
 import type { FridaInstrumentationPort } from "../../../src/application/frida/FridaInstrumentationPort.js";

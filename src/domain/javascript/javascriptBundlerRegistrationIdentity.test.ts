@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 import { analyzeJavaScriptStaticSource } from "./javascriptStaticAnalysis.js";
 
 const registration = (runtime: string, callback: string, chunk = 1) =>

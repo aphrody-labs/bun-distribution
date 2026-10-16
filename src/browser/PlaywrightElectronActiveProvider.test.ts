@@ -1,4 +1,4 @@
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "../../tests/support/bunTest.js";
 import { writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 

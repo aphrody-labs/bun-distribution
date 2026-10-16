@@ -1,5 +1,5 @@
 import { boundedViewMessages } from "./analysisViewCoverage.js";
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 
 import { functionDossierSchema } from "../hopperValues.js";
 import { ghidraFunctionDossier } from "../ghidraValues.fixture.js";

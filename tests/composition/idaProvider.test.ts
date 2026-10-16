@@ -1,6 +1,6 @@
 import { rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "../support/bunTest.js";
 import { projectAnalysisError } from "../../src/domain/analysisErrorProjection.js";
 import { IdaProvider } from "../../src/ida/IdaProvider.js";
 import { createIdaTarget, RecordingIdaMcp } from "../fixtures/idaMcp.js";

@@ -1,5 +1,5 @@
 import { parseMcpToolError } from "../../fixtures/mcpToolError.js";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

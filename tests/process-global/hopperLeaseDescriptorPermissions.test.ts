@@ -2,7 +2,7 @@ import { chmod, lstat, mkdir, mkdtemp, rm } from "node:fs/promises";
 import type { FileHandle } from "node:fs/promises";
 import { join } from "node:path";
 
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "../support/bunTest.js";
 
 const replacement = vi.hoisted(() => ({
   selected: "",

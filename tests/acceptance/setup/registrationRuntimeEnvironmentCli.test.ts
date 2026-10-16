@@ -1,6 +1,6 @@
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 import { stringify } from "yaml";
 
 import {

@@ -1,7 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "../support/bunTest.js";
 
 import { createCli } from "../../src/cli.js";
 import { parseEvidence } from "../../src/domain/evidence.js";

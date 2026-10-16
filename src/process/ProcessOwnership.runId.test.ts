@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../tests/support/bunTest.js";
 
 import type { ProcessOwnershipHost } from "./ProcessOwnership.js";
 import { readProcessRunId } from "./ProcessOwnership.js";

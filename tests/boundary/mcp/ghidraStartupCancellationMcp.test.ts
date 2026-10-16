@@ -1,7 +1,7 @@
 import { access } from "node:fs/promises";
 
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../support/bunTest.js";
 
 import { AnalysisProviderRegistry } from "../../../src/application/binary/AnalysisProviderRegistry.js";
 import { composeBinarySession } from "../../../src/application/binary/BinarySessionComposition.js";

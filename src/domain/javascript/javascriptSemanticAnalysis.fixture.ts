@@ -1,4 +1,4 @@
-import { expect } from "vitest";
+import { expect } from "../../../tests/support/bunTest.js";
 
 import type {
   JavaScriptSemanticBinding,

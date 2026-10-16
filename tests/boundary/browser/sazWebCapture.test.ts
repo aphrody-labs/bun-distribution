@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 import { Uint8ArrayReader, Uint8ArrayWriter, ZipWriter } from "@zip.js/zip.js";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { expect, it as runtimeTest } from "vitest";
+import { expect, it as runtimeTest } from "../../support/bunTest.js";
 import { z } from "zod";
 import { parseEvidence } from "../../../src/domain/evidence.js";
 import {

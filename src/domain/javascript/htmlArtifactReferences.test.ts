@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 
 import {
   HTML_INLINE_SCRIPT_LOCATION_LIMIT,

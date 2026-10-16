@@ -1,5 +1,5 @@
 import { ArtifactResourceScope } from "../../src/artifacts/ArtifactResourceScope.js";
-import { onTestFinished } from "vitest";
+import { onTestFinished } from "../support/bunTest.js";
 import { ArtifactReaderFailure } from "../../src/artifacts/ArtifactReader.js";
 import { classifyAndHashRoot as classifyAndHashRootOwned } from "../../src/artifacts/inventory/classify.js";
 import {

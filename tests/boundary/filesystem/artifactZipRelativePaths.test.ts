@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { TextReader, Uint8ArrayWriter, ZipWriter } from "@zip.js/zip.js";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { writeOrderedZip } from "../../fixtures/artifactEntryOrder.js";
 import { inventoryArtifact } from "../../fixtures/artifactInventory.js";

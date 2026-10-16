@@ -1,4 +1,4 @@
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../support/bunTest.js";
 
 import { CutterBridgeService } from "../../../src/cutter/CutterBridgeService.js";
 

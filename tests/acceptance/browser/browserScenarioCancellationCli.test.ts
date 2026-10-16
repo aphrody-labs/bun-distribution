@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { browserScenarioCaptureSchema } from "../../../src/domain/browserScenarioCapture.js";

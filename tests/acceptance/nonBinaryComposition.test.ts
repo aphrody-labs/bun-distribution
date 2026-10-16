@@ -2,7 +2,7 @@ import { parseMcpToolError } from "../fixtures/mcpToolError.js";
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { expect, onTestFinished } from "vitest";
+import { expect, onTestFinished } from "../support/bunTest.js";
 
 import { createAndroidAnalysisProvider } from "../../src/composition/android.js";
 import { createFirmwareAnalysisProvider } from "../../src/composition/firmware.js";

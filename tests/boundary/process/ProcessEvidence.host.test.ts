@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { emptyUnverifiedProcessCapture } from "../../../src/domain/process/processCapture.fixture.js";
 import { parseProcessCapture } from "../../../src/domain/process/processCaptureParsing.js";

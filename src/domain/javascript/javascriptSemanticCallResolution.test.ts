@@ -1,5 +1,5 @@
 import * as t from "@babel/types";
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../../tests/support/bunTest.js";
 
 import { indexJavaScriptBindingsSteps } from "./javascriptSemanticAnalysis.js";
 import {

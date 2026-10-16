@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { test } from "vitest";
+import { test } from "../support/bunTest.js";
 
 test("packet page verification rejects skipped matches with unchanged counts and monotone frames", () => {
   const moduleUrl = new URL(

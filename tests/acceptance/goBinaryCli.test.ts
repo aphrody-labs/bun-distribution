@@ -1,7 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
-import { expect } from "vitest";
+import { expect } from "../support/bunTest.js";
 import { toolContract } from "../../src/contracts/toolContracts.js";
 import {
   createGoBinaryByteStringFixture,

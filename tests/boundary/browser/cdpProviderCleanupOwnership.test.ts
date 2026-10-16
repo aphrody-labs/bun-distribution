@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { WebSocket } from "ws";
-import { expect, it, onTestFinished, vi } from "vitest";
+import { expect, it, onTestFinished, vi } from "../../support/bunTest.js";
 
 import { CdpElectronProvider } from "../../../src/browser/CdpElectronProvider.js";
 import { ProviderCleanupError } from "../../../src/domain/providerCleanupError.js";

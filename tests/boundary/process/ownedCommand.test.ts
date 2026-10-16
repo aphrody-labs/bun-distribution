@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
 import { PassThrough, Writable } from "node:stream";
 import { setTimeout as delay } from "node:timers/promises";
-import { beforeAll, expect, it, vi } from "vitest";
+import { beforeAll, expect, it, vi } from "../../support/bunTest.js";
 import {
   OwnedCommandFailure,
   runOwnedCommand,

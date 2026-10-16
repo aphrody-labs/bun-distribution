@@ -1,7 +1,14 @@
 import { mkdir, open as fsOpen, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
-import { afterEach, beforeEach, expect, it, onTestFinished, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from "../../support/bunTest.js";
 
 import { ArtifactResourceScope } from "../../../src/artifacts/ArtifactResourceScope.js";
 import { importReferenceSource } from "../../../src/application/ReferenceSourceImport.js";
@@ -22,7 +29,9 @@ beforeEach(async () => {
     await vi.importActual<typeof import("node:fs/promises")>(
       "node:fs/promises",
     );
-  openMock.mockImplementation((...args) => actual.open(...args));
+  openMock.mockImplementation((...args) =>
+    (actual.open as (...a: any[]) => any)(...args),
+  );
 });
 
 afterEach(() => openMock.mockReset());
@@ -34,7 +43,7 @@ const failCloseUntilAllowed = (
   let allowClose = false;
   let closeCalls = 0;
   openMock.mockImplementation(async (...args) => {
-    const handle = await actual.open(...args);
+    const handle = await (actual.open as (...a: any[]) => any)(...args);
     if (resolve(String(args[0])) !== resolve(target)) return handle;
     const close = handle.close.bind(handle);
     vi.spyOn(handle, "close").mockImplementation(async () => {
@@ -186,7 +195,7 @@ it("retains later packed-ref cleanup after an earlier loose-ref read failure", a
   let looseReadFailed = false;
   const packedCloseCalls = new Map<object, number>();
   openMock.mockImplementation(async (...args) => {
-    const handle = await actual.open(...args);
+    const handle = await (actual.open as (...a: any[]) => any)(...args);
     const path = resolve(String(args[0]));
     if (path === resolve(looseRef)) {
       vi.spyOn(handle, "read").mockImplementation(async () => {
@@ -240,7 +249,7 @@ it("keeps a later packed-ref read error primary over earlier loose-ref cleanup",
   let allowClose = false;
   const looseCloseCalls = new Map<object, number>();
   openMock.mockImplementation(async (...args) => {
-    const handle = await actual.open(...args);
+    const handle = await (actual.open as (...a: any[]) => any)(...args);
     const path = resolve(String(args[0]));
     if (path === resolve(looseRef)) {
       const close = handle.close.bind(handle);

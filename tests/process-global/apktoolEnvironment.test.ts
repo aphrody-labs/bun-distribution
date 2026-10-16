@@ -1,4 +1,10 @@
-import { afterEach, expect, it, onTestFinished, vi } from "vitest";
+import {
+  afterEach,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from "../support/bunTest.js";
 
 import { ApktoolProvider } from "../../src/apktool/ApktoolProvider.js";
 import { runOwnedCommand } from "../../src/process/OwnedCommand.js";

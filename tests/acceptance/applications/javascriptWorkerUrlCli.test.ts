@@ -1,4 +1,4 @@
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 
 import type { JavaScriptApplicationGraph } from "../../../src/domain/javascript/javascriptApplicationGraph.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

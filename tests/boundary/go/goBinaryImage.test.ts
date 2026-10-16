@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { javaClassFile } from "../../fixtures/javaClassFile.js";
 import {
   CPU,

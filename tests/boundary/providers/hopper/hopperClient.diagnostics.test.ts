@@ -1,6 +1,6 @@
 import { access } from "node:fs/promises";
 
-import { expect, it, onTestFinished, vi } from "vitest";
+import { expect, it, onTestFinished, vi } from "../../../support/bunTest.js";
 
 import { HopperTimeoutError } from "../../../../src/domain/hopperErrors.js";
 import {

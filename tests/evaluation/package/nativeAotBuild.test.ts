@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../support/bunTest.js";
 
 import { buildNativeAotFixture } from "../../../scripts/lib/nativeaot-build.mjs";
 

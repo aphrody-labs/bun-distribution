@@ -4,7 +4,7 @@ import {
   serializeMessage,
   type JSONRPCMessage,
 } from "@modelcontextprotocol/client";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import type { ProviderProcessHandle } from "../../../src/process/ProviderProcess.js";
 import {
   JadxMcpTransport,

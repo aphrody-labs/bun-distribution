@@ -1,7 +1,7 @@
 import { setImmediate } from "node:timers";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../support/bunTest.js";
 import { z } from "zod";
 import {
   ArtifactResourceScope,

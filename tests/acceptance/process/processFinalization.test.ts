@@ -3,7 +3,7 @@ import { access, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
-import { expect, onTestFinished } from "vitest";
+import { expect, onTestFinished } from "../../support/bunTest.js";
 
 import { parseEvidence } from "../../../src/domain/evidence.js";
 import { toolContract } from "../../../src/contracts/toolContracts.js";

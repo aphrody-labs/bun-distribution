@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 
 import type { WebPageInspection } from "./browserObservationSchemas.js";
 import { fingerprintWebCaptureFrames } from "./webCaptureFrameComparison.js";

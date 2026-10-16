@@ -4,7 +4,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import { rm } from "node:fs/promises";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import { join, resolve } from "node:path";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { parseEvidence } from "../../../src/domain/evidence.js";

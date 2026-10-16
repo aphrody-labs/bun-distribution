@@ -2,7 +2,7 @@ import type { Client } from "@modelcontextprotocol/client";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 
 import { toolContract } from "../../../src/contracts/toolContracts.js";
 import { expandToolAvailability } from "../../../src/contracts/toolOutputSchemaPrimitives.js";

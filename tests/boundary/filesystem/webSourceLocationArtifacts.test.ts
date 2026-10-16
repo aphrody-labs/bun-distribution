@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { LocalWebSourceLocationArtifacts } from "../../../src/browser/assets/WebSourceLocationArtifacts.js";
 import { projectAnalysisError } from "../../../src/domain/analysisErrorProjection.js";
 import { ok } from "../../../src/domain/result.js";

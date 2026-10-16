@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 
 import { collectJavaScriptExports } from "./javascriptAstFingerprint.js";
 import { analyzeJavaScriptStaticSource } from "./javascriptStaticAnalysis.js";

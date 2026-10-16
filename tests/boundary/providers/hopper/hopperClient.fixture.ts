@@ -1,7 +1,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-import { onTestFinished, vi } from "vitest";
+import { onTestFinished, vi } from "../../../support/bunTest.js";
 import { z } from "zod";
 
 import { ok } from "../../../../src/domain/result.js";

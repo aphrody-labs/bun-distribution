@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { inspectPacketFieldsInputSchema } from "../../../src/domain/captures/packetFields.js";
 import { parseFieldDiscovery } from "../../../src/captures/parseFieldDiscovery.js";
 

@@ -9,7 +9,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
-import { expect, it, onTestFinished, vi } from "vitest";
+import { expect, it, onTestFinished, vi } from "../../support/bunTest.js";
 import { ArtifactResourceScope } from "../../../src/artifacts/ArtifactResourceScope.js";
 import type { StableArtifactFileSystem } from "../../../src/artifacts/readStableArtifact.js";
 import { captureSqliteDatabaseSnapshot } from "../../../src/sqlite/SqliteDatabaseSnapshot.js";

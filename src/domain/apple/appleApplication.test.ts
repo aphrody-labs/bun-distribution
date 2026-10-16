@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../tests/support/bunTest.js";
 
 import { projectAppleApplication } from "./appleApplication.js";
 import { compareUnicodeCodePoints } from "../unicodeCodePointOrder.js";

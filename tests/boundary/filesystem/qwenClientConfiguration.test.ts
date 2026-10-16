@@ -1,7 +1,14 @@
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "../../support/bunTest.js";
 import { parse as parseJsonc } from "jsonc-parser";
 
 import { readClientRegistrationStatuses } from "../../../src/application/ClientRegistrationStatus.js";

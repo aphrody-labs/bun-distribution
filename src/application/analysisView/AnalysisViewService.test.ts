@@ -3,7 +3,7 @@ import {
   analysisViewCaptureEvidence,
   analysisViewObjectDenseCapture,
 } from "../../../tests/fixtures/analysisView.js";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../tests/support/bunTest.js";
 
 import { JAVASCRIPT_APPLICATION_EVIDENCE_EXAMPLE } from "../../contracts/javascript/javascriptRuntimeReconciliationExample.js";
 import { createEvidence, parseEvidence } from "../../domain/evidence.js";

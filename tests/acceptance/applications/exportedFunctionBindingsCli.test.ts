@@ -7,7 +7,13 @@ import { promisify } from "node:util";
 
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import {
+  afterAll,
+  beforeAll,
+  describe,
+  expect,
+  it,
+} from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { closeVerifierResources } from "../../../scripts/lib/verifier-cleanup.mjs";

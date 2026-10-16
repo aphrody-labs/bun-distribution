@@ -1,6 +1,6 @@
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import type { CallToolResult } from "@modelcontextprotocol/server";
-import { expect, it, onTestFinished, vi } from "vitest";
+import { expect, it, onTestFinished, vi } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { parseEvidence } from "../../../src/domain/evidence.js";
@@ -80,7 +80,7 @@ it("retains completed Android Evidence through the MCP cancellation delivery pat
     ToolResultDelivery.prototype,
     "toRecordedPartialErrorToolResult",
   ).mockImplementation((...args) => {
-    const result = deliver(...args);
+    const result = (deliver as (...a: any[]) => any)(...args);
     delivered.resolve(result);
     return result;
   });

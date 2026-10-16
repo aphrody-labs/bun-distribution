@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 
-import { beforeEach, expect, it, vi } from "vitest";
+import { beforeEach, expect, it, vi } from "../../tests/support/bunTest.js";
 
 const mocks = vi.hoisted(() => ({
   openBrowser: vi.fn(),

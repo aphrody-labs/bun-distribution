@@ -1,4 +1,4 @@
-import { expect, expectTypeOf, it, vi } from "vitest";
+import { expect, expectTypeOf, it, vi } from "../support/bunTest.js";
 import { z } from "zod";
 import { evmInterfaceModule } from "../../src/composition/evm.js";
 import { wasmArtifactModule } from "../../src/composition/wasm.js";

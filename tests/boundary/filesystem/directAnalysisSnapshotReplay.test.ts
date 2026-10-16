@@ -2,7 +2,7 @@ import { parseConfig } from "../../../src/config/parseConfig.js";
 import { symlink, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { runDirectAnalysis } from "../../../src/application/DirectAnalysis.js";

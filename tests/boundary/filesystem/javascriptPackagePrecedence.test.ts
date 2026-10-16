@@ -6,7 +6,7 @@ import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { reconstructJavaScriptArtifact } from "../../support/javascriptApplicationScope.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

@@ -2,7 +2,7 @@ import { rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { afterEach, expect, test } from "vitest";
+import { afterEach, expect, test } from "../../support/bunTest.js";
 
 import { V8InspectorProvider } from "../../../src/inspector/V8InspectorProvider.js";
 import { startFakeV8Inspector } from "../../fixtures/inspector/fakeV8Inspector.js";

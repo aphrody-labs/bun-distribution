@@ -1,6 +1,6 @@
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import type { McpServer } from "@modelcontextprotocol/server";
-import { test as base } from "vitest";
+import { test as base } from "../bunTest.js";
 
 /** Client identity used during an in-memory MCP negotiation. */
 export interface McpClientIdentity {

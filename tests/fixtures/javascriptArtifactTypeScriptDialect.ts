@@ -6,7 +6,7 @@ import { promisify } from "node:util";
 
 import { createPackageWithOptions } from "@electron/asar";
 import { parse } from "@babel/parser";
-import { expect } from "vitest";
+import { expect } from "../support/bunTest.js";
 
 import type { JavaScriptApplicationGraph } from "../../src/domain/javascript/javascriptApplicationGraph.js";
 import { createTestTempDirectory } from "./temporaryDirectory.js";

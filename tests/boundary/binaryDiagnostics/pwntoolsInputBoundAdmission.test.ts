@@ -1,7 +1,7 @@
 import { open } from "node:fs/promises";
 import { join } from "node:path";
 
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../support/bunTest.js";
 
 import { PwntoolsLayoutProvider } from "../../../src/native/pwntools/PwntoolsLayoutProvider.js";
 import { projectAnalysisError } from "../../../src/domain/analysisErrorProjection.js";

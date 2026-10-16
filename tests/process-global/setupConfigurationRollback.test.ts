@@ -2,7 +2,13 @@ import { open, readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 
-import { afterEach, expect, it, onTestFinished, vi } from "vitest";
+import {
+  afterEach,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from "../support/bunTest.js";
 
 const state = vi.hoisted(() => ({
   readbackFailed: false,

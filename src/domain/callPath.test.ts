@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 
 import { buildCallPath } from "./callPath.js";
 import { combineFunctionRelationshipCoverage } from "./functionCallCoverage.js";

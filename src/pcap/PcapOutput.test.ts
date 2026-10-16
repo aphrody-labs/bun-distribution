@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../tests/support/bunTest.js";
 import { parseCapinfosOutput, parseTsharkJsonOutput } from "./PcapOutput.js";
 
 const capture = (layers: ReadonlyArray<Record<string, string[]>>) =>

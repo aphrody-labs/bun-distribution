@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { build } from "plist";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { inspectBundleKeyedArchive } from "../../../src/artifacts/apple/KeyedArchiveReader.js";
 import { keyedArchiveResultSchema } from "../../../src/domain/apple/keyedArchive.js";
 import { parseEvidence } from "../../../src/domain/evidence.js";

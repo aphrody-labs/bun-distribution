@@ -1,7 +1,7 @@
 import { mkdir, rename, writeFile, type FileHandle } from "node:fs/promises";
 import { join } from "node:path";
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "../../support/bunTest.js";
 
 const controls = vi.hoisted(() => ({
   wrapDirectory: undefined as

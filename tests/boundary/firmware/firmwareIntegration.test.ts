@@ -1,6 +1,6 @@
 import { STDIO_DEFAULT_MAX_BUFFER_SIZE } from "@modelcontextprotocol/server";
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
-import { expect, it as test, vi } from "vitest";
+import { expect, it as test, vi } from "../../support/bunTest.js";
 import {
   firmwareFixture,
   assertFirmwareCleanup,

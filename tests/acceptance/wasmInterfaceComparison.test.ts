@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { expect } from "vitest";
+import { expect } from "../support/bunTest.js";
 import { createEvidence, parseEvidence } from "../../src/domain/evidence.js";
 import { wasmInterfaceComparisonSchema } from "../../src/contracts/wasm/wasmComparisonContracts.js";
 import { composeBinarySession } from "../../src/application/binary/BinarySessionComposition.js";

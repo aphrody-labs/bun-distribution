@@ -1,4 +1,4 @@
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";

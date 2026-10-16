@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 import { windowAnnotationText } from "./annotationTextWindow.js";
 
 it("preserves line terminators, blank lines and literal display text", () => {

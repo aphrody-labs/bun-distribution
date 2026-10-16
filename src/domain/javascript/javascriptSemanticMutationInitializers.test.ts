@@ -1,5 +1,5 @@
 import * as t from "@babel/types";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../tests/support/bunTest.js";
 
 import { semanticMutationInitializers } from "./javascriptSemanticMutationInitializers.js";
 import type { JavaScriptSemanticBindingState } from "./javascriptSemanticState.js";

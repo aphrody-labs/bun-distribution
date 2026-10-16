@@ -12,7 +12,14 @@ import {
 } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { parse as parseToml } from "smol-toml";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "../../support/bunTest.js";
 import { parse as parseJsonc, type ParseError } from "jsonc-parser";
 
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

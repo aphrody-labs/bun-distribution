@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 
-import { fc, it } from "@fast-check/vitest";
+import { fc, it } from "../../tests/support/fastCheckIt.js";
 import canonicalize from "canonicalize";
-import { describe, expect } from "vitest";
+import { describe, expect } from "../../tests/support/bunTest.js";
 
 import { digestCanonicalValue } from "./canonicalDigest.js";
 

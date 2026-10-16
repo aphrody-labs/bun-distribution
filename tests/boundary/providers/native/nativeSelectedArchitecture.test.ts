@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../../support/bunTest.js";
 import { CPU } from "../../../../src/artifacts/apple/MachoImage.fixture.js";
 import { inspectMachoSchema } from "../../../../src/domain/native/nativeInspection.js";
 import { err } from "../../../../src/domain/result.js";

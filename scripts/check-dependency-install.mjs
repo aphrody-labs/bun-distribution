@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const REMEDIATION = "Run `npm ci`, then retry.";
+const REMEDIATION = "Run `bun install`, then retry.";
 
 const readJson = async (path) => JSON.parse(await readFile(path, "utf8"));
 
@@ -11,38 +11,42 @@ const directDependencies = (rootPackage) => ({
   ...rootPackage.devDependencies,
 });
 
-const installedPackageKey = (name) => `node_modules/${name}`;
-
-/** Compare root direct dependencies with npm's hidden installed lockfile. */
-export const dependencyInstallProblems = (rootLock, installedLock) => {
-  const rootPackage = rootLock.packages?.[""];
-  if (rootPackage === undefined)
-    return ["package-lock.json does not contain a root package entry"];
-  const installedPackages = installedLock.packages ?? {};
-  return Object.keys(directDependencies(rootPackage))
-    .sort()
-    .flatMap((name) => {
-      const key = installedPackageKey(name);
-      const expected = rootLock.packages?.[key]?.version;
-      const actual = installedPackages[key]?.version;
-      if (expected === undefined)
-        return [`${name}: missing resolved version in package-lock.json`];
+/** Compare the root manifest's direct dependencies with node_modules. */
+export const dependencyInstallProblems = (rootPackage, installedVersions) =>
+  Object.entries(directDependencies(rootPackage))
+    .sort(([left], [right]) => left.localeCompare(right))
+    .flatMap(([name, range]) => {
+      const actual = installedVersions[name];
       if (actual === undefined)
-        return [`${name}: missing from the installed dependency lockfile`];
-      return actual === expected
+        return [`${name}: missing from the installed dependencies`];
+      if (/^(?:workspace|npm|file|link|git|https?):/u.test(range)) return [];
+      return Bun.semver.satisfies(actual, range)
         ? []
-        : [`${name}: installed ${actual}, expected ${expected}`];
+        : [`${name}: installed ${actual}, expected ${range}`];
     });
+
+const installedVersion = async (root, name) => {
+  try {
+    return (await readJson(resolve(root, "node_modules", name, "package.json")))
+      .version;
+  } catch {
+    return undefined;
+  }
 };
 
 const main = async () => {
   const root = process.cwd();
   try {
-    const [rootLock, installedLock] = await Promise.all([
-      readJson(resolve(root, "package-lock.json")),
-      readJson(resolve(root, "node_modules/.package-lock.json")),
-    ]);
-    const problems = dependencyInstallProblems(rootLock, installedLock);
+    const rootPackage = await readJson(resolve(root, "package.json"));
+    const installedVersions = Object.fromEntries(
+      await Promise.all(
+        Object.keys(directDependencies(rootPackage)).map(async (name) => [
+          name,
+          await installedVersion(root, name),
+        ]),
+      ),
+    );
+    const problems = dependencyInstallProblems(rootPackage, installedVersions);
     if (problems.length === 0) return;
     process.stderr.write(
       `Direct dependency installation is stale:\n${problems.map((problem) => `- ${problem}`).join("\n")}\n${REMEDIATION}\n`,
@@ -50,7 +54,7 @@ const main = async () => {
     process.exitCode = 1;
   } catch (error) {
     const reason =
-      error instanceof Error ? error.message : "unreadable lockfile";
+      error instanceof Error ? error.message : "unreadable package manifest";
     process.stderr.write(
       `Could not verify the installed direct dependencies: ${reason}\n${REMEDIATION}\n`,
     );

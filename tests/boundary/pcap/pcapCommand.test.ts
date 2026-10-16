@@ -1,5 +1,5 @@
 import { setTimeout as delay } from "node:timers/promises";
-import { expect, it, onTestFinished, vi } from "vitest";
+import { expect, it, onTestFinished, vi } from "../../support/bunTest.js";
 import { runPcapCommand } from "../../../src/pcap/PcapCommand.js";
 import * as ownership from "../../../src/process/ProcessOwnershipObservation.js";
 import { cleanupOwnedProcessGroup } from "../../../src/process/ProcessOwnership.js";

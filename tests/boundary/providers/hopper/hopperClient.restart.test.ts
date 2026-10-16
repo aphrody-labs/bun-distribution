@@ -1,4 +1,9 @@
-import { describe, expect, it, onTestFinished } from "vitest";
+import {
+  describe,
+  expect,
+  it,
+  onTestFinished,
+} from "../../../support/bunTest.js";
 import { HopperClient } from "../../../../src/hopper/HopperClient.js";
 
 import {

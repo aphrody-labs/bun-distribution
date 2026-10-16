@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, sep } from "node:path";
 
 import { createPackageWithOptions, listPackage } from "@electron/asar";
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { javascriptApplicationAnalysisResultSchema } from "../../../src/domain/javascript/javascriptApplicationAnalysis.js";

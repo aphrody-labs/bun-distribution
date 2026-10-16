@@ -5,7 +5,7 @@ import {
   isCallToolResult,
   isJSONRPCResultResponse,
 } from "@modelcontextprotocol/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { createAnalysisExecution } from "../../../src/application/AnalysisProvider.js";

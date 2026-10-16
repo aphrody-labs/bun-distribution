@@ -1,6 +1,6 @@
 import { symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 import { createPeResourcesService } from "../../../src/composition/binaryDiagnostics.js";
 import { peResourceFixture } from "../../../src/native/pe/PeResources.fixture.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

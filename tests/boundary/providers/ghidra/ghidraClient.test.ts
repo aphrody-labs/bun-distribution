@@ -6,7 +6,14 @@ import { access, chmod, mkdir, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { PassThrough } from "node:stream";
 
-import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
+import {
+  afterEach,
+  describe,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from "../../../support/bunTest.js";
 import pino from "pino";
 import type { Logger } from "pino";
 import type { ProgressUpdate } from "../../../../src/application/ProgressReporter.js";

@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../tests/support/bunTest.js";
 import { projectEvmoleInterface } from "./EvmoleInterfaceAdapter.js";
 
 it("preserves the actual producer keys, duplicates and unknown inference absence", () => {

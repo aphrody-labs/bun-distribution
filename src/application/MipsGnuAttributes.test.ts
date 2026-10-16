@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 import { parseMipsGnuAttributes } from "./MipsGnuAttributes.js";
 
 const u32 = (value: number, little: boolean): number[] => {

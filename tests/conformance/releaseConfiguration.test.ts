@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../support/bunTest.js";
 
 import { SUPPORTED_NODE_VERSION_RANGE } from "../../src/domain/runtimeVersion.js";
 

@@ -9,7 +9,12 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { join } from "node:path";
-import { expect, onTestFinished, test, vi } from "vitest";
+import {
+  expect,
+  onTestFinished,
+  test,
+  vi,
+} from "../../tests/support/bunTest.js";
 
 const adbTestHooks = vi.hoisted(() => ({
   afterScreencap: undefined as (() => void) | undefined,

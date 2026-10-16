@@ -1,7 +1,7 @@
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import { chmod, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../support/bunTest.js";
 
 import { AdbProvider } from "../../../src/adb/AdbProvider.js";
 import { analysisErrorProjectionSchema } from "../../../src/contracts/errorSchemas.js";

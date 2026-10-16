@@ -1,5 +1,5 @@
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "../../support/bunTest.js";
 import { PROCEDURES, inventory, jsonResult } from "./enhancedToolsHarness.js";
 
 import type { AnalysisOperationPort } from "../../../src/application/AnalysisProvider.js";

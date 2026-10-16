@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { test } from "vitest";
+import { test } from "../support/bunTest.js";
 
 test("signal verification rejects skipped identical UART bytes and reordered I2C samples", () => {
   const moduleUrl = new URL(

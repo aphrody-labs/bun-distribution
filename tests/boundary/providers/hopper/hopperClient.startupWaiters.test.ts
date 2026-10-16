@@ -1,6 +1,6 @@
 import { access } from "node:fs/promises";
 
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../../support/bunTest.js";
 
 import { HopperClient } from "../../../../src/hopper/HopperClient.js";
 import { ok } from "../../../../src/domain/result.js";

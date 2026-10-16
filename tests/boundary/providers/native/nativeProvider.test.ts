@@ -5,7 +5,13 @@ import { chmod, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { PassThrough } from "node:stream";
 
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import {
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+} from "../../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../../fixtures/temporaryDirectory.js";
 

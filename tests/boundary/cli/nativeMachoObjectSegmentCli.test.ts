@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { writeFile } from "node:fs/promises";
 
-import { describe, expect } from "vitest";
+import { describe, expect } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { inspectMachoSchema } from "../../../src/domain/native/nativeInspection.js";

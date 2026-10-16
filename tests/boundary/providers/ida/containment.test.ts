@@ -1,5 +1,5 @@
 import { rm } from "node:fs/promises";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "../../../support/bunTest.js";
 import { inspectAddressContext } from "../../../../src/application/AnalysisContextQueries.js";
 import { EnhancedTools } from "../../../../src/application/EnhancedTools.js";
 import { IdaSessionClient } from "../../../../src/ida/IdaSessionClient.js";

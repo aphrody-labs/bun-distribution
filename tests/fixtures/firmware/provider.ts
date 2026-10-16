@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { access, rm, writeFile } from "node:fs/promises";
-import { expect, onTestFinished } from "vitest";
+import { expect, onTestFinished } from "../../support/bunTest.js";
 import { createFirmwareAnalysisProvider } from "../../../src/composition/firmware.js";
 import { FirmwareAnalysisService } from "../../../src/application/firmware/FirmwareAnalysisService.js";
 import { spawnOwnedProviderProcess } from "../../../src/process/ProviderProcess.js";

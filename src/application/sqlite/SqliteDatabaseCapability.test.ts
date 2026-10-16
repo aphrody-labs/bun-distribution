@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 import { expandProviderCapabilities } from "../../contracts/toolOutputSchemaPrimitives.js";
 import { providerCapabilitySets } from "../binary/BinarySessionStatus.js";
 import { sqliteDatabaseCapability } from "./SqliteDatabaseCapability.js";

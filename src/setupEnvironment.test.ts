@@ -2,7 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "../tests/support/bunTest.js";
 
 import { createDoctorHostFixture } from "./application/Doctor.fixture.js";
 import * as macHopperInstaller from "./application/MacHopper.js";

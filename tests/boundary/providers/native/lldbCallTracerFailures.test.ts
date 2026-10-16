@@ -1,7 +1,13 @@
 import { access, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
-import { describe, expect, it, onTestFinished, vi } from "vitest";
+import {
+  describe,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from "../../../support/bunTest.js";
 import { z } from "zod";
 
 import { AnalysisCancelledError } from "../../../../src/domain/analysisErrorCore.js";

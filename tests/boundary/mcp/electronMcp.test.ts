@@ -5,7 +5,7 @@ import { basename, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

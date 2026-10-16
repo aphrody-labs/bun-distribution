@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { buildBinary } from "plist";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../tests/support/bunTest.js";
 
 import { analyzeInterfaceBuilderBundle } from "./InterfaceBuilderAnalysis.js";
 import { preflightPropertyListDecode } from "./InterfaceBuilderDecodeBudget.js";

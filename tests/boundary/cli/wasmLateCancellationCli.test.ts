@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { WasmArtifactService } from "../../../src/application/wasm/WasmArtifactService.js";
 import { withCommandCancellation } from "../../../src/cli/commandCancellation.js";
 import { finishAnalysisCommand } from "../../../src/cli/finishAnalysisCommand.js";

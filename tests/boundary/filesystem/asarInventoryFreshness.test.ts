@@ -4,7 +4,7 @@ import { Readable } from "node:stream";
 import { buffer } from "node:stream/consumers";
 
 import { createPackage, listPackage, uncache } from "@electron/asar";
-import { describe, expect, it, onTestFinished } from "vitest";
+import { describe, expect, it, onTestFinished } from "../../support/bunTest.js";
 
 import { ArtifactResourceScope } from "../../../src/artifacts/ArtifactResourceScope.js";
 import { DirectoryArtifactReader } from "../../../src/artifacts/DirectoryArtifactReader.js";

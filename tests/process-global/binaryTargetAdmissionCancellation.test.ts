@@ -1,7 +1,13 @@
 import type { FileHandle } from "node:fs/promises";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { afterEach, expect, it, onTestFinished, vi } from "vitest";
+import {
+  afterEach,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from "../support/bunTest.js";
 
 const admission = vi.hoisted(() => ({
   path: "",

@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { access, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../../fixtures/temporaryDirectory.js";
 

@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { vi } from "../../tests/support/bunTest.js";
 import type { ProcessOwnershipHost } from "./ProcessOwnership.js";
 
 export const ownership = {

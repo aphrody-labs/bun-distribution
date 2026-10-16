@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { expect, it } from "vitest";
+import { expect, it } from "../../../support/bunTest.js";
 import { z } from "zod";
 
 import { createTestTempDirectory } from "../../../fixtures/temporaryDirectory.js";

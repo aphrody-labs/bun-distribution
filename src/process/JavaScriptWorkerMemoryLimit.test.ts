@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../tests/support/bunTest.js";
 import {
   BUN_WORKER_RUNTIME_RESERVE_BYTES,
   javaScriptWorkerMemoryLimitBytes,

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../tests/support/bunTest.js";
 
 import type { BinaryTarget } from "../../domain/binaryTargetTypes.js";
 import { createEvidence } from "../../domain/evidence.js";

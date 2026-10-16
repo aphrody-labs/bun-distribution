@@ -1,6 +1,6 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { access } from "node:fs/promises";
-import { expect, it, onTestFinished, vi } from "vitest";
+import { expect, it, onTestFinished, vi } from "../../support/bunTest.js";
 
 import { projectAnalysisError } from "../../../src/domain/analysisErrorProjection.js";
 import { PrivateRuntimeRoot } from "../../../src/process/PrivateRuntimeRoot.js";

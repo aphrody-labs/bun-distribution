@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../../tests/support/bunTest.js";
 import { AnalysisOutputError } from "../../domain/analysisErrorCore.js";
 import { OwnedFileHandle } from "../../filesystem/OwnedFileHandle.js";
 import {

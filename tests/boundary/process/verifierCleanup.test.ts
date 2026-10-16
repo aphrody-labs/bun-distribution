@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { closeVerifierResources } from "../../../scripts/lib/verifier-cleanup.mjs";
 
 it("attempts every cleanup and reports failures when there is no primary error", async () => {

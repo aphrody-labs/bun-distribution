@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "../../tests/support/bunTest.js";
 import type { BrowserContext, Page, Request, Response } from "playwright-core";
 
 import { browserScenarioSchema } from "../domain/browserScenario.js";

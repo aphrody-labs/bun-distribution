@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../tests/support/bunTest.js";
 import { ProviderProcessSupervisor } from "./ProviderProcess.js";
 import { redactCapturedTransportCredential } from "./ProviderDiagnosticRedaction.js";
 

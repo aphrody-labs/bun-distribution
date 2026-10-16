@@ -1,7 +1,7 @@
 import { appendFile, open, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import { readBoundedFileBytes } from "../../../src/process/BoundedFileBytes.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

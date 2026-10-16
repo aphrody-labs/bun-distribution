@@ -10,7 +10,13 @@ import { join } from "node:path";
 import type { Readable } from "node:stream";
 
 import { build } from "plist";
-import { describe, expect, it, onTestFinished, vi } from "vitest";
+import {
+  describe,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from "../../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../../fixtures/temporaryDirectory.js";
 import { execFileOutput } from "../../../../src/process/ExecFileOutput.js";

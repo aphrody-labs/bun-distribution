@@ -1,5 +1,12 @@
 import { writeFile } from "node:fs/promises";
-import { afterEach, beforeEach, expect, it, onTestFinished, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from "../support/bunTest.js";
 
 import { createCli } from "../../src/cli.js";
 import * as composition from "../../src/composition/binaryDiagnostics.js";

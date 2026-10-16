@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../tests/support/bunTest.js";
 import { readNativeCallRoutes } from "./NativeCallRoutes.js";
 import { createAnalysisExecution } from "../AnalysisProvider.js";
 import { ghidraReferenceEdge } from "../../domain/ghidraValues.fixture.js";

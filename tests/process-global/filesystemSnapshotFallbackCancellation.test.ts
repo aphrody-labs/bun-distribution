@@ -3,7 +3,7 @@ import { lstat, writeFile } from "node:fs/promises";
 import type { FileHandle } from "node:fs/promises";
 import { join } from "node:path";
 
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "../support/bunTest.js";
 
 const observation = vi.hoisted(() => ({
   path: "",

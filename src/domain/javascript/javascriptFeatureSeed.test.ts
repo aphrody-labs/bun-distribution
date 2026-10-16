@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../tests/support/bunTest.js";
 
 import { buildSyntheticJavaScriptApplicationGraph } from "./javascriptApplicationGraph.fixture.js";
 import type { JsonValue } from "../jsonValue.js";

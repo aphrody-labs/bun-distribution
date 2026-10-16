@@ -2,7 +2,7 @@ import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import * as v8 from "node:v8";
 
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../../support/bunTest.js";
 
 import { normalizeKunaAddress } from "../../../../src/kuna/KunaAddress.js";
 import {

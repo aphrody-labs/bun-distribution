@@ -2,7 +2,7 @@ import type { FileHandle } from "node:fs/promises";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../support/bunTest.js";
 
 const cleanupState = vi.hoisted(() => ({
   failFirstClose: false,

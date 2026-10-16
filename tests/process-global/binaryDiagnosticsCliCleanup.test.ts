@@ -1,4 +1,4 @@
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "../support/bunTest.js";
 
 import { createCli } from "../../src/cli.js";
 import { CLI_COMMANDS } from "../../src/cliCommandNames.js";

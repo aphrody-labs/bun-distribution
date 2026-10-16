@@ -2,7 +2,7 @@ import { chmod, readFile, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 import { parse as parseToml } from "smol-toml";
 
 import {

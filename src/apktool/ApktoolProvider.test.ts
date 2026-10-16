@@ -8,7 +8,12 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { join } from "node:path";
-import { describe, expect, onTestFinished, test } from "vitest";
+import {
+  describe,
+  expect,
+  onTestFinished,
+  test,
+} from "../../tests/support/bunTest.js";
 
 import { ApktoolProvider } from "./ApktoolProvider.js";
 import { projectAnalysisError } from "../domain/analysisErrorProjection.js";

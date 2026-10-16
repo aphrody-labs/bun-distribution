@@ -1,5 +1,5 @@
 import { STDIO_DEFAULT_MAX_BUFFER_SIZE } from "@modelcontextprotocol/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import { toolContract } from "../../../src/contracts/toolContracts.js";
 import { createEvidence, type Evidence } from "../../../src/domain/evidence.js";

@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { inspectSignalDecodersInputSchema } from "../../../src/domain/signals/signalDecoders.js";
 import { parseDecoderDiscovery } from "../../../src/signals/parseDecoderDiscovery.js";
 

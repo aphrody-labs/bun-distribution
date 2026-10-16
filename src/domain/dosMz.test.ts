@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 
 import { dosMz, pe } from "./binaryTarget.fixture.js";
 import { parseExecutableHeader } from "./binaryTarget.js";

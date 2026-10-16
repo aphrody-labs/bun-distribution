@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import { Cli } from "incur";
 import { resolve } from "node:path";
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../support/bunTest.js";
 
 import type { BrowserScenarioCapturePort } from "../../src/application/BrowserScenarioCapturePort.js";
 import { createBrowserScenarioEvidence } from "../../src/application/BrowserScenarioEvidence.js";

@@ -1,4 +1,4 @@
-import { it } from "vitest";
+import { it } from "../../support/bunTest.js";
 
 import { probeProcessCaptureCapability } from "../../../src/process/capture/ProcessCaptureCapability.js";
 

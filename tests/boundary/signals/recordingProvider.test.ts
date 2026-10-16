@@ -1,6 +1,6 @@
 import { signalDecodersSchema } from "../../../src/domain/signals/signalDecoders.js";
 import { OwnedCommandFailure } from "../../../src/process/OwnedCommand.js";
-import { it, expect, onTestFinished } from "vitest";
+import { it, expect, onTestFinished } from "../../support/bunTest.js";
 import { writeFile, readdir, chmod, symlink } from "node:fs/promises";
 import { join } from "node:path";
 import { readStableArtifact } from "../../../src/artifacts/readStableArtifact.js";

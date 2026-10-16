@@ -1,4 +1,4 @@
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../support/bunTest.js";
 
 import { inspectWebPageInputSchema } from "../../../src/domain/browserObservation.js";
 import { CdpBrowserProvider } from "../../../src/browser/CdpBrowserProvider.js";

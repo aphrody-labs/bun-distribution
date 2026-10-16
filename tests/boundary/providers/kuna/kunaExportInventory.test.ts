@@ -1,4 +1,4 @@
-import { expect, it as test } from "vitest";
+import { expect, it as test } from "../../../support/bunTest.js";
 
 import { fakeKunaCalls } from "./fakeKuna.js";
 import { exportsOf, run, session } from "./kunaSessionFixture.js";

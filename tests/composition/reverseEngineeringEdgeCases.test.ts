@@ -1,7 +1,7 @@
 import { rm } from "node:fs/promises";
 import type { Stats } from "node:fs";
 
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../support/bunTest.js";
 import { registerSharedReverseEngineeringEdgeCaseTests } from "../support/reverseEngineeringCompositionEdgeCases.js";
 import { registerOwnedRizinCommandEvidenceTests } from "../support/ownedRizinCommandEvidenceTests.js";
 import {

@@ -1,4 +1,4 @@
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../support/bunTest.js";
 import type { Socket } from "node:net";
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";

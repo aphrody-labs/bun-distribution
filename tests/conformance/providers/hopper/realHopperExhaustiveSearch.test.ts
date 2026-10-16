@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../support/bunTest.js";
 
 import { openAndVerifyLargeFixture } from "../../../../scripts/lib/real-hopper-exhaustive-search.mjs";
 

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 import { historicalHar } from "../../../tests/fixtures/historicalHar.js";
 import { decodeCaptureText } from "./CaptureJson.js";
 import { decodeHarCapture } from "./HarCapture.js";

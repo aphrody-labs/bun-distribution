@@ -11,7 +11,7 @@ import {
 import { join } from "node:path";
 import { promisify } from "node:util";
 
-import { expect, it } from "vitest";
+import { expect, it } from "../support/bunTest.js";
 
 import { assertCleanLinuxHopperRuntime } from "../../scripts/lib/clean-linux-hopper-runtime.mjs";
 import { completeVerifierRun } from "../../scripts/lib/verifier-run.mjs";

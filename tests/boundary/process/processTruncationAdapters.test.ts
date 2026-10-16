@@ -3,7 +3,7 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
-import { expect, onTestFinished } from "vitest";
+import { expect, onTestFinished } from "../../support/bunTest.js";
 import { parseEvidence } from "../../../src/domain/evidence.js";
 import { compareProcessCaptures } from "../../../src/domain/process/processComparison.js";
 import { parseProcessCapture } from "../../../src/domain/process/processCaptureParsing.js";

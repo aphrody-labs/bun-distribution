@@ -1,4 +1,4 @@
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../support/bunTest.js";
 import type { CdpEvent } from "../../../src/browser/CdpConnection.js";
 import { CdpWebRuntimeProvider } from "../../../src/browser/execution/CdpWebRuntimeProvider.js";
 import { observeWebExecutionInputSchema } from "../../../src/domain/webExecution.js";

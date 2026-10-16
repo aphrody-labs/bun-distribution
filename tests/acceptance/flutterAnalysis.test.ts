@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { expect } from "vitest";
+import { expect } from "../support/bunTest.js";
 import { toolContract } from "../../src/contracts/toolContracts.js";
 import { parseEvidence } from "../../src/domain/evidence.js";
 import { flutterResultSchemas } from "../../src/domain/flutter/flutterBuildAnalysis.js";

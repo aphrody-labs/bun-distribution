@@ -1,7 +1,12 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { createHash, randomUUID } from "node:crypto";
 import { join } from "node:path";
-import { describe, expect, it, onTestFinished } from "vitest";
+import {
+  describe,
+  expect,
+  it,
+  onTestFinished,
+} from "../../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../../fixtures/temporaryDirectory.js";
 import { createGhidraDiagnostics } from "../../../../src/ghidra/GhidraDiagnostics.js";

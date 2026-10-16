@@ -1,4 +1,4 @@
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../../tests/support/bunTest.js";
 import { AnalysisCapabilityUnavailableError } from "../../domain/analysisErrorCore.js";
 import { NodeCaptureAdapter } from "./NodeCaptureAdapter.js";
 

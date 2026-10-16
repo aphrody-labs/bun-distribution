@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { access } from "node:fs/promises";
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../support/bunTest.js";
 import { SourceMapDecoder } from "../../../src/javascript/sourceMaps/SourceMapDecoder.js";
 import {
   SOURCE_MAP_CODEC_MEMORY_LIMIT_BYTES,

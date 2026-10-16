@@ -3,7 +3,7 @@ import { writeFile, truncate, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { expect, it as runtimeTest } from "vitest";
+import { expect, it as runtimeTest } from "../../support/bunTest.js";
 import {
   NODE_CAPTURE_HEAP_ENFORCED,
   NODE_CAPTURE_PROCESS_MEMORY_LIMIT_BYTES,

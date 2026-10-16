@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 
 import { buildBinary } from "plist";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import { parseBinaryTarget } from "../../../src/application/BinaryTargetResolver.js";
 import {

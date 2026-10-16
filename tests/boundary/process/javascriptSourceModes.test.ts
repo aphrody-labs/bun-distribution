@@ -1,4 +1,4 @@
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 
 import { parseJavaScriptSource } from "../../../src/domain/javascript/javascriptSourceParser.js";
 import { processTest } from "../../support/process/processFixture.js";

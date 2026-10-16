@@ -1,5 +1,5 @@
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 
 import {
   TOOL_CONTRACTS,

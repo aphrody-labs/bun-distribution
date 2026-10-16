@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../support/bunTest.js";
 import { ok } from "../../src/domain/result.js";
 import { WebNetworkCaptureService } from "../../src/application/WebNetworkCaptureService.js";
 import { WebSourceLocationService } from "../../src/application/WebSourceLocationService.js";

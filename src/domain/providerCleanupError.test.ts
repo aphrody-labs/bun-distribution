@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../tests/support/bunTest.js";
 import { ProviderCleanupError } from "./providerCleanupError.js";
 import { projectAnalysisError } from "./analysisErrorProjection.js";
 import { analysisErrorWithCleanupFailure } from "./analysisErrorCleanup.js";

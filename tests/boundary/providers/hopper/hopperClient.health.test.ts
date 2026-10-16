@@ -1,7 +1,13 @@
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 
-import { describe, expect, it, onTestFinished, vi } from "vitest";
+import {
+  describe,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from "../../../support/bunTest.js";
 
 import { projectAnalysisError } from "../../../../src/domain/analysisErrorProjection.js";
 import { ok } from "../../../../src/domain/result.js";

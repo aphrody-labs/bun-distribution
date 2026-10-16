@@ -1,7 +1,7 @@
 import { unlink } from "node:fs/promises";
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { expect, it, onTestFinished, vi } from "vitest";
+import { expect, it, onTestFinished, vi } from "../../support/bunTest.js";
 import { AndroidAnalysisService } from "../../../src/application/android/AndroidAnalysisService.js";
 import { inspectAndroidPackage } from "../../../src/application/android/AndroidPackageInspection.js";
 import { inspectAnalysisView } from "../../../src/application/analysisView/AnalysisViewService.js";

@@ -1,7 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { webPageInspectionSchema } from "../../../src/domain/browserObservationSchemas.js";
 import { parseEvidence } from "../../../src/domain/evidence.js";

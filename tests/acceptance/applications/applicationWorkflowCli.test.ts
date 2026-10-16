@@ -8,7 +8,7 @@ import { promisify } from "node:util";
 
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 import { writeElectronApiAliasApplication } from "../../fixtures/electronApiAliasApplication.js";

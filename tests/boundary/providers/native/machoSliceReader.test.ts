@@ -1,7 +1,12 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { describe, expect, it, onTestFinished } from "vitest";
+import {
+  describe,
+  expect,
+  it,
+  onTestFinished,
+} from "../../../support/bunTest.js";
 
 import { MachOSliceArtifactReader } from "../../../../src/artifacts/MachOSliceArtifactReader.js";
 import { XcrunCommandRunner } from "../../../../src/native/CommandRunner.js";

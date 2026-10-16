@@ -1,7 +1,13 @@
 import { readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { describe, expect, it, onTestFinished, vi } from "vitest";
+import {
+  describe,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from "../../support/bunTest.js";
 
 import { withArtifactResourceScope } from "../../fixtures/artifactInventory.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

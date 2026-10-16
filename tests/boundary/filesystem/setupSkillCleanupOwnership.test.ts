@@ -6,7 +6,14 @@ import {
 } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "../../support/bunTest.js";
 
 import { ArtifactResourceScope } from "../../../src/artifacts/ArtifactResourceScope.js";
 import { PRODUCT_IDENTITY } from "../../../src/identity.js";
@@ -40,7 +47,9 @@ beforeEach(async () => {
     await vi.importActual<typeof import("node:fs/promises")>(
       "node:fs/promises",
     );
-  openMock.mockImplementation((...args) => actualFs.open(...args));
+  openMock.mockImplementation((...args) =>
+    (actualFs.open as (...a: any[]) => any)(...args),
+  );
 });
 
 afterEach(() => openMock.mockReset());
@@ -49,7 +58,7 @@ const failFirstCloses = (path: string) => {
   const attempts: FileHandle[] = [];
   let allowClose = false;
   openMock.mockImplementation(async (...args) => {
-    const handle = await actualFs.open(...args);
+    const handle = await (actualFs.open as (...a: any[]) => any)(...args);
     if (String(args[0]) !== path) return handle;
     const nativeClose = handle.close.bind(handle);
     vi.spyOn(handle, "close").mockImplementation(async () => {
@@ -126,7 +135,7 @@ describe("skill regular-file cleanup ownership", () => {
     });
     let heldRead = false;
     openMock.mockImplementation(async (...args) => {
-      const handle = await actualFs.open(...args);
+      const handle = await (actualFs.open as (...a: any[]) => any)(...args);
       if (String(args[0]) !== manifest || heldRead) return handle;
       heldRead = true;
       const nativeRead = handle.read.bind(handle);

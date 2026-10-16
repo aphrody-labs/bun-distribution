@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { assertVerifierCleanupComplete } from "../../../scripts/lib/verifier-run.mjs";
 

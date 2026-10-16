@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../support/bunTest.js";
 import { z } from "zod";
 import { OFFICIAL_TOOL_CONTRACTS } from "../../../../src/contracts/officialToolContracts.js";
 import { functionDossierSchema } from "../../../../src/domain/hopperValues.js";

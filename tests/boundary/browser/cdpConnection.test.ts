@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "../../support/bunTest.js";
 
 import { CdpConnection } from "../../../src/browser/CdpConnection.js";
 import { WEB_RUNTIME_LIMITS } from "../../../src/domain/webRuntime.js";

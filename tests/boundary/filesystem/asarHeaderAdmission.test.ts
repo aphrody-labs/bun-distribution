@@ -1,7 +1,7 @@
 import { mkdir, open, readFile, truncate, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createPackage } from "@electron/asar";
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../support/bunTest.js";
 
 import {
   admitAsarHeader,

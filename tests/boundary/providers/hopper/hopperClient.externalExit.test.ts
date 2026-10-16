@@ -3,7 +3,7 @@ import { once } from "node:events";
 import { rm } from "node:fs/promises";
 import { join } from "node:path";
 
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../../support/bunTest.js";
 
 import {
   createAnalysisExecution,

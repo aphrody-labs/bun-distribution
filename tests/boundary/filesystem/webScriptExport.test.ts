@@ -21,7 +21,7 @@ import {
   it,
   onTestFinished,
   vi,
-} from "vitest";
+} from "../../support/bunTest.js";
 
 import { analyzeJavaScriptApplication } from "../../support/javascriptApplicationScope.js";
 import { exportWebScripts } from "../../../src/application/WebScriptExportService.js";
@@ -57,7 +57,9 @@ beforeEach(async () => {
     await vi.importActual<typeof import("node:fs/promises")>(
       "node:fs/promises",
     );
-  openMock.mockImplementation((...args) => actualFs.open(...args));
+  openMock.mockImplementation((...args) =>
+    (actualFs.open as (...a: any[]) => any)(...args),
+  );
 });
 
 afterEach(() => openMock.mockReset());
@@ -689,7 +691,7 @@ describe("capture read and close failure", () => {
     let closeCalls = 0;
     let allowClose = false;
     openMock.mockImplementation(async (...args) => {
-      const handle = await actualFs.open(...args);
+      const handle = await (actualFs.open as (...a: any[]) => any)(...args);
       if (String(args[0]) !== input.capture_path) return handle;
       openedHandle = handle;
       vi.spyOn(handle, "read").mockRejectedValue(readFailure);
@@ -751,7 +753,7 @@ describe("capture handle ownership", () => {
     const closeCalls = new Map<object, number>();
     let allowClose = false;
     openMock.mockImplementation(async (...args) => {
-      const handle = await actualFs.open(...args);
+      const handle = await (actualFs.open as (...a: any[]) => any)(...args);
       if (String(args[0]) !== input.capture_path) return handle;
       const close = handle.close.bind(handle);
       vi.spyOn(handle, "close").mockImplementation(async () => {
@@ -807,7 +809,7 @@ describe("capture handle ownership", () => {
     const closeFailure = new Error("injected one-time capture close failure");
     let closeCalls = 0;
     openMock.mockImplementation(async (...args) => {
-      const handle = await actualFs.open(...args);
+      const handle = await (actualFs.open as (...a: any[]) => any)(...args);
       if (String(args[0]) !== input.capture_path) return handle;
       const close = handle.close.bind(handle);
       vi.spyOn(handle, "close").mockImplementation(async () => {
@@ -848,7 +850,7 @@ describe("capture handle ownership", () => {
       releaseOpen = resolve;
     });
     openMock.mockImplementation(async (...args) => {
-      const handle = await actualFs.open(...args);
+      const handle = await (actualFs.open as (...a: any[]) => any)(...args);
       if (String(args[0]) === input.capture_path) {
         notifyOpen();
         await openGate;

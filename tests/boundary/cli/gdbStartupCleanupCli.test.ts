@@ -1,5 +1,5 @@
 import pino from "pino";
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../support/bunTest.js";
 
 import { AnalysisOutputError } from "../../../src/domain/analysisErrorCore.js";
 import { err } from "../../../src/domain/result.js";

@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 import type { Page } from "playwright-core";
-import { expect, it } from "vitest";
+import { expect, it } from "../../tests/support/bunTest.js";
 
 import { browserScenarioSchema } from "../domain/browserScenario.js";
 import { BrowserScenarioSecrets } from "./BrowserScenarioSecrets.js";

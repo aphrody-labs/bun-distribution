@@ -1,7 +1,7 @@
 import type { FileHandle } from "node:fs/promises";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { expect, it, onTestFinished, vi } from "vitest";
+import { expect, it, onTestFinished, vi } from "../../support/bunTest.js";
 
 import { ArtifactProvider } from "../../../src/artifacts/ArtifactProvider.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

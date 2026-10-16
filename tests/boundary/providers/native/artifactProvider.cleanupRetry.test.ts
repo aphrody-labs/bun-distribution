@@ -2,7 +2,7 @@ import { access, mkdir, open, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { createPackage } from "@electron/asar";
-import { expect, it, onTestFinished, vi } from "vitest";
+import { expect, it, onTestFinished, vi } from "../../../support/bunTest.js";
 
 import { ArtifactProvider } from "../../../../src/artifacts/ArtifactProvider.js";
 import { ArtifactReaderFailure } from "../../../../src/artifacts/ArtifactReader.js";

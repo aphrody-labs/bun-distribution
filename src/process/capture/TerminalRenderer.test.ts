@@ -2,7 +2,7 @@ import { createRequire } from "node:module";
 import { mkdtemp, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../../tests/support/bunTest.js";
 
 import { TerminalRenderer } from "./TerminalRenderer.js";
 import { ProcessCaptureResourceScope } from "./ProcessCaptureLifecycle.js";

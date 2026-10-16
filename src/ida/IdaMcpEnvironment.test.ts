@@ -1,7 +1,7 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "../../tests/support/bunTest.js";
 import { DEFAULT_INHERITED_ENV_VARS } from "@modelcontextprotocol/client/stdio";
 import { createIdaMcpConnection } from "./IdaMcpConnection.js";
 

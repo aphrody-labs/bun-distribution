@@ -3,7 +3,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { delimiter, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { parse } from "yaml";
 import { z } from "zod";
 

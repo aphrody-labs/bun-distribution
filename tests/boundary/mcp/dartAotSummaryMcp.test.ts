@@ -1,6 +1,6 @@
 import { unlink } from "node:fs/promises";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { expect, it, onTestFinished, vi } from "vitest";
+import { expect, it, onTestFinished, vi } from "../../support/bunTest.js";
 import { FlutterBuildAnalysisService } from "../../../src/application/flutter/FlutterBuildAnalysisService.js";
 import { inspectDartAot } from "../../../src/application/flutter/DartAotInspection.js";
 import { inspectAnalysisView } from "../../../src/application/analysisView/AnalysisViewService.js";

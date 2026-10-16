@@ -1,6 +1,12 @@
 import { once } from "node:events";
 
-import { describe, expect, it, onTestFinished, vi } from "vitest";
+import {
+  describe,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from "../../../support/bunTest.js";
 
 import { HopperProcessError } from "../../../../src/domain/hopperErrors.js";
 import { HOPPER_OPERATIONS } from "../../../../src/hopper/HopperProviderCapabilities.js";

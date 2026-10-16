@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { access } from "node:fs/promises";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "../../support/bunTest.js";
 import {
   stopFakeNoInferior,
   rizinTestInferiorTty,

@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 
-import { expect, it as test } from "vitest";
+import { expect, it as test } from "../../../support/bunTest.js";
 
 import { session } from "./kunaSessionFixture.js";
 

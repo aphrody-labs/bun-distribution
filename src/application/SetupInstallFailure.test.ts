@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 
 import { HOPPER_PUBLISHER } from "../domain/hopperPublisher.js";
 import { setupInstallFailure } from "./SetupInstallFailure.js";

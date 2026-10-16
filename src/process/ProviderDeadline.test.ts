@@ -1,4 +1,10 @@
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  expect,
+  it,
+  vi,
+} from "../../tests/support/bunTest.js";
 import { ProviderStartupDeadline } from "./ProviderDeadline.js";
 
 beforeEach(() => {

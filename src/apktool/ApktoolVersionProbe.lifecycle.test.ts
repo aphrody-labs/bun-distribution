@@ -3,7 +3,7 @@ import { chmod, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { promisify } from "node:util";
-import { expect, it } from "vitest";
+import { expect, it } from "../../tests/support/bunTest.js";
 
 import { AnalysisCancelledError } from "../domain/analysisErrorCore.js";
 import { createTestTempDirectory } from "../../tests/fixtures/temporaryDirectory.js";

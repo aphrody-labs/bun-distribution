@@ -10,7 +10,7 @@ import {
 } from "node:fs/promises";
 import { join } from "node:path";
 
-import { expect, it as test, vi } from "vitest";
+import { expect, it as test, vi } from "../../../support/bunTest.js";
 
 import type { BinaryTarget } from "../../../../src/domain/binaryTargetTypes.js";
 import type { JsonValue } from "../../../../src/domain/jsonValue.js";

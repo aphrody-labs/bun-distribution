@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../tests/support/bunTest.js";
 import type { BrowserObservationPort } from "./BrowserObservationPort.js";
 import { listBrowserTargets } from "./BrowserObservationService.js";
 import type { BrowserTargetList } from "../domain/browserObservationSchemas.js";

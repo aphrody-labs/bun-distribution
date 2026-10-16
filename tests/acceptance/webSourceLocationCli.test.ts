@@ -1,4 +1,4 @@
-import { expect, onTestFinished } from "vitest";
+import { expect, onTestFinished } from "../support/bunTest.js";
 import { Client } from "@modelcontextprotocol/client";
 import {
   StdioClientTransport,

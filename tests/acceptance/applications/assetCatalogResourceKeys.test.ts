@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 import { buildBinary } from "plist";
 
 import { encodeNibArchiveFixture } from "../../../src/artifacts/apple/NibArchive.fixture.js";

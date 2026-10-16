@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { mappedFileOffset } from "../../../src/go/GoBinaryContainer.js";
 
 const selected = { address: 100n, offset: 16, size: 64 };

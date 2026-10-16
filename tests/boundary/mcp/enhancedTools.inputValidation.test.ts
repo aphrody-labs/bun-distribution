@@ -1,5 +1,5 @@
 import { parseMcpToolError } from "../../fixtures/mcpToolError.js";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "../../support/bunTest.js";
 
 import { closeEnhancedToolResources, connect } from "./enhancedToolsHarness.js";
 import { observed as ok } from "../../fixtures/analysisExecution.js";

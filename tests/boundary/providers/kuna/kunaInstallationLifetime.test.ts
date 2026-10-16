@@ -1,4 +1,10 @@
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  expect,
+  it,
+  vi,
+} from "../../../support/bunTest.js";
 
 const gates = vi.hoisted(() => {
   const createGate = () => {

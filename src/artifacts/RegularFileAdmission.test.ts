@@ -1,7 +1,7 @@
 import type { BigIntStats, Stats } from "node:fs";
 import type { FileHandle } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "../../tests/support/bunTest.js";
 
 import {
   NonRegularFileReadError,

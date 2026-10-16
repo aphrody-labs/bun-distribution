@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../tests/support/bunTest.js";
 import { build, buildBinary, type PlistValue } from "plist";
 import { decodeKeyedArchiveBytes } from "./KeyedArchiveReader.js";
 import { deeplyNestedXmlPlist } from "../../../tests/fixtures/keyedArchiveXmlNesting.js";

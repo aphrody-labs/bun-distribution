@@ -1,6 +1,13 @@
 import { mkdir, readFile, rm, writeFile, access } from "node:fs/promises";
 import { delimiter, dirname, join, relative, resolve } from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "../support/bunTest.js";
 
 import { err, ok } from "../../src/domain/result.js";
 import { runUpdate, type UpdateResult } from "../../src/application/Update.js";

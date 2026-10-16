@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../tests/support/bunTest.js";
 import { createGhidraDiagnostics } from "./GhidraDiagnostics.js";
 
 it("does not reuse historical operation-scoped failure output without a current owner", () => {

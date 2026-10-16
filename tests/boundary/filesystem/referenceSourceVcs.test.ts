@@ -1,6 +1,6 @@
 import { chmod, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 import { withArtifactResourceScope } from "../../fixtures/artifactInventory.js";
 import { execFileOutput } from "../../../src/process/ExecFileOutput.js";

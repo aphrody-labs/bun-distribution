@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { classifyBrowserCompleteness } from "../../../src/domain/browserCompleteness.js";
 import type { WebPageInspection } from "../../../src/domain/browserObservationSchemas.js";

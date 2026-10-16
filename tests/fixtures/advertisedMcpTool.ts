@@ -1,6 +1,6 @@
 import type { Client } from "@modelcontextprotocol/client";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { expect } from "vitest";
+import { expect } from "../support/bunTest.js";
 import { toolContract } from "../../src/contracts/toolContracts.js";
 import { parseEvidence } from "../../src/domain/evidence.js";
 import type { BinarySession } from "../../src/application/binary/BinarySession.js";

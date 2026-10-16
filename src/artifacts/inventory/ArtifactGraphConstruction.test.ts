@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../tests/support/bunTest.js";
 
 import { CPU, fatImage, machoImage } from "../apple/MachoImage.fixture.js";
 import {

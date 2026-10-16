@@ -1,5 +1,5 @@
 import { rm } from "node:fs/promises";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "../../../support/bunTest.js";
 import { EnhancedTools } from "../../../../src/application/EnhancedTools.js";
 import { IdaSessionClient } from "../../../../src/ida/IdaSessionClient.js";
 import type { JsonValue } from "../../../../src/domain/jsonValue.js";

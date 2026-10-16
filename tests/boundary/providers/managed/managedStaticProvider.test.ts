@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { truncate, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "../../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../../fixtures/temporaryDirectory.js";
 
@@ -87,7 +87,7 @@ describe("managed static snapshot cancellation", () => {
       .spyOn(boundedFileBytes, "readBoundedFileBytes")
       .mockImplementation(async (...arguments_) => {
         controller.abort(new Error("fixture cancellation"));
-        return originalRead(...arguments_);
+        return (originalRead as (...a: any[]) => any)(...arguments_);
       });
     const originalClose = OwnedFileHandle.prototype.close;
     let permitClose = false;

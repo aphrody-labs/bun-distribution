@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { parsePacketOutput } from "../../../src/captures/parsePacketOutput.js";
 
 it("preserves repeated field values and missing fields while discarding export index metadata", () => {

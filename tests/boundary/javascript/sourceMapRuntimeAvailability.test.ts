@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { projectAnalysisError } from "../../../src/domain/analysisErrorProjection.js";
 import { runSourceMapCommand } from "../../../src/javascript/sourceMaps/SourceMapCommand.js";
 import { PrivateRuntimeRootUnavailableError } from "../../../src/process/PrivateRuntimeRootUnavailableError.js";

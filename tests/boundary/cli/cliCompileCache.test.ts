@@ -1,6 +1,6 @@
 import { readdir } from "node:fs/promises";
 
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 
 import { PRODUCT_IDENTITY } from "../../../src/identity.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

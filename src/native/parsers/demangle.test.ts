@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../tests/support/bunTest.js";
 
 import { parseDemangledSymbols } from "./demangle.js";
 import { swiftSymbolsSchema } from "../../contracts/native/nativeToolContracts.js";

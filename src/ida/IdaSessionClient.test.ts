@@ -1,6 +1,13 @@
 import { readFile, readdir, rm } from "node:fs/promises";
 import { sep } from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "../../tests/support/bunTest.js";
 import { z } from "zod";
 import {
   createIdaTarget,

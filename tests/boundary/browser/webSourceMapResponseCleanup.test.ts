@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { describe, expect, it, onTestFinished } from "vitest";
+import { describe, expect, it, onTestFinished } from "../../support/bunTest.js";
 import { fetchWebSourceMaps } from "../../../src/browser/WebSourceMapFetcher.js";
 import { analyzeWebBundleInputSchema } from "../../../src/domain/webBundleAnalysis.js";
 

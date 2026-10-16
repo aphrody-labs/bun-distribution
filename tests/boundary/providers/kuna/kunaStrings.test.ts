@@ -1,4 +1,4 @@
-import { expect, it as test, vi } from "vitest";
+import { expect, it as test, vi } from "../../../support/bunTest.js";
 import { readKunaConfiguration } from "../../../../src/kuna/KunaConfiguration.js";
 import { KUNA_DIAGNOSTIC_BYTES } from "../../../../src/kuna/KunaLimits.js";
 import { projectAnalysisError } from "../../../../src/domain/analysisErrorProjection.js";

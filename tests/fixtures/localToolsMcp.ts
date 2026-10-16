@@ -6,7 +6,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import type { ValidateFunction } from "ajv";
 import { fileURLToPath } from "node:url";
-import { expect, onTestFinished } from "vitest";
+import { expect, onTestFinished } from "../support/bunTest.js";
 import { z } from "zod";
 
 // validateSchema checks against the meta-schema without registering user $ids.

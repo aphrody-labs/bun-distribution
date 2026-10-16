@@ -1,4 +1,4 @@
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 
 import type { GdbSessionManager } from "../../../src/gdb/GdbSessionManager.js";
 

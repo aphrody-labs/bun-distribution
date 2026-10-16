@@ -1,4 +1,4 @@
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../support/bunTest.js";
 import { CdpConnection } from "../../../src/browser/CdpConnection.js";
 import type { BrowserObservationError } from "../../../src/domain/browserObservationError.js";
 import { startFakeCdpBrowser } from "../../fixtures/fakeCdpBrowser.js";

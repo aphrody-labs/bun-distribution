@@ -1,7 +1,7 @@
 import { open, writeFile, type FileHandle } from "node:fs/promises";
 import { join } from "node:path";
 
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../../support/bunTest.js";
 
 import { parseBinaryTarget } from "../../../../src/application/BinaryTargetResolver.js";
 import { projectAnalysisError } from "../../../../src/domain/analysisErrorProjection.js";

@@ -3,7 +3,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { afterAll, beforeAll, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  beforeAll,
+  expect,
+  it,
+  vi,
+} from "../../tests/support/bunTest.js";
 
 import { AnalysisCancelledError } from "../domain/analysisErrorCore.js";
 import { finalizeInspectorCapture } from "./V8InspectorCaptureProjection.js";

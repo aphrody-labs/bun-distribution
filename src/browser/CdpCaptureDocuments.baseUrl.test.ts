@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 
 import { inspectWebPageInputSchema } from "../domain/browserObservation.js";
 import { captureDom } from "./CdpCaptureDocuments.js";

@@ -9,7 +9,7 @@ import {
 import { dirname, join } from "node:path";
 
 import { createPackage } from "@electron/asar";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import { AsarArtifactReader } from "../../../src/artifacts/AsarArtifactReader.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

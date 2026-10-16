@@ -1,7 +1,7 @@
 import { chmod, mkdir, symlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
-import { describe, expect } from "vitest";
+import { describe, expect } from "../../support/bunTest.js";
 
 import {
   CPU,

@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-import { expect, it } from "vitest";
+import { expect, it } from "../../../support/bunTest.js";
 
 import { writeOrderedZip } from "../../../fixtures/artifactEntryOrder.js";
 import { createTestTempDirectory } from "../../../fixtures/temporaryDirectory.js";

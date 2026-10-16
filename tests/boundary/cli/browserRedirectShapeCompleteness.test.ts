@@ -1,4 +1,4 @@
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it } from "../../support/bunTest.js";
 
 import { runCliJson as runCli } from "../../fixtures/cliJsonProcess.js";
 import {

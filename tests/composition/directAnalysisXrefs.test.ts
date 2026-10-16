@@ -1,5 +1,5 @@
 import { parseConfig } from "../../src/config/parseConfig.js";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../support/bunTest.js";
 import { runDirectAnalysis } from "../../src/application/DirectAnalysis.js";
 import type { DirectAnalysisDependencies } from "../../src/application/DirectAnalysisDependencies.js";
 import type { AnalysisError } from "../../src/domain/analysisErrorBase.js";

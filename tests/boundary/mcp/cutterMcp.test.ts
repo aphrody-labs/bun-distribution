@@ -3,7 +3,7 @@ import { chmod, writeFile } from "node:fs/promises";
 import { createServer as createNetServer } from "node:net";
 import { createHmac } from "node:crypto";
 import { join } from "node:path";
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../support/bunTest.js";
 
 import {
   createTestBinarySession,

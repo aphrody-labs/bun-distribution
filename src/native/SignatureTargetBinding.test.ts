@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdtemp, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it } from "../../tests/support/bunTest.js";
 
 import { ArtifactResourceScope } from "../artifacts/ArtifactResourceScope.js";
 import type { BinaryTarget } from "../domain/binaryTargetTypes.js";

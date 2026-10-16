@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "../support/bunTest.js";
 
 import { logCliCommand } from "../../src/cliLogging.js";
 import { silentLogger } from "../../src/logger.js";

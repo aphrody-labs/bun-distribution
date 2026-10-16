@@ -1,5 +1,5 @@
 import { STDIO_DEFAULT_MAX_BUFFER_SIZE } from "@modelcontextprotocol/server";
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../support/bunTest.js";
 
 import type { BrowserScenarioCapturePort } from "../../../src/application/BrowserScenarioCapturePort.js";
 import { createBrowserObservationProvider } from "../../../src/composition/browserObservation.js";

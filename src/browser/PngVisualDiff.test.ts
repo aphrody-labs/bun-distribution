@@ -1,6 +1,6 @@
 import { crc32, deflateSync } from "node:zlib";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 
 import { comparePngScreenshots } from "./PngVisualDiff.js";
 import {

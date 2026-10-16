@@ -1,6 +1,6 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 import { readJsonFile } from "../../../src/application/JsonFiles.js";
 import { parseCliJsonInput } from "../../../src/cliJsonInput.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

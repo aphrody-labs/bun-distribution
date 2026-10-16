@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { absoluteCallerPath } from "../../../src/filesystem/callerPath.js";
 

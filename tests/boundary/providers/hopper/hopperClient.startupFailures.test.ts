@@ -2,7 +2,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { access } from "node:fs/promises";
 import { createServer, type Server } from "node:net";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "../../../support/bunTest.js";
 
 import { projectAnalysisError } from "../../../../src/domain/analysisErrorProjection.js";
 import type { HopperStartupDiagnostic } from "../../../../src/domain/hopperStartupFailure.js";

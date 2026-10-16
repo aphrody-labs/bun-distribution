@@ -1,7 +1,7 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it } from "../../tests/support/bunTest.js";
 import { inspectIdaRegistration } from "./IdaDoctor.js";
 import { providerRegistrationEnvironment } from "../application/SetupRegistrationEnvironment.js";
 

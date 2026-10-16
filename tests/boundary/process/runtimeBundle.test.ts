@@ -2,7 +2,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { describe, expect } from "vitest";
+import { describe, expect } from "../../support/bunTest.js";
 
 import { bundleRuntime } from "../../../scripts/bundle-runtime.mjs";
 import { workspaceCliTest } from "../../support/cli/workspaceCliFixture.js";

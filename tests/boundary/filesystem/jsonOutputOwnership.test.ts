@@ -2,7 +2,7 @@ import { readdirSync, renameSync, writeFileSync } from "node:fs";
 import { mkdir, open, rm } from "node:fs/promises";
 import * as fs from "node:fs/promises";
 import { join } from "node:path";
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../support/bunTest.js";
 
 import { ArtifactResourceScope } from "../../../src/artifacts/ArtifactResourceScope.js";
 import { AnalysisCancelledError } from "../../../src/domain/analysisErrorCore.js";

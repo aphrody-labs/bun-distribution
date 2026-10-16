@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { build, buildBinary } from "plist";
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 
 import { interfaceBuilderAnalysisSchema } from "../../../src/domain/apple/interfaceBuilderGraph.js";
 import { thinMach } from "../../../src/domain/binaryTarget.fixture.js";

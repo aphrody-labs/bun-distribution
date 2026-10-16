@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 import { decodeQlogCapture } from "./QlogCapture.js";
 import { decodeCaptureText } from "./CaptureJson.js";
 import { CaptureFormatError } from "./CaptureFormatError.js";

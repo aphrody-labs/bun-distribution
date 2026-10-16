@@ -1,7 +1,7 @@
 import { Ajv } from "ajv";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { AjvJsonSchemaValidator } from "@modelcontextprotocol/client/validators/ajv";
-import { expect, it } from "vitest";
+import { expect, it } from "../../tests/support/bunTest.js";
 import { z } from "zod";
 
 import { toolContract } from "./toolContracts.js";

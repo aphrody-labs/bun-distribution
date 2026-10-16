@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { it } from "vitest";
+import { it } from "../../support/bunTest.js";
 import { expectedMipsElfProfile } from "./mips-checks.mjs";
 import { ghidraMipsProfileParameters } from "../../../src/ghidra/GhidraMipsProfile.js";
 import type { BinaryTarget } from "../../../src/domain/binaryTargetTypes.js";

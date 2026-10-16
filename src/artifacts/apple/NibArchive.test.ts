@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../tests/support/bunTest.js";
 
 import { decodeNibArchive } from "./NibArchive.js";
 import { encodeNibArchiveFixture as encodeArchive } from "./NibArchive.fixture.js";

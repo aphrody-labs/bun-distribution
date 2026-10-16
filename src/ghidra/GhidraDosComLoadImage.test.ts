@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 import { attestGhidraDosComLoadImage } from "./GhidraLoadImageValues.js";
 import { fixtureDosComLoadImage } from "./GhidraLoadImage.fixture.js";
 import type { NativeLoadImageObservation } from "../domain/native/nativeLoadImage.js";

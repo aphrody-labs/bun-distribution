@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { expect, it } from "vitest";
+import { expect, it } from "../../tests/support/bunTest.js";
 
 import { parseReferenceSourceEntries } from "./ReferenceSourceImportEntries.js";
 import { historicalSourceLanguages } from "../domain/referenceSourceGraph.js";

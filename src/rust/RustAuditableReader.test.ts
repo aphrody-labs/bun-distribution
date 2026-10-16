@@ -1,5 +1,5 @@
 import { deflateSync } from "node:zlib";
-import { expect, it } from "vitest";
+import { expect, it } from "../../tests/support/bunTest.js";
 import { rustAuditableMetadataSchema } from "../domain/rust/rustBinary.js";
 import {
   RUST_SECTION_BYTES,

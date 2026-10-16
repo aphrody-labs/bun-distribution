@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../support/bunTest.js";
 
 import { ReverseEngineeringService } from "../../src/application/reverse/ReverseEngineeringService.js";
 import { REVERSE_ENGINEERING_TOOL_CONTRACTS } from "../../src/contracts/reverseEngineeringToolContracts.js";

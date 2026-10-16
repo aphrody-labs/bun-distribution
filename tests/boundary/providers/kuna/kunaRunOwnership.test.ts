@@ -1,6 +1,6 @@
 import { setImmediate } from "node:timers/promises";
 
-import { expect, it as test, vi } from "vitest";
+import { expect, it as test, vi } from "../../../support/bunTest.js";
 
 import { inspectKunaInstallationOwned as inspectKunaInstallation } from "./kunaFileCloseOwner.js";
 import { KunaRunSlots } from "../../../../src/kuna/KunaRunSlots.js";

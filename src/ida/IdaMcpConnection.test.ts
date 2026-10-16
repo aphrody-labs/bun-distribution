@@ -1,6 +1,12 @@
 import { inspect } from "node:util";
 import { SdkErrorCode, SdkHttpError } from "@modelcontextprotocol/client";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "../../tests/support/bunTest.js";
 import {
   createIdaMcpConnection,
   decodeIdaToolResult,

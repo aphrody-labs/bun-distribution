@@ -1,6 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 
 import { parseEvidence } from "../../../src/domain/evidence.js";
 import { webCaptureDiffSchema } from "../../../src/domain/webCaptureDiffSchemas.js";

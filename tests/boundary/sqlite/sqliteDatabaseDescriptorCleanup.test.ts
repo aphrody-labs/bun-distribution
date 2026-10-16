@@ -3,7 +3,7 @@ import { access, writeFile } from "node:fs/promises";
 import type { FileHandle } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { expect, it, onTestFinished, vi } from "vitest";
+import { expect, it, onTestFinished, vi } from "../../support/bunTest.js";
 
 import { SqliteDatabaseService } from "../../../src/application/sqlite/SqliteDatabaseService.js";
 import { registerSqliteCommands } from "../../../src/cli/sqliteCommands.js";

@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { analysisErrorProjectionSchema } from "../../../src/contracts/errorSchemas.js";
 import { parseEvidence } from "../../../src/domain/evidence.js";

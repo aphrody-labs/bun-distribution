@@ -1,6 +1,6 @@
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import { z } from "zod";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import {
   TOOL_CONTRACTS,

@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { createProcessCaptureEvidence } from "../../../src/application/process/ProcessEvidence.js";
 import {

@@ -7,7 +7,7 @@ import {
   parse,
   type DefaultTreeAdapterTypes,
 } from "parse5";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { reconstructJavaScriptArtifact } from "../../support/javascriptApplicationScope.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

@@ -2,7 +2,7 @@ import { traceSourceMap } from "../../../src/javascript/sourceMaps/TraceSourceMa
 import { webSourceLocationArgs as args } from "../../fixtures/webSourceLocation.js";
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../support/bunTest.js";
 import { WebSourceLocationService } from "../../../src/application/WebSourceLocationService.js";
 import { toolContract } from "../../../src/contracts/toolContracts.js";
 import { parseEvidence } from "../../../src/domain/evidence.js";

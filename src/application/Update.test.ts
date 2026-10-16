@@ -1,6 +1,6 @@
 import { join, resolve } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 
 import { err, ok, type Result } from "../domain/result.js";
 import {

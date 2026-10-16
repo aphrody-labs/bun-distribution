@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 import { createEvidence } from "../../domain/evidence.js";
 import { wasmInterfaceComparisonSchema } from "../../contracts/wasm/wasmComparisonContracts.js";
 import { compareWasmInterfaces } from "./WasmInterfaceComparisonService.js";

@@ -3,7 +3,7 @@ import { copyFile, mkdir, rename, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../support/bunTest.js";
 
 import { inspectModuleBoundaries } from "../../scripts/lib/module-boundaries.mjs";
 import { createTestTempDirectory } from "../fixtures/temporaryDirectory.js";

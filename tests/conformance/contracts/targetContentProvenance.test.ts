@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import { TOOL_CONTRACTS } from "../../../src/contracts/toolContracts.js";
 import { TARGET_CONTENT_FREE_TOOLS } from "../../../src/contracts/toolEffects.js";

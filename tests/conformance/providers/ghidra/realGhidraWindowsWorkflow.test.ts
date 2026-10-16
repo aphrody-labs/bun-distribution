@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../support/bunTest.js";
 import { parse } from "yaml";
 
 describe("real Windows Ghidra workflow trust boundary", () => {

@@ -1,6 +1,6 @@
 import pino from "pino";
 import { Cli, z } from "incur";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "../../support/bunTest.js";
 import { rm } from "node:fs/promises";
 
 import { registerReverseEngineeringCommands } from "../../../src/cli/reverseEngineeringCommands.js";
@@ -176,7 +176,7 @@ it("promotes only complete production cleanup-only Evidence after CLI cleanup re
   let completionBeforeClose: unknown;
   vi.spyOn(service, "inspectWithObjdump").mockImplementation(
     async (...args) => {
-      const result = await inspect(...args);
+      const result = await (inspect as (...a: any[]) => any)(...args);
       if (!result.ok && result.error instanceof AnalysisOutputError) {
         producedCleanupFailure = result.error;
         cleanupIncompleteBeforeClose = result.error.cleanupIncomplete;
@@ -239,7 +239,7 @@ it("preserves an operation timeout and unknown partial Evidence after cleanup re
   const inspect = service.inspectWithObjdump.bind(service);
   vi.spyOn(service, "inspectWithObjdump").mockImplementation(
     async (...args) => {
-      const result = await inspect(...args);
+      const result = await (inspect as (...a: any[]) => any)(...args);
       if (!result.ok && result.error instanceof AnalysisTimeoutError)
         timeout = result.error;
       return result;

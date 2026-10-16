@@ -3,7 +3,7 @@ import { AnalysisCancelledError } from "../../../src/domain/analysisErrorCore.js
 import { ProviderCleanupError } from "../../../src/domain/providerCleanupError.js";
 import { SignalRecordingService } from "../../../src/application/signals/SignalRecordingService.js";
 import { err } from "../../../src/domain/result.js";
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../support/bunTest.js";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { createApplicationMcpHarness } from "../../fixtures/applicationMcpHarness.js";
 import { parseMcpToolError } from "../../fixtures/mcpToolError.js";

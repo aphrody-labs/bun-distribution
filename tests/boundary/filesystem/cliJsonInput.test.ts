@@ -3,7 +3,7 @@ import { chmod, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
-import { describe, expect, it, onTestFinished } from "vitest";
+import { describe, expect, it, onTestFinished } from "../../support/bunTest.js";
 
 import { createCli } from "../../../src/cli.js";
 import { parseCliJsonInput } from "../../../src/cliJsonInput.js";

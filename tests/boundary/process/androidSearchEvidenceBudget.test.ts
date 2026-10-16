@@ -1,5 +1,5 @@
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
-import { expect, it as test, onTestFinished } from "vitest";
+import { expect, it as test, onTestFinished } from "../../support/bunTest.js";
 import { androidResultSchemas } from "../../../src/domain/android/androidAnalysis.js";
 import { parseEvidence } from "../../../src/domain/evidence.js";
 import { createServer } from "../../../src/server/createServer.js";

@@ -1,4 +1,4 @@
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it } from "../../support/bunTest.js";
 import { createAnalysisExecution } from "../../../src/application/AnalysisProvider.js";
 import { ok } from "../../../src/domain/result.js";
 import { parseEvidence } from "../../../src/domain/evidence.js";

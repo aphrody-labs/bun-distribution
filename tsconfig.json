@@ -16,14 +16,9 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "ES2023",
-    "types": ["node"],
+    "types": ["bun"],
     "verbatimModuleSyntax": true
   },
-  "include": [
-    "src/**/*.ts",
-    "tests/**/*.ts",
-    "vitest.config.ts",
-    "docs/.vitepress/config.ts"
-  ],
+  "include": ["src/**/*.ts", "tests/**/*.ts", "docs/.vitepress/config.ts"],
   "exclude": ["dist", "node_modules"]
 }

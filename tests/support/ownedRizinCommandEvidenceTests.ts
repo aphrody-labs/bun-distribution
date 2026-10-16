@@ -1,6 +1,6 @@
 import { rm } from "node:fs/promises";
 
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "./bunTest.js";
 
 import { OwnedCommandFailure } from "../../src/process/OwnedCommand.js";
 import { TestReverseEngineeringService } from "./reverseEngineeringService.js";

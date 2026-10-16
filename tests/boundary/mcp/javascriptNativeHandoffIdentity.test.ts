@@ -3,7 +3,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import { createHash } from "node:crypto";
 import { readFile, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { afterAll, beforeAll, expect } from "vitest";
+import { afterAll, beforeAll, expect } from "../../support/bunTest.js";
 
 import { toolContract } from "../../../src/contracts/toolContracts.js";
 import { analysisViewResultSchema } from "../../../src/domain/analysisView/analysisView.js";

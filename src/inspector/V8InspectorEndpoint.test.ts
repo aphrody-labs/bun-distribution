@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 
-import { expect, it } from "vitest";
+import { expect, it } from "../../tests/support/bunTest.js";
 
 import { V8InspectorProvider } from "./V8InspectorProvider.js";
 

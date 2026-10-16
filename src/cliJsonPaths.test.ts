@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../tests/support/bunTest.js";
 
 import { resolveCliJsonPaths } from "./cliJsonInput.js";
 import { electronActiveObservationInputSchema } from "./domain/javascript/electronActiveObservation.js";

@@ -3,7 +3,7 @@ import { access, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Socket } from "node:net";
 
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../../support/bunTest.js";
 
 import { projectAnalysisError } from "../../../../src/domain/analysisErrorProjection.js";
 import { HopperStartError } from "../../../../src/domain/hopperErrors.js";

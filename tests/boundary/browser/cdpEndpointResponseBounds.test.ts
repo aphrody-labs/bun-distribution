@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import type { RequestListener, Server } from "node:http";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "../../support/bunTest.js";
 
 import { readCdpJson } from "../../../src/browser/CdpEndpoint.js";
 

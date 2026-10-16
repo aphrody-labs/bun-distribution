@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 import { ok } from "../../../src/domain/result.js";
 import {
   compactReference,

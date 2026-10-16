@@ -12,7 +12,7 @@ import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 
-import { expect, it, onTestFinished, vi } from "vitest";
+import { expect, it, onTestFinished, vi } from "../support/bunTest.js";
 
 import { createTestTempDirectory } from "../fixtures/temporaryDirectory.js";
 

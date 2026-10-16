@@ -1,4 +1,4 @@
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it } from "../../support/bunTest.js";
 import { evidenceSchema } from "../../../src/domain/evidence.js";
 import { rizinTestInferiorTty } from "./RizinTestInferiorTty.js";
 import {

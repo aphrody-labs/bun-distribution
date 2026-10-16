@@ -13,7 +13,7 @@ import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 
 import { spawn } from "@lydell/node-pty";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

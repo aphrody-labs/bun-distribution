@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 
 import { managedNativeVerificationInputSchema } from "../domain/managed/managedNativeVerificationSchemas.js";
 import { toolContract } from "./toolContracts.js";

@@ -1,6 +1,12 @@
 import { chmod, mkdir, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "../../tests/support/bunTest.js";
 import { spawnSync } from "node:child_process";
 
 import { elf, fat, thinMach } from "../domain/binaryTarget.fixture.js";

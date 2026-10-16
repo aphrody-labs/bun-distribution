@@ -1,6 +1,6 @@
 import { createServer, type Socket } from "node:net";
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "../../support/bunTest.js";
 
 import { CdpBrowserProvider } from "../../../src/browser/CdpBrowserProvider.js";
 import { openCdpEndpoint } from "../../../src/browser/CdpTargetSession.js";

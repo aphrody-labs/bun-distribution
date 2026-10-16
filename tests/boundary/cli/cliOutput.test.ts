@@ -2,7 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { createPackageWithOptions } from "@electron/asar";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import { workspaceCliTest } from "../../support/cli/workspaceCliFixture.js";
 

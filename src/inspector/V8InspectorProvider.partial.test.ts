@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../tests/support/bunTest.js";
 import { WebSocketServer } from "ws";
 import { z } from "zod";
 

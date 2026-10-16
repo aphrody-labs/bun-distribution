@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 
 import { createEvidence } from "./evidence.js";
 import { ANALYSIS_SNAPSHOT_TARGET } from "./analysisSnapshot.fixture.js";

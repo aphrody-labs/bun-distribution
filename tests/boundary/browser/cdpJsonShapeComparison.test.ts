@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import { compareWebCaptureEvidence } from "../../../src/application/BrowserObservationService.js";
 import { CdpBrowserProvider } from "../../../src/browser/CdpBrowserProvider.js";

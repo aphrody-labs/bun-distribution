@@ -6,7 +6,7 @@ import {
   Uint8ArrayWriter,
   ZipWriter,
 } from "@zip.js/zip.js";
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 import { createDirectAnalysis } from "../../../src/composition/directAnalysis.js";
 import { parseEvidence } from "../../../src/domain/evidence.js";
 import { connectLocalToolsMcp } from "../../fixtures/localToolsMcp.js";

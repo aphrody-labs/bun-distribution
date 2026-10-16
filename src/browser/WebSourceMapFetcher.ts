@@ -42,7 +42,10 @@ export interface WebSourceMapRequest {
 }
 
 interface SourceMapFetchHost {
-  readonly fetch: typeof fetch;
+  readonly fetch: (
+    input: string | Request | URL,
+    init?: RequestInit,
+  ) => Promise<Response>;
   /** Fetch-operation deadline; injectable so boundary regressions stay fast. */
   readonly timeoutMs?: number;
   /** Maximum response bytes retained across this operation. */
@@ -455,7 +458,7 @@ const readBoundedText = async (
 };
 
 const readWithAbort = <T>(
-  reader: ReadableStreamDefaultReader<T>,
+  reader: Pick<ReadableStreamDefaultReader<T>, "read" | "cancel">,
   signal: AbortSignal | undefined,
 ): Promise<Awaited<ReturnType<ReadableStreamDefaultReader<T>["read"]>>> => {
   if (signal === undefined) return reader.read();

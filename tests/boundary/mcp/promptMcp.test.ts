@@ -7,7 +7,7 @@ import {
   STDIO_DEFAULT_MAX_BUFFER_SIZE,
   type McpServer,
 } from "@modelcontextprotocol/server";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 

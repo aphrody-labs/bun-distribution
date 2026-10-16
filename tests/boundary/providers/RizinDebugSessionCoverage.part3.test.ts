@@ -1,4 +1,4 @@
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "../../support/bunTest.js";
 import { AnalysisInputError } from "../../../src/domain/analysisErrorCore.js";
 import { rizinTestInferiorTty } from "./RizinTestInferiorTty.js";
 import {

@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { createPackage, createPackageWithOptions } from "@electron/asar";
 import { TextReader, Uint8ArrayWriter, ZipWriter } from "@zip.js/zip.js";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../../fixtures/temporaryDirectory.js";
 

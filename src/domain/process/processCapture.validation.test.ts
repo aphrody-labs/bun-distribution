@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 
 import { digestProcessCommitment } from "./processScenario.js";
 import { parseProcessCapture } from "./processCaptureParsing.js";

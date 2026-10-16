@@ -1,6 +1,6 @@
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import { STDIO_DEFAULT_MAX_BUFFER_SIZE } from "@modelcontextprotocol/server";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "../support/bunTest.js";
 import { z } from "zod";
 
 import { createAnalysisExecution } from "../../src/application/AnalysisProvider.js";

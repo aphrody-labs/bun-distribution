@@ -9,7 +9,7 @@ import type {
   Script,
   Session,
 } from "frida";
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../support/bunTest.js";
 
 import { FridaScriptLoadCancelledError } from "../../../src/application/frida/FridaInstrumentationPort.js";
 import type {

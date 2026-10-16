@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 import { PeResourcesService } from "./PeResourcesService.js";
 import { PE_RESOURCES_PROVIDER } from "../InvestigationProviders.js";
 import { inspectPeResourcesInputSchema } from "../../domain/native/peResources.js";

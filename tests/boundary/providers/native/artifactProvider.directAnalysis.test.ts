@@ -2,7 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { createPackageWithOptions } from "@electron/asar";
-import { expect, it } from "vitest";
+import { expect, it } from "../../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../../fixtures/temporaryDirectory.js";
 import { createDirectAnalysis } from "../../../../src/composition/directAnalysis.js";

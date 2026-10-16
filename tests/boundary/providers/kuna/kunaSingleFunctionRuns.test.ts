@@ -1,4 +1,4 @@
-import { expect, it as test } from "vitest";
+import { expect, it as test } from "../../../support/bunTest.js";
 
 import {
   fakeKunaCalls,

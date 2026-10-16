@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 import { JAVASCRIPT_FEATURE_TRACE_EXAMPLE } from "../contracts/javascript/javascriptApplicationWorkflowExamples.js";
 import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
 import { resolveEvidenceInput } from "./EvidenceInputResolver.js";

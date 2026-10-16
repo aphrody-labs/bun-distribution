@@ -13,7 +13,6 @@ export const bundleRuntime = async (root) => {
   const metadataModule = join(compiledRoot, "generatedPackageMetadata.js");
   const isMetadataModule = (id) =>
     isAbsolute(id) && resolve(id) === metadataModule;
-  const { rolldown, RUNTIME_MODULE_ID } = await import("rolldown");
   const { imports = {} } = JSON.parse(
     await readFile(join(root, "package.json"), "utf8"),
   );
@@ -29,107 +28,109 @@ export const bundleRuntime = async (root) => {
       },
     ],
   ]) {
-    const bundle = await rolldown({
-      input: Object.fromEntries(
-        Object.entries(entries).map(([name, path]) => [
-          name,
-          join(compiledRoot, path),
-        ]),
+    const rewriteImportMeta = (code, id) => {
+      if (!code.includes("import.meta")) return code;
+      const sourcePath = relative(compiledRoot, id);
+      if (
+        isAbsolute(sourcePath) ||
+        sourcePath === ".." ||
+        sourcePath.startsWith(`..${sep}`)
+      )
+        throw new Error(`Runtime bundle input is outside dist: ${id}`);
+      // Each output directory is directly under dist. Preserve the original
+      // module URL, including URL escaping, for bridges and createRequire.
+      const moduleUrl = `new URL(${JSON.stringify(`../${sourcePath.split(sep).map(encodeURIComponent).join("/")}`)}, import.meta.url).href`;
+      const edits = [];
+      const visit = (node) => {
+        if (node === null || typeof node !== "object") return;
+        const isMeta = (value) =>
+          value?.type === "MetaProperty" &&
+          value.meta.name === "import" &&
+          value.property.name === "meta";
+        if (
+          node.type === "CallExpression" &&
+          node.callee.type === "MemberExpression" &&
+          !node.callee.computed &&
+          isMeta(node.callee.object) &&
+          node.callee.property.name === "resolve" &&
+          node.arguments.length === 1 &&
+          node.arguments[0].type === "StringLiteral" &&
+          Object.hasOwn(imports, node.arguments[0].value)
+        )
+          // Package imports resolve in the same package scope after bundling.
+          return;
+        if (
+          node.type === "MemberExpression" &&
+          !node.computed &&
+          isMeta(node.object) &&
+          node.property.name === "url"
+        ) {
+          edits.push({ start: node.start, end: node.end });
+          return;
+        }
+        if (isMeta(node))
+          throw new Error(
+            `Unsupported import.meta use in runtime bundle: ${id}`,
+          );
+        for (const value of Object.values(node)) {
+          if (Array.isArray(value)) value.forEach(visit);
+          else visit(value);
+        }
+      };
+      visit(parse(code, { sourceType: "module" }).program);
+      for (const { start, end } of edits.sort((a, b) => b.start - a.start))
+        code = code.slice(0, start) + moduleUrl + code.slice(end);
+      return code;
+    };
+    const result = await Bun.build({
+      entrypoints: Object.values(entries).map((path) =>
+        join(compiledRoot, path),
       ),
-      platform: "node",
-      treeshake: false,
-      external: (source) =>
-        isMetadataModule(source) ||
-        (!source.startsWith(".") && !isAbsolute(source)),
+      outdir: join(compiledRoot, directory),
+      target: "node",
+      format: "esm",
+      splitting: true,
+      minify: false,
+      sourcemap: "none",
+      naming: {
+        entry: "[name].js",
+        chunk: "[name]-[hash].js",
+        asset: "[name]-[hash].[ext]",
+      },
       plugins: [
         {
           name: "preserve-compiled-module-locations",
-          transform(code, id) {
-            if (id === RUNTIME_MODULE_ID) return null;
-            if (!code.includes("import.meta")) return null;
-            const sourcePath = relative(compiledRoot, id);
-            if (
-              isAbsolute(sourcePath) ||
-              sourcePath === ".." ||
-              sourcePath.startsWith(`..${sep}`)
-            )
-              throw new Error(`Runtime bundle input is outside dist: ${id}`);
-            // Each output directory is directly under dist. Preserve the original
-            // module URL, including URL escaping, for bridges and createRequire.
-            const moduleUrl = `new URL(${JSON.stringify(`../${sourcePath.split(sep).map(encodeURIComponent).join("/")}`)}, import.meta.url).href`;
-            const edits = [];
-            const visit = (node) => {
-              if (node === null || typeof node !== "object") return;
-              const isMeta = (value) =>
-                value?.type === "MetaProperty" &&
-                value.meta.name === "import" &&
-                value.property.name === "meta";
-              if (
-                node.type === "CallExpression" &&
-                node.callee.type === "MemberExpression" &&
-                !node.callee.computed &&
-                isMeta(node.callee.object) &&
-                node.callee.property.name === "resolve" &&
-                node.arguments.length === 1 &&
-                node.arguments[0].type === "StringLiteral" &&
-                Object.hasOwn(imports, node.arguments[0].value)
-              )
-                // Package imports resolve in the same package scope after bundling.
-                return;
-              if (
-                node.type === "MemberExpression" &&
-                !node.computed &&
-                isMeta(node.object) &&
-                node.property.name === "url"
-              ) {
-                edits.push({ start: node.start, end: node.end });
-                return;
-              }
-              if (isMeta(node))
-                throw new Error(
-                  `Unsupported import.meta use in runtime bundle: ${id}`,
-                );
-              for (const value of Object.values(node)) {
-                if (Array.isArray(value)) value.forEach(visit);
-                else visit(value);
-              }
-            };
-            visit(parse(code, { sourceType: "module" }).program);
-            for (const { start, end } of edits.sort(
-              (a, b) => b.start - a.start,
-            ))
-              code = code.slice(0, start) + moduleUrl + code.slice(end);
-            return { code, map: null };
+          setup(build) {
+            build.onResolve({ filter: /.*/ }, (args) => {
+              if (!args.path.startsWith(".") && !isAbsolute(args.path))
+                return { path: args.path, external: true };
+              if (args.importer === "" || args.importer === undefined)
+                return undefined;
+              const target = resolve(dirname(args.importer), args.path);
+              if (isMetadataModule(target))
+                return {
+                  path: "../generatedPackageMetadata.js",
+                  external: true,
+                };
+              return undefined;
+            });
+            build.onLoad(
+              { filter: /.js$/, namespace: "file" },
+              async (args) => {
+                if (!args.path.startsWith(compiledRoot)) return undefined;
+                const code = await readFile(args.path, "utf8");
+                return {
+                  contents: rewriteImportMeta(code, args.path),
+                  loader: "js",
+                };
+              },
+            );
           },
         },
       ],
     });
-    try {
-      await bundle.write({
-        dir: join(compiledRoot, directory),
-        format: "esm",
-        entryFileNames: "[name].js",
-        chunkFileNames:
-          directory === "mcp"
-            ? "[name]-[hash].js"
-            : (chunk) => {
-                // Keep lazy facades distinguishable when source basenames repeat.
-                if (typeof chunk.facadeModuleId !== "string")
-                  return "[name]-[hash].js";
-                const path = relative(compiledRoot, chunk.facadeModuleId);
-                return `${path.replace(/\.js$/u, "").split(sep).join("__")}-[hash].js`;
-              },
-        paths: (id) =>
-          isMetadataModule(id) ? "../generatedPackageMetadata.js" : id,
-        minifyInternalExports: directory === "mcp",
-        codeSplitting: true,
-        strictExecutionOrder: true,
-        minify: false,
-        sourcemap: false,
-      });
-    } finally {
-      await bundle.close();
-    }
+    if (!result.success)
+      throw new AggregateError(result.logs, "Runtime bundle failed");
   }
 };
 

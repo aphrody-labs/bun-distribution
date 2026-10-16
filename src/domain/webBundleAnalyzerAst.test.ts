@@ -1,5 +1,5 @@
 import * as t from "@babel/types";
-import { expect, it } from "vitest";
+import { expect, it } from "../../tests/support/bunTest.js";
 
 import { parseJavaScriptSource } from "./javascript/javascriptSourceParser.js";
 import { objectString } from "./webBundleAnalyzerAst.js";

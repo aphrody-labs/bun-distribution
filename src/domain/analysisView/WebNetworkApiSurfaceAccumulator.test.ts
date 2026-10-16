@@ -1,4 +1,4 @@
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../../tests/support/bunTest.js";
 import { analysisViewCaptureFixture } from "../../../tests/fixtures/analysisView.js";
 import type { WebNetworkCaptureRecord } from "../webNetworkCapture.js";
 import { WebNetworkApiSurfaceAccumulator } from "./WebNetworkApiSurfaceAccumulator.js";

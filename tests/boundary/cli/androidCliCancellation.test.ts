@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import {
   withCommandCancellation,
   type CommandCancellationHost,

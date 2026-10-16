@@ -3,7 +3,13 @@ import { appendFileSync } from "node:fs";
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { afterEach, expect, it as test, onTestFinished, vi } from "vitest";
+import {
+  afterEach,
+  expect,
+  it as test,
+  onTestFinished,
+  vi,
+} from "../../../support/bunTest.js";
 
 import { inspectKunaInstallationOwned as inspectKunaInstallation } from "./kunaFileCloseOwner.js";
 import { KunaProjectCache } from "../../../../src/kuna/KunaProjectCache.js";

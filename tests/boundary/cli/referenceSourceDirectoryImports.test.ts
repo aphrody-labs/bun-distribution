@@ -2,7 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 
-import { describe, expect } from "vitest";
+import { describe, expect } from "../../support/bunTest.js";
 
 import { historicalSourceGraphSchema } from "../../../src/domain/referenceSourceGraph.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

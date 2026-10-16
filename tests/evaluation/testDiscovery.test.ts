@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../support/bunTest.js";
 
 import { compareTestDiscovery } from "../../scripts/lib/test-discovery.mjs";
 

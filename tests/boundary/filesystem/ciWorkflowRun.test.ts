@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { normalizeWorkflowRun } from "../../../scripts/ci/workflow-run.mjs";
 
 it.each([

@@ -1,6 +1,6 @@
 import { mkdir, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { resolveWakaruCommand } from "../../../src/javascript/recovery/WakaruCommand.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 

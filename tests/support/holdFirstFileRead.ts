@@ -1,5 +1,5 @@
 import { open, type FileHandle } from "node:fs/promises";
-import { vi } from "vitest";
+import { vi } from "./bunTest.js";
 
 /** Pause after one selected file chunk reaches the operating system. */
 export const holdFirstFileRead = async (path: string) => {

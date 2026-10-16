@@ -1,5 +1,5 @@
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
-import { expect, it, onTestFinished, vi } from "vitest";
+import { expect, it, onTestFinished, vi } from "../../support/bunTest.js";
 import { createTestBinarySession } from "../../fixtures/binarySession.js";
 import { GoBinaryService } from "../../../src/application/go/GoBinaryService.js";
 import type { GoBinary } from "../../../src/domain/go/goBinary.js";

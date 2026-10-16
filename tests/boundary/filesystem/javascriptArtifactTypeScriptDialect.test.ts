@@ -1,5 +1,5 @@
 import { parse } from "@babel/parser";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { reconstructJavaScriptArtifact } from "../../support/javascriptApplicationScope.js";
 import {

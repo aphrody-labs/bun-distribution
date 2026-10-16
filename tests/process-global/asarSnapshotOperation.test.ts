@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { buffer } from "node:stream/consumers";
 
 import { createPackage } from "@electron/asar";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "../support/bunTest.js";
 
 import { AsarArtifactReader } from "../../src/artifacts/AsarArtifactReader.js";
 import { createTestTempDirectory } from "../fixtures/temporaryDirectory.js";

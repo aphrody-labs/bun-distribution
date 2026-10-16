@@ -1,7 +1,7 @@
 import { copyFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
-import { describe, expect } from "vitest";
+import { describe, expect } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import {

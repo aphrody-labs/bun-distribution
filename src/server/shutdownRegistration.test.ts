@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import { expect, it } from "vitest";
+import { expect, it } from "../../tests/support/bunTest.js";
 import pino from "pino";
 
 import { createShutdown } from "../main/shutdown.js";

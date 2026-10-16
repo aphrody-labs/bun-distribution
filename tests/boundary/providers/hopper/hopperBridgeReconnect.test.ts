@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../../support/bunTest.js";
 import { z } from "zod";
 import { PrivateRuntimeRoot } from "../../../../src/process/PrivateRuntimeRoot.js";
 

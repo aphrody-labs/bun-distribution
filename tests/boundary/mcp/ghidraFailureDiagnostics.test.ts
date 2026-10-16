@@ -1,5 +1,5 @@
 import { parseMcpToolError } from "../../fixtures/mcpToolError.js";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { logCliCommand } from "../../../src/cliLogging.js";
 import { analysisErrorProjectionSchema } from "../../../src/contracts/errorSchemas.js";

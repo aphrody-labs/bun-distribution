@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

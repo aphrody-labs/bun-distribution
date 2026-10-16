@@ -1,7 +1,7 @@
 import { access, chmod, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { STDIO_DEFAULT_MAX_BUFFER_SIZE } from "@modelcontextprotocol/server";
 
 import { toolContract } from "../../../src/contracts/toolContracts.js";

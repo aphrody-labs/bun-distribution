@@ -1,6 +1,6 @@
 import { chmod, lstat, readFile, unlink } from "node:fs/promises";
 import { dirname } from "node:path";
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { toolContract } from "../../../src/contracts/toolContracts.js";

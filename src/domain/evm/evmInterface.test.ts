@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../../tests/support/bunTest.js";
 import { evmInterfaceSchema } from "./evmInterface.js";
 import { evmInterfaceFixture } from "../../../tests/fixtures/evm/interface.js";
 

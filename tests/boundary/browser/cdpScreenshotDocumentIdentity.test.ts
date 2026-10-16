@@ -1,4 +1,4 @@
-import { describe, expect, it, onTestFinished } from "vitest";
+import { describe, expect, it, onTestFinished } from "../../support/bunTest.js";
 import { CdpBrowserProvider } from "../../../src/browser/CdpBrowserProvider.js";
 import { captureWebScreenshotInputSchema } from "../../../src/domain/webScreenshot.js";
 import { startFakeCdpBrowser } from "../../fixtures/fakeCdpBrowser.js";

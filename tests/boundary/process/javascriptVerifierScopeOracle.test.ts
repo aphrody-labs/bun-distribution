@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import {

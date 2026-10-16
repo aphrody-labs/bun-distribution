@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { open, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 import { parseBinaryTarget } from "../../../src/application/BinaryTargetResolver.js";
 import { AnalysisCancelledError } from "../../../src/domain/analysisErrorCore.js";
 import { jsonObjectSchema } from "../../../src/domain/jsonValue.js";

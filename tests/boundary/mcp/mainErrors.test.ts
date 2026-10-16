@@ -2,7 +2,7 @@ import type { ServeStdioOptions } from "@modelcontextprotocol/server/stdio";
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import { run, runEntrypoint } from "../../../src/main.js";
 

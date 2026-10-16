@@ -1,7 +1,7 @@
 import { join, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
-import { describe, expect } from "vitest";
+import { describe, expect } from "../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 import { cliTest } from "../../support/cli/cliFixture.js";

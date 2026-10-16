@@ -1,5 +1,5 @@
 import type { Client } from "@modelcontextprotocol/client";
-import { expect, type OnTestFinishedHandler } from "vitest";
+import { expect, type OnTestFinishedHandler } from "../bunTest.js";
 
 import { createArtifactBinarySession } from "../../../src/composition/binary.js";
 import { createServer } from "../../../src/server/createServer.js";

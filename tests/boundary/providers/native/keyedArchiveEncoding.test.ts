@@ -3,7 +3,7 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { buildBinary, parse } from "plist";
-import { expect, it } from "vitest";
+import { expect, it } from "../../../support/bunTest.js";
 
 import { inspectBundleKeyedArchive } from "../../../../src/artifacts/apple/KeyedArchiveReader.js";
 import { nativeFixture } from "../../../fixtures/nativeCommands.js";

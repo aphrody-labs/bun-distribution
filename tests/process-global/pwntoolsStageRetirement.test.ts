@@ -9,7 +9,7 @@ import {
   it,
   onTestFinished,
   vi,
-} from "vitest";
+} from "../support/bunTest.js";
 import { z } from "zod";
 import { projectAnalysisError } from "../../src/domain/analysisErrorProjection.js";
 import { PwntoolsRecordedCrashProvider } from "../../src/native/pwntools/PwntoolsRecordedCrashProvider.js";

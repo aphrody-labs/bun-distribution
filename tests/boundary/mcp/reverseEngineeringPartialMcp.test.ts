@@ -2,7 +2,7 @@ import pino from "pino";
 import { mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../support/bunTest.js";
 
 import { TestReverseEngineeringService as ReverseEngineeringService } from "../../support/reverseEngineeringService.js";
 import { AnalysisInputError } from "../../../src/domain/analysisErrorCore.js";

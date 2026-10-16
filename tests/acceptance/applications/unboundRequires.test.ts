@@ -5,7 +5,7 @@ import { createRequire } from "node:module";
 import { dirname, join, relative } from "node:path";
 import { promisify } from "node:util";
 
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 
 import { parseEvidence } from "../../../src/domain/evidence.js";
 import { javascriptApplicationAnalysisResultSchema } from "../../../src/domain/javascript/javascriptApplicationAnalysis.js";

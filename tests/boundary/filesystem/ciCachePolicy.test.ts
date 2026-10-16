@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { chmod, readFile, readdir, writeFile } from "node:fs/promises";
 import { delimiter, join } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 import { parse } from "yaml";
 import { z } from "zod";
 

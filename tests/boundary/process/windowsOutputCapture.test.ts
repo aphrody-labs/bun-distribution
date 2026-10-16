@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import {
   ProviderProcessSupervisor,

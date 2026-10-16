@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { Readable } from "node:stream";
 
 import { createPackage } from "@electron/asar";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { extractArtifact } from "../../../src/artifacts/extraction/ArtifactExtraction.js";
 import { SafeOutputTree } from "../../../src/artifacts/SafeOutputTree.js";

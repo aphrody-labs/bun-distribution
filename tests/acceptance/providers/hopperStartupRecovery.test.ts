@@ -5,7 +5,7 @@ import { setTimeout as delay } from "node:timers/promises";
 
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
-import { expect, onTestFinished, vi } from "vitest";
+import { expect, onTestFinished, vi } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { parseMcpToolError } from "../../fixtures/mcpToolError.js";

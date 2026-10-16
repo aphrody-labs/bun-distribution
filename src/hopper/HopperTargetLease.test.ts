@@ -15,7 +15,12 @@ import { createServer, type Socket } from "node:net";
 import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 
-import { afterEach, describe, expect, it } from "vitest";
+import {
+  afterEach,
+  describe,
+  expect,
+  it,
+} from "../../tests/support/bunTest.js";
 
 import {
   acquireHopperTargetLease,

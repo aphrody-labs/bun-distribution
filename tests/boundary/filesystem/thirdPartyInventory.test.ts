@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 
 import { processTest as test } from "../../support/process/processFixture.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";

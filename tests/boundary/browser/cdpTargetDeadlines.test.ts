@@ -1,6 +1,12 @@
 import { createServer, type Socket } from "node:net";
 
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  expect,
+  it,
+  vi,
+} from "../../support/bunTest.js";
 
 import { CdpBrowserProvider } from "../../../src/browser/CdpBrowserProvider.js";
 import { CdpConnection } from "../../../src/browser/CdpConnection.js";
@@ -40,7 +46,7 @@ const expireTimer = (milliseconds: number): void => {
   const timer = timers[0];
   if (timer === undefined) throw new Error("Expected one active timer");
   try {
-    timer.callback();
+    timer.callback?.();
     if (milliseconds === WEB_RUNTIME_LIMITS.commandTimeoutMs)
       expect(globalThis.clearTimeout).toHaveBeenCalledWith(timer.timer);
   } finally {

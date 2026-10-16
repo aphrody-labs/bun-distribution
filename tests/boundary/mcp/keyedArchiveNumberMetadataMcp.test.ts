@@ -1,4 +1,4 @@
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 import { z } from "zod";
 
 import { keyedArchiveResultSchema } from "../../../src/domain/apple/keyedArchive.js";

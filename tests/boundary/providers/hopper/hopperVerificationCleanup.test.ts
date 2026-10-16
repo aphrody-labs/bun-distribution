@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../../support/bunTest.js";
 
 import { snapshotHopperRuntime } from "../../../../scripts/lib/real-hopper-cleanup.mjs";
 import { acquireHopperTargetLease } from "../../../../src/process/HopperLease.js";

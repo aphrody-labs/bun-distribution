@@ -3,7 +3,7 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { crc32, deflateSync } from "node:zlib";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import { createWebScreenshotArtifact } from "../../../src/domain/webScreenshot.js";
 import { runCliJson as runCli } from "../../fixtures/cliJsonProcess.js";

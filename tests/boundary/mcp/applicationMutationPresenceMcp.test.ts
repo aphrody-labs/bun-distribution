@@ -1,6 +1,6 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../../support/bunTest.js";
 import { parseEvidence } from "../../../src/domain/evidence.js";
 import {
   javaScriptExportShapeComparisonResultSchema,

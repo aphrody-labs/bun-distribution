@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { test } from "vitest";
+import { test } from "../support/bunTest.js";
 
 test("SAZ verification preserves source identities, duplicate headers and encoded empty bodies", () => {
   const moduleUrl = new URL(

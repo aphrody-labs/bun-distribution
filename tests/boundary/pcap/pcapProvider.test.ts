@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { watch } from "node:fs";
 import { chmod, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { expect, onTestFinished, test, vi } from "vitest";
+import { expect, onTestFinished, test, vi } from "../../support/bunTest.js";
 
 import { PcapProvider } from "../../../src/pcap/PcapProvider.js";
 import { projectAnalysisError } from "../../../src/domain/analysisErrorProjection.js";

@@ -1,1 +1,1 @@
-npm run check:fast
+bun run check:fast

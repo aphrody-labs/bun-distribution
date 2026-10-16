@@ -4,7 +4,7 @@ import { createServer } from "node:http";
 import type { Socket } from "node:net";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { expect, it, onTestFinished } from "vitest";
+import { expect, it, onTestFinished } from "../support/bunTest.js";
 import { parseEvidence } from "../../src/domain/evidence.js";
 import { webEventListenersSchema } from "../../src/domain/webEventListeners.js";
 import { startRuntimeBrowser } from "../fixtures/webRuntime.js";

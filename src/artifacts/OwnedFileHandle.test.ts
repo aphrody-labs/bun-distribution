@@ -1,4 +1,4 @@
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "../../tests/support/bunTest.js";
 
 import { OwnedFileHandle } from "../filesystem/OwnedFileHandle.js";
 

@@ -1,6 +1,6 @@
 import { mkdir, rename, symlink, truncate, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "../../support/bunTest.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 import { parseConfig } from "../../../src/config/parseConfig.js";
 import { silentLogger } from "../../../src/logger.js";

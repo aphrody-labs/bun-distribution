@@ -3,7 +3,12 @@ import { PassThrough } from "node:stream";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { describe, expect, it, onTestFinished } from "vitest";
+import {
+  describe,
+  expect,
+  it,
+  onTestFinished,
+} from "../../tests/support/bunTest.js";
 
 import { createTestTempDirectory } from "../../tests/fixtures/temporaryDirectory.js";
 import { CPU, fatImage, machoImage } from "./apple/MachoImage.fixture.js";

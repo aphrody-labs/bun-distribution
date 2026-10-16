@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../tests/support/bunTest.js";
 
 import { TOOL_CONTRACTS } from "./toolContracts.js";
 import { FRIDA_KEEPALIVE_INTERVAL_DESCRIPTION } from "./fridaToolContracts.js";

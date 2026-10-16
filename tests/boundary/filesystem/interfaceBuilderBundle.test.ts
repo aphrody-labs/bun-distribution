@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 
 import { buildBinary } from "plist";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "../../support/bunTest.js";
 
 import { analyzeInterfaceBuilderBundle } from "../../../src/artifacts/apple/InterfaceBuilderAnalysis.js";
 import { InterfaceBuilderDecodeBudget } from "../../../src/artifacts/apple/InterfaceBuilderDecodeBudget.js";

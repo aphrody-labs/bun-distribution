@@ -1,7 +1,14 @@
 import { mkdir, open as fsOpen, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "../../support/bunTest.js";
 
 import type { DoctorHost } from "../../../src/application/Doctor.js";
 import { ConfigurationError } from "../../../src/domain/configurationErrors.js";
@@ -27,7 +34,9 @@ beforeEach(async () => {
     await vi.importActual<typeof import("node:fs/promises")>(
       "node:fs/promises",
     );
-  openMock.mockImplementation((...args) => actualFs.open(...args));
+  openMock.mockImplementation((...args) =>
+    (actualFs.open as (...a: any[]) => any)(...args),
+  );
 });
 
 afterEach(() => openMock.mockReset());
@@ -36,7 +45,7 @@ const holdReadHandle = (path: string, reason: string) => {
   const closeAttempts: object[] = [];
   let released = false;
   openMock.mockImplementation(async (...args) => {
-    const handle = await actualFs.open(...args);
+    const handle = await (actualFs.open as (...a: any[]) => any)(...args);
     if (String(args[0]) !== path) return handle;
     const nativeClose = handle.close.bind(handle);
     vi.spyOn(handle, "close").mockImplementation(async () => {
@@ -250,7 +259,7 @@ describe("setup client configuration cleanup ownership", () => {
     });
     let heldRead = false;
     openMock.mockImplementation(async (...args) => {
-      const handle = await actualFs.open(...args);
+      const handle = await (actualFs.open as (...a: any[]) => any)(...args);
       if (String(args[0]) !== client.configPath || heldRead) return handle;
       heldRead = true;
       const nativeRead = handle.read.bind(handle);

@@ -4,7 +4,11 @@ import { access, lstat, readFile, symlink, writeFile } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
-import { expect, it as nativeTest, onTestFinished } from "vitest";
+import {
+  expect,
+  it as nativeTest,
+  onTestFinished,
+} from "../../support/bunTest.js";
 import { projectAnalysisError } from "../../../src/domain/analysisErrorProjection.js";
 import { SqliteDatabaseProvider } from "../../../src/sqlite/SqliteDatabaseProvider.js";
 import { inspectSqliteDatabaseSnapshot } from "../../../src/sqlite/SqliteDatabaseInspection.js";

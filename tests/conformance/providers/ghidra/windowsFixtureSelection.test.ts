@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { it } from "vitest";
+import { it } from "../../../support/bunTest.js";
 
 import { windowsGhidraFixtureOptions } from "../../../../scripts/lib/ghidra-windows-fixture-options.mjs";
 

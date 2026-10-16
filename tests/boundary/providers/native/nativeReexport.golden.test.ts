@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "../../../support/bunTest.js";
 
 import { NativeMacOSProvider } from "../../../../src/native/NativeMacOSProvider.js";
 import {

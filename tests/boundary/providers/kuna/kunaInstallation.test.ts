@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { chmod, readFile, realpath, symlink } from "node:fs/promises";
 import { join } from "node:path";
 
-import { expect, it as test } from "vitest";
+import { expect, it as test } from "../../../support/bunTest.js";
 
 import { readKunaConfiguration } from "../../../../src/kuna/KunaConfiguration.js";
 import { inspectKunaInstallationOwned as inspectKunaInstallation } from "./kunaFileCloseOwner.js";

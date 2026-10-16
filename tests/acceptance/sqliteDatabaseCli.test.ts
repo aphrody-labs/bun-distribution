@@ -10,7 +10,7 @@ import {
 } from "node:fs/promises";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { expect, onTestFinished } from "vitest";
+import { expect, onTestFinished } from "../support/bunTest.js";
 import { z } from "zod";
 import {
   expandProviderCapabilities,

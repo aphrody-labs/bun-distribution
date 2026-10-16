@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { createServer } from "node:http";
 import { join } from "node:path";
 
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 
 import { CdpBrowserProvider } from "../../../src/browser/CdpBrowserProvider.js";
 import { waitForBrowserDevtoolsPort } from "../../../src/browser/BrowserProcessStartup.js";

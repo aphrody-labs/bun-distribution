@@ -2,7 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { buffer } from "node:stream/consumers";
 import { setImmediate } from "node:timers/promises";
-import { expect, it } from "vitest";
+import { expect, it } from "../../support/bunTest.js";
 
 import { AsarArtifactReader } from "../../../src/artifacts/AsarArtifactReader.js";
 import { readAsarListing } from "../../../src/artifacts/AsarListing.js";

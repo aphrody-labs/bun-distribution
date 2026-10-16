@@ -2,7 +2,7 @@ import { once } from "node:events";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { TextReader, Uint8ArrayWriter, ZipWriter } from "@zip.js/zip.js";
-import { expect, it } from "vitest";
+import { expect, it } from "../../../support/bunTest.js";
 import { ZipArtifactReader } from "../../../../src/artifacts/ZipArtifactReader.js";
 import { createTestTempDirectory } from "../../../fixtures/temporaryDirectory.js";
 

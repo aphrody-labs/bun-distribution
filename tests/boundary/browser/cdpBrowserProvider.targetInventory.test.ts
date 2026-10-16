@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 
 import { CdpBrowserProvider } from "../../../src/browser/CdpBrowserProvider.js";
 import { listBrowserTargetsInputSchema } from "../../../src/domain/browserObservation.js";

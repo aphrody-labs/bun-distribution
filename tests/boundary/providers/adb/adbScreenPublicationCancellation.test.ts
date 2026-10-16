@@ -1,7 +1,13 @@
 import { createHash } from "node:crypto";
 import { link, lstat, open, readFile, rm } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
-import { afterEach, expect, onTestFinished, test, vi } from "vitest";
+import {
+  afterEach,
+  expect,
+  onTestFinished,
+  test,
+  vi,
+} from "../../../support/bunTest.js";
 
 import { AdbProvider } from "../../../../src/adb/AdbProvider.js";
 import { parseEvidence } from "../../../../src/domain/evidence.js";
@@ -95,7 +101,7 @@ test("retains a committed screen capture receipt when cancellation arrives after
       "node:fs/promises",
     );
   vi.mocked(link).mockImplementationOnce(async (...args) => {
-    await actualFs.link(...args);
+    await (actualFs.link as (...a: any[]) => any)(...args);
     controller.abort(abortReason);
   });
   const output = join(f.root, "captures");
@@ -150,7 +156,7 @@ test.each([1, 2])(
     });
     vi.mocked(open).mockImplementation(async (...args) => {
       const path = String(args[0]);
-      const handle = await actualFs.open(...args);
+      const handle = await (actualFs.open as (...a: any[]) => any)(...args);
       if (basename(path) === "screen.png" && path.includes(".rea-screen-")) {
         stagedPath = path;
         stagedRoot = dirname(path);
@@ -250,7 +256,7 @@ test("retains the committed receipt and cleanup observation when cancellation ra
     stderr: Buffer.alloc(0),
   });
   vi.mocked(link).mockImplementationOnce(async (...args) => {
-    await actualFs.link(...args);
+    await (actualFs.link as (...a: any[]) => any)(...args);
     controller.abort(abortReason);
   });
   const output = join(f.root, "captures");
@@ -381,7 +387,7 @@ test("retains a receipt when cancellation arrives after exclusive output creatio
     Object.assign(new Error("hard links are unsupported"), { code: "EPERM" }),
   );
   vi.mocked(open).mockImplementation(async (...args) => {
-    const handle = await actualFs.open(...args);
+    const handle = await (actualFs.open as (...a: any[]) => any)(...args);
     if (String(args[0]) === destination) controller.abort(abortReason);
     return handle;
   });
@@ -425,7 +431,7 @@ test("closes and retains ownership when exclusive output stat fails", async () =
     Object.assign(new Error("hard links are unsupported"), { code: "EPERM" }),
   );
   vi.mocked(open).mockImplementation(async (...args) => {
-    const handle = await actualFs.open(...args);
+    const handle = await (actualFs.open as (...a: any[]) => any)(...args);
     if (String(args[0]) !== destination) return handle;
     handleOpen = true;
     return new Proxy(handle, {
@@ -494,7 +500,7 @@ test("waits for descriptor close before rolling back an incomplete exclusive out
     Object.assign(new Error("hard links are unsupported"), { code: "EPERM" }),
   );
   vi.mocked(open).mockImplementation(async (...args) => {
-    const handle = await actualFs.open(...args);
+    const handle = await (actualFs.open as (...a: any[]) => any)(...args);
     if (String(args[0]) !== destination) return handle;
     handleOpen = true;
     return new Proxy(handle, {
@@ -555,7 +561,7 @@ const exclusiveScreenCloseFixture = async (
     Object.assign(new Error("hard links are unsupported"), { code: "EPERM" }),
   );
   vi.mocked(open).mockImplementation(async (...args) => {
-    const handle = await actualFs.open(...args);
+    const handle = await (actualFs.open as (...a: any[]) => any)(...args);
     if (String(args[0]) !== destination) return handle;
     return new Proxy(handle, {
       get(target, property) {

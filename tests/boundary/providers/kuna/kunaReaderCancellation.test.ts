@@ -2,7 +2,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { addAbortSignal, PassThrough } from "node:stream";
 
-import { afterEach, expect, it as test, vi } from "vitest";
+import { afterEach, expect, it as test, vi } from "../../../support/bunTest.js";
 
 import { run, session } from "./kunaSessionFixture.js";
 

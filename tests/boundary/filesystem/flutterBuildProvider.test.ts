@@ -4,7 +4,7 @@ import { createServer } from "node:net";
 import { join } from "node:path";
 import { Readable } from "node:stream";
 import { Uint8ArrayReader, Uint8ArrayWriter, ZipWriter } from "@zip.js/zip.js";
-import { expect, it, onTestFinished, vi } from "vitest";
+import { expect, it, onTestFinished, vi } from "../../support/bunTest.js";
 
 import {
   aotFixtureImage,
@@ -281,12 +281,12 @@ it.each([
     if (stage === "stat")
       vi.spyOn(fsPromises, "stat").mockImplementation((...args) => {
         if (args[0] !== path) return Promise.reject(cause);
-        return native.stat(...args);
+        return (native.stat as (...a: any[]) => any)(...args);
       });
     if (["open", "write", "close"].includes(stage))
       vi.spyOn(fsPromises, "open").mockImplementation(async (...args) => {
         if (args[1] === "wx" && stage === "open") throw cause;
-        const handle = await native.open(...args);
+        const handle = await (native.open as (...a: any[]) => any)(...args);
         if (args[1] === "wx") {
           if (stage === "write")
             vi.spyOn(handle, "writeFile").mockRejectedValueOnce(cause);
@@ -346,7 +346,7 @@ it.each(["close", "elf", "pool", "cleanup"] as const)(
       const original = dartElf.readElfSymbols;
       vi.spyOn(dartElf, "readElfSymbols").mockImplementation(
         async (...args) => {
-          const value = await original(...args);
+          const value = await (original as (...a: any[]) => any)(...args);
           setImmediate(() => controller.abort());
           return value;
         },
@@ -1328,7 +1328,7 @@ it.each(["EACCES", "EPERM"] as const)(
       const admitted = vi
         .spyOn(regularFile, "openRegularFile")
         .mockImplementation(async (...args) => {
-          const handle = await original(...args);
+          const handle = await (original as (...a: any[]) => any)(...args);
           if (stage === "read")
             vi.spyOn(handle, "read").mockRejectedValueOnce(cause);
           return handle;
@@ -1363,7 +1363,7 @@ it("detects same-size source rewrites with restored mtime through the opened des
   const admitted = vi
     .spyOn(regularFile, "openRegularFile")
     .mockImplementation(async (...args) => {
-      const handle = await nativeAdmission(...args);
+      const handle = await (nativeAdmission as (...a: any[]) => any)(...args);
       // Admission returns an open descriptor; mutate its file before the final
       // descriptor stat, preserving the size and restoring the visible mtime.
       const nativeStat = handle.stat.bind(handle);
@@ -1425,7 +1425,7 @@ it("stops a cancelled descriptor copy before writing its next chunk and releases
   const admitted = vi
     .spyOn(regularFile, "openRegularFile")
     .mockImplementation(async (...args) => {
-      const handle = await nativeAdmission(...args);
+      const handle = await (nativeAdmission as (...a: any[]) => any)(...args);
       const nativeRead = handle.read.bind(handle);
       vi.spyOn(handle, "read").mockImplementation(async (...readArgs) => {
         const result = await nativeRead(...readArgs);

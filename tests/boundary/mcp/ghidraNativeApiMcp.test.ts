@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "../../support/bunTest.js";
 import { connectGhidraMcp, sessionEvidence } from "./ghidraMcpHarness.js";
 
 describe("Ghidra MCP native API evidence", () => {

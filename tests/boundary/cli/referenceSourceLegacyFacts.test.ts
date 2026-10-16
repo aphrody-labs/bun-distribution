@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { expect } from "vitest";
+import { expect } from "../../support/bunTest.js";
 
 import { historicalSourceGraphSchema } from "../../../src/domain/referenceSourceGraph.js";
 import { PRODUCT_IDENTITY } from "../../../src/identity.js";

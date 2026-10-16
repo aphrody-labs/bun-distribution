@@ -3,7 +3,7 @@ import { writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
-import { expect } from "vitest";
+import { expect } from "../support/bunTest.js";
 
 import { parseEvidence } from "../../src/domain/evidence.js";
 import { buildManagedMemberPointerFixture } from "../../src/dotnet/ManagedPe.fixture.js";

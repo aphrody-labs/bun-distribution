@@ -12,7 +12,7 @@ import {
 } from "node:fs/promises";
 import { join } from "node:path";
 
-import { expect, it as test, vi } from "vitest";
+import { expect, it as test, vi } from "../../../support/bunTest.js";
 
 import { inspectKunaInstallationOwned as inspectKunaInstallation } from "./kunaFileCloseOwner.js";
 import { cleanupOwnedProcessGroup } from "../../../../src/process/ProcessOwnership.js";
@@ -360,7 +360,7 @@ it("resolves a hash failure delivered after its retained owner was released", as
     .spyOn(stableFileHash, "hashStableFile")
     .mockImplementation(async (...args) => {
       try {
-        return await hashFile(...args);
+        return await (hashFile as (...a: any[]) => any)(...args);
       } catch (cause: unknown) {
         if (!(cause instanceof RegularFileCleanupFailure)) throw cause;
         failureRetained.resolve();
