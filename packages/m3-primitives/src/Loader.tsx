@@ -22,7 +22,11 @@ export function Loader(props: { className?: string; color?: string }) {
       aria-label="Loading"
       viewBox="0 0 48 48"
       fill="none"
-      className={clsx("size-7", props.color === undefined && "text-primary", props.className)}
+      className={clsx(
+        "size-7",
+        props.color === undefined && "text-primary",
+        props.className,
+      )}
     >
       <g>
         <circle

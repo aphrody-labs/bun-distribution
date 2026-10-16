@@ -160,7 +160,8 @@ export function parseArgs(argv: string[], cwd = process.cwd()): AnalyzeOptions {
     else if (arg === "-v" || arg === "--verbose") options.verbose = true;
     else if (arg === "-h" || arg === "--help") options.help = true;
     else if (arg.startsWith("-")) throw new Error(`Unknown option: ${arg}`);
-    else if (options.binary) throw new Error(`Only one binary is accepted (got ${arg})`);
+    else if (options.binary)
+      throw new Error(`Only one binary is accepted (got ${arg})`);
     else options.binary = arg;
   }
   return options;
@@ -189,11 +190,13 @@ export function launcherArgs(
     "-scriptPath",
     scriptPath,
   ];
-  for (const script of options.scripts) args.push("-postScript", script.name, ...script.args);
+  for (const script of options.scripts)
+    args.push("-postScript", script.name, ...script.args);
   if (options.processor) args.push("-processor", options.processor);
   if (options.cspec) args.push("-cspec", options.cspec);
   if (options.noAnalysis) args.push("-noanalysis");
-  if (options.timeout) args.push("-analysisTimeoutPerFile", String(options.timeout));
+  if (options.timeout)
+    args.push("-analysisTimeoutPerFile", String(options.timeout));
   if (!options.keepProject) args.push("-deleteProject");
   if (options.loader) args.push("-loader", options.loader);
   if (options.librarySearchPaths.length > 0)
@@ -245,9 +248,16 @@ export async function analyze(options: AnalyzeOptions): Promise<number> {
   };
   if (options.maxMemory) env.MAXMEM = options.maxMemory;
   const argv = launcher.toLowerCase().endsWith(".bat")
-    ? ["cmd.exe", "/d", "/s", "/c", `"${[launcher, ...args].map(cmdQuote).join(" ")}"`]
+    ? [
+        "cmd.exe",
+        "/d",
+        "/s",
+        "/c",
+        `"${[launcher, ...args].map(cmdQuote).join(" ")}"`,
+      ]
     : [launcher, ...args];
-  if (options.verbose) console.error(`Running: ${[launcher, ...args].join(" ")}`);
+  if (options.verbose)
+    console.error(`Running: ${[launcher, ...args].join(" ")}`);
   const child = Bun.spawn(argv, {
     env,
     stdin: "ignore",

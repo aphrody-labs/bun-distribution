@@ -50,7 +50,7 @@ interface GetTaskQueueSuccess extends CommandResult {
 
 export const GetTaskQueue = async (): Promise<GetTaskQueueResponse> => {
   const result = (await invoke(
-    "get_task_queue_command"
+    "get_task_queue_command",
   )) as GetTaskQueueSuccess;
 
   const tasks = result?.payload?.tasks || [];
@@ -61,7 +61,7 @@ export const GetTaskQueue = async (): Promise<GetTaskQueueResponse> => {
 
     if (completed_item) {
       completed_item.primary_media_file.created_at = new Date(
-        completed_item.primary_media_file.created_at
+        completed_item.primary_media_file.created_at,
       );
     }
 

@@ -1,1 +1,1 @@
-export { ControlPanelSceneObject } from './ControlPanelSceneObject';
+export { ControlPanelSceneObject } from "./ControlPanelSceneObject";

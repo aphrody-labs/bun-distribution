@@ -65,23 +65,36 @@ function toLocalInput(iso: string | null): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function ArticleEditor({ initial, siteUrl }: { initial: ArticleDraft; siteUrl: string }) {
+export function ArticleEditor({
+  initial,
+  siteUrl,
+}: {
+  initial: ArticleDraft;
+  siteUrl: string;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   const [draft, setDraft] = useState<ArticleDraft>(initial);
-  const [dateInput, setDateInput] = useState(() => toLocalInput(initial.publishedAt));
+  const [dateInput, setDateInput] = useState(() =>
+    toLocalInput(initial.publishedAt),
+  );
   // L'admin a-t-il repris la main sur le slug ? Tant que non, il suit le titre.
   const [slugTouched, setSlugTouched] = useState(Boolean(initial.slug));
-  const [slugState, setSlugState] = useState<"idle" | "checking" | "free" | "taken">("idle");
+  const [slugState, setSlugState] = useState<
+    "idle" | "checking" | "free" | "taken"
+  >("idle");
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [dirty, setDirty] = useState(false);
 
-  const set = useCallback(<K extends keyof ArticleDraft>(key: K, value: ArticleDraft[K]) => {
-    setDraft((d) => ({ ...d, [key]: value }));
-    setDirty(true);
-  }, []);
+  const set = useCallback(
+    <K extends keyof ArticleDraft>(key: K, value: ArticleDraft[K]) => {
+      setDraft((d) => ({ ...d, [key]: value }));
+      setDirty(true);
+    },
+    [],
+  );
 
   // --- Slug ---------------------------------------------------------------
   const effectiveSlug = slugTouched ? draft.slug : slugify(draft.title);
@@ -172,9 +185,12 @@ export function ArticleEditor({ initial, siteUrl }: { initial: ArticleDraft; sit
     return () => window.removeEventListener("keydown", onKey);
   }, [submit, draft.status]);
 
-  const seoTitlePreview = draft.seoTitle?.trim() || draft.title || "Titre de l'article";
+  const seoTitlePreview =
+    draft.seoTitle?.trim() || draft.title || "Titre de l'article";
   const seoDescPreview =
-    draft.seoDescription?.trim() || draft.excerpt?.trim() || "Résumé de l'article…";
+    draft.seoDescription?.trim() ||
+    draft.excerpt?.trim() ||
+    "Résumé de l'article…";
 
   return (
     <div className="mx-auto w-full max-w-[1500px]">
@@ -191,12 +207,15 @@ export function ArticleEditor({ initial, siteUrl }: { initial: ArticleDraft; sit
         <StatusBadge status={draft.status} publishedAt={dateInput} />
 
         {dirty && (
-          <span className="text-[12px] text-amber-300">Modifications non enregistrées</span>
+          <span className="text-[12px] text-amber-300">
+            Modifications non enregistrées
+          </span>
         )}
         {!dirty && savedAt && (
           <span className="inline-flex items-center gap-1.5 text-[12px] text-emerald-300">
             <Check className="size-3.5" />
-            Enregistré à {savedAt.toLocaleTimeString("fr-FR", { timeStyle: "short" })}
+            Enregistré à{" "}
+            {savedAt.toLocaleTimeString("fr-FR", { timeStyle: "short" })}
           </span>
         )}
 
@@ -212,18 +231,33 @@ export function ArticleEditor({ initial, siteUrl }: { initial: ArticleDraft; sit
               Voir en ligne
             </a>
           )}
-          <Button variant="outline" size="lg" disabled={pending} onClick={() => submit("draft")}>
+          <Button
+            variant="outline"
+            size="lg"
+            disabled={pending}
+            onClick={() => submit("draft")}
+          >
             Enregistrer le brouillon
           </Button>
           <Button
             size="lg"
             disabled={pending || slugState === "taken"}
             onClick={() =>
-              submit(dateInput && new Date(dateInput) > new Date() ? "scheduled" : "published")
+              submit(
+                dateInput && new Date(dateInput) > new Date()
+                  ? "scheduled"
+                  : "published",
+              )
             }
           >
-            {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-            {dateInput && new Date(dateInput) > new Date() ? "Programmer" : "Publier"}
+            {pending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Save className="size-4" />
+            )}
+            {dateInput && new Date(dateInput) > new Date()
+              ? "Programmer"
+              : "Publier"}
           </Button>
         </div>
       </div>
@@ -247,7 +281,8 @@ export function ArticleEditor({ initial, siteUrl }: { initial: ArticleDraft; sit
               value={draft.title}
               onChange={(e) => {
                 set("title", e.target.value);
-                if (!slugTouched) setDraft((d) => ({ ...d, slug: slugify(e.target.value) }));
+                if (!slugTouched)
+                  setDraft((d) => ({ ...d, slug: slugify(e.target.value) }));
               }}
               placeholder="Titre de l'article"
               className="w-full border-0 bg-transparent px-1 text-[32px] font-bold leading-tight tracking-tight text-white outline-none placeholder:text-white/25"
@@ -303,7 +338,8 @@ export function ArticleEditor({ initial, siteUrl }: { initial: ArticleDraft; sit
                   }}
                 />
                 <p className="text-[12px] text-white/50">
-                  Une date future programme l&apos;article : il sortira tout seul le moment venu.
+                  Une date future programme l&apos;article : il sortira tout
+                  seul le moment venu.
                 </p>
               </div>
 
@@ -386,7 +422,8 @@ export function ArticleEditor({ initial, siteUrl }: { initial: ArticleDraft; sit
               {/* Aperçu du résultat de recherche — l'admin voit ce que Google affichera. */}
               <div className="rounded-lg border border-white/10 bg-white p-3">
                 <p className="truncate text-[12px] text-[#4d5156]">
-                  {siteUrl.replace(/^https?:\/\//, "")} › actualites › {effectiveSlug || "…"}
+                  {siteUrl.replace(/^https?:\/\//, "")} › actualites ›{" "}
+                  {effectiveSlug || "…"}
                 </p>
                 <p className="truncate text-[16px] leading-snug text-[#1a0dab]">
                   {seoTitlePreview}
@@ -399,7 +436,10 @@ export function ArticleEditor({ initial, siteUrl }: { initial: ArticleDraft; sit
               <div className="space-y-1.5">
                 <div className="flex items-baseline justify-between">
                   <Label htmlFor="seoTitle">Titre SEO</Label>
-                  <Counter value={(draft.seoTitle ?? draft.title).length} limit={SEO_TITLE_LIMIT} />
+                  <Counter
+                    value={(draft.seoTitle ?? draft.title).length}
+                    limit={SEO_TITLE_LIMIT}
+                  />
                 </div>
                 <Input
                   id="seoTitle"
@@ -456,7 +496,9 @@ export function ArticleEditor({ initial, siteUrl }: { initial: ArticleDraft; sit
                 size="lg"
                 className="w-full"
                 onClick={(e) => {
-                  if (!confirm(`Supprimer définitivement « ${draft.title} » ?`)) {
+                  if (
+                    !confirm(`Supprimer définitivement « ${draft.title} » ?`)
+                  ) {
                     e.preventDefault();
                   }
                 }}
@@ -474,10 +516,17 @@ export function ArticleEditor({ initial, siteUrl }: { initial: ArticleDraft; sit
 
 /* -------------------------------------------------------------------------- */
 
-function StatusBadge({ status, publishedAt }: { status: PostStatus; publishedAt: string }) {
+function StatusBadge({
+  status,
+  publishedAt,
+}: {
+  status: PostStatus;
+  publishedAt: string;
+}) {
   const isFuture = publishedAt ? new Date(publishedAt) > new Date() : false;
   if (status === "draft") return <Badge variant="secondary">Brouillon</Badge>;
-  if (status === "scheduled" || isFuture) return <Badge variant="warning">Programmé</Badge>;
+  if (status === "scheduled" || isFuture)
+    return <Badge variant="warning">Programmé</Badge>;
   return <Badge variant="success">Publié</Badge>;
 }
 
@@ -503,7 +552,9 @@ function SlugField({
         placeholder="slug-de-l-article"
         className="min-w-0 flex-1 border-0 bg-transparent font-mono text-[12px] text-white outline-none placeholder:text-white/25"
       />
-      {state === "checking" && <Loader2 className="size-3.5 animate-spin text-white/50" />}
+      {state === "checking" && (
+        <Loader2 className="size-3.5 animate-spin text-white/50" />
+      )}
       {state === "free" && (
         <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400">
           <Check className="size-3.5" /> disponible
@@ -518,13 +569,20 @@ function SlugField({
   );
 }
 
-function TagInput({ tags, onChange }: { tags: string[]; onChange: (t: string[]) => void }) {
+function TagInput({
+  tags,
+  onChange,
+}: {
+  tags: string[];
+  onChange: (t: string[]) => void;
+}) {
   const [value, setValue] = useState("");
 
   const add = () => {
     const t = value.trim().replace(/\s+/g, " ");
     if (!t) return;
-    if (!tags.some((x) => x.toLowerCase() === t.toLowerCase())) onChange([...tags, t]);
+    if (!tags.some((x) => x.toLowerCase() === t.toLowerCase()))
+      onChange([...tags, t]);
     setValue("");
   };
 
@@ -561,10 +619,13 @@ function TagInput({ tags, onChange }: { tags: string[]; onChange: (t: string[]) 
             add();
           }
           // Retour arrière sur un champ vide : retire le dernier thème.
-          if (e.key === "Backspace" && !value && tags.length) onChange(tags.slice(0, -1));
+          if (e.key === "Backspace" && !value && tags.length)
+            onChange(tags.slice(0, -1));
         }}
         onBlur={add}
-        placeholder={tags.length >= 8 ? "Maximum atteint" : "Ajouter un thème puis Entrée"}
+        placeholder={
+          tags.length >= 8 ? "Maximum atteint" : "Ajouter un thème puis Entrée"
+        }
         disabled={tags.length >= 8}
       />
     </div>
@@ -586,7 +647,11 @@ function ToggleRow({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <Switch checked={checked} onCheckedChange={onChange} className="mt-0.5 shrink-0" />
+      <Switch
+        checked={checked}
+        onCheckedChange={onChange}
+        className="mt-0.5 shrink-0"
+      />
       <div className="min-w-0">
         <p className="flex items-center gap-1.5 text-[13px] font-medium text-white">
           {icon}

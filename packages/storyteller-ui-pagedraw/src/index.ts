@@ -7,10 +7,18 @@ export { HistoryStack } from "./lib/HistoryStack";
 
 // Store
 export { useSceneStore, generateId } from "./lib/stores/SceneState";
-export type { SceneState, AspectRatioType, LineNode } from "./lib/stores/SceneState";
+export type {
+  SceneState,
+  AspectRatioType,
+  LineNode,
+} from "./lib/stores/SceneState";
 
 // Adapter interface
-export type { PageDrawAdapter, PageDrawEditRequest, PageDrawInpaintRequest } from "./lib/adapter";
+export type {
+  PageDrawAdapter,
+  PageDrawEditRequest,
+  PageDrawInpaintRequest,
+} from "./lib/adapter";
 
 // Shared types
 export type { BaseSelectorImage, ImageBundle, DragState } from "./lib/types";

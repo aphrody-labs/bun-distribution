@@ -24,9 +24,21 @@ export interface LinkFinding {
   message: string;
 }
 
-const SKIP = new Set(["node_modules", "dist", ".git", "target", "forks", "upstream", ".next"]);
+const SKIP = new Set([
+  "node_modules",
+  "dist",
+  ".git",
+  "target",
+  "forks",
+  "upstream",
+  ".next",
+]);
 
-function markdownFiles(dir: string, skip: string[], out: string[] = []): string[] {
+function markdownFiles(
+  dir: string,
+  skip: string[],
+  out: string[] = [],
+): string[] {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     if (SKIP.has(e.name)) continue;
     const p = join(dir, e.name);
@@ -62,7 +74,8 @@ export function anchors(file: string): Set<string> {
     seen.set(base, n + 1);
     set.add(n ? `${base}-${n}` : base);
   }
-  for (const m of text.matchAll(/\b(?:id|name)=["']([^"']+)["']/g)) set.add(m[1]!);
+  for (const m of text.matchAll(/\b(?:id|name)=["']([^"']+)["']/g))
+    set.add(m[1]!);
   anchorCache.set(file, set);
   return set;
 }
@@ -78,29 +91,51 @@ export function links(text: string): Array<{ link: string; line: number }> {
     }
     if (fence) return;
     const line = raw.replace(/`[^`]*`/g, "");
-    for (const m of line.matchAll(/!?\[(?:[^\]\\]|\\.)*\]\(\s*<?([^)\s>]+)>?(?:\s+["'(][^)]*)?\)/g)) out.push({ link: m[1]!, line: i + 1 });
+    for (const m of line.matchAll(
+      /!?\[(?:[^\]\\]|\\.)*\]\(\s*<?([^)\s>]+)>?(?:\s+["'(][^)]*)?\)/g,
+    ))
+      out.push({ link: m[1]!, line: i + 1 });
     const def = /^\s{0,3}\[[^\]]+\]:\s*<?(\S+?)>?(?:\s+.*)?$/.exec(line);
     if (def) out.push({ link: def[1]!, line: i + 1 });
-    for (const m of line.matchAll(/\s(?:href|src)=["']([^"']+)["']/g)) out.push({ link: m[1]!, line: i + 1 });
+    for (const m of line.matchAll(/\s(?:href|src)=["']([^"']+)["']/g))
+      out.push({ link: m[1]!, line: i + 1 });
   });
   return out;
 }
 
-const external = (link: string) => /^[a-z][a-z0-9+.-]*:/i.test(link) || link.startsWith("//");
+const external = (link: string) =>
+  /^[a-z][a-z0-9+.-]*:/i.test(link) || link.startsWith("//");
 
-export function checkLinks(repo = REPO, roots: string[] = [repo]): LinkFinding[] {
+export function checkLinks(
+  repo = REPO,
+  roots: string[] = [repo],
+): LinkFinding[] {
   const host = hostRoot(repo);
   const nested = nestedRepos(repo);
   const findings: LinkFinding[] = [];
-  const files = roots.flatMap((r) => (statSync(r).isDirectory() ? markdownFiles(r, nested) : [r]));
+  const files = roots.flatMap((r) =>
+    statSync(r).isDirectory() ? markdownFiles(r, nested) : [r],
+  );
   for (const file of files) {
     const rel = relative(repo, file);
     for (const { link, line } of links(readFileSync(file, "utf8"))) {
       if (external(link) || /[{}$]/.test(link)) continue;
-      const [rawPath, anchor] = link.split("#", 2) as [string, string | undefined];
+      const [rawPath, anchor] = link.split("#", 2) as [
+        string,
+        string | undefined,
+      ];
       if (rawPath === "") {
-        if (anchor && !anchors(file).has(decodeURIComponent(anchor).toLowerCase()))
-          findings.push({ file: rel, line, link, severity: "error", message: `anchor #${anchor} not found in this file` });
+        if (
+          anchor &&
+          !anchors(file).has(decodeURIComponent(anchor).toLowerCase())
+        )
+          findings.push({
+            file: rel,
+            line,
+            link,
+            severity: "error",
+            message: `anchor #${anchor} not found in this file`,
+          });
         continue;
       }
       if (rawPath.startsWith("/")) continue; // site-absolute: served by an app, not a file of the repo
@@ -113,13 +148,45 @@ export function checkLinks(repo = REPO, roots: string[] = [repo]): LinkFinding[]
       const target = resolve(dirname(file), path);
       const inside = target === repo || target.startsWith(repo + sep);
       if (!existsSync(target)) {
-        if (inside) findings.push({ file: rel, line, link, severity: "error", message: "target does not exist" });
-        else if (host && target.startsWith(host + sep)) findings.push({ file: rel, line, link, severity: "error", message: `target missing from the host checkout ${host}` });
-        else findings.push({ file: rel, line, link, severity: "warn", message: "host target outside this repository (no host checkout)" });
+        if (inside)
+          findings.push({
+            file: rel,
+            line,
+            link,
+            severity: "error",
+            message: "target does not exist",
+          });
+        else if (host && target.startsWith(host + sep))
+          findings.push({
+            file: rel,
+            line,
+            link,
+            severity: "error",
+            message: `target missing from the host checkout ${host}`,
+          });
+        else
+          findings.push({
+            file: rel,
+            line,
+            link,
+            severity: "warn",
+            message: "host target outside this repository (no host checkout)",
+          });
         continue;
       }
-      if (anchor && target.endsWith(".md") && statSync(target).isFile() && !anchors(target).has(decodeURIComponent(anchor).toLowerCase()))
-        findings.push({ file: rel, line, link, severity: "error", message: `anchor #${anchor} not found in ${relative(repo, target)}` });
+      if (
+        anchor &&
+        target.endsWith(".md") &&
+        statSync(target).isFile() &&
+        !anchors(target).has(decodeURIComponent(anchor).toLowerCase())
+      )
+        findings.push({
+          file: rel,
+          line,
+          link,
+          severity: "error",
+          message: `anchor #${anchor} not found in ${relative(repo, target)}`,
+        });
     }
   }
   return findings;
@@ -130,10 +197,16 @@ if (import.meta.main) {
   const paths = args.filter((a) => !a.startsWith("--")).map((p) => resolve(p));
   const findings = checkLinks(REPO, paths.length ? paths : [REPO]);
   const errors = findings.filter((f) => f.severity === "error");
-  if (args.includes("--json")) console.log(JSON.stringify({ errors: errors.length, findings }, null, 2));
+  if (args.includes("--json"))
+    console.log(JSON.stringify({ errors: errors.length, findings }, null, 2));
   else {
-    for (const f of findings) console.log(`${f.severity.toUpperCase().padEnd(5)} ${f.file}:${f.line} ${f.link} (${f.message})`);
-    console.log(`check-links: ${errors.length} errors, ${findings.length - errors.length} warnings`);
+    for (const f of findings)
+      console.log(
+        `${f.severity.toUpperCase().padEnd(5)} ${f.file}:${f.line} ${f.link} (${f.message})`,
+      );
+    console.log(
+      `check-links: ${errors.length} errors, ${findings.length - errors.length} warnings`,
+    );
   }
   process.exit(errors.length ? 1 : 0);
 }

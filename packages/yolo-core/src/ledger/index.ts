@@ -7,7 +7,13 @@
  * benchmarks, and codebase fingerprints.
  */
 import { Database } from "bun:sqlite";
-import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { findRepoRoot } from "../vfs/index";
@@ -50,7 +56,10 @@ export function redactSecrets(text: string | null | undefined): string {
         },
       )
       // 8. CLI flags --password=..., --token=...
-      .replace(/--(?:password|passwd|token|secret)[=\s]+[^\s]+/gi, "--password=[REDACTED_SECRET]")
+      .replace(
+        /--(?:password|passwd|token|secret)[=\s]+[^\s]+/gi,
+        "--password=[REDACTED_SECRET]",
+      )
       // 9. JWT tokens (header.payload.signature)
       .replace(
         /\bey[A-Za-z0-9_-]{10,}\.ey[A-Za-z0-9_-]{10,}\.[A-Za-z0-9-_]{10,}\b/g,
@@ -287,7 +296,9 @@ export function initLedgerDatabase(customPath?: string): Database {
 
   // Migrate existing table if 'profile' column is missing
   try {
-    db.run("ALTER TABLE training_samples ADD COLUMN profile TEXT NOT NULL DEFAULT 'yolo';");
+    db.run(
+      "ALTER TABLE training_samples ADD COLUMN profile TEXT NOT NULL DEFAULT 'yolo';",
+    );
   } catch {
     // Column already exists
   }
@@ -315,7 +326,10 @@ export interface TrainingSampleRecord {
   createdAt: string;
 }
 
-export function recordAgentTelemetry(db: Database, event: AgentTelemetryRecord): void {
+export function recordAgentTelemetry(
+  db: Database,
+  event: AgentTelemetryRecord,
+): void {
   const stmt = db.prepare(`
     INSERT INTO agent_telemetry (agent, session_id, event_type, target_path, timestamp)
     VALUES (?, ?, ?, ?, ?)
@@ -329,7 +343,10 @@ export function recordAgentTelemetry(db: Database, event: AgentTelemetryRecord):
   );
 }
 
-export function recordTrainingSample(db: Database, sample: TrainingSampleRecord): void {
+export function recordTrainingSample(
+  db: Database,
+  sample: TrainingSampleRecord,
+): void {
   const profile = sample.profile ?? "yolo";
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO training_samples (sample_id, profile, domain, instruction, input_context, action, outcome, reward_score, created_at)
@@ -370,7 +387,10 @@ export function recordSession(db: Database, session: SessionRecord): void {
 /**
  * Records an audit report.
  */
-export function recordAuditReport(db: Database, audit: AuditReportRecord): void {
+export function recordAuditReport(
+  db: Database,
+  audit: AuditReportRecord,
+): void {
   const stmt = db.prepare(`
     INSERT INTO audit_reports (session_id, domain, auditor, verdict, summary, details, recorded_at)
     VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -481,7 +501,10 @@ export function enforceLedgerPermissions(customPath?: string): void {
  * Recursively scans and indexes all source files in the codebase using Wyhash64.
  * Skips target/, node_modules/, .git/, vendor/, .venv/, etc.
  */
-export function indexCodebaseFingerprints(db: Database, rootDir: string): number {
+export function indexCodebaseFingerprints(
+  db: Database,
+  rootDir: string,
+): number {
   const root = resolve(rootDir);
   const IGNORE = new Set([
     ".git",
@@ -512,7 +535,9 @@ export function indexCodebaseFingerprints(db: Database, rootDir: string): number
         scan(fullPath);
       } else if (entry.isFile()) {
         try {
-          const ext = entry.name.includes(".") ? entry.name.split(".").pop() || "" : "";
+          const ext = entry.name.includes(".")
+            ? entry.name.split(".").pop() || ""
+            : "";
           const content = readFileSync(fullPath);
           const hash = Bun.hash.wyhash(content).toString(16);
           const relPath = relative(root, fullPath).replaceAll("\\", "/");
@@ -545,19 +570,29 @@ export function summarizeLedger(db: Database): {
   remediations: RemediationRecord[];
 } {
   const sessionCount = (
-    db.query("SELECT COUNT(*) as count FROM sessions").get() as { count: number }
+    db.query("SELECT COUNT(*) as count FROM sessions").get() as {
+      count: number;
+    }
   ).count;
   const auditCount = (
-    db.query("SELECT COUNT(*) as count FROM audit_reports").get() as { count: number }
+    db.query("SELECT COUNT(*) as count FROM audit_reports").get() as {
+      count: number;
+    }
   ).count;
   const benchmarkCount = (
-    db.query("SELECT COUNT(*) as count FROM benchmarks").get() as { count: number }
+    db.query("SELECT COUNT(*) as count FROM benchmarks").get() as {
+      count: number;
+    }
   ).count;
   const gateCount = (
-    db.query("SELECT COUNT(*) as count FROM quality_gates").get() as { count: number }
+    db.query("SELECT COUNT(*) as count FROM quality_gates").get() as {
+      count: number;
+    }
   ).count;
   const fingerprintCount = (
-    db.query("SELECT COUNT(*) as count FROM codebase_fingerprints").get() as { count: number }
+    db.query("SELECT COUNT(*) as count FROM codebase_fingerprints").get() as {
+      count: number;
+    }
   ).count;
 
   const remediations = db

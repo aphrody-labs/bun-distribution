@@ -1,6 +1,5 @@
-
 /// Common aspect ratio Tauri API
-/// Not all models have each of these aspect ratios, 
+/// Not all models have each of these aspect ratios,
 /// but Tauri will interpolate if a mistake is sent.
 export enum CommonAspectRatio {
   // "Auto"
@@ -29,7 +28,7 @@ export enum CommonAspectRatio {
   // Not appropriate for all models to use these values.
   Wide = "wide",
   Tall = "tall",
-  
+
   // Auto values that bake in resolution
   Auto2k = "auto_2k",
   Auto3k = "auto_3k",

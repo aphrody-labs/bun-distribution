@@ -85,5 +85,4 @@ export class UserBookmarksApi extends ApiManager {
         return { success: false, errorMessage: err.message };
       });
   }
-
 }

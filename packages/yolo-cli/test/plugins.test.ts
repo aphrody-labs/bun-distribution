@@ -12,7 +12,13 @@ import {
 test("the CLI dispatch creates a plugin through the absorbed command", () => {
   const target = join(root, "cli-plugin");
   const run = Bun.spawnSync(
-    [process.execPath, join(import.meta.dir, "../src/index.ts"), "plugin", "create", target],
+    [
+      process.execPath,
+      join(import.meta.dir, "../src/index.ts"),
+      "plugin",
+      "create",
+      target,
+    ],
     {
       windowsHide: true,
       cwd: root,
@@ -67,7 +73,11 @@ describe("generateUnifiedYoloPlugin", async () => {
       readManifest(result.pluginDir, ".claude-plugin/plugin.json"),
       readManifest(result.pluginDir, ".codex-plugin/plugin.json"),
     ]);
-    expect(plain).toMatchObject({ name: "fixture", version: "2.0.0", engines: { bun: ">=1.4.2" } });
+    expect(plain).toMatchObject({
+      name: "fixture",
+      version: "2.0.0",
+      engines: { bun: ">=1.4.2" },
+    });
     expect(claude).toEqual(plain);
     expect(codex).toEqual(plain);
   });
@@ -82,7 +92,9 @@ describe("generateUnifiedYoloPlugin", async () => {
     const skills = await Promise.all(
       ["yolo", "bun-doctrine", "typescript7-bun"].map(async (skill) => ({
         skill,
-        text: await Bun.file(join(result.pluginDir, `skills/${skill}/SKILL.md`)).text(),
+        text: await Bun.file(
+          join(result.pluginDir, `skills/${skill}/SKILL.md`),
+        ).text(),
       })),
     );
     for (const { skill, text } of skills) {
@@ -91,12 +103,17 @@ describe("generateUnifiedYoloPlugin", async () => {
   });
 
   test("the generated session context runs under Bun and emits hook JSON", () => {
-    const run = Bun.spawnSync(["bun", join(result.pluginDir, "hooks/scripts/session-context.ts")], {
-      windowsHide: true,
-      cwd: root,
-      stdout: "pipe",
-    });
+    const run = Bun.spawnSync(
+      ["bun", join(result.pluginDir, "hooks/scripts/session-context.ts")],
+      {
+        windowsHide: true,
+        cwd: root,
+        stdout: "pipe",
+      },
+    );
     expect(run.exitCode).toBe(0);
-    expect(JSON.parse(run.stdout.toString()).hookSpecificOutput.hookEventName).toBe("SessionStart");
+    expect(
+      JSON.parse(run.stdout.toString()).hookSpecificOutput.hookEventName,
+    ).toBe("SessionStart");
   });
 });

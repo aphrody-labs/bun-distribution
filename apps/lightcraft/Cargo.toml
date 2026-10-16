@@ -26,12 +26,21 @@ rawnind-model = ["denoise", "lightcraft-engine/rawnind-model"]
 heif = ["lightcraft-codecs/heif"]
 
 [dependencies]
-lightcraft-engine = { path = "../../crates/lightcraft-engine", features = ["sam"] }
+lightcraft-engine = { path = "../../crates/lightcraft-engine", features = [
+  "sam",
+] }
 lightcraft-sysmem = { path = "../../crates/lightcraft-sysmem" }
 lightcraft-ui-egui = { path = "../../crates/lightcraft-ui-egui" }
 lightcraft-codecs = { path = "../../crates/lightcraft-codecs" }
 lightcraft-raster = { path = "../../crates/lightcraft-raster" }
-eframe = { version = "0.36", default-features = false, features = ["default_fonts", "wgpu", "glow", "accesskit", "wayland", "x11"] }
+eframe = { version = "0.36", default-features = false, features = [
+  "default_fonts",
+  "wgpu",
+  "glow",
+  "accesskit",
+  "wayland",
+  "x11",
+] }
 egui = "0.36"
 serde_json = { version = "1", features = ["float_roundtrip"] }
 pollster = "1"

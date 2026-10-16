@@ -1,9 +1,9 @@
 export { TabManagerProvider } from "./TabManagerContext";
 export type {
-	Tab,
-	TabExplorerState,
-	ViewMode,
-	SortBy,
+  Tab,
+  TabExplorerState,
+  ViewMode,
+  SortBy,
 } from "./TabManagerContext";
 export { useTabManager } from "./useTabManager";
 export { TabBar } from "./TabBar";

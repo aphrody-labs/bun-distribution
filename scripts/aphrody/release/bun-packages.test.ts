@@ -26,13 +26,18 @@ test("rejects missing entrypoints even if the workspace file exists", () => {
   ]);
 });
 test("rejects local dependencies and protected archive paths", () => {
-  const errors = auditPayload({ ...manifest, dependencies: { owner: "workspace:*" } }, [
-    "src/index.ts",
-    ".env.production",
-    "data/store.sqlite",
-    "../escape",
-    "node_modules/owner/index.js",
-  ]);
+  const errors = auditPayload(
+    { ...manifest, dependencies: { owner: "workspace:*" } },
+    [
+      "src/index.ts",
+      ".env.production",
+      "data/store.sqlite",
+      "../escape",
+      "node_modules/owner/index.js",
+    ],
+  );
   expect(errors).toContain("local dependency: owner=workspace:*");
-  expect(errors.filter((error) => error.startsWith("protected filename:"))).toHaveLength(4);
+  expect(
+    errors.filter((error) => error.startsWith("protected filename:")),
+  ).toHaveLength(4);
 });

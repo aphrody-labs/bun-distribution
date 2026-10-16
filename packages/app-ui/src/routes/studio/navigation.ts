@@ -8,7 +8,10 @@ export const studioSections = [
   { id: "runtime", label: "Moteur", icon: "memory" },
 ] as const;
 export type StudioSection = (typeof studioSections)[number]["id"];
-export function studioLabel(section: StudioSection, language: SupportedLanguage): string {
+export function studioLabel(
+  section: StudioSection,
+  language: SupportedLanguage,
+): string {
   return section === "google"
     ? nativeGoogleMessages[language].title
     : studioSections.find((entry) => entry.id === section)!.label;

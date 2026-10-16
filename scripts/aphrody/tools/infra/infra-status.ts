@@ -17,9 +17,11 @@
 import { homedir } from "node:os";
 import { readFile } from "node:fs/promises";
 
-const INFRA_ROOT = process.env.APHRODY_INFRA_ROOT ?? `${import.meta.dir}/../../..`;
+const INFRA_ROOT =
+  process.env.APHRODY_INFRA_ROOT ?? `${import.meta.dir}/../../..`;
 const CATALOG_PATH =
-  process.env.APHRODY_SERVICE_CATALOG ?? `${INFRA_ROOT}/tools/config/service-catalog.json`;
+  process.env.APHRODY_SERVICE_CATALOG ??
+  `${INFRA_ROOT}/tools/config/service-catalog.json`;
 const catalog = JSON.parse(await readFile(CATALOG_PATH, "utf8")) as Catalog;
 const json = process.argv.includes("--json");
 const strict = process.argv.includes("--strict");
@@ -73,7 +75,10 @@ const manifest = {
     ...catalog.services.map((service): Component => {
       const timer = service.unit.endsWith(".timer") ? service.unit : undefined;
       const retired = service.status === "retired";
-      const ports = [service.health, ...(service.additionalUpstreams ?? [])].flatMap((address) => {
+      const ports = [
+        service.health,
+        ...(service.additionalUpstreams ?? []),
+      ].flatMap((address) => {
         const value = address ? port(address) : undefined;
         return value === undefined ? [] : [value];
       });
@@ -87,7 +92,8 @@ const manifest = {
             service.id.split("-", 1)[0] ??
             service.id),
         unit: timer ? timer.replace(/\.timer$/u, ".service") : service.unit,
-        required: !retired && (service.required ?? (service.staged ? false : true)),
+        required:
+          !retired && (service.required ?? (service.staged ? false : true)),
         oneshot: timer !== undefined,
         timer,
         // A retired unit is never health-probed: its listener is gone.
@@ -111,7 +117,11 @@ const manifest = {
 
 type CommandResult = { code: number; stdout: string; stderr: string };
 async function run(args: string[]): Promise<CommandResult> {
-  const child = Bun.spawn(args, { windowsHide: true, stdout: "pipe", stderr: "pipe" });
+  const child = Bun.spawn(args, {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const [stdout, stderr] = await Promise.all([
     new Response(child.stdout).text(),
     new Response(child.stderr).text(),
@@ -142,7 +152,8 @@ function manifestProblems(): string[] {
   if (manifest.schemaVersion !== 1) problems.push("schemaVersion inconnue");
   const ids = manifest.components.map((component) => component.id);
   for (const id of unique(ids)) {
-    if (ids.filter((candidate) => candidate === id).length > 1) problems.push(`id dupliqué: ${id}`);
+    if (ids.filter((candidate) => candidate === id).length > 1)
+      problems.push(`id dupliqué: ${id}`);
   }
   const ports = new Map<number, Component[]>();
   for (const component of manifest.components) {
@@ -228,7 +239,12 @@ async function probe(url: string) {
             close() {},
           },
         });
-        return { url, ok: true, status: 200, ms: Math.round(performance.now() - started) };
+        return {
+          url,
+          ok: true,
+          status: 200,
+          ms: Math.round(performance.now() - started),
+        };
       } catch (error) {
         return {
           url,
@@ -286,7 +302,8 @@ function parseMeminfo(source: string) {
   const values: Record<string, number> = {};
   for (const line of source.trim().split("\n")) {
     const [, key, amount] = line.match(/^([^:]+):\s+(\d+)/u) ?? [];
-    if (key && amount) values[key] = Number(amount) * (line.endsWith(" kB") ? 1024 : 1);
+    if (key && amount)
+      values[key] = Number(amount) * (line.endsWith(" kB") ? 1024 : 1);
   }
   const total = values.MemTotal ?? 0;
   const available = values.MemAvailable ?? values.MemFree ?? 0;
@@ -299,7 +316,9 @@ function parseMeminfo(source: string) {
     usedPercent: total ? Math.round((1 - available / total) * 100) : null,
     swapTotalBytes: swapTotal,
     swapUsedBytes: Math.max(0, swapTotal - swapFree),
-    swapUsedPercent: swapTotal ? Math.round((1 - swapFree / swapTotal) * 100) : null,
+    swapUsedPercent: swapTotal
+      ? Math.round((1 - swapFree / swapTotal) * 100)
+      : null,
   };
 }
 
@@ -347,7 +366,9 @@ function parsePressure(source: string) {
         return [
           kind,
           Object.fromEntries(
-            fields.map((field) => field.split("=", 2)).filter((pair) => pair.length === 2),
+            fields
+              .map((field) => field.split("=", 2))
+              .filter((pair) => pair.length === 2),
           ),
         ];
       }),
@@ -422,8 +443,12 @@ async function socketSummary() {
   const listening = await run(["ss", "-Hln"]);
   return {
     summary: summary.stdout.trim().split("\n").filter(Boolean),
-    established: established.stdout.trim() ? established.stdout.trim().split("\n").length : 0,
-    listening: listening.stdout.trim() ? listening.stdout.trim().split("\n").length : 0,
+    established: established.stdout.trim()
+      ? established.stdout.trim().split("\n").length
+      : 0,
+    listening: listening.stdout.trim()
+      ? listening.stdout.trim().split("\n").length
+      : 0,
   };
 }
 
@@ -436,7 +461,10 @@ async function kernelSummary() {
       ]),
     ),
   );
-  const fileNr = (await text("/proc/sys/fs/file-nr")).trim().split(/\s+/u).map(Number);
+  const fileNr = (await text("/proc/sys/fs/file-nr"))
+    .trim()
+    .split(/\s+/u)
+    .map(Number);
   const oom =
     (await run(["journalctl", "-k", "-n", "300", "--no-pager"])).stdout.match(
       /out of memory|oom-kill|killed process/giu,
@@ -487,11 +515,14 @@ async function inventory() {
           .filter(Boolean)
           .map((line) => {
             const match = line.match(/^(\d+)\s+(.*)$/u);
-            return match ? { bytes: Number(match[1]), path: match[2] } : { raw: line };
+            return match
+              ? { bytes: Number(match[1]), path: match[2] }
+              : { raw: line };
           })
           .toSorted(
             (a, b) =>
-              ((b as { bytes?: number }).bytes ?? 0) - ((a as { bytes?: number }).bytes ?? 0),
+              ((b as { bytes?: number }).bytes ?? 0) -
+              ((a as { bytes?: number }).bytes ?? 0),
           )
           .slice(0, 20),
       };
@@ -510,21 +541,29 @@ async function status() {
     })),
   );
   const diskState = await filesystems();
-  const [networkState, processes, services, sockets, kernel] = await Promise.all([
-    network(),
-    processSummary(),
-    serviceSummary(),
-    socketSummary(),
-    kernelSummary(),
-  ]);
-  const diskWarnings = diskState.filter((row) => row.usedPercent >= DISK_WARNING_PERCENT);
-  const diskCritical = diskState.some((row) => row.usedPercent >= DISK_CRITICAL_PERCENT);
+  const [networkState, processes, services, sockets, kernel] =
+    await Promise.all([
+      network(),
+      processSummary(),
+      serviceSummary(),
+      socketSummary(),
+      kernelSummary(),
+    ]);
+  const diskWarnings = diskState.filter(
+    (row) => row.usedPercent >= DISK_WARNING_PERCENT,
+  );
+  const diskCritical = diskState.some(
+    (row) => row.usedPercent >= DISK_CRITICAL_PERCENT,
+  );
   const requiredFailures = components.filter(
     (component) =>
       (component.required &&
         ((!component.oneshot && !component.unit.active) ||
           (component.probe && !component.probe.ok))) ||
-      (component.required && component.oneshot && component.timer && !component.timer.active) ||
+      (component.required &&
+        component.oneshot &&
+        component.timer &&
+        !component.timer.active) ||
       (component.retired && component.unit.active),
   );
   const result = {
@@ -548,7 +587,9 @@ async function status() {
     diskWarnings,
     manifestProblems: manifestProblems(),
     health:
-      requiredFailures.length === 0 && manifestProblems().length === 0 && !diskCritical
+      requiredFailures.length === 0 &&
+      manifestProblems().length === 0 &&
+      !diskCritical
         ? "ok"
         : "degraded",
   };
@@ -558,20 +599,25 @@ async function status() {
     for (const component of components) {
       const health = component.probe ? ` probe=${component.probe.status}` : "";
       const isActive =
-        component.oneshot && component.timer ? component.timer.active : component.unit.active;
+        component.oneshot && component.timer
+          ? component.timer.active
+          : component.unit.active;
       const state =
         component.oneshot && component.timer
           ? component.timer.active
             ? "timer-active"
             : "timer-inactive"
           : component.unit.state;
-      console.log(`- ${component.id.padEnd(24)} ${isActive ? "UP" : "DOWN"} ${state}${health}`);
+      console.log(
+        `- ${component.id.padEnd(24)} ${isActive ? "UP" : "DOWN"} ${state}${health}`,
+      );
     }
     console.log(`- host ${result.host.hostname} ${result.host.kernel}`);
     console.log(
       `- memory ${result.memory.usedPercent}% used, swap ${result.memory.swapUsedPercent ?? 0}% used`,
     );
-    for (const row of result.disk) console.log(`- disk ${row.mount}: ${row.usedPercent}% used`);
+    for (const row of result.disk)
+      console.log(`- disk ${row.mount}: ${row.usedPercent}% used`);
     for (const row of result.network)
       console.log(
         `- net ${row.interface}: rx ${row.rxBytesPerSecond} B/s, tx ${row.txBytesPerSecond} B/s`,

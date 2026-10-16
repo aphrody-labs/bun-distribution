@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0 AND MIT
 // Derived from SpaceUI (packages/aphrody-spaceui/packages/ai/src/TaskCreateForm.tsx), MIT, rebuilt on Material Design 3.
 
-import { Button, Input, Select, SelectOption, TextArea } from "@aphrody/m3-primitives";
+import {
+  Button,
+  Input,
+  Select,
+  SelectOption,
+  TextArea,
+} from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
@@ -51,7 +57,11 @@ export function TaskCreateForm({
 
   const handleSubmit = useCallback(() => {
     if (!canSubmit) return;
-    onSubmit({ title: title.trim(), description: description.trim(), priority });
+    onSubmit({
+      title: title.trim(),
+      description: description.trim(),
+      priority,
+    });
     setTitle("");
     setDescription("");
     setPriority(defaultPriority);
@@ -110,11 +120,21 @@ export function TaskCreateForm({
       />
       <div className="flex items-center justify-end gap-2">
         {onCancel && (
-          <Button variant="text" size="lg" onClick={onCancel} disabled={isSubmitting}>
+          <Button
+            variant="text"
+            size="lg"
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
         )}
-        <Button variant="filled" size="lg" disabled={!canSubmit} onClick={handleSubmit}>
+        <Button
+          variant="filled"
+          size="lg"
+          disabled={!canSubmit}
+          onClick={handleSubmit}
+        >
           Create
         </Button>
       </div>

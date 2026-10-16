@@ -28,11 +28,16 @@ const titles: Record<string, string> = {
 };
 
 /** Null preserves titles supplied by a loaded source detail. */
-export function deriveTitleFromPath(pathname: string, search: string): string | null {
+export function deriveTitleFromPath(
+  pathname: string,
+  search: string,
+): string | null {
   const params = new URLSearchParams(search);
   if (pathname === "/studio") {
     const section = studioSection(params.get("section"));
-    return studioSections.find((entry) => entry.id === section)?.label ?? "Studio";
+    return (
+      studioSections.find((entry) => entry.id === section)?.label ?? "Studio"
+    );
   }
   if (pathname === "/explorer" && search) {
     if (params.get("view") === "device") return "Cet appareil";
@@ -59,8 +64,10 @@ export function deriveTitleFromPath(pathname: string, search: string): string | 
   if (titles[pathname]) return titles[pathname];
   if (pathname.startsWith("/docs/")) return "Documentation";
   if (pathname.startsWith("/templates/")) return "Templates";
-  if (pathname.startsWith("/material-3/") || pathname.startsWith("/showcase/")) return "Material 3";
-  if (pathname.startsWith("/tag/")) return `Tag : ${pathname.split("/")[2]?.slice(0, 8) ?? ""}`;
+  if (pathname.startsWith("/material-3/") || pathname.startsWith("/showcase/"))
+    return "Material 3";
+  if (pathname.startsWith("/tag/"))
+    return `Tag : ${pathname.split("/")[2]?.slice(0, 8) ?? ""}`;
   if (pathname.startsWith("/file-kinds/"))
     return `Fichiers : ${pathname.slice(12).replaceAll("_", " ")}`;
   if (pathname.startsWith("/sources/")) return null;

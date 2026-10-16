@@ -29,10 +29,18 @@ test("typed tooling subpaths reject invalid inputs without loading product FFI",
   closeNativeLibrary();
   expect(() => formatSource("x\0y")).toThrow(TypeError);
   expect(() => scanNodeProject("x\0y")).toThrow(TypeError);
-  expect(() => scanNodeProject(root, { mode: "invalid" } as never)).toThrow(TypeError);
-  expect(() => scanNodeProject(root, { dry_run: 3 } as never)).toThrow(TypeError);
-  expect(() => scanNodeProject(root, { ignore: [3] } as never)).toThrow(TypeError);
-  expect(() => scanNodeProject(root, { unknown: true } as never)).toThrow(TypeError);
+  expect(() => scanNodeProject(root, { mode: "invalid" } as never)).toThrow(
+    TypeError,
+  );
+  expect(() => scanNodeProject(root, { dry_run: 3 } as never)).toThrow(
+    TypeError,
+  );
+  expect(() => scanNodeProject(root, { ignore: [3] } as never)).toThrow(
+    TypeError,
+  );
+  expect(() => scanNodeProject(root, { unknown: true } as never)).toThrow(
+    TypeError,
+  );
   expect(nativeLibraryLoaded()).toBe(false);
 });
 
@@ -46,14 +54,19 @@ try {
 const native = test.skipIf(!available);
 const toolingProbe = probeNativeTooling();
 if (process.env.YOLO_TOOLING_LIB && !toolingProbe.available)
-  throw new Error(toolingProbe.error ?? "Selected tooling provider is unavailable");
+  throw new Error(
+    toolingProbe.error ?? "Selected tooling provider is unavailable",
+  );
 const tooling = test.skipIf(!toolingProbe.available);
 
 // The legacy C contract is checked explicitly, separately from production SDK bindings.
 function legacyTooling<S extends Record<string, FFIFunction>>(definitions: S) {
   loadNativeLibrary();
   const path = resolveNativeLibraryPath();
-  if (!path) throw new Error("Legacy C ABI qualification requires an Aphrody FFI artifact");
+  if (!path)
+    throw new Error(
+      "Legacy C ABI qualification requires an Aphrody FFI artifact",
+    );
   return dlopen(path, definitions);
 }
 
@@ -63,93 +76,118 @@ native(
     const version = runAphrodyCaptured(["version", "--json"]);
     expect(version.code).toBe(0);
     expect(JSON.parse(version.stdout).version).toMatch(/^\d+\.\d+\.\d+/);
-    const invalid = runAphrodyCaptured(["version", "--unknown-validation-flag"]);
+    const invalid = runAphrodyCaptured([
+      "version",
+      "--unknown-validation-flag",
+    ]);
     expect(invalid.code).toBe(2);
     expect(invalid.stderr).toContain("--unknown-validation-flag");
     expect(runAphrodyCaptured(["version", "--json"]).code).toBe(0);
   },
 );
 
-tooling("N2B reports findings, respects ignores and previews then applies fixes", () => {
-  writeFileSync(script, original);
-  const report = scanNodeProject(root);
-  expect(report.schema_version).toBe(2);
-  expect(
-    report.files
-      .flatMap((file) => file.findings)
-      .some((finding) => finding.rule_id === "shebang/node"),
-  ).toBe(true);
-  expect(readFileSync(script, "utf8")).toBe(original);
-  const preview = scanNodeProject(root, { mode: "fix", dry_run: true });
-  expect(preview.files.some((file) => file.changed)).toBe(true);
-  expect(readFileSync(script, "utf8")).toBe(original);
-  expect(scanNodeProject(root, { ignore: ["index.js"] }).findings_total).toBe(0);
-  scanNodeProject(root, { mode: "fix", dry_run: false });
-  expect(readFileSync(script, "utf8")).toContain("#!/usr/bin/env bun");
-  expect(() => scanNodeProject(join(root, "missing"))).toThrow("not a directory");
-});
+tooling(
+  "N2B reports findings, respects ignores and previews then applies fixes",
+  () => {
+    writeFileSync(script, original);
+    const report = scanNodeProject(root);
+    expect(report.schema_version).toBe(2);
+    expect(
+      report.files
+        .flatMap((file) => file.findings)
+        .some((finding) => finding.rule_id === "shebang/node"),
+    ).toBe(true);
+    expect(readFileSync(script, "utf8")).toBe(original);
+    const preview = scanNodeProject(root, { mode: "fix", dry_run: true });
+    expect(preview.files.some((file) => file.changed)).toBe(true);
+    expect(readFileSync(script, "utf8")).toBe(original);
+    expect(scanNodeProject(root, { ignore: ["index.js"] }).findings_total).toBe(
+      0,
+    );
+    scanNodeProject(root, { mode: "fix", dry_run: false });
+    expect(readFileSync(script, "utf8")).toContain("#!/usr/bin/env bun");
+    expect(() => scanNodeProject(join(root, "missing"))).toThrow(
+      "not a directory",
+    );
+  },
+);
 
-tooling("UTF16 helper preserves astral, lone-surrogate and high-byte newline offsets", () => {
-  const source = "😀\n\u0A00\u000A\uD800x\n";
-  const expected = Array.from({ length: source.length }, (_, index) => index).filter(
-    (index) => source.charCodeAt(index) === 10,
-  );
-  expect([...findNewlinesUtf16(source)]).toEqual(expected);
-  expect([...findNewlinesUtf16("")]).toEqual([]);
-});
+tooling(
+  "UTF16 helper preserves astral, lone-surrogate and high-byte newline offsets",
+  () => {
+    const source = "😀\n\u0A00\u000A\uD800x\n";
+    const expected = Array.from(
+      { length: source.length },
+      (_, index) => index,
+    ).filter((index) => source.charCodeAt(index) === 10);
+    expect([...findNewlinesUtf16(source)]).toEqual(expected);
+    expect([...findNewlinesUtf16("")]).toEqual([]);
+  },
+);
 
-tooling("Oxc uses the shared SDK owner independently of product FFI lifetime", () => {
-  const source = "const greeting='hello';console.log(greeting)";
-  expect(formatSource(source)).toContain('const greeting = "hello";');
-  expect(minifySource(source)).toContain("console.log");
-  expect(lintSource("const = ;").length).toBeGreaterThan(0);
-  expect(() => minifySource("const = ;")).toThrow("Oxc minify:");
-  closeNativeLibrary();
-  expect(formatSource(source)).toContain("const greeting");
-  expect(nativeLibraryLoaded()).toBe(false);
-});
+tooling(
+  "Oxc uses the shared SDK owner independently of product FFI lifetime",
+  () => {
+    const source = "const greeting='hello';console.log(greeting)";
+    expect(formatSource(source)).toContain('const greeting = "hello";');
+    expect(minifySource(source)).toContain("console.log");
+    expect(lintSource("const = ;").length).toBeGreaterThan(0);
+    expect(() => minifySource("const = ;")).toThrow("Oxc minify:");
+    closeNativeLibrary();
+    expect(formatSource(source)).toContain("const greeting");
+    expect(nativeLibraryLoaded()).toBe(false);
+  },
+);
 
 const referencePath = process.env.APHRODY_OXC_REFERENCE_LIB;
-test.skipIf(!referencePath)("aggregate Oxc matches the original fork bridge byte for byte", () => {
-  const definitions = {
-    aphrody_oxc_abi_version: { args: [], returns: "u32" },
-    aphrody_oxc_format: { args: ["cstring", "cstring"], returns: "ptr" },
-    aphrody_oxc_minify: { args: ["cstring", "cstring"], returns: "ptr" },
-    aphrody_oxc_lint: { args: ["cstring", "cstring"], returns: "ptr" },
-    aphrody_oxc_free: { args: ["ptr"], returns: "void" },
-  } as const;
-  const reference = dlopen(referencePath!, definitions);
-  const aggregate = legacyTooling(definitions);
-  try {
-    expect(reference.symbols.aphrody_oxc_abi_version()).toBe(
-      aggregate.symbols.aphrody_oxc_abi_version(),
-    );
-    for (const [source, filename] of [
-      ["const foo='hello';console.log(foo)", "fixture.js"],
-      ["interface Person {name: string};const greet=(p:Person)=>p.name", "fixture.ts"],
-      ["const component = <div title='a'>hello</div>", "fixture.jsx"],
-      ["const = ;", "invalid.js"],
-      ["let α = '😀'; console.log(α)", "unicode.js"],
-    ]) {
-      for (const operation of ["format", "minify", "lint"] as const) {
-        const symbol = `aphrody_oxc_${operation}` as const;
-        const input = Buffer.from(`${source}\0`);
-        const path = Buffer.from(`${filename}\0`);
-        const expected = reference.symbols[symbol](input, path);
-        const actual = aggregate.symbols[symbol](input, path);
-        try {
-          expect(new CString(actual!).toString()).toBe(new CString(expected!).toString());
-        } finally {
-          reference.symbols.aphrody_oxc_free(expected);
-          aggregate.symbols.aphrody_oxc_free(actual);
+test.skipIf(!referencePath)(
+  "aggregate Oxc matches the original fork bridge byte for byte",
+  () => {
+    const definitions = {
+      aphrody_oxc_abi_version: { args: [], returns: "u32" },
+      aphrody_oxc_format: { args: ["cstring", "cstring"], returns: "ptr" },
+      aphrody_oxc_minify: { args: ["cstring", "cstring"], returns: "ptr" },
+      aphrody_oxc_lint: { args: ["cstring", "cstring"], returns: "ptr" },
+      aphrody_oxc_free: { args: ["ptr"], returns: "void" },
+    } as const;
+    const reference = dlopen(referencePath!, definitions);
+    const aggregate = legacyTooling(definitions);
+    try {
+      expect(reference.symbols.aphrody_oxc_abi_version()).toBe(
+        aggregate.symbols.aphrody_oxc_abi_version(),
+      );
+      for (const [source, filename] of [
+        ["const foo='hello';console.log(foo)", "fixture.js"],
+        [
+          "interface Person {name: string};const greet=(p:Person)=>p.name",
+          "fixture.ts",
+        ],
+        ["const component = <div title='a'>hello</div>", "fixture.jsx"],
+        ["const = ;", "invalid.js"],
+        ["let α = '😀'; console.log(α)", "unicode.js"],
+      ]) {
+        for (const operation of ["format", "minify", "lint"] as const) {
+          const symbol = `aphrody_oxc_${operation}` as const;
+          const input = Buffer.from(`${source}\0`);
+          const path = Buffer.from(`${filename}\0`);
+          const expected = reference.symbols[symbol](input, path);
+          const actual = aggregate.symbols[symbol](input, path);
+          try {
+            expect(new CString(actual!).toString()).toBe(
+              new CString(expected!).toString(),
+            );
+          } finally {
+            reference.symbols.aphrody_oxc_free(expected);
+            aggregate.symbols.aphrody_oxc_free(actual);
+          }
         }
       }
+    } finally {
+      aggregate.close();
+      reference.close();
     }
-  } finally {
-    aggregate.close();
-    reference.close();
-  }
-});
+  },
+);
 
 const n2bReferencePath = process.env.APHRODY_N2B_REFERENCE_LIB;
 test.skipIf(!n2bReferencePath)(
@@ -158,7 +196,10 @@ test.skipIf(!n2bReferencePath)(
     const definitions = {
       node2bun_abi_version: { args: [], returns: "u32" },
       node2bun_scan_json: { args: ["cstring"], returns: "ptr" },
-      node2bun_scan_with_options_json: { args: ["cstring", "cstring"], returns: "ptr" },
+      node2bun_scan_with_options_json: {
+        args: ["cstring", "cstring"],
+        returns: "ptr",
+      },
       node2bun_string_free: { args: ["ptr"], returns: "void" },
     } as const;
     const reference = dlopen(n2bReferencePath!, definitions);
@@ -177,8 +218,14 @@ test.skipIf(!n2bReferencePath)(
         { unknown: true },
       ]) {
         const encoded = Buffer.from(`${JSON.stringify(options)}\0`);
-        const expected = reference.symbols.node2bun_scan_with_options_json(path, encoded);
-        const actual = aggregate.symbols.node2bun_scan_with_options_json(path, encoded);
+        const expected = reference.symbols.node2bun_scan_with_options_json(
+          path,
+          encoded,
+        );
+        const actual = aggregate.symbols.node2bun_scan_with_options_json(
+          path,
+          encoded,
+        );
         try {
           expect(JSON.parse(new CString(actual!).toString())).toEqual(
             JSON.parse(new CString(expected!).toString()),

@@ -57,7 +57,9 @@ export function CharacterStatsPanel({ characterId }: { characterId: string }) {
   const row = useQuery({
     queryKey: ["wiki-studio", "db_characters", characterId, "stats"],
     queryFn: () =>
-      client.get<Record<string, unknown>>(`/db_characters/${encodeURIComponent(characterId)}`),
+      client.get<Record<string, unknown>>(
+        `/db_characters/${encodeURIComponent(characterId)}`,
+      ),
     staleTime: 30_000,
   });
 
@@ -80,10 +82,14 @@ export function CharacterStatsPanel({ characterId }: { characterId: string }) {
           ...(s.accent ? { accent: s.accent } : {}),
         }))
         .filter((s) => s.label && s.value);
-      return client.put(`/db_characters/${encodeURIComponent(characterId)}`, { stats: cleaned });
+      return client.put(`/db_characters/${encodeURIComponent(characterId)}`, {
+        stats: cleaned,
+      });
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["wiki-studio", "db_characters", characterId] });
+      qc.invalidateQueries({
+        queryKey: ["wiki-studio", "db_characters", characterId],
+      });
       setToast("Stats enregistrées.");
     },
     onError: (e: Error) => setToast(`Erreur : ${e.message}`),
@@ -117,12 +123,15 @@ export function CharacterStatsPanel({ characterId }: { characterId: string }) {
             Stats (cartes scouter)
           </p>
           <p className="mt-0.5 text-[11px] text-white/50">
-            En plus du Ki / Ki max — ex. Vitesse, Rang, Puissance d&apos;attaque…
+            En plus du Ki / Ki max — ex. Vitesse, Rang, Puissance
+            d&apos;attaque…
           </p>
         </div>
         <button
           type="button"
-          onClick={() => setStats((s) => [...s, { label: "", value: "", accent: "orange" }])}
+          onClick={() =>
+            setStats((s) => [...s, { label: "", value: "", accent: "orange" }])
+          }
           className="btn btn-ghost px-2 text-xs"
         >
           <Plus className="h-3.5 w-3.5" />
@@ -134,7 +143,8 @@ export function CharacterStatsPanel({ characterId }: { characterId: string }) {
 
       {stats.length === 0 ? (
         <p className="py-4 text-center text-xs italic text-white/50">
-          Aucune stat custom. Ki / Ki max restent gérés dans le formulaire principal.
+          Aucune stat custom. Ki / Ki max restent gérés dans le formulaire
+          principal.
         </p>
       ) : (
         <ul className="space-y-2">
@@ -198,7 +208,9 @@ export function CharacterStatsPanel({ characterId }: { characterId: string }) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setStats((arr) => arr.filter((_, j) => j !== i))}
+                  onClick={() =>
+                    setStats((arr) => arr.filter((_, j) => j !== i))
+                  }
                   className="btn btn-ghost px-2 text-red-400"
                   title="Supprimer"
                 >

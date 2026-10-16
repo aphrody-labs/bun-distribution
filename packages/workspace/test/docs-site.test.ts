@@ -1,10 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import {
+  mkdtemp,
+  mkdir,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { exportDocumentationSite, type SiteDocument } from "../src/docs-site.ts";
+import {
+  exportDocumentationSite,
+  type SiteDocument,
+} from "../src/docs-site.ts";
 
 async function fixture(
   run: (root: string, documents: SiteDocument[]) => Promise<void>,
@@ -18,10 +28,15 @@ async function fixture(
         title: "Guide A",
         text: '# Guide A\n[Guide B](b.md)\n[Code](../../src/private.ts)\n<script>alert(1)</script>\n<img src="https://example.com/pixel">\n[Bad](javascript:alert)\n```html\n<script>example</script>\n```',
       },
-      { path: "docs/guides/b.md", title: "Guide B", text: "# Guide B\n[Guide A](a.md)" },
+      {
+        path: "docs/guides/b.md",
+        title: "Guide B",
+        text: "# Guide B\n[Guide A](a.md)",
+      },
     ];
     // oxlint-disable-next-line no-await-in-loop -- fixture documents are written in order before the export under test
-    for (const source of sources) await writeFile(join(root, source.path), source.text);
+    for (const source of sources)
+      await writeFile(join(root, source.path), source.text);
     await run(
       root,
       sources.map(({ path, title, text }) => ({
@@ -39,8 +54,14 @@ describe("private documentation site", () => {
   test("exports provenance, local navigation and inert Markdown/HTML", async () => {
     await fixture(async (root, documents) => {
       const output = join(root, ".cache/documentation-site");
-      expect(await exportDocumentationSite(root, documents, output)).toEqual({ pages: 2, output });
-      const html = await readFile(join(output, "docs/guides/a.md.html"), "utf8");
+      expect(await exportDocumentationSite(root, documents, output)).toEqual({
+        pages: 2,
+        output,
+      });
+      const html = await readFile(
+        join(output, "docs/guides/a.md.html"),
+        "utf8",
+      );
       expect(html).toContain('href="b.md.html"');
       expect(html).toContain('href="a.md"');
       expect(html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
@@ -54,20 +75,32 @@ describe("private documentation site", () => {
         await readFile(join(root, documents[0]!.path), "utf8"),
       );
       expect(
-        JSON.parse(await readFile(join(output, "export-manifest.json"), "utf8")).visibility,
+        JSON.parse(await readFile(join(output, "export-manifest.json"), "utf8"))
+          .visibility,
       ).toBe("private");
-      expect(await readFile(join(output, "llms.txt"), "utf8")).toContain("docs/guides/a.md");
-      expect(await readFile(join(output, "llms-full.txt"), "utf8")).toContain(documents[0]!.sha256);
-      expect(await exportDocumentationSite(root, documents, output)).toEqual({ pages: 2, output });
+      expect(await readFile(join(output, "llms.txt"), "utf8")).toContain(
+        "docs/guides/a.md",
+      );
+      expect(await readFile(join(output, "llms-full.txt"), "utf8")).toContain(
+        documents[0]!.sha256,
+      );
+      expect(await exportDocumentationSite(root, documents, output)).toEqual({
+        pages: 2,
+        output,
+      });
     });
   });
   test("rejects unsafe output, traversal and SHA mismatch before writes", async () => {
     await fixture(async (root, documents) => {
-      for (const destination of [root, join(root, "docs/export"), join(root, "apps/site/public")]) {
+      for (const destination of [
+        root,
+        join(root, "docs/export"),
+        join(root, "apps/site/public"),
+      ]) {
         // oxlint-disable-next-line no-await-in-loop -- export destinations are checked one by one; each export is asserted before the next
-        await expect(exportDocumentationSite(root, documents, destination)).rejects.toThrow(
-          "Output",
-        );
+        await expect(
+          exportDocumentationSite(root, documents, destination),
+        ).rejects.toThrow("Output");
       }
       await expect(
         exportDocumentationSite(
@@ -90,11 +123,22 @@ describe("private documentation site", () => {
       const output = join(root, ".cache/documentation-site");
       await mkdir(output, { recursive: true });
       await writeFile(join(output, "keep.txt"), "owned by another tool");
-      await expect(exportDocumentationSite(root, documents, output)).rejects.toThrow();
-      expect(await readFile(join(output, "keep.txt"), "utf8")).toBe("owned by another tool");
-      await symlink(join(root, "docs/guides/a.md"), join(root, "docs/guides/link.md"));
       await expect(
-        exportDocumentationSite(root, [{ ...documents[0]!, path: "docs/guides/link.md" }], output),
+        exportDocumentationSite(root, documents, output),
+      ).rejects.toThrow();
+      expect(await readFile(join(output, "keep.txt"), "utf8")).toBe(
+        "owned by another tool",
+      );
+      await symlink(
+        join(root, "docs/guides/a.md"),
+        join(root, "docs/guides/link.md"),
+      );
+      await expect(
+        exportDocumentationSite(
+          root,
+          [{ ...documents[0]!, path: "docs/guides/link.md" }],
+          output,
+        ),
       ).rejects.toThrow("Symlink refused");
       await symlink(output, join(root, "linked-output"));
       await expect(
@@ -106,7 +150,9 @@ describe("private documentation site", () => {
     const output = await mkdtemp(join(tmpdir(), "private-docs-out-"));
     try {
       await fixture(async (root, documents) => {
-        expect((await exportDocumentationSite(root, documents, output)).pages).toBe(2);
+        expect(
+          (await exportDocumentationSite(root, documents, output)).pages,
+        ).toBe(2);
       });
     } finally {
       await rm(output, { recursive: true, force: true });

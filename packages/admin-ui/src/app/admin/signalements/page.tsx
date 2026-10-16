@@ -18,10 +18,16 @@ import {
 } from "@/lib/report-types";
 import { PlainField } from "@/components/editor/PlainField";
 
-type ReportsResponse = { ok: true; items: ReportRow[]; counts: Record<string, number> };
+type ReportsResponse = {
+  ok: true;
+  items: ReportRow[];
+  counts: Record<string, number>;
+};
 
 async function fetchReports(status: string): Promise<ReportsResponse> {
-  const res = await fetch(`/api/admin/reports?status=${status}`, { credentials: "same-origin" });
+  const res = await fetch(`/api/admin/reports?status=${status}`, {
+    credentials: "same-origin",
+  });
   if (!res.ok) throw new Error(`reports ${res.status}`);
   return res.json() as Promise<ReportsResponse>;
 }
@@ -64,7 +70,8 @@ export default function SignalementsPage() {
     placeholderData: (prev) => prev,
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-reports"] });
+  const invalidate = () =>
+    qc.invalidateQueries({ queryKey: ["admin-reports"] });
 
   const items = q.data?.items ?? [];
   const counts = q.data?.counts ?? {};
@@ -85,8 +92,9 @@ export default function SignalementsPage() {
           Signalements
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/60">
-          Remontées « Signaler une erreur » des membres connectés. Traite-les comme des tickets :
-          ouvert → en cours → résolu. Distinct des tickets de support Discord.
+          Remontées « Signaler une erreur » des membres connectés. Traite-les
+          comme des tickets : ouvert → en cours → résolu. Distinct des tickets
+          de support Discord.
         </p>
       </div>
 
@@ -113,12 +121,16 @@ export default function SignalementsPage() {
             </span>
           </button>
         ))}
-        {q.isFetching && <Chargement className="h-4 w-4 animate-spin self-center text-white/50" />}
+        {q.isFetching && (
+          <Chargement className="h-4 w-4 animate-spin self-center text-white/50" />
+        )}
       </div>
 
       {q.isError && (
         <div className="card border-dbz-red/40">
-          <p className="text-sm text-dbz-red">Impossible de charger les signalements.</p>
+          <p className="text-sm text-dbz-red">
+            Impossible de charger les signalements.
+          </p>
         </div>
       )}
 
@@ -126,9 +138,12 @@ export default function SignalementsPage() {
         <div className="dbz-panel py-16 text-center">
           <Drapeau className="mx-auto mb-3 h-8 w-8 text-white/20" />
           <p className="font-saiyan uppercase tracking-widest text-white/50">
-            Aucun signalement {filter !== "all" ? reportStatusLabel(filter).toLowerCase() : ""}
+            Aucun signalement{" "}
+            {filter !== "all" ? reportStatusLabel(filter).toLowerCase() : ""}
           </p>
-          <p className="mt-1 text-sm text-white/50">Les remontées des membres apparaîtront ici.</p>
+          <p className="mt-1 text-sm text-white/50">
+            Les remontées des membres apparaîtront ici.
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -141,7 +156,13 @@ export default function SignalementsPage() {
   );
 }
 
-function ReportCard({ report, onChanged }: { report: ReportRow; onChanged: () => void }) {
+function ReportCard({
+  report,
+  onChanged,
+}: {
+  report: ReportRow;
+  onChanged: () => void;
+}) {
   const [note, setNote] = useState(report.adminNote ?? "");
 
   const patch = useMutation({
@@ -191,7 +212,9 @@ function ReportCard({ report, onChanged }: { report: ReportRow; onChanged: () =>
         >
           {report.path}
         </Link>
-        <span className="ml-auto text-[11px] text-white/50">{fmtDate(report.createdAt)}</span>
+        <span className="ml-auto text-[11px] text-white/50">
+          {fmtDate(report.createdAt)}
+        </span>
       </div>
 
       {/* Message */}
@@ -204,7 +227,9 @@ function ReportCard({ report, onChanged }: { report: ReportRow; onChanged: () =>
         <span>
           Par <span className="text-white/75">{report.username ?? "?"}</span>
         </span>
-        {report.discordId && <span className="font-mono">Discord ID : {report.discordId}</span>}
+        {report.discordId && (
+          <span className="font-mono">Discord ID : {report.discordId}</span>
+        )}
         {report.resolvedBy && <span>· traité par {report.resolvedBy}</span>}
       </div>
 
@@ -252,7 +277,8 @@ function ReportCard({ report, onChanged }: { report: ReportRow; onChanged: () =>
           type="button"
           disabled={busy}
           onClick={() => {
-            if (window.confirm("Supprimer définitivement ce signalement ?")) remove.mutate();
+            if (window.confirm("Supprimer définitivement ce signalement ?"))
+              remove.mutate();
           }}
           className="ml-auto inline-flex items-center gap-1 rounded border border-white/15 px-2.5 py-1 text-xs text-red-400 transition-colors hover:border-dbz-red hover:text-red-300 disabled:opacity-40"
         >

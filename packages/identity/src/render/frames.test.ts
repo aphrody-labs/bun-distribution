@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
 import { PET } from "../pet";
-import { atlasUv, fitRect, PetTimeline, petStates, sliceDepths, swayYaw } from "./frames";
+import {
+  atlasUv,
+  fitRect,
+  PetTimeline,
+  petStates,
+  sliceDepths,
+  swayYaw,
+} from "./frames";
 
 describe("atlasUv", () => {
   test("normalises a frame rectangle against the atlas size", () => {

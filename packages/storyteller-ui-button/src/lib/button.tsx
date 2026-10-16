@@ -69,7 +69,9 @@ export const Button = ({
   const className = twMerge(
     "w-fit rounded-[3px] font-mono text-xs font-semibold uppercase tracking-[0.12em] px-3.5 py-2 border border-transparent focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/60 transition-colors duration-150 flex gap-2 items-center justify-center",
     getVariantClassNames(propsVariant),
-    (propsVariant === "secondary" || propsVariant === "action" || propsVariant === "ghost") &&
+    (propsVariant === "secondary" ||
+      propsVariant === "action" ||
+      propsVariant === "ghost") &&
       NEUTRAL_BUTTON_HOVER_CLASSES,
     propsClassName,
     disabledClass,

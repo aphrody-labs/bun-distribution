@@ -53,7 +53,11 @@ function buildResampledBuffer({
 }): AudioBuffer {
   const outputLength = Math.max(1, Math.ceil(clipDuration * targetSampleRate));
   const numChannels = Math.max(1, Math.min(2, sourceBuffer.numberOfChannels));
-  const outputBuffer = audioContext.createBuffer(numChannels, outputLength, targetSampleRate);
+  const outputBuffer = audioContext.createBuffer(
+    numChannels,
+    outputLength,
+    targetSampleRate,
+  );
 
   for (let channel = 0; channel < numChannels; channel++) {
     const sourceData = sourceBuffer.getChannelData(
@@ -63,7 +67,8 @@ function buildResampledBuffer({
 
     for (let i = 0; i < outputLength; i++) {
       const clipTime = i / targetSampleRate;
-      const sourceTime = trimStart + getSourceTimeAtClipTime({ clipTime, retime });
+      const sourceTime =
+        trimStart + getSourceTimeAtClipTime({ clipTime, retime });
       outputData[i] = sampleLinear({
         channelData: sourceData,
         position: sourceTime * sourceBuffer.sampleRate,
@@ -90,20 +95,39 @@ async function buildPitchPreservedBuffer({
   const nativeSampleRate = sourceBuffer.sampleRate;
   const sourceDuration = clipDuration * rate;
   const startSample = Math.max(0, Math.floor(trimStart * nativeSampleRate));
-  const numSourceSamples = Math.max(1, Math.ceil(sourceDuration * nativeSampleRate));
+  const numSourceSamples = Math.max(
+    1,
+    Math.ceil(sourceDuration * nativeSampleRate),
+  );
   const available = Math.max(0, sourceBuffer.length - startSample);
   const actualSamples = Math.max(1, Math.min(numSourceSamples, available));
   const numChannels = Math.max(1, Math.min(2, sourceBuffer.numberOfChannels));
 
   // Resample to targetSampleRate first — soundtouchjs reads raw channel data
   // and does not respect the source buffer's native sample rate.
-  const resampledLength = Math.max(1, Math.ceil(sourceDuration * targetSampleRate));
-  const resampleCtx = new OfflineAudioContext(numChannels, resampledLength, targetSampleRate);
-  const nativeBuffer = resampleCtx.createBuffer(numChannels, actualSamples, nativeSampleRate);
+  const resampledLength = Math.max(
+    1,
+    Math.ceil(sourceDuration * targetSampleRate),
+  );
+  const resampleCtx = new OfflineAudioContext(
+    numChannels,
+    resampledLength,
+    targetSampleRate,
+  );
+  const nativeBuffer = resampleCtx.createBuffer(
+    numChannels,
+    actualSamples,
+    nativeSampleRate,
+  );
 
   for (let ch = 0; ch < numChannels; ch++) {
-    const src = sourceBuffer.getChannelData(Math.min(ch, sourceBuffer.numberOfChannels - 1));
-    nativeBuffer.copyToChannel(src.subarray(startSample, startSample + actualSamples), ch);
+    const src = sourceBuffer.getChannelData(
+      Math.min(ch, sourceBuffer.numberOfChannels - 1),
+    );
+    nativeBuffer.copyToChannel(
+      src.subarray(startSample, startSample + actualSamples),
+      ch,
+    );
   }
 
   const resampleSourceNode = resampleCtx.createBufferSource();
@@ -113,7 +137,11 @@ async function buildPitchPreservedBuffer({
   const resampledBuffer = await resampleCtx.startRendering();
 
   const outputSamples = Math.max(1, Math.ceil(clipDuration * targetSampleRate));
-  const stretchCtx = new OfflineAudioContext(numChannels, outputSamples, targetSampleRate);
+  const stretchCtx = new OfflineAudioContext(
+    numChannels,
+    outputSamples,
+    targetSampleRate,
+  );
   const shifter = new PitchShifter(stretchCtx, resampledBuffer, 4096);
   shifter.tempo = rate;
   shifter.pitch = 1;
@@ -139,7 +167,8 @@ export async function renderRetimedBuffer({
   const targetSampleRate = audioContext.sampleRate;
   const rate = clampRetimeRate({ rate: retime?.rate ?? 1 });
   const usePitchPreservation =
-    shouldMaintainPitch({ rate, maintainPitch }) && Math.abs(rate - 1) > RATE_EPSILON;
+    shouldMaintainPitch({ rate, maintainPitch }) &&
+    Math.abs(rate - 1) > RATE_EPSILON;
 
   if (usePitchPreservation) {
     return buildPitchPreservedBuffer({

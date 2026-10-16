@@ -22,7 +22,9 @@ export interface GeneratePluginOptions {
  * 3. TypeScript 7.0.2 official engine & types (@types/bun + node_modules/typescript)
  * 4. NHITL (Non-Human-In-The-Loop) execution doctrine & subagent autonomy
  */
-export async function generateUnifiedYoloPlugin(options: GeneratePluginOptions): Promise<{
+export async function generateUnifiedYoloPlugin(
+  options: GeneratePluginOptions,
+): Promise<{
   readonly pluginDir: string;
   readonly filesGenerated: readonly string[];
 }> {
@@ -61,10 +63,17 @@ export async function generateUnifiedYoloPlugin(options: GeneratePluginOptions):
 
   // 3. Read official TypeScript 7 package information
   let tsVersion = "7.0.2";
-  const tsPkgPath = join(yoloRoot, "node_modules", "typescript", "package.json");
+  const tsPkgPath = join(
+    yoloRoot,
+    "node_modules",
+    "typescript",
+    "package.json",
+  );
   if (existsSync(tsPkgPath)) {
     try {
-      const tsPkg = JSON.parse(await Bun.file(tsPkgPath).text()) as { version?: string };
+      const tsPkg = JSON.parse(await Bun.file(tsPkgPath).text()) as {
+        version?: string;
+      };
       if (tsPkg.version) tsVersion = tsPkg.version;
     } catch {}
   }
@@ -76,7 +85,8 @@ export async function generateUnifiedYoloPlugin(options: GeneratePluginOptions):
   const manifest: PluginManifest = {
     name: pluginName,
     version: pluginVersion,
-    description: "Unified YOLO autonomous developer runtime & Bun-TS7 native industrial engine",
+    description:
+      "Unified YOLO autonomous developer runtime & Bun-TS7 native industrial engine",
     author: "aphrody-dev <contact@aphrody.com>",
     license: "Apache-2.0",
     repository: "https://github.com/aphrody-labs/yolo.git",
@@ -88,8 +98,14 @@ export async function generateUnifiedYoloPlugin(options: GeneratePluginOptions):
   await writeContent("plugin.json", JSON.stringify(manifest, null, 2));
 
   // Generate .claude-plugin/plugin.json & .codex-plugin/plugin.json
-  await writeContent(".claude-plugin/plugin.json", JSON.stringify(manifest, null, 2));
-  await writeContent(".codex-plugin/plugin.json", JSON.stringify(manifest, null, 2));
+  await writeContent(
+    ".claude-plugin/plugin.json",
+    JSON.stringify(manifest, null, 2),
+  );
+  await writeContent(
+    ".codex-plugin/plugin.json",
+    JSON.stringify(manifest, null, 2),
+  );
 
   // Generate hooks.json & hooks/hooks.json (NHITL session-start hook)
   const hooksConfig: PluginHooksManifest = {
@@ -101,7 +117,8 @@ export async function generateUnifiedYoloPlugin(options: GeneratePluginOptions):
           hooks: [
             {
               type: "command",
-              command: 'bash "${CLAUDE_PLUGIN_ROOT:-.}/hooks/scripts/session-start.sh"',
+              command:
+                'bash "${CLAUDE_PLUGIN_ROOT:-.}/hooks/scripts/session-start.sh"',
               timeout: 10,
             },
           ],

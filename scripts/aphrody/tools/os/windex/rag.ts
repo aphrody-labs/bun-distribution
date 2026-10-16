@@ -5,7 +5,14 @@
 // incremental by content hash) so `aphrody home query` and the MCP `aphrody_rag_search` see them. Cards are only
 // rewritten when their text changes and removed when their node disappears.
 import type { SQL } from "bun";
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { aphrodyBin, RECORD_VERSION, type Config } from "./config.ts";
 
@@ -14,7 +21,10 @@ export const DIR_DEPTH = { graph: 4, other: 2 };
 
 const safe = (s: string) => s.replace(/[^A-Za-z0-9._-]+/g, "_").slice(0, 80);
 const short = (s: string) =>
-  new Bun.CryptoHasher("sha256").update(s.toLowerCase()).digest("hex").slice(0, 12);
+  new Bun.CryptoHasher("sha256")
+    .update(s.toLowerCase())
+    .digest("hex")
+    .slice(0, 12);
 
 /** Card file of a node: `<kind>/<2 hex>/<name>-<hash>.md` (flat, far below MAX_PATH). */
 export function cardPath(
@@ -28,7 +38,9 @@ export function cardPath(
 }
 
 const line = (label: string, value: unknown) =>
-  value === null || value === undefined || value === "" ? "" : `- ${label}: ${value}\n`;
+  value === null || value === undefined || value === ""
+    ? ""
+    : `- ${label}: ${value}\n`;
 
 const list = (items: string[] | null | undefined, max: number) => {
   if (!items?.length) return null;
@@ -94,17 +106,25 @@ export function peCardText(r: PeCard): string {
         .join(", "),
     ) +
     line("Size", `${r.size} bytes`) +
-    line("Modified", r.modified_at ? new Date(r.modified_at).toISOString() : null) +
+    line(
+      "Modified",
+      r.modified_at ? new Date(r.modified_at).toISOString() : null,
+    ) +
     line("SHA-256", r.sha256) +
     line("Imported modules", list(r.modules, 120)) +
     line("Imports resolve to", list(r.resolved, 120)) +
     line("Imported functions", r.n_imports) +
     line(
       "Imported by",
-      r.n_importers ? `${r.n_importers} images: ${list(r.importers, 40)}` : null,
+      r.n_importers
+        ? `${r.n_importers} images: ${list(r.importers, 40)}`
+        : null,
     ) +
     line("Export name", r.export_name) +
-    line("Exports", r.n_exports ? `${r.n_exports}: ${list(r.exports, 150)}` : null) +
+    line(
+      "Exports",
+      r.n_exports ? `${r.n_exports}: ${list(r.exports, 150)}` : null,
+    ) +
     line("Hosts services", list(r.services, 40))
   );
 }
@@ -127,7 +147,10 @@ export function dirCardText(r: DirCard): string {
     line("Files", r.n_files) +
     line("PE images", r.n_pe) +
     line("Bytes (direct files)", r.bytes) +
-    line("Modified", r.modified_at ? new Date(r.modified_at).toISOString() : null) +
+    line(
+      "Modified",
+      r.modified_at ? new Date(r.modified_at).toISOString() : null,
+    ) +
     line("Entries", list(r.children, 300))
   );
 }
@@ -156,7 +179,10 @@ export function svcCardText(r: SvcCard): string {
     line("Start", r.start_mode) +
     line("Group", r.grp) +
     line("Account", r.object_name) +
-    line("Description", r.description && !r.description.startsWith("@") ? r.description : null) +
+    line(
+      "Description",
+      r.description && !r.description.startsWith("@") ? r.description : null,
+    ) +
     line("Image path", r.image_path) +
     line("Image file", r.image) +
     line("Service DLL", r.service_dll) +
@@ -174,7 +200,12 @@ export type RagStats = {
   ms: number;
 };
 
-function writeCard(file: string, text: string, keep: Set<string>, stats: RagStats): void {
+function writeCard(
+  file: string,
+  text: string,
+  keep: Set<string>,
+  stats: RagStats,
+): void {
   keep.add(file);
   stats.cards++;
   if (existsSync(file) && readFileSync(file, "utf8") === text) {
@@ -203,7 +234,13 @@ export async function buildCards(
 ): Promise<{ dir: string } & RagStats> {
   const t0 = performance.now();
   const dir = join(cfg.dir, "rag");
-  const stats: RagStats = { written: 0, unchanged: 0, removed: 0, cards: 0, ms: 0 };
+  const stats: RagStats = {
+    written: 0,
+    unchanged: 0,
+    removed: 0,
+    cards: 0,
+    ms: 0,
+  };
   const keep = new Set<string>();
 
   // PE images: every image below a graph root, executables and drivers elsewhere.
@@ -233,7 +270,12 @@ export async function buildCards(
         AND position('\\winsxs\\' IN f.path_lc) = 0
       ORDER BY p.node_id LIMIT ${page}`;
     for (const r of rows)
-      writeCard(cardPath(dir, "pe", r.path, r.name), peCardText(r), keep, stats);
+      writeCard(
+        cardPath(dir, "pe", r.path, r.name),
+        peCardText(r),
+        keep,
+        stats,
+      );
     if (rows.length < page) break;
     after = Number(rows.at(-1)!.id);
   }
@@ -241,7 +283,9 @@ export async function buildCards(
   // Directories down to a bounded depth below each root (deeper below graph roots).
   for (const root of await sql`SELECT path, path_lc, graph FROM windex.root`) {
     const depth = root.graph ? DIR_DEPTH.graph : DIR_DEPTH.other;
-    const base = root.path_lc.endsWith("\\") ? root.path_lc : `${root.path_lc}\\`;
+    const base = root.path_lc.endsWith("\\")
+      ? root.path_lc
+      : `${root.path_lc}\\`;
     const baseDepth = base.split("\\").length - 1;
     let last = "";
     for (;;) {
@@ -262,7 +306,12 @@ export async function buildCards(
                (SELECT count(*) FROM windex.fs_node s WHERE s.parent_id = d.parent_id AND s.is_dir) <= 500)
         ORDER BY d.path_lc LIMIT ${page}`;
       for (const r of rows)
-        writeCard(cardPath(dir, "dir", r.path, r.name), dirCardText(r), keep, stats);
+        writeCard(
+          cardPath(dir, "dir", r.path, r.name),
+          dirCardText(r),
+          keep,
+          stats,
+        );
       if (rows.length < page) break;
       last = rows.at(-1)!.path_lc;
     }
@@ -277,7 +326,12 @@ export async function buildCards(
          WHERE e.dst = s.id AND e.kind = 'depends_on') AS dependents
     FROM windex.service s ORDER BY s.name`;
   for (const r of svcs)
-    writeCard(cardPath(dir, "svc", r.name, r.name), svcCardText(r), keep, stats);
+    writeCard(
+      cardPath(dir, "svc", r.name, r.name),
+      svcCardText(r),
+      keep,
+      stats,
+    );
 
   for (const f of files(dir)) {
     if (!keep.has(f)) {
@@ -290,13 +344,19 @@ export async function buildCards(
 }
 
 /** Runs the home pipeline on the card directory (`aphrody-home index <dir> --label windex --state <home>`). */
-export async function indexCards(cfg: Config, dir: string): Promise<{ code: number; out: string }> {
+export async function indexCards(
+  cfg: Config,
+  dir: string,
+): Promise<{ code: number; out: string }> {
   const bin = aphrodyBin(cfg.home, "aphrody-home");
-  const proc = Bun.spawn([bin, "--state", cfg.home, "index", dir, "--label", RAG_LABEL], {
-    stdout: "pipe",
-    stderr: "pipe",
-    windowsHide: true,
-  });
+  const proc = Bun.spawn(
+    [bin, "--state", cfg.home, "index", dir, "--label", RAG_LABEL],
+    {
+      stdout: "pipe",
+      stderr: "pipe",
+      windowsHide: true,
+    },
+  );
   const [out, err] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
@@ -312,7 +372,17 @@ export async function queryHome(
 ): Promise<{ code: number; out: string }> {
   const bin = aphrodyBin(cfg.home, "aphrody-home");
   const proc = Bun.spawn(
-    [bin, "--state", cfg.home, "query", text, "--limit", String(limit), "--kind", "chunk"],
+    [
+      bin,
+      "--state",
+      cfg.home,
+      "query",
+      text,
+      "--limit",
+      String(limit),
+      "--kind",
+      "chunk",
+    ],
     {
       stdout: "pipe",
       stderr: "pipe",

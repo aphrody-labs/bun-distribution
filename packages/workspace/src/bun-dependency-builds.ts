@@ -21,7 +21,8 @@ export interface DependencyBuild {
 }
 
 function hasBuiltEntry(value: unknown): boolean {
-  if (typeof value === "string") return /^(?:\.\/)?(?:dist|build)\//.test(value);
+  if (typeof value === "string")
+    return /^(?:\.\/)?(?:dist|build)\//.test(value);
   if (value !== null && typeof value === "object") {
     return Object.values(value).some(hasBuiltEntry);
   }
@@ -55,7 +56,9 @@ export async function dependencyBuildPlan(
     if (!item.manifest.name)
       throw new Error(`Workspace manifest has no package name: ${item.path}`);
     if (owners.has(item.manifest.name))
-      throw new Error(`Duplicate workspace artifact owner: ${item.manifest.name}`);
+      throw new Error(
+        `Duplicate workspace artifact owner: ${item.manifest.name}`,
+      );
     owners.set(item.manifest.name, item);
   }
   const builds: DependencyBuild[] = [];
@@ -76,7 +79,8 @@ export async function dependencyBuildPlan(
   };
   const visit = (name: string) => {
     const item = owners.get(name);
-    if (!item) throw new Error(`Workspace dependency has no active owner: ${name}`);
+    if (!item)
+      throw new Error(`Workspace dependency has no active owner: ${name}`);
     if (visited.has(name)) return;
     const cycle = active.indexOf(name);
     if (cycle !== -1) {
@@ -89,12 +93,15 @@ export async function dependencyBuildPlan(
     }
     active.push(name);
     const { manifest } = item;
-    for (const dependency of workspaceDependencyNames(manifest)) visit(dependency);
+    for (const dependency of workspaceDependencyNames(manifest))
+      visit(dependency);
     active.pop();
     visited.add(name);
     if (needsBuild(name)) {
       if (!manifest.scripts?.build)
-        throw new Error(`Workspace artifact owner has no build script: ${name}`);
+        throw new Error(
+          `Workspace artifact owner has no build script: ${name}`,
+        );
       builds.push({ name, path: item.path });
     }
   };
@@ -102,7 +109,8 @@ export async function dependencyBuildPlan(
     const consumer = owners.get(name);
     if (!consumer) throw new Error(`Unknown workspace consumer: ${name}`);
     // The gate builds the consumer itself; preparation builds its dependencies.
-    for (const dependency of workspaceDependencyNames(consumer.manifest)) visit(dependency);
+    for (const dependency of workspaceDependencyNames(consumer.manifest))
+      visit(dependency);
   }
   return builds;
 }

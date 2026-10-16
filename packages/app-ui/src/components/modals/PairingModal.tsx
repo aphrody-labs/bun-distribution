@@ -12,7 +12,10 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { clsx } from "clsx";
 import { drawQr } from "@aphrody/qr";
-import { useCoreMutation, useCoreQuery } from "../../contexts/SpacedriveContext";
+import {
+  useCoreMutation,
+  useCoreQuery,
+} from "../../contexts/SpacedriveContext";
 import { sounds } from "@aphrody/assets/sounds";
 import { Icon } from "@aphrody/m3-primitives";
 
@@ -87,7 +90,8 @@ export function PairingModal({
   };
 
   // Check if pairing completed
-  const isCompleted = currentSession?.state === "Completed" || joinPairing.isSuccess;
+  const isCompleted =
+    currentSession?.state === "Completed" || joinPairing.isSuccess;
 
   // Latest close handler, read by the delayed close timer without restarting it on each render
   const handleCloseRef = useRef(handleClose);
@@ -132,7 +136,9 @@ export function PairingModal({
             <div className="flex items-center gap-3">
               <DeviceMobile className="size-6 text-primary" weight="bold" />
               <div>
-                <h2 className="text-title-medium font-semibold text-on-surface">Device pairing</h2>
+                <h2 className="text-title-medium font-semibold text-on-surface">
+                  Device pairing
+                </h2>
                 <p className="text-body-small text-on-surface-variant">
                   Connect another device to share files
                 </p>
@@ -204,7 +210,9 @@ export function PairingModal({
               >
                 <Check className="size-5 text-primary" weight="bold" />
                 <div className="flex-1">
-                  <p className="text-label-large font-medium text-primary">Pairing successful!</p>
+                  <p className="text-label-large font-medium text-primary">
+                    Pairing successful!
+                  </p>
                   <p className="text-body-small text-on-surface-variant mt-0.5">
                     {joinPairing.data
                       ? `Connected to ${joinPairing.data.device_name}`
@@ -220,7 +228,13 @@ export function PairingModal({
   );
 }
 
-function GenerateMode({ generatePairing, currentSession, onGenerate, onCancel, onCopyCode }: any) {
+function GenerateMode({
+  generatePairing,
+  currentSession,
+  onGenerate,
+  onCancel,
+  onCopyCode,
+}: any) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const hasCode = generatePairing.data?.code;
   const isLoading = generatePairing.isPending;
@@ -243,10 +257,12 @@ function GenerateMode({ generatePairing, currentSession, onGenerate, onCancel, o
                 <QrCode className="size-5 text-primary" weight="bold" />
               </div>
               <div className="flex-1">
-                <h3 className="text-label-large font-medium text-on-surface">How it works</h3>
+                <h3 className="text-label-large font-medium text-on-surface">
+                  How it works
+                </h3>
                 <p className="text-body-small text-on-surface-variant mt-1">
-                  Generate a secure code to share with another device. They'll enter the code to
-                  establish a trusted connection.
+                  Generate a secure code to share with another device. They'll
+                  enter the code to establish a trusted connection.
                 </p>
               </div>
             </div>
@@ -263,7 +279,9 @@ function GenerateMode({ generatePairing, currentSession, onGenerate, onCancel, o
                 : "bg-primary hover:bg-primary/90 text-white",
             )}
           >
-            {isLoading && <ArrowsClockwise className="size-5 animate-spin" weight="bold" />}
+            {isLoading && (
+              <ArrowsClockwise className="size-5 animate-spin" weight="bold" />
+            )}
             {isLoading ? "Generating..." : "Generate pairing code"}
           </button>
         </>
@@ -273,7 +291,9 @@ function GenerateMode({ generatePairing, currentSession, onGenerate, onCancel, o
           <div className="space-y-4">
             {/* QR Code */}
             <div className="flex flex-col items-center gap-3">
-              <p className="text-body-medium text-on-surface-variant">Scan with mobile device</p>
+              <p className="text-body-medium text-on-surface-variant">
+                Scan with mobile device
+              </p>
               <div className="inline-block p-4 bg-white rounded-small">
                 <QRCodeCanvas data={generatePairing.data.qr_json} size={192} />
               </div>
@@ -293,7 +313,10 @@ function GenerateMode({ generatePairing, currentSession, onGenerate, onCancel, o
                   className="absolute top-2 right-2 p-2 bg-surface-container hover:bg-on-surface/8 border border-outline-variant rounded-small transition-colors"
                   title="Copy code"
                 >
-                  <Copy className="size-4 text-on-surface-variant" weight="bold" />
+                  <Copy
+                    className="size-4 text-on-surface-variant"
+                    weight="bold"
+                  />
                 </button>
               </div>
             </div>
@@ -309,11 +332,18 @@ function GenerateMode({ generatePairing, currentSession, onGenerate, onCancel, o
                     {generatePairing.data.node_id}
                   </div>
                   <button
-                    onClick={() => navigator.clipboard.writeText(generatePairing.data.node_id)}
+                    onClick={() =>
+                      navigator.clipboard.writeText(
+                        generatePairing.data.node_id,
+                      )
+                    }
                     className="absolute top-1.5 right-1.5 p-1.5 bg-surface-container hover:bg-on-surface/8 border border-outline-variant rounded-small transition-colors"
                     title="Copy node ID"
                   >
-                    <Copy className="size-3 text-on-surface-variant" weight="bold" />
+                    <Copy
+                      className="size-3 text-on-surface-variant"
+                      weight="bold"
+                    />
                   </button>
                 </div>
                 <p className="text-body-small text-on-surface-variant mt-1.5">
@@ -344,7 +374,10 @@ function GenerateMode({ generatePairing, currentSession, onGenerate, onCancel, o
               >
                 <span>Advanced</span>
                 <CaretDown
-                  className={clsx("size-3 transition-transform", showAdvanced && "rotate-180")}
+                  className={clsx(
+                    "size-3 transition-transform",
+                    showAdvanced && "rotate-180",
+                  )}
                   weight="bold"
                 />
               </button>
@@ -366,11 +399,16 @@ function GenerateMode({ generatePairing, currentSession, onGenerate, onCancel, o
                           </span>
                           <button
                             onClick={() =>
-                              navigator.clipboard.writeText(generatePairing.data.session_id)
+                              navigator.clipboard.writeText(
+                                generatePairing.data.session_id,
+                              )
                             }
                             className="p-1 hover:bg-on-surface/8 rounded-extra-small transition-colors"
                           >
-                            <Copy className="size-3 text-on-surface-variant" weight="bold" />
+                            <Copy
+                              className="size-3 text-on-surface-variant"
+                              weight="bold"
+                            />
                           </button>
                         </div>
                         <code className="text-body-small text-on-surface font-mono break-all">
@@ -380,12 +418,17 @@ function GenerateMode({ generatePairing, currentSession, onGenerate, onCancel, o
 
                       <div className="p-3 bg-surface-container/40 rounded-small border border-outline-variant">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-body-small text-on-surface-variant">QR JSON</span>
+                          <span className="text-body-small text-on-surface-variant">
+                            QR JSON
+                          </span>
                           <button
                             onClick={copyQRJson}
                             className="p-1 hover:bg-on-surface/8 rounded-extra-small transition-colors"
                           >
-                            <Copy className="size-3 text-on-surface-variant" weight="bold" />
+                            <Copy
+                              className="size-3 text-on-surface-variant"
+                              weight="bold"
+                            />
                           </button>
                         </div>
                         <code className="text-body-small text-on-surface font-mono break-all line-clamp-2">
@@ -396,7 +439,9 @@ function GenerateMode({ generatePairing, currentSession, onGenerate, onCancel, o
                       {generatePairing.data.expires_at && (
                         <p className="text-body-small text-on-surface-variant text-center pt-2">
                           Expires at{" "}
-                          {new Date(generatePairing.data.expires_at).toLocaleTimeString()}
+                          {new Date(
+                            generatePairing.data.expires_at,
+                          ).toLocaleTimeString()}
                         </p>
                       )}
                     </div>
@@ -421,9 +466,14 @@ function GenerateMode({ generatePairing, currentSession, onGenerate, onCancel, o
       {/* Error */}
       {generatePairing.isError && (
         <div className="flex items-start gap-2 p-3 bg-error/10 border border-error/30 rounded-small">
-          <Warning className="size-5 text-error shrink-0 mt-0.5" weight="bold" />
+          <Warning
+            className="size-5 text-error shrink-0 mt-0.5"
+            weight="bold"
+          />
           <div className="flex-1">
-            <p className="text-label-large font-medium text-error">Failed to generate code</p>
+            <p className="text-label-large font-medium text-error">
+              Failed to generate code
+            </p>
             <p className="text-body-small text-on-surface-variant mt-0.5">
               {String(generatePairing.error)}
             </p>
@@ -456,9 +506,12 @@ function JoinMode({
             <QrCode className="size-5 text-primary" weight="bold" />
           </div>
           <div className="flex-1">
-            <h3 className="text-label-large font-medium text-on-surface">Enter pairing code</h3>
+            <h3 className="text-label-large font-medium text-on-surface">
+              Enter pairing code
+            </h3>
             <p className="text-body-small text-on-surface-variant mt-1">
-              Enter the 12-word code from the other device to establish a secure connection.
+              Enter the 12-word code from the other device to establish a secure
+              connection.
             </p>
           </div>
         </div>
@@ -555,7 +608,12 @@ function JoinMode({
                   : "bg-primary hover:bg-primary/90 text-white",
               )}
             >
-              {isLoading && <ArrowsClockwise className="size-5 animate-spin" weight="bold" />}
+              {isLoading && (
+                <ArrowsClockwise
+                  className="size-5 animate-spin"
+                  weight="bold"
+                />
+              )}
               {isLoading ? "Joining..." : "Join"}
             </button>
           </>
@@ -565,9 +623,14 @@ function JoinMode({
       {/* Error */}
       {joinPairing.isError && (
         <div className="flex items-start gap-2 p-3 bg-error/10 border border-error/30 rounded-small">
-          <Warning className="size-5 text-error shrink-0 mt-0.5" weight="bold" />
+          <Warning
+            className="size-5 text-error shrink-0 mt-0.5"
+            weight="bold"
+          />
           <div className="flex-1">
-            <p className="text-label-large font-medium text-error">Failed to join</p>
+            <p className="text-label-large font-medium text-error">
+              Failed to join
+            </p>
             <p className="text-body-small text-on-surface-variant mt-0.5">
               {String(joinPairing.error)}
             </p>
@@ -585,7 +648,11 @@ function QRCodeCanvas({ data, size }: { data: string; size: number }) {
   useEffect(() => {
     if (canvasRef.current && data) {
       try {
-        drawQr(canvasRef.current, data, { width: size, margin: 1, errorCorrectionLevel: "M" });
+        drawQr(canvasRef.current, data, {
+          width: size,
+          margin: 1,
+          errorCorrectionLevel: "M",
+        });
       } catch (err: unknown) {
         console.error("Failed to generate QR code:", err);
       }

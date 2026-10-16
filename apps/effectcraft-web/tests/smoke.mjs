@@ -51,7 +51,13 @@ await using proc = Bun.spawn(
     "--window-size=1600,1000",
     "about:blank",
   ],
-  { stdin: "ignore", stdout: "ignore", stderr: "ignore", windowsHide: true, timeout: 1200000 },
+  {
+    stdin: "ignore",
+    stdout: "ignore",
+    stderr: "ignore",
+    windowsHide: true,
+    timeout: 1200000,
+  },
 );
 
 const sleep = (ms) => Bun.sleep(ms);
@@ -63,7 +69,9 @@ const logs = [];
 async function connect() {
   for (let i = 0; i < 100; i++) {
     try {
-      const list = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
+      const list = await (
+        await fetch(`http://127.0.0.1:${port}/json/list`)
+      ).json();
       const page = list.find((t) => t.type === "page");
       if (page) {
         ws = new WebSocket(page.webSocketDebuggerUrl);
@@ -77,7 +85,11 @@ async function connect() {
             waiting.get(msg.id)(msg);
             waiting.delete(msg.id);
           } else if (msg.method === "Runtime.consoleAPICalled") {
-            logs.push(msg.params.args.map((a) => a.value ?? a.description ?? "").join(" "));
+            logs.push(
+              msg.params.args
+                .map((a) => a.value ?? a.description ?? "")
+                .join(" "),
+            );
           } else if (msg.method === "Runtime.exceptionThrown") {
             logs.push(
               "EXCEPTION " +
@@ -138,7 +150,11 @@ async function ready(ms = 180000) {
 }
 
 async function idle() {
-  await until(`effectcraft.execute("renderQueue.list", {}).then(r => !r.rendering)`, 300000, 200);
+  await until(
+    `effectcraft.execute("renderQueue.list", {}).then(r => !r.rendering)`,
+    300000,
+    200,
+  );
 }
 
 async function shot(name) {
@@ -160,7 +176,9 @@ async function until(expr, ms = 60000, step = 200) {
 async function waitDownload(pred, ms = 120000) {
   const t0 = Date.now();
   while (Date.now() - t0 < ms) {
-    const f = readdirSync(downloads).find((n) => pred(n) && !n.endsWith(".crdownload"));
+    const f = readdirSync(downloads).find(
+      (n) => pred(n) && !n.endsWith(".crdownload"),
+    );
     if (f) return { name: f, bytes: statSync(join(downloads, f)).size };
     await sleep(200);
   }
@@ -173,9 +191,10 @@ try {
   await connect();
   await send("Page.enable");
   await send("Runtime.enable");
-  await send("Browser.setDownloadBehavior", { behavior: "allow", downloadPath: downloads }).catch(
-    () => {},
-  );
+  await send("Browser.setDownloadBehavior", {
+    behavior: "allow",
+    downloadPath: downloads,
+  }).catch(() => {});
   await send("Emulation.setDeviceMetricsOverride", {
     width: 1600,
     height: 1000,
@@ -194,7 +213,11 @@ try {
   );
 
   // The demo comp in the viewer: wait for the first viewer frame (renderMs > 0).
-  const ms = await until("effectcraft.inspect().then(i => i.renderMs > 0)", 120000, 500);
+  const ms = await until(
+    "effectcraft.inspect().then(i => i.renderMs > 0)",
+    120000,
+    500,
+  );
   await sleep(1500);
   const insp = await js("effectcraft.inspect()");
   report.steps.viewer = {
@@ -208,7 +231,11 @@ try {
   // GPU: with WebGPU, eframe runs on it and the compositor renders viewer frames on the GPU
   // (no readback); without it, WebGL2 / CPU.
   const info = await js("effectcraft.info()");
-  report.steps.gpu = { webgpu: info.webgpu, backend: info.backend, ...info.gpu };
+  report.steps.gpu = {
+    webgpu: info.webgpu,
+    backend: info.backend,
+    ...info.gpu,
+  };
   if (info.webgpu && info.backend === "BrowserWebGpu") {
     check(info.gpu && info.gpu.compositor, "GPU compositor on WebGPU");
     check(info.gpu.viewerOnGpu, "viewer frames on the GPU");
@@ -240,13 +267,22 @@ try {
   })()`);
   const fwk = report.steps.frameWorkers;
   await js(`effectcraft.execute("render.backend", {backend: "gpu"})`);
-  check(fwk.after.alive > 0, `frame workers alive: ${JSON.stringify(fwk.after)}`);
+  check(
+    fwk.after.alive > 0,
+    `frame workers alive: ${JSON.stringify(fwk.after)}`,
+  );
   check(
     fwk.after.rendered >= fwk.before.rendered + 3,
     `frames rendered in workers: ${JSON.stringify(fwk)}`,
   );
-  check(fwk.after.syncs >= 2, `project synced as diffs: ${JSON.stringify(fwk.after)}`);
-  check(fwk.maxGapMs < 400, `event loop blocked ${fwk.maxGapMs} ms while scrubbing`);
+  check(
+    fwk.after.syncs >= 2,
+    `project synced as diffs: ${JSON.stringify(fwk.after)}`,
+  );
+  check(
+    fwk.maxGapMs < 400,
+    `event loop blocked ${fwk.maxGapMs} ms while scrubbing`,
+  );
 
   // GPU effects in the browser (M13.24): each frame worker opens its own WebGPU device; frames
   // with effects go to the workers, which render them on the GPU in passes (awaiting the
@@ -302,9 +338,13 @@ try {
       pa && pa.meanDiff < 0.5 && pa.over4 < 0.005,
       `GPU worker frame vs the CPU: ${JSON.stringify(pa)}`,
     );
-    check(ge.maxGapMs < 400, `event loop blocked ${ge.maxGapMs} ms while GPU workers rendered`);
+    check(
+      ge.maxGapMs < 400,
+      `event loop blocked ${ge.maxGapMs} ms while GPU workers rendered`,
+    );
   } else {
-    report.steps.gpuWorkers.note = "no WebGPU in workers here: frame workers render on their CPU";
+    report.steps.gpuWorkers.note =
+      "no WebGPU in workers here: frame workers render on their CPU";
   }
 
   // The storage manager (Settings ▸ Disk ▸ Browser Storage) and its commands.
@@ -313,7 +353,10 @@ try {
     `(async () => { await new Promise((r) => setTimeout(r, 1200)); return effectcraft.execute("storage.info", {}); })()`,
   );
   report.steps.storage = st;
-  check(st.available && st.quota > 0 && st.usage > 0, `storage.info: ${JSON.stringify(st)}`);
+  check(
+    st.available && st.quota > 0 && st.usage > 0,
+    `storage.info: ${JSON.stringify(st)}`,
+  );
   check(
     st.diskCache && st.diskCache.enabled && st.diskCache.writes > 0,
     `disk cache in OPFS: ${JSON.stringify(st.diskCache)}`,
@@ -326,7 +369,8 @@ try {
   );
   report.steps.storage.elements = ids;
   check(
-    ids.includes("settings.storage.usage") && ids.includes("settings.storage.clear.diskCache"),
+    ids.includes("settings.storage.usage") &&
+      ids.includes("settings.storage.clear.diskCache"),
     `storage manager widgets: ${ids}`,
   );
   await js(`effectcraft.request("ui.click", {id: "settings.cancel"})`);
@@ -353,11 +397,16 @@ try {
     !waited.rendering && waited.status.every((s) => s === "Done"),
     `wait:true replies when done: ${JSON.stringify(waited)}`,
   );
-  check(waited.maxGapMs < 400, `event loop blocked ${waited.maxGapMs} ms during a waiting render`);
+  check(
+    waited.maxGapMs < 400,
+    `event loop blocked ${waited.maxGapMs} ms during a waiting render`,
+  );
   await idle();
 
   // An image sequence arrives as one .zip.
-  await js(`effectcraft.execute("renderQueue.setRender", {index: 1, render: false})`);
+  await js(
+    `effectcraft.execute("renderQueue.setRender", {index: 1, render: false})`,
+  );
   await js(
     `effectcraft.request("ui.menu.invoke", {id: "renderQueue.add", params: {format: "png", output: "seq_[####].png", resolution: 0.125, timeSpan: "custom", start: 0, end: 0.2}})`,
   );
@@ -367,7 +416,9 @@ try {
 
   // A background render (`wait: false`, what the Render button does) runs in a Web Worker: the
   // page keeps its event loop. Measure the longest gap between 10 ms timers while it renders.
-  await js(`effectcraft.execute("renderQueue.setRender", {index: 2, render: false})`);
+  await js(
+    `effectcraft.execute("renderQueue.setRender", {index: 2, render: false})`,
+  );
   await js(
     `effectcraft.request("ui.menu.invoke", {id: "renderQueue.add", params: {format: "gif", output: "bg_[compName].gif", resolution: 0.5, timeSpan: "custom", start: 0, end: 4}})`,
   );
@@ -389,16 +440,23 @@ try {
     return {startedRendering: r.rendering, callMs, renderMs: performance.now() - t0, maxGapMs, ticks, progressFrames: progress, workers: effectcraft.info().workers};
   })()`);
   const bg = report.steps.backgroundRender;
-  bg.download = await waitDownload((n) => n.startsWith("bg_") && n.endsWith(".gif"));
+  bg.download = await waitDownload(
+    (n) => n.startsWith("bg_") && n.endsWith(".gif"),
+  );
   check(bg.startedRendering, "render started in the background");
-  check(bg.maxGapMs < 400, `event loop blocked ${bg.maxGapMs} ms during the render`);
+  check(
+    bg.maxGapMs < 400,
+    `event loop blocked ${bg.maxGapMs} ms during the render`,
+  );
   check(bg.progressFrames > 0, "progress reported while rendering");
 
   // GPU in the job workers (M13.30): a Render Queue job and a Warp Stabilizer analysis whose
   // frames have GPU effects render on the job worker's own WebGPU device, in passes (the job
   // awaits the device's readbacks between them), while the page's event loop stays free.
   if (report.steps.gpuWorkers.effects) {
-    await js(`effectcraft.execute("renderQueue.setRender", {index: 3, render: false})`);
+    await js(
+      `effectcraft.execute("renderQueue.setRender", {index: 3, render: false})`,
+    );
     report.steps.gpuJobs = await js(`(async () => {
       let maxGapMs = 0, last = performance.now();
       const timer = setInterval(() => { const now = performance.now(); maxGapMs = Math.max(maxGapMs, now - last); last = now; }, 10);
@@ -471,7 +529,10 @@ try {
       rj && rj.gpu && rj.readbacks >= 3 && rj.passes >= 6,
       `Render Queue frames on the job worker's GPU, in passes: ${JSON.stringify(rj)}`,
     );
-    check(gj.warp.analyzed, `Warp Stabilizer analysed in a job worker: ${JSON.stringify(gj.warp)}`);
+    check(
+      gj.warp.analyzed,
+      `Warp Stabilizer analysed in a job worker: ${JSON.stringify(gj.warp)}`,
+    );
     check(
       wj && wj.gpu && wj.readbacks > 0,
       `Warp Stabilizer input frames on the job worker's GPU: ${JSON.stringify(wj)}`,
@@ -494,7 +555,9 @@ try {
       `event loop blocked ${gj.gaps.prepareFill} ms while editing after the analysis (pre-compose, mask): ${JSON.stringify(gj.gaps)}`,
     );
   } else {
-    report.steps.gpuJobs = { note: "no WebGPU in workers here: job workers render on their CPU" };
+    report.steps.gpuJobs = {
+      note: "no WebGPU in workers here: job workers render on their CPU",
+    };
   }
 
   // Audio: the AudioContext starts on a user gesture.
@@ -571,7 +634,10 @@ try {
   check(pb.audio, "audio preview running");
   check(au.posted > 0.5 * au.sampleRate, `audio fed (${au.posted} frames)`);
   check(au.played > 0, "audio clock advancing");
-  check(Math.max(...(pb.levelsDb || [-99])) > -20, `meters (${JSON.stringify(pb.levelsDb)})`);
+  check(
+    Math.max(...(pb.levelsDb || [-99])) > -20,
+    `meters (${JSON.stringify(pb.levelsDb)})`,
+  );
 
   // Save As → .ecproj download; reopen it.
   await js(`effectcraft.execute("file.saveAs", {path: "/smoke.ecproj"})`);
@@ -588,8 +654,12 @@ try {
 
   // Persistence: the session, imported media, settings and a project saved to browser storage
   // survive a reload; File ▸ Open Recent reopens the project.
-  await js(`effectcraft.execute("layer.newSolid", {name: "Persisted Solid", color: "#22aa66"})`);
-  await js(`effectcraft.execute("prefs.set", {key: "general.recentItems", value: 7})`);
+  await js(
+    `effectcraft.execute("layer.newSolid", {name: "Persisted Solid", color: "#22aa66"})`,
+  );
+  await js(
+    `effectcraft.execute("prefs.set", {key: "general.recentItems", value: 7})`,
+  );
   const saved = await js(`effectcraft.saveToBrowser("/persist-test.ecproj")`);
   await js(`effectcraft.execute("layer.newSolid", {name: "Unsaved Solid"})`);
   // A layer slow enough on the CPU for its buffer to go to the disk cache too (M13.30).
@@ -637,7 +707,9 @@ try {
   const layers = await js(
     `effectcraft.execute("comp.info", {}).then(c => c.layers.map(l => l.name))`,
   );
-  const recentItems = await js(`effectcraft.execute("prefs.get", {key: "general.recentItems"})`);
+  const recentItems = await js(
+    `effectcraft.execute("prefs.get", {key: "general.recentItems"})`,
+  );
   const rec = await js(`effectcraft.execute("file.recoveryInfo", {})`);
   const paths = after.files.map((f) => f.path);
   report.steps.persistence = {
@@ -663,7 +735,10 @@ try {
     `stored files: ${paths}`,
   );
   check(recentItems === 7, `setting after reload: ${recentItems}`);
-  check(rec.recentProjects[0] === "/persist-test.ecproj", `recent projects: ${rec.recentProjects}`);
+  check(
+    rec.recentProjects[0] === "/persist-test.ecproj",
+    `recent projects: ${rec.recentProjects}`,
+  );
   // The disk cache survived the reload: the same frames come from it, not from a render.
   report.steps.diskCache = await js(`(async () => {
     const t0 = performance.now();
@@ -706,12 +781,17 @@ try {
     dcr.layers.after.layerHits > dcr.layers.before.layerHits,
     `layer buffers served from the disk cache: ${JSON.stringify(dcr.layers)}`,
   );
-  check(dcr.listed >= diskTimes.length, `disk cache entries after reload: ${JSON.stringify(dcr)}`);
+  check(
+    dcr.listed >= diskTimes.length,
+    `disk cache entries after reload: ${JSON.stringify(dcr)}`,
+  );
   check(
     dcr.frameWorkers.diskHits >= diskTimes.length,
     `cache hits after reload: ${JSON.stringify(dcr.frameWorkers)}`,
   );
-  const cleared = await js(`effectcraft.execute("storage.clear", {what: "diskCache"})`);
+  const cleared = await js(
+    `effectcraft.execute("storage.clear", {what: "diskCache"})`,
+  );
   const afterClear = await js(`effectcraft.execute("cache.diskStats", {})`);
   dcr.cleared = { cleared, afterClear };
   check(
@@ -766,7 +846,10 @@ try {
     crossOriginIsolated: info3.crossOriginIsolated,
   };
   check(info3.serviceWorker, "offline reload served by the service worker");
-  check(info3.crossOriginIsolated, "cross-origin isolated under the service worker");
+  check(
+    info3.crossOriginIsolated,
+    "cross-origin isolated under the service worker",
+  );
   report.steps.final2 = { screenshot: await shot("03-offline") };
 } catch (e) {
   failed = true;

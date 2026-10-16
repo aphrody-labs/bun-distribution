@@ -30,7 +30,10 @@ const NAMES = [
 const MAX_BYTES = 4 * 1024 * 1024;
 const MODULE_BYTES = 64 * 1024 * 1024;
 type ObjectValue = Record<string, unknown>;
-type Run = (argv: string[], environment?: Record<string, string>) => Promise<string>;
+type Run = (
+  argv: string[],
+  environment?: Record<string, string>,
+) => Promise<string>;
 
 export interface DriveReviewConfig {
   intervalSeconds: number;
@@ -78,8 +81,16 @@ interface Validator {
       originalPlanSha: string;
     },
   ): Promise<{ planSha: string; refreshed: number }>;
-  preflight(api: GoogleApi, owner: GoogleOwner, paths: ReviewPaths): Promise<{ planSha: string }>;
-  apply(api: GoogleApi, owner: GoogleOwner, paths: ReviewPaths): Promise<ObjectValue>;
+  preflight(
+    api: GoogleApi,
+    owner: GoogleOwner,
+    paths: ReviewPaths,
+  ): Promise<{ planSha: string }>;
+  apply(
+    api: GoogleApi,
+    owner: GoogleOwner,
+    paths: ReviewPaths,
+  ): Promise<ObjectValue>;
 }
 export interface ReviewPorts {
   owner: GoogleOwner;
@@ -139,11 +150,18 @@ function object(value: unknown): ObjectValue {
   return value as ObjectValue;
 }
 function string(value: unknown): string {
-  if (typeof value !== "string" || !value || value.length > 4096) throw new Error("INVALID_STRING");
+  if (typeof value !== "string" || !value || value.length > 4096)
+    throw new Error("INVALID_STRING");
   return value;
 }
-async function readPrivate(path: string, limit = MAX_BYTES): Promise<Uint8Array> {
-  if (!isAbsolute(path) || (await realpath(dirname(path))) !== resolve(dirname(path)))
+async function readPrivate(
+  path: string,
+  limit = MAX_BYTES,
+): Promise<Uint8Array> {
+  if (
+    !isAbsolute(path) ||
+    (await realpath(dirname(path))) !== resolve(dirname(path))
+  )
     throw new Error("UNSAFE_PRIVATE_PARENT");
   const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
   try {
@@ -167,7 +185,11 @@ async function privateDirectory(path: string) {
   if (!isAbsolute(path)) throw new Error("ABSOLUTE_PRIVATE_PATH_REQUIRED");
   await mkdir(path, { recursive: true, mode: 0o700 });
   const info = await lstat(path);
-  if (!info.isDirectory() || info.isSymbolicLink() || (await realpath(path)) !== resolve(path))
+  if (
+    !info.isDirectory() ||
+    info.isSymbolicLink() ||
+    (await realpath(path)) !== resolve(path)
+  )
     throw new Error("UNSAFE_PRIVATE_DIRECTORY");
   await chmod(path, 0o700);
 }
@@ -176,7 +198,9 @@ async function save(path: string, value: unknown, raw = false) {
   const temp = `${path}.${crypto.randomUUID()}.tmp`;
   const file = await open(temp, "wx", 0o600);
   try {
-    await file.writeFile(raw ? (value as Uint8Array | string) : JSON.stringify(value) + "\n");
+    await file.writeFile(
+      raw ? (value as Uint8Array | string) : JSON.stringify(value) + "\n",
+    );
     await file.sync();
   } finally {
     await file.close();
@@ -208,22 +232,30 @@ async function exists(path: string) {
 }
 /** Verify the managed immutable generation, never an arbitrary symlink target. */
 export async function verifyReviewedProjection(pointer: string): Promise<void> {
-  if (!isAbsolute(pointer) || (await realpath(dirname(pointer))) !== resolve(dirname(pointer)))
+  if (
+    !isAbsolute(pointer) ||
+    (await realpath(dirname(pointer))) !== resolve(dirname(pointer))
+  )
     throw new Error("UNSAFE_REVIEWED_POINTER");
-  if (!(await lstat(pointer)).isSymbolicLink()) throw new Error("UNMANAGED_REVIEWED_POINTER");
+  if (!(await lstat(pointer)).isSymbolicLink())
+    throw new Error("UNMANAGED_REVIEWED_POINTER");
   const target = await readlink(pointer);
   const generations = `${pointer}.generations`;
   const hash = target.slice(generations.length + 1);
   if (target !== join(generations, hash) || !hashPattern.test(hash))
     throw new Error("UNSAFE_REVIEWED_TARGET");
-  if ((await realpath(target)) !== target || !(await lstat(target)).isDirectory())
+  if (
+    (await realpath(target)) !== target ||
+    !(await lstat(target)).isDirectory()
+  )
     throw new Error("UNSAFE_REVIEWED_GENERATION");
   const manifest = await json(join(generations, `${hash}.json`));
   if (
     !Array.isArray(manifest.files) ||
     manifest.files.length !== NAMES.length ||
     sha(JSON.stringify(manifest.files)) !== hash ||
-    (await readdir(target)).toSorted().join("\n") !== NAMES.toSorted().join("\n")
+    (await readdir(target)).toSorted().join("\n") !==
+      NAMES.toSorted().join("\n")
   )
     throw new Error("INVALID_REVIEWED_GENERATION");
   for (let index = 0; index < NAMES.length; index++) {
@@ -250,14 +282,17 @@ async function reviewedFiles(config: DriveReviewScope, owner: GoogleOwner) {
     const entry = object(stateFiles[name]);
     const local = await readPrivate(join(config.home, name));
     const baseline = await readPrivate(join(config.baselineDirectory, name));
-    const native = await readPrivate(join(config.baselineDirectory, name + ".native.json"));
+    const native = await readPrivate(
+      join(config.baselineDirectory, name + ".native.json"),
+    );
     const document = object(JSON.parse(decoder.decode(native)));
     if (
       sha(local) !== entry.localHash ||
       sha(baseline) !== entry.localHash ||
       document.documentId !== entry.id ||
       sha(owner.nativeMarkdown(document)) !== entry.remoteHash ||
-      (entry.sourceSnapshotHash !== undefined && sha(native) !== entry.sourceSnapshotHash)
+      (entry.sourceSnapshotHash !== undefined &&
+        sha(native) !== entry.sourceSnapshotHash)
     )
       throw new Error("REVIEWED_BASELINE_CHANGED");
     files.push({
@@ -272,7 +307,10 @@ async function reviewedFiles(config: DriveReviewScope, owner: GoogleOwner) {
   return { files, bytes, hash: sha(JSON.stringify(files)) };
 }
 /** Stage all seven baseline-verified files before atomically switching the managed root. */
-export async function publishReviewedProjection(config: DriveReviewScope, owner: GoogleOwner) {
+export async function publishReviewedProjection(
+  config: DriveReviewScope,
+  owner: GoogleOwner,
+) {
   if (!config.reviewedDirectory) return;
   const pointer = config.reviewedDirectory;
   await privateDirectory(dirname(pointer));
@@ -292,9 +330,15 @@ export async function publishReviewedProjection(config: DriveReviewScope, owner:
   }
   // Existing generations are immutable: validate bytes before replacing any pointer.
   for (let index = 0; index < NAMES.length; index++)
-    if (sha(await readPrivate(join(target, NAMES[index]!))) !== captured.files[index]!.localHash)
+    if (
+      sha(await readPrivate(join(target, NAMES[index]!))) !==
+      captured.files[index]!.localHash
+    )
       throw new Error("REVIEWED_GENERATION_CHANGED");
-  await save(join(generations, `${captured.hash}.json`), { version: 1, files: captured.files });
+  await save(join(generations, `${captured.hash}.json`), {
+    version: 1,
+    files: captured.files,
+  });
   if ((await reviewedFiles(config, owner)).hash !== captured.hash)
     throw new Error("REVIEWED_SOURCE_CHANGED_DURING_COPY");
   await save(join(config.receiptRoot, "publication.json"), {
@@ -380,18 +424,28 @@ export async function captureDriveReview(
     const entry = object(baseline[name]);
     const id = string(entry.id);
     const local = await readPrivate(join(config.home, name));
-    const baselineLocal = await readPrivate(join(config.baselineDirectory, name));
-    const baselineNative = await readPrivate(join(config.baselineDirectory, name + ".native.json"));
+    const baselineLocal = await readPrivate(
+      join(config.baselineDirectory, name),
+    );
+    const baselineNative = await readPrivate(
+      join(config.baselineDirectory, name + ".native.json"),
+    );
     if (
       sha(baselineLocal) !== entry.localHash ||
-      sha(ports.owner.nativeMarkdown(JSON.parse(decoder.decode(baselineNative)))) !==
-        entry.remoteHash ||
-      (entry.sourceSnapshotHash !== undefined && sha(baselineNative) !== entry.sourceSnapshotHash)
+      sha(
+        ports.owner.nativeMarkdown(JSON.parse(decoder.decode(baselineNative))),
+      ) !== entry.remoteHash ||
+      (entry.sourceSnapshotHash !== undefined &&
+        sha(baselineNative) !== entry.sourceSnapshotHash)
     )
       throw new Error("UNVERIFIED_BASELINE");
     const metadata = object(
-      (await ports.api.drive.files.get({ fileId: id, fields: "id,name,mimeType,parents,trashed" }))
-        .data,
+      (
+        await ports.api.drive.files.get({
+          fileId: id,
+          fields: "id,name,mimeType,parents,trashed",
+        })
+      ).data,
     );
     if (
       metadata.id !== id ||
@@ -403,13 +457,19 @@ export async function captureDriveReview(
     )
       throw new Error("REMOTE_SCOPE_MISMATCH");
     const document = object(
-      (await ports.api.docs.documents.get({ documentId: id, includeTabsContent: true })).data,
+      (
+        await ports.api.docs.documents.get({
+          documentId: id,
+          includeTabsContent: true,
+        })
+      ).data,
     );
     if (document.documentId !== id) throw new Error("REMOTE_ID_MISMATCH");
     if (typeof document.revisionId !== "string" || !document.revisionId)
       throw new Error("REMOTE_REVISION_UNAVAILABLE");
     const native = JSON.stringify(document);
-    if (Buffer.byteLength(native) > MAX_BYTES) throw new Error("NATIVE_SNAPSHOT_TOO_LARGE");
+    if (Buffer.byteLength(native) > MAX_BYTES)
+      throw new Error("NATIVE_SNAPSHOT_TOO_LARGE");
     const input = {
       name,
       id,
@@ -476,30 +536,43 @@ async function bindPlan(path: string, inputs: Inputs) {
     const entry = entries.find((value) => value.name === input.name);
     if (
       !entry ||
-      ["id", "localBeforeSha256", "remoteRevisionId", "remoteBeforeSha256"].some(
-        (key) => entry[key] !== input[key as keyof InputFile],
-      )
+      [
+        "id",
+        "localBeforeSha256",
+        "remoteRevisionId",
+        "remoteBeforeSha256",
+      ].some((key) => entry[key] !== input[key as keyof InputFile])
     )
       throw new Error("PLAN_INPUT_MISMATCH");
   }
   return sha(bytes);
 }
-async function productionPorts(config: DriveReviewScope, run: Run): Promise<ReviewPorts> {
+async function productionPorts(
+  config: DriveReviewScope,
+  run: Run,
+): Promise<ReviewPorts> {
   for (const module of [config.ownerModule, config.validatorModule])
     if (
       !hashPattern.test(module.sha256) ||
       sha(await readPrivate(module.path, MODULE_BYTES)) !== module.sha256
     )
       throw new Error("OWNER_MODULE_CHANGED");
-  const owner = (await import(pathToFileURL(config.ownerModule.path).href)) as GoogleOwner;
-  const validator = (await import(pathToFileURL(config.validatorModule.path).href)) as Validator;
+  const owner = (await import(
+    pathToFileURL(config.ownerModule.path).href
+  )) as GoogleOwner;
+  const validator = (await import(
+    pathToFileURL(config.validatorModule.path).href
+  )) as Validator;
   const api = await owner.googleApi("service-account");
   const client = new A2AClient({
     url: config.a2aUrl,
     timeoutMs: 30_000,
     headers: async () => {
-      const token = decoder.decode(await readPrivate(config.tokenFile, 4096)).trim();
-      if (!/^[A-Za-z0-9._~-]{16,4096}$/.test(token)) throw new Error("INVALID_BEARER_FILE");
+      const token = decoder
+        .decode(await readPrivate(config.tokenFile, 4096))
+        .trim();
+      if (!/^[A-Za-z0-9._~-]{16,4096}$/.test(token))
+        throw new Error("INVALID_BEARER_FILE");
       return { authorization: `Bearer ${token}` };
     },
   });
@@ -511,13 +584,24 @@ async function productionPorts(config: DriveReviewScope, run: Run): Promise<Revi
     seedReviewed: async (directory) => {
       const report = object(
         JSON.parse(
-          await run([config.yolo, "google", "drive", "sync", "--seed-reviewed", directory], {
-            APHRODY_AGENT_HOME: config.home,
-            APHRODY_GOOGLE_DRIVE_FOLDER_ID: config.folderId,
-          }),
+          await run(
+            [
+              config.yolo,
+              "google",
+              "drive",
+              "sync",
+              "--seed-reviewed",
+              directory,
+            ],
+            {
+              APHRODY_AGENT_HOME: config.home,
+              APHRODY_GOOGLE_DRIVE_FOLDER_ID: config.folderId,
+            },
+          ),
         ),
       );
-      if (report.seeded !== NAMES.length) throw new Error("BASELINE_SEED_UNVERIFIED");
+      if (report.seeded !== NAMES.length)
+        throw new Error("BASELINE_SEED_UNVERIFIED");
     },
   };
 }
@@ -543,7 +627,10 @@ export async function reconcileDriveReview(
         captured = await captureDriveReview(config, ports);
       } catch (error) {
         // Google withholds the Docs revision: no write can be guarded, so the review waits instead of failing the timer.
-        if (error instanceof Error && error.message === "REMOTE_REVISION_UNAVAILABLE")
+        if (
+          error instanceof Error &&
+          error.message === "REMOTE_REVISION_UNAVAILABLE"
+        )
           return { review_blocked: 1 };
         throw error;
       }
@@ -558,7 +645,8 @@ export async function reconcileDriveReview(
     await privateDirectory(directory);
     const recordPath = join(directory, "review.json");
     let record: RecordState;
-    if (await exists(recordPath)) record = (await json(recordPath)) as unknown as RecordState;
+    if (await exists(recordPath))
+      record = (await json(recordPath)) as unknown as RecordState;
     else {
       if (!captured) throw new Error("MISSING_REVIEW_INTENT");
       await privateDirectory(join(directory, "inputs"));
@@ -570,7 +658,11 @@ export async function reconcileDriveReview(
           ["baseline.md", snapshot.baselineLocal],
           ["baseline.native.json", snapshot.baselineNative],
         ] as const)
-          await save(join(directory, "inputs", `${snapshot.name}.${suffix}`), value, true);
+          await save(
+            join(directory, "inputs", `${snapshot.name}.${suffix}`),
+            value,
+            true,
+          );
       }
       await save(join(directory, "inputs.json"), captured.inputs);
       record = {
@@ -633,12 +725,17 @@ export async function reconcileDriveReview(
         historyLength: 0,
         includeArtifacts: false,
       });
-      const matching = page.tasks.filter((task) => task.contextId === record.contextId);
-      if (matching.length > 1 || page.nextPageToken) return block("AMBIGUOUS_TASK_RECOVERY");
+      const matching = page.tasks.filter(
+        (task) => task.contextId === record.contextId,
+      );
+      if (matching.length > 1 || page.nextPageToken)
+        return block("AMBIGUOUS_TASK_RECOVERY");
       if (matching.length === 0) {
         record.recoveryMisses = (record.recoveryMisses ?? 0) + 1;
         await persist();
-        return record.recoveryMisses >= 3 ? block("ACK_UNRECOVERED") : { review_pending: 1 };
+        return record.recoveryMisses >= 3
+          ? block("ACK_UNRECOVERED")
+          : { review_pending: 1 };
       }
       record.taskId = matching[0]!.id;
       record.taskState = matching[0]!.status.state;
@@ -648,7 +745,10 @@ export async function reconcileDriveReview(
     }
     const reviewPaths = paths(config, directory);
     if (record.phase === "submitted") {
-      const task = await ports.client.getTask({ id: string(record.taskId), historyLength: 0 });
+      const task = await ports.client.getTask({
+        id: string(record.taskId),
+        historyLength: 0,
+      });
       if (task.id !== record.taskId || task.contextId !== record.contextId)
         return block("TASK_SCOPE_MISMATCH");
       record.taskState = task.status.state;
@@ -666,8 +766,11 @@ export async function reconcileDriveReview(
         await persist();
         return { review_pending: 1 };
       }
-      const inputs = (await json(join(directory, "inputs.json"))) as unknown as Inputs;
-      if (sha(JSON.stringify(inputs)) !== hash) return block("FROZEN_INPUTS_CHANGED");
+      const inputs = (await json(
+        join(directory, "inputs.json"),
+      )) as unknown as Inputs;
+      if (sha(JSON.stringify(inputs)) !== hash)
+        return block("FROZEN_INPUTS_CHANGED");
       for (const input of inputs.files) {
         for (const [suffix, expected] of [
           ["local.md", input.localBeforeSha256],
@@ -676,8 +779,11 @@ export async function reconcileDriveReview(
           ["baseline.native.json", input.baselineNativeSha256],
         ] as const)
           if (
-            sha(await readPrivate(join(directory, "inputs", `${input.name}.${suffix}`))) !==
-            expected
+            sha(
+              await readPrivate(
+                join(directory, "inputs", `${input.name}.${suffix}`),
+              ),
+            ) !== expected
           )
             return block("FROZEN_SNAPSHOT_CHANGED");
       }
@@ -685,10 +791,14 @@ export async function reconcileDriveReview(
       let bound: string;
       if (await exists(original)) {
         bound = await bindPlan(original, inputs);
-        if (record.originalPlanSha !== undefined && record.originalPlanSha !== bound)
+        if (
+          record.originalPlanSha !== undefined &&
+          record.originalPlanSha !== bound
+        )
           return block("ORIGINAL_PLAN_CHANGED");
       } else {
-        if (record.originalPlanSha !== undefined) return block("ORIGINAL_PLAN_MISSING");
+        if (record.originalPlanSha !== undefined)
+          return block("ORIGINAL_PLAN_MISSING");
         bound = await bindPlan(reviewPaths.plan, inputs);
         await save(original, await readPrivate(reviewPaths.plan), true);
       }
@@ -705,7 +815,11 @@ export async function reconcileDriveReview(
           originalPlanSha: bound,
         },
       );
-      const checked = await ports.validator.preflight(ports.api, ports.owner, reviewPaths);
+      const checked = await ports.validator.preflight(
+        ports.api,
+        ports.owner,
+        reviewPaths,
+      );
       if (
         checked.planSha !== refreshed.planSha ||
         sha(await readPrivate(reviewPaths.plan)) !== refreshed.planSha
@@ -717,7 +831,9 @@ export async function reconcileDriveReview(
       return { reviewed: NAMES.length, review_pending: 1 };
     }
     if (
-      ["reviewed", "applying", "seeding", "publishing"].includes(record.phase) &&
+      ["reviewed", "applying", "seeding", "publishing"].includes(
+        record.phase,
+      ) &&
       !hashPattern.test(record.planSha ?? "")
     )
       return block("INVALID_REVIEWED_PLAN_HASH");
@@ -744,7 +860,11 @@ export async function reconcileDriveReview(
         return block("PLAN_CHANGED_DURING_REFRESH");
       record.planSha = refreshed.planSha;
       await persist();
-      const checked = await ports.validator.preflight(ports.api, ports.owner, reviewPaths);
+      const checked = await ports.validator.preflight(
+        ports.api,
+        ports.owner,
+        reviewPaths,
+      );
       if (
         checked.planSha !== record.planSha ||
         sha(await readPrivate(reviewPaths.plan)) !== record.planSha
@@ -753,22 +873,45 @@ export async function reconcileDriveReview(
       record.phase = "applying";
       await persist();
       try {
-        const result = await ports.validator.apply(ports.api, ports.owner, reviewPaths);
-        if (result.ok !== true || result.phase !== "complete" || result.planSha !== record.planSha)
+        const result = await ports.validator.apply(
+          ports.api,
+          ports.owner,
+          reviewPaths,
+        );
+        if (
+          result.ok !== true ||
+          result.phase !== "complete" ||
+          result.planSha !== record.planSha
+        )
           return block("OWNER_APPLY_UNVERIFIED");
-        const expected = join(reviewPaths.journalRoot, string(record.planSha), "fresh-native");
-        if (result.seedReviewed !== expected) return block("SEED_PATH_MISMATCH");
+        const expected = join(
+          reviewPaths.journalRoot,
+          string(record.planSha),
+          "fresh-native",
+        );
+        if (result.seedReviewed !== expected)
+          return block("SEED_PATH_MISMATCH");
         record.seedReviewed = expected;
         record.phase = "seeding";
         await persist();
         return { review_pending: 1 };
       } catch (error) {
         // The native owner may have committed before its ACK was lost. Read its journal next tick.
-        const safe = error as { code?: string; noWrites?: boolean; journalCreated?: boolean };
+        const safe = error as {
+          code?: string;
+          noWrites?: boolean;
+          journalCreated?: boolean;
+        };
         if (
           (safe.code === "OWNER_LOCK_BUSY" ||
             (safe.noWrites === true && safe.journalCreated === false)) &&
-          !(await exists(join(reviewPaths.journalRoot, string(record.planSha), "receipt.json")))
+          !(await exists(
+            join(
+              reviewPaths.journalRoot,
+              string(record.planSha),
+              "receipt.json",
+            ),
+          ))
         ) {
           record.phase = "reviewed";
           await persist();
@@ -777,10 +920,18 @@ export async function reconcileDriveReview(
       }
     }
     if (record.phase === "applying") {
-      const journal = join(reviewPaths.journalRoot, string(record.planSha), "receipt.json");
+      const journal = join(
+        reviewPaths.journalRoot,
+        string(record.planSha),
+        "receipt.json",
+      );
       if (!(await exists(journal))) return block("APPLY_ACK_UNKNOWN_NO_REPLAY");
       const receipt = await json(journal);
-      const expected = join(reviewPaths.journalRoot, string(record.planSha), "fresh-native");
+      const expected = join(
+        reviewPaths.journalRoot,
+        string(record.planSha),
+        "fresh-native",
+      );
       if (
         receipt.phase !== "complete" ||
         receipt.planSha !== record.planSha ||

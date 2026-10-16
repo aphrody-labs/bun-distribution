@@ -30,7 +30,10 @@ export function consoleUi(): Ui {
     ask: (question) => (interactive ? prompt(question) : null),
     confirm(question, fallback = false) {
       if (!interactive) return fallback;
-      return parseYesNo(prompt(`${question} ${fallback ? "(O/n)" : "(o/N)"}`), fallback);
+      return parseYesNo(
+        prompt(`${question} ${fallback ? "(O/n)" : "(o/N)"}`),
+        fallback,
+      );
     },
     pause(message = "Appuie sur Entrée pour continuer...") {
       if (interactive) prompt(message);
@@ -45,7 +48,10 @@ export interface MemoryUi extends Ui {
 }
 
 /** Scripted UI: each ask/confirm consumes the next answer (null when exhausted). */
-export function memoryUi(answers: (string | null)[] = [], interactive = true): MemoryUi {
+export function memoryUi(
+  answers: (string | null)[] = [],
+  interactive = true,
+): MemoryUi {
   const queue = [...answers];
   const ui: MemoryUi = {
     interactive,
@@ -58,11 +64,20 @@ export function memoryUi(answers: (string | null)[] = [], interactive = true): M
     },
     confirm(question, fallback = false) {
       ui.questions.push(question);
-      return parseYesNo(queue.length > 0 ? (queue.shift() ?? null) : null, fallback);
+      return parseYesNo(
+        queue.length > 0 ? (queue.shift() ?? null) : null,
+        fallback,
+      );
     },
     pause() {},
   };
   return ui;
 }
 
-export const MARK = { ok: "[OK]", warn: "[!] ", fail: "[X] ", wait: "[..]", skip: "[--]" } as const;
+export const MARK = {
+  ok: "[OK]",
+  warn: "[!] ",
+  fail: "[X] ",
+  wait: "[..]",
+  skip: "[--]",
+} as const;

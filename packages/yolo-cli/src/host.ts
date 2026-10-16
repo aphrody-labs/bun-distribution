@@ -88,8 +88,10 @@ export function sq(value: string): string {
   return `'${value.replaceAll("'", `'\\''`)}'`;
 }
 
-const isTTY = process.stdout.isTTY === true && process.env["NO_COLOR"] === undefined;
-const paint = (code: string, s: string): string => (isTTY ? `\x1b[${code}m${s}\x1b[0m` : s);
+const isTTY =
+  process.stdout.isTTY === true && process.env["NO_COLOR"] === undefined;
+const paint = (code: string, s: string): string =>
+  isTTY ? `\x1b[${code}m${s}\x1b[0m` : s;
 const bold = (s: string): string => paint("1", s);
 const red = (s: string): string => paint("31", s);
 const yellow = (s: string): string => paint("33", s);
@@ -101,9 +103,14 @@ function pad(s: string, width: number, right = false): string {
   return right ? " ".repeat(gap) + s : s + " ".repeat(gap);
 }
 
-function table(rows: readonly (readonly string[])[], right: readonly number[] = []): string {
+function table(
+  rows: readonly (readonly string[])[],
+  right: readonly number[] = [],
+): string {
   if (rows.length === 0) return "";
-  const widths = rows[0]!.map((_, i) => Math.max(...rows.map((r) => Bun.stringWidth(r[i] ?? ""))));
+  const widths = rows[0]!.map((_, i) =>
+    Math.max(...rows.map((r) => Bun.stringWidth(r[i] ?? ""))),
+  );
   return rows
     .map(
       (r) =>
@@ -165,7 +172,11 @@ export class LocalTransport implements Transport {
   }
 
   async tune(): Promise<ExecResult> {
-    return { code: 127, stdout: "", stderr: "aphrody-infra ssh tune is for remote hosts" };
+    return {
+      code: 127,
+      stdout: "",
+      stderr: "aphrody-infra ssh tune is for remote hosts",
+    };
   }
 }
 
@@ -189,7 +200,9 @@ export class RemoteTransport implements Transport {
 export function makeTransport(host: HostName): Transport {
   if (host === "local") return new LocalTransport();
   if (!onPath("aphrody-infra")) {
-    throw new Error(`\`aphrody-infra\` is not on PATH (Aphrody install: ${aphrodyRoot()})`);
+    throw new Error(
+      `\`aphrody-infra\` is not on PATH (Aphrody install: ${aphrodyRoot()})`,
+    );
   }
   return new RemoteTransport(host);
 }
@@ -203,7 +216,8 @@ export function policyFile(yoloRoot: string, explicit?: string): string | null {
     join(process.cwd(), "host-policy.toml"),
     join(yoloRoot, "tools/config/host/host-policy.toml"),
   ];
-  for (const c of candidates) if (c !== undefined && c !== "" && existsSync(c)) return c;
+  for (const c of candidates)
+    if (c !== undefined && c !== "" && existsSync(c)) return c;
   return null;
 }
 
@@ -213,23 +227,35 @@ export function loadPolicy(
   explicit?: string,
 ): { policy: Policy; file: string | null } {
   const file = policyFile(yoloRoot, explicit);
-  return { policy: parsePolicy(file === null ? null : readFileSync(file, "utf8"), host), file };
+  return {
+    policy: parsePolicy(
+      file === null ? null : readFileSync(file, "utf8"),
+      host,
+    ),
+    file,
+  };
 }
 
 export function expandHome(p: string, home: string): string {
-  return p === "~" ? home : p.startsWith("~/") ? posix.join(home, p.slice(2)) : p;
+  return p === "~"
+    ? home
+    : p.startsWith("~/")
+      ? posix.join(home, p.slice(2))
+      : p;
 }
 
 /** Quote a policy path for a shell script, keeping `~` as "$HOME". Throws on anything unusual. */
 function shellPath(p: string): string {
-  if (!/^[~/][\w./@+-]*$/.test(p)) throw new Error(`unsupported path in policy: ${p}`);
+  if (!/^[~/][\w./@+-]*$/.test(p))
+    throw new Error(`unsupported path in policy: ${p}`);
   if (p === "~") return '"$HOME"';
   if (p.startsWith("~/")) return `"$HOME"/${sq(p.slice(2))}`;
   return sq(p);
 }
 
 function shellGlob(p: string): string {
-  if (!/^\/[\w./@+*?-]*$/.test(p)) throw new Error(`unsupported glob in policy: ${p}`);
+  if (!/^\/[\w./@+*?-]*$/.test(p))
+    throw new Error(`unsupported glob in policy: ${p}`);
   return p;
 }
 
@@ -237,7 +263,11 @@ function shellGlob(p: string): string {
 export function effectiveLocks(host: HostName, policy: Policy): string[] {
   const out = [...policy.locks];
   const factory = buildFactoryInfo();
-  if (factory !== null && factory.target === host && !out.includes(factory.lockPath))
+  if (
+    factory !== null &&
+    factory.target === host &&
+    !out.includes(factory.lockPath)
+  )
     out.push(factory.lockPath);
   return out;
 }
@@ -292,7 +322,13 @@ export const FACT_SECTIONS: readonly Section[] = [
   "locks",
 ];
 
-export const ROTATED_LOG_PATTERNS = ["*.gz", "*.xz", "*.zst", "*.[0-9]", "*.old"] as const;
+export const ROTATED_LOG_PATTERNS = [
+  "*.gz",
+  "*.xz",
+  "*.zst",
+  "*.[0-9]",
+  "*.old",
+] as const;
 
 export function rotatedLogsFind(days: number, tail: string): string {
   const names = ROTATED_LOG_PATTERNS.map((n) => `-name '${n}'`).join(" -o ");
@@ -309,7 +345,8 @@ export function collectorScript(
   const caches = policy.reclaim.cacheDirs.map(shellPath).join(" ");
   const exclude = policy.reclaim.excludeNames
     .map((n) => {
-      if (!/^[\w.@+-]+$/.test(n)) throw new Error(`unsupported exclude name in policy: ${n}`);
+      if (!/^[\w.@+-]+$/.test(n))
+        throw new Error(`unsupported exclude name in policy: ${n}`);
       return `-name ${sq(n)}`;
     })
     .join(" -o ");
@@ -333,11 +370,13 @@ done`,
     df: "df -PT -B1 2>/dev/null",
     dfi: "df -Pi 2>/dev/null",
     mounts: "findmnt -rn -o TARGET,SOURCE,FSTYPE,OPTIONS 2>/dev/null",
-    swapon: "swapon --noheadings --raw --bytes --show=NAME,TYPE,SIZE,USED,PRIO 2>/dev/null",
+    swapon:
+      "swapon --noheadings --raw --bytes --show=NAME,TYPE,SIZE,USED,PRIO 2>/dev/null",
     zram: "zramctl --noheadings --raw --bytes -o NAME,DISKSIZE,DATA,COMPR,ALGORITHM 2>/dev/null",
     services:
       "systemctl list-units --type=service --state=running --no-legend --plain --no-pager 2>/dev/null",
-    failed: "systemctl list-units --state=failed --no-legend --plain --no-pager 2>/dev/null",
+    failed:
+      "systemctl list-units --state=failed --no-legend --plain --no-pager 2>/dev/null",
     timers: "systemctl list-timers --all --no-legend --no-pager 2>/dev/null",
     ports: "$S ss -H -tulnp 2>/dev/null",
     ps: "ps -eo pid=,ppid=,rss=,pcpu=,etimes=,stat=,user:32=,args= 2>/dev/null",
@@ -412,7 +451,11 @@ export async function collect(
   policy: Policy,
   sections: readonly Section[] = SECTIONS,
 ): Promise<Audit> {
-  const script = collectorScript(sections, policy, effectiveLocks(t.host, policy));
+  const script = collectorScript(
+    sections,
+    policy,
+    effectiveLocks(t.host, policy),
+  );
   const r = await t.exec(wrapScript(script), 300);
   if (r.code !== 0 && r.stdout.trim() === "")
     throw new Error(
@@ -421,8 +464,16 @@ export async function collect(
   return buildAudit(t.host, r.stdout);
 }
 
-export function pathContext(a: Audit, host: HostName, policy: Policy): PathContext {
-  return { user: a.identity.user, home: a.identity.home, preserve: preservePaths(host, policy) };
+export function pathContext(
+  a: Audit,
+  host: HostName,
+  policy: Policy,
+): PathContext {
+  return {
+    user: a.identity.user,
+    home: a.identity.home,
+    preserve: preservePaths(host, policy),
+  };
 }
 
 export function heldLocks(a: Audit): LockState[] {
@@ -482,9 +533,11 @@ export interface Step {
   /** extra exit codes that count as success */
   readonly okCodes?: readonly number[] | undefined;
   /** re-checked at run time; a string refuses the step */
-  readonly gate?: ((ctx: RunContext, state: RunState) => Promise<string | null>) | undefined;
+  readonly gate?:
+    ((ctx: RunContext, state: RunState) => Promise<string | null>) | undefined;
   readonly record?: ((r: StepResult, state: RunState) => void) | undefined;
-  readonly run?: ((ctx: RunContext, state: RunState) => Promise<StepResult>) | undefined;
+  readonly run?:
+    ((ctx: RunContext, state: RunState) => Promise<StepResult>) | undefined;
 }
 
 export interface Plan {
@@ -527,16 +580,25 @@ export function journalPath(yoloRoot: string, host: HostName): string {
   return join(yoloRoot, "var/host", host, "journal.jsonl");
 }
 
-export async function appendJournal(yoloRoot: string, entry: JournalEntry): Promise<void> {
+export async function appendJournal(
+  yoloRoot: string,
+  entry: JournalEntry,
+): Promise<void> {
   const file = journalPath(yoloRoot, entry.host);
   await mkdir(dirname(file), { recursive: true });
   // a torn last line (crash, full disk) must not swallow the next record
   const f = Bun.file(file);
-  const torn = (await f.exists()) && f.size > 0 && (await f.slice(f.size - 1).text()) !== "\n";
+  const torn =
+    (await f.exists()) &&
+    f.size > 0 &&
+    (await f.slice(f.size - 1).text()) !== "\n";
   await appendFile(file, `${torn ? "\n" : ""}${JSON.stringify(entry)}\n`);
 }
 
-export async function readJournal(yoloRoot: string, host: HostName): Promise<JournalEntry[]> {
+export async function readJournal(
+  yoloRoot: string,
+  host: HostName,
+): Promise<JournalEntry[]> {
   const file = journalPath(yoloRoot, host);
   if (!existsSync(file)) return [];
   const out: JournalEntry[] = [];
@@ -560,7 +622,9 @@ export function renderPlan(plan: Plan): string {
   plan.steps.forEach((s, i) => {
     const tags = [
       s.mutates ? "" : "read-only",
-      s.estimateBytes !== undefined && s.estimateBytes > 0 ? `~${fmtBytes(s.estimateBytes)}` : "",
+      s.estimateBytes !== undefined && s.estimateBytes > 0
+        ? `~${fmtBytes(s.estimateBytes)}`
+        : "",
       s.blocked !== undefined ? red(`BLOCKED: ${s.blocked}`) : "",
     ]
       .filter((x) => x !== "")
@@ -568,14 +632,22 @@ export function renderPlan(plan: Plan): string {
     lines.push(
       `${String(i + 1).padStart(3)}. ${s.title}${tags === "" ? "" : ` ${dim(`[${tags}]`)}`}`,
     );
-    const where = s.kind === "local-exec" ? "local$" : s.kind === "inproc" ? "in-process:" : "$";
+    const where =
+      s.kind === "local-exec"
+        ? "local$"
+        : s.kind === "inproc"
+          ? "in-process:"
+          : "$";
     lines.push(`       ${where} ${s.cmd}`);
     if (s.undo !== null) lines.push(`       undo: ${s.undo}`);
   });
   const SHOWN = 8;
-  for (const k of plan.skipped.slice(0, SHOWN)) lines.push(`  left alone: ${k.what} (${k.why})`);
+  for (const k of plan.skipped.slice(0, SHOWN))
+    lines.push(`  left alone: ${k.what} (${k.why})`);
   if (plan.skipped.length > SHOWN)
-    lines.push(`  left alone: ... and ${plan.skipped.length - SHOWN} more (--json lists them all)`);
+    lines.push(
+      `  left alone: ... and ${plan.skipped.length - SHOWN} more (--json lists them all)`,
+    );
   return lines.join("\n");
 }
 
@@ -585,7 +657,10 @@ const nowId = (): string => Bun.randomUUIDv7().slice(0, 18);
  * Execute a plan. Refuses when a build lock is held; stops a group at its first failure; journals every
  * step. Returns 0 when all steps succeeded, 1 on failure, 3 on a refusal.
  */
-export async function executePlan(plan: Plan, ctx: RunContext): Promise<number> {
+export async function executePlan(
+  plan: Plan,
+  ctx: RunContext,
+): Promise<number> {
   const run = nowId();
   const state: RunState = { verification: new Map(), values: new Map() };
   const policyLocks = effectiveLocks(ctx.host, ctx.policy);
@@ -642,11 +717,20 @@ export async function executePlan(plan: Plan, ctx: RunContext): Promise<number> 
   let refused = false;
   for (const step of plan.steps) {
     const started = Bun.nanoseconds();
-    const elapsed = (): number => Math.round((Bun.nanoseconds() - started) / 1e6);
+    const elapsed = (): number =>
+      Math.round((Bun.nanoseconds() - started) / 1e6);
     if (step.group !== undefined && aborted.has(step.group)) {
       ctx.out(`  skip  ${step.title} (an earlier step of this group failed)`);
       // oxlint-disable-next-line no-await-in-loop -- plan steps run in order: each depends on the host and state left by the previous step, and a failure or refusal gates the rest
-      await journal(step, "skipped", null, 0, null, null, "an earlier step of the group failed");
+      await journal(
+        step,
+        "skipped",
+        null,
+        0,
+        null,
+        null,
+        "an earlier step of the group failed",
+      );
       continue;
     }
     if (step.blocked !== undefined) {
@@ -656,7 +740,8 @@ export async function executePlan(plan: Plan, ctx: RunContext): Promise<number> 
       continue;
     }
     try {
-      if (step.kind === "exec" || step.kind === "local-exec") assertSafeCommand(step.cmd);
+      if (step.kind === "exec" || step.kind === "local-exec")
+        assertSafeCommand(step.cmd);
       if (step.gate !== undefined) {
         // oxlint-disable-next-line no-await-in-loop -- plan steps run in order: each depends on the host and state left by the previous step, and a failure or refusal gates the rest
         const why = await step.gate(ctx, state);
@@ -698,24 +783,43 @@ export async function executePlan(plan: Plan, ctx: RunContext): Promise<number> 
     let after: Metrics | null = null;
     if (step.mutates && step.metricPaths !== undefined && result.ok)
       // oxlint-disable-next-line no-await-in-loop -- plan steps run in order: each depends on the host and state left by the previous step, and a failure or refusal gates the rest
-      after = parseMetrics((await ctx.transport.exec(metricsCommand(step.metricPaths), 60)).stdout);
+      after = parseMetrics(
+        (await ctx.transport.exec(metricsCommand(step.metricPaths), 60)).stdout,
+      );
 
     const note =
-      (result.note ?? result.output.trim().split("\n").slice(-3).join(" | ")).slice(0, 400) || null;
+      (
+        result.note ?? result.output.trim().split("\n").slice(-3).join(" | ")
+      ).slice(0, 400) || null;
     // oxlint-disable-next-line no-await-in-loop -- plan steps run in order: each depends on the host and state left by the previous step, and a failure or refusal gates the rest
-    await journal(step, result.ok ? "ok" : "failed", result.code, elapsed(), before, after, note);
+    await journal(
+      step,
+      result.ok ? "ok" : "failed",
+      result.code,
+      elapsed(),
+      before,
+      after,
+      note,
+    );
     if (result.ok) {
       const freed =
         before !== null && after !== null
           ? Object.keys(after.freeBytes).reduce(
-              (n, k) => n + ((after.freeBytes[k] ?? 0) - (before.freeBytes[k] ?? 0)),
+              (n, k) =>
+                n + ((after.freeBytes[k] ?? 0) - (before.freeBytes[k] ?? 0)),
               0,
             )
           : 0;
-      ctx.out(`  ok    ${step.title}${freed > 0 ? green(` (+${fmtBytes(freed)} free)`) : ""}`);
+      ctx.out(
+        `  ok    ${step.title}${freed > 0 ? green(` (+${fmtBytes(freed)} free)`) : ""}`,
+      );
     } else {
       failed = true;
-      ctx.out(red(`  FAIL  ${step.title} (exit ${result.code}): ${(note ?? "").slice(0, 200)}`));
+      ctx.out(
+        red(
+          `  FAIL  ${step.title} (exit ${result.code}): ${(note ?? "").slice(0, 200)}`,
+        ),
+      );
       if (step.group !== undefined) aborted.add(step.group);
       else break;
     }
@@ -724,7 +828,11 @@ export async function executePlan(plan: Plan, ctx: RunContext): Promise<number> 
   return refused ? 3 : failed ? 1 : 0;
 }
 
-async function runStep(step: Step, ctx: RunContext, state: RunState): Promise<StepResult> {
+async function runStep(
+  step: Step,
+  ctx: RunContext,
+  state: RunState,
+): Promise<StepResult> {
   if (step.run !== undefined) return step.run(ctx, state);
   let r: ExecResult;
   if (step.kind === "service")
@@ -749,10 +857,18 @@ export async function finish(
 ): Promise<number> {
   if (!apply) {
     if (json) {
-      ctx.out(JSON.stringify({ apply: false, ...plan, steps: plan.steps.map(stepJson) }, null, 2));
+      ctx.out(
+        JSON.stringify(
+          { apply: false, ...plan, steps: plan.steps.map(stepJson) },
+          null,
+          2,
+        ),
+      );
     } else {
       ctx.out(renderPlan(plan));
-      const n = plan.steps.filter((s) => s.mutates && s.blocked === undefined).length;
+      const n = plan.steps.filter(
+        (s) => s.mutates && s.blocked === undefined,
+      ).length;
       ctx.out(
         n === 0
           ? "\nNothing to apply."
@@ -809,7 +925,9 @@ export function reclaimCandidates(
   const skipped: { what: string; why: string }[] = [];
   const id = a.identity;
   const ctx = pathContext(a, host, policy);
-  const rootCmd = (cmd: string): { cmd: string | null; blocked?: string | undefined } => {
+  const rootCmd = (
+    cmd: string,
+  ): { cmd: string | null; blocked?: string | undefined } => {
     const c = asRoot(id, cmd);
     return c === null
       ? { cmd, blocked: "needs root and passwordless sudo is not available" }
@@ -910,10 +1028,15 @@ export function reclaimCandidates(
       continue;
     }
     if (
-      !policy.reclaim.swapFileGlobs.some((g) => new Bun.Glob(g).match(sw.path)) ||
+      !policy.reclaim.swapFileGlobs.some((g) =>
+        new Bun.Glob(g).match(sw.path),
+      ) ||
       isDatabasePath(sw.path)
     ) {
-      skipped.push({ what: sw.path, why: "not matching the swap file patterns" });
+      skipped.push({
+        what: sw.path,
+        why: "not matching the swap file patterns",
+      });
       continue;
     }
     out.push({
@@ -992,7 +1115,9 @@ export function reclaimCandidates(
       skipped.push({ what: `~/${k}`, why: "reusable cache kept on purpose" });
   }
 
-  out.sort((x, y) => (x.risk === y.risk ? y.bytes - x.bytes : x.risk === "low" ? -1 : 1));
+  out.sort((x, y) =>
+    x.risk === y.risk ? y.bytes - x.bytes : x.risk === "low" ? -1 : 1,
+  );
   return { candidates: out, skipped };
 }
 
@@ -1011,10 +1136,14 @@ export function planReclaim(a: Audit, policy: Policy, host: HostName): Plan {
     timeoutSecs: 900,
     group: c.id, // independent cleanups: one failure does not stop the others
   }));
-  const notes = [`only regenerable data is removed; protected paths need \`yolo host archive\``];
+  const notes = [
+    `only regenerable data is removed; protected paths need \`yolo host archive\``,
+  ];
   const held = heldLocks(a);
   if (held.length > 0)
-    notes.push(`BUILD LOCK HELD (${held.map((l) => l.path).join(", ")}): --apply will refuse`);
+    notes.push(
+      `BUILD LOCK HELD (${held.map((l) => l.path).join(", ")}): --apply will refuse`,
+    );
   return { host, command: "reclaim", steps, notes, skipped };
 }
 
@@ -1078,7 +1207,9 @@ export function renderAudit(
           ? yellow("WARN    ")
           : dim("info    ");
     L.push(`  ${tag} ${f.title}`);
-    L.push(`           ${f.detail}${f.action === undefined ? "" : `  ->  ${f.action}`}`);
+    L.push(
+      `           ${f.detail}${f.action === undefined ? "" : `  ->  ${f.action}`}`,
+    );
   }
 
   L.push("", bold("Disks (lsblk)"));
@@ -1091,7 +1222,8 @@ export function renderAudit(
         d.state,
         d.filesystems
           .map(
-            (f) => `${f.path.replace("/dev/", "")}:${f.fstype}${f.mounted ? "" : " (unmounted)"}`,
+            (f) =>
+              `${f.path.replace("/dev/", "")}:${f.fstype}${f.mounted ? "" : " (unmounted)"}`,
           )
           .join(", ") || "-",
         d.note,
@@ -1130,7 +1262,9 @@ export function renderAudit(
       .join(" ")}`,
   );
   for (const t of p.topRss.slice(0, 5))
-    L.push(`  ${pad(fmtBytes(t.rssBytes), 9, true)}  ${pad(t.user, 10)} ${t.command}`);
+    L.push(
+      `  ${pad(fmtBytes(t.rssBytes), 9, true)}  ${pad(t.user, 10)} ${t.command}`,
+    );
 
   L.push(
     "",
@@ -1138,7 +1272,9 @@ export function renderAudit(
       `Services: ${a.services.running.length} running, ${a.services.failed.length} failed, ${a.timers.length} timers, ${a.cron.files.length} cron.d files, ${a.cron.userEntries} user crontab entries`,
     ),
   );
-  L.push(`  ${a.services.running.map((u) => u.name.replace(/\.service$/, "")).join(", ")}`);
+  L.push(
+    `  ${a.services.running.map((u) => u.name.replace(/\.service$/, "")).join(", ")}`,
+  );
   if (a.services.failed.length > 0)
     L.push(`  failed: ${a.services.failed.map((u) => u.name).join(", ")}`);
 
@@ -1227,8 +1363,10 @@ export function planServices(
   });
   const running = new Set(a.services.running.map((u) => u.name));
   const wanted = new Set<string>();
-  if (opts.candidates) for (const r of rows) if (r.cls === "candidate") wanted.add(r.name);
-  for (const s of opts.stop) wanted.add(s.endsWith(".service") ? s : `${s}.service`);
+  if (opts.candidates)
+    for (const r of rows) if (r.cls === "candidate") wanted.add(r.name);
+  for (const s of opts.stop)
+    wanted.add(s.endsWith(".service") ? s : `${s}.service`);
 
   const steps: Step[] = [];
   const skipped: { what: string; why: string }[] = [];
@@ -1283,7 +1421,10 @@ export function renderServices(rows: readonly ServiceRow[]): string {
   const sorted = [...rows].toSorted(
     (x, y) => order[x.cls] - order[y.cls] || x.name.localeCompare(y.name),
   );
-  return table([["CLASS", "UNIT", "WHY"], ...sorted.map((r) => [r.cls, r.name, r.why])]);
+  return table([
+    ["CLASS", "UNIT", "WHY"],
+    ...sorted.map((r) => [r.cls, r.name, r.why]),
+  ]);
 }
 
 // ------------------------------------------------------------------------------------------------ tune
@@ -1300,9 +1441,21 @@ export const SYSCTL_TARGETS: readonly TuneTarget[] = [
     value: "bbr",
     why: "BBR congestion control: better throughput on lossy or long links",
   },
-  { key: "net.core.default_qdisc", value: "fq", why: "fq pacing, required for BBR to work well" },
-  { key: "net.core.rmem_max", value: "16777216", why: "16 MiB receive buffer ceiling" },
-  { key: "net.core.wmem_max", value: "16777216", why: "16 MiB send buffer ceiling" },
+  {
+    key: "net.core.default_qdisc",
+    value: "fq",
+    why: "fq pacing, required for BBR to work well",
+  },
+  {
+    key: "net.core.rmem_max",
+    value: "16777216",
+    why: "16 MiB receive buffer ceiling",
+  },
+  {
+    key: "net.core.wmem_max",
+    value: "16777216",
+    why: "16 MiB send buffer ceiling",
+  },
   {
     key: "net.ipv4.tcp_rmem",
     value: "4096 131072 16777216",
@@ -1313,10 +1466,26 @@ export const SYSCTL_TARGETS: readonly TuneTarget[] = [
     value: "4096 65536 16777216",
     why: "TCP send buffer autotuning range",
   },
-  { key: "net.core.somaxconn", value: "65535", why: "listen backlog for busy web servers" },
-  { key: "net.ipv4.tcp_max_syn_backlog", value: "65535", why: "SYN backlog under bursts" },
-  { key: "net.core.netdev_max_backlog", value: "16384", why: "packet queue per CPU before drops" },
-  { key: "net.ipv4.tcp_fin_timeout", value: "15", why: "recycle FIN-WAIT-2 sockets faster" },
+  {
+    key: "net.core.somaxconn",
+    value: "65535",
+    why: "listen backlog for busy web servers",
+  },
+  {
+    key: "net.ipv4.tcp_max_syn_backlog",
+    value: "65535",
+    why: "SYN backlog under bursts",
+  },
+  {
+    key: "net.core.netdev_max_backlog",
+    value: "16384",
+    why: "packet queue per CPU before drops",
+  },
+  {
+    key: "net.ipv4.tcp_fin_timeout",
+    value: "15",
+    why: "recycle FIN-WAIT-2 sockets faster",
+  },
   {
     key: "net.ipv4.tcp_tw_reuse",
     value: "1",
@@ -1333,11 +1502,31 @@ export const SYSCTL_TARGETS: readonly TuneTarget[] = [
     why: "wider ephemeral port range for proxies",
   },
   { key: "fs.file-max", value: "2097152", why: "system-wide open file limit" },
-  { key: "fs.inotify.max_user_watches", value: "524288", why: "file watchers for dev tools" },
-  { key: "fs.inotify.max_user_instances", value: "1024", why: "inotify instances" },
-  { key: "vm.vfs_cache_pressure", value: "50", why: "keep dentries/inodes cached longer" },
-  { key: "vm.dirty_ratio", value: "15", why: "bound dirty page cache before writers block" },
-  { key: "vm.dirty_background_ratio", value: "5", why: "start background writeback earlier" },
+  {
+    key: "fs.inotify.max_user_watches",
+    value: "524288",
+    why: "file watchers for dev tools",
+  },
+  {
+    key: "fs.inotify.max_user_instances",
+    value: "1024",
+    why: "inotify instances",
+  },
+  {
+    key: "vm.vfs_cache_pressure",
+    value: "50",
+    why: "keep dentries/inodes cached longer",
+  },
+  {
+    key: "vm.dirty_ratio",
+    value: "15",
+    why: "bound dirty page cache before writers block",
+  },
+  {
+    key: "vm.dirty_background_ratio",
+    value: "5",
+    why: "start background writeback earlier",
+  },
 ];
 
 export const norm = (v: string): string => v.replace(/\s+/g, " ").trim();
@@ -1346,11 +1535,16 @@ export const norm = (v: string): string => v.replace(/\s+/g, " ").trim();
 const CEILING_KEYS =
   /^(fs\.file-max|fs\.inotify\..*|net\.core\.(r|w)mem_max|net\.core\.somaxconn|net\.core\.netdev_max_backlog|net\.ipv4\.tcp_max_syn_backlog|net\.ipv4\.tcp_(r|w)mem)$/;
 
-export function satisfies(key: string, current: string, target: string): boolean {
+export function satisfies(
+  key: string,
+  current: string,
+  target: string,
+): boolean {
   if (norm(current) === norm(target)) return true;
   if (!CEILING_KEYS.test(key)) return false;
   const last = (v: string): number => Number(norm(v).split(" ").at(-1));
-  const mid = (v: string): number => Number(norm(v).split(" ").at(-2) ?? norm(v));
+  const mid = (v: string): number =>
+    Number(norm(v).split(" ").at(-2) ?? norm(v));
   if (key.endsWith("tcp_rmem") || key.endsWith("tcp_wmem"))
     return last(current) >= last(target) && mid(current) >= mid(target);
   return Number(norm(current)) >= Number(norm(target));
@@ -1361,7 +1555,10 @@ export function suggestedSwapBytes(ramBytes: number): number {
   const GiB = 1024 ** 3;
   if (ramBytes <= 2 * GiB) return 2 * ramBytes;
   if (ramBytes <= 8 * GiB) return ramBytes;
-  return Math.min(16 * GiB, Math.max(4 * GiB, Math.round(ramBytes / 8 / GiB) * GiB));
+  return Math.min(
+    16 * GiB,
+    Math.max(4 * GiB, Math.round(ramBytes / 8 / GiB) * GiB),
+  );
 }
 
 export function tuneProbeScript(keys: readonly string[]): string {
@@ -1430,11 +1627,14 @@ export function planTune(
       key: o.key,
       current: norm(o.current_value),
       target: norm(o.recommended_value),
-      status: norm(o.current_value) === norm(o.recommended_value) ? "ok" : "change",
+      status:
+        norm(o.current_value) === norm(o.recommended_value) ? "ok" : "change",
       source: "aphrody-infra",
       why: o.rationale ?? "",
     });
-  const ownerPending = owner.filter((o) => norm(o.current_value) !== norm(o.recommended_value));
+  const ownerPending = owner.filter(
+    (o) => norm(o.current_value) !== norm(o.recommended_value),
+  );
   for (const o of ownerPending)
     if (satisfies(o.key, o.current_value, o.recommended_value))
       notes.push(
@@ -1454,7 +1654,11 @@ export function planTune(
   const swappiness = String(policy.tune.swappiness);
   const targets: TuneTarget[] = [
     ...SYSCTL_TARGETS,
-    { key: "vm.swappiness", value: swappiness, why: "prefer RAM and zram before disk swap" },
+    {
+      key: "vm.swappiness",
+      value: swappiness,
+      why: "prefer RAM and zram before disk swap",
+    },
   ];
   const available = (probe["avail_cc"] ?? "").split(/\s+/);
   const ours: TuneTarget[] = [];
@@ -1475,7 +1679,10 @@ export function planTune(
       });
       continue;
     }
-    if (t.key === "net.ipv4.tcp_congestion_control" && !available.includes("bbr")) {
+    if (
+      t.key === "net.ipv4.tcp_congestion_control" &&
+      !available.includes("bbr")
+    ) {
       rows.push({
         key: t.key,
         current,
@@ -1504,7 +1711,9 @@ export function planTune(
   if (ours.length > 0) {
     const file = "/etc/sysctl.d/99-yolo-tune.conf";
     const content = managed.map((t) => `${t.key} = ${t.value}`);
-    const modprobe = managed.some((t) => t.key === "net.ipv4.tcp_congestion_control")
+    const modprobe = managed.some(
+      (t) => t.key === "net.ipv4.tcp_congestion_control",
+    )
       ? "modprobe tcp_bbr 2>/dev/null; "
       : "";
     const cmd = `${modprobe}printf '%s\\n' ${content.map(sq).join(" ")} > ${file}.tmp && if [ -f ${file} ] && cmp -s ${file}.tmp ${file}; then rm -f ${file}.tmp; else { [ -f ${file} ] && cp -a ${file} ${file}.bak-${stamp}; mv ${file}.tmp ${file}; }; fi && sysctl -p ${file}`;
@@ -1578,7 +1787,10 @@ export function planTune(
 
   if (probe["nginx_present"] === "yes") {
     const cur = probe["nginx_workers"] ?? "";
-    const target = policy.tune.nginxWorkers === "cpus" ? String(id.cpus) : policy.tune.nginxWorkers;
+    const target =
+      policy.tune.nginxWorkers === "cpus"
+        ? String(id.cpus)
+        : policy.tune.nginxWorkers;
     const status = cur === target ? "ok" : "change";
     rows.push({
       key: "nginx worker_processes",
@@ -1666,7 +1878,9 @@ export function planTune(
     );
 
   if (host !== "local" && owner.length === 0)
-    notes.push("aphrody-infra ssh tune returned no items; only yolo's own targets are shown");
+    notes.push(
+      "aphrody-infra ssh tune returned no items; only yolo's own targets are shown",
+    );
   notes.push(
     "a sysctl value owned by aphrody-infra ssh tune is applied through it; yolo adds the settings it does not manage",
   );
@@ -1697,7 +1911,8 @@ export function parseCurlStats(text: string): CurlStats | null {
   const kv = parseKeyValues(text.trim().split(/\s+/).join("\n"));
   const size = Number(kv["size"]);
   const total = Number(kv["total"]);
-  if (!Number.isFinite(size) || !Number.isFinite(total) || total <= 0) return null;
+  if (!Number.isFinite(size) || !Number.isFinite(total) || total <= 0)
+    return null;
   return {
     sizeBytes: size,
     totalSecs: total,
@@ -1713,10 +1928,15 @@ export function median(xs: readonly number[]): number {
   if (xs.length === 0) return Number.NaN;
   const s = [...xs].toSorted((a, b) => a - b);
   const m = Math.floor(s.length / 2);
-  return s.length % 2 === 1 ? (s[m] as number) : ((s[m - 1] as number) + (s[m] as number)) / 2;
+  return s.length % 2 === 1
+    ? (s[m] as number)
+    : ((s[m - 1] as number) + (s[m] as number)) / 2;
 }
 
-export function netUrl(size: number, base = "https://speed.cloudflare.com/__down"): string {
+export function netUrl(
+  size: number,
+  base = "https://speed.cloudflare.com/__down",
+): string {
   return `${base}?bytes=${size}`;
 }
 
@@ -1724,7 +1944,9 @@ export function hostCurlCommand(url: string): string {
   return `curl -sS -o /dev/null --max-time 90 -w ${sq(CURL_FORMAT)} ${sq(url)}`;
 }
 
-export async function sshEndpoint(alias: string): Promise<{ hostname: string; port: number }> {
+export async function sshEndpoint(
+  alias: string,
+): Promise<{ hostname: string; port: number }> {
   const p = Bun.spawn(["ssh", "-G", alias], {
     windowsHide: true,
     stdout: "pipe",
@@ -1732,12 +1954,20 @@ export async function sshEndpoint(alias: string): Promise<{ hostname: string; po
   });
   const text = await new Response(p.stdout).text();
   const kv = Object.fromEntries(
-    text.split("\n").map((l) => [l.split(" ")[0], l.split(" ").slice(1).join(" ")]),
+    text
+      .split("\n")
+      .map((l) => [l.split(" ")[0], l.split(" ").slice(1).join(" ")]),
   );
-  return { hostname: String(kv["hostname"] ?? alias), port: Number(kv["port"] ?? 22) };
+  return {
+    hostname: String(kv["hostname"] ?? alias),
+    port: Number(kv["port"] ?? 22),
+  };
 }
 
-export async function tcpConnectMs(hostname: string, port: number): Promise<number> {
+export async function tcpConnectMs(
+  hostname: string,
+  port: number,
+): Promise<number> {
   const t0 = Bun.nanoseconds();
   let first = 0;
   await new Promise<void>((resolve, reject) => {
@@ -1851,7 +2081,11 @@ export async function runNet(
       rtt.push((Bun.nanoseconds() - t0) / 1e6);
     }
     result["sshExecMs"] = { median: median(rtt), samples: rtt };
-    rows.push(["ssh exec round trip (aphrody-infra) median", median(rtt).toFixed(0), "ms"]);
+    rows.push([
+      "ssh exec round trip (aphrody-infra) median",
+      median(rtt).toFixed(0),
+      "ms",
+    ]);
     const r = await t.exec(hostCurlCommand(url), 120);
     const stats = r.code === 0 ? parseCurlStats(r.stdout) : null;
     if (stats === null)
@@ -1869,11 +2103,20 @@ export async function runNet(
       rows.push(
         [
           "download ON the host: size received",
-          fmtBytes(stats.sizeBytes) + (stats.sizeBytes === size ? "" : " (INCOMPLETE)"),
+          fmtBytes(stats.sizeBytes) +
+            (stats.sizeBytes === size ? "" : " (INCOMPLETE)"),
           "",
         ],
-        ["download ON the host: throughput", (stats.bytesPerSec / 1e6).toFixed(1), "MB/s"],
-        ["download ON the host: throughput", mbit(stats.bytesPerSec).toFixed(0), "Mbit/s"],
+        [
+          "download ON the host: throughput",
+          (stats.bytesPerSec / 1e6).toFixed(1),
+          "MB/s",
+        ],
+        [
+          "download ON the host: throughput",
+          mbit(stats.bytesPerSec).toFixed(0),
+          "Mbit/s",
+        ],
         [
           "download ON the host: connect / first byte",
           `${(stats.connectSecs * 1000).toFixed(0)} / ${(stats.ttfbSecs * 1000).toFixed(0)}`,
@@ -1905,12 +2148,24 @@ export async function runNet(
         fmtBytes(got) + (got === size ? "" : " (INCOMPLETE)"),
         "",
       ],
-      ["download FROM this machine (fetch): throughput", (got / secs / 1e6).toFixed(1), "MB/s"],
-      ["download FROM this machine (fetch): throughput", mbit(got / secs).toFixed(0), "Mbit/s"],
+      [
+        "download FROM this machine (fetch): throughput",
+        (got / secs / 1e6).toFixed(1),
+        "MB/s",
+      ],
+      [
+        "download FROM this machine (fetch): throughput",
+        mbit(got / secs).toFixed(0),
+        "Mbit/s",
+      ],
       ["download FROM this machine (fetch): first byte", ttfb.toFixed(0), "ms"],
     );
   } catch (e) {
-    rows.push(["download from this machine", `failed: ${(e as Error).message}`, ""]);
+    rows.push([
+      "download from this machine",
+      `failed: ${(e as Error).message}`,
+      "",
+    ]);
   }
   out(
     json
@@ -1948,7 +2203,12 @@ export function readOnlyOptions(fstype: string): string {
   return base;
 }
 
-export function planMount(a: Audit, o: MountOptions, host: HostName, now: Date): Plan {
+export function planMount(
+  a: Audit,
+  o: MountOptions,
+  host: HostName,
+  now: Date,
+): Plan {
   const refuse = (why: string): Plan => ({
     host,
     command: "mount",
@@ -1956,12 +2216,17 @@ export function planMount(a: Audit, o: MountOptions, host: HostName, now: Date):
     notes: [`refused: ${why}`],
     skipped: [{ what: o.device, why }],
   });
-  if (!/^\/dev\/[A-Za-z0-9/_-]+$/.test(o.device)) return refuse("device must look like /dev/sdb1");
+  if (!/^\/dev\/[A-Za-z0-9/_-]+$/.test(o.device))
+    return refuse("device must look like /dev/sdb1");
   const disk = a.disks.find((d) => d.devicePaths.includes(o.device));
   if (disk === undefined)
-    return refuse(`${o.device} is not a disk or partition of this host (see \`yolo host audit\`)`);
+    return refuse(
+      `${o.device} is not a disk or partition of this host (see \`yolo host audit\`)`,
+    );
   if (disk.state === "system")
-    return refuse(`${o.device} belongs to the disk carrying the running system`);
+    return refuse(
+      `${o.device} belongs to the disk carrying the running system`,
+    );
   const fs = disk.filesystems.find((f) => f.path === o.device);
   if (fs === undefined) {
     return refuse(
@@ -1974,7 +2239,8 @@ export function planMount(a: Audit, o: MountOptions, host: HostName, now: Date):
     return refuse(
       `${o.device} is a ${fs.fstype} volume layer: assemble or unlock it first, yolo does not`,
     );
-  if (fs.mounted) return refuse(`${o.device} is already mounted (nothing to do)`);
+  if (fs.mounted)
+    return refuse(`${o.device} is already mounted (nothing to do)`);
   if (o.rw && !o.confirmBackup)
     return refuse(
       `${o.device} already holds an existing ${fs.fstype} filesystem with data: --rw also needs --i-know-this-is-a-backup (it only confirms that writing is intended, it never wipes)`,
@@ -1990,7 +2256,9 @@ export function planMount(a: Audit, o: MountOptions, host: HostName, now: Date):
   }
   if (!(t.startsWith("/mnt/") || t.startsWith("/media/")))
     return refuse(`mount point ${t} must be under /mnt or /media`);
-  const opts = o.rw ? "rw,nosuid,nodev,noexec,nofail" : `${readOnlyOptions(fs.fstype)},nofail`;
+  const opts = o.rw
+    ? "rw,nosuid,nodev,noexec,nofail"
+    : `${readOnlyOptions(fs.fstype)},nofail`;
   const stamp = now.toISOString().replace(/[-:]/g, "").slice(0, 15);
   const id = a.identity;
   const root = (cmd: string): { cmd: string; blocked?: string | undefined } => {
@@ -2090,14 +2358,19 @@ export function planArchive(
   const notes: string[] = [];
   const ctx = pathContext(a, host, policy);
   const day = o.stamp ?? now.toISOString().slice(0, 10).replaceAll("-", "");
-  const refuse = (what: string, why: string): void => void skipped.push({ what, why });
+  const refuse = (what: string, why: string): void =>
+    void skipped.push({ what, why });
   let to: string;
   try {
     to = normalizePath(o.to);
     if (!SIMPLE_PATH.test(to))
-      throw new Error(`--to must use only letters, digits and ._/@+- (got ${o.to})`);
+      throw new Error(
+        `--to must use only letters, digits and ._/@+- (got ${o.to})`,
+      );
     if (o.pull !== undefined && !SIMPLE_PATH.test(normalizePath(o.pull)))
-      throw new Error(`--pull must use only letters, digits and ._/@+- (got ${o.pull})`);
+      throw new Error(
+        `--pull must use only letters, digits and ._/@+- (got ${o.pull})`,
+      );
   } catch (e) {
     return {
       host,
@@ -2120,7 +2393,8 @@ export function planArchive(
     const rsync = local
       ? `rsync -a --partial --append-verify ${files.map(sq).join(" ")} ${sq(`${dest}/`)}`
       : `rsync -a --partial --append-verify -e ssh ${files.map((f) => sq(`${host}:${f}`)).join(" ")} ${sq(`${dest}/`)}`;
-    const rcloneRemote = (f: string): string => sq(local ? f : `${host.toUpperCase()}:${f}`);
+    const rcloneRemote = (f: string): string =>
+      sq(local ? f : `${host.toUpperCase()}:${f}`);
     const rcloneEnv = local
       ? ""
       : `RCLONE_CONFIG_${host.toUpperCase()}_TYPE=sftp RCLONE_CONFIG_${host.toUpperCase()}_SSH=${sq(`ssh ${host}`)} `;
@@ -2158,9 +2432,16 @@ export function planArchive(
           const m = await ctx2.transport.exec(`cat ${sq(sum)}`, 60);
           const expected = /^([0-9a-f]{64})\s/.exec(m.stdout)?.[1];
           if (m.code !== 0 || expected === undefined)
-            return { ok: false, code: 1, output: "", note: "host manifest unreadable" };
+            return {
+              ok: false,
+              code: 1,
+              output: "",
+              note: "host manifest unreadable",
+            };
           const hasher = new Bun.CryptoHasher("sha256");
-          for await (const chunk of Bun.file(`${dest}/${posix.basename(main)}`).stream())
+          for await (const chunk of Bun.file(
+            `${dest}/${posix.basename(main)}`,
+          ).stream())
             hasher.update(chunk);
           const actual = hasher.digest("hex");
           return {
@@ -2199,9 +2480,13 @@ export function planArchive(
       group: pgGroup,
       cmd: `n=$(pg_restore -l ${sq(dump)} 2>/dev/null | grep -c '^[0-9]'); echo "toc_entries=$n"; [ "$n" -gt 0 ] && cd ${sq(to)} && sha256sum -b -- ${sq(posix.basename(dump))} > ${sq(`${dump}.sha256`)} && sha256sum -c --quiet -- ${sq(`${dump}.sha256`)}`,
       record: (r, st) =>
-        void st.verification.set(pgGroup, { ...st.verification.get(pgGroup), dumpListed: r.ok }),
+        void st.verification.set(pgGroup, {
+          ...st.verification.get(pgGroup),
+          dumpListed: r.ok,
+        }),
     });
-    if (o.pull !== undefined) steps.push(...pullSteps(pgGroup, dump, `${dump}.sha256`));
+    if (o.pull !== undefined)
+      steps.push(...pullSteps(pgGroup, dump, `${dump}.sha256`));
   }
 
   for (const raw of o.sources) {
@@ -2232,7 +2517,9 @@ export function planArchive(
     const group = src;
     const prot = protectedReason(src, ctx);
     if (prot !== null)
-      notes.push(`${src} is ${prot}: it can only be reduced through this archive + verify path`);
+      notes.push(
+        `${src} is ${prot}: it can only be reduced through this archive + verify path`,
+      );
     if (isDatabasePath(src))
       notes.push(
         `${src} is database state: a file-level archive of a live database may be inconsistent, use --pg-dump for PostgreSQL`,
@@ -2278,11 +2565,15 @@ export function planArchive(
       timeoutSecs: 7200,
       cmd: `${nice} zstd -t -q ${sq(arc)}`,
       record: (r, st) =>
-        void st.verification.set(group, { ...st.verification.get(group), zstdTest: r.ok }),
+        void st.verification.set(group, {
+          ...st.verification.get(group),
+          zstdTest: r.ok,
+        }),
     });
     steps.push({
       id: `verify-count:${src}`,
-      title: "verify: entry count of the source equals the entries listed in the archive",
+      title:
+        "verify: entry count of the source equals the entries listed in the archive",
       kind: "exec",
       mutates: false,
       undo: null,
@@ -2290,7 +2581,10 @@ export function planArchive(
       timeoutSecs: 7200,
       cmd: `src=$(${sudo}find ${sq(src)} ! -type s 2>/dev/null | wc -l); arc=$(zstd -dc ${sq(arc)} | tar -tf - | wc -l); echo "source_entries=$src archive_entries=$arc"; [ "$src" -gt 0 ] && [ "$src" = "$arc" ]`,
       record: (r, st) =>
-        void st.verification.set(group, { ...st.verification.get(group), entryCountMatches: r.ok }),
+        void st.verification.set(group, {
+          ...st.verification.get(group),
+          entryCountMatches: r.ok,
+        }),
     });
     steps.push({
       id: `manifest:${src}`,
@@ -2302,7 +2596,10 @@ export function planArchive(
       timeoutSecs: 7200,
       cmd: `cd ${sq(to)} && sha256sum -b -- ${sq(posix.basename(arc))} > ${sq(sum)} && sha256sum -c --quiet -- ${sq(sum)} && echo manifest ok`,
       record: (r, st) =>
-        void st.verification.set(group, { ...st.verification.get(group), manifestChecked: r.ok }),
+        void st.verification.set(group, {
+          ...st.verification.get(group),
+          manifestChecked: r.ok,
+        }),
     });
 
     if (o.pull !== undefined) steps.push(...pullSteps(group, arc, sum));
@@ -2335,18 +2632,27 @@ export function planArchive(
                   pullChecksumMatches:
                     v.pullChecksumMatches === true &&
                     (pgGroup === undefined ||
-                      st.verification.get(pgGroup)?.pullChecksumMatches === true),
+                      st.verification.get(pgGroup)?.pullChecksumMatches ===
+                        true),
                 }
               : {}),
           };
           if (!canRemoveSource(need))
             return `verification incomplete or failed (${JSON.stringify(need)}): source kept`;
           const lock = await rc.transport.exec(
-            wrapScript(collectorScript(["locks"], rc.policy, effectiveLocks(rc.host, rc.policy))),
+            wrapScript(
+              collectorScript(
+                ["locks"],
+                rc.policy,
+                effectiveLocks(rc.host, rc.policy),
+              ),
+            ),
             60,
           );
           const held = heldLocks(buildAudit(rc.host, lock.stdout));
-          return held.length > 0 ? `build lock held (${held[0]?.path}): source kept` : null;
+          return held.length > 0
+            ? `build lock held (${held[0]?.path}): source kept`
+            : null;
         },
       });
     }
@@ -2442,7 +2748,10 @@ export async function runHostCommand(
   const one = (k: string): string | undefined => f.values.get(k)?.at(-1);
   const has = (k: string): boolean => f.values.has(k);
   const hostArg = one("host") ?? process.env["YOLO_HOST"];
-  if (hostArg === undefined || !(HOSTS as readonly string[]).includes(hostArg)) {
+  if (
+    hostArg === undefined ||
+    !(HOSTS as readonly string[]).includes(hostArg)
+  ) {
     console.error(`--host is required: ${HOSTS.join("|")}`);
     return 2;
   }
@@ -2456,13 +2765,17 @@ export async function runHostCommand(
     const tail = Math.max(1, Number(one("tail") ?? 20));
     const shown = entries.slice(-tail);
     if (json) out(JSON.stringify(shown, null, 2));
-    else if (shown.length === 0) out(`no journal for ${host} (${journalPath(yoloRoot, host)})`);
+    else if (shown.length === 0)
+      out(`no journal for ${host} (${journalPath(yoloRoot, host)})`);
     else
       for (const e of shown) {
         const freed =
           e.before !== null && e.after !== null
             ? Object.keys(e.after.freeBytes).reduce(
-                (n, k) => n + ((e.after?.freeBytes[k] ?? 0) - (e.before?.freeBytes[k] ?? 0)),
+                (n, k) =>
+                  n +
+                  ((e.after?.freeBytes[k] ?? 0) -
+                    (e.before?.freeBytes[k] ?? 0)),
                 0,
               )
             : 0;
@@ -2545,9 +2858,12 @@ export async function runHostCommand(
     if (sub === "services") {
       const a = await collect(transport, policy, ["identity", "services"]);
       const { rows, plan } = planServices(a, policy, host, {
-        stop: (f.values.get("stop") ?? []).flatMap((s) => s.split(",")).filter((s) => s !== ""),
+        stop: (f.values.get("stop") ?? [])
+          .flatMap((s) => s.split(","))
+          .filter((s) => s !== ""),
         disable: has("disable"),
-        candidates: has("candidates") || (!has("stop") && !has("no-candidates")),
+        candidates:
+          has("candidates") || (!has("stop") && !has("no-candidates")),
       });
       if (!json)
         out(
@@ -2565,9 +2881,14 @@ export async function runHostCommand(
         "locks",
       ]);
       const keys = [...SYSCTL_TARGETS.map((t) => t.key), "vm.swappiness"];
-      const probe = parseKeyValues((await transport.exec(tuneProbeScript(keys), 60)).stdout);
+      const probe = parseKeyValues(
+        (await transport.exec(tuneProbeScript(keys), 60)).stdout,
+      );
       const ownerRes = host === "local" ? null : await transport.tune(false);
-      const owner = ownerRes !== null && ownerRes.code === 0 ? parseOwnerTune(ownerRes.stdout) : [];
+      const owner =
+        ownerRes !== null && ownerRes.code === 0
+          ? parseOwnerTune(ownerRes.stdout)
+          : [];
       const { rows, plan } = planTune(a, probe, owner, policy, host, now);
       if (!json) out(`${bold("Tuning")} on ${host}\n${renderTune(rows)}\n`);
       return finish(plan, ctx, apply, json);
@@ -2592,18 +2913,32 @@ export async function runHostCommand(
         return 2;
       }
       const fs = one("fs") ?? "/";
-      const parallel = Math.max(1, Number(one("parallel") ?? policy.space.parallel));
-      const depth = Math.max(0, Number(one("depth") ?? policy.space.splitDepth));
+      const parallel = Math.max(
+        1,
+        Number(one("parallel") ?? policy.space.parallel),
+      );
+      const depth = Math.max(
+        0,
+        Number(one("depth") ?? policy.space.splitDepth),
+      );
       const scanStart = performance.now();
       const links = await scanLinks(f.positional, {
         run: async (cmd) =>
-          (await transport.exec(`timeout 300 nice -n 19 ionice -c3 ${cmd}`, 330)).stdout,
+          (
+            await transport.exec(
+              `timeout 300 nice -n 19 ionice -c3 ${cmd}`,
+              330,
+            )
+          ).stdout,
         depth,
         parallel,
         sudo: has("sudo"),
       });
       const scanMs = Math.round(performance.now() - scanStart);
-      const df = await transport.exec(`df -B1 --output=size,avail -- ${sq(fs)}`, 30);
+      const df = await transport.exec(
+        `df -B1 --output=size,avail -- ${sq(fs)}`,
+        30,
+      );
       if (df.code !== 0) {
         console.error(`df ${fs} failed: ${df.stderr.trim()}`);
         return 1;
@@ -2655,7 +2990,9 @@ export async function runHostCommand(
             ],
             [
               `floor ${(minFree * 100).toFixed(0)} %`,
-              after.ok ? green("reached") : red(`short by ${fmtBytes(after.shortfallBytes)}`),
+              after.ok
+                ? green("reached")
+                : red(`short by ${fmtBytes(after.shortfallBytes)}`),
             ],
           ]),
         );
@@ -2679,7 +3016,11 @@ export async function runHostCommand(
         );
         return 2;
       }
-      const a = await collect(transport, policy, ["identity", "lsblk", "locks"]);
+      const a = await collect(transport, policy, [
+        "identity",
+        "lsblk",
+        "locks",
+      ]);
       const plan = planMount(
         a,
         {

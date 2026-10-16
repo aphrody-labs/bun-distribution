@@ -340,7 +340,9 @@ function StickerItem({
 
   const displayName = item.name;
   const shapePreset =
-    item.provider === "shapes" ? parseShapeStickerId({ stickerId: item.id }) : null;
+    item.provider === "shapes"
+      ? parseShapeStickerId({ stickerId: item.id })
+      : null;
 
   const handleAdd = async () => {
     setIsAdding(true);

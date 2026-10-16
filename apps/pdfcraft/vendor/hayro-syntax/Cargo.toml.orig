@@ -11,16 +11,26 @@ readme = "README.md"
 
 [features]
 default = ["std", "images"]
-std = ["hayro-jbig2?/std", "hayro-jpeg2000?/std", "dep:rustc-hash", "zune-jpeg?/std"]
-images = ["dep:zune-jpeg", "dep:hayro-ccitt", "dep:hayro-jbig2", "dep:hayro-jpeg2000"]
+std = [
+  "hayro-jbig2?/std",
+  "hayro-jpeg2000?/std",
+  "dep:rustc-hash",
+  "zune-jpeg?/std",
+]
+images = [
+  "dep:zune-jpeg",
+  "dep:hayro-ccitt",
+  "dep:hayro-jbig2",
+  "dep:hayro-jpeg2000",
+]
 unsafe = [
-    "std",
-    "dep:flate2",
-    "dep:memchr",
-    "hayro-jbig2?/simd",
-    "hayro-jpeg2000?/simd",
-    "zune-jpeg?/x86",
-    "zune-jpeg?/neon",
+  "std",
+  "dep:flate2",
+  "dep:memchr",
+  "hayro-jbig2?/simd",
+  "hayro-jpeg2000?/simd",
+  "zune-jpeg?/x86",
+  "zune-jpeg?/neon",
 ]
 logging = ["dep:log", "hayro-jpeg2000?/logging"]
 

@@ -9,7 +9,9 @@ import { appServerProxy, isLoopbackHost } from "@aphrody/app-ui/backend";
 
 function within(root: string, path: string): boolean {
   const suffix = relative(root, path);
-  return suffix !== ".." && !suffix.startsWith(".." + sep) && !suffix.startsWith(sep);
+  return (
+    suffix !== ".." && !suffix.startsWith(".." + sep) && !suffix.startsWith(sep)
+  );
 }
 
 export interface ProductUiServerOptions {
@@ -19,7 +21,9 @@ export interface ProductUiServerOptions {
   uiDist?: string;
 }
 
-export async function startProductUiServer(options: ProductUiServerOptions = {}) {
+export async function startProductUiServer(
+  options: ProductUiServerOptions = {},
+) {
   const {
     port = 3000,
     host = "127.0.0.1",
@@ -30,7 +34,8 @@ export async function startProductUiServer(options: ProductUiServerOptions = {})
     throw new Error("The private product UI must bind to a loopback address.");
   const root = await realpath(uiDist);
   const index = resolve(root, "index.html");
-  if (!existsSync(index)) throw new Error("Build @aphrody/app-ui before serving its UI.");
+  if (!existsSync(index))
+    throw new Error("Build @aphrody/app-ui before serving its UI.");
 
   return serveM3({
     hostname: host,
@@ -52,7 +57,8 @@ export async function startProductUiServer(options: ProductUiServerOptions = {})
             const origin = request.headers.get("origin");
             if (!origin) return forward(request);
             // Validate the browser boundary before adapting its origin to the private backend.
-            if (origin !== url.origin) return new Response("Forbidden", { status: 403 });
+            if (origin !== url.origin)
+              return new Response("Forbidden", { status: 403 });
             const headers = new Headers(request.headers);
             headers.set("origin", target);
             return forward(new Request(request, { headers }));
@@ -69,7 +75,10 @@ export async function startProductUiServer(options: ProductUiServerOptions = {})
         );
       }
       if (request.method !== "GET" && request.method !== "HEAD") {
-        return new Response("Method Not Allowed", { status: 405, headers: { Allow: "GET, HEAD" } });
+        return new Response("Method Not Allowed", {
+          status: 405,
+          headers: { Allow: "GET, HEAD" },
+        });
       }
       let pathname: string;
       try {
@@ -78,7 +87,8 @@ export async function startProductUiServer(options: ProductUiServerOptions = {})
         return new Response("Bad Request", { status: 400 });
       }
       const candidate = resolve(root, "." + pathname);
-      if (!within(root, candidate)) return new Response("Forbidden", { status: 403 });
+      if (!within(root, candidate))
+        return new Response("Forbidden", { status: 403 });
       const file = Bun.file(candidate);
       if (await file.exists()) {
         if (!within(root, await realpath(candidate)))
@@ -90,7 +100,10 @@ export async function startProductUiServer(options: ProductUiServerOptions = {})
       if (extname(pathname) || pathname.startsWith("/fonts/"))
         return new Response("Not Found", { status: 404 });
       return new Response(request.method === "HEAD" ? null : Bun.file(index), {
-        headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" },
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "no-cache",
+        },
       });
     },
   });

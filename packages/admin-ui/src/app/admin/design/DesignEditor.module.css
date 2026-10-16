@@ -280,7 +280,12 @@
   min-height: 19rem;
   padding: clamp(1.25rem, 4vw, 2.5rem);
   background:
-    linear-gradient(145deg, transparent 0 49%, rgb(255 255 255 / 8%) 49% 51%, transparent 51%),
+    linear-gradient(
+      145deg,
+      transparent 0 49%,
+      rgb(255 255 255 / 8%) 49% 51%,
+      transparent 51%
+    ),
     var(--dbz-blue);
 }
 
@@ -289,7 +294,11 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 78% 24%, var(--dbz-ki) 0 0.5rem, transparent 0.6rem),
+    radial-gradient(
+      circle at 78% 24%,
+      var(--dbz-ki) 0 0.5rem,
+      transparent 0.6rem
+    ),
     repeating-conic-gradient(
       from 15deg at 78% 24%,
       transparent 0 10deg,

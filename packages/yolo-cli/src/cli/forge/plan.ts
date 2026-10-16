@@ -24,7 +24,11 @@ export interface ForgeConfig {
   /** Highest GLIBC version the artifact may require (hosts that install it run an older glibc than the build host); null disables the step. */
   glibcCeiling: string | null;
   scratch: { mode: ScratchMode; size: string };
-  watch: { intervalSeconds: number; everyCommit: boolean; historyDepth: number };
+  watch: {
+    intervalSeconds: number;
+    everyCommit: boolean;
+    historyDepth: number;
+  };
   toolchain: {
     llvm: { major: number; version: string; url: string };
     cmake: { minimum: string; version: string; url: string };
@@ -64,16 +68,25 @@ const COMMANDS: Command[] = [
   "version",
 ];
 
-const ALIASES: Record<string, Command> = { "-h": "help", "--help": "help", "--version": "version" };
+const ALIASES: Record<string, Command> = {
+  "-h": "help",
+  "--help": "help",
+  "--version": "version",
+};
 
-export function parseArgs(argv: string[], env: Record<string, string | undefined>): Options {
+export function parseArgs(
+  argv: string[],
+  env: Record<string, string | undefined>,
+): Options {
   const config: ForgeConfig = structuredClone(DEFAULT_CONFIG);
   const first = argv[0];
   const command: Command =
     first === undefined
       ? "help"
       : (COMMANDS.find((c) => c === first) ??
-        (Object.hasOwn(ALIASES, first) ? ALIASES[first]! : fail(`unknown command: ${first}`)));
+        (Object.hasOwn(ALIASES, first)
+          ? ALIASES[first]!
+          : fail(`unknown command: ${first}`)));
   const home =
     env.BUN_FORGE_HOME ??
     join(env.XDG_CACHE_HOME ?? join(env.HOME ?? "/tmp", ".cache"), "bun-forge");
@@ -136,14 +149,16 @@ export function parseArgs(argv: string[], env: Record<string, string | undefined
         break;
       case "--interval":
         config.watch.intervalSeconds = Number(value());
-        if (!(config.watch.intervalSeconds >= 10)) fail("--interval must be at least 10 seconds");
+        if (!(config.watch.intervalSeconds >= 10))
+          fail("--interval must be at least 10 seconds");
         break;
       case "--latest":
         config.watch.everyCommit = false;
         break;
       case "--home":
         options.home = value();
-        options.artifacts = env.BUN_FORGE_ARTIFACTS ?? join(options.home, "artifacts");
+        options.artifacts =
+          env.BUN_FORGE_ARTIFACTS ?? join(options.home, "artifacts");
         break;
       case "--artifacts":
         options.artifacts = value();
@@ -212,10 +227,14 @@ export function versionIn(output: string): string | undefined {
 }
 
 /** scripts/build/tools.ts accepts clang/lld `>=MAJOR.1.0 <MAJOR.1.99`. */
-export function llvmAccepted(version: string | undefined, major: number): boolean {
+export function llvmAccepted(
+  version: string | undefined,
+  major: number,
+): boolean {
   if (!version) return false;
   return (
-    compareVersions(version, `${major}.1.0`) >= 0 && compareVersions(version, `${major}.1.99`) < 0
+    compareVersions(version, `${major}.1.0`) >= 0 &&
+    compareVersions(version, `${major}.1.99`) < 0
   );
 }
 
@@ -246,7 +265,9 @@ export function toolUrl(
     cmake: { x64: "x86_64", arm64: "aarch64" },
     rustup: { x64: "x86_64", arm64: "aarch64" },
   }[name][arch];
-  return template.replaceAll("{version}", version).replaceAll("{arch}", archName);
+  return template
+    .replaceAll("{version}", version)
+    .replaceAll("{arch}", archName);
 }
 
 export interface Paths {
@@ -309,12 +330,21 @@ export function scratchPlan(
 ): ScratchPlan {
   const bytes = parseSize(size);
   const resolved: Exclude<ScratchMode, "auto"> =
-    mode === "auto" ? (host.root && host.freeBytes > bytes * 1.05 ? "loop" : "dir") : mode;
+    mode === "auto"
+      ? host.root && host.freeBytes > bytes * 1.05
+        ? "loop"
+        : "dir"
+      : mode;
   if ((resolved === "loop" || resolved === "tmpfs") && !host.root)
     fail(`--scratch ${resolved} needs root or passwordless sudo`);
   const dir = join(base, sha.slice(0, 12));
   if (resolved === "dir")
-    return { mode: resolved, dir, setup: [["mkdir", "-p", dir]], teardown: [["rm", "-rf", dir]] };
+    return {
+      mode: resolved,
+      dir,
+      setup: [["mkdir", "-p", dir]],
+      teardown: [["rm", "-rf", dir]],
+    };
   if (resolved === "tmpfs") {
     return {
       mode: resolved,
@@ -358,10 +388,14 @@ export function scratchPlan(
 }
 
 /** `git ls-remote` output -> SHA of `refs/heads/<branch>`. */
-export function remoteHead(lsRemote: string, branch: string): string | undefined {
+export function remoteHead(
+  lsRemote: string,
+  branch: string,
+): string | undefined {
   for (const line of lsRemote.split("\n")) {
     const [sha, ref] = line.trim().split(/\s+/);
-    if (ref === `refs/heads/${branch}` && sha && /^[0-9a-f]{40}$/.test(sha)) return sha;
+    if (ref === `refs/heads/${branch}` && sha && /^[0-9a-f]{40}$/.test(sha))
+      return sha;
   }
   return undefined;
 }
@@ -398,7 +432,8 @@ export function buildEnv(input: BuildEnvInput): Record<string, string> {
   if (input.cmakeDir) pathEntries.push(join(input.cmakeDir, "bin"));
   pathEntries.push(input.baseEnv.PATH ?? "/usr/local/bin:/usr/bin:/bin");
   const env: Record<string, string> = {};
-  for (const [k, v] of Object.entries(input.baseEnv)) if (v !== undefined) env[k] = v;
+  for (const [k, v] of Object.entries(input.baseEnv))
+    if (v !== undefined) env[k] = v;
   delete env.BUN_BE_BUN;
   Object.assign(env, {
     PATH: pathEntries.join(":"),
@@ -463,10 +498,15 @@ export function compileCommand(
   ];
 }
 
-export function artifactLayout(out: string): { binary: string; aliases: Record<string, string> } {
+export function artifactLayout(out: string): {
+  binary: string;
+  aliases: Record<string, string>;
+} {
   return {
     binary: `${out}/${BINARY.name}`,
-    aliases: Object.fromEntries(BINARY.aliases.map((name) => [name, `${out}/${name}`])),
+    aliases: Object.fromEntries(
+      BINARY.aliases.map((name) => [name, `${out}/${name}`]),
+    ),
   };
 }
 
@@ -498,10 +538,20 @@ export interface Receipt {
   aliases?: { name: string; path: string; target: string }[];
   smokeAlias?: unknown;
   /** Set when the artifact is the yolo CLI compiled onto the engine (otherwise it is the bare engine). */
-  compiled?: { entry: string; version: string; flags: string[]; asset: string | null };
+  compiled?: {
+    entry: string;
+    version: string;
+    flags: string[];
+    asset: string | null;
+  };
   smokeYolo?: unknown;
   smokeVu?: unknown;
-  glibc?: { ceiling: string; maxBefore: string | null; maxAfter: string | null; patched: string[] };
+  glibc?: {
+    ceiling: string;
+    maxBefore: string | null;
+    maxAfter: string | null;
+    patched: string[];
+  };
   smoke?: unknown;
   startedAt: string;
   finishedAt: string;
@@ -519,14 +569,22 @@ export function recordBuild(
 ): State {
   const builds = [
     ...state.builds,
-    { revision: receipt.revision, ok: receipt.ok, finishedAt: receipt.finishedAt },
+    {
+      revision: receipt.revision,
+      ok: receipt.ok,
+      finishedAt: receipt.finishedAt,
+    },
   ].slice(-keep);
   // `last` is the last attempted commit: a failed commit keeps its receipt and the queue moves on.
   return { last: receipt.revision, builds };
 }
 
 /** The unit running `<command> watch`; `command` is the forge invocation (`yolo forge` or the standalone executable). */
-export function systemdUnit(command: string, home: string, user: string): string {
+export function systemdUnit(
+  command: string,
+  home: string,
+  user: string,
+): string {
   return `[Unit]
 Description=bun-forge: build aphrody-labs/bun on every commit of the watched branch
 After=network-online.target

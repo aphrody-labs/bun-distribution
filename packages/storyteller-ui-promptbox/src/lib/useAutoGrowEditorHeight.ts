@@ -58,7 +58,9 @@ export function useAutoGrowEditorHeight(
   const applyHeights = useCallback(() => {
     const el = editorRef.current;
     if (!el) return;
-    const maxH = isExpanded ? computeExpandedMaxPx() : computeCollapsedMaxPx(el);
+    const maxH = isExpanded
+      ? computeExpandedMaxPx()
+      : computeCollapsedMaxPx(el);
     el.style.maxHeight = `${maxH}px`;
     el.style.minHeight = "0";
     if (!isExpanded) {

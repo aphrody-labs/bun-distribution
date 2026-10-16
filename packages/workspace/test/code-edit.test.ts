@@ -25,7 +25,9 @@ test("preview preserves files; apply inserts literal dollar signs and removal wo
     expect(readFileSync(path, "utf8")).toBe("foo();\n");
     expect(runCodeEdit([...args, "--apply"])).toBe(0);
     expect(readFileSync(path, "utf8")).toBe("$barfoo();\n");
-    expect(runCodeEdit(["remove", "--root", root, "--find", "$bar", "--apply"])).toBe(0);
+    expect(
+      runCodeEdit(["remove", "--root", root, "--find", "$bar", "--apply"]),
+    ).toBe(0);
     expect(readFileSync(path, "utf8")).toBe("foo();\n");
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -77,7 +79,9 @@ test("YOLO rename delegates path selection and literal rules to the owner CLI", 
     "/tmp/yolo",
   ]);
   const command = editCommand(options, []);
-  expect(command).toContain(resolve("/tmp/yolo/packages/engine/yolo/src/index.ts"));
+  expect(command).toContain(
+    resolve("/tmp/yolo/packages/engine/yolo/src/index.ts"),
+  );
   expect(command).toContain(resolve("/tmp/source repo"));
   expect(command).toContain("--exclude");
   expect(command).toContain("**/*.test.ts");
@@ -89,7 +93,7 @@ test("YOLO restore requires a journal and previews by default", () => {
   const options = parseCodeEdit(["restore", "--journal", "/tmp/rename.jsonl"]);
   expect(editCommand(options, [])).toContain("--restore");
   expect(editCommand(options, [])).not.toContain("--apply");
-  expect(() => parseCodeEdit(["replace", "--find", "a", "--with", "b", "--paths"])).toThrow(
-    "--paths",
-  );
+  expect(() =>
+    parseCodeEdit(["replace", "--find", "a", "--with", "b", "--paths"]),
+  ).toThrow("--paths");
 });

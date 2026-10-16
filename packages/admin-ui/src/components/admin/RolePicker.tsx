@@ -59,7 +59,9 @@ export function RolePicker({
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled || isLoading}
       >
-        <option value="">{isLoading ? "Chargement..." : error ? "Erreur" : placeholder}</option>
+        <option value="">
+          {isLoading ? "Chargement..." : error ? "Erreur" : placeholder}
+        </option>
         {roles.map((r) => (
           <option key={r.id} value={r.id}>
             {r.name}

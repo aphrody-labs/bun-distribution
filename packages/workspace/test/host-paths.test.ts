@@ -17,7 +17,9 @@ const VPS = ["", "home", "ubuntu"].join("/");
 
 test("rules classify each span once, in priority order", () => {
   const line = `cd ${HOME}/aphrody/scripts && ls ${HOME}/yolo ${HOME}/source/x ${HOME}/.cache ${VPS}/bin /mnt/c/x aphrody-src`;
-  expect(scanHostPaths(line, "code").map((item) => [item.rule, item.match])).toEqual([
+  expect(
+    scanHostPaths(line, "code").map((item) => [item.rule, item.match]),
+  ).toEqual([
     ["repo-absolute", `${HOME}/aphrody/`],
     ["sibling-absolute", `${HOME}/yolo`],
     ["source-checkouts", `${HOME}/source`],
@@ -26,7 +28,9 @@ test("rules classify each span once, in priority order", () => {
     ["wsl-mount", "/mnt/c"],
     ["legacy-layout", "aphrody-src"],
   ]);
-  expect(scanHostPaths("see ../source and ../source-map.json", "docs")).toHaveLength(1);
+  expect(
+    scanHostPaths("see ../source and ../source-map.json", "docs"),
+  ).toHaveLength(1);
   expect(scanHostPaths(`${HOME}/aphrody`, "code")[0]?.rewrite).toBeUndefined();
 });
 
@@ -48,7 +52,9 @@ test("rewrites make prose, records and data location-independent, never code", (
 
 test("areas separate runtime sources from prose, records and data", () => {
   expect(hostPathArea("tools/config/host/vps-cargo.json")).toBe("host");
-  expect(hostPathArea("tools/config/host/systemd/aphrody/x.service")).toBe("host");
+  expect(hostPathArea("tools/config/host/systemd/aphrody/x.service")).toBe(
+    "host",
+  );
   expect(hostPathArea("tools/config/production-topology.json")).toBe("config");
   expect(hostPathArea("scripts/a.sh")).toBe("code");
   expect(hostPathArea("config/infra/hosts.json")).toBe("host");
@@ -63,17 +69,45 @@ test("areas separate runtime sources from prose, records and data", () => {
 test("apply skips dirty files and the ratchet reports regressions", async () => {
   const root = await mkdtemp(join(tmpdir(), "host-paths-"));
   const git = (...args: string[]) =>
-    expect(Bun.spawnSync(["git", "-C", root, ...args], { windowsHide: true }).exitCode).toBe(0);
+    expect(
+      Bun.spawnSync(["git", "-C", root, ...args], { windowsHide: true })
+        .exitCode,
+    ).toBe(0);
   try {
     await mkdir(join(root, "docs/migration"), { recursive: true });
-    await writeFile(join(root, "docs/clean.md"), `Open ${HOME}/aphrody/README.md\n`);
-    await writeFile(join(root, "docs/dirty.md"), `Open ${HOME}/aphrody/README.md\n`);
-    await writeFile(join(root, "docs/migration/map.json"), `{"from":"aphrody-ai/scripts/x.sh"}\n`);
+    await writeFile(
+      join(root, "docs/clean.md"),
+      `Open ${HOME}/aphrody/README.md\n`,
+    );
+    await writeFile(
+      join(root, "docs/dirty.md"),
+      `Open ${HOME}/aphrody/README.md\n`,
+    );
+    await writeFile(
+      join(root, "docs/migration/map.json"),
+      `{"from":"aphrody-ai/scripts/x.sh"}\n`,
+    );
     git("init", "-q");
     git("add", ".");
-    const identity = ["-c", "user.name=t", "-c", "user.email=t@example.invalid"];
-    git(...identity, "-c", "commit.gpgsign=false", "commit", "--no-verify", "-qm", "fixture");
-    await writeFile(join(root, "docs/dirty.md"), `Open ${HOME}/aphrody/README.md\nlocal edit\n`);
+    const identity = [
+      "-c",
+      "user.name=t",
+      "-c",
+      "user.email=t@example.invalid",
+    ];
+    git(
+      ...identity,
+      "-c",
+      "commit.gpgsign=false",
+      "commit",
+      "--no-verify",
+      "-qm",
+      "fixture",
+    );
+    await writeFile(
+      join(root, "docs/dirty.md"),
+      `Open ${HOME}/aphrody/README.md\nlocal edit\n`,
+    );
     // Provenance records keep original repository names.
     expect((await collectHostPaths(root)).map((file) => file.path)).toEqual([
       "docs/clean.md",
@@ -83,13 +117,19 @@ test("apply skips dirty files and the ratchet reports regressions", async () => 
     const original = console.log;
     console.log = (value: string) => log.push(value);
     try {
-      expect(await runHostPaths(["--root", root, "--apply", "--write-baseline"])).toBe(0);
+      expect(
+        await runHostPaths(["--root", root, "--apply", "--write-baseline"]),
+      ).toBe(0);
     } finally {
       console.log = original;
     }
     expect(JSON.parse(log[0]!).skippedDirty).toEqual(["docs/dirty.md"]);
-    expect(await readFile(join(root, "docs/clean.md"), "utf8")).toBe("Open README.md\n");
-    expect(await readFile(join(root, "docs/dirty.md"), "utf8")).toContain(`${HOME}/aphrody`);
+    expect(await readFile(join(root, "docs/clean.md"), "utf8")).toBe(
+      "Open README.md\n",
+    );
+    expect(await readFile(join(root, "docs/dirty.md"), "utf8")).toContain(
+      `${HOME}/aphrody`,
+    );
     await writeFile(join(root, "docs/clean.md"), `Open ${HOME}/x\n`);
     console.log = () => {};
     try {
@@ -103,8 +143,8 @@ test("apply skips dirty files and the ratchet reports regressions", async () => 
 });
 
 test("the declared VPS catalog and fixtures keep their host names", () => {
-  expect(scanHostPaths(`${VPS}/x /mnt/c/x`, "host").map((item) => item.rule)).toEqual([
-    "wsl-mount",
-  ]);
+  expect(
+    scanHostPaths(`${VPS}/x /mnt/c/x`, "host").map((item) => item.rule),
+  ).toEqual(["wsl-mount"]);
   expect(scanHostPaths(`${HOME}/x`, "test")).toEqual([]);
 });

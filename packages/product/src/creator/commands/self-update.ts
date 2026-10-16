@@ -28,7 +28,9 @@ const command: Command = {
     }
     const say = (line: string) => values.quiet || console.log(line);
     try {
-      const result = await updateKit(defaultContext(), { checkOnly: values.check === true });
+      const result = await updateKit(defaultContext(), {
+        checkOnly: values.check === true,
+      });
       switch (result.status) {
         case "up-to-date":
           say(`À jour (version ${VERSION}).`);
@@ -39,10 +41,14 @@ const command: Command = {
           );
           break;
         case "updated":
-          say(`Mis à jour : ${VERSION} -> ${result.latest}. Active au prochain lancement.`);
+          say(
+            `Mis à jour : ${VERSION} -> ${result.latest}. Active au prochain lancement.`,
+          );
           break;
         case "skipped":
-          say(`Version ${result.latest} disponible, non installée : ${result.detail}`);
+          say(
+            `Version ${result.latest} disponible, non installée : ${result.detail}`,
+          );
           break;
       }
       return 0;

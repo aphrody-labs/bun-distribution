@@ -39,7 +39,9 @@ function resolveFrom(
   preset: PresetId,
   id: ActionId,
 ): Binding[] {
-  return overrides[id] ?? PRESETS[preset].bindings[id] ?? BASE_BINDINGS[id] ?? [];
+  return (
+    overrides[id] ?? PRESETS[preset].bindings[id] ?? BASE_BINDINGS[id] ?? []
+  );
 }
 
 export const useKeybindsStore = create<KeybindsState>()(

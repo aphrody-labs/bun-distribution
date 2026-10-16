@@ -11,7 +11,8 @@ import { useEmptySpaceContextMenu } from "../../hooks/useEmptySpaceContextMenu";
 const VIRTUALIZATION_THRESHOLD = 0; // Disabled - always virtualize
 
 export function GridView() {
-  const { viewSettings, setCurrentFiles, scrollPosition, setScrollPosition } = useExplorer();
+  const { viewSettings, setCurrentFiles, scrollPosition, setScrollPosition } =
+    useExplorer();
   const {
     isSelected,
     focusedIndex,
@@ -63,7 +64,10 @@ export function GridView() {
   }, [scrollPosition.top, scrollPosition.left]);
 
   const handleGridScroll = (event: React.UIEvent<HTMLDivElement>) => {
-    setScrollPosition({ top: event.currentTarget.scrollTop, left: event.currentTarget.scrollLeft });
+    setScrollPosition({
+      top: event.currentTarget.scrollTop,
+      left: event.currentTarget.scrollLeft,
+    });
   };
 
   // Empty state for tag view with no tagged files
@@ -148,7 +152,12 @@ interface VirtualizedGridProps {
   selectedFiles: File[];
   scrollPosition: { top: number; left: number };
   setScrollPosition: (position: { top: number; left: number }) => void;
-  selectFile: (file: File, files: File[], multi?: boolean, range?: boolean) => void;
+  selectFile: (
+    file: File,
+    files: File[],
+    multi?: boolean,
+    range?: boolean,
+  ) => void;
   setSelectedFiles: (files: File[]) => void;
   onContainerClick: (e: React.MouseEvent) => void;
   onContainerContextMenu: (e: React.MouseEvent) => void;
@@ -246,7 +255,9 @@ function VirtualizedGrid({
   // Keyboard navigation with correct column count
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+      if (
+        !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)
+      ) {
         return;
       }
       if (files.length === 0) return;
@@ -270,7 +281,9 @@ function VirtualizedGrid({
         setSelectedFiles([files[newIndex]]);
 
         // Scroll into view
-        const element = document.querySelector(`[data-file-id="${files[newIndex].id}"]`);
+        const element = document.querySelector(
+          `[data-file-id="${files[newIndex].id}"]`,
+        );
         if (element) {
           element.scrollIntoView({
             block: "nearest",

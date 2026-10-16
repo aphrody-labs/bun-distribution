@@ -15,11 +15,42 @@
       "id": "grid",
       "label": "From hex colours…",
       "params": [
-        { "name": "palette", "label": "Palette", "type": "text", "default": "#FF5A5F, #FFB400, #00A699, #007A87, #7B0051, #3D3D3D" },
-        { "name": "columns", "label": "Columns", "type": "number", "default": 3, "min": 1, "max": 24 },
-        { "name": "size", "label": "Swatch size", "type": "number", "default": 64, "min": 8, "max": 512 },
-        { "name": "gap", "label": "Gap", "type": "number", "default": 16, "min": 0, "max": 256 },
-        { "name": "labels", "label": "Label each swatch", "type": "boolean", "default": true }
+        {
+          "name": "palette",
+          "label": "Palette",
+          "type": "text",
+          "default": "#FF5A5F, #FFB400, #00A699, #007A87, #7B0051, #3D3D3D"
+        },
+        {
+          "name": "columns",
+          "label": "Columns",
+          "type": "number",
+          "default": 3,
+          "min": 1,
+          "max": 24
+        },
+        {
+          "name": "size",
+          "label": "Swatch size",
+          "type": "number",
+          "default": 64,
+          "min": 8,
+          "max": 512
+        },
+        {
+          "name": "gap",
+          "label": "Gap",
+          "type": "number",
+          "default": 16,
+          "min": 0,
+          "max": 256
+        },
+        {
+          "name": "labels",
+          "label": "Label each swatch",
+          "type": "boolean",
+          "default": true
+        }
       ]
     }
   ]

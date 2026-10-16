@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
-import { qualifyUiAllocation, type UiFactory } from "../src/build-factory-ui.ts";
+import {
+  qualifyUiAllocation,
+  type UiFactory,
+} from "../src/build-factory-ui.ts";
 
 const factory: UiFactory = {
   enabled: true,
@@ -47,21 +50,29 @@ describe("declared UI factory allocation", () => {
     { enabled: false },
   ])("refuses an undeclared or unbounded allocation %j", (change) => {
     expect(() =>
-      qualifyUiAllocation({ ...factory, ui: { ...factory.ui, ...change } }, capacity),
+      qualifyUiAllocation(
+        { ...factory, ui: { ...factory.ui, ...change } },
+        capacity,
+      ),
     ).toThrow();
   });
   test("refuses execution-only targets and absent UI declaration", () => {
-    expect(() => qualifyUiAllocation({ ...factory, target: "dbfr" }, capacity)).toThrow();
     expect(() =>
-      qualifyUiAllocation({ ...factory, ui: undefined } as unknown as UiFactory, capacity),
+      qualifyUiAllocation({ ...factory, target: "dbfr" }, capacity),
+    ).toThrow();
+    expect(() =>
+      qualifyUiAllocation(
+        { ...factory, ui: undefined } as unknown as UiFactory,
+        capacity,
+      ),
     ).toThrow();
   });
   test("refuses missing capacity fields and an unknown native budget", () => {
     expect(() => qualifyUiAllocation(factory, {} as typeof capacity)).toThrow(
       "Unknown factory capacity",
     );
-    expect(() => qualifyUiAllocation({ ...factory, rust: { maxJobs: NaN } }, capacity)).toThrow(
-      "Native allocation is unknown",
-    );
+    expect(() =>
+      qualifyUiAllocation({ ...factory, rust: { maxJobs: NaN } }, capacity),
+    ).toThrow("Native allocation is unknown");
   });
 });

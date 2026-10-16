@@ -10,8 +10,12 @@ import {
 const root = resolve(import.meta.dir, "../../../docs/aphrody");
 
 test("the launcher only relays commands that the dispatcher has", async () => {
-  const dispatcher = await Bun.file(resolve(import.meta.dir, "../src/index.ts")).text();
-  const cases = new Set([...dispatcher.matchAll(/^\s*case "([^"]+)":/gm)].map((m) => m[1]!));
+  const dispatcher = await Bun.file(
+    resolve(import.meta.dir, "../src/index.ts"),
+  ).text();
+  const cases = new Set(
+    [...dispatcher.matchAll(/^\s*case "([^"]+)":/gm)].map((m) => m[1]!),
+  );
   expect([...RELAY_COMMANDS].toSorted()).toEqual(["bench", "rename", "verify"]);
   expect([...RELAY_COMMANDS].filter((name) => !cases.has(name))).toEqual([]);
 });
@@ -38,11 +42,17 @@ test("the Rust aphrody commands and the Bun fork commands never go to yolo", () 
 });
 
 test("the launcher and its wrappers are never resolved as the native binary", () => {
-  expect(isLauncher(resolve(root, "scripts/dev/cli/aphrody.ts"), root)).toBe(true);
+  expect(isLauncher(resolve(root, "scripts/dev/cli/aphrody.ts"), root)).toBe(
+    true,
+  );
   expect(isLauncher(resolve(root, "scripts/dev/cli/aphrody"), root)).toBe(true);
-  expect(isLauncher(resolve(root, "scripts/dev/cli/aphrody.cmd"), root)).toBe(true);
+  expect(isLauncher(resolve(root, "scripts/dev/cli/aphrody.cmd"), root)).toBe(
+    true,
+  );
   expect(isLauncher(resolve(root, "scripts/dev/cli/yolo"), root)).toBe(true);
-  expect(isLauncher(resolve(root, "scripts/dev/cli/yolo.cmd"), root)).toBe(true);
+  expect(isLauncher(resolve(root, "scripts/dev/cli/yolo.cmd"), root)).toBe(
+    true,
+  );
   expect(isLauncher(resolve(root, "target/release/aphrody"), root)).toBe(false);
 
   const resolved = resolveRustAphrody(root, {

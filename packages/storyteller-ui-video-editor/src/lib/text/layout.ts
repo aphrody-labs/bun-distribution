@@ -24,8 +24,7 @@ export interface TextBlockMeasurement {
 }
 
 export type TextCanvasContext =
-  | CanvasRenderingContext2D
-  | OffscreenCanvasRenderingContext2D;
+  CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 
 const TEXT_DECORATION_THICKNESS_RATIO = 0.07;
 const STRIKETHROUGH_VERTICAL_RATIO = 0.35;
@@ -38,8 +37,9 @@ export function setCanvasLetterSpacing({
   letterSpacingPx: number;
 }): void {
   if ("letterSpacing" in ctx) {
-    (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing =
-      `${letterSpacingPx}px`;
+    (
+      ctx as CanvasRenderingContext2D & { letterSpacing: string }
+    ).letterSpacing = `${letterSpacingPx}px`;
   }
 }
 

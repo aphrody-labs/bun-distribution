@@ -6,18 +6,29 @@ import { afterEach, describe, expect, test } from "bun:test";
 import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 const { act } = await import("react");
 const { createRoot } = await import("react-dom/client");
 const { CheckboxIndicator, CheckboxRoot } = await import("../src/Checkbox");
-const { Collapsible, CollapsibleContent, CollapsibleTrigger } = await import("../src/Collapsible");
-const { DialogContent, DialogRoot, DialogTitle, DialogTrigger } = await import("../src/Dialog");
+const { Collapsible, CollapsibleContent, CollapsibleTrigger } =
+  await import("../src/Collapsible");
+const { DialogContent, DialogRoot, DialogTitle, DialogTrigger } =
+  await import("../src/Dialog");
 const { DropdownMenu } = await import("../src/DropdownMenu");
 const { Popover } = await import("../src/Popover");
 const { Item: RadioItem, Root: RadioRoot } = await import("../src/RadioGroup");
-const { Select, SelectContent, SelectItem, SelectOption, SelectRoot, SelectTrigger, SelectValue } =
-  await import("../src/Select");
+const {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectOption,
+  SelectRoot,
+  SelectTrigger,
+  SelectValue,
+} = await import("../src/Select");
 const { Slider } = await import("../src/Slider");
 const { Switch } = await import("../src/Switch");
 const {
@@ -52,10 +63,18 @@ async function settle(ms = 20) {
 
 async function click(element: Element) {
   await act(async () => {
-    element.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, cancelable: true }));
-    element.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
-    element.dispatchEvent(new MouseEvent("pointerup", { bubbles: true, cancelable: true }));
-    element.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, cancelable: true }));
+    element.dispatchEvent(
+      new MouseEvent("pointerdown", { bubbles: true, cancelable: true }),
+    );
+    element.dispatchEvent(
+      new MouseEvent("mousedown", { bubbles: true, cancelable: true }),
+    );
+    element.dispatchEvent(
+      new MouseEvent("pointerup", { bubbles: true, cancelable: true }),
+    );
+    element.dispatchEvent(
+      new MouseEvent("mouseup", { bubbles: true, cancelable: true }),
+    );
     (element as HTMLElement).click();
   });
   await settle();
@@ -64,7 +83,11 @@ async function click(element: Element) {
 async function key(element: Element, name: string) {
   await act(async () => {
     element.dispatchEvent(
-      new KeyboardEvent("keydown", { key: name, bubbles: true, cancelable: true }),
+      new KeyboardEvent("keydown", {
+        key: name,
+        bubbles: true,
+        cancelable: true,
+      }),
     );
   });
   await settle();
@@ -84,7 +107,10 @@ describe("controls", () => {
   test("CheckboxRoot toggles, reports the new state and keeps the Radix tri-state value", async () => {
     const changes: boolean[] = [];
     await mount(
-      <CheckboxRoot aria-label="agree" onCheckedChange={(checked) => changes.push(checked)}>
+      <CheckboxRoot
+        aria-label="agree"
+        onCheckedChange={(checked) => changes.push(checked)}
+      >
         <CheckboxIndicator />
       </CheckboxRoot>,
     );
@@ -97,14 +123,21 @@ describe("controls", () => {
     expect(box.hasAttribute("data-checked")).toBe(true);
     expect(document.body.innerHTML).toContain(">check<");
 
-    const mixed = renderToStaticMarkup(<CheckboxRoot checked="indeterminate" />);
+    const mixed = renderToStaticMarkup(
+      <CheckboxRoot checked="indeterminate" />,
+    );
     expect(mixed).toContain('aria-checked="mixed"');
     expect(mixed).toContain("data-indeterminate");
   });
 
   test("Switch toggles through the keyboard-accessible native button", async () => {
     const changes: boolean[] = [];
-    await mount(<Switch aria-label="wifi" onCheckedChange={(checked) => changes.push(checked)} />);
+    await mount(
+      <Switch
+        aria-label="wifi"
+        onCheckedChange={(checked) => changes.push(checked)}
+      />,
+    );
     const control = $("[role=switch]");
     expect(control.tagName).toBe("BUTTON");
     await click(control);
@@ -169,7 +202,10 @@ describe("controls", () => {
   test("Tabs switch panels on click; the sliding M3 indicator renders in the list", async () => {
     const values: unknown[] = [];
     await mount(
-      <TabsRoot defaultValue="one" onValueChange={(value) => values.push(value)}>
+      <TabsRoot
+        defaultValue="one"
+        onValueChange={(value) => values.push(value)}
+      >
         <TabsList>
           <TabsTrigger value="one">One</TabsTrigger>
           <TabsTrigger value="two">Two</TabsTrigger>
@@ -248,7 +284,9 @@ describe("select", () => {
       o.textContent?.includes("Beta"),
     ) as HTMLElement;
     expect(beta).toBeTruthy();
-    expect(document.body.innerHTML).toContain("data-selected:bg-secondary-container");
+    expect(document.body.innerHTML).toContain(
+      "data-selected:bg-secondary-container",
+    );
     await click(beta);
     expect(changes).toEqual(["b"]);
   });
@@ -281,7 +319,9 @@ describe("overlays", () => {
       <DropdownMenu.Root>
         <DropdownMenu.Trigger>menu</DropdownMenu.Trigger>
         <DropdownMenu.Content>
-          <DropdownMenu.Item onSelect={() => selected.push("open")}>Open</DropdownMenu.Item>
+          <DropdownMenu.Item onSelect={() => selected.push("open")}>
+            Open
+          </DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Root>,
     );
@@ -307,7 +347,9 @@ describe("overlays", () => {
     await click($("button"));
     const dialog = $("[role=dialog]");
     expect(dialog).toBeTruthy();
-    const title = document.getElementById(dialog.getAttribute("aria-labelledby") ?? "");
+    const title = document.getElementById(
+      dialog.getAttribute("aria-labelledby") ?? "",
+    );
     expect(title?.textContent).toBe("Rename");
     await key(dialog, "Escape");
     expect(changes).toEqual([true, false]);

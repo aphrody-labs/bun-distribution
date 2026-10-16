@@ -15,7 +15,8 @@ export function productArgs(
   const name = basename(executable)
     .replace(/\.exe$/i, "")
     .toLowerCase();
-  if (/^(aphrody-omar|aphrody-omar-admin)$/.test(name)) return ["admin", ...argv];
+  if (/^(aphrody-omar|aphrody-omar-admin)$/.test(name))
+    return ["admin", ...argv];
   if (name === "creator-kit") return ["creator", ...argv];
   return argv;
 }
@@ -37,13 +38,21 @@ export async function main(argv: string[]): Promise<number> {
     (command === "admin" && rest[0] === "mise-a-jour") ||
     (command === "creator" && rest[0] === "self-update")
   ) {
-    return (await import("./setup/cli.ts")).main(["mise-a-jour", ...rest.slice(1)]);
+    return (await import("./setup/cli.ts")).main([
+      "mise-a-jour",
+      ...rest.slice(1),
+    ]);
   }
-  if (command === "interne") return (await import("./admin/cli.ts")).guarded(argv);
+  if (command === "interne")
+    return (await import("./admin/cli.ts")).guarded(argv);
   if (command === "web") return (await import("./web.ts")).main(rest);
-  if (command === "admin") return (await import("./admin/cli.ts")).guarded(rest);
-  if (command === "creator") return (await import("./creator/cli.ts")).guarded(rest);
-  return (await import("./setup/cli.ts")).main(command === "setup" ? rest : argv);
+  if (command === "admin")
+    return (await import("./admin/cli.ts")).guarded(rest);
+  if (command === "creator")
+    return (await import("./creator/cli.ts")).guarded(rest);
+  return (await import("./setup/cli.ts")).main(
+    command === "setup" ? rest : argv,
+  );
 }
 
 if (import.meta.main) {
@@ -52,12 +61,17 @@ if (import.meta.main) {
   process.env.APHRODY_OMAR_NO_UPDATE = "1";
   process.env.CREATOR_KIT_NO_UPDATE = "1";
   try {
-    if (!args.includes("--version") && !args.includes("--help") && args[0] !== "mise-a-jour") {
+    if (
+      !args.includes("--version") &&
+      !args.includes("--help") &&
+      args[0] !== "mise-a-jour"
+    ) {
       const { autoUpdateInBackground } = await import("./admin/lib/update.ts");
       const { setupApp } = await import("./setup/cli.ts");
-      const notice = await autoUpdateInBackground(process.env, setupApp(VERSION)).catch(
-        () => undefined,
-      );
+      const notice = await autoUpdateInBackground(
+        process.env,
+        setupApp(VERSION),
+      ).catch(() => undefined);
       if (notice) console.error(notice);
     }
     process.exitCode = await main(args);

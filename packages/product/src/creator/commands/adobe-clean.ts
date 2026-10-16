@@ -100,7 +100,11 @@ export async function listProcessesNative(): Promise<ProcInfo[]> {
     .split("\n")
     .map((line) => line.trim().match(/^(\d+)\s+(\d+)\s+(.+)$/))
     .filter((m): m is RegExpMatchArray => m !== null)
-    .map((m) => ({ pid: Number(m[1]), bytes: Number(m[2]) * 1024, name: m[3] as string }));
+    .map((m) => ({
+      pid: Number(m[1]),
+      bytes: Number(m[2]) * 1024,
+      name: m[3] as string,
+    }));
 }
 
 const norm = (name: string) => name.toLowerCase().replace(/\.exe$/, "");
@@ -127,8 +131,14 @@ export function cacheLocations(
         label: "Premiere / AE / Media Encoder : Media Cache (base de données)",
         pattern: join(appData, "Adobe", "Common", "Media Cache"),
       },
-      { label: "Premiere : Peak Files", pattern: join(appData, "Adobe", "Common", "Peak Files") },
-      { label: "Camera Raw : cache", pattern: join(appData, "Adobe", "CameraRaw", "Cache") },
+      {
+        label: "Premiere : Peak Files",
+        pattern: join(appData, "Adobe", "Common", "Peak Files"),
+      },
+      {
+        label: "Camera Raw : cache",
+        pattern: join(appData, "Adobe", "CameraRaw", "Cache"),
+      },
     );
   }
   if (temp)
@@ -161,7 +171,11 @@ const nativeIo = (): Io => ({
           process.platform === "win32"
             ? ["taskkill", "/IM", `${name}.exe`, ...(force ? ["/F"] : [])]
             : ["pkill", "-x", name];
-        return Bun.spawn(cmd, { windowsHide: true, stdout: "ignore", stderr: "ignore" }).exited;
+        return Bun.spawn(cmd, {
+          windowsHide: true,
+          stdout: "ignore",
+          stderr: "ignore",
+        }).exited;
       }),
     );
   },
@@ -174,20 +188,31 @@ export function topConsumers(
   procs: ProcInfo[],
   count: number,
 ): { name: string; bytes: number; count: number }[] {
-  const byName = new Map<string, { name: string; bytes: number; count: number }>();
+  const byName = new Map<
+    string,
+    { name: string; bytes: number; count: number }
+  >();
   for (const p of procs) {
     const key = norm(p.name);
-    const entry = byName.get(key) ?? { name: p.name.replace(/\.exe$/i, ""), bytes: 0, count: 0 };
+    const entry = byName.get(key) ?? {
+      name: p.name.replace(/\.exe$/i, ""),
+      bytes: 0,
+      count: 0,
+    };
     entry.bytes += p.bytes;
     entry.count += 1;
     byName.set(key, entry);
   }
-  return [...byName.values()].toSorted((a, b) => b.bytes - a.bytes).slice(0, count);
+  return [...byName.values()]
+    .toSorted((a, b) => b.bytes - a.bytes)
+    .slice(0, count);
 }
 
 export async function status(io: Io, json = false, top = 8): Promise<number> {
   const procs = await io.list();
-  const adobe = pick(procs, [...BACKGROUND, ...APPS]).toSorted((a, b) => b.bytes - a.bytes);
+  const adobe = pick(procs, [...BACKGROUND, ...APPS]).toSorted(
+    (a, b) => b.bytes - a.bytes,
+  );
   const total = totalmem();
   const freeBytes = freemem();
   if (json) {
@@ -198,10 +223,16 @@ export async function status(io: Io, json = false, top = 8): Promise<number> {
   const sum = adobe.reduce((s, p) => s + p.bytes, 0);
   io.log(`Processus Adobe : ${adobe.length} (${formatBytes(sum)})`);
   for (const p of adobe)
-    io.log(`  ${p.name.padEnd(28)} ${String(p.pid).padStart(7)}  ${formatBytes(p.bytes)}`);
-  io.log(`\nPlus gros consommateurs de RAM (tous programmes, regroupés par nom) :`);
+    io.log(
+      `  ${p.name.padEnd(28)} ${String(p.pid).padStart(7)}  ${formatBytes(p.bytes)}`,
+    );
+  io.log(
+    `\nPlus gros consommateurs de RAM (tous programmes, regroupés par nom) :`,
+  );
   for (const t of topConsumers(procs, top))
-    io.log(`  ${t.name.padEnd(28)} ${String(t.count).padStart(3)} proc.  ${formatBytes(t.bytes)}`);
+    io.log(
+      `  ${t.name.padEnd(28)} ${String(t.count).padStart(3)} proc.  ${formatBytes(t.bytes)}`,
+    );
   return 0;
 }
 
@@ -220,8 +251,13 @@ export async function free(io: Io, apply: boolean): Promise<number> {
   );
   for (const p of targets) io.log(`  ${p.name} (${formatBytes(p.bytes)})`);
   if (apply && targets.length > 0) {
-    await io.kill([...new Set(targets.map((p) => p.name.replace(/\.exe$/i, "")))], true);
-    io.log("Fermés. Creative Cloud se relance à la prochaine ouverture d'une application Adobe.");
+    await io.kill(
+      [...new Set(targets.map((p) => p.name.replace(/\.exe$/i, "")))],
+      true,
+    );
+    io.log(
+      "Fermés. Creative Cloud se relance à la prochaine ouverture d'une application Adobe.",
+    );
   } else if (targets.length > 0) {
     io.log("Simulation : relance avec --apply pour les fermer.");
   }
@@ -252,14 +288,18 @@ export async function cache(
     for (const path of await expandStar(location.pattern)) {
       const isTempPattern = location.pattern.includes("Photoshop Temp");
       // oxlint-disable-next-line no-await-in-loop -- mesure/suppression séquentielle d'un dossier avant le suivant (journal ordonné, pas de concurrence sur le cache)
-      const stats = await (isTempPattern ? treeStats(path) : clearDir(path, apply, olderThanMs));
+      const stats = await (isTempPattern
+        ? treeStats(path)
+        : clearDir(path, apply, olderThanMs));
       if (isTempPattern && apply) {
         // oxlint-disable-next-line no-await-in-loop -- suppression séquentielle du dossier temporaire Photoshop, après sa mesure
         await rm(path, { recursive: true, force: true }).catch(() => undefined);
       }
       if (stats.bytes === 0) continue;
       total += stats.bytes;
-      io.log(`  ${formatBytes(stats.bytes).padStart(9)}  ${location.label}  (${path})`);
+      io.log(
+        `  ${formatBytes(stats.bytes).padStart(9)}  ${location.label}  (${path})`,
+      );
     }
   }
   io.log(
@@ -268,7 +308,10 @@ export async function cache(
   return 0;
 }
 
-export async function run(argv: string[], io: Io = nativeIo()): Promise<number> {
+export async function run(
+  argv: string[],
+  io: Io = nativeIo(),
+): Promise<number> {
   const { values, positionals } = parse(argv, {
     apply: { type: "boolean" },
     "older-than": { type: "string" },

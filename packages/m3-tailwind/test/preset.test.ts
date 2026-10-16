@@ -19,13 +19,17 @@ import {
 } from "../src/index.ts";
 
 const kebab = (s: string): string => s.replace(/([A-Z])/g, "-$1").toLowerCase();
-const file = (url: string): Promise<string> => Bun.file(new URL(url, import.meta.url)).text();
+const file = (url: string): Promise<string> =>
+  Bun.file(new URL(url, import.meta.url)).text();
 const tokenSheets =
   (await file("../../m3-tokens/src/m3-tokens.css")) +
   (await file("../../m3-tokens/src/expressive.css"));
 
 /** Compile the generated preset (without `@import "tailwindcss"`, which would add the base layers) and build `classes`. */
-async function build(classes: string[], css: string = presetCss()): Promise<string> {
+async function build(
+  classes: string[],
+  css: string = presetCss(),
+): Promise<string> {
   const compiler = await compile(`@tailwind utilities;\n${css}`, {
     base: process.cwd(),
     onDependency: () => {},
@@ -40,7 +44,9 @@ describe("preset.css", () => {
 
   test("themeCss is `inline` by default and `static` on request", () => {
     expect(themeCss().startsWith("@theme inline {")).toBe(true);
-    expect(themeCss({ keepUnused: true }).startsWith("@theme static {")).toBe(true);
+    expect(themeCss({ keepUnused: true }).startsWith("@theme static {")).toBe(
+      true,
+    );
   });
 });
 
@@ -65,18 +71,27 @@ describe("token coverage", () => {
     for (const s of [...SHAPES, ...DIRECTIONAL_SHAPE_NAMES])
       expect(css).toContain(`--shape-${s}: var(--md-sys-shape-corner-${s});`);
     for (const d of DURATIONS)
-      expect(css).toContain(`--transition-duration-${d}: var(--md-sys-motion-duration-${d});`);
+      expect(css).toContain(
+        `--transition-duration-${d}: var(--md-sys-motion-duration-${d});`,
+      );
     for (const e of EASINGS)
       expect(css).toContain(`--ease-${e}: var(--md-sys-motion-easing-${e});`);
     for (const n of ELEVATIONS)
-      expect(css).toContain(`--shadow-elevation-${n}: var(--md-sys-elevation-level${n});`);
+      expect(css).toContain(
+        `--shadow-elevation-${n}: var(--md-sys-elevation-level${n});`,
+      );
   });
 
   test("15 base and 15 emphasized type styles carry size, line height, tracking and weight", () => {
     expect(Object.keys(TYPE_BASE)).toHaveLength(15);
     expect(EMPHASIZED_STYLES).toHaveLength(15);
     for (const name of Object.keys(TYPE_BASE)) {
-      for (const key of ["", "--line-height", "--letter-spacing", "--font-weight"])
+      for (const key of [
+        "",
+        "--line-height",
+        "--letter-spacing",
+        "--font-weight",
+      ])
         expect(css).toContain(`--text-${name}${key}:`);
     }
     expect(css).toContain(
@@ -85,16 +100,24 @@ describe("token coverage", () => {
   });
 
   test("window size classes become breakpoints", () => {
-    expect(css).toContain(`--breakpoint-medium: ${BREAKPOINTS.medium / 16}rem;`);
-    expect(css).toContain(`--breakpoint-extra-large: ${BREAKPOINTS["extra-large"] / 16}rem;`);
+    expect(css).toContain(
+      `--breakpoint-medium: ${BREAKPOINTS.medium / 16}rem;`,
+    );
+    expect(css).toContain(
+      `--breakpoint-extra-large: ${BREAKPOINTS["extra-large"] / 16}rem;`,
+    );
   });
 
   test("the four state layers are read from the token sheet", () => {
-    expect(new Set(STATE_LAYERS)).toEqual(new Set(["dragged", "focus", "hover", "pressed"]));
+    expect(new Set(STATE_LAYERS)).toEqual(
+      new Set(["dragged", "focus", "hover", "pressed"]),
+    );
   });
 
   test("every --md-sys/--md-ref custom property the preset reads exists in the token sheets or is a colour role", () => {
-    const defined = new Set([...tokenSheets.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]!));
+    const defined = new Set(
+      [...tokenSheets.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]!),
+    );
     const colours = new Set(ROLES.map((r) => `--md-sys-color-${kebab(r)}`));
     const missing = [...presetCss().matchAll(/var\((--md-[\w-]+)/g)]
       .map((m) => m[1]!)
@@ -105,7 +128,9 @@ describe("token coverage", () => {
 
 describe("Tailwind v4 compiles the preset", () => {
   test("a utility for every colour role", async () => {
-    const out = await build(ROLES.flatMap((r) => [`bg-${kebab(r)}`, `text-${kebab(r)}`]));
+    const out = await build(
+      ROLES.flatMap((r) => [`bg-${kebab(r)}`, `text-${kebab(r)}`]),
+    );
     for (const role of ROLES) {
       expect(out).toContain(`.bg-${kebab(role)} {`);
       expect(out).toContain(`var(--md-sys-color-${kebab(role)})`);
@@ -124,7 +149,9 @@ describe("Tailwind v4 compiles the preset", () => {
     expect(out).toContain(
       ".shape-extra-large-top {\n  border-radius: var(--md-sys-shape-corner-extra-large-top);",
     );
-    expect(out).toContain("border-radius: var(--md-sys-shape-corner-large-start);");
+    expect(out).toContain(
+      "border-radius: var(--md-sys-shape-corner-large-start);",
+    );
   });
 
   test("type: text-* sets size, line height, tracking and weight; typescale-* adds the family", async () => {
@@ -137,15 +164,22 @@ describe("Tailwind v4 compiles the preset", () => {
     ]);
     expect(out).toContain("var(--md-sys-typescale-body-large-size)");
     expect(out).toContain("var(--md-sys-typescale-body-large-line-height)");
-    expect(out).toContain("var(--md-sys-typescale-title-small-emphasized-weight)");
-    expect(out).toContain("font-family: var(--md-sys-typescale-label-large-font);");
-    expect(out).toContain("font-family: var(--md-sys-typescale-display-large-emphasized-font);");
+    expect(out).toContain(
+      "var(--md-sys-typescale-title-small-emphasized-weight)",
+    );
+    expect(out).toContain(
+      "font-family: var(--md-sys-typescale-label-large-font);",
+    );
+    expect(out).toContain(
+      "font-family: var(--md-sys-typescale-display-large-emphasized-font);",
+    );
     expect(out).toContain("var(--md-ref-typeface-brand)");
   });
 
   test("elevation 0 to 5", async () => {
     const out = await build(ELEVATIONS.map((n) => `shadow-elevation-${n}`));
-    for (const n of ELEVATIONS) expect(out).toContain(`var(--md-sys-elevation-level${n})`);
+    for (const n of ELEVATIONS)
+      expect(out).toContain(`var(--md-sys-elevation-level${n})`);
   });
 
   test("motion: durations, easings and springs", async () => {
@@ -159,12 +193,18 @@ describe("Tailwind v4 compiles the preset", () => {
       "motion-expressive-default-spatial",
       "motion-slow-effects",
     ]);
-    expect(out).toContain("transition-duration: var(--md-sys-motion-duration-short1);");
+    expect(out).toContain(
+      "transition-duration: var(--md-sys-motion-duration-short1);",
+    );
     expect(out).toContain("var(--md-sys-motion-duration-extra-long4)");
     expect(out).toContain("var(--md-sys-motion-easing-emphasized-decelerate)");
     expect(out).toContain("var(--md-sys-motion-easing-legacy)");
-    expect(out).toMatch(/\.ease-spring-expressive-fast-spatial \{[^}]*linear\(0, /);
-    expect(out).toMatch(/\.duration-spring-default-effects \{[^}]*transition-duration: \d+ms;/);
+    expect(out).toMatch(
+      /\.ease-spring-expressive-fast-spatial \{[^}]*linear\(0, /,
+    );
+    expect(out).toMatch(
+      /\.duration-spring-default-effects \{[^}]*transition-duration: \d+ms;/,
+    );
     expect(out).toMatch(
       /\.motion-expressive-default-spatial \{[^}]*--tw-ease: linear\(0, [^}]*transition-duration: \d+ms;/,
     );
@@ -186,7 +226,9 @@ describe("Tailwind v4 compiles the preset", () => {
     expect(out).toContain(
       ".state-layer-primary {\n  --m3-state-layer-color: var(--md-sys-color-primary);",
     );
-    expect(out).toContain("--m3-state-layer-color: var(--md-sys-color-on-surface-variant);");
+    expect(out).toContain(
+      "--m3-state-layer-color: var(--md-sys-color-on-surface-variant);",
+    );
     // Pressed is declared after hover: with equal specificity it wins while the pointer is down.
     expect(out.indexOf("hover-state-layer-opacity")).toBeLessThan(
       out.indexOf("pressed-state-layer-opacity"),
@@ -194,7 +236,10 @@ describe("Tailwind v4 compiles the preset", () => {
   });
 
   test("state layers as opacity modifiers on the content role", async () => {
-    const out = await build(["hover:bg-on-surface/8", "active:bg-on-primary/10"]);
+    const out = await build([
+      "hover:bg-on-surface/8",
+      "active:bg-on-primary/10",
+    ]);
     expect(out).toContain("color-mix(in oklab, var(--md-sys-color-on-surface)");
   });
 
@@ -239,7 +284,9 @@ describe("Tailwind v4 compiles the preset", () => {
       "m3-horizontal:flex-row",
       "group-m3-open:rotate-180",
     ]);
-    expect(out).toContain('[data-open], [data-popup-open], [open], [aria-expanded="true"]');
+    expect(out).toContain(
+      '[data-open], [data-popup-open], [open], [aria-expanded="true"]',
+    );
     expect(out).toContain("[data-checked], [data-selected], [data-pressed]");
     expect(out).toContain("[data-starting-style]");
     expect(out).toContain("[data-ending-style]");
@@ -249,16 +296,29 @@ describe("Tailwind v4 compiles the preset", () => {
   test("an app on the preset (theme + utilities + preset) builds without errors", async () => {
     const compiler = await compile(
       '@import "tailwindcss/theme.css" layer(theme);\n@import "tailwindcss/utilities.css" layer(utilities);\n@import "@aphrody/m3-tailwind/preset.css";',
-      { base: Bun.fileURLToPath(new URL("..", import.meta.url)), onDependency: () => {} },
+      {
+        base: Bun.fileURLToPath(new URL("..", import.meta.url)),
+        onDependency: () => {},
+      },
     );
-    const out = compiler.build(["bg-primary", "p-4", "md:grid", "medium:flex", "dark:bg-surface"]);
+    const out = compiler.build([
+      "bg-primary",
+      "p-4",
+      "md:grid",
+      "medium:flex",
+      "dark:bg-surface",
+    ]);
     expect(out).toContain("var(--md-sys-color-primary)");
     expect(out).toContain("padding");
   });
 });
 
 const peak = (damping: number, stiffness: number): number =>
-  Math.max(...Array.from({ length: 400 }, (_, i) => springPosition(damping, stiffness, i / 200)));
+  Math.max(
+    ...Array.from({ length: 400 }, (_, i) =>
+      springPosition(damping, stiffness, i / 200),
+    ),
+  );
 
 describe("springs as CSS linear()", () => {
   test("a spring starts at 0 and settles at 1", () => {
@@ -271,10 +331,16 @@ describe("springs as CSS linear()", () => {
   test("Expressive spatial springs overshoot; effects springs (damping ratio 1) never do", () => {
     const defs = Object.fromEntries(springDefs().map((s) => [s.name, s]));
     expect(
-      peak(defs["expressive-fast-spatial"]!.damping, defs["expressive-fast-spatial"]!.stiffness),
+      peak(
+        defs["expressive-fast-spatial"]!.damping,
+        defs["expressive-fast-spatial"]!.stiffness,
+      ),
     ).toBeGreaterThan(1.05);
     expect(
-      peak(defs["default-effects"]!.damping, defs["default-effects"]!.stiffness),
+      peak(
+        defs["default-effects"]!.damping,
+        defs["default-effects"]!.stiffness,
+      ),
     ).toBeLessThanOrEqual(1.0000001);
   });
 
@@ -290,7 +356,9 @@ describe("springs as CSS linear()", () => {
   });
 
   test("an over-damped spring is monotone", () => {
-    const samples = Array.from({ length: 50 }, (_, i) => springPosition(1.5, 400, i / 25));
+    const samples = Array.from({ length: 50 }, (_, i) =>
+      springPosition(1.5, 400, i / 25),
+    );
     for (let i = 1; i < samples.length; i += 1)
       expect(samples[i]!).toBeGreaterThanOrEqual(samples[i - 1]!);
   });

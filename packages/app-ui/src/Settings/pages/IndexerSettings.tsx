@@ -1,5 +1,9 @@
 import { useForm } from "react-hook-form";
-import { useLibraryQuery, useLibraryMutation, useSpacedriveClient } from "../../contexts/SpacedriveContext";
+import {
+  useLibraryQuery,
+  useLibraryMutation,
+  useSpacedriveClient,
+} from "../../contexts/SpacedriveContext";
 
 interface IndexerSettingsForm {
   no_system_files: boolean;
@@ -13,9 +17,13 @@ interface IndexerSettingsForm {
 export function IndexerSettings() {
   const client = useSpacedriveClient();
   const libraryId = client.getCurrentLibraryId();
-  const { data: config, refetch, isLoading } = useLibraryQuery(
+  const {
+    data: config,
+    refetch,
+    isLoading,
+  } = useLibraryQuery(
     { type: "config.library.get", input: null as any },
-    { enabled: !!libraryId }
+    { enabled: !!libraryId },
   );
   const updateConfig = useLibraryMutation("config.library.update");
 
@@ -39,7 +47,9 @@ export function IndexerSettings() {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-title-medium font-semibold text-on-surface mb-2">Indexer</h2>
+          <h2 className="text-title-medium font-semibold text-on-surface mb-2">
+            Indexer
+          </h2>
           <p className="text-body-medium text-on-surface-variant">
             No library selected. Please select a library first.
           </p>
@@ -52,7 +62,9 @@ export function IndexerSettings() {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-title-medium font-semibold text-on-surface mb-2">Indexer</h2>
+          <h2 className="text-title-medium font-semibold text-on-surface mb-2">
+            Indexer
+          </h2>
           <p className="text-body-medium text-on-surface-variant">Loading...</p>
         </div>
       </div>
@@ -62,7 +74,9 @@ export function IndexerSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-title-medium font-semibold text-on-surface mb-2">Indexer</h2>
+        <h2 className="text-title-medium font-semibold text-on-surface mb-2">
+          Indexer
+        </h2>
         <p className="text-body-medium text-on-surface-variant">
           Configure what files are indexed in your library.
         </p>
@@ -71,12 +85,18 @@ export function IndexerSettings() {
       <form onSubmit={onSubmit} className="space-y-4">
         {/* Exclusions Section */}
         <div className="p-4 bg-surface-container rounded-small border border-outline-variant space-y-4">
-          <h3 className="text-label-large font-medium text-on-surface">Exclusions</h3>
+          <h3 className="text-label-large font-medium text-on-surface">
+            Exclusions
+          </h3>
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Skip system files</span>
-              <p className="text-body-small text-on-surface-variant">Ignore OS system files and directories</p>
+              <span className="text-body-medium text-on-surface">
+                Skip system files
+              </span>
+              <p className="text-body-small text-on-surface-variant">
+                Ignore OS system files and directories
+              </p>
             </div>
             <input
               type="checkbox"
@@ -87,8 +107,12 @@ export function IndexerSettings() {
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Skip Git repositories</span>
-              <p className="text-body-small text-on-surface-variant">Ignore .git directories</p>
+              <span className="text-body-medium text-on-surface">
+                Skip Git repositories
+              </span>
+              <p className="text-body-small text-on-surface-variant">
+                Ignore .git directories
+              </p>
             </div>
             <input
               type="checkbox"
@@ -99,8 +123,12 @@ export function IndexerSettings() {
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Skip dev directories</span>
-              <p className="text-body-small text-on-surface-variant">Ignore node_modules, vendor, target, etc.</p>
+              <span className="text-body-medium text-on-surface">
+                Skip dev directories
+              </span>
+              <p className="text-body-small text-on-surface-variant">
+                Ignore node_modules, vendor, target, etc.
+              </p>
             </div>
             <input
               type="checkbox"
@@ -111,8 +139,12 @@ export function IndexerSettings() {
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Skip hidden files</span>
-              <p className="text-body-small text-on-surface-variant">Ignore files starting with a dot</p>
+              <span className="text-body-medium text-on-surface">
+                Skip hidden files
+              </span>
+              <p className="text-body-small text-on-surface-variant">
+                Ignore files starting with a dot
+              </p>
             </div>
             <input
               type="checkbox"
@@ -124,12 +156,18 @@ export function IndexerSettings() {
 
         {/* Filters Section */}
         <div className="p-4 bg-surface-container rounded-small border border-outline-variant space-y-4">
-          <h3 className="text-label-large font-medium text-on-surface">Filters</h3>
+          <h3 className="text-label-large font-medium text-on-surface">
+            Filters
+          </h3>
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Respect .gitignore</span>
-              <p className="text-body-small text-on-surface-variant">Honor .gitignore files when indexing</p>
+              <span className="text-body-medium text-on-surface">
+                Respect .gitignore
+              </span>
+              <p className="text-body-small text-on-surface-variant">
+                Honor .gitignore files when indexing
+              </p>
             </div>
             <input
               type="checkbox"
@@ -140,8 +178,12 @@ export function IndexerSettings() {
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Only index images</span>
-              <p className="text-body-small text-on-surface-variant">Only index image files (photos, graphics)</p>
+              <span className="text-body-medium text-on-surface">
+                Only index images
+              </span>
+              <p className="text-body-small text-on-surface-variant">
+                Only index image files (photos, graphics)
+              </p>
             </div>
             <input
               type="checkbox"

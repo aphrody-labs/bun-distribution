@@ -4,7 +4,7 @@ import { GenerationProvider } from "@storyteller/api-enums";
 
 // TODO: Some of the model configs, such as generation counts, are authoritatively controlled in `legacy/Models.ts`
 
-export const SPLAT_MODELS : SplatModel [] = [
+export const SPLAT_MODELS: SplatModel[] = [
   new SplatModel({
     id: "marble_0p1_mini",
     tauriId: "marble_0p1_mini",

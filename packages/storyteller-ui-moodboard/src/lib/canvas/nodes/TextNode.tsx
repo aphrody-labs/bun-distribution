@@ -24,9 +24,8 @@ const TextNodeInner = ({ node, draggable, selected, onSelect }: Props) => {
     (s) => s.transient.editingTextId === node.id,
   );
 
-  const handleSelect = (
-    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
-  ) => onSelect(node.id, e);
+  const handleSelect = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) =>
+    onSelect(node.id, e);
 
   return (
     <KonvaText

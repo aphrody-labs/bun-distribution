@@ -69,21 +69,25 @@ test("public search redacts failure, stays in Aphrody and retries the real backe
     );
     const input = host.querySelector("input")!;
     await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(
-        input,
-        "TypeScript 7 & Bun",
-      );
+      Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )!.set!.call(input, "TypeScript 7 & Bun");
       input.dispatchEvent(new Event("input", { bubbles: true }));
     });
     await act(async () =>
       host
         .querySelector("form")!
-        .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
+        .dispatchEvent(
+          new Event("submit", { bubbles: true, cancelable: true }),
+        ),
     );
     expect(requested).toHaveLength(1);
     expect(requested[0]).toStartWith("/api/search?");
     const alert = host.querySelector('[role="alert"]')!;
-    expect(new URL(requested[0], "https://aphrody.com").searchParams.get("hl")).toBe("fr");
+    expect(
+      new URL(requested[0], "https://aphrody.com").searchParams.get("hl"),
+    ).toBe("fr");
     expect(alert.textContent).toContain(productSearchMessages.fr.unavailable);
     expect(alert.textContent).not.toContain("private backend diagnostics");
     const link = alert.querySelector("a")!;
@@ -129,7 +133,9 @@ test("every supported locale translates the complete public surface and preserve
       expect(Object.keys(text).toSorted()).toEqual(
         Object.keys(productSearchMessages.en).toSorted(),
       );
-      expect(Object.values(text).every((value) => value.trim().length > 0)).toBe(true);
+      expect(
+        Object.values(text).every((value) => value.trim().length > 0),
+      ).toBe(true);
       expect(html).not.toContain("Search images, news, videos and books");
     }
   } finally {

@@ -28,7 +28,9 @@ interface Options {
 
 function parseArgs(argv: string[]): Options {
   const all = (name: string): string[] =>
-    argv.flatMap((a, i) => (a === name && argv[i + 1] ? [argv[i + 1] as string] : []));
+    argv.flatMap((a, i) =>
+      a === name && argv[i + 1] ? [argv[i + 1] as string] : [],
+    );
   const one = (name: string): string | undefined => all(name)[0];
   const target = one("--target");
   const client = one("--client");
@@ -52,22 +54,38 @@ function parseArgs(argv: string[]): Options {
   };
 }
 
-async function exec(host: string, cmd: string, timeoutSecs = 120): Promise<string> {
+async function exec(
+  host: string,
+  cmd: string,
+  timeoutSecs = 120,
+): Promise<string> {
   const r = await $`aphrody-infra ssh exec --host ${host} --json --cmd ${cmd}`
-    .env({ ...process.env, APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(timeoutSecs) })
+    .env({
+      ...process.env,
+      APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(timeoutSecs),
+    })
     .nothrow()
     .quiet();
   const text = r.stdout.toString();
   try {
-    const j = JSON.parse(text) as { exit_code: number; stdout: string; stderr: string };
+    const j = JSON.parse(text) as {
+      exit_code: number;
+      stdout: string;
+      stderr: string;
+    };
     if (j.exit_code !== 0)
-      throw new Error(`${host}: exit ${j.exit_code}: ${j.stderr.slice(0, 400)}`);
+      throw new Error(
+        `${host}: exit ${j.exit_code}: ${j.stderr.slice(0, 400)}`,
+      );
     return j.stdout;
   } catch (e) {
     if (e instanceof SyntaxError)
-      throw new Error(`${host}: ${text.slice(0, 400)} ${r.stderr.toString().slice(0, 400)}`, {
-        cause: e,
-      });
+      throw new Error(
+        `${host}: ${text.slice(0, 400)} ${r.stderr.toString().slice(0, 400)}`,
+        {
+          cause: e,
+        },
+      );
     throw e;
   }
 }
@@ -82,7 +100,8 @@ interface Snapshot {
   cpu: Record<string, number>;
 }
 
-const SNAPSHOT = "grep -E '^ *(NET_RX|NET_TX):' /proc/softirqs; grep '^cpu ' /proc/stat";
+const SNAPSHOT =
+  "grep -E '^ *(NET_RX|NET_TX):' /proc/softirqs; grep '^cpu ' /proc/stat";
 
 function parseSnapshot(text: string): Snapshot {
   const row = (name: string): number[] =>
@@ -96,7 +115,16 @@ function parseSnapshot(text: string): Snapshot {
     .split(/\s+/)
     .slice(1)
     .map(Number);
-  const names = ["user", "nice", "system", "idle", "iowait", "irq", "softirq", "steal"];
+  const names = [
+    "user",
+    "nice",
+    "system",
+    "idle",
+    "iowait",
+    "irq",
+    "softirq",
+    "steal",
+  ];
   return {
     netRx: row("NET_RX"),
     netTx: row("NET_TX"),
@@ -104,7 +132,8 @@ function parseSnapshot(text: string): Snapshot {
   };
 }
 
-const per = (x: number[], y: number[]): number[] => y.map((v, i) => v - (x[i] ?? 0));
+const per = (x: number[], y: number[]): number[] =>
+  y.map((v, i) => v - (x[i] ?? 0));
 
 function delta(a: Snapshot, b: Snapshot) {
   const rx = per(a.netRx, b.netRx);
@@ -118,13 +147,21 @@ function delta(a: Snapshot, b: Snapshot) {
     netRxTopCpuShare: Math.round((Math.max(...rx) / total) * 1000) / 10,
     netRxCpusAbove5pct: rx.filter((v) => v / total > 0.05).length,
     cpuPercent: Object.fromEntries(
-      Object.entries(cpuTicks).map(([k, v]) => [k, Math.round((v / ticks) * 1000) / 10]),
+      Object.entries(cpuTicks).map(([k, v]) => [
+        k,
+        Math.round((v / ticks) * 1000) / 10,
+      ]),
     ),
   };
 }
 
 interface OhaSummary {
-  summary: { successRate: number; requestsPerSec: number; total: number; sizePerSec?: number };
+  summary: {
+    successRate: number;
+    requestsPerSec: number;
+    total: number;
+    sizePerSec?: number;
+  };
   latencyPercentiles: Record<string, number>;
   statusCodeDistribution: Record<string, number>;
   errorDistribution: Record<string, number>;
@@ -136,7 +173,9 @@ async function main(): Promise<void> {
   const results = [];
   try {
     for (const unit of opts.freeze) {
-      const active = (await exec(opts.target, `systemctl is-active ${unit} || true`)).trim();
+      const active = (
+        await exec(opts.target, `systemctl is-active ${unit} || true`)
+      ).trim();
       if (active === "active" || active === "activating") {
         await exec(opts.target, cgroupFreeze(unit, 1));
         frozen.push(unit);

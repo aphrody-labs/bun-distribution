@@ -19,14 +19,7 @@ export type HostPathRule =
   | "legacy-layout";
 /** `host` is the declared VPS catalog, `platform` a WSL/Windows tool by design `test` fixture data. */
 export type HostPathArea =
-  | "platform"
-  | "code"
-  | "config"
-  | "host"
-  | "test"
-  | "docs"
-  | "record"
-  | "data";
+  "platform" | "code" | "config" | "host" | "test" | "docs" | "record" | "data";
 export interface HostPathFinding {
   line: number;
   rule: HostPathRule;
@@ -45,7 +38,8 @@ let monorepoDirs = new Map<string, string>();
 /** Crate, package and app names to their monorepo directory; names that exist twice are dropped. */
 function indexMonorepo(root: string): void {
   const seen = new Map<string, string | null>();
-  const add = (key: string, dir: string) => seen.set(key, seen.has(key) ? null : dir);
+  const add = (key: string, dir: string) =>
+    seen.set(key, seen.has(key) ? null : dir);
   for (const file of git(root, [
     "ls-files",
     "crates/*/Cargo.toml",
@@ -55,22 +49,38 @@ function indexMonorepo(root: string): void {
     const parts = file.split("/");
     if (parts.length !== 4) continue;
     const kind = parts[0] === "crates" ? "crates" : parts[0];
-    add(`${kind}/${parts[2]!.replace(/^aphrody-/, "")}`, `${parts[0]}/${parts[1]}/${parts[2]}`);
+    add(
+      `${kind}/${parts[2]!.replace(/^aphrody-/, "")}`,
+      `${parts[0]}/${parts[1]}/${parts[2]}`,
+    );
   }
-  monorepoDirs = new Map([...seen].filter((entry): entry is [string, string] => entry[1] !== null));
+  monorepoDirs = new Map(
+    [...seen].filter((entry): entry is [string, string] => entry[1] !== null),
+  );
 }
 
 function legacyRewrite(match: string): string {
-  if (match.startsWith("aphrody-infra/")) return match.slice("aphrody-infra/".length);
+  if (match.startsWith("aphrody-infra/"))
+    return match.slice("aphrody-infra/".length);
   if (match === "aphrody-contracts/docs") return "docs/apis/contracts";
-  const named = /^aphrody-[a-z]+\/(crates|packages|apps)\/([\w@.-]+)$/.exec(match);
-  if (named) return monorepoDirs.get(`${named[1]}/${named[2]!.replace(/^aphrody-/, "")}`) ?? match;
+  const named = /^aphrody-[a-z]+\/(crates|packages|apps)\/([\w@.-]+)$/.exec(
+    match,
+  );
+  if (named)
+    return (
+      monorepoDirs.get(`${named[1]}/${named[2]!.replace(/^aphrody-/, "")}`) ??
+      match
+    );
   return match;
 }
 
 const END = String.raw`(?=$|[/\\\s"'\x60),:;\]}>|])`;
 /** Ordered: the first rule that claims a span owns it. `rewrite` applies only to prose and records. */
-const RULES: { rule: HostPathRule; pattern: RegExp; rewrite?: (match: string) => string }[] = [
+const RULES: {
+  rule: HostPathRule;
+  pattern: RegExp;
+  rewrite?: (match: string) => string;
+}[] = [
   {
     rule: "repo-absolute",
     pattern: new RegExp(String.raw`/home/[\w.-]+/aphrody${END}/?`, "g"),
@@ -123,8 +133,14 @@ const REWRITABLE: ReadonlySet<HostPathArea> = new Set<HostPathArea>([
   "config",
 ]);
 /** Config files only take the retired-layout mapping; other rules need a reviewed edit. */
-const CONFIG_REWRITES: ReadonlySet<HostPathRule> = new Set<HostPathRule>(["legacy-layout"]);
-const canRewrite = (area: HostPathArea, rule: HostPathRule, line: string): boolean =>
+const CONFIG_REWRITES: ReadonlySet<HostPathRule> = new Set<HostPathRule>([
+  "legacy-layout",
+]);
+const canRewrite = (
+  area: HostPathArea,
+  rule: HostPathRule,
+  line: string,
+): boolean =>
   REWRITABLE.has(area) &&
   (area !== "code" || COMMENT_LINE.test(line)) &&
   (area !== "config" || CONFIG_REWRITES.has(rule));
@@ -153,7 +169,8 @@ export function hostPathArea(path: string): HostPathArea {
     )
   )
     return "platform";
-  if (/(^|\/)(examples?|benchmarks\/results|adapters)\//.test(path)) return "test";
+  if (/(^|\/)(examples?|benchmarks\/results|adapters)\//.test(path))
+    return "test";
   if (path === "crates/engine/yolo-core/src/mapper/audit.rs") return "test";
   if (/^(systemd|nginx|config\/infra)\//.test(path)) return "host";
   if (
@@ -162,12 +179,25 @@ export function hostPathArea(path: string): HostPathArea {
     )
   )
     return "host";
-  if (/^scripts\/(atomic-deploy-|rg\/assemble-vps|ops\/provision|shenron\/install-)/.test(path))
+  if (
+    /^scripts\/(atomic-deploy-|rg\/assemble-vps|ops\/provision|shenron\/install-)/.test(
+      path,
+    )
+  )
     return "host";
-  if (/^scripts\/(migration|audit\/live-candidates|test-atomic-)/.test(path)) return "host";
-  if (/(^|\/)(tests?|__tests__)\/|\.(test|spec)\.[a-z]+$|_tests?\.rs$|\/tests\.rs$/.test(path))
+  if (/^scripts\/(migration|audit\/live-candidates|test-atomic-)/.test(path))
+    return "host";
+  if (
+    /(^|\/)(tests?|__tests__)\/|\.(test|spec)\.[a-z]+$|_tests?\.rs$|\/tests\.rs$/.test(
+      path,
+    )
+  )
     return "test";
-  if (/(^|\/)data\//.test(path) || name.endsWith(".jsonl") || /\/inventaires\//.test(path))
+  if (
+    /(^|\/)data\//.test(path) ||
+    name.endsWith(".jsonl") ||
+    /\/inventaires\//.test(path)
+  )
     return "data";
   if (/\.(md|mdx|txt|rst|html)$/.test(name)) return "docs";
   if (path.startsWith("docs/")) return "record";
@@ -180,7 +210,11 @@ export function hostPathArea(path: string): HostPathArea {
 }
 
 /** Findings for one text; rewrites are offered for prose, records and data only. */
-export function scanHostPaths(text: string, area: HostPathArea, rust = false): HostPathFinding[] {
+export function scanHostPaths(
+  text: string,
+  area: HostPathArea,
+  rust = false,
+): HostPathFinding[] {
   const findings: HostPathFinding[] = [];
   let inTests = false;
   for (const [index, line] of text.split("\n").entries()) {
@@ -206,7 +240,9 @@ export function scanHostPaths(text: string, area: HostPathArea, rust = false): H
           line: index + 1,
           rule,
           match: match[0],
-          ...(rewrite && REWRITABLE.has(area) && (area !== "code" || COMMENT_LINE.test(line))
+          ...(rewrite &&
+          REWRITABLE.has(area) &&
+          (area !== "code" || COMMENT_LINE.test(line))
             ? { rewrite: rewrite(match[0]) }
             : {}),
         });
@@ -230,12 +266,16 @@ export function rewriteHostPaths(text: string, area: HostPathArea): string {
           claimed.push([
             start,
             end,
-            rewrite && canRewrite(area, rule, line) ? rewrite(match[0]) : match[0],
+            rewrite && canRewrite(area, rule, line)
+              ? rewrite(match[0])
+              : match[0],
           ]);
         }
       let output = "";
       let cursor = 0;
-      for (const [start, end, replacement] of claimed.toSorted((a, b) => a[0] - b[0])) {
+      for (const [start, end, replacement] of claimed.toSorted(
+        (a, b) => a[0] - b[0],
+      )) {
         output += line.slice(cursor, start) + replacement;
         cursor = end;
       }
@@ -251,15 +291,23 @@ function git(root: string, args: string[], allowEmpty = false): string {
     stderr: "pipe",
   });
   if (result.exitCode !== 0 && !(allowEmpty && result.exitCode === 1))
-    throw new Error(`git ${args[0]} failed: ${result.stderr.toString().trim()}`);
+    throw new Error(
+      `git ${args[0]} failed: ${result.stderr.toString().trim()}`,
+    );
   return result.stdout.toString();
 }
 
 export async function collectHostPaths(root: string): Promise<HostPathFile[]> {
   indexMonorepo(root);
-  const candidates = git(root, ["grep", "-l", "-z", "-I", "-E", PREFILTER], true)
+  const candidates = git(
+    root,
+    ["grep", "-l", "-z", "-I", "-E", PREFILTER],
+    true,
+  )
     .split("\0")
-    .filter((path) => path && !OWN_FILES.has(path) && existsSync(join(root, path)));
+    .filter(
+      (path) => path && !OWN_FILES.has(path) && existsSync(join(root, path)),
+    );
   const files = await Promise.all(
     candidates.map(async (path) => {
       const area = hostPathArea(path);
@@ -278,7 +326,11 @@ export async function collectHostPaths(root: string): Promise<HostPathFile[]> {
     .toSorted((a, b) => a.path.localeCompare(b.path));
 }
 
-type Baseline = { schemaVersion: 1; $comment?: string; files: Record<string, number> };
+type Baseline = {
+  schemaVersion: 1;
+  $comment?: string;
+  files: Record<string, number>;
+};
 
 export async function runHostPaths(args: string[]): Promise<number> {
   let root = process.cwd();
@@ -314,7 +366,8 @@ export async function runHostPaths(args: string[]): Promise<number> {
   );
   if (apply)
     for (const file of await collectHostPaths(root)) {
-      if (!file.findings.some((finding) => finding.rewrite !== undefined)) continue;
+      if (!file.findings.some((finding) => finding.rewrite !== undefined))
+        continue;
       if (dirty.has(file.path)) {
         skipped.push(file.path);
         continue;
@@ -329,7 +382,9 @@ export async function runHostPaths(args: string[]): Promise<number> {
     }
   const files = await collectHostPaths(root);
   const baselinePath = join(root, "tools/config/host-paths.baseline.json");
-  const counts = Object.fromEntries(files.map((file) => [file.path, file.findings.length]));
+  const counts = Object.fromEntries(
+    files.map((file) => [file.path, file.findings.length]),
+  );
   if (writeBaseline)
     await Bun.write(
       baselinePath,
@@ -349,7 +404,9 @@ export async function runHostPaths(args: string[]): Promise<number> {
     : null;
   const regressions = baseline
     ? files
-        .filter((file) => file.findings.length > (baseline.files[file.path] ?? 0))
+        .filter(
+          (file) => file.findings.length > (baseline.files[file.path] ?? 0),
+        )
         .map((file) => ({
           path: file.path,
           baseline: baseline.files[file.path] ?? 0,
@@ -377,14 +434,22 @@ export async function runHostPaths(args: string[]): Promise<number> {
       byRule: tally((item) => item.rule),
       byArea: tally((item) => item.area),
     },
-    ratchet: { baseline: baseline ? "tools/config/host-paths.baseline.json" : null, regressions },
+    ratchet: {
+      baseline: baseline ? "tools/config/host-paths.baseline.json" : null,
+      regressions,
+    },
     files,
   };
   if (markdown) {
     const rows = files
-      .toSorted((a, b) => b.findings.length - a.findings.length || a.path.localeCompare(b.path))
+      .toSorted(
+        (a, b) =>
+          b.findings.length - a.findings.length || a.path.localeCompare(b.path),
+      )
       .map((file) => {
-        const rules = [...new Set(file.findings.map((finding) => finding.rule))].join(", ");
+        const rules = [
+          ...new Set(file.findings.map((finding) => finding.rule)),
+        ].join(", ");
         return `| ${file.area} | \`${file.path}\` | ${file.findings.length} | ${rules} |`;
       });
     console.log(
@@ -403,7 +468,8 @@ export async function runHostPaths(args: string[]): Promise<number> {
           ? [
               "",
               ...regressions.map(
-                (item) => `- regression: \`${item.path}\` ${item.baseline} → ${item.current}`,
+                (item) =>
+                  `- regression: \`${item.path}\` ${item.baseline} → ${item.current}`,
               ),
             ]
           : []),

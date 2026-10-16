@@ -14,11 +14,24 @@ type Repo = {
 };
 const api = async (path: string): Promise<unknown> =>
   JSON.parse((await Bun.$`gh api ${path}`.quiet()).stdout.toString());
-const repos = (await api("user/repos?per_page=100&affiliation=owner")) as Repo[];
+const repos = (await api(
+  "user/repos?per_page=100&affiliation=owner",
+)) as Repo[];
 const packages: unknown[] = [];
-for (const type of ["npm", "container", "maven", "rubygems", "nuget", "docker"]) {
+for (const type of [
+  "npm",
+  "container",
+  "maven",
+  "rubygems",
+  "nuget",
+  "docker",
+]) {
   try {
-    packages.push(...((await api(`user/packages?package_type=${type}&per_page=100`)) as unknown[]));
+    packages.push(
+      ...((await api(
+        `user/packages?package_type=${type}&per_page=100`,
+      )) as unknown[]),
+    );
   } catch {
     /* unsupported package type */
   }
@@ -29,7 +42,10 @@ const collaborator = await Promise.all(
       const result = (await api(
         `repos/${repo.full_name}/collaborators/aphrody-dev/permission`,
       )) as { user?: { permissions?: { admin?: boolean } } };
-      return { repository: repo.full_name, admin: result.user?.permissions?.admin === true };
+      return {
+        repository: repo.full_name,
+        admin: result.user?.permissions?.admin === true,
+      };
     } catch {
       return { repository: repo.full_name, admin: false };
     }
@@ -54,7 +70,9 @@ const report = {
   collaborator: {
     login: "aphrody-dev",
     adminCount: collaborator.filter((item) => item.admin).length,
-    missingOrUnavailable: collaborator.filter((item) => !item.admin).map((item) => item.repository),
+    missingOrUnavailable: collaborator
+      .filter((item) => !item.admin)
+      .map((item) => item.repository),
   },
   packages: {
     total: packages.length,

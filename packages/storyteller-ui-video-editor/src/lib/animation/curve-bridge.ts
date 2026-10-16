@@ -1,7 +1,4 @@
-import {
-  getDefaultLeftHandle,
-  getDefaultRightHandle,
-} from "./bezier";
+import { getDefaultLeftHandle, getDefaultRightHandle } from "./bezier";
 import type {
   CurveHandle,
   NormalizedCubicBezier,
@@ -37,7 +34,8 @@ export function getNormalizedCubicBezierForScalarSegment({
   const effectiveSpanValue =
     Math.abs(spanValue) > VALUE_EPSILON
       ? spanValue
-      : referenceSpanValue !== undefined && Math.abs(referenceSpanValue) > VALUE_EPSILON
+      : referenceSpanValue !== undefined &&
+          Math.abs(referenceSpanValue) > VALUE_EPSILON
         ? referenceSpanValue
         : null;
 
@@ -77,7 +75,8 @@ export function getCurveHandlesForNormalizedCubicBezier({
   const effectiveSpanValue =
     Math.abs(spanValue) > VALUE_EPSILON
       ? spanValue
-      : referenceSpanValue !== undefined && Math.abs(referenceSpanValue) > VALUE_EPSILON
+      : referenceSpanValue !== undefined &&
+          Math.abs(referenceSpanValue) > VALUE_EPSILON
         ? referenceSpanValue
         : null;
 

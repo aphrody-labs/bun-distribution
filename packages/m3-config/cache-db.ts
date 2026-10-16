@@ -82,7 +82,8 @@ export class M3UiCache {
    */
   set<T = unknown>(namespace: string, key: string, value: T): void {
     const serialized = JSON.stringify(value);
-    if (serialized === undefined) throw new TypeError("M3UiCache: value must be JSON serializable");
+    if (serialized === undefined)
+      throw new TypeError("M3UiCache: value must be JSON serializable");
     const now = Date.now();
 
     this.db
@@ -111,7 +112,9 @@ export class M3UiCache {
    */
   clear(namespace?: string): number {
     if (namespace !== undefined) {
-      const result = this.db.query("DELETE FROM ui_cache WHERE namespace = ?").run(namespace);
+      const result = this.db
+        .query("DELETE FROM ui_cache WHERE namespace = ?")
+        .run(namespace);
       return result.changes;
     }
     const result = this.db.query("DELETE FROM ui_cache").run();
@@ -161,7 +164,9 @@ export function getSharedUiCache(path?: string): M3UiCache {
     const defaultPath =
       path ??
       process.env.APHRODY_UI_CACHE_PATH ??
-      (process.env.HOME ? `${process.env.HOME}/.aphrody/cache/ui.sqlite` : ":memory:");
+      (process.env.HOME
+        ? `${process.env.HOME}/.aphrody/cache/ui.sqlite`
+        : ":memory:");
     defaultInstance = new M3UiCache(defaultPath);
   }
   return defaultInstance;

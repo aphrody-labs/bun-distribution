@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useEffect, useState } from "react";
 import { normalizeSeed, rustVariant, schemeRoles } from "@aphrody/m3-theme";
-import { useM3Theme, type SchemeVariant, type ThemeMode } from "@aphrody/m3-theme/react";
+import {
+  useM3Theme,
+  type SchemeVariant,
+  type ThemeMode,
+} from "@aphrody/m3-theme/react";
 import { Button, Input } from "@aphrody/m3-primitives";
 import { Card, Code, Page, Section, Swatch } from "../ui.tsx";
 import type { PageProps } from "./index.ts";
@@ -28,7 +32,9 @@ const PAIRS = [
 
 export default function Theme({ adaptive }: PageProps) {
   const theme = useM3Theme();
-  const [scheme, setScheme] = useState<{ roles: Record<string, string> } | { error: string }>();
+  const [scheme, setScheme] = useState<
+    { roles: Record<string, string> } | { error: string }
+  >();
   const { sheet, seedColor, variant, contrastLevel, resolvedTheme } = theme;
   useEffect(() => {
     if (!sheet) return;
@@ -44,14 +50,17 @@ export default function Theme({ adaptive }: PageProps) {
         }),
       )
       .then((css) => current && setScheme({ roles: schemeRoles(css) }))
-      .catch((error: unknown) => current && setScheme({ error: String(error) }));
+      .catch(
+        (error: unknown) => current && setScheme({ error: String(error) }),
+      );
     return () => {
       current = false;
     };
   }, [sheet, seedColor, variant, contrastLevel, resolvedTheme]);
   const roles = scheme && "roles" in scheme ? scheme.roles : {};
   const failure =
-    theme.schemeError?.message ?? (scheme && "error" in scheme ? scheme.error : undefined);
+    theme.schemeError?.message ??
+    (scheme && "error" in scheme ? scheme.error : undefined);
   return (
     <Page
       title="Theme"
@@ -79,7 +88,8 @@ export default function Theme({ adaptive }: PageProps) {
     >
       {!sheet && (
         <p role="alert" className="text-body-large text-error">
-          This host has no Rust scheme sheet source; only the compiled theme is shown.
+          This host has no Rust scheme sheet source; only the compiled theme is
+          shown.
         </p>
       )}
       {failure && (
@@ -103,7 +113,9 @@ export default function Theme({ adaptive }: PageProps) {
             <select
               className="h-12 rounded-small border border-outline bg-surface px-3 text-body-large"
               value={theme.variant}
-              onChange={(event) => theme.setVariant(event.target.value as SchemeVariant)}
+              onChange={(event) =>
+                theme.setVariant(event.target.value as SchemeVariant)
+              }
             >
               {VARIANTS.map((schemeVariant) => (
                 <option key={schemeVariant}>{schemeVariant}</option>
@@ -115,7 +127,9 @@ export default function Theme({ adaptive }: PageProps) {
             <select
               className="h-12 rounded-small border border-outline bg-surface px-3 text-body-large"
               value={theme.themeMode}
-              onChange={(event) => theme.setThemeMode(event.target.value as ThemeMode)}
+              onChange={(event) =>
+                theme.setThemeMode(event.target.value as ThemeMode)
+              }
             >
               {(["light", "dark", "system"] as const).map((mode) => (
                 <option key={mode}>{mode}</option>
@@ -130,7 +144,9 @@ export default function Theme({ adaptive }: PageProps) {
               max={1}
               step={0.1}
               value={theme.contrastLevel}
-              onChange={(event) => theme.setContrastLevel(Number(event.target.value))}
+              onChange={(event) =>
+                theme.setContrastLevel(Number(event.target.value))
+              }
             />
             <span className="text-body-small text-on-surface-variant">
               0 is standard; 1 requests maximum contrast.
@@ -158,7 +174,9 @@ export default function Theme({ adaptive }: PageProps) {
             <Swatch
               key={role}
               name={role}
-              value={roles[`--md-sys-color-${role}`] ?? `var(--md-sys-color-${role})`}
+              value={
+                roles[`--md-sys-color-${role}`] ?? `var(--md-sys-color-${role})`
+              }
               on={roles[`--md-sys-color-${on}`] ?? `var(--md-sys-color-${on})`}
             />
           ))}

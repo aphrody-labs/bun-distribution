@@ -56,9 +56,7 @@ export class EntranceAnimator {
     if (prefersReducedMotion()) return;
 
     const isSplat = object instanceof SplatMesh;
-    const handle = isSplat
-      ? buildSplatSettle(object)
-      : buildMeshDrop(object);
+    const handle = isSplat ? buildSplatSettle(object) : buildMeshDrop(object);
     if (!handle) return;
 
     // Run the first frame hidden so nothing flashes at full size before the

@@ -10,7 +10,9 @@ import { prepareStore } from "../src/agent-plugin-store.ts";
 for (const provider of ["codex", "claude", "agy"])
   for (const scope of ["user", "project"])
     for (const kind of ["plugin", "skill", "mcp"])
-      test.skipIf(process.env.APHRODY_PLUGIN_NATIVE_TESTS !== "1" || !Bun.which(provider))(
+      test.skipIf(
+        process.env.APHRODY_PLUGIN_NATIVE_TESTS !== "1" || !Bun.which(provider),
+      )(
         `${provider} ${scope}: install/remove ${kind} in a fresh profile`,
         async () => {
           const root = mkdtempSync(join(tmpdir(), "aphrody-native-plugins-"));
@@ -36,8 +38,16 @@ for (const provider of ["codex", "claude", "agy"])
             );
             prepareStore(store, "aphrody-user", true);
             const mcp = join(root, "mcp.json");
-            writeFileSync(mcp, JSON.stringify({ command: "aphrody", args: ["kernel", "mcp"] }));
-            const name = kind === "plugin" ? "example" : kind === "skill" ? "demo" : "fixture";
+            writeFileSync(
+              mcp,
+              JSON.stringify({ command: "aphrody", args: ["kernel", "mcp"] }),
+            );
+            const name =
+              kind === "plugin"
+                ? "example"
+                : kind === "skill"
+                  ? "demo"
+                  : "fixture";
             const args = [
               "--provider",
               provider,
@@ -55,10 +65,15 @@ for (const provider of ["codex", "claude", "agy"])
               store,
               "--apply",
             ];
-            if (kind !== "plugin") args.push("--source", kind === "skill" ? skill : mcp);
-            const installed = await pluginOperation(parsePluginArgs(["install", ...args]));
+            if (kind !== "plugin")
+              args.push("--source", kind === "skill" ? skill : mcp);
+            const installed = await pluginOperation(
+              parsePluginArgs(["install", ...args]),
+            );
             expect(installed.apply).toBe(true);
-            const removed = await pluginOperation(parsePluginArgs(["uninstall", ...args]));
+            const removed = await pluginOperation(
+              parsePluginArgs(["uninstall", ...args]),
+            );
             expect(removed.apply).toBe(true);
           } finally {
             rmSync(root, { recursive: true, force: true });

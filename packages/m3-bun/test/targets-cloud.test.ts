@@ -5,7 +5,11 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { loadApp } from "../src/config.ts";
-import { contextFor, generateTargets, type TargetContext } from "../src/targets/index.ts";
+import {
+  contextFor,
+  generateTargets,
+  type TargetContext,
+} from "../src/targets/index.ts";
 import { forkTag, RELEASE_MATRIX } from "../src/targets/release.ts";
 import { COMPILE_TARGETS } from "../src/config.ts";
 import { cleanup, fixtureCopy } from "./helpers.ts";
@@ -45,7 +49,10 @@ async function bundleHandler(outdir: string): Promise<string> {
   });
   expect(result.logs).toEqual([]);
   mkdirSync(join(outdir, "dist"), { recursive: true });
-  writeFileSync(join(outdir, "dist", "index.html"), "<!doctype html><title>hello-m3</title>");
+  writeFileSync(
+    join(outdir, "dist", "index.html"),
+    "<!doctype html><title>hello-m3</title>",
+  );
   return join(outdir, "handler.js");
 }
 
@@ -58,8 +65,12 @@ describe("lambda", () => {
       default: { fetch(r: Request): Promise<Response> };
     };
     const [health, hello, page] = await Promise.all([
-      lambda.fetch(new Request("https://fn.lambda-url.eu-west-3.on.aws/healthz")),
-      lambda.fetch(new Request("https://fn.lambda-url.eu-west-3.on.aws/api/hello/lambda")),
+      lambda.fetch(
+        new Request("https://fn.lambda-url.eu-west-3.on.aws/healthz"),
+      ),
+      lambda.fetch(
+        new Request("https://fn.lambda-url.eu-west-3.on.aws/api/hello/lambda"),
+      ),
       lambda.fetch(
         new Request("https://fn.lambda-url.eu-west-3.on.aws/", {
           headers: { Accept: "text/html" },
@@ -77,9 +88,13 @@ describe("lambda", () => {
     const build = await read("lambda", "build-lambda.ts");
     expect(build).toContain('import { archiveDir } from "@aphrody/m3-bun";');
     expect(build).toContain('const app = join(here, "../..");');
-    expect(() => new Bun.Transpiler({ loader: "ts" }).transformSync(build)).not.toThrow();
+    expect(() =>
+      new Bun.Transpiler({ loader: "ts" }).transformSync(build),
+    ).not.toThrow();
     const layer = await read("lambda", "build-layer.sh");
-    expect(layer).toContain('/packages/bun-lambda/scripts/build-layer.ts" --arch aarch64 \\\n');
+    expect(layer).toContain(
+      '/packages/bun-lambda/scripts/build-layer.ts" --arch aarch64 \\\n',
+    );
     const tag = forkTag(ctx.bunVersion);
     expect(layer).toContain(
       tag
@@ -174,7 +189,10 @@ describe("lambda", () => {
         ),
       ]);
       proc.kill();
-      expect({ status: response.statusCode, body: JSON.parse(response.body) }).toEqual({
+      expect({
+        status: response.statusCode,
+        body: JSON.parse(response.body),
+      }).toEqual({
         status: 200,
         body: { hello: "aws" },
       });
@@ -185,19 +203,31 @@ describe("lambda", () => {
 
 describe("release", () => {
   test("a tag builds every target with the fork Bun and attaches archives and checksums to the release", async () => {
-    const workflow = Bun.YAML.parse(await read("release", ".github/workflows/release.yml")) as any;
+    const workflow = Bun.YAML.parse(
+      await read("release", ".github/workflows/release.yml"),
+    ) as any;
     expect(workflow.on.push.tags).toEqual(["v*"]);
     expect(workflow.permissions).toEqual({ contents: "write" });
-    const include = workflow.jobs.package.strategy.matrix.include as { target: string }[];
-    expect(include.map((m) => m.target)).toEqual(RELEASE_MATRIX.map((m) => m.target));
+    const include = workflow.jobs.package.strategy.matrix.include as {
+      target: string;
+    }[];
+    expect(include.map((m) => m.target)).toEqual(
+      RELEASE_MATRIX.map((m) => m.target),
+    );
     for (const { target } of include)
       expect(COMPILE_TARGETS as readonly string[]).toContain(target);
-    const steps = workflow.jobs.package.steps.map((s: any) => s.run ?? s.uses).join("\n");
-    expect(steps).toContain("aphrody-labs/bun/main/scripts/aphrody/install.sh | bash -s ");
+    const steps = workflow.jobs.package.steps
+      .map((s: any) => s.run ?? s.uses)
+      .join("\n");
+    expect(steps).toContain(
+      "aphrody-labs/bun/main/scripts/aphrody/install.sh | bash -s ",
+    );
     expect(steps).toContain(
       "bunx --bun m3-bun package --target ${{ matrix.target }} --out release",
     );
-    const publish = workflow.jobs.publish.steps.map((s: any) => s.run ?? s.uses).join("\n");
+    const publish = workflow.jobs.publish.steps
+      .map((s: any) => s.run ?? s.uses)
+      .join("\n");
     expect(publish).toContain('gh release create "$GITHUB_REF_NAME" release/*');
     expect(publish).toContain("grep -v '\\.sha256$'");
   });
@@ -211,10 +241,17 @@ describe("release", () => {
 describe("next", () => {
   test("next.config.ts is withBun(withM3(...)): standalone output, M3 packages transpiled, Turbopack root set", async () => {
     // Evaluated inside this package so @aphrody/m3-next and @aphrody/next-bun resolve.
-    const { default: config } = (await import(join(out, "next", "next.config.ts"))) as {
-      default: (phase: string, ctx: { defaultConfig: object }) => Promise<Record<string, any>>;
+    const { default: config } = (await import(
+      join(out, "next", "next.config.ts")
+    )) as {
+      default: (
+        phase: string,
+        ctx: { defaultConfig: object },
+      ) => Promise<Record<string, any>>;
     };
-    const resolved = await config("phase-production-build", { defaultConfig: {} });
+    const resolved = await config("phase-production-build", {
+      defaultConfig: {},
+    });
     expect(resolved).toMatchObject({
       output: "standalone",
       poweredByHeader: false,

@@ -23,7 +23,11 @@ function Navigation() {
   return createElement(
     "div",
     {},
-    createElement("button", { id: "launcher", onClick: () => setOpen(true) }, "Navigation"),
+    createElement(
+      "button",
+      { id: "launcher", onClick: () => setOpen(true) },
+      "Navigation",
+    ),
     <RailDrawer open={open} onOpenChange={setOpen} label="Navigation">
       <div>
         <button id="destination">Files</button>
@@ -75,10 +79,21 @@ test("compact navigation announces its modal, skips hidden controls and traps bo
   expect(drawer.getAttribute("aria-label")).toBe("Navigation");
   expect(document.activeElement).toBe(close);
   close.dispatchEvent(
-    new KeyboardEvent("keydown", { key: "Tab", shiftKey: true, bubbles: true, cancelable: true }),
+    new KeyboardEvent("keydown", {
+      key: "Tab",
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    }),
   );
   expect(document.activeElement).toBe(last);
-  last.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
+  last.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      key: "Tab",
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
   expect(document.activeElement).toBe(close);
   expect(document.activeElement).not.toBe(control("#disabled"));
   expect(document.activeElement).not.toBe(control("#hidden"));
@@ -89,7 +104,11 @@ test("Escape dismisses compact navigation and returns focus to its actual invoke
   await openNavigation();
   await act(async () =>
     control(".app-drawer-close").dispatchEvent(
-      new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }),
+      new KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        cancelable: true,
+      }),
     ),
   );
   expect(control('[role="dialog"]').hidden).toBe(true);

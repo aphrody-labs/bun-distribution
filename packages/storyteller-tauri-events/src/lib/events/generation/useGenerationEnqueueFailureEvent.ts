@@ -1,16 +1,20 @@
 import { useEffect } from "react";
-import { listen, UnlistenFn } from '@tauri-apps/api/event';
+import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { SoundManager } from "@storyteller/soundboard";
 import { toast } from "@storyteller/ui-toaster";
-import { GenerationAction, GenerationModel, GenerationServiceProvider } from "./common";
+import {
+  GenerationAction,
+  GenerationModel,
+  GenerationServiceProvider,
+} from "./common";
 import { BasicEventWrapper } from "../../common/BasicEventWrapper";
 
 type GenerationEnqueueFailureEvent = {
-  action: GenerationAction,
-  service: GenerationServiceProvider,
-  model?: GenerationModel | string,
-  reason?: string,
-}; 
+  action: GenerationAction;
+  service: GenerationServiceProvider;
+  model?: GenerationModel | string;
+  reason?: string;
+};
 
 export const useGenerationEnqueueFailureEvent = () => {
   useEffect(() => {
@@ -18,27 +22,29 @@ export const useGenerationEnqueueFailureEvent = () => {
     let unlisten: Promise<UnlistenFn>;
 
     const setup = async () => {
-      unlisten = listen<BasicEventWrapper<GenerationEnqueueFailureEvent>>('generation-enqueue-failure-event', async (event) => {
-        console.log("Generation enqueue failure event received:", event);
-        await SoundManager.playEnqueueFailure();
-        const message = makeMessage(event.payload.data);
-        toast.error(message);
-      });
+      unlisten = listen<BasicEventWrapper<GenerationEnqueueFailureEvent>>(
+        "generation-enqueue-failure-event",
+        async (event) => {
+          console.log("Generation enqueue failure event received:", event);
+          await SoundManager.playEnqueueFailure();
+          const message = makeMessage(event.payload.data);
+          toast.error(message);
+        },
+      );
 
       if (isUnmounted) {
-        unlisten.then(f => f()); // Unsubscribe if unmounted early.
+        unlisten.then((f) => f()); // Unsubscribe if unmounted early.
       }
     };
 
     setup();
-    
+
     return () => {
       isUnmounted = true;
-      unlisten.then(f => f());
+      unlisten.then((f) => f());
     };
-
   }, []);
-}
+};
 
 const makeMessage = (event: GenerationEnqueueFailureEvent) => {
   if (event.reason) {
@@ -58,4 +64,4 @@ const makeMessage = (event: GenerationEnqueueFailureEvent) => {
     default:
       return "Couldn't enqueue generation!";
   }
-}
+};

@@ -54,13 +54,20 @@ import {
 export function firstPartyTests(tree: string): string[] {
   const root = join(tree, "test/js/first_party");
   const files: string[] = [];
-  for (const file of new Bun.Glob("**/*.test.{ts,tsx,js,mjs}").scanSync({ cwd: root }))
-    if (!readFileSync(join(root, file), "utf8").includes("bun:internal-for-testing"))
+  for (const file of new Bun.Glob("**/*.test.{ts,tsx,js,mjs}").scanSync({
+    cwd: root,
+  }))
+    if (
+      !readFileSync(join(root, file), "utf8").includes(
+        "bun:internal-for-testing",
+      )
+    )
       files.push(`test/js/first_party/${file}`);
   return files.toSorted();
 }
 
-const log = (message: string) => console.error(`\x1b[36m[bun-forge]\x1b[0m ${message}`);
+const log = (message: string) =>
+  console.error(`\x1b[36m[bun-forge]\x1b[0m ${message}`);
 
 interface Captured {
   code: number;
@@ -80,7 +87,11 @@ function capture(
       stdout: "pipe",
       stderr: "pipe",
     });
-    return { code: r.exitCode ?? 1, stdout: r.stdout.toString(), stderr: r.stderr.toString() };
+    return {
+      code: r.exitCode ?? 1,
+      stdout: r.stdout.toString(),
+      stderr: r.stderr.toString(),
+    };
   } catch (e) {
     return { code: 127, stdout: "", stderr: (e as Error).message };
   }
@@ -101,13 +112,19 @@ async function run(
     stdin: "ignore",
   });
   const sink = opts.logFile ? Bun.file(opts.logFile).writer() : undefined;
-  const pump = async (stream: ReadableStream<Uint8Array>, out: NodeJS.WriteStream) => {
+  const pump = async (
+    stream: ReadableStream<Uint8Array>,
+    out: NodeJS.WriteStream,
+  ) => {
     for await (const chunk of stream) {
       out.write(chunk);
       sink?.write(chunk);
     }
   };
-  await Promise.all([pump(proc.stdout, process.stdout), pump(proc.stderr, process.stderr)]);
+  await Promise.all([
+    pump(proc.stdout, process.stdout),
+    pump(proc.stderr, process.stderr),
+  ]);
   const code = await proc.exited;
   await sink?.end();
   if (code !== 0) fail(`${cmd[0]} exited with ${code}`);
@@ -118,16 +135,22 @@ let rootPrefixCache: string[] | null | undefined;
 function rootPrefix(): string[] | null {
   if (rootPrefixCache !== undefined) return rootPrefixCache;
   if (process.getuid?.() === 0) rootPrefixCache = [];
-  else rootPrefixCache = capture(["sudo", "-n", "true"]).code === 0 ? ["sudo", "-n"] : null;
+  else
+    rootPrefixCache =
+      capture(["sudo", "-n", "true"]).code === 0 ? ["sudo", "-n"] : null;
   return rootPrefixCache;
 }
 
 async function asRoot(cmd: string[], logFile?: string): Promise<void> {
   const prefix = rootPrefix();
-  if (prefix === null) fail(`needs root or passwordless sudo: ${cmd.join(" ")}`);
+  if (prefix === null)
+    fail(`needs root or passwordless sudo: ${cmd.join(" ")}`);
   await run([...prefix, ...cmd], {
     logFile,
-    env: { ...(process.env as Record<string, string>), DEBIAN_FRONTEND: "noninteractive" },
+    env: {
+      ...(process.env as Record<string, string>),
+      DEBIAN_FRONTEND: "noninteractive",
+    },
   });
 }
 
@@ -168,8 +191,14 @@ export interface Toolchain {
   root: boolean;
 }
 
-function systemLlvm(major: number): { dir: string; version: string } | undefined {
-  for (const dir of [`/usr/lib/llvm-${major}`, "/usr/lib/llvm", `/usr/lib/llvm${major}`]) {
+function systemLlvm(
+  major: number,
+): { dir: string; version: string } | undefined {
+  for (const dir of [
+    `/usr/lib/llvm-${major}`,
+    "/usr/lib/llvm",
+    `/usr/lib/llvm${major}`,
+  ]) {
     const clang = join(dir, "bin/clang");
     if (!existsSync(clang)) continue;
     const version = versionIn(capture([clang, "--version"]).stdout);
@@ -196,8 +225,11 @@ export function probe(options: Options): Toolchain {
     ? versionIn(capture([systemCmake, "--version"]).stdout)
     : undefined;
   const cmakeOk =
-    systemCmakeVersion !== undefined && compareVersions(systemCmakeVersion, tc.cmake.minimum) >= 0;
-  const cachedCmake = existsSync(join(p.cmake, "bin/cmake")) ? p.cmake : undefined;
+    systemCmakeVersion !== undefined &&
+    compareVersions(systemCmakeVersion, tc.cmake.minimum) >= 0;
+  const cachedCmake = existsSync(join(p.cmake, "bin/cmake"))
+    ? p.cmake
+    : undefined;
   const hasDpkg = which("dpkg-query") !== undefined;
   const missingApt = hasDpkg
     ? tc.apt.filter(
@@ -216,7 +248,11 @@ export function probe(options: Options): Toolchain {
     llvmVersion,
     llvmSystem: sys !== undefined,
     cmakeDir: cmakeOk ? undefined : cachedCmake,
-    cmakeVersion: cmakeOk ? systemCmakeVersion : cachedCmake ? tc.cmake.version : undefined,
+    cmakeVersion: cmakeOk
+      ? systemCmakeVersion
+      : cachedCmake
+        ? tc.cmake.version
+        : undefined,
     rustup,
     missingApt,
     missingBinaries: tc.binaries.filter((b) => which(b) === undefined),
@@ -228,7 +264,11 @@ export function doctor(options: Options): boolean {
   const t = probe(options);
   const rows: [string, string, boolean][] = [
     ["arch", t.arch, true],
-    ["llvm", t.llvmDir ? `${t.llvmVersion} (${t.llvmDir})` : "missing", !!t.llvmDir],
+    [
+      "llvm",
+      t.llvmDir ? `${t.llvmVersion} (${t.llvmDir})` : "missing",
+      !!t.llvmDir,
+    ],
     ["cmake", t.cmakeVersion ?? "missing", !!t.cmakeVersion],
     ["rustup", t.rustup ?? "missing", !!t.rustup],
     [
@@ -238,10 +278,16 @@ export function doctor(options: Options): boolean {
     ],
     [
       "binaries",
-      t.missingBinaries.length ? `missing: ${t.missingBinaries.join(" ")}` : "ok",
+      t.missingBinaries.length
+        ? `missing: ${t.missingBinaries.join(" ")}`
+        : "ok",
       t.missingBinaries.length === 0,
     ],
-    ["root", t.root ? "yes (loop/tmpfs scratch, apt)" : "no (dir scratch only)", true],
+    [
+      "root",
+      t.root ? "yes (loop/tmpfs scratch, apt)" : "no (dir scratch only)",
+      true,
+    ],
     ["cpus", String(availableParallelism()), true],
     ["memory", `${(totalmem() / 2 ** 30).toFixed(1)} GiB`, true],
   ];
@@ -250,7 +296,10 @@ export function doctor(options: Options): boolean {
   return rows.every(([, , ok]) => ok);
 }
 
-export async function bootstrap(options: Options, logFile?: string): Promise<Toolchain> {
+export async function bootstrap(
+  options: Options,
+  logFile?: string,
+): Promise<Toolchain> {
   const p = paths(options);
   const tc = options.config.toolchain;
   for (const dir of [p.home, p.bin, p.toolchains, p.downloads, p.logs])
@@ -260,7 +309,14 @@ export async function bootstrap(options: Options, logFile?: string): Promise<Too
     log(`apt: ${t.missingApt.join(" ")}`);
     await asRoot(["apt-get", "update", "-q"], logFile);
     await asRoot(
-      ["apt-get", "install", "-y", "-q", "--no-install-recommends", ...t.missingApt],
+      [
+        "apt-get",
+        "install",
+        "-y",
+        "-q",
+        "--no-install-recommends",
+        ...t.missingApt,
+      ],
       logFile,
     );
   }
@@ -278,11 +334,22 @@ export async function bootstrap(options: Options, logFile?: string): Promise<Too
   }
   if (!t.rustup) {
     const url = toolUrl(tc.rustup.url, tc.rustup.version, "rustup", t.arch);
-    const init = join(p.downloads, `rustup-init-${tc.rustup.version}-${t.arch}`);
+    const init = join(
+      p.downloads,
+      `rustup-init-${tc.rustup.version}-${t.arch}`,
+    );
     await download(url, init);
     await run(["chmod", "+x", init]);
     await run(
-      [init, "-y", "--no-modify-path", "--profile", "minimal", "--default-toolchain", "none"],
+      [
+        init,
+        "-y",
+        "--no-modify-path",
+        "--profile",
+        "minimal",
+        "--default-toolchain",
+        "none",
+      ],
       {
         env: {
           ...(process.env as Record<string, string>),
@@ -307,8 +374,11 @@ export async function bootstrap(options: Options, logFile?: string): Promise<Too
 /** `bun` on the build PATH: this executable itself (a compiled Bun program acts as `bun` with BUN_BE_BUN=1). */
 function writeBunShim(p: Paths): void {
   const shim = join(p.bin, "bun");
-  const compiled = Bun.main.startsWith("/$bunfs/") || Bun.main.startsWith("B:/~BUN/");
-  const target = compiled ? process.execPath : (Bun.which("bun") ?? process.execPath);
+  const compiled =
+    Bun.main.startsWith("/$bunfs/") || Bun.main.startsWith("B:/~BUN/");
+  const target = compiled
+    ? process.execPath
+    : (Bun.which("bun") ?? process.execPath);
   writeFileSync(
     shim,
     `#!/bin/sh\n${compiled ? "BUN_BE_BUN=1 " : ""}exec '${target.replaceAll("'", "'\\''")}' "$@"\n`,
@@ -320,7 +390,8 @@ function writeBunShim(p: Paths): void {
 
 function git(args: string[], cwd?: string): string {
   const r = capture(["git", ...args], { cwd });
-  if (r.code !== 0) fail(`git ${args[0]} failed: ${r.stderr.trim() || r.stdout.trim()}`);
+  if (r.code !== 0)
+    fail(`git ${args[0]} failed: ${r.stderr.trim() || r.stdout.trim()}`);
   return r.stdout.trim();
 }
 
@@ -331,10 +402,23 @@ function ensureMirror(options: Options): string {
     git(["init", "-q", "--bare", p.mirror]);
     git(["-C", p.mirror, "remote", "add", "origin", options.config.repository]);
     git(["-C", p.mirror, "config", "remote.origin.promisor", "true"]);
-    git(["-C", p.mirror, "config", "remote.origin.partialclonefilter", "blob:none"]);
+    git([
+      "-C",
+      p.mirror,
+      "config",
+      "remote.origin.partialclonefilter",
+      "blob:none",
+    ]);
     git(["-C", p.mirror, "config", "extensions.partialClone", "origin"]);
   } else {
-    git(["-C", p.mirror, "remote", "set-url", "origin", options.config.repository]);
+    git([
+      "-C",
+      p.mirror,
+      "remote",
+      "set-url",
+      "origin",
+      options.config.repository,
+    ]);
   }
   return p.mirror;
 }
@@ -366,8 +450,21 @@ function fetchBranch(options: Options): string[] {
 
 function fetchRevision(options: Options, sha: string): void {
   const mirror = ensureMirror(options);
-  if (capture(["git", "-C", mirror, "cat-file", "-e", `${sha}^{commit}`]).code === 0) return;
-  git(["-C", mirror, "fetch", "-q", "--filter=blob:none", "--depth=1", "origin", sha]);
+  if (
+    capture(["git", "-C", mirror, "cat-file", "-e", `${sha}^{commit}`]).code ===
+    0
+  )
+    return;
+  git([
+    "-C",
+    mirror,
+    "fetch",
+    "-q",
+    "--filter=blob:none",
+    "--depth=1",
+    "origin",
+    sha,
+  ]);
 }
 
 // ── Lock and state ─────────────────────────────────────────────────────────
@@ -412,12 +509,20 @@ function readState(p: Paths): State {
 
 // ── Build ──────────────────────────────────────────────────────────────────
 
-async function step<T>(steps: StepRecord[], name: string, body: () => Promise<T> | T): Promise<T> {
+async function step<T>(
+  steps: StepRecord[],
+  name: string,
+  body: () => Promise<T> | T,
+): Promise<T> {
   const start = performance.now();
   log(`── ${name}`);
   try {
     const value = await body();
-    steps.push({ name, ok: true, seconds: Math.round((performance.now() - start) / 100) / 10 });
+    steps.push({
+      name,
+      ok: true,
+      seconds: Math.round((performance.now() - start) / 100) / 10,
+    });
     return value;
   } catch (e) {
     steps.push({
@@ -430,7 +535,10 @@ async function step<T>(steps: StepRecord[], name: string, body: () => Promise<T>
   }
 }
 
-export async function buildRevision(options: Options, sha: string): Promise<Receipt> {
+export async function buildRevision(
+  options: Options,
+  sha: string,
+): Promise<Receipt> {
   const p = paths(options);
   if (process.env.APHRODY_FACTORY_RESOURCE)
     p.scratch = join(process.env.APHRODY_FACTORY_RESOURCE, "forge");
@@ -447,7 +555,11 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
     profile: options.config.profile,
     lto: options.config.lto,
     scratch: options.config.scratch.mode,
-    host: { arch: process.arch, cpus: availableParallelism(), memoryBytes: totalmem() },
+    host: {
+      arch: process.arch,
+      cpus: availableParallelism(),
+      memoryBytes: totalmem(),
+    },
     toolchain: {},
     steps,
     ok: false,
@@ -468,13 +580,17 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
     const info = userInfo();
     mkdirSync(p.scratch, { recursive: true });
     plan = scratchPlan(
-      process.env.APHRODY_FACTORY_RESOURCE ? "dir" : options.config.scratch.mode,
+      process.env.APHRODY_FACTORY_RESOURCE
+        ? "dir"
+        : options.config.scratch.mode,
       options.config.scratch.size,
       p.scratch,
       sha,
       {
         root: t.root,
-        freeBytes: Number(statfsSync(p.scratch).bavail) * Number(statfsSync(p.scratch).bsize),
+        freeBytes:
+          Number(statfsSync(p.scratch).bavail) *
+          Number(statfsSync(p.scratch).bsize),
         uid: info.uid,
         gid: info.gid,
       },
@@ -488,9 +604,21 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
     worktree = join(plan.dir, "src");
     const tree = worktree;
     await step(steps, "checkout", () =>
-      git(["-C", p.mirror, "worktree", "add", "-q", "--detach", "--force", tree, sha]),
+      git([
+        "-C",
+        p.mirror,
+        "worktree",
+        "add",
+        "-q",
+        "--detach",
+        "--force",
+        tree,
+        sha,
+      ]),
     );
-    const channel = rustChannel(readFileSync(join(tree, "rust-toolchain.toml"), "utf8"));
+    const channel = rustChannel(
+      readFileSync(join(tree, "rust-toolchain.toml"), "utf8"),
+    );
     const env = buildEnv({
       paths: p,
       baseEnv: process.env,
@@ -516,7 +644,11 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
       ),
     );
     await step(steps, "build", () =>
-      run(buildCommand(options.config, options.jobs), { cwd: tree, env, logFile }),
+      run(buildCommand(options.config, options.jobs), {
+        cwd: tree,
+        env,
+        logFile,
+      }),
     );
     const built = join(tree, "build", options.config.profile, "bun");
     if (!existsSync(built)) fail(`build produced no ${built}`);
@@ -528,15 +660,21 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
         const root = resolve(options.yoloRoot);
         const entry = join(root, YOLO_CLI.entry);
         if (!existsSync(entry)) fail(`no yolo CLI at ${entry} (--yolo-root)`);
-        const version = readFileSync(join(root, YOLO_CLI.versionFile), "utf8").trim();
+        const version = readFileSync(
+          join(root, YOLO_CLI.versionFile),
+          "utf8",
+        ).trim();
         await Bun.write(dest, Bun.file(built));
         await run(["chmod", "+x", dest]);
         const flags = [...COMPILE_FLAGS];
-        await run(compileCommand(built, dest, version, flags, options.yoloAsset), {
-          cwd: root,
-          env,
-          logFile,
-        });
+        await run(
+          compileCommand(built, dest, version, flags, options.yoloAsset),
+          {
+            cwd: root,
+            env,
+            logFile,
+          },
+        );
         receipt.compiled = {
           entry: YOLO_CLI.entry,
           version,
@@ -556,7 +694,12 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
           await Bun.write(dest, bytes);
           bytes = await Bun.file(dest).bytes();
         }
-        receipt.glibc = { ceiling, maxBefore, maxAfter: result.maxGlibc, patched: result.patched };
+        receipt.glibc = {
+          ceiling,
+          maxBefore,
+          maxAfter: result.maxGlibc,
+          patched: result.patched,
+        };
       }
       receipt.aliases = [];
       for (const [name, path] of Object.entries(artifactLayout(out).aliases)) {
@@ -576,17 +719,30 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
       const engine = aliasPath("bun");
       // The engine answers to the `bun` alias whether or not the CLI is compiled onto it.
       const viaBun = capture([engine, "-e", SMOKE_SCRIPT], { env });
-      if (viaBun.code !== 0) fail(`smoke through the bun alias failed: ${viaBun.stderr.trim()}`);
+      if (viaBun.code !== 0)
+        fail(`smoke through the bun alias failed: ${viaBun.stderr.trim()}`);
       receipt.smoke = JSON.parse(viaBun.stdout.trim().split("\n").pop()!);
       const engineSmoke = receipt.smoke as { argv0: string; revision: string };
-      if (engineSmoke.argv0 !== "bun") fail(`bun alias argv0 is ${engineSmoke.argv0}`);
+      if (engineSmoke.argv0 !== "bun")
+        fail(`bun alias argv0 is ${engineSmoke.argv0}`);
       if (!receipt.compiled) {
         // Bare engine: `yolo` is the same file as `bun`.
-        const viaYolo = capture([receipt.artifact!.path, "-e", SMOKE_SCRIPT], { env });
-        if (viaYolo.code !== 0) fail(`smoke through yolo failed: ${viaYolo.stderr.trim()}`);
-        receipt.smokeAlias = JSON.parse(viaYolo.stdout.trim().split("\n").pop()!);
-        const second = receipt.smokeAlias as { argv0: string; revision: string };
-        if (second.argv0 !== BINARY.name || second.revision !== engineSmoke.revision)
+        const viaYolo = capture([receipt.artifact!.path, "-e", SMOKE_SCRIPT], {
+          env,
+        });
+        if (viaYolo.code !== 0)
+          fail(`smoke through yolo failed: ${viaYolo.stderr.trim()}`);
+        receipt.smokeAlias = JSON.parse(
+          viaYolo.stdout.trim().split("\n").pop()!,
+        );
+        const second = receipt.smokeAlias as {
+          argv0: string;
+          revision: string;
+        };
+        if (
+          second.argv0 !== BINARY.name ||
+          second.revision !== engineSmoke.revision
+        )
           fail(`argv0 check failed: ${second.argv0}`);
         return;
       }
@@ -597,10 +753,14 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
       receipt.smokeYolo = yolo.stdout.trim();
       const emptyHome = join(out, ".vu-none");
       mkdirSync(emptyHome, { recursive: true });
-      const vu = capture([aliasPath("vu"), "--version"], { env: { ...env, VU_HOME: emptyHome } });
+      const vu = capture([aliasPath("vu"), "--version"], {
+        env: { ...env, VU_HOME: emptyHome },
+      });
       rmSync(emptyHome, { recursive: true, force: true });
       if (vu.code !== 127 || !vu.stderr.includes("vu: runtime not installed"))
-        fail(`vu alias did not dispatch by argv0: exit ${vu.code} ${vu.stderr.trim()}`);
+        fail(
+          `vu alias did not dispatch by argv0: exit ${vu.code} ${vu.stderr.trim()}`,
+        );
       receipt.smokeVu = { exit: vu.code, message: vu.stderr.trim() };
     });
     if (options.tests) {
@@ -614,7 +774,11 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
         const suites = firstPartyTests(tree);
         await run([built, "test", ...suites], {
           cwd: tree,
-          env: { ...env, BUN_DEBUG_QUIET_LOGS: "1", BUN_FEATURE_FLAG_INTERNAL_FOR_TESTING: "1" },
+          env: {
+            ...env,
+            BUN_DEBUG_QUIET_LOGS: "1",
+            BUN_FEATURE_FLAG_INTERNAL_FOR_TESTING: "1",
+          },
           logFile,
         });
       });
@@ -625,7 +789,15 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
   } finally {
     receipt.finishedAt = new Date().toISOString();
     if (worktree && !options.keep)
-      capture(["git", "-C", p.mirror, "worktree", "remove", "--force", worktree]);
+      capture([
+        "git",
+        "-C",
+        p.mirror,
+        "worktree",
+        "remove",
+        "--force",
+        worktree,
+      ]);
     if (plan && !options.keep) {
       for (const cmd of plan.teardown) {
         const prefix = plan.mode === "dir" ? [] : (rootPrefix() ?? []);
@@ -634,12 +806,18 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
     }
     capture(["git", "-C", p.mirror, "worktree", "prune"]);
     mkdirSync(out, { recursive: true });
-    writeFileSync(join(out, "receipt.json"), `${JSON.stringify(receipt, null, 2)}\n`);
+    writeFileSync(
+      join(out, "receipt.json"),
+      `${JSON.stringify(receipt, null, 2)}\n`,
+    );
     if (receipt.ok) {
       rmSync(join(options.artifacts, "latest"), { force: true });
       capture(["ln", "-s", sha, join(options.artifacts, "latest")]);
     }
-    writeFileSync(p.state, `${JSON.stringify(recordBuild(readState(p), receipt), null, 2)}\n`);
+    writeFileSync(
+      p.state,
+      `${JSON.stringify(recordBuild(readState(p), receipt), null, 2)}\n`,
+    );
   }
   log(
     `${receipt.ok ? "\x1b[32mOK\x1b[0m" : "\x1b[31mFAILED\x1b[0m"} ${sha} -> ${join(out, "receipt.json")}`,
@@ -653,16 +831,27 @@ export async function build(options: Options): Promise<boolean> {
     let sha = options.revision;
     if (!sha) {
       const head = remoteHead(
-        git(["ls-remote", options.config.repository, `refs/heads/${options.config.branch}`]),
+        git([
+          "ls-remote",
+          options.config.repository,
+          `refs/heads/${options.config.branch}`,
+        ]),
         options.config.branch,
       );
-      if (!head) fail(`branch ${options.config.branch} not found on ${options.config.repository}`);
+      if (!head)
+        fail(
+          `branch ${options.config.branch} not found on ${options.config.repository}`,
+        );
       sha = head;
     }
     if (options.dryRun) {
       console.log(
         JSON.stringify(
-          { revision: sha, command: buildCommand(options.config, options.jobs), paths: p },
+          {
+            revision: sha,
+            command: buildCommand(options.config, options.jobs),
+            paths: p,
+          },
           null,
           2,
         ),
@@ -679,9 +868,15 @@ export async function watch(options: Options): Promise<void> {
     try {
       await withLock(p, async () => {
         const history = fetchBranch(options);
-        const queue = commitQueue(history, readState(p).last, options.config.watch.everyCommit);
+        const queue = commitQueue(
+          history,
+          readState(p).last,
+          options.config.watch.everyCommit,
+        );
         if (queue.length === 0)
-          log(`${options.config.branch} @ ${history[0]?.slice(0, 12)}: up to date`);
+          log(
+            `${options.config.branch} @ ${history[0]?.slice(0, 12)}: up to date`,
+          );
         for (const sha of queue) {
           await buildRevision(options, sha);
         }

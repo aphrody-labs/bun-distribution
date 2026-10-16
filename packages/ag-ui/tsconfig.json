@@ -15,5 +15,14 @@
     "types": ["bun", "node"]
   },
   "include": ["src/**/*", "test/**/*"],
-  "exclude": ["node_modules", "dist", "client", "core", "encoder", "proto", "a2ui", "fixtures"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "client",
+    "core",
+    "encoder",
+    "proto",
+    "a2ui",
+    "fixtures"
+  ]
 }

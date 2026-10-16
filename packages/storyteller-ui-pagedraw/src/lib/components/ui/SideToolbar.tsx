@@ -1,5 +1,21 @@
 import React, { useState, useRef, useEffect } from "react";
-import { CircleIcon, DropletIcon, EraserIcon, ImageIcon, MousePointerIcon, PaintbrushIcon, PipetteIcon, Redo2Icon, RotateCcwIcon, SendToBackIcon, ShapesIcon, SquareIcon, Trash2Icon, TriangleIcon, XIcon } from "lucide-react";
+import {
+  CircleIcon,
+  DropletIcon,
+  EraserIcon,
+  ImageIcon,
+  MousePointerIcon,
+  PaintbrushIcon,
+  PipetteIcon,
+  Redo2Icon,
+  RotateCcwIcon,
+  SendToBackIcon,
+  ShapesIcon,
+  SquareIcon,
+  Trash2Icon,
+  TriangleIcon,
+  XIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import "../../pagedraw.css";
 import { HsvaColorPicker, HsvaColor } from "react-colorful";
@@ -92,7 +108,9 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
   // Get selected nodes for shape color picker
   const selectedNodes =
     store.selectedNodeIds.length > 0
-      ? store.drawNodes.filter((node) => store.selectedNodeIds.includes(node.id))
+      ? store.drawNodes.filter((node) =>
+          store.selectedNodeIds.includes(node.id),
+        )
       : [];
 
   // Get only colorable nodes (shapes, not images or lines)
@@ -233,9 +251,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     {
       id: "select",
       label: "Select & Move",
-      icon: (
-        <MousePointerIcon  className="pl-0.5 text-lg" />
-      ),
+      icon: <MousePointerIcon className="pl-0.5 text-lg" />,
       onClick: () => {
         onSelect();
       },
@@ -244,7 +260,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     {
       id: "add-shape",
       label: "Add Shape",
-      icon: <ShapesIcon  className="h-5 w-5" />,
+      icon: <ShapesIcon className="h-5 w-5" />,
       onClick: () => {
         store.selectNode(null);
         if (!store.currentShape) {
@@ -278,7 +294,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     {
       id: "upload",
       label: "Upload Image",
-      icon: <ImageIcon  className="h-5 w-5" />,
+      icon: <ImageIcon className="h-5 w-5" />,
       onClick: () => {
         onUploadImage();
       },
@@ -297,7 +313,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     {
       id: "inpaint",
       label: "Mask",
-      icon: <SendToBackIcon  className="h-5 w-5" />,
+      icon: <SendToBackIcon className="h-5 w-5" />,
       onClick: () => {
         store.setActiveTool("inpaint");
       },
@@ -305,7 +321,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     {
       id: "erase",
       label: "Eraser",
-      icon: <EraserIcon  className="h-5 w-5" />,
+      icon: <EraserIcon className="h-5 w-5" />,
       onClick: () => {
         store.setActiveTool("eraser");
       },
@@ -322,11 +338,11 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
             style={{ backgroundColor: hsvaToHex(bgHsva) }}
           />
           <DropletIcon
-            
             className="relative h-2 w-2 text-white drop-shadow-sm"
             style={{
               filter: "drop-shadow(0 0 1px rgba(0,0,0,0.8))",
-            }} />
+            }}
+          />
         </div>
       ),
       popout: BgPopout,
@@ -334,7 +350,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     {
       id: "undo",
       label: "Undo",
-      icon: <RotateCcwIcon  className="h-5 w-5" />,
+      icon: <RotateCcwIcon className="h-5 w-5" />,
       onClick: () => {
         store.undo();
       },
@@ -342,7 +358,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     {
       id: "redo",
       label: "Redo",
-      icon: <Redo2Icon  className="h-5 w-5" />,
+      icon: <Redo2Icon className="h-5 w-5" />,
       onClick: () => {
         store.redo();
       },
@@ -368,9 +384,11 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
       primaryActionText: "Reset all",
       onPrimaryAction: () => {
         store.setNodes([]);
-        store.drawNodes.filter((n) => n.type === "line").forEach((lineNode) => {
-          store.removeLineNode(lineNode.id, false);
-        });
+        store.drawNodes
+          .filter((n) => n.type === "line")
+          .forEach((lineNode) => {
+            store.removeLineNode(lineNode.id, false);
+          });
         store.selectNode(null);
         store.copySelectedItems();
         store.saveState();
@@ -410,7 +428,6 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
       )}
 
       {tools.map((tool) => {
-
         if (tool.type === "separator") {
           return <div key={tool.id} className="my-1 h-px w-8 bg-white/15" />;
         }
@@ -424,7 +441,9 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
 
         // Resolved shortcut badge in the button corner (switchable tools only).
         const toolActionId = TOOL_ACTION_IDS[id];
-        const toolBinding = toolActionId ? forAction(toolActionId)[0] : undefined;
+        const toolBinding = toolActionId
+          ? forAction(toolActionId)[0]
+          : undefined;
         const keyBadge = toolBinding ? (
           <span className="pointer-events-none absolute bottom-0 right-0 min-w-[13px] rounded-[4px] bg-black/60 px-0.5 text-center text-[9px] font-medium leading-[13px] text-white/80">
             {formatBinding(toolBinding)}
@@ -432,7 +451,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
         ) : null;
         const btnStyle = active
           ? "bg-primary/30 border-2 !border-primary text-white"
-          : (id === "inpaint" && !supportsMaskTool)
+          : id === "inpaint" && !supportsMaskTool
             ? "opacity-50 cursor-not-allowed hover:bg-transparent hover:border-transparent hover:text-white/50"
             : "hover:bg-white/10 text-white";
 
@@ -444,7 +463,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
               style={{ backgroundColor: hsvaToHex(brushHsva) }}
             />
           ) : (
-            <PaintbrushIcon  className="h-5 w-5" />
+            <PaintbrushIcon className="h-5 w-5" />
           );
         }
 
@@ -455,10 +474,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
             triangle: TriangleIcon,
           } as const;
           displayIcon = (
-            <DynamicIcon
-              icon={shapeIcons[currentShape]}
-              className="h-5 w-5"
-            />
+            <DynamicIcon icon={shapeIcons[currentShape]} className="h-5 w-5" />
           );
         }
 
@@ -612,7 +628,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
               className="flex h-10 w-10 items-center justify-center rounded-lg border-2 border-transparent text-white transition-colors hover:bg-red/50"
               onClick={handleResetCanvas}
             >
-              <XIcon  className="h-5 w-5 text-xl" />
+              <XIcon className="h-5 w-5 text-xl" />
             </button>
           </Tooltip>
         </div>

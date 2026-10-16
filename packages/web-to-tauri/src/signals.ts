@@ -15,7 +15,10 @@ export const API_RULES: ApiRule[] = [
   { id: "websocket", re: /\bnew\s+WebSocket\s*\(/ },
   { id: "event-source", re: /\bnew\s+EventSource\s*\(/ },
   { id: "webrtc", re: /\bRTCPeerConnection\b/ },
-  { id: "media-devices", re: /navigator\s*\.\s*mediaDevices\b|\bgetUserMedia\b/ },
+  {
+    id: "media-devices",
+    re: /navigator\s*\.\s*mediaDevices\b|\bgetUserMedia\b/,
+  },
   { id: "geolocation", re: /navigator\s*\.\s*geolocation\b/ },
   {
     id: "notifications",
@@ -42,7 +45,11 @@ export const API_RULES: ApiRule[] = [
   },
   { id: "web-usb", re: /navigator\s*\.\s*usb\b/, chromiumOnly: true },
   { id: "web-serial", re: /navigator\s*\.\s*serial\b/, chromiumOnly: true },
-  { id: "web-bluetooth", re: /navigator\s*\.\s*bluetooth\b/, chromiumOnly: true },
+  {
+    id: "web-bluetooth",
+    re: /navigator\s*\.\s*bluetooth\b/,
+    chromiumOnly: true,
+  },
   { id: "web-hid", re: /navigator\s*\.\s*hid\b/, chromiumOnly: true },
   { id: "webgpu", re: /navigator\s*\.\s*gpu\b/, chromiumOnly: true },
   { id: "eye-dropper", re: /\bnew\s+EyeDropper\b/, chromiumOnly: true },
@@ -70,27 +77,44 @@ interface FrameworkRule {
 }
 
 const FRAMEWORKS: FrameworkRule[] = [
-  { id: "next", html: /__NEXT_DATA__|\/_next\/static\//, headers: /x-powered-by:\s*next\.js/i },
+  {
+    id: "next",
+    html: /__NEXT_DATA__|\/_next\/static\//,
+    headers: /x-powered-by:\s*next\.js/i,
+  },
   { id: "nuxt", html: /__NUXT__|\/_nuxt\// },
   { id: "sveltekit", html: /__sveltekit|\/_app\/immutable\// },
   { id: "remix", html: /__remixContext|__remix/ },
   { id: "astro", html: /astro-island|<meta name="generator" content="Astro/i },
   { id: "gatsby", html: /___gatsby|\/page-data\// },
   { id: "angular", html: /\bng-version=/ },
-  { id: "vue", html: /\bdata-v-[0-9a-f]{6,}|__vue_app__|\bdata-server-rendered=/ },
+  {
+    id: "vue",
+    html: /\bdata-v-[0-9a-f]{6,}|__vue_app__|\bdata-server-rendered=/,
+  },
   { id: "react", html: /data-reactroot|\bid="root"|\bid="__next"/ },
-  { id: "vite", html: /\/@vite\/client|type="module"[^>]+\/assets\/index-[\w-]+\.js/ },
+  {
+    id: "vite",
+    html: /\/@vite\/client|type="module"[^>]+\/assets\/index-[\w-]+\.js/,
+  },
   { id: "wordpress", html: /\/wp-content\/|\/wp-includes\// },
   { id: "shopify", html: /cdn\.shopify\.com|Shopify\.theme/ },
   { id: "wix", html: /static\.parastorage\.com|wixstatic\.com/ },
   { id: "squarespace", html: /static1\.squarespace\.com|squarespace-cdn/ },
-  { id: "webflow", html: /data-wf-page|assets\.website-files\.com|webflow\.js/ },
+  {
+    id: "webflow",
+    html: /data-wf-page|assets\.website-files\.com|webflow\.js/,
+  },
   { id: "ghost", html: /<meta name="generator" content="Ghost/i },
   { id: "phoenix-liveview", html: /data-phx-main|phx-socket/ },
   { id: "htmx", html: /\bhx-(?:get|post|boost)=/ },
 ];
 
-export function detectFrameworks(html: string, rawHeaders: string, scripts = ""): string[] {
+export function detectFrameworks(
+  html: string,
+  rawHeaders: string,
+  scripts = "",
+): string[] {
   const out: string[] = [];
   for (const rule of FRAMEWORKS) {
     if (
@@ -117,7 +141,11 @@ export const IDP_RULES: IdpRule[] = [
     kind: "idp",
     patterns: ["https://accounts.google.com", "https://accounts.youtube.com"],
   },
-  { id: "apple", kind: "idp", patterns: ["https://appleid.apple.com", "https://idmsa.apple.com"] },
+  {
+    id: "apple",
+    kind: "idp",
+    patterns: ["https://appleid.apple.com", "https://idmsa.apple.com"],
+  },
   {
     id: "microsoft",
     kind: "idp",
@@ -140,37 +168,61 @@ export const IDP_RULES: IdpRule[] = [
   {
     id: "facebook",
     kind: "idp",
-    patterns: ["https://www.facebook.com/*/dialog/*", "https://m.facebook.com/*/dialog/*"],
+    patterns: [
+      "https://www.facebook.com/*/dialog/*",
+      "https://m.facebook.com/*/dialog/*",
+    ],
   },
   {
     id: "discord",
     kind: "idp",
-    patterns: ["https://discord.com/oauth2/*", "https://discord.com/api/oauth2/*"],
+    patterns: [
+      "https://discord.com/oauth2/*",
+      "https://discord.com/api/oauth2/*",
+    ],
   },
   {
     id: "x",
     kind: "idp",
     patterns: ["https://x.com/i/oauth2/*", "https://api.twitter.com/oauth/*"],
   },
-  { id: "linkedin", kind: "idp", patterns: ["https://www.linkedin.com/oauth/*"] },
+  {
+    id: "linkedin",
+    kind: "idp",
+    patterns: ["https://www.linkedin.com/oauth/*"],
+  },
   {
     id: "slack",
     kind: "idp",
     patterns: ["https://slack.com/oauth/*", "https://*.slack.com/openid/*"],
   },
   { id: "auth0", kind: "idp", patterns: ["https://*.auth0.com"] },
-  { id: "okta", kind: "idp", patterns: ["https://*.okta.com", "https://*.oktapreview.com"] },
+  {
+    id: "okta",
+    kind: "idp",
+    patterns: ["https://*.okta.com", "https://*.oktapreview.com"],
+  },
   { id: "cognito", kind: "idp", patterns: ["https://*.amazoncognito.com"] },
-  { id: "firebase-auth", kind: "idp", patterns: ["https://*.firebaseapp.com/__/auth/*"] },
+  {
+    id: "firebase-auth",
+    kind: "idp",
+    patterns: ["https://*.firebaseapp.com/__/auth/*"],
+  },
   {
     id: "stripe",
     kind: "payment",
-    patterns: ["https://checkout.stripe.com", "https://*.stripe.com/*/checkout/*"],
+    patterns: [
+      "https://checkout.stripe.com",
+      "https://*.stripe.com/*/checkout/*",
+    ],
   },
   {
     id: "paypal",
     kind: "payment",
-    patterns: ["https://www.paypal.com/checkoutnow*", "https://*.paypal.com/webapps/*"],
+    patterns: [
+      "https://www.paypal.com/checkoutnow*",
+      "https://*.paypal.com/webapps/*",
+    ],
   },
 ];
 
@@ -185,17 +237,29 @@ export const EMBED_RULES: { id: string; patterns: string[] }[] = [
     ],
   },
   { id: "vimeo", patterns: ["https://player.vimeo.com"] },
-  { id: "google-maps", patterns: ["https://www.google.com/maps/*", "https://maps.google.com"] },
+  {
+    id: "google-maps",
+    patterns: ["https://www.google.com/maps/*", "https://maps.google.com"],
+  },
   {
     id: "recaptcha",
-    patterns: ["https://www.google.com/recaptcha/*", "https://www.recaptcha.net"],
+    patterns: [
+      "https://www.google.com/recaptcha/*",
+      "https://www.recaptcha.net",
+    ],
   },
   { id: "hcaptcha", patterns: ["https://*.hcaptcha.com"] },
   { id: "turnstile", patterns: ["https://challenges.cloudflare.com"] },
-  { id: "stripe-js", patterns: ["https://js.stripe.com", "https://hooks.stripe.com"] },
+  {
+    id: "stripe-js",
+    patterns: ["https://js.stripe.com", "https://hooks.stripe.com"],
+  },
   { id: "spotify", patterns: ["https://open.spotify.com"] },
   { id: "soundcloud", patterns: ["https://w.soundcloud.com"] },
-  { id: "twitter-embed", patterns: ["https://platform.twitter.com", "https://platform.x.com"] },
+  {
+    id: "twitter-embed",
+    patterns: ["https://platform.twitter.com", "https://platform.x.com"],
+  },
   { id: "calendly", patterns: ["https://calendly.com"] },
   { id: "typeform", patterns: ["https://*.typeform.com"] },
 ];
@@ -204,7 +268,10 @@ export const EMBED_RULES: { id: string; patterns: string[] }[] = [
 export function detectEmbeds(
   urls: Iterable<string>,
 ): { id: string; origin: string; patterns: string[] }[] {
-  const found = new Map<string, { id: string; origin: string; patterns: string[] }>();
+  const found = new Map<
+    string,
+    { id: string; origin: string; patterns: string[] }
+  >();
   for (const text of urls) {
     let url: URL;
     try {
@@ -218,7 +285,11 @@ export function detectEmbeds(
         return host !== null && matchesPattern(host, url);
       });
       if (hit && !found.has(rule.id))
-        found.set(rule.id, { id: rule.id, origin: url.origin, patterns: rule.patterns });
+        found.set(rule.id, {
+          id: rule.id,
+          origin: url.origin,
+          patterns: rule.patterns,
+        });
     }
   }
   return [...found.values()];
@@ -231,7 +302,12 @@ export function detectEmbeds(
  */
 export function detectIdps(
   urls: Iterable<string>,
-): { id: string; kind: "idp" | "payment"; origin: string; patterns: string[] }[] {
+): {
+  id: string;
+  kind: "idp" | "payment";
+  origin: string;
+  patterns: string[];
+}[] {
   const found = new Map<
     string,
     { id: string; kind: "idp" | "payment"; origin: string; patterns: string[] }
@@ -244,7 +320,10 @@ export function detectIdps(
       continue;
     }
     for (const rule of IDP_RULES) {
-      if (rule.patterns.some((pattern) => matchesPattern(pattern, url)) && !found.has(rule.id)) {
+      if (
+        rule.patterns.some((pattern) => matchesPattern(pattern, url)) &&
+        !found.has(rule.id)
+      ) {
         found.set(rule.id, {
           id: rule.id,
           kind: rule.kind,
@@ -289,7 +368,9 @@ export function parseSetCookies(values: string[]): CookieInfo[] {
     const name = pair.split("=")[0] ?? "";
     const lower = new Set(attrs.map((attr) => attr.toLowerCase()));
     const attr = (key: string) =>
-      attrs.find((entry) => entry.toLowerCase().startsWith(`${key}=`))?.split("=")[1] ?? null;
+      attrs
+        .find((entry) => entry.toLowerCase().startsWith(`${key}=`))
+        ?.split("=")[1] ?? null;
     const sameSite = attr("samesite")?.toLowerCase() ?? null;
     return {
       name,
@@ -298,7 +379,9 @@ export function parseSetCookies(values: string[]): CookieInfo[] {
       secure: lower.has("secure"),
       httpOnly: lower.has("httponly"),
       sameSite:
-        sameSite === "strict" || sameSite === "lax" || sameSite === "none" ? sameSite : null,
+        sameSite === "strict" || sameSite === "lax" || sameSite === "none"
+          ? sameSite
+          : null,
       partitioned: lower.has("partitioned"),
       prefixed: /^__(?:host|secure)-/i.test(name),
     };

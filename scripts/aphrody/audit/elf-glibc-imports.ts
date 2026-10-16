@@ -64,7 +64,8 @@ export function readElfVersions(bytes: Uint8Array): ElfVersionReport {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   if (bytes.length < 64 || view.getUint32(0, false) !== 0x7f454c46)
     throw new Error("not an ELF file");
-  if (bytes[4] !== 2 || bytes[5] !== 1) throw new Error("only little-endian ELF64 is supported");
+  if (bytes[4] !== 2 || bytes[5] !== 1)
+    throw new Error("only little-endian ELF64 is supported");
   const shoff = Number(view.getBigUint64(0x28, true));
   const shentsize = view.getUint16(0x3a, true);
   const shnum = view.getUint16(0x3c, true);
@@ -93,12 +94,18 @@ export function readElfVersions(bytes: Uint8Array): ElfVersionReport {
     let at = verneed.offset;
     for (let n = 0; n < verneed.info; n++) {
       const count = view.getUint16(at + 2, true);
-      const file = cString(bytes, strings.offset + view.getUint32(at + 4, true));
+      const file = cString(
+        bytes,
+        strings.offset + view.getUint32(at + 4, true),
+      );
       let aux = at + view.getUint32(at + 8, true);
       for (let k = 0; k < count; k++) {
         const index = view.getUint16(aux + 6, true) & 0x7fff;
         versions.set(index, {
-          version: cString(bytes, strings.offset + view.getUint32(aux + 8, true)),
+          version: cString(
+            bytes,
+            strings.offset + view.getUint32(aux + 8, true),
+          ),
           file,
         });
         aux += view.getUint32(aux + 12, true) || 0;
@@ -134,7 +141,11 @@ export function readElfVersions(bytes: Uint8Array): ElfVersionReport {
     const shndx = view.getUint16(at + 6, true);
     const raw = versym ? view.getUint16(versym.offset + i * 2, true) : 0;
     const info = versions.get(raw & 0x7fff);
-    const entry = { symbol, version: info?.version ?? null, file: info?.file ?? null };
+    const entry = {
+      symbol,
+      version: info?.version ?? null,
+      file: info?.file ?? null,
+    };
     (shndx === 0 ? imports : defined).push(entry);
   }
   let maxGlibc: string | null = null;
@@ -150,7 +161,10 @@ export function readElfVersions(bytes: Uint8Array): ElfVersionReport {
 }
 
 /** Imports (or definitions) whose GLIBC version is above `ceiling` (e.g. "2.39"). */
-export function aboveCeiling(symbols: VersionedSymbol[], ceiling: string): VersionedSymbol[] {
+export function aboveCeiling(
+  symbols: VersionedSymbol[],
+  ceiling: string,
+): VersionedSymbol[] {
   const limit = ceiling.split(".").map(Number);
   return symbols.filter((entry) => {
     const parsed = glibcVersion(entry.version);
@@ -160,7 +174,9 @@ export function aboveCeiling(symbols: VersionedSymbol[], ceiling: string): Versi
 
 if (import.meta.main) {
   const args = process.argv.slice(2);
-  const path = args.find((arg) => !arg.startsWith("--") && args[args.indexOf(arg) - 1] !== "--max");
+  const path = args.find(
+    (arg) => !arg.startsWith("--") && args[args.indexOf(arg) - 1] !== "--max",
+  );
   if (!path) {
     console.error("usage: elf-glibc-imports.ts <elf> [--max 2.39] [--libm]");
     process.exit(64);
@@ -169,7 +185,8 @@ if (import.meta.main) {
   const max = maxIndex >= 0 ? args[maxIndex + 1] : undefined;
   const report = readElfVersions(readFileSync(path));
   const offending = max ? aboveCeiling(report.imports, max) : [];
-  const definedAbove = args.includes("--libm") && max ? aboveCeiling(report.defined, max) : [];
+  const definedAbove =
+    args.includes("--libm") && max ? aboveCeiling(report.defined, max) : [];
   console.log(
     JSON.stringify(
       {

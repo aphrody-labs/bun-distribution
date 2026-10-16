@@ -9,11 +9,15 @@ import {
 const base = "https://assets.aphrody.app";
 test("public assets use explicit object paths while local atlas remains unchanged", () => {
   expect(publicPetAtlas("local.webp")).toBe("local.webp");
-  expect(publicPetAtlas("local.webp", base)).toBe(base + "/pet/spritesheet.webp");
+  expect(publicPetAtlas("local.webp", base)).toBe(
+    base + "/pet/spritesheet.webp",
+  );
   expect(publicPetSymbol("svg/sharp/wght700/pet_idle.svg", base)).toBe(
     base + "/pet/symbols/svg/sharp/wght700/pet_idle.svg",
   );
-  expect(publicMaterialSymbolsIndex(base)).toBe(base + "/m3/symbols/material-symbols-index.json");
+  expect(publicMaterialSymbolsIndex(base)).toBe(
+    base + "/m3/symbols/material-symbols-index.json",
+  );
 });
 test("public assets refuse credentials traversal and scheme injection", () => {
   for (const path of [

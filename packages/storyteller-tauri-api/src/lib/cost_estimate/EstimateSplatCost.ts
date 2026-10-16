@@ -39,8 +39,7 @@ export interface EstimateSplatCostErrorResult extends CommandResult {
 }
 
 export type EstimateSplatCostResult =
-  | EstimateSplatCostSuccess
-  | EstimateSplatCostErrorResult;
+  EstimateSplatCostSuccess | EstimateSplatCostErrorResult;
 
 export const EstimateSplatCost = async (
   request: EstimateSplatCostRequest,

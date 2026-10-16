@@ -63,25 +63,39 @@ type Params = {
 const lien = (params: Params, modif: Partial<Params>) => {
   const fusion = { ...params, ...modif };
   const qs = new URLSearchParams();
-  for (const [cle, val] of Object.entries(fusion)) if (val) qs.set(cle, String(val));
+  for (const [cle, val] of Object.entries(fusion))
+    if (val) qs.set(cle, String(val));
   const s = qs.toString();
   return `/admin/db-universe/assets${s ? `?${s}` : ""}`;
 };
 
-export default async function AdminAssetsPage({ searchParams }: { searchParams: Promise<Params> }) {
+export default async function AdminAssetsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Params>;
+}) {
   const sp = await searchParams;
   const bucket = sp.bucket ?? "";
   const recherche = sp.q ?? "";
   const licence = sp.licence ?? "";
-  const vue = (["orphelins", "doublons"].includes(sp.vue ?? "") ? sp.vue : "tous") as
-    | "tous"
-    | "orphelins"
-    | "doublons";
+  const vue = (
+    ["orphelins", "doublons"].includes(sp.vue ?? "") ? sp.vue : "tous"
+  ) as "tous" | "orphelins" | "doublons";
   const page = Math.max(1, Number(sp.page) || 1);
-  const tri = (TRIS_ASSETS.some((t) => t.cle === sp.tri) ? sp.tri : "naturel") as TriAssets;
+  const tri = (
+    TRIS_ASSETS.some((t) => t.cle === sp.tri) ? sp.tri : "naturel"
+  ) as TriAssets;
 
   const [{ lignes, total }, buckets, licences, stats] = await Promise.all([
-    listAssets({ bucket, recherche, licence, vue, tri, page, parPage: PAR_PAGE }),
+    listAssets({
+      bucket,
+      recherche,
+      licence,
+      vue,
+      tri,
+      page,
+      parPage: PAR_PAGE,
+    }),
     listAssetBuckets(),
     listAssetLicences(),
     getAssetStats(),
@@ -102,7 +116,10 @@ export default async function AdminAssetsPage({ searchParams }: { searchParams: 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
         {[
           { valeur: String(stats.total), etiquette: "fichiers" },
-          { valeur: `${(stats.octets / 1024 / 1024).toFixed(0)} Mo`, etiquette: "poids total" },
+          {
+            valeur: `${(stats.octets / 1024 / 1024).toFixed(0)} Mo`,
+            etiquette: "poids total",
+          },
           {
             valeur: String(stats.orphelins),
             etiquette: "non rattachés",
@@ -116,7 +133,9 @@ export default async function AdminAssetsPage({ searchParams }: { searchParams: 
         ].map((c) => {
           const contenu = (
             <>
-              <div className="font-saiyan text-2xl text-dbz-orange leading-none">{c.valeur}</div>
+              <div className="font-saiyan text-2xl text-dbz-orange leading-none">
+                {c.valeur}
+              </div>
               <div className="text-[11px] uppercase tracking-widest text-white/50 mt-1">
                 {c.etiquette}
               </div>
@@ -176,7 +195,11 @@ export default async function AdminAssetsPage({ searchParams }: { searchParams: 
         <button type="submit" className="dbz-button-ghost !text-xs cible-44">
           Filtrer
         </button>
-        {recherche || licence || vue !== "tous" || bucket || tri !== "naturel" ? (
+        {recherche ||
+        licence ||
+        vue !== "tous" ||
+        bucket ||
+        tri !== "naturel" ? (
           <Link
             href="/admin/db-universe/assets"
             className="text-xs text-white/50 hover:text-white cible-44"
@@ -188,7 +211,10 @@ export default async function AdminAssetsPage({ searchParams }: { searchParams: 
       </form>
 
       {/* Buckets mesurés en base : aucun média ne peut être invisible faute d'être listé ici. */}
-      <nav className="mb-5 flex flex-wrap gap-2" aria-label="Catégorie d'assets">
+      <nav
+        className="mb-5 flex flex-wrap gap-2"
+        aria-label="Catégorie d'assets"
+      >
         <Link
           href={lien(sp, { bucket: "", page: "" })}
           className={`px-3 py-1.5 border-2 font-saiyan tracking-widest text-xs uppercase transition-colors ${
@@ -221,7 +247,10 @@ export default async function AdminAssetsPage({ searchParams }: { searchParams: 
             ? "médias rattachés à aucune fiche. Ce n'est pas une anomalie en soi : des buckets entiers (toei, dbofficial, shueisha…) sont des bannières et des visuels d'actualité, qui n'illustrent aucune fiche par nature. Les buckets de fiches, eux, sont rattachés à 100 %"
             : `médias dont le sha256 est partagé par au moins deux lignes — les ${total} lignes affichées forment ${stats.doublonsEnTrop} doublons réels, chaque groupe étant montré en entier`}
           {" · "}
-          <Link href={lien(sp, { vue: "", page: "" })} className="underline hover:text-white">
+          <Link
+            href={lien(sp, { vue: "", page: "" })}
+            className="underline hover:text-white"
+          >
             revenir à tout
           </Link>
         </p>
@@ -229,8 +258,12 @@ export default async function AdminAssetsPage({ searchParams }: { searchParams: 
 
       {assets.length === 0 ? (
         <div className="dbz-panel p-12 text-center">
-          <p className="font-saiyan text-xl uppercase text-white/50 mb-1">Aucun média</p>
-          <p className="text-white/50 text-sm">Aucun fichier ne correspond à ces filtres.</p>
+          <p className="font-saiyan text-xl uppercase text-white/50 mb-1">
+            Aucun média
+          </p>
+          <p className="text-white/50 text-sm">
+            Aucun fichier ne correspond à ces filtres.
+          </p>
         </div>
       ) : (
         <GalerieMedias
@@ -252,7 +285,10 @@ export default async function AdminAssetsPage({ searchParams }: { searchParams: 
       )}
 
       {pages > 1 ? (
-        <nav className="mt-8 flex items-center justify-center gap-3" aria-label="Pagination">
+        <nav
+          className="mt-8 flex items-center justify-center gap-3"
+          aria-label="Pagination"
+        >
           {page > 1 ? (
             <Link
               href={lien(sp, { page: String(page - 1) })}

@@ -46,7 +46,10 @@ export function runSvgToIco(args: string[]): number {
   const fill = flag("fill");
   if (fill) {
     const tmp = join(mkdtempSync(join(tmpdir(), "m3-icon-")), "icon.svg");
-    writeFileSync(tmp, readFileSync(svg, "utf8").replace(/<svg /, `<svg fill="${fill}" `));
+    writeFileSync(
+      tmp,
+      readFileSync(svg, "utf8").replace(/<svg /, `<svg fill="${fill}" `),
+    );
     svg = tmp;
   }
   const tauri = tauriCli();

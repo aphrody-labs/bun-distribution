@@ -85,7 +85,8 @@ export function useDesktopGenerationFeed(options: {
     try {
       const { tasks } = await GetTaskQueue();
       const filtered = tasks.filter(
-        (t) => getTaskMediaType(t) === mediaType && !dismissedRef.current.has(t.id),
+        (t) =>
+          getTaskMediaType(t) === mediaType && !dismissedRef.current.has(t.id),
       );
 
       const newInProgress = filtered
@@ -243,7 +244,10 @@ export function useDesktopGenerationFeed(options: {
           : undefined;
         // Without a preview or template, getMediaThumbnail would fall back to
         // the .mp4 itself, which an <img> can't show. Try again next round.
-        if (!links?.maybe_video_previews?.animated && !links?.maybe_thumbnail_template) {
+        if (
+          !links?.maybe_video_previews?.animated &&
+          !links?.maybe_thumbnail_template
+        ) {
           continue;
         }
         const thumbnail = getMediaThumbnail(links, "video", {
@@ -260,7 +264,10 @@ export function useDesktopGenerationFeed(options: {
       }
     };
 
-    const intervalId = setInterval(lookUpMissingThumbnails, MISSING_THUMBNAIL_POLL_MS);
+    const intervalId = setInterval(
+      lookUpMissingThumbnails,
+      MISSING_THUMBNAIL_POLL_MS,
+    );
     return () => {
       cancelled = true;
       clearInterval(intervalId);
@@ -355,7 +362,9 @@ function getTaskMediaType(t: TaskQueueItem): "image" | "video" | "other" {
 
 function getTaskModelLabel(t: TaskQueueItem): string {
   const modelType = t.model_type ? String(t.model_type) : "";
-  const modelDisplay = modelType ? findDesktopModel(modelType)?.fullName ?? getModelDisplayName(modelType) : undefined;
+  const modelDisplay = modelType
+    ? (findDesktopModel(modelType)?.fullName ?? getModelDisplayName(modelType))
+    : undefined;
   const provider = t.provider
     ? getProviderDisplayName(String(t.provider).toLowerCase())
     : undefined;

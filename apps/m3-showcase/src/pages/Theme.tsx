@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { useM3Theme, type SchemeVariant, type ThemeMode } from "@aphrody/m3-theme/react";
+import {
+  useM3Theme,
+  type SchemeVariant,
+  type ThemeMode,
+} from "@aphrody/m3-theme/react";
 import { schemeFromSeed } from "@aphrody/m3-tokens/dynamic-color";
 import { Button, Input } from "@aphrody/m3-primitives";
 import { Card, Code, Page, Section, Swatch } from "../components/ui.tsx";
@@ -73,7 +77,9 @@ export default function Theme({ adaptive }: PageProps) {
             <select
               className="h-12 rounded-small border border-outline bg-surface px-3 text-body-large"
               value={theme.variant}
-              onChange={(event) => theme.setVariant(event.target.value as SchemeVariant)}
+              onChange={(event) =>
+                theme.setVariant(event.target.value as SchemeVariant)
+              }
             >
               {VARIANTS.map((variant) => (
                 <option key={variant}>{variant}</option>
@@ -85,7 +91,9 @@ export default function Theme({ adaptive }: PageProps) {
             <select
               className="h-12 rounded-small border border-outline bg-surface px-3 text-body-large"
               value={theme.themeMode}
-              onChange={(event) => theme.setThemeMode(event.target.value as ThemeMode)}
+              onChange={(event) =>
+                theme.setThemeMode(event.target.value as ThemeMode)
+              }
             >
               {(["light", "dark", "system"] as const).map((mode) => (
                 <option key={mode}>{mode}</option>
@@ -100,7 +108,9 @@ export default function Theme({ adaptive }: PageProps) {
               max={1}
               step={0.1}
               value={theme.contrastLevel}
-              onChange={(event) => theme.setContrastLevel(Number(event.target.value))}
+              onChange={(event) =>
+                theme.setContrastLevel(Number(event.target.value))
+              }
             />
             <span className="text-body-small text-on-surface-variant">
               0 is standard; 1 requests maximum contrast.

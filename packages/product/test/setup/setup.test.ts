@@ -22,12 +22,14 @@ const touch = (path: string, text = "x") => {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, text);
 };
-const sha = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex");
+const sha = (bytes: Uint8Array | string) =>
+  createHash("sha256").update(bytes).digest("hex");
 
 /** A tar.gz holding one file, the format the publisher writes for plugins. */
 function tarGz(name: string, content: string): Uint8Array {
   const header = new Uint8Array(512);
-  const put = (text: string, at: number) => header.set(new TextEncoder().encode(text), at);
+  const put = (text: string, at: number) =>
+    header.set(new TextEncoder().encode(text), at);
   put(name, 0);
   put("0000644\0", 100);
   put(`${content.length.toString(8).padStart(11, "0")}\0`, 124);
@@ -46,17 +48,22 @@ function tarGz(name: string, content: string): Uint8Array {
 }
 
 function site(
-  files: Record<string, { name: string; bytes: Uint8Array; version?: string; platform?: string }>,
+  files: Record<
+    string,
+    { name: string; bytes: Uint8Array; version?: string; platform?: string }
+  >,
 ) {
-  const artifacts = Object.entries(files).map(([file, { name, bytes, version, platform }]) => ({
-    name,
-    version: version ?? "1.0.0",
-    platform: platform ?? "windows-x86_64",
-    url: `${BASE}/files/${file}`,
-    sha256: sha(bytes),
-    size: bytes.length,
-    file,
-  }));
+  const artifacts = Object.entries(files).map(
+    ([file, { name, bytes, version, platform }]) => ({
+      name,
+      version: version ?? "1.0.0",
+      platform: platform ?? "windows-x86_64",
+      url: `${BASE}/files/${file}`,
+      sha256: sha(bytes),
+      size: bytes.length,
+      file,
+    }),
+  );
   const sums = artifacts.map((a) => `${a.sha256}  ${a.file}`).join("\n");
   return async (input: string | URL | Request) => {
     const r2Url = String(input);
@@ -64,7 +71,8 @@ function site(
       const product = r2Url.includes("/bun/") ? "bun" : "aphrody";
       const archive = `${product}-windows-x64.zip`;
       const hash = "a".repeat(64);
-      if (r2Url.endsWith("SHA256SUMS.txt")) return new Response(`${hash}  ${archive}`);
+      if (r2Url.endsWith("SHA256SUMS.txt"))
+        return new Response(`${hash}  ${archive}`);
       return new Response(
         JSON.stringify({
           product,
@@ -105,10 +113,16 @@ function site(
         ],
       });
     if (url.endsWith("/latest.json"))
-      return Response.json({ schemaVersion: 1, release: { id: "r" }, baseUrl: BASE, artifacts });
+      return Response.json({
+        schemaVersion: 1,
+        release: { id: "r" },
+        baseUrl: BASE,
+        artifacts,
+      });
     if (url.endsWith("/SHA256SUMS")) return new Response(sums);
     const file = url.split("/files/")[1];
-    if (file && files[file]) return new Response(new Uint8Array(files[file]!.bytes).buffer);
+    if (file && files[file])
+      return new Response(new Uint8Array(files[file]!.bytes).buffer);
     return new Response("nope", { status: 404 });
   };
 }
@@ -118,8 +132,17 @@ test("roles parse in French and English, unknown roles are refused", () => {
   expect([...parseRoles("creator")]).toEqual(["createur"]);
   expect(() => parseRoles("root")).toThrow("rôle inconnu");
   const base = stepsFor(new Set()).map((step) => step.id);
-  expect(base).toEqual(["setup", "aphrody", "desktop", "plugins", "mcp", "raccourci"]);
-  expect(stepsFor(new Set(["admin"])).map((s) => s.id)).toContain("admin-tools");
+  expect(base).toEqual([
+    "setup",
+    "aphrody",
+    "desktop",
+    "plugins",
+    "mcp",
+    "raccourci",
+  ]);
+  expect(stepsFor(new Set(["admin"])).map((s) => s.id)).toContain(
+    "admin-tools",
+  );
   expect(stepsFor(new Set(["admin"])).map((s) => s.id)).toContain("acces");
   expect(
     stepsFor(new Set(["createur"]))
@@ -130,15 +153,20 @@ test("roles parse in French and English, unknown roles are refused", () => {
 
 test("the desktop app waits until it is published, then installs silently after the hash check", async () => {
   const waiting = testContext({ fetchImpl: site({}) });
-  expect((await stepDesktop.run(waiting.ctx, "executer", { repoReady: false })).state).toBe(
-    "attente",
-  );
+  expect(
+    (await stepDesktop.run(waiting.ctx, "executer", { repoReady: false }))
+      .state,
+  ).toBe("attente");
   const bytes = new TextEncoder().encode("nsis installer");
   const file = "aphrody-app-1.2.0-abc-x86_64-pc-windows-msvc.exe";
   const { ctx, sys } = testContext({
-    fetchImpl: site({ [file]: { name: "aphrody-app", bytes, version: "1.2.0" } }),
+    fetchImpl: site({
+      [file]: { name: "aphrody-app", bytes, version: "1.2.0" },
+    }),
   });
-  expect((await stepDesktop.run(ctx, "simuler", { repoReady: false })).state).toBe("a-faire");
+  expect(
+    (await stepDesktop.run(ctx, "simuler", { repoReady: false })).state,
+  ).toBe("a-faire");
   const installed = join(ctx.paths.localAppData, "aphrody", "aphrody-app.exe");
   sys.handlers.push({
     match: /\/S$/,
@@ -151,7 +179,9 @@ test("the desktop app waits until it is published, then installs silently after 
   const done = await stepDesktop.run(ctx, "executer", { repoReady: false });
   expect(done.state).toBe("fait");
   expect(sys.calls.at(-1)?.argv.at(-1)).toBe("/S");
-  expect((await stepDesktop.run(ctx, "executer", { repoReady: false })).state).toBe("deja");
+  expect(
+    (await stepDesktop.run(ctx, "executer", { repoReady: false })).state,
+  ).toBe("deja");
 });
 
 test("a tampered desktop installer is refused before anything runs", async () => {
@@ -173,7 +203,11 @@ test("plugins land in a local Claude Code marketplace and are installed through 
   const files = Object.fromEntries(
     ["aphrody", "yolo"].map((name) => [
       `plugin-${name}-2.2.0-abc.tar.gz`,
-      { name: `plugin-${name}`, platform: "any", bytes: tarGz("README.md", `# ${name}`) },
+      {
+        name: `plugin-${name}`,
+        platform: "any",
+        bytes: tarGz("README.md", `# ${name}`),
+      },
     ]),
   );
   const { ctx, sys } = testContext({ fetchImpl: site(files) });
@@ -182,9 +216,13 @@ test("plugins land in a local Claude Code marketplace and are installed through 
   const result = await stepPlugins.run(ctx, "executer", { repoReady: false });
   expect(result.state).toBe("fait");
   const root = setupDirs(ctx).plugins;
-  expect(readFileSync(join(root, "plugin-yolo", "README.md"), "utf8")).toBe("# yolo");
+  expect(readFileSync(join(root, "plugin-yolo", "README.md"), "utf8")).toBe(
+    "# yolo",
+  );
   expect(
-    JSON.parse(readFileSync(join(root, ".claude-plugin", "marketplace.json"), "utf8")).plugins,
+    JSON.parse(
+      readFileSync(join(root, ".claude-plugin", "marketplace.json"), "utf8"),
+    ).plugins,
   ).toEqual([
     { name: "aphrody", source: "./plugin-aphrody" },
     { name: "yolo", source: "./plugin-yolo" },
@@ -196,19 +234,33 @@ test("plugins land in a local Claude Code marketplace and are installed through 
 });
 
 test("--oui --simuler changes nothing and reports every step", async () => {
-  const { ctx, ui, sys } = testContext({ fetchImpl: site({}), interactive: false });
+  const { ctx, ui, sys } = testContext({
+    fetchImpl: site({}),
+    interactive: false,
+  });
   expect(
-    await main(["--oui", "--simuler", "--roles", "createur"], { ...ctx, version: "0.1.0" }),
+    await main(["--oui", "--simuler", "--roles", "createur"], {
+      ...ctx,
+      version: "0.1.0",
+    }),
   ).toBe(0);
   const text = ui.lines.join("\n");
-  for (const title of ["aphrody", "Application Aphrody", "Plugins Claude", "Outils créateur"])
+  for (const title of [
+    "aphrody",
+    "Application Aphrody",
+    "Plugins Claude",
+    "Outils créateur",
+  ])
     expect(text).toContain(title);
   expect(sys.calls.filter((call) => call.argv[0] !== "powershell")).toEqual([]);
   expect(existsSync(setupDirs(ctx).plugins)).toBe(false);
 });
 
 test("the wizard asks the two roles and can stop before anything is done", async () => {
-  const { ctx, ui, sys } = testContext({ fetchImpl: site({}), answers: ["n", "n", "n"] });
+  const { ctx, ui, sys } = testContext({
+    fetchImpl: site({}),
+    answers: ["n", "n", "n"],
+  });
   expect(await main([], ctx)).toBe(0);
   expect(ui.questions).toHaveLength(3);
   expect(ui.lines.join("\n")).toContain("Rien n'a été modifié");

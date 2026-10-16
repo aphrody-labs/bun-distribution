@@ -25,7 +25,9 @@ async function bundle(
     plugins: [m3Bun({ configDir: dir, ...options })],
     throw: false,
   });
-  const text = (await Promise.all(result.outputs.map(o => o.text()))).join("\n");
+  const text = (await Promise.all(result.outputs.map((o) => o.text()))).join(
+    "\n",
+  );
   return { success: result.success, logs: result.logs.map(String), text };
 }
 
@@ -46,11 +48,18 @@ describe("m3Bun: the one plugin", () => {
 
   test("m3:icons/<name> is the SVG markup from the catalogue; variants and errors", async () => {
     const iconsRoot = tmp();
-    await Bun.write(join(iconsRoot, "home/materialsymbolsoutlined/home_24px.svg"), '<svg xmlns="a"/>');
-    await Bun.write(join(iconsRoot, "home/materialsymbolsrounded/home_fill1_24px.svg"), '<svg xmlns="b"/>');
+    await Bun.write(
+      join(iconsRoot, "home/materialsymbolsoutlined/home_24px.svg"),
+      '<svg xmlns="a"/>',
+    );
+    await Bun.write(
+      join(iconsRoot, "home/materialsymbolsrounded/home_fill1_24px.svg"),
+      '<svg xmlns="b"/>',
+    );
     const ok = await bundle(
       {
-        "main.ts": 'import a from "m3:icons/home"; import b from "m3:icons/rounded/home?fill=1"; console.log(a, b);\n',
+        "main.ts":
+          'import a from "m3:icons/home"; import b from "m3:icons/rounded/home?fill=1"; console.log(a, b);\n',
       },
       "main.ts",
       { iconsRoot },
@@ -58,7 +67,10 @@ describe("m3Bun: the one plugin", () => {
     expect(ok.success).toBe(true);
     expect(ok.text).toContain('<svg xmlns="b"/>');
     const missing = await bundle(
-      { "main.ts": 'import a from "m3:icons/no_such_symbol_xyz"; console.log(a);\n' },
+      {
+        "main.ts":
+          'import a from "m3:icons/no_such_symbol_xyz"; console.log(a);\n',
+      },
       "main.ts",
       { iconsRoot },
     );
@@ -67,29 +79,44 @@ describe("m3Bun: the one plugin", () => {
   });
 
   test("m3:fonts.css falls back to @aphrody/m3-fonts when no Aphrody OS checkout holds the fonts", async () => {
-    const { success, text, logs } = await bundle({ "main.css": '@import "m3:fonts.css";\n' }, "main.css");
+    const { success, text, logs } = await bundle(
+      { "main.css": '@import "m3:fonts.css";\n' },
+      "main.css",
+    );
     expect({ success, logs }).toEqual({ success: true, logs: [] });
     expect(text).toContain("@font-face");
     expect(text).toContain("Google Sans Flex");
   });
 
   test("an app can pass its own css generator for the sheets the TypeScript one does not know", async () => {
-    const { success, text } = await bundle({ "main.css": '@import "m3:spaceui.css";\n' }, "main.css", {
-      css: (config: any) => `/* ${config.sheet} */ :root { --custom: 1; }`,
-    });
+    const { success, text } = await bundle(
+      { "main.css": '@import "m3:spaceui.css";\n' },
+      "main.css",
+      {
+        css: (config: any) => `/* ${config.sheet} */ :root { --custom: 1; }`,
+      },
+    );
     expect(success).toBe(true);
     expect(text).toContain("--custom");
-    const fallback = await bundle({ "main.css": '@import "m3:spaceui.css";\n' }, "main.css", {
-      theme: { seed: "#123456" },
-    });
+    const fallback = await bundle(
+      { "main.css": '@import "m3:spaceui.css";\n' },
+      "main.css",
+      {
+        theme: { seed: "#123456" },
+      },
+    );
     expect(fallback.success).toBe(false);
     expect(fallback.logs.join("\n")).toContain("native");
   });
 
   test("default baseline uses the committed native sheet without a TypeScript override", async () => {
-    const { success, text, logs } = await bundle({ "main.ts": 'import "m3:tokens.css";\n' }, "main.ts", {
-      theme: { seed: "#6750A4", variant: "tonalSpot", contrast: 0 },
-    });
+    const { success, text, logs } = await bundle(
+      { "main.ts": 'import "m3:tokens.css";\n' },
+      "main.ts",
+      {
+        theme: { seed: "#6750A4", variant: "tonalSpot", contrast: 0 },
+      },
+    );
     // Tailwind compiles the sheet's `@theme inline`: Bun's CSS parser has nothing to warn about.
     expect({ success, logs }).toEqual({ success: true, logs: [] });
     expect(text).toContain("--md-sys-color-primary: #65558f");
@@ -116,28 +143,51 @@ if (!nativeCorpus) {
 describe.skipIf(!nativeCorpus)("m3Bun native artifact default", () => {
   test("the real native pet export reaches Bun.build without an injected generator", async () => {
     const theme = await Bun.file(join(nativeCorpus!, "tokens.json")).json();
-    const output = await bundle({ "main.ts": 'import "m3:tokens.css";\n' }, "main.ts", {
-      configDir: nativeCorpus,
-      theme: { seed: theme.seed, variant: theme.variant, contrast: theme.contrast_level },
-      tailwind: false,
-      sass: false,
-    });
+    const output = await bundle(
+      { "main.ts": 'import "m3:tokens.css";\n' },
+      "main.ts",
+      {
+        configDir: nativeCorpus,
+        theme: {
+          seed: theme.seed,
+          variant: theme.variant,
+          contrast: theme.contrast_level,
+        },
+        tailwind: false,
+        sass: false,
+      },
+    );
     expect(output.success).toBe(true);
-    expect(output.logs.filter(log => log !== "BuildMessage: invalid @ rule encountered: '@theme'")).toEqual([]);
-    if (output.logs.length) console.warn(`[m3Bun native CSS qualification gap] ${output.logs.join("; ")}`);
-    expect(output.text).toContain(`--md-sys-color-primary: ${theme.light.primary}`);
-    expect(output.text).toContain(`--md-sys-color-primary: ${theme.dark.primary}`);
+    expect(
+      output.logs.filter(
+        (log) => log !== "BuildMessage: invalid @ rule encountered: '@theme'",
+      ),
+    ).toEqual([]);
+    if (output.logs.length)
+      console.warn(
+        `[m3Bun native CSS qualification gap] ${output.logs.join("; ")}`,
+      );
+    expect(output.text).toContain(
+      `--md-sys-color-primary: ${theme.light.primary}`,
+    );
+    expect(output.text).toContain(
+      `--md-sys-color-primary: ${theme.dark.primary}`,
+    );
     expect(output.text).toContain("--primary: var(--md-sys-color-primary)");
   });
 
   test("an explicit CSS generator still takes precedence over a native artifact", async () => {
-    const output = await bundle({ "main.ts": 'import "m3:tokens.css";\n' }, "main.ts", {
-      nativeTheme: join(nativeCorpus!, "tokens.json"),
-      theme: { seed: "#123456" },
-      css: () => ":root { --caller-color: #123456; }",
-      tailwind: false,
-      sass: false,
-    });
+    const output = await bundle(
+      { "main.ts": 'import "m3:tokens.css";\n' },
+      "main.ts",
+      {
+        nativeTheme: join(nativeCorpus!, "tokens.json"),
+        theme: { seed: "#123456" },
+        css: () => ":root { --caller-color: #123456; }",
+        tailwind: false,
+        sass: false,
+      },
+    );
     expect(output.success).toBe(true);
     expect(output.text).toContain("--caller-color: #123456");
     expect(output.text).not.toContain("--md-sys-color-primary");

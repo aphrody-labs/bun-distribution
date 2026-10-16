@@ -1,1 +1,1 @@
-export * from './lib/provider-setup-modal';
+export * from "./lib/provider-setup-modal";

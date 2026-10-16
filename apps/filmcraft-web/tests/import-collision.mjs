@@ -30,20 +30,34 @@ function tone(frequency, seconds) {
   return b;
 }
 
-export async function checkImportCollision({ evaluate, navigate, url, timeoutMs = 120000 }) {
+export async function checkImportCollision({
+  evaluate,
+  navigate,
+  url,
+  timeoutMs = 120000,
+}) {
   const fixtures = [tone(440, 2), tone(880, 2)];
-  const hashes = fixtures.map((b) => new Bun.CryptoHasher("sha256").update(b).digest("hex"));
-  const report = { hashes, fixtureBytes: fixtures.map((b) => b.length), gates: {} };
+  const hashes = fixtures.map((b) =>
+    new Bun.CryptoHasher("sha256").update(b).digest("hex"),
+  );
+  const report = {
+    hashes,
+    fixtureBytes: fixtures.map((b) => b.length),
+    gates: {},
+  };
   const hash = (expression) =>
     evaluate(
       `(async () => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", ${expression})), b => b.toString(16).padStart(2, "0")).join(""))()`,
     );
-  const readHash = (path) => hash(`await filmcraft.readFile(${JSON.stringify(path)})`);
+  const readHash = (path) =>
+    hash(`await filmcraft.readFile(${JSON.stringify(path)})`);
   const importFile = (index) =>
     evaluate(
       `filmcraft.importFiles([new File([Uint8Array.from(atob(${JSON.stringify(fixtures[index].toBase64())}), c => c.charCodeAt(0))], "collision.wav", {type: "audio/wav"})])`,
     );
-  await evaluate('filmcraft.execute("file.newProject", {name: "Import collision"})');
+  await evaluate(
+    'filmcraft.execute("file.newProject", {name: "Import collision"})',
+  );
   const a = await importFile(0);
   report.a = a;
   if (a.errors?.length || !a.items?.length)
@@ -80,7 +94,9 @@ export async function checkImportCollision({ evaluate, navigate, url, timeoutMs 
     )
       break;
     if (Date.now() >= deadline)
-      throw new Error("Recovery persistence gate failed: " + JSON.stringify(snapshot));
+      throw new Error(
+        "Recovery persistence gate failed: " + JSON.stringify(snapshot),
+      );
     await Bun.sleep(persistencePollMs);
   }
   // Media writes run separately from the snapshot queue; gate their actual bytes before navigation.
@@ -101,12 +117,16 @@ export async function checkImportCollision({ evaluate, navigate, url, timeoutMs 
     ]);
     if (
       [...expected].every(([path, digest]) =>
-        report.opfs.some((f) => f.name === path.slice("/files/".length) && f.hash === digest),
+        report.opfs.some(
+          (f) => f.name === path.slice("/files/".length) && f.hash === digest,
+        ),
       )
     )
       break;
     if (Date.now() >= deadline)
-      throw new Error("Imported media did not reach OPFS: " + JSON.stringify(report.opfs));
+      throw new Error(
+        "Imported media did not reach OPFS: " + JSON.stringify(report.opfs),
+      );
     await Bun.sleep(persistencePollMs);
   }
   const recoveryUrl = new URL(url);
@@ -114,8 +134,13 @@ export async function checkImportCollision({ evaluate, navigate, url, timeoutMs 
   recoveryUrl.searchParams.delete("norecover");
   await navigate(recoveryUrl.href);
   report.recovered = await evaluate('filmcraft.execute("project.inspect")');
-  report.afterReload = { a: await readHash(a.paths[0]), b: await readHash(b.paths[0]) };
-  report.gates.recoveredProject = JSON.stringify(report.recovered).includes("Original A");
+  report.afterReload = {
+    a: await readHash(a.paths[0]),
+    b: await readHash(b.paths[0]),
+  };
+  report.gates.recoveredProject = JSON.stringify(report.recovered).includes(
+    "Original A",
+  );
   report.gates.recoveredSources =
     report.afterReload.a === hashes[0] && report.afterReload.b === hashes[1];
   report.ok = Object.values(report.gates).every(Boolean);

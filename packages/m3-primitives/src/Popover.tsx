@@ -15,7 +15,12 @@ import {
   useState,
 } from "react";
 
-import { type AsChildProp, asChildProps, createPortalScope, withClassName } from "./base-ui";
+import {
+  type AsChildProp,
+  asChildProps,
+  createPortalScope,
+  withClassName,
+} from "./base-ui";
 
 /** Convenience hook for controlled popover state */
 export function usePopover() {
@@ -42,7 +47,8 @@ const Root = (props: PopoverRootProps) => {
 };
 Root.displayName = "PopoverRoot";
 
-export interface PopoverTriggerProps extends PopoverPrimitive.Trigger.Props, AsChildProp {}
+export interface PopoverTriggerProps
+  extends PopoverPrimitive.Trigger.Props, AsChildProp {}
 
 const Trigger = forwardRef<HTMLButtonElement, PopoverTriggerProps>(
   ({ asChild, children, ...props }, ref) => {
@@ -52,7 +58,8 @@ const Trigger = forwardRef<HTMLButtonElement, PopoverTriggerProps>(
 );
 Trigger.displayName = "PopoverTrigger";
 
-export interface PopoverCloseProps extends PopoverPrimitive.Close.Props, AsChildProp {}
+export interface PopoverCloseProps
+  extends PopoverPrimitive.Close.Props, AsChildProp {}
 
 const Close = forwardRef<HTMLButtonElement, PopoverCloseProps>(
   ({ asChild, children, ...props }, ref) => {
@@ -74,7 +81,10 @@ const Anchor = ({
   const ctx = useContext(AnchorContext);
   const child = asChildProps(asChild, children);
   if (child.render) {
-    return cloneElement(child.render, { ...props, ref: ctx?.setAnchor } as HTMLAttributes<Element>);
+    return cloneElement(child.render, {
+      ...props,
+      ref: ctx?.setAnchor,
+    } as HTMLAttributes<Element>);
   }
   return (
     <div ref={ctx?.setAnchor} {...props}>
@@ -84,7 +94,10 @@ const Anchor = ({
 };
 Anchor.displayName = "PopoverAnchor";
 
-const { Portal, EnsurePortal } = createPortalScope(PopoverPrimitive.Portal, "PopoverPortal");
+const { Portal, EnsurePortal } = createPortalScope(
+  PopoverPrimitive.Portal,
+  "PopoverPortal",
+);
 
 /**
  * M3 rich-tooltip / menu-like surface: `surface-container`, medium corners, level 2. Enters with
@@ -118,7 +131,8 @@ type PositionerProps = Pick<
   | "arrowPadding"
 >;
 
-export interface PopoverContentProps extends PositionerProps, PopoverPrimitive.Popup.Props {
+export interface PopoverContentProps
+  extends PositionerProps, PopoverPrimitive.Popup.Props {
   /** Radix name for the portal's `keepMounted`. */
   forceMount?: boolean;
 }

@@ -10,7 +10,10 @@ test("known domains run bottom to top, then new domains in name order", async ()
   try {
     await Bun.write(
       join(root, "package.json"),
-      JSON.stringify({ name: "aphrody-workspace", workspaces: ["packages/*/*"] }),
+      JSON.stringify({
+        name: "aphrody-workspace",
+        workspaces: ["packages/*/*"],
+      }),
     );
     await Promise.all(
       ["os", "shell", "google", "ai", "future", "alpha"].map(async (domain) => {
@@ -18,7 +21,10 @@ test("known domains run bottom to top, then new domains in name order", async ()
         await mkdir(dir, { recursive: true });
         await Bun.write(
           join(dir, "package.json"),
-          JSON.stringify({ name: `@aphrody/${domain}`, scripts: { test: "bun test" } }),
+          JSON.stringify({
+            name: `@aphrody/${domain}`,
+            scripts: { test: "bun test" },
+          }),
         );
       }),
     );
@@ -27,7 +33,9 @@ test("known domains run bottom to top, then new domains in name order", async ()
     expect(stages.indexOf("bun-os")).toBeLessThan(stages.indexOf("bun-shell"));
     expect(stages.indexOf("bun-google")).toBeLessThan(stages.indexOf("bun-ai"));
     expect(stages.indexOf("bun-ai")).toBeLessThan(stages.indexOf("bun-alpha"));
-    expect(stages.indexOf("bun-alpha")).toBeLessThan(stages.indexOf("bun-future"));
+    expect(stages.indexOf("bun-alpha")).toBeLessThan(
+      stages.indexOf("bun-future"),
+    );
     expect(stages.at(-1)).toBe("bun-future");
   } finally {
     await rm(root, { recursive: true, force: true });

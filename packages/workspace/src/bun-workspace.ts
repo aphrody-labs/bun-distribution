@@ -41,7 +41,15 @@ const M3_PRESET = "@aphrody/m3-config/";
 
 export interface Violation {
   path: string;
-  rule: "pm" | "engines" | "catalog" | "scripts" | "typecheck" | "m3" | "install" | "bunfig";
+  rule:
+    | "pm"
+    | "engines"
+    | "catalog"
+    | "scripts"
+    | "typecheck"
+    | "m3"
+    | "install"
+    | "bunfig";
   message: string;
   fixable: boolean;
 }
@@ -59,15 +67,25 @@ export interface ManifestContext {
 }
 
 type Manifest = Record<string, any>;
-const DEP_SECTIONS = ["dependencies", "devDependencies", "optionalDependencies"] as const;
+const DEP_SECTIONS = [
+  "dependencies",
+  "devDependencies",
+  "optionalDependencies",
+] as const;
 const FOREIGN_TOOL = /(^|[\s;&|(])(npx|bunx|npm|pnpm|yarn|node)(?=\s|$)/;
 
-export function minimumBun(packageManager: string, runtimeVersion?: string): string {
+export function minimumBun(
+  packageManager: string,
+  runtimeVersion?: string,
+): string {
   const version =
     /^bun@(\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?)(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.exec(
       packageManager,
     )?.[1];
-  if (!version) throw new Error(`root packageManager must be bun@x.y.z, got ${packageManager}`);
+  if (!version)
+    throw new Error(
+      `root packageManager must be bun@x.y.z, got ${packageManager}`,
+    );
   if (runtimeVersion && runtimeVersion !== version)
     throw new Error("Bun runtime contract must match the root packageManager");
   return `>=${runtimeVersion ?? version.split("-")[0]}`;
@@ -80,10 +98,16 @@ export function checkManifest(
   root: Manifest,
   context: ManifestContext,
 ): Violation[] {
-  const { hasTsconfig, tsconfigExtends, hasDevTsconfig = false, fix = false } = context;
+  const {
+    hasTsconfig,
+    tsconfigExtends,
+    hasDevTsconfig = false,
+    fix = false,
+  } = context;
   const out: Violation[] = [];
   const catalog: Record<string, string> = root.workspaces?.catalog ?? {};
-  const catalogs: Record<string, Record<string, string>> = root.workspaces?.catalogs ?? {};
+  const catalogs: Record<string, Record<string, string>> = root.workspaces
+    ?.catalogs ?? {};
   const engine = minimumBun(root.packageManager, context.bunRuntimeVersion);
 
   if (manifest.packageManager !== undefined) {
@@ -114,7 +138,9 @@ export function checkManifest(
     if (fix) manifest.engines = { ...manifest.engines, bun: engine };
   }
   for (const section of DEP_SECTIONS) {
-    for (const [name, spec] of Object.entries<string>(manifest[section] ?? {})) {
+    for (const [name, spec] of Object.entries<string>(
+      manifest[section] ?? {},
+    )) {
       const namedCatalog = /^catalog:([^:]+)$/.exec(spec)?.[1];
       const catalogSpec =
         spec === "catalog:" && name in catalog
@@ -146,7 +172,9 @@ export function checkManifest(
       }
     }
   }
-  for (const [name, command] of Object.entries<string>(manifest.scripts ?? {})) {
+  for (const [name, command] of Object.entries<string>(
+    manifest.scripts ?? {},
+  )) {
     const tool = FOREIGN_TOOL.exec(command)?.[2];
     if (tool)
       out.push({
@@ -156,7 +184,11 @@ export function checkManifest(
         fixable: false,
       });
   }
-  if (hasTsconfig && !TYPECHECK_EXEMPT.has(manifest.name) && !manifest.scripts?.typecheck) {
+  if (
+    hasTsconfig &&
+    !TYPECHECK_EXEMPT.has(manifest.name) &&
+    !manifest.scripts?.typecheck
+  ) {
     out.push({
       path,
       rule: "typecheck",
@@ -164,7 +196,10 @@ export function checkManifest(
       fixable: true,
     });
     if (fix)
-      manifest.scripts = { ...manifest.scripts, typecheck: "bun check -p tsconfig.json --noEmit" };
+      manifest.scripts = {
+        ...manifest.scripts,
+        typecheck: "bun check -p tsconfig.json --noEmit",
+      };
   }
   // Private manifests (the presets, the showcases) are never published: no lockstep for them.
   if (M3_FAMILY.test(manifest.name) && !manifest.private) {
@@ -218,7 +253,9 @@ export async function staleInstallEntries(dir: string): Promise<string[]> {
       .map(async (entry) => {
         if (!entry.name.startsWith("@") || !entry.isDirectory())
           return entry.isDirectory() ? [entry.name] : [];
-        const scoped = await readdir(join(root, entry.name), { withFileTypes: true });
+        const scoped = await readdir(join(root, entry.name), {
+          withFileTypes: true,
+        });
         return scoped
           .filter((child) => child.isDirectory())
           .map((child) => `${entry.name}/${child.name}`);
@@ -245,7 +282,11 @@ async function installPolicy(repo: string): Promise<InstallPolicy> {
 function checkInstallPolicy(policy: InstallPolicy): Violation[] {
   const requirements: Array<[keyof InstallPolicy, unknown, string]> = [
     ["linker", "isolated", "use the isolated workspace linker"],
-    ["hoist", false, "disable the fallback hoist tree to catch undeclared imports"],
+    [
+      "hoist",
+      false,
+      "disable the fallback hoist tree to catch undeclared imports",
+    ],
     ["saveTextLockfile", true, "keep the canonical text bun.lock format"],
     ["minimumReleaseAge", 259200, "require a 3-day minimum release age"],
   ];
@@ -310,7 +351,8 @@ export async function run(repo: string, fix: boolean): Promise<Violation[]> {
         await Bun.write(file, `${JSON.stringify(manifest, null, 2)}\n`);
       const stale = isolated ? await staleInstallEntries(dir) : [];
       if (stale.length > 0) {
-        const sample = stale.slice(0, 3).join(", ") + (stale.length > 3 ? ", ..." : "");
+        const sample =
+          stale.slice(0, 3).join(", ") + (stale.length > 3 ? ", ..." : "");
         found.push({
           path,
           rule: "install",
@@ -325,7 +367,11 @@ export async function run(repo: string, fix: boolean): Promise<Violation[]> {
   return fix ? violations.filter((v) => !v.fixable) : violations;
 }
 
-function parseArgs(args: string[]): { repo: string; fix: boolean; json: boolean } {
+function parseArgs(args: string[]): {
+  repo: string;
+  fix: boolean;
+  json: boolean;
+} {
   let repo = process.cwd();
   let fix = false;
   let json = false;
@@ -335,7 +381,9 @@ function parseArgs(args: string[]): { repo: string; fix: boolean; json: boolean 
     else if (arg === "--fix") fix = true;
     else if (arg === "--json") json = true;
     else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: aphrody-ops bun-workspace [--root <repository>] [--fix] [--json]");
+      console.log(
+        "Usage: aphrody-ops bun-workspace [--root <repository>] [--fix] [--json]",
+      );
       process.exit(0);
     } else throw new Error(`Unknown argument: ${arg}`);
   }
@@ -351,7 +399,9 @@ export async function runBunWorkspace(args: string[]): Promise<number> {
     console.log(JSON.stringify(violations, null, 2));
   } else {
     for (const v of violations)
-      console.log(`${v.path}  [${v.rule}]  ${v.message}${v.fixable ? "  (--fix)" : ""}`);
+      console.log(
+        `${v.path}  [${v.rule}]  ${v.message}${v.fixable ? "  (--fix)" : ""}`,
+      );
     const scanned = (await firstPartyManifests(repo)).length;
     console.log(
       `${scanned} first-party manifests, ${violations.length} violation(s)${options.fix ? " left after --fix" : ""}`,
@@ -360,4 +410,5 @@ export async function runBunWorkspace(args: string[]): Promise<number> {
   return violations.length === 0 ? 0 : 1;
 }
 
-if (import.meta.main) process.exit(await runBunWorkspace(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runBunWorkspace(process.argv.slice(2)));

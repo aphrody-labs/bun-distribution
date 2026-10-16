@@ -53,10 +53,18 @@ async function toolHost(args: string[]): Promise<string> {
 export function m3McpRoutes(options: M3McpOptions = {}): M3Routes {
   const path = (options.path ?? "/api/m3/mcp").replace(/\/+$/, "");
   const list = async (): Promise<unknown> =>
-    options.isolate ? JSON.parse(await toolHost(["list"])) : (await mcp()).listM3Tools();
-  const call = async (name: string, args: unknown, signal: AbortSignal): Promise<ToolResult> =>
     options.isolate
-      ? (JSON.parse(await toolHost(["call", name, JSON.stringify(args)])) as ToolResult)
+      ? JSON.parse(await toolHost(["list"]))
+      : (await mcp()).listM3Tools();
+  const call = async (
+    name: string,
+    args: unknown,
+    signal: AbortSignal,
+  ): Promise<ToolResult> =>
+    options.isolate
+      ? (JSON.parse(
+          await toolHost(["call", name, JSON.stringify(args)]),
+        ) as ToolResult)
       : (await mcp()).callM3Tool(name, args, signal);
   return {
     [path]: { GET: async () => Response.json({ tools: await list() }) },
@@ -69,7 +77,10 @@ export function m3McpRoutes(options: M3McpOptions = {}): M3Routes {
             args = JSON.parse(text);
           } catch {
             return Response.json(
-              { content: [{ type: "text", text: "arguments are not JSON" }], isError: true },
+              {
+                content: [{ type: "text", text: "arguments are not JSON" }],
+                isError: true,
+              },
               { status: 400 },
             );
           }

@@ -10,12 +10,18 @@ export interface FileHashOptions {
 }
 
 /** One streamed hash owner for local files and remote object verification. */
-export async function hashStream(stream: ReadableStream<Uint8Array>, options: FileHashOptions = {}): Promise<string> {
+export async function hashStream(
+  stream: ReadableStream<Uint8Array>,
+  options: FileHashOptions = {},
+): Promise<string> {
   const maxBytes = options.maxBytes ?? Number.MAX_SAFE_INTEGER;
-  if (!Number.isSafeInteger(maxBytes) || maxBytes < 0) throw new Error("Invalid file hash size limit.");
+  if (!Number.isSafeInteger(maxBytes) || maxBytes < 0)
+    throw new Error("Invalid file hash size limit.");
   if (
     options.expectedBytes !== undefined &&
-    (!Number.isSafeInteger(options.expectedBytes) || options.expectedBytes < 0 || options.expectedBytes > maxBytes)
+    (!Number.isSafeInteger(options.expectedBytes) ||
+      options.expectedBytes < 0 ||
+      options.expectedBytes > maxBytes)
   )
     throw new Error("Invalid expected file size.");
   options.signal?.throwIfAborted();
@@ -24,7 +30,10 @@ export async function hashStream(stream: ReadableStream<Uint8Array>, options: Fi
   let bytes = 0;
   let finished = false;
   let rejectRead: ((reason?: unknown) => void) | undefined;
-  const interrupt = () => rejectRead?.(options.signal?.reason ?? new DOMException("Interrupted", "AbortError"));
+  const interrupt = () =>
+    rejectRead?.(
+      options.signal?.reason ?? new DOMException("Interrupted", "AbortError"),
+    );
   options.signal?.addEventListener("abort", interrupt, { once: true });
   try {
     for (;;) {
@@ -35,7 +44,10 @@ export async function hashStream(stream: ReadableStream<Uint8Array>, options: Fi
       const chunk = await Promise.race([reader.read(), cancelled]);
       rejectRead = undefined;
       if (chunk.done) {
-        if (options.expectedBytes !== undefined && bytes !== options.expectedBytes)
+        if (
+          options.expectedBytes !== undefined &&
+          bytes !== options.expectedBytes
+        )
           throw new Error("File length changed during hashing.");
         finished = true;
         return hasher.digest("hex");
@@ -56,10 +68,14 @@ export async function hashStream(stream: ReadableStream<Uint8Array>, options: Fi
 }
 
 /** Bound a large native payload before opening and while streaming its contents. */
-export async function hashFile(path: string, options: FileHashOptions = {}): Promise<string> {
+export async function hashFile(
+  path: string,
+  options: FileHashOptions = {},
+): Promise<string> {
   options.signal?.throwIfAborted();
   const file = Bun.file(path);
-  if (options.maxBytes !== undefined && file.size > options.maxBytes) throw new Error("File hash size limit exceeded.");
+  if (options.maxBytes !== undefined && file.size > options.maxBytes)
+    throw new Error("File hash size limit exceeded.");
   return hashStream(file.stream(), {
     ...options,
     maxBytes: options.maxBytes ?? file.size,

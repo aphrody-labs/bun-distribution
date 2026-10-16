@@ -3,12 +3,12 @@
 `wordcraft-web-<version>.zip` (from the GitHub release, or `packaging/web/package.sh`) holds a
 static site in `wordcraft-web-<version>/`:
 
-| File | What it is |
-|---|---|
-| `index.html` | The page. It loads everything through relative URLs. |
-| `wordcraft-web-<hash>.js` | wasm-bindgen glue (generated, ES module) |
-| `wordcraft-web-<hash>_bg.wasm` | The app, about 13 MB, or 5 MB with compression |
-| `_headers`, `.htaccess` | Sample header rules for Netlify/Cloudflare Pages and Apache |
+| File                           | What it is                                                  |
+| ------------------------------ | ----------------------------------------------------------- |
+| `index.html`                   | The page. It loads everything through relative URLs.        |
+| `wordcraft-web-<hash>.js`      | wasm-bindgen glue (generated, ES module)                    |
+| `wordcraft-web-<hash>_bg.wasm` | The app, about 13 MB, or 5 MB with compression              |
+| `_headers`, `.htaccess`        | Sample header rules for Netlify/Cloudflare Pages and Apache |
 
 There is no server-side code. Upload the folder's contents anywhere that serves static files.
 
@@ -58,7 +58,8 @@ Local test: `python3 -m http.server 8765` inside the folder, then open http://lo
   title="WordCraft image editor"
   style="width: 100%; height: 720px; border: 0;"
   allow="fullscreen; clipboard-read; clipboard-write"
-  allowfullscreen>
+  allowfullscreen
+>
 </iframe>
 ```
 
@@ -78,9 +79,9 @@ Local test: `python3 -m http.server 8765` inside the folder, then open http://lo
 WordCraft renders with wgpu. It uses **WebGPU** when the browser has it and falls back to
 **WebGL2** on its own. URL query flags override this, and they work on the iframe `src` too:
 
-| Flag | Effect |
-|---|---|
-| *(none)* | WebGPU if available, otherwise WebGL2 |
+| Flag     | Effect                                                            |
+| -------- | ----------------------------------------------------------------- |
+| _(none)_ | WebGPU if available, otherwise WebGL2                             |
 | `?webgl` | Force the WebGL2 backend (useful when a WebGPU driver misbehaves) |
 
 For example: `<iframe src="https://example.com/wordcraft/?webgl" ...>`.

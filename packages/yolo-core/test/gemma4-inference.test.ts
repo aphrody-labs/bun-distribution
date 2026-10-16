@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Local HTTP fixtures qualify transport, never model weights or inference quality. */
 import { afterEach, describe, expect, it } from "bun:test";
-import { InferenceError, UnifiedInferenceEngine } from "../../core/src/gemma4/index";
+import {
+  InferenceError,
+  UnifiedInferenceEngine,
+} from "../../core/src/gemma4/index";
 
 const servers: Array<{ stop(closeActiveConnections?: boolean): void }> = [];
 afterEach(() => {
@@ -12,7 +15,8 @@ function listen(handler: (request: Request) => Response | Promise<Response>) {
   servers.push(server);
   return new URL("v1", server.url).href;
 }
-const json = (content: unknown, status = 200) => Response.json(content, { status });
+const json = (content: unknown, status = 200) =>
+  Response.json(content, { status });
 const reply = (content = "real provider fixture") => ({
   model: "provider-revision",
   choices: [{ message: { content } }],
@@ -20,9 +24,12 @@ const reply = (content = "real provider fixture") => ({
 });
 const event = (content: string) =>
   `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`;
-const terminal = 'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n';
+const terminal =
+  'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n';
 const sse = (body: BodyInit) =>
-  new Response(body, { headers: { "content-type": "text/event-stream; charset=utf-8" } });
+  new Response(body, {
+    headers: { "content-type": "text/event-stream; charset=utf-8" },
+  });
 async function collect(iterator: AsyncIterable<string>) {
   let text = "";
   for await (const chunk of iterator) text += chunk;
@@ -42,9 +49,15 @@ describe("Real configured inference HTTP transport", () => {
       const requests: Record<string, unknown>[] = [];
       const endpointUrl = listen(async (request) => {
         expect(new URL(request.url).pathname).toBe("/v1/chat/completions");
-        expect(request.headers.get("authorization")).toBe("Bearer public-test-fixture");
+        expect(request.headers.get("authorization")).toBe(
+          "Bearer public-test-fixture",
+        );
         requests.push((await request.json()) as Record<string, unknown>);
-        return json(reply("<thought>provider trace</thought>\nactual answer<end_of_turn>"));
+        return json(
+          reply(
+            "<thought>provider trace</thought>\nactual answer<end_of_turn>",
+          ),
+        );
       });
       const engine = new UnifiedInferenceEngine("native-model-id", {
         endpointUrl,
@@ -89,10 +102,19 @@ describe("Real configured inference HTTP transport", () => {
   it("preserves provider reasoning and labels missing usage as estimates", async () => {
     const endpointUrl = listen(() =>
       json({
-        choices: [{ message: { content: "Answer", reasoning_content: "provider metadata" } }],
+        choices: [
+          {
+            message: {
+              content: "Answer",
+              reasoning_content: "provider metadata",
+            },
+          },
+        ],
       }),
     );
-    const result = await new UnifiedInferenceEngine("provider-only-model", { endpointUrl }).infer({
+    const result = await new UnifiedInferenceEngine("provider-only-model", {
+      endpointUrl,
+    }).infer({
       prompt: "Q",
     });
     expect(result.model).toBe("provider-only-model");
@@ -118,14 +140,26 @@ describe("Real configured inference HTTP transport", () => {
         { maxTokens: 1.5 },
         { thought: "prefill" },
         { history: [{ role: "user" as const, content: "Q", imageCount: 1 }] },
-        { history: [{ role: "assistant" as const, content: "A", thought: "prefill" }] },
+        {
+          history: [
+            { role: "assistant" as const, content: "A", thought: "prefill" },
+          ],
+        },
         { timeoutMs: 0 },
         { maxResponseBytes: 0 },
-      ].map((patch) => expect(engine.infer({ prompt: "Q", ...patch })).rejects.toThrow()),
+      ].map((patch) =>
+        expect(engine.infer({ prompt: "Q", ...patch })).rejects.toThrow(),
+      ),
     );
     await Promise.all(
-      ["invalid URL", "file:///tmp/model", "http://user:password@127.0.0.1/v1"].map((url) =>
-        expect(engine.infer({ prompt: "Q", endpointUrl: url })).rejects.toThrow(),
+      [
+        "invalid URL",
+        "file:///tmp/model",
+        "http://user:password@127.0.0.1/v1",
+      ].map((url) =>
+        expect(
+          engine.infer({ prompt: "Q", endpointUrl: url }),
+        ).rejects.toThrow(),
       ),
     );
     expect(requests).toBe(0);
@@ -154,21 +188,31 @@ describe("Real configured inference HTTP transport", () => {
       {},
       { choices: [] },
       { choices: [{ message: { content: null } }] },
-      { ...reply(), usage: { prompt_tokens: -1, completion_tokens: 1, total_tokens: 0 } },
+      {
+        ...reply(),
+        usage: { prompt_tokens: -1, completion_tokens: 1, total_tokens: 0 },
+      },
     ];
     await Promise.all(
       malformed.map((response) => {
         const endpointUrl = listen(() =>
-          typeof response === "string" ? new Response(response) : json(response),
+          typeof response === "string"
+            ? new Response(response)
+            : json(response),
         );
         return expect(
-          new UnifiedInferenceEngine("fixture", { endpointUrl }).infer({ prompt: "Q" }),
+          new UnifiedInferenceEngine("fixture", { endpointUrl }).infer({
+            prompt: "Q",
+          }),
         ).rejects.toThrow();
       }),
     );
     const endpointUrl = listen(() => json(reply("x".repeat(1000))));
     await expect(
-      new UnifiedInferenceEngine("fixture", { endpointUrl, maxResponseBytes: 100 }).infer({
+      new UnifiedInferenceEngine("fixture", {
+        endpointUrl,
+        maxResponseBytes: 100,
+      }).infer({
         prompt: "Q",
       }),
     ).rejects.toThrow("maxResponseBytes");
@@ -199,7 +243,9 @@ describe("Real configured inference HTTP transport", () => {
         }),
       ),
     );
-    const iterator = new UnifiedInferenceEngine("fixture", { endpointUrl }).stream({ prompt: "Q" });
+    const iterator = new UnifiedInferenceEngine("fixture", {
+      endpointUrl,
+    }).stream({ prompt: "Q" });
     try {
       const first = await Promise.race([
         iterator.next(),
@@ -223,7 +269,11 @@ describe("Real configured inference HTTP transport", () => {
       terminal;
     const endpointUrl = listen(() => sse(body));
     expect(
-      await collect(new UnifiedInferenceEngine("fixture", { endpointUrl }).stream({ prompt: "Q" })),
+      await collect(
+        new UnifiedInferenceEngine("fixture", { endpointUrl }).stream({
+          prompt: "Q",
+        }),
+      ),
     ).toBe("A");
   });
 
@@ -231,7 +281,10 @@ describe("Real configured inference HTTP transport", () => {
     const endpointUrl = listen(() => sse(event("a").repeat(20) + terminal));
     expect(
       await collect(
-        new UnifiedInferenceEngine("fixture", { endpointUrl, maxResponseBytes: 100 }).stream({
+        new UnifiedInferenceEngine("fixture", {
+          endpointUrl,
+          maxResponseBytes: 100,
+        }).stream({
           prompt: "Q",
         }),
       ),
@@ -239,9 +292,10 @@ describe("Real configured inference HTTP transport", () => {
     const large = listen(() => sse(event("x".repeat(200)) + terminal));
     await expect(
       collect(
-        new UnifiedInferenceEngine("fixture", { endpointUrl: large, maxResponseBytes: 100 }).stream(
-          { prompt: "Q" },
-        ),
+        new UnifiedInferenceEngine("fixture", {
+          endpointUrl: large,
+          maxResponseBytes: 100,
+        }).stream({ prompt: "Q" }),
       ),
     ).rejects.toThrow("maxResponseBytes");
   });
@@ -256,13 +310,21 @@ describe("Real configured inference HTTP transport", () => {
       ].map((body) => {
         const endpointUrl = listen(() => sse(body));
         return expect(
-          collect(new UnifiedInferenceEngine("fixture", { endpointUrl }).stream({ prompt: "Q" })),
+          collect(
+            new UnifiedInferenceEngine("fixture", { endpointUrl }).stream({
+              prompt: "Q",
+            }),
+          ),
         ).rejects.toThrow();
       }),
     );
     const endpointUrl = listen(() => json(reply()));
     await expect(
-      collect(new UnifiedInferenceEngine("fixture", { endpointUrl }).stream({ prompt: "Q" })),
+      collect(
+        new UnifiedInferenceEngine("fixture", { endpointUrl }).stream({
+          prompt: "Q",
+        }),
+      ),
     ).rejects.toThrow("text/event-stream");
   });
 
@@ -274,7 +336,10 @@ describe("Real configured inference HTTP transport", () => {
     });
     try {
       await expect(
-        new UnifiedInferenceEngine("fixture", { endpointUrl, timeoutMs: 25 }).infer({
+        new UnifiedInferenceEngine("fixture", {
+          endpointUrl,
+          timeoutMs: 25,
+        }).infer({
           prompt: "Q",
         }),
       ).rejects.toThrow();
@@ -312,7 +377,9 @@ describe("Real configured inference HTTP transport", () => {
         }),
       ),
     );
-    const iterator = new UnifiedInferenceEngine("fixture", { endpointUrl }).stream({ prompt: "Q" });
+    const iterator = new UnifiedInferenceEngine("fixture", {
+      endpointUrl,
+    }).stream({ prompt: "Q" });
     expect((await iterator.next()).value).toBe("first");
     await iterator.return(undefined);
     await Promise.race([
@@ -334,7 +401,9 @@ describe("Real configured inference HTTP transport", () => {
       ),
     );
     const controller = new AbortController();
-    const iterator = new UnifiedInferenceEngine("fixture", { endpointUrl }).stream({
+    const iterator = new UnifiedInferenceEngine("fixture", {
+      endpointUrl,
+    }).stream({
       prompt: "Q",
       signal: controller.signal,
     });
@@ -365,13 +434,19 @@ describe("Real configured inference HTTP transport", () => {
   it("reports unsupported or invalid embeddings without a synthetic fallback", async () => {
     const unsupported = listen(() => json({ error: "unsupported" }, 404));
     await expect(
-      new UnifiedInferenceEngine("fixture", { endpointUrl: unsupported }).embed("text"),
+      new UnifiedInferenceEngine("fixture", { endpointUrl: unsupported }).embed(
+        "text",
+      ),
     ).rejects.toThrow("HTTP 404");
     await Promise.all(
       [[], [null, 0, 0], [1e99, 0, 0], [1, 2]].map((vector) => {
-        const endpointUrl = listen(() => json({ data: [{ embedding: vector }] }));
+        const endpointUrl = listen(() =>
+          json({ data: [{ embedding: vector }] }),
+        );
         return expect(
-          new UnifiedInferenceEngine("fixture", { endpointUrl }).embed("text", { dimensions: 3 }),
+          new UnifiedInferenceEngine("fixture", { endpointUrl }).embed("text", {
+            dimensions: 3,
+          }),
         ).rejects.toThrow();
       }),
     );

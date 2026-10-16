@@ -6,7 +6,11 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 
 import { currentPlatform } from "../../src/shared/update.ts";
-import { KIT_ARTIFACT, omarApp, updateKit } from "../../src/admin/lib/update.ts";
+import {
+  KIT_ARTIFACT,
+  omarApp,
+  updateKit,
+} from "../../src/admin/lib/update.ts";
 import { testContext } from "./helpers.ts";
 
 let server: ReturnType<typeof Bun.serve>;
@@ -21,10 +25,21 @@ beforeAll(() => {
   writeFileSync(join(src, "Aphrody-Omar"), "NEW-EXE");
   writeFileSync(join(src, "Guide.html"), "new guide");
   const tar = join(src, "..", `omar-${Date.now()}.tar.gz`);
-  Bun.spawnSync(["tar", "-czf", basename(tar), "-C", basename(src), "Aphrody-Omar", "Guide.html"], {
-    windowsHide: true,
-    cwd: dirname(src),
-  });
+  Bun.spawnSync(
+    [
+      "tar",
+      "-czf",
+      basename(tar),
+      "-C",
+      basename(src),
+      "Aphrody-Omar",
+      "Guide.html",
+    ],
+    {
+      windowsHide: true,
+      cwd: dirname(src),
+    },
+  );
   archive = new Uint8Array(readFileSync(tar));
   sha = createHash("sha256").update(archive).digest("hex");
   server = Bun.serve({
@@ -98,7 +113,9 @@ test("up to date, nothing published and a catalogue that disagrees with SHA256SU
   advertise = true;
   tamper = true;
   ctx.version = "0.1.0";
-  await expect(updateKit(ctx, { base })).rejects.toThrow("pas la même empreinte");
+  await expect(updateKit(ctx, { base })).rejects.toThrow(
+    "pas la même empreinte",
+  );
   expect(readFileSync(join(dir, "Aphrody-Omar"), "utf8")).toBe("OLD-EXE");
   tamper = false;
 });

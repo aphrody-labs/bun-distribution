@@ -7,7 +7,9 @@ import { stageShenronVideo } from "./stage-shenron-video-origin";
 
 const roots: string[] = [];
 afterEach(async () => {
-  await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+  await Promise.all(
+    roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
+  );
 });
 
 test("publishes qualified files once and rejects a changed source", async () => {
@@ -23,7 +25,19 @@ test("publishes qualified files once and rejects a changed source", async () => 
   );
   await Bun.write(
     join(privateRoot, "optimized-720p.mp4"),
-    new Uint8Array([0, 0, 0, 14, ...new TextEncoder().encode("ftyp"), 0, 0, 0, 0, 1, 2]),
+    new Uint8Array([
+      0,
+      0,
+      0,
+      14,
+      ...new TextEncoder().encode("ftyp"),
+      0,
+      0,
+      0,
+      0,
+      1,
+      2,
+    ]),
   );
   await Bun.write(join(publicRoot, ".keep"), "");
   const qualified = await Promise.all(
@@ -32,7 +46,9 @@ test("publishes qualified files once and rejects a changed source", async () => 
       return {
         name,
         source,
-        sha256: new Bun.CryptoHasher("sha256").update(await Bun.file(source).bytes()).digest("hex"),
+        sha256: new Bun.CryptoHasher("sha256")
+          .update(await Bun.file(source).bytes())
+          .digest("hex"),
       };
     }),
   );

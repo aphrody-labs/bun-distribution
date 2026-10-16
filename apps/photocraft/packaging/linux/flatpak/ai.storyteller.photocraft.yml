@@ -12,7 +12,7 @@
 # which repackages the prebuilt release binaries. Keep runtime-version and finish-args identical.
 id: ai.storyteller.photocraft
 runtime: org.freedesktop.Platform
-runtime-version: '26.08'
+runtime-version: "26.08"
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.rust-stable
@@ -42,7 +42,7 @@ modules:
     build-options:
       env:
         CARGO_HOME: /run/build/photocraft/cargo
-        CARGO_NET_OFFLINE: 'true'
+        CARGO_NET_OFFLINE: "true"
     build-commands:
       - cargo --offline build --release --locked -p photocraft --features heif
       - install -Dm755 target/release/photocraft /app/bin/photocraft

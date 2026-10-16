@@ -38,9 +38,19 @@ type ImageTo3DState = {
     meshOnly: boolean,
     subscriberId?: string,
   ) => string;
-  completeGeneration: (modelUrl: string, mediaToken: string, maybeSubscriberId?: string) => void;
-  uploadCoverImage: (mediaToken: string, thumbnailDataUrl: string) => Promise<void>;
-  captureAndUploadCover: (modelUrl: string, mediaToken: string) => Promise<void>;
+  completeGeneration: (
+    modelUrl: string,
+    mediaToken: string,
+    maybeSubscriberId?: string,
+  ) => void;
+  uploadCoverImage: (
+    mediaToken: string,
+    thumbnailDataUrl: string,
+  ) => Promise<void>;
+  captureAndUploadCover: (
+    modelUrl: string,
+    mediaToken: string,
+  ) => Promise<void>;
   failGeneration: (subscriberId: string) => void;
   reset: () => void;
 };
@@ -79,7 +89,11 @@ export const useImageTo3DStore = create<ImageTo3DState>((set, get) => ({
     set((s) => ({ results: [result, ...s.results] }));
     return id;
   },
-  completeGeneration: (modelUrl: string, mediaToken: string, maybeSubscriberId?: string) => {
+  completeGeneration: (
+    modelUrl: string,
+    mediaToken: string,
+    maybeSubscriberId?: string,
+  ) => {
     console.log("[ImageTo3DStore] completeGeneration", {
       modelUrl,
       mediaToken,
@@ -96,7 +110,8 @@ export const useImageTo3DStore = create<ImageTo3DState>((set, get) => ({
         : -1;
 
       if (targetIdx === -1) {
-        const generatedId = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
+        const generatedId =
+          crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
         const result: ImageTo3DResult = {
           id: generatedId,
           subscriberId: generatedId,
@@ -125,7 +140,10 @@ export const useImageTo3DStore = create<ImageTo3DState>((set, get) => ({
       // Check if already uploaded
       const result = get().results.find((r) => r.mediaToken === mediaToken);
       if (result?.coverImageUploaded) {
-        console.log("[ImageTo3DStore] Cover image already uploaded for:", mediaToken);
+        console.log(
+          "[ImageTo3DStore] Cover image already uploaded for:",
+          mediaToken,
+        );
         return;
       }
 
@@ -167,7 +185,9 @@ export const useImageTo3DStore = create<ImageTo3DState>((set, get) => ({
         // Mark as uploaded
         set((s) => ({
           results: s.results.map((r) =>
-            r.mediaToken === mediaToken ? { ...r, coverImageUploaded: true } : r,
+            r.mediaToken === mediaToken
+              ? { ...r, coverImageUploaded: true }
+              : r,
           ),
         }));
         // Emit event to trigger task queue refresh with the cover data
@@ -177,7 +197,10 @@ export const useImageTo3DStore = create<ImageTo3DState>((set, get) => ({
           }),
         );
       } else {
-        console.error("[ImageTo3DStore] Failed to set cover image:", setCoverResult.errorMessage);
+        console.error(
+          "[ImageTo3DStore] Failed to set cover image:",
+          setCoverResult.errorMessage,
+        );
       }
     } catch (error) {
       console.error("[ImageTo3DStore] Error uploading cover image:", error);

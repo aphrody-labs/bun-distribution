@@ -4,23 +4,24 @@
  * Request accepted by `bun_rs_m3_css` (JSON).
  */
 export type M3CssRequest = {
-/**
- * `tokens`, `tailwind`, `spaceui` or `scheme`.
- */
-sheet: string,
-/**
- * Source colour (`#rrggbb`); defaults to the M3 baseline `#6750a4`.
- */
-seed?: string,
-/**
- * Scheme variant (`tonal-spot`, `vibrant`, ...); defaults to `tonal-spot`.
- */
-variant?: string,
-/**
- * Dark mode, for the single-mode `scheme` sheet.
- */
-dark?: boolean,
-/**
- * Contrast level, -1..=1.
- */
-contrast?: number, };
+  /**
+   * `tokens`, `tailwind`, `spaceui` or `scheme`.
+   */
+  sheet: string;
+  /**
+   * Source colour (`#rrggbb`); defaults to the M3 baseline `#6750a4`.
+   */
+  seed?: string;
+  /**
+   * Scheme variant (`tonal-spot`, `vibrant`, ...); defaults to `tonal-spot`.
+   */
+  variant?: string;
+  /**
+   * Dark mode, for the single-mode `scheme` sheet.
+   */
+  dark?: boolean;
+  /**
+   * Contrast level, -1..=1.
+   */
+  contrast?: number;
+};

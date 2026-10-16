@@ -13,7 +13,10 @@ export interface SliderProps extends Omit<
 > {
   className?: StateClassName<SliderPrimitive.Root.State>;
   /** Called on every change with one value per handle (Radix shape). */
-  onValueChange?: (value: number[], eventDetails: SliderPrimitive.Root.ChangeEventDetails) => void;
+  onValueChange?: (
+    value: number[],
+    eventDetails: SliderPrimitive.Root.ChangeEventDetails,
+  ) => void;
   /** Base UI name for the end-of-interaction callback. */
   onValueCommitted?: (
     value: number[],
@@ -48,7 +51,10 @@ export const Slider = ({
     <SliderPrimitive.Root
       data-m3-component="Slider"
       {...props}
-      onValueChange={onValueChange && ((value, details) => onValueChange(asArray(value), details))}
+      onValueChange={
+        onValueChange &&
+        ((value, details) => onValueChange(asArray(value), details))
+      }
       onValueCommitted={
         onValueCommitted || onValueCommit
           ? (value, details) => {

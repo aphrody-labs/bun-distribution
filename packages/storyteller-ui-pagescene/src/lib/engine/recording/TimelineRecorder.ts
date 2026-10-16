@@ -53,8 +53,11 @@ export async function recordTimeline(
   // camera-view framing offset, hide the grid, and render at the render
   // camera's target dimensions/aspect for the duration of the encode.
   // Everything is restored in the finally block.
-  const { width: targetWidth, height: targetHeight, aspectRatio } =
-    editor.cameraController.getRenderDimensions();
+  const {
+    width: targetWidth,
+    height: targetHeight,
+    aspectRatio,
+  } = editor.cameraController.getRenderDimensions();
   const sizeVector = new THREE.Vector2();
   renderer.getSize(sizeVector);
   const originalWidth = sizeVector.x;

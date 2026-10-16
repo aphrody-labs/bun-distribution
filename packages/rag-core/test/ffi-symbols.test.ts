@@ -17,7 +17,9 @@ test("every Rust export has a typed binding with the same arity, and vice versa"
   for (const m of source.matchAll(re)) {
     exported.set(m[1]!, m[2]!.split(",").filter((p) => p.includes(":")).length);
   }
-  expect([...exported.keys()].toSorted()).toEqual(Object.keys(RAG_SYMBOLS).toSorted());
+  expect([...exported.keys()].toSorted()).toEqual(
+    Object.keys(RAG_SYMBOLS).toSorted(),
+  );
   for (const [name, def] of Object.entries(RAG_SYMBOLS)) {
     expect(`${name}:${def.args.length}`).toBe(`${name}:${exported.get(name)}`);
   }

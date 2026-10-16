@@ -6,9 +6,12 @@ export function buildMultiplayerSocketUrl(location, room, configuredBase = "") {
     throw new TypeError("Le nom de salle est invalide.");
   const page = new URL(location.href);
   if (page.protocol !== "http:" && page.protocol !== "https:")
-    throw new TypeError("Le protocole de la page ne permet pas les WebSockets.");
+    throw new TypeError(
+      "Le protocole de la page ne permet pas les WebSockets.",
+    );
   const socketProtocol = page.protocol === "https:" ? "wss:" : "ws:";
-  const explicitBase = typeof configuredBase === "string" ? configuredBase.trim() : "";
+  const explicitBase =
+    typeof configuredBase === "string" ? configuredBase.trim() : "";
   let socket;
   if (explicitBase) {
     socket = new URL(explicitBase, `${socketProtocol}//${page.host}`);

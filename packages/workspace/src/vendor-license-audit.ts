@@ -8,7 +8,9 @@ function gitPaths(root: string, args: string[]) {
     stderr: "pipe",
   });
   if (result.exitCode !== 0)
-    throw new Error(`git ls-files ${args.join(" ")} failed: ${result.stderr.toString().trim()}`);
+    throw new Error(
+      `git ls-files ${args.join(" ")} failed: ${result.stderr.toString().trim()}`,
+    );
   return new Set(result.stdout.toString().split("\0").filter(Boolean));
 }
 
@@ -20,7 +22,8 @@ export async function runVendorLicenseAudit(args: string[]): Promise<number> {
     if (arg === "--root") root = args[++index] ?? "";
     else if (arg === "--vendor") {
       const value = args[++index];
-      if (!value) throw new Error("--vendor requires a repository-relative path");
+      if (!value)
+        throw new Error("--vendor requires a repository-relative path");
       vendorRoots.push(value);
     } else if (arg === "--help" || arg === "-h") {
       console.log(
@@ -49,27 +52,37 @@ export async function runVendorLicenseAudit(args: string[]): Promise<number> {
     }
     const files = readdirSync(absoluteRoot, { withFileTypes: true });
     const notice = files.some(
-      (entry) => entry.isFile() && /^(?:license|copying|notice|readme)/iu.test(entry.name),
+      (entry) =>
+        entry.isFile() &&
+        /^(?:license|copying|notice|readme)/iu.test(entry.name),
     );
     if (!notice) failures.push(`${vendorRoot}: no local license/readme notice`);
     const stack = [{ absolute: absoluteRoot, relative: vendorRoot }];
     while (stack.length) {
       const current = stack.pop();
       if (!current) continue;
-      for (const entry of readdirSync(current.absolute, { withFileTypes: true })) {
+      for (const entry of readdirSync(current.absolute, {
+        withFileTypes: true,
+      })) {
         const relative = `${current.relative}/${entry.name}`;
         const absolute = join(current.absolute, entry.name);
         if (entry.isDirectory()) stack.push({ absolute, relative });
-        else if (statSync(absolute).isFile() && !tracked.has(relative) && !ignored.has(relative))
+        else if (
+          statSync(absolute).isFile() &&
+          !tracked.has(relative) &&
+          !ignored.has(relative)
+        )
           failures.push(`${relative}: not tracked by Git`);
       }
     }
   }
-  if (failures.length) throw new Error(`License/vendor audit failed:\n${failures.join("\n")}`);
+  if (failures.length)
+    throw new Error(`License/vendor audit failed:\n${failures.join("\n")}`);
   console.log(
     `license/vendor audit passed: ${vendorRoots.length} declared roots, all source files tracked`,
   );
   return 0;
 }
 
-if (import.meta.main) process.exit(await runVendorLicenseAudit(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runVendorLicenseAudit(process.argv.slice(2)));

@@ -144,12 +144,13 @@ export const CAMERA_MOVE_ACTION_SLOTS: Record<string, keyof HeldMoveKeys> = {
   "pagescene.camera.down": "down",
 };
 
-export const CAMERA_ROTATE_ACTION_SLOTS: Record<string, keyof HeldRotateKeys> = {
-  "pagescene.camera.pitchUp": "pitchUp",
-  "pagescene.camera.pitchDown": "pitchDown",
-  "pagescene.camera.yawLeft": "yawLeft",
-  "pagescene.camera.yawRight": "yawRight",
-};
+export const CAMERA_ROTATE_ACTION_SLOTS: Record<string, keyof HeldRotateKeys> =
+  {
+    "pagescene.camera.pitchUp": "pitchUp",
+    "pagescene.camera.pitchDown": "pitchDown",
+    "pagescene.camera.yawLeft": "yawLeft",
+    "pagescene.camera.yawRight": "yawRight",
+  };
 
 // Translate a KeyboardEvent code into the move/rotate slot it drives via a
 // resolved `code → slot` map, or null. (The map replaces the old hardcoded

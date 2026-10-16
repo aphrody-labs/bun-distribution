@@ -39,7 +39,9 @@ export const displayToRotation = (display: number): number =>
   display < 0 ? display + 360 : display;
 
 /** Snap targets for the display-range rotation slider. */
-export const DISPLAY_ROTATION_VALUES = [-180, -135, -90, -45, 0, 45, 90, 135, 180];
+export const DISPLAY_ROTATION_VALUES = [
+  -180, -135, -90, -45, 0, 45, 90, 135, 180,
+];
 
 interface AnglesState {
   // Source image
@@ -62,7 +64,11 @@ interface AnglesState {
   isLoadingImage: boolean;
 
   // Actions
-  setSourceImage: (url: string, mediaToken: string | null, thumbnailUrlTemplate?: string | null) => void;
+  setSourceImage: (
+    url: string,
+    mediaToken: string | null,
+    thumbnailUrlTemplate?: string | null,
+  ) => void;
   setImageDimensions: (dims: ImageDimensions | null) => void;
   setRotation: (value: number) => void;
   setTilt: (value: number) => void;
@@ -108,7 +114,11 @@ export const useAnglesStore = create<AnglesState>((set, get) => ({
   isLoadingImage: false,
 
   setSourceImage: (url, mediaToken, thumbnailUrlTemplate) => {
-    set({ sourceImageUrl: url, sourceMediaToken: mediaToken, sourceThumbnailUrlTemplate: thumbnailUrlTemplate ?? null });
+    set({
+      sourceImageUrl: url,
+      sourceMediaToken: mediaToken,
+      sourceThumbnailUrlTemplate: thumbnailUrlTemplate ?? null,
+    });
   },
 
   setImageDimensions: (dims) => {

@@ -47,19 +47,26 @@ const templates = join(
   "packages/m3/templates",
 );
 const outIndex = Bun.argv.indexOf("--out");
-const outRoot = resolve(root, outIndex > 0 ? (Bun.argv[outIndex + 1] as string) : "dist/release");
+const outRoot = resolve(
+  root,
+  outIndex > 0 ? (Bun.argv[outIndex + 1] as string) : "dist/release",
+);
 const version = readFileSync(join(cliRoot, "VERSION"), "utf8").trim();
-if (!Bun.semver.satisfies(version, "*")) throw new Error("Invalid release version");
+if (!Bun.semver.satisfies(version, "*"))
+  throw new Error("Invalid release version");
 for (const input of [
   cliEntry,
   join(sdkRoot, "LICENSE-APACHE"),
   join(templates, "stack.toml"),
   ...["install.sh", "install.ps1"].map((file) => join(cliRoot, file)),
 ]) {
-  if (!existsSync(input)) throw new Error(`Missing release source input: ${input}`);
+  if (!existsSync(input))
+    throw new Error(`Missing release source input: ${input}`);
 }
 if (Bun.argv.includes("--check-inputs")) {
-  console.log("Release source inputs OK (package CLI, SDK and configured Material templates).");
+  console.log(
+    "Release source inputs OK (package CLI, SDK and configured Material templates).",
+  );
   process.exit(0);
 }
 const target = hostTarget();
@@ -68,10 +75,17 @@ const dir = join(outRoot, version);
 const stage = join(outRoot, `.stage-${target}`);
 
 const sha256 = (path: string): string =>
-  new Bun.CryptoHasher("sha256").update(new Uint8Array(readFileSync(path))).digest("hex");
+  new Bun.CryptoHasher("sha256")
+    .update(new Uint8Array(readFileSync(path)))
+    .digest("hex");
 
 async function run(argv: string[], cwd = root): Promise<string> {
-  const proc = Bun.spawn(argv, { windowsHide: true, cwd, stdout: "pipe", stderr: "pipe" });
+  const proc = Bun.spawn(argv, {
+    windowsHide: true,
+    cwd,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const [out, err, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
@@ -85,11 +99,14 @@ const artifactDir = process.env["YOLO_RUNTIME_ARTIFACT"]
   ? resolve(process.env["YOLO_RUNTIME_ARTIFACT"]!)
   : join(root, "dist/runtime", target);
 if (!existsSync(join(artifactDir, "manifest.json"))) {
-  throw new Error(`No packaged runtime for ${target}: run \`just yolo::runtime-package\` first`);
+  throw new Error(
+    `No packaged runtime for ${target}: run \`just yolo::runtime-package\` first`,
+  );
 }
 const manifest = verifyArtifact(artifactDir);
 const prebuilt = process.env["YOLO_BINARY"];
-if (prebuilt && !existsSync(prebuilt)) throw new Error(`YOLO_BINARY ${prebuilt} does not exist`);
+if (prebuilt && !existsSync(prebuilt))
+  throw new Error(`YOLO_BINARY ${prebuilt} does not exist`);
 const tooling = prebuilt ? null : await toolingAsset(root);
 
 rmSync(stage, { recursive: true, force: true });
@@ -104,7 +121,8 @@ if (prebuilt) {
   chmodSync(exe, 0o755);
   if (!windows) {
     // One executable, three names by argv0: yolo, bun (the engine) and vu (the vu runtime artifact).
-    for (const alias of ["bun", "vu"]) symlinkSync("yolo", join(stage, "bin", alias));
+    for (const alias of ["bun", "vu"])
+      symlinkSync("yolo", join(stage, "bin", alias));
   }
 } else {
   await run([
@@ -152,7 +170,9 @@ const crates = `yolo-${version}-crates.tar.gz`;
 const crateStage = join(outRoot, ".stage-crates");
 rmSync(crateStage, { recursive: true, force: true });
 mkdirSync(crateStage, { recursive: true });
-cpSync(join(stage, "LICENSES"), join(crateStage, "LICENSES"), { recursive: true });
+cpSync(join(stage, "LICENSES"), join(crateStage, "LICENSES"), {
+  recursive: true,
+});
 cpSync(join(root, "vendor.lock"), join(crateStage, "vendor.lock"));
 const imports = JSON.parse(readFileSync(join(root, "vendor.lock"), "utf8")) as {
   crates: { dir: string }[];
@@ -191,10 +211,20 @@ writeFileSync(
       version,
       target,
       commit,
-      runtime: { version: manifest.version, abi: manifest.abi, toolchain: manifest.toolchain },
-      tooling: tooling ? { sha256: tooling.sha256, abi: tooling.abi, embedded: true } : null,
+      runtime: {
+        version: manifest.version,
+        abi: manifest.abi,
+        toolchain: manifest.toolchain,
+      },
+      tooling: tooling
+        ? { sha256: tooling.sha256, abi: tooling.abi, embedded: true }
+        : null,
       binary: prebuilt
-        ? { source: "bun-forge", sha256: sha256(prebuilt), aliases: ["bun", "vu"] }
+        ? {
+            source: "bun-forge",
+            sha256: sha256(prebuilt),
+            aliases: ["bun", "vu"],
+          }
         : null,
       assets: files,
       bun: Bun.version,
@@ -205,4 +235,6 @@ writeFileSync(
 );
 rmSync(stage, { recursive: true, force: true });
 rmSync(crateStage, { recursive: true, force: true });
-console.log(`Release ${version} (${target}) -> ${dir}\n  ${files.join("\n  ")}`);
+console.log(
+  `Release ${version} (${target}) -> ${dir}\n  ${files.join("\n  ")}`,
+);

@@ -48,9 +48,15 @@ async function readyPc(): Promise<TestContext> {
   const aphrody = join(ctx.paths.home, ".local", "bin", "aphrody.exe");
   touch(aphrody);
   sys.handlers.push(
-    { match: /git(\.exe)? --version/, result: { stdout: "git version 2.50.0" } },
+    {
+      match: /git(\.exe)? --version/,
+      result: { stdout: "git version 2.50.0" },
+    },
     { match: /git(\.exe)? -C .* rev-parse/, result: { stdout: "main\n" } },
-    { match: "sc query", result: { stdout: "        STATE              : 4  RUNNING" } },
+    {
+      match: "sc query",
+      result: { stdout: "        STATE              : 4  RUNNING" },
+    },
     { match: /aphrody(\.exe)? --version/, result: { stdout: "aphrody 1.0.0" } },
     { match: /^ssh /, result: { stdout: SONDE_OK } },
   );
@@ -61,7 +67,8 @@ async function readyPc(): Promise<TestContext> {
   return t;
 }
 
-const find = (checks: Check[], id: string) => checks.find((entry) => entry.id === id);
+const find = (checks: Check[], id: string) =>
+  checks.find((entry) => entry.id === id);
 
 test("parseProbe reads every line of the host probe", () => {
   const probe = parseProbe(SONDE_OK);
@@ -84,12 +91,21 @@ test("parseProbe reads every line of the host probe", () => {
 });
 
 test("readTrainStatus tells a JSON status from a build without the train feature", () => {
-  expect(readTrainStatus('{ "gpu_lock_active": true }').json?.gpu_lock_active).toBe(true);
-  expect(readTrainStatus("× `aphrody train` requires --features train").missing).toBe(true);
+  expect(
+    readTrainStatus('{ "gpu_lock_active": true }').json?.gpu_lock_active,
+  ).toBe(true);
+  expect(
+    readTrainStatus("× `aphrody train` requires --features train").missing,
+  ).toBe(true);
   expect(readTrainStatus("Segmentation fault").missing).toBe(false);
 });
 
-const c = (status: Check["status"]): Check => ({ id: "x", titre: "x", status, detail: "" });
+const c = (status: Check["status"]): Check => ({
+  id: "x",
+  titre: "x",
+  status,
+  detail: "",
+});
 
 test("verdict: failures block, remarks do not", () => {
   expect(verdictOf([c("ok")])).toBe("pret");
@@ -101,7 +117,12 @@ test("verdict: failures block, remarks do not", () => {
 test("a fully set up PC is ready, and training can start", async () => {
   const { ctx } = await readyPc();
   ctx.fetchImpl = async () =>
-    Response.json({ schemaVersion: 1, release: { id: "r" }, baseUrl: "x", artifacts: [] });
+    Response.json({
+      schemaVersion: 1,
+      release: { id: "r" },
+      baseUrl: "x",
+      artifacts: [],
+    });
   const report = await runDoctor(ctx);
   const failing = report.checks.filter((entry) => entry.status === "echec");
   expect(failing).toEqual([]);
@@ -116,7 +137,9 @@ test("a fully set up PC is ready, and training can start", async () => {
   expect(find(report.checks, "mcpHttp")?.status).toBe("ok");
   expect(find(report.checks, "a2a")?.status).toBe("ok");
   expect(report.entrainementPret).toBe(true);
-  expect(renderReport(report).join("\n")).toContain("Entraînement : prêt à être lancé.");
+  expect(renderReport(report).join("\n")).toContain(
+    "Entraînement : prêt à être lancé.",
+  );
 });
 
 test("tunnel down: the report says to start it and the servers are not blamed", async () => {
@@ -127,8 +150,14 @@ test("tunnel down: the report says to start it and the servers are not blamed", 
   });
   sys.open.clear();
   const report = await runDoctor(ctx);
-  expect(find(report.checks, "tunnel")).toMatchObject({ status: "echec", responsable: "omar" });
-  expect(find(report.checks, "reseau-gpu")).toMatchObject({ status: "echec", responsable: "omar" });
+  expect(find(report.checks, "tunnel")).toMatchObject({
+    status: "echec",
+    responsable: "omar",
+  });
+  expect(find(report.checks, "reseau-gpu")).toMatchObject({
+    status: "echec",
+    responsable: "omar",
+  });
   expect(find(report.checks, "ssh-gpu")).toBeUndefined();
   expect(report.verdict).toBe("pas-pret");
   expect(report.entrainementPret).toBe(false);
@@ -144,7 +173,10 @@ test("key refused: the team is told, with the exact reason", async () => {
     result: { code: 255, stderr: "omar@x: Permission denied (publickey)." },
   });
   const report = await runDoctor(ctx);
-  expect(find(report.checks, "ssh-gpu")).toMatchObject({ status: "echec", responsable: "equipe" });
+  expect(find(report.checks, "ssh-gpu")).toMatchObject({
+    status: "echec",
+    responsable: "equipe",
+  });
   expect(find(report.checks, "ssh-gpu")?.detail).toContain("refuse ta clé");
   expect(renderReport(report).join("\n")).toContain("À signaler à l'équipe");
 });
@@ -154,7 +186,10 @@ test("training feature missing on the host is a team problem, not Omar's", async
   sys.handlers.unshift({
     match: /^ssh /,
     result: {
-      stdout: SONDE_OK.replace(/train\|.*/, "train|× `aphrody train` requires --features train"),
+      stdout: SONDE_OK.replace(
+        /train\|.*/,
+        "train|× `aphrody train` requires --features train",
+      ),
     },
   });
   const report = await runDoctor(ctx);
@@ -169,9 +204,16 @@ test("a full disk or a missing GPU on the training host is flagged before launch
   const { ctx, sys } = await readyPc();
   sys.handlers.unshift({
     match: /^ssh /,
-    result: { stdout: SONDE_OK.replace("disk|412000000|500000000", "disk|2000000|500000000") },
+    result: {
+      stdout: SONDE_OK.replace(
+        "disk|412000000|500000000",
+        "disk|2000000|500000000",
+      ),
+    },
   });
-  expect(find((await runDoctor(ctx)).checks, "ressources-gpu")?.status).toBe("echec");
+  expect(find((await runDoctor(ctx)).checks, "ressources-gpu")?.status).toBe(
+    "echec",
+  );
   sys.handlers.shift();
   sys.handlers.unshift({
     match: /^ssh /,
@@ -184,8 +226,13 @@ test("a full disk or a missing GPU on the training host is flagged before launch
 
 test("a GPU already reserved is a remark, not a failure", async () => {
   const { ctx, sys } = await readyPc();
-  sys.handlers.unshift({ match: /^ssh /, result: { stdout: SONDE_OK.replace("false", "true") } });
-  expect(find((await runDoctor(ctx)).checks, "entrainement-gpu")?.status).toBe("attention");
+  sys.handlers.unshift({
+    match: /^ssh /,
+    result: { stdout: SONDE_OK.replace("false", "true") },
+  });
+  expect(find((await runDoctor(ctx)).checks, "entrainement-gpu")?.status).toBe(
+    "attention",
+  );
 });
 
 test("server services that are not up yet are remarks for the team, never blockers", async () => {
@@ -209,12 +256,21 @@ test("a bare PC says what to do first, and aphrody not published for Windows is 
       release: { id: "r" },
       baseUrl: "https://downloads.aphrody.com",
       artifacts: [
-        { name: "aphrody", platform: "linux-x86_64", version: "1", url: "u", sha256: "0", size: 1 },
+        {
+          name: "aphrody",
+          platform: "linux-x86_64",
+          version: "1",
+          url: "u",
+          sha256: "0",
+          size: 1,
+        },
       ],
     });
   const report = await runDoctor(ctx);
   expect(find(report.checks, "git")?.status).toBe("echec");
-  expect(find(report.checks, "acces")?.action).toContain("aphrody-omar-acces.json");
+  expect(find(report.checks, "acces")?.action).toContain(
+    "aphrody-omar-acces.json",
+  );
   expect(find(report.checks, "aphrody")).toMatchObject({
     status: "attente",
     responsable: "equipe",
@@ -228,13 +284,15 @@ test("the check never modifies anything", async () => {
   await runDoctor(ctx);
   const mutating = sys.calls.filter(
     (call) =>
-      /install|uninstall|clone|pull|add|remove|kill|rm /.test(call.argv.join(" ")) &&
-      !call.argv.join(" ").startsWith("ssh "),
+      /install|uninstall|clone|pull|add|remove|kill|rm /.test(
+        call.argv.join(" "),
+      ) && !call.argv.join(" ").startsWith("ssh "),
   );
   expect(mutating).toEqual([]);
   const ssh = sys.calls.filter((call) => call.argv[0] === "ssh");
   expect(ssh.length).toBeGreaterThan(0);
-  for (const call of ssh) expect(call.options.input).not.toMatch(/\brm\b|\bkill\b|\bmkdir\b/);
+  for (const call of ssh)
+    expect(call.options.input).not.toMatch(/\brm\b|\bkill\b|\bmkdir\b/);
 });
 
 export type { FakeSystem };

@@ -11,7 +11,11 @@ export async function main(args: string[]): Promise<number> {
   const cwd = join(bun, "packages/web/cloudflare");
   if (!(await Bun.file(join(cwd, "wrangler.jsonc")).exists()))
     throw new Error("Canonical Cloudflare worker configuration is missing");
-  if (args[0] !== "deploy" || args.includes("--help") || args.includes("--assets"))
+  if (
+    args[0] !== "deploy" ||
+    args.includes("--help") ||
+    args.includes("--assets")
+  )
     return wrangler(args.length ? args : ["--help"], { cwd }).exited;
 
   const stage = await mkdtemp(join(tmpdir(), "aphrody-cloudflare-"));
@@ -42,7 +46,15 @@ export async function main(args: string[]): Promise<number> {
       data,
       ...offline,
     ]);
-    await run("build.ts", ["--src", bun, "--out", assets, "--data", data, ...offline]);
+    await run("build.ts", [
+      "--src",
+      bun,
+      "--out",
+      assets,
+      "--data",
+      data,
+      ...offline,
+    ]);
     return await wrangler([...args, "--assets", assets], { cwd }).exited;
   } finally {
     await rm(stage, { recursive: true, force: true });

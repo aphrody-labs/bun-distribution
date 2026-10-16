@@ -1,6 +1,9 @@
 import { afterEach, expect, test } from "bun:test";
 
-import { Gateway, GatewayFatalError } from "../../src/creator/commands/challonge/gateway.ts";
+import {
+  Gateway,
+  GatewayFatalError,
+} from "../../src/creator/commands/challonge/gateway.ts";
 
 /**
  * Faux serveur Gateway Discord (WebSocket sur la boucle locale) : aucun accès réseau externe.
@@ -15,7 +18,11 @@ interface Frame {
 
 interface Script {
   /** Appelé pour chaque trame reçue du client ; `ack` répond à un heartbeat. */
-  onFrame?: (frame: Frame, ws: Bun.ServerWebSocket<unknown>, connection: number) => void;
+  onFrame?: (
+    frame: Frame,
+    ws: Bun.ServerWebSocket<unknown>,
+    connection: number,
+  ) => void;
   /** Appelé à l'ouverture, après le HELLO. */
   onOpen?: (ws: Bun.ServerWebSocket<unknown>, connection: number) => void;
   ackHeartbeats?: boolean;
@@ -51,7 +58,8 @@ function startServer(script: Script) {
         message(ws, message) {
           const frame = JSON.parse(String(message)) as Frame;
           received[connections - 1]!.push(frame);
-          if (frame.op === 1 && script.ackHeartbeats !== false) ws.send(JSON.stringify({ op: 11 }));
+          if (frame.op === 1 && script.ackHeartbeats !== false)
+            ws.send(JSON.stringify({ op: 11 }));
           script.onFrame?.(frame, ws, connections);
         },
       },
@@ -71,7 +79,9 @@ const ready = (ws: Bun.ServerWebSocket<unknown>, url: string, seq = 1) =>
     }),
   );
 const dispatch = (ws: Bun.ServerWebSocket<unknown>, seq: number, id: string) =>
-  ws.send(JSON.stringify({ op: 0, s: seq, t: "INTERACTION_CREATE", d: { id } }));
+  ws.send(
+    JSON.stringify({ op: 0, s: seq, t: "INTERACTION_CREATE", d: { id } }),
+  );
 
 function waitFor(predicate: () => boolean, timeoutMs = 4000): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -88,14 +98,17 @@ function waitFor(predicate: () => boolean, timeoutMs = 4000): Promise<void> {
 
 function gateway(
   url: string,
-  extra: Partial<ConstructorParameters<typeof Gateway>[0]> & { events: string[] },
+  extra: Partial<ConstructorParameters<typeof Gateway>[0]> & {
+    events: string[];
+  },
 ) {
   controller = new AbortController();
   const { events, ...options } = extra;
   const g = new Gateway({
     token: "TOKEN-secret-1234",
     getUrl: async () => url,
-    onDispatch: (event, data) => events.push(`${event}:${(data as { id?: string }).id ?? ""}`),
+    onDispatch: (event, data) =>
+      events.push(`${event}:${(data as { id?: string }).id ?? ""}`),
     random: () => 0,
     sleep: async () => undefined,
     signal: controller.signal,
@@ -116,7 +129,9 @@ test("IDENTIFY puis READY, heartbeats avec ACK et dispatch INTERACTION_CREATE", 
   });
   const running = gateway(srv.url, { events });
   await waitFor(() => events.includes("INTERACTION_CREATE:i1"));
-  await waitFor(() => (srv.received[0] ?? []).filter((f) => f.op === 1).length >= 2);
+  await waitFor(
+    () => (srv.received[0] ?? []).filter((f) => f.op === 1).length >= 2,
+  );
 
   const identify = srv.received[0]!.find((f) => f.op === 2)!;
   expect(identify.d.token).toBe("TOKEN-secret-1234");
@@ -154,7 +169,11 @@ test("fermeture 4000 : reconnexion avec RESUME (session_id, seq) et sans nouvel 
   const second = srv.received[1]!;
   expect(second.some((f) => f.op === 2)).toBe(false);
   const resume = second.find((f) => f.op === 6)!;
-  expect(resume.d).toEqual({ token: "TOKEN-secret-1234", session_id: "sess-1", seq: 2 });
+  expect(resume.d).toEqual({
+    token: "TOKEN-secret-1234",
+    session_id: "sess-1",
+    seq: 2,
+  });
   controller!.abort();
   await running;
 });
@@ -245,9 +264,12 @@ test("opcode 9 d=true : tentative de RESUME", async () => {
 test("code 4004 (token refusé) : arrêt définitif, sans reconnexion", async () => {
   const events: string[] = [];
   const srv = startServer({
-    onFrame: (frame, ws) => frame.op === 2 && ws.close(4004, "Authentication failed"),
+    onFrame: (frame, ws) =>
+      frame.op === 2 && ws.close(4004, "Authentication failed"),
   });
-  await expect(gateway(srv.url, { events })).rejects.toBeInstanceOf(GatewayFatalError);
+  await expect(gateway(srv.url, { events })).rejects.toBeInstanceOf(
+    GatewayFatalError,
+  );
   await Bun.sleep(100);
   expect(srv.connectionCount()).toBe(1);
 });
@@ -255,7 +277,8 @@ test("code 4004 (token refusé) : arrêt définitif, sans reconnexion", async ()
 test("code 4014 (intents non autorisés) : message en français", async () => {
   const events: string[] = [];
   const srv = startServer({
-    onFrame: (frame, ws) => frame.op === 2 && ws.close(4014, "Disallowed intents"),
+    onFrame: (frame, ws) =>
+      frame.op === 2 && ws.close(4014, "Disallowed intents"),
   });
   const error = await gateway(srv.url, { events }).catch((e: Error) => e);
   expect(error).toBeInstanceOf(GatewayFatalError);
@@ -270,7 +293,9 @@ test("la connexion initiale utilise v=10 et encoding=json", async () => {
     port: 0,
     fetch(req, s) {
       seen = req.url;
-      return s.upgrade(req, { data: undefined }) ? undefined : new Response("x", { status: 426 });
+      return s.upgrade(req, { data: undefined })
+        ? undefined
+        : new Response("x", { status: 426 });
     },
     websocket: {
       open(ws) {
@@ -282,7 +307,9 @@ test("la connexion initiale utilise v=10 et encoding=json", async () => {
   const running = gateway(`ws://127.0.0.1:${server.port}`, { events });
   await waitFor(() => seen !== "");
   expect(new URL(seen.replace("http", "ws")).searchParams.get("v")).toBe("10");
-  expect(new URL(seen.replace("http", "ws")).searchParams.get("encoding")).toBe("json");
+  expect(new URL(seen.replace("http", "ws")).searchParams.get("encoding")).toBe(
+    "json",
+  );
   controller!.abort();
   await running;
 });

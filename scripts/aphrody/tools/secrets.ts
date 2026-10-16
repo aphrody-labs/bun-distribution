@@ -24,7 +24,11 @@ export interface EncryptedManifest {
 /**
  * Derive a 256-bit AES-GCM key from a passphrase and salt using PBKDF2-HMAC-SHA256.
  */
-export async function deriveKey(passphrase: string, salt: Uint8Array, iterations = 100_000): Promise<CryptoKey> {
+export async function deriveKey(
+  passphrase: string,
+  salt: Uint8Array,
+  iterations = 100_000,
+): Promise<CryptoKey> {
   const enc = new TextEncoder();
   const baseKey = await crypto.subtle.importKey(
     "raw",
@@ -51,7 +55,10 @@ export async function deriveKey(passphrase: string, salt: Uint8Array, iterations
 /**
  * Encrypt a plaintext secret using AES-256-GCM.
  */
-export async function encryptValue(key: CryptoKey, plaintext: string): Promise<string> {
+export async function encryptValue(
+  key: CryptoKey,
+  plaintext: string,
+): Promise<string> {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const enc = new TextEncoder();
   const ciphertextWithTag = new Uint8Array(
@@ -77,18 +84,23 @@ export async function encryptValue(key: CryptoKey, plaintext: string): Promise<s
 /**
  * Decrypt an envelope value formatted like `ENC[AES256_GCM,data:...,iv:...,tag:...]`.
  */
-export async function decryptValue(key: CryptoKey, encToken: string): Promise<string> {
+export async function decryptValue(
+  key: CryptoKey,
+  encToken: string,
+): Promise<string> {
   const trimmed = encToken.trim();
   if (!trimmed.startsWith("ENC[AES256_GCM,") || !trimmed.endsWith("]")) {
     throw new Error("Invalid envelope format");
   }
 
   const payload = trimmed.slice("ENC[AES256_GCM,".length, -1);
-  const parts = payload.split(",").reduce<Record<string, string>>((acc, part) => {
-    const [k, v] = part.split(":");
-    if (k && v) acc[k.trim()] = v.trim();
-    return acc;
-  }, {});
+  const parts = payload
+    .split(",")
+    .reduce<Record<string, string>>((acc, part) => {
+      const [k, v] = part.split(":");
+      if (k && v) acc[k.trim()] = v.trim();
+      return acc;
+    }, {});
 
   if (!parts.data || !parts.iv || !parts.tag) {
     throw new Error("Missing data, iv or tag in encrypted token");

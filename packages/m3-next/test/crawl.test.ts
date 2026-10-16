@@ -17,7 +17,12 @@ describe("m3SitemapXml", () => {
       [
         "/b",
         "/a?x=1&y=2",
-        { path: "/b", lastmod: "2026-10-01", changefreq: "weekly", priority: 0.8 },
+        {
+          path: "/b",
+          lastmod: "2026-10-01",
+          changefreq: "weekly",
+          priority: 0.8,
+        },
         "https://example.com/c#frag",
       ],
       origin,
@@ -35,13 +40,21 @@ describe("m3SitemapXml", () => {
     ]);
     expect(xml).toContain("<lastmod>2026-10-01</lastmod>");
     expect(xml).toContain("<priority>0.8</priority>");
-    expect(m3SitemapXml(["/z", "/a"], origin)).toBe(m3SitemapXml(["/a", "/z"], origin));
+    expect(m3SitemapXml(["/z", "/a"], origin)).toBe(
+      m3SitemapXml(["/a", "/z"], origin),
+    );
   });
 
   test("rejects foreign origins, bad dates, bad priorities and oversized lists", () => {
-    expect(() => m3SitemapXml(["https://other.com/x"], origin)).toThrow(RangeError);
-    expect(() => m3SitemapXml([{ path: "/a", lastmod: "yesterday" }], origin)).toThrow(RangeError);
-    expect(() => m3SitemapXml([{ path: "/a", priority: 2 }], origin)).toThrow(RangeError);
+    expect(() => m3SitemapXml(["https://other.com/x"], origin)).toThrow(
+      RangeError,
+    );
+    expect(() =>
+      m3SitemapXml([{ path: "/a", lastmod: "yesterday" }], origin),
+    ).toThrow(RangeError);
+    expect(() => m3SitemapXml([{ path: "/a", priority: 2 }], origin)).toThrow(
+      RangeError,
+    );
     expect(() =>
       m3SitemapXml(
         Array.from({ length: M3_SITEMAP_MAX_URLS + 1 }, (_, i) => `/p${i}`),
@@ -76,15 +89,22 @@ describe("m3RobotsTxt", () => {
     expect(txt).toContain(
       "User-agent: GPTBot\nUser-agent: ClaudeBot\nDisallow: /\nCrawl-delay: 10",
     );
-    expect(txt.trimEnd().endsWith("Sitemap: https://example.com/news.xml")).toBe(true);
+    expect(
+      txt.trimEnd().endsWith("Sitemap: https://example.com/news.xml"),
+    ).toBe(true);
     expect(m3RobotsTxt({ origin, sitemaps: [] })).not.toContain("Sitemap:");
   });
 
   test("rejects header injection", () => {
     expect(() =>
-      m3RobotsTxt({ origin, rules: [{ userAgent: "*", disallow: ["/a\nAllow: /"] }] }),
+      m3RobotsTxt({
+        origin,
+        rules: [{ userAgent: "*", disallow: ["/a\nAllow: /"] }],
+      }),
     ).toThrow(TypeError);
-    expect(() => m3RobotsTxt({ origin, rules: [{ userAgent: [] }] })).toThrow(TypeError);
+    expect(() => m3RobotsTxt({ origin, rules: [{ userAgent: [] }] })).toThrow(
+      TypeError,
+    );
   });
 });
 
@@ -96,7 +116,11 @@ describe("m3LlmsTxt (llmstxt.org)", () => {
       summary: "One line summary.",
       details: ["First paragraph.", "Second paragraph."],
       sections: [
-        { title: "Extras", links: [{ title: "Changelog", path: "/changelog" }], optional: true },
+        {
+          title: "Extras",
+          links: [{ title: "Changelog", path: "/changelog" }],
+          optional: true,
+        },
         {
           title: "Docs",
           links: [
@@ -120,7 +144,9 @@ describe("m3LlmsTxt (llmstxt.org)", () => {
 
   test("requires a name and forbids headings in details", () => {
     expect(() => m3LlmsTxt({ origin, name: " " })).toThrow(TypeError);
-    expect(() => m3LlmsTxt({ origin, name: "X", details: "# not allowed" })).toThrow(TypeError);
+    expect(() =>
+      m3LlmsTxt({ origin, name: "X", details: "# not allowed" }),
+    ).toThrow(TypeError);
     expect(m3LlmsTxt({ origin, name: "X" })).toBe("# X\n");
   });
 });

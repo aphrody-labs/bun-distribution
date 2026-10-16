@@ -58,7 +58,9 @@ export const MODEL_UNAVAILABLE_REPLY =
 // Logs keep the cause actionable without echoing credentials or unbounded payloads.
 export function errorSummary(error: unknown): string {
   const text =
-    error instanceof Error ? `${error.name}: ${error.message}` : String(error ?? "unknown");
+    error instanceof Error
+      ? `${error.name}: ${error.message}`
+      : String(error ?? "unknown");
   return text
     .replace(/\b(Bot|Bearer)\s+\S+/gi, "$1 [masqué]")
     .replace(/[\w-]{20,}\.[\w-]{6,}\.[\w-]{20,}/g, "[masqué]")
@@ -83,7 +85,9 @@ export async function processMessage(
   );
   if (
     message.author.id !== policy.ownerId &&
-    !member.roles.some((role) => role === adminRoleId || role === state.researcherRoleId)
+    !member.roles.some(
+      (role) => role === adminRoleId || role === state.researcherRoleId,
+    )
   )
     return false;
   let answer: string;
@@ -135,7 +139,9 @@ if (import.meta.main) {
   );
   if (!admin) throw new Error("Admin role absent");
   const channelId = policy.assistant.channelId ?? state.channels.assistant;
-  const channel = await api<{ guild_id: string; type: number }>(`/channels/${channelId}`);
+  const channel = await api<{ guild_id: string; type: number }>(
+    `/channels/${channelId}`,
+  );
   if (channel.guild_id !== policy.guildId || channel.type !== 0)
     throw new Error("Conversation channel identity mismatch");
   if (process.argv.includes("--smoke")) {
@@ -149,7 +155,11 @@ if (import.meta.main) {
       },
     );
     console.log(
-      JSON.stringify({ smoke: true, model: policy.assistant.model, messageId: posted.id }),
+      JSON.stringify({
+        smoke: true,
+        model: policy.assistant.model,
+        messageId: posted.id,
+      }),
     );
     process.exit(0);
   }
@@ -158,7 +168,9 @@ if (import.meta.main) {
     ? ((await Bun.file(cursorPath).json()) as { after: string }).after
     : undefined;
   if (!cursor) {
-    const latest = await api<LabMessage[]>(`/channels/${channelId}/messages?limit=1`);
+    const latest = await api<LabMessage[]>(
+      `/channels/${channelId}/messages?limit=1`,
+    );
     cursor = latest[0]?.id ?? String(BigInt(Date.now() - 1420070400000) << 22n);
     await saveState(cursorPath, { after: cursor });
   }
@@ -183,7 +195,9 @@ if (import.meta.main) {
       const messages: LabMessage[] = await api<LabMessage[]>(
         `/channels/${channelId}/messages?after=${cursor}&limit=100`,
       );
-      for (const message of messages.toSorted((a, b) => (BigInt(a.id) < BigInt(b.id) ? -1 : 1))) {
+      for (const message of messages.toSorted((a, b) =>
+        BigInt(a.id) < BigInt(b.id) ? -1 : 1,
+      )) {
         if (stopping) break;
         await processMessage(message, state, policy, admin.id, api);
         cursor = message.id;

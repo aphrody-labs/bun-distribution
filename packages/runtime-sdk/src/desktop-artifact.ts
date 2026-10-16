@@ -83,19 +83,28 @@ function digestFile(path: string): DesktopFile {
 export function safeDesktopPath(name: string): boolean {
   if (name === "manifest.json") return false;
   const segments = name.split("/");
-  return segments.length <= MAX_DEPTH + 1 && segments.every((segment) => SEGMENT.test(segment));
+  return (
+    segments.length <= MAX_DEPTH + 1 &&
+    segments.every((segment) => SEGMENT.test(segment))
+  );
 }
 export function desktopFile(target = hostTarget()): string {
   return target.includes("windows") ? "yolo-desktop.exe" : "yolo-desktop";
 }
 export function desktopHome(): string {
-  return join(process.env["YOLO_HOME"] ?? join(homedir(), ".yolo"), "desktop", hostTarget());
+  return join(
+    process.env["YOLO_HOME"] ?? join(homedir(), ".yolo"),
+    "desktop",
+    hostTarget(),
+  );
 }
 function regular(path: string): void {
-  if (!lstatSync(path).isFile()) throw new Error(`Expected a regular desktop file: ${path}`);
+  if (!lstatSync(path).isFile())
+    throw new Error(`Expected a regular desktop file: ${path}`);
 }
 function directory(path: string): void {
-  if (!lstatSync(path).isDirectory()) throw new Error(`Expected a real desktop directory: ${path}`);
+  if (!lstatSync(path).isDirectory())
+    throw new Error(`Expected a real desktop directory: ${path}`);
 }
 /** `file` is under `root` through real directories only: no symlink anywhere on the way. */
 function regularUnder(root: string, file: string): string {
@@ -122,7 +131,9 @@ export function inspectDesktopBinary(executable: string): DesktopBuildInfo {
       "Native desktop host metadata failed: " +
         new TextDecoder().decode(reply.stderr).slice(0, 2048),
     );
-  const info = JSON.parse(new TextDecoder().decode(reply.stdout)) as DesktopBuildInfo;
+  const info = JSON.parse(
+    new TextDecoder().decode(reply.stdout),
+  ) as DesktopBuildInfo;
   if (
     info.name !== "yolo-desktop" ||
     info.protocol !== "yolo.desktop/1" ||
@@ -133,14 +144,21 @@ export function inspectDesktopBinary(executable: string): DesktopBuildInfo {
     !/^[a-f0-9]{40}$/.test(info.git_rev) ||
     info.panic_recovery !== true
   ) {
-    throw new Error("Native desktop host identity, target or unwind contract is incompatible");
+    throw new Error(
+      "Native desktop host identity, target or unwind contract is incompatible",
+    );
   }
   return info;
 }
 /** Every file and directory entry under `path`, as relative POSIX paths (symlinks are entries too). */
-function entries(path: string, prefix = ""): { file: string; directory: boolean }[] {
+function entries(
+  path: string,
+  prefix = "",
+): { file: string; directory: boolean }[] {
   const found: { file: string; directory: boolean }[] = [];
-  for (const entry of readdirSync(join(path, prefix), { withFileTypes: true })) {
+  for (const entry of readdirSync(join(path, prefix), {
+    withFileTypes: true,
+  })) {
     const relative = prefix === "" ? entry.name : `${prefix}/${entry.name}`;
     if (entry.isDirectory()) {
       found.push({ file: relative, directory: true });
@@ -161,10 +179,15 @@ export function desktopTreeDigest(manifest: DesktopManifest): string {
   );
 }
 /** Hash every regular file before native execution; reject traversal, symlinks and extra files. */
-export function verifyDesktopArtifact(path: string, inspect = true): DesktopManifest {
+export function verifyDesktopArtifact(
+  path: string,
+  inspect = true,
+): DesktopManifest {
   directory(path);
   regular(join(path, "manifest.json"));
-  const manifest = JSON.parse(readFileSync(join(path, "manifest.json"), "utf8")) as DesktopManifest;
+  const manifest = JSON.parse(
+    readFileSync(join(path, "manifest.json"), "utf8"),
+  ) as DesktopManifest;
   if (
     manifest.schema !== "yolo.desktop-artifact/2" ||
     manifest.name !== "yolo-desktop" ||
@@ -212,8 +235,11 @@ export function verifyDesktopArtifact(path: string, inspect = true): DesktopMani
   );
   for (const entry of entries(path)) {
     if (entry.file === "manifest.json") continue;
-    const allowed = entry.directory ? parents.has(entry.file) : entry.file in manifest.files;
-    if (!allowed) throw new Error(`Unverified desktop artifact entry: ${entry.file}`);
+    const allowed = entry.directory
+      ? parents.has(entry.file)
+      : entry.file in manifest.files;
+    if (!allowed)
+      throw new Error(`Unverified desktop artifact entry: ${entry.file}`);
     if (entry.directory) directory(join(path, entry.file));
   }
   if (inspect) {
@@ -229,7 +255,10 @@ export function verifyDesktopArtifact(path: string, inspect = true): DesktopMani
 }
 const versionName = (manifest: DesktopManifest): string =>
   `${manifest.version}-${desktopTreeDigest(manifest).slice(0, 12)}`;
-function pointer(dir: string, name: "current" | "previous"): string | undefined {
+function pointer(
+  dir: string,
+  name: "current" | "previous",
+): string | undefined {
   const path = join(dir, name);
   let stat;
   try {
@@ -238,7 +267,8 @@ function pointer(dir: string, name: "current" | "previous"): string | undefined 
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
     throw error;
   }
-  if (!stat.isSymbolicLink()) throw new Error(`Refusing to replace unmanaged desktop ${name}`);
+  if (!stat.isSymbolicLink())
+    throw new Error(`Refusing to replace unmanaged desktop ${name}`);
   const value = readlinkSync(path);
   if (!/^\d[0-9A-Za-z.+-]*-[a-f0-9]{12}$/.test(value)) {
     throw new Error(`Unsafe desktop ${name} pointer`);
@@ -269,7 +299,10 @@ function locked<T>(dir: string, operation: () => T): T {
 /** Files the loader must be able to execute: the host and Chromium's setuid sandbox helper. */
 const needsExecuteBit = (manifest: DesktopManifest, file: string): boolean =>
   file === manifest.executable || file === "chrome-sandbox";
-export function installDesktopArtifact(source: string, home = desktopHome()): string {
+export function installDesktopArtifact(
+  source: string,
+  home = desktopHome(),
+): string {
   const manifest = verifyDesktopArtifact(resolve(source));
   return locked(home, () => {
     const current = pointer(home, "current");
@@ -282,9 +315,13 @@ export function installDesktopArtifact(source: string, home = desktopHome()): st
         for (const file of Object.keys(manifest.files)) {
           mkdirSync(dirname(join(staging, file)), { recursive: true });
           copyFileSync(join(source, file), join(staging, file));
-          if (needsExecuteBit(manifest, file)) chmodSync(join(staging, file), 0o755);
+          if (needsExecuteBit(manifest, file))
+            chmodSync(join(staging, file), 0o755);
         }
-        copyFileSync(join(source, "manifest.json"), join(staging, "manifest.json"));
+        copyFileSync(
+          join(source, "manifest.json"),
+          join(staging, "manifest.json"),
+        );
         verifyDesktopArtifact(staging);
         renameSync(staging, destination);
       } finally {
@@ -293,7 +330,9 @@ export function installDesktopArtifact(source: string, home = desktopHome()): st
     } else {
       const installed = verifyDesktopArtifact(destination);
       if (desktopTreeDigest(installed) !== desktopTreeDigest(manifest)) {
-        throw new Error("Installed desktop version conflicts with its immutable name");
+        throw new Error(
+          "Installed desktop version conflicts with its immutable name",
+        );
       }
     }
     if (current !== name) {
@@ -316,9 +355,12 @@ export function rollbackDesktopArtifact(home = desktopHome()): string {
     return previous;
   });
 }
-export function verifyInstalledDesktopArtifact(home = desktopHome()): DesktopManifest {
+export function verifyInstalledDesktopArtifact(
+  home = desktopHome(),
+): DesktopManifest {
   const current = pointer(home, "current");
-  if (current === undefined) throw new Error("No managed desktop artifact is active");
+  if (current === undefined)
+    throw new Error("No managed desktop artifact is active");
   return verifyDesktopArtifact(join(home, current));
 }
 export function installedDesktopExecutable(): string | undefined {
@@ -383,10 +425,14 @@ export function writeDesktopManifest(
     if (name.includes("/")) throw new Error("Unsafe desktop notice filename");
     add(name, source);
   }
-  for (const [name, source] of Object.entries(write.payload ?? {})) add(name, source);
+  for (const [name, source] of Object.entries(write.payload ?? {}))
+    add(name, source);
   if (write.payload?.["chrome-sandbox"] !== undefined)
     chmodSync(join(path, "chrome-sandbox"), 0o755);
-  writeFileSync(join(path, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
+  writeFileSync(
+    join(path, "manifest.json"),
+    JSON.stringify(manifest, null, 2) + "\n",
+  );
   verifyDesktopArtifact(path);
   return manifest;
 }

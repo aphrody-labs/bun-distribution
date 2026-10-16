@@ -31,7 +31,11 @@ export async function installFlow(
     repoReady: false,
     ...(options.acces ? { packFile: options.acces } : {}),
   };
-  const report = await runInstall(ctx, options.simuler ? "simuler" : "executer", state);
+  const report = await runInstall(
+    ctx,
+    options.simuler ? "simuler" : "executer",
+    state,
+  );
   ui.say();
   if (options.simuler) {
     ui.say("Simulation terminée. Rien n'a été modifié.");
@@ -41,7 +45,8 @@ export async function installFlow(
   const doctor = await runDoctor(ctx);
   for (const line of renderReport(doctor)) ui.say(line);
   const needsPack =
-    report.results.find((entry) => entry.step.id === "acces")?.result.state === "attente";
+    report.results.find((entry) => entry.step.id === "acces")?.result.state ===
+    "attente";
   if (needsPack) {
     ui.say();
     ui.say(
@@ -70,7 +75,10 @@ const command: Command = {
     if (
       !values.simuler &&
       ctx.ui.interactive &&
-      !ctx.ui.confirm("Je vais installer et configurer Aphrody sur ce PC. Continuer ?", true)
+      !ctx.ui.confirm(
+        "Je vais installer et configurer Aphrody sur ce PC. Continuer ?",
+        true,
+      )
     ) {
       ctx.ui.say("D'accord, rien n'a été fait.");
       return 0;

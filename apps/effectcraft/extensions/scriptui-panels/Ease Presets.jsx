@@ -26,7 +26,12 @@
   var HOLD = KeyframeInterpolationType.HOLD;
 
   function curve(outInfluence, outSpeed, inInfluence, inSpeed) {
-    return { outInfluence: outInfluence, outSpeed: outSpeed, inInfluence: inInfluence, inSpeed: inSpeed };
+    return {
+      outInfluence: outInfluence,
+      outSpeed: outSpeed,
+      inInfluence: inInfluence,
+      inSpeed: inSpeed,
+    };
   }
 
   // Our own presets. "Accelerate" starts slowly, "Decelerate" settles slowly.
@@ -42,7 +47,7 @@
     { name: "Decelerate Strong", curve: curve(15, 2.5, 80, 0) },
     { name: "Expo In-Out", curve: curve(88, 0, 88, 0) },
     { name: "Expo Accelerate", curve: curve(75, 0, 12, 7) },
-    { name: "Expo Decelerate", curve: curve(12, 7, 75, 0) }
+    { name: "Expo Decelerate", curve: curve(12, 7, 75, 0) },
   ];
 
   // ------------------------------------------------------------------ presets
@@ -53,14 +58,33 @@
 
   // The curve with influences in 0.1–100 % and speeds within ±100; null when a number is missing.
   function sanitized(c) {
-    if (!c || !finite(c.outInfluence) || !finite(c.outSpeed) || !finite(c.inInfluence) || !finite(c.inSpeed)) return null;
-    var inf = function (v) { return Math.min(100, Math.max(MIN_INFLUENCE, v)); };
-    var speed = function (v) { return Math.min(MAX_SPEED, Math.max(-MAX_SPEED, v)); };
-    return curve(inf(c.outInfluence), speed(c.outSpeed), inf(c.inInfluence), speed(c.inSpeed));
+    if (
+      !c ||
+      !finite(c.outInfluence) ||
+      !finite(c.outSpeed) ||
+      !finite(c.inInfluence) ||
+      !finite(c.inSpeed)
+    )
+      return null;
+    var inf = function (v) {
+      return Math.min(100, Math.max(MIN_INFLUENCE, v));
+    };
+    var speed = function (v) {
+      return Math.min(MAX_SPEED, Math.max(-MAX_SPEED, v));
+    };
+    return curve(
+      inf(c.outInfluence),
+      speed(c.outSpeed),
+      inf(c.inInfluence),
+      speed(c.inSpeed),
+    );
   }
 
   function cleanName(name) {
-    var n = String(name === undefined || name === null ? "" : name).replace(/^\s+|\s+$/g, "");
+    var n = String(name === undefined || name === null ? "" : name).replace(
+      /^\s+|\s+$/g,
+      "",
+    );
     return n.length > 0 && n.length <= MAX_NAME ? n : null;
   }
 
@@ -69,7 +93,8 @@
   }
 
   function find(list, name) {
-    for (var i = 0; i < list.length; i++) if (same(list[i].name, name)) return i;
+    for (var i = 0; i < list.length; i++)
+      if (same(list[i].name, name)) return i;
     return -1;
   }
 
@@ -87,13 +112,18 @@
     for (var i = 0; i < list.length; i++) {
       var name = cleanName(list[i] && list[i].name);
       var c = sanitized(list[i] && list[i].curve);
-      if (name && c && find(BUILT_IN, name) < 0 && find(out, name) < 0) out.push({ name: name, curve: c });
+      if (name && c && find(BUILT_IN, name) < 0 && find(out, name) < 0)
+        out.push({ name: name, curve: c });
     }
     return out;
   }
 
   function saveUser(list) {
-    app.settings.saveSetting(SECTION, KEY, JSON.stringify({ version: 1, presets: list }));
+    app.settings.saveSetting(
+      SECTION,
+      KEY,
+      JSON.stringify({ version: 1, presets: list }),
+    );
   }
 
   // ------------------------------------------------------------------ keyframes
@@ -107,20 +137,43 @@
     var props = comp.selectedProperties;
     for (var i = 0; i < props.length; i++) {
       var p = props[i];
-      if (p.propertyType !== PropertyType.PROPERTY || p.numKeys < 2 || !p.isInterpolationTypeValid(BEZIER)) continue;
+      if (
+        p.propertyType !== PropertyType.PROPERTY ||
+        p.numKeys < 2 ||
+        !p.isInterpolationTypeValid(BEZIER)
+      )
+        continue;
       var keys = p.selectedKeys;
-      for (var k = 0; k + 1 < keys.length; k++) if (keys[k + 1] === keys[k] + 1) out.push({ prop: p, key: keys[k] });
+      for (var k = 0; k + 1 < keys.length; k++)
+        if (keys[k + 1] === keys[k] + 1) out.push({ prop: p, key: keys[k] });
     }
     return out;
   }
 
   // Length of the motion path from `a` to `b` with the tangents of their keys.
   function pathLength(a, outTangent, inTangent, b) {
-    var p = [], n = Math.max(a.length, b.length), len = 0, prev = null;
-    for (var d = 0; d < n; d++) p.push([a[d] || 0, (a[d] || 0) + (outTangent[d] || 0), (b[d] || 0) + (inTangent[d] || 0), b[d] || 0]);
+    var p = [],
+      n = Math.max(a.length, b.length),
+      len = 0,
+      prev = null;
+    for (var d = 0; d < n; d++)
+      p.push([
+        a[d] || 0,
+        (a[d] || 0) + (outTangent[d] || 0),
+        (b[d] || 0) + (inTangent[d] || 0),
+        b[d] || 0,
+      ]);
     for (var s = 0; s <= 128; s++) {
-      var t = s / 128, u = 1 - t, pt = [];
-      for (var e = 0; e < n; e++) pt.push(u * u * u * p[e][0] + 3 * u * u * t * p[e][1] + 3 * u * t * t * p[e][2] + t * t * t * p[e][3]);
+      var t = s / 128,
+        u = 1 - t,
+        pt = [];
+      for (var e = 0; e < n; e++)
+        pt.push(
+          u * u * u * p[e][0] +
+            3 * u * u * t * p[e][1] +
+            3 * u * t * t * p[e][2] +
+            t * t * t * p[e][3],
+        );
       if (prev) {
         var sq = 0;
         for (var f = 0; f < n; f++) sq += (pt[f] - prev[f]) * (pt[f] - prev[f]);
@@ -141,17 +194,32 @@
   // segment has no duration.
   function slopes(p, a) {
     var stretch = layerOf(p).stretch || 100;
-    var dur = (p.keyTime(a + 1) - p.keyTime(a)) * 100 / stretch;
+    var dur = ((p.keyTime(a + 1) - p.keyTime(a)) * 100) / stretch;
     if (!(dur > 0) || !isFinite(dur)) return null;
     var n = Math.max(1, p.keyOutTemporalEase(a).length);
-    var v0 = p.keyValue(a), v1 = p.keyValue(a + 1), out = [];
+    var v0 = p.keyValue(a),
+      v1 = p.keyValue(a + 1),
+      out = [];
     var vt = p.propertyValueType;
-    if (vt === PropertyValueType.TwoD_SPATIAL || vt === PropertyValueType.ThreeD_SPATIAL) {
-      var speed = pathLength(v0, p.keyOutSpatialTangent(a), p.keyInSpatialTangent(a + 1), v1) / dur;
+    if (
+      vt === PropertyValueType.TwoD_SPATIAL ||
+      vt === PropertyValueType.ThreeD_SPATIAL
+    ) {
+      var speed =
+        pathLength(
+          v0,
+          p.keyOutSpatialTangent(a),
+          p.keyInSpatialTangent(a + 1),
+          v1,
+        ) / dur;
       for (var i = 0; i < n; i++) out.push(speed);
     } else if (typeof v0 === "number" && typeof v1 === "number") {
       out.push((v1 - v0) / dur);
-    } else if (v0 instanceof Array && v1 instanceof Array && v0.length === v1.length) {
+    } else if (
+      v0 instanceof Array &&
+      v1 instanceof Array &&
+      v0.length === v1.length
+    ) {
       for (var d = 0; d < n; d++) out.push(((v1[d] || 0) - (v0[d] || 0)) / dur);
     } else {
       // Shapes and other values ease their overall progress.
@@ -163,8 +231,10 @@
   // Ease one side of key `k` with `eases`, leaving its other side as it plays (auto-Bezier and
   // linear sides keep their shape; a continuous key stops being continuous, its sides now differ).
   function easeSide(p, k, out, eases) {
-    var inType = p.keyInInterpolationType(k), outType = p.keyOutInterpolationType(k);
-    var inEase = p.keyInTemporalEase(k), outEase = p.keyOutTemporalEase(k);
+    var inType = p.keyInInterpolationType(k),
+      outType = p.keyOutInterpolationType(k);
+    var inEase = p.keyInTemporalEase(k),
+      outEase = p.keyOutTemporalEase(k);
     if (p.keyTemporalContinuous(k)) p.setTemporalContinuousAtKey(k, false);
     if (out) {
       p.setTemporalEaseAtKey(k, inEase, eases);
@@ -178,14 +248,18 @@
   // Ease every pair of neighbouring selected keyframes with `c` (one undo step). Returns the
   // number of pairs eased.
   function applyCurve(c) {
-    var pairs = selectedPairs(), n = 0;
+    var pairs = selectedPairs(),
+      n = 0;
     if (!pairs.length) return 0;
     app.beginUndoGroup("Apply Ease Preset");
     try {
       for (var i = 0; i < pairs.length; i++) {
-        var p = pairs[i].prop, a = pairs[i].key, s = slopes(p, a);
+        var p = pairs[i].prop,
+          a = pairs[i].key,
+          s = slopes(p, a);
         if (!s) continue;
-        var outE = [], inE = [];
+        var outE = [],
+          inE = [];
         for (var d = 0; d < s.length; d++) {
           outE.push(new KeyframeEase(c.outSpeed * s[d], c.outInfluence));
           inE.push(new KeyframeEase(c.inSpeed * s[d], c.inInfluence));
@@ -205,22 +279,31 @@
   function captureCurve() {
     var pairs = selectedPairs();
     if (!pairs.length) return null;
-    var p = pairs[0].prop, a = pairs[0].key;
+    var p = pairs[0].prop,
+      a = pairs[0].key;
     if (p.keyOutInterpolationType(a) === HOLD) return null;
     var s = slopes(p, a);
     if (!s) return null;
     var d = 0;
-    for (var i = 1; i < s.length; i++) if (Math.abs(s[i]) > Math.abs(s[d])) d = i;
+    for (var i = 1; i < s.length; i++)
+      if (Math.abs(s[i]) > Math.abs(s[d])) d = i;
     if (Math.abs(s[d]) < 1e-12) return null;
-    var o = p.keyOutTemporalEase(a), n = p.keyInTemporalEase(a + 1);
-    var oe = o[d] || o[0], ne = n[d] || n[0];
+    var o = p.keyOutTemporalEase(a),
+      n = p.keyInTemporalEase(a + 1);
+    var oe = o[d] || o[0],
+      ne = n[d] || n[0];
     if (!oe || !ne) return null;
-    return sanitized(curve(oe.influence, oe.speed / s[d], ne.influence, ne.speed / s[d]));
+    return sanitized(
+      curve(oe.influence, oe.speed / s[d], ne.influence, ne.speed / s[d]),
+    );
   }
 
   // ------------------------------------------------------------------ panel
 
-  var ui = thisObj instanceof Panel ? thisObj : new Window("palette", "Ease Presets", undefined, { resizeable: true });
+  var ui =
+    thisObj instanceof Panel
+      ? thisObj
+      : new Window("palette", "Ease Presets", undefined, { resizeable: true });
   ui.orientation = "column";
   ui.alignChildren = ["fill", "top"];
   ui.spacing = 6;
@@ -237,25 +320,42 @@
   var graph = ui.add("group");
   graph.preferredSize = [220, 110];
   graph.onDraw = function () {
-    var g = this.graphics, w = this.size.width, h = this.size.height;
-    var lo = -0.35, hi = 1.35, m = 10;
-    var at = function (x, v) { return [m + (w - 2 * m) * x, h - m - (h - 2 * m) * (v - lo) / (hi - lo)]; };
+    var g = this.graphics,
+      w = this.size.width,
+      h = this.size.height;
+    var lo = -0.35,
+      hi = 1.35,
+      m = 10;
+    var at = function (x, v) {
+      return [
+        m + (w - 2 * m) * x,
+        h - m - ((h - 2 * m) * (v - lo)) / (hi - lo),
+      ];
+    };
     var frame = g.newPen(g.PenType.SOLID_COLOR, [0.5, 0.5, 0.5, 0.6], 1);
     g.newPath();
     g.rectPath(0, 0, w, h);
     g.strokePath(frame);
     g.newPath();
-    var a = at(0, 0), b = at(1, 0), c0 = at(0, 1), d = at(1, 1);
+    var a = at(0, 0),
+      b = at(1, 0),
+      c0 = at(0, 1),
+      d = at(1, 1);
     g.moveTo(a[0], a[1]);
     g.lineTo(b[0], b[1]);
     g.moveTo(c0[0], c0[1]);
     g.lineTo(d[0], d[1]);
     g.strokePath(frame);
     // Handles: (out influence, out speed × out influence) and (1 − in influence, 1 − in speed × in influence).
-    var oi = working.outInfluence / 100, ii = working.inInfluence / 100;
-    var h1 = [oi, working.outSpeed * oi], h2 = [1 - ii, 1 - working.inSpeed * ii];
+    var oi = working.outInfluence / 100,
+      ii = working.inInfluence / 100;
+    var h1 = [oi, working.outSpeed * oi],
+      h2 = [1 - ii, 1 - working.inSpeed * ii];
     var handles = g.newPen(g.PenType.SOLID_COLOR, [0.8, 0.8, 0.8, 1], 1);
-    var p1 = at(h1[0], h1[1]), p2 = at(h2[0], h2[1]), k0 = at(0, 0), k1 = at(1, 1);
+    var p1 = at(h1[0], h1[1]),
+      p2 = at(h2[0], h2[1]),
+      k0 = at(0, 0),
+      k1 = at(1, 1);
     g.newPath();
     g.moveTo(k0[0], k0[1]);
     g.lineTo(p1[0], p1[1]);
@@ -265,7 +365,8 @@
     var accent = g.newPen(g.PenType.SOLID_COLOR, [0.29, 0.56, 1, 1], 2);
     g.newPath();
     for (var s = 0; s <= 48; s++) {
-      var t = s / 48, u = 1 - t;
+      var t = s / 48,
+        u = 1 - t;
       var x = 3 * u * u * t * h1[0] + 3 * u * t * t * h2[0] + t * t * t;
       var v = 3 * u * u * t * h1[1] + 3 * u * t * t * h2[1] + t * t * t;
       var q = at(x, v);
@@ -289,8 +390,12 @@
   var inSpeed = field(inRow, "Speed", "inSpeed");
 
   var actions = ui.add("group");
-  var applyButton = actions.add("button", undefined, "Apply", { name: "apply" });
-  var fromKeys = actions.add("button", undefined, "From Keys", { name: "fromKeys" });
+  var applyButton = actions.add("button", undefined, "Apply", {
+    name: "apply",
+  });
+  var fromKeys = actions.add("button", undefined, "From Keys", {
+    name: "fromKeys",
+  });
   var nameRow = ui.add("group");
   nameRow.alignChildren = ["fill", "center"];
   var nameField = nameRow.add("edittext", undefined, "", { name: "name" });
@@ -298,8 +403,12 @@
   nameField.helpTip = "Preset name";
   var saveButton = nameRow.add("button", undefined, "Save", { name: "save" });
   var edits = ui.add("group");
-  var renameButton = edits.add("button", undefined, "Rename", { name: "rename" });
-  var deleteButton = edits.add("button", undefined, "Delete", { name: "delete" });
+  var renameButton = edits.add("button", undefined, "Rename", {
+    name: "rename",
+  });
+  var deleteButton = edits.add("button", undefined, "Delete", {
+    name: "delete",
+  });
   var status = ui.add("statictext", undefined, "", { name: "status" });
   status.alignment = ["fill", "top"];
 
@@ -318,7 +427,14 @@
 
   // The curve typed into the fields (null when one isn't a number).
   function typedCurve() {
-    return sanitized(curve(parseFloat(outInfluence.text), parseFloat(outSpeed.text), parseFloat(inInfluence.text), parseFloat(inSpeed.text)));
+    return sanitized(
+      curve(
+        parseFloat(outInfluence.text),
+        parseFloat(outSpeed.text),
+        parseFloat(inInfluence.text),
+        parseFloat(inSpeed.text),
+      ),
+    );
   }
 
   function presets() {
@@ -347,13 +463,17 @@
 
   function apply(c, what) {
     var n = applyCurve(c);
-    status.text = n > 0 ? "Eased " + n + " keyframe pair(s) with " + what : "Select two or more neighbouring keyframes of a property";
+    status.text =
+      n > 0
+        ? "Eased " + n + " keyframe pair(s) with " + what
+        : "Select two or more neighbouring keyframes of a property";
     return n;
   }
 
   list.onChange = function () {
     if (refreshing || !list.selection) return;
-    var all = presets(), i = find(all, list.selection.text);
+    var all = presets(),
+      i = find(all, list.selection.text);
     if (i < 0) return;
     showCurve(all[i].curve);
     nameField.text = find(user, all[i].name) >= 0 ? all[i].name : "";
@@ -364,7 +484,11 @@
     var c = typedCurve();
     if (c) working = c;
   };
-  outInfluence.onChange = outSpeed.onChange = inInfluence.onChange = inSpeed.onChange = onTyped;
+  outInfluence.onChange =
+    outSpeed.onChange =
+    inInfluence.onChange =
+    inSpeed.onChange =
+      onTyped;
 
   applyButton.onClick = function () {
     var c = typedCurve();
@@ -387,7 +511,8 @@
   };
 
   saveButton.onClick = function () {
-    var name = cleanName(nameField.text), c = typedCurve();
+    var name = cleanName(nameField.text),
+      c = typedCurve();
     if (!name) {
       status.text = "Type a name for the preset first";
       return;
@@ -410,7 +535,8 @@
   };
 
   renameButton.onClick = function () {
-    var p = selectedUser(), name = cleanName(nameField.text);
+    var p = selectedUser(),
+      name = cleanName(nameField.text);
     if (!p) {
       status.text = "Select one of your own presets first";
       return;

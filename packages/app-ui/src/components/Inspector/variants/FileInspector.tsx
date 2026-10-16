@@ -102,7 +102,9 @@ export function FileInspector({ file }: FileInspectorProps) {
 
   // Extract OCR text or transcript if present
   const ocrText =
-    (fileData as any).extracted_text || fileData.content_identity?.text_content || null;
+    (fileData as any).extracted_text ||
+    fileData.content_identity?.text_content ||
+    null;
   const transcriptSidecar = fileData.sidecars?.find(
     (s: any) =>
       s.kind === "transcript" ||
@@ -111,9 +113,12 @@ export function FileInspector({ file }: FileInspectorProps) {
       s.format === "srt",
   );
   const transcriptText =
-    (fileData as any).transcript_text || (transcriptSidecar as any)?.content || null;
+    (fileData as any).transcript_text ||
+    (transcriptSidecar as any)?.content ||
+    null;
 
-  const hasTranscript = isAudioVideoEligible(fileData) && (!!transcriptText || !!transcriptSidecar);
+  const hasTranscript =
+    isAudioVideoEligible(fileData) && (!!transcriptText || !!transcriptSidecar);
   const hasOcrText = !hasTranscript && !!ocrText;
 
   const tabs = [
@@ -146,14 +151,21 @@ export function FileInspector({ file }: FileInspectorProps) {
             <TextTranscriptTab
               file={fileData}
               type="transcript"
-              text={transcriptText || "Transcription disponible dans le fichier sidecar."}
+              text={
+                transcriptText ||
+                "Transcription disponible dans le fichier sidecar."
+              }
             />
           </TabContent>
         )}
 
         {hasOcrText && (
           <TabContent id="text" activeTab={activeTab}>
-            <TextTranscriptTab file={fileData} type="text" text={ocrText || ""} />
+            <TextTranscriptTab
+              file={fileData}
+              type="text"
+              text={ocrText || ""}
+            />
           </TabContent>
         )}
 
@@ -531,7 +543,9 @@ function MediaMetadataCard({ file }: { file: File }) {
       {/* Date/Time Header */}
       {mediaDate && (
         <div className="px-2">
-          <div className="text-on-surface text-label-large font-semibold">{mediaDate}</div>
+          <div className="text-on-surface text-label-large font-semibold">
+            {mediaDate}
+          </div>
           <div className="text-on-surface-variant mt-0.5 flex items-center gap-1.5 text-body-small">
             <Image size={12} weight="bold" />
             <span>{file.name}</span>
@@ -545,7 +559,9 @@ function MediaMetadataCard({ file }: { file: File }) {
           {/* Camera Header */}
           {cameraDisplay && (
             <div className="border-outline-variant/30 flex items-center justify-between border-b px-3 py-2.5">
-              <span className="text-on-surface text-label-large font-medium">{cameraDisplay}</span>
+              <span className="text-on-surface text-label-large font-medium">
+                {cameraDisplay}
+              </span>
               <div className="flex items-center gap-1.5">
                 {format && (
                   <span className="bg-surface-container border-outline-variant text-on-surface-variant rounded-small border px-1.5 py-0.5 text-[10px] font-semibold">
@@ -563,12 +579,20 @@ function MediaMetadataCard({ file }: { file: File }) {
 
           {/* Camera/Lens Details */}
           <div className="space-y-1 px-3 py-2.5">
-            {lensInfo && <div className="text-on-surface-variant text-body-small">{lensInfo}</div>}
+            {lensInfo && (
+              <div className="text-on-surface-variant text-body-small">
+                {lensInfo}
+              </div>
+            )}
             {resolutionLine && (
-              <div className="text-on-surface-variant text-body-small">{resolutionLine}</div>
+              <div className="text-on-surface-variant text-body-small">
+                {resolutionLine}
+              </div>
             )}
             {videoInfo && (
-              <div className="text-on-surface-variant text-body-small">{videoInfo}</div>
+              <div className="text-on-surface-variant text-body-small">
+                {videoInfo}
+              </div>
             )}
             {duration && (
               <div className="text-on-surface-variant flex items-center gap-1 text-body-small">
@@ -586,7 +610,9 @@ function MediaMetadataCard({ file }: { file: File }) {
                   key={`${spec.label}-${spec.value}`}
                   className="text-on-surface-variant text-center text-[11px]"
                 >
-                  {spec.label && <span className="mr-0.5 font-medium">{spec.label}</span>}
+                  {spec.label && (
+                    <span className="mr-0.5 font-medium">{spec.label}</span>
+                  )}
                   <span>{spec.value}</span>
                 </div>
               ))}
@@ -601,13 +627,16 @@ function MediaMetadataCard({ file }: { file: File }) {
       )}
 
       {/* Location Map */}
-      {hasLocation && imageData && imageData.latitude && imageData.longitude && (
-        <LocationMap
-          latitude={imageData.latitude}
-          longitude={imageData.longitude}
-          className="bg-surface-container/60 border-outline-variant/50 mx-2 overflow-hidden rounded-medium border"
-        />
-      )}
+      {hasLocation &&
+        imageData &&
+        imageData.latitude &&
+        imageData.longitude && (
+          <LocationMap
+            latitude={imageData.latitude}
+            longitude={imageData.longitude}
+            className="bg-surface-container/60 border-outline-variant/50 mx-2 overflow-hidden rounded-medium border"
+          />
+        )}
     </div>
   );
 }
@@ -632,12 +661,15 @@ function TextTranscriptTab({
     }
   };
 
-  const title = type === "transcript" ? "Transcription audio" : "Texte extrait (OCR)";
+  const title =
+    type === "transcript" ? "Transcription audio" : "Texte extrait (OCR)";
 
   return (
     <div className="no-scrollbar mask-fade-out flex flex-col space-y-4 overflow-x-hidden overflow-y-scroll px-3 pb-10 pt-2 text-body-large">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-on-surface text-title-medium font-semibold">{title}</h3>
+        <h3 className="text-on-surface text-title-medium font-semibold">
+          {title}
+        </h3>
         <Button
           variant="tonal"
           size="sm"
@@ -680,8 +712,12 @@ function OverviewTab({ file }: { file: File }) {
 
   // Tag mutations — refetch queries on success to update the UI
   const refetchTagQueries = useRefetchTagQueries();
-  const applyTag = useLibraryMutation("tags.apply", { onSuccess: refetchTagQueries });
-  const unapplyTag = useLibraryMutation("tags.unapply", { onSuccess: refetchTagQueries });
+  const applyTag = useLibraryMutation("tags.apply", {
+    onSuccess: refetchTagQueries,
+  });
+  const unapplyTag = useLibraryMutation("tags.unapply", {
+    onSuccess: refetchTagQueries,
+  });
 
   // AI Processing mutations
   const generateSplat = useLibraryMutation("media.splat.generate");
@@ -708,7 +744,12 @@ function OverviewTab({ file }: { file: File }) {
     <div className="no-scrollbar mask-fade-out flex flex-col space-y-5 overflow-x-hidden overflow-y-scroll pb-10">
       {/* Thumbnail */}
       <div className="flex w-full justify-center px-4">
-        <FileComponent.Thumb file={file} size={200} iconScale={0.6} className="w-full max-w-full" />
+        <FileComponent.Thumb
+          file={file}
+          size={200}
+          iconScale={0.6}
+          className="w-full max-w-full"
+        />
       </div>
 
       {/* File name & Quick Actions */}
@@ -717,7 +758,9 @@ function OverviewTab({ file }: { file: File }) {
           {file.name}
           {file.extension ? `.${file.extension}` : ""}
         </h4>
-        <p className="text-on-surface-variant mt-1 text-center text-body-large">{fileKind}</p>
+        <p className="text-on-surface-variant mt-1 text-center text-body-large">
+          {fileKind}
+        </p>
         {/* Quick Actions - Share and media jobs */}
         <div className="mt-2.5">
           <FileQuickActions file={file} />
@@ -739,12 +782,13 @@ function OverviewTab({ file }: { file: File }) {
       </div>
 
       {/* Media Metadata Card - iOS Photos style */}
-      {(isImage || isVideo) && (file.image_media_data || file.video_media_data) && (
-        <>
-          <Divider />
-          <MediaMetadataCard file={file} />
-        </>
-      )}
+      {(isImage || isVideo) &&
+        (file.image_media_data || file.video_media_data) && (
+          <>
+            <Divider />
+            <MediaMetadataCard file={file} />
+          </>
+        )}
 
       <Divider />
 
@@ -761,14 +805,22 @@ function OverviewTab({ file }: { file: File }) {
       <Section title="Dates" icon={Calendar}>
         {/* Show capture date for media files */}
         {file.video_media_data?.date_captured && (
-          <InfoRow label="Captured" value={formatDate(file.video_media_data.date_captured)} />
+          <InfoRow
+            label="Captured"
+            value={formatDate(file.video_media_data.date_captured)}
+          />
         )}
         {file.image_media_data?.date_taken && (
-          <InfoRow label="Taken" value={formatDate(file.image_media_data.date_taken)} />
+          <InfoRow
+            label="Taken"
+            value={formatDate(file.image_media_data.date_taken)}
+          />
         )}
         <InfoRow label="Created" value={formatDate(file.created_at)} />
         <InfoRow label="Modified" value={formatDate(file.modified_at)} />
-        {file.accessed_at && <InfoRow label="Accessed" value={formatDate(file.accessed_at)} />}
+        {file.accessed_at && (
+          <InfoRow label="Accessed" value={formatDate(file.accessed_at)} />
+        )}
       </Section>
 
       {/* Image Metadata */}
@@ -791,13 +843,19 @@ function OverviewTab({ file }: { file: File }) {
             <InfoRow label="ISO" value={String(file.image_media_data.iso)} />
           )}
           {file.image_media_data.focal_length && (
-            <InfoRow label="Focal length" value={file.image_media_data.focal_length} />
+            <InfoRow
+              label="Focal length"
+              value={file.image_media_data.focal_length}
+            />
           )}
           {file.image_media_data.aperture && (
             <InfoRow label="Aperture" value={file.image_media_data.aperture} />
           )}
           {file.image_media_data.shutter_speed && (
-            <InfoRow label="Shutter speed" value={file.image_media_data.shutter_speed} />
+            <InfoRow
+              label="Shutter speed"
+              value={file.image_media_data.shutter_speed}
+            />
           )}
         </Section>
       )}
@@ -988,7 +1046,11 @@ function OverviewTab({ file }: { file: File }) {
                 )}
               >
                 <Cube size={4} weight="bold" />
-                <span>{generateSplat.isPending ? "Generating..." : "Generate 3D Splat"}</span>
+                <span>
+                  {generateSplat.isPending
+                    ? "Generating..."
+                    : "Generate 3D Splat"}
+                </span>
               </button>
             )}
 
@@ -996,7 +1058,10 @@ function OverviewTab({ file }: { file: File }) {
             {(isImage || isVideo) && (
               <button
                 onClick={() => {
-                  console.log("Regenerate thumbnails clicked for file:", file.id);
+                  console.log(
+                    "Regenerate thumbnails clicked for file:",
+                    file.id,
+                  );
                   regenerateThumbnail.mutate(
                     {
                       entry_uuid: file.id,
@@ -1010,7 +1075,10 @@ function OverviewTab({ file }: { file: File }) {
                       onError: (error) => {
                         console.error("Thumbnail regeneration error:", error);
 
-                        const errorMessage = error instanceof Error ? error.message : String(error);
+                        const errorMessage =
+                          error instanceof Error
+                            ? error.message
+                            : String(error);
                         if (
                           errorMessage.includes("feature is not enabled") ||
                           errorMessage.includes("--features ffmpeg") ||
@@ -1034,12 +1102,15 @@ function OverviewTab({ file }: { file: File }) {
                 className={clsx(
                   "flex items-center gap-2 rounded-small px-3 py-2 text-label-large font-medium transition-colors",
                   "bg-surface-container hover:bg-on-surface/8 border-outline-variant border",
-                  regenerateThumbnail.isPending && "cursor-not-allowed opacity-50",
+                  regenerateThumbnail.isPending &&
+                    "cursor-not-allowed opacity-50",
                 )}
               >
                 <ArrowsClockwise size={4} weight="bold" />
                 <span>
-                  {regenerateThumbnail.isPending ? "Generating..." : "Regenerate Thumbnails"}
+                  {regenerateThumbnail.isPending
+                    ? "Generating..."
+                    : "Regenerate Thumbnails"}
                 </span>
               </button>
             )}
@@ -1062,7 +1133,10 @@ function OverviewTab({ file }: { file: File }) {
                       onError: (error) => {
                         console.error("Thumbstrip generation error:", error);
 
-                        const errorMessage = error instanceof Error ? error.message : String(error);
+                        const errorMessage =
+                          error instanceof Error
+                            ? error.message
+                            : String(error);
                         if (
                           errorMessage.includes("feature is not enabled") ||
                           errorMessage.includes("--features ffmpeg")
@@ -1085,12 +1159,15 @@ function OverviewTab({ file }: { file: File }) {
                 className={clsx(
                   "flex items-center gap-2 rounded-small px-3 py-2 text-label-large font-medium transition-colors",
                   "bg-surface-container hover:bg-on-surface/8 border-outline-variant border",
-                  generateThumbstrip.isPending && "cursor-not-allowed opacity-50",
+                  generateThumbstrip.isPending &&
+                    "cursor-not-allowed opacity-50",
                 )}
               >
                 <FilmStrip size={4} weight="bold" />
                 <span>
-                  {generateThumbstrip.isPending ? "Generating..." : "Generate Thumbstrip"}
+                  {generateThumbstrip.isPending
+                    ? "Generating..."
+                    : "Generate Thumbstrip"}
                 </span>
               </button>
             )}
@@ -1125,7 +1202,11 @@ function OverviewTab({ file }: { file: File }) {
                 )}
               >
                 <VideoCamera size={4} weight="bold" />
-                <span>{generateProxy.isPending ? "Encoding..." : "Generate Scrubbing Proxy"}</span>
+                <span>
+                  {generateProxy.isPending
+                    ? "Encoding..."
+                    : "Generate Scrubbing Proxy"}
+                </span>
               </button>
             )}
 
@@ -1212,7 +1293,9 @@ function SidecarItem({
 }) {
   const isImage =
     (sidecar.kind === "thumb" || sidecar.kind === "thumbstrip") &&
-    (sidecar.format === "webp" || sidecar.format === "jpg" || sidecar.format === "png");
+    (sidecar.format === "webp" ||
+      sidecar.format === "jpg" ||
+      sidecar.format === "png");
 
   // Get appropriate Spacedrive icon based on sidecar format/kind
   const getSidecarIcon = () => {
@@ -1299,7 +1382,9 @@ function SidecarItem({
               // Fallback to icon on error
               e.currentTarget.style.display = "none";
               if (e.currentTarget.nextElementSibling) {
-                (e.currentTarget.nextElementSibling as HTMLElement).style.display = "flex";
+                (
+                  e.currentTarget.nextElementSibling as HTMLElement
+                ).style.display = "flex";
               }
             }}
           />
@@ -1314,7 +1399,9 @@ function SidecarItem({
       )}
 
       <div className="min-w-0 flex-1">
-        <div className="text-on-surface text-label-medium font-medium">{String(sidecar.kind)}</div>
+        <div className="text-on-surface text-label-medium font-medium">
+          {String(sidecar.kind)}
+        </div>
         <div className="text-on-surface-variant text-[11px]">
           {String(sidecar.variant)} · {formatBytes(sidecar.size)}
         </div>
@@ -1349,8 +1436,10 @@ function InstancesTab({ file }: { file: File }) {
   });
 
   const instances =
-    (instancesQuery.data as { instances: File[]; total_count: number } | undefined)?.instances ||
-    [];
+    (
+      instancesQuery.data as
+        { instances: File[]; total_count: number } | undefined
+    )?.instances || [];
 
   // Query devices to get proper names and icons
   const devicesQuery = useNormalizedQuery<any, any[]>({
@@ -1405,7 +1494,8 @@ function InstancesTab({ file }: { file: File }) {
     return (
       <div className="no-scrollbar mask-fade-out flex flex-col space-y-4 overflow-x-hidden overflow-y-scroll px-2 pb-10 pt-2">
         <p className="text-on-surface-variant text-body-small">
-          This file has not been content-hashed yet. Instances will appear after indexing completes.
+          This file has not been content-hashed yet. Instances will appear after
+          indexing completes.
         </p>
       </div>
     );
@@ -1432,7 +1522,11 @@ function InstancesTab({ file }: { file: File }) {
                 <div key={deviceSlug} className="space-y-1">
                   {/* Device Header */}
                   <div className="flex items-center gap-2 px-2">
-                    <img src={getDeviceIcon(deviceInfo)} className="size-4 shrink-0" alt="" />
+                    <img
+                      src={getDeviceIcon(deviceInfo)}
+                      className="size-4 shrink-0"
+                      alt=""
+                    />
                     <span className="text-on-surface text-label-medium font-semibold">
                       {deviceName}
                     </span>
@@ -1562,7 +1656,10 @@ function ChatTab({ file }: { file?: File }) {
       content: file
         ? `Je suis prêt à analyser le fichier "${file.name}". Que souhaitez-vous savoir ou extraire ?`
         : "Je suis prêt à analyser votre fichier sélectionné.",
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
       isAI: true,
       isUser: false,
     },
@@ -1576,7 +1673,10 @@ function ChatTab({ file }: { file?: File }) {
       id: Date.now(),
       sender: "Vous",
       content: text,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
       isAI: false,
       isUser: true,
     };
@@ -1585,7 +1685,9 @@ function ChatTab({ file }: { file?: File }) {
     setLoading(true);
 
     try {
-      const prompt = file ? `[Fichier: ${file.name} (Taille: ${file.size} octets)]\n${text}` : text;
+      const prompt = file
+        ? `[Fichier: ${file.name} (Taille: ${file.size} octets)]\n${text}`
+        : text;
       const res = await askLocalAi(prompt);
       setMessages((prev) => [
         ...prev,
@@ -1593,7 +1695,10 @@ function ChatTab({ file }: { file?: File }) {
           id: Date.now() + 1,
           sender: "Aphrody AI",
           content: res?.answer || "Analyse terminée.",
-          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          time: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
           isAI: true,
           isUser: false,
         },
@@ -1612,13 +1717,18 @@ function ChatTab({ file }: { file?: File }) {
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={clsx("flex gap-2", msg.isUser ? "flex-row-reverse" : "flex-row")}
+            className={clsx(
+              "flex gap-2",
+              msg.isUser ? "flex-row-reverse" : "flex-row",
+            )}
           >
             {/* Avatar */}
             <div
               className={clsx(
                 "flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold",
-                msg.isAI ? "bg-primary/20 text-primary" : "bg-secondary-container text-on-surface",
+                msg.isAI
+                  ? "bg-primary/20 text-primary"
+                  : "bg-secondary-container text-on-surface",
               )}
             >
               {msg.isAI ? "S" : "U"}
@@ -1640,16 +1750,22 @@ function ChatTab({ file }: { file?: File }) {
                 )}
               >
                 {msg.isAI && (
-                  <div className="mb-0.5 text-[10px] font-semibold text-primary">{msg.sender}</div>
+                  <div className="mb-0.5 text-[10px] font-semibold text-primary">
+                    {msg.sender}
+                  </div>
                 )}
                 <p className="text-body-small leading-relaxed">{msg.content}</p>
               </div>
-              <span className="text-on-surface-variant mt-0.5 px-1 text-[10px]">{msg.time}</span>
+              <span className="text-on-surface-variant mt-0.5 px-1 text-[10px]">
+                {msg.time}
+              </span>
             </div>
           </div>
         ))}
         {loading && (
-          <div className="text-[11px] text-on-surface-variant italic px-2">Analyse en cours...</div>
+          <div className="text-[11px] text-on-surface-variant italic px-2">
+            Analyse en cours...
+          </div>
         )}
       </div>
 
@@ -1685,7 +1801,9 @@ function ChatTab({ file }: { file?: File }) {
         <div className="flex gap-1">
           <button
             onClick={() =>
-              handleSend("Résume en trois points clés le contenu et l'utilité de ce document.")
+              handleSend(
+                "Résume en trois points clés le contenu et l'utilité de ce document.",
+              )
             }
             className="text-on-surface-variant hover:text-on-surface bg-surface-container/40 hover:bg-surface-container/60 flex items-center gap-1 rounded-small px-2 py-1 text-[10px] font-medium transition-colors"
           >
@@ -1693,7 +1811,9 @@ function ChatTab({ file }: { file?: File }) {
             Résumer
           </button>
           <button
-            onClick={() => handleSend("Vérifie les métadonnées et la validité de ce format.")}
+            onClick={() =>
+              handleSend("Vérifie les métadonnées et la validité de ce format.")
+            }
             className="text-on-surface-variant hover:text-on-surface bg-surface-container/40 hover:bg-surface-container/60 rounded-small px-2 py-1 text-[10px] font-medium transition-colors"
           >
             Vérifier format
@@ -1708,12 +1828,16 @@ function ActivityTab({ file }: { file?: File }) {
   const items = [
     {
       action: "Dernière modification locale enregistrée",
-      time: file?.modified_at ? new Date(file.modified_at).toLocaleString() : "Inconnue",
+      time: file?.modified_at
+        ? new Date(file.modified_at).toLocaleString()
+        : "Inconnue",
       device: file?.is_local ? "Système de fichiers local" : "Stockage distant",
     },
     {
       action: "Date de découverte par Spacedrive",
-      time: file?.created_at ? new Date(file.created_at).toLocaleString() : "Inconnue",
+      time: file?.created_at
+        ? new Date(file.created_at).toLocaleString()
+        : "Inconnue",
       device: "Base SQLite VDFS",
     },
     {
@@ -1729,7 +1853,9 @@ function ActivityTab({ file }: { file?: File }) {
 
   return (
     <div className="no-scrollbar mask-fade-out flex flex-col space-y-4 overflow-x-hidden overflow-y-scroll px-2 pb-10 pt-2">
-      <p className="text-on-surface-variant text-body-small">Événements et synchronisation réels</p>
+      <p className="text-on-surface-variant text-body-small">
+        Événements et synchronisation réels
+      </p>
 
       <div className="space-y-1">
         {items.map((item) => (
@@ -1741,7 +1867,9 @@ function ActivityTab({ file }: { file?: File }) {
               <ClockCounterClockwise size={16} weight="bold" />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="text-on-surface text-body-small font-medium">{item.action}</div>
+              <div className="text-on-surface text-body-small font-medium">
+                {item.action}
+              </div>
               <div className="text-on-surface-variant mt-0.5 text-[11px]">
                 {item.time} · {item.device}
               </div>
@@ -1761,34 +1889,54 @@ function DetailsTab({ file }: { file: File }) {
         <Section title="Content identity" icon={Fingerprint}>
           <InfoRow
             label="Content hash"
-            value={String(file.content_identity.content_hash).slice(0, 16) + "..."}
+            value={
+              String(file.content_identity.content_hash).slice(0, 16) + "..."
+            }
             mono
           />
           {file.content_identity.integrity_hash && (
             <InfoRow
               label="Integrity hash"
-              value={String(file.content_identity.integrity_hash).slice(0, 16) + "..."}
+              value={
+                String(file.content_identity.integrity_hash).slice(0, 16) +
+                "..."
+              }
               mono
             />
           )}
           {file.content_identity.mime_type_id !== null && (
-            <InfoRow label="MIME type ID" value={String(file.content_identity.mime_type_id)} />
+            <InfoRow
+              label="MIME type ID"
+              value={String(file.content_identity.mime_type_id)}
+            />
           )}
         </Section>
       )}
 
       {/* Metadata */}
       <Section title="Metadata" icon={Hash}>
-        <InfoRow label="File ID" value={String(file.id).slice(0, 8) + "..."} mono />
-        <InfoRow label="Content kind" value={String(file.content_kind || "Unknown")} />
-        {file.extension && <InfoRow label="Extension" value={String(file.extension)} />}
+        <InfoRow
+          label="File ID"
+          value={String(file.id).slice(0, 8) + "..."}
+          mono
+        />
+        <InfoRow
+          label="Content kind"
+          value={String(file.content_kind || "Unknown")}
+        />
+        {file.extension && (
+          <InfoRow label="Extension" value={String(file.extension)} />
+        )}
       </Section>
 
       {/* System */}
       <Section title="System" icon={DotsThree}>
         <InfoRow label="Entry kind" value={file.kind} />
         <InfoRow label="Local" value={file.is_local ? "Yes" : "No"} />
-        <InfoRow label="Instances" value={String((file.alternate_paths?.length || 0) + 1)} />
+        <InfoRow
+          label="Instances"
+          value={String((file.alternate_paths?.length || 0) + 1)}
+        />
       </Section>
     </div>
   );

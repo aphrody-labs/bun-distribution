@@ -21,10 +21,12 @@ export class UserReferralCodesApi extends ApiManager {
     ApiResponse<{ referral_codes: ReferralCodeEntry[] }>
   > {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/user_referral_codes/list`;
-    return this.jsonFetch<{
-      success: boolean;
-      referral_codes?: ReferralCodeEntry[];
-    } & ErrorBody>(endpoint, { method: "GET" })
+    return this.jsonFetch<
+      {
+        success: boolean;
+        referral_codes?: ReferralCodeEntry[];
+      } & ErrorBody
+    >(endpoint, { method: "GET" })
       .then((response) => {
         if (!response.success) {
           return {

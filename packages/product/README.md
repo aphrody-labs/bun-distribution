@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Aphrody
 
 Un seul produit Aphrody possède les parcours d’installation, d’administration,

@@ -71,7 +71,11 @@ const MULTI_LABEL_SUFFIXES = new Set([
 /** Registrable domain of a host (`app.example.co.uk` -> `example.co.uk`); IPs and `localhost` map to themselves. */
 export function registrableDomain(host: string): string {
   const lower = host.toLowerCase();
-  if (lower === "localhost" || /^\d{1,3}(?:\.\d{1,3}){3}$/.test(lower) || lower.includes(":"))
+  if (
+    lower === "localhost" ||
+    /^\d{1,3}(?:\.\d{1,3}){3}$/.test(lower) ||
+    lower.includes(":")
+  )
     return lower;
   const labels = lower.split(".");
   if (labels.length <= 2) return lower;
@@ -86,10 +90,14 @@ function siteApp(probe: SiteProbe, extra: string[]): string[] {
   const registrable = registrableDomain(finalOrigin.hostname);
   const scheme = finalOrigin.protocol.replace(":", "");
   const wildcardable =
-    registrable !== "localhost" && !/^\d/.test(registrable) && registrable.includes(".");
+    registrable !== "localhost" &&
+    !/^\d/.test(registrable) &&
+    registrable.includes(".");
   for (const origin of probe.redirectOrigins) out.add(origin);
   out.add(finalOrigin.origin);
-  const input = originOf(probe.input.includes("://") ? probe.input : `https://${probe.input}`);
+  const input = originOf(
+    probe.input.includes("://") ? probe.input : `https://${probe.input}`,
+  );
   if (input) out.add(input);
   if (wildcardable) {
     // Cookies are shared across the registrable domain; so is the app.
@@ -119,14 +127,20 @@ function embedPatterns(probe: SiteProbe): string[] {
 }
 
 function chromiumApis(probe: Probe): string[] {
-  return probe.signals.filter((signal) => isChromiumOnly(signal.id)).map((signal) => signal.id);
+  return probe.signals
+    .filter((signal) => isChromiumOnly(signal.id))
+    .map((signal) => signal.id);
 }
 
 function hasSignal(probe: Probe, id: string): boolean {
   return probe.signals.some((signal) => signal.id === id);
 }
 
-function chooseMode(probe: Probe, requested: WrapMode | "auto", reasons: string[]): WrapMode {
+function chooseMode(
+  probe: Probe,
+  requested: WrapMode | "auto",
+  reasons: string[],
+): WrapMode {
   if (probe.kind === "site") {
     if (requested !== "auto" && requested !== "remote") {
       throw new PlanError(
@@ -144,23 +158,33 @@ function chooseMode(probe: Probe, requested: WrapMode | "auto", reasons: string[
   const { staticDir, serverEntry } = probe;
   if (requested === "bundle") {
     if (!staticDir)
-      throw new PlanError(`no built bundle with an index.html in ${probe.input}; build it first`);
-    reasons.push("bundle: requested; the static bundle is served from loopback");
+      throw new PlanError(
+        `no built bundle with an index.html in ${probe.input}; build it first`,
+      );
+    reasons.push(
+      "bundle: requested; the static bundle is served from loopback",
+    );
     return "bundle";
   }
   if (requested === "sidecar") {
-    if (!serverEntry) throw new PlanError(`no server entry found in ${probe.input}`);
+    if (!serverEntry)
+      throw new PlanError(`no server entry found in ${probe.input}`);
     reasons.push(`sidecar: requested; ${serverEntry} runs next to the app`);
     return "sidecar";
   }
-  if (serverEntry && (probe.apiRoutes > 0 || probe.nextOutput === "standalone" || !staticDir)) {
+  if (
+    serverEntry &&
+    (probe.apiRoutes > 0 || probe.nextOutput === "standalone" || !staticDir)
+  ) {
     reasons.push(
       `sidecar: ${serverEntry} serves the app and its API routes (${probe.apiRoutes}); a static bundle would lose them`,
     );
     return "sidecar";
   }
   if (staticDir) {
-    reasons.push(`bundle: ${staticDir}/ is a built static bundle with no server of its own`);
+    reasons.push(
+      `bundle: ${staticDir}/ is a built static bundle with no server of its own`,
+    );
     return "bundle";
   }
   throw new PlanError(
@@ -168,7 +192,11 @@ function chooseMode(probe: Probe, requested: WrapMode | "auto", reasons: string[
   );
 }
 
-function chooseEngine(probe: Probe, requested: WrapEngine | "auto", reasons: string[]): WrapEngine {
+function chooseEngine(
+  probe: Probe,
+  requested: WrapEngine | "auto",
+  reasons: string[],
+): WrapEngine {
   const apis = chromiumApis(probe);
   if (requested !== "auto") {
     reasons.push(`${requested} engine: requested`);
@@ -180,7 +208,9 @@ function chooseEngine(probe: Probe, requested: WrapEngine | "auto", reasons: str
     );
     return "cef";
   }
-  reasons.push("wry engine: no Chromium-only API found, the system webview is lighter on memory");
+  reasons.push(
+    "wry engine: no Chromium-only API found, the system webview is lighter on memory",
+  );
   return "wry";
 }
 
@@ -390,7 +420,9 @@ function siteRisks(probe: SiteProbe, config: WrapConfig): Risk[] {
         "their origins are allowed in-app, popups keep their opener",
       ),
     );
-    const strict = probe.idps.filter((idp) => idp.id === "google" || idp.id === "apple");
+    const strict = probe.idps.filter(
+      (idp) => idp.id === "google" || idp.id === "apple",
+    );
     if (strict.length > 0 && config.engine === "wry") {
       risks.push(
         risk(
@@ -578,19 +610,31 @@ function validateOptions(options: PlanOptions): void {
     } catch {
       // reported below
     }
-    if (url === null || (url.protocol !== "http:" && url.protocol !== "https:")) {
-      throw new PlanError(`--backend ${JSON.stringify(options.backend)} is not an http(s) origin`);
+    if (
+      url === null ||
+      (url.protocol !== "http:" && url.protocol !== "https:")
+    ) {
+      throw new PlanError(
+        `--backend ${JSON.stringify(options.backend)} is not an http(s) origin`,
+      );
     }
   }
   if (
     options.port !== undefined &&
-    !(Number.isInteger(options.port) && options.port >= 0 && options.port <= 65_535)
+    !(
+      Number.isInteger(options.port) &&
+      options.port >= 0 &&
+      options.port <= 65_535
+    )
   ) {
     throw new PlanError(`--port ${options.port} is not a port number`);
   }
 }
 
-export function planConversion(probe: Probe, options: PlanOptions = {}): ConversionPlan {
+export function planConversion(
+  probe: Probe,
+  options: PlanOptions = {},
+): ConversionPlan {
   validateOptions(options);
   const reasons: string[] = [];
   const mode = chooseMode(probe, options.mode ?? "auto", reasons);
@@ -607,7 +651,9 @@ export function planConversion(probe: Probe, options: PlanOptions = {}): Convers
   let sidecar: WrapConfig["sidecar"] = null;
 
   if (probe.kind === "site") {
-    const input = probe.input.includes("://") ? probe.input : `https://${probe.input}`;
+    const input = probe.input.includes("://")
+      ? probe.input
+      : `https://${probe.input}`;
     start = new URL(input).href;
     appOrigins = siteApp(probe, extra);
     auth = authPatterns(probe);
@@ -617,14 +663,20 @@ export function planConversion(probe: Probe, options: PlanOptions = {}): Convers
     );
   } else {
     start = "/";
-    const backend = options.backend ?? (probe.backends.length === 1 ? probe.backends[0]! : null);
+    const backend =
+      options.backend ??
+      (probe.backends.length === 1 ? probe.backends[0]! : null);
     appOrigins = [...extra];
     if (backend) appOrigins.push(backend);
     if (mode === "bundle") {
       bundle = {
         dir: `../${probe.staticDir && probe.staticDir !== "." ? probe.staticDir : "dist"}`,
         backend: backend ?? null,
-        proxy: backend ? (probe.proxyPrefixes.length > 0 ? probe.proxyPrefixes : ["/api"]) : [],
+        proxy: backend
+          ? probe.proxyPrefixes.length > 0
+            ? probe.proxyPrefixes
+            : ["/api"]
+          : [],
         spaFallback: probe.htmlPages <= 1,
       };
     } else {
@@ -677,7 +729,9 @@ export function planConversion(probe: Probe, options: PlanOptions = {}): Convers
     probe.kind === "site"
       ? [
           "/",
-          ...probe.links.filter((path) => path !== "/").slice(0, (options.maxParityPaths ?? 8) - 1),
+          ...probe.links
+            .filter((path) => path !== "/")
+            .slice(0, (options.maxParityPaths ?? 8) - 1),
         ]
       : ["/"];
 

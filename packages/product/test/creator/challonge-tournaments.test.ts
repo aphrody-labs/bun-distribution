@@ -5,7 +5,11 @@ import { join } from "node:path";
 
 import { UsageError } from "../../src/shared/args.ts";
 import { ChallongeClient } from "../../src/creator/commands/challonge/client.ts";
-import { authOf, loadConfig, secretsOf } from "../../src/creator/commands/challonge/config.ts";
+import {
+  authOf,
+  loadConfig,
+  secretsOf,
+} from "../../src/creator/commands/challonge/config.ts";
 import type { Fetch } from "../../src/creator/commands/challonge/http.ts";
 import {
   assertUnique,
@@ -56,7 +60,9 @@ function api(handler: (call: Call, index: number) => unknown) {
     };
     calls.push(call);
     const out = handler(call, calls.length - 1);
-    return new Response(JSON.stringify(out), { status: call.method === "POST" ? 201 : 200 });
+    return new Response(JSON.stringify(out), {
+      status: call.method === "POST" ? 201 : 200,
+    });
   };
   const client = new ChallongeClient({
     auth: { kind: "key", key: "k-1234567" },
@@ -100,12 +106,17 @@ test("attributs de création : mots séparés par des espaces et options imbriqu
     url: "cup_2026",
     private: true,
     starts_at: "2026-11-07T17:00:00.000Z",
-    registration_options: { open_signup: true, signup_cap: 32, check_in_duration: 15 },
+    registration_options: {
+      open_signup: true,
+      signup_cap: 32,
+      check_in_duration: 15,
+    },
     match_options: { consolation_matches_target_rank: 3 },
     double_elimination_options: { grand_finals_modifier: "single match" },
   });
   expect(
-    buildTournamentAttributes({ name: "S", type: "swiss", swissRounds: 5 }).swiss_options,
+    buildTournamentAttributes({ name: "S", type: "swiss", swissRounds: 5 })
+      .swiss_options,
   ).toEqual({ rounds: 5 });
   expect(
     buildTournamentAttributes({
@@ -124,22 +135,40 @@ test("attributs de création : mots séparés par des espaces et options imbriqu
 });
 
 test("validation : check-in multiple de 5, slug, options hors format, date", () => {
-  expect(() => buildTournamentAttributes({ name: "a", type: "swiss", checkInMinutes: 7 })).toThrow(
-    "multiple de 5",
-  );
   expect(() =>
-    buildTournamentAttributes({ name: "a", type: "swiss", url: "pas d'espace" }),
+    buildTournamentAttributes({ name: "a", type: "swiss", checkInMinutes: 7 }),
+  ).toThrow("multiple de 5");
+  expect(() =>
+    buildTournamentAttributes({
+      name: "a",
+      type: "swiss",
+      url: "pas d'espace",
+    }),
   ).toThrow("URL invalide");
   expect(() =>
-    buildTournamentAttributes({ name: "a", type: "single_elimination", grandFinals: "skip" }),
+    buildTournamentAttributes({
+      name: "a",
+      type: "single_elimination",
+      grandFinals: "skip",
+    }),
   ).toThrow("double élimination");
   expect(() =>
-    buildTournamentAttributes({ name: "a", type: "single_elimination", swissRounds: 3 }),
+    buildTournamentAttributes({
+      name: "a",
+      type: "single_elimination",
+      swissRounds: 3,
+    }),
   ).toThrow("swiss");
   expect(() =>
-    buildTournamentAttributes({ name: "a", type: "swiss", startsAt: "demain-ish" }),
+    buildTournamentAttributes({
+      name: "a",
+      type: "swiss",
+      startsAt: "demain-ish",
+    }),
   ).toThrow("Date invalide");
-  expect(() => buildTournamentAttributes({ name: "  ", type: "swiss" })).toThrow(UsageError);
+  expect(() =>
+    buildTournamentAttributes({ name: "  ", type: "swiss" }),
+  ).toThrow(UsageError);
 });
 
 test("stateFor : transitions de poules uniquement pour start et finalize", () => {
@@ -152,11 +181,14 @@ test("stateFor : transitions de poules uniquement pour start et finalize", () =>
 // --- Participants -------------------------------------------------------------------------------------------------
 
 test("lecture des participants : fichier, liste en ligne, commentaires, BOM, doublons", async () => {
-  expect(namesFromInline("Alice, Bob ,, Carol")).toEqual(["Alice", "Bob", "Carol"]);
-  expect(namesFromLines("﻿Alice\r\n# commentaire\n\n Bob, le Brave \n")).toEqual([
+  expect(namesFromInline("Alice, Bob ,, Carol")).toEqual([
     "Alice",
-    "Bob, le Brave",
+    "Bob",
+    "Carol",
   ]);
+  expect(
+    namesFromLines("﻿Alice\r\n# commentaire\n\n Bob, le Brave \n"),
+  ).toEqual(["Alice", "Bob, le Brave"]);
 
   const file = join(dir, "players.txt");
   await writeFile(file, "Alice\nBob\n# absent\nCarol\n");
@@ -167,16 +199,20 @@ test("lecture des participants : fichier, liste en ligne, commentaires, BOM, dou
 });
 
 test("--seed-by : ordre du fichier ou notes décroissantes, noms inconnus signalés, non listés à la fin", () => {
-  expect(readSeedFile("Carol\nAlice\nBob\n")).toEqual(["Carol", "Alice", "Bob"]);
-  expect(readSeedFile("Alice;1500\nBob;1800\nCarol,1650\nDan\t1200\n")).toEqual([
-    "Bob",
+  expect(readSeedFile("Carol\nAlice\nBob\n")).toEqual([
     "Carol",
     "Alice",
-    "Dan",
+    "Bob",
   ]);
+  expect(readSeedFile("Alice;1500\nBob;1800\nCarol,1650\nDan\t1200\n")).toEqual(
+    ["Bob", "Carol", "Alice", "Dan"],
+  );
   expect(() => readSeedFile("Alice;1500\nBob\n")).toThrow("mélange");
 
-  const { entries, unknown } = seedBy(["Alice", "Bob", "Carol", "Dan"], ["carol", "Zoe", "Bob"]);
+  const { entries, unknown } = seedBy(
+    ["Alice", "Bob", "Carol", "Dan"],
+    ["carol", "Zoe", "Bob"],
+  );
   expect(entries).toEqual([
     { name: "Carol", seed: 1 },
     { name: "Bob", seed: 2 },
@@ -201,10 +237,12 @@ test("shuffleSeeds : permutation complète, graines 1..n, déterministe avec un 
 test("addParticipants découpe par lots de 20 et transmet seed et misc", async () => {
   let id = 100;
   const { calls, client } = api((call) => ({
-    data: (call.body.data.attributes.participants as { name: string }[]).map((p) => ({
-      id: String(id++),
-      attributes: { name: p.name },
-    })),
+    data: (call.body.data.attributes.participants as { name: string }[]).map(
+      (p) => ({
+        id: String(id++),
+        attributes: { name: p.name },
+      }),
+    ),
   }));
   const entries = Array.from({ length: 45 }, (_, i) => ({
     name: `p${i}`,
@@ -214,9 +252,15 @@ test("addParticipants découpe par lots de 20 et transmet seed et misc", async (
   const created = await addParticipants(client, "7", entries);
 
   expect(created).toHaveLength(45);
-  expect(calls.map((c) => c.body.data.attributes.participants.length)).toEqual([20, 20, 5]);
+  expect(calls.map((c) => c.body.data.attributes.participants.length)).toEqual([
+    20, 20, 5,
+  ]);
   expect(
-    calls.every((c) => c.method === "POST" && c.path === "/tournaments/7/participants/bulk_add"),
+    calls.every(
+      (c) =>
+        c.method === "POST" &&
+        c.path === "/tournaments/7/participants/bulk_add",
+    ),
   ).toBe(true);
   expect(calls[0]!.body.data.type).toBe("Participants");
   expect(calls[0]!.body.data.attributes.participants[0]).toEqual({
@@ -259,21 +303,29 @@ test("createTournamentFlow : création, participants par lots puis démarrage ; 
   });
   expect(result.state).toBe("underway");
 
-  const groups = api(() => ({ data: { id: "56", attributes: { url: "g", state: "pending" } } }));
+  const groups = api(() => ({
+    data: { id: "56", attributes: { url: "g", state: "pending" } },
+  }));
   await createTournamentFlow(
     groups.client,
     { name: "G", type: "single_elimination", groupStage: {} },
     [],
     { start: true },
   );
-  expect(groups.calls.at(-1)!.body.data.attributes.state).toBe("start_group_stage");
+  expect(groups.calls.at(-1)!.body.data.attributes.state).toBe(
+    "start_group_stage",
+  );
 });
 
 // --- Scores -------------------------------------------------------------------------------------------------------
 
 test("parseScore : une manche, plusieurs manches, séparateurs variés, égalités", () => {
   expect(parseScore("2-1")).toMatchObject({ set1: "2", set2: "1", leader: 0 });
-  expect(parseScore("2 : 3")).toMatchObject({ set1: "2", set2: "3", leader: 1 });
+  expect(parseScore("2 : 3")).toMatchObject({
+    set1: "2",
+    set2: "3",
+    leader: 1,
+  });
   const bo3 = parseScore("3-1,2-4,5-0");
   expect(bo3).toMatchObject({ set1: "3,2,5", set2: "1,4,0", leader: 0 });
   // Une manche chacun et 5 points partout : aucun joueur en tête, le gagnant doit être désigné.
@@ -290,12 +342,16 @@ function matchesApi(extra: Record<string, unknown> = {}) {
     attributes: {
       identifier: "A",
       state: "open",
-      relationships: { player1: { data: { id: "111" } }, player2: { data: { id: "222" } } },
+      relationships: {
+        player1: { data: { id: "111" } },
+        player2: { data: { id: "222" } },
+      },
       ...extra,
     },
   };
   return api((call) => {
-    if (call.method === "PUT") return { data: { id: "8001", attributes: { state: "complete" } } };
+    if (call.method === "PUT")
+      return { data: { id: "8001", attributes: { state: "complete" } } };
     if (call.path === "/tournaments/9/matches")
       return { data: call.query.get("state") === "open" ? [open] : [open] };
     if (call.path === "/tournaments/9/matches/12345678")
@@ -317,9 +373,13 @@ test("reportMatch : identifiant de bracket -> recherche parmi les matchs ouverts
   const result = await reportMatch(client, "9", "a", "2-1");
   expect(
     calls.map(
-      (c) => `${c.method} ${c.path}${c.query.get("state") ? `?state=${c.query.get("state")}` : ""}`,
+      (c) =>
+        `${c.method} ${c.path}${c.query.get("state") ? `?state=${c.query.get("state")}` : ""}`,
     ),
-  ).toEqual(["GET /tournaments/9/matches?state=open", "PUT /tournaments/9/matches/8001"]);
+  ).toEqual([
+    "GET /tournaments/9/matches?state=open",
+    "PUT /tournaments/9/matches/8001",
+  ]);
   expect(calls[1]!.body).toEqual({
     data: {
       type: "match",
@@ -331,12 +391,19 @@ test("reportMatch : identifiant de bracket -> recherche parmi les matchs ouverts
       },
     },
   });
-  expect(result).toMatchObject({ matchId: "8001", identifier: "A", winnerId: "111", tie: false });
+  expect(result).toMatchObject({
+    matchId: "8001",
+    identifier: "A",
+    winnerId: "111",
+    tie: false,
+  });
 });
 
 test("reportMatch : ID numérique -> GET direct, victoire du joueur 2 par nom (une lecture des participants)", async () => {
   const { calls, client } = matchesApi();
-  const result = await reportMatch(client, "9", "12345678", "1-1", { winner: "bob" });
+  const result = await reportMatch(client, "9", "12345678", "1-1", {
+    winner: "bob",
+  });
   expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual([
     "GET /tournaments/9/matches/12345678",
     "GET /tournaments/9/participants",
@@ -344,12 +411,18 @@ test("reportMatch : ID numérique -> GET direct, victoire du joueur 2 par nom (u
   ]);
   expect(result.winnerId).toBe("222");
   const entries = calls[2]!.body.data.attributes.match;
-  expect(entries[1]).toEqual({ participant_id: "222", score_set: "1", advancing: true });
+  expect(entries[1]).toEqual({
+    participant_id: "222",
+    score_set: "1",
+    advancing: true,
+  });
 });
 
 test("reportMatch : égalité sans gagnant refusée ; --tie envoie tie sans advancing ; gagnant contradictoire refusé sauf --force", async () => {
   const noWinner = matchesApi();
-  await expect(reportMatch(noWinner.client, "9", "A", "1-1")).rejects.toThrow("Score à égalité");
+  await expect(reportMatch(noWinner.client, "9", "A", "1-1")).rejects.toThrow(
+    "Score à égalité",
+  );
   expect(noWinner.calls.some((c) => c.method === "PUT")).toBe(false);
 
   const tie = matchesApi();
@@ -358,18 +431,26 @@ test("reportMatch : égalité sans gagnant refusée ; --tie envoie tie sans adva
   expect(put.body.data.attributes.tie).toBe(true);
   expect(JSON.stringify(put.body)).not.toContain("advancing");
 
-  await expect(reportMatch(matchesApi().client, "9", "A", "2-1", { tie: true })).rejects.toThrow(
-    "pas égaux",
-  );
-  await expect(reportMatch(matchesApi().client, "9", "A", "2-1", { winner: "2" })).rejects.toThrow(
-    "score le plus bas",
-  );
+  await expect(
+    reportMatch(matchesApi().client, "9", "A", "2-1", { tie: true }),
+  ).rejects.toThrow("pas égaux");
+  await expect(
+    reportMatch(matchesApi().client, "9", "A", "2-1", { winner: "2" }),
+  ).rejects.toThrow("score le plus bas");
   const forced = matchesApi();
   expect(
-    (await reportMatch(forced.client, "9", "A", "2-1", { winner: "2", force: true })).winnerId,
+    (
+      await reportMatch(forced.client, "9", "A", "2-1", {
+        winner: "2",
+        force: true,
+      })
+    ).winnerId,
   ).toBe("222");
   await expect(
-    reportMatch(matchesApi().client, "9", "A", "2-1", { winner: "1", tie: true }),
+    reportMatch(matchesApi().client, "9", "A", "2-1", {
+      winner: "1",
+      tie: true,
+    }),
   ).rejects.toThrow("s'excluent");
 });
 
@@ -377,7 +458,9 @@ test("reportMatch : match en attente refusé ; match introuvable explicite", asy
   await expect(
     reportMatch(matchesApi({ state: "pending" }).client, "9", "A", "2-1"),
   ).rejects.toThrow("pas encore jouable");
-  await expect(findMatch(matchesApi().client, "9", "Z")).rejects.toThrow("introuvable");
+  await expect(findMatch(matchesApi().client, "9", "Z")).rejects.toThrow(
+    "introuvable",
+  );
 });
 
 test("reportMatch en dry-run : plan avec recherche puis envoi, sans appel réseau", async () => {
@@ -408,7 +491,11 @@ test("configuration : les variables d'environnement l'emportent sur challonge.js
     }),
   );
   const fromFile = await loadConfig({}, cfgDir);
-  expect(fromFile).toMatchObject({ apiKey: "file-key-1234", communityId: "asso", game: "SF6" });
+  expect(fromFile).toMatchObject({
+    apiKey: "file-key-1234",
+    communityId: "asso",
+    game: "SF6",
+  });
   expect(fromFile.discord).toMatchObject({
     appId: "42",
     organiserRoleId: "7",
@@ -416,11 +503,19 @@ test("configuration : les variables d'environnement l'emportent sur challonge.js
   });
 
   const merged = await loadConfig(
-    { CHALLONGE_API_KEY: "env-key-9999", DISCORD_TOKEN: "dtok-1234", ORGANISER_ROLE_ID: "99" },
+    {
+      CHALLONGE_API_KEY: "env-key-9999",
+      DISCORD_TOKEN: "dtok-1234",
+      ORGANISER_ROLE_ID: "99",
+    },
     cfgDir,
   );
   expect(merged.apiKey).toBe("env-key-9999");
-  expect(merged.discord).toMatchObject({ token: "dtok-1234", organiserRoleId: "99", appId: "42" });
+  expect(merged.discord).toMatchObject({
+    token: "dtok-1234",
+    organiserRoleId: "99",
+    appId: "42",
+  });
   expect(secretsOf(merged)).toEqual(["env-key-9999", "dtok-1234"]);
 });
 
@@ -428,8 +523,13 @@ test("configuration : fichier absent toléré, JSON invalide et clé manquante s
   const empty = await loadConfig({}, join(dir, "nulle-part"));
   expect(empty.apiKey).toBeUndefined();
   expect(() => authOf(empty)).toThrow("CHALLONGE_API_KEY");
-  expect(authOf({ ...empty, apiKey: "k-abcdefg" })).toEqual({ kind: "key", key: "k-abcdefg" });
-  expect(authOf({ ...empty, apiKey: "k-abcdefg", oauthToken: "tok-xyz" })).toEqual({
+  expect(authOf({ ...empty, apiKey: "k-abcdefg" })).toEqual({
+    kind: "key",
+    key: "k-abcdefg",
+  });
+  expect(
+    authOf({ ...empty, apiKey: "k-abcdefg", oauthToken: "tok-xyz" }),
+  ).toEqual({
     kind: "oauth",
     token: "tok-xyz",
   });
@@ -438,7 +538,10 @@ test("configuration : fichier absent toléré, JSON invalide et clé manquante s
   await Bun.write(join(bad, "challonge.json"), "{ pas du json");
   await expect(loadConfig({}, bad)).rejects.toThrow("pas du JSON valide");
   const wrong = join(dir, "wrong");
-  await Bun.write(join(wrong, "challonge.json"), JSON.stringify({ apiKey: 12 }));
+  await Bun.write(
+    join(wrong, "challonge.json"),
+    JSON.stringify({ apiKey: 12 }),
+  );
   await expect(loadConfig({}, wrong)).rejects.toThrow("apiKey");
 });
 
@@ -450,7 +553,10 @@ test("StateStore : mises à jour concurrentes sérialisées, écriture atomique,
   await Promise.all(
     Array.from({ length: 25 }, (_, i) =>
       store.update((state) => {
-        (state.players["t1"] ??= {})[`u${i}`] = { participantId: String(i), name: `n${i}` };
+        (state.players["t1"] ??= {})[`u${i}`] = {
+          participantId: String(i),
+          name: `n${i}`,
+        };
       }),
     ),
   );

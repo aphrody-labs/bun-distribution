@@ -3,10 +3,15 @@ import { expect, test } from "bun:test";
 import { mkdtemp, rm, writeFile, copyFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { configuredPublicIndexSearch, createHandler, publicIndexResponse } from "./server.ts";
+import {
+  configuredPublicIndexSearch,
+  createHandler,
+  publicIndexResponse,
+} from "./server.ts";
 import type { PublicIndexSearch } from "./public-index.ts";
 
-const url = "https://aphrody.com/api/index/search?query=Bun&collection=public-docs";
+const url =
+  "https://aphrody.com/api/index/search?query=Bun&collection=public-docs";
 const owner: PublicIndexSearch = async ({ query, collection }) => ({
   body: {
     query,
@@ -14,7 +19,11 @@ const owner: PublicIndexSearch = async ({ query, collection }) => ({
     source: "public-crawl-cache",
     generatedAt: "2026-10-11T00:00:00Z",
     organic: [
-      { title: "Bun fixture", url: "https://example.test/bun", snippet: "Exported public text" },
+      {
+        title: "Bun fixture",
+        url: "https://example.test/bun",
+        snippet: "Exported public text",
+      },
     ],
   },
   etag: '"snapshot-a"',
@@ -28,13 +37,25 @@ test("public index projects only its explicit public contract and forwards cance
     headers: { cookie: "private", authorization: "private" },
   });
   const response = await publicIndexResponse(request, async (input, signal) => {
-    expect(input).toEqual({ query: "Bun", collection: "public-docs", num: 10, start: 0 });
+    expect(input).toEqual({
+      query: "Bun",
+      collection: "public-docs",
+      num: 10,
+      start: 0,
+    });
     expect(signal).toBe(request.signal);
     return { ...(await owner(input)), privateMetadata: "must not project" };
   });
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual(
-    (await owner({ query: "Bun", collection: "public-docs", num: 10, start: 0 })).body,
+    (
+      await owner({
+        query: "Bun",
+        collection: "public-docs",
+        num: 10,
+        start: 0,
+      })
+    ).body,
   );
   expect(response.headers.get("etag")).toBe('"snapshot-a"');
   expect(response.headers.get("x-public-index-cache")).toBe("miss");
@@ -66,7 +87,10 @@ test("public index rejects invalid, duplicate, privileged and overbudget query p
     }),
   );
   expect(calls).toBe(0);
-  const response = await publicIndexResponse(new Request(url, { method: "POST" }), owner);
+  const response = await publicIndexResponse(
+    new Request(url, { method: "POST" }),
+    owner,
+  );
   expect(response.status).toBe(405);
   expect(response.headers.get("allow")).toBe("GET");
 });
@@ -78,7 +102,9 @@ test("public index returns empty 304 only after owner verification and reflects 
     return { ...(await owner(input)), cache: "hit" };
   };
   const response = await publicIndexResponse(
-    new Request(url, { headers: { "if-none-match": '"other", W/"snapshot-a"' } }),
+    new Request(url, {
+      headers: { "if-none-match": '"other", W/"snapshot-a"' },
+    }),
     cached,
   );
   expect(response.status).toBe(304);
@@ -100,7 +126,12 @@ test("public index preserves Unicode and punctuation as owner input, without exe
       `${url.replace("query=Bun", `query=${encodeURIComponent(query)}`)}&num=20&start=1000`,
     ),
     async (input) => {
-      expect(input).toEqual({ query, collection: "public-docs", num: 20, start: 1000 });
+      expect(input).toEqual({
+        query,
+        collection: "public-docs",
+        num: 20,
+        start: 1000,
+      });
       return owner(input);
     },
   );
@@ -146,10 +177,13 @@ test("public index stops aborted requests before loading and after owner cancell
   let calls = 0;
   expect(
     (
-      await publicIndexResponse(new Request(url, { signal: controller.signal }), async (input) => {
-        calls++;
-        return owner(input);
-      })
+      await publicIndexResponse(
+        new Request(url, { signal: controller.signal }),
+        async (input) => {
+          calls++;
+          return owner(input);
+        },
+      )
     ).status,
   ).toBe(503);
   expect(calls).toBe(0);
@@ -168,12 +202,18 @@ test("public index stops aborted requests before loading and after owner cancell
 test("public index route is restricted to declared site hosts", async () => {
   const handler = createHandler(
     join(tmpdir(), "no-fixture-downloads"),
-    { root: join(tmpdir(), "no-fixture-site"), hosts: new Set(["aphrody.com"]) },
+    {
+      root: join(tmpdir(), "no-fixture-site"),
+      hosts: new Set(["aphrody.com"]),
+    },
     undefined,
     owner,
   );
   expect((await handler(new Request(url))).status).toBe(200);
-  expect((await handler(new Request(url.replace("aphrody.com", "foreign.test")))).status).toBe(404);
+  expect(
+    (await handler(new Request(url.replace("aphrody.com", "foreign.test"))))
+      .status,
+  ).toBe(404);
 });
 
 test("explicit SDK configuration resolves real fixture module and standalone server erases type-only imports", async () => {
@@ -198,7 +238,9 @@ test("explicit SDK configuration resolves real fixture module and standalone ser
       PUBLIC_INDEX_COLLECTIONS: JSON.stringify(collections),
     };
     const configured = await configuredPublicIndexSearch(env);
-    expect((await publicIndexResponse(new Request(url), configured)).status).toBe(200);
+    expect(
+      (await publicIndexResponse(new Request(url), configured)).status,
+    ).toBe(200);
     const missingModule: PublicIndexSearch = async (input, signal) =>
       (
         await configuredPublicIndexSearch({
@@ -206,7 +248,9 @@ test("explicit SDK configuration resolves real fixture module and standalone ser
           PUBLIC_INDEX_SDK_MODULE: join(root, "absent.ts"),
         })
       )(input, signal);
-    expect((await publicIndexResponse(new Request(url), missingModule)).status).toBe(503);
+    expect(
+      (await publicIndexResponse(new Request(url), missingModule)).status,
+    ).toBe(503);
     await Promise.all(
       [
         { ...env, PUBLIC_INDEX_ROOT: "relative" },
@@ -215,7 +259,10 @@ test("explicit SDK configuration resolves real fixture module and standalone ser
         {
           ...env,
           PUBLIC_INDEX_COLLECTIONS: JSON.stringify({
-            "public-docs": { ...collections["public-docs"], pointer: "../private" },
+            "public-docs": {
+              ...collections["public-docs"],
+              pointer: "../private",
+            },
           }),
         },
       ].map(async (invalid) => {

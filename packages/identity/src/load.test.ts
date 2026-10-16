@@ -24,7 +24,9 @@ const cdn = Bun.serve({
     hits.push(path);
     if (path.includes("/home/")) return new Response(SVG);
     if (path.includes("/evil/"))
-      return new Response(SVG.replace("<path", "<script>alert(1)</script><path"));
+      return new Response(
+        SVG.replace("<path", "<script>alert(1)</script><path"),
+      );
     if (path.includes("/broken/")) return new Response("", { status: 500 });
     return new Response("", { status: 404 });
   },
@@ -33,11 +35,16 @@ afterAll(() => cdn.stop(true));
 const origin = cdn.url.href;
 
 /** ICO with a BMP header per entry (40-byte DIB) and a PNG entry carrying only its IHDR. */
-function ico(entries: { side: number; bits: number; png?: boolean }[]): Uint8Array<ArrayBuffer> {
+function ico(
+  entries: { side: number; bits: number; png?: boolean }[],
+): Uint8Array<ArrayBuffer> {
   const blobs = entries.map(({ side, bits, png }) => {
     if (png) {
       const d = new Uint8Array(33);
-      d.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52]);
+      d.set([
+        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48,
+        0x44, 0x52,
+      ]);
       new DataView(d.buffer).setUint32(16, side);
       new DataView(d.buffer).setUint32(20, side);
       return d;
@@ -50,7 +57,9 @@ function ico(entries: { side: number; bits: number; png?: boolean }[]): Uint8Arr
     v.setUint16(14, bits, true);
     return d;
   });
-  const out = new Uint8Array(6 + entries.length * 16 + blobs.reduce((n, b) => n + b.length, 0));
+  const out = new Uint8Array(
+    6 + entries.length * 16 + blobs.reduce((n, b) => n + b.length, 0),
+  );
   const v = new DataView(out.buffer);
   v.setUint16(2, 1, true);
   v.setUint16(4, entries.length, true);
@@ -83,20 +92,28 @@ test("detectFormat reads magic bytes like Format::detecter", () => {
   expect(detectFormat(text("GIF89a"))).toBe("gif");
   expect(detectFormat(b(0, 0, 1, 0, 1, 0))).toBe("ico");
   expect(detectFormat(b(0, 0, 1, 0, 0, 0))).toBeUndefined();
-  expect(detectFormat(text(`\uFEFF<?xml version="1.0"?><!-- c --><!DOCTYPE svg><svg/>`))).toBe(
-    "svg",
-  );
+  expect(
+    detectFormat(
+      text(`\uFEFF<?xml version="1.0"?><!-- c --><!DOCTYPE svg><svg/>`),
+    ),
+  ).toBe("svg");
   expect(detectFormat(text("<svgx>"))).toBeUndefined();
   expect(detectFormat(text("hello"))).toBeUndefined();
 });
 
 describe("symbols", () => {
   test("grammar and CDN layout (same paths as symbols::cdn_path)", () => {
-    expect(symbolUrl(parseSymbol("symbol:home"), "https://cdn.aphrody.com")).toBe(
+    expect(
+      symbolUrl(parseSymbol("symbol:home"), "https://cdn.aphrody.com"),
+    ).toBe(
       "https://cdn.aphrody.com/s/i/short-term/release/materialsymbolsoutlined/home/default/24px.svg",
     );
     expect(
-      symbolUrl(parseSymbol("symbol:settings?style=rounded&wght=300&grad=-25&fill=1&opsz=48")),
+      symbolUrl(
+        parseSymbol(
+          "symbol:settings?style=rounded&wght=300&grad=-25&fill=1&opsz=48",
+        ),
+      ),
     ).toBe(
       "https://cdn.aphrody.com/s/i/short-term/release/materialsymbolsrounded/settings/wght300gradN25fill1/48px.svg",
     );
@@ -132,7 +149,9 @@ describe("symbols", () => {
       `<svg width="64" height="64" fill="#6750a4" color="#6750a4" xmlns=`,
     );
     expect(big.svg).not.toContain(`fill="#000"`);
-    expect(hits).toContain("/s/i/short-term/release/materialsymbolssharp/home/fill1/48px.svg");
+    expect(hits).toContain(
+      "/s/i/short-term/release/materialsymbolssharp/home/fill1/48px.svg",
+    );
 
     const filled = await loadIcon(
       new TextEncoder().encode(SVG.replace('width="24"', 'width="48"')),
@@ -157,23 +176,33 @@ describe("symbols", () => {
       'unknown symbol "no_such_icon"',
     );
     await expect(loadIcon("symbol:broken", svg)).rejects.toThrow("HTTP 500");
-    await expect(loadIcon("symbol:evil", svg)).rejects.toThrow("scripts, event handlers");
-    await expect(loadIcon("symbol:home", { ...svg, tint: "purple" })).rejects.toThrow(
-      "tint purple",
+    await expect(loadIcon("symbol:evil", svg)).rejects.toThrow(
+      "scripts, event handlers",
     );
-    await expect(loadIcon("symbol:home", { ...svg, scale: 0 })).rejects.toThrow("scale 0");
-    await expect(loadIcon("symbol:home", { ...svg, size: 20_000 })).rejects.toThrow(
-      "out of 1..16384",
+    await expect(
+      loadIcon("symbol:home", { ...svg, tint: "purple" }),
+    ).rejects.toThrow("tint purple");
+    await expect(loadIcon("symbol:home", { ...svg, scale: 0 })).rejects.toThrow(
+      "scale 0",
     );
-    await expect(loadIcon(new Uint8Array([1, 2, 3]))).rejects.toThrow("unknown image format");
-    await expect(loadIcon(ico([{ side: 16, bits: 32 }]), { output: "svg" })).rejects.toThrow(
-      "no SVG output",
+    await expect(
+      loadIcon("symbol:home", { ...svg, size: 20_000 }),
+    ).rejects.toThrow("out of 1..16384");
+    await expect(loadIcon(new Uint8Array([1, 2, 3]))).rejects.toThrow(
+      "unknown image format",
     );
-    await expect(loadIcon("symbol:home", { origin })).rejects.toThrow("createImageBitmap");
+    await expect(
+      loadIcon(ico([{ side: 16, bits: 32 }]), { output: "svg" }),
+    ).rejects.toThrow("no SVG output");
+    await expect(loadIcon("symbol:home", { origin })).rejects.toThrow(
+      "createImageBitmap",
+    );
     const down = (async () => {
       throw new Error("offline");
     }) as unknown as typeof fetch;
-    await expect(loadIcon("symbol:home", { ...svg, fetch: down })).rejects.toThrow("offline");
+    await expect(
+      loadIcon("symbol:home", { ...svg, fetch: down }),
+    ).rejects.toThrow("offline");
   });
 });
 
@@ -186,18 +215,32 @@ describe("ico", () => {
         { side: 256, bits: 32, png: true },
       ]),
     );
-    expect(entries.map(({ width, height, bits, png }) => [width, height, bits, png])).toEqual([
+    expect(
+      entries.map(({ width, height, bits, png }) => [width, height, bits, png]),
+    ).toEqual([
       [16, 16, 4, false],
       [48, 48, 24, false],
       [256, 256, 32, true],
     ]);
-    expect(() => icoEntries(ico([{ side: 16, bits: 4 }]).subarray(0, 30))).toThrow("past the end");
-    expect(() => icoEntries(new Uint8Array([0, 0, 1, 0, 9, 0]))).toThrow("truncated");
+    expect(() =>
+      icoEntries(ico([{ side: 16, bits: 4 }]).subarray(0, 30)),
+    ).toThrow("past the end");
+    expect(() => icoEntries(new Uint8Array([0, 0, 1, 0, 9, 0]))).toThrow(
+      "truncated",
+    );
   });
 
   test("bestEntry: same answers as meilleure_entree (crate test choix_d_entree)", () => {
-    const entries = [entry(16, 32), entry(32, 8), entry(32, 32), entry(48, 32), entry(256, 32)];
-    expect([24, 32, 49, 512].map((t) => bestEntry(entries, t))).toEqual([2, 2, 4, 4]);
+    const entries = [
+      entry(16, 32),
+      entry(32, 8),
+      entry(32, 32),
+      entry(48, 32),
+      entry(256, 32),
+    ];
+    expect([24, 32, 49, 512].map((t) => bestEntry(entries, t))).toEqual([
+      2, 2, 4, 4,
+    ]);
     expect(bestEntry(entries)).toBe(4);
     expect(bestEntry([], 16)).toBe(-1);
   });
@@ -211,9 +254,13 @@ describe("ico", () => {
     );
     const one = new Uint8Array(await icoEntryBlob(bmp!).arrayBuffer());
     expect(icoEntryBlob(bmp!).type).toBe("image/x-icon");
-    expect(icoEntries(one).map(({ width, bits, png: isPng }) => [width, bits, isPng])).toEqual([
-      [24, 8, false],
-    ]);
+    expect(
+      icoEntries(one).map(({ width, bits, png: isPng }) => [
+        width,
+        bits,
+        isPng,
+      ]),
+    ).toEqual([[24, 8, false]]);
     expect(one.subarray(22)).toEqual(bmp!.data);
     expect(icoEntryBlob(png!).type).toBe("image/png");
     expect(icoEntryBlob(png!).size).toBe(png!.data.length);
@@ -239,7 +286,9 @@ test("dimensions and colours: same arithmetic as the crate", () => {
     height: 100,
   });
   expect(dimensions([20, 10], { scale: 2 })).toEqual({ width: 40, height: 20 });
-  expect(() => dimensions([1, 1], { size: 20_000, fit: "fill" })).toThrow(LoadIconError);
+  expect(() => dimensions([1, 1], { size: 20_000, fit: "fill" })).toThrow(
+    LoadIconError,
+  );
   expect(() => dimensions([0, 1], {})).toThrow("zero size");
   expect(parseColor("#6750a4")).toEqual([0x67, 0x50, 0xa4, 255]);
   expect(parseColor("#fff")).toEqual([255, 255, 255, 255]);

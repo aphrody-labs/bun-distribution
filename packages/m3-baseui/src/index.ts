@@ -25,7 +25,12 @@ export {
 } from "./checkbox";
 export { M3CheckboxGroup } from "./checkbox-group";
 export { M3Form } from "./form";
-export { INPUT_VARIANTS, M3Input, type InputVariant, type M3InputProps } from "./input";
+export {
+  INPUT_VARIANTS,
+  M3Input,
+  type InputVariant,
+  type M3InputProps,
+} from "./input";
 export { M3Menubar } from "./menubar";
 export {
   M3Radio,
@@ -73,6 +78,9 @@ export * as M3Tooltip from "./tooltip";
 
 // Base UI pieces without a visual role.
 export { CSPProvider } from "@base-ui/react/csp-provider";
-export { DirectionProvider, useDirection } from "@base-ui/react/direction-provider";
+export {
+  DirectionProvider,
+  useDirection,
+} from "@base-ui/react/direction-provider";
 export { mergeProps } from "@base-ui/react/merge-props";
 export { useRender } from "@base-ui/react/use-render";

@@ -12,7 +12,11 @@ import {
   selfCommand,
   stageConf,
 } from "../../src/admin/lib/tunnel.ts";
-import { generateKeyPair, isWgKey, publicKeyOf } from "../../src/admin/lib/wireguard.ts";
+import {
+  generateKeyPair,
+  isWgKey,
+  publicKeyOf,
+} from "../../src/admin/lib/wireguard.ts";
 import { samplePack, testContext } from "./helpers.ts";
 
 const touch = (path: string, text = "x") => {
@@ -26,8 +30,12 @@ test("service state is read from sc output", () => {
       "SERVICE_NAME: WireGuardTunnel$aphrody\n        STATE              : 4  RUNNING",
     ),
   ).toBe("RUNNING");
-  expect(parseServiceState("        STATE              : 1  STOPPED")).toBe("STOPPED");
-  expect(parseServiceState("[SC] EnumQueryServicesStatus:OpenService FAILED 1060")).toBeUndefined();
+  expect(parseServiceState("        STATE              : 1  STOPPED")).toBe(
+    "STOPPED",
+  );
+  expect(
+    parseServiceState("[SC] EnumQueryServicesStatus:OpenService FAILED 1060"),
+  ).toBeUndefined();
 });
 
 test("the elevated command quotes paths with spaces for Start-Process", () => {
@@ -56,7 +64,9 @@ test("the elevated command quotes paths with spaces for Start-Process", () => {
 test("selfCommand restarts the exe, or bun with the entry file from sources", () => {
   const { ctx } = testContext();
   expect(selfCommand(ctx)).toEqual([ctx.exePath]);
-  expect(selfCommand({ ...ctx, exePath: "C:\\bun\\bun.exe" })[0]).toBe("C:\\bun\\bun.exe");
+  expect(selfCommand({ ...ctx, exePath: "C:\\bun\\bun.exe" })[0]).toBe(
+    "C:\\bun\\bun.exe",
+  );
 });
 
 test("the WireGuard key is made once, kept in a protected file and never rewritten", async () => {
@@ -65,8 +75,14 @@ test("the WireGuard key is made once, kept in a protected file and never rewritt
   expect(first.created).toBe(true);
   expect(isWgKey(first.privateKey)).toBe(true);
   expect(publicKeyOf(first.privateKey)).toBe(first.publicKey);
-  expect(readFileSync(ctx.paths.wgKeyFile, "utf8").trim()).toBe(first.privateKey);
-  expect(sys.calls[0]!.argv.slice(0, 3)).toEqual(["icacls", ctx.paths.wgKeyFile, "/inheritance:r"]);
+  expect(readFileSync(ctx.paths.wgKeyFile, "utf8").trim()).toBe(
+    first.privateKey,
+  );
+  expect(sys.calls[0]!.argv.slice(0, 3)).toEqual([
+    "icacls",
+    ctx.paths.wgKeyFile,
+    "/inheritance:r",
+  ]);
   expect(sys.calls[0]!.argv).toContain("omar:F");
   const second = await ensureWgKey(sys, ctx.paths);
   expect(second).toEqual({ ...first, created: false });
@@ -81,21 +97,37 @@ test("stageConf assembles the file in a protected temp folder and fingerprints i
   const staged = await stageConf(sys, ctx.paths, samplePack(), privateKey);
   const conf = readFileSync(staged.path, "utf8");
   expect(conf).toContain(`PrivateKey = ${privateKey}`);
-  expect(staged.path.startsWith(join(ctx.paths.programData, "Aphrody"))).toBe(true);
-  expect(
-    sys.calls.some((call) => call.argv[0] === "icacls" && call.argv.includes(staged.path)),
-  ).toBe(true);
-  expect((await stageConf(sys, ctx.paths, samplePack(), privateKey)).fingerprint).toBe(
-    staged.fingerprint,
+  expect(staged.path.startsWith(join(ctx.paths.programData, "Aphrody"))).toBe(
+    true,
   );
   expect(
-    (await stageConf(sys, ctx.paths, samplePack(), generateKeyPair().privateKey)).fingerprint,
+    sys.calls.some(
+      (call) => call.argv[0] === "icacls" && call.argv.includes(staged.path),
+    ),
+  ).toBe(true);
+  expect(
+    (await stageConf(sys, ctx.paths, samplePack(), privateKey)).fingerprint,
+  ).toBe(staged.fingerprint);
+  expect(
+    (
+      await stageConf(
+        sys,
+        ctx.paths,
+        samplePack(),
+        generateKeyPair().privateKey,
+      )
+    ).fingerprint,
   ).not.toBe(staged.fingerprint);
   await expect(
     stageConf(sys, ctx.paths, samplePack({ wireguard: undefined }), privateKey),
   ).rejects.toThrow("WireGuard");
   await expect(
-    stageConf(sys, ctx.paths, samplePack({ wireguard: { tunnelName: "aphrody" } }), privateKey),
+    stageConf(
+      sys,
+      ctx.paths,
+      samplePack({ wireguard: { tunnelName: "aphrody" } }),
+      privateKey,
+    ),
   ).rejects.toThrow("ni bloc");
 });
 
@@ -135,7 +167,9 @@ test("elevated install: encrypted copy preferred, previous tunnel removed first,
   sys.handlers.push(
     {
       match: "sc query",
-      result: () => ({ stdout: queries++ === 0 ? "STATE : 1  STOPPED" : "[SC] FAILED 1060" }),
+      result: () => ({
+        stdout: queries++ === 0 ? "STATE : 1  STOPPED" : "[SC] FAILED 1060",
+      }),
     },
     {
       match: /uninstalltunnelservice/,
@@ -155,7 +189,8 @@ test("elevated install: encrypted copy preferred, previous tunnel removed first,
     "aphrody.conf.dpapi",
   );
   sys.sleep = async () => {
-    if (existsSync(join(dirname(dpapi), "aphrody.conf"))) touch(dpapi, "encrypted");
+    if (existsSync(join(dirname(dpapi), "aphrody.conf")))
+      touch(dpapi, "encrypted");
   };
   const result = await installTunnelElevated(sys, ctx.paths, conf, "aphrody");
   expect(result.ok).toBe(true);
@@ -175,7 +210,10 @@ test("elevated install falls back to the plain file when the manager does not en
   touch(conf, "[Interface]\n");
   sys.handlers.push(
     { match: "sc query", result: { stdout: "[SC] FAILED 1060" } },
-    { match: /installtunnelservice/, result: { code: 1, stderr: "PrivateKey = AAAA boom" } },
+    {
+      match: /installtunnelservice/,
+      result: { code: 1, stderr: "PrivateKey = AAAA boom" },
+    },
   );
   const failed = await installTunnelElevated(sys, ctx.paths, conf, "aphrody");
   expect(failed.ok).toBe(false);
@@ -183,7 +221,14 @@ test("elevated install falls back to the plain file when the manager does not en
   expect(failed.detail).not.toContain("AAAA");
   expect(existsSync(conf)).toBe(false);
   expect(
-    (await installTunnelElevated(sys, ctx.paths, join(root, "nothing.conf"), "aphrody")).ok,
+    (
+      await installTunnelElevated(
+        sys,
+        ctx.paths,
+        join(root, "nothing.conf"),
+        "aphrody",
+      )
+    ).ok,
   ).toBe(false);
 });
 
@@ -197,10 +242,16 @@ test("importTunnel asks Windows for elevation, waits for the service and removes
     { match: /^powershell .*Start-Process/, result: {} },
     {
       match: "sc query",
-      result: () => ({ stdout: ++polls < 3 ? "STATE : 2  START_PENDING" : "STATE : 4  RUNNING" }),
+      result: () => ({
+        stdout: ++polls < 3 ? "STATE : 2  START_PENDING" : "STATE : 4  RUNNING",
+      }),
     },
   );
-  const result = await importTunnel(ctx, { path: staged, fingerprint: "f" }, "aphrody");
+  const result = await importTunnel(
+    ctx,
+    { path: staged, fingerprint: "f" },
+    "aphrody",
+  );
   expect(result.ok).toBe(true);
   expect(existsSync(staged)).toBe(false);
   const elevated = sys.calls.find((call) => call.argv[0] === "powershell")!;
@@ -217,7 +268,11 @@ test("importTunnel explains a refused consent window and a tunnel that never sta
     match: /^powershell /,
     result: { code: 1, stderr: "The operation was canceled by the user" },
   });
-  const refused = await importTunnel(ctx, { path: staged, fingerprint: "f" }, "aphrody");
+  const refused = await importTunnel(
+    ctx,
+    { path: staged, fingerprint: "f" },
+    "aphrody",
+  );
   expect(refused.ok).toBe(false);
   expect(refused.detail).toContain("« Oui »");
   expect(existsSync(staged)).toBe(false);
@@ -227,11 +282,18 @@ test("importTunnel explains a refused consent window and a tunnel that never sta
     { match: "sc query", result: { stdout: "STATE : 1  STOPPED" } },
   );
   touch(staged, "secret");
-  expect((await importTunnel(ctx, { path: staged, fingerprint: "f" }, "aphrody")).detail).toContain(
-    "n'a pas démarré",
-  );
+  expect(
+    (await importTunnel(ctx, { path: staged, fingerprint: "f" }, "aphrody"))
+      .detail,
+  ).toContain("n'a pas démarré");
   const linux = testContext({ platform: "linux" });
   expect(
-    (await importTunnel(linux.ctx, { path: staged, fingerprint: "f" }, "aphrody")).detail,
+    (
+      await importTunnel(
+        linux.ctx,
+        { path: staged, fingerprint: "f" },
+        "aphrody",
+      )
+    ).detail,
   ).toContain("Windows");
 });

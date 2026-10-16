@@ -36,7 +36,13 @@ export interface Snapshot {
   packages: Record<string, PackageSize>;
   apps: Record<
     string,
-    { files: number; bytes: number; gzipBytes: number; buildMs: number; error?: string }
+    {
+      files: number;
+      bytes: number;
+      gzipBytes: number;
+      buildMs: number;
+      error?: string;
+    }
   >;
 }
 
@@ -67,14 +73,17 @@ export function packageEntries(
       if (target) targets.add(target);
     }
   } else if (typeof exp === "string") targets.add(exp);
-  else if (manifest.module ?? manifest.main) targets.add((manifest.module ?? manifest.main)!);
+  else if (manifest.module ?? manifest.main)
+    targets.add((manifest.module ?? manifest.main)!);
   const files = new Set<string>();
   for (const target of targets) {
     if (target.startsWith("./dist/")) {
       // An export that only points at `dist/x.js`: measure the source it is built from.
       const rel = target.slice("./dist/".length).replace(/\.js$/, "");
       const source = ["src/", ""]
-        .flatMap((base) => [".ts", ".tsx"].map((ext) => join(dir, `${base}${rel}${ext}`)))
+        .flatMap((base) =>
+          [".ts", ".tsx"].map((ext) => join(dir, `${base}${rel}${ext}`)),
+        )
         .find((c) => existsSync(c));
       if (source) files.add(source);
       continue;
@@ -90,7 +99,9 @@ export function packageEntries(
     const file = resolve(dir, target);
     if (existsSync(file) && statSync(file).isFile()) files.add(file);
   }
-  return [...files].filter((f) => (JS.test(f) && !SKIP.test(f)) || f.endsWith(".css")).toSorted();
+  return [...files]
+    .filter((f) => (JS.test(f) && !SKIP.test(f)) || f.endsWith(".css"))
+    .toSorted();
 }
 
 /** The shipped build output: `.js` files under `dist/`. */
@@ -100,7 +111,10 @@ export function measureDist(
   const out = { distFiles: 0, distBytes: 0, distGzipBytes: 0 };
   const dist = join(dir, "dist");
   if (!existsSync(dist)) return out;
-  for (const file of new Glob("**/*.js").scanSync({ cwd: dist, onlyFiles: true })) {
+  for (const file of new Glob("**/*.js").scanSync({
+    cwd: dist,
+    onlyFiles: true,
+  })) {
     const bytes = new Uint8Array(readFileSync(join(dist, file)));
     out.distFiles++;
     out.distBytes += bytes.length;
@@ -137,7 +151,11 @@ async function measurePackage(
       throw: false,
     });
     if (!result.success) {
-      size.error = result.logs.slice(0, 2).map(String).join(" | ").slice(0, 300);
+      size.error = result.logs
+        .slice(0, 2)
+        .map(String)
+        .join(" | ")
+        .slice(0, 300);
     }
     for (const output of result.outputs) {
       if (output.kind === "sourcemap") continue;
@@ -159,7 +177,11 @@ async function measurePackage(
 
 async function measureApp(dir: string) {
   const started = performance.now();
-  const proc = Bun.spawnSync(["bun", "run", "build"], { cwd: dir, stdout: "pipe", stderr: "pipe" });
+  const proc = Bun.spawnSync(["bun", "run", "build"], {
+    cwd: dir,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const outdir = join(dir, "dist");
   const out = {
     files: 0,
@@ -171,7 +193,10 @@ async function measureApp(dir: string) {
     out.error = proc.stderr.toString().slice(0, 300);
     return out;
   }
-  for (const file of new Glob("**/*").scanSync({ cwd: outdir, onlyFiles: true })) {
+  for (const file of new Glob("**/*").scanSync({
+    cwd: outdir,
+    onlyFiles: true,
+  })) {
     if (file.endsWith(".map")) continue;
     const bytes = new Uint8Array(readFileSync(join(outdir, file)));
     out.files++;
@@ -196,7 +221,10 @@ export function renderReport(
   exclude: readonly string[] = [],
 ): string {
   const names = [
-    ...new Set([...Object.keys(before.packages), ...Object.keys(after.packages)]),
+    ...new Set([
+      ...Object.keys(before.packages),
+      ...Object.keys(after.packages),
+    ]),
   ].toSorted();
   const rows = names.map((name) => {
     const b = before.packages[name]?.error ? undefined : before.packages[name];
@@ -213,9 +241,13 @@ export function renderReport(
         after.packages[name] &&
         !after.packages[name]!.error,
     );
-  const sum = (s: Snapshot, key: "jsBytes" | "gzipBytes" | "cssBytes" | "distBytes") =>
-    inScope(s).reduce((n, [, p]) => n + p[key], 0);
-  const apps = [...new Set([...Object.keys(before.apps), ...Object.keys(after.apps)])]
+  const sum = (
+    s: Snapshot,
+    key: "jsBytes" | "gzipBytes" | "cssBytes" | "distBytes",
+  ) => inScope(s).reduce((n, [, p]) => n + p[key], 0);
+  const apps = [
+    ...new Set([...Object.keys(before.apps), ...Object.keys(after.apps)]),
+  ]
     .toSorted()
     .map((name) => {
       const b = before.apps[name];
@@ -244,9 +276,15 @@ if (import.meta.main) {
   };
   if (args.includes("--report")) {
     const [beforeFile, afterFile] = args.slice(args.indexOf("--report") + 1);
-    const before = JSON.parse(readFileSync(resolve(beforeFile!), "utf8")) as Snapshot;
-    const after = JSON.parse(readFileSync(resolve(afterFile!), "utf8")) as Snapshot;
-    console.log(renderReport(before, after, flag("--exclude")?.split(",") ?? []));
+    const before = JSON.parse(
+      readFileSync(resolve(beforeFile!), "utf8"),
+    ) as Snapshot;
+    const after = JSON.parse(
+      readFileSync(resolve(afterFile!), "utf8"),
+    ) as Snapshot;
+    console.log(
+      renderReport(before, after, flag("--exclude")?.split(",") ?? []),
+    );
     process.exit(0);
   }
   const root = resolve(flag("--root") ?? REPO);
@@ -259,7 +297,8 @@ if (import.meta.main) {
   };
   for (const { name, dir, manifest } of workspacePackages(root)) {
     if (!name.startsWith("@aphrody/") && only === undefined) continue;
-    if (only && !only.includes(name) && !only.includes(relative(REPO, dir))) continue;
+    if (only && !only.includes(name) && !only.includes(relative(REPO, dir)))
+      continue;
     // Keep benchmark jobs serial so concurrent builds do not distort sizes or resource measurements.
     // oxlint-disable-next-line no-await-in-loop
     snapshot.packages[name] = await measurePackage(dir, manifest);
@@ -269,7 +308,9 @@ if (import.meta.main) {
     if (existsSync(appsDir))
       for (const name of readdirSync(appsDir).toSorted()) {
         if (!existsSync(join(appsDir, name, "package.json"))) continue;
-        const manifest = JSON.parse(readFileSync(join(appsDir, name, "package.json"), "utf8")) as {
+        const manifest = JSON.parse(
+          readFileSync(join(appsDir, name, "package.json"), "utf8"),
+        ) as {
           name: string;
           scripts?: Record<string, string>;
         };
@@ -285,5 +326,6 @@ if (import.meta.main) {
   if (out) await Bun.write(resolve(out), text);
   else process.stdout.write(text);
   const failed = Object.entries(snapshot.packages).filter(([, p]) => p.error);
-  for (const [name, p] of failed) console.error(`bundle-size: ${name}: ${p.error}`);
+  for (const [name, p] of failed)
+    console.error(`bundle-size: ${name}: ${p.error}`);
 }

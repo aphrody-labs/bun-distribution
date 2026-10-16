@@ -3,7 +3,12 @@
 
 "use client";
 
-import { CircleButton, Popover, SelectPill, usePopover } from "@aphrody/m3-primitives";
+import {
+  CircleButton,
+  Popover,
+  SelectPill,
+  usePopover,
+} from "@aphrody/m3-primitives";
 import { m3Durations, m3Easings } from "@aphrody/m3-motion";
 import { clsx } from "clsx";
 import { AnimatePresence, motion } from "motion/react";
@@ -63,12 +68,18 @@ const iconButtonEnter = {
   animate: {
     scale: 1,
     opacity: 1,
-    transition: { duration: m3Durations.short4, ease: m3Easings.emphasizedDecelerate },
+    transition: {
+      duration: m3Durations.short4,
+      ease: m3Easings.emphasizedDecelerate,
+    },
   },
   exit: {
     scale: 0.6,
     opacity: 0,
-    transition: { duration: m3Durations.short3, ease: m3Easings.emphasizedAccelerate },
+    transition: {
+      duration: m3Durations.short3,
+      ease: m3Easings.emphasizedAccelerate,
+    },
   },
 } as const;
 
@@ -102,7 +113,11 @@ export function ChatComposer({
     <>
       {heading && (
         <div className="mb-3 flex items-center gap-2 px-1 text-title-small text-on-surface-variant">
-          <ChatIcon name="auto_awesome_filled" size={18} className="text-primary" />
+          <ChatIcon
+            name="auto_awesome_filled"
+            size={18}
+            className="text-primary"
+          />
           {heading}
         </div>
       )}
@@ -144,7 +159,9 @@ export function ChatComposer({
                     disabled={disabled}
                     hideCaret
                   >
-                    <span className="min-w-0 flex-1 truncate">{projectSelector.value}</span>
+                    <span className="min-w-0 flex-1 truncate">
+                      {projectSelector.value}
+                    </span>
                     <ChatIcon name="expand_more" size={18} />
                   </SelectPill>
                 </Popover.Trigger>
@@ -181,7 +198,9 @@ export function ChatComposer({
                             "focus-visible:outline-offset-[-3px]",
                           )}
                         >
-                          <span className="min-w-0 flex-1 truncate">{option}</span>
+                          <span className="min-w-0 flex-1 truncate">
+                            {option}
+                          </span>
                           {selected && <ChatIcon name="check" size={20} />}
                         </button>
                       );

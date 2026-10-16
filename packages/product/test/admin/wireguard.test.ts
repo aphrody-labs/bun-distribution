@@ -17,7 +17,11 @@ const b64 = (hex: string) => Buffer.from(hex, "hex").toString("base64");
 const block = (packJson().wireguard as { block: string }).block;
 
 test("publicKeyOf matches the RFC 7748 X25519 vector", () => {
-  expect(publicKeyOf(b64("77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a"))).toBe(
+  expect(
+    publicKeyOf(
+      b64("77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a"),
+    ),
+  ).toBe(
     b64("8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a"),
   );
 });
@@ -45,7 +49,9 @@ test("assembleConf puts the local private key in [Interface] and keeps the team'
   const { privateKey } = generateKeyPair();
   const conf = assembleConf(privateKey, block);
   expect(
-    conf.startsWith(`[Interface]\nPrivateKey = ${privateKey}\nAddress = 198.51.100.10/32\n`),
+    conf.startsWith(
+      `[Interface]\nPrivateKey = ${privateKey}\nAddress = 198.51.100.10/32\n`,
+    ),
   ).toBe(true);
   expect(conf).toContain(
     `[Peer]\nPublicKey = ${hubKey}\nEndpoint = 203.0.113.9:51821\nAllowedIPs = 198.51.100.0/24`,
@@ -56,14 +62,16 @@ test("assembleConf puts the local private key in [Interface] and keeps the team'
 
 test("a block with its own [Interface] header is accepted too", () => {
   const { privateKey } = generateKeyPair();
-  expect(assembleConf(privateKey, `[Interface]\n${block}`)).toContain("PrivateKey");
+  expect(assembleConf(privateKey, `[Interface]\n${block}`)).toContain(
+    "PrivateKey",
+  );
 });
 
 test("the team's block may never carry a private key", () => {
   const { privateKey } = generateKeyPair();
-  expect(() => assembleConf(privateKey, `PrivateKey = ${privateKey}\n${block}`)).toThrow(
-    "clé privée",
-  );
+  expect(() =>
+    assembleConf(privateKey, `PrivateKey = ${privateKey}\n${block}`),
+  ).toThrow("clé privée");
 });
 
 test("script hooks and system settings are refused (they run as SYSTEM on Windows)", () => {
@@ -77,31 +85,45 @@ test("script hooks and system settings are refused (they run as SYSTEM on Window
     "Table = off",
     "ListenPort = 1",
   ]) {
-    expect(() => assembleConf(privateKey, `${evil}\n${block}`)).toThrow("refusé");
+    expect(() => assembleConf(privateKey, `${evil}\n${block}`)).toThrow(
+      "refusé",
+    );
   }
 });
 
 test("a default route in AllowedIPs is refused: only the private network goes through the tunnel", () => {
   const { privateKey } = generateKeyPair();
-  expect(() => assembleConf(privateKey, block.replace("198.51.100.0/24", "0.0.0.0/0"))).toThrow(
-    "route par défaut",
-  );
   expect(() =>
-    assembleConf(privateKey, block.replace("198.51.100.0/24", "198.51.100.0/24, ::/0")),
+    assembleConf(privateKey, block.replace("198.51.100.0/24", "0.0.0.0/0")),
+  ).toThrow("route par défaut");
+  expect(() =>
+    assembleConf(
+      privateKey,
+      block.replace("198.51.100.0/24", "198.51.100.0/24, ::/0"),
+    ),
   ).toThrow("route par défaut");
 });
 
 test("malformed blocks are refused with a reason", () => {
   const { privateKey } = generateKeyPair();
-  expect(() => assembleConf(privateKey, "Address = 198.51.100.10/32")).toThrow("[Peer]");
+  expect(() => assembleConf(privateKey, "Address = 198.51.100.10/32")).toThrow(
+    "[Peer]",
+  );
   expect(() =>
-    assembleConf(privateKey, block.replace("Address = 198.51.100.10/32", "Address = not-an-ip")),
+    assembleConf(
+      privateKey,
+      block.replace("Address = 198.51.100.10/32", "Address = not-an-ip"),
+    ),
   ).toThrow("invalide");
-  expect(() => assembleConf(privateKey, block.replace(hubKey, "tooshort"))).toThrow("invalide");
+  expect(() =>
+    assembleConf(privateKey, block.replace(hubKey, "tooshort")),
+  ).toThrow("invalide");
   expect(() =>
     assembleConf(privateKey, block.replace("203.0.113.9:51821", "bad host:1")),
   ).toThrow();
-  expect(() => assembleConf(privateKey, `[Weird]\n${block}`)).toThrow("inconnue");
+  expect(() => assembleConf(privateKey, `[Weird]\n${block}`)).toThrow(
+    "inconnue",
+  );
   expect(() => assembleConf("nope", block)).toThrow("clé privée");
 });
 
@@ -109,7 +131,9 @@ test("normaliseConf validates a complete file from the team", () => {
   const { privateKey } = generateKeyPair();
   const full = assembleConf(privateKey, block);
   expect(normaliseConf(full.replace(/\n/g, "\r\n"))).toBe(full);
-  expect(() => normaliseConf(full.replace(/PrivateKey = .*\n/, ""))).toThrow("PrivateKey");
+  expect(() => normaliseConf(full.replace(/PrivateKey = .*\n/, ""))).toThrow(
+    "PrivateKey",
+  );
   expect(() => normaliseConf(`${full}PostUp = x\n`)).toThrow();
 });
 
@@ -117,6 +141,9 @@ test("parseWgText ignores comments and blank lines", () => {
   const sections = parseWgText(
     "# hello\n[Interface]\nAddress = 198.51.100.10/32 # trailing\n\n[Peer]\nPublicKey = x\n",
   );
-  expect(sections.map((section) => section.name)).toEqual(["Interface", "Peer"]);
+  expect(sections.map((section) => section.name)).toEqual([
+    "Interface",
+    "Peer",
+  ]);
   expect(sections[0]!.entries[0]).toEqual(["Address", "198.51.100.10/32"]);
 });

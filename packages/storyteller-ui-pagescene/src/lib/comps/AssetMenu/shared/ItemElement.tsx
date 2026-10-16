@@ -64,9 +64,7 @@ export const ItemElement = ({ item }: Props) => {
     // what a drop accepts read as broken.
     const target = selectedId
       ? (store.characters.find((c) => c.id === selectedId) ??
-        store.outlinerItems.find(
-          (o) => o.id === selectedId && o.hasSkeleton,
-        ))
+        store.outlinerItems.find((o) => o.id === selectedId && o.hasSkeleton))
       : undefined;
     if (!target) {
       editor.adapter.showToast(
@@ -111,7 +109,9 @@ export const ItemElement = ({ item }: Props) => {
 
       <div
         className="pointer-events-none relative aspect-[16/12] w-full select-none overflow-hidden rounded-none border border-white/15 bg-brand-secondary-600 object-cover object-center transition-all group-hover:border-brand-primary"
-        onPointerDown={(event) => dragAndDrop.onPointerDown(event, item, editor)}
+        onPointerDown={(event) =>
+          dragAndDrop.onPointerDown(event, item, editor)
+        }
         onClick={handleClick}
         style={{ cursor: "grab", pointerEvents: "auto" }}
       >
@@ -140,12 +140,12 @@ export const ItemElement = ({ item }: Props) => {
         <div className="text-shadow-md absolute inset-0 flex items-center justify-center bg-brand-primary-950/50 text-[13px] font-medium text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
           {item.type === AssetType.ANIMATION ? (
             <>
-              <FootprintsIcon  className="mr-1.5" />
+              <FootprintsIcon className="mr-1.5" />
               Add to Character
             </>
           ) : (
             <>
-              <MoveIcon  className="mr-1.5" />
+              <MoveIcon className="mr-1.5" />
               Drag to Scene
             </>
           )}

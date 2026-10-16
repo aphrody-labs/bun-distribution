@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "Preserve",
     "moduleDetection": "force",
     "moduleResolution": "Bundler",
@@ -16,10 +12,7 @@
     "verbatimModuleSyntax": true,
     "noUncheckedIndexedAccess": false,
     "noImplicitOverride": false,
-    "types": [
-      "bun",
-      "node"
-    ],
+    "types": ["bun", "node"],
     "jsx": "react-jsx",
     "declaration": true,
     "noUnusedLocals": true,

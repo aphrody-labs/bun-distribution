@@ -12,11 +12,24 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { repoRoot, sessionStamp, withKernel } from "../../tools/os/scripts/kernel-session.ts";
+import {
+  repoRoot,
+  sessionStamp,
+  withKernel,
+} from "../../tools/os/scripts/kernel-session.ts";
 
-export const rustCatalog = join(repoRoot, "crates/os/kernel/comps/winclean/src/tools.json");
-export const ledgerPath = join(repoRoot, "crates/os/kernel/comps/winclean/tool-migration.json");
-export const bunCatalog = join(repoRoot, "packages/os/winclean/src/generated.ts");
+export const rustCatalog = join(
+  repoRoot,
+  "crates/os/kernel/comps/winclean/src/tools.json",
+);
+export const ledgerPath = join(
+  repoRoot,
+  "crates/os/kernel/comps/winclean/tool-migration.json",
+);
+export const bunCatalog = join(
+  repoRoot,
+  "packages/os/winclean/src/generated.ts",
+);
 
 export interface Ledger {
   catalog_sha256: string;
@@ -27,13 +40,22 @@ export interface Ledger {
 
 /** SHA-256 of the catalog as Git's LF blob (core.autocrlf may expand the working file to CRLF). */
 export function catalogHash(text: string): string {
-  return createHash("sha256").update(text.replaceAll("\r\n", "\n"), "utf8").digest("hex");
+  return createHash("sha256")
+    .update(text.replaceAll("\r\n", "\n"), "utf8")
+    .digest("hex");
 }
 
 /** Ledger drift against the catalog tool names and text; an empty list when they agree. */
-export function ledgerDrift(names: string[], catalogText: string, ledger: Ledger): string[] {
+export function ledgerDrift(
+  names: string[],
+  catalogText: string,
+  ledger: Ledger,
+): string[] {
   const problems: string[] = [];
-  if (ledger.catalog_tool_count !== names.length || ledger.tools.length !== names.length)
+  if (
+    ledger.catalog_tool_count !== names.length ||
+    ledger.tools.length !== names.length
+  )
     problems.push(
       `ledger count drift: declared=${ledger.catalog_tool_count} ledger=${ledger.tools.length} catalog=${names.length}`,
     );
@@ -45,12 +67,16 @@ export function ledgerDrift(names: string[], catalogText: string, ledger: Ledger
     ledgerNames.some((name, index) => name !== native[index])
   )
     problems.push("ledger names diverge from the frozen catalog");
-  if (ledger.catalog_sha256 !== catalogHash(catalogText)) problems.push("ledger schema hash drift");
+  if (ledger.catalog_sha256 !== catalogHash(catalogText))
+    problems.push("ledger schema hash drift");
   return problems;
 }
 
 async function checkGeneratedBindings(): Promise<void> {
-  const generator = join(repoRoot, "scripts/tools/os/scripts/generate-winclean-catalog.ts");
+  const generator = join(
+    repoRoot,
+    "scripts/tools/os/scripts/generate-winclean-catalog.ts",
+  );
   const child = Bun.spawn([process.execPath, generator, "--check"], {
     cwd: repoRoot,
     windowsHide: true,
@@ -64,23 +90,28 @@ async function checkGeneratedBindings(): Promise<void> {
 
 export async function verify(live: boolean): Promise<Record<string, unknown>> {
   for (const path of [rustCatalog, ledgerPath, bunCatalog])
-    if (!existsSync(path)) throw new Error(`WinClean integration input missing: ${path}`);
+    if (!existsSync(path))
+      throw new Error(`WinClean integration input missing: ${path}`);
   await checkGeneratedBindings();
   const catalogText = readFileSync(rustCatalog, "utf8");
-  const names = (JSON.parse(catalogText) as { tools: Array<{ name: string }> }).tools.map(
-    (tool) => tool.name,
-  );
+  const names = (
+    JSON.parse(catalogText) as { tools: Array<{ name: string }> }
+  ).tools.map((tool) => tool.name);
   const ledger = JSON.parse(readFileSync(ledgerPath, "utf8")) as Ledger;
   const problems = ledgerDrift(names, catalogText, ledger);
-  if (problems.length > 0) throw new Error(`WinClean migration ${problems.join("; ")}`);
+  if (problems.length > 0)
+    throw new Error(`WinClean migration ${problems.join("; ")}`);
   const report: Record<string, unknown> = {
     catalog_tools: names.length,
     rust_tools: names.length,
     ledger_tools: ledger.tools.length,
-    rust_dispatched_tools: Object.values(ledger.dispatch_overrides ?? {}).filter(
-      (value) => value === "rust",
-    ).length,
-    plugin: join(process.env.APHRODY_PLUGINS_ROOT ?? join(homedir(), "plugins"), "aphrody"),
+    rust_dispatched_tools: Object.values(
+      ledger.dispatch_overrides ?? {},
+    ).filter((value) => value === "rust").length,
+    plugin: join(
+      process.env.APHRODY_PLUGINS_ROOT ?? join(homedir(), "plugins"),
+      "aphrody",
+    ),
   };
   if (!live) return { ...report, live_call: null };
   return await withKernel("winclean", sessionStamp(), async (session) => {
@@ -90,7 +121,9 @@ export async function verify(live: boolean): Promise<Record<string, unknown>> {
     const kernelNames = new Set((listed.tools ?? []).map((tool) => tool.name));
     const missing = names.filter((name) => !kernelNames.has(name));
     if (missing.length > 0)
-      throw new Error(`Kernel admin drift: missing=${missing.join(", ")} catalog=${names.length}`);
+      throw new Error(
+        `Kernel admin drift: missing=${missing.join(", ")} catalog=${names.length}`,
+      );
     const call = (await session.call("get_os_info")) as {
       isError?: boolean;
       structuredContent?: unknown;
@@ -104,7 +137,9 @@ export async function verify(live: boolean): Promise<Record<string, unknown>> {
 if (import.meta.main) {
   const args = process.argv.slice(2);
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: bun scripts/audit/os/verify-winclean-integration.ts [--static]");
+    console.log(
+      "Usage: bun scripts/audit/os/verify-winclean-integration.ts [--static]",
+    );
   } else {
     const unknown = args.filter((arg) => arg !== "--static");
     if (unknown.length > 0) {

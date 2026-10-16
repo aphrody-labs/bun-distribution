@@ -84,7 +84,11 @@ function toBase64Thumb(url: string): Promise<string> {
     img.onload = () => {
       try {
         const canvas = document.createElement("canvas");
-        const scale = Math.min(THUMB_SIZE / img.width, THUMB_SIZE / img.height, 1);
+        const scale = Math.min(
+          THUMB_SIZE / img.width,
+          THUMB_SIZE / img.height,
+          1,
+        );
         canvas.width = Math.round(img.width * scale);
         canvas.height = Math.round(img.height * scale);
         const ctx = canvas.getContext("2d");

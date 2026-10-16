@@ -1,14 +1,8 @@
-import type {
-  AnimationPath,
-  ElementAnimations,
-} from "./types";
+import type { AnimationPath, ElementAnimations } from "./types";
 import { formatLinearRgba, parseColorToLinearRgba } from "../params";
 import type { ParamValue } from "../params";
 import { isCompositeChannelData, isLeafChannelData } from "./channel-data";
-import {
-  getChannelValueAtTime,
-  isScalarChannel,
-} from "./interpolation";
+import { getChannelValueAtTime, isScalarChannel } from "./interpolation";
 
 // Computes the resolved param value at a given local time, accounting
 // for animations. The path can address a leaf channel (single value)
@@ -107,7 +101,10 @@ export function resolveAnimationPathValueAtTime({
         fallbackValue,
       });
     }
-    if (typeof fallbackValue === "string" || typeof fallbackValue === "boolean") {
+    if (
+      typeof fallbackValue === "string" ||
+      typeof fallbackValue === "boolean"
+    ) {
       return getChannelValueAtTime({
         channel: !isScalarChannel(data) ? data : undefined,
         time: localTime,

@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
 import { existsSync } from "node:fs";
-import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import {
+  mkdtemp,
+  mkdir,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -48,11 +55,16 @@ export function callJson(op:string,input:string):string;
 export function callVec(op:string,params:string,a:Uint8Array,b:Uint8Array):Uint8Array;
 `,
   );
-  await writeFile(join(input, "aphrody_command_wasm_bg.wasm.d.ts"), "export {};\n");
+  await writeFile(
+    join(input, "aphrody_command_wasm_bg.wasm.d.ts"),
+    "export {};\n",
+  );
   const provenance: WasmBuildProvenance = {
     source: {
       revision: "1".repeat(40),
-      patches: [{ path: "tools/config/container/Dockerfile", sha256: "2".repeat(64) }],
+      patches: [
+        { path: "tools/config/container/Dockerfile", sha256: "2".repeat(64) },
+      ],
     },
     wasm: { sha256: sha256Bytes(wasm), bytes: wasm.length },
     inputs: Object.fromEntries(
@@ -64,7 +76,10 @@ export function callVec(op:string,params:string,a:Uint8Array,b:Uint8Array):Uint8
           "aphrody_command_wasm_bg.wasm",
         ].map(async (name) => [
           name,
-          { sha256: await sha256File(join(input, name)), bytes: Bun.file(join(input, name)).size },
+          {
+            sha256: await sha256File(join(input, name)),
+            bytes: Bun.file(join(input, name)).size,
+          },
         ]),
       ),
     ),
@@ -76,7 +91,11 @@ test("portable stage bundles the existing facade, emits usable declarations and 
   const f = await fixture();
   try {
     const out = join(f.work, "out");
-    const entries = await stageCliWasm({ out, input: f.input, provenance: f.provenance });
+    const entries = await stageCliWasm({
+      out,
+      input: f.input,
+      provenance: f.provenance,
+    });
     expect(entries).toHaveLength(1);
     const entry = entries[0]!;
     expect(entry).toMatchObject({
@@ -98,9 +117,13 @@ test("portable stage bundles the existing facade, emits usable declarations and 
     const pack = join(f.work, "pack");
     await mkdir(pack);
     await run(["tar", "-xzf", join(out, entry.file), "-C", pack]);
-    const metadata = JSON.parse(await readFile(join(pack, "provenance.json"), "utf8"));
+    const metadata = JSON.parse(
+      await readFile(join(pack, "provenance.json"), "utf8"),
+    );
     expect(metadata.build).toEqual(f.provenance);
-    expect(metadata.files["aphrody_command_wasm_bg.wasm"]).toEqual(f.provenance.wasm);
+    expect(metadata.files["aphrody_command_wasm_bg.wasm"]).toEqual(
+      f.provenance.wasm,
+    );
     const portable = await import(join(pack, "index.js"));
     const cli = await portable.loadCliWasm(wasm);
     expect(cli.version).toBe("fixture");
@@ -141,37 +164,59 @@ void vector;
 
 test("qualified input rejects hash/size/source mismatch and linked or invalid modules", async () => {
   await Promise.all(
-    ["hash", "size", "revision", "patch", "link", "invalid", "js", "types", "missing-hash"].map(
-      async (failure) => {
-        const f = await fixture();
-        try {
-          if (failure === "hash") f.provenance.wasm.sha256 = "3".repeat(64);
-          if (failure === "size") f.provenance.wasm.bytes += 1;
-          if (failure === "revision") f.provenance.source.revision = "unknown";
-          if (failure === "js")
-            await writeFile(join(f.input, "aphrody_command_wasm.js"), "unqualified glue");
-          if (failure === "types")
-            await writeFile(join(f.input, "aphrody_command_wasm.d.ts"), "unqualified types");
-          if (failure === "missing-hash") delete f.provenance.inputs["aphrody_command_wasm.js"];
-          if (failure === "patch") f.provenance.source.patches![0]!.path = "../escape";
-          const path = join(f.input, "aphrody_command_wasm_bg.wasm");
-          if (failure === "link") {
-            await rm(path);
-            await writeFile(join(f.work, "outside.wasm"), wasm);
-            await symlink(join(f.work, "outside.wasm"), path);
-          }
-          if (failure === "invalid") {
-            const bytes = new Uint8Array([1, 2, 3]);
-            await writeFile(path, bytes);
-            f.provenance.wasm = { sha256: sha256Bytes(bytes), bytes: bytes.length };
-            f.provenance.inputs["aphrody_command_wasm_bg.wasm"] = f.provenance.wasm;
-          }
-          await expect(validateWasmInput(f.input, f.provenance)).rejects.toThrow();
-        } finally {
-          await rm(f.work, { recursive: true, force: true });
+    [
+      "hash",
+      "size",
+      "revision",
+      "patch",
+      "link",
+      "invalid",
+      "js",
+      "types",
+      "missing-hash",
+    ].map(async (failure) => {
+      const f = await fixture();
+      try {
+        if (failure === "hash") f.provenance.wasm.sha256 = "3".repeat(64);
+        if (failure === "size") f.provenance.wasm.bytes += 1;
+        if (failure === "revision") f.provenance.source.revision = "unknown";
+        if (failure === "js")
+          await writeFile(
+            join(f.input, "aphrody_command_wasm.js"),
+            "unqualified glue",
+          );
+        if (failure === "types")
+          await writeFile(
+            join(f.input, "aphrody_command_wasm.d.ts"),
+            "unqualified types",
+          );
+        if (failure === "missing-hash")
+          delete f.provenance.inputs["aphrody_command_wasm.js"];
+        if (failure === "patch")
+          f.provenance.source.patches![0]!.path = "../escape";
+        const path = join(f.input, "aphrody_command_wasm_bg.wasm");
+        if (failure === "link") {
+          await rm(path);
+          await writeFile(join(f.work, "outside.wasm"), wasm);
+          await symlink(join(f.work, "outside.wasm"), path);
         }
-      },
-    ),
+        if (failure === "invalid") {
+          const bytes = new Uint8Array([1, 2, 3]);
+          await writeFile(path, bytes);
+          f.provenance.wasm = {
+            sha256: sha256Bytes(bytes),
+            bytes: bytes.length,
+          };
+          f.provenance.inputs["aphrody_command_wasm_bg.wasm"] =
+            f.provenance.wasm;
+        }
+        await expect(
+          validateWasmInput(f.input, f.provenance),
+        ).rejects.toThrow();
+      } finally {
+        await rm(f.work, { recursive: true, force: true });
+      }
+    }),
   );
 });
 
@@ -180,11 +225,21 @@ test("bundling consumes frozen validated inputs even after the source glue chang
   try {
     const frozen = join(f.work, "frozen");
     await freezeWasmInput(f.input, f.provenance, frozen);
-    const previous = await readFile(join(frozen, "aphrody_command_wasm.js"), "utf8");
-    await writeFile(join(f.input, "aphrody_command_wasm.js"), "source changed after freeze");
+    const previous = await readFile(
+      join(frozen, "aphrody_command_wasm.js"),
+      "utf8",
+    );
+    await writeFile(
+      join(f.input, "aphrody_command_wasm.js"),
+      "source changed after freeze",
+    );
     await validateWasmInput(frozen, f.provenance);
-    expect(await readFile(join(frozen, "aphrody_command_wasm.js"), "utf8")).toBe(previous);
-    await expect(validateWasmInput(f.input, f.provenance)).rejects.toThrow("checksum");
+    expect(
+      await readFile(join(frozen, "aphrody_command_wasm.js"), "utf8"),
+    ).toBe(previous);
+    await expect(validateWasmInput(f.input, f.provenance)).rejects.toThrow(
+      "checksum",
+    );
   } finally {
     await rm(f.work, { recursive: true, force: true });
   }
@@ -193,9 +248,9 @@ test("bundling consumes frozen validated inputs even after the source glue chang
 test("prebuilt input cannot silently skip provenance", async () => {
   const f = await fixture();
   try {
-    await expect(stageCliWasm({ out: join(f.work, "out"), input: f.input })).rejects.toThrow(
-      "provenance",
-    );
+    await expect(
+      stageCliWasm({ out: join(f.work, "out"), input: f.input }),
+    ).rejects.toThrow("provenance");
   } finally {
     await rm(f.work, { recursive: true, force: true });
   }
@@ -207,8 +262,14 @@ test.skipIf(!existsSync("/dev/shm"))(
     const f = await fixture();
     const out = await mkdtemp("/dev/shm/aphrody-cli-wasm-test-");
     try {
-      const entries = await stageCliWasm({ input: f.input, provenance: f.provenance, out });
-      expect(await sha256File(join(out, entries[0]!.file))).toBe(entries[0]!.sha256);
+      const entries = await stageCliWasm({
+        input: f.input,
+        provenance: f.provenance,
+        out,
+      });
+      expect(await sha256File(join(out, entries[0]!.file))).toBe(
+        entries[0]!.sha256,
+      );
     } finally {
       await rm(f.work, { recursive: true, force: true });
       await rm(out, { recursive: true, force: true });

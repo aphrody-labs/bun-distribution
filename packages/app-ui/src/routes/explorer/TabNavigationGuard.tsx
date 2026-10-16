@@ -17,13 +17,19 @@ interface TabNavigationGuardProps {
  *
  * Regular in-tab navigation (sidebar, breadcrumbs) is NOT blocked.
  */
-export function TabNavigationGuard({ children, fallback }: TabNavigationGuardProps) {
+export function TabNavigationGuard({
+  children,
+  fallback,
+}: TabNavigationGuardProps) {
   const { activeTabId } = useExplorer();
   const { tabs } = useTabManager();
   const location = useLocation();
 
   // Track when we last switched tabs
-  const [tabSwitch, setTabSwitch] = useState({ tabId: activeTabId, switchedAt: 0 });
+  const [tabSwitch, setTabSwitch] = useState({
+    tabId: activeTabId,
+    switchedAt: 0,
+  });
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
   const currentUrlPath = location.pathname + location.search;
@@ -40,7 +46,8 @@ export function TabNavigationGuard({ children, fallback }: TabNavigationGuardPro
   const justSwitchedTabs = Date.now() - tabSwitch.switchedAt < 50;
 
   // Only block if we JUST switched tabs AND URL hasn't caught up yet
-  const isNavigating = justSwitchedTabs && activeTab && currentUrlPath !== activeTab.savedPath;
+  const isNavigating =
+    justSwitchedTabs && activeTab && currentUrlPath !== activeTab.savedPath;
 
   if (isNavigating) {
     return fallback ?? <div className="h-full overflow-auto" />;

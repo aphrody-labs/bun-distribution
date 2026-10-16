@@ -26,7 +26,10 @@ export interface SnapshotDriver {
 }
 
 /** Evaluates in a CDP page (`Runtime.evaluate` takes an expression, not a function body). */
-export async function cdpDriver(endpoint?: string, label = "cdp"): Promise<SnapshotDriver> {
+export async function cdpDriver(
+  endpoint?: string,
+  label = "cdp",
+): Promise<SnapshotDriver> {
   const page = await WebCdpPage.connect(endpoint);
   return {
     label,
@@ -41,12 +44,17 @@ export async function cdpDriver(endpoint?: string, label = "cdp"): Promise<Snaps
 }
 
 /** Evaluates in the first window of a running debug-enabled wry app. */
-export async function bridgeDriver(exe?: string, label = "tauri-bridge"): Promise<SnapshotDriver> {
+export async function bridgeDriver(
+  exe?: string,
+  label = "tauri-bridge",
+): Promise<SnapshotDriver> {
   const { bridge } = await TauriBridge.connectToRunning(exe);
   return {
     label,
     async capture(url) {
-      await bridge.evaluate(`window.location.assign(${JSON.stringify(url)}); return true;`);
+      await bridge.evaluate(
+        `window.location.assign(${JSON.stringify(url)}); return true;`,
+      );
       const deadline = Date.now() + 30_000;
       for (;;) {
         await Bun.sleep(300);
@@ -90,28 +98,52 @@ export async function runParity(
   const skipped: string[] = [];
   const policy = verifyPolicy(plan);
   const paths: PathReport[] = [];
-  if (!options.reference) skipped.push("reference capture: no CDP endpoint for the original");
+  if (!options.reference)
+    skipped.push("reference capture: no CDP endpoint for the original");
   if (!options.wrapped)
-    skipped.push("wrapped capture: no running app (debug bridge or CEF CDP port)");
+    skipped.push(
+      "wrapped capture: no running app (debug bridge or CEF CDP port)",
+    );
   const referenceBase =
     options.referenceBase ??
-    (plan.probe.kind === "site" ? new URL(plan.probe.finalUrl).origin : undefined);
+    (plan.probe.kind === "site"
+      ? new URL(plan.probe.finalUrl).origin
+      : undefined);
   const wrappedBase = options.wrappedBase ?? referenceBase;
   if (!referenceBase || !wrappedBase)
     skipped.push("a directory plan needs --reference-base and --app-base");
   for (const path of plan.parityPaths) {
-    if (!options.reference || !options.wrapped || !referenceBase || !wrappedBase) {
-      paths.push({ path, status: "skipped", textSimilarity: null, findings: [] });
+    if (
+      !options.reference ||
+      !options.wrapped ||
+      !referenceBase ||
+      !wrappedBase
+    ) {
+      paths.push({
+        path,
+        status: "skipped",
+        textSimilarity: null,
+        findings: [],
+      });
       continue;
     }
     try {
-      const reference = await options.reference.capture(new URL(path, referenceBase).href);
-      const wrapped = await options.wrapped.capture(new URL(path, wrappedBase).href);
+      const reference = await options.reference.capture(
+        new URL(path, referenceBase).href,
+      );
+      const wrapped = await options.wrapped.capture(
+        new URL(path, wrappedBase).href,
+      );
       const originMap =
         referenceBase === wrappedBase
           ? {}
           : { [new URL(wrappedBase).origin]: new URL(referenceBase).origin };
-      paths.push(compareSnapshots(path, reference, wrapped, { originMap, ...options.compare }));
+      paths.push(
+        compareSnapshots(path, reference, wrapped, {
+          originMap,
+          ...options.compare,
+        }),
+      );
     } catch (error) {
       paths.push({
         path,

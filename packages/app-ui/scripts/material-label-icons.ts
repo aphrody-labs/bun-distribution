@@ -3,7 +3,13 @@
 // Replaces a button's sole verbose label with its Material Symbols icon, keeping the label as aria-label/title.
 //   bun scripts/material-label-icons.ts plan|apply|rollback
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { createRequire } from "node:module";
 import { join, relative, resolve } from "node:path";
 
@@ -14,7 +20,10 @@ const ts: typeof import("typescript") = createRequire(
   join(REPO, "packages/infra/workspace/package.json"),
 )("@typescript/typescript6");
 const MANIFEST = join(import.meta.dir, "material-label-icons.manifest.json");
-const CATALOGUE = join(REPO, "m3/packages/m3-fonts/fonts/upstream/material-symbols/index.d.ts");
+const CATALOGUE = join(
+  REPO,
+  "m3/packages/m3-fonts/fonts/upstream/material-symbols/index.d.ts",
+);
 const PRIMITIVES = "@aphrody/m3-primitives";
 const ICON_SIZE = 18;
 
@@ -94,35 +103,49 @@ const rel = (path: string) => relative(REPO, path).replaceAll("\\", "/");
 
 function git(args: string[]): string {
   const result = Bun.spawnSync(["git", "-C", REPO, ...args]);
-  if (result.exitCode !== 0) throw new Error(`git ${args.join(" ")}: ${result.stderr.toString()}`);
+  if (result.exitCode !== 0)
+    throw new Error(`git ${args.join(" ")}: ${result.stderr.toString()}`);
   return result.stdout.toString().trim();
 }
 
 function assertIconsExist() {
   const names = new Set(
-    [...readFileSync(CATALOGUE, "utf8").matchAll(/"([a-z0-9_]+)"/g)].map((m) => m[1]),
+    [...readFileSync(CATALOGUE, "utf8").matchAll(/"([a-z0-9_]+)"/g)].map(
+      (m) => m[1],
+    ),
   );
-  const missing = [...new Set(Object.values(LABEL_ICONS))].filter((name) => !names.has(name));
+  const missing = [...new Set(Object.values(LABEL_ICONS))].filter(
+    (name) => !names.has(name),
+  );
   if (missing.length)
-    throw new Error(`icons absent from the Material Symbols catalogue: ${missing.join(", ")}`);
+    throw new Error(
+      `icons absent from the Material Symbols catalogue: ${missing.join(", ")}`,
+    );
 }
 
 function sourceFiles(dir: string, top = true): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const path = join(dir, entry.name);
     if (entry.isDirectory())
-      return top && SKIP_TOP_DIRS.has(entry.name) ? [] : sourceFiles(path, false);
-    return entry.name.endsWith(".tsx") && !entry.name.endsWith(".test.tsx") ? [path] : [];
+      return top && SKIP_TOP_DIRS.has(entry.name)
+        ? []
+        : sourceFiles(path, false);
+    return entry.name.endsWith(".tsx") && !entry.name.endsWith(".test.tsx")
+      ? [path]
+      : [];
   });
 }
 
 function isButton(tag: ts.JsxTagNameExpression) {
-  return ts.isIdentifier(tag) && (tag.text === "Button" || tag.text === "button");
+  return (
+    ts.isIdentifier(tag) && (tag.text === "Button" || tag.text === "button")
+  );
 }
 
 function importsForeignIcon(sf: ts.SourceFile) {
   return sf.statements.some((statement) => {
-    if (!ts.isImportDeclaration(statement) || !statement.importClause) return false;
+    if (!ts.isImportDeclaration(statement) || !statement.importClause)
+      return false;
     if (
       ts.isStringLiteral(statement.moduleSpecifier) &&
       statement.moduleSpecifier.text === PRIMITIVES
@@ -133,7 +156,10 @@ function importsForeignIcon(sf: ts.SourceFile) {
       clause.namedBindings && ts.isNamedImports(clause.namedBindings)
         ? clause.namedBindings.elements
         : [];
-    return clause.name?.text === "Icon" || named.some((element) => element.name.text === "Icon");
+    return (
+      clause.name?.text === "Icon" ||
+      named.some((element) => element.name.text === "Icon")
+    );
   });
 }
 
@@ -153,7 +179,10 @@ function labelTarget(
     const start = only.pos + raw.indexOf(label);
     return { label, start, end: start + label.length };
   }
-  if (ts.isJsxElement(only) && only.openingElement.tagName.getText() === "span") {
+  if (
+    ts.isJsxElement(only) &&
+    only.openingElement.tagName.getText() === "span"
+  ) {
     const inner = only.children.filter(
       (child) => !(ts.isJsxText(child) && child.containsOnlyTriviaWhiteSpaces),
     );
@@ -166,7 +195,13 @@ function labelTarget(
 }
 
 function transform(path: string, text: string): { text: string; hits: Hit[] } {
-  const sf = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const sf = ts.createSourceFile(
+    path,
+    text,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
   if (importsForeignIcon(sf)) return { text, hits: [] };
   const edits: Edit[] = [];
   const hits: Hit[] = [];
@@ -223,7 +258,11 @@ function transform(path: string, text: string): { text: string; hits: Hit[] } {
   } else {
     const imports = sf.statements.filter(ts.isImportDeclaration);
     const pos = imports.length ? imports[imports.length - 1].getEnd() : 0;
-    edits.push({ start: pos, end: pos, text: `\nimport { Icon } from "${PRIMITIVES}";` });
+    edits.push({
+      start: pos,
+      end: pos,
+      text: `\nimport { Icon } from "${PRIMITIVES}";`,
+    });
   }
 
   let out = text;
@@ -235,7 +274,12 @@ function transform(path: string, text: string): { text: string; hits: Hit[] } {
 
 function scan() {
   assertIconsExist();
-  const results: { file: string; original: string; changed: string; hits: Hit[] }[] = [];
+  const results: {
+    file: string;
+    original: string;
+    changed: string;
+    hits: Hit[];
+  }[] = [];
   for (const file of sourceFiles(SRC)) {
     const original = readFileSync(file, "utf8");
     const { text, hits } = transform(file, original);
@@ -249,13 +293,15 @@ function plan() {
   let total = 0;
   for (const r of results) {
     total += r.hits.length;
-    for (const h of r.hits) console.log(`${rel(r.file)}:${h.line}  "${h.label}" -> ${h.icon}`);
+    for (const h of r.hits)
+      console.log(`${rel(r.file)}:${h.line}  "${h.label}" -> ${h.icon}`);
   }
   console.log(`plan: ${total} libellés dans ${results.length} fichiers`);
 }
 
 function apply() {
-  if (existsSync(MANIFEST)) throw new Error("manifest présent : lancer rollback avant apply");
+  if (existsSync(MANIFEST))
+    throw new Error("manifest présent : lancer rollback avant apply");
   const results = scan();
   if (results.length === 0) {
     console.log("apply: rien à changer");
@@ -291,7 +337,8 @@ function rollback() {
       `fichiers modifiés depuis apply, rollback refusé : ${drifted.map((f) => f.path).join(", ")}`,
     );
   }
-  for (const f of manifest.files) git(["checkout", manifest.base, "--", f.path]);
+  for (const f of manifest.files)
+    git(["checkout", manifest.base, "--", f.path]);
   unlinkSync(MANIFEST);
   console.log(
     `rollback: ${manifest.files.length} fichiers restaurés depuis ${manifest.base.slice(0, 12)}`,
@@ -303,6 +350,8 @@ if (command === "plan") plan();
 else if (command === "apply") apply();
 else if (command === "rollback") rollback();
 else {
-  console.error("usage: bun scripts/material-label-icons.ts plan|apply|rollback");
+  console.error(
+    "usage: bun scripts/material-label-icons.ts plan|apply|rollback",
+  );
   process.exit(2);
 }

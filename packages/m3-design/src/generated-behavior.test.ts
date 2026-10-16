@@ -1,5 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  test,
+} from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve as resolvePath } from "node:path";
@@ -8,7 +15,8 @@ import type { Root } from "react-dom/client";
 import { DesignCompiler } from "./generator.ts";
 
 // Load React DOM only after the shared DOM/ElementInternals preload is installed.
-if (typeof document === "undefined") await import("../../m3-config/test/dom.ts");
+if (typeof document === "undefined")
+  await import("../../m3-config/test/dom.ts");
 const React = await import("react");
 const { createRoot } = await import("react-dom/client");
 const environment = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
@@ -38,11 +46,13 @@ beforeAll(async () => {
     }).flatMap(([layout, brief]) =>
       ["default", "compact", "aéré"].map(async (density) => {
         const name = density === "default" ? layout : `${layout}-${density}`;
-        const customBrief = density === "default" ? brief : `${brief} ${density} mobile`;
+        const customBrief =
+          density === "default" ? brief : `${brief} ${density} mobile`;
         const source = compiler
           .compile(customBrief)
           .files.find((file) => file.path === "src/index.tsx");
-        if (!source) throw new Error("Compiler did not produce a React artifact");
+        if (!source)
+          throw new Error("Compiler did not produce a React artifact");
         const entry = join(workspace, `${name}.tsx`);
         await Bun.write(entry, source.content);
         return entry;
@@ -53,11 +63,15 @@ beforeAll(async () => {
   const featureless = compiler
     .compile("standard")
     .files.find((file) => file.path === "src/index.tsx");
-  if (!featureless) throw new Error("Compiler did not produce a featureless React artifact");
+  if (!featureless)
+    throw new Error("Compiler did not produce a featureless React artifact");
   await Bun.write(featurelessEntry, featureless.content);
   entries.push(featurelessEntry);
   const checkout = resolvePath(import.meta.dir, "../../..");
-  const reactTypes = resolvePath(Bun.resolveSync("@types/react/package.json", checkout), "..");
+  const reactTypes = resolvePath(
+    Bun.resolveSync("@types/react/package.json", checkout),
+    "..",
+  );
   const reactDomTypes = resolvePath(
     Bun.resolveSync("@types/react-dom/package.json", checkout),
     "..",
@@ -69,7 +83,11 @@ beforeAll(async () => {
       extends: join(checkout, "packages/m3-config/tsconfig.json"),
       compilerOptions: {
         types: ["react", "react-dom"],
-        typeRoots: [...new Set([reactTypes, reactDomTypes].map((dir) => resolvePath(dir, "..")))],
+        typeRoots: [
+          ...new Set(
+            [reactTypes, reactDomTypes].map((dir) => resolvePath(dir, "..")),
+          ),
+        ],
         paths: {
           "@aphrody/m3-react": [join(checkout, "packages/m3-react/index.ts")],
           react: [join(reactTypes, "index.d.ts")],
@@ -89,7 +107,8 @@ beforeAll(async () => {
     new Response(checked.stdout).text(),
     new Response(checked.stderr).text(),
   ]);
-  if (typecheckExit !== 0) throw new Error(`Generated React typecheck failed:\n${stdout}${stderr}`);
+  if (typecheckExit !== 0)
+    throw new Error(`Generated React typecheck failed:\n${stdout}${stderr}`);
   // A deliverable browser build bundles React and the actual M3 wrapper dependencies.
   const browser = await Bun.build({
     entrypoints: entries,
@@ -109,7 +128,8 @@ beforeAll(async () => {
       },
     ],
   });
-  if (!browser.success) throw new AggregateError(browser.logs, "Standalone browser build failed");
+  if (!browser.success)
+    throw new AggregateError(browser.logs, "Standalone browser build failed");
   const built = await Bun.build({
     entrypoints: entries,
     outdir: join(workspace, "browser"),
@@ -134,13 +154,16 @@ beforeAll(async () => {
       },
     ],
   });
-  if (!built.success) throw new AggregateError(built.logs, "Generated browser build failed");
+  if (!built.success)
+    throw new AggregateError(built.logs, "Generated browser build failed");
   // outdir writes the build outputs; writing each file-backed blob to itself would truncate it.
   await Promise.all(
     ["scaffold", "detail", "supporting", "feed"].map(async (name) => {
       const module = await import(join(workspace, "browser", `${name}.js`));
       if (typeof module.default !== "function") {
-        throw new Error(`Generated ${name} export is missing: ${Object.keys(module).join(", ")}`);
+        throw new Error(
+          `Generated ${name} export is missing: ${Object.keys(module).join(", ")}`,
+        );
       }
       artifacts[name] = module.default;
     }),
@@ -170,7 +193,10 @@ async function mount(element: ReactNode) {
   return mounted;
 }
 
-function required<T extends Element = HTMLElement>(host: Element, selector: string): T {
+function required<T extends Element = HTMLElement>(
+  host: Element,
+  selector: string,
+): T {
   const element = host.querySelector<T>(selector);
   if (!element) throw new Error(`Missing generated element: ${selector}`);
   return element;
@@ -183,12 +209,14 @@ async function click(element: Element) {
     element.getRootNode() instanceof ShadowRoot
       ? (element.getRootNode() as ShadowRoot).host
       : element;
-  const ripple = buttonHost.shadowRoot?.querySelector<HTMLElement & { disabled: boolean }>(
-    "md-ripple",
-  );
+  const ripple = buttonHost.shadowRoot?.querySelector<
+    HTMLElement & { disabled: boolean }
+  >("md-ripple");
   if (ripple) ripple.disabled = true;
   await React.act(() => {
-    element.dispatchEvent(new MouseEvent("click", { bubbles: true, composed: true }));
+    element.dispatchEvent(
+      new MouseEvent("click", { bubbles: true, composed: true }),
+    );
   });
 }
 
@@ -255,14 +283,20 @@ describe("generated browser artifacts with real M3 React wrappers", () => {
     expect(mounted.host.querySelector("md-scaffold")).not.toBeNull();
     expect(mounted.host.querySelector("[data-thinking-indicator]")).toBeNull();
     await React.act(() =>
-      mounted.root.render(React.createElement(artifacts.scaffold, { thinking: true })),
+      mounted.root.render(
+        React.createElement(artifacts.scaffold, { thinking: true }),
+      ),
     );
-    expect(required(mounted.host, "[data-thinking-indicator]").textContent).toBe("Reflecting...");
+    expect(
+      required(mounted.host, "[data-thinking-indicator]").textContent,
+    ).toBe("Reflecting...");
   });
 
   test("appends consumer chunks and finishes without a caret in feed layouts", async () => {
     const producer = controlledStream();
-    const mounted = await mount(React.createElement(artifacts.feed, { stream: producer.stream }));
+    const mounted = await mount(
+      React.createElement(artifacts.feed, { stream: producer.stream }),
+    );
     const output = required(mounted.host, "[data-stream-output]");
     expect(producer.starts).toBe(1);
     expect(output.getAttribute("aria-busy")).toBe("true");
@@ -282,10 +316,14 @@ describe("generated browser artifacts with real M3 React wrappers", () => {
       React.createElement(artifacts.scaffold, { stream: producer.stream }),
     );
     await React.act(async () => producer.push("Partial result"));
-    await React.act(async () => producer.fail(new Error("Connection interrupted")));
+    await React.act(async () =>
+      producer.fail(new Error("Connection interrupted")),
+    );
     const output = required(mounted.host, "[data-stream-output]");
     expect(output.textContent).toContain("Partial result");
-    expect(required(output, '[role="alert"]').textContent).toBe("Connection interrupted");
+    expect(required(output, '[role="alert"]').textContent).toBe(
+      "Connection interrupted",
+    );
     expect(output.getAttribute("aria-busy")).toBe("false");
     expect(producer.returns).toBe(1);
   });
@@ -296,18 +334,28 @@ describe("generated browser artifacts with real M3 React wrappers", () => {
         throw new Error("Stream unavailable");
       },
     };
-    const mounted = await mount(React.createElement(artifacts.detail, { stream }));
-    expect(required(mounted.host, '[role="alert"]').textContent).toBe("Stream unavailable");
-    expect(required(mounted.host, "[data-stream-output]").getAttribute("aria-busy")).toBe("false");
+    const mounted = await mount(
+      React.createElement(artifacts.detail, { stream }),
+    );
+    expect(required(mounted.host, '[role="alert"]').textContent).toBe(
+      "Stream unavailable",
+    );
+    expect(
+      required(mounted.host, "[data-stream-output]").getAttribute("aria-busy"),
+    ).toBe("false");
   });
 
   test("replaces and removes a stream without accepting late chunks", async () => {
     const previous = controlledStream();
     const replacement = controlledStream();
-    const mounted = await mount(React.createElement(artifacts.detail, { stream: previous.stream }));
+    const mounted = await mount(
+      React.createElement(artifacts.detail, { stream: previous.stream }),
+    );
     await React.act(async () => previous.push("Old result"));
     await React.act(() =>
-      mounted.root.render(React.createElement(artifacts.detail, { stream: replacement.stream })),
+      mounted.root.render(
+        React.createElement(artifacts.detail, { stream: replacement.stream }),
+      ),
     );
     const output = required(mounted.host, "[data-stream-output]");
     expect(previous.returns).toBe(1);
@@ -316,7 +364,9 @@ describe("generated browser artifacts with real M3 React wrappers", () => {
     expect(output.textContent).toBe("|");
     await React.act(async () => replacement.push("New result"));
     expect(output.textContent).toBe("New result|");
-    await React.act(() => mounted.root.render(React.createElement(artifacts.detail)));
+    await React.act(() =>
+      mounted.root.render(React.createElement(artifacts.detail)),
+    );
     expect(replacement.returns).toBe(1);
     await React.act(async () => replacement.fail(new Error("Late rejection")));
     expect(output.textContent).toBe("");
@@ -340,11 +390,15 @@ describe("generated browser artifacts with real M3 React wrappers", () => {
   test("selecting list items updates details and emits typed action data", async () => {
     const actions: Action[] = [];
     const mounted = await mount(
-      React.createElement(artifacts.detail, { onAction: (action) => actions.push(action) }),
+      React.createElement(artifacts.detail, {
+        onAction: (action) => actions.push(action),
+      }),
     );
     const first = required(mounted.host, '[data-id="detail-1"]');
     const second = required(mounted.host, '[data-id="detail-2"]');
-    expect(required(second, '[slot="headline"]').textContent).toBe("Secondary Detail Item");
+    expect(required(second, '[slot="headline"]').textContent).toBe(
+      "Secondary Detail Item",
+    );
     expect(required(second, '[slot="supporting-text"]').textContent).toBe(
       "Detailed metrics and parameters",
     );
@@ -367,7 +421,9 @@ describe("generated browser artifacts with real M3 React wrappers", () => {
   test("inspecting a task updates its supporting pane", async () => {
     const actions: Action[] = [];
     const mounted = await mount(
-      React.createElement(artifacts.supporting, { onAction: (action) => actions.push(action) }),
+      React.createElement(artifacts.supporting, {
+        onAction: (action) => actions.push(action),
+      }),
     );
     await click(required(mounted.host, '[data-id="task-1"]'));
     expect(required(mounted.host, "[data-task-details]").textContent).toBe(
@@ -379,7 +435,9 @@ describe("generated browser artifacts with real M3 React wrappers", () => {
   test("like/unlike updates each post and routes clicks from a Lit shadow button", async () => {
     const actions: Action[] = [];
     const mounted = await mount(
-      React.createElement(artifacts.feed, { onAction: (action) => actions.push(action) }),
+      React.createElement(artifacts.feed, {
+        onAction: (action) => actions.push(action),
+      }),
     );
     const first = required<HTMLElement & { updateComplete: Promise<boolean> }>(
       mounted.host,
@@ -387,13 +445,15 @@ describe("generated browser artifacts with real M3 React wrappers", () => {
     );
     await first.updateComplete;
     const shadowButton = first.shadowRoot?.querySelector("button");
-    if (!shadowButton) throw new Error("Real Lit button did not render its shadow button");
+    if (!shadowButton)
+      throw new Error("Real Lit button did not render its shadow button");
     await click(shadowButton);
     expect(first.textContent).toBe("Unlike");
     expect(first.getAttribute("aria-pressed")).toBe("true");
-    expect(required(mounted.host, '[data-action="like-post"][data-id="2"]').textContent).toBe(
-      "Like",
-    );
+    expect(
+      required(mounted.host, '[data-action="like-post"][data-id="2"]')
+        .textContent,
+    ).toBe("Like");
     await click(shadowButton);
     expect(first.textContent).toBe("Like");
     expect(first.getAttribute("aria-pressed")).toBe("false");
@@ -401,7 +461,10 @@ describe("generated browser artifacts with real M3 React wrappers", () => {
       { type: "like-post", id: "1", liked: true },
       { type: "like-post", id: "1", liked: false },
     ]);
-    const tooltip = required<HTMLElement & { text: string }>(mounted.host, "md-tooltip");
+    const tooltip = required<HTMLElement & { text: string }>(
+      mounted.host,
+      "md-tooltip",
+    );
     expect(tooltip.text).toBe("Hovering over primary CTA");
     const third = required(tooltip, '[data-id="3"]');
     expect(third.getAttribute("slot")).toBe("trigger");
@@ -411,12 +474,21 @@ describe("generated browser artifacts with real M3 React wrappers", () => {
 
   test("navigation uses distinct values, a selected destination and visible default-slot icons", async () => {
     const mounted = await mount(React.createElement(artifacts.scaffold));
-    type Rail = HTMLElement & { value: string; updateComplete: Promise<boolean> };
+    type Rail = HTMLElement & {
+      value: string;
+      updateComplete: Promise<boolean>;
+    };
     type Destination = Rail & { selected: boolean };
     const rail = required<Rail>(mounted.host, "md-navigation-rail");
     await rail.updateComplete;
-    const items = Array.from(rail.querySelectorAll<Destination>("md-navigation-rail-item"));
-    expect(items.map((item) => item.value)).toEqual(["dashboard", "components", "analytics"]);
+    const items = Array.from(
+      rail.querySelectorAll<Destination>("md-navigation-rail-item"),
+    );
+    expect(items.map((item) => item.value)).toEqual([
+      "dashboard",
+      "components",
+      "analytics",
+    ]);
     expect(items[0].selected).toBe(true);
     const icon = required(items[1], "md-icon");
     expect(icon.textContent).toBe("widgets");
@@ -434,7 +506,9 @@ describe("generated browser artifacts with real M3 React wrappers", () => {
   test("spec dialogs display selected content and stay local to each instance", async () => {
     const actions: Action[] = [];
     const first = await mount(
-      React.createElement(artifacts.scaffold, { onAction: (action) => actions.push(action) }),
+      React.createElement(artifacts.scaffold, {
+        onAction: (action) => actions.push(action),
+      }),
     );
     const second = await mount(React.createElement(artifacts.scaffold));
     const firstDialog = required<DialogElement>(first.host, "md-dialog");
@@ -444,8 +518,12 @@ describe("generated browser artifacts with real M3 React wrappers", () => {
     expect(firstDialog.open).toBe(false);
     await click(required(first.host, '[data-id="motion-spec"]'));
     expect(firstDialog.open).toBe(true);
-    expect(required(firstDialog, '[slot="headline"]').textContent).toBe("Spring Motion Physics");
-    expect(firstDialog.textContent).toContain("Damping 0.9 spatial, Damping 1.0 effects");
+    expect(required(firstDialog, '[slot="headline"]').textContent).toBe(
+      "Spring Motion Physics",
+    );
+    expect(firstDialog.textContent).toContain(
+      "Damping 0.9 spatial, Damping 1.0 effects",
+    );
     await click(required(firstDialog, '[data-action="toggle-dialog"]'));
     expect(firstDialog.open).toBe(false);
     expect(secondDialog.open).toBe(true);
@@ -462,7 +540,9 @@ describe("generated browser artifacts with real M3 React wrappers", () => {
   test("ignores unregistered actions and invalid IDs", async () => {
     const actions: Action[] = [];
     const mounted = await mount(
-      React.createElement(artifacts.feed, { onAction: (action) => actions.push(action) }),
+      React.createElement(artifacts.feed, {
+        onAction: (action) => actions.push(action),
+      }),
     );
     const element = required(mounted.host, '[data-action="like-post"]');
     element.setAttribute("data-id", "unknown");

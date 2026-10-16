@@ -112,7 +112,9 @@ export class ImageModel extends Model {
       throw new Error("defaultGenerationCount must be at least 1");
     }
     if (args.defaultGenerationCount > args.maxGenerationCount) {
-      throw new Error("defaultGenerationCount must be less than or equal to maxGenerationCount");
+      throw new Error(
+        "defaultGenerationCount must be less than or equal to maxGenerationCount",
+      );
     }
     super(args);
     this.maxGenerationCount = args.maxGenerationCount;
@@ -132,13 +134,19 @@ export class ImageModel extends Model {
     this.qualityOptions = args.qualityOptions ?? [];
     this.defaultAspectRatio =
       args.defaultAspectRatio ??
-      (args.aspectRatios && args.aspectRatios.length > 0 ? args.aspectRatios[0] : undefined);
+      (args.aspectRatios && args.aspectRatios.length > 0
+        ? args.aspectRatios[0]
+        : undefined);
     this.defaultResolution =
       args.defaultResolution ??
-      (args.resolutions && args.resolutions.length > 0 ? args.resolutions[0] : undefined);
+      (args.resolutions && args.resolutions.length > 0
+        ? args.resolutions[0]
+        : undefined);
     this.defaultQuality =
       args.defaultQuality ??
-      (args.qualityOptions && args.qualityOptions.length > 0 ? args.qualityOptions[0] : undefined);
+      (args.qualityOptions && args.qualityOptions.length > 0
+        ? args.qualityOptions[0]
+        : undefined);
   }
 
   // If the model is a "Nano Banana"-type model, we may want to enable certain features.
@@ -159,13 +167,21 @@ export class ImageModel extends Model {
   // Rolling out new aspect ratio controls to models.
   // If we have them set on the model, we can use the new UI controls.
   supportsNewAspectRatio(): boolean {
-    return this.canChangeAspectRatio && this.aspectRatios && this.aspectRatios.length > 0;
+    return (
+      this.canChangeAspectRatio &&
+      this.aspectRatios &&
+      this.aspectRatios.length > 0
+    );
   }
 
   // Rolling out new resolution controls to models.
   // If we have them set on the model, we can use the new UI controls.
   supportsNewResolution(): boolean {
-    return this.canChangeResolution && this.resolutions && this.resolutions.length > 0;
+    return (
+      this.canChangeResolution &&
+      this.resolutions &&
+      this.resolutions.length > 0
+    );
   }
 
   // True if this model exposes a quality picker (e.g. OpenAI image models).

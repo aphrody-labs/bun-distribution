@@ -21,7 +21,9 @@ type Entry = {
 };
 
 function git(root: string, args: string[]): Buffer {
-  return execFileSync("git", ["-C", root, ...args], { maxBuffer: 4 * 1024 * 1024 });
+  return execFileSync("git", ["-C", root, ...args], {
+    maxBuffer: 4 * 1024 * 1024,
+  });
 }
 
 function hash(bytes: Buffer): string {
@@ -62,16 +64,26 @@ export async function importSourceLicenses(
 
   for (const root of sourceMap.roots) {
     if (root.key === "aphrody-ui" || root.key === "src-root-docs") continue;
-    const pinnedUpstreamOxc = root.key === "oxc" && root.policy === "upstream-pinned";
-    if (root.policy !== "extract" && root.policy !== "orchestrator-split" && !pinnedUpstreamOxc)
+    const pinnedUpstreamOxc =
+      root.key === "oxc" && root.policy === "upstream-pinned";
+    if (
+      root.policy !== "extract" &&
+      root.policy !== "orchestrator-split" &&
+      !pinnedUpstreamOxc
+    )
       continue;
     if (!/^[a-z0-9-]+$/.test(root.key) || !/^[0-9a-f]{40}$/.test(root.head))
       throw new Error(`invalid source root identity: ${root.key}`);
-    const expectedPath = root.key === "iecode" ? "../iecode" : `src/${root.key}`;
+    const expectedPath =
+      root.key === "iecode" ? "../iecode" : `src/${root.key}`;
     if (root.sourcePath !== expectedPath)
-      throw new Error(`unexpected source path for ${root.key}: ${root.sourcePath}`);
+      throw new Error(
+        `unexpected source path for ${root.key}: ${root.sourcePath}`,
+      );
     const sourcePath =
-      root.key === "iecode" ? resolve(source, "../iecode") : join(source, root.key);
+      root.key === "iecode"
+        ? resolve(source, "../iecode")
+        : join(source, root.key);
     const rootEntries = sourceMap.entries
       .filter((entry) => entry.source.startsWith(`${root.key}/`))
       .filter((entry) => isRootLicense(entry.source.slice(root.key.length + 1)))
@@ -81,26 +93,60 @@ export async function importSourceLicenses(
       const name = entry.source.slice(root.key.length + 1);
       const spec = `${root.head}:${name}`;
       const bytes = git(sourcePath, ["show", spec]);
-      const sourceBlob = git(sourcePath, ["rev-parse", spec]).toString("utf8").trim();
+      const sourceBlob = git(sourcePath, ["rev-parse", spec])
+        .toString("utf8")
+        .trim();
       const sha256 = hash(bytes);
       // oxlint-disable-next-line no-await-in-loop -- license files are hashed one at a time in manifest order
       const worktreeSha256 = hash(await readFile(join(sourcePath, name)));
-      const rawWorktreeBlob = git(sourcePath, ["hash-object", "--no-filters", name])
+      const rawWorktreeBlob = git(sourcePath, [
+        "hash-object",
+        "--no-filters",
+        name,
+      ])
         .toString("utf8")
         .trim();
-      const normalizedWorktreeBlob = git(sourcePath, ["hash-object", "--path", name, name])
+      const normalizedWorktreeBlob = git(sourcePath, [
+        "hash-object",
+        "--path",
+        name,
+        name,
+      ])
         .toString("utf8")
         .trim();
-      if (rawWorktreeBlob !== sourceBlob && normalizedWorktreeBlob !== sourceBlob)
-        throw new Error(`license worktree differs from pinned Git blob: ${entry.source}`);
-      const worktreeRelation = rawWorktreeBlob === sourceBlob ? "raw" : "git-filtered";
-      if (entry.sourceLicenseBlobSha256 && entry.sourceLicenseBlobSha256 !== sha256)
-        throw new Error(`recorded pinned license hash changed: ${entry.source}`);
-      if (entry.sha256 && entry.sha256 !== worktreeSha256 && entry.sha256 !== sha256)
-        throw new Error(`source map worktree hash differs from license: ${entry.source}`);
+      if (
+        rawWorktreeBlob !== sourceBlob &&
+        normalizedWorktreeBlob !== sourceBlob
+      )
+        throw new Error(
+          `license worktree differs from pinned Git blob: ${entry.source}`,
+        );
+      const worktreeRelation =
+        rawWorktreeBlob === sourceBlob ? "raw" : "git-filtered";
+      if (
+        entry.sourceLicenseBlobSha256 &&
+        entry.sourceLicenseBlobSha256 !== sha256
+      )
+        throw new Error(
+          `recorded pinned license hash changed: ${entry.source}`,
+        );
+      if (
+        entry.sha256 &&
+        entry.sha256 !== worktreeSha256 &&
+        entry.sha256 !== sha256
+      )
+        throw new Error(
+          `source map worktree hash differs from license: ${entry.source}`,
+        );
       const canonical = canonicalByHash.get(sha256);
-      const destination = canonical?.target ?? `docs/migration/source-licenses/${root.key}/${name}`;
-      if (!canonical) canonicalByHash.set(sha256, { source: entry.source, target: destination });
+      const destination =
+        canonical?.target ??
+        `docs/migration/source-licenses/${root.key}/${name}`;
+      if (!canonical)
+        canonicalByHash.set(sha256, {
+          source: entry.source,
+          target: destination,
+        });
       const targetPath = resolve(target, destination);
       if (!targetPath.startsWith(`${target}/`))
         throw new Error(`license path escapes target: ${entry.source}`);
@@ -155,10 +201,15 @@ export async function importSourceLicenses(
     missingRootLicense,
     policy:
       "Pinned Git blobs only; delegated UI and deferred repositories are excluded. Exact byte duplicates share a recorded canonical target.",
-    files: planned.map(({ bytes: _bytes, entry: _entry, existing: _existing, ...item }) => item),
+    files: planned.map(
+      ({ bytes: _bytes, entry: _entry, existing: _existing, ...item }) => item,
+    ),
   };
   const reportPath = "docs/migration/source-licenses-import.json";
-  await writeFile(join(target, reportPath), `${JSON.stringify(report, null, 2)}\n`);
+  await writeFile(
+    join(target, reportPath),
+    `${JSON.stringify(report, null, 2)}\n`,
+  );
   return {
     sourceFileCount: report.sourceFileCount,
     canonicalFileCount: report.canonicalFileCount,

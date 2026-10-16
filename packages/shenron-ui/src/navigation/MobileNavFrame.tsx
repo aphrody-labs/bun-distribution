@@ -1,6 +1,12 @@
 import type { ReactNode } from "react";
 
-export function MobileNavFrame({ children, label }: { children: ReactNode; label: string }) {
+export function MobileNavFrame({
+  children,
+  label,
+}: {
+  children: ReactNode;
+  label: string;
+}) {
   return (
     <nav
       aria-label={label}

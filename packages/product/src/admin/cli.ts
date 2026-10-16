@@ -10,22 +10,34 @@ import { mainMenu } from "./menu.ts";
 
 export function help(): string {
   const width = Math.max(...Object.keys(summaries).map((name) => name.length));
-  const lines = Object.entries(summaries).map(([name, text]) => `  ${name.padEnd(width)}  ${text}`);
+  const lines = Object.entries(summaries).map(
+    ([name, text]) => `  ${name.padEnd(width)}  ${text}`,
+  );
   return `aphrody-omar <commande> [options]\n\nCommandes :\n${lines.join("\n")}\n\nSans commande : le menu. "aphrody-omar <commande> --help" détaille les options.`;
 }
 
-export async function main(argv: string[], ctx: Context = defaultContext()): Promise<number> {
+export async function main(
+  argv: string[],
+  ctx: Context = defaultContext(),
+): Promise<number> {
   const [first, ...rest] = argv;
   if (first === "--version" || first === "-v") {
     ctx.ui.say(ctx.version);
     return 0;
   }
-  if (!first || first === "--help" || first === "-h" || first === "help" || first === "aide") {
+  if (
+    !first ||
+    first === "--help" ||
+    first === "-h" ||
+    first === "help" ||
+    first === "aide"
+  ) {
     ctx.ui.say(help());
     return 0;
   }
   // Kit bridge of the desktop app (route `admin`), not listed in the help.
-  if (first === "desktop") return (await import("./desktop.ts")).desktopMain(rest);
+  if (first === "desktop")
+    return (await import("./desktop.ts")).desktopMain(rest);
   const name = aliases[first] ?? first;
   const load = registry[name];
   if (!load) {
@@ -33,9 +45,10 @@ export async function main(argv: string[], ctx: Context = defaultContext()): Pro
     return 2;
   }
   if (name !== "mise-a-jour" && name !== "interne") {
-    const notice = await autoUpdateInBackground(ctx.sys.env, omarApp(ctx.version)).catch(
-      () => undefined,
-    );
+    const notice = await autoUpdateInBackground(
+      ctx.sys.env,
+      omarApp(ctx.version),
+    ).catch(() => undefined);
     if (notice) console.error(notice);
   }
   const { default: command } = await load();
@@ -46,7 +59,9 @@ export async function main(argv: string[], ctx: Context = defaultContext()): Pro
       error instanceof UsageError ||
       (error as { code?: string }).code?.startsWith("ERR_PARSE_ARGS")
     ) {
-      console.error(`${(error as Error).message}\n(aphrody-omar ${name} --help)`);
+      console.error(
+        `${(error as Error).message}\n(aphrody-omar ${name} --help)`,
+      );
       return 2;
     }
     throw error;
@@ -59,9 +74,13 @@ export async function guarded(argv: string[], ctx?: Context): Promise<number> {
     return await main(argv, ctx);
   } catch (error) {
     const log = logCrash(error, argv, process.env, omarApp(VERSION));
-    console.error(`Erreur inattendue : ${error instanceof Error ? error.message : String(error)}`);
+    console.error(
+      `Erreur inattendue : ${error instanceof Error ? error.message : String(error)}`,
+    );
     if (log) console.error(`Détails : ${log}`);
-    console.error("Choisis « Préparer le message d'aide pour l'équipe » et envoie-le.");
+    console.error(
+      "Choisis « Préparer le message d'aide pour l'équipe » et envoie-le.",
+    );
     return 1;
   }
 }
@@ -71,16 +90,19 @@ async function interactive(): Promise<number> {
   const ctx = defaultContext();
   if (ctx.sys.platform === "win32")
     ctx.sys.run(["cmd", "/c", "chcp 65001 >nul"]).catch(() => undefined);
-  const notice = await autoUpdateInBackground(ctx.sys.env, omarApp(ctx.version)).catch(
-    () => undefined,
-  );
+  const notice = await autoUpdateInBackground(
+    ctx.sys.env,
+    omarApp(ctx.version),
+  ).catch(() => undefined);
   if (notice) ctx.ui.say(notice);
   try {
     await mainMenu(ctx);
     return 0;
   } catch (error) {
     const log = logCrash(error, [], process.env, omarApp(VERSION));
-    console.error(`Erreur inattendue : ${error instanceof Error ? error.message : String(error)}`);
+    console.error(
+      `Erreur inattendue : ${error instanceof Error ? error.message : String(error)}`,
+    );
     if (log) console.error(`Détails : ${log}`);
     ctx.ui.pause("Appuie sur Entrée pour fermer...");
     return 1;
@@ -89,7 +111,9 @@ async function interactive(): Promise<number> {
 
 function crashAndExit(error: unknown): never {
   logCrash(error, Bun.argv.slice(2), process.env, omarApp(VERSION));
-  console.error(`Erreur inattendue : ${error instanceof Error ? error.message : String(error)}`);
+  console.error(
+    `Erreur inattendue : ${error instanceof Error ? error.message : String(error)}`,
+  );
   process.exit(1);
 }
 

@@ -38,7 +38,12 @@ interface GalleryFile {
  * `POST /api/admin/upload` (admin-gated, relais vers le bot) et stocke le chemin
  * DB renvoyé (`./assets/wiki/<subdir>/<uuid>.<ext>`).
  */
-export function ImageField({ value, onChange, subdir = "uploads", column }: Props) {
+export function ImageField({
+  value,
+  onChange,
+  subdir = "uploads",
+  column,
+}: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   // Garde anti-concurrence (ref → pas de dépendance/closure obsolète dans upload).
   const busyRef = useRef(false);
@@ -73,7 +78,10 @@ export function ImageField({ value, onChange, subdir = "uploads", column }: Prop
           body: fd,
           credentials: "same-origin",
         });
-        const data = (await res.json().catch(() => ({}))) as { path?: string; error?: string };
+        const data = (await res.json().catch(() => ({}))) as {
+          path?: string;
+          error?: string;
+        };
         if (!res.ok || !data.path) {
           throw new Error(data.error ?? `Upload échoué (${res.status}).`);
         }
@@ -109,14 +117,18 @@ export function ImageField({ value, onChange, subdir = "uploads", column }: Prop
         setError(null);
         return;
       }
-      setError("Déposez une image depuis votre ordinateur ou un lien d’image http(s).");
+      setError(
+        "Déposez une image depuis votre ordinateur ou un lien d’image http(s).",
+      );
     },
     [onChange, upload],
   );
 
   const onPaste = useCallback(
     (e: ClipboardEvent<HTMLDivElement>) => {
-      const file = Array.from(e.clipboardData.files).find((f) => f.type.startsWith("image/"));
+      const file = Array.from(e.clipboardData.files).find((f) =>
+        f.type.startsWith("image/"),
+      );
       if (file) {
         e.preventDefault();
         void upload(file);
@@ -155,7 +167,8 @@ export function ImageField({ value, onChange, subdir = "uploads", column }: Prop
         onDragLeave={(e) => {
           e.preventDefault();
           // Ignore les dragleave vers un élément enfant (sinon flicker du surlignage).
-          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false);
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null))
+            setDragging(false);
         }}
         onDrop={onDrop}
         onPaste={onPaste}
@@ -195,13 +208,17 @@ export function ImageField({ value, onChange, subdir = "uploads", column }: Prop
               "Relâchez pour envoyer l'image"
             ) : (
               <>
-                <span className="font-semibold text-dbz-orange">Glisser-déposer</span> une image ou
-                son lien, coller, ou cliquer pour parcourir
+                <span className="font-semibold text-dbz-orange">
+                  Glisser-déposer
+                </span>{" "}
+                une image ou son lien, coller, ou cliquer pour parcourir
               </>
             )}
           </p>
           <p className="truncate text-[11px] text-white/50">
-            {value ? value : "Image ou lien https · PNG · JPG · WebP · GIF — max 50 Mo"}
+            {value
+              ? value
+              : "Image ou lien https · PNG · JPG · WebP · GIF — max 50 Mo"}
           </p>
         </div>
 
@@ -306,7 +323,9 @@ function GalleryPicker({
   }, []);
 
   const shown = (files ?? [])
-    .filter((f) => (filter ? f.name.toLowerCase().includes(filter.toLowerCase()) : true))
+    .filter((f) =>
+      filter ? f.name.toLowerCase().includes(filter.toLowerCase()) : true,
+    )
     .slice(0, 240);
 
   return (
@@ -319,7 +338,9 @@ function GalleryPicker({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center gap-3">
-          <h3 className="font-saiyan text-lg uppercase text-dbz-orange">Galerie d'images</h3>
+          <h3 className="font-saiyan text-lg uppercase text-dbz-orange">
+            Galerie d'images
+          </h3>
           <div className="relative ml-auto">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-white/50" />
             <input
@@ -346,7 +367,9 @@ function GalleryPicker({
             <Loader2 className="h-4 w-4 animate-spin" /> Chargement…
           </div>
         ) : shown.length === 0 ? (
-          <p className="py-12 text-center text-sm text-white/50">Aucune image trouvée.</p>
+          <p className="py-12 text-center text-sm text-white/50">
+            Aucune image trouvée.
+          </p>
         ) : (
           <div className="grid flex-1 grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-4 md:grid-cols-6">
             {shown.map((f) => (

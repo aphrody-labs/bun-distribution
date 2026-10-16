@@ -1,16 +1,27 @@
 import { afterEach, expect, test } from "bun:test";
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { verifyDesktopArtifact } from "@aphrody/runtime-sdk/desktop-artifact";
 import { hostTarget } from "@aphrody/runtime-sdk/target";
 import { packageDesktop } from "../src/distribution/desktop-package.ts";
-import { cefNotice, cefPayload, strippedInArtifact } from "../src/distribution/cef-payload.ts";
+import {
+  cefNotice,
+  cefPayload,
+  strippedInArtifact,
+} from "../src/distribution/cef-payload.ts";
 
 const LINUX = "x86_64-unknown-linux-gnu";
 const owned: string[] = [];
 afterEach(() => {
-  for (const path of owned.splice(0)) rmSync(path, { recursive: true, force: true });
+  for (const path of owned.splice(0))
+    rmSync(path, { recursive: true, force: true });
 });
 const temp = (): string => {
   const path = mkdtempSync(join(tmpdir(), "cef-payload-"));
@@ -41,7 +52,8 @@ function distribution(skip: string[] = []): string {
     "locales/en-US_NEUTER.pak",
     "locales/fr.pak",
   ]) {
-    if (!skip.includes(name)) writeFileSync(join(dir, name), `stand-in ${name}`);
+    if (!skip.includes(name))
+      writeFileSync(join(dir, name), `stand-in ${name}`);
   }
   return dir;
 }
@@ -77,13 +89,15 @@ test("the Linux payload is the bundler list plus the en-US and the present Frenc
 });
 
 test("a missing distribution file is named, and macOS has no payload", () => {
-  expect(() => cefPayload(LINUX, distribution(["libcef.so", "locales/en-US.pak"]))).toThrow(
-    /libcef\.so, locales\/en-US\.pak/,
+  expect(() =>
+    cefPayload(LINUX, distribution(["libcef.so", "locales/en-US.pak"])),
+  ).toThrow(/libcef\.so, locales\/en-US\.pak/);
+  expect(() => cefPayload("aarch64-apple-darwin", distribution())).toThrow(
+    "macOS",
   );
-  expect(() => cefPayload("aarch64-apple-darwin", distribution())).toThrow("macOS");
-  expect(Object.keys(cefPayload("x86_64-pc-windows-msvc", windowsDistribution()))).toContain(
-    "libcef.dll",
-  );
+  expect(
+    Object.keys(cefPayload("x86_64-pc-windows-msvc", windowsDistribution())),
+  ).toContain("libcef.dll");
 });
 
 function windowsDistribution(): string {
@@ -121,13 +135,19 @@ test("only Linux shared libraries are stripped", () => {
   expect(strippedInArtifact(LINUX, "libcef.so")).toBe(true);
   expect(strippedInArtifact(LINUX, "libvulkan.so.1")).toBe(false);
   expect(strippedInArtifact(LINUX, "resources.pak")).toBe(false);
-  expect(strippedInArtifact("x86_64-pc-windows-msvc", "libcef.dll")).toBe(false);
+  expect(strippedInArtifact("x86_64-pc-windows-msvc", "libcef.dll")).toBe(
+    false,
+  );
 });
 
 test("the Chromium credits become a notice, and their absence is an error", () => {
   const dir = distribution();
-  expect(cefNotice(dir)).toEqual({ "LICENSE-chromium-credits.html": join(dir, "CREDITS.html") });
-  expect(() => cefNotice(distribution(["CREDITS.html"]))).toThrow("CREDITS.html");
+  expect(cefNotice(dir)).toEqual({
+    "LICENSE-chromium-credits.html": join(dir, "CREDITS.html"),
+  });
+  expect(() => cefNotice(distribution(["CREDITS.html"]))).toThrow(
+    "CREDITS.html",
+  );
 });
 
 test.skipIf(process.platform !== "linux" || hostTarget() !== LINUX)(
@@ -135,12 +155,22 @@ test.skipIf(process.platform !== "linux" || hostTarget() !== LINUX)(
   () => {
     const root = temp();
     const git = (...args: string[]) =>
-      Bun.spawnSync(["git", "-c", "user.name=t", "-c", "user.email=t@example.test", ...args], {
-        windowsHide: true,
-        cwd: root,
-        stdout: "pipe",
-        stderr: "pipe",
-      });
+      Bun.spawnSync(
+        [
+          "git",
+          "-c",
+          "user.name=t",
+          "-c",
+          "user.email=t@example.test",
+          ...args,
+        ],
+        {
+          windowsHide: true,
+          cwd: root,
+          stdout: "pipe",
+          stderr: "pipe",
+        },
+      );
     git("init", "-q");
     for (const [name, text] of [
       ["THIRD-PARTY.md", "third party"],
@@ -152,7 +182,9 @@ test.skipIf(process.platform !== "linux" || hostTarget() !== LINUX)(
     }
     git("add", "-A");
     git("commit", "-q", "-m", "fixture");
-    const revision = new TextDecoder().decode(git("rev-parse", "HEAD").stdout).trim();
+    const revision = new TextDecoder()
+      .decode(git("rev-parse", "HEAD").stdout)
+      .trim();
     const dir = distribution();
     const executable = join(dir, "aphrody-app");
     writeFileSync(

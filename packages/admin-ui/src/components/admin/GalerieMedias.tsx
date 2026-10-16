@@ -1,7 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type DragEvent,
+} from "react";
 import { useRouter } from "next/navigation";
 import { DbRowActions } from "@aphrody/admin-ui/components/admin/DbCrud";
 
@@ -50,7 +56,13 @@ const poids = (octets: number | null) =>
       ? `${(octets / 1024 / 1024).toFixed(1)} Mo`
       : `${Math.round(octets / 1024)} Ko`;
 
-export function GalerieMedias({ medias, bucket }: { medias: Media[]; bucket: string }) {
+export function GalerieMedias({
+  medias,
+  bucket,
+}: {
+  medias: Media[];
+  bucket: string;
+}) {
   const router = useRouter();
   const [ouvert, setOuvert] = useState<number | null>(null);
   const [zoom, setZoom] = useState(false);
@@ -70,7 +82,9 @@ export function GalerieMedias({ medias, bucket }: { medias: Media[]; bucket: str
   // ── Visionneuse ────────────────────────────────────────────────────────────
   const deplacer = useCallback(
     (pas: number) => {
-      setOuvert((i) => (i === null ? null : (i + pas + medias.length) % medias.length));
+      setOuvert((i) =>
+        i === null ? null : (i + pas + medias.length) % medias.length,
+      );
       setZoom(false);
     },
     [medias.length],
@@ -110,9 +124,16 @@ export function GalerieMedias({ medias, bucket }: { medias: Media[]; bucket: str
         const corps = new FormData();
         corps.append("file", fichier);
         corps.append("subdir", "galerie");
-        const envoi = await fetch("/api/admin/upload", { method: "POST", body: corps });
-        const donnees = (await envoi.json()) as { path?: string; error?: string };
-        if (!envoi.ok || !donnees.path) throw new Error(donnees.error ?? "dépôt refusé");
+        const envoi = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: corps,
+        });
+        const donnees = (await envoi.json()) as {
+          path?: string;
+          error?: string;
+        };
+        if (!envoi.ok || !donnees.path)
+          throw new Error(donnees.error ?? "dépôt refusé");
 
         const creation = await fetch("/api/wiki-admin/db_assets", {
           method: "POST",
@@ -151,7 +172,10 @@ export function GalerieMedias({ medias, bucket }: { medias: Media[]; bucket: str
         `/api/admin/entites?type=${type}&q=${encodeURIComponent(recherche)}`,
       ).catch(() => null);
       if (!r?.ok) return;
-      setResultats(((await r.json()) as { entites: { id: number; nom: string }[] }).entites);
+      setResultats(
+        ((await r.json()) as { entites: { id: number; nom: string }[] })
+          .entites,
+      );
     }, 250);
     return () => clearTimeout(minuteur);
   }, [type, recherche]);
@@ -183,7 +207,9 @@ export function GalerieMedias({ medias, bucket }: { medias: Media[]; bucket: str
       {/* Dépôt en lot : fichiers multiples par dialogue ou glisser-déposer. */}
       <div
         className={`dbz-panel mb-4 flex flex-wrap items-center gap-3 border-2 border-dashed p-3 transition-colors ${
-          depotActif ? "border-dbz-orange bg-dbz-orange/10" : "border-dbz-border"
+          depotActif
+            ? "border-dbz-orange bg-dbz-orange/10"
+            : "border-dbz-border"
         }`}
         onDragOver={(event) => {
           event.preventDefault();
@@ -208,7 +234,8 @@ export function GalerieMedias({ medias, bucket }: { medias: Media[]; bucket: str
           className="text-sm text-white/70 file:mr-3 file:border-2 file:border-dbz-border file:bg-dbz-bg file:px-3 file:py-2 file:text-white file:cursor-pointer hover:file:border-dbz-orange"
         />
         <span className="text-xs text-white/45">
-          Déposez plusieurs images ici ou choisissez-les · PNG, JPG, WebP, GIF · 50 Mo maxi chacune
+          Déposez plusieurs images ici ou choisissez-les · PNG, JPG, WebP, GIF ·
+          50 Mo maxi chacune
         </span>
       </div>
 
@@ -324,7 +351,10 @@ export function GalerieMedias({ medias, bucket }: { medias: Media[]; bucket: str
             </div>
             <figcaption className="mt-1.5 space-y-1">
               <div className="flex items-center justify-between gap-1">
-                <span className="text-[10px] text-white/55 font-mono truncate" title={m.chemin}>
+                <span
+                  className="text-[10px] text-white/55 font-mono truncate"
+                  title={m.chemin}
+                >
                   #{m.id}
                   {m.role ? ` · ${m.role}` : ""}
                 </span>
@@ -384,7 +414,11 @@ export function GalerieMedias({ medias, bucket }: { medias: Media[]; bucket: str
           >
             {/* En zoom on sert l'image à sa taille propre, sinon on l'ajuste à l'écran. */}
             {zoom ? (
-              <img src={media.url} alt={media.chemin} className="max-w-none mx-auto" />
+              <img
+                src={media.url}
+                alt={media.chemin}
+                className="max-w-none mx-auto"
+              />
             ) : (
               <Image
                 src={media.url}
@@ -409,9 +443,13 @@ export function GalerieMedias({ medias, bucket }: { medias: Media[]; bucket: str
               {[
                 media.attribution,
                 media.licence,
-                media.largeur && media.hauteur ? `${media.largeur}×${media.hauteur}` : null,
+                media.largeur && media.hauteur
+                  ? `${media.largeur}×${media.hauteur}`
+                  : null,
                 poids(media.octets),
-                media.typeEntite ? `${media.typeEntite} #${media.idEntite}` : "non rattaché",
+                media.typeEntite
+                  ? `${media.typeEntite} #${media.idEntite}`
+                  : "non rattaché",
               ]
                 .filter(Boolean)
                 .join(" · ")}

@@ -3,7 +3,10 @@
 // Prints JSON {importMs, firstMs, warmMs, files, bytes, digest}; the digest covers every generated path and byte.
 import { join } from "node:path";
 
-const src = join(import.meta.dir, "../../../packages/m3-os-themes/src/index.ts");
+const src = join(
+  import.meta.dir,
+  "../../../packages/m3-os-themes/src/index.ts",
+);
 const t0 = performance.now();
 const { generate, TARGETS } = (await import(
   src

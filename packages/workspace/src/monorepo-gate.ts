@@ -62,14 +62,29 @@ export function buildMonorepoGatePlan(input: {
   const cargo = cargoSerialCommand(root);
   const gaps = [...(input.gaps ?? [])];
   const checks: GateCheck[] = [];
-  const add = (name: string, command: string[]) => checks.push({ name, command, cwd: root });
+  const add = (name: string, command: string[]) =>
+    checks.push({ name, command, cwd: root });
   if (!input.hasCargoManifest)
-    gaps.push({ path: "Cargo.toml", check: "rust", reason: "Rust workspace manifest missing" });
+    gaps.push({
+      path: "Cargo.toml",
+      check: "rust",
+      reason: "Rust workspace manifest missing",
+    });
   else {
     if (!input.hasCargoLock)
-      gaps.push({ path: "Cargo.lock", check: "lockfile", reason: "Rust lockfile missing" });
+      gaps.push({
+        path: "Cargo.lock",
+        check: "lockfile",
+        reason: "Rust lockfile missing",
+      });
     add("Rust formatting", ["cargo", "fmt", "--all", "--check"]);
-    add("Rust all-target check", [...cargo, "check", "--workspace", "--all-targets", "--locked"]);
+    add("Rust all-target check", [
+      ...cargo,
+      "check",
+      "--workspace",
+      "--all-targets",
+      "--locked",
+    ]);
     add("Rust Clippy", [
       ...cargo,
       "clippy",
@@ -80,8 +95,20 @@ export function buildMonorepoGatePlan(input: {
       "-D",
       "warnings",
     ]);
-    add("Rust all-target tests", [...cargo, "test", "--workspace", "--all-targets", "--locked"]);
-    add("Rust documentation tests", [...cargo, "test", "--workspace", "--doc", "--locked"]);
+    add("Rust all-target tests", [
+      ...cargo,
+      "test",
+      "--workspace",
+      "--all-targets",
+      "--locked",
+    ]);
+    add("Rust documentation tests", [
+      ...cargo,
+      "test",
+      "--workspace",
+      "--doc",
+      "--locked",
+    ]);
     add("Rust release build", [
       ...cargo,
       "build",
@@ -92,7 +119,11 @@ export function buildMonorepoGatePlan(input: {
     ]);
   }
   if (!input.hasBunLock)
-    gaps.push({ path: "bun.lock", check: "lockfile", reason: "Bun lockfile missing" });
+    gaps.push({
+      path: "bun.lock",
+      check: "lockfile",
+      reason: "Bun lockfile missing",
+    });
   // Install first so package scripts run against the actual frozen root dependency graph.
   checks.unshift({
     name: "Frozen Bun install",
@@ -106,7 +137,9 @@ export function buildMonorepoGatePlan(input: {
       reason: "No declared Bun workspace members discovered",
     });
   const names = new Set<string>();
-  for (const pkg of input.packages.toSorted((a, b) => a.path.localeCompare(b.path))) {
+  for (const pkg of input.packages.toSorted((a, b) =>
+    a.path.localeCompare(b.path),
+  )) {
     if (names.has(pkg.name))
       gaps.push({
         path: pkg.path,
@@ -142,7 +175,8 @@ export function buildMonorepoGatePlan(input: {
     }
   }
   const docsScript =
-    input.docsScript ?? ["docs:check", "docs:check-links"].find((name) => input.rootScripts[name]);
+    input.docsScript ??
+    ["docs:check", "docs:check-links"].find((name) => input.rootScripts[name]);
   if (!docsScript || !input.rootScripts[docsScript]?.trim())
     gaps.push({
       path: "package.json",
@@ -151,7 +185,11 @@ export function buildMonorepoGatePlan(input: {
         ? `Missing root script: ${docsScript}`
         : "Missing root docs:check or docs:check-links script",
     });
-  else if (/^(?:echo\b[^;&|]*|true|exit\s+0)\s*;?$/.test(input.rootScripts[docsScript]!.trim()))
+  else if (
+    /^(?:echo\b[^;&|]*|true|exit\s+0)\s*;?$/.test(
+      input.rootScripts[docsScript]!.trim(),
+    )
+  )
     gaps.push({
       path: "package.json",
       check: "documentation",
@@ -174,15 +212,22 @@ export function buildMonorepoGatePlan(input: {
       "--root",
       root,
     ]);
-  const plan: MonorepoGatePlan = { root, packages: input.packages, checks, gaps };
+  const plan: MonorepoGatePlan = {
+    root,
+    packages: input.packages,
+    checks,
+    gaps,
+  };
   return input.noBuild ? restrictToNoBuild(plan) : plan;
 }
 
 /** Fail closed for scripts with arbitrary adapters or lifecycle hooks. */
 export function noBuildScriptReason(check: GateCheck): string | undefined {
-  if (check.name.endsWith(": build")) return "Build stages are excluded in no-build mode";
+  if (check.name.endsWith(": build"))
+    return "Build stages are excluded in no-build mode";
   const script = check.script?.trim();
-  if (!script) return "Only reviewed package leaf commands are executed in no-build mode";
+  if (!script)
+    return "Only reviewed package leaf commands are executed in no-build mode";
   if (/^bun check\b[\w\s./:@=,-]*$/.test(script)) return undefined;
   if (/^bun lint\b[\w\s./:@=,*-]*$/.test(script)) return undefined;
   if (/^bun fmt --check\b[\w\s./:@=,*-]*$/.test(script)) return undefined;
@@ -202,7 +247,13 @@ export function restrictToNoBuild(plan: MonorepoGatePlan): MonorepoGatePlan {
     if (check.name === "Frozen Bun install") {
       checks.push({
         ...check,
-        command: ["bun", "install", "--frozen-lockfile", "--dry-run", "--ignore-scripts"],
+        command: [
+          "bun",
+          "install",
+          "--frozen-lockfile",
+          "--dry-run",
+          "--ignore-scripts",
+        ],
       });
       continue;
     }
@@ -216,7 +267,14 @@ export function restrictToNoBuild(plan: MonorepoGatePlan): MonorepoGatePlan {
       checks.push({
         name: "Rust workspace metadata (offline, no dependencies)",
         cwd: plan.root,
-        command: ["cargo", "metadata", "--no-deps", "--offline", "--locked", "--format-version=1"],
+        command: [
+          "cargo",
+          "metadata",
+          "--no-deps",
+          "--offline",
+          "--locked",
+          "--format-version=1",
+        ],
       });
       continue;
     }
@@ -229,7 +287,10 @@ export function restrictToNoBuild(plan: MonorepoGatePlan): MonorepoGatePlan {
   for (const check of checks)
     if (check.script) {
       check.command = check.script.trim().split(/\s+/);
-      if (/^bun check\b/.test(check.script) && !check.command.includes("--noEmit"))
+      if (
+        /^bun check\b/.test(check.script) &&
+        !check.command.includes("--noEmit")
+      )
         check.command.push("--noEmit");
     }
   return { ...plan, checks, deferred, noBuild: true };
@@ -250,12 +311,20 @@ export async function discoverMonorepoGatePlan(
     : (manifest.workspaces?.packages ?? []);
   const safePatterns = patterns.filter((entry) => {
     const pattern = entry.replace(/^!/, "");
-    return !/^(?:[a-zA-Z]:|[/\\])/.test(pattern) && !pattern.split(/[\\/]/).includes("..");
+    return (
+      !/^(?:[a-zA-Z]:|[/\\])/.test(pattern) &&
+      !pattern.split(/[\\/]/).includes("..")
+    );
   });
-  const selectedManifests = new Set(await firstPartyManifests(root, safePatterns));
+  const selectedManifests = new Set(
+    await firstPartyManifests(root, safePatterns),
+  );
   const excludedPatterns = patterns
     .filter((entry) => entry.startsWith("!"))
-    .map((entry) => new Bun.Glob(`${entry.slice(1).replace(/\/$/, "")}/package.json`));
+    .map(
+      (entry) =>
+        new Bun.Glob(`${entry.slice(1).replace(/\/$/, "")}/package.json`),
+    );
   const packages: WorkspacePackage[] = [];
   const gaps: GateGap[] = [];
   const discovered = new Set<string>();
@@ -271,7 +340,9 @@ export async function discoverMonorepoGatePlan(
     let matches = 0;
     // Manifests are classified in scan order; each realpath check updates the shared `discovered` set.
     // oxlint-disable-next-line no-await-in-loop -- sequential classification keeps scan-order results and the shared discovered set consistent
-    for await (const scanned of new Bun.Glob(`${pattern.replace(/\/$/, "")}/package.json`).scan({
+    for await (const scanned of new Bun.Glob(
+      `${pattern.replace(/\/$/, "")}/package.json`,
+    ).scan({
       cwd: root,
       onlyFiles: true,
       followSymlinks: false,
@@ -308,7 +379,8 @@ export async function discoverMonorepoGatePlan(
         name?: string;
         scripts?: Record<string, string>;
       };
-      if (!pkg.name) gaps.push({ path, check: "workspace", reason: "Package name missing" });
+      if (!pkg.name)
+        gaps.push({ path, check: "workspace", reason: "Package name missing" });
       packages.push({
         name: pkg.name ?? directory,
         path: directory.replaceAll("\\", "/"),
@@ -331,7 +403,9 @@ export async function discoverMonorepoGatePlan(
     hasCargoManifest: await Bun.file(join(root, "Cargo.toml")).exists(),
     hasCargoLock: await Bun.file(join(root, "Cargo.lock")).exists(),
     hasBunLock: await Bun.file(join(root, "bun.lock")).exists(),
-    hasInlineBaseline: await Bun.file(join(root, DEFAULT_INLINE_BASELINE)).exists(),
+    hasInlineBaseline: await Bun.file(
+      join(root, DEFAULT_INLINE_BASELINE),
+    ).exists(),
     noBuild,
   });
 }
@@ -385,9 +459,14 @@ export async function runMonorepoGate(args: string[]): Promise<number> {
   let timeoutSeconds = 1200;
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
-    if (arg === "--root" || arg === "--docs-script" || arg === "--timeout-seconds") {
+    if (
+      arg === "--root" ||
+      arg === "--docs-script" ||
+      arg === "--timeout-seconds"
+    ) {
       const value = args[++index];
-      if (!value || value.startsWith("--")) throw new Error(`${arg} requires a value`);
+      if (!value || value.startsWith("--"))
+        throw new Error(`${arg} requires a value`);
       if (arg === "--root") root = value;
       else if (arg === "--docs-script") docsScript = value;
       else timeoutSeconds = Number(value);
@@ -405,7 +484,9 @@ export async function runMonorepoGate(args: string[]): Promise<number> {
     throw new Error("--timeout-seconds must be a positive integer");
   const plan = await discoverMonorepoGatePlan(root, docsScript, noBuild);
   if (planOnly) {
-    console.log(JSON.stringify({ status: "planned", executed: false, ...plan }, null, 2));
+    console.log(
+      JSON.stringify({ status: "planned", executed: false, ...plan }, null, 2),
+    );
     return plan.gaps.length ? 1 : 0;
   }
   if (!noBuild) {
@@ -414,7 +495,13 @@ export async function runMonorepoGate(args: string[]): Promise<number> {
       (arg, index) => arg !== "--root" && args[index - 1] !== "--root",
     );
     const dispatched = await routeHeavyBuild(
-      ["bun", "packages/engine/yolo/src/index.ts", "ops", "monorepo-gate", ...remoteArgs],
+      [
+        "bun",
+        "packages/engine/yolo/src/index.ts",
+        "ops",
+        "monorepo-gate",
+        ...remoteArgs,
+      ],
       plan.root,
     );
     if (dispatched !== undefined) return dispatched;
@@ -442,7 +529,9 @@ export async function runMonorepoGate(args: string[]): Promise<number> {
       const [exitCode] = await Promise.all([
         child.exited,
         (async () => {
-          const reader = (child.stdout as ReadableStream<Uint8Array>).getReader();
+          const reader = (
+            child.stdout as ReadableStream<Uint8Array>
+          ).getReader();
           try {
             while (true) {
               // oxlint-disable-next-line no-await-in-loop -- stream chunks must be read and forwarded in order
@@ -464,11 +553,15 @@ export async function runMonorepoGate(args: string[]): Promise<number> {
     }
     return await child.exited;
   });
-  if (json) console.log(JSON.stringify({ ...plan, executed: true, ...report }, null, 2));
+  if (json)
+    console.log(
+      JSON.stringify({ ...plan, executed: true, ...report }, null, 2),
+    );
   else {
     for (const check of plan.deferred ?? [])
       console.error(`DEFERRED ${check.name}: ${check.reason}`);
-    for (const gap of plan.gaps) console.error(`GAP ${gap.path}: ${gap.check}: ${gap.reason}`);
+    for (const gap of plan.gaps)
+      console.error(`GAP ${gap.path}: ${gap.check}: ${gap.reason}`);
     for (const result of report.results)
       console.log(
         `${result.status.toUpperCase()} ${result.name}${result.error ? `: ${result.error}` : ""}`,
@@ -478,4 +571,5 @@ export async function runMonorepoGate(args: string[]): Promise<number> {
   return report.passed ? 0 : 1;
 }
 
-if (import.meta.main) process.exit(await runMonorepoGate(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runMonorepoGate(process.argv.slice(2)));

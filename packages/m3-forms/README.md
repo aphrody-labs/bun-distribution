@@ -70,12 +70,21 @@ type Values = z.infer<typeof schema>;
 export function ProfileForm() {
   const form = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", email: "", role: "user", plan: "free", notifications: true },
+    defaultValues: {
+      name: "",
+      email: "",
+      role: "user",
+      plan: "free",
+      notifications: true,
+    },
   });
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(console.log)} className="flex flex-col gap-6">
+      <form
+        onSubmit={form.handleSubmit(console.log)}
+        className="flex flex-col gap-6"
+      >
         <InputField name="name" label="Full name" required />
         <InputField
           name="email"

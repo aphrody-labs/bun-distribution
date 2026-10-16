@@ -27,7 +27,8 @@ afterEach(() => {
   else process.env.APHRODY_YOLO_ROOT = savedRoot;
   if (savedUnits === undefined) delete process.env.APHRODY_SYSTEMD_USER_DIR;
   else process.env.APHRODY_SYSTEMD_USER_DIR = savedUnits;
-  for (const root of temporary.splice(0)) rmSync(root, { recursive: true, force: true });
+  for (const root of temporary.splice(0))
+    rmSync(root, { recursive: true, force: true });
 });
 
 function fixture(apply: boolean) {
@@ -52,7 +53,10 @@ function fixture(apply: boolean) {
   for (const name of ["aphrody", "aphrody-mcp"])
     writeFileSync(join(home, ".local/bin", name), bytes);
   const pin = new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
-  const names = ["aphrody-local-mcp.service", "aphrody-jobs-worker-wsl.service"];
+  const names = [
+    "aphrody-local-mcp.service",
+    "aphrody-jobs-worker-wsl.service",
+  ];
   writeFileSync(
     join(renderer, "index.ts"),
     `export const renderAll = () => ${JSON.stringify(names.map((file) => ({ file, text: "[Service]\nExecStart=qualified\n" })))};`,
@@ -83,7 +87,11 @@ function fixture(apply: boolean) {
           content: [
             {
               type: "text",
-              text: JSON.stringify({ count: 0, jobs: [], queue: { queued: 0, running: 0 } }),
+              text: JSON.stringify({
+                count: 0,
+                jobs: [],
+                queue: { queued: 0, running: 0 },
+              }),
             },
           ],
         },
@@ -94,9 +102,25 @@ function fixture(apply: boolean) {
   context.run = run;
   const request = (async (url, init) =>
     new Response("", {
-      status: String(url).endsWith("/healthz") ? 200 : init?.headers ? 401 : 500,
+      status: String(url).endsWith("/healthz")
+        ? 200
+        : init?.headers
+          ? 401
+          : 500,
     })) as typeof fetch;
-  return { home, units, privateRoot, pin, context, calls, active, enabled, run, request, names };
+  return {
+    home,
+    units,
+    privateRoot,
+    pin,
+    context,
+    calls,
+    active,
+    enabled,
+    run,
+    request,
+    names,
+  };
 }
 
 test("only the selected unit's exact loopback PID can reuse the endpoint", () => {
@@ -117,9 +141,13 @@ test("only the selected unit's exact loopback PID can reuse the endpoint", () =>
 test("jobs qualification refuses malformed, unavailable or ambiguous queue receipts", () => {
   const valid = { count: 0, jobs: [], queue: { queued: 0, running: 0 } };
   assertLocalJobsReceipt(
-    JSON.stringify({ result: { content: [{ type: "text", text: JSON.stringify(valid) }] } }),
+    JSON.stringify({
+      result: { content: [{ type: "text", text: JSON.stringify(valid) }] },
+    }),
   );
-  assertLocalJobsReceipt(JSON.stringify({ result: { structuredContent: valid } }));
+  assertLocalJobsReceipt(
+    JSON.stringify({ result: { structuredContent: valid } }),
+  );
   for (const receipt of [
     {},
     { ...valid, count: 1 },
@@ -130,12 +158,18 @@ test("jobs qualification refuses malformed, unavailable or ambiguous queue recei
   ]) {
     expect(() =>
       assertLocalJobsReceipt(
-        JSON.stringify({ result: { content: [{ type: "text", text: JSON.stringify(receipt) }] } }),
+        JSON.stringify({
+          result: {
+            content: [{ type: "text", text: JSON.stringify(receipt) }],
+          },
+        }),
       ),
     ).toThrow();
   }
   expect(() =>
-    assertLocalJobsReceipt(JSON.stringify({ result: { isError: true, structuredContent: valid } })),
+    assertLocalJobsReceipt(
+      JSON.stringify({ result: { isError: true, structuredContent: valid } }),
+    ),
   ).toThrow();
   expect(() =>
     assertLocalJobsReceipt(
@@ -165,7 +199,11 @@ test("dry run writes no bearer, config or units and rejects an unqualified binar
     expect(existsSync(join(f.units, f.names[0]!))).toBe(false);
     writeFileSync(join(f.home, ".local/bin/aphrody"), "foreign-native");
     await expect(
-      activateLocalJobs(f.context, f.pin, { home: f.home, platform: "linux", run: f.run }),
+      activateLocalJobs(f.context, f.pin, {
+        home: f.home,
+        platform: "linux",
+        run: f.run,
+      }),
     ).rejects.toThrow("qualified pin");
   } finally {
     log.mockRestore();
@@ -175,12 +213,16 @@ test("dry run writes no bearer, config or units and rejects an unqualified binar
 test("authentication failure restores selected prior units and leaves the PC service untouched", async () => {
   const f = fixture(true);
   writeFileSync(join(f.units, f.names[0]!), "previous native MCP\n");
-  writeFileSync(join(f.units, "aphrody-pc-agent.service"), "protected PC owner\n");
+  writeFileSync(
+    join(f.units, "aphrody-pc-agent.service"),
+    "protected PC owner\n",
+  );
   f.active.add(f.names[0]!);
   f.enabled.add(f.names[0]!);
   const log = spyOn(console, "log").mockImplementation(() => {});
   try {
-    const failure = (async () => new Response("", { status: 200 })) as typeof fetch;
+    const failure = (async () =>
+      new Response("", { status: 200 })) as typeof fetch;
     await expect(
       activateLocalJobs(f.context, f.pin, {
         home: f.home,
@@ -190,15 +232,19 @@ test("authentication failure restores selected prior units and leaves the PC ser
         fetch: failure,
       }),
     ).rejects.toThrow("prior selected user units restored");
-    expect(readFileSync(join(f.units, f.names[0]!), "utf8")).toBe("previous native MCP\n");
+    expect(readFileSync(join(f.units, f.names[0]!), "utf8")).toBe(
+      "previous native MCP\n",
+    );
     expect(existsSync(join(f.units, f.names[1]!))).toBe(false);
     expect(f.active.has(f.names[0]!)).toBe(true);
     expect(f.active.has(f.names[1]!)).toBe(false);
     expect(f.enabled.has(f.names[0]!)).toBe(true);
-    expect(readFileSync(join(f.units, "aphrody-pc-agent.service"), "utf8")).toBe(
-      "protected PC owner\n",
-    );
-    expect(f.calls.some((call) => call.includes("aphrody-pc-agent.service"))).toBe(false);
+    expect(
+      readFileSync(join(f.units, "aphrody-pc-agent.service"), "utf8"),
+    ).toBe("protected PC owner\n");
+    expect(
+      f.calls.some((call) => call.includes("aphrody-pc-agent.service")),
+    ).toBe(false);
   } finally {
     log.mockRestore();
   }
@@ -221,16 +267,19 @@ test("successful activation retains its purpose-bound bearer and keeps client co
     await activateLocalJobs(f.context, f.pin, options);
     expect(readFileSync(bearer, "utf8")).toBe(before);
     for (const path of [bearer, join(f.privateRoot, "jobs/wsl.toml")])
-      if (process.platform !== "win32") expect(statSync(path).mode & 0o777).toBe(0o600);
-    expect(readFileSync(join(f.privateRoot, "jobs/wsl.toml"), "utf8")).toContain(
-      "127.0.0.1:8791/mcp",
-    );
-    expect(readFileSync(join(f.privateRoot, "jobs/wsl.toml"), "utf8")).toContain(
-      "[mcp_servers.aphrody.http_headers]",
-    );
+      if (process.platform !== "win32")
+        expect(statSync(path).mode & 0o777).toBe(0o600);
+    expect(
+      readFileSync(join(f.privateRoot, "jobs/wsl.toml"), "utf8"),
+    ).toContain("127.0.0.1:8791/mcp");
+    expect(
+      readFileSync(join(f.privateRoot, "jobs/wsl.toml"), "utf8"),
+    ).toContain("[mcp_servers.aphrody.http_headers]");
     expect(f.names.every((unit) => f.active.has(unit))).toBe(true);
     expect(
-      log.mock.calls.some((call) => String(call[0]).includes("workerReady remains false")),
+      log.mock.calls.some((call) =>
+        String(call[0]).includes("workerReady remains false"),
+      ),
     ).toBe(true);
   } finally {
     log.mockRestore();

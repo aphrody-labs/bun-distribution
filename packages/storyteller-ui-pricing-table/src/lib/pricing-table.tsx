@@ -1,10 +1,7 @@
 import { useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { SUBSCRIPTION_PLANS } from "@storyteller/subscription";
-import {
-  BillingCadence,
-  WebsitePricingTable,
-} from "./website-pricing-table";
+import { BillingCadence, WebsitePricingTable } from "./website-pricing-table";
 
 export type { BillingCadence };
 
@@ -121,7 +118,9 @@ export const PricingSectionLabel = ({
       <span className="text-white/40">{index} / </span>
       {label}
     </p>
-    {annotation && <p className="hidden text-white/40 sm:block">{annotation}</p>}
+    {annotation && (
+      <p className="hidden text-white/40 sm:block">{annotation}</p>
+    )}
   </div>
 );
 

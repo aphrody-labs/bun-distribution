@@ -161,8 +161,10 @@ const paletteRe = new RegExp(
 );
 const radiusRe =
   /(?<![\w-])((?:[\w[\]&:.-]+:)*!?)rounded(-(?:t|r|b|l|tl|tr|br|bl|s|e|ss|se|es|ee))?(?:-(xs|sm|md|lg|xl|2xl|3xl|window))?(?![\w-])/g;
-const textRe = /(?<![\w-])((?:[\w[\]&:.-]+:)*!?)text-(tiny|xs|sm|base|lg|xl|[2-7]xl)(?![\w-])/g;
-const shadowRe = /(?<![\w-])((?:[\w[\]&:.-]+:)*!?)shadow(?:-(xs|sm|md|lg|xl|2xl))?(?![\w-/])/g;
+const textRe =
+  /(?<![\w-])((?:[\w[\]&:.-]+:)*!?)text-(tiny|xs|sm|base|lg|xl|[2-7]xl)(?![\w-])/g;
+const shadowRe =
+  /(?<![\w-])((?:[\w[\]&:.-]+:)*!?)shadow(?:-(xs|sm|md|lg|xl|2xl))?(?![\w-/])/g;
 const easeRe = /(?<![\w-])((?:[\w[\]&:.-]+:)*!?)ease-(in-out|out|in)(?![\w-])/g;
 
 /** Combine an M3 state-layer opacity with an upstream opacity modifier. */
@@ -170,7 +172,10 @@ function withAlpha(target: string, alpha?: string): string {
   if (!alpha) return target;
   const [role, layer] = target.split("/");
   if (!layer) return `${role}/${alpha}`;
-  const combined = Math.max(1, Math.round((Number(layer) * Number(alpha)) / 100));
+  const combined = Math.max(
+    1,
+    Math.round((Number(layer) * Number(alpha)) / 100),
+  );
   return `${role}/${combined}`;
 }
 
@@ -191,7 +196,10 @@ export function rewriteClasses(list: string): string {
       const role = (medium && LABEL[size]) || TEXT[size]!;
       return `${variants}text-${role}`;
     })
-    .replace(shadowRe, (_, variants, size = "") => `${variants}shadow-${SHADOW[size]!}`)
+    .replace(
+      shadowRe,
+      (_, variants, size = "") => `${variants}shadow-${SHADOW[size]!}`,
+    )
     .replace(easeRe, (_, variants, curve) => `${variants}ease-${EASE[curve]!}`);
 }
 
@@ -248,9 +256,13 @@ async function walk(dir: string): Promise<string[]> {
     entries.map(async (entry): Promise<string[]> => {
       const full = join(dir, entry.name);
       if (entry.isDirectory()) {
-        return entry.name !== "node_modules" && entry.name !== "dist" ? walk(full) : [];
+        return entry.name !== "node_modules" && entry.name !== "dist"
+          ? walk(full)
+          : [];
       }
-      return /\.(tsx?|jsx?)$/.test(entry.name) && !/\.test\./.test(entry.name) ? [full] : [];
+      return /\.(tsx?|jsx?)$/.test(entry.name) && !/\.test\./.test(entry.name)
+        ? [full]
+        : [];
     }),
   );
   return nested.flat();

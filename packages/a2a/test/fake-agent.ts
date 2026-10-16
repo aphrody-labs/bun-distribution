@@ -15,7 +15,11 @@ import type {
   TaskPushNotificationConfig,
   TaskState,
 } from "../src/index.ts";
-import { A2A_ERROR_CODES, TERMINAL_TASK_STATES, type A2AErrorReason } from "../src/index.ts";
+import {
+  A2A_ERROR_CODES,
+  TERMINAL_TASK_STATES,
+  type A2AErrorReason,
+} from "../src/index.ts";
 
 export interface Recorded {
   method: string;
@@ -102,7 +106,12 @@ export class FakeAgent {
       description: "Test agent",
       version: "1.2.3",
       supportedInterfaces: [
-        { url: `${this.url}/rpc`, protocolBinding: "JSONRPC", protocolVersion: "1.0", ...tenant },
+        {
+          url: `${this.url}/rpc`,
+          protocolBinding: "JSONRPC",
+          protocolVersion: "1.0",
+          ...tenant,
+        },
         {
           url: `${this.url}/rest`,
           protocolBinding: "HTTP+JSON",
@@ -110,10 +119,21 @@ export class FakeAgent {
           ...tenant,
         },
       ],
-      capabilities: { streaming: true, pushNotifications: true, extendedAgentCard: true },
+      capabilities: {
+        streaming: true,
+        pushNotifications: true,
+        extendedAgentCard: true,
+      },
       defaultInputModes: ["text/plain"],
       defaultOutputModes: ["text/plain"],
-      skills: [{ id: "echo", name: "Echo", description: "Repeats the text", tags: ["echo"] }],
+      skills: [
+        {
+          id: "echo",
+          name: "Echo",
+          description: "Repeats the text",
+          tags: ["echo"],
+        },
+      ],
     };
   }
 
@@ -121,7 +141,8 @@ export class FakeAgent {
 
   private async route(req: Request): Promise<Response> {
     const url = new URL(req.url);
-    const text = req.method === "GET" || req.method === "DELETE" ? "" : await req.text();
+    const text =
+      req.method === "GET" || req.method === "DELETE" ? "" : await req.text();
     let body: unknown = text;
     try {
       body = text ? JSON.parse(text) : undefined;
@@ -135,14 +156,16 @@ export class FakeAgent {
       body,
     });
 
-    if (url.pathname === "/.well-known/agent-card.json") return this.serveCard(req);
+    if (url.pathname === "/.well-known/agent-card.json")
+      return this.serveCard(req);
     if (
       this.options.bearer &&
       req.headers.get("authorization") !== `Bearer ${this.options.bearer}`
     ) {
       return new Response("unauthorized", { status: 401 });
     }
-    if (url.pathname === "/rpc" && req.method === "POST") return this.rpc(req, body);
+    if (url.pathname === "/rpc" && req.method === "POST")
+      return this.rpc(req, body);
     if (url.pathname.startsWith("/rest")) return this.rest(req, url, body);
     return new Response("not found", { status: 404 });
   }
@@ -152,7 +175,10 @@ export class FakeAgent {
     const etag = '"card-v1"';
     if (req.headers.get("if-none-match")) this.conditionalCardFetches++;
     if (req.headers.get("if-none-match") === etag) {
-      return new Response(null, { status: 304, headers: { etag, "cache-control": "max-age=0" } });
+      return new Response(null, {
+        status: 304,
+        headers: { etag, "cache-control": "max-age=0" },
+      });
     }
     const card = this.options.legacyCard
       ? {
@@ -167,7 +193,9 @@ export class FakeAgent {
           skills: [],
         }
       : this.card();
-    return Response.json(card, { headers: { etag, "cache-control": "max-age=0" } });
+    return Response.json(card, {
+      headers: { etag, "cache-control": "max-age=0" },
+    });
   }
 
   // ---- JSON-RPC ------------------------------------------------------------
@@ -196,9 +224,13 @@ export class FakeAgent {
     };
     try {
       if (!this.versionOk(req)) {
-        throw new FakeFailure("VERSION_NOT_SUPPORTED", "version not supported", {
-          requested: req.headers.get("a2a-version") ?? "",
-        });
+        throw new FakeFailure(
+          "VERSION_NOT_SUPPORTED",
+          "version not supported",
+          {
+            requested: req.headers.get("a2a-version") ?? "",
+          },
+        );
       }
       if (method === "SendStreamingMessage" || method === "SubscribeToTask") {
         const events =
@@ -282,21 +314,37 @@ export class FakeAgent {
           }),
         );
       }
-      if ((match = path.match(/^\/tasks\/([^/]+):cancel$/)) && req.method === "POST") {
+      if (
+        (match = path.match(/^\/tasks\/([^/]+):cancel$/)) &&
+        req.method === "POST"
+      ) {
         return Response.json(
-          await this.unary("CancelTask", { id: decodeURIComponent(match[1] as string) }),
+          await this.unary("CancelTask", {
+            id: decodeURIComponent(match[1] as string),
+          }),
         );
       }
-      if ((match = path.match(/^\/tasks\/([^/]+):subscribe$/)) && req.method === "POST") {
-        return await this.restStream(this.streamSubscribe(decodeURIComponent(match[1] as string)));
+      if (
+        (match = path.match(/^\/tasks\/([^/]+):subscribe$/)) &&
+        req.method === "POST"
+      ) {
+        return await this.restStream(
+          this.streamSubscribe(decodeURIComponent(match[1] as string)),
+        );
       }
-      if ((match = path.match(/^\/tasks\/([^/]+)\/pushNotificationConfigs\/([^/]+)$/))) {
+      if (
+        (match = path.match(
+          /^\/tasks\/([^/]+)\/pushNotificationConfigs\/([^/]+)$/,
+        ))
+      ) {
         const params = {
           taskId: decodeURIComponent(match[1] as string),
           id: decodeURIComponent(match[2] as string),
         };
         if (req.method === "GET")
-          return Response.json(await this.unary("GetTaskPushNotificationConfig", params));
+          return Response.json(
+            await this.unary("GetTaskPushNotificationConfig", params),
+          );
         if (req.method === "DELETE") {
           await this.unary("DeleteTaskPushNotificationConfig", params);
           return new Response(null, { status: 200 });
@@ -306,22 +354,31 @@ export class FakeAgent {
         const taskId = decodeURIComponent(match[1] as string);
         if (req.method === "POST") {
           return Response.json(
-            await this.unary("CreateTaskPushNotificationConfig", { ...(body as object), taskId }),
+            await this.unary("CreateTaskPushNotificationConfig", {
+              ...(body as object),
+              taskId,
+            }),
           );
         }
         if (req.method === "GET")
-          return Response.json(await this.unary("ListTaskPushNotificationConfigs", { taskId }));
+          return Response.json(
+            await this.unary("ListTaskPushNotificationConfigs", { taskId }),
+          );
       }
       if ((match = path.match(/^\/tasks\/([^/:]+)$/)) && req.method === "GET") {
         return Response.json(
           await this.unary("GetTask", {
             id: decodeURIComponent(match[1] as string),
-            historyLength: q.has("historyLength") ? Number(q.get("historyLength")) : undefined,
+            historyLength: q.has("historyLength")
+              ? Number(q.get("historyLength"))
+              : undefined,
           }),
         );
       }
       if (req.method === "GET" && path === "/extendedAgentCard") {
-        return Response.json(await this.unary("GetExtendedAgentCard", { tenant }));
+        return Response.json(
+          await this.unary("GetExtendedAgentCard", { tenant }),
+        );
       }
       return new Response("not found", { status: 404 });
     } catch (cause) {
@@ -330,7 +387,9 @@ export class FakeAgent {
     }
   }
 
-  private async restStream(events: AsyncIterable<StreamResponse>): Promise<Response> {
+  private async restStream(
+    events: AsyncIterable<StreamResponse>,
+  ): Promise<Response> {
     const iterator = events[Symbol.asyncIterator]();
     const first = await iterator.next();
     const rest = async function* () {
@@ -364,17 +423,24 @@ export class FakeAgent {
       async start(controller) {
         try {
           for await (const event of events)
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify(wrap(event))}\n\n`));
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify(wrap(event))}\n\n`),
+            );
         } catch (cause) {
           if (cause instanceof FakeFailure)
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify(wrapError(cause))}\n\n`));
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify(wrapError(cause))}\n\n`),
+            );
           else throw cause;
         }
         controller.close();
       },
     });
     return new Response(stream, {
-      headers: { "content-type": "text/event-stream", "cache-control": "no-cache" },
+      headers: {
+        "content-type": "text/event-stream",
+        "cache-control": "no-cache",
+      },
     });
   }
 
@@ -413,22 +479,40 @@ export class FakeAgent {
     return task;
   }
 
-  private checkMessage(request: SendMessageRequest): { message: Message; text: string } {
+  private checkMessage(request: SendMessageRequest): {
+    message: Message;
+    text: string;
+  } {
     const message = request?.message;
-    if (!message || !Array.isArray(message.parts) || message.parts.length === 0) {
-      throw new FakeFailure("INVALID_PARAMS", "message.parts must not be empty");
+    if (
+      !message ||
+      !Array.isArray(message.parts) ||
+      message.parts.length === 0
+    ) {
+      throw new FakeFailure(
+        "INVALID_PARAMS",
+        "message.parts must not be empty",
+      );
     }
     const text = textOf(message);
     const fail = /^fail:(\w+)$/.exec(text);
-    if (fail) throw new FakeFailure(fail[1] as A2AErrorReason, `forced ${fail[1]}`);
+    if (fail)
+      throw new FakeFailure(fail[1] as A2AErrorReason, `forced ${fail[1]}`);
     if (message.taskId) {
       const existing = this.tasks.get(message.taskId);
       if (!existing)
-        throw new FakeFailure("TASK_NOT_FOUND", `task not found: ${message.taskId}`, {
-          taskId: message.taskId,
-        });
+        throw new FakeFailure(
+          "TASK_NOT_FOUND",
+          `task not found: ${message.taskId}`,
+          {
+            taskId: message.taskId,
+          },
+        );
       if (TERMINAL_TASK_STATES.includes(existing.status.state)) {
-        throw new FakeFailure("UNSUPPORTED_OPERATION", "task is in a terminal state");
+        throw new FakeFailure(
+          "UNSUPPORTED_OPERATION",
+          "task is in a terminal state",
+        );
       }
     }
     return { message, text };
@@ -438,7 +522,9 @@ export class FakeAgent {
     const params = input as Record<string, unknown>;
     switch (method) {
       case "SendMessage": {
-        const { message, text } = this.checkMessage(params as unknown as SendMessageRequest);
+        const { message, text } = this.checkMessage(
+          params as unknown as SendMessageRequest,
+        );
         if (text === "message") {
           return {
             message: {
@@ -448,34 +534,57 @@ export class FakeAgent {
             },
           };
         }
-        const requestMetadata = (params as unknown as SendMessageRequest).metadata;
-        const returnImmediately = (params as unknown as SendMessageRequest).configuration
-          ?.returnImmediately;
+        const requestMetadata = (params as unknown as SendMessageRequest)
+          .metadata;
+        const returnImmediately = (params as unknown as SendMessageRequest)
+          .configuration?.returnImmediately;
         if (returnImmediately)
-          return { task: this.newTask(message, "TASK_STATE_WORKING", undefined, requestMetadata) };
+          return {
+            task: this.newTask(
+              message,
+              "TASK_STATE_WORKING",
+              undefined,
+              requestMetadata,
+            ),
+          };
         return {
-          task: this.newTask(message, "TASK_STATE_COMPLETED", `echo: ${text}`, requestMetadata),
+          task: this.newTask(
+            message,
+            "TASK_STATE_COMPLETED",
+            `echo: ${text}`,
+            requestMetadata,
+          ),
         };
       }
       case "GetTask": {
         const task = this.tasks.get(String(params.id));
         if (!task)
-          throw new FakeFailure("TASK_NOT_FOUND", `task not found: ${params.id}`, {
-            taskId: String(params.id),
-          });
+          throw new FakeFailure(
+            "TASK_NOT_FOUND",
+            `task not found: ${params.id}`,
+            {
+              taskId: String(params.id),
+            },
+          );
         const length = params.historyLength;
         if (typeof length !== "number") return task;
         const { history, ...rest } = task;
-        return length === 0 ? rest : { ...rest, history: (history ?? []).slice(-length) };
+        return length === 0
+          ? rest
+          : { ...rest, history: (history ?? []).slice(-length) };
       }
       case "ListTasks": {
         let tasks = [...this.tasks.values()];
-        if (params.contextId) tasks = tasks.filter((t) => t.contextId === params.contextId);
-        if (params.status) tasks = tasks.filter((t) => t.status.state === params.status);
-        const pageSize = typeof params.pageSize === "number" ? params.pageSize : 50;
+        if (params.contextId)
+          tasks = tasks.filter((t) => t.contextId === params.contextId);
+        if (params.status)
+          tasks = tasks.filter((t) => t.status.state === params.status);
+        const pageSize =
+          typeof params.pageSize === "number" ? params.pageSize : 50;
         const offset = params.pageToken ? Number(params.pageToken) : 0;
         const page = tasks.slice(offset, offset + pageSize);
-        const next = offset + pageSize < tasks.length ? String(offset + pageSize) : "";
+        const next =
+          offset + pageSize < tasks.length ? String(offset + pageSize) : "";
         // Like ProtoJSON, omit empty collections and default scalars.
         return {
           ...(page.length > 0 ? { tasks: page } : {}),
@@ -487,27 +596,38 @@ export class FakeAgent {
       case "CancelTask": {
         const task = this.tasks.get(String(params.id));
         if (!task)
-          throw new FakeFailure("TASK_NOT_FOUND", `task not found: ${params.id}`, {
-            taskId: String(params.id),
-          });
+          throw new FakeFailure(
+            "TASK_NOT_FOUND",
+            `task not found: ${params.id}`,
+            {
+              taskId: String(params.id),
+            },
+          );
         if (TERMINAL_TASK_STATES.includes(task.status.state)) {
-          throw new FakeFailure("TASK_NOT_CANCELABLE", `task cannot be canceled: ${task.id}`, {
-            taskId: task.id,
-          });
+          throw new FakeFailure(
+            "TASK_NOT_CANCELABLE",
+            `task cannot be canceled: ${task.id}`,
+            {
+              taskId: task.id,
+            },
+          );
         }
         task.status = { state: "TASK_STATE_CANCELED" };
         return task;
       }
       case "CreateTaskPushNotificationConfig": {
         const config = params as unknown as TaskPushNotificationConfig;
-        if (!config.url) throw new FakeFailure("INVALID_PARAMS", "url is required");
+        if (!config.url)
+          throw new FakeFailure("INVALID_PARAMS", "url is required");
         const stored = { ...config, id: config.id ?? this.nextId("cfg") };
         const list = this.pushConfigs.get(String(config.taskId)) ?? [];
         this.pushConfigs.set(String(config.taskId), [...list, stored]);
         return stored;
       }
       case "GetTaskPushNotificationConfig": {
-        const found = this.pushConfigs.get(String(params.taskId))?.find((c) => c.id === params.id);
+        const found = this.pushConfigs
+          .get(String(params.taskId))
+          ?.find((c) => c.id === params.id);
         if (!found)
           throw new FakeFailure("TASK_NOT_FOUND", "push config not found", {
             taskId: String(params.taskId),
@@ -529,11 +649,16 @@ export class FakeAgent {
       case "GetExtendedAgentCard":
         return { ...this.card(), description: "extended" };
       default:
-        throw new FakeFailure("METHOD_NOT_FOUND", `method not found: ${method}`);
+        throw new FakeFailure(
+          "METHOD_NOT_FOUND",
+          `method not found: ${method}`,
+        );
     }
   }
 
-  private async *streamSend(request: SendMessageRequest): AsyncGenerator<StreamResponse> {
+  private async *streamSend(
+    request: SendMessageRequest,
+  ): AsyncGenerator<StreamResponse> {
     const { message, text } = this.checkMessage(request);
     if (text === "message") {
       yield {
@@ -546,7 +671,12 @@ export class FakeAgent {
       return;
     }
     const delay = this.options.streamDelayMs ?? 0;
-    const task = this.newTask(message, "TASK_STATE_SUBMITTED", undefined, request.metadata);
+    const task = this.newTask(
+      message,
+      "TASK_STATE_SUBMITTED",
+      undefined,
+      request.metadata,
+    );
     yield { task: { ...task } };
     await sleep(delay);
     yield {
@@ -565,7 +695,8 @@ export class FakeAgent {
         artifact: { artifactId, name: "answer", parts: [{ text: "echo: " }] },
       },
     };
-    if (text === "error-mid") throw new FakeFailure("INTERNAL_ERROR", "agent crashed");
+    if (text === "error-mid")
+      throw new FakeFailure("INTERNAL_ERROR", "agent crashed");
     await sleep(delay);
     yield {
       artifactUpdate: {
@@ -579,7 +710,9 @@ export class FakeAgent {
     const done: Task = {
       ...task,
       status: { state: "TASK_STATE_COMPLETED" },
-      artifacts: [{ artifactId, name: "answer", parts: [{ text: "echo: " }, { text }] }],
+      artifacts: [
+        { artifactId, name: "answer", parts: [{ text: "echo: " }, { text }] },
+      ],
     };
     this.tasks.set(task.id, done);
     yield {
@@ -593,11 +726,18 @@ export class FakeAgent {
 
   private async *streamSubscribe(id: string): AsyncGenerator<StreamResponse> {
     const task = this.tasks.get(id);
-    if (!task) throw new FakeFailure("TASK_NOT_FOUND", `task not found: ${id}`, { taskId: id });
-    if (TERMINAL_TASK_STATES.includes(task.status.state)) {
-      throw new FakeFailure("UNSUPPORTED_OPERATION", "task is already in a terminal state", {
+    if (!task)
+      throw new FakeFailure("TASK_NOT_FOUND", `task not found: ${id}`, {
         taskId: id,
       });
+    if (TERMINAL_TASK_STATES.includes(task.status.state)) {
+      throw new FakeFailure(
+        "UNSUPPORTED_OPERATION",
+        "task is already in a terminal state",
+        {
+          taskId: id,
+        },
+      );
     }
     yield { task: { ...task } };
     await sleep(this.options.streamDelayMs ?? 0);

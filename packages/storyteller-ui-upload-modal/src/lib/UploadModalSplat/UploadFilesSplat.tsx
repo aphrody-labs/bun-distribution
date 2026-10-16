@@ -14,7 +14,10 @@ import {
   XIcon,
 } from "lucide-react";
 import { WebGLRenderer, PerspectiveCamera } from "three";
-import { loadPreviewOnCanvas, snapshotCanvasAsThumbnail } from "../UploadModal3D/utilities";
+import {
+  loadPreviewOnCanvas,
+  snapshotCanvasAsThumbnail,
+} from "../UploadModal3D/utilities";
 import { upload3DObjects } from "../UploadModal3D/utilities/upload3DObjects";
 import { upload3DObjectsBatch } from "../UploadModal3D/utilities/upload3DObjectsBatch";
 import {
@@ -83,18 +86,28 @@ export const UploadFilesSplat = ({
   const fileSubtypes = options?.fileSubtypes;
 
   const [subtype, setSubtype] = useState<MediaFileAnimationType | undefined>(
-    fileSubtypes ? (Object.values(fileSubtypes[0])[0] as MediaFileAnimationType) : undefined,
+    fileSubtypes
+      ? (Object.values(fileSubtypes[0])[0] as MediaFileAnimationType)
+      : undefined,
   );
 
   const seedFiles = initialFiles ?? [];
 
-  const [fileEntries, setFileEntries] = useState<FileEntry[]>(seedFiles.map(f => ({ file: f, status: "idle" })));
+  const [fileEntries, setFileEntries] = useState<FileEntry[]>(
+    seedFiles.map((f) => ({ file: f, status: "idle" })),
+  );
   const [previewIndex, setPreviewIndex] = useState(0);
   const [filesVersion, setFilesVersion] = useState(0);
-  const [previewStatus, setPreviewStatus] = useState<{ type: string; message?: string }>({ type: "init" });
+  const [previewStatus, setPreviewStatus] = useState<{
+    type: string;
+    message?: string;
+  }>({ type: "init" });
   const [thumbnails, setThumbnails] = useState<Map<File, Blob>>(new Map());
   const [isUploading, setIsUploading] = useState(false);
-  const [overallProgress, setOverallProgress] = useState<{ current: number; total: number } | null>(null);
+  const [overallProgress, setOverallProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
   const [selectionError, setSelectionError] = useState<string | undefined>();
 
   // Tears down the current preview: stops its loop, cancels in-flight
@@ -134,9 +147,9 @@ export const UploadFilesSplat = ({
       const rafId = requestAnimationFrame(() => {
         snapshotCanvasAsThumbnail({
           targetNode: canvas,
-          resultCallback: blob => {
+          resultCallback: (blob) => {
             if (blob && currentFile) {
-              setThumbnails(prev => new Map(prev).set(currentFile, blob));
+              setThumbnails((prev) => new Map(prev).set(currentFile, blob));
             }
           },
         });
@@ -151,20 +164,32 @@ export const UploadFilesSplat = ({
       setSubtype(undefined);
       return;
     }
-    setSubtype(Object.values(fileSubtypes[0])[0] as MediaFileAnimationType | undefined);
+    setSubtype(
+      Object.values(fileSubtypes[0])[0] as MediaFileAnimationType | undefined,
+    );
   }, [fileSubtypes]);
 
-  const updateFileStatus = (index: number, status: FileEntryStatus, errorMessage?: string) => {
-    setFileEntries(prev => prev.map((entry, i) => (i === index ? { ...entry, status, errorMessage } : entry)));
+  const updateFileStatus = (
+    index: number,
+    status: FileEntryStatus,
+    errorMessage?: string,
+  ) => {
+    setFileEntries((prev) =>
+      prev.map((entry, i) =>
+        i === index ? { ...entry, status, errorMessage } : entry,
+      ),
+    );
   };
 
   const removeFile = (index: number) => {
-    setFileEntries(prev => {
+    setFileEntries((prev) => {
       const next = prev.filter((_, i) => i !== index);
-      setPreviewIndex(prevIdx => Math.min(prevIdx, Math.max(0, next.length - 1)));
+      setPreviewIndex((prevIdx) =>
+        Math.min(prevIdx, Math.max(0, next.length - 1)),
+      );
       return next;
     });
-    setFilesVersion(v => v + 1);
+    setFilesVersion((v) => v + 1);
   };
 
   const retrySingleFile = async (index: number) => {
@@ -177,7 +202,7 @@ export const UploadFilesSplat = ({
       engineCategory,
       animationType: subtype,
       thumbnailSnapshot: thumbnails.get(entry.file),
-      progressCallback: state => {
+      progressCallback: (state) => {
         if (state.status === UploaderStates.success) {
           updateFileStatus(index, "success");
         } else if (
@@ -192,9 +217,9 @@ export const UploadFilesSplat = ({
   };
 
   const handleFilesChange = (files: File[]) => {
-    setFileEntries(files.map(f => ({ file: f, status: "idle" })));
+    setFileEntries(files.map((f) => ({ file: f, status: "idle" })));
     setPreviewIndex(0);
-    setFilesVersion(v => v + 1);
+    setFilesVersion((v) => v + 1);
     setThumbnails(new Map());
     setSelectionError(undefined);
     setOverallProgress(null);
@@ -211,7 +236,9 @@ export const UploadFilesSplat = ({
       .map((e, i) => ({ entry: e, originalIndex: i }))
       .filter(({ entry }) => entry.status !== "success");
     const files = pendingEntries.map(({ entry }) => entry.file);
-    const originalIndices = pendingEntries.map(({ originalIndex }) => originalIndex);
+    const originalIndices = pendingEntries.map(
+      ({ originalIndex }) => originalIndex,
+    );
     const pendingThumbnails = new Map<File, Blob>(
       files
         .map((file): [File, Blob | undefined] => [file, thumbnails.get(file)])
@@ -240,7 +267,8 @@ export const UploadFilesSplat = ({
       animationType: subtype,
       onFileStatusChange: (batchIndex, status, errorMessage) =>
         updateFileStatus(originalIndices[batchIndex], status, errorMessage),
-      onOverallProgress: (completed, total) => setOverallProgress({ current: completed, total }),
+      onOverallProgress: (completed, total) =>
+        setOverallProgress({ current: completed, total }),
       onComplete: (allSucceeded, anySucceeded) => {
         setIsUploading(false);
         if (allSucceeded) {
@@ -256,13 +284,20 @@ export const UploadFilesSplat = ({
   };
 
   const retryAllFailed = () => {
-    const failedIndices = fileEntries.map((e, i) => (e.status === "error" ? i : -1)).filter(i => i !== -1);
+    const failedIndices = fileEntries
+      .map((e, i) => (e.status === "error" ? i : -1))
+      .filter((i) => i !== -1);
     if (failedIndices.length === 0) return;
 
-    const failedFiles = failedIndices.map(i => fileEntries[i].file).filter(file => file !== undefined);
+    const failedFiles = failedIndices
+      .map((i) => fileEntries[i].file)
+      .filter((file) => file !== undefined);
     const failedThumbnails = new Map<File, Blob>(
       failedFiles
-        .map((file): [File, Blob | undefined] => [file, thumbnails.get(file) ?? undefined])
+        .map((file): [File, Blob | undefined] => [
+          file,
+          thumbnails.get(file) ?? undefined,
+        ])
         .filter((pair): pair is [File, Blob] => pair[1] !== undefined),
     );
 
@@ -276,7 +311,8 @@ export const UploadFilesSplat = ({
       animationType: subtype,
       onFileStatusChange: (batchIndex, status, errorMessage) =>
         updateFileStatus(failedIndices[batchIndex], status, errorMessage),
-      onOverallProgress: (completed, total) => setOverallProgress({ current: completed, total }),
+      onOverallProgress: (completed, total) =>
+        setOverallProgress({ current: completed, total }),
       onComplete: (allSucceeded, anySucceeded) => {
         setIsUploading(false);
         if (allSucceeded) {
@@ -292,21 +328,26 @@ export const UploadFilesSplat = ({
   };
 
   const isMulti = fileEntries.length > 1;
-  const anyFailed = fileEntries.some(e => e.status === "error");
-  const anyUploading = fileEntries.some(e => e.status === "uploading");
-  const hasUploadStarted = fileEntries.some(e => e.status !== "idle");
-  const allDone = fileEntries.length > 0 && fileEntries.every(e => e.status === "success" || e.status === "error");
+  const anyFailed = fileEntries.some((e) => e.status === "error");
+  const anyUploading = fileEntries.some((e) => e.status === "uploading");
+  const hasUploadStarted = fileEntries.some((e) => e.status !== "idle");
+  const allDone =
+    fileEntries.length > 0 &&
+    fileEntries.every((e) => e.status === "success" || e.status === "error");
   const currentFile = fileEntries[previewIndex]?.file;
 
   return (
     <div className="flex flex-col gap-3">
       {fileSubtypes && fileSubtypes.length > 1 && (
-        <ListDropdown list={fileSubtypes} onSelect={value => setSubtype(value as MediaFileAnimationType)} />
+        <ListDropdown
+          list={fileSubtypes}
+          onSelect={(value) => setSubtype(value as MediaFileAnimationType)}
+        />
       )}
 
       <FileUploader
         fileTypes={fileTypes}
-        files={fileEntries.map(e => e.file)}
+        files={fileEntries.map((e) => e.file)}
         handleChange={handleFilesChange}
         multiple={true}
         fileIcon={BoxIcon}
@@ -333,7 +374,7 @@ export const UploadFilesSplat = ({
                     {entry.status === "idle" && (
                       <button
                         className="opacity-40 hover:opacity-100 transition-opacity"
-                        onClick={e => {
+                        onClick={(e) => {
                           e.stopPropagation();
                           removeFile(i);
                         }}
@@ -342,14 +383,18 @@ export const UploadFilesSplat = ({
                         <XIcon />
                       </button>
                     )}
-                    {entry.status === "uploading" && <LoaderIcon className="animate-spin opacity-60" />}
-                    {entry.status === "success" && <CheckIcon className="text-green-400" />}
+                    {entry.status === "uploading" && (
+                      <LoaderIcon className="animate-spin opacity-60" />
+                    )}
+                    {entry.status === "success" && (
+                      <CheckIcon className="text-green-400" />
+                    )}
                     {entry.status === "error" && (
                       <span className="flex items-center gap-1">
                         <CircleAlertIcon className="text-red-400" />
                         <button
                           className="hidden group-hover:inline-flex items-center text-xs text-white/60 hover:text-white transition-colors"
-                          onClick={e => {
+                          onClick={(e) => {
                             e.stopPropagation();
                             retrySingleFile(i);
                           }}
@@ -368,14 +413,17 @@ export const UploadFilesSplat = ({
           <Separator className="flex w-4 items-center justify-center">
             <div
               className="h-8 w-1 rounded-none bg-white/20 transition-colors hover:bg-white/40"
-              onPointerDown={e => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
             />
           </Separator>
 
           <Panel defaultSize="67%" minSize="25%">
             <div className="flex h-full flex-col gap-2">
               <div className="relative w-full min-h-48 overflow-hidden rounded-none border border-white/15 bg-black/30">
-                <canvas className="pointer-events-none h-full min-h-48 !w-full" ref={canvasCallbackRef} />
+                <canvas
+                  className="pointer-events-none h-full min-h-48 !w-full"
+                  ref={canvasCallbackRef}
+                />
                 {!currentFile && (
                   <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-50">
                     <BoxIcon />
@@ -393,7 +441,7 @@ export const UploadFilesSplat = ({
               <div className="flex items-center justify-center gap-3">
                 <Button
                   variant="secondary"
-                  onClick={() => setPreviewIndex(p => Math.max(0, p - 1))}
+                  onClick={() => setPreviewIndex((p) => Math.max(0, p - 1))}
                   disabled={previewIndex === 0}
                 >
                   <ChevronLeftIcon />
@@ -403,7 +451,11 @@ export const UploadFilesSplat = ({
                 </span>
                 <Button
                   variant="secondary"
-                  onClick={() => setPreviewIndex(p => Math.min(fileEntries.length - 1, p + 1))}
+                  onClick={() =>
+                    setPreviewIndex((p) =>
+                      Math.min(fileEntries.length - 1, p + 1),
+                    )
+                  }
                   disabled={previewIndex === fileEntries.length - 1}
                 >
                   <ChevronRightIcon />
@@ -414,7 +466,10 @@ export const UploadFilesSplat = ({
         </Group>
       ) : (
         <div className="relative m-auto w-full min-h-48 overflow-hidden rounded-none border border-white/15 bg-black/30">
-          <canvas className="pointer-events-none h-full min-h-48 !w-full" ref={canvasCallbackRef} />
+          <canvas
+            className="pointer-events-none h-full min-h-48 !w-full"
+            ref={canvasCallbackRef}
+          />
           {!currentFile && (
             <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-50">
               <BoxIcon />
@@ -439,7 +494,8 @@ export const UploadFilesSplat = ({
 
       {!isUploading && !anyUploading && allDone && anyFailed && isMulti && (
         <p className="text-center text-sm text-red-400">
-          {fileEntries.filter(e => e.status === "error").length} file(s) failed to upload.
+          {fileEntries.filter((e) => e.status === "error").length} file(s)
+          failed to upload.
         </p>
       )}
 
@@ -453,7 +509,11 @@ export const UploadFilesSplat = ({
           </Button>
         )}
         {!hasUploadStarted && (
-          <Button variant="primary" onClick={handleSubmit} disabled={fileEntries.length === 0}>
+          <Button
+            variant="primary"
+            onClick={handleSubmit}
+            disabled={fileEntries.length === 0}
+          >
             Upload
           </Button>
         )}

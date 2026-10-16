@@ -24,7 +24,9 @@ export interface ScaffoldOptions {
 }
 
 /** Writes the migrated project: the `app` template of `@aphrody/scaffold` with the migrated route tree as `src/App.tsx`. */
-export async function scaffoldTargetProject(options: ScaffoldOptions): Promise<void> {
+export async function scaffoldTargetProject(
+  options: ScaffoldOptions,
+): Promise<void> {
   const {
     projectName = "migrated-app",
     target = "tauri",
@@ -39,7 +41,9 @@ export async function scaffoldTargetProject(options: ScaffoldOptions): Promise<v
     target,
     modernizeM3,
     dependencies: options.dependencies,
-    appTsx: hierarchy ? generateAppRouterCode(hierarchy, { modernizeM3, target }) : undefined,
+    appTsx: hierarchy
+      ? generateAppRouterCode(hierarchy, { modernizeM3, target })
+      : undefined,
   });
   await writeFiles(outDir, files, "empty");
 }

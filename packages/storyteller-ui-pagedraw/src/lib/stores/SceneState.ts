@@ -62,12 +62,7 @@ export const convertFileToBase64 = (file: File): Promise<string> => {
 };
 
 export type ActiveTool =
-  | "select"
-  | "draw"
-  | "inpaint"
-  | "eraser"
-  | "backgroundColor"
-  | "shape";
+  "select" | "draw" | "inpaint" | "eraser" | "backgroundColor" | "shape";
 
 // Serialized shape node for history storage
 type SerializedNodeData = {
@@ -285,7 +280,9 @@ export interface SceneState {
   sendBackward: (nodeIds: string[]) => void;
 
   // Start background removal — returns {base64, nodeId} for the caller to enqueue via adapter
-  beginRemoveBackground: (nodeIds: string[]) => Promise<{ base64: string; nodeId: string } | null>;
+  beginRemoveBackground: (
+    nodeIds: string[],
+  ) => Promise<{ base64: string; nodeId: string } | null>;
 
   // Finish background removal (handoff back from the platform event)
   finishRemoveBackground: (
@@ -907,10 +904,9 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   // Clipboard actions
   copySelectedItems: () => {
     set((state) => {
-      const selected = [
-        ...state.drawNodes,
-        ...state.inpaintLineNodes,
-      ].filter((n) => state.selectedNodeIds.includes(n.id));
+      const selected = [...state.drawNodes, ...state.inpaintLineNodes].filter(
+        (n) => state.selectedNodeIds.includes(n.id),
+      );
 
       const copied = selected.map((item) => {
         if (item instanceof Node) {
@@ -1022,11 +1018,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     });
 
     set((state) => ({
-      drawNodes: [
-        ...state.drawNodes,
-        ...nodesToAdd,
-        ...lineNodesToAdd,
-      ],
+      drawNodes: [...state.drawNodes, ...nodesToAdd, ...lineNodesToAdd],
       selectedNodeIds: newPastedItemIds,
     }));
 
@@ -1142,12 +1134,16 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
       };
 
       const restoredDrawNodes = (sceneData.drawNodes || []).map(
-        (nodeData: SerializedNodeData & { imageDataUrl?: string } | LineNode) => {
+        (
+          nodeData: (SerializedNodeData & { imageDataUrl?: string }) | LineNode,
+        ) => {
           if (nodeData.type === "line") {
             return nodeData as LineNode;
           }
 
-          const shapeData = nodeData as SerializedNodeData & { imageDataUrl?: string };
+          const shapeData = nodeData as SerializedNodeData & {
+            imageDataUrl?: string;
+          };
           const node = new Node(shapeData);
 
           if (node.type === "image") {
@@ -1292,7 +1288,10 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   beginRemoveBackground: async (nodeIds: string[]) => {
     const drawNodes = get().drawNodes;
     const firstNode = drawNodes.find(
-      (n) => nodeIds.includes(n.id) && n instanceof Node && (n as Node).type === "image",
+      (n) =>
+        nodeIds.includes(n.id) &&
+        n instanceof Node &&
+        (n as Node).type === "image",
     ) as Node | undefined;
 
     if (!firstNode || !firstNode.imageFile) {
@@ -1316,7 +1315,8 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
       return;
     }
     const firstNode = get().drawNodes.find(
-      (n) => n.id === nodeId && n instanceof Node && (n as Node).type === "image",
+      (n) =>
+        n.id === nodeId && n instanceof Node && (n as Node).type === "image",
     ) as Node | undefined;
 
     if (!firstNode || !firstNode.imageFile) {
@@ -1371,7 +1371,11 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     }
 
     const info = get().baseImageInfo;
-    if (info?.isBlankCanvas && info.blankCanvasWidth && info.blankCanvasHeight) {
+    if (
+      info?.isBlankCanvas &&
+      info.blankCanvasWidth &&
+      info.blankCanvasHeight
+    ) {
       return { width: info.blankCanvasWidth, height: info.blankCanvasHeight };
     }
 
@@ -1440,13 +1444,22 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
           const node = new Node(nodeData as SerializedNodeData);
           if (node.type === "image" && (node.imageUrl || node.imageFile)) {
             const src = node.imageUrl || node.imageFile!;
-            node.setImage(src).catch((e) =>
-              console.error("Failed to restore image in base image switch:", e),
-            );
+            node
+              .setImage(src)
+              .catch((e) =>
+                console.error(
+                  "Failed to restore image in base image switch:",
+                  e,
+                ),
+              );
           }
           return node;
         });
-        set({ drawNodes: restoredDrawNodes, inpaintLineNodes: previousNodeData.inpaintLineNodes, baseImageBitmap: bitmap });
+        set({
+          drawNodes: restoredDrawNodes,
+          inpaintLineNodes: previousNodeData.inpaintLineNodes,
+          baseImageBitmap: bitmap,
+        });
       } else {
         set({ drawNodes: [], inpaintLineNodes: [], baseImageBitmap: bitmap });
       }

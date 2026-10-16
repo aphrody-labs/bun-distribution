@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // `next-migrate codemod ...` and `next-migrate pages-hints ...`: the @aphrody/next-bun codemod CLI with the MUI group.
-import { codemodHelp, runCodemodCli as runNextCodemodCli } from "@aphrody/next-bun/codemods/cli";
+import {
+  codemodHelp,
+  runCodemodCli as runNextCodemodCli,
+} from "@aphrody/next-bun/codemods/cli";
 import { CODEMODS } from "./index";
 
 const options = {

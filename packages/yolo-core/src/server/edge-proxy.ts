@@ -40,7 +40,8 @@ interface Meta {
   br: boolean;
 }
 
-const COMPRESSIBLE = /^(text\/|application\/(json|javascript|xml)|image\/svg\+xml)/;
+const COMPRESSIBLE =
+  /^(text\/|application\/(json|javascript|xml)|image\/svg\+xml)/;
 const KEY = /^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/;
 
 export const validEdgeKey = (key: string): boolean =>
@@ -69,11 +70,15 @@ export function edgeDiskPath(root: string, key: string): string {
   const cut = key.lastIndexOf("/") + 1;
   const name = key.slice(cut);
   if (Buffer.byteLength(name) <= MAX_SEGMENT) return `${root}/${key}`;
-  const digest = new Bun.CryptoHasher("sha256").update(name).digest("hex").slice(0, 32);
+  const digest = new Bun.CryptoHasher("sha256")
+    .update(name)
+    .digest("hex")
+    .slice(0, 32);
   return `${root}/${key.slice(0, cut)}${name.slice(0, 64)}-${digest}`;
 }
 
-const acceptsBrotli = (req: Request) => /\bbr\b/.test(req.headers.get("accept-encoding") ?? "");
+const acceptsBrotli = (req: Request) =>
+  /\bbr\b/.test(req.headers.get("accept-encoding") ?? "");
 
 class UpstreamError extends Error {
   constructor(
@@ -100,7 +105,9 @@ export function createEdgeProxy(options: EdgeProxyOptions) {
     if (!(await f.exists())) return null;
     try {
       const meta = (await f.json()) as Meta;
-      return (await Bun.file(`${dirOf(path)}/${meta.body}`).exists()) ? meta : null;
+      return (await Bun.file(`${dirOf(path)}/${meta.body}`).exists())
+        ? meta
+        : null;
     } catch {
       return null;
     }
@@ -116,9 +123,12 @@ export function createEdgeProxy(options: EdgeProxyOptions) {
     if (Number(res.headers.get("content-length") ?? 0) > maxBytes)
       throw new UpstreamError(502, "upstream too large");
     let body = await res.bytes();
-    if (body.byteLength > maxBytes) throw new UpstreamError(502, "upstream too large");
+    if (body.byteLength > maxBytes)
+      throw new UpstreamError(502, "upstream too large");
     if (route.transform)
-      body = new TextEncoder().encode(route.transform(new TextDecoder().decode(body)));
+      body = new TextEncoder().encode(
+        route.transform(new TextDecoder().decode(body)),
+      );
     const type = res.headers.get("content-type") ?? "application/octet-stream";
     const previous = await readMeta(path);
     const name = `${path.slice(path.lastIndexOf("/") + 1)}~${Date.now().toString(36)}`;
@@ -176,11 +186,15 @@ export function createEdgeProxy(options: EdgeProxyOptions) {
 
   return async function handle(req: Request): Promise<Response> {
     if (req.method !== "GET" && req.method !== "HEAD") {
-      return new Response("Method Not Allowed", { status: 405, headers: { allow: "GET, HEAD" } });
+      return new Response("Method Not Allowed", {
+        status: 405,
+        headers: { allow: "GET, HEAD" },
+      });
     }
     const route = options.route(new URL(req.url), req);
     if (route instanceof Response) return route;
-    if (!route || !validEdgeKey(route.cacheKey)) return new Response("Not Found", { status: 404 });
+    if (!route || !validEdgeKey(route.cacheKey))
+      return new Response("Not Found", { status: 404 });
     const path = edgeDiskPath(root, route.cacheKey);
     try {
       const meta = await readMeta(path);

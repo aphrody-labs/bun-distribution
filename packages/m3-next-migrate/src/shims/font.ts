@@ -43,9 +43,15 @@ function createFontShim(
 
 export const Inter = createFontShim("Inter", "Inter, sans-serif");
 export const Roboto = createFontShim("Roboto", "Roboto, sans-serif");
-export const Roboto_Mono = createFontShim("Roboto Mono", "'Roboto Mono', monospace");
+export const Roboto_Mono = createFontShim(
+  "Roboto Mono",
+  "'Roboto Mono', monospace",
+);
 export const Geist = createFontShim("Geist", "Geist, sans-serif");
-export const Geist_Mono = createFontShim("Geist Mono", "'Geist Mono', monospace");
+export const Geist_Mono = createFontShim(
+  "Geist Mono",
+  "'Geist Mono', monospace",
+);
 export const Poppins = createFontShim("Poppins", "Poppins, sans-serif");
 export const Open_Sans = createFontShim("Open Sans", "'Open Sans', sans-serif");
 export const Fira_Code = createFontShim("Fira Code", "'Fira Code', monospace");
@@ -59,7 +65,9 @@ export interface LocalFontConfig {
 export function localFont(config: LocalFontConfig): NextFont {
   const variable = config.variable || "--font-local";
   const className = "font-local";
-  const fallbackStr = config.fallback ? `, ${config.fallback.join(", ")}` : ", sans-serif";
+  const fallbackStr = config.fallback
+    ? `, ${config.fallback.join(", ")}`
+    : ", sans-serif";
   return {
     className,
     variable,

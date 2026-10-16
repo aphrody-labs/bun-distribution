@@ -7,7 +7,8 @@ export async function runCargoPackageRepair(args: string[]): Promise<number> {
   const tableIndex = args.indexOf("--rename-table");
   const apply = args.includes("--apply");
   const repositories = args.filter(
-    (arg, index) => arg !== "--apply" && index !== tableIndex && index !== tableIndex + 1,
+    (arg, index) =>
+      arg !== "--apply" && index !== tableIndex && index !== tableIndex + 1,
   );
   const table = tableIndex === -1 ? undefined : args[tableIndex + 1];
   if (!table || repositories.length === 0)
@@ -21,11 +22,24 @@ export async function runCargoPackageRepair(args: string[]): Promise<number> {
   for (const repository of repositories) {
     const root = resolve(repository);
     const child = Bun.spawn(
-      ["git", "-C", root, "grep", "-lE", "--", "(-p|--package)-[a-z0-9]", "--", ":!*.lock"],
+      [
+        "git",
+        "-C",
+        root,
+        "grep",
+        "-lE",
+        "--",
+        "(-p|--package)-[a-z0-9]",
+        "--",
+        ":!*.lock",
+      ],
       { windowsHide: true, stdout: "pipe", stderr: "pipe" },
     );
     // oxlint-disable-next-line no-await-in-loop -- dépôts traités un par un : sortie console et code de retour dans l'ordre
-    const [code, stdout] = await Promise.all([child.exited, new Response(child.stdout).text()]);
+    const [code, stdout] = await Promise.all([
+      child.exited,
+      new Response(child.stdout).text(),
+    ]);
     if (code > 1) throw new Error(`git grep failed for ${root}`);
     for (const file of stdout.trim().split("\n").filter(Boolean)) {
       const path = `${root}/${file}`;
@@ -34,10 +48,15 @@ export async function runCargoPackageRepair(args: string[]): Promise<number> {
       if (text === undefined) continue;
       let fixed = text;
       for (const name of names) {
-        const suffix = name.slice("aphrody-".length).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const suffix = name
+          .slice("aphrody-".length)
+          .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         for (const option of ["-p", "--package"]) {
           fixed = fixed.replace(
-            new RegExp(`(^|[^\\w-])${option}-${suffix}(?=[\\s\\x60"':,]|$)`, "gm"),
+            new RegExp(
+              `(^|[^\\w-])${option}-${suffix}(?=[\\s\\x60"':,]|$)`,
+              "gm",
+            ),
             `$1${option} ${name}`,
           );
         }

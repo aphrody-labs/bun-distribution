@@ -27,10 +27,10 @@ export function useTauriWindowControls() {
       try {
         const { listen } = await import("@tauri-apps/api/event");
         unlistenMax = await listen("tauri://maximize", () =>
-          setIsMaximized(true)
+          setIsMaximized(true),
         );
         unlistenUnmax = await listen("tauri://unmaximize", () =>
-          setIsMaximized(false)
+          setIsMaximized(false),
         );
         unlistenResize = await listen("tauri://resize", async () => {
           try {

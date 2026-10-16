@@ -25,7 +25,9 @@ interface Fixture {
   gaze: [number, number, number | null][];
 }
 
-const fixture: Fixture = await Bun.file(join(crate, "tests/fixtures/parite-web.json")).json();
+const fixture: Fixture = await Bun.file(
+  join(crate, "tests/fixtures/parite-web.json"),
+).json();
 
 describe("parity with the crate clock", () => {
   test("fixture schema", () => {
@@ -37,7 +39,13 @@ describe("parity with the crate clock", () => {
     test(`${c.id}: ${c.ticks.length} ticks`, () => {
       const got = c.ticks.map(([elapsed, name]): TickRow => {
         const r = resolve(c.tracks, name, elapsed);
-        return [elapsed, name, r?.track ?? null, r?.tick.sprite ?? null, r?.tick.delay ?? null];
+        return [
+          elapsed,
+          name,
+          r?.track ?? null,
+          r?.tick.sprite ?? null,
+          r?.tick.delay ?? null,
+        ];
       });
       expect(got).toEqual(c.ticks);
     });
@@ -82,7 +90,10 @@ describe("parity with the crate clock", () => {
 
 describe("generated data", () => {
   test("states carry Codex lifetimes and labels", () => {
-    expect(PET_WEB.states.running).toEqual({ lifetimeMs: 180_000, label: "Running" });
+    expect(PET_WEB.states.running).toEqual({
+      lifetimeMs: 180_000,
+      label: "Running",
+    });
     expect(PET_WEB.states.waiting?.label).toBe("Needs input");
     expect(PET_WEB.directions).toHaveLength(16);
   });
@@ -93,6 +104,7 @@ describe("generated data", () => {
 
   test("sprite CSS covers every cell", () => {
     const { columns, rows } = PET_WEB.atlas;
-    for (let i = 0; i < columns * rows; i++) expect(PET_WEB.css).toContain(`.nie-c${i} {`);
+    for (let i = 0; i < columns * rows; i++)
+      expect(PET_WEB.css).toContain(`.nie-c${i} {`);
   });
 });

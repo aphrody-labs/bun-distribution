@@ -4,7 +4,13 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { domainOf, renderDocsIndex, renderLlms, renderState, type Unit } from "../src/docs-gen.ts";
+import {
+  domainOf,
+  renderDocsIndex,
+  renderLlms,
+  renderState,
+  type Unit,
+} from "../src/docs-gen.ts";
 
 const unit = (over: Partial<Unit>): Unit => ({
   ecosystem: "rust",
@@ -26,10 +32,16 @@ describe("docs-gen", () => {
     try {
       execFileSync("git", ["init", "--quiet", root], { windowsHide: true });
       mkdirSync(join(root, "docs/guides/workspace"), { recursive: true });
-      writeFileSync(join(root, "docs/guides/workspace/README.md"), "# Tracked guide\n");
+      writeFileSync(
+        join(root, "docs/guides/workspace/README.md"),
+        "# Tracked guide\n",
+      );
       execFileSync("git", ["add", "."], { cwd: root, windowsHide: true });
       mkdirSync(join(root, "docs/audit/private-draft"), { recursive: true });
-      writeFileSync(join(root, "docs/audit/private-draft/README.md"), "# Private draft\n");
+      writeFileSync(
+        join(root, "docs/audit/private-draft/README.md"),
+        "# Private draft\n",
+      );
       const index = renderDocsIndex(root);
       expect(index).toContain("[Tracked guide](guides/workspace/README.md)");
       expect(index).not.toContain("private-draft");
@@ -52,7 +64,12 @@ describe("docs-gen", () => {
       [
         unit({}),
         unit({ name: "y", path: "crates/ai/y", todos: 2, tests: false }),
-        unit({ ecosystem: "bun", name: "@aphrody/z", path: "packages/ai/z", role: "package" }),
+        unit({
+          ecosystem: "bun",
+          name: "@aphrody/z",
+          path: "packages/ai/z",
+          role: "package",
+        }),
         unit({
           name: "cli",
           path: "crates/infra/aphrody",

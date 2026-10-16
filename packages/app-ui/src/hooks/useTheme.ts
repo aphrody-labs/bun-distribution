@@ -37,9 +37,17 @@ export function applyAppearance(
   preferences: Pick<Preferences, "theme" | "fontSize" | "reducedMotion">,
 ) {
   applyTheme(preferences.theme);
-  const size = [18, 20, 22].includes(preferences.fontSize) ? preferences.fontSize : 18;
-  document.documentElement.style.setProperty("--aphrody-base-font-size", `${size}px`);
-  document.documentElement.classList.toggle("reduce-motion", preferences.reducedMotion);
+  const size = [18, 20, 22].includes(preferences.fontSize)
+    ? preferences.fontSize
+    : 18;
+  document.documentElement.style.setProperty(
+    "--aphrody-base-font-size",
+    `${size}px`,
+  );
+  document.documentElement.classList.toggle(
+    "reduce-motion",
+    preferences.reducedMotion,
+  );
 }
 
 /** Appearance belongs to the application preferences, independently of Drive availability. */
@@ -52,7 +60,8 @@ export function useTheme() {
       current = preferences;
       applyAppearance(preferences);
     };
-    const saved = (event: Event) => apply((event as CustomEvent<Preferences>).detail);
+    const saved = (event: Event) =>
+      apply((event as CustomEvent<Preferences>).detail);
     const systemChanged = () => {
       if (current.theme === "system") applyTheme("system");
     };

@@ -43,9 +43,7 @@ export const PendingRow = memo(function PendingRow({
       <div className="relative size-[100px] shrink-0 overflow-hidden bg-white/[0.03] leading-none">
         <div className="animate-shimmer h-full w-full" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <LoaderCircleIcon
-            
-            className="animate-spin text-2xl text-white/25" />
+          <LoaderCircleIcon className="animate-spin text-2xl text-white/25" />
         </div>
       </div>
 

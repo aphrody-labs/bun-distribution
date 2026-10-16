@@ -45,7 +45,10 @@ afterEach(() => {
 
 describe("generated wrappers render their custom element", () => {
   test("MdFilledButton mounts an upgraded <md-filled-button> with a shadow root", async () => {
-    const el = await mount(<MdFilledButton>Click</MdFilledButton>, "md-filled-button");
+    const el = await mount(
+      <MdFilledButton>Click</MdFilledButton>,
+      "md-filled-button",
+    );
     expect(customElements.get("md-filled-button")).toBeDefined();
     expect(el.shadowRoot).toBeTruthy();
     expect(el.shadowRoot!.childNodes.length).toBeGreaterThan(0);
@@ -66,7 +69,8 @@ describe("generated wrappers render their custom element", () => {
   test("MdCard and MdOutlinedTextField mount their elements", async () => {
     expect((await mount(<MdCard />, "md-card")).shadowRoot).toBeTruthy();
     expect(
-      (await mount(<MdOutlinedTextField />, "md-outlined-text-field")).shadowRoot,
+      (await mount(<MdOutlinedTextField />, "md-outlined-text-field"))
+        .shadowRoot,
     ).toBeTruthy();
   });
 });

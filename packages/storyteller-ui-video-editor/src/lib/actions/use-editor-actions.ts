@@ -20,14 +20,20 @@ import { getElementsAtTime, hasMediaId } from "../timeline/element-utils";
 import { cancelInteraction } from "../editor/cancel-interaction";
 import { invokeAction } from ".";
 import { canToggleSourceAudio } from "../timeline/audio-separation";
-import { activateScope, clearActiveScope, type ScopeEntry } from "../selection/scope";
+import {
+  activateScope,
+  clearActiveScope,
+  type ScopeEntry,
+} from "../selection/scope";
 import { useCommittedRef } from "../hooks/use-committed-ref";
 
 export function useEditorActions() {
   const editor = useEditor();
   const { selectedElements, setElementSelection } = useElementSelection();
   const { selectedKeyframes, clearKeyframeSelection } = useKeyframeSelection();
-  const selectedMaskPointSelection = useEditor((e) => e.selection.getSelectedMaskPointSelection());
+  const selectedMaskPointSelection = useEditor((e) =>
+    e.selection.getSelectedMaskPointSelection(),
+  );
   const toggleSnapping = useTimelineStore((s) => s.toggleSnapping);
   const rippleEditingEnabled = useTimelineStore((s) => s.rippleEditingEnabled);
   const toggleRippleEditing = useTimelineStore((s) => s.toggleRippleEditing);
@@ -348,7 +354,11 @@ export function useEditorActions() {
           return null;
         }
 
-        return editor.media.getAssets().find((asset) => asset.id === element.mediaId) ?? null;
+        return (
+          editor.media
+            .getAssets()
+            .find((asset) => asset.id === element.mediaId) ?? null
+        );
       })();
       if (!canToggleSourceAudio(selectedElement.element, mediaAsset)) {
         return;

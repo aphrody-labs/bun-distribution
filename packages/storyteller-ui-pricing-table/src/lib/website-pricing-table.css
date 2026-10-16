@@ -1,5 +1,7 @@
 .pricing-hud {
-  font-family: var(--font-geist-mono, "Geist Mono"), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family:
+    var(--font-geist-mono, "Geist Mono"), ui-monospace, SFMono-Regular, Menlo,
+    Consolas, monospace;
   font-size: 0.6875rem;
   font-weight: 500;
   line-height: 1.5;

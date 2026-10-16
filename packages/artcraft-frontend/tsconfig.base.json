@@ -19,58 +19,110 @@
     "customConditions": ["development"],
     "paths": {
       "~/*": ["./apps/artcraft/app/src/*"],
-      "@storyteller/google-analytics": ["../storyteller-google-analytics/src/index.ts"],
+      "@storyteller/google-analytics": [
+        "../storyteller-google-analytics/src/index.ts"
+      ],
       "@storyteller/api": ["../storyteller-api/src/index.ts"],
       "@storyteller/api-enums": ["../storyteller-api-enums/src/index.ts"],
       "@storyteller/common": ["../storyteller-common/src/index.ts"],
-      "@storyteller/ui-action-reminder-modal": ["../storyteller-ui-action-reminder-modal/src/index.ts"],
-      "@storyteller/ui-audio-player": ["../storyteller-ui-audio-player/src/index.ts"],
+      "@storyteller/ui-action-reminder-modal": [
+        "../storyteller-ui-action-reminder-modal/src/index.ts"
+      ],
+      "@storyteller/ui-audio-player": [
+        "../storyteller-ui-audio-player/src/index.ts"
+      ],
       "@storyteller/ui-badge": ["../storyteller-ui-badge/src/index.ts"],
       "@storyteller/ui-button": ["../storyteller-ui-button/src/index.ts"],
-      "@storyteller/ui-button-dropdown": ["../storyteller-ui-button-dropdown/src/index.ts"],
-      "@storyteller/ui-button-icon": ["../storyteller-ui-button-icon/src/index.ts"],
-      "@storyteller/ui-button-icon-select": ["../storyteller-ui-button-icon-select/src/index.ts"],
-      "@storyteller/ui-camera-settings-modal": ["../storyteller-ui-camera-settings-modal/src/index.ts"],
+      "@storyteller/ui-button-dropdown": [
+        "../storyteller-ui-button-dropdown/src/index.ts"
+      ],
+      "@storyteller/ui-button-icon": [
+        "../storyteller-ui-button-icon/src/index.ts"
+      ],
+      "@storyteller/ui-button-icon-select": [
+        "../storyteller-ui-button-icon-select/src/index.ts"
+      ],
+      "@storyteller/ui-camera-settings-modal": [
+        "../storyteller-ui-camera-settings-modal/src/index.ts"
+      ],
       "@storyteller/ui-checkbox": ["../storyteller-ui-checkbox/src/index.ts"],
-      "@storyteller/ui-close-button": ["../storyteller-ui-close-button/src/index.ts"],
-      "@storyteller/ui-file-uploader": ["../storyteller-ui-file-uploader/src/index.ts"],
-      "@storyteller/ui-gallery-modal": ["../storyteller-ui-gallery-modal/src/index.ts"],
-      "@storyteller/ui-generation-list": ["../storyteller-ui-generation-list/src/index.ts"],
+      "@storyteller/ui-close-button": [
+        "../storyteller-ui-close-button/src/index.ts"
+      ],
+      "@storyteller/ui-file-uploader": [
+        "../storyteller-ui-file-uploader/src/index.ts"
+      ],
+      "@storyteller/ui-gallery-modal": [
+        "../storyteller-ui-gallery-modal/src/index.ts"
+      ],
+      "@storyteller/ui-generation-list": [
+        "../storyteller-ui-generation-list/src/index.ts"
+      ],
       "@storyteller/ui-gravatar": ["../storyteller-ui-gravatar/src/index.ts"],
       "@storyteller/ui-help-menu": ["../storyteller-ui-help-menu/src/index.ts"],
       "@storyteller/ui-input": ["../storyteller-ui-input/src/index.ts"],
       "@storyteller/keybinds": ["../storyteller-keybinds/src/index.ts"],
       "@storyteller/ui-label": ["../storyteller-ui-label/src/index.ts"],
-      "@storyteller/ui-lightbox-modal": ["../storyteller-ui-lightbox-modal/src/index.ts"],
-      "@storyteller/ui-list-dropdown": ["../storyteller-ui-list-dropdown/src/index.ts"],
+      "@storyteller/ui-lightbox-modal": [
+        "../storyteller-ui-lightbox-modal/src/index.ts"
+      ],
+      "@storyteller/ui-list-dropdown": [
+        "../storyteller-ui-list-dropdown/src/index.ts"
+      ],
       "@storyteller/ui-loading": ["../storyteller-ui-loading/src/index.ts"],
-      "@storyteller/ui-loading-spinner": ["../storyteller-ui-loading-spinner/src/index.ts"],
-      "@storyteller/ui-login-modal": ["../storyteller-ui-login-modal/src/index.ts"],
-      "@storyteller/ui-menu-icon-selector": ["../storyteller-ui-menu-icon-selector/src/index.ts"],
+      "@storyteller/ui-loading-spinner": [
+        "../storyteller-ui-loading-spinner/src/index.ts"
+      ],
+      "@storyteller/ui-login-modal": [
+        "../storyteller-ui-login-modal/src/index.ts"
+      ],
+      "@storyteller/ui-menu-icon-selector": [
+        "../storyteller-ui-menu-icon-selector/src/index.ts"
+      ],
       "@storyteller/ui-modal": ["../storyteller-ui-modal/src/index.ts"],
-      "@storyteller/ui-model-selector": ["../storyteller-ui-model-selector/src/index.ts"],
+      "@storyteller/ui-model-selector": [
+        "../storyteller-ui-model-selector/src/index.ts"
+      ],
       "@storyteller/ui-moodboard": ["../storyteller-ui-moodboard/src/index.ts"],
       "@storyteller/ui-pagedraw": ["../storyteller-ui-pagedraw/src/index.ts"],
       "@storyteller/ui-pagescene": ["../storyteller-ui-pagescene/src/index.ts"],
       "@storyteller/ui-popover": ["../storyteller-ui-popover/src/index.ts"],
-      "@storyteller/ui-pricing-modal": ["../storyteller-ui-pricing-modal/src/index.ts"],
-      "@storyteller/ui-pricing-table": ["../storyteller-ui-pricing-table/src/index.ts"],
+      "@storyteller/ui-pricing-modal": [
+        "../storyteller-ui-pricing-modal/src/index.ts"
+      ],
+      "@storyteller/ui-pricing-table": [
+        "../storyteller-ui-pricing-table/src/index.ts"
+      ],
       "@storyteller/ui-promptbox": ["../storyteller-ui-promptbox/src/index.ts"],
-      "@storyteller/provider-billing-modal": ["../storyteller-provider-billing-modal/src/index.ts"],
-      "@storyteller/provider-setup-modal": ["../storyteller-provider-setup-modal/src/index.ts"],
+      "@storyteller/provider-billing-modal": [
+        "../storyteller-provider-billing-modal/src/index.ts"
+      ],
+      "@storyteller/provider-setup-modal": [
+        "../storyteller-provider-setup-modal/src/index.ts"
+      ],
       "@storyteller/ui-select": ["../storyteller-ui-select/src/index.ts"],
-      "@storyteller/ui-settings-modal": ["../storyteller-ui-settings-modal/src/index.ts"],
+      "@storyteller/ui-settings-modal": [
+        "../storyteller-ui-settings-modal/src/index.ts"
+      ],
       "@storyteller/ui-sliderv2": ["../storyteller-ui-sliderv2/src/index.ts"],
       "@storyteller/ui-switch": ["../storyteller-ui-switch/src/index.ts"],
-      "@storyteller/ui-tab-selector": ["../storyteller-ui-tab-selector/src/index.ts"],
+      "@storyteller/ui-tab-selector": [
+        "../storyteller-ui-tab-selector/src/index.ts"
+      ],
       "@storyteller/ui-toaster": ["../storyteller-ui-toaster/src/index.ts"],
       "@storyteller/ui-tooltip": ["../storyteller-ui-tooltip/src/index.ts"],
-      "@storyteller/ui-upload-modal": ["../storyteller-ui-upload-modal/src/index.ts"],
+      "@storyteller/ui-upload-modal": [
+        "../storyteller-ui-upload-modal/src/index.ts"
+      ],
       "@storyteller/ui-vfx": ["../storyteller-ui-vfx/src/index.ts"],
-      "@storyteller/ui-video-editor": ["../storyteller-ui-video-editor/src/index.ts"],
+      "@storyteller/ui-video-editor": [
+        "../storyteller-ui-video-editor/src/index.ts"
+      ],
       "@storyteller/ui-viewer-3d": ["../storyteller-ui-viewer-3d/src/index.ts"],
       "@storyteller/icons": ["../storyteller-icons/src/index.ts"],
-      "@storyteller/markdown-content": ["../storyteller-markdown-content/src/index.ts"],
+      "@storyteller/markdown-content": [
+        "../storyteller-markdown-content/src/index.ts"
+      ],
       "@storyteller/model-list": ["../storyteller-model-list/src/index.ts"],
       "@storyteller/omni-gen": ["../storyteller-omni-gen/src/index.ts"],
       "@storyteller/soundboard": ["../storyteller-soundboard/src/index.ts"],

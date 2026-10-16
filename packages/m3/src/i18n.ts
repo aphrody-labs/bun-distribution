@@ -10,13 +10,18 @@ import enCatalog from "./locales/en.json";
 import frCatalog from "./locales/fr.json";
 
 export type SupportedLocale = "en" | "fr";
-export const SUPPORTED_LOCALES: readonly SupportedLocale[] = ["en", "fr"] as const;
+export const SUPPORTED_LOCALES: readonly SupportedLocale[] = [
+  "en",
+  "fr",
+] as const;
 
 export type I18nSchema = typeof enCatalog;
 
 export type Leaves<T> = T extends object
   ? {
-      [K in keyof T]: `${Exclude<K, symbol>}${Leaves<T[K]> extends never ? "" : `.${Leaves<T[K]>}`}`;
+      [
+        K in keyof T
+      ]: `${Exclude<K, symbol>}${Leaves<T[K]> extends never ? "" : `.${Leaves<T[K]>}`}`;
     }[keyof T]
   : never;
 
@@ -58,13 +63,17 @@ export function setLocale(locale: SupportedLocale): void {
 }
 
 /** Subscribe to locale changes. */
-export function onLocaleChange(fn: (locale: SupportedLocale) => void): () => void {
+export function onLocaleChange(
+  fn: (locale: SupportedLocale) => void,
+): () => void {
   listeners.add(fn);
   return () => listeners.delete(fn);
 }
 
 /** Get the raw structured catalog for a given locale. */
-export function getCatalog(locale: SupportedLocale = currentLocale): I18nSchema {
+export function getCatalog(
+  locale: SupportedLocale = currentLocale,
+): I18nSchema {
   return CATALOGS[locale] || CATALOGS.en;
 }
 
@@ -84,13 +93,21 @@ export function t(
   let node: unknown = getCatalog(locale);
 
   for (const part of parts) {
-    if (node && typeof node === "object" && part in (node as Record<string, unknown>)) {
+    if (
+      node &&
+      typeof node === "object" &&
+      part in (node as Record<string, unknown>)
+    ) {
       node = (node as Record<string, unknown>)[part];
     } else {
       // Fallback to English catalog
       let fallbackNode: unknown = CATALOGS.en;
       for (const p of parts) {
-        if (fallbackNode && typeof fallbackNode === "object" && p in (fallbackNode as Record<string, unknown>)) {
+        if (
+          fallbackNode &&
+          typeof fallbackNode === "object" &&
+          p in (fallbackNode as Record<string, unknown>)
+        ) {
           fallbackNode = (fallbackNode as Record<string, unknown>)[p];
         } else {
           return key;

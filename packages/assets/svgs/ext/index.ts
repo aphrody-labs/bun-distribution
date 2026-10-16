@@ -8,7 +8,9 @@ import * as Extras from "./Extras";
 // through a different workspace package boundary on Bun and make otherwise identical React types
 // nominally incompatible.
 type LayeredIcon =
-  | (typeof Code)[keyof typeof Code]
-  | (typeof Extras)[keyof typeof Extras];
+  (typeof Code)[keyof typeof Code] | (typeof Extras)[keyof typeof Extras];
 
-export const LayeredIcons: Record<string, Record<string, LayeredIcon>> = { Code, Extras };
+export const LayeredIcons: Record<string, Record<string, LayeredIcon>> = {
+  Code,
+  Extras,
+};

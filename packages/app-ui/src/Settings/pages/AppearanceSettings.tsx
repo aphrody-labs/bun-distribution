@@ -2,7 +2,11 @@
 import { useState, useEffect } from "react";
 import { Icon, Switch, Card } from "@aphrody/m3-primitives";
 import { applyAppearance } from "../../hooks/useTheme";
-import { hydratePreferences, updatePreferences, type Preferences } from "../../preferences";
+import {
+  hydratePreferences,
+  updatePreferences,
+  type Preferences,
+} from "../../preferences";
 import { clsx } from "clsx";
 
 const THEMES = [
@@ -94,15 +98,22 @@ export function AppearanceSettings() {
   return (
     <div className="space-y-8 max-w-3xl" aria-busy={loading || saving}>
       <div>
-        <h2 className="text-headline-small font-bold text-on-surface">Apparence</h2>
+        <h2 className="text-headline-small font-bold text-on-surface">
+          Apparence
+        </h2>
         <p className="text-body-large text-on-surface-variant mt-1">
           Personnalisation visuelle et accessibilité de l'interface.
         </p>
       </div>
 
-      {loading && <output className="block">Chargement des préférences…</output>}
+      {loading && (
+        <output className="block">Chargement des préférences…</output>
+      )}
       {error && (
-        <div role="alert" className="rounded-xl bg-error-container p-4 text-on-error-container">
+        <div
+          role="alert"
+          className="rounded-xl bg-error-container p-4 text-on-error-container"
+        >
           <p>{error}</p>
           <button
             type="button"
@@ -119,9 +130,14 @@ export function AppearanceSettings() {
       )}
       <div className="space-y-6">
         {/* Thème */}
-        <Card variant="elevated" className="p-6 border border-outline-variant/30 space-y-4">
+        <Card
+          variant="elevated"
+          className="p-6 border border-outline-variant/30 space-y-4"
+        >
           <div>
-            <h3 className="text-title-medium font-medium text-on-surface">Mode d'affichage</h3>
+            <h3 className="text-title-medium font-medium text-on-surface">
+              Mode d'affichage
+            </h3>
             <p className="text-body-large text-on-surface-variant mt-1">
               Sélectionnez l'ambiance lumineuse de la station de travail.
             </p>
@@ -148,11 +164,17 @@ export function AppearanceSettings() {
                     <Icon
                       name={t.icon}
                       size={24}
-                      className={isSelected ? "text-primary" : "text-on-surface-variant"}
+                      className={
+                        isSelected ? "text-primary" : "text-on-surface-variant"
+                      }
                     />
-                    {isSelected && <span className="size-2.5 rounded-full bg-primary" />}
+                    {isSelected && (
+                      <span className="size-2.5 rounded-full bg-primary" />
+                    )}
                   </div>
-                  <span className="text-label-large font-semibold text-on-surface">{t.name}</span>
+                  <span className="text-label-large font-semibold text-on-surface">
+                    {t.name}
+                  </span>
                   <span className="text-body-large text-on-surface-variant mt-1 line-clamp-2">
                     {t.desc}
                   </span>
@@ -163,7 +185,10 @@ export function AppearanceSettings() {
         </Card>
 
         {/* Accessibilité & Mouvement */}
-        <Card variant="elevated" className="p-6 border border-outline-variant/30 space-y-6">
+        <Card
+          variant="elevated"
+          className="p-6 border border-outline-variant/30 space-y-6"
+        >
           <div className="flex items-center justify-between gap-4">
             <div>
               <h3 className="text-title-medium font-medium text-on-surface">
@@ -188,8 +213,8 @@ export function AppearanceSettings() {
                 Taille du texte (Profil Low Vision)
               </h3>
               <p className="text-body-large text-on-surface-variant mt-1">
-                Conforme au plancher d'accessibilité de 18 px minimum pour un confort de lecture
-                optimal.
+                Conforme au plancher d'accessibilité de 18 px minimum pour un
+                confort de lecture optimal.
               </p>
             </div>
 
@@ -212,9 +237,13 @@ export function AppearanceSettings() {
                   >
                     <div>
                       <span className="text-label-large block">{f.label}</span>
-                      <span className="text-body-large text-on-surface-variant">{f.desc}</span>
+                      <span className="text-body-large text-on-surface-variant">
+                        {f.desc}
+                      </span>
                     </div>
-                    {isSelected && <span className="size-2.5 rounded-full bg-primary shrink-0" />}
+                    {isSelected && (
+                      <span className="size-2.5 rounded-full bg-primary shrink-0" />
+                    )}
                   </button>
                 );
               })}

@@ -5,7 +5,12 @@
  * registry feeds `yolo api` (HTTP) and `yolo ai`; no second MCP server lives in this package.
  */
 import { yoloHome } from "../vfs/home";
-import { TOOLS, ToolExecutionContext, executeTool, type ToolDefinition } from "./registry";
+import {
+  TOOLS,
+  ToolExecutionContext,
+  executeTool,
+  type ToolDefinition,
+} from "./registry";
 
 export interface HostResult {
   content: { type: "text"; text: string }[];
@@ -27,14 +32,24 @@ export async function callTool(
   try {
     const result = await executeTool(
       name,
-      (args === undefined || args === null ? {} : args) as Record<string, unknown>,
+      (args === undefined || args === null ? {} : args) as Record<
+        string,
+        unknown
+      >,
       rootDir,
       own,
     );
-    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+    return {
+      content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+    };
   } catch (error) {
     return {
-      content: [{ type: "text", text: error instanceof Error ? error.message : String(error) }],
+      content: [
+        {
+          type: "text",
+          text: error instanceof Error ? error.message : String(error),
+        },
+      ],
       isError: true,
     };
   } finally {
@@ -43,7 +58,10 @@ export async function callTool(
 }
 
 /** `yolo tool list | call <tool-name> '<json-object>'`. */
-export async function runToolHost(args: string[], rootDir: string): Promise<number> {
+export async function runToolHost(
+  args: string[],
+  rootDir: string,
+): Promise<number> {
   if (args[0] === "list" && args.length === 1) {
     console.log(JSON.stringify(listTools()));
     return 0;

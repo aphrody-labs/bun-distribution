@@ -24,9 +24,15 @@ export function useResolvedKeybinds(): ResolvedKeybinds {
 
   return useMemo(() => {
     const forAction = (id: ActionId): Binding[] =>
-      overrides[id] ?? PRESETS[selectedPreset].bindings[id] ?? BASE_BINDINGS[id] ?? [];
+      overrides[id] ??
+      PRESETS[selectedPreset].bindings[id] ??
+      BASE_BINDINGS[id] ??
+      [];
 
-    const matchAction = (e: KeyboardEvent, surface: Surface): ActionId | null => {
+    const matchAction = (
+      e: KeyboardEvent,
+      surface: Surface,
+    ): ActionId | null => {
       for (const action of ACTIONS_BY_SURFACE[surface]) {
         if (forAction(action.id).some((bd) => bindingMatchesEvent(bd, e))) {
           return action.id;

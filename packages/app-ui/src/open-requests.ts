@@ -52,7 +52,9 @@ export function parseLink(link: string): OpenIntent | null {
   const name = head.toLowerCase();
   if (name === "ask") {
     const prompt = url.searchParams.get("q")?.trim();
-    return prompt ? { kind: "ask", prompt } : { kind: "navigate", destination: "agent" };
+    return prompt
+      ? { kind: "ask", prompt }
+      : { kind: "navigate", destination: "agent" };
   }
   if (name === "thread") {
     const id = rest[0]?.trim();
@@ -71,7 +73,8 @@ export function intentsOf(requests: OpenRequest[]): OpenIntent[] {
       const intent = parseLink(link);
       if (intent) intents.push(intent);
     }
-    if (request.files.length > 0) intents.push({ kind: "files", paths: [...request.files] });
+    if (request.files.length > 0)
+      intents.push({ kind: "files", paths: [...request.files] });
   }
   return intents;
 }

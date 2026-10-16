@@ -10,7 +10,13 @@
 import { join } from "node:path";
 import type { FileInfo } from "../lib/engine";
 
-const TRANSFORMS = ["orchestrator", "mui-imports", "button", "fields", "icons"] as const;
+const TRANSFORMS = [
+  "orchestrator",
+  "mui-imports",
+  "button",
+  "fields",
+  "icons",
+] as const;
 
 const args = process.argv.slice(2);
 const dry = args.includes("--dry");
@@ -42,9 +48,13 @@ for (const pattern of patterns) {
       console.log(`${dry ? "changerait" : "modifié"} ${path}`);
     } catch (error) {
       failed++;
-      console.error(`ERREUR ${path}: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(
+        `ERREUR ${path}: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 }
-console.log(`${changed} fichier(s) ${dry ? "à modifier" : "modifié(s)"}, ${failed} erreur(s).`);
+console.log(
+  `${changed} fichier(s) ${dry ? "à modifier" : "modifié(s)"}, ${failed} erreur(s).`,
+);
 if (failed > 0) process.exit(1);

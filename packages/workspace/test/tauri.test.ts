@@ -1,13 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterEach, expect, test } from "bun:test";
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { resolveTauriLayout, runTauri } from "../src/tauri";
 
 const roots: string[] = [];
 afterEach(() => {
-  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+  for (const root of roots.splice(0))
+    rmSync(root, { recursive: true, force: true });
 });
 
 test("Tauri check uses only the current app and serialized Cargo wrapper", async () => {
@@ -20,7 +28,10 @@ test("Tauri check uses only the current app and serialized Cargo wrapper", async
   writeFileSync(join(root, "Cargo.toml"), "[workspace]\nmembers = []\n");
   writeFileSync(join(app, "Cargo.toml"), '[package]\nname = "test-app"\n');
   const windows = process.platform === "win32";
-  const wrapper = join(scripts, windows ? "cargo-serial.ts" : "cargo-serial.sh");
+  const wrapper = join(
+    scripts,
+    windows ? "cargo-serial.ts" : "cargo-serial.sh",
+  );
   if (windows)
     writeFileSync(
       wrapper,
@@ -46,12 +57,16 @@ test("Tauri check uses only the current app and serialized Cargo wrapper", async
     expect(layout.uiDir).toBe(join(root, "m3/packages/app-ui"));
     expect(layout.appDir).toBe(app);
     expect(await runTauri(["check", "--root", root])).toBe(0);
-    expect(readFileSync(join(root, "invocation"), "utf8")).toBe("check\n--locked\n");
+    expect(readFileSync(join(root, "invocation"), "utf8")).toBe(
+      "check\n--locked\n",
+    );
     // Tauri's internal Cargo is routed through CARGO only where the wrapper is an executable.
     expect(readFileSync(join(root, "cargo-env"), "utf8")).toBe(
       windows ? (process.env.CARGO ?? "") : wrapper,
     );
-    expect(readFileSync(join(root, "rustc-env"), "utf8")).toBe("test-sccache-wrapper");
+    expect(readFileSync(join(root, "rustc-env"), "utf8")).toBe(
+      "test-sccache-wrapper",
+    );
   } finally {
     if (previous === undefined) delete Bun.env.RUSTC_WRAPPER;
     else Bun.env.RUSTC_WRAPPER = previous;
@@ -63,6 +78,9 @@ test("legacy app-only checkout is not a Tauri root", () => {
   roots.push(root);
   mkdirSync(join(root, "crates/aphrody-app"), { recursive: true });
   writeFileSync(join(root, "Cargo.toml"), "[workspace]\nmembers = []\n");
-  writeFileSync(join(root, "crates/aphrody-app/Cargo.toml"), '[package]\nname = "legacy"\n');
+  writeFileSync(
+    join(root, "crates/aphrody-app/Cargo.toml"),
+    '[package]\nname = "legacy"\n',
+  );
   expect(() => resolveTauriLayout(root)).toThrow("active Aphrody monorepo");
 });

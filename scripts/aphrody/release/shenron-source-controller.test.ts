@@ -12,7 +12,9 @@ import {
 } from "./shenron-source-controller";
 const roots: string[] = [];
 afterEach(async () => {
-  await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+  await Promise.all(
+    roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
+  );
 });
 const profile: SourceControllerProfile = {
   host: "dbfr",
@@ -83,9 +85,14 @@ test("same-service worker readiness prevents early stop races and joins graceful
     entry,
     `process.on("SIGUSR1",async()=>{await Bun.write(${JSON.stringify(stopped)},"stopped");process.disconnect();process.exit(0);});process.send({schema:"shenron-source-controller-ready/v1"});setInterval(()=>{},1000);`,
   );
-  const worker = await startSourceControllerWorker(Bun.which("bun")!, entry, process.env, {
-    joinMs: 1000,
-  });
+  const worker = await startSourceControllerWorker(
+    Bun.which("bun")!,
+    entry,
+    process.env,
+    {
+      joinMs: 1000,
+    },
+  );
   await worker.stop();
   expect(await Bun.file(stopped).text()).toBe("stopped");
 });
@@ -98,16 +105,23 @@ test("join deadline kills the owned process group including noncooperative desce
     entry,
     `process.on("SIGUSR1",()=>{});process.on("SIGTERM",()=>{});const leaf=Bun.spawn([process.execPath,"-e",'process.on("SIGTERM",()=>{});console.log("ready");setInterval(()=>{},1000);'],{stdin:"ignore",stdout:"pipe",stderr:"ignore"});await leaf.stdout.getReader().read();await Bun.write(${JSON.stringify(pidFile)},String(leaf.pid));process.send({schema:"shenron-source-controller-ready/v1"});setInterval(()=>{},1000);`,
   );
-  const worker = await startSourceControllerWorker(Bun.which("bun")!, entry, process.env, {
-    joinMs: 30,
-    killMs: 20,
-    reapMs: 1000,
-  });
+  const worker = await startSourceControllerWorker(
+    Bun.which("bun")!,
+    entry,
+    process.env,
+    {
+      joinMs: 30,
+      killMs: 20,
+      reapMs: 1000,
+    },
+  );
   const pid = Number(await Bun.file(pidFile).text());
   await expect(worker.stop()).rejects.toThrow("join deadline");
   let stopped = false;
   try {
-    stopped = /^\d+\s+\(.+\)\s+Z\s/.test(await Bun.file("/proc/" + pid + "/stat").text());
+    stopped = /^\d+\s+\(.+\)\s+Z\s/.test(
+      await Bun.file("/proc/" + pid + "/stat").text(),
+    );
   } catch (error) {
     if ((error as { code?: string }).code !== "ENOENT") throw error;
     stopped = true;

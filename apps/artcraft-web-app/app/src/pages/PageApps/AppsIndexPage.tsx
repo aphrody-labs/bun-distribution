@@ -42,9 +42,7 @@ export const AppsIndexPage = () => {
               index === 0 ? "mt-8 sm:mt-10" : "mt-10",
             )}
           >
-            <h2 className="hud-label mb-4 text-base-fg/70">
-              {category.title}
-            </h2>
+            <h2 className="hud-label mb-4 text-base-fg/70">{category.title}</h2>
             <div className="grid auto-rows-fr gap-3 md:grid-cols-2 xl:grid-cols-3">
               {category.apps.map((app) => (
                 <AppCard key={app.id} app={app} />
@@ -67,7 +65,9 @@ function AppCard({ app }: { app: FullAppItem }) {
       disabled={!enabled}
       className={twMerge(
         "group relative flex h-full rounded-[3px] border border-ui-border bg-white/5 p-5 text-left transition-colors duration-150 focus-visible:border-primary",
-        enabled ? twMerge("cursor-pointer", palette.hoverStyle) : "cursor-default opacity-60",
+        enabled
+          ? twMerge("cursor-pointer", palette.hoverStyle)
+          : "cursor-default opacity-60",
       )}
     >
       <div className="relative flex w-full items-start gap-4">

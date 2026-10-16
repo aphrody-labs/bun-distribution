@@ -9,7 +9,10 @@ const scratch = mkdtempSync(join(tmpdir(), "m3-token-catalog-"));
 let fixtures = 0;
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
 
-function fixture(exports: Record<string, unknown>, files: Record<string, string>): string {
+function fixture(
+  exports: Record<string, unknown>,
+  files: Record<string, string>,
+): string {
   const root = join(scratch, String(fixtures++));
   const pkg = join(root, "packages/m3-tokens");
   mkdirSync(pkg, { recursive: true });
@@ -38,7 +41,9 @@ describe("the repository token catalogue", () => {
     const input = names.map((name) => `var(${name})`).join(" ");
     expect(validateTokens(input)).toEqual({ checked: names, unknown: [] });
     expect(
-      validateTokens(`${input} var(--md-sys-motion-spring-expressive-fast-spatial-dampng)`).unknown,
+      validateTokens(
+        `${input} var(--md-sys-motion-spring-expressive-fast-spatial-dampng)`,
+      ).unknown,
     ).toEqual(["--md-sys-motion-spring-expressive-fast-spatial-dampng"]);
   });
 
@@ -132,9 +137,16 @@ describe("exported token sources", () => {
       "--md-sys-color-on-primary-container",
     ]);
     expect(
-      validateTokens("--md-present --md-sys-color-on-primary-container --md-missing", root),
+      validateTokens(
+        "--md-present --md-sys-color-on-primary-container --md-missing",
+        root,
+      ),
     ).toEqual({
-      checked: ["--md-present", "--md-sys-color-on-primary-container", "--md-missing"],
+      checked: [
+        "--md-present",
+        "--md-sys-color-on-primary-container",
+        "--md-missing",
+      ],
       unknown: ["--md-missing"],
     });
   });

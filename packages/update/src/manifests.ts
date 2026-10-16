@@ -15,18 +15,27 @@ export async function firstPartyManifests(
   const root = await Bun.file(join(repo, "package.json")).json();
   const patterns: readonly string[] =
     patternsOverride ??
-    (Array.isArray(root.workspaces) ? root.workspaces : (root.workspaces?.packages ?? []));
+    (Array.isArray(root.workspaces)
+      ? root.workspaces
+      : (root.workspaces?.packages ?? []));
   const includes = patterns.filter((pattern) => !pattern.startsWith("!"));
   const excludes = patterns
     .filter((pattern) => pattern.startsWith("!"))
-    .map((pattern) => new Glob(`${pattern.slice(1).replace(/\/$/, "")}/package.json`));
+    .map(
+      (pattern) =>
+        new Glob(`${pattern.slice(1).replace(/\/$/, "")}/package.json`),
+    );
   const found = await Promise.all(
     includes.map(async (pattern) => {
       const manifestPattern = `${pattern.replace(/\/$/, "")}/package.json`;
       if (!/[?*{[]/.test(pattern)) {
-        return (await Bun.file(join(repo, manifestPattern)).exists()) ? [manifestPattern] : [];
+        return (await Bun.file(join(repo, manifestPattern)).exists())
+          ? [manifestPattern]
+          : [];
       }
-      return Array.fromAsync(new Glob(manifestPattern).scan({ cwd: repo, onlyFiles: true }));
+      return Array.fromAsync(
+        new Glob(manifestPattern).scan({ cwd: repo, onlyFiles: true }),
+      );
     }),
   );
   return [...new Set(found.flat().map((path) => path.replaceAll("\\", "/")))]

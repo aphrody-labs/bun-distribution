@@ -25,7 +25,8 @@ import {
 
 const dirs: string[] = [];
 afterEach(() => {
-  for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+  for (const dir of dirs.splice(0))
+    rmSync(dir, { recursive: true, force: true });
 });
 const temp = () => {
   const dir = mkdtempSync(join(tmpdir(), "bun-hygiene-"));
@@ -59,10 +60,18 @@ test("the newest runtime release older than the minimum age is selected", () => 
   expect(eligibleTag(releases, now, 0)).toBe("aphrody-v1.4.3-aphrody.3");
   expect(eligibleTag(releases, now, 30)).toBeUndefined();
   expect(tagOf("1.4.3-aphrody.3\n")).toBe("aphrody-v1.4.3-aphrody.3");
-  expect(isNewer("aphrody-v1.4.3-aphrody.10", "aphrody-v1.4.3-aphrody.9")).toBe(true);
-  expect(isNewer("aphrody-v1.4.4-aphrody.1", "aphrody-v1.4.3-aphrody.9")).toBe(true);
-  expect(isNewer("aphrody-v1.4.3-aphrody.1", "aphrody-v1.4.3-aphrody.3")).toBe(false);
-  expect(isNewer("aphrody-v1.4.3-aphrody.3", "aphrody-v1.4.3-aphrody.3")).toBe(false);
+  expect(isNewer("aphrody-v1.4.3-aphrody.10", "aphrody-v1.4.3-aphrody.9")).toBe(
+    true,
+  );
+  expect(isNewer("aphrody-v1.4.4-aphrody.1", "aphrody-v1.4.3-aphrody.9")).toBe(
+    true,
+  );
+  expect(isNewer("aphrody-v1.4.3-aphrody.1", "aphrody-v1.4.3-aphrody.3")).toBe(
+    false,
+  );
+  expect(isNewer("aphrody-v1.4.3-aphrody.3", "aphrody-v1.4.3-aphrody.3")).toBe(
+    false,
+  );
   expect(isNewer("aphrody-v1.4.3-aphrody.1", "aphrody-v1.4.3")).toBe(true);
   expect(isNewer("aphrody-v1.4.3-aphrody.4", "aphrody-v1.4.4")).toBe(false);
   expect(isNewer("aphrody-v1.4.4-aphrody.1", "aphrody-v1.4.4")).toBe(true);
@@ -81,14 +90,21 @@ test("the executable is swapped aside and aliases are relinked to it", () => {
   writeFileSync(join(bin, "bun.exe"), "old");
   writeFileSync(join(bin, "node.exe"), "old");
   writeFileSync(join(bin, "bun.exe.new"), "new");
-  expect(swapExecutable(bin, join(bin, "bun.exe.new"), 7)).toEqual(["bunx.exe", "node.exe"]);
+  expect(swapExecutable(bin, join(bin, "bun.exe.new"), 7)).toEqual([
+    "bunx.exe",
+    "node.exe",
+  ]);
   for (const name of ["bun.exe", "bunx.exe", "node.exe"])
     expect(readFileSync(join(bin, name), "utf8")).toBe("new");
   expect(existsSync(join(bin, "npm.exe"))).toBe(false);
   expect(statSync(join(bin, "bun.exe")).nlink).toBe(3);
   expect(readFileSync(join(bin, "bun.exe.old-7"), "utf8")).toBe("old");
   expect(sweepOld(bin).toSorted()).toEqual(["bun.exe.old-7", "node.exe.old-7"]);
-  expect(readdirSync(bin).toSorted()).toEqual(["bun.exe", "bunx.exe", "node.exe"]);
+  expect(readdirSync(bin).toSorted()).toEqual([
+    "bun.exe",
+    "bunx.exe",
+    "node.exe",
+  ]);
 });
 
 test("cache entries are pruned only above the size threshold", () => {
@@ -99,6 +115,8 @@ test("cache entries are pruned only above the size threshold", () => {
     writeFileSync(join(dir, "f"), "x");
   }
   expect(cachePrunable(cache, now + 60 * 86_400_000, 1)).toEqual([]);
-  expect(cachePrunable(cache, Date.now() + 60 * 86_400_000, 6 * 1024 ** 3).length).toBe(2);
+  expect(
+    cachePrunable(cache, Date.now() + 60 * 86_400_000, 6 * 1024 ** 3).length,
+  ).toBe(2);
   expect(cachePrunable(cache, Date.now(), 6 * 1024 ** 3)).toEqual([]);
 });

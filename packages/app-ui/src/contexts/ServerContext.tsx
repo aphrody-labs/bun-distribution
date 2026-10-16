@@ -138,7 +138,12 @@ export function ServerProvider({ children }: ServerProviderProps) {
   }, [platform]);
 
   const buildSidecarUrl = useCallback(
-    (contentUuid: string, kind: string, variant: string, format: string): string | null => {
+    (
+      contentUuid: string,
+      kind: string,
+      variant: string,
+      format: string,
+    ): string | null => {
       if (!serverUrl || !libraryId) {
         return null;
       }
@@ -157,7 +162,9 @@ export function ServerProvider({ children }: ServerProviderProps) {
     [serverUrl, libraryId, buildSidecarUrl],
   );
 
-  return <ServerContext.Provider value={value}>{children}</ServerContext.Provider>;
+  return (
+    <ServerContext.Provider value={value}>{children}</ServerContext.Provider>
+  );
 }
 
 /**

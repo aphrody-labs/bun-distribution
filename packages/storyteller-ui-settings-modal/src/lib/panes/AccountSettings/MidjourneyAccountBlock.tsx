@@ -1,14 +1,20 @@
 import { Button } from "@storyteller/ui-button";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
-import { MidjourneyGetCredentialInfo, MidjourneyGetCredentialInfoSuccess } from "@storyteller/tauri-api";
+import {
+  MidjourneyGetCredentialInfo,
+  MidjourneyGetCredentialInfoSuccess,
+} from "@storyteller/tauri-api";
 import { LoaderCircleIcon } from "lucide-react";
 import { useRefreshAccountStateEvent } from "@storyteller/tauri-events";
 import { RefreshAccountStateEvent } from "@storyteller/tauri-events";
 
 export const MidjourneyAccountBlock = () => {
-  const [midjourneySession, setMidjourneySession] = useState<MidjourneyGetCredentialInfoSuccess| undefined>(undefined);
-  const [isCheckingMidjourneySession, setIsCheckingMidjourneySession] = useState(false);
+  const [midjourneySession, setMidjourneySession] = useState<
+    MidjourneyGetCredentialInfoSuccess | undefined
+  >(undefined);
+  const [isCheckingMidjourneySession, setIsCheckingMidjourneySession] =
+    useState(false);
 
   const fetchSession = async () => {
     setIsCheckingMidjourneySession(true);
@@ -31,21 +37,21 @@ export const MidjourneyAccountBlock = () => {
     fetchSession();
   });
 
-  const clearState = async() => {
+  const clearState = async () => {
     try {
       await invoke("midjourney_clear_credentials_command");
     } catch (e) {
       console.error("Error clearing Midjourney credentials", e);
     }
-  }
+  };
 
-  const openLogin = async() => {
+  const openLogin = async () => {
     try {
       await invoke("midjourney_open_login_command");
     } catch (e) {
       console.error("Error opening Midjourney login", e);
     }
-  }
+  };
 
   const handleMidjourneyButton = async () => {
     if (midjourneySession?.payload?.can_clear_state) {
@@ -56,7 +62,7 @@ export const MidjourneyAccountBlock = () => {
     }
   };
 
-  return(
+  return (
     <div className="flex items-center justify-between gap-3">
       <div className="flex min-w-0 flex-col gap-0.5">
         <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
@@ -68,11 +74,12 @@ export const MidjourneyAccountBlock = () => {
       </div>
       <Button
         variant={
-          midjourneySession?.payload?.can_clear_state && !isCheckingMidjourneySession
+          midjourneySession?.payload?.can_clear_state &&
+          !isCheckingMidjourneySession
             ? "destructive"
             : midjourneySession?.payload?.can_clear_state
-            ? "primary"
-            : "secondary"
+              ? "primary"
+              : "secondary"
         }
         className="h-9 shrink-0 px-3"
         onClick={handleMidjourneyButton}
@@ -87,5 +94,5 @@ export const MidjourneyAccountBlock = () => {
         )}
       </Button>
     </div>
-  )
-}
+  );
+};

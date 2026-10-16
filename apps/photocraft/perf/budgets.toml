@@ -78,7 +78,7 @@ issue = 209
 bench = "perf_scenarios"
 row = "move styled layer 10 px + refresh"
 budget_ms = 25
-enforce = false  # over budget in the 2026-10-05 baseline
+enforce = false # over budget in the 2026-10-05 baseline
 
 [[scenario]]
 id = "P2"
@@ -87,7 +87,7 @@ issue = 209
 bench = "perf_scenarios"
 row = "set layer opacity + refresh"
 budget_ms = 20
-enforce = false  # over budget in the 2026-10-05 baseline
+enforce = false # over budget in the 2026-10-05 baseline
 
 [[scenario]]
 id = "P3"
@@ -96,7 +96,7 @@ issue = 209
 bench = "perf_scenarios"
 row = "set layer fill + refresh"
 budget_ms = 20
-enforce = false  # over budget in the 2026-10-05 baseline
+enforce = false # over budget in the 2026-10-05 baseline
 
 [[scenario]]
 id = "P4"
@@ -105,7 +105,7 @@ issue = 209
 bench = "perf_scenarios"
 row = "set blend mode + refresh"
 budget_ms = 20
-enforce = false  # over budget in the 2026-10-05 baseline
+enforce = false # over budget in the 2026-10-05 baseline
 
 [[scenario]]
 id = "P5"
@@ -114,7 +114,7 @@ issue = 209
 bench = "perf_scenarios"
 row = "toggle visibility + refresh"
 budget_ms = 10
-enforce = false  # over budget in the 2026-10-05 baseline
+enforce = false # over budget in the 2026-10-05 baseline
 
 [[scenario]]
 id = "P6"
@@ -123,7 +123,7 @@ issue = 209
 bench = "perf_scenarios"
 row = "undo move + refresh"
 budget_ms = 25
-enforce = false  # over budget in the 2026-10-05 baseline
+enforce = false # over budget in the 2026-10-05 baseline
 
 [[scenario]]
 id = "P7"
@@ -132,7 +132,7 @@ issue = 209
 bench = "perf_scenarios"
 row = "redo opacity change + refresh"
 budget_ms = 25
-enforce = false  # over budget in the 2026-10-05 baseline
+enforce = false # over budget in the 2026-10-05 baseline
 
 [[scenario]]
 id = "P8"
@@ -141,7 +141,7 @@ issue = 209
 bench = "perf_scenarios"
 row = "duplicate 12 MP layer (first) + refresh"
 budget_ms = 100
-enforce = false  # over budget in the 2026-10-05 baseline
+enforce = false # over budget in the 2026-10-05 baseline
 
 [[scenario]]
 id = "P9"
@@ -150,7 +150,7 @@ issue = 209
 bench = "perf_scenarios"
 row = "duplicate 12 MP layer (repeat) + refresh"
 budget_ms = 20
-enforce = false  # over budget in the 2026-10-05 baseline
+enforce = false # over budget in the 2026-10-05 baseline
 
 [[scenario]]
 id = "P10"
@@ -159,7 +159,7 @@ issue = 209
 bench = "perf_scenarios"
 row = "paste 12 MP layer (first) + refresh"
 budget_ms = 100
-enforce = false  # over budget in the 2026-10-05 baseline
+enforce = false # over budget in the 2026-10-05 baseline
 
 [[scenario]]
 id = "P11"
@@ -168,7 +168,7 @@ issue = 209
 bench = "perf_scenarios"
 row = "paste 12 MP layer (repeat) + refresh"
 budget_ms = 20
-enforce = false  # over budget in the 2026-10-05 baseline
+enforce = false # over budget in the 2026-10-05 baseline
 
 [[scenario]]
 id = "P12"
@@ -177,7 +177,7 @@ issue = 209
 bench = "perf_scenarios"
 row = "nudge 1 px in the many-layer document + refresh"
 budget_ms = 30
-enforce = false  # over budget in the 2026-10-05 baseline
+enforce = false # over budget in the 2026-10-05 baseline
 
 [[scenario]]
 id = "P51"
@@ -186,7 +186,7 @@ issue = 1771
 bench = "perf_scenarios"
 row = "new layer in the many-layer document + refresh"
 budget_ms = 16
-enforce = false  # not in the baseline yet
+enforce = false # not in the baseline yet
 
 [[scenario]]
 id = "P13"
@@ -195,7 +195,7 @@ issue = 209
 bench = "perf_scenarios"
 row = "brush dab 60 px on 16-bit 15000x10000 + refresh"
 budget_ms = 80
-enforce = false  # over budget in the 2026-10-05 baseline
+enforce = false # over budget in the 2026-10-05 baseline
 
 [[scenario]]
 id = "P14"
@@ -204,7 +204,7 @@ issue = 209
 bench = "perf_scenarios"
 row = "move layer on 16-bit 15000x10000 + refresh"
 budget_ms = 80
-enforce = false  # over budget in the 2026-10-05 baseline
+enforce = false # over budget in the 2026-10-05 baseline
 
 [[scenario]]
 id = "P15"
@@ -220,7 +220,7 @@ issue = 209
 bench = "perf_scenarios"
 row = "brush dab 60 px on 32-bit 20 layers + refresh"
 budget_ms = 100
-enforce = false  # over budget in the 2026-10-05 baseline
+enforce = false # over budget in the 2026-10-05 baseline
 
 [[scenario]]
 id = "P17"
@@ -229,7 +229,7 @@ issue = 209
 bench = "perf_scenarios"
 row = "move layer on 32-bit 20 layers + refresh"
 budget_ms = 100
-enforce = false  # over budget in the 2026-10-05 baseline
+enforce = false # over budget in the 2026-10-05 baseline
 
 # ---- #210: long operations ---------------------------------------------------------------------
 
@@ -240,7 +240,7 @@ issue = 210
 bench = "perf_scenarios"
 row = "open 20 MP layered PSD (decode + first composite)"
 budget_ms = 1000
-enforce = false  # over budget in the 2026-10-05 baseline
+enforce = false # over budget in the 2026-10-05 baseline
 
 [[scenario]]
 id = "P19"
@@ -324,7 +324,7 @@ issue = 211
 bench = "perf_scenarios"
 row = "Select > Modify > Smooth r 50 on 24 MP"
 budget_ms = 100
-enforce = false  # #2873: p95 20-45 ms on 16 cores (load up to ~15), over 100 ms only at load avg > 20; CI cores unmeasured
+enforce = false # #2873: p95 20-45 ms on 16 cores (load up to ~15), over 100 ms only at load avg > 20; CI cores unmeasured
 
 [[scenario]]
 id = "P27"
@@ -333,7 +333,7 @@ issue = 211
 bench = "perf_scenarios"
 row = "Select > Modify > Feather r 50 on 24 MP"
 budget_ms = 100
-enforce = false  # #2873: p95 20-45 ms on 16 cores (load up to ~15), over 100 ms only at load avg > 20; CI cores unmeasured
+enforce = false # #2873: p95 20-45 ms on 16 cores (load up to ~15), over 100 ms only at load avg > 20; CI cores unmeasured
 
 [[scenario]]
 id = "P28"
@@ -342,7 +342,7 @@ issue = 211
 bench = "perf_scenarios"
 row = "Content-Aware Scale 24 MP to 90 % width"
 budget_ms = 3000
-enforce = false  # over budget in the 2026-10-05 baseline
+enforce = false # over budget in the 2026-10-05 baseline
 
 [[scenario]]
 id = "P29"
@@ -351,7 +351,7 @@ issue = 211
 bench = "perf_scenarios"
 row = "Select Subject 24 MP (repeat)"
 budget_ms = 100
-enforce = false  # #2865: met (repeats answer from the last mask, 7-10 ms p95, was 270-370 ms); enforce once the baseline is refreshed
+enforce = false # #2865: met (repeats answer from the last mask, 7-10 ms p95, was 270-370 ms); enforce once the baseline is refreshed
 
 [[scenario]]
 id = "P30"
@@ -371,7 +371,7 @@ target = "≤ 10 ms"
 bench = "camera_raw_bench"
 row = "exposure proxy update"
 budget_ms = 10
-enforce = false  # not in the 2026-10-05 baseline yet; contributor M4 run 2026-10-06: p95 5.4 ms
+enforce = false # not in the 2026-10-05 baseline yet; contributor M4 run 2026-10-06: p95 5.4 ms
 
 [[scenario]]
 id = "P32"
@@ -381,7 +381,7 @@ target = "≤ 16 ms (no hitch at mouse-up)"
 bench = "perf_scenarios"
 row = "brush release: 600-point stroke, 200 px soft, 24 MP"
 budget_ms = 16
-enforce = false  # measurable since the release commits the live stroke's pixels; awaiting a baseline run
+enforce = false # measurable since the release commits the live stroke's pixels; awaiting a baseline run
 
 [[scenario]]
 id = "P33"
@@ -390,7 +390,7 @@ issue = 211
 bench = "perf_scenarios"
 row = "brush dab on A4 300 ppi CMYK + refresh"
 budget_ms = 6
-enforce = false  # over budget in the 2026-10-05 baseline
+enforce = false # over budget in the 2026-10-05 baseline
 
 [[scenario]]
 id = "P34"
@@ -413,7 +413,7 @@ issue = 211
 bench = "camera_raw_bench"
 row = "interactive scope update"
 budget_ms = 10
-enforce = false  # not in the 2026-10-05 baseline yet; contributor M4 run 2026-10-06: p95 8.0 ms
+enforce = false # not in the 2026-10-05 baseline yet; contributor M4 run 2026-10-06: p95 8.0 ms
 
 # ---- tracked (no budget yet): regressions only -------------------------------------------------
 

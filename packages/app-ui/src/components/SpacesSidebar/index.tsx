@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useDndContext, useDroppable } from "@dnd-kit/core";
-import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
   ArrowsClockwise,
@@ -16,7 +20,12 @@ import type {
   SpaceGroup as SpaceGroupType,
   SpaceItem as SpaceItemType,
 } from "@aphrody/drive-client";
-import { CircleButton, Popover, usePopover, type IconComponentProps } from "@aphrody/m3-primitives";
+import {
+  CircleButton,
+  Popover,
+  usePopover,
+  type IconComponentProps,
+} from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import { motion } from "motion/react";
 import { memo, useEffect, useState, useMemo } from "react";
@@ -92,7 +101,10 @@ function SpaceGroupWithDropZone({
       style={style}
       className={clsx("relative", isDragging && "z-50 opacity-50")}
     >
-      <div ref={setDropRef} className="absolute -top-2.5 left-0 right-0 z-10 h-5">
+      <div
+        ref={setDropRef}
+        className="absolute -top-2.5 left-0 right-0 z-10 h-5"
+      >
         {isOver && !isDragging && !isDraggingSortableItem && (
           <div className="bg-primary absolute left-2 right-2 top-1/2 h-[2px] -translate-y-1/2 rounded-full" />
         )}
@@ -130,7 +142,9 @@ function SyncIcon({ className, size }: IconComponentProps) {
 }
 
 function SpinningSyncIcon({ className, size }: IconComponentProps) {
-  return <CircleNotch className={clsx(className, "animate-spin")} size={size} />;
+  return (
+    <CircleNotch className={clsx(className, "animate-spin")} size={size} />
+  );
 }
 
 function JobsIcon({ className, size }: IconComponentProps) {
@@ -138,7 +152,12 @@ function JobsIcon({ className, size }: IconComponentProps) {
 }
 
 function RunningJobsIcon({ className, size }: IconComponentProps) {
-  return <CircleNotch className={clsx(className, "animate-spin text-primary")} size={size} />;
+  return (
+    <CircleNotch
+      className={clsx(className, "animate-spin text-primary")}
+      size={size}
+    />
+  );
 }
 
 // Sync Monitor Button with Popover
@@ -158,7 +177,10 @@ const SyncButton = memo(function SyncButton() {
   return (
     <Popover.Root open={popover.open} onOpenChange={popover.setOpen}>
       <Popover.Trigger asChild>
-        <CircleButton icon={isSyncing ? SpinningSyncIcon : SyncIcon} title="Synchro" />
+        <CircleButton
+          icon={isSyncing ? SpinningSyncIcon : SyncIcon}
+          title="Synchro"
+        />
       </Popover.Trigger>
       <Popover.Content
         side="top"
@@ -167,12 +189,15 @@ const SyncButton = memo(function SyncButton() {
         className="!bg-surface z-50 max-h-[520px] w-[380px] !rounded-medium !p-0"
       >
         <div className="border-outline-variant flex items-center justify-between border-b px-4 py-3">
-          <h3 className="text-on-surface text-label-large font-semibold">Synchro</h3>
+          <h3 className="text-on-surface text-label-large font-semibold">
+            Synchro
+          </h3>
 
           <div className="flex items-center gap-2">
             {onlinePeerCount > 0 && (
               <span className="text-on-surface-variant text-body-large">
-                {onlinePeerCount} {onlinePeerCount === 1 ? "pair connecté" : "pairs connectés"}
+                {onlinePeerCount}{" "}
+                {onlinePeerCount === 1 ? "pair connecté" : "pairs connectés"}
               </span>
             )}
 
@@ -186,7 +211,9 @@ const SyncButton = memo(function SyncButton() {
               icon={FunnelSimple}
               active={showActivityFeed}
               onClick={() => setShowActivityFeed(!showActivityFeed)}
-              title={showActivityFeed ? "Afficher les pairs" : "Afficher l'activité"}
+              title={
+                showActivityFeed ? "Afficher les pairs" : "Afficher l'activité"
+              }
             />
           </div>
         </div>
@@ -195,7 +222,9 @@ const SyncButton = memo(function SyncButton() {
           <>
             <div className="border-outline-variant bg-surface-container/50 border-b px-4 py-2">
               <div className="flex items-center gap-2">
-                <div className={`size-2 rounded-full ${getStateColor(sync.currentState)}`} />
+                <div
+                  className={`size-2 rounded-full ${getStateColor(sync.currentState)}`}
+                />
                 <span className="text-on-surface-variant text-label-large font-medium">
                   {sync.currentState}
                 </span>
@@ -259,14 +288,20 @@ const JobsButton = memo(
 
     const filteredJobs = showOnlyRunning
       ? jobs.filter(
-          (job) => job.status === "running" || job.status === "paused" || job.status === "queued",
+          (job) =>
+            job.status === "running" ||
+            job.status === "paused" ||
+            job.status === "queued",
         )
       : jobs;
 
     return (
       <Popover.Root open={popover.open} onOpenChange={popover.setOpen}>
         <Popover.Trigger asChild>
-          <CircleButton icon={hasRunningJobs ? RunningJobsIcon : JobsIcon} title="Tâches" />
+          <CircleButton
+            icon={hasRunningJobs ? RunningJobsIcon : JobsIcon}
+            title="Tâches"
+          />
         </Popover.Trigger>
         <Popover.Content
           side="top"
@@ -275,7 +310,9 @@ const JobsButton = memo(
           className="!bg-surface z-50 max-h-[480px] w-[360px] !rounded-medium !p-0"
         >
           <div className="border-outline-variant flex items-center justify-between border-b px-4 py-3">
-            <h3 className="text-on-surface text-label-large font-semibold">Tâches</h3>
+            <h3 className="text-on-surface text-label-large font-semibold">
+              Tâches
+            </h3>
 
             <div className="flex items-center gap-2">
               {activeJobCount > 0 && (
@@ -288,7 +325,11 @@ const JobsButton = memo(
                 icon={FunnelSimple}
                 active={showOnlyRunning}
                 onClick={() => setShowOnlyRunning(!showOnlyRunning)}
-                title={showOnlyRunning ? "Toutes les tâches" : "Tâches actives uniquement"}
+                title={
+                  showOnlyRunning
+                    ? "Toutes les tâches"
+                    : "Tâches actives uniquement"
+                }
               />
 
               {onOpenTasks && (
@@ -312,7 +353,10 @@ const JobsButton = memo(
                 height:
                   filteredJobs.length === 0
                     ? CARD_HEIGHT + 16
-                    : Math.min(filteredJobs.length * (CARD_HEIGHT + 8) + 16, 400),
+                    : Math.min(
+                        filteredJobs.length * (CARD_HEIGHT + 8) + 16,
+                        400,
+                      ),
               }}
               transition={{
                 duration: 0.2,
@@ -386,14 +430,23 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
 
   const recentThreads = useMemo(() => {
     return [...threads]
-      .toSorted((a, b) => (b.updatedAt ?? b.createdAt) - (a.updatedAt ?? a.createdAt))
+      .toSorted(
+        (a, b) => (b.updatedAt ?? b.createdAt) - (a.updatedAt ?? a.createdAt),
+      )
       .slice(0, 8);
   }, [threads]);
 
   // Job and sync status
   useSyncCount();
-  const { activeJobCount, hasRunningJobs, jobs, pause, resume, cancel, getSpeedHistory } =
-    useJobsContext();
+  const {
+    activeJobCount,
+    hasRunningJobs,
+    jobs,
+    pause,
+    resume,
+    cancel,
+    getSpeedHistory,
+  } = useJobsContext();
 
   const { currentSpaceId, setCurrentSpace } = useSidebarStore();
   const { data: spacesData } = useSpaces();
@@ -423,7 +476,8 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
     }
   }, [libraries, currentLibraryId, client, platform]);
 
-  const currentSpace = spaces?.find((s) => s.id === currentSpaceId) ?? spaces?.[0];
+  const currentSpace =
+    spaces?.find((s) => s.id === currentSpaceId) ?? spaces?.[0];
 
   useEffect(() => {
     if (currentSpace && currentSpace.id !== currentSpaceId) {
@@ -457,7 +511,9 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
     location.pathname.startsWith("/location");
   const isModelsActive = location.pathname.startsWith("/models");
   const isStudioActive = location.pathname.startsWith("/studio");
-  const isTerminalActive = location.pathname.startsWith(browserOnlyRoutes.terminal);
+  const isTerminalActive = location.pathname.startsWith(
+    browserOnlyRoutes.terminal,
+  );
   const isCreatorActive = location.pathname.startsWith(desktopRoutes.creator);
   const isAdminActive = location.pathname.startsWith(desktopRoutes.admin);
   const showCreator = useKitVisible("creator") || isCreatorActive;
@@ -486,7 +542,8 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
     if (!settingsSearch.trim()) return SETTINGS_SECTIONS;
     const q = settingsSearch.toLowerCase();
     return SETTINGS_SECTIONS.filter(
-      (s) => s.label.toLowerCase().includes(q) || s.id.toLowerCase().includes(q),
+      (s) =>
+        s.label.toLowerCase().includes(q) || s.id.toLowerCase().includes(q),
     );
   }, [settingsSearch]);
 
@@ -507,7 +564,11 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
           )}
         >
           {/* Switcher en haut avec avatar Aphrody */}
-          <SpaceSwitcher spaces={spaces} currentSpace={currentSpace} onSwitch={setCurrentSpace} />
+          <SpaceSwitcher
+            spaces={spaces}
+            currentSpace={currentSpace}
+            onSwitch={setCurrentSpace}
+          />
 
           {/* Les 4 zones principales (icônes M3, 48dp, label-large 18px) */}
           <div className="flex flex-col gap-1 border-b border-outline-variant/30 pb-2">
@@ -517,7 +578,8 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                   ? location.pathname === "/"
                   : location.pathname === route ||
                     location.pathname.startsWith(`${route}/`) ||
-                    (route === "/material-3" && location.pathname.startsWith("/showcase"));
+                    (route === "/material-3" &&
+                      location.pathname.startsWith("/showcase"));
               return (
                 <button
                   key={route}
@@ -531,7 +593,10 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                       : "text-on-surface-variant hover:bg-secondary-container/20",
                   )}
                 >
-                  <span className="material-symbol text-title-medium" aria-hidden="true">
+                  <span
+                    className="material-symbol text-title-medium"
+                    aria-hidden="true"
+                  >
                     {icon}
                   </span>
                   <span className="truncate">{label}</span>
@@ -556,7 +621,9 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
               >
                 chat
               </span>
-              <span className="truncate">{language === "fr" ? "Chat" : "Chat"}</span>
+              <span className="truncate">
+                {language === "fr" ? "Chat" : "Chat"}
+              </span>
             </button>
 
             <button
@@ -577,7 +644,9 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
               >
                 folder_open
               </span>
-              <span className="truncate">{language === "fr" ? "Fichiers" : "Files"}</span>
+              <span className="truncate">
+                {language === "fr" ? "Fichiers" : "Files"}
+              </span>
             </button>
 
             {platform.platform !== "tauri" && (
@@ -620,7 +689,9 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
               >
                 model_training
               </span>
-              <span className="truncate">{language === "fr" ? "Modèles" : "Models"}</span>
+              <span className="truncate">
+                {language === "fr" ? "Modèles" : "Models"}
+              </span>
             </button>
             <button
               type="button"
@@ -661,7 +732,9 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                 >
                   brush
                 </span>
-                <span className="truncate">{language === "fr" ? "Créateur" : "Creator"}</span>
+                <span className="truncate">
+                  {language === "fr" ? "Créateur" : "Creator"}
+                </span>
               </button>
             )}
             {showAdmin && (
@@ -714,7 +787,9 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                         onClick={() => setSettingsSearch("")}
                         className="text-on-surface-variant hover:text-on-surface"
                       >
-                        <span className="material-symbol text-title-small">close</span>
+                        <span className="material-symbol text-title-small">
+                          close
+                        </span>
                       </button>
                     )}
                   </div>
@@ -728,7 +803,9 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                       <button
                         key={section.id}
                         type="button"
-                        onClick={() => navigate(`/settings?section=${section.id}`)}
+                        onClick={() =>
+                          navigate(`/settings?section=${section.id}`)
+                        }
                         className={clsx(
                           "flex h-12 w-full items-center gap-3 rounded-full px-3 text-label-large font-medium transition-colors cursor-pointer text-left select-none",
                           isSelected
@@ -759,7 +836,9 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                   }}
                   className="flex h-12 w-full items-center justify-center gap-2.5 rounded-full bg-secondary-container hover:bg-secondary-container/80 text-on-secondary-container px-4 text-label-large font-medium transition-colors cursor-pointer select-none"
                 >
-                  <span className="material-symbol text-title-small">edit_square</span>
+                  <span className="material-symbol text-title-small">
+                    edit_square
+                  </span>
                   <span>Nouveau chat</span>
                 </button>
 
@@ -782,10 +861,14 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                               <span className="material-symbol text-title-small text-primary shrink-0">
                                 folder
                               </span>
-                              <span className="truncate font-semibold">{project.name}</span>
+                              <span className="truncate font-semibold">
+                                {project.name}
+                              </span>
                             </div>
                             <span className="material-symbol text-title-small text-on-surface-variant">
-                              {project.expanded ? "expand_more" : "chevron_right"}
+                              {project.expanded
+                                ? "expand_more"
+                                : "chevron_right"}
                             </span>
                           </button>
 
@@ -816,7 +899,9 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                                       )}
                                     >
                                       <span className="truncate">
-                                        {thread.name || thread.preview || "Sans titre"}
+                                        {thread.name ||
+                                          thread.preview ||
+                                          "Sans titre"}
                                       </span>
                                       {isUnread && (
                                         <span className="size-2 rounded-full bg-primary shrink-0 ml-1.5" />
@@ -878,7 +963,11 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                 <button
                   type="button"
                   onClick={() => navigate("/redundancy")}
-                  aria-current={location.pathname.startsWith("/redundancy") ? "page" : undefined}
+                  aria-current={
+                    location.pathname.startsWith("/redundancy")
+                      ? "page"
+                      : undefined
+                  }
                   className={clsx(
                     "flex min-h-10 w-full items-center gap-2 rounded-full px-3 text-left text-body-large outline-none focus-visible:ring-2 focus-visible:ring-primary",
                     location.pathname.startsWith("/redundancy")
@@ -886,7 +975,10 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                       : "text-on-surface-variant hover:bg-secondary-container/20 hover:text-on-surface",
                   )}
                 >
-                  <span className="material-symbol text-title-medium" aria-hidden="true">
+                  <span
+                    className="material-symbol text-title-medium"
+                    aria-hidden="true"
+                  >
                     verified_user
                   </span>
                   <span>{language === "fr" ? "Redondance" : "Redundancy"}</span>
@@ -990,7 +1082,9 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                 type="button"
                 onClick={() => setLanguage(language === "fr" ? "en" : "fr")}
                 className="flex h-9 items-center justify-center rounded-full px-2.5 text-[13px] font-semibold text-on-surface-variant hover:text-on-surface bg-surface-container-high hover:bg-surface-container-highest transition-colors cursor-pointer border border-outline-variant/40"
-                title={language === "fr" ? "Switch to English" : "Passer en Français"}
+                title={
+                  language === "fr" ? "Switch to English" : "Passer en Français"
+                }
               >
                 {language.toUpperCase()}
               </button>

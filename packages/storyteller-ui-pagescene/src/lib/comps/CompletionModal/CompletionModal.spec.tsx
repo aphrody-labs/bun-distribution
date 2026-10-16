@@ -1,5 +1,15 @@
-import { stubGlobal, restoreGlobals } from "../../../../../../../tools/testing/globals";
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  stubGlobal,
+  restoreGlobals,
+} from "../../../../../../../tools/testing/globals";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "bun:test";
 import { CompletionModal } from "./CompletionModal";
 import { EngineContext } from "../../contexts/EngineContext";
@@ -38,7 +48,9 @@ it("uploads only on click and retains the video until its lightbox is ready", as
   renderModal({ uploadMedia, openMediaLightbox });
   expect(uploadMedia).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole("button", { name: "Upload & continue" }));
-  await waitFor(() => expect(openMediaLightbox).toHaveBeenCalledWith("mf_video", "video"));
+  await waitFor(() =>
+    expect(openMediaLightbox).toHaveBeenCalledWith("mf_video", "video"),
+  );
   expect(uploadMedia).toHaveBeenCalledWith({
     kind: "video",
     blob: artifact.blob,
@@ -46,9 +58,10 @@ it("uploads only on click and retains the video until its lightbox is ready", as
   });
   expect(usePageSceneStore.getState().producedArtifact).toBe(artifact);
   expect(mocks.revoke).not.toHaveBeenCalled();
-  expect((screen.getByRole("button", { name: "Discard" }) as HTMLButtonElement).disabled).toBe(
-    true,
-  );
+  expect(
+    (screen.getByRole("button", { name: "Discard" }) as HTMLButtonElement)
+      .disabled,
+  ).toBe(true);
   await act(async () => finishPreview());
   expect(usePageSceneStore.getState().producedArtifact).toBeNull();
   expect(mocks.revoke).toHaveBeenCalledWith(artifact.objectUrl);
@@ -58,7 +71,9 @@ it("shows missing upload support instead of silently ignoring the click", async 
   const artifact = setArtifact("video");
   renderModal({});
   fireEvent.click(screen.getByRole("button", { name: "Upload & continue" }));
-  expect((await screen.findByRole("alert")).textContent).toContain("Uploading is unavailable");
+  expect((await screen.findByRole("alert")).textContent).toContain(
+    "Uploading is unavailable",
+  );
   expect(usePageSceneStore.getState().producedArtifact).toBe(artifact);
   expect(console.error).toHaveBeenCalled();
 });
@@ -72,10 +87,14 @@ it("keeps a failed upload available and retries it", async () => {
   const openMediaLightbox = vi.fn();
   renderModal({ uploadMedia, openMediaLightbox });
   fireEvent.click(screen.getByRole("button", { name: "Upload & continue" }));
-  expect((await screen.findByRole("alert")).textContent).toContain("Connection lost");
+  expect((await screen.findByRole("alert")).textContent).toContain(
+    "Connection lost",
+  );
   expect(usePageSceneStore.getState().producedArtifact).toBe(artifact);
   fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-  await waitFor(() => expect(usePageSceneStore.getState().producedArtifact).toBeNull());
+  await waitFor(() =>
+    expect(usePageSceneStore.getState().producedArtifact).toBeNull(),
+  );
   expect(uploadMedia).toHaveBeenCalledTimes(2);
   expect(openMediaLightbox).toHaveBeenCalledWith("mf_video", "video");
 });
@@ -91,7 +110,9 @@ it("retries preview failures without uploading the recording twice", async () =>
   fireEvent.click(screen.getByRole("button", { name: "Upload & continue" }));
   await screen.findByRole("alert");
   fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-  await waitFor(() => expect(usePageSceneStore.getState().producedArtifact).toBeNull());
+  await waitFor(() =>
+    expect(usePageSceneStore.getState().producedArtifact).toBeNull(),
+  );
   expect(uploadMedia).toHaveBeenCalledTimes(1);
   expect(openMediaLightbox).toHaveBeenCalledTimes(2);
 });
@@ -101,7 +122,9 @@ it("still uploads captured images automatically", async () => {
   const uploadMedia = vi.fn().mockResolvedValue("mf_image");
   const openMediaLightbox = vi.fn();
   renderModal({ uploadMedia, openMediaLightbox });
-  await waitFor(() => expect(usePageSceneStore.getState().producedArtifact).toBeNull());
+  await waitFor(() =>
+    expect(usePageSceneStore.getState().producedArtifact).toBeNull(),
+  );
   expect(uploadMedia).toHaveBeenCalledWith({
     kind: "image",
     blob: artifact.blob,
@@ -121,7 +144,9 @@ function renderModal(adapter: Partial<Editor["adapter"]>) {
 function setArtifact(kind: "image" | "video"): ProducedArtifact {
   const artifact: ProducedArtifact = {
     kind,
-    blob: new Blob(["rendered scene"], { type: kind === "video" ? "video/mp4" : "image/png" }),
+    blob: new Blob(["rendered scene"], {
+      type: kind === "video" ? "video/mp4" : "image/png",
+    }),
     objectUrl: "blob:scene-output",
     fileName: kind === "video" ? "recording.mp4" : "capture.png",
     mimeType: kind === "video" ? "video/mp4" : "image/png",

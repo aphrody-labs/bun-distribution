@@ -14,7 +14,10 @@ const run = async (args: string[]) => {
     env: { ...process.env, NO_COLOR: "1" },
   });
   const timer = setTimeout(() => p.kill(), 20_000);
-  const [o, e] = await Promise.all([new Response(p.stdout).text(), new Response(p.stderr).text()]);
+  const [o, e] = await Promise.all([
+    new Response(p.stdout).text(),
+    new Response(p.stderr).text(),
+  ]);
   clearTimeout(timer);
   return strip(o || e);
 };
@@ -53,7 +56,9 @@ const SKIP = new Set([
 ]);
 const src = await Bun.file(entry).text();
 const commands = [
-  ...new Set([...src.matchAll(/^\s{2,4}case "([a-z][a-z0-9-]*)":/gm)].map((m) => m[1]!)),
+  ...new Set(
+    [...src.matchAll(/^\s{2,4}case "([a-z][a-z0-9-]*)":/gm)].map((m) => m[1]!),
+  ),
 ].filter((c) => !SKIP.has(c));
 const out = [
   "# yolo CLI reference",
@@ -69,8 +74,18 @@ const out = [
 // desktop-runtime reads `--help`, not `-h`.
 const helpFlag = (c: string) => (c === "desktop-runtime" ? "--help" : "-h");
 for (const c of commands)
-  out.push("", `## yolo ${c} -h`, "", "```", await run([c, helpFlag(c)]), "```");
-const infra = Bun.spawnSync(["aphrody-infra", "--help"], { windowsHide: true, cwd: root })
+  out.push(
+    "",
+    `## yolo ${c} -h`,
+    "",
+    "```",
+    await run([c, helpFlag(c)]),
+    "```",
+  );
+const infra = Bun.spawnSync(["aphrody-infra", "--help"], {
+  windowsHide: true,
+  cwd: root,
+})
   .stdout.toString()
   .trimEnd();
 if (infra)

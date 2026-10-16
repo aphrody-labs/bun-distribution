@@ -141,9 +141,7 @@ export function WaveformAudioPlayer({
           barRadius: 2,
           normalize: true,
           interact: true,
-          ...(cached
-            ? { peaks: cached.peaks, duration: cached.duration }
-            : {}),
+          ...(cached ? { peaks: cached.peaks, duration: cached.duration } : {}),
         });
         waveSurferRef.current = ws;
 
@@ -299,7 +297,8 @@ export function WaveformAudioPlayer({
       <span
         className={`shrink-0 tabular-nums text-white/70 ${compact ? "text-[11px]" : "text-xs"}`}
       >
-        {formatTime(currentTime)} / {duration > 0 ? formatTime(duration) : "-:--"}
+        {formatTime(currentTime)} /{" "}
+        {duration > 0 ? formatTime(duration) : "-:--"}
       </span>
 
       <div className="relative shrink-0">

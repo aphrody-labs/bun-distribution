@@ -30,8 +30,8 @@ import {
 
 const pkgDir = join(import.meta.dir, "..");
 const require = createRequire(join(pkgDir, "package.json"));
-const nativeLib = ["bun_rs.dll", "libbun_rs.so", "libbun_rs.dylib"].some((name) =>
-  existsSync(join(pkgDir, "../../target/release", name)),
+const nativeLib = ["bun_rs.dll", "libbun_rs.so", "libbun_rs.dylib"].some(
+  (name) => existsSync(join(pkgDir, "../../target/release", name)),
 );
 
 describe("withM3", () => {
@@ -42,11 +42,16 @@ describe("withM3", () => {
       poweredByHeader: false,
     });
     expect(config.transpilePackages).toContain("my-lib");
-    for (const name of M3_TRANSPILE_PACKAGES) expect(config.transpilePackages).toContain(name);
+    for (const name of M3_TRANSPILE_PACKAGES)
+      expect(config.transpilePackages).toContain(name);
     expect(config.reactStrictMode).toBe(false);
     expect(config.poweredByHeader).toBe(false);
-    expect(config.serverExternalPackages).toEqual([...M3_SERVER_EXTERNAL_PACKAGES]);
-    expect(config.experimental?.optimizePackageImports).toContain("@aphrody/m3-primitives");
+    expect(config.serverExternalPackages).toEqual([
+      ...M3_SERVER_EXTERNAL_PACKAGES,
+    ]);
+    expect(config.experimental?.optimizePackageImports).toContain(
+      "@aphrody/m3-primitives",
+    );
   });
 
   test("defaults strict mode on, deduplicates and never lists a package twice", () => {
@@ -55,9 +60,9 @@ describe("withM3", () => {
       serverExternalPackages: ["@aphrody/m3-ai", "sharp"],
     });
     expect(config.reactStrictMode).toBe(true);
-    expect(config.transpilePackages!.filter((name) => name === "@aphrody/m3-theme")).toHaveLength(
-      1,
-    );
+    expect(
+      config.transpilePackages!.filter((name) => name === "@aphrody/m3-theme"),
+    ).toHaveLength(1);
     // A transpiled package can never be external at the same time (Next rejects the overlap).
     expect(config.serverExternalPackages).toEqual(["sharp", "@aphrody/bun"]);
   });
@@ -67,9 +72,14 @@ describe("withM3", () => {
       { turbopack: { resolveExtensions: [".tsx", ".ts", ".js"] } },
       { turbopackRoot: "/repo" },
     );
-    expect(config.turbopack).toEqual({ resolveExtensions: [".tsx", ".ts", ".js"], root: "/repo" });
+    expect(config.turbopack).toEqual({
+      resolveExtensions: [".tsx", ".ts", ".js"],
+      root: "/repo",
+    });
     expect(withM3({}).turbopack).toBeUndefined();
-    expect(withM3({}, { optimizePackageImports: false }).experimental).toBeUndefined();
+    expect(
+      withM3({}, { optimizePackageImports: false }).experimental,
+    ).toBeUndefined();
   });
 });
 
@@ -80,22 +90,30 @@ describe("theme mode", () => {
     expect(parseThemeMode("bogus")).toBe("system");
     expect(parseThemeMode(undefined, "dark")).toBe("dark");
     expect(colorSchemeFor("system")).toBe("light dark");
-    expect(themeCookie("dark")).toBe("m3-theme=dark; path=/; max-age=31536000; samesite=lax");
+    expect(themeCookie("dark")).toBe(
+      "m3-theme=dark; path=/; max-age=31536000; samesite=lax",
+    );
   });
 });
 
 describe("metadata and viewport", () => {
   test("theme-color is the scheme surface in both modes", () => {
     const colors = m3ThemeColors({ seed: "#0b57d0" });
-    expect(colors.light).toBe(schemeFromSeed("#0b57d0")["--md-sys-color-surface"]!);
-    expect(colors.dark).toBe(schemeFromSeed("#0b57d0", { dark: true })["--md-sys-color-surface"]!);
+    expect(colors.light).toBe(
+      schemeFromSeed("#0b57d0")["--md-sys-color-surface"]!,
+    );
+    expect(colors.dark).toBe(
+      schemeFromSeed("#0b57d0", { dark: true })["--md-sys-color-surface"]!,
+    );
     const viewport = generateM3Viewport({ seed: "#0b57d0" });
     expect(viewport.colorScheme).toBe("light dark");
     expect(viewport.themeColor).toEqual([
       { media: "(prefers-color-scheme: light)", color: colors.light },
       { media: "(prefers-color-scheme: dark)", color: colors.dark },
     ]);
-    expect(generateM3Viewport({ mode: "dark" }).themeColor).toBe(m3ThemeColors().dark);
+    expect(generateM3Viewport({ mode: "dark" }).themeColor).toBe(
+      m3ThemeColors().dark,
+    );
   });
 
   test("metadata has a title template and merges overrides", () => {
@@ -118,7 +136,9 @@ describe("m3Css", () => {
     expect(result.css).toBe(
       readFileSync(require.resolve("@aphrody/m3-theme/tailwind.css"), "utf8"),
     );
-    expect(await m3Css({ sheet: "tokens" }, { noFfi: true })).toContain("--md-sys-color-primary:");
+    expect(await m3Css({ sheet: "tokens" }, { noFfi: true })).toContain(
+      "--md-sys-color-primary:",
+    );
   });
 
   test("the JS scheme fallback equals material-color-utilities", async () => {
@@ -127,7 +147,9 @@ describe("m3Css", () => {
       { noFfi: true },
     );
     expect(result.source).toBe("js");
-    expect(rootDeclarations(result.css)).toEqual(schemeFromSeed("#b3261e", { dark: true }));
+    expect(rootDeclarations(result.css)).toEqual(
+      schemeFromSeed("#b3261e", { dark: true }),
+    );
   });
 
   test.skipIf(!isBunRuntime() || !nativeLib)(
@@ -148,7 +170,9 @@ describe("m3Css", () => {
   test("the inline scheme sheet wires both modes to the classes and the media query", async () => {
     const { css } = await m3SchemeCss({ seed: "#6750a4" }, { noFfi: true });
     expect(css).toContain(":root {");
-    expect(css).toContain("@media (prefers-color-scheme: dark) {\n  :root:not(.light) {");
+    expect(css).toContain(
+      "@media (prefers-color-scheme: dark) {\n  :root:not(.light) {",
+    );
     expect(css).toContain(":root.dark {");
     expect(css).toContain(":root.light {");
     expect(css.match(/--md-sys-color-primary:/g)).toHaveLength(4);

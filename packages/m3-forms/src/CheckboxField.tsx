@@ -12,7 +12,13 @@ export interface CheckboxFieldProps {
   required?: boolean;
 }
 
-function CheckboxField({ name, label, description, disabled, required }: CheckboxFieldProps) {
+function CheckboxField({
+  name,
+  label,
+  description,
+  disabled,
+  required,
+}: CheckboxFieldProps) {
   return (
     <FormField
       name={name}
@@ -32,10 +38,16 @@ function CheckboxField({ name, label, description, disabled, required }: Checkbo
                 onBlur={field.onBlur}
                 disabled={disabled ?? field.disabled}
                 required={required}
-                className={fieldState.error ? "border-error accent-error" : undefined}
+                className={
+                  fieldState.error ? "border-error accent-error" : undefined
+                }
               />
             </FormControl>
-            <FieldText label={label} description={description} required={required} />
+            <FieldText
+              label={label}
+              description={description}
+              required={required}
+            />
           </div>
         </FormItem>
       )}

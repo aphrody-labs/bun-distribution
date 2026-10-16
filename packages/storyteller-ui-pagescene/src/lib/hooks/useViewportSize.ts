@@ -10,11 +10,12 @@ export const useViewportSize = (): { width: number; height: number } => {
   const editor = useContext(EngineContext);
   const adapterGet = editor?.adapter.getViewportSize;
 
-  const [size, setSize] = useState(() =>
-    adapterGet?.() ?? {
-      width: typeof window !== "undefined" ? window.innerWidth : 0,
-      height: typeof window !== "undefined" ? window.innerHeight : 0,
-    },
+  const [size, setSize] = useState(
+    () =>
+      adapterGet?.() ?? {
+        width: typeof window !== "undefined" ? window.innerWidth : 0,
+        height: typeof window !== "undefined" ? window.innerHeight : 0,
+      },
   );
 
   useEffect(() => {

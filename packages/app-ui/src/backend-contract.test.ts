@@ -11,9 +11,9 @@ import { parseAgentInventory } from "./backend-inventory";
 
 const originalFetch = globalThis.fetch;
 beforeEach(() => {
-  (window as unknown as { happyDOM: { setURL(url: string): void } }).happyDOM.setURL(
-    "http://localhost/?backend=http",
-  );
+  (
+    window as unknown as { happyDOM: { setURL(url: string): void } }
+  ).happyDOM.setURL("http://localhost/?backend=http");
   resetAphrodyInitializationForTesting();
 });
 afterEach(() => {
@@ -22,7 +22,8 @@ afterEach(() => {
 });
 
 function respond(body: unknown, status = 200) {
-  globalThis.fetch = (async () => Response.json(body, { status })) as typeof fetch;
+  globalThis.fetch = (async () =>
+    Response.json(body, { status })) as typeof fetch;
 }
 
 test("RPC rejects a missing result instead of claiming success", async () => {
@@ -36,18 +37,24 @@ test("approval replies propagate both HTTP and JSON-RPC errors", async () => {
   respond({}, 503);
   await expect(aphrodyReply({ id: 1, result: {} })).rejects.toThrow("503");
   respond({ error: { message: "Approval expired" } });
-  await expect(aphrodyReply({ id: 1, result: {} })).rejects.toThrow("Approval expired");
+  await expect(aphrodyReply({ id: 1, result: {} })).rejects.toThrow(
+    "Approval expired",
+  );
 });
 
 test("shared initialization retries a failed connection and coalesces concurrent routes", async () => {
   respond({ error: { message: "Service unavailable" } });
-  await expect(ensureAphrodyInitialized()).rejects.toThrow("Service unavailable");
+  await expect(ensureAphrodyInitialized()).rejects.toThrow(
+    "Service unavailable",
+  );
   const methods: string[] = [];
   globalThis.fetch = (async (_url: unknown, options: RequestInit) => {
     const request = JSON.parse(String(options.body)) as { method: string };
     methods.push(request.method);
     return Response.json(
-      request.method === "initialize" ? { result: { serverInfo: { name: "aphrody" } } } : {},
+      request.method === "initialize"
+        ? { result: { serverInfo: { name: "aphrody" } } }
+        : {},
     );
   }) as typeof fetch;
   await Promise.all([ensureAphrodyInitialized(), ensureAphrodyInitialized()]);
@@ -59,7 +66,10 @@ test("shared initialization retries a failed connection and coalesces concurrent
 });
 
 test("inventory preserves empty and unknown states without demonstration data", () => {
-  expect(parseAgentInventory({ data: [] }, { servers: [] })).toEqual({ tools: [], servers: [] });
+  expect(parseAgentInventory({ data: [] }, { servers: [] })).toEqual({
+    tools: [],
+    servers: [],
+  });
   expect(
     parseAgentInventory(
       { data: [{ name: "read_file", description: "Read a file" }] },
@@ -70,7 +80,9 @@ test("inventory preserves empty and unknown states without demonstration data", 
     servers: [{ name: "local", status: "unknown" }],
   });
   expect(() => parseAgentInventory({}, { servers: [] })).toThrow("incomplet");
-  expect(() => parseAgentInventory({ data: [{}] }, { servers: [] })).toThrow("sans nom");
+  expect(() => parseAgentInventory({ data: [{}] }, { servers: [] })).toThrow(
+    "sans nom",
+  );
 });
 
 test("web RPC and approval replies use the app-server root from nested UI routes", async () => {

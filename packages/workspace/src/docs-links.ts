@@ -3,7 +3,8 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { join, dirname, resolve, relative } from "node:path";
 
 /** Default location of the declared third-party documentation trees. */
-export const IMPORTED_UPSTREAM_DOCS_CONFIG = "tools/config/docs/imported-upstream-docs.json";
+export const IMPORTED_UPSTREAM_DOCS_CONFIG =
+  "tools/config/docs/imported-upstream-docs.json";
 
 interface ImportedTree {
   id: string;
@@ -18,7 +19,9 @@ export function importedUpstreamMatcher(
 ): (relativePath: string) => string | undefined {
   const file = resolve(root, configPath);
   if (!existsSync(file)) return () => undefined;
-  const config = JSON.parse(readFileSync(file, "utf8")) as { trees?: ImportedTree[] };
+  const config = JSON.parse(readFileSync(file, "utf8")) as {
+    trees?: ImportedTree[];
+  };
   const trees = (config.trees ?? []).map((tree) => ({
     id: tree.id,
     include: tree.include.map((pattern) => new Bun.Glob(pattern)),
@@ -36,12 +39,15 @@ export function importedUpstreamMatcher(
 }
 
 /** Default location of documents whose backtick-path check is explicitly deferred. */
-export const DOC_PATH_CHECK_DEFERRED_CONFIG = "tools/config/docs/doc-path-check-deferred.json";
+export const DOC_PATH_CHECK_DEFERRED_CONFIG =
+  "tools/config/docs/doc-path-check-deferred.json";
 
 function deferredPathCheckFiles(root: string): Set<string> {
   const file = resolve(root, DOC_PATH_CHECK_DEFERRED_CONFIG);
   if (!existsSync(file)) return new Set();
-  const config = JSON.parse(readFileSync(file, "utf8")) as { deferred?: Array<{ file: string }> };
+  const config = JSON.parse(readFileSync(file, "utf8")) as {
+    deferred?: Array<{ file: string }>;
+  };
   return new Set((config.deferred ?? []).map((entry) => entry.file));
 }
 
@@ -62,20 +68,31 @@ const BACKTICK_PATH = /^[A-Za-z0-9_.@-][A-Za-z0-9_.@+/-]*$/;
  * Extract inline-code spans that name a repository path: no whitespace, no glob or
  * placeholder syntax, at least one `/`, and a first segment that exists at the root.
  */
-export function backtickRepositoryPaths(content: string, rootEntries: Set<string>): string[] {
+export function backtickRepositoryPaths(
+  content: string,
+  rootEntries: Set<string>,
+): string[] {
   const paths: string[] = [];
   const prose = content.replace(/^(```|~~~)[\s\S]*?^\1/gm, "");
   for (const match of prose.matchAll(/(?<!`)`([^`\n]+)`(?!`)/g)) {
     if (
       ABSENT_PATH_SUFFIX.test(
-        prose.slice(match.index! + match[0].length, match.index! + match[0].length + 16),
+        prose.slice(
+          match.index! + match[0].length,
+          match.index! + match[0].length + 16,
+        ),
       )
     )
       continue;
     let value = match[1]!.trim();
     value = value.replace(/:\d+(?:[-:]\d+)?$/, "").replace(/#.*$/, "");
     if (value.startsWith(".//")) value = value.slice(2);
-    if (!BACKTICK_PATH.test(value) || !value.includes("/") || value.includes("//")) continue;
+    if (
+      !BACKTICK_PATH.test(value) ||
+      !value.includes("/") ||
+      value.includes("//")
+    )
+      continue;
     if (value.includes("...") || MCP_TOOL_METHODS.has(value)) continue;
     const first = value.split("/", 1)[0]!;
     if (!rootEntries.has(first)) continue;
@@ -119,11 +136,16 @@ export function markdownLinkDestinations(content: string): string[] {
   const labels = /!?\[(?:\\.|[^\]\\])*\]\(/g;
   while (labels.exec(content) !== null) {
     let cursor = labels.lastIndex;
-    while (/\s/.test(content[cursor] ?? "") && cursor < content.length) cursor++;
+    while (/\s/.test(content[cursor] ?? "") && cursor < content.length)
+      cursor++;
     let destination = "";
     if (content[cursor] === "<") {
       const start = ++cursor;
-      while (cursor < content.length && content[cursor] !== ">" && content[cursor] !== "\n") {
+      while (
+        cursor < content.length &&
+        content[cursor] !== ">" &&
+        content[cursor] !== "\n"
+      ) {
         cursor += content[cursor] === "\\" ? 2 : 1;
       }
       if (content[cursor] !== ">") continue;
@@ -148,9 +170,10 @@ export function markdownLinkDestinations(content: string): string[] {
       destination = content.slice(start, cursor);
     }
     // A destination may be followed by a quoted or parenthesized title.
-    const ending = /^(?:\s+(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\((?:\\.|[^)\\])*\)))?\s*\)/.exec(
-      content.slice(cursor),
-    );
+    const ending =
+      /^(?:\s+(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\((?:\\.|[^)\\])*\)))?\s*\)/.exec(
+        content.slice(cursor),
+      );
     if (!ending) continue;
     links.push(destination.replace(/\\([\\()[\]<>])/g, "$1"));
     labels.lastIndex = cursor + ending[0].length;
@@ -158,11 +181,20 @@ export function markdownLinkDestinations(content: string): string[] {
   return links;
 }
 
-function documentationRouteCandidates(docsDir: string, route: string): string[] {
+function documentationRouteCandidates(
+  docsDir: string,
+  route: string,
+): string[] {
   const relativeRoute = route.replace(/^\/+/, "");
   if (relativeRoute.split(/[\\/]/).includes("..")) return [];
   const page = join(docsDir, relativeRoute);
-  return [page, `${page}.md`, `${page}.mdx`, join(page, "index.md"), join(page, "index.mdx")];
+  return [
+    page,
+    `${page}.md`,
+    `${page}.mdx`,
+    join(page, "index.md"),
+    join(page, "index.mdx"),
+  ];
 }
 
 export async function runDocsLinks(args: string[]): Promise<number> {
@@ -180,11 +212,13 @@ export async function runDocsLinks(args: string[]): Promise<number> {
     else if (arg === "--docs") docs = args[++index] ?? "";
     else if (arg === "--exclude-file") {
       const value = args[++index];
-      if (!value || value.startsWith("--")) throw new Error("--exclude-file requires a path");
+      if (!value || value.startsWith("--"))
+        throw new Error("--exclude-file requires a path");
       excludedFiles.push(value);
     } else if (arg === "--imported-config") {
       const value = args[++index];
-      if (!value || value.startsWith("--")) throw new Error("--imported-config requires a path");
+      if (!value || value.startsWith("--"))
+        throw new Error("--imported-config requires a path");
       importedConfig = value;
     } else if (arg === "--no-backtick-paths") backtickPaths = false;
     else if (arg === "--scope") {
@@ -210,13 +244,16 @@ export async function runDocsLinks(args: string[]): Promise<number> {
   if (scope === "repository") {
     const rootEntries = await readdir(ROOT_DIR, { withFileTypes: true });
     for (const entry of rootEntries)
-      if (entry.isFile() && entry.name.endsWith(".md")) files.push(join(ROOT_DIR, entry.name));
+      if (entry.isFile() && entry.name.endsWith(".md"))
+        files.push(join(ROOT_DIR, entry.name));
   }
   const excluded = new Set<string>();
   for (const requested of excludedFiles) {
     const file = resolve(ROOT_DIR, requested);
     if (!files.includes(file))
-      throw new Error(`Excluded file is not an inventoried Markdown document: ${requested}`);
+      throw new Error(
+        `Excluded file is not an inventoried Markdown document: ${requested}`,
+      );
     excluded.add(file);
   }
   const isImported = importedUpstreamMatcher(ROOT_DIR, importedConfig);
@@ -235,7 +272,10 @@ export async function runDocsLinks(args: string[]): Promise<number> {
     const rootRelative = relative(ROOT_DIR, file).replaceAll("\\", "/");
     const importedTree = isImported(rootRelative);
     if (importedTree) {
-      importedSkipped.set(importedTree, (importedSkipped.get(importedTree) ?? 0) + 1);
+      importedSkipped.set(
+        importedTree,
+        (importedSkipped.get(importedTree) ?? 0) + 1,
+      );
       continue;
     }
     checkedFiles.push(rootRelative);
@@ -254,14 +294,18 @@ export async function runDocsLinks(args: string[]): Promise<number> {
     ) {
       for (const path of backtickRepositoryPaths(content, rootEntries)) {
         totalBacktickPaths++;
-        if (pathExists(join(ROOT_DIR, path)) || pathExists(join(fileDir, path))) continue;
+        if (pathExists(join(ROOT_DIR, path)) || pathExists(join(fileDir, path)))
+          continue;
         deadPaths.push({ file: rootRelative, path });
-        if (!json) console.error(`❌ Chemin mort dans [${rootRelative}] : \`${path}\``);
+        if (!json)
+          console.error(`❌ Chemin mort dans [${rootRelative}] : \`${path}\``);
       }
     }
 
     // Retirer les blocs de code (fenced et inline) pour éviter de valider de faux liens dans des exemples de code
-    const cleanContent = content.replace(/```[\s\S]*?```/g, "").replace(/`[^`\n]+`/g, "");
+    const cleanContent = content
+      .replace(/```[\s\S]*?```/g, "")
+      .replace(/`[^`\n]+`/g, "");
 
     for (const linkUrl of markdownLinkDestinations(cleanContent)) {
       // Ignorer les liens externes
@@ -284,7 +328,11 @@ export async function runDocsLinks(args: string[]): Promise<number> {
         // Strip URL metadata before decoding so %23 and %3F remain filename characters.
         path = decodeURIComponent(linkUrl.split(/[?#]/, 1)[0] ?? "");
       } catch {
-        findings.push({ file: rootRelative, link: linkUrl, target: "<invalid URL encoding>" });
+        findings.push({
+          file: rootRelative,
+          link: linkUrl,
+          target: "<invalid URL encoding>",
+        });
         brokenLinks++;
         continue;
       }
@@ -301,7 +349,11 @@ export async function runDocsLinks(args: string[]): Promise<number> {
       const exists = (await Promise.all(targets.map(verifyPath))).some(Boolean);
       if (!exists) {
         const targetPath = targets[0] ?? "<invalid route>";
-        findings.push({ file: rootRelative, link: linkUrl, target: targetPath });
+        findings.push({
+          file: rootRelative,
+          link: linkUrl,
+          target: targetPath,
+        });
         if (!json)
           console.error(
             `❌ Lien cassé dans [${rootRelative}] : "${linkUrl}" (Cible non trouvée: ${targetPath})`,
@@ -318,7 +370,9 @@ export async function runDocsLinks(args: string[]): Promise<number> {
           scanned: files.length,
           checked: checkedFiles.length,
           checkedFiles,
-          excluded: [...excluded].map((file) => relative(ROOT_DIR, file).replaceAll("\\", "/")),
+          excluded: [...excluded].map((file) =>
+            relative(ROOT_DIR, file).replaceAll("\\", "/"),
+          ),
           importedSkipped: Object.fromEntries(importedSkipped),
           links: totalLinks,
           broken: brokenLinks,
@@ -340,9 +394,13 @@ export async function runDocsLinks(args: string[]): Promise<number> {
     console.log(`   - Chemins \`code\` vérifiés : ${totalBacktickPaths}`);
     console.log(`   - Chemins \`code\` morts    : ${deadPaths.length}`);
     for (const [tree, count] of importedSkipped)
-      console.log(`   - Arbre amont importé ignoré (${tree}) : ${count} documents`);
+      console.log(
+        `   - Arbre amont importé ignoré (${tree}) : ${count} documents`,
+      );
     for (const file of excluded)
-      console.log(`   - Fichier exclu explicitement : ${relative(ROOT_DIR, file)}`);
+      console.log(
+        `   - Fichier exclu explicitement : ${relative(ROOT_DIR, file)}`,
+      );
   }
 
   if (brokenLinks > 0 || deadPaths.length > 0) {

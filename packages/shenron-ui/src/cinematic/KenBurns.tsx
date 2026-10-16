@@ -10,59 +10,59 @@ import type { CSSProperties } from "react";
  * (et sa config de domaines distants) est superflue.
  */
 export function KenBurns({
-	src,
-	alt = "",
-	variant = "default",
-	overlay = "bottom",
-	blur = false,
-	grain = true,
-	className = "",
-	style,
+  src,
+  alt = "",
+  variant = "default",
+  overlay = "bottom",
+  blur = false,
+  grain = true,
+  className = "",
+  style,
 }: {
-	src: string;
-	alt?: string;
-	/** rythme/origine du mouvement — varie pour casser la répétition entre pages */
-	variant?: "default" | "slow" | "rev";
-	/** type de dégradé d'assombrissement posé sur l'image */
-	overlay?: "bottom" | "full" | "sides" | "none";
-	/** flou de fond (backdrop héro derrière un contenu net) */
-	blur?: boolean;
-	grain?: boolean;
-	className?: string;
-	style?: CSSProperties;
+  src: string;
+  alt?: string;
+  /** rythme/origine du mouvement — varie pour casser la répétition entre pages */
+  variant?: "default" | "slow" | "rev";
+  /** type de dégradé d'assombrissement posé sur l'image */
+  overlay?: "bottom" | "full" | "sides" | "none";
+  /** flou de fond (backdrop héro derrière un contenu net) */
+  blur?: boolean;
+  grain?: boolean;
+  className?: string;
+  style?: CSSProperties;
 }) {
-	const kb =
-		variant === "slow"
-			? "ken-burns ken-burns-slow"
-			: variant === "rev"
-				? "ken-burns ken-burns-rev"
-				: "ken-burns";
+  const kb =
+    variant === "slow"
+      ? "ken-burns ken-burns-slow"
+      : variant === "rev"
+        ? "ken-burns ken-burns-rev"
+        : "ken-burns";
 
-	const overlayClass =
-		overlay === "full"
-			? "bg-gradient-to-t from-black via-black/70 to-black/40"
-			: overlay === "bottom"
-				? "bg-gradient-to-t from-black via-black/55 to-transparent"
-				: overlay === "sides"
-					? "bg-gradient-to-r from-black/85 via-black/30 to-black/70"
-					: "";
+  const overlayClass =
+    overlay === "full"
+      ? "bg-gradient-to-t from-black via-black/70 to-black/40"
+      : overlay === "bottom"
+        ? "bg-gradient-to-t from-black via-black/55 to-transparent"
+        : overlay === "sides"
+          ? "bg-gradient-to-r from-black/85 via-black/30 to-black/70"
+          : "";
 
-	return (
-		<div
-			className={`absolute inset-0 overflow-hidden pointer-events-none vignette ${grain ? "film-grain" : ""} ${className}`}
-			aria-hidden={alt ? undefined : true}
-			style={style}
-		>
-			<img
-				src={src}
-				alt={alt}
-				className={`h-full w-full object-cover ${kb} ${blur ? "blur-2xl scale-110" : ""}`}
-				loading="eager"
-				decoding="async"
-			/>
-			{overlayClass && <div className={`absolute inset-0 ${overlayClass}`} />}
-		</div>
-	);
+  return (
+    <div
+      className={`absolute inset-0 overflow-hidden pointer-events-none vignette ${grain ? "film-grain" : ""} ${className}`}
+      aria-hidden={alt ? undefined : true}
+      style={style}
+    >
+      <img
+        src={src}
+        alt={alt}
+        className={`h-full w-full object-cover ${kb} ${blur ? "blur-2xl scale-110" : ""}`}
+        loading="eager"
+        decoding="async"
+      />
+      {overlayClass && <div className={`absolute inset-0 ${overlayClass}`} />}
+    </div>
+  );
 }
 
 /**
@@ -70,12 +70,12 @@ export function KenBurns({
  * une section. Complète le starfield global avec une couche d'énergie colorée.
  */
 export function Aurora({ className = "" }: { className?: string }) {
-	return (
-		<div
-			aria-hidden
-			className={`absolute inset-0 -z-0 overflow-hidden pointer-events-none ${className}`}
-		>
-			<div className="aurora absolute inset-[-20%]" />
-		</div>
-	);
+  return (
+    <div
+      aria-hidden
+      className={`absolute inset-0 -z-0 overflow-hidden pointer-events-none ${className}`}
+    >
+      <div className="aurora absolute inset-[-20%]" />
+    </div>
+  );
 }

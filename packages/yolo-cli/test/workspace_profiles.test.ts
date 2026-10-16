@@ -6,11 +6,16 @@ import { join, resolve } from "node:path";
 
 const root = resolve(import.meta.dir, "../../../docs/aphrody");
 const just = Bun.which("just");
-const profileTest = just !== null && process.platform !== "win32" ? test : test.skip;
+const profileTest =
+  just !== null && process.platform !== "win32" ? test : test.skip;
 const fixtures: string[] = [];
 
 afterEach(async () => {
-  await Promise.all(fixtures.splice(0).map((path) => rm(path, { recursive: true, force: true })));
+  await Promise.all(
+    fixtures
+      .splice(0)
+      .map((path) => rm(path, { recursive: true, force: true })),
+  );
 });
 
 async function fixture() {
@@ -36,7 +41,14 @@ if (process.env.YOLO_PROFILE_MISSING_NIGHTLY === "1") process.exit(1);
 `,
   );
   await chmod(rustup, 0o700);
-  return { dir, log, wrapper, recorder, bin, preflightLog: join(dir, "preflight.jsonl") };
+  return {
+    dir,
+    log,
+    wrapper,
+    recorder,
+    bin,
+    preflightLog: join(dir, "preflight.jsonl"),
+  };
 }
 
 async function runRecipes(
@@ -120,7 +132,8 @@ async function workspacePackageNames(): Promise<string[]> {
             !entry.name.startsWith(".")
           )
             await walk(join(dir, entry.name));
-        } else if (entry.name === "Cargo.toml") manifests.push(join(dir, entry.name));
+        } else if (entry.name === "Cargo.toml")
+          manifests.push(join(dir, entry.name));
       }),
     );
   };
@@ -137,71 +150,92 @@ async function workspacePackageNames(): Promise<string[]> {
 }
 
 function packages(args: string[]): string[] {
-  return args.flatMap((value, index) => (value === "-p" ? [args[index + 1]!] : []));
+  return args.flatMap((value, index) =>
+    value === "-p" ? [args[index + 1]!] : [],
+  );
 }
 
-profileTest("the Bun recipe dispatches to yolo forge, which owns toolchain and pins", async () => {
-  const setup = await fixture();
-  const bun = await bunFixture(setup);
-  const result = await runRecipes(setup, ["qualify-bun", "--dry-run"], setup.dir, {
-    APHRODY_BUN_CHECKOUT: "",
-  });
-  expect(result.exitCode, result.stderr).toBe(0);
-  const probes = (await Bun.file(bun.log).text())
-    .trim()
-    .split("\n")
-    .map((line) => JSON.parse(line));
-  expect(probes).toEqual([
-    {
-      args: [
-        "packages/engine/yolo/src/index.ts",
-        "forge",
-        "build",
-        "--branch",
-        "main",
-        "--dry-run",
-      ],
-      cwd: setup.dir,
-    },
-  ]);
-  expect(await Bun.file(setup.log).exists()).toBe(false);
-});
+profileTest(
+  "the Bun recipe dispatches to yolo forge, which owns toolchain and pins",
+  async () => {
+    const setup = await fixture();
+    const bun = await bunFixture(setup);
+    const result = await runRecipes(
+      setup,
+      ["qualify-bun", "--dry-run"],
+      setup.dir,
+      {
+        APHRODY_BUN_CHECKOUT: "",
+      },
+    );
+    expect(result.exitCode, result.stderr).toBe(0);
+    const probes = (await Bun.file(bun.log).text())
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line));
+    expect(probes).toEqual([
+      {
+        args: [
+          "packages/engine/yolo/src/index.ts",
+          "forge",
+          "build",
+          "--branch",
+          "main",
+          "--dry-run",
+        ],
+        cwd: setup.dir,
+      },
+    ]);
+    expect(await Bun.file(setup.log).exists()).toBe(false);
+  },
+);
 
-profileTest("the Bun recipe qualifies the local fork checkout before forge builds it", async () => {
-  const setup = await fixture();
-  const bun = await bunFixture(setup);
-  const fork = join(setup.dir, "fork");
-  await Bun.write(join(fork, "scripts/aphrody/scope.ts"), "");
-  const result = await runRecipes(setup, ["qualify-bun", "--dry-run"], setup.dir, {
-    APHRODY_BUN_CHECKOUT: fork,
-  });
-  expect(result.exitCode, result.stderr).toBe(0);
-  const probes = (await Bun.file(bun.log).text())
-    .trim()
-    .split("\n")
-    .map((line) => JSON.parse(line));
-  expect(probes).toEqual([
-    { args: [join(fork, "scripts/aphrody/scope.ts"), "--check"], cwd: setup.dir },
-    {
-      args: [
-        "packages/engine/yolo/src/index.ts",
-        "forge",
-        "build",
-        "--branch",
-        "main",
-        "--repository",
-        fork,
-        "--dry-run",
-      ],
-      cwd: setup.dir,
-    },
-  ]);
+profileTest(
+  "the Bun recipe qualifies the local fork checkout before forge builds it",
+  async () => {
+    const setup = await fixture();
+    const bun = await bunFixture(setup);
+    const fork = join(setup.dir, "fork");
+    await Bun.write(join(fork, "scripts/aphrody/scope.ts"), "");
+    const result = await runRecipes(
+      setup,
+      ["qualify-bun", "--dry-run"],
+      setup.dir,
+      {
+        APHRODY_BUN_CHECKOUT: fork,
+      },
+    );
+    expect(result.exitCode, result.stderr).toBe(0);
+    const probes = (await Bun.file(bun.log).text())
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line));
+    expect(probes).toEqual([
+      {
+        args: [join(fork, "scripts/aphrody/scope.ts"), "--check"],
+        cwd: setup.dir,
+      },
+      {
+        args: [
+          "packages/engine/yolo/src/index.ts",
+          "forge",
+          "build",
+          "--branch",
+          "main",
+          "--repository",
+          fork,
+          "--dry-run",
+        ],
+        cwd: setup.dir,
+      },
+    ]);
 
-  const missing = await runRecipes(setup, ["qualify-bun"], setup.dir, {
-    APHRODY_BUN_CHECKOUT: join(setup.dir, "absent"),
-  });
-  expect(missing.exitCode).toBe(64);
-});
+    const missing = await runRecipes(setup, ["qualify-bun"], setup.dir, {
+      APHRODY_BUN_CHECKOUT: join(setup.dir, "absent"),
+    });
+    expect(missing.exitCode).toBe(64);
+  },
+);
 
 profileTest(
   "historical full ship refuses a missing factory contract before bootstrap",
@@ -215,10 +249,19 @@ profileTest(
     );
     for (const environment of [
       { APHRODY_BUILD_HOST: "", YOLO_CARGO_WRAPPER: setup.wrapper },
-      { APHRODY_BUILD_HOST: "vps", YOLO_CARGO_WRAPPER: join(setup.dir, "missing owner") },
+      {
+        APHRODY_BUILD_HOST: "vps",
+        YOLO_CARGO_WRAPPER: join(setup.dir, "missing owner"),
+      },
     ]) {
       const child = Bun.spawn(
-        ["bash", join(root, "scripts/release/ship_remote.sh"), "fixture", setup.dir, setup.dir],
+        [
+          "bash",
+          join(root, "scripts/release/ship_remote.sh"),
+          "fixture",
+          setup.dir,
+          setup.dir,
+        ],
         {
           windowsHide: true,
           cwd: setup.dir,
@@ -233,7 +276,9 @@ profileTest(
         new Response(child.stdout).text(),
       ]);
       expect(exitCode, stderr).toBe(64);
-      expect(await Bun.file(join(setup.dir, "bootstrap.started")).exists()).toBe(false);
+      expect(
+        await Bun.file(join(setup.dir, "bootstrap.started")).exists(),
+      ).toBe(false);
       expect(await Bun.file(join(setup.dir, "STATUS")).exists()).toBe(false);
     }
   },
@@ -252,8 +297,20 @@ profileTest(
     ]);
     expect(result.exitCode, result.stderr).toBe(0);
     const [formatter, ...commands] = await calls(setup.log);
-    expect(formatter).toEqual(["fmt", "--check", "-p", "yolo-core", "-p", "yolo-runtime"]);
-    expect(commands.map((args) => args[0])).toEqual(["check", "clippy", "nextest", "build"]);
+    expect(formatter).toEqual([
+      "fmt",
+      "--check",
+      "-p",
+      "yolo-core",
+      "-p",
+      "yolo-runtime",
+    ]);
+    expect(commands.map((args) => args[0])).toEqual([
+      "check",
+      "clippy",
+      "nextest",
+      "build",
+    ]);
     for (const args of commands) {
       expect(args).toContain("--locked");
       expect(args).toContain("--no-default-features");
@@ -264,7 +321,10 @@ profileTest(
         expect(args[args.indexOf("--features") + 1]).toBe("browser,tooling");
       } else {
         expect(args).not.toContain("--features");
-        expect(packages(args).toSorted()).toEqual(["yolo-core", "yolo-runtime"]);
+        expect(packages(args).toSorted()).toEqual([
+          "yolo-core",
+          "yolo-runtime",
+        ]);
       }
     }
     expect(commands[1]!.slice(-3)).toEqual(["--", "-D", "warnings"]);
@@ -287,12 +347,20 @@ profileTest(
     const executed = await calls(setup.log);
     const formatters = executed.filter((args) => args[0] === "fmt");
     expect(formatters).toContainEqual(["fmt", "--check", "-p", "aphrody-app"]);
-    expect(formatters).toContainEqual(["fmt", "--check", "-p", "yolo-core", "-p", "yolo-runtime"]);
+    expect(formatters).toContainEqual([
+      "fmt",
+      "--check",
+      "-p",
+      "yolo-core",
+      "-p",
+      "yolo-runtime",
+    ]);
     expect(formatters).toContainEqual(["fmt", "--all", "--check"]);
     const commands = executed.filter((args) => args[0] !== "fmt");
     expect(commands).toHaveLength(11);
     for (const args of commands) expect(args).toContain("--locked");
-    for (const args of commands.slice(0, 3)) expect(packages(args)).toEqual(["aphrody-app"]);
+    for (const args of commands.slice(0, 3))
+      expect(packages(args)).toEqual(["aphrody-app"]);
     for (const args of commands.slice(3, 6)) {
       expect(packages(args)).toEqual(["yolo-runtime"]);
       expect(args[args.indexOf("--features") + 1]).toBe("browser");
@@ -300,7 +368,11 @@ profileTest(
     for (const args of commands.slice(6, 9)) {
       expect(packages(args)).toEqual(["yolo-pyo3"]);
       expect(args[args.indexOf("--manifest-path") + 1]).toBe(
-        join(setup.dir, "qualified bun fork", "packages/bun-runtime-sdk/Cargo.toml"),
+        join(
+          setup.dir,
+          "qualified bun fork",
+          "packages/bun-runtime-sdk/Cargo.toml",
+        ),
       );
     }
 
@@ -328,7 +400,11 @@ profileTest(
     await Bun.write(yolo, setup.recorder);
     await chmod(yolo, 0o700);
     const revision = "a".repeat(40);
-    const result = await runRecipes(setup, ["factory", "desktop", revision], setup.dir);
+    const result = await runRecipes(
+      setup,
+      ["factory", "desktop", revision],
+      setup.dir,
+    );
     expect(result.exitCode, result.stderr).toBe(0);
     expect(await calls(setup.log)).toEqual([
       [
@@ -344,7 +420,11 @@ profileTest(
         "qualify-desktop",
       ],
     ]);
-    const bun = await runRecipes(setup, ["factory", "bun", revision], setup.dir);
+    const bun = await runRecipes(
+      setup,
+      ["factory", "bun", revision],
+      setup.dir,
+    );
     expect(bun.exitCode, bun.stderr).toBe(0);
     expect((await calls(setup.log))[1]).toEqual([
       "ops",

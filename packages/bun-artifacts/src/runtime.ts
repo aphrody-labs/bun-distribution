@@ -1,9 +1,32 @@
-import { chmod, lstat, mkdir, open, realpath, rename, unlink } from "node:fs/promises";
+import {
+  chmod,
+  lstat,
+  mkdir,
+  open,
+  realpath,
+  rename,
+  unlink,
+} from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import { assertRuntimeFacts, checkoutPath, currentRuntimeFacts, hashFile } from "@aphrody/bun-workspace";
-import { hostMatchesTarget, maxFileBytes, nativeBundleDigest, validateAppManifest } from "./manifest.ts";
-import { ArtifactError, type AppManifest, type AppRuntime, type NativeFile } from "./types.ts";
+import {
+  assertRuntimeFacts,
+  checkoutPath,
+  currentRuntimeFacts,
+  hashFile,
+} from "@aphrody/bun-workspace";
+import {
+  hostMatchesTarget,
+  maxFileBytes,
+  nativeBundleDigest,
+  validateAppManifest,
+} from "./manifest.ts";
+import {
+  ArtifactError,
+  type AppManifest,
+  type AppRuntime,
+  type NativeFile,
+} from "./types.ts";
 
 export interface PrepareAppOptions {
   embeddedRoot?: string;
@@ -15,8 +38,16 @@ export interface PrepareAppOptions {
 }
 
 function absolutePath(path: string): string {
-  if (!path || path.includes("\0") || path.length > 32_768 || !isAbsolute(path)) {
-    throw new ArtifactError("INVALID_OPTIONS", "Select an absolute artifact directory.");
+  if (
+    !path ||
+    path.includes("\0") ||
+    path.length > 32_768 ||
+    !isAbsolute(path)
+  ) {
+    throw new ArtifactError(
+      "INVALID_OPTIONS",
+      "Select an absolute artifact directory.",
+    );
   }
   return resolve(path);
 }
@@ -24,19 +55,42 @@ function absolutePath(path: string): string {
 function defaultPaths(appId: string): { cache: string; data: string } {
   if (process.platform === "win32") {
     const local = Bun.env.LOCALAPPDATA;
-    if (!local) throw new ArtifactError("INVALID_OPTIONS", "LOCALAPPDATA is required for the application cache.");
-    return { cache: join(local, "Aphrody", "cache", "artifacts"), data: join(local, "Aphrody", "apps", appId) };
+    if (!local)
+      throw new ArtifactError(
+        "INVALID_OPTIONS",
+        "LOCALAPPDATA is required for the application cache.",
+      );
+    return {
+      cache: join(local, "Aphrody", "cache", "artifacts"),
+      data: join(local, "Aphrody", "apps", appId),
+    };
   }
   const home = homedir();
   if (process.platform === "darwin") {
     return {
       cache: join(home, "Library", "Caches", "Aphrody", "artifacts"),
-      data: join(home, "Library", "Application Support", "Aphrody", "apps", appId),
+      data: join(
+        home,
+        "Library",
+        "Application Support",
+        "Aphrody",
+        "apps",
+        appId,
+      ),
     };
   }
   return {
-    cache: join(Bun.env.XDG_CACHE_HOME ?? join(home, ".cache"), "aphrody", "artifacts"),
-    data: join(Bun.env.XDG_DATA_HOME ?? join(home, ".local", "share"), "aphrody", "apps", appId),
+    cache: join(
+      Bun.env.XDG_CACHE_HOME ?? join(home, ".cache"),
+      "aphrody",
+      "artifacts",
+    ),
+    data: join(
+      Bun.env.XDG_DATA_HOME ?? join(home, ".local", "share"),
+      "aphrody",
+      "apps",
+      appId,
+    ),
   };
 }
 
@@ -44,9 +98,11 @@ async function privateRoot(path: string): Promise<string> {
   const target = absolutePath(path);
   await mkdir(target, { recursive: true, mode: 0o700 });
   const entry = await lstat(target);
-  if (!entry.isDirectory() || entry.isSymbolicLink()) throw new Error("Invalid artifact directory.");
+  if (!entry.isDirectory() || entry.isSymbolicLink())
+    throw new Error("Invalid artifact directory.");
   const actual = await realpath(target);
-  if (relative(target, actual) !== "") throw new Error("Artifact directory redirects outside its selected path.");
+  if (relative(target, actual) !== "")
+    throw new Error("Artifact directory redirects outside its selected path.");
   return actual;
 }
 
@@ -63,13 +119,19 @@ async function directoryWithin(root: string, path: string): Promise<string> {
       if ((error as { code?: string }).code !== "EEXIST") throw error;
     }
     const entry = await lstat(cursor);
-    if (!entry.isDirectory() || entry.isSymbolicLink()) throw new Error("Invalid artifact subdirectory.");
-    if (relative(cursor, await realpath(cursor)) !== "") throw new Error("Artifact subdirectory redirects.");
+    if (!entry.isDirectory() || entry.isSymbolicLink())
+      throw new Error("Invalid artifact subdirectory.");
+    if (relative(cursor, await realpath(cursor)) !== "")
+      throw new Error("Artifact subdirectory redirects.");
   }
   return target;
 }
 
-async function verifyFile(path: string, asset: NativeFile, signal: AbortSignal): Promise<boolean> {
+async function verifyFile(
+  path: string,
+  asset: NativeFile,
+  signal: AbortSignal,
+): Promise<boolean> {
   let entry;
   try {
     entry = await lstat(path);
@@ -78,10 +140,18 @@ async function verifyFile(path: string, asset: NativeFile, signal: AbortSignal):
     throw error;
   }
   if (!entry.isFile() || entry.isSymbolicLink() || entry.size !== asset.size) {
-    throw new ArtifactError("INTEGRITY_FAILED", "A cached native payload differs from its manifest.");
+    throw new ArtifactError(
+      "INTEGRITY_FAILED",
+      "A cached native payload differs from its manifest.",
+    );
   }
-  if ((await hashFile(path, { signal, maxBytes: asset.size })) !== asset.sha256) {
-    throw new ArtifactError("INTEGRITY_FAILED", "A cached native payload differs from its manifest.");
+  if (
+    (await hashFile(path, { signal, maxBytes: asset.size })) !== asset.sha256
+  ) {
+    throw new ArtifactError(
+      "INTEGRITY_FAILED",
+      "A cached native payload differs from its manifest.",
+    );
   }
   return true;
 }
@@ -95,7 +165,10 @@ async function writePayload(
 ): Promise<void> {
   const file = Bun.file(source);
   if (file.size !== asset.size)
-    throw new ArtifactError("INTEGRITY_FAILED", "An embedded native payload has an invalid size.");
+    throw new ArtifactError(
+      "INTEGRITY_FAILED",
+      "An embedded native payload has an invalid size.",
+    );
   const handle = await open(temporary, "wx", 0o600);
   created();
   const reader = file.stream().getReader();
@@ -115,16 +188,24 @@ async function writePayload(
       if (chunk.done) break;
       total += chunk.value.byteLength;
       if (total > asset.size || total > maxFileBytes)
-        throw new ArtifactError("INTEGRITY_FAILED", "An embedded payload exceeded its size.");
+        throw new ArtifactError(
+          "INTEGRITY_FAILED",
+          "An embedded payload exceeded its size.",
+        );
       let written = 0;
       while (written < chunk.value.byteLength) {
         signal.throwIfAborted();
         const result = await handle.write(chunk.value.subarray(written));
-        if (!result.bytesWritten) throw new Error("Native payload write made no progress.");
+        if (!result.bytesWritten)
+          throw new Error("Native payload write made no progress.");
         written += result.bytesWritten;
       }
     }
-    if (total !== asset.size) throw new ArtifactError("INTEGRITY_FAILED", "An embedded native payload is incomplete.");
+    if (total !== asset.size)
+      throw new ArtifactError(
+        "INTEGRITY_FAILED",
+        "An embedded native payload is incomplete.",
+      );
     await handle.sync();
     completed = true;
   } finally {
@@ -139,19 +220,29 @@ async function writePayload(
   }
 }
 
-async function extractFile(root: string, source: string, asset: NativeFile, signal: AbortSignal): Promise<string> {
+async function extractFile(
+  root: string,
+  source: string,
+  asset: NativeFile,
+  signal: AbortSignal,
+): Promise<string> {
   signal.throwIfAborted();
   const target = checkoutPath(root, asset.path);
   await directoryWithin(root, relative(root, dirname(target)));
   if (await verifyFile(target, asset, signal)) return target;
-  const temporary = checkoutPath(root, `${asset.path}.${crypto.randomUUID()}.partial`);
+  const temporary = checkoutPath(
+    root,
+    `${asset.path}.${crypto.randomUUID()}.partial`,
+  );
   let ownsTemporary = false;
   try {
     await writePayload(source, temporary, asset, signal, () => {
       ownsTemporary = true;
     });
-    if (!(await verifyFile(temporary, asset, signal))) throw new Error("Native payload missing after extraction.");
-    if (process.platform !== "win32") await chmod(temporary, asset.kind === "engine" ? 0o700 : 0o600);
+    if (!(await verifyFile(temporary, asset, signal)))
+      throw new Error("Native payload missing after extraction.");
+    if (process.platform !== "win32")
+      await chmod(temporary, asset.kind === "engine" ? 0o700 : 0o600);
     signal.throwIfAborted();
     if (await verifyFile(target, asset, signal)) return target;
     try {
@@ -160,12 +251,13 @@ async function extractFile(root: string, source: string, asset: NativeFile, sign
       // Another application can have completed this exact immutable payload concurrently.
       if (!(await verifyFile(target, asset, signal))) throw error;
     }
-    if (!(await verifyFile(target, asset, signal))) throw new Error("Extracted native payload is unavailable.");
+    if (!(await verifyFile(target, asset, signal)))
+      throw new Error("Extracted native payload is unavailable.");
     return target;
   } finally {
     // Only this invocation's exclusive staging file is removed.
     if (ownsTemporary) {
-      await unlink(temporary).catch(error => {
+      await unlink(temporary).catch((error) => {
         if ((error as { code?: string }).code !== "ENOENT") throw error;
       });
     }
@@ -177,19 +269,31 @@ export function assertAppRuntime(value: unknown): AppManifest {
   try {
     assertRuntimeFacts(manifest.runtime, currentRuntimeFacts());
   } catch {
-    throw new ArtifactError("RUNTIME_MISMATCH", "The application requires its pinned Aphrody Bun runtime.");
+    throw new ArtifactError(
+      "RUNTIME_MISMATCH",
+      "The application requires its pinned Aphrody Bun runtime.",
+    );
   }
   if (!hostMatchesTarget(manifest.target)) {
-    throw new ArtifactError("TARGET_MISMATCH", "The application artifact does not match this native host.");
+    throw new ArtifactError(
+      "TARGET_MISMATCH",
+      "The application artifact does not match this native host.",
+    );
   }
   return manifest;
 }
 
 /** No checkout, Git, Cargo, provider stores or implicit network downloads at runtime. */
-export async function prepareAppRuntime(value: unknown, options: PrepareAppOptions): Promise<AppRuntime> {
+export async function prepareAppRuntime(
+  value: unknown,
+  options: PrepareAppOptions,
+): Promise<AppRuntime> {
   const manifest = assertAppRuntime(value);
   if (Boolean(options.embeddedRoot) === Boolean(options.embeddedFiles)) {
-    throw new ArtifactError("INVALID_OPTIONS", "Supply embedded files or one embedded payload directory.");
+    throw new ArtifactError(
+      "INVALID_OPTIONS",
+      "Supply embedded files or one embedded payload directory.",
+    );
   }
   const timeoutMs = options.timeoutMs ?? 60_000;
   if (
@@ -198,7 +302,10 @@ export async function prepareAppRuntime(value: unknown, options: PrepareAppOptio
     timeoutMs > 300_000 ||
     (options.signal !== undefined && !(options.signal instanceof AbortSignal))
   ) {
-    throw new ArtifactError("INVALID_OPTIONS", "Select a bounded artifact extraction deadline.");
+    throw new ArtifactError(
+      "INVALID_OPTIONS",
+      "Select a bounded artifact extraction deadline.",
+    );
   }
   const controller = new AbortController();
   const interrupt = () => controller.abort();
@@ -209,9 +316,16 @@ export async function prepareAppRuntime(value: unknown, options: PrepareAppOptio
   const defaults = defaultPaths(manifest.app.id);
   try {
     signal.throwIfAborted();
-    const cacheRoot = await privateRoot(options.cacheRoot ?? Bun.env.APHRODY_ARTIFACT_CACHE ?? defaults.cache);
-    const appDataDir = await privateRoot(options.appDataDir ?? Bun.env.APHRODY_APP_DATA ?? defaults.data);
-    const bundle = await directoryWithin(cacheRoot, `native/${nativeBundleDigest(manifest.native)}`);
+    const cacheRoot = await privateRoot(
+      options.cacheRoot ?? Bun.env.APHRODY_ARTIFACT_CACHE ?? defaults.cache,
+    );
+    const appDataDir = await privateRoot(
+      options.appDataDir ?? Bun.env.APHRODY_APP_DATA ?? defaults.data,
+    );
+    const bundle = await directoryWithin(
+      cacheRoot,
+      `native/${nativeBundleDigest(manifest.native)}`,
+    );
     const resources: Record<string, string> = {};
     let next = 0;
     const worker = async () => {
@@ -221,11 +335,21 @@ export async function prepareAppRuntime(value: unknown, options: PrepareAppOptio
         if (!asset) return;
         const source =
           options.embeddedFiles?.[asset.path] ??
-          (options.embeddedRoot ? checkoutPath(options.embeddedRoot, asset.path) : undefined);
+          (options.embeddedRoot
+            ? checkoutPath(options.embeddedRoot, asset.path)
+            : undefined);
         if (!source || typeof source !== "string" || source.includes("\0")) {
-          throw new ArtifactError("INTEGRITY_FAILED", "An application payload is unavailable.");
+          throw new ArtifactError(
+            "INTEGRITY_FAILED",
+            "An application payload is unavailable.",
+          );
         }
-        resources[asset.path] = await extractFile(bundle, source, asset, signal);
+        resources[asset.path] = await extractFile(
+          bundle,
+          source,
+          asset,
+          signal,
+        );
       }
     };
     const workers = [worker(), worker()];
@@ -246,7 +370,10 @@ export async function prepareAppRuntime(value: unknown, options: PrepareAppOptio
         revision: manifest.runtime.revision,
       },
       nativeBinary: resources[manifest.engine.path]!,
-      engine: { version: manifest.engine.version, sourceRevision: manifest.source.revision },
+      engine: {
+        version: manifest.engine.version,
+        sourceRevision: manifest.source.revision,
+      },
       resources: Object.freeze(resources),
       cacheRoot,
       appDataDir,
@@ -254,8 +381,15 @@ export async function prepareAppRuntime(value: unknown, options: PrepareAppOptio
     };
   } catch (error) {
     if (error instanceof ArtifactError) throw error;
-    if (signal.aborted) throw new ArtifactError("INTERRUPTED", "Application payload extraction was interrupted.");
-    throw new ArtifactError("EXTRACTION_FAILED", "Application payload extraction failed.");
+    if (signal.aborted)
+      throw new ArtifactError(
+        "INTERRUPTED",
+        "Application payload extraction was interrupted.",
+      );
+    throw new ArtifactError(
+      "EXTRACTION_FAILED",
+      "Application payload extraction failed.",
+    );
   } finally {
     options.signal?.removeEventListener("abort", interrupt);
     clearTimeout(timer);
@@ -268,10 +402,15 @@ export function artifactDoctor(manifest: AppManifest, runtime: AppRuntime) {
     app: manifest.app.id,
     target: manifest.target,
     runtime: runtime.runtime,
-    engine: { available: true, version: runtime.engine.version, sourceRevision: runtime.engine.sourceRevision },
+    engine: {
+      available: true,
+      version: runtime.engine.version,
+      sourceRevision: runtime.engine.sourceRevision,
+    },
     embeddedFiles: manifest.native.length,
     nativeBytes: manifest.native.reduce((total, file) => total + file.size, 0),
     sharedAssets: manifest.sharedAssets ?? null,
-    qualification: "Payload integrity and runtime identity; native operations require separate qualification.",
+    qualification:
+      "Payload integrity and runtime identity; native operations require separate qualification.",
   };
 }

@@ -2,14 +2,12 @@ import { useState, useEffect } from "react";
 import { GetOpenAIApiKey, SetOpenAIApiKey } from "@storyteller/tauri-api";
 import { Input } from "@storyteller/ui-input";
 
-
 export const OpenAIApiKeyBlock = () => {
   const [openAIApiKey, setOpenAIApiKey] = useState<string | undefined>(
-    undefined
+    undefined,
   );
 
-  const [isCheckingOpenAIApiKey, setIsCheckingOpenAIApiKey] =
-    useState(false);
+  const [isCheckingOpenAIApiKey, setIsCheckingOpenAIApiKey] = useState(false);
 
   console.log(isCheckingOpenAIApiKey);
 

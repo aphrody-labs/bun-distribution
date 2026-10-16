@@ -51,11 +51,10 @@ export interface EnqueueImageTo3dObjectSuccess extends CommandResult {
 }
 
 export type EnqueueImageTo3dObjectResult =
-  | EnqueueImageTo3dObjectSuccess
-  | EnqueueImageTo3dObjectError;
+  EnqueueImageTo3dObjectSuccess | EnqueueImageTo3dObjectError;
 
 export const EnqueueImageTo3dObject = async (
-  request: EnqueueImageTo3dObjectRequest
+  request: EnqueueImageTo3dObjectRequest,
 ): Promise<EnqueueImageTo3dObjectResult> => {
   let mutableRequest: EnqueueImageTo3dObjectRequestRaw = {
     image_media_token: request.image_media_token,

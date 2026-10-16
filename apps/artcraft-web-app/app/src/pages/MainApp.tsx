@@ -70,13 +70,19 @@ const TextToImage = lazy(() => import("./PageImage/TextToImage"));
 const ImageToVideo = lazy(() => import("./PageVideo/ImageToVideo"));
 const CreateAudio = lazy(() => import("./PageAudio/CreateAudio"));
 const VideoFrameExtractor = lazy(() =>
-  import("./PageVideoFrameExtractor").then((m) => ({ default: m.VideoFrameExtractor })),
+  import("./PageVideoFrameExtractor").then((m) => ({
+    default: m.VideoFrameExtractor,
+  })),
 );
 const VideoWatermarkRemover = lazy(() =>
-  import("./PageVideoWatermarkRemover").then((m) => ({ default: m.VideoWatermarkRemover })),
+  import("./PageVideoWatermarkRemover").then((m) => ({
+    default: m.VideoWatermarkRemover,
+  })),
 );
 const ImageWatermarkRemover = lazy(() =>
-  import("./PageImageWatermarkRemover").then((m) => ({ default: m.ImageWatermarkRemover })),
+  import("./PageImageWatermarkRemover").then((m) => ({
+    default: m.ImageWatermarkRemover,
+  })),
 );
 const ImageTo3DObject = lazy(() =>
   import("./PageImageTo3DObject").then((m) => ({ default: m.ImageTo3DObject })),
@@ -85,7 +91,9 @@ const ImageTo3DWorld = lazy(() =>
   import("./PageImageTo3DWorld").then((m) => ({ default: m.ImageTo3DWorld })),
 );
 const RemoveBackground = lazy(() =>
-  import("./PageRemoveBackground").then((m) => ({ default: m.RemoveBackground })),
+  import("./PageRemoveBackground").then((m) => ({
+    default: m.RemoveBackground,
+  })),
 );
 const Angles = lazy(() =>
   import("./PageAngles").then((m) => ({ default: m.Angles })),
@@ -94,7 +102,9 @@ const Storyboard = lazy(() =>
   import("./PageStoryboard").then((m) => ({ default: m.Storyboard })),
 );
 const PageBackgroundChange = lazy(() =>
-  import("./PageBackgroundChange").then((m) => ({ default: m.PageBackgroundChange })),
+  import("./PageBackgroundChange").then((m) => ({
+    default: m.PageBackgroundChange,
+  })),
 );
 const PageScene = lazy(() =>
   import("./PageScene").then((m) => ({ default: m.PageScene })),

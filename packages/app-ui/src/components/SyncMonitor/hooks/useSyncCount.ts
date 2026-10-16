@@ -20,7 +20,9 @@ export function useSyncCount() {
 
       const state = data.currentState;
       const syncing =
-        (typeof state === "object" && ("Backfilling" in state || "CatchingUp" in state)) || false;
+        (typeof state === "object" &&
+          ("Backfilling" in state || "CatchingUp" in state)) ||
+        false;
       setIsSyncing(syncing);
     }
   }

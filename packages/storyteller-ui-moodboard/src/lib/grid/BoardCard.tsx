@@ -1,5 +1,11 @@
 import { memo, useEffect, useRef, useState } from "react";
-import { CheckIcon, Maximize2Icon, StarIcon, Trash2Icon, WandSparklesIcon } from "lucide-react";
+import {
+  CheckIcon,
+  Maximize2Icon,
+  StarIcon,
+  Trash2Icon,
+  WandSparklesIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { BoardItem } from "../boards/boardTypes";
 import { hostnameOf } from "../boards/linkMeta";
@@ -77,7 +83,11 @@ const BoardCardInner = ({
 
   // Pull DOM focus here when the grid hands us focus via arrow navigation.
   useEffect(() => {
-    if (focused && rootRef.current && document.activeElement !== rootRef.current) {
+    if (
+      focused &&
+      rootRef.current &&
+      document.activeElement !== rootRef.current
+    ) {
       rootRef.current.focus();
     }
   }, [focused]);
@@ -151,8 +161,9 @@ const BoardCardInner = ({
               {Array.from({ length: item.rating }).map((_, i) => (
                 <StarIcon
                   key={i}
-                  
-                  className="h-2.5 w-2.5 text-yellow-400" />
+
+                  className="h-2.5 w-2.5 text-yellow-400"
+                />
               ))}
             </div>
           )}
@@ -167,7 +178,7 @@ const BoardCardInner = ({
                 : "border-white/40 bg-black/45 text-white/0 opacity-0 group-hover:opacity-100",
             ].join(" ")}
           >
-            <CheckIcon  className="h-3 w-3" />
+            <CheckIcon className="h-3 w-3" />
           </div>
 
           {/* Action rail — solid scrim pill (no blur in the scroll container),

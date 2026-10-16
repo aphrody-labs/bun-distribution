@@ -9,7 +9,8 @@ function styleStringValues(openingElement) {
   const out = [];
   for (const attrName of ["style", "sx"]) {
     const attr = getAttr(openingElement, attrName);
-    if (!attr || !attr.value || attr.value.type !== "JSXExpressionContainer") continue;
+    if (!attr || !attr.value || attr.value.type !== "JSXExpressionContainer")
+      continue;
     const expr = attr.value.expression;
     if (!expr || expr.type !== "ObjectExpression") continue;
     for (const p of expr.properties) {
@@ -35,7 +36,8 @@ export default {
   meta: {
     type: "suggestion",
     docs: {
-      description: "Use var(--md-sys-color-*) instead of hardcoded colors on md-* components.",
+      description:
+        "Use var(--md-sys-color-*) instead of hardcoded colors on md-* components.",
     },
     schema: [],
   },

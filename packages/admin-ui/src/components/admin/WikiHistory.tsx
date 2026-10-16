@@ -45,7 +45,10 @@ interface Revision {
 
 const client = apiAt("/api/wiki-history");
 
-const ACTION_META: Record<string, { label: string; cls: string; icon: React.ReactNode }> = {
+const ACTION_META: Record<
+  string,
+  { label: string; cls: string; icon: React.ReactNode }
+> = {
   create: {
     label: "Création",
     cls: "border-green-500/40 text-green-300 bg-green-500/10",
@@ -73,7 +76,14 @@ const ACTION_META: Record<string, { label: string; cls: string; icon: React.Reac
   },
 };
 
-const ACTION_FILTERS = ["", "create", "update", "delete", "visibility", "revert"] as const;
+const ACTION_FILTERS = [
+  "",
+  "create",
+  "update",
+  "delete",
+  "visibility",
+  "revert",
+] as const;
 
 function relTime(iso: string): string {
   const then = new Date(iso).getTime();
@@ -110,7 +120,10 @@ export function WikiHistory({
   const [page, setPage] = useState(0);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [confirmId, setConfirmId] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    msg: string;
+  } | null>(null);
   const limit = compact ? 20 : 30;
   const offset = page * limit;
 
@@ -123,11 +136,13 @@ export function WikiHistory({
 
   const query = useQuery({
     queryKey: ["wiki-history", table ?? "*", rowId ?? "*", action, page],
-    queryFn: () => client.get<{ rows: Revision[]; total: number }>(`?${qs.toString()}`),
+    queryFn: () =>
+      client.get<{ rows: Revision[]; total: number }>(`?${qs.toString()}`),
   });
 
   const revert = useMutation({
-    mutationFn: (id: string) => client.post<{ ok: boolean; mode: string }>("", { id }),
+    mutationFn: (id: string) =>
+      client.post<{ ok: boolean; mode: string }>("", { id }),
     onSuccess: (res) => {
       setConfirmId(null);
       const modeLabel =
@@ -216,7 +231,8 @@ export function WikiHistory({
             };
             const tableLabel = TABLE_LABELS[r.tableName] ?? r.tableName;
             const isOpen = expanded[r.id];
-            const canStudio = isStudioTable(r.tableName) && !r.rowId.includes(":");
+            const canStudio =
+              isStudioTable(r.tableName) && !r.rowId.includes(":");
             const canRevert = r.action !== "revert";
             const diffKeys = r.changedKeys.length
               ? r.changedKeys
@@ -239,7 +255,9 @@ export function WikiHistory({
                         {r.label || `#${r.rowId}`}
                       </Link>
                     ) : (
-                      <span className="font-semibold text-white">{r.label || `#${r.rowId}`}</span>
+                      <span className="font-semibold text-white">
+                        {r.label || `#${r.rowId}`}
+                      </span>
                     )}
                     <span className="ml-2 text-[11px] text-white/50">
                       {tableLabel} · {r.rowId}
@@ -256,7 +274,9 @@ export function WikiHistory({
                   {diffKeys.length > 0 && (
                     <button
                       type="button"
-                      onClick={() => setExpanded((e) => ({ ...e, [r.id]: !e[r.id] }))}
+                      onClick={() =>
+                        setExpanded((e) => ({ ...e, [r.id]: !e[r.id] }))
+                      }
                       className="inline-flex items-center gap-1 rounded border border-dbz-border px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white/50 hover:border-dbz-orange/50 hover:text-white"
                     >
                       {diffKeys.length} champ{diffKeys.length > 1 ? "s" : ""}
@@ -290,7 +310,9 @@ export function WikiHistory({
                             <td className="py-1.5 pr-3 text-white/50 line-through decoration-red-400/40">
                               {short(r.before?.[k])}
                             </td>
-                            <td className="py-1.5 text-white/85">{short(r.after?.[k])}</td>
+                            <td className="py-1.5 text-white/85">
+                              {short(r.after?.[k])}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -301,9 +323,10 @@ export function WikiHistory({
                 {confirmId === r.id && (
                   <div className="border-t border-purple-400/30 bg-purple-500/5 p-3">
                     <p className="mb-2 text-xs text-white/70">
-                      Revenir à l'état <strong className="text-white">avant</strong> cette{" "}
-                      {meta.label.toLowerCase()} ? Une nouvelle révision « retour arrière » sera
-                      enregistrée (rien n'est perdu).
+                      Revenir à l'état{" "}
+                      <strong className="text-white">avant</strong> cette{" "}
+                      {meta.label.toLowerCase()} ? Une nouvelle révision «
+                      retour arrière » sera enregistrée (rien n'est perdu).
                     </p>
                     <div className="flex justify-end gap-2">
                       <button
@@ -321,7 +344,9 @@ export function WikiHistory({
                         className="btn btn-primary h-8 text-xs"
                       >
                         <Undo2 className="h-3 w-3" />
-                        {revert.isPending ? "Restauration…" : "Confirmer le retour arrière"}
+                        {revert.isPending
+                          ? "Restauration…"
+                          : "Confirmer le retour arrière"}
                       </button>
                     </div>
                   </div>

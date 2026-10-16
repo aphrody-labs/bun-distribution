@@ -24,7 +24,8 @@ export type ProgressBarProps = {
 );
 
 // M3 linear progress: 4 dp track on `secondary-container`, `primary` active indicator, full shape.
-const track = "relative h-1 overflow-hidden rounded-full bg-secondary-container";
+const track =
+  "relative h-1 overflow-hidden rounded-full bg-secondary-container";
 
 export const ProgressBar = memo((props: ProgressBarProps) => {
   const reduced = useM3ReducedMotion();

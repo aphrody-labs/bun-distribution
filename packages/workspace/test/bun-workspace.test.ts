@@ -23,11 +23,15 @@ describe("bun workspace contract", () => {
   test("minimum Bun comes from the root packageManager", () => {
     expect(minimumBun("bun@1.4.2")).toBe(">=1.4.2");
     expect(minimumBun("bun@1.4.3-aphrody.4")).toBe(">=1.4.3");
-    expect(minimumBun("bun@1.4.3-aphrody.4", "1.4.3-aphrody.4")).toBe(">=1.4.3-aphrody.4");
+    expect(minimumBun("bun@1.4.3-aphrody.4", "1.4.3-aphrody.4")).toBe(
+      ">=1.4.3-aphrody.4",
+    );
     expect(minimumBun("bun@1.4.3-aphrody.4+41211b568", "1.4.3-aphrody.4")).toBe(
       ">=1.4.3-aphrody.4",
     );
-    expect(() => minimumBun("bun@1.4.3-aphrody.4", "1.4.3-aphrody.3")).toThrow();
+    expect(() =>
+      minimumBun("bun@1.4.3-aphrody.4", "1.4.3-aphrody.3"),
+    ).toThrow();
     expect(() => minimumBun("pnpm@9.0.0")).toThrow();
     expect(() => minimumBun("bun@1.4.3-invalid!")).toThrow();
     expect(() => minimumBun("bun@1.4.3 trailing")).toThrow();
@@ -49,24 +53,37 @@ describe("bun workspace contract", () => {
       scripts: { typecheck: "bun check", test: "bun test" },
       dependencies: { zod: "catalog:", x: "workspace:*" },
     };
-    expect(checkManifest("p", manifest, root, { hasTsconfig: true })).toEqual([]);
+    expect(checkManifest("p", manifest, root, { hasTsconfig: true })).toEqual(
+      [],
+    );
   });
 
   test("a qualified fork contract preserves the required fork version", () => {
     const forkRoot = { ...root, packageManager: "bun@1.4.3-aphrody.4" };
-    const manifest = { name: "@rosegriffon/db", engines: { bun: ">=1.4.3-aphrody.4" } };
-    const context = { hasTsconfig: false, bunRuntimeVersion: "1.4.3-aphrody.4" };
+    const manifest = {
+      name: "@rosegriffon/db",
+      engines: { bun: ">=1.4.3-aphrody.4" },
+    };
+    const context = {
+      hasTsconfig: false,
+      bunRuntimeVersion: "1.4.3-aphrody.4",
+    };
     expect(checkManifest("p", manifest, forkRoot, context)).toEqual([]);
     manifest.engines.bun = ">=1.4.3";
     expect(
-      checkManifest("p", manifest, forkRoot, context).map((violation) => violation.rule),
+      checkManifest("p", manifest, forkRoot, context).map(
+        (violation) => violation.rule,
+      ),
     ).toEqual(["engines"]);
   });
 
   test("named catalogs satisfy the centralized dependency contract", () => {
     const catalogRoot = {
       ...root,
-      workspaces: { ...root.workspaces, catalogs: { drive: { tailwindcss: "^3.4.15" } } },
+      workspaces: {
+        ...root.workspaces,
+        catalogs: { drive: { tailwindcss: "^3.4.15" } },
+      },
     };
     const manifest = {
       name: "@aphrody/drive-web",
@@ -74,9 +91,11 @@ describe("bun workspace contract", () => {
       scripts: { typecheck: "bun check" },
       dependencies: { tailwindcss: "catalog:drive" },
     };
-    expect(checkManifest("drive/apps/web", manifest, catalogRoot, { hasTsconfig: true })).toEqual(
-      [],
-    );
+    expect(
+      checkManifest("drive/apps/web", manifest, catalogRoot, {
+        hasTsconfig: true,
+      }),
+    ).toEqual([]);
   });
 
   test("every rule fires and --fix repairs the fixable ones", () => {
@@ -84,10 +103,17 @@ describe("bun workspace contract", () => {
       name: "@aphrody/os",
       packageManager: "bun@1.3.0",
       engines: { node: ">=18", bun: ">=1.3.0" },
-      scripts: { gen: "node gen.mjs", pre: "npx only-allow bun", ok: "bun run nodemon-free" },
+      scripts: {
+        gen: "node gen.mjs",
+        pre: "npx only-allow bun",
+        ok: "bun run nodemon-free",
+      },
       devDependencies: { typescript: "^5.6.2", other: "^1.0.0" },
     };
-    const found = checkManifest("p", manifest, root, { hasTsconfig: true, fix: true });
+    const found = checkManifest("p", manifest, root, {
+      hasTsconfig: true,
+      fix: true,
+    });
     expect(found.map((v) => v.rule).toSorted()).toEqual([
       "catalog",
       "engines",
@@ -100,11 +126,15 @@ describe("bun workspace contract", () => {
     expect(found.filter((v) => !v.fixable)).toHaveLength(2);
     expect(manifest.packageManager).toBeUndefined();
     expect(manifest.engines).toEqual({ bun: ">=1.4.2" });
-    expect(manifest.devDependencies).toEqual({ typescript: "catalog:", other: "^1.0.0" });
-    expect(checkManifest("p", manifest, root, { hasTsconfig: true }).map((v) => v.rule)).toEqual([
-      "scripts",
-      "scripts",
-    ]);
+    expect(manifest.devDependencies).toEqual({
+      typescript: "catalog:",
+      other: "^1.0.0",
+    });
+    expect(
+      checkManifest("p", manifest, root, { hasTsconfig: true }).map(
+        (v) => v.rule,
+      ),
+    ).toEqual(["scripts", "scripts"]);
   });
 
   test("the M3 family is versioned in lockstep and extends the shared presets", () => {
@@ -116,7 +146,12 @@ describe("bun workspace contract", () => {
     ]) {
       expect(M3_FAMILY.test(name)).toBe(true);
     }
-    for (const name of ["@aphrody/os", "@aphrody/canvas", "@aphrody/bun", "@spacedrive/primitives"])
+    for (const name of [
+      "@aphrody/os",
+      "@aphrody/canvas",
+      "@aphrody/bun",
+      "@spacedrive/primitives",
+    ])
       expect(M3_FAMILY.test(name)).toBe(false);
 
     const manifest: Record<string, any> = {
@@ -165,7 +200,12 @@ describe("bun workspace contract", () => {
       ),
     ).toEqual([]);
     expect(() =>
-      checkManifest("p", manifest, { ...root, aphrody: undefined }, { hasTsconfig: false }),
+      checkManifest(
+        "p",
+        manifest,
+        { ...root, aphrody: undefined },
+        { hasTsconfig: false },
+      ),
     ).toThrow(/m3Version/);
   });
 
@@ -181,9 +221,20 @@ describe("bun workspace contract", () => {
           "node_modules/@scope/real",
         ].map((p) => mkdir(join(dir, p), { recursive: true })),
       );
-      await symlink(join(store, "react"), join(dir, "node_modules/react"), "junction");
-      await symlink(join(store, "react"), join(dir, "node_modules/@scope/linked"), "junction");
-      expect(await staleInstallEntries(dir)).toEqual(["@scope/real", "react-dom"]);
+      await symlink(
+        join(store, "react"),
+        join(dir, "node_modules/react"),
+        "junction",
+      );
+      await symlink(
+        join(store, "react"),
+        join(dir, "node_modules/@scope/linked"),
+        "junction",
+      );
+      expect(await staleInstallEntries(dir)).toEqual([
+        "@scope/real",
+        "react-dom",
+      ]);
       expect(await staleInstallEntries(join(dir, "missing"))).toEqual([]);
     } finally {
       await rm(dir, { recursive: true, force: true });

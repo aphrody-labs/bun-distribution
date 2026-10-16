@@ -81,7 +81,14 @@ export const CANONICAL_NAVIGATION_TARGETS: NavigationSuggestion[] = [
     description: "Explorateur de fichiers Spacedrive VDFS",
     route: desktopRoutes.files,
     icon: "folder_open",
-    keywords: ["fichiers", "files", "explorer", "dossier", "spacedrive", "documents"],
+    keywords: [
+      "fichiers",
+      "files",
+      "explorer",
+      "dossier",
+      "spacedrive",
+      "documents",
+    ],
   },
   {
     kind: "navigation",
@@ -90,7 +97,16 @@ export const CANONICAL_NAVIGATION_TARGETS: NavigationSuggestion[] = [
     description: "Hub de modèles locaux et gestion VRAM / GPU",
     route: desktopRoutes.models,
     icon: "model_training",
-    keywords: ["modèles", "modeles", "models", "llm", "ia", "gpu", "vram", "weights"],
+    keywords: [
+      "modèles",
+      "modeles",
+      "models",
+      "llm",
+      "ia",
+      "gpu",
+      "vram",
+      "weights",
+    ],
   },
   {
     kind: "navigation",
@@ -99,7 +115,14 @@ export const CANONICAL_NAVIGATION_TARGETS: NavigationSuggestion[] = [
     description: "Configuration du poste de travail et raccourcis",
     route: desktopRoutes.settings,
     icon: "settings",
-    keywords: ["paramètres", "parametres", "settings", "config", "options", "preferences"],
+    keywords: [
+      "paramètres",
+      "parametres",
+      "settings",
+      "config",
+      "options",
+      "preferences",
+    ],
   },
   {
     kind: "navigation",
@@ -198,8 +221,18 @@ export const DEFAULT_RECENT_LOCATIONS: RecentFileItem[] = [];
  * parentheses and unary signs. Returns null for anything else, so plain questions never match.
  */
 export function evaluateArithmetic(input: string): number | null {
-  const source = input.trim().replace(/=\s*$/, "").replace(/[×x]/g, "*").replace(/÷/g, "/").replace(/(\d),(\d)/g, "$1.$2");
-  if (!/^[\d\s.+\-*/%^()]+$/.test(source) || !/\d/.test(source) || !/[+\-*/%^]/.test(source)) return null;
+  const source = input
+    .trim()
+    .replace(/=\s*$/, "")
+    .replace(/[×x]/g, "*")
+    .replace(/÷/g, "/")
+    .replace(/(\d),(\d)/g, "$1.$2");
+  if (
+    !/^[\d\s.+\-*/%^()]+$/.test(source) ||
+    !/\d/.test(source) ||
+    !/[+\-*/%^]/.test(source)
+  )
+    return null;
   const tokens = source.match(/\d+(?:\.\d+)?|\.\d+|[+\-*/%^()]/g) ?? [];
   if (tokens.join("") !== source.replace(/\s+/g, "")) return null;
   let index = 0;
@@ -231,7 +264,8 @@ export function evaluateArithmetic(input: string): number | null {
     while (peek() === "*" || peek() === "/" || peek() === "%") {
       const op = next();
       const right = power();
-      value = op === "*" ? value * right : op === "/" ? value / right : value % right;
+      value =
+        op === "*" ? value * right : op === "/" ? value / right : value % right;
     }
     return value;
   };
@@ -255,7 +289,10 @@ export function evaluateArithmetic(input: string): number | null {
 
 /** Format a calculator result without binary-float noise (`0.1 + 0.2` -> `0.3`). */
 export function formatNumber(value: number, locale = "en"): string {
-  return new Intl.NumberFormat(locale, { maximumFractionDigits: 10, useGrouping: false }).format(Number(value.toPrecision(15)));
+  return new Intl.NumberFormat(locale, {
+    maximumFractionDigits: 10,
+    useGrouping: false,
+  }).format(Number(value.toPrecision(15)));
 }
 
 /** Case and accent insensitive word-level matching. */
@@ -267,7 +304,10 @@ export function normalizeText(text: string): string {
 }
 
 /** Returns true if all words in `query` appear in the combined targets. */
-export function matchesQuery(query: string, ...targets: (string | undefined)[]): boolean {
+export function matchesQuery(
+  query: string,
+  ...targets: (string | undefined)[]
+): boolean {
   const normQuery = normalizeText(query).trim();
   if (!normQuery) return false;
   const words = normQuery.split(/\s+/).filter(Boolean);
@@ -280,7 +320,10 @@ export function matchesQuery(query: string, ...targets: (string | undefined)[]):
 }
 
 /** Get default quick-access suggestions (for empty query or initial view in Command Palette). */
-export function getDefaultSuggestions(sources: Partial<SearchSources> = {}, limit = 8): Suggestion[] {
+export function getDefaultSuggestions(
+  sources: Partial<SearchSources> = {},
+  limit = 8,
+): Suggestion[] {
   const out: Suggestion[] = [];
   if (sources.navigation !== false) {
     for (const nav of CANONICAL_NAVIGATION_TARGETS) {
@@ -337,7 +380,16 @@ export function suggest(
       const cmdQuery = query.slice(1).trim();
       for (const cmd of commands) {
         if (out.length >= limit) break;
-        if (!cmdQuery || matchesQuery(cmdQuery, cmd.label, cmd.command, cmd.description, ...cmd.keywords)) {
+        if (
+          !cmdQuery ||
+          matchesQuery(
+            cmdQuery,
+            cmd.label,
+            cmd.command,
+            cmd.description,
+            ...cmd.keywords,
+          )
+        ) {
           out.push(cmd);
         }
       }
@@ -371,7 +423,15 @@ export function suggest(
   if (allowNavigation) {
     for (const nav of navigationTargets) {
       if (out.length >= limit) break;
-      if (matchesQuery(query, nav.label, nav.description, nav.route, ...nav.keywords)) {
+      if (
+        matchesQuery(
+          query,
+          nav.label,
+          nav.description,
+          nav.route,
+          ...nav.keywords,
+        )
+      ) {
         out.push(nav);
       }
     }

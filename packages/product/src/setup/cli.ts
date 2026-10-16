@@ -76,15 +76,24 @@ export async function install(
   roles: ReadonlySet<Role>,
   simulate: boolean,
 ): Promise<InstallReport> {
-  ctx.log(`setup ${ctx.version} rôles=${[...roles].join(",") || "aucun"} simulation=${simulate}`);
-  return runInstall(ctx, simulate ? "simuler" : "executer", { repoReady: false }, stepsFor(roles));
+  ctx.log(
+    `setup ${ctx.version} rôles=${[...roles].join(",") || "aucun"} simulation=${simulate}`,
+  );
+  return runInstall(
+    ctx,
+    simulate ? "simuler" : "executer",
+    { repoReady: false },
+    stepsFor(roles),
+  );
 }
 
 /** The double-click wizard: what will happen, the two optional roles, then the run. */
 export async function wizard(ctx: Context): Promise<number> {
   ctx.ui.say(`Aphrody - installation (version ${ctx.version})`);
   ctx.ui.say("");
-  ctx.ui.say("Je vais installer ou réparer, sans rien te demander de technique :");
+  ctx.ui.say(
+    "Je vais installer ou réparer, sans rien te demander de technique :",
+  );
   ctx.ui.say("  - aphrody (outils et serveur MCP)");
   ctx.ui.say("  - l'application Aphrody");
   ctx.ui.say("  - les plugins Claude aphrody et yolo");
@@ -93,7 +102,12 @@ export async function wizard(ctx: Context): Promise<number> {
   );
   ctx.ui.say("");
   const roles = new Set<Role>();
-  if (ctx.ui.confirm("Ajouter le rôle administrateur (tunnel privé, SSH, entraînement) ?", false))
+  if (
+    ctx.ui.confirm(
+      "Ajouter le rôle administrateur (tunnel privé, SSH, entraînement) ?",
+      false,
+    )
+  )
     roles.add("admin");
   if (
     ctx.ui.confirm(
@@ -111,10 +125,13 @@ export async function wizard(ctx: Context): Promise<number> {
   summary(ctx, report);
   const app = desktopApp(ctx);
   if (app && ctx.ui.confirm("Ouvrir Aphrody maintenant ?", true))
-    openInDesktop(roles.has("admin") ? "admin" : roles.has("createur") ? "creator" : "chat", {
-      ...ctx.sys.env,
-      APHRODY_DESKTOP_BIN: app,
-    });
+    openInDesktop(
+      roles.has("admin") ? "admin" : roles.has("createur") ? "creator" : "chat",
+      {
+        ...ctx.sys.env,
+        APHRODY_DESKTOP_BIN: app,
+      },
+    );
   ctx.ui.pause("Appuie sur Entrée pour fermer...");
   return report.failed > 0 ? 1 : 0;
 }
@@ -125,11 +142,16 @@ export function setupContext(): Context {
   return {
     ...ctx,
     version: VERSION,
-    log: createLogger(join(ctx.paths.localAppData, "Aphrody", "Setup", "setup.log")),
+    log: createLogger(
+      join(ctx.paths.localAppData, "Aphrody", "Setup", "setup.log"),
+    ),
   };
 }
 
-export async function main(argv: string[], ctx: Context = setupContext()): Promise<number> {
+export async function main(
+  argv: string[],
+  ctx: Context = setupContext(),
+): Promise<number> {
   const [first, ...rest] = argv;
   if (first === "--version" || first === "-v") {
     ctx.ui.say(ctx.version);
@@ -140,13 +162,17 @@ export async function main(argv: string[], ctx: Context = setupContext()): Promi
     return 0;
   }
   if (first === "mise-a-jour") {
-    const { values } = parse(rest, { check: { type: "boolean" }, quiet: { type: "boolean" } });
+    const { values } = parse(rest, {
+      check: { type: "boolean" },
+      quiet: { type: "boolean" },
+    });
     const result = await updateKit(ctx, {
       checkOnly: values.check ?? false,
       artifact: ARTIFACTS.setup,
       app: setupApp(ctx.version),
     });
-    if (!values.quiet) ctx.ui.say(`${result.status}${result.latest ? ` ${result.latest}` : ""}`);
+    if (!values.quiet)
+      ctx.ui.say(`${result.status}${result.latest ? ` ${result.latest}` : ""}`);
     return 0;
   }
   const { values } = parse(argv, {
@@ -155,7 +181,11 @@ export async function main(argv: string[], ctx: Context = setupContext()): Promi
     roles: { type: "string" },
   });
   if (!values.oui && ctx.ui.interactive) return wizard(ctx);
-  const report = await install(ctx, parseRoles(values.roles), values.simuler ?? false);
+  const report = await install(
+    ctx,
+    parseRoles(values.roles),
+    values.simuler ?? false,
+  );
   summary(ctx, report);
   return report.failed > 0 ? 1 : 0;
 }
@@ -163,7 +193,9 @@ export async function main(argv: string[], ctx: Context = setupContext()): Promi
 if (import.meta.main) {
   const crash = (error: unknown) => {
     logCrash(error, Bun.argv.slice(2), process.env, setupApp(VERSION));
-    console.error(`Erreur inattendue : ${error instanceof Error ? error.message : String(error)}`);
+    console.error(
+      `Erreur inattendue : ${error instanceof Error ? error.message : String(error)}`,
+    );
     process.exit(1);
   };
   process.on("uncaughtException", crash);
@@ -173,9 +205,10 @@ if (import.meta.main) {
     ctx.sys.run(["cmd", "/c", "chcp 65001 >nul"]).catch(() => undefined);
   const args = Bun.argv.slice(2);
   if (args[0] !== "mise-a-jour") {
-    const notice = await autoUpdateInBackground(ctx.sys.env, setupApp(VERSION)).catch(
-      () => undefined,
-    );
+    const notice = await autoUpdateInBackground(
+      ctx.sys.env,
+      setupApp(VERSION),
+    ).catch(() => undefined);
     if (notice) ctx.ui.say(notice);
   }
   let code: number;

@@ -61,7 +61,9 @@ function Champ({
 }) {
   return (
     <label className="block space-y-1">
-      <span className="block text-[11px] uppercase tracking-wider text-white/50">{label}</span>
+      <span className="block text-[11px] uppercase tracking-wider text-white/50">
+        {label}
+      </span>
       {children}
       {aide && <span className="block text-[11px] text-white/35">{aide}</span>}
     </label>
@@ -148,7 +150,8 @@ function ListeDeLignes({
 }) {
   const modifier = (i: number, v: string) =>
     onChange(valeurs.map((ligne, index) => (index === i ? v : ligne)));
-  const supprimer = (i: number) => onChange(valeurs.filter((_, index) => index !== i));
+  const supprimer = (i: number) =>
+    onChange(valeurs.filter((_, index) => index !== i));
   const deplacer = (i: number, delta: number) => {
     const j = i + delta;
     if (j < 0 || j >= valeurs.length) return;
@@ -212,7 +215,13 @@ function ListeDeLignes({
 }
 
 /** Mots-clés séparés par des virgules — la forme la plus rapide à corriger. */
-function MotsCles({ valeurs, onChange }: { valeurs: string[]; onChange: (v: string[]) => void }) {
+function MotsCles({
+  valeurs,
+  onChange,
+}: {
+  valeurs: string[];
+  onChange: (v: string[]) => void;
+}) {
   return (
     <Texte
       value={valeurs.join(", ")}
@@ -306,7 +315,10 @@ export default function CanonEditor({
       };
       if (res.ok && data.ok && data.config) {
         setConfig(data.config);
-        setMsg({ ok: true, text: "Doctrine enregistrée — /wiki/canon l'applique immédiatement." });
+        setMsg({
+          ok: true,
+          text: "Doctrine enregistrée — /wiki/canon l'applique immédiatement.",
+        });
       } else {
         setMsg({ ok: false, text: data.error ?? "Échec de l'enregistrement." });
       }
@@ -319,7 +331,11 @@ export default function CanonEditor({
 
   // ── Sujets tranchés ────────────────────────────────────────────────────
   const majEntree = (i: number, p: Partial<CanonTopicEntry>) =>
-    patch({ entries: config.entries.map((e, index) => (index === i ? { ...e, ...p } : e)) });
+    patch({
+      entries: config.entries.map((e, index) =>
+        index === i ? { ...e, ...p } : e,
+      ),
+    });
 
   const ajouterEntree = () =>
     patch({
@@ -340,24 +356,35 @@ export default function CanonEditor({
     });
 
   const majReference = (id: string, p: Partial<CanonReference>) =>
-    patch({ references: config.references.map((r) => (r.id === id ? { ...r, ...p } : r)) });
+    patch({
+      references: config.references.map((r) =>
+        r.id === id ? { ...r, ...p } : r,
+      ),
+    });
 
   const refsFiltrees = useMemo(() => {
     const q = filtreRef.trim().toLowerCase();
     if (!q) return config.references;
     return config.references.filter((r) =>
-      `${r.subject} ${r.keywords.join(" ")} ${r.text} ${r.source}`.toLowerCase().includes(q),
+      `${r.subject} ${r.keywords.join(" ")} ${r.text} ${r.source}`
+        .toLowerCase()
+        .includes(q),
     );
   }, [config.references, filtreRef]);
 
   const parDocument = useMemo(() => {
     const compte = new Map<string, number>();
-    for (const r of config.references) compte.set(r.source, (compte.get(r.source) ?? 0) + 1);
+    for (const r of config.references)
+      compte.set(r.source, (compte.get(r.source) ?? 0) + 1);
     return [...compte.entries()].toSorted((a, b) => b[1] - a[1]);
   }, [config.references]);
 
   const majRegle = (i: number, p: Partial<CanonHeuristic>) =>
-    patch({ heuristics: config.heuristics.map((h, index) => (index === i ? { ...h, ...p } : h)) });
+    patch({
+      heuristics: config.heuristics.map((h, index) =>
+        index === i ? { ...h, ...p } : h,
+      ),
+    });
 
   return (
     <div className="space-y-4 pb-24">
@@ -371,20 +398,29 @@ export default function CanonEditor({
         <div className="dbz-panel flex flex-wrap items-center justify-between gap-3 p-4 backdrop-blur">
           <div>
             <p className="text-sm text-white/70">
-              <strong className="text-dbz-orange">{config.entries.length}</strong> sujets tranchés ·{" "}
-              <strong className="text-dbz-orange">{config.heuristics.length}</strong> familles de
-              formulations · <strong className="text-dbz-orange">{config.references.length}</strong>{" "}
+              <strong className="text-dbz-orange">
+                {config.entries.length}
+              </strong>{" "}
+              sujets tranchés ·{" "}
+              <strong className="text-dbz-orange">
+                {config.heuristics.length}
+              </strong>{" "}
+              familles de formulations ·{" "}
+              <strong className="text-dbz-orange">
+                {config.references.length}
+              </strong>{" "}
               citations d&apos;auteur
             </p>
             <p className="text-[11px] text-white/45">
               {modifie ? (
                 <span className="text-dbz-yellow">
-                  Modifications non enregistrées — la doctrine publique n&apos;a pas encore changé.
+                  Modifications non enregistrées — la doctrine publique n&apos;a
+                  pas encore changé.
                 </span>
               ) : (
                 <>
-                  Le moteur de <code>/wiki/canon</code> ne connaît que ce qui est écrit sur cette
-                  page.
+                  Le moteur de <code>/wiki/canon</code> ne connaît que ce qui
+                  est écrit sur cette page.
                 </>
               )}
             </p>
@@ -541,7 +577,9 @@ export default function CanonEditor({
                     onChange={(e) =>
                       patch({
                         tiers: config.tiers.map((t, index) =>
-                          index === i ? { ...t, score: Number(e.target.value) } : t,
+                          index === i
+                            ? { ...t, score: Number(e.target.value) }
+                            : t,
                         ),
                       })
                     }
@@ -624,15 +662,16 @@ export default function CanonEditor({
                   className="h-2 w-2 shrink-0 rounded-full"
                   style={{
                     background:
-                      config.tiers.find((t) => t.id === entree.tier)?.couleur ?? "#9ca3af",
+                      config.tiers.find((t) => t.id === entree.tier)?.couleur ??
+                      "#9ca3af",
                   }}
                 />
                 <span className="font-saiyan text-sm text-white">
                   {entree.title || "Nouveau sujet"}
                 </span>
                 <span className="text-[11px] text-white/35">
-                  {config.tiers.find((t) => t.id === entree.tier)?.court} · {entree.score}/100 ·{" "}
-                  {entree.keywords.length} mots-clés
+                  {config.tiers.find((t) => t.id === entree.tier)?.court} ·{" "}
+                  {entree.score}/100 · {entree.keywords.length} mots-clés
                 </span>
               </summary>
               <div className="space-y-3 border-t border-dbz-border/60 p-3">
@@ -649,7 +688,8 @@ export default function CanonEditor({
                       value={entree.category}
                       onChange={(e) =>
                         majEntree(i, {
-                          category: e.target.value as CanonTopicEntry["category"],
+                          category: e.target
+                            .value as CanonTopicEntry["category"],
                         })
                       }
                       className={champClasse}
@@ -674,7 +714,9 @@ export default function CanonEditor({
                       min={0}
                       max={100}
                       value={entree.score}
-                      onChange={(e) => majEntree(i, { score: Number(e.target.value) })}
+                      onChange={(e) =>
+                        majEntree(i, { score: Number(e.target.value) })
+                      }
                       className={`${champClasse} w-20 tabular-nums`}
                     />
                   </Champ>
@@ -688,7 +730,10 @@ export default function CanonEditor({
                     onChange={(v) => majEntree(i, { keywords: v })}
                   />
                 </Champ>
-                <Champ label="Verdict" aide="Une phrase. C'est la réponse affichée en gros.">
+                <Champ
+                  label="Verdict"
+                  aide="Une phrase. C'est la réponse affichée en gros."
+                >
                   <Texte
                     rows={2}
                     value={entree.verdict}
@@ -746,7 +791,9 @@ export default function CanonEditor({
                             toriyamaQuote: entree.toriyamaQuote
                               ? {
                                   ...entree.toriyamaQuote,
-                                  year: e.target.value ? Number(e.target.value) : undefined,
+                                  year: e.target.value
+                                    ? Number(e.target.value)
+                                    : undefined,
                                 }
                               : undefined,
                           })
@@ -768,7 +815,9 @@ export default function CanonEditor({
                 <button
                   type="button"
                   onClick={() =>
-                    patch({ entries: config.entries.filter((_, index) => index !== i) })
+                    patch({
+                      entries: config.entries.filter((_, index) => index !== i),
+                    })
                   }
                   className="inline-flex items-center gap-1.5 text-[11px] text-white/40 hover:text-red-400"
                 >
@@ -822,8 +871,8 @@ export default function CanonEditor({
                   {regle.label || "Nouvelle famille"}
                 </span>
                 <span className="text-[11px] text-white/35">
-                  {config.tiers.find((t) => t.id === regle.tier)?.court} · {regle.keywords.length}{" "}
-                  mots-clés
+                  {config.tiers.find((t) => t.id === regle.tier)?.court} ·{" "}
+                  {regle.keywords.length} mots-clés
                 </span>
               </summary>
               <div className="space-y-3 border-t border-dbz-border/60 p-3">
@@ -848,7 +897,9 @@ export default function CanonEditor({
                       min={0}
                       max={100}
                       value={regle.score}
-                      onChange={(e) => majRegle(i, { score: Number(e.target.value) })}
+                      onChange={(e) =>
+                        majRegle(i, { score: Number(e.target.value) })
+                      }
                       className={`${champClasse} w-20 tabular-nums`}
                     />
                   </Champ>
@@ -884,7 +935,11 @@ export default function CanonEditor({
                 <button
                   type="button"
                   onClick={() =>
-                    patch({ heuristics: config.heuristics.filter((_, index) => index !== i) })
+                    patch({
+                      heuristics: config.heuristics.filter(
+                        (_, index) => index !== i,
+                      ),
+                    })
                   }
                   className="inline-flex items-center gap-1.5 text-[11px] text-white/40 hover:text-red-400"
                 >
@@ -905,9 +960,11 @@ export default function CanonEditor({
         {config.references.length === 0 ? (
           <p className="rounded-lg border border-dbz-border bg-black/20 p-3 text-[13px] leading-relaxed text-white/50">
             Aucune citation chargée. Depuis <code>apps/shenron/site</code> :{" "}
-            <code className="text-dbz-orange">bun run canon:aphrody --appliquer</code> lit les
-            introductions des 42 tomes, le Super Exciting Guide, les Daizenshuu et les interviews
-            conservés dans <code>.aphrody</code>.
+            <code className="text-dbz-orange">
+              bun run canon:aphrody --appliquer
+            </code>{" "}
+            lit les introductions des 42 tomes, le Super Exciting Guide, les
+            Daizenshuu et les interviews conservés dans <code>.aphrody</code>.
           </p>
         ) : (
           <>
@@ -933,87 +990,101 @@ export default function CanonEditor({
               </span>
             </div>
             <div className="space-y-2">
-              {(toutesRefs ? refsFiltrees : refsFiltrees.slice(0, 20)).map((r) => (
-                <details key={r.id} className="rounded-lg border border-dbz-border bg-black/20">
-                  <summary className="flex cursor-pointer flex-wrap items-center gap-2 px-3 py-2.5">
-                    <span className="font-saiyan text-sm text-white">
-                      {r.subject || "Sans sujet"}
-                    </span>
-                    <span className="text-[11px] text-white/35">
-                      {r.source}
-                      {r.year ? `, ${r.year}` : ""} · {r.lang}
-                      {r.provenance === "databooks" ? " · planche du site" : ""}
-                      {r.provenance === "manga" ? " · manga" : ""}
-                      {r.provenance === "manuel" ? " · saisie à la main" : ""}
-                      {r.lang !== "fr" && !r.textFr ? " · à traduire" : ""}
-                    </span>
-                  </summary>
-                  <div className="space-y-3 border-t border-dbz-border/60 p-3">
-                    <p
-                      lang={r.lang}
-                      className="rounded-lg bg-black/30 p-3 text-[13px] italic leading-relaxed text-white/70"
-                    >
-                      « {r.text} »
-                    </p>
-                    {r.lang !== "fr" && (
-                      <Champ
-                        label="Traduction française"
-                        aide="Affichée à la place de l'original, qui reste visible dessous. Vide = la citation s'affiche en version originale."
+              {(toutesRefs ? refsFiltrees : refsFiltrees.slice(0, 20)).map(
+                (r) => (
+                  <details
+                    key={r.id}
+                    className="rounded-lg border border-dbz-border bg-black/20"
+                  >
+                    <summary className="flex cursor-pointer flex-wrap items-center gap-2 px-3 py-2.5">
+                      <span className="font-saiyan text-sm text-white">
+                        {r.subject || "Sans sujet"}
+                      </span>
+                      <span className="text-[11px] text-white/35">
+                        {r.source}
+                        {r.year ? `, ${r.year}` : ""} · {r.lang}
+                        {r.provenance === "databooks"
+                          ? " · planche du site"
+                          : ""}
+                        {r.provenance === "manga" ? " · manga" : ""}
+                        {r.provenance === "manuel" ? " · saisie à la main" : ""}
+                        {r.lang !== "fr" && !r.textFr ? " · à traduire" : ""}
+                      </span>
+                    </summary>
+                    <div className="space-y-3 border-t border-dbz-border/60 p-3">
+                      <p
+                        lang={r.lang}
+                        className="rounded-lg bg-black/30 p-3 text-[13px] italic leading-relaxed text-white/70"
                       >
+                        « {r.text} »
+                      </p>
+                      {r.lang !== "fr" && (
+                        <Champ
+                          label="Traduction française"
+                          aide="Affichée à la place de l'original, qui reste visible dessous. Vide = la citation s'affiche en version originale."
+                        >
+                          <Texte
+                            rows={4}
+                            value={r.textFr ?? ""}
+                            onChange={(v) => majReference(r.id, { textFr: v })}
+                          />
+                        </Champ>
+                      )}
+                      <Champ label="Sujet">
                         <Texte
-                          rows={4}
-                          value={r.textFr ?? ""}
-                          onChange={(v) => majReference(r.id, { textFr: v })}
+                          value={r.subject}
+                          onChange={(v) => majReference(r.id, { subject: v })}
                         />
                       </Champ>
-                    )}
-                    <Champ label="Sujet">
-                      <Texte
-                        value={r.subject}
-                        onChange={(v) => majReference(r.id, { subject: v })}
-                      />
-                    </Champ>
-                    <Champ
-                      label="Mots-clés"
-                      aide="Ce sont eux qui font remonter la citation sous un verdict."
-                    >
-                      <MotsCles
-                        valeurs={r.keywords}
-                        onChange={(v) => majReference(r.id, { keywords: v })}
-                      />
-                    </Champ>
-                    <Champ label="Source">
-                      <Texte value={r.source} onChange={(v) => majReference(r.id, { source: v })} />
-                    </Champ>
-                    <p className="text-[11px] text-white/30">
-                      Document : {r.document || "—"}
-                      {r.href && (
-                        <>
-                          {" · "}
-                          <a
-                            href={r.href}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-white/45 hover:text-dbz-orange"
-                          >
-                            voir la pièce
-                          </a>
-                        </>
-                      )}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        patch({ references: config.references.filter((x) => x.id !== r.id) })
-                      }
-                      className="inline-flex items-center gap-1.5 text-[11px] text-white/40 hover:text-red-400"
-                    >
-                      <Corbeille className="h-3.5 w-3.5" />
-                      Retirer cette citation
-                    </button>
-                  </div>
-                </details>
-              ))}
+                      <Champ
+                        label="Mots-clés"
+                        aide="Ce sont eux qui font remonter la citation sous un verdict."
+                      >
+                        <MotsCles
+                          valeurs={r.keywords}
+                          onChange={(v) => majReference(r.id, { keywords: v })}
+                        />
+                      </Champ>
+                      <Champ label="Source">
+                        <Texte
+                          value={r.source}
+                          onChange={(v) => majReference(r.id, { source: v })}
+                        />
+                      </Champ>
+                      <p className="text-[11px] text-white/30">
+                        Document : {r.document || "—"}
+                        {r.href && (
+                          <>
+                            {" · "}
+                            <a
+                              href={r.href}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-white/45 hover:text-dbz-orange"
+                            >
+                              voir la pièce
+                            </a>
+                          </>
+                        )}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          patch({
+                            references: config.references.filter(
+                              (x) => x.id !== r.id,
+                            ),
+                          })
+                        }
+                        className="inline-flex items-center gap-1.5 text-[11px] text-white/40 hover:text-red-400"
+                      >
+                        <Corbeille className="h-3.5 w-3.5" />
+                        Retirer cette citation
+                      </button>
+                    </div>
+                  </details>
+                ),
+              )}
             </div>
             {refsFiltrees.length > 20 && (
               <button
@@ -1027,7 +1098,8 @@ export default function CanonEditor({
               </button>
             )}
             <p className="text-[11px] leading-relaxed text-white/35">
-              Un nouveau chargement (<code>bun run canon:aphrody --appliquer</code>) remplace ces
+              Un nouveau chargement (
+              <code>bun run canon:aphrody --appliquer</code>) remplace ces
               citations et conserve celles saisies à la main.
             </p>
           </>
@@ -1044,14 +1116,18 @@ export default function CanonEditor({
             <Texte
               rows={2}
               value={config.fallback.verdict}
-              onChange={(v) => patch({ fallback: { ...config.fallback, verdict: v } })}
+              onChange={(v) =>
+                patch({ fallback: { ...config.fallback, verdict: v } })
+              }
             />
           </Champ>
           <Champ label="Rang de repli">
             <ChoixRang
               value={config.fallback.tier}
               tiers={config.tiers}
-              onChange={(v) => patch({ fallback: { ...config.fallback, tier: v } })}
+              onChange={(v) =>
+                patch({ fallback: { ...config.fallback, tier: v } })
+              }
             />
           </Champ>
         </div>
@@ -1059,13 +1135,17 @@ export default function CanonEditor({
           <Texte
             rows={3}
             value={config.fallback.explanation}
-            onChange={(v) => patch({ fallback: { ...config.fallback, explanation: v } })}
+            onChange={(v) =>
+              patch({ fallback: { ...config.fallback, explanation: v } })
+            }
           />
         </Champ>
         <Champ label="Sources citées en repli">
           <ListeDeLignes
             valeurs={config.fallback.sources}
-            onChange={(v) => patch({ fallback: { ...config.fallback, sources: v } })}
+            onChange={(v) =>
+              patch({ fallback: { ...config.fallback, sources: v } })
+            }
             ajout="Ajouter une source"
             libelle="Source de la citation"
           />
@@ -1082,7 +1162,9 @@ export default function CanonEditor({
             <Texte
               rows={2}
               value={config.vide.explanation}
-              onChange={(v) => patch({ vide: { ...config.vide, explanation: v } })}
+              onChange={(v) =>
+                patch({ vide: { ...config.vide, explanation: v } })
+              }
             />
           </Champ>
         </div>
@@ -1112,10 +1194,15 @@ export default function CanonEditor({
                 }
                 className="h-4 w-4 rounded border-dbz-border bg-black/40 text-dbz-orange focus:ring-dbz-orange"
               />
-              <span>{config.powerScaling.enabled ? "Activé" : "Désactivé"}</span>
+              <span>
+                {config.powerScaling.enabled ? "Activé" : "Désactivé"}
+              </span>
             </label>
           </Champ>
-          <Champ label="1 Kiri = X Battle Power (BP)" aide="Étalon officiel V-Jump : ~50 000 BP">
+          <Champ
+            label="1 Kiri = X Battle Power (BP)"
+            aide="Étalon officiel V-Jump : ~50 000 BP"
+          >
             <input
               type="number"
               value={config.powerScaling.kiriToBpRate}
@@ -1202,7 +1289,12 @@ export default function CanonEditor({
                         onChange={(e) => {
                           const maj = [...config.powerScaling.multipliers];
                           maj[i] = { ...m, form: e.target.value };
-                          patch({ powerScaling: { ...config.powerScaling, multipliers: maj } });
+                          patch({
+                            powerScaling: {
+                              ...config.powerScaling,
+                              multipliers: maj,
+                            },
+                          });
                         }}
                         className="w-full rounded bg-black/20 px-2 py-1 text-white"
                       />
@@ -1213,8 +1305,16 @@ export default function CanonEditor({
                         value={m.multiplier}
                         onChange={(e) => {
                           const maj = [...config.powerScaling.multipliers];
-                          maj[i] = { ...m, multiplier: Number(e.target.value) || 0 };
-                          patch({ powerScaling: { ...config.powerScaling, multipliers: maj } });
+                          maj[i] = {
+                            ...m,
+                            multiplier: Number(e.target.value) || 0,
+                          };
+                          patch({
+                            powerScaling: {
+                              ...config.powerScaling,
+                              multipliers: maj,
+                            },
+                          });
                         }}
                         className="w-16 rounded bg-black/20 px-2 py-1 text-white font-mono"
                       />
@@ -1226,7 +1326,12 @@ export default function CanonEditor({
                         onChange={(e) => {
                           const maj = [...config.powerScaling.multipliers];
                           maj[i] = { ...m, baseForm: e.target.value };
-                          patch({ powerScaling: { ...config.powerScaling, multipliers: maj } });
+                          patch({
+                            powerScaling: {
+                              ...config.powerScaling,
+                              multipliers: maj,
+                            },
+                          });
                         }}
                         className="w-full rounded bg-black/20 px-2 py-1 text-white"
                       />
@@ -1236,8 +1341,16 @@ export default function CanonEditor({
                         value={m.canonTier}
                         onChange={(e) => {
                           const maj = [...config.powerScaling.multipliers];
-                          maj[i] = { ...m, canonTier: e.target.value as CanonTier };
-                          patch({ powerScaling: { ...config.powerScaling, multipliers: maj } });
+                          maj[i] = {
+                            ...m,
+                            canonTier: e.target.value as CanonTier,
+                          };
+                          patch({
+                            powerScaling: {
+                              ...config.powerScaling,
+                              multipliers: maj,
+                            },
+                          });
                         }}
                         className="rounded bg-black/20 px-1 py-1 text-xs text-white"
                       >
@@ -1255,7 +1368,12 @@ export default function CanonEditor({
                         onChange={(e) => {
                           const maj = [...config.powerScaling.multipliers];
                           maj[i] = { ...m, source: e.target.value };
-                          patch({ powerScaling: { ...config.powerScaling, multipliers: maj } });
+                          patch({
+                            powerScaling: {
+                              ...config.powerScaling,
+                              multipliers: maj,
+                            },
+                          });
                         }}
                         className="w-full rounded bg-black/20 px-2 py-1 text-white/80"
                       />
@@ -1267,9 +1385,10 @@ export default function CanonEditor({
                           patch({
                             powerScaling: {
                               ...config.powerScaling,
-                              multipliers: config.powerScaling.multipliers.filter(
-                                (_, idx) => idx !== i,
-                              ),
+                              multipliers:
+                                config.powerScaling.multipliers.filter(
+                                  (_, idx) => idx !== i,
+                                ),
                             },
                           });
                         }}
@@ -1308,7 +1427,9 @@ export default function CanonEditor({
                   onChange={(e) => {
                     const maj = [...config.powerScaling.tiers];
                     maj[i] = { ...t, name: e.target.value };
-                    patch({ powerScaling: { ...config.powerScaling, tiers: maj } });
+                    patch({
+                      powerScaling: { ...config.powerScaling, tiers: maj },
+                    });
                   }}
                   className="w-full rounded bg-black/30 px-1.5 py-0.5 text-xs text-white font-medium"
                 />
@@ -1318,7 +1439,9 @@ export default function CanonEditor({
                   onChange={(e) => {
                     const maj = [...config.powerScaling.tiers];
                     maj[i] = { ...t, description: e.target.value };
-                    patch({ powerScaling: { ...config.powerScaling, tiers: maj } });
+                    patch({
+                      powerScaling: { ...config.powerScaling, tiers: maj },
+                    });
                   }}
                   className="w-full resize-none rounded bg-black/30 px-1.5 py-0.5 text-[10px] text-white/60"
                 />
@@ -1335,7 +1458,11 @@ export default function CanonEditor({
       >
         <div className="flex items-center gap-2">
           <Recherche className="h-4 w-4 shrink-0 text-white/40" />
-          <Texte value={essai} onChange={setEssai} placeholder="Le Super Saiyan 5 existe-t-il ?" />
+          <Texte
+            value={essai}
+            onChange={setEssai}
+            placeholder="Le Super Saiyan 5 existe-t-il ?"
+          />
         </div>
         {verdictEssai && (
           <div
@@ -1354,7 +1481,9 @@ export default function CanonEditor({
               </p>
             </div>
             <p className="text-sm text-white">{verdictEssai.verdict}</p>
-            <p className="text-[13px] leading-relaxed text-white/55">{verdictEssai.explanation}</p>
+            <p className="text-[13px] leading-relaxed text-white/55">
+              {verdictEssai.explanation}
+            </p>
             {verdictEssai.matchedKeywords.length > 0 && (
               <p className="text-[11px] text-white/35">
                 Mots-clés reconnus : {verdictEssai.matchedKeywords.join(", ")}
@@ -1363,7 +1492,8 @@ export default function CanonEditor({
             {verdictEssai.origine === "fallback" && (
               <p className="flex items-center gap-1.5 text-[11px] text-amber-300/80">
                 <Alerte className="h-3 w-3" />
-                Aucun sujet ni famille ne répond : ajoute un mot-clé ou un sujet pour trancher.
+                Aucun sujet ni famille ne répond : ajoute un mot-clé ou un sujet
+                pour trancher.
               </p>
             )}
           </div>

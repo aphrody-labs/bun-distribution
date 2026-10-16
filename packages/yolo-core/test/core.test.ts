@@ -89,9 +89,12 @@ describe("YOLO Core Library (@aphrody/yolo-core)", () => {
     );
 
     it("should perform parallel recursive directory scan", async () => {
-      const report = await scanDirectory(resolve(rootDir, "packages/engine/core/src/sys"), {
-        exts: ["ts"],
-      });
+      const report = await scanDirectory(
+        resolve(rootDir, "packages/engine/core/src/sys"),
+        {
+          exts: ["ts"],
+        },
+      );
       expect(report.schema).toBe("yolo.scan/1");
       expect(report.totalFiles).toBeGreaterThan(0);
       expect(report.totalLines).toBeGreaterThan(0);
@@ -99,7 +102,9 @@ describe("YOLO Core Library (@aphrody/yolo-core)", () => {
     });
 
     it("should audit environment portability and verify zero hardcoded paths", async () => {
-      const report = await vfs.auditPortability(resolve(rootDir, "packages/engine/core"));
+      const report = await vfs.auditPortability(
+        resolve(rootDir, "packages/engine/core"),
+      );
       expect(report.schema).toBe("yolo.portability/1");
       expect(report.auditedFiles).toBeGreaterThan(10);
       expect(report.ok).toBe(true);
@@ -268,7 +273,9 @@ describe("YOLO Core Library (@aphrody/yolo-core)", () => {
 `;
       const sections = curation.parseAwesome(sampleMarkdown);
       expect(sections.length).toBeGreaterThan(0);
-      const fwSection = sections.find((s) => s.title.includes("Web Frameworks"));
+      const fwSection = sections.find((s) =>
+        s.title.includes("Web Frameworks"),
+      );
       expect(fwSection).toBeDefined();
       expect(fwSection?.entries.length).toBe(2);
       expect(fwSection?.entries[0]?.name).toBe("Hono");

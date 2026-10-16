@@ -69,11 +69,11 @@ Base UI's `render` API. See [Base UI accessibility](https://base-ui.com/react/ov
 
 ## Application boundary
 
-| In this package | Supplied by the host |
-| --- | --- |
+| In this package                                                                                                 | Supplied by the host                                                    |
+| --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | Base UI controls, Toriyama vectors, geometry, layouts, content cards, pagers, navigation and admin presentation | Route matching, launch catalogue, translations, auth and editorial data |
-| Reader components, scoped stylesheets and 24 generated or vector interface assets | Fonts and content media |
-| Default HTML links and images | Optional router links and optimized image renderer |
+| Reader components, scoped stylesheets and 24 generated or vector interface assets                               | Fonts and content media                                                 |
+| Default HTML links and images                                                                                   | Optional router links and optimized image renderer                      |
 
 `apps/shenron/site` keeps the thin Next adapters and its domain screens. The server
 entry renders React views; it does not provide an HTTP server or Shenron APIs.

@@ -24,11 +24,11 @@ export function CostCalculatorButton({
       className={className}
       title="Cost Calculator"
     >
-      <CalculatorIcon  className="text-base-fg" />
+      <CalculatorIcon className="text-base-fg" />
       <span>Costs</span>
       {credits != null && (
         <span className="text-xs font-semibold flex items-center gap-1">
-          <CoinsIcon  className="text-base-fg" />
+          <CoinsIcon className="text-base-fg" />
           {credits}
         </span>
       )}

@@ -4,7 +4,15 @@ import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button, GenerateButton } from "@storyteller/ui-button";
 import { Modal } from "@storyteller/ui-modal";
-import { ChevronDownIcon, ChevronUpIcon, FrameIcon, MaximizeIcon, RectangleHorizontalIcon, RectangleVerticalIcon, SquareIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  FrameIcon,
+  MaximizeIcon,
+  RectangleHorizontalIcon,
+  RectangleVerticalIcon,
+  SquareIcon,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 
@@ -108,17 +116,17 @@ export const PromptBox2D = ({
     {
       label: "Wide",
       selected: aspectRatio === "wide",
-      icon: <RectangleHorizontalIcon  className="h-4 w-4" />,
+      icon: <RectangleHorizontalIcon className="h-4 w-4" />,
     },
     {
       label: "Tall",
       selected: aspectRatio === "tall",
-      icon: <RectangleVerticalIcon  className="h-4 w-4" />,
+      icon: <RectangleVerticalIcon className="h-4 w-4" />,
     },
     {
       label: "Square",
       selected: aspectRatio === "square",
-      icon: <SquareIcon  className="h-4 w-4" />,
+      icon: <SquareIcon className="h-4 w-4" />,
     },
   ]);
 
@@ -126,17 +134,17 @@ export const PromptBox2D = ({
     {
       label: "1K",
       selected: resolution === "1k",
-      icon: <MaximizeIcon  className="h-4 w-4" />,
+      icon: <MaximizeIcon className="h-4 w-4" />,
     },
     {
       label: "2K",
       selected: resolution === "2k",
-      icon: <MaximizeIcon  className="h-4 w-4" />,
+      icon: <MaximizeIcon className="h-4 w-4" />,
     },
     {
       label: "4K",
       selected: resolution === "4k",
-      icon: <MaximizeIcon  className="h-4 w-4" />,
+      icon: <MaximizeIcon className="h-4 w-4" />,
     },
   ]);
 
@@ -486,9 +494,7 @@ export const PromptBox2D = ({
                     mode="toggle"
                     panelTitle="Resolution"
                     showIconsInList
-                    triggerIcon={
-                      <MaximizeIcon  className="h-4 w-4" />
-                    }
+                    triggerIcon={<MaximizeIcon className="h-4 w-4" />}
                   />
                 </Tooltip>
               )}
@@ -506,7 +512,7 @@ export const PromptBox2D = ({
                     className="h-9 bg-ui-controls/60 px-3 text-base-fg hover:bg-ui-controls/90"
                     onClick={onFitPressed}
                   >
-                    <FrameIcon  className="h-4 w-4" />
+                    <FrameIcon className="h-4 w-4" />
                     Fit
                   </Button>
                 </Tooltip>

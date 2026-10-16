@@ -58,7 +58,13 @@ export const MONOREPO_BUN_CATALOG: MonorepoBunCatalog = {
       title: "Native HTTP Server & WebSockets",
       description:
         "High-performance Bun.serve with zero-copy routing, SSE streams, backpressure WebSocket, and TLS",
-      keyApis: ["Bun.serve", "Bun.listen", "ServerWebSocket", "Response.json", "Response.redirect"],
+      keyApis: [
+        "Bun.serve",
+        "Bun.listen",
+        "ServerWebSocket",
+        "Response.json",
+        "Response.redirect",
+      ],
       docCount: 60,
       sampleDocs: [
         "aphrody-source\\products\\web\\drive-server\\README.md",

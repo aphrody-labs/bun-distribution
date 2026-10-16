@@ -51,19 +51,26 @@ export function WikiEntityPreview({ table, draft }: Props) {
     .filter((c) => !used.has(c) && !HIDDEN_CHIP.test(c) && val(c) !== "")
     .map((c) => {
       const raw = val(c);
-      const value = isBoolColumn(c) ? (raw === "true" || raw === "1" ? "Oui" : "Non") : raw;
+      const value = isBoolColumn(c)
+        ? raw === "true" || raw === "1"
+          ? "Oui"
+          : "Non"
+        : raw;
       return { key: c, label: colLabel(c), value };
     });
 
-  const isEmpty = !image && !title && !description && chips.length === 0 && !ki && !maxKi;
+  const isEmpty =
+    !image && !title && !description && chips.length === 0 && !ki && !maxKi;
 
   if (isEmpty) {
     return (
       <div className="flex h-full min-h-[320px] flex-col items-center justify-center gap-2 text-center">
-        <span className="font-saiyan text-2xl uppercase text-white/15">Aperçu de la page</span>
+        <span className="font-saiyan text-2xl uppercase text-white/15">
+          Aperçu de la page
+        </span>
         <p className="max-w-xs text-sm text-white/50">
-          Remplis les champs à gauche : l&apos;aperçu de la page wiki se construit ici en temps
-          réel.
+          Remplis les champs à gauche : l&apos;aperçu de la page wiki se
+          construit ici en temps réel.
         </p>
       </div>
     );
@@ -99,7 +106,9 @@ export function WikiEntityPreview({ table, draft }: Props) {
           {(ja || romaji) && (
             <div className="flex flex-wrap items-center gap-3">
               {ja && (
-                <span className="text-xl font-bold tracking-widest text-dbz-orange">{ja}</span>
+                <span className="text-xl font-bold tracking-widest text-dbz-orange">
+                  {ja}
+                </span>
               )}
               {romaji && (
                 <span className="text-xs uppercase italic tracking-[0.2em] text-white/50">
@@ -153,8 +162,12 @@ export function WikiEntityPreview({ table, draft }: Props) {
 function KiCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="dbz-panel border-l-4 border-l-dbz-orange p-4">
-      <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.3em] text-white/50">{label}</p>
-      <p className="scouter-text break-words text-2xl text-dbz-orange">{value}</p>
+      <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.3em] text-white/50">
+        {label}
+      </p>
+      <p className="scouter-text break-words text-2xl text-dbz-orange">
+        {value}
+      </p>
     </div>
   );
 }

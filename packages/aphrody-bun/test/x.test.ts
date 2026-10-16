@@ -102,7 +102,10 @@ native("local operations answer synchronously without a client", async () => {
   expect(count.ok).toBe(true);
   if (count.ok) expect(count.data).toBe(5_000_000);
 
-  const meta = xCallData<{ ops: { name: string; kind: string }[]; policy: unknown }>(0, "meta");
+  const meta = xCallData<{
+    ops: { name: string; kind: string }[];
+    policy: unknown;
+  }>(0, "meta");
   expect(meta.ops.length).toBeGreaterThan(100);
   expect(meta.ops.some((op) => op.name === "create_tweet")).toBe(true);
 
@@ -114,15 +117,21 @@ native("local operations answer synchronously without a client", async () => {
   }
 });
 
-native("opening a client validates the session and never echoes it", async () => {
-  const { xClientClose, xClientOpen, XNativeError } = await import("../src/x");
-  expect(() => xClientOpen({ auth_token: "only-one" } as never)).toThrow(XNativeError);
-  const handle = await openClient();
-  expect(JSON.stringify(handle)).not.toContain("AUTH_TOKEN_PLACEHOLDER");
-  expect(handle.client).toBeGreaterThan(0);
-  expect(xClientClose(handle.client)).toBe(true);
-  expect(xClientClose(handle.client)).toBe(false);
-});
+native(
+  "opening a client validates the session and never echoes it",
+  async () => {
+    const { xClientClose, xClientOpen, XNativeError } =
+      await import("../src/x");
+    expect(() => xClientOpen({ auth_token: "only-one" } as never)).toThrow(
+      XNativeError,
+    );
+    const handle = await openClient();
+    expect(JSON.stringify(handle)).not.toContain("AUTH_TOKEN_PLACEHOLDER");
+    expect(handle.client).toBeGreaterThan(0);
+    expect(xClientClose(handle.client)).toBe(true);
+    expect(xClientClose(handle.client)).toBe(false);
+  },
+);
 
 native(
   "a job runs an operation through the loopback server with the rotating headers",
@@ -179,7 +188,9 @@ native("an aborted signal rejects and a closed client is unknown", async () => {
   const { client } = await openClient();
   const controller = new AbortController();
   controller.abort();
-  await expect(xSubmit(client, "whoami", {}, { signal: controller.signal })).rejects.toBeDefined();
+  await expect(
+    xSubmit(client, "whoami", {}, { signal: controller.signal }),
+  ).rejects.toBeDefined();
   xClientClose(client);
   const unknown = await xSubmit(client, "whoami", {});
   expect(unknown.ok).toBe(false);
@@ -215,11 +226,18 @@ native(
     expect(first.total).toBe(4);
     const run1 = await drain(first.batch);
     expect(run1.items).toHaveLength(4);
-    expect(run1.summary).toMatchObject({ total: 4, ok: 3, failed: 1, resumed: 0 });
+    expect(run1.summary).toMatchObject({
+      total: 4,
+      ok: 3,
+      failed: 1,
+      resumed: 0,
+    });
     const terminal = run1.items.find((item) => item.id === "like-1002");
     expect(terminal?.ok).toBe(false);
     expect(readFileSync(checkpoint, "utf8").trim().split("\n")).toHaveLength(4);
-    expect(readFileSync(checkpoint, "utf8")).not.toContain("AUTH_TOKEN_PLACEHOLDER");
+    expect(readFileSync(checkpoint, "utf8")).not.toContain(
+      "AUTH_TOKEN_PLACEHOLDER",
+    );
     const calls = seen.length;
 
     // The same batch again: every result is final, so every one is replayed, none is executed.
@@ -250,8 +268,13 @@ native(
 native(
   "invalid batches are refused before anything runs, and a batch can be cancelled",
   async () => {
-    const { xBatchCancel, xBatchPoll, xBatchSubmit, xClientClose, XNativeError } =
-      await import("../src/x");
+    const {
+      xBatchCancel,
+      xBatchPoll,
+      xBatchSubmit,
+      xClientClose,
+      XNativeError,
+    } = await import("../src/x");
     const { client } = await openClient();
     seen.length = 0;
     expect(() =>

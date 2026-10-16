@@ -4,7 +4,10 @@
 import { forwardRef, type FormHTMLAttributes, type ReactNode } from "react";
 import { useNextMigrateContext } from "./provider";
 
-export interface FormProps extends Omit<FormHTMLAttributes<HTMLFormElement>, "action"> {
+export interface FormProps extends Omit<
+  FormHTMLAttributes<HTMLFormElement>,
+  "action"
+> {
   action: string | ((formData: FormData) => void | Promise<void>);
   replace?: boolean;
   scroll?: boolean;
@@ -13,12 +16,22 @@ export interface FormProps extends Omit<FormHTMLAttributes<HTMLFormElement>, "ac
 }
 
 export const Form = forwardRef<HTMLFormElement, FormProps>(function Form(
-  { action, replace = false, scroll = true, prefetch: _prefetch, onSubmit, children, ...rest },
+  {
+    action,
+    replace = false,
+    scroll = true,
+    prefetch: _prefetch,
+    onSubmit,
+    children,
+    ...rest
+  },
   ref,
 ) {
   const ctx = useNextMigrateContext();
 
-  const handleSubmit: NonNullable<FormHTMLAttributes<HTMLFormElement>["onSubmit"]> = (event) => {
+  const handleSubmit: NonNullable<
+    FormHTMLAttributes<HTMLFormElement>["onSubmit"]
+  > = (event) => {
     onSubmit?.(event);
     if (event.defaultPrevented || typeof action === "function") return;
 
@@ -46,10 +59,16 @@ export const Form = forwardRef<HTMLFormElement, FormProps>(function Form(
     destination.search = "";
     const data = new FormData(form, submitter);
     for (const [name, value] of data) {
-      destination.searchParams.append(name, typeof value === "string" ? value : value.name);
+      destination.searchParams.append(
+        name,
+        typeof value === "string" ? value : value.name,
+      );
     }
     event.preventDefault();
-    ctx.navigate(destination.pathname + destination.search + destination.hash, { replace, scroll });
+    ctx.navigate(destination.pathname + destination.search + destination.hash, {
+      replace,
+      scroll,
+    });
   };
 
   return (

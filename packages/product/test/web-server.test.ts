@@ -15,7 +15,10 @@ beforeEach(async () => {
   directory = await mkdtemp(join(tmpdir(), "aphrody-ui-transport-"));
   uiDist = join(directory, "ui");
   await mkdir(uiDist);
-  await Bun.write(join(uiDist, "index.html"), '<!doctype html><div id="root"></div>');
+  await Bun.write(
+    join(uiDist, "index.html"),
+    '<!doctype html><div id="root"></div>',
+  );
   await Bun.write(join(uiDist, "app.css"), "body { color: black }");
 });
 afterEach(async () => {
@@ -33,7 +36,9 @@ async function request(path: string, init?: RequestInit) {
 
 test("serves the built app unchanged, preserves SPA reloads and reports missing endpoints/assets", async () => {
   server = await startProductUiServer({ port: 0, uiDist });
-  expect(await (await request("/")).text()).toBe('<!doctype html><div id="root"></div>');
+  expect(await (await request("/")).text()).toBe(
+    '<!doctype html><div id="root"></div>',
+  );
   const page = await request("/settings/appearance");
   expect(await page.text()).toBe('<!doctype html><div id="root"></div>');
   const css = await request("/app.css");
@@ -45,8 +50,12 @@ test("serves the built app unchanged, preserves SPA reloads and reports missing 
   expect((await request("/fonts/missing.woff2")).status).toBe(404);
   expect((await request("/api/capabilities")).status).toBe(404);
   expect(
-    (await request("/api/tauri/invoke", { method: "POST", body: '{"cmd":"aphrody_model_pull"}' }))
-      .status,
+    (
+      await request("/api/tauri/invoke", {
+        method: "POST",
+        body: '{"cmd":"aphrody_model_pull"}',
+      })
+    ).status,
   ).toBe(404);
 });
 
@@ -70,10 +79,19 @@ test("forwards exact RPC and approval frames with real upstream errors and healt
     uiDist,
     backendUrl: upstream.url.href,
   });
-  const frame = { id: 17, method: "aphrody/rag/search", params: { query: "fixture" } };
-  const rpc = await request("/rpc", { method: "POST", body: JSON.stringify(frame) });
+  const frame = {
+    id: 17,
+    method: "aphrody/rag/search",
+    params: { query: "fixture" },
+  };
+  const rpc = await request("/rpc", {
+    method: "POST",
+    body: JSON.stringify(frame),
+  });
   expect(rpc.status).toBe(409);
-  expect(await rpc.json()).toEqual({ error: { code: -32601, message: "Method not found" } });
+  expect(await rpc.json()).toEqual({
+    error: { code: -32601, message: "Method not found" },
+  });
   const approval = { id: "approval-1", result: { decision: "decline" } };
   await request("/rpc", { method: "POST", body: JSON.stringify(approval) });
   expect(received).toEqual([frame, approval]);
@@ -84,7 +102,8 @@ test("forwards exact RPC and approval frames with real upstream errors and healt
 
 test("streams backend SSE bytes and query without synthesizing notifications", async () => {
   let seen = "";
-  const event = 'data: {"method":"turn/completed","params":{"threadId":"fixture"}}\n\n';
+  const event =
+    'data: {"method":"turn/completed","params":{"threadId":"fixture"}}\n\n';
   upstream = Bun.serve({
     port: 0,
     hostname: "127.0.0.1",
@@ -113,13 +132,19 @@ test("streams backend SSE bytes and query without synthesizing notifications", a
 });
 
 test("a stopped backend is an error, never a ready or successful operation", async () => {
-  upstream = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response("unused") });
+  upstream = Bun.serve({
+    port: 0,
+    hostname: "127.0.0.1",
+    fetch: () => new Response("unused"),
+  });
   const target = upstream.url.href;
   upstream.stop(true);
   upstream = undefined;
   server = await startProductUiServer({ port: 0, uiDist, backendUrl: target });
   expect((await request("/health")).status).toBe(502);
-  expect((await request("/rpc", { method: "POST", body: "{}" })).status).toBe(502);
+  expect((await request("/rpc", { method: "POST", body: "{}" })).status).toBe(
+    502,
+  );
 });
 
 test("authenticates browser origin before forwarding RPC to the native backend", async () => {
@@ -132,7 +157,11 @@ test("authenticates browser origin before forwarding RPC to the native backend",
       return Response.json({ result: { initialized: true } });
     },
   });
-  server = await startProductUiServer({ port: 0, uiDist, backendUrl: upstream.url.href });
+  server = await startProductUiServer({
+    port: 0,
+    uiDist,
+    backendUrl: upstream.url.href,
+  });
   const response = await request("/rpc", {
     method: "POST",
     body: "{}",
@@ -146,7 +175,9 @@ test("authenticates browser origin before forwarding RPC to the native backend",
     { Host: "example.com" },
   ];
   const denied = await Promise.all(
-    blocked.map((headers) => request("/rpc", { method: "POST", body: "{}", headers })),
+    blocked.map((headers) =>
+      request("/rpc", { method: "POST", body: "{}", headers }),
+    ),
   );
   expect(denied.map((denial) => denial.status)).toEqual([403, 403, 403]);
   expect(origins).toHaveLength(1);
@@ -163,10 +194,14 @@ test("keeps static files within the build and backend access on loopback", async
   await Bun.write(join(directory, "outside.txt"), "outside fixture");
   await symlink(join(directory, "outside.txt"), join(uiDist, "outside.txt"));
   expect((await request("/outside.txt")).status).toBe(403);
-  await expect(startProductUiServer({ port: 0, host: "0.0.0.0", uiDist })).rejects.toThrow(
+  await expect(
+    startProductUiServer({ port: 0, host: "0.0.0.0", uiDist }),
+  ).rejects.toThrow("loopback");
+  expect(() => appServerProxy("https://example.com")).toThrow("loopback");
+  expect(() => appServerProxy("http://127.0.0.1:8765/prefix")).toThrow(
     "loopback",
   );
-  expect(() => appServerProxy("https://example.com")).toThrow("loopback");
-  expect(() => appServerProxy("http://127.0.0.1:8765/prefix")).toThrow("loopback");
-  expect(appServerProxy("http://127.0.0.1:8765")["/rpc"]).toBe("http://127.0.0.1:8765");
+  expect(appServerProxy("http://127.0.0.1:8765")["/rpc"]).toBe(
+    "http://127.0.0.1:8765",
+  );
 });

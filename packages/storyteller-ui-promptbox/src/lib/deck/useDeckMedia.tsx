@@ -250,10 +250,7 @@ export function useDeckMedia<
     setIsGalleryModalOpen(true);
   };
 
-  const processImageFiles = (
-    files: File[],
-    uploadTarget: "start" | "end",
-  ) => {
+  const processImageFiles = (files: File[], uploadTarget: "start" | "end") => {
     const currentCount = referenceImages.length + visibleUploadingImages.length;
     const availableSlots = Math.max(0, maxImages - currentCount);
     if (availableSlots <= 0 && uploadTarget !== "end") {
@@ -617,9 +614,12 @@ export function useDeckMedia<
       const baseAudios = [...referenceAudios];
       const availableSlots = Math.max(0, maxAudios - baseAudios.length);
       if (availableSlots <= 0) {
-        toast.error(`Max ${maxAudios} audio tracks / ${maxAudioTotalSec}s total`, {
-          id: "audio-ref-limit",
-        });
+        toast.error(
+          `Max ${maxAudios} audio tracks / ${maxAudioTotalSec}s total`,
+          {
+            id: "audio-ref-limit",
+          },
+        );
         handleGalleryClose();
         return;
       }

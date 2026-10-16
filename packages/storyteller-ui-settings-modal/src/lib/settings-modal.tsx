@@ -1,6 +1,16 @@
 import { Modal } from "@storyteller/ui-modal";
 import { useEffect, useState } from "react";
-import { CreditCardIcon, DownloadIcon, FlaskConicalIcon, InfoIcon, KeyboardIcon, PaletteIcon, SettingsIcon, UserIcon, Volume2Icon } from "lucide-react";
+import {
+  CreditCardIcon,
+  DownloadIcon,
+  FlaskConicalIcon,
+  InfoIcon,
+  KeyboardIcon,
+  PaletteIcon,
+  SettingsIcon,
+  UserIcon,
+  Volume2Icon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
 import { KeybindsSettings } from "@storyteller/keybinds";
@@ -85,7 +95,13 @@ export const SettingsModal = ({
     //{ id: "video" as const, label: "Video", icon: VideoIcon },
     //{ id: "image" as const, label: "Image", icon: ImageIcon },
     ...(experimentalEnabled
-      ? [{ id: "experimental" as const, label: "Experimental", icon: FlaskConicalIcon }]
+      ? [
+          {
+            id: "experimental" as const,
+            label: "Experimental",
+            icon: FlaskConicalIcon,
+          },
+        ]
       : []),
   ];
 

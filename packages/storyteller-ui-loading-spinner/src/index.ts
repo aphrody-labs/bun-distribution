@@ -1,2 +1,1 @@
-
-export * from './lib/loading-spinner';
+export * from "./lib/loading-spinner";

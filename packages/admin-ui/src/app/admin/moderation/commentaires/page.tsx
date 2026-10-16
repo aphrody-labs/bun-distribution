@@ -31,24 +31,35 @@ export default async function CommentModerationPage({
 }) {
   const { statut } = await searchParams;
   const filter =
-    statut && (statut === "all" || (COMMENT_STATUSES as readonly string[]).includes(statut))
+    statut &&
+    (statut === "all" ||
+      (COMMENT_STATUSES as readonly string[]).includes(statut))
       ? (statut as CommentStatus | "all")
       : "all";
 
-  const { entries, total } = await listModerationQueue({ status: filter, limit: 100 });
+  const { entries, total } = await listModerationQueue({
+    status: filter,
+    limit: 100,
+  });
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">
       <header className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-[28px] font-bold tracking-tight text-white">Commentaires</h1>
+          <h1 className="text-[28px] font-bold tracking-tight text-white">
+            Commentaires
+          </h1>
           <p className="mt-1 text-[14px] text-white/50">
-            Articles, fiches wiki, databooks et tier lists — une seule file. Masquer conserve la
-            ligne et la trace du modérateur ; rien n&apos;est effacé.
+            Articles, fiches wiki, databooks et tier lists — une seule file.
+            Masquer conserve la ligne et la trace du modérateur ; rien
+            n&apos;est effacé.
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <PublicViewLink href="/news/fil/discussions" label="Voir le fil public" />
+          <PublicViewLink
+            href="/news/fil/discussions"
+            label="Voir le fil public"
+          />
           <Link
             href="/admin/moderation"
             className="text-[13px] text-white/60 underline-offset-4 hover:text-white hover:underline"
@@ -58,7 +69,10 @@ export default async function CommentModerationPage({
         </div>
       </header>
 
-      <nav className="flex flex-wrap items-center gap-2" aria-label="Filtrer par statut">
+      <nav
+        className="flex flex-wrap items-center gap-2"
+        aria-label="Filtrer par statut"
+      >
         {FILTERS.map((f) => (
           <Link
             key={f.key}
@@ -73,7 +87,9 @@ export default async function CommentModerationPage({
             {f.label}
           </Link>
         ))}
-        <span className="ml-auto text-[13px] tabular-nums text-white/40">{total} message(s)</span>
+        <span className="ml-auto text-[13px] tabular-nums text-white/40">
+          {total} message(s)
+        </span>
       </nav>
 
       <ModerationQueue rows={entries as QueueRow[]} />

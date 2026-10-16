@@ -38,10 +38,13 @@ const names = [
   "BOOT.md",
 ];
 const roots: string[] = [];
-const digest = (value: string) => createHash("sha256").update(value).digest("hex");
+const digest = (value: string) =>
+  createHash("sha256").update(value).digest("hex");
 const markdown = (document: Record<string, unknown>) => String(document.text);
 afterEach(async () => {
-  await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+  await Promise.all(
+    roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
+  );
 });
 
 async function fixture(changed = true) {
@@ -54,14 +57,23 @@ async function fixture(changed = true) {
   await mkdir(baselineDirectory, { mode: 0o700 });
   const files: Record<
     string,
-    { id: string; localHash: string; remoteHash: string; sourceSnapshotHash: string }
+    {
+      id: string;
+      localHash: string;
+      remoteHash: string;
+      sourceSnapshotHash: string;
+    }
   > = {};
   const documents = new Map<string, Record<string, unknown>>();
   const writes: Promise<unknown>[] = [];
   for (const name of names) {
     const baseline = `baseline ${name}\n`;
     const local = changed ? `edited ${name}\n` : baseline;
-    const native = { documentId: `id-${name}`, revisionId: "revision-1", text: baseline };
+    const native = {
+      documentId: `id-${name}`,
+      revisionId: "revision-1",
+      text: baseline,
+    };
     const nativeJson = JSON.stringify(native);
     files[name] = {
       id: native.documentId,
@@ -71,9 +83,13 @@ async function fixture(changed = true) {
     };
     documents.set(native.documentId, native);
     writes.push(writeFile(join(home, name), local, { mode: 0o600 }));
-    writes.push(writeFile(join(baselineDirectory, name), baseline, { mode: 0o600 }));
     writes.push(
-      writeFile(join(baselineDirectory, `${name}.native.json`), nativeJson, { mode: 0o600 }),
+      writeFile(join(baselineDirectory, name), baseline, { mode: 0o600 }),
+    );
+    writes.push(
+      writeFile(join(baselineDirectory, `${name}.native.json`), nativeJson, {
+        mode: 0o600,
+      }),
     );
   }
   await Promise.all(writes);
@@ -98,17 +114,25 @@ async function fixture(changed = true) {
     tokenFile: join(root, "token"),
     peer: "review-peer",
     ownerModule: { path: join(root, "owner.ts"), sha256: "a".repeat(64) },
-    validatorModule: { path: join(root, "validator.ts"), sha256: "b".repeat(64) },
+    validatorModule: {
+      path: join(root, "validator.ts"),
+      sha256: "b".repeat(64),
+    },
     home,
     folderId: "folder",
     yolo: "yolo",
   };
-  const owner = { nativeMarkdown: (document: Record<string, unknown>) => String(document.text) };
+  const owner = {
+    nativeMarkdown: (document: Record<string, unknown>) =>
+      String(document.text),
+  };
   const api = {
     drive: {
       files: {
         get: async ({ fileId }: { fileId: string }) => {
-          const name = names.find((candidate) => files[candidate]!.id === fileId)!;
+          const name = names.find(
+            (candidate) => files[candidate]!.id === fileId,
+          )!;
           return {
             data: {
               id: fileId,
@@ -147,7 +171,9 @@ test("Drive review persists the private intent and ACK before polling a single t
   let submissions = 0;
   ports.client.sendMessage = async () => {
     submissions++;
-    const active = JSON.parse(await readFile(join(config.receiptRoot, "active.json"), "utf8")) as {
+    const active = JSON.parse(
+      await readFile(join(config.receiptRoot, "active.json"), "utf8"),
+    ) as {
       hash: string;
     };
     const reviewPath = join(config.receiptRoot, active.hash, "review.json");
@@ -178,25 +204,40 @@ test("Drive review persists the private intent and ACK before polling a single t
     review_submitted: 1,
     review_pending: 1,
   });
-  expect(await reconcileDriveReview(config, async () => "", ports)).toEqual({ review_pending: 1 });
+  expect(await reconcileDriveReview(config, async () => "", ports)).toEqual({
+    review_pending: 1,
+  });
   expect(submissions).toBe(1);
   expect(
-    (await readdir(config.receiptRoot)).filter((entry) => /^[a-f0-9]{64}$/.test(entry)),
+    (await readdir(config.receiptRoot)).filter((entry) =>
+      /^[a-f0-9]{64}$/.test(entry),
+    ),
   ).toHaveLength(1);
 });
 
 async function lifecycle(project = false) {
   const value = await fixture();
   const { config, ports, documents } = value;
-  if (project) config.reviewedDirectory = join(config.home, "..", "reviewed-current");
-  const calls = { send: 0, poll: 0, list: 0, refresh: 0, preflight: 0, apply: 0, seed: 0 };
+  if (project)
+    config.reviewedDirectory = join(config.home, "..", "reviewed-current");
+  const calls = {
+    send: 0,
+    poll: 0,
+    list: 0,
+    refresh: 0,
+    preflight: 0,
+    apply: 0,
+    seed: 0,
+  };
   let task: Task | undefined;
   let taskState: Task["status"]["state"] = "TASK_STATE_COMPLETED";
   let lostAck = false;
   let missingAck = false;
   let failApply: "none" | "complete" | "partial" | "safe" = "none";
   const active = async () => {
-    const { hash } = JSON.parse(await readFile(join(config.receiptRoot, "active.json"), "utf8"));
+    const { hash } = JSON.parse(
+      await readFile(join(config.receiptRoot, "active.json"), "utf8"),
+    );
     return join(config.receiptRoot, hash);
   };
   const record = async () =>
@@ -246,7 +287,9 @@ async function lifecycle(project = false) {
   ports.client = new A2AClient({ transport });
   const writePlan = async () => {
     const directory = await active();
-    const inputs = JSON.parse(await readFile(join(directory, "inputs.json"), "utf8"));
+    const inputs = JSON.parse(
+      await readFile(join(directory, "inputs.json"), "utf8"),
+    );
     const plan = {
       version: 1,
       folderId: "folder",
@@ -256,20 +299,34 @@ async function lifecycle(project = false) {
         localBeforeSha256: input.localBeforeSha256,
         remoteRevisionId: input.remoteRevisionId,
         remoteBeforeSha256: input.remoteBeforeSha256,
-        proposedLocalFile: join(directory, "reconciliation", input.name as string),
+        proposedLocalFile: join(
+          directory,
+          "reconciliation",
+          input.name as string,
+        ),
         explanationFile: join(directory, "reconciliation", `${input.name}.txt`),
         requests: [],
       })),
     };
-    await writeFile(join(directory, "reconciliation-plan.json"), JSON.stringify(plan), {
-      mode: 0o600,
-    });
+    await writeFile(
+      join(directory, "reconciliation-plan.json"),
+      JSON.stringify(plan),
+      {
+        mode: 0o600,
+      },
+    );
   };
   ports.validator.refreshRevisions = async (_api, _owner, paths, binding) => {
     calls.refresh++;
-    expect(digest(await readFile(binding.originalPlanPath, "utf8"))).toBe(binding.originalPlanSha);
+    expect(digest(await readFile(binding.originalPlanPath, "utf8"))).toBe(
+      binding.originalPlanSha,
+    );
     expect(
-      digest(JSON.stringify(JSON.parse(await readFile(binding.inputManifestPath, "utf8")))),
+      digest(
+        JSON.stringify(
+          JSON.parse(await readFile(binding.inputManifestPath, "utf8")),
+        ),
+      ),
     ).toBe(binding.expectedInputHash);
     const plan = JSON.parse(await readFile(paths.plan, "utf8"));
     for (const entry of plan.files) {
@@ -278,7 +335,10 @@ async function lifecycle(project = false) {
       entry.remoteBeforeSha256 = digest(JSON.stringify(document));
     }
     await writeFile(paths.plan, JSON.stringify(plan));
-    return { planSha: digest(await readFile(paths.plan, "utf8")), refreshed: 0 };
+    return {
+      planSha: digest(await readFile(paths.plan, "utf8")),
+      refreshed: 0,
+    };
   };
   ports.validator.preflight = async (_api, _owner, paths) => {
     calls.preflight++;
@@ -292,7 +352,10 @@ async function lifecycle(project = false) {
     calls.apply++;
     expect((await record()).phase).toBe("applying");
     if (failApply === "safe")
-      throw Object.assign(new Error("PRE_JOURNAL"), { noWrites: true, journalCreated: false });
+      throw Object.assign(new Error("PRE_JOURNAL"), {
+        noWrites: true,
+        journalCreated: false,
+      });
     const planSha = digest(await readFile(paths.plan, "utf8"));
     const journal = join(paths.journalRoot, planSha);
     const seedReviewed = join(journal, "fresh-native");
@@ -303,7 +366,9 @@ async function lifecycle(project = false) {
       planSha,
       seedReviewed,
     };
-    await writeFile(join(journal, "receipt.json"), JSON.stringify(result), { mode: 0o600 });
+    await writeFile(join(journal, "receipt.json"), JSON.stringify(result), {
+      mode: 0o600,
+    });
     if (failApply !== "none") throw new Error("LOST_APPLY_ACK");
     return result;
   };
@@ -384,7 +449,10 @@ test("frozen input tampering blocks before native validator", async () => {
   const value = await lifecycle();
   await value.tick();
   await value.writePlan();
-  await writeFile(join(await value.active(), "inputs", "AGENTS.md.native.json"), "changed");
+  await writeFile(
+    join(await value.active(), "inputs", "AGENTS.md.native.json"),
+    "changed",
+  );
   expect(await value.tick()).toEqual({ review_blocked: 1 });
   expect(value.calls.preflight).toBe(0);
 });
@@ -406,7 +474,8 @@ test("revision-only refresh is repeated just before apply while original plan re
   await value.writePlan();
   expect(await value.tick()).toEqual({ reviewed: 7, review_pending: 1 });
   const originalSha = (await value.record()).originalPlanSha;
-  for (const document of value.documents.values()) document.revisionId = "rotated-2";
+  for (const document of value.documents.values())
+    document.revisionId = "rotated-2";
   await value.tick();
   expect(value.calls).toMatchObject({ refresh: 2, preflight: 2, apply: 1 });
   expect((await value.record()).originalPlanSha).toBe(originalSha);
@@ -422,7 +491,10 @@ test("reviewed plan edits never reach apply", async () => {
   await value.tick();
   await value.writePlan();
   await value.tick();
-  await writeFile(join(await value.active(), "reconciliation-plan.json"), "changed");
+  await writeFile(
+    join(await value.active(), "reconciliation-plan.json"),
+    "changed",
+  );
   expect(await value.tick()).toEqual({ review_blocked: 1 });
   expect(value.calls.apply).toBe(0);
 });
@@ -483,51 +555,71 @@ test("seed retry never repeats an already journaled apply", async () => {
 });
 test("all seven verified files publish as one immutable generation and managed pointer", async () => {
   const value = await fixture(false);
-  value.config.reviewedDirectory = join(value.config.home, "..", "reviewed-current");
-  expect(await reconcileDriveReview(value.config, async () => "", value.ports)).toEqual({
+  value.config.reviewedDirectory = join(
+    value.config.home,
+    "..",
+    "reviewed-current",
+  );
+  expect(
+    await reconcileDriveReview(value.config, async () => "", value.ports),
+  ).toEqual({
     unchanged: 7,
     verified: 7,
   });
   const target = await readlink(value.config.reviewedDirectory);
   expect((await readdir(target)).toSorted()).toEqual(names.toSorted());
-  expect(hasMode((await stat(join(target, "AGENTS.md"))).mode, 0o600)).toBe(true);
+  expect(hasMode((await stat(join(target, "AGENTS.md"))).mode, 0o600)).toBe(
+    true,
+  );
   await verifyReviewedProjection(value.config.reviewedDirectory);
   await reconcileDriveReview(value.config, async () => "", value.ports);
   expect(await readlink(value.config.reviewedDirectory)).toBe(target);
   await writeFile(join(target, "AGENTS.md"), "modified generation");
-  await expect(verifyReviewedProjection(value.config.reviewedDirectory)).rejects.toThrow(
-    "REVIEWED_GENERATION_CHANGED",
-  );
+  await expect(
+    verifyReviewedProjection(value.config.reviewedDirectory),
+  ).rejects.toThrow("REVIEWED_GENERATION_CHANGED");
 });
 test("publication never switches the previous generation when local bytes are unreviewed", async () => {
   const value = await fixture(false);
-  value.config.reviewedDirectory = join(value.config.home, "..", "reviewed-current");
+  value.config.reviewedDirectory = join(
+    value.config.home,
+    "..",
+    "reviewed-current",
+  );
   await publishReviewedProjection(value.config, value.ports.owner);
   const prior = await readlink(value.config.reviewedDirectory);
   await writeFile(join(value.config.home, "AGENTS.md"), "new local edit");
-  await expect(publishReviewedProjection(value.config, value.ports.owner)).rejects.toThrow(
-    "REVIEWED_BASELINE_CHANGED",
-  );
+  await expect(
+    publishReviewedProjection(value.config, value.ports.owner),
+  ).rejects.toThrow("REVIEWED_BASELINE_CHANGED");
   expect(await readlink(value.config.reviewedDirectory)).toBe(prior);
 });
 test("unmanaged publication roots and private hardlinks fail closed", async () => {
   const value = await fixture(false);
-  value.config.reviewedDirectory = join(value.config.home, "..", "reviewed-current");
+  value.config.reviewedDirectory = join(
+    value.config.home,
+    "..",
+    "reviewed-current",
+  );
   await symlink(value.config.home, value.config.reviewedDirectory);
-  await expect(publishReviewedProjection(value.config, value.ports.owner)).rejects.toThrow(
-    "UNSAFE_REVIEWED_TARGET",
+  await expect(
+    publishReviewedProjection(value.config, value.ports.owner),
+  ).rejects.toThrow("UNSAFE_REVIEWED_TARGET");
+  await link(
+    join(value.config.home, "AGENTS.md"),
+    join(value.config.home, "linked.md"),
   );
-  await link(join(value.config.home, "AGENTS.md"), join(value.config.home, "linked.md"));
-  await expect(reconcileDriveReview(value.config, async () => "", value.ports)).rejects.toThrow(
-    "UNSAFE_PRIVATE_FILE",
-  );
+  await expect(
+    reconcileDriveReview(value.config, async () => "", value.ports),
+  ).rejects.toThrow("UNSAFE_PRIVATE_FILE");
 });
 
 test("a resumed preflight uses the immutable original after revision refresh changed the working plan", async () => {
   const value = await lifecycle();
   await value.tick();
   await value.writePlan();
-  for (const document of value.documents.values()) document.revisionId = "rotated-before-preflight";
+  for (const document of value.documents.values())
+    document.revisionId = "rotated-before-preflight";
   const originalPreflight = value.ports.validator.preflight;
   value.ports.validator.preflight = async () => {
     throw new Error("TRANSIENT_PREFLIGHT");
@@ -562,7 +654,13 @@ test("unchanged and out-of-scope documents never submit a review task", async ()
     submissions++;
     return {} as never;
   };
-  expect(await reconcileDriveReview(unchanged.config, async () => "", unchanged.ports)).toEqual({
+  expect(
+    await reconcileDriveReview(
+      unchanged.config,
+      async () => "",
+      unchanged.ports,
+    ),
+  ).toEqual({
     unchanged: names.length,
     verified: names.length,
   });
@@ -579,9 +677,9 @@ test("unchanged and out-of-scope documents never submit a review task", async ()
         trashed: false,
       },
     }) as never;
-  await expect(reconcileDriveReview(scoped.config, async () => "", scoped.ports)).rejects.toThrow(
-    "REMOTE_SCOPE_MISMATCH",
-  );
+  await expect(
+    reconcileDriveReview(scoped.config, async () => "", scoped.ports),
+  ).rejects.toThrow("REMOTE_SCOPE_MISMATCH");
   expect(submissions).toBe(0);
 });
 
@@ -595,9 +693,14 @@ test("a Docs document without a revision blocks the review without submitting or
   const documents = value.ports.api.docs.documents;
   const get = documents.get;
   documents.get = async (params) => ({
-    data: { ...((await get(params)).data as Record<string, unknown>), revisionId: undefined },
+    data: {
+      ...((await get(params)).data as Record<string, unknown>),
+      revisionId: undefined,
+    },
   });
-  expect(await reconcileDriveReview(value.config, async () => "", value.ports)).toEqual({
+  expect(
+    await reconcileDriveReview(value.config, async () => "", value.ports),
+  ).toEqual({
     review_blocked: 1,
   });
   expect(submissions).toBe(0);
@@ -628,7 +731,9 @@ docs:{documents:{get:async({documentId})=>({data:documents[documentId]})}}};}` +
 
 test("production loading accepts SHA-pinned private owner modules above the document limit without network or tasks", async () => {
   const { config } = await productionFixture();
-  expect((await stat(config.ownerModule.path)).size).toBeGreaterThan(4 * 1024 * 1024);
+  expect((await stat(config.ownerModule.path)).size).toBeGreaterThan(
+    4 * 1024 * 1024,
+  );
   const network = spyOn(globalThis, "fetch").mockImplementation(
     Object.assign(
       () => {
@@ -655,7 +760,12 @@ test("production loading accepts SHA-pinned private owner modules above the docu
   }
 });
 
-test.each(["sha", ...(POSIX_MODES ? ["permissions"] : []), "hardlink", "oversize"])(
+test.each([
+  "sha",
+  ...(POSIX_MODES ? ["permissions"] : []),
+  "hardlink",
+  "oversize",
+])(
   "production module loading preserves the %s guard before imports",
   async (kind) => {
     const { config } = await productionFixture();
@@ -675,7 +785,9 @@ test.each(["sha", ...(POSIX_MODES ? ["permissions"] : []), "hardlink", "oversize
       reconcileDriveReview(config, async () => {
         throw Error("UNEXPECTED_CLI");
       }),
-    ).rejects.toThrow(kind === "sha" ? "OWNER_MODULE_CHANGED" : "UNSAFE_PRIVATE_FILE");
+    ).rejects.toThrow(
+      kind === "sha" ? "OWNER_MODULE_CHANGED" : "UNSAFE_PRIVATE_FILE",
+    );
     expect(await readdir(config.receiptRoot)).toEqual([]);
   },
 );

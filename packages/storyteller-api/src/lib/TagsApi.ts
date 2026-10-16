@@ -260,7 +260,10 @@ export class TagsApi extends ApiManager {
     >({ endpoint, body: { maybe_tags_list: tags } })
       .then((response) => ({
         success: response.success,
-        data: { tags: response.tags ?? [], removed_count: response.removed_count },
+        data: {
+          tags: response.tags ?? [],
+          removed_count: response.removed_count,
+        },
       }))
       .catch((err) => ({ success: false, errorMessage: err.message }));
   }

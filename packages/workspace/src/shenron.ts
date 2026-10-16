@@ -5,7 +5,8 @@
 import { runRustBridge } from "./bridges.ts";
 import { parseArgs } from "node:util";
 
-const USAGE = "usage: yolo ops shenron <infra|service|deploy|dev-env|timeline> ...";
+const USAGE =
+  "usage: yolo ops shenron <infra|service|deploy|dev-env|timeline> ...";
 
 export async function runShenron(args: string[]): Promise<number> {
   const [action, ...rest] = args;
@@ -23,7 +24,11 @@ export async function runShenron(args: string[]): Promise<number> {
         help: { type: "boolean" },
       },
     });
-    if (!operation || ["--help", "help", "-h"].includes(operation) || values.help) {
+    if (
+      !operation ||
+      ["--help", "help", "-h"].includes(operation) ||
+      values.help
+    ) {
       console.log(
         "yolo ops shenron timeline refresh|query|serve --output PRIVATE_DIR [--index] [--crawl-budget 32] [--query GRAPHQL] [--port 8813]",
       );
@@ -35,7 +40,10 @@ export async function runShenron(args: string[]): Promise<number> {
     if (operation === "refresh") {
       process.umask(0o077);
       const indexDocuments = values.index
-        ? async (directory: string, snapshot: import("@aphrody/timeline").Snapshot) => {
+        ? async (
+            directory: string,
+            snapshot: import("@aphrody/timeline").Snapshot,
+          ) => {
             const binary = Bun.which("aphrody");
             if (!binary) throw new Error("native Aphrody home owner required");
             const child = Bun.spawn(
@@ -52,7 +60,10 @@ export async function runShenron(args: string[]): Promise<number> {
               { windowsHide: true, stdout: "pipe", stderr: "pipe" },
             );
             const timeout = setTimeout(() => child.kill("SIGTERM"), 1800000);
-            const killTimeout = setTimeout(() => child.kill("SIGKILL"), 1810000);
+            const killTimeout = setTimeout(
+              () => child.kill("SIGKILL"),
+              1810000,
+            );
             try {
               const [stdout, , code] = await Promise.all([
                 new Response(child.stdout).text(),
@@ -61,7 +72,8 @@ export async function runShenron(args: string[]): Promise<number> {
               ]);
               if (code !== 0) throw new Error(`home indexing failed (${code})`);
               const result = JSON.parse(stdout);
-              if (result.errors?.length) throw new Error("home indexing reported errors");
+              if (result.errors?.length)
+                throw new Error("home indexing reported errors");
               const url = process.env.APHRODY_AI_HTTP_URL;
               const retrieval = url
                 ? await indexRetrieval(snapshot, {
@@ -71,7 +83,9 @@ export async function runShenron(args: string[]): Promise<number> {
                     lang: "fr",
                     requireVectors: true,
                     content: (entry) =>
-                      Bun.file(`${directory}/${entry.key.replace(":", "-")}.md`).text(),
+                      Bun.file(
+                        `${directory}/${entry.key.replace(":", "-")}.md`,
+                      ).text(),
                   })
                 : null;
               return { home: result, retrieval };
@@ -87,7 +101,9 @@ export async function runShenron(args: string[]): Promise<number> {
             redisUrl: process.env.SHENRON_TIMELINE_REDIS_URL,
             indexDocuments,
             crawlBudget:
-              values["crawl-budget"] === undefined ? undefined : Number(values["crawl-budget"]),
+              values["crawl-budget"] === undefined
+                ? undefined
+                : Number(values["crawl-budget"]),
           }),
         ),
       );
@@ -106,7 +122,8 @@ export async function runShenron(args: string[]): Promise<number> {
     }
     if (operation === "serve") {
       const port = Number(values.port);
-      if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("invalid port");
+      if (!Number.isInteger(port) || port < 1 || port > 65535)
+        throw new Error("invalid port");
       const output = values.output;
       const server = Bun.serve({
         hostname: "127.0.0.1",
@@ -127,10 +144,14 @@ export async function runShenron(args: string[]): Promise<number> {
     throw new Error("unknown timeline operation");
   }
   if (action === "infra") {
-    if (!rest.length) throw new Error("usage: yolo ops shenron infra <aphrody-infra arguments...>");
+    if (!rest.length)
+      throw new Error(
+        "usage: yolo ops shenron infra <aphrody-infra arguments...>",
+      );
     return runRustBridge("aphrody-infra", rest, inherit);
   }
-  if (action === "service") return runRustBridge("aphrody-infra", ["service", ...rest], inherit);
+  if (action === "service")
+    return runRustBridge("aphrody-infra", ["service", ...rest], inherit);
   if (action === "deploy") {
     const targetIndex = rest.indexOf("--target");
     if (
@@ -144,10 +165,16 @@ export async function runShenron(args: string[]): Promise<number> {
       throw new Error(
         "usage: yolo ops shenron deploy --target <infra-target> --release <path> [--apply]",
       );
-    return runRustBridge("aphrody-infra", ["deploy", "--stack", "shenron", ...rest], inherit);
+    return runRustBridge(
+      "aphrody-infra",
+      ["deploy", "--stack", "shenron", ...rest],
+      inherit,
+    );
   }
-  if (action === "dev-env") return runRustBridge("aphrody-infra", ["dev-env", ...rest], inherit);
+  if (action === "dev-env")
+    return runRustBridge("aphrody-infra", ["dev-env", ...rest], inherit);
   throw new Error(USAGE);
 }
 
-if (import.meta.main) process.exitCode = await runShenron(process.argv.slice(2));
+if (import.meta.main)
+  process.exitCode = await runShenron(process.argv.slice(2));

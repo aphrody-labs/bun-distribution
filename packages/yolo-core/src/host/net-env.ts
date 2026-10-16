@@ -7,7 +7,12 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { buildFiche, syncFicheWith, writeMemory } from "./fiche.ts";
-import { collectFacts, renderFacts, setKeys, staticUpdates } from "./net-facts.ts";
+import {
+  collectFacts,
+  renderFacts,
+  setKeys,
+  staticUpdates,
+} from "./net-facts.ts";
 import { ufwRules, type Tunnel } from "./wireguard.ts";
 
 export const BEGIN =
@@ -17,7 +22,11 @@ export const END = "# <<< aphrody-net-map";
 const key = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]+/g, "_");
 
 export function networkEnvPath(env = process.env): string {
-  return join(env.APHRODY_HOME ?? join(homedir(), ".aphrody"), "private", "network.env");
+  return join(
+    env.APHRODY_HOME ?? join(homedir(), ".aphrody"),
+    "private",
+    "network.env",
+  );
 }
 
 const addressOf = (t: Tunnel, id: string) =>
@@ -29,10 +38,15 @@ export function reachable(t: Tunnel, member: string) {
   const services = (t.grants[member] ?? [])
     .map((id) => byId.get(id))
     .filter(
-      (s): s is NonNullable<typeof s> => !!s && s.port !== undefined && s.status !== "pending",
+      (s): s is NonNullable<typeof s> =>
+        !!s && s.port !== undefined && s.status !== "pending",
     );
   const mesh = [
-    ...new Set((t.mesh ?? []).filter((m) => m.from.includes(member)).flatMap((m) => m.to)),
+    ...new Set(
+      (t.mesh ?? [])
+        .filter((m) => m.from.includes(member))
+        .flatMap((m) => m.to),
+    ),
   ]
     .filter((id) => id !== member)
     .map((id) => ({ id, address: addressOf(t, id)! }))
@@ -55,12 +69,23 @@ export function renderNetMap(
   now = new Date(),
   live: string[] = [],
 ): string {
-  const lines = [BEGIN, `NET_MAP_GENERATED=${now.toISOString()}`, `NET_SELF=${member}`];
-  lines.push(`NET_INTERFACE=${t.interface}`, `NET_WINDOWS_TUNNEL=${t.windowsTunnelName}`);
-  lines.push(`NET_SUBNET=${t.subnet}`, `NET_HUB=${t.hub.peer}@${t.hub.address} ${t.hub.endpoint}`);
+  const lines = [
+    BEGIN,
+    `NET_MAP_GENERATED=${now.toISOString()}`,
+    `NET_SELF=${member}`,
+  ];
+  lines.push(
+    `NET_INTERFACE=${t.interface}`,
+    `NET_WINDOWS_TUNNEL=${t.windowsTunnelName}`,
+  );
+  lines.push(
+    `NET_SUBNET=${t.subnet}`,
+    `NET_HUB=${t.hub.peer}@${t.hub.address} ${t.hub.endpoint}`,
+  );
   const members = [t.hub.peer, ...t.peers.map((p) => p.id)];
   lines.push(`NET_MEMBERS=${members.join(",")}`);
-  for (const id of members) lines.push(`NET_${key(id)}_ADDRESS=${addressOf(t, id)}`);
+  for (const id of members)
+    lines.push(`NET_${key(id)}_ADDRESS=${addressOf(t, id)}`);
   for (const s of t.services)
     lines.push(
       `NET_SERVICE_${key(s.id)}=${s.address}:${s.port ?? "pending"} ${s.expose}${s.auth ? ` ${s.auth}` : ""}`,
@@ -68,7 +93,9 @@ export function renderNetMap(
   for (const [peer, ids] of Object.entries(t.grants))
     lines.push(`NET_GRANT_${key(peer)}=${ids.join(",")}`);
   for (const m of t.mesh ?? [])
-    lines.push(`NET_MESH_${key(m.id)}=${m.from.join(",")} -> ${m.to.join(",")} (all ports)`);
+    lines.push(
+      `NET_MESH_${key(m.id)}=${m.from.join(",")} -> ${m.to.join(",")} (all ports)`,
+    );
   if (t.firewall.meshDenied?.length)
     lines.push(`NET_MESH_DENIED=${t.firewall.meshDenied.join(",")}`);
   lines.push(`NET_HUB_UFW_RULES=${ufwRules(t).length}`);
@@ -76,12 +103,18 @@ export function renderNetMap(
   lines.push(
     `NET_REACH_SERVICES=${own.services.map((s) => `${s.id}=${s.address}:${s.port}`).join(" ")}`,
   );
-  lines.push(`NET_REACH_MESH=${own.mesh.map((m) => `${m.id}=${m.address}`).join(" ")}`);
+  lines.push(
+    `NET_REACH_MESH=${own.mesh.map((m) => `${m.id}=${m.address}`).join(" ")}`,
+  );
   if (probes) {
     lines.push(`NET_STATUS_AT=${now.toISOString()}`);
     for (const p of probes)
-      lines.push(`NET_STATUS_${key(p.name)}=${p.ok ? "up" : "down"} ${p.target} ${p.ms}ms`);
-    lines.push(`NET_STATUS_UP=${probes.filter((p) => p.ok).length}/${probes.length}`);
+      lines.push(
+        `NET_STATUS_${key(p.name)}=${p.ok ? "up" : "down"} ${p.target} ${p.ms}ms`,
+      );
+    lines.push(
+      `NET_STATUS_UP=${probes.filter((p) => p.ok).length}/${probes.length}`,
+    );
   }
   lines.push(...live, END);
   return lines.join("\n");
@@ -96,7 +129,11 @@ export function mergeNetMap(text: string, block: string): string {
   return `${text.replace(/\s*$/, "")}\n\n${block}\n`;
 }
 
-export async function tcp(host: string, port: number, timeoutMs: number): Promise<boolean> {
+export async function tcp(
+  host: string,
+  port: number,
+  timeoutMs: number,
+): Promise<boolean> {
   return await new Promise<boolean>((resolve) => {
     const timer = setTimeout(() => resolve(false), timeoutMs);
     Bun.connect({
@@ -122,12 +159,23 @@ export async function tcp(host: string, port: number, timeoutMs: number): Promis
 }
 
 /** TCP probes of every service granted to `member`, plus SSH on every member it meshes with. */
-export async function probeNetwork(t: Tunnel, member: string, timeoutMs = 2500): Promise<Probe[]> {
+export async function probeNetwork(
+  t: Tunnel,
+  member: string,
+  timeoutMs = 2500,
+): Promise<Probe[]> {
   const own = reachable(t, member);
   const jobs = [
-    ...own.services.map((s) => ({ name: s.id, host: s.address, port: s.port! })),
+    ...own.services.map((s) => ({
+      name: s.id,
+      host: s.address,
+      port: s.port!,
+    })),
     ...own.mesh
-      .filter((m) => !own.services.some((s) => s.address === m.address && s.port === 22))
+      .filter(
+        (m) =>
+          !own.services.some((s) => s.address === m.address && s.port === 22),
+      )
       .map((m) => ({ name: `mesh-${m.id}-ssh`, host: m.address, port: 22 })),
   ];
   return await Promise.all(
@@ -155,14 +203,23 @@ export function captureSshConfig(
   envText: string,
   file = join(homedir(), ".ssh", "config"),
 ): string {
-  const live = readFileSync(file, "utf8").replace(/\r\n/g, "\n").trimEnd().replaceAll('"', "'");
+  const live = readFileSync(file, "utf8")
+    .replace(/\r\n/g, "\n")
+    .trimEnd()
+    .replaceAll('"', "'");
   const line = `SSH_CONFIG="${live}"`;
   const re = /^SSH_CONFIG=(?:"[\s\S]*?"|.*)$/m;
-  return re.test(envText) ? envText.replace(re, () => line) : `${envText.trimEnd()}\n${line}\n`;
+  return re.test(envText)
+    ? envText.replace(re, () => line)
+    : `${envText.trimEnd()}\n${line}\n`;
 }
 
 /** Send only the NET_LIVE_* lines (no secret) to `host` over SSH, atomically, for the Discord synchronisation of the hub. */
-export async function pushLive(lines: string[], host: string, path: string): Promise<boolean> {
+export async function pushLive(
+  lines: string[],
+  host: string,
+  path: string,
+): Promise<boolean> {
   const proc = Bun.spawn(
     [
       "ssh",
@@ -175,7 +232,9 @@ export async function pushLive(lines: string[], host: string, path: string): Pro
     ],
     { stdin: "pipe", stdout: "ignore", stderr: "ignore", timeout: 20_000 },
   );
-  proc.stdin.write(lines.filter((l) => l.startsWith("NET_LIVE_")).join("\n") + "\n");
+  proc.stdin.write(
+    lines.filter((l) => l.startsWith("NET_LIVE_")).join("\n") + "\n",
+  );
   await proc.stdin.end();
   return (await proc.exited) === 0;
 }
@@ -189,8 +248,12 @@ export async function netEnvMain(t: Tunnel, args: string[]): Promise<void> {
   const file = value("file") ?? networkEnvPath();
   const member = value("member") ?? "aphro-pc";
   if (!addressOf(t, member)) throw new Error(`unknown member ${member}`);
-  const probes = args.includes("--probe") ? await probeNetwork(t, member) : undefined;
-  const collected = args.includes("--facts") ? await collectFacts(t, member, tcp) : undefined;
+  const probes = args.includes("--probe")
+    ? await probeNetwork(t, member)
+    : undefined;
+  const collected = args.includes("--facts")
+    ? await collectFacts(t, member, tcp)
+    : undefined;
   const block = renderNetMap(
     t,
     member,
@@ -202,7 +265,10 @@ export async function netEnvMain(t: Tunnel, args: string[]): Promise<void> {
   else {
     const text = existsSync(file) ? readFileSync(file, "utf8") : "";
     const merged = mergeNetMap(text, block);
-    writeFileSync(file, collected ? setKeys(merged, staticUpdates(collected.publicIps)) : merged);
+    writeFileSync(
+      file,
+      collected ? setKeys(merged, staticUpdates(collected.publicIps)) : merged,
+    );
     console.log(
       `net-env: ${file} updated${probes ? ` (${probes.filter((p) => p.ok).length}/${probes.length} up)` : ""}`,
     );
@@ -218,7 +284,10 @@ export async function netEnvMain(t: Tunnel, args: string[]): Promise<void> {
   }
   const ficheHost = value("fiche");
   if (ficheHost && args.includes("--write")) {
-    const merged = await syncFicheWith(ficheHost, await buildFiche(process.cwd(), file));
+    const merged = await syncFicheWith(
+      ficheHost,
+      await buildFiche(process.cwd(), file),
+    );
     const memory = value("fiche-memory");
     if (merged && memory) writeMemory(memory, merged);
     console.log(`fiche: ${ficheHost} ${merged ? "ok" : "failed"}`);
@@ -227,7 +296,11 @@ export async function netEnvMain(t: Tunnel, args: string[]): Promise<void> {
     const before = readFileSync(file, "utf8");
     const after = captureSshConfig(before);
     if (after !== before) writeFileSync(file, after);
-    console.log(`ssh-config: ${after === before ? "unchanged" : "captured from ~/.ssh/config"}`);
+    console.log(
+      `ssh-config: ${after === before ? "unchanged" : "captured from ~/.ssh/config"}`,
+    );
   }
-  if (probes) for (const p of probes) if (!p.ok) console.error(`down: ${p.name} ${p.target}`);
+  if (probes)
+    for (const p of probes)
+      if (!p.ok) console.error(`down: ${p.name} ${p.target}`);
 }

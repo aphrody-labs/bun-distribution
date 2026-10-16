@@ -3,10 +3,7 @@ import { create } from "zustand";
 import { useBoardLibraryStore } from "../boards/BoardLibraryStore";
 import type { Board } from "../boards/boardTypes";
 import { useMoodboardStore } from "../canvas/MoodboardStore";
-import type {
-  MoodboardAdapter,
-  MoodboardPersistenceAdapter,
-} from "../adapter";
+import type { MoodboardAdapter, MoodboardPersistenceAdapter } from "../adapter";
 import {
   applyResolvedMediaUrls,
   collectUnresolvedMediaTokens,
@@ -53,11 +50,7 @@ const TOMBSTONE_STORAGE_KEY = "artcraft_moodboard_deleted_tokens_v1";
 const DEFAULT_BOARD_NAME = "Untitled board";
 
 export type MoodboardSaveStatus =
-  | "idle"
-  | "dirty"
-  | "saving"
-  | "saved"
-  | "error";
+  "idle" | "dirty" | "saving" | "saved" | "error";
 
 interface MoodboardSyncState {
   status: MoodboardSaveStatus;

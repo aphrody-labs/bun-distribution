@@ -2,6 +2,7 @@
 
 Winit aims to expose an interface that abstracts over window creation and input handling and can
 be used to create both games and applications. It supports the following main graphical platforms:
+
 - Desktop
   - Windows
   - macOS
@@ -31,8 +32,8 @@ Core features are taken care of by the core Winit maintainers. Platform features
 When a platform feature is submitted, the submitter is considered the expert in the
 feature and may be asked to support the feature should it break in the future.
 
-Winit ***does not*** directly expose functionality for drawing inside windows or creating native
-menus, but ***does*** commit to providing APIs that higher-level crates can use to implement that
+Winit _**does not**_ directly expose functionality for drawing inside windows or creating native
+menus, but _**does**_ commit to providing APIs that higher-level crates can use to implement that
 functionality.
 
 ## `1.0` and stability
@@ -42,6 +43,7 @@ be released and the library will enter maintenance mode. For the most part, new 
 be added past this point. New platform features may be accepted and exposed through point releases.
 
 ### Tier upgrades
+
 Some platform features could, in theory, be exposed across multiple platforms, but have not gone
 through the implementation work necessary to function on all platforms. When one of these features
 gets implemented across all platforms, a PR can be opened to upgrade the feature to a core feature.
@@ -60,12 +62,13 @@ If your PR makes notable changes to Winit's features, please update this section
 - If your PR begins a new API rework, add a row to the `Pending API Reworks` table. If the PR implements the
   API rework on all relevant platforms, please move it to the `Completed API Reworks` table.
 
-- If your PR implements an already-existing feature on a new platform, either mark the feature as *completed*,
-  or mark it as *mostly completed* and link to an issue describing the problems with the implementation.
+- If your PR implements an already-existing feature on a new platform, either mark the feature as _completed_,
+  or mark it as _mostly completed_ and link to an issue describing the problems with the implementation.
 
 ## Core
 
 ### Windowing
+
 - **Window initialization**: Winit allows the creation of a window
 - **Providing pointer to init OpenGL**: Winit provides the necessary pointers to initialize a working opengl context
 - **Providing pointer to init Vulkan**: Same as OpenGL but for Vulkan
@@ -92,12 +95,13 @@ If your PR makes notable changes to Winit's features, please update this section
   windows can be disabled in favor of popup windows. This feature also guarantees that popup windows
   get drawn above their owner.
 
-
 ### System Information
+
 - **Monitor list**: Retrieve the list of monitors and their metadata, including which one is primary.
 - **Video mode query**: Monitors can be queried for their supported fullscreen video modes (consisting of resolution, refresh rate, and bit depth).
 
 ### Input Handling
+
 - **Mouse events**: Generating mouse events associated with pointer motion, click, and scrolling events.
 - **Mouse set location**: Forcibly changing the location of the pointer.
 - **Cursor locking**: Locking the cursor inside the window so it cannot move.
@@ -116,49 +120,55 @@ If your PR makes notable changes to Winit's features, please update this section
 - **Device movement events**: Capturing input from the device gyroscope and accelerometer.
 
 ## Platform
+
 ### Windows
-* Setting the name of the internal window class
-* Setting the taskbar icon
-* Setting the parent window
-* Setting a menu bar
-* `WS_EX_NOREDIRECTIONBITMAP` support
-* Theme the title bar according to Windows 10 Dark Mode setting or set a preferred theme
-* Changing a system-drawn backdrop
-* Setting the window border color
-* Setting the title bar background color
-* Setting the title color
-* Setting the corner rounding preference
+
+- Setting the name of the internal window class
+- Setting the taskbar icon
+- Setting the parent window
+- Setting a menu bar
+- `WS_EX_NOREDIRECTIONBITMAP` support
+- Theme the title bar according to Windows 10 Dark Mode setting or set a preferred theme
+- Changing a system-drawn backdrop
+- Setting the window border color
+- Setting the title bar background color
+- Setting the title color
+- Setting the corner rounding preference
 
 ### macOS
-* Window activation policy
-* Window movable by background
-* Transparent titlebar
-* Hidden titlebar
-* Hidden titlebar buttons
-* Full-size content view
-* Accepts first mouse
-* Set a preferred theme and get current theme.
+
+- Window activation policy
+- Window movable by background
+- Transparent titlebar
+- Hidden titlebar
+- Hidden titlebar buttons
+- Full-size content view
+- Accepts first mouse
+- Set a preferred theme and get current theme.
 
 ### Unix
-* Window urgency
-* X11 Window Class
-* X11 Override Redirect Flag
-* GTK Theme Variant
-* Base window size
-* Setting the X11 parent window
+
+- Window urgency
+- X11 Window Class
+- X11 Override Redirect Flag
+- GTK Theme Variant
+- Base window size
+- Setting the X11 parent window
 
 ### iOS
-* Get the `UIScreen` object pointer
-* Setting the `UIView` hidpi factor
-* Valid orientations
-* Home indicator visibility
-* Status bar visibility and style
-* Deferring system gestures
-* Getting the device idiom
-* Getting the preferred video mode
+
+- Get the `UIScreen` object pointer
+- Setting the `UIView` hidpi factor
+- Valid orientations
+- Home indicator visibility
+- Status bar visibility and style
+- Deferring system gestures
+- Getting the device idiom
+- Getting the preferred video mode
 
 ### Web
-* Get if the systems preferred color scheme is "dark"
+
+- Get if the systems preferred color scheme is "dark"
 
 ## Compatibility Matrix
 
@@ -171,65 +181,70 @@ Legend:
 - ❓: Unknown status
 
 ### Windowing
-|Feature                          |Windows|MacOS   |Linux x11   |Linux Wayland  |Android|iOS    |Web      |Redox OS|
-|-------------------------------- | ----- | ----   | -------    | -----------   | ----- | ----- | -------- | ------ |
-|Window initialization            |✔️     |✔️     |▢[#5]      |✔️             |▢[#33]|▢[#33] |✔️        |✔️      |
-|Providing pointer to init OpenGL |✔️     |✔️     |✔️         |✔️             |✔️     |✔️    |**N/A**|✔️      |
-|Providing pointer to init Vulkan |✔️     |✔️     |✔️         |✔️             |✔️     |❓     |**N/A**|**N/A** |
-|Window decorations               |✔️     |✔️     |✔️         |✔️             |**N/A**|**N/A**|**N/A**|✔️      |
-|Window decorations toggle        |✔️     |✔️     |✔️         |✔️             |**N/A**|**N/A**|**N/A**|**N/A** |
-|Window resizing                  |✔️     |✔️     |✔️         |✔️        |**N/A**|**N/A**|✔️        |✔️      |
-|Window resize increments         |✔️     |✔️     |✔️         |❌             |**N/A**|**N/A**|**N/A**|**N/A** |
-|Window transparency              |✔️     |✔️     |✔️         |✔️             |**N/A**|**N/A**|N/A        |✔️      |
-|Window blur                      |❌    |❌    |❌        |✔️             |**N/A**|**N/A**|N/A        |❌     |
-|Window maximization              |✔️     |✔️     |✔️         |✔️             |**N/A**|**N/A**|**N/A**|**N/A** |
-|Window maximization toggle       |✔️     |✔️     |✔️         |✔️             |**N/A**|**N/A**|**N/A**|**N/A** |
-|Window minimization              |✔️     |✔️     |✔️         |✔️             |**N/A**|**N/A**|**N/A**|**N/A** |
-|Fullscreen                       |✔️     |✔️     |✔️         |✔️             |**N/A**|✔️     |✔️        |**N/A** |
-|Fullscreen toggle                |✔️     |✔️     |✔️         |✔️             |**N/A**|✔️     |✔️        |**N/A** |
-|Exclusive fullscreen             |✔️     |✔️     |✔️         |**N/A**         |❌    |✔️     |**N/A**|**N/A** |
-|HiDPI support                    |✔️     |✔️     |✔️         |✔️             |✔️     |✔️    |✔️    |❌      |
-|Popup windows                    |❌     |❌     |❌         |❌             |❌    |❌     |**N/A**|**N/A** |
+
+| Feature                          | Windows | MacOS | Linux x11 | Linux Wayland | Android | iOS     | Web     | Redox OS |
+| -------------------------------- | ------- | ----- | --------- | ------------- | ------- | ------- | ------- | -------- |
+| Window initialization            | ✔️      | ✔️    | ▢[#5]     | ✔️            | ▢[#33]  | ▢[#33]  | ✔️      | ✔️       |
+| Providing pointer to init OpenGL | ✔️      | ✔️    | ✔️        | ✔️            | ✔️      | ✔️      | **N/A** | ✔️       |
+| Providing pointer to init Vulkan | ✔️      | ✔️    | ✔️        | ✔️            | ✔️      | ❓      | **N/A** | **N/A**  |
+| Window decorations               | ✔️      | ✔️    | ✔️        | ✔️            | **N/A** | **N/A** | **N/A** | ✔️       |
+| Window decorations toggle        | ✔️      | ✔️    | ✔️        | ✔️            | **N/A** | **N/A** | **N/A** | **N/A**  |
+| Window resizing                  | ✔️      | ✔️    | ✔️        | ✔️            | **N/A** | **N/A** | ✔️      | ✔️       |
+| Window resize increments         | ✔️      | ✔️    | ✔️        | ❌            | **N/A** | **N/A** | **N/A** | **N/A**  |
+| Window transparency              | ✔️      | ✔️    | ✔️        | ✔️            | **N/A** | **N/A** | N/A     | ✔️       |
+| Window blur                      | ❌      | ❌    | ❌        | ✔️            | **N/A** | **N/A** | N/A     | ❌       |
+| Window maximization              | ✔️      | ✔️    | ✔️        | ✔️            | **N/A** | **N/A** | **N/A** | **N/A**  |
+| Window maximization toggle       | ✔️      | ✔️    | ✔️        | ✔️            | **N/A** | **N/A** | **N/A** | **N/A**  |
+| Window minimization              | ✔️      | ✔️    | ✔️        | ✔️            | **N/A** | **N/A** | **N/A** | **N/A**  |
+| Fullscreen                       | ✔️      | ✔️    | ✔️        | ✔️            | **N/A** | ✔️      | ✔️      | **N/A**  |
+| Fullscreen toggle                | ✔️      | ✔️    | ✔️        | ✔️            | **N/A** | ✔️      | ✔️      | **N/A**  |
+| Exclusive fullscreen             | ✔️      | ✔️    | ✔️        | **N/A**       | ❌      | ✔️      | **N/A** | **N/A**  |
+| HiDPI support                    | ✔️      | ✔️    | ✔️        | ✔️            | ✔️      | ✔️      | ✔️      | ❌       |
+| Popup windows                    | ❌      | ❌    | ❌        | ❌            | ❌      | ❌      | **N/A** | **N/A**  |
 
 ### System information
-|Feature          |Windows|MacOS |Linux x11|Linux Wayland|Android|iOS      |Web      |Redox OS|
-|---------------- | ----- | ---- | ------- | ----------- | ----- | ------- | -------- | ------ |
-|Monitor list     |✔️    |✔️    |✔️       |✔️          |✔️     |✔️      |**N/A**|❌      |
-|Video mode query |✔️    |✔️    |✔️       |✔️          |✔️     |✔️      |**N/A**|❌      |
+
+| Feature          | Windows | MacOS | Linux x11 | Linux Wayland | Android | iOS | Web     | Redox OS |
+| ---------------- | ------- | ----- | --------- | ------------- | ------- | --- | ------- | -------- |
+| Monitor list     | ✔️      | ✔️    | ✔️        | ✔️            | ✔️      | ✔️  | **N/A** | ❌       |
+| Video mode query | ✔️      | ✔️    | ✔️        | ✔️            | ✔️      | ✔️  | **N/A** | ❌       |
 
 ### Input handling
-|Feature                 |Windows   |MacOS   |Linux x11|Linux Wayland|Android|iOS    |Web      |Redox OS|
-|----------------------- | -----    | ----   | ------- | ----------- | ----- | ----- | -------- | ------ |
-|Mouse events            |✔️       |▢[#63]  |✔️       |✔️          |**N/A**|**N/A**|✔️        |✔️      |
-|Mouse set location      |✔️       |✔️      |✔️       |✔️(when locked)  |**N/A**|**N/A**|**N/A**|**N/A** |
-|Cursor locking          |❌       |✔️      |❌       |✔️          |**N/A**|**N/A**|✔️        |❌      |
-|Cursor confining        |✔️       |❌      |✔️       |✔️          |**N/A**|**N/A**|❌       |❌      |
-|Cursor icon             |✔️       |✔️      |✔️       |✔️          |**N/A**|**N/A**|✔️        |**N/A** |
-|Cursor image            |✔️       |✔️      |✔️       |✔️          |**N/A**|**N/A**|✔️        |**N/A** |
-|Cursor hittest          |✔️       |✔️      |✔️       |✔️          |**N/A**|**N/A**|❌        |❌      |
-|Touch events            |✔️       |❌      |✔️       |✔️          |✔️    |✔️     |✔️        |**N/A** |
-|Touch pressure          |✔️       |❌      |❌       |❌          |❌    |✔️     |✔️        |**N/A** |
-|Multitouch              |✔️       |❌      |✔️       |✔️          |✔️    |✔️     |❌        |**N/A** |
-|Keyboard events         |✔️       |✔️      |✔️       |✔️          |✔️    |❌     |✔️        |✔️      |
-|Drag & Drop             |▢[#720]  |▢[#720] |▢[#720]  |▢[#720]   |**N/A**|**N/A**|❓        |**N/A** |
-|Raw Device Events       |▢[#750]  |▢[#750] |▢[#750]  |❌          |❌    |❌     |❓        |**N/A** |
-|Gamepad/Joystick events |❌[#804] |❌      |❌       |❌          |❌    |❌     |❓        |**N/A** |
-|Device movement events  |❓        |❓       |❓       |❓           |❌    |❌     |❓        |**N/A** |
-|Drag window with cursor |✔️       |✔️      |✔️       |✔️          |**N/A**|**N/A**|**N/A**   |**N/A** |
-|Resize with cursor      |✔️       |❌       |✔️       |✔️       |**N/A**|**N/A**|**N/A**   |**N/A** |
+
+| Feature                 | Windows  | MacOS   | Linux x11 | Linux Wayland   | Android | iOS     | Web     | Redox OS |
+| ----------------------- | -------- | ------- | --------- | --------------- | ------- | ------- | ------- | -------- |
+| Mouse events            | ✔️       | ▢[#63]  | ✔️        | ✔️              | **N/A** | **N/A** | ✔️      | ✔️       |
+| Mouse set location      | ✔️       | ✔️      | ✔️        | ✔️(when locked) | **N/A** | **N/A** | **N/A** | **N/A**  |
+| Cursor locking          | ❌       | ✔️      | ❌        | ✔️              | **N/A** | **N/A** | ✔️      | ❌       |
+| Cursor confining        | ✔️       | ❌      | ✔️        | ✔️              | **N/A** | **N/A** | ❌      | ❌       |
+| Cursor icon             | ✔️       | ✔️      | ✔️        | ✔️              | **N/A** | **N/A** | ✔️      | **N/A**  |
+| Cursor image            | ✔️       | ✔️      | ✔️        | ✔️              | **N/A** | **N/A** | ✔️      | **N/A**  |
+| Cursor hittest          | ✔️       | ✔️      | ✔️        | ✔️              | **N/A** | **N/A** | ❌      | ❌       |
+| Touch events            | ✔️       | ❌      | ✔️        | ✔️              | ✔️      | ✔️      | ✔️      | **N/A**  |
+| Touch pressure          | ✔️       | ❌      | ❌        | ❌              | ❌      | ✔️      | ✔️      | **N/A**  |
+| Multitouch              | ✔️       | ❌      | ✔️        | ✔️              | ✔️      | ✔️      | ❌      | **N/A**  |
+| Keyboard events         | ✔️       | ✔️      | ✔️        | ✔️              | ✔️      | ❌      | ✔️      | ✔️       |
+| Drag & Drop             | ▢[#720]  | ▢[#720] | ▢[#720]   | ▢[#720]         | **N/A** | **N/A** | ❓      | **N/A**  |
+| Raw Device Events       | ▢[#750]  | ▢[#750] | ▢[#750]   | ❌              | ❌      | ❌      | ❓      | **N/A**  |
+| Gamepad/Joystick events | ❌[#804] | ❌      | ❌        | ❌              | ❌      | ❌      | ❓      | **N/A**  |
+| Device movement events  | ❓       | ❓      | ❓        | ❓              | ❌      | ❌      | ❓      | **N/A**  |
+| Drag window with cursor | ✔️       | ✔️      | ✔️        | ✔️              | **N/A** | **N/A** | **N/A** | **N/A**  |
+| Resize with cursor      | ✔️       | ❌      | ✔️        | ✔️              | **N/A** | **N/A** | **N/A** | **N/A**  |
 
 ### Pending API Reworks
+
 Changes in the API that have been agreed upon but aren't implemented across all platforms.
 
-|Feature                             |Windows|MacOS |Linux x11|Linux Wayland|Android|iOS    |Web      |Redox OS|
-|------------------------------      | ----- | ---- | ------- | ----------- | ----- | ----- | -------- | ------ |
-|New API for HiDPI ([#315] [#319])   |✔️      |✔️     |✔️        |✔️            |✔️      |✔️      |❓        |❓      |
-|Event Loop 2.0 ([#459])             |✔️      |✔️     |✔️        |✔️            |✔️      |✔️      |❓        |✔️       |
-|Keyboard Input 2.0 ([#753])         |✔️      |✔️     |✔️        |✔️            |✔️      |❌     |✔️         |✔️       |
+| Feature                           | Windows | MacOS | Linux x11 | Linux Wayland | Android | iOS | Web | Redox OS |
+| --------------------------------- | ------- | ----- | --------- | ------------- | ------- | --- | --- | -------- |
+| New API for HiDPI ([#315] [#319]) | ✔️      | ✔️    | ✔️        | ✔️            | ✔️      | ✔️  | ❓  | ❓       |
+| Event Loop 2.0 ([#459])           | ✔️      | ✔️    | ✔️        | ✔️            | ✔️      | ✔️  | ❓  | ✔️       |
+| Keyboard Input 2.0 ([#753])       | ✔️      | ✔️    | ✔️        | ✔️            | ✔️      | ❌  | ✔️  | ✔️       |
 
 ### Completed API Reworks
-|Feature                             |Windows|MacOS |Linux x11|Linux Wayland|Android|iOS    |Web      |Redox OS|
-|------------------------------      | ----- | ---- | ------- | ----------- | ----- | ----- | -------- | ------ |
+
+| Feature | Windows | MacOS | Linux x11 | Linux Wayland | Android | iOS | Web | Redox OS |
+| ------- | ------- | ----- | --------- | ------------- | ------- | --- | --- | -------- |
 
 [#165]: https://github.com/rust-windowing/winit/issues/165
 [#219]: https://github.com/rust-windowing/winit/issues/219

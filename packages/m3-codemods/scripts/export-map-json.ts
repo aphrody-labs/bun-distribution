@@ -25,13 +25,16 @@ import {
 const ROOT = join(__dirname, "..");
 const MIGRATION = ROOT;
 
-const exceptions = JSON.parse(readFileSync(join(ROOT, "data", "mui-icon-exceptions.json"), "utf8"));
+const exceptions = JSON.parse(
+  readFileSync(join(ROOT, "data", "mui-icon-exceptions.json"), "utf8"),
+);
 const symbolNames: string[] = JSON.parse(
   readFileSync(join(ROOT, "data", "material-symbols-names.json"), "utf8"),
 );
 
 const map = {
-  $schema: "https://aphrody-code.github.io/material-web/schemas/mui-m3-map.json",
+  $schema:
+    "https://aphrody-code.github.io/material-web/schemas/mui-m3-map.json",
   meta: {
     description:
       "Mapping canonique MUI (@mui/material@9 + @mui/icons-material) -> material-web (@aphrody/m3-react + Material Symbols). Généré depuis migration/codemods/lib/.",
@@ -76,7 +79,8 @@ const map = {
   events: {
     onChange:
       "MUI onChange(e, value) -> events DOM natifs input/change ; lire e.target.value (le 2e paramètre disparaît).",
-    namespaced: "Composants fork : events namespacés (table:sort, stepper:change, tree:select…).",
+    namespaced:
+      "Composants fork : events namespacés (table:sort, stepper:change, tree:select…).",
     renamedProps: {
       "Switch.checked": "selected",
       "Drawer.open": "opened",

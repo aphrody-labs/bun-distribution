@@ -20,7 +20,13 @@ export type Config = {
   dir: string;
   /** `<home>/private/windex`: generated passwords (never committed nor printed). */
   privateDir: string;
-  pg: { host: string; port: number; user: string; database: string; passwordFile: string };
+  pg: {
+    host: string;
+    port: number;
+    user: string;
+    database: string;
+    passwordFile: string;
+  };
   redis: { host: string; port: number; passwordFile: string };
   /** Worker threads hashing and parsing files. */
   workers: number;
@@ -30,7 +36,9 @@ export function resolveHome(explicit?: string): string {
   return explicit ?? process.env.APHRODY_HOME ?? join(homedir(), ".aphrody");
 }
 
-export function loadConfig(opts: { home?: string; workers?: number } = {}): Config {
+export function loadConfig(
+  opts: { home?: string; workers?: number } = {},
+): Config {
   const home = resolveHome(opts.home);
   const privateDir = join(home, "private", "windex");
   const cpus = navigator.hardwareConcurrency || 4;
@@ -57,7 +65,9 @@ export function loadConfig(opts: { home?: string; workers?: number } = {}): Conf
 /** Reads a generated secret; the value is returned to the caller and never logged. */
 export function readSecret(file: string): string {
   if (!existsSync(file)) {
-    throw new Error(`secret absent : ${file} (lancer \`windex up\` pour le générer)`);
+    throw new Error(
+      `secret absent : ${file} (lancer \`windex up\` pour le générer)`,
+    );
   }
   return readFileSync(file, "utf8").trim();
 }
@@ -67,7 +77,10 @@ export function ensureSecret(file: string): boolean {
   if (existsSync(file)) return false;
   mkdirSync(dirname(file), { recursive: true });
   const bytes = crypto.getRandomValues(new Uint8Array(32));
-  writeFileSync(file, Buffer.from(bytes).toString("base64url"), { mode: 0o600, flag: "wx" });
+  writeFileSync(file, Buffer.from(bytes).toString("base64url"), {
+    mode: 0o600,
+    flag: "wx",
+  });
   return true;
 }
 

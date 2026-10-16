@@ -173,7 +173,10 @@ function subsetFaces(
   extra: Partial<FontFace> = {},
 ): FontFace[] {
   return SUBSETS.filter((s) => s.id === id).map((s) =>
-    face(family, s.file, licenseFile, { ...extra, unicodeRange: s.unicodeRange }),
+    face(family, s.file, licenseFile, {
+      ...extra,
+      unicodeRange: s.unicodeRange,
+    }),
   );
 }
 
@@ -185,24 +188,36 @@ export const FONTS: readonly FontFamily[] = [
     role: "brand",
     script: "latin",
     sheet: "core",
-    source: "github.com/google/fonts ofl/googlesansflex (fork aphrody-labs/fonts, vendor/fonts)",
+    source:
+      "github.com/google/fonts ofl/googlesansflex (fork aphrody-labs/fonts, vendor/fonts)",
     sourceFile: `${GS}/google-sans-flex/GoogleSansFlex-Variable.ttf`,
-    faces: subsetFaces("google-sans-flex", "Google Sans Flex", "fonts/GoogleSansFlex-OFL.txt", {
-      weight: [1, 1000],
-      stretch: [25, 151],
-      oblique: [-10, 0],
-    }),
+    faces: subsetFaces(
+      "google-sans-flex",
+      "Google Sans Flex",
+      "fonts/GoogleSansFlex-OFL.txt",
+      {
+        weight: [1, 1000],
+        stretch: [25, 151],
+        oblique: [-10, 0],
+      },
+    ),
   },
   {
     family: "Google Sans Code",
     role: "code",
     script: "latin",
     sheet: "core",
-    source: "github.com/google/fonts ofl/googlesanscode (fork aphrody-labs/fonts, vendor/fonts)",
+    source:
+      "github.com/google/fonts ofl/googlesanscode (fork aphrody-labs/fonts, vendor/fonts)",
     sourceFile: `${GS}/google-sans-code/GoogleSansCode-Variable.ttf`,
-    faces: subsetFaces("google-sans-code", "Google Sans Code", "fonts/GoogleSansCode-OFL.txt", {
-      weight: [300, 800],
-    }),
+    faces: subsetFaces(
+      "google-sans-code",
+      "Google Sans Code",
+      "fonts/GoogleSansCode-OFL.txt",
+      {
+        weight: [300, 800],
+      },
+    ),
   },
   {
     family: "Roboto Flex",
@@ -211,10 +226,15 @@ export const FONTS: readonly FontFamily[] = [
     sheet: "core",
     source: "github.com/google/fonts ofl/robotoflex",
     sourceFile: "fonts/RobotoFlex-Variable.ttf",
-    faces: subsetFaces("roboto-flex", "Roboto Flex", "fonts/RobotoFlex-OFL.txt", {
-      weight: [100, 1000],
-      stretch: [25, 151],
-    }),
+    faces: subsetFaces(
+      "roboto-flex",
+      "Roboto Flex",
+      "fonts/RobotoFlex-OFL.txt",
+      {
+        weight: [100, 1000],
+        stretch: [25, 151],
+      },
+    ),
   },
   {
     family: "Roboto Mono",
@@ -227,10 +247,15 @@ export const FONTS: readonly FontFamily[] = [
       ...subsetFaces("roboto-mono", "Roboto Mono", "fonts/RobotoMono-OFL.txt", {
         weight: [100, 700],
       }),
-      ...subsetFaces("roboto-mono-italic", "Roboto Mono", "fonts/RobotoMono-OFL.txt", {
-        weight: [100, 700],
-        style: "italic",
-      }),
+      ...subsetFaces(
+        "roboto-mono-italic",
+        "Roboto Mono",
+        "fonts/RobotoMono-OFL.txt",
+        {
+          weight: [100, 700],
+          style: "italic",
+        },
+      ),
     ],
   },
   {
@@ -240,7 +265,11 @@ export const FONTS: readonly FontFamily[] = [
     sheet: "jp",
     source: "github.com/google/fonts ofl/notosansjp",
     sourceFile: "fonts/NotoSansJP-Variable.ttf",
-    faces: subsetFaces("noto-sans-jp", "Noto Sans JP", "fonts/NotoSansJP-OFL.txt"),
+    faces: subsetFaces(
+      "noto-sans-jp",
+      "Noto Sans JP",
+      "fonts/NotoSansJP-OFL.txt",
+    ),
   },
   {
     family: "M PLUS 1 Code",
@@ -249,9 +278,14 @@ export const FONTS: readonly FontFamily[] = [
     sheet: "jp",
     source: "github.com/google/fonts ofl/mplus1code",
     sourceFile: "fonts/MPLUS1Code-Variable.ttf",
-    faces: subsetFaces("mplus-1-code", "M PLUS 1 Code", "fonts/MPLUS1Code-OFL.txt", {
-      weight: [100, 700],
-    }),
+    faces: subsetFaces(
+      "mplus-1-code",
+      "M PLUS 1 Code",
+      "fonts/MPLUS1Code-OFL.txt",
+      {
+        weight: [100, 700],
+      },
+    ),
   },
   ...SYMBOL_VARIANTS.map((v): FontFamily => {
     const file = `${MS}/material-symbols-${v.toLowerCase()}.woff2`;
@@ -263,7 +297,12 @@ export const FONTS: readonly FontFamily[] = [
       source:
         "npm material-symbols@0.44.8 (the build aphrody crates/ui/bun/icons/material-symbols renders)",
       sourceFile: file,
-      faces: [face(`Material Symbols ${v}`, file, null, { weight: [100, 700], display: "block" })],
+      faces: [
+        face(`Material Symbols ${v}`, file, null, {
+          weight: [100, 700],
+          display: "block",
+        }),
+      ],
     };
   }),
 ];
@@ -302,13 +341,16 @@ export function fontFaceCss(base = "", sheet?: FontSheet): string {
 
 /** Renders one @font-face rule for `x`, served from `url`. */
 export function faceRule(x: FontFace, url: string): string {
-  const style = x.oblique ? `oblique ${x.oblique[0]}deg ${x.oblique[1]}deg` : x.style;
+  const style = x.oblique
+    ? `oblique ${x.oblique[0]}deg ${x.oblique[1]}deg`
+    : x.style;
   const lines = [
     `  font-family: "${x.family}";`,
     `  src: url("${url}") format("${x.format}");`,
     `  font-weight: ${x.weight[0]} ${x.weight[1]};`,
   ];
-  if (x.stretch) lines.push(`  font-stretch: ${x.stretch[0]}% ${x.stretch[1]}%;`);
+  if (x.stretch)
+    lines.push(`  font-stretch: ${x.stretch[0]}% ${x.stretch[1]}%;`);
   lines.push(`  font-style: ${style};`, `  font-display: ${x.display};`);
   if (x.unicodeRange) lines.push(`  unicode-range: ${x.unicodeRange};`);
   return `@font-face {\n${lines.join("\n")}\n}`;
@@ -317,7 +359,8 @@ export function faceRule(x: FontFace, url: string): string {
 /** The first face declared for `family`; throws when the manifest lacks it. */
 export function fontFace(family: string): FontFace {
   const selectedFace = FONTS.find((f) => f.family === family)?.faces[0];
-  if (!selectedFace) throw new Error(`@aphrody/m3-fonts: unknown family "${family}"`);
+  if (!selectedFace)
+    throw new Error(`@aphrody/m3-fonts: unknown family "${family}"`);
   return selectedFace;
 }
 
@@ -335,14 +378,24 @@ export function renderStylesheet(base = "", sheet: FontSheet = "core"): string {
 /** Public object layout keeps native/local font paths unchanged and preserves face metadata. */
 export function publicFontUrl(file: string, base: string): string {
   const url = new URL(base);
-  if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash)
+  if (
+    url.protocol !== "https:" ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash
+  )
     throw new Error("Public fonts require an HTTPS base without credentials");
   const name = file.split("/").pop();
-  if (!name || !/^[\w.-]+\.woff2$/.test(name)) throw new Error("Invalid public WOFF2 filename");
+  if (!name || !/^[\w.-]+\.woff2$/.test(name))
+    throw new Error("Invalid public WOFF2 filename");
   return new URL(`m3/fonts/${name}`, url.href.replace(/\/?$/, "/")).href;
 }
 
-export function renderPublicStylesheet(base: string, sheet: FontSheet = "core"): string {
+export function renderPublicStylesheet(
+  base: string,
+  sheet: FontSheet = "core",
+): string {
   return renderStylesheet("", sheet).replace(
     /url\("([^"\n]+\.woff2)"\)/g,
     (_match, file: string) => `url("${publicFontUrl(file, base)}")`,

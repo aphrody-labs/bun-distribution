@@ -7,7 +7,13 @@
  */
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useTransition } from "react";
-import { Alerte, Chargement, ChevronDroite, Recherche, Terminal } from "@/components/icones";
+import {
+  Alerte,
+  Chargement,
+  ChevronDroite,
+  Recherche,
+  Terminal,
+} from "@/components/icones";
 import { api } from "@aphrody/admin-ui/client";
 
 interface OptionSpec {
@@ -33,7 +39,11 @@ interface CommandSpec {
 interface Reply {
   method: string;
   content?: string;
-  embeds?: { title?: string; description?: string; fields?: { name: string; value: string }[] }[];
+  embeds?: {
+    title?: string;
+    description?: string;
+    fields?: { name: string; value: string }[];
+  }[];
   files?: number;
   ephemeral?: boolean;
 }
@@ -66,7 +76,10 @@ const INTERACTIVE = new Set([
 export function CommandRunner() {
   const catalog = useQuery({
     queryKey: ["bot", "commands", "catalog"],
-    queryFn: () => api.get<{ commands: CommandSpec[]; count: number }>("/bot/commands/catalog"),
+    queryFn: () =>
+      api.get<{ commands: CommandSpec[]; count: number }>(
+        "/bot/commands/catalog",
+      ),
     staleTime: 5 * 60_000,
   });
   const commands = useMemo(() => catalog.data?.commands ?? [], [catalog.data]);
@@ -81,7 +94,9 @@ export function CommandRunner() {
     const n = q.trim().toLowerCase();
     return commands.filter(
       (c) =>
-        !n || c.invocation.toLowerCase().includes(n) || c.description.toLowerCase().includes(n),
+        !n ||
+        c.invocation.toLowerCase().includes(n) ||
+        c.description.toLowerCase().includes(n),
     );
   }, [commands, q]);
 
@@ -105,7 +120,9 @@ export function CommandRunner() {
 
   function run() {
     if (!selected) return;
-    const missing = selected.options.some((o) => o.required && !String(args[o.name] ?? "").trim());
+    const missing = selected.options.some(
+      (o) => o.required && !String(args[o.name] ?? "").trim(),
+    );
     if (missing) return;
     setResult(null);
     startTransition(async () => {
@@ -113,7 +130,10 @@ export function CommandRunner() {
         const res = await fetch("/api/bot-admin/bot/commands/exec", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ invocation: selected.invocation, options: args }),
+          body: JSON.stringify({
+            invocation: selected.invocation,
+            options: args,
+          }),
         });
         setResult((await res.json()) as ExecResult);
       } catch (e) {
@@ -147,10 +167,13 @@ export function CommandRunner() {
         <div className="min-h-0 flex-1 overflow-y-auto pr-1">
           {catalog.isLoading ? (
             <p className="p-3 text-xs text-white/50">
-              <Chargement className="mr-1 inline h-3 w-3 animate-spin" /> Chargement du catalogue…
+              <Chargement className="mr-1 inline h-3 w-3 animate-spin" />{" "}
+              Chargement du catalogue…
             </p>
           ) : catalog.isError ? (
-            <p className="p-3 text-xs text-red-400">Catalogue indisponible (bot hors-ligne ?).</p>
+            <p className="p-3 text-xs text-red-400">
+              Catalogue indisponible (bot hors-ligne ?).
+            </p>
           ) : (
             byPersona.map(([persona, cmds]) => (
               <div key={persona} className="mb-2">
@@ -169,7 +192,9 @@ export function CommandRunner() {
                     }`}
                   >
                     <ChevronDroite className="h-3 w-3 shrink-0 text-white/50" />
-                    <span className="font-mono text-[13px]">/{c.invocation}</span>
+                    <span className="font-mono text-[13px]">
+                      /{c.invocation}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -183,12 +208,16 @@ export function CommandRunner() {
         {!selected ? (
           <div className="flex h-full flex-col items-center justify-center text-center text-white/50">
             <Terminal className="mb-2 h-8 w-8" />
-            <p className="text-sm">Sélectionne une commande à gauche pour l&apos;exécuter.</p>
+            <p className="text-sm">
+              Sélectionne une commande à gauche pour l&apos;exécuter.
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
             <div>
-              <h2 className="font-mono text-lg text-dbz-orange">/{selected.invocation}</h2>
+              <h2 className="font-mono text-lg text-dbz-orange">
+                /{selected.invocation}
+              </h2>
               <p className="text-sm text-white/60">{selected.description}</p>
               <p className="mt-1 text-[11px] uppercase tracking-widest text-white/50">
                 persona : {selected.persona}
@@ -198,8 +227,9 @@ export function CommandRunner() {
             {interactive && (
               <div className="flex items-start gap-2 rounded border border-dbz-yellow/40 bg-dbz-yellow/5 p-2.5 text-xs text-dbz-yellow/90">
                 <Alerte className="mt-0.5 h-4 w-4 shrink-0" />
-                Commande interactive (menus/boutons/canvas) : seule la première réponse est capturée
-                hors Discord ; la partie interactive ne s&apos;exécute pas.
+                Commande interactive (menus/boutons/canvas) : seule la première
+                réponse est capturée hors Discord ; la partie interactive ne
+                s&apos;exécute pas.
               </div>
             )}
 
@@ -262,7 +292,9 @@ function OptionField({
       <label className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-dbz-blue-light">
         {opt.name}
         {opt.required && <span className="text-dbz-red">*</span>}
-        <span className="font-normal normal-case text-white/50">{opt.typeName}</span>
+        <span className="font-normal normal-case text-white/50">
+          {opt.typeName}
+        </span>
       </label>
       {opt.choices && opt.choices.length > 0 ? (
         <select
@@ -296,7 +328,9 @@ function OptionField({
           onChange={(e) => onChange(e.target.value)}
         />
       )}
-      {opt.description && <p className="mt-0.5 text-[10px] text-white/50">{opt.description}</p>}
+      {opt.description && (
+        <p className="mt-0.5 text-[10px] text-white/50">{opt.description}</p>
+      )}
     </div>
   );
 }
@@ -305,23 +339,36 @@ function ResultView({ result }: { result: NonNullable<ExecResult> }) {
   return (
     <div
       className={`rounded border-l-4 p-3 ${
-        result.ok ? "border-green-500 bg-green-500/5" : "border-red-500 bg-red-500/5"
+        result.ok
+          ? "border-green-500 bg-green-500/5"
+          : "border-red-500 bg-red-500/5"
       }`}
     >
-      <p className={`text-sm font-semibold ${result.ok ? "text-green-400" : "text-red-400"}`}>
+      <p
+        className={`text-sm font-semibold ${result.ok ? "text-green-400" : "text-red-400"}`}
+      >
         {result.ok ? "Exécuté" : "Échec"} · {result.replies.length} réponse
         {result.replies.length !== 1 ? "s" : ""}
       </p>
-      {result.error && <p className="mt-1 text-xs text-red-400">{result.error}</p>}
+      {result.error && (
+        <p className="mt-1 text-xs text-red-400">{result.error}</p>
+      )}
       {result.replies.map((r, i) => (
-        <div key={i} className="mt-2 rounded bg-black/40 p-2 text-xs text-white/80">
-          <span className="mr-2 text-[9px] uppercase text-white/50">{r.method}</span>
+        <div
+          key={i}
+          className="mt-2 rounded bg-black/40 p-2 text-xs text-white/80"
+        >
+          <span className="mr-2 text-[9px] uppercase text-white/50">
+            {r.method}
+          </span>
           {r.content && <p className="whitespace-pre-wrap">{r.content}</p>}
           {r.embeds?.map((e, j) => (
             <div key={j} className="mt-1 border-l-2 border-dbz-orange/40 pl-2">
               {e.title && <p className="font-bold text-white">{e.title}</p>}
               {e.description && (
-                <p className="whitespace-pre-wrap text-white/70">{e.description}</p>
+                <p className="whitespace-pre-wrap text-white/70">
+                  {e.description}
+                </p>
               )}
               {e.fields?.map((f, k) => (
                 <p key={k} className="mt-0.5">

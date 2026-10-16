@@ -69,7 +69,20 @@ interface Token {
   endLine?: number;
 }
 
-const SYMBOLS = new Set(["{", "}", "[", "]", "(", ")", "<", ">", "=", ";", ",", ":"]);
+const SYMBOLS = new Set([
+  "{",
+  "}",
+  "[",
+  "]",
+  "(",
+  ")",
+  "<",
+  ">",
+  "=",
+  ";",
+  ",",
+  ":",
+]);
 
 function tokenize(source: string): Token[] {
   const tokens: Token[] = [];
@@ -96,7 +109,8 @@ function tokenize(source: string): Token[] {
       i = end;
     } else if (ch === '"') {
       let j = i + 1;
-      while (j < source.length && source[j] !== '"') j += source[j] === "\\" ? 2 : 1;
+      while (j < source.length && source[j] !== '"')
+        j += source[j] === "\\" ? 2 : 1;
       tokens.push({ kind: "string", text: source.slice(i + 1, j), line });
       i = j + 1;
     } else if (SYMBOLS.has(ch)) {
@@ -105,7 +119,9 @@ function tokenize(source: string): Token[] {
     } else {
       const match = /^[A-Za-z0-9_.\-+*/]+/.exec(source.slice(i));
       if (!match)
-        throw new Error(`proto: unexpected character ${JSON.stringify(ch)} at line ${line}`);
+        throw new Error(
+          `proto: unexpected character ${JSON.stringify(ch)} at line ${line}`,
+        );
       tokens.push({ kind: "word", text: match[0], line });
       i += match[0].length;
     }
@@ -148,7 +164,9 @@ class Parser {
   private expect(text: string): Token {
     const token = this.next();
     if (token.text !== text || token.kind === "string") {
-      throw new Error(`proto: expected ${text} at line ${token.line}, found ${token.text}`);
+      throw new Error(
+        `proto: expected ${text} at line ${token.line}, found ${token.text}`,
+      );
     }
     return token;
   }
@@ -168,7 +186,9 @@ class Parser {
     while (this.peek()?.kind === "comment") {
       const comment = this.next();
       const following = this.peek();
-      const adjacent = following !== undefined && following.line === (comment.endLine ?? 0) + 1;
+      const adjacent =
+        following !== undefined &&
+        following.line === (comment.endLine ?? 0) + 1;
       doc = adjacent ? cleanDoc(comment.text) : "";
     }
     return doc;
@@ -187,7 +207,8 @@ class Parser {
 
   private skipStatement(): void {
     while (!this.accept(";")) {
-      if (this.peek()?.text === "{" && this.peek()?.kind === "symbol") this.skipBlock();
+      if (this.peek()?.text === "{" && this.peek()?.kind === "symbol")
+        this.skipBlock();
       else this.next();
     }
   }
@@ -199,7 +220,9 @@ class Parser {
       const token = this.peek();
       if (!token) break;
       if (token.kind !== "word")
-        throw new Error(`proto: unexpected ${token.text} at line ${token.line}`);
+        throw new Error(
+          `proto: unexpected ${token.text} at line ${token.line}`,
+        );
       switch (token.text) {
         case "syntax":
         case "import":
@@ -222,7 +245,9 @@ class Parser {
           file.rpcs.push(...this.parseService());
           break;
         default:
-          throw new Error(`proto: unsupported top-level ${token.text} at line ${token.line}`);
+          throw new Error(
+            `proto: unsupported top-level ${token.text} at line ${token.line}`,
+          );
       }
     }
     return file;
@@ -247,7 +272,11 @@ class Parser {
     return result;
   }
 
-  private parseField(doc: string, repeated: boolean, optional: boolean): ProtoField {
+  private parseField(
+    doc: string,
+    repeated: boolean,
+    optional: boolean,
+  ): ProtoField {
     let type = this.next().text;
     let mapKey: string | undefined;
     if (type === "map") {
@@ -279,12 +308,18 @@ class Parser {
 
   private parseMessage(doc: string): ProtoMessage {
     this.expect("message");
-    const message: ProtoMessage = { name: this.next().text, doc, fields: [], oneofs: [] };
+    const message: ProtoMessage = {
+      name: this.next().text,
+      doc,
+      fields: [],
+      oneofs: [],
+    };
     this.expect("{");
     while (!this.accept("}")) {
       const fieldDoc = this.takeDoc();
       const token = this.peek();
-      if (!token) throw new Error(`proto: unterminated message ${message.name}`);
+      if (!token)
+        throw new Error(`proto: unterminated message ${message.name}`);
       if (token.text === "}") continue;
       if (token.text === "oneof") {
         this.next();
@@ -303,7 +338,9 @@ class Parser {
       } else if (token.text === "option" || token.text === "reserved") {
         this.skipStatement();
       } else if (token.text === "message" || token.text === "enum") {
-        throw new Error(`proto: nested ${token.text} in ${message.name} is not supported`);
+        throw new Error(
+          `proto: nested ${token.text} in ${message.name} is not supported`,
+        );
       } else {
         const repeated = this.accept("repeated");
         const optional = !repeated && this.accept("optional");
@@ -357,9 +394,17 @@ class Parser {
       const responseStream = this.accept("stream");
       const response = this.next().text;
       this.expect(")");
-      if (this.peek()?.text === "{" && this.peek()?.kind === "symbol") this.skipBlock();
+      if (this.peek()?.text === "{" && this.peek()?.kind === "symbol")
+        this.skipBlock();
       else this.expect(";");
-      rpcs.push({ name, doc, request, response, requestStream, responseStream });
+      rpcs.push({
+        name,
+        doc,
+        request,
+        response,
+        requestStream,
+        responseStream,
+      });
     }
     return rpcs;
   }
@@ -401,8 +446,14 @@ function tsType(
   messages: ReadonlySet<string>,
 ): string {
   const base = SCALARS[field.type] ?? field.type;
-  if (!(field.type in SCALARS) && !enums.has(field.type) && !messages.has(field.type)) {
-    throw new Error(`proto: unresolved type ${field.type} (field ${field.name})`);
+  if (
+    !(field.type in SCALARS) &&
+    !enums.has(field.type) &&
+    !messages.has(field.type)
+  ) {
+    throw new Error(
+      `proto: unresolved type ${field.type} (field ${field.name})`,
+    );
   }
   if (field.mapKey !== undefined) return `{ [key: string]: ${base} }`;
   const needsParens = base.includes(" ") && !base.startsWith("{");
@@ -435,7 +486,9 @@ function emitFields(
   for (const field of fields) {
     lines.push(...jsdoc(field.doc, indent));
     const optional = field.required ? "" : "?";
-    lines.push(`${indent}${field.jsonName}${optional}: ${tsType(field, enums, messages)};`);
+    lines.push(
+      `${indent}${field.jsonName}${optional}: ${tsType(field, enums, messages)};`,
+    );
   }
   for (const name of neverNames) lines.push(`${indent}${name}?: never;`);
   return lines;
@@ -448,7 +501,10 @@ export interface GenerateOptions {
   command: string;
 }
 
-export function generateTypes(file: ProtoFile, options: GenerateOptions): string {
+export function generateTypes(
+  file: ProtoFile,
+  options: GenerateOptions,
+): string {
   const enums = new Set(file.enums.map((e) => e.name));
   const messages = new Set(file.messages.map((m) => m.name));
   const out: string[] = [
@@ -488,7 +544,9 @@ export function generateTypes(file: ProtoFile, options: GenerateOptions): string
       }
       out.push("] as const;");
     }
-    out.push(`export type ${e.name} = (typeof ${constName(e.name)}_VALUES)[number];`);
+    out.push(
+      `export type ${e.name} = (typeof ${constName(e.name)}_VALUES)[number];`,
+    );
     if (values.length === 0) throw new Error(`proto: empty enum ${e.name}`);
     out.push("");
   }
@@ -502,7 +560,8 @@ export function generateTypes(file: ProtoFile, options: GenerateOptions): string
       out.push("");
       continue;
     }
-    if (m.oneofs.length > 1) throw new Error(`proto: ${m.name} has several oneofs`);
+    if (m.oneofs.length > 1)
+      throw new Error(`proto: ${m.name} has several oneofs`);
     const oneof = m.oneofs[0] as ProtoOneof;
     const names = oneof.fields.map((f) => f.jsonName);
     const common = `${m.name}Common`;
@@ -512,7 +571,8 @@ export function generateTypes(file: ProtoFile, options: GenerateOptions): string
       out.push("}");
       out.push("");
     }
-    const unionName = m.fields.length > 0 ? `${m.name}${pascal(oneof.name)}` : m.name;
+    const unionName =
+      m.fields.length > 0 ? `${m.name}${pascal(oneof.name)}` : m.name;
     out.push(`export type ${unionName} =`);
     for (const member of oneof.fields) {
       out.push(...jsdoc(member.doc, "  "));
@@ -530,7 +590,9 @@ export function generateTypes(file: ProtoFile, options: GenerateOptions): string
     }
   }
 
-  out.push("/** JSON-RPC method names and gRPC rpc names of the A2AService. */");
+  out.push(
+    "/** JSON-RPC method names and gRPC rpc names of the A2AService. */",
+  );
   out.push(
     ...constArray(
       "A2A_METHODS",
@@ -546,7 +608,9 @@ export function generateTypes(file: ProtoFile, options: GenerateOptions): string
       file.rpcs.filter((r) => r.responseStream).map((r) => r.name),
     ),
   );
-  out.push("export type A2AStreamingMethod = (typeof A2A_STREAMING_METHODS)[number];");
+  out.push(
+    "export type A2AStreamingMethod = (typeof A2A_STREAMING_METHODS)[number];",
+  );
   out.push("");
   out.push("/** Request and response type of every method. */");
   out.push("export interface A2AMethodTypes {");
@@ -567,7 +631,11 @@ function constArray(name: string, values: readonly string[]): string[] {
   const items = values.map((v) => JSON.stringify(v));
   const oneLine = `export const ${name} = [${items.join(", ")}] as const;`;
   if (oneLine.length <= 100) return [oneLine];
-  return [`export const ${name} = [`, ...items.map((item) => `  ${item},`), "] as const;"];
+  return [
+    `export const ${name} = [`,
+    ...items.map((item) => `  ${item},`),
+    "] as const;",
+  ];
 }
 
 function pascal(name: string): string {

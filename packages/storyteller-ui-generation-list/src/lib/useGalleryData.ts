@@ -187,7 +187,11 @@ export function useGalleryData(options: {
     setIsInitialLoading(true);
     loadItems(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [username, JSON.stringify(filterMediaClasses), JSON.stringify(filterModelIds)]);
+  }, [
+    username,
+    JSON.stringify(filterMediaClasses),
+    JSON.stringify(filterModelIds),
+  ]);
 
   const loadMore = useCallback(() => {
     if (hasMore && !isLoadingRef.current) {

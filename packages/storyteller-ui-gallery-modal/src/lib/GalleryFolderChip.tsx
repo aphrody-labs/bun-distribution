@@ -102,9 +102,9 @@ export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({
       ) : (
         <div className="absolute inset-0 flex items-center justify-center">
           <FolderIcon
-            
             className={colorCode ? "text-4xl" : "text-4xl text-primary"}
-            style={colorCode ? { color: colorCode } : undefined} />
+            style={colorCode ? { color: colorCode } : undefined}
+          />
         </div>
       )}
 
@@ -115,9 +115,7 @@ export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({
 
       {/* Star (favorite) */}
       {hasStar && (
-        <StarIcon
-          
-          className="absolute left-2 top-2 text-sm text-amber-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
+        <StarIcon className="absolute left-2 top-2 text-sm text-amber-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
       )}
 
       {/* Name + subfolder count */}
@@ -127,12 +125,12 @@ export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({
               still reads as a folder. */}
           {hasArt && (
             <FolderIcon
-              
               className={twMerge(
                 "flex-shrink-0 text-sm drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]",
                 colorCode ? "" : "text-primary",
               )}
-              style={colorCode ? { color: colorCode } : undefined} />
+              style={colorCode ? { color: colorCode } : undefined}
+            />
           )}
           <span
             className={twMerge(
@@ -170,7 +168,7 @@ export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({
           }}
           className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-[3px] bg-black/40 text-white opacity-0 transition-opacity hover:bg-black/60 group-hover/chip:opacity-100 [@media(pointer:coarse)]:opacity-100"
         >
-          <EllipsisIcon  className="text-sm" />
+          <EllipsisIcon className="text-sm" />
         </span>
       )}
     </button>

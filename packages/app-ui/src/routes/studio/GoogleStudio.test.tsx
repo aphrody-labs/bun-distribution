@@ -29,7 +29,9 @@ test("public Studio routes search to the same translated SafeSearch controller",
 test("native Studio preserves every owned search vertical while translating the surface", async () => {
   const element = document.createElement("div");
   const root = createRoot(element);
-  const host = window as unknown as { __TAURI_INTERNALS__?: { invoke: unknown } };
+  const host = window as unknown as {
+    __TAURI_INTERNALS__?: { invoke: unknown };
+  };
   const prior = host.__TAURI_INTERNALS__;
   host.__TAURI_INTERNALS__ = {
     invoke: () => {
@@ -51,7 +53,9 @@ test("native Studio preserves every owned search vertical while translating the 
       for (const vertical of ["web", "images", "news", "videos", "books"])
         expect(html).toContain(`value="${vertical}"`);
       expect(html).toContain(`lang="${language}"`);
-      expect(html).toContain(language === "en" ? "Your search" : "Votre recherche");
+      expect(html).toContain(
+        language === "en" ? "Your search" : "Votre recherche",
+      );
       expect(html).toContain('type="checkbox"');
       expect(html).not.toContain("Recherche Google");
     }

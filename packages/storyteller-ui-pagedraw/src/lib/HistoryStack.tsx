@@ -162,9 +162,7 @@ export const HistoryStack = ({
     <div className="h-auto w-20 rounded-lg">
       <div className="glass rounded-lg p-1.5">
         <div className="mb-2 flex w-full items-center justify-center">
-          <HistoryIcon
-            
-            className="p-1 text-base-fg/50" />
+          <HistoryIcon className="p-1 text-base-fg/50" />
         </div>
         <div
           ref={scrollRef}
@@ -185,9 +183,7 @@ export const HistoryStack = ({
                   <div
                     className="group relative w-full cursor-pointer"
                     title={
-                      tileCount > 1
-                        ? `Remove batch of ${tileCount}`
-                        : "Remove"
+                      tileCount > 1 ? `Remove batch of ${tileCount}` : "Remove"
                     }
                     onClick={(e) => {
                       e.stopPropagation();
@@ -259,9 +255,7 @@ export const HistoryStack = ({
                       className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
                     >
                       <div className="flex items-center justify-center gap-1 rounded-lg bg-red/80 px-3 py-2 shadow-lg">
-                        <Trash2Icon
-                          
-                          className="text-base-fg text-base" />
+                        <Trash2Icon className="text-base-fg text-base" />
                         {tileCount > 1 && (
                           <span className="text-base-fg text-xs font-semibold">
                             ×{tileCount}
@@ -318,13 +312,14 @@ export const HistoryStack = ({
                           primaryActionBtnClassName: "bg-red hover:bg-red/80",
                           message: (
                             <>
-                            <p className="text-base-fg text-sm opacity-70">
-                              Are you sure you want to remove this image from the history stack? This
-                              action cannot be undone.
-                            </p>
-                            <p className="text-base-fg text-sm opacity-70">
-                              Images removed here can still be found in the library.
-                            </p>
+                              <p className="text-base-fg text-sm opacity-70">
+                                Are you sure you want to remove this image from
+                                the history stack? This action cannot be undone.
+                              </p>
+                              <p className="text-base-fg text-sm opacity-70">
+                                Images removed here can still be found in the
+                                library.
+                              </p>
                             </>
                           ),
                           primaryActionText: "Delete",
@@ -335,9 +330,7 @@ export const HistoryStack = ({
                         });
                       }}
                     >
-                      <Trash2Icon
-                        
-                        className="text-base-fg h-full w-full text-[13px]" />
+                      <Trash2Icon className="text-base-fg h-full w-full text-[13px]" />
                     </div>
                   </Button>
                 ))}
@@ -384,7 +377,7 @@ export const HistoryStack = ({
                   })
                 }
               >
-                <XIcon  className="h-5 w-5 text-xl" />
+                <XIcon className="h-5 w-5 text-xl" />
               </button>
             </Tooltip>
           </div>

@@ -35,7 +35,9 @@ test("isolated Paths package runs its source owner with source and output proven
     );
     expect(child.exitCode).toBe(0);
     expect(child.stderr.toString()).toBe("");
-    expect(existsSync(join(root, "node_modules/@aphrody/workspace"))).toBe(false);
+    expect(existsSync(join(root, "node_modules/@aphrody/workspace"))).toBe(
+      false,
+    );
     const provenance = JSON.parse(
       await readFile(join(destination, "source-provenance.json"), "utf8"),
     );
@@ -64,14 +66,24 @@ test("SDK staging refuses a Paths package with an obsolete checkout import", asy
   try {
     const source = join(root, "paths");
     await mkdir(join(source, "src"), { recursive: true });
-    await cp(join(import.meta.dir, "../../paths/package.json"), join(source, "package.json"));
+    await cp(
+      join(import.meta.dir, "../../paths/package.json"),
+      join(source, "package.json"),
+    );
     await writeFile(
       join(source, "src/index.ts"),
       'export * from "../../workspace/src/paths.ts";\n',
     );
-    await expect(stageNativeConsumer(source, join(root, "isolated"))).rejects.toThrow();
+    await expect(
+      stageNativeConsumer(source, join(root, "isolated")),
+    ).rejects.toThrow();
     expect(
-      existsSync(join(root, "isolated/node_modules/@aphrody/paths/source-provenance.json")),
+      existsSync(
+        join(
+          root,
+          "isolated/node_modules/@aphrody/paths/source-provenance.json",
+        ),
+      ),
     ).toBe(false);
   } finally {
     await rm(root, { recursive: true, force: true });

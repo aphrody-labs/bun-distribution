@@ -18,7 +18,12 @@ describe("buildM3", () => {
     expect(result.outdir).toBe(uiDist);
     const top = (await readdir(uiDist)).toSorted();
     expect(top).toEqual(
-      [TAURI_LAYOUT.style, TAURI_LAYOUT.script, TAURI_LAYOUT.fonts, TAURI_LAYOUT.html].toSorted(),
+      [
+        TAURI_LAYOUT.style,
+        TAURI_LAYOUT.script,
+        TAURI_LAYOUT.fonts,
+        TAURI_LAYOUT.html,
+      ].toSorted(),
     );
     expect((await readdir(join(uiDist, "fonts"))).toSorted()).toEqual([
       "GoogleSansFlex-Variable.ttf",
@@ -31,7 +36,9 @@ describe("buildM3", () => {
     expect(html).toContain('href="./app.css"');
     expect(html).not.toContain("main");
     const css = await Bun.file(join(uiDist, "app.css")).text();
-    expect(css).toMatch(/url\("?\.\/fonts\/material-symbols-outlined\.woff2"?\)/);
+    expect(css).toMatch(
+      /url\("?\.\/fonts\/material-symbols-outlined\.woff2"?\)/,
+    );
     expect(css).toContain("--fixture-primary");
     expect(result.outputs.map((o) => o.path).toSorted()).toEqual([
       "app.css",
@@ -79,7 +86,8 @@ describe("buildM3", () => {
         new Uint8Array([0x89, 0x50, 0x4e, 0x47, icon.length]),
       );
     }
-    const lines = (form: (icon: string) => string) => icons.map(form).join("\n");
+    const lines = (form: (icon: string) => string) =>
+      icons.map(form).join("\n");
     await Bun.write(
       join(src, "plain.ts"),
       lines((i) => `export const ${i} = () => import("./${i}.svg");`),
@@ -115,7 +123,12 @@ describe("buildM3", () => {
         entry: join(src, "index.html"),
         tauri: { uiDist },
         cwd,
-        plugin: { css: fakeCss().css, theme: {}, root: REPO_ROOT, tailwind: false },
+        plugin: {
+          css: fakeCss().css,
+          theme: {},
+          root: REPO_ROOT,
+          tailwind: false,
+        },
       });
       // oxlint-disable-next-line no-await-in-loop -- Read this completed build before comparing the next independently ordered run.
       const js = await Bun.file(join(uiDist, TAURI_LAYOUT.script)).text();
@@ -126,21 +139,26 @@ describe("buildM3", () => {
       // The chosen forms: every svg is a fonts/ file, every png an inline data URL.
       expect(js).not.toContain("data:image/svg+xml");
       for (const icon of icons)
-        expect(result.outputs.map((o) => o.path)).toContain(`fonts/${icon}.svg`);
+        expect(result.outputs.map((o) => o.path)).toContain(
+          `fonts/${icon}.svg`,
+        );
       expect(js.match(/data:image\/png;base64,/g)?.length).toBe(icons.length);
     }
     for (const run of runs.slice(1)) expect(run).toEqual(runs[0]!);
   });
 
   test("Tauri mode rejects several entries", async () => {
-    await expect(buildM3({ entry: ["a.html", "b.html"], tauri: { uiDist: "x" } })).rejects.toThrow(
-      "exactly one",
-    );
-    await expect(buildM3({ entry: "a.ts", tauri: { uiDist: "x" } })).rejects.toThrow(".html");
+    await expect(
+      buildM3({ entry: ["a.html", "b.html"], tauri: { uiDist: "x" } }),
+    ).rejects.toThrow("exactly one");
+    await expect(
+      buildM3({ entry: "a.ts", tauri: { uiDist: "x" } }),
+    ).rejects.toThrow(".html");
   });
 
   test("rewriteHtmlReference touches src/href attributes only", () => {
-    const html = '<script src="./main.js"></script><link href="main.js"><p>main.js</p>';
+    const html =
+      '<script src="./main.js"></script><link href="main.js"><p>main.js</p>';
     expect(rewriteHtmlReference(html, "main.js", "app.js")).toBe(
       '<script src="./app.js"></script><link href="./app.js"><p>main.js</p>',
     );

@@ -69,7 +69,12 @@ text selection. The stem is selected on mount and the extension is a read-only s
 or unchanged name cancels.
 
 ```tsx
-<RenameInput name="report" extension="pdf" onSave={async (next) => rename(next)} onCancel={stop} />
+<RenameInput
+  name="report"
+  extension="pdf"
+  onSave={async (next) => rename(next)}
+  onCancel={stop}
+/>
 ```
 
 ### `FileThumb`

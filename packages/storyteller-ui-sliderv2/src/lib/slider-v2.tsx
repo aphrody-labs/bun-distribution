@@ -124,14 +124,14 @@ export const SliderV2 = ({
           className={twMerge(
             "glass border-ui-border group relative h-7 w-full cursor-pointer overflow-hidden rounded-lg border",
             isDragging && "!bg-ui-controls/90",
-            className
+            className,
           )}
           onMouseDown={handleMouseDown}
         >
           <div
             className={twMerge(
               "absolute h-full bg-primary/30 transition-colors duration-300 group-hover:bg-primary/50",
-              isDragging && "!bg-primary/50"
+              isDragging && "!bg-primary/50",
             )}
             style={{ width: `${percentage}%` }}
           >
@@ -139,7 +139,7 @@ export const SliderV2 = ({
               <span
                 className={twMerge(
                   "absolute top-1/2 ml-2.5 -translate-y-1/2 text-nowrap text-sm font-medium text-white/60 transition-colors duration-300 group-hover:text-white",
-                  isDragging && "!text-white"
+                  isDragging && "!text-white",
                 )}
               >
                 {innerLabel}
@@ -148,7 +148,7 @@ export const SliderV2 = ({
             <div
               className={twMerge(
                 "absolute right-0 top-1/2 mr-1 h-4 w-0.5 -translate-y-1/2 rounded-full",
-                isDragging ? "bg-white" : "bg-white/50"
+                isDragging ? "bg-white" : "bg-white/50",
               )}
               onMouseDown={handleMouseDown}
               onMouseEnter={handleMouseEnter}
@@ -161,7 +161,7 @@ export const SliderV2 = ({
           ref={sliderRef}
           className={twMerge(
             "relative h-4 w-full cursor-pointer flex items-center",
-            className
+            className,
           )}
           onMouseDown={handleMouseDown}
         >
@@ -175,7 +175,7 @@ export const SliderV2 = ({
           <div
             className={twMerge(
               "absolute top-1/2 z-10 size-4 -translate-y-1/2 rounded-full border-2 border-white bg-white shadow transition-colors duration-200 hover:ring-[4px] hover:ring-white/20",
-              isDragging ? "ring-[4px] ring-white/20" : ""
+              isDragging ? "ring-[4px] ring-white/20" : "",
             )}
             style={{ left: `calc(${percentage}% - 10px)` }}
             onMouseDown={handleMouseDown}

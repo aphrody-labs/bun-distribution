@@ -29,7 +29,9 @@ type Button = {
   (props: LinkButtonProps): React.ReactElement;
 };
 
-const hasHref = (props: ButtonProps | LinkButtonProps): props is LinkButtonProps => "href" in props;
+const hasHref = (
+  props: ButtonProps | LinkButtonProps,
+): props is LinkButtonProps => "href" in props;
 
 // M3 common-button looks. Disabled: container on-surface 12 %, content on-surface 38 %.
 const filled = [

@@ -18,7 +18,10 @@ import {
 
 const viewport = { width: 1000, height: 800 };
 const pet = { width: 100, height: 100 };
-const bottomRight = { x: 1000 - 100 - GUIDE_MARGIN, y: 800 - 100 - GUIDE_MARGIN };
+const bottomRight = {
+  x: 1000 - 100 - GUIDE_MARGIN,
+  y: 800 - 100 - GUIDE_MARGIN,
+};
 const base = {
   viewport,
   pet,
@@ -46,12 +49,17 @@ describe("resting spots", () => {
   });
 
   test("nearest spot is the one closest to the current position", () => {
-    expect(nearestRestingSpot({ x: 0, y: 0 }, viewport, pet, [])).toEqual({ x: GUIDE_MARGIN, y: GUIDE_MARGIN });
+    expect(nearestRestingSpot({ x: 0, y: 0 }, viewport, pet, [])).toEqual({
+      x: GUIDE_MARGIN,
+      y: GUIDE_MARGIN,
+    });
   });
 
   test("no spot when every margin is covered", () => {
     const everywhere: Box = { x: 0, y: 0, width: 1000, height: 800 };
-    expect(nearestRestingSpot(bottomRight, viewport, pet, [everywhere])).toBeNull();
+    expect(
+      nearestRestingSpot(bottomRight, viewport, pet, [everywhere]),
+    ).toBeNull();
   });
 });
 
@@ -75,23 +83,41 @@ describe("decideGuide", () => {
     const field: Box = { x: 700, y: 700, width: 280, height: 60 };
     const action = decideGuide({ ...base, typing: true, obstacles: [field] });
     expect(action.kind).toBe("step-aside");
-    if (action.kind === "step-aside") expect(action.to).not.toEqual(bottomRight);
+    if (action.kind === "step-aside")
+      expect(action.to).not.toEqual(bottomRight);
   });
 
   test("steps aside during a fast scroll and stays for a slow one", () => {
     const middle = { x: 450, y: 350 };
-    expect(decideGuide({ ...base, position: middle, scrollSpeed: SCROLL_FAST + 1 }).kind).toBe("step-aside");
-    expect(decideGuide({ ...base, position: middle, scrollSpeed: SCROLL_FAST }).kind).toBe("stay");
+    expect(
+      decideGuide({ ...base, position: middle, scrollSpeed: SCROLL_FAST + 1 })
+        .kind,
+    ).toBe("step-aside");
+    expect(
+      decideGuide({ ...base, position: middle, scrollSpeed: SCROLL_FAST }).kind,
+    ).toBe("stay");
   });
 
   test("stays when it already rests on the best spot", () => {
-    expect(decideGuide({ ...base, scrollSpeed: SCROLL_FAST + 1 })).toEqual({ kind: "stay" });
+    expect(decideGuide({ ...base, scrollSpeed: SCROLL_FAST + 1 })).toEqual({
+      kind: "stay",
+    });
   });
 
   test("offers a hint beside a control only after a hesitation", () => {
     const button: Box = { x: 400, y: 300, width: 120, height: 40 };
-    expect(decideGuide({ ...base, hesitationTarget: button, idleMs: HESITATION_MS - 1 }).kind).toBe("stay");
-    const action = decideGuide({ ...base, hesitationTarget: button, idleMs: HESITATION_MS });
+    expect(
+      decideGuide({
+        ...base,
+        hesitationTarget: button,
+        idleMs: HESITATION_MS - 1,
+      }).kind,
+    ).toBe("stay");
+    const action = decideGuide({
+      ...base,
+      hesitationTarget: button,
+      idleMs: HESITATION_MS,
+    });
     expect(action.kind).toBe("hint");
     if (action.kind === "hint") {
       expect(action.target).toEqual(button);
@@ -109,7 +135,13 @@ describe("decideGuide", () => {
     const button: Box = { x: 400, y: 300, width: 120, height: 40 };
     const middle = { x: 450, y: 350 };
     expect(
-      decideGuide({ ...base, position: middle, typing: true, hesitationTarget: button, idleMs: HESITATION_MS }).kind,
+      decideGuide({
+        ...base,
+        position: middle,
+        typing: true,
+        hesitationTarget: button,
+        idleMs: HESITATION_MS,
+      }).kind,
     ).toBe("step-aside");
   });
 });
@@ -128,8 +160,12 @@ describe("message admission", () => {
   test("respects the minimum interval", () => {
     const first = admitMessage(NO_MESSAGES, 1000);
     expect(first.allowed).toBe(true);
-    expect(admitMessage(first.gate, 1000 + MESSAGE_MIN_INTERVAL_MS - 1).allowed).toBe(false);
-    expect(admitMessage(first.gate, 1000 + MESSAGE_MIN_INTERVAL_MS).allowed).toBe(true);
+    expect(
+      admitMessage(first.gate, 1000 + MESSAGE_MIN_INTERVAL_MS - 1).allowed,
+    ).toBe(false);
+    expect(
+      admitMessage(first.gate, 1000 + MESSAGE_MIN_INTERVAL_MS).allowed,
+    ).toBe(true);
   });
 
   test("caps messages per visit", () => {

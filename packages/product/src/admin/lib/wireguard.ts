@@ -14,7 +14,9 @@ export function isWgKey(value: string): boolean {
 }
 
 /** X25519 private key as WireGuard writes it (clamped, base64). */
-export function generatePrivateKey(entropy: Uint8Array = randomBytes(32)): string {
+export function generatePrivateKey(
+  entropy: Uint8Array = randomBytes(32),
+): string {
   const raw = Buffer.from(entropy);
   if (raw.length !== 32) throw new Error("32 octets attendus");
   raw[0] = (raw[0] ?? 0) & 248;
@@ -27,7 +29,9 @@ const PKCS8_X25519 = Buffer.from("302e020100300506032b656e04220420", "hex");
 export function publicKeyOf(privateKey: string): string {
   if (!isWgKey(privateKey)) throw new Error("clé privée WireGuard invalide");
   const der = Buffer.concat([PKCS8_X25519, Buffer.from(privateKey, "base64")]);
-  const jwk = createPublicKey(createPrivateKey({ key: der, format: "der", type: "pkcs8" })).export({
+  const jwk = createPublicKey(
+    createPrivateKey({ key: der, format: "der", type: "pkcs8" }),
+  ).export({
     format: "jwk",
   });
   if (!jwk.x) throw new Error("clé publique introuvable");
@@ -72,14 +76,19 @@ export function parseWgText(text: string): WgSection[] {
     const header = /^\[(\w+)\]$/.exec(line);
     if (header) {
       const name =
-        header[1] === "Interface" ? "Interface" : header[1] === "Peer" ? "Peer" : undefined;
+        header[1] === "Interface"
+          ? "Interface"
+          : header[1] === "Peer"
+            ? "Peer"
+            : undefined;
       if (!name) throw new Error(`section WireGuard inconnue : [${header[1]}]`);
       current = { name, entries: [] };
       sections.push(current);
       continue;
     }
     const pair = /^([A-Za-z]+)\s*=\s*(.+)$/.exec(line);
-    if (!pair) throw new Error(`ligne WireGuard illisible : ${line.slice(0, 40)}`);
+    if (!pair)
+      throw new Error(`ligne WireGuard illisible : ${line.slice(0, 40)}`);
     if (!current) {
       current = { name: "Interface", entries: [] };
       sections.push(current);
@@ -89,7 +98,11 @@ export function parseWgText(text: string): WgSection[] {
   return sections;
 }
 
-function checkCidrList(key: string, value: string, allowDefaultRoute: boolean): void {
+function checkCidrList(
+  key: string,
+  value: string,
+  allowDefaultRoute: boolean,
+): void {
   for (const part of value.split(",").map((item) => item.trim())) {
     const match = CIDR_RE.exec(part);
     if (!match) throw new Error(`${key} : adresse invalide « ${part} »`);
@@ -101,19 +114,26 @@ function checkCidrList(key: string, value: string, allowDefaultRoute: boolean): 
 }
 
 /** Validate sections; `withPrivateKey` is true for a complete .conf. Returns the sections unchanged. */
-export function validateWgSections(sections: WgSection[], withPrivateKey: boolean): WgSection[] {
+export function validateWgSections(
+  sections: WgSection[],
+  withPrivateKey: boolean,
+): WgSection[] {
   const interfaces = sections.filter((section) => section.name === "Interface");
   const peers = sections.filter((section) => section.name === "Peer");
   if (interfaces.length !== 1)
     throw new Error("le bloc doit contenir exactement une partie [Interface]");
   if (peers.length < 1)
-    throw new Error("le bloc ne contient aucun [Peer] (le serveur de l'équipe)");
+    throw new Error(
+      "le bloc ne contient aucun [Peer] (le serveur de l'équipe)",
+    );
   for (const section of sections) {
     for (const [rawKey, value] of section.entries) {
       const key = rawKey.toLowerCase();
       if (section.name === "Interface" && key === "privatekey") {
         if (!withPrivateKey)
-          throw new Error("le bloc de l'équipe ne doit contenir aucune clé privée (PrivateKey)");
+          throw new Error(
+            "le bloc de l'équipe ne doit contenir aucune clé privée (PrivateKey)",
+          );
         if (!isWgKey(value)) throw new Error("PrivateKey invalide");
         continue;
       }
@@ -127,7 +147,8 @@ export function validateWgSections(sections: WgSection[], withPrivateKey: boolea
       else if (key === "publickey" || key === "presharedkey") {
         if (!isWgKey(value)) throw new Error(`${rawKey} invalide`);
       } else if (key === "endpoint") {
-        if (!ENDPOINT_RE.test(value)) throw new Error("Endpoint invalide (hôte:port attendu)");
+        if (!ENDPOINT_RE.test(value))
+          throw new Error("Endpoint invalide (hôte:port attendu)");
       } else if (key === "persistentkeepalive" || key === "mtu") {
         if (!/^\d{1,5}$/.test(value)) throw new Error(`${rawKey} invalide`);
       }
@@ -146,7 +167,10 @@ export function validateWgSections(sections: WgSection[], withPrivateKey: boolea
       }
     }
   }
-  if (withPrivateKey && !interfaces[0]!.entries.some(([key]) => key.toLowerCase() === "privatekey"))
+  if (
+    withPrivateKey &&
+    !interfaces[0]!.entries.some(([key]) => key.toLowerCase() === "privatekey")
+  )
     throw new Error("[Interface] sans PrivateKey");
   return sections;
 }
@@ -163,10 +187,15 @@ const render = (sections: WgSection[]): string =>
 export function assembleConf(privateKey: string, block: string): string {
   if (!isWgKey(privateKey)) throw new Error("clé privée WireGuard invalide");
   const sections = validateWgSections(parseWgText(block), false);
-  const interfaceSection = sections.find((section) => section.name === "Interface")!;
+  const interfaceSection = sections.find(
+    (section) => section.name === "Interface",
+  )!;
   interfaceSection.entries.unshift(["PrivateKey", privateKey]);
   // Interface first, then peers, whatever the order in the block.
-  return render([interfaceSection, ...sections.filter((section) => section.name === "Peer")]);
+  return render([
+    interfaceSection,
+    ...sections.filter((section) => section.name === "Peer"),
+  ]);
 }
 
 /** Validate a complete .conf received from the team and return it normalised. */
@@ -175,9 +204,15 @@ export function normaliseConf(conf: string): string {
 }
 
 /** The hub the tunnel talks to: first Peer's endpoint host (used only to say what is unreachable, never stored). */
-export function peerEndpoint(conf: string): { host: string; port: number } | undefined {
+export function peerEndpoint(
+  conf: string,
+): { host: string; port: number } | undefined {
   const peer = parseWgText(conf).find((section) => section.name === "Peer");
-  const value = peer?.entries.find(([key]) => key.toLowerCase() === "endpoint")?.[1];
+  const value = peer?.entries.find(
+    ([key]) => key.toLowerCase() === "endpoint",
+  )?.[1];
   const match = value ? /^(.*):(\d+)$/.exec(value) : null;
-  return match ? { host: match[1]!.replace(/^\[|\]$/g, ""), port: Number(match[2]) } : undefined;
+  return match
+    ? { host: match[1]!.replace(/^\[|\]$/g, ""), port: Number(match[2]) }
+    : undefined;
 }

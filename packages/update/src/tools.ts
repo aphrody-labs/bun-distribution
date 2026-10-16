@@ -7,7 +7,12 @@ import { Ctx } from "./context.ts";
 import { apply as applyPin, check as checkPins, load } from "./pins.ts";
 import { cmpVersion, registries } from "./deps/sync.ts";
 
-export type ToolRow = { tool: string; pinned?: string; installed?: string; latest?: string };
+export type ToolRow = {
+  tool: string;
+  pinned?: string;
+  installed?: string;
+  latest?: string;
+};
 
 const VERSION = /\d+\.\d+\.\d+/;
 /** Installers of the aphrody-labs/bun runtime releases (append `.sh` or `.ps1`). */
@@ -29,7 +34,13 @@ export function installed(c: Ctx, tool: string): string | undefined {
 
 export async function latest(
   tool: string,
-  src: { github?: string; pypi?: string; npm?: string; crate?: string; stripTag?: string },
+  src: {
+    github?: string;
+    pypi?: string;
+    npm?: string;
+    crate?: string;
+    stripTag?: string;
+  },
 ): Promise<string | undefined> {
   if (src.npm) return registries.npm(src.npm).catch(() => undefined);
   if (src.crate) return registries.crate(src.crate).catch(() => undefined);
@@ -67,7 +78,8 @@ export async function plan(c: Ctx): Promise<ToolRow[]> {
 
 /** Install exactly `version` for tools the host manages; returns false when only the pin can change. */
 export function install(c: Ctx, tool: string, version: string): boolean {
-  const run = (cmd: string, args: string[]) => c.run(cmd, args, { inherit: true }).status === 0;
+  const run = (cmd: string, args: string[]) =>
+    c.run(cmd, args, { inherit: true }).status === 0;
   switch (tool) {
     case "uv":
       return run("uv", ["self", "update", version]);
@@ -78,9 +90,18 @@ export function install(c: Ctx, tool: string, version: string): boolean {
             "-Command",
             `& ([scriptblock]::Create((irm ${BUN_INSTALLER}.ps1))) -Version ${version}`,
           ])
-        : run("bash", ["-c", `curl -fsSL ${BUN_INSTALLER}.sh | bash -s ${version}`]);
+        : run("bash", [
+            "-c",
+            `curl -fsSL ${BUN_INSTALLER}.sh | bash -s ${version}`,
+          ]);
     case "rust":
-      return run("rustup", ["toolchain", "install", version, "--profile", "minimal"]);
+      return run("rustup", [
+        "toolchain",
+        "install",
+        version,
+        "--profile",
+        "minimal",
+      ]);
     case "nushell":
       return run("cargo", ["binstall", "-y", `nu@${version}`]);
     default:
@@ -100,13 +121,17 @@ export async function runTools(c: Ctx, args: string[]): Promise<number> {
     );
     if (!c.apply || !r.latest || !behind) continue;
     if (!install(c, r.tool, r.latest)) {
-      console.error(`warn   could not install ${r.tool} ${r.latest}; pin left at ${r.pinned}`);
+      console.error(
+        `warn   could not install ${r.tool} ${r.latest}; pin left at ${r.pinned}`,
+      );
       continue;
     }
     // The installer channel can lag the tag: pin what is actually present when the tool is host-installed.
     const have = installed(c, r.tool);
-    const target = r.tool === "uv" || r.tool === "bun" ? (have ?? r.latest) : r.latest;
-    for (const f of applyPin(c, r.tool, target)) console.log(`pin    ${r.tool} ${target} -> ${f}`);
+    const target =
+      r.tool === "uv" || r.tool === "bun" ? (have ?? r.latest) : r.latest;
+    for (const f of applyPin(c, r.tool, target))
+      console.log(`pin    ${r.tool} ${target} -> ${f}`);
     stale++;
   }
   if (c.apply && stale) c.run("bun", ["install"], { inherit: true });

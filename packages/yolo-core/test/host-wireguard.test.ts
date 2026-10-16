@@ -41,18 +41,25 @@ const tunnel = () => loadTunnel(root);
 const unappliedTunnel = () => {
   const t = tunnel();
   t.hub.publicKey = null;
-  for (const p of t.peers) if (["wsl", "dbfr"].includes(p.id)) p.publicKey = null;
+  for (const p of t.peers)
+    if (["wsl", "dbfr"].includes(p.id)) p.publicKey = null;
   return t;
 };
 const plan = () =>
-  buildPlan(unappliedTunnel(), { root, catalog, compose: (u) => composeUnit(u, root) });
+  buildPlan(unappliedTunnel(), {
+    root,
+    catalog,
+    compose: (u) => composeUnit(u, root),
+  });
 const newKey = () => randomBytes(32).toString("base64");
 
 /** A copy of the declaration and the account files that a test may mutate. */
 function scratch(mutate: (t: Record<string, any>) => void): string {
   const dir = mkdtempSync(join(tmpdir(), "wg-decl-"));
   mkdirSync(join(dir, "wireguard"), { recursive: true });
-  const t = JSON.parse(readFileSync(join(root, "wireguard/aphrody-tunnel.json"), "utf8"));
+  const t = JSON.parse(
+    readFileSync(join(root, "wireguard/aphrody-tunnel.json"), "utf8"),
+  );
   mutate(t);
   writeFileSync(join(dir, "wireguard/aphrody-tunnel.json"), JSON.stringify(t));
   return dir;
@@ -66,7 +73,8 @@ test("the host catalog, the tunnel declaration and the omar account agree", () =
 
 test("the tunnel subnet overlaps no existing network, wg0 included", () => {
   const t = tunnel();
-  for (const n of t.existingNetworks) expect(cidrsOverlap(t.subnet, n.cidr)).toBe(false);
+  for (const n of t.existingNetworks)
+    expect(cidrsOverlap(t.subnet, n.cidr)).toBe(false);
   expect(t.existingNetworks.map((n) => n.cidr)).toContain("10.8.0.0/24");
   expect(cidrsOverlap("10.100.0.0/24", "10.64.0.0/10")).toBe(true);
   expect(cidrsOverlap("10.200.77.0/24", "10.8.0.0/24")).toBe(false);
@@ -76,36 +84,79 @@ test("the tunnel subnet overlaps no existing network, wg0 included", () => {
 
 test("a declaration that breaks a rule is reported", () => {
   const bad: [string, (t: Record<string, any>) => void, RegExp][] = [
-    ["overlapping subnet", (t) => (t.subnet = "10.8.0.0/24"), /overlaps 10\.8\.0\.0\/24/],
-    ["default route", (t) => (t.clientAllowedIps = "0.0.0.0/0"), /split tunnel/],
+    [
+      "overlapping subnet",
+      (t) => (t.subnet = "10.8.0.0/24"),
+      /overlaps 10\.8\.0\.0\/24/,
+    ],
+    [
+      "default route",
+      (t) => (t.clientAllowedIps = "0.0.0.0/0"),
+      /split tunnel/,
+    ],
     ["wg0 reuse", (t) => (t.interface = "wg0"), /new wgN/],
     ["wg0 port", (t) => (t.hub.listenPort = 51820), /51820/],
-    ["bad key", (t) => (t.peers[2].publicKey = "not-a-key"), /not a WireGuard key/],
-    ["duplicate address", (t) => (t.peers[0].address = t.peers[1].address), /duplicate address/],
-    ["address outside", (t) => (t.peers[0].address = "10.8.0.9"), /outside the subnet/],
+    [
+      "bad key",
+      (t) => (t.peers[2].publicKey = "not-a-key"),
+      /not a WireGuard key/,
+    ],
+    [
+      "duplicate address",
+      (t) => (t.peers[0].address = t.peers[1].address),
+      /duplicate address/,
+    ],
+    [
+      "address outside",
+      (t) => (t.peers[0].address = "10.8.0.9"),
+      /outside the subnet/,
+    ],
     [
       "foreign marker",
       (t) =>
-        (t.peers[3].udpSource = { mode: "ufw", ips: ["92.170.252.46"], comment: "shenron-admin" }),
+        (t.peers[3].udpSource = {
+          mode: "ufw",
+          ips: ["92.170.252.46"],
+          comment: "shenron-admin",
+        }),
       /comment must be/,
     ],
     [
       "world source",
       (t) =>
-        (t.peers[3].udpSource = { mode: "ufw", ips: ["0.0.0.0/0"], comment: "aphrody-wg-omar" }),
+        (t.peers[3].udpSource = {
+          mode: "ufw",
+          ips: ["0.0.0.0/0"],
+          comment: "aphrody-wg-omar",
+        }),
       /one public address/,
     ],
     ["postgres exposed", (t) => (t.services[0].port = 5432), /never-open port/],
     ["unknown grant", (t) => (t.grants.omar = ["nope"]), /unknown service/],
-    ["mesh to dbfr", (t) => t.mesh[0].to.push("dbfr"), /opens every port of dbfr/],
-    ["mesh unknown member", (t) => t.mesh[0].from.push("nobody"), /unknown member nobody/],
-    ["private key in file", (t) => (t.$note = `PrivateKey = ${newKey()}`), /private key material/],
+    [
+      "mesh to dbfr",
+      (t) => t.mesh[0].to.push("dbfr"),
+      /opens every port of dbfr/,
+    ],
+    [
+      "mesh unknown member",
+      (t) => t.mesh[0].from.push("nobody"),
+      /unknown member nobody/,
+    ],
+    [
+      "private key in file",
+      (t) => (t.$note = `PrivateKey = ${newKey()}`),
+      /private key material/,
+    ],
   ];
   for (const [label, mutate, pattern] of bad) {
     const dir = scratch(mutate);
     try {
       const problems = tunnelProblems(dir).join("\n");
-      expect({ label, hit: pattern.test(problems) }).toEqual({ label, hit: true });
+      expect({ label, hit: pattern.test(problems) }).toEqual({
+        label,
+        hit: true,
+      });
     } finally {
       rmSync(dir, { recursive: true });
     }
@@ -114,11 +165,15 @@ test("a declaration that breaks a rule is reported", () => {
 
 test("WireGuard key format: 44 base64 characters, 32 bytes", () => {
   expect(isWgKey(newKey())).toBe(true);
-  expect(isWgKey(tunnel().peers.find((p) => p.id === "aphro-pc")?.publicKey)).toBe(true);
+  expect(
+    isWgKey(tunnel().peers.find((p) => p.id === "aphro-pc")?.publicKey),
+  ).toBe(true);
   expect(isWgKey("AAAA")).toBe(false);
   expect(isWgKey(`${newKey().slice(0, 43)}!`)).toBe(false);
   expect(
-    isWgKey("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHyaI3orZmtXCvv8ItHvbBVEGHbPOq+QCicxIbmrHBxO"),
+    isWgKey(
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHyaI3orZmtXCvv8ItHvbBVEGHbPOq+QCicxIbmrHBxO",
+    ),
   ).toBe(false);
 });
 
@@ -127,7 +182,9 @@ test("registered peers have valid public keys after host-local generation", () =
   expect(t.peers.find((p) => p.id === "omar")?.publicKey).toBe(
     "EXfatxgVFs8Lr9k7QoJ2wiznY5MYO4C19+4gLbGmCEw=",
   );
-  expect(t.peers.find((p) => p.id === "omar")?.publicKeyNote).toContain("never handshaked");
+  expect(t.peers.find((p) => p.id === "omar")?.publicKeyNote).toContain(
+    "never handshaked",
+  );
   expect(t.peers.find((p) => p.id === "aphro-pc")?.publicKey).toBe(
     "VewVolGGwY3Lvp78jp9dKB7RIxg2xUR2pbVS+y+uj2I=",
   );
@@ -154,7 +211,9 @@ test("client sections: split tunnel, no private key, hub key placeholder until i
   const withKey = clientSections(t, "omar", hub);
   expect(withKey.peer).toContain(`PublicKey = ${hub}`);
   expect(withKey.hubKeyKnown).toBe(true);
-  expect(() => clientSections(t, "omar", "short")).toThrow(/not a WireGuard key/);
+  expect(() => clientSections(t, "omar", "short")).toThrow(
+    /not a WireGuard key/,
+  );
   expect(() => clientSections(t, "nobody")).toThrow(/unknown peer/);
 });
 
@@ -175,14 +234,18 @@ test("a complete conf needs a valid private key and a valid hub key, and never l
   expect(conf.indexOf("[Interface]")).toBeLessThan(conf.indexOf("PrivateKey"));
   expect(conf.indexOf("PrivateKey")).toBeLessThan(conf.indexOf("[Peer]"));
   expect(() => clientConf(t, "aphro-pc", hub, "oops")).toThrow(/private key/);
-  expect(() => clientConf(t, "aphro-pc", "oops", priv)).toThrow(/hub-public-key/);
-  expect(() => assertOutsideRepo(join(repo, "tools", "config", "aphrody.conf"), repo)).toThrow(
-    /inside the repository/,
+  expect(() => clientConf(t, "aphro-pc", "oops", priv)).toThrow(
+    /hub-public-key/,
   );
-  expect(() => assertOutsideRepo(join(repo, "not-yet", "dir", "a.conf"), repo)).toThrow(
-    /inside the repository/,
-  );
-  expect(() => assertOutsideRepo(join(tmpdir(), "aphrody.conf"), repo)).not.toThrow();
+  expect(() =>
+    assertOutsideRepo(join(repo, "tools", "config", "aphrody.conf"), repo),
+  ).toThrow(/inside the repository/);
+  expect(() =>
+    assertOutsideRepo(join(repo, "not-yet", "dir", "a.conf"), repo),
+  ).toThrow(/inside the repository/);
+  expect(() =>
+    assertOutsideRepo(join(tmpdir(), "aphrody.conf"), repo),
+  ).not.toThrow();
 });
 
 test("wg-client refuses to write a conf into the repository and writes it outside", async () => {
@@ -223,7 +286,9 @@ test("wg-client refuses to write a conf into the repository and writes it outsid
   try {
     const ok = await run(join(dir, "aphrody.conf"));
     expect(ok.code).toBe(0);
-    expect(readFileSync(join(dir, "aphrody.conf"), "utf8")).toContain("PrivateKey = ");
+    expect(readFileSync(join(dir, "aphrody.conf"), "utf8")).toContain(
+      "PrivateKey = ",
+    );
   } finally {
     rmSync(dir, { recursive: true });
     rmSync(keyDir, { recursive: true });
@@ -234,10 +299,17 @@ test("hub config: known keys inline, the others are apply-time inputs, no privat
   const h = hubConfig(unappliedTunnel());
   expect(h.text).toContain("ListenPort = 51821");
   expect(h.text).toContain("Address = 10.200.77.1/24");
-  expect(h.text).toContain("PublicKey = VewVolGGwY3Lvp78jp9dKB7RIxg2xUR2pbVS+y+uj2I=");
+  expect(h.text).toContain(
+    "PublicKey = VewVolGGwY3Lvp78jp9dKB7RIxg2xUR2pbVS+y+uj2I=",
+  );
   expect(h.text).toContain("AllowedIPs = 10.200.77.10/32");
-  expect(h.needs.map((n) => n.env)).toEqual(["WSL_PUBLIC_KEY", "DBFR_PUBLIC_KEY"]);
-  expect(h.text).toContain("PublicKey = EXfatxgVFs8Lr9k7QoJ2wiznY5MYO4C19+4gLbGmCEw=");
+  expect(h.needs.map((n) => n.env)).toEqual([
+    "WSL_PUBLIC_KEY",
+    "DBFR_PUBLIC_KEY",
+  ]);
+  expect(h.text).toContain(
+    "PublicKey = EXfatxgVFs8Lr9k7QoJ2wiznY5MYO4C19+4gLbGmCEw=",
+  );
   expect(PRIVATE_KEY_PATTERN.test(h.text)).toBe(false);
   expect(h.text).not.toMatch(/AllowedIPs = [^\n]*\/(0|2[0-3])\b/);
 });
@@ -251,7 +323,8 @@ test("ufw rules: specific sources, own marker, nothing for postgres, redis or th
     expect(r.text).not.toContain("shenron-admin");
     expect(r.text).not.toMatch(/Anywhere|from any\b|0\.0\.0\.0/);
     expect(r.text).not.toMatch(/port (5432|6379)\b/);
-    if (r.text.includes("10.200.77.2 port")) expect(r.text).toContain("port 22 proto tcp"); // SSH is active; training remains pending
+    if (r.text.includes("10.200.77.2 port"))
+      expect(r.text).toContain("port 22 proto tcp"); // SSH is active; training remains pending
   }
   const udp = rules.filter((r) => r.kind === "udp-source");
   // Omar's source is `open` since 2026-10-09 (dynamic public address): the hub rule is declared by hand, not generated.
@@ -294,7 +367,9 @@ test("ufw rules: specific sources, own marker, nothing for postgres, redis or th
       ),
   ).toBe(true);
   expect(
-    rules.filter((r) => r.peer === "dbfr" && !r.service?.startsWith("mesh:")).map((r) => r.text),
+    rules
+      .filter((r) => r.peer === "dbfr" && !r.service?.startsWith("mesh:"))
+      .map((r) => r.text),
   ).toEqual([
     "ufw route allow in on wg1 out on wg1 from 10.200.77.3 to 10.200.77.4 port 22 proto tcp comment 'aphrody-wg-dbfr'",
     "ufw allow in on wg1 from 10.200.77.3 to 10.200.77.1 port 22 proto tcp comment 'aphrody-wg-dbfr'",
@@ -312,7 +387,9 @@ test("the plan carries no private key, names its inputs and repeats the shared s
     "WSL_PUBLIC_KEY",
     "DBFR_PUBLIC_KEY",
   ]);
-  expect(p.steps.find((s) => s.id === "dbfr.conf")?.needs).toEqual(["HUB_PUBLIC_KEY"]);
+  expect(p.steps.find((s) => s.id === "dbfr.conf")?.needs).toEqual([
+    "HUB_PUBLIC_KEY",
+  ]);
   for (const host of ["vps", "dbfr"]) {
     const keys = p.steps.find((s) => s.id === `${host}.account.omar.keys`)!;
     expect(keys.kind).toBe("mutate");
@@ -324,26 +401,37 @@ test("the plan carries no private key, names its inputs and repeats the shared s
   expect(p.decisions.join("\n")).toMatch(
     /also a line of \/home\/ubuntu\/\.ssh\/authorized_keys on dbfr/,
   );
-  expect(p.decisions.join("\n")).toMatch(/recommendation: a distinct ssh key for omar/);
-  const shared = p.steps.filter((s) => s.id.includes("key-not-on-other-logins"));
+  expect(p.decisions.join("\n")).toMatch(
+    /recommendation: a distinct ssh key for omar/,
+  );
+  const shared = p.steps.filter((s) =>
+    s.id.includes("key-not-on-other-logins"),
+  );
   expect(shared.map((s) => s.host).toSorted()).toEqual(["dbfr", "vps"]);
   for (const s of shared) {
     expect(s.kind).toBe("warn");
-    expect(s.run).toContain("AAAAC3NzaC1lZDI1NTE5AAAAIJvmGjMWPLFJZWsACxRqCC0Ll+uXvnyunYdPG4E8jS4V");
+    expect(s.run).toContain(
+      "AAAAC3NzaC1lZDI1NTE5AAAAIJvmGjMWPLFJZWsACxRqCC0Ll+uXvnyunYdPG4E8jS4V",
+    );
     expect(s.run).toContain("/home/ubuntu/.ssh/authorized_keys");
   }
   expect(p.pending.join("\n")).not.toMatch(/omar/);
   expect(p.pending.join("\n")).toMatch(/hub: wg1 public key/);
   expect(p.pending.join("\n")).toMatch(/training/);
   expect(p.clients.omar!.peer).toContain("AllowedIPs = 10.200.77.0/24");
-  expect(p.clients["aphro-pc"]!.pasteBlock.startsWith("Address = 10.200.77.4/32")).toBe(true);
+  expect(
+    p.clients["aphro-pc"]!.pasteBlock.startsWith("Address = 10.200.77.4/32"),
+  ).toBe(true);
   // every mutation is a root shell script that fails fast; the key is read from the host file, never inlined
   for (const s of p.steps.filter((x) => x.kind === "mutate" && x.run))
-    if (s.run!.includes("PrivateKey")) expect(s.run).toContain('"$(cat /etc/wireguard/wg1.key)"');
+    if (s.run!.includes("PrivateKey"))
+      expect(s.run).toContain('"$(cat /etc/wireguard/wg1.key)"');
   const dbfr = p.steps.filter((s) => s.host === "dbfr").map((s) => s.id);
   expect(dbfr).toContain("dbfr.account.omar.pg-no-group");
   expect(dbfr).toContain("dbfr.account.omar.pg-direct");
-  expect(p.steps.filter((s) => s.host === "dbfr" && s.run?.includes("ufw allow"))).toHaveLength(3);
+  expect(
+    p.steps.filter((s) => s.host === "dbfr" && s.run?.includes("ufw allow")),
+  ).toHaveLength(3);
 });
 
 test("observe runs only read-only preflight steps, never a mutation", async () => {
@@ -354,7 +442,9 @@ test("observe runs only read-only preflight steps, never a mutation", async () =
     return { code: 0, stdout: "", stderr: "" };
   });
   expect(ran.length).toBeGreaterThan(10);
-  const mutations = new Set(p.steps.filter((s) => s.kind === "mutate").map((s) => s.run));
+  const mutations = new Set(
+    p.steps.filter((s) => s.kind === "mutate").map((s) => s.run),
+  );
   for (const command of ran) expect(mutations.has(command)).toBe(false);
   for (const id of result.keys()) {
     const step = p.steps.find((s) => s.id === id)!;
@@ -365,7 +455,9 @@ test("observe runs only read-only preflight steps, never a mutation", async () =
 
 test("the omar account files: no key invented, root-owned key file, one sudoers rule, key-only sshd", () => {
   const keys = readFileSync(join(root, "ssh/omar.authorized_keys"), "utf8");
-  const lines = keys.split("\n").filter((l) => l.trim() && !l.trim().startsWith("#"));
+  const lines = keys
+    .split("\n")
+    .filter((l) => l.trim() && !l.trim().startsWith("#"));
   expect(lines).toEqual([
     'from="92.170.252.46,10.200.77.0/24",restrict,pty,port-forwarding,permitlisten="127.0.0.1:22010",permitlisten="127.0.0.1:28795",permitlisten="127.0.0.1:28793",permitlisten="127.0.0.1:22011",permitlisten="127.0.0.1:25900" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJvmGjMWPLFJZWsACxRqCC0Ll+uXvnyunYdPG4E8jS4V omar (supplied comment: windows-aphro)',
   ]);
@@ -374,15 +466,15 @@ test("the omar account files: no key invented, root-owned key file, one sudoers 
     /same key pair as ~\/\.ssh\/id_ed25519\.pub/,
   );
   const sudoers = readFileSync(join(root, "sudoers/omar"), "utf8");
-  expect(sudoers.split("\n").filter((l) => l.trim() && !l.startsWith("#"))).toEqual([
-    "Defaults:omar use_pty",
-    "omar ALL=(ALL:ALL) NOPASSWD: ALL",
-  ]);
+  expect(
+    sudoers.split("\n").filter((l) => l.trim() && !l.startsWith("#")),
+  ).toEqual(["Defaults:omar use_pty", "omar ALL=(ALL:ALL) NOPASSWD: ALL"]);
   const visudo = Bun.which("visudo");
   if (visudo)
     expect(
-      Bun.spawnSync([visudo, "-c", "-f", join(root, "sudoers/omar")], { windowsHide: true })
-        .exitCode,
+      Bun.spawnSync([visudo, "-c", "-f", join(root, "sudoers/omar")], {
+        windowsHide: true,
+      }).exitCode,
     ).toBe(0);
   const sshd = readFileSync(join(root, "ssh/omar-sshd.conf"), "utf8");
   for (const line of [
@@ -396,12 +488,16 @@ test("the omar account files: no key invented, root-owned key file, one sudoers 
     "AuthorizedKeysFile /etc/ssh/authorized_keys.d/%u",
   ])
     expect(sshd).toContain(line);
-  const pg = readFileSync(join(root, "ssh/postgres-no-login-sshd.conf"), "utf8");
+  const pg = readFileSync(
+    join(root, "ssh/postgres-no-login-sshd.conf"),
+    "utf8",
+  );
   expect(pg).toMatch(/^DenyUsers postgres$/m);
   expect(catalog.accounts![0]!.groups).toEqual([]);
-  expect(catalog.accounts![0]!.sshdDropIns.find((d) => d.file.includes("postgres"))?.hosts).toEqual(
-    ["dbfr"],
-  );
+  expect(
+    catalog.accounts![0]!.sshdDropIns.find((d) => d.file.includes("postgres"))
+      ?.hosts,
+  ).toEqual(["dbfr"]);
 });
 
 test("account checks reject an unrestricted key, a wrong source, a group grant and a missing postgres guard", () => {
@@ -421,20 +517,36 @@ test("account checks reject an unrestricted key, a wrong source, a group grant a
     const keyFile = (line: string) =>
       writeFileSync(join(dir, "ssh/omar.authorized_keys"), `# c\n${line}\n`);
     keyFile(`ssh-ed25519 ${blob} omar`);
-    expect(accountProblems(dir, acct(), tunnel()).join("\n")).toMatch(/not "options type key/);
+    expect(accountProblems(dir, acct(), tunnel()).join("\n")).toMatch(
+      /not "options type key/,
+    );
     keyFile(`restrict ssh-ed25519 ${blob} omar`);
-    expect(accountProblems(dir, acct(), tunnel()).join("\n")).toMatch(/without from=/);
+    expect(accountProblems(dir, acct(), tunnel()).join("\n")).toMatch(
+      /without from=/,
+    );
     keyFile(`from="1.2.3.4",restrict ssh-ed25519 ${blob} omar`);
     expect(accountProblems(dir, acct(), tunnel()).join("\n")).toMatch(
       /from=1\.2\.3\.4 is not in allowedFrom/,
     );
     keyFile(`from="92.170.252.46",pty ssh-ed25519 ${blob} omar`);
-    expect(accountProblems(dir, acct(), tunnel()).join("\n")).toMatch(/without restrict/);
-    keyFile(`from="92.170.252.46,10.200.77.0/24",restrict,pty ssh-ed25519 ${blob} omar`);
+    expect(accountProblems(dir, acct(), tunnel()).join("\n")).toMatch(
+      /without restrict/,
+    );
+    keyFile(
+      `from="92.170.252.46,10.200.77.0/24",restrict,pty ssh-ed25519 ${blob} omar`,
+    );
     expect(accountProblems(dir, acct(), tunnel())).toEqual([]);
-    writeFileSync(join(dir, "ssh/omar.authorized_keys"), `-----BEGIN OPENSSH PRIVATE KEY-----\n`);
-    expect(accountProblems(dir, acct(), tunnel()).join("\n")).toMatch(/private key material/);
-    cpSync(join(root, "ssh/omar.authorized_keys"), join(dir, "ssh/omar.authorized_keys"));
+    writeFileSync(
+      join(dir, "ssh/omar.authorized_keys"),
+      `-----BEGIN OPENSSH PRIVATE KEY-----\n`,
+    );
+    expect(accountProblems(dir, acct(), tunnel()).join("\n")).toMatch(
+      /private key material/,
+    );
+    cpSync(
+      join(root, "ssh/omar.authorized_keys"),
+      join(dir, "ssh/omar.authorized_keys"),
+    );
     const grouped = acct();
     grouped[0]!.groups = ["postgres"];
     expect(accountProblems(dir, grouped, tunnel()).join("\n")).toMatch(
@@ -449,7 +561,9 @@ test("account checks reject an unrestricted key, a wrong source, a group grant a
     );
     cpSync(join(root, "sudoers/omar"), join(dir, "sudoers/omar"));
     writeFileSync(join(dir, "ssh/postgres-no-login-sshd.conf"), "# empty\n");
-    expect(accountProblems(dir, acct(), tunnel()).join("\n")).toMatch(/denies the postgres login/);
+    expect(accountProblems(dir, acct(), tunnel()).join("\n")).toMatch(
+      /denies the postgres login/,
+    );
   } finally {
     rmSync(dir, { recursive: true });
   }
@@ -468,7 +582,9 @@ test("the tunnel forwarder units bind the hub address only and compose from the 
   expect(service).toContain("IPAddressAllow=127.0.0.0/8 10.200.77.0/24");
   expect(service).toContain("DynamicUser=yes");
   expect(service).toContain("NoNewPrivileges=true");
-  const proxied = t.services.filter((s) => s.expose === "socket-proxyd").map((s) => s.port);
+  const proxied = t.services
+    .filter((s) => s.expose === "socket-proxyd")
+    .map((s) => s.port);
   expect(proxied).toEqual([8793, 8788, 8793]);
   const mcp = t.services.find((s) => s.id === "mcp-http")!;
   expect(mcp.upstream).toBe("127.0.0.1:8793");
@@ -487,7 +603,9 @@ test("peer MCP projections bind the actual host and grant only private sources",
   expect(text).toContain("ListenStream=10.200.77.3:%i");
   expect(text).not.toContain("ListenStream=10.200.77.1:%i");
   expect(text).not.toMatch(/ListenStream=(0\.0\.0\.0|\[::\])/);
-  const inputs = p.steps.filter((step) => step.id.startsWith("dbfr.proxy-ufw."));
+  const inputs = p.steps.filter((step) =>
+    step.id.startsWith("dbfr.proxy-ufw."),
+  );
   expect(inputs).toHaveLength(3);
   for (const step of inputs) {
     expect(step.run).toContain("in on wg1");
@@ -495,14 +613,20 @@ test("peer MCP projections bind the actual host and grant only private sources",
     expect(step.run).not.toContain("from any");
     expect(step.run).not.toContain("omar");
   }
-  expect(inputs.some((step) => step.run!.includes("from 10.200.77.1"))).toBe(true);
+  expect(inputs.some((step) => step.run!.includes("from 10.200.77.1"))).toBe(
+    true,
+  );
   const start = p.steps.find((step) => step.id === "dbfr.proxy-start")!;
   expect(start.run).toContain("aphrody-wg-proxy@8793.socket");
   const tmp = scratch(() => {});
   try {
     const t = loadTunnel(tmp);
-    t.services.find((service) => service.id === "mcp-http-dbfr")!.address = "10.200.77.1";
-    writeFileSync(join(tmp, "wireguard/aphrody-tunnel.json"), JSON.stringify(t));
+    t.services.find((service) => service.id === "mcp-http-dbfr")!.address =
+      "10.200.77.1";
+    writeFileSync(
+      join(tmp, "wireguard/aphrody-tunnel.json"),
+      JSON.stringify(t),
+    );
     expect(tunnelProblems(tmp).join("\n")).toContain("declared owner address");
   } finally {
     rmSync(tmp, { recursive: true });
@@ -520,7 +644,10 @@ test("no private key material anywhere in the declared tunnel and account files"
     "systemd/aphrody/aphrody-wg-proxy@.service",
     "systemd/aphrody/aphrody-wg-proxy@.socket",
   ])
-    expect({ f, hit: PRIVATE_KEY_PATTERN.test(readFileSync(join(root, f), "utf8")) }).toEqual({
+    expect({
+      f,
+      hit: PRIVATE_KEY_PATTERN.test(readFileSync(join(root, f), "utf8")),
+    }).toEqual({
       f,
       hit: false,
     });

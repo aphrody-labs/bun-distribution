@@ -12,7 +12,9 @@ import {
   type Report,
 } from "../src/verify";
 
-const nativeTools = Boolean(Bun.which("uv") && Bun.which("python3") && Bun.which("ruff"));
+const nativeTools = Boolean(
+  Bun.which("uv") && Bun.which("python3") && Bun.which("ruff"),
+);
 
 function pythonGate(id: string): Gate {
   const gate = GATES.find((entry) => entry.id === id);
@@ -20,14 +22,19 @@ function pythonGate(id: string): Gate {
   return gate;
 }
 
-const selected = (file: string): string[] => selectChanged(GATES, [file]).map((gate) => gate.id);
+const selected = (file: string): string[] =>
+  selectChanged(GATES, [file]).map((gate) => gate.id);
 
 describe("Python verification owners", () => {
   const fixtureRoot = mkdtempSync(join(tmpdir(), "yolo-verify-python-"));
 
   beforeAll(async () => {
-    mkdirSync(join(fixtureRoot, "packages/engine/python/python/yolo"), { recursive: true });
-    mkdirSync(join(fixtureRoot, "packages/engine/python/tests"), { recursive: true });
+    mkdirSync(join(fixtureRoot, "packages/engine/python/python/yolo"), {
+      recursive: true,
+    });
+    mkdirSync(join(fixtureRoot, "packages/engine/python/tests"), {
+      recursive: true,
+    });
     mkdirSync(join(fixtureRoot, "plugins"));
     mkdirSync(join(fixtureRoot, "design"));
     await Promise.all([
@@ -39,7 +46,10 @@ describe("Python verification owners", () => {
         join(fixtureRoot, "packages/engine/python/pyproject.toml"),
         `[project]\nname = "yolo"\nversion = "0.1.0"\nrequires-python = ">=3.12"\n`,
       ),
-      Bun.write(join(fixtureRoot, "packages/engine/python/python/yolo/__init__.py"), ""),
+      Bun.write(
+        join(fixtureRoot, "packages/engine/python/python/yolo/__init__.py"),
+        "",
+      ),
       Bun.write(
         join(fixtureRoot, "packages/engine/python/tests/test_engine.py"),
         "def test_engine():\n    assert True\n",
@@ -59,8 +69,12 @@ describe("Python verification owners", () => {
         ],
         { windowsHide: true, cwd: fixtureRoot, stdout: "pipe", stderr: "pipe" },
       );
-      const [code, stderr] = await Promise.all([proc.exited, new Response(proc.stderr).text()]);
-      if (code !== 0) throw new Error(`Cannot prepare native uv test environment: ${stderr}`);
+      const [code, stderr] = await Promise.all([
+        proc.exited,
+        new Response(proc.stderr).text(),
+      ]);
+      if (code !== 0)
+        throw new Error(`Cannot prepare native uv test environment: ${stderr}`);
       const python = Bun.spawn(
         [
           "uv",
@@ -81,7 +95,9 @@ describe("Python verification owners", () => {
         new Response(python.stderr).text(),
       ]);
       if (pythonCode !== 0)
-        throw new Error(`Cannot locate native uv test site-packages: ${pythonStderr}`);
+        throw new Error(
+          `Cannot locate native uv test site-packages: ${pythonStderr}`,
+        );
       await Bun.write(
         join(purelib.trim(), "yolo-fixture.pth"),
         `${join(fixtureRoot, "packages/engine/python/python")}\n`,
@@ -107,7 +123,9 @@ describe("Python verification owners", () => {
         expect(invalid.output).toContain("missing_name");
         expect(invalid.output).not.toContain("foreign.py");
       } finally {
-        rmSync(join(fixtureRoot, "packages/engine/python/python/yolo/broken.py"));
+        rmSync(
+          join(fixtureRoot, "packages/engine/python/python/yolo/broken.py"),
+        );
       }
     },
   );
@@ -121,7 +139,9 @@ describe("Python verification owners", () => {
         { root: fixtureRoot, parallel: 2 },
       );
       expect(results[0]?.status).toBe("fail");
-      expect(results[0]?.detail).toContain("No module named 'yolo._yolo_native'");
+      expect(results[0]?.detail).toContain(
+        "No module named 'yolo._yolo_native'",
+      );
       expect(results[1]).toMatchObject({
         status: "skipped",
         detail: "dependency python-native did not pass",
@@ -132,7 +152,10 @@ describe("Python verification owners", () => {
   it.skipIf(!nativeTools)(
     "fails missing workspace pytest instead of falling back to a system executable",
     async () => {
-      const result = await spawnRunner(fixtureRoot, 30_000)(pythonGate("python-test"));
+      const result = await spawnRunner(
+        fixtureRoot,
+        30_000,
+      )(pythonGate("python-test"));
       expect(result.exitCode).not.toBe(0);
       expect(result.output).toContain("No module named pytest");
       expect(result.output).not.toContain("test session starts");
@@ -148,8 +171,12 @@ describe("Python verification owners", () => {
       expect(selected(file)).toContain("python-native");
       expect(selected(file)).toContain("python-test");
     }
-    expect(selected("packages/engine/python/pyproject.toml")).toContain("python-native");
-    expect(selected("crates/engine/yolo-core/src/lib.rs")).not.toContain("python-native");
+    expect(selected("packages/engine/python/pyproject.toml")).toContain(
+      "python-native",
+    );
+    expect(selected("crates/engine/yolo-core/src/lib.rs")).not.toContain(
+      "python-native",
+    );
     expect(selected("plugins/foreign.py")).not.toContain("python-lint");
     expect(selected("design/foreign.py")).not.toContain("python-lint");
   });
@@ -157,22 +184,29 @@ describe("Python verification owners", () => {
   it("includes the required native import when only Python tests are requested", async () => {
     const executed: string[] = [];
     let report: Report | undefined;
-    const code = await runVerifyCommand(["--only", "python-test", "--json"], fixtureRoot, {
-      run: async (gate) => {
-        executed.push(gate.id);
-        return {
-          exitCode: gate.id === "python-native" ? 1 : 0,
-          output: "native extension missing",
-        };
+    const code = await runVerifyCommand(
+      ["--only", "python-test", "--json"],
+      fixtureRoot,
+      {
+        run: async (gate) => {
+          executed.push(gate.id);
+          return {
+            exitCode: gate.id === "python-native" ? 1 : 0,
+            output: "native extension missing",
+          };
+        },
+        out: (text) => {
+          report = JSON.parse(text) as Report;
+        },
       },
-      out: (text) => {
-        report = JSON.parse(text) as Report;
-      },
-    });
+    );
     expect(code).toBe(1);
     expect(executed).toEqual(["python-native"]);
     expect(report?.ok).toBe(false);
-    expect(report?.gates.map((gate) => gate.id)).toEqual(["python-native", "python-test"]);
+    expect(report?.gates.map((gate) => gate.id)).toEqual([
+      "python-native",
+      "python-test",
+    ]);
     expect(report?.gates[0]?.status).toBe("fail");
     expect(report?.gates[1]).toMatchObject({
       status: "skipped",
@@ -189,7 +223,12 @@ describe("Python verification owners", () => {
     expect(init.exitCode).toBe(0);
     await Bun.write(join(fixtureRoot, "workflow.py"), "# changed workflow\n");
     const catalog: Gate[] = [
-      { id: "prepare", title: "prepare", command: ["fake"], surfaces: ["prepare.txt"] },
+      {
+        id: "prepare",
+        title: "prepare",
+        command: ["fake"],
+        surfaces: ["prepare.txt"],
+      },
       {
         id: "native",
         title: "native",

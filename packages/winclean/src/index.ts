@@ -24,7 +24,9 @@ export class Winclean extends GeneratedTools implements Disposable {
 
   private constructor(readonly endpoint?: string) {
     super();
-    this.path = endpoint ? "kernel://aphrody-os" : "bun:windows+kernel://aphrody-os";
+    this.path = endpoint
+      ? "kernel://aphrody-os"
+      : "bun:windows+kernel://aphrody-os";
   }
 
   static open(endpoint?: string): Winclean {
@@ -43,13 +45,19 @@ export class Winclean extends GeneratedTools implements Disposable {
     }));
   }
 
-  async call<N extends ToolName>(name: N, args?: ToolArgsMap[N]): Promise<ToolResult>;
+  async call<N extends ToolName>(
+    name: N,
+    args?: ToolArgsMap[N],
+  ): Promise<ToolResult>;
   async call(name: string, args?: Record<string, unknown>): Promise<ToolResult>;
   async call(name: string, args: object = {}): Promise<ToolResult> {
     if (this.#closed) throw new Error("Winclean client is closed");
     try {
       if (!this.endpoint) {
-        const native = await callBunWindows(name, args as Record<string, unknown>);
+        const native = await callBunWindows(
+          name,
+          args as Record<string, unknown>,
+        );
         if (native.handled) {
           return new ToolResult(name, {
             structuredContent: native.value,
@@ -65,7 +73,10 @@ export class Winclean extends GeneratedTools implements Disposable {
       });
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error);
-      return new ToolResult(name, { isError: true, content: [{ type: "text", text }] });
+      return new ToolResult(name, {
+        isError: true,
+        content: [{ type: "text", text }],
+      });
     }
   }
 
@@ -86,6 +97,9 @@ export class Winclean extends GeneratedTools implements Disposable {
   }
 
   async #client(): Promise<KernelClient> {
-    return (this.#clientPromise ??= KernelClient.connect(this.endpoint, "bun/winclean"));
+    return (this.#clientPromise ??= KernelClient.connect(
+      this.endpoint,
+      "bun/winclean",
+    ));
   }
 }

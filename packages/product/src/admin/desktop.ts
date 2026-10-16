@@ -25,7 +25,11 @@ import { parseYesNo, type Ui } from "./lib/ui.ts";
 import { MAIN_MENU, PC_MENU, TRAIN_MENU, type MenuItem } from "./menu.ts";
 
 export const OMAR_GROUPS: KitGroup[] = [
-  { id: "principal", title: "Installation et accès", icon: "admin_panel_settings" },
+  {
+    id: "principal",
+    title: "Installation et accès",
+    icon: "admin_panel_settings",
+  },
   { id: "entrainement", title: "Entraîner un modèle", icon: "model_training" },
   { id: "pc", title: "Mon PC et mes serveurs", icon: "computer" },
 ];
@@ -44,7 +48,9 @@ const actionsOf = (group: string, items: MenuItem[]): OmarAction[] =>
     title: item.title,
     item,
     // PC_MENU lists PC_ACTIONS first, in order, then the server health entry.
-    ...(group === "pc" && PC_ACTIONS[index]?.windowsOnly ? { windowsOnly: true } : {}),
+    ...(group === "pc" && PC_ACTIONS[index]?.windowsOnly
+      ? { windowsOnly: true }
+      : {}),
   }));
 
 function actions(): OmarAction[] {
@@ -58,7 +64,9 @@ function actions(): OmarAction[] {
   ];
 }
 
-export function omarCatalog(ctx: Pick<Context, "paths" | "sys"> = defaultContext()): KitCatalog {
+export function omarCatalog(
+  ctx: Pick<Context, "paths" | "sys"> = defaultContext(),
+): KitCatalog {
   return {
     protocol: KIT_PROTOCOL,
     kit: "omar",
@@ -81,7 +89,10 @@ export function desktopUi(channel: KitChannel): Ui {
       return ask(channel, kind, question, expect ? { expect } : {});
     },
     confirm(question, fallback = false) {
-      return parseYesNo(ask(channel, "confirm", question, { fallback }), fallback);
+      return parseYesNo(
+        ask(channel, "confirm", question, { fallback }),
+        fallback,
+      );
     },
     pause() {},
   };

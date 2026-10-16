@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 /* eslint-disable no-await-in-loop -- Requests are bounded and only one finite collection is claimed per tick. */
-import { chmod, lstat, mkdir, realpath, readdir, rename } from "node:fs/promises";
+import {
+  chmod,
+  lstat,
+  mkdir,
+  realpath,
+  readdir,
+  rename,
+} from "node:fs/promises";
 import { Database } from "bun:sqlite";
 import { watch } from "node:fs";
 import { join } from "node:path";
@@ -24,7 +31,10 @@ export interface SourceOutboxRequest {
   configSha256: string;
 }
 interface OutboxPorts extends SourceJobPorts {
-  plan?: (config: SourceJobConfig, ports: SourceJobPorts) => Promise<SourceJobPlan>;
+  plan?: (
+    config: SourceJobConfig,
+    ports: SourceJobPorts,
+  ) => Promise<SourceJobPlan>;
   apply?: typeof applySourceJob;
 }
 async function privatePath(path: string, directory = false) {
@@ -52,7 +62,8 @@ async function load(path: string, maxBytes: number) {
   let size = 0;
   for await (const chunk of Bun.file(path).stream()) {
     size += chunk.byteLength;
-    if (size > maxBytes) throw new Error("Source control record exceeds budget");
+    if (size > maxBytes)
+      throw new Error("Source control record exceeds budget");
     chunks.push(new Uint8Array(chunk));
   }
   const bytes = new Uint8Array(size);
@@ -61,7 +72,10 @@ async function load(path: string, maxBytes: number) {
     bytes.set(chunk, offset);
     offset += chunk.byteLength;
   }
-  return { value: JSON.parse(new TextDecoder().decode(bytes)) as unknown, sha256: digest(bytes) };
+  return {
+    value: JSON.parse(new TextDecoder().decode(bytes)) as unknown,
+    sha256: digest(bytes),
+  };
 }
 async function save(path: string, value: unknown) {
   const temporary = path + "." + crypto.randomUUID() + ".new";
@@ -77,7 +91,8 @@ export async function drainSourceOutbox(
   if (!/^[a-f0-9]{64}$/.test(expectedConfigSha256))
     throw new Error("Source owner config digest is required");
   const owner = await load(configPath, 16384);
-  if (owner.sha256 !== expectedConfigSha256) throw new Error("Source owner config digest differs");
+  if (owner.sha256 !== expectedConfigSha256)
+    throw new Error("Source owner config digest differs");
   const config = owner.value as SourceJobConfig;
   if (config.version !== 1 || config.type !== "shenron-source-vpn")
     throw new Error("Source control requires the approved typed job");
@@ -100,13 +115,18 @@ export async function drainSourceOutbox(
   }
   try {
     const names = await readdir(join(control, "requests"));
-    if (names.length > 128) throw new Error("Source request mailbox exceeds budget");
+    if (names.length > 128)
+      throw new Error("Source request mailbox exceeds budget");
     for (const name of names.toSorted()) {
       const requestPath = join(control, "requests", name);
       // Unsafe filesystem objects require owner intervention; never follow or discard them.
       await privatePath(requestPath);
       const reject = async () => {
-        const rejected = join(control, "jobs", "rejected-" + crypto.randomUUID());
+        const rejected = join(
+          control,
+          "jobs",
+          "rejected-" + crypto.randomUUID(),
+        );
         await privateDirectory(rejected);
         await save(join(rejected, "rejection.json"), {
           schema: "shenron-source-rejection/v1",
@@ -117,7 +137,8 @@ export async function drainSourceOutbox(
         await rename(requestPath, join(rejected, "request.json"));
         return { status: "failed" as const, handled: 1 };
       };
-      if (!name.endsWith(".json") || !uuid.test(name.slice(0, -5))) return await reject();
+      if (!name.endsWith(".json") || !uuid.test(name.slice(0, -5)))
+        return await reject();
       const requestId = name.slice(0, -5),
         responsePath = join(control, "responses", name);
       if (await Bun.file(responsePath).exists()) {
@@ -142,7 +163,10 @@ export async function drainSourceOutbox(
         value.configPath !== logicalConfig ||
         !/^[a-f0-9]{64}$/.test(value.configSha256) ||
         Object.keys(value).some(
-          (key) => !["schema", "requestId", "configPath", "configSha256"].includes(key),
+          (key) =>
+            !["schema", "requestId", "configPath", "configSha256"].includes(
+              key,
+            ),
         )
       )
         return await reject();
@@ -152,7 +176,10 @@ export async function drainSourceOutbox(
       if (await Bun.file(started).exists()) {
         const resultPath = join(job, "result.json");
         if (await Bun.file(resultPath).exists()) {
-          const fence = (await load(started, 4096)).value as Record<string, unknown>;
+          const fence = (await load(started, 4096)).value as Record<
+            string,
+            unknown
+          >;
           const replay = (await load(resultPath, 65536)).value as Awaited<
             ReturnType<typeof applySourceJob>
           >;
@@ -198,7 +225,8 @@ export async function drainSourceOutbox(
           requestSha256: request.sha256,
           ownerConfigSha256: expectedConfigSha256,
           planSha256,
-          collectionSchema: plan.collectionSchema ?? "shenron-source-collection/v1",
+          collectionSchema:
+            plan.collectionSchema ?? "shenron-source-collection/v1",
           at: new Date().toISOString(),
         });
         const cancelled = new AbortController();
@@ -206,10 +234,15 @@ export async function drainSourceOutbox(
           void Bun.file(requestPath)
             .exists()
             .then((exists) => {
-              if (!exists) cancelled.abort(new Error("Source collection requester left"));
+              if (!exists)
+                cancelled.abort(new Error("Source collection requester left"));
               return exists;
             })
-            .catch(() => cancelled.abort(new Error("Source request ownership unavailable")));
+            .catch(() =>
+              cancelled.abort(
+                new Error("Source request ownership unavailable"),
+              ),
+            );
         };
         const watcher = watch(join(control, "requests"), (_event, filename) => {
           if (!filename || filename.toString() === name) checkCancellation();
@@ -222,7 +255,10 @@ export async function drainSourceOutbox(
             ? AbortSignal.any([ports.signal, cancelled.signal])
             : cancelled.signal;
           signal.throwIfAborted();
-          result = await (ports.apply ?? applySourceJob)(plan, planSha256, { ...ports, signal });
+          result = await (ports.apply ?? applySourceJob)(plan, planSha256, {
+            ...ports,
+            signal,
+          });
         } finally {
           watcher.close();
         }

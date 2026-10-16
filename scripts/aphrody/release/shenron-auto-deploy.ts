@@ -1,6 +1,12 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
-import { existsSync, mkdirSync, copyFileSync, chmodSync, readFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  copyFileSync,
+  chmodSync,
+  readFileSync,
+} from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
@@ -21,15 +27,21 @@ import {
   type ControllerWorker,
 } from "./shenron-source-controller";
 
-const infra = resolve(dirname(fileURLToPath(import.meta.url)), "../../../docs/aphrody");
+const infra = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  "../../../docs/aphrody",
+);
 const config = JSON.parse(
   readFileSync(
-    process.env.SHENRON_AUTO_DEPLOY_CONFIG ?? join(infra, "tools/config/shenron-auto-deploy.json"),
+    process.env.SHENRON_AUTO_DEPLOY_CONFIG ??
+      join(infra, "tools/config/shenron-auto-deploy.json"),
     "utf8",
   ),
 );
 const factoryPath = join(infra, "tools/config/build-factory.json");
-const factory = JSON.parse(readFileSync(factoryPath, "utf8")) as BuildFactoryConfig;
+const factory = JSON.parse(
+  readFileSync(factoryPath, "utf8"),
+) as BuildFactoryConfig;
 const resources = factoryResourcePolicy(factory);
 const env: Record<string, string | undefined> = {
   ...process.env,
@@ -58,7 +70,12 @@ export interface RuntimeEvidence {
   version: string;
   revision: string;
   sourceUrl: string;
-  features: { yolo: boolean; crawl: boolean; curl: boolean; vectorIndex: boolean };
+  features: {
+    yolo: boolean;
+    crawl: boolean;
+    curl: boolean;
+    vectorIndex: boolean;
+  };
 }
 export const runtimeFixture = `
 const {mkdtemp,rm}=await import('node:fs/promises');
@@ -116,7 +133,9 @@ type RuntimeProbe = (
   args: string[],
   environment: Record<string, string | undefined>,
 ) => Promise<string>;
-async function readProbeOutput(stream: ReadableStream<Uint8Array>): Promise<string> {
+async function readProbeOutput(
+  stream: ReadableStream<Uint8Array>,
+): Promise<string> {
   const reader = stream.getReader();
   const chunks: Uint8Array[] = [];
   let size = 0;
@@ -127,7 +146,8 @@ async function readProbeOutput(stream: ReadableStream<Uint8Array>): Promise<stri
       const { done, value } = await reader.read();
       if (done) break;
       size += value.byteLength;
-      if (size > 16_384) throw new Error("Native runtime qualification output exceeded limit");
+      if (size > 16_384)
+        throw new Error("Native runtime qualification output exceeded limit");
       chunks.push(value);
     }
     return new TextDecoder().decode(Buffer.concat(chunks));
@@ -162,7 +182,9 @@ export async function probe(
   }
   const [stdout, stderr, status] = output;
   if (status !== 0)
-    throw new Error("Native runtime qualification failed" + runtimeFailureStage(stderr));
+    throw new Error(
+      "Native runtime qualification failed" + runtimeFailureStage(stderr),
+    );
   return stdout;
 }
 export function runtimeEvidence(
@@ -175,10 +197,13 @@ export function runtimeEvidence(
     typeof result.version !== "string" ||
     typeof result.revision !== "string" ||
     typeof result.sourceUrl !== "string" ||
-    !result.sourceUrl.startsWith("https://github.com/aphrody-labs/bun/releases/download/") ||
+    !result.sourceUrl.startsWith(
+      "https://github.com/aphrody-labs/bun/releases/download/",
+    ) ||
     !result.features ||
     ["yolo", "crawl", "curl", "vectorIndex"].some(
-      (key) => result.features[key as keyof RuntimeEvidence["features"]] !== true,
+      (key) =>
+        result.features[key as keyof RuntimeEvidence["features"]] !== true,
     ) ||
     Object.entries(expected).some(
       ([key, value]) => result[key as keyof RuntimeExpectation] !== value,
@@ -193,7 +218,10 @@ export async function qualifyRuntime(
   expected: RuntimeExpectation = {},
   run: RuntimeProbe = probe,
 ) {
-  if (!/^[a-f0-9]{64}$/.test(expectedSha256) || !matches(binary, expectedSha256))
+  if (
+    !/^[a-f0-9]{64}$/.test(expectedSha256) ||
+    !matches(binary, expectedSha256)
+  )
     throw new Error("Pinned Bun runtime digest differs");
   const evidence = runtimeEvidence(
     await run([binary, "-e", runtimeFixture], { ...env, BUN_BE_BUN: "1" }),
@@ -239,7 +267,11 @@ export async function qualifyCompiledRuntimes(
   };
 }
 
-export function syncDecision(branch: string, status: string, fastForward: boolean): string {
+export function syncDecision(
+  branch: string,
+  status: string,
+  fastForward: boolean,
+): string {
   if (branch !== "main") return "branch-not-main";
   if (status.trim()) return "local-changes";
   if (!fastForward) return "divergent-history";
@@ -268,7 +300,11 @@ export async function verifyVendor(work: string): Promise<void> {
   }
 }
 
-function command(args: string[], cwd = config.source, inherited = false): string {
+function command(
+  args: string[],
+  cwd = config.source,
+  inherited = false,
+): string {
   console.log(new Date().toISOString(), args[0], args[1] ?? "");
   const p = Bun.spawnSync(args, {
     cwd,
@@ -277,21 +313,33 @@ function command(args: string[], cwd = config.source, inherited = false): string
     stderr: "inherit",
   });
   if (p.exitCode !== 0)
-    throw new Error(`Command failed (${p.exitCode}): ${args[0]} ${args[1] ?? ""}`);
+    throw new Error(
+      `Command failed (${p.exitCode}): ${args[0]} ${args[1] ?? ""}`,
+    );
   return inherited ? "" : (p.stdout?.toString().trim() ?? "");
 }
 function git(args: string[], cwd = config.source): string {
   return command(["git", ...args], cwd);
 }
 function matches(p: string, hash: string): boolean {
-  return existsSync(p) && createHash("sha256").update(readFileSync(p)).digest("hex") === hash;
+  return (
+    existsSync(p) &&
+    createHash("sha256").update(readFileSync(p)).digest("hex") === hash
+  );
 }
 async function state(status: string, fields: Record<string, unknown> = {}) {
   mkdirSync(config.state, { recursive: true, mode: 0o700 });
-  const p = join(config.state, process.argv[2]?.startsWith("sync") ? "sync.json" : "deploy.json");
+  const p = join(
+    config.state,
+    process.argv[2]?.startsWith("sync") ? "sync.json" : "deploy.json",
+  );
   await Bun.write(
     p,
-    JSON.stringify({ status, at: new Date().toISOString(), ...fields }, null, 2) + "\n",
+    JSON.stringify(
+      { status, at: new Date().toISOString(), ...fields },
+      null,
+      2,
+    ) + "\n",
   );
   chmodSync(p, 0o600);
 }
@@ -299,10 +347,13 @@ async function syncSource(): Promise<string | undefined> {
   git(["fetch", "--quiet", "origin", "main"]);
   const branch = git(["branch", "--show-current"]);
   const dirty = git(["status", "--porcelain", "--untracked-files=normal"]);
-  const ancestor = Bun.spawnSync(["git", "merge-base", "--is-ancestor", "HEAD", "origin/main"], {
-    cwd: config.source,
-    env,
-  });
+  const ancestor = Bun.spawnSync(
+    ["git", "merge-base", "--is-ancestor", "HEAD", "origin/main"],
+    {
+      cwd: config.source,
+      env,
+    },
+  );
   const decision = syncDecision(branch, dirty, ancestor.exitCode === 0);
   if (decision !== "fast-forward") {
     await state("skipped", { reason: decision });
@@ -331,7 +382,8 @@ async function sync(): Promise<string | undefined> {
   );
   if (p.exitCode === 75) return;
   if (p.exitCode !== 0) throw new Error("Checkout synchronization failed");
-  return JSON.parse(readFileSync(join(config.state, "sync.json"), "utf8")).commit;
+  return JSON.parse(readFileSync(join(config.state, "sync.json"), "utf8"))
+    .commit;
 }
 function remote(args: string): string {
   return command([
@@ -350,7 +402,9 @@ function remote(args: string): string {
 function active() {
   const code = `const fs=await import('node:fs/promises');const release=await fs.realpath(${JSON.stringify(config.remoteRoot + "/current")});const m=await Bun.file(release+'/release.json').json();console.log(JSON.stringify({release,commit:m.commit,deployment:m.deployment}));`;
   return activeDeployment(
-    JSON.parse(remote("bun --no-env-file -e '" + code.replaceAll("'", "'\\''") + "'")),
+    JSON.parse(
+      remote("bun --no-env-file -e '" + code.replaceAll("'", "'\\''") + "'"),
+    ),
   );
 }
 function native(sha: string, work: string) {
@@ -396,7 +450,8 @@ function native(sha: string, work: string) {
         work,
         true,
       );
-    if (!matches(mcp, n.mcpSha256)) throw new Error("Qualified MCP digest differs");
+    if (!matches(mcp, n.mcpSha256))
+      throw new Error("Qualified MCP digest differs");
     for (const [from, name] of [
       [mcp, "shenron-mcp"],
       [ffi, "libshenron_ffi.so"],
@@ -405,21 +460,42 @@ function native(sha: string, work: string) {
       copyFileSync(from, join(out, name));
       chmodSync(join(out, name), 0o755);
     }
-    console.log("Native artifacts reused after source-input and SHA-256 comparison");
+    console.log(
+      "Native artifacts reused after source-input and SHA-256 comparison",
+    );
   } else {
     for (const crate of ["shenron-mcp", "shenron-ffi", "shenron-re"]) {
       for (const args of [
-        ["clippy", "-p", crate, "--all-targets", "--locked", "--", "-D", "warnings"],
+        [
+          "clippy",
+          "-p",
+          crate,
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings",
+        ],
         ["test", "-p", crate, "--locked"],
         ["build", "--release", "--locked", "-p", crate],
       ])
-        command([config.bun, "scripts/build/rust/cargo.ts", ...args], work, true);
+        command(
+          [config.bun, "scripts/build/rust/cargo.ts", ...args],
+          work,
+          true,
+        );
     }
     for (const name of ["shenron-mcp", "libshenron_ffi.so", "libshenron_re.so"])
-      copyFileSync(join(env.CARGO_TARGET_DIR!, "release", name), join(out, name));
+      copyFileSync(
+        join(env.CARGO_TARGET_DIR!, "release", name),
+        join(out, name),
+      );
   }
   mkdirSync(join(work, "dist/mcp/linux-x64"), { recursive: true });
-  copyFileSync(join(out, "shenron-mcp"), join(work, "dist/mcp/linux-x64/shenron-mcp"));
+  copyFileSync(
+    join(out, "shenron-mcp"),
+    join(work, "dist/mcp/linux-x64/shenron-mcp"),
+  );
   chmodSync(join(work, "dist/mcp/linux-x64/shenron-mcp"), 0o755);
 }
 async function buildDeploy() {
@@ -437,7 +513,11 @@ async function buildDeploy() {
     await state("current", { commit: sha, deploymentId: selection.id });
     return;
   }
-  await state("building", { commit: sha, deploymentId: selection.id, previous: previous.id });
+  await state("building", {
+    commit: sha,
+    deploymentId: selection.id,
+    previous: previous.id,
+  });
   const work = config.worktree,
     job = join(config.artifacts, selection.id);
   mkdirSync(dirname(work), { recursive: true });
@@ -456,13 +536,22 @@ async function buildDeploy() {
     env,
   );
   const runtime = config.runtimeSha256
-    ? await qualifyRuntime(config.bun, config.runtimeSha256, config.runtimeExpected)
+    ? await qualifyRuntime(
+        config.bun,
+        config.runtimeSha256,
+        config.runtimeExpected,
+      )
     : undefined;
   if (runtime)
-    await Bun.write(join(job, "runtime.json"), JSON.stringify(runtime, null, 2) + "\n", {
-      mode: 0o600,
-    });
-  if (!existsSync(join(work, ".git"))) git(["worktree", "add", "--detach", work, sha]);
+    await Bun.write(
+      join(job, "runtime.json"),
+      JSON.stringify(runtime, null, 2) + "\n",
+      {
+        mode: 0o600,
+      },
+    );
+  if (!existsSync(join(work, ".git")))
+    git(["worktree", "add", "--detach", work, sha]);
   else {
     if (git(["status", "--porcelain", "--untracked-files=normal"], work))
       throw new Error("Build worktree contains changes; preserved");
@@ -487,7 +576,11 @@ async function buildDeploy() {
     work,
     true,
   );
-  command([config.bun, "packages/koharu/scripts/build-wasm.ts", "--check"], work, true);
+  command(
+    [config.bun, "packages/koharu/scripts/build-wasm.ts", "--check"],
+    work,
+    true,
+  );
   for (const gate of ["typecheck", "lint", "format:check", "test"])
     command([config.bun, "run", gate], work, true);
   for (const args of [
@@ -496,9 +589,20 @@ async function buildDeploy() {
     ["packages/pipeline/scripts/ai/check-contracts.ts"],
   ])
     command([config.bun, ...args], work, true);
-  command([config.bun, "scripts/build/bot.ts", "--target", "linux-x64"], work, true);
   command(
-    [config.bun, "scripts/build/server.ts", "--flavor", "production", "--target", "linux-x64"],
+    [config.bun, "scripts/build/bot.ts", "--target", "linux-x64"],
+    work,
+    true,
+  );
+  command(
+    [
+      config.bun,
+      "scripts/build/server.ts",
+      "--flavor",
+      "production",
+      "--target",
+      "linux-x64",
+    ],
     work,
     true,
   );
@@ -524,7 +628,15 @@ async function buildDeploy() {
     true,
   );
   command(
-    ["docker", "run", "--rm", "--network", "none", `localhost/shenron:${selection.id}`, "version"],
+    [
+      "docker",
+      "run",
+      "--rm",
+      "--network",
+      "none",
+      `localhost/shenron:${selection.id}`,
+      "version",
+    ],
     work,
     true,
   );
@@ -544,7 +656,14 @@ async function buildDeploy() {
     true,
   );
   const image = command(
-    ["docker", "image", "inspect", "-f", "{{.Id}}", `localhost/shenron:${selection.id}`],
+    [
+      "docker",
+      "image",
+      "inspect",
+      "-f",
+      "{{.Id}}",
+      `localhost/shenron:${selection.id}`,
+    ],
     work,
   );
   if (runtime) {
@@ -553,11 +672,20 @@ async function buildDeploy() {
       revision: runtime.revision,
       sourceUrl: runtime.sourceUrl,
     });
-    await Bun.write(join(job, "compiled-runtimes.json"), JSON.stringify(compiled, null, 2) + "\n", {
-      mode: 0o600,
-    });
+    await Bun.write(
+      join(job, "compiled-runtimes.json"),
+      JSON.stringify(compiled, null, 2) + "\n",
+      {
+        mode: 0o600,
+      },
+    );
   }
-  await state("built", { commit: sha, deploymentId: selection.id, previous: previous.id, image });
+  await state("built", {
+    commit: sha,
+    deploymentId: selection.id,
+    previous: previous.id,
+    image,
+  });
   // Promotion uses the same sealed Infra adapter as manual Shenron releases.
   command(
     [
@@ -574,7 +702,9 @@ async function buildDeploy() {
   );
   if (!deploymentIsCurrent(active(), selection))
     throw new Error("Remote deployment identity differs after promotion");
-  const health = await fetch(`${config.site}/api/health`, { signal: AbortSignal.timeout(20000) });
+  const health = await fetch(`${config.site}/api/health`, {
+    signal: AbortSignal.timeout(20000),
+  });
   if (!health.ok || (await health.json()).status !== "ok")
     throw new Error("Public health probe failed");
   await state("deployed", {
@@ -591,7 +721,8 @@ if (import.meta.main) {
   try {
     const mode = process.argv[2];
     const expectedVersion = config.runtimeExpected?.version ?? "1.4.4";
-    if (Bun.version !== expectedVersion) throw new Error(`Bun ${expectedVersion} is required`);
+    if (Bun.version !== expectedVersion)
+      throw new Error(`Bun ${expectedVersion} is required`);
     if (mode === "source-controller") {
       if (!config.sourceCollection)
         throw new Error("No qualified source controller profile configured");
@@ -610,11 +741,16 @@ if (import.meta.main) {
       const sha = await sync();
       if (!sha) process.exitCode = 75;
       else if (deploymentIsCurrent(active(), deploymentSelection(sha, config)))
-        await state("current", { commit: sha, deploymentId: deploymentSelection(sha, config).id });
+        await state("current", {
+          commit: sha,
+          deploymentId: deploymentSelection(sha, config).id,
+        });
       else {
         mkdirSync(dirname(config.lock), { recursive: true });
         if (!factory.cleanup || config.lock !== factory.lockPath)
-          throw new Error("Deployment requires the canonical factory resource policy");
+          throw new Error(
+            "Deployment requires the canonical factory resource policy",
+          );
         const child = Bun.spawn(
           [
             "flock",

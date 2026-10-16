@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, describe, expect, test } from "bun:test";
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { findAnalyzeHeadless, LAUNCHER } from "./find-ghidra.ts";
@@ -22,9 +29,15 @@ function fakeGhidra(): string {
   mkdirSync(join(root, "support"), { recursive: true });
   const launcher = join(root, "support", LAUNCHER);
   if (WINDOWS) {
-    writeFileSync(launcher, "@echo off\r\necho ARGS %*\r\necho MAXMEM=%MAXMEM%\r\nexit /b 0\r\n");
+    writeFileSync(
+      launcher,
+      "@echo off\r\necho ARGS %*\r\necho MAXMEM=%MAXMEM%\r\nexit /b 0\r\n",
+    );
   } else {
-    writeFileSync(launcher, '#!/bin/sh\necho "ARGS $*"\necho "MAXMEM=$MAXMEM"\n');
+    writeFileSync(
+      launcher,
+      '#!/bin/sh\necho "ARGS $*"\necho "MAXMEM=$MAXMEM"\n',
+    );
     chmodSync(launcher, 0o755);
   }
   return root;
@@ -50,11 +63,15 @@ describe("ghidra-analyze", () => {
     );
     expect(options.binary).toBe("a.exe");
     expect(options.output).toBe("out");
-    expect(options.scripts).toEqual([{ name: "ExportAll.java", args: ["x", "y"] }]);
+    expect(options.scripts).toEqual([
+      { name: "ExportAll.java", args: ["x", "y"] },
+    ]);
     expect(options.timeout).toBe(60);
     expect(options.extra).toEqual(["-readOnly"]);
     expect(() => parseArgs(["-a", "x"])).toThrow("must follow --script");
-    expect(() => parseArgs(["--timeout", "0", "a"])).toThrow("positive integer");
+    expect(() => parseArgs(["--timeout", "0", "a"])).toThrow(
+      "positive integer",
+    );
     expect(() => parseArgs(["--bogus"])).toThrow("Unknown option");
   });
 
@@ -103,7 +120,9 @@ describe("ghidra-analyze", () => {
   });
 
   test("names the default project after the binary", () => {
-    expect(defaultProjectName("C:/x/my-app.v2.exe", 42)).toBe("ghidra_my_app_v2_42");
+    expect(defaultProjectName("C:/x/my-app.v2.exe", 42)).toBe(
+      "ghidra_my_app_v2_42",
+    );
   });
 
   test("quotes cmd arguments only when needed", () => {
@@ -128,7 +147,15 @@ describe("ghidra-analyze", () => {
     const previous = process.env.GHIDRA_INSTALL_DIR;
     process.env.GHIDRA_INSTALL_DIR = root;
     try {
-      const options = parseArgs(["-o", output, "--max-memory", "2G", "-s", "S.java", binary]);
+      const options = parseArgs([
+        "-o",
+        output,
+        "--max-memory",
+        "2G",
+        "-s",
+        "S.java",
+        binary,
+      ]);
       expect(await analyze(options)).toBe(0);
     } finally {
       if (previous === undefined) delete process.env.GHIDRA_INSTALL_DIR;

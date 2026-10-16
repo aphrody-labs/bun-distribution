@@ -64,7 +64,9 @@ export function ModelsSettings() {
   return (
     <div className="space-y-8 max-w-3xl">
       <div>
-        <h2 className="text-headline-small font-bold text-on-surface">Modèles</h2>
+        <h2 className="text-headline-small font-bold text-on-surface">
+          Modèles
+        </h2>
         <p className="text-body-large text-on-surface-variant mt-1">
           Emplacement du stockage local et accélération matérielle.
         </p>
@@ -77,18 +79,24 @@ export function ModelsSettings() {
           </p>
         )}
         {/* Emplacement de stockage */}
-        <Card variant="elevated" className="p-6 border border-outline-variant/30 space-y-4">
+        <Card
+          variant="elevated"
+          className="p-6 border border-outline-variant/30 space-y-4"
+        >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h3 className="text-title-medium font-medium text-on-surface">
                 Emplacement de stockage
               </h3>
               <p className="text-body-large text-on-surface-variant mt-1">
-                Dossier racine hébergeant les poids des modèles GGUF et les embeddings.
+                Dossier racine hébergeant les poids des modèles GGUF et les
+                embeddings.
               </p>
               <div className="mt-3 p-3 rounded-medium bg-surface-container border border-outline-variant/30 font-mono text-body-large text-on-surface break-all">
                 {storeLocation ??
-                  (storeError ? "Emplacement indisponible" : "Chargement de l’emplacement…")}
+                  (storeError
+                    ? "Emplacement indisponible"
+                    : "Chargement de l’emplacement…")}
               </div>
             </div>
             <Button
@@ -123,7 +131,13 @@ export function ModelsSettings() {
               </div>
               <div>
                 <dt>AVX2</dt>
-                <dd>{hardware.avx2 === null ? "inconnu" : hardware.avx2 ? "oui" : "non"}</dd>
+                <dd>
+                  {hardware.avx2 === null
+                    ? "inconnu"
+                    : hardware.avx2
+                      ? "oui"
+                      : "non"}
+                </dd>
               </div>
               <div>
                 <dt>VRAM CUDA</dt>

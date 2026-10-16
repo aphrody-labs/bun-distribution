@@ -2,7 +2,10 @@
 const series = {
   "": { queryPrefix: "", titlePrefix: null },
   manga: { queryPrefix: "", titlePrefix: null },
-  dragonball: { queryPrefix: "Dragon Ball tome", titlePrefix: "Dragon Ball — tome " },
+  dragonball: {
+    queryPrefix: "Dragon Ball tome",
+    titlePrefix: "Dragon Ball — tome ",
+  },
   dragonballsuper: {
     queryPrefix: "Dragon Ball Super",
     titlePrefix: "Dragon Ball Super — chapitre ",
@@ -15,7 +18,8 @@ export function buildLoreSearchRequest(query, sourceId) {
   if (normalizedQuery.length < 2 || normalizedQuery.length > 120)
     return { error: "La recherche doit contenir entre 2 et 120 caractères." };
   const selected = series[normalizedSource];
-  if (!selected) return { error: "Le corpus sélectionné n'est pas disponible." };
+  if (!selected)
+    return { error: "Le corpus sélectionné n'est pas disponible." };
   return {
     query: [selected.queryPrefix, normalizedQuery].filter(Boolean).join(" "),
     sourceId: normalizedSource ? "manga" : "",
@@ -34,6 +38,8 @@ export function filterLoreSearchPayload(payload, sourceId) {
       : [];
   return {
     ...payload,
-    results: items.filter((item) => item?.title?.startsWith(titlePrefix)).slice(0, 8),
+    results: items
+      .filter((item) => item?.title?.startsWith(titlePrefix))
+      .slice(0, 8),
   };
 }

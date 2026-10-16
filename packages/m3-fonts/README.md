@@ -4,13 +4,13 @@ The Aphrody M3 typefaces as `@font-face` CSS and a typed manifest: Google Sans F
 Sans Code, Roboto Flex, Roboto Mono and Material Symbols (outlined, rounded, sharp), with Japanese
 fallbacks (Noto Sans JP, M PLUS 1 Code).
 
-| Import | Contents |
-| --- | --- |
-| `@aphrody/m3-fonts` | `FONTS`, `FONT_STACKS`, `SUBSETS`, `SUBSET_JOBS`, `fontFaceCss`, `faceRule`, `renderStylesheet`, `UPSTREAM_DIR` |
-| `@aphrody/m3-fonts/fonts.css` | Latin core faces (always imported, < 3 MiB) |
-| `@aphrody/m3-fonts/fonts-jp.css` | Japanese faces chunked by `unicode-range` |
-| `@aphrody/m3-fonts/fonts-symbols.css` | Material Symbols variable fonts (opt-in; `@aphrody/m3-icons` renders SVG) |
-| `@aphrody/m3-fonts/fonts/*` | the font files |
+| Import                                | Contents                                                                                                        |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `@aphrody/m3-fonts`                   | `FONTS`, `FONT_STACKS`, `SUBSETS`, `SUBSET_JOBS`, `fontFaceCss`, `faceRule`, `renderStylesheet`, `UPSTREAM_DIR` |
+| `@aphrody/m3-fonts/fonts.css`         | Latin core faces (always imported, < 3 MiB)                                                                     |
+| `@aphrody/m3-fonts/fonts-jp.css`      | Japanese faces chunked by `unicode-range`                                                                       |
+| `@aphrody/m3-fonts/fonts-symbols.css` | Material Symbols variable fonts (opt-in; `@aphrody/m3-icons` renders SVG)                                       |
+| `@aphrody/m3-fonts/fonts/*`           | the font files                                                                                                  |
 
 Files:
 

@@ -44,7 +44,9 @@ export interface SegmentationResponse {
 
 export class SegmentationApi extends ApiManager {
   // returns uuid
-  public async createSession(blobVideo: File | Blob): Promise<{ session_id: string }> {
+  public async createSession(
+    blobVideo: File | Blob,
+  ): Promise<{ session_id: string }> {
     const endpoint = `https://hax.storyteller.ai/segmentation/new_session`;
     const id = crypto.randomUUID().toString();
     return this.postFormVideo<{ session_id: "fix-mimetype" }>({

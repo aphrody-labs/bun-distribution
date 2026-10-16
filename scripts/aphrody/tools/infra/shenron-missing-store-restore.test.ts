@@ -13,11 +13,15 @@ test("validates both backed-up databases without writes and refuses existing liv
       target = join(root, "data");
     mkdirSync(join(source, "server/data"), { recursive: true });
     mkdirSync(target);
-    const files: Record<string, string> = { "shenron_site.dump": "a".repeat(64) };
+    const files: Record<string, string> = {
+      "shenron_site.dump": "a".repeat(64),
+    };
     await Promise.all(
       ["memory.sqlite", "conversations.sqlite"].map(async (name) => {
         const db = new Database(":memory:");
-        db.exec("CREATE TABLE preserved (value TEXT); INSERT INTO preserved VALUES ('existing');");
+        db.exec(
+          "CREATE TABLE preserved (value TEXT); INSERT INTO preserved VALUES ('existing');",
+        );
         const snapshot = db.serialize();
         // Consistent on-disk snapshots can retain WAL header bytes.
         snapshot[18] = 2;
@@ -33,7 +37,10 @@ test("validates both backed-up databases without writes and refuses existing liv
       join(source, "VERIFIED.json"),
       JSON.stringify({ kind: "shenron-container-backup", files }),
     );
-    const report = await restoreMissingStores(source, target, { uid: 1000, gid: 1000 });
+    const report = await restoreMissingStores(source, target, {
+      uid: 1000,
+      gid: 1000,
+    });
     expect(report.apply).toBeFalse();
     expect(report.stores).toHaveLength(2);
     expect(await Bun.file(join(target, "memory.sqlite")).exists()).toBeFalse();
@@ -54,7 +61,9 @@ test("validates both backed-up databases without writes and refuses existing liv
     await expect(
       restoreMissingStores(source, target, { uid: 1000, gid: 1000 }, true),
     ).rejects.toThrow("Existing store preserved");
-    expect(await Bun.file(join(target, "memory.sqlite")).text()).toBe("must remain");
+    expect(await Bun.file(join(target, "memory.sqlite")).text()).toBe(
+      "must remain",
+    );
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

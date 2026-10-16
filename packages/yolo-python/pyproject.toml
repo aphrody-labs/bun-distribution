@@ -1,5 +1,7 @@
 [build-system]
-requires = ["bun-native-build @ git+https://github.com/aphrody-labs/bun.git@fcfc2a6dca114193a1d7120ad9cd7c2855a022b0#subdirectory=packages/bun-python-native/python/build-backend"]
+requires = [
+  "bun-native-build @ git+https://github.com/aphrody-labs/bun.git@fcfc2a6dca114193a1d7120ad9cd7c2855a022b0#subdirectory=packages/bun-python-native/python/build-backend",
+]
 build-backend = "bun_native_build"
 
 [project]

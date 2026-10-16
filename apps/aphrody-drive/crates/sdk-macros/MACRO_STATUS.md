@@ -10,6 +10,7 @@
 ### `#[model]` Macro - Enhanced!
 
 **Handles all field attributes:**
+
 ```rust
 #[derive(Serialize, Deserialize, Clone)]
 #[model(version = "1.0.0")]
@@ -47,6 +48,7 @@ struct Photo {
 ```
 
 **What the macro does:**
+
 1. Parses and strips field attributes
 2. Generates `ExtensionModel` trait impl
 3. Finds `id` or `uuid` field automatically
@@ -54,6 +56,7 @@ struct Photo {
 5. Compiles successfully
 
 **Recognized attributes:**
+
 - `#[entry]` - References file/directory
 - `#[sidecar]` - Extension-owned derivative data
 - `#[metadata]` - Core-extracted metadata
@@ -68,16 +71,16 @@ struct Photo {
 
 ## Other Macros
 
-| Macro | Status | Notes |
-|-------|--------|-------|
-| `#[extension]` | Working | Generates plugin_init(), job registration |
-| `#[job]` | Working | FFI exports (proven in test-extension) |
-| `#[model]` | Enhanced | Handles field attributes! |
-| `#[agent]` | Pass-through | Needs impl block handling |
-| `#[agent_memory]` | Working | Generates AgentMemory trait |
-| `#[task]` | Pass-through | Needs implementation |
-| `#[action]` | Pass-through | Needs implementation |
-| `#[query]` | Pass-through | Needs implementation |
+| Macro             | Status       | Notes                                     |
+| ----------------- | ------------ | ----------------------------------------- |
+| `#[extension]`    | Working      | Generates plugin_init(), job registration |
+| `#[job]`          | Working      | FFI exports (proven in test-extension)    |
+| `#[model]`        | Enhanced     | Handles field attributes!                 |
+| `#[agent]`        | Pass-through | Needs impl block handling                 |
+| `#[agent_memory]` | Working      | Generates AgentMemory trait               |
+| `#[task]`         | Pass-through | Needs implementation                      |
+| `#[action]`       | Pass-through | Needs implementation                      |
+| `#[query]`        | Pass-through | Needs implementation                      |
 
 ---
 
@@ -106,6 +109,7 @@ struct PhotoAnalysis {
 ```
 
 **The attributes:**
+
 - Show design intent
 - Will be processed when macro is enhanced
 - Don't break compilation
@@ -118,6 +122,7 @@ struct PhotoAnalysis {
 ### For Full Compilation
 
 Photos extension needs:
+
 1. Convert async jobs to sync (match test-extension pattern)
 2. OR: Enhance `#[job]` macro to support async
 3. OR: Keep as aspirational reference
@@ -141,5 +146,4 @@ Photos extension needs:
 
 ---
 
-**The macro system now supports the design! Field attributes work.** 
-
+**The macro system now supports the design! Field attributes work.**

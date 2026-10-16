@@ -42,8 +42,7 @@ export interface EstimateImageCostErrorResult extends CommandResult {
 }
 
 export type EstimateImageCostResult =
-  | EstimateImageCostSuccess
-  | EstimateImageCostErrorResult;
+  EstimateImageCostSuccess | EstimateImageCostErrorResult;
 
 export const EstimateImageCost = async (
   request: EstimateImageCostRequest,

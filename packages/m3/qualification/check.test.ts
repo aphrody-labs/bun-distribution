@@ -15,7 +15,12 @@ async function fixture() {
   };
 }
 
-async function workspace(dir: string, name: string, script: "check" | "bun:check", exitCode = 0) {
+async function workspace(
+  dir: string,
+  name: string,
+  script: "check" | "bun:check",
+  exitCode = 0,
+) {
   await Bun.write(
     join(dir, "package.json"),
     JSON.stringify({ name, scripts: { [script]: "bun contract.ts" } }),
@@ -29,7 +34,10 @@ async function workspace(dir: string, name: string, script: "check" | "bun:check
 async function app(dir: string, passing = true) {
   await Bun.write(
     join(dir, "package.json"),
-    JSON.stringify({ name: "consumer", scripts: { check: "bun nonexistent.ts" } }),
+    JSON.stringify({
+      name: "consumer",
+      scripts: { check: "bun nonexistent.ts" },
+    }),
   );
   await Bun.write(
     join(dir, "app.test.ts"),

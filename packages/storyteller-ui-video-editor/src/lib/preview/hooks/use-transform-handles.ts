@@ -41,7 +41,8 @@ export function useTransformHandles({
       getCanvasSize: () => canvasSize,
     },
     timeline: {
-      previewElements: (updates) => editor.timeline.previewElements({ updates }),
+      previewElements: (updates) =>
+        editor.timeline.previewElements({ updates }),
       commitPreview: () => editor.timeline.commitPreview(),
       discardPreview: () => editor.timeline.discardPreview(),
     },
@@ -50,7 +51,9 @@ export function useTransformHandles({
     },
   };
   const depsRef = useCommittedRef(deps);
-  const [controller] = useState(() => new TransformHandleController({ depsRef }));
+  const [controller] = useState(
+    () => new TransformHandleController({ depsRef }),
+  );
 
   const [, rerender] = useReducer((n: number) => n + 1, 0);
   useEffect(() => controller.subscribe(rerender), [controller]);

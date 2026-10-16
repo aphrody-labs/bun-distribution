@@ -24,7 +24,7 @@ interface ActionReminderModalFullProps extends ShowActionReminderOptions {
 
 export const isActionReminderOpen = signal(false);
 export const actionReminderProps = signal<ActionReminderModalFullProps | null>(
-  null
+  null,
 );
 
 export function showActionReminder(options: ShowActionReminderOptions): void {

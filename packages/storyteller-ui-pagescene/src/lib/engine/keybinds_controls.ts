@@ -1,5 +1,8 @@
 import * as THREE from "three";
-import { OrbitControls, PointerLockControls } from "three/examples/jsm/Addons.js";
+import {
+  OrbitControls,
+  PointerLockControls,
+} from "three/examples/jsm/Addons.js";
 import { TransformControls } from "./TransformControls";
 import type { SelectionOutlinePass } from "./SelectionOutlinePass";
 import { SceneManager, SceneObject } from "./scene_manager_api";
@@ -225,7 +228,11 @@ export class MouseControls {
   }
 
   onMouseDown(event: any) {
-    if ((event.button === 0 || event.button === 1) && this.isMovable() && !this.isBoneDragged) {
+    if (
+      (event.button === 0 || event.button === 1) &&
+      this.isMovable() &&
+      !this.isBoneDragged
+    ) {
       this.isMouseClicked = true;
       // Pointer lock is requested from `handleMousePointerLock()` once
       // we see a real mousemove with the button held — locking eagerly
@@ -346,7 +353,10 @@ export class MouseControls {
       _euler.y -= event.movementX * _MOUSE_SENSITIVITY * pointerSpeed;
       _euler.x -= event.movementY * _MOUSE_SENSITIVITY * pointerSpeed;
 
-      _euler.x = Math.max(_PI_2 - maxPolarAngle, Math.min(_PI_2 - minPolarAngle, _euler.x));
+      _euler.x = Math.max(
+        _PI_2 - maxPolarAngle,
+        Math.min(_PI_2 - minPolarAngle, _euler.x),
+      );
 
       camera.quaternion.setFromEuler(_euler);
     } else if (this.lockControls) {

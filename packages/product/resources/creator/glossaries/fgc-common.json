@@ -62,7 +62,13 @@
       "src": ["詐欺飛び", "詐欺跳び", "さぎとび", "safe jump", "safejump"],
       "en": "safe jump",
       "alt": ["safejump", "safe-jump"],
-      "avoid": ["fraud jump", "scam jump", "deceptive jump", "swindle jump", "cheating jump"],
+      "avoid": [
+        "fraud jump",
+        "scam jump",
+        "deceptive jump",
+        "swindle jump",
+        "cheating jump"
+      ],
       "note": "A jump-in timed so you land with a block-ready recovery: an invincible reversal cannot hit you. 詐欺飛び (sagi-tobi) is the JP name; the literal 'fraud' is wrong.",
       "kind": "term",
       "confidence": "partial",
@@ -103,7 +109,13 @@
       "id": "katame",
       "src": ["固め", "固める", "固められ", "固められる"],
       "en": "pressure",
-      "alt": ["block string", "blockstring", "tight pressure", "set pressure", "strings"],
+      "alt": [
+        "block string",
+        "blockstring",
+        "tight pressure",
+        "set pressure",
+        "strings"
+      ],
       "avoid": ["hardening", "solidifying", "stiffening", "firming up"],
       "note": "固め = keeping the opponent stuck in blockstun with a frame-advantage string (pressure). 固め直し = re-establishing pressure after a gap. Careful: ガードを固める = to hunker down and just block (the defender turtles), which is not this meaning.",
       "kind": "term",
@@ -130,7 +142,13 @@
     },
     {
       "id": "whiff-punish",
-      "src": ["差し返し", "スカし確定反撃", "スカ確", "whiff punish", "whiff-punish"],
+      "src": [
+        "差し返し",
+        "スカし確定反撃",
+        "スカ確",
+        "whiff punish",
+        "whiff-punish"
+      ],
       "en": "whiff punish",
       "alt": ["punish the whiff", "whiff punishing", "whiff-punish"],
       "avoid": ["stab back", "thrust back", "insert back", "return thrust"],
@@ -155,7 +173,13 @@
       "id": "okiwaza",
       "src": ["置き技", "置き牽制", "置き攻撃", "okiwaza"],
       "en": "preemptive poke",
-      "alt": ["okiwaza", "poke", "placed attack", "put out a button", "throw out a poke"],
+      "alt": [
+        "okiwaza",
+        "poke",
+        "placed attack",
+        "put out a button",
+        "throw out a poke"
+      ],
       "avoid": ["put-down technique", "placement skill"],
       "note": "置き技 (okiwaza) = a move placed in advance where the opponent will walk or jump into.",
       "kind": "term",
@@ -188,7 +212,12 @@
       "id": "neutral",
       "src": ["立ち回り", "neutral"],
       "en": "neutral",
-      "alt": ["neutral game", "footsies", "movement", "how you play the neutral"],
+      "alt": [
+        "neutral game",
+        "footsies",
+        "movement",
+        "how you play the neutral"
+      ],
       "avoid": ["standing around", "standing movement"],
       "note": "立ち回り = how a player moves and pokes outside of pressure situations: the neutral game.",
       "kind": "term",
@@ -211,7 +240,12 @@
       "id": "line-control",
       "src": ["ライン管理", "ラインを上げ", "ラインを下げ", "ライン"],
       "en": "space control",
-      "alt": ["positioning", "screen control", "controlling the line", "stage position"],
+      "alt": [
+        "positioning",
+        "screen control",
+        "controlling the line",
+        "stage position"
+      ],
       "avoid": ["line management"],
       "note": "ライン = the virtual midpoint between the two characters; 'ラインを上げる' = pushing the midpoint forward, gaining ground.",
       "kind": "term",
@@ -268,7 +302,13 @@
     },
     {
       "id": "throw-tech",
-      "src": ["投げ抜け", "投げ外し", "投げはずし", "throw tech", "tech the throw"],
+      "src": [
+        "投げ抜け",
+        "投げ外し",
+        "投げはずし",
+        "throw tech",
+        "tech the throw"
+      ],
       "en": "throw tech",
       "alt": ["tech", "tech the throw", "break the throw", "throw break"],
       "avoid": ["throw escape", "pull out of the throw"],
@@ -347,7 +387,15 @@
     },
     {
       "id": "anti-air",
-      "src": ["対空", "anti-air", "antiair", "anti air", "anti-aérien", "antiaérien", "antiaéreo"],
+      "src": [
+        "対空",
+        "anti-air",
+        "antiair",
+        "anti air",
+        "anti-aérien",
+        "antiaérien",
+        "antiaéreo"
+      ],
       "en": "anti-air",
       "alt": ["antiair", "AA", "anti air"],
       "avoid": ["air defense", "counter-air"],
@@ -414,7 +462,13 @@
         "invulnerability"
       ],
       "en": "invincible",
-      "alt": ["invuln", "invulnerable", "invincibility", "i-frames", "invincible reversal"],
+      "alt": [
+        "invuln",
+        "invulnerable",
+        "invincibility",
+        "i-frames",
+        "invincible reversal"
+      ],
       "avoid": ["undefeated", "unbeatable", "invincibility star"],
       "note": "無敵 = frames where the move cannot be hit (typical of reversals). 無敵技 = an invincible reversal.",
       "kind": "term",
@@ -440,7 +494,12 @@
       "kind": "term",
       "confidence": "verified",
       "ref": "dustloop-glossary+ja-wikipedia-taisen",
-      "unverifiedSrc": ["フレーム有利", "フレーム不利", "有利フレーム", "不利フレーム"]
+      "unverifiedSrc": [
+        "フレーム有利",
+        "フレーム不利",
+        "有利フレーム",
+        "不利フレーム"
+      ]
     },
     {
       "id": "startup",
@@ -499,7 +558,15 @@
     },
     {
       "id": "hitbox",
-      "src": ["判定", "当たり判定", "やられ判定", "判定が強い", "判定勝ち", "hitbox", "hurtbox"],
+      "src": [
+        "判定",
+        "当たり判定",
+        "やられ判定",
+        "判定が強い",
+        "判定勝ち",
+        "hitbox",
+        "hurtbox"
+      ],
       "en": "hitbox",
       "alt": ["hurtbox", "priority", "hitboxes"],
       "avoid": ["judgment", "judgement", "decision", "verdict"],
@@ -511,7 +578,15 @@
     },
     {
       "id": "yomi",
-      "src": ["読み合い", "読み勝ち", "読み負け", "読み", "yomi", "mind games", "mindgame"],
+      "src": [
+        "読み合い",
+        "読み勝ち",
+        "読み負け",
+        "読み",
+        "yomi",
+        "mind games",
+        "mindgame"
+      ],
       "en": "read",
       "alt": ["yomi", "mind games", "predict", "guess"],
       "avoid": ["reading", "reading comprehension"],
@@ -536,7 +611,14 @@
     },
     {
       "id": "bnb",
-      "src": ["基本コンボ", "基礎コンボ", "bnb", "b&b", "bread and butter", "bread-and-butter"],
+      "src": [
+        "基本コンボ",
+        "基礎コンボ",
+        "bnb",
+        "b&b",
+        "bread and butter",
+        "bread-and-butter"
+      ],
       "en": "BnB",
       "alt": ["bread and butter", "bread-and-butter", "basic combo", "B&B"],
       "avoid": ["basic course"],
@@ -551,7 +633,12 @@
       "src": ["永久コンボ", "永久", "永パ", "infinite", "infini", "infinito"],
       "en": "infinite",
       "alt": ["infinite combo", "loop", "infinites"],
-      "avoid": ["eternal combo", "permanent combo", "forever combo", "everlasting combo"],
+      "avoid": [
+        "eternal combo",
+        "permanent combo",
+        "forever combo",
+        "everlasting combo"
+      ],
       "note": "永パ (永久パターン) = an infinite combo; ハメ is the broader 'inescapable situation'.",
       "kind": "term",
       "confidence": "partial",
@@ -617,7 +704,12 @@
       "id": "birdcage",
       "src": ["トリカゴ", "鳥かご", "鳥籠"],
       "en": "cage",
-      "alt": ["corner trap", "birdcage", "corner lock", "trapped in the corner"],
+      "alt": [
+        "corner trap",
+        "birdcage",
+        "corner lock",
+        "trapped in the corner"
+      ],
       "avoid": ["bird cage"],
       "note": "トリカゴ = a projectile character pins the opponent in the corner and spams projectiles so they cannot leave.",
       "kind": "term",
@@ -629,7 +721,12 @@
       "id": "knowledge-check",
       "src": ["わからん殺し", "ワカラン殺し", "初見殺し", "knowledge check"],
       "en": "knowledge check",
-      "alt": ["gotcha", "cheese", "a trick that works if you don't know it", "first-time trick"],
+      "alt": [
+        "gotcha",
+        "cheese",
+        "a trick that works if you don't know it",
+        "first-time trick"
+      ],
       "avoid": ["don't-know kill", "first-sight kill", "unknown kill"],
       "note": "わからん殺し / 初見殺し = a setup that is easy to handle if you know it but nearly impossible the first time (Dustloop: knowledge check).",
       "kind": "term",
@@ -639,7 +736,15 @@
     },
     {
       "id": "whiff",
-      "src": ["スカし", "スカる", "スカった", "空振り", "空ぶり", "whiff", "whiffed"],
+      "src": [
+        "スカし",
+        "スカる",
+        "スカった",
+        "空振り",
+        "空ぶり",
+        "whiff",
+        "whiffed"
+      ],
       "en": "whiff",
       "alt": ["miss", "whiffed", "whiffing"],
       "avoid": ["empty swing", "air swing"],
@@ -663,7 +768,12 @@
     },
     {
       "id": "throw-invuln",
-      "src": ["投げ無敵", "硬直明け投げ無敵", "throw protection", "throw invuln"],
+      "src": [
+        "投げ無敵",
+        "硬直明け投げ無敵",
+        "throw protection",
+        "throw invuln"
+      ],
       "en": "throw invulnerability",
       "alt": ["throw protection", "throw invuln"],
       "note": "A few frames of throw invulnerability after blockstun/hitstun/wakeup.",
@@ -673,7 +783,13 @@
     },
     {
       "id": "pushback",
-      "src": ["ガードバック", "ヒットバック", "ノックバック", "pushback", "push back"],
+      "src": [
+        "ガードバック",
+        "ヒットバック",
+        "ノックバック",
+        "pushback",
+        "push back"
+      ],
       "en": "pushback",
       "alt": ["knockback", "push back", "pushed back"],
       "avoid": ["guard back"],
@@ -742,7 +858,13 @@
     },
     {
       "id": "fuzzy",
-      "src": ["ファジーガード", "ファジー", "fuzzy guard", "fuzzy block", "fuzzy"],
+      "src": [
+        "ファジーガード",
+        "ファジー",
+        "fuzzy guard",
+        "fuzzy block",
+        "fuzzy"
+      ],
       "en": "fuzzy guard",
       "alt": ["fuzzy block", "fuzzy"],
       "avoid": ["blurry guard", "vague guard"],
@@ -774,7 +896,13 @@
         "stagger"
       ],
       "en": "stagger",
-      "alt": ["delay gatling", "delayed gatling", "delay", "stagger pressure", "delayed cancel"],
+      "alt": [
+        "delay gatling",
+        "delayed gatling",
+        "delay",
+        "stagger pressure",
+        "delayed cancel"
+      ],
       "avoid": ["delay-ing", "lateness"],
       "note": "遅らせ = intentionally delaying the next gatling/cancel so a gap forms (frame trap) to catch mashing.",
       "kind": "term",
@@ -784,7 +912,13 @@
     },
     {
       "id": "setplay",
-      "src": ["セットプレイ", "セットプレー", "setplay", "set-play", "set play"],
+      "src": [
+        "セットプレイ",
+        "セットプレー",
+        "setplay",
+        "set-play",
+        "set play"
+      ],
       "en": "setplay",
       "alt": ["set play", "setup", "oki setup"],
       "avoid": ["set piece"],
@@ -798,7 +932,13 @@
       "id": "interrupt",
       "src": ["割り込み", "割り込む", "割り込まれ", "打ち返し", "打ち返す"],
       "en": "interrupt",
-      "alt": ["cut in", "challenge", "swing back", "mash out", "press a button"],
+      "alt": [
+        "cut in",
+        "challenge",
+        "swing back",
+        "mash out",
+        "press a button"
+      ],
       "avoid": ["cut-in", "interrupt-in"],
       "note": "割り込み = interrupting the opponent's string with a button; 打ち返し = hitting back after a block string ends.",
       "kind": "term",
@@ -806,9 +946,21 @@
     },
     {
       "id": "reactable",
-      "src": ["見てから", "見てからできる", "見てから反応", "反応できる", "反応できない"],
+      "src": [
+        "見てから",
+        "見てからできる",
+        "見てから反応",
+        "反応できる",
+        "反応できない"
+      ],
       "en": "reactable",
-      "alt": ["on reaction", "react to it", "can react", "can't react", "reaction"],
+      "alt": [
+        "on reaction",
+        "react to it",
+        "can react",
+        "can't react",
+        "reaction"
+      ],
       "avoid": ["after seeing"],
       "note": "見てから〜できる = can be done reactively after seeing the move; 見てから無理 = not reactable.",
       "kind": "term",
@@ -819,7 +971,13 @@
       "id": "buppa",
       "src": ["ぶっぱ", "ぶっぱなし", "ブッパ", "ぶっぱなす", "ぶっぱ"],
       "en": "just throw it out",
-      "alt": ["YOLO", "blindly throw", "fling it", "throw it out on a hunch", "button-press it"],
+      "alt": [
+        "YOLO",
+        "blindly throw",
+        "fling it",
+        "throw it out on a hunch",
+        "button-press it"
+      ],
       "avoid": ["fire off", "blast it"],
       "note": "ぶっぱ = throwing out a risky special/super without a read or safety.",
       "kind": "term",
@@ -838,7 +996,14 @@
     },
     {
       "id": "matchup",
-      "src": ["キャラ対", "キャラ対策", "キャラ差", "matchup", "match-up", "matchups"],
+      "src": [
+        "キャラ対",
+        "キャラ対策",
+        "キャラ差",
+        "matchup",
+        "match-up",
+        "matchups"
+      ],
       "en": "matchup",
       "alt": ["matchup knowledge", "matchups", "character-specific plan"],
       "avoid": ["character versus", "character gap"],
@@ -870,7 +1035,14 @@
     },
     {
       "id": "knockdown",
-      "src": ["ダウン", "ダウンを取", "起き上がり", "強制ダウン", "hard knockdown", "hkd"],
+      "src": [
+        "ダウン",
+        "ダウンを取",
+        "起き上がり",
+        "強制ダウン",
+        "hard knockdown",
+        "hkd"
+      ],
       "en": "knockdown",
       "alt": ["KD", "HKD", "hard knockdown", "wakeup", "down"],
       "avoid": ["get up rising"],
@@ -961,7 +1133,12 @@
     },
     {
       "id": "sf6-drive-rush",
-      "src": ["ドライブラッシュ", "drive rush", "生ラッシュ", "キャンセルラッシュ"],
+      "src": [
+        "ドライブラッシュ",
+        "drive rush",
+        "生ラッシュ",
+        "キャンセルラッシュ"
+      ],
       "en": "Drive Rush",
       "alt": ["raw Drive Rush", "cancel Drive Rush"],
       "note": "SF6 dash: 生ラッシュ = raw Drive Rush (from parry); キャンセルラッシュ = Drive Rush cancel (from a normal, costs 3 bars).",
@@ -983,7 +1160,12 @@
     },
     {
       "id": "sf6-super-art",
-      "src": ["スーパーアーツ", "super art", "クリティカルアーツ", "critical art"],
+      "src": [
+        "スーパーアーツ",
+        "super art",
+        "クリティカルアーツ",
+        "critical art"
+      ],
       "en": "Super Art",
       "alt": ["Critical Art", "SA", "SA3"],
       "note": "SF6 super moves (Level 1-3). The Level 3 move becomes a Critical Art when low on life.",
@@ -1007,7 +1189,13 @@
     },
     {
       "id": "sf6-controls",
-      "src": ["モダン", "クラシック", "ダイナミック", "modern control", "classic control"],
+      "src": [
+        "モダン",
+        "クラシック",
+        "ダイナミック",
+        "modern control",
+        "classic control"
+      ],
       "en": "Modern",
       "alt": ["Classic", "Dynamic", "Modern control", "Classic control"],
       "note": "SF6 control types: Classic (6 buttons), Modern (simplified 4 buttons), Dynamic (offline).",

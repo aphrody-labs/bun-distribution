@@ -3,7 +3,12 @@ import { FFIType, type Pointer } from "bun:ffi";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
-import { nativeLibrary, readNativeString, toCString, type NativeLibrary } from "./ffi.ts";
+import {
+  nativeLibrary,
+  readNativeString,
+  toCString,
+  type NativeLibrary,
+} from "./ffi.ts";
 import { defaultLibraryPath } from "./index.ts";
 import type { Finding, N2BReport } from "./tooling-schema.ts";
 
@@ -29,7 +34,12 @@ export interface ModuleAnalysis {
     typeOnly: boolean;
     isImport: boolean;
   }[];
-  exportEntries: { name: string; start: number; end: number; typeOnly: boolean }[];
+  exportEntries: {
+    name: string;
+    start: number;
+    end: number;
+    typeOnly: boolean;
+  }[];
 }
 
 const SYMBOLS = {
@@ -37,16 +47,28 @@ const SYMBOLS = {
   node2bun_abi_version: { args: [], returns: FFIType.u32 },
   aphrody_oxc_abi_version: { args: [], returns: FFIType.u32 },
   node2bun_scan_json: { args: [FFIType.ptr], returns: FFIType.ptr },
-  node2bun_scan_with_options_json: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
+  node2bun_scan_with_options_json: {
+    args: [FFIType.ptr, FFIType.ptr],
+    returns: FFIType.ptr,
+  },
   node2bun_string_free: { args: [FFIType.ptr], returns: FFIType.void },
   find_newlines_u16: {
     args: [FFIType.ptr, "usize", FFIType.ptr, "usize"],
     returns: "usize",
   },
-  aphrody_oxc_format: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
-  aphrody_oxc_minify: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
+  aphrody_oxc_format: {
+    args: [FFIType.ptr, FFIType.ptr],
+    returns: FFIType.ptr,
+  },
+  aphrody_oxc_minify: {
+    args: [FFIType.ptr, FFIType.ptr],
+    returns: FFIType.ptr,
+  },
   aphrody_oxc_lint: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
-  aphrody_oxc_analyze: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
+  aphrody_oxc_analyze: {
+    args: [FFIType.ptr, FFIType.ptr],
+    returns: FFIType.ptr,
+  },
   aphrody_oxc_parse: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
   aphrody_oxc_free: { args: [FFIType.ptr], returns: FFIType.void },
 } as const;
@@ -78,11 +100,15 @@ function optionsJson(options: ScanNodeProjectOptions): Uint8Array {
     if (!["mode", "ignore", "dry_run", "jobs"].includes(key))
       throw new TypeError(`Unknown N2B option: ${key}`);
   }
-  if (options.mode !== undefined && !["check", "fix", "aggressive"].includes(options.mode))
+  if (
+    options.mode !== undefined &&
+    !["check", "fix", "aggressive"].includes(options.mode)
+  )
     throw new TypeError("N2B mode must be check, fix or aggressive");
   if (
     options.ignore !== undefined &&
-    (!Array.isArray(options.ignore) || !options.ignore.every((entry) => typeof entry === "string"))
+    (!Array.isArray(options.ignore) ||
+      !options.ignore.every((entry) => typeof entry === "string"))
   )
     throw new TypeError("N2B ignore must be an array of strings");
   if (options.dry_run !== undefined && typeof options.dry_run !== "boolean")
@@ -103,7 +129,9 @@ function envelope(
   if (!pointer) throw new Error(`${name} returned a null pointer`);
   let value: unknown;
   try {
-    value = JSON.parse(readNativeString(pointer, (address) => free(address as Pointer)));
+    value = JSON.parse(
+      readNativeString(pointer, (address) => free(address as Pointer)),
+    );
   } catch (cause) {
     throw new Error(`${name}: invalid native JSON`, { cause });
   }
@@ -119,7 +147,9 @@ function envelope(
 }
 
 function strings(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((entry) => typeof entry === "string");
+  return (
+    Array.isArray(value) && value.every((entry) => typeof entry === "string")
+  );
 }
 
 /** One lazy provider owner. All native operations finish before close can unload its handle. */
@@ -133,24 +163,30 @@ export class NativeTooling {
   constructor(options: NativeToolingOptions = {}) {
     if (options.path !== undefined) {
       cString(options.path, "Native tooling path");
-      if (!options.path) throw new TypeError("Native tooling path must not be empty");
+      if (!options.path)
+        throw new TypeError("Native tooling path must not be empty");
     }
     this.#options = { ...options };
   }
 
   #symbols(): Symbols {
-    if (this.#closed) throw new Error(this.#failure ?? "Native tooling is closed");
+    if (this.#closed)
+      throw new Error(this.#failure ?? "Native tooling is closed");
     if (!this.#library) {
       let path = this.#options.path ?? process.env.YOLO_TOOLING_LIB;
       if (path !== undefined) {
         cString(path, "Native tooling path");
         if (!path || !existsSync(path))
-          throw new Error("Selected native tooling library is missing; selection preserved");
+          throw new Error(
+            "Selected native tooling library is missing; selection preserved",
+          );
       } else {
         const selected = defaultLibraryPath();
         if (existsSync(selected)) path = selected;
         else if (process.env.YOLO_RUNTIME_LIB)
-          throw new Error("Selected native runtime library is missing; selection preserved");
+          throw new Error(
+            "Selected native runtime library is missing; selection preserved",
+          );
       }
       this.#library = nativeLibrary({
         name: "aphrody_ffi",
@@ -171,7 +207,10 @@ export class NativeTooling {
       });
     }
     const symbols = this.#library.load();
-    if (!symbols) throw new Error(this.#library.loadError() ?? "Native tooling unavailable");
+    if (!symbols)
+      throw new Error(
+        this.#library.loadError() ?? "Native tooling unavailable",
+      );
     if (!this.#validated) {
       const actual = {
         tooling: symbols.yolo_tooling_abi_version(),
@@ -227,19 +266,22 @@ export class NativeTooling {
 
   formatSource(source: string, filename = "input.js"): string {
     const result = this.#oxc("format", source, filename);
-    if (typeof result.code !== "string") throw new Error("Oxc format: missing native code");
+    if (typeof result.code !== "string")
+      throw new Error("Oxc format: missing native code");
     return result.code;
   }
 
   minifySource(source: string, filename = "input.js"): string {
     const result = this.#oxc("minify", source, filename);
-    if (typeof result.code !== "string") throw new Error("Oxc minify: missing native code");
+    if (typeof result.code !== "string")
+      throw new Error("Oxc minify: missing native code");
     return result.code;
   }
 
   lintSource(source: string, filename = "input.js"): string[] {
     const result = this.#oxc("lint", source, filename);
-    if (!strings(result.diagnostics)) throw new Error("Oxc lint: invalid native diagnostics");
+    if (!strings(result.diagnostics))
+      throw new Error("Oxc lint: invalid native diagnostics");
     return result.diagnostics;
   }
 
@@ -273,7 +315,10 @@ export class NativeTooling {
     return value as T;
   }
 
-  scanNodeProject(root: string, options?: ScanNodeProjectOptions): NodeProjectReport {
+  scanNodeProject(
+    root: string,
+    options?: ScanNodeProjectOptions,
+  ): NodeProjectReport {
     const input = cString(root, "N2B project root");
     const encoded = options === undefined ? undefined : optionsJson(options);
     const symbols = this.#symbols();
@@ -291,19 +336,27 @@ export class NativeTooling {
   }
 
   findNewlinesUtf16(source: string): Uint32Array {
-    if (this.#closed) throw new Error(this.#failure ?? "Native tooling is closed");
-    if (typeof source !== "string") throw new TypeError("Newline source must be a string");
+    if (this.#closed)
+      throw new Error(this.#failure ?? "Native tooling is closed");
+    if (typeof source !== "string")
+      throw new TypeError("Newline source must be a string");
     if (source.length === 0) return new Uint32Array();
     const bytes = new Uint8Array(source.length * 2);
     const view = new DataView(bytes.buffer);
     for (let index = 0; index < source.length; index++)
       view.setUint16(index * 2, source.charCodeAt(index), true);
     const symbols = this.#symbols();
-    const count = Number(symbols.find_newlines_u16(bytes, bytes.length, null, 0));
+    const count = Number(
+      symbols.find_newlines_u16(bytes, bytes.length, null, 0),
+    );
     if (!Number.isSafeInteger(count) || count < 0 || count > source.length)
       throw new Error("N2B newline count is invalid");
     const offsets = new Uint32Array(count);
-    if (count && Number(symbols.find_newlines_u16(bytes, bytes.length, offsets, count)) !== count)
+    if (
+      count &&
+      Number(symbols.find_newlines_u16(bytes, bytes.length, offsets, count)) !==
+        count
+    )
       throw new Error("N2B newline count changed");
     return offsets;
   }
@@ -339,11 +392,16 @@ export const minifySource = (source: string, filename?: string): string =>
   sharedTooling().minifySource(source, filename);
 export const lintSource = (source: string, filename?: string): string[] =>
   sharedTooling().lintSource(source, filename);
-export const analyzeModule = (source: string, filename?: string): ModuleAnalysis =>
-  sharedTooling().analyzeModule(source, filename);
-export const parseProgram = <T = unknown>(source: string, filename?: string): T =>
-  sharedTooling().parseProgram<T>(source, filename);
+export const analyzeModule = (
+  source: string,
+  filename?: string,
+): ModuleAnalysis => sharedTooling().analyzeModule(source, filename);
+export const parseProgram = <T = unknown>(
+  source: string,
+  filename?: string,
+): T => sharedTooling().parseProgram<T>(source, filename);
 export const findNewlinesUtf16 = (source: string): Uint32Array =>
   sharedTooling().findNewlinesUtf16(source);
-export const probeNativeTooling = (): NativeToolingProbe => sharedTooling().probe();
+export const probeNativeTooling = (): NativeToolingProbe =>
+  sharedTooling().probe();
 export const closeNativeTooling = (): void => sharedTooling().close();

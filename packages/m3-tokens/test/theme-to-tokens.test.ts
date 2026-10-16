@@ -71,7 +71,9 @@ describe("muiThemeToTokens", () => {
   });
 
   test("uses a separate dark theme when provided", async () => {
-    const dark = { palette: { mode: "dark" as const, primary: { main: "#90caf9" } } };
+    const dark = {
+      palette: { mode: "dark" as const, primary: { main: "#90caf9" } },
+    };
     const { darkRoles } = await muiThemeToTokens(theme, { darkTheme: dark });
     expect(darkRoles["primary"]).toBe("#90caf9");
   });

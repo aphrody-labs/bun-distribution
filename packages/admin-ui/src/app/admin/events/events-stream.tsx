@@ -82,19 +82,22 @@ export function EventsStream() {
 
       {!connected && (
         <div className="dbz-panel p-3 text-xs text-red-300 border border-red-800 bg-red-900/20">
-          La connexion est interrompue. Les événements reprendront automatiquement dès que le bot
-          sera joignable.
+          La connexion est interrompue. Les événements reprendront
+          automatiquement dès que le bot sera joignable.
         </div>
       )}
 
       <div className="space-y-2">
         {events.length === 0 ? (
           <div className="dbz-panel p-8 text-center text-zinc-500 text-sm">
-            {connected ? "En attente du prochain événement A2A…" : "Connexion en cours…"}
+            {connected
+              ? "En attente du prochain événement A2A…"
+              : "Connexion en cours…"}
           </div>
         ) : (
           events.map((e) => {
-            const colorClass = COLOR_BY_TYPE[e.type] ?? "text-dbz-blue-light border-dbz-border";
+            const colorClass =
+              COLOR_BY_TYPE[e.type] ?? "text-dbz-blue-light border-dbz-border";
             const label = EVENT_LABEL[e.type] ?? e.type;
             return (
               <article
@@ -103,10 +106,14 @@ export function EventsStream() {
               >
                 <div className="flex items-baseline justify-between mb-1">
                   <div className="flex items-center gap-2">
-                    <span className={`font-saiyan text-sm font-bold ${colorClass.split(" ")[0]}`}>
+                    <span
+                      className={`font-saiyan text-sm font-bold ${colorClass.split(" ")[0]}`}
+                    >
                       {label}
                     </span>
-                    <code className="text-[9px] text-zinc-500 font-mono">{e.type}</code>
+                    <code className="text-[9px] text-zinc-500 font-mono">
+                      {e.type}
+                    </code>
                   </div>
                   <span className="text-[10px] text-zinc-500 font-mono">
                     {new Date(e.ts).toLocaleTimeString("fr-FR", {

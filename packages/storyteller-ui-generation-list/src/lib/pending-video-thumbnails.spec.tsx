@@ -1,5 +1,14 @@
-import { stubGlobal, restoreGlobals } from "../../../../../tools/testing/globals";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  stubGlobal,
+  restoreGlobals,
+} from "../../../../../tools/testing/globals";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
 import { VideoIcon } from "lucide-react";
 import {
@@ -51,10 +60,15 @@ describe("checker", () => {
 
     vi.advanceTimersByTime(5_000);
     expect(probes).toHaveLength(1);
-    expect(probes[0].src).toMatch(/^https:\/\/cdn-2\.fakeyou\.com\/.*\.mp4-thumb\.gif\?_r=\d+$/);
+    expect(probes[0].src).toMatch(
+      /^https:\/\/cdn-2\.fakeyou\.com\/.*\.mp4-thumb\.gif\?_r=\d+$/,
+    );
 
     probes[0].onload!();
-    expect(getVideoThumbnailState(THUMB)).toEqual({ status: "ready", src: probes[0].src });
+    expect(getVideoThumbnailState(THUMB)).toEqual({
+      status: "ready",
+      src: probes[0].src,
+    });
   });
 
   it("keeps checking past the old 20-retry limit, backing off", () => {
@@ -144,7 +158,12 @@ describe("GalleryThumbnail", () => {
 
   it("leaves image thumbnails on the placeholder fallback", () => {
     render(
-      <GalleryThumbnail thumbnail={THUMB} alt="Image" isVideo={false} fallbackIcon={VideoIcon} />,
+      <GalleryThumbnail
+        thumbnail={THUMB}
+        alt="Image"
+        isVideo={false}
+        fallbackIcon={VideoIcon}
+      />,
     );
     fireEvent.error(screen.getByRole("img"));
     expect(screen.getByRole("img").getAttribute("src")).toBe("placeholder.png");
@@ -153,7 +172,14 @@ describe("GalleryThumbnail", () => {
 });
 
 function renderVideoThumbnail() {
-  render(<GalleryThumbnail thumbnail={THUMB} alt="Video" isVideo fallbackIcon={VideoIcon} />);
+  render(
+    <GalleryThumbnail
+      thumbnail={THUMB}
+      alt="Video"
+      isVideo
+      fallbackIcon={VideoIcon}
+    />,
+  );
 }
 
 // Advance time, failing every probe the checker starts along the way.

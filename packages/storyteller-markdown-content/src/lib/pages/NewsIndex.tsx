@@ -24,12 +24,8 @@ export const NewsIndex = ({ basePath }: NewsIndexProps) => {
 
       <div className="relative z-10 mx-auto w-full max-w-4xl px-4 sm:px-8 pt-28 sm:pt-36 pb-12">
         <div className="text-center mb-10">
-          <h1 className="text-4xl sm:text-6xl font-bold mb-3">
-            {title}
-          </h1>
-          <p className="text-white/70 text-base sm:text-lg">
-            {description}
-          </p>
+          <h1 className="text-4xl sm:text-6xl font-bold mb-3">{title}</h1>
+          <p className="text-white/70 text-base sm:text-lg">{description}</p>
         </div>
 
         <div className="flex flex-col gap-6">
@@ -42,18 +38,22 @@ export const NewsIndex = ({ basePath }: NewsIndexProps) => {
               <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 mb-2">
                 <h2 className="text-2xl font-semibold group-hover:text-blue-400 transition-colors flex items-center gap-3">
                   {item.title}
-                  <ArrowRightIcon  className="text-xl opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+                  <ArrowRightIcon className="text-xl opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
                 </h2>
                 {item.date && (
-                   <span className="text-white/50 text-sm font-mono shrink-0">{item.date}</span>
+                  <span className="text-white/50 text-sm font-mono shrink-0">
+                    {item.date}
+                  </span>
                 )}
               </div>
-              <p className="text-white/70 text-base leading-relaxed">{item.description}</p>
+              <p className="text-white/70 text-base leading-relaxed">
+                {item.description}
+              </p>
             </Link>
           ))}
           {items.length === 0 && (
             <div className="text-center py-10 opacity-50">
-                No updates yet. Check back soon!
+              No updates yet. Check back soon!
             </div>
           )}
         </div>

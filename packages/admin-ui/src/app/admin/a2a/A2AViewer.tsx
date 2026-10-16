@@ -27,7 +27,9 @@ const POLL_MAX_INTERVAL_MS = 30_000;
 
 type SendStatus = { tone: "pending" | "ok" | "error"; text: string };
 
-async function readJson(res: Response): Promise<Record<string, unknown> | null> {
+async function readJson(
+  res: Response,
+): Promise<Record<string, unknown> | null> {
   const data: unknown = await res.json().catch(() => null);
   return data && typeof data === "object" && !Array.isArray(data)
     ? (data as Record<string, unknown>)
@@ -79,7 +81,9 @@ export function A2AViewer() {
           setLoaded(true);
           setFailure(null);
           setLastSyncAt(
-            typeof data.fetchedAt === "string" ? data.fetchedAt : new Date().toISOString(),
+            typeof data.fetchedAt === "string"
+              ? data.fetchedAt
+              : new Date().toISOString(),
           );
           return "ok";
         } catch {
@@ -92,7 +96,8 @@ export function A2AViewer() {
       },
     });
     pollerRef.current = poller;
-    const onVisibilityChange = () => poller.setVisible(document.visibilityState === "visible");
+    const onVisibilityChange = () =>
+      poller.setVisible(document.visibilityState === "visible");
     document.addEventListener("visibilitychange", onVisibilityChange);
     poller.start();
     return () => {
@@ -112,7 +117,10 @@ export function A2AViewer() {
     if (!text || sending) return;
 
     setSending(true);
-    setLastStatus({ tone: "pending", text: "Envoi en cours via protocole A2A..." });
+    setLastStatus({
+      tone: "pending",
+      text: "Envoi en cours via protocole A2A...",
+    });
     try {
       const res = await fetch(ADMIN_A2A_URL, {
         method: "POST",
@@ -137,7 +145,10 @@ export function A2AViewer() {
         setLastStatus({ tone: "error", text: `✗ ${next.text}` });
       }
     } catch {
-      setLastStatus({ tone: "error", text: `✗ ${describeA2ANetworkFailure().text}` });
+      setLastStatus({
+        tone: "error",
+        text: `✗ ${describeA2ANetworkFailure().text}`,
+      });
     } finally {
       setSending(false);
     }
@@ -159,23 +170,33 @@ export function A2AViewer() {
             Protocole
           </span>
           <div className="text-xl font-bold mt-1 text-primary">A2A 1.0.0</div>
-          <div className="text-xs text-muted-foreground mt-0.5">ai.json v1 • .coord Mailbox</div>
+          <div className="text-xs text-muted-foreground mt-0.5">
+            ai.json v1 • .coord Mailbox
+          </div>
         </div>
         <div className="p-4 rounded-xl border border-border bg-card/60">
           <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
             Hub Principal
           </span>
-          <div className="text-xl font-bold mt-1 text-primary">Shenron Core</div>
+          <div className="text-xl font-bold mt-1 text-primary">
+            Shenron Core
+          </div>
           {/* mcp.dragonballfr.com a été retiré le 2026-09-25 (shenron-mcp fusionné
 					    dans aphrody-mcp dragonball.*, sans hôte HTTP public). */}
-          <div className="text-xs text-muted-foreground mt-0.5">aphrody-mcp (dragonball.*)</div>
+          <div className="text-xs text-muted-foreground mt-0.5">
+            aphrody-mcp (dragonball.*)
+          </div>
         </div>
         <div className="p-4 rounded-xl border border-border bg-card/60">
           <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
             Doctrine
           </span>
-          <div className="text-xl font-bold mt-1 text-emerald-400">YOLO Zero-HITL</div>
-          <div className="text-xs text-muted-foreground mt-0.5">Format Bimodal • #bot-admin</div>
+          <div className="text-xl font-bold mt-1 text-emerald-400">
+            YOLO Zero-HITL
+          </div>
+          <div className="text-xs text-muted-foreground mt-0.5">
+            Format Bimodal • #bot-admin
+          </div>
         </div>
         <div className="p-4 rounded-xl border border-border bg-card/60">
           <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
@@ -185,7 +206,9 @@ export function A2AViewer() {
             {loaded ? envelopes.length : "—"}
           </div>
           <div className="text-xs text-muted-foreground mt-0.5">
-            {syncedAt ? `Synchronisé à ${syncedAt}` : "Canal fichier & RPC unifié"}
+            {syncedAt
+              ? `Synchronisé à ${syncedAt}`
+              : "Canal fichier & RPC unifié"}
           </div>
         </div>
       </div>
@@ -204,7 +227,9 @@ export function A2AViewer() {
               <select
                 value={target}
                 onChange={(e) => {
-                  const next = A2A_ADMIN_TARGETS.find((entry) => entry.id === e.target.value);
+                  const next = A2A_ADMIN_TARGETS.find(
+                    (entry) => entry.id === e.target.value,
+                  );
                   if (next) setTarget(next.id);
                 }}
                 className="w-full bg-background border border-input rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary"
@@ -223,7 +248,9 @@ export function A2AViewer() {
               <select
                 value={kind}
                 onChange={(e) => {
-                  const next = A2A_ADMIN_KINDS.find((entry) => entry.id === e.target.value);
+                  const next = A2A_ADMIN_KINDS.find(
+                    (entry) => entry.id === e.target.value,
+                  );
                   if (next) setKind(next.id);
                 }}
                 className="w-full bg-background border border-input rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary"
@@ -241,7 +268,9 @@ export function A2AViewer() {
                 disabled={sending || !instruction.trim()}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-4 py-2 rounded-lg text-sm transition disabled:opacity-50"
               >
-                {sending ? "Transmission en cours..." : "🚀 Émettre l'Ordre A2A"}
+                {sending
+                  ? "Transmission en cours..."
+                  : "🚀 Émettre l'Ordre A2A"}
               </button>
             </div>
           </div>
@@ -278,7 +307,9 @@ export function A2AViewer() {
             )}
           </h3>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Filtrer par pair :</span>
+            <span className="text-xs text-muted-foreground">
+              Filtrer par pair :
+            </span>
             <select
               value={filterPeer}
               onChange={(e) => setFilterPeer(e.target.value)}
@@ -303,7 +334,9 @@ export function A2AViewer() {
           >
             <span>
               {failure.text}
-              {loaded && syncedAt ? ` Les enveloppes affichées datent de ${syncedAt}.` : ""}
+              {loaded && syncedAt
+                ? ` Les enveloppes affichées datent de ${syncedAt}.`
+                : ""}
             </span>
             <button
               type="button"
@@ -358,15 +391,21 @@ export function A2AViewer() {
                 >
                   <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-[#79c0ff]">{env.from}</span>
+                      <span className="font-bold text-[#79c0ff]">
+                        {env.from}
+                      </span>
                       <span className="text-muted-foreground">→</span>
-                      <span className="font-bold text-[#79c0ff]/80">{env.to}</span>
+                      <span className="font-bold text-[#79c0ff]/80">
+                        {env.to}
+                      </span>
                       <span
                         className={`px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wider ${badgeStyle}`}
                       >
                         {env.kind || "?"}
                       </span>
-                      <span className="text-muted-foreground/60 text-[10px]">({env.id})</span>
+                      <span className="text-muted-foreground/60 text-[10px]">
+                        ({env.id})
+                      </span>
                     </div>
                     <span className="text-muted-foreground text-[11px]">
                       {formatEnvelopeTime(env.ts)}
@@ -374,7 +413,9 @@ export function A2AViewer() {
                   </div>
 
                   {env.topic && (
-                    <div className="font-semibold text-sm text-[#e6edf3]">{env.topic}</div>
+                    <div className="font-semibold text-sm text-[#e6edf3]">
+                      {env.topic}
+                    </div>
                   )}
 
                   {env.body && (

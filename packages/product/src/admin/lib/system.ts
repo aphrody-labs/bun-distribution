@@ -52,21 +52,41 @@ export function realSystem(env: Env = process.env): System {
     env,
     async run(argv, options = {}) {
       const [command, ...args] = argv;
-      if (!command) return { code: 127, stdout: "", stderr: "commande vide", timedOut: false };
+      if (!command)
+        return {
+          code: 127,
+          stdout: "",
+          stderr: "commande vide",
+          timedOut: false,
+        };
       let proc: ReturnType<typeof Bun.spawn>;
       try {
         proc = Bun.spawn([command, ...args], {
           windowsHide: true,
           cwd: options.cwd,
           env: { ...process.env, ...env, ...options.env },
-          stdin: options.input === undefined ? (options.inherit ? "inherit" : "ignore") : "pipe",
+          stdin:
+            options.input === undefined
+              ? options.inherit
+                ? "inherit"
+                : "ignore"
+              : "pipe",
           stdout: options.inherit ? "inherit" : "pipe",
           stderr: options.inherit ? "inherit" : "pipe",
         });
       } catch (error) {
-        return { code: 127, stdout: "", stderr: (error as Error).message, timedOut: false };
+        return {
+          code: 127,
+          stdout: "",
+          stderr: (error as Error).message,
+          timedOut: false,
+        };
       }
-      if (options.input !== undefined && proc.stdin && typeof proc.stdin !== "number") {
+      if (
+        options.input !== undefined &&
+        proc.stdin &&
+        typeof proc.stdin !== "number"
+      ) {
         proc.stdin.write(options.input);
         await proc.stdin.end();
       }
@@ -99,7 +119,9 @@ export function realSystem(env: Env = process.env): System {
       }),
     async httpGet(url, timeoutMs) {
       try {
-        const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+        const res = await fetch(url, {
+          signal: AbortSignal.timeout(timeoutMs),
+        });
         return { status: res.status, body: (await res.text()).slice(0, 4096) };
       } catch {
         return undefined;
@@ -127,7 +149,9 @@ export interface FakeSystem extends System {
   free: number | undefined;
   handlers: {
     match: string | RegExp;
-    result: Partial<RunResult> | ((argv: string[], options: RunOptions) => Partial<RunResult>);
+    result:
+      | Partial<RunResult>
+      | ((argv: string[], options: RunOptions) => Partial<RunResult>);
   }[];
 }
 
@@ -153,10 +177,17 @@ export function fakeSystem(
             : handler.match.test(line);
         if (!hit) continue;
         const partial =
-          typeof handler.result === "function" ? handler.result(argv, options) : handler.result;
+          typeof handler.result === "function"
+            ? handler.result(argv, options)
+            : handler.result;
         return { code: 0, stdout: "", stderr: "", timedOut: false, ...partial };
       }
-      return { code: 127, stdout: "", stderr: `non prévu : ${line}`, timedOut: false };
+      return {
+        code: 127,
+        stdout: "",
+        stderr: `non prévu : ${line}`,
+        timedOut: false,
+      };
     },
     which: (name) => fake.tools[name],
     tcpOpen: async (host, port) => fake.open.has(`${host}:${port}`),

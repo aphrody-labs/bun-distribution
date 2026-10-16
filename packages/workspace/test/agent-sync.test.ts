@@ -13,7 +13,9 @@ test("wrong kernel domains stop before conversation ingestion", async () => {
     },
     close() {},
   };
-  await expect(syncAgentPass(client, "aphrody", true)).rejects.toThrow("domain differs");
+  await expect(syncAgentPass(client, "aphrody", true)).rejects.toThrow(
+    "domain differs",
+  );
   expect(tools).toEqual(["nu_eval"]);
 });
 
@@ -31,7 +33,9 @@ test("native sync publishes counters, preserves memory mode and omits private se
             ),
             state_path: "/private/state",
             records_ingested: 12,
-            sessions: [{ title: "private conversation", text: "private content" }],
+            sessions: [
+              { title: "private conversation", text: "private content" },
+            ],
             memory: { records_fed: 4 },
             issues: [],
           });
@@ -39,7 +43,10 @@ test("native sync publishes counters, preserves memory mode and omits private se
     close() {},
   };
   const result = await syncAgentPass(client, "aphrody", true);
-  expect(calls[1]).toEqual(["sync_external_agents", { live: true, memory: true }]);
+  expect(calls[1]).toEqual([
+    "sync_external_agents",
+    { live: true, memory: true },
+  ]);
   expect(result.records_ingested).toBe(12);
   expect(result.memory.records_fed).toBe(4);
   expect(JSON.stringify(result)).not.toContain("private conversation");
@@ -49,12 +56,18 @@ test("native sync publishes counters, preserves memory mode and omits private se
 test("logical MCP errors and unexpected stores remain failed passes", async () => {
   const client: SyncClient = {
     async call(tool) {
-      return tool === "nu_eval" ? { value: "aphrody" } : { error: "sync failed" };
+      return tool === "nu_eval"
+        ? { value: "aphrody" }
+        : { error: "sync failed" };
     },
     close() {},
   };
-  await expect(syncAgentPass(client, "aphrody", true)).rejects.toThrow("sync failed");
+  await expect(syncAgentPass(client, "aphrody", true)).rejects.toThrow(
+    "sync failed",
+  );
   client.call = async (tool) =>
     tool === "nu_eval" ? { value: "aphrody" } : { output_dir: "/other-domain" };
-  await expect(syncAgentPass(client, "aphrody", true)).rejects.toThrow("selected domain store");
+  await expect(syncAgentPass(client, "aphrody", true)).rejects.toThrow(
+    "selected domain store",
+  );
 });

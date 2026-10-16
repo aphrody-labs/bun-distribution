@@ -13,7 +13,10 @@ import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
 import { publicFontUrl, renderPublicStylesheet } from "@aphrody/m3-fonts";
 import { prunePublicFontCopies } from "./public-assets-package";
-import { canonicalBunInputs, productBuildContext } from "@aphrody/product/build-inputs";
+import {
+  canonicalBunInputs,
+  productBuildContext,
+} from "@aphrody/product/build-inputs";
 const WEBOS_WASM_NAME = "aphrody_webos_wasm_bg.wasm";
 const escape = (value: string) =>
   value.replace(/[&<>"']/g, (character) => `&#${character.charCodeAt(0)};`);
@@ -21,7 +24,8 @@ const escape = (value: string) =>
 if (import.meta.main) {
   const context = productBuildContext();
   const config = await loadM3Config(import.meta.dir);
-  if (!config.tauri) throw new Error("app-ui: m3.config.ts must set tauri.uiDist");
+  if (!config.tauri)
+    throw new Error("app-ui: m3.config.ts must set tauri.uiDist");
   const dev = process.argv.includes("--dev");
   const { values } = parseArgs({
     args: process.argv.slice(2),
@@ -31,13 +35,19 @@ if (import.meta.main) {
       "public-assets": { type: "boolean" },
     },
   });
-  const tauri = values.out ? { ...config.tauri, uiDist: resolve(values.out) } : config.tauri;
+  const tauri = values.out
+    ? { ...config.tauri, uiDist: resolve(values.out) }
+    : config.tauri;
   if (values["public-assets"] && !values.out)
-    throw new Error("--public-assets requires an isolated --out artifact directory");
+    throw new Error(
+      "--public-assets requires an isolated --out artifact directory",
+    );
   const assets = values["public-assets"]
-    ? ((await Bun.file(
-        context.publicAssets,
-      ).json()) as { schemaVersion: number; baseUrl: string; localFontFallbacks: string[] })
+    ? ((await Bun.file(context.publicAssets).json()) as {
+        schemaVersion: number;
+        baseUrl: string;
+        localFontFallbacks: string[];
+      })
     : undefined;
   if (
     assets &&
@@ -46,15 +56,27 @@ if (import.meta.main) {
   )
     throw new Error("Unqualified public assets configuration");
   const bunCheckout = context.bunCheckout;
-  const sourceRevision = Bun.spawnSync(["git", "rev-parse", "HEAD"], { cwd: bunCheckout });
+  const sourceRevision = Bun.spawnSync(["git", "rev-parse", "HEAD"], {
+    cwd: bunCheckout,
+  });
   if (sourceRevision.exitCode !== 0)
     throw new Error("Canonical Bun checkout must have a source revision");
   const bunRevision = sourceRevision.stdout.toString().trim();
-  if (Bun.env.APP_UI_BUN_REVISION && Bun.env.APP_UI_BUN_REVISION !== bunRevision)
-    throw new Error("Selected Bun revision must match the canonical checkout HEAD");
+  if (
+    Bun.env.APP_UI_BUN_REVISION &&
+    Bun.env.APP_UI_BUN_REVISION !== bunRevision
+  )
+    throw new Error(
+      "Selected Bun revision must match the canonical checkout HEAD",
+    );
   const docsFile = canonicalBunInputs(bunCheckout, bunRevision).docsFile;
-  if (Bun.env.APP_UI_DOCS_CATALOG && resolve(Bun.env.APP_UI_DOCS_CATALOG) !== resolve(docsFile))
-    throw new Error("APP_UI_DOCS_CATALOG must match the canonical Bun transfer receipt");
+  if (
+    Bun.env.APP_UI_DOCS_CATALOG &&
+    resolve(Bun.env.APP_UI_DOCS_CATALOG) !== resolve(docsFile)
+  )
+    throw new Error(
+      "APP_UI_DOCS_CATALOG must match the canonical Bun transfer receipt",
+    );
   const started = performance.now();
   const result = await buildM3({
     entry: config.entry,
@@ -78,9 +100,14 @@ if (import.meta.main) {
   );
   if (!(await Bun.file(webosWasm).exists()))
     throw new Error(
-      "missing " + webosWasm + ": run `bun run build:wasm` in packages/web/webos-wasm",
+      "missing " +
+        webosWasm +
+        ": run `bun run build:wasm` in packages/web/webos-wasm",
     );
-  await Bun.write(join(result.outdir, "wasm", WEBOS_WASM_NAME), Bun.file(webosWasm));
+  await Bun.write(
+    join(result.outdir, "wasm", WEBOS_WASM_NAME),
+    Bun.file(webosWasm),
+  );
   const bytes = result.outputs.reduce((sum, output) => sum + output.bytes, 0);
   let shell = await Bun.file(`${result.outdir}/index.html`).text();
   if (values.out) {
@@ -108,7 +135,12 @@ if (import.meta.main) {
     await Bun.write(
       join(result.outdir, "fonts.css"),
       ["core", "jp"]
-        .map((sheet) => renderPublicStylesheet(assets.baseUrl, sheet as "core" | "jp" | "symbols"))
+        .map((sheet) =>
+          renderPublicStylesheet(
+            assets.baseUrl,
+            sheet as "core" | "jp" | "symbols",
+          ),
+        )
         .join("\n"),
     );
     await Bun.write(
@@ -128,22 +160,27 @@ if (import.meta.main) {
     createElement(
       MemoryRouter,
       null,
-      createElement(ProductSearchHome, { publicPreview: true, assetBase: assets?.baseUrl }),
+      createElement(ProductSearchHome, {
+        publicPreview: true,
+        assetBase: assets?.baseUrl,
+      }),
     ),
   ).replaceAll(
     /(?<![:\w/\\])(?:[A-Za-z]:[\\/]|\/)[^"<>]*?([\\/])(?:icon-(?:64|128|192)\.png|spritesheet\.webp)/g,
     (path) => `./fonts/${path.split(/[\\/]/).pop()}`,
   );
   await Promise.all(
-    ["icon-64.png", "icon-128.png", "icon-192.png", "spritesheet.webp"].map(async (name) => {
-      const source = join(
-        import.meta.dir,
-        "../identity",
-        name === "spritesheet.webp" ? "dist" : "assets",
-        name,
-      );
-      await Bun.write(join(result.outdir, "fonts", name), Bun.file(source));
-    }),
+    ["icon-64.png", "icon-128.png", "icon-192.png", "spritesheet.webp"].map(
+      async (name) => {
+        const source = join(
+          import.meta.dir,
+          "../identity",
+          name === "spritesheet.webp" ? "dist" : "assets",
+          name,
+        );
+        await Bun.write(join(result.outdir, "fonts", name), Bun.file(source));
+      },
+    ),
   );
   const publicHome = shell
     .replace(
@@ -153,8 +190,12 @@ if (import.meta.main) {
     .replace('<div id="root"></div>', `<div id="root">${home}</div>`);
   await Bun.write(`${result.outdir}/public-home.html`, publicHome);
   const docsBytes = await Bun.file(docsFile).text();
-  const docs: Array<{ id: string; title: string; summary: string; content: string }> =
-    JSON.parse(docsBytes);
+  const docs: Array<{
+    id: string;
+    title: string;
+    summary: string;
+    content: string;
+  }> = JSON.parse(docsBytes);
   await Bun.write(join(result.outdir, "public-docs.json"), docsBytes);
   await Promise.all(
     docs.map(async (article) => {
@@ -173,7 +214,10 @@ if (import.meta.main) {
           '<div id="root"></div>',
           `<div id="root"><main class="min-h-screen bg-surface p-6 text-on-surface"><nav class="mx-auto mb-8 flex max-w-3xl flex-wrap gap-6"><a class="text-primary underline" href="/">Aphrody</a><a class="text-primary underline" href="/docs">Bun documentation</a><a class="text-primary underline" href="/os">Open Aphrody OS</a></nav><article class="mx-auto max-w-3xl space-y-6 text-body-large">${prose}</article></main></div>`,
         );
-      await Bun.write(join(result.outdir, "public-docs", article.id + ".html"), document);
+      await Bun.write(
+        join(result.outdir, "public-docs", article.id + ".html"),
+        document,
+      );
     }),
   );
   console.log(

@@ -2,7 +2,10 @@ import { Command, type CommandResult } from "../../base-command";
 import type { SceneTracks, TrackType } from "../../../timeline/types";
 import { generateUUID } from "../../../utils/id";
 import { EditorCore } from "../../../core";
-import { buildEmptyTrack, getDefaultInsertIndexForTrack } from "../../../timeline/placement";
+import {
+  buildEmptyTrack,
+  getDefaultInsertIndexForTrack,
+} from "../../../timeline/placement";
 
 export class AddTrackCommand extends Command {
   private trackId: string;

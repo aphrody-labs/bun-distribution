@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Canonical Aphrody surfaces
 
 Owner request, 2026-10-09: serve the real app-ui and M3 packages across sites,

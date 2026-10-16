@@ -19,11 +19,23 @@ interface RatioOption {
 }
 
 const RATIO_OPTIONS: RatioOption[] = [
-  { ratio: CameraAspectRatio.HORIZONTAL_16_9, label: "16:9", proportions: [16, 9] },
-  { ratio: CameraAspectRatio.HORIZONTAL_3_2, label: "3:2", proportions: [3, 2] },
+  {
+    ratio: CameraAspectRatio.HORIZONTAL_16_9,
+    label: "16:9",
+    proportions: [16, 9],
+  },
+  {
+    ratio: CameraAspectRatio.HORIZONTAL_3_2,
+    label: "3:2",
+    proportions: [3, 2],
+  },
   { ratio: CameraAspectRatio.SQUARE_1_1, label: "1:1", proportions: [1, 1] },
   { ratio: CameraAspectRatio.VERTICAL_2_3, label: "2:3", proportions: [2, 3] },
-  { ratio: CameraAspectRatio.VERTICAL_9_16, label: "9:16", proportions: [9, 16] },
+  {
+    ratio: CameraAspectRatio.VERTICAL_9_16,
+    label: "9:16",
+    proportions: [9, 16],
+  },
 ];
 
 export const AspectRatioMenu = () => {

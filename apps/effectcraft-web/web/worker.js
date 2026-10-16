@@ -24,7 +24,9 @@ self.onmessage = (e) => {
   const m = e.data;
   if (m.type === "init") {
     ready = (async () => {
-      await init({ module_or_path: m.module ?? new URL("effectcraft_web_bg.wasm", m.base) });
+      await init({
+        module_or_path: m.module ?? new URL("effectcraft_web_bg.wasm", m.base),
+      });
       ec.workerInit();
       if (m.frames) await ec.workerFrameInit(!!m.gpu);
       else await ec.workerJobInit(!!m.gpu);
@@ -32,10 +34,21 @@ self.onmessage = (e) => {
     })();
     // A failed start is re-raised outside the promise so the page's `onerror` sees it: its job
     // fails instead of waiting for "ready" forever (#216).
-    ready.catch((err) => setTimeout(() => { throw err; }));
+    ready.catch((err) =>
+      setTimeout(() => {
+        throw err;
+      }),
+    );
     return;
   }
   // A failure (a panic) is re-raised outside the queue so the page's `onerror` sees it, as
   // before the queue: the page then drops the worker.
-  queue = queue.then(() => ready).then(() => handle(m)).catch((err) => setTimeout(() => { throw err; }));
+  queue = queue
+    .then(() => ready)
+    .then(() => handle(m))
+    .catch((err) =>
+      setTimeout(() => {
+        throw err;
+      }),
+    );
 };

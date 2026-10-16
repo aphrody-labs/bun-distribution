@@ -1,5 +1,8 @@
 import { useEffect, useMemo } from "react";
-import { useResolvedKeybinds, type KeybindContext } from "@storyteller/keybinds";
+import {
+  useResolvedKeybinds,
+  type KeybindContext,
+} from "@storyteller/keybinds";
 import type Editor from "../engine/editor";
 import { buildKeymap, dispatchBinding } from "../engine/keymap";
 import { usePageSceneStore } from "../PageSceneStore";

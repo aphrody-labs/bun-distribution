@@ -8,13 +8,24 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { Badge } from "../src/Badge";
 import { Banner } from "../src/Banner";
 import { Button } from "../src/Button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../src/Card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../src/Card";
 import { CircleButton } from "../src/CircleButton";
 import { CircleButtonGroup } from "../src/CircleButtonGroup";
 import { CircularProgress } from "../src/CircularProgress";
 import { Divider } from "../src/Divider";
 import { FilterButton } from "../src/FilterButton";
-import { InfoBanner, InfoBannerSubtext, InfoBannerText } from "../src/InfoBanner";
+import {
+  InfoBanner,
+  InfoBannerSubtext,
+  InfoBannerText,
+} from "../src/InfoBanner";
 import { modifierSymbols, keySymbols, ModifierKeys } from "../src/keys";
 import { Card as LayoutCard, GridLayout } from "../src/Layout";
 import { Loader } from "../src/Loader";
@@ -33,7 +44,9 @@ import { m3FocusRing, tw } from "../src/utils";
 
 const SPACEUI_VOCABULARY = /\b(bg|text|border)-(app|ink|sidebar|menu|accent)\b/;
 
-const Glyph = (p: { className?: string }) => <svg data-glyph className={p.className} />;
+const Glyph = (p: { className?: string }) => (
+  <svg data-glyph className={p.className} />
+);
 
 /** Render, and check the markup is free of SpaceUI vocabulary and hard-coded white text. */
 function render(element: ReactElement): string {
@@ -68,23 +81,33 @@ describe("Button", () => {
     expect(classesOf(render(<Button variant="outlined">x</Button>))).toContain(
       "border-outline-variant",
     );
-    expect(classesOf(render(<Button variant="text">x</Button>))).toContain("text-primary");
+    expect(classesOf(render(<Button variant="text">x</Button>))).toContain(
+      "text-primary",
+    );
     const elevated = classesOf(render(<Button variant="elevated">x</Button>));
     expect(elevated).toContain("bg-surface-container-low");
     expect(elevated).toContain("shadow-md3-1");
   });
 
   test("SpaceUI variants map onto the M3 looks", () => {
-    expect(classesOf(render(<Button variant="accent">x</Button>))).toContain("bg-primary");
-    expect(classesOf(render(<Button>x</Button>))).toContain("bg-secondary-container");
+    expect(classesOf(render(<Button variant="accent">x</Button>))).toContain(
+      "bg-primary",
+    );
+    expect(classesOf(render(<Button>x</Button>))).toContain(
+      "bg-secondary-container",
+    );
     expect(classesOf(render(<Button variant="gray">x</Button>))).toContain(
       "text-on-secondary-container",
     );
     expect(classesOf(render(<Button variant="outline">x</Button>))).toContain(
       "border-outline-variant",
     );
-    expect(classesOf(render(<Button variant="subtle">x</Button>))).toContain("text-primary");
-    expect(classesOf(render(<Button variant="dotted">x</Button>))).toContain("border-dashed");
+    expect(classesOf(render(<Button variant="subtle">x</Button>))).toContain(
+      "text-primary",
+    );
+    expect(classesOf(render(<Button variant="dotted">x</Button>))).toContain(
+      "border-dashed",
+    );
     const colored = classesOf(
       render(
         <Button variant="colored" className="bg-tertiary">
@@ -115,8 +138,12 @@ describe("Button", () => {
   });
 
   test("rounding, loading and links keep working", () => {
-    expect(classesOf(render(<Button rounding="left">x</Button>))).toContain("rounded-l-full");
-    expect(classesOf(render(<Button rounding="none">x</Button>))).toContain("rounded-none");
+    expect(classesOf(render(<Button rounding="left">x</Button>))).toContain(
+      "rounded-l-full",
+    );
+    expect(classesOf(render(<Button rounding="none">x</Button>))).toContain(
+      "rounded-none",
+    );
     expect(render(<Button loading>x</Button>)).toContain("disabled");
     const link = render(
       <Button href="/docs" variant="accent">
@@ -142,15 +169,17 @@ describe("CircleButton", () => {
     expect(classesOf(render(<CircleButton icon="add" active />))).toContain(
       "bg-secondary-container",
     );
-    const accent = classesOf(render(<CircleButton icon="add" active activeAccent />));
+    const accent = classesOf(
+      render(<CircleButton icon="add" active activeAccent />),
+    );
     expect(accent).toContain("bg-primary");
     expect(accent).toContain("text-on-primary");
-    expect(classesOf(render(<CircleButton variant="standard" icon="add" />))).toContain(
-      "bg-transparent",
-    );
-    expect(classesOf(render(<CircleButton variant="solid" icon="add" />))).toContain(
-      "border-outline-variant",
-    );
+    expect(
+      classesOf(render(<CircleButton variant="standard" icon="add" />)),
+    ).toContain("bg-transparent");
+    expect(
+      classesOf(render(<CircleButton variant="solid" icon="add" />)),
+    ).toContain("border-outline-variant");
   });
 
   test("icon components and labels still render", () => {
@@ -234,7 +263,9 @@ describe("chips and pickers", () => {
     expect(classesOf(html)).toContain("h-10");
     expect(classesOf(html)).toContain("rounded-full");
     expect(html).toContain("expand_more");
-    expect(render(<SelectPill hideCaret>x</SelectPill>)).not.toContain("expand_more");
+    expect(render(<SelectPill hideCaret>x</SelectPill>)).not.toContain(
+      "expand_more",
+    );
     expect(render(<SelectPill variant="sidebar">x</SelectPill>)).toContain(
       "bg-surface-container-low",
     );
@@ -293,11 +324,15 @@ describe("status", () => {
     expect(classesOf(render(<Badge variant="warning">!</Badge>))).toContain(
       "text-on-warning-container",
     );
-    expect(classesOf(render(<Badge variant="error">x</Badge>))).toContain("bg-error-container");
+    expect(classesOf(render(<Badge variant="error">x</Badge>))).toContain(
+      "bg-error-container",
+    );
     expect(classesOf(render(<Badge variant="destructive">x</Badge>))).toContain(
       "bg-error-container",
     );
-    expect(classesOf(render(<Badge variant="accent">x</Badge>))).toContain("bg-primary-container");
+    expect(classesOf(render(<Badge variant="accent">x</Badge>))).toContain(
+      "bg-primary-container",
+    );
     const badge = classesOf(
       render(
         <Badge variant="badge" size="sm">
@@ -336,7 +371,9 @@ describe("status", () => {
     expect(classesOf(html)).toContain("bg-error-container");
     expect(classesOf(html)).toContain("text-on-error-container");
     expect(html).toContain(">warning</span>");
-    expect(render(<InfoBanner icon={<i>i</i>}>x</InfoBanner>)).toContain("bg-primary-container");
+    expect(render(<InfoBanner icon={<i>i</i>}>x</InfoBanner>)).toContain(
+      "bg-primary-container",
+    );
   });
 });
 
@@ -357,21 +394,33 @@ describe("containment and text", () => {
     expect(c).toContain("bg-surface-container-low");
     expect(c).toContain("shadow-md3-1");
     expect(html).toContain("text-title-large");
-    expect(classesOf(render(<Card variant="filled" />))).toContain("bg-surface-container-highest");
+    expect(classesOf(render(<Card variant="filled" />))).toContain(
+      "bg-surface-container-highest",
+    );
     const outlined = classesOf(render(<Card variant="outlined" />));
     expect(outlined).toContain("bg-surface");
     expect(outlined).toContain("border-outline-variant");
-    expect(classesOf(render(<Card variant="dark" />))).toContain("border-outline-variant");
+    expect(classesOf(render(<Card variant="dark" />))).toContain(
+      "border-outline-variant",
+    );
   });
 
   test("Layout card and grid", () => {
-    expect(classesOf(render(<LayoutCard>x</LayoutCard>))).toContain("border-outline-variant");
-    expect(classesOf(render(<GridLayout className="extra" />))).toContain("extra");
+    expect(classesOf(render(<LayoutCard>x</LayoutCard>))).toContain(
+      "border-outline-variant",
+    );
+    expect(classesOf(render(<GridLayout className="extra" />))).toContain(
+      "extra",
+    );
   });
 
   test("Typography maps onto the typescale", () => {
-    expect(classesOf(render(<ScreenHeading>S</ScreenHeading>))).toContain("text-headline-small");
-    expect(classesOf(render(<CategoryHeading>C</CategoryHeading>))).toContain("text-title-small");
+    expect(classesOf(render(<ScreenHeading>S</ScreenHeading>))).toContain(
+      "text-headline-small",
+    );
+    expect(classesOf(render(<CategoryHeading>C</CategoryHeading>))).toContain(
+      "text-title-small",
+    );
   });
 
   test("Divider: 1 dp outline-variant", () => {
@@ -379,7 +428,9 @@ describe("containment and text", () => {
     expect(c).toContain("bg-outline-variant");
     expect(c).toContain("h-px");
     expect(c).toContain("my-2");
-    expect(classesOf(render(<Divider orientation="vertical" />))).toContain("w-px");
+    expect(classesOf(render(<Divider orientation="vertical" />))).toContain(
+      "w-px",
+    );
   });
 
   test("Shortcut: key chip", () => {
@@ -395,7 +446,10 @@ describe("containment and text", () => {
     expect(modifierSymbols[ModifierKeys.Meta].macOS).toBe("⌘");
     expect(keySymbols.Tab?.Other).toBe("⭾");
     const Box = tw.div`bg-surface`;
-    expect(classesOf(render(<Box className="p-2" />))).toEqual(["bg-surface", "p-2"]);
+    expect(classesOf(render(<Box className="p-2" />))).toEqual([
+      "bg-surface",
+      "p-2",
+    ]);
     expect(m3FocusRing).toContain("focus-visible:outline-3");
   });
 });
@@ -407,7 +461,9 @@ describe("progress", () => {
     expect(html).toContain("text-primary");
     expect(html).toContain("animateTransform");
     expect(html).toContain("size-7");
-    expect(render(<Loader color="red" className="size-4" />)).toContain('stroke="red"');
+    expect(render(<Loader color="red" className="size-4" />)).toContain(
+      'stroke="red"',
+    );
   });
 
   test("ProgressBar: 4 dp track, primary indicator, all prop shapes", () => {
@@ -431,7 +487,12 @@ describe("progress", () => {
     expect(html).toContain('stroke-width="4"');
     expect(html).toContain('aria-valuenow="50"');
     const custom = render(
-      <CircularProgress radius={10} progress={10} strokeColor="red" strokeWidth={2} />,
+      <CircularProgress
+        radius={10}
+        progress={10}
+        strokeColor="red"
+        strokeWidth={2}
+      />,
     );
     expect(custom).toContain('stroke="red"');
     expect(custom).not.toContain("stroke-primary");
@@ -440,7 +501,9 @@ describe("progress", () => {
 
 describe("navigation", () => {
   test("SpaceItem: drawer item with full-shape active indicator", () => {
-    const html = render(<SpaceItem label="Library" icon="folder" active right={<span>3</span>} />);
+    const html = render(
+      <SpaceItem label="Library" icon="folder" active right={<span>3</span>} />,
+    );
     const c = classesOf(html);
     expect(c).toContain("h-10");
     expect(c).toContain("rounded-full");
@@ -448,13 +511,21 @@ describe("navigation", () => {
     expect(c).toContain("text-on-secondary-container");
     expect(html).toContain(">folder</span>");
     expect(html).toContain('aria-current="page"');
-    expect(classesOf(render(<SpaceItem label="x" />))).toContain("text-on-surface-variant");
+    expect(classesOf(render(<SpaceItem label="x" />))).toContain(
+      "text-on-surface-variant",
+    );
   });
 
   test("SpaceItem: image URL, color dot, iconElement", () => {
-    expect(render(<SpaceItem label="x" icon="/img/a.png" />)).toContain('<img src="/img/a.png"');
-    expect(render(<SpaceItem label="x" color="#f00" />)).toContain("background-color:#f00");
-    expect(render(<SpaceItem label="x" iconElement={<b>i</b>} />)).toContain("<b>i</b>");
+    expect(render(<SpaceItem label="x" icon="/img/a.png" />)).toContain(
+      '<img src="/img/a.png"',
+    );
+    expect(render(<SpaceItem label="x" color="#f00" />)).toContain(
+      "background-color:#f00",
+    );
+    expect(render(<SpaceItem label="x" iconElement={<b>i</b>} />)).toContain(
+      "<b>i</b>",
+    );
   });
 
   test("TabBar: primary tabs with a 3 dp primary indicator", () => {

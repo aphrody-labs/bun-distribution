@@ -120,7 +120,9 @@ export const GalleryRow = memo(function GalleryRow({
       )}
 
       {/* Thumbnail */}
-      <div className={`relative size-[100px] shrink-0 overflow-hidden bg-ui-controls/40 leading-none ${lastViewed ? "ring-2 ring-primary-400/50" : ""}`}>
+      <div
+        className={`relative size-[100px] shrink-0 overflow-hidden bg-ui-controls/40 leading-none ${lastViewed ? "ring-2 ring-primary-400/50" : ""}`}
+      >
         <GalleryThumbnail
           thumbnail={item.thumbnail}
           stillThumbnail={item.stillThumbnail}

@@ -3,8 +3,9 @@
 export function publicAssetsBase(): string | undefined {
   return typeof document === "undefined"
     ? undefined
-    : document.querySelector('meta[name="aphrody-assets-base"]')?.getAttribute("content") ||
-        undefined;
+    : document
+        .querySelector('meta[name="aphrody-assets-base"]')
+        ?.getAttribute("content") || undefined;
 }
 
 export function publicAssetUrl(path: string, base: string): string {
@@ -23,13 +24,19 @@ export function publicAssetUrl(path: string, base: string): string {
     path.includes("\\") ||
     path
       .split("/")
-      .some((part) => !part || part === "." || part === ".." || !/^[\w.-]+$/.test(part))
+      .some(
+        (part) =>
+          !part || part === "." || part === ".." || !/^[\w.-]+$/.test(part),
+      )
   )
     throw new Error("Invalid public asset path");
   return new URL(path, origin.href.replace(/\/?$/, "/")).href;
 }
 
-export function publicPetAtlas(localUrl: string, base = publicAssetsBase()): string {
+export function publicPetAtlas(
+  localUrl: string,
+  base = publicAssetsBase(),
+): string {
   return base ? publicAssetUrl("pet/spritesheet.webp", base) : localUrl;
 }
 

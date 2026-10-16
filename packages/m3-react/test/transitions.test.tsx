@@ -3,7 +3,10 @@ import * as React from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { flushSync } from "react-dom";
 import { Collapse, Fade, Grow, Slide, Zoom } from "../transitions/index.js";
-import { isVisible, resolveTimeout } from "../transitions/use-transition-state.js";
+import {
+  isVisible,
+  resolveTimeout,
+} from "../transitions/use-transition-state.js";
 
 // --- Pure helpers (no DOM) -------------------------------------------------
 

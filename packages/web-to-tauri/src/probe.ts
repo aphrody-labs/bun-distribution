@@ -50,12 +50,15 @@ const DEFAULTS = {
   maxHtmlBytes: 2_000_000,
   maxScripts: 12,
   maxScriptBytes: 1_500_000,
-  userAgent: "Mozilla/5.0 (compatible; aphrody-web-to-tauri/1; +https://github.com/aphrody-code)",
+  userAgent:
+    "Mozilla/5.0 (compatible; aphrody-web-to-tauri/1; +https://github.com/aphrody-code)",
 } as const;
 
 /** Adds `https://` to a bare host and rejects every scheme but http(s). */
 export function normalizeTarget(input: string): URL {
-  const text = /^[a-z][a-z0-9+.-]*:\/\//i.test(input) ? input : `https://${input}`;
+  const text = /^[a-z][a-z0-9+.-]*:\/\//i.test(input)
+    ? input
+    : `https://${input}`;
   let url: URL;
   try {
     url = new URL(text);
@@ -63,7 +66,9 @@ export function normalizeTarget(input: string): URL {
     throw new ProbeError(`not a URL: ${input}`);
   }
   if (url.protocol !== "http:" && url.protocol !== "https:") {
-    throw new ProbeError(`only http and https targets can be probed, got ${url.protocol}`);
+    throw new ProbeError(
+      `only http and https targets can be probed, got ${url.protocol}`,
+    );
   }
   return url;
 }
@@ -143,8 +148,10 @@ async function readHtml(html: string): Promise<HtmlFacts> {
     .on("meta", {
       element(el) {
         const name = (el.getAttribute("name") ?? "").toLowerCase();
-        if (name === "description") facts.description = el.getAttribute("content");
-        if (name === "theme-color") facts.themeColor ??= el.getAttribute("content");
+        if (name === "description")
+          facts.description = el.getAttribute("content");
+        if (name === "theme-color")
+          facts.themeColor ??= el.getAttribute("content");
       },
     })
     .on("link", {
@@ -181,7 +188,8 @@ async function readHtml(html: string): Promise<HtmlFacts> {
       element(el) {
         const href = el.getAttribute("href");
         if (href) facts.links.push(href);
-        if ((el.getAttribute("target") ?? "").toLowerCase() === "_blank") facts.popupLinks += 1;
+        if ((el.getAttribute("target") ?? "").toLowerCase() === "_blank")
+          facts.popupLinks += 1;
       },
     })
     .on("form[action]", {
@@ -220,7 +228,10 @@ function resolve(value: string, base: URL): URL | null {
 }
 
 /** Probes a deployed site. Never follows more than `maxRedirects`, never sends cookies or credentials. */
-export async function probeUrl(input: string, options: ProbeOptions = {}): Promise<SiteProbe> {
+export async function probeUrl(
+  input: string,
+  options: ProbeOptions = {},
+): Promise<SiteProbe> {
   const opts = { ...DEFAULTS, ...options };
   const doFetch = options.fetch ?? fetch;
   const warnings: string[] = [];
@@ -230,7 +241,11 @@ export async function probeUrl(input: string, options: ProbeOptions = {}): Promi
     return doFetch(target, {
       redirect: "manual",
       signal,
-      headers: { "user-agent": opts.userAgent, accept, "accept-language": "en" },
+      headers: {
+        "user-agent": opts.userAgent,
+        accept,
+        "accept-language": "en",
+      },
     });
   };
 
@@ -239,7 +254,10 @@ export async function probeUrl(input: string, options: ProbeOptions = {}): Promi
   let response: Response | undefined;
   for (let hop = 0; hop <= opts.maxRedirects; hop += 1) {
     try {
-      response = await request(current, "text/html,application/xhtml+xml,*/*;q=0.8");
+      response = await request(
+        current,
+        "text/html,application/xhtml+xml,*/*;q=0.8",
+      );
     } catch (error) {
       throw new ProbeError(
         `${current.href} is unreachable: ${error instanceof Error ? error.message : error}`,
@@ -252,7 +270,9 @@ export async function probeUrl(input: string, options: ProbeOptions = {}): Promi
       try {
         current = new URL(location, current);
       } catch {
-        throw new ProbeError(`invalid redirect target from ${current.href}: ${location}`);
+        throw new ProbeError(
+          `invalid redirect target from ${current.href}: ${location}`,
+        );
       }
       continue;
     }
@@ -262,7 +282,8 @@ export async function probeUrl(input: string, options: ProbeOptions = {}): Promi
   if (response.status >= 300 && response.status < 400) {
     warnings.push(`redirect chain longer than ${opts.maxRedirects}`);
   }
-  if (response.status >= 400) warnings.push(`start page answered HTTP ${response.status}`);
+  if (response.status >= 400)
+    warnings.push(`start page answered HTTP ${response.status}`);
 
   const finalUrl = current;
   const headers = headerRecord(response.headers);
@@ -272,7 +293,9 @@ export async function probeUrl(input: string, options: ProbeOptions = {}): Promi
   const html = isHtml ? await readCapped(response, opts.maxHtmlBytes) : "";
   if (!isHtml) {
     await response.body?.cancel().catch(() => undefined);
-    warnings.push(`start page is ${contentType || "not HTML"}; nothing to inspect`);
+    warnings.push(
+      `start page is ${contentType || "not HTML"}; nothing to inspect`,
+    );
   }
   const facts = html ? await readHtml(html) : await readHtml("");
 
@@ -282,8 +305,14 @@ export async function probeUrl(input: string, options: ProbeOptions = {}): Promi
     const manifestUrl = resolve(facts.manifestHref, finalUrl);
     if (manifestUrl) {
       try {
-        const res = await request(manifestUrl, "application/manifest+json,application/json");
-        const raw = JSON.parse(await readCapped(res, 200_000)) as Record<string, unknown>;
+        const res = await request(
+          manifestUrl,
+          "application/manifest+json,application/json",
+        );
+        const raw = JSON.parse(await readCapped(res, 200_000)) as Record<
+          string,
+          unknown
+        >;
         const icons = Array.isArray(raw.icons) ? raw.icons : [];
         manifest = {
           url: manifestUrl.href,
@@ -292,8 +321,12 @@ export async function probeUrl(input: string, options: ProbeOptions = {}): Promi
           startUrl: typeof raw.start_url === "string" ? raw.start_url : null,
           scope: typeof raw.scope === "string" ? raw.scope : null,
           display: typeof raw.display === "string" ? raw.display : null,
-          themeColor: typeof raw.theme_color === "string" ? raw.theme_color : null,
-          backgroundColor: typeof raw.background_color === "string" ? raw.background_color : null,
+          themeColor:
+            typeof raw.theme_color === "string" ? raw.theme_color : null,
+          backgroundColor:
+            typeof raw.background_color === "string"
+              ? raw.background_color
+              : null,
           icons: icons
             .filter(
               (icon): icon is Record<string, unknown> =>
@@ -307,9 +340,11 @@ export async function probeUrl(input: string, options: ProbeOptions = {}): Promi
               sizes: typeof icon.sizes === "string" ? icon.sizes : null,
               type: typeof icon.type === "string" ? icon.type : null,
             })),
-          hasShareTarget: typeof raw.share_target === "object" && raw.share_target !== null,
+          hasShareTarget:
+            typeof raw.share_target === "object" && raw.share_target !== null,
           hasProtocolHandlers:
-            Array.isArray(raw.protocol_handlers) && raw.protocol_handlers.length > 0,
+            Array.isArray(raw.protocol_handlers) &&
+            raw.protocol_handlers.length > 0,
         };
       } catch (error) {
         warnings.push(
@@ -323,7 +358,8 @@ export async function probeUrl(input: string, options: ProbeOptions = {}): Promi
   const signals: ApiSignal[] = [];
   const addSignals = (text: string, where: string) => {
     for (const id of detectApis(text)) {
-      if (!signals.some((signal) => signal.id === id)) signals.push({ id, where });
+      if (!signals.some((signal) => signal.id === id))
+        signals.push({ id, where });
     }
   };
   addSignals(html, finalUrl.href);
@@ -345,7 +381,8 @@ export async function probeUrl(input: string, options: ProbeOptions = {}): Promi
   // The links of the page: sign-in buttons are anchors.
   for (const href of facts.links) {
     const url = resolve(href, finalUrl);
-    if (url && (url.protocol === "https:" || url.protocol === "http:")) pointedAt.add(url.href);
+    if (url && (url.protocol === "https:" || url.protocol === "http:"))
+      pointedAt.add(url.href);
   }
   for (const script of facts.scripts) {
     if (script.inline) {
@@ -361,7 +398,8 @@ export async function probeUrl(input: string, options: ProbeOptions = {}): Promi
   const external = facts.scripts
     .map((script) => (script.src ? resolve(script.src, finalUrl) : null))
     .filter(
-      (url): url is URL => url !== null && (url.protocol === "https:" || url.protocol === "http:"),
+      (url): url is URL =>
+        url !== null && (url.protocol === "https:" || url.protocol === "http:"),
     );
   for (const url of external) {
     origins.add(url.origin);
@@ -400,7 +438,8 @@ export async function probeUrl(input: string, options: ProbeOptions = {}): Promi
   const links = new Set<string>();
   for (const href of facts.links) {
     const url = resolve(href, finalUrl);
-    if (!url || url.origin !== finalUrl.origin || ASSET_EXT.test(url.pathname)) continue;
+    if (!url || url.origin !== finalUrl.origin || ASSET_EXT.test(url.pathname))
+      continue;
     url.hash = "";
     links.add(`${url.pathname}${url.search}`);
   }
@@ -413,7 +452,8 @@ export async function probeUrl(input: string, options: ProbeOptions = {}): Promi
         .filter((value): value is string => Boolean(value)),
     ),
   ];
-  if (!redirectOrigins.includes(finalUrl.origin)) redirectOrigins.push(finalUrl.origin);
+  if (!redirectOrigins.includes(finalUrl.origin))
+    redirectOrigins.push(finalUrl.origin);
 
   const formUrls = facts.formActions
     .map((action) => resolve(action, finalUrl)?.href)
@@ -450,7 +490,9 @@ export async function probeUrl(input: string, options: ProbeOptions = {}): Promi
   const frameUrls = facts.frames
     .map((src) => resolve(src, finalUrl)?.href)
     .filter((href): href is string => href !== undefined);
-  const embeds = detectEmbeds([...frameUrls, ...loaded]).map(({ id, origin }) => ({ id, origin }));
+  const embeds = detectEmbeds([...frameUrls, ...loaded]).map(
+    ({ id, origin }) => ({ id, origin }),
+  );
 
   const idps = detectIdps([...pointedAt, ...frameUrls, ...formUrls]).map(
     ({ id, kind, origin }) => ({
@@ -566,7 +608,10 @@ export async function probeDirectory(dir: string): Promise<DirectoryProbe> {
   const pkgPath = join(dir, "package.json");
   if (existsSync(pkgPath)) {
     try {
-      pkg = JSON.parse(await Bun.file(pkgPath).text()) as Record<string, unknown>;
+      pkg = JSON.parse(await Bun.file(pkgPath).text()) as Record<
+        string,
+        unknown
+      >;
     } catch {
       warnings.push("package.json is not valid JSON");
     }
@@ -575,7 +620,9 @@ export async function probeDirectory(dir: string): Promise<DirectoryProbe> {
     ...(pkg.dependencies as Record<string, string> | undefined),
     ...(pkg.devDependencies as Record<string, string> | undefined),
   };
-  const frameworks = FRAMEWORK_DEPS.filter(([dep]) => dep in deps).map(([, id]) => id);
+  const frameworks = FRAMEWORK_DEPS.filter(([dep]) => dep in deps).map(
+    ([, id]) => id,
+  );
 
   let nextOutput: DirectoryProbe["nextOutput"] = null;
   for (const name of ["next.config.ts", "next.config.js", "next.config.mjs"]) {
@@ -583,7 +630,8 @@ export async function probeDirectory(dir: string): Promise<DirectoryProbe> {
     if (!existsSync(path)) continue;
     const text = await Bun.file(path).text();
     if (/output\s*:\s*["']export["']/.test(text)) nextOutput = "export";
-    else if (/output\s*:\s*["']standalone["']/.test(text)) nextOutput = "standalone";
+    else if (/output\s*:\s*["']standalone["']/.test(text))
+      nextOutput = "standalone";
   }
 
   let staticDir: string | null = null;
@@ -602,7 +650,10 @@ export async function probeDirectory(dir: string): Promise<DirectoryProbe> {
       break;
     }
   }
-  if (nextOutput === "standalone" && existsSync(join(dir, ".next/standalone/server.js"))) {
+  if (
+    nextOutput === "standalone" &&
+    existsSync(join(dir, ".next/standalone/server.js"))
+  ) {
     serverEntry = ".next/standalone/server.js";
   }
   if (frameworks.includes("next") && !staticDir && !serverEntry) {
@@ -625,7 +676,12 @@ export async function probeDirectory(dir: string): Promise<DirectoryProbe> {
   }
 
   const backends = new Set<string>();
-  for (const name of [".env", ".env.production", ".env.local", ".env.example"]) {
+  for (const name of [
+    ".env",
+    ".env.production",
+    ".env.local",
+    ".env.example",
+  ]) {
     const path = join(dir, name);
     if (!existsSync(path)) continue;
     for (const line of (await Bun.file(path).text()).split("\n")) {
@@ -650,7 +706,11 @@ export async function probeDirectory(dir: string): Promise<DirectoryProbe> {
   let htmlPages = 0;
   if (staticDir) {
     const root = join(dir, staticDir);
-    const files = await walkFiles(root, (name) => /\.(?:js|mjs|html)$/.test(name), 300);
+    const files = await walkFiles(
+      root,
+      (name) => /\.(?:js|mjs|html)$/.test(name),
+      300,
+    );
     const prefixes = new Set<string>();
     htmlPages = files.filter((file) => file.endsWith(".html")).length;
     for (const file of files) {
@@ -672,7 +732,10 @@ export async function probeDirectory(dir: string): Promise<DirectoryProbe> {
   return {
     kind: "directory",
     input: dir,
-    name: typeof pkg.name === "string" ? pkg.name.replace(/^@[^/]+\//, "") : basename(dir),
+    name:
+      typeof pkg.name === "string"
+        ? pkg.name.replace(/^@[^/]+\//, "")
+        : basename(dir),
     frameworks,
     staticDir,
     htmlPages,

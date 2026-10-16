@@ -16,7 +16,13 @@ interface JobCardProps {
   getSpeedHistory?: (jobId: string) => SpeedSample[];
 }
 
-export function JobCard({ job, onPause, onResume, onCancel, getSpeedHistory }: JobCardProps) {
+export function JobCard({
+  job,
+  onPause,
+  onResume,
+  onCancel,
+  getSpeedHistory,
+}: JobCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -27,7 +33,8 @@ export function JobCard({ job, onPause, onResume, onCancel, getSpeedHistory }: J
   const showActionButton = job.status === "running" || job.status === "paused";
   const canPause = job.status === "running" && !!onPause;
   const canResume = job.status === "paused" && !!onResume;
-  const canCancel = (job.status === "running" || job.status === "paused") && !!onCancel;
+  const canCancel =
+    (job.status === "running" || job.status === "paused") && !!onCancel;
 
   const handleAction = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -69,7 +76,10 @@ export function JobCard({ job, onPause, onResume, onCancel, getSpeedHistory }: J
         onClick={toggleExpanded}
         onKeyDown={(e) => {
           // Only the card itself: keys pressed on the nested action buttons must not toggle it.
-          if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+          if (
+            e.target === e.currentTarget &&
+            (e.key === "Enter" || e.key === " ")
+          ) {
             e.preventDefault();
             toggleExpanded();
           }
@@ -111,17 +121,26 @@ export function JobCard({ job, onPause, onResume, onCancel, getSpeedHistory }: J
             animate={{
               height: "auto",
               opacity: 1,
-              transition: { duration: m3Durations.medium2, ease: m3Easings.emphasizedDecelerate },
+              transition: {
+                duration: m3Durations.medium2,
+                ease: m3Easings.emphasizedDecelerate,
+              },
             }}
             exit={{
               height: 0,
               opacity: 0,
-              transition: { duration: m3Durations.short3, ease: m3Easings.emphasizedAccelerate },
+              transition: {
+                duration: m3Durations.short3,
+                ease: m3Easings.emphasizedAccelerate,
+              },
             }}
             className="overflow-hidden"
           >
             <div className="border-t border-outline-variant">
-              <renderer.DetailsPanel job={job} speedHistory={getSpeedHistory(job.id)} />
+              <renderer.DetailsPanel
+                job={job}
+                speedHistory={getSpeedHistory(job.id)}
+              />
             </div>
           </motion.div>
         )}

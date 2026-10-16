@@ -9,16 +9,16 @@
 `lightcraft-web-<version>.zip` (from the GitHub release, or `packaging/web/package.sh`) holds a
 static site in `lightcraft-web-<version>/`:
 
-| File | What it is |
-|---|---|
-| `index.html` | The page. It loads everything through relative URLs. |
-| `lightcraft_web.js` | wasm-bindgen glue (generated, ES module) |
-| `lightcraft_web_bg.wasm` | The app, about 13 MB (about 3 MB with brotli) |
-| `worker.js` | Starts the render workers (each runs the same module) |
-| `lightcraft_zh_hans.otf` | Simplified Chinese UI font, included when built with `CRAFT_FONTS_DIR` |
-| `OFL-noto-sans-cjk-sc.txt` | The bundled Chinese font's SIL Open Font License |
-| `*.gz`, `*.br` | Precompressed copies of the files above (optional to serve) |
-| `_headers`, `.htaccess` | Sample header rules for Netlify/Cloudflare Pages and Apache |
+| File                       | What it is                                                             |
+| -------------------------- | ---------------------------------------------------------------------- |
+| `index.html`               | The page. It loads everything through relative URLs.                   |
+| `lightcraft_web.js`        | wasm-bindgen glue (generated, ES module)                               |
+| `lightcraft_web_bg.wasm`   | The app, about 13 MB (about 3 MB with brotli)                          |
+| `worker.js`                | Starts the render workers (each runs the same module)                  |
+| `lightcraft_zh_hans.otf`   | Simplified Chinese UI font, included when built with `CRAFT_FONTS_DIR` |
+| `OFL-noto-sans-cjk-sc.txt` | The bundled Chinese font's SIL Open Font License                       |
+| `*.gz`, `*.br`             | Precompressed copies of the files above (optional to serve)            |
+| `_headers`, `.htaccess`    | Sample header rules for Netlify/Cloudflare Pages and Apache            |
 
 There is no server-side code. Upload the folder's contents anywhere that serves static files.
 
@@ -79,7 +79,8 @@ One tab at a time can have the library open; a second tab shows a message instea
   title="LightCraft image editor"
   style="width: 100%; height: 720px; border: 0;"
   allow="fullscreen; clipboard-read; clipboard-write"
-  allowfullscreen>
+  allowfullscreen
+>
 </iframe>
 ```
 
@@ -101,9 +102,9 @@ LightCraft draws its UI with WebGL2 (eframe's `glow` backend) and renders photos
 Web Workers. A browser without WebGL2 gets a message in place of the app. URL options, also on
 an iframe `src`:
 
-| Option | Effect |
-|---|---|
-| `?workers=N` | Number of render workers (default: cores − 1, at most 4); `?workers=0` renders on the main thread |
-| `?store=idb` | Keep the library in IndexedDB instead of OPFS |
-| `?store=memory` | Keep nothing (a throwaway session) |
-| `?reset` | Delete the library stored in this browser (asks first) |
+| Option          | Effect                                                                                            |
+| --------------- | ------------------------------------------------------------------------------------------------- |
+| `?workers=N`    | Number of render workers (default: cores − 1, at most 4); `?workers=0` renders on the main thread |
+| `?store=idb`    | Keep the library in IndexedDB instead of OPFS                                                     |
+| `?store=memory` | Keep nothing (a throwaway session)                                                                |
+| `?reset`        | Delete the library stored in this browser (asks first)                                            |

@@ -106,7 +106,11 @@ describe("manifest declarations", () => {
   test("registry dependencies only, with renames and workspace inheritance", () => {
     const d = readDecls("crates/x/Cargo.toml", MANIFEST);
     const by = (n: string) => d.find((x) => x.name === n);
-    expect(by("serde")).toMatchObject({ req: "1", crate: "serde", pkg: "demo" });
+    expect(by("serde")).toMatchObject({
+      req: "1",
+      crate: "serde",
+      pkg: "demo",
+    });
     expect(by("tokio")?.req).toBe("1.52");
     expect(by("shared")).toMatchObject({ workspace: true });
     expect(by("tempfile")?.section).toBe("dev-dependencies");
@@ -117,14 +121,20 @@ describe("manifest declarations", () => {
     expect(by("fork")).toBeUndefined();
   });
   test("direct dependencies join workspace entries with their consumers", () => {
-    const decls = [...readDecls("Cargo.toml", ROOT), ...readDecls("crates/x/Cargo.toml", MANIFEST)];
+    const decls = [
+      ...readDecls("Cargo.toml", ROOT),
+      ...readDecls("crates/x/Cargo.toml", MANIFEST),
+    ];
     const rows = directDeps(decls);
     const shared = rows.find((r) => r.crate === "shared")!;
     expect(shared.req).toBe("0.9");
     expect(shared.consumers).toEqual(["demo"]);
     expect(shared.declaredIn).toEqual(["Cargo.toml"]);
     const serde = rows.find((r) => r.crate === "serde")!;
-    expect(serde.declaredIn.toSorted()).toEqual(["Cargo.toml", "crates/x/Cargo.toml"]);
+    expect(serde.declaredIn.toSorted()).toEqual([
+      "Cargo.toml",
+      "crates/x/Cargo.toml",
+    ]);
     expect(rows.find((r) => r.crate === "yara-x")?.req).toBe("=1.7.0");
   });
 });
@@ -133,15 +143,21 @@ describe("rewriteReq", () => {
   test("rewrites only the named dependency in dependency sections", () => {
     const a = rewriteReq(MANIFEST, "tokio", "1.52", "1.53");
     expect(a.count).toBe(1);
-    expect(a.text).toContain('tokio = { version = "1.53", default-features = false');
-    expect(rewriteReq(MANIFEST, "serde", "1", "2").text).toContain('serde = "2"');
+    expect(a.text).toContain(
+      'tokio = { version = "1.53", default-features = false',
+    );
+    expect(rewriteReq(MANIFEST, "serde", "1", "2").text).toContain(
+      'serde = "2"',
+    );
     const t = rewriteReq(MANIFEST, "detailed", "0.3", "0.4");
     expect(t.count).toBe(1);
     expect(t.text).toContain('version = "0.4"');
     expect(t.text).toContain('version = "0.1.0"\n\n[dependencies]'); // [package] version untouched
     const w = rewriteReq(MANIFEST, "windows-sys", "0.61", "0.62");
     expect(w.count).toBe(1);
-    expect(rewriteReq(ROOT, "yara-x", "=1.7.0", "=1.19.0").text).toContain('version = "=1.19.0"');
+    expect(rewriteReq(ROOT, "yara-x", "=1.7.0", "=1.19.0").text).toContain(
+      'version = "=1.19.0"',
+    );
   });
   test("does not touch a name that is only a prefix, or a stale requirement", () => {
     expect(rewriteReq(MANIFEST, "tok", "1.52", "1.53").count).toBe(0);
@@ -230,7 +246,12 @@ describe("cargo update output", () => {
       { action: "Updating", name: "syn", from: "2.0.1", to: "2.0.2" },
       { action: "Adding", name: "pem", from: undefined, to: "4.0.0" },
       { action: "Removing", name: "mio", from: undefined, to: "0.8.11" },
-      { action: "Downgrading", name: "openssl", from: "0.10.81", to: "0.10.78" },
+      {
+        action: "Downgrading",
+        name: "openssl",
+        from: "0.10.81",
+        to: "0.10.78",
+      },
     ]);
   });
 });
@@ -256,12 +277,37 @@ describe("classification", () => {
     ["tauri", index(["3.0.0-alpha.4", "3.0.0-alpha.5"])],
   ]);
   const direct = [
-    { crate: "tokio", req: "1.52", declaredIn: ["Cargo.toml"], consumers: ["a", "b"] },
-    { crate: "rand", req: "0.8", declaredIn: ["crates/x/Cargo.toml"], consumers: ["x"] },
-    { crate: "yara-x", req: "=1.7.0", declaredIn: ["Cargo.toml"], consumers: ["aphrody-re"] },
-    { crate: "ort", req: "=2.0.0-rc.12", declaredIn: ["Cargo.toml"], consumers: [] },
+    {
+      crate: "tokio",
+      req: "1.52",
+      declaredIn: ["Cargo.toml"],
+      consumers: ["a", "b"],
+    },
+    {
+      crate: "rand",
+      req: "0.8",
+      declaredIn: ["crates/x/Cargo.toml"],
+      consumers: ["x"],
+    },
+    {
+      crate: "yara-x",
+      req: "=1.7.0",
+      declaredIn: ["Cargo.toml"],
+      consumers: ["aphrody-re"],
+    },
+    {
+      crate: "ort",
+      req: "=2.0.0-rc.12",
+      declaredIn: ["Cargo.toml"],
+      consumers: [],
+    },
     { crate: "unused", req: "1", declaredIn: ["Cargo.toml"], consumers: [] },
-    { crate: "tauri", req: "=3.0.0-alpha.4", declaredIn: ["Cargo.toml"], consumers: [] },
+    {
+      crate: "tauri",
+      req: "=3.0.0-alpha.4",
+      declaredIn: ["Cargo.toml"],
+      consumers: [],
+    },
   ];
   const rows = classify({
     direct,
@@ -271,7 +317,8 @@ describe("classification", () => {
     owners: new Map([["tauri", "tauri-sync"]]),
     toolchain: "1.98.1",
   });
-  const row = (c: string, r?: string) => rows.find((x) => x.crate === c && (!r || x.req === r))!;
+  const row = (c: string, r?: string) =>
+    rows.find((x) => x.crate === c && (!r || x.req === r))!;
 
   test("in-range and beyond are separate, pre-releases and yanked releases are skipped", () => {
     expect(row("tokio")).toMatchObject({
@@ -280,7 +327,11 @@ describe("classification", () => {
       beyond: "2.0.0",
       consumers: ["a", "b"],
     });
-    expect(row("rand")).toMatchObject({ locked: "0.8.5", inRange: undefined, beyond: "0.10.0" });
+    expect(row("rand")).toMatchObject({
+      locked: "0.8.5",
+      inRange: undefined,
+      beyond: "0.10.0",
+    });
   });
   test("holds, exact pins and owners are flagged, pre-release trains stay in their train", () => {
     expect(row("yara-x")).toMatchObject({
@@ -288,7 +339,11 @@ describe("classification", () => {
       exactPin: true,
       beyond: "1.21.0",
     });
-    expect(row("ort")).toMatchObject({ beyond: "2.0.0-rc.13", exactPin: true, held: undefined });
+    expect(row("ort")).toMatchObject({
+      beyond: "2.0.0-rc.13",
+      exactPin: true,
+      held: undefined,
+    });
     expect(row("tauri").owner).toBe("tauri-sync");
   });
   test("a declared but unlocked dependency yields no row", () => {
@@ -301,15 +356,27 @@ describe("classification", () => {
     );
     expect(p.precise).toEqual([]); // the bulk refresh already covers tokio
     const q = buildPlan([row("tokio")], []);
-    expect(q.precise).toEqual([{ crate: "tokio", from: "1.52.0", to: "1.53.1" }]);
-    expect(q.majors[0]).toMatchObject({ crate: "tokio", to: "2.0.0", newReq: "2.0" });
+    expect(q.precise).toEqual([
+      { crate: "tokio", from: "1.52.0", to: "1.53.1" },
+    ]);
+    expect(q.majors[0]).toMatchObject({
+      crate: "tokio",
+      to: "2.0.0",
+      newReq: "2.0",
+    });
     expect(p.held.map((h) => h.crate)).toEqual(["yara-x"]);
   });
 });
 
 describe("build metadata and quoted keys", () => {
   test("toml_edit style +spec versions compare by their core", () => {
-    const lock = [{ name: "toml_edit", version: "0.23.10+spec-1.0.0", source: "registry+x" }];
+    const lock = [
+      {
+        name: "toml_edit",
+        version: "0.23.10+spec-1.0.0",
+        source: "registry+x",
+      },
+    ];
     const versions = new Map([
       [
         "toml_edit",
@@ -334,7 +401,11 @@ describe("build metadata and quoted keys", () => {
       versions,
       holds: [],
     });
-    expect(row).toMatchObject({ locked: "0.23.10", inRange: undefined, beyond: "0.25.15" });
+    expect(row).toMatchObject({
+      locked: "0.23.10",
+      inRange: undefined,
+      beyond: "0.25.15",
+    });
   });
   test("rewriteReq handles a quoted version key", () => {
     const text =
@@ -347,8 +418,12 @@ describe("build metadata and quoted keys", () => {
     const m =
       '[package]\nname = "n"\n[features]\nstealth = ["wreq", "dep:other"]\n[dependencies]\nwreq = { version = "=6.0.0-rc.29", optional = true }\nother = { version = "1", optional = true }\n';
     const rows = directDeps(readDecls("n/Cargo.toml", m));
-    expect(rows.find((r) => r.crate === "wreq")?.optional).toEqual({ n: ["stealth"] });
-    expect(featuresEnabling({ a: ["x/y"], b: ["dep:x"], c: ["z"] }, "x")).toEqual(["a", "b"]);
+    expect(rows.find((r) => r.crate === "wreq")?.optional).toEqual({
+      n: ["stealth"],
+    });
+    expect(
+      featuresEnabling({ a: ["x/y"], b: ["dep:x"], c: ["z"] }, "x"),
+    ).toEqual(["a", "b"]);
   });
 });
 
@@ -379,11 +454,18 @@ describe("advisories and channels", () => {
       { ecosystem: "crates.io", name: "rsa", reason: "no patched release" },
       { ecosystem: "npm", name: "foo", reason: "other ecosystem" },
     ]);
-    expect(s.open).toEqual([{ crate: "foo", version: "1.0.0", ids: ["GHSA-xxxx"] }]);
-    expect(s.held[0]).toMatchObject({ crate: "rsa", reason: "no patched release" });
+    expect(s.open).toEqual([
+      { crate: "foo", version: "1.0.0", ids: ["GHSA-xxxx"] },
+    ]);
+    expect(s.held[0]).toMatchObject({
+      crate: "rsa",
+      reason: "no patched release",
+    });
   });
   test("toolchain and channel manifests", () => {
-    expect(parseToolchainChannel('[toolchain]\nchannel = "1.98.1"\n')).toBe("1.98.1");
+    expect(parseToolchainChannel('[toolchain]\nchannel = "1.98.1"\n')).toBe(
+      "1.98.1",
+    );
     expect(
       parseChannelManifest(
         'date = "2026-10-01"\n[pkg.rust]\nversion = "1.99.0 (abc 2026-09-30)"\n',

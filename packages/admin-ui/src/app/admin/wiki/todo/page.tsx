@@ -8,7 +8,11 @@ import {
   Presse,
 } from "@/components/icones";
 import { StatTiles } from "@/components/kit";
-import { listIncompleteContent, type IncompleteGroup, type IncompleteRow } from "@/lib/wiki-admin";
+import {
+  listIncompleteContent,
+  type IncompleteGroup,
+  type IncompleteRow,
+} from "@/lib/wiki-admin";
 import { assetUrl } from "@/lib/db-universe";
 import { TABLE_LABELS } from "@/lib/db-labels";
 import { GAP_LABELS } from "@/lib/wiki-gaps";
@@ -40,7 +44,13 @@ function editHref(row: IncompleteRow): string {
 }
 
 /** URL de la page en conservant les options (masquées, table dépliée). */
-function todoHref({ masquees, tout }: { masquees: boolean; tout: string | null }): string {
+function todoHref({
+  masquees,
+  tout,
+}: {
+  masquees: boolean;
+  tout: string | null;
+}): string {
   const qs = new URLSearchParams();
   if (masquees) qs.set("masquees", "1");
   if (tout) qs.set("tout", tout);
@@ -58,7 +68,9 @@ function plural(n: number, singular: string, many: string): string {
 
 /** « fiche masquée, non publique » / « fiches masquées, non publiques ». */
 function hiddenLabel(n: number): string {
-  return n > 1 ? "fiches masquées, non publiques" : "fiche masquée, non publique";
+  return n > 1
+    ? "fiches masquées, non publiques"
+    : "fiche masquée, non publique";
 }
 
 /** Badge de manque : cadre 1 px, sans ombre, glyphe plutôt qu'emoji. */
@@ -97,7 +109,9 @@ function RowItem({ row }: { row: IncompleteRow }) {
           )}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-semibold text-white">{row.label}</span>
+          <span className="block truncate font-semibold text-white">
+            {row.label}
+          </span>
           <span className="font-mono text-[10px] text-white/50">
             #{row.id}
             {row.context ? ` · ${row.context}` : ""}
@@ -141,10 +155,12 @@ function GroupSection({
         Tout afficher
       </Link>
     ) : null;
-  const notes = [group.note, group.jaScopeReason, group.jaExemptReason].filter((n): n is string =>
-    Boolean(n),
+  const notes = [group.note, group.jaScopeReason, group.jaExemptReason].filter(
+    (n): n is string => Boolean(n),
   );
-  const unchecked = (["image", "desc", "ja"] as const).filter((k) => !group.checks[k]);
+  const unchecked = (["image", "desc", "ja"] as const).filter(
+    (k) => !group.checks[k],
+  );
 
   return (
     <section id={group.table} className="scroll-mt-24 space-y-3">
@@ -153,7 +169,9 @@ function GroupSection({
           {tableLabel(group.table)}
         </h2>
         <span className="text-sm text-white/60">
-          <span className="font-bold tabular-nums text-dbz-orange">{nf.format(counts.total)}</span>{" "}
+          <span className="font-bold tabular-nums text-dbz-orange">
+            {nf.format(counts.total)}
+          </span>{" "}
           publique{counts.total > 1 ? "s" : ""} à compléter
         </span>
         <span className="text-xs text-white/45">
@@ -168,7 +186,11 @@ function GroupSection({
         {counts.hidden > 0 && (
           <span className="inline-flex items-center gap-1 text-xs text-dbz-yellow/70">
             <OeilBarre className="h-3 w-3" />
-            {plural(counts.hidden, "masquée, non publique", "masquées, non publiques")}
+            {plural(
+              counts.hidden,
+              "masquée, non publique",
+              "masquées, non publiques",
+            )}
           </span>
         )}
       </div>
@@ -196,8 +218,9 @@ function GroupSection({
       )}
       {truncated && (
         <p className="text-xs text-white/50">
-          {nf.format(group.rows.length)} affichée{group.rows.length > 1 ? "s" : ""} sur{" "}
-          {nf.format(counts.total)}. {expandLink}
+          {nf.format(group.rows.length)} affichée
+          {group.rows.length > 1 ? "s" : ""} sur {nf.format(counts.total)}.{" "}
+          {expandLink}
         </p>
       )}
 
@@ -212,7 +235,9 @@ function GroupSection({
                 : nf.format(counts.hidden)}
             </span>
             {hiddenTruncated && !truncated && (
-              <span className="font-normal normal-case tracking-normal">{expandLink}</span>
+              <span className="font-normal normal-case tracking-normal">
+                {expandLink}
+              </span>
             )}
           </h3>
           <ul className="divide-y divide-white/[0.08] overflow-hidden rounded-xl border border-white/[0.08] bg-dbz-card/80 opacity-80">
@@ -226,7 +251,11 @@ function GroupSection({
   );
 }
 
-export default async function WikiTodoPage({ searchParams }: { searchParams: SearchParams }) {
+export default async function WikiTodoPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const params = await searchParams;
   const masquees = one(params.masquees) === "1";
   const tout = one(params.tout);
@@ -253,15 +282,20 @@ export default async function WikiTodoPage({ searchParams }: { searchParams: Sea
             Fiches à compléter
           </h1>
           <p className="mt-1 text-sm text-white/50">
-            Les fiches publiées dont l'image, le texte ou le nom japonais manque encore. Clique pour
-            ouvrir la fiche dans son éditeur et la compléter.
+            Les fiches publiées dont l'image, le texte ou le nom japonais manque
+            encore. Clique pour ouvrir la fiche dans son éditeur et la
+            compléter.
           </p>
         </div>
       </div>
 
       <StatTiles
         items={[
-          { label: "Fiches publiques à compléter", value: totals.total, hint: "comptes réels" },
+          {
+            label: "Fiches publiques à compléter",
+            value: totals.total,
+            hint: "comptes réels",
+          },
           { label: "Sans image", value: totals.image },
           { label: "Sans texte", value: totals.desc },
           { label: "Sans japonais", value: totals.ja },
@@ -277,15 +311,18 @@ export default async function WikiTodoPage({ searchParams }: { searchParams: Sea
                 <span className="font-bold tabular-nums text-dbz-yellow">
                   {nf.format(totals.hidden)}
                 </span>{" "}
-                <strong>{hiddenLabel(totals.hidden)}</strong> {totals.hidden > 1 ? "ont" : "a"}{" "}
-                aussi des manques.{" "}
+                <strong>{hiddenLabel(totals.hidden)}</strong>{" "}
+                {totals.hidden > 1 ? "ont" : "a"} aussi des manques.{" "}
                 {masquees
                   ? "Elles sont listées sous chaque rubrique, à part des fiches publiques."
                   : "Elles ne sont pas listées : les compléter ne change rien au site tant qu'elles restent masquées."}
               </p>
               <p className="text-xs text-white/45">
                 {hiddenGroups
-                  .map((g) => `${tableLabel(g.table)} ${nf.format(g.counts.hidden)}`)
+                  .map(
+                    (g) =>
+                      `${tableLabel(g.table)} ${nf.format(g.counts.hidden)}`,
+                  )
                   .join(" · ")}
               </p>
             </div>
@@ -302,16 +339,22 @@ export default async function WikiTodoPage({ searchParams }: { searchParams: Sea
       {totals.total === 0 && (
         <div className="card py-16 text-center">
           <CocheCercle className="mx-auto mb-3 h-10 w-10 text-green-400" />
-          <p className="font-saiyan text-2xl uppercase text-white">Tout est complet</p>
+          <p className="font-saiyan text-2xl uppercase text-white">
+            Tout est complet
+          </p>
           <p className="mt-1 text-sm text-white/50">
-            Chaque fiche publiée possède son image, son texte et son nom japonais.
+            Chaque fiche publiée possède son image, son texte et son nom
+            japonais.
           </p>
         </div>
       )}
 
       {visibleGroups.length > 0 && (
         <>
-          <nav aria-label="Rubriques à compléter" className="flex flex-wrap gap-1.5">
+          <nav
+            aria-label="Rubriques à compléter"
+            className="flex flex-wrap gap-1.5"
+          >
             {visibleGroups.map((g) => (
               <a
                 key={g.table}
@@ -326,7 +369,12 @@ export default async function WikiTodoPage({ searchParams }: { searchParams: Sea
             ))}
           </nav>
           {visibleGroups.map((g) => (
-            <GroupSection key={g.table} group={g} masquees={masquees} tout={tout} />
+            <GroupSection
+              key={g.table}
+              group={g}
+              masquees={masquees}
+              tout={tout}
+            />
           ))}
         </>
       )}

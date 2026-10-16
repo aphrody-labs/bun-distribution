@@ -52,7 +52,11 @@ interface Envelope {
 }
 
 function callReproduce(kind: 0 | 1 | 2, input: Uint8Array): ReproductionPlan {
-  const rawPtr = lib.bun_rs_m3_reproduce(kind, input.length > 0 ? input : null, input.length);
+  const rawPtr = lib.bun_rs_m3_reproduce(
+    kind,
+    input.length > 0 ? input : null,
+    input.length,
+  );
   if (!rawPtr) throw new Error("bun_rs_m3_reproduce returned a null pointer");
   let envelope: Envelope;
   try {
@@ -68,13 +72,17 @@ function callReproduce(kind: 0 | 1 | 2, input: Uint8Array): ReproductionPlan {
 /** Reproduces a site in M3 from a URL (fetched and crawled), a PNG/JPEG screenshot, or
  *  already-fetched HTML. Exactly one of `url`, `image` or `html` must be set. */
 export function m3Reproduce(
-  opts: { url: string } | { image: Uint8Array | ArrayBuffer } | { html: string },
+  opts:
+    { url: string } | { image: Uint8Array | ArrayBuffer } | { html: string },
 ): ReproductionPlan {
   if ("url" in opts) {
     return callReproduce(0, new TextEncoder().encode(opts.url));
   }
   if ("image" in opts) {
-    const bytes = opts.image instanceof ArrayBuffer ? new Uint8Array(opts.image) : opts.image;
+    const bytes =
+      opts.image instanceof ArrayBuffer
+        ? new Uint8Array(opts.image)
+        : opts.image;
     return callReproduce(1, bytes);
   }
   return callReproduce(2, new TextEncoder().encode(opts.html));

@@ -31,7 +31,8 @@ function downsampleSpeedHistory(samples: SpeedSample[]): SpeedSample[] {
   for (let i = 0; i < samples.length; i += step) {
     // Average the samples in this bucket
     const bucket = samples.slice(i, i + step);
-    const avgRate = bucket.reduce((sum, s) => sum + s.bytesPerSecond, 0) / bucket.length;
+    const avgRate =
+      bucket.reduce((sum, s) => sum + s.bytesPerSecond, 0) / bucket.length;
     downsampled.push({
       timestamp: bucket[0]!.timestamp,
       bytesPerSecond: avgRate,
@@ -129,9 +130,15 @@ export function useJobs(options: UseJobsOptions = {}): UseJobsReturn {
         "JobResumed" in event ||
         "JobCancelled" in event
       ) {
-        if ("JobCompleted" in event || "JobFailed" in event || "JobCancelled" in event) {
+        if (
+          "JobCompleted" in event ||
+          "JobFailed" in event ||
+          "JobCancelled" in event
+        ) {
           const jobId =
-            event.JobCompleted?.job_id || event.JobFailed?.job_id || event.JobCancelled?.job_id;
+            event.JobCompleted?.job_id ||
+            event.JobFailed?.job_id ||
+            event.JobCancelled?.job_id;
 
           if (jobId) {
             // Set progress to 100% on completion so the UI
@@ -139,7 +146,9 @@ export function useJobs(options: UseJobsOptions = {}): UseJobsReturn {
             // a throttled progress update is emitted.
             if ("JobCompleted" in event) {
               setJobs((prev) =>
-                prev.map((job) => (job.id === jobId ? { ...job, progress: 1.0 } : job)),
+                prev.map((job) =>
+                  job.id === jobId ? { ...job, progress: 1.0 } : job,
+                ),
               );
             }
 

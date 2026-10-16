@@ -57,7 +57,8 @@ export function validateSourceConsumer(
     configuration.configurationSha256,
     request.indexSha256,
   ])
-    if (!/^[a-f0-9]{64}$/.test(sha)) throw Error("Complete consumer SHA256 pins required");
+    if (!/^[a-f0-9]{64}$/.test(sha))
+      throw Error("Complete consumer SHA256 pins required");
   if (
     !configuration.publisherModulePath
       .replaceAll("\\", "/")
@@ -75,7 +76,10 @@ export function validateSourceConsumer(
     target.hash
   )
     throw Error("Unsupported public target");
-  const inside = posix.relative(configuration.inventoryRoot, request.publicRoot);
+  const inside = posix.relative(
+    configuration.inventoryRoot,
+    request.publicRoot,
+  );
   const job = posix.relative(
     posix.join(configuration.inventoryRoot, "source-cdn-consumer-jobs"),
     request.job,
@@ -105,7 +109,8 @@ export async function consumeSourcePublication(
   validateSourceConsumer(configuration, request);
   await ports.qualify();
   const result = await ports.execute();
-  if (!result || typeof result !== "object") throw Error("Product consumer returned no proof");
+  if (!result || typeof result !== "object")
+    throw Error("Product consumer returned no proof");
   const value = result as Json;
   if (value.noChange === true && value.writes !== 0)
     throw Error("No-change product proof reports writes");
@@ -159,7 +164,10 @@ export async function runNativeSourceConsumer(
     throw Error("DBFR root consumer context required");
   validateSourceConsumer(configuration, request);
   const jobs = join(configuration.inventoryRoot, "source-cdn-consumer-jobs");
-  const moduleBytes = await guarded(configuration.productModulePath, 1024 * 1024);
+  const moduleBytes = await guarded(
+    configuration.productModulePath,
+    1024 * 1024,
+  );
   const configBytes = await guarded(configuration.configurationPath, 32768);
   if (
     hash(moduleBytes) !== configuration.productModuleSha256 ||
@@ -169,7 +177,8 @@ export async function runNativeSourceConsumer(
   const publisherConfig = JSON.parse(new TextDecoder().decode(configBytes));
   if (
     publisherConfig.inventoryRoot !== configuration.inventoryRoot ||
-    publisherConfig.nativeOriginPreparation?.input?.inventoryRoot !== configuration.inventoryRoot
+    publisherConfig.nativeOriginPreparation?.input?.inventoryRoot !==
+      configuration.inventoryRoot
   )
     throw Error("Consumer belongs to another private inventory scope");
   const publicInfo = await lstat(request.publicRoot);
@@ -179,7 +188,11 @@ export async function runNativeSourceConsumer(
     (await realpath(request.publicRoot)) !== request.publicRoot
   )
     throw Error("Consumer public inputs escaped their private root");
-  const index = join(request.publicRoot, new URL(request.target).pathname.slice(1), "index.json");
+  const index = join(
+    request.publicRoot,
+    new URL(request.target).pathname.slice(1),
+    "index.json",
+  );
   const publicIndex = async () => {
     const info = await lstat(index);
     if (
@@ -195,7 +208,9 @@ export async function runNativeSourceConsumer(
   const document = JSON.parse(new TextDecoder().decode(indexBytes));
   if (
     hash(indexBytes) !== request.indexSha256 ||
-    !new Set(["shenron-manga-cdn/v1", "shenron-source-publication/v1"]).has(document.schema)
+    !new Set(["shenron-manga-cdn/v1", "shenron-source-publication/v1"]).has(
+      document.schema,
+    )
   )
     throw Error("Only pinned public producer indexes are accepted");
   await mkdir(jobs, { mode: 0o700, recursive: true });
@@ -233,10 +248,16 @@ export async function runNativeSourceConsumer(
           request.job,
         );
         if (!publisher) throw Error("Product publisher was not configured");
-        return request.apply ? product.publishQualified(publisher) : publisher.plan();
+        return request.apply
+          ? product.publishQualified(publisher)
+          : publisher.plan();
       },
       async receipt(value) {
-        const file = await open(join(request.job, "consumer-receipt.json"), "wx", 0o600);
+        const file = await open(
+          join(request.job, "consumer-receipt.json"),
+          "wx",
+          0o600,
+        );
         try {
           await file.writeFile(JSON.stringify(value));
           await file.sync();
@@ -255,7 +276,9 @@ export async function runNativeSourceConsumer(
 if (import.meta.main) {
   const stdin = Bun.argv.length === 6 && Bun.argv[3] === "--stdin";
   if (!stdin && Bun.argv.length !== 4)
-    throw Error("consumer requires pinned private configuration and request JSON files");
+    throw Error(
+      "consumer requires pinned private configuration and request JSON files",
+    );
   const configBytes = await guarded(Bun.argv[2]!, 32768);
   if (
     stdin &&
@@ -274,7 +297,9 @@ if (import.meta.main) {
       chunks.push(chunk);
     }
     requestBytes = new Uint8Array(
-      await new Blob(chunks.map((chunk) => new Uint8Array(chunk))).arrayBuffer(),
+      await new Blob(
+        chunks.map((chunk) => new Uint8Array(chunk)),
+      ).arrayBuffer(),
     );
   } else requestBytes = await guarded(Bun.argv[3]!, 32768);
   const request = JSON.parse(new TextDecoder().decode(requestBytes));
@@ -315,11 +340,18 @@ export function sourceConsumerCommand(
     transport.host !== "dbfr"
   )
     throw Error("Exact DBFR consumer transport required");
-  for (const path of [transport.consumerModulePath, transport.configurationPath])
+  for (const path of [
+    transport.consumerModulePath,
+    transport.configurationPath,
+  ])
     if (!/^\/[A-Za-z0-9/._-]+$/.test(path) || posix.resolve(path) !== path)
       throw Error("Safe absolute owner transport path required");
-  for (const sha of [transport.consumerModuleSha256, transport.configurationSha256])
-    if (!/^[a-f0-9]{64}$/.test(sha)) throw Error("Complete transport SHA pins required");
+  for (const sha of [
+    transport.consumerModuleSha256,
+    transport.configurationSha256,
+  ])
+    if (!/^[a-f0-9]{64}$/.test(sha))
+      throw Error("Complete transport SHA pins required");
   const bytes = JSON.stringify(request);
   if (new TextEncoder().encode(bytes).byteLength > 32768)
     throw Error("Transport request exceeds bound");
@@ -335,7 +367,15 @@ export async function submitSourceConsumer(
 ) {
   const invocation = sourceConsumerCommand(transport, request);
   const child = Bun.spawn(
-    ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", transport.host, invocation.command],
+    [
+      "ssh",
+      "-o",
+      "BatchMode=yes",
+      "-o",
+      "ConnectTimeout=15",
+      transport.host,
+      invocation.command,
+    ],
     {
       stdin: new Blob([invocation.input]),
       stdout: "pipe",
@@ -343,8 +383,12 @@ export async function submitSourceConsumer(
       timeout: invocation.timeoutMs,
     },
   );
-  const [output, exit] = await Promise.all([new Response(child.stdout).text(), child.exited]);
-  if (exit !== 0 || output.length > 32768) throw Error("DBFR owner consumer invocation failed");
+  const [output, exit] = await Promise.all([
+    new Response(child.stdout).text(),
+    child.exited,
+  ]);
+  if (exit !== 0 || output.length > 32768)
+    throw Error("DBFR owner consumer invocation failed");
   const result = JSON.parse(output);
   if (
     result.qualified !== true ||

@@ -34,5 +34,5 @@ export const useTutorialModalStore = create<TutorialModalState>()(
       })),
 
     getProgress: (id) => get().progress[id] || 0,
-  })
+  }),
 );

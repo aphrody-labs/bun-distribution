@@ -1,20 +1,20 @@
 interface SourceStatusBadgeProps {
-	status: string;
+  status: string;
 }
 
 export function SourceStatusBadge({ status }: SourceStatusBadgeProps) {
-	return (
-		<span className="text-outline inline-flex items-center gap-1.5 text-[11px] font-medium">
-			<span
-				className={`h-1.5 w-1.5 rounded-full ${
-					status === "syncing"
-						? "bg-primary animate-pulse"
-						: status === "error"
-							? "bg-error"
-							: "bg-outline"
-				}`}
-			/>
-			{status}
-		</span>
-	);
+  return (
+    <span className="text-outline inline-flex items-center gap-1.5 text-[11px] font-medium">
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${
+          status === "syncing"
+            ? "bg-primary animate-pulse"
+            : status === "error"
+              ? "bg-error"
+              : "bg-outline"
+        }`}
+      />
+      {status}
+    </span>
+  );
 }

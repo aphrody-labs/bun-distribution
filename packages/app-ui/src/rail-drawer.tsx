@@ -93,22 +93,33 @@ export function RailDrawer({
     const pop = popoverRef.current;
     const panel = panelRef.current;
     if (!open || !pop || !panel) return;
-    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previous =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     // Native top-layer support is optional: the fixed modal and hidden attribute also work
     // in a WebView without the popover API.
     if (typeof pop.showPopover === "function") pop.showPopover();
     scrollerRef.current?.scrollTo({ left: 0, behavior: "instant" });
     (focusTargets(panel)[0] ?? panel).focus();
     return () => {
-      if (typeof pop.hidePopover === "function" && pop.matches(":popover-open")) pop.hidePopover();
-      if (previous?.isConnected && !previous.closest("[inert], [hidden]")) previous.focus();
+      if (typeof pop.hidePopover === "function" && pop.matches(":popover-open"))
+        pop.hidePopover();
+      if (previous?.isConnected && !previous.closest("[inert], [hidden]"))
+        previous.focus();
     };
   }, [open]);
 
   useEffect(() => {
     const scroller = scrollerRef.current;
     const panel = panelRef.current;
-    if (!open || !scroller || !panel || typeof IntersectionObserver === "undefined") return;
+    if (
+      !open ||
+      !scroller ||
+      !panel ||
+      typeof IntersectionObserver === "undefined"
+    )
+      return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry && !entry.isIntersecting) onOpenChange(false);
@@ -141,7 +152,10 @@ export function RailDrawer({
           const first = targets[0] ?? panelRef.current;
           const last = targets.at(-1) ?? first;
           const active = document.activeElement;
-          if (event.shiftKey && (active === first || !targets.includes(active as HTMLElement))) {
+          if (
+            event.shiftKey &&
+            (active === first || !targets.includes(active as HTMLElement))
+          ) {
             event.preventDefault();
             last.focus();
           } else if (

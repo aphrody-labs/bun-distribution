@@ -18,11 +18,7 @@ export interface Binding {
 // (grid + item inspector + presentation deck) — a different view of the same
 // page, never active at the same time, so the two surfaces never conflict.
 export type Surface =
-  | "global"
-  | "pagescene"
-  | "pagedraw"
-  | "moodboard"
-  | "moodboard-grid";
+  "global" | "pagescene" | "pagedraw" | "moodboard" | "moodboard-grid";
 
 export type KeyGroup =
   | "Camera"

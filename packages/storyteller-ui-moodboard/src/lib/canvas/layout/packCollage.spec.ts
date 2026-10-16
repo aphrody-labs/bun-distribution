@@ -26,7 +26,12 @@ const img = (
 
 describe("packCollage", () => {
   it("returns no patches for empty input", () => {
-    const patches = computePackPatches([], { x: 0, y: 0, width: 800, height: 600 });
+    const patches = computePackPatches([], {
+      x: 0,
+      y: 0,
+      width: 800,
+      height: 600,
+    });
     expect(patches).toEqual([]);
   });
 
@@ -37,7 +42,10 @@ describe("packCollage", () => {
       img("c", 0, 0, 200, 200),
     ];
     const bounds = { x: 0, y: 0, width: 600, height: 400 };
-    const patches = computePackPatches(nodes, bounds, { rowHeight: 180, gap: 8 });
+    const patches = computePackPatches(nodes, bounds, {
+      rowHeight: 180,
+      gap: 8,
+    });
     expect(patches.length).toBe(3);
     // All in one row → same y, identical heights, total widths + 2 gaps == bounds.width.
     const ys = patches.map((p) => p.patch.y!);
@@ -54,14 +62,20 @@ describe("packCollage", () => {
     const wide = (id: string) => img(id, 0, 0, 400, 100); // aspect 4
     const nodes = [wide("a"), wide("b"), wide("c"), wide("d")];
     const bounds = { x: 0, y: 0, width: 400, height: 600 };
-    const patches = computePackPatches(nodes, bounds, { rowHeight: 100, gap: 0 });
+    const patches = computePackPatches(nodes, bounds, {
+      rowHeight: 100,
+      gap: 0,
+    });
     const distinctYs = new Set(patches.map((p) => p.patch.y!));
     expect(distinctYs.size).toBeGreaterThan(1);
   });
 
   it("computeAABB returns null on empty and a tight box on inputs", () => {
     expect(computeAABB([])).toBeNull();
-    const aabb = computeAABB([img("a", 10, 20, 100, 50), img("b", 60, 0, 80, 200)]);
+    const aabb = computeAABB([
+      img("a", 10, 20, 100, 50),
+      img("b", 60, 0, 80, 200),
+    ]);
     expect(aabb).toEqual({ x: 10, y: 0, width: 130, height: 200 });
   });
 });

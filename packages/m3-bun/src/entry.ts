@@ -20,26 +20,42 @@ export interface RunAppOptions extends Omit<M3AppOptions, "files"> {
 }
 
 /** The value after `--name` or `--name=value`. */
-export function flagValue(argv: readonly string[], name: string): string | undefined {
-  const i = argv.findIndex((a) => a === `--${name}` || a.startsWith(`--${name}=`));
+export function flagValue(
+  argv: readonly string[],
+  name: string,
+): string | undefined {
+  const i = argv.findIndex(
+    (a) => a === `--${name}` || a.startsWith(`--${name}=`),
+  );
   if (i === -1) return undefined;
   const arg = argv[i]!;
   return arg.includes("=") ? arg.slice(arg.indexOf("=") + 1) : argv[i + 1];
 }
 
 /** Run the app: the command line first, then the server. Resolves when the process should exit, never while serving. */
-export async function runApp(options: RunAppOptions, argv: readonly string[] = Bun.argv.slice(2)): Promise<void> {
+export async function runApp(
+  options: RunAppOptions,
+  argv: readonly string[] = Bun.argv.slice(2),
+): Promise<void> {
   if (argv.includes("--version")) {
     console.log(`${options.name} ${options.version} (${options.buildId})`);
     return;
   }
   const portFlag = flagValue(argv, "port");
-  const port = Bun.env.PORT ? Number(Bun.env.PORT) : portFlag ? Number(portFlag) : options.port;
-  if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error(`${options.name}: invalid port ${String(port)}`);
+  const port = Bun.env.PORT
+    ? Number(Bun.env.PORT)
+    : portFlag
+      ? Number(portFlag)
+      : options.port;
+  if (!Number.isInteger(port) || port < 0 || port > 65535)
+    throw new Error(`${options.name}: invalid port ${String(port)}`);
 
   if (argv.includes("--healthcheck")) {
     try {
-      const response = await fetch(`http://127.0.0.1:${port}${options.health === false ? "/" : (options.health ?? "/healthz")}`, { signal: AbortSignal.timeout(3000) });
+      const response = await fetch(
+        `http://127.0.0.1:${port}${options.health === false ? "/" : (options.health ?? "/healthz")}`,
+        { signal: AbortSignal.timeout(3000) },
+      );
       process.exitCode = response.ok ? 0 : 1;
     } catch {
       process.exitCode = 1;
@@ -49,7 +65,12 @@ export async function runApp(options: RunAppOptions, argv: readonly string[] = B
 
   const { files, ...rest } = options;
   const hostname = Bun.env.HOST;
-  const server = startM3Server({ ...rest, files: embeddedSource(files, options.buildId), port, ...(hostname ? { hostname } : {}) });
+  const server = startM3Server({
+    ...rest,
+    files: embeddedSource(files, options.buildId),
+    port,
+    ...(hostname ? { hostname } : {}),
+  });
   console.log(`${options.name} ${options.version} listening on ${server.url}`);
   const stop = () => {
     void server.stop(true).then(() => process.exit(0));

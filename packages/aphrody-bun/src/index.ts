@@ -93,7 +93,11 @@ function pub_fn_hctToArgb(h: number, c: number, t: number): number {
 export { pub_fn_hctToArgb as hctToArgb };
 
 /** Convert ARGB to HCT coordinates. */
-function pub_fn_argbToHct(argb: number): { hue: number; chroma: number; tone: number } {
+function pub_fn_argbToHct(argb: number): {
+  hue: number;
+  chroma: number;
+  tone: number;
+} {
   const h = new Float32Array(1);
   const c = new Float32Array(1);
   const t = new Float32Array(1);
@@ -115,7 +119,11 @@ function pub_fn_hctTones(h: number, c: number, t: number): Uint32Array {
 export { pub_fn_hctTones as hctTones };
 
 /** Derive all 49 M3 color roles from HCT seed. */
-function pub_fn_deriveScheme(h: number, c: number, isDark: boolean): ColorRoleMap {
+function pub_fn_deriveScheme(
+  h: number,
+  c: number,
+  isDark: boolean,
+): ColorRoleMap {
   const colors = new Uint32Array(49);
   lib.bun_rs_derive_scheme(h, c, isDark, colors);
 
@@ -235,7 +243,10 @@ function pub_fn_validateSpec(code: string): ValidationResult {
 export { pub_fn_validateSpec as validateSpec };
 
 function escapeForTemplate(css: string): string {
-  return css.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
+  return css
+    .replace(/\\/g, "\\\\")
+    .replace(/`/g, "\\`")
+    .replace(/\$\{/g, "\\${");
 }
 
 export interface SassPluginOptions {
@@ -252,7 +263,12 @@ export function sassRustPlugin(options: SassPluginOptions = {}) {
       build.onLoad({ filter: /\.scss$/ }, async (args: any) => {
         try {
           const quietVal = options.quiet ?? true;
-          const css = pub_fn_compileSassFile(args.path, options.loadPaths, options.style, quietVal);
+          const css = pub_fn_compileSassFile(
+            args.path,
+            options.loadPaths,
+            options.style,
+            quietVal,
+          );
           const styles = escapeForTemplate(css);
           return {
             contents:
@@ -294,7 +310,8 @@ export function m3Css(request: M3CssRequest): string {
     lib.bun_rs_free_string(ptr);
   }
   if (!envelope.ok) throw new Error(`m3Css: ${envelope.error}`);
-  if (typeof envelope.css !== "string") throw new Error("m3Css: native response omitted CSS");
+  if (typeof envelope.css !== "string")
+    throw new Error("m3Css: native response omitted CSS");
   return envelope.css;
 }
 

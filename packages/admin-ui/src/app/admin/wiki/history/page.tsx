@@ -20,8 +20,9 @@ export default function WikiHistoryPage() {
             Historique des révisions
           </h1>
           <p className="mt-1 text-sm text-white/50">
-            Toutes les modifications du wiki éditorial — création, édition, suppression, visibilité
-            — avec leur auteur et un retour arrière en un clic.
+            Toutes les modifications du wiki éditorial — création, édition,
+            suppression, visibilité — avec leur auteur et un retour arrière en
+            un clic.
           </p>
         </div>
       </div>

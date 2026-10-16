@@ -15,11 +15,18 @@ import {
 
 describe("terminal-build", () => {
   test("parses options and rejects unknown values", () => {
-    const options = parseArgs(["--project", "Conhost\\Host_EXE", "--platform", "ARM64"]);
+    const options = parseArgs([
+      "--project",
+      "Conhost\\Host_EXE",
+      "--platform",
+      "ARM64",
+    ]);
     expect(options.project).toBe("Conhost\\Host_EXE");
     expect(options.platform).toBe("ARM64");
     expect(options.configuration).toBe("Release");
-    expect(() => parseArgs(["--configuration", "Ship"])).toThrow("--configuration");
+    expect(() => parseArgs(["--configuration", "Ship"])).toThrow(
+      "--configuration",
+    );
     expect(() => parseArgs(["--bogus"])).toThrow("Unknown argument");
     expect(() => parseArgs(["--project"])).toThrow("expects a value");
   });
@@ -39,7 +46,9 @@ describe("terminal-build", () => {
   });
 
   test("parses captured set output", () => {
-    expect(parseSetOutput("A=1\r\nPath=C:\\x;C:\\y\r\n=C:=C:\\\r\nnoise\r\n")).toEqual({
+    expect(
+      parseSetOutput("A=1\r\nPath=C:\\x;C:\\y\r\n=C:=C:\\\r\nnoise\r\n"),
+    ).toEqual({
       A: "1",
       Path: "C:\\x;C:\\y",
       "=C:": "C:\\",
@@ -69,7 +78,11 @@ describe("terminal-build", () => {
     () => {
       const env = developerEnvironment(process.env);
       expect(env.VSINSTALLDIR).toBeTruthy();
-      expect(existsSync(join(env.VSINSTALLDIR as string, "MSBuild", "Current", "Bin"))).toBe(true);
+      expect(
+        existsSync(
+          join(env.VSINSTALLDIR as string, "MSBuild", "Current", "Bin"),
+        ),
+      ).toBe(true);
     },
     60_000,
   );

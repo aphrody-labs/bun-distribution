@@ -13,7 +13,10 @@ function streamOf(
     pull(controller) {
       const chunk = chunks[i++];
       if (chunk === undefined) controller.close();
-      else controller.enqueue(typeof chunk === "string" ? encoder.encode(chunk) : chunk);
+      else
+        controller.enqueue(
+          typeof chunk === "string" ? encoder.encode(chunk) : chunk,
+        );
     },
     cancel() {
       onCancel?.();
@@ -36,8 +39,12 @@ describe("readSse", () => {
   });
 
   test("joins multi-line data and keeps event, id and retry fields", async () => {
-    const events = await collect(["event: update\nid: 7\nretry: 1500\ndata: a\ndata: b\n\n"]);
-    expect(events).toEqual([{ event: "update", data: "a\nb", id: "7", retry: 1500 }]);
+    const events = await collect([
+      "event: update\nid: 7\nretry: 1500\ndata: a\ndata: b\n\n",
+    ]);
+    expect(events).toEqual([
+      { event: "update", data: "a\nb", id: "7", retry: 1500 },
+    ]);
   });
 
   test("handles events split across chunks, including inside a field and between CR and LF", async () => {
@@ -59,7 +66,9 @@ describe("readSse", () => {
   });
 
   test("drops a trailing event that is not terminated by a blank line", async () => {
-    expect((await collect(["data: done\n\ndata: cut"])).map((e) => e.data)).toEqual(["done"]);
+    expect(
+      (await collect(["data: done\n\ndata: cut"])).map((e) => e.data),
+    ).toEqual(["done"]);
   });
 
   test("ignores events without data and a leading byte order mark", async () => {
@@ -75,9 +84,12 @@ describe("readSse", () => {
 
   test("cancels the underlying stream when the consumer stops early", async () => {
     let cancelled = false;
-    const stream = streamOf(["data: 1\n\n", "data: 2\n\n", "data: 3\n\n"], () => {
-      cancelled = true;
-    });
+    const stream = streamOf(
+      ["data: 1\n\n", "data: 2\n\n", "data: 3\n\n"],
+      () => {
+        cancelled = true;
+      },
+    );
     for await (const event of readSse(stream)) {
       expect(event.data).toBe("1");
       break;

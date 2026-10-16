@@ -27,6 +27,9 @@ export function appServerProxy(
     throw new Error("APHRODY_APP_SERVER_URL must be a loopback HTTP origin.");
   }
   return Object.fromEntries(
-    ["/rpc", "/events", "/notifications", "/health", "/healthz"].map((path) => [path, url.origin]),
+    ["/rpc", "/events", "/notifications", "/health", "/healthz"].map((path) => [
+      path,
+      url.origin,
+    ]),
   );
 }

@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Bun agent client
 
 [`src/agent.ts`](src/agent.ts) (export `@aphrody/bun/agent`) provides a Bun-native app-server client alongside the
@@ -11,8 +12,13 @@ import { AgentClient } from "@aphrody/bun/agent";
 const client = new AgentClient({ executable: "aphrody" });
 try {
   await client.initialize();
-  const { thread } = await client.startThread({ model: "your-installed-model" });
-  const turn = await client.startTurn(thread.id, "Explain the current workspace.");
+  const { thread } = await client.startThread({
+    model: "your-installed-model",
+  });
+  const turn = await client.startTurn(
+    thread.id,
+    "Explain the current workspace.",
+  );
   for await (const event of turn.events()) {
     if (event.method === "item/agentMessage/delta") {
       await Bun.stdout.write(event.params?.delta ?? "");

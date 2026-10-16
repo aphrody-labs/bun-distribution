@@ -35,7 +35,14 @@ const PAIRS: [string, string][] = [
   ["inverse-surface", "inverse-on-surface"],
 ];
 
-const SEEDS = ["#6750a4", "#00658f", "#3a6a1e", "#9a4521", "#b3261e", "#ffd700"];
+const SEEDS = [
+  "#6750a4",
+  "#00658f",
+  "#3a6a1e",
+  "#9a4521",
+  "#b3261e",
+  "#ffd700",
+];
 const AA = 4.5;
 const AAA = 7;
 
@@ -45,7 +52,10 @@ describe("dynamic colour — WCAG AA contrast (standard)", () => {
       test(`${seed} ${dark ? "dark" : "light"}: every on-* pair ≥ ${AA}:1`, () => {
         const scheme = schemeFromSeed(seed, { dark });
         for (const [bg, fg] of PAIRS) {
-          const ratio = contrast(scheme[`--md-sys-color-${bg}`], scheme[`--md-sys-color-${fg}`]);
+          const ratio = contrast(
+            scheme[`--md-sys-color-${bg}`],
+            scheme[`--md-sys-color-${fg}`],
+          );
           expect(
             ratio,
             `${fg} on ${bg} (${dark ? "dark" : "light"}, seed ${seed}) = ${ratio.toFixed(2)}:1`,
@@ -62,7 +72,10 @@ describe("dynamic colour — WCAG AAA contrast (high-contrast mode)", () => {
       test(`${seed} ${dark ? "dark" : "light"} @contrast=1: every on-* pair ≥ ${AAA}:1`, () => {
         const scheme = schemeFromSeed(seed, { dark, contrast: 1 });
         for (const [bg, fg] of PAIRS) {
-          const ratio = contrast(scheme[`--md-sys-color-${bg}`], scheme[`--md-sys-color-${fg}`]);
+          const ratio = contrast(
+            scheme[`--md-sys-color-${bg}`],
+            scheme[`--md-sys-color-${fg}`],
+          );
           expect(
             ratio,
             `${fg} on ${bg} (${dark ? "dark" : "light"}, seed ${seed}) = ${ratio.toFixed(2)}:1`,

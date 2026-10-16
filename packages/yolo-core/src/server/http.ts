@@ -40,7 +40,11 @@ function loopbackOrigin(origin: string): boolean {
   }
 }
 
-function jsonResponse(data: unknown, status = 200, headers: Record<string, string> = {}) {
+function jsonResponse(
+  data: unknown,
+  status = 200,
+  headers: Record<string, string> = {},
+) {
   return Response.json(data, {
     status,
     headers: { "Content-Type": "application/json; charset=utf-8", ...headers },
@@ -51,23 +55,31 @@ export function createApiServer(options: ApiServerOptions = {}) {
   const rootDir = options.rootDir ?? yoloHome();
   const hostname = options.hostname ?? "127.0.0.1";
   const requiredToken = options.token ?? Bun.env.YOLO_API_TOKEN;
-  const context = options.toolContext ?? new ToolExecutionContext({ containPaths: true });
+  const context =
+    options.toolContext ?? new ToolExecutionContext({ containPaths: true });
   const server = Bun.serve({
     port: options.port ?? 8999,
     hostname,
     async fetch(req) {
       let requestHost: string;
       try {
-        requestHost = new URL(`http://${req.headers.get("host") ?? ""}`).hostname;
+        requestHost = new URL(`http://${req.headers.get("host") ?? ""}`)
+          .hostname;
       } catch {
-        return jsonResponse({ error: "Invalid Host header (DNS rebinding protection)" }, 403);
+        return jsonResponse(
+          { error: "Invalid Host header (DNS rebinding protection)" },
+          403,
+        );
       }
       if (
         !["127.0.0.1", "localhost", "[::1]", hostname.toLowerCase()].includes(
           requestHost.toLowerCase(),
         )
       ) {
-        return jsonResponse({ error: "Invalid Host header (DNS rebinding protection)" }, 403);
+        return jsonResponse(
+          { error: "Invalid Host header (DNS rebinding protection)" },
+          403,
+        );
       }
       const origin = req.headers.get("origin");
       const corsHeaders: Record<string, string> =
@@ -75,18 +87,25 @@ export function createApiServer(options: ApiServerOptions = {}) {
           ? {
               "Access-Control-Allow-Origin": origin,
               "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-              "Access-Control-Allow-Headers": "Content-Type, Authorization, X-YOLO-Token",
+              "Access-Control-Allow-Headers":
+                "Content-Type, Authorization, X-YOLO-Token",
               Vary: "Origin",
             }
           : {};
-      if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+      if (req.method === "OPTIONS")
+        return new Response(null, { headers: corsHeaders });
       if (req.method === "POST" && origin && !loopbackOrigin(origin)) {
-        return jsonResponse({ error: "Untrusted request origin" }, 403, corsHeaders);
+        return jsonResponse(
+          { error: "Untrusted request origin" },
+          403,
+          corsHeaders,
+        );
       }
       if (req.method === "POST" && requiredToken) {
         const auth = req.headers.get("authorization");
         const provided =
-          req.headers.get("x-yolo-token") ?? (auth?.startsWith("Bearer ") ? auth.slice(7) : null);
+          req.headers.get("x-yolo-token") ??
+          (auth?.startsWith("Bearer ") ? auth.slice(7) : null);
         if (provided !== requiredToken)
           return jsonResponse(
             { error: "Unauthorized: valid Bearer or X-YOLO-Token required" },
@@ -103,23 +122,39 @@ export function createApiServer(options: ApiServerOptions = {}) {
         } catch {
           throw new ToolArgumentError("Request body must be valid JSON");
         }
-        if (!isRecord(value)) throw new ToolArgumentError("Request body must be an object");
+        if (!isRecord(value))
+          throw new ToolArgumentError("Request body must be an object");
         return value;
       };
       // Enforce HTTP containment even when dependencies are supplied by the caller.
       const call = async (name: string, args: Record<string, unknown>) => {
         validateToolArguments(name, args);
-        if (["yolo_scan", "yolo_parse", "yolo_package_sync", "yolo_n2b_scan"].includes(name)) {
+        if (
+          [
+            "yolo_scan",
+            "yolo_parse",
+            "yolo_package_sync",
+            "yolo_n2b_scan",
+          ].includes(name)
+        ) {
           if (args.path !== undefined && typeof args.path !== "string")
             throw new ToolArgumentError("path must be a string");
-          args = { ...args, path: safeResolvePath(rootDir, args.path as string | undefined) };
+          args = {
+            ...args,
+            path: safeResolvePath(rootDir, args.path as string | undefined),
+          };
         } else if (name === "yolo_host_space" && typeof args.dir === "string") {
           args = { ...args, dir: safeResolvePath(rootDir, args.dir) };
         }
-        return executeTool(name, args, rootDir, context, { signal: req.signal });
+        return executeTool(name, args, rootDir, context, {
+          signal: req.signal,
+        });
       };
       try {
-        if (["/", "/health", "/api/health"].includes(path) && req.method === "GET") {
+        if (
+          ["/", "/health", "/api/health"].includes(path) &&
+          req.method === "GET"
+        ) {
           return jsonResponse(
             {
               status: "ok",
@@ -134,9 +169,17 @@ export function createApiServer(options: ApiServerOptions = {}) {
           );
         }
         if (path === "/api/openapi.json" && req.method === "GET")
-          return jsonResponse(buildOpenApiSpec(yoloVersion(), Bun.version), 200, corsHeaders);
+          return jsonResponse(
+            buildOpenApiSpec(yoloVersion(), Bun.version),
+            200,
+            corsHeaders,
+          );
         if (path === "/api/tools" && req.method === "GET")
-          return jsonResponse({ schema: "yolo.tools/1", tools: TOOLS }, 200, corsHeaders);
+          return jsonResponse(
+            { schema: "yolo.tools/1", tools: TOOLS },
+            200,
+            corsHeaders,
+          );
         if (path === "/api/bench" && req.method === "GET") {
           return jsonResponse(
             await call("yolo_bench", {
@@ -157,16 +200,26 @@ export function createApiServer(options: ApiServerOptions = {}) {
             "/api/verify": "yolo_verify",
           };
           const route = routes[path];
-          if (route) return jsonResponse(await call(route, await readBody()), 200, corsHeaders);
+          if (route)
+            return jsonResponse(
+              await call(route, await readBody()),
+              200,
+              corsHeaders,
+            );
           if (path === "/api/tools/call") {
             const body = await readBody();
             if (
               typeof body.name !== "string" ||
               (body.arguments !== undefined && !isRecord(body.arguments))
             )
-              throw new ToolArgumentError("Provide tool name and object arguments");
+              throw new ToolArgumentError(
+                "Provide tool name and object arguments",
+              );
             return jsonResponse(
-              await call(body.name, (body.arguments ?? {}) as Record<string, unknown>),
+              await call(
+                body.name,
+                (body.arguments ?? {}) as Record<string, unknown>,
+              ),
               200,
               corsHeaders,
             );
@@ -224,7 +277,8 @@ Native Bun HTTP REST and OpenAPI micro-server for YOLO tools.
   const port = portOpt ? parseInt(portOpt, 10) : 8999;
   const hostname = hostOpt ?? "127.0.0.1";
 
-  const isLoopback = hostname === "127.0.0.1" || hostname === "localhost" || hostname === "::1";
+  const isLoopback =
+    hostname === "127.0.0.1" || hostname === "localhost" || hostname === "::1";
   if (!isLoopback && !tokenOpt && !allowRemote) {
     console.error(
       `\x1b[31mError:\x1b[0m Refusing to bind non-loopback host '${hostname}' without authentication. Use --token <secret> or --allow-remote.`,
@@ -235,11 +289,19 @@ Native Bun HTTP REST and OpenAPI micro-server for YOLO tools.
   const server = createApiServer({ port, hostname, rootDir, token: tokenOpt });
   console.log(`\x1b[1m\x1b[36m=== YOLO API Server ===\x1b[0m`);
   console.log(`  Listening on: http://${server.hostname}:${server.port}`);
-  console.log(`  Health:       http://${server.hostname}:${server.port}/health`);
-  console.log(`  OpenAPI:      http://${server.hostname}:${server.port}/api/openapi.json`);
-  console.log(`  Tools:        http://${server.hostname}:${server.port}/api/tools`);
+  console.log(
+    `  Health:       http://${server.hostname}:${server.port}/health`,
+  );
+  console.log(
+    `  OpenAPI:      http://${server.hostname}:${server.port}/api/openapi.json`,
+  );
+  console.log(
+    `  Tools:        http://${server.hostname}:${server.port}/api/tools`,
+  );
   if (tokenOpt) {
-    console.log(`  Security:     Token authentication active on mutating POST endpoints`);
+    console.log(
+      `  Security:     Token authentication active on mutating POST endpoints`,
+    );
   }
   console.log(`  Press Ctrl+C to stop.`);
 

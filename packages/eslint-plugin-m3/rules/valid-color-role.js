@@ -25,7 +25,8 @@ export default {
   create(context) {
     /** Vérifie une chaîne arbitraire et signale chaque rôle inconnu. */
     function checkString(node, raw) {
-      if (typeof raw !== "string" || raw.indexOf("--md-sys-color-") === -1) return;
+      if (typeof raw !== "string" || raw.indexOf("--md-sys-color-") === -1)
+        return;
       VAR_RE.lastIndex = 0;
       const seen = new Set();
       let m;

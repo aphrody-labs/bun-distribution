@@ -15,7 +15,7 @@
 # For Flathub, replace the `dir` source with a `git` source pinned to a release tag and commit.
 id: ai.storyteller.filmcraft
 runtime: org.freedesktop.Platform
-runtime-version: '25.08'
+runtime-version: "25.08"
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.rust-stable
@@ -52,7 +52,7 @@ modules:
     build-options:
       env:
         CARGO_HOME: /run/build/filmcraft/cargo
-        CARGO_NET_OFFLINE: 'true'
+        CARGO_NET_OFFLINE: "true"
     build-commands:
       - cargo --offline build --release --locked -p filmcraft -p filmcraft-cli
       - install -Dm755 target/release/filmcraft /app/bin/filmcraft

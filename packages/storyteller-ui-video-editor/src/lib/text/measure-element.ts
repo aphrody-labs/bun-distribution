@@ -3,9 +3,7 @@ import { DEFAULTS } from "../timeline/defaults";
 import type { TextElement } from "../timeline/types";
 import type { TextBackground } from "./background";
 import { resolveNumberAtTime } from "../animation/values";
-import {
-  getTextVisualRect,
-} from "./layout";
+import { getTextVisualRect } from "./layout";
 import {
   measureTextLayout,
   type MeasuredTextLayout,
@@ -36,16 +34,13 @@ export interface MeasuredTextElement extends MeasuredTextLayout {
 }
 
 let textMeasurementContext:
-  | CanvasRenderingContext2D
-  | OffscreenCanvasRenderingContext2D
-  | null = null;
+  CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null = null;
 
 // Shared measurement context — reused across all measureTextElement
 // calls so we don't create a canvas per measurement. Falls back from
 // OffscreenCanvas (workers + main thread) to a hidden <canvas>.
 export function getTextMeasurementContext():
-  | CanvasRenderingContext2D
-  | OffscreenCanvasRenderingContext2D {
+  CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D {
   if (textMeasurementContext) {
     return textMeasurementContext;
   }

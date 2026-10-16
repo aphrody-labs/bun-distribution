@@ -308,7 +308,11 @@ function getDurationForVisibleSourceSpan({
   });
 }
 
-function getSourceDuration({ member }: { member: GroupResizeMember }): MediaTime {
+function getSourceDuration({
+  member,
+}: {
+  member: GroupResizeMember;
+}): MediaTime {
   if (member.sourceDuration != null) {
     return member.sourceDuration;
   }

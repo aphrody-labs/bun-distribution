@@ -5,19 +5,19 @@ name: Printing
 on:
   pull_request:
     paths:
-      - 'Cargo*'
-      - 'apps/wordcraft/**'
-      - 'apps/wordcraft-web/**'
-      - 'crates/ui-egui/**'
-      - '.github/workflows/printing.yml'
+      - "Cargo*"
+      - "apps/wordcraft/**"
+      - "apps/wordcraft-web/**"
+      - "crates/ui-egui/**"
+      - ".github/workflows/printing.yml"
   push:
     branches: [main]
     paths:
-      - 'Cargo*'
-      - 'apps/wordcraft/**'
-      - 'apps/wordcraft-web/**'
-      - 'crates/ui-egui/**'
-      - '.github/workflows/printing.yml'
+      - "Cargo*"
+      - "apps/wordcraft/**"
+      - "apps/wordcraft-web/**"
+      - "crates/ui-egui/**"
+      - ".github/workflows/printing.yml"
   workflow_dispatch:
 
 permissions:
@@ -38,7 +38,7 @@ jobs:
     timeout-minutes: 90
     env:
       CARGO_TERM_COLOR: always
-      CARGO_INCREMENTAL: '0'
+      CARGO_INCREMENTAL: "0"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 

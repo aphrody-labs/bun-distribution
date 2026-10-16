@@ -43,17 +43,14 @@
 // Core client
 export { SpacedriveClient } from "./client";
 export type { Transport } from "./transport";
-export {
-	TauriTransport,
-	HttpTransport,
-} from "./transport";
+export { TauriTransport, HttpTransport } from "./transport";
 export { SubscriptionManager } from "./subscriptionManager";
 
 // Event filtering utilities
 export {
-	DEFAULT_EVENT_SUBSCRIPTION,
-	NOISY_EVENTS,
-	type EventVariant,
+  DEFAULT_EVENT_SUBSCRIPTION,
+  NOISY_EVENTS,
+  type EventVariant,
 } from "./event-filter";
 
 // React hooks (requires @tanstack/react-query peer dependency)

@@ -12,7 +12,8 @@ export async function tauriInvoke<T = unknown>(
   args?: Record<string, unknown>,
 ): Promise<T> {
   if (typeof window !== "undefined") {
-    const tauri = (window as any).__TAURI__?.core || (window as any).__TAURI_INTERNALS__;
+    const tauri =
+      (window as any).__TAURI__?.core || (window as any).__TAURI_INTERNALS__;
     if (tauri?.invoke) {
       return await tauri.invoke(cmd, args);
     }
@@ -34,7 +35,9 @@ export function createServerActionBridge<TArgs = any, TResult = any>(
     localFallback?: (args: TArgs) => Promise<TResult>;
   },
 ): (args: TArgs) => Promise<TResult> {
-  const tauriCmd = options?.tauriCommand || `action_${actionName.replace(/[^a-zA-Z0-9_]/g, "_")}`;
+  const tauriCmd =
+    options?.tauriCommand ||
+    `action_${actionName.replace(/[^a-zA-Z0-9_]/g, "_")}`;
   const endpoint = options?.endpoint || `/api/actions/${actionName}`;
 
   return async (args: TArgs): Promise<TResult> => {

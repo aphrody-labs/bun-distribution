@@ -17,7 +17,8 @@ const roboto = localFont({
 
 export const metadata: Metadata = generateM3Metadata({
   name: "M3 on Next 16",
-  description: "Base UI, Tailwind v4 and Material 3 on Next.js 16, built and served on Bun.",
+  description:
+    "Base UI, Tailwind v4 and Material 3 on Next.js 16, built and served on Bun.",
 });
 export const viewport: Viewport = generateM3Viewport();
 

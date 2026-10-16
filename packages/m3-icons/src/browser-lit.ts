@@ -30,7 +30,9 @@ export class M3IconSvgElement extends LitElement {
     if (!this.svg) return nothing;
     return html`${
       this.title
-        ? html`<span role="img" aria-label=${this.title}>${unsafeHTML(this.svg)}</span>`
+        ? html`<span role="img" aria-label=${this.title}
+            >${unsafeHTML(this.svg)}</span
+          >`
         : html`<span aria-hidden="true">${unsafeHTML(this.svg)}</span>`
     }`;
   }

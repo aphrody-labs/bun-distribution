@@ -19,7 +19,11 @@ let outputRoot = HERE;
 for (let i = 0; i < args.length; i++) {
   const flag = args[i];
   const value = args[++i];
-  if ((flag !== "--source" && flag !== "--output") || !value || value.startsWith("--")) {
+  if (
+    (flag !== "--source" && flag !== "--output") ||
+    !value ||
+    value.startsWith("--")
+  ) {
     throw new Error(
       "Usage: bun run generate.ts --source /path/to/material-web [--output /tmp/preview]",
     );
@@ -64,7 +68,8 @@ const SKIP_DIRS = new Set([
   "sass",
   "testing",
 ]);
-const RE = /@customElement\(\s*['"]([a-z0-9-]+)['"]\s*\)\s*\nexport class (\w+)/g;
+const RE =
+  /@customElement\(\s*['"]([a-z0-9-]+)['"]\s*\)\s*\nexport class (\w+)/g;
 
 interface Def {
   file: string;
@@ -96,7 +101,11 @@ async function walk(dir: string): Promise<void> {
       if (SKIP_DIRS.has(name)) continue;
       // oxlint-disable-next-line no-await-in-loop -- depth-first walk in readdir order: the defs lists it appends to feed the generated output order
       await walk(full);
-    } else if (name.endsWith(".ts") && !name.endsWith("_test.ts") && !name.endsWith(".d.ts")) {
+    } else if (
+      name.endsWith(".ts") &&
+      !name.endsWith("_test.ts") &&
+      !name.endsWith(".d.ts")
+    ) {
       // oxlint-disable-next-line no-await-in-loop -- files are registered in walk order (defs lists feed the generated output), so reads stay sequential
       const src = await Bun.file(full).text();
       let m;
@@ -117,9 +126,12 @@ await walk(MW);
 // Tags re-exported by the three bundles must import from the bundled entry
 // path. Build the set of canonical relative paths from those bundles.
 const bundleImports = new Set<string>();
-const bundleSources = await Promise.all(BUNDLES.map((bundle) => Bun.file(join(MW, bundle)).text()));
+const bundleSources = await Promise.all(
+  BUNDLES.map((bundle) => Bun.file(join(MW, bundle)).text()),
+);
 for (const src of bundleSources) {
-  for (const m of src.matchAll(/from ['"]\.\/([^'"]+\.js)['"]/g)) bundleImports.add(m[1]);
+  for (const m of src.matchAll(/from ['"]\.\/([^'"]+\.js)['"]/g))
+    bundleImports.add(m[1]);
 }
 
 function pickDef(tag: string, candidates: Def[]): Def {
@@ -304,7 +316,8 @@ for (const tag of tags) {
 }
 
 // ── 6. Group by top-level category dir, emit one wrapper file per group ─────
-const groupOf = (file: string): string => file.split("/")[0].replace(/\..*$/, "");
+const groupOf = (file: string): string =>
+  file.split("/")[0].replace(/\..*$/, "");
 const groups: Map<string, Resolved[]> = new Map();
 for (const r of resolved) {
   const g = groupOf(r.file);
@@ -355,7 +368,9 @@ for (const [group, items] of [...groups.entries()].toSorted()) {
     lines.push("");
   }
   writes.push(Bun.write(join(OUT_DIR, fileName), lines.join("\n")));
-  indexLines.push(`export * from './wrappers/${group}.js';`.replace("./wrappers", "./"));
+  indexLines.push(
+    `export * from './wrappers/${group}.js';`.replace("./wrappers", "./"),
+  );
 }
 await Promise.all(writes);
 
@@ -369,7 +384,9 @@ await Bun.write(join(outputRoot, "index.ts"), idx.join("\n"));
 
 // ── 7. Report ──────────────────────────────────────────────────────────────
 console.log(`Tags requested: ${tags.length}`);
-console.log(`Wrappers generated: ${resolved.length} across ${groups.size} files`);
+console.log(
+  `Wrappers generated: ${resolved.length} across ${groups.size} files`,
+);
 if (unresolved.length) {
   console.log(`Unresolved (${unresolved.length}):`);
   for (const u of unresolved) console.log(`  - ${u.tag}: ${u.reason}`);
@@ -409,7 +426,10 @@ const listSection =
   `| Wrapper | Tag | Import élément | # events |\n| --- | --- | --- | --- |\n${rows}\n`;
 try {
   const readme = await Bun.file(README).text();
-  const updated = readme.replace(/## Liste complète des wrappers \(\d+\)[\s\S]*$/, listSection);
+  const updated = readme.replace(
+    /## Liste complète des wrappers \(\d+\)[\s\S]*$/,
+    listSection,
+  );
   if (updated !== readme) await Bun.write(README, updated);
 } catch {
   /* README optional */

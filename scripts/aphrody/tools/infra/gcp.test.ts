@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -27,14 +34,17 @@ function fakeGcloud(state: { account: boolean; apiKey: boolean }) {
     calls.push({ args, env });
     const line = args.join(" ");
     if (line.startsWith("iam service-accounts list"))
-      return ok(state.account ? "aphrody-bot@aphrody.iam.gserviceaccount.com\n" : "");
+      return ok(
+        state.account ? "aphrody-bot@aphrody.iam.gserviceaccount.com\n" : "",
+      );
     if (line.startsWith("iam service-accounts keys create")) {
       writeFileSync(args[4]!, '{"type":"service_account"}');
       return ok();
     }
     if (line.startsWith("services api-keys list"))
       return ok(state.apiKey ? "projects/1/locations/global/keys/k\n" : "");
-    if (line.startsWith("services api-keys get-key-string")) return ok(`${API_KEY}\n`);
+    if (line.startsWith("services api-keys get-key-string"))
+      return ok(`${API_KEY}\n`);
     if (line.startsWith("services api-keys create")) return ok(`${API_KEY}\n`);
     if (line === "auth print-access-token") return ok("ya29.token\n");
     if (line.startsWith("services list --enabled"))
@@ -95,18 +105,28 @@ describe("service account provisioning", () => {
     const { run, calls } = fakeGcloud({ account: false, apiKey: false });
     const lines: string[] = [];
     const report = await serviceAccount(
-      { project: "aphrody", name: "aphrody-bot", location: "us-central1", root, rotate: false },
+      {
+        project: "aphrody",
+        name: "aphrody-bot",
+        location: "us-central1",
+        root,
+        rotate: false,
+      },
       run,
       (line) => lines.push(line),
     );
     const commands = calls.map((call) => call.args.slice(0, 3).join(" "));
     expect(commands).toContain("iam service-accounts create");
     expect(commands).toContain("services api-keys create");
-    expect(calls.filter((call) => call.args[1] === "enable" && call.args.length > 5)).toHaveLength(
-      Math.ceil(APIS.length / 20),
-    );
+    expect(
+      calls.filter((call) => call.args[1] === "enable" && call.args.length > 5),
+    ).toHaveLength(Math.ceil(APIS.length / 20));
     const isolated = calls.filter((call) => call.env?.CLOUDSDK_CONFIG);
-    expect(isolated.map((call) => call.args[0])).toEqual(["auth", "auth", "services"]);
+    expect(isolated.map((call) => call.args[0])).toEqual([
+      "auth",
+      "auth",
+      "services",
+    ]);
     expect(existsSync(isolated[0]!.env!.CLOUDSDK_CONFIG!)).toBe(false);
     expect(report).toEqual({
       email: "aphrody-bot@aphrody.iam.gserviceaccount.com",
@@ -114,9 +134,13 @@ describe("service account provisioning", () => {
       apis: 2,
       token: 10,
     });
-    expect(readFileSync(join(root, "secrets", "aphrody-api-key.txt"), "utf8")).toBe(API_KEY);
+    expect(
+      readFileSync(join(root, "secrets", "aphrody-api-key.txt"), "utf8"),
+    ).toBe(API_KEY);
     const env = readFileSync(join(root, ".env"), "utf8");
-    expect(env).toStartWith("KEEP=1\n\n# --- GCP service account (aphrody-bot)");
+    expect(env).toStartWith(
+      "KEEP=1\n\n# --- GCP service account (aphrody-bot)",
+    );
     expect(env).toContain(`GEMINI_API_KEY=${API_KEY}`);
     expect(lines.join("\n")).not.toContain(API_KEY);
     expect(lines.join("\n")).not.toContain("ya29");
@@ -134,13 +158,25 @@ describe("service account provisioning", () => {
     const state = { account: true, apiKey: true };
     const first = fakeGcloud(state);
     await serviceAccount(
-      { project: "aphrody", name: "aphrody-bot", location: "us-central1", root, rotate: false },
+      {
+        project: "aphrody",
+        name: "aphrody-bot",
+        location: "us-central1",
+        root,
+        rotate: false,
+      },
       first.run,
       () => {},
     );
     const again = fakeGcloud(state);
     await serviceAccount(
-      { project: "aphrody", name: "aphrody-bot", location: "us-central1", root, rotate: false },
+      {
+        project: "aphrody",
+        name: "aphrody-bot",
+        location: "us-central1",
+        root,
+        rotate: false,
+      },
       again.run,
       () => {},
     );
@@ -152,13 +188,21 @@ describe("service account provisioning", () => {
     );
     const rotated = fakeGcloud(state);
     await serviceAccount(
-      { project: "aphrody", name: "aphrody-bot", location: "us-central1", root, rotate: true },
+      {
+        project: "aphrody",
+        name: "aphrody-bot",
+        location: "us-central1",
+        root,
+        rotate: true,
+      },
       rotated.run,
       () => {},
     );
     expect(
       rotated.calls.some(
-        (call) => call.args.slice(0, 4).join(" ") === "iam service-accounts keys create",
+        (call) =>
+          call.args.slice(0, 4).join(" ") ===
+          "iam service-accounts keys create",
       ),
     ).toBe(true);
   });
@@ -180,10 +224,18 @@ describe("service account provisioning", () => {
     ).rejects.toThrow("racine absente");
     const root = mkdtempSync(join(work, "fail-"));
     const failing: Gcloud = (args) =>
-      args[0] === "projects" ? { code: 1, stdout: "", stderr: "PERMISSION_DENIED" } : run(args);
+      args[0] === "projects"
+        ? { code: 1, stdout: "", stderr: "PERMISSION_DENIED" }
+        : run(args);
     await expect(
       serviceAccount(
-        { project: "aphrody", name: "aphrody-bot", location: "us-central1", root, rotate: false },
+        {
+          project: "aphrody",
+          name: "aphrody-bot",
+          location: "us-central1",
+          root,
+          rotate: false,
+        },
         failing,
         () => {},
       ),

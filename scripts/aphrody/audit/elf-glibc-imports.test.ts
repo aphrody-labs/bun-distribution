@@ -97,14 +97,20 @@ function fixture(): Uint8Array {
 describe("elf-glibc-imports", () => {
   test("reads the versioned imports and definitions of an ELF64 object", () => {
     const report = readElfVersions(fixture());
-    expect(report.imports).toEqual([{ symbol: "acosf", version: "GLIBC_2.43", file: "libm.so.6" }]);
-    expect(report.defined).toEqual([{ symbol: "entry", version: "GLIBC_2.2.5", file: null }]);
+    expect(report.imports).toEqual([
+      { symbol: "acosf", version: "GLIBC_2.43", file: "libm.so.6" },
+    ]);
+    expect(report.defined).toEqual([
+      { symbol: "entry", version: "GLIBC_2.2.5", file: null },
+    ]);
     expect(report.maxGlibc).toBe("GLIBC_2.43");
   });
 
   test("the ceiling selects exactly the imports above it", () => {
     const { imports } = readElfVersions(fixture());
-    expect(aboveCeiling(imports, "2.39").map((entry) => entry.symbol)).toEqual(["acosf"]);
+    expect(aboveCeiling(imports, "2.39").map((entry) => entry.symbol)).toEqual([
+      "acosf",
+    ]);
     expect(aboveCeiling(imports, "2.43")).toEqual([]);
     expect(aboveCeiling(imports, "2.9")).toHaveLength(1);
   });
@@ -120,15 +126,20 @@ describe("elf-glibc-imports", () => {
   });
 
   test("rejects files that are not little-endian ELF64", () => {
-    expect(() => readElfVersions(new Uint8Array(80))).toThrow("not an ELF file");
+    expect(() => readElfVersions(new Uint8Array(80))).toThrow(
+      "not an ELF file",
+    );
     const elf32 = fixture();
     elf32[4] = 1;
     expect(() => readElfVersions(elf32)).toThrow("only little-endian ELF64");
   });
 
-  test.skipIf(process.platform !== "linux")("parses the running Bun executable", () => {
-    const report = readElfVersions(readFileSync(process.execPath));
-    expect(report.imports.length).toBeGreaterThan(50);
-    expect(report.maxGlibc).toMatch(/^GLIBC_2\.\d+/);
-  });
+  test.skipIf(process.platform !== "linux")(
+    "parses the running Bun executable",
+    () => {
+      const report = readElfVersions(readFileSync(process.execPath));
+      expect(report.imports.length).toBeGreaterThan(50);
+      expect(report.maxGlibc).toMatch(/^GLIBC_2\.\d+/);
+    },
+  );
 });

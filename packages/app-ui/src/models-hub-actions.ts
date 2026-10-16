@@ -22,12 +22,19 @@ export async function loadModelInventories(
 }
 
 /** The transfer must acknowledge cancellation before the UI permits a resume. */
-export async function stopModelDownload(id: string, cancel: (id: string) => Promise<boolean>) {
+export async function stopModelDownload(
+  id: string,
+  cancel: (id: string) => Promise<boolean>,
+) {
   if (!(await cancel(id)))
-    throw new Error("Aucun téléchargement actif à arrêter ; actualisez le stockage.");
+    throw new Error(
+      "Aucun téléchargement actif à arrêter ; actualisez le stockage.",
+    );
 }
 
 /** Only explicitly catalogued chat models can be selected as chat defaults. */
-export function isChatModel(entry: Pick<CatalogEntry, "task"> | undefined): boolean {
+export function isChatModel(
+  entry: Pick<CatalogEntry, "task"> | undefined,
+): boolean {
   return entry?.task === "chat" || entry?.task === "text-generation";
 }

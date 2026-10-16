@@ -10,7 +10,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Alerte, Corbeille, Crayon, Croix, Enregistrer, Plus } from "@/components/icones";
+import {
+  Alerte,
+  Corbeille,
+  Crayon,
+  Croix,
+  Enregistrer,
+  Plus,
+} from "@/components/icones";
 import { SmartField } from "@aphrody/admin-ui/components/admin/SmartField";
 import { api, apiAt } from "@aphrody/admin-ui/client";
 import { colLabel } from "@/lib/db-labels";
@@ -34,7 +41,8 @@ function useCrud(table: string) {
   const wiki = isWikiTable(table);
   const client = wiki ? apiAt(crudBase(table)) : api;
   const collection = wiki ? `/${table}` : `/database/${table}`;
-  const row = (id: string | number) => `${collection}/${encodeURIComponent(String(id))}`;
+  const row = (id: string | number) =>
+    `${collection}/${encodeURIComponent(String(id))}`;
   return { client, collection, row };
 }
 
@@ -82,7 +90,13 @@ function fireToast(type: "success" | "error", msg: string) {
 }
 
 // ── Bouton "Ajouter une entrée" (création) ────────────────────────────────
-export function DbAddButton({ table, label = "Ajouter" }: { table: string; label?: string }) {
+export function DbAddButton({
+  table,
+  label = "Ajouter",
+}: {
+  table: string;
+  label?: string;
+}) {
   const spec = useTableSpec(table);
   const [open, setOpen] = useState(false);
   const router = useRouter();
@@ -90,7 +104,8 @@ export function DbAddButton({ table, label = "Ajouter" }: { table: string; label
   const crud = useCrud(table);
 
   const create = useMutation({
-    mutationFn: (body: Record<string, unknown>) => crud.client.post(crud.collection, body),
+    mutationFn: (body: Record<string, unknown>) =>
+      crud.client.post(crud.collection, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["db", table] });
       setOpen(false);
@@ -143,7 +158,13 @@ export function DbAddButton({ table, label = "Ajouter" }: { table: string; label
 }
 
 // ── Actions par ligne (éditer / supprimer) ────────────────────────────────
-export function DbRowActions({ table, id }: { table: string; id: string | number }) {
+export function DbRowActions({
+  table,
+  id,
+}: {
+  table: string;
+  id: string | number;
+}) {
   const spec = useTableSpec(table);
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -159,7 +180,8 @@ export function DbRowActions({ table, id }: { table: string; id: string | number
   });
 
   const update = useMutation({
-    mutationFn: (body: Record<string, unknown>) => crud.client.put(crud.row(id), body),
+    mutationFn: (body: Record<string, unknown>) =>
+      crud.client.put(crud.row(id), body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["db", table] });
       setEditing(false);
@@ -241,7 +263,8 @@ export function DbRowActions({ table, id }: { table: string; id: string | number
               </h3>
             </div>
             <p className="mb-1 text-sm text-white/70">
-              Entrée <code className="font-mono text-xs text-dbz-orange">{id}</code> de{" "}
+              Entrée{" "}
+              <code className="font-mono text-xs text-dbz-orange">{id}</code> de{" "}
               <strong className="text-white">{spec.name}</strong>.
             </p>
             <p className="mb-6 text-sm font-semibold text-red-400/80">
@@ -302,7 +325,9 @@ function FieldModal({
   // Réhydrate quand la ligne canonique arrive (édition).
   useEffect(() => {
     setDraft(
-      Object.fromEntries(columns.map((c) => [c, initial[c] != null ? String(initial[c]) : ""])),
+      Object.fromEntries(
+        columns.map((c) => [c, initial[c] != null ? String(initial[c]) : ""]),
+      ),
     );
   }, [columns, initial]);
 
@@ -315,7 +340,9 @@ function FieldModal({
       <div className="dbz-panel max-h-[85vh] w-full max-w-2xl overflow-y-auto p-6">
         <div className="mb-5 flex items-center justify-between">
           <div>
-            <h3 className="font-saiyan text-lg uppercase text-dbz-orange">{title}</h3>
+            <h3 className="font-saiyan text-lg uppercase text-dbz-orange">
+              {title}
+            </h3>
             <p className="mt-0.5 font-mono text-xs text-white/50">{subtitle}</p>
           </div>
           <button
@@ -329,14 +356,18 @@ function FieldModal({
         </div>
 
         {loading ? (
-          <div className="py-12 text-center text-sm text-white/50">Chargement…</div>
+          <div className="py-12 text-center text-sm text-white/50">
+            Chargement…
+          </div>
         ) : (
           <div className="space-y-3">
             {columns.map((c) => (
               <div key={c}>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-dbz-blue-light">
                   {colLabel(c)}
-                  <span className="ml-2 font-mono text-white/25 normal-case font-normal">{c}</span>
+                  <span className="ml-2 font-mono text-white/25 normal-case font-normal">
+                    {c}
+                  </span>
                 </label>
                 <SmartField
                   table={table}

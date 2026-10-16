@@ -12,7 +12,9 @@ export interface CommandResult {
   selection?: EditorSelectionPatch;
 }
 
-export function createElementSelectionResult(selectedElements: ElementRef[]): CommandResult {
+export function createElementSelectionResult(
+  selectedElements: ElementRef[],
+): CommandResult {
   return {
     selection: {
       selectedElements,

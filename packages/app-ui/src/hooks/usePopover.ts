@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 export function usePopover() {
-	const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false);
 
-	return { open, setOpen };
+  return { open, setOpen };
 }

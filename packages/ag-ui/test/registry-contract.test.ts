@@ -25,11 +25,14 @@ describe("AG-UI registry wire compatibility", () => {
     test(`${fixture.name}: Protobuf`, () => {
       const original = structuredClone(event);
       const frame = new EventEncoder().encodeProtobuf(event);
-      expect(new DataView(frame.buffer, frame.byteOffset).getUint32(0)).toBe(frame.length - 4);
+      expect(new DataView(frame.buffer, frame.byteOffset).getUint32(0)).toBe(
+        frame.length - 4,
+      );
       // The previous codec also materializes an absent repeated resume field
       // as []; Protobuf cannot distinguish that value from an absent list.
-      const expected = structuredClone(fixture.expected) as unknown as BaseEvent &
-        Record<string, unknown>;
+      const expected = structuredClone(
+        fixture.expected,
+      ) as unknown as BaseEvent & Record<string, unknown>;
       const input = expected.input as Record<string, unknown> | undefined;
       if (input && input.resume === undefined) input.resume = [];
       expect(decodeProto(frame.slice(4))).toEqual(expected);

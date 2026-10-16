@@ -14,16 +14,8 @@
     "full": {
       "commit": "f5d2bcb54abd0f45e50f5822e869ea5da9b06b91",
       "date": "2026-10-05T14:17:51Z",
-      "load_avg_end": [
-        289.86,
-        276.99,
-        270.86
-      ],
-      "load_avg_start": [
-        224.9,
-        226.31,
-        196.03
-      ],
+      "load_avg_end": [289.86, 276.99, 270.86],
+      "load_avg_start": [224.9, 226.31, 196.03],
       "scenarios": {
         "P1": {
           "gpu_bytes": 429194378,

@@ -18,7 +18,9 @@ priority = 100
 id = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 name = "Microsoft Excel (OpenXML)"
 extensions = ["xlsx"]
-mime_types = ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]
+mime_types = [
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]
 uti = "org.openxmlformats.spreadsheetml.sheet"
 category = "spreadsheet"
 priority = 100
@@ -32,7 +34,9 @@ priority = 90
 id = "application/vnd.openxmlformats-officedocument.spreadsheetml.template"
 name = "Excel Template (OpenXML)"
 extensions = ["xltx"]
-mime_types = ["application/vnd.openxmlformats-officedocument.spreadsheetml.template"]
+mime_types = [
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.template",
+]
 category = "spreadsheet"
 priority = 100
 

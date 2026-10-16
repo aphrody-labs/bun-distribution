@@ -13,18 +13,27 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "border-outline-variant bg-surface-container-high text-on-surface-variant",
-        secondary: "border-transparent bg-secondary-container text-on-secondary-container",
-        outline: "border-outline-variant bg-transparent text-on-surface-variant",
-        accent: "border-transparent bg-primary-container text-on-primary-container",
-        success: "border-transparent bg-success-container text-on-success-container",
-        warning: "border-transparent bg-warning-container text-on-warning-container",
+        default:
+          "border-outline-variant bg-surface-container-high text-on-surface-variant",
+        secondary:
+          "border-transparent bg-secondary-container text-on-secondary-container",
+        outline:
+          "border-outline-variant bg-transparent text-on-surface-variant",
+        accent:
+          "border-transparent bg-primary-container text-on-primary-container",
+        success:
+          "border-transparent bg-success-container text-on-success-container",
+        warning:
+          "border-transparent bg-warning-container text-on-warning-container",
         error: "border-transparent bg-error-container text-on-error-container",
-        destructive: "border-transparent bg-error-container text-on-error-container",
+        destructive:
+          "border-transparent bg-error-container text-on-error-container",
         info: "border-transparent bg-primary-container text-on-primary-container",
         // M3 names
-        tertiary: "border-transparent bg-tertiary-container text-on-tertiary-container",
-        badge: "justify-center rounded-full border-transparent bg-error text-on-error",
+        tertiary:
+          "border-transparent bg-tertiary-container text-on-tertiary-container",
+        badge:
+          "justify-center rounded-full border-transparent bg-error text-on-error",
       },
       size: {
         sm: "h-4 min-w-4 px-1 text-label-small",
@@ -42,7 +51,9 @@ const badgeVariants = cva(
 );
 
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {}
+  extends
+    React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof badgeVariants> {}
 
 function Badge({ className, variant, size, ...props }: BadgeProps) {
   return (

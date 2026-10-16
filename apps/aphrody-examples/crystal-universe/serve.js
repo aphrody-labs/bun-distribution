@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { buildLoreSearchRequest, filterLoreSearchPayload } from "./lore-search.js";
+import {
+  buildLoreSearchRequest,
+  filterLoreSearchPayload,
+} from "./lore-search.js";
 import {
   buildLoreCatalogRequest,
   normalizeLoreCatalogPayload,
@@ -20,7 +23,8 @@ const files = new Set([
   "dragon-pixel-wasm.js",
   "dragon-pixel-wasm_bg.wasm",
 ]);
-const shenronBase = process.env.SHENRON_API_BASE || "https://bot.dragonballfr.com";
+const shenronBase =
+  process.env.SHENRON_API_BASE || "https://bot.dragonballfr.com";
 function publicMultiplayerWebSocketBase() {
   const value = process.env.DRAGON_PIXEL_WS_BASE?.trim() || "";
   if (!value) return "";
@@ -52,7 +56,10 @@ const server = Bun.serve({
         { multiplayerWebSocketBase: publicMultiplayerWebSocketBase() },
         { headers: { "cache-control": "no-store" } },
       );
-    if (pathname === "/dragon-pixel-wasm.js" || pathname === "/dragon-pixel-wasm_bg.wasm") {
+    if (
+      pathname === "/dragon-pixel-wasm.js" ||
+      pathname === "/dragon-pixel-wasm_bg.wasm"
+    ) {
       const file = Bun.file(
         new URL(
           `../../../target/wasm-package-stage/aphrody-dragon-pixel-wasm/${pathname.slice(1)}`,
@@ -62,7 +69,9 @@ const server = Bun.serve({
       return file.exists().then((exists) =>
         exists
           ? new Response(file, {
-              headers: pathname.endsWith(".wasm") ? { "content-type": "application/wasm" } : {},
+              headers: pathname.endsWith(".wasm")
+                ? { "content-type": "application/wasm" }
+                : {},
             })
           : new Response("WASM package not built", { status: 404 }),
       );
@@ -71,7 +80,8 @@ const server = Bun.serve({
       const params = new URL(request.url).searchParams;
       const sourceId = params.get("sourceId")?.trim() || "";
       const search = buildLoreSearchRequest(params.get("q"), sourceId);
-      if (search.error) return Response.json({ error: search.error }, { status: 400 });
+      if (search.error)
+        return Response.json({ error: search.error }, { status: 400 });
       const url = new URL("/api/public/rag/search", shenronBase);
       url.searchParams.set("q", search.query);
       url.searchParams.set("limit", String(search.limit));
@@ -87,7 +97,8 @@ const server = Bun.serve({
               status: response.status,
               headers: {
                 "content-type":
-                  response.headers.get("content-type") || "application/json; charset=utf-8",
+                  response.headers.get("content-type") ||
+                  "application/json; charset=utf-8",
                 "cache-control": "no-store",
               },
             });
@@ -100,10 +111,13 @@ const server = Bun.serve({
               },
             });
           try {
-            return Response.json(filterLoreSearchPayload(JSON.parse(body), sourceId), {
-              status: response.status,
-              headers: { "cache-control": "no-store" },
-            });
+            return Response.json(
+              filterLoreSearchPayload(JSON.parse(body), sourceId),
+              {
+                status: response.status,
+                headers: { "cache-control": "no-store" },
+              },
+            );
           } catch {
             return Response.json(
               { error: "La réponse des archives est illisible." },
@@ -121,7 +135,8 @@ const server = Bun.serve({
     if (name === "api/lore/catalog" && request.method === "GET") {
       const params = new URL(request.url).searchParams;
       const catalog = buildLoreCatalogRequest(params.get("series"));
-      if (catalog.error) return Response.json({ error: catalog.error }, { status: 400 });
+      if (catalog.error)
+        return Response.json({ error: catalog.error }, { status: 400 });
       const url = new URL("/api/public/manga/tomes", shenronBase);
       url.searchParams.set("series", catalog.series);
       return fetch(url, {
@@ -139,9 +154,12 @@ const server = Bun.serve({
               },
             });
           try {
-            return Response.json(normalizeLoreCatalogPayload(JSON.parse(body), catalog.series), {
-              headers: { "cache-control": "no-store" },
-            });
+            return Response.json(
+              normalizeLoreCatalogPayload(JSON.parse(body), catalog.series),
+              {
+                headers: { "cache-control": "no-store" },
+              },
+            );
           } catch {
             return Response.json(
               { error: "La réponse du catalogue est illisible." },
@@ -168,9 +186,12 @@ const server = Bun.serve({
               { status: 502, headers: { "cache-control": "no-store" } },
             );
           try {
-            return Response.json(normalizeLoreCoveragePayload(await response.json()), {
-              headers: { "cache-control": "no-store" },
-            });
+            return Response.json(
+              normalizeLoreCoveragePayload(await response.json()),
+              {
+                headers: { "cache-control": "no-store" },
+              },
+            );
           } catch {
             return Response.json(
               { error: "La réponse de couverture RAG est illisible." },
@@ -180,7 +201,10 @@ const server = Bun.serve({
         })
         .catch(() =>
           Response.json(
-            { error: "La couverture publique du RAG est momentanément indisponible." },
+            {
+              error:
+                "La couverture publique du RAG est momentanément indisponible.",
+            },
             { status: 502, headers: { "cache-control": "no-store" } },
           ),
         );

@@ -54,7 +54,9 @@ export function TimelinePlayhead({
     tracksScrollRef,
     playheadRef,
   });
-  const { height: timelineHeight } = useContainerSize({ containerRef: timelineRef });
+  const { height: timelineHeight } = useContainerSize({
+    containerRef: timelineRef,
+  });
   const { height: tracksHeight } = useContainerSize({
     containerRef: tracksScrollRef,
   });
@@ -63,7 +65,8 @@ export function TimelinePlayhead({
   const timelineContainerHeight = timelineHeight || tracksHeight || 400;
   const totalHeight = Math.max(
     0,
-    timelineContainerHeight - (hasHorizontalScrollbar ? TIMELINE_SCROLLBAR_SIZE_PX - 5 : 0),
+    timelineContainerHeight -
+      (hasHorizontalScrollbar ? TIMELINE_SCROLLBAR_SIZE_PX - 5 : 0),
   );
 
   const currentTime = editor.playback.getCurrentTime();
@@ -71,9 +74,12 @@ export function TimelinePlayhead({
     time: currentTime,
     zoomLevel,
   });
-  const leftPosition = getCenteredLineLeft({ centerPixel: centerPosition }) - scrollLeft;
+  const leftPosition =
+    getCenteredLineLeft({ centerPixel: centerPosition }) - scrollLeft;
 
-  const handlePlayheadKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  const handlePlayheadKeyDown = (
+    event: React.KeyboardEvent<HTMLDivElement>,
+  ) => {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
 
     event.preventDefault();

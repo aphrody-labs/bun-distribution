@@ -12,7 +12,12 @@ import Prism from "prismjs";
 const languages = import("./prism-languages");
 
 /** Resolve once the Prism core and every language plugin are loaded. */
-export async function loadPrism(): Promise<Pick<typeof Prism, "highlightElement">> {
-	await languages;
-	return { highlightElement: (element, async) => Prism.highlightElement(element, async) };
+export async function loadPrism(): Promise<
+  Pick<typeof Prism, "highlightElement">
+> {
+  await languages;
+  return {
+    highlightElement: (element, async) =>
+      Prism.highlightElement(element, async),
+  };
 }

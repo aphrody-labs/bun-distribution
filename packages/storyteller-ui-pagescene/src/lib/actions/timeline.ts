@@ -134,15 +134,17 @@ export function addClipToCharacter(
 ): string | null {
   if (!item.media_id) return null;
   const startTime = atTime ?? editor.timelineController.getPlayhead();
-  const laneId = editor.timelineController.recordEdit("Add Animation Clip", () =>
-    editor.timelineController.addClipLane(characterUuid, {
-      sourceMediaId: item.media_id,
-      name: item.name ?? "Animation",
-      startTime,
-      duration: DEFAULT_CLIP_DURATION,
-      loop: true,
-      autoDuration: true,
-    }),
+  const laneId = editor.timelineController.recordEdit(
+    "Add Animation Clip",
+    () =>
+      editor.timelineController.addClipLane(characterUuid, {
+        sourceMediaId: item.media_id,
+        name: item.name ?? "Animation",
+        startTime,
+        duration: DEFAULT_CLIP_DURATION,
+        loop: true,
+        autoDuration: true,
+      }),
   );
   if (laneId) {
     const store = usePageSceneStore.getState();
@@ -174,7 +176,10 @@ export function addBakedClipToObject(
       bakedClipIndex: clipIndex,
       name: clip.name || `Clip ${clipIndex + 1}`,
       startTime: atTime,
-      duration: Math.min(clip.duration || DEFAULT_CLIP_DURATION, DEFAULT_CLIP_DURATION),
+      duration: Math.min(
+        clip.duration || DEFAULT_CLIP_DURATION,
+        DEFAULT_CLIP_DURATION,
+      ),
       // Loop by default, same as library strips (see addClipToCharacter).
       loop: true,
     }),

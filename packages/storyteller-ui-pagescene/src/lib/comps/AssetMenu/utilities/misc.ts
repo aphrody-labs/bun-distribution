@@ -1,9 +1,5 @@
 import type { PageSceneAdapter } from "../../../adapter";
-import {
-  AssetType,
-  FetchStatus,
-  FilterEngineCategories,
-} from "../../../enums";
+import { AssetType, FetchStatus, FilterEngineCategories } from "../../../enums";
 import type { MediaInfo } from "../../../models/mediaInfo";
 import type { MediaItem } from "../../../models/assets";
 

@@ -1,5 +1,8 @@
 import { AdminHeader } from "../_Header";
-import { DbAddButton, DbRowActions } from "@aphrody/admin-ui/components/admin/DbCrud";
+import {
+  DbAddButton,
+  DbRowActions,
+} from "@aphrody/admin-ui/components/admin/DbCrud";
 import { listSourcesWithLicense } from "@/lib/wiki-admin";
 
 export const dynamic = "force-dynamic";
@@ -31,9 +34,9 @@ export default async function AdminSourcesPage() {
       />
 
       <p className="text-sm text-white/50 mb-6">
-        Chaque image ou média de l&apos;encyclopédie est lié à une source et une licence. Cette page
-        liste toutes les sources référencées, avec le modèle d&apos;attribution à utiliser et la
-        licence applicable.
+        Chaque image ou média de l&apos;encyclopédie est lié à une source et une
+        licence. Cette page liste toutes les sources référencées, avec le modèle
+        d&apos;attribution à utiliser et la licence applicable.
       </p>
 
       <div className="flex justify-end mb-6">
@@ -46,7 +49,8 @@ export default async function AdminSourcesPage() {
             Aucune source enregistrée
           </p>
           <p className="text-white/50 text-sm">
-            Les sources s&apos;affichent ici une fois que des assets ont été importés.
+            Les sources s&apos;affichent ici une fois que des assets ont été
+            importés.
           </p>
         </div>
       ) : (
@@ -78,7 +82,9 @@ export default async function AdminSourcesPage() {
                   className="border-b border-dbz-border/40 hover:bg-dbz-blue-light/5 transition-colors"
                 >
                   <td className="p-3 align-top">
-                    <code className="text-dbz-orange text-xs font-mono">{s.id}</code>
+                    <code className="text-dbz-orange text-xs font-mono">
+                      {s.id}
+                    </code>
                   </td>
                   <td className="p-3 align-top">
                     <a
@@ -108,7 +114,9 @@ export default async function AdminSourcesPage() {
                         {s.license_key}
                       </span>
                     )}
-                    <p className="text-[10px] text-white/50 mt-1">{s.license_name}</p>
+                    <p className="text-[10px] text-white/50 mt-1">
+                      {s.license_name}
+                    </p>
                   </td>
                   <td className="p-3 align-top text-xs text-white/75">
                     {s.attribution_template ? (

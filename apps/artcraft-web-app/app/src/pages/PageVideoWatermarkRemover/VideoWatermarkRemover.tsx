@@ -1,5 +1,16 @@
 import { useState, useRef, useEffect } from "react";
-import { DropletIcon, ImagesIcon, PauseIcon, PlayIcon, RotateCwIcon, SkipBackIcon, SkipForwardIcon, VideoIcon, Volume2Icon, VolumeXIcon } from "lucide-react";
+import {
+  DropletIcon,
+  ImagesIcon,
+  PauseIcon,
+  PlayIcon,
+  RotateCwIcon,
+  SkipBackIcon,
+  SkipForwardIcon,
+  VideoIcon,
+  Volume2Icon,
+  VolumeXIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
@@ -273,9 +284,7 @@ export const VideoWatermarkRemover = () => {
                             className="flex h-8 w-8 items-center justify-center rounded-[3px] bg-white/10 transition-colors hover:bg-white/20"
                             title="First Frame"
                           >
-                            <SkipBackIcon
-                              
-                              className="text-sm text-white" />
+                            <SkipBackIcon className="text-sm text-white" />
                           </button>
                           <button
                             onClick={togglePlayPause}
@@ -291,9 +300,7 @@ export const VideoWatermarkRemover = () => {
                             className="flex h-8 w-8 items-center justify-center rounded-[3px] bg-white/10 transition-colors hover:bg-white/20"
                             title="Last Frame"
                           >
-                            <SkipForwardIcon
-                              
-                              className="text-sm text-white" />
+                            <SkipForwardIcon className="text-sm text-white" />
                           </button>
                           <div className="mx-1 h-6 w-px bg-white/20" />
                           <button
@@ -341,9 +348,7 @@ export const VideoWatermarkRemover = () => {
                 <div className="border border-ui-panel-border bg-ui-panel p-6">
                   <div>
                     <div className="mb-4 flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
-                      <VideoIcon
-                        
-                        className="text-ui-accent-ink" />
+                      <VideoIcon className="text-ui-accent-ink" />
                       Video Information
                     </div>
                     <div className="space-y-3 text-sm">

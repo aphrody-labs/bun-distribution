@@ -79,10 +79,7 @@ export type {
   Status,
   ActiveJob,
 } from "./lib/models/mediaInfo";
-export type {
-  Pagination,
-  PaginationInfinite,
-} from "./lib/models/pagination";
+export type { Pagination, PaginationInfinite } from "./lib/models/pagination";
 export type { Prompts } from "./lib/models/prompts";
 export type {
   UserDetailsLight,
@@ -110,7 +107,10 @@ export type { SceneDeps } from "./lib/engine/scene";
 export { SceneUtils } from "./lib/engine/helper";
 export type { SceneUtilsDeps } from "./lib/engine/helper";
 export { SaveManager } from "./lib/engine/save_manager";
-export type { SaveManagerDeps, SaveSceneStateArgs } from "./lib/engine/save_manager";
+export type {
+  SaveManagerDeps,
+  SaveSceneStateArgs,
+} from "./lib/engine/save_manager";
 export { SceneManager } from "./lib/engine/scene_manager_api";
 export { MouseControls } from "./lib/engine/keybinds_controls";
 export type { MouseControlsDeps } from "./lib/engine/keybinds_controls";
@@ -122,14 +122,23 @@ export type {
 
 // Engine subsystems
 export { HistoryManager } from "./lib/engine/editor/HistoryManager";
-export type { UndoableAction, HistoryManagerOptions } from "./lib/engine/editor/HistoryManager";
+export type {
+  UndoableAction,
+  HistoryManagerOptions,
+} from "./lib/engine/editor/HistoryManager";
 export { ViewportController } from "./lib/engine/editor/ViewportController";
 export type { ViewportEngineRefs } from "./lib/engine/editor/ViewportController";
 export { PostProcessingPipeline } from "./lib/engine/editor/PostProcessingPipeline";
 export { GizmoController } from "./lib/engine/editor/GizmoController";
-export type { GizmoControllerDeps, GizmoCallbacks } from "./lib/engine/editor/GizmoController";
+export type {
+  GizmoControllerDeps,
+  GizmoCallbacks,
+} from "./lib/engine/editor/GizmoController";
 export { CameraController } from "./lib/engine/editor/CameraController";
-export type { CameraControllerDeps, RenderDimensions } from "./lib/engine/editor/CameraController";
+export type {
+  CameraControllerDeps,
+  RenderDimensions,
+} from "./lib/engine/editor/CameraController";
 export { SelectionBridge } from "./lib/engine/editor/SelectionBridge";
 export type { SelectionBridgeDeps } from "./lib/engine/editor/SelectionBridge";
 
@@ -237,10 +246,7 @@ export type {
   HeldMoveKeys,
   HeldRotateKeys,
 } from "./lib/engine/cameraMath";
-export {
-  ndcFromClient,
-  applyNdcToVector2,
-} from "./lib/engine/pointer";
+export { ndcFromClient, applyNdcToVector2 } from "./lib/engine/pointer";
 export { isPointerLockSupported } from "./lib/engine/browserChecks";
 
 // Engine event bus + event classes (host wrappers can emit

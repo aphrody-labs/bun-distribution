@@ -17,13 +17,17 @@ import { M3Button, M3Dialog, M3Select, M3Switch } from "@aphrody/m3-baseui";
 </M3Button>;
 
 <M3Dialog.Root>
-  <M3Dialog.Trigger render={<M3Button variant="text" />}>Delete</M3Dialog.Trigger>
+  <M3Dialog.Trigger render={<M3Button variant="text" />}>
+    Delete
+  </M3Dialog.Trigger>
   <M3Dialog.Portal>
     <M3Dialog.Backdrop />
     <M3Dialog.Popup>
       <M3Dialog.Title>Delete the file?</M3Dialog.Title>
       <M3Dialog.Description>It cannot be undone.</M3Dialog.Description>
-      <M3Dialog.Close render={<M3Button variant="text" />}>Cancel</M3Dialog.Close>
+      <M3Dialog.Close render={<M3Button variant="text" />}>
+        Cancel
+      </M3Dialog.Close>
     </M3Dialog.Popup>
   </M3Dialog.Portal>
 </M3Dialog.Root>;

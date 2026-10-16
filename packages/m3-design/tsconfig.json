@@ -1,11 +1,5 @@
 {
   "extends": "@aphrody/m3-config/tsconfig.json",
-  "include": [
-    "src/**/*.ts",
-    "*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["src/**/*.ts", "*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

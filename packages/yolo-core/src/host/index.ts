@@ -36,7 +36,13 @@ export interface HostAccount {
 export interface HostCatalog {
   schemaVersion: number;
   units: HostUnit[];
-  nginx: { file: string; site: string; service?: string; ownerRepo: string; targetHost: string }[];
+  nginx: {
+    file: string;
+    site: string;
+    service?: string;
+    ownerRepo: string;
+    targetHost: string;
+  }[];
   dropIns: { dir: string; files: string[] };
   unitDropIns: { unit: string; path: string; hosts: string[] }[];
   nginxSnippets: { dir: string; files: string[] };
@@ -49,8 +55,13 @@ export interface HostCatalog {
 
 /** The source checkout that holds this module, when it carries the host catalog (null in a compiled binary). */
 export function sourceCheckout(from = import.meta.dir): string | null {
-  for (let dir = from, up = dirname(dir); dir !== up; dir = up, up = dirname(dir))
-    if (existsSync(join(dir, "tools", "config", "host", "catalog.json"))) return dir;
+  for (
+    let dir = from, up = dirname(dir);
+    dir !== up;
+    dir = up, up = dirname(dir)
+  )
+    if (existsSync(join(dir, "tools", "config", "host", "catalog.json")))
+      return dir;
   return null;
 }
 
@@ -60,7 +71,9 @@ export function yoloRoot(
   checkout: string | null = sourceCheckout(),
 ): string {
   return (
-    env.YOLO_ROOT || checkout || join(env.HOME || env.USERPROFILE || homedir(), "src", "aphrody")
+    env.YOLO_ROOT ||
+    checkout ||
+    join(env.HOME || env.USERPROFILE || homedir(), "src", "aphrody")
   );
 }
 export const hostRoot = (env?: Record<string, string | undefined>) =>
@@ -70,7 +83,8 @@ export const hostRoot = (env?: Record<string, string | undefined>) =>
 export function hostRepositoryRoot(root = hostRoot()): string {
   const parent = resolve(root, "..", "..");
   // A legacy repository named tools still owns its own Git directory or worktree file.
-  if (basename(parent) !== "tools" || existsSync(join(parent, ".git"))) return parent;
+  if (basename(parent) !== "tools" || existsSync(join(parent, ".git")))
+    return parent;
   return dirname(parent);
 }
 
@@ -80,14 +94,18 @@ export function loadCatalog(root = hostRoot()): HostCatalog {
 
 /** Flat unit text: the unit file plus its drop-in directives inserted at the head of `[Service]`. */
 export function composeUnit(name: string, root = hostRoot()): string {
-  const entry = loadCatalog(root).units.find((u) => u.unit === name || u.service === name);
+  const entry = loadCatalog(root).units.find(
+    (u) => u.unit === name || u.service === name,
+  );
   if (!entry) throw new Error(`unknown unit: ${name}`);
   const text = readFileSync(join(root, entry.path), "utf8");
   if (!entry.dropIns.length) return text;
   const body = entry.dropIns.flatMap((d) =>
     readFileSync(join(root, "systemd/shared", `${d}.conf`), "utf8")
       .split("\n")
-      .filter((l) => l.trim() && !l.startsWith("#") && l.trim() !== "[Service]"),
+      .filter(
+        (l) => l.trim() && !l.startsWith("#") && l.trim() !== "[Service]",
+      ),
   );
   const at = text.indexOf("[Service]\n");
   if (at < 0) throw new Error(`${entry.unit}: no [Service] section`);
@@ -97,12 +115,14 @@ export function composeUnit(name: string, root = hostRoot()): string {
 
 /** Inline `include snippets/NAME.inc;` so a concatenated site bundle stays self-contained. */
 export function composeNginx(text: string, root = hostRoot()): string {
-  return text.replace(/^([ \t]*)include snippets\/([\w.-]+);[ \t]*$/gm, (_m, indent, file) =>
-    readFileSync(join(root, "nginx/snippets", file), "utf8")
-      .split("\n")
-      .filter((l) => l.trim() && !l.startsWith("#"))
-      .map((l) => `${indent}${l}`)
-      .join("\n"),
+  return text.replace(
+    /^([ \t]*)include snippets\/([\w.-]+);[ \t]*$/gm,
+    (_m, indent, file) =>
+      readFileSync(join(root, "nginx/snippets", file), "utf8")
+        .split("\n")
+        .filter((l) => l.trim() && !l.startsWith("#"))
+        .map((l) => `${indent}${l}`)
+        .join("\n"),
   );
 }
 
@@ -113,15 +133,18 @@ export function checkCatalog(root = hostRoot()): string[] {
   const listed = new Set<string>();
   for (const u of c.units) {
     listed.add(u.path);
-    if (!existsSync(join(root, u.path))) problems.push(`missing unit file: ${u.path}`);
+    if (!existsSync(join(root, u.path)))
+      problems.push(`missing unit file: ${u.path}`);
     for (const d of u.dropIns)
       if (!existsSync(join(root, "systemd/shared", `${d}.conf`)))
         problems.push(`${u.unit}: unknown drop-in ${d}`);
-    if (basename(u.path) !== u.unit) problems.push(`${u.unit}: path/unit mismatch`);
+    if (basename(u.path) !== u.unit)
+      problems.push(`${u.unit}: path/unit mismatch`);
   }
   for (const n of c.nginx) {
     listed.add(n.file);
-    if (!existsSync(join(root, n.file))) problems.push(`missing nginx file: ${n.file}`);
+    if (!existsSync(join(root, n.file)))
+      problems.push(`missing nginx file: ${n.file}`);
   }
   if (c.inventory) {
     for (const f of c.inventory.files)
@@ -131,13 +154,16 @@ export function checkCatalog(root = hostRoot()): string[] {
       problems.push(`missing toolchain manifest: ${c.inventory.toolchain}`);
     if (existsSync(join(root, c.inventory.dir)))
       for (const f of readdirSync(join(root, c.inventory.dir)))
-        if (!c.inventory.files.includes(f)) problems.push(`unlisted inventory file: ${f}`);
+        if (!c.inventory.files.includes(f))
+          problems.push(`unlisted inventory file: ${f}`);
   }
   for (const dir of ["aphrody", "shenron"])
     for (const f of readdirSync(join(root, "systemd", dir)))
       if (f.endsWith(".service") || f.endsWith(".timer"))
-        if (!listed.has(`systemd/${dir}/${f}`)) problems.push(`unlisted unit: systemd/${dir}/${f}`);
-  if (c.wireguard) problems.push(...tunnelProblems(root, c.wireguard.declaration));
+        if (!listed.has(`systemd/${dir}/${f}`))
+          problems.push(`unlisted unit: systemd/${dir}/${f}`);
+  if (c.wireguard)
+    problems.push(...tunnelProblems(root, c.wireguard.declaration));
   if (c.accounts)
     problems.push(
       ...accountProblems(

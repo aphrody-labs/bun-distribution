@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync, existsSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+  existsSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { prunePublicFontCopies } from "../public-assets-package";
@@ -9,7 +15,12 @@ test("public packaging removes remote-only duplicate fonts and retains local gly
   const root = mkdtempSync(join(tmpdir(), "public-font-trim-"));
   const fonts = join(root, "fonts");
   mkdirSync(fonts);
-  for (const name of ["remote.woff2", "glyph.woff2", "icon.png", "spritesheet.webp"])
+  for (const name of [
+    "remote.woff2",
+    "glyph.woff2",
+    "icon.png",
+    "spritesheet.webp",
+  ])
     writeFileSync(join(fonts, name), "bytes");
   const base = "https://public.example";
   try {
@@ -23,7 +34,11 @@ test("public packaging removes remote-only duplicate fonts and retains local gly
     for (const name of ["glyph.woff2", "icon.png", "spritesheet.webp"])
       expect(existsSync(join(fonts, name))).toBe(true);
     expect(() =>
-      prunePublicFontCopies(root, ['url("https://other.example/unsafe.woff2")'], base),
+      prunePublicFontCopies(
+        root,
+        ['url("https://other.example/unsafe.woff2")'],
+        base,
+      ),
     ).toThrow("Unqualified");
   } finally {
     rmSync(root, { recursive: true, force: true });

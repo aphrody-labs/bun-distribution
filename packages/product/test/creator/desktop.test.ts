@@ -11,8 +11,17 @@ import {
   desktopMain,
 } from "../../src/creator/desktop.ts";
 import { logCrash } from "../../src/shared/crash.ts";
-import { desktopCandidates, findDesktop, openInDesktop } from "../../src/shared/desktop-launch.ts";
-import { argvFor, askKind, KitInputError, memoryChannel } from "../../src/shared/desktop.ts";
+import {
+  desktopCandidates,
+  findDesktop,
+  openInDesktop,
+} from "../../src/shared/desktop-launch.ts";
+import {
+  argvFor,
+  askKind,
+  KitInputError,
+  memoryChannel,
+} from "../../src/shared/desktop.ts";
 
 test("the catalog covers every command and keeps the command lines private", () => {
   const catalog = creatorCatalog();
@@ -30,8 +39,12 @@ test("the catalog covers every command and keeps the command lines private", () 
   expect(new Set(ids).size).toBe(ids.length);
   expect(catalog.actions.every((action) => !("argv" in action))).toBe(true);
   for (const action of catalog.actions)
-    expect(catalog.groups.some((group) => group.id === action.group)).toBe(true);
-  expect(catalog.actions.find((a) => a.id === "adobe-apply")?.confirm).toBeDefined();
+    expect(catalog.groups.some((group) => group.id === action.group)).toBe(
+      true,
+    );
+  expect(
+    catalog.actions.find((a) => a.id === "adobe-apply")?.confirm,
+  ).toBeDefined();
 });
 
 test("form values become the same command line as the terminal", () => {
@@ -50,10 +63,16 @@ test("form values become the same command line as the terminal", () => {
     "B",
     "--dry-run",
   ]);
-  expect(creatorArgv("disk-apply", {})).toEqual(["disk-clean", "clean", "--apply"]);
+  expect(creatorArgv("disk-apply", {})).toEqual([
+    "disk-clean",
+    "clean",
+    "--apply",
+  ]);
   expect(() => creatorArgv("challonge-create", {})).toThrow(KitInputError);
   expect(() =>
-    argvFor([], [{ name: "q", label: "Q", kind: "number", flag: "--q" }], { q: "1; rm" }),
+    argvFor([], [{ name: "q", label: "Q", kind: "number", flag: "--q" }], {
+      q: "1; rm",
+    }),
   ).toThrow("nombre");
 });
 
@@ -85,7 +104,9 @@ test("the crash report reads the crash log", () => {
 });
 
 test("the launcher opens the desktop route only when the app is installed", () => {
-  expect(desktopCandidates({ LOCALAPPDATA: "C:\\L" }, "win32")[0]).toContain("aphrody-app.exe");
+  expect(desktopCandidates({ LOCALAPPDATA: "C:\\L" }, "win32")[0]).toContain(
+    "aphrody-app.exe",
+  );
   expect(
     findDesktop(
       {},
@@ -96,6 +117,8 @@ test("the launcher opens the desktop route only when the app is installed", () =
   ).toBeUndefined();
   const launched: string[][] = [];
   const env = { APHRODY_DESKTOP_BIN: process.execPath };
-  expect(openInDesktop("creator", env, (argv) => (launched.push(argv), true))).toBe(true);
+  expect(
+    openInDesktop("creator", env, (argv) => (launched.push(argv), true)),
+  ).toBe(true);
   expect(launched).toEqual([[process.execPath, "aphrody://creator"]]);
 });

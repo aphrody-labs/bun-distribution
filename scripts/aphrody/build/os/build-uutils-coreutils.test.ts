@@ -12,7 +12,9 @@ import {
 
 describe("build-uutils-coreutils", () => {
   test("installs into the directory the kernel coreutils subsystem resolves", () => {
-    expect(installRoot).toBe(join(repoRoot, "target", "aphrody-uutils", "coreutils"));
+    expect(installRoot).toBe(
+      join(repoRoot, "target", "aphrody-uutils", "coreutils"),
+    );
   });
 
   test("selects the coreutils feature set per platform", () => {
@@ -22,7 +24,9 @@ describe("build-uutils-coreutils", () => {
   });
 
   test("builds locked cargo install arguments", () => {
-    expect(installArgs({ crate: "coreutils", version: "0.12.0" }, "windows")).toEqual([
+    expect(
+      installArgs({ crate: "coreutils", version: "0.12.0" }, "windows"),
+    ).toEqual([
       "install",
       "--root",
       installRoot,
@@ -46,7 +50,9 @@ describe("build-uutils-coreutils", () => {
   });
 
   test("reports missing required utilities", () => {
-    expect(missingUtilities("cat\ncp\nls\nrm\nsha256sum\nsort\nwhoami\n")).toEqual([]);
+    expect(
+      missingUtilities("cat\ncp\nls\nrm\nsha256sum\nsort\nwhoami\n"),
+    ).toEqual([]);
     expect(missingUtilities("cat cp", ["cat", "ls"])).toEqual(["ls"]);
   });
 

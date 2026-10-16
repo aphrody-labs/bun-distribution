@@ -1,13 +1,12 @@
-
 /**
  * This is cached whenever vite/remix/whatever launches.
  * It's fed from an environment variable.
  */
 export enum BuildEnvironmentType {
-    Dev,
-    DevProxy,
-    Staging,
-    Production,
+  Dev,
+  DevProxy,
+  Staging,
+  Production,
 }
 
 export class BuildEnvironment {
@@ -20,10 +19,15 @@ export class BuildEnvironment {
     }
 
     // https://v2.vitejs.dev/guide/env-and-mode.html
-    console.log('Reading environment variable: `VITE_ENVIRONMENT_TYPE` to determine build environment.')
-    console.log(`Environment variable 'VITE_ENVIRONMENT_TYPE' = ${import.meta.env.VITE_ENVIRONMENT_TYPE}`)
+    console.log(
+      "Reading environment variable: `VITE_ENVIRONMENT_TYPE` to determine build environment.",
+    );
+    console.log(
+      `Environment variable 'VITE_ENVIRONMENT_TYPE' = ${import.meta.env.VITE_ENVIRONMENT_TYPE}`,
+    );
 
-    const environmentLabel : string | undefined = import.meta.env.VITE_ENVIRONMENT_TYPE;
+    const environmentLabel: string | undefined = import.meta.env
+      .VITE_ENVIRONMENT_TYPE;
 
     let environmentType = BuildEnvironmentType.Production;
 
@@ -56,6 +60,6 @@ export class BuildEnvironment {
   }
 }
 
-export function GetBuildEnvironment() : BuildEnvironment {
+export function GetBuildEnvironment(): BuildEnvironment {
   return BuildEnvironment.getInstance();
 }

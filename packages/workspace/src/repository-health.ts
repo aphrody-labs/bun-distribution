@@ -2,9 +2,20 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { runDocsLinks } from "./docs-links.ts";
 
-async function command(root: string, args: string[]): Promise<{ code: number; out: string }> {
-  const child = Bun.spawn(args, { windowsHide: true, cwd: root, stdout: "pipe", stderr: "pipe" });
-  const [code, stdout] = await Promise.all([child.exited, new Response(child.stdout).text()]);
+async function command(
+  root: string,
+  args: string[],
+): Promise<{ code: number; out: string }> {
+  const child = Bun.spawn(args, {
+    windowsHide: true,
+    cwd: root,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [code, stdout] = await Promise.all([
+    child.exited,
+    new Response(child.stdout).text(),
+  ]);
   return { code, out: stdout.trim() };
 }
 
@@ -32,16 +43,25 @@ export async function runRepositoryHealth(args: string[]): Promise<number> {
     if (arg !== "--fail-on-links") index += 1;
   }
   const cargo = await readFile(`${root}/Cargo.toml`, "utf8").catch(() => "");
-  const members = (cargo.match(/^members\s*=\s*\[[\s\S]*?^\]/m)?.[0].match(/"[^"]+"/g) ?? [])
-    .length;
+  const members = (
+    cargo.match(/^members\s*=\s*\[[\s\S]*?^\]/m)?.[0].match(/"[^"]+"/g) ?? []
+  ).length;
   const [crates, packages, apps, docs, stubs, paths] = await Promise.all([
-    command(root, ["sh", "-c", "find crates -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l"]),
+    command(root, [
+      "sh",
+      "-c",
+      "find crates -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l",
+    ]),
     command(root, [
       "sh",
       "-c",
       "find packages -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l",
     ]),
-    command(root, ["sh", "-c", "find apps -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l"]),
+    command(root, [
+      "sh",
+      "-c",
+      "find apps -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l",
+    ]),
     command(root, ["sh", "-c", "find docs -name '*.md' 2>/dev/null | wc -l"]),
     command(root, [
       "rg",
@@ -68,6 +88,12 @@ export async function runRepositoryHealth(args: string[]): Promise<number> {
   console.log(
     `stale references: ${staleResult.out ? staleResult.out.split("\n").length : 0}; stubs: ${stubs.out ? stubs.out.split("\n").length : 0}; machine paths: ${paths.out ? paths.out.split("\n").length : 0}`,
   );
-  const links = await runDocsLinks(["--root", root, "--scope", "repository", "--json"]);
+  const links = await runDocsLinks([
+    "--root",
+    root,
+    "--scope",
+    "repository",
+    "--json",
+  ]);
   return failOnLinks && links !== 0 ? links : 0;
 }

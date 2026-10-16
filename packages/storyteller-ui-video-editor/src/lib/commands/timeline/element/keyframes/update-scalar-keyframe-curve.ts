@@ -3,7 +3,10 @@ import { updateScalarKeyframeCurve } from "../../../../animation";
 import { Command, type CommandResult } from "../../../base-command";
 import { updateElementInSceneTracks } from "../../../../timeline/track-element-update";
 import { resolveAnimationTarget } from "../../../../timeline/animation-targets";
-import type { AnimationPath, ScalarCurveKeyframePatch } from "../../../../animation/types";
+import type {
+  AnimationPath,
+  ScalarCurveKeyframePatch,
+} from "../../../../animation/types";
 import type { SceneTracks } from "../../../../timeline/types";
 
 export class UpdateScalarKeyframeCurveCommand extends Command {

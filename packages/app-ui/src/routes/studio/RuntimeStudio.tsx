@@ -51,7 +51,8 @@ export function RuntimeStudio() {
       <header className="flex flex-col gap-2">
         <h2 className="text-headline-small">Moteur</h2>
         <p className="max-w-prose text-on-surface-variant">
-          Le runtime Bun d’Aphrody et les mesures du moteur natif de cette application.
+          Le runtime Bun d’Aphrody et les mesures du moteur natif de cette
+          application.
         </p>
       </header>
       <section className="flex flex-col gap-3 rounded-large bg-surface-container-low p-6">
@@ -74,7 +75,10 @@ export function RuntimeStudio() {
             Banc d’essai ({BENCHMARK_ITERATIONS.toLocaleString()} itérations)
           </button>
         </div>
-        <output aria-live="polite" className="min-h-6 font-mono text-body-medium">
+        <output
+          aria-live="polite"
+          className="min-h-6 font-mono text-body-medium"
+        >
           {output}
         </output>
       </section>
@@ -82,7 +86,8 @@ export function RuntimeStudio() {
         <h3 className="text-title-large">
           Bun {catalog.bunVersion}{" "}
           <span className="text-body-medium text-on-surface-variant">
-            ({catalog.bunRevision.slice(0, 8)}, vendor/bun {catalog.sourceRevision.slice(0, 8)})
+            ({catalog.bunRevision.slice(0, 8)}, vendor/bun{" "}
+            {catalog.sourceRevision.slice(0, 8)})
           </span>
         </h3>
         <ul className="grid gap-3 md:grid-cols-2">

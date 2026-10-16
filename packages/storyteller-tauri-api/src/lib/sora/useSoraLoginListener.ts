@@ -6,7 +6,7 @@ type SoraLoginSuccessPayload = {
 };
 
 export function useSoraLoginListener(
-  onSuccess: (payload: SoraLoginSuccessPayload) => void
+  onSuccess: (payload: SoraLoginSuccessPayload) => void,
 ) {
   useEffect(() => {
     let unlisten: () => void;
@@ -16,7 +16,7 @@ export function useSoraLoginListener(
         "sora-login-success",
         (event) => {
           onSuccess(event.payload);
-        }
+        },
       );
       unlisten = stop;
     };

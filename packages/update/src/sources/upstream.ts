@@ -19,7 +19,12 @@ import { spawnSync } from "../process.ts";
 import { Ctx } from "../context.ts";
 import { refHead } from "./drift.ts";
 import { lsRemote } from "../deps/inventory.ts";
-import { parseManifest, resolveSourceRoot, type Manifest, type Reference } from "./restore.ts";
+import {
+  parseManifest,
+  resolveSourceRoot,
+  type Manifest,
+  type Reference,
+} from "./restore.ts";
 
 const MANIFEST = "tools/config/upstream-sources.json";
 export const DOC = "docs/reference/infra/UPSTREAMS.md";
@@ -33,14 +38,21 @@ const git = (args: string[], cwd?: string) =>
   });
 
 export function cacheRoot(): string {
-  return join(process.env.XDG_CACHE_HOME ?? join(homedir(), ".cache"), "aphrody", "upstream");
+  return join(
+    process.env.XDG_CACHE_HOME ?? join(homedir(), ".cache"),
+    "aphrody",
+    "upstream",
+  );
 }
 
 export function loadManifest(c: Ctx): Manifest {
   return parseManifest(c.read(MANIFEST));
 }
 
-export function findReference(manifest: Manifest, id: string): Reference | undefined {
+export function findReference(
+  manifest: Manifest,
+  id: string,
+): Reference | undefined {
   return (manifest.reference ?? []).find((r) => r.id === id);
 }
 
@@ -51,12 +63,20 @@ export function githubSlug(url: string): string | undefined {
 
 /** Clean means: no changed paths and no commit that the remote does not have. */
 function isClean(dir: string): { clean: boolean; why?: string } {
-  if (!existsSync(join(dir, ".git"))) return { clean: false, why: "not a git checkout" };
+  if (!existsSync(join(dir, ".git")))
+    return { clean: false, why: "not a git checkout" };
   const status = git(["status", "--porcelain"], dir);
   if (status.stdout.trim())
-    return { clean: false, why: `${status.stdout.trim().split("\n").length} changed paths` };
-  const ahead = git(["log", "--oneline", "--branches", "--not", "--remotes"], dir);
-  if (ahead.status === 0 && ahead.stdout.trim()) return { clean: false, why: "unpushed commits" };
+    return {
+      clean: false,
+      why: `${status.stdout.trim().split("\n").length} changed paths`,
+    };
+  const ahead = git(
+    ["log", "--oneline", "--branches", "--not", "--remotes"],
+    dir,
+  );
+  if (ahead.status === 0 && ahead.stdout.trim())
+    return { clean: false, why: "unpushed commits" };
   return { clean: true };
 }
 
@@ -65,14 +85,25 @@ export function nonVital(root: string, manifest: Manifest): string[] {
   if (!existsSync(root)) return [];
   const vital = new Set(manifest.sources.map((s) => s.id));
   return readdirSync(root, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && !vital.has(e.name) && !e.name.includes(".pre-bump-"))
+    .filter(
+      (e) =>
+        e.isDirectory() && !vital.has(e.name) && !e.name.includes(".pre-bump-"),
+    )
     .map((e) => e.name)
     .toSorted();
 }
 
-export type ForkEntry = { repo: string; role?: string; parent?: string; keep?: string };
+export type ForkEntry = {
+  repo: string;
+  role?: string;
+  parent?: string;
+  keep?: string;
+};
 
-export function renderDocs(manifest: Manifest, forks: ForkEntry[] = []): string {
+export function renderDocs(
+  manifest: Manifest,
+  forks: ForkEntry[] = [],
+): string {
   const rows = (tier: string) =>
     (manifest.reference ?? [])
       .filter((r) => r.tier === tier)
@@ -86,8 +117,10 @@ export function renderDocs(manifest: Manifest, forks: ForkEntry[] = []): string 
       s.kind === "crate"
         ? `crates.io \`${s.crate}\` ${s.version}`
         : `${s.url} \`${s.ref ?? "HEAD"}\``;
-    const why = s.cargoPathDep !== undefined ? "Cargo path dependency" : "build input";
-    const patches = (s.patches ?? []).map((p) => `\`${p.file}\``).join(", ") || "-";
+    const why =
+      s.cargoPathDep !== undefined ? "Cargo path dependency" : "build input";
+    const patches =
+      (s.patches ?? []).map((p) => `\`${p.file}\``).join(", ") || "-";
     return `| \`${s.id}\` | ${origin} | ${why}${s.hold ? ` (held: ${s.hold})` : ""} | ${patches} |`;
   });
   return `<!-- SPDX-License-Identifier: Apache-2.0 -->
@@ -175,7 +208,9 @@ export async function runUpstream(c: Ctx, args: string[]): Promise<number> {
       }
       const extra = nonVital(root, manifest);
       if (extra.length)
-        console.log(`not vital on disk: ${extra.join(", ")}  (yolo update upstream prune --apply)`);
+        console.log(
+          `not vital on disk: ${extra.join(", ")}  (yolo update upstream prune --apply)`,
+        );
       return 0;
     }
     case "drift": {
@@ -183,7 +218,8 @@ export async function runUpstream(c: Ctx, args: string[]): Promise<number> {
       for (const r of refs) {
         const head = refHead(r.url, r.ref ?? "HEAD");
         const tag = lsRemote(r.url).latestTag;
-        const behind = !!head && !!r.observedCommit && head !== r.observedCommit;
+        const behind =
+          !!head && !!r.observedCommit && head !== r.observedCommit;
         moved += behind ? 1 : 0;
         console.log(
           `${behind ? "moved" : head ? "same " : "?    "} ${r.id.padEnd(24)} ${(r.observedCommit ?? "-").slice(0, 10)} -> ${(head ?? "unreachable").slice(0, 10)}${tag ? `  tag ${tag}` : ""}`,
@@ -205,7 +241,8 @@ export async function runUpstream(c: Ctx, args: string[]): Promise<number> {
           changed++;
         }
       }
-      if (c.apply && changed) c.write(MANIFEST, `${JSON.stringify(next, null, 2)}\n`);
+      if (c.apply && changed)
+        c.write(MANIFEST, `${JSON.stringify(next, null, 2)}\n`);
       if (!changed) console.log("refresh  observed commits already current");
       return 0;
     }
@@ -214,7 +251,10 @@ export async function runUpstream(c: Ctx, args: string[]): Promise<number> {
       const r = id ? findReference(manifest, id) : undefined;
       if (!r)
         return (
-          console.error(`usage: upstream fetch <id>; ids: ${refs.map((x) => x.id).join(", ")}`), 2
+          console.error(
+            `usage: upstream fetch <id>; ids: ${refs.map((x) => x.id).join(", ")}`,
+          ),
+          2
         );
       const paths: string[] = [];
       for (let i = 1; i < rest.length; i++)
@@ -222,8 +262,12 @@ export async function runUpstream(c: Ctx, args: string[]): Promise<number> {
       const sparse = paths.length ? paths : (r.sparse ?? []);
       const dir = join(cacheRoot(), r.id);
       if (existsSync(dir)) {
-        const pulled = git(["fetch", "--depth", "1", "--quiet", "origin", r.ref ?? "HEAD"], dir);
-        if (pulled.status !== 0) return (console.error(`fetch failed: ${pulled.stderr.trim()}`), 1);
+        const pulled = git(
+          ["fetch", "--depth", "1", "--quiet", "origin", r.ref ?? "HEAD"],
+          dir,
+        );
+        if (pulled.status !== 0)
+          return (console.error(`fetch failed: ${pulled.stderr.trim()}`), 1);
         git(["checkout", "--quiet", "--detach", "FETCH_HEAD"], dir);
       } else {
         const clone = git([
@@ -237,9 +281,11 @@ export async function runUpstream(c: Ctx, args: string[]): Promise<number> {
           r.url,
           dir,
         ]);
-        if (clone.status !== 0) return (console.error(`clone failed: ${clone.stderr.trim()}`), 1);
+        if (clone.status !== 0)
+          return (console.error(`clone failed: ${clone.stderr.trim()}`), 1);
       }
-      if (sparse.length) git(["sparse-checkout", "set", "--cone", ...sparse], dir);
+      if (sparse.length)
+        git(["sparse-checkout", "set", "--cone", ...sparse], dir);
       console.log(dir);
       return 0;
     }
@@ -266,7 +312,9 @@ export async function runUpstream(c: Ctx, args: string[]): Promise<number> {
     case "docs": {
       const text = renderDocs(
         manifest,
-        c.jsonFile<{ forks: ForkEntry[] }>("tools/config/update/forks.json", { forks: [] }).forks,
+        c.jsonFile<{ forks: ForkEntry[] }>("tools/config/update/forks.json", {
+          forks: [],
+        }).forks,
       );
       if (c.apply) {
         c.write(DOC, text);
@@ -278,7 +326,9 @@ export async function runUpstream(c: Ctx, args: string[]): Promise<number> {
         console.log(`docs   ${DOC} current`);
         return 0;
       }
-      console.log(`docs   ${DOC} is stale; run \`yolo update upstream docs --apply\``);
+      console.log(
+        `docs   ${DOC} is stale; run \`yolo update upstream docs --apply\``,
+      );
       return 1;
     }
     default:

@@ -1,9 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 import { existsSync, statSync } from "node:fs";
-import { copyFile, link, mkdir, mkdtemp, readFile, rename, writeFile } from "node:fs/promises";
+import {
+  copyFile,
+  link,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rename,
+  writeFile,
+} from "node:fs/promises";
 import { join } from "node:path";
 import type { Context } from "../admin/lib/context.ts";
-import { stepAphrody as legacyStepAphrody, type Step } from "../admin/lib/steps.ts";
+import {
+  stepAphrody as legacyStepAphrody,
+  type Step,
+} from "../admin/lib/steps.ts";
 
 export const R2_DIST = "https://dist.aphrody.app";
 export type R2Product = "bun" | "aphrody";
@@ -30,13 +41,20 @@ export interface R2Plan {
 const names = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
 
 async function binaryHash(path: string): Promise<string> {
-  return new Bun.CryptoHasher("sha256").update(await Bun.file(path).arrayBuffer()).digest("hex");
+  return new Bun.CryptoHasher("sha256")
+    .update(await Bun.file(path).arrayBuffer())
+    .digest("hex");
 }
 
 /** Hash known installed bytes before any execution; detect corrupt copied aliases too. */
-export async function installedR2Matches(root: string, plans: R2Plan[]): Promise<boolean> {
+export async function installedR2Matches(
+  root: string,
+  plans: R2Plan[],
+): Promise<boolean> {
   try {
-    const stamp = JSON.parse(await readFile(join(root, "bin", "r2-install.json"), "utf8")) as {
+    const stamp = JSON.parse(
+      await readFile(join(root, "bin", "r2-install.json"), "utf8"),
+    ) as {
       plans: R2Plan[];
       checksums: Record<string, string>;
     };
@@ -82,12 +100,17 @@ export async function installedR2Matches(root: string, plans: R2Plan[]): Promise
 }
 
 /** Same executable identity when hard links are unavailable on the target volume. */
-export async function nativeAlias(source: string, destination: string): Promise<void> {
+export async function nativeAlias(
+  source: string,
+  destination: string,
+): Promise<void> {
   try {
     await link(source, destination);
   } catch (error) {
     if (
-      !["EPERM", "ENOTSUP", "EXDEV", "EACCES"].includes((error as NodeJS.ErrnoException).code ?? "")
+      !["EPERM", "ENOTSUP", "EXDEV", "EACCES"].includes(
+        (error as NodeJS.ErrnoException).code ?? "",
+      )
     )
       throw error;
     await copyFile(source, destination, 1); // COPYFILE_EXCL; never overwrite an unrelated alias.
@@ -122,17 +145,26 @@ export async function r2Plan(
     !/^[a-f0-9]{64}$/.test(manifest.sha256)
   )
     throw new Error("Invalid R2 manifest identity");
-  const entries = (await checksums.text()).trim().split(/\r?\n/).filter(Boolean);
+  const entries = (await checksums.text())
+    .trim()
+    .split(/\r?\n/)
+    .filter(Boolean);
   const matching = entries.filter((line) =>
-    new RegExp(`^[a-f0-9]{64}\\s+\\*?${manifest.archive.replaceAll(".", "\\.")}$`).test(line),
+    new RegExp(
+      `^[a-f0-9]{64}\\s+\\*?${manifest.archive.replaceAll(".", "\\.")}$`,
+    ).test(line),
   );
   if (matching.length !== 1 || matching[0]!.slice(0, 64) !== manifest.sha256)
     throw new Error("R2 manifest/checksum mismatch");
   const expected =
     product === "bun"
       ? ["bun-windows-x64/bun.exe"]
-      : ["aphrody-windows-x64/aphrody.exe", "aphrody-windows-x64/aphrody-site.exe"];
-  const binaries = manifest.binaries ?? (manifest.binary ? [manifest.binary] : []);
+      : [
+          "aphrody-windows-x64/aphrody.exe",
+          "aphrody-windows-x64/aphrody-site.exe",
+        ];
+  const binaries =
+    manifest.binaries ?? (manifest.binary ? [manifest.binary] : []);
   if (JSON.stringify(binaries) !== JSON.stringify(expected))
     throw new Error("Unexpected R2 binary paths");
   if (
@@ -160,15 +192,25 @@ export async function r2Plan(
 }
 
 /** Stage only: hash before extraction/execution. Never overwrite PATH binaries. */
-export async function stageR2(ctx: Context, plan: R2Plan, root: string): Promise<string> {
-  if (ctx.sys.platform !== "win32") throw new Error("Native Windows R2 stage requires Windows");
+export async function stageR2(
+  ctx: Context,
+  plan: R2Plan,
+  root: string,
+): Promise<string> {
+  if (ctx.sys.platform !== "win32")
+    throw new Error("Native Windows R2 stage requires Windows");
   await mkdir(root, { recursive: true });
   const staged = await mkdtemp(join(root, `${plan.manifest.product}-`));
   const archive = join(staged, plan.manifest.archive);
-  const response = await ctx.fetchImpl(plan.url, { signal: AbortSignal.timeout(300000) });
+  const response = await ctx.fetchImpl(plan.url, {
+    signal: AbortSignal.timeout(300000),
+  });
   if (!response.ok) throw new Error(`R2 archive HTTP ${response.status}`);
   const bytes = new Uint8Array(await response.arrayBuffer());
-  if (new Bun.CryptoHasher("sha256").update(bytes).digest("hex") !== plan.manifest.sha256)
+  if (
+    new Bun.CryptoHasher("sha256").update(bytes).digest("hex") !==
+    plan.manifest.sha256
+  )
     throw new Error("R2 archive SHA-256 mismatch");
   await writeFile(archive, bytes);
   // Extract only allowlisted binaries to a flat, newly allocated directory.
@@ -206,20 +248,30 @@ try { foreach($name in ($env:APHRODY_STAGE_BINARIES | ConvertFrom-Json)) {
       },
     },
   );
-  if (extracted.code !== 0) throw new Error(`R2 extraction failed: ${extracted.stderr}`);
+  if (extracted.code !== 0)
+    throw new Error(`R2 extraction failed: ${extracted.stderr}`);
   for (const binary of plan.binaries) {
     const filename = binary.split("/").pop()!;
-    if (!existsSync(join(staged, filename))) throw new Error(`R2 extraction missing: ${filename}`);
+    if (!existsSync(join(staged, filename)))
+      throw new Error(`R2 extraction missing: ${filename}`);
     // aphrody-site deliberately has --help only; no fabricated --version probe.
     // Ordered qualification keeps execution/output bounded to one binary.
     // eslint-disable-next-line no-await-in-loop
     const check = await ctx.sys.run(
-      [join(staged, filename), filename === "aphrody-site.exe" ? "--help" : "--version"],
+      [
+        join(staged, filename),
+        filename === "aphrody-site.exe" ? "--help" : "--version",
+      ],
       { timeoutMs: 30000 },
     );
     if (check.code !== 0 || !check.stdout.trim())
-      throw new Error(`R2 qualification failed: ${filename} (exit ${check.code}: ${check.stderr})`);
-    if (filename !== "aphrody-site.exe" && !check.stdout.includes(plan.manifest.version))
+      throw new Error(
+        `R2 qualification failed: ${filename} (exit ${check.code}: ${check.stderr})`,
+      );
+    if (
+      filename !== "aphrody-site.exe" &&
+      !check.stdout.includes(plan.manifest.version)
+    )
       throw new Error(`R2 declared version mismatch: ${filename}`);
   }
   for (const [alias, binary] of Object.entries(plan.aliases)) {
@@ -228,7 +280,10 @@ try { foreach($name in ($env:APHRODY_STAGE_BINARIES | ConvertFrom-Json)) {
     // eslint-disable-next-line no-await-in-loop
     await nativeAlias(join(staged, binary), join(staged, alias));
   }
-  await writeFile(join(staged, "verified-manifest.json"), JSON.stringify(plan, null, 2));
+  await writeFile(
+    join(staged, "verified-manifest.json"),
+    JSON.stringify(plan, null, 2),
+  );
   return staged;
 }
 
@@ -258,10 +313,16 @@ export async function activateR2(
   }
   await writeFile(
     join(candidate, "r2-install.json"),
-    JSON.stringify({ plans: stages.map(({ plan }) => plan), checksums }, null, 2),
+    JSON.stringify(
+      { plans: stages.map(({ plan }) => plan), checksums },
+      null,
+      2,
+    ),
   );
   const bin = join(root, "bin");
-  const previous = existsSync(bin) ? join(root, `bin-previous-${Date.now()}`) : undefined;
+  const previous = existsSync(bin)
+    ? join(root, `bin-previous-${Date.now()}`)
+    : undefined;
   if (previous) await rename(bin, previous);
   try {
     await rename(candidate, bin);
@@ -295,7 +356,8 @@ export const stepNativeRuntime: Step = {
   id: "aphrody",
   titre: "Bun et Aphrody natifs",
   async run(ctx, mode, state) {
-    if (state.pack?.downloadsBase) return legacyStepAphrody.run(ctx, mode, state);
+    if (state.pack?.downloadsBase)
+      return legacyStepAphrody.run(ctx, mode, state);
     if (ctx.sys.platform !== "win32")
       return { state: "ignore", detail: "installation Windows seulement" };
     try {
@@ -307,7 +369,10 @@ export const stepNativeRuntime: Step = {
         ctx.sys.env.APHRODY_NATIVE_INSTALL_ROOT ||
         join(ctx.paths.localAppData, "Aphrody", "Native");
       if (await installedR2Matches(root, plans))
-        return { state: "deja", detail: `Bun et Aphrody vérifiés dans ${join(root, "bin")}` };
+        return {
+          state: "deja",
+          detail: `Bun et Aphrody vérifiés dans ${join(root, "bin")}`,
+        };
       if (mode === "simuler")
         return {
           state: "a-faire",
@@ -316,7 +381,10 @@ export const stepNativeRuntime: Step = {
       const stages = [];
       for (const plan of plans) {
         // eslint-disable-next-line no-await-in-loop
-        stages.push({ plan, dir: await stageR2(ctx, plan, join(root, "verified")) });
+        stages.push({
+          plan,
+          dir: await stageR2(ctx, plan, join(root, "verified")),
+        });
       }
       const bin = await activateR2(ctx, stages, root);
       return {

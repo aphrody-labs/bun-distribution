@@ -135,7 +135,11 @@ header_file = true
 id = "text/javascript"
 name = "JavaScript"
 extensions = ["js", "mjs"]
-mime_types = ["text/javascript", "application/javascript", "application/x-javascript"]
+mime_types = [
+  "text/javascript",
+  "application/javascript",
+  "application/x-javascript",
+]
 uti = "com.netscape.javascript-source"
 category = "code"
 priority = 80

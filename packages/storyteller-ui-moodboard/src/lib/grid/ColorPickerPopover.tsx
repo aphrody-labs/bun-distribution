@@ -22,12 +22,7 @@ export const ColorPickerPopover = ({ onAdd }: Props) => (
       position="bottom"
       panelTitle="Add a color"
       panelClassName="w-60"
-      triggerIcon={
-        <PaletteIcon
-          
-          className="h-4 w-4"
-          aria-label="Add color" />
-      }
+      triggerIcon={<PaletteIcon className="h-4 w-4" aria-label="Add color" />}
       buttonClassName="h-9 w-9 rounded-[10px] border-transparent bg-transparent p-0 text-base-fg/80 shadow-none hover:bg-base-fg/10 hover:text-base-fg"
     >
       {(close) => (

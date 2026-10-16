@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Input } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
-import { EyeIcon, EyeOffIcon, LoaderCircleIcon, TriangleAlertIcon } from "lucide-react";
+import {
+  EyeIcon,
+  EyeOffIcon,
+  LoaderCircleIcon,
+  TriangleAlertIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 
 interface ArtCraftSignUpProps {

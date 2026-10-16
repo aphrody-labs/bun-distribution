@@ -8,8 +8,20 @@
 // oxlint-disable no-await-in-loop -- sequential by design: host commands run one after the other and stop on failure.
 import { existsSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { composeUnit, type HostUnit, hostRepositoryRoot, hostRoot, loadCatalog } from "./index.ts";
-import { inCidr, loadTunnel, selectedProxySteps, TUNNEL_FILE, type WgStep } from "./wireguard.ts";
+import {
+  composeUnit,
+  type HostUnit,
+  hostRepositoryRoot,
+  hostRoot,
+  loadCatalog,
+} from "./index.ts";
+import {
+  inCidr,
+  loadTunnel,
+  selectedProxySteps,
+  TUNNEL_FILE,
+  type WgStep,
+} from "./wireguard.ts";
 
 export interface UnitFacts {
   unit: string;
@@ -24,7 +36,8 @@ export interface UnitFacts {
   writePaths: string[];
 }
 
-export type StepPhase = "preflight" | "provision" | "install" | "verify" | "rollback";
+export type StepPhase =
+  "preflight" | "provision" | "install" | "verify" | "rollback";
 /** `check` fails the plan, `info` only reports, `mutate` changes the host. */
 export type StepKind = "check" | "info" | "mutate";
 export interface PlanStep {
@@ -61,7 +74,11 @@ const MCP_TOKEN_ENV = "APHRODY_MCP_HTTP_TOKEN";
 const b64 = (text: string) => Buffer.from(text).toString("base64");
 const sq = (text: string) => `'${text.replaceAll("'", "'\\''")}'`;
 const socketPattern = (sockets: string[]) =>
-  "^(" + sockets.map((socket) => socket.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")$";
+  "^(" +
+  sockets
+    .map((socket) => socket.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|") +
+  ")$";
 
 /** Retain immutable pins without duplicate bytes; never write through a live binary or rollback symlink. */
 export function pinnedBinaryInstall(
@@ -117,7 +134,9 @@ function socketRelays(repoRoot: string, facts: UnitFacts): string[] {
           inCidr(service.address, cidr),
         )
       )
-        throw new Error(`${facts.unit}: relay must use its declared private WireGuard address`);
+        throw new Error(
+          `${facts.unit}: relay must use its declared private WireGuard address`,
+        );
       return `${service.address}:${service.port}`;
     });
 }
@@ -129,7 +148,8 @@ function serviceDirectives(text: string): Map<string, string[]> {
   for (const raw of text.split("\n")) {
     const line = raw.trim();
     if (line.startsWith("[")) inService = line === "[Service]";
-    if (!inService || !line || line.startsWith("#") || line.startsWith("[")) continue;
+    if (!inService || !line || line.startsWith("#") || line.startsWith("["))
+      continue;
     const eq = line.indexOf("=");
     if (eq < 0) continue;
     const key = line.slice(0, eq).trim();
@@ -149,10 +169,15 @@ export function unitFacts(entry: HostUnit, text: string): UnitFacts {
     bind = { host: address.slice(0, at), port: Number(address.slice(at + 1)) };
     // Never a public listener: the plan refuses a unit that would bind anything but loopback.
     if (!LOOPBACK.test(bind.host) || !Number.isInteger(bind.port)) {
-      throw new Error(`${entry.unit}: bind address ${address} is not a loopback address`);
+      throw new Error(
+        `${entry.unit}: bind address ${address} is not a loopback address`,
+      );
     }
   }
-  const paths = [...(d.get("ReadWritePaths") ?? []), ...(d.get("BindPaths") ?? [])]
+  const paths = [
+    ...(d.get("ReadWritePaths") ?? []),
+    ...(d.get("BindPaths") ?? []),
+  ]
     .flatMap((v) => v.split(/\s+/))
     .map((p) => p.replace(/^-/, "").split(":")[0] ?? "")
     .filter(Boolean);
@@ -182,12 +207,18 @@ interface ServiceEntry {
 function serviceEntry(repoRoot: string, id: string): ServiceEntry | undefined {
   const file = join(repoRoot, "tools/config/service-catalog.json");
   if (!existsSync(file)) return undefined;
-  const catalog = JSON.parse(readFileSync(file, "utf8")) as { services: ServiceEntry[] };
+  const catalog = JSON.parse(readFileSync(file, "utf8")) as {
+    services: ServiceEntry[];
+  };
   return catalog.services.find((s) => s.id === id);
 }
 
 /** Track only resources introduced by this selected proxy apply; existing resources remain owned by their prior state. */
-export function trackProxyMutations(projection: WgStep[], state: string, port: number) {
+export function trackProxyMutations(
+  projection: WgStep[],
+  state: string,
+  port: number,
+) {
   const rules = projection.filter((proxy) => proxy.id.includes(".proxy-ufw."));
   const markers = [
     "ready",
@@ -208,7 +239,8 @@ export function trackProxyMutations(projection: WgStep[], state: string, port: n
     const rule = rules.findIndex((candidate) => candidate.id === proxy.id);
     if (rule >= 0) {
       const tuple = /from (\S+) to (\S+) port (\d+) proto tcp/.exec(proxy.run!);
-      if (!tuple) throw new Error("Unsupported selected proxy firewall command");
+      if (!tuple)
+        throw new Error("Unsupported selected proxy firewall command");
       prefix += `known=$(ufw show added) || exit 1; known=$(printf %s "$known" | tr -d "'"); desired=$(printf %s ${sq(proxy.run!)} | tr -d "'"); if ! printf '%s\\n' "$known" | grep -Fx -- "$desired" >/dev/null; then if printf '%s\\n' "$known" | grep -F -- ${sq(tuple[1]!)} | grep -F -- ${sq(tuple[2]!)} | grep -F -- ${sq(`port ${tuple[3]!}`)} >/dev/null; then exit 1; fi; touch ${sq(`${state}/new-rule.${rule}`)}; fi; `;
     }
     return { ...proxy, run: prefix + proxy.run };
@@ -229,7 +261,8 @@ export function pinnedSocketCheck(
   relays: string[],
   requireListener = false,
 ): string {
-  if (!facts.bind) throw new Error("Pinned socket qualification requires a bind address");
+  if (!facts.bind)
+    throw new Error("Pinned socket qualification requires a bind address");
   const port = facts.bind.port;
   const endpoints = (
     facts.bind.host === "localhost" ? ["127.0.0.1", "[::1]"] : [facts.bind.host]
@@ -275,13 +308,21 @@ function unitSteps(
     id: string,
     note: string,
     run: string,
-  ): PlanStep => ({ id: `${f.service}/${id}`, unit: f.unit, phase, kind, note, run });
+  ): PlanStep => ({
+    id: `${f.service}/${id}`,
+    unit: f.unit,
+    phase,
+    kind,
+    note,
+    run,
+  });
   const port = f.bind?.port;
   const relays = socketRelays(repoRoot, f);
   const expectedSockets = f.bind
-    ? (f.bind.host === "localhost" ? ["127.0.0.1", "[::1]"] : [f.bind.host]).map(
-        (host) => `${host === "::1" ? "[::1]" : host}:${port}`,
-      )
+    ? (f.bind.host === "localhost"
+        ? ["127.0.0.1", "[::1]"]
+        : [f.bind.host]
+      ).map((host) => `${host === "::1" ? "[::1]" : host}:${port}`)
     : [];
   const socketRows = `socket_rows=$(ss -H -ltn "sport = :${port}") || exit 1; sockets=$(printf '%s\\n' "$socket_rows" | awk '{print $4}')`;
   const stage = `${STAGE_DIR}/${f.unit}`;
@@ -293,7 +334,9 @@ function unitSteps(
   const gateway = f.service === "aphrody-ai-gateway-dbfr";
   const install = mcp || a2a || jobs || gateway ? binary : undefined;
   if (install && !/^[0-9a-f]{64}$/.test(install.sha256)) {
-    throw new Error(`${f.unit}: --binary-sha256 must be a 64 hex digit SHA-256`);
+    throw new Error(
+      `${f.unit}: --binary-sha256 must be a 64 hex digit SHA-256`,
+    );
   }
   const tokenFile = f.envFiles.find((e) => !e.optional)?.path;
   steps.push(
@@ -403,13 +446,24 @@ function unitSteps(
     const fleetConfigured = existsSync(fleetPath);
     if (fleetConfigured) {
       const { hub } = JSON.parse(readFileSync(fleetPath, "utf8")) as {
-        hub: { workspace: string; seed: string; branch: string; remote: string; profile: string };
+        hub: {
+          workspace: string;
+          seed: string;
+          branch: string;
+          remote: string;
+          profile: string;
+        };
       };
       if (hub.workspace !== dir || hub.branch !== "main")
-        throw new Error("A2A fleet workspace and unit must agree on the dedicated main checkout");
-      const revision = Bun.spawnSync(["git", "-C", repoRoot, "rev-parse", "HEAD"], {
-        windowsHide: true,
-      });
+        throw new Error(
+          "A2A fleet workspace and unit must agree on the dedicated main checkout",
+        );
+      const revision = Bun.spawnSync(
+        ["git", "-C", repoRoot, "rev-parse", "HEAD"],
+        {
+          windowsHide: true,
+        },
+      );
       const sha = revision.stdout.toString().trim();
       if (revision.exitCode !== 0 || !/^[0-9a-f]{40}$/.test(sha))
         throw new Error("Cannot qualify the A2A workspace source revision");
@@ -489,7 +543,10 @@ function unitSteps(
       const { hub } = JSON.parse(readFileSync(fleetPath, "utf8")) as {
         hub: { clientTokenFile: string };
       };
-      const parent = hub.clientTokenFile.slice(0, hub.clientTokenFile.lastIndexOf("/"));
+      const parent = hub.clientTokenFile.slice(
+        0,
+        hub.clientTokenFile.lastIndexOf("/"),
+      );
       const clientCredentialScript = [
         "set -e",
         "umask 077",
@@ -556,7 +613,13 @@ function unitSteps(
       `install /etc/systemd/system/${f.unit} (root:root 0644)`,
       `sudo install -o root -g root -m 0644 ${stage} /etc/systemd/system/${f.unit}`,
     ),
-    step("install", "mutate", "daemon-reload", "reload systemd", "sudo systemctl daemon-reload"),
+    step(
+      "install",
+      "mutate",
+      "daemon-reload",
+      "reload systemd",
+      "sudo systemctl daemon-reload",
+    ),
     step(
       "install",
       "mutate",
@@ -603,10 +666,15 @@ function unitSteps(
       ),
     );
   }
-  if ((mcp || (a2a && tokenFile) || (gateway && tokenFile)) && port !== undefined) {
+  if (
+    (mcp || (a2a && tokenFile) || (gateway && tokenFile)) &&
+    port !== undefined
+  ) {
     const endpoint = `http://127.0.0.1:${port}/${mcp ? "mcp" : ""}`;
     const post = `curl -s -o /dev/null -m 5 -w '%{http_code}' -X POST -H 'content-type: application/json' -H 'accept: application/json, text/event-stream' -d '{"jsonrpc":"2.0","id":1,"method":"ping"}'`;
-    const authEndpoint = gateway ? `http://127.0.0.1:${port}/v1/models` : endpoint;
+    const authEndpoint = gateway
+      ? `http://127.0.0.1:${port}/v1/models`
+      : endpoint;
     const unauthRequest = gateway
       ? `curl -s -o /dev/null -m 5 -w '%{http_code}' ${authEndpoint}`
       : `${post} ${endpoint}`;
@@ -659,7 +727,10 @@ function unitSteps(
     }
   }
   if (mcp && port !== undefined) {
-    const script = readFileSync(join(repoRoot, "scripts/tools/infra/mcp-tools-count.ts"), "utf8");
+    const script = readFileSync(
+      join(repoRoot, "scripts/tools/infra/mcp-tools-count.ts"),
+      "utf8",
+    );
     const expect = expectTools !== undefined ? ` --expect ${expectTools}` : "";
     const token = tokenFile
       ? `${MCP_TOKEN_ENV}="$(sudo -n sed -n 's/^${MCP_TOKEN_ENV}=//p' ${tokenFile} | tail -n 1)" `
@@ -699,7 +770,9 @@ function unitSteps(
   if (mcp && f.targetHost === "dbfr" && relays.length) {
     const root = join(repoRoot, "tools/config/host");
     const tunnel = loadTunnel(root);
-    const service = tunnel.services.find((candidate) => candidate.unit === f.service);
+    const service = tunnel.services.find(
+      (candidate) => candidate.unit === f.service,
+    );
     if (!service) throw new Error(`${f.unit}: declared private proxy missing`);
     steps.push(
       step(
@@ -712,7 +785,10 @@ function unitSteps(
     );
     for (const extension of ["socket", "service"] as const) {
       const unit = `aphrody-wg-proxy@.${extension}`;
-      const desired = composeUnit(unit, root).replaceAll(tunnel.hub.address, service.address);
+      const desired = composeUnit(unit, root).replaceAll(
+        tunnel.hub.address,
+        service.address,
+      );
       const path = `/etc/systemd/system/${unit}`;
       steps.push(
         step(
@@ -727,7 +803,11 @@ function unitSteps(
     const tracked = trackProxyMutations(
       selectedProxySteps(
         tunnel,
-        { root, catalog: loadCatalog(root), compose: (unit) => composeUnit(unit, root) },
+        {
+          root,
+          catalog: loadCatalog(root),
+          compose: (unit) => composeUnit(unit, root),
+        },
         service.id,
       ),
       `${stage}.proxy`,
@@ -776,7 +856,9 @@ export function hostPlan(units: string[], options: PlanOptions = {}): Plan {
   const repoRoot = hostRepositoryRoot(root);
   const catalog = loadCatalog(root);
   const entries = units.map((name) => {
-    const entry = catalog.units.find((u) => u.unit === name || u.service === name);
+    const entry = catalog.units.find(
+      (u) => u.unit === name || u.service === name,
+    );
     if (!entry) throw new Error(`unknown unit: ${name}`);
     if (!entry.unit.endsWith(".service"))
       throw new Error(`${entry.unit}: only .service units are planned`);
@@ -849,12 +931,15 @@ export function renderPlan(
 
 /** Default runner: `aphrody infra ssh exec` (the Rust SSH operator), one finite deadline per command. */
 export const sshRunner: Runner = async (host, command) => {
-  const proc = Bun.spawn(["aphrody", "infra", "ssh", "exec", "--host", host, "--", command], {
-    windowsHide: true,
-    env: { ...process.env, APHRODY_SSH_COMMAND_TIMEOUT_SECS: "180" },
-    stdout: "pipe",
-    stderr: "pipe",
-  });
+  const proc = Bun.spawn(
+    ["aphrody", "infra", "ssh", "exec", "--host", host, "--", command],
+    {
+      windowsHide: true,
+      env: { ...process.env, APHRODY_SSH_COMMAND_TIMEOUT_SECS: "180" },
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  );
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
@@ -897,9 +982,13 @@ export async function applyPlan(
     const rollback = mine.find((x) => x.phase === "rollback");
     let installed = false;
     for (const s of mine.filter(
-      (x) => x.phase === "provision" || x.phase === "install" || x.phase === "verify",
+      (x) =>
+        x.phase === "provision" ||
+        x.phase === "install" ||
+        x.phase === "verify",
     )) {
-      if (s.id.endsWith("/install") || s.id.endsWith("/install-binary")) installed = true;
+      if (s.id.endsWith("/install") || s.id.endsWith("/install-binary"))
+        installed = true;
       if (!(await exec(s))) {
         if (installed && rollback) await exec(rollback);
         return [s.id];

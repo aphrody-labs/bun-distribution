@@ -8,33 +8,33 @@ Dessine les frames du pet depuis l'atlas `spritesheet.webp`. WebGPU quand la pag
 import { createPetRenderer } from "@aphrody/identity/render";
 
 const renderer = await createPetRenderer(canvas, {
-  mode: "2d",          // "2d" | "3d"
-  backend: "auto",     // "auto" | "webgpu" | "canvas2d"
-  state: "idle",       // piste initiale
+  mode: "2d", // "2d" | "3d"
+  backend: "auto", // "auto" | "webgpu" | "canvas2d"
+  state: "idle", // piste initiale
 });
 
-renderer.start();                 // boucle requestAnimationFrame
-renderer.play("waving");          // lit une piste (loop par défaut)
-renderer.play("jumping", false);  // une fois, puis reste sur la dernière frame
-renderer.look(dx, dy);            // regard vers un point en pixels (écrase la piste)
-renderer.setMode("3d");           // bascule 2D/3D sans recréer le rendu
-renderer.render(nowMs);           // dessin manuel, sans boucle
+renderer.start(); // boucle requestAnimationFrame
+renderer.play("waving"); // lit une piste (loop par défaut)
+renderer.play("jumping", false); // une fois, puis reste sur la dernière frame
+renderer.look(dx, dy); // regard vers un point en pixels (écrase la piste)
+renderer.setMode("3d"); // bascule 2D/3D sans recréer le rendu
+renderer.render(nowMs); // dessin manuel, sans boucle
 renderer.stop();
-renderer.dispose();               // libère le device GPU et les textures
+renderer.dispose(); // libère le device GPU et les textures
 ```
 
 ### Options de `createPetRenderer`
 
-| Option | Défaut | Rôle |
-| --- | --- | --- |
-| `mode` | `"2d"` | Quad plat ou volume 3D |
-| `backend` | `"auto"` | `"webgpu"` échoue si absent, au lieu de retomber sur Canvas 2D |
-| `state` | `"idle"` | Piste de départ |
-| `atlasUrl` | atlas embarqué | URL de l'image d'atlas |
-| `data` | `PET` | Données de pet (pistes, atlas) |
-| `depth` | `0.3` | Profondeur d'extrusion, fraction de la hauteur de frame (3D) |
-| `slices` | `24` | Nombre de tranches du volume (3D) |
-| `swayDeg` | `12` | Amplitude du balancement en degrés (3D) |
+| Option     | Défaut         | Rôle                                                           |
+| ---------- | -------------- | -------------------------------------------------------------- |
+| `mode`     | `"2d"`         | Quad plat ou volume 3D                                         |
+| `backend`  | `"auto"`       | `"webgpu"` échoue si absent, au lieu de retomber sur Canvas 2D |
+| `state`    | `"idle"`       | Piste de départ                                                |
+| `atlasUrl` | atlas embarqué | URL de l'image d'atlas                                         |
+| `data`     | `PET`          | Données de pet (pistes, atlas)                                 |
+| `depth`    | `0.3`          | Profondeur d'extrusion, fraction de la hauteur de frame (3D)   |
+| `slices`   | `24`           | Nombre de tranches du volume (3D)                              |
+| `swayDeg`  | `12`           | Amplitude du balancement en degrés (3D)                        |
 
 ### Propriétés
 

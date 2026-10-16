@@ -30,7 +30,9 @@ type FormFieldContextValue<
   name: TName;
 };
 
-const FormFieldContext = createContext<FormFieldContextValue>({} as FormFieldContextValue);
+const FormFieldContext = createContext<FormFieldContextValue>(
+  {} as FormFieldContextValue,
+);
 
 const FormField = <
   TFieldValues extends FieldValues = FieldValues,
@@ -115,16 +117,24 @@ function mayHaveDescription(children: React.ReactNode): boolean {
   return found;
 }
 
-const FormItemContext = createContext<FormItemContextValue>({} as FormItemContextValue);
+const FormItemContext = createContext<FormItemContextValue>(
+  {} as FormItemContextValue,
+);
 
 /**
  * One field: label, control, then supporting text 4px below the control (M3 text-field anatomy).
  * Set `data-disabled` to dim the label and supporting text to 38 % along with the control.
  */
-const FormItem = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
+const FormItem = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => {
   const id = useId();
   const hasDescription = mayHaveDescription(props.children);
-  const itemContext = useMemo(() => ({ id, hasDescription }), [id, hasDescription]);
+  const itemContext = useMemo(
+    () => ({ id, hasDescription }),
+    [id, hasDescription],
+  );
 
   return (
     <FormItemContext.Provider value={itemContext}>
@@ -183,7 +193,8 @@ interface FormControlProps {
 }
 
 const FormControl = ({ children }: FormControlProps) => {
-  const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
+  const { error, formItemId, formDescriptionId, formMessageId } =
+    useFormField();
   const { hasDescription } = useContext(FormItemContext);
   const describedBy = [
     hasDescription !== false ? formDescriptionId : undefined,
@@ -214,7 +225,10 @@ const FormControl = ({ children }: FormControlProps) => {
 };
 
 /** M3 supporting text. Text fields add `px-4` so it lines up with the input text. */
-const FormDescription = ({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => {
+const FormDescription = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLParagraphElement>) => {
   const { formDescriptionId } = useFormField();
 
   return (
@@ -247,7 +261,10 @@ const FormMessage = ({
     <p
       id={formMessageId}
       data-m3-component="FormMessage"
-      className={clsx("flex items-start gap-1 text-body-small text-error", className)}
+      className={clsx(
+        "flex items-start gap-1 text-body-small text-error",
+        className,
+      )}
       {...props}
     >
       <Icon name="error" size={16} className="mt-px" />

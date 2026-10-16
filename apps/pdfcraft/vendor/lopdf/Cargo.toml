@@ -19,13 +19,7 @@ authors = [
     "Emulator <emulator@hotmail.it>",
 ]
 build = false
-exclude = [
-    "/benches",
-    "/assets",
-    "/.chglog",
-    "/.vscode",
-    "/.github",
-]
+exclude = ["/benches", "/assets", "/.chglog", "/.vscode", "/.github"]
 autolib = false
 autobins = false
 autoexamples = false
@@ -35,12 +29,7 @@ description = "A Rust library for PDF document manipulation."
 homepage = "https://github.com/J-F-Liu/lopdf"
 documentation = "https://docs.rs/crate/lopdf/"
 readme = "README.md"
-keywords = [
-    "pdf",
-    "editing",
-    "manipulation",
-    "merge",
-]
+keywords = ["pdf", "editing", "manipulation", "merge"]
 categories = ["text-processing"]
 license = "MIT"
 repository = "https://github.com/J-F-Liu/lopdf.git"
@@ -49,19 +38,10 @@ repository = "https://github.com/J-F-Liu/lopdf.git"
 repository = "J-F-Liu/lopdf"
 
 [features]
-async = [
-    "tokio/rt-multi-thread",
-    "tokio/macros",
-]
+async = ["tokio/rt-multi-thread", "tokio/macros"]
 chrono = ["dep:chrono"]
-chrono-clock = [
-    "chrono",
-    "chrono/clock",
-]
-default = [
-    "chrono-clock",
-    "rayon",
-]
+chrono-clock = ["chrono", "chrono/clock"]
+default = ["chrono-clock", "rayon"]
 embed_image = ["image"]
 font_embedding = ["dep:skrifa"]
 jiff = ["dep:jiff"]
@@ -422,18 +402,12 @@ version = "2.0"
 
 [dependencies.time]
 version = "0.3"
-features = [
-    "formatting",
-    "parsing",
-]
+features = ["formatting", "parsing"]
 optional = true
 
 [dependencies.tokio]
 version = "1"
-features = [
-    "fs",
-    "io-util",
-]
+features = ["fs", "io-util"]
 optional = true
 
 [dependencies.weezl]

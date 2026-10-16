@@ -3,10 +3,14 @@ import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const { buildZip, crc32 } = require("../../resources/creator/web/image-compressor/zip.js") as {
-  buildZip(files: { name: string; data: Uint8Array }[], now?: Date): Uint8Array;
-  crc32(bytes: Uint8Array): number;
-};
+const { buildZip, crc32 } =
+  require("../../resources/creator/web/image-compressor/zip.js") as {
+    buildZip(
+      files: { name: string; data: Uint8Array }[],
+      now?: Date,
+    ): Uint8Array;
+    crc32(bytes: Uint8Array): number;
+  };
 
 test("crc32 matches the reference vector", () => {
   expect(crc32(new TextEncoder().encode("123456789"))).toBe(0xcbf43926);

@@ -1,7 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useLibraryQuery, useLibraryMutation } from "../../contexts/SpacedriveContext";
+import {
+  useLibraryQuery,
+  useLibraryMutation,
+} from "../../contexts/SpacedriveContext";
 import { useTabManager } from "../../components/TabManager/useTabManager";
 import { TopBarPortal, TopBarItem } from "../../TopBar";
 import {
@@ -89,7 +92,8 @@ export function SourceDetail() {
   const updateMutation = useLibraryMutation("adapters.update");
 
   const adapterHasUpdate =
-    adapters?.find((a) => a.id === source?.adapter_id)?.update_available ?? false;
+    adapters?.find((a) => a.id === source?.adapter_id)?.update_available ??
+    false;
 
   // Sync tab title with source name
   const { activeTabId, updateTabTitle } = useTabManager();
@@ -150,7 +154,8 @@ export function SourceDetail() {
   }, [nextPage, loadingMore]);
 
   // Trigger load more when virtualizer reaches near the end
-  const lastVirtualItem = virtualizer.getVirtualItems()[virtualizer.getVirtualItems().length - 1];
+  const lastVirtualItem =
+    virtualizer.getVirtualItems()[virtualizer.getVirtualItems().length - 1];
   const lastVirtualIndex = lastVirtualItem?.index;
 
   useEffect(() => {
@@ -163,7 +168,13 @@ export function SourceDetail() {
     ) {
       setLoadingMore(true);
     }
-  }, [lastVirtualIndex, filteredItems.length, hasMore, loadingMore, searchValue]);
+  }, [
+    lastVirtualIndex,
+    filteredItems.length,
+    hasMore,
+    loadingMore,
+    searchValue,
+  ]);
 
   if (isLoading) {
     return (
@@ -191,10 +202,17 @@ export function SourceDetail() {
         left={
           <>
             <TopBarItem id="back" label="Back" priority="high">
-              <CircleButton icon="arrow_back" onClick={() => navigate("/sources")} title="Back" />
+              <CircleButton
+                icon="arrow_back"
+                onClick={() => navigate("/sources")}
+                title="Back"
+              />
             </TopBarItem>
             <TopBarItem id="source-path" label="Path" priority="high">
-              <SourcePathBar sourceName={source.name} itemCount={source.item_count} />
+              <SourcePathBar
+                sourceName={source.name}
+                itemCount={source.item_count}
+              />
             </TopBarItem>
           </>
         }
@@ -242,8 +260,9 @@ export function SourceDetail() {
           {updateMutation.data && (
             <div className="bg-primary-container rounded-small p-3">
               <p className="text-on-primary-container text-body-small">
-                Updated {updateMutation.data.adapter_id}: v{updateMutation.data.old_version} &rarr;
-                v{updateMutation.data.new_version}
+                Updated {updateMutation.data.adapter_id}: v
+                {updateMutation.data.old_version} &rarr; v
+                {updateMutation.data.new_version}
                 {updateMutation.data.schema_changed
                   ? " (schema changed — will migrate on next sync)"
                   : ""}
@@ -277,7 +296,9 @@ export function SourceDetail() {
 
         {!itemsLoading && filteredItems.length === 0 && (
           <div className="text-on-surface-variant py-12 text-center text-body-medium">
-            {searchValue ? "No matching items" : "No items yet. Run a sync to populate."}
+            {searchValue
+              ? "No matching items"
+              : "No items yet. Run a sync to populate."}
           </div>
         )}
 
@@ -315,7 +336,9 @@ export function SourceDetail() {
         )}
 
         {loadingMore && (
-          <div className="text-outline py-4 text-center text-body-small">Loading more...</div>
+          <div className="text-outline py-4 text-center text-body-small">
+            Loading more...
+          </div>
         )}
       </div>
 
@@ -323,13 +346,18 @@ export function SourceDetail() {
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/32">
           <div className="bg-surface-container-high w-full max-w-sm rounded-extra-large p-6 shadow-md3-3">
-            <h3 className="text-on-surface text-headline-small">Delete source</h3>
+            <h3 className="text-on-surface text-headline-small">
+              Delete source
+            </h3>
             <p className="text-on-surface-variant mt-4 text-body-medium">
               This will permanently delete{" "}
-              <strong className="text-on-surface">{source.name}</strong> and all its data.
+              <strong className="text-on-surface">{source.name}</strong> and all
+              its data.
             </p>
             {deleteMutation.error && (
-              <p className="mt-2 text-body-small text-error">{String(deleteMutation.error)}</p>
+              <p className="mt-2 text-body-small text-error">
+                {String(deleteMutation.error)}
+              </p>
             )}
             <div className="mt-6 flex justify-end gap-2">
               <Button

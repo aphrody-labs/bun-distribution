@@ -10,7 +10,11 @@ interface VolumeSizeBarProps {
 /**
  * Visual size bar for volumes showing used/available space
  */
-export function VolumeSizeBar({ totalBytes, availableBytes, className }: VolumeSizeBarProps) {
+export function VolumeSizeBar({
+  totalBytes,
+  availableBytes,
+  className,
+}: VolumeSizeBarProps) {
   const usedBytes = totalBytes - availableBytes;
   const usedPercentage = (usedBytes / totalBytes) * 100;
 

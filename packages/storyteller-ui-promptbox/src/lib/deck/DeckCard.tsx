@@ -5,7 +5,17 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import { BoxIcon, ImagesIcon, LoaderCircleIcon, MusicIcon, PlayIcon, SquareIcon, UploadIcon, VideoIcon, XIcon } from "lucide-react";
+import {
+  BoxIcon,
+  ImagesIcon,
+  LoaderCircleIcon,
+  MusicIcon,
+  PlayIcon,
+  SquareIcon,
+  UploadIcon,
+  VideoIcon,
+  XIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Modal } from "@storyteller/ui-modal";
 import { twMerge } from "tailwind-merge";
@@ -123,9 +133,7 @@ export const DeckCard = ({
       )}
       {item.kind === "mesh" && (
         <div className="flex h-full w-full items-center justify-center">
-          <BoxIcon
-            
-            className="h-5 w-5 text-base-fg/60 transition-colors group-hover:text-base-fg" />
+          <BoxIcon className="h-5 w-5 text-base-fg/60 transition-colors group-hover:text-base-fg" />
         </div>
       )}
       {item.kind === "audio" && (
@@ -144,12 +152,12 @@ export const DeckCard = ({
 
       {item.kind === "video" && (
         <div className="pointer-events-none absolute left-[3px] top-[3px] flex h-4 w-4 items-center justify-center bg-black/60 text-white">
-          <VideoIcon  className="h-2.5 w-2.5" />
+          <VideoIcon className="h-2.5 w-2.5" />
         </div>
       )}
       {item.kind === "audio" && (
         <div className="pointer-events-none absolute left-[3px] top-[3px] flex h-4 w-4 items-center justify-center bg-black/60 text-white">
-          <MusicIcon  className="h-2.5 w-2.5" />
+          <MusicIcon className="h-2.5 w-2.5" />
         </div>
       )}
 
@@ -161,9 +169,7 @@ export const DeckCard = ({
 
       {item.uploading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-          <LoaderCircleIcon
-            
-            className="h-6 w-6 animate-spin text-white" />
+          <LoaderCircleIcon className="h-6 w-6 animate-spin text-white" />
         </div>
       )}
 
@@ -178,7 +184,7 @@ export const DeckCard = ({
           onPointerDown={(e) => e.stopPropagation()}
           className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-0 backdrop-blur-md transition-colors hover:bg-red/70 group-hover:opacity-100"
         >
-          <XIcon  className="h-2.5 w-2.5" />
+          <XIcon className="h-2.5 w-2.5" />
         </button>
       )}
     </div>
@@ -240,9 +246,7 @@ export const DeckAddMenu = ({
               <DynamicIcon
                 icon={
                   action.icon ??
-                  (action.key.startsWith("upload")
-                    ? UploadIcon
-                    : ImagesIcon)
+                  (action.key.startsWith("upload") ? UploadIcon : ImagesIcon)
                 }
                 className="h-3.5 w-3.5 opacity-60"
               />

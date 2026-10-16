@@ -14,7 +14,10 @@ import {
 import type { Cue } from "./subtitles.ts";
 
 export interface Chat {
-  chat(messages: ChatMessage[], options?: { maxTokens?: number }): Promise<string>;
+  chat(
+    messages: ChatMessage[],
+    options?: { maxTokens?: number },
+  ): Promise<string>;
 }
 
 export interface TranslateOptions {
@@ -122,7 +125,8 @@ export function extractJson(raw: string): unknown {
   if (open >= 0 && close > open) attempts.push(text.slice(open, close + 1));
   const brace = text.indexOf("{");
   const braceEnd = text.lastIndexOf("}");
-  if (brace >= 0 && braceEnd > brace) attempts.push(text.slice(brace, braceEnd + 1));
+  if (brace >= 0 && braceEnd > brace)
+    attempts.push(text.slice(brace, braceEnd + 1));
   for (const attempt of attempts) {
     for (const candidate of [attempt, attempt.replace(/,\s*([\]}])/g, "$1")]) {
       try {
@@ -156,23 +160,31 @@ export function toItems(parsed: unknown): Item[] | string {
   let list: unknown = parsed;
   if (!Array.isArray(list) && list && typeof list === "object") {
     const record = list as Record<string, unknown>;
-    const key = ARRAY_KEYS.find((candidate) => Array.isArray(record[candidate]));
+    const key = ARRAY_KEYS.find((candidate) =>
+      Array.isArray(record[candidate]),
+    );
     list = key ? record[key] : undefined;
   }
-  if (!Array.isArray(list)) return "the reply must be a JSON array of {id, text} objects";
+  if (!Array.isArray(list))
+    return "the reply must be a JSON array of {id, text} objects";
   const items: Item[] = [];
   for (const [index, raw] of list.entries()) {
-    if (!raw || typeof raw !== "object") return `element ${index + 1} is not an object`;
+    if (!raw || typeof raw !== "object")
+      return `element ${index + 1} is not an object`;
     const record = raw as Record<string, unknown>;
     const id = typeof record.id === "string" ? Number(record.id) : record.id;
     if (typeof id !== "number" || !Number.isInteger(id))
       return `element ${index + 1} has no integer "id"`;
-    items.push({ id, text: record.text ?? record.en ?? record.translation ?? record.subtitle });
+    items.push({
+      id,
+      text: record.text ?? record.en ?? record.translation ?? record.subtitle,
+    });
   }
   return items;
 }
 
-const SCRIPT = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
+const SCRIPT =
+  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
 
 export interface Validation {
   texts: Map<number, string>;
@@ -191,7 +203,11 @@ export function squash(text: string): string {
   let out = flat;
   if (tail) {
     const head = flat.slice(0, tail.index).trimEnd();
-    out = !head ? "Haha." : /[.!?…]$/.test(head) ? `${head} Haha.` : `${head}, haha.`;
+    out = !head
+      ? "Haha."
+      : /[.!?…]$/.test(head)
+        ? `${head} Haha.`
+        : `${head}, haha.`;
   }
   return out.replace(LAUGH_MID, ", haha,").replace(/\s+/g, " ").trim();
 }
@@ -224,7 +240,8 @@ export function validateItems(
     texts.set(item.id, squash(item.text));
   }
   const missing = cues.filter((cue) => !seen.has(cue.id)).map((cue) => cue.id);
-  if (missing.length) hard.push(`missing ids: ${missing.slice(0, 8).join(", ")}`);
+  if (missing.length)
+    hard.push(`missing ids: ${missing.slice(0, 8).join(", ")}`);
   let empties = 0;
   for (const cue of cues) {
     const text = texts.get(cue.id);
@@ -252,10 +269,19 @@ export function validateItems(
 // helpers
 // ---------------------------------------------------------------------------------------------
 
-export const budgetFor = (cue: Cue, maxCps: number, maxLine: number, maxLines: number): number =>
-  Math.min(maxLine * maxLines, Math.max(16, Math.floor(((cue.end - cue.start) / 1000) * maxCps)));
+export const budgetFor = (
+  cue: Cue,
+  maxCps: number,
+  maxLine: number,
+  maxLines: number,
+): number =>
+  Math.min(
+    maxLine * maxLines,
+    Math.max(16, Math.floor(((cue.end - cue.start) / 1000) * maxCps)),
+  );
 
-const tokensFor = (count: number): number => Math.min(8192, Math.max(512, count * 120 + 400));
+const tokensFor = (count: number): number =>
+  Math.min(8192, Math.max(512, count * 120 + 400));
 
 interface WindowInput {
   cues: Cue[];
@@ -296,7 +322,9 @@ class Translator {
     });
   }
 
-  private budgets(cues: Cue[]): { id: number; text: string; maxChars: number }[] {
+  private budgets(
+    cues: Cue[],
+  ): { id: number; text: string; maxChars: number }[] {
     const { maxCps, maxLine, maxLines } = this.options;
     return cues.map((cue) => ({
       id: cue.id,
@@ -306,12 +334,17 @@ class Translator {
   }
 
   /** One model conversation for a set of cues: ask, validate, repair up to `retries` times. */
-  private async batch(input: WindowInput, retries: number): Promise<BatchOutcome> {
+  private async batch(
+    input: WindowInput,
+    retries: number,
+  ): Promise<BatchOutcome> {
     const { glossary } = this.deps;
     const entries = glossary.match(
       [...input.cues, ...input.next].map((cue) => cue.text).join("\n"),
     );
-    const previousText = input.previous.map((p) => `${p.src}\n${p.en}`).join("\n");
+    const previousText = input.previous
+      .map((p) => `${p.src}\n${p.en}`)
+      .join("\n");
     const recent = glossary
       .match(previousText)
       .filter((entry) => !entries.some((e) => e.id === entry.id));
@@ -346,12 +379,21 @@ class Translator {
       } catch (error) {
         problems = [error instanceof Error ? error.message : String(error)];
       }
-      if (validation && validation.hard.length === 0 && validation.soft.length === 0) {
+      if (
+        validation &&
+        validation.hard.length === 0 &&
+        validation.soft.length === 0
+      ) {
         return { texts: validation.texts, repairs, ok: true, warnings: [] };
       }
       if (attempt === retries) {
         if (validation && validation.hard.length === 0) {
-          return { texts: validation.texts, repairs, ok: true, warnings: validation.soft };
+          return {
+            texts: validation.texts,
+            repairs,
+            ok: true,
+            warnings: validation.soft,
+          };
         }
         return { texts: new Map(), repairs, ok: false, warnings: problems };
       }
@@ -378,7 +420,10 @@ class Translator {
     const out = new Map<number, string>();
     const rolling = [...previous];
     for (const [index, cue] of input.cues.entries()) {
-      const next = [...input.cues.slice(index + 1), ...input.next].slice(0, this.options.after);
+      const next = [...input.cues.slice(index + 1), ...input.next].slice(
+        0,
+        this.options.after,
+      );
       // oxlint-disable-next-line no-await-in-loop -- cue windows roll: each batch's context is the previous batch's output
       const result = await this.batch(
         { cues: [cue], previous: rolling.slice(-this.options.before), next },
@@ -418,7 +463,11 @@ class Translator {
       .filter((entry) => !entry.ambiguous)
       .map((entry) => entry.en)
       .slice(0, 40);
-    const prompt = buildSummaryPrompt({ transcript, userContext: this.options.userContext, terms });
+    const prompt = buildSummaryPrompt({
+      transcript,
+      userContext: this.options.userContext,
+      terms,
+    });
     const key = keyOf(PROMPT_VERSION, "summary", llmKey, prompt);
     const cached = await cache.get<string>("summary", key);
     if (cached !== undefined) {
@@ -452,7 +501,11 @@ class Translator {
     const out = new Map<number, string>();
     const history: { id: number; src: string; en: string }[] = [];
     const total = Math.ceil(cues.length / windowSize);
-    for (let start = 0, index = 1; start < cues.length; start += windowSize, index += 1) {
+    for (
+      let start = 0, index = 1;
+      start < cues.length;
+      start += windowSize, index += 1
+    ) {
       const slice = cues.slice(start, start + windowSize);
       const input: WindowInput = {
         cues: slice,
@@ -498,7 +551,9 @@ class Translator {
         }
         // oxlint-disable-next-line no-await-in-loop -- window translation is sequential: each window depends on the previous output and on the cache state
         map = await this.fixGlossary(slice, map);
-        texts = Object.fromEntries([...map.entries()].map(([id, text]) => [String(id), text]));
+        texts = Object.fromEntries(
+          [...map.entries()].map(([id, text]) => [String(id), text]),
+        );
         // oxlint-disable-next-line no-await-in-loop -- window translation is sequential: each window depends on the previous output and on the cache state
         await cache.set("window", key, texts);
         log(
@@ -520,7 +575,10 @@ class Translator {
     texts: Map<number, string>,
   ): Promise<Map<number, string>> {
     const { glossary } = this.deps;
-    const bad: { cue: Cue; entries: { entry: GlossaryEntry; bad: string }[] }[] = [];
+    const bad: {
+      cue: Cue;
+      entries: { entry: GlossaryEntry; bad: string }[];
+    }[] = [];
     for (const cue of slice) {
       const text = texts.get(cue.id);
       if (!text) continue;
@@ -572,21 +630,35 @@ class Translator {
     for (const { cue, entries } of bad) {
       const still = glossary.violations(cue.text, next.get(cue.id) ?? "");
       for (const { entry, bad: word } of entries) {
-        const fixed = !still.some((v) => v.entry.id === entry.id && v.bad === word);
+        const fixed = !still.some(
+          (v) => v.entry.id === entry.id && v.bad === word,
+        );
         if (fixed) this.stats.glossaryFixed += 1;
-        this.stats.glossaryViolations.push({ id: cue.id, term: entry.id, bad: word, fixed });
+        this.stats.glossaryViolations.push({
+          id: cue.id,
+          term: entry.id,
+          bad: word,
+          fixed,
+        });
       }
     }
     return next;
   }
 
-  async review(source: Cue[], texts: Map<number, string>): Promise<ReviewIssue[]> {
+  async review(
+    source: Cue[],
+    texts: Map<number, string>,
+  ): Promise<ReviewIssue[]> {
     const issues: ReviewIssue[] = [];
     const size = Math.max(10, this.options.windowSize);
     for (let start = 0; start < source.length; start += size) {
       const items = source
         .slice(start, start + size)
-        .map((cue) => ({ id: cue.id, src: cue.text, en: texts.get(cue.id) ?? "" }));
+        .map((cue) => ({
+          id: cue.id,
+          src: cue.text,
+          en: texts.get(cue.id) ?? "",
+        }));
       try {
         // oxlint-disable-next-line no-await-in-loop -- chunks are sent one at a time: LLM calls are rate-limited and replies are applied in order
         const reply = await this.deps.llm.chat(
@@ -610,7 +682,10 @@ class Translator {
             id,
             severity: raw.severity === "error" ? "error" : "warn",
             issue: squash(raw.issue),
-            suggestion: typeof raw.suggestion === "string" ? squash(raw.suggestion) : undefined,
+            suggestion:
+              typeof raw.suggestion === "string"
+                ? squash(raw.suggestion)
+                : undefined,
           });
         }
       } catch (error) {
@@ -653,13 +728,20 @@ export function consistencyReport(
 }
 
 /** Capitalised words (not sentence-initial) that neither the current line nor the glossary knows. */
-export function introducedNames(suggestion: string, current: string, glossary: Glossary): string[] {
+export function introducedNames(
+  suggestion: string,
+  current: string,
+  glossary: Glossary,
+): string[] {
   const known = glossary.vocabulary();
   const seen = new Set(current.toLowerCase().match(/\p{L}{2,}/gu) ?? []);
   const names: string[] = [];
-  for (const match of suggestion.matchAll(/(?<![.!?]\s)(?<!^)\b(\p{Lu}\p{L}{2,})\b/gu)) {
+  for (const match of suggestion.matchAll(
+    /(?<![.!?]\s)(?<!^)\b(\p{Lu}\p{L}{2,})\b/gu,
+  )) {
     const word = match[1] ?? "";
-    if (!known.has(word.toLowerCase()) && !seen.has(word.toLowerCase())) names.push(word);
+    if (!known.has(word.toLowerCase()) && !seen.has(word.toLowerCase()))
+      names.push(word);
   }
   return names;
 }

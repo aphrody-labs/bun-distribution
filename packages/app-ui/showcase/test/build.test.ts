@@ -21,11 +21,15 @@ test("the showcase builds into html, favicon, script and stylesheet", async () =
     const html = await Bun.file(join(outdir, page!)).text();
     const icon = /<link[^>]+rel="icon"[^>]+href="([^"]+)"/.exec(html)?.[1];
     expect(icon).toBeDefined();
-    expect(await Bun.file(resolve(outdir, page!, "..", icon!)).exists()).toBe(true);
+    expect(await Bun.file(resolve(outdir, page!, "..", icon!)).exists()).toBe(
+      true,
+    );
     expect(files.some((f) => f.endsWith(".js"))).toBe(true);
     const css = files.filter((f) => f.endsWith(".css"));
     expect(css.length).toBeGreaterThan(0);
-    const style = (await Promise.all(css.map((f) => Bun.file(join(outdir, f)).text()))).join("\n");
+    const style = (
+      await Promise.all(css.map((f) => Bun.file(join(outdir, f)).text()))
+    ).join("\n");
     expect(style).toMatch(/--md-sys-color-surface|surface/);
   } finally {
     await rm(outdir, { recursive: true, force: true });

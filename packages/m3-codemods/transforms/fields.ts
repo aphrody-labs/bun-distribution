@@ -15,7 +15,11 @@
  */
 import { runEngine, type FileInfo, type Options } from "../lib/engine";
 
-export default function transformer(file: FileInfo, api?: unknown, options: Options = {}): string {
+export default function transformer(
+  file: FileInfo,
+  api?: unknown,
+  options: Options = {},
+): string {
   return runEngine(file, api, {
     ...options,
     only: new Set(["TextField", "Select", "NativeSelect", "MenuItem"]),

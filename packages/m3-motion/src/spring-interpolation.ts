@@ -383,8 +383,10 @@ export interface SpringPresetLike {
  */
 export function springFromPreset(preset: SpringPresetLike): SpringParams {
   return {
-    stiffness: preset.stiffness != null && preset.stiffness > 0 ? preset.stiffness : 220,
-    damping: preset.damping != null && preset.damping >= 0 ? preset.damping : 17,
+    stiffness:
+      preset.stiffness != null && preset.stiffness > 0 ? preset.stiffness : 220,
+    damping:
+      preset.damping != null && preset.damping >= 0 ? preset.damping : 17,
     mass: preset.mass != null && preset.mass > 0 ? preset.mass : DEFAULT_MASS,
   };
 }

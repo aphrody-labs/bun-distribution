@@ -8,7 +8,7 @@ truth, `crates/ai/rag-core/src/api.rs`:
 
 | Backend     | Import                   | Use                                                                    |
 | :---------- | :----------------------- | :--------------------------------------------------------------------- |
-| WebAssembly | `@aphrody/rag-core/wasm` | browser, Bun, Node (the shared `@aphrody/cli-wasm` module) |
+| WebAssembly | `@aphrody/rag-core/wasm` | browser, Bun, Node (the shared `@aphrody/cli-wasm` module)             |
 | bun:ffi     | `@aphrody/rag-core/ffi`  | Bun backend (`crates/ai/rag-ffi`, in the single `aphrody-ffi` library) |
 
 The native desktop app links `aphrody-rag-core` directly as a Rust crate (no binding layer).

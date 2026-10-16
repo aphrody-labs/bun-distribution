@@ -38,9 +38,8 @@ const GroupNodeInner = ({ node, selected, onSelect }: Props) => {
     ),
   );
 
-  const handleSelect = (
-    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
-  ) => onSelect(node.id, e);
+  const handleSelect = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) =>
+    onSelect(node.id, e);
 
   return (
     <Group

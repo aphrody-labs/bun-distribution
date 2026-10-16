@@ -122,7 +122,9 @@ function buildGraphicParamDescriptor({
   const definition = getGraphicDefinition({
     definitionId: element.definitionId,
   });
-  const param = definition.params.find((candidate) => candidate.key === paramKey);
+  const param = definition.params.find(
+    (candidate) => candidate.key === paramKey,
+  );
   if (!param) {
     return null;
   }
@@ -150,14 +152,18 @@ function buildEffectParamDescriptor({
     return null;
   }
 
-  const effect = element.effects?.find((candidate) => candidate.id === effectId);
+  const effect = element.effects?.find(
+    (candidate) => candidate.id === effectId,
+  );
   if (!effect) {
     return null;
   }
 
   registerDefaultEffects();
   const definition = effectsRegistry.get(effect.type);
-  const param = definition.params.find((candidate) => candidate.key === paramKey);
+  const param = definition.params.find(
+    (candidate) => candidate.key === paramKey,
+  );
   if (!param) {
     return null;
   }

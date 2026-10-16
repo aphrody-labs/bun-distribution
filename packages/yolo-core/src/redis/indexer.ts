@@ -134,8 +134,11 @@ export async function indexCodebaseToRedis(
       const stat = statSync(file);
       totalBytes += stat.size;
 
-      const ext = relPath.includes(".") ? relPath.split(".").pop()?.toLowerCase() || "" : "";
-      const isBinaryOrLarge = stat.size > MAX_TEXT_FILE_SIZE || BINARY_EXTENSIONS.has(ext);
+      const ext = relPath.includes(".")
+        ? relPath.split(".").pop()?.toLowerCase() || ""
+        : "";
+      const isBinaryOrLarge =
+        stat.size > MAX_TEXT_FILE_SIZE || BINARY_EXTENSIONS.has(ext);
 
       let hash = "";
       let lines = 0;

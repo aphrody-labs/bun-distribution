@@ -74,8 +74,12 @@ export function GeminiAccountMenu({
             {avatar ?? name.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-body-medium font-medium text-on-surface">{name}</div>
-            <div className="truncate text-body-small text-on-surface-variant">{email}</div>
+            <div className="truncate text-body-medium font-medium text-on-surface">
+              {name}
+            </div>
+            <div className="truncate text-body-small text-on-surface-variant">
+              {email}
+            </div>
           </div>
         </div>
 
@@ -103,16 +107,24 @@ export function GeminiAccountMenu({
                     <Icon
                       name={item.icon}
                       size={20}
-                      className={item.destructive ? "text-error" : "text-on-surface-variant"}
+                      className={
+                        item.destructive
+                          ? "text-error"
+                          : "text-on-surface-variant"
+                      }
                     />
                   )}
                   <span>{item.label}</span>
                 </div>
                 {item.shortcut && (
-                  <span className="text-label-small text-on-surface-variant">{item.shortcut}</span>
+                  <span className="text-label-small text-on-surface-variant">
+                    {item.shortcut}
+                  </span>
                 )}
               </button>
-              {item.dividerAfter && <div className="my-1 border-t border-outline-variant/30" />}
+              {item.dividerAfter && (
+                <div className="my-1 border-t border-outline-variant/30" />
+              )}
             </div>
           ))}
         </div>
@@ -170,11 +182,17 @@ export function ComposerMoreUploadsMenu({
                 className="flex w-full items-center gap-3 rounded-small px-3 py-2 text-body-medium text-on-surface transition-colors hover:bg-on-surface/8"
               >
                 {item.icon && (
-                  <Icon name={item.icon} size={20} className="text-on-surface-variant" />
+                  <Icon
+                    name={item.icon}
+                    size={20}
+                    className="text-on-surface-variant"
+                  />
                 )}
                 <span className="flex-1 text-left">{item.label}</span>
               </button>
-              {item.dividerAfter && <div className="my-1 border-t border-outline-variant/30" />}
+              {item.dividerAfter && (
+                <div className="my-1 border-t border-outline-variant/30" />
+              )}
             </div>
           ))}
         </div>
@@ -200,7 +218,9 @@ export function ComposerMoreUploadsMenu({
                 }}
                 className="flex w-full items-center gap-3 rounded-small px-3 py-2 text-body-medium text-on-surface transition-colors hover:bg-on-surface/8"
               >
-                {sub.icon && <Icon name={sub.icon} size={20} className="text-primary" />}
+                {sub.icon && (
+                  <Icon name={sub.icon} size={20} className="text-primary" />
+                )}
                 <span className="flex-1 text-left">{sub.label}</span>
               </button>
             ))}

@@ -33,7 +33,8 @@ export interface Manifest {
 
 export interface Finding {
   level: "error" | "warn";
-  kind: "declared-builtin" | "declared-fork" | "dead-catalog" | "native-regression";
+  kind:
+    "declared-builtin" | "declared-fork" | "dead-catalog" | "native-regression";
   package: string;
   detail: string;
 }
@@ -68,7 +69,8 @@ export function declared(json: Record<string, unknown>): Map<string, string> {
   for (const field of DEPENDENCY_FIELDS) {
     const deps = json[field];
     if (deps && typeof deps === "object") {
-      for (const [name, spec] of Object.entries(deps)) out.set(name, String(spec));
+      for (const [name, spec] of Object.entries(deps))
+        out.set(name, String(spec));
     }
   }
   return out;
@@ -138,9 +140,15 @@ export function evaluate(
   };
 }
 
-async function workspaceManifests(root: string, patterns: string[]): Promise<Manifest[]> {
+async function workspaceManifests(
+  root: string,
+  patterns: string[],
+): Promise<Manifest[]> {
   const manifests: Manifest[] = [
-    { path: "package.json", json: await Bun.file(resolve(root, "package.json")).json() },
+    {
+      path: "package.json",
+      json: await Bun.file(resolve(root, "package.json")).json(),
+    },
   ];
   // Negated workspace patterns (packages leaving for another repository) still count as users.
   for (const pattern of patterns.filter((p) => !p.startsWith("!"))) {
@@ -150,21 +158,32 @@ async function workspaceManifests(root: string, patterns: string[]): Promise<Man
     })) {
       const path = rawPath.replace(/\\/g, "/");
       if (path.includes("node_modules/")) continue;
-      manifests.push({ path, json: await Bun.file(resolve(root, path)).json() });
+      manifests.push({
+        path,
+        json: await Bun.file(resolve(root, path)).json(),
+      });
     }
   }
   return manifests;
 }
 
-async function countImports(root: string, config: AbsorbConfig): Promise<Record<string, number>> {
+async function countImports(
+  root: string,
+  config: AbsorbConfig,
+): Promise<Record<string, number>> {
   const tracked = new Set(
-    config.packages.filter((entry) => entry.status !== "builtin").map((entry) => entry.name),
+    config.packages
+      .filter((entry) => entry.status !== "builtin")
+      .map((entry) => entry.name),
   );
   const exclude = new RegExp(
     `(^|/)(${config.scan.exclude.map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})(/|$)`,
   );
   const counts: Record<string, number> = {};
-  for await (const rawPath of new Bun.Glob(config.scan.include).scan({ cwd: root, onlyFiles: true })) {
+  for await (const rawPath of new Bun.Glob(config.scan.include).scan({
+    cwd: root,
+    onlyFiles: true,
+  })) {
     const path = rawPath.replace(/\\/g, "/");
     if (exclude.test(path)) continue;
     let source: string;
@@ -177,21 +196,29 @@ async function countImports(root: string, config: AbsorbConfig): Promise<Record<
       if (tracked.has(name)) counts[name] = (counts[name] ?? 0) + 1;
     }
   }
-  return Object.fromEntries(Object.entries(counts).toSorted(([a], [b]) => a.localeCompare(b)));
+  return Object.fromEntries(
+    Object.entries(counts).toSorted(([a], [b]) => a.localeCompare(b)),
+  );
 }
 
 if (import.meta.main) {
   const args = new Set(Bun.argv.slice(2));
   const root = resolve(import.meta.dir, "../../../../docs/aphrody");
-  const config: AbsorbConfig = await Bun.file(resolve(root, "tools/config/bun-absorb.json")).json();
+  const config: AbsorbConfig = await Bun.file(
+    resolve(root, "tools/config/bun-absorb.json"),
+  ).json();
   const rootManifest = await Bun.file(resolve(root, "package.json")).json();
   const baselinePath = resolve(root, "tools/config/bun-absorb.baseline.json");
   const imports = await countImports(root, config);
   const native = new Set(
-    config.packages.filter((entry) => entry.status === "native").map((entry) => entry.name),
+    config.packages
+      .filter((entry) => entry.status === "native")
+      .map((entry) => entry.name),
   );
   if (args.has("--write-baseline")) {
-    const counts = Object.fromEntries(Object.entries(imports).filter(([name]) => native.has(name)));
+    const counts = Object.fromEntries(
+      Object.entries(imports).filter(([name]) => native.has(name)),
+    );
     await Bun.write(
       baselinePath,
       `${JSON.stringify({ schemaVersion: 1, imports: counts }, null, 2)}\n`,
@@ -213,13 +240,17 @@ if (import.meta.main) {
     console.log(JSON.stringify(report, null, 2));
   } else {
     for (const [name, count] of Object.entries(report.imports)) {
-      const entry = config.packages.find((candidate) => candidate.name === name)!;
+      const entry = config.packages.find(
+        (candidate) => candidate.name === name,
+      )!;
       console.log(
         `${entry.status.padEnd(7)} ${name.padEnd(30)} ${String(count).padStart(4)}  -> ${entry.bun}`,
       );
     }
     for (const finding of report.findings)
-      console.log(`${finding.level} ${finding.kind} ${finding.package}: ${finding.detail}`);
+      console.log(
+        `${finding.level} ${finding.kind} ${finding.package}: ${finding.detail}`,
+      );
     console.log(report.ok ? "bun-absorb: ok" : "bun-absorb: FAILED");
   }
   process.exit(report.ok ? 0 : 1);

@@ -2,7 +2,10 @@
 import { Glob } from "bun";
 import { existsSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
-export async function runScriptAudit(repo: string, workspaceRoot?: string): Promise<void> {
+export async function runScriptAudit(
+  repo: string,
+  workspaceRoot?: string,
+): Promise<void> {
   if (!/^[a-z0-9-]+$/u.test(repo)) throw new Error("invalid repository name");
   const root = workspaceRoot
     ? resolve(workspaceRoot)
@@ -25,9 +28,16 @@ export async function runScriptAudit(repo: string, workspaceRoot?: string): Prom
         violations.push(`${label}: hard-coded PostgreSQL credential`);
       if (/SHENRON_ADMIN_TOKEN\s*=\s*["'][^"']+/u.test(text))
         violations.push(`${label}: hard-coded admin token`);
-      if (label.startsWith("scripts/ops/") && /\/home\/ubuntu|C:\/Users\/aphro/u.test(text))
+      if (
+        label.startsWith("scripts/ops/") &&
+        /\/home\/ubuntu|C:\/Users\/aphro/u.test(text)
+      )
         violations.push(`${label}: machine-specific absolute path`);
-      if (/DELETE\s+FROM\s+bot\.db_(wishes|timeline_events|power_levels)\b/i.test(text))
+      if (
+        /DELETE\s+FROM\s+bot\.db_(wishes|timeline_events|power_levels)\b/i.test(
+          text,
+        )
+      )
         violations.push(`${label}: physical deletion of editorial data`);
     }
   if (repo === "shenron") {
@@ -35,7 +45,10 @@ export async function runScriptAudit(repo: string, workspaceRoot?: string): Prom
       cwd: join(root, "apps/bot"),
       absolute: true,
     })) {
-      if (!file.includes(`${sep}node_modules${sep}`) && !file.includes(`${sep}dist${sep}`))
+      if (
+        !file.includes(`${sep}node_modules${sep}`) &&
+        !file.includes(`${sep}dist${sep}`)
+      )
         violations.push(
           `${relative(root, file).split(sep).join("/")}: bot scripts must be TypeScript`,
         );

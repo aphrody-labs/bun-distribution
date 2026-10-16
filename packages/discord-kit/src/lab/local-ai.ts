@@ -19,7 +19,10 @@ export type OpenLocalAI = (
   controls: { signal?: AbortSignal; timeoutMs?: number },
 ) => Promise<LocalAISession>;
 
-async function openNative(selection: LocalAISelection, controls: Parameters<OpenLocalAI>[1]) {
+async function openNative(
+  selection: LocalAISelection,
+  controls: Parameters<OpenLocalAI>[1],
+) {
   // This subpath loads only the existing inference ABI; unrelated tooling/UI symbols are not required.
   const { NativeInference } = await import("@aphrody/bun/src/inference.js");
   return NativeInference.open(selection, controls);
@@ -33,7 +36,9 @@ function validate(selection: LocalAISelection) {
     typeof selection.profile !== "string" ||
     !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(selection.profile)
   )
-    throw new Error("A catalog model reference and explicit named Agent Home profile are required");
+    throw new Error(
+      "A catalog model reference and explicit named Agent Home profile are required",
+    );
   if (
     selection.context !== undefined &&
     (!Number.isSafeInteger(selection.context) ||
@@ -47,7 +52,9 @@ function validate(selection: LocalAISelection) {
   )
     throw new RangeError("Local AI GPU layers must be a nonnegative integer");
   if (selection.lora !== undefined && !isAbsolute(selection.lora))
-    throw new Error("The installed LoRA adapter must have an absolute protected-store path");
+    throw new Error(
+      "The installed LoRA adapter must have an absolute protected-store path",
+    );
 }
 
 /** Native inference with one active turn and no idle model residency in this process. */
@@ -58,7 +65,10 @@ export class NativeLocalAI implements AsyncDisposable {
 
   constructor(private readonly open: OpenLocalAI = openNative) {}
 
-  async chat(selection: LocalAISelection, input: LocalAIInput): Promise<LocalAIResult> {
+  async chat(
+    selection: LocalAISelection,
+    input: LocalAIInput,
+  ): Promise<LocalAIResult> {
     validate(selection);
     input.signal?.throwIfAborted();
     if (this.#closing) throw new Error("Local AI is closing");
@@ -70,13 +80,18 @@ export class NativeLocalAI implements AsyncDisposable {
     const remaining = () => {
       input.signal?.throwIfAborted();
       const timeoutMs = deadline - performance.now();
-      if (timeoutMs <= 0) throw new DOMException("Local AI deadline exceeded", "TimeoutError");
+      if (timeoutMs <= 0)
+        throw new DOMException("Local AI deadline exceeded", "TimeoutError");
       return { signal: input.signal, timeoutMs };
     };
     this.#queued++;
     const turn = this.#tail.then(async () => {
       const session = await this.open(
-        { ...selection, context: selection.context ?? 4096, gpuLayers: selection.gpuLayers ?? 0 },
+        {
+          ...selection,
+          context: selection.context ?? 4096,
+          gpuLayers: selection.gpuLayers ?? 0,
+        },
         remaining(),
       );
       try {
@@ -86,7 +101,9 @@ export class NativeLocalAI implements AsyncDisposable {
           result.model !== selection.model ||
           result.profile !== selection.profile
         )
-          throw new Error("Local AI returned an invalid model/profile identity");
+          throw new Error(
+            "Local AI returned an invalid model/profile identity",
+          );
         return result;
       } finally {
         // Complete native generations/destructors before another model or profile opens.

@@ -42,7 +42,10 @@ export type FleetReadiness = {
 export function resolveExternalLocks(
   locks: string[],
   checkout: string | undefined,
-  pathApi: { isAbsolute: (path: string) => boolean; join: (...paths: string[]) => string },
+  pathApi: {
+    isAbsolute: (path: string) => boolean;
+    join: (...paths: string[]) => string;
+  },
 ): string[] {
   const marker = "$APHRODY_BUN_CHECKOUT/";
   return locks.map((lock) => {
@@ -53,10 +56,14 @@ export function resolveExternalLocks(
   });
 }
 
-async function resolveLocalHost(host: FleetHost, workspaceRoot: string): Promise<FleetHost> {
+async function resolveLocalHost(
+  host: FleetHost,
+  workspaceRoot: string,
+): Promise<FleetHost> {
   const marker = "$APHRODY_BUN_CHECKOUT/";
   const locks = host.externalLocks ?? [];
-  if (!host.local || !locks.some((lock) => lock.startsWith(marker))) return host;
+  if (!host.local || !locks.some((lock) => lock.startsWith(marker)))
+    return host;
 
   const configured = process.env.APHRODY_BUN_CHECKOUT?.trim();
   const candidates = [
@@ -67,12 +74,16 @@ async function resolveLocalHost(host: FleetHost, workspaceRoot: string): Promise
     await Promise.all(
       candidates.map(async (candidate) => {
         const path = resolve(candidate);
-        return (await Bun.file(join(path, "docs", "docs.json")).exists()) ? path : undefined;
+        return (await Bun.file(join(path, "docs", "docs.json")).exists())
+          ? path
+          : undefined;
       }),
     )
   ).find((path) => path !== undefined);
   if (!checkout)
-    throw new Error("The configured Bun checkout is unavailable for its native build lock");
+    throw new Error(
+      "The configured Bun checkout is unavailable for its native build lock",
+    );
   return {
     ...host,
     externalLocks: resolveExternalLocks(locks, checkout, { isAbsolute, join }),
@@ -99,19 +110,27 @@ const processIdentitySource = `async function identity(pid) {
 export function validateRequest(request: FleetRequest): void {
   if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(request.id))
     throw new Error("Invalid stable job id");
-  if (!["probe", "build"].includes(request.kind)) throw new Error("Invalid task kind");
-  if (!Number.isFinite(request.memoryGiB) || request.memoryGiB < 0.1 || request.memoryGiB > 256)
+  if (!["probe", "build"].includes(request.kind))
+    throw new Error("Invalid task kind");
+  if (
+    !Number.isFinite(request.memoryGiB) ||
+    request.memoryGiB < 0.1 ||
+    request.memoryGiB > 256
+  )
     throw new Error("Invalid task memory requirement");
   if (!Number.isInteger(request.jobs) || request.jobs < 1 || request.jobs > 64)
     throw new Error("Invalid jobs");
-  if (request.os && !["win32", "linux"].includes(request.os)) throw new Error("Invalid task OS");
+  if (request.os && !["win32", "linux"].includes(request.os))
+    throw new Error("Invalid task OS");
   if (request.kind === "build") {
     if (!/^[a-f0-9]{40}$/.test(request.revision ?? ""))
       throw new Error("Full source revision required");
     if (
       !request.workspace ||
       !request.command?.length ||
-      request.command.some((arg) => typeof arg !== "string" || arg.includes("\0"))
+      request.command.some(
+        (arg) => typeof arg !== "string" || arg.includes("\0"),
+      )
     )
       throw new Error("Build workspace and owner command required");
     const command = request.command!;
@@ -127,14 +146,18 @@ export function validateRequest(request: FleetRequest): void {
       Number(limits[0]!.slice(2)) < 1
     )
       throw new Error("Explicit bounded factory -j required");
-    if (command.some((arg) => /^--jobs|^-j$/.test(arg))) throw new Error("Conflicting job flags");
+    if (command.some((arg) => /^--jobs|^-j$/.test(arg)))
+      throw new Error("Conflicting job flags");
     if (
       command[1] === "run" &&
-      !["build", "build:release", "build:local", "build:windows"].includes(command[2] ?? "")
+      !["build", "build:release", "build:local", "build:windows"].includes(
+        command[2] ?? "",
+      )
     )
       throw Error("Unknown owner build script");
     const executionBoundary = command.findIndex(
-      (arg, index) => index > 1 && ["test", "run", "-e", "-p", "--"].includes(arg),
+      (arg, index) =>
+        index > 1 && ["test", "run", "-e", "-p", "--"].includes(arg),
     );
     if (
       executionBoundary !== -1 &&
@@ -163,10 +186,13 @@ export function selectHost(
       state.os === host.os &&
       (request.kind === "probe" || !state.busy) &&
       (state.freeGiB ?? 0) >=
-        (request.kind === "build" ? Math.max(10, request.memoryGiB) : request.memoryGiB) +
+        (request.kind === "build"
+          ? Math.max(10, request.memoryGiB)
+          : request.memoryGiB) +
           (request.kind === "probe" ? 1 : host.reserveGiB) &&
       (!state.observed || Date.now() - state.observed < 60000) &&
-      (request.kind === "probe" || ((state.diskGiB ?? 0) >= 20 && (state.load ?? 1) < 0.95))
+      (request.kind === "probe" ||
+        ((state.diskGiB ?? 0) >= 20 && (state.load ?? 1) < 0.95))
     );
   });
   eligible.sort(
@@ -175,7 +201,9 @@ export function selectHost(
       (readiness.find((s) => s.host === b.id)?.load ?? 0),
   );
   if (!eligible[0])
-    throw new Error(`No qualified host with sufficient reserved capacity for ${request.id}`);
+    throw new Error(
+      `No qualified host with sufficient reserved capacity for ${request.id}`,
+    );
   return eligible[0];
 }
 
@@ -190,7 +218,14 @@ export function encodedCommand(host: FleetHost, javascript: string): string {
 async function execute(host: FleetHost, javascript: string, seconds = 60) {
   if (!host.local)
     return runInfra({
-      args: ["ssh", "exec", "--host", host.id, "--cmd", encodedCommand(host, javascript)],
+      args: [
+        "ssh",
+        "exec",
+        "--host",
+        host.id,
+        "--cmd",
+        encodedCommand(host, javascript),
+      ],
       env: { APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(seconds) },
     });
   const proc = Bun.spawn([process.execPath, "-e", javascript], {
@@ -224,7 +259,9 @@ const readinessScript = `(async()=>{
  console.log(JSON.stringify({ready:true,observed:Date.now(),diskGiB:Number(disk.bavail)*Number(disk.bsize)/1073741824,os:process.platform,freeGiB:free/1073741824,cores:os.availableParallelism(),load,busy:fs.existsSync(lease)}));
 })().catch(e=>{console.error(e.message);process.exitCode=1})`;
 
-export async function inspectFleet(hosts: FleetHost[]): Promise<FleetReadiness[]> {
+export async function inspectFleet(
+  hosts: FleetHost[],
+): Promise<FleetReadiness[]> {
   return Promise.all(
     hosts.map(async (host) => {
       try {
@@ -234,7 +271,9 @@ export async function inspectFleet(hosts: FleetHost[]): Promise<FleetReadiness[]
         );
         const result = await execute(host, source, 30);
         if (result.exitCode !== 0)
-          throw new Error(result.stderr.trim() || `probe exit ${result.exitCode}`);
+          throw new Error(
+            result.stderr.trim() || `probe exit ${result.exitCode}`,
+          );
         const data = JSON.parse(result.stdout.trim());
         return { ...data, host: host.id, ready: data.os === host.os };
       } catch (error) {
@@ -303,7 +342,9 @@ export async function runBuildFleet(args: readonly string[]): Promise<number> {
     return 0;
   }
   const root = infraRoot();
-  const config = JSON.parse(await Bun.file(join(root, "tools/config/build-fleet.json")).text()) as {
+  const config = JSON.parse(
+    await Bun.file(join(root, "tools/config/build-fleet.json")).text(),
+  ) as {
     schemaVersion: number;
     hosts: FleetHost[];
   };
@@ -329,7 +370,9 @@ export async function runBuildFleet(args: readonly string[]): Promise<number> {
     )
   )
     throw Error("Invalid host capacity or protected production policy");
-  const hosts = await Promise.all(config.hosts.map((host) => resolveLocalHost(host, root)));
+  const hosts = await Promise.all(
+    config.hosts.map((host) => resolveLocalHost(host, root)),
+  );
   const stateRoot = join(
     process.env.USERPROFILE ?? process.env.HOME ?? root,
     ".aphrody",
@@ -337,7 +380,11 @@ export async function runBuildFleet(args: readonly string[]): Promise<number> {
     "requests",
   );
   if (operation === "status") {
-    if (rest[0] !== "--id" || !rest[1] || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(rest[1]))
+    if (
+      rest[0] !== "--id" ||
+      !rest[1] ||
+      !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(rest[1])
+    )
       throw Error("Stable job id required");
     const file = join(stateRoot, rest[1] + ".json");
     const saved = JSON.parse(await readFile(file, "utf8"));
@@ -395,7 +442,9 @@ export async function runBuildFleet(args: readonly string[]): Promise<number> {
       if (!recorded.every(Boolean))
         throw Error("Partially recorded batch requires status reconciliation");
       console.log(JSON.stringify(recorded, null, 2));
-      return recorded.every((r) => r.state === "terminal" && r.exitCode === 0) ? 0 : 1;
+      return recorded.every((r) => r.state === "terminal" && r.exitCode === 0)
+        ? 0
+        : 1;
     }
   }
   const readiness = await inspectFleet(hosts),
@@ -428,7 +477,9 @@ export async function runBuildFleet(args: readonly string[]): Promise<number> {
         sourcePin:
           request.revision ??
           createHash("sha256")
-            .update(workerScript(host, request, digest({ request, host }), command))
+            .update(
+              workerScript(host, request, digest({ request, host }), command),
+            )
             .digest("hex"),
         command,
       };
@@ -444,7 +495,9 @@ export async function runBuildFleet(args: readonly string[]): Promise<number> {
         const existing = JSON.parse(await readFile(file, "utf8"));
         if (existing.fingerprint !== plan.fingerprint)
           throw Error(`Conflicting request ${plan.request.id}`);
-        throw Error(`Request ${plan.request.id} already recorded; reconcile status, never replay`);
+        throw Error(
+          `Request ${plan.request.id} already recorded; reconcile status, never replay`,
+        );
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
       }
@@ -475,7 +528,13 @@ export async function runBuildFleet(args: readonly string[]): Promise<number> {
         );
         const lines = result.stdout.trim().split("\n");
         let remote:
-          | { id?: string; fingerprint?: string; host?: string; state?: string; exitCode?: number }
+          | {
+              id?: string;
+              fingerprint?: string;
+              host?: string;
+              state?: string;
+              exitCode?: number;
+            }
           | undefined;
         try {
           remote = JSON.parse(lines.at(-1)!);
@@ -501,7 +560,10 @@ export async function runBuildFleet(args: readonly string[]): Promise<number> {
         await writeFile(
           file,
           JSON.stringify(
-            Object.assign({}, receipt, { state: "indeterminate", error: String(error) }),
+            Object.assign({}, receipt, {
+              state: "indeterminate",
+              error: String(error),
+            }),
           ),
           { mode: 0o600 },
         );
@@ -510,7 +572,9 @@ export async function runBuildFleet(args: readonly string[]): Promise<number> {
     }),
   );
   console.log(JSON.stringify(results, null, 2));
-  return results.some((r) => r.exitCode !== 0 || r.state === "indeterminate") ? 1 : 0;
+  return results.some((r) => r.exitCode !== 0 || r.state === "indeterminate")
+    ? 1
+    : 0;
 }
 
 if (import.meta.main) process.exit(await runBuildFleet(process.argv.slice(2)));

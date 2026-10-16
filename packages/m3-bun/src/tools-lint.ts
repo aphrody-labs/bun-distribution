@@ -67,7 +67,9 @@ export function oxlintBinary(explicit?: string, from?: string): string {
     if (!base) continue;
     try {
       const manifest = Bun.resolveSync("oxlint/package.json", base);
-      const { bin } = require(manifest) as { bin: string | Record<string, string> };
+      const { bin } = require(manifest) as {
+        bin: string | Record<string, string>;
+      };
       return resolve(
         manifest,
         "..",
@@ -77,7 +79,9 @@ export function oxlintBinary(explicit?: string, from?: string): string {
   }
   const onPath = Bun.which("oxlint");
   if (onPath) return onPath;
-  throw new Error("m3-bun lint: oxlint is not installed (bun add -d oxlint, or put it on PATH)");
+  throw new Error(
+    "m3-bun lint: oxlint is not installed (bun add -d oxlint, or put it on PATH)",
+  );
 }
 
 /** A script `bin` (the package's JS entry) runs under this Bun; a native executable runs directly. */
@@ -87,17 +91,23 @@ function oxlintArgv(binary: string): string[] {
   try {
     head = readFileSync(binary).subarray(0, 64).toString("latin1");
   } catch {}
-  return /^#!.*\b(node|bun)\b/.test(head) ? [process.execPath, binary] : [binary];
+  return /^#!.*\b(node|bun)\b/.test(head)
+    ? [process.execPath, binary]
+    : [binary];
 }
 
 /** `m3(no-sx-prop)` -> `m3/no-sx-prop`. */
-export const ruleName = (code: string): string => code.replace(/^([\w-]+)\((.+)\)$/, "$1/$2");
+export const ruleName = (code: string): string =>
+  code.replace(/^([\w-]+)\((.+)\)$/, "$1/$2");
 
 /** Lint an app with the m3 rules. */
 export async function lintApp(options: LintOptions = {}): Promise<LintReport> {
   const dir = resolve(options.dir ?? process.cwd());
   const plugin = (
-    await loadTool("@aphrody/eslint-plugin-m3", () => import("@aphrody/eslint-plugin-m3"))
+    await loadTool(
+      "@aphrody/eslint-plugin-m3",
+      () => import("@aphrody/eslint-plugin-m3"),
+    )
   ).default;
   const preset = options.preset ?? "recommended";
   const rules = plugin.configs[preset]?.rules;
@@ -112,7 +122,9 @@ export async function lintApp(options: LintOptions = {}): Promise<LintReport> {
       config,
       JSON.stringify({
         jsPlugins: [
-          fileURLToPath(import.meta.resolve("@aphrody/eslint-plugin-m3")).replaceAll("\\", "/"),
+          fileURLToPath(
+            import.meta.resolve("@aphrody/eslint-plugin-m3"),
+          ).replaceAll("\\", "/"),
         ],
         ...(options.correctness ? {} : { categories: { correctness: "off" } }),
         rules,
@@ -146,7 +158,10 @@ export async function lintApp(options: LintOptions = {}): Promise<LintReport> {
         `m3-bun lint: oxlint exited ${exitCode} without a JSON report:\n${stderr || stdout}`,
       );
     }
-    if (!options.correctness && json.number_of_rules < Object.keys(rules).length)
+    if (
+      !options.correctness &&
+      json.number_of_rules < Object.keys(rules).length
+    )
       throw new Error(
         `m3-bun lint: ${binary} enabled ${json.number_of_rules} of the ${Object.keys(rules).length} m3 rules: it does not run jsPlugins (a standalone native oxlint); install the oxlint package (bun add -d oxlint) or pass one that does`,
       );

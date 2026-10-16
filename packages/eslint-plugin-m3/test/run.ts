@@ -33,9 +33,12 @@ function oxlintCommand(): string[] {
 const OXLINT = oxlintCommand();
 
 function lint(file: string): string {
-  const r = spawnSync([...OXLINT, "-c", CONFIG, join(ROOT, "test", "fixtures", file)], {
-    cwd: ROOT,
-  });
+  const r = spawnSync(
+    [...OXLINT, "-c", CONFIG, join(ROOT, "test", "fixtures", file)],
+    {
+      cwd: ROOT,
+    },
+  );
   return r.stdout.toString() + r.stderr.toString();
 }
 

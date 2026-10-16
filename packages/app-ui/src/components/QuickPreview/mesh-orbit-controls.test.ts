@@ -29,7 +29,9 @@ function setup() {
 }
 
 function wheel(element: HTMLElement, deltaY: number) {
-  element.dispatchEvent(new WheelEvent("wheel", { deltaY, bubbles: true, cancelable: true }));
+  element.dispatchEvent(
+    new WheelEvent("wheel", { deltaY, bubbles: true, cancelable: true }),
+  );
 }
 
 test("official Three wheel input zooms the camera, requests redraw and preserves mesh distance bounds", () => {

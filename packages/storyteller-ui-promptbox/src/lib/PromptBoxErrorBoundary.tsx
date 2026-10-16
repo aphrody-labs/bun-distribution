@@ -40,8 +40,6 @@ export class PromptBoxErrorBoundary extends Component<Props, State> {
         </div>
       );
     }
-    return (
-      <Fragment key={this.state.resetKey}>{this.props.children}</Fragment>
-    );
+    return <Fragment key={this.state.resetKey}>{this.props.children}</Fragment>;
   }
 }

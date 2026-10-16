@@ -23,7 +23,14 @@
 /* oxlint-disable eslint/no-await-in-loop -- the harness measures serially on purpose */
 // --check exits 1 when a budgeted metric exceeds its budget by more than the tolerance (default 10%). Timings that fail are
 // re-measured up to --retries times and the best p50 counts, so a loaded machine does not fail the gate on noise.
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, cpSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+  cpSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { YOLO_CLI, YOLO_ROOT, plan } from "../yolo.ts";
@@ -105,7 +112,9 @@ async function yolo(ctx: Ctx): Promise<void> {
 
 // ---------------------------------------------------------------- mcp
 
-const MCP_SERVER = process.env["BENCH_MCP_SERVER"] ?? join(REPO, "packages/m3-mcp/src/server.ts");
+const MCP_SERVER =
+  process.env["BENCH_MCP_SERVER"] ??
+  join(REPO, "packages/m3-mcp/src/server.ts");
 const rpc = (id: number, method: string, params: unknown = {}): string =>
   `${JSON.stringify({ jsonrpc: "2.0", id, method, params })}\n`;
 const INIT = rpc(1, "initialize", {
@@ -119,9 +128,14 @@ async function mcpSession(
   server: string,
   calls: { id: number; method: string; params?: unknown }[],
 ): Promise<Map<number, unknown>> {
-  const proc = Bun.spawn(["bun", server], { stdin: "pipe", stdout: "pipe", stderr: "ignore" });
+  const proc = Bun.spawn(["bun", server], {
+    stdin: "pipe",
+    stdout: "pipe",
+    stderr: "ignore",
+  });
   proc.stdin.write(
-    INIT + `${JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" })}\n`,
+    INIT +
+      `${JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" })}\n`,
   );
   for (const c of calls) proc.stdin.write(rpc(c.id, c.method, c.params ?? {}));
   proc.stdin.flush();
@@ -154,7 +168,8 @@ const mcpToolCall = (id: number, name: string, args: unknown) => ({
 
 async function mcp(ctx: Ctx): Promise<void> {
   const samples = await sample(
-    async () => (await timeToFirstLine(["bun", MCP_SERVER], { stdin: INIT })).ms,
+    async () =>
+      (await timeToFirstLine(["bun", MCP_SERVER], { stdin: INIT })).ms,
     runsOf(ctx, 10),
     2,
   );
@@ -163,7 +178,11 @@ async function mcp(ctx: Ctx): Promise<void> {
 
   const out = await mcpSession(MCP_SERVER, [
     { id: 2, method: "tools/list" },
-    mcpToolCall(3, "m3_os_themes_list", { seed: "#6750a4", target: "all", name: "Aphrody" }),
+    mcpToolCall(3, "m3_os_themes_list", {
+      seed: "#6750a4",
+      target: "all",
+      name: "Aphrody",
+    }),
     mcpToolCall(4, "m3_os_themes_generate", {
       seed: "#6750a4",
       target: "gnome",
@@ -180,14 +199,17 @@ async function mcp(ctx: Ctx): Promise<void> {
     mcpToolCall(7, "m3_token_lookup", { query: "primary", limit: 10 }),
   ]);
   const names = (
-    (out.get(2) as { result?: { tools?: { name: string }[] } } | undefined)?.result?.tools ?? []
+    (out.get(2) as { result?: { tools?: { name: string }[] } } | undefined)
+      ?.result?.tools ?? []
   )
     .map((t) => t.name)
     .toSorted();
   ctx.gates["mcp.tools"] = `${names.length} ${digest(names.join(","))}`;
   for (const id of [3, 4, 5, 6, 7])
     ctx.gates[`mcp.call.${id}`] = digest(
-      JSON.stringify((out.get(id) as { result?: unknown } | undefined)?.result ?? "missing"),
+      JSON.stringify(
+        (out.get(id) as { result?: unknown } | undefined)?.result ?? "missing",
+      ),
     );
 }
 
@@ -204,7 +226,9 @@ async function themes(ctx: Ctx): Promise<void> {
     "--out",
     out,
   ];
-  ctx.metrics["themes.cli"] = summarize(await sample(() => spawnTimed(cli).ms, runsOf(ctx, 20), 3));
+  ctx.metrics["themes.cli"] = summarize(
+    await sample(() => spawnTimed(cli).ms, runsOf(ctx, 20), 3),
+  );
   const probe = ["bun", join(FIXTURES, "themes-probe.ts")];
   const rows: {
     importMs: number;
@@ -216,13 +240,15 @@ async function themes(ctx: Ctx): Promise<void> {
   }[] = [];
   for (let i = 0; i < runsOf(ctx, 10) + 2; i++) {
     const r = spawnTimed(probe);
-    if (r.code !== 0) throw new Error(`themes-probe exited ${r.code}: ${r.out.slice(0, 200)}`);
+    if (r.code !== 0)
+      throw new Error(`themes-probe exited ${r.code}: ${r.out.slice(0, 200)}`);
     if (i >= 2) rows.push(JSON.parse(r.out.trim().split("\n").at(-1)!));
   }
   ctx.metrics["themes.import"] = summarize(rows.map((r) => r.importMs));
   ctx.metrics["themes.first"] = summarize(rows.map((r) => r.firstMs));
   ctx.metrics["themes.warm"] = summarize(rows.map((r) => r.warmMs));
-  ctx.gates["themes.output"] = `${rows[0]!.files} files ${rows[0]!.bytes} B ${rows[0]!.digest}`;
+  ctx.gates["themes.output"] =
+    `${rows[0]!.files} files ${rows[0]!.bytes} B ${rows[0]!.digest}`;
   rmSync(out, { recursive: true, force: true });
 }
 
@@ -233,7 +259,13 @@ function installFixture(dir: string): void {
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   // Everything the root manifest can point at: the lockfile, the registry config, the dependency patches.
-  for (const file of ["package.json", "bun.lock", "bunfig.toml", ".npmrc", "patches"]) {
+  for (const file of [
+    "package.json",
+    "bun.lock",
+    "bunfig.toml",
+    ".npmrc",
+    "patches",
+  ]) {
     if (existsSync(join(REPO, file)))
       cpSync(join(REPO, file), join(dir, file), { recursive: true });
   }
@@ -247,10 +279,15 @@ async function install(ctx: Ctx): Promise<void> {
   const dir = join(SCRATCH, "install");
   installFixture(dir);
   const cmd = ["bun", "install", "--frozen-lockfile", "--no-progress"];
-  const run = (extra: string[] = []) => spawnTimed([...cmd, ...extra], { cwd: dir });
+  const run = (extra: string[] = []) =>
+    spawnTimed([...cmd, ...extra], { cwd: dir });
   const first = run();
-  if (first.code !== 0) throw new Error(`bun install failed: ${first.out.slice(-300)}`);
-  ctx.metrics["install.nm_bytes"] = exact(dirBytes(join(dir, "node_modules")), "B");
+  if (first.code !== 0)
+    throw new Error(`bun install failed: ${first.out.slice(-300)}`);
+  ctx.metrics["install.nm_bytes"] = exact(
+    dirBytes(join(dir, "node_modules")),
+    "B",
+  );
   if (wants(ctx, "install.cold_nm"))
     ctx.metrics["install.cold_nm"] = summarize(
       await sample(
@@ -262,13 +299,19 @@ async function install(ctx: Ctx): Promise<void> {
       ),
     );
   if (wants(ctx, "install.warm"))
-    ctx.metrics["install.warm"] = summarize(await sample(() => run().ms, runsOf(ctx, 5), 1));
-  const summary = /(\d+) packages installed|Checked (\d+) installs across (\d+) packages/.exec(
-    run().out,
-  );
+    ctx.metrics["install.warm"] = summarize(
+      await sample(() => run().ms, runsOf(ctx, 5), 1),
+    );
+  const summary =
+    /(\d+) packages installed|Checked (\d+) installs across (\d+) packages/.exec(
+      run().out,
+    );
   ctx.gates["install.packages"] = summary?.[0] ?? "unknown";
   if (existsSync(join(REPO, "node_modules")))
-    ctx.metrics["install.repo_nm_bytes"] = exact(dirBytes(join(REPO, "node_modules")), "B");
+    ctx.metrics["install.repo_nm_bytes"] = exact(
+      dirBytes(join(REPO, "node_modules")),
+      "B",
+    );
   const hoisted = join(SCRATCH, "install-hoisted");
   if (wants(ctx, "install.cold_nm_hoisted")) installFixture(hoisted);
   const probe = wants(ctx, "install.cold_nm_hoisted")
@@ -280,13 +323,20 @@ async function install(ctx: Ctx): Promise<void> {
     ctx.metrics["install.cold_nm_hoisted"] = summarize(
       await sample(
         () => {
-          rmSync(join(hoisted, "node_modules"), { recursive: true, force: true });
-          return spawnTimed([...cmd, "--linker", "hoisted"], { cwd: hoisted }).ms;
+          rmSync(join(hoisted, "node_modules"), {
+            recursive: true,
+            force: true,
+          });
+          return spawnTimed([...cmd, "--linker", "hoisted"], { cwd: hoisted })
+            .ms;
         },
         runsOf(ctx, 3),
       ),
     );
-    ctx.metrics["install.nm_bytes_hoisted"] = exact(dirBytes(join(hoisted, "node_modules")), "B");
+    ctx.metrics["install.nm_bytes_hoisted"] = exact(
+      dirBytes(join(hoisted, "node_modules")),
+      "B",
+    );
   } else fail(ctx, "install.hoisted", probe.out.slice(-200));
   rmSync(hoisted, { recursive: true, force: true });
   if (ctx.coldCache) {
@@ -311,7 +361,10 @@ const counts = (out: string): string => {
   return `${pass} pass ${failed} fail`;
 };
 
-async function perPackage(ctx: Ctx, script: "test" | "typecheck"): Promise<void> {
+async function perPackage(
+  ctx: Ctx,
+  script: "test" | "typecheck",
+): Promise<void> {
   let sum = 0;
   for (const pkg of workspacePackages(REPO)) {
     if (!pkg.manifest.scripts?.[script]) continue;
@@ -328,10 +381,15 @@ async function perPackage(ctx: Ctx, script: "test" | "typecheck"): Promise<void>
     const metric = summarize(samples);
     ctx.metrics[`${script}.pkg.${pkg.id}`] = metric;
     ctx.gates[`${script}.pkg.${pkg.id}`] =
-      script === "test" ? `exit ${first!.code}, ${counts(first!.out)}` : `exit ${first!.code}`;
+      script === "test"
+        ? `exit ${first!.code}, ${counts(first!.out)}`
+        : `exit ${first!.code}`;
     sum += metric.value;
   }
-  ctx.metrics[`${script}.sum`] = { value: Math.round(sum * 1000) / 1000, unit: "ms" };
+  ctx.metrics[`${script}.sum`] = {
+    value: Math.round(sum * 1000) / 1000,
+    unit: "ms",
+  };
 }
 
 async function lint(ctx: Ctx): Promise<void> {
@@ -380,7 +438,8 @@ async function bundle(ctx: Ctx): Promise<void> {
     const size = await bundlePackage(pkg);
     ctx.metrics[`bundle.pkg.${pkg.id}.min`] = exact(size.jsBytes, "B");
     ctx.metrics[`bundle.pkg.${pkg.id}.gzip`] = exact(size.gzipBytes, "B");
-    if (size.cssBytes > 0) ctx.metrics[`bundle.pkg.${pkg.id}.css`] = exact(size.cssBytes, "B");
+    if (size.cssBytes > 0)
+      ctx.metrics[`bundle.pkg.${pkg.id}.css`] = exact(size.cssBytes, "B");
     if (size.error) fail(ctx, `bundle.pkg.${pkg.id}`, size.error);
     js += size.jsBytes;
     gzip += size.gzipBytes;
@@ -389,15 +448,25 @@ async function bundle(ctx: Ctx): Promise<void> {
   ctx.metrics["bundle.total.min"] = exact(js, "B");
   ctx.metrics["bundle.total.gzip"] = exact(gzip, "B");
   ctx.metrics["bundle.total.css"] = exact(css, "B");
-  ctx.metrics["bundle.time"] = exact(Math.round(performance.now() - started), "ms");
+  ctx.metrics["bundle.time"] = exact(
+    Math.round(performance.now() - started),
+    "ms",
+  );
 }
 
 // ---------------------------------------------------------------- compile
 
 /** What a tuned `bun build --compile` adds: a bytecode cache and no runtime scan for .env / bunfig.toml. */
-const TUNED = ["--bytecode", "--no-compile-autoload-dotenv", "--no-compile-autoload-bunfig"];
+const TUNED = [
+  "--bytecode",
+  "--no-compile-autoload-dotenv",
+  "--no-compile-autoload-bunfig",
+];
 
-async function compileServer(ctx: Ctx, variant: "default" | "tuned"): Promise<void> {
+async function compileServer(
+  ctx: Ctx,
+  variant: "default" | "tuned",
+): Promise<void> {
   const exe = join(SCRATCH, `server-${variant}`);
   const cmd = [
     "bun",
@@ -409,7 +478,8 @@ async function compileServer(ctx: Ctx, variant: "default" | "tuned"): Promise<vo
     exe,
   ];
   const first = spawnTimed(cmd, { cwd: FIXTURES });
-  if (first.code !== 0) throw new Error(`compile ${variant}: ${first.out.slice(-300)}`);
+  if (first.code !== 0)
+    throw new Error(`compile ${variant}: ${first.out.slice(-300)}`);
   const key = `compile.server_${variant}`;
   ctx.metrics[`${key}.build`] = summarize(
     await sample(() => spawnTimed(cmd, { cwd: FIXTURES }).ms, runsOf(ctx, 3)),
@@ -464,14 +534,19 @@ async function compileYolo(ctx: Ctx): Promise<void> {
     exe,
   ];
   const first = spawnTimed(cmd, { cwd: YOLO_ROOT });
-  if (first.code !== 0) throw new Error(`compile yolo: ${first.out.slice(-300)}`);
+  if (first.code !== 0)
+    throw new Error(`compile yolo: ${first.out.slice(-300)}`);
   ctx.metrics["compile.yolo.build"] = summarize(
     await sample(() => spawnTimed(cmd, { cwd: YOLO_ROOT }).ms, runsOf(ctx, 3)),
   );
   ctx.metrics["compile.yolo.size"] = exact(Bun.file(exe).size, "B");
   const run = ["version"];
   ctx.metrics["compile.yolo.start"] = summarize(
-    await sample(() => spawnTimed([exe, ...run], { cwd: SCRATCH }).ms, runsOf(ctx, 20), 3),
+    await sample(
+      () => spawnTimed([exe, ...run], { cwd: SCRATCH }).ms,
+      runsOf(ctx, 20),
+      3,
+    ),
   );
   const out = spawnTimed([exe, ...run], { cwd: SCRATCH });
   ctx.gates["compile.yolo.version"] = `${out.code} ${out.out.trim()}`;
@@ -567,7 +642,10 @@ async function measure(
   mkdirSync(SCRATCH, { recursive: true });
   for (const name of groups) {
     const fn = GROUPS[name];
-    if (!fn) throw new Error(`unknown group ${name}; known: ${Object.keys(GROUPS).join(", ")}`);
+    if (!fn)
+      throw new Error(
+        `unknown group ${name}; known: ${Object.keys(GROUPS).join(", ")}`,
+      );
     const started = performance.now();
     process.stderr.write(`bench ${name} ...`);
     try {
@@ -577,7 +655,9 @@ async function measure(
     }
     process.stderr.write(` ${Math.round(performance.now() - started)} ms\n`);
   }
-  env.loadEnd = (await import("node:os")).loadavg().map((n) => Math.round(n * 100) / 100);
+  env.loadEnd = (await import("node:os"))
+    .loadavg()
+    .map((n) => Math.round(n * 100) / 100);
   return {
     schema: "m3-bench/1",
     repeat: 1,
@@ -598,13 +678,20 @@ function table(snapshot: Snapshot, only?: (key: string) => boolean): string {
           : "";
       return `| ${key} | ${formatValue(m.value, m.unit)} | ${spread} |`;
     });
-  return ["| metric | value | distribution |", "| --- | ---: | --- |", ...rows].join("\n");
+  return [
+    "| metric | value | distribution |",
+    "| --- | ---: | --- |",
+    ...rows,
+  ].join("\n");
 }
 
 function compare(before: Snapshot, after: Snapshot): string {
   // Only what both snapshots measured: a partial run (`--only yolo`) compares against the full baseline.
   const keys = Object.keys(before.metrics).filter((k) => k in after.metrics);
-  const lines = ["| metric | before | after | change |", "| --- | ---: | ---: | ---: |"];
+  const lines = [
+    "| metric | before | after | change |",
+    "| --- | ---: | ---: | ---: |",
+  ];
   for (const key of keys) {
     const b = before.metrics[key];
     const a = after.metrics[key];
@@ -613,7 +700,9 @@ function compare(before: Snapshot, after: Snapshot): string {
       m
         ? `${formatValue(m.value, unit)}${m.p95 !== undefined && m.n && m.n > 1 ? ` (p95 ${formatValue(m.p95, unit)})` : ""}`
         : "n/a";
-    lines.push(`| ${key} | ${dist(b)} | ${dist(a)} | ${pct(b?.value, a?.value)} |`);
+    lines.push(
+      `| ${key} | ${dist(b)} | ${dist(a)} | ${pct(b?.value, a?.value)} |`,
+    );
   }
   const gateKeys = Object.keys(before.gates).filter((k) => k in after.gates);
   const changed = gateKeys.filter((k) => before.gates[k] !== after.gates[k]);
@@ -622,7 +711,9 @@ function compare(before: Snapshot, after: Snapshot): string {
     `Equivalence gates: ${gateKeys.length - changed.length} of ${gateKeys.length} identical.`,
   );
   for (const k of changed)
-    lines.push(`- ${k}: \`${before.gates[k] ?? "-"}\` -> \`${after.gates[k] ?? "-"}\``);
+    lines.push(
+      `- ${k}: \`${before.gates[k] ?? "-"}\` -> \`${after.gates[k] ?? "-"}\``,
+    );
   return lines.join("\n");
 }
 
@@ -650,18 +741,22 @@ async function main(): Promise<number> {
     const budgetFile = flag("--budget") ?? BUDGET_FILE;
     const budget = readJson<Budget>(budgetFile);
     const retries = Number(flag("--retries") ?? 2);
-    const groups = [...new Set(Object.keys(budget.metrics).map(groupOf))].filter(
-      (g) => g in GROUPS,
-    );
+    const groups = [
+      ...new Set(Object.keys(budget.metrics).map(groupOf)),
+    ].filter((g) => g in GROUPS);
     const errors: Record<string, string> = {};
     let best: Record<string, Metric> = {};
     let rows = compareBudget(budget, {});
     for (let attempt = 0; attempt <= retries; attempt++) {
       const needed =
-        attempt === 0 ? groups : [...new Set(rows.filter((r) => !r.ok).map((r) => groupOf(r.key)))];
+        attempt === 0
+          ? groups
+          : [...new Set(rows.filter((r) => !r.ok).map((r) => groupOf(r.key)))];
       if (needed.length === 0) break;
       const wanted =
-        attempt === 0 ? Object.keys(budget.metrics) : rows.filter((r) => !r.ok).map((r) => r.key);
+        attempt === 0
+          ? Object.keys(budget.metrics)
+          : rows.filter((r) => !r.ok).map((r) => r.key);
       const snap = await measure(needed, { runs, coldCache: false, wanted });
       Object.assign(errors, snap.errors);
       for (const [key, metric] of Object.entries(snap.metrics)) {
@@ -685,7 +780,8 @@ async function main(): Promise<number> {
       );
     }
     console.log(lines.join("\n"));
-    for (const [key, why] of Object.entries(errors)) console.log(`\nnot measured: ${key}: ${why}`);
+    for (const [key, why] of Object.entries(errors))
+      console.log(`\nnot measured: ${key}: ${why}`);
     const bad = rows.filter((r) => !r.ok);
     console.log(
       bad.length === 0
@@ -695,8 +791,14 @@ async function main(): Promise<number> {
     return bad.length === 0 ? 0 : 1;
   }
 
-  const groups = only ?? [...DEFAULT_GROUPS, ...(has("--with-build") ? ["build"] : [])];
-  const snapshot = await measure(groups, { runs, coldCache: has("--cold-cache") });
+  const groups = only ?? [
+    ...DEFAULT_GROUPS,
+    ...(has("--with-build") ? ["build"] : []),
+  ];
+  const snapshot = await measure(groups, {
+    runs,
+    coldCache: has("--cold-cache"),
+  });
   const repeat = Math.max(1, Number(flag("--repeat") ?? 1));
   for (let i = 1; i < repeat; i++) {
     // Another complete run: keep, per timing, the sample set with the lowest p50 (a loaded machine only ever adds time).
@@ -706,16 +808,21 @@ async function main(): Promise<number> {
       if (!kept || (metric.unit === "ms" && metric.value < kept.value))
         snapshot.metrics[key] = metric;
     }
-    for (const [key, why] of Object.entries(next.errors)) snapshot.errors[key] ??= why;
+    for (const [key, why] of Object.entries(next.errors))
+      snapshot.errors[key] ??= why;
     snapshot.env.loadEnd = next.env.loadEnd;
   }
   snapshot.repeat = repeat;
 
   if (has("--update-budget")) {
     const baselineFile = flag("--baseline");
-    const baseline = baselineFile ? readJson<Snapshot>(baselineFile) : undefined;
+    const baseline = baselineFile
+      ? readJson<Snapshot>(baselineFile)
+      : undefined;
     // A partial run (`--only bundle`) refreshes only the metrics it measured and keeps the rest of the file.
-    const previous: Partial<Budget> = existsSync(BUDGET_FILE) ? readJson<Budget>(BUDGET_FILE) : {};
+    const previous: Partial<Budget> = existsSync(BUDGET_FILE)
+      ? readJson<Budget>(BUDGET_FILE)
+      : {};
     const budget: Budget = {
       schema: "m3-bench-budget/1",
       tolerance: previous.tolerance ?? 0.1,
@@ -734,7 +841,8 @@ async function main(): Promise<number> {
     for (const key of BUDGETED) {
       const m = snapshot.metrics[key];
       if (!m) continue;
-      const first = baseline?.metrics[key]?.value ?? previous.metrics?.[key]?.baseline;
+      const first =
+        baseline?.metrics[key]?.value ?? previous.metrics?.[key]?.baseline;
       budget.metrics[key] = {
         value: m.value,
         unit: m.unit,

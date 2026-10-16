@@ -10,7 +10,10 @@ import { cp, mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { nativeThemeColorRoles, parseNativeThemeExport } from "@aphrody/m3-tokens/native-theme";
+import {
+  nativeThemeColorRoles,
+  parseNativeThemeExport,
+} from "@aphrody/m3-tokens/native-theme";
 
 const here = import.meta.dir;
 /** Source colour of the logo (QuantizerCelebi + Score of material-color-utilities on assets/icon-256.png). */
@@ -77,7 +80,10 @@ export async function build(outDir = join(here, "dist")): Promise<string> {
 `;
   await Bun.write(join(outDir, "theme.css"), `${font}\n${tokens}\n${scheme}`);
   await cp(
-    fileURLToPath(import.meta.resolve("@aphrody/m3-fonts/fonts/web/GoogleSansFlex-latin.woff2")),
+    fileURLToPath(
+      import.meta
+        .resolve("@aphrody/m3-fonts/fonts/web/GoogleSansFlex-latin.woff2"),
+    ),
     join(outDir, "fonts/GoogleSansFlex-latin.woff2"),
   );
   await Promise.all(
@@ -86,9 +92,12 @@ export async function build(outDir = join(here, "dist")): Promise<string> {
     ),
   );
   await Promise.all(
-    ["logo.webp", "favicon-32.png", "favicon-192.png", "apple-touch-icon.png"].map((name) =>
-      cp(join(here, "assets", name), join(outDir, name)),
-    ),
+    [
+      "logo.webp",
+      "favicon-32.png",
+      "favicon-192.png",
+      "apple-touch-icon.png",
+    ].map((name) => cp(join(here, "assets", name), join(outDir, name))),
   );
   return outDir;
 }

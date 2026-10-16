@@ -17,33 +17,33 @@
     <p>Press Ctrl+R to reload and see the state persist.</p>
 
     <script>
-      const { invoke } = window.__TAURI__.core
+      const { invoke } = window.__TAURI__.core;
 
-      const incrementBtn = document.querySelector('#increment-btn')
-      const decrementBtn = document.querySelector('#decrement-btn')
-      const resetBtn = document.querySelector('#reset-btn')
-      const counterContainer = document.querySelector('#counter')
+      const incrementBtn = document.querySelector("#increment-btn");
+      const decrementBtn = document.querySelector("#decrement-btn");
+      const resetBtn = document.querySelector("#reset-btn");
+      const counterContainer = document.querySelector("#counter");
 
-      document.addEventListener('DOMContentLoaded', async () => {
-        let currentCount = await invoke('get')
-        counterContainer.innerText = currentCount
-        console.log('loaded')
-      })
+      document.addEventListener("DOMContentLoaded", async () => {
+        let currentCount = await invoke("get");
+        counterContainer.innerText = currentCount;
+        console.log("loaded");
+      });
 
-      incrementBtn.addEventListener('click', async () => {
-        let newCount = await invoke('increment')
-        counterContainer.innerText = newCount
-      })
+      incrementBtn.addEventListener("click", async () => {
+        let newCount = await invoke("increment");
+        counterContainer.innerText = newCount;
+      });
 
-      decrementBtn.addEventListener('click', async () => {
-        let newCount = await invoke('decrement')
-        counterContainer.innerText = newCount
-      })
+      decrementBtn.addEventListener("click", async () => {
+        let newCount = await invoke("decrement");
+        counterContainer.innerText = newCount;
+      });
 
-      resetBtn.addEventListener('click', async () => {
-        let newCount = await invoke('reset')
-        counterContainer.innerText = newCount
-      })
+      resetBtn.addEventListener("click", async () => {
+        let newCount = await invoke("reset");
+        counterContainer.innerText = newCount;
+      });
     </script>
   </body>
 </html>

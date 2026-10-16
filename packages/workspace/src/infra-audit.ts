@@ -3,8 +3,20 @@
 /* eslint-disable no-await-in-loop -- Serialize bounded runtime probes and retain ordered private evidence. */
 import { TOML, Transpiler } from "bun";
 import { chmod, mkdir, realpath } from "node:fs/promises";
-import { basename, delimiter, isAbsolute, join, relative, resolve, sep } from "node:path";
-import { discoverMonorepoGatePlan, executeMonorepoGate, type GateCheck } from "./monorepo-gate.ts";
+import {
+  basename,
+  delimiter,
+  isAbsolute,
+  join,
+  relative,
+  resolve,
+  sep,
+} from "node:path";
+import {
+  discoverMonorepoGatePlan,
+  executeMonorepoGate,
+  type GateCheck,
+} from "./monorepo-gate.ts";
 import { loadFleet } from "./fleet.ts";
 import { pipelineCatalog } from "./pipeline-catalog.ts";
 import { infraExecutable } from "./runtime.ts";
@@ -52,7 +64,13 @@ type HostSnapshot = {
     exitCode?: number | null;
     properties?: Record<string, string>;
   }>;
-  health?: Array<{ id: string; kind: string; url: string; status?: number; ok?: boolean }>;
+  health?: Array<{
+    id: string;
+    kind: string;
+    url: string;
+    status?: number;
+    ok?: boolean;
+  }>;
   paths?: Array<{ id: string; path: string; exists: boolean }>;
   failedUnits?: { exitCode?: number | null; units?: string[] };
   postgresqlReady?: { exitCode?: number | null };
@@ -74,14 +92,18 @@ export function qualifyHost(
 ): HostQualification {
   const failures: string[] = [];
   const optionalFailures: string[] = [];
-  const observed = exitCode === 0 && Boolean(snapshot.hostname && snapshot.observedAt);
+  const observed =
+    exitCode === 0 && Boolean(snapshot.hostname && snapshot.observedAt);
   if (!observed) failures.push("Host observation missing or transport failed");
   const selected = hostServices(services, host);
   const unitRequirements = new Map([
     ...["nginx.service", "postgresql.service", "redis-server.service"].map(
       (name): [string, boolean] => [name, host !== "wsl"],
     ),
-    ...selected.map((service): [string, boolean] => [service.unit, service.required !== false]),
+    ...selected.map((service): [string, boolean] => [
+      service.unit,
+      service.required !== false,
+    ]),
   ]);
   const failure = (message: string, required: boolean) =>
     (required ? failures : optionalFailures).push(message);
@@ -99,13 +121,22 @@ export function qualifyHost(
     for (const [kind, url] of [
       ["health", service.health],
       ["readiness", service.readiness],
-      ...(service.additionalUpstreams ?? []).map((address) => ["upstream", `tcp://${address}`]),
+      ...(service.additionalUpstreams ?? []).map((address) => [
+        "upstream",
+        `tcp://${address}`,
+      ]),
     ]) {
       if (!url) continue;
       const endpoint = snapshot.health?.find(
-        (entry) => entry.id === service.id && entry.kind === kind && entry.url === url,
+        (entry) =>
+          entry.id === service.id && entry.kind === kind && entry.url === url,
       );
-      if (!endpoint?.ok || !endpoint.status || endpoint.status < 200 || endpoint.status >= 300)
+      if (
+        !endpoint?.ok ||
+        !endpoint.status ||
+        endpoint.status < 200 ||
+        endpoint.status >= 300
+      )
         failure(
           `${service.id} ${kind} failed (${endpoint?.status ?? "not observed"})`,
           service.required !== false,
@@ -115,10 +146,15 @@ export function qualifyHost(
       service.workingDirectory &&
       !snapshot.paths?.some(
         (entry) =>
-          entry.id === service.id && entry.path === service.workingDirectory && entry.exists,
+          entry.id === service.id &&
+          entry.path === service.workingDirectory &&
+          entry.exists,
       )
     )
-      failure(`${service.id} working directory is missing`, service.required !== false);
+      failure(
+        `${service.id} working directory is missing`,
+        service.required !== false,
+      );
   }
   if (snapshot.failedUnits?.exitCode !== 0)
     failure("Failed-unit inventory unavailable", host !== "wsl");
@@ -128,12 +164,24 @@ export function qualifyHost(
     failure("PostgreSQL readiness failed", host !== "wsl");
   if (snapshot.redis?.exitCode !== 0 || snapshot.redis?.stdout !== "PONG")
     failure("Redis readiness failed", host !== "wsl");
-  return { observed, healthy: observed && failures.length === 0, failures, optionalFailures };
+  return {
+    observed,
+    healthy: observed && failures.length === 0,
+    failures,
+    optionalFailures,
+  };
 }
 
 /** Supplied results remain historical, including leaf gates still present in the current plan. */
 export function classifyGateEvidence(
-  prior: { results?: Array<{ name?: string; command?: string[]; cwd?: string; status?: string }> },
+  prior: {
+    results?: Array<{
+      name?: string;
+      command?: string[];
+      cwd?: string;
+      status?: string;
+    }>;
+  },
   checks: GateCheck[],
 ) {
   const historicalResults = prior.results ?? [];
@@ -149,13 +197,17 @@ export function classifyGateEvidence(
     qualifiesCurrentSource: false,
     results: historicalResults,
     matchingCurrentCommands: historicalResults.filter(present).length,
-    excludedFromCurrentPlan: historicalResults.filter((result) => !present(result)),
+    excludedFromCurrentPlan: historicalResults.filter(
+      (result) => !present(result),
+    ),
   };
 }
 
 export function evidenceOutsideRoot(root: string, evidence: string): boolean {
   const location = relative(root, evidence);
-  return location === ".." || location.startsWith(`..${sep}`) || isAbsolute(location);
+  return (
+    location === ".." || location.startsWith(`..${sep}`) || isAbsolute(location)
+  );
 }
 const sha256 = (bytes: string | Uint8Array) =>
   new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
@@ -175,7 +227,9 @@ export async function observeCommand(
       /^(?:cargo(?:\.exe)?|cargo-serial\.sh)$/.test(executable) &&
       !["fmt", "metadata"].includes(command[1] ?? "")
     )
-      throw new Error("Cargo execution is excluded; only formatting and metadata are allowed");
+      throw new Error(
+        "Cargo execution is excluded; only formatting and metadata are allowed",
+      );
     if (/^next(?:\.exe)?$/.test(executable) && command.includes("build"))
       throw new Error("Next builds are excluded");
     const child = Bun.spawn(command, {
@@ -223,16 +277,24 @@ export async function observeCommand(
   }
 }
 
-export function hostServices(services: Service[], host: "vps" | "dbfr" | "wsl"): Service[] {
+export function hostServices(
+  services: Service[],
+  host: "vps" | "dbfr" | "wsl",
+): Service[] {
   // The catalog describes the VPS workload plane. dbfr has its own DB role;
   // absent application units there are not deployment failures.
   return host === "vps"
-    ? services.filter((service) => service.status !== "retired" && !service.staged)
+    ? services.filter(
+        (service) => service.status !== "retired" && !service.staged,
+      )
     : [];
 }
 
 /** One bounded read-only SSH command per host, one request per catalog health URL. */
-export function hostProbeCommand(host: "vps" | "dbfr" | "wsl", services: Service[]): string {
+export function hostProbeCommand(
+  host: "vps" | "dbfr" | "wsl",
+  services: Service[],
+): string {
   const selected = hostServices(services, host);
   const python = `import json,os,platform,shutil,socket,subprocess,time,urllib.request,urllib.error
 from datetime import datetime,timezone
@@ -287,16 +349,21 @@ print(json.dumps({'observedAt':datetime.now(timezone.utc).isoformat(),'hostname'
 }
 
 export async function sourceInventory(root: string) {
-  const manifests = TOML.parse(await Bun.file(join(root, "Cargo.toml")).text()) as Manifest;
+  const manifests = TOML.parse(
+    await Bun.file(join(root, "Cargo.toml")).text(),
+  ) as Manifest;
   const members = new Set<string>();
-  const exclusions = (manifests.workspace?.exclude ?? []).map((pattern) => new Bun.Glob(pattern));
+  const exclusions = (manifests.workspace?.exclude ?? []).map(
+    (pattern) => new Bun.Glob(pattern),
+  );
   for (const pattern of manifests.workspace?.members ?? [])
     for await (const path of new Bun.Glob(`${pattern}/Cargo.toml`).scan({
       cwd: root,
       onlyFiles: true,
     })) {
       const directory = path.slice(0, -"/Cargo.toml".length);
-      if (!exclusions.some((glob) => glob.match(directory))) members.add(directory);
+      if (!exclusions.some((glob) => glob.match(directory)))
+        members.add(directory);
     }
   const crates = [];
   for (const path of [...members].toSorted()) {
@@ -308,17 +375,24 @@ export async function sourceInventory(root: string) {
       version: manifest.package?.version,
       manifestSha256: sha256(text),
       features: manifest.features ?? {},
-      qualification: "manifest-parsed; source compilation/tests/features excluded",
+      qualification:
+        "manifest-parsed; source compilation/tests/features excluded",
     });
   }
   const infraSources: SourceProof[] = [];
   const transpiler = new Transpiler({ loader: "ts" });
   for (const family of ["crates/infra", "packages/infra"])
-    for await (const path of new Bun.Glob(`${family}/**/*.{ts,tsx,js,rs}`).scan({
-      cwd: root,
-      onlyFiles: true,
-    })) {
-      if (/\/(?:node_modules|dist|target|docs)\//.test(path) || path.endsWith(".d.ts")) continue;
+    for await (const path of new Bun.Glob(`${family}/**/*.{ts,tsx,js,rs}`).scan(
+      {
+        cwd: root,
+        onlyFiles: true,
+      },
+    )) {
+      if (
+        /\/(?:node_modules|dist|target|docs)\//.test(path) ||
+        path.endsWith(".d.ts")
+      )
+        continue;
       const text = await Bun.file(join(root, path)).text();
       const rust = path.endsWith(".rs");
       const proof: SourceProof = {
@@ -329,10 +403,15 @@ export async function sourceInventory(root: string) {
           ? (text.match(/#\[test\]|#\[tokio::test[^\]]*\]/g) ?? []).length
           : (text.match(/\b(?:test|it)\s*(?:\.\w+)?\s*\(/g) ?? []).length,
       };
-      if (rust) proof.cfg = [...text.matchAll(/#\[cfg\(([^\n]+)\)\]/g)].map((match) => match[1]!);
+      if (rust)
+        proof.cfg = [...text.matchAll(/#\[cfg\(([^\n]+)\)\]/g)].map(
+          (match) => match[1]!,
+        );
       else
         try {
-          const parser = path.endsWith(".tsx") ? new Transpiler({ loader: "tsx" }) : transpiler;
+          const parser = path.endsWith(".tsx")
+            ? new Transpiler({ loader: "tsx" })
+            : transpiler;
           parser.transformSync(text);
           proof.imports = parser.scan(text).imports.map((entry) => entry.path);
         } catch (error) {
@@ -342,7 +421,9 @@ export async function sourceInventory(root: string) {
       infraSources.push(proof);
     }
   const scripts = [];
-  for await (const path of new Bun.Glob("scripts/**/*.{sh,ts,mts,cts,js,mjs,cjs,py,nu,ps1}").scan({
+  for await (const path of new Bun.Glob(
+    "scripts/**/*.{sh,ts,mts,cts,js,mjs,cjs,py,nu,ps1}",
+  ).scan({
     cwd: root,
     onlyFiles: true,
   })) {
@@ -357,9 +438,10 @@ export async function sourceInventory(root: string) {
       path,
       sha256: sha256(text),
       qualification: "inventoried; not executed automatically",
-      heavyAdapter: /cargo\s+(?:build|check|test|clippy|run)|next\s+build|playwright|crawl/i.test(
-        text,
-      ),
+      heavyAdapter:
+        /cargo\s+(?:build|check|test|clippy|run)|next\s+build|playwright|crawl/i.test(
+          text,
+        ),
     };
     if (/\.(?:ts|mts|cts|js|mjs|cjs)$/.test(path)) {
       try {
@@ -379,11 +461,21 @@ export async function sourceInventory(root: string) {
             "import ast,pathlib,sys;ast.parse(pathlib.Path(sys.argv[1]).read_text(encoding='utf-8-sig'))",
             join(root, path),
           ];
-      const result = await observeCommand(`Syntax ${path}`, command, root, 10_000);
+      const result = await observeCommand(
+        `Syntax ${path}`,
+        command,
+        root,
+        10_000,
+      );
       proof.qualification =
-        result.exitCode === 0 ? "syntax-parsed; adapter not executed" : "syntax-failed";
-      if (result.exitCode !== 0) proof.error = result.error ?? result.stderr.slice(-1000);
-    } else proof.qualification = "inventoried; optional Nushell/PowerShell parser not executed";
+        result.exitCode === 0
+          ? "syntax-parsed; adapter not executed"
+          : "syntax-failed";
+      if (result.exitCode !== 0)
+        proof.error = result.error ?? result.stderr.slice(-1000);
+    } else
+      proof.qualification =
+        "inventoried; optional Nushell/PowerShell parser not executed";
     scripts.push(proof);
   }
   return {
@@ -402,9 +494,12 @@ export async function runInfraAudit(args: string[]): Promise<number> {
     run = false;
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    if (["--root", "--output", "--evidence", "--gate-report"].includes(arg ?? "")) {
+    if (
+      ["--root", "--output", "--evidence", "--gate-report"].includes(arg ?? "")
+    ) {
       const value = args[++i];
-      if (!value || value.startsWith("--")) throw new Error(`${arg} requires a value`);
+      if (!value || value.startsWith("--"))
+        throw new Error(`${arg} requires a value`);
       if (arg === "--root") root = value;
       else if (arg === "--output") output = value;
       else if (arg === "--evidence") evidence = value;
@@ -418,10 +513,13 @@ export async function runInfraAudit(args: string[]): Promise<number> {
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }
-  if (run && gateReport) throw new Error("--run and --gate-report are mutually exclusive");
+  if (run && gateReport)
+    throw new Error("--run and --gate-report are mutually exclusive");
   root = await realpath(resolve(root));
   if (!evidence)
-    throw new Error("--evidence requires a private directory for raw runtime evidence");
+    throw new Error(
+      "--evidence requires a private directory for raw runtime evidence",
+    );
   evidence = resolve(evidence);
   if (!evidenceOutsideRoot(root, evidence))
     throw new Error("Raw evidence must stay outside the repository");
@@ -464,7 +562,11 @@ export async function runInfraAudit(args: string[]): Promise<number> {
     ["git", "status", "--porcelain=v1"],
     root,
   );
-  const sourceHead = await observeCommand("Git source HEAD", ["git", "rev-parse", "HEAD"], root);
+  const sourceHead = await observeCommand(
+    "Git source HEAD",
+    ["git", "rev-parse", "HEAD"],
+    root,
+  );
   const plan = await discoverMonorepoGatePlan(root, undefined, true);
   const fleet = await loadFleet(root);
   const pipeline = await pipelineCatalog(root);
@@ -475,7 +577,9 @@ export async function runInfraAudit(args: string[]): Promise<number> {
           (await observe(check.name, check.command, check.cwd)).exitCode ?? 1,
       )
     : undefined;
-  const priorGate = gateReport ? await Bun.file(resolve(gateReport)).json() : undefined;
+  const priorGate = gateReport
+    ? await Bun.file(resolve(gateReport)).json()
+    : undefined;
   if (priorGate && resolve(priorGate.root ?? "") !== root)
     throw new Error("Gate report belongs to another root");
   const gateEvidence = gateReport
@@ -487,8 +591,9 @@ export async function runInfraAudit(args: string[]): Promise<number> {
         ...classifyGateEvidence(priorGate, plan.checks),
       }
     : null;
-  const services = (await Bun.file(join(root, "tools/config/service-catalog.json")).json())
-    .services as Service[];
+  const services = (
+    await Bun.file(join(root, "tools/config/service-catalog.json")).json()
+  ).services as Service[];
   const hosts: Record<string, unknown> = {};
   const hostQualifications: Record<string, HostQualification> = {};
   if (live) {
@@ -524,7 +629,13 @@ export async function runInfraAudit(args: string[]): Promise<number> {
       "doctor",
     ]);
     // OVH belongs to the Rust Infra owner (`aphrody ovh` = `aphrody infra ovh`).
-    await observe("Native OVH profiles", [...binary, "--root", root, "ovh", "profiles"]);
+    await observe("Native OVH profiles", [
+      ...binary,
+      "--root",
+      root,
+      "ovh",
+      "profiles",
+    ]);
     for (const profile of ["aphrody.com", "rosegriffon.fr", "dragonballfr.com"])
       await observe(
         `Native OVH API ${profile}`,
@@ -569,9 +680,16 @@ export async function runInfraAudit(args: string[]): Promise<number> {
       );
       try {
         const envelope = JSON.parse(result.stdout);
-        hosts[host] = typeof envelope.stdout === "string" ? JSON.parse(envelope.stdout) : envelope;
+        hosts[host] =
+          typeof envelope.stdout === "string"
+            ? JSON.parse(envelope.stdout)
+            : envelope;
       } catch {
-        hosts[host] = { observed: false, exitCode: result.exitCode, evidence: observations.length };
+        hosts[host] = {
+          observed: false,
+          exitCode: result.exitCode,
+          evidence: observations.length,
+        };
       }
       hostQualifications[host] = qualifyHost(
         host,
@@ -586,7 +704,9 @@ export async function runInfraAudit(args: string[]): Promise<number> {
       .toSorted((a, b) => a.path.localeCompare(b.path))
       .map(async (pkg) => ({
         path: `${pkg.path}/package.json`,
-        sha256: sha256(await Bun.file(join(root, pkg.path, "package.json")).bytes()),
+        sha256: sha256(
+          await Bun.file(join(root, pkg.path, "package.json")).bytes(),
+        ),
       })),
   );
   const controlFiles = [];
@@ -600,14 +720,21 @@ export async function runInfraAudit(args: string[]): Promise<number> {
     "tools/config/pipeline.json",
   ]) {
     const file = Bun.file(join(root, path));
-    if (await file.exists()) controlFiles.push({ path, sha256: sha256(await file.bytes()) });
+    if (await file.exists())
+      controlFiles.push({ path, sha256: sha256(await file.bytes()) });
   }
   const sourceFingerprint = sha256(
     JSON.stringify({
       controlFiles,
-      crates: inventory.crates.map((crate) => [crate.path, crate.manifestSha256]),
+      crates: inventory.crates.map((crate) => [
+        crate.path,
+        crate.manifestSha256,
+      ]),
       bunManifests,
-      infraSources: inventory.infraSources.map((source) => [source.path, source.sha256]),
+      infraSources: inventory.infraSources.map((source) => [
+        source.path,
+        source.sha256,
+      ]),
       scripts: inventory.scripts
         .toSorted((a, b) => a.path.localeCompare(b.path))
         .map((script) => [script.path, script.sha256]),
@@ -628,7 +755,11 @@ export async function runInfraAudit(args: string[]): Promise<number> {
     inventory.scripts.some((item) => item.qualification === "syntax-failed") ||
     Boolean(gate?.results.some((item) => item.status === "failed"));
   const incomplete =
-    !gate || !live || !gate.passed || plan.gaps.length > 0 || Boolean(plan.deferred?.length);
+    !gate ||
+    !live ||
+    !gate.passed ||
+    plan.gaps.length > 0 ||
+    Boolean(plan.deferred?.length);
   const report = {
     schemaVersion: 2,
     generatedAt: new Date().toISOString(),
@@ -648,7 +779,8 @@ export async function runInfraAudit(args: string[]): Promise<number> {
       browsers: false,
       crawlers: false,
       liveMutations: false,
-      rustSourceExecution: "Excluded; installed binaries do not qualify changed Rust source",
+      rustSourceExecution:
+        "Excluded; installed binaries do not qualify changed Rust source",
     },
     inventory,
     fleet,
@@ -672,7 +804,9 @@ export async function runInfraAudit(args: string[]): Promise<number> {
     },
     coverage: {
       rustCrates: inventory.crates.length,
-      infraRustCrates: inventory.crates.filter((c) => c.path.startsWith("crates/infra/")).length,
+      infraRustCrates: inventory.crates.filter((c) =>
+        c.path.startsWith("crates/infra/"),
+      ).length,
       bunPackages: plan.packages.length,
       infraSourceFiles: inventory.infraSources.length,
       scripts: inventory.scripts.length,
@@ -687,7 +821,8 @@ export async function runInfraAudit(args: string[]): Promise<number> {
       "Snapshots do not qualify the current source as the deployed release",
     ],
   };
-  if (output) await Bun.write(resolve(output), JSON.stringify(report, null, 2) + "\n");
+  if (output)
+    await Bun.write(resolve(output), JSON.stringify(report, null, 2) + "\n");
   else console.log(JSON.stringify(report, null, 2));
   return failed || incomplete ? 1 : 0;
 }

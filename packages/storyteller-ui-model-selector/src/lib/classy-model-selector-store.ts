@@ -5,12 +5,14 @@ import { GenerationProvider } from "@storyteller/api-enums";
 
 interface ClassyModelSelectorState {
   selectedModels: { [page in ModelPage]?: Model };
-  selectedProviders: { [page in ModelPage]?: { [modelId: string]: GenerationProvider } };
+  selectedProviders: {
+    [page in ModelPage]?: { [modelId: string]: GenerationProvider };
+  };
   setSelectedModel: (page: ModelPage, model: Model) => void;
   setSelectedProvider: (
     page: ModelPage,
     modelId: string,
-    provider: GenerationProvider
+    provider: GenerationProvider,
   ) => void;
 }
 
@@ -35,11 +37,11 @@ export const useClassyModelSelectorStore = create<ClassyModelSelectorState>(
           },
         },
       })),
-  })
+  }),
 );
 
 export const getSelectedImageModel = (
-  page: ModelPage
+  page: ModelPage,
 ): ImageModel | undefined => {
   const { selectedModels } = useClassyModelSelectorStore.getState();
   const maybeModel = selectedModels[page];
@@ -55,7 +57,7 @@ export const getSelectedImageModel = (
 };
 
 export const getSelectedVideoModel = (
-  page: ModelPage
+  page: ModelPage,
 ): VideoModel | undefined => {
   const { selectedModels } = useClassyModelSelectorStore.getState();
   const maybeModel = selectedModels[page];
@@ -72,7 +74,7 @@ export const getSelectedVideoModel = (
 
 export const getSelectedProviderForModel = (
   page: ModelPage,
-  modelId: string
+  modelId: string,
 ): GenerationProvider | undefined => {
   const { selectedProviders } = useClassyModelSelectorStore.getState();
   const byPage = selectedProviders[page];
@@ -85,7 +87,7 @@ export const useSelectedModel = (page: ModelPage): Model | undefined =>
   useClassyModelSelectorStore((s) => s.selectedModels[page]);
 
 export const useSelectedImageModel = (
-  page: ModelPage
+  page: ModelPage,
 ): ImageModel | undefined => {
   const maybeModel = useSelectedModel(page);
   if (!maybeModel) return undefined;
@@ -95,7 +97,7 @@ export const useSelectedImageModel = (
 };
 
 export const useSelectedVideoModel = (
-  page: ModelPage
+  page: ModelPage,
 ): VideoModel | undefined => {
   const maybeModel = useSelectedModel(page);
   if (!maybeModel) return undefined;
@@ -107,10 +109,12 @@ export const useSelectedVideoModel = (
 // TODO: This shouldn't be on a per-page basis.
 export const useSelectedProviderForModel = (
   page: ModelPage,
-  modelId: string | undefined
+  modelId: string | undefined,
 ): GenerationProvider | undefined =>
   useClassyModelSelectorStore((s) =>
-    modelId ? resolveSelectedProvider(s.selectedProviders[page]?.[modelId]) : undefined
+    modelId
+      ? resolveSelectedProvider(s.selectedProviders[page]?.[modelId])
+      : undefined,
   );
 
 function resolveSelectedProvider(

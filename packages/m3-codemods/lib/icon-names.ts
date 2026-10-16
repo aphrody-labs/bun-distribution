@@ -35,7 +35,9 @@ interface Exceptions {
 let exceptions: Exceptions | null = null;
 function getExceptions(): Exceptions {
   if (!exceptions) {
-    const raw = JSON.parse(readFileSync(join(DATA, "mui-icon-exceptions.json"), "utf8"));
+    const raw = JSON.parse(
+      readFileSync(join(DATA, "mui-icon-exceptions.json"), "utf8"),
+    );
     exceptions = { brands: raw.brands || {}, remap: raw.remap || {} };
   }
   return exceptions;

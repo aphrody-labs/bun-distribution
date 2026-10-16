@@ -24,8 +24,7 @@ export const useCheatsheetPin = create<CheatsheetPinState>((set) => ({
 // the overlay panel itself, and any button that toggles the pin (otherwise
 // the toggle's own pointerdown would unpin first and the click would re-pin,
 // making the button appear to do nothing).
-const DISMISS_EXEMPT =
-  "[data-keybinds-cheatsheet], [data-cheatsheet-toggle]";
+const DISMISS_EXEMPT = "[data-keybinds-cheatsheet], [data-cheatsheet-toggle]";
 
 // Visibility for the cheatsheet overlay. Two paths compose:
 //  - Hold-to-peek: holding Ctrl (Cmd on Mac) ALONE for HOLD_MS shows it; any

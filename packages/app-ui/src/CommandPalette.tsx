@@ -8,17 +8,28 @@ import { Icon, Kbd } from "@aphrody/m3-primitives";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loadPreferences, savePreferences } from "./preferences";
-import { getDefaultSuggestions, suggest, type Suggestion } from "./quickbar-suggest";
+import {
+  getDefaultSuggestions,
+  suggest,
+  type Suggestion,
+} from "./quickbar-suggest";
 import { useChatStore } from "./stores/chat-store";
 import { desktopRoutes } from "./desktop-navigation";
-import { dispatchMenuCommand, isMacPlatform, menuShortcut } from "./menu-commands";
+import {
+  dispatchMenuCommand,
+  isMacPlatform,
+  menuShortcut,
+} from "./menu-commands";
 
 export interface CommandPaletteProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
-export function CommandPalette({ open: controlledOpen, onOpenChange }: CommandPaletteProps = {}) {
+export function CommandPalette({
+  open: controlledOpen,
+  onOpenChange,
+}: CommandPaletteProps = {}) {
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
   const isOpen = isControlled ? controlledOpen : internalOpen;
@@ -51,7 +62,8 @@ export function CommandPalette({ open: controlledOpen, onOpenChange }: CommandPa
   // Global keyboard listener for Ctrl+K / Cmd+K and Ctrl+Shift+P / Cmd+Shift+P
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.platform);
+      const isMac =
+        typeof navigator !== "undefined" && /mac/i.test(navigator.platform);
       const isCmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
 
       if (
@@ -70,7 +82,10 @@ export function CommandPalette({ open: controlledOpen, onOpenChange }: CommandPa
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("aphrody:open-command-palette", handleCustomOpen);
+      window.removeEventListener(
+        "aphrody:open-command-palette",
+        handleCustomOpen,
+      );
     };
   }, [isOpen, setOpen]);
 
@@ -137,7 +152,10 @@ export function CommandPalette({ open: controlledOpen, onOpenChange }: CommandPa
             navigate(desktopRoutes.settings);
             break;
           case "theme":
-            await savePreferences({ ...prefs, theme: prefs.theme === "dark" ? "light" : "dark" });
+            await savePreferences({
+              ...prefs,
+              theme: prefs.theme === "dark" ? "light" : "dark",
+            });
             break;
           default:
             throw new Error("Cette commande n'est pas disponible.");
@@ -154,7 +172,9 @@ export function CommandPalette({ open: controlledOpen, onOpenChange }: CommandPa
       }
       setOpen(false);
     } catch (failure) {
-      setActionError(failure instanceof Error ? failure.message : String(failure));
+      setActionError(
+        failure instanceof Error ? failure.message : String(failure),
+      );
     } finally {
       setActivating(false);
     }
@@ -172,11 +192,17 @@ export function CommandPalette({ open: controlledOpen, onOpenChange }: CommandPa
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       if (suggestions.length > 0) {
-        setHighlight((prev) => (prev - 1 + suggestions.length) % suggestions.length);
+        setHighlight(
+          (prev) => (prev - 1 + suggestions.length) % suggestions.length,
+        );
       }
     } else if (e.key === "Enter") {
       e.preventDefault();
-      if (suggestions.length > 0 && highlight >= 0 && highlight < suggestions.length) {
+      if (
+        suggestions.length > 0 &&
+        highlight >= 0 &&
+        highlight < suggestions.length
+      ) {
         void activateItem(suggestions[highlight]);
       } else if (draft.trim()) {
         // Transfer the exact text to the composer; the user sends it from Chat.
@@ -218,7 +244,9 @@ export function CommandPalette({ open: controlledOpen, onOpenChange }: CommandPa
             role="combobox"
             aria-expanded={suggestions.length > 0}
             aria-controls="command-palette-suggestions"
-            aria-activedescendant={highlight >= 0 ? `command-palette-item-${highlight}` : undefined}
+            aria-activedescendant={
+              highlight >= 0 ? `command-palette-item-${highlight}` : undefined
+            }
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Rechercher ou exécuter une action..."
@@ -256,7 +284,8 @@ export function CommandPalette({ open: controlledOpen, onOpenChange }: CommandPa
                         ? item.icon
                         : item.kind === "command"
                           ? item.icon
-                          : (item.icon ?? (item.isDir ? "folder" : "description"));
+                          : (item.icon ??
+                            (item.isDir ? "folder" : "description"));
 
                 const badgeLabel =
                   item.kind === "navigation"
@@ -302,17 +331,25 @@ export function CommandPalette({ open: controlledOpen, onOpenChange }: CommandPa
                         name={iconName}
                         size={24}
                         className={`shrink-0 ${
-                          isSelected ? "text-primary" : "text-on-surface-variant"
+                          isSelected
+                            ? "text-primary"
+                            : "text-on-surface-variant"
                         }`}
                       />
                       <div className="flex flex-col overflow-hidden text-left">
                         {item.kind === "calculator" ? (
                           <div className="truncate">
-                            <span className="text-on-surface-variant">{item.expression} = </span>
-                            <strong className="text-title-small">{item.value}</strong>
+                            <span className="text-on-surface-variant">
+                              {item.expression} ={" "}
+                            </span>
+                            <strong className="text-title-small">
+                              {item.value}
+                            </strong>
                           </div>
                         ) : item.kind === "thread" ? (
-                          <span className="truncate text-label-large">{item.thread.title}</span>
+                          <span className="truncate text-label-large">
+                            {item.thread.title}
+                          </span>
                         ) : item.kind === "navigation" ? (
                           <div className="flex flex-col truncate">
                             <span className="truncate text-label-large font-semibold">

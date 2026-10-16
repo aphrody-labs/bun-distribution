@@ -11,7 +11,15 @@ import { Progress } from "../ui/progress";
 import { Checkbox } from "../ui/checkbox";
 import { cn } from "../../utils/ui";
 import { getExportMimeType, getExportFileExtension } from "../../export";
-import { AlertCircle, Check, Copy, Download, Library, Loader2, RotateCcw } from "lucide-react";
+import {
+  AlertCircle,
+  Check,
+  Copy,
+  Download,
+  Library,
+  Loader2,
+  RotateCcw,
+} from "lucide-react";
 import {
   EXPORT_FORMAT_VALUES,
   EXPORT_QUALITY_VALUES,
@@ -34,11 +42,7 @@ import type {
 } from "../../adapters";
 
 type DestinationStatus =
-  | "skipped"
-  | "pending"
-  | "uploading"
-  | "success"
-  | "error";
+  "skipped" | "pending" | "uploading" | "success" | "error";
 
 interface SaveState {
   // "idle" before the user clicks Export; "saving" while the adapter
@@ -363,9 +367,7 @@ function ExportPopover({
                               setSaveToDisk(!!checked)
                             }
                           />
-                          <Label htmlFor="save-to-disk">
-                            Save to disk
-                          </Label>
+                          <Label htmlFor="save-to-disk">Save to disk</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Checkbox
@@ -425,10 +427,7 @@ function ExportPopover({
             )}
 
             {!isExporting && saveState.phase !== "idle" && (
-              <SavePhasePanel
-                saveState={saveState}
-                onDismiss={handleDismiss}
-              />
+              <SavePhasePanel saveState={saveState} onDismiss={handleDismiss} />
             )}
           </div>
         </>

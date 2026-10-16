@@ -56,13 +56,18 @@ function section(title: string, body: Section): string {
 
 export function renderService(e: UnitEntry): RenderedUnit {
   const service: Section = { Type: e.kind ?? "simple", ...e.service };
-  const install = e.install ?? (e.kind === "oneshot" ? undefined : { WantedBy: "default.target" });
+  const install =
+    e.install ??
+    (e.kind === "oneshot" ? undefined : { WantedBy: "default.target" });
   const parts = [
     section("Unit", e.unit),
     section("Service", service),
     ...(install ? [section("Install", install)] : []),
   ];
-  return { file: `${e.name}.service`, text: `${HEADER}${parts.join("\n\n")}\n` };
+  return {
+    file: `${e.name}.service`,
+    text: `${HEADER}${parts.join("\n\n")}\n`,
+  };
 }
 
 export function renderTimer(e: UnitEntry): RenderedUnit | undefined {
@@ -70,7 +75,11 @@ export function renderTimer(e: UnitEntry): RenderedUnit | undefined {
   const { description, ...keys } = e.timer;
   const text = [
     section("Unit", { Description: description }),
-    section("Timer", { ...keys, Persistent: "true", Unit: `${e.name}.service` }),
+    section("Timer", {
+      ...keys,
+      Persistent: "true",
+      Unit: `${e.name}.service`,
+    }),
     section("Install", { WantedBy: "timers.target" }),
   ].join("\n\n");
   return { file: `${e.name}.timer`, text: `${HEADER}${text}\n` };

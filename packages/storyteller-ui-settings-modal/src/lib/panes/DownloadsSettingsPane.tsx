@@ -107,7 +107,10 @@ export const DownloadsSettingsPane = () => {
     setSaving(true);
     setSettingsError(null);
     try {
-      await UpdateAppPreferences({ preference: PreferenceName.AutoDownload, value: enabled });
+      await UpdateAppPreferences({
+        preference: PreferenceName.AutoDownload,
+        value: enabled,
+      });
       await reloadPreferences();
     } catch (error) {
       setSettingsError(String(error));
@@ -120,7 +123,10 @@ export const DownloadsSettingsPane = () => {
     setSaving(true);
     setFormatError(null);
     try {
-      await UpdateAppPreferences({ preference: PreferenceName.PreferredDownloadFilename, value });
+      await UpdateAppPreferences({
+        preference: PreferenceName.PreferredDownloadFilename,
+        value,
+      });
       await reloadPreferences();
       setFilenameMode(typeof value === "string" ? value : "custom");
     } catch (error) {
@@ -137,7 +143,9 @@ export const DownloadsSettingsPane = () => {
       return;
     }
     if (/[/\\'"`%<>|:*?\p{Cc}]/u.test(format) || format.includes("..")) {
-      setFormatError("Format cannot contain slashes, quotes, or other unsafe characters");
+      setFormatError(
+        "Format cannot contain slashes, quotes, or other unsafe characters",
+      );
       return;
     }
     await saveFilenamePreference({ custom_format: format });
@@ -145,7 +153,11 @@ export const DownloadsSettingsPane = () => {
 
   return (
     <div className="space-y-4 pt-3 text-base-fg">
-      {settingsError && <p role="alert" className="text-red-400">{settingsError}</p>}
+      {settingsError && (
+        <p role="alert" className="text-red-400">
+          {settingsError}
+        </p>
+      )}
       <div className="space-y-2">
         <Label htmlFor="download-path">Default Download Directory</Label>
         <p className="text-xs opacity-70">
@@ -206,10 +218,17 @@ export const DownloadsSettingsPane = () => {
           setEnabled={toggleAskLocationBeforeDownload}
         />
       </div>
-      <fieldset disabled={!preferences || saving} className="flex flex-col gap-2 border-0 p-0">
-        <Label htmlFor="download-filename-mode">Preferred download naming scheme</Label>
+      <fieldset
+        disabled={!preferences || saving}
+        className="flex flex-col gap-2 border-0 p-0"
+      >
+        <Label htmlFor="download-filename-mode">
+          Preferred download naming scheme
+        </Label>
         <p className="text-xs opacity-70">
-          {"The ArtCraft convention is {model}_{date}.{ext}, with a batch number when a generation produces several files."}
+          {
+            "The ArtCraft convention is {model}_{date}.{ext}, with a batch number when a generation produces several files."
+          }
         </p>
         <div className="max-w-xs">
           <Select
@@ -239,15 +258,25 @@ export const DownloadsSettingsPane = () => {
                 spellCheck={false}
                 className="min-w-0 flex-1 rounded-[3px] border border-ui-controls-border bg-ui-controls px-3 py-2 font-mono text-xs outline-none focus:border-base-fg/40"
               />
-              <Button variant="secondary" onClick={saveCustomFormat}>Save format</Button>
+              <Button variant="secondary" onClick={saveCustomFormat}>
+                Save format
+              </Button>
             </div>
             <p className="text-xs opacity-70">
-              {"Tokens: {model}, {date}, {YYYY}, {YY}, {MM}, {DD}, {HH}, {mm}, {SS}, {batch_index}. The file extension is added automatically. Batch numbers are added automatically if omitted."}
+              {
+                "Tokens: {model}, {date}, {YYYY}, {YY}, {MM}, {DD}, {HH}, {mm}, {SS}, {batch_index}. The file extension is added automatically. Batch numbers are added automatically if omitted."
+              }
             </p>
-            <p className="text-xs opacity-70">Changes apply after you click Save format.</p>
+            <p className="text-xs opacity-70">
+              Changes apply after you click Save format.
+            </p>
           </>
         )}
-        {formatError && <p role="alert" className="text-xs text-red-400">{formatError}</p>}
+        {formatError && (
+          <p role="alert" className="text-xs text-red-400">
+            {formatError}
+          </p>
+        )}
       </fieldset>
     </div>
   );

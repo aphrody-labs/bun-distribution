@@ -18,7 +18,11 @@ test("the showcase builds into html, favicon, script and stylesheet", async () =
       entry: join(app, "src/index.html"),
       outdir,
       cwd: app,
-      plugin: { theme: { seed: "#6750a4" }, root: repo, css: (config) => `:root { --showcase-sheet: ${config.sheet}; }\n` },
+      plugin: {
+        theme: { seed: "#6750a4" },
+        root: repo,
+        css: (config) => `:root { --showcase-sheet: ${config.sheet}; }\n`,
+      },
     });
     const files = (await readdir(outdir, { recursive: true })).map(String);
     // Bun keeps the entry's directory relative to the common root: src/index.html.
@@ -27,11 +31,15 @@ test("the showcase builds into html, favicon, script and stylesheet", async () =
     const html = await Bun.file(join(outdir, page!)).text();
     const icon = /<link[^>]+rel="icon"[^>]+href="([^"]+)"/.exec(html)?.[1];
     expect(icon).toBeDefined();
-    expect(await Bun.file(resolve(outdir, page!, "..", icon!)).exists()).toBe(true);
+    expect(await Bun.file(resolve(outdir, page!, "..", icon!)).exists()).toBe(
+      true,
+    );
     expect(files.some((f) => f.endsWith(".js"))).toBe(true);
     const css = files.filter((f) => f.endsWith(".css"));
     expect(css.length).toBeGreaterThan(0);
-    const style = (await Promise.all(css.map((f) => Bun.file(join(outdir, f)).text()))).join("\n");
+    const style = (
+      await Promise.all(css.map((f) => Bun.file(join(outdir, f)).text()))
+    ).join("\n");
     // The M3 Tailwind preset produced the surface utilities the page uses.
     expect(style).toMatch(/--md-sys-color-surface|surface/);
   } finally {

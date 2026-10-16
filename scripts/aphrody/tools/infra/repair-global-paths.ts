@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 // Audit first; apply only exact, declared replacements with verified destination provenance.
 import { createHash } from "node:crypto";
-import { chmodSync, readFileSync, renameSync, statSync, unlinkSync } from "node:fs";
+import {
+  chmodSync,
+  readFileSync,
+  renameSync,
+  statSync,
+  unlinkSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 
@@ -29,11 +35,25 @@ export type PathRule = {
 
 type Result = {
   id: string;
-  status: "current" | "ready" | "fixed" | "missing-config" | "unmatched" | "unverified" | "invalid";
+  status:
+    | "current"
+    | "ready"
+    | "fixed"
+    | "missing-config"
+    | "unmatched"
+    | "unverified"
+    | "invalid";
 };
-export type PathAudit = { checked: number; missing: number; duplicate: number; skipped: number };
-const digest = (data: Uint8Array) => createHash("sha256").update(data).digest("hex");
-const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+export type PathAudit = {
+  checked: number;
+  missing: number;
+  duplicate: number;
+  skipped: number;
+};
+const digest = (data: Uint8Array) =>
+  createHash("sha256").update(data).digest("hex");
+const escapeRegex = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const asObject = (value: unknown): Record<string, unknown> | undefined =>
   value !== null && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -49,10 +69,19 @@ function parseDocument(text: string, format: Rule["format"]): unknown {
   return format === "toml" ? Bun.TOML.parse(text) : JSON.parse(text);
 }
 
-function replaceToml(text: string, key: string, expected: string, target: string): string {
+function replaceToml(
+  text: string,
+  key: string,
+  expected: string,
+  target: string,
+): string {
   const parts = key.split(".");
   const field = parts.pop();
-  if (!field || parts.some((part) => !/^[\w-]+$/.test(part)) || !/^[\w-]+$/.test(field))
+  if (
+    !field ||
+    parts.some((part) => !/^[\w-]+$/.test(part)) ||
+    !/^[\w-]+$/.test(field)
+  )
     throw new Error("unsupported key");
   const section = parts.join(".");
   const newline = text.includes("\r\n") ? "\r\n" : "\n";
@@ -67,20 +96,28 @@ function replaceToml(text: string, key: string, expected: string, target: string
       continue;
     }
     if (!active) continue;
-    const assignment = /^(\s*([\w-]+)\s*=\s*)(['"])(.*)\3(\s*(?:#.*)?)$/.exec(line);
+    const assignment = /^(\s*([\w-]+)\s*=\s*)(['"])(.*)\3(\s*(?:#.*)?)$/.exec(
+      line,
+    );
     if (!assignment || assignment[2] !== field) continue;
     // The parsed TOML value has already been checked; do not interpret the source text ourselves.
-    lines[index] = `${assignment[1]}'${target.replaceAll("'", "\\'")}'${assignment[5]}`;
+    lines[index] =
+      `${assignment[1]}'${target.replaceAll("'", "\\'")}'${assignment[5]}`;
     changed++;
   }
-  if (changed !== 1 || getKey(Bun.TOML.parse(lines.join(newline)), key) !== target)
+  if (
+    changed !== 1 ||
+    getKey(Bun.TOML.parse(lines.join(newline)), key) !== target
+  )
     throw new Error("ambiguous TOML replacement");
-  if (getKey(Bun.TOML.parse(text), key) !== expected) throw new Error("source changed");
+  if (getKey(Bun.TOML.parse(text), key) !== expected)
+    throw new Error("source changed");
   return lines.join(newline);
 }
 
 function replacement(text: string, rule: Rule): string {
-  if (rule.format === "toml") return replaceToml(text, rule.key, rule.from, rule.to);
+  if (rule.format === "toml")
+    return replaceToml(text, rule.key, rule.from, rule.to);
   const key = rule.key.split(".").at(-1)!;
   const pattern = new RegExp(
     `(${escapeRegex(JSON.stringify(key))}\\s*:\\s*)${escapeRegex(JSON.stringify(rule.from))}`,
@@ -94,7 +131,8 @@ function replacement(text: string, rule: Rule): string {
     match[1] +
     JSON.stringify(rule.to) +
     text.slice(match.index + match[0].length);
-  if (getKey(JSON.parse(result), rule.key) !== rule.to) throw new Error("wrong JSON key");
+  if (getKey(JSON.parse(result), rule.key) !== rule.to)
+    throw new Error("wrong JSON key");
   return result;
 }
 
@@ -114,10 +152,16 @@ async function verifyTarget(
       )
         return false;
       artifact = resolve(rule.to, rule.anchor);
-      if (!artifact.toLowerCase().startsWith(`${resolve(rule.to).toLowerCase()}\\`)) return false;
+      if (
+        !artifact
+          .toLowerCase()
+          .startsWith(`${resolve(rule.to).toLowerCase()}\\`)
+      )
+        return false;
     } else if (!target.isFile()) return false;
     const data = readFileSync(artifact);
-    if (rule.kind !== "installation" && (data[0] !== 0x4d || data[1] !== 0x5a)) return false;
+    if (rule.kind !== "installation" && (data[0] !== 0x4d || data[1] !== 0x5a))
+      return false;
     if (rule.sha256 && digest(data) !== rule.sha256.toLowerCase()) return false;
     if (!rule.sha256 && rule.provenance !== "aphrody-bun") return false;
     if (rule.provenance === "aphrody-bun") {
@@ -132,7 +176,8 @@ async function verifyTarget(
       const doctor = JSON.parse(output);
       if (doctor.aphrody !== true || doctor.current !== true) return false;
       if (
-        resolve(doctor.installed?.executable ?? "").toLowerCase() !== resolve(rule.to).toLowerCase()
+        resolve(doctor.installed?.executable ?? "").toLowerCase() !==
+        resolve(rule.to).toLowerCase()
       )
         return false;
     }
@@ -167,16 +212,21 @@ export async function inspectRule(rule: Rule, apply = false): Promise<Result> {
   }
   try {
     const actual = getKey(parseDocument(original, rule.format), rule.key);
-    if (actual === rule.to) return out((await verifyTarget(rule)) ? "current" : "unverified");
+    if (actual === rule.to)
+      return out((await verifyTarget(rule)) ? "current" : "unverified");
     if (actual !== rule.from) return out("unmatched");
     if (!(await verifyTarget(rule))) return out("unverified");
     const next = replacement(original, rule);
-    if (getKey(parseDocument(next, rule.format), rule.key) !== rule.to) return out("invalid");
+    if (getKey(parseDocument(next, rule.format), rule.key) !== rule.to)
+      return out("invalid");
     if (!apply) return out("ready");
     // Abort if another session edited the configuration after inspection.
     if (digest(readFileSync(rule.config)) !== digest(Buffer.from(original)))
       return out("unmatched");
-    const temporary = join(dirname(rule.config), `.${crypto.randomUUID()}.path-repair.tmp`);
+    const temporary = join(
+      dirname(rule.config),
+      `.${crypto.randomUUID()}.path-repair.tmp`,
+    );
     try {
       await Bun.write(temporary, next, { mode: metadata.mode & 0o777 });
       chmodSync(temporary, metadata.mode & 0o777);
@@ -212,8 +262,16 @@ export async function defaultRules(): Promise<Rule[]> {
 }
 
 /** Read-only audit of literal absolute PATH entries. Variables and relative entries are skipped. */
-export function auditPathEntries(value: string, isDirectory: (path: string) => boolean): PathAudit {
-  const result: PathAudit = { checked: 0, missing: 0, duplicate: 0, skipped: 0 };
+export function auditPathEntries(
+  value: string,
+  isDirectory: (path: string) => boolean,
+): PathAudit {
+  const result: PathAudit = {
+    checked: 0,
+    missing: 0,
+    duplicate: 0,
+    skipped: 0,
+  };
   const seen = new Set<string>();
   for (const entry of value.split(";")) {
     const path = entry.trim().replace(/^"|"$/g, "");
@@ -236,7 +294,11 @@ export function auditPathEntries(value: string, isDirectory: (path: string) => b
 type RegistryValue = { value: string; type: "REG_SZ" | "REG_EXPAND_SZ" };
 export type PathRegistry = {
   read(scope: PathRule["scope"]): Promise<RegistryValue | undefined>;
-  write(scope: PathRule["scope"], expected: RegistryValue, next: string): Promise<boolean>;
+  write(
+    scope: PathRule["scope"],
+    expected: RegistryValue,
+    next: string,
+  ): Promise<boolean>;
 };
 
 const registryKey = (scope: PathRule["scope"]) =>
@@ -248,26 +310,46 @@ export const windowsPathRegistry: PathRegistry = {
   async read(scope) {
     if (process.platform !== "win32") return undefined;
     try {
-      const child = Bun.spawn(["reg.exe", "query", registryKey(scope), "/v", "Path"], {
-        stdout: "pipe",
-        stderr: "ignore",
-        signal: AbortSignal.timeout(5_000),
-      });
+      const child = Bun.spawn(
+        ["reg.exe", "query", registryKey(scope), "/v", "Path"],
+        {
+          stdout: "pipe",
+          stderr: "ignore",
+          signal: AbortSignal.timeout(5_000),
+        },
+      );
       const output = await new Response(child.stdout).text();
       if ((await child.exited) !== 0) return undefined;
       const match = /^\s*Path\s+(REG_(?:EXPAND_)?SZ)\s+(.+)$/im.exec(output);
-      return match ? { type: match[1] as RegistryValue["type"], value: match[2]! } : undefined;
+      return match
+        ? { type: match[1] as RegistryValue["type"], value: match[2]! }
+        : undefined;
     } catch {
       return undefined;
     }
   },
   async write(scope, expected, next) {
     const current = await this.read(scope);
-    if (!current || current.type !== expected.type || current.value !== expected.value)
+    if (
+      !current ||
+      current.type !== expected.type ||
+      current.value !== expected.value
+    )
       return false;
     try {
       const child = Bun.spawn(
-        ["reg.exe", "add", registryKey(scope), "/v", "Path", "/t", expected.type, "/d", next, "/f"],
+        [
+          "reg.exe",
+          "add",
+          registryKey(scope),
+          "/v",
+          "Path",
+          "/t",
+          expected.type,
+          "/d",
+          next,
+          "/f",
+        ],
         {
           stdout: "ignore",
           stderr: "ignore",
@@ -305,13 +387,17 @@ export async function inspectPathRule(
   const entries = current.value.split(";");
   if (entries.includes(rule.to) && !entries.includes(rule.from))
     return out((await verifyTarget(rule)) ? "current" : "unverified");
-  const indices = entries.flatMap((value, index) => (value === rule.from ? [index] : []));
+  const indices = entries.flatMap((value, index) =>
+    value === rule.from ? [index] : [],
+  );
   if (indices.length !== 1) return out("unmatched");
   if (!(await verifyTarget(rule))) return out("unverified");
   entries[indices[0]!] = rule.to;
   if (!apply) return out("ready");
   return out(
-    (await registry.write(rule.scope, current, entries.join(";"))) ? "fixed" : "unmatched",
+    (await registry.write(rule.scope, current, entries.join(";")))
+      ? "fixed"
+      : "unmatched",
   );
 }
 
@@ -327,9 +413,12 @@ if (import.meta.main) {
   if (
     args.some(
       (arg, index) =>
-        (arg.startsWith("--") && !["--manifest", "--audit-path", "--apply"].includes(arg)) ||
-        (arg === "--manifest" && (!args[index + 1] || args[index + 1]!.startsWith("--"))) ||
-        (!arg.startsWith("--") && (index === 0 || args[index - 1] !== "--manifest")),
+        (arg.startsWith("--") &&
+          !["--manifest", "--audit-path", "--apply"].includes(arg)) ||
+        (arg === "--manifest" &&
+          (!args[index + 1] || args[index + 1]!.startsWith("--"))) ||
+        (!arg.startsWith("--") &&
+          (index === 0 || args[index - 1] !== "--manifest")),
     ) ||
     args.filter((arg) => arg === "--manifest").length > 1
   ) {
@@ -341,7 +430,9 @@ if (import.meta.main) {
     rules =
       manifestIndex < 0
         ? await defaultRules()
-        : ((await Bun.file(args[manifestIndex + 1]!).json()) as (Rule | PathRule)[]);
+        : ((await Bun.file(args[manifestIndex + 1]!).json()) as (
+            Rule | PathRule
+          )[]);
   } catch {
     console.error("Invalid manifest");
     process.exit(2);
@@ -387,7 +478,9 @@ if (import.meta.main) {
   }
   if (
     results.some((result) =>
-      ["invalid", "unverified", "unmatched", "missing-config"].includes(result.status),
+      ["invalid", "unverified", "unmatched", "missing-config"].includes(
+        result.status,
+      ),
     )
   )
     process.exitCode = 1;

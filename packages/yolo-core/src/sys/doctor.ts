@@ -3,7 +3,11 @@
  */
 import { existsSync } from "node:fs";
 import { delimiter, join, resolve } from "node:path";
-import { hostTarget, loadArtifact, runtimeHome } from "@aphrody/runtime-sdk/src/artifact.ts";
+import {
+  hostTarget,
+  loadArtifact,
+  runtimeHome,
+} from "@aphrody/runtime-sdk/src/artifact.ts";
 import { list } from "@aphrody/runtime-sdk/src/release.ts";
 import { isCompiled, yoloHome, yoloVersion } from "../vfs/home";
 import { templatesRoot } from "../scaffold/create";
@@ -27,7 +31,11 @@ export interface DoctorReport {
   readonly components: readonly DoctorComponent[];
   readonly stack: {
     readonly bun: { version: string; ok: boolean };
-    readonly rust: { found: boolean; cargo?: string | undefined; rustc?: string | undefined };
+    readonly rust: {
+      found: boolean;
+      cargo?: string | undefined;
+      rustc?: string | undefined;
+    };
     readonly cCompiler: { found: boolean; bin?: string | undefined };
     readonly python: {
       found: boolean;
@@ -77,7 +85,11 @@ export function collectDoctorReport(): DoctorReport {
   for (const [path, label, required] of [
     [join(templatesRoot(home), "stack.toml"), "templates (yolo create)", true],
     ["packages/engine/runtime/package.json", "runtime SDK", true],
-    ["packages/engine/python/pyproject.toml", "Python package (uv / maturin)", sourceInstallation],
+    [
+      "packages/engine/python/pyproject.toml",
+      "Python package (uv / maturin)",
+      sourceInstallation,
+    ],
     [
       join(templatesRoot(home), "desktop/src-tauri/icons"),
       "desktop scaffold icons (templates)",
@@ -124,7 +136,9 @@ export function collectDoctorReport(): DoctorReport {
     runtimeInfo = { installed: false, error: "no runtime artifact installed" };
   } else {
     try {
-      using runtime = loadArtifact(join(runtimeHome(), hostTarget(), active.name));
+      using runtime = loadArtifact(
+        join(runtimeHome(), hostTarget(), active.name),
+      );
       const info = runtime.buildInfo();
       runtimeInfo = {
         installed: true,

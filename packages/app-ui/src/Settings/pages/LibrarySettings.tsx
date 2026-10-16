@@ -22,7 +22,10 @@ export function LibrarySettings() {
     data: config,
     refetch,
     isLoading,
-  } = useLibraryQuery({ type: "config.library.get", input: null as any }, { enabled: !!libraryId });
+  } = useLibraryQuery(
+    { type: "config.library.get", input: null as any },
+    { enabled: !!libraryId },
+  );
   const updateConfig = useLibraryMutation("config.library.update");
 
   const form = useForm<LibrarySettingsForm>({
@@ -37,7 +40,10 @@ export function LibrarySettings() {
     },
   });
 
-  const thumbnailQuality = useWatch({ control: form.control, name: "thumbnail_quality" });
+  const thumbnailQuality = useWatch({
+    control: form.control,
+    name: "thumbnail_quality",
+  });
 
   const onSubmit = form.handleSubmit(async (data) => {
     await updateConfig.mutateAsync(data);
@@ -48,7 +54,9 @@ export function LibrarySettings() {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-title-medium font-semibold text-on-surface mb-2">Library</h2>
+          <h2 className="text-title-medium font-semibold text-on-surface mb-2">
+            Library
+          </h2>
           <p className="text-body-medium text-on-surface-variant">
             No library selected. Please select a library first.
           </p>
@@ -61,7 +69,9 @@ export function LibrarySettings() {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-title-medium font-semibold text-on-surface mb-2">Library</h2>
+          <h2 className="text-title-medium font-semibold text-on-surface mb-2">
+            Library
+          </h2>
           <p className="text-body-medium text-on-surface-variant">Loading...</p>
         </div>
       </div>
@@ -71,7 +81,9 @@ export function LibrarySettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-title-medium font-semibold text-on-surface mb-2">Library</h2>
+        <h2 className="text-title-medium font-semibold text-on-surface mb-2">
+          Library
+        </h2>
         <p className="text-body-medium text-on-surface-variant">
           Configure settings for the current library.
         </p>
@@ -80,11 +92,15 @@ export function LibrarySettings() {
       <form onSubmit={onSubmit} className="space-y-4">
         {/* Media Section */}
         <div className="p-4 bg-surface-container rounded-small border border-outline-variant space-y-4">
-          <h3 className="text-label-large font-medium text-on-surface">Media</h3>
+          <h3 className="text-label-large font-medium text-on-surface">
+            Media
+          </h3>
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Generate thumbnails</span>
+              <span className="text-body-medium text-on-surface">
+                Generate thumbnails
+              </span>
               <p className="text-body-small text-on-surface-variant">
                 Create preview images for media files
               </p>
@@ -97,7 +113,9 @@ export function LibrarySettings() {
           </label>
 
           <label className="block">
-            <span className="text-body-medium text-on-surface mb-1 block">Thumbnail quality</span>
+            <span className="text-body-medium text-on-surface mb-1 block">
+              Thumbnail quality
+            </span>
             <p className="text-body-small text-on-surface-variant mb-2">
               Quality setting for generated thumbnails (1-100)
             </p>
@@ -112,13 +130,17 @@ export function LibrarySettings() {
                   background: `linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) ${((thumbnailQuality - 1) / 99) * 100}%, var(--color-app) ${((thumbnailQuality - 1) / 99) * 100}%, var(--color-app) 100%)`,
                 }}
               />
-              <span className="text-body-medium text-on-surface w-8">{thumbnailQuality}</span>
+              <span className="text-body-medium text-on-surface w-8">
+                {thumbnailQuality}
+              </span>
             </div>
           </label>
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">AI tagging</span>
+              <span className="text-body-medium text-on-surface">
+                AI tagging
+              </span>
               <p className="text-body-small text-on-surface-variant">
                 Enable AI-powered automatic tagging
               </p>
@@ -133,11 +155,15 @@ export function LibrarySettings() {
 
         {/* Sync & Security Section */}
         <div className="p-4 bg-surface-container rounded-small border border-outline-variant space-y-4">
-          <h3 className="text-label-large font-medium text-on-surface">Sync & security</h3>
+          <h3 className="text-label-large font-medium text-on-surface">
+            Sync & security
+          </h3>
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Sync enabled</span>
+              <span className="text-body-medium text-on-surface">
+                Sync enabled
+              </span>
               <p className="text-body-small text-on-surface-variant">
                 Sync this library across devices
               </p>
@@ -151,7 +177,9 @@ export function LibrarySettings() {
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Encryption</span>
+              <span className="text-body-medium text-on-surface">
+                Encryption
+              </span>
               <p className="text-body-small text-on-surface-variant">
                 Encrypt library data at rest
               </p>
@@ -166,11 +194,15 @@ export function LibrarySettings() {
 
         {/* Auto-Tracking Section */}
         <div className="p-4 bg-surface-container rounded-small border border-outline-variant space-y-4">
-          <h3 className="text-label-large font-medium text-on-surface">Auto-Tracking</h3>
+          <h3 className="text-label-large font-medium text-on-surface">
+            Auto-Tracking
+          </h3>
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">System volumes</span>
+              <span className="text-body-medium text-on-surface">
+                System volumes
+              </span>
               <p className="text-body-small text-on-surface-variant">
                 Automatically track system drives
               </p>
@@ -184,7 +216,9 @@ export function LibrarySettings() {
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">External volumes</span>
+              <span className="text-body-medium text-on-surface">
+                External volumes
+              </span>
               <p className="text-body-small text-on-surface-variant">
                 Automatically track external drives when connected
               </p>

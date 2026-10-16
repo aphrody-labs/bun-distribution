@@ -31,21 +31,32 @@ export interface GeneratedFile {
 /** Write generated files below `dir`; returns the absolute paths written. Never touches anything else. */
 export async function writeFiles(
   dir: string,
-  files: ReadonlyArray<Omit<GeneratedFile, "content"> & { content: string | Uint8Array }>,
+  files: ReadonlyArray<
+    Omit<GeneratedFile, "content"> & { content: string | Uint8Array }
+  >,
 ): Promise<string[]> {
   const written: string[] = [];
   /* eslint-disable no-await-in-loop -- Files and ancestor checks are ordered to preserve containment and repeated-path writes. */
   for (const file of files) {
     const target = resolve(dir, file.path);
     const inside = relative(resolve(dir), target);
-    if (inside === "" || inside === ".." || inside.startsWith(`..${sep}`) || isAbsolute(inside))
-      throw new Error(`m3-bun: generated path escapes its directory: ${file.path}`);
+    if (
+      inside === "" ||
+      inside === ".." ||
+      inside.startsWith(`..${sep}`) ||
+      isAbsolute(inside)
+    )
+      throw new Error(
+        `m3-bun: generated path escapes its directory: ${file.path}`,
+      );
     let ancestor = resolve(dir);
     for (const part of inside.split(sep)) {
       ancestor = join(ancestor, part);
       try {
         if ((await lstat(ancestor)).isSymbolicLink())
-          throw new Error(`m3-bun: generated path contains a symlink: ${file.path}`);
+          throw new Error(
+            `m3-bun: generated path contains a symlink: ${file.path}`,
+          );
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
       }
@@ -66,11 +77,14 @@ export function sha256(data: string | Uint8Array): string {
 }
 
 /** Format a byte count as KiB with one decimal. */
-export const kib = (bytes: number): string => `${(bytes / 1024).toFixed(1)} KiB`;
+export const kib = (bytes: number): string =>
+  `${(bytes / 1024).toFixed(1)} KiB`;
 
 /** Shell-quote one argument for generated scripts. */
 export function shq(value: string): string {
-  return /^[A-Za-z0-9_./:=@%+-]+$/.test(value) ? value : `'${value.replaceAll("'", "'\\''")}'`;
+  return /^[A-Za-z0-9_./:=@%+-]+$/.test(value)
+    ? value
+    : `'${value.replaceAll("'", "'\\''")}'`;
 }
 
 export const GENERATED_NOTE =

@@ -23,8 +23,10 @@
     border: 2px solid var(--md-sys-color-on-surface-variant);
     border-radius: var(--md-sys-shape-corner-extra-small);
     transition:
-      background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
-      border-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+      background-color var(--md-sys-motion-duration-short2)
+        var(--md-sys-motion-easing-standard),
+      border-color var(--md-sys-motion-duration-short2)
+        var(--md-sys-motion-easing-standard);
   }
   .m3-bui-checkbox:is([data-checked], [data-indeterminate]) {
     --m3-state: var(--md-sys-color-primary);
@@ -36,17 +38,31 @@
   .m3-bui-checkbox[data-invalid]::before {
     border-color: var(--md-sys-color-error);
   }
-  .m3-bui-checkbox[data-invalid]:is([data-checked], [data-indeterminate])::before {
+  .m3-bui-checkbox[data-invalid]:is(
+      [data-checked],
+      [data-indeterminate]
+    )::before {
     background: var(--md-sys-color-error);
   }
   .m3-bui-checkbox:is(:disabled, [data-disabled]) {
     cursor: default;
   }
   .m3-bui-checkbox:is(:disabled, [data-disabled])::before {
-    border-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--md-sys-color-on-surface) 38%,
+      transparent
+    );
   }
-  .m3-bui-checkbox:is(:disabled, [data-disabled]):is([data-checked], [data-indeterminate])::before {
-    background: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  .m3-bui-checkbox:is(:disabled, [data-disabled]):is(
+      [data-checked],
+      [data-indeterminate]
+    )::before {
+    background: color-mix(
+      in srgb,
+      var(--md-sys-color-on-surface) 38%,
+      transparent
+    );
   }
 
   .m3-bui-checkbox__indicator {

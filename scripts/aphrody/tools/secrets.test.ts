@@ -5,7 +5,8 @@ import { decryptManifest, encryptManifest } from "./secrets.js";
 describe("Bun Native Secrets Engine", () => {
   test("encrypts and decrypts configuration map adhering to EncryptedManifest format", async () => {
     const raw = {
-      DATABASE_URL: "postgres://aphrody_web:Secret123@127.0.0.1:5432/aphrody_web",
+      DATABASE_URL:
+        "postgres://aphrody_web:Secret123@127.0.0.1:5432/aphrody_web",
       JWT_SECRET: "token_abc_xyz_998877",
     };
 

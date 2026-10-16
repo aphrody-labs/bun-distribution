@@ -26,14 +26,17 @@ export interface FalBackgroundRemovalSuccess extends CommandResult {
   payload: FalBackgroundRemovalPayload;
 }
 
-export type FalBackgroundRemovalResult = FalBackgroundRemovalSuccess | FalBackgroundRemovalError;
+export type FalBackgroundRemovalResult =
+  FalBackgroundRemovalSuccess | FalBackgroundRemovalError;
 
-export const FalBackgroundRemoval = async (request: FalBackgroundRemovalRequest) : Promise<FalBackgroundRemovalResult> => {
-  let result = await invoke("fal_background_removal_command", { 
+export const FalBackgroundRemoval = async (
+  request: FalBackgroundRemovalRequest,
+): Promise<FalBackgroundRemovalResult> => {
+  let result = await invoke("fal_background_removal_command", {
     request: {
       image_media_token: request.image_media_token,
       base64_image: request.base64_image,
-    }
+    },
   });
-  return (result as FalBackgroundRemovalResult);
-}
+  return result as FalBackgroundRemovalResult;
+};

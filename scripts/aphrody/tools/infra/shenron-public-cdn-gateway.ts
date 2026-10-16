@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Render a sealed-release candidate; Infra activation remains the sole host writer. */
 export function publicCdnFallback(name: string, upstream: string): string {
-  if (!/^@cdn_(?:worker|public_origin)$/.test(name)) throw Error("Unknown CDN fallback");
+  if (!/^@cdn_(?:worker|public_origin)$/.test(name))
+    throw Error("Unknown CDN fallback");
   if (
     !/^http:\/\/127\.0\.0\.1:[1-9][0-9]{0,4}$/.test(upstream) ||
     Number(new URL(upstream).port) > 65535
@@ -74,7 +75,8 @@ function blocks(source: string, pattern: RegExp) {
   const found: { start: number; end: number; match: RegExpExecArray }[] = [];
   let previous = -1;
   for (const start of syntaxPositions(source)) {
-    if (start <= previous || (start > 0 && /[\w]/.test(source[start - 1]!))) continue;
+    if (start <= previous || (start > 0 && /[\w]/.test(source[start - 1]!)))
+      continue;
     pattern.lastIndex = start;
     const match = pattern.exec(source);
     if (!match) continue;
@@ -103,7 +105,8 @@ function insertBunVideoAssets(source: string) {
     owners = 0;
   for (const server of blocks(source, /server\s*\{/y)) {
     const body = source.slice(server.start, server.end);
-    if (!blocks(body, /location\s+@cdn_(?:worker|public_origin)\s*\{/y).length) continue;
+    if (!blocks(body, /location\s+@cdn_(?:worker|public_origin)\s*\{/y).length)
+      continue;
     const existing = blocks(
       body,
       /location\s*=\s*(\/assets\/bun-video\/(?:hls\.worker\.js|LICENSE\.txt))\s*\{/y,
@@ -117,13 +120,15 @@ function insertBunVideoAssets(source: string) {
       const matches = existing.filter((entry) => entry.match[1] === path);
       if (
         matches.length > 1 ||
-        (matches.length && body.slice(matches[0]!.start, matches[0]!.end + 1) !== wanted)
+        (matches.length &&
+          body.slice(matches[0]!.start, matches[0]!.end + 1) !== wanted)
       )
         throw Error("Conflicting exact Bun Video asset location");
       if (!matches.length) missing.push(wanted);
     }
     result +=
-      source.slice(previous, server.end) + (missing.length ? `\n${missing.join("\n")}\n` : "");
+      source.slice(previous, server.end) +
+      (missing.length ? `\n${missing.join("\n")}\n` : "");
     previous = server.end;
     owners++;
   }
@@ -143,7 +148,9 @@ export function renderPublicCdnGateway(
     count = 0;
   for (let match = pattern.exec(source); match; match = pattern.exec(source)) {
     const end = closingBrace(source, pattern.lastIndex);
-    result += source.slice(previous, match.index) + publicCdnFallback(match[1]!, upstream);
+    result +=
+      source.slice(previous, match.index) +
+      publicCdnFallback(match[1]!, upstream);
     previous = end + 1;
     pattern.lastIndex = previous;
     count++;
@@ -156,10 +163,17 @@ export function renderPublicCdnGateway(
 if (import.meta.main) {
   const [source, destination, upstream, assets] = process.argv.slice(2);
   if (!source || !destination || !upstream || source === destination)
-    throw Error("Expected distinct SOURCE CANDIDATE and qualified LOOPBACK_UPSTREAM");
-  if (assets && assets !== "--bun-video-assets") throw Error("Unknown explicit asset option");
+    throw Error(
+      "Expected distinct SOURCE CANDIDATE and qualified LOOPBACK_UPSTREAM",
+    );
+  if (assets && assets !== "--bun-video-assets")
+    throw Error("Unknown explicit asset option");
   const input = await Bun.file(source).text();
-  const output = renderPublicCdnGateway(input, upstream, assets === "--bun-video-assets");
+  const output = renderPublicCdnGateway(
+    input,
+    upstream,
+    assets === "--bun-video-assets",
+  );
   await Bun.write(destination, output);
   console.log(
     JSON.stringify({
@@ -167,7 +181,9 @@ if (import.meta.main) {
       destination,
       upstream,
       inputSha256: new Bun.CryptoHasher("sha256").update(input).digest("hex"),
-      candidateSha256: new Bun.CryptoHasher("sha256").update(output).digest("hex"),
+      candidateSha256: new Bun.CryptoHasher("sha256")
+        .update(output)
+        .digest("hex"),
     }),
   );
 }

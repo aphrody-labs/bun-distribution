@@ -20,7 +20,10 @@ export function validateThemeCookieName(name: string): string {
 }
 
 /** The `Set-Cookie`-style string the client toggle writes. */
-export function themeCookie(mode: M3ThemeMode, name: string = M3_THEME_COOKIE): string {
+export function themeCookie(
+  mode: M3ThemeMode,
+  name: string = M3_THEME_COOKIE,
+): string {
   return `${validateThemeCookieName(name)}=${mode}; path=/; max-age=${M3_THEME_COOKIE_MAX_AGE}; samesite=lax`;
 }
 
@@ -29,5 +32,7 @@ export function parseThemeMode(
   value: string | undefined | null,
   fallback: M3ThemeMode = "system",
 ): M3ThemeMode {
-  return value === "light" || value === "dark" || value === "system" ? value : fallback;
+  return value === "light" || value === "dark" || value === "system"
+    ? value
+    : fallback;
 }

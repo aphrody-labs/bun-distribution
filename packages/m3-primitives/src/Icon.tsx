@@ -19,7 +19,10 @@ import {
  * from `@aphrody/material-web/icon/material-symbols.js`, or self-host the woff2 shipped by
  * `crates/ui/bun/icons`.
  */
-export interface IconProps extends Omit<HTMLAttributes<HTMLSpanElement>, "children"> {
+export interface IconProps extends Omit<
+  HTMLAttributes<HTMLSpanElement>,
+  "children"
+> {
   /** Material Symbols name, snake_case (`search`, `chevron_right`, `more_horiz`). */
   name: string;
   /** Optical size in px (the M3 sizes are 20, 24, 40 and 48). Default 24. */
@@ -35,7 +38,10 @@ export interface IconProps extends Omit<HTMLAttributes<HTMLSpanElement>, "childr
 }
 
 export const Icon = forwardRef<HTMLSpanElement, IconProps>(
-  ({ name, size, filled, weight, grade, label, className, style, ...props }, ref) => {
+  (
+    { name, size, filled, weight, grade, label, className, style, ...props },
+    ref,
+  ) => {
     const vars: CSSProperties & Record<string, string | number> = {};
     if (size !== undefined) vars["--md-icon-size"] = `${size}px`;
     if (filled !== undefined) vars["--md-icon-fill"] = filled ? 1 : 0;
@@ -100,7 +106,10 @@ export interface IconComponentProps {
 export type IconSource = string | ReactNode | ElementType;
 
 /** Render an {@link IconSource}. */
-export function renderIcon(icon: IconSource, props: IconComponentProps = {}): ReactNode {
+export function renderIcon(
+  icon: IconSource,
+  props: IconComponentProps = {},
+): ReactNode {
   if (icon === null || icon === undefined || icon === false) return null;
   if (typeof icon === "string") return <Icon name={icon} {...props} />;
   if (isValidElement(icon)) return icon;

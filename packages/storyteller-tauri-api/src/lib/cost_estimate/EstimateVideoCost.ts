@@ -1,9 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { CommandResult, CommandSuccessStatus } from "../common/CommandStatus";
-import {
-  GenerationMode,
-  GenerationProvider,
-} from "@storyteller/api-enums";
+import { GenerationMode, GenerationProvider } from "@storyteller/api-enums";
 
 export interface EstimateVideoCostRequest {
   [key: string]: unknown;
@@ -53,8 +50,7 @@ export interface EstimateVideoCostErrorResult extends CommandResult {
 }
 
 export type EstimateVideoCostResult =
-  | EstimateVideoCostSuccess
-  | EstimateVideoCostErrorResult;
+  EstimateVideoCostSuccess | EstimateVideoCostErrorResult;
 
 export const EstimateVideoCost = async (
   request: EstimateVideoCostRequest,

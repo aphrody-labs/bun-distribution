@@ -34,7 +34,10 @@ export interface TextFieldEditBuffer {
 /** A listener notified after every committed mutation. */
 export type TextFieldStateListener = () => void;
 
-function clampSelection(selection: TextFieldSelection, length: number): TextFieldSelection {
+function clampSelection(
+  selection: TextFieldSelection,
+  length: number,
+): TextFieldSelection {
   const clamp = (n: number): number => {
     if (!Number.isFinite(n) || n < 0) {
       return 0;
@@ -60,7 +63,10 @@ export class WebTextFieldState {
   private _selection: TextFieldSelection;
   private readonly _listeners = new Set<TextFieldStateListener>();
 
-  constructor(initialText = "", initialSelection: TextFieldSelection = { start: 0, end: 0 }) {
+  constructor(
+    initialText = "",
+    initialSelection: TextFieldSelection = { start: 0, end: 0 },
+  ) {
     this._text = initialText;
     this._selection = clampSelection(initialSelection, initialText.length);
     // Bind so the methods can be passed directly to useSyncExternalStore /
@@ -94,7 +100,10 @@ export class WebTextFieldState {
    */
   setSelection(start: number, end: number = start): void {
     const next = clampSelection({ start, end }, this._text.length);
-    if (next.start === this._selection.start && next.end === this._selection.end) {
+    if (
+      next.start === this._selection.start &&
+      next.end === this._selection.end
+    ) {
       return;
     }
     this._selection = next;
@@ -153,7 +162,8 @@ export class WebTextFieldState {
   replaceSelection(replacement: string): void {
     this.edit((buffer) => {
       const { start, end } = buffer.selection;
-      buffer.text = buffer.text.slice(0, start) + replacement + buffer.text.slice(end);
+      buffer.text =
+        buffer.text.slice(0, start) + replacement + buffer.text.slice(end);
       const caret = start + replacement.length;
       buffer.selection = { start: caret, end: caret };
     });

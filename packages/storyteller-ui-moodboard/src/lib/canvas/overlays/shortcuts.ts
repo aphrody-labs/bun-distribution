@@ -20,9 +20,7 @@ export const MOD = isMac ? "⌘" : "Ctrl";
 // (⌘⇧Z); other platforms use "+" separators (Ctrl+Shift+Z). Pass keys in
 // order, e.g. [MOD, "Shift", "Z"].
 export const fmtShortcut = (keys: string[]): string =>
-  isMac
-    ? keys.map((k) => (k === "Shift" ? "⇧" : k)).join("")
-    : keys.join("+");
+  isMac ? keys.map((k) => (k === "Shift" ? "⇧" : k)).join("") : keys.join("+");
 
 export const SHORTCUTS: ShortcutRow[] = [
   // Tools
@@ -33,7 +31,11 @@ export const SHORTCUTS: ShortcutRow[] = [
   // Selection
   { section: "Selection", label: "Select all", keys: [MOD, "A"] },
   { section: "Selection", label: "Clear selection", keys: ["Esc"] },
-  { section: "Selection", label: "Add / remove from selection", keys: ["Shift", "Click"] },
+  {
+    section: "Selection",
+    label: "Add / remove from selection",
+    keys: ["Shift", "Click"],
+  },
 
   // Editing
   { section: "Editing", label: "Delete selection", keys: ["Delete"] },

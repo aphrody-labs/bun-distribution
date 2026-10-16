@@ -6,7 +6,11 @@ import type { CodemodResult } from "@aphrody/next-bun/codemods";
 import { applyEdits, skippedSpans } from "@aphrody/next-bun/codemods/lex";
 import { closingTag, findTags, stringValue, type Attr, type Tag } from "./jsx";
 
-const unchanged = (code: string): CodemodResult => ({ code, changes: [], warnings: [] });
+const unchanged = (code: string): CodemodResult => ({
+  code,
+  changes: [],
+  warnings: [],
+});
 
 /** MUI component -> Base UI wrapper. */
 const WRAPPERS: Record<string, string> = {
@@ -82,8 +86,14 @@ function muiImports(src: string): {
   statements: { start: number; end: number; names: string[]; source: string }[];
 } {
   const specs: Imported[] = [];
-  const statements: { start: number; end: number; names: string[]; source: string }[] = [];
-  const re = /import\s+([^'";]+?)\s+from\s+(["'])(@mui\/material(?:\/[\w/]+)?)\2\s*;?[ \t]*\n?/g;
+  const statements: {
+    start: number;
+    end: number;
+    names: string[];
+    source: string;
+  }[] = [];
+  const re =
+    /import\s+([^'";]+?)\s+from\s+(["'])(@mui\/material(?:\/[\w/]+)?)\2\s*;?[ \t]*\n?/g;
   for (let m = re.exec(src); m !== null; m = re.exec(src)) {
     const clause = m[1]!.trim();
     const start = m.index;
@@ -93,7 +103,11 @@ function muiImports(src: string): {
     const deep = source.split("/")[2];
     const def = /^([A-Za-z_$][\w$]*)\s*(?:,|$)/.exec(clause);
     if (def && deep && !clause.startsWith("{")) {
-      specs.push({ imported: deep, local: def[1]!, statement: { start, end, clauseEnd: end } });
+      specs.push({
+        imported: deep,
+        local: def[1]!,
+        statement: { start, end, clauseEnd: end },
+      });
       names.push(def[1]!);
     }
     const named = /\{([^}]*)\}/.exec(clause);
@@ -115,11 +129,17 @@ function muiImports(src: string): {
   return { specs, statements };
 }
 
-const mergeClass = (attrs: Attr[], extra: string): { remove?: Attr; text: string } => {
+const mergeClass = (
+  attrs: Attr[],
+  extra: string,
+): { remove?: Attr; text: string } => {
   const existing = attrs.find((a) => a.name === "className");
   const value = stringValue(existing);
   if (existing && value !== undefined)
-    return { remove: existing, text: `className="${`${extra} ${value}`.trim()}"` };
+    return {
+      remove: existing,
+      text: `className="${`${extra} ${value}`.trim()}"`,
+    };
   if (existing)
     return {
       remove: existing,
@@ -149,7 +169,11 @@ export function muiToM3(source: string): CodemodResult {
     const rename = (to: string) => {
       edits.push({ start: tag.nameStart, end: tag.nameEnd, text: to });
       if (close !== -1)
-        edits.push({ start: close + 2, end: close + 2 + tag.name.length, text: to });
+        edits.push({
+          start: close + 2,
+          end: close + 2 + tag.name.length,
+          text: to,
+        });
     };
     const drop = (attr: Attr) =>
       edits.push({
@@ -172,19 +196,36 @@ export function muiToM3(source: string): CodemodResult {
       };
       if (variant) {
         if (value !== undefined && map[value] !== undefined)
-          edits.push({ start: variant.start, end: variant.end, text: `variant="${map[value]}"` });
+          edits.push({
+            start: variant.start,
+            end: variant.end,
+            text: `variant="${map[value]}"`,
+          });
         else
           withNote(
             "Button: a dynamic `variant` is not mapped (MUI contained/outlined/text -> M3 filled/outlined/text)",
           );
-      } else edits.push({ start: tag.nameEnd, end: tag.nameEnd, text: ' variant="text"' }); // MUI's default variant is text
+      } else
+        edits.push({
+          start: tag.nameEnd,
+          end: tag.nameEnd,
+          text: ' variant="text"',
+        }); // MUI's default variant is text
       const size = attr("size");
       const sizeValue = stringValue(size);
       if (size && sizeValue !== undefined) {
-        const sizes: Record<string, string> = { small: "xs", medium: "sm", large: "md" };
+        const sizes: Record<string, string> = {
+          small: "xs",
+          medium: "sm",
+          large: "md",
+        };
         if (sizeValue === "medium") drop(size);
         else if (sizes[sizeValue])
-          edits.push({ start: size.start, end: size.end, text: `size="${sizes[sizeValue]}"` });
+          edits.push({
+            start: size.start,
+            end: size.end,
+            text: `size="${sizes[sizeValue]}"`,
+          });
       }
       const color = attr("color");
       if (color) {
@@ -198,12 +239,19 @@ export function muiToM3(source: string): CodemodResult {
         const merged = mergeClass(tag.attrs, "w-full");
         if (merged.remove) {
           drop(full);
-          edits.push({ start: merged.remove.start, end: merged.remove.end, text: merged.text });
-        } else edits.push({ start: full.start, end: full.end, text: merged.text });
+          edits.push({
+            start: merged.remove.start,
+            end: merged.remove.end,
+            text: merged.text,
+          });
+        } else
+          edits.push({ start: full.start, end: full.end, text: merged.text });
       }
       for (const name of ["startIcon", "endIcon"])
         if (attr(name))
-          withNote(`Button: \`${name}\` is not a prop of M3Button: put the icon in the children`);
+          withNote(
+            `Button: \`${name}\` is not a prop of M3Button: put the icon in the children`,
+          );
       if (attr("href"))
         withNote(
           "Button: with `href`, render a link: <M3Button render={<a href=... />} nativeButton={false}>",
@@ -226,7 +274,8 @@ export function muiToM3(source: string): CodemodResult {
         const a = attr(name);
         if (a) {
           drop(a);
-          if (name === "sx") withNote(`${kind}: \`sx\` was dropped: use className`);
+          if (name === "sx")
+            withNote(`${kind}: \`sx\` was dropped: use className`);
         }
       }
       wrappers.add(WRAPPERS[kind]!);
@@ -250,8 +299,17 @@ export function muiToM3(source: string): CodemodResult {
       if (component) drop(component);
       const merged = mergeClass(tag.attrs, target[1]);
       if (merged.remove)
-        edits.push({ start: merged.remove.start, end: merged.remove.end, text: merged.text });
-      else edits.push({ start: tag.nameEnd, end: tag.nameEnd, text: ` ${merged.text}` });
+        edits.push({
+          start: merged.remove.start,
+          end: merged.remove.end,
+          text: merged.text,
+        });
+      else
+        edits.push({
+          start: tag.nameEnd,
+          end: tag.nameEnd,
+          text: ` ${merged.text}`,
+        });
       for (const name of ["sx", "gutterBottom", "color", "align"]) {
         const a = attr(name);
         if (a) {
@@ -266,9 +324,13 @@ export function muiToM3(source: string): CodemodResult {
       const direction = stringValue(attr("direction")) ?? "column";
       const spacing = attr("spacing");
       const gap = spacing?.value && /^\{?\s*(\d+)\s*\}?$/.exec(spacing.value);
-      const classes = ["flex", direction.startsWith("row") ? "flex-row" : "flex-col"];
+      const classes = [
+        "flex",
+        direction.startsWith("row") ? "flex-row" : "flex-col",
+      ];
       if (gap) classes.push(`gap-${Number(gap[1]) * 2}`);
-      else if (spacing) withNote("Stack: a dynamic `spacing` was dropped: add a gap-* class");
+      else if (spacing)
+        withNote("Stack: a dynamic `spacing` was dropped: add a gap-* class");
       for (const name of [
         "direction",
         "spacing",
@@ -282,14 +344,25 @@ export function muiToM3(source: string): CodemodResult {
       }
       const merged = mergeClass(tag.attrs, classes.join(" "));
       if (merged.remove)
-        edits.push({ start: merged.remove.start, end: merged.remove.end, text: merged.text });
-      else edits.push({ start: tag.nameEnd, end: tag.nameEnd, text: ` ${merged.text}` });
+        edits.push({
+          start: merged.remove.start,
+          end: merged.remove.end,
+          text: merged.text,
+        });
+      else
+        edits.push({
+          start: tag.nameEnd,
+          end: tag.nameEnd,
+          text: ` ${merged.text}`,
+        });
       rename("div");
     } else if (kind === "Box" || kind === "Paper") {
       const sx = attr("sx");
       if (sx) {
         drop(sx);
-        withNote(`${kind}: \`sx\` was dropped: translate it to Tailwind classes`);
+        withNote(
+          `${kind}: \`sx\` was dropped: translate it to Tailwind classes`,
+        );
       }
       for (const name of ["elevation", "variant", "square"]) {
         const a = attr(name);
@@ -301,8 +374,17 @@ export function muiToM3(source: string): CodemodResult {
           "rounded-medium bg-surface-container text-on-surface shadow-elevation-1",
         );
         if (merged.remove)
-          edits.push({ start: merged.remove.start, end: merged.remove.end, text: merged.text });
-        else edits.push({ start: tag.nameEnd, end: tag.nameEnd, text: ` ${merged.text}` });
+          edits.push({
+            start: merged.remove.start,
+            end: merged.remove.end,
+            text: merged.text,
+          });
+        else
+          edits.push({
+            start: tag.nameEnd,
+            end: tag.nameEnd,
+            text: ` ${merged.text}`,
+          });
       }
       rename("div");
     } else continue;
@@ -332,28 +414,42 @@ export function muiToM3(source: string): CodemodResult {
     const first = statements[0]!;
     // oxlint-disable-next-line unicorn/no-array-sort -- a copy: ES2022 has no toSorted
     const importLine = `import { ${[...wrappers].sort().join(", ")} } from "@aphrody/m3-baseui";\n`;
-    const e = edits.find((x) => x.start === first.start && x.end === first.end)!;
+    const e = edits.find(
+      (x) => x.start === first.start && x.end === first.end,
+    )!;
     e.text = importLine + e.text;
   }
 
   // Reported but not migrated.
   const unmigrated = specs.filter((s) => !migrated.has(s.local));
-  const reported = [...new Set(unmigrated.map((s) => s.imported))].filter((n) => REPORTED.has(n));
+  const reported = [...new Set(unmigrated.map((s) => s.imported))].filter((n) =>
+    REPORTED.has(n),
+  );
   if (reported.length > 0)
     warnings.push(
       `not migrated (structure differs in Base UI; see @aphrody/m3-baseui): ${reported.join(", ")}`,
     );
-  const others = [...new Set(unmigrated.map((s) => s.imported))].filter((n) => !REPORTED.has(n));
+  const others = [...new Set(unmigrated.map((s) => s.imported))].filter(
+    (n) => !REPORTED.has(n),
+  );
   if (others.length > 0) warnings.push(`left on MUI: ${others.join(", ")}`);
   if (/@mui\/icons-material/.test(source))
-    warnings.push("@mui/icons-material: use @aphrody/m3-icons (Material Symbols) or inline SVG");
+    warnings.push(
+      "@mui/icons-material: use @aphrody/m3-icons (Material Symbols) or inline SVG",
+    );
   if (/\bThemeProvider\b|\bcreateTheme\b|\bCssBaseline\b/.test(source))
     warnings.push(
       "ThemeProvider, createTheme and CssBaseline: the theme is M3Root from @aphrody/m3-next plus the m3.css sheets",
     );
   if (/\bstyled\(|@mui\/system|@mui\/styled-engine/.test(source))
-    warnings.push("styled() and @mui/system: use Tailwind classes or the Base UI wrappers");
+    warnings.push(
+      "styled() and @mui/system: use Tailwind classes or the Base UI wrappers",
+    );
 
   if (edits.length === 0) return { code: source, changes, warnings };
-  return { code: applyEdits(source, edits), changes: [...new Set(changes)], warnings };
+  return {
+    code: applyEdits(source, edits),
+    changes: [...new Set(changes)],
+    warnings,
+  };
 }

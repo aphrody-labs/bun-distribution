@@ -2,7 +2,14 @@
 import { expect, test } from "bun:test";
 import { dirname, join, resolve } from "node:path";
 import { tmpdir } from "node:os";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import {
   composeArgs,
   adapterDue,
@@ -19,7 +26,13 @@ const config = (): MeshConfig => ({
   member: "omar",
   root: tmpdir(),
   home,
-  compose: [{ file: join(tmpdir(), "compose.yaml"), services: ["pc"], profiles: ["pc"] }],
+  compose: [
+    {
+      file: join(tmpdir(), "compose.yaml"),
+      services: ["pc"],
+      profiles: ["pc"],
+    },
+  ],
   adapters: [],
   health: [],
 });
@@ -33,10 +46,14 @@ function alive(pid: number): boolean {
   }
 }
 
-async function waitUntil(predicate: () => boolean, timeout = 10_000): Promise<void> {
+async function waitUntil(
+  predicate: () => boolean,
+  timeout = 10_000,
+): Promise<void> {
   const deadline = Date.now() + timeout;
   while (!predicate()) {
-    if (Date.now() >= deadline) throw new Error("native recovery condition timed out");
+    if (Date.now() >= deadline)
+      throw new Error("native recovery condition timed out");
     // oxlint-disable-next-line no-await-in-loop -- bounded polling of an actual process/health receipt
     await Bun.sleep(50);
   }
@@ -95,7 +112,8 @@ await new Promise(() => {});
     async fetch() {
       try {
         const target = marker();
-        if (target) return await fetch(target.url, { signal: AbortSignal.timeout(500) });
+        if (target)
+          return await fetch(target.url, { signal: AbortSignal.timeout(500) });
       } catch {
         /* An absent owned child is unhealthy. */
       }
@@ -109,14 +127,19 @@ await new Promise(() => {});
       member: "dbfr",
       root: fixture,
       home: fixtureHome,
-      compose: [{ file: join(fixture, "absent-compose.yaml"), services: ["pc"] }],
+      compose: [
+        { file: join(fixture, "absent-compose.yaml"), services: ["pc"] },
+      ],
       adapters: [
         {
           id: "bad-env",
           argv: [process.execPath, "-e", "throw new Error('must not run')"],
           envFile: join(fixtureHome, "private", "missing.env"),
         },
-        { id: "recovery", argv: [process.execPath, "--no-env-file", nativePath, nativeMarker] },
+        {
+          id: "recovery",
+          argv: [process.execPath, "--no-env-file", nativePath, nativeMarker],
+        },
       ],
       health: [{ id: "native", url: probe.url.toString() }],
     }),
@@ -133,7 +156,11 @@ await new Promise(() => {});
     ],
     {
       cwd: fixture,
-      env: { ...process.env, PATH: join(fixture, "no-docker"), APHRODY_HOME: fixtureHome },
+      env: {
+        ...process.env,
+        PATH: join(fixture, "no-docker"),
+        APHRODY_HOME: fixtureHome,
+      },
       stdin: "ignore",
       stdout: "ignore",
       stderr: "ignore",
@@ -156,7 +183,10 @@ await new Promise(() => {});
       } catch {
         return false;
       }
-      return receipt?.health[0]?.healthy === true && receipt?.compose[0]?.status === "degraded";
+      return (
+        receipt?.health[0]?.healthy === true &&
+        receipt?.compose[0]?.status === "degraded"
+      );
     });
     expect(supervisor.exitCode).toBeNull();
     expect(receipt!.status).toBe("degraded");
@@ -164,10 +194,14 @@ await new Promise(() => {});
       pid: null,
       error: "native adapter or protected environment unavailable",
     });
-    expect(receipt!.adapters.find((a) => a.id === "recovery")?.error).toBeNull();
+    expect(
+      receipt!.adapters.find((a) => a.id === "recovery")?.error,
+    ).toBeNull();
     const native = marker()!;
     expect(alive(native.pid)).toBe(true);
-    expect(await (await fetch(native.url)).text()).toBe("native-recovery-ready");
+    expect(await (await fetch(native.url)).text()).toBe(
+      "native-recovery-ready",
+    );
     supervisor.kill();
     await supervisor.exited;
     await waitUntil(() => !alive(native.pid), 3000);
@@ -183,12 +217,19 @@ await new Promise(() => {});
 }, 15_000);
 
 test("periodic maintenance never duplicates a running child or loops after success", () => {
-  const adapter = { id: "update", argv: ["aphrody", "self", "update"], intervalSeconds: 3600 };
+  const adapter = {
+    id: "update",
+    argv: ["aphrody", "self", "update"],
+    intervalSeconds: 3600,
+  };
   expect(adapterDue(adapter, false, 4_000_000)).toBe(false);
   expect(adapterDue(adapter, true, 5000)).toBe(false);
   expect(adapterDue(adapter, true, 3_600_000)).toBe(true);
   expect(() =>
-    validateConfig({ ...config(), adapters: [{ ...adapter, intervalSeconds: 0 }] }),
+    validateConfig({
+      ...config(),
+      adapters: [{ ...adapter, intervalSeconds: 0 }],
+    }),
   ).toThrow();
 });
 
@@ -208,14 +249,23 @@ test("reject credentials in command arguments, URLs and env outside the protecte
   expect(() =>
     validateConfig({
       ...config(),
-      compose: [{ ...config().compose[0], envFile: join(home, "private-other", "token.env") }],
+      compose: [
+        {
+          ...config().compose[0],
+          envFile: join(home, "private-other", "token.env"),
+        },
+      ],
     }),
   ).toThrow();
   expect(
     validateConfig({
       ...config(),
       adapters: [
-        { id: "mcp", argv: ["aphrody-mcp"], envFile: join(home, "private", "mcp-http.env") },
+        {
+          id: "mcp",
+          argv: ["aphrody-mcp"],
+          envFile: join(home, "private", "mcp-http.env"),
+        },
       ],
     }).member,
   ).toBe("omar");
@@ -237,7 +287,12 @@ test("startup selects declared existing services and waits for their real health
   expect(() =>
     validateConfig({
       ...config(),
-      compose: [{ file: join(tmpdir(), "compose.yaml"), services: ["--remove-orphans"] }],
+      compose: [
+        {
+          file: join(tmpdir(), "compose.yaml"),
+          services: ["--remove-orphans"],
+        },
+      ],
     }),
   ).toThrow();
 });
@@ -255,7 +310,9 @@ test("health fails on errors, redirects and authentication failure instead of ac
     hostname: "127.0.0.1",
     port: 0,
     fetch(req) {
-      return new Response(null, { status: new URL(req.url).pathname === "/healthy" ? 200 : 401 });
+      return new Response(null, {
+        status: new URL(req.url).pathname === "/healthy" ? 200 : 401,
+      });
     },
   });
   try {
@@ -278,18 +335,24 @@ test.skipIf(process.platform !== "win32")(
   async () => {
     const { Job } = await import("bun:windows");
     const job = new Job({ killOnClose: true });
-    const child = Bun.spawn([process.execPath, "-e", "await Bun.sleep(120000)"], {
-      windowsHide: true,
-      stdin: "ignore",
-      stdout: "ignore",
-      stderr: "ignore",
-    });
+    const child = Bun.spawn(
+      [process.execPath, "-e", "await Bun.sleep(120000)"],
+      {
+        windowsHide: true,
+        stdin: "ignore",
+        stdout: "ignore",
+        stderr: "ignore",
+      },
+    );
     try {
       job.assign(child);
       expect(job.info().pids).toContain(child.pid);
       job.close();
       expect(
-        await Promise.race([child.exited.then(() => true), Bun.sleep(1000).then(() => false)]),
+        await Promise.race([
+          child.exited.then(() => true),
+          Bun.sleep(1000).then(() => false),
+        ]),
       ).toBe(true);
       expect(job.closed).toBe(true);
     } finally {

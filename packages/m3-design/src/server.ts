@@ -19,5 +19,7 @@ if (cli) {
   process.exit(runCli(cli, compiler));
 }
 
-console.log(`[HTTP Server] Starting automated design engine on http://localhost:${PORT}...`);
+console.log(
+  `[HTTP Server] Starting automated design engine on http://localhost:${PORT}...`,
+);
 Bun.serve({ port: PORT, fetch: createFetchHandler(compiler) });

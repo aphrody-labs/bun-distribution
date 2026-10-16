@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { mkdir, readdir, realpath, stat } from "node:fs/promises";
-import { basename, delimiter, dirname, extname, join, resolve } from "node:path";
+import {
+  basename,
+  delimiter,
+  dirname,
+  extname,
+  join,
+  resolve,
+} from "node:path";
 import { homedir } from "node:os";
 
 interface Entry {
@@ -25,11 +32,15 @@ interface SourceCli {
 
 // Capability-owner contracts: these entry points consume a machine protocol or
 // a protected service configuration. Invoking --help is not part of their ABI.
-const PROTOCOL_HELPERS: Record<string, { kind: string; owner: string; reason: string }> = {
+const PROTOCOL_HELPERS: Record<
+  string,
+  { kind: string; owner: string; reason: string }
+> = {
   "aphrody-canvas": {
     kind: "json-stdin-png-stdout",
     owner: "crates/ui/render/src/canvas_cli.rs",
-    reason: "Canvas rendering subprocess; stdin is a JSON scene, stdout is PNG.",
+    reason:
+      "Canvas rendering subprocess; stdin is a JSON scene, stdout is PNG.",
   },
   "aphrody-host-service": {
     kind: "configured-service-entry",
@@ -39,18 +50,24 @@ const PROTOCOL_HELPERS: Record<string, { kind: string; owner: string; reason: st
   },
 };
 
-async function sourceCliIndex(catalog: any, root: string): Promise<SourceCli[]> {
+async function sourceCliIndex(
+  catalog: any,
+  root: string,
+): Promise<SourceCli[]> {
   const repositories = catalog.repos.filter((repo: any) =>
     ["aphrody", "iecode"].includes(repo.name),
   );
   const groups = await Promise.all(
     repositories.map(async (repo: any) => {
-      const repoRoot = repo.name === "aphrody" ? root : join(dirname(root), repo.name);
+      const repoRoot =
+        repo.name === "aphrody" ? root : join(dirname(root), repo.name);
       const rust: SourceCli[] = repo.crates.flatMap((crate: any) =>
         crate.bins.map((binary: string): SourceCli => {
           const cli = catalog.cli.find(
             (item: any) =>
-              item.repo === repo.name && item.binary === binary && item.crate === crate.name,
+              item.repo === repo.name &&
+              item.binary === binary &&
+              item.crate === crate.name,
           );
           return {
             runtime: "Rust",
@@ -90,19 +107,21 @@ async function sourceCliIndex(catalog: any, root: string): Promise<SourceCli[]> 
                 ? { [current.name.split("/").at(-1)]: current.bin }
                 : (current.bin ?? {});
             return Promise.all(
-              Object.entries(bins).map(async ([binary, target]): Promise<SourceCli> => {
-                const entrypoint = resolve(dirname(manifest), String(target));
-                return {
-                  runtime: "Bun",
-                  repo: repo.name,
-                  owner: current.name,
-                  binary,
-                  manifest,
-                  entrypoint,
-                  sourceExists: await Bun.file(entrypoint).exists(),
-                  installed: Bun.which(binary),
-                };
-              }),
+              Object.entries(bins).map(
+                async ([binary, target]): Promise<SourceCli> => {
+                  const entrypoint = resolve(dirname(manifest), String(target));
+                  return {
+                    runtime: "Bun",
+                    repo: repo.name,
+                    owner: current.name,
+                    binary,
+                    manifest,
+                    entrypoint,
+                    sourceExists: await Bun.file(entrypoint).exists(),
+                    installed: Bun.which(binary),
+                  };
+                },
+              ),
             );
           }),
         )
@@ -113,7 +132,9 @@ async function sourceCliIndex(catalog: any, root: string): Promise<SourceCli[]> 
   return groups
     .flat()
     .toSorted((a, b) =>
-      `${a.runtime}/${a.repo}/${a.binary}`.localeCompare(`${b.runtime}/${b.repo}/${b.binary}`),
+      `${a.runtime}/${a.repo}/${a.binary}`.localeCompare(
+        `${b.runtime}/${b.repo}/${b.binary}`,
+      ),
     );
 }
 
@@ -123,7 +144,9 @@ export function helpCommands(help: string): string[] {
   let inCommands = false;
   let commandIndent: number | undefined;
   for (const line of help.split("\n")) {
-    if (/^(?:Commands|Subcommands|Available commands):\s*$/i.test(line.trim())) {
+    if (
+      /^(?:Commands|Subcommands|Available commands):\s*$/i.test(line.trim())
+    ) {
       inCommands = true;
       commandIndent = undefined;
       continue;
@@ -133,7 +156,8 @@ export function helpCommands(help: string): string[] {
     const row = /^(\s{2,})([a-zA-Z][\w-]*)(?:\s{2,}|\s*$)/.exec(line);
     if (!row) continue;
     commandIndent ??= row[1]!.length;
-    if (row[1]!.length === commandIndent && row[2] !== "help") commands.push(row[2]!);
+    if (row[1]!.length === commandIndent && row[2] !== "help")
+      commands.push(row[2]!);
   }
   return [...new Set(commands)];
 }
@@ -150,7 +174,10 @@ export async function runCliHelp(
     );
     return 0;
   }
-  let out = join(process.env.XDG_DATA_HOME ?? join(homedir(), ".local/share"), "aphrody/cli-help");
+  let out = join(
+    process.env.XDG_DATA_HOME ?? join(homedir(), ".local/share"),
+    "aphrody/cli-help",
+  );
   let explicitOut = false;
   let only: string[] | undefined;
   let recursive = true;
@@ -182,13 +209,17 @@ export async function runCliHelp(
       if (only) throw new Error("--only may be specified once");
       const names = value.split(",");
       if (names.some((name) => !/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(name))) {
-        throw new Error("--only requires comma-separated binary names, without paths");
+        throw new Error(
+          "--only requires comma-separated binary names, without paths",
+        );
       }
       only = [...new Set(names)].toSorted();
     }
   }
   if (only && !explicitOut) out = join(out, "selected", only.join(","));
-  const catalog = await Bun.file(join(root, "docs/ecosystem/ecosystem.json")).json();
+  const catalog = await Bun.file(
+    join(root, "docs/ecosystem/ecosystem.json"),
+  ).json();
   const sourceCli = (await sourceCliIndex(catalog, root)).filter(
     (entry) => !only || only.includes(entry.binary),
   );
@@ -198,8 +229,10 @@ export async function runCliHelp(
   if (!only) {
     for (const cli of catalog.cli) binaries.add(cli.binary);
     for (const repo of catalog.repos) {
-      for (const pkg of repo.bunPackages) for (const name of pkg.bins) binaries.add(name);
-      for (const pkg of repo.pythonPackages) for (const name of pkg.scripts) binaries.add(name);
+      for (const pkg of repo.bunPackages)
+        for (const name of pkg.bins) binaries.add(name);
+      for (const pkg of repo.pythonPackages)
+        for (const name of pkg.scripts) binaries.add(name);
     }
     // Standalone native surfaces can be installed after the source catalog was generated.
     const pathDirectories = await Promise.allSettled(
@@ -220,7 +253,9 @@ export async function runCliHelp(
     const executable = Bun.which(binary);
     return executable ? [{ binary, executable }] : [];
   });
-  const missing = [...binaries].filter((binary) => !Bun.which(binary)).toSorted();
+  const missing = [...binaries]
+    .filter((binary) => !Bun.which(binary))
+    .toSorted();
   const capturedAt = new Date().toISOString();
   const snapshot = join(out, capturedAt.replaceAll(/[:.]/g, "-"));
   await mkdir(snapshot, { recursive: true, mode: 0o700 });
@@ -242,13 +277,18 @@ export async function runCliHelp(
   const sensitiveValues = Object.entries(process.env)
     .filter(
       ([key, value]) =>
-        /token|secret|password|api.?key|credential/i.test(key) && value && value.length >= 8,
+        /token|secret|password|api.?key|credential/i.test(key) &&
+        value &&
+        value.length >= 8,
     )
     .map(([, value]) => value!);
   const protocolHelpers = installed
     .filter(({ binary }) => PROTOCOL_HELPERS[binary])
     .map(({ binary, executable }) =>
-      Object.assign({ binary, executable, status: "unsupported-help" }, PROTOCOL_HELPERS[binary]),
+      Object.assign(
+        { binary, executable, status: "unsupported-help" },
+        PROTOCOL_HELPERS[binary],
+      ),
     );
   const queue = installed
     .filter(({ binary }) => !PROTOCOL_HELPERS[binary])
@@ -285,7 +325,8 @@ export async function runCliHelp(
         ]);
         clearTimeout(timer);
         let help = Bun.stripANSI([stdout, stderr].filter(Boolean).join("\n"));
-        for (const value of sensitiveValues) help = help.replaceAll(value, "[REDACTED]");
+        for (const value of sensitiveValues)
+          help = help.replaceAll(value, "[REDACTED]");
         const file = `${command.join("__")}.txt`;
         await Bun.write(join(snapshot, file), help);
         entries.push({ command, executable, exitCode, timedOut, file });
@@ -302,15 +343,22 @@ export async function runCliHelp(
           unresolved.push(command);
           return;
         }
-        for (const child of children) queue.push({ command: [...command, child], executable });
+        for (const child of children)
+          queue.push({ command: [...command, child], executable });
       }),
     );
     if (entries.length % 50 < 6)
-      console.error(`CLI help: ${entries.length} captured, ${queue.length} pending`);
+      console.error(
+        `CLI help: ${entries.length} captured, ${queue.length} pending`,
+      );
   }
   unresolved.push(...queue.map(({ command }) => command));
-  entries = entries.toSorted((a, b) => a.command.join(" ").localeCompare(b.command.join(" ")));
-  const failed = entries.filter((entry) => entry.exitCode !== 0 || entry.timedOut);
+  entries = entries.toSorted((a, b) =>
+    a.command.join(" ").localeCompare(b.command.join(" ")),
+  );
+  const failed = entries.filter(
+    (entry) => entry.exitCode !== 0 || entry.timedOut,
+  );
   const manifest = {
     schemaVersion: 1,
     capturedAt,
@@ -326,7 +374,10 @@ export async function runCliHelp(
     protocolHelpers,
     entries,
   };
-  await Bun.write(join(snapshot, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  await Bun.write(
+    join(snapshot, "manifest.json"),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
   const lines = [
     "# Installed CLI help",
     "",
@@ -381,7 +432,9 @@ export async function runCliHelp(
     "",
     "## Traversal limits",
     "",
-    ...unresolved.map((command) => `- \`${command.join(" ")}\`: depth or page limit reached`),
+    ...unresolved.map(
+      (command) => `- \`${command.join(" ")}\`: depth or page limit reached`,
+    ),
     "",
     "## Repeated ancestor help",
     "",
@@ -411,12 +464,19 @@ export async function runCliHelp(
       unresolved: unresolved.length,
     }),
   );
-  if (only) return missing.length === 0 && failed.length === 0 && unresolved.length === 0 ? 0 : 1;
+  if (only)
+    return missing.length === 0 &&
+      failed.length === 0 &&
+      unresolved.length === 0
+      ? 0
+      : 1;
   return failed.length === 0 &&
     unresolved.length === 0 &&
     entries.some(
       (entry) =>
-        entry.command.length === 1 && entry.command[0] === "aphrody" && entry.exitCode === 0,
+        entry.command.length === 1 &&
+        entry.command[0] === "aphrody" &&
+        entry.exitCode === 0,
     )
     ? 0
     : 1;

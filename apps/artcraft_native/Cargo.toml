@@ -21,22 +21,55 @@ anyhow = "1.0.102"
 cookie = "0.18.1"
 chrono = { version = "0.4.44", features = ["serde"] }
 directories = "6.0.0"
-eframe = { version = "0.36", default-features = false, features = ["default_fonts", "glow", "accesskit", "wayland", "x11", "persistence", "links"] }
+eframe = { version = "0.36", default-features = false, features = [
+  "default_fonts",
+  "glow",
+  "accesskit",
+  "wayland",
+  "x11",
+  "persistence",
+  "links",
+] }
 egui = "0.36"
 enums = { path = "../../crates/artcraft-enums", package = "artcraft-enums" }
-egui_extras = { version = "0.36", default-features = false, features = ["image", "svg"] }
+egui_extras = { version = "0.36", default-features = false, features = [
+  "image",
+  "svg",
+] }
 env_logger = "0.11.9"
-image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif"] }
+image = { version = "0.25", default-features = false, features = [
+  "png",
+  "jpeg",
+  "webp",
+  "gif",
+] }
 log = "0.4.29"
 open = "5"
-reqwest = { version = "0.12.23", default-features = false, features = ["charset", "http2", "system-proxy", "json", "cookies", "rustls-tls", "gzip", "multipart"] }
+reqwest = { version = "0.12.23", default-features = false, features = [
+  "charset",
+  "http2",
+  "system-proxy",
+  "json",
+  "cookies",
+  "rustls-tls",
+  "gzip",
+  "multipart",
+] }
 resvg = "0.45"
 rfd = "0.16"
-rodio = { version = "0.20", default-features = false, features = ["symphonia-all"] }
+rodio = { version = "0.20", default-features = false, features = [
+  "symphonia-all",
+] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 tempfile = "3.27.0"
-tokio = { version = "1.50.0", features = ["macros", "rt-multi-thread", "sync", "time", "fs"] }
+tokio = { version = "1.50.0", features = [
+  "macros",
+  "rt-multi-thread",
+  "sync",
+  "time",
+  "fs",
+] }
 url = { version = "2.5.8", features = ["serde"] }
 uuid = { version = "1.22.0", features = ["v4"] }
 arboard = { version = "3", default-features = false, features = ["image-data"] }

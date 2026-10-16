@@ -30,7 +30,9 @@ export interface ImageProps extends Omit<
   sizes?: string;
 }
 
-export function getImageProps(props: ImageProps): { props: ImgHTMLAttributes<HTMLImageElement> } {
+export function getImageProps(props: ImageProps): {
+  props: ImgHTMLAttributes<HTMLImageElement>;
+} {
   const {
     src,
     alt,
@@ -49,7 +51,8 @@ export function getImageProps(props: ImageProps): { props: ImgHTMLAttributes<HTM
 
   const resolvedSrc = typeof src === "string" ? src : src?.src || "";
   const resolvedWidth = typeof src === "object" && !width ? src.width : width;
-  const resolvedHeight = typeof src === "object" && !height ? src.height : height;
+  const resolvedHeight =
+    typeof src === "object" && !height ? src.height : height;
 
   const computedStyle: CSSProperties = {
     ...style,
@@ -80,9 +83,11 @@ export function getImageProps(props: ImageProps): { props: ImgHTMLAttributes<HTM
   };
 }
 
-export const Image = forwardRef<HTMLImageElement, ImageProps>(function Image(props, ref) {
-  const { props: imgProps } = getImageProps(props);
-  return <img ref={ref} alt={imgProps.alt} {...imgProps} />;
-});
+export const Image = forwardRef<HTMLImageElement, ImageProps>(
+  function Image(props, ref) {
+    const { props: imgProps } = getImageProps(props);
+    return <img ref={ref} alt={imgProps.alt} {...imgProps} />;
+  },
+);
 
 export default Image;

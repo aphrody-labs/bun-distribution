@@ -13,7 +13,9 @@ const iconMap: Record<string, IconAsset> = icons;
 
 // Define a type for icon names. This filters out any names with underscores in them.
 // The use of 'never' is to make sure that icon types with underscores are not included.
-export type IconTypes<K = keyof typeof icons> = K extends `${string}_${string}` ? never : K;
+export type IconTypes<K = keyof typeof icons> = K extends `${string}_${string}`
+  ? never
+  : K;
 
 // Create a record of icon names that don't contain underscores.
 export const iconNames = Object.fromEntries(
@@ -47,7 +49,8 @@ export const getIcon = (
   if (isDir) return isDark ? icons.Folder : icons.Folder_Light;
 
   // Default document icon.
-  let document: Extract<keyof typeof icons, "Document" | "Document_Light"> = "Document";
+  let document: Extract<keyof typeof icons, "Document" | "Document_Light"> =
+    "Document";
 
   // Modify the extension based on kind and theme (dark/light).
   if (extension) extension = `${kind}_${extension.toLowerCase()}`;
@@ -80,7 +83,9 @@ export const getLayeredIcon = (kind: string, extension?: string | null) => {
       // Check if specific kind exists.
       kind && kind in LayeredIcons ? kind : "Extras"
     ];
-  return extension ? iconKind?.[extension] || LayeredIcons["Extras"]?.[extension] : null;
+  return extension
+    ? iconKind?.[extension] || LayeredIcons["Extras"]?.[extension]
+    : null;
 };
 
 /**

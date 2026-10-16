@@ -14,12 +14,15 @@ async function isolatedDispatcher(run: (directory: string) => Promise<void>) {
 }
 
 async function dispatch(directory: string, ...args: string[]) {
-  const child = Bun.spawn([process.execPath, join(directory, "ops.ts"), ...args], {
-    windowsHide: true,
-    cwd: directory,
-    stdout: "pipe",
-    stderr: "pipe",
-  });
+  const child = Bun.spawn(
+    [process.execPath, join(directory, "ops.ts"), ...args],
+    {
+      windowsHide: true,
+      cwd: directory,
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  );
   const [stdout, stderr, status] = await Promise.all([
     new Response(child.stdout).text(),
     new Response(child.stderr).text(),
@@ -30,8 +33,14 @@ async function dispatch(directory: string, ...args: string[]) {
 
 test("IECODE doctor help loads without other operations or installed dependencies", async () => {
   await isolatedDispatcher(async (directory) => {
-    await copyFile(join(import.meta.dir, "iecode-doctor.ts"), join(directory, "iecode-doctor.ts"));
-    expect((await readdir(directory)).toSorted()).toEqual(["iecode-doctor.ts", "ops.ts"]);
+    await copyFile(
+      join(import.meta.dir, "iecode-doctor.ts"),
+      join(directory, "iecode-doctor.ts"),
+    );
+    expect((await readdir(directory)).toSorted()).toEqual([
+      "iecode-doctor.ts",
+      "ops.ts",
+    ]);
     const result = await dispatch(directory, "iecode-doctor", "--help");
     expect(result.status).toBe(0);
     expect(result.stderr).toBe("");
@@ -45,10 +54,21 @@ test("the selected operation receives arguments and preserves its exit status", 
       join(directory, "shenron.ts"),
       "export async function runShenron(args: string[]) { console.log(JSON.stringify(args)); return 23; }\n",
     );
-    expect((await readdir(directory)).toSorted()).toEqual(["ops.ts", "shenron.ts"]);
-    const result = await dispatch(directory, "shenron", "literal argument", "--example");
+    expect((await readdir(directory)).toSorted()).toEqual([
+      "ops.ts",
+      "shenron.ts",
+    ]);
+    const result = await dispatch(
+      directory,
+      "shenron",
+      "literal argument",
+      "--example",
+    );
     expect(result.status).toBe(23);
     expect(result.stderr).toBe("");
-    expect(JSON.parse(result.stdout)).toEqual(["literal argument", "--example"]);
+    expect(JSON.parse(result.stdout)).toEqual([
+      "literal argument",
+      "--example",
+    ]);
   });
 });

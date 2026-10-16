@@ -1,6 +1,21 @@
 import { useState, useRef, useEffect, type ReactNode } from "react";
 import { IsDesktopApp } from "@storyteller/tauri-utils";
-import { CameraIcon, ChevronDownIcon, ChevronUpIcon, DownloadIcon, Grid2x2Icon, HistoryIcon, MaximizeIcon, MousePointerIcon, PlusIcon, RectangleHorizontalIcon, RectangleVerticalIcon, SaveIcon, SquareIcon, WandSparklesIcon } from "lucide-react";
+import {
+  CameraIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  DownloadIcon,
+  Grid2x2Icon,
+  HistoryIcon,
+  MaximizeIcon,
+  MousePointerIcon,
+  PlusIcon,
+  RectangleHorizontalIcon,
+  RectangleVerticalIcon,
+  SaveIcon,
+  SquareIcon,
+  WandSparklesIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { PopoverItem, PopoverMenu } from "@storyteller/ui-popover";
 import { Button, ToggleButton, GenerateButton } from "@storyteller/ui-button";
@@ -167,34 +182,34 @@ export const PromptBox3D = ({
     {
       label: "Wide",
       selected: true,
-      icon: <RectangleHorizontalIcon  className="h-4 w-4" />,
+      icon: <RectangleHorizontalIcon className="h-4 w-4" />,
     },
     {
       label: "Tall",
       selected: false,
-      icon: <RectangleVerticalIcon  className="h-4 w-4" />,
+      icon: <RectangleVerticalIcon className="h-4 w-4" />,
     },
     {
       label: "Square",
       selected: false,
-      icon: <SquareIcon  className="h-4 w-4" />,
+      icon: <SquareIcon className="h-4 w-4" />,
     },
   ]);
   const [resolutionList, setResolutionList] = useState<PopoverItem[]>([
     {
       label: "1K",
       selected: resolution === "1k",
-      icon: <MaximizeIcon  className="h-4 w-4" />,
+      icon: <MaximizeIcon className="h-4 w-4" />,
     },
     {
       label: "2K",
       selected: resolution === "2k",
-      icon: <MaximizeIcon  className="h-4 w-4" />,
+      icon: <MaximizeIcon className="h-4 w-4" />,
     },
     {
       label: "4K",
       selected: resolution === "4k",
-      icon: <MaximizeIcon  className="h-4 w-4" />,
+      icon: <MaximizeIcon className="h-4 w-4" />,
     },
   ]);
   const [isCameraSettingsOpen, setIsCameraSettingsOpen] = useState(false);
@@ -328,7 +343,9 @@ export const PromptBox3D = ({
     const trimmed = prompt.trim();
     if (!trimmed) return;
     if (isFinite(maxLen) && trimmed.length > maxLen) {
-      toast.error(`Prompt exceeds the ${maxLen} character limit for this model`);
+      toast.error(
+        `Prompt exceeds the ${maxLen} character limit for this model`,
+      );
       return;
     }
     setEnginePrompt(trimmed);
@@ -753,148 +770,144 @@ export const PromptBox3D = ({
             </div>
           </div>
           {buildMode === "manual" && (
-          <div className="mt-3.5 flex items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              {modelSelector}
-              {selectedImageModel?.supportsNewAspectRatio() && (
-                <AspectRatioPicker
-                  model={selectedImageModel}
-                  currentAspectRatio={commonAspectRatio}
-                  handleCommonAspectRatioSelect={handleCommonAspectRatioSelect}
-                />
-              )}
-              {selectedImageModel?.canChangeAspectRatio &&
-                !selectedImageModel?.supportsNewAspectRatio() && (
+            <div className="mt-3.5 flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {modelSelector}
+                {selectedImageModel?.supportsNewAspectRatio() && (
+                  <AspectRatioPicker
+                    model={selectedImageModel}
+                    currentAspectRatio={commonAspectRatio}
+                    handleCommonAspectRatioSelect={
+                      handleCommonAspectRatioSelect
+                    }
+                  />
+                )}
+                {selectedImageModel?.canChangeAspectRatio &&
+                  !selectedImageModel?.supportsNewAspectRatio() && (
+                    <Tooltip
+                      content="Aspect ratio"
+                      position="top"
+                      className="z-50"
+                      closeOnClick={true}
+                    >
+                      <PopoverMenu
+                        items={aspectRatioList}
+                        onSelect={handleAspectRatioSelect}
+                        mode="toggle"
+                        panelTitle="Aspect Ratio"
+                        showIconsInList
+                        triggerIcon={
+                          <DynamicIcon
+                            icon={getCurrentAspectRatioIcon()}
+                            className="h-4 w-4"
+                          />
+                        }
+                      />
+                    </Tooltip>
+                  )}
+                {selectedImageModel?.canChangeResolution && (
                   <Tooltip
-                    content="Aspect ratio"
+                    content="Resolution"
                     position="top"
                     className="z-50"
                     closeOnClick={true}
                   >
                     <PopoverMenu
-                      items={aspectRatioList}
-                      onSelect={handleAspectRatioSelect}
+                      items={resolutionList}
+                      onSelect={handleResolutionSelect}
                       mode="toggle"
-                      panelTitle="Aspect Ratio"
+                      panelTitle="Resolution"
                       showIconsInList
-                      triggerIcon={
-                        <DynamicIcon
-                          icon={getCurrentAspectRatioIcon()}
-                          className="h-4 w-4"
-                        />
-                      }
+                      triggerIcon={<MaximizeIcon className="h-4 w-4" />}
                     />
                   </Tooltip>
                 )}
-              {selectedImageModel?.canChangeResolution && (
                 <Tooltip
-                  content="Resolution"
+                  content="Camera"
                   position="top"
                   className="z-50"
+                  delay={300}
                   closeOnClick={true}
                 >
                   <PopoverMenu
-                    items={resolutionList}
-                    onSelect={handleResolutionSelect}
-                    mode="toggle"
-                    panelTitle="Resolution"
+                    items={cameras.map((cam) => ({
+                      id: cam.id,
+                      label: cam.label,
+                      selected: cam.id === selectedCameraId,
+                      icon: <CameraIcon className="h-4 w-4" />,
+                      focalLength: cam.focalLength,
+                      position: cam.position,
+                      rotation: cam.rotation,
+                      lookAt: cam.lookAt,
+                    }))}
+                    onSelect={handleCameraSelect}
+                    onAdd={handleAddCamera}
+                    triggerIcon={<CameraIcon className="h-4 w-4" />}
+                    showAddButton
+                    disableAddButton={cameras.length >= 6}
                     showIconsInList
-                    triggerIcon={
-                      <MaximizeIcon  className="h-4 w-4" />
-                    }
+                    mode="toggle"
+                    panelTitle="Camera"
+                    panelActionLabel="Settings"
+                    onPanelAction={() => setIsCameraSettingsOpen(true)}
+                    buttonClassName="max-w-[130px] h-9"
                   />
                 </Tooltip>
-              )}
-              <Tooltip
-                content="Camera"
-                position="top"
-                className="z-50"
-                delay={300}
-                closeOnClick={true}
-              >
-                <PopoverMenu
-                  items={cameras.map((cam) => ({
-                    id: cam.id,
-                    label: cam.label,
-                    selected: cam.id === selectedCameraId,
-                    icon: (
-                      <CameraIcon  className="h-4 w-4" />
-                    ),
-                    focalLength: cam.focalLength,
-                    position: cam.position,
-                    rotation: cam.rotation,
-                    lookAt: cam.lookAt,
-                  }))}
-                  onSelect={handleCameraSelect}
-                  onAdd={handleAddCamera}
-                  triggerIcon={
-                    <CameraIcon  className="h-4 w-4" />
-                  }
-                  showAddButton
-                  disableAddButton={cameras.length >= 6}
-                  showIconsInList
-                  mode="toggle"
-                  panelTitle="Camera"
-                  panelActionLabel="Settings"
-                  onPanelAction={() => setIsCameraSettingsOpen(true)}
-                  buttonClassName="max-w-[130px] h-9"
+                <Tooltip
+                  content={gridVisibility ? "Grid: ON" : "Grid: OFF"}
+                  position="top"
+                  className="z-50"
+                  delay={200}
+                >
+                  <ToggleButton
+                    isActive={gridVisibility}
+                    icon={Grid2x2Icon}
+                    activeIcon={Grid2x2Icon}
+                    onClick={() => setGridVisibility(!gridVisibility)}
+                  />
+                </Tooltip>
+              </div>
+              <div className="flex items-center gap-2">
+                <PromptClearAllButton
+                  onClick={handleClearAll}
+                  disabled={!hasClearableContent}
+                  confirmClear={referenceImages.length > 0}
                 />
-              </Tooltip>
-              <Tooltip
-                content={gridVisibility ? "Grid: ON" : "Grid: OFF"}
-                position="top"
-                className="z-50"
-                delay={200}
-              >
-                <ToggleButton
-                  isActive={gridVisibility}
-                  icon={Grid2x2Icon}
-                  activeIcon={Grid2x2Icon}
-                  onClick={() => setGridVisibility(!gridVisibility)}
-                />
-              </Tooltip>
-            </div>
-            <div className="flex items-center gap-2">
-              <PromptClearAllButton
-                onClick={handleClearAll}
-                disabled={!hasClearableContent}
-                confirmClear={referenceImages.length > 0}
-              />
-              <Tooltip
-                content="Download frame"
-                position="top"
-                className="z-50"
-                closeOnClick={true}
-                delay={200}
-              >
-                <Button
-                  className="flex h-9 items-center border border-ui-controls-border bg-ui-controls/60 px-3 text-sm text-base-fg backdrop-blur-lg hover:bg-ui-controls/90"
-                  variant="secondary"
-                  icon={DownloadIcon}
-                  onClick={handleDownloadFrame}
-                />
-              </Tooltip>
+                <Tooltip
+                  content="Download frame"
+                  position="top"
+                  className="z-50"
+                  closeOnClick={true}
+                  delay={200}
+                >
+                  <Button
+                    className="flex h-9 items-center border border-ui-controls-border bg-ui-controls/60 px-3 text-sm text-base-fg backdrop-blur-lg hover:bg-ui-controls/90"
+                    variant="secondary"
+                    icon={DownloadIcon}
+                    onClick={handleDownloadFrame}
+                  />
+                </Tooltip>
 
-              <Button
-                className="flex items-center border border-ui-controls-border bg-ui-controls/60 px-3 text-sm text-base-fg backdrop-blur-lg hover:bg-ui-controls/90"
-                variant="secondary"
-                icon={SaveIcon}
-                onClick={handleSaveFrame}
-              >
-                Save frame
-              </Button>
-              <GenerateButton
-                className="flex items-center border-none bg-white px-3 text-sm font-bold text-black hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
-                icon={undefined}
-                onClick={handleEnqueue}
-                disabled={isEnqueueing || !prompt.trim()}
-                loading={isEnqueueing}
-                credits={credits}
-              >
-                Generate
-              </GenerateButton>
+                <Button
+                  className="flex items-center border border-ui-controls-border bg-ui-controls/60 px-3 text-sm text-base-fg backdrop-blur-lg hover:bg-ui-controls/90"
+                  variant="secondary"
+                  icon={SaveIcon}
+                  onClick={handleSaveFrame}
+                >
+                  Save frame
+                </Button>
+                <GenerateButton
+                  className="flex items-center border-none bg-white px-3 text-sm font-bold text-black hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
+                  icon={undefined}
+                  onClick={handleEnqueue}
+                  disabled={isEnqueueing || !prompt.trim()}
+                  loading={isEnqueueing}
+                  credits={credits}
+                >
+                  Generate
+                </GenerateButton>
+              </div>
             </div>
-          </div>
           )}
           {buildMode === "prompted" && (
             <div className="mt-3 flex items-center justify-between gap-2">
@@ -921,11 +934,7 @@ export const PromptBox3D = ({
                   <PopoverMenu
                     mode="toggle"
                     panelTitle="Recent prompts"
-                    triggerIcon={
-                      <HistoryIcon
-                        
-                        className="h-4 w-4" />
-                    }
+                    triggerIcon={<HistoryIcon className="h-4 w-4" />}
                     items={
                       promptHistory.length
                         ? promptHistory.map((p) => ({
@@ -958,24 +967,24 @@ export const PromptBox3D = ({
             </div>
           )}
           {buildMode === "manual" && (
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
-            <Tooltip
-              content={isExpanded ? "Collapse" : "Expand"}
-              position="top"
-              className="-mb-2"
-            >
-              <button
-                type="button"
-                onClick={toggleExpand}
-                className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
+              <Tooltip
+                content={isExpanded ? "Collapse" : "Expand"}
+                position="top"
+                className="-mb-2"
               >
-                <DynamicIcon
-                  icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
-                  className="text-xs"
-                />
-              </button>
-            </Tooltip>
-          </div>
+                <button
+                  type="button"
+                  onClick={toggleExpand}
+                  className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
+                >
+                  <DynamicIcon
+                    icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
+                    className="text-xs"
+                  />
+                </button>
+              </Tooltip>
+            </div>
           )}
         </div>
         <CameraSettingsModal
@@ -985,7 +994,7 @@ export const PromptBox3D = ({
             id: cam.id,
             label: cam.label,
             selected: cam.id === selectedCameraId,
-            icon: <CameraIcon  className="h-4 w-4" />,
+            icon: <CameraIcon className="h-4 w-4" />,
             focalLength: cam.focalLength,
             position: cam.position,
             rotation: cam.rotation,

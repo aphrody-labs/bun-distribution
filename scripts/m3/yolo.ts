@@ -20,7 +20,11 @@ export const REPO = resolve(dirname(import.meta.path), "..");
 export const YOLO_ROOT = process.env["YOLO_ROOT"] ?? join(homedir(), "yolo");
 export const YOLO_CLI = join(YOLO_ROOT, "bin/yolo");
 
-export type Step = { cmd: string[]; cwd?: string; env?: Record<string, string> };
+export type Step = {
+  cmd: string[];
+  cwd?: string;
+  env?: Record<string, string>;
+};
 
 /** `<yolo cli> ...args` with yolo's home set to this repository. */
 export const yolo = (...args: string[]): Step => ({
@@ -39,9 +43,16 @@ const EXCLUDED = [
   "@aphrody/web-to-tauri",
   "@aphrody/nie-ui",
 ];
-const ALL = ["--filter", "*", ...EXCLUDED.flatMap((name) => ["--filter", `!${name}`])];
+const ALL = [
+  "--filter",
+  "*",
+  ...EXCLUDED.flatMap((name) => ["--filter", `!${name}`]),
+];
 
-const bun = (cwd: string, ...args: string[]): Step => ({ cmd: ["bun", ...args], cwd });
+const bun = (cwd: string, ...args: string[]): Step => ({
+  cmd: ["bun", ...args],
+  cwd,
+});
 
 /** The steps of one task, in order. */
 export function plan(task: string, rest: string[] = []): Step[] {
@@ -51,7 +62,10 @@ export function plan(task: string, rest: string[] = []): Step[] {
     case "serve":
       return [yolo("web", "dev")];
     case "compile":
-      return [yolo("tauri", "build"), bun(join(REPO, "apps/web"), "run", "compile")];
+      return [
+        yolo("tauri", "build"),
+        bun(join(REPO, "apps/web"), "run", "compile"),
+      ];
     case "test":
       return [
         yolo("version", "--json"),
@@ -69,7 +83,15 @@ export function plan(task: string, rest: string[] = []): Step[] {
         ),
         // Package tests do not need each other's results: `--parallel` runs them all at once, where `--filter` alone
         // waits for the workspace dependencies' scripts first (5.3 s -> 2.9 s). A failing package fails the task.
-        bun(REPO, "run", "--parallel", "--no-exit-on-error", ...ALL, "--if-present", "test"),
+        bun(
+          REPO,
+          "run",
+          "--parallel",
+          "--no-exit-on-error",
+          ...ALL,
+          "--if-present",
+          "test",
+        ),
         // Repository gates: manifests and first-party imports, asset references and app icons, docs links.
         bun(REPO, "scripts/check-exports.ts"),
         bun(REPO, "scripts/check-assets.ts"),

@@ -34,7 +34,9 @@ interface ApiRepository {
 }
 const encodedPlan = process.env.APHRODY_GITEA_PLAN_B64;
 if (!encodedPlan) throw new Error("Gitea public plan missing");
-const d = JSON.parse(Buffer.from(encodedPlan, "base64").toString()) as RemotePlan;
+const d = JSON.parse(
+  Buffer.from(encodedPlan, "base64").toString(),
+) as RemotePlan;
 function bad(message: string): never {
   console.error(message);
   process.exit(2);
@@ -63,7 +65,10 @@ const tokenDir = Bun.file("/home/ubuntu/.aphrody/config");
 await Bun.$`mkdir -p /home/ubuntu/.aphrody/config && chmod 700 /home/ubuntu/.aphrody/config`;
 if (!(await tokenFile.exists())) await Bun.write(d.tokenFile, "");
 await Bun.$`chmod 600 /home/ubuntu/.aphrody/config/gitea.env`;
-const [fileStat, dirStat] = await Promise.all([tokenFile.stat(), tokenDir.stat()]);
+const [fileStat, dirStat] = await Promise.all([
+  tokenFile.stat(),
+  tokenDir.stat(),
+]);
 if ((fileStat.mode & 0o777) !== 0o600 || (dirStat.mode & 0o777) !== 0o700)
   bad("Gitea credential store permissions invalid");
 const parsed = Object.fromEntries(
@@ -129,17 +134,24 @@ async function req(
 ): Promise<[number, any]> {
   const options: RequestInit = {
     method,
-    headers: { Authorization: "token " + token, "Content-Type": "application/json" },
+    headers: {
+      Authorization: "token " + token,
+      "Content-Type": "application/json",
+    },
     signal: AbortSignal.timeout(12000),
   };
   if (payload !== undefined) {
-    if (method === "GET" || method === "HEAD") bad("Gitea read request body refused");
+    if (method === "GET" || method === "HEAD")
+      bad("Gitea read request body refused");
     options.body = JSON.stringify(payload);
   }
   const response = await fetch(base + path, options);
   if (missing && response.status === 404) return [404, null];
   if (!response.ok) bad("Gitea API request failed: " + response.status);
-  return [response.status, response.status === 204 ? null : await response.json()];
+  return [
+    response.status,
+    response.status === 204 ? null : await response.json(),
+  ];
 }
 async function ensureAccountKey(key: string) {
   const [, items] = await req("GET", "/user/keys");
@@ -150,15 +162,22 @@ async function ensureDeployKey(path: string, key: string) {
   const [, items] = await req("GET", path + "/keys");
   const found = items.find((x: ApiKey) => x.key.trim() === key);
   if (!found) {
-    await req("POST", path + "/keys", { title: "bun-os VPS runner", key, read_only: false });
+    await req("POST", path + "/keys", {
+      title: "bun-os VPS runner",
+      key,
+      read_only: false,
+    });
     return;
   }
-  if (found.read_only) await req("PATCH", path + "/keys/" + found.id, { read_only: false });
+  if (found.read_only)
+    await req("PATCH", path + "/keys/" + found.id, { read_only: false });
 }
 const identity = await req("GET", "/user");
 if (identity[1].login !== d.owner) bad("Gitea token owner mismatch");
 function sourceRefs(url: string): { ref: string; sha: string }[] {
-  const result = Bun.spawnSync(["git", "ls-remote", "--refs", url], { timeout: 12000 });
+  const result = Bun.spawnSync(["git", "ls-remote", "--refs", url], {
+    timeout: 12000,
+  });
   if (result.exitCode !== 0) bad("Gitea upstream ref query failed");
   return result.stdout
     .toString()
@@ -172,12 +191,20 @@ function sourceRefs(url: string): { ref: string; sha: string }[] {
     })
     .toSorted((a, b) => a.ref.localeCompare(b.ref));
 }
-async function syncAndQualifyMirror(path: string, repo: RemoteRepository, privateState: boolean) {
+async function syncAndQualifyMirror(
+  path: string,
+  repo: RemoteRepository,
+  privateState: boolean,
+) {
   if (repo.upstream !== "https://github.com/aphrody-labs/bun-distribution.git")
     bad("Gitea mirror upstream is outside the approved source");
   const upstream = sourceRefs(repo.upstream!);
   const source = upstream[0];
-  if (upstream.length !== 1 || !source || source.ref !== "refs/heads/" + d.branch)
+  if (
+    upstream.length !== 1 ||
+    !source ||
+    source.ref !== "refs/heads/" + d.branch
+  )
     bad("Gitea mirror upstream ref set is not the qualified default branch");
   const [status, current] = await req("GET", path, undefined, true);
   if (status === 404) {
@@ -195,7 +222,8 @@ async function syncAndQualifyMirror(path: string, repo: RemoteRepository, privat
   const existing = (await req("GET", path))[1];
   if (!existing.private) await req("PATCH", path, { private: true });
   const before = (await req("GET", path))[1];
-  if (before.has_actions !== d.actions) await req("PATCH", path, { has_actions: d.actions });
+  if (before.has_actions !== d.actions)
+    await req("PATCH", path, { has_actions: d.actions });
   await req("POST", path + "/mirror-sync");
   const branches = await req("GET", path + "/branches?limit=50&page=1");
   const tags = await req("GET", path + "/tags?limit=50&page=1");
@@ -214,7 +242,9 @@ async function syncAndQualifyMirror(path: string, repo: RemoteRepository, privat
     currentSource!.ref !== source!.ref ||
     currentSource!.sha !== source!.sha
   )
-    bad("Gitea upstream moved during synchronization; repository remains private");
+    bad(
+      "Gitea upstream moved during synchronization; repository remains private",
+    );
   const synced = (await req("GET", path))[1];
   if (
     !synced.mirror ||
@@ -239,12 +269,25 @@ const keyPath = d.runnerKey;
 await Bun.$`mkdir -p ${keyPath.slice(0, keyPath.lastIndexOf("/"))} && chmod 700 ${keyPath.slice(0, keyPath.lastIndexOf("/"))}`;
 if (!(await Bun.file(keyPath).exists())) {
   const p = Bun.spawnSync(
-    ["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-C", "bun-os-crate-runner", "-f", keyPath],
+    [
+      "ssh-keygen",
+      "-q",
+      "-t",
+      "ed25519",
+      "-N",
+      "",
+      "-C",
+      "bun-os-crate-runner",
+      "-f",
+      keyPath,
+    ],
     { timeout: 15000 },
   );
   if (p.exitCode !== 0) bad("VPS runner key generation failed");
 } else if (!(await Bun.file(keyPath + ".pub").exists())) {
-  const p = Bun.spawnSync(["ssh-keygen", "-y", "-f", keyPath], { timeout: 15000 });
+  const p = Bun.spawnSync(["ssh-keygen", "-y", "-f", keyPath], {
+    timeout: 15000,
+  });
   if (p.exitCode !== 0) bad("VPS runner public key repair failed");
   await Bun.write(keyPath + ".pub", p.stdout);
 }
@@ -253,7 +296,10 @@ const [runnerStat, runnerDirStat] = await Promise.all([
   Bun.file(keyPath).stat(),
   Bun.file(keyPath.slice(0, keyPath.lastIndexOf("/"))).stat(),
 ]);
-if ((runnerStat.mode & 0o777) !== 0o600 || (runnerDirStat.mode & 0o777) !== 0o700)
+if (
+  (runnerStat.mode & 0o777) !== 0o600 ||
+  (runnerDirStat.mode & 0o777) !== 0o700
+)
   bad("VPS runner identity permissions invalid");
 const runner = (await Bun.file(keyPath + ".pub").text()).trim();
 await ensureAccountKey(d.accountKey);
@@ -261,8 +307,13 @@ for (const repo of d.repositories) {
   const path: string = "/repos/" + d.owner + "/" + repo.name;
   const targetPrivate = repo.private ?? d.private;
   const [status, current] = await req("GET", path, undefined, true);
-  if (status !== 404 && (current.mirror || current.fork || current.owner?.login !== d.owner))
-    bad("Existing Gitea repository type or owner conflicts with private source ownership");
+  if (
+    status !== 404 &&
+    (current.mirror || current.fork || current.owner?.login !== d.owner)
+  )
+    bad(
+      "Existing Gitea repository type or owner conflicts with private source ownership",
+    );
   if (repo.mirror) {
     await syncAndQualifyMirror(path, repo, targetPrivate);
     continue;
@@ -291,7 +342,11 @@ for (const repo of d.repositories) {
   )
     bad("Gitea private repository postconditions failed");
   const keys = (await req("GET", path + "/keys"))[1];
-  if (!keys.some((key: ApiKey) => key.key.trim() === runner && key.read_only === false))
+  if (
+    !keys.some(
+      (key: ApiKey) => key.key.trim() === runner && key.read_only === false,
+    )
+  )
     bad("Gitea runner write deploy key postcondition failed");
 }
 const accountKeys = (await req("GET", "/user/keys"))[1];

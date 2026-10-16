@@ -79,4 +79,6 @@ export const objectHasBones = (root: THREE.Object3D): boolean => {
 export const createRigHelper = (
   root: THREE.Object3D,
 ): THREE.SkeletonHelper | NodeHierarchyHelper =>
-  objectHasBones(root) ? new THREE.SkeletonHelper(root) : new NodeHierarchyHelper(root);
+  objectHasBones(root)
+    ? new THREE.SkeletonHelper(root)
+    : new NodeHierarchyHelper(root);

@@ -59,7 +59,9 @@ export function filterConversations(
   const needle = query.trim().toLocaleLowerCase();
   if (!needle) return [...conversations];
   return conversations.filter((conversation) =>
-    `${conversation.title}\n${conversation.preview ?? ""}`.toLocaleLowerCase().includes(needle),
+    `${conversation.title}\n${conversation.preview ?? ""}`
+      .toLocaleLowerCase()
+      .includes(needle),
   );
 }
 
@@ -79,7 +81,10 @@ export function ConversationList({
 }: ConversationListProps) {
   const l = resolveChatLabels(labels);
   const [query, setQuery] = useState("");
-  const visible = useMemo(() => filterConversations(conversations, query), [conversations, query]);
+  const visible = useMemo(
+    () => filterConversations(conversations, query),
+    [conversations, query],
+  );
   const dateFormat = useMemo(
     () => new Intl.DateTimeFormat(locale, { dateStyle: "short" }),
     [locale],
@@ -99,7 +104,9 @@ export function ConversationList({
       )}
     >
       <div className="flex items-center justify-between gap-2 px-1">
-        <h2 className="m-0 text-title-small text-on-surface-variant">{l.conversations}</h2>
+        <h2 className="m-0 text-title-small text-on-surface-variant">
+          {l.conversations}
+        </h2>
       </div>
       {onNew ? (
         <button
@@ -117,7 +124,11 @@ export function ConversationList({
       ) : null}
       {searchable ? (
         <label className="flex h-12 items-center gap-3 rounded-extra-large bg-surface-container-high px-4 focus-within:bg-surface-container-highest">
-          <ChatIcon name="search" size={20} className="text-on-surface-variant" />
+          <ChatIcon
+            name="search"
+            size={20}
+            className="text-on-surface-variant"
+          />
           <input
             type="search"
             value={query}
@@ -159,7 +170,9 @@ export function ConversationList({
                   )}
                 >
                   <span className="flex w-full items-baseline gap-2">
-                    <span className="min-w-0 flex-1 truncate text-label-large">{title}</span>
+                    <span className="min-w-0 flex-1 truncate text-label-large">
+                      {title}
+                    </span>
                     <time
                       className="shrink-0 text-label-small opacity-80"
                       dateTime={isoDate(conversation.updatedAt)}

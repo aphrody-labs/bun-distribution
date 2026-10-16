@@ -57,12 +57,20 @@ function dateInputToEpoch(dateStr: string, original: string): string {
 export function SmartField({ table, col, value, onChange, original }: Props) {
   if (isImageColumn(table, col)) {
     return (
-      <ImageField value={value} onChange={onChange} subdir={uploadSubdir(table)} column={col} />
+      <ImageField
+        value={value}
+        onChange={onChange}
+        subdir={uploadSubdir(table)}
+        column={col}
+      />
     );
   }
 
   const fk = fkTarget(col);
-  if (fk) return <EntityPicker refTable={fk.table} value={value} onChange={onChange} />;
+  if (fk)
+    return (
+      <EntityPicker refTable={fk.table} value={value} onChange={onChange} />
+    );
 
   if (isBoolColumn(col)) {
     const on = value === "true" || value === "1";
@@ -82,7 +90,11 @@ export function SmartField({ table, col, value, onChange, original }: Props) {
     if (en.strict) {
       const known = en.options.includes(value);
       return (
-        <select className="input" value={value} onChange={(e) => onChange(e.target.value)}>
+        <select
+          className="input"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        >
           <option value="">— Aucun —</option>
           {value && !known && <option value={value}>{value}</option>}
           {en.options.map((o) => (
@@ -127,16 +139,29 @@ export function SmartField({ table, col, value, onChange, original }: Props) {
     // `buildSubmitBody` ne réécrit jamais ces colonnes → zéro corruption).
     return (
       <div className="space-y-1">
-        <PlainField value={value} readOnly monospace minRows={4} spellCheck={false} />
+        <PlainField
+          value={value}
+          readOnly
+          monospace
+          minRows={4}
+          spellCheck={false}
+        />
         <p className="text-[10px] text-white/50">
-          Champ JSON structuré — non éditable ici (édité via les scripts/outils dédiés).
+          Champ JSON structuré — non éditable ici (édité via les scripts/outils
+          dédiés).
         </p>
       </div>
     );
   }
 
   if (isRichTextColumn(table, col)) {
-    return <MarkdownField value={value} onChange={onChange} subdir={uploadSubdir(table)} />;
+    return (
+      <MarkdownField
+        value={value}
+        onChange={onChange}
+        subdir={uploadSubdir(table)}
+      />
+    );
   }
 
   if (isLongTextColumn(col)) {
@@ -177,9 +202,9 @@ function EntityPicker({
   const { data, isLoading, isError } = useQuery({
     queryKey: ["fk-options", refTable],
     queryFn: () =>
-      apiAt(crudBase(refTable)).get<{ options: { value: string; label: string }[] }>(
-        `/${refTable}?as=options`,
-      ),
+      apiAt(crudBase(refTable)).get<{
+        options: { value: string; label: string }[];
+      }>(`/${refTable}?as=options`),
     staleTime: 5 * 60_000,
   });
 

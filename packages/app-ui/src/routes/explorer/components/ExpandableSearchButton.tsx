@@ -75,7 +75,9 @@ export function ExpandableSearchButton({
         }}
         transition={{
           duration: m3Durations.medium2,
-          ease: isExpanded ? m3Easings.emphasizedDecelerate : m3Easings.emphasizedAccelerate,
+          ease: isExpanded
+            ? m3Easings.emphasizedDecelerate
+            : m3Easings.emphasizedAccelerate,
         }}
         className="overflow-hidden"
         onAnimationComplete={handleAnimationComplete}
@@ -87,9 +89,16 @@ export function ExpandableSearchButton({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: m3Durations.short3, ease: m3Easings.standard }}
+              transition={{
+                duration: m3Durations.short3,
+                ease: m3Easings.standard,
+              }}
             >
-              <CircleButton icon="search" title="Search" onClick={handleButtonClick} />
+              <CircleButton
+                icon="search"
+                title="Search"
+                onClick={handleButtonClick}
+              />
             </motion.div>
           ) : (
             <motion.div
@@ -97,7 +106,10 @@ export function ExpandableSearchButton({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: m3Durations.short3, ease: m3Easings.standard }}
+              transition={{
+                duration: m3Durations.short3,
+                ease: m3Easings.standard,
+              }}
             >
               <SearchBar
                 ref={inputRef}

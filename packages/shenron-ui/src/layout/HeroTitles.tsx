@@ -18,64 +18,69 @@ import type { ReactNode } from "react";
  *    imbriquées).
  */
 export function HeroTitles({
-	eyebrow,
-	title,
-	titleJa,
-	titleRomaji,
-	lead,
-	regime = "plain",
+  eyebrow,
+  title,
+  titleJa,
+  titleRomaji,
+  lead,
+  regime = "plain",
 }: {
-	/** Nœud, pas chaîne : un sur-titre peut venir du dictionnaire (`<T>`). */
-	eyebrow?: ReactNode;
-	title: ReactNode;
-	titleJa?: ReactNode;
-	titleRomaji?: ReactNode;
-	lead?: ReactNode;
-	regime?: "plain" | "image" | "compact";
+  /** Nœud, pas chaîne : un sur-titre peut venir du dictionnaire (`<T>`). */
+  eyebrow?: ReactNode;
+  title: ReactNode;
+  titleJa?: ReactNode;
+  titleRomaji?: ReactNode;
+  lead?: ReactNode;
+  regime?: "plain" | "image" | "compact";
 }) {
-	return (
-		<>
-			{eyebrow && (
-				<p className="font-display font-semibold text-[12px] tracking-[0.18em] uppercase text-dbz-orange mb-3 inline-flex items-center gap-3">
-					<span aria-hidden className="w-7 h-px bg-dbz-orange/70" />
-					{eyebrow}
-				</p>
-			)}
-			<h1
-				className={
-					regime === "image"
-						? "font-saiyan font-bold uppercase text-[40px] md:text-[58px] leading-[1.02] tracking-[0.01em] title-gold mb-3"
-						: regime === "compact"
-							? "font-serif font-semibold text-[30px] md:text-[38px] leading-[1.1] tracking-[-0.015em] text-white mb-2 text-balance"
-							: "font-serif font-semibold text-[42px] md:text-[56px] leading-[1.05] tracking-[-0.02em] text-white mb-3 text-balance"
-				}
-			>
-				{title}
-			</h1>
-			{(titleJa || titleRomaji) && (
-				<div className="flex items-center flex-wrap gap-2.5 mb-3 text-white/70">
-					{titleJa && (
-						<span lang="ja" className="font-jp text-sm md:text-base font-semibold tracking-wider text-dbz-orange">
-							{titleJa}
-						</span>
-					)}
-					{titleJa && titleRomaji && <span className="text-white/30 text-xs select-none">·</span>}
-					{titleRomaji && (
-						<span className="font-scouter text-[11px] uppercase tracking-[0.16em] text-white/60">
-							{titleRomaji}
-						</span>
-					)}
-				</div>
-			)}
-			{lead && (
-				<p
-					className={`leading-relaxed text-white/85 max-w-xl ${
-						regime === "compact" ? "text-[15px]" : "text-[17px]"
-					}`}
-				>
-					{lead}
-				</p>
-			)}
-		</>
-	);
+  return (
+    <>
+      {eyebrow && (
+        <p className="font-display font-semibold text-[12px] tracking-[0.18em] uppercase text-dbz-orange mb-3 inline-flex items-center gap-3">
+          <span aria-hidden className="w-7 h-px bg-dbz-orange/70" />
+          {eyebrow}
+        </p>
+      )}
+      <h1
+        className={
+          regime === "image"
+            ? "font-saiyan font-bold uppercase text-[40px] md:text-[58px] leading-[1.02] tracking-[0.01em] title-gold mb-3"
+            : regime === "compact"
+              ? "font-serif font-semibold text-[30px] md:text-[38px] leading-[1.1] tracking-[-0.015em] text-white mb-2 text-balance"
+              : "font-serif font-semibold text-[42px] md:text-[56px] leading-[1.05] tracking-[-0.02em] text-white mb-3 text-balance"
+        }
+      >
+        {title}
+      </h1>
+      {(titleJa || titleRomaji) && (
+        <div className="flex items-center flex-wrap gap-2.5 mb-3 text-white/70">
+          {titleJa && (
+            <span
+              lang="ja"
+              className="font-jp text-sm md:text-base font-semibold tracking-wider text-dbz-orange"
+            >
+              {titleJa}
+            </span>
+          )}
+          {titleJa && titleRomaji && (
+            <span className="text-white/30 text-xs select-none">·</span>
+          )}
+          {titleRomaji && (
+            <span className="font-scouter text-[11px] uppercase tracking-[0.16em] text-white/60">
+              {titleRomaji}
+            </span>
+          )}
+        </div>
+      )}
+      {lead && (
+        <p
+          className={`leading-relaxed text-white/85 max-w-xl ${
+            regime === "compact" ? "text-[15px]" : "text-[17px]"
+          }`}
+        >
+          {lead}
+        </p>
+      )}
+    </>
+  );
 }

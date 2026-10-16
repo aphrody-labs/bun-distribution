@@ -1,9 +1,17 @@
 "use client";
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
-import type { HTMLMotionProps, MotionStyle, Transition, Variants } from "motion/react";
+import type {
+  HTMLMotionProps,
+  MotionStyle,
+  Transition,
+  Variants,
+} from "motion/react";
 import { m3Easings, m3Durations } from "../easings";
-import { motionVariants, useM3ReducedMotion } from "../hooks/useM3ReducedMotion";
+import {
+  motionVariants,
+  useM3ReducedMotion,
+} from "../hooks/useM3ReducedMotion";
 
 export type M3TransitionPattern =
   | "fade"
@@ -13,7 +21,10 @@ export type M3TransitionPattern =
   | "shared-axis-z"
   | "collapse";
 
-export interface M3TransitionProps extends Omit<HTMLMotionProps<"div">, "variants" | "style"> {
+export interface M3TransitionProps extends Omit<
+  HTMLMotionProps<"div">,
+  "variants" | "style"
+> {
   style?: MotionStyle;
   /**
    * Unique key representing the active view/content. Changing this key triggers the transition.
@@ -43,7 +54,10 @@ export interface M3TransitionProps extends Omit<HTMLMotionProps<"div">, "variant
 const OFFSET = 30;
 const SCALE_OFFSET = 0.08;
 
-function buildVariants(pattern: M3TransitionPattern, forward: boolean): Variants {
+function buildVariants(
+  pattern: M3TransitionPattern,
+  forward: boolean,
+): Variants {
   const enterTransition: Transition = {
     ease: m3Easings.emphasizedDecelerate,
     duration: m3Durations.medium2,
@@ -67,7 +81,9 @@ function buildVariants(pattern: M3TransitionPattern, forward: boolean): Variants
         },
         exit: {
           opacity: 0,
-          transition: { opacity: { ease: m3Easings.emphasizedAccelerate, duration: 0.09 } },
+          transition: {
+            opacity: { ease: m3Easings.emphasizedAccelerate, duration: 0.09 },
+          },
         },
       };
     case "shared-axis-x":
@@ -78,7 +94,10 @@ function buildVariants(pattern: M3TransitionPattern, forward: boolean): Variants
           x: 0,
           transition: {
             x: enterTransition,
-            opacity: { ease: m3Easings.standard, duration: m3Durations.medium2 },
+            opacity: {
+              ease: m3Easings.standard,
+              duration: m3Durations.medium2,
+            },
           },
         },
         exit: {
@@ -98,7 +117,10 @@ function buildVariants(pattern: M3TransitionPattern, forward: boolean): Variants
           y: 0,
           transition: {
             y: enterTransition,
-            opacity: { ease: m3Easings.standard, duration: m3Durations.medium2 },
+            opacity: {
+              ease: m3Easings.standard,
+              duration: m3Durations.medium2,
+            },
           },
         },
         exit: {
@@ -112,13 +134,19 @@ function buildVariants(pattern: M3TransitionPattern, forward: boolean): Variants
       };
     case "shared-axis-z":
       return {
-        initial: { opacity: 0, scale: forward ? 1 - SCALE_OFFSET : 1 + SCALE_OFFSET },
+        initial: {
+          opacity: 0,
+          scale: forward ? 1 - SCALE_OFFSET : 1 + SCALE_OFFSET,
+        },
         animate: {
           opacity: 1,
           scale: 1,
           transition: {
             scale: enterTransition,
-            opacity: { ease: m3Easings.standard, duration: m3Durations.medium2 },
+            opacity: {
+              ease: m3Easings.standard,
+              duration: m3Durations.medium2,
+            },
           },
         },
         exit: {
@@ -137,16 +165,28 @@ function buildVariants(pattern: M3TransitionPattern, forward: boolean): Variants
           height: "auto",
           opacity: 1,
           transition: {
-            height: { ease: m3Easings.emphasized, duration: m3Durations.medium4 },
-            opacity: { ease: m3Easings.standard, duration: m3Durations.medium2 },
+            height: {
+              ease: m3Easings.emphasized,
+              duration: m3Durations.medium4,
+            },
+            opacity: {
+              ease: m3Easings.standard,
+              duration: m3Durations.medium2,
+            },
           },
         },
         exit: {
           height: 0,
           opacity: 0,
           transition: {
-            height: { ease: m3Easings.emphasized, duration: m3Durations.medium4 },
-            opacity: { ease: m3Easings.standard, duration: m3Durations.medium2 },
+            height: {
+              ease: m3Easings.emphasized,
+              duration: m3Durations.medium4,
+            },
+            opacity: {
+              ease: m3Easings.standard,
+              duration: m3Durations.medium2,
+            },
           },
         },
       };
@@ -180,9 +220,14 @@ export const M3Transition = React.forwardRef<HTMLDivElement, M3TransitionProps>(
     ref,
   ) => {
     const reduced = useM3ReducedMotion();
-    const resolvedVariants = motionVariants(variants ?? buildVariants(pattern, forward), reduced);
+    const resolvedVariants = motionVariants(
+      variants ?? buildVariants(pattern, forward),
+      reduced,
+    );
     const baseStyle: MotionStyle =
-      pattern === "collapse" ? { overflow: "hidden" } : { willChange: "opacity, transform" };
+      pattern === "collapse"
+        ? { overflow: "hidden" }
+        : { willChange: "opacity, transform" };
     const resolvedStyle: MotionStyle = { ...baseStyle, ...style };
 
     return (

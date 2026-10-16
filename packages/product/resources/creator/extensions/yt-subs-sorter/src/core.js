@@ -61,7 +61,8 @@
 
   function isValidKey(key) {
     return (
-      typeof key === "string" && (HANDLE_RE.test(key) || ID_RE.test(key) || LEGACY_RE.test(key))
+      typeof key === "string" &&
+      (HANDLE_RE.test(key) || ID_RE.test(key) || LEGACY_RE.test(key))
     );
   }
 
@@ -108,10 +109,13 @@
       const key = "@" + head.slice(1).toLowerCase();
       return HANDLE_RE.test(key) ? { kind: "handle", key } : null;
     }
-    if (head === "channel" && next && ID_RE.test(next)) return { kind: "id", key: next };
+    if (head === "channel" && next && ID_RE.test(next))
+      return { kind: "id", key: next };
     if ((head === "c" || head === "user") && next) {
       const key = (head === "c" ? "c:" : "u:") + next.toLowerCase();
-      return LEGACY_RE.test(key) ? { kind: head === "c" ? "c" : "user", key } : null;
+      return LEGACY_RE.test(key)
+        ? { kind: head === "c" ? "c" : "user", key }
+        : null;
     }
     return null;
   }
@@ -139,7 +143,9 @@
   /** The canonical key of several keys found on one element (handle preferred). */
   function bestKey(keys) {
     const valid = (keys || []).filter(isValidKey);
-    return valid.length ? valid.toSorted((a, b) => keyRank(a) - keyRank(b))[0] : null;
+    return valid.length
+      ? valid.toSorted((a, b) => keyRank(a) - keyRank(b))[0]
+      : null;
   }
 
   // ---------------------------------------------------------------- state
@@ -158,7 +164,8 @@
   function normalizeSettings(raw, groups) {
     const src = isObj(raw) ? raw : {};
     const ids = new Set((groups || []).map((g) => g.id));
-    const filter = (v) => (v === "all" || v === "none" || ids.has(v) ? v : "all");
+    const filter = (v) =>
+      v === "all" || v === "none" || ids.has(v) ? v : "all";
     const threshold = Number.isFinite(src.watchedThreshold)
       ? Math.min(100, Math.max(1, Math.round(src.watchedThreshold)))
       : DEFAULT_SETTINGS.watchedThreshold;
@@ -186,7 +193,12 @@
         break;
       }
       const name = cleanText(g && g.name, LIMITS.groupName);
-      if (!isObj(g) || typeof g.id !== "string" || !GROUP_ID_RE.test(g.id) || !name) {
+      if (
+        !isObj(g) ||
+        typeof g.id !== "string" ||
+        !GROUP_ID_RE.test(g.id) ||
+        !name
+      ) {
         warnings.push("groups: invalid entry ignored");
         continue;
       }
@@ -206,12 +218,18 @@
     }
     const channels = {};
     let count = 0;
-    for (const [key, rec] of isObj(src.channels) ? Object.entries(src.channels) : []) {
+    for (const [key, rec] of isObj(src.channels)
+      ? Object.entries(src.channels)
+      : []) {
       if (!isValidKey(key) || !isObj(rec) || !Array.isArray(rec.g)) {
         warnings.push("channels: invalid entry ignored");
         continue;
       }
-      const ids = [...new Set(rec.g.filter((id) => typeof id === "string" && seenIds.has(id)))];
+      const ids = [
+        ...new Set(
+          rec.g.filter((id) => typeof id === "string" && seenIds.has(id)),
+        ),
+      ];
       if (!ids.length) continue;
       if (count >= LIMITS.channels) {
         warnings.push("channels: limit reached, extra channels ignored");
@@ -222,8 +240,15 @@
     }
     const aliases = {};
     let aliasCount = 0;
-    for (const [from, to] of isObj(src.aliases) ? Object.entries(src.aliases) : []) {
-      if (!isValidKey(from) || !isValidKey(to) || from === to || aliasCount >= LIMITS.aliases)
+    for (const [from, to] of isObj(src.aliases)
+      ? Object.entries(src.aliases)
+      : []) {
+      if (
+        !isValidKey(from) ||
+        !isValidKey(to) ||
+        from === to ||
+        aliasCount >= LIMITS.aliases
+      )
         continue;
       aliases[from] = to;
       aliasCount++;
@@ -244,13 +269,16 @@
   // ---------------------------------------------------------------- group editing (all pure: return a new state)
 
   function newGroupId(random = Math.random, now = Date.now) {
-    return "g" + now().toString(36) + Math.floor(random() * 36 ** 4).toString(36);
+    return (
+      "g" + now().toString(36) + Math.floor(random() * 36 ** 4).toString(36)
+    );
   }
 
   function addGroup(state, name, color, id) {
     const clean = cleanText(name, LIMITS.groupName);
     if (!clean) return { state, error: "name-empty" };
-    if (state.groups.length >= LIMITS.groups) return { state, error: "too-many-groups" };
+    if (state.groups.length >= LIMITS.groups)
+      return { state, error: "too-many-groups" };
     if (state.groups.some((g) => g.name.toLowerCase() === clean.toLowerCase()))
       return { state, error: "name-duplicate" };
     let gid = id && GROUP_ID_RE.test(id) ? id : newGroupId();
@@ -272,7 +300,11 @@
     if (patch && patch.name !== undefined) {
       const clean = cleanText(patch.name, LIMITS.groupName);
       if (!clean) return { state, error: "name-empty" };
-      if (state.groups.some((g) => g.id !== id && g.name.toLowerCase() === clean.toLowerCase()))
+      if (
+        state.groups.some(
+          (g) => g.id !== id && g.name.toLowerCase() === clean.toLowerCase(),
+        )
+      )
         return { state, error: "name-duplicate" };
       next.name = clean;
     }
@@ -281,7 +313,10 @@
       next.color = patch.color.toLowerCase();
     }
     return {
-      state: { ...state, groups: state.groups.map((g) => (g.id === id ? next : g)) },
+      state: {
+        ...state,
+        groups: state.groups.map((g) => (g.id === id ? next : g)),
+      },
       group: next,
     };
   }
@@ -301,7 +336,9 @@
 
   function resolveKey(state, key) {
     if (!isValidKey(key)) return null;
-    return hasOwn(state.aliases, key) && isValidKey(state.aliases[key]) ? state.aliases[key] : key;
+    return hasOwn(state.aliases, key) && isValidKey(state.aliases[key])
+      ? state.aliases[key]
+      : key;
   }
 
   function groupsOf(state, key) {
@@ -341,7 +378,10 @@
       delete channels[k];
     }
     if (ids.length)
-      channels[target] = { n: cleanText(name, LIMITS.channelName) || previous, g: ids };
+      channels[target] = {
+        n: cleanText(name, LIMITS.channelName) || previous,
+        g: ids,
+      };
     return { ...state, channels };
   }
 
@@ -362,7 +402,8 @@
     const target = keyRank(ra) <= keyRank(rb) ? ra : rb;
     const source = target === ra ? rb : ra;
     const aliases = { ...state.aliases };
-    for (const [from, to] of Object.entries(aliases)) if (to === source) aliases[from] = target;
+    for (const [from, to] of Object.entries(aliases))
+      if (to === source) aliases[from] = target;
     aliases[source] = target;
     const channels = { ...state.channels };
     if (hasOwn(channels, source)) {
@@ -419,14 +460,16 @@
    * returns { hide, reason }  reason: "short" | "watched" | "group" | null
    */
   function decideFeedItem(item, settings, groupIds) {
-    if (settings.hideShorts && item.isShort) return { hide: true, reason: "short" };
+    if (settings.hideShorts && item.isShort)
+      return { hide: true, reason: "short" };
     if (
       settings.hideWatched &&
       item.watchedPct !== null &&
       item.watchedPct >= settings.watchedThreshold
     )
       return { hide: true, reason: "watched" };
-    if (!matchesFilter(settings.feedFilter, groupIds)) return { hide: true, reason: "group" };
+    if (!matchesFilter(settings.feedFilter, groupIds))
+      return { hide: true, reason: "group" };
     return { hide: false, reason: null };
   }
 
@@ -436,7 +479,10 @@
    */
   function sortRanks(items, mode, state) {
     if (mode !== "alpha" && mode !== "group") return null;
-    const collator = new Intl.Collator(undefined, { sensitivity: "base", numeric: true });
+    const collator = new Intl.Collator(undefined, {
+      sensitivity: "base",
+      numeric: true,
+    });
     const order = new Map(state.groups.map((g, i) => [g.id, i]));
     const groupRank = (item) => {
       const ranks = (item.key ? groupsOf(state, item.key) : [])
@@ -450,7 +496,10 @@
       rank: mode === "group" ? groupRank(item) : 0,
     }));
     decorated.sort(
-      (a, b) => a.rank - b.rank || collator.compare(a.name, b.name) || a.index - b.index,
+      (a, b) =>
+        a.rank - b.rank ||
+        collator.compare(a.name, b.name) ||
+        a.index - b.index,
     );
     const ranks = Array.from({ length: items.length });
     decorated.forEach((d, position) => {
@@ -468,7 +517,10 @@
       exportedAt: now.toISOString(),
       groups: state.groups.map((g) => ({ ...g })),
       channels: Object.fromEntries(
-        Object.entries(state.channels).map(([k, r]) => [k, { n: r.n, g: [...r.g] }]),
+        Object.entries(state.channels).map(([k, r]) => [
+          k,
+          { n: r.n, g: [...r.g] },
+        ]),
       ),
       aliases: { ...state.aliases },
       settings: { ...state.settings },
@@ -479,7 +531,8 @@
   function validateImport(input) {
     let raw = input;
     if (typeof input === "string") {
-      if (input.length > LIMITS.importBytes) return { ok: false, errors: ["file too large"] };
+      if (input.length > LIMITS.importBytes)
+        return { ok: false, errors: ["file too large"] };
       try {
         raw = JSON.parse(input);
       } catch {
@@ -487,9 +540,14 @@
       }
     }
     const errors = [];
-    if (!isObj(raw)) return { ok: false, errors: ["JSON root must be an object"] };
+    if (!isObj(raw))
+      return { ok: false, errors: ["JSON root must be an object"] };
     if (raw.format !== FORMAT) errors.push(`format must be "${FORMAT}"`);
-    if (!Number.isInteger(raw.version) || raw.version < 1 || raw.version > VERSION)
+    if (
+      !Number.isInteger(raw.version) ||
+      raw.version < 1 ||
+      raw.version > VERSION
+    )
       errors.push(`unsupported version (supported: 1..${VERSION})`);
     if (!Array.isArray(raw.groups)) errors.push("groups must be an array");
     if (!isObj(raw.channels)) errors.push("channels must be an object");
@@ -505,7 +563,9 @@
     const idMap = new Map();
     for (const g of imported.groups) {
       const sameId = state.groups.find((x) => x.id === g.id);
-      const sameName = state.groups.find((x) => x.name.toLowerCase() === g.name.toLowerCase());
+      const sameName = state.groups.find(
+        (x) => x.name.toLowerCase() === g.name.toLowerCase(),
+      );
       const target = sameId || sameName;
       if (target) {
         idMap.set(g.id, target.id);

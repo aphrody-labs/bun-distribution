@@ -28,7 +28,12 @@ export interface ProductReceipt {
   sha256: string;
   inputs: InputProof[];
   runtime: RuntimeFacts;
-  qualification: { compiled: boolean; executed: boolean; deployed: boolean; [key: string]: unknown };
+  qualification: {
+    compiled: boolean;
+    executed: boolean;
+    deployed: boolean;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 }
 export interface ProductVerification {
@@ -62,7 +67,8 @@ export function validateProductReceipt(value: unknown): ProductReceipt {
     typeof value.runtime.revision !== "string" ||
     !revisionPattern.test(value.runtime.revision) ||
     typeof value.runtime.executable !== "string" ||
-    (value.runtime.sourceUrl !== null && typeof value.runtime.sourceUrl !== "string") ||
+    (value.runtime.sourceUrl !== null &&
+      typeof value.runtime.sourceUrl !== "string") ||
     !object(value.qualification) ||
     value.qualification.compiled !== true ||
     typeof value.qualification.executed !== "boolean" ||
@@ -79,7 +85,8 @@ export function validateProductReceipt(value: unknown): ProductReceipt {
       typeof input.generated !== "boolean" ||
       (input.generated
         ? input.gitBlob !== null
-        : typeof input.gitBlob !== "string" || !revisionPattern.test(input.gitBlob))
+        : typeof input.gitBlob !== "string" ||
+          !revisionPattern.test(input.gitBlob))
     )
       throw new Error("Product source input proof is invalid.");
   }
@@ -94,13 +101,16 @@ export async function verifyProduct(
 ): Promise<ProductVerification> {
   const timeout = options.timeoutMs ?? 30000;
   if (!Number.isSafeInteger(timeout) || timeout < 1 || timeout > 30000)
-    throw new Error("Product verification deadline must be at most 30 seconds.");
+    throw new Error(
+      "Product verification deadline must be at most 30 seconds.",
+    );
   const deadline = new AbortController();
   const startedAt = Date.now();
   const timer = setTimeout(() => deadline.abort(), timeout);
   const remaining = () => {
     const value = timeout - (Date.now() - startedAt);
-    if (value < 1 || deadline.signal.aborted) throw new Error("Product verification deadline exceeded.");
+    if (value < 1 || deadline.signal.aborted)
+      throw new Error("Product verification deadline exceeded.");
     return value;
   };
   try {
@@ -108,9 +118,12 @@ export async function verifyProduct(
     binary = await realpath(binary);
     receiptPath = await realpath(receiptPath);
     const file = Bun.file(receiptPath);
-    if (file.size > 8 * 1024 * 1024) throw new Error("Product receipt exceeds its size limit.");
+    if (file.size > 8 * 1024 * 1024)
+      throw new Error("Product receipt exceeds its size limit.");
     const receipt = validateProductReceipt(await file.json());
-    const receiptHash = await hashFile(receiptPath, { signal: deadline.signal });
+    const receiptHash = await hashFile(receiptPath, {
+      signal: deadline.signal,
+    });
     const command = async (args: string[]) => {
       const result = await runProcess(args, root, {
         timeoutMs: Math.min(5000, remaining()),
@@ -121,10 +134,19 @@ export async function verifyProduct(
       return result.stdout.trim();
     };
     const head = await command(["git", "rev-parse", "HEAD"]);
-    await command(["git", "merge-base", "--is-ancestor", receipt.sourceRevision, head]);
+    await command([
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      receipt.sourceRevision,
+      head,
+    ]);
     const config = await loadConfig(root);
-    const product = (await Bun.file(join(root, "package.json")).json()) as { version?: string };
-    if (receipt.version !== product.version) throw new Error("Product receipt version differs from its source owner.");
+    const product = (await Bun.file(join(root, "package.json")).json()) as {
+      version?: string;
+    };
+    if (receipt.version !== product.version)
+      throw new Error("Product receipt version differs from its source owner.");
     const target = nativeRuntimeTarget();
     if (!target) throw new Error("Product target host is unsupported.");
     assertRuntimeFacts(runtimePinFor(config, target), receipt.runtime);
@@ -134,27 +156,52 @@ export async function verifyProduct(
       for (const input of receipt.inputs) {
         const path = resolve(input.path);
         const local = relative(root, path);
-        if (!local || local === ".." || local.startsWith(`..${sep}`) || seen.has(path))
+        if (
+          !local ||
+          local === ".." ||
+          local.startsWith(`..${sep}`) ||
+          seen.has(path)
+        )
           throw new Error("Product input leaves its owner or is duplicated.");
         seen.add(path);
         if (input.generated) {
           generated++;
-          if (!/^build\/staging\/product-server\/[a-f0-9-]{36}\/entry\.ts$/.test(local.replaceAll("\\", "/")))
-            throw new Error("Generated product input is outside its staging owner.");
-          if ((await Bun.file(path).exists()) && (await hashFile(path, { signal: deadline.signal })) !== input.sha256)
+          if (
+            !/^build\/staging\/product-server\/[a-f0-9-]{36}\/entry\.ts$/.test(
+              local.replaceAll("\\", "/"),
+            )
+          )
+            throw new Error(
+              "Generated product input is outside its staging owner.",
+            );
+          if (
+            (await Bun.file(path).exists()) &&
+            (await hashFile(path, { signal: deadline.signal })) !== input.sha256
+          )
             throw new Error("Generated product input changed.");
           continue;
         }
-        if ((await realpath(path)) !== path) throw new Error("Product input ownership changed.");
+        if ((await realpath(path)) !== path)
+          throw new Error("Product input ownership changed.");
         const gitPath = local.replaceAll("\\", "/");
         if (
-          (await command(["git", "rev-parse", receipt.sourceRevision + ":" + gitPath])) !== input.gitBlob ||
-          (await command(["git", "hash-object", "--path=" + gitPath, path])) !== input.gitBlob ||
+          (await command([
+            "git",
+            "rev-parse",
+            receipt.sourceRevision + ":" + gitPath,
+          ])) !== input.gitBlob ||
+          (await command(["git", "hash-object", "--path=" + gitPath, path])) !==
+            input.gitBlob ||
           (await hashFile(path, { signal: deadline.signal })) !== input.sha256
         )
-          throw new Error("Product input differs from its committed source proof: " + gitPath);
+          throw new Error(
+            "Product input differs from its committed source proof: " + gitPath,
+          );
       }
-      if (generated !== 1) throw new Error("Product receipt requires exactly one generated entry proof.");
+      if (generated !== 1)
+        throw new Error(
+          "Product receipt requires exactly one generated entry proof.",
+        );
       for (const path of [
         "package.json",
         ".gitmodules",
@@ -167,11 +214,16 @@ export async function verifyProduct(
         "packages/bun-app-host/src/source-portal.ts",
         "packages/bun-app-host/src/transport.ts",
       ]) {
-        if (!seen.has(join(root, path))) throw new Error("Product receipt omits a canonical source owner input.");
+        if (!seen.has(join(root, path)))
+          throw new Error(
+            "Product receipt omits a canonical source owner input.",
+          );
       }
     };
     await sourceInputs();
-    if ((await hashFile(binary, { signal: deadline.signal })) !== receipt.sha256)
+    if (
+      (await hashFile(binary, { signal: deadline.signal })) !== receipt.sha256
+    )
       throw new Error("Product artifact checksum differs.");
     const version = await runProcess([binary, "--version"], root, {
       timeoutMs: Math.min(5000, remaining()),
@@ -179,10 +231,15 @@ export async function verifyProduct(
       signal: deadline.signal,
       env: { ...Bun.env, BUN_BE_BUN: undefined },
     });
-    if (version.code || version.stdout.trim() !== "Aphrody / Bun server " + receipt.version)
+    if (
+      version.code ||
+      version.stdout.trim() !== "Aphrody / Bun server " + receipt.version
+    )
       throw new Error("Product version contract differs.");
     const bytes = crypto.getRandomValues(new Uint8Array(32));
-    const token = Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
+    const token = Array.from(bytes, (byte) =>
+      byte.toString(16).padStart(2, "0"),
+    ).join("");
     const stop = new AbortController();
     const interrupt = () => stop.abort();
     deadline.signal.addEventListener("abort", interrupt, { once: true });
@@ -205,11 +262,40 @@ export async function verifyProduct(
       { path: "/api/v1/owners", status: 200, auth: true },
       { path: "/api/v1/apps", status: 405, auth: true, method: "POST" },
       { path: "/missing", status: 404, auth: true },
-      { path: "/api/v1/apps", status: 403, auth: true, origin: "https://foreign.invalid" },
-      { path: "/api/v1/status", status: 200, auth: true, origin: publicOrigin, proxy: true },
-      { path: "/api/v1/status", status: 401, auth: false, origin: publicOrigin, proxy: true },
-      { path: "/api/v1/status", status: 403, auth: true, origin: publicOrigin, crossSite: true },
-      { path: "/api/v1/status", status: 403, auth: true, origin: "https://foreign.invalid", proxy: true },
+      {
+        path: "/api/v1/apps",
+        status: 403,
+        auth: true,
+        origin: "https://foreign.invalid",
+      },
+      {
+        path: "/api/v1/status",
+        status: 200,
+        auth: true,
+        origin: publicOrigin,
+        proxy: true,
+      },
+      {
+        path: "/api/v1/status",
+        status: 401,
+        auth: false,
+        origin: publicOrigin,
+        proxy: true,
+      },
+      {
+        path: "/api/v1/status",
+        status: 403,
+        auth: true,
+        origin: publicOrigin,
+        crossSite: true,
+      },
+      {
+        path: "/api/v1/status",
+        status: 403,
+        auth: true,
+        origin: "https://foreign.invalid",
+        proxy: true,
+      },
     ];
     try {
       await runProcess([binary], root, {
@@ -229,8 +315,11 @@ export async function verifyProduct(
         onOutput: async (channel, chunk) => {
           if (channel !== "stdout" || probing) return;
           output += decoder.decode(chunk, { stream: true });
-          if (output.length > 8192) throw new Error("Product readiness output exceeds its bound.");
-          const ready = output.match(/Aphrody \/ Bun server: (http:\/\/127\.0\.0\.1:\d+\/)/);
+          if (output.length > 8192)
+            throw new Error("Product readiness output exceeds its bound.");
+          const ready = output.match(
+            /Aphrody \/ Bun server: (http:\/\/127\.0\.0\.1:\d+\/)/,
+          );
           if (!ready) return;
           probing = true;
           try {
@@ -253,7 +342,9 @@ export async function verifyProduct(
               });
               if (
                 response.status !== probe.status ||
-                !response.headers.get("Content-Type")?.startsWith("application/json") ||
+                !response.headers
+                  .get("Content-Type")
+                  ?.startsWith("application/json") ||
                 response.headers.get("Cache-Control") !== "no-store" ||
                 response.headers.get("X-Content-Type-Options") !== "nosniff"
               )
@@ -268,7 +359,8 @@ export async function verifyProduct(
                     const next = await reader.read();
                     if (next.done) break;
                     size += next.value.byteLength;
-                    if (size > 1048576) throw new Error("Product response exceeds its bound.");
+                    if (size > 1048576)
+                      throw new Error("Product response exceeds its bound.");
                     text += bodyDecoder.decode(next.value, { stream: true });
                   }
               } finally {
@@ -280,13 +372,18 @@ export async function verifyProduct(
                 text.includes(root.replaceAll("\\", "/")) ||
                 text.includes(JSON.stringify(root).slice(1, -1))
               )
-                throw new Error("Product response exposes private execution inputs.");
+                throw new Error(
+                  "Product response exposes private execution inputs.",
+                );
               const value: unknown = JSON.parse(text);
-              if (!object(value)) throw new Error("Product response schema differs.");
+              if (!object(value))
+                throw new Error("Product response schema differs.");
               if (
                 probe.status === 200 &&
                 probe.path === "/healthz" &&
-                (value.status !== "ready" || value.product !== receipt.product || value.version !== receipt.version)
+                (value.status !== "ready" ||
+                  value.product !== receipt.product ||
+                  value.version !== receipt.version)
               )
                 throw new Error("Product readiness identity differs.");
               if (
@@ -300,23 +397,37 @@ export async function verifyProduct(
                   value.runtime.platform !== process.platform ||
                   value.runtime.arch !== process.arch)
               )
-                throw new Error("Product source/runtime/target identity differs.");
+                throw new Error(
+                  "Product source/runtime/target identity differs.",
+                );
               if (
                 probe.status === 200 &&
                 probe.path === "/api/v1/sources" &&
-                (value.revision !== receipt.sourceRevision || !Array.isArray(value.sources))
+                (value.revision !== receipt.sourceRevision ||
+                  !Array.isArray(value.sources))
               )
                 throw new Error("Product source catalog differs.");
-              if (probe.status === 200 && probe.path === "/api/v1/apps" && !Array.isArray(value.apps))
+              if (
+                probe.status === 200 &&
+                probe.path === "/api/v1/apps" &&
+                !Array.isArray(value.apps)
+              )
                 throw new Error("Product application catalog differs.");
-              if (probe.status === 200 && probe.path === "/api/v1/public-sources") {
+              if (
+                probe.status === 200 &&
+                probe.path === "/api/v1/public-sources"
+              ) {
                 const publicSnapshot = validateSnapshot(value);
-                const expected = validateSnapshot(await Bun.file(join(root, "infra/source-portal.json")).json());
+                const expected = validateSnapshot(
+                  await Bun.file(join(root, "infra/source-portal.json")).json(),
+                );
                 if (
                   JSON.stringify(publicSnapshot) !== JSON.stringify(expected) ||
                   JSON.stringify(value) !== JSON.stringify(publicSnapshot)
                 )
-                  throw new Error("Product public source snapshot differs from its minimal committed input.");
+                  throw new Error(
+                    "Product public source snapshot differs from its minimal committed input.",
+                  );
               }
               if (
                 probe.status === 200 &&
@@ -341,12 +452,14 @@ export async function verifyProduct(
       deadline.signal.removeEventListener("abort", interrupt);
       stop.abort();
     }
-    if (!completed || passed !== cases.length) throw new Error("Product server did not complete its HTTP gates.");
+    if (!completed || passed !== cases.length)
+      throw new Error("Product server did not complete its HTTP gates.");
     remaining();
     await sourceInputs();
     if (
       (await command(["git", "rev-parse", "HEAD"])) !== head ||
-      (await hashFile(binary, { signal: deadline.signal })) !== receipt.sha256 ||
+      (await hashFile(binary, { signal: deadline.signal })) !==
+        receipt.sha256 ||
       (await hashFile(receiptPath, { signal: deadline.signal })) !== receiptHash
     )
       throw new Error("Product verification inputs changed.");

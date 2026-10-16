@@ -5,7 +5,10 @@ import type { GraphicDefinition } from "./types";
 // (rectangle, ellipse, polygon, star) plus any host-extended graphics.
 // Looked up by definitionId at render time and from the properties
 // panel.
-export class GraphicsRegistry extends DefinitionRegistry<string, GraphicDefinition> {
+export class GraphicsRegistry extends DefinitionRegistry<
+  string,
+  GraphicDefinition
+> {
   constructor() {
     super("graphic");
   }

@@ -1,8 +1,5 @@
 {
-  "extends": [
-    "./tsconfig.json",
-    "@aphrody/m3-config/tsconfig.build.json"
-  ],
+  "extends": ["./tsconfig.json", "@aphrody/m3-config/tsconfig.build.json"],
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "."
@@ -19,9 +16,5 @@
     "data/**/*.tsx",
     "material-web-shims.d.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "generate.ts",
-    "dist"
-  ]
+  "exclude": ["node_modules", "generate.ts", "dist"]
 }

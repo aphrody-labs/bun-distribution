@@ -1,5 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-import { existsSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { generateUnifiedYoloPlugin } from "./generator";
@@ -41,8 +47,8 @@ function discoverPlugins(pluginsDir: string): PluginInfo[] {
       const skillsDir = join(pluginPath, "skills");
       let skillsCount = 0;
       if (existsSync(skillsDir)) {
-        skillsCount = readdirSync(skillsDir, { withFileTypes: true }).filter((d) =>
-          d.isDirectory(),
+        skillsCount = readdirSync(skillsDir, { withFileTypes: true }).filter(
+          (d) => d.isDirectory(),
         ).length;
       }
 
@@ -105,7 +111,10 @@ function findStaleArtifacts(pluginsDir: string): string[] {
   return stale;
 }
 
-function checkManifestConsistency(rootDir: string, plugins: PluginInfo[]): string[] {
+function checkManifestConsistency(
+  rootDir: string,
+  plugins: PluginInfo[],
+): string[] {
   const issues: string[] = [];
   const validNames = new Set(plugins.map((p) => p.name));
 
@@ -117,7 +126,9 @@ function checkManifestConsistency(rootDir: string, plugins: PluginInfo[]): strin
       for (const entry of data.entries ?? []) {
         for (const inc of entry.include_only ?? []) {
           if (!validNames.has(inc)) {
-            issues.push(`yolo/.agents/plugins.json references non-existent plugin: '${inc}'`);
+            issues.push(
+              `yolo/.agents/plugins.json references non-existent plugin: '${inc}'`,
+            );
           }
         }
       }
@@ -134,7 +145,9 @@ function checkManifestConsistency(rootDir: string, plugins: PluginInfo[]): strin
       for (const entry of data.entries ?? []) {
         for (const inc of entry.include_only ?? []) {
           if (!validNames.has(inc)) {
-            issues.push(`~/.gemini/.agents/plugins.json references non-existent plugin: '${inc}'`);
+            issues.push(
+              `~/.gemini/.agents/plugins.json references non-existent plugin: '${inc}'`,
+            );
           }
         }
       }
@@ -146,7 +159,10 @@ function checkManifestConsistency(rootDir: string, plugins: PluginInfo[]): strin
   return issues;
 }
 
-export async function runPluginCommand(args: readonly string[], rootDir: string): Promise<number> {
+export async function runPluginCommand(
+  args: readonly string[],
+  rootDir: string,
+): Promise<number> {
   const sub = args[0] || "help";
   const pluginsDir = resolve(rootDir, "plugins");
   const isJson = args.includes("--json");
@@ -155,12 +171,16 @@ export async function runPluginCommand(args: readonly string[], rootDir: string)
   switch (sub) {
     case "create":
     case "generate": {
-      const targetArg = args.find((a) => !a.startsWith("-") && a !== "create" && a !== "generate");
+      const targetArg = args.find(
+        (a) => !a.startsWith("-") && a !== "create" && a !== "generate",
+      );
       const targetDir = targetArg
         ? resolve(process.cwd(), targetArg)
         : resolve(rootDir, "plugins", "yolo");
 
-      console.log(`\x1b[1m\x1b[36m=== YOLO Plugin Generator (Native Bun + TS7 + NHITL) ===\x1b[0m`);
+      console.log(
+        `\x1b[1m\x1b[36m=== YOLO Plugin Generator (Native Bun + TS7 + NHITL) ===\x1b[0m`,
+      );
       console.log(`  Source Monorepo: ${rootDir}`);
       console.log(`  Target Output:   ${targetDir}`);
 
@@ -205,7 +225,9 @@ export async function runPluginCommand(args: readonly string[], rootDir: string)
         console.log(`# YOLO Plugins Status\n`);
         console.log(`- **Store :** \`${pluginsDir}\``);
         console.log(`- **Total Plugins :** ${plugins.length}\n`);
-        console.log(`| Plugin | Version | Skills | Agents | Commit | Description |`);
+        console.log(
+          `| Plugin | Version | Skills | Agents | Commit | Description |`,
+        );
         console.log(`| :--- | :---: | :---: | :---: | :---: | :--- |`);
         for (const p of plugins) {
           console.log(
@@ -215,7 +237,9 @@ export async function runPluginCommand(args: readonly string[], rootDir: string)
         return 0;
       }
 
-      console.log(`\x1b[1m\x1b[36m=== YOLO Plugins Status (${plugins.length} active) ===\x1b[0m`);
+      console.log(
+        `\x1b[1m\x1b[36m=== YOLO Plugins Status (${plugins.length} active) ===\x1b[0m`,
+      );
       console.log(`  Store Directory: ${pluginsDir}\n`);
       for (const p of plugins) {
         console.log(
@@ -257,7 +281,9 @@ export async function runPluginCommand(args: readonly string[], rootDir: string)
         );
         console.log(`### Active Plugins (${plugins.length})`);
         for (const p of plugins) {
-          console.log(`- **${p.name}** v${p.version} (${p.skillsCount} skills)`);
+          console.log(
+            `- **${p.name}** v${p.version} (${p.skillsCount} skills)`,
+          );
         }
         if (staleArtifacts.length > 0) {
           console.log(`\n### Stale Artifacts to Purge`);
@@ -270,10 +296,14 @@ export async function runPluginCommand(args: readonly string[], rootDir: string)
         return passed ? 0 : 1;
       }
 
-      console.log(`\x1b[1m\x1b[36m=== YOLO Plugins Verification & Doctor ===\x1b[0m`);
+      console.log(
+        `\x1b[1m\x1b[36m=== YOLO Plugins Verification & Doctor ===\x1b[0m`,
+      );
       console.log(`  Plugins Verified: ${plugins.length}`);
       for (const p of plugins) {
-        console.log(`    \x1b[32m✔\x1b[0m ${p.name} (v${p.version}, ${p.skillsCount} skills)`);
+        console.log(
+          `    \x1b[32m✔\x1b[0m ${p.name} (v${p.version}, ${p.skillsCount} skills)`,
+        );
       }
 
       if (staleArtifacts.length > 0) {
@@ -293,7 +323,9 @@ export async function runPluginCommand(args: readonly string[], rootDir: string)
           console.log(`    - ${m}`);
         }
       } else {
-        console.log(`  \x1b[32m✔ Manifests synchronized with active plugins\x1b[0m`);
+        console.log(
+          `  \x1b[32m✔ Manifests synchronized with active plugins\x1b[0m`,
+        );
       }
 
       console.log(
@@ -306,11 +338,15 @@ export async function runPluginCommand(args: readonly string[], rootDir: string)
 
     case "purge":
     case "clean": {
-      console.log(`\x1b[1m\x1b[36m=== YOLO Plugins Autonomous Purge ===\x1b[0m`);
+      console.log(
+        `\x1b[1m\x1b[36m=== YOLO Plugins Autonomous Purge ===\x1b[0m`,
+      );
       const staleArtifacts = findStaleArtifacts(pluginsDir);
 
       if (staleArtifacts.length === 0) {
-        console.log(`  \x1b[32m✔ No stale or hallucinated artifacts found in ${pluginsDir}\x1b[0m`);
+        console.log(
+          `  \x1b[32m✔ No stale or hallucinated artifacts found in ${pluginsDir}\x1b[0m`,
+        );
         return 0;
       }
 
@@ -322,7 +358,9 @@ export async function runPluginCommand(args: readonly string[], rootDir: string)
           rmSync(item, { recursive: true, force: true });
           console.log(`  \x1b[32m✔ Purged:\x1b[0m ${item}`);
         } catch (e) {
-          console.warn(`  \x1b[31m✖ Failed to purge ${item}:\x1b[0m ${(e as Error).message}`);
+          console.warn(
+            `  \x1b[31m✖ Failed to purge ${item}:\x1b[0m ${(e as Error).message}`,
+          );
         }
       }
 

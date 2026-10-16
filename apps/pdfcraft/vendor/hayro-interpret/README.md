@@ -17,14 +17,18 @@ lacks pretty much any documentation on how to use it. It's current API also only
 useful for rendering to PNG or SVG, though this will be improved upon in the future.
 
 ## Examples
+
 See the `examples` folder on the GitHub repository. Apart from that, you can also consult
 the implementation of `hayro` and `hayro-svg` to get an idea on how to use this crate.
 
 ## Safety
+
 This crate forbids unsafe code via a crate-level attribute.
 
 ## Cargo features
+
 This crate has one optional feature:
+
 - `embed-fonts`: PDF processors are required to support 14 predefined fonts that do not need to be
   embedded into a PDF file. If you enable this feature, hayro will embed a (permissively-licensed)
   substitute for each font, so that you don't have to implement your custom font loading logic. This
@@ -33,6 +37,7 @@ This crate has one optional feature:
 <!-- cargo-rdme end -->
 
 ## License
+
 Licensed under either of
 
 - Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0>)

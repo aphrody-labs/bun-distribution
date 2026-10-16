@@ -15,7 +15,10 @@ import {
 } from "@/components/icones";
 import { useEffect, useState } from "react";
 import { api } from "@aphrody/admin-ui/client";
-import { RoleSelect, RoleBadge } from "@aphrody/admin-ui/components/admin/RoleSelect";
+import {
+  RoleSelect,
+  RoleBadge,
+} from "@aphrody/admin-ui/components/admin/RoleSelect";
 
 /**
  * Éditeur visuel de la hiérarchie staff (paramètre `moderation.hierarchy`).
@@ -29,13 +32,15 @@ export default function HierarchyPage() {
 
   const hierarchy = useQuery({
     queryKey: ["moderation", "hierarchy"],
-    queryFn: () => api.get<{ levels: string[][]; raw: string }>("/moderation/hierarchy"),
+    queryFn: () =>
+      api.get<{ levels: string[][]; raw: string }>("/moderation/hierarchy"),
   });
 
   const save = useMutation({
     mutationFn: (levels: string[][]) =>
       api.put<{ ok: boolean }>("/moderation/hierarchy", { levels }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["moderation", "hierarchy"] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["moderation", "hierarchy"] }),
   });
 
   const [draft, setDraft] = useState<string[][]>([]);
@@ -70,7 +75,9 @@ export default function HierarchyPage() {
     setDirty(true);
   };
   const removeRole = (idx: number, roleId: string) => {
-    setDraft((d) => d.map((lvl, i) => (i === idx ? lvl.filter((r) => r !== roleId) : lvl)));
+    setDraft((d) =>
+      d.map((lvl, i) => (i === idx ? lvl.filter((r) => r !== roleId) : lvl)),
+    );
     setDirty(true);
   };
 
@@ -88,10 +95,11 @@ export default function HierarchyPage() {
           <h2 className="text-lg font-semibold">Hiérarchie du staff</h2>
         </div>
         <p className="mt-1 text-sm text-zinc-400">
-          Définit qui peut sanctionner qui. Le niveau <strong>0</strong> est le plus haut
-          (administrateurs), le niveau le plus bas est celui des modérateurs débutants. Un membre du
-          staff ne peut sanctionner que des membres d&apos;un niveau <em>plus bas</em> que le sien.
-          Les propriétaires du serveur et les développeurs du bot passent toujours.
+          Définit qui peut sanctionner qui. Le niveau <strong>0</strong> est le
+          plus haut (administrateurs), le niveau le plus bas est celui des
+          modérateurs débutants. Un membre du staff ne peut sanctionner que des
+          membres d&apos;un niveau <em>plus bas</em> que le sien. Les
+          propriétaires du serveur et les développeurs du bot passent toujours.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <button type="button" className="btn btn-ghost" onClick={addLevel}>
@@ -107,7 +115,11 @@ export default function HierarchyPage() {
             {save.isPending ? "Enregistrement…" : "Enregistrer la hiérarchie"}
           </button>
           {dirty && (
-            <button type="button" className="btn btn-ghost text-zinc-400" onClick={reset}>
+            <button
+              type="button"
+              className="btn btn-ghost text-zinc-400"
+              onClick={reset}
+            >
               <Croix className="h-3 w-3" /> Annuler les modifications
             </button>
           )}
@@ -118,7 +130,8 @@ export default function HierarchyPage() {
           )}
           {save.isError && (
             <span className="flex items-center gap-1 text-xs text-red-400">
-              <Alerte className="inline h-3 w-3" /> {(save.error as Error)?.message}
+              <Alerte className="inline h-3 w-3" />{" "}
+              {(save.error as Error)?.message}
             </span>
           )}
         </div>
@@ -145,8 +158,8 @@ export default function HierarchyPage() {
         <div className="card text-center text-zinc-500">
           <p>Aucun niveau défini.</p>
           <p className="mt-1 text-xs">
-            Sans hiérarchie configurée, les sanctions ne sont limitées que par la garde{" "}
-            <code>ModOnly</code>.
+            Sans hiérarchie configurée, les sanctions ne sont limitées que par
+            la garde <code>ModOnly</code>.
           </p>
         </div>
       ) : (

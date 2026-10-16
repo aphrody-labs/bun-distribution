@@ -5,17 +5,29 @@ import { findWorkspaceRoot } from "@aphrody/paths";
 import { compactPet, type RawAnimations, renderModule } from "./compact";
 import { frameAt, gazeFrame, PET, spriteStyle, trackDuration } from "./pet";
 
-const crateJson = join(findWorkspaceRoot(), "crates/ui/identity/assets/aphrody/animations.json");
+const crateJson = join(
+  findWorkspaceRoot(),
+  "crates/ui/identity/assets/aphrody/animations.json",
+);
 
 describe("generated pet data", () => {
   test("matches the crate animations.json (run `bun run gen` after a re-export)", async () => {
     const raw = (await Bun.file(crateJson).json()) as RawAnimations;
-    const generated = await Bun.file(join(import.meta.dir, "animations.generated.ts")).text();
+    const generated = await Bun.file(
+      join(import.meta.dir, "animations.generated.ts"),
+    ).text();
     expect(generated).toBe(renderModule(compactPet(raw)));
   });
 
   test("atlas is the 8x11 grid of 192x208 cells", () => {
-    expect(PET.atlas).toEqual({ width: 1536, height: 2288, cellWidth: 192, cellHeight: 208, columns: 8, rows: 11 });
+    expect(PET.atlas).toEqual({
+      width: 1536,
+      height: 2288,
+      cellWidth: 192,
+      cellHeight: 208,
+      columns: 8,
+      rows: 11,
+    });
     expect(PET.directions).toHaveLength(16);
     expect(Object.keys(PET.tracks)).toContain("waving");
   });
@@ -33,7 +45,9 @@ describe("frameAt", () => {
 
   test("loops, or holds the last frame of a single pass", () => {
     expect(frameAt(idle, 1100 + 280)).toBe(idle.frames[1]!);
-    expect(frameAt(idle, 50_000, false)).toBe(idle.frames[idle.frames.length - 1]!);
+    expect(frameAt(idle, 50_000, false)).toBe(
+      idle.frames[idle.frames.length - 1]!,
+    );
   });
 
   test("still tracks never move", () => {

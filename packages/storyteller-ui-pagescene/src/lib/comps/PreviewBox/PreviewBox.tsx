@@ -26,7 +26,7 @@ export const PreviewBox = ({ imageUrl }: PreviewBoxProps) => {
         className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full text-white/60 hover:bg-white/10 hover:text-white"
         aria-label="Hide preview"
       >
-        <XIcon  className="text-xs" />
+        <XIcon className="text-xs" />
       </button>
       <img
         src={imageUrl}

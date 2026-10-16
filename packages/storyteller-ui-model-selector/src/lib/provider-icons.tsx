@@ -3,7 +3,9 @@ import { IsDesktopApp } from "@storyteller/tauri-utils";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { ReactNode } from "react";
 
-const GENERATION_PROVIDER_TO_CREATOR: Partial<Record<GenerationProvider, ModelCreator>> = {
+const GENERATION_PROVIDER_TO_CREATOR: Partial<
+  Record<GenerationProvider, ModelCreator>
+> = {
   [GenerationProvider.Artcraft]: ModelCreator.ArtCraft,
   [GenerationProvider.Grok]: ModelCreator.Grok,
   [GenerationProvider.Midjourney]: ModelCreator.Midjourney,
@@ -18,7 +20,7 @@ const GENERATION_PROVIDER_TO_CREATOR: Partial<Record<GenerationProvider, ModelCr
 
 export const getProviderIcon = (
   provider: GenerationProvider,
-  className = "h-4 w-4 icon-auto-contrast"
+  className = "h-4 w-4 icon-auto-contrast",
 ): ReactNode => {
   const creator = GENERATION_PROVIDER_TO_CREATOR[provider];
   if (creator) return getCreatorIcon(creator, className);
@@ -35,7 +37,9 @@ export const getProviderIcon = (
   );
 };
 
-export const getProviderDisplayName = (provider: GenerationProvider): string => {
+export const getProviderDisplayName = (
+  provider: GenerationProvider,
+): string => {
   switch (provider) {
     case GenerationProvider.Artcraft:
       return "ArtCraft";

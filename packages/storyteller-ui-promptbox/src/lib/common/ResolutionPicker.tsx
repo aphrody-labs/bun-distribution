@@ -1,6 +1,10 @@
 import { SquareIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { DynamicIcon, HighDefinitionIcon, StandardDefinitionIcon } from "@storyteller/icons";
+import {
+  DynamicIcon,
+  HighDefinitionIcon,
+  StandardDefinitionIcon,
+} from "@storyteller/icons";
 import { PopoverItem, PopoverMenu } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { CommonResolution, ImageModel } from "@storyteller/model-list";
@@ -54,10 +58,7 @@ export const ResolutionPicker = ({
       action: resolution,
       selected: useResolution === resolution,
       icon: (
-        <DynamicIcon
-          icon={getResolutionIcon(resolution)}
-          className="h-4 w-4"
-        />
+        <DynamicIcon icon={getResolutionIcon(resolution)} className="h-4 w-4" />
       ),
     });
   });

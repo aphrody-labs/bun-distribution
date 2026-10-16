@@ -5,7 +5,11 @@ import { Vec2 } from "../types";
 import { stagePointerPos } from "./useStagePointer";
 import { pointInPolygon } from "../layout/pointInPolygon";
 import { polygonIntersectsRect } from "../layout/segmentsIntersect";
-import { rectCorners, rectFromPoints, rectsIntersect } from "../layout/geometry";
+import {
+  rectCorners,
+  rectFromPoints,
+  rectsIntersect,
+} from "../layout/geometry";
 
 const MIN_DRAG = 4; // screen px before a press becomes a drag
 
@@ -20,9 +24,7 @@ interface DragState {
 // lasso (Lasso tool). Pan gestures (middle-mouse, spacebar+left) are owned
 // by `useViewportControls` and stop the event at the capture phase, so
 // they never reach Konva's mousedown and therefore never reach this hook.
-export const useSelection = (
-  stageRef: React.RefObject<Konva.Stage | null>,
-) => {
+export const useSelection = (stageRef: React.RefObject<Konva.Stage | null>) => {
   const drag = useRef<DragState>({
     origin: { x: 0, y: 0 },
     path: [],

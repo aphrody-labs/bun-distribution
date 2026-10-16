@@ -43,27 +43,36 @@ function sourceFiles(list: string): string[] {
   ].toSorted();
 }
 
-function classify(path: string): { surface: string; role: string; target: string; status: string } {
-  const role = /(?:^|\/)(?:test|tests|fixtures|test-dom)(?:\/)|\.(?:test|spec)\./.test(path)
-    ? "test / fixture"
-    : /(?:server|site)\.ts$/.test(path)
-      ? "HTTP server / launcher"
-      : /(?:build|config|scripts)(?:\/|\.)/.test(path)
-        ? "build / tooling"
-        : path.endsWith(".css")
-          ? "styles / tokens"
-          : path.endsWith(".html")
-            ? "HTML document"
-            : path.endsWith(".tsx") || path.endsWith(".jsx")
-              ? "component / view"
-              : path.endsWith(".d.ts")
-                ? "type contract"
-                : "module / behavior";
+function classify(path: string): {
+  surface: string;
+  role: string;
+  target: string;
+  status: string;
+} {
+  const role =
+    /(?:^|\/)(?:test|tests|fixtures|test-dom)(?:\/)|\.(?:test|spec)\./.test(
+      path,
+    )
+      ? "test / fixture"
+      : /(?:server|site)\.ts$/.test(path)
+        ? "HTTP server / launcher"
+        : /(?:build|config|scripts)(?:\/|\.)/.test(path)
+          ? "build / tooling"
+          : path.endsWith(".css")
+            ? "styles / tokens"
+            : path.endsWith(".html")
+              ? "HTML document"
+              : path.endsWith(".tsx") || path.endsWith(".jsx")
+                ? "component / view"
+                : path.endsWith(".d.ts")
+                  ? "type contract"
+                  : "module / behavior";
   if (path.startsWith("apps/web/"))
     return {
       surface: "retired app",
       role,
-      target: "crates/web/site + canonical m3/packages/app-ui; WebOS fork owner",
+      target:
+        "crates/web/site + canonical m3/packages/app-ui; WebOS fork owner",
       status: "removed unused legacy source; NOT Rust frontend parity",
     };
   if (path.includes("/ui-dist/"))
@@ -95,7 +104,8 @@ function classify(path: string): { surface: string; role: string; target: string
     return {
       surface: "web capability",
       role,
-      target: "crates/web/{web-engine,obscura-*,webos-wasm} existing capability owner",
+      target:
+        "crates/web/{web-engine,obscura-*,webos-wasm} existing capability owner",
       status: "TS capability / tests; file-level Rust parity pending",
     };
   if (path.startsWith("crates/web/"))
@@ -103,7 +113,8 @@ function classify(path: string): { surface: string; role: string; target: string
       surface: "native site / WASM",
       role,
       target: "crates/web/site + crates/web/webos-wasm",
-      status: "JS/HTML/CSS asset or bridge; native HTTP present, frontend parity pending",
+      status:
+        "JS/HTML/CSS asset or bridge; native HTTP present, frontend parity pending",
     };
   return {
     surface: "desktop / Tauri / renderer",
@@ -114,16 +125,36 @@ function classify(path: string): { surface: string; role: string; target: string
 }
 
 const current = sourceFiles(
-  git(root, "ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", ...roots),
+  git(
+    root,
+    "ls-files",
+    "-z",
+    "--cached",
+    "--others",
+    "--exclude-standard",
+    "--",
+    ...roots,
+  ),
 ).filter((path) => existsSync(resolve(root, path)));
 const retired = sourceFiles(
   git(root, "ls-tree", "-r", "--name-only", "-z", checkpoint, "--", "apps/web"),
 ).filter((path) => !existsSync(resolve(root, path)));
-const deletedTotal = git(root, "ls-tree", "-r", "--name-only", checkpoint, "--", "apps/web")
+const deletedTotal = git(
+  root,
+  "ls-tree",
+  "-r",
+  "--name-only",
+  checkpoint,
+  "--",
+  "apps/web",
+)
   .split("\n")
   .filter(Boolean).length;
 const fork = process.env.APHRODY_BUN_CHECKOUT;
-if (!fork) throw new Error("Set APHRODY_BUN_CHECKOUT to inspect the actual Bun Rust owners.");
+if (!fork)
+  throw new Error(
+    "Set APHRODY_BUN_CHECKOUT to inspect the actual Bun Rust owners.",
+  );
 const originMain = git(fork, "rev-parse", "origin/main");
 const forkHead = git(fork, "rev-parse", "HEAD");
 const workspace = readFileSync(resolve(fork, "Cargo.toml"), "utf8");
@@ -150,7 +181,8 @@ const crateRows = crates.map((name) => {
   if (!match) throw new Error(`Missing Bun workspace owner: ${name}`);
   const manifest = readFileSync(resolve(fork, match[1]!, "Cargo.toml"), "utf8");
   const actualName = manifest.match(/^name\s*=\s*"([^"]+)"/m)?.[1];
-  if (actualName !== name) throw new Error(`Bun crate identity mismatch: ${name} != ${actualName}`);
+  if (actualName !== name)
+    throw new Error(`Bun crate identity mismatch: ${name} != ${actualName}`);
   return `| ${name} | ${match[1]}/Cargo.toml | verified manifest; downstream integration pending |`;
 });
 const textCell = (value: string) => value.replaceAll("|", "\\|");
@@ -165,13 +197,16 @@ const previous = existsSync(output)
 const beginAt = previous.indexOf(begin);
 const endAt = previous.indexOf(end);
 if (beginAt < 0 !== endAt < 0)
-  throw new Error("Incomplete inventory marker; preserve existing agent sections.");
+  throw new Error(
+    "Incomplete inventory marker; preserve existing agent sections.",
+  );
 const next =
   beginAt < 0
     ? `${previous.trimEnd()}\n\n${section}\n`
     : `${previous.slice(0, beginAt)}${section}${previous.slice(endAt + end.length)}`;
 if (process.argv.includes("--check")) {
-  if (next !== previous) throw new Error("UI Rust inventory differs; regenerate it.");
+  if (next !== previous)
+    throw new Error("UI Rust inventory differs; regenerate it.");
 } else {
   mkdirSync(dirname(output), { recursive: true });
   writeFileSync(output, next);

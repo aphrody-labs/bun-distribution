@@ -14,16 +14,33 @@ test("replica snapshots contracted documents and evidence, excludes authenticati
     await mkdir(incoming);
     await Bun.write(join(home, "USER.md"), "Owner profile");
     await Bun.write(join(home, ".env"), "TOKEN=private");
-    const staged = join(incoming, "USER.md-" + "a".repeat(16) + "-" + "b".repeat(16));
+    const staged = join(
+      incoming,
+      "USER.md-" + "a".repeat(16) + "-" + "b".repeat(16),
+    );
     await mkdir(staged);
-    await Bun.write(join(staged, "remote.candidate.md"), "Remote owner profile");
+    await Bun.write(
+      join(staged, "remote.candidate.md"),
+      "Remote owner profile",
+    );
     await Bun.write(join(staged, "credentials.json"), "private");
-    const files = await snapshotFiles(home, incoming, ["USER.md"], join(dir, "out"));
+    const files = await snapshotFiles(
+      home,
+      incoming,
+      ["USER.md"],
+      join(dir, "out"),
+    );
     expect(files.map((file) => file.relative)).toEqual([
       "active/USER.md",
-      "incoming/USER.md-" + "a".repeat(16) + "-" + "b".repeat(16) + "/remote.candidate.md",
+      "incoming/USER.md-" +
+        "a".repeat(16) +
+        "-" +
+        "b".repeat(16) +
+        "/remote.candidate.md",
     ]);
-    expect(files.every((file) => /^[a-f0-9]{64}$/.test(file.sha256))).toBe(true);
+    expect(files.every((file) => /^[a-f0-9]{64}$/.test(file.sha256))).toBe(
+      true,
+    );
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -46,7 +63,8 @@ test("replica verifies every upload before indexing and repairs corrupted snapsh
       if (argv.includes("sftp")) {
         const target = argv[argv.indexOf("--path") + 1]!;
         await copyFile(argv[argv.indexOf("--put") + 1]!, target);
-        if (corrupt && target.endsWith("SOUL.md")) await Bun.write(target, "corrupted");
+        if (corrupt && target.endsWith("SOUL.md"))
+          await Bun.write(target, "corrupted");
         uploads++;
         return "";
       }
@@ -82,12 +100,16 @@ test("replica verifies every upload before indexing and repairs corrupted snapsh
     ).rejects.toThrow();
     expect(indexes).toBe(0);
     corrupt = false;
-    expect(await replicateHome(config, home, join(dir, "receipts"), "aphrody", run)).toEqual({
+    expect(
+      await replicateHome(config, home, join(dir, "receipts"), "aphrody", run),
+    ).toEqual({
       files_copied: 3,
       homes_indexed: 2,
       indexed: 6,
     });
-    expect(await replicateHome(config, home, join(dir, "receipts"), "aphrody", run)).toEqual({
+    expect(
+      await replicateHome(config, home, join(dir, "receipts"), "aphrody", run),
+    ).toEqual({
       files_copied: 0,
       homes_indexed: 2,
       indexed: 6,
@@ -96,9 +118,13 @@ test("replica verifies every upload before indexing and repairs corrupted snapsh
     const folders = await import("node:fs/promises").then(({ readdir }) =>
       readdir(config.directory),
     );
-    await Bun.write(join(config.directory, folders[0]!, "active/USER.md"), "corrupted later");
+    await Bun.write(
+      join(config.directory, folders[0]!, "active/USER.md"),
+      "corrupted later",
+    );
     expect(
-      (await replicateHome(config, home, join(dir, "receipts"), "aphrody", run)).files_copied,
+      (await replicateHome(config, home, join(dir, "receipts"), "aphrody", run))
+        .files_copied,
     ).toBe(3);
   } finally {
     await rm(dir, { recursive: true, force: true });
@@ -113,7 +139,12 @@ test("replica refuses symlinked documents and path traversal", async () => {
       snapshotFiles(dir, join(dir, "none"), ["USER.md"], join(dir, "out")),
     ).rejects.toThrow("Unsafe snapshot source");
     await expect(
-      snapshotFiles(dir, join(dir, "none"), ["../private.env"], join(dir, "out")),
+      snapshotFiles(
+        dir,
+        join(dir, "none"),
+        ["../private.env"],
+        join(dir, "out"),
+      ),
     ).rejects.toThrow("Unsafe home document name");
   } finally {
     await rm(dir, { recursive: true, force: true });

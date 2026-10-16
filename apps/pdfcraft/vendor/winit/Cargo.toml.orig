@@ -2,8 +2,8 @@
 name = "winit"
 version = "0.30.13"
 authors = [
-    "The winit contributors",
-    "Pierre Krieger <pierre.krieger1708@gmail.com>",
+  "The winit contributors",
+  "Pierre Krieger <pierre.krieger1708@gmail.com>",
 ]
 description = "Cross-platform window creation library."
 keywords = ["windowing"]
@@ -15,43 +15,43 @@ repository.workspace = true
 license.workspace = true
 edition.workspace = true
 include = [
-    "/build.rs",
-    "/docs",
-    "/examples",
-    "/FEATURES.md",
-    "/LICENSE",
-    "/src",
-    "!/src/platform_impl/web/script",
-    "/src/platform_impl/web/script/**/*.min.js",
-    "/tests",
+  "/build.rs",
+  "/docs",
+  "/examples",
+  "/FEATURES.md",
+  "/LICENSE",
+  "/src",
+  "!/src/platform_impl/web/script",
+  "/src/platform_impl/web/script/**/*.min.js",
+  "/tests",
 ]
 
 [package.metadata.docs.rs]
 features = [
-    "rwh_04",
-    "rwh_05",
-    "rwh_06",
-    "serde",
-    "mint",
-    # Enabled to get docs to compile
-    "android-native-activity",
+  "rwh_04",
+  "rwh_05",
+  "rwh_06",
+  "serde",
+  "mint",
+  # Enabled to get docs to compile
+  "android-native-activity",
 ]
 # These are all tested in CI
 targets = [
-    # Windows
-    "i686-pc-windows-msvc",
-    "x86_64-pc-windows-msvc",
-    # macOS
-    "x86_64-apple-darwin",
-    # Unix (X11 & Wayland)
-    "i686-unknown-linux-gnu",
-    "x86_64-unknown-linux-gnu",
-    # iOS
-    "x86_64-apple-ios",
-    # Android
-    "aarch64-linux-android",
-    # Web
-    "wasm32-unknown-unknown",
+  # Windows
+  "i686-pc-windows-msvc",
+  "x86_64-pc-windows-msvc",
+  # macOS
+  "x86_64-apple-darwin",
+  # Unix (X11 & Wayland)
+  "i686-unknown-linux-gnu",
+  "x86_64-unknown-linux-gnu",
+  # iOS
+  "x86_64-apple-ios",
+  # Android
+  "aarch64-linux-android",
+  # Web
+  "wasm32-unknown-unknown",
 ]
 rustdoc-args = ["--cfg", "docsrs"]
 
@@ -60,13 +60,13 @@ rustdoc-args = ["--cfg", "docsrs"]
 default = ["rwh_06", "x11", "wayland", "wayland-dlopen", "wayland-csd-adwaita"]
 x11 = ["x11-dl", "bytemuck", "percent-encoding", "xkbcommon-dl/x11", "x11rb"]
 wayland = [
-    "wayland-client",
-    "wayland-backend",
-    "wayland-protocols",
-    "wayland-protocols-plasma",
-    "sctk",
-    "ahash",
-    "memmap2",
+  "wayland-client",
+  "wayland-backend",
+  "wayland-protocols",
+  "wayland-protocols-plasma",
+  "sctk",
+  "ahash",
+  "memmap2",
 ]
 wayland-dlopen = ["wayland-backend/dlopen"]
 wayland-csd-adwaita = ["sctk-adwaita", "sctk-adwaita/ab_glyph"]
@@ -88,12 +88,8 @@ bitflags = "2"
 cursor-icon = "1.1.0"
 dpi = { version = "0.1.1", path = "dpi" }
 rwh_04 = { package = "raw-window-handle", version = "0.4", optional = true }
-rwh_05 = { package = "raw-window-handle", version = "0.5.2", features = [
-    "std",
-], optional = true }
-rwh_06 = { package = "raw-window-handle", version = "0.6", features = [
-    "std",
-], optional = true }
+rwh_05 = { package = "raw-window-handle", version = "0.5.2", features = ["std"], optional = true }
+rwh_06 = { package = "raw-window-handle", version = "0.6", features = ["std"], optional = true }
 serde = { workspace = true, optional = true }
 smol_str = "0.2.0"
 tracing = { version = "0.1.40", default-features = false }
@@ -106,10 +102,10 @@ winit = { path = ".", features = ["rwh_05"] }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dev-dependencies]
 softbuffer = { version = "0.4.0", default-features = false, features = [
-    "x11",
-    "x11-dlopen",
-    "wayland",
-    "wayland-dlopen",
+  "x11",
+  "x11-dlopen",
+  "wayland",
+  "wayland-dlopen",
 ] }
 
 [target.'cfg(target_os = "android")'.dependencies]
@@ -127,95 +123,95 @@ core-graphics = "0.23.1"
 [target.'cfg(target_os = "macos")'.dependencies.objc2-foundation]
 version = "0.2.2"
 features = [
-    "block2",
-    "dispatch",
-    "NSArray",
-    "NSAttributedString",
-    "NSData",
-    "NSDictionary",
-    "NSDistributedNotificationCenter",
-    "NSEnumerator",
-    "NSKeyValueObserving",
-    "NSNotification",
-    "NSObjCRuntime",
-    "NSPathUtilities",
-    "NSProcessInfo",
-    "NSRunLoop",
-    "NSString",
-    "NSThread",
-    "NSValue",
+  "block2",
+  "dispatch",
+  "NSArray",
+  "NSAttributedString",
+  "NSData",
+  "NSDictionary",
+  "NSDistributedNotificationCenter",
+  "NSEnumerator",
+  "NSKeyValueObserving",
+  "NSNotification",
+  "NSObjCRuntime",
+  "NSPathUtilities",
+  "NSProcessInfo",
+  "NSRunLoop",
+  "NSString",
+  "NSThread",
+  "NSValue",
 ]
 
 [target.'cfg(target_os = "macos")'.dependencies.objc2-app-kit]
 version = "0.2.2"
 features = [
-    "NSAppearance",
-    "NSApplication",
-    "NSBitmapImageRep",
-    "NSButton",
-    "NSColor",
-    "NSControl",
-    "NSCursor",
-    "NSDragging",
-    "NSEvent",
-    "NSGraphics",
-    "NSGraphicsContext",
-    "NSImage",
-    "NSImageRep",
-    "NSMenu",
-    "NSMenuItem",
-    "NSOpenGLView",
-    "NSPasteboard",
-    "NSResponder",
-    "NSRunningApplication",
-    "NSScreen",
-    "NSTextInputClient",
-    "NSTextInputContext",
-    "NSView",
-    "NSWindow",
-    "NSWindowScripting",
-    "NSWindowTabGroup",
+  "NSAppearance",
+  "NSApplication",
+  "NSBitmapImageRep",
+  "NSButton",
+  "NSColor",
+  "NSControl",
+  "NSCursor",
+  "NSDragging",
+  "NSEvent",
+  "NSGraphics",
+  "NSGraphicsContext",
+  "NSImage",
+  "NSImageRep",
+  "NSMenu",
+  "NSMenuItem",
+  "NSOpenGLView",
+  "NSPasteboard",
+  "NSResponder",
+  "NSRunningApplication",
+  "NSScreen",
+  "NSTextInputClient",
+  "NSTextInputContext",
+  "NSView",
+  "NSWindow",
+  "NSWindowScripting",
+  "NSWindowTabGroup",
 ]
 
 [target.'cfg(target_os = "ios")'.dependencies.objc2-foundation]
 version = "0.2.2"
 features = [
-    "block2",
-    "dispatch",
-    "NSArray",
-    "NSEnumerator",
-    "NSGeometry",
-    "NSObjCRuntime",
-    "NSOperation",
-    "NSString",
-    "NSProcessInfo",
-    "NSThread",
-    "NSSet",
+  "block2",
+  "dispatch",
+  "NSArray",
+  "NSEnumerator",
+  "NSGeometry",
+  "NSObjCRuntime",
+  "NSOperation",
+  "NSString",
+  "NSProcessInfo",
+  "NSThread",
+  "NSSet",
 ]
 
 [target.'cfg(target_os = "ios")'.dependencies.objc2-ui-kit]
 version = "0.2.2"
 features = [
-    "UIApplication",
-    "UIDevice",
-    "UIEvent",
-    "UIGeometry",
-    "UIGestureRecognizer",
-    "UITextInput",
-    "UITextInputTraits",
-    "UIOrientation",
-    "UIPanGestureRecognizer",
-    "UIPinchGestureRecognizer",
-    "UIResponder",
-    "UIRotationGestureRecognizer",
-    "UIScreen",
-    "UIScreenMode",
-    "UITapGestureRecognizer",
-    "UITouch",
-    "UITraitCollection",
-    "UIView",
-    "UIViewController",
-    "UIWindow",
+  "UIApplication",
+  "UIDevice",
+  "UIEvent",
+  "UIGeometry",
+  "UIGestureRecognizer",
+  "UITextInput",
+  "UITextInputTraits",
+  "UIOrientation",
+  "UIPanGestureRecognizer",
+  "UIPinchGestureRecognizer",
+  "UIResponder",
+  "UIRotationGestureRecognizer",
+  "UIScreen",
+  "UIScreenMode",
+  "UITapGestureRecognizer",
+  "UITouch",
+  "UITraitCollection",
+  "UIView",
+  "UIViewController",
+  "UIWindow",
 ]
 
 [target.'cfg(target_os = "windows")'.dependencies]
@@ -224,31 +220,31 @@ unicode-segmentation = "1.7.1"
 [target.'cfg(target_os = "windows")'.dependencies.windows-sys]
 version = "0.52.0"
 features = [
-    "Win32_Devices_HumanInterfaceDevice",
-    "Win32_Foundation",
-    "Win32_Globalization",
-    "Win32_Graphics_Dwm",
-    "Win32_Graphics_Gdi",
-    "Win32_Media",
-    "Win32_System_Com_StructuredStorage",
-    "Win32_System_Com",
-    "Win32_System_LibraryLoader",
-    "Win32_System_Ole",
-    "Win32_Security",
-    "Win32_System_SystemInformation",
-    "Win32_System_SystemServices",
-    "Win32_System_Threading",
-    "Win32_System_WindowsProgramming",
-    "Win32_UI_Accessibility",
-    "Win32_UI_Controls",
-    "Win32_UI_HiDpi",
-    "Win32_UI_Input_Ime",
-    "Win32_UI_Input_KeyboardAndMouse",
-    "Win32_UI_Input_Pointer",
-    "Win32_UI_Input_Touch",
-    "Win32_UI_Shell",
-    "Win32_UI_TextServices",
-    "Win32_UI_WindowsAndMessaging",
+  "Win32_Devices_HumanInterfaceDevice",
+  "Win32_Foundation",
+  "Win32_Globalization",
+  "Win32_Graphics_Dwm",
+  "Win32_Graphics_Gdi",
+  "Win32_Media",
+  "Win32_System_Com_StructuredStorage",
+  "Win32_System_Com",
+  "Win32_System_LibraryLoader",
+  "Win32_System_Ole",
+  "Win32_Security",
+  "Win32_System_SystemInformation",
+  "Win32_System_SystemServices",
+  "Win32_System_Threading",
+  "Win32_System_WindowsProgramming",
+  "Win32_UI_Accessibility",
+  "Win32_UI_Controls",
+  "Win32_UI_HiDpi",
+  "Win32_UI_Input_Ime",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_UI_Input_Pointer",
+  "Win32_UI_Input_Touch",
+  "Win32_UI_Shell",
+  "Win32_UI_TextServices",
+  "Win32_UI_WindowsAndMessaging",
 ]
 
 [target.'cfg(all(unix, not(any(target_os = "redox", target_family = "wasm", target_os = "android", target_os = "ios", target_os = "macos"))))'.dependencies]
@@ -259,34 +255,19 @@ libc = "0.2.64"
 memmap2 = { version = "0.9.0", optional = true }
 percent-encoding = { version = "2.0", optional = true }
 rustix = { version = "0.38.4", default-features = false, features = [
-    "std",
-    "system",
-    "thread",
-    "process",
+  "std",
+  "system",
+  "thread",
+  "process",
 ] }
-sctk = { package = "smithay-client-toolkit", version = "0.19.2", default-features = false, features = [
-    "calloop",
-], optional = true }
+sctk = { package = "smithay-client-toolkit", version = "0.19.2", default-features = false, features = ["calloop"], optional = true }
 sctk-adwaita = { version = "0.10.1", default-features = false, optional = true }
-wayland-backend = { version = "0.3.10", default-features = false, features = [
-    "client_system",
-], optional = true }
+wayland-backend = { version = "0.3.10", default-features = false, features = ["client_system"], optional = true }
 wayland-client = { version = "0.31.10", optional = true }
-wayland-protocols = { version = "0.32.8", features = [
-    "staging",
-], optional = true }
-wayland-protocols-plasma = { version = "0.3.8", features = [
-    "client",
-], optional = true }
+wayland-protocols = { version = "0.32.8", features = ["staging"], optional = true }
+wayland-protocols-plasma = { version = "0.3.8", features = ["client"], optional = true }
 x11-dl = { version = "2.19.1", optional = true }
-x11rb = { version = "0.13.0", default-features = false, features = [
-    "allow-unsafe-code",
-    "dl-libxcb",
-    "randr",
-    "resource_manager",
-    "xinput",
-    "xkb",
-], optional = true }
+x11rb = { version = "0.13.0", default-features = false, features = ["allow-unsafe-code", "dl-libxcb", "randr", "resource_manager", "xinput", "xkb"], optional = true }
 xkbcommon-dl = "0.4.2"
 
 [target.'cfg(target_os = "redox")'.dependencies]
@@ -300,55 +281,55 @@ wasm-bindgen = "0.2.93"
 wasm-bindgen-futures = "0.4.43"
 web-time = "1"
 web_sys = { package = "web-sys", version = "0.3.70", features = [
-    "AbortController",
-    "AbortSignal",
-    "Blob",
-    "BlobPropertyBag",
-    "console",
-    "CssStyleDeclaration",
-    "Document",
-    "DomException",
-    "DomRect",
-    "DomRectReadOnly",
-    "Element",
-    "Event",
-    "EventTarget",
-    "FocusEvent",
-    "HtmlCanvasElement",
-    "HtmlElement",
-    "HtmlImageElement",
-    "ImageBitmap",
-    "ImageBitmapOptions",
-    "ImageBitmapRenderingContext",
-    "ImageData",
-    "IntersectionObserver",
-    "IntersectionObserverEntry",
-    "KeyboardEvent",
-    "MediaQueryList",
-    "MessageChannel",
-    "MessagePort",
-    "Navigator",
-    "Node",
-    "OrientationLockType",
-    "OrientationType",
-    "PageTransitionEvent",
-    "Permissions",
-    "PermissionState",
-    "PermissionStatus",
-    "PointerEvent",
-    "PremultiplyAlpha",
-    "ResizeObserver",
-    "ResizeObserverBoxOptions",
-    "ResizeObserverEntry",
-    "ResizeObserverOptions",
-    "ResizeObserverSize",
-    "Screen",
-    "ScreenOrientation",
-    "Url",
-    "VisibilityState",
-    "WheelEvent",
-    "Window",
-    "Worker",
+  "AbortController",
+  "AbortSignal",
+  "Blob",
+  "BlobPropertyBag",
+  "console",
+  "CssStyleDeclaration",
+  "Document",
+  "DomException",
+  "DomRect",
+  "DomRectReadOnly",
+  "Element",
+  "Event",
+  "EventTarget",
+  "FocusEvent",
+  "HtmlCanvasElement",
+  "HtmlElement",
+  "HtmlImageElement",
+  "ImageBitmap",
+  "ImageBitmapOptions",
+  "ImageBitmapRenderingContext",
+  "ImageData",
+  "IntersectionObserver",
+  "IntersectionObserverEntry",
+  "KeyboardEvent",
+  "MediaQueryList",
+  "MessageChannel",
+  "MessagePort",
+  "Navigator",
+  "Node",
+  "OrientationLockType",
+  "OrientationType",
+  "PageTransitionEvent",
+  "Permissions",
+  "PermissionState",
+  "PermissionStatus",
+  "PointerEvent",
+  "PremultiplyAlpha",
+  "ResizeObserver",
+  "ResizeObserverBoxOptions",
+  "ResizeObserverEntry",
+  "ResizeObserverOptions",
+  "ResizeObserverSize",
+  "Screen",
+  "ScreenOrientation",
+  "Url",
+  "VisibilityState",
+  "WheelEvent",
+  "Window",
+  "Worker",
 ] }
 
 [target.'cfg(all(target_family = "wasm", target_feature = "atomics"))'.dependencies]

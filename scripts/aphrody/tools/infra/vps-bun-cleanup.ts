@@ -37,7 +37,8 @@ const retainedAssetTrees = [
 ];
 const option = (name: string): string => {
   const value = args[args.indexOf(name) + 1];
-  if (value === undefined || value.startsWith("--")) throw new Error(`${name} requires a value.`);
+  if (value === undefined || value.startsWith("--"))
+    throw new Error(`${name} requires a value.`);
   return value;
 };
 const output = args.includes("--out")
@@ -83,18 +84,29 @@ const protectedRoots = [
   "build/tools-build",
   "build/xmsvc",
 ].map((path) => join(home, path));
-const within = (path: string, root: string) => path === root || path.startsWith(`${root}/`);
+const within = (path: string, root: string) =>
+  path === root || path.startsWith(`${root}/`);
 const overlaps = (a: string, b: string) => within(a, b) || within(b, a);
-const digest = (text: string) => new Bun.CryptoHasher("sha256").update(text).digest("hex");
+const digest = (text: string) =>
+  new Bun.CryptoHasher("sha256").update(text).digest("hex");
 const sanitizeRemote = (value: string) =>
-  value.replace(/([a-z][a-z0-9+.-]*:\/\/)[^/@\s]+@/gi, "$1[redacted]@").replace(/[?#].*$/, "");
+  value
+    .replace(/([a-z][a-z0-9+.-]*:\/\/)[^/@\s]+@/gi, "$1[redacted]@")
+    .replace(/[?#].*$/, "");
 
 async function command(argv: string[], seconds = 60) {
-  const child = Bun.spawn(["timeout", "--signal=TERM", "--kill-after=3", `${seconds}s`, ...argv], {
-    stdout: "pipe",
-    stderr: "pipe",
-    env: { ...process.env, GIT_OPTIONAL_LOCKS: "0", GIT_TERMINAL_PROMPT: "0" },
-  });
+  const child = Bun.spawn(
+    ["timeout", "--signal=TERM", "--kill-after=3", `${seconds}s`, ...argv],
+    {
+      stdout: "pipe",
+      stderr: "pipe",
+      env: {
+        ...process.env,
+        GIT_OPTIONAL_LOCKS: "0",
+        GIT_TERMINAL_PROMPT: "0",
+      },
+    },
+  );
   const [stdout, stderr, exitCode] = await Promise.all([
     new Response(child.stdout).text(),
     new Response(child.stderr).text(),
@@ -122,7 +134,8 @@ function processes() {
           references.push(value);
           return value;
         } catch (error) {
-          if ((error as { code?: string }).code !== "ENOENT") failures.push(`${pid}:${part}`);
+          if ((error as { code?: string }).code !== "ENOENT")
+            failures.push(`${pid}:${part}`);
           return null;
         }
       };
@@ -145,14 +158,18 @@ function processes() {
         references,
       });
     } catch (error) {
-      if (!["ENOENT", "ESRCH"].includes((error as { code?: string }).code ?? ""))
+      if (
+        !["ENOENT", "ESRCH"].includes((error as { code?: string }).code ?? "")
+      )
         failures.push(`${pid}:inspection`);
     }
   }
   return { rows, failures };
 }
 
-let filesystemScan: Promise<{ exitCode: number; stderr: string; directories: number }> | undefined;
+let filesystemScan:
+  | Promise<{ exitCode: number; stderr: string; directories: number }>
+  | undefined;
 async function scanFilesystem() {
   const directoriesFd = openSync(join(output, "directories.nul"), "w", 0o644);
   const markersFd = openSync(join(output, "git-markers.nul"), "w", 0o644);
@@ -210,7 +227,8 @@ async function scanFilesystem() {
             ],
             25,
           );
-          if (index.exitCode !== 0) failures.push(`Git index inaccessible: ${item.path}`);
+          if (index.exitCode !== 0)
+            failures.push(`Git index inaccessible: ${item.path}`);
           for (const record of index.stdout.split("\0").filter(Boolean)) {
             const tab = record.indexOf("\t");
             if (tab < 0) continue;
@@ -243,15 +261,24 @@ async function scanFilesystem() {
         }
         if (directories % 256 === 0) await Bun.sleep(0);
       } catch (error) {
-        failures.push(`${item.path}: ${(error as { code?: string }).code ?? "inspection failed"}`);
+        failures.push(
+          `${item.path}: ${(error as { code?: string }).code ?? "inspection failed"}`,
+        );
       }
     }
   } finally {
     closeSync(directoriesFd);
     closeSync(markersFd);
   }
-  await Bun.write(join(output, "indexed-directories.nul"), [...indexDirectories].join("\0") + "\0");
-  return { exitCode: failures.length ? 1 : 0, stderr: failures.join("\n"), directories };
+  await Bun.write(
+    join(output, "indexed-directories.nul"),
+    [...indexDirectories].join("\0") + "\0",
+  );
+  return {
+    exitCode: failures.length ? 1 : 0,
+    stderr: failures.join("\n"),
+    directories,
+  };
 }
 async function exportFind(file: string) {
   filesystemScan ??= scanFilesystem();
@@ -259,29 +286,48 @@ async function exportFind(file: string) {
 }
 
 async function inventory() {
-  if (!within(output, `${home}/.local/share/aphrody/infra`) || output.includes("/../"))
-    throw new Error("Inventory reports must remain in the declared Infra store.");
+  if (
+    !within(output, `${home}/.local/share/aphrody/infra`) ||
+    output.includes("/../")
+  )
+    throw new Error(
+      "Inventory reports must remain in the declared Infra store.",
+    );
   mkdirSync(output, { recursive: true, mode: 0o700 });
-  if (realpathSync(output) !== output) throw new Error("Report directory is not canonical.");
+  if (realpathSync(output) !== output)
+    throw new Error("Report directory is not canonical.");
   console.log(`Inventory: ${output}`);
-  const [gitScan, directoryScan, mounts, services, usage, ps, containers, sessions] =
-    await Promise.all([
-      exportFind("git-markers.nul"),
-      exportFind("directories.nul"),
-      command(["findmnt", "--json", "--output", "TARGET,SOURCE,FSTYPE"]),
-      command([
-        "systemctl",
-        "list-units",
-        "--type=service",
-        "--state=running",
-        "--no-legend",
-        "--no-pager",
-      ]),
-      command(["du", "-x", "-B1", "--max-depth=1", "--", home], 180),
-      command(["ps", "-eo", "pid,ppid,user,comm,pcpu,pmem,etimes", "--sort=-pmem"]),
-      command(["docker", "ps", "--format", "{{.ID}}\t{{.Names}}\t{{.Image}}"]),
-      command(["tmux", "list-sessions"]),
-    ]);
+  const [
+    gitScan,
+    directoryScan,
+    mounts,
+    services,
+    usage,
+    ps,
+    containers,
+    sessions,
+  ] = await Promise.all([
+    exportFind("git-markers.nul"),
+    exportFind("directories.nul"),
+    command(["findmnt", "--json", "--output", "TARGET,SOURCE,FSTYPE"]),
+    command([
+      "systemctl",
+      "list-units",
+      "--type=service",
+      "--state=running",
+      "--no-legend",
+      "--no-pager",
+    ]),
+    command(["du", "-x", "-B1", "--max-depth=1", "--", home], 180),
+    command([
+      "ps",
+      "-eo",
+      "pid,ppid,user,comm,pcpu,pmem,etimes",
+      "--sort=-pmem",
+    ]),
+    command(["docker", "ps", "--format", "{{.ID}}\t{{.Names}}\t{{.Image}}"]),
+    command(["tmux", "list-sessions"]),
+  ]);
   const shallow = await command([
     "find",
     "-P",
@@ -300,7 +346,11 @@ async function inventory() {
       ((await Bun.file(join(output, gitScan.file)).text()) + shallow.stdout)
         .split("\0")
         .filter(Boolean)
-        .concat(retainedAssetTrees.map((path) => join(path, ".git")).filter(existsSync)),
+        .concat(
+          retainedAssetTrees
+            .map((path) => join(path, ".git"))
+            .filter(existsSync),
+        ),
     ),
   ];
   const repositories = [];
@@ -327,7 +377,10 @@ async function inventory() {
       git(["branch", "--show-current"]),
       git(["status", "--porcelain=v1", "-z", "--untracked-files=normal"]),
       git(["remote", "-v"]),
-      git(["for-each-ref", "--format=%(refname) %(objectname) %(upstream:track)"]),
+      git([
+        "for-each-ref",
+        "--format=%(refname) %(objectname) %(upstream:track)",
+      ]),
       git(["worktree", "list", "--porcelain"]),
     ]);
     repositories.push({
@@ -357,7 +410,11 @@ async function inventory() {
     const stat = lstatSync(path);
     return {
       path,
-      kind: stat.isSymbolicLink() ? "symlink" : stat.isDirectory() ? "directory" : "file",
+      kind: stat.isSymbolicLink()
+        ? "symlink"
+        : stat.isDirectory()
+          ? "directory"
+          : "file",
       target: stat.isSymbolicLink() ? readlinkSync(path) : undefined,
       disposition: protectedRoots.some((root) => overlaps(path, root))
         ? "preserve"
@@ -370,7 +427,9 @@ async function inventory() {
     home,
     observedAt: new Date().toISOString(),
     apply: false,
-    coverage: args.includes("--summary") ? "bounded-depth-summary" : "recursive-filesystem-scan",
+    coverage: args.includes("--summary")
+      ? "bounded-depth-summary"
+      : "recursive-filesystem-scan",
     directories,
     repositories,
     protectedRoots,
@@ -384,7 +443,9 @@ async function inventory() {
     ps,
     containers,
     sessions,
-    processes: proc.rows.map(({ references: _privateReferences, ...row }) => row),
+    processes: proc.rows.map(
+      ({ references: _privateReferences, ...row }) => row,
+    ),
     processInspectionFailures: proc.failures,
     limitations: [
       "Symlink destinations outside home are retained, not recursively scanned.",
@@ -397,7 +458,10 @@ async function inventory() {
       "No processes or services are stopped; no dependency caches are purged.",
     ],
   };
-  await Bun.write(join(output, "inventory.json"), JSON.stringify(report, null, 2));
+  await Bun.write(
+    join(output, "inventory.json"),
+    JSON.stringify(report, null, 2),
+  );
   const plan = {
     schema: "aphrody.bun-cleanup-plan/1",
     home,
@@ -414,7 +478,8 @@ async function inventory() {
       repositories: repositories.length,
       dirty: repositories.filter((repo) => repo.dirty).length,
       unknown: repositories.filter((repo) => repo.dirty === null).length,
-      directories: directories.filter((entry) => entry.kind === "directory").length,
+      directories: directories.filter((entry) => entry.kind === "directory")
+        .length,
       processes: proc.rows.length,
       scanComplete: gitScan.exitCode === 0 && directoryScan.exitCode === 0,
       removed: 0,
@@ -424,7 +489,9 @@ async function inventory() {
 
 async function apply() {
   if (process.getuid?.() !== 0)
-    throw new Error("Apply requires privileged process inspection through sudo -n.");
+    throw new Error(
+      "Apply requires privileged process inspection through sudo -n.",
+    );
   const planFile = option("--apply");
   if (
     !within(planFile, `${home}/.local/share/aphrody/infra`) ||
@@ -449,7 +516,9 @@ async function apply() {
     realpathSync(plan.inventoryFile) !== plan.inventoryFile
   )
     throw new Error("Invalid inventory reference.");
-  const inventoryReceipt = JSON.parse(await Bun.file(plan.inventoryFile).text());
+  const inventoryReceipt = JSON.parse(
+    await Bun.file(plan.inventoryFile).text(),
+  );
   if (
     digest(JSON.stringify(inventoryReceipt)) !== plan.inventorySha256 ||
     inventoryReceipt.host !== "vps" ||
@@ -458,15 +527,21 @@ async function apply() {
     inventoryReceipt.directoryScan.exitCode !== 0 ||
     inventoryReceipt.shallowScan.exitCode !== 0 ||
     inventoryReceipt.repositories.some(
-      (repo: { statusExitCode: number; metadataExitCodes?: Record<string, number> }) =>
+      (repo: {
+        statusExitCode: number;
+        metadataExitCodes?: Record<string, number>;
+      }) =>
         repo.statusExitCode !== 0 ||
         !repo.metadataExitCodes ||
         Object.values(repo.metadataExitCodes).some((code) => code !== 0),
     ) ||
-    Math.abs(Date.now() - Date.parse(inventoryReceipt.observedAt)) > 1_800_000 ||
+    Math.abs(Date.now() - Date.parse(inventoryReceipt.observedAt)) >
+      1_800_000 ||
     !Number.isFinite(Date.parse(inventoryReceipt.observedAt))
   )
-    throw new Error("Inventory is incomplete, stale, or changed; apply refused.");
+    throw new Error(
+      "Inventory is incomplete, stale, or changed; apply refused.",
+    );
   if (
     plan.entries.some((entry: { path: string }, index: number) =>
       plan.entries.some(
@@ -500,7 +575,9 @@ async function apply() {
     .map((line) =>
       line
         .split(" ")[4]
-        ?.replace(/\\([0-7]{3})/g, (_match, octal) => String.fromCharCode(parseInt(octal, 8))),
+        ?.replace(/\\([0-7]{3})/g, (_match, octal) =>
+          String.fromCharCode(parseInt(octal, 8)),
+        ),
     )
     .filter(Boolean) as string[];
   const docker = await command(["docker", "ps", "-q"]);
@@ -509,9 +586,11 @@ async function apply() {
   const inspection = ids.length
     ? await command(["docker", "inspect", ...ids])
     : { exitCode: 0, stdout: "[]" };
-  if (inspection.exitCode !== 0) throw new Error("Cannot inspect container mounts.");
+  if (inspection.exitCode !== 0)
+    throw new Error("Cannot inspect container mounts.");
   const binds: string[] = JSON.parse(inspection.stdout).flatMap(
-    (container: { Mounts: { Source: string }[] }) => container.Mounts.map((mount) => mount.Source),
+    (container: { Mounts: { Source: string }[] }) =>
+      container.Mounts.map((mount) => mount.Source),
   );
   // Validate the entire batch before deleting even the first item.
   for (const entry of plan.entries) {
@@ -524,13 +603,25 @@ async function apply() {
       lstatSync(path).isSymbolicLink()
     )
       throw new Error("Unsafe path.");
-    if (entry.kind !== "retired-build-output" || !entry.reason || !entry.terminalReceipt)
-      throw new Error("Only explicitly retired outputs with terminal evidence may be removed.");
-    if (protectedRoots.some((root) => overlaps(path, root)) || overlaps(path, output))
+    if (
+      entry.kind !== "retired-build-output" ||
+      !entry.reason ||
+      !entry.terminalReceipt
+    )
+      throw new Error(
+        "Only explicitly retired outputs with terminal evidence may be removed.",
+      );
+    if (
+      protectedRoots.some((root) => overlaps(path, root)) ||
+      overlaps(path, output)
+    )
       throw new Error(`Protected: ${path}`);
     if (!within(path, `${home}/build`) && !within(path, `${home}/builds`))
       throw new Error(`Outside declared build roots: ${path}`);
-    if (mounts.some((mount) => within(mount, path)) || binds.some((bind) => overlaps(path, bind)))
+    if (
+      mounts.some((mount) => within(mount, path)) ||
+      binds.some((bind) => overlaps(path, bind))
+    )
       throw new Error(`Mounted or container-used: ${path}`);
     const scan = await command([
       "find",
@@ -558,7 +649,8 @@ async function apply() {
       "-print",
       "-quit",
     ]);
-    if (scan.exitCode !== 0 || scan.stdout) throw new Error(`Source or protected payload: ${path}`);
+    if (scan.exitCode !== 0 || scan.stdout)
+      throw new Error(`Source or protected payload: ${path}`);
     if (
       typeof entry.terminalReceipt !== "string" ||
       ![
@@ -579,12 +671,16 @@ async function apply() {
       terminal.exitCode !== 0 ||
       terminal.outputPath !== path
     )
-      throw new Error("Missing successful terminal receipt retained outside output.");
+      throw new Error(
+        "Missing successful terminal receipt retained outside output.",
+      );
     const proc = processes();
     if (
       proc.failures.length ||
       proc.rows.some((row) =>
-        row.references.some((ref) => within(ref.replace(/ \(deleted\)$/, ""), path)),
+        row.references.some((ref) =>
+          within(ref.replace(/ \(deleted\)$/, ""), path),
+        ),
       )
     )
       throw new Error(`Active or inaccessible process: ${path}`);
@@ -595,7 +691,9 @@ async function apply() {
     if (
       realpathSync(entry.path) !== entry.path ||
       proc.failures.length ||
-      proc.rows.some((row) => row.references.some((ref) => within(ref, entry.path)))
+      proc.rows.some((row) =>
+        row.references.some((ref) => within(ref, entry.path)),
+      )
     )
       throw new Error("Concurrent use; stopping cleanup.");
     rmSync(entry.path, { recursive: true });
@@ -603,7 +701,11 @@ async function apply() {
   }
 }
 
-if (process.platform !== "linux" || hostname() !== "vps-203bea89" || !existsSync(home))
+if (
+  process.platform !== "linux" ||
+  hostname() !== "vps-203bea89" ||
+  !existsSync(home)
+)
   throw new Error("This script is for the declared VPS Ubuntu home only.");
 if (args.includes("--apply")) await apply();
 else await inventory();

@@ -13,7 +13,9 @@ describe("computeSnap", () => {
     const moving = box(103, 400);
     const result = computeSnap(moving, [box(100, 0)], 6, null);
     expect(result.x).toBe(100);
-    expect(result.guides.some((g) => g.axis === "x" && g.pos === 100)).toBe(true);
+    expect(result.guides.some((g) => g.axis === "x" && g.pos === 100)).toBe(
+      true,
+    );
   });
 
   it("snaps centers together", () => {

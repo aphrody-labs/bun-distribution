@@ -18,11 +18,21 @@
       "csp": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
     }
   },
-  "plugins": { "aphrody": { "bun": { "sidecar": "aphrody-server", "readyTimeoutMs": 15000 } } },
+  "plugins": {
+    "aphrody": {
+      "bun": { "sidecar": "aphrody-server", "readyTimeoutMs": 15000 }
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",
     "externalBin": ["../../../build/apps/desktop/native/aphrody-server"],
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"]
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
   }
 }

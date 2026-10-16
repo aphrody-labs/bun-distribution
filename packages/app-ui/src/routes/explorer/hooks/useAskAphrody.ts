@@ -10,7 +10,11 @@ export function useAskAphrody() {
     if (targets.length === 0) return;
     const { prompt, parentDir, targetPaths } = buildAskAphrodyPrompt(targets);
     navigate("/chat", {
-      state: { initialPrompt: prompt, cwd: parentDir, contextFiles: targetPaths },
+      state: {
+        initialPrompt: prompt,
+        cwd: parentDir,
+        contextFiles: targetPaths,
+      },
     });
   };
 }

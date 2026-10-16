@@ -71,8 +71,18 @@ describe("computeSectionedLayout", () => {
   it("emits a band per group and stacks them top-to-bottom", () => {
     const layout = computeSectionedLayout(
       [
-        { id: null, name: "Ungrouped", collapsed: false, items: [{ id: "a", aspect: 1 }] },
-        { id: "s1", name: "Refs", collapsed: false, items: [{ id: "b", aspect: 1 }] },
+        {
+          id: null,
+          name: "Ungrouped",
+          collapsed: false,
+          items: [{ id: "a", aspect: 1 }],
+        },
+        {
+          id: "s1",
+          name: "Refs",
+          collapsed: false,
+          items: [{ id: "b", aspect: 1 }],
+        },
       ],
       600,
       DENSITY,
@@ -85,7 +95,14 @@ describe("computeSectionedLayout", () => {
 
   it("offsets a section's cards below its own header", () => {
     const layout = computeSectionedLayout(
-      [{ id: "s1", name: "Refs", collapsed: false, items: [{ id: "b", aspect: 1 }] }],
+      [
+        {
+          id: "s1",
+          name: "Refs",
+          collapsed: false,
+          items: [{ id: "b", aspect: 1 }],
+        },
+      ],
       600,
       DENSITY,
     );
@@ -94,7 +111,14 @@ describe("computeSectionedLayout", () => {
 
   it("renders a header but no cards for a collapsed section", () => {
     const layout = computeSectionedLayout(
-      [{ id: "s1", name: "Refs", collapsed: true, items: [{ id: "b", aspect: 1 }] }],
+      [
+        {
+          id: "s1",
+          name: "Refs",
+          collapsed: true,
+          items: [{ id: "b", aspect: 1 }],
+        },
+      ],
       600,
       DENSITY,
     );

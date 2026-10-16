@@ -32,7 +32,9 @@ export class LlmError extends Error {
 /** `http://host:port` becomes `http://host:port/v1`; a trailing `/chat/completions` is dropped. */
 export function normalizeBaseUrl(input: string): string {
   const url = new URL(input);
-  let path = url.pathname.replace(/\/+$/, "").replace(/\/chat\/completions$/, "");
+  let path = url.pathname
+    .replace(/\/+$/, "")
+    .replace(/\/chat\/completions$/, "");
   if (path === "") path = "/v1";
   url.pathname = path;
   url.search = "";
@@ -61,15 +63,21 @@ export function stripThinking(text: string): string {
   return out.trim();
 }
 
-const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 
 function contentOf(body: unknown): string {
-  const choice = (body as { choices?: { message?: { content?: unknown } }[] })?.choices?.[0];
+  const choice = (body as { choices?: { message?: { content?: unknown } }[] })
+    ?.choices?.[0];
   const content = choice?.message?.content;
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
     return content
-      .map((part) => (typeof part === "string" ? part : ((part as { text?: string })?.text ?? "")))
+      .map((part) =>
+        typeof part === "string"
+          ? part
+          : ((part as { text?: string })?.text ?? ""),
+      )
       .join("");
   }
   throw new LlmError("réponse sans choices[0].message.content");
@@ -82,12 +90,18 @@ export class LlmClient {
   constructor(readonly config: LlmConfig) {}
 
   private headers(): Record<string, string> {
-    const headers: Record<string, string> = { "content-type": "application/json" };
-    if (this.config.apiKey) headers.authorization = `Bearer ${this.config.apiKey}`;
+    const headers: Record<string, string> = {
+      "content-type": "application/json",
+    };
+    if (this.config.apiKey)
+      headers.authorization = `Bearer ${this.config.apiKey}`;
     return headers;
   }
 
-  async chat(messages: ChatMessage[], options: { maxTokens?: number } = {}): Promise<string> {
+  async chat(
+    messages: ChatMessage[],
+    options: { maxTokens?: number } = {},
+  ): Promise<string> {
     const attempts = this.config.maxAttempts ?? 3;
     let delay = this.config.retryDelayMs ?? 800;
     let last: unknown;
@@ -97,7 +111,12 @@ export class LlmClient {
         return await this.once(messages, options);
       } catch (error) {
         last = error;
-        if (!(error instanceof LlmError) || !error.retryable || attempt === attempts) break;
+        if (
+          !(error instanceof LlmError) ||
+          !error.retryable ||
+          attempt === attempts
+        )
+          break;
         // oxlint-disable-next-line no-await-in-loop -- backoff exponentiel entre tentatives séquentielles, par conception
         await sleep(delay);
         delay *= 2;
@@ -106,7 +125,10 @@ export class LlmClient {
     throw last instanceof Error ? last : new LlmError(String(last));
   }
 
-  private async once(messages: ChatMessage[], options: { maxTokens?: number }): Promise<string> {
+  private async once(
+    messages: ChatMessage[],
+    options: { maxTokens?: number },
+  ): Promise<string> {
     const { config } = this;
     const body: Record<string, unknown> = {
       model: config.model,
@@ -130,7 +152,10 @@ export class LlmClient {
       });
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
-      throw new LlmError(`endpoint injoignable (${config.baseUrl}) : ${reason}`, true);
+      throw new LlmError(
+        `endpoint injoignable (${config.baseUrl}) : ${reason}`,
+        true,
+      );
     }
     if (!response.ok) {
       const text = (await response.text().catch(() => "")).slice(0, 300);
@@ -185,15 +210,22 @@ export async function listModels(
     headers: apiKey ? { authorization: `Bearer ${apiKey}` } : {},
     signal: AbortSignal.timeout(timeoutMs),
   });
-  if (!response.ok) throw new LlmError(`HTTP ${response.status} sur ${baseUrl}/models`);
-  const json = (await response.json()) as { data?: { id?: string; status?: { value?: string } }[] };
+  if (!response.ok)
+    throw new LlmError(`HTTP ${response.status} sur ${baseUrl}/models`);
+  const json = (await response.json()) as {
+    data?: { id?: string; status?: { value?: string } }[];
+  };
   return (json.data ?? [])
     .filter(
-      (item): item is { id: string; status?: { value?: string } } => typeof item.id === "string",
+      (item): item is { id: string; status?: { value?: string } } =>
+        typeof item.id === "string",
     )
     .map((item) => ({
       id: item.id,
-      loaded: item.status?.value === undefined ? undefined : item.status.value === "loaded",
+      loaded:
+        item.status?.value === undefined
+          ? undefined
+          : item.status.value === "loaded",
     }));
 }
 

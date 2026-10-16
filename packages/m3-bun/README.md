@@ -35,8 +35,15 @@ plugins = ["@aphrody/m3-bun/plugin"]
 
 ```ts
 // m3.config.ts
-export default defineM3Config({ entry: "src/index.html", theme: { seed: "#6750a4" } });
-export const bun = defineM3Bun({ api: "src/api/index.ts", port: 3000, compile: { bytecode: true } });
+export default defineM3Config({
+  entry: "src/index.html",
+  theme: { seed: "#6750a4" },
+});
+export const bun = defineM3Bun({
+  api: "src/api/index.ts",
+  port: 3000,
+  compile: { bytecode: true },
+});
 ```
 
 The fork's Bun plugins compose behind options of `m3Bun` (`src/plugins.ts`): `yaml`, `svelte` (on by default), `mdx`
@@ -62,20 +69,20 @@ same routes into one `fetch` handler for Cloudflare Workers and Vercel functions
 
 The server's optional parts load on first use (`src/server-*.ts`), on Bun APIs only:
 
-| Module | What it does |
-| --- | --- |
-| HTML | `HTMLRewriter`: CSP nonce on every script, and the request's theme |
-| Markdown | `Bun.markdown` pages |
-| Crawl | `sitemap.xml`, `robots.txt` and `llms.txt` |
-| Realtime | WebSocket topics |
-| Data | `bun:sqlite` with migrations |
-| Secrets | `Bun.secrets` |
-| Auth | `Bun.password` and sessions |
-| Cache | `Bun.RedisClient` |
-| MCP | `@aphrody/m3-mcp` tools |
-| AG-UI | `@aphrody/m3-ai` |
-| Next | `@aphrody/next-bun` behind a proxy |
-| m3 routes | `@aphrody/m3/server` routes |
+| Module    | What it does                                                       |
+| --------- | ------------------------------------------------------------------ |
+| HTML      | `HTMLRewriter`: CSP nonce on every script, and the request's theme |
+| Markdown  | `Bun.markdown` pages                                               |
+| Crawl     | `sitemap.xml`, `robots.txt` and `llms.txt`                         |
+| Realtime  | WebSocket topics                                                   |
+| Data      | `bun:sqlite` with migrations                                       |
+| Secrets   | `Bun.secrets`                                                      |
+| Auth      | `Bun.password` and sessions                                        |
+| Cache     | `Bun.RedisClient`                                                  |
+| MCP       | `@aphrody/m3-mcp` tools                                            |
+| AG-UI     | `@aphrody/m3-ai`                                                   |
+| Next      | `@aphrody/next-bun` behind a proxy                                 |
+| m3 routes | `@aphrody/m3/server` routes                                        |
 
 `m3-bun dev --inspect [--inspector-ui]` runs the dev server in a child Bun with its inspector on, relays its console and
 exceptions, and serves the WebKit Web Inspector (`@aphrody/web-inspector-bun`). API load and handler errors go to Bun's

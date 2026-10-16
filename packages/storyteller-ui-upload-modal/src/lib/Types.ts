@@ -72,8 +72,4 @@ export const getFileExtension = (file: File): string =>
 // = an FBX being normalized to GLB client-side before it can be previewed
 // or uploaded.
 export type FileEntryStatus =
-  | "idle"
-  | "converting"
-  | "uploading"
-  | "success"
-  | "error";
+  "idle" | "converting" | "uploading" | "success" | "error";

@@ -10,7 +10,10 @@ test("automation inventory discovers the monorepo itself and accepts a worktree 
   try {
     await writeFile(join(root, ".git"), "gitdir: ../private-git\n");
     await mkdir(join(root, "scripts/audit"), { recursive: true });
-    await writeFile(join(root, "scripts/audit/check.ts"), "throw new Error('must not execute')");
+    await writeFile(
+      join(root, "scripts/audit/check.ts"),
+      "throw new Error('must not execute')",
+    );
     const report = await collectAutomationInventory(root);
     expect(report.repositories).toHaveLength(1);
     expect(report.scripts).toBe(1);

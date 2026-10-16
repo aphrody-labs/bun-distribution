@@ -23,7 +23,11 @@ export {
   noopSegmentTranslator,
   freeTranslate,
 } from "./translator.js";
-export type { TranslateOptions, OfflineTranslateOptions, SegmentTranslator } from "./translator.js";
+export type {
+  TranslateOptions,
+  OfflineTranslateOptions,
+  SegmentTranslator,
+} from "./translator.js";
 
 export {
   createGeminiClient,

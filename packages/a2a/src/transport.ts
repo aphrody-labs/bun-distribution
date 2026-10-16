@@ -13,8 +13,18 @@ import {
   a2aErrorFromRpc,
   isRpcErrorShape,
 } from "./errors.ts";
-import { HttpCore, joinUrl, parseJsonLoose, type CallOptions, type HttpOptions } from "./http.ts";
-import { A2A_JSON_MEDIA_TYPE, asStreamResponse, type SupportedBinding } from "./protocol.ts";
+import {
+  HttpCore,
+  joinUrl,
+  parseJsonLoose,
+  type CallOptions,
+  type HttpOptions,
+} from "./http.ts";
+import {
+  A2A_JSON_MEDIA_TYPE,
+  asStreamResponse,
+  type SupportedBinding,
+} from "./protocol.ts";
 import { readSse } from "./sse.ts";
 
 export type UnaryMethod = Exclude<A2AMethod, A2AStreamingMethod>;
@@ -43,7 +53,9 @@ export interface TransportOptions extends HttpOptions {
 }
 
 function isEventStream(response: Response): boolean {
-  return (response.headers.get("content-type") ?? "").toLowerCase().includes("text/event-stream");
+  return (response.headers.get("content-type") ?? "")
+    .toLowerCase()
+    .includes("text/event-stream");
 }
 
 /**
@@ -59,18 +71,28 @@ async function* decodeEvents(
 ): AsyncGenerator<StreamResponse> {
   try {
     if (!response.body)
-      throw new A2ATransportError("protocol", `${operation}: empty stream`, { method: operation });
+      throw new A2ATransportError("protocol", `${operation}: empty stream`, {
+        method: operation,
+      });
     for await (const event of readSse(response.body)) yield decode(event.data);
   } catch (cause) {
-    if (cause instanceof A2AError || cause instanceof A2ATransportError) throw cause;
+    if (cause instanceof A2AError || cause instanceof A2ATransportError)
+      throw cause;
     if (signal?.aborted) {
-      throw new A2ATransportError("aborted", `${operation} aborted`, { method: operation, cause });
+      throw new A2ATransportError("aborted", `${operation} aborted`, {
+        method: operation,
+        cause,
+      });
     }
     const reason = cause instanceof Error ? cause.message : String(cause);
-    throw new A2ATransportError("stream", `${operation} stream failed: ${reason}`, {
-      method: operation,
-      cause,
-    });
+    throw new A2ATransportError(
+      "stream",
+      `${operation} stream failed: ${reason}`,
+      {
+        method: operation,
+        cause,
+      },
+    );
   } finally {
     release();
     await response.body?.cancel().catch(() => undefined);
@@ -101,7 +123,12 @@ export class JsonRpcTransport implements Transport {
   }
 
   private envelope(method: string, params: unknown): string {
-    return JSON.stringify({ jsonrpc: "2.0", id: this.nextId++, method, params: params ?? {} });
+    return JSON.stringify({
+      jsonrpc: "2.0",
+      id: this.nextId++,
+      method,
+      params: params ?? {},
+    });
   }
 
   async call<M extends UnaryMethod>(
@@ -123,16 +150,28 @@ export class JsonRpcTransport implements Transport {
       throw a2aErrorFromRpc(payload.error, method);
     }
     if (!response.ok) {
-      throw new A2ATransportError("http", `${method}: HTTP ${response.status}`, {
-        status: response.status,
-        method,
-      });
+      throw new A2ATransportError(
+        "http",
+        `${method}: HTTP ${response.status}`,
+        {
+          status: response.status,
+          method,
+        },
+      );
     }
-    if (payload === undefined || typeof payload !== "object" || !("result" in payload)) {
-      throw new A2ATransportError("protocol", `${method}: response is not a JSON-RPC result`, {
-        status: response.status,
-        method,
-      });
+    if (
+      payload === undefined ||
+      typeof payload !== "object" ||
+      !("result" in payload)
+    ) {
+      throw new A2ATransportError(
+        "protocol",
+        `${method}: response is not a JSON-RPC result`,
+        {
+          status: response.status,
+          method,
+        },
+      );
     }
     // DeleteTaskPushNotificationConfig answers `null`: expose the empty message.
     return (payload.result ?? {}) as MethodResponse<M>;
@@ -190,14 +229,21 @@ function decodeRpcResult(payload: RpcResponse, method: string): StreamResponse {
   try {
     return asStreamResponse(payload.result);
   } catch (cause) {
-    throw new A2ATransportError("protocol", `${method}: invalid stream event`, { method, cause });
+    throw new A2ATransportError("protocol", `${method}: invalid stream event`, {
+      method,
+      cause,
+    });
   }
 }
 
 function decodeRpcEvent(data: string, method: string): StreamResponse {
   const payload = parseJsonLoose(data) as RpcResponse | undefined;
   if (payload === undefined || typeof payload !== "object") {
-    throw new A2ATransportError("protocol", `${method}: malformed stream event`, { method });
+    throw new A2ATransportError(
+      "protocol",
+      `${method}: malformed stream event`,
+      { method },
+    );
   }
   if (payload.error !== undefined && isRpcErrorShape(payload.error)) {
     throw a2aErrorFromRpc(payload.error, method);
@@ -212,7 +258,9 @@ function decodeRpcEvent(data: string, method: string): StreamResponse {
 type Query = Record<string, string | number | boolean | undefined>;
 
 function queryString(query: Query): string {
-  const pairs = Object.entries(query).filter(([, v]) => v !== undefined && v !== "");
+  const pairs = Object.entries(query).filter(
+    ([, v]) => v !== undefined && v !== "",
+  );
   if (pairs.length === 0) return "";
   return `?${pairs.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join("&")}`;
 }
@@ -237,7 +285,10 @@ export class RestTransport implements Transport {
 
   /** Route of one method. `tenant` moves from the body to the path prefix. */
   private route(method: A2AMethod, params: Record<string, unknown>): RestCall {
-    const { tenant, ...rest } = params as { tenant?: string } & Record<string, unknown>;
+    const { tenant, ...rest } = params as { tenant?: string } & Record<
+      string,
+      unknown
+    >;
     const prefix = tenant ? `/${encodeURIComponent(tenant)}` : "";
     const id = encodeURIComponent(String(rest.id ?? ""));
     const taskId = encodeURIComponent(String(rest.taskId ?? ""));
@@ -262,7 +313,8 @@ export class RestTransport implements Transport {
             pageSize: rest.pageSize as number | undefined,
             pageToken: rest.pageToken as string | undefined,
             historyLength: rest.historyLength as number | undefined,
-            statusTimestampAfter: rest.statusTimestampAfter as string | undefined,
+            statusTimestampAfter: rest.statusTimestampAfter as
+              string | undefined,
             includeArtifacts: rest.includeArtifacts as boolean | undefined,
           },
         };
@@ -279,7 +331,10 @@ export class RestTransport implements Transport {
           body: rest,
         };
       case "GetTaskPushNotificationConfig":
-        return { verb: "GET", path: `${prefix}/tasks/${taskId}/pushNotificationConfigs/${id}` };
+        return {
+          verb: "GET",
+          path: `${prefix}/tasks/${taskId}/pushNotificationConfigs/${id}`,
+        };
       case "ListTaskPushNotificationConfigs":
         return {
           verb: "GET",
@@ -290,7 +345,10 @@ export class RestTransport implements Transport {
           },
         };
       case "DeleteTaskPushNotificationConfig":
-        return { verb: "DELETE", path: `${prefix}/tasks/${taskId}/pushNotificationConfigs/${id}` };
+        return {
+          verb: "DELETE",
+          path: `${prefix}/tasks/${taskId}/pushNotificationConfigs/${id}`,
+        };
       case "GetExtendedAgentCard":
         return { verb: "GET", path: `${prefix}/extendedAgentCard` };
     }
@@ -302,7 +360,9 @@ export class RestTransport implements Transport {
     return {
       method: call.verb,
       url: joinUrl(this.url, call.path) + queryString(call.query ?? {}),
-      ...(hasBody ? { body: JSON.stringify(call.body), contentType: A2A_JSON_MEDIA_TYPE } : {}),
+      ...(hasBody
+        ? { body: JSON.stringify(call.body), contentType: A2A_JSON_MEDIA_TYPE }
+        : {}),
       accept: stream
         ? "text/event-stream, application/a2a+json, application/json"
         : "application/a2a+json, application/json",
@@ -331,16 +391,24 @@ export class RestTransport implements Transport {
     params: MethodRequest<M>,
     options: CallOptions = {},
   ): Promise<MethodResponse<M>> {
-    const { response, text } = await this.core.exchange(this.spec(method, params, false), options);
+    const { response, text } = await this.core.exchange(
+      this.spec(method, params, false),
+      options,
+    );
     if (!response.ok) throw this.restFailure(response, text, method);
     const body = parseJsonLoose(text);
     if (body === undefined) {
       // DeleteTaskPushNotificationConfig answers an empty 200.
-      if (method === "DeleteTaskPushNotificationConfig") return {} as MethodResponse<M>;
-      throw new A2ATransportError("protocol", `${method}: empty or non-JSON body`, {
-        status: response.status,
-        method,
-      });
+      if (method === "DeleteTaskPushNotificationConfig")
+        return {} as MethodResponse<M>;
+      throw new A2ATransportError(
+        "protocol",
+        `${method}: empty or non-JSON body`,
+        {
+          status: response.status,
+          method,
+        },
+      );
     }
     return body as MethodResponse<M>;
   }
@@ -350,7 +418,10 @@ export class RestTransport implements Transport {
     params: MethodRequest<M>,
     options: CallOptions = {},
   ): AsyncGenerator<StreamResponse> {
-    const { response, release } = await this.core.open(this.spec(method, params, true), options);
+    const { response, release } = await this.core.open(
+      this.spec(method, params, true),
+      options,
+    );
     if (!response.ok || !isEventStream(response)) {
       try {
         const text = await response.text();
@@ -376,7 +447,10 @@ function asStreamResponseFor(payload: unknown, method: string): StreamResponse {
   try {
     return asStreamResponse(payload);
   } catch (cause) {
-    throw new A2ATransportError("protocol", `${method}: invalid stream event`, { method, cause });
+    throw new A2ATransportError("protocol", `${method}: invalid stream event`, {
+      method,
+      cause,
+    });
   }
 }
 
@@ -386,7 +460,11 @@ function decodeRestEvent(data: string, method: string): StreamResponse {
     // A failure inside a stream is a `google.rpc.Status` envelope or a bare JSON-RPC error object.
     const nested = (payload as { error?: { code?: unknown } }).error;
     if (typeof nested === "object" && nested !== null) {
-      throw a2aErrorFromRest(typeof nested.code === "number" ? nested.code : 500, payload, method);
+      throw a2aErrorFromRest(
+        typeof nested.code === "number" ? nested.code : 500,
+        payload,
+        method,
+      );
     }
     if (isRpcErrorShape(payload)) throw a2aErrorFromRpc(payload, method);
   }

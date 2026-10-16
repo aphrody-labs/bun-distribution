@@ -14,7 +14,8 @@ et les services MCP et A2A du serveur quand ils sont déclarés. Ne modifie rien
 
 const command: Command = {
   name: "verifier",
-  summary: "Vérifier que tout est prêt (tunnel, SSH, MCP, A2A, GPU/CPU, disque)",
+  summary:
+    "Vérifier que tout est prêt (tunnel, SSH, MCP, A2A, GPU/CPU, disque)",
   async run(argv, ctx) {
     const { values } = parse(argv, {
       json: { type: "boolean" },

@@ -27,7 +27,8 @@ export interface ExeBranding {
   cacheDir?: string;
 }
 
-const sha256Hex = (bytes: Uint8Array): string => createHash("sha256").update(bytes).digest("hex");
+const sha256Hex = (bytes: Uint8Array): string =>
+  createHash("sha256").update(bytes).digest("hex");
 
 async function run(argv: string[], env: Record<string, string>): Promise<void> {
   const proc = Bun.spawn(argv, {
@@ -42,7 +43,9 @@ async function run(argv: string[], env: Record<string, string>): Promise<void> {
     proc.exited,
   ]);
   if (code !== 0)
-    throw new Error(`${argv.slice(0, 4).join(" ")} failed (${code}):\n${stderr || stdout}`);
+    throw new Error(
+      `${argv.slice(0, 4).join(" ")} failed (${code}):\n${stderr || stdout}`,
+    );
 }
 
 async function ensureRcedit(cache: string): Promise<string> {
@@ -54,13 +57,17 @@ async function ensureRcedit(cache: string): Promise<string> {
   const res = await fetch(RCEDIT.url);
   if (!res.ok) throw new Error(`rcedit download: HTTP ${res.status}`);
   const bytes = new Uint8Array(await res.arrayBuffer());
-  if (sha256Hex(bytes) !== RCEDIT.sha256) throw new Error("rcedit: SHA-256 mismatch");
+  if (sha256Hex(bytes) !== RCEDIT.sha256)
+    throw new Error("rcedit: SHA-256 mismatch");
   await mkdir(cache, { recursive: true });
   await writeFile(rcedit, bytes);
   return rcedit;
 }
 
-export async function brandExe(exe: string, branding: ExeBranding): Promise<void> {
+export async function brandExe(
+  exe: string,
+  branding: ExeBranding,
+): Promise<void> {
   const cache = branding.cacheDir ?? join(homedir(), ".cache/creator-kit");
   const rcedit = await ensureRcedit(cache);
   const args = [

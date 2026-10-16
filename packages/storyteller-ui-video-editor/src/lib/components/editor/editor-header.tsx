@@ -31,7 +31,10 @@ export interface EditorHeaderProps {
   exitTo?: string;
 }
 
-export function EditorHeader({ endSlot, exitTo = "/projects" }: EditorHeaderProps) {
+export function EditorHeader({
+  endSlot,
+  exitTo = "/projects",
+}: EditorHeaderProps) {
   return (
     <header className="bg-background flex h-[3.4rem] items-center justify-between px-3 pt-0.5">
       <div className="flex items-center gap-1">

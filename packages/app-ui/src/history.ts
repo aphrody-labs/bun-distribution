@@ -22,14 +22,19 @@ type RawThread = {
 };
 
 const str = (value: unknown) => (typeof value === "string" ? value : "");
-const num = (value: unknown) => (typeof value === "number" && Number.isFinite(value) ? value : 0);
+const num = (value: unknown) =>
+  typeof value === "number" && Number.isFinite(value) ? value : 0;
 
 /** Decode a `thread/list` result (`{ threads, nextCursor }`, `data` accepted for older servers). */
 export function normalizeThreads(result: unknown): {
   threads: ThreadSummary[];
   nextCursor?: string;
 } {
-  const record = (result ?? {}) as { threads?: unknown; data?: unknown; nextCursor?: unknown };
+  const record = (result ?? {}) as {
+    threads?: unknown;
+    data?: unknown;
+    nextCursor?: unknown;
+  };
   const raw = Array.isArray(record.threads)
     ? record.threads
     : Array.isArray(record.data)
@@ -39,7 +44,8 @@ export function normalizeThreads(result: unknown): {
     .filter((item) => typeof item?.id === "string" && item.id.length > 0)
     .map((item) => ({
       id: item.id as string,
-      title: str(item.name).trim() || str(item.preview).trim() || "Untitled thread",
+      title:
+        str(item.name).trim() || str(item.preview).trim() || "Untitled thread",
       updatedAt: num(item.updatedAt) || num(item.createdAt),
       model: str(item.model) || undefined,
       status: typeof item.status === "string" ? item.status : undefined,
@@ -56,7 +62,10 @@ const fold = (text: string) =>
     .toLowerCase();
 
 /** Case- and accent-insensitive search over title and model; every word must match. */
-export function filterThreads(threads: ThreadSummary[], query: string): ThreadSummary[] {
+export function filterThreads(
+  threads: ThreadSummary[],
+  query: string,
+): ThreadSummary[] {
   const words = fold(query).split(/\s+/).filter(Boolean);
   if (words.length === 0) return threads;
   return threads.filter((thread) => {
@@ -65,7 +74,11 @@ export function filterThreads(threads: ThreadSummary[], query: string): ThreadSu
   });
 }
 
-export type DateGroup = { key: string; label: string; threads: ThreadSummary[] };
+export type DateGroup = {
+  key: string;
+  label: string;
+  threads: ThreadSummary[];
+};
 
 const startOfDay = (date: Date) =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
@@ -79,7 +92,10 @@ export function groupByDate(
   const today = startOfDay(now);
   const day = 86_400_000;
   const groups = new Map<string, DateGroup>();
-  const month = new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" });
+  const month = new Intl.DateTimeFormat(locale, {
+    month: "long",
+    year: "numeric",
+  });
   for (const thread of threads) {
     const at = thread.updatedAt * 1000;
     let key: string;
@@ -87,7 +103,8 @@ export function groupByDate(
     if (at >= today) [key, label] = ["today", "Today"];
     else if (at >= today - day) [key, label] = ["yesterday", "Yesterday"];
     else if (at >= today - 7 * day) [key, label] = ["week", "Previous 7 days"];
-    else if (at >= today - 30 * day) [key, label] = ["month", "Previous 30 days"];
+    else if (at >= today - 30 * day)
+      [key, label] = ["month", "Previous 30 days"];
     else {
       const date = new Date(at);
       key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
@@ -103,19 +120,28 @@ export function groupByDate(
   return [...groups.values()];
 }
 
-type RawItem = { type?: string; text?: string; content?: Array<{ type?: string; text?: string }> };
+type RawItem = {
+  type?: string;
+  text?: string;
+  content?: Array<{ type?: string; text?: string }>;
+};
 
 /** Plain-text transcript of a `thread/read` (`includeTurns: true`) result, for local sharing. */
 export function transcript(result: unknown): string {
   const thread = ((result ?? {}) as { thread?: RawThread }).thread ?? {};
-  const title = str(thread.name).trim() || str(thread.preview).trim() || "Untitled thread";
+  const title =
+    str(thread.name).trim() || str(thread.preview).trim() || "Untitled thread";
   const lines = [`# ${title}`];
-  const turns = Array.isArray(thread.turns) ? (thread.turns as Array<{ items?: RawItem[] }>) : [];
+  const turns = Array.isArray(thread.turns)
+    ? (thread.turns as Array<{ items?: RawItem[] }>)
+    : [];
   for (const turn of turns) {
     for (const item of turn.items ?? []) {
       if (item.type === "userMessage") {
         const text = (item.content ?? [])
-          .flatMap((part) => (part.type === "text" && part.text ? [part.text] : []))
+          .flatMap((part) =>
+            part.type === "text" && part.text ? [part.text] : [],
+          )
           .join("\n");
         if (text) lines.push("", `**You:** ${text}`);
       } else if (item.type === "agentMessage" && item.text) {

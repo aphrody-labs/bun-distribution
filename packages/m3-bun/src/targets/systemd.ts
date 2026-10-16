@@ -15,7 +15,10 @@ export const SHARED_DROPINS: ReadonlyArray<readonly [string, string]> = [
     "sandbox-base.conf",
     "# Baseline sandbox: no privilege gain, private /tmp, read-only OS tree (add ReadWritePaths per unit).\n[Service]\nNoNewPrivileges=true\nPrivateTmp=true\nProtectSystem=strict\n",
   ],
-  ["sandbox-home-ro.conf", "# Home directories read-only.\n[Service]\nProtectHome=read-only\n"],
+  [
+    "sandbox-home-ro.conf",
+    "# Home directories read-only.\n[Service]\nProtectHome=read-only\n",
+  ],
   [
     "sandbox-kernel.conf",
     "# Kernel tunables, modules and cgroups read-only; no setuid/setgid; no personality changes.\n[Service]\nProtectKernelTunables=true\nProtectKernelModules=true\nProtectControlGroups=true\nRestrictSUIDSGID=true\nLockPersonality=true\n",
@@ -37,7 +40,9 @@ export function sharedDropin(yoloRoot: string, file: string): string {
   return SHARED_DROPINS.find(([name]) => name === file)![1];
 }
 
-export const unit = (c: TargetContext): string => `# SPDX-License-Identifier: Apache-2.0
+export const unit = (
+  c: TargetContext,
+): string => `# SPDX-License-Identifier: Apache-2.0
 # ${GENERATED_NOTE}
 [Unit]
 Description=${c.name}: M3 app, UI and API from one Bun executable

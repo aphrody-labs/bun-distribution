@@ -24,7 +24,10 @@ export interface GridItemProps {
   /** Size of the thumbnail area in pixels */
   thumbSize?: number;
   /** Props passed through to FileThumb (icon source accepts URL string or StaticImageData) */
-  thumb: Pick<FileThumbProps, "iconSrc" | "thumbnailSrc" | "beardedIconSrc" | "frameClassName">;
+  thumb: Pick<
+    FileThumbProps,
+    "iconSrc" | "thumbnailSrc" | "beardedIconSrc" | "frameClassName"
+  >;
   /** Volume capacity bar (optional, for volume items) */
   volumeBar?: React.ReactNode;
   /** Event handlers */
@@ -93,7 +96,9 @@ export function GridItem({
           <div
             className={clsx(
               "mt-0.5 text-label-small",
-              selected ? "text-on-secondary-container" : "text-on-surface-variant",
+              selected
+                ? "text-on-secondary-container"
+                : "text-on-surface-variant",
             )}
           >
             {sizeText}
@@ -102,7 +107,10 @@ export function GridItem({
 
         {/* Tag dots */}
         {tags && tags.length > 0 && (
-          <div className="mt-1 flex items-center gap-1" title={tags.map((t) => t.name).join(", ")}>
+          <div
+            className="mt-1 flex items-center gap-1"
+            title={tags.map((t) => t.name).join(", ")}
+          >
             {tags.slice(0, 3).map((tag) => (
               <div
                 key={tag.name}
@@ -115,7 +123,9 @@ export function GridItem({
               <span
                 className={clsx(
                   "text-label-small",
-                  selected ? "text-on-secondary-container" : "text-on-surface-variant",
+                  selected
+                    ? "text-on-secondary-container"
+                    : "text-on-surface-variant",
                 )}
               >
                 +{tags.length - 3}

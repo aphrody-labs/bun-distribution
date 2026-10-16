@@ -3,7 +3,12 @@
 import { defineM3Api } from "@aphrody/m3-bun/api";
 import { EventEncoder, EventType, type BaseEvent } from "@aphrody/ag-ui";
 import { DesignCompiler } from "@aphrody/m3-design";
-import { generate, TARGETS, type Target, type ThemeInput } from "@aphrody/m3-os-themes";
+import {
+  generate,
+  TARGETS,
+  type Target,
+  type ThemeInput,
+} from "@aphrody/m3-os-themes";
 import {
   generateM3Metadata,
   generateM3Viewport,
@@ -25,10 +30,14 @@ class InputError extends Error {}
 const json = (data: unknown, status = 200) =>
   Response.json(data, {
     status,
-    headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" },
+    headers: {
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+    },
   });
 const guarded =
-  (handler: (request: Request) => Response | Promise<Response>) => async (request: Request) => {
+  (handler: (request: Request) => Response | Promise<Response>) =>
+  async (request: Request) => {
     try {
       return await handler(request);
     } catch (error) {
@@ -53,7 +62,11 @@ async function readJson(request: Request): Promise<Record<string, unknown>> {
     bytes = 0;
   try {
     // eslint-disable-next-line no-await-in-loop -- The next request-body chunk depends on the previous read.
-    for (let chunk = await reader.read(); !chunk.done; chunk = await reader.read()) {
+    for (
+      let chunk = await reader.read();
+      !chunk.done;
+      chunk = await reader.read()
+    ) {
       bytes += chunk.value.byteLength;
       if (bytes > 65_536) {
         // eslint-disable-next-line no-await-in-loop -- Stop the sequential request stream before rejecting oversized input.
@@ -78,13 +91,16 @@ async function readJson(request: Request): Promise<Record<string, unknown>> {
 }
 function textInput(value: unknown, name: string, limit = 2000): string {
   if (typeof value !== "string" || !value.trim() || value.length > limit)
-    throw new InputError(name + " must be a non-empty string of at most " + limit + " characters.");
+    throw new InputError(
+      name + " must be a non-empty string of at most " + limit + " characters.",
+    );
   return value;
 }
 function themeInput(url: URL): ThemeInput {
   const seed = url.searchParams.get("seed") ?? "#6750a4";
   const mode = url.searchParams.get("mode") ?? "auto";
-  if (!/^#[a-f\d]{6}$/i.test(seed)) throw new InputError("seed must be #rrggbb.");
+  if (!/^#[a-f\d]{6}$/i.test(seed))
+    throw new InputError("seed must be #rrggbb.");
   if (!["light", "dark", "auto"].includes(mode))
     throw new InputError("mode must be light, dark or auto.");
   return { name: "Showcase", seed, mode: mode as ThemeInput["mode"] };
@@ -101,14 +117,16 @@ let toolsPromise: Promise<unknown[]> | undefined;
 async function discoverMcpTools(): Promise<unknown[]> {
   if (!toolsPromise)
     toolsPromise = (async () => {
-      const [{ createM3McpServer }, { Client }, { InMemoryTransport }] = await Promise.all([
-        import("@aphrody/m3-mcp"),
-        import("@modelcontextprotocol/sdk/client/index.js"),
-        import("@modelcontextprotocol/sdk/inMemory.js"),
-      ]);
+      const [{ createM3McpServer }, { Client }, { InMemoryTransport }] =
+        await Promise.all([
+          import("@aphrody/m3-mcp"),
+          import("@modelcontextprotocol/sdk/client/index.js"),
+          import("@modelcontextprotocol/sdk/inMemory.js"),
+        ]);
       const server = createM3McpServer();
       const client = new Client({ name: "m3-showcase", version: "3.3.3" });
-      const [serverTransport, clientTransport] = InMemoryTransport.createLinkedPair();
+      const [serverTransport, clientTransport] =
+        InMemoryTransport.createLinkedPair();
       try {
         await server.connect(serverTransport);
         await client.connect(clientTransport);
@@ -143,7 +161,11 @@ function fixtureStream(request: Request, prompt: string): Response {
     " packages. The transcript below is rendered from AG-UI events.";
   const events: BaseEvent[] = [
     { type: EventType.RUN_STARTED, threadId: "showcase-fixture", runId },
-    { type: EventType.TOOL_CALL_START, toolCallId: "inventory", toolCallName: "package_inventory" },
+    {
+      type: EventType.TOOL_CALL_START,
+      toolCallId: "inventory",
+      toolCallName: "package_inventory",
+    },
     { type: EventType.TOOL_CALL_ARGS, toolCallId: "inventory", delta: "{}" },
     { type: EventType.TOOL_CALL_END, toolCallId: "inventory" },
     {
@@ -151,12 +173,19 @@ function fixtureStream(request: Request, prompt: string): Response {
       toolCallId: "inventory",
       messageId: runId + "-inventory",
       role: "tool",
-      content: JSON.stringify({ packages: PACKAGES.length, source: "build inventory" }),
+      content: JSON.stringify({
+        packages: PACKAGES.length,
+        source: "build inventory",
+      }),
     },
     { type: EventType.TEXT_MESSAGE_START, messageId, role: "assistant" },
     ...response
       .match(/.{1,12}/g)!
-      .map((delta) => ({ type: EventType.TEXT_MESSAGE_CONTENT, messageId, delta })),
+      .map((delta) => ({
+        type: EventType.TEXT_MESSAGE_CONTENT,
+        messageId,
+        delta,
+      })),
     { type: EventType.TEXT_MESSAGE_END, messageId },
     { type: EventType.RUN_FINISHED, threadId: "showcase-fixture", runId },
   ] as BaseEvent[];
@@ -179,7 +208,9 @@ function fixtureStream(request: Request, prompt: string): Response {
       };
       request.signal.addEventListener("abort", abort, { once: true });
       timer = setInterval(() => {
-        controller.enqueue(new TextEncoder().encode(encoder.encodeSSE(events[index++])));
+        controller.enqueue(
+          new TextEncoder().encode(encoder.encodeSSE(events[index++])),
+        );
         if (index === events.length) {
           cleanup();
           controller.close();
@@ -202,11 +233,15 @@ function fixtureStream(request: Request, prompt: string): Response {
 
 export default defineM3Api({
   "/api/packages": () =>
-    Response.json(PACKAGES, { headers: { "Cache-Control": "public, max-age=60" } }),
+    Response.json(PACKAGES, {
+      headers: { "Cache-Control": "public, max-age=60" },
+    }),
   "/api/package": (request) => {
     const name = new URL(request.url).searchParams.get("name");
     const found = PACKAGES.find((p) => p.name === name);
-    return found ? json(found) : json({ error: "Unknown package " + String(name) }, 404);
+    return found
+      ? json(found)
+      : json({ error: "Unknown package " + String(name) }, 404);
   },
   "/api/echo": {
     POST: guarded(async (request) =>
@@ -219,12 +254,17 @@ export default defineM3Api({
   },
   "/api/m3/fonts/:name": async (request) => {
     const name = request.params.name;
-    if (!Object.hasOwn(fonts, name)) return json({ error: "Unknown font." }, 404);
+    if (!Object.hasOwn(fonts, name))
+      return json({ error: "Unknown font." }, 404);
     const file = Bun.file(fonts[name]);
     let tag = fontTags.get(name);
     if (!tag) {
       tag =
-        '"' + new Bun.CryptoHasher("sha256").update(await file.arrayBuffer()).digest("hex") + '"';
+        '"' +
+        new Bun.CryptoHasher("sha256")
+          .update(await file.arrayBuffer())
+          .digest("hex") +
+        '"';
       fontTags.set(name, tag);
     }
     const headers = {
@@ -239,14 +279,18 @@ export default defineM3Api({
   },
   "/api/ai/stream": {
     POST: guarded(async (request) =>
-      fixtureStream(request, textInput((await readJson(request)).prompt, "prompt")),
+      fixtureStream(
+        request,
+        textInput((await readJson(request)).prompt, "prompt"),
+      ),
     ),
   },
   "/api/design": {
     POST: guarded(async (request) => {
       const body = await readJson(request);
       const brief = textInput(body.brief, "brief");
-      const seed = body.seed === undefined ? undefined : textInput(body.seed, "seed", 7);
+      const seed =
+        body.seed === undefined ? undefined : textInput(body.seed, "seed", 7);
       if (seed !== undefined && !/^#[a-f\d]{6}$/i.test(seed))
         throw new InputError("seed must be #rrggbb.");
       return json(new DesignCompiler().compile(brief, seed));
@@ -268,7 +312,10 @@ export default defineM3Api({
         m3SchemeColors({ ...options, dark: true }),
       ),
       config: withM3({}),
-      robots: m3RobotsTxt({ origin: url.origin, rules: [{ userAgent: "*", disallow: ["/api/"] }] }),
+      robots: m3RobotsTxt({
+        origin: url.origin,
+        rules: [{ userAgent: "*", disallow: ["/api/"] }],
+      }),
       sitemap: m3SitemapXml(["/", "/theme", "/components"], url.origin),
       jsonLd: m3JsonLd({
         "@context": "https://schema.org",
@@ -282,7 +329,11 @@ export default defineM3Api({
   "/api/system": guarded(async (request) => {
     const url = new URL(request.url);
     const files = generate(themeInput(url), targetsFor(url));
-    const sample = renderTemplate({ template: "web", name: "m3-demo", m3Version: "3.3.3" });
+    const sample = renderTemplate({
+      template: "web",
+      name: "m3-demo",
+      m3Version: "3.3.3",
+    });
     return json({
       themeFiles: files.map((file) => ({
         target: file.target,
@@ -308,7 +359,9 @@ export default defineM3Api({
   "/api/os-theme": guarded((request) => {
     const url = new URL(request.url);
     const path = url.searchParams.get("path");
-    const file = generate(themeInput(url), targetsFor(url)).find((item) => item.path === path);
+    const file = generate(themeInput(url), targetsFor(url)).find(
+      (item) => item.path === path,
+    );
     if (!file) return json({ error: "Unknown generated theme file." }, 404);
     if (typeof file.content !== "string")
       return new Response(file.content as unknown as BodyInit, {
@@ -321,7 +374,8 @@ export default defineM3Api({
       const body = await readJson(request);
       const source = textInput(body.source, "source", 40_000);
       const kind = body.kind ?? "mui";
-      if (kind !== "mui" && kind !== "icons") throw new InputError("kind must be mui or icons.");
+      if (kind !== "mui" && kind !== "icons")
+        throw new InputError("kind must be mui or icons.");
       try {
         return json(transformSource(source, kind as MigrationKind));
       } catch {

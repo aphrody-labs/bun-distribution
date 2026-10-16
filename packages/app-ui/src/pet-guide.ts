@@ -46,7 +46,12 @@ export function centerOf(box: Box): Point {
 }
 
 /** Resting spots on the page margins (corners and edge midpoints) not covering any obstacle. */
-export function restingSpots(viewport: Size, pet: Size, obstacles: Box[], margin = GUIDE_MARGIN): Point[] {
+export function restingSpots(
+  viewport: Size,
+  pet: Size,
+  obstacles: Box[],
+  margin = GUIDE_MARGIN,
+): Point[] {
   const left = margin;
   const right = viewport.width - pet.width - margin;
   const top = margin;
@@ -63,10 +68,10 @@ export function restingSpots(viewport: Size, pet: Size, obstacles: Box[], margin
     { x: midX, y: bottom },
     { x: midX, y: top },
   ];
-  return candidates.filter(p => {
+  return candidates.filter((p) => {
     if (p.x < 0 || p.y < 0) return false;
     const box = { ...p, width: pet.width, height: pet.height };
-    return !obstacles.some(o => overlaps(box, o, GUIDE_CLEARANCE));
+    return !obstacles.some((o) => overlaps(box, o, GUIDE_CLEARANCE));
   });
 }
 
@@ -74,7 +79,12 @@ function distance(a: Point, b: Point): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
-export function nearestRestingSpot(from: Point, viewport: Size, pet: Size, obstacles: Box[]): Point | null {
+export function nearestRestingSpot(
+  from: Point,
+  viewport: Size,
+  pet: Size,
+  obstacles: Box[],
+): Point | null {
   let best: Point | null = null;
   for (const spot of restingSpots(viewport, pet, obstacles)) {
     if (!best || distance(spot, from) < distance(best, from)) best = spot;
@@ -83,7 +93,10 @@ export function nearestRestingSpot(from: Point, viewport: Size, pet: Size, obsta
 }
 
 /** Scroll speed between two samples (px/s); 0 when the samples do not advance in time. */
-export function scrollSpeed(previous: { y: number; t: number }, current: { y: number; t: number }): number {
+export function scrollSpeed(
+  previous: { y: number; t: number },
+  current: { y: number; t: number },
+): number {
   const seconds = (current.t - previous.t) / 1000;
   if (seconds <= 0) return 0;
   return Math.abs(current.y - previous.y) / seconds;
@@ -121,26 +134,52 @@ function samePoint(a: Point, b: Point): boolean {
  */
 export function decideGuide(ctx: GuideContext): GuideAction {
   if (ctx.typing || ctx.scrollSpeed > SCROLL_FAST) {
-    const to = nearestRestingSpot(ctx.position, ctx.viewport, ctx.pet, ctx.obstacles);
-    return to && !samePoint(to, ctx.position) ? { kind: "step-aside", to } : { kind: "stay" };
+    const to = nearestRestingSpot(
+      ctx.position,
+      ctx.viewport,
+      ctx.pet,
+      ctx.obstacles,
+    );
+    return to && !samePoint(to, ctx.position)
+      ? { kind: "step-aside", to }
+      : { kind: "stay" };
   }
   if (ctx.hesitationTarget && ctx.idleMs >= HESITATION_MS) {
     const target = ctx.hesitationTarget;
-    const beside = nearestSpotBeside(target, ctx.viewport, ctx.pet, ctx.obstacles);
+    const beside = nearestSpotBeside(
+      target,
+      ctx.viewport,
+      ctx.pet,
+      ctx.obstacles,
+    );
     return beside ? { kind: "hint", to: beside, target } : { kind: "stay" };
   }
-  const covered = ctx.obstacles.some(o =>
-    overlaps({ ...ctx.position, width: ctx.pet.width, height: ctx.pet.height }, o, 0),
+  const covered = ctx.obstacles.some((o) =>
+    overlaps(
+      { ...ctx.position, width: ctx.pet.width, height: ctx.pet.height },
+      o,
+      0,
+    ),
   );
   if (covered) {
-    const to = nearestRestingSpot(ctx.position, ctx.viewport, ctx.pet, ctx.obstacles);
+    const to = nearestRestingSpot(
+      ctx.position,
+      ctx.viewport,
+      ctx.pet,
+      ctx.obstacles,
+    );
     return to ? { kind: "move", to } : { kind: "stay" };
   }
   return { kind: "stay" };
 }
 
 /** Free spot closest to the target, leaving the target itself uncovered. */
-function nearestSpotBeside(target: Box, viewport: Size, pet: Size, obstacles: Box[]): Point | null {
+function nearestSpotBeside(
+  target: Box,
+  viewport: Size,
+  pet: Size,
+  obstacles: Box[],
+): Point | null {
   const spots = restingSpots(viewport, pet, [...obstacles, target]);
   const center = centerOf(target);
   let best: Point | null = null;
@@ -155,11 +194,20 @@ export interface MessageGate {
   lastAt: number;
 }
 
-export const NO_MESSAGES: MessageGate = { shown: 0, lastAt: Number.NEGATIVE_INFINITY };
+export const NO_MESSAGES: MessageGate = {
+  shown: 0,
+  lastAt: Number.NEGATIVE_INFINITY,
+};
 
 /** Whether a pet message may show at `now`; returns the updated gate. */
-export function admitMessage(gate: MessageGate, now: number): { allowed: boolean; gate: MessageGate } {
-  if (gate.shown >= MESSAGE_MAX_PER_VISIT || now - gate.lastAt < MESSAGE_MIN_INTERVAL_MS) {
+export function admitMessage(
+  gate: MessageGate,
+  now: number,
+): { allowed: boolean; gate: MessageGate } {
+  if (
+    gate.shown >= MESSAGE_MAX_PER_VISIT ||
+    now - gate.lastAt < MESSAGE_MIN_INTERVAL_MS
+  ) {
     return { allowed: false, gate };
   }
   return { allowed: true, gate: { shown: gate.shown + 1, lastAt: now } };
@@ -187,7 +235,8 @@ const GUIDE_ROUTES: ReadonlyArray<readonly [prefix: string, guide: GuideId]> = [
   ["/showcase", "docs"],
 ];
 
-export type GuideId = "home" | "assistant" | "files" | "creation" | "jobs" | "settings" | "docs";
+export type GuideId =
+  "home" | "assistant" | "files" | "creation" | "jobs" | "settings" | "docs";
 
 /** Page guide for a pathname: the first matching route prefix on a segment boundary, else `home`. */
 export function guideForPath(pathname: string): GuideId {

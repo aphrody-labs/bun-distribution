@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Inspector variants
 
 The inspector is composed inside `@aphrody/app-ui`; `Inspector` reads selection from the app's

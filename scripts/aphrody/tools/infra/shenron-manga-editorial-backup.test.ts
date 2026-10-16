@@ -1,8 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import { backupScope, qualifyBackupInventory } from "./shenron-manga-editorial-backup";
+import {
+  backupScope,
+  qualifyBackupInventory,
+} from "./shenron-manga-editorial-backup";
 test("editorial backup capability confines jobs to private owner inventory", () => {
-  expect(() => backupScope("/tmp/public", "/home/ubuntu/.aphrody/private/shenron")).toThrow();
+  expect(() =>
+    backupScope("/tmp/public", "/home/ubuntu/.aphrody/private/shenron"),
+  ).toThrow();
   expect(() =>
     backupScope(
       "/home/ubuntu/.aphrody/private/shenron/../../public",

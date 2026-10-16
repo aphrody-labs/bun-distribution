@@ -5,7 +5,14 @@
  * depuis le studio du perso plutôt que via la table globale + picker de perso.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Chargement, Corbeille, Croix, Etincelle, LienExterne, Plus } from "@/components/icones";
+import {
+  Chargement,
+  Corbeille,
+  Croix,
+  Etincelle,
+  LienExterne,
+  Plus,
+} from "@/components/icones";
 import Link from "next/link";
 import { useState } from "react";
 import { ImageField } from "@aphrody/admin-ui/components/admin/ImageField";
@@ -72,19 +79,26 @@ export function TransformationsPanel({ characterId }: { characterId: string }) {
       <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-dbz-blue-light">
         <Etincelle className="h-3.5 w-3.5" /> Transformations
         <span className="text-white/50">({rows.length})</span>
-        {(list.isFetching || busy) && <Chargement className="h-3 w-3 animate-spin text-white/50" />}
+        {(list.isFetching || busy) && (
+          <Chargement className="h-3 w-3 animate-spin text-white/50" />
+        )}
       </div>
 
       <p className="text-xs text-white/50">
-        Formes et évolutions de ce personnage. Ajoutées ici, elles s&apos;affichent sur sa fiche
-        publique et dans l&apos;index des transformations — plus besoin de créer une entrée globale
-        puis de choisir le perso à la main.
+        Formes et évolutions de ce personnage. Ajoutées ici, elles
+        s&apos;affichent sur sa fiche publique et dans l&apos;index des
+        transformations — plus besoin de créer une entrée globale puis de
+        choisir le perso à la main.
       </p>
 
       {list.isError ? (
-        <p className="text-xs text-red-400">Chargement des transformations échoué.</p>
+        <p className="text-xs text-red-400">
+          Chargement des transformations échoué.
+        </p>
       ) : rows.length === 0 && !adding ? (
-        <p className="text-xs italic text-white/50">Aucune transformation pour l&apos;instant.</p>
+        <p className="text-xs italic text-white/50">
+          Aucune transformation pour l&apos;instant.
+        </p>
       ) : (
         <div className="space-y-2">
           {rows.map((t) => (
@@ -106,8 +120,14 @@ export function TransformationsPanel({ characterId }: { characterId: string }) {
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-white">{t.name}</p>
-                {t.ki && <p className="scouter-text text-[10px] text-dbz-orange">KI {t.ki}</p>}
+                <p className="truncate text-sm font-semibold text-white">
+                  {t.name}
+                </p>
+                {t.ki && (
+                  <p className="scouter-text text-[10px] text-dbz-orange">
+                    KI {t.ki}
+                  </p>
+                )}
               </div>
               <Link
                 href={`/admin/wiki/studio/db_transformations/${t.id}`}

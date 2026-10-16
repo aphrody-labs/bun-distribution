@@ -59,19 +59,29 @@ globalThis.location = { reload: () => reloads++ };
 const host = await import(pathToFileURL(join(here, "../js/host.js")));
 
 // #226: one readable and one unreadable file.
-const file = (name, read) => ({ name, webkitRelativePath: "", arrayBuffer: read });
+const file = (name, read) => ({
+  name,
+  webkitRelativePath: "",
+  arrayBuffer: read,
+});
 const picked = host.browsePickFiles(false);
 picker.files = [
   file("ok.png", async () => new Uint8Array([1, 2, 3]).buffer),
   file("red-corner.png", async () => {
-    throw new DOMException("Generated unreadable selected file", "NotReadableError");
+    throw new DOMException(
+      "Generated unreadable selected file",
+      "NotReadableError",
+    );
   }),
 ];
 await picker.onchange();
 const out = await picked;
 assert.equal(out.length, 2);
 assert.deepEqual([out[0].path, [...out[0].bytes]], ["ok.png", [1, 2, 3]]);
-assert.deepEqual(out[1], { path: "red-corner.png", error: "Generated unreadable selected file" });
+assert.deepEqual(out[1], {
+  path: "red-corner.png",
+  error: "Generated unreadable selected file",
+});
 const cancelled = host.browsePickFiles(false);
 picker.oncancel();
 assert.deepEqual(await cancelled, [], "cancelling picks nothing");
@@ -86,7 +96,8 @@ self.effectcraft = {
   },
   execute: async (command, params) => {
     calls.push([command, params]);
-    if (command === "file.save") throw new Error("no path: use file.saveAs {path}");
+    if (command === "file.save")
+      throw new Error("no path: use file.saveAs {path}");
   },
 };
 const notice = () => document.getElementById("device-lost");

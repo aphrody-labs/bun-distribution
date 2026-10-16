@@ -28,16 +28,10 @@ repository = "https://github.com/LaurenzV/hayro"
 resolver = "2"
 
 [features]
-default = [
-    "embed-fonts",
-    "embed-cmaps",
-]
+default = ["embed-fonts", "embed-cmaps"]
 embed-cmaps = ["hayro-cmap/embed-cmaps"]
 embed-fonts = []
-logging = [
-    "dep:log",
-    "hayro-syntax/logging",
-]
+logging = ["dep:log", "hayro-syntax/logging"]
 
 [lib]
 name = "hayro_interpret"
@@ -60,11 +54,7 @@ default-features = false
 
 [dependencies.hayro-syntax]
 version = "0.7.0"
-features = [
-    "std",
-    "images",
-    "unsafe",
-]
+features = ["std", "images", "unsafe"]
 default-features = false
 
 [dependencies.kurbo]

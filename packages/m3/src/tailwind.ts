@@ -6,7 +6,8 @@ import { Scanner, type SourceEntry } from "@tailwindcss/oxide";
 import type { BunPlugin } from "bun";
 import { dirname } from "node:path";
 
-const TAILWIND_DIRECTIVE = /@import\s*(?:url\()?['"]tailwindcss(?:['"/]|$)|@(?:tailwind|apply|theme|source|utility|variant|custom-variant|config|plugin)\b/;
+const TAILWIND_DIRECTIVE =
+  /@import\s*(?:url\()?['"]tailwindcss(?:['"/]|$)|@(?:tailwind|apply|theme|source|utility|variant|custom-variant|config|plugin)\b/;
 
 export function tailwindM3Plugin(): BunPlugin {
   return {
@@ -21,12 +22,21 @@ export function tailwindM3Plugin(): BunPlugin {
         await defer();
         const base = dirname(path);
         const compiler = await compile(input, { base, onDependency() {} });
-        const sources: SourceEntry[] = compiler.root === "none"
-          ? []
-          : compiler.root === null
-            ? [{ base: build.config?.root ?? base, pattern: "**/*", negated: false }]
-            : [{ ...compiler.root, negated: false }];
-        sources.push(...compiler.sources.map((source) => ({ ...source, negated: false })));
+        const sources: SourceEntry[] =
+          compiler.root === "none"
+            ? []
+            : compiler.root === null
+              ? [
+                  {
+                    base: build.config?.root ?? base,
+                    pattern: "**/*",
+                    negated: false,
+                  },
+                ]
+              : [{ ...compiler.root, negated: false }];
+        sources.push(
+          ...compiler.sources.map((source) => ({ ...source, negated: false })),
+        );
         const candidates = new Scanner({ sources }).scan();
         return { contents: compiler.build(candidates), loader: "css" };
       });

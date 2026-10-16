@@ -56,8 +56,9 @@ function newId(): string {
 export function createIndexedDBProjectStorage(): ProjectStorageAdapter {
   return {
     async loadProject(id) {
-      const project = await tx<EditorProject | undefined>("readonly", (s) =>
-        s.get(id) as IDBRequest<EditorProject | undefined>,
+      const project = await tx<EditorProject | undefined>(
+        "readonly",
+        (s) => s.get(id) as IDBRequest<EditorProject | undefined>,
       );
       return project ?? null;
     },
@@ -68,8 +69,9 @@ export function createIndexedDBProjectStorage(): ProjectStorageAdapter {
       await tx("readwrite", (s) => s.delete(id));
     },
     async listProjects() {
-      const all = await tx<EditorProject[]>("readonly", (s) =>
-        s.getAll() as IDBRequest<EditorProject[]>,
+      const all = await tx<EditorProject[]>(
+        "readonly",
+        (s) => s.getAll() as IDBRequest<EditorProject[]>,
       );
       const metas: ProjectMeta[] = (all ?? []).map((p) => ({
         id: p.id,

@@ -16,21 +16,26 @@ function withGroups(...names) {
 
 describe("parseChannelRef", () => {
   test("handles are lower-cased and decoded", () => {
-    expect(core.parseChannelRef("/@Fireship")).toEqual({ kind: "handle", key: "@fireship" });
+    expect(core.parseChannelRef("/@Fireship")).toEqual({
+      kind: "handle",
+      key: "@fireship",
+    });
     expect(core.parseChannelRef("/@Fireship/videos?view=0")).toEqual({
       kind: "handle",
       key: "@fireship",
     });
-    expect(core.parseChannelRef("/@%E3%83%92%E3%82%AB%E3%82%AD%E3%83%B3")).toEqual({
+    expect(
+      core.parseChannelRef("/@%E3%83%92%E3%82%AB%E3%82%AD%E3%83%B3"),
+    ).toEqual({
       kind: "handle",
       key: "@ヒカキン",
     });
   });
 
   test("absolute youtube URLs", () => {
-    expect(core.parseChannelRef("https://www.youtube.com/@RickAstleyYT")?.key).toBe(
-      "@rickastleyyt",
-    );
+    expect(
+      core.parseChannelRef("https://www.youtube.com/@RickAstleyYT")?.key,
+    ).toBe("@rickastleyyt");
     expect(core.parseChannelRef("https://m.youtube.com/@x")?.key).toBe("@x");
     expect(core.parseChannelRef(`http://youtube.com/channel/${UC}`)).toEqual({
       kind: "id",
@@ -39,8 +44,14 @@ describe("parseChannelRef", () => {
   });
 
   test("channel id, /c/ and /user/", () => {
-    expect(core.parseChannelRef(`/channel/${UC}`)).toEqual({ kind: "id", key: UC });
-    expect(core.parseChannelRef("/c/SomeName")).toEqual({ kind: "c", key: "c:somename" });
+    expect(core.parseChannelRef(`/channel/${UC}`)).toEqual({
+      kind: "id",
+      key: UC,
+    });
+    expect(core.parseChannelRef("/c/SomeName")).toEqual({
+      kind: "c",
+      key: "c:somename",
+    });
     expect(core.parseChannelRef("/user/OldName/featured")).toEqual({
       kind: "user",
       key: "u:oldname",
@@ -171,21 +182,35 @@ describe("groups", () => {
     const s = core.emptyState();
     expect(core.addGroup(s, "   ").error).toBe("name-empty");
     const a = core.addGroup(s, "  Combat / FGC ", "#00ff00", "gfgc");
-    expect(a.group).toEqual({ id: "gfgc", name: "Combat / FGC", color: "#00ff00" });
+    expect(a.group).toEqual({
+      id: "gfgc",
+      name: "Combat / FGC",
+      color: "#00ff00",
+    });
     expect(core.addGroup(a.state, "combat / fgc").error).toBe("name-duplicate");
     const b = core.addGroup(a.state, "Dessin", "not-a-colour");
     expect(b.group.color).toBe(core.PALETTE[1]);
-    expect(core.addGroup(b.state, "X", undefined, "gfgc").group.id).not.toBe("gfgc");
+    expect(core.addGroup(b.state, "X", undefined, "gfgc").group.id).not.toBe(
+      "gfgc",
+    );
   });
 
   test("updateGroup renames and recolours with the same checks", () => {
     const s = withGroups("A", "B");
-    expect(core.updateGroup(s, "g1", { name: "b" }).error).toBe("name-duplicate");
+    expect(core.updateGroup(s, "g1", { name: "b" }).error).toBe(
+      "name-duplicate",
+    );
     expect(core.updateGroup(s, "g1", { name: " " }).error).toBe("name-empty");
-    expect(core.updateGroup(s, "g1", { color: "zzz" }).error).toBe("color-invalid");
+    expect(core.updateGroup(s, "g1", { color: "zzz" }).error).toBe(
+      "color-invalid",
+    );
     expect(core.updateGroup(s, "nope", {}).error).toBe("group-unknown");
     const u = core.updateGroup(s, "g1", { name: "Alpha", color: "#112233" });
-    expect(u.state.groups[0]).toEqual({ id: "g1", name: "Alpha", color: "#112233" });
+    expect(u.state.groups[0]).toEqual({
+      id: "g1",
+      name: "Alpha",
+      color: "#112233",
+    });
     expect(s.groups[0].name).toBe("A"); // input not mutated
   });
 
@@ -194,7 +219,10 @@ describe("groups", () => {
     s = core.toggleChannelGroup(s, "@x", "X", "g1");
     s = core.toggleChannelGroup(s, "@x", "X", "g2");
     s = core.toggleChannelGroup(s, "@y", "Y", "g1");
-    s = { ...s, settings: { ...s.settings, feedFilter: "g1", listFilter: "g2" } };
+    s = {
+      ...s,
+      settings: { ...s.settings, feedFilter: "g1", listFilter: "g2" },
+    };
     const d = core.deleteGroup(s, "g1");
     expect(d.groups.map((g) => g.id)).toEqual(["g2"]);
     expect(d.channels).toEqual({ "@x": { n: "X", g: ["g2"] } });
@@ -207,7 +235,10 @@ describe("groups", () => {
     s = core.toggleChannelGroup(s, "@x", "X", "g1");
     s = core.toggleChannelGroup(s, "@y", "Y", "g1");
     s = core.toggleChannelGroup(s, "@y", "Y", "g2");
-    expect(core.countByGroup(s)).toEqual({ counts: { g1: 2, g2: 1 }, assigned: 2 });
+    expect(core.countByGroup(s)).toEqual({
+      counts: { g1: 2, g2: 1 },
+      assigned: 2,
+    });
   });
 });
 
@@ -269,25 +300,44 @@ describe("feed decisions", () => {
 
   test("shorts", () => {
     expect(
-      core.decideFeedItem({ isShort: true, watchedPct: null }, { ...base, hideShorts: true }, []),
+      core.decideFeedItem(
+        { isShort: true, watchedPct: null },
+        { ...base, hideShorts: true },
+        [],
+      ),
     ).toEqual({ hide: true, reason: "short" });
-    expect(core.decideFeedItem({ isShort: true, watchedPct: null }, base, []).hide).toBe(false);
+    expect(
+      core.decideFeedItem({ isShort: true, watchedPct: null }, base, []).hide,
+    ).toBe(false);
   });
 
   test("watched uses the threshold, null means no progress bar", () => {
     const s = { ...base, hideWatched: true, watchedThreshold: 80 };
     expect(core.decideFeedItem(watched(79), s, []).hide).toBe(false);
-    expect(core.decideFeedItem(watched(80), s, [])).toEqual({ hide: true, reason: "watched" });
+    expect(core.decideFeedItem(watched(80), s, [])).toEqual({
+      hide: true,
+      reason: "watched",
+    });
     expect(core.decideFeedItem(watched(100), s, []).hide).toBe(true);
     expect(core.decideFeedItem(watched(null), s, []).hide).toBe(false);
     expect(core.decideFeedItem(watched(100), base, []).hide).toBe(false);
   });
 
   test("group filter and reason priority", () => {
-    const s = { ...base, feedFilter: "g1", hideShorts: true, hideWatched: true };
+    const s = {
+      ...base,
+      feedFilter: "g1",
+      hideShorts: true,
+      hideWatched: true,
+    };
     expect(core.decideFeedItem(watched(null), s, ["g1"]).hide).toBe(false);
-    expect(core.decideFeedItem(watched(null), s, ["g2"])).toEqual({ hide: true, reason: "group" });
-    expect(core.decideFeedItem({ isShort: true, watchedPct: 100 }, s, ["g1"]).reason).toBe("short");
+    expect(core.decideFeedItem(watched(null), s, ["g2"])).toEqual({
+      hide: true,
+      reason: "group",
+    });
+    expect(
+      core.decideFeedItem({ isShort: true, watchedPct: 100 }, s, ["g1"]).reason,
+    ).toBe("short");
     expect(core.decideFeedItem(watched(100), s, ["g1"]).reason).toBe("watched");
   });
 
@@ -318,7 +368,9 @@ describe("sortRanks", () => {
 
   test("alpha is case-insensitive, numeric-aware and stable", () => {
     // 10 videos < Alpha (item 1) < alpha (item 4) < beta < gamma
-    expect(core.sortRanks(items, "alpha", core.emptyState())).toEqual([3, 1, 0, 4, 2]);
+    expect(core.sortRanks(items, "alpha", core.emptyState())).toEqual([
+      3, 1, 0, 4, 2,
+    ]);
   });
 
   test("group orders by group position then name, ungrouped last", () => {
@@ -341,13 +393,18 @@ function sample() {
   s = core.toggleChannelGroup(s, "@a", "A", "g1");
   s = core.toggleChannelGroup(s, UC, "B", "g2");
   s = core.learnAlias(s, "@b", UC);
-  return { ...s, settings: { ...s.settings, hideShorts: true, feedFilter: "g1" } };
+  return {
+    ...s,
+    settings: { ...s.settings, hideShorts: true, feedFilter: "g1" },
+  };
 }
 
 describe("export / import", () => {
   test("roundtrip through JSON text", () => {
     const s = sample();
-    const text = JSON.stringify(core.exportState(s, new Date("2026-10-06T00:00:00Z")));
+    const text = JSON.stringify(
+      core.exportState(s, new Date("2026-10-06T00:00:00Z")),
+    );
     const res = core.validateImport(text);
     expect(res.ok).toBe(true);
     expect(res.state).toEqual(s);
@@ -359,19 +416,37 @@ describe("export / import", () => {
     expect(core.validateImport("{nope").ok).toBe(false);
     expect(core.validateImport("[]").ok).toBe(false);
     expect(core.validateImport("null").ok).toBe(false);
-    expect(core.validateImport({ format: "other", version: 1, groups: [], channels: {} }).ok).toBe(
-      false,
-    );
     expect(
-      core.validateImport({ format: core.FORMAT, version: 99, groups: [], channels: {} }).ok,
+      core.validateImport({
+        format: "other",
+        version: 1,
+        groups: [],
+        channels: {},
+      }).ok,
     ).toBe(false);
     expect(
-      core.validateImport({ format: core.FORMAT, version: 1, groups: {}, channels: {} }).errors,
+      core.validateImport({
+        format: core.FORMAT,
+        version: 99,
+        groups: [],
+        channels: {},
+      }).ok,
+    ).toBe(false);
+    expect(
+      core.validateImport({
+        format: core.FORMAT,
+        version: 1,
+        groups: {},
+        channels: {},
+      }).errors,
     ).toContain("groups must be an array");
-    expect(core.validateImport({ format: core.FORMAT, version: 1, groups: [] }).errors).toContain(
-      "channels must be an object",
-    );
-    expect(core.validateImport("x".repeat(core.LIMITS.importBytes + 1)).ok).toBe(false);
+    expect(
+      core.validateImport({ format: core.FORMAT, version: 1, groups: [] })
+        .errors,
+    ).toContain("channels must be an object");
+    expect(
+      core.validateImport("x".repeat(core.LIMITS.importBytes + 1)).ok,
+    ).toBe(false);
   });
 
   test("hostile keys cannot reach the prototype", () => {
@@ -394,12 +469,17 @@ describe("export / import", () => {
         { id: "zz", name: "fgc", color: "#111111" }, // same name, other id
         { id: "g9", name: "Musique", color: "#222222" },
       ],
-      channels: { "@a": { n: "A", g: ["g9"] }, "@new": { n: "New", g: ["zz"] } },
+      channels: {
+        "@a": { n: "A", g: ["g9"] },
+        "@new": { n: "New", g: ["zz"] },
+      },
     }).state;
     const merged = core.mergeImport(current, incoming, "merge");
     expect(merged.groups.map((g) => g.name)).toEqual(["FGC", "Musique"]);
     const musique = merged.groups[1].id;
-    expect(merged.channels["@a"].g.toSorted()).toEqual(["g1", musique].toSorted());
+    expect(merged.channels["@a"].g.toSorted()).toEqual(
+      ["g1", musique].toSorted(),
+    );
     expect(merged.channels["@new"].g).toEqual(["g1"]);
     expect(merged.settings).toEqual(current.settings);
     expect(current.groups).toHaveLength(1); // inputs untouched

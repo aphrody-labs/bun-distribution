@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect, useRef } from "react";
-import { AlertDialog, Icon, Switch, Button, Card } from "@aphrody/m3-primitives";
+import {
+  AlertDialog,
+  Icon,
+  Switch,
+  Button,
+  Card,
+} from "@aphrody/m3-primitives";
 import {
   checkForAppUpdate,
   installAppUpdate,
@@ -24,11 +30,14 @@ const backend: GeneralSettingsBackend = {
   isDesktop: isTauri,
   readAutostart: async () => {
     const enabled = await tauriInvoke<boolean>("plugin:autostart|is_enabled");
-    if (typeof enabled !== "boolean") throw new Error("État de démarrage invalide.");
+    if (typeof enabled !== "boolean")
+      throw new Error("État de démarrage invalide.");
     return enabled;
   },
   writeAutostart: async (enabled) => {
-    await tauriInvoke(enabled ? "plugin:autostart|enable" : "plugin:autostart|disable");
+    await tauriInvoke(
+      enabled ? "plugin:autostart|enable" : "plugin:autostart|disable",
+    );
   },
   checkUpdate: checkForAppUpdate,
   installUpdate: installAppUpdate,
@@ -67,7 +76,9 @@ export function GeneralSettings({
         if (active) {
           setStartWithSystem(null);
           setReadingAutostart(false);
-          setAutostartError(error instanceof Error ? error.message : String(error));
+          setAutostartError(
+            error instanceof Error ? error.message : String(error),
+          );
         }
       });
     return () => {
@@ -88,9 +99,12 @@ export function GeneralSettings({
       written = true;
       const actual = await services.readAutostart();
       setStartWithSystem(actual);
-      if (actual !== enabled) throw new Error("Le système n'a pas confirmé ce changement.");
+      if (actual !== enabled)
+        throw new Error("Le système n'a pas confirmé ce changement.");
       setAutostartStatus(
-        actual ? "Démarrage automatique activé." : "Démarrage automatique désactivé.",
+        actual
+          ? "Démarrage automatique activé."
+          : "Démarrage automatique désactivé.",
       );
     } catch (error) {
       if (written) setStartWithSystem(null);
@@ -136,7 +150,9 @@ export function GeneralSettings({
       setUpdateStatus("Mise à jour installée ; redémarrage demandé.");
       setUpdate(null);
     } catch {
-      setUpdateStatus("Installation ou redémarrage impossible. Aucun succès confirmé.");
+      setUpdateStatus(
+        "Installation ou redémarrage impossible. Aucun succès confirmé.",
+      );
     } finally {
       setInstalling(false);
     }
@@ -154,20 +170,28 @@ export function GeneralSettings({
         onConfirm={() => void handleInstallUpdate()}
       />
       <div>
-        <h2 className="text-headline-small font-bold text-on-surface">Général</h2>
+        <h2 className="text-headline-small font-bold text-on-surface">
+          Général
+        </h2>
         <p className="text-body-large text-on-surface-variant mt-1">
           Démarrage et mises à jour de l'application.
         </p>
       </div>
       {!desktop ? (
-        <Card variant="elevated" className="p-6 border border-outline-variant/30">
+        <Card
+          variant="elevated"
+          className="p-6 border border-outline-variant/30"
+        >
           <p className="text-body-large text-on-surface-variant">
             Ces réglages système sont disponibles dans l'application de bureau.
           </p>
         </Card>
       ) : (
         <div className="space-y-6">
-          <Card variant="elevated" className="p-6 border border-outline-variant/30 space-y-4">
+          <Card
+            variant="elevated"
+            className="p-6 border border-outline-variant/30 space-y-4"
+          >
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h3 className="text-title-medium font-medium text-on-surface">
@@ -181,18 +205,26 @@ export function GeneralSettings({
                 <Switch
                   checked={startWithSystem}
                   disabled={savingAutostart}
-                  onCheckedChange={(enabled) => void handleStartWithSystemChange(enabled)}
+                  onCheckedChange={(enabled) =>
+                    void handleStartWithSystemChange(enabled)
+                  }
                   aria-label="Lancer avec le système"
                 />
               )}
             </div>
             {readingAutostart && (
-              <output className="block">Lecture du démarrage automatique…</output>
+              <output className="block">
+                Lecture du démarrage automatique…
+              </output>
             )}
             {savingAutostart && (
-              <output className="block">Modification du démarrage automatique…</output>
+              <output className="block">
+                Modification du démarrage automatique…
+              </output>
             )}
-            {autostartStatus && <output className="block">{autostartStatus}</output>}
+            {autostartStatus && (
+              <output className="block">{autostartStatus}</output>
+            )}
             {autostartError && (
               <div role="alert" className="space-y-3 text-error">
                 <p>Démarrage automatique indisponible : {autostartError}</p>
@@ -212,7 +244,10 @@ export function GeneralSettings({
               </div>
             )}
           </Card>
-          <Card variant="elevated" className="p-6 border border-outline-variant/30 space-y-4">
+          <Card
+            variant="elevated"
+            className="p-6 border border-outline-variant/30 space-y-4"
+          >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 className="text-title-medium font-medium text-on-surface">
@@ -221,7 +256,9 @@ export function GeneralSettings({
                 {update && (
                   <p className="text-body-large text-on-surface-variant mt-1">
                     Version actuelle :{" "}
-                    <span className="font-semibold text-on-surface">{update.currentVersion}</span>
+                    <span className="font-semibold text-on-surface">
+                      {update.currentVersion}
+                    </span>
                   </p>
                 )}
                 {updateStatus && (
@@ -236,8 +273,14 @@ export function GeneralSettings({
                 disabled={checking || installing}
                 className="h-12 px-6 shrink-0 flex items-center gap-2"
               >
-                <Icon name="sync" size={20} className={checking ? "animate-spin" : ""} />
-                <span>{checking ? "Vérification..." : "Vérifier les mises à jour"}</span>
+                <Icon
+                  name="sync"
+                  size={20}
+                  className={checking ? "animate-spin" : ""}
+                />
+                <span>
+                  {checking ? "Vérification..." : "Vérifier les mises à jour"}
+                </span>
               </Button>
               {update && (
                 <Button

@@ -24,7 +24,10 @@ describe("withM3 options", () => {
   });
 
   test("React Compiler, Cache Components and typed routes are Next 16 top-level keys", () => {
-    const config = withM3({}, { reactCompiler: true, cacheComponents: true, typedRoutes: true });
+    const config = withM3(
+      {},
+      { reactCompiler: true, cacheComponents: true, typedRoutes: true },
+    );
     expect(config.reactCompiler).toBe(true);
     expect(config.cacheComponents).toBe(true);
     expect(config.typedRoutes).toBe(true);
@@ -65,7 +68,10 @@ describe("Tauri static export", () => {
     );
     expect(config.output).toBe("standalone");
     expect(config.trailingSlash).toBe(false);
-    expect(config.images).toEqual({ unoptimized: true, formats: ["image/avif"] });
+    expect(config.images).toEqual({
+      unoptimized: true,
+      formats: ["image/avif"],
+    });
     expect(config.env).toEqual({ NEXT_PUBLIC_M3_STATIC: "1", A: "1" });
   });
 
@@ -99,11 +105,14 @@ describe("Tauri static export", () => {
       delete env["TAURI_DEV_HOST"];
       env["NODE_ENV"] = "development";
       expect(withM3({}, { tauri: true }).assetPrefix).toBeUndefined();
-      expect(withM3({}, { tauri: { devHost: "192.168.1.5", devPort: 3100 } }).assetPrefix).toBe(
-        "http://192.168.1.5:3100",
-      );
+      expect(
+        withM3({}, { tauri: { devHost: "192.168.1.5", devPort: 3100 } })
+          .assetPrefix,
+      ).toBe("http://192.168.1.5:3100");
       env["TAURI_DEV_HOST"] = "10.0.0.2";
-      expect(withM3({}, { tauri: true }).assetPrefix).toBe("http://10.0.0.2:3000");
+      expect(withM3({}, { tauri: true }).assetPrefix).toBe(
+        "http://10.0.0.2:3000",
+      );
       env["NODE_ENV"] = "production";
       expect(withM3({}, { tauri: true }).assetPrefix).toBeUndefined();
     } finally {
@@ -119,7 +128,12 @@ describe("Tauri static export", () => {
 });
 
 /** Run the script against a minimal document and report the classes and color-scheme it leaves. */
-function run(cookie: string, osDark: boolean, initial: string[] = [], name?: string) {
+function run(
+  cookie: string,
+  osDark: boolean,
+  initial: string[] = [],
+  name?: string,
+) {
   const classes = new Set(initial);
   const root = {
     classList: {
@@ -144,22 +158,43 @@ function run(cookie: string, osDark: boolean, initial: string[] = [], name?: str
 describe("the pre-paint script", () => {
   test("no cookie means system: the OS preference decides", () => {
     expect(run("", true)).toEqual({ classes: ["dark"], colorScheme: "dark" });
-    expect(run("", false, ["dark"])).toEqual({ classes: [], colorScheme: "light" });
-    expect(run("other=1", true)).toEqual({ classes: ["dark"], colorScheme: "dark" });
+    expect(run("", false, ["dark"])).toEqual({
+      classes: [],
+      colorScheme: "light",
+    });
+    expect(run("other=1", true)).toEqual({
+      classes: ["dark"],
+      colorScheme: "dark",
+    });
   });
 
   test("a saved light or dark preference wins over the OS", () => {
-    expect(run("m3-theme=light", true)).toEqual({ classes: ["light"], colorScheme: "light" });
-    expect(run("a=b; m3-theme=dark", false)).toEqual({ classes: ["dark"], colorScheme: "dark" });
-    expect(run("m3-theme=system; x=y", true)).toEqual({ classes: ["dark"], colorScheme: "dark" });
+    expect(run("m3-theme=light", true)).toEqual({
+      classes: ["light"],
+      colorScheme: "light",
+    });
+    expect(run("a=b; m3-theme=dark", false)).toEqual({
+      classes: ["dark"],
+      colorScheme: "dark",
+    });
+    expect(run("m3-theme=system; x=y", true)).toEqual({
+      classes: ["dark"],
+      colorScheme: "dark",
+    });
   });
 
   test("system clears a stale .light", () => {
-    expect(run("m3-theme=system", false, ["light"])).toEqual({ classes: [], colorScheme: "light" });
+    expect(run("m3-theme=system", false, ["light"])).toEqual({
+      classes: [],
+      colorScheme: "light",
+    });
   });
 
   test("an invalid value is ignored, a custom cookie name is honoured", () => {
-    expect(run("m3-theme=purple", true)).toEqual({ classes: ["dark"], colorScheme: "dark" });
+    expect(run("m3-theme=purple", true)).toEqual({
+      classes: ["dark"],
+      colorScheme: "dark",
+    });
     expect(run("app-theme=light", true, [], "app-theme")).toEqual({
       classes: ["light"],
       colorScheme: "light",
@@ -172,23 +207,28 @@ describe("typefaces", () => {
   test("map the M3 reference typefaces onto the fonts an app loads", () => {
     expect(m3TypefaceCss({})).toBe("");
     expect(
-      m3TypefaceCss({ brand: "var(--font-roboto), sans-serif", code: "var(--font-mono)" }),
+      m3TypefaceCss({
+        brand: "var(--font-roboto), sans-serif",
+        code: "var(--font-mono)",
+      }),
     ).toBe(
       ":root {\n  --md-ref-typeface-brand: var(--font-roboto), sans-serif;\n  --md-ref-typeface-code: var(--font-mono);\n}",
     );
   });
 
   test("a value cannot escape the declaration", () => {
-    expect(m3TypefaceCss({ plain: "Inter; } body { display: none" })).not.toMatch(/[;}]\s*body/);
+    expect(
+      m3TypefaceCss({ plain: "Inter; } body { display: none" }),
+    ).not.toMatch(/[;}]\s*body/);
     expect(m3TypefaceCss({ plain: "</style><script>" })).not.toContain("<");
   });
 });
 
 describe("m3.css", () => {
-  const css = readFileSync(join(import.meta.dir, "..", "m3.css"), "utf8").replace(
-    /\/\*[\s\S]*?\*\//g,
-    "",
-  );
+  const css = readFileSync(
+    join(import.meta.dir, "..", "m3.css"),
+    "utf8",
+  ).replace(/\/\*[\s\S]*?\*\//g, "");
 
   test("imports tokens, expressive tokens, the colour sheets and the Tailwind preset, in that order", () => {
     const imports = [...css.matchAll(/@import "([^"]+)";/g)].map((m) => m[1]);

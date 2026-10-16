@@ -103,11 +103,11 @@ export const CameraSettingsModal = ({
       onClose={onClose}
       className={twMerge(
         "h-[500px] max-w-3xl duration-200",
-        isDragging ? "opacity-10" : "opacity-100"
+        isDragging ? "opacity-10" : "opacity-100",
       )}
       backdropClassName={twMerge(
         "duration-200",
-        isDragging ? "opacity-0" : "opacity-100"
+        isDragging ? "opacity-0" : "opacity-100",
       )}
       childPadding={false}
       disableHotkeyInput={disableHotkeyInput}
@@ -123,7 +123,7 @@ export const CameraSettingsModal = ({
                 className="flex h-6 w-6 items-center justify-center rounded-[3px] text-white/70 transition-colors hover:bg-white/10 hover:text-white"
                 onClick={onAddCamera}
               >
-                <PlusIcon  className="text-xl" />
+                <PlusIcon className="text-xl" />
               </button>
             </Tooltip>
           </div>
@@ -178,16 +178,14 @@ export const CameraSettingsModal = ({
                     }
                     disabled={selectedCamera?.id === "main"}
                   >
-                    <Trash2Icon  className="text-lg" />
+                    <Trash2Icon className="text-lg" />
                   </button>
                 </Tooltip>
               </div>
               <hr className="my-2 w-full border-white/15" />
               <div className="space-y-4">
                 <div className="space-y-1">
-                  <Label htmlFor="camera-name">
-                    Name
-                  </Label>
+                  <Label htmlFor="camera-name">Name</Label>
                   <Input
                     id="camera-name"
                     type="text"
@@ -201,9 +199,7 @@ export const CameraSettingsModal = ({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="focal-length">
-                    Focal Length
-                  </Label>
+                  <Label htmlFor="focal-length">Focal Length</Label>
                   <div
                     className="mt-1 flex items-center gap-4"
                     onPointerDown={handlePointerDown}

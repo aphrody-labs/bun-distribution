@@ -9,7 +9,11 @@ import { saveOfficialTierlist } from "../_actions";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Éditer une tier list" };
 
-export default async function EditTierlistPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditTierlistPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   await requireAdmin();
   const { id } = await params;
   const tl = await getTierlistForAdmin(id);

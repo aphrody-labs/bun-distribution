@@ -37,7 +37,11 @@ const git = (cwd: string, ...args: string[]) => {
     stdout: "pipe",
     stderr: "pipe",
   });
-  return { ok: r.exitCode === 0, out: r.stdout.toString().trim(), err: r.stderr.toString().trim() };
+  return {
+    ok: r.exitCode === 0,
+    out: r.stdout.toString().trim(),
+    err: r.stderr.toString().trim(),
+  };
 };
 
 const head = (dir: string) =>
@@ -62,7 +66,16 @@ export function fetchSource(s: VendorSource): string {
   // A sparse script owns its tree (a cone of the 2.1M-file icons repository hangs git): check out nothing, let it materialise.
   if (s.sparseScript) git(dir, "sparse-checkout", "set", "--no-cone", "!/*");
   else if (s.sparse) git(dir, "sparse-checkout", "set", "--cone", ...s.sparse);
-  const f = git(dir, "fetch", "-q", "--depth", "1", "--filter=blob:none", "origin", s.ref);
+  const f = git(
+    dir,
+    "fetch",
+    "-q",
+    "--depth",
+    "1",
+    "--filter=blob:none",
+    "origin",
+    s.ref,
+  );
   if (!f.ok) throw new Error(`${s.name}: fetch ${s.ref}: ${f.err}`);
   const c = git(dir, "checkout", "-q", "--detach", "FETCH_HEAD");
   if (!c.ok) throw new Error(`${s.name}: checkout: ${c.err}`);
@@ -74,7 +87,9 @@ export function fetchSource(s: VendorSource): string {
       stderr: "pipe",
     });
     if (r.exitCode !== 0)
-      throw new Error(`${s.name}: ${s.sparseScript}: ${r.stderr.toString().trim()}`);
+      throw new Error(
+        `${s.name}: ${s.sparseScript}: ${r.stderr.toString().trim()}`,
+      );
   }
   return `fetched ${s.name} @ ${s.ref.slice(0, 9)}`;
 }
@@ -106,7 +121,9 @@ export async function main(argv: string[]): Promise<number> {
     console.log(
       json
         ? JSON.stringify(rows, null, 2)
-        : rows.map((r) => `${r.state.padEnd(8)}${r.name.padEnd(26)}${r.path}`).join("\n"),
+        : rows
+            .map((r) => `${r.state.padEnd(8)}${r.name.padEnd(26)}${r.path}`)
+            .join("\n"),
     );
     return 0;
   }
@@ -116,7 +133,8 @@ export async function main(argv: string[]): Promise<number> {
     return bad.length ? 1 : 0;
   }
   if (cmd === "remove") {
-    for (const s of picked) rmSync(join(REPO, s.path), { recursive: true, force: true });
+    for (const s of picked)
+      rmSync(join(REPO, s.path), { recursive: true, force: true });
     return 0;
   }
   if (cmd === "fetch") {

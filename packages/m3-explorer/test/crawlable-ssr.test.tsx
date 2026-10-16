@@ -24,14 +24,18 @@ describe("crawlable SSR markup (m3-explorer)", () => {
   });
 
   test("tag chips, thumbnails and the rename field carry hooks", () => {
-    expect(renderToStaticMarkup(<TagPill color="#0f0">Done</TagPill>)).toContain(
-      'data-m3-component="TagPill"',
-    );
-    expect(renderToStaticMarkup(<FileThumb iconSrc="/f.svg" size={48} />)).toContain(
-      'data-m3-component="FileThumb"',
-    );
+    expect(
+      renderToStaticMarkup(<TagPill color="#0f0">Done</TagPill>),
+    ).toContain('data-m3-component="TagPill"');
+    expect(
+      renderToStaticMarkup(<FileThumb iconSrc="/f.svg" size={48} />),
+    ).toContain('data-m3-component="FileThumb"');
     const rename = renderToStaticMarkup(
-      <RenameInput name="Projects" onSave={async () => {}} onCancel={() => {}} />,
+      <RenameInput
+        name="Projects"
+        onSave={async () => {}}
+        onCancel={() => {}}
+      />,
     );
     expect(rename).toContain('data-m3-component="RenameInput"');
     expect(rename).toContain('aria-label="Name"');

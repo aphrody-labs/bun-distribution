@@ -3,7 +3,8 @@ import { StorytellerApiHostStore } from "@storyteller/api";
 
 export async function get_media_url(mediaId: string) {
   //This is for prod when we have the proper info on the url.
-  const apiSchemeAndHost = StorytellerApiHostStore.getInstance().getApiSchemeAndHost();
+  const apiSchemeAndHost =
+    StorytellerApiHostStore.getInstance().getApiSchemeAndHost();
   const url = `${apiSchemeAndHost}/v1/media_files/file/${mediaId}`;
 
   const response = await fetch(url);

@@ -5,14 +5,18 @@ import { runPythonCommand } from "../src/python";
 
 const repo = join(import.meta.dir, "../../../docs/aphrody");
 
-async function capture(args: string[]): Promise<{ code: number; text: string }> {
+async function capture(
+  args: string[],
+): Promise<{ code: number; text: string }> {
   const original = console.log;
   let text = "";
   console.log = (line: string) => {
     text += line;
   };
   try {
-    const code = await runPythonCommand(args, repo, { env: { PATH: process.env["PATH"] } });
+    const code = await runPythonCommand(args, repo, {
+      env: { PATH: process.env["PATH"] },
+    });
     return { code, text };
   } finally {
     console.log = original;
@@ -40,7 +44,8 @@ test("yolo py supervised commands reject unknown extra arguments and bad timeout
 test.skipIf(process.platform !== "linux")(
   "yolo py delegates vu verbs to the artifact's bin/vu and strips the yolo-only flags",
   async () => {
-    const { mkdtempSync, mkdirSync, writeFileSync, chmodSync, rmSync } = await import("node:fs");
+    const { mkdtempSync, mkdirSync, writeFileSync, chmodSync, rmSync } =
+      await import("node:fs");
     const { tmpdir } = await import("node:os");
     const dir = mkdtempSync(join(tmpdir(), "yolo-vu-delegate-"));
     try {
@@ -78,16 +83,26 @@ test.skipIf(process.platform !== "linux")(
         calls.push(command);
         return 0;
       };
-      const code = await runPythonCommand(["python", "install", "3.14", "--vu", dir], repo, {
-        env: { PATH: process.env["PATH"] },
-        run,
-      });
+      const code = await runPythonCommand(
+        ["python", "install", "3.14", "--vu", dir],
+        repo,
+        {
+          env: { PATH: process.env["PATH"] },
+          run,
+        },
+      );
       expect(code).toBe(0);
-      expect(calls).toEqual([[join(dir, "bin/vu"), "python", "install", "3.14"]]);
-      await runPythonCommand(["vu", "hf", "status", "--vu", dir, "--vu-full"], repo, {
-        env: { PATH: process.env["PATH"] },
-        run,
-      });
+      expect(calls).toEqual([
+        [join(dir, "bin/vu"), "python", "install", "3.14"],
+      ]);
+      await runPythonCommand(
+        ["vu", "hf", "status", "--vu", dir, "--vu-full"],
+        repo,
+        {
+          env: { PATH: process.env["PATH"] },
+          run,
+        },
+      );
       expect(calls[1]).toEqual([join(dir, "bin/vu"), "hf", "status"]);
     } finally {
       rmSync(dir, { recursive: true, force: true });

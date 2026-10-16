@@ -16,7 +16,9 @@ function pascalToSnake(s) {
 
 /** Fixer : remplace le texte enfant du <md-icon> par `replacement`. */
 function fixChild(node, replacement) {
-  const only = (node.children || []).find((c) => !(c.type === "JSXText" && c.value.trim() === ""));
+  const only = (node.children || []).find(
+    (c) => !(c.type === "JSXText" && c.value.trim() === ""),
+  );
   if (!only || only.type !== "JSXText") return undefined;
   return (fixer) => fixer.replaceText(only, replacement);
 }
@@ -31,7 +33,8 @@ export default {
     type: "problem",
     fixable: "code",
     docs: {
-      description: "md-icon child must be a valid Material Symbols glyph name (snake_case).",
+      description:
+        "md-icon child must be a valid Material Symbols glyph name (snake_case).",
     },
     schema: [],
   },

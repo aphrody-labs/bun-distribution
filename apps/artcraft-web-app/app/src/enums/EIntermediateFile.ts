@@ -1,4 +1,4 @@
 export enum EIntermediateFile {
-  "true",
-  "false"
+  true,
+  false,
 }

@@ -235,7 +235,8 @@ export class CharacterAnimationManager {
   }
 
   clear(): void {
-    for (const laneId of Array.from(this.lanes.keys())) this.disposeLane(laneId);
+    for (const laneId of Array.from(this.lanes.keys()))
+      this.disposeLane(laneId);
     for (const uuid of this.mixers.keys()) this.resetToRestPose(uuid);
     for (const mixer of this.mixers.values()) mixer.stopAllAction();
     this.mixers.clear();

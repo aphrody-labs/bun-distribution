@@ -7,32 +7,44 @@
 
 :root {
   /* Typescale: emphasized styles. */
-  --md-sys-typescale-display-large-emphasized-font: var(--md-ref-typeface-brand);
+  --md-sys-typescale-display-large-emphasized-font: var(
+    --md-ref-typeface-brand
+  );
   --md-sys-typescale-display-large-emphasized-weight: 500;
   --md-sys-typescale-display-large-emphasized-size: 3.5625rem;
   --md-sys-typescale-display-large-emphasized-line-height: 4rem;
   --md-sys-typescale-display-large-emphasized-tracking: 0rem;
-  --md-sys-typescale-display-medium-emphasized-font: var(--md-ref-typeface-brand);
+  --md-sys-typescale-display-medium-emphasized-font: var(
+    --md-ref-typeface-brand
+  );
   --md-sys-typescale-display-medium-emphasized-weight: 500;
   --md-sys-typescale-display-medium-emphasized-size: 2.8125rem;
   --md-sys-typescale-display-medium-emphasized-line-height: 3.25rem;
   --md-sys-typescale-display-medium-emphasized-tracking: 0rem;
-  --md-sys-typescale-display-small-emphasized-font: var(--md-ref-typeface-brand);
+  --md-sys-typescale-display-small-emphasized-font: var(
+    --md-ref-typeface-brand
+  );
   --md-sys-typescale-display-small-emphasized-weight: 500;
   --md-sys-typescale-display-small-emphasized-size: 2.25rem;
   --md-sys-typescale-display-small-emphasized-line-height: 2.75rem;
   --md-sys-typescale-display-small-emphasized-tracking: 0rem;
-  --md-sys-typescale-headline-large-emphasized-font: var(--md-ref-typeface-brand);
+  --md-sys-typescale-headline-large-emphasized-font: var(
+    --md-ref-typeface-brand
+  );
   --md-sys-typescale-headline-large-emphasized-weight: 500;
   --md-sys-typescale-headline-large-emphasized-size: 2rem;
   --md-sys-typescale-headline-large-emphasized-line-height: 2.5rem;
   --md-sys-typescale-headline-large-emphasized-tracking: 0rem;
-  --md-sys-typescale-headline-medium-emphasized-font: var(--md-ref-typeface-brand);
+  --md-sys-typescale-headline-medium-emphasized-font: var(
+    --md-ref-typeface-brand
+  );
   --md-sys-typescale-headline-medium-emphasized-weight: 500;
   --md-sys-typescale-headline-medium-emphasized-size: 1.75rem;
   --md-sys-typescale-headline-medium-emphasized-line-height: 2.25rem;
   --md-sys-typescale-headline-medium-emphasized-tracking: 0rem;
-  --md-sys-typescale-headline-small-emphasized-font: var(--md-ref-typeface-brand);
+  --md-sys-typescale-headline-small-emphasized-font: var(
+    --md-ref-typeface-brand
+  );
   --md-sys-typescale-headline-small-emphasized-weight: 500;
   --md-sys-typescale-headline-small-emphasized-size: 1.5rem;
   --md-sys-typescale-headline-small-emphasized-line-height: 2rem;
@@ -92,14 +104,28 @@
   --md-sys-motion-spring-expressive-slow-spatial-stiffness: 200;
 
   /* Shape: directional corners (LTR; start/end swap under RTL). */
-  --md-sys-shape-corner-extra-small-top: var(--md-sys-shape-corner-extra-small) var(--md-sys-shape-corner-extra-small) var(--md-sys-shape-corner-none) var(--md-sys-shape-corner-none);
-  --md-sys-shape-corner-large-top: var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-none) var(--md-sys-shape-corner-none);
-  --md-sys-shape-corner-large-start: var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-none) var(--md-sys-shape-corner-none) var(--md-sys-shape-corner-large);
-  --md-sys-shape-corner-large-end: var(--md-sys-shape-corner-none) var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-none);
-  --md-sys-shape-corner-extra-large-top: var(--md-sys-shape-corner-extra-large) var(--md-sys-shape-corner-extra-large) var(--md-sys-shape-corner-none) var(--md-sys-shape-corner-none);
+  --md-sys-shape-corner-extra-small-top: var(--md-sys-shape-corner-extra-small)
+    var(--md-sys-shape-corner-extra-small) var(--md-sys-shape-corner-none)
+    var(--md-sys-shape-corner-none);
+  --md-sys-shape-corner-large-top: var(--md-sys-shape-corner-large)
+    var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-none)
+    var(--md-sys-shape-corner-none);
+  --md-sys-shape-corner-large-start: var(--md-sys-shape-corner-large)
+    var(--md-sys-shape-corner-none) var(--md-sys-shape-corner-none)
+    var(--md-sys-shape-corner-large);
+  --md-sys-shape-corner-large-end: var(--md-sys-shape-corner-none)
+    var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-large)
+    var(--md-sys-shape-corner-none);
+  --md-sys-shape-corner-extra-large-top: var(--md-sys-shape-corner-extra-large)
+    var(--md-sys-shape-corner-extra-large) var(--md-sys-shape-corner-none)
+    var(--md-sys-shape-corner-none);
 }
 
 :root:dir(rtl) {
-  --md-sys-shape-corner-large-start: var(--md-sys-shape-corner-none) var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-none);
-  --md-sys-shape-corner-large-end: var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-none) var(--md-sys-shape-corner-none) var(--md-sys-shape-corner-large);
+  --md-sys-shape-corner-large-start: var(--md-sys-shape-corner-none)
+    var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-large)
+    var(--md-sys-shape-corner-none);
+  --md-sys-shape-corner-large-end: var(--md-sys-shape-corner-large)
+    var(--md-sys-shape-corner-none) var(--md-sys-shape-corner-none)
+    var(--md-sys-shape-corner-large);
 }

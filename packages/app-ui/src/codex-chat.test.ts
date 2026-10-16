@@ -129,15 +129,29 @@ describe("Codex Chat - Item & Turn Reduction", () => {
       streaming?: boolean;
       itemId?: string;
     }> = [
-      { id: "msg-1", role: "assistant", content: "Hello", streaming: false, itemId: "item-1" },
-      { id: "msg-2", role: "assistant", content: "Work", streaming: true, itemId: "item-2" },
+      {
+        id: "msg-1",
+        role: "assistant",
+        content: "Hello",
+        streaming: false,
+        itemId: "item-1",
+      },
+      {
+        id: "msg-2",
+        role: "assistant",
+        content: "Work",
+        streaming: true,
+        itemId: "item-2",
+      },
     ];
 
     const delta = " in progress";
     const targetItemId = "item-2";
 
     const updated = items.map((item) =>
-      item.itemId === targetItemId ? Object.assign(item, { content: item.content + delta }) : item,
+      item.itemId === targetItemId
+        ? Object.assign(item, { content: item.content + delta })
+        : item,
     );
 
     expect(updated[0].content).toBe("Hello");
@@ -147,7 +161,10 @@ describe("Codex Chat - Item & Turn Reduction", () => {
 
 describe("Codex Chat - Thread Actions & Wire Payloads", () => {
   it("builds exact payload for thread/name/update", () => {
-    const payload = buildThreadRenamePayload("thread-abc-123", "Nouveau titre de session");
+    const payload = buildThreadRenamePayload(
+      "thread-abc-123",
+      "Nouveau titre de session",
+    );
     expect(payload).toEqual({
       threadId: "thread-abc-123",
       name: "Nouveau titre de session",
@@ -178,24 +195,45 @@ describe("Codex Chat - Thread Actions & Wire Payloads", () => {
 
   it("does not schedule another compaction when its terminal turn arrives", () => {
     expect(
-      shouldAutoCompactThread({ status: "completed", items: [{ type: "agentMessage" }] }, 25),
+      shouldAutoCompactThread(
+        { status: "completed", items: [{ type: "agentMessage" }] },
+        25,
+      ),
     ).toBe(true);
     expect(
-      shouldAutoCompactThread({ status: "completed", items: [{ type: "contextCompaction" }] }, 25),
+      shouldAutoCompactThread(
+        { status: "completed", items: [{ type: "contextCompaction" }] },
+        25,
+      ),
     ).toBe(false);
     expect(
-      shouldAutoCompactThread({ status: "failed", items: [{ type: "agentMessage" }] }, 25),
+      shouldAutoCompactThread(
+        { status: "failed", items: [{ type: "agentMessage" }] },
+        25,
+      ),
     ).toBe(false);
     expect(shouldAutoCompactThread({ status: "interrupted" }, 25)).toBe(false);
     expect(shouldAutoCompactThread({ status: "completed" }, 24)).toBe(false);
-    expect(shouldAutoCompactThread({ status: "completed" }, 26, 25)).toBe(false);
+    expect(shouldAutoCompactThread({ status: "completed" }, 26, 25)).toBe(
+      false,
+    );
     expect(shouldAutoCompactThread({ status: "completed" }, 50, 25)).toBe(true);
   });
 
   it("updates thread state when renaming without mutating unrelated threads", () => {
     const threads: ThreadSummary[] = [
-      { id: "t-1", name: "Initial 1", preview: "Init 1", createdAt: 1700000000 },
-      { id: "t-2", name: "Initial 2", preview: "Init 2", createdAt: 1700000100 },
+      {
+        id: "t-1",
+        name: "Initial 1",
+        preview: "Init 1",
+        createdAt: 1700000000,
+      },
+      {
+        id: "t-2",
+        name: "Initial 2",
+        preview: "Init 2",
+        createdAt: 1700000100,
+      },
     ];
 
     const updated = threads.map((t) =>
@@ -250,7 +288,12 @@ describe("Codex Chat - ThreadDrawer Component", () => {
 
   it("renders sessions list, active indicator, and action buttons when open", () => {
     const threads: ThreadSummary[] = [
-      { id: "t-1", name: "Analyse Architecture", createdAt: 1700000000, cwd: "C:/aphrody" },
+      {
+        id: "t-1",
+        name: "Analyse Architecture",
+        createdAt: 1700000000,
+        cwd: "C:/aphrody",
+      },
       { id: "t-2", preview: "Deuxième échange", createdAt: 1700001000 },
     ];
 
@@ -284,7 +327,9 @@ describe("Codex Chat - ThreadDrawer Component", () => {
       }),
     );
 
-    expect(html).toContain("Aucune session : envoyez un message pour en créer une");
+    expect(html).toContain(
+      "Aucune session : envoyez un message pour en créer une",
+    );
   });
 });
 
@@ -309,7 +354,11 @@ describe("Codex Chat - Pixel-Perfect Parity & Timeline Cards", () => {
   it("renders CodexChat with centered clamp column, compact rounded user bubble, plain assistant, and floating composer", () => {
     const turns: Turn[] = [
       { id: "u-1", role: "user", content: "hey" },
-      { id: "a-1", role: "assistant", content: "Hey! What can I help you with?" },
+      {
+        id: "a-1",
+        role: "assistant",
+        content: "Hey! What can I help you with?",
+      },
     ];
 
     const html = renderToStaticMarkup(

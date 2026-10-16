@@ -59,7 +59,9 @@ const $ = (id) => document.getElementById(id);
           "aria-label": `Couleur de ${g.name}`,
         });
         color.addEventListener("change", () =>
-          mutate((s) => core.updateGroup(s, g.id, { color: color.value }).state),
+          mutate(
+            (s) => core.updateGroup(s, g.id, { color: color.value }).state,
+          ),
         );
         const name = h("input", {
           type: "text",
@@ -74,7 +76,11 @@ const $ = (id) => document.getElementById(id);
             return res.state;
           }),
         );
-        const del = h("button", { type: "button", "aria-label": `Supprimer ${g.name}` }, "✕");
+        const del = h(
+          "button",
+          { type: "button", "aria-label": `Supprimer ${g.name}` },
+          "✕",
+        );
         let armed = 0;
         del.addEventListener("click", () => {
           if (!armed) {
@@ -126,7 +132,10 @@ const $ = (id) => document.getElementById(id);
   const setSetting = (key, value) =>
     mutate((s) => ({
       ...s,
-      settings: core.normalizeSettings({ ...s.settings, [key]: value }, s.groups),
+      settings: core.normalizeSettings(
+        { ...s.settings, [key]: value },
+        s.groups,
+      ),
     }));
 
   function status(text, isError) {
@@ -150,21 +159,27 @@ const $ = (id) => document.getElementById(id);
       });
     });
     for (const id of ["hideShorts", "hideWatched", "badges"])
-      $(id).addEventListener("change", (ev) => setSetting(id, ev.currentTarget.checked));
+      $(id).addEventListener("change", (ev) =>
+        setSetting(id, ev.currentTarget.checked),
+      );
     $("threshold").addEventListener("input", (ev) => {
       $("threshold-out").textContent = `${ev.currentTarget.value} %`;
     });
     $("threshold").addEventListener("change", (ev) =>
       setSetting("watchedThreshold", Number(ev.currentTarget.value)),
     );
-    $("sort").addEventListener("change", (ev) => setSetting("sort", ev.currentTarget.value));
+    $("sort").addEventListener("change", (ev) =>
+      setSetting("sort", ev.currentTarget.value),
+    );
 
     $("export").addEventListener("click", () => {
       $("json").value = exportText();
       status("Sauvegarde générée ci-dessus.");
     });
     $("download").addEventListener("click", () => {
-      const url = URL.createObjectURL(new Blob([exportText()], { type: "application/json" }));
+      const url = URL.createObjectURL(
+        new Blob([exportText()], { type: "application/json" }),
+      );
       const a = h("a", {
         href: url,
         download: `yt-subs-sorter-${new Date().toISOString().slice(0, 10)}.json`,
@@ -200,7 +215,9 @@ const $ = (id) => document.getElementById(id);
       }
       const mode = document.querySelector('input[name="mode"]:checked').value;
       await mutate((s) => core.mergeImport(s, res.state, mode));
-      const warn = res.warnings.length ? ` (${res.warnings.length} entrée(s) ignorée(s))` : "";
+      const warn = res.warnings.length
+        ? ` (${res.warnings.length} entrée(s) ignorée(s))`
+        : "";
       status(
         `Import terminé (${mode === "replace" ? "remplacement" : "fusion"}) : ${res.state.groups.length} groupe(s), ${Object.keys(res.state.channels).length} chaîne(s)${warn}.`,
       );

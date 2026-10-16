@@ -63,7 +63,7 @@ least likely to know about. Please read `AGENTS.md` §1 before adding any asset.
 
 ## Parity and reach
 
-- [ ] `parity/acrobat-features.toml` updated in this PR, with `notes` saying what is *still*
+- [ ] `parity/acrobat-features.toml` updated in this PR, with `notes` saying what is _still_
       missing — `shipped` means "exists and tested", not "as good as Acrobat"
 - [ ] Reachable headlessly through an `automation` tool where that applies (`AGENTS.md` §3),
       so agents can drive it and not just the UI

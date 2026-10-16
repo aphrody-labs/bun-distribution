@@ -1,5 +1,9 @@
 import { UsageError } from "../../../shared/args.ts";
-import { COMMAND_NAME, commandDefinitions, REGISTER_PREFIX } from "./bot-commands.ts";
+import {
+  COMMAND_NAME,
+  commandDefinitions,
+  REGISTER_PREFIX,
+} from "./bot-commands.ts";
 import { ChallongeClient, ChallongeError, type Participant } from "./client.ts";
 import { authOf, type ChallongeConfig, secretsOf } from "./config.ts";
 import {
@@ -12,11 +16,21 @@ import {
   type MessageData,
   plain,
 } from "./discord.ts";
-import { FALLBACK_GATEWAY, Gateway, GatewayFatalError, INTENT_GUILDS } from "./gateway.ts";
+import {
+  FALLBACK_GATEWAY,
+  Gateway,
+  GatewayFatalError,
+  INTENT_GUILDS,
+} from "./gateway.ts";
 import { errorText, redact } from "./http.ts";
 import type { Io } from "./io.ts";
 import { BULK_LIMIT, chunk, shuffle, type SeedEntry } from "./participants.ts";
-import { defaultStatePath, type PlayerRef, StateStore, type TournamentRef } from "./state.ts";
+import {
+  defaultStatePath,
+  type PlayerRef,
+  StateStore,
+  type TournamentRef,
+} from "./state.ts";
 import {
   assertSlug,
   createTournamentFlow,
@@ -52,7 +66,10 @@ const COLOR = 0xf26e22;
  * Rôle organisateur configuré (ORGANISER_ROLE_ID) ou, à défaut, permission « Gérer le serveur ».
  * Un administrateur du serveur passe toujours.
  */
-export function isOrganiser(config: BotConfig, member?: DiscordMember): boolean {
+export function isOrganiser(
+  config: BotConfig,
+  member?: DiscordMember,
+): boolean {
   if (!member) return false;
   let permissions = 0n;
   try {
@@ -61,23 +78,34 @@ export function isOrganiser(config: BotConfig, member?: DiscordMember): boolean 
     // champ illisible : on ne déduit aucun droit
   }
   if (permissions & ADMINISTRATOR) return true;
-  if (config.organiserRoleId) return member.roles?.includes(config.organiserRoleId) ?? false;
+  if (config.organiserRoleId)
+    return member.roles?.includes(config.organiserRoleId) ?? false;
   return (permissions & MANAGE_GUILD) !== 0n;
 }
 
-function optionValues(options?: CommandOption[]): Map<string, string | number | boolean> {
+function optionValues(
+  options?: CommandOption[],
+): Map<string, string | number | boolean> {
   const map = new Map<string, string | number | boolean>();
   for (const option of options ?? [])
     if (option.value !== undefined) map.set(option.name, option.value);
   return map;
 }
 
-function text(values: Map<string, string | number | boolean>, name: string): string | undefined {
+function text(
+  values: Map<string, string | number | boolean>,
+  name: string,
+): string | undefined {
   const value = values.get(name);
-  return value === undefined || value === "" ? undefined : String(value).trim() || undefined;
+  return value === undefined || value === ""
+    ? undefined
+    : String(value).trim() || undefined;
 }
 
-export async function handleInteraction(ctx: BotContext, interaction: Interaction): Promise<void> {
+export async function handleInteraction(
+  ctx: BotContext,
+  interaction: Interaction,
+): Promise<void> {
   try {
     if (interaction.guild_id !== ctx.config.guildId) {
       await ctx.discord.respond(
@@ -88,30 +116,46 @@ export async function handleInteraction(ctx: BotContext, interaction: Interactio
     }
     if (interaction.type === 2 && interaction.data?.name === COMMAND_NAME)
       return await onCommand(ctx, interaction);
-    if (interaction.type === 3 && interaction.data?.custom_id?.startsWith(REGISTER_PREFIX))
+    if (
+      interaction.type === 3 &&
+      interaction.data?.custom_id?.startsWith(REGISTER_PREFIX)
+    )
       return await onRegisterButton(ctx, interaction);
   } catch (error) {
     ctx.log(`Interaction ${interaction.id} : ${errorText(error)}`);
   }
 }
 
-async function onCommand(ctx: BotContext, interaction: Interaction): Promise<void> {
+async function onCommand(
+  ctx: BotContext,
+  interaction: Interaction,
+): Promise<void> {
   const sub = interaction.data?.options?.[0];
   if (!sub)
     return ctx.discord.respond(
       interaction,
-      ephemeral("Sous-commande manquante : creer, inscrire, demarrer, score, terminer ou bracket."),
+      ephemeral(
+        "Sous-commande manquante : creer, inscrire, demarrer, score, terminer ou bracket.",
+      ),
     );
   const values = optionValues(sub.options);
 
   if (sub.name === "bracket") return showBracket(ctx, interaction);
   if (sub.name === "inscrire") {
     return deferred(ctx, interaction, async () => ({
-      reply: await register(ctx, interaction, await activeTournament(ctx), text(values, "pseudo")),
+      reply: await register(
+        ctx,
+        interaction,
+        await activeTournament(ctx),
+        text(values, "pseudo"),
+      ),
     }));
   }
   if (!["creer", "demarrer", "score", "terminer"].includes(sub.name)) {
-    return ctx.discord.respond(interaction, ephemeral(`Sous-commande inconnue : ${sub.name}.`));
+    return ctx.discord.respond(
+      interaction,
+      ephemeral(`Sous-commande inconnue : ${sub.name}.`),
+    );
   }
   // Contrôle de rôle AVANT tout travail : la réponse part dans les 3 s imposées par Discord.
   if (!isOrganiser(ctx.config, interaction.member)) {
@@ -127,7 +171,9 @@ async function onCommand(ctx: BotContext, interaction: Interaction): Promise<voi
     case "creer":
       return deferred(ctx, interaction, () => create(ctx, interaction, values));
     case "demarrer":
-      return deferred(ctx, interaction, () => start(ctx, values.get("melanger") === true));
+      return deferred(ctx, interaction, () =>
+        start(ctx, values.get("melanger") === true),
+      );
     case "score":
       return deferred(ctx, interaction, () => score(ctx, values));
     default:
@@ -135,8 +181,12 @@ async function onCommand(ctx: BotContext, interaction: Interaction): Promise<voi
   }
 }
 
-async function onRegisterButton(ctx: BotContext, interaction: Interaction): Promise<void> {
-  const tournamentId = interaction.data?.custom_id?.slice(REGISTER_PREFIX.length) ?? "";
+async function onRegisterButton(
+  ctx: BotContext,
+  interaction: Interaction,
+): Promise<void> {
+  const tournamentId =
+    interaction.data?.custom_id?.slice(REGISTER_PREFIX.length) ?? "";
   await deferred(ctx, interaction, async () => {
     const tournament = await activeTournament(ctx);
     if (tournament.id !== tournamentId)
@@ -165,7 +215,9 @@ async function deferred(
   try {
     await ctx.discord.defer(interaction, true);
   } catch (error) {
-    ctx.log(`Impossible d'accuser réception de ${interaction.id} : ${errorText(error)}`);
+    ctx.log(
+      `Impossible d'accuser réception de ${interaction.id} : ${errorText(error)}`,
+    );
     return;
   }
   try {
@@ -186,7 +238,8 @@ function named(tournament: TournamentRef): string {
 }
 
 function userMessage(ctx: BotContext, error: unknown): string {
-  if (error instanceof UsageError || error instanceof ChallongeError) return error.message;
+  if (error instanceof UsageError || error instanceof ChallongeError)
+    return error.message;
   if (error instanceof DiscordError) return `Erreur Discord : ${error.message}`;
   ctx.log(
     `Erreur interne : ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
@@ -198,11 +251,16 @@ async function activeTournament(ctx: BotContext): Promise<TournamentRef> {
   const state = await ctx.state.read();
   const tournament = state.guilds[ctx.config.guildId]?.tournament;
   if (!tournament)
-    throw new UsageError("Aucun tournoi en cours : un organisateur doit lancer /tournoi creer.");
+    throw new UsageError(
+      "Aucun tournoi en cours : un organisateur doit lancer /tournoi creer.",
+    );
   return tournament;
 }
 
-async function showBracket(ctx: BotContext, interaction: Interaction): Promise<void> {
+async function showBracket(
+  ctx: BotContext,
+  interaction: Interaction,
+): Promise<void> {
   try {
     const tournament = await activeTournament(ctx);
     await ctx.discord.respond(interaction, {
@@ -227,9 +285,14 @@ async function create(
   if (url) assertSlug(url);
   const type = normalizeType(text(values, "format") ?? "single_elimination");
   const game = text(values, "jeu") ?? ctx.config.defaultGame;
-  const result = await createTournamentFlow(ctx.challonge, { name, type, game, url }, [], {
-    community: ctx.config.community,
-  });
+  const result = await createTournamentFlow(
+    ctx.challonge,
+    { name, type, game, url },
+    [],
+    {
+      community: ctx.config.community,
+    },
+  );
   const tournament = result.tournament;
   const replaced = await ctx.state.update((state) => {
     const previous = state.guilds[ctx.config.guildId]?.tournament;
@@ -284,10 +347,16 @@ async function create(
 
 // --- Inscriptions -----------------------------------------------------------------------------------------------
 
-function uniqueName(base: string, taken: Set<string>, username: string): string {
+function uniqueName(
+  base: string,
+  taken: Set<string>,
+  username: string,
+): string {
   let name = base.slice(0, 60);
-  if (taken.has(name.toLocaleLowerCase())) name = `${name.slice(0, 45)} (${username})`.slice(0, 60);
-  for (let n = 2; taken.has(name.toLocaleLowerCase()); n += 1) name = `${base.slice(0, 50)} ${n}`;
+  if (taken.has(name.toLocaleLowerCase()))
+    name = `${name.slice(0, 45)} (${username})`.slice(0, 60);
+  for (let n = 2; taken.has(name.toLocaleLowerCase()); n += 1)
+    name = `${base.slice(0, 50)} ${n}`;
   return name;
 }
 
@@ -298,7 +367,8 @@ async function register(
   requested?: string,
 ): Promise<string> {
   const user = interaction.member?.user ?? interaction.user;
-  if (!user) throw new UsageError("Utilisateur Discord introuvable dans l'interaction.");
+  if (!user)
+    throw new UsageError("Utilisateur Discord introuvable dans l'interaction.");
   const key = `${tournament.id}:${user.id}`;
   if (ctx.inflight.has(key))
     throw new UsageError("Ton inscription est déjà en cours de traitement.");
@@ -306,8 +376,12 @@ async function register(
   try {
     const snapshot = await ctx.state.read();
     const known =
-      snapshot.players[tournament.id]?.[user.id] ?? snapshot.pending[tournament.id]?.[user.id];
-    if (known) throw new UsageError(`Tu es déjà inscrit·e sous le nom « ${known.name} ».`);
+      snapshot.players[tournament.id]?.[user.id] ??
+      snapshot.pending[tournament.id]?.[user.id];
+    if (known)
+      throw new UsageError(
+        `Tu es déjà inscrit·e sous le nom « ${known.name} ».`,
+      );
     const taken = new Set([
       ...Object.values(snapshot.players[tournament.id] ?? {}).map((p) =>
         p.name.toLocaleLowerCase(),
@@ -316,12 +390,19 @@ async function register(
         p.name.toLocaleLowerCase(),
       ),
     ]);
-    const base = requested ?? interaction.member?.nick ?? user.global_name ?? user.username;
+    const base =
+      requested ??
+      interaction.member?.nick ??
+      user.global_name ??
+      user.username;
     const name = uniqueName(base, taken, user.username);
 
     if (ctx.config.batchRegistrations) {
       await ctx.state.update((state) => {
-        (state.pending[tournament.id] ??= {})[user.id] = { name, at: Date.now() };
+        (state.pending[tournament.id] ??= {})[user.id] = {
+          name,
+          at: Date.now(),
+        };
       });
       return `Inscription enregistrée sous « ${name} ». Elle sera envoyée à Challonge au démarrage du tournoi.`;
     }
@@ -353,15 +434,17 @@ async function flushPending(
     .toSorted((a, b) => a.at - b.at);
   if (!waiting.length) return 0;
   const ordered = shuffleSeeds ? shuffle(waiting, ctx.random) : waiting;
-  const entries: (SeedEntry & { userId: string })[] = ordered.map((w, index) => {
-    const entry: SeedEntry & { userId: string } = {
-      userId: w.userId,
-      name: w.name,
-      misc: `discord:${w.userId}`,
-    };
-    if (shuffleSeeds) entry.seed = index + 1;
-    return entry;
-  });
+  const entries: (SeedEntry & { userId: string })[] = ordered.map(
+    (w, index) => {
+      const entry: SeedEntry & { userId: string } = {
+        userId: w.userId,
+        name: w.name,
+        misc: `discord:${w.userId}`,
+      };
+      if (shuffleSeeds) entry.seed = index + 1;
+      return entry;
+    },
+  );
   let unresolved: { userId: string; name: string }[] = [];
   let sent = 0;
   for (const batch of chunk(entries, BULK_LIMIT)) {
@@ -379,7 +462,11 @@ async function flushPending(
       const hit =
         created.find((p) => p.attributes.misc === entry.misc) ??
         created.find((p) => p.attributes.name === entry.name);
-      if (hit) mapped[entry.userId] = { participantId: String(hit.id), name: entry.name };
+      if (hit)
+        mapped[entry.userId] = {
+          participantId: String(hit.id),
+          name: entry.name,
+        };
       else unresolved.push({ userId: entry.userId, name: entry.name });
     }
     // oxlint-disable-next-line no-await-in-loop -- batches run in order: each state update must land before the next bulk request (Challonge rate limits)
@@ -394,13 +481,16 @@ async function flushPending(
   }
   if (unresolved.length) {
     // La réponse de bulk_add n'a pas permis d'associer ces joueurs : une seule lecture de la liste suffit.
-    const all: Participant[] = await ctx.challonge.listParticipants(tournament.id);
+    const all: Participant[] = await ctx.challonge.listParticipants(
+      tournament.id,
+    );
     const found: Record<string, PlayerRef> = {};
     for (const u of unresolved) {
       const hit =
         all.find((p) => p.attributes.misc === `discord:${u.userId}`) ??
         all.find((p) => p.attributes.name === u.name);
-      if (hit) found[u.userId] = { participantId: String(hit.id), name: u.name };
+      if (hit)
+        found[u.userId] = { participantId: String(hit.id), name: u.name };
     }
     await ctx.state.update((state) => {
       for (const [userId, ref] of Object.entries(found))
@@ -420,8 +510,10 @@ async function flushPending(
 async function start(ctx: BotContext, shuffleSeeds: boolean): Promise<Done> {
   const tournament = await activeTournament(ctx);
   let sent = 0;
-  if (ctx.config.batchRegistrations) sent = await flushPending(ctx, tournament, shuffleSeeds);
-  else if (shuffleSeeds) await ctx.challonge.randomizeParticipants(tournament.id);
+  if (ctx.config.batchRegistrations)
+    sent = await flushPending(ctx, tournament, shuffleSeeds);
+  else if (shuffleSeeds)
+    await ctx.challonge.randomizeParticipants(tournament.id);
   await ctx.challonge.changeState(tournament.id, "start");
   const link = tournament.bracketUrl ?? "";
   return {
@@ -442,7 +534,9 @@ async function score(
   const matchRef = text(values, "match");
   const scoreText = text(values, "score");
   if (!matchRef || !scoreText)
-    throw new UsageError("Indiquez le match et le score (ex. /tournoi score match:A score:2-1).");
+    throw new UsageError(
+      "Indiquez le match et le score (ex. /tournoi score match:A score:2-1).",
+    );
   const winnerUser = text(values, "gagnant");
   const state = await ctx.state.read();
   const roster = state.players[tournament.id] ?? {};
@@ -517,7 +611,9 @@ export function botConfigOf(config: ChallongeConfig): {
     !config.apiKey && !config.oauthToken && "CHALLONGE_API_KEY",
   ].filter(Boolean);
   if (missing.length)
-    throw new UsageError(`Variables manquantes pour le bot : ${missing.join(", ")}.`);
+    throw new UsageError(
+      `Variables manquantes pour le bot : ${missing.join(", ")}.`,
+    );
   return {
     token: d.token!,
     appId: d.appId!,
@@ -547,7 +643,9 @@ export async function runBot(
     random: io.random,
     community: config.communityId,
     onRetry: ({ status, attempt, waitMs }) =>
-      log(`Challonge ${status} : nouvelle tentative ${attempt} dans ${waitMs} ms.`),
+      log(
+        `Challonge ${status} : nouvelle tentative ${attempt} dans ${waitMs} ms.`,
+      ),
   });
   const discord = new DiscordRest({
     token,
@@ -570,11 +668,18 @@ export async function runBot(
       "ORGANISER_ROLE_ID absent : seuls les membres avec « Gérer le serveur » ou administrateur peuvent organiser.",
     );
   if (bot.batchRegistrations)
-    log("Inscriptions groupées : envoyées à Challonge par lots de 20 au démarrage du tournoi.");
+    log(
+      "Inscriptions groupées : envoyées à Challonge par lots de 20 au démarrage du tournoi.",
+    );
 
   if (options.register !== false) {
-    const registered = await discord.putGuildCommands(bot.guildId, commandDefinitions());
-    log(`${registered.length} commande(s) enregistrée(s) sur le serveur ${bot.guildId}.`);
+    const registered = await discord.putGuildCommands(
+      bot.guildId,
+      commandDefinitions(),
+    );
+    log(
+      `${registered.length} commande(s) enregistrée(s) sur le serveur ${bot.guildId}.`,
+    );
   }
 
   const gateway = new Gateway({
@@ -591,13 +696,17 @@ export async function runBot(
       } catch (error) {
         if (error instanceof DiscordError && error.status === 401)
           throw new GatewayFatalError(4004, error.message);
-        log(`GET /gateway/bot impossible (${errorText(error)}) : URL par défaut.`);
+        log(
+          `GET /gateway/bot impossible (${errorText(error)}) : URL par défaut.`,
+        );
         return FALLBACK_GATEWAY;
       }
     },
-    onReady: (data) => log(`Connecté à la Gateway (utilisateur ${data.user?.id ?? "?"}).`),
+    onReady: (data) =>
+      log(`Connecté à la Gateway (utilisateur ${data.user?.id ?? "?"}).`),
     onDispatch: (event, data) => {
-      if (event === "INTERACTION_CREATE") void handleInteraction(ctx, data as Interaction);
+      if (event === "INTERACTION_CREATE")
+        void handleInteraction(ctx, data as Interaction);
     },
     WebSocketImpl: io.WebSocketImpl,
     random: io.random,

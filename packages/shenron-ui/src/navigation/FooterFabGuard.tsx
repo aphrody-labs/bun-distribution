@@ -17,25 +17,28 @@
 import { useEffect, useRef } from "react";
 
 export function FooterFabGuard() {
-	const sentinelle = useRef<HTMLDivElement>(null);
+  const sentinelle = useRef<HTMLDivElement>(null);
 
-	useEffect(() => {
-		const el = sentinelle.current;
-		if (!el || typeof IntersectionObserver === "undefined") return;
-		const io = new IntersectionObserver(
-			([entree]) => {
-				document.documentElement.toggleAttribute("data-footer-visible", !!entree?.isIntersecting);
-			},
-			// Une marge basse généreuse : les boutons doivent s'être effacés AVANT
-			// que le pied de page n'arrive sous eux, pas au moment où il y est.
-			{ rootMargin: "0px 0px 120px 0px" }
-		);
-		io.observe(el);
-		return () => {
-			io.disconnect();
-			document.documentElement.removeAttribute("data-footer-visible");
-		};
-	}, []);
+  useEffect(() => {
+    const el = sentinelle.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      ([entree]) => {
+        document.documentElement.toggleAttribute(
+          "data-footer-visible",
+          !!entree?.isIntersecting,
+        );
+      },
+      // Une marge basse généreuse : les boutons doivent s'être effacés AVANT
+      // que le pied de page n'arrive sous eux, pas au moment où il y est.
+      { rootMargin: "0px 0px 120px 0px" },
+    );
+    io.observe(el);
+    return () => {
+      io.disconnect();
+      document.documentElement.removeAttribute("data-footer-visible");
+    };
+  }, []);
 
-	return <div ref={sentinelle} aria-hidden className="h-px w-full" />;
+  return <div ref={sentinelle} aria-hidden className="h-px w-full" />;
 }

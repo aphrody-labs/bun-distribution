@@ -7,7 +7,12 @@ import { useM3ThemeToggle } from "@aphrody/m3-next/client";
 export function ThemeToggle() {
   const { mode, resolved, toggle } = useM3ThemeToggle();
   return (
-    <M3Button variant="tonal" size="xs" onClick={toggle} data-testid="theme-toggle">
+    <M3Button
+      variant="tonal"
+      size="xs"
+      onClick={toggle}
+      data-testid="theme-toggle"
+    >
       Theme: {mode} ({resolved})
     </M3Button>
   );

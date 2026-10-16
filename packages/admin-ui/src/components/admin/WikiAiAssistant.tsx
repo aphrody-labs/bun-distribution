@@ -8,7 +8,13 @@
  */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Baguette, Chargement, Etincelle, LienExterne, Plus } from "@/components/icones";
+import {
+  Baguette,
+  Chargement,
+  Etincelle,
+  LienExterne,
+  Plus,
+} from "@/components/icones";
 import { apiAt } from "@aphrody/admin-ui/client";
 import { sectionKeyFromLabel } from "@/lib/wiki-fields";
 import { crudBase } from "@/lib/wiki-tables";
@@ -68,7 +74,9 @@ export function WikiAiAssistant({
       });
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["wiki-sections", entityType, entityId] });
+      qc.invalidateQueries({
+        queryKey: ["wiki-sections", entityType, entityId],
+      });
       setMarkdown("");
       setHits([]);
     },
@@ -89,9 +97,10 @@ export function WikiAiAssistant({
         <Etincelle className="h-3.5 w-3.5" /> Assistant sources (RAG)
       </div>
       <p className="text-xs text-white/50">
-        Donne une instruction : l&apos;assistant récupère des <strong>passages sourcés</strong> de
-        la base (aucune IA générative — extraits réels + citations) et prépare un brouillon que tu
-        relis puis insères comme section.
+        Donne une instruction : l&apos;assistant récupère des{" "}
+        <strong>passages sourcés</strong> de la base (aucune IA générative —
+        extraits réels + citations) et prépare un brouillon que tu relis puis
+        insères comme section.
       </p>
 
       <div className="flex flex-wrap gap-1.5">
@@ -130,17 +139,26 @@ export function WikiAiAssistant({
           disabled={search.isPending || !query.trim()}
           className="btn btn-ghost shrink-0"
         >
-          {search.isPending ? <Chargement className="h-4 w-4 animate-spin" /> : "Chercher"}
+          {search.isPending ? (
+            <Chargement className="h-4 w-4 animate-spin" />
+          ) : (
+            "Chercher"
+          )}
         </button>
       </div>
 
-      {search.isError && <p className="text-xs text-red-400">Recherche échouée.</p>}
+      {search.isError && (
+        <p className="text-xs text-red-400">Recherche échouée.</p>
+      )}
 
       {hits.length > 0 && (
         <>
           <div className="max-h-40 space-y-1.5 overflow-y-auto">
             {hits.map((h, i) => (
-              <div key={i} className="rounded border border-dbz-border bg-dbz-bg/50 p-2 text-xs">
+              <div
+                key={i}
+                className="rounded border border-dbz-border bg-dbz-bg/50 p-2 text-xs"
+              >
                 <div className="mb-0.5 flex items-center justify-between gap-2">
                   <span className="truncate font-semibold text-white/80">
                     {h.title || "Source"}
@@ -196,8 +214,12 @@ export function WikiAiAssistant({
               )}
               Insérer comme section
             </button>
-            {insert.isSuccess && <span className="text-xs text-green-400">Section créée ✓</span>}
-            {insert.isError && <span className="text-xs text-red-400">Échec.</span>}
+            {insert.isSuccess && (
+              <span className="text-xs text-green-400">Section créée ✓</span>
+            )}
+            {insert.isError && (
+              <span className="text-xs text-red-400">Échec.</span>
+            )}
           </div>
         </>
       )}

@@ -64,13 +64,21 @@ describe("status file counts", () => {
     try {
       mkdirSync(join(vendor, "create-tauri-app/src/deep"), { recursive: true });
       mkdirSync(join(vendor, "create-tauri-app/.git"), { recursive: true });
-      for (const file of ["a.rs", "src/b.rs", "src/deep/c.rs", ".hidden", ".git/HEAD"]) {
+      for (const file of [
+        "a.rs",
+        "src/b.rs",
+        "src/deep/c.rs",
+        ".hidden",
+        ".git/HEAD",
+      ]) {
         writeFileSync(join(vendor, "create-tauri-app", file), "x");
       }
       mkdirSync(join(vendor, "plugins-workspace/src"), { recursive: true });
       for (let i = 0; i < 300; i++)
         writeFileSync(join(vendor, "plugins-workspace/src", `f${i}.rs`), "x");
-      const byName = new Map((await inspectPackages(vendor)).map((p) => [p.name, p]));
+      const byName = new Map(
+        (await inspectPackages(vendor)).map((p) => [p.name, p]),
+      );
       expect(byName.get("create-tauri-app")?.filesCount).toBe(3);
       expect(byName.get("plugins-workspace")?.filesCount).toBe(251);
       expect(byName.has("bun")).toBe(false);

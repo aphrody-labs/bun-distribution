@@ -24,28 +24,46 @@ const UNIX_EPOCH_FILETIME = 116_444_736_000_000_000n;
 const openIphlpapi = () =>
   dlopen("iphlpapi.dll", {
     GetExtendedTcpTable: {
-      args: [FFIType.ptr, FFIType.ptr, FFIType.i32, FFIType.u32, FFIType.i32, FFIType.u32],
+      args: [
+        FFIType.ptr,
+        FFIType.ptr,
+        FFIType.i32,
+        FFIType.u32,
+        FFIType.i32,
+        FFIType.u32,
+      ],
       returns: FFIType.u32,
     },
   }).symbols;
 
 const openKernel32 = () =>
   dlopen("kernel32.dll", {
-    OpenProcess: { args: [FFIType.u32, FFIType.i32, FFIType.u32], returns: FFIType.ptr },
+    OpenProcess: {
+      args: [FFIType.u32, FFIType.i32, FFIType.u32],
+      returns: FFIType.ptr,
+    },
     CloseHandle: { args: [FFIType.ptr], returns: FFIType.i32 },
     GetProcessTimes: {
       args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.ptr],
       returns: FFIType.i32,
     },
-    CreateJobObjectW: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
+    CreateJobObjectW: {
+      args: [FFIType.ptr, FFIType.ptr],
+      returns: FFIType.ptr,
+    },
     SetInformationJobObject: {
       args: [FFIType.ptr, FFIType.i32, FFIType.ptr, FFIType.u32],
       returns: FFIType.i32,
     },
-    AssignProcessToJobObject: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.i32 },
+    AssignProcessToJobObject: {
+      args: [FFIType.ptr, FFIType.ptr],
+      returns: FFIType.i32,
+    },
   }).symbols;
 
-type Handle = NonNullable<ReturnType<ReturnType<typeof openKernel32>["CreateJobObjectW"]>>;
+type Handle = NonNullable<
+  ReturnType<ReturnType<typeof openKernel32>["CreateJobObjectW"]>
+>;
 
 let iphlpapi: ReturnType<typeof openIphlpapi> | undefined;
 let kernel32: ReturnType<typeof openKernel32> | undefined;
@@ -63,7 +81,11 @@ export function normalizeAddress(address: string): string {
 
 /** Rows of a `MIB_TCPTABLE_OWNER_PID` (24-byte `MIB_TCPROW_OWNER_PID`, ports in network order). */
 export function parseIPv4Table(buffer: Uint8Array): Listener[] {
-  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  const view = new DataView(
+    buffer.buffer,
+    buffer.byteOffset,
+    buffer.byteLength,
+  );
   const rows: Listener[] = [];
   for (let i = 0; i < view.getUint32(0, true); i += 1) {
     const at = 4 + i * 24;
@@ -78,7 +100,11 @@ export function parseIPv4Table(buffer: Uint8Array): Listener[] {
 
 /** Rows of a `MIB_TCP6TABLE_OWNER_PID` (56-byte `MIB_TCP6ROW_OWNER_PID`). */
 export function parseIPv6Table(buffer: Uint8Array): Listener[] {
-  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  const view = new DataView(
+    buffer.buffer,
+    buffer.byteOffset,
+    buffer.byteLength,
+  );
   const rows: Listener[] = [];
   for (let i = 0; i < view.getUint32(0, true); i += 1) {
     const at = 4 + i * 56;
@@ -108,7 +134,8 @@ function listenerTable(family: number): Uint8Array {
       0,
     );
     if (status === 0) return buffer;
-    if (status !== ERROR_INSUFFICIENT_BUFFER) throw new Error(`GetExtendedTcpTable : ${status}`);
+    if (status !== ERROR_INSUFFICIENT_BUFFER)
+      throw new Error(`GetExtendedTcpTable : ${status}`);
     size[0] = size[0]! + 16 * 1024;
   }
   throw new Error("GetExtendedTcpTable : table instable");
@@ -116,7 +143,10 @@ function listenerTable(family: number): Uint8Array {
 
 /** Every listening TCP socket (IPv4 and IPv6) with its owning process. */
 export function tcpListeners(): Listener[] {
-  return [...parseIPv4Table(listenerTable(AF_INET)), ...parseIPv6Table(listenerTable(AF_INET6))];
+  return [
+    ...parseIPv4Table(listenerTable(AF_INET)),
+    ...parseIPv6Table(listenerTable(AF_INET6)),
+  ];
 }
 
 /** `FILETIME` as ISO-8601 UTC with the 7 fractional digits of .NET's round-trip `o` format. */
@@ -141,7 +171,9 @@ export function processStartedAt(pid: number): string | null {
       ptr(times, 16),
       ptr(times, 24),
     );
-    return ok ? fileTimeIso((BigInt(times[1]!) << 32n) | BigInt(times[0]!)) : null;
+    return ok
+      ? fileTimeIso((BigInt(times[1]!) << 32n) | BigInt(times[0]!))
+      : null;
   } finally {
     api.CloseHandle(handle);
   }
@@ -158,15 +190,27 @@ export function killWithThisProcess(pid: number): void {
     if (!handle) throw new Error("CreateJobObjectW");
     // JOBOBJECT_EXTENDED_LIMIT_INFORMATION (144 bytes on 64-bit), BasicLimitInformation.LimitFlags at 16.
     const info = new Uint8Array(144);
-    new DataView(info.buffer).setUint32(16, JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE, true);
-    if (!api.SetInformationJobObject(handle, JOB_OBJECT_EXTENDED_LIMIT_INFORMATION, ptr(info), 144))
+    new DataView(info.buffer).setUint32(
+      16,
+      JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+      true,
+    );
+    if (
+      !api.SetInformationJobObject(
+        handle,
+        JOB_OBJECT_EXTENDED_LIMIT_INFORMATION,
+        ptr(info),
+        144,
+      )
+    )
       throw new Error("SetInformationJobObject");
     job = handle;
   }
   const target = api.OpenProcess(PROCESS_SET_QUOTA | PROCESS_TERMINATE, 0, pid);
   if (!target) throw new Error(`OpenProcess ${pid}`);
   try {
-    if (!api.AssignProcessToJobObject(job, target)) throw new Error("AssignProcessToJobObject");
+    if (!api.AssignProcessToJobObject(job, target))
+      throw new Error("AssignProcessToJobObject");
   } finally {
     api.CloseHandle(target);
   }

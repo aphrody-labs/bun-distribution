@@ -2,7 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Portable browser/Bun/Node package of the existing typed pure-command facade and Rust WASM. */
 import { createHash } from "node:crypto";
-import { copyFile, lstat, mkdir, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promises";
+import {
+  copyFile,
+  lstat,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rename,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { buildWasmPackage } from "../build/rust/wasm-package.ts";
 import {
@@ -17,7 +26,12 @@ import {
 const repository = resolve(import.meta.dir, "../../../docs/aphrody");
 const wasmName = "aphrody_command_wasm";
 const wasmFile = `${wasmName}_bg.wasm`;
-const generatedFiles = [`${wasmName}.js`, `${wasmName}.d.ts`, `${wasmName}_bg.wasm.d.ts`, wasmFile];
+const generatedFiles = [
+  `${wasmName}.js`,
+  `${wasmName}.d.ts`,
+  `${wasmName}_bg.wasm.d.ts`,
+  wasmFile,
+];
 
 export interface WasmBuildProvenance {
   source: { revision: string; patches?: { path: string; sha256: string }[] };
@@ -34,7 +48,10 @@ export interface WasmStageOptions {
   root?: string;
 }
 
-export async function validateWasmInput(input: string, provenance: WasmBuildProvenance) {
+export async function validateWasmInput(
+  input: string,
+  provenance: WasmBuildProvenance,
+) {
   if (
     !provenance?.source ||
     !/^[0-9a-f]{40}$/.test(provenance.source.revision) ||
@@ -75,16 +92,25 @@ export async function validateWasmInput(input: string, provenance: WasmBuildProv
       const file = Bun.file(join(input, name));
       if (
         file.size !== provenance.inputs[name]!.bytes ||
-        (await sha256File(join(input, name))) !== provenance.inputs[name]!.sha256
+        (await sha256File(join(input, name))) !==
+          provenance.inputs[name]!.sha256
       )
-        throw new Error(`qualified WASM input size or checksum mismatch: ${name}`);
+        throw new Error(
+          `qualified WASM input size or checksum mismatch: ${name}`,
+        );
     }),
   );
   const module = await Bun.file(join(input, wasmFile)).arrayBuffer();
-  const hash = createHash("sha256").update(new Uint8Array(module)).digest("hex");
-  if (module.byteLength !== provenance.wasm.bytes || hash !== provenance.wasm.sha256)
+  const hash = createHash("sha256")
+    .update(new Uint8Array(module))
+    .digest("hex");
+  if (
+    module.byteLength !== provenance.wasm.bytes ||
+    hash !== provenance.wasm.sha256
+  )
     throw new Error("qualified WASM size or checksum mismatch");
-  if (!WebAssembly.validate(module)) throw new Error("qualified WASM module is invalid");
+  if (!WebAssembly.validate(module))
+    throw new Error("qualified WASM module is invalid");
 }
 
 /** Freeze every generated input before the bundler or type compiler can consume it. */
@@ -99,30 +125,39 @@ export async function freezeWasmInput(
   await Promise.all(
     generatedFiles.map(async (name) => {
       const source = join(input, name);
-      if (!(await lstat(source)).isFile()) throw new Error(`WASM input must be regular: ${name}`);
+      if (!(await lstat(source)).isFile())
+        throw new Error(`WASM input must be regular: ${name}`);
       await copyFile(source, join(frozen, name));
     }),
   );
   await validateWasmInput(frozen, provenance);
 }
 
-export async function stageCliWasm(options: WasmStageOptions): Promise<StagedEntry[]> {
+export async function stageCliWasm(
+  options: WasmStageOptions,
+): Promise<StagedEntry[]> {
   const root = options.root ?? repository;
   const app = join(root, "packages/infra/cli-wasm");
   const pkg = JSON.parse(await readFile(join(app, "package.json"), "utf8"));
-  const commit = (await run(["git", "rev-parse", "HEAD"], { cwd: root })).stdout.trim();
+  const commit = (
+    await run(["git", "rev-parse", "HEAD"], { cwd: root })
+  ).stdout.trim();
   const out = resolve(options.out);
   // The archive is promoted by rename; /tmp may be a separate tmpfs on the factory.
   await mkdir(out, { recursive: true });
   const work = await mkdtemp(join(out, ".aphrody-cli-wasm-stage-"));
   try {
-    const source = options.input ? resolve(options.input) : join(work, "generated");
+    const source = options.input
+      ? resolve(options.input)
+      : join(work, "generated");
     let provenance = options.provenance;
     if (options.input && !provenance)
       throw new Error("--input requires qualified build provenance");
     if (!options.input) {
       const dirty = (
-        await run(["git", "status", "--porcelain", "--untracked-files=no"], { cwd: root })
+        await run(["git", "status", "--porcelain", "--untracked-files=no"], {
+          cwd: root,
+        })
       ).stdout;
       if (dirty.trim())
         throw new Error(
@@ -171,12 +206,15 @@ export async function stageCliWasm(options: WasmStageOptions): Promise<StagedEnt
         {
           name: "qualified-cli-wasm",
           setup(build) {
-            build.onResolve({ filter: /^#cli-wasm-glue$/ }, () => ({ path: generated }));
+            build.onResolve({ filter: /^#cli-wasm-glue$/ }, () => ({
+              path: generated,
+            }));
           },
         },
       ],
     });
-    if (!bundled.success) throw new Error(`WASM facade bundle failed: ${bundled.logs.join("\n")}`);
+    if (!bundled.success)
+      throw new Error(`WASM facade bundle failed: ${bundled.logs.join("\n")}`);
     const compiler = join(root, "node_modules/typescript/bin/tsc");
     if (!(await Bun.file(compiler).exists()))
       throw new Error("the locked TypeScript declaration emitter is required");
@@ -200,9 +238,17 @@ export async function stageCliWasm(options: WasmStageOptions): Promise<StagedEnt
         files: [join(app, "src/index.ts")],
       }),
     );
-    await run([process.execPath, compiler, "--project", tsconfig], { cwd: root });
-    await copyFile(join(work, "declarations/index.d.ts"), join(pack, "index.d.ts"));
-    await copyFile(join(input, `${wasmName}.d.ts`), join(pack, `${wasmName}.d.ts`));
+    await run([process.execPath, compiler, "--project", tsconfig], {
+      cwd: root,
+    });
+    await copyFile(
+      join(work, "declarations/index.d.ts"),
+      join(pack, "index.d.ts"),
+    );
+    await copyFile(
+      join(input, `${wasmName}.d.ts`),
+      join(pack, `${wasmName}.d.ts`),
+    );
     await copyFile(join(input, wasmFile), join(pack, wasmFile));
     // Verify copied module, not mutable source bytes, before producing distribution metadata.
     if ((await sha256File(join(pack, wasmFile))) !== provenance!.wasm.sha256)
@@ -220,7 +266,11 @@ export async function stageCliWasm(options: WasmStageOptions): Promise<StagedEnt
           type: "module",
           license: "Apache-2.0",
           exports: {
-            ".": { types: "./index.d.ts", import: "./index.js", default: "./index.js" },
+            ".": {
+              types: "./index.d.ts",
+              import: "./index.js",
+              default: "./index.js",
+            },
             "./wasm": `./${wasmFile}`,
           },
           imports: { "#cli-wasm-glue": { types: `./${wasmName}.d.ts` } },
@@ -229,7 +279,10 @@ export async function stageCliWasm(options: WasmStageOptions): Promise<StagedEnt
         2,
       ) + "\n",
     );
-    await writeFile(join(pack, "README.md"), await readFile(join(app, "README.md"), "utf8"));
+    await writeFile(
+      join(pack, "README.md"),
+      await readFile(join(app, "README.md"), "utf8"),
+    );
     const hashes: Record<string, { sha256: string; bytes: number }> = {};
     await Promise.all(
       [
@@ -242,7 +295,10 @@ export async function stageCliWasm(options: WasmStageOptions): Promise<StagedEnt
         "README.md",
       ].map(async (name) => {
         const file = Bun.file(join(pack, name));
-        hashes[name] = { sha256: await sha256File(file.name!), bytes: file.size };
+        hashes[name] = {
+          sha256: await sha256File(file.name!),
+          bytes: file.size,
+        };
       }),
     );
     await writeFile(
@@ -258,12 +314,19 @@ export async function stageCliWasm(options: WasmStageOptions): Promise<StagedEnt
             },
             stage: {
               path: "scripts/release/stage-cli-wasm.ts",
-              sha256: await sha256File(join(root, "scripts/release/stage-cli-wasm.ts")),
+              sha256: await sha256File(
+                join(root, "scripts/release/stage-cli-wasm.ts"),
+              ),
             },
           },
           build: provenance,
           target: "wasm32-unknown-unknown",
-          bundler: { runtime: "Bun", version: Bun.version, target: "browser", minify: true },
+          bundler: {
+            runtime: "Bun",
+            version: Bun.version,
+            target: "browser",
+            minify: true,
+          },
           files: hashes,
         },
         null,
@@ -273,7 +336,9 @@ export async function stageCliWasm(options: WasmStageOptions): Promise<StagedEnt
     const secrets = loadConfig().secrets;
     await Promise.all(
       [...Object.keys(hashes), "provenance.json"].map(async (name) => {
-        const bytes = new Uint8Array(await Bun.file(join(pack, name)).arrayBuffer());
+        const bytes = new Uint8Array(
+          await Bun.file(join(pack, name)).arrayBuffer(),
+        );
         if (
           scanName(name, secrets.deniedNames).length ||
           scanBytes(name, bytes, secrets.contentPatterns).length
@@ -308,7 +373,10 @@ export async function stageCliWasm(options: WasmStageOptions): Promise<StagedEnt
       join(out, "aphrody-cli-wasm.manifest.json"),
       JSON.stringify(entries, null, 2) + "\n",
     );
-    await writeFile(join(out, "SHA256SUMS"), `${entries[0]!.sha256}  ${file}\n`);
+    await writeFile(
+      join(out, "SHA256SUMS"),
+      `${entries[0]!.sha256}  ${file}\n`,
+    );
     return entries;
   } finally {
     await rm(work, { recursive: true, force: true });
@@ -325,7 +393,9 @@ if (import.meta.main) {
   const entries = await stageCliWasm({
     out: flag("--out") ?? join(repository, "dist/cli-wasm"),
     input: flag("--input"),
-    provenance: provenanceFile ? await Bun.file(provenanceFile).json() : undefined,
+    provenance: provenanceFile
+      ? await Bun.file(provenanceFile).json()
+      : undefined,
   });
   console.log(JSON.stringify(entries, null, 2));
 }

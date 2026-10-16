@@ -76,7 +76,10 @@ export function ShinyButton({
 
   const content = (
     <>
-      {renderIcon(icon as IconSource, { size: iconSize, className: "shrink-0" })}
+      {renderIcon(icon as IconSource, {
+        size: iconSize,
+        className: "shrink-0",
+      })}
       <span
         className={clsx(
           "text-center font-plain",
@@ -99,7 +102,11 @@ export function ShinyButton({
   }
 
   return (
-    <button type="button" {...(props as ComponentProps<"button">)} className={classes}>
+    <button
+      type="button"
+      {...(props as ComponentProps<"button">)}
+      className={classes}
+    >
       {content}
     </button>
   );

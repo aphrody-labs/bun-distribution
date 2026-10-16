@@ -11,7 +11,7 @@ export interface EnqueueEditImageRequest {
   provider?: GenerationProvider;
 
   /// If set, this is the first image in the contextual image set.
-  /// This gets submitted along with `image_media_tokens` and will 
+  /// This gets submitted along with `image_media_tokens` and will
   // be prompt engineered by Tauri.
   scene_image_media_token?: string;
 
@@ -55,7 +55,6 @@ export interface EnqueueEditImageRequest {
   // Optional frontend state to return later.
   frontend_subscriber_id?: string;
 }
-
 
 // Shape of request sent to Tauri
 // (We do some transformations from the public-facing request object.)
@@ -118,16 +117,18 @@ export interface EnqueueEditImageError extends CommandResult {
   error_message?: string;
 }
 
-export interface EnqueueEditImagePayload {
-}
+export interface EnqueueEditImagePayload {}
 
 export interface EnqueueEditImageSuccess extends CommandResult {
   payload: EnqueueEditImagePayload;
 }
 
-export type EnqueueEditImageResult = EnqueueEditImageSuccess | EnqueueEditImageError;
+export type EnqueueEditImageResult =
+  EnqueueEditImageSuccess | EnqueueEditImageError;
 
-export const EnqueueEditImage = async (request: EnqueueEditImageRequest) : Promise<EnqueueEditImageResult> => {
+export const EnqueueEditImage = async (
+  request: EnqueueEditImageRequest,
+): Promise<EnqueueEditImageResult> => {
   let modelName = undefined;
 
   if (request.model) {
@@ -140,14 +141,16 @@ export const EnqueueEditImage = async (request: EnqueueEditImageRequest) : Promi
   }
 
   if (!modelName) {
-    throw new Error("No model specified in request: " + JSON.stringify(request));
+    throw new Error(
+      "No model specified in request: " + JSON.stringify(request),
+    );
   }
 
-  let mutableRequest : RawEnqueueEditImageRequest = {
+  let mutableRequest: RawEnqueueEditImageRequest = {
     model: modelName,
     prompt: request.prompt,
   };
-  
+
   if (request.provider) {
     mutableRequest.provider = request.provider;
   }
@@ -200,9 +203,9 @@ export const EnqueueEditImage = async (request: EnqueueEditImageRequest) : Promi
     mutableRequest.frontend_subscriber_id = request.frontend_subscriber_id;
   }
 
-  const result = await invoke("enqueue_edit_image_command", { 
+  const result = await invoke("enqueue_edit_image_command", {
     request: mutableRequest,
   });
-  
-  return (result as EnqueueEditImageResult);
-}
+
+  return result as EnqueueEditImageResult;
+};

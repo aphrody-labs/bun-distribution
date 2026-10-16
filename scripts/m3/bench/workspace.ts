@@ -25,13 +25,17 @@ export interface WorkspacePackage {
 
 /** The packages named by the root `workspaces.packages` globs minus their `!` exclusions. */
 export function workspacePackages(root: string): WorkspacePackage[] {
-  const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
+  const manifest = JSON.parse(
+    readFileSync(join(root, "package.json"), "utf8"),
+  ) as {
     workspaces?: { packages?: string[] } | string[];
   };
   const globs = Array.isArray(manifest.workspaces)
     ? manifest.workspaces
     : (manifest.workspaces?.packages ?? []);
-  const excluded = new Set(globs.filter((g) => g.startsWith("!")).map((g) => g.slice(1)));
+  const excluded = new Set(
+    globs.filter((g) => g.startsWith("!")).map((g) => g.slice(1)),
+  );
   const out: WorkspacePackage[] = [];
   for (const glob of globs.filter((g) => !g.startsWith("!"))) {
     const base = glob.replace(/\/\*$/, "");
@@ -78,7 +82,8 @@ export function packageEntries(dir: string, manifest: Manifest): string[] {
       if (target) targets.add(target);
     }
   } else if (typeof exp === "string") targets.add(exp);
-  else if (manifest.module ?? manifest.main) targets.add((manifest.module ?? manifest.main)!);
+  else if (manifest.module ?? manifest.main)
+    targets.add((manifest.module ?? manifest.main)!);
   const files = new Set<string>();
   for (const target of targets) {
     if (target.includes("*")) {
@@ -92,7 +97,9 @@ export function packageEntries(dir: string, manifest: Manifest): string[] {
     const file = resolve(dir, target);
     if (existsSync(file) && statSync(file).isFile()) files.add(file);
   }
-  return [...files].filter((f) => (JS.test(f) && !SKIP.test(f)) || f.endsWith(".css")).toSorted();
+  return [...files]
+    .filter((f) => (JS.test(f) && !SKIP.test(f)) || f.endsWith(".css"))
+    .toSorted();
 }
 
 export interface BundleSize {
@@ -105,7 +112,9 @@ export interface BundleSize {
 }
 
 /** Bundle every export entry of a package the way a consumer would: browser, ESM, split, minified, bare imports external. */
-export async function bundlePackage(pkg: WorkspacePackage): Promise<BundleSize> {
+export async function bundlePackage(
+  pkg: WorkspacePackage,
+): Promise<BundleSize> {
   const entries = packageEntries(pkg.dir, pkg.manifest);
   const size: BundleSize = {
     entries: entries.length,
@@ -128,7 +137,12 @@ export async function bundlePackage(pkg: WorkspacePackage): Promise<BundleSize> 
       define: { "process.env.NODE_ENV": '"production"' },
       throw: false,
     });
-    if (!result.success) size.error = result.logs.slice(0, 2).map(String).join(" | ").slice(0, 300);
+    if (!result.success)
+      size.error = result.logs
+        .slice(0, 2)
+        .map(String)
+        .join(" | ")
+        .slice(0, 300);
     for (const output of result.outputs) {
       if (output.kind === "sourcemap") continue;
       const bytes = new Uint8Array(await output.arrayBuffer());

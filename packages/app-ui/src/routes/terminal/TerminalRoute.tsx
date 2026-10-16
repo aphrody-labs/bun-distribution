@@ -23,7 +23,13 @@ const MAX_ROWS = 60;
 const FONT_STORAGE_KEY = "aphrody.terminal.font-size";
 const DEFAULT_FONT_SIZE = 18;
 
-function Line({ text, cursorColumn }: { text: string; cursorColumn: number | null }) {
+function Line({
+  text,
+  cursorColumn,
+}: {
+  text: string;
+  cursorColumn: number | null;
+}) {
   if (cursorColumn === null) return <div>{text || " "}</div>;
   const padded = text.padEnd(cursorColumn + 1, " ");
   return (
@@ -50,7 +56,9 @@ export function TerminalRoute() {
   const [fontSize, setFontSize] = useState(() => {
     try {
       const stored = Number(localStorage.getItem(FONT_STORAGE_KEY));
-      return Number.isFinite(stored) && stored >= 12 && stored <= 36 ? stored : DEFAULT_FONT_SIZE;
+      return Number.isFinite(stored) && stored >= 12 && stored <= 36
+        ? stored
+        : DEFAULT_FONT_SIZE;
     } catch {
       return DEFAULT_FONT_SIZE;
     }
@@ -69,7 +77,8 @@ export function TerminalRoute() {
         return undefined;
       })
       .catch((reason: unknown) => {
-        if (!cancelled) setError(reason instanceof Error ? reason.message : String(reason));
+        if (!cancelled)
+          setError(reason instanceof Error ? reason.message : String(reason));
       });
     return () => {
       cancelled = true;
@@ -82,8 +91,16 @@ export function TerminalRoute() {
     const instance = terminal.current;
     if (!panel || !instance || typeof ResizeObserver === "undefined") return;
     const resize = () => {
-      const columns = clamp(panel.clientWidth / (fontSize * 0.6), MIN_COLS, MAX_COLS);
-      const rows = clamp(panel.clientHeight / (fontSize + 6), MIN_ROWS, MAX_ROWS);
+      const columns = clamp(
+        panel.clientWidth / (fontSize * 0.6),
+        MIN_COLS,
+        MAX_COLS,
+      );
+      const rows = clamp(
+        panel.clientHeight / (fontSize + 6),
+        MIN_ROWS,
+        MAX_ROWS,
+      );
       instance.resize(columns, rows);
       setScreen(instance.snapshot());
     };
@@ -110,7 +127,11 @@ export function TerminalRoute() {
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.nativeEvent.isComposing) return;
-    if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "c") {
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      event.shiftKey &&
+      event.key.toLowerCase() === "c"
+    ) {
       event.preventDefault();
       void copyScreen();
       return;
@@ -123,14 +144,20 @@ export function TerminalRoute() {
   };
   const onPaste = (event: ClipboardEvent<HTMLDivElement>) => {
     event.preventDefault();
-    send(event.clipboardData.getData("text").replaceAll("\r\n", "\n").replaceAll("\n", "\r"));
+    send(
+      event.clipboardData
+        .getData("text")
+        .replaceAll("\r\n", "\n")
+        .replaceAll("\n", "\r"),
+    );
   };
   const onCompositionEnd = (event: CompositionEvent<HTMLDivElement>) => {
     if (event.data) send(event.data);
   };
   async function copyScreen() {
     try {
-      if (!navigator.clipboard?.writeText || !screen) throw new Error("clipboard unavailable");
+      if (!navigator.clipboard?.writeText || !screen)
+        throw new Error("clipboard unavailable");
       await navigator.clipboard.writeText(screen.lines.join("\n").trimEnd());
       setNotice(t("terminal.copied"));
     } catch {
@@ -142,13 +169,18 @@ export function TerminalRoute() {
     <main className="flex h-full min-h-0 flex-col gap-5 overflow-hidden p-4 sm:p-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-label-large text-primary">{t("terminal.eyebrow")}</p>
+          <p className="text-label-large text-primary">
+            {t("terminal.eyebrow")}
+          </p>
           <h1 className="mt-1 text-headline-medium">{t("terminal.title")}</h1>
           <p className="mt-1 max-w-2xl text-body-medium text-on-surface-variant">
             {t("terminal.description")}
           </p>
         </div>
-        <div className="flex items-center gap-2" aria-label="Actions du terminal">
+        <div
+          className="flex items-center gap-2"
+          aria-label="Actions du terminal"
+        >
           <Button variant="text" size="md" onClick={() => send("help\r")}>
             <Icon name="help" size={18} />
             {t("terminal.help")}
@@ -167,7 +199,10 @@ export function TerminalRoute() {
           >
             <Icon name="text_decrease" size={18} />
           </Button>
-          <span className="min-w-9 text-center text-label-medium" aria-live="polite">
+          <span
+            className="min-w-9 text-center text-label-medium"
+            aria-live="polite"
+          >
             {fontSize}px
           </span>
           <Button
@@ -180,7 +215,12 @@ export function TerminalRoute() {
           >
             <Icon name="text_increase" size={18} />
           </Button>
-          <Button variant="outline" size="md" onClick={() => void copyScreen()} disabled={!screen}>
+          <Button
+            variant="outline"
+            size="md"
+            onClick={() => void copyScreen()}
+            disabled={!screen}
+          >
             <Icon name="content_copy" size={18} />
             {t("terminal.copy")}
           </Button>
@@ -190,7 +230,10 @@ export function TerminalRoute() {
       <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-extra-large border border-outline-variant bg-surface-container-low">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-outline-variant px-4 py-3">
           <div className="flex items-center gap-3">
-            <span className="size-2.5 rounded-full bg-primary" aria-hidden="true" />
+            <span
+              className="size-2.5 rounded-full bg-primary"
+              aria-hidden="true"
+            />
             <span className="text-label-large">{t("terminal.session")}</span>
             <span className="text-label-medium text-on-surface-variant">·</span>
             <span className="text-label-medium text-on-surface-variant">
@@ -198,10 +241,16 @@ export function TerminalRoute() {
             </span>
           </div>
           <div className="flex items-center gap-3 text-label-medium text-on-surface-variant">
-            <span>{screen ? `${screen.columns} × ${screen.rows}` : t("terminal.starting")}</span>
+            <span>
+              {screen
+                ? `${screen.columns} × ${screen.rows}`
+                : t("terminal.starting")}
+            </span>
             {persistent !== null && (
               <span className="rounded-full bg-surface-container-high px-3 py-1">
-                {persistent ? t("terminal.persistent") : t("terminal.temporary")}
+                {persistent
+                  ? t("terminal.persistent")
+                  : t("terminal.temporary")}
               </span>
             )}
           </div>
@@ -215,7 +264,10 @@ export function TerminalRoute() {
             <p className="mt-1 text-body-medium">{error}</p>
           </div>
         ) : (
-          <div ref={terminalPanel} className="min-h-0 flex-1 overflow-auto p-4 sm:p-5">
+          <div
+            ref={terminalPanel}
+            className="min-h-0 flex-1 overflow-auto p-4 sm:p-5"
+          >
             <div
               // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- VT grid requires custom key handling and cell rendering
               role="textbox"
@@ -227,7 +279,10 @@ export function TerminalRoute() {
               onPaste={onPaste}
               onCompositionEnd={onCompositionEnd}
               className="min-h-full w-max min-w-full rounded-large bg-surface-container-lowest p-4 font-mono whitespace-pre text-on-surface outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              style={{ fontSize: `${fontSize}px`, lineHeight: `${fontSize + 6}px` }}
+              style={{
+                fontSize: `${fontSize}px`,
+                lineHeight: `${fontSize + 6}px`,
+              }}
             >
               {screen?.lines.map((text, row) => (
                 <Line
@@ -235,21 +290,34 @@ export function TerminalRoute() {
                   key={row}
                   text={text}
                   cursorColumn={
-                    screen.cursor.visible && screen.cursor.row === row ? screen.cursor.col : null
+                    screen.cursor.visible && screen.cursor.row === row
+                      ? screen.cursor.col
+                      : null
                   }
                 />
               ))}
-              {!screen && <span className="text-on-surface-variant">{t("terminal.loading")}</span>}
+              {!screen && (
+                <span className="text-on-surface-variant">
+                  {t("terminal.loading")}
+                </span>
+              )}
             </div>
           </div>
         )}
 
         <footer className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-outline-variant px-4 py-3">
-          <p id="terminal-help" className="text-label-medium text-on-surface-variant">
+          <p
+            id="terminal-help"
+            className="text-label-medium text-on-surface-variant"
+          >
             {t("terminal.keyboardHelp")}
           </p>
-          <output className="text-label-medium text-on-surface-variant" aria-live="polite">
-            {notice || (persistent === false ? t("terminal.temporaryNotice") : "")}
+          <output
+            className="text-label-medium text-on-surface-variant"
+            aria-live="polite"
+          >
+            {notice ||
+              (persistent === false ? t("terminal.temporaryNotice") : "")}
           </output>
         </footer>
       </section>

@@ -1,8 +1,22 @@
-import { Command, createElementSelectionResult, type CommandResult } from "../../base-command";
+import {
+  Command,
+  createElementSelectionResult,
+  type CommandResult,
+} from "../../base-command";
 import { EditorCore } from "../../../core";
-import type { SceneTracks, TimelineElement, TimelineTrack } from "../../../timeline/types";
-import { buildEmptyTrack, validateElementTrackCompatibility } from "../../../timeline/placement";
-import type { PlannedElementMove, PlannedTrackCreation } from "../../../timeline/group-move";
+import type {
+  SceneTracks,
+  TimelineElement,
+  TimelineTrack,
+} from "../../../timeline/types";
+import {
+  buildEmptyTrack,
+  validateElementTrackCompatibility,
+} from "../../../timeline/placement";
+import type {
+  PlannedElementMove,
+  PlannedTrackCreation,
+} from "../../../timeline/group-move";
 import { findTrackInSceneTracks } from "../../../timeline/track-element-update";
 
 export class MoveElementCommand extends Command {
@@ -84,7 +98,8 @@ export class MoveElementCommand extends Command {
         continue;
       }
 
-      const nextTargetElements = movedElementsByTargetTrackId.get(move.targetTrackId) ?? [];
+      const nextTargetElements =
+        movedElementsByTargetTrackId.get(move.targetTrackId) ?? [];
       nextTargetElements.push(movedElement);
       movedElementsByTargetTrackId.set(move.targetTrackId, nextTargetElements);
     }
@@ -94,7 +109,9 @@ export class MoveElementCommand extends Command {
       update: (track) => ({
         ...track,
         elements: [
-          ...track.elements.filter((element) => !movedElementIds.has(element.id)),
+          ...track.elements.filter(
+            (element) => !movedElementIds.has(element.id),
+          ),
           ...(movedElementsByTargetTrackId.get(track.id) ?? []),
         ],
       }),
@@ -155,7 +172,10 @@ function insertTrackAtDisplayIndex({
     };
   }
 
-  const overlayInsertIndex = Math.max(0, Math.min(insertIndex, tracks.overlay.length));
+  const overlayInsertIndex = Math.max(
+    0,
+    Math.min(insertIndex, tracks.overlay.length),
+  );
   return {
     ...tracks,
     overlay: [

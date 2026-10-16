@@ -27,7 +27,10 @@ import {
 
 const repo = resolve(import.meta.dir, "../../../../docs/aphrody");
 const schema = JSON.parse(
-  readFileSync(join(repo, "tools/config/host/windows/aphrody-startup.schema.json"), "utf8"),
+  readFileSync(
+    join(repo, "tools/config/host/windows/aphrody-startup.schema.json"),
+    "utf8",
+  ),
 );
 const windows = process.platform === "win32";
 const scratch = mkdtempSync(join(tmpdir(), "native-startup-"));
@@ -37,7 +40,11 @@ const base = (): Config => ({
   version: 1,
   home: "C:\\Users\\owner\\.aphrody",
   root: "C:\\aphrody",
-  principal: { userId: "HOST\\owner", logonType: "Interactive", runLevel: "Limited" },
+  principal: {
+    userId: "HOST\\owner",
+    logonType: "Interactive",
+    runLevel: "Limited",
+  },
   trigger: { kind: "logon" },
   services: [
     {
@@ -49,7 +56,11 @@ const base = (): Config => ({
       port: 36515,
       desiredPort: 80,
       home: "C:\\ProgramData\\Aphrody\\site",
-      principal: { userId: "SYSTEM", logonType: "ServiceAccount", runLevel: "Limited" },
+      principal: {
+        userId: "SYSTEM",
+        logonType: "ServiceAccount",
+        runLevel: "Limited",
+      },
       trigger: { kind: "boot" },
       arguments: [],
       healthPath: "/health",
@@ -82,7 +93,10 @@ describe("configuration", () => {
       port: 70_000,
       principal: { userId: "x" },
     };
-    const nested = schemaErrors({ ...base(), services: [service] }, schema).join("\n");
+    const nested = schemaErrors(
+      { ...base(), services: [service] },
+      schema,
+    ).join("\n");
     expect(nested).toContain("$.services[0].id");
     expect(nested).toContain("$.services[0].port");
     expect(nested).toContain("$.services[0].principal : logonType requis");
@@ -98,13 +112,23 @@ describe("configuration", () => {
       edit(c);
       return () => resolveServices(c, anyDir);
     };
-    expect(broken((c) => (c.services[1]!.bind = "0.0.0.0"))).toThrow("loopback");
-    expect(broken((c) => (c.services[0]!.arguments = ["--bind=0.0.0.0:80"]))).toThrow("bind/port");
+    expect(broken((c) => (c.services[1]!.bind = "0.0.0.0"))).toThrow(
+      "loopback",
+    );
+    expect(
+      broken((c) => (c.services[0]!.arguments = ["--bind=0.0.0.0:80"])),
+    ).toThrow("bind/port");
     expect(broken((c) => (c.services[1]!.port = 36515))).toThrow("deux fois");
     expect(broken((c) => delete c.services[0]!.home)).toThrow("propre home");
-    expect(broken((c) => (c.services[0]!.executable = "bin\\site.exe"))).toThrow("absolu");
-    expect(broken((c) => (c.services[1]!.trigger = { kind: "boot" }))).toThrow("Interactive");
-    expect(broken((c) => (c.root = "\\aphrody"))).toThrow("répertoires absolus");
+    expect(
+      broken((c) => (c.services[0]!.executable = "bin\\site.exe")),
+    ).toThrow("absolu");
+    expect(broken((c) => (c.services[1]!.trigger = { kind: "boot" }))).toThrow(
+      "Interactive",
+    );
+    expect(broken((c) => (c.root = "\\aphrody"))).toThrow(
+      "répertoires absolus",
+    );
   });
 });
 
@@ -116,7 +140,8 @@ describe("plan and boot entry", () => {
       name: "site",
       path: "\\Aphrody\\Native\\",
       triggers: ["atStartup"],
-      arguments: "--no-env-file scripts/tools/infra/native-startup.ts run site --config C:\\c.json",
+      arguments:
+        "--no-env-file scripts/tools/infra/native-startup.ts run site --config C:\\c.json",
       principal: "system",
     },
   ];
@@ -141,24 +166,37 @@ describe("plan and boot entry", () => {
       listeners: () => [{ address: "127.0.0.1", port: 36515, pid: 42 }],
       taskExists: () => true,
     });
-    expect(busy[0]).toMatchObject({ reason: "occupied-port", enabled: false, listenerPids: [42] });
+    expect(busy[0]).toMatchObject({
+      reason: "occupied-port",
+      enabled: false,
+      listenerPids: [42],
+    });
     expect(() =>
-      plan(resolved, entries, { exists: () => true, listeners: () => [], taskExists: () => false }),
+      plan(resolved, entries, {
+        exists: () => true,
+        listeners: () => [],
+        taskExists: () => false,
+      }),
     ).toThrow("absente");
   });
 
-  test.skipIf(!windows)("drift between the declaration and the boot entry", () => {
-    const [site] = resolveServices(base(), anyDir);
-    const drift = bootEntry(site!, [
-      { ...entries[0]!, principal: "user", triggers: ["atLogon"] },
-    ]).drift;
-    expect(drift.join(" | ")).toContain("principal user");
-    expect(drift.join(" | ")).toContain("atStartup");
-    expect(bootEntry(site!, []).entry).toBeNull();
-  });
+  test.skipIf(!windows)(
+    "drift between the declaration and the boot entry",
+    () => {
+      const [site] = resolveServices(base(), anyDir);
+      const drift = bootEntry(site!, [
+        { ...entries[0]!, principal: "user", triggers: ["atLogon"] },
+      ]).drift;
+      expect(drift.join(" | ")).toContain("principal user");
+      expect(drift.join(" | ")).toContain("atStartup");
+      expect(bootEntry(site!, []).entry).toBeNull();
+    },
+  );
 
   test("the repository boot catalog registers the site runner as declared", () => {
-    const site = bootTasks().find((e) => e.name === "site" && e.path === "\\Aphrody\\Native\\");
+    const site = bootTasks().find(
+      (e) => e.name === "site" && e.path === "\\Aphrody\\Native\\",
+    );
     expect(site).toBeDefined();
     const resolved = {
       service: base().services[0]!,
@@ -179,9 +217,19 @@ describe("plan and boot entry", () => {
       "--bind",
       "127.0.0.1:36515",
     ]);
-    expect(serviceArgv({ ...mcp!, bind: "::1", arguments: ["--home={{home}}"] }, "R", "H")).toEqual(
-      ["C:\\bin\\aphrody-mcp.exe", "http", "--bind", "[::1]:8793", "--home=H"],
-    );
+    expect(
+      serviceArgv(
+        { ...mcp!, bind: "::1", arguments: ["--home={{home}}"] },
+        "R",
+        "H",
+      ),
+    ).toEqual([
+      "C:\\bin\\aphrody-mcp.exe",
+      "http",
+      "--bind",
+      "[::1]:8793",
+      "--home=H",
+    ]);
     expect(probeHost("0.0.0.0")).toBe("127.0.0.1");
     expect(probeHost("::")).toBe("[::1]");
     expect(probeHost("fe80::1")).toBe("[fe80::1]");
@@ -196,14 +244,18 @@ describe("win32", () => {
     v4.set([127, 0, 0, 1], 8);
     d4.setUint16(12, 36515, false);
     d4.setUint32(24, 9504, true);
-    expect(parseIPv4Table(v4)).toEqual([{ address: "127.0.0.1", port: 36515, pid: 9504 }]);
+    expect(parseIPv4Table(v4)).toEqual([
+      { address: "127.0.0.1", port: 36515, pid: 9504 },
+    ]);
     const v6 = new Uint8Array(4 + 56);
     const d6 = new DataView(v6.buffer);
     d6.setUint32(0, 1, true);
     d6.setUint16(4 + 14, 1, false);
     d6.setUint16(4 + 20, 8793, false);
     d6.setUint32(4 + 52, 77, true);
-    expect(parseIPv6Table(v6)).toEqual([{ address: "::1", port: 8793, pid: 77 }]);
+    expect(parseIPv6Table(v6)).toEqual([
+      { address: "::1", port: 8793, pid: 77 },
+    ]);
     expect(normalizeAddress("0:0:0:0:0:0:0:1")).toBe("::1");
   });
 
@@ -215,7 +267,11 @@ describe("win32", () => {
   });
 
   test.skipIf(!windows)("live listeners and process start time", async () => {
-    const server = Bun.listen({ hostname: "127.0.0.1", port: 0, socket: { data() {} } });
+    const server = Bun.listen({
+      hostname: "127.0.0.1",
+      port: 0,
+      socket: { data() {} },
+    });
     try {
       expect(tcpListeners()).toContainEqual({
         address: "127.0.0.1",
@@ -262,56 +318,80 @@ describe("win32", () => {
           healthStatus: 204,
           healthy: true,
         });
-        expect(record.processStartedAt).toMatch(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{7}Z$/);
+        expect(record.processStartedAt).toMatch(
+          /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{7}Z$/,
+        );
         const saved = JSON.parse(
           readFileSync(join(scratch, "run/native-services/site.json"), "utf8"),
         );
         expect(saved).toEqual(record);
-        expect(await health([resolved])).toEqual([{ id: "site", status: 204, healthy: true }]);
+        expect(await health([resolved])).toEqual([
+          { id: "site", status: 204, healthy: true },
+        ]);
       } finally {
         child.kill();
         await child.exited;
       }
-      expect(await health([resolved])).toEqual([{ id: "site", status: null, healthy: false }]);
+      expect(await health([resolved])).toEqual([
+        { id: "site", status: null, healthy: false },
+      ]);
     },
   );
 
-  test.skipIf(!windows)("a supervised child dies with its terminated supervisor", async () => {
-    const module = JSON.stringify(join(import.meta.dir, "win32-net.ts"));
-    const supervisor = Bun.spawn(
-      [
-        process.execPath,
-        "--no-env-file",
-        "-e",
-        `const { killWithThisProcess } = await import(${module});
+  test.skipIf(!windows)(
+    "a supervised child dies with its terminated supervisor",
+    async () => {
+      const module = JSON.stringify(join(import.meta.dir, "win32-net.ts"));
+      const supervisor = Bun.spawn(
+        [
+          process.execPath,
+          "--no-env-file",
+          "-e",
+          `const { killWithThisProcess } = await import(${module});
          const child = Bun.spawn([process.execPath, "-e", "setInterval(() => {}, 1000)"]);
          killWithThisProcess(child.pid);
          console.log(child.pid);
          setInterval(() => {}, 1000);`,
-      ],
-      { stdout: "pipe", stderr: "inherit" },
-    );
-    const reader = supervisor.stdout.getReader();
-    const pid = Number(new TextDecoder().decode((await reader.read()).value).trim());
-    expect(processStartedAt(pid)).not.toBeNull();
-    supervisor.kill();
-    await supervisor.exited;
-    const deadline = Date.now() + 5000;
-    // oxlint-disable-next-line no-await-in-loop -- bounded wait for the job object to kill the child
-    while (processStartedAt(pid) !== null && Date.now() < deadline) await Bun.sleep(100);
-    expect(processStartedAt(pid)).toBeNull();
-  });
+        ],
+        { stdout: "pipe", stderr: "inherit" },
+      );
+      const reader = supervisor.stdout.getReader();
+      const pid = Number(
+        new TextDecoder().decode((await reader.read()).value).trim(),
+      );
+      expect(processStartedAt(pid)).not.toBeNull();
+      supervisor.kill();
+      await supervisor.exited;
+      const deadline = Date.now() + 5000;
+      // oxlint-disable-next-line no-await-in-loop -- bounded wait for the job object to kill the child
+      while (processStartedAt(pid) !== null && Date.now() < deadline)
+        await Bun.sleep(100);
+      expect(processStartedAt(pid)).toBeNull();
+    },
+  );
 
-  test.skipIf(!windows)("a child that never listens is stopped and reported", async () => {
-    const service = { ...base().services[0]!, executable: process.execPath, port: 0 };
-    const resolved: Resolved = {
-      service,
-      principal: service.principal!,
-      trigger: { kind: "boot" },
-      home: scratch,
-    };
-    await expect(
-      activate(resolved, scratch, [process.execPath, "-e", "process.exit(3)"], 5_000),
-    ).rejects.toThrow("s'est arrêté");
-  });
+  test.skipIf(!windows)(
+    "a child that never listens is stopped and reported",
+    async () => {
+      const service = {
+        ...base().services[0]!,
+        executable: process.execPath,
+        port: 0,
+      };
+      const resolved: Resolved = {
+        service,
+        principal: service.principal!,
+        trigger: { kind: "boot" },
+        home: scratch,
+      };
+      await expect(
+        activate(
+          resolved,
+          scratch,
+          [process.execPath, "-e", "process.exit(3)"],
+          5_000,
+        ),
+      ).rejects.toThrow("s'est arrêté");
+    },
+  );
 });

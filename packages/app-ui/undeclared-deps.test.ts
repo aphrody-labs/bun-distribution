@@ -31,12 +31,21 @@ test("plugin guest resolves from the selected host workspace outside Material", 
   const previous = process.env.APHRODY_WORKSPACE_ROOT;
   try {
     const host = join(root, "host");
-    const guest = join(host, "crates/tauri/aphrody-tauri-plugin-dialog/guest-js");
+    const guest = join(
+      host,
+      "crates/tauri/aphrody-tauri-plugin-dialog/guest-js",
+    );
     mkdirSync(guest, { recursive: true });
     process.env.APHRODY_WORKSPACE_ROOT = host;
-    writeFileSync(join(guest, "index.ts"), 'export const owner = "selected host guest";');
+    writeFileSync(
+      join(guest, "index.ts"),
+      'export const owner = "selected host guest";',
+    );
     const entry = join(root, "entry.ts");
-    writeFileSync(entry, 'import { owner } from "@aphrody/plugin-dialog"; console.log(owner);');
+    writeFileSync(
+      entry,
+      'import { owner } from "@aphrody/plugin-dialog"; console.log(owner);',
+    );
     const result = await Bun.build({
       entrypoints: [entry],
       target: "browser",

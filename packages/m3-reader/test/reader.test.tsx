@@ -48,7 +48,12 @@ describe("<CollectionReader>", () => {
 
   test("renders the empty label when no edition has content", () => {
     const html = renderToStaticMarkup(
-      <CollectionReader title="Collection" editions={[]} {...labels} renderChapter={() => null} />,
+      <CollectionReader
+        title="Collection"
+        editions={[]}
+        {...labels}
+        renderChapter={() => null}
+      />,
     );
     expect(html).toContain("Aucun contenu");
   });
@@ -58,7 +63,9 @@ describe("<CollectionReader>", () => {
     document.body.append(container);
     container.innerHTML = renderToString(element);
     const errors: unknown[] = [];
-    const root = hydrateRoot(container, element, { onRecoverableError: (e) => errors.push(e) });
+    const root = hydrateRoot(container, element, {
+      onRecoverableError: (e) => errors.push(e),
+    });
     await new Promise((resolve) => setTimeout(resolve, 50));
     root.unmount();
     container.remove();

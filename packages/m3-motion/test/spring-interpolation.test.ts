@@ -17,7 +17,11 @@ import { m3Springs } from "../src/springs.js";
 
 // k=200, m=1 -> 2*sqrt(k*m) = 28.28...
 const underDamped: SpringParams = { stiffness: 200, damping: 10, mass: 1 }; // zeta ~ 0.354
-const criticallyDamped: SpringParams = { stiffness: 200, damping: 28.2842712, mass: 1 }; // zeta ~ 1
+const criticallyDamped: SpringParams = {
+  stiffness: 200,
+  damping: 28.2842712,
+  mass: 1,
+}; // zeta ~ 1
 const overDamped: SpringParams = { stiffness: 200, damping: 60, mass: 1 }; // zeta ~ 2.12
 
 function isFinite(n: number): boolean {
@@ -61,7 +65,9 @@ describe("springDurationMs", () => {
   });
 
   test("clamps an undamped spring to the maximum", () => {
-    expect(springDurationMs({ stiffness: 200, damping: 0, mass: 1 })).toBe(2000);
+    expect(springDurationMs({ stiffness: 200, damping: 0, mass: 1 })).toBe(
+      2000,
+    );
   });
 
   test("clamps an extremely over-damped/stiff spring to the minimum floor", () => {
@@ -94,7 +100,9 @@ describe("springToCssEasing", () => {
 
   test("bouncy (under-damped) springs fall back to the M3 emphasized decelerate", () => {
     // zeta < 0.85 -> documented fallback (overshoot is impossible in cubic-bezier).
-    expect(springToCssEasing(underDamped)).toBe("cubic-bezier(0.05, 0.7, 0.1, 1)");
+    expect(springToCssEasing(underDamped)).toBe(
+      "cubic-bezier(0.05, 0.7, 0.1, 1)",
+    );
   });
 
   test("x control points stay within the valid [0,1] range", () => {
@@ -117,7 +125,11 @@ describe("springToCssEasing", () => {
 
 describe("springToWaapiKeyframes", () => {
   test("first sample is at offset 0 == from, last is at offset 1 == to", () => {
-    const { samples } = springToWaapiKeyframes(underDamped, { from: 100, to: 0, steps: 40 });
+    const { samples } = springToWaapiKeyframes(underDamped, {
+      from: 100,
+      to: 0,
+      steps: 40,
+    });
     expect(samples[0]!.offset).toBe(0);
     expect(samples[0]!.value).toBe(100);
     const last = samples[samples.length - 1]!;
@@ -135,7 +147,11 @@ describe("springToWaapiKeyframes", () => {
   });
 
   test("under-damped spring overshoots the target at least once", () => {
-    const { samples } = springToWaapiKeyframes(underDamped, { from: 0, to: 1, steps: 120 });
+    const { samples } = springToWaapiKeyframes(underDamped, {
+      from: 0,
+      to: 1,
+      steps: 120,
+    });
     // Some interior sample must exceed `to` (1) — the bounce.
     const interior = samples.slice(1, samples.length - 1);
     const overshoots = interior.some((s) => s.value > 1.001);
@@ -144,7 +160,11 @@ describe("springToWaapiKeyframes", () => {
 
   test("critically/over-damped springs do NOT overshoot", () => {
     for (const p of [criticallyDamped, overDamped]) {
-      const { samples } = springToWaapiKeyframes(p, { from: 0, to: 1, steps: 120 });
+      const { samples } = springToWaapiKeyframes(p, {
+        from: 0,
+        to: 1,
+        steps: 120,
+      });
       const maxValue = Math.max(...samples.map((s) => s.value));
       expect(maxValue).toBeLessThanOrEqual(1 + 1e-6);
     }
@@ -170,8 +190,12 @@ describe("springToWaapiKeyframes", () => {
   });
 
   test("respects a custom step count (min 2 enforced)", () => {
-    expect(springToWaapiKeyframes(underDamped, { steps: 10 }).samples).toHaveLength(10);
-    expect(springToWaapiKeyframes(underDamped, { steps: 1 }).samples).toHaveLength(2);
+    expect(
+      springToWaapiKeyframes(underDamped, { steps: 10 }).samples,
+    ).toHaveLength(10);
+    expect(
+      springToWaapiKeyframes(underDamped, { steps: 1 }).samples,
+    ).toHaveLength(2);
   });
 
   test("emits property keyframes when a property + format is supplied", () => {
@@ -186,12 +210,17 @@ describe("springToWaapiKeyframes", () => {
     const first = keyframes[0] as { offset: number; transform: string };
     expect(first.offset).toBe(0);
     expect(first.transform).toBe("translateX(100px)");
-    const last = keyframes[keyframes.length - 1] as { offset: number; transform: string };
+    const last = keyframes[keyframes.length - 1] as {
+      offset: number;
+      transform: string;
+    };
     expect(last.transform).toBe("translateX(0px)");
   });
 
   test("emits offset-only keyframes when no property is supplied", () => {
-    const { keyframes } = springToWaapiKeyframes(criticallyDamped, { steps: 5 });
+    const { keyframes } = springToWaapiKeyframes(criticallyDamped, {
+      steps: 5,
+    });
     expect(keyframes).toHaveLength(5);
     expect(Object.keys(keyframes[0] as object)).toEqual(["offset"]);
   });
@@ -212,7 +241,11 @@ describe("springToWaapiKeyframes", () => {
 
 describe("springKeyframesForProperty", () => {
   test("projects samples onto a CSS property with a unit suffix", () => {
-    const { samples } = springToWaapiKeyframes(criticallyDamped, { from: 0, to: 24, steps: 6 });
+    const { samples } = springToWaapiKeyframes(criticallyDamped, {
+      from: 0,
+      to: 24,
+      steps: 6,
+    });
     const kf = springKeyframesForProperty(samples, "width", undefined, "px");
     expect(kf).toHaveLength(6);
     const last = kf[kf.length - 1] as { width: string };

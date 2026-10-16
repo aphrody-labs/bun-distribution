@@ -85,7 +85,9 @@ export class UnifiedInferenceEngine {
       throw new InferenceError("model must be non-empty");
     this.defaultModel = defaultModel;
     const profile = defaultModel.toLowerCase().replace(/_/g, "-");
-    this.defaultConfig = Object.hasOwn(GEMMA4_MODELS, profile) ? GEMMA4_MODELS[profile] : undefined;
+    this.defaultConfig = Object.hasOwn(GEMMA4_MODELS, profile)
+      ? GEMMA4_MODELS[profile]
+      : undefined;
   }
 
   #endpoint(
@@ -110,11 +112,18 @@ export class UnifiedInferenceEngine {
     } catch {
       throw new InferenceError("Invalid inference endpoint URL");
     }
-    if (!["http:", "https:"].includes(endpoint.protocol) || endpoint.username || endpoint.password)
-      throw new InferenceError("Inference endpoint must use HTTP(S) without embedded credentials");
+    if (
+      !["http:", "https:"].includes(endpoint.protocol) ||
+      endpoint.username ||
+      endpoint.password
+    )
+      throw new InferenceError(
+        "Inference endpoint must use HTTP(S) without embedded credentials",
+      );
     endpoint.pathname =
-      endpoint.pathname.replace(/\/(?:chat\/completions|embeddings)\/?$/, "").replace(/\/$/, "") +
-      `/${operation}`;
+      endpoint.pathname
+        .replace(/\/(?:chat\/completions|embeddings)\/?$/, "")
+        .replace(/\/$/, "") + `/${operation}`;
     return endpoint.href;
   }
 
@@ -127,7 +136,8 @@ export class UnifiedInferenceEngine {
       apiKey: request.apiKey ?? this.options.apiKey,
       signal,
       timeoutMs: request.timeoutMs ?? this.options.timeoutMs,
-      maxResponseBytes: request.maxResponseBytes ?? this.options.maxResponseBytes,
+      maxResponseBytes:
+        request.maxResponseBytes ?? this.options.maxResponseBytes,
     };
   }
 
@@ -139,8 +149,12 @@ export class UnifiedInferenceEngine {
         "thought prefill is unsupported by the native Chat Completions transport",
       );
     const messages: Gemma4Message[] = [];
-    if (request.systemPrompt) messages.push({ role: "system", content: request.systemPrompt });
-    messages.push(...(request.history ?? []), { role: "user", content: request.prompt });
+    if (request.systemPrompt)
+      messages.push({ role: "system", content: request.systemPrompt });
+    messages.push(...(request.history ?? []), {
+      role: "user",
+      content: request.prompt,
+    });
     const formatted = formatGemma4ChatPrompt(messages);
     if (messages.some((message) => message.thought !== undefined))
       throw new InferenceError(
@@ -152,7 +166,9 @@ export class UnifiedInferenceEngine {
       );
     if (
       request.temperature !== undefined &&
-      (!Number.isFinite(request.temperature) || request.temperature < 0 || request.temperature > 2)
+      (!Number.isFinite(request.temperature) ||
+        request.temperature < 0 ||
+        request.temperature > 2)
     )
       throw new InferenceError("temperature must be between 0 and 2");
     if (
@@ -172,7 +188,9 @@ export class UnifiedInferenceEngine {
           role: message.role === "model" ? "assistant" : message.role,
           content: message.content,
         })),
-        ...(request.temperature !== undefined ? { temperature: request.temperature } : {}),
+        ...(request.temperature !== undefined
+          ? { temperature: request.temperature }
+          : {}),
         ...(request.topP !== undefined ? { top_p: request.topP } : {}),
         max_tokens: request.maxTokens ?? 1024,
         stream: streaming,
@@ -180,11 +198,15 @@ export class UnifiedInferenceEngine {
     };
   }
 
-  async infer(request: UnifiedInferenceRequest): Promise<UnifiedInferenceResponse> {
+  async infer(
+    request: UnifiedInferenceRequest,
+  ): Promise<UnifiedInferenceResponse> {
     if (request.backend === "mock") {
       this.#transport(request).signal?.throwIfAborted();
       if (!this.options.mock)
-        throw new InferenceError("The mock backend requires an explicitly injected mock handler");
+        throw new InferenceError(
+          "The mock backend requires an explicitly injected mock handler",
+        );
       return { ...(await this.options.mock(request)), backend: "mock" };
     }
     const started = performance.now();
@@ -199,7 +221,9 @@ export class UnifiedInferenceEngine {
     );
     const message = object(firstChoice(data).message);
     if (typeof message.content !== "string")
-      throw new InferenceError("Inference response has no text message content");
+      throw new InferenceError(
+        "Inference response has no text message content",
+      );
     const parsed = parseGemma4Response(message.content);
     const providerThought = message.reasoning_content ?? message.reasoning;
     if (
@@ -208,20 +232,33 @@ export class UnifiedInferenceEngine {
       typeof providerThought !== "string"
     )
       throw new InferenceError("Invalid provider reasoning content");
-    const usage = data.usage === undefined || data.usage === null ? undefined : object(data.usage);
-    const counts = [usage?.prompt_tokens, usage?.completion_tokens, usage?.total_tokens];
+    const usage =
+      data.usage === undefined || data.usage === null
+        ? undefined
+        : object(data.usage);
+    const counts = [
+      usage?.prompt_tokens,
+      usage?.completion_tokens,
+      usage?.total_tokens,
+    ];
     const providerUsage = counts.every(
-      (count) => typeof count === "number" && Number.isSafeInteger(count) && count >= 0,
+      (count) =>
+        typeof count === "number" && Number.isSafeInteger(count) && count >= 0,
     );
-    if (usage && !providerUsage) throw new InferenceError("Invalid inference provider token usage");
-    const promptTokensEst = providerUsage ? (counts[0] as number) : Math.ceil(formatted.length / 4);
+    if (usage && !providerUsage)
+      throw new InferenceError("Invalid inference provider token usage");
+    const promptTokensEst = providerUsage
+      ? (counts[0] as number)
+      : Math.ceil(formatted.length / 4);
     const completionTokensEst = providerUsage
       ? (counts[1] as number)
       : Math.ceil(message.content.length / 4);
     return {
       text: parsed.content,
-      thought: typeof providerThought === "string" ? providerThought : parsed.thought,
-      model: typeof data.model === "string" && data.model ? data.model : body.model,
+      thought:
+        typeof providerThought === "string" ? providerThought : parsed.thought,
+      model:
+        typeof data.model === "string" && data.model ? data.model : body.model,
       backend,
       latencyMs: Number((performance.now() - started).toFixed(2)),
       usage: {
@@ -260,8 +297,16 @@ export class UnifiedInferenceEngine {
       } catch {
         throw new InferenceError("Invalid JSON in inference stream");
       }
-      if (data.error) throw new InferenceError("Inference provider reported a streaming error");
-      if (Array.isArray(data.choices) && data.choices.length === 0 && data.usage) continue;
+      if (data.error)
+        throw new InferenceError(
+          "Inference provider reported a streaming error",
+        );
+      if (
+        Array.isArray(data.choices) &&
+        data.choices.length === 0 &&
+        data.usage
+      )
+        continue;
       const choice = firstChoice(data);
       const delta = object(choice.delta);
       if (delta.content !== undefined && delta.content !== null) {
@@ -273,43 +318,62 @@ export class UnifiedInferenceEngine {
       if (typeof choice.finish_reason === "string") terminal = true;
     }
     if (!completed && !terminal)
-      throw new InferenceError("Inference stream ended without a completion marker");
+      throw new InferenceError(
+        "Inference stream ended without a completion marker",
+      );
     const final = parser.finish();
     if (final.text) yield final.text;
   }
 
   /** Use the provider's real /embeddings endpoint; unsupported providers return an explicit HTTP error. */
-  async embed(input: string, request: EmbeddingRequestOptions = {}): Promise<Float32Array> {
+  async embed(
+    input: string,
+    request: EmbeddingRequestOptions = {},
+  ): Promise<Float32Array> {
     if (typeof input !== "string" || !input.trim())
       throw new InferenceError("embedding input must be non-empty text");
     if (input.length > 1_048_576)
       throw new InferenceError("embedding input exceeds the text budget");
-    if (request.dimensions !== undefined) positiveInteger(request.dimensions, "dimensions");
+    if (request.dimensions !== undefined)
+      positiveInteger(request.dimensions, "dimensions");
     const model = request.model ?? this.defaultModel;
     if (typeof model !== "string" || !model.trim())
       throw new InferenceError("model must be non-empty");
     const data = object(
       await postInferenceJson(
-        this.#endpoint(request.backend ?? "local", request.endpointUrl, "embeddings"),
+        this.#endpoint(
+          request.backend ?? "local",
+          request.endpointUrl,
+          "embeddings",
+        ),
         {
           model,
           input,
           encoding_format: "float",
-          ...(request.dimensions !== undefined ? { dimensions: request.dimensions } : {}),
+          ...(request.dimensions !== undefined
+            ? { dimensions: request.dimensions }
+            : {}),
         },
         this.#transport(request),
       ),
     );
     if (!Array.isArray(data.data) || data.data.length !== 1)
-      throw new InferenceError("Embedding response must contain exactly one vector");
+      throw new InferenceError(
+        "Embedding response must contain exactly one vector",
+      );
     const vector = object(data.data[0]).embedding;
     if (
       !Array.isArray(vector) ||
       vector.length < 1 ||
-      !vector.every((value) => typeof value === "number" && Number.isFinite(value))
+      !vector.every(
+        (value) => typeof value === "number" && Number.isFinite(value),
+      )
     )
       throw new InferenceError("Embedding response contains an invalid vector");
-    if (request.dimensions !== undefined && vector.length !== request.dimensions)
+    if (
+      request.dimensions !== undefined &&
+      vector.length !== request.dimensions
+    )
       throw new InferenceError("Embedding response dimension mismatch");
     const result = Float32Array.from(vector as number[]);
     if (!result.every(Number.isFinite))

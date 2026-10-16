@@ -10,13 +10,13 @@ installed, built and tested by the aphrody workspace, which provides its host de
 (`@aphrody/drive-client`, ...) and the crate assets it
 imports (`crates/ui/identity`, `crates/ui/app`).
 
-| Script | Does |
-| --- | --- |
-| `bun run dev` | `yolo m3 dev` on port 1421 (`tauri.conf.json` `build.devUrl`) |
-| `bun run build` | `build.ts`: `m3 build --tauri` into `crates/ui/app/ui-dist` |
-| `bun run test` | `bun test src` (layout parity, chat, history, brand theme, ...) |
-| `bun run typecheck` | `tsc --noEmit` |
-| `bun run brand` | regenerates the brand theme (`scripts/brand-theme.ts`) |
+| Script              | Does                                                            |
+| ------------------- | --------------------------------------------------------------- |
+| `bun run dev`       | `yolo m3 dev` on port 1421 (`tauri.conf.json` `build.devUrl`)   |
+| `bun run build`     | `build.ts`: `m3 build --tauri` into `crates/ui/app/ui-dist`     |
+| `bun run test`      | `bun test src` (layout parity, chat, history, brand theme, ...) |
+| `bun run typecheck` | `tsc --noEmit`                                                  |
+| `bun run brand`     | regenerates the brand theme (`scripts/brand-theme.ts`)          |
 
 Configuration: `m3.config.ts` (entry `src/index.html`, Tauri `uiDist`), `bunfig.toml`.
 

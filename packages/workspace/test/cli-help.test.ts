@@ -9,7 +9,9 @@ import { withoutPath, writeBunCommand } from "./fixtures/bun-command.ts";
 
 const roots: string[] = [];
 afterEach(async () => {
-  await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+  await Promise.all(
+    roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
+  );
 });
 
 async function fixture() {
@@ -35,7 +37,11 @@ for (const binary of ["yolo", "qualified", "aphrody", "bxc", "n2b", "nie", "nier
 process.exitCode = await runCliHelp(process.argv.slice(2), ${JSON.stringify(root)});
 `,
   );
-  const executable = async (binary: string, exitCode = 0, repeatRootHelp = false) =>
+  const executable = async (
+    binary: string,
+    exitCode = 0,
+    repeatRootHelp = false,
+  ) =>
     writeBunCommand(
       bin,
       binary,
@@ -65,7 +71,8 @@ if (args.length === 1 || ${repeatRootHelp}) {
       new Response(child.stderr).text(),
       child.exited,
     ]);
-    if (stderr.includes("Fixture PATH isolation failed")) throw new Error(stderr);
+    if (stderr.includes("Fixture PATH isolation failed"))
+      throw new Error(stderr);
     return exitCode;
   };
   const invocations = async () =>
@@ -92,19 +99,31 @@ test("selected top-level capture invokes only requested PATH binaries and preser
   await mkdir(global, { recursive: true });
   await writeFile(join(global, "INDEX.md"), "existing full index\n");
   await writeFile(join(global, "latest.json"), "existing full snapshot\n");
-  expect(await value.capture(["--only", "yolo,yolo", "--no-recursive"])).toBe(0);
-  expect(await value.invocations()).toEqual([{ binary: "yolo", args: ["--help"] }]);
+  expect(await value.capture(["--only", "yolo,yolo", "--no-recursive"])).toBe(
+    0,
+  );
+  expect(await value.invocations()).toEqual([
+    { binary: "yolo", args: ["--help"] },
+  ]);
   const manifest = await value.manifest(join(global, "selected/yolo"));
   expect(manifest.capture).toEqual({ binaries: ["yolo"], recursive: false });
-  expect(manifest.installed.map((entry: any) => entry.executable)).toEqual([yolo]);
+  expect(manifest.installed.map((entry: any) => entry.executable)).toEqual([
+    yolo,
+  ]);
   expect(manifest.entries).toHaveLength(1);
-  const latest = await Bun.file(join(global, "selected/yolo/latest.json")).json();
+  const latest = await Bun.file(
+    join(global, "selected/yolo/latest.json"),
+  ).json();
   const page = await readFile(join(latest.snapshot, "yolo.txt"), "utf8");
   expect(page).not.toContain("\x1b[");
   expect(page).not.toContain("fixture-sensitive-value");
   expect(page).toContain("[REDACTED]");
-  expect(await readFile(join(global, "INDEX.md"), "utf8")).toBe("existing full index\n");
-  expect(await readFile(join(global, "latest.json"), "utf8")).toBe("existing full snapshot\n");
+  expect(await readFile(join(global, "INDEX.md"), "utf8")).toBe(
+    "existing full index\n",
+  );
+  expect(await readFile(join(global, "latest.json"), "utf8")).toBe(
+    "existing full snapshot\n",
+  );
 });
 
 function resolveCollector() {
@@ -116,8 +135,20 @@ test("comma selection and explicit output remain bounded without subcommand disp
   await value.executable("yolo");
   await value.executable("qualified");
   const out = join(value.root, "dedicated-output");
-  expect(await value.capture(["--only", "yolo,qualified", "--out", out, "--no-recursive"])).toBe(0);
-  expect((await value.invocations()).toSorted((a, b) => a.binary.localeCompare(b.binary))).toEqual([
+  expect(
+    await value.capture([
+      "--only",
+      "yolo,qualified",
+      "--out",
+      out,
+      "--no-recursive",
+    ]),
+  ).toBe(0);
+  expect(
+    (await value.invocations()).toSorted((a, b) =>
+      a.binary.localeCompare(b.binary),
+    ),
+  ).toEqual([
     { binary: "qualified", args: ["--help"] },
     { binary: "yolo", args: ["--help"] },
   ]);
@@ -150,14 +181,18 @@ test("without flags the legacy catalogue and PATH discovery remain recursive", a
   ]);
   expect(manifest.entries).toHaveLength(6);
   expect(manifest.capture).toEqual({ binaries: null, recursive: true });
-  expect((await value.invocations()).some((entry) => entry.binary === "aphrody-summary")).toBe(
-    false,
-  );
+  expect(
+    (await value.invocations()).some(
+      (entry) => entry.binary === "aphrody-summary",
+    ),
+  ).toBe(false);
 });
 
 test("missing selected binaries and failing stderr help return a failure", async () => {
   const missing = await fixture();
-  expect(await missing.capture(["--only", "absent-fixture", "--no-recursive"])).toBe(1);
+  expect(
+    await missing.capture(["--only", "absent-fixture", "--no-recursive"]),
+  ).toBe(1);
   expect(await missing.invocations()).toEqual([]);
   const failed = await fixture();
   await failed.executable("yolo", 3);
@@ -165,9 +200,13 @@ test("missing selected binaries and failing stderr help return a failure", async
   const out = join(failed.root, "data/aphrody/cli-help/selected/yolo");
   const manifest = await failed.manifest(out);
   expect(manifest.entries[0].exitCode).toBe(3);
-  expect(await failed.invocations()).toEqual([{ binary: "yolo", args: ["--help"] }]);
+  expect(await failed.invocations()).toEqual([
+    { binary: "yolo", args: ["--help"] },
+  ]);
   const latest = await Bun.file(join(out, "latest.json")).json();
-  expect(await readFile(join(latest.snapshot, "yolo.txt"), "utf8")).toContain("fixture failure");
+  expect(await readFile(join(latest.snapshot, "yolo.txt"), "utf8")).toContain(
+    "fixture failure",
+  );
 });
 
 test("invalid selections are rejected before invoking a binary", async () => {
@@ -204,7 +243,9 @@ test("the page budget records unvisited commands without executing them", async 
   const value = await fixture();
   await value.executable("yolo");
   expect(await value.capture(["--only", "yolo", "--max-pages", "1"])).toBe(1);
-  expect(await value.invocations()).toEqual([{ binary: "yolo", args: ["--help"] }]);
+  expect(await value.invocations()).toEqual([
+    { binary: "yolo", args: ["--help"] },
+  ]);
   const out = join(value.root, "data/aphrody/cli-help/selected/yolo");
   const manifest = await value.manifest(out);
   expect(manifest.unresolved).toEqual([["yolo", "unsafe"]]);
@@ -234,6 +275,8 @@ test("a real CLI failure propagates even when primary Aphrody help succeeds", as
   const out = join(value.root, "data/aphrody/cli-help");
   const manifest = await value.manifest(out);
   expect(
-    manifest.entries.find((entry: any) => entry.command[0] === "catalog-unselected").exitCode,
+    manifest.entries.find(
+      (entry: any) => entry.command[0] === "catalog-unselected",
+    ).exitCode,
   ).toBe(3);
 });

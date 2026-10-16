@@ -33,7 +33,9 @@ async function run(argv: string[]): Promise<number> {
   }
   const repoRoot = resolve(import.meta.dir, "../../../../../docs/aphrody");
   assertOutsideRepo(values.out, repoRoot);
-  const tunnelFile = values.tunnel ?? join(repoRoot, "tools/config/host/wireguard/aphrody-tunnel.json");
+  const tunnelFile =
+    values.tunnel ??
+    join(repoRoot, "tools/config/host/wireguard/aphrody-tunnel.json");
   const tunnel = JSON.parse(await readFile(tunnelFile, "utf8")) as Tunnel;
   const hostKeys = values["host-keys"]
     ? (await readFile(values["host-keys"], "utf8"))
@@ -43,14 +45,18 @@ async function run(argv: string[]): Promise<number> {
     : [];
   const pack = buildAccessPack(tunnel, {
     peer: values.peer,
-    ...(values["wg-block"] ? { wgBlock: await readFile(values["wg-block"], "utf8") } : {}),
+    ...(values["wg-block"]
+      ? { wgBlock: await readFile(values["wg-block"], "utf8") }
+      : {}),
     ...(values["train-host"] ? { trainHost: values["train-host"] } : {}),
     hostKeys,
     repoDirs: pairs(values["repo-dir"]),
     aphrodyBins: pairs(values["aphrody-bin"]),
   });
   await mkdir(dirname(resolve(values.out)), { recursive: true });
-  await writeFile(values.out, `${JSON.stringify(pack, null, 2)}\n`, { mode: 0o600 });
+  await writeFile(values.out, `${JSON.stringify(pack, null, 2)}\n`, {
+    mode: 0o600,
+  });
   console.log(
     `écrit : ${values.out} (hôtes : ${Object.keys(pack.hosts).join(", ")}${pack.wireguard?.block ? ", tunnel WireGuard" : ", SANS tunnel WireGuard"}${pack.hostKeys.length > 0 ? `, ${pack.hostKeys.length} empreintes` : ", SANS empreintes d'hôtes (première connexion non vérifiée)"})`,
   );

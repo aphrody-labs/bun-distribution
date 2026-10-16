@@ -11,22 +11,30 @@ import { MemoryRouter } from "react-router-dom";
 const { HistoryPanel } = await import("./history-panel");
 const { ModelsHub } = await import("./models-hub");
 const { GeneralSettings } = await import("./Settings/pages/GeneralSettings");
-const { AgentToolsSettings } = await import("./Settings/pages/AgentToolsSettings");
+const { AgentToolsSettings } =
+  await import("./Settings/pages/AgentToolsSettings");
 
 test("configured MCP servers show unknown connection honestly and propagate registry errors", async () => {
   let fail = false;
   window.__TAURI__ = {
     core: {
-      invoke: async <T>(command: string, args?: Record<string, unknown>): Promise<T> => {
+      invoke: async <T>(
+        command: string,
+        args?: Record<string, unknown>,
+      ): Promise<T> => {
         expect(command).toBe("aphrody_rpc");
-        const method = (args?.request as { method: string } | undefined)?.method;
+        const method = (args?.request as { method: string } | undefined)
+          ?.method;
         if (fail) return { error: { message: "synthetic unavailable" } } as T;
-        if (method === "initialize") return { result: { serverInfo: { name: "aphrody" } } } as T;
+        if (method === "initialize")
+          return { result: { serverInfo: { name: "aphrody" } } } as T;
         if (method === "initialized") return {} as T;
         if (method === "tools/list") return { result: { data: [] } } as T;
         expect(method).toBe("mcpServerStatus/list");
         return {
-          result: { servers: [{ name: "synthetic", status: "unknown", toolCount: 0 }] },
+          result: {
+            servers: [{ name: "synthetic", status: "unknown", toolCount: 0 }],
+          },
         } as T;
       },
     },
@@ -76,13 +84,18 @@ test("update installation uses the signed updater hook and restarts only after s
   const calls: string[] = [];
   window.__TAURI__ = {
     core: {
-      invoke: async <T>(command: string, args?: Record<string, unknown>): Promise<T> => {
+      invoke: async <T>(
+        command: string,
+        args?: Record<string, unknown>,
+      ): Promise<T> => {
         calls.push(command);
         if (command === "plugin:updater|check")
           return { rid: 42, currentVersion: "1.0.0", version: "1.0.1" } as T;
         if (command === "plugin:updater|download_and_install") {
           expect(args?.rid).toBe(42);
-          const channel = args?.onEvent as { onmessage: (message: unknown) => void };
+          const channel = args?.onEvent as {
+            onmessage: (message: unknown) => void;
+          };
           channel.onmessage({ event: "Started", data: { contentLength: 100 } });
           channel.onmessage({ event: "Progress", data: { chunkLength: 100 } });
         }
@@ -128,7 +141,13 @@ test("rendered archived history restores through the canonical RPC and removes t
         if (method === "thread/list")
           return {
             threads: params?.archived
-              ? [{ id: "synthetic", name: "Archived synthetic thread", updatedAt: 2 }]
+              ? [
+                  {
+                    id: "synthetic",
+                    name: "Archived synthetic thread",
+                    updatedAt: 2,
+                  },
+                ]
               : [],
           };
         expect(params?.threadId).toBe("synthetic");
@@ -183,7 +202,8 @@ test("rendered update check does not report up-to-date when the release feed fai
   window.__TAURI__ = {
     core: {
       invoke: async <T>(command: string): Promise<T> => {
-        if (command === "plugin:updater|check") throw new Error("synthetic feed failure");
+        if (command === "plugin:updater|check")
+          throw new Error("synthetic feed failure");
         if (command === "plugin:store|load") return 1 as T;
         if (command === "plugin:store|get") return [null, false] as T;
         return undefined as T;
@@ -203,7 +223,8 @@ test("rendered model favorites persist and deletion waits for the M3 confirmatio
     invoke: async (command, args) => {
       const input = args as { key: string; value?: unknown };
       if (command === "plugin:store|load") return 1;
-      if (command === "plugin:store|get") return [settings.get(input.key), settings.has(input.key)];
+      if (command === "plugin:store|get")
+        return [settings.get(input.key), settings.has(input.key)];
       if (command === "plugin:store|set") settings.set(input.key, input.value);
       return undefined;
     },
@@ -223,8 +244,12 @@ test("rendered model favorites persist and deletion waits for the M3 confirmatio
   };
   window.__TAURI__ = {
     core: {
-      invoke: async <T>(command: string, args?: Record<string, unknown>): Promise<T> => {
-        if (command === "aphrody_model_catalog") return { entries: [entry], count: 1 } as T;
+      invoke: async <T>(
+        command: string,
+        args?: Record<string, unknown>,
+      ): Promise<T> => {
+        if (command === "aphrody_model_catalog")
+          return { entries: [entry], count: 1 } as T;
         if (command === "aphrody_model_list")
           return {
             root: "/synthetic",

@@ -21,13 +21,13 @@
     </video>
 
     <script>
-      const { invoke, convertFileSrc } = window.__TAURI__.core
-      const video = document.getElementById('video_source')
-      const source = document.createElement('source')
-      source.type = 'video/mp4'
-      source.src = convertFileSrc('streaming_example_test_video.mp4', 'stream')
-      video.appendChild(source)
-      video.load()
+      const { invoke, convertFileSrc } = window.__TAURI__.core;
+      const video = document.getElementById("video_source");
+      const source = document.createElement("source");
+      source.type = "video/mp4";
+      source.src = convertFileSrc("streaming_example_test_video.mp4", "stream");
+      video.appendChild(source);
+      video.load();
     </script>
   </body>
 </html>

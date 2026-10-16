@@ -49,12 +49,16 @@ export const m3IconPlugin: BunPlugin = {
 function splitStyleAndName(stylePart: string): [M3IconStyle, string] {
   const slash = stylePart.indexOf("/");
   if (slash === -1) {
-    throw new Error(`m3:icon module path must be "m3:icon/<style>/<name>", got "${stylePart}"`);
+    throw new Error(
+      `m3:icon module path must be "m3:icon/<style>/<name>", got "${stylePart}"`,
+    );
   }
   const style = stylePart.slice(0, slash);
   const name = stylePart.slice(slash + 1);
   if (!STYLES.includes(style as M3IconStyle)) {
-    throw new Error(`m3:icon style must be one of ${STYLES.join(", ")}, got "${style}"`);
+    throw new Error(
+      `m3:icon style must be one of ${STYLES.join(", ")}, got "${style}"`,
+    );
   }
   return [style as M3IconStyle, name];
 }

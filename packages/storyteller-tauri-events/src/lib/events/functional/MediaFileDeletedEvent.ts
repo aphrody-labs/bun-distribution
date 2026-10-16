@@ -9,7 +9,7 @@ export interface MediaFileDeletedEvent {
 }
 
 export const useMediaFileDeletedEvent = (
-  asyncCallback: (event: MediaFileDeletedEvent) => Promise<void>
+  asyncCallback: (event: MediaFileDeletedEvent) => Promise<void>,
 ) => {
   useEffect(() => {
     let isUnmounted = false;
@@ -20,7 +20,7 @@ export const useMediaFileDeletedEvent = (
         EVENT_NAME,
         async (wrappedEvent) => {
           await asyncCallback(wrappedEvent.payload.data);
-        }
+        },
       );
 
       if (isUnmounted) {

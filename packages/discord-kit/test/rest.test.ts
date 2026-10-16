@@ -5,10 +5,15 @@ import { discordFetch, DiscordRESTError } from "../src/rest";
 test("REST authenticates with the requested identity and refuses credential redirects", async () => {
   const fetcher = ((url: string, init: RequestInit) => {
     expect(url).toBe("https://discord.com/api/v10/users/@me");
-    expect(new Headers(init.headers).get("authorization")).toBe("Bearer fixture");
+    expect(new Headers(init.headers).get("authorization")).toBe(
+      "Bearer fixture",
+    );
     expect(init.redirect).toBe("error");
     return Promise.resolve(
-      Response.json({ id: "42" }, { headers: { "X-RateLimit-Remaining": "9" } }),
+      Response.json(
+        { id: "42" },
+        { headers: { "X-RateLimit-Remaining": "9" } },
+      ),
     );
   }) as typeof fetch;
   const result = await discordFetch<{ id: string }>("/users/@me", {
@@ -25,11 +30,18 @@ test("REST retries rate limiting once and preserves the final Discord error", as
   const fetcher = (() => {
     calls++;
     return Promise.resolve(
-      Response.json({ message: "limited", code: 20028, retry_after: 0 }, { status: 429 }),
+      Response.json(
+        { message: "limited", code: 20028, retry_after: 0 },
+        { status: 429 },
+      ),
     );
   }) as typeof fetch;
   try {
-    await discordFetch("/channels/42", { mode: "Bot", token: "fixture", fetch: fetcher });
+    await discordFetch("/channels/42", {
+      mode: "Bot",
+      token: "fixture",
+      fetch: fetcher,
+    });
     throw new Error("request must fail");
   } catch (error) {
     expect(error).toBeInstanceOf(DiscordRESTError);

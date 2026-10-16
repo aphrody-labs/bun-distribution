@@ -91,9 +91,7 @@ export const ItemElements = ({
   if (items.length === 0 && !busy) {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center text-center">
-        <CircleSlashIcon
-          
-          className="mb-4 text-4xl opacity-30" />
+        <CircleSlashIcon className="mb-4 text-4xl opacity-30" />
         <h4>You do not have anything here.</h4>
         <p className="text-sm opacity-75">Please upload some assets.</p>
       </div>

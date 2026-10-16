@@ -40,7 +40,8 @@ export function isInterruptedState(state: TaskState | undefined): boolean {
 }
 
 /** The single member present in a `StreamResponse` or `SendMessageResponse`. */
-export type StreamPayloadKind = "task" | "message" | "statusUpdate" | "artifactUpdate";
+export type StreamPayloadKind =
+  "task" | "message" | "statusUpdate" | "artifactUpdate";
 
 const PAYLOAD_KEYS: readonly StreamPayloadKind[] = [
   "task",
@@ -50,7 +51,9 @@ const PAYLOAD_KEYS: readonly StreamPayloadKind[] = [
 ];
 
 /** Which of the oneof members is set, or `undefined` when the object is not a stream payload. */
-export function streamPayloadKind(value: unknown): StreamPayloadKind | undefined {
+export function streamPayloadKind(
+  value: unknown,
+): StreamPayloadKind | undefined {
   if (typeof value !== "object" || value === null) return undefined;
   const present = PAYLOAD_KEYS.filter(
     (key) => (value as Record<string, unknown>)[key] !== undefined,

@@ -18,7 +18,10 @@ function shouldAddToast(toasts: Toast[], newToast: Toast): boolean {
     if (newToast.timestamp <= toasts[i].timestamp + TWO_SECONDS) {
       break;
     }
-    if (toasts[i].type === newToast.type && newToast.message === toasts[i].message) {
+    if (
+      toasts[i].type === newToast.type &&
+      newToast.message === toasts[i].message
+    ) {
       noLastToast = false;
       break;
     }
@@ -26,7 +29,11 @@ function shouldAddToast(toasts: Toast[], newToast: Toast): boolean {
   return noLastToast;
 }
 
-export const addToast = (type: ToastTypes, message: string, timeout?: number | false) => {
+export const addToast = (
+  type: ToastTypes,
+  message: string,
+  timeout?: number | false,
+) => {
   const newToast: Toast = {
     id: crypto.randomUUID(),
     type,
@@ -44,7 +51,11 @@ export const addToast = (type: ToastTypes, message: string, timeout?: number | f
 
   // delete the toast on a timer
   if (timeout === undefined || typeof timeout === "number") {
-    const calTimeout = timeout ? timeout : type === ToastTypes.SUCCESS ? TEN_SECONDS : FIVE_SECONDS;
+    const calTimeout = timeout
+      ? timeout
+      : type === ToastTypes.SUCCESS
+        ? TEN_SECONDS
+        : FIVE_SECONDS;
     setTimeout(() => {
       //delete toast after timeout
       deleteToast(newToast.id);

@@ -26,7 +26,9 @@ export function isBrowserCanvasAvailable(): boolean {
 export function selectCanvasBackend(preferred?: CanvasBackend): CanvasBackend {
   return preferred ?? (isBrowserCanvasAvailable() ? "browser" : "native-skia");
 }
-export function createM3CanvasSurface(options: Partial<M3CanvasSurface> = {}): M3CanvasSurface {
+export function createM3CanvasSurface(
+  options: Partial<M3CanvasSurface> = {},
+): M3CanvasSurface {
   return {
     color: options.color ?? "var(--md-sys-color-surface, #fffbfe)",
     pixelRatio: options.pixelRatio ?? 1,
@@ -45,7 +47,9 @@ export function configureBrowserCanvas(
   canvas.dataset["aphrodyCanvasDensity"] = options.m3?.density ?? "comfortable";
   return canvas;
 }
-export function createBrowserCanvas(options: AphrodyCanvasOptions): HTMLCanvasElement {
+export function createBrowserCanvas(
+  options: AphrodyCanvasOptions,
+): HTMLCanvasElement {
   if (!isBrowserCanvasAvailable())
     throw new Error("@aphrody/canvas: browser canvas is unavailable");
   const canvas = document.createElement("canvas");

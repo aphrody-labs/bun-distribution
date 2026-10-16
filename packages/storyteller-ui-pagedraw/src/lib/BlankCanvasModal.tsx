@@ -80,7 +80,10 @@ export const BlankCanvasModal = ({
                   selected?.height === preset.height;
                 const maxW = 56;
                 const maxH = 36;
-                const scale = Math.min(maxW / preset.width, maxH / preset.height);
+                const scale = Math.min(
+                  maxW / preset.width,
+                  maxH / preset.height,
+                );
                 const previewW = Math.round(preset.width * scale);
                 const previewH = Math.round(preset.height * scale);
 
@@ -113,7 +116,11 @@ export const BlankCanvasModal = ({
           <Button variant="action" onClick={handleClose}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleConfirm} disabled={!selected}>
+          <Button
+            variant="primary"
+            onClick={handleConfirm}
+            disabled={!selected}
+          >
             Create Canvas
           </Button>
         </div>

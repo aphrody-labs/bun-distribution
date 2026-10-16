@@ -1,4 +1,7 @@
-import { stubGlobal, restoreGlobals } from "../../../../../tools/testing/globals";
+import {
+  stubGlobal,
+  restoreGlobals,
+} from "../../../../../tools/testing/globals";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "bun:test";
@@ -43,7 +46,9 @@ beforeEach(() => {
   );
   useClassyModelSelectorStore.setState({
     selectedModels: { [PAGE]: INITIAL_MODEL },
-    selectedProviders: { [PAGE]: { [MIDJOURNEY_MODEL.id]: GenerationProvider.Artcraft } },
+    selectedProviders: {
+      [PAGE]: { [MIDJOURNEY_MODEL.id]: GenerationProvider.Artcraft },
+    },
   });
 });
 
@@ -51,21 +56,40 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   restoreGlobals();
-  useClassyModelSelectorStore.setState({ selectedModels: {}, selectedProviders: {} });
+  useClassyModelSelectorStore.setState({
+    selectedModels: {},
+    selectedProviders: {},
+  });
   useModelPickerStyleStore.getState().setStyle("grouped");
 });
 
 it.each([
-  { style: "grouped", provider: GenerationProvider.Midjourney, label: "Midjourney" },
-  { style: "flat", provider: GenerationProvider.Midjourney, label: "Midjourney" },
-  { style: "grouped", provider: GenerationProvider.Artcraft, label: "ArtCraft" },
+  {
+    style: "grouped",
+    provider: GenerationProvider.Midjourney,
+    label: "Midjourney",
+  },
+  {
+    style: "flat",
+    provider: GenerationProvider.Midjourney,
+    label: "Midjourney",
+  },
+  {
+    style: "grouped",
+    provider: GenerationProvider.Artcraft,
+    label: "ArtCraft",
+  },
 ] as const)(
   "selects both Midjourney v8 and $label from the $style picker",
   async ({ style, provider, label }) => {
     if (provider === GenerationProvider.Artcraft) {
       useClassyModelSelectorStore
         .getState()
-        .setSelectedProvider(PAGE, MIDJOURNEY_MODEL.id, GenerationProvider.Midjourney);
+        .setSelectedProvider(
+          PAGE,
+          MIDJOURNEY_MODEL.id,
+          GenerationProvider.Midjourney,
+        );
     }
     const user = await openProviderPicker(style);
 
@@ -73,13 +97,19 @@ it.each([
     // the grouped submenu before the provider's click handler could run.
     await user.click(screen.getByRole("button", { name: new RegExp(label) }));
 
-    expect(useClassyModelSelectorStore.getState().selectedModels[PAGE]).toBe(MIDJOURNEY_MODEL);
+    expect(useClassyModelSelectorStore.getState().selectedModels[PAGE]).toBe(
+      MIDJOURNEY_MODEL,
+    );
     expect(
-      useClassyModelSelectorStore.getState().selectedProviders[PAGE]?.[MIDJOURNEY_MODEL.id],
+      useClassyModelSelectorStore.getState().selectedProviders[PAGE]?.[
+        MIDJOURNEY_MODEL.id
+      ],
     ).toBe(provider);
     await waitFor(() => expect(screen.queryByText("Select Model")).toBeNull());
     expect(
-      screen.getByRole("button", { name: new RegExp(MIDJOURNEY_MODEL.selectorName) }),
+      screen.getByRole("button", {
+        name: new RegExp(MIDJOURNEY_MODEL.selectorName),
+      }),
     ).toBeTruthy();
   },
 );
@@ -91,9 +121,13 @@ it("still dismisses the grouped picker on an outside press without changing sele
 
   await waitFor(() => expect(screen.queryByText("Select Model")).toBeNull());
   expect(screen.queryByText("Select Provider")).toBeNull();
-  expect(useClassyModelSelectorStore.getState().selectedModels[PAGE]).toBe(INITIAL_MODEL);
+  expect(useClassyModelSelectorStore.getState().selectedModels[PAGE]).toBe(
+    INITIAL_MODEL,
+  );
   expect(
-    useClassyModelSelectorStore.getState().selectedProviders[PAGE]?.[MIDJOURNEY_MODEL.id],
+    useClassyModelSelectorStore.getState().selectedProviders[PAGE]?.[
+      MIDJOURNEY_MODEL.id
+    ],
   ).toBe(GenerationProvider.Artcraft);
 });
 
@@ -107,11 +141,17 @@ async function openProviderPicker(style: "grouped" | "flat") {
     </>,
   );
 
-  await user.click(screen.getByRole("button", { name: new RegExp(INITIAL_MODEL.selectorName) }));
+  await user.click(
+    screen.getByRole("button", {
+      name: new RegExp(INITIAL_MODEL.selectorName),
+    }),
+  );
   if (style === "grouped") {
     await user.click(screen.getByText("Midjourney", { exact: true }));
   }
-  await user.hover(await screen.findByText(MIDJOURNEY_MODEL.selectorName, { exact: true }));
+  await user.hover(
+    await screen.findByText(MIDJOURNEY_MODEL.selectorName, { exact: true }),
+  );
   await screen.findByRole("button", { name: /Midjourney/ });
   return user;
 }

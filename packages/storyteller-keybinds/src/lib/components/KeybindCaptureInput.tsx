@@ -46,7 +46,9 @@ export function KeybindCaptureInput({
       )}
     >
       {capturing ? (
-        <span className="text-[12px] font-medium">Press a key… (Esc to cancel)</span>
+        <span className="text-[12px] font-medium">
+          Press a key… (Esc to cancel)
+        </span>
       ) : (
         <KbdBindings bindings={bindings} />
       )}

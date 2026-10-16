@@ -29,7 +29,11 @@ export async function listAllThreads(
   for (let page = 0; page < maxPages; page++) {
     const { threads, nextCursor } = normalizeThreads(
       // oxlint-disable-next-line no-await-in-loop -- each page needs the previous cursor
-      await rpc("thread/list", { ...(cursor ? { cursor } : {}), limit: 100, archived }),
+      await rpc("thread/list", {
+        ...(cursor ? { cursor } : {}),
+        limit: 100,
+        archived,
+      }),
     );
     all.push(...threads);
     if (!nextCursor || nextCursor === cursor) break;
@@ -64,11 +68,16 @@ export function HistoryPanel({
   useEffect(() => {
     void listAllThreads(rpc, 10, archived)
       .then(setThreads)
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)))
+      .catch((e: unknown) =>
+        setError(e instanceof Error ? e.message : String(e)),
+      )
       .finally(() => setLoading(false));
   }, [rpc, archived]);
 
-  const groups = useMemo(() => groupByDate(filterThreads(threads, query)), [threads, query]);
+  const groups = useMemo(
+    () => groupByDate(filterThreads(threads, query)),
+    [threads, query],
+  );
 
   const share = async (thread: ThreadSummary) => {
     try {
@@ -136,7 +145,10 @@ export function HistoryPanel({
         </p>
       )}
       {notice && (
-        <p aria-live="polite" className="m-0 text-body-medium text-on-surface-variant">
+        <p
+          aria-live="polite"
+          className="m-0 text-body-medium text-on-surface-variant"
+        >
           {notice}
         </p>
       )}
@@ -155,7 +167,9 @@ export function HistoryPanel({
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {loading ? (
-          <p className="m-0 p-2 text-body-medium text-on-surface-variant">Loading threads...</p>
+          <p className="m-0 p-2 text-body-medium text-on-surface-variant">
+            Loading threads...
+          </p>
         ) : groups.length === 0 ? (
           <p className="m-0 p-2 text-body-medium text-on-surface-variant">
             {query
@@ -165,7 +179,9 @@ export function HistoryPanel({
         ) : (
           groups.map((group) => (
             <div key={group.key} className="mb-2">
-              <h3 className="m-0 px-2 py-1 text-label-large text-primary">{group.label}</h3>
+              <h3 className="m-0 px-2 py-1 text-label-large text-primary">
+                {group.label}
+              </h3>
               <ul className="m-0 list-none p-0">
                 {group.threads.map((thread) => (
                   <li
@@ -181,7 +197,10 @@ export function HistoryPanel({
                       {thread.title}
                     </button>
                     {archived ? (
-                      <Button variant="tonal" onClick={() => void restore(thread)}>
+                      <Button
+                        variant="tonal"
+                        onClick={() => void restore(thread)}
+                      >
                         Restore
                       </Button>
                     ) : confirming === thread.id ? (
@@ -194,7 +213,10 @@ export function HistoryPanel({
                         >
                           <Icon name="close" size={18} />
                         </Button>
-                        <Button variant="tonal" onClick={() => void remove(thread)}>
+                        <Button
+                          variant="tonal"
+                          onClick={() => void remove(thread)}
+                        >
                           Archive
                         </Button>
                       </>

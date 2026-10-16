@@ -40,13 +40,17 @@ describe("status / network classification", () => {
     expect(isTransientNetworkError({ code: "ETIMEDOUT" })).toBe(true);
     expect(isTransientNetworkError({ code: "ECONNRESET" })).toBe(true);
     expect(isTransientNetworkError(new Error("fetch failed"))).toBe(true);
-    expect(isTransientNetworkError(new Error("connection timed out"))).toBe(true);
+    expect(isTransientNetworkError(new Error("connection timed out"))).toBe(
+      true,
+    );
     expect(isTransientNetworkError(new Error("bad request"))).toBe(false);
     expect(isTransientNetworkError(null)).toBe(false);
   });
 
   test("defaultIsRetryable honours LlmError flags and status", () => {
-    expect(defaultIsRetryable(new LlmError("x", { retryable: true }))).toBe(true);
+    expect(defaultIsRetryable(new LlmError("x", { retryable: true }))).toBe(
+      true,
+    );
     expect(defaultIsRetryable(new LlmError("x", { status: 503 }))).toBe(true);
     expect(defaultIsRetryable(new LlmError("x", { status: 400 }))).toBe(false);
     expect(defaultIsRetryable(new LlmError("x"))).toBe(false);
@@ -171,7 +175,12 @@ describe("withRetry", () => {
         if (calls < 2) throw new Error("plain error normally non-retryable");
         return "done";
       },
-      { retries: 3, sleep: noSleep, random: zeroRandom, isRetryable: () => true },
+      {
+        retries: 3,
+        sleep: noSleep,
+        random: zeroRandom,
+        isRetryable: () => true,
+      },
     );
     expect(calls).toBe(2);
   });

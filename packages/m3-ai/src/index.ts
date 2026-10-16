@@ -54,7 +54,11 @@ export { InlineWorkerCard } from "./InlineWorkerCard";
 export type { InlineWorkerCardProps } from "./InlineWorkerCard";
 export { InlineBranchCard } from "./InlineBranchCard";
 export type { InlineBranchCardProps } from "./InlineBranchCard";
-export { ModelSelector, ModelOptionList, groupModelsByProvider } from "./ModelSelector";
+export {
+  ModelSelector,
+  ModelOptionList,
+  groupModelsByProvider,
+} from "./ModelSelector";
 export type { ModelSelectorProps, ModelOptionListProps } from "./ModelSelector";
 export { ChatComposer } from "./ChatComposer";
 export type { ChatComposerProps } from "./ChatComposer";
@@ -62,7 +66,10 @@ export type { ChatComposerProps } from "./ChatComposer";
 // Google & Gemini Desktop / Web benchmark components
 export { GoogleSpotlightBar } from "./GoogleSpotlightBar";
 export type { GoogleSpotlightBarProps } from "./GoogleSpotlightBar";
-export { GeminiAccountMenu, ComposerMoreUploadsMenu } from "./GeminiAccountMenu";
+export {
+  GeminiAccountMenu,
+  ComposerMoreUploadsMenu,
+} from "./GeminiAccountMenu";
 export type {
   GeminiAccountMenuProps,
   ComposerMoreUploadsMenuProps,
@@ -103,7 +110,11 @@ export type {
 
 // Aphrody A2A (Agent-to-Agent) Fleet UI
 export { A2APeerInspector } from "./A2APeerInspector";
-export type { A2APeerInspectorProps, AgentPeer, SendEnvelopePayload } from "./A2APeerInspector";
+export type {
+  A2APeerInspectorProps,
+  AgentPeer,
+  SendEnvelopePayload,
+} from "./A2APeerInspector";
 export { A2ATaskTimeline } from "./A2ATaskTimeline";
 export type { A2ATaskTimelineProps, TimelineStep } from "./A2ATaskTimeline";
 
@@ -147,11 +158,20 @@ export type {
   StreamChatOptions,
 } from "./openaiChatStream";
 export { useOpenAIChat } from "./useOpenAIChat";
-export type { UseOpenAIChatOptions, UseOpenAIChatResult } from "./useOpenAIChat";
+export type {
+  UseOpenAIChatOptions,
+  UseOpenAIChatResult,
+} from "./useOpenAIChat";
 export { ConversationList, filterConversations } from "./ConversationList";
-export type { ConversationListProps, ConversationSummary } from "./ConversationList";
+export type {
+  ConversationListProps,
+  ConversationSummary,
+} from "./ConversationList";
 export { ModelUnavailable, clampProgress } from "./ModelUnavailable";
-export type { ModelAvailabilityPhase, ModelUnavailableProps } from "./ModelUnavailable";
+export type {
+  ModelAvailabilityPhase,
+  ModelUnavailableProps,
+} from "./ModelUnavailable";
 export {
   CitationChip,
   CitationList,

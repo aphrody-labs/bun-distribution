@@ -15,7 +15,8 @@ export const BULK_LIMIT = 20;
 
 export function chunk<T>(items: readonly T[], size: number): T[][] {
   const out: T[][] = [];
-  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  for (let i = 0; i < items.length; i += size)
+    out.push(items.slice(i, i + size));
   return out;
 }
 
@@ -33,7 +34,9 @@ export function namesFromLines(text: string): string[] {
 
 /** Liste en ligne `a,b,c` (ou une par ligne si elle contient des retours à la ligne). */
 export function namesFromInline(text: string): string[] {
-  const parts = text.includes("\n") ? namesFromLines(text) : text.split(",").map((s) => s.trim());
+  const parts = text.includes("\n")
+    ? namesFromLines(text)
+    : text.split(",").map((s) => s.trim());
   return parts.filter(Boolean);
 }
 
@@ -57,17 +60,23 @@ async function readIfFile(path: string): Promise<string | undefined> {
     return await readFile(path, "utf8");
   } catch (error) {
     const code = (error as { code?: string }).code;
-    if (code === "ENOENT" || code === "ENOTDIR" || code === "ENAMETOOLONG") return undefined;
+    if (code === "ENOENT" || code === "ENOTDIR" || code === "ENAMETOOLONG")
+      return undefined;
     if (code === "EISDIR")
-      throw new UsageError(`${path} est un dossier : indiquez un fichier de noms.`);
-    throw new UsageError(`Impossible de lire ${path} : ${(error as Error).message}`);
+      throw new UsageError(
+        `${path} est un dossier : indiquez un fichier de noms.`,
+      );
+    throw new UsageError(
+      `Impossible de lire ${path} : ${(error as Error).message}`,
+    );
   }
 }
 
 /** `--participants` : chemin d'un fichier (un nom par ligne) ou liste `"a,b,c"`. */
 export async function readParticipants(source: string): Promise<string[]> {
   const fileText = await readIfFile(source);
-  const names = fileText === undefined ? namesFromInline(source) : namesFromLines(fileText);
+  const names =
+    fileText === undefined ? namesFromInline(source) : namesFromLines(fileText);
   assertUnique(names);
   return names;
 }
@@ -110,7 +119,10 @@ export interface SeedResult {
 }
 
 /** Applique l'ordre du fichier de seeding ; les participants non listés passent après, dans leur ordre d'origine. */
-export function seedBy(names: readonly string[], ranking: readonly string[]): SeedResult {
+export function seedBy(
+  names: readonly string[],
+  ranking: readonly string[],
+): SeedResult {
   const byKey = new Map(names.map((n) => [n.toLocaleLowerCase(), n]));
   const ordered: string[] = [];
   const unknown: string[] = [];
@@ -124,12 +136,19 @@ export function seedBy(names: readonly string[], ranking: readonly string[]): Se
       ordered.push(real);
     }
   }
-  for (const name of names) if (!used.has(name.toLocaleLowerCase())) ordered.push(name);
-  return { entries: ordered.map((name, index) => ({ name, seed: index + 1 })), unknown };
+  for (const name of names)
+    if (!used.has(name.toLocaleLowerCase())) ordered.push(name);
+  return {
+    entries: ordered.map((name, index) => ({ name, seed: index + 1 })),
+    unknown,
+  };
 }
 
 /** Mélange de Fisher-Yates (le générateur est injectable pour des tests déterministes). */
-export function shuffle<T>(items: readonly T[], random: () => number = Math.random): T[] {
+export function shuffle<T>(
+  items: readonly T[],
+  random: () => number = Math.random,
+): T[] {
   const out = [...items];
   for (let i = out.length - 1; i > 0; i -= 1) {
     const j = Math.floor(random() * (i + 1));
@@ -143,5 +162,8 @@ export function shuffleSeeds(
   names: readonly string[],
   random: () => number = Math.random,
 ): SeedEntry[] {
-  return shuffle(names, random).map((name, index) => ({ name, seed: index + 1 }));
+  return shuffle(names, random).map((name, index) => ({
+    name,
+    seed: index + 1,
+  }));
 }

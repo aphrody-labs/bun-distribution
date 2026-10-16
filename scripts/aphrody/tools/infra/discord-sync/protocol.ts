@@ -8,7 +8,14 @@
 //   ```
 // Aucun secret n'est jamais encodé dans un message.
 export const PROTOCOL = "APHRODY-SYNC/1";
-export const KINDS = ["state", "event", "request", "report", "agreement", "ack"] as const;
+export const KINDS = [
+  "state",
+  "event",
+  "request",
+  "report",
+  "agreement",
+  "ack",
+] as const;
 export type Kind = (typeof KINDS)[number];
 export const ACK_EMOJI = "✅";
 export const MAX_CONTENT = 1900;
@@ -55,9 +62,11 @@ export function encode(env: Envelope, text: string): string {
   const json = JSON.stringify(env);
   const head = `${PROTOCOL} ${env.kind} ${env.type}`;
   const fixed = head.length + json.length + 2 * FENCE.length + 8;
-  if (fixed > MAX_CONTENT) throw new Error(`message trop long (${fixed} > ${MAX_CONTENT})`);
+  if (fixed > MAX_CONTENT)
+    throw new Error(`message trop long (${fixed} > ${MAX_CONTENT})`);
   const room = MAX_CONTENT - fixed;
-  const body = text.length > room ? `${text.slice(0, Math.max(0, room - 1))}…` : text;
+  const body =
+    text.length > room ? `${text.slice(0, Math.max(0, room - 1))}…` : text;
   return `${head}\n${body}\n${FENCE}json\n${json}\n${FENCE}`;
 }
 
@@ -71,7 +80,8 @@ export function decode(content: string): Envelope | null {
   if (!m) return null;
   try {
     const env = JSON.parse(m[1]!) as Envelope;
-    if (env.v !== 1 || !KINDS.includes(env.kind) || typeof env.id !== "string") return null;
+    if (env.v !== 1 || !KINDS.includes(env.kind) || typeof env.id !== "string")
+      return null;
     return env;
   } catch {
     return null;
@@ -166,7 +176,9 @@ export function parseContainers(raw: string): Record<string, string> {
   for (const item of raw.split(/\s+/)) {
     const at = item.indexOf("=");
     if (at <= 0) continue;
-    out[item.slice(0, at)] = containerState(item.slice(at + 1).replaceAll("_", " "));
+    out[item.slice(0, at)] = containerState(
+      item.slice(at + 1).replaceAll("_", " "),
+    );
   }
   return out;
 }
@@ -204,7 +216,13 @@ export function diff(
         events.push({
           type: "member.offline",
           text: `${m.id} hors ligne (aucun handshake wg1 récent, pas de tunnel inverse).`,
-          data: { member: m.id, wg: m.wg, reverse: m.reverse, ageS: m.ageS, onlineSince: since },
+          data: {
+            member: m.id,
+            wg: m.wg,
+            reverse: m.reverse,
+            ageS: m.ageS,
+            onlineSince: since,
+          },
         });
       }
     }
@@ -236,7 +254,10 @@ export function diff(
             text: `${host}: conteneur ${name} démarré (${st}).`,
             data: { host, container: name, state: st },
           });
-        else if (was !== st && (st === "unhealthy" || was === "unhealthy" || st === "restarting"))
+        else if (
+          was !== st &&
+          (st === "unhealthy" || was === "unhealthy" || st === "restarting")
+        )
           events.push({
             type:
               st === "unhealthy" || st === "restarting"
@@ -278,8 +299,10 @@ export function diff(
 
 // --- rendu du message d'état -----------------------------------------------------------------------------------
 
-const block = (lines: string[]) => [FENCE, lines.join("\n") || "-", FENCE].join("\n");
-const pad = (s: string, n: number) => (s.length >= n ? s : s + " ".repeat(n - s.length));
+const block = (lines: string[]) =>
+  [FENCE, lines.join("\n") || "-", FENCE].join("\n");
+const pad = (s: string, n: number) =>
+  s.length >= n ? s : s + " ".repeat(n - s.length);
 
 export function humanAge(s: number | null): string {
   if (s === null) return "jamais";
@@ -294,8 +317,15 @@ export function renderStatus(
   state: SyncState,
 ): { content: string; embed: Record<string, unknown> } {
   const compact = {
-    members: snap.members.map((m) => ({ id: m.id, online: m.online, ageS: m.ageS, open: m.open })),
-    failed: Object.fromEntries(Object.entries(snap.hosts).map(([h, s]) => [h, s.failed.length])),
+    members: snap.members.map((m) => ({
+      id: m.id,
+      online: m.online,
+      ageS: m.ageS,
+      open: m.open,
+    })),
+    failed: Object.fromEntries(
+      Object.entries(snap.hosts).map(([h, s]) => [h, s.failed.length]),
+    ),
   };
   const env: Envelope = {
     v: 1,
@@ -305,7 +335,10 @@ export function renderStatus(
     at: snap.at,
     data: compact,
   };
-  const content = encode(env, "Etat du réseau privé wg1 (édité chaque minute).");
+  const content = encode(
+    env,
+    "Etat du réseau privé wg1 (édité chaque minute).",
+  );
   const rows = snap.members.map((m) => {
     const st = m.online ? "EN LIGNE" : "HORS LIGNE";
     const via = m.wg ? "wg1" : m.reverse ? "inverse" : "-";
@@ -317,7 +350,9 @@ export function renderStatus(
   );
   const hosts = Object.entries(snap.hosts).map(([h, s]) => {
     const names = Object.entries(s.containers);
-    const bad = names.filter(([, v]) => v !== "up").map(([k, v]) => `${k}:${v}`);
+    const bad = names
+      .filter(([, v]) => v !== "up")
+      .map(([k, v]) => `${k}:${v}`);
     const f = s.facts;
     const res = [
       f.load && `load ${f.load.split(" ")[0]}`,
@@ -329,7 +364,10 @@ export function renderStatus(
     const tail = s.factsAt ? ` (sonde ${s.factsAt.slice(11, 16)}Z)` : "";
     return `${pad(h, 9)} conteneurs ${names.length}${bad.length ? ` [${bad.join(" ")}]` : ""} | échecs ${s.failed.length ? s.failed.join(" ") : "0"}${res ? ` | ${res}` : ""}${tail}`;
   });
-  const total = Object.values(snap.hosts).reduce((n, s) => n + Object.keys(s.containers).length, 0);
+  const total = Object.values(snap.hosts).reduce(
+    (n, s) => n + Object.keys(s.containers).length,
+    0,
+  );
   const pending = Object.values(state.pendingAcks);
   const embed = {
     title: "Réseau privé wg1 (10.200.77.0/24)",

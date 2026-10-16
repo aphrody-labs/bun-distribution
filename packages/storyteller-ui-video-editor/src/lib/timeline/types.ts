@@ -65,11 +65,7 @@ export interface EffectTrack extends BaseTrack {
 }
 
 export type TimelineTrack =
-  | VideoTrack
-  | TextTrack
-  | AudioTrack
-  | GraphicTrack
-  | EffectTrack;
+  VideoTrack | TextTrack | AudioTrack | GraphicTrack | EffectTrack;
 
 export type OverlayTrack = VideoTrack | TextTrack | GraphicTrack | EffectTrack;
 
@@ -209,8 +205,7 @@ export type VisualElement = Extract<
 export type CreateUploadAudioElement = Omit<UploadAudioElement, "id">;
 export type CreateLibraryAudioElement = Omit<LibraryAudioElement, "id">;
 export type CreateAudioElement =
-  | CreateUploadAudioElement
-  | CreateLibraryAudioElement;
+  CreateUploadAudioElement | CreateLibraryAudioElement;
 export type CreateVideoElement = Omit<VideoElement, "id">;
 export type CreateImageElement = Omit<ImageElement, "id">;
 export type CreateTextElement = Omit<TextElement, "id">;

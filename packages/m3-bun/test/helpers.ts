@@ -17,13 +17,18 @@ export function tmp(prefix = "m3-bun-test-"): string {
 /** A copy of the fixture app inside the repository (so workspace packages resolve), removed by `cleanup()`. */
 export function fixtureCopy(): string {
   const dir = mkdtempSync(join(import.meta.dir, "fixtures", ".copy-"));
-  cpSync(FIXTURE, dir, { recursive: true, filter: (src) => !/\/(dist|bin|release|node_modules|\.copy-[^/]*)(\/|$)/.test(src) });
+  cpSync(FIXTURE, dir, {
+    recursive: true,
+    filter: (src) =>
+      !/\/(dist|bin|release|node_modules|\.copy-[^/]*)(\/|$)/.test(src),
+  });
   made.push(dir);
   return dir;
 }
 
 export function cleanup(): void {
-  for (const dir of made.splice(0)) rmSync(dir, { recursive: true, force: true });
+  for (const dir of made.splice(0))
+    rmSync(dir, { recursive: true, force: true });
 }
 
 /** A port that is free right now. */

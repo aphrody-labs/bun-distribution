@@ -14,9 +14,9 @@ const suite = available ? describe : describe.skip;
 
 describe("runtime SDK without the artifact", () => {
   it("explains how to obtain the library when it is missing", () => {
-    expect(() => Runtime.load({ libraryPath: "/nonexistent/libaphrody_ffi.so" })).toThrow(
-      /cargo build --profile runtime/,
-    );
+    expect(() =>
+      Runtime.load({ libraryPath: "/nonexistent/libaphrody_ffi.so" }),
+    ).toThrow(/cargo build --profile runtime/);
   });
 });
 
@@ -29,7 +29,12 @@ suite("runtime SDK against the precompiled library", () => {
     expect(info.abi).toBe(`${runtime.abi.major}.${runtime.abi.minor}`);
     expect(info.panic_recovery).toBe(true);
     expect(runtime.capabilities()).toEqual(
-      expect.arrayContaining(["system.stats", "bench.compute", "process.supervise", "http.probe"]),
+      expect.arrayContaining([
+        "system.stats",
+        "bench.compute",
+        "process.supervise",
+        "http.probe",
+      ]),
     );
   });
 
@@ -37,7 +42,8 @@ suite("runtime SDK against the precompiled library", () => {
     using runtime = Runtime.load();
     const stats = runtime.systemStats();
     const expected =
-      { darwin: "macos", win32: "windows" }[process.platform as string] ?? process.platform;
+      { darwin: "macos", win32: "windows" }[process.platform as string] ??
+      process.platform;
     expect(stats.os).toBe(expected);
     expect(stats.timestamp_ms).toBeGreaterThan(0);
   });
@@ -147,7 +153,10 @@ suite("process supervision (runtime:process)", () => {
     using runtime = Runtime.load();
     using child = runtime.spawn({
       program: "sh",
-      args: ["-c", 'test -z "$YOLO_SDK_INHERITED" && test "$YOLO_SDK_ADDED" = 1'],
+      args: [
+        "-c",
+        'test -z "$YOLO_SDK_INHERITED" && test "$YOLO_SDK_ADDED" = 1',
+      ],
       env: { YOLO_SDK_ADDED: "1", YOLO_SDK_INHERITED: undefined },
       stdio: "null",
     });
@@ -157,7 +166,11 @@ suite("process supervision (runtime:process)", () => {
 
   unix("stops a process group gracefully and reports the signal", () => {
     using runtime = Runtime.load();
-    using child = runtime.spawn({ program: "sh", args: ["-c", "sleep 60 & wait"], stdio: "null" });
+    using child = runtime.spawn({
+      program: "sh",
+      args: ["-c", "sleep 60 & wait"],
+      stdio: "null",
+    });
     Bun.sleepSync(100);
     expect(child.status().running).toBe(true);
     const status = child.stop(2000);
@@ -171,73 +184,109 @@ suite("process supervision (runtime:process)", () => {
       using runtime = Runtime.load();
       const server = Bun.serve({ port: 0, fetch: () => new Response("ok") });
       try {
-        using child = runtime.spawn({ program: "sleep", args: ["30"], stdio: "null" });
+        using child = runtime.spawn({
+          program: "sleep",
+          args: ["30"],
+          stdio: "null",
+        });
         expect(
-          await child.waitForHttp({ port: server.port as number, path: "/", timeoutMs: 5000 }),
+          await child.waitForHttp({
+            port: server.port as number,
+            path: "/",
+            timeoutMs: 5000,
+          }),
         ).toBe(200);
       } finally {
         await server.stop(true);
       }
-      using dying = runtime.spawn({ program: "sh", args: ["-c", "exit 1"], stdio: "null" });
-      await expect(dying.waitForHttp({ port: 9, timeoutMs: 5000 })).rejects.toBeInstanceOf(
-        ProcessExitedError,
-      );
+      using dying = runtime.spawn({
+        program: "sh",
+        args: ["-c", "exit 1"],
+        stdio: "null",
+      });
+      await expect(
+        dying.waitForHttp({ port: 9, timeoutMs: 5000 }),
+      ).rejects.toBeInstanceOf(ProcessExitedError);
     },
   );
 
   unix("waitForHttp honors timeouts and AbortSignal", async () => {
     using runtime = Runtime.load();
-    using child = runtime.spawn({ program: "sleep", args: ["30"], stdio: "null" });
-    await expect(child.waitForHttp({ port: 9, timeoutMs: 150 })).rejects.toThrow(/not ready/);
+    using child = runtime.spawn({
+      program: "sleep",
+      args: ["30"],
+      stdio: "null",
+    });
+    await expect(
+      child.waitForHttp({ port: 9, timeoutMs: 150 }),
+    ).rejects.toThrow(/not ready/);
     const controller = new AbortController();
     setTimeout(() => controller.abort(new Error("stop")), 30);
     await expect(
-      child.waitForHttp({ port: 9, timeoutMs: 5000, signal: controller.signal }),
+      child.waitForHttp({
+        port: 9,
+        timeoutMs: 5000,
+        signal: controller.signal,
+      }),
     ).rejects.toThrow("stop");
   });
 
-  unix("captures stdout and stderr and waits for the first stdout line", async () => {
-    using runtime = Runtime.load();
-    using child = runtime.spawn({
-      program: "sh",
-      args: ["-c", "echo ws://127.0.0.1:1/devtools/browser; echo boom >&2; sleep 30"],
-      stdio: "capture",
-    });
-    expect(await child.waitForStdoutLine({ timeoutMs: 5000 })).toBe(
-      "ws://127.0.0.1:1/devtools/browser",
-    );
-    expect(child.takeStdout()).toBe("");
-    for (let i = 0; i < 100 && !child.stderrTail().includes("boom"); i++) Bun.sleepSync(10);
-    expect(child.stderrTail()).toContain("boom");
-    expect(child.stderrTail()).toContain("boom"); // peek does not clear
-    expect(child.takeStderr()).toContain("boom");
-    expect(child.takeStderr()).toBe(""); // draining clears
-  });
+  unix(
+    "captures stdout and stderr and waits for the first stdout line",
+    async () => {
+      using runtime = Runtime.load();
+      using child = runtime.spawn({
+        program: "sh",
+        args: [
+          "-c",
+          "echo ws://127.0.0.1:1/devtools/browser; echo boom >&2; sleep 30",
+        ],
+        stdio: "capture",
+      });
+      expect(await child.waitForStdoutLine({ timeoutMs: 5000 })).toBe(
+        "ws://127.0.0.1:1/devtools/browser",
+      );
+      expect(child.takeStdout()).toBe("");
+      for (let i = 0; i < 100 && !child.stderrTail().includes("boom"); i++)
+        Bun.sleepSync(10);
+      expect(child.stderrTail()).toContain("boom");
+      expect(child.stderrTail()).toContain("boom"); // peek does not clear
+      expect(child.takeStderr()).toContain("boom");
+      expect(child.takeStderr()).toBe(""); // draining clears
+    },
+  );
 
-  unix("lossless output preserves binary bursts beyond the old 64 KiB tail", async () => {
-    using runtime = Runtime.load();
-    using child = runtime.spawn({
-      program: process.execPath,
-      args: [
-        "--eval",
-        "await Promise.all([Bun.write(Bun.stdout, new Uint8Array(200000).fill(255)), Bun.write(Bun.stderr, new Uint8Array([0, 254, 128]))]);",
-      ],
-      stdio: "capture-lossless",
-    });
-    const chunks: Uint8Array[] = [];
-    const output = await child.collectOutput({
-      timeoutMs: 5000,
-      onStderr: (bytes) => chunks.push(bytes),
-    });
-    expect(Buffer.concat(chunks)).toEqual(Buffer.from([0, 254, 128]));
-    expect(output.status).toMatchObject({ running: false, exitCode: 0, signal: 0 });
-    expect(output.stdout).toEqual(new Uint8Array(200000).fill(255));
-    expect(output.stderr).toEqual(new Uint8Array([0, 254, 128]));
-    expect(child.outputComplete()).toBe(true);
-    // Native buffers were copied and released; another drain cannot invalidate returned bytes.
-    expect(child.takeStdoutBytes()).toHaveLength(0);
-    expect(output.stdout[199999]).toBe(255);
-  });
+  unix(
+    "lossless output preserves binary bursts beyond the old 64 KiB tail",
+    async () => {
+      using runtime = Runtime.load();
+      using child = runtime.spawn({
+        program: process.execPath,
+        args: [
+          "--eval",
+          "await Promise.all([Bun.write(Bun.stdout, new Uint8Array(200000).fill(255)), Bun.write(Bun.stderr, new Uint8Array([0, 254, 128]))]);",
+        ],
+        stdio: "capture-lossless",
+      });
+      const chunks: Uint8Array[] = [];
+      const output = await child.collectOutput({
+        timeoutMs: 5000,
+        onStderr: (bytes) => chunks.push(bytes),
+      });
+      expect(Buffer.concat(chunks)).toEqual(Buffer.from([0, 254, 128]));
+      expect(output.status).toMatchObject({
+        running: false,
+        exitCode: 0,
+        signal: 0,
+      });
+      expect(output.stdout).toEqual(new Uint8Array(200000).fill(255));
+      expect(output.stderr).toEqual(new Uint8Array([0, 254, 128]));
+      expect(child.outputComplete()).toBe(true);
+      // Native buffers were copied and released; another drain cannot invalidate returned bytes.
+      expect(child.takeStdoutBytes()).toHaveLength(0);
+      expect(output.stdout[199999]).toBe(255);
+    },
+  );
 
   unix("lossless budget overflow rejects and stops the process", async () => {
     using runtime = Runtime.load();
@@ -250,70 +299,112 @@ suite("process supervision (runtime:process)", () => {
       stdio: "capture-lossless",
       maxOutputBytes: 100000,
     });
-    await expect(child.collectOutput()).rejects.toMatchObject({ status: Status.OutputLimit });
+    await expect(child.collectOutput()).rejects.toMatchObject({
+      status: Status.OutputLimit,
+    });
     expect(child.status().running).toBe(false);
     expect(child.outputComplete()).toBe(true);
   });
 
-  unix("collectOutput stops the owned process on timeout and abort", async () => {
-    using runtime = Runtime.load();
-    using timed = runtime.spawn({ program: "sleep", args: ["60"], stdio: "capture-lossless" });
-    await expect(timed.collectOutput({ timeoutMs: 30 })).rejects.toMatchObject({
-      status: Status.Timeout,
-    });
-    expect(timed.status().running).toBe(false);
-    using aborted = runtime.spawn({ program: "sleep", args: ["60"], stdio: "capture-lossless" });
-    const controller = new AbortController();
-    const reason = new Error("caller stopped collection");
-    setTimeout(() => controller.abort(reason), 30);
-    await expect(aborted.collectOutput({ signal: controller.signal })).rejects.toBe(reason);
-    expect(aborted.status().running).toBe(false);
-    expect(aborted.outputComplete()).toBe(true);
-  });
+  unix(
+    "collectOutput stops the owned process on timeout and abort",
+    async () => {
+      using runtime = Runtime.load();
+      using timed = runtime.spawn({
+        program: "sleep",
+        args: ["60"],
+        stdio: "capture-lossless",
+      });
+      await expect(
+        timed.collectOutput({ timeoutMs: 30 }),
+      ).rejects.toMatchObject({
+        status: Status.Timeout,
+      });
+      expect(timed.status().running).toBe(false);
+      using aborted = runtime.spawn({
+        program: "sleep",
+        args: ["60"],
+        stdio: "capture-lossless",
+      });
+      const controller = new AbortController();
+      const reason = new Error("caller stopped collection");
+      setTimeout(() => controller.abort(reason), 30);
+      await expect(
+        aborted.collectOutput({ signal: controller.signal }),
+      ).rejects.toBe(reason);
+      expect(aborted.status().running).toBe(false);
+      expect(aborted.outputComplete()).toBe(true);
+    },
+  );
 
   unix("rejects invalid lossless budgets before spawning", () => {
     using runtime = Runtime.load();
     for (const maxOutputBytes of [0, -1, 1.5, 64 * 1024 * 1024 + 1, NaN]) {
       expect(() =>
-        runtime.spawn({ program: "true", stdio: "capture-lossless", maxOutputBytes }),
+        runtime.spawn({
+          program: "true",
+          stdio: "capture-lossless",
+          maxOutputBytes,
+        }),
       ).toThrow(RangeError);
     }
-    expect(() => runtime.spawn({ program: "true", stdio: "capture", maxOutputBytes: 100 })).toThrow(
-      RangeError,
-    );
+    expect(() =>
+      runtime.spawn({ program: "true", stdio: "capture", maxOutputBytes: 100 }),
+    ).toThrow(RangeError);
   });
 
-  unix("repeated runtime unload joins capture workers with a live child", () => {
-    for (let index = 0; index < 20; index++) {
-      const runtime = Runtime.load();
-      const child = runtime.spawn({ program: "sleep", args: ["60"], stdio: "capture" });
-      const pid = child.pid;
-      runtime.close();
-      expect(() => process.kill(-pid, 0)).toThrow();
-    }
-  });
+  unix(
+    "repeated runtime unload joins capture workers with a live child",
+    () => {
+      for (let index = 0; index < 20; index++) {
+        const runtime = Runtime.load();
+        const child = runtime.spawn({
+          program: "sleep",
+          args: ["60"],
+          stdio: "capture",
+        });
+        const pid = child.pid;
+        runtime.close();
+        expect(() => process.kill(-pid, 0)).toThrow();
+      }
+    },
+  );
 
-  unix("waitForStdoutLine rejects when the process exits without a line", async () => {
-    using runtime = Runtime.load();
-    using child = runtime.spawn({ program: "sh", args: ["-c", "exit 4"], stdio: "capture" });
-    await expect(child.waitForStdoutLine({ timeoutMs: 5000 })).rejects.toBeInstanceOf(
-      ProcessExitedError,
-    );
-  });
+  unix(
+    "waitForStdoutLine rejects when the process exits without a line",
+    async () => {
+      using runtime = Runtime.load();
+      using child = runtime.spawn({
+        program: "sh",
+        args: ["-c", "exit 4"],
+        stdio: "capture",
+      });
+      await expect(
+        child.waitForStdoutLine({ timeoutMs: 5000 }),
+      ).rejects.toBeInstanceOf(ProcessExitedError);
+    },
+  );
 
-  unix("stopAsync keeps the event loop responsive and waitForExit resolves", async () => {
-    using runtime = Runtime.load();
-    using child = runtime.spawn({ program: "sh", args: ["-c", "sleep 60 & wait"], stdio: "null" });
-    await Bun.sleep(100);
-    let ticks = 0;
-    const timer = setInterval(() => ticks++, 5);
-    const exited = child.waitForExit();
-    const status = await child.stopAsync(2000);
-    clearInterval(timer);
-    expect(status).toMatchObject({ running: false, signal: 15 });
-    expect(await exited).toBe(-1);
-    expect(ticks).toBeGreaterThanOrEqual(0);
-  });
+  unix(
+    "stopAsync keeps the event loop responsive and waitForExit resolves",
+    async () => {
+      using runtime = Runtime.load();
+      using child = runtime.spawn({
+        program: "sh",
+        args: ["-c", "sleep 60 & wait"],
+        stdio: "null",
+      });
+      await Bun.sleep(100);
+      let ticks = 0;
+      const timer = setInterval(() => ticks++, 5);
+      const exited = child.waitForExit();
+      const status = await child.stopAsync(2000);
+      clearInterval(timer);
+      expect(status).toMatchObject({ running: false, signal: 15 });
+      expect(await exited).toBe(-1);
+      expect(ticks).toBeGreaterThanOrEqual(0);
+    },
+  );
 
   unix("waitForHttp can require a successful status", async () => {
     using runtime = Runtime.load();
@@ -323,7 +414,11 @@ suite("process supervision (runtime:process)", () => {
       fetch: () => new Response("x", { status: ++hits < 3 ? 503 : 200 }),
     });
     try {
-      using child = runtime.spawn({ program: "sleep", args: ["30"], stdio: "null" });
+      using child = runtime.spawn({
+        program: "sleep",
+        args: ["30"],
+        stdio: "null",
+      });
       const code = await child.waitForHttp({
         port: server.port as number,
         timeoutMs: 5000,
@@ -338,7 +433,11 @@ suite("process supervision (runtime:process)", () => {
 
   unix("closing the runtime stops its processes", () => {
     const runtime = Runtime.load();
-    const child = runtime.spawn({ program: "sleep", args: ["60"], stdio: "null" });
+    const child = runtime.spawn({
+      program: "sleep",
+      args: ["60"],
+      stdio: "null",
+    });
     const pid = child.pid;
     runtime.close();
     expect(() => process.kill(-pid, 0)).toThrow();
@@ -349,18 +448,45 @@ suite("process supervision (runtime:process)", () => {
     expect(await processes.probeHttp("127.0.0.1", 9)).toBeUndefined();
   });
 
-  unix("the SDK-owned shared supervisor has room for processes and readiness probes", async () => {
-    const { processes } = await import("../../runtime/src/modules");
-    using first = processes.spawn({ program: "sleep", args: ["60"], stdio: "null" });
-    using second = processes.spawn({ program: "sleep", args: ["60"], stdio: "null" });
-    using third = processes.spawn({ program: "sleep", args: ["60"], stdio: "null" });
-    using fourth = processes.spawn({ program: "sleep", args: ["60"], stdio: "null" });
-    using fifth = processes.spawn({ program: "sleep", args: ["60"], stdio: "null" });
-    expect(await processes.probeHttp("127.0.0.1", 9, "/", 20)).toBeUndefined();
-    expect([first, second, third, fourth, fifth].every((child) => child.status().running)).toBe(
-      true,
-    );
-  });
+  unix(
+    "the SDK-owned shared supervisor has room for processes and readiness probes",
+    async () => {
+      const { processes } = await import("../../runtime/src/modules");
+      using first = processes.spawn({
+        program: "sleep",
+        args: ["60"],
+        stdio: "null",
+      });
+      using second = processes.spawn({
+        program: "sleep",
+        args: ["60"],
+        stdio: "null",
+      });
+      using third = processes.spawn({
+        program: "sleep",
+        args: ["60"],
+        stdio: "null",
+      });
+      using fourth = processes.spawn({
+        program: "sleep",
+        args: ["60"],
+        stdio: "null",
+      });
+      using fifth = processes.spawn({
+        program: "sleep",
+        args: ["60"],
+        stdio: "null",
+      });
+      expect(
+        await processes.probeHttp("127.0.0.1", 9, "/", 20),
+      ).toBeUndefined();
+      expect(
+        [first, second, third, fourth, fifth].every(
+          (child) => child.status().running,
+        ),
+      ).toBe(true);
+    },
+  );
 
   it("reports spawn failures as structured errors", () => {
     using runtime = Runtime.load();
@@ -388,7 +514,9 @@ suite("process lifetime across runtime close", () => {
     try {
       const pending = runtime.probeHttp("127.0.0.1", server.port!, "/", 100);
       runtime.close();
-      await expect(pending).rejects.toMatchObject({ status: Status.InvalidHandle });
+      await expect(pending).rejects.toMatchObject({
+        status: Status.InvalidHandle,
+      });
     } finally {
       runtime.close();
       await server.stop(true);
@@ -399,11 +527,17 @@ suite("process lifetime across runtime close", () => {
     "closing a runtime during collection rejects without calling unloaded native code",
     async () => {
       const runtime = Runtime.load();
-      using child = runtime.spawn({ program: "sleep", args: ["60"], stdio: "capture-lossless" });
+      using child = runtime.spawn({
+        program: "sleep",
+        args: ["60"],
+        stdio: "capture-lossless",
+      });
       const pending = child.collectOutput();
       runtime.close();
       expect(runtime.closed).toBe(true);
-      await expect(pending).rejects.toMatchObject({ status: Status.InvalidHandle });
+      await expect(pending).rejects.toMatchObject({
+        status: Status.InvalidHandle,
+      });
       expect(() => child.status()).toThrow(RuntimeError);
       expect(() => child.takeStdoutBytes()).toThrow(RuntimeError);
       expect(() => process.kill(-child.pid, 0)).toThrow();

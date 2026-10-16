@@ -91,8 +91,10 @@ function resolveWrapper(
     const name = (variant && vm.byValue[variant]) || vm.default;
     return { kind: "wrapper", name };
   }
-  if (SIMPLE_COMPONENTS[muiComp]) return { kind: "wrapper", name: SIMPLE_COMPONENTS[muiComp] };
-  if (RENAME_CHILDREN[muiComp]) return { kind: "wrapper", name: RENAME_CHILDREN[muiComp] };
+  if (SIMPLE_COMPONENTS[muiComp])
+    return { kind: "wrapper", name: SIMPLE_COMPONENTS[muiComp] };
+  if (RENAME_CHILDREN[muiComp])
+    return { kind: "wrapper", name: RENAME_CHILDREN[muiComp] };
   const layout = LAYOUT_COMPONENTS[muiComp];
   if (layout) {
     return layout.startsWith("Md")
@@ -100,8 +102,10 @@ function resolveWrapper(
       : { kind: "layout", name: layout };
   }
   const slotted = SLOTTED_CHILDREN[muiComp];
-  if (slotted) return { kind: "layout", name: slotted.replaceWith, note: muiComp };
-  if (GAP_COMPONENTS[muiComp]) return { kind: "gap", note: GAP_COMPONENTS[muiComp] };
+  if (slotted)
+    return { kind: "layout", name: slotted.replaceWith, note: muiComp };
+  if (GAP_COMPONENTS[muiComp])
+    return { kind: "gap", note: GAP_COMPONENTS[muiComp] };
   return { kind: "unknown" };
 }
 
@@ -169,20 +173,32 @@ function transformProps(pass: Pass, node: JsxNode): void {
 }
 
 /** `<md-icon slot="icon">{…}</md-icon>` par expression, avec les transformations faites à l'intérieur. */
-function iconChildren(pass: Pass, icons: { start: number; end: number }[]): string {
+function iconChildren(
+  pass: Pass,
+  icons: { start: number; end: number }[],
+): string {
   return icons
-    .map((r) => `<md-icon slot="icon">{${pass.edits.render(r.start, r.end)}}</md-icon>`)
+    .map(
+      (r) =>
+        `<md-icon slot="icon">{${pass.edits.render(r.start, r.end)}}</md-icon>`,
+    )
     .join("");
 }
 
 /** L'élément a un enfant direct `<md-icon>` (ajouté ou déjà présent) : import d'effet de bord requis. */
 function hasMdIconChild(pass: Pass, node: JsxNode): boolean {
   if ((pass.addedIcons.get(node)?.length ?? 0) > 0) return true;
-  return node.children.some((c) => c.kind === "element" && jsxName(c) === "md-icon");
+  return node.children.some(
+    (c) => c.kind === "element" && jsxName(c) === "md-icon",
+  );
 }
 
 /** Point d'entree du moteur, appele par chaque transform. */
-export function runEngine(file: FileInfo, _api: unknown, options: Options & EngineOptions): string {
+export function runEngine(
+  file: FileInfo,
+  _api: unknown,
+  options: Options & EngineOptions,
+): string {
   const src = file.source;
   assertTsx(src, file.path ?? "source");
   const scan = scanTsx(src);

@@ -5,7 +5,8 @@ const TARGET = "/etc/aphrody/cloudflare/cli/cdn-origin.mjs";
 const UNIT = "/etc/systemd/system/shenron-cdn-origin.service";
 const CONFIG = "/etc/aphrody/cloudflare/origin-cdn.json";
 const SERVICE = "shenron-cdn-origin.service";
-const sha = (bytes: Uint8Array) => new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
+const sha = (bytes: Uint8Array) =>
+  new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
 
 export interface ConsumerPins {
   sourceCommit: string;
@@ -16,20 +17,27 @@ export interface ConsumerPins {
 }
 
 export function validateConsumerPins(pins: ConsumerPins) {
-  if (!/^[a-f0-9]{40}$/.test(pins.sourceCommit)) throw Error("Qualified source commit required");
+  if (!/^[a-f0-9]{40}$/.test(pins.sourceCommit))
+    throw Error("Qualified source commit required");
   for (const name of [
     "beforeCodeSha256",
     "candidateCodeSha256",
     "unitSha256",
     "configSha256",
   ] as const)
-    if (!/^[a-f0-9]{64}$/.test(pins[name])) throw Error("Complete qualified SHA256 pins required");
+    if (!/^[a-f0-9]{64}$/.test(pins[name]))
+      throw Error("Complete qualified SHA256 pins required");
   if (pins.beforeCodeSha256 === pins.candidateCodeSha256)
     throw Error("Distinct qualified consumer required");
 }
 
 export function assertConsumerFile(
-  info: { uid: number; mode: number; isFile(): boolean; isSymbolicLink(): boolean },
+  info: {
+    uid: number;
+    mode: number;
+    isFile(): boolean;
+    isSymbolicLink(): boolean;
+  },
   privateFile: boolean,
 ) {
   if (
@@ -43,12 +51,17 @@ export function assertConsumerFile(
 
 function command(args: string[]) {
   const result = Bun.spawnSync(args, { stdout: "pipe", stderr: "pipe" });
-  if (result.exitCode !== 0) throw Error(`Qualified operation failed: ${args[0]}`);
+  if (result.exitCode !== 0)
+    throw Error(`Qualified operation failed: ${args[0]}`);
   return new TextDecoder().decode(result.stdout).trim();
 }
 
 /** Product supplies one pinned artifact; Infra alone replaces the installed consumer. */
-export async function applyOriginConsumer(candidate: string, pins: ConsumerPins, apply = false) {
+export async function applyOriginConsumer(
+  candidate: string,
+  pins: ConsumerPins,
+  apply = false,
+) {
   validateConsumerPins(pins);
   if (process.platform !== "linux" || process.getuid?.() !== 0)
     throw Error("Native root Infra execution required");
@@ -60,7 +73,8 @@ export async function applyOriginConsumer(candidate: string, pins: ConsumerPins,
   )
     throw Error("Bounded regular product artifact required");
   const bytes = await Bun.file(candidate).bytes();
-  if (sha(bytes) !== pins.candidateCodeSha256) throw Error("Product artifact SHA256 mismatch");
+  if (sha(bytes) !== pins.candidateCodeSha256)
+    throw Error("Product artifact SHA256 mismatch");
   async function unchanged() {
     const inputs = [
       [TARGET, pins.beforeCodeSha256, true],
@@ -75,13 +89,27 @@ export async function applyOriginConsumer(candidate: string, pins: ConsumerPins,
       }),
     );
     if (
-      command(["systemctl", "show", SERVICE, "--value", "-p", "FragmentPath"]) !== UNIT ||
+      command([
+        "systemctl",
+        "show",
+        SERVICE,
+        "--value",
+        "-p",
+        "FragmentPath",
+      ]) !== UNIT ||
       command(["systemctl", "is-active", SERVICE]) !== "active"
     )
       throw Error("Canonical active unit required");
   }
   await unchanged();
-  const mainPid = command(["systemctl", "show", SERVICE, "--value", "-p", "MainPID"]);
+  const mainPid = command([
+    "systemctl",
+    "show",
+    SERVICE,
+    "--value",
+    "-p",
+    "MainPID",
+  ]);
   const owners: string[] = [];
   const pids = (await readdir("/proc")).filter((value) => /^\d+$/.test(value));
   let cursor = 0;
@@ -94,7 +122,9 @@ export async function applyOriginConsumer(candidate: string, pins: ConsumerPins,
     if (argv.split("\0").includes(TARGET)) owners.push(pid);
     return inspectConsumer();
   }
-  await Promise.all(Array.from({ length: Math.min(32, pids.length) }, inspectConsumer));
+  await Promise.all(
+    Array.from({ length: Math.min(32, pids.length) }, inspectConsumer),
+  );
   if (owners.length !== 1 || owners[0] !== mainPid)
     throw Error("Exactly one current service consumer required");
   if (!apply)
@@ -126,9 +156,12 @@ export async function applyOriginConsumer(candidate: string, pins: ConsumerPins,
     sha(await Bun.file(CONFIG).bytes()) !== pins.configSha256
   )
     throw Error("Unrelated runtime inputs changed");
-  const response = await fetch("http://127.0.0.1:9077/.well-known/shenron-cdn-origin.json", {
-    signal: AbortSignal.timeout(10000),
-  }).catch((error: any) => {
+  const response = await fetch(
+    "http://127.0.0.1:9077/.well-known/shenron-cdn-origin.json",
+    {
+      signal: AbortSignal.timeout(10000),
+    },
+  ).catch((error: any) => {
     if (error.code !== "ECONNREFUSED") throw error;
     return null;
   });

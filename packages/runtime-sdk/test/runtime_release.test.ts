@@ -1,9 +1,24 @@
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { hostTarget, loadArtifact, verifyArtifact } from "../../runtime/src/artifact";
-import { install, list, rollback } from "../../../../scripts/release/runtime_release";
+import {
+  hostTarget,
+  loadArtifact,
+  verifyArtifact,
+} from "../../runtime/src/artifact";
+import {
+  install,
+  list,
+  rollback,
+} from "../../../../scripts/release/runtime_release";
 
 const root = resolve(import.meta.dir, "../../../docs/aphrody");
 const packaged = join(root, "dist/runtime", hostTarget());
@@ -21,11 +36,17 @@ beforeAll(() => {
 // Windows keeps a loaded library locked until the process exits: retry, then leave it to the OS temp cleanup.
 afterAll(() => {
   if (environmentChanged) {
-    if (previousRuntimeHome === undefined) delete process.env["YOLO_RUNTIME_HOME"];
+    if (previousRuntimeHome === undefined)
+      delete process.env["YOLO_RUNTIME_HOME"];
     else process.env["YOLO_RUNTIME_HOME"] = previousRuntimeHome;
   }
   try {
-    rmSync(sandbox, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmSync(sandbox, {
+      recursive: true,
+      force: true,
+      maxRetries: 5,
+      retryDelay: 100,
+    });
   } catch {}
 });
 
@@ -49,8 +70,12 @@ suite("runtime artifact verification, install and rollback", () => {
 
   it("rejects a tampered library before loading it", () => {
     const dir = variant("0.0.1-tampered");
-    const manifest = JSON.parse(readFileSync(join(dir, "manifest.json"), "utf8"));
-    const lib = Object.keys(manifest.files).find((f) => /\.(so|dylib|dll)$/.test(f)) as string;
+    const manifest = JSON.parse(
+      readFileSync(join(dir, "manifest.json"), "utf8"),
+    );
+    const lib = Object.keys(manifest.files).find((f) =>
+      /\.(so|dylib|dll)$/.test(f),
+    ) as string;
     writeFileSync(join(dir, lib), new Uint8Array([1, 2, 3]));
     expect(() => verifyArtifact(dir)).toThrow(/Hash mismatch/);
     expect(() => loadArtifact(dir)).toThrow(/Hash mismatch/);
@@ -93,9 +118,16 @@ suite("runtime artifact verification, install and rollback", () => {
   });
 
   it("refuses to roll back without a previous artifact", () => {
-    rmSync(join(process.env["YOLO_RUNTIME_HOME"] as string, hostTarget(), "previous"), {
-      force: true,
-    });
+    rmSync(
+      join(
+        process.env["YOLO_RUNTIME_HOME"] as string,
+        hostTarget(),
+        "previous",
+      ),
+      {
+        force: true,
+      },
+    );
     expect(() => rollback()).toThrow(/Nothing to roll back/);
   });
 });

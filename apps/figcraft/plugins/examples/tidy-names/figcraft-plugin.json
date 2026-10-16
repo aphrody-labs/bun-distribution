@@ -14,8 +14,19 @@
       "id": "tidy",
       "label": "Tidy names…",
       "params": [
-        { "name": "case", "label": "Case", "type": "select", "options": ["Keep", "Title Case", "lower case", "UPPER CASE"], "default": "Keep" },
-        { "name": "children", "label": "Include layers inside", "type": "boolean", "default": true }
+        {
+          "name": "case",
+          "label": "Case",
+          "type": "select",
+          "options": ["Keep", "Title Case", "lower case", "UPPER CASE"],
+          "default": "Keep"
+        },
+        {
+          "name": "children",
+          "label": "Include layers inside",
+          "type": "boolean",
+          "default": true
+        }
       ]
     },
     { "id": "quick", "label": "Quick tidy" }

@@ -11,9 +11,32 @@ import { renderGenerated } from "../scripts/generate-types.ts";
 import { generateTypes, jsonName, parseProto } from "../scripts/proto-to-ts.ts";
 
 const repoRoot = join(import.meta.dir, "..", "..", "..", "..");
-const protoPath = join(repoRoot, "crates", "os", "kernel", "comps", "a2a-pb", "proto", "a2a.proto");
-const rustErrors = join(repoRoot, "crates", "contracts", "a2a", "src", "errors.rs");
-const rustJsonRpc = join(repoRoot, "crates", "contracts", "a2a", "src", "jsonrpc.rs");
+const protoPath = join(
+  repoRoot,
+  "crates",
+  "os",
+  "kernel",
+  "comps",
+  "a2a-pb",
+  "proto",
+  "a2a.proto",
+);
+const rustErrors = join(
+  repoRoot,
+  "crates",
+  "contracts",
+  "a2a",
+  "src",
+  "errors.rs",
+);
+const rustJsonRpc = join(
+  repoRoot,
+  "crates",
+  "contracts",
+  "a2a",
+  "src",
+  "jsonrpc.rs",
+);
 
 describe("generated types", () => {
   test("src/generated/a2a.ts is the projection of the current proto", async () => {
@@ -55,7 +78,14 @@ describe("proto reader", () => {
     expect(proto.package).toBe("demo.v1");
     const thing = proto.messages.find((m) => m.name === "Thing");
     expect(thing?.doc).toBe("A thing.");
-    expect(thing?.fields.map((f) => [f.jsonName, f.required, f.optional, f.repeated])).toEqual([
+    expect(
+      thing?.fields.map((f) => [
+        f.jsonName,
+        f.required,
+        f.optional,
+        f.repeated,
+      ]),
+    ).toEqual([
       ["thingId", true, false, false],
       ["pageSize", false, true, false],
       ["tags", false, false, true],
@@ -63,9 +93,15 @@ describe("proto reader", () => {
       ["metadata", false, false, false],
     ]);
     expect(thing?.fields[3]?.mapKey).toBe("string");
-    expect(thing?.oneofs[0]?.fields.map((f) => f.name)).toEqual(["text", "raw"]);
+    expect(thing?.oneofs[0]?.fields.map((f) => f.name)).toEqual([
+      "text",
+      "raw",
+    ]);
     expect(proto.messages[1]?.fields[0]?.deprecated).toBe(true);
-    expect(proto.enums[0]?.values.map((v) => v.name)).toEqual(["COLOR_UNSPECIFIED", "COLOR_RED"]);
+    expect(proto.enums[0]?.values.map((v) => v.name)).toEqual([
+      "COLOR_UNSPECIFIED",
+      "COLOR_RED",
+    ]);
     expect(proto.rpcs).toEqual([
       {
         name: "Do",
@@ -87,7 +123,10 @@ describe("proto reader", () => {
   });
 
   test("projects to ProtoJSON TypeScript", () => {
-    const ts = generateTypes(proto, { protoPath: "demo.proto", command: "regen" });
+    const ts = generateTypes(proto, {
+      protoPath: "demo.proto",
+      command: "regen",
+    });
     expect(ts).toContain("thingId: string;");
     expect(ts).toContain("pageSize?: number;");
     expect(ts).toContain("tags?: string[];");
@@ -108,9 +147,14 @@ describe("proto reader", () => {
   });
 
   test("an unsupported construct fails loudly", () => {
-    expect(() => parseProto("message A { message B {} }")).toThrow(/nested message/);
+    expect(() => parseProto("message A { message B {} }")).toThrow(
+      /nested message/,
+    );
     expect(() =>
-      generateTypes(parseProto("message A { Missing m = 1; }"), { protoPath: "x", command: "y" }),
+      generateTypes(parseProto("message A { Missing m = 1; }"), {
+        protoPath: "x",
+        command: "y",
+      }),
     ).toThrow(/unresolved type Missing/);
   });
 });
@@ -127,7 +171,9 @@ describe("parity with the Rust owner", () => {
   test("method names equal the `methods` module of aphrody-a2a", async () => {
     const source = await Bun.file(rustJsonRpc).text();
     const block = source.slice(source.indexOf("pub mod methods"));
-    const names = [...block.matchAll(/pub const [A-Z_]+: &str = "(\w+)";/g)].map((m) => m[1]);
+    const names = [
+      ...block.matchAll(/pub const [A-Z_]+: &str = "(\w+)";/g),
+    ].map((m) => m[1]);
     expect(new Set(names)).toEqual(new Set(A2A_METHODS));
   });
 
@@ -138,7 +184,10 @@ describe("parity with the Rust owner", () => {
       source.indexOf("/// Returns the reason string"),
     );
     const rust = new Map(
-      [...block.matchAll(/pub const ([A-Z_]+): i32 = (-?\d+);/g)].map((m) => [m[1], Number(m[2])]),
+      [...block.matchAll(/pub const ([A-Z_]+): i32 = (-?\d+);/g)].map((m) => [
+        m[1],
+        Number(m[2]),
+      ]),
     );
     const aliases: Record<string, string> = {
       EXTENDED_AGENT_CARD_NOT_CONFIGURED: "EXTENDED_CARD_NOT_CONFIGURED",
@@ -152,7 +201,9 @@ describe("parity with the Rust owner", () => {
   test("task states are the enum of a2a.proto", async () => {
     const proto = parseProto(await Bun.file(protoPath).text());
     expect([...TASK_STATE_VALUES] as string[]).toEqual(
-      proto.enums.find((e) => e.name === "TaskState")?.values.map((v) => v.name) as string[],
+      proto.enums
+        .find((e) => e.name === "TaskState")
+        ?.values.map((v) => v.name) as string[],
     );
   });
 });

@@ -32,16 +32,28 @@ const DEFAULTS: Profile = {
 const validate: Resolver<Profile> = (values) => {
   const errors: FieldErrors<Profile> = {};
   if (values.name.trim().length < 2)
-    errors.name = { type: "minLength", message: "Enter a name with at least two characters." };
+    errors.name = {
+      type: "minLength",
+      message: "Enter a name with at least two characters.",
+    };
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email))
     errors.email = { type: "pattern", message: "Enter a valid email address." };
   if (!values.consent)
-    errors.consent = { type: "required", message: "Confirm this is local demonstration data." };
-  return Object.keys(errors).length ? { values: {}, errors } : { values, errors: {} };
+    errors.consent = {
+      type: "required",
+      message: "Confirm this is local demonstration data.",
+    };
+  return Object.keys(errors).length
+    ? { values: {}, errors }
+    : { values, errors: {} };
 };
 
 export default function Forms({ adaptive }: PageProps) {
-  const form = useForm<Profile>({ defaultValues: DEFAULTS, resolver: validate, mode: "onBlur" });
+  const form = useForm<Profile>({
+    defaultValues: DEFAULTS,
+    resolver: validate,
+    mode: "onBlur",
+  });
   const [saved, setSaved] = useState<Profile | null>(null);
   return (
     <Page
@@ -102,7 +114,11 @@ export default function Forms({ adaptive }: PageProps) {
                 description="Optional local sample text."
               />
               <SwitchField name="notifications" label="Notifications" />
-              <CheckboxField name="consent" label="These are local sample values" required />
+              <CheckboxField
+                name="consent"
+                label="These are local sample values"
+                required
+              />
               <div className="flex flex-wrap gap-3">
                 <Button type="submit">Preview profile</Button>
                 <Button
@@ -116,8 +132,13 @@ export default function Forms({ adaptive }: PageProps) {
                   Reset form
                 </Button>
               </div>
-              <p role="status" className="text-body-medium text-on-surface-variant">
-                {saved ? "Valid preview ready. No data was sent." : "No profile has been saved."}
+              <p
+                role="status"
+                className="text-body-medium text-on-surface-variant"
+              >
+                {saved
+                  ? "Valid preview ready. No data was sent."
+                  : "No profile has been saved."}
               </p>
             </form>
           </Form>

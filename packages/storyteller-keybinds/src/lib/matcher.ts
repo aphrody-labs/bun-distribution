@@ -4,7 +4,10 @@ import { Binding } from "./types";
 // binding authored with `ctrl` also fires for Cmd on macOS — the same rule the
 // 3D keymap already used.
 
-export function bindingMatchesEvent(binding: Binding, e: KeyboardEvent): boolean {
+export function bindingMatchesEvent(
+  binding: Binding,
+  e: KeyboardEvent,
+): boolean {
   if (binding.code !== e.code) return false;
   const ctrlOrMeta = e.ctrlKey || e.metaKey;
   if (!!binding.ctrl !== ctrlOrMeta) return false;
@@ -47,7 +50,12 @@ export function bindingsEqual(a: Binding, b: Binding): boolean {
 
 /** Stable string key for a binding — for conflict maps and React keys. */
 export function bindingKey(b: Binding): string {
-  return [b.ctrl ? "ctrl" : "", b.shift ? "shift" : "", b.alt ? "alt" : "", b.code]
+  return [
+    b.ctrl ? "ctrl" : "",
+    b.shift ? "shift" : "",
+    b.alt ? "alt" : "",
+    b.code,
+  ]
     .filter(Boolean)
     .join("+");
 }

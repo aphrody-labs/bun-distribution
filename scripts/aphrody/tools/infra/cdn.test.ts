@@ -4,11 +4,19 @@ import { $ } from "bun";
 import { mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { build, type Catalog, contentType, hashedName, loadCatalog, scan } from "./cdn.ts";
+import {
+  build,
+  type Catalog,
+  contentType,
+  hashedName,
+  loadCatalog,
+  scan,
+} from "./cdn.ts";
 
 async function repo(root: string, name: string, files: Record<string, string>) {
   const dir = join(root, name);
-  for (const [path, body] of Object.entries(files)) await Bun.write(join(dir, path), body);
+  for (const [path, body] of Object.entries(files))
+    await Bun.write(join(dir, path), body);
   await $`git -C ${dir} init -q && git -C ${dir} add -A`.quiet();
 }
 
@@ -34,8 +42,14 @@ describe("asset CDN", () => {
     async () => {
       const root = await mkdtemp(join(tmpdir(), "cdn-"));
       try {
-        await repo(root, "a", { "assets/logo.png": "LOGO", "assets/art.psd": "PSD" });
-        await repo(root, "b", { "assets/copy/logo.png": "LOGO", "assets/own.svg": "<svg/>" });
+        await repo(root, "a", {
+          "assets/logo.png": "LOGO",
+          "assets/art.psd": "PSD",
+        });
+        await repo(root, "b", {
+          "assets/copy/logo.png": "LOGO",
+          "assets/own.svg": "<svg/>",
+        });
         const sources = [
           { scope: "a", repo: "a", path: "assets", exclude: ["**/*.psd"] },
           { scope: "b", repo: "b", path: "assets", exclude: [] },
@@ -49,10 +63,15 @@ describe("asset CDN", () => {
         expect(problems.map((p) => p.kind)).toEqual(["cross-source-duplicate"]);
 
         const missing = await scan(
-          catalog([...sources, { scope: "c", repo: "nope", path: "assets", exclude: [] }]),
+          catalog([
+            ...sources,
+            { scope: "c", repo: "nope", path: "assets", exclude: [] },
+          ]),
           root,
         );
-        expect(missing.problems.some((p) => p.kind === "missing-source")).toBe(true);
+        expect(missing.problems.some((p) => p.kind === "missing-source")).toBe(
+          true,
+        );
       } finally {
         await rm(root, { recursive: true, force: true });
       }
@@ -65,16 +84,30 @@ describe("asset CDN", () => {
     async () => {
       const root = await mkdtemp(join(tmpdir(), "cdn-"));
       try {
-        await repo(root, "a", { "assets/fonts/x.ttf": "FONT", "assets/ui/y.webp": "IMG" });
+        await repo(root, "a", {
+          "assets/fonts/x.ttf": "FONT",
+          "assets/ui/y.webp": "IMG",
+        });
         const cat = catalog([
           { scope: "os", repo: "a", path: "assets/ui", exclude: [] },
-          { scope: "os", repo: "a", path: "assets/fonts", mount: "fonts", exclude: [] },
+          {
+            scope: "os",
+            repo: "a",
+            path: "assets/fonts",
+            mount: "fonts",
+            exclude: [],
+          },
         ]);
         const { entries } = await scan(cat, root);
         const out = join(root, "out");
         const manifest = await build(cat, entries, out);
-        expect(Object.keys(manifest.files).toSorted()).toEqual(["os/fonts/x.ttf", "os/y.webp"]);
-        expect(await Bun.file(join(out, "s/os/fonts/x.ttf")).text()).toBe("FONT");
+        expect(Object.keys(manifest.files).toSorted()).toEqual([
+          "os/fonts/x.ttf",
+          "os/y.webp",
+        ]);
+        expect(await Bun.file(join(out, "s/os/fonts/x.ttf")).text()).toBe(
+          "FONT",
+        );
         const hashed = manifest.files["os/y.webp"]!.hashed;
         expect(hashed).toBe(
           `/h/${hashedName(
@@ -97,10 +130,14 @@ describe("asset CDN", () => {
     "the real catalog is clean",
     async () => {
       const cat = await loadCatalog();
-      expect(new Set(cat.sources.map((source) => source.repo))).toEqual(new Set(["aphrody"]));
+      expect(new Set(cat.sources.map((source) => source.repo))).toEqual(
+        new Set(["aphrody"]),
+      );
       const { entries, problems } = await scan(cat);
       expect(entries.length).toBeGreaterThan(0);
-      expect(entries.some((entry) => entry.path.startsWith("fonts/"))).toBe(true);
+      expect(entries.some((entry) => entry.path.startsWith("fonts/"))).toBe(
+        true,
+      );
       expect(problems).toEqual([]);
     },
     GIT_TIMEOUT_MS,

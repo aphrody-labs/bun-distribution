@@ -21,11 +21,15 @@ import {
   type SqliteCandidate,
 } from "./probe.ts";
 
-const repo = new URL("../../../../../docs/aphrody/", import.meta.url).pathname.replace(/\/$/, "");
+const repo = new URL(
+  "../../../../../docs/aphrody/",
+  import.meta.url,
+).pathname.replace(/\/$/, "");
 const home = homedir();
 const iecode = process.env.IECODE_ROOT?.trim().replace(/\/+$/, "");
 /** Paths in the local IECODE checkout; empty when IECODE_ROOT is not set. */
-const rg = (relative: string): string[] => (iecode ? [`${iecode}/${relative}`] : []);
+const rg = (relative: string): string[] =>
+  iecode ? [`${iecode}/${relative}`] : [];
 const today = new Date().toISOString().slice(0, 10);
 const { values } = parseArgs({
   options: {
@@ -47,7 +51,11 @@ const shenron = process.env.SHENRON_ROOT?.trim() || `${repo}/../shenron`;
 
 const HOSTS: Record<string, Omit<ProbeInput, "host">> = {
   local: {
-    sqliteRoots: [...rg("apps/rg"), `${shenron}/apps`, `${home}/.aphrody/private/backups`],
+    sqliteRoots: [
+      ...rg("apps/rg"),
+      `${shenron}/apps`,
+      `${home}/.aphrody/private/backups`,
+    ],
     packageRoots: [...rg("packages/rg"), `${shenron}/packages`],
     vecExtensionDirs: [`${repo}/node_modules/sqlite-vec-linux-x64`],
   },
@@ -59,14 +67,22 @@ const HOSTS: Record<string, Omit<ProbeInput, "host">> = {
       ...remote("shenron"),
       "/var/backups/aphrody-unique",
     ],
-    packageRoots: ["/home/ubuntu/apps/rg", "/home/ubuntu/apps/shenron", ...remote("")],
+    packageRoots: [
+      "/home/ubuntu/apps/rg",
+      "/home/ubuntu/apps/shenron",
+      ...remote(""),
+    ],
     vecExtensionDirs: [
       "/home/ubuntu/apps/shenron/current/node_modules/sqlite-vec-linux-x64",
       ...remote("shenron/node_modules/sqlite-vec-linux-x64"),
     ],
   },
   dbfr: {
-    sqliteRoots: [...remote("shenron"), "/home/ubuntu/apps", "/var/backups/aphrody-unique"],
+    sqliteRoots: [
+      ...remote("shenron"),
+      "/home/ubuntu/apps",
+      "/var/backups/aphrody-unique",
+    ],
     packageRoots: [...remote(""), "/home/ubuntu/apps"],
     vecExtensionDirs: remote("shenron/node_modules/sqlite-vec-linux-x64"),
   },
@@ -82,7 +98,13 @@ async function runHost(host: string): Promise<ProbeOutput> {
   if (host === "local") return probe(input);
   const payload = new TextEncoder().encode(JSON.stringify(input)).toBase64();
   const proc = Bun.spawn(
-    ["ssh", "-o", "BatchMode=yes", host, `PROBE_INPUT=${payload} exec ~/.bun/bin/bun run -`],
+    [
+      "ssh",
+      "-o",
+      "BatchMode=yes",
+      host,
+      `PROBE_INPUT=${payload} exec ~/.bun/bin/bun run -`,
+    ],
     {
       windowsHide: true,
       stdin: probeSource,
@@ -96,7 +118,10 @@ async function runHost(host: string): Promise<ProbeOutput> {
     new Response(proc.stderr).text(),
     proc.exited,
   ]);
-  if (code !== 0) throw new Error(`${host}: probe exited ${code}: ${err.trim().slice(0, 500)}`);
+  if (code !== 0)
+    throw new Error(
+      `${host}: probe exited ${code}: ${err.trim().slice(0, 500)}`,
+    );
   return JSON.parse(out.trim().split("\n").at(-1)!) as ProbeOutput;
 }
 
@@ -104,7 +129,10 @@ const freshness = (c: SqliteCandidate): string =>
   c.newestRow && c.newestRow > c.modified ? c.newestRow : c.modified;
 
 /** Most complete first (rows), then freshest; integrity failures last. */
-function bestSqlite(all: SqliteCandidate[], domain: Domain): SqliteCandidate | undefined {
+function bestSqlite(
+  all: SqliteCandidate[],
+  domain: Domain,
+): SqliteCandidate | undefined {
   return all
     .filter((c) => c.domain === domain && !c.error)
     .toSorted(
@@ -115,11 +143,16 @@ function bestSqlite(all: SqliteCandidate[], domain: Domain): SqliteCandidate | u
     )[0];
 }
 
-function freshestPackage(all: PackageCandidate[], domain: Domain): PackageCandidate | undefined {
+function freshestPackage(
+  all: PackageCandidate[],
+  domain: Domain,
+): PackageCandidate | undefined {
   return all
     .filter((p) => p.domain === domain)
     .toSorted(
-      (a, b) => b.modified.localeCompare(a.modified) || Bun.semver.order(b.version, a.version),
+      (a, b) =>
+        b.modified.localeCompare(a.modified) ||
+        Bun.semver.order(b.version, a.version),
     )[0];
 }
 
@@ -141,15 +174,23 @@ function compareSqlite(rg: SqliteCandidate, sh: SqliteCandidate) {
     });
   return {
     sameContent: rg.sha256 === sh.sha256,
-    tablesOnlyRg: [...rgTables.keys()].filter((n) => !shTables.has(n)).toSorted(),
-    tablesOnlyShenron: [...shTables.keys()].filter((n) => !rgTables.has(n)).toSorted(),
+    tablesOnlyRg: [...rgTables.keys()]
+      .filter((n) => !shTables.has(n))
+      .toSorted(),
+    tablesOnlyShenron: [...shTables.keys()]
+      .filter((n) => !rgTables.has(n))
+      .toSorted(),
     commonTables: common,
   };
 }
 
 function comparePackages(rg: PackageCandidate, sh: PackageCandidate) {
-  const deps = new Set([...Object.keys(rg.dependencies), ...Object.keys(sh.dependencies)]);
-  const shared: { name: string; rg: string; shenron: string; same: boolean }[] = [];
+  const deps = new Set([
+    ...Object.keys(rg.dependencies),
+    ...Object.keys(sh.dependencies),
+  ]);
+  const shared: { name: string; rg: string; shenron: string; same: boolean }[] =
+    [];
   const onlyRg: string[] = [];
   const onlyShenron: string[] = [];
   for (const name of [...deps].toSorted()) {
@@ -175,11 +216,16 @@ function comparePackages(rg: PackageCandidate, sh: PackageCandidate) {
       .filter((f) => shByHash.has(f.sha256))
       .map((f) => ({ rg: f.path, shenron: shByHash.get(f.sha256)! })),
     samePathDifferentContent: rg.files
-      .filter((f) => shByPath.has(f.path) && shByPath.get(f.path)!.sha256 !== f.sha256)
+      .filter(
+        (f) =>
+          shByPath.has(f.path) && shByPath.get(f.path)!.sha256 !== f.sha256,
+      )
       .map((f) => f.path),
     sameModuleName: [
       ...new Set(
-        rg.files.map((f) => basename(f.path)).filter((b) => shBase.has(b) && /\.tsx?$/.test(b)),
+        rg.files
+          .map((f) => basename(f.path))
+          .filter((b) => shBase.has(b) && /\.tsx?$/.test(b)),
       ),
     ].toSorted(),
     declaredTables: {
@@ -190,7 +236,8 @@ function comparePackages(rg: PackageCandidate, sh: PackageCandidate) {
   };
 }
 
-const where = (c: { host: string; path?: string; dir?: string }) => `${c.host}:${c.path ?? c.dir}`;
+const where = (c: { host: string; path?: string; dir?: string }) =>
+  `${c.host}:${c.path ?? c.dir}`;
 const list = (xs: string[], max = 12) =>
   xs.length
     ? `${xs.slice(0, max).join(", ")}${xs.length > max ? ` … (+${xs.length - max})` : ""}`
@@ -201,15 +248,23 @@ const hosts = values.hosts
   .map((h) => h.trim())
   .filter(Boolean);
 const settled = await Promise.allSettled(hosts.map(runHost));
-const outputs = settled.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
+const outputs = settled.flatMap((r) =>
+  r.status === "fulfilled" ? [r.value] : [],
+);
 const failures = settled.flatMap((r, i) =>
   r.status === "rejected" ? [{ host: hosts[i]!, error: String(r.reason) }] : [],
 );
 const sqlite = outputs.flatMap((o) => o.sqlite);
 const packages = outputs.flatMap((o) => o.packages);
 
-const best = { rg: bestSqlite(sqlite, "rg"), shenron: bestSqlite(sqlite, "shenron") };
-const pkg = { rg: freshestPackage(packages, "rg"), shenron: freshestPackage(packages, "shenron") };
+const best = {
+  rg: bestSqlite(sqlite, "rg"),
+  shenron: bestSqlite(sqlite, "shenron"),
+};
+const pkg = {
+  rg: freshestPackage(packages, "rg"),
+  shenron: freshestPackage(packages, "shenron"),
+};
 const copiesOf = (c?: SqliteCandidate) =>
   c ? sqlite.filter((x) => x.sha256 === c.sha256 && x !== c).map(where) : [];
 
@@ -223,18 +278,29 @@ const report = {
   })),
   failures,
   sqlite: {
-    candidates: sqlite.map(({ tables, ...rest }) => ({ ...rest, tableCount: tables.length })),
+    candidates: sqlite.map(({ tables, ...rest }) => ({
+      ...rest,
+      tableCount: tables.length,
+    })),
     best: { rg: best.rg, shenron: best.shenron },
     identicalCopies: { rg: copiesOf(best.rg), shenron: copiesOf(best.shenron) },
-    comparison: best.rg && best.shenron ? compareSqlite(best.rg, best.shenron) : null,
+    comparison:
+      best.rg && best.shenron ? compareSqlite(best.rg, best.shenron) : null,
   },
   packages: {
-    candidates: packages.map(({ files, ...rest }) => ({ ...rest, fileCount: files.length })),
+    candidates: packages.map(({ files, ...rest }) => ({
+      ...rest,
+      fileCount: files.length,
+    })),
     freshest: {
       rg: pkg.rg && { ...pkg.rg, files: pkg.rg.files.length },
-      shenron: pkg.shenron && { ...pkg.shenron, files: pkg.shenron.files.length },
+      shenron: pkg.shenron && {
+        ...pkg.shenron,
+        files: pkg.shenron.files.length,
+      },
     },
-    comparison: pkg.rg && pkg.shenron ? comparePackages(pkg.rg, pkg.shenron) : null,
+    comparison:
+      pkg.rg && pkg.shenron ? comparePackages(pkg.rg, pkg.shenron) : null,
   },
 };
 
@@ -280,7 +346,9 @@ if (sc) {
     "",
     `Contenu identique : ${sc.sameContent ? "oui" : "non"}`,
   );
-  lines.push(`Tables seulement rg (${sc.tablesOnlyRg.length}) : ${list(sc.tablesOnlyRg)}`);
+  lines.push(
+    `Tables seulement rg (${sc.tablesOnlyRg.length}) : ${list(sc.tablesOnlyRg)}`,
+  );
   lines.push(
     `Tables seulement shenron (${sc.tablesOnlyShenron.length}) : ${list(sc.tablesOnlyShenron)}`,
   );
@@ -296,7 +364,8 @@ lines.push(
   "|---|---|---|--:|---|",
 );
 for (const p of [...packages].toSorted(
-  (a, b) => a.domain.localeCompare(b.domain) || b.modified.localeCompare(a.modified),
+  (a, b) =>
+    a.domain.localeCompare(b.domain) || b.modified.localeCompare(a.modified),
 )) {
   lines.push(
     `| ${p.domain} | ${where(p)} | ${p.name}@${p.version} | ${p.files.length} | ${p.modified.slice(0, 16)} |`,
@@ -315,7 +384,9 @@ const pc = report.packages.comparison;
 if (pc) {
   const diverging = pc.dependencies.shared.filter((d) => !d.same);
   lines.push("", "## Comparaison des deux packages db", "");
-  lines.push(`Versions : rg ${pc.versions.rg} / shenron ${pc.versions.shenron}`);
+  lines.push(
+    `Versions : rg ${pc.versions.rg} / shenron ${pc.versions.shenron}`,
+  );
   lines.push(
     `Dépendances communes (${pc.dependencies.shared.length}) : ${list(pc.dependencies.shared.map((d) => (d.same ? d.name : `${d.name} ${d.rg}≠${d.shenron}`)))}`,
   );
@@ -323,14 +394,18 @@ if (pc) {
     `Versions divergentes : ${list(diverging.map((d) => `${d.name} ${d.rg}≠${d.shenron}`))}`,
   );
   lines.push(`Dépendances seulement rg : ${list(pc.dependencies.onlyRg)}`);
-  lines.push(`Dépendances seulement shenron : ${list(pc.dependencies.onlyShenron)}`);
+  lines.push(
+    `Dépendances seulement shenron : ${list(pc.dependencies.onlyShenron)}`,
+  );
   lines.push(
     `Exports communs : ${list(pc.exports.common)} ; seulement rg : ${list(pc.exports.onlyRg)} ; seulement shenron : ${list(pc.exports.onlyShenron)}`,
   );
   lines.push(
     `Fichiers identiques (doublons de code) : ${list(pc.identicalFiles.map((f) => (f.rg === f.shenron ? f.rg : `${f.rg}=${f.shenron}`)))}`,
   );
-  lines.push(`Même chemin, contenu différent : ${list(pc.samePathDifferentContent)}`);
+  lines.push(
+    `Même chemin, contenu différent : ${list(pc.samePathDifferentContent)}`,
+  );
   lines.push(`Modules homonymes : ${list(pc.sameModuleName)}`);
   lines.push(
     `Tables déclarées : rg ${pc.declaredTables.rgCount}, shenron ${pc.declaredTables.shenronCount}, communes ${list(pc.declaredTables.common)}`,

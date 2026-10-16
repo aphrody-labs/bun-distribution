@@ -44,7 +44,9 @@ describe("loadApp", () => {
       join(dir, "m3.config.ts"),
       'import { defineM3Config } from "@aphrody/m3/config";\nexport default defineM3Config({ entry: "src/index.html" });\nexport const bun = { minify: "extreme" };\n',
     );
-    await expect(loadApp(dir)).rejects.toThrow(/minify must be none, basic or full/);
+    await expect(loadApp(dir)).rejects.toThrow(
+      /minify must be none, basic or full/,
+    );
     await Bun.write(
       join(dir, "m3.config.ts"),
       'import { defineM3Config } from "@aphrody/m3/config";\nexport default defineM3Config({ entry: "src/index.html" });\nexport const bun = { api: "src/nope.ts" };\n',
@@ -73,13 +75,17 @@ describe("helpers", () => {
   test("compile targets map to bun-<name>; unknown names throw", () => {
     expect(compileTarget("linux-x64-musl")).toBe("bun-linux-x64-musl");
     expect(compileTarget(undefined)).toBeUndefined();
-    expect(() => compileTarget("plan9-x64" as never)).toThrow(/unknown compile target/);
+    expect(() => compileTarget("plan9-x64" as never)).toThrow(
+      /unknown compile target/,
+    );
     expect(COMPILE_TARGETS).toContain("windows-x64");
   });
   test("defineM3Bun is the identity and findWorkspaceRoot finds the monorepo", () => {
     const config = { port: 1 };
     expect(defineM3Bun(config)).toBe(config);
-    expect(findWorkspaceRoot(FIXTURE)).toBe(join(import.meta.dir, "../../../.."));
+    expect(findWorkspaceRoot(FIXTURE)).toBe(
+      join(import.meta.dir, "../../../.."),
+    );
     expect(findWorkspaceRoot("/")).toBeUndefined();
   });
 });

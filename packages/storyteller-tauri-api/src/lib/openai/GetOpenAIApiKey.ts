@@ -7,7 +7,8 @@ export interface GetOpenAIApiKeySuccessResult extends CommandResult {
   };
 }
 
-export type GetOpenAIApiKeyResult = GetOpenAIApiKeySuccessResult | CommandResult;
+export type GetOpenAIApiKeyResult =
+  GetOpenAIApiKeySuccessResult | CommandResult;
 
 export const GetOpenAIApiKey = async (): Promise<GetOpenAIApiKeyResult> => {
   const result = await invoke("get_openai_api_key_command");

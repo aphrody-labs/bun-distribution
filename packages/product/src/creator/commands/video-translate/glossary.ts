@@ -49,7 +49,8 @@ const CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Hangul}]/u;
 const KATA = /\p{Script=Katakana}/u;
 const LATIN_ONLY = /^[\p{Script=Latin}\p{N}\s.'\-/&♯#!?+:_,]+$/u;
 
-const escapeRegex = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const escapeRegex = (text: string): string =>
+  text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 function latinBody(term: string): string {
   return escapeRegex(term)
@@ -71,7 +72,10 @@ export function surfaceRegex(surface: string, caseSensitive = false): RegExp {
     KATA.test(term) &&
     !CJK.test(term.replace(/[\p{Script=Katakana}ー・=\s\-.'♯A-Za-z0-9?]/gu, ""))
   ) {
-    return new RegExp(String.raw`(?<![${KATAKANA}])${escapeRegex(term)}(?![${KATAKANA}])`, "u");
+    return new RegExp(
+      String.raw`(?<![${KATAKANA}])${escapeRegex(term)}(?![${KATAKANA}])`,
+      "u",
+    );
   }
   return new RegExp(escapeRegex(term), "u");
 }
@@ -97,7 +101,10 @@ export class Glossary {
       entry,
       matchers: [
         ...entry.src.map((surface) =>
-          surfaceRegex(surface, entry.ambiguous === true && /^\p{Lu}/u.test(surface)),
+          surfaceRegex(
+            surface,
+            entry.ambiguous === true && /^\p{Lu}/u.test(surface),
+          ),
         ),
         ...(entry.re ?? []).map((source) => new RegExp(source, "iu")),
       ],
@@ -119,14 +126,20 @@ export class Glossary {
   }
 
   /** Wrong literal renderings present in the English `output` for the entries matched in `source`. */
-  violations(source: string, output: string): { entry: GlossaryEntry; bad: string }[] {
+  violations(
+    source: string,
+    output: string,
+  ): { entry: GlossaryEntry; bad: string }[] {
     const matched = new Set(this.match(source).map((entry) => entry.id));
     const found: { entry: GlossaryEntry; bad: string }[] = [];
     for (const item of this.compiled) {
       if (!matched.has(item.entry.id)) continue;
       item.avoid.forEach((re, index) => {
         if (re.test(output))
-          found.push({ entry: item.entry, bad: item.entry.avoid?.[index] ?? "" });
+          found.push({
+            entry: item.entry,
+            bad: item.entry.avoid?.[index] ?? "",
+          });
       });
     }
     return found;
@@ -137,7 +150,8 @@ export class Glossary {
     const words = new Set<string>();
     for (const entry of this.entries) {
       for (const form of [entry.en, ...(entry.alt ?? [])]) {
-        for (const word of form.toLowerCase().match(/\p{L}{2,}/gu) ?? []) words.add(word);
+        for (const word of form.toLowerCase().match(/\p{L}{2,}/gu) ?? [])
+          words.add(word);
       }
     }
     return words;
@@ -145,7 +159,9 @@ export class Glossary {
 
   /** Whether `output` contains the preferred or an accepted rendering of `entry`. */
   uses(entry: GlossaryEntry, output: string): boolean {
-    const item = this.compiled.find((candidate) => candidate.entry.id === entry.id);
+    const item = this.compiled.find(
+      (candidate) => candidate.entry.id === entry.id,
+    );
     return item ? item.accept.some((re) => re.test(output)) : false;
   }
 }
@@ -153,16 +169,22 @@ export class Glossary {
 /** Renders matched entries for the prompt, most specific (longest source form) first, capped. */
 export function renderGlossary(entries: GlossaryEntry[], limit = 32): string {
   const ranked = [...entries].toSorted(
-    (a, b) => Math.max(...b.src.map((s) => s.length)) - Math.max(...a.src.map((s) => s.length)),
+    (a, b) =>
+      Math.max(...b.src.map((s) => s.length)) -
+      Math.max(...a.src.map((s) => s.length)),
   );
   return ranked
     .slice(0, limit)
     .map((entry) => {
-      const alt = entry.alt?.length ? ` (also fine: ${entry.alt.join(", ")})` : "";
+      const alt = entry.alt?.length
+        ? ` (also fine: ${entry.alt.join(", ")})`
+        : "";
       const avoid = entry.avoid?.length
         ? ` NEVER: ${entry.avoid.map((a) => `"${a}"`).join(", ")}.`
         : "";
-      const amb = entry.ambiguous ? " Ambiguous: only when the context clearly means this." : "";
+      const amb = entry.ambiguous
+        ? " Ambiguous: only when the context clearly means this."
+        : "";
       const note = entry.note ? ` ${entry.note}` : "";
       return `- ${entry.src.slice(0, 3).join(" / ")} => "${entry.en}"${alt}.${note}${avoid}${amb}`.replace(
         /\s+/g,
@@ -184,21 +206,29 @@ export const BUILTIN_NAMES = Object.keys(BUILTIN);
 export function validateGlossary(value: unknown, label: string): GlossaryFile {
   const file = value as Partial<GlossaryFile> | null;
   if (!file || typeof file !== "object" || !Array.isArray(file.entries)) {
-    throw new UsageError(`${label}: glossaire invalide (champ "entries" manquant)`);
+    throw new UsageError(
+      `${label}: glossaire invalide (champ "entries" manquant)`,
+    );
   }
   const seen = new Set<string>();
   for (const [index, entry] of file.entries.entries()) {
     const where = `${label} entrée #${index + 1}`;
     if (!entry || typeof entry.id !== "string" || !entry.id)
       throw new UsageError(`${where}: "id" manquant`);
-    if (seen.has(entry.id)) throw new UsageError(`${label}: id en double "${entry.id}"`);
+    if (seen.has(entry.id))
+      throw new UsageError(`${label}: id en double "${entry.id}"`);
     seen.add(entry.id);
     if (typeof entry.en !== "string" || !entry.en)
       throw new UsageError(`${where} (${entry.id}): "en" manquant`);
-    if (!Array.isArray(entry.src) || (entry.src.length === 0 && !entry.re?.length)) {
+    if (
+      !Array.isArray(entry.src) ||
+      (entry.src.length === 0 && !entry.re?.length)
+    ) {
       throw new UsageError(`${where} (${entry.id}): "src" vide`);
     }
-    const stray = (entry.unverifiedSrc ?? []).filter((form) => !entry.src.includes(form));
+    const stray = (entry.unverifiedSrc ?? []).filter(
+      (form) => !entry.src.includes(form),
+    );
     if (stray.length)
       throw new UsageError(
         `${where} (${entry.id}): unverifiedSrc hors de src : ${stray.join(", ")}`,
@@ -220,7 +250,9 @@ export function validateGlossary(value: unknown, label: string): GlossaryFile {
 export function builtinGlossary(name: string): GlossaryFile {
   const file = BUILTIN[name];
   if (!file)
-    throw new UsageError(`glossaire inconnu : ${name} (intégrés : ${BUILTIN_NAMES.join(", ")})`);
+    throw new UsageError(
+      `glossaire inconnu : ${name} (intégrés : ${BUILTIN_NAMES.join(", ")})`,
+    );
   return validateGlossary(file, name);
 }
 
@@ -236,11 +268,13 @@ export async function loadGlossaries(
     }
     const handle = Bun.file(spec);
     // oxlint-disable-next-line no-await-in-loop -- glossaires lus dans l'ordre fourni : la première erreur signalée doit être celle du premier fichier fautif
-    if (!(await handle.exists())) throw new UsageError(`glossaire introuvable : ${spec}`);
+    if (!(await handle.exists()))
+      throw new UsageError(`glossaire introuvable : ${spec}`);
     // oxlint-disable-next-line no-await-in-loop -- même lecture séquentielle ordonnée que ci-dessus
     files.push(validateGlossary(JSON.parse(await handle.text()), spec));
   }
   const byId = new Map<string, GlossaryEntry>();
-  for (const file of files) for (const entry of file.entries) byId.set(entry.id, entry);
+  for (const file of files)
+    for (const entry of file.entries) byId.set(entry.id, entry);
   return { glossary: new Glossary([...byId.values()]), files };
 }

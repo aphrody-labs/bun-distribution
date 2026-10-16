@@ -18,7 +18,10 @@ interface StoryboardState {
   addBoard: () => void;
   deleteBoard: (id: string) => void;
   selectBoard: (id: string) => void;
-  updateBoard: (id: string, patch: Partial<Omit<Board, "id" | "shotNumber">>) => void;
+  updateBoard: (
+    id: string,
+    patch: Partial<Omit<Board, "id" | "shotNumber">>,
+  ) => void;
   reorderBoards: (fromIndex: number, toIndex: number) => void;
   reset: () => void;
 }
@@ -50,7 +53,9 @@ export const useStoryboardStore = create<StoryboardState>((set, get) => ({
   deleteBoard: (id) => {
     set((state) => {
       const idx = state.boards.findIndex((b) => b.id === id);
-      const remaining = syncShotNumbers(state.boards.filter((b) => b.id !== id));
+      const remaining = syncShotNumbers(
+        state.boards.filter((b) => b.id !== id),
+      );
       const nextSelected = remaining[idx] ?? remaining[idx - 1] ?? null;
       return {
         boards: remaining,

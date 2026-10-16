@@ -19,7 +19,13 @@ import { PlainField } from "@/components/editor/PlainField";
  * Shenron — ne jamais laisser croire à l'admin qu'il change d'identité.
  */
 
-type Channel = { id: string; name: string; type: number; parentId?: string; position?: number };
+type Channel = {
+  id: string;
+  name: string;
+  type: number;
+  parentId?: string;
+  position?: number;
+};
 type Message = {
   id: string;
   authorId: string;
@@ -78,8 +84,11 @@ export function BotConsole() {
   });
 
   const sendM = useMutation({
-    mutationFn: (vars: { channelId: string; content: string; persona: string }) =>
-      api.post<{ ok: boolean; url?: string }>("/discord/send", vars),
+    mutationFn: (vars: {
+      channelId: string;
+      content: string;
+      persona: string;
+    }) => api.post<{ ok: boolean; url?: string }>("/discord/send", vars),
     onSuccess: (res) => {
       setContent("");
       setSendError(null);
@@ -109,11 +118,14 @@ export function BotConsole() {
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6">
       <header>
-        <h1 className="text-4xl font-saiyan text-dbz-orange mb-2">CONSOLE BOTS</h1>
+        <h1 className="text-4xl font-saiyan text-dbz-orange mb-2">
+          CONSOLE BOTS
+        </h1>
         <p className="text-sm text-dbz-blue-light">
-          Lis les messages d'un salon et publie un message. Le bot n'a qu'un seul client Gateway :
-          quel que soit l'alias choisi, le message est publié par le compte Shenron. Les messages se
-          rafraîchissent toutes les 5&nbsp;s.
+          Lis les messages d'un salon et publie un message. Le bot n'a qu'un
+          seul client Gateway : quel que soit l'alias choisi, le message est
+          publié par le compte Shenron. Les messages se rafraîchissent toutes
+          les 5&nbsp;s.
         </p>
       </header>
 
@@ -156,7 +168,9 @@ export function BotConsole() {
       </div>
 
       {channelsQ.isError && (
-        <p className="text-sm text-rose-400">Impossible de charger les salons.</p>
+        <p className="text-sm text-rose-400">
+          Impossible de charger les salons.
+        </p>
       )}
 
       {/* Fil de messages */}
@@ -164,7 +178,8 @@ export function BotConsole() {
         <div className="flex items-center justify-between border-b border-white/10 px-4 py-2">
           <span className="flex items-center gap-2 text-sm font-bold text-white/80">
             <Diese className="h-4 w-4 text-white/50" />
-            {messagesQ.data?.channelName ?? (channelId ? "Salon" : "Aucun salon sélectionné")}
+            {messagesQ.data?.channelName ??
+              (channelId ? "Salon" : "Aucun salon sélectionné")}
           </span>
           <button
             type="button"
@@ -172,7 +187,9 @@ export function BotConsole() {
             disabled={!channelId}
             className="flex items-center gap-1 rounded-md border border-white/15 px-2 py-1 text-[12px] text-white/60 hover:border-white/40 disabled:opacity-40"
           >
-            <Rafraichir className={`h-3.5 w-3.5 ${messagesQ.isFetching ? "animate-spin" : ""}`} />
+            <Rafraichir
+              className={`h-3.5 w-3.5 ${messagesQ.isFetching ? "animate-spin" : ""}`}
+            />
             Rafraîchir
           </button>
         </div>
@@ -186,7 +203,9 @@ export function BotConsole() {
             <p className="text-sm italic text-white/50">Chargement…</p>
           )}
           {channelId && messagesQ.data?.messages.length === 0 && (
-            <p className="text-sm italic text-white/50">Aucun message récent.</p>
+            <p className="text-sm italic text-white/50">
+              Aucun message récent.
+            </p>
           )}
           {messagesQ.data?.messages.map((m) => (
             <div key={m.id} className="flex gap-2.5">
@@ -202,7 +221,9 @@ export function BotConsole() {
               )}
               <div className="min-w-0">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-semibold text-white/90">{m.authorName}</span>
+                  <span className="text-sm font-semibold text-white/90">
+                    {m.authorName}
+                  </span>
                   {m.authorBot && (
                     <span className="rounded bg-dbz-blue/30 px-1 text-[10px] font-bold uppercase text-dbz-blue-light">
                       bot
@@ -264,9 +285,13 @@ export function BotConsole() {
             <Envoyer className="h-4 w-4" />
             {sendM.isPending ? "Envoi…" : "Envoyer"}
           </button>
-          <span className="text-[12px] text-white/50">{content.length}/2000</span>
+          <span className="text-[12px] text-white/50">
+            {content.length}/2000
+          </span>
           {sendError && (
-            <span className="text-[13px] font-semibold text-rose-400">{sendError}</span>
+            <span className="text-[13px] font-semibold text-rose-400">
+              {sendError}
+            </span>
           )}
           {sentUrl && (
             <a

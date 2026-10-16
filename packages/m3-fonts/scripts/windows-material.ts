@@ -10,7 +10,14 @@
 //   bun scripts/windows-material.ts shell rollback
 import { dlopen, FFIType } from "bun:ffi";
 import windows from "bun:windows";
-import { copyFile, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  copyFile,
+  mkdir,
+  readdir,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { join } from "node:path";
 
 if (process.platform !== "win32")
@@ -26,7 +33,8 @@ const icoDir = join(baseDir, "ico");
 const rollbackFile = join(baseDir, "rollback.json");
 const fontsDir = join(localAppData, "Microsoft", "Windows", "Fonts");
 const fontKey = "HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts";
-const shellIconsKey = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Icons";
+const shellIconsKey =
+  "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Icons";
 const icoSizes = [16, 24, 32, 48, 256];
 
 const fonts = [
@@ -34,8 +42,14 @@ const fonts = [
     file: "MaterialSymbolsOutlined.ttf",
     valueName: "Material Symbols Outlined Regular (TrueType)",
   },
-  { file: "MaterialSymbolsRounded.ttf", valueName: "Material Symbols Rounded Regular (TrueType)" },
-  { file: "MaterialSymbolsSharp.ttf", valueName: "Material Symbols Sharp Regular (TrueType)" },
+  {
+    file: "MaterialSymbolsRounded.ttf",
+    valueName: "Material Symbols Rounded Regular (TrueType)",
+  },
+  {
+    file: "MaterialSymbolsSharp.ttf",
+    valueName: "Material Symbols Sharp Regular (TrueType)",
+  },
 ];
 
 const user32 = dlopen("user32.dll", {
@@ -60,7 +74,12 @@ const SHCNF_FLUSH = 0x1000;
 
 function notifyShell() {
   shell32.symbols.SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_FLUSH, 0, 0);
-  shell32.symbols.SHChangeNotify(SHCNE_UPDATEIMAGE, SHCNF_DWORD | SHCNF_FLUSH, 0xffffffff, 0);
+  shell32.symbols.SHChangeNotify(
+    SHCNE_UPDATEIMAGE,
+    SHCNF_DWORD | SHCNF_FLUSH,
+    0xffffffff,
+    0,
+  );
 }
 
 function broadcastFontChange() {
@@ -100,7 +119,10 @@ async function buildIcons(pngDir: string, outDir: string) {
     const images = [];
     for (const size of icoSizes) {
       // oxlint-disable-next-line no-await-in-loop -- sizes are read one by one: the icon set is thousands of PNGs, and a fan-out would open them all at once
-      images.push({ size, png: await Bun.file(join(pngDir, String(size), `${name}.png`)).bytes() });
+      images.push({
+        size,
+        png: await Bun.file(join(pngDir, String(size), `${name}.png`)).bytes(),
+      });
     }
     // oxlint-disable-next-line no-await-in-loop -- one .ico at a time, matching the sequential PNG reads above (bounded file handles)
     await Bun.write(join(outDir, `${name}.ico`), encodeIco(images));
@@ -133,12 +155,16 @@ async function shellApply(force: boolean) {
       `rollback déjà présent (${rollbackFile}) : relancer avec --force après rollback`,
     );
   }
-  const table: ShellEntry[] = JSON.parse(await readFile(shellTableFile, "utf8"));
+  const table: ShellEntry[] = JSON.parse(
+    await readFile(shellTableFile, "utf8"),
+  );
   const plan = table.map((entry) => {
     const icon = join(icoDir, `${entry.material}.ico`);
     return { name: String(entry.shellIndex), icon, data: `${icon},0` };
   });
-  const iconPresent = await Promise.all(plan.map((step) => Bun.file(step.icon).exists()));
+  const iconPresent = await Promise.all(
+    plan.map((step) => Bun.file(step.icon).exists()),
+  );
   const absent = plan.find((_step, index) => !iconPresent[index]);
   if (absent) throw new Error(`icône absente : ${absent.icon}`);
   const entries = plan.map((step) => {
@@ -153,29 +179,43 @@ async function shellApply(force: boolean) {
   await mkdir(baseDir, { recursive: true });
   await writeFile(
     rollbackFile,
-    JSON.stringify({ key: shellIconsKey, savedAt: new Date().toISOString(), entries }, null, 1),
+    JSON.stringify(
+      { key: shellIconsKey, savedAt: new Date().toISOString(), entries },
+      null,
+      1,
+    ),
   );
-  for (const step of plan) windows.registry.set(shellIconsKey, step.name, step.data, "REG_SZ");
+  for (const step of plan)
+    windows.registry.set(shellIconsKey, step.name, step.data, "REG_SZ");
   notifyShell();
-  console.log(JSON.stringify({ applied: plan.map((step) => step.name), rollback: rollbackFile }));
+  console.log(
+    JSON.stringify({
+      applied: plan.map((step) => step.name),
+      rollback: rollbackFile,
+    }),
+  );
 }
 
 async function shellRollback() {
   const saved = JSON.parse(await readFile(rollbackFile, "utf8"));
   for (const entry of saved.entries) {
-    if (entry.existed) windows.registry.set(saved.key, entry.name, entry.value, entry.type);
+    if (entry.existed)
+      windows.registry.set(saved.key, entry.name, entry.value, entry.type);
     else windows.registry.deleteValue(saved.key, entry.name);
   }
   notifyShell();
   await rm(rollbackFile);
   console.log(
-    JSON.stringify({ restored: saved.entries.map((entry: { name: string }) => entry.name) }),
+    JSON.stringify({
+      restored: saved.entries.map((entry: { name: string }) => entry.name),
+    }),
   );
 }
 
 const [command, sub, ...rest] = Bun.argv.slice(2);
 if (command === "icons") await buildIcons(sub, rest[0] ?? icoDir);
 else if (command === "font") await installFonts(sub);
-else if (command === "shell" && sub === "apply") await shellApply(rest.includes("--force"));
+else if (command === "shell" && sub === "apply")
+  await shellApply(rest.includes("--force"));
 else if (command === "shell" && sub === "rollback") await shellRollback();
 else throw new Error("usage: windows-material.ts icons|font|shell ...");

@@ -6,7 +6,10 @@ import { join } from "node:path";
 // (packages/interop/native/scripts/ -> repo root). material-web was merged in-tree on
 // 2026-06-01, so both the input JSON and the output Rust file live under packages/.
 const root = join(import.meta.dir, "../../../docs/aphrody");
-const jsonPath = join(root, "m3/packages/m3-codemods/data/material-symbols-names.json");
+const jsonPath = join(
+  root,
+  "m3/packages/m3-codemods/data/material-symbols-names.json",
+);
 const rustPath = join(root, "crates/ui/bun/src/symbols.rs");
 
 console.log("Reading symbols JSON from:", jsonPath);

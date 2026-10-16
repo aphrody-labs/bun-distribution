@@ -9,7 +9,11 @@ Nothing here compiles an engine. See `docs/architecture/runtime-native/RUNTIME-A
 import { Runtime } from "@aphrody/runtime-sdk";
 
 using runtime = Runtime.load(); // verified artifact, ABI negotiated first
-using child = runtime.spawn({ program: "server", args: ["--port", "8080"], stdio: "capture" });
+using child = runtime.spawn({
+  program: "server",
+  args: ["--port", "8080"],
+  stdio: "capture",
+});
 await child.waitForHttp({ port: 8080, path: "/health" });
 await child.stopAsync(2000);
 ```
@@ -30,7 +34,9 @@ using child = runtime.spawn({
   stdio: "capture-lossless",
   maxOutputBytes: 8 * 1024 * 1024, // per stream, total across all drains
 });
-const { stdout, stderr, status } = await child.collectOutput({ timeoutMs: 30_000 });
+const { stdout, stderr, status } = await child.collectOutput({
+  timeoutMs: 30_000,
+});
 // stdout/stderr are owned Uint8Arrays; arbitrary bytes survive without UTF-8 decoding.
 ```
 

@@ -15,7 +15,10 @@ export interface CacheTarget {
 type Env = Record<string, string | undefined>;
 
 /** Caches that every program regenerates by itself. Nothing here holds user documents. */
-export function catalog(env: Env, platform: NodeJS.Platform = process.platform): CacheTarget[] {
+export function catalog(
+  env: Env,
+  platform: NodeJS.Platform = process.platform,
+): CacheTarget[] {
   if (platform === "win32") return windows(env);
   return unix(env);
 }
@@ -35,7 +38,11 @@ function windows(env: Env): CacheTarget[] {
     });
   if (local) {
     out.push(
-      { id: "crash-dumps", label: "Rapports de plantage", patterns: [join(local, "CrashDumps")] },
+      {
+        id: "crash-dumps",
+        label: "Rapports de plantage",
+        patterns: [join(local, "CrashDumps")],
+      },
       {
         id: "gpu-shaders",
         label: "Caches de shaders GPU (DirectX, NVIDIA, AMD)",
@@ -65,10 +72,16 @@ function windows(env: Env): CacheTarget[] {
       {
         id: "firefox",
         label: "Cache Firefox",
-        patterns: [join(local, "Mozilla", "Firefox", "Profiles", "*", "cache2")],
+        patterns: [
+          join(local, "Mozilla", "Firefox", "Profiles", "*", "cache2"),
+        ],
         lockedBy: ["firefox"],
       },
-      { id: "pip", label: "Cache pip", patterns: [join(local, "pip", "Cache")] },
+      {
+        id: "pip",
+        label: "Cache pip",
+        patterns: [join(local, "pip", "Cache")],
+      },
       { id: "npm", label: "Cache npm", patterns: [join(local, "npm-cache")] },
     );
   }
@@ -76,17 +89,29 @@ function windows(env: Env): CacheTarget[] {
     out.push({
       id: "discord",
       label: "Cache Discord",
-      patterns: ["Cache", "Code Cache", "GPUCache"].map((d) => join(roaming, "discord", d)),
+      patterns: ["Cache", "Code Cache", "GPUCache"].map((d) =>
+        join(roaming, "discord", d),
+      ),
       lockedBy: ["discord"],
     });
   }
   if (home)
-    out.push({ id: "bun", label: "Cache Bun", patterns: [join(home, ".bun", "install", "cache")] });
+    out.push({
+      id: "bun",
+      label: "Cache Bun",
+      patterns: [join(home, ".bun", "install", "cache")],
+    });
   out.push({
     id: "adobe",
     label: "Caches Adobe (voir aussi adobe-clean)",
     patterns: cacheLocations(env).map((l) => l.pattern),
-    lockedBy: ["photoshop", "afterfx", "adobe premiere pro", "adobe media encoder", "illustrator"],
+    lockedBy: [
+      "photoshop",
+      "afterfx",
+      "adobe premiere pro",
+      "adobe media encoder",
+      "illustrator",
+    ],
   });
   return out;
 }
@@ -96,14 +121,32 @@ function unix(env: Env): CacheTarget[] {
   if (!home) return [];
   const cache = env.XDG_CACHE_HOME ?? join(home, ".cache");
   return [
-    { id: "thumbnails", label: "Miniatures", patterns: [join(cache, "thumbnails")] },
+    {
+      id: "thumbnails",
+      label: "Miniatures",
+      patterns: [join(cache, "thumbnails")],
+    },
     { id: "pip", label: "Cache pip", patterns: [join(cache, "pip")] },
-    { id: "npm", label: "Cache npm", patterns: [join(home, ".npm", "_cacache")] },
-    { id: "bun", label: "Cache Bun", patterns: [join(home, ".bun", "install", "cache")] },
+    {
+      id: "npm",
+      label: "Cache npm",
+      patterns: [join(home, ".npm", "_cacache")],
+    },
+    {
+      id: "bun",
+      label: "Cache Bun",
+      patterns: [join(home, ".bun", "install", "cache")],
+    },
     {
       id: "trash",
       label: "Corbeille",
-      patterns: [join(env.XDG_DATA_HOME ?? join(home, ".local", "share"), "Trash", "files")],
+      patterns: [
+        join(
+          env.XDG_DATA_HOME ?? join(home, ".local", "share"),
+          "Trash",
+          "files",
+        ),
+      ],
     },
   ];
 }

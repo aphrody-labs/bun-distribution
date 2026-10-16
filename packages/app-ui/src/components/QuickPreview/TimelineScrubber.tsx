@@ -62,7 +62,10 @@ export const TimelineScrubber = memo(function TimelineScrubber({
   }
 
   // Calculate which frame to show
-  const frameIndex = Math.min(Math.floor(hoverPercent * totalFrames), totalFrames - 1);
+  const frameIndex = Math.min(
+    Math.floor(hoverPercent * totalFrames),
+    totalFrames - 1,
+  );
 
   const row = Math.floor(frameIndex / grid.columns);
   const col = frameIndex % grid.columns;
@@ -81,7 +84,10 @@ export const TimelineScrubber = memo(function TimelineScrubber({
   const mouseXRelativeToControls = mouseX - sidebarWidth;
   const leftPosition = Math.max(
     10,
-    Math.min(mouseXRelativeToControls - previewWidth / 2, controlsWidth - previewWidth - 10),
+    Math.min(
+      mouseXRelativeToControls - previewWidth / 2,
+      controlsWidth - previewWidth - 10,
+    ),
   );
 
   // Format timestamp

@@ -44,8 +44,8 @@ export interface PageSceneGenerateRequest {
 
 export interface ListMediaFilesQuery {
   pageSize: number;
-  pageIndex?: number;        // user-list pagination
-  cursor?: string;           // featured-list infinite pagination
+  pageIndex?: number; // user-list pagination
+  cursor?: string; // featured-list infinite pagination
   filterEngineCategories: FilterEngineCategories[];
   filterMediaTypes?: FilterMediaType[];
 }
@@ -108,9 +108,7 @@ export interface PageSceneArtifact {
 
 export interface PageSceneAdapter {
   // Generation enqueue. Same shape as PageDrawAdapter.enqueueEditImage.
-  enqueueGeneration(
-    req: PageSceneGenerateRequest,
-  ): Promise<{ status: string }>;
+  enqueueGeneration(req: PageSceneGenerateRequest): Promise<{ status: string }>;
 
   // Scene I/O — replaces the previous engine/api_manager.ts +
   // engine/api_fetchers.ts. The host owns all HTTP / FetchProxy
@@ -124,10 +122,7 @@ export interface PageSceneAdapter {
   // switches, applyJson during loadScene). Adapters that can't honor
   // cancellation may ignore the signal — the lib's ticket guard still
   // protects state correctness.
-  fetchAsset(
-    url: string,
-    init?: { signal?: AbortSignal },
-  ): Promise<Response>;
+  fetchAsset(url: string, init?: { signal?: AbortSignal }): Promise<Response>;
 
   // Hosts. Engine builds CDN URLs (`${cdnOrigin}${bucket_path}`) and
   // API URLs (`${apiSchemeAndHost}/v1/...`); the host supplies both.
@@ -275,7 +270,10 @@ export interface PageSceneAdapter {
   // offers every destination for the media type (Edit-on-Canvas, Make-Video,
   // Recreate, Share, Download). Host resolves the CDN URL from the token and
   // renders <Lightbox>. Replaces bespoke per-destination handoffs.
-  openMediaLightbox(token: string, kind: "image" | "video"): void | Promise<void>;
+  openMediaLightbox(
+    token: string,
+    kind: "image" | "video",
+  ): void | Promise<void>;
 
   // Auth/logout — the SettingsModal in Controls3D needs a logout
   // callback. Tauri host: setLogoutStates. Web host: web auth flow.
@@ -303,9 +301,7 @@ export interface PageSceneAdapter {
   resetToOriginal?(): Promise<void> | void;
 
   // Optional event hooks — telemetry, host-side modals, tab title sync.
-  onSelectionChange?(
-    sel: { uuid: string; assetType: string } | null,
-  ): void;
+  onSelectionChange?(sel: { uuid: string; assetType: string } | null): void;
   onSceneDirty?(dirty: boolean): void;
   onError?(err: { title: string; message: string }): void;
   onSceneSaved?(token: string): void;

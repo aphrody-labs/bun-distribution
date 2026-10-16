@@ -45,9 +45,9 @@ const sortedBySelectorName = <T extends Model>(models: T[]): T[] => {
   return list;
 };
 
-const imageIcon = <ImageIcon  className="h-4 w-4" />;
-const filmIcon = <FilmIcon  className="h-4 w-4" />;
-const cubeIcon = <BoxIcon  className="h-4 w-4" />;
+const imageIcon = <ImageIcon className="h-4 w-4" />;
+const filmIcon = <FilmIcon className="h-4 w-4" />;
+const cubeIcon = <BoxIcon className="h-4 w-4" />;
 
 /**
  * Per-page model subsetting. These pages show a slice of the full model set
@@ -60,7 +60,9 @@ const cubeIcon = <BoxIcon  className="h-4 w-4" />;
  * backend-reconciled list from `useModelsStore`.
  */
 
-export const buildTextToImagePageList = (imageModels: ImageModel[]): ModelList =>
+export const buildTextToImagePageList = (
+  imageModels: ImageModel[],
+): ModelList =>
   buildItems(
     sortedBySelectorName(imageModels.filter((m) => m.canTextToImage)),
     imageIcon,
@@ -84,7 +86,9 @@ export const buildStage3dPageList = (imageModels: ImageModel[]): ModelList =>
     imageIcon,
   );
 
-export const buildImageEditorPageList = (imageModels: ImageModel[]): ModelList =>
+export const buildImageEditorPageList = (
+  imageModels: ImageModel[],
+): ModelList =>
   buildItems(
     sortedBySelectorName(imageModels.filter((m) => m.canEditImages)),
     imageIcon,
@@ -96,7 +100,9 @@ export const buildAnglesPageList = (imageModels: ImageModel[]): ModelList =>
     imageIcon,
   );
 
-export const buildImageToVideoPageList = (videoModels: VideoModel[]): ModelList =>
+export const buildImageToVideoPageList = (
+  videoModels: VideoModel[],
+): ModelList =>
   buildItems(
     // SwitchX is a VFX/background-change model with its own page; keep it
     // out of the general video selector.

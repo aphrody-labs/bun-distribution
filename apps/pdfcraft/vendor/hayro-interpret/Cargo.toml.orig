@@ -18,7 +18,7 @@ log = { workspace = true, optional = true }
 moxcms = { workspace = true }
 phf = { workspace = true, features = ["macros"] }
 skrifa = { workspace = true }
-yoke = { workspace = true, features = ["derive"]}
+yoke = { workspace = true, features = ["derive"] }
 siphasher = { workspace = true }
 bitflags = { workspace = true }
 rustc-hash = { workspace = true }

@@ -1,7 +1,6 @@
 import { Object3D, ObjectLoader } from "three";
 
 export class BoneJSONHelper {
-
   model: Object3D;
 
   constructor(model: Object3D) {
@@ -11,7 +10,10 @@ export class BoneJSONHelper {
   private findHipBone(objectGroup: Object3D[]): Object3D | undefined {
     let hipBone = undefined;
     for (const child of objectGroup) {
-      if (child.type === "Bone" && child.name.toLowerCase().includes("mixamorighips")) {
+      if (
+        child.type === "Bone" &&
+        child.name.toLowerCase().includes("mixamorighips")
+      ) {
         hipBone = child;
         break;
       }
@@ -72,5 +74,4 @@ export class BoneJSONHelper {
     const boneTree = loader.parse(boneJSON);
     this.applyBoneTree(hipBone, boneTree);
   }
-
 }

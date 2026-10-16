@@ -74,9 +74,7 @@
     "workspace": true,
     "private": true,
     "exports": 10,
-    "bin": [
-      "m3"
-    ]
+    "bin": ["m3"]
   },
   {
     "name": "@aphrody/m3-ai",
@@ -109,9 +107,7 @@
     "workspace": true,
     "private": true,
     "exports": 9,
-    "bin": [
-      "m3-bun"
-    ]
+    "bin": ["m3-bun"]
   },
   {
     "name": "@aphrody/m3-codemods",
@@ -232,9 +228,7 @@
     "workspace": true,
     "private": true,
     "exports": 6,
-    "bin": [
-      "m3-next"
-    ]
+    "bin": ["m3-next"]
   },
   {
     "name": "@aphrody/m3-next-migrate",
@@ -245,10 +239,7 @@
     "workspace": true,
     "private": true,
     "exports": 16,
-    "bin": [
-      "m3-next-migrate",
-      "next-migrate"
-    ]
+    "bin": ["m3-next-migrate", "next-migrate"]
   },
   {
     "name": "@aphrody/m3-os-themes",
@@ -259,9 +250,7 @@
     "workspace": true,
     "private": true,
     "exports": 3,
-    "bin": [
-      "m3-os-themes"
-    ]
+    "bin": ["m3-os-themes"]
   },
   {
     "name": "@aphrody/m3-primitives",
@@ -360,9 +349,7 @@
     "workspace": true,
     "private": true,
     "exports": 1,
-    "bin": [
-      "m3-svg-to-ico"
-    ]
+    "bin": ["m3-svg-to-ico"]
   },
   {
     "name": "@aphrody/nie-ui",
@@ -384,9 +371,7 @@
     "workspace": true,
     "private": false,
     "exports": 7,
-    "bin": [
-      "aphrody-scaffold"
-    ]
+    "bin": ["aphrody-scaffold"]
   },
   {
     "name": "@aphrody/web-to-tauri",
@@ -397,9 +382,7 @@
     "workspace": false,
     "private": false,
     "exports": 8,
-    "bin": [
-      "web-to-tauri"
-    ]
+    "bin": ["web-to-tauri"]
   },
   {
     "name": "@rosegriffon/ui",

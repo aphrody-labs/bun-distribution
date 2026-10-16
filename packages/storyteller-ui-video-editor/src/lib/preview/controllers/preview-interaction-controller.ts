@@ -7,11 +7,7 @@ import {
   getVisibleElementsWithBounds,
   type ElementWithBounds,
 } from "../element-bounds";
-import {
-  getHitElements,
-  hitTest,
-  resolvePreferredHit,
-} from "../hit-test";
+import { getHitElements, hitTest, resolvePreferredHit } from "../hit-test";
 import {
   SNAP_THRESHOLD_SCREEN_PIXELS,
   snapPosition,
@@ -67,9 +63,7 @@ interface DraggingGesture extends CapturedPointerState {
 }
 
 type GestureSession =
-  | { readonly kind: "idle" }
-  | PendingGesture
-  | DraggingGesture;
+  { readonly kind: "idle" } | PendingGesture | DraggingGesture;
 
 const IDLE_GESTURE: GestureSession = { kind: "idle" };
 
@@ -568,17 +562,21 @@ export class PreviewInteractionController {
       snappedPosition.y - firstElement.initialTransform.position.y;
 
     this.deps.timeline.previewElements(
-      drag.elements.map(({ trackId, elementId, initialTransform, initialParams }) => ({
-        trackId,
-        elementId,
-        updates: {
-          params: {
-            ...initialParams,
-            "transform.positionX": initialTransform.position.x + deltaSnappedX,
-            "transform.positionY": initialTransform.position.y + deltaSnappedY,
+      drag.elements.map(
+        ({ trackId, elementId, initialTransform, initialParams }) => ({
+          trackId,
+          elementId,
+          updates: {
+            params: {
+              ...initialParams,
+              "transform.positionX":
+                initialTransform.position.x + deltaSnappedX,
+              "transform.positionY":
+                initialTransform.position.y + deltaSnappedY,
+            },
           },
-        },
-      })),
+        }),
+      ),
     );
   }
 }

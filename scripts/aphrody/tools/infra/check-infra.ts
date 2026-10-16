@@ -55,9 +55,11 @@ async function checkSensitiveFiles(): Promise<void> {
     new Response(child.stdout).text(),
     new Response(child.stderr).text(),
   ]);
-  if (code !== 0) fail(`Cannot inspect tracked Infra inventory: ${stderr.trim()}`);
+  if (code !== 0)
+    fail(`Cannot inspect tracked Infra inventory: ${stderr.trim()}`);
   for (const path of stdout.split("\0").filter(Boolean))
-    if (sensitiveInventoryPath(path)) fail(`Sensitive-looking tracked Infra file: ${path}`);
+    if (sensitiveInventoryPath(path))
+      fail(`Sensitive-looking tracked Infra file: ${path}`);
 }
 
 function hasOwn(value: object, key: string): boolean {
@@ -94,14 +96,21 @@ async function main(): Promise<void> {
   for (const relative of required) {
     const path = join(repo, relative);
     try {
-      if (!(await stat(path)).isFile()) fail(`Missing required file: ${relative}`);
+      if (!(await stat(path)).isFile())
+        fail(`Missing required file: ${relative}`);
     } catch (error) {
-      if (error instanceof Error && error.message.startsWith("Missing required file:")) throw error;
+      if (
+        error instanceof Error &&
+        error.message.startsWith("Missing required file:")
+      )
+        throw error;
       fail(`Missing required file: ${relative}`);
     }
   }
 
-  await readJson<JsonObject>(join(yoloRoot, "tools/config/host/inventory/vps-source.json"));
+  await readJson<JsonObject>(
+    join(yoloRoot, "tools/config/host/inventory/vps-source.json"),
+  );
   const a2a = await readJson<{
     peers: A2aPeer[];
     protocol: { rpcPath: string; agentCardPath: string };
@@ -116,7 +125,8 @@ async function main(): Promise<void> {
 
   for (const peer of a2a.peers) {
     for (const field of ["id", "role", "transport", "endpoint"] as const) {
-      if (!peer[field]) fail(`a2a peer missing ${field}: ${peer.id ?? "<unknown>"}`);
+      if (!peer[field])
+        fail(`a2a peer missing ${field}: ${peer.id ?? "<unknown>"}`);
     }
 
     const id = peer.id!;
@@ -131,8 +141,11 @@ async function main(): Promise<void> {
 
     if (transport === "https-jsonrpc") {
       const rpcPath = peer.rpcPath ?? a2a.protocol.rpcPath;
-      const endpointPattern = new RegExp(`^https://[^/]+${escapeRegExp(rpcPath)}$`);
-      if (!endpointPattern.test(endpoint)) fail(`a2a endpoint must end with rpcPath: ${id}`);
+      const endpointPattern = new RegExp(
+        `^https://[^/]+${escapeRegExp(rpcPath)}$`,
+      );
+      if (!endpointPattern.test(endpoint))
+        fail(`a2a endpoint must end with rpcPath: ${id}`);
       if (!catalog.services.some((service) => service.id === peer.service)) {
         fail(`a2a peer service not in catalog: ${id}`);
       }
@@ -141,7 +154,9 @@ async function main(): Promise<void> {
       if (peer.status === "retired") continue;
 
       const hostname = new URL(endpoint).hostname;
-      const publicRoute = routes.routes.find((route) => route.host === hostname);
+      const publicRoute = routes.routes.find(
+        (route) => route.host === hostname,
+      );
       if (!publicRoute) fail(`a2a public host missing: ${hostname}`);
       const route =
         publicRoute.service === peer.service
@@ -153,11 +168,13 @@ async function main(): Promise<void> {
                 hasOwn(candidate, "publicHost") &&
                 candidate.publicHost === hostname,
             );
-      const routePaths = route && hasOwn(route, "paths") ? (route.paths ?? []) : [];
+      const routePaths =
+        route && hasOwn(route, "paths") ? (route.paths ?? []) : [];
       if (
         !route ||
         (routePaths.length > 0 &&
-          (!routePaths.includes(rpcPath) || !routePaths.includes(a2a.protocol.agentCardPath)))
+          (!routePaths.includes(rpcPath) ||
+            !routePaths.includes(a2a.protocol.agentCardPath)))
       ) {
         fail(`a2a nginx route missing for ${hostname}`);
       }

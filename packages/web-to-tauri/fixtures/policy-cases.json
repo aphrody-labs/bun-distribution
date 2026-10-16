@@ -5,7 +5,11 @@
     {
       "name": "system browser for other sites",
       "origins": {
-        "app": ["https://example.com", "https://*.example.com", "http://127.0.0.1:*"],
+        "app": [
+          "https://example.com",
+          "https://*.example.com",
+          "http://127.0.0.1:*"
+        ],
         "auth": ["https://accounts.google.com", "https://github.com/login/*"],
         "external": "system",
         "embeds": []
@@ -307,7 +311,10 @@
       "name": "star segment in a path pattern",
       "origins": {
         "app": [],
-        "auth": ["https://www.facebook.com/*/dialog/*", "https://*.slack.com/openid/*"],
+        "auth": [
+          "https://www.facebook.com/*/dialog/*",
+          "https://*.slack.com/openid/*"
+        ],
         "embeds": [],
         "external": "system"
       },

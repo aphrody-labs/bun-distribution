@@ -139,7 +139,9 @@ export const AudioSettingsPane = (_args: AudioSettingsPaneProps) => {
             <Select
               id="success-sound"
               value={enqueueSuccessSound}
-              onChange={(val: SelectValue) => setEnqueueSuccessSound(val as string)}
+              onChange={(val: SelectValue) =>
+                setEnqueueSuccessSound(val as string)
+              }
               options={SoundManager.OPTIONS}
               className="grow"
             />
@@ -158,7 +160,9 @@ export const AudioSettingsPane = (_args: AudioSettingsPaneProps) => {
             <Select
               id="success-sound"
               value={enqueueFailureSound}
-              onChange={(val: SelectValue) => setEnqueueFailureSound(val as string)}
+              onChange={(val: SelectValue) =>
+                setEnqueueFailureSound(val as string)
+              }
               options={SoundManager.OPTIONS}
               className="grow"
             />
@@ -208,7 +212,6 @@ export const AudioSettingsPane = (_args: AudioSettingsPaneProps) => {
             />
           </div>
         </div>
-
       </div>
     </>
   );

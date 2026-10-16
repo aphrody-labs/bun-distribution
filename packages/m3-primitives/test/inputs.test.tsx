@@ -4,8 +4,17 @@ import type { ReactElement } from "react";
 import { useForm } from "react-hook-form";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { CheckBox, CheckboxIndicator, CheckboxRoot, RadixCheckbox } from "../src/Checkbox";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../src/Collapsible";
+import {
+  CheckBox,
+  CheckboxIndicator,
+  CheckboxRoot,
+  RadixCheckbox,
+} from "../src/Checkbox";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "../src/Collapsible";
 import { ErrorMessage, errorStyles, Form, z } from "../src/forms/Form";
 import {
   Input,
@@ -85,7 +94,9 @@ describe("Input", () => {
   });
 
   test("icon accepts a Material Symbols name, upstream transparent variant still works", () => {
-    const html = render(<Input icon="mail" variant="transparent" right={<span>R</span>} />);
+    const html = render(
+      <Input icon="mail" variant="transparent" right={<span>R</span>} />,
+    );
     expect(html).toContain(">mail<");
     expect(html).toContain("border-transparent");
     expect(html).toContain(">R<");
@@ -197,7 +208,9 @@ describe("Switch", () => {
 
   test("upstream sizes still work (sm is a density step)", () => {
     expect(render(<Switch size="sm" />)).toContain("h-6 w-10");
-    expect(render(<Switch size="lg" thumbClassName="thumb-x" />)).toContain("thumb-x");
+    expect(render(<Switch size="lg" thumbClassName="thumb-x" />)).toContain(
+      "thumb-x",
+    );
   });
 });
 
@@ -249,7 +262,9 @@ describe("Select", () => {
 
   test("sizes and filled variant", () => {
     expect(selectStyles({ size: "xl" })).toContain("h-14");
-    expect(selectStyles({ variant: "filled" })).toContain("bg-surface-container-highest");
+    expect(selectStyles({ variant: "filled" })).toContain(
+      "bg-surface-container-highest",
+    );
     expect(selectStyles()).toContain("h-8");
   });
 
@@ -319,7 +334,9 @@ describe("NumberStepper", () => {
   });
 
   test("dense size", () => {
-    expect(render(<NumberStepper value={1} onChange={() => {}} size="sm" />)).toContain("h-10");
+    expect(
+      render(<NumberStepper value={1} onChange={() => {}} size="sm" />),
+    ).toContain("h-10");
   });
 });
 
@@ -370,10 +387,14 @@ describe("Resizable", () => {
 });
 
 /** Seeds the error through the `errors` option instead of mutating `formState`. */
-const NAME_REQUIRED = { name: { type: "required", message: "Name is required" } };
+const NAME_REQUIRED = {
+  name: { type: "required", message: "Name is required" },
+};
 
 function Harness({ withError }: { withError: boolean }) {
-  const form = useForm<{ name: string }>({ errors: withError ? NAME_REQUIRED : undefined });
+  const form = useForm<{ name: string }>({
+    errors: withError ? NAME_REQUIRED : undefined,
+  });
   return (
     <Form form={form}>
       <input />

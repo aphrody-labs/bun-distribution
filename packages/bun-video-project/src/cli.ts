@@ -32,7 +32,13 @@ const valued = new Set([
   "--end",
 ]);
 const flags = new Set(["--json", "--allow-offline"]);
-const globalOptions = ["--binary", "--data-dir", "--timeout-ms", "--max-output-bytes", "--json"];
+const globalOptions = [
+  "--binary",
+  "--data-dir",
+  "--timeout-ms",
+  "--max-output-bytes",
+  "--json",
+];
 
 interface Arguments {
   positional: string[];
@@ -40,7 +46,10 @@ interface Arguments {
 }
 
 function usage(): never {
-  throw new VideoLibraryError("INVALID_OPTIONS", "Invalid video arguments. Run aphrody-video help.");
+  throw new VideoLibraryError(
+    "INVALID_OPTIONS",
+    "Invalid video arguments. Run aphrody-video help.",
+  );
 }
 
 function parse(args: string[]): Arguments {
@@ -85,12 +94,17 @@ function integerOption(args: Arguments, key: string): number | undefined {
   return Number(value);
 }
 
-function allowed(args: Arguments, extra: string[], minimum: number, maximum = minimum): void {
+function allowed(
+  args: Arguments,
+  extra: string[],
+  minimum: number,
+  maximum = minimum,
+): void {
   const options = new Set([...globalOptions, ...extra]);
   if (
     args.positional.length < minimum ||
     args.positional.length > maximum ||
-    [...args.values.keys()].some(key => !options.has(key))
+    [...args.values.keys()].some((key) => !options.has(key))
   )
     usage();
 }
@@ -156,8 +170,10 @@ async function main(): Promise<number> {
       break;
     case "inspect": {
       const kind = args.positional[1] ?? "sequence";
-      if (kind === "project") result = await library.inspect(args.positional[0]!, "project");
-      else if (kind === "sequence") result = await library.inspect(args.positional[0]!, "sequence");
+      if (kind === "project")
+        result = await library.inspect(args.positional[0]!, "project");
+      else if (kind === "sequence")
+        result = await library.inspect(args.positional[0]!, "sequence");
       else usage();
       break;
     }
@@ -193,7 +209,8 @@ try {
   process.exitCode = await main();
 } catch (error) {
   if (error instanceof VideoLibraryError) {
-    if (error.result !== undefined) console.log(stringifyNativeJSON(error.result, 2));
+    if (error.result !== undefined)
+      console.log(stringifyNativeJSON(error.result, 2));
     console.error(`Aphrody / Bun: ${error.message} (${error.code})`);
     process.exitCode = error.code === "INVALID_OPTIONS" ? 2 : 1;
   } else {

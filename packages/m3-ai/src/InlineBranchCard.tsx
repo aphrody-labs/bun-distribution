@@ -6,7 +6,12 @@ import { clsx } from "clsx";
 import { AnimatePresence, motion } from "motion/react";
 import { Icon } from "@aphrody/m3-primitives";
 import { Markdown } from "./Markdown";
-import { CircularIndicator, StatusChip, expandMotion, focusRing } from "./internal";
+import {
+  CircularIndicator,
+  StatusChip,
+  expandMotion,
+  focusRing,
+} from "./internal";
 
 interface InlineBranchCardProps {
   description: string;
@@ -83,7 +88,11 @@ function InlineBranchCard({
               className="overflow-hidden"
             >
               <div className="border-t border-outline-variant px-4 py-3">
-                <Markdown content={conclusion} size="small" className="text-on-surface-variant" />
+                <Markdown
+                  content={conclusion}
+                  size="small"
+                  className="text-on-surface-variant"
+                />
               </div>
             </motion.div>
           ) : null}

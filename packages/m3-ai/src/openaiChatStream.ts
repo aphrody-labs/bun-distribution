@@ -48,7 +48,8 @@ export type ChatStreamEvent =
   | { type: "finish"; reason: string }
   | { type: "done" };
 
-export type ChatStreamErrorKind = "network" | "http" | "aborted" | "parse" | "stream";
+export type ChatStreamErrorKind =
+  "network" | "http" | "aborted" | "parse" | "stream";
 
 /** Typed failure of a chat request. `unavailable` marks a model that cannot answer right now. */
 export class ChatStreamError extends Error {
@@ -61,11 +62,15 @@ export class ChatStreamError extends Error {
     message: string,
     options: { status?: number; cause?: unknown } = {},
   ) {
-    super(message, options.cause === undefined ? undefined : { cause: options.cause });
+    super(
+      message,
+      options.cause === undefined ? undefined : { cause: options.cause },
+    );
     this.name = "ChatStreamError";
     this.kind = kind;
     this.status = options.status;
-    this.unavailable = kind === "network" || isUnavailableStatus(options.status);
+    this.unavailable =
+      kind === "network" || isUnavailableStatus(options.status);
   }
 }
 
@@ -149,16 +154,20 @@ export function parseChatCompletionChunk(payload: string): ChatStreamEvent[] {
   try {
     chunk = JSON.parse(trimmed) as RawChunk;
   } catch (cause) {
-    throw new ChatStreamError("parse", "invalid chat-completions chunk", { cause });
+    throw new ChatStreamError("parse", "invalid chat-completions chunk", {
+      cause,
+    });
   }
   if (chunk.error) {
-    const message = typeof chunk.error === "string" ? chunk.error : chunk.error.message;
+    const message =
+      typeof chunk.error === "string" ? chunk.error : chunk.error.message;
     throw new ChatStreamError("stream", message || "stream error");
   }
   const events: ChatStreamEvent[] = [];
   for (const choice of chunk.choices ?? []) {
     const delta = choice.delta;
-    if (delta?.reasoning_content) events.push({ type: "reasoning", text: delta.reasoning_content });
+    if (delta?.reasoning_content)
+      events.push({ type: "reasoning", text: delta.reasoning_content });
     if (delta?.content) events.push({ type: "content", text: delta.content });
     if (delta?.refusal) events.push({ type: "refusal", text: delta.refusal });
     for (const call of delta?.tool_calls ?? []) {
@@ -170,7 +179,8 @@ export function parseChatCompletionChunk(payload: string): ChatStreamEvent[] {
         arguments: call.function?.arguments,
       });
     }
-    if (choice.finish_reason) events.push({ type: "finish", reason: choice.finish_reason });
+    if (choice.finish_reason)
+      events.push({ type: "finish", reason: choice.finish_reason });
   }
   if (Array.isArray(chunk.citations))
     events.push({ type: "citations", citations: chunk.citations });
@@ -201,9 +211,14 @@ export function accumulateToolCall(
 }
 
 /** The request body messages, in the OpenAI wire shape. */
-export function toOpenAIMessages(messages: readonly ChatMessage[]): Record<string, unknown>[] {
+export function toOpenAIMessages(
+  messages: readonly ChatMessage[],
+): Record<string, unknown>[] {
   return messages.map((message) => {
-    const wire: Record<string, unknown> = { role: message.role, content: message.content };
+    const wire: Record<string, unknown> = {
+      role: message.role,
+      content: message.content,
+    };
     if (message.toolCalls?.length) wire.tool_calls = message.toolCalls;
     if (message.toolCallId) wire.tool_call_id = message.toolCallId;
     return wire;
@@ -255,8 +270,11 @@ export async function* streamChatCompletion(
       signal: options.signal,
     });
   } catch (cause) {
-    if (options.signal?.aborted) throw new ChatStreamError("aborted", "request aborted", { cause });
-    throw new ChatStreamError("network", "chat endpoint unreachable", { cause });
+    if (options.signal?.aborted)
+      throw new ChatStreamError("aborted", "request aborted", { cause });
+    throw new ChatStreamError("network", "chat endpoint unreachable", {
+      cause,
+    });
   }
   if (!response.ok) {
     let detail = "";
@@ -269,7 +287,8 @@ export async function* streamChatCompletion(
       status: response.status,
     });
   }
-  if (!response.body) throw new ChatStreamError("stream", "response has no body");
+  if (!response.body)
+    throw new ChatStreamError("stream", "response has no body");
 
   const queue: string[] = [];
   const parser = createSseParser((data) => queue.push(data));
@@ -335,7 +354,10 @@ function applyEvent(message: ChatMessage, event: ChatStreamEvent): ChatMessage {
     case "reasoning":
       return { ...message, reasoning: (message.reasoning ?? "") + event.text };
     case "tool_call_delta":
-      return { ...message, toolCalls: accumulateToolCall(message.toolCalls ?? [], event) };
+      return {
+        ...message,
+        toolCalls: accumulateToolCall(message.toolCalls ?? [], event),
+      };
     case "citations":
       return { ...message, citations: event.citations };
     case "refusal":
@@ -364,7 +386,9 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       return {
         ...state,
         messages: state.messages.map((message) =>
-          message.id === action.assistantId ? applyEvent(message, action.event) : message,
+          message.id === action.assistantId
+            ? applyEvent(message, action.event)
+            : message,
         ),
       };
     case "finish":
@@ -374,7 +398,10 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       // An empty assistant turn left by a failed request is dropped.
       const last = state.messages.at(-1);
       const messages =
-        last && last.role === "assistant" && !last.content && !last.toolCalls?.length
+        last &&
+        last.role === "assistant" &&
+        !last.content &&
+        !last.toolCalls?.length
           ? state.messages.slice(0, -1)
           : state.messages;
       return {

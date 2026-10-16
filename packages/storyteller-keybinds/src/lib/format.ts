@@ -4,7 +4,8 @@ import { Binding } from "./types";
 // other platforms use word modifiers joined with "+".
 
 const isMac =
-  typeof navigator !== "undefined" && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+  typeof navigator !== "undefined" &&
+  /Mac|iPod|iPhone|iPad/.test(navigator.platform);
 
 // event.code → display token.
 const CODE_LABELS: Record<string, string> = {

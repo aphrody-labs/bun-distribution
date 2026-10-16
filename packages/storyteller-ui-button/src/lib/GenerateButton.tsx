@@ -38,9 +38,7 @@ export const GenerateButton = ({
             )}
           >
             <CoinsIcon className="text-xs" />
-            <span className="text-[13px] font-bold">
-              {credits}
-            </span>
+            <span className="text-[13px] font-bold">{credits}</span>
           </div>
         </Tooltip>
       )}

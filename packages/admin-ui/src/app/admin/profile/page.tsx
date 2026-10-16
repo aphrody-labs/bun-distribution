@@ -35,7 +35,11 @@ type MemberProfile = {
   level: number;
   xp: number;
   zeni: number;
-  xpProgress: { current: number; nextLevelXp: number; nextLevel: number } | null;
+  xpProgress: {
+    current: number;
+    nextLevelXp: number;
+    nextLevel: number;
+  } | null;
   equipped: {
     card: string | null;
     badge: string | null;
@@ -46,7 +50,8 @@ type MemberProfile = {
   inventory: Array<{ type: string; key: string }>;
 };
 
-const fmt = (value: number | null | undefined) => (value ?? 0).toLocaleString("fr-FR");
+const fmt = (value: number | null | undefined) =>
+  (value ?? 0).toLocaleString("fr-FR");
 
 export default function MemberProfilesPage() {
   const [query, setQuery] = useState("");
@@ -64,7 +69,8 @@ export default function MemberProfilesPage() {
       ),
     staleTime: 30_000,
   });
-  const selectedMember = members.data?.members.find((member) => member.id === selectedId) ?? null;
+  const selectedMember =
+    members.data?.members.find((member) => member.id === selectedId) ?? null;
   const profile = useQuery({
     queryKey: ["member-profile", selectedId],
     queryFn: () => api.get<MemberProfile>(`/public/user/${selectedId}`),
@@ -80,13 +86,18 @@ export default function MemberProfilesPage() {
           <p className="text-xs font-semibold uppercase tracking-[.2em] text-dbz-orange">
             Communauté
           </p>
-          <h1 className="mt-2 font-saiyan text-4xl text-white">Profils membres</h1>
+          <h1 className="mt-2 font-saiyan text-4xl text-white">
+            Profils membres
+          </h1>
           <p className="mt-2 max-w-2xl text-sm text-white/50">
-            Recherchez un membre Discord et contrôlez sa progression DBFR depuis une fiche unique.
+            Recherchez un membre Discord et contrôlez sa progression DBFR depuis
+            une fiche unique.
           </p>
         </div>
         {members.data && (
-          <p className="text-sm text-white/40">{fmt(members.data.total)} membres sur le serveur</p>
+          <p className="text-sm text-white/40">
+            {fmt(members.data.total)} membres sur le serveur
+          </p>
         )}
       </header>
 
@@ -178,8 +189,13 @@ export default function MemberProfilesPage() {
           {!selectedMember ? (
             <div className="grid h-full min-h-80 place-items-center text-center">
               <div>
-                <UserRound className="mx-auto h-10 w-10 text-white/20" aria-hidden />
-                <h2 className="mt-4 text-lg font-semibold text-white">Sélectionnez un membre</h2>
+                <UserRound
+                  className="mx-auto h-10 w-10 text-white/20"
+                  aria-hidden
+                />
+                <h2 className="mt-4 text-lg font-semibold text-white">
+                  Sélectionnez un membre
+                </h2>
                 <p className="mt-1 text-sm text-white/35">
                   Sa progression et ses raccourcis apparaîtront ici.
                 </p>
@@ -220,7 +236,9 @@ function MemberDetail({
         />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="truncate text-2xl font-bold text-white">{member.displayName}</h2>
+            <h2 className="truncate text-2xl font-bold text-white">
+              {member.displayName}
+            </h2>
             {member.bot && (
               <span className="rounded-full bg-dbz-blue/20 px-2 py-1 text-xs text-dbz-blue-light">
                 Bot
@@ -228,7 +246,9 @@ function MemberDetail({
             )}
           </div>
           <p className="mt-1 text-sm text-white/45">@{member.username}</p>
-          <p className="mt-2 break-all font-mono text-xs text-white/30">{member.id}</p>
+          <p className="mt-2 break-all font-mono text-xs text-white/30">
+            {member.id}
+          </p>
         </div>
         <Link
           href={`/profil/${member.id}`}
@@ -245,11 +265,17 @@ function MemberDetail({
           icon={CalendarDays}
           value={
             member.joinedAt
-              ? new Date(member.joinedAt).toLocaleDateString("fr-FR", { dateStyle: "long" })
+              ? new Date(member.joinedAt).toLocaleDateString("fr-FR", {
+                  dateStyle: "long",
+                })
               : "Non renseignée"
           }
         />
-        <Info label="Rôles Discord" icon={ShieldCheck} value={fmt(member.roleIds.length)} />
+        <Info
+          label="Rôles Discord"
+          icon={ShieldCheck}
+          value={fmt(member.roleIds.length)}
+        />
       </dl>
 
       {member.bot ? (
@@ -260,23 +286,36 @@ function MemberDetail({
         <div className="mt-6 h-56 animate-pulse rounded-2xl bg-white/[.04]" />
       ) : unavailable || !profile ? (
         <p className="mt-6 rounded-xl border border-yellow-300/20 bg-yellow-300/5 p-4 text-sm text-yellow-100/70">
-          Ce membre est présent sur Discord mais n’a pas encore de progression DBFR, ou le bot ne
-          répond pas.
+          Ce membre est présent sur Discord mais n’a pas encore de progression
+          DBFR, ou le bot ne répond pas.
         </p>
       ) : (
         <>
           <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Metric label="Niveau" value={fmt(profile.level)} icon={Trophy} />
             <Metric label="XP" value={fmt(profile.xp)} icon={Sparkles} />
-            <Metric label="Zénis" value={fmt(profile.zeni)} icon={CircleDollarSign} />
-            <Metric label="Succès" value={fmt(profile.achievements.length)} icon={ShieldCheck} />
+            <Metric
+              label="Zénis"
+              value={fmt(profile.zeni)}
+              icon={CircleDollarSign}
+            />
+            <Metric
+              label="Succès"
+              value={fmt(profile.achievements.length)}
+              icon={ShieldCheck}
+            />
           </div>
           <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_240px]">
             <dl className="divide-y divide-white/10 rounded-2xl border border-white/10 bg-black/20 px-4">
               {Object.entries(profile.equipped).map(([key, value]) => (
-                <div key={key} className="flex items-center justify-between gap-3 py-3 text-sm">
+                <div
+                  key={key}
+                  className="flex items-center justify-between gap-3 py-3 text-sm"
+                >
                   <dt className="capitalize text-white/40">{key}</dt>
-                  <dd className="truncate font-semibold text-white">{value || "Non équipé"}</dd>
+                  <dd className="truncate font-semibold text-white">
+                    {value || "Non équipé"}
+                  </dd>
                 </div>
               ))}
             </dl>
@@ -334,7 +373,10 @@ function MemberListSkeleton() {
   return (
     <div className="mt-4 space-y-2" aria-label="Chargement des membres">
       {Array.from({ length: 6 }, (_, index) => (
-        <div key={index} className="h-16 animate-pulse rounded-xl bg-white/[.04]" />
+        <div
+          key={index}
+          className="h-16 animate-pulse rounded-xl bg-white/[.04]"
+        />
       ))}
     </div>
   );

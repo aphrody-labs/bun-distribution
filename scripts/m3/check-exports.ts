@@ -60,21 +60,37 @@ const SKIP_DIRS = new Set([
   "coverage",
   "out",
 ]);
-const RESOLVE_EXT = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".d.ts", ".json"];
+const RESOLVE_EXT = [
+  ".ts",
+  ".tsx",
+  ".js",
+  ".jsx",
+  ".mjs",
+  ".cjs",
+  ".mts",
+  ".d.ts",
+  ".json",
+];
 
 const readJson = (file: string) => JSON.parse(readFileSync(file, "utf8"));
 
 /** Workspace patterns of a manifest (`workspaces` array or `{ packages }`). */
 export function workspacePatterns(manifest: Record<string, any>): string[] {
   const ws = manifest.workspaces;
-  return Array.isArray(ws) ? ws : Array.isArray(ws?.packages) ? ws.packages : [];
+  return Array.isArray(ws)
+    ? ws
+    : Array.isArray(ws?.packages)
+      ? ws.packages
+      : [];
 }
 
 /** Package directories matched by workspace patterns under `root` (negations honoured). */
 export function expandWorkspaces(root: string, patterns: string[]): string[] {
   const dirs = new Set<string>();
   for (const pattern of patterns.filter((p) => !p.startsWith("!"))) {
-    for (const file of new Bun.Glob(`${pattern.replace(/\/$/, "")}/package.json`).scanSync({
+    for (const file of new Bun.Glob(
+      `${pattern.replace(/\/$/, "")}/package.json`,
+    ).scanSync({
       cwd: root,
       onlyFiles: true,
     })) {
@@ -94,7 +110,9 @@ export function expandWorkspaces(root: string, patterns: string[]): string[] {
 export function listPackages(root = REPO): Pkg[] {
   const out: Pkg[] = [];
   const rootManifest = readJson(join(root, "package.json"));
-  const members = new Set(expandWorkspaces(root, workspacePatterns(rootManifest)));
+  const members = new Set(
+    expandWorkspaces(root, workspacePatterns(rootManifest)),
+  );
   for (const group of ["packages", "apps"]) {
     const base = join(root, group);
     if (!existsSync(base)) continue;
@@ -105,9 +123,17 @@ export function listPackages(root = REPO): Pkg[] {
       const rel = `${group}/${name}`;
       const nested = existsSync(join(dir, ".git"));
       const manifest = readJson(file);
-      out.push({ dir, rel, manifest, nested, hostBound: !nested && !members.has(rel) });
+      out.push({
+        dir,
+        rel,
+        manifest,
+        nested,
+        hostBound: !nested && !members.has(rel),
+      });
       // Workspace members declared below a package (`packages/m3-next/examples/*`).
-      for (const member of [...members].filter((m) => m.startsWith(`${rel}/`)).toSorted())
+      for (const member of [...members]
+        .filter((m) => m.startsWith(`${rel}/`))
+        .toSorted())
         out.push({
           dir: join(root, member),
           rel: member,
@@ -130,13 +156,17 @@ export function listPackages(root = REPO): Pkg[] {
 
 /** Package names of the host repositories that install the host-bound packages. */
 export function hostPackageNames(
-  roots = (process.env["M3_HOST_ROOTS"] ??
+  roots = (
+    process.env["M3_HOST_ROOTS"] ??
     (process.platform === "win32"
       ? ["C:\\aphrody", "C:\\iecode", "C:\\shenron"].join(";")
-      : `${homedir()}/aphrody:/mnt/c/iecode`)).split(process.platform === "win32" ? ";" : ":"),
+      : `${homedir()}/aphrody:/mnt/c/iecode`)
+  ).split(process.platform === "win32" ? ";" : ":"),
 ): Set<string> {
   const names = new Set<string>();
-  for (const root of roots.filter((r) => r && existsSync(join(r, "package.json")))) {
+  for (const root of roots.filter(
+    (r) => r && existsSync(join(r, "package.json")),
+  )) {
     for (const dir of expandWorkspaces(
       root,
       workspacePatterns(readJson(join(root, "package.json"))),
@@ -163,7 +193,12 @@ function walk(
     if (SKIP_DIRS.has(entry.name)) continue;
     const path = join(dir, entry.name);
     // A directory with its own manifest is another package (example apps, nested workspaces).
-    if (entry.isDirectory() && existsSync(join(path, "package.json")) && path !== root) continue;
+    if (
+      entry.isDirectory() &&
+      existsSync(join(path, "package.json")) &&
+      path !== root
+    )
+      continue;
     if (entry.isDirectory()) walk(path, accept, out, root);
     else if (entry.isFile() && accept(path)) out.push(path);
   }
@@ -171,13 +206,17 @@ function walk(
 }
 
 /** Test files of a package (`*.test.*`, `*.spec.*`); a workspace root counts the tests of its members. */
-const acceptTestFile = (file: string) => /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(file);
+const acceptTestFile = (file: string) =>
+  /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(file);
 
 export function testFiles(pkg: Pkg): string[] {
-  if (workspacePatterns(pkg.manifest).length === 0) return walk(pkg.dir, acceptTestFile);
+  if (workspacePatterns(pkg.manifest).length === 0)
+    return walk(pkg.dir, acceptTestFile);
   return [
     pkg.dir,
-    ...expandWorkspaces(pkg.dir, workspacePatterns(pkg.manifest)).map((m) => join(pkg.dir, m)),
+    ...expandWorkspaces(pkg.dir, workspacePatterns(pkg.manifest)).map((m) =>
+      join(pkg.dir, m),
+    ),
   ].flatMap((d) => walk(d, acceptTestFile));
 }
 
@@ -188,14 +227,16 @@ export function exportTargets(
 ): Array<[string, string, string]> {
   if (exportsField == null) return [];
   if (typeof exportsField === "string") return [[subpath, "", exportsField]];
-  if (Array.isArray(exportsField)) return exportsField.flatMap((e) => exportTargets(e, subpath));
+  if (Array.isArray(exportsField))
+    return exportsField.flatMap((e) => exportTargets(e, subpath));
   const obj = exportsField as Record<string, unknown>;
   const keys = Object.keys(obj);
   const isSubpathMap = keys.length > 0 && keys.every((k) => k.startsWith("."));
   if (isSubpathMap) return keys.flatMap((k) => exportTargets(obj[k], k));
   return keys.flatMap((cond) =>
     exportTargets(obj[cond], subpath).map(
-      ([s, c, t]) => [s, c ? `${cond}.${c}` : cond, t] as [string, string, string],
+      ([s, c, t]) =>
+        [s, c ? `${cond}.${c}` : cond, t] as [string, string, string],
     ),
   );
 }
@@ -220,17 +261,24 @@ export function distSource(pkgDir: string, target: string): string | undefined {
 }
 
 /** Whether `target` (relative to the package) is satisfied: a file, a dist output with a source, or a wildcard directory. */
-export function targetStatus(pkg: Pkg, target: string): { ok: boolean; note?: string } {
+export function targetStatus(
+  pkg: Pkg,
+  target: string,
+): { ok: boolean; note?: string } {
   if (target.includes("*")) {
     const prefix = target.slice(0, target.indexOf("*"));
     const dir = join(pkg.dir, prefix.endsWith("/") ? prefix : dirname(prefix));
     return existsSync(dir)
       ? { ok: true }
-      : { ok: false, note: `wildcard directory ${relative(pkg.dir, dir) || "."} missing` };
+      : {
+          ok: false,
+          note: `wildcard directory ${relative(pkg.dir, dir) || "."} missing`,
+        };
   }
   const abs = join(pkg.dir, target);
   // Bun probes extensions on exports targets (`./svgs/*` -> `urls.ts`).
-  if ([abs, ...RESOLVE_EXT.map((e) => abs + e)].some((p) => existsSync(p))) return { ok: true };
+  if ([abs, ...RESOLVE_EXT.map((e) => abs + e)].some((p) => existsSync(p)))
+    return { ok: true };
   if (/^\.?\/?dist\//.test(target)) {
     if (!pkg.manifest.scripts?.build)
       return { ok: false, note: "dist target without a build script" };
@@ -255,10 +303,16 @@ export function scriptTestFiles(pkg: Pkg): string[] {
 function manifestChecks(pkg: Pkg, findings: Finding[]) {
   const m = pkg.manifest;
   const add = (severity: Severity, message: string) =>
-    findings.push({ pkg: pkg.rel, check: "manifest", severity: pkg.hostBound ? "warn" : severity, message });
+    findings.push({
+      pkg: pkg.rel,
+      check: "manifest",
+      severity: pkg.hostBound ? "warn" : severity,
+      message,
+    });
   if (!m.name) add("error", "package.json has no name");
   if (!m.version) add("error", "package.json has no version");
-  if (!existsSync(join(pkg.dir, "README.md"))) add("error", "README.md missing");
+  if (!existsSync(join(pkg.dir, "README.md")))
+    add("error", "README.md missing");
   if (!m.scripts?.test) add("error", "no test script");
   else if (
     testFiles(pkg).length === 0 &&
@@ -266,13 +320,19 @@ function manifestChecks(pkg: Pkg, findings: Finding[]) {
     scriptTestFiles(pkg).length === 0
   )
     add("error", "test script but no *.test.* file");
-  if (!m.scripts?.typecheck && !m.scripts?.build) add("error", "no typecheck or build script");
+  if (!m.scripts?.typecheck && !m.scripts?.build)
+    add("error", "no typecheck or build script");
 }
 
 function entryChecks(pkg: Pkg, findings: Finding[]) {
   const m = pkg.manifest;
   const add = (message: string) =>
-    findings.push({ pkg: pkg.rel, check: "entries", severity: "error", message });
+    findings.push({
+      pkg: pkg.rel,
+      check: "entries",
+      severity: "error",
+      message,
+    });
   for (const field of ["main", "module", "types", "typings"]) {
     if (typeof m[field] !== "string") continue;
     const s = targetStatus(pkg, m[field]);
@@ -285,7 +345,10 @@ function entryChecks(pkg: Pkg, findings: Finding[]) {
   }
   for (const [subpath, cond, target] of exportTargets(m.exports)) {
     const s = targetStatus(pkg, target);
-    if (!s.ok) add(`exports["${subpath}"]${cond ? `[${cond}]` : ""} -> ${target}: ${s.note}`);
+    if (!s.ok)
+      add(
+        `exports["${subpath}"]${cond ? `[${cond}]` : ""} -> ${target}: ${s.note}`,
+      );
   }
 }
 
@@ -302,7 +365,10 @@ function depChecks(
     "peerDependencies",
     "optionalDependencies",
   ]) {
-    for (const [name, spec] of Object.entries(pkg.manifest[field] ?? {}) as [string, string][]) {
+    for (const [name, spec] of Object.entries(pkg.manifest[field] ?? {}) as [
+      string,
+      string,
+    ][]) {
       if (spec.startsWith("workspace:") && !names.has(name)) {
         if (pkg.hostBound && host().has(name)) continue;
         findings.push({
@@ -324,7 +390,10 @@ function depChecks(
 }
 
 /** Resolve a relative import from `file` to an existing file, or undefined. */
-export function resolveRelative(file: string, spec: string): string | undefined {
+export function resolveRelative(
+  file: string,
+  spec: string,
+): string | undefined {
   const clean = spec.replace(/[?#].*$/, "");
   const base = resolve(dirname(file), clean);
   const tries = [
@@ -355,7 +424,10 @@ export function matchExportKey(key: string, subpath: string): string | null {
 }
 
 /** Split a bare specifier into package name and `./subpath`. */
-export function splitSpecifier(spec: string): { name: string; subpath: string } {
+export function splitSpecifier(spec: string): {
+  name: string;
+  subpath: string;
+} {
   const parts = spec.split("/");
   const n = spec.startsWith("@") ? 2 : 1;
   const name = parts.slice(0, n).join("/");
@@ -411,11 +483,17 @@ function importChecks(
     .map((p) => p.dir + "/");
   const files = walk(
     pkg.dir,
-    (f) => SOURCE_EXT.test(f) && !f.endsWith(".d.ts") && !inner.some((d) => f.startsWith(d)),
+    (f) =>
+      SOURCE_EXT.test(f) &&
+      !f.endsWith(".d.ts") &&
+      !inner.some((d) => f.startsWith(d)),
   );
   const severity: Severity = pkg.nested || pkg.hostBound ? "warn" : "error";
   const push = (f: Finding) =>
-    findings.push({ ...f, severity: f.severity === "error" ? severity : f.severity });
+    findings.push({
+      ...f,
+      severity: f.severity === "error" ? severity : f.severity,
+    });
   for (const file of files) {
     const rel = relative(pkg.dir, file);
     for (const spec of scanImports(file)) {
@@ -483,7 +561,9 @@ function importChecks(
         const capture = matchExportKey(key, subpath);
         if (capture === null) continue;
         matched = true;
-        const targets = exportTargets(value, key).map(([, , t]) => t.replace("*", capture));
+        const targets = exportTargets(value, key).map(([, , t]) =>
+          t.replace("*", capture),
+        );
         const ok = targets.some((t) => targetStatus(target, t).ok);
         if (!ok)
           push({
@@ -521,19 +601,28 @@ export function checkAll(
   only: string[] = [],
 ): { packages: number; findings: Finding[] } {
   const pkgs = listPackages(root);
-  const rootManifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+  const rootManifest = JSON.parse(
+    readFileSync(join(root, "package.json"), "utf8"),
+  );
   const catalog: Record<string, string> =
     rootManifest.workspaces?.catalog ?? rootManifest.catalog ?? {};
   const byName = new Map(
-    pkgs.filter((p) => p.manifest.name && !p.nested).map((p) => [p.manifest.name as string, p]),
+    pkgs
+      .filter((p) => p.manifest.name && !p.nested)
+      .map((p) => [p.manifest.name as string, p]),
   );
   for (const p of pkgs)
-    if (p.nested && p.manifest.name && !byName.has(p.manifest.name)) byName.set(p.manifest.name, p);
+    if (p.nested && p.manifest.name && !byName.has(p.manifest.name))
+      byName.set(p.manifest.name, p);
   const names = new Set(byName.keys());
   let hostNames: Set<string> | undefined;
   const host = () => (hostNames ??= hostPackageNames());
   const selected = only.length
-    ? pkgs.filter((p) => only.some((o) => p.rel === o.replace(/\/$/, "") || p.manifest.name === o))
+    ? pkgs.filter((p) =>
+        only.some(
+          (o) => p.rel === o.replace(/\/$/, "") || p.manifest.name === o,
+        ),
+      )
     : pkgs;
   const findings: Finding[] = [];
   for (const pkg of selected) {
@@ -551,7 +640,13 @@ export function checkAll(
       host,
       findings,
     );
-    importChecks(pkg, pkgs, byName, pkg.nested ? new Set() : declaredDeps(rootManifest), findings);
+    importChecks(
+      pkg,
+      pkgs,
+      byName,
+      pkg.nested ? new Set() : declaredDeps(rootManifest),
+      findings,
+    );
     if (pkg.nested) for (const f of findings.slice(before)) f.severity = "warn";
   }
   return { packages: selected.length, findings };
@@ -564,7 +659,10 @@ if (import.meta.main) {
   const only = args.filter((a) => !a.startsWith("--"));
   const { packages, findings } = checkAll(REPO, only);
   const errors = findings.filter((f) => f.severity === "error");
-  if (json) console.log(JSON.stringify({ packages, errors: errors.length, findings }, null, 2));
+  if (json)
+    console.log(
+      JSON.stringify({ packages, errors: errors.length, findings }, null, 2),
+    );
   else {
     for (const f of findings)
       console.log(

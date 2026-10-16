@@ -23,7 +23,10 @@ export function ownedJson(
   }
 }
 
-export function envelope(value: unknown, name: string): Record<string, unknown> {
+export function envelope(
+  value: unknown,
+  name: string,
+): Record<string, unknown> {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
     throw new Error(`${name}: invalid native response`);
   }

@@ -12,7 +12,8 @@ export function bunToolArgv(
 ): string[] {
   if (missingBuiltin && forkCheckout) {
     const entry = join(forkCheckout, "src", "js", "eval", "devtools.ts");
-    if (!existsSync(entry)) throw new Error(`Configured Bun fork has no devtools owner: ${entry}`);
+    if (!existsSync(entry))
+      throw new Error(`Configured Bun fork has no devtools owner: ${entry}`);
     return [bun, entry, command, ...args];
   }
   return [bun, command, ...args];
@@ -36,7 +37,8 @@ export async function runBunTool(
     stderr: "pipe",
   });
   const missingBuiltin =
-    probe.exitCode !== 0 && probe.stderr.toString().includes("Script not found");
+    probe.exitCode !== 0 &&
+    probe.stderr.toString().includes("Script not found");
   const argv = bunToolArgv(bun, command, args, missingBuiltin);
   await using proc = Bun.spawn({
     windowsHide: true,

@@ -28,8 +28,8 @@ export function promptFolderDrop({
     title: `Move or copy ${count} item${plural}?`,
     message: (
       <p className="text-sm text-white/70">
-        Move{dest} removes {count === 1 ? "it" : "them"} from the current folder.
-        Add a copy keeps {count === 1 ? "it" : "them"} in both.
+        Move{dest} removes {count === 1 ? "it" : "them"} from the current
+        folder. Add a copy keeps {count === 1 ? "it" : "them"} in both.
       </p>
     ),
     primaryActionText: "Move here",

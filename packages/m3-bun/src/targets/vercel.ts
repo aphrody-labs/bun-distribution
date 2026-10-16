@@ -23,14 +23,22 @@ export const vercelJson = (c: TargetContext) => ({
       headers: [
         { key: "X-Content-Type-Options", value: "nosniff" },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-        { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        {
+          key: "Permissions-Policy",
+          value: "camera=(), microphone=(), geolocation=()",
+        },
       ],
     },
     {
       source: "/chunk-(.*)",
-      headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      headers: [
+        { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+      ],
     },
-    { source: "/index.html", headers: [{ key: "Cache-Control", value: "no-cache" }] },
+    {
+      source: "/index.html",
+      headers: [{ key: "Cache-Control", value: "no-cache" }],
+    },
   ],
 });
 
@@ -57,7 +65,10 @@ export const vercel: Target = {
     "vercel.json (static output, SPA rewrites, headers, Bun runtime) and an api/index.ts function over the app's routes",
   generate(c): GeneratedFile[] {
     return [
-      { path: "vercel.json", content: `${JSON.stringify(vercelJson(c), null, 2)}\n` },
+      {
+        path: "vercel.json",
+        content: `${JSON.stringify(vercelJson(c), null, 2)}\n`,
+      },
       { path: "api/index.ts", content: apiFunction(c) },
     ];
   },

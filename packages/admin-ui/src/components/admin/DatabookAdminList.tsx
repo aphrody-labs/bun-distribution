@@ -59,8 +59,18 @@ function norm(value: string): string {
     .toLowerCase();
 }
 
-function Row({ d, fmtDate }: { d: AdminDatabook; fmtDate: (v: number | null) => string }) {
-  const coverUrl = d.cover ? (/^https?:\/\//.test(d.cover) ? d.cover : assetCdnUrl(d.cover)) : null;
+function Row({
+  d,
+  fmtDate,
+}: {
+  d: AdminDatabook;
+  fmtDate: (v: number | null) => string;
+}) {
+  const coverUrl = d.cover
+    ? /^https?:\/\//.test(d.cover)
+      ? d.cover
+      : assetCdnUrl(d.cover)
+    : null;
   const hasDesc = !!d.description?.trim();
   const isVisible = d.visible !== false;
   const pages = pagesCount(d.pages);
@@ -90,7 +100,9 @@ function Row({ d, fmtDate }: { d: AdminDatabook; fmtDate: (v: number | null) => 
           {d.title}
         </Link>
         {d.title_ja && (
-          <div className="font-jp mt-0.5 text-xs text-dbz-yellow/75">{d.title_ja}</div>
+          <div className="font-jp mt-0.5 text-xs text-dbz-yellow/75">
+            {d.title_ja}
+          </div>
         )}
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <span className="text-[10px] font-mono uppercase text-dbz-orange">
@@ -118,7 +130,9 @@ function Row({ d, fmtDate }: { d: AdminDatabook; fmtDate: (v: number | null) => 
           </a>
         </div>
       </td>
-      <td className="p-2 text-[11px] text-white/55">{fmtDate(d.published_at)}</td>
+      <td className="p-2 text-[11px] text-white/55">
+        {fmtDate(d.published_at)}
+      </td>
       <td className="p-2 text-xs text-white/70">{d.author ?? "—"}</td>
       <td className="p-2 text-center">
         <span
@@ -126,7 +140,9 @@ function Row({ d, fmtDate }: { d: AdminDatabook; fmtDate: (v: number | null) => 
           title={hasDesc ? "Description renseignée" : "Description manquante"}
         />
         {pages > 0 && (
-          <span className="ml-1 text-[10px] font-mono text-dbz-orange/80">{pages}p</span>
+          <span className="ml-1 text-[10px] font-mono text-dbz-orange/80">
+            {pages}p
+          </span>
         )}
       </td>
       <td className="p-2 text-center">
@@ -210,21 +226,28 @@ export function DatabookAdminList({
   const filtered = useMemo(() => {
     const q = norm(query.trim());
     return items.filter((d) => {
-      if (scope !== "all" && (d.category ?? "").toLowerCase() !== scope) return false;
+      if (scope !== "all" && (d.category ?? "").toLowerCase() !== scope)
+        return false;
       if (state === "visible" && d.visible === false) return false;
       if (state === "hidden" && d.visible !== false) return false;
       if (state === "missing-pages" && pagesCount(d.pages) > 0) return false;
-      if (state === "missing-description" && d.description?.trim()) return false;
+      if (state === "missing-description" && d.description?.trim())
+        return false;
       return (
         !q ||
-        norm(`${d.title} ${d.title_ja ?? ""} ${d.author ?? ""} ${d.category ?? ""}`).includes(q)
+        norm(
+          `${d.title} ${d.title_ja ?? ""} ${d.author ?? ""} ${d.category ?? ""}`,
+        ).includes(q)
       );
     });
   }, [items, query, scope, state]);
   useEffect(() => setPage(1), [query, scope, state]);
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const current = Math.min(page, pages);
-  const visible = filtered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
+  const visible = filtered.slice(
+    (current - 1) * PAGE_SIZE,
+    current * PAGE_SIZE,
+  );
   const grouped = groups
     .map((g) => ({
       ...g,
@@ -234,7 +257,8 @@ export function DatabookAdminList({
   const other = visible.filter(
     (d) => !groups.some((g) => (d.category ?? "").toLowerCase() === g.key),
   );
-  if (other.length) grouped.push({ key: "other", label: "Autres", items: other });
+  if (other.length)
+    grouped.push({ key: "other", label: "Autres", items: other });
   return (
     <>
       <div className="dbz-panel mb-8 grid gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
@@ -250,7 +274,11 @@ export function DatabookAdminList({
         </label>
         <label className="flex items-center gap-2 text-xs text-white/60">
           <span className="sr-only">Filtrer par catégorie</span>
-          <select value={scope} onChange={(e) => setScope(e.target.value)} className="input h-10">
+          <select
+            value={scope}
+            onChange={(e) => setScope(e.target.value)}
+            className="input h-10"
+          >
             <option value="all">Toutes catégories</option>
             {groups.map((g) => (
               <option key={g.key} value={g.key}>
@@ -273,8 +301,12 @@ export function DatabookAdminList({
             <option value="missing-description">Sans description</option>
           </select>
         </label>
-        <p className="text-xs tabular-nums text-dbz-orange sm:col-span-3" aria-live="polite">
-          {filtered.length} résultat{filtered.length > 1 ? "s" : ""} · page {current}/{pages}
+        <p
+          className="text-xs tabular-nums text-dbz-orange sm:col-span-3"
+          aria-live="polite"
+        >
+          {filtered.length} résultat{filtered.length > 1 ? "s" : ""} · page{" "}
+          {current}/{pages}
         </p>
       </div>
       {grouped.length ? (

@@ -13,7 +13,15 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import {
+  basename,
+  dirname,
+  isAbsolute,
+  join,
+  relative,
+  resolve,
+  sep,
+} from "node:path";
 import { markdownLinkDestinations } from "./docs-links.ts";
 
 export type Json = Record<string, unknown>;
@@ -45,7 +53,8 @@ export function containedPath(root: string, path: string): string {
   const full = resolve(root, path);
   if (!inside(root, full)) throw new Error(`Path escapes plugin root: ${path}`);
   let ancestor = full;
-  while (!existsSync(ancestor) && ancestor !== dirname(ancestor)) ancestor = dirname(ancestor);
+  while (!existsSync(ancestor) && ancestor !== dirname(ancestor))
+    ancestor = dirname(ancestor);
   if (!inside(realpathSync(root), realpathSync(ancestor)))
     throw new Error(`Symlink escapes plugin root: ${path}`);
   return full;
@@ -55,10 +64,13 @@ export function files(root: string): string[] {
   if (lstatSync(root).isSymbolicLink()) return [];
   const found: string[] = [];
   const visit = (path: string): void => {
-    for (const e of readdirSync(path, { withFileTypes: true }).toSorted((a, b) =>
-      a.name.localeCompare(b.name),
+    for (const e of readdirSync(path, { withFileTypes: true }).toSorted(
+      (a, b) => a.name.localeCompare(b.name),
     )) {
-      if ([".git", "node_modules", "target", ".cache"].includes(e.name) || e.isSymbolicLink())
+      if (
+        [".git", "node_modules", "target", ".cache"].includes(e.name) ||
+        e.isSymbolicLink()
+      )
         continue;
       const full = join(path, e.name);
       if (e.isDirectory()) visit(full);
@@ -75,35 +87,48 @@ function releaseVersion(value: unknown): number[] | undefined {
 }
 export function plugins(store: string): Plugin[] {
   if (!existsSync(store)) return [];
-  if (lstatSync(store).isSymbolicLink()) throw new Error("Plugin store must not be a symlink");
+  if (lstatSync(store).isSymbolicLink())
+    throw new Error("Plugin store must not be a symlink");
   const found: Plugin[] = [];
   for (const e of readdirSync(store, { withFileTypes: true }).toSorted((a, b) =>
     a.name.localeCompare(b.name),
   )) {
-    if (!e.isDirectory() || e.name.startsWith("_") || e.name.startsWith(".")) continue;
+    if (!e.isDirectory() || e.name.startsWith("_") || e.name.startsWith("."))
+      continue;
     const path = join(store, e.name);
-    const manifestPath = ["plugin.json", ".claude-plugin/plugin.json", ".codex-plugin/plugin.json"]
+    const manifestPath = [
+      "plugin.json",
+      ".claude-plugin/plugin.json",
+      ".codex-plugin/plugin.json",
+    ]
       .map((p) => join(path, p))
       .find(existsSync);
     if (!manifestPath) continue;
     let manifest = readJson(manifestPath);
     // Provider fusion can advance before the compact root manifest is regenerated.
     // Preserve the newest matching identity rather than downgrading its overlays.
-    for (const overlay of [".claude-plugin/plugin.json", ".codex-plugin/plugin.json"]) {
+    for (const overlay of [
+      ".claude-plugin/plugin.json",
+      ".codex-plugin/plugin.json",
+    ]) {
       const candidatePath = join(path, overlay);
       if (!existsSync(candidatePath)) continue;
       const candidate = readJson(candidatePath);
       const current = releaseVersion(manifest.version);
       const next = releaseVersion(candidate.version);
       if (candidate.name === manifest.name && current && next) {
-        const difference = next.findIndex((part, index) => part !== current[index]);
-        if (difference >= 0 && next[difference]! > current[difference]!) manifest = candidate;
+        const difference = next.findIndex(
+          (part, index) => part !== current[index],
+        );
+        if (difference >= 0 && next[difference]! > current[difference]!)
+          manifest = candidate;
       }
     }
     const name = String(manifest.name ?? "");
     if (!validName(name) || name !== e.name)
       throw new Error(`Plugin name must match its directory: ${path}`);
-    if (found.some((p) => p.name === name)) throw new Error(`Duplicate plugin name: ${name}`);
+    if (found.some((p) => p.name === name))
+      throw new Error(`Duplicate plugin name: ${name}`);
     found.push({
       name,
       version: String(manifest.version ?? "1.0.0"),
@@ -114,7 +139,12 @@ export function plugins(store: string): Plugin[] {
   }
   return found;
 }
-export function writeChanged(path: string, text: string, apply: boolean, changes: Change[]): void {
+export function writeChanged(
+  path: string,
+  text: string,
+  apply: boolean,
+  changes: Change[],
+): void {
   if (existsSync(path) && readFileSync(path, "utf8") === text) return;
   changes.push({ path, action: "write" });
   if (apply) {
@@ -122,10 +152,19 @@ export function writeChanged(path: string, text: string, apply: boolean, changes
     writeFileSync(path, text);
   }
 }
-export function writeJson(path: string, value: unknown, apply: boolean, changes: Change[]): void {
+export function writeJson(
+  path: string,
+  value: unknown,
+  apply: boolean,
+  changes: Change[],
+): void {
   if (existsSync(path)) {
     try {
-      if (JSON.stringify(JSON.parse(readFileSync(path, "utf8"))) === JSON.stringify(value)) return;
+      if (
+        JSON.stringify(JSON.parse(readFileSync(path, "utf8"))) ===
+        JSON.stringify(value)
+      )
+        return;
     } catch {
       /* A malformed generated document is replaced by its canonical representation. */
     }
@@ -141,7 +180,11 @@ export function skillFrontmatter(path: string): Json {
 }
 
 /** Convert provider overlays from one portable manifest; never generate installations. */
-export function prepareStore(store: string, marketplace: string, apply: boolean): Change[] {
+export function prepareStore(
+  store: string,
+  marketplace: string,
+  apply: boolean,
+): Change[] {
   const changes: Change[] = [];
   const entries = plugins(store);
   for (const plugin of entries) {
@@ -162,11 +205,19 @@ export function prepareStore(store: string, marketplace: string, apply: boolean)
       description,
       author: { name: "aphrody-dev", email: "contact@aphrody.com" },
     };
-    for (const key of ["author", "license", "keywords", "homepage", "repository"])
+    for (const key of [
+      "author",
+      "license",
+      "keywords",
+      "homepage",
+      "repository",
+    ])
       if (manifest[key]) common[key] = manifest[key];
     if (typeof common.author === "string") {
       const match = common.author.match(/^(.*?)\s*<([^>]+)>$/);
-      common.author = match ? { name: match[1]!.trim(), email: match[2] } : { name: common.author };
+      common.author = match
+        ? { name: match[1]!.trim(), email: match[2] }
+        : { name: common.author };
     }
     const claude: Json = { ...common };
     const codex: Json = {
@@ -181,25 +232,44 @@ export function prepareStore(store: string, marketplace: string, apply: boolean)
       claude.skills = "./skills/";
       codex.skills = "./skills/";
     }
-    if (existsSync(join(path, ".mcp.json")) || existsSync(join(path, "mcp_config.json"))) {
+    if (
+      existsSync(join(path, ".mcp.json")) ||
+      existsSync(join(path, "mcp_config.json"))
+    ) {
       const mcp = readJson(
-        join(path, existsSync(join(path, ".mcp.json")) ? ".mcp.json" : "mcp_config.json"),
+        join(
+          path,
+          existsSync(join(path, ".mcp.json")) ? ".mcp.json" : "mcp_config.json",
+        ),
       );
       const servers = object(mcp.mcpServers ?? {});
       if (name === "aphrody" && servers.aphrody)
         servers.aphrody = { type: "stdio", command: "aphrody-mcp", args: [] };
       for (const filename of [".mcp.json", "mcp_config.json", "mcp.json"])
-        writeJson(join(path, filename), { mcpServers: servers }, apply, changes);
+        writeJson(
+          join(path, filename),
+          { mcpServers: servers },
+          apply,
+          changes,
+        );
       claude.mcpServers = "./.mcp.json";
       codex.mcpServers = "./.mcp.json";
     }
     // Claude discovers default component directories. Preserve explicit non-default declarations.
-    for (const overlay of [".claude-plugin/plugin.json", ".codex-plugin/plugin.json"]) {
-      const old = existsSync(join(path, overlay)) ? readJson(join(path, overlay)) : {};
+    for (const overlay of [
+      ".claude-plugin/plugin.json",
+      ".codex-plugin/plugin.json",
+    ]) {
+      const old = existsSync(join(path, overlay))
+        ? readJson(join(path, overlay))
+        : {};
       const generated = overlay.startsWith(".claude") ? claude : codex;
       const target = { ...old, ...generated };
       if (generated.interface)
-        target.interface = { ...object(old.interface ?? {}), ...object(generated.interface) };
+        target.interface = {
+          ...object(old.interface ?? {}),
+          ...object(generated.interface),
+        };
       writeJson(join(path, overlay), target, apply, changes);
     }
     writeJson(
@@ -222,7 +292,10 @@ export function prepareStore(store: string, marketplace: string, apply: boolean)
         events[event] = (events[event] as Json[]).flatMap((group) => {
           if (!Array.isArray(group.hooks)) return [group];
           const hooks = (group.hooks as Json[]).flatMap((hook) => {
-            if (hook.command === 'bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-start.sh"') {
+            if (
+              hook.command ===
+              'bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-start.sh"'
+            ) {
               changed = true;
               return [
                 {
@@ -232,7 +305,10 @@ export function prepareStore(store: string, marketplace: string, apply: boolean)
                 },
               ];
             }
-            if (hook.command === 'bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/permission-allow.sh"') {
+            if (
+              hook.command ===
+              'bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/permission-allow.sh"'
+            ) {
               // The provider's permission policy remains authoritative on every host.
               changed = true;
               return [];
@@ -245,11 +321,15 @@ export function prepareStore(store: string, marketplace: string, apply: boolean)
       }
       if (changed) {
         writeJson(hookPath, { ...source, hooks: events }, apply, changes);
-        const portable = JSON.stringify({ [name]: { enabled: true, ...events } }).replaceAll(
-          "${CLAUDE_PLUGIN_ROOT}",
-          path.replaceAll("\\", "/"),
+        const portable = JSON.stringify({
+          [name]: { enabled: true, ...events },
+        }).replaceAll("${CLAUDE_PLUGIN_ROOT}", path.replaceAll("\\", "/"));
+        writeJson(
+          join(path, "hooks.json"),
+          JSON.parse(portable),
+          apply,
+          changes,
         );
-        writeJson(join(path, "hooks.json"), JSON.parse(portable), apply, changes);
       }
     }
     const nested = join(path, ".claude-plugin/marketplace.json");
@@ -257,7 +337,10 @@ export function prepareStore(store: string, marketplace: string, apply: boolean)
       changes.push({ path: nested, action: "remove-obsolete-marketplace" });
       if (apply) rmSync(nested);
     }
-    if (!existsSync(join(path, "hooks.json")) && existsSync(join(path, "hooks/hooks.json"))) {
+    if (
+      !existsSync(join(path, "hooks.json")) &&
+      existsSync(join(path, "hooks/hooks.json"))
+    ) {
       const hooks = readJson(join(path, "hooks/hooks.json"));
       const serialized = JSON.stringify(
         { [name]: { enabled: true, ...object(hooks.hooks ?? {}) } },
@@ -267,7 +350,10 @@ export function prepareStore(store: string, marketplace: string, apply: boolean)
       writeChanged(join(path, "hooks.json"), `${serialized}\n`, apply, changes);
     }
   }
-  for (const target of [".agents/plugins/marketplace.json", ".claude-plugin/marketplace.json"])
+  for (const target of [
+    ".agents/plugins/marketplace.json",
+    ".claude-plugin/marketplace.json",
+  ])
     containedPath(store, target);
   writeJson(
     join(store, ".agents/plugins/marketplace.json"),
@@ -289,7 +375,8 @@ export function prepareStore(store: string, marketplace: string, apply: boolean)
     {
       name: marketplace,
       owner: { name: "aphrody-dev", email: "contact@aphrody.com" },
-      description: "Private canonical Aphrody plugins managed by aphrody-workspace",
+      description:
+        "Private canonical Aphrody plugins managed by aphrody-workspace",
       plugins: entries.map((p) => ({
         name: p.name,
         source: `./${p.name}`,
@@ -306,50 +393,78 @@ export function prepareStore(store: string, marketplace: string, apply: boolean)
 export type Problem = { path: string; message: string };
 export function validateStore(store: string, names: string[] = []): Problem[] {
   const problems: Problem[] = [];
-  for (const plugin of plugins(store).filter((p) => !names.length || names.includes(p.name))) {
+  for (const plugin of plugins(store).filter(
+    (p) => !names.length || names.includes(p.name),
+  )) {
     for (const path of files(plugin.path)) {
       try {
         if (path.endsWith(".json")) {
           const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
-          if (Array.isArray(parsed) || !parsed || typeof parsed !== "object") continue;
+          if (Array.isArray(parsed) || !parsed || typeof parsed !== "object")
+            continue;
           const value = object(parsed);
           if (basename(path) === "plugin.json") {
             if (value.name !== plugin.name)
               throw new Error("Overlay plugin name differs from root");
             if (value.version !== plugin.version)
               throw new Error("Overlay version differs from root");
-            for (const key of ["skills", "mcpServers", "hooks", "commands", "agents"]) {
-              for (const ref of Array.isArray(value[key]) ? value[key] : [value[key]]) {
+            for (const key of [
+              "skills",
+              "mcpServers",
+              "hooks",
+              "commands",
+              "agents",
+            ]) {
+              for (const ref of Array.isArray(value[key])
+                ? value[key]
+                : [value[key]]) {
                 if (typeof ref !== "string") continue;
-                if (!ref.startsWith(".//")) throw new Error(`${key} must be a .// relative path`);
+                if (!ref.startsWith(".//"))
+                  throw new Error(`${key} must be a .// relative path`);
                 if (!existsSync(containedPath(plugin.path, ref)))
                   throw new Error(`Missing ${key}: ${ref}`);
               }
             }
           }
           if (value.mcpServers && typeof value.mcpServers === "object") {
-            for (const [name, entry] of Object.entries(object(value.mcpServers))) {
-              if (!validName(name)) throw new Error(`Invalid MCP name: ${name}`);
+            for (const [name, entry] of Object.entries(
+              object(value.mcpServers),
+            )) {
+              if (!validName(name))
+                throw new Error(`Invalid MCP name: ${name}`);
               const server = object(entry);
-              if (typeof server.command !== "string" && typeof server.url !== "string")
+              if (
+                typeof server.command !== "string" &&
+                typeof server.url !== "string"
+              )
                 throw new Error(`MCP ${name} needs command or URL`);
               if (
                 server.command &&
-                (String(server.command).includes("${") || !Array.isArray(server.args))
+                (String(server.command).includes("${") ||
+                  !Array.isArray(server.args))
               )
-                throw new Error(`MCP ${name}: command must be executable and args an array`);
+                throw new Error(
+                  `MCP ${name}: command must be executable and args an array`,
+                );
             }
           }
         }
         if (basename(path) === "SKILL.md") {
           const fm = skillFrontmatter(path);
-          if (!validName(String(fm.name ?? "")) || fm.name !== basename(dirname(path)))
-            throw new Error("Skill name must be kebab-case and match directory");
+          if (
+            !validName(String(fm.name ?? "")) ||
+            fm.name !== basename(dirname(path))
+          )
+            throw new Error(
+              "Skill name must be kebab-case and match directory",
+            );
           if (typeof fm.description !== "string" || !fm.description.trim())
             throw new Error("Skill description is required");
         }
         if (path.endsWith(".md"))
-          for (const link of markdownLinkDestinations(markdownProse(readFileSync(path, "utf8")))) {
+          for (const link of markdownLinkDestinations(
+            markdownProse(readFileSync(path, "utf8")),
+          )) {
             if (
               !link ||
               link.startsWith("#") ||
@@ -362,7 +477,10 @@ export function validateStore(store: string, names: string[] = []): Problem[] {
               problems.push({ path, message: `Missing local link: ${link}` });
           }
       } catch (e) {
-        problems.push({ path, message: String(e instanceof Error ? e.message : e) });
+        problems.push({
+          path,
+          message: String(e instanceof Error ? e.message : e),
+        });
       }
     }
   }
@@ -370,7 +488,11 @@ export function validateStore(store: string, names: string[] = []): Problem[] {
 }
 
 /** Only proven relocation prefixes are rewritten; historical reports stay unchanged. */
-export function fixReferences(store: string, apply: boolean, extraRoots: string[] = []): Change[] {
+export function fixReferences(
+  store: string,
+  apply: boolean,
+  extraRoots: string[] = [],
+): Change[] {
   const changes: Change[] = [];
   const reportPath = join(store, "relocation-2026-10-03.json");
   const mappings: [string, string][] = [];
@@ -388,10 +510,14 @@ export function fixReferences(store: string, apply: boolean, extraRoots: string[
   }
   const absoluteMappings = mappings.slice();
   for (const [before, after] of absoluteMappings) {
-    if (before.startsWith(`${home}/`)) mappings.push([`~/${before.slice(home.length + 1)}`, after]);
+    if (before.startsWith(`${home}/`))
+      mappings.push([`~/${before.slice(home.length + 1)}`, after]);
   }
   mappings.sort((a, b) => b[0].length - a[0].length);
-  const paths = [...plugins(store).flatMap((p) => files(p.path)), ...extraRoots.flatMap(files)];
+  const paths = [
+    ...plugins(store).flatMap((p) => files(p.path)),
+    ...extraRoots.flatMap(files),
+  ];
   for (const path of new Set(paths)) {
     if (
       !/\.(?:md|json|toml|sh|ps1|ts|js|yaml|yml)$/.test(path) ||
@@ -401,11 +527,16 @@ export function fixReferences(store: string, apply: boolean, extraRoots: string[
     let text = readFileSync(path, "utf8");
     for (const [before, after] of mappings) {
       const escaped = before.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      text = text.replace(new RegExp(`${escaped}(?![a-zA-Z0-9_-])`, "g"), () => after);
+      text = text.replace(
+        new RegExp(`${escaped}(?![a-zA-Z0-9_-])`, "g"),
+        () => after,
+      );
     }
     if (path.endsWith(".md")) {
       const plugin = plugins(store).find((p) => inside(p.path, path));
-      const original = plugin ? mappings.find(([, target]) => target === plugin.path) : undefined;
+      const original = plugin
+        ? mappings.find(([, target]) => target === plugin.path)
+        : undefined;
       if (original)
         for (const link of markdownLinkDestinations(markdownProse(text))) {
           if (!link || /^(?:[a-z][\w+.-]*:|[/#])/i.test(link)) continue;
@@ -420,11 +551,14 @@ export function fixReferences(store: string, apply: boolean, extraRoots: string[
           const oldFile = join(original[0], relative(plugin!.path, path));
           let target = resolve(dirname(oldFile), decoded);
           for (const [before, after] of mappings)
-            if (inside(before, target)) target = join(after, relative(before, target));
+            if (inside(before, target))
+              target = join(after, relative(before, target));
           // Some old skills already had one too few ../ segments. Canonical docs remain in the workspace.
           const doc = decoded.match(/(?:^|\/)docs\/(.+)$/);
-          if (!existsSync(target) && doc) target = join(home, "aphrody/docs", doc[1]!);
-          if (existsSync(target)) text = text.replaceAll(link, target + link.slice(clean.length));
+          if (!existsSync(target) && doc)
+            target = join(home, "aphrody/docs", doc[1]!);
+          if (existsSync(target))
+            text = text.replaceAll(link, target + link.slice(clean.length));
         }
     }
     if (
@@ -435,7 +569,9 @@ export function fixReferences(store: string, apply: boolean, extraRoots: string[
       text = text.replace(
         /^(description:\s*)([^\r\n]*: [^\r\n]*)$/m,
         (all, prefix: string, value: string) => {
-          return /^["'|>]/.test(value.trim()) ? all : prefix + JSON.stringify(value);
+          return /^["'|>]/.test(value.trim())
+            ? all
+            : prefix + JSON.stringify(value);
         },
       );
     }
@@ -451,26 +587,37 @@ export function fixReferences(store: string, apply: boolean, extraRoots: string[
     next = join(store, "aphrody/skills/shared-winclean");
   if (existsSync(old)) {
     if (existsSync(next))
-      throw new Error("Both old and new WinClean shared skill directories exist");
+      throw new Error(
+        "Both old and new WinClean shared skill directories exist",
+      );
     changes.push({ path: old, action: "rename", detail: next });
     if (apply) {
       renameSync(old, next);
       const skill = join(next, "SKILL.md");
       writeFileSync(
         skill,
-        readFileSync(skill, "utf8").replace(/^name: _shared$/m, "name: shared-winclean"),
+        readFileSync(skill, "utf8").replace(
+          /^name: _shared$/m,
+          "name: shared-winclean",
+        ),
       );
     }
     for (const path of plugins(store).flatMap((p) => files(p.path)))
       if (path.endsWith(".md"))
         writeChanged(
           path,
-          readFileSync(path, "utf8").replaceAll("skills/_shared/", "skills/shared-winclean/"),
+          readFileSync(path, "utf8").replaceAll(
+            "skills/_shared/",
+            "skills/shared-winclean/",
+          ),
           apply,
           changes,
         );
   }
-  const dangling = join(store, "google-gemini/skills/google-style-guide/google-style-guide");
+  const dangling = join(
+    store,
+    "google-gemini/skills/google-style-guide/google-style-guide",
+  );
   if (existsSync(dirname(dangling)))
     try {
       if (lstatSync(dangling).isSymbolicLink() && !existsSync(dangling)) {
@@ -478,7 +625,8 @@ export function fixReferences(store: string, apply: boolean, extraRoots: string[
         if (apply) rmSync(dangling);
       }
     } catch (e) {
-      if (!(e && typeof e === "object" && "code" in e && e.code === "ENOENT")) throw e;
+      if (!(e && typeof e === "object" && "code" in e && e.code === "ENOENT"))
+        throw e;
     }
   return changes;
 }
@@ -506,16 +654,22 @@ export function cleanStore(
   let bytes = 0,
     recovered = 0;
   const known = new Map(
-    [...plugins(store).flatMap((p) => files(p.path)), ...files(join(store, "_recovered"))].map(
-      (path) => [hash(path), path],
-    ),
+    [
+      ...plugins(store).flatMap((p) => files(p.path)),
+      ...files(join(store, "_recovered")),
+    ].map((path) => [hash(path), path]),
   );
   const copies = join(store, "_copies");
   for (const path of files(copies)) {
     if (path.endsWith("/relocation-2026-10-03.json")) continue;
     // Full marketplace clones contain unrelated repository files. Only detached plugin trees are source assets.
     const local = relative(copies, path).split(sep).join("/");
-    if (!/(?:^|\/)plugins\/(?!marketplace\.json)|\/cache\/aphrody-ai\//.test(local)) continue;
+    if (
+      !/(?:^|\/)plugins\/(?!marketplace\.json)|\/cache\/aphrody-ai\//.test(
+        local,
+      )
+    )
+      continue;
     const digest = hash(path);
     const canonical = known.get(digest);
     if (canonical) {

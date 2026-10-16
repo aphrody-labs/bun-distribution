@@ -15,7 +15,11 @@ import {
 } from "@aphrody/m3-primitives";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { isChatModel, loadModelInventories, stopModelDownload } from "./models-hub-actions";
+import {
+  isChatModel,
+  loadModelInventories,
+  stopModelDownload,
+} from "./models-hub-actions";
 import {
   applyProgress,
   type DownloadState,
@@ -70,7 +74,9 @@ const TASK_FILTERS: Array<[string, string]> = [
 
 export function ModelsHub() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"installed" | "catalog">("installed");
+  const [activeTab, setActiveTab] = useState<"installed" | "catalog">(
+    "installed",
+  );
   const [catalog, setCatalog] = useState<CatalogEntry[]>([]);
   const [installed, setInstalled] = useState<InstalledModels | null>(null);
   const [loadError, setLoadError] = useState("");
@@ -80,7 +86,9 @@ export function ModelsHub() {
   const [downloads, setDownloads] = useState<Record<string, DownloadState>>({});
   const [activeModel, setActiveModel] = useState<string | null>(null);
   const [defaultModel, setDefaultModel] = useState<string | null>(null);
-  const [removal, setRemoval] = useState<{ id: string; title: string } | null>(null);
+  const [removal, setRemoval] = useState<{ id: string; title: string } | null>(
+    null,
+  );
   const [stopping, setStopping] = useState<Record<string, boolean>>({});
   const [pulling, setPulling] = useState<Record<string, boolean>>({});
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -89,7 +97,10 @@ export function ModelsHub() {
 
   const loadStore = useCallback(async () => {
     try {
-      const result = await loadModelInventories(fetchModelCatalog, fetchInstalledModels);
+      const result = await loadModelInventories(
+        fetchModelCatalog,
+        fetchInstalledModels,
+      );
       if (result.catalog) setCatalog(result.catalog);
       if (result.installed) setInstalled(result.installed);
       setLoadError(result.error);
@@ -117,7 +128,9 @@ export function ModelsHub() {
     void readSetting<unknown>("favoriteModels")
       .then((value) => {
         if (Array.isArray(value))
-          setFavorites(value.filter((id): id is string => typeof id === "string"));
+          setFavorites(
+            value.filter((id): id is string => typeof id === "string"),
+          );
         return undefined;
       })
       .catch(() => setLoadError("Favoris indisponibles."));
@@ -128,7 +141,10 @@ export function ModelsHub() {
       setDownloads((current) => {
         const state = current[event.id];
         if (!state || state.status !== "downloading") return current;
-        return { ...current, [event.id]: applyProgress(state, event, Date.now()) };
+        return {
+          ...current,
+          [event.id]: applyProgress(state, event, Date.now()),
+        };
       });
     }).then((unlisten) => {
       if (active) stop = unlisten;
@@ -142,7 +158,10 @@ export function ModelsHub() {
     };
   }, [loadStore]);
 
-  const installedModelsList = useMemo(() => installed?.models ?? [], [installed]);
+  const installedModelsList = useMemo(
+    () => installed?.models ?? [],
+    [installed],
+  );
   const installedSet = useMemo(() => {
     const set = new Set<string>();
     for (const m of installedModelsList) {
@@ -190,7 +209,12 @@ export function ModelsHub() {
     setDownloads((current) => ({
       ...current,
       [entry.id]: resumed
-        ? { ...resumed, status: "downloading", error: undefined, sampledAt: Date.now() }
+        ? {
+            ...resumed,
+            status: "downloading",
+            error: undefined,
+            sampledAt: Date.now(),
+          }
         : startDownload(entryBytes(entry), Date.now()),
     }));
     try {
@@ -199,7 +223,9 @@ export function ModelsHub() {
         const { [entry.id]: _done, ...rest } = current;
         return rest;
       });
-      toast.success(`${entry.title} : ${report.artifacts.length} fichier(s) vérifié(s) (SHA-256)`);
+      toast.success(
+        `${entry.title} : ${report.artifacts.length} fichier(s) vérifié(s) (SHA-256)`,
+      );
       await refreshStore();
     } catch (error) {
       setDownloads((current) => {
@@ -261,7 +287,9 @@ export function ModelsHub() {
     const entries =
       filterKind === "all"
         ? catalog
-        : catalog.filter((entry) => normalizeModelKind(entry.task) === filterKind);
+        : catalog.filter(
+            (entry) => normalizeModelKind(entry.task) === filterKind,
+          );
     return searchModelCatalog(entries, searchQuery).filter(
       (entry) => !favoritesOnly || favorites.includes(entry.id),
     );
@@ -269,7 +297,9 @@ export function ModelsHub() {
 
   const visibleInstalled = useMemo(() => {
     return installedModelsList.filter((m) => {
-      const entry = catalog.find((c) => c.id === m.catalog_id || c.id === m.ref);
+      const entry = catalog.find(
+        (c) => c.id === m.catalog_id || c.id === m.ref,
+      );
       const kind = normalizeModelKind(entry?.task ?? m.ref);
       return (
         (filterKind === "all" || kind === filterKind) &&
@@ -287,7 +317,14 @@ export function ModelsHub() {
         ).length > 0
       );
     });
-  }, [installedModelsList, catalog, filterKind, favoritesOnly, favorites, searchQuery]);
+  }, [
+    installedModelsList,
+    catalog,
+    filterKind,
+    favoritesOnly,
+    favorites,
+    searchQuery,
+  ]);
 
   return (
     <section className="flex h-full flex-col gap-6 overflow-auto p-6">
@@ -308,7 +345,9 @@ export function ModelsHub() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="m-0 text-[28px] font-semibold text-on-surface">Modèles</h1>
+          <h1 className="m-0 text-[28px] font-semibold text-on-surface">
+            Modèles
+          </h1>
           <p className="m-0 mt-1 text-[18px] text-body-large text-on-surface-variant">
             Gérer les modèles locaux et explorer le catalogue.
           </p>
@@ -320,7 +359,11 @@ export function ModelsHub() {
             onClick={() => void refreshStore()}
             disabled={loading}
           >
-            <Icon name="refresh" size={20} className={loading ? "animate-spin" : ""} />
+            <Icon
+              name="refresh"
+              size={20}
+              className={loading ? "animate-spin" : ""}
+            />
             <span>Actualiser</span>
           </Button>
         </div>
@@ -435,7 +478,8 @@ export function ModelsHub() {
                 Aucun modèle installé
               </h2>
               <p className="m-0 mt-2 text-[18px] text-on-surface-variant">
-                Parcourez le catalogue pour télécharger des modèles optimisés pour cette machine.
+                Parcourez le catalogue pour télécharger des modèles optimisés
+                pour cette machine.
               </p>
               <Button
                 variant="filled"
@@ -452,10 +496,13 @@ export function ModelsHub() {
                 (c) => c.id === model.catalog_id || c.id === model.ref,
               );
               const modelId = model.catalog_id || model.ref;
-              const title = catalogEntry?.title || model.ref.split("/").pop() || model.ref;
+              const title =
+                catalogEntry?.title || model.ref.split("/").pop() || model.ref;
               const kind = normalizeModelKind(catalogEntry?.task ?? model.ref);
-              const isDefault = defaultModel === modelId || defaultModel === model.ref;
-              const isActiveChat = activeModel === modelId || activeModel === model.ref;
+              const isDefault =
+                defaultModel === modelId || defaultModel === model.ref;
+              const isActiveChat =
+                activeModel === modelId || activeModel === model.ref;
 
               return (
                 <Card
@@ -466,12 +513,24 @@ export function ModelsHub() {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex flex-col gap-1">
                       <div className="flex flex-wrap items-center gap-3">
-                        <h2 className="m-0 text-[20px] font-semibold text-on-surface">{title}</h2>
-                        <Badge variant="secondary" className="px-3 py-1 text-[18px]">
+                        <h2 className="m-0 text-[20px] font-semibold text-on-surface">
+                          {title}
+                        </h2>
+                        <Badge
+                          variant="secondary"
+                          className="px-3 py-1 text-[18px]"
+                        >
                           {kindLabel(kind)}
                         </Badge>
-                        <Badge variant="accent" className="px-3 py-1 text-[18px]">
-                          <Icon name="check_circle" size={18} className="mr-1.5" />
+                        <Badge
+                          variant="accent"
+                          className="px-3 py-1 text-[18px]"
+                        >
+                          <Icon
+                            name="check_circle"
+                            size={18}
+                            className="mr-1.5"
+                          />
                           Installé
                         </Badge>
                         {isDefault && (
@@ -484,7 +543,10 @@ export function ModelsHub() {
                           </Badge>
                         )}
                         {isActiveChat && (
-                          <Badge variant="accent" className="px-3 py-1 text-[18px]">
+                          <Badge
+                            variant="accent"
+                            className="px-3 py-1 text-[18px]"
+                          >
                             <Icon name="chat" size={18} className="mr-1.5" />
                             Actif dans le chat
                           </Badge>
@@ -514,7 +576,9 @@ export function ModelsHub() {
                     aria-pressed={favorites.includes(modelId)}
                     onClick={() => void toggleFavorite(modelId)}
                   >
-                    {favorites.includes(modelId) ? "Retirer des favoris" : "Ajouter aux favoris"}
+                    {favorites.includes(modelId)
+                      ? "Retirer des favoris"
+                      : "Ajouter aux favoris"}
                   </Button>
 
                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -575,7 +639,9 @@ export function ModelsHub() {
       {activeTab === "catalog" && (
         <div className="grid gap-4 md:grid-cols-2">
           {visibleCatalog.length === 0 && (
-            <output className="block">Aucun modèle dans cette sélection.</output>
+            <output className="block">
+              Aucun modèle dans cette sélection.
+            </output>
           )}
           {visibleCatalog.map((entry) => {
             const size = entryBytes(entry);
@@ -583,14 +649,21 @@ export function ModelsHub() {
             const download = downloads[entry.id];
             const running = download?.status === "downloading";
             const percent = download?.total
-              ? Math.min(100, Math.round((download.downloaded / download.total) * 100))
+              ? Math.min(
+                  100,
+                  Math.round((download.downloaded / download.total) * 100),
+                )
               : null;
             const kind = normalizeModelKind(entry.task);
             const isDefault = defaultModel === entry.id;
             const isActiveChat = activeModel === entry.id;
 
             return (
-              <Card key={entry.id} variant="elevated" className="flex flex-col justify-between p-5">
+              <Card
+                key={entry.id}
+                variant="elevated"
+                className="flex flex-col justify-between p-5"
+              >
                 <div className="flex flex-col gap-3">
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -603,16 +676,29 @@ export function ModelsHub() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="secondary" className="px-3 py-1 text-[18px]">
+                      <Badge
+                        variant="secondary"
+                        className="px-3 py-1 text-[18px]"
+                      >
                         {kindLabel(kind)}
                       </Badge>
                       {isInstalled ? (
-                        <Badge variant="accent" className="px-3 py-1 text-[18px]">
-                          <Icon name="check_circle" size={18} className="mr-1" />
+                        <Badge
+                          variant="accent"
+                          className="px-3 py-1 text-[18px]"
+                        >
+                          <Icon
+                            name="check_circle"
+                            size={18}
+                            className="mr-1"
+                          />
                           Installé
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="px-3 py-1 text-[18px]">
+                        <Badge
+                          variant="outline"
+                          className="px-3 py-1 text-[18px]"
+                        >
                           Disponible
                         </Badge>
                       )}
@@ -626,7 +712,10 @@ export function ModelsHub() {
                         </Badge>
                       )}
                       {isActiveChat && (
-                        <Badge variant="accent" className="px-3 py-1 text-[18px]">
+                        <Badge
+                          variant="accent"
+                          className="px-3 py-1 text-[18px]"
+                        >
                           <Icon name="chat" size={18} className="mr-1.5" />
                           Actif dans le chat
                         </Badge>
@@ -634,14 +723,18 @@ export function ModelsHub() {
                     </div>
                   </div>
 
-                  <p className="m-0 text-[18px] text-on-surface-variant">{entry.summary}</p>
+                  <p className="m-0 text-[18px] text-on-surface-variant">
+                    {entry.summary}
+                  </p>
                   <p className="m-0 text-[18px] text-on-surface-variant">
                     Licence : {entry.license.spdx}
                   </p>
                   <Button
                     variant="tonal"
                     aria-expanded={detailsId === entry.id}
-                    onClick={() => setDetailsId(detailsId === entry.id ? null : entry.id)}
+                    onClick={() =>
+                      setDetailsId(detailsId === entry.id ? null : entry.id)
+                    }
                   >
                     Détails des fichiers
                   </Button>
@@ -653,7 +746,9 @@ export function ModelsHub() {
                       {entry.files.map((file) => (
                         <li key={`${file.role}:${file.ref}`}>
                           {file.role} · {file.ref} ·{" "}
-                          {file.bytes === undefined ? "Taille inconnue" : formatBytes(file.bytes)}
+                          {file.bytes === undefined
+                            ? "Taille inconnue"
+                            : formatBytes(file.bytes)}
                         </li>
                       ))}
                     </ul>
@@ -663,12 +758,17 @@ export function ModelsHub() {
                     aria-pressed={favorites.includes(entry.id)}
                     onClick={() => void toggleFavorite(entry.id)}
                   >
-                    {favorites.includes(entry.id) ? "Retirer des favoris" : "Ajouter aux favoris"}
+                    {favorites.includes(entry.id)
+                      ? "Retirer des favoris"
+                      : "Ajouter aux favoris"}
                   </Button>
 
                   <div className="flex flex-wrap gap-4 text-[18px] text-on-surface">
                     <span>
-                      Taille : <strong>{size === null ? "Inconnu" : formatBytes(size)}</strong>
+                      Taille :{" "}
+                      <strong>
+                        {size === null ? "Inconnu" : formatBytes(size)}
+                      </strong>
                     </span>
                     {entry.speed && (
                       <span>
@@ -700,7 +800,8 @@ export function ModelsHub() {
                         </span>
                         <span className="text-[18px] text-on-surface-variant">
                           {formatBytes(download.downloaded)}
-                          {download.total !== null && ` / ${formatBytes(download.total)}`}
+                          {download.total !== null &&
+                            ` / ${formatBytes(download.total)}`}
                           {running &&
                             download.speedBps !== null &&
                             ` · ${formatBytes(Math.round(download.speedBps))}/s`}
@@ -711,7 +812,9 @@ export function ModelsHub() {
                       </div>
                     </div>
                     {download.error && (
-                      <p className="m-0 text-[18px] text-error">{download.error}</p>
+                      <p className="m-0 text-[18px] text-error">
+                        {download.error}
+                      </p>
                     )}
                   </div>
                 )}
@@ -749,7 +852,9 @@ export function ModelsHub() {
                         <Button
                           variant="outlined"
                           className="min-h-[48px] px-4 text-[18px]"
-                          onClick={() => void handleVerify(entry.id, entry.title)}
+                          onClick={() =>
+                            void handleVerify(entry.id, entry.title)
+                          }
                         >
                           <Icon name="verified_user" size={20} />
                           <span>Vérifier</span>
@@ -758,7 +863,9 @@ export function ModelsHub() {
                         <Button
                           variant="outlined"
                           className="min-h-[48px] px-4 text-[18px] text-error hover:bg-error/10 border-error/40"
-                          onClick={() => setRemoval({ id: entry.id, title: entry.title })}
+                          onClick={() =>
+                            setRemoval({ id: entry.id, title: entry.title })
+                          }
                         >
                           <Icon name="delete" size={20} />
                           <span>Supprimer</span>
@@ -782,7 +889,10 @@ export function ModelsHub() {
                       onClick={() => void handleInstall(entry)}
                       disabled={stopping[entry.id] || pulling[entry.id]}
                     >
-                      <Icon name={download ? "play_arrow" : "download"} size={20} />
+                      <Icon
+                        name={download ? "play_arrow" : "download"}
+                        size={20}
+                      />
                       <span>
                         {download
                           ? "Reprendre"

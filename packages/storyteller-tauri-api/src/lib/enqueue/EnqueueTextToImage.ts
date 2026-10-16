@@ -115,8 +115,7 @@ export interface EnqueueTextToImageSuccess extends CommandResult {
 }
 
 export type EnqueueTextToImageResult =
-  | EnqueueTextToImageSuccess
-  | EnqueueTextToImageError;
+  EnqueueTextToImageSuccess | EnqueueTextToImageError;
 
 export const EnqueueTextToImage = async (
   request: EnqueueTextToImageRequest,

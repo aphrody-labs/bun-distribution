@@ -1,11 +1,7 @@
 import * as THREE from "three";
 import type Editor from "..";
 import type { UndoableAction } from "../HistoryManager";
-import {
-  ObjectSnap,
-  recreateFromSnapshot,
-  snapshotObject,
-} from "./snapshots";
+import { ObjectSnap, recreateFromSnapshot, snapshotObject } from "./snapshots";
 
 // Records the creation of an object. apply() re-creates from the
 // captured snapshot (used on redo). revert() removes the object using

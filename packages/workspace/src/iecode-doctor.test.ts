@@ -12,13 +12,14 @@ test("doctor resolves overlapping Bun globs and rejects missing literal members"
       writeFileSync(join(root, member, "package.json"), "{}");
     }
     const failures: string[] = [];
-    expect(resolveBunMembers(root, ["packages/*", "packages/a"], failures)).toEqual([
-      "packages/a",
-      "packages/b",
-    ]);
+    expect(
+      resolveBunMembers(root, ["packages/*", "packages/a"], failures),
+    ).toEqual(["packages/a", "packages/b"]);
     expect(failures).toEqual([]);
     expect(resolveBunMembers(root, ["packages/missing"], failures)).toEqual([]);
-    expect(failures).toEqual(["missing Bun workspace member: packages/missing/package.json"]);
+    expect(failures).toEqual([
+      "missing Bun workspace member: packages/missing/package.json",
+    ]);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

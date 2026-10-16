@@ -38,7 +38,9 @@ export interface ScanStats {
   }>;
 }
 
-export async function scanNextDirectory(targetPath: string): Promise<ScanStats> {
+export async function scanNextDirectory(
+  targetPath: string,
+): Promise<ScanStats> {
   const stats: ScanStats = {
     totalFiles: 0,
     clientComponents: 0,
@@ -194,7 +196,9 @@ export async function scanNextDirectory(targetPath: string): Promise<ScanStats> 
       features.push("m3-candidate");
     }
 
-    const envMatches = content.matchAll(/process\.env\.(NEXT_PUBLIC_[A-Z0-9_]+)/g);
+    const envMatches = content.matchAll(
+      /process\.env\.(NEXT_PUBLIC_[A-Z0-9_]+)/g,
+    );
     for (const match of envMatches) {
       envSet.add(match[1]);
     }

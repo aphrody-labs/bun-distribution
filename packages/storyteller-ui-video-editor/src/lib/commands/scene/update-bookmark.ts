@@ -8,7 +8,13 @@ import type { MediaTime } from "../../wasm";
 export class UpdateBookmarkCommand extends Command {
   private savedScenes: TScene[] | null = null;
 
-  constructor({ time, updates }: { time: MediaTime; updates: Partial<Omit<Bookmark, "time">> }) {
+  constructor({
+    time,
+    updates,
+  }: {
+    time: MediaTime;
+    updates: Partial<Omit<Bookmark, "time">>;
+  }) {
     super();
     this.time = time;
     this.updates = updates;

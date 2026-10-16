@@ -53,16 +53,25 @@ export interface PackageSyncResult {
   }>;
 }
 
-const MANIFESTS = { bun: "package.json", uv: "pyproject.toml", cargo: "Cargo.toml" } as const;
+const MANIFESTS = {
+  bun: "package.json",
+  uv: "pyproject.toml",
+  cargo: "Cargo.toml",
+} as const;
 const hash = async (path: string) =>
-  new Bun.CryptoHasher("sha256").update(await Bun.file(path).arrayBuffer()).digest("hex");
+  new Bun.CryptoHasher("sha256")
+    .update(await Bun.file(path).arrayBuffer())
+    .digest("hex");
 
 /** Read-only preflight. It never installs a tool, updates a lock or executes a script. */
-export async function planPackageSync(options: PackageSyncOptions = {}): Promise<PackageSyncPlan> {
+export async function planPackageSync(
+  options: PackageSyncOptions = {},
+): Promise<PackageSyncPlan> {
   const root = realpathSync(resolve(options.root ?? process.cwd()));
-  if (!statSync(root).isDirectory()) throw new Error("Package root must be a directory");
-  const detected = (Object.keys(MANIFESTS) as PackageManager[]).filter((manager) =>
-    existsSync(join(root, MANIFESTS[manager])),
+  if (!statSync(root).isDirectory())
+    throw new Error("Package root must be a directory");
+  const detected = (Object.keys(MANIFESTS) as PackageManager[]).filter(
+    (manager) => existsSync(join(root, MANIFESTS[manager])),
   );
   const managers = options.managers ? [...options.managers] : detected;
   if (!managers.length) throw new Error("No supported package manifests found");
@@ -98,7 +107,8 @@ export async function planPackageSync(options: PackageSyncOptions = {}): Promise
       try {
         // oxlint-disable-next-line no-await-in-loop -- lecture séquentielle du manifeste avant analyse
         const text = await Bun.file(manifest).text();
-        const value: unknown = manager === "bun" ? JSON.parse(text) : Bun.TOML.parse(text);
+        const value: unknown =
+          manager === "bun" ? JSON.parse(text) : Bun.TOML.parse(text);
         if (!value || typeof value !== "object" || Array.isArray(value))
           throw new Error("Expected manifest object");
       } catch {
@@ -131,7 +141,9 @@ export async function planPackageSync(options: PackageSyncOptions = {}): Promise
     else {
       const wrapper = cargoSerialArgv();
       if (!existsSync(wrapper.at(-1)!))
-        blockers.push("Supported Aphrody Cargo serialization wrapper unavailable");
+        blockers.push(
+          "Supported Aphrody Cargo serialization wrapper unavailable",
+        );
       argv = [...wrapper, "fetch", "--locked"];
     }
     if (options.offline) argv.push("--offline");
@@ -148,7 +160,9 @@ export async function planPackageSync(options: PackageSyncOptions = {}): Promise
 /** Sequential native dependency acquisition; it does not build engines or publish packages. */
 const activeRoots = new Set<string>();
 
-export async function syncPackages(options: PackageSyncOptions = {}): Promise<PackageSyncResult> {
+export async function syncPackages(
+  options: PackageSyncOptions = {},
+): Promise<PackageSyncResult> {
   const timeoutMs = options.timeoutMs ?? 300000;
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 1800000)
     throw new RangeError("Package timeout must be 1..1800000 milliseconds");
@@ -161,7 +175,8 @@ export async function syncPackages(options: PackageSyncOptions = {}): Promise<Pa
     results: [],
   };
   if (!report.applied) return report;
-  if (activeRoots.has(plan.root)) throw new Error("Package sync already running for this root");
+  if (activeRoots.has(plan.root))
+    throw new Error("Package sync already running for this root");
   activeRoots.add(plan.root);
   try {
     for (const step of plan.steps) {
@@ -172,7 +187,9 @@ export async function syncPackages(options: PackageSyncOptions = {}): Promise<Pa
           manager: step.manager,
           status: "skipped",
           exitCode: null,
-          reason: options.signal?.aborted ? "Cancelled" : "Previous manager failed",
+          reason: options.signal?.aborted
+            ? "Cancelled"
+            : "Previous manager failed",
           elapsedMs: 0,
         });
         continue;
@@ -202,7 +219,9 @@ export async function syncPackages(options: PackageSyncOptions = {}): Promise<Pa
           args: step.argv.slice(1),
           cwd: plan.root,
           env: {
-            APHRODY_CARGO_LOCK_TIMEOUT_SECS: String(Math.max(1, Math.ceil(timeoutMs / 1000))),
+            APHRODY_CARGO_LOCK_TIMEOUT_SECS: String(
+              Math.max(1, Math.ceil(timeoutMs / 1000)),
+            ),
           },
           stdio: "capture-lossless",
           maxOutputBytes: 262144,
@@ -214,7 +233,8 @@ export async function syncPackages(options: PackageSyncOptions = {}): Promise<Pa
             ...(options.signal ? { signal: options.signal } : {}),
           });
           exitCode = outcome.status.exitCode;
-          if (outcome.status.signal) reason = `Stopped by signal ${outcome.status.signal}`;
+          if (outcome.status.signal)
+            reason = `Stopped by signal ${outcome.status.signal}`;
         } finally {
           child.release();
         }

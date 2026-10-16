@@ -3,7 +3,13 @@
  * Diagnostic approfondi du lecteur USB Z: (Disque 1, General UDisk 2TB)
  * Exploite le runtime Bun de notre fork (Bun v1.4.3-aphrody.3) et le module natif `bun:windows`.
  */
-import { readdirSync, statSync, writeFileSync, readFileSync, unlinkSync } from "node:fs";
+import {
+  readdirSync,
+  statSync,
+  writeFileSync,
+  readFileSync,
+  unlinkSync,
+} from "node:fs";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 
@@ -34,7 +40,7 @@ interface BunWindowsModule {
   eventLog: {
     query(
       channel?: string,
-      options?: { xpath?: string; limit?: number; newestFirst?: boolean }
+      options?: { xpath?: string; limit?: number; newestFirst?: boolean },
     ): string[];
   };
   registry: {
@@ -43,12 +49,16 @@ interface BunWindowsModule {
 }
 
 async function main() {
-  console.log("=== DIAGNOSTIC AMOVIBLE Z: VIA BUN:WINDOWS (FORK APHRODY) ===\n");
+  console.log(
+    "=== DIAGNOSTIC AMOVIBLE Z: VIA BUN:WINDOWS (FORK APHRODY) ===\n",
+  );
 
   // 1. Chargement de bun:windows
   let win: BunWindowsModule;
   try {
-    win = (await import("bun:windows" as string)) as unknown as BunWindowsModule;
+    win = (await import(
+      "bun:windows" as string
+    )) as unknown as BunWindowsModule;
   } catch (err) {
     console.error("Échec du chargement de bun:windows:", err);
     process.exit(1);
@@ -57,28 +67,42 @@ async function main() {
   // 2. Privilèges et Système
   const elevated = win.isElevated();
   const sys = win.systemInfo();
-  console.log(`[Hôte] Machine: ${sys.computerName} | Utilisateur: ${sys.userName} | Élévation Admin: ${elevated ? "OUI" : "NON"}`);
-  console.log(`[Mémoire] RAM Totale: ${(sys.totalMemory / 1024 / 1024 / 1024).toFixed(2)} Go | Libre: ${(sys.freeMemory / 1024 / 1024 / 1024).toFixed(2)} Go (Charge: ${sys.memoryLoad}%)\n`);
+  console.log(
+    `[Hôte] Machine: ${sys.computerName} | Utilisateur: ${sys.userName} | Élévation Admin: ${elevated ? "OUI" : "NON"}`,
+  );
+  console.log(
+    `[Mémoire] RAM Totale: ${(sys.totalMemory / 1024 / 1024 / 1024).toFixed(2)} Go | Libre: ${(sys.freeMemory / 1024 / 1024 / 1024).toFixed(2)} Go (Charge: ${sys.memoryLoad}%)\n`,
+  );
 
   // 3. Inspection des disques logiques
   const drives = win.storage.drives();
   console.log("[Lecteurs Détectés]");
   for (const d of drives) {
-    const totalGB = (d.totalBytes / (1024 ** 3)).toFixed(2);
-    const freeGB = (d.freeBytes / (1024 ** 3)).toFixed(2);
-    console.log(`  - ${d.root} [${d.type}]: Total = ${totalGB} Go, Libre = ${freeGB} Go (${d.totalBytes} octets)`);
+    const totalGB = (d.totalBytes / 1024 ** 3).toFixed(2);
+    const freeGB = (d.freeBytes / 1024 ** 3).toFixed(2);
+    console.log(
+      `  - ${d.root} [${d.type}]: Total = ${totalGB} Go, Libre = ${freeGB} Go (${d.totalBytes} octets)`,
+    );
   }
 
   const targetDrive = drives.find((d) => d.root.toUpperCase().startsWith("Z"));
   if (!targetDrive) {
-    console.error("\n[ERREUR] Lecteur Z: non trouvé dans l'inventaire des disques !");
+    console.error(
+      "\n[ERREUR] Lecteur Z: non trouvé dans l'inventaire des disques !",
+    );
     process.exit(1);
   }
 
   console.log(`\n[Cible Identifiée] ${targetDrive.root}`);
-  console.log(`  Capacité déclarée : ${(targetDrive.totalBytes / (1024 ** 4)).toFixed(3)} To (${targetDrive.totalBytes.toLocaleString()} octets)`);
-  console.log(`  Espace libre      : ${(targetDrive.freeBytes / (1024 ** 4)).toFixed(3)} To (${targetDrive.freeBytes.toLocaleString()} octets)`);
-  console.log(`  Espace utilisé    : ${((targetDrive.totalBytes - targetDrive.freeBytes) / (1024 ** 3)).toFixed(2)} Go`);
+  console.log(
+    `  Capacité déclarée : ${(targetDrive.totalBytes / 1024 ** 4).toFixed(3)} To (${targetDrive.totalBytes.toLocaleString()} octets)`,
+  );
+  console.log(
+    `  Espace libre      : ${(targetDrive.freeBytes / 1024 ** 4).toFixed(3)} To (${targetDrive.freeBytes.toLocaleString()} octets)`,
+  );
+  console.log(
+    `  Espace utilisé    : ${((targetDrive.totalBytes - targetDrive.freeBytes) / 1024 ** 3).toFixed(2)} Go`,
+  );
 
   // 4. Examen du contenu à la racine de Z:\
   console.log(`\n[Contenu Racine Z:\\]`);
@@ -92,8 +116,12 @@ async function main() {
         try {
           const full = join("Z:\\", entry);
           const st = statSync(full);
-          const kind = st.isDirectory() ? "<DIR>" : `${st.size.toLocaleString()} B`;
-          console.log(`   - ${entry.padEnd(30)} ${kind} (modifié: ${st.mtime.toISOString()})`);
+          const kind = st.isDirectory()
+            ? "<DIR>"
+            : `${st.size.toLocaleString()} B`;
+          console.log(
+            `   - ${entry.padEnd(30)} ${kind} (modifié: ${st.mtime.toISOString()})`,
+          );
         } catch (e: any) {
           console.log(`   - ${entry.padEnd(30)} [Erreur I/O: ${e.message}]`);
         }
@@ -127,9 +155,15 @@ async function main() {
     const readHash = createHash("sha256").update(readBack).digest("hex");
     const hashMatch = originalHash === readHash;
 
-    console.log(`  Écriture 64 Ko : ${tWrite.toFixed(2)} ms (${((64 / 1024) / (tWrite / 1000)).toFixed(2)} Mo/s)`);
-    console.log(`  Lecture  64 Ko : ${tRead.toFixed(2)} ms (${((64 / 1024) / (tRead / 1000)).toFixed(2)} Mo/s)`);
-    console.log(`  Checksum SHA-256: ${hashMatch ? "OK (Correspondance exacte)" : "ÉCHEC (Corruption immédiate !)"}`);
+    console.log(
+      `  Écriture 64 Ko : ${tWrite.toFixed(2)} ms (${(64 / 1024 / (tWrite / 1000)).toFixed(2)} Mo/s)`,
+    );
+    console.log(
+      `  Lecture  64 Ko : ${tRead.toFixed(2)} ms (${(64 / 1024 / (tRead / 1000)).toFixed(2)} Mo/s)`,
+    );
+    console.log(
+      `  Checksum SHA-256: ${hashMatch ? "OK (Correspondance exacte)" : "ÉCHEC (Corruption immédiate !)"}`,
+    );
 
     unlinkSync(probeFile);
     console.log("  Suppression du fichier sonde : Succès");
@@ -141,7 +175,8 @@ async function main() {
   console.log(`\n[Événements Système Récents sur le stockage / Harddisk1]`);
   try {
     const rawEvents = win.eventLog.query("System", {
-      xpath: "*[System[Provider[@Name='disk'] or Provider[@Name='USBSTOR'] or Provider[@Name='partmgr']]]",
+      xpath:
+        "*[System[Provider[@Name='disk'] or Provider[@Name='USBSTOR'] or Provider[@Name='partmgr']]]",
       limit: 40,
       newestFirst: true,
     });
@@ -168,15 +203,21 @@ async function main() {
         else if (eventId === "157") label = " [DISQUE DÉCONNECTÉ PAR SURPRISE]";
         else if (eventId === "140") label = " [ÉCHEC D'ÉCRITURE DIFFÉRÉE]";
 
-        console.log(`  - ${time} | ${provider} | ID ${eventId}${label} -> ${data}`);
+        console.log(
+          `  - ${time} | ${provider} | ID ${eventId}${label} -> ${data}`,
+        );
       }
     }
 
     if (disk1Events === 0) {
-      console.log("  Aucun événement d'erreur récent spécifiquement enregistré sur Harddisk1.");
+      console.log(
+        "  Aucun événement d'erreur récent spécifiquement enregistré sur Harddisk1.",
+      );
     }
   } catch (err: any) {
-    console.error(`  Erreur lors de la lecture du journal d'événements: ${err.message}`);
+    console.error(
+      `  Erreur lors de la lecture du journal d'événements: ${err.message}`,
+    );
   }
 
   console.log("\n=== FIN DU DIAGNOSTIC BUN:WINDOWS ===");

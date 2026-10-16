@@ -46,8 +46,9 @@ export function TabNavigationSync() {
       document.title = browserDocumentTitle(
         location.pathname,
         newTitle ?? activeTab?.title ?? null,
-        document.querySelector('meta[name="aphrody-rpc"]')?.getAttribute("content") ===
-          "unavailable",
+        document
+          .querySelector('meta[name="aphrody-rpc"]')
+          ?.getAttribute("content") === "unavailable",
       );
     }
   }, [

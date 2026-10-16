@@ -14,7 +14,7 @@
 # which repackages the prebuilt release binaries. Keep runtime-version and finish-args identical.
 id: ai.storyteller.cadcraft
 runtime: org.freedesktop.Platform
-runtime-version: '26.08'
+runtime-version: "26.08"
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.rust-stable
@@ -44,7 +44,7 @@ modules:
     build-options:
       env:
         CARGO_HOME: /run/build/cadcraft/cargo
-        CARGO_NET_OFFLINE: 'true'
+        CARGO_NET_OFFLINE: "true"
     build-commands:
       - cargo --offline build --manifest-path Cargo.toml --release --locked -p cadcraft -p cadcraft-cli
       - install -Dm755 target/release/cadcraft /app/bin/cadcraft

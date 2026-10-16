@@ -17,7 +17,10 @@ import {
   getTextMeasurementContext,
   measureTextElement,
 } from "../../text/measure-element";
-import { resolveColorAtTime, resolveOpacityAtTime } from "../../animation/values";
+import {
+  resolveColorAtTime,
+  resolveOpacityAtTime,
+} from "../../animation/values";
 import { resolveTransformAtTime } from "../../rendering/animation-values";
 import { videoCache } from "../video-cache/service";
 import type { CanvasRenderer } from "./canvas-renderer";
@@ -205,7 +208,9 @@ async function resolveVideoNode({
   const frame = await videoCache.getFrameAt({
     mediaId: node.params.mediaId,
     file: node.params.file,
-    time: mediaTimeToSeconds({ time: roundMediaTime({ time: sourceTimeTicks }) }),
+    time: mediaTimeToSeconds({
+      time: roundMediaTime({ time: sourceTimeTicks }),
+    }),
   });
   if (!frame) {
     return null;
@@ -427,7 +432,9 @@ async function resolveBackdropSource({
     const frame = await videoCache.getFrameAt({
       mediaId: node.params.mediaId,
       file: node.params.file,
-      time: mediaTimeToSeconds({ time: roundMediaTime({ time: sourceTimeTicks }) }),
+      time: mediaTimeToSeconds({
+        time: roundMediaTime({ time: sourceTimeTicks }),
+      }),
     });
     if (!frame) {
       return null;

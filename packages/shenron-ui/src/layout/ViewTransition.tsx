@@ -17,27 +17,27 @@ import * as React from "react";
 type VTAnim = string | Record<string, string>;
 
 export interface ViewTransitionProps {
-	children: React.ReactNode;
-	/** Identité partagée entre deux routes → morph automatique de l'élément. */
-	name?: string;
-	/** "morph" | "auto" | "none" — assigne une classe ciblable en CSS. */
-	share?: VTAnim;
-	enter?: VTAnim;
-	exit?: VTAnim;
-	/** Animation par défaut (souvent "none" pour ne pas animer hors contexte). */
-	default?: VTAnim;
+  children: React.ReactNode;
+  /** Identité partagée entre deux routes → morph automatique de l'élément. */
+  name?: string;
+  /** "morph" | "auto" | "none" — assigne une classe ciblable en CSS. */
+  share?: VTAnim;
+  enter?: VTAnim;
+  exit?: VTAnim;
+  /** Animation par défaut (souvent "none" pour ne pas animer hors contexte). */
+  default?: VTAnim;
 }
 
 // `ViewTransition` n'est présent que sur le build react-experimental injecté par
 // Next quand le flag est actif. On le récupère dynamiquement pour éviter une
 // erreur de type/résolution si absent.
 const ReactAny = React as unknown as {
-	ViewTransition?: React.ComponentType<ViewTransitionProps>;
-	unstable_ViewTransition?: React.ComponentType<ViewTransitionProps>;
+  ViewTransition?: React.ComponentType<ViewTransitionProps>;
+  unstable_ViewTransition?: React.ComponentType<ViewTransitionProps>;
 };
 const RVT = ReactAny.ViewTransition ?? ReactAny.unstable_ViewTransition;
 
 export function ViewTransition(props: ViewTransitionProps) {
-	if (!RVT) return <Fragment>{props.children}</Fragment>;
-	return <RVT {...props} />;
+  if (!RVT) return <Fragment>{props.children}</Fragment>;
+  return <RVT {...props} />;
 }

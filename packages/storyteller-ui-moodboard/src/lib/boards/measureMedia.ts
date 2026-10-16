@@ -2,9 +2,7 @@
 // Both resolve (never reject) with a square fallback so a failed probe still
 // yields a usable tile.
 
-export const measureImage = (
-  url: string,
-): Promise<{ w: number; h: number }> =>
+export const measureImage = (url: string): Promise<{ w: number; h: number }> =>
   new Promise((resolve) => {
     const img = new window.Image();
     // No crossOrigin: we only read naturalWidth/Height (which never taint a
@@ -16,9 +14,7 @@ export const measureImage = (
     img.src = url;
   });
 
-export const measureVideo = (
-  url: string,
-): Promise<{ w: number; h: number }> =>
+export const measureVideo = (url: string): Promise<{ w: number; h: number }> =>
   new Promise((resolve) => {
     const v = document.createElement("video");
     v.preload = "metadata";

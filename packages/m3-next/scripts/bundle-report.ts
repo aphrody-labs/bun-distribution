@@ -30,13 +30,19 @@ export interface Measure {
 }
 export type Report = Record<string, Measure | number>;
 
-const gz = (text: string | Uint8Array): number => gzipSync(text, { level: 9 }).length;
-const size = (text: string): Measure => ({ bytes: Buffer.byteLength(text), gzip: gz(text) });
+const gz = (text: string | Uint8Array): number =>
+  gzipSync(text, { level: 9 }).length;
+const size = (text: string): Measure => ({
+  bytes: Buffer.byteLength(text),
+  gzip: gz(text),
+});
 
 /** Entry file of a workspace package: the `.` export, falling back to `main`. */
 function entryOf(pkg: string): string {
   const dir = join(PACKAGES, pkg);
-  const manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as {
+  const manifest = JSON.parse(
+    readFileSync(join(dir, "package.json"), "utf8"),
+  ) as {
     exports?: Record<string, unknown>;
     main?: string;
   };
@@ -104,7 +110,11 @@ async function bundleSplit(
 /** Minified CSS through Bun's CSS pipeline. */
 async function minifyCss(css: string): Promise<Measure> {
   const entry = join(PACKAGES, "m3-next", "__bundle_entry__.css");
-  const result = await Bun.build({ entrypoints: [entry], files: { [entry]: css }, minify: true });
+  const result = await Bun.build({
+    entrypoints: [entry],
+    files: { [entry]: css },
+    minify: true,
+  });
   if (!result.success) throw new Error(result.logs.map(String).join("\n"));
   return size(await result.outputs[0]!.text());
 }
@@ -152,7 +162,11 @@ export const M3_CANDIDATES = [
   "dark:bg-surface",
 ];
 
-async function tailwindCss(): Promise<{ preset: Measure; app: Measure; m3: Measure }> {
+async function tailwindCss(): Promise<{
+  preset: Measure;
+  app: Measure;
+  m3: Measure;
+}> {
   const base = join(PACKAGES, "m3-tailwind");
   const input = [
     '@import "tailwindcss/theme.css" layer(theme);',
@@ -161,8 +175,12 @@ async function tailwindCss(): Promise<{ preset: Measure; app: Measure; m3: Measu
   ].join("\n");
   const compiler = await compile(input, { base, onDependency() {} });
   const app = await minifyCss(compiler.build(TYPICAL_CANDIDATES));
-  const m3 = await minifyCss(compiler.build([...TYPICAL_CANDIDATES, ...M3_CANDIDATES]));
-  const preset = await minifyCss(readFileSync(join(base, "preset.css"), "utf8"));
+  const m3 = await minifyCss(
+    compiler.build([...TYPICAL_CANDIDATES, ...M3_CANDIDATES]),
+  );
+  const preset = await minifyCss(
+    readFileSync(join(base, "preset.css"), "utf8"),
+  );
   return { preset, app, m3 };
 }
 
@@ -204,7 +222,13 @@ export async function measure(): Promise<Report> {
   report["tailwind.app.css"] = tw.app;
   report["tailwind.app.m3.css"] = tw.m3;
 
-  const clientExternal = ["react", "react-dom", "react/jsx-runtime", "next", "next/*"];
+  const clientExternal = [
+    "react",
+    "react-dom",
+    "react/jsx-runtime",
+    "next",
+    "next/*",
+  ];
   const client = await bundleSplit(
     `import * as c from ${JSON.stringify(nextClient)}; globalThis.x = c;`,
     clientExternal,
@@ -228,11 +252,14 @@ const LABELS: Record<string, string> = {
   "baseui.css.button": "m3-baseui CSS, core + Button only (minified)",
   "tailwind.preset.css": "m3-tailwind `preset.css` (minified)",
   "tailwind.app.css": "Tailwind app CSS, 25 typical classes (minified)",
-  "tailwind.app.m3.css": "same 25 classes plus 10 of the new utilities and variants (minified)",
-  "next.client.js": "m3-next client entry JS (theme provider; downloaded up front)",
+  "tailwind.app.m3.css":
+    "same 25 classes plus 10 of the new utilities and variants (minified)",
+  "next.client.js":
+    "m3-next client entry JS (theme provider; downloaded up front)",
   "next.client.lazy.js":
     "m3-next colour engine chunk (loaded only for a custom seed, variant or contrast)",
-  "next.index.js": "m3-next config/scheme entry JS (server and build time only)",
+  "next.index.js":
+    "m3-next config/scheme entry JS (server and build time only)",
 };
 
 const delta = (a: number, b: number): string =>
@@ -246,8 +273,8 @@ export interface ExampleSize {
 
 /** Client assets of a built example: `.next/static` (server app) or `out/_next/static` (static export). */
 export function exampleSizes(dir: string): ExampleSize | undefined {
-  const root = [join(dir, "out/_next/static"), join(dir, ".next/static")].find((d) =>
-    existsSync(d),
+  const root = [join(dir, "out/_next/static"), join(dir, ".next/static")].find(
+    (d) => existsSync(d),
   );
   if (!root) return undefined;
   let js = Buffer.alloc(0);
@@ -274,11 +301,16 @@ export function exampleSizes(dir: string): ExampleSize | undefined {
   };
 }
 
-export function markdown(after: Report, before: Report | undefined, extra: string): string {
+export function markdown(
+  after: Report,
+  before: Report | undefined,
+  extra: string,
+): string {
   const rows = Object.keys({ ...before, ...after }).map((key) => {
     const a = after[key] as Measure | undefined;
     const b = before?.[key] as Measure | undefined;
-    const cell = (m: Measure | undefined): string => (m ? `${m.bytes} (${m.gzip} gz)` : "n/a");
+    const cell = (m: Measure | undefined): string =>
+      m ? `${m.bytes} (${m.gzip} gz)` : "n/a";
     return `| ${LABELS[key] ?? key} | ${cell(b)} | ${cell(a)} | ${a && b ? delta(b.bytes, a.bytes) : "n/a"} |`;
   });
   return `<!-- SPDX-License-Identifier: Apache-2.0 -->
@@ -305,7 +337,9 @@ if (import.meta.main) {
   const out = flag("--out");
   if (out) writeFileSync(out, JSON.stringify(after, null, 2) + "\n");
   const beforePath = flag("--before");
-  const before = beforePath ? (JSON.parse(readFileSync(beforePath, "utf8")) as Report) : undefined;
+  const before = beforePath
+    ? (JSON.parse(readFileSync(beforePath, "utf8")) as Report)
+    : undefined;
   const mdPath = flag("--write");
   const extraPath = flag("--extra");
   let extra = extraPath ? readFileSync(extraPath, "utf8") : "";
@@ -343,5 +377,6 @@ ${rows.join("\n")}
     writeFileSync(mdPath, markdown(after, before, extra));
     console.log(`wrote ${mdPath}`);
   }
-  if (args.includes("--json") || (!mdPath && !out)) console.log(JSON.stringify(after, null, 2));
+  if (args.includes("--json") || (!mdPath && !out))
+    console.log(JSON.stringify(after, null, 2));
 }

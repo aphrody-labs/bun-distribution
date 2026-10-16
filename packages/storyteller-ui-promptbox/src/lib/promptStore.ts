@@ -315,7 +315,9 @@ const ENTER_TO_GENERATE_STORAGE_KEY = "artcraft_enter_to_generate";
 const readEnterToGenerate = (): boolean => {
   if (typeof window === "undefined") return false;
   try {
-    return window.localStorage.getItem(ENTER_TO_GENERATE_STORAGE_KEY) === "true";
+    return (
+      window.localStorage.getItem(ENTER_TO_GENERATE_STORAGE_KEY) === "true"
+    );
   } catch {
     return false;
   }
@@ -339,13 +341,15 @@ interface EnterToGenerateStore {
   setEnabled: (enabled: boolean) => void;
 }
 
-export const useEnterToGenerateStore = create<EnterToGenerateStore>()((set) => ({
-  enabled: readEnterToGenerate(),
-  setEnabled: (enabled) => {
-    writeEnterToGenerate(enabled);
-    set({ enabled });
-  },
-}));
+export const useEnterToGenerateStore = create<EnterToGenerateStore>()(
+  (set) => ({
+    enabled: readEnterToGenerate(),
+    setEnabled: (enabled) => {
+      writeEnterToGenerate(enabled);
+      set({ enabled });
+    },
+  }),
+);
 
 // ----- Characters Store -----
 export interface StoredCharacter {

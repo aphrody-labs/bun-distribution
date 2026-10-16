@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 import { loadApp } from "../src/config.ts";
 import {
@@ -25,8 +31,10 @@ afterAll(cleanup);
 
 let ctx: TargetContext;
 let out = "";
-const read = (id: string, file: string) => readFileSync(join(out, id, file), "utf8");
-const json = (id: string, file: string) => JSON.parse(read(id, file)) as Record<string, any>;
+const read = (id: string, file: string) =>
+  readFileSync(join(out, id, file), "utf8");
+const json = (id: string, file: string) =>
+  JSON.parse(read(id, file)) as Record<string, any>;
 
 beforeAll(async () => {
   out = tmp("m3-bun-targets-");
@@ -75,7 +83,9 @@ describe("registry", () => {
       "next",
     ]);
     for (const t of TARGETS) expect(t.description.length).toBeGreaterThan(20);
-    expect(() => getTarget("heroku")).toThrow(/unknown deploy target heroku \(docker, systemd/);
+    expect(() => getTarget("heroku")).toThrow(
+      /unknown deploy target heroku \(docker, systemd/,
+    );
   });
 
   test("generation writes only below <out>/<id>/ and every target produced files", async () => {
@@ -88,9 +98,9 @@ describe("registry", () => {
 
   test("a generated path that escapes its directory is refused", async () => {
     const { writeFiles } = await import("../src/util.ts");
-    await expect(writeFiles(tmp(), [{ path: "../escape.txt", content: "x" }])).rejects.toThrow(
-      /escapes its directory/,
-    );
+    await expect(
+      writeFiles(tmp(), [{ path: "../escape.txt", content: "x" }]),
+    ).rejects.toThrow(/escapes its directory/);
   });
 });
 
@@ -104,7 +114,9 @@ describe("docker", () => {
     ]);
     expect(file).toContain("COPY --chown=agent:agent . .");
     expect(file).toContain("compile --outfile /home/agent/out/hello-m3");
-    expect(file).toContain("COPY --from=build /home/agent/out/hello-m3 /app/server");
+    expect(file).toContain(
+      "COPY --from=build /home/agent/out/hello-m3 /app/server",
+    );
     expect(file).toContain(
       'HEALTHCHECK --interval=30s --timeout=4s --start-period=5s --retries=3 CMD ["/app/server", "--healthcheck"]',
     );
@@ -120,7 +132,11 @@ describe("docker", () => {
     expect(service.read_only).toBe(true);
     expect(service.cap_drop).toEqual(["ALL"]);
     expect(service.ports).toEqual(["127.0.0.1:3456:3456"]);
-    expect(service.healthcheck.test).toEqual(["CMD", "/app/server", "--healthcheck"]);
+    expect(service.healthcheck.test).toEqual([
+      "CMD",
+      "/app/server",
+      "--healthcheck",
+    ]);
     expect(read("docker", ".dockerignore")).toContain("node_modules");
   });
 });
@@ -153,14 +169,29 @@ describe("systemd", () => {
     ];
     names.forEach((name, i) => {
       expect(
-        read("systemd", `hello-m3.service.d/${String(10 + i * 10).padStart(2, "0")}-${name}`),
+        read(
+          "systemd",
+          `hello-m3.service.d/${String(10 + i * 10).padStart(2, "0")}-${name}`,
+        ),
       ).toBe(sharedDropin(ctx.yoloRoot, name));
     });
-    expect(sharedDropin("/nonexistent", "sandbox-base.conf")).toContain("ProtectSystem=strict");
-    if (existsSync(join(ctx.yoloRoot, "tools/config/host/systemd/shared/sandbox-base.conf"))) {
+    expect(sharedDropin("/nonexistent", "sandbox-base.conf")).toContain(
+      "ProtectSystem=strict",
+    );
+    if (
+      existsSync(
+        join(
+          ctx.yoloRoot,
+          "tools/config/host/systemd/shared/sandbox-base.conf",
+        ),
+      )
+    ) {
       expect(sharedDropin(ctx.yoloRoot, "sandbox-base.conf")).toBe(
         readFileSync(
-          join(ctx.yoloRoot, "tools/config/host/systemd/shared/sandbox-base.conf"),
+          join(
+            ctx.yoloRoot,
+            "tools/config/host/systemd/shared/sandbox-base.conf",
+          ),
           "utf8",
         ),
       );
@@ -189,11 +220,15 @@ describe("systemd", () => {
       const root = tmp("m3-bun-systemd-");
       const bin = join(root, "current/bin");
       mkdirSync(bin, { recursive: true });
-      writeFileSync(join(bin, "hello-m3"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+      writeFileSync(join(bin, "hello-m3"), "#!/bin/sh\nexit 0\n", {
+        mode: 0o755,
+      });
       // The drop-ins are plain `[Service]` sections: appended in order, they are what systemd merges.
       const dropins = readdirSync(join(out, "systemd", "hello-m3.service.d"))
         .toSorted()
-        .map((f) => readFileSync(join(out, "systemd", "hello-m3.service.d", f), "utf8"));
+        .map((f) =>
+          readFileSync(join(out, "systemd", "hello-m3.service.d", f), "utf8"),
+        );
       const merged = `${read("systemd", "hello-m3.service")
         .replaceAll("/home/ubuntu/apps/aphrody/current", join(root, "current"))
         .replace("[Install]", `${dropins.join("\n")}\n[Install]`)}`;
@@ -211,7 +246,9 @@ describe("systemd", () => {
         .filter(
           (l) =>
             l.trim() &&
-            !/Failed to resolve (user|group)|User .* not found|Group .* not found|ubuntu/i.test(l),
+            !/Failed to resolve (user|group)|User .* not found|Group .* not found|ubuntu/i.test(
+              l,
+            ),
         );
       expect(findings).toEqual([]);
     },
@@ -228,21 +265,30 @@ describe("nginx", () => {
     );
     const model = vhostModel(ctx);
     expect(
-      JSON.parse(await renderNginx([process.execPath, script], model, ["owner comment"])),
+      JSON.parse(
+        await renderNginx([process.execPath, script], model, ["owner comment"]),
+      ),
     ).toEqual({
       model,
       args: ["--comment", "owner comment", "-"],
     });
-    await Bun.write(script, 'console.error("renderer denied"); process.exit(23);');
-    await expect(renderNginx([process.execPath, script], model, [])).rejects.toThrow(
-      "failed (23): renderer denied",
+    await Bun.write(
+      script,
+      'console.error("renderer denied"); process.exit(23);',
     );
+    await expect(
+      renderNginx([process.execPath, script], model, []),
+    ).rejects.toThrow("failed (23): renderer denied");
   });
   test("vhost model: upstream with keepalive, ACME and redirect on :80, TLS on :443, the yolo proxy snippet", () => {
     const model = json("nginx", "hello-m3.nginx.json") as NginxModel;
     expect(model).toEqual(vhostModel(ctx));
     expect(model.upstreams).toEqual([
-      { name: "hello_m3", targets: [{ type: "Tcp", target: "127.0.0.1:3456" }], keepalive: 16 },
+      {
+        name: "hello_m3",
+        targets: [{ type: "Tcp", target: "127.0.0.1:3456" }],
+        keepalive: 16,
+      },
     ]);
     const [redirect, tls] = model.servers;
     expect(redirect!.listen_ports).toEqual(["80"]);
@@ -255,14 +301,20 @@ describe("nginx", () => {
     ]);
     expect(tls!.listen_ports).toEqual(["443 ssl"]);
     expect(tls!.server_names).toEqual(["hello.example.com"]);
-    expect(tls!.ssl_certificate).toBe("/etc/letsencrypt/live/hello.example.com/fullchain.pem");
+    expect(tls!.ssl_certificate).toBe(
+      "/etc/letsencrypt/live/hello.example.com/fullchain.pem",
+    );
     expect(tls!.custom_directives).toContain("http2 on");
     expect(tls!.custom_directives).toContain(
       'add_header Strict-Transport-Security "max-age=31536000" always',
     );
     expect(tls!.locations![0]!.proxy_pass).toBe("http://hello_m3");
-    expect(tls!.locations![0]!.custom_directives).toContain("include snippets/proxy-client-ip.inc");
-    expect(json("nginx", "hello-m3.http.nginx.json")).toEqual(httpVhostModel(ctx));
+    expect(tls!.locations![0]!.custom_directives).toContain(
+      "include snippets/proxy-client-ip.inc",
+    );
+    expect(json("nginx", "hello-m3.http.nginx.json")).toEqual(
+      httpVhostModel(ctx),
+    );
   });
   test("the listen-http2 form is available for nginx older than 1.25.1", () => {
     const tls = vhostModel({ ...ctx, http2: "listen" }).servers[1]!;
@@ -275,9 +327,13 @@ describe("nginx", () => {
       expect(conf).toContain(
         "upstream hello_m3 {\n    server 127.0.0.1:3456;\n    keepalive 16;\n}",
       );
-      expect(conf).toContain("listen 443 ssl;\n    server_name hello.example.com;");
+      expect(conf).toContain(
+        "listen 443 ssl;\n    server_name hello.example.com;",
+      );
       expect(conf).toContain("    http2 on;\n");
-      expect(conf).toContain("return 301 https://hello.example.com$request_uri;");
+      expect(conf).toContain(
+        "return 301 https://hello.example.com$request_uri;",
+      );
       expect(conf).toContain('proxy_set_header Connection "";');
       expect(conf).toContain("include snippets/proxy-client-ip.inc;");
     } else {
@@ -300,7 +356,10 @@ describe("nginx", () => {
     async () => {
       const dir = tmp("m3-bun-nginx-");
       mkdirSync(join(dir, "snippets"), { recursive: true });
-      const snippet = join(ctx.yoloRoot, "tools/config/host/nginx/snippets/proxy-client-ip.inc");
+      const snippet = join(
+        ctx.yoloRoot,
+        "tools/config/host/nginx/snippets/proxy-client-ip.inc",
+      );
       writeFileSync(
         join(dir, "snippets/proxy-client-ip.inc"),
         existsSync(snippet)
@@ -336,21 +395,27 @@ describe("nginx", () => {
       const target = join(tmp(), "nginx");
       // `http2 on;` needs nginx 1.25.1; older servers take the `listen ... http2` form.
       const version = /nginx\/(\d+)\.(\d+)\.(\d+)/.exec(
-        Bun.spawnSync(["nginx", "-v"], { windowsHide: true, stderr: "pipe" }).stderr.toString(),
+        Bun.spawnSync(["nginx", "-v"], {
+          windowsHide: true,
+          stderr: "pipe",
+        }).stderr.toString(),
       );
       const modern = version
         ? [Number(version[1]), Number(version[2]), Number(version[3])]
         : [0, 0, 0];
       const supportsDirective =
         modern[0]! > 1 ||
-        (modern[0] === 1 && (modern[1]! > 25 || (modern[1] === 25 && modern[2]! >= 1)));
+        (modern[0] === 1 &&
+          (modern[1]! > 25 || (modern[1] === 25 && modern[2]! >= 1)));
       await generateTargets(
         ["nginx"],
         { ...ctx, tls, http2: supportsDirective ? "directive" : "listen" },
         target,
       );
       const files =
-        tls === "letsencrypt" ? ["hello-m3.http.conf"] : ["hello-m3.conf", "hello-m3.http.conf"];
+        tls === "letsencrypt"
+          ? ["hello-m3.http.conf"]
+          : ["hello-m3.conf", "hello-m3.http.conf"];
       for (const file of files) {
         // An unprivileged test cannot bind :80 and :443: move the listeners, keep every other line as generated.
         const generatedPath = join(target, "nginx", file);
@@ -371,7 +436,11 @@ describe("nginx", () => {
           stderr: "pipe",
         });
         const text = `${proc.stdout.toString()}${proc.stderr.toString()}`;
-        expect({ file, ok: proc.exitCode === 0, text: proc.exitCode === 0 ? "" : text }).toEqual({
+        expect({
+          file,
+          ok: proc.exitCode === 0,
+          text: proc.exitCode === 0 ? "" : text,
+        }).toEqual({
           file,
           ok: true,
           text: "",
@@ -396,13 +465,15 @@ describe("vercel", () => {
     expect(spa.test("/some/route")).toBe(true);
     expect(spa.test("/chunk-abc.js")).toBe(false);
     expect(spa.test("/api/x")).toBe(false);
-    expect(v.headers.flatMap((h: any) => h.headers.map((x: any) => x.key))).toContain(
-      "X-Content-Type-Options",
-    );
+    expect(
+      v.headers.flatMap((h: any) => h.headers.map((x: any) => x.key)),
+    ).toContain("X-Content-Type-Options");
   });
   test("api/index.ts adapts the app's routes to one fetch handler", () => {
     const fn = read("vercel", "api/index.ts");
-    expect(fn).toContain('import { normalizeApi, routesToFetch } from "@aphrody/m3-bun/api";');
+    expect(fn).toContain(
+      'import { normalizeApi, routesToFetch } from "@aphrody/m3-bun/api";',
+    );
     expect(fn).toContain('import api from "../src/api.ts";');
     expect(fn).toContain("export default {");
   });
@@ -422,7 +493,10 @@ describe("fly", () => {
       auto_start_machines: true,
       min_machines_running: 0,
     });
-    expect(fly.http_service.checks[0]).toMatchObject({ method: "GET", path: "/healthz" });
+    expect(fly.http_service.checks[0]).toMatchObject({
+      method: "GET",
+      path: "/healthz",
+    });
     expect(fly.vm[0]).toEqual({ size: "shared-cpu-1x", memory: "256mb" });
   });
 });
@@ -431,10 +505,9 @@ const stripCommentLines = (text: string) => text.replace(/^\s*\/\/.*$/gm, "");
 
 describe("cloudflare", () => {
   test("wrangler.jsonc: worker, static assets with SPA fallback, worker-first API routes, custom domain", () => {
-    const w = JSON.parse(stripCommentLines(read("cloudflare", "wrangler.jsonc"))) as Record<
-      string,
-      any
-    >;
+    const w = JSON.parse(
+      stripCommentLines(read("cloudflare", "wrangler.jsonc")),
+    ) as Record<string, any>;
     expect(w).toMatchObject({
       name: "hello-m3",
       main: "src/worker.ts",
@@ -452,9 +525,15 @@ describe("cloudflare", () => {
     expect(read("cloudflare", "src/worker.ts")).toContain(
       "routesToFetch(normalizeApi(api).routes)",
     );
-    expect(read("cloudflare", "src/worker.ts")).toContain("env.ASSETS.fetch(request)");
-    expect(read("cloudflare", "pages/functions/[[path]].ts")).toContain("export const onRequest");
-    expect(read("cloudflare", "pages/_redirects")).toContain("/* /index.html 200");
+    expect(read("cloudflare", "src/worker.ts")).toContain(
+      "env.ASSETS.fetch(request)",
+    );
+    expect(read("cloudflare", "pages/functions/[[path]].ts")).toContain(
+      "export const onRequest",
+    );
+    expect(read("cloudflare", "pages/_redirects")).toContain(
+      "/* /index.html 200",
+    );
     expect(read("cloudflare", "pages/_headers")).toContain(
       "Cache-Control: public, max-age=31536000, immutable",
     );
@@ -467,9 +546,15 @@ describe("coolify", () => {
       services: Record<string, any>;
     };
     const service = compose.services["hello-m3"];
-    expect(service.environment).toContain("SERVICE_FQDN_HELLO_M3_3456=https://hello.example.com");
+    expect(service.environment).toContain(
+      "SERVICE_FQDN_HELLO_M3_3456=https://hello.example.com",
+    );
     expect(service.environment).toContain("PORT=3456");
-    expect(service.healthcheck.test).toEqual(["CMD", "/app/server", "--healthcheck"]);
+    expect(service.healthcheck.test).toEqual([
+      "CMD",
+      "/app/server",
+      "--healthcheck",
+    ]);
     expect(service.build).toEqual({ context: ".", dockerfile: "Dockerfile" });
   });
 });
@@ -489,13 +574,22 @@ describe("vscode", () => {
       "m3-bun: test",
     ])
       expect(labels).toContain(label);
-    expect(tasks.tasks.find((t: any) => t.label === "m3-bun: build").group).toEqual({
+    expect(
+      tasks.tasks.find((t: any) => t.label === "m3-bun: build").group,
+    ).toEqual({
       kind: "build",
       isDefault: true,
     });
-    expect(tasks.tasks.find((t: any) => t.label === "m3-bun: dev").isBackground).toBe(true);
+    expect(
+      tasks.tasks.find((t: any) => t.label === "m3-bun: dev").isBackground,
+    ).toBe(true);
     const launch = json("vscode", ".vscode/launch.json");
-    expect(launch.configurations.map((c: any) => c.type)).toEqual(["bun", "bun", "bun", "bun"]);
+    expect(launch.configurations.map((c: any) => c.type)).toEqual([
+      "bun",
+      "bun",
+      "bun",
+      "bun",
+    ]);
     expect(json("vscode", ".vscode/extensions.json").recommendations).toEqual([
       "oven.bun-vscode",
       "oxc.oxc-vscode",
@@ -510,24 +604,40 @@ describe("vscode", () => {
   test.skipIf(!existsSync(extension))(
     "launch.json and settings.json use only what the Bun extension declares",
     async () => {
-      const { contributes } = (await Bun.file(extension).json()) as { contributes: any };
+      const { contributes } = (await Bun.file(extension).json()) as {
+        contributes: any;
+      };
       const debuggerSchema = contributes.debuggers.find(
         (d: any) => d.type === "bun",
       ).configurationAttributes;
-      for (const config of json("vscode", ".vscode/launch.json").configurations) {
+      for (const config of json("vscode", ".vscode/launch.json")
+        .configurations) {
         const known = Object.keys(debuggerSchema[config.request].properties);
-        const own = Object.keys(config).filter((key) => !["type", "request", "name"].includes(key));
-        expect({ name: config.name, unknown: own.filter((key) => !known.includes(key)) }).toEqual({
+        const own = Object.keys(config).filter(
+          (key) => !["type", "request", "name"].includes(key),
+        );
+        expect({
+          name: config.name,
+          unknown: own.filter((key) => !known.includes(key)),
+        }).toEqual({
           name: config.name,
           unknown: [],
         });
       }
-      const properties = contributes.configuration.properties as Record<string, { type: string }>;
+      const properties = contributes.configuration.properties as Record<
+        string,
+        { type: string }
+      >;
       const settings = json("vscode", ".vscode/settings.json");
-      const bunSettings = Object.entries(settings).filter(([key]) => key.startsWith("bun."));
+      const bunSettings = Object.entries(settings).filter(([key]) =>
+        key.startsWith("bun."),
+      );
       expect(bunSettings.length).toBeGreaterThan(5);
       for (const [key, value] of bunSettings)
-        expect({ key, type: properties[key]?.type }).toEqual({ key, type: typeof value });
+        expect({ key, type: properties[key]?.type }).toEqual({
+          key,
+          type: typeof value,
+        });
     },
   );
 });
@@ -545,14 +655,18 @@ describe("windows", () => {
       "Registry::HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\hello-m3",
     );
     expect(app).toContain("DisplayVersion = '1.2.3'");
-    expect(read("windows", "uninstall-app.ps1")).toContain("Remove-Item $key -Recurse");
+    expect(read("windows", "uninstall-app.ps1")).toContain(
+      "Remove-Item $key -Recurse",
+    );
     expect(read("windows", "windows-check.ts")).toContain("inspectWindows(");
     const install = read("windows", "install-service.ps1");
     expect(install).toContain("WinSW-x64.exe");
     expect(install).toContain("Register-ScheduledTask");
     expect(install).toContain("$OpenFirewall");
     expect(install).not.toContain("sc.exe create");
-    expect(read("windows", "uninstall-service.ps1")).toContain("Unregister-ScheduledTask");
+    expect(read("windows", "uninstall-service.ps1")).toContain(
+      "Unregister-ScheduledTask",
+    );
     const xml = read("windows", "hello-m3-service.xml");
     expect(xml).toContain("<id>hello-m3</id>");
     expect(xml).toContain('<env name="PORT" value="__PORT__" />');
@@ -570,12 +684,18 @@ describe("windows", () => {
         "uninstall-service.ps1",
       ].map((file) => join(out, "windows", file));
       const script = `foreach ($f in @(${files.map((file) => `'${file}'`).join(", ")})) { $e = $null; $t = $null; [System.Management.Automation.Language.Parser]::ParseFile($f, [ref]$t, [ref]$e) | Out-Null; foreach ($x in $e) { "$(Split-Path $f -Leaf): $($x.Message)" } }`;
-      const proc = Bun.spawnSync(["pwsh", "-NoProfile", "-NonInteractive", "-Command", script], {
-        windowsHide: true,
-        stdout: "pipe",
-        stderr: "pipe",
-      });
-      expect({ out: proc.stdout.toString().trim(), code: proc.exitCode }).toEqual({
+      const proc = Bun.spawnSync(
+        ["pwsh", "-NoProfile", "-NonInteractive", "-Command", script],
+        {
+          windowsHide: true,
+          stdout: "pipe",
+          stderr: "pipe",
+        },
+      );
+      expect({
+        out: proc.stdout.toString().trim(),
+        code: proc.exitCode,
+      }).toEqual({
         out: "",
         code: 0,
       });
@@ -602,21 +722,29 @@ describe("linux-image", () => {
       expect(Bun.file(path).size).toBeGreaterThan(200);
     }
   });
-  test.skipIf(!bash)("a qualified native Bash validates generated shell syntax", () => {
-    for (const file of ["build-image.sh", "run-qemu.sh"]) {
-      expect(
-        Bun.spawnSync([bash!, "-n", join(out, "linux-image", file).replaceAll("\\", "/")], {
-          windowsHide: true,
-        }).exitCode,
-      ).toBe(0);
-    }
-  });
+  test.skipIf(!bash)(
+    "a qualified native Bash validates generated shell syntax",
+    () => {
+      for (const file of ["build-image.sh", "run-qemu.sh"]) {
+        expect(
+          Bun.spawnSync(
+            [bash!, "-n", join(out, "linux-image", file).replaceAll("\\", "/")],
+            {
+              windowsHide: true,
+            },
+          ).exitCode,
+        ).toBe(0);
+      }
+    },
+  );
   test.skipIf(process.platform === "win32")(
     "a native POSIX host qualifies executable permissions",
     () => {
       for (const file of ["build-image.sh", "run-qemu.sh"]) {
         const path = join(out, "linux-image", file);
-        expect(Bun.spawnSync(["test", "-x", path], { windowsHide: true }).exitCode).toBe(0);
+        expect(
+          Bun.spawnSync(["test", "-x", path], { windowsHide: true }).exitCode,
+        ).toBe(0);
       }
     },
   );

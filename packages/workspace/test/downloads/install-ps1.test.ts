@@ -14,7 +14,10 @@ import {
 import { tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
 
-const script = resolve(import.meta.dir, "../../assets/downloads/install-full.ps1");
+const script = resolve(
+  import.meta.dir,
+  "../../assets/downloads/install-full.ps1",
+);
 const pwsh = Bun.which("pwsh");
 const work = mkdtempSync(join(tmpdir(), "install-ps1-"));
 afterAll(() => rmSync(work, { recursive: true, force: true }));
@@ -23,7 +26,10 @@ const windows = process.platform === "win32";
 const systemPath = windows ? "" : "/usr/bin:/bin";
 
 /** Environment for the installer: Windows .NET networking and temp files need the system variables. */
-function installerEnv(path: string, extra: Record<string, string>): Record<string, string> {
+function installerEnv(
+  path: string,
+  extra: Record<string, string>,
+): Record<string, string> {
   const env: Record<string, string> = {
     PATH: [path, systemPath].filter(Boolean).join(delimiter),
     ...extra,
@@ -49,7 +55,10 @@ function installerEnv(path: string, extra: Record<string, string>): Record<strin
 function stub(bin: string, name: string, kind: "ok" | { log: string }): string {
   if (windows) {
     const path = join(bin, `${name}.cmd`);
-    writeFileSync(path, kind === "ok" ? "@exit /b 0\r\n" : `@>>"${kind.log}" echo %*\r\n`);
+    writeFileSync(
+      path,
+      kind === "ok" ? "@exit /b 0\r\n" : `@>>"${kind.log}" echo %*\r\n`,
+    );
     return path;
   }
   const path = join(bin, name);
@@ -60,7 +69,9 @@ function stub(bin: string, name: string, kind: "ok" | { log: string }): string {
 }
 
 /** A stored (uncompressed) ZIP written in-process, so no `zip` binary is needed; `link` marks a Unix symlink. */
-function storedZip(entries: { name: string; data: string; link?: boolean }[]): Uint8Array {
+function storedZip(
+  entries: { name: string; data: string; link?: boolean }[],
+): Uint8Array {
   const locals: Uint8Array[] = [];
   const centrals: Uint8Array[] = [];
   let offset = 0;
@@ -88,14 +99,21 @@ function storedZip(entries: { name: string; data: string; link?: boolean }[]): U
     central.setUint32(20, data.length, true);
     central.setUint32(24, data.length, true);
     central.setUint16(28, name.length, true);
-    central.setUint32(38, ((entry.link ? 0o120777 : 0o100644) << 16) >>> 0, true);
+    central.setUint32(
+      38,
+      ((entry.link ? 0o120777 : 0o100644) << 16) >>> 0,
+      true,
+    );
     central.setUint32(42, offset, true);
     new Uint8Array(central.buffer).set(name, 46);
     locals.push(localBytes);
     centrals.push(new Uint8Array(central.buffer));
     offset += localBytes.length;
   }
-  const directorySize = centrals.reduce((total, part) => total + part.length, 0);
+  const directorySize = centrals.reduce(
+    (total, part) => total + part.length,
+    0,
+  );
   const end = new DataView(new ArrayBuffer(22));
   end.setUint32(0, 0x06054b50, true);
   end.setUint16(8, entries.length, true);
@@ -119,7 +137,9 @@ test.skipIf(!pwsh)(
     const file = "plugin-aphrody-2.2.0-abc-any-any.zip";
     writeFileSync(
       join(pinned, "files", file),
-      storedZip([{ name: ".claude-plugin/plugin.json", data: '{"name":"aphrody"}' }]),
+      storedZip([
+        { name: ".claude-plugin/plugin.json", data: '{"name":"aphrody"}' },
+      ]),
     );
     const sum = new Bun.CryptoHasher("sha256")
       .update(readFileSync(join(pinned, "files", file)))
@@ -127,7 +147,8 @@ test.skipIf(!pwsh)(
     writeFileSync(join(pinned, "SHA256SUMS"), `${sum}  ${file}\n`);
     const server = Bun.serve({
       port: 0,
-      fetch: (req) => new Response(Bun.file(join(site, new URL(req.url).pathname))),
+      fetch: (req) =>
+        new Response(Bun.file(join(site, new URL(req.url).pathname))),
     });
     const bin = join(work, "bin");
     mkdirSync(bin);
@@ -156,13 +177,21 @@ test.skipIf(!pwsh)(
       expect(out).toContain("skipped: the desktop app is not published");
       const calls = readFileSync(log, "utf8").trim().split(/\r?\n/);
       expect(calls[0]).toStartWith("plugin marketplace add ");
-      expect(calls[1]).toBe("plugin install aphrody@aphrody-local --scope user");
+      expect(calls[1]).toBe(
+        "plugin install aphrody@aphrody-local --scope user",
+      );
       const root = calls[0]!.split(" ")[3]!;
-      expect(existsSync(join(root, "plugin-aphrody", ".claude-plugin", "plugin.json"))).toBe(true);
+      expect(
+        existsSync(
+          join(root, "plugin-aphrody", ".claude-plugin", "plugin.json"),
+        ),
+      ).toBe(true);
       const market = JSON.parse(
         readFileSync(join(root, ".claude-plugin", "marketplace.json"), "utf8"),
       );
-      expect(market.plugins).toEqual([{ name: "aphrody", source: "./plugin-aphrody" }]);
+      expect(market.plugins).toEqual([
+        { name: "aphrody", source: "./plugin-aphrody" },
+      ]);
     } finally {
       server.stop(true);
     }
@@ -210,7 +239,10 @@ for (const canonical of [true, false]) {
         const err = await new Response(proc.stderr).text();
         expect(err).toBe("");
         expect(await proc.exited).toBe(0);
-        expect(requests).toEqual(["/latest.json", "/releases/fixture-release/SHA256SUMS"]);
+        expect(requests).toEqual([
+          "/latest.json",
+          "/releases/fixture-release/SHA256SUMS",
+        ]);
         expect(readFileSync(log, "utf8").trim().split(/\r?\n/)).toEqual([
           "mcp remove aphrody --scope user",
           `mcp add --scope user aphrody -- ${stubPath}${canonical ? "" : " mcp-server"}`,
@@ -265,7 +297,9 @@ test.skipIf(!pwsh)(
         stdout: "pipe",
         stderr: "pipe",
       });
-      expect(await new Response(proc.stderr).text()).toContain("unsafe archive entry");
+      expect(await new Response(proc.stderr).text()).toContain(
+        "unsafe archive entry",
+      );
       expect(await proc.exited).toBe(1);
       expect(readFileSync(join(dest, "sentinel"), "utf8")).toBe("original");
       expect(existsSync(`${dest}.new`)).toBe(false);

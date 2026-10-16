@@ -1,5 +1,21 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import { CheckIcon, EraserIcon, FastForwardIcon, ImagesIcon, PauseIcon, PencilIcon, PlayIcon, PlusIcon, RewindIcon, RotateCcwIcon, SkipBackIcon, SkipForwardIcon, TrashIcon, UploadIcon, XIcon } from "lucide-react";
+import {
+  CheckIcon,
+  EraserIcon,
+  FastForwardIcon,
+  ImagesIcon,
+  PauseIcon,
+  PencilIcon,
+  PlayIcon,
+  PlusIcon,
+  RewindIcon,
+  RotateCcwIcon,
+  SkipBackIcon,
+  SkipForwardIcon,
+  TrashIcon,
+  UploadIcon,
+  XIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { twMerge } from "tailwind-merge";
@@ -41,11 +57,15 @@ const EmptyState = ({ onAdd }: { onAdd: () => void }) => (
   <div className="flex h-[calc(100vh-56px)] w-full items-center justify-center bg-ui-background">
     <div className="flex flex-col items-center gap-4 text-center">
       <div className="flex h-20 w-20 items-center justify-center border border-white/15 bg-white/[0.015]">
-        <ImagesIcon  className="text-4xl text-base-fg/40" />
+        <ImagesIcon className="text-4xl text-base-fg/40" />
       </div>
       <div>
-        <p className="font-display text-2xl tracking-tight text-base-fg">No shots yet</p>
-        <p className="mt-1 text-sm text-base-fg/50">Add your first shot to get started</p>
+        <p className="font-display text-2xl tracking-tight text-base-fg">
+          No shots yet
+        </p>
+        <p className="mt-1 text-sm text-base-fg/50">
+          Add your first shot to get started
+        </p>
       </div>
       <Button variant="primary" icon={PlusIcon} onClick={onAdd}>
         Add your first shot
@@ -64,16 +84,22 @@ interface MetadataEditorProps {
   onSketch: () => void;
 }
 
-const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: MetadataEditorProps) => (
+const MetadataEditor = ({
+  board,
+  onUpdate,
+  onDelete,
+  onUpload,
+  onSketch,
+}: MetadataEditorProps) => (
   <aside className="flex w-[280px] shrink-0 flex-col border-r border-ui-panel-border bg-ui-panel">
     <div className="flex-1 overflow-y-auto p-4">
       <div className="flex flex-col gap-3">
-        <div className="hud-label text-base-fg/40">
-          Shot {board.shotNumber}
-        </div>
+        <div className="hud-label text-base-fg/40">Shot {board.shotNumber}</div>
 
         <div>
-          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Title</label>
+          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
+            Title
+          </label>
           <input
             type="text"
             value={board.title}
@@ -84,7 +110,9 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
         </div>
 
         <div>
-          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Dialogue</label>
+          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
+            Dialogue
+          </label>
           <textarea
             value={board.dialogue}
             onChange={(e) => onUpdate({ dialogue: e.target.value })}
@@ -95,7 +123,9 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
         </div>
 
         <div>
-          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Action</label>
+          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
+            Action
+          </label>
           <textarea
             value={board.action}
             onChange={(e) => onUpdate({ action: e.target.value })}
@@ -106,7 +136,9 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
         </div>
 
         <div>
-          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Notes</label>
+          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
+            Notes
+          </label>
           <textarea
             value={board.notes}
             onChange={(e) => onUpdate({ notes: e.target.value })}
@@ -117,13 +149,17 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
         </div>
 
         <div>
-          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">Duration (seconds)</label>
+          <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
+            Duration (seconds)
+          </label>
           <input
             type="number"
             min={0}
             step={0.5}
             value={board.duration}
-            onChange={(e) => onUpdate({ duration: parseFloat(e.target.value) || 0 })}
+            onChange={(e) =>
+              onUpdate({ duration: parseFloat(e.target.value) || 0 })
+            }
             className="w-full rounded-[3px] border border-white/15 bg-ui-controls px-3 py-2 font-mono text-sm tabular-nums text-base-fg focus:border-white/60 focus:outline-none"
           />
         </div>
@@ -131,10 +167,20 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload, onSketch }: Metad
     </div>
 
     <div className="flex flex-col gap-2 border-t border-ui-panel-border p-4">
-      <Button variant="action" icon={PencilIcon} onClick={onSketch} className="w-full justify-center">
+      <Button
+        variant="action"
+        icon={PencilIcon}
+        onClick={onSketch}
+        className="w-full justify-center"
+      >
         Sketch
       </Button>
-      <Button variant="action" icon={UploadIcon} onClick={onUpload} className="w-full justify-center">
+      <Button
+        variant="action"
+        icon={UploadIcon}
+        onClick={onUpload}
+        className="w-full justify-center"
+      >
         Upload Image
       </Button>
       <Button
@@ -180,7 +226,7 @@ const MainPreview = ({
         onClick={onUploadClick}
         className="flex flex-col items-center gap-3 border border-dashed border-white/20 bg-white/[0.015] p-12 text-base-fg/40 transition-colors hover:border-white/40 hover:bg-white/5 hover:text-base-fg/70"
       >
-        <UploadIcon  className="text-3xl" />
+        <UploadIcon className="text-3xl" />
         <span className="text-sm">Click to upload an image</span>
       </button>
     )}
@@ -197,7 +243,11 @@ interface SketchCanvasProps {
   onExit: () => void;
 }
 
-const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps) => {
+const SketchCanvas = ({
+  initialImageDataUrl,
+  onSave,
+  onExit,
+}: SketchCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
   const prevPosRef = useRef<{ x: number; y: number } | null>(null);
@@ -225,7 +275,7 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
       };
       img.src = initialImageDataUrl;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // intentionally runs once — we own the canvas state after mount
 
   const getCoords = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -290,7 +340,12 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
     applyCtxSettings(ctx);
     ctx.beginPath();
     ctx.moveTo(prevPosRef.current.x, prevPosRef.current.y);
-    ctx.quadraticCurveTo(prevPosRef.current.x, prevPosRef.current.y, mid.x, mid.y);
+    ctx.quadraticCurveTo(
+      prevPosRef.current.x,
+      prevPosRef.current.y,
+      mid.x,
+      mid.y,
+    );
     ctx.stroke();
 
     prevPosRef.current = pos;
@@ -352,7 +407,10 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
         <div className="mx-1 h-5 w-px bg-ui-panel-border" />
 
         {/* Color picker */}
-        <label className="relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-[3px] border border-white/15 hover:border-white/30" title="Stroke color">
+        <label
+          className="relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-[3px] border border-white/15 hover:border-white/30"
+          title="Stroke color"
+        >
           <span
             className="h-4 w-4 rounded-sm border border-white/20"
             style={{ background: color }}
@@ -367,7 +425,9 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
 
         {/* Brush size */}
         <div className="flex items-center gap-1.5">
-          <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-base-fg/40">Size</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-base-fg/40">
+            Size
+          </span>
           <input
             type="range"
             min={1}
@@ -376,7 +436,9 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
             onChange={(e) => setBrushSize(Number(e.target.value))}
             className="w-20 accent-white"
           />
-          <span className="w-5 text-center font-mono text-[10px] tabular-nums text-base-fg/50">{brushSize}</span>
+          <span className="w-5 text-center font-mono text-[10px] tabular-nums text-base-fg/50">
+            {brushSize}
+          </span>
         </div>
 
         <div className="mx-1 h-5 w-px bg-ui-panel-border" />
@@ -387,7 +449,7 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
           title="Undo"
           className="flex h-8 w-8 items-center justify-center rounded-[3px] text-base-fg/60 transition-colors hover:bg-white/10 hover:text-base-fg disabled:opacity-30"
         >
-          <RotateCcwIcon  className="text-sm" />
+          <RotateCcwIcon className="text-sm" />
         </button>
 
         <button
@@ -395,7 +457,7 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
           title="Clear canvas"
           className="flex h-8 w-8 items-center justify-center rounded-[3px] text-base-fg/60 transition-colors hover:bg-white/10 hover:text-red-400"
         >
-          <XIcon  className="text-sm" />
+          <XIcon className="text-sm" />
         </button>
 
         <button
@@ -403,7 +465,7 @@ const SketchCanvas = ({ initialImageDataUrl, onSave, onExit }: SketchCanvasProps
           title="Done sketching"
           className="ml-auto flex h-8 items-center gap-1.5 rounded-[3px] bg-white px-3 text-xs font-medium text-black transition-colors hover:bg-white/85"
         >
-          <CheckIcon  className="text-xs" />
+          <CheckIcon className="text-xs" />
           Done
         </button>
       </div>
@@ -468,21 +530,25 @@ const ThumbnailItem = ({
     onClick={onSelect}
     className={twMerge(
       "relative flex h-[60px] w-[100px] shrink-0 cursor-pointer overflow-hidden rounded-[3px] border transition-all select-none",
-      isSelected
-        ? "border-white"
-        : "border-white/15 hover:border-white/30",
+      isSelected ? "border-white" : "border-white/15 hover:border-white/30",
       isDragOver && "border-white/60 opacity-60",
     )}
   >
     {board.imageDataUrl ? (
-      <img src={board.imageDataUrl} alt="" className="h-full w-full object-cover" />
+      <img
+        src={board.imageDataUrl}
+        alt=""
+        className="h-full w-full object-cover"
+      />
     ) : (
       <div className="flex h-full w-full items-center justify-center bg-white/5">
-        <ImagesIcon  className="text-lg text-base-fg/20" />
+        <ImagesIcon className="text-lg text-base-fg/20" />
       </div>
     )}
     <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1.5 py-0.5">
-      <span className="font-mono text-[10px] tabular-nums text-white/85">{board.shotNumber}</span>
+      <span className="font-mono text-[10px] tabular-nums text-white/85">
+        {board.shotNumber}
+      </span>
     </div>
   </div>
 );
@@ -567,7 +633,11 @@ const Timeline = ({
   onReorder,
 }: TimelineProps) => {
   const laneRef = useRef<HTMLDivElement>(null);
-  const resizeRef = useRef<{ id: string; startX: number; startDuration: number } | null>(null);
+  const resizeRef = useRef<{
+    id: string;
+    startX: number;
+    startDuration: number;
+  } | null>(null);
   // Store full drag data in a ref so onUp can read it without going through a setState updater
   const activeDragRef = useRef<{
     boardId: string;
@@ -577,8 +647,14 @@ const Timeline = ({
   } | null>(null);
   const [dragState, setDragState] = useState<TimelineDragState | null>(null);
 
-  const boardTimings: BoardTiming[] = useMemo(() => buildBoardTimings(boards), [boards]);
-  const totalDuration = boardTimings.reduce((s, { board }) => s + board.duration, 0);
+  const boardTimings: BoardTiming[] = useMemo(
+    () => buildBoardTimings(boards),
+    [boards],
+  );
+  const totalDuration = boardTimings.reduce(
+    (s, { board }) => s + board.duration,
+    0,
+  );
   const totalWidth = Math.max(totalDuration * PIXELS_PER_SECOND, 300);
 
   // ── Resize handlers ──────────────────────────────────────────────────────
@@ -587,14 +663,23 @@ const Timeline = ({
     (e: React.PointerEvent, id: string, currentDuration: number) => {
       e.stopPropagation();
       e.preventDefault();
-      resizeRef.current = { id, startX: e.clientX, startDuration: currentDuration };
+      resizeRef.current = {
+        id,
+        startX: e.clientX,
+        startDuration: currentDuration,
+      };
 
       const onMove = (ev: PointerEvent) => {
         if (!resizeRef.current) return;
         const delta = ev.clientX - resizeRef.current.startX;
         const newDuration = Math.max(
           MIN_DURATION,
-          parseFloat((resizeRef.current.startDuration + delta / PIXELS_PER_SECOND).toFixed(1)),
+          parseFloat(
+            (
+              resizeRef.current.startDuration +
+              delta / PIXELS_PER_SECOND
+            ).toFixed(1),
+          ),
         );
         onUpdateDuration(resizeRef.current.id, newDuration);
       };
@@ -614,7 +699,10 @@ const Timeline = ({
   // ── Drag-to-rearrange handlers ───────────────────────────────────────────
 
   const computeInsertionFromPointerX = useCallback(
-    (pointerX: number, fromIndex: number): { caretX: number; insertionIndex: number } => {
+    (
+      pointerX: number,
+      fromIndex: number,
+    ): { caretX: number; insertionIndex: number } => {
       let insertionIndex = boardTimings.length;
       let caretX = totalWidth;
 
@@ -644,7 +732,12 @@ const Timeline = ({
       e.stopPropagation();
       e.preventDefault();
 
-      activeDragRef.current = { boardId, boardIndex, insertionIndex: boardIndex, caretX: 0 };
+      activeDragRef.current = {
+        boardId,
+        boardIndex,
+        insertionIndex: boardIndex,
+        caretX: 0,
+      };
 
       const onMove = (ev: PointerEvent) => {
         if (!activeDragRef.current || !laneRef.current) return;
@@ -655,7 +748,11 @@ const Timeline = ({
           pointerX,
           activeDragRef.current.boardIndex,
         );
-        activeDragRef.current = { ...activeDragRef.current, caretX, insertionIndex };
+        activeDragRef.current = {
+          ...activeDragRef.current,
+          caretX,
+          insertionIndex,
+        };
         setDragState({ boardId, boardIndex, caretX, insertionIndex });
       };
 
@@ -664,7 +761,8 @@ const Timeline = ({
         if (activeDragRef.current) {
           const { boardIndex: fromIdx, insertionIndex } = activeDragRef.current;
           // If moving forward, subtract 1 because the item is removed first before inserting
-          const toIndex = insertionIndex > fromIdx ? insertionIndex - 1 : insertionIndex;
+          const toIndex =
+            insertionIndex > fromIdx ? insertionIndex - 1 : insertionIndex;
           if (toIndex !== fromIdx) {
             onReorder(fromIdx, toIndex);
           }
@@ -708,9 +806,13 @@ const Timeline = ({
     <div className="shrink-0 border-t border-ui-panel-border bg-ui-panel">
       {/* Header row */}
       <div className="flex items-center justify-between border-b border-ui-panel-border/40 px-3 py-1">
-        <span className="font-mono text-xs tabular-nums text-base-fg/50">{formatTime(currentTimeSeconds)}</span>
+        <span className="font-mono text-xs tabular-nums text-base-fg/50">
+          {formatTime(currentTimeSeconds)}
+        </span>
         <span className="hud-label text-base-fg/25">Timeline</span>
-        <span className="font-mono text-xs tabular-nums text-base-fg/50">{formatTime(totalDuration)}</span>
+        <span className="font-mono text-xs tabular-nums text-base-fg/50">
+          {formatTime(totalDuration)}
+        </span>
       </div>
 
       {/* Lane */}
@@ -729,13 +831,18 @@ const Timeline = ({
               style={{ left: i * PIXELS_PER_SECOND }}
             >
               <div className="h-2 w-px bg-white/10" />
-              <span className="font-mono text-[9px] tabular-nums text-base-fg/25">{i}s</span>
+              <span className="font-mono text-[9px] tabular-nums text-base-fg/25">
+                {i}s
+              </span>
             </div>
           ))}
 
           {/* Board blocks */}
           {boardTimings.map(({ board, startTime }, idx) => {
-            const blockWidth = Math.max(MIN_BLOCK_WIDTH, board.duration * PIXELS_PER_SECOND);
+            const blockWidth = Math.max(
+              MIN_BLOCK_WIDTH,
+              board.duration * PIXELS_PER_SECOND,
+            );
             const isSelected = board.id === selectedBoardId;
             const isDragging = dragState?.boardId === board.id;
 
@@ -776,7 +883,9 @@ const Timeline = ({
                       "{board.dialogue}"
                     </span>
                   )}
-                  <span className="font-mono text-[9px] tabular-nums text-base-fg/30">{board.duration.toFixed(1)}s</span>
+                  <span className="font-mono text-[9px] tabular-nums text-base-fg/30">
+                    {board.duration.toFixed(1)}s
+                  </span>
                 </div>
 
                 {/* Resize handle */}
@@ -784,7 +893,9 @@ const Timeline = ({
                   data-resize="true"
                   className="absolute right-0 top-0 bottom-0 w-2 opacity-0 transition-opacity hover:bg-white/30 hover:opacity-100"
                   style={{ cursor: "ew-resize" }}
-                  onPointerDown={(e) => handleResizePointerDown(e, board.id, board.duration)}
+                  onPointerDown={(e) =>
+                    handleResizePointerDown(e, board.id, board.duration)
+                  }
                   title="Drag to resize duration"
                 />
               </div>
@@ -851,7 +962,9 @@ const PlaybackControls = ({
     <div className="flex h-[52px] shrink-0 items-center border-t border-ui-panel-border bg-ui-background px-4">
       {/* Left stats */}
       <div className="flex w-32 flex-col">
-        <span className="font-mono text-xs tabular-nums text-base-fg/60">{formatTime(currentTimeSeconds)}</span>
+        <span className="font-mono text-xs tabular-nums text-base-fg/60">
+          {formatTime(currentTimeSeconds)}
+        </span>
         <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-base-fg/30">
           {currentBoardNumber !== null ? `Shot ${currentBoardNumber}` : "—"}
         </span>
@@ -880,7 +993,10 @@ const PlaybackControls = ({
           onClick={isPlaying ? onPause : onPlay}
           title={isPlaying ? "Pause" : "Play"}
         >
-          <DynamicIcon icon={isPlaying ? PauseIcon : PlayIcon} className="text-sm" />
+          <DynamicIcon
+            icon={isPlaying ? PauseIcon : PlayIcon}
+            className="text-sm"
+          />
         </button>
 
         <button
@@ -901,8 +1017,12 @@ const PlaybackControls = ({
 
       {/* Right stats */}
       <div className="flex w-32 flex-col items-end">
-        <span className="font-mono text-xs tabular-nums text-base-fg/60">{formatTime(totalDuration)}</span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-base-fg/30">{totalBoards} shot{totalBoards !== 1 ? "s" : ""}</span>
+        <span className="font-mono text-xs tabular-nums text-base-fg/60">
+          {formatTime(totalDuration)}
+        </span>
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-base-fg/30">
+          {totalBoards} shot{totalBoards !== 1 ? "s" : ""}
+        </span>
       </div>
     </div>
   );
@@ -934,14 +1054,21 @@ export const Storyboard = () => {
 
   // Keep refs in sync — currentTimeRef is updated manually in every handler and in the rAF
   // tick itself, so we do NOT sync it here (that would race with and reset manual updates).
-  useEffect(() => { boardsRef.current = boards; }, [boards]);
+  useEffect(() => {
+    boardsRef.current = boards;
+  }, [boards]);
 
   // selectedBoardId ref so the rAF tick can check current selection without a stale closure
   const selectedBoardIdRef = useRef<string | null>(selectedBoardId);
-  useEffect(() => { selectedBoardIdRef.current = selectedBoardId; }, [selectedBoardId]);
+  useEffect(() => {
+    selectedBoardIdRef.current = selectedBoardId;
+  }, [selectedBoardId]);
 
   const boardTimings = useMemo(() => buildBoardTimings(boards), [boards]);
-  const totalDuration = boardTimings.reduce((s, { board }) => s + board.duration, 0);
+  const totalDuration = boardTimings.reduce(
+    (s, { board }) => s + board.duration,
+    0,
+  );
   const selectedBoard = boards.find((b) => b.id === selectedBoardId) ?? null;
 
   // ── Playback engine ────────────────────────────────────────────────────────
@@ -1023,7 +1150,8 @@ export const Storyboard = () => {
     const curTime = currentTimeRef.current;
     // If we're more than 0.3s into the current board, rewind to its start
     const currentEntry = timings.find(
-      ({ startTime, board }) => curTime >= startTime && curTime < startTime + board.duration,
+      ({ startTime, board }) =>
+        curTime >= startTime && curTime < startTime + board.duration,
     );
     if (currentEntry && curTime - currentEntry.startTime > 0.3) {
       setCurrentTimeSeconds(currentEntry.startTime);
@@ -1044,7 +1172,8 @@ export const Storyboard = () => {
   const handleNextBoard = useCallback(() => {
     const timings = buildBoardTimings(boards);
     const idx = timings.findIndex(({ board }) => board.id === selectedBoardId);
-    const nextEntry = idx >= 0 && idx < timings.length - 1 ? timings[idx + 1] : null;
+    const nextEntry =
+      idx >= 0 && idx < timings.length - 1 ? timings[idx + 1] : null;
     if (nextEntry) {
       setCurrentTimeSeconds(nextEntry.startTime);
       currentTimeRef.current = nextEntry.startTime;
@@ -1156,7 +1285,8 @@ export const Storyboard = () => {
   const handleSketchExit = useCallback(() => setIsSketchMode(false), []);
   const handleSketchSave = useCallback(
     (dataUrl: string) => {
-      if (selectedBoardId) updateBoard(selectedBoardId, { imageDataUrl: dataUrl });
+      if (selectedBoardId)
+        updateBoard(selectedBoardId, { imageDataUrl: dataUrl });
     },
     [selectedBoardId, updateBoard],
   );
@@ -1213,7 +1343,10 @@ export const Storyboard = () => {
             onExit={handleSketchExit}
           />
         ) : (
-          <MainPreview board={selectedBoard} onUploadClick={handleUploadClick} />
+          <MainPreview
+            board={selectedBoard}
+            onUploadClick={handleUploadClick}
+          />
         )}
       </div>
 

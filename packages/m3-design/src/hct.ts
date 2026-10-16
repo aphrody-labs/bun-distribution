@@ -5,7 +5,8 @@ import { Hct } from "@material/material-color-utilities";
 import type { M3Theme, TonalPalette } from "./types.ts";
 
 const toneSteps = [
-  0, 4, 6, 10, 12, 17, 20, 22, 24, 30, 40, 50, 60, 70, 80, 87, 90, 92, 94, 95, 96, 98, 99, 100,
+  0, 4, 6, 10, 12, 17, 20, 22, 24, 30, 40, 50, 60, 70, 80, 87, 90, 92, 94, 95,
+  96, 98, 99, 100,
 ];
 
 type RoleTone = readonly [palette: string, light: number, dark: number];
@@ -40,7 +41,11 @@ function systemRoles(): Record<string, RoleTone> {
     roles[`on-${palette}`] = [palette, 100, 20];
     roles[`${palette}-container`] = [palette, 90, 30];
     // MCU Scheme.dark uses error tone 80, while the other container foregrounds use 90.
-    roles[`on-${palette}-container`] = [palette, 10, palette === "error" ? 80 : 90];
+    roles[`on-${palette}-container`] = [
+      palette,
+      10,
+      palette === "error" ? 80 : 90,
+    ];
     if (palette !== "error") {
       roles[`${palette}-fixed`] = [palette, 90, 90];
       roles[`${palette}-fixed-dim`] = [palette, 80, 80];
@@ -71,7 +76,9 @@ function parseSeedArgb(hex: string): number {
 
   const digits = match[1]!;
   const rgb =
-    digits.length === 3 ? [...digits].map((digit) => `${digit}${digit}`).join("") : digits;
+    digits.length === 3
+      ? [...digits].map((digit) => `${digit}${digit}`).join("")
+      : digits;
   return (0xff000000 | Number.parseInt(rgb, 16)) >>> 0;
 }
 
@@ -79,7 +86,11 @@ function argbToHex(argb: number): string {
   return `#${(argb >>> 0).toString(16).slice(-6).toUpperCase()}`;
 }
 
-function createPalette(name: string, hue: number, chroma: number): TonalPalette {
+function createPalette(
+  name: string,
+  hue: number,
+  chroma: number,
+): TonalPalette {
   const tones: Record<number, string> = {};
   for (const tone of toneSteps) {
     tones[tone] = argbToHex(Hct.from(hue, chroma, tone).toInt());
@@ -103,7 +114,14 @@ export function generateTheme(seedHex: string): M3Theme {
   const error = createPalette("error", 25, 84);
 
   let css = `:root {\n  /* Seed Color: ${seed} */\n`;
-  const palettes = { primary, secondary, tertiary, error, neutral, neutralVariant };
+  const palettes = {
+    primary,
+    secondary,
+    tertiary,
+    error,
+    neutral,
+    neutralVariant,
+  };
 
   for (const [key, palette] of Object.entries(palettes)) {
     const prefix = key === "neutralVariant" ? "neutral-variant" : key;

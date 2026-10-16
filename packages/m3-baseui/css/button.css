@@ -28,8 +28,10 @@
     cursor: pointer;
     user-select: none;
     transition:
-      box-shadow var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
-      border-radius var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized);
+      box-shadow var(--md-sys-motion-duration-short3)
+        var(--md-sys-motion-easing-standard),
+      border-radius var(--md-sys-motion-duration-short4)
+        var(--md-sys-motion-easing-emphasized);
   }
   .m3-bui-button > svg {
     flex: none;
@@ -90,14 +92,22 @@
   }
 
   .m3-bui-button:is(:disabled, [data-disabled]) {
-    background: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--md-sys-color-on-surface) 12%,
+      transparent
+    );
     color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
     box-shadow: none;
     cursor: default;
   }
   .m3-bui-button--outlined:is(:disabled, [data-disabled]) {
     background: transparent;
-    border-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--md-sys-color-on-surface) 12%,
+      transparent
+    );
   }
   .m3-bui-button--text:is(:disabled, [data-disabled]) {
     background: transparent;

@@ -25,7 +25,8 @@ const hasInspector =
   resolvable("@aphrody/bun-inspector-protocol") &&
   resolvable("@aphrody/bun-debug-adapter-protocol");
 
-const src = (file: string) => JSON.stringify(join(import.meta.dir, "..", "src", file));
+const src = (file: string) =>
+  JSON.stringify(join(import.meta.dir, "..", "src", file));
 
 describe.skipIf(!hasInspector)(
   "m3-bun dev --inspect (bun-inspector-protocol, bun-debug-adapter-protocol)",
@@ -51,14 +52,19 @@ describe.skipIf(!hasInspector)(
         onException: (exception) => thrown.resolve(exception),
       });
       try {
-        expect(inspected.inspectorUrl).toMatch(/^ws:\/\/127\.0\.0\.1:\d+\/\w+$/);
+        expect(inspected.inspectorUrl).toMatch(
+          /^ws:\/\/127\.0\.0\.1:\d+\/\w+$/,
+        );
         await inspected.attached;
         const exception = await thrown.promise;
         expect(exception.name).toBe("TypeError");
         expect(exception.message).toBe("kaboom");
         expect(exception.frames[0]).toMatch(/server\.ts:\d+:\d+$/);
         expect(entries.slice(0, 2)).toEqual([
-          { level: "log", text: expect.stringMatching(/^ready .*port.*0.*1.*2/) },
+          {
+            level: "log",
+            text: expect.stringMatching(/^ready .*port.*0.*1.*2/),
+          },
           { level: "warning", text: "careful" },
         ]);
         expect(await inspected.child.exited).not.toBe(0);
@@ -73,7 +79,9 @@ describe.skipIf(!resolvable("@aphrody/web-inspector-bun"))(
   "Web Inspector frontend (@aphrody/web-inspector-bun)",
   () => {
     test("the WebKit Web Inspector is served on a free port, pointed at the inspector", async () => {
-      const frontend = serveInspectorFrontend({ ws: "ws://127.0.0.1:6499/abc" });
+      const frontend = serveInspectorFrontend({
+        ws: "ws://127.0.0.1:6499/abc",
+      });
       try {
         const url = new URL(frontend.url);
         expect(url.hostname).toBe("127.0.0.1");
@@ -83,7 +91,9 @@ describe.skipIf(!resolvable("@aphrody/web-inspector-bun"))(
         expect(page.status).toBe(200);
         expect(page.headers.get("content-security-policy")).toBeNull();
         expect(await page.text()).toContain("<!DOCTYPE html>");
-        const host = await fetch(new URL("/Base/BrowserInspectorFrontendHost.js", url));
+        const host = await fetch(
+          new URL("/Base/BrowserInspectorFrontendHost.js", url),
+        );
         expect(await host.text()).toContain('"ws" in queryParams');
       } finally {
         await frontend.stop();
@@ -100,7 +110,10 @@ describe("API errors in dev go to Bun's error overlay (bun-error)", () => {
       join(dir, "api.ts"),
       'throw new Error("api.ts: database url missing");\nexport default {};',
     );
-    writeFileSync(join(dir, "index.html"), "<!doctype html><html><body>ui</body></html>");
+    writeFileSync(
+      join(dir, "index.html"),
+      "<!doctype html><html><body>ui</body></html>",
+    );
     writeFileSync(
       join(dir, "dev.ts"),
       `import { loadDevApi } from ${src("dev-error.ts")};
@@ -144,7 +157,9 @@ process.exit(0); // a reported handler error would otherwise set exit code 1
     const ok = join(dir, "api.ts");
     writeFileSync(ok, 'export default { "/api/a": () => new Response("a") };');
     expect(Object.keys((await loadDevApi(ok)) as object)).toEqual(["/api/a"]);
-    const api = failingApi(new Error("x"), "/rpc/") as { routes: Record<string, () => never> };
+    const api = failingApi(new Error("x"), "/rpc/") as {
+      routes: Record<string, () => never>;
+    };
     expect(Object.keys(api.routes)).toEqual(["/rpc", "/rpc/*"]);
     expect(() => api.routes["/rpc"]!()).toThrow("x");
   });

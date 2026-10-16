@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # @aphrody/sql
 
 Shared Bun database mechanics for Aphrody. The package implements decisions
@@ -12,13 +13,13 @@ The package exports TypeScript sources. It has no ORM: consumers keep theirs
 
 ## Modules
 
-| Subpath | Runtime | Contents |
-|---|---|---|
-| `@aphrody/sql/env` | any (no `bun`, `node:` or DOM import) | env/URL resolution, `redactUrl`, pooler and loopback detection, dotenv `lastAssignment`, `resolvePoolSize` |
-| `@aphrody/sql/postgres` | Bun | `sqlOptions`, `createSql`, `withTransaction`, `transactionMode` over `Bun.SQL` |
-| `@aphrody/sql/redis` | importable anywhere; client creation requires Bun | `createRedisClient`, `redisOptions`, `resolveRedisUrl` over Bun's `RedisClient` |
-| `@aphrody/sql/sqlite` | Bun | `openSqlite`, `closeSqlite`, `loadSqliteVec`, `sqliteVecVersion`, `vacuumInto` over `bun:sqlite` |
-| `@aphrody/sql` | Bun | re-exports all of the above |
+| Subpath                 | Runtime                                           | Contents                                                                                                   |
+| ----------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `@aphrody/sql/env`      | any (no `bun`, `node:` or DOM import)             | env/URL resolution, `redactUrl`, pooler and loopback detection, dotenv `lastAssignment`, `resolvePoolSize` |
+| `@aphrody/sql/postgres` | Bun                                               | `sqlOptions`, `createSql`, `withTransaction`, `transactionMode` over `Bun.SQL`                             |
+| `@aphrody/sql/redis`    | importable anywhere; client creation requires Bun | `createRedisClient`, `redisOptions`, `resolveRedisUrl` over Bun's `RedisClient`                            |
+| `@aphrody/sql/sqlite`   | Bun                                               | `openSqlite`, `closeSqlite`, `loadSqliteVec`, `sqliteVecVersion`, `vacuumInto` over `bun:sqlite`           |
+| `@aphrody/sql`          | Bun                                               | re-exports all of the above                                                                                |
 
 Import a subpath rather than the root, so that browser or Next bundles never
 pull in `bun:sqlite`.
@@ -35,9 +36,9 @@ import { requireDatabaseUrl, redactUrl } from "@aphrody/sql/env";
 
 // Tries APHRODY_TRAINING_DATABASE_URL_POOLED, APHRODY_TRAINING_DATABASE_URL, then DATABASE_URL.
 const { url, name } = requireDatabaseUrl({
-	prefix: "APHRODY_TRAINING",
-	pooled: true,
-	fallbacks: ["DATABASE_URL"],
+  prefix: "APHRODY_TRAINING",
+  pooled: true,
+  fallbacks: ["DATABASE_URL"],
 });
 console.log(`database from ${name}: ${redactUrl(url)}`);
 ```
@@ -53,7 +54,10 @@ their values.
 import { createSql, withTransaction } from "@aphrody/sql/postgres";
 
 const sql = createSql(url, { applicationName: "aphrody-train" });
-await withTransaction(sql, async (tx) => tx`SELECT 1`, { readOnly: true, statementTimeoutMs: 5000 });
+await withTransaction(sql, async (tx) => tx`SELECT 1`, {
+  readOnly: true,
+  statementTimeoutMs: 5000,
+});
 ```
 
 - **Pool defaults:** `max` 4, `idleTimeout` 30 s, `maxLifetime` 1800 s,
@@ -91,13 +95,13 @@ const redis = createRedisClient(); // REDIS_URL, VALKEY_URL, then redis://127.0.
 `openSqlite(path, { readonly, vec, busyTimeoutMs, create, strict, safeIntegers })`
 applies the same pragmas as the Rust crate:
 
-| Pragma | Value | Note |
-|---|---|---|
-| `busy_timeout` | 5000 | set first |
-| `journal_mode` | `WAL` | skipped for read-only and in-memory databases |
-| `foreign_keys` | `ON` | |
-| `temp_store` | `MEMORY` | |
-| `optimize` | `0x10002` | at open; skipped for read-only connections |
+| Pragma         | Value     | Note                                          |
+| -------------- | --------- | --------------------------------------------- |
+| `busy_timeout` | 5000      | set first                                     |
+| `journal_mode` | `WAL`     | skipped for read-only and in-memory databases |
+| `foreign_keys` | `ON`      |                                               |
+| `temp_store`   | `MEMORY`  |                                               |
+| `optimize`     | `0x10002` | at open; skipped for read-only connections    |
 
 - `closeSqlite(db)` runs `PRAGMA optimize` before it closes the connection.
 - `vec: true` loads sqlite-vec through the npm `sqlite-vec` package

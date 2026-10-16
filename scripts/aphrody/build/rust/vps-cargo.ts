@@ -61,7 +61,11 @@ export type VpsCargoConfig = {
   jobs: number;
   /** Largest `--jobs` the host accepts (a production host stays below its core count). */
   maxJobs?: number;
-  resources?: { reserveMemoryGiB?: number; reserveDiskGiB?: number; memoryPerJobGiB?: number };
+  resources?: {
+    reserveMemoryGiB?: number;
+    reserveDiskGiB?: number;
+    memoryPerJobGiB?: number;
+  };
   remoteTransientRoot?: string;
   /**
    * False when the host has no GTK 4 development libraries (the CEF desktop runtime; a production server keeps a minimum
@@ -71,13 +75,21 @@ export type VpsCargoConfig = {
   /** Crates whose presence in a package's dependency closure means the desktop libraries are needed. */
   desktopSysCrates?: string[];
   /** Per-host overrides merged over this config: secondary build hosts such as dbfr. */
-  hosts?: Record<string, Partial<Omit<VpsCargoConfig, "hosts" | "repositories">>>;
+  hosts?: Record<
+    string,
+    Partial<Omit<VpsCargoConfig, "hosts" | "repositories">>
+  >;
   /** External repositories, by name, for `--repo`: primary host only. */
   repositories?: Record<string, RepositoryConfig>;
   /** Wrapper path on the VPS; the Aphrody default is relative to the remote workspace. Set by `--repo`. */
   cargoSerial?: string;
   forwards: { remote: Forward[]; local: Forward[] };
-  gitDaemon: { listen: string; port: number; basePath: string; repository: string };
+  gitDaemon: {
+    listen: string;
+    port: number;
+    basePath: string;
+    repository: string;
+  };
   snapshotRef: string;
   refuseSnapshotPaths: string[];
 };
@@ -93,24 +105,39 @@ export function expandHome(path: string, home = homedir()): string {
 
 /** POSIX single-quote for remote shell commands. */
 export function shellQuote(value: string): string {
-  return /^[A-Za-z0-9_./:=@%+,-]+$/.test(value) ? value : `'${value.replaceAll("'", `'\\''`)}'`;
+  return /^[A-Za-z0-9_./:=@%+,-]+$/.test(value)
+    ? value
+    : `'${value.replaceAll("'", `'\\''`)}'`;
 }
 
-export async function loadConfig(path = CONFIG_PATH, host?: string): Promise<VpsCargoConfig> {
+export async function loadConfig(
+  path = CONFIG_PATH,
+  host?: string,
+): Promise<VpsCargoConfig> {
   const base = (await Bun.file(path).json()) as VpsCargoConfig;
   // Local paths follow this worktree instead of a particular user's machine.
   if (!base.gitDaemon.basePath) base.gitDaemon.basePath = dirname(ROOT);
   if (!base.gitDaemon.repository) base.gitDaemon.repository = basename(ROOT);
   for (const repository of Object.values(base.repositories ?? {})) {
-    if (!repository.root.startsWith("~") && !/^(?:[A-Za-z]:[\\/]|\/)/.test(repository.root)) {
+    if (
+      !repository.root.startsWith("~") &&
+      !/^(?:[A-Za-z]:[\\/]|\/)/.test(repository.root)
+    ) {
       repository.root = resolve(ROOT, repository.root);
     }
   }
   if (host === undefined || host === base.host) return base;
   const override = base.hosts?.[host];
   if (!override)
-    throw new Error(`unknown build host "${host}" (tools/config/host/vps-cargo.json hosts)`);
-  return { ...base, ...override, remoteEnv: { ...base.remoteEnv, ...override.remoteEnv }, host };
+    throw new Error(
+      `unknown build host "${host}" (tools/config/host/vps-cargo.json hosts)`,
+    );
+  return {
+    ...base,
+    ...override,
+    remoteEnv: { ...base.remoteEnv, ...override.remoteEnv },
+    host,
+  };
 }
 
 /**
@@ -123,10 +150,15 @@ export function repositoryConfig(
 ): { config: VpsCargoConfig; root: string } {
   const repository = config.repositories?.[name];
   if (!repository)
-    throw new Error(`unknown repository "${name}" (tools/config/host/vps-cargo.json repositories)`);
+    throw new Error(
+      `unknown repository "${name}" (tools/config/host/vps-cargo.json repositories)`,
+    );
   if (repository.host && repository.host !== config.host) {
     const host = config.hosts?.[repository.host];
-    if (!host) throw new Error(`repository "${name}" requires unknown host "${repository.host}"`);
+    if (!host)
+      throw new Error(
+        `repository "${name}" requires unknown host "${repository.host}"`,
+      );
     config = {
       ...config,
       ...host,
@@ -157,7 +189,11 @@ export function repositoryConfig(
 /** True when the primary host's heavy lock is held: a build is running there. */
 export function heavyLockBusy(config: VpsCargoConfig): boolean {
   const probe = Bun.spawnSync(
-    [...sshBase(config), config.host, `flock -n ${shellQuote(config.remoteHeavyLock)} true`],
+    [
+      ...sshBase(config),
+      config.host,
+      `flock -n ${shellQuote(config.remoteHeavyLock)} true`,
+    ],
     { windowsHide: true, stdout: "ignore", stderr: "ignore" },
   );
   return probe.exitCode === 1;
@@ -170,7 +206,10 @@ type CargoMetadata = {
   packages: { id: string; name: string }[];
   workspace_members: string[];
   resolve: {
-    nodes: { id: string; deps: { pkg: string; dep_kinds?: { kind: string | null }[] }[] }[];
+    nodes: {
+      id: string;
+      deps: { pkg: string; dep_kinds?: { kind: string | null }[] }[];
+    }[];
   };
 };
 
@@ -188,7 +227,8 @@ export function desktopRequirements(
     const parents = new Map<string, string[]>();
     for (const node of metadata.resolve.nodes) {
       for (const dep of node.deps) {
-        if (!(dep.dep_kinds ?? []).some((k) => kinds.has(k.kind ?? "normal"))) continue;
+        if (!(dep.dep_kinds ?? []).some((k) => kinds.has(k.kind ?? "normal")))
+          continue;
         const list = parents.get(dep.pkg) ?? [];
         list.push(node.id);
         parents.set(dep.pkg, list);
@@ -209,7 +249,9 @@ export function desktopRequirements(
       }
     }
     return new Set(
-      metadata.workspace_members.filter((id) => seen.has(id)).map((id) => name.get(id) ?? id),
+      metadata.workspace_members
+        .filter((id) => seen.has(id))
+        .map((id) => name.get(id) ?? id),
     );
   };
   return {
@@ -243,14 +285,18 @@ export function cargoSelection(cargoArgs: readonly string[]) {
     if (arg === "-p" || arg === "--package") {
       packages.push(next);
       i++;
-    } else if (arg.startsWith("--package=")) packages.push(arg.slice("--package=".length));
+    } else if (arg.startsWith("--package="))
+      packages.push(arg.slice("--package=".length));
     else if (arg === "--exclude") {
       excluded.push(next);
       i++;
-    } else if (arg.startsWith("--exclude=")) excluded.push(arg.slice("--exclude=".length));
+    } else if (arg.startsWith("--exclude="))
+      excluded.push(arg.slice("--exclude=".length));
     else if (arg === "--workspace" || arg === "--all") workspace = true;
-    else if (DEV_TARGET_FLAGS.has(arg) || /^--(test|bench|example)=/.test(arg)) devTargets = true;
-    else if (!subcommand && !arg.startsWith("-") && !arg.startsWith("+")) subcommand = arg;
+    else if (DEV_TARGET_FLAGS.has(arg) || /^--(test|bench|example)=/.test(arg))
+      devTargets = true;
+    else if (!subcommand && !arg.startsWith("-") && !arg.startsWith("+"))
+      subcommand = arg;
   }
   if (DEV_SUBCOMMANDS.has(subcommand)) devTargets = true;
   return { subcommand, packages, excluded, workspace, devTargets };
@@ -311,10 +357,16 @@ async function worktreeDesktopRequirements(
       .cwd(ROOT)
       .quiet()
       .text();
-  const requirements = desktopRequirements(JSON.parse(json) as CargoMetadata, sysCrates);
+  const requirements = desktopRequirements(
+    JSON.parse(json) as CargoMetadata,
+    sysCrates,
+  );
   await Bun.write(
     cache,
-    JSON.stringify({ build: [...requirements.build], all: [...requirements.all] }),
+    JSON.stringify({
+      build: [...requirements.build],
+      all: [...requirements.all],
+    }),
   );
   return requirements;
 }
@@ -331,7 +383,9 @@ async function ensureHostCanBuild(
   if (cargoArgs.length === 0) return candidate;
   const offenders = desktopOffenders(
     cargoArgs,
-    await worktreeDesktopRequirements(primary.desktopSysCrates ?? ["gdk4-sys", "gtk4-sys"]),
+    await worktreeDesktopRequirements(
+      primary.desktopSysCrates ?? ["gdk4-sys", "gtk4-sys"],
+    ),
   );
   if (offenders.length === 0) return candidate;
   const sample = `${offenders.slice(0, 3).join(", ")}${offenders.length > 3 ? `, … (${offenders.length})` : ""}`;
@@ -347,13 +401,21 @@ async function ensureHostCanBuild(
 }
 
 /** `--host <name|auto>` or VPS_CARGO_HOST: the primary host, a named secondary, or the first idle one. */
-export async function selectConfig(options: readonly string[]): Promise<VpsCargoConfig> {
+export async function selectConfig(
+  options: readonly string[],
+): Promise<VpsCargoConfig> {
   const requested = flag(options, "--host") ?? process.env["VPS_CARGO_HOST"];
-  const configPath = flag(options, "--config") ?? process.env["VPS_CARGO_CONFIG"] ?? CONFIG_PATH;
+  const configPath =
+    flag(options, "--config") ?? process.env["VPS_CARGO_CONFIG"] ?? CONFIG_PATH;
   const primary = await loadConfig(configPath);
   if (requested === undefined || requested === primary.host) return primary;
   if (requested !== "auto") {
-    return ensureHostCanBuild(await loadConfig(configPath, requested), primary, options, requested);
+    return ensureHostCanBuild(
+      await loadConfig(configPath, requested),
+      primary,
+      options,
+      requested,
+    );
   }
   if (!heavyLockBusy(primary)) return primary;
   const fallback = Object.keys(primary.hosts ?? {})[0];
@@ -370,12 +432,18 @@ export async function selectConfig(options: readonly string[]): Promise<VpsCargo
 }
 
 /** Snapshot paths that look like secrets: the snapshot leaves the machine, so it fails closed. */
-export function secretLikePaths(paths: readonly string[], patterns: readonly string[]): string[] {
+export function secretLikePaths(
+  paths: readonly string[],
+  patterns: readonly string[],
+): string[] {
   const regexes = patterns.map((pattern) => new RegExp(pattern, "i"));
   return paths.filter((path) => regexes.some((regex) => regex.test(path)));
 }
 
-export function sshBase(config: VpsCargoConfig, platform = process.platform): string[] {
+export function sshBase(
+  config: VpsCargoConfig,
+  platform = process.platform,
+): string[] {
   return [
     "ssh",
     ...(platform === "win32"
@@ -397,10 +465,15 @@ export function sshBase(config: VpsCargoConfig, platform = process.platform): st
 
 /** The persistent, self-reconnecting SSH master carrying both forward directions. */
 export function localQuote(value: string, platform = process.platform): string {
-  return platform === "win32" ? `'${value.replaceAll("'", "''")}'` : shellQuote(value);
+  return platform === "win32"
+    ? `'${value.replaceAll("'", "''")}'`
+    : shellQuote(value);
 }
 
-export function tunnelCommand(config: VpsCargoConfig, platform = process.platform): string {
+export function tunnelCommand(
+  config: VpsCargoConfig,
+  platform = process.platform,
+): string {
   if (platform === "win32") {
     const args = [
       ...sshBase(config, platform),
@@ -415,8 +488,12 @@ export function tunnelCommand(config: VpsCargoConfig, platform = process.platfor
     return `& ${localQuote(process.execPath, platform)} -e ${localQuote(code, platform)}`;
   }
   const forwards = [
-    ...config.forwards.remote.map((forward) => `-R ${forward.bind}:${forward.to}`),
-    ...config.forwards.local.map((forward) => `-L ${forward.bind}:${forward.to}`),
+    ...config.forwards.remote.map(
+      (forward) => `-R ${forward.bind}:${forward.to}`,
+    ),
+    ...config.forwards.local.map(
+      (forward) => `-L ${forward.bind}:${forward.to}`,
+    ),
   ];
   const ssh = [
     ...sshBase(config, platform).map(shellQuote),
@@ -432,7 +509,10 @@ export function tunnelCommand(config: VpsCargoConfig, platform = process.platfor
 }
 
 /** Read-only git daemon on loopback: the VPS reaches it through the reverse forward. */
-export function gitDaemonCommand(config: VpsCargoConfig, platform = process.platform): string {
+export function gitDaemonCommand(
+  config: VpsCargoConfig,
+  platform = process.platform,
+): string {
   const base = expandHome(config.gitDaemon.basePath);
   const normalizedBase = base.replaceAll("\\", "/");
   // Git daemon appends /<repository>. A drive root ending in / produces C://repo,
@@ -446,7 +526,10 @@ export function gitDaemonCommand(config: VpsCargoConfig, platform = process.plat
     `--listen=${config.gitDaemon.listen}`,
     `--port=${config.gitDaemon.port}`,
     `--base-path=${localQuote(daemonBase, platform)}`,
-    localQuote(join(base, config.gitDaemon.repository).replaceAll("\\", "/"), platform),
+    localQuote(
+      join(base, config.gitDaemon.repository).replaceAll("\\", "/"),
+      platform,
+    ),
   ].join(" ");
 }
 
@@ -474,7 +557,10 @@ export function pinRef(config: VpsCargoConfig, sha: string): string {
 export const PIN_RETENTION_DAYS = 3;
 
 /** Remote script: fail (exit 3) when the snapshot misses any object (a commit whose blobs were collected). */
-export function remoteVerifyScript(config: VpsCargoConfig, sha: string): string {
+export function remoteVerifyScript(
+  config: VpsCargoConfig,
+  sha: string,
+): string {
   return [
     `cd ${shellQuote(config.remoteWorkspace)}`,
     // `--quiet` prints nothing and exits non-zero when an object is missing: fast, no checkout needed.
@@ -495,7 +581,11 @@ export function remoteForgetScript(config: VpsCargoConfig): string {
 }
 
 /** Remote script that moves the dedicated VPS checkout to the snapshot commit. */
-export function remoteCheckoutScript(config: VpsCargoConfig, sha: string, pull: boolean): string {
+export function remoteCheckoutScript(
+  config: VpsCargoConfig,
+  sha: string,
+  pull: boolean,
+): string {
   const port = config.forwards.remote[0]?.bind.split(":").at(-1) ?? "19418";
   const fetch = pull
     ? `git fetch --quiet git://127.0.0.1:${port}/${config.gitDaemon.repository} ${config.snapshotRef}`
@@ -531,7 +621,12 @@ export function remoteRunScript(
 ): string {
   const selectedJobs = cargoJobsSetting(String(jobs), config);
   const policy = factoryResourcePolicy({
-    rust: { maxJobs: selectedJobs === "auto" ? (config.maxJobs ?? config.jobs) : selectedJobs },
+    rust: {
+      maxJobs:
+        selectedJobs === "auto"
+          ? (config.maxJobs ?? config.jobs)
+          : selectedJobs,
+    },
     resources: config.resources,
   });
   const admission = factoryResourceAdmissionProgram(
@@ -655,33 +750,50 @@ export function snapshot(config: VpsCargoConfig, cwd = ROOT): Promise<string> {
   return withSnapshotBackoff(() => snapshotOnce(config, cwd));
 }
 
-async function snapshotOnce(config: VpsCargoConfig, cwd: string): Promise<string> {
+async function snapshotOnce(
+  config: VpsCargoConfig,
+  cwd: string,
+): Promise<string> {
   // `.git` is a file in a linked worktree: ask git for the per-worktree directory holding the index.
-  const gitDir = (await $`git rev-parse --absolute-git-dir`.cwd(cwd).text()).trim();
+  const gitDir = (
+    await $`git rev-parse --absolute-git-dir`.cwd(cwd).text()
+  ).trim();
   // One scratch index per call: concurrent runs (other processes, or this one) never share an index file.
-  const index = join(gitDir, `vps-cargo.${process.pid}.${crypto.randomUUID().slice(0, 8)}.index`);
+  const index = join(
+    gitDir,
+    `vps-cargo.${process.pid}.${crypto.randomUUID().slice(0, 8)}.index`,
+  );
   try {
     await Bun.write(index, Bun.file(join(gitDir, "index")));
     const env = { ...process.env, GIT_INDEX_FILE: index };
     await $`git add -A`.cwd(cwd).env(env).quiet();
-    const changed = (await $`git diff --cached --name-only HEAD`.cwd(cwd).env(env).text())
+    const changed = (
+      await $`git diff --cached --name-only HEAD`.cwd(cwd).env(env).text()
+    )
       .split("\n")
       .filter(Boolean);
     const refused = secretLikePaths(changed, config.refuseSnapshotPaths);
     if (refused.length > 0) {
-      throw new Error(`refusing to snapshot secret-like paths: ${refused.join(", ")}`);
+      throw new Error(
+        `refusing to snapshot secret-like paths: ${refused.join(", ")}`,
+      );
     }
     const large: string[] = [];
     for (const path of changed) {
       const file = Bun.file(join(cwd, path));
-      if ((await file.exists()) && file.size > MAX_SNAPSHOT_FILE_BYTES) large.push(path);
+      if ((await file.exists()) && file.size > MAX_SNAPSHOT_FILE_BYTES)
+        large.push(path);
     }
     if (large.length > 0) {
-      throw new Error(`refusing files over 50 MiB (ignore them first): ${large.join(", ")}`);
+      throw new Error(
+        `refusing files over 50 MiB (ignore them first): ${large.join(", ")}`,
+      );
     }
     const tree = (await $`git write-tree`.cwd(cwd).env(env).text()).trim();
     const head = (await $`git rev-parse HEAD`.cwd(cwd).text()).trim();
-    const headTree = (await $`git rev-parse HEAD^{tree}`.cwd(cwd).text()).trim();
+    const headTree = (
+      await $`git rev-parse HEAD^{tree}`.cwd(cwd).text()
+    ).trim();
     const message = "workspace snapshot";
     const sha =
       tree === headTree
@@ -698,9 +810,15 @@ async function snapshotOnce(config: VpsCargoConfig, cwd: string): Promise<string
   }
 }
 
-async function sync(config: VpsCargoConfig, pull: boolean, root = ROOT): Promise<string> {
+async function sync(
+  config: VpsCargoConfig,
+  pull: boolean,
+  root = ROOT,
+): Promise<string> {
   if (pull && root !== ROOT)
-    throw new Error("--pull reads the Aphrody git daemon: not available with --repo");
+    throw new Error(
+      "--pull reads the Aphrody git daemon: not available with --repo",
+    );
   const sha = await snapshot(config, root);
   if (!pull) {
     // Seed the dedicated checkout first so the push has a repository to land in.
@@ -730,7 +848,10 @@ async function sync(config: VpsCargoConfig, pull: boolean, root = ROOT): Promise
             stderr: "pipe",
           },
         );
-        const [code, stderr] = await Promise.all([push.exited, new Response(push.stderr).text()]);
+        const [code, stderr] = await Promise.all([
+          push.exited,
+          new Response(push.stderr).text(),
+        ]);
         if (stderr) process.stderr.write(stderr);
         if (code !== 0)
           throw Object.assign(new Error("git push of the snapshot failed"), {
@@ -742,11 +863,15 @@ async function sync(config: VpsCargoConfig, pull: boolean, root = ROOT): Promise
     // A remote ref can advertise history whose objects were collected (another session's snapshot, since
     // overwritten): git then never resends them. Verify, and on damage forget the refs and push in full.
     if ((await ssh(config, remoteVerifyScript(config, sha))) !== 0) {
-      console.error("vps-cargo: the snapshot is incomplete on the VPS, resending it in full");
+      console.error(
+        "vps-cargo: the snapshot is incomplete on the VPS, resending it in full",
+      );
       await ssh(config, remoteForgetScript(config));
       await pushOnce();
       if ((await ssh(config, remoteVerifyScript(config, sha))) !== 0) {
-        throw new Error("the snapshot is still incomplete on the VPS after a full resend");
+        throw new Error(
+          "the snapshot is still incomplete on the VPS after a full resend",
+        );
       }
     }
   }
@@ -757,11 +882,17 @@ async function sync(config: VpsCargoConfig, pull: boolean, root = ROOT): Promise
 }
 
 function tmuxLocal(args: string[]): Promise<number> {
-  return Bun.spawn(["tmux", ...args], { windowsHide: true, stdout: "inherit", stderr: "inherit" })
-    .exited;
+  return Bun.spawn(["tmux", ...args], {
+    windowsHide: true,
+    stdout: "inherit",
+    stderr: "inherit",
+  }).exited;
 }
 
-async function tunnel(config: VpsCargoConfig, action: string | undefined): Promise<number> {
+async function tunnel(
+  config: VpsCargoConfig,
+  action: string | undefined,
+): Promise<number> {
   const session = config.localSession;
   const has = Bun.spawn(["tmux", "has-session", "-t", session], {
     windowsHide: true,
@@ -773,8 +904,19 @@ async function tunnel(config: VpsCargoConfig, action: string | undefined): Promi
       console.log(`tmux session ${session} already running`);
       return 0;
     }
-    await mkdir(dirname(expandHome(config.controlPath)), { recursive: true, mode: 0o700 });
-    await tmuxLocal(["new-session", "-d", "-s", session, "-n", "ssh", tunnelCommand(config)]);
+    await mkdir(dirname(expandHome(config.controlPath)), {
+      recursive: true,
+      mode: 0o700,
+    });
+    await tmuxLocal([
+      "new-session",
+      "-d",
+      "-s",
+      session,
+      "-n",
+      "ssh",
+      tunnelCommand(config),
+    ]);
     await tmuxLocal([
       "new-window",
       "-d",
@@ -800,7 +942,15 @@ async function tunnel(config: VpsCargoConfig, action: string | undefined): Promi
   }
   const check = Bun.spawn(
     process.platform === "win32"
-      ? [...sshBase(config), "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", config.host, "true"]
+      ? [
+          ...sshBase(config),
+          "-o",
+          "BatchMode=yes",
+          "-o",
+          "ConnectTimeout=5",
+          config.host,
+          "true",
+        ]
       : [...sshBase(config), "-O", "check", config.host],
     { windowsHide: true, stderr: "ignore" },
   );
@@ -824,7 +974,9 @@ async function fetchArtifact(
   const bin = flag(args, "--bin");
   if (!bin) throw new Error("fetch needs --bin <name>");
   const profile = flag(args, "--profile") ?? "release";
-  const sha = (await $`git rev-parse ${config.snapshotRef}`.cwd(root).text()).trim();
+  const sha = (
+    await $`git rev-parse ${config.snapshotRef}`.cwd(root).text()
+  ).trim();
   const defaultDest =
     process.platform === "win32"
       ? join(
@@ -856,15 +1008,20 @@ async function fetchArtifact(
     [...sshBase(config), config.host, `sha256sum ${shellQuote(remote)}`],
     { windowsHide: true, stdout: "pipe" },
   );
-  const remoteDigest = (await new Response(remoteSum.stdout).text()).split(/\s+/)[0];
+  const remoteDigest = (await new Response(remoteSum.stdout).text()).split(
+    /\s+/,
+  )[0];
   if (digest !== remoteDigest) throw new Error(`sha256 mismatch for ${bin}`);
   // A WebAssembly module or a shared library is a verified copy, not something to execute.
   if (/\.(wasm|so|dll|dylib)$/.test(bin)) {
     console.log(`${local} sha256=${digest} (not executed)`);
     return 0;
   }
-  const runs = Bun.spawnSync([local, "--version"], { windowsHide: true }).exitCode === 0;
-  console.log(`${local} sha256=${digest} ${runs ? "runs here" : "does NOT run here (ABI)"}`);
+  const runs =
+    Bun.spawnSync([local, "--version"], { windowsHide: true }).exitCode === 0;
+  console.log(
+    `${local} sha256=${digest} ${runs ? "runs here" : "does NOT run here (ABI)"}`,
+  );
   return runs ? 0 : 3;
 }
 
@@ -904,23 +1061,45 @@ export async function main(argv: readonly string[]): Promise<number> {
       return 0;
     case "run": {
       const separator = rest.indexOf("--");
-      if (separator < 0 || separator === rest.length - 1) throw new Error(USAGE);
+      if (separator < 0 || separator === rest.length - 1)
+        throw new Error(USAGE);
       const options = rest.slice(0, separator);
       const jobs = cargoJobsSetting(flag(options, "--jobs"), config);
       const sha = await sync(config, options.includes("--pull"), root);
       const job = `${new Date().toISOString().replaceAll(/[:.]/g, "-")}-${sha.slice(0, 12)}`;
-      console.log(`job ${job} (attach: bun scripts/build/rust/vps-cargo.ts attach)`);
-      return ssh(config, remoteRunScript(config, sha, job, rest.slice(separator + 1), jobs));
+      console.log(
+        `job ${job} (attach: bun scripts/build/rust/vps-cargo.ts attach)`,
+      );
+      return ssh(
+        config,
+        remoteRunScript(config, sha, job, rest.slice(separator + 1), jobs),
+      );
     }
     case "logs":
       if (!rest[0]) throw new Error("usage: vps-cargo logs <job>");
-      return ssh(config, `cat ${shellQuote(`${config.remoteLogDir}/${rest[0]}.log`)}`);
+      return ssh(
+        config,
+        `cat ${shellQuote(`${config.remoteLogDir}/${rest[0]}.log`)}`,
+      );
     case "fetch":
       return fetchArtifact(config, rest, root);
     case "attach":
       return Bun.spawn(
-        [...sshBase(config), "-t", config.host, "tmux", "attach", "-t", config.remoteSession],
-        { windowsHide: true, stdin: "inherit", stdout: "inherit", stderr: "inherit" },
+        [
+          ...sshBase(config),
+          "-t",
+          config.host,
+          "tmux",
+          "attach",
+          "-t",
+          config.remoteSession,
+        ],
+        {
+          windowsHide: true,
+          stdin: "inherit",
+          stdout: "inherit",
+          stderr: "inherit",
+        },
       ).exited;
     default:
       console.error(USAGE);
@@ -932,7 +1111,9 @@ if (import.meta.main) {
   try {
     process.exitCode = await main(process.argv.slice(2));
   } catch (error) {
-    console.error(`vps-cargo: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(
+      `vps-cargo: ${error instanceof Error ? error.message : String(error)}`,
+    );
     process.exitCode = 1;
   }
 }

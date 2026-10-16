@@ -42,8 +42,11 @@ test.skipIf(!pwsh)(
     await stepKit.run(t.ctx, "executer", { repoReady: false });
     for (const call of t.sys.calls) snippets.push(call.argv[3]!);
     expect(snippets.length).toBe(3);
-    for (const snippet of snippets) expect(parseErrors(snippet), snippet).toBe("");
-    expect(parseErrors("Start-Process -FilePath 'x' -ArgumentList (")).not.toBe("");
+    for (const snippet of snippets)
+      expect(parseErrors(snippet), snippet).toBe("");
+    expect(parseErrors("Start-Process -FilePath 'x' -ArgumentList (")).not.toBe(
+      "",
+    );
     expect(join("a", "b")).toBeDefined();
   },
 );

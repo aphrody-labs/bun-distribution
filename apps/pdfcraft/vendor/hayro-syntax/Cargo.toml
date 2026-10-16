@@ -28,35 +28,29 @@ repository = "https://github.com/LaurenzV/hayro"
 resolver = "2"
 
 [features]
-default = [
-    "std",
-    "images",
-]
+default = ["std", "images"]
 images = [
-    "dep:zune-jpeg",
-    "dep:hayro-ccitt",
-    "dep:hayro-jbig2",
-    "dep:hayro-jpeg2000",
+  "dep:zune-jpeg",
+  "dep:hayro-ccitt",
+  "dep:hayro-jbig2",
+  "dep:hayro-jpeg2000",
 ]
-logging = [
-    "dep:log",
-    "hayro-jpeg2000?/logging",
-]
+logging = ["dep:log", "hayro-jpeg2000?/logging"]
 std = [
-    "hayro-jbig2?/std",
-    "hayro-jpeg2000?/std",
-    "dep:rustc-hash",
-    "dep:stringprep",
-    "zune-jpeg?/std",
+  "hayro-jbig2?/std",
+  "hayro-jpeg2000?/std",
+  "dep:rustc-hash",
+  "dep:stringprep",
+  "zune-jpeg?/std",
 ]
 unsafe = [
-    "std",
-    "dep:flate2",
-    "dep:memchr",
-    "hayro-jbig2?/simd",
-    "hayro-jpeg2000?/simd",
-    "zune-jpeg?/x86",
-    "zune-jpeg?/neon",
+  "std",
+  "dep:flate2",
+  "dep:memchr",
+  "hayro-jbig2?/simd",
+  "hayro-jpeg2000?/simd",
+  "zune-jpeg?/x86",
+  "zune-jpeg?/neon",
 ]
 
 [lib]

@@ -21,12 +21,13 @@ export const FULL_INTENTS: readonly GatewayIntentBits[] = [
  * Safe fallback without any privileged intents.
  * Used when privileged intents have not yet been granted in the Developer Portal.
  */
-export const FALLBACK_INTENTS: readonly GatewayIntentBits[] = FULL_INTENTS.filter(
-  (intent) =>
-    intent !== GatewayIntentBits.GuildMembers &&
-    intent !== GatewayIntentBits.GuildPresences &&
-    intent !== GatewayIntentBits.MessageContent,
-);
+export const FALLBACK_INTENTS: readonly GatewayIntentBits[] =
+  FULL_INTENTS.filter(
+    (intent) =>
+      intent !== GatewayIntentBits.GuildMembers &&
+      intent !== GatewayIntentBits.GuildPresences &&
+      intent !== GatewayIntentBits.MessageContent,
+  );
 
 /**
  * Bit flags in `application.flags` confirming whether privileged intents are approved.
@@ -38,7 +39,9 @@ export const PRIVILEGED_GRANT_BITS = {
   messageContent: [1 << 18, 1 << 19],
 } as const;
 
-function withoutPrivilegedIntents(intents: readonly GatewayIntentBits[]): GatewayIntentBits[] {
+function withoutPrivilegedIntents(
+  intents: readonly GatewayIntentBits[],
+): GatewayIntentBits[] {
   return intents.filter(
     (intent) =>
       intent !== GatewayIntentBits.GuildMembers &&
@@ -100,15 +103,22 @@ export async function resolveGrantedIntents(
     return withoutPrivilegedIntents(desired);
   }
 
-  const isGranted = (bits: readonly number[]) => bits.some((b) => (flags & b) !== 0);
+  const isGranted = (bits: readonly number[]) =>
+    bits.some((b) => (flags & b) !== 0);
   const refused: string[] = [];
 
   const grantedIntents = desired.filter((intent) => {
-    if (intent === GatewayIntentBits.GuildMembers && !isGranted(PRIVILEGED_GRANT_BITS.members)) {
+    if (
+      intent === GatewayIntentBits.GuildMembers &&
+      !isGranted(PRIVILEGED_GRANT_BITS.members)
+    ) {
       refused.push("GuildMembers");
       return false;
     }
-    if (intent === GatewayIntentBits.GuildPresences && !isGranted(PRIVILEGED_GRANT_BITS.presence)) {
+    if (
+      intent === GatewayIntentBits.GuildPresences &&
+      !isGranted(PRIVILEGED_GRANT_BITS.presence)
+    ) {
       refused.push("GuildPresences");
       return false;
     }
@@ -146,7 +156,11 @@ export interface DiscordBotProfile {
 export async function assertDiscordTokenMatchesProfile(
   botToken: string,
   profile: DiscordBotProfile,
-  options: { fetchImpl?: typeof fetch; apiBase?: string; timeoutMs?: number } = {},
+  options: {
+    fetchImpl?: typeof fetch;
+    apiBase?: string;
+    timeoutMs?: number;
+  } = {},
 ): Promise<void> {
   if (!profile.clientId) {
     throw new Error(

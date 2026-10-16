@@ -30,9 +30,16 @@ interface ModuleReference {
   sourceFile: string;
   specifier: string;
   packageName: string | null;
-  resolution: "builtin" | "workspace-source" | "installed-package" | "unresolved";
+  resolution:
+    "builtin" | "workspace-source" | "installed-package" | "unresolved";
   resolvedPath?: string;
-  kind: "import" | "re-export" | "dynamic-import" | "require" | "import-type" | "reference-type";
+  kind:
+    | "import"
+    | "re-export"
+    | "dynamic-import"
+    | "require"
+    | "import-type"
+    | "reference-type";
   typeOnly: boolean;
   line: number;
 }
@@ -82,7 +89,16 @@ const IGNORED_DIRS = new Set([
   "coverage",
   "vendor",
 ]);
-const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"]);
+const SOURCE_EXTENSIONS = new Set([
+  ".ts",
+  ".tsx",
+  ".mts",
+  ".cts",
+  ".js",
+  ".jsx",
+  ".mjs",
+  ".cjs",
+]);
 const BUILTINS = new Set([
   "assert",
   "buffer",
@@ -132,9 +148,14 @@ function packageName(specifier: string): string | null {
   return value.split("/")[0] || null;
 }
 
-function workspaceContains(root: string, patterns: string[], packageDir: string): boolean {
+function workspaceContains(
+  root: string,
+  patterns: string[],
+  packageDir: string,
+): boolean {
   const rel = relative(root, packageDir).split(sep).join("/");
-  if (rel === ".." || rel.startsWith("../") || rel.startsWith("/")) return false;
+  if (rel === ".." || rel.startsWith("../") || rel.startsWith("/"))
+    return false;
   let included = rel === ".";
   for (const entry of patterns) {
     const negated = entry.startsWith("!");
@@ -157,7 +178,11 @@ async function packageManifests(
 ): Promise<Array<{ path: string; manifest: WorkspaceManifest }>> {
   const manifests: Array<{ path: string; manifest: WorkspaceManifest }> = [];
   const glob = new Bun.Glob("**/package.json");
-  for await (const file of glob.scan({ cwd: root, onlyFiles: true, followSymlinks: false })) {
+  for await (const file of glob.scan({
+    cwd: root,
+    onlyFiles: true,
+    followSymlinks: false,
+  })) {
     if (file.split("/").some((segment) => IGNORED_DIRS.has(segment))) continue;
     const path = resolve(root, file);
     const manifest = await readJson<WorkspaceManifest>(path);
@@ -168,14 +193,17 @@ async function packageManifests(
 
 async function activeWorkspacePackages(
   root: string,
-): Promise<Array<{ path: string; manifest: WorkspaceManifest; workspaceRoot: string }>> {
+): Promise<
+  Array<{ path: string; manifest: WorkspaceManifest; workspaceRoot: string }>
+> {
   const manifests = await packageManifests(root);
   const rootManifest = manifests.find(
     ({ path }) => resolve(path) === resolve(root, "package.json"),
   );
   if (!rootManifest) throw new Error(`Missing root package.json at ${root}`);
   const nestedRoots = manifests.filter(
-    ({ path, manifest }) => path !== rootManifest.path && workspacePatterns(manifest).length > 0,
+    ({ path, manifest }) =>
+      path !== rootManifest.path && workspacePatterns(manifest).length > 0,
   );
   const roots = [
     {
@@ -199,10 +227,16 @@ async function activeWorkspacePackages(
     if (item.path === rootManifest.path) continue;
     const dir = dirname(item.path);
     const memberships = roots
-      .filter((workspace) => workspaceContains(workspace.path, workspace.patterns, dir))
+      .filter((workspace) =>
+        workspaceContains(workspace.path, workspace.patterns, dir),
+      )
       .toSorted((a, b) => b.path.length - a.path.length);
     const owner = memberships[0];
-    if (owner) found.set(item.path, { ...item, workspaceRoot: relative(root, owner.path) || "." });
+    if (owner)
+      found.set(item.path, {
+        ...item,
+        workspaceRoot: relative(root, owner.path) || ".",
+      });
   }
   return [...found.values()].toSorted((a, b) => a.path.localeCompare(b.path));
 }
@@ -226,7 +260,13 @@ function parseSource(
         : [".js", ".mjs", ".cjs"].includes(ext)
           ? ts.ScriptKind.JS
           : ts.ScriptKind.TS;
-  const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true, scriptKind);
+  const source = ts.createSourceFile(
+    path,
+    text,
+    ts.ScriptTarget.Latest,
+    true,
+    scriptKind,
+  );
   const imports: ModuleReference[] = [];
   const exports = new Set<string>();
   const addImport = (
@@ -246,13 +286,18 @@ function parseSource(
           ? "unresolved"
           : "builtin"
         : "unresolved";
-    const resolvedPath = ts.resolveModuleName(specifier, path, compilerOptions, ts.sys)
-      .resolvedModule?.resolvedFileName;
+    const resolvedPath = ts.resolveModuleName(
+      specifier,
+      path,
+      compilerOptions,
+      ts.sys,
+    ).resolvedModule?.resolvedFileName;
     const normalizedResolved = resolvedPath?.replaceAll("\\", "/");
     const isWorkspaceSource = Boolean(
       normalizedResolved &&
       !normalizedResolved.includes("/node_modules/") &&
-      (normalizedResolved === packageDir || normalizedResolved.startsWith(`${packageDir}/`)),
+      (normalizedResolved === packageDir ||
+        normalizedResolved.startsWith(`${packageDir}/`)),
     );
     imports.push({
       sourceFile: path,
@@ -299,7 +344,8 @@ function parseSource(
         node.getStart(source),
       );
       if (node.exportClause && ts.isNamedExports(node.exportClause)) {
-        for (const element of node.exportClause.elements) exports.add(element.name.text);
+        for (const element of node.exportClause.elements)
+          exports.add(element.name.text);
       } else if (node.exportClause && ts.isNamespaceExport(node.exportClause)) {
         exports.add(node.exportClause.name.text);
       } else if (!node.exportClause) {
@@ -315,10 +361,16 @@ function parseSource(
         Boolean(node.isTypeOnly),
         node.getStart(source),
       );
-      if (node.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword))
+      if (
+        node.modifiers?.some(
+          (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword,
+        )
+      )
         exports.add(node.name.text);
     } else if (ts.isImportTypeNode(node)) {
-      const literal = ts.isLiteralTypeNode(node.argument) ? node.argument.literal : undefined;
+      const literal = ts.isLiteralTypeNode(node.argument)
+        ? node.argument.literal
+        : undefined;
       addImport(
         externalModuleName(literal),
         "import-type",
@@ -334,7 +386,10 @@ function parseSource(
           false,
           node.getStart(source),
         );
-      } else if (ts.isIdentifier(node.expression) && node.expression.text === "require") {
+      } else if (
+        ts.isIdentifier(node.expression) &&
+        node.expression.text === "require"
+      ) {
         addImport(
           argument ? externalModuleName(argument as ts.Expression) : null,
           "require",
@@ -348,15 +403,20 @@ function parseSource(
       exports.add(node.isExportEquals ? "export=" : "default");
     } else if (
       ts.canHaveModifiers(node) &&
-      ts.getModifiers(node)?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword)
+      ts
+        .getModifiers(node)
+        ?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword)
     ) {
       if (
         ts.canHaveModifiers(node) &&
-        ts.getModifiers(node)?.some((modifier) => modifier.kind === ts.SyntaxKind.DefaultKeyword)
+        ts
+          .getModifiers(node)
+          ?.some((modifier) => modifier.kind === ts.SyntaxKind.DefaultKeyword)
       )
         exports.add("default");
       else if (ts.isVariableStatement(node))
-        for (const decl of node.declarationList.declarations) addBindingNames(decl.name);
+        for (const decl of node.declarationList.declarations)
+          addBindingNames(decl.name);
       else if (
         ts.isFunctionDeclaration(node) ||
         ts.isClassDeclaration(node) ||
@@ -365,7 +425,8 @@ function parseSource(
         ts.isEnumDeclaration(node) ||
         ts.isModuleDeclaration(node)
       ) {
-        if (node.name && ts.isIdentifier(node.name)) exports.add(node.name.text);
+        if (node.name && ts.isIdentifier(node.name))
+          exports.add(node.name.text);
       }
     }
     ts.forEachChild(node, visit);
@@ -374,16 +435,25 @@ function parseSource(
   return { path, imports, exports: [...exports].toSorted() };
 }
 
-async function sourceFiles(packageDir: string, nestedWorkspaceDirs: string[]): Promise<string[]> {
+async function sourceFiles(
+  packageDir: string,
+  nestedWorkspaceDirs: string[],
+): Promise<string[]> {
   const results: string[] = [];
   const glob = new Bun.Glob("**/*");
-  for await (const file of glob.scan({ cwd: packageDir, onlyFiles: true, followSymlinks: false })) {
+  for await (const file of glob.scan({
+    cwd: packageDir,
+    onlyFiles: true,
+    followSymlinks: false,
+  })) {
     const segments = file.split("/");
     if (segments.some((segment) => IGNORED_DIRS.has(segment))) continue;
     const absolute = resolve(packageDir, file);
     if (
       nestedWorkspaceDirs.some(
-        (workspaceDir) => absolute === workspaceDir || absolute.startsWith(`${workspaceDir}${sep}`),
+        (workspaceDir) =>
+          absolute === workspaceDir ||
+          absolute.startsWith(`${workspaceDir}${sep}`),
       )
     )
       continue;
@@ -396,10 +466,16 @@ async function sourceFiles(packageDir: string, nestedWorkspaceDirs: string[]): P
 
 function manifestEntries(manifest: WorkspaceManifest): string[] {
   const result = new Set<string>();
-  for (const value of [manifest.main, manifest.module, manifest.types, manifest.typings])
+  for (const value of [
+    manifest.main,
+    manifest.module,
+    manifest.types,
+    manifest.typings,
+  ])
     if (value) result.add(value);
   if (typeof manifest.bin === "string") result.add(manifest.bin);
-  else if (manifest.bin) for (const value of Object.values(manifest.bin)) result.add(value);
+  else if (manifest.bin)
+    for (const value of Object.values(manifest.bin)) result.add(value);
   for (const [key, value] of Object.entries(manifest.exports ?? {})) {
     if (typeof value === "string") result.add(value);
     else if (value && typeof value === "object") {
@@ -418,7 +494,8 @@ async function auditPackage(
 ): Promise<PackageAudit> {
   const dir = dirname(item.path);
   const nestedWorkspaceDirs = workspaceDirs.filter(
-    (workspaceDir) => workspaceDir !== dir && workspaceDir.startsWith(`${dir}${sep}`),
+    (workspaceDir) =>
+      workspaceDir !== dir && workspaceDir.startsWith(`${dir}${sep}`),
   );
   const files = await sourceFiles(dir, nestedWorkspaceDirs);
   const configPath = join(dir, "tsconfig.json");
@@ -443,7 +520,9 @@ async function auditPackage(
     ...(item.manifest.bundledDependencies ?? []),
   ]);
   const imports = parsedFiles.flatMap((file) => file.imports);
-  const used = new Set(imports.flatMap((ref) => (ref.packageName ? [ref.packageName] : [])));
+  const used = new Set(
+    imports.flatMap((ref) => (ref.packageName ? [ref.packageName] : [])),
+  );
   const subpathUsed = new Set(
     imports.flatMap((ref) => {
       if (!ref.packageName) return [];
@@ -454,7 +533,8 @@ async function auditPackage(
     }),
   );
   const externalImports = [...used].filter(
-    (name) => name !== "bun" && (!name.startsWith("@aphrody/") || declared.has(name)),
+    (name) =>
+      name !== "bun" && (!name.startsWith("@aphrody/") || declared.has(name)),
   );
   const unlisted = externalImports
     .filter((name) => !declared.has(name) && !name.startsWith("@types/"))
@@ -472,7 +552,8 @@ async function auditPackage(
   const exportsByFile: Record<string, string[]> = {};
   for (const file of parsedFiles) {
     if (file.exports.length)
-      exportsByFile[relative(root, file.path).split(sep).join("/")] = file.exports;
+      exportsByFile[relative(root, file.path).split(sep).join("/")] =
+        file.exports;
   }
   return {
     path: relative(root, item.path).split(sep).join("/"),
@@ -497,7 +578,9 @@ export async function scanImportsExports(
 ): Promise<AuditSummary> {
   const active = await activeWorkspacePackages(root);
   const workspaceDirs = active.map((item) => dirname(item.path));
-  const packages = await Promise.all(active.map((item) => auditPackage(root, item, workspaceDirs)));
+  const packages = await Promise.all(
+    active.map((item) => auditPackage(root, item, workspaceDirs)),
+  );
   const filtered = workspaceFilter
     ? packages.filter(
         (pkg) =>
@@ -535,10 +618,15 @@ export async function scanImportsExports(
     root,
     packages: filtered,
     packageCount: filtered.length,
-    sourceFileCount: filtered.reduce((count, pkg) => count + pkg.sourceFiles, 0),
+    sourceFileCount: filtered.reduce(
+      (count, pkg) => count + pkg.sourceFiles,
+      0,
+    ),
     importCount: imports.length,
     externalPackages: [
-      ...new Set(imports.flatMap((ref) => (ref.packageName ? [ref.packageName] : []))),
+      ...new Set(
+        imports.flatMap((ref) => (ref.packageName ? [ref.packageName] : [])),
+      ),
     ].toSorted(),
     versionSpecDifferences,
   };
@@ -563,7 +651,10 @@ function parseArgs(args: string[]): { json: boolean; workspace?: string } {
   return { json, workspace };
 }
 
-export async function runImportsExports(args: string[], root = process.cwd()): Promise<void> {
+export async function runImportsExports(
+  args: string[],
+  root = process.cwd(),
+): Promise<void> {
   const { json, workspace } = parseArgs(args);
   const summary = await scanImportsExports(resolve(root), workspace);
   if (json) {

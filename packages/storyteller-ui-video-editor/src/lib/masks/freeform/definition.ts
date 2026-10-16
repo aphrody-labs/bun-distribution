@@ -24,10 +24,7 @@ import {
 } from "./path";
 import { getBoxMaskHandlePositions } from "../handle-positions";
 import { computeFeatherUpdate } from "../param-update";
-import {
-  setMaskLocalCenter,
-  toGlobalMaskSnapLines,
-} from "../geometry";
+import { setMaskLocalCenter, toGlobalMaskSnapLines } from "../geometry";
 import {
   snapPosition,
   snapRotation,
@@ -40,7 +37,9 @@ const PERCENTAGE_DISPLAY = {
   step: 1,
 } as const;
 
-const FREEFORM_PATH_MASK_PARAMS: ParamDefinition<keyof FreeformPathMaskParams & string>[] = [
+const FREEFORM_PATH_MASK_PARAMS: ParamDefinition<
+  keyof FreeformPathMaskParams & string
+>[] = [
   {
     key: "centerX",
     label: "X",

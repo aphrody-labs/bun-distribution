@@ -1,7 +1,4 @@
-import type {
-  ElementAnimations,
-  GraphicParamPath,
-} from "./types";
+import type { ElementAnimations, GraphicParamPath } from "./types";
 import type { ParamDefinition, ParamValues } from "../params";
 import { resolveAnimationPathValueAtTime } from "./resolve";
 

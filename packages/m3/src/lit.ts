@@ -8,7 +8,10 @@
 //   applyM3Theme("#6750a4", { variant: "tonalSpot" });
 // oxlint-disable-next-line import/no-unassigned-import -- Importing this public entry point registers the Aphrody custom elements.
 import "@aphrody/material-web/aphrody-components.js";
-import { applyDynamicFusionTheme, type ApplyDynamicFusionThemeOptions } from "@aphrody/m3-theme";
+import {
+  applyDynamicFusionTheme,
+  type ApplyDynamicFusionThemeOptions,
+} from "@aphrody/m3-theme";
 
 export interface RegisterM3ComponentsOptions {
   /** Also register the upstream `md-*` catalog (`@aphrody/material-web/all.js`). */
@@ -34,7 +37,10 @@ export async function whenM3Defined(tags: readonly string[]): Promise<void> {
  * Apply a dynamic Material You scheme from `seed` to `options.target` (default `<html>`):
  * `--md-sys-color-*`, the shadcn/Tailwind aliases, the `dark` class and `color-scheme`.
  */
-export function applyM3Theme(seed: string, options: ApplyDynamicFusionThemeOptions = {}): void {
+export function applyM3Theme(
+  seed: string,
+  options: ApplyDynamicFusionThemeOptions = {},
+): void {
   applyDynamicFusionTheme(seed, options);
 }
 

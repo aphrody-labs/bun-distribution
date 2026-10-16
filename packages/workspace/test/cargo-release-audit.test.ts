@@ -115,7 +115,9 @@ test("audit respects inherited aliases, target dependencies and dev publication 
     });
     expect(report.resolutionVerified).toBe(false);
     expect(report.manifestHashes["core/Cargo.toml"]).toHaveLength(64);
-    await expect(auditCargoRelease(meta, join(root, "other"))).rejects.toThrow("another workspace");
+    await expect(auditCargoRelease(meta, join(root, "other"))).rejects.toThrow(
+      "another workspace",
+    );
   } finally {
     await rm(root, { recursive: true, force: true });
   }

@@ -41,11 +41,10 @@ export interface EnqueueImageTo3dWorldSuccess extends CommandResult {
 }
 
 export type EnqueueImageTo3dWorldResult =
-  | EnqueueImageTo3dWorldSuccess
-  | EnqueueImageTo3dWorldError;
+  EnqueueImageTo3dWorldSuccess | EnqueueImageTo3dWorldError;
 
 export const EnqueueImageTo3dWorld = async (
-  request: EnqueueImageTo3dWorldRequest
+  request: EnqueueImageTo3dWorldRequest,
 ): Promise<EnqueueImageTo3dWorldResult> => {
   let mutableRequest: EnqueueImageTo3dWorldRequestRaw = {
     image_media_token: request.image_media_token,
@@ -66,4 +65,3 @@ export const EnqueueImageTo3dWorld = async (
 
   return result as EnqueueImageTo3dWorldResult;
 };
-

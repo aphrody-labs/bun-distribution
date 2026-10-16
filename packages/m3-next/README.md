@@ -20,7 +20,10 @@ Tauri webview loads.
 ```ts
 // next.config.ts
 import { withM3 } from "@aphrody/m3-next";
-export default withM3({}, { reactCompiler: true, cacheComponents: true, typedRoutes: true });
+export default withM3(
+  {},
+  { reactCompiler: true, cacheComponents: true, typedRoutes: true },
+);
 ```
 
 `withM3` transpiles the M3 packages (including `@aphrody/m3-baseui`, which ships source), keeps `@aphrody/bun` external on the
@@ -36,7 +39,11 @@ server, rewrites barrel imports and keeps strict mode on. Options never override
 ```tsx
 // app/layout.tsx
 import { M3Root } from "@aphrody/m3-next/server";
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return <M3Root readCookie={false}>{children}</M3Root>;
 }
 ```
@@ -46,7 +53,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 import { createM3Proxy } from "@aphrody/m3-next/proxy";
 export const proxy = createM3Proxy();
 // `matcher` is parsed at compile time, so it must be a literal. Pages only:
-export const config = { matcher: ["/((?!api|_next/static|_next/image|.*\\..*).*)"] };
+export const config = {
+  matcher: ["/((?!api|_next/static|_next/image|.*\\..*).*)"],
+};
 ```
 
 ## Theme, SSR and Cache Components

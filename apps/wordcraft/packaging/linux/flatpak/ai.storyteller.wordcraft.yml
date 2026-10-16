@@ -12,7 +12,7 @@
 # keep runtime, runtime-version, sdk and finish-args identical in both (packaging-lint checks this).
 id: ai.storyteller.wordcraft
 runtime: org.freedesktop.Platform
-runtime-version: '25.08'
+runtime-version: "25.08"
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.rust-stable
@@ -42,7 +42,7 @@ modules:
     build-options:
       env:
         CARGO_HOME: /run/build/wordcraft/cargo
-        CARGO_NET_OFFLINE: 'true'
+        CARGO_NET_OFFLINE: "true"
     build-commands:
       - cargo --offline build --release --locked -p wordcraft -p wordcraft-cli
       - install -Dm755 target/release/wordcraft /app/bin/wordcraft

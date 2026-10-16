@@ -35,7 +35,9 @@ test("D-pad ignores controls hidden or disabled by ancestors", () => {
   disabled.disabled = true;
   document.body.append(disabled);
   button(disabled, "Disabled fieldset");
-  expect(focusables(document).map((element) => element.textContent)).toEqual([visible.textContent]);
+  expect(focusables(document).map((element) => element.textContent)).toEqual([
+    visible.textContent,
+  ]);
 });
 test("hidden modal containers do not steal the D-pad focus scope", () => {
   const live = document.createElement("section");
@@ -48,7 +50,9 @@ test("hidden modal containers do not steal the D-pad focus scope", () => {
   expect(activeModal(document) === live).toBe(true);
 });
 test("Back calls a custom dialog's close method and disposal removes the handler", () => {
-  const dialog = document.createElement("md-dialog") as HTMLElement & { close(): void };
+  const dialog = document.createElement("md-dialog") as HTMLElement & {
+    close(): void;
+  };
   dialog.setAttribute("open", "");
   let closes = 0;
   dialog.close = () => {
@@ -63,16 +67,28 @@ test("Back calls a custom dialog's close method and disposal removes the handler
     },
   });
   document.dispatchEvent(
-    new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }),
+    new KeyboardEvent("keydown", {
+      key: "Escape",
+      bubbles: true,
+      cancelable: true,
+    }),
   );
   expect(closes).toBe(1);
   document.dispatchEvent(
-    new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }),
+    new KeyboardEvent("keydown", {
+      key: "Escape",
+      bubbles: true,
+      cancelable: true,
+    }),
   );
   expect(backs).toBe(1);
   dispose();
   document.dispatchEvent(
-    new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }),
+    new KeyboardEvent("keydown", {
+      key: "Escape",
+      bubbles: true,
+      cancelable: true,
+    }),
   );
   expect(backs).toBe(1);
 });

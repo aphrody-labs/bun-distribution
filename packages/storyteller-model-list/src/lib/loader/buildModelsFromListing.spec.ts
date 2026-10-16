@@ -85,12 +85,12 @@ describe("desktop catalog", () => {
     const videos = buildVideoModelsFromListing(VIDEO_MODELS, [
       { model: "sora_2", duration_seconds_options: [4, 8, 12] },
     ]);
-    expect(images.find((model) => model.tauriId === "gpt_image_1")?.getProviders()).toEqual([
-      GenerationProvider.Artcraft,
-    ]);
-    expect(videos.find((model) => model.tauriId === "sora_2")?.getProviders()).toEqual([
-      GenerationProvider.Artcraft,
-    ]);
+    expect(
+      images.find((model) => model.tauriId === "gpt_image_1")?.getProviders(),
+    ).toEqual([GenerationProvider.Artcraft]);
+    expect(
+      videos.find((model) => model.tauriId === "sora_2")?.getProviders(),
+    ).toEqual([GenerationProvider.Artcraft]);
     expect(SPLAT_MODELS.map((model) => model.tauriId)).toEqual([
       "marble_0p1_mini",
       "marble_0p1_plus",
@@ -126,7 +126,11 @@ describe("API video options", () => {
             audio_references_max: 5,
             audio_references_max_total_duration_seconds: 15,
             show_generate_with_sound_toggle: true,
-            resolution_options: ["four_eighty_p", "seven_twenty_p", "ten_eighty_p"],
+            resolution_options: [
+              "four_eighty_p",
+              "seven_twenty_p",
+              "ten_eighty_p",
+            ],
             resolution_default: "seven_twenty_p",
             duration_seconds_min: 2,
             duration_seconds_max: 30,
@@ -174,7 +178,11 @@ describe("API video options", () => {
           },
         ],
       );
-      expect(model.outputFormatOptions).toEqual(["mp4", "mov", "future_format"]);
+      expect(model.outputFormatOptions).toEqual([
+        "mp4",
+        "mov",
+        "future_format",
+      ]);
       expect(model.defaultOutputFormat).toBe("mp4");
       expect(resolveVideoOutputFormat(model, "mov")).toBe("mov");
       expect(resolveVideoOutputFormat(model, "unsupported")).toBe("mp4");
@@ -204,7 +212,10 @@ describe("API video options", () => {
     expect(resolveVideoDuration(model, 30, false)).toBe(30);
     expect(resolveVideoDuration(model, 30, true)).toBe(10);
     expect(model.bitrateOptions).toEqual(["normal", "high"]);
-    expect(model.resolutionOptions?.map(videoResolutionValue)).toEqual(["four_k", "eight_k"]);
+    expect(model.resolutionOptions?.map(videoResolutionValue)).toEqual([
+      "four_k",
+      "eight_k",
+    ]);
   });
 
   it("snaps sparse duration lists to the nearest option, preferring longer ties", () => {

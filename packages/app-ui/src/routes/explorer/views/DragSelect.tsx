@@ -70,11 +70,14 @@ export function DragSelect({ children, files, scrollRef }: DragSelectProps) {
           // Prevent drag selection from starting if clicking on a selected item
           // This allows dnd-kit drag-and-drop to work without interference
           const target = e.inputEvent.target as Element;
-          const clickedElement = target.closest(`[${SELECTABLE_DATA_ATTRIBUTE}]`);
+          const clickedElement = target.closest(
+            `[${SELECTABLE_DATA_ATTRIBUTE}]`,
+          );
 
           if (clickedElement) {
             const file = getFileFromElement(clickedElement);
-            const isAlreadySelected = file && selectedFiles.some((f) => f.id === file.id);
+            const isAlreadySelected =
+              file && selectedFiles.some((f) => f.id === file.id);
             const hasModifiers =
               e.inputEvent.shiftKey ||
               (e.inputEvent as MouseEvent).metaKey ||
@@ -100,10 +103,14 @@ export function DragSelect({ children, files, scrollRef }: DragSelectProps) {
         onSelect={(e) => {
           const inputEvent = e.inputEvent as MouseEvent;
           const isContinueSelect =
-            inputEvent.shiftKey || (isWindows ? inputEvent.ctrlKey : inputEvent.metaKey);
+            inputEvent.shiftKey ||
+            (isWindows ? inputEvent.ctrlKey : inputEvent.metaKey);
 
           // Handle selection
-          if (inputEvent.type === "mousedown" || inputEvent.type === "touchstart") {
+          if (
+            inputEvent.type === "mousedown" ||
+            inputEvent.type === "touchstart"
+          ) {
             // Single click handling
             if (!isDragSelecting.current || e.selected.length <= 1) {
               return; // Let normal click handlers deal with it
@@ -111,7 +118,10 @@ export function DragSelect({ children, files, scrollRef }: DragSelectProps) {
           }
 
           // Handle drag selection
-          if (inputEvent.type === "mousemove" || inputEvent.type === "touchmove") {
+          if (
+            inputEvent.type === "mousemove" ||
+            inputEvent.type === "touchmove"
+          ) {
             const selectedElements = e.selected;
             const newSelectedFiles = getFilesFromElements(selectedElements);
 
@@ -140,7 +150,10 @@ export function DragSelect({ children, files, scrollRef }: DragSelectProps) {
           const container = scrollRef.current;
           if (!container) return;
 
-          container.scrollBy((e.direction[0] || 0) * 10, (e.direction[1] || 0) * 10);
+          container.scrollBy(
+            (e.direction[0] || 0) * 10,
+            (e.direction[1] || 0) * 10,
+          );
         }}
       />
       {children}

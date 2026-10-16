@@ -55,7 +55,12 @@ export function atlasUv(frame: PetFrame, data: PetData = PET): AtlasUv {
 }
 
 /** Largest rectangle with the frame's aspect that fits in `width` x `height`, centred. */
-export function fitRect(frame: PetFrame, width: number, height: number, padding = 0): Rect {
+export function fitRect(
+  frame: PetFrame,
+  width: number,
+  height: number,
+  padding = 0,
+): Rect {
   const availW = Math.max(0, width - 2 * padding);
   const availH = Math.max(0, height - 2 * padding);
   const scale = Math.min(availW / frame.w, availH / frame.h);
@@ -65,15 +70,23 @@ export function fitRect(frame: PetFrame, width: number, height: number, padding 
 }
 
 /** Yaw in radians of the slow 3D sway, `amplitudeDeg` peak, one oscillation per `periodMs`. */
-export function swayYaw(nowMs: number, amplitudeDeg = 12, periodMs = 6000): number {
+export function swayYaw(
+  nowMs: number,
+  amplitudeDeg = 12,
+  periodMs = 6000,
+): number {
   const amplitude = (amplitudeDeg * Math.PI) / 180;
   return amplitude * Math.sin((2 * Math.PI * nowMs) / periodMs);
 }
 
 /** Back-to-front depths of `count` slices centred on 0 and spanning `depth` pixels. */
 export function sliceDepths(count: number, depth: number): number[] {
-  if (!Number.isInteger(count) || count < 2) throw new RangeError("sliceDepths needs at least 2 slices");
-  return Array.from({ length: count }, (_, i) => (i / (count - 1) - 0.5) * depth);
+  if (!Number.isInteger(count) || count < 2)
+    throw new RangeError("sliceDepths needs at least 2 slices");
+  return Array.from(
+    { length: count },
+    (_, i) => (i / (count - 1) - 0.5) * depth,
+  );
 }
 
 /**
@@ -111,12 +124,14 @@ export class PetTimeline {
   pose(nowMs: number): PetPose {
     const track = this.#data.tracks[this.#track];
     if (!track) throw new Error(`unknown pet state: ${this.#track}`);
-    const frame = this.#gaze ?? frameAt(track, nowMs - this.#startMs, this.#loop);
+    const frame =
+      this.#gaze ?? frameAt(track, nowMs - this.#startMs, this.#loop);
     return { track: this.#track, frame, uv: atlasUv(frame, this.#data) };
   }
 
   #require(state: string): string {
-    if (!this.#data.tracks[state]) throw new Error(`unknown pet state: ${state}`);
+    if (!this.#data.tracks[state])
+      throw new Error(`unknown pet state: ${state}`);
     return state;
   }
 }

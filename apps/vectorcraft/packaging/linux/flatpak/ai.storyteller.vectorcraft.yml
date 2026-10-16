@@ -11,7 +11,7 @@
 # Release bundles (.flatpak on GitHub Releases) use ai.storyteller.vectorcraft.bundle.yml instead.
 id: ai.storyteller.vectorcraft
 runtime: org.freedesktop.Platform
-runtime-version: '25.08'
+runtime-version: "25.08"
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.rust-stable
@@ -34,7 +34,7 @@ modules:
     build-options:
       env:
         CARGO_HOME: /run/build/vectorcraft/cargo
-        CARGO_NET_OFFLINE: 'true'
+        CARGO_NET_OFFLINE: "true"
     build-commands:
       - cargo --offline build --release --locked -p vectorcraft
       - install -Dm755 target/release/vectorcraft /app/bin/vectorcraft

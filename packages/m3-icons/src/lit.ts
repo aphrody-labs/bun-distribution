@@ -42,9 +42,13 @@ export class M3IconElement extends LitElement {
       opticalSize: this.opticalSize,
       size: this.size,
     });
-    return html`${this.title
-      ? html`<span role="img" aria-label=${this.title}>${unsafeHTML(svg)}</span>`
-      : html`<span aria-hidden="true">${unsafeHTML(svg)}</span>`}`;
+    return html`${
+      this.title
+        ? html`<span role="img" aria-label=${this.title}
+            >${unsafeHTML(svg)}</span
+          >`
+        : html`<span aria-hidden="true">${unsafeHTML(svg)}</span>`
+    }`;
   }
 }
 

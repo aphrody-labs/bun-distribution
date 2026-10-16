@@ -42,7 +42,8 @@ export async function runWorkspaceRepair(
     const arg = args[index];
     if (arg === "--root" || arg === "--workspace") {
       const value = args[++index];
-      if (!value || value.startsWith("--")) throw new Error(`${arg} requires a value`);
+      if (!value || value.startsWith("--"))
+        throw new Error(`${arg} requires a value`);
       if (arg === "--root") root = value;
       else workspace = value;
     } else if (arg === "--apply") apply = true;
@@ -51,7 +52,11 @@ export async function runWorkspaceRepair(
   }
   root = resolve(root);
   // Mutations finish before checks; the host-path owner preserves concurrent dirty files.
-  const paths = await owners.hostPaths(["--root", root, ...(apply ? ["--apply"] : [])]);
+  const paths = await owners.hostPaths([
+    "--root",
+    root,
+    ...(apply ? ["--apply"] : []),
+  ]);
   const results = await Promise.allSettled([
     owners.imports(workspace ? ["--workspace", workspace] : [], root),
     owners.documentation(["check", "--root", root]),
@@ -61,7 +66,9 @@ export async function runWorkspaceRepair(
   let code = paths;
   for (const result of results) {
     if (result.status === "rejected") {
-      console.error(result.reason instanceof Error ? result.reason.message : result.reason);
+      console.error(
+        result.reason instanceof Error ? result.reason.message : result.reason,
+      );
       code ||= 1;
     } else if (typeof result.value === "number") code ||= result.value;
   }

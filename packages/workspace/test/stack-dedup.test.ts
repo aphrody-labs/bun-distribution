@@ -79,8 +79,16 @@ describe("crateTable", () => {
   });
 
   test("keeps relative paths, kinds and the publish flag", () => {
-    expect(row("ui")).toMatchObject({ path: "crates/ui", kinds: ["lib"], publishable: false });
-    expect(row("app")).toMatchObject({ path: "apps/app", kinds: ["bin"], publishable: true });
+    expect(row("ui")).toMatchObject({
+      path: "crates/ui",
+      kinds: ["lib"],
+      publishable: false,
+    });
+    expect(row("app")).toMatchObject({
+      path: "apps/app",
+      kinds: ["bin"],
+      publishable: true,
+    });
   });
 
   test("sorts the heaviest first", () => {
@@ -107,7 +115,10 @@ describe("olderVersionsPulledDirectly", () => {
           node.id === "tool"
             ? { id: "tool", deps: [{ pkg: "serde@1" }, { pkg: "heavy" }] }
             : node.id === "heavy"
-              ? { id: "heavy", deps: [{ pkg: "heavy-sub" }, { pkg: "serde@0" }] }
+              ? {
+                  id: "heavy",
+                  deps: [{ pkg: "heavy-sub" }, { pkg: "serde@0" }],
+                }
               : node,
         ),
       },
@@ -116,7 +127,11 @@ describe("olderVersionsPulledDirectly", () => {
   });
 });
 
-const file = (path: string, hash: string, size: number) => ({ path, hash, size });
+const file = (path: string, hash: string, size: number) => ({
+  path,
+  hash,
+  size,
+});
 
 describe("groupDuplicates", () => {
   test("groups identical content and counts the bytes of the extra copies", () => {
@@ -138,8 +153,12 @@ describe("groupDuplicates", () => {
   });
 
   test("a same hash with another size is another file, and small files are skipped", () => {
-    expect(groupDuplicates([file("a", "h", 10), file("b", "h", 10)], 100)).toEqual([]);
-    expect(groupDuplicates([file("a", "h", 1000), file("b", "h", 2000)], 100)).toEqual([]);
+    expect(
+      groupDuplicates([file("a", "h", 10), file("b", "h", 10)], 100),
+    ).toEqual([]);
+    expect(
+      groupDuplicates([file("a", "h", 1000), file("b", "h", 2000)], 100),
+    ).toEqual([]);
   });
 });
 
@@ -187,10 +206,11 @@ describe("jsFindings", () => {
   });
 
   test("reports packages that nothing imports or declares", () => {
-    expect(jsFindings(summary).withoutDependents.map((entry) => entry.package)).toEqual([
-      "@x/a",
-      "@x/c",
-    ]);
-    expect(jsFindings(summary).versionSpecDifferences).toEqual({ react: { a: "^19", b: ">=18" } });
+    expect(
+      jsFindings(summary).withoutDependents.map((entry) => entry.package),
+    ).toEqual(["@x/a", "@x/c"]);
+    expect(jsFindings(summary).versionSpecDifferences).toEqual({
+      react: { a: "^19", b: ">=18" },
+    });
   });
 });

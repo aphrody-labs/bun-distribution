@@ -14,7 +14,11 @@ const labels = {
   nextLabel: "Next",
 };
 const editions = [
-  { id: "v1", label: "Volume 1", chapters: [{ id: 1, label: "Chapter 1", pageCount: 3 }] },
+  {
+    id: "v1",
+    label: "Volume 1",
+    chapters: [{ id: 1, label: "Chapter 1", pageCount: 3 }],
+  },
 ];
 
 describe("crawlable SSR markup (m3-reader)", () => {
@@ -35,7 +39,12 @@ describe("crawlable SSR markup (m3-reader)", () => {
 
   test("MangaReader is a labelled region whose pages are images with alternatives and whose chapter links are real", () => {
     const html = renderToStaticMarkup(
-      <MangaReader title="Chapter 1" pages={["a.jpg", "b.jpg"]} prevHref="/c/0" nextHref="/c/2" />,
+      <MangaReader
+        title="Chapter 1"
+        pages={["a.jpg", "b.jpg"]}
+        prevHref="/c/0"
+        nextHref="/c/2"
+      />,
     );
     expect(html).toContain('role="region"');
     expect(html).toContain('aria-label="Chapter 1"');

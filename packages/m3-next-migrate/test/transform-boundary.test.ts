@@ -15,7 +15,9 @@ describe("migration syntax and runtime bindings", () => {
     expect(result.code).toContain("async function save(formData: FormData) {");
     expect(result.code).toContain('return formData.get("name")');
     expect(result.warnings.join("\n")).toContain("native host adapter");
-    expect(() => new Bun.Transpiler({ loader: "tsx" }).transformSync(result.code)).not.toThrow();
+    expect(() =>
+      new Bun.Transpiler({ loader: "tsx" }).transformSync(result.code),
+    ).not.toThrow();
   });
   test("root containers merge dynamic classes once and remove valued hydration flags", () => {
     const source =
@@ -29,7 +31,9 @@ describe("migration syntax and runtime bindings", () => {
     );
     expect(result.code.match(/font.className/g)).toHaveLength(1);
     expect(result.code).not.toContain("suppressHydrationWarning");
-    expect(() => new Bun.Transpiler({ loader: "tsx" }).transformSync(result.code)).not.toThrow();
+    expect(() =>
+      new Bun.Transpiler({ loader: "tsx" }).transformSync(result.code),
+    ).not.toThrow();
   });
   test("metadata injection supplies the runtime hook import and preserves existing imports", () => {
     const source =
@@ -39,9 +43,12 @@ describe("migration syntax and runtime bindings", () => {
       "import { useMetadata } from '@aphrody/m3-next-migrate/shims/metadata'",
     );
     expect(result.code).toContain("useMetadata(metadata)");
-    expect(() => new Bun.Transpiler({ loader: "tsx" }).transformSync(result.code)).not.toThrow();
+    expect(() =>
+      new Bun.Transpiler({ loader: "tsx" }).transformSync(result.code),
+    ).not.toThrow();
     const existing = transformComponent(
-      "import { useMetadata } from '@aphrody/m3-next-migrate/shims/metadata';\n" + source,
+      "import { useMetadata } from '@aphrody/m3-next-migrate/shims/metadata';\n" +
+        source,
     );
     expect(existing.code.match(/import \{ useMetadata \}/g)).toHaveLength(1);
   });

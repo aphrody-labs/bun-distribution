@@ -44,7 +44,9 @@ it("keeps redo available when navigating away after undo", async () => {
   const scene = useSceneStore.getState();
   useSceneStore.setState({ drawNodes: [rectangle("first")] });
   scene.saveState();
-  useSceneStore.setState({ drawNodes: [rectangle("first"), rectangle("second")] });
+  useSceneStore.setState({
+    drawNodes: [rectangle("first"), rectangle("second")],
+  });
   scene.saveState();
   await scene.undo();
 
@@ -53,7 +55,10 @@ it("keeps redo available when navigating away after undo", async () => {
   await useTabStore.getState().setActiveTab("2D");
   await useSceneStore.getState().redo();
 
-  expect(useSceneStore.getState().drawNodes.map((node) => node.id)).toEqual(["first", "second"]);
+  expect(useSceneStore.getState().drawNodes.map((node) => node.id)).toEqual([
+    "first",
+    "second",
+  ]);
 });
 
 it("keeps edits made while away and does not restore an old scene after a gallery reset", async () => {
@@ -63,7 +68,9 @@ it("keeps edits made while away and does not restore an old scene after a galler
   useSceneStore.getState().RESET();
   useSceneStore.setState({ drawNodes: [rectangle("new")] });
   await useTabStore.getState().setActiveTab("2D");
-  expect(useSceneStore.getState().drawNodes.map((node) => node.id)).toEqual(["new"]);
+  expect(useSceneStore.getState().drawNodes.map((node) => node.id)).toEqual([
+    "new",
+  ]);
 });
 
 it("honors the latest rapid navigation request", async () => {
@@ -88,10 +95,22 @@ it("still exports a portable scene when explicitly requested", async () => {
     imageFile: new File(["pixels"], "image.png", { type: "image/png" }),
   });
   useSceneStore.setState({ drawNodes: [image] });
-  const exported = JSON.parse(await useSceneStore.getState().exportSceneAsJson());
-  expect(exported.drawNodes[0].imageDataUrl).toBe("data:image/png;base64,cGl4ZWxz");
+  const exported = JSON.parse(
+    await useSceneStore.getState().exportSceneAsJson(),
+  );
+  expect(exported.drawNodes[0].imageDataUrl).toBe(
+    "data:image/png;base64,cGl4ZWxz",
+  );
 });
 
 function rectangle(id: string) {
-  return new Node({ id, type: "rectangle", x: 0, y: 0, width: 100, height: 100, fill: "red" });
+  return new Node({
+    id,
+    type: "rectangle",
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 100,
+    fill: "red",
+  });
 }

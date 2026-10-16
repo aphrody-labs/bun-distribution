@@ -57,12 +57,16 @@ async function main(args: string[]): Promise<number> {
     return 0;
   }
 
-  if (args[0] === "codemod" || args[0] === "pages-hints") return await runCodemodCli(args);
+  if (args[0] === "codemod" || args[0] === "pages-hints")
+    return await runCodemodCli(args);
 
   if (args.includes("-v") || args.includes("--version")) {
     console.log(
-      ((await Bun.file(new URL("../package.json", import.meta.url)).json()) as { version: string })
-        .version,
+      (
+        (await Bun.file(
+          new URL("../package.json", import.meta.url),
+        ).json()) as { version: string }
+      ).version,
     );
     return 0;
   }
@@ -142,7 +146,9 @@ async function main(args: string[]): Promise<number> {
       new Bun.Transpiler({ loader }).transformSync(result.code);
     }
     for (const requirement of requirements)
-      console.warn(`${requirement.file}: ${requirement.capability} — ${requirement.detail}`);
+      console.warn(
+        `${requirement.file}: ${requirement.capability} — ${requirement.detail}`,
+      );
 
     if (dryRun) {
       console.log(`[DRY-RUN] Transformed ${sourcePath}:`);
@@ -164,7 +170,9 @@ async function main(args: string[]): Promise<number> {
     const requirements: MigrationRequirement[] = [];
     for (const file of stats.files) {
       // oxlint-disable-next-line no-await-in-loop -- Scan source modules in order with bounded I/O.
-      requirements.push(...migrationRequirements(file.path, await Bun.file(file.path).text()));
+      requirements.push(
+        ...migrationRequirements(file.path, await Bun.file(file.path).text()),
+      );
     }
 
     if (jsonOutput) {
@@ -192,17 +200,23 @@ async function main(args: string[]): Promise<number> {
     console.log(`next/dynamic uses:     ${stats.dynamicUsages}`);
     console.log(`next/headers uses:     ${stats.headersUsages}`);
     console.log(`next/form uses:        ${stats.formUsages}`);
-    console.log(`Public Env Vars:       ${stats.envVars.join(", ") || "(none)"}`);
+    console.log(
+      `Public Env Vars:       ${stats.envVars.join(", ") || "(none)"}`,
+    );
 
     if (hierarchy.routes.length > 0) {
       console.log(`\nDetected Route Hierarchy:`);
       for (const r of hierarchy.routes) {
-        console.log(`  ${r.routePath.padEnd(24)} -> ${r.pageFile} (layouts: ${r.layouts.length})`);
+        console.log(
+          `  ${r.routePath.padEnd(24)} -> ${r.pageFile} (layouts: ${r.layouts.length})`,
+        );
       }
     }
 
     for (const requirement of requirements)
-      console.warn(`${requirement.file}: ${requirement.capability} — ${requirement.detail}`);
+      console.warn(
+        `${requirement.file}: ${requirement.capability} — ${requirement.detail}`,
+      );
     console.log(
       `\nInspect the migration with: next-migrate ${sourcePath} <DEST> --target ${target} --m3 --dry-run\n`,
     );
@@ -215,7 +229,9 @@ async function main(args: string[]): Promise<number> {
 
   const resolvedTarget = resolve(process.cwd(), targetPath);
   if (!jsonOutput)
-    console.log(`Starting migration: Next.js 16 -> ${target.toUpperCase()} (${resolvedTarget})...`);
+    console.log(
+      `Starting migration: Next.js 16 -> ${target.toUpperCase()} (${resolvedTarget})...`,
+    );
 
   const report = await migrateProject({
     sourceDir: resolvedSource,
@@ -246,14 +262,18 @@ async function main(args: string[]): Promise<number> {
   console.log(`Output Directory:    ${resolvedTarget}\n`);
 
   for (const requirement of report.requirements)
-    console.warn(`${requirement.file}: ${requirement.capability} — ${requirement.detail}`);
+    console.warn(
+      `${requirement.file}: ${requirement.capability} — ${requirement.detail}`,
+    );
   if (report.transformDetails.length > 0) {
     console.log(`Details:`);
     for (const item of report.transformDetails.slice(0, 10)) {
       console.log(` - ${item.file} -> ${item.transformations.join(", ")}`);
     }
     if (report.transformDetails.length > 10) {
-      console.log(`   ...and ${report.transformDetails.length - 10} more files`);
+      console.log(
+        `   ...and ${report.transformDetails.length - 10} more files`,
+      );
     }
   }
 
@@ -262,7 +282,9 @@ async function main(args: string[]): Promise<number> {
   console.log(`  bun install`);
   if (target === "tauri") {
     console.log(`  bun run tauri:dev   # Desktop GUI with pinned Tauri 3`);
-    console.log(`  bun run dev:bun     # Desktop native backend with Bun.serve`);
+    console.log(
+      `  bun run dev:bun     # Desktop native backend with Bun.serve`,
+    );
   } else {
     console.log(`  bun run dev`);
   }

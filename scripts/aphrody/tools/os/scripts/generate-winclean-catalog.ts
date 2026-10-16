@@ -3,7 +3,10 @@
 import { join } from "node:path";
 
 const root = join(import.meta.dir, "../../../../../docs/aphrody");
-const catalogPath = join(root, "crates/os/kernel/comps/winclean/src/tools.json");
+const catalogPath = join(
+  root,
+  "crates/os/kernel/comps/winclean/src/tools.json",
+);
 const rustPath = join(root, "crates/os/kernel/comps/winclean/src/generated.rs");
 const bindingsPath = join(root, "packages/os/winclean/src/generated.ts");
 const outputPath = join(root, "packages/os/winclean/src/catalog.ts");
@@ -11,7 +14,11 @@ const outputPath = join(root, "packages/os/winclean/src/catalog.ts");
 type Tool = {
   name: string;
   description: string;
-  inputSchema: { type: string; properties?: Record<string, unknown>; required?: string[] };
+  inputSchema: {
+    type: string;
+    properties?: Record<string, unknown>;
+    required?: string[];
+  };
 };
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -30,7 +37,10 @@ assert(Array.isArray(tools) && tools.length > 0, "empty WinClean catalog");
 const names = tools.map((tool) => tool.name);
 assert(new Set(names).size === names.length, "duplicate WinClean catalog name");
 for (const tool of tools) {
-  assert(tool.inputSchema?.type === "object", `invalid inputSchema for ${tool.name}`);
+  assert(
+    tool.inputSchema?.type === "object",
+    `invalid inputSchema for ${tool.name}`,
+  );
 }
 
 const rust = await Bun.file(rustPath).text();
@@ -39,7 +49,9 @@ const rustArray = capture(
   /pub const TOOL_NAMES: \[&str; \d+\] = \[([\s\S]*?)\];/,
   "Rust generated TOOL_NAMES missing",
 );
-const rustNames = [...rustArray.matchAll(/"([^"]+)"/g)].map((match) => match[1]);
+const rustNames = [...rustArray.matchAll(/"([^"]+)"/g)].map(
+  (match) => match[1],
+);
 assert(
   JSON.stringify(rustNames) === JSON.stringify(names),
   "Rust generated tool names diverge from tools.json",
@@ -71,17 +83,26 @@ const interfaces = new Map(
     ...bindings
       .replace(/^export interface (\w+) \{\}$/gm, "export interface $1 {\n}")
       .matchAll(/^export interface (\w+) \{([\s\S]*?)^\}/gm),
-  ].flatMap(([, name, body]) => (name && body !== undefined ? [[name, body] as const] : [])),
+  ].flatMap(([, name, body]) =>
+    name && body !== undefined ? [[name, body] as const] : [],
+  ),
 );
-assert(mapping.size === tools.length, "Bun ToolArgsMap count diverges from tools.json");
+assert(
+  mapping.size === tools.length,
+  "Bun ToolArgsMap count diverges from tools.json",
+);
 for (const tool of tools) {
   const reference = mapping.get(tool.name);
   assert(reference, `Bun args mapping missing for ${tool.name}`);
   const definition = interfaces.get(reference);
-  assert(definition !== undefined, `Bun args interface missing for ${tool.name}`);
+  assert(
+    definition !== undefined,
+    `Bun args interface missing for ${tool.name}`,
+  );
   const fields = new Map(
-    [...definition.matchAll(/^  (\w+)(\?)?:/gm)].flatMap(([, name, optional]) =>
-      name ? [[name, optional !== undefined] as const] : [],
+    [...definition.matchAll(/^  (\w+)(\?)?:/gm)].flatMap(
+      ([, name, optional]) =>
+        name ? [[name, optional !== undefined] as const] : [],
     ),
   );
   const properties = tool.inputSchema.properties ?? {};
@@ -111,4 +132,6 @@ if (process.argv.includes("--check")) {
 } else {
   await Bun.write(outputPath, output);
 }
-console.log(`WinClean catalog parity: ${tools.length} names, schemas and argument fields`);
+console.log(
+  `WinClean catalog parity: ${tools.length} names, schemas and argument fields`,
+);

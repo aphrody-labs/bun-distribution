@@ -36,9 +36,12 @@
   --md-sys-typescale-label-small-tracking: 0.03125rem;
 
   /* Typescale: typefaces, weight, size, line height. */
-  --md-ref-typeface-brand: "Google Sans Flex", "Google Sans", Roboto, system-ui, sans-serif;
-  --md-ref-typeface-plain: "Google Sans Flex", "Google Sans", Roboto, system-ui, sans-serif;
-  --md-ref-typeface-code: "Google Sans Code", "JetBrains Mono", ui-monospace, monospace;
+  --md-ref-typeface-brand:
+    "Google Sans Flex", "Google Sans", Roboto, system-ui, sans-serif;
+  --md-ref-typeface-plain:
+    "Google Sans Flex", "Google Sans", Roboto, system-ui, sans-serif;
+  --md-ref-typeface-code:
+    "Google Sans Code", "JetBrains Mono", ui-monospace, monospace;
 
   --md-sys-typescale-display-large-font: var(--md-ref-typeface-brand);
   --md-sys-typescale-display-large-weight: 400;
@@ -150,39 +153,39 @@
 
   --md-sys-elevation-level0: none;
   --md-sys-elevation-level1:
-    0px 1px 2px 0px rgb(0 0 0 / 0.3),
-    0px 1px 3px 1px rgb(0 0 0 / 0.15);
+    0px 1px 2px 0px rgb(0 0 0 / 0.3), 0px 1px 3px 1px rgb(0 0 0 / 0.15);
   --md-sys-elevation-level2:
-    0px 1px 2px 0px rgb(0 0 0 / 0.3),
-    0px 2px 6px 2px rgb(0 0 0 / 0.15);
+    0px 1px 2px 0px rgb(0 0 0 / 0.3), 0px 2px 6px 2px rgb(0 0 0 / 0.15);
   --md-sys-elevation-level3:
-    0px 1px 3px 0px rgb(0 0 0 / 0.3),
-    0px 4px 8px 3px rgb(0 0 0 / 0.15);
+    0px 1px 3px 0px rgb(0 0 0 / 0.3), 0px 4px 8px 3px rgb(0 0 0 / 0.15);
   --md-sys-elevation-level4:
-    0px 2px 3px 0px rgb(0 0 0 / 0.3),
-    0px 6px 10px 4px rgb(0 0 0 / 0.15);
+    0px 2px 3px 0px rgb(0 0 0 / 0.3), 0px 6px 10px 4px rgb(0 0 0 / 0.15);
   --md-sys-elevation-level5:
-    0px 4px 4px 0px rgb(0 0 0 / 0.3),
-    0px 8px 12px 6px rgb(0 0 0 / 0.15);
+    0px 4px 4px 0px rgb(0 0 0 / 0.3), 0px 8px 12px 6px rgb(0 0 0 / 0.15);
 }
 
 @supports (color: rgb(from black r g b / 0.3)) {
   :root {
     --md-sys-elevation-level1:
       0px 1px 2px 0px rgb(from var(--md-sys-elevation-shadow-color) r g b / 0.3),
-      0px 1px 3px 1px rgb(from var(--md-sys-elevation-shadow-color) r g b / 0.15);
+      0px 1px 3px 1px
+        rgb(from var(--md-sys-elevation-shadow-color) r g b / 0.15);
     --md-sys-elevation-level2:
       0px 1px 2px 0px rgb(from var(--md-sys-elevation-shadow-color) r g b / 0.3),
-      0px 2px 6px 2px rgb(from var(--md-sys-elevation-shadow-color) r g b / 0.15);
+      0px 2px 6px 2px
+        rgb(from var(--md-sys-elevation-shadow-color) r g b / 0.15);
     --md-sys-elevation-level3:
       0px 1px 3px 0px rgb(from var(--md-sys-elevation-shadow-color) r g b / 0.3),
-      0px 4px 8px 3px rgb(from var(--md-sys-elevation-shadow-color) r g b / 0.15);
+      0px 4px 8px 3px
+        rgb(from var(--md-sys-elevation-shadow-color) r g b / 0.15);
     --md-sys-elevation-level4:
       0px 2px 3px 0px rgb(from var(--md-sys-elevation-shadow-color) r g b / 0.3),
-      0px 6px 10px 4px rgb(from var(--md-sys-elevation-shadow-color) r g b / 0.15);
+      0px 6px 10px 4px
+        rgb(from var(--md-sys-elevation-shadow-color) r g b / 0.15);
     --md-sys-elevation-level5:
       0px 4px 4px 0px rgb(from var(--md-sys-elevation-shadow-color) r g b / 0.3),
-      0px 8px 12px 6px rgb(from var(--md-sys-elevation-shadow-color) r g b / 0.15);
+      0px 8px 12px 6px
+        rgb(from var(--md-sys-elevation-shadow-color) r g b / 0.15);
   }
 }
 

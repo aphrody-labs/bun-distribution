@@ -117,7 +117,10 @@ export function MemoryPanel({
                 setConfirming(false);
                 onClear?.();
               }}
-              className={clsx(textButton, "bg-error px-4 text-on-error hover:bg-error/92")}
+              className={clsx(
+                textButton,
+                "bg-error px-4 text-on-error hover:bg-error/92",
+              )}
             >
               {l.confirm}
             </button>

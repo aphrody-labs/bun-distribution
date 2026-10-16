@@ -10,14 +10,18 @@ const SESSION_STORAGE_KEY = "artcraft_signed_session";
 export function storeSignedSession(signedSession: string) {
   try {
     localStorage.setItem(SESSION_STORAGE_KEY, signedSession);
-  } catch { /* localStorage unavailable */ }
+  } catch {
+    /* localStorage unavailable */
+  }
 }
 
 /** Clear stored session (on logout). */
 export function clearSignedSession() {
   try {
     localStorage.removeItem(SESSION_STORAGE_KEY);
-  } catch { /* localStorage unavailable */ }
+  } catch {
+    /* localStorage unavailable */
+  }
 }
 
 /** Get the stored session token, if any. */
@@ -30,7 +34,9 @@ export function getSignedSession(): string | null {
 }
 
 /** Build headers with session fallback for mobile browsers. */
-export function buildSessionHeaders(base: Record<string, string>): Record<string, string> {
+export function buildSessionHeaders(
+  base: Record<string, string>,
+): Record<string, string> {
   const session = getSignedSession();
   if (session) {
     return { ...base, session };

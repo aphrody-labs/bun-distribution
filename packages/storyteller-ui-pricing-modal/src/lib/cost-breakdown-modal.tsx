@@ -51,9 +51,7 @@ const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
 };
 
 // Extract the concrete `Model` instances out of a page's selectable item list.
-const modelsFromList = (
-  list: { model?: Model }[],
-): Model[] =>
+const modelsFromList = (list: { model?: Model }[]): Model[] =>
   list.map((item) => item.model).filter((m): m is Model => m !== undefined);
 
 export interface CostBreakdownModalProps {
@@ -64,12 +62,7 @@ export interface CostBreakdownModalProps {
 export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
   const { isOpen, closeModal, estimatedCreditsByPage } =
     useCostBreakdownModalStore();
-  const {
-    currency,
-    setCurrency,
-    formatPrice,
-    currencyOptions,
-  } = useCurrency();
+  const { currency, setCurrency, formatPrice, currencyOptions } = useCurrency();
 
   // Map TabId to ModelPage, default to TextToImage
   const activePage = useMemo(() => {
@@ -143,9 +136,16 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
     selectedModel,
     selectedProvider,
   );
-  const { isLoading: isMeshEstimateLoading } = useMeshCostEstimate(activePage, selectedModel, selectedProvider);
+  const { isLoading: isMeshEstimateLoading } = useMeshCostEstimate(
+    activePage,
+    selectedModel,
+    selectedProvider,
+  );
   const isEstimateLoading =
-    isVideoEstimateLoading || isImageEstimateLoading || isSplatEstimateLoading || isMeshEstimateLoading;
+    isVideoEstimateLoading ||
+    isImageEstimateLoading ||
+    isSplatEstimateLoading ||
+    isMeshEstimateLoading;
 
   // Get generation settings from the appropriate stores based on active page
   const prompt2D = usePrompt2DStore();

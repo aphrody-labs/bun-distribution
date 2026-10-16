@@ -7,7 +7,12 @@
 // Usage: bun export-theme.ts --out dist/icons [--theme Aphrody-M3] [--styles outlined,rounded,sharp]
 import { mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { readSymbolSvg, symbolNames, hasSymbol, type SymbolStyle } from "../src/index.ts";
+import {
+  readSymbolSvg,
+  symbolNames,
+  hasSymbol,
+  type SymbolStyle,
+} from "../src/index.ts";
 
 const args = process.argv.slice(2);
 const flag = (n: string, d: string) => {
@@ -16,10 +21,13 @@ const flag = (n: string, d: string) => {
 };
 const out = resolve(flag("out", "dist/icons"));
 const theme = flag("theme", "Aphrody-M3");
-const styles = flag("styles", "outlined,rounded,sharp").split(",") as SymbolStyle[];
+const styles = flag("styles", "outlined,rounded,sharp").split(
+  ",",
+) as SymbolStyle[];
 
 const pending: Promise<unknown>[] = [];
-const write = (path: string, content: string): void => void pending.push(Bun.write(path, content));
+const write = (path: string, content: string): void =>
+  void pending.push(Bun.write(path, content));
 
 const names = symbolNames();
 if (names.length === 0) {
@@ -29,8 +37,10 @@ if (names.length === 0) {
 mkdirSync(out, { recursive: true });
 await Bun.write(join(out, "names.json"), JSON.stringify(names));
 
-const inner = (svg: string) => svg.replace(/^[\s\S]*?<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "");
-const viewBox = (svg: string) => /viewBox="([^"]+)"/.exec(svg)?.[1] ?? "0 -960 960 960";
+const inner = (svg: string) =>
+  svg.replace(/^[\s\S]*?<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "");
+const viewBox = (svg: string) =>
+  /viewBox="([^"]+)"/.exec(svg)?.[1] ?? "0 -960 960 960";
 
 let sprites = 0;
 for (const style of styles) {
@@ -41,7 +51,9 @@ for (const style of styles) {
       if (!hasSymbol(name, style, 400, filled)) continue;
       const svg = readSymbolSvg(name, style, 400, filled);
       box = viewBox(svg);
-      symbols.push(`<symbol id="${name}" viewBox="${box}">${inner(svg)}</symbol>`);
+      symbols.push(
+        `<symbol id="${name}" viewBox="${box}">${inner(svg)}</symbol>`,
+      );
     }
     write(
       join(out, `sprite-${style}${filled ? "-fill" : ""}.svg`),
@@ -110,7 +122,10 @@ const dirs = new Set<string>(["material"]);
 mkdirSync(join(root, "material"), { recursive: true });
 for (const name of names) {
   if (hasSymbol(name, "outlined"))
-    write(join(root, "material", `${name}.svg`), readSymbolSvg(name, "outlined"));
+    write(
+      join(root, "material", `${name}.svg`),
+      readSymbolSvg(name, "outlined"),
+    );
 }
 let mapped = 0;
 for (const [icon, [context, symbol]] of Object.entries(MAP)) {
@@ -133,7 +148,8 @@ const ctx: Record<string, string> = {
 const listed = [...dirs].map((d) => `scalable/${d}`);
 const sections = [...dirs]
   .map(
-    (d) => `[scalable/${d}]\nContext=${ctx[d]}\nSize=24\nMinSize=16\nMaxSize=512\nType=Scalable\n`,
+    (d) =>
+      `[scalable/${d}]\nContext=${ctx[d]}\nSize=24\nMinSize=16\nMaxSize=512\nType=Scalable\n`,
   )
   .join("\n");
 await Bun.write(

@@ -16,7 +16,10 @@ export interface WindowClassState {
   panes: 1 | 2 | 3;
 }
 
-export function windowClassFor(widthDp: number, heightDp: number): WindowClassState {
+export function windowClassFor(
+  widthDp: number,
+  heightDp: number,
+): WindowClassState {
   const width = classifyWidth(widthDp);
   return {
     width,

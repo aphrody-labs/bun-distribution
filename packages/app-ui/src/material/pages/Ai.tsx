@@ -34,7 +34,8 @@ export default function Ai({ adaptive, host = "bun" }: PageProps) {
     setRunning(true);
     try {
       let body: ReadableStream<Uint8Array>;
-      if (host === "native") body = fixtureStream(draft.trim(), controller.signal);
+      if (host === "native")
+        body = fixtureStream(draft.trim(), controller.signal);
       else {
         const response = await fetch("/api/ai/stream", {
           method: "POST",
@@ -64,7 +65,11 @@ export default function Ai({ adaptive, host = "bun" }: PageProps) {
       };
       try {
         // eslint-disable-next-line no-await-in-loop -- Each SSE read extends the pending event frame from the previous chunk.
-        for (let chunk = await reader.read(); !chunk.done; chunk = await reader.read()) {
+        for (
+          let chunk = await reader.read();
+          !chunk.done;
+          chunk = await reader.read()
+        ) {
           pending += decoder.decode(chunk.value, { stream: true });
           consume();
         }
@@ -75,7 +80,9 @@ export default function Ai({ adaptive, host = "bun" }: PageProps) {
       }
     } catch (error) {
       if (!controller.signal.aborted)
-        setNotice(error instanceof Error ? error.message : "The fixture stream failed.");
+        setNotice(
+          error instanceof Error ? error.message : "The fixture stream failed.",
+        );
     } finally {
       if (active.current === controller) {
         active.current = null;
@@ -118,7 +125,11 @@ export default function Ai({ adaptive, host = "bun" }: PageProps) {
         description="This app streams its package inventory as labelled AG-UI events."
       >
         <Card className="flex flex-col gap-4">
-          <div aria-live="polite" aria-busy={running} className="flex flex-col gap-3">
+          <div
+            aria-live="polite"
+            aria-busy={running}
+            className="flex flex-col gap-3"
+          >
             {prompt ? (
               <MessageBubble content={prompt} isUser />
             ) : (

@@ -1,5 +1,13 @@
 import { useContext, useEffect, useRef } from "react";
-import { ChevronDownIcon, CrosshairIcon, PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon, TrashIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  CrosshairIcon,
+  PauseIcon,
+  PlayIcon,
+  SkipBackIcon,
+  SkipForwardIcon,
+  TrashIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -57,14 +65,10 @@ export const TimelineEditor = () => {
   const selectedClipLaneId = usePageSceneStore(
     (s) => s.timelineSelectedClipLaneId,
   );
-  const revealObjectUuid = usePageSceneStore(
-    (s) => s.timelineRevealObjectUuid,
-  );
+  const revealObjectUuid = usePageSceneStore((s) => s.timelineRevealObjectUuid);
   const selectedObject = usePageSceneStore((s) => s.selectedObject);
   const focusSelected = usePageSceneStore((s) => s.timelineFocusSelected);
-  const setFocusSelected = usePageSceneStore(
-    (s) => s.setTimelineFocusSelected,
-  );
+  const setFocusSelected = usePageSceneStore((s) => s.setTimelineFocusSelected);
   const setExpanded = usePageSceneStore((s) => s.setTimelineExpanded);
 
   // Every scene object gets a track row (empty lanes included), so the
@@ -296,7 +300,8 @@ export const TimelineEditor = () => {
   };
 
   // The timeline runs on a frame grid (what Record encodes at).
-  const fps = editor?.timelineController.getTimeline()?.fps ?? DEFAULT_TIMELINE_FPS;
+  const fps =
+    editor?.timelineController.getTimeline()?.fps ?? DEFAULT_TIMELINE_FPS;
 
   // Scrubbing follows the pointer 1:1 (no magnetism toward keyframes),
   // quantized to the frame grid so times are never arbitrary floats.
@@ -329,7 +334,7 @@ export const TimelineEditor = () => {
           onClick={() => editor && seekTimeline(editor, 0)}
           className="flex h-7 w-7 items-center justify-center rounded-[3px] text-base-fg/70 hover:bg-white/10"
         >
-          <SkipBackIcon  className="h-3.5 w-3.5" />
+          <SkipBackIcon className="h-3.5 w-3.5" />
         </button>
         <button
           type="button"
@@ -348,7 +353,7 @@ export const TimelineEditor = () => {
           onClick={() => editor && seekTimeline(editor, duration)}
           className="flex h-7 w-7 items-center justify-center rounded-[3px] text-base-fg/70 hover:bg-white/10"
         >
-          <SkipForwardIcon  className="h-3.5 w-3.5" />
+          <SkipForwardIcon className="h-3.5 w-3.5" />
         </button>
         <span className="ml-2 font-mono tabular-nums text-xs text-base-fg/60">
           {formatTimecodeFrames(playhead, fps)} / {formatTimecode(duration)}
@@ -375,7 +380,7 @@ export const TimelineEditor = () => {
                   : "text-base-fg/60 hover:bg-white/10"
               }`}
             >
-              <CrosshairIcon  className="h-3.5 w-3.5" />
+              <CrosshairIcon className="h-3.5 w-3.5" />
             </button>
           </Tooltip>
         </div>
@@ -385,7 +390,7 @@ export const TimelineEditor = () => {
           onClick={() => setExpanded(false)}
           className="flex h-7 w-7 items-center justify-center rounded-[3px] text-base-fg/60 hover:bg-white/10"
         >
-          <ChevronDownIcon  className="h-3 w-3" />
+          <ChevronDownIcon className="h-3 w-3" />
         </button>
       </div>
 
@@ -562,7 +567,9 @@ export const TimelineEditor = () => {
                         null,
                       );
                     }
-                    usePageSceneStore.getState().setTimelineEasingClipLane(null);
+                    usePageSceneStore
+                      .getState()
+                      .setTimelineEasingClipLane(null);
                   }}
                 >
                   Remove transition

@@ -21,10 +21,22 @@ export interface ThemeManifest {
 
 /** Browser policy directories (Linux) and registry hives (Windows) per browser. */
 export const BROWSERS = {
-  chrome: { linux: "/etc/opt/chrome/policies/managed", win: "SOFTWARE\\Policies\\Google\\Chrome" },
-  chromium: { linux: "/etc/chromium/policies/managed", win: "SOFTWARE\\Policies\\Chromium" },
-  brave: { linux: "/etc/brave/policies/managed", win: "SOFTWARE\\Policies\\BraveSoftware\\Brave" },
-  edge: { linux: "/etc/opt/edge/policies/managed", win: "SOFTWARE\\Policies\\Microsoft\\Edge" },
+  chrome: {
+    linux: "/etc/opt/chrome/policies/managed",
+    win: "SOFTWARE\\Policies\\Google\\Chrome",
+  },
+  chromium: {
+    linux: "/etc/chromium/policies/managed",
+    win: "SOFTWARE\\Policies\\Chromium",
+  },
+  brave: {
+    linux: "/etc/brave/policies/managed",
+    win: "SOFTWARE\\Policies\\BraveSoftware\\Brave",
+  },
+  edge: {
+    linux: "/etc/opt/edge/policies/managed",
+    win: "SOFTWARE\\Policies\\Microsoft\\Edge",
+  },
 } as const;
 
 export function themeManifest(input: ThemeInput, mode: Mode): ThemeManifest {
@@ -61,7 +73,10 @@ export function themeManifest(input: ThemeInput, mode: Mode): ThemeManifest {
         background_tab: [-1, -1, -1],
       },
       images: { theme_ntp_background: "images/ntp.png" },
-      properties: { ntp_background_alignment: "bottom", ntp_background_repeat: "no-repeat" },
+      properties: {
+        ntp_background_alignment: "bottom",
+        ntp_background_repeat: "no-repeat",
+      },
     },
   };
 }
@@ -73,7 +88,11 @@ export function policyJson(roles: Roles): string {
 export function policyReg(roles: Roles): string {
   const lines = ["Windows Registry Editor Version 5.00", ""];
   for (const b of Object.values(BROWSERS)) {
-    lines.push(`[HKEY_LOCAL_MACHINE\\${b.win}]`, `"BrowserThemeColor"="${roles["primary"]}"`, "");
+    lines.push(
+      `[HKEY_LOCAL_MACHINE\\${b.win}]`,
+      `"BrowserThemeColor"="${roles["primary"]}"`,
+      "",
+    );
   }
   return lines.join("\r\n");
 }
@@ -163,12 +182,24 @@ Check at \`chrome://policy\`. \`--dry-run\` prints the commands without running 
 
 export function generateChromium(input: ThemeInput): GeneratedFile[] {
   const files: GeneratedFile[] = [];
-  const add = (path: string, content: string | Uint8Array, executable = false): void => {
-    files.push({ target: "chromium", path: `chromium/${path}`, content, executable });
+  const add = (
+    path: string,
+    content: string | Uint8Array,
+    executable = false,
+  ): void => {
+    files.push({
+      target: "chromium",
+      path: `chromium/${path}`,
+      content,
+      executable,
+    });
   };
   for (const mode of ["light", "dark"] as const) {
     const { roles } = rolesFor(input, mode);
-    add(`${mode}/manifest.json`, `${JSON.stringify(themeManifest(input, mode), null, 2)}\n`);
+    add(
+      `${mode}/manifest.json`,
+      `${JSON.stringify(themeManifest(input, mode), null, 2)}\n`,
+    );
     add(
       `${mode}/images/ntp.png`,
       gradientPng(1, 256, roles["surface"]!, roles["primaryContainer"]!),

@@ -13,7 +13,11 @@ import {
 import { readWorkspaceCargo } from "../../core/src/vendor/cargo";
 
 const roots: string[] = [];
-afterEach(() => roots.splice(0).forEach((root) => rmSync(root, { recursive: true, force: true })));
+afterEach(() =>
+  roots
+    .splice(0)
+    .forEach((root) => rmSync(root, { recursive: true, force: true })),
+);
 function git(cwd: string, ...args: string[]) {
   const child = Bun.spawnSync(["git", ...args], {
     windowsHide: true,
@@ -50,16 +54,23 @@ test("full SHA survives packed refs and vendor comparison rejects a matching sho
   git(value.repository, "pack-refs", "--all");
   expect(await readGitHead(value.repository)).toBe(value.sha);
   const packages = await inspectPackages(join(value.root, "vendor"));
-  expect(packages.find((entry) => entry.name === "tauri")?.headCommit).toBe(value.sha);
+  expect(packages.find((entry) => entry.name === "tauri")?.headCommit).toBe(
+    value.sha,
+  );
   writeFileSync(
     join(value.root, "vendor.lock"),
-    JSON.stringify({ sources: [{ name: "tauri", sha: value.sha }], crates: [] }),
+    JSON.stringify({
+      sources: [{ name: "tauri", sha: value.sha }],
+      crates: [],
+    }),
   );
   expect((await readVendorStatus(value.root))?.sources[0]?.inSync).toBe(true);
   writeFileSync(
     join(value.root, "vendor.lock"),
     JSON.stringify({
-      sources: [{ name: "tauri", sha: `${value.sha.slice(0, 10)}${"0".repeat(30)}` }],
+      sources: [
+        { name: "tauri", sha: `${value.sha.slice(0, 10)}${"0".repeat(30)}` },
+      ],
       crates: [],
     }),
   );
@@ -93,7 +104,10 @@ test("bounded symbolic refs resolve while malformed or cyclic metadata stays unq
   git(value.repository, "symbolic-ref", "refs/heads/alias", "refs/heads/main");
   git(value.repository, "symbolic-ref", "HEAD", "refs/heads/alias");
   expect(await readGitHead(value.repository)).toBe(value.sha);
-  writeFileSync(join(value.repository, ".git/refs/heads/alias"), "ref: refs/heads/alias\n");
+  writeFileSync(
+    join(value.repository, ".git/refs/heads/alias"),
+    "ref: refs/heads/alias\n",
+  );
   expect(await readGitHead(value.repository)).toBeUndefined();
   writeFileSync(join(value.repository, ".git/HEAD"), "ref: refs/../outside\n");
   expect(await readGitHead(value.repository)).toBeUndefined();
@@ -115,7 +129,10 @@ test("status distinguishes the core default selection from all workspace members
   expect(renderStatusMarkdown(status)).toContain(
     "**Default Members:** crates/engine/yolo-core, crates/engine/yolo-runtime",
   );
-  writeFileSync(join(root, "Cargo.toml"), '[workspace]\nmembers = ["crates/*"]\n');
+  writeFileSync(
+    join(root, "Cargo.toml"),
+    '[workspace]\nmembers = ["crates/*"]\n',
+  );
   expect((await readWorkspaceCargo(root))?.defaultMembers).toBeNull();
   writeFileSync(
     join(root, "Cargo.toml"),

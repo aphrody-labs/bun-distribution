@@ -13,7 +13,7 @@ the PDF parsing logic.
 
 This crate does not provide more high-level functionality, such as parsing fonts or color spaces.
 Such functionality is out-of-scope for `hayro-syntax`, since this crate is supposed to be
-as *light-weight* and *application-agnostic* as possible.
+as _light-weight_ and _application-agnostic_ as possible.
 
 Functionality-wise, this crate is therefore close to feature-complete. The main missing feature
 is support for password-protected documents. In addition to that, more low-level APIs might be
@@ -22,8 +22,10 @@ added in the future.
 The crate is `no_std` compatible but requires an allocator to be available.
 
 ## Example
+
 This short example shows you how to load a PDF file and iterate over the content streams of all
 pages.
+
 ```rust
 use hayro_syntax::Pdf;
 use std::path::PathBuf;
@@ -53,18 +55,22 @@ for page in pages.iter() {
 ```
 
 ## Safety
+
 When the `unsafe` feature is disabled, there is only use of `unsafe` in `hayro-syntax`.
 We also unconditionally use the `smallvec` crate which uses unsafe internally, but that's
 it.
 
 For better performance, it is strongly recommended to enable the `unsafe` feature,
 which does result in slightly more unsafe code being, but does give better performance:
+
 - We will use the `flate2` crate for decoding flate streams.
 - SIMD will be enabled to accelerate decoding of images.
 - `memchr` will be used to accelerate some of the fallback parsing code.
 
 ## Features
+
 The supported features include:
+
 - Parsing xref tables in all its possible formats, including xref streams.
 - Best-effort attempt at repairing PDF files with broken xref tables.
 - Parsing of all objects types (also in object streams).
@@ -73,6 +79,7 @@ The supported features include:
 - The crate is very lightweight, especially in comparison to other PDF crates.
 
 ## Limitations
+
 - There are still a few features missing, for example, support for
   password-protected PDFs. In addition to that, many properties (like page annotations) are
   currently not exposed.
@@ -82,9 +89,10 @@ The supported features include:
 <!-- cargo-rdme end -->
 
 ## License
+
 Licensed under either of
 
 - Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0>)
 - MIT license ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
 
-at your option. 
+at your option.

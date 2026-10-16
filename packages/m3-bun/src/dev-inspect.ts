@@ -100,7 +100,9 @@ const LEVELS: Record<string, M3ConsoleLevel> = {
 };
 
 /** Run `options.cmd` under the inspector and relay its console and uncaught exceptions. */
-export async function launchInspected(options: M3InspectOptions): Promise<M3Inspected> {
+export async function launchInspected(
+  options: M3InspectOptions,
+): Promise<M3Inspected> {
   const [dap, protocol] = await Promise.all([
     loadOptional<Dap>("@aphrody/bun-debug-adapter-protocol", FEATURE),
     loadOptional<Protocol>("@aphrody/bun-inspector-protocol", FEATURE),
@@ -127,7 +129,9 @@ export async function launchInspected(options: M3InspectOptions): Promise<M3Insp
   void child.exited.then(() => {
     signal.close();
     return received.reject(
-      new Error(`m3-bun ${FEATURE}: the program exited before its inspector listened`),
+      new Error(
+        `m3-bun ${FEATURE}: the program exited before its inspector listened`,
+      ),
     );
   });
 
@@ -135,16 +139,22 @@ export async function launchInspected(options: M3InspectOptions): Promise<M3Insp
     const client = new protocol.WebSocketInspector(inspectorUrl);
     client.on("Console.messageAdded", ({ message }) => {
       const text = message.parameters?.length
-        ? message.parameters.map((value) => protocol.remoteObjectToString(value, true)).join(" ")
+        ? message.parameters
+            .map((value) => protocol.remoteObjectToString(value, true))
+            .join(" ")
         : message.text;
       options.onConsole?.({ level: LEVELS[message.level] ?? "log", text });
     });
-    client.on("LifecycleReporter.error", ({ name, message, urls, lineColumns }) => {
-      const frames = urls.map(
-        (url, i) => `${url}:${lineColumns[i * 2] ?? 0}:${lineColumns[i * 2 + 1] ?? 0}`,
-      );
-      options.onException?.({ name, message, frames });
-    });
+    client.on(
+      "LifecycleReporter.error",
+      ({ name, message, urls, lineColumns }) => {
+        const frames = urls.map(
+          (url, i) =>
+            `${url}:${lineColumns[i * 2] ?? 0}:${lineColumns[i * 2 + 1] ?? 0}`,
+        );
+        options.onException?.({ name, message, frames });
+      },
+    );
     if (!(await client.start()))
       throw new Error(`m3-bun ${FEATURE}: cannot attach to ${inspectorUrl}`);
     await Promise.all([

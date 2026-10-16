@@ -4,7 +4,10 @@ import { runInNewContext } from "node:vm";
 import { colorSchemeScript, themeCookie } from "../src/index";
 
 function modeFor(cookie: string, cookieName?: string): string {
-  const root = { classList: { remove() {}, toggle() {} }, style: { colorScheme: "" } };
+  const root = {
+    classList: { remove() {}, toggle() {} },
+    style: { colorScheme: "" },
+  };
   runInNewContext(colorSchemeScript(cookieName), {
     document: { cookie, documentElement: root },
     window: { matchMedia: () => ({ matches: false }) },
@@ -24,7 +27,13 @@ describe("theme cookie identity", () => {
     expect(themeCookie("dark", "app.theme")).toStartWith("app.theme=dark;");
   });
   test("cookie delimiters and script markup cannot become a cookie name", () => {
-    for (const name of ["", "theme;path=/", "theme=dark", "</script>", "with space"]) {
+    for (const name of [
+      "",
+      "theme;path=/",
+      "theme=dark",
+      "</script>",
+      "with space",
+    ]) {
       expect(() => themeCookie("dark", name)).toThrow("HTTP cookie token");
       expect(() => colorSchemeScript(name)).toThrow("HTTP cookie token");
     }

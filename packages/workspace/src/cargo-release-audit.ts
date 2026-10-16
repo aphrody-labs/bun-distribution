@@ -27,7 +27,9 @@ export type ReleaseMetadata = {
 };
 type RecordValue = Record<string, unknown>;
 const object = (value: unknown): RecordValue =>
-  value && typeof value === "object" && !Array.isArray(value) ? (value as RecordValue) : {};
+  value && typeof value === "object" && !Array.isArray(value)
+    ? (value as RecordValue)
+    : {};
 const compare = (a: number[], b: number[]): number => {
   for (let i = 0; i < 3; i++) {
     const difference = (a[i] ?? 0) - (b[i] ?? 0);
@@ -41,10 +43,18 @@ const compare = (a: number[], b: number[]): number => {
 function caretRange(requirement: string) {
   const match = /^\^?(\d+)(?:\.(\d+))?(?:\.(\d+))?$/.exec(requirement.trim());
   if (!match) return null;
-  const floor = [Number(match[1]), Number(match[2] ?? 0), Number(match[3] ?? 0)];
+  const floor = [
+    Number(match[1]),
+    Number(match[2] ?? 0),
+    Number(match[3] ?? 0),
+  ];
   const ceiling = [...floor];
   const bump =
-    floor[0] !== 0 || match[2] === undefined ? 0 : floor[1] !== 0 || match[3] === undefined ? 1 : 2;
+    floor[0] !== 0 || match[2] === undefined
+      ? 0
+      : floor[1] !== 0 || match[3] === undefined
+        ? 1
+        : 2;
   ceiling[bump] = (ceiling[bump] ?? 0) + 1;
   for (let index = bump + 1; index < 3; index++) ceiling[index] = 0;
   return { floor, ceiling };
@@ -54,14 +64,19 @@ export function classifyRequirements(requirements: string[]) {
   const unique = [...new Set(requirements)].toSorted();
   const ranges = unique.map(caretRange);
   if (ranges.some((range) => range === null))
-    return { requirements: unique, status: "requires-review", candidateMinimum: null };
+    return {
+      requirements: unique,
+      status: "requires-review",
+      candidateMinimum: null,
+    };
   const known = ranges.filter((range) => range !== null);
   const low = known
     .map((range) => range.floor)
     .toSorted(compare)
     .at(-1);
   const high = known.map((range) => range.ceiling).toSorted(compare)[0];
-  const overlaps = low !== undefined && high !== undefined && compare(low, high) < 0;
+  const overlaps =
+    low !== undefined && high !== undefined && compare(low, high) < 0;
   return {
     requirements: unique,
     status: overlaps ? "overlapping-caret-ranges" : "disjoint-caret-ranges",
@@ -69,25 +84,40 @@ export function classifyRequirements(requirements: string[]) {
   };
 }
 
-function dependencySpec(manifest: RecordValue, rootManifest: RecordValue, dep: Dependency) {
+function dependencySpec(
+  manifest: RecordValue,
+  rootManifest: RecordValue,
+  dep: Dependency,
+) {
   const section =
     dep.kind === "dev"
       ? "dev-dependencies"
       : dep.kind === "build"
         ? "build-dependencies"
         : "dependencies";
-  const table = dep.target ? object(object(manifest.target)[dep.target]) : manifest;
+  const table = dep.target
+    ? object(object(manifest.target)[dep.target])
+    : manifest;
   const value = object(table[section])[dep.rename ?? dep.name];
   const spec = typeof value === "string" ? { version: value } : object(value);
   if (spec.workspace !== true) return spec;
-  return object(object(object(rootManifest.workspace).dependencies)[dep.rename ?? dep.name]);
+  return object(
+    object(object(rootManifest.workspace).dependencies)[dep.rename ?? dep.name],
+  );
 }
 
-export async function auditCargoRelease(metadata: ReleaseMetadata, root = metadata.workspace_root) {
+export async function auditCargoRelease(
+  metadata: ReleaseMetadata,
+  root = metadata.workspace_root,
+) {
   root = resolve(root);
   if (resolve(metadata.workspace_root) !== root)
-    throw new Error("Metadata belongs to another workspace; regenerate it for --root");
-  const rootManifest = object(Bun.TOML.parse(await Bun.file(join(root, "Cargo.toml")).text()));
+    throw new Error(
+      "Metadata belongs to another workspace; regenerate it for --root",
+    );
+  const rootManifest = object(
+    Bun.TOML.parse(await Bun.file(join(root, "Cargo.toml")).text()),
+  );
   const members = new Set(metadata.workspace_members);
   const packages = metadata.packages
     .filter((pkg) => members.has(pkg.id))
@@ -123,7 +153,9 @@ export async function auditCargoRelease(metadata: ReleaseMetadata, root = metada
     const cached = parsed.get(key);
     if (cached) return cached;
     const text = await Bun.file(key).text();
-    manifestHashes[relative(root, key).replaceAll("\\", "/")] = createHash("sha256")
+    manifestHashes[relative(root, key).replaceAll("\\", "/")] = createHash(
+      "sha256",
+    )
       .update(text)
       .digest("hex");
     const manifest = object(Bun.TOML.parse(text));
@@ -134,7 +166,9 @@ export async function auditCargoRelease(metadata: ReleaseMetadata, root = metada
     join(root, "Cargo.toml"),
     ...packages.map((pkg) => pkg.manifest_path),
     ...packages.flatMap((pkg) =>
-      pkg.dependencies.filter((dep) => dep.path).map((dep) => join(dep.path!, "Cargo.toml")),
+      pkg.dependencies
+        .filter((dep) => dep.path)
+        .map((dep) => join(dep.path!, "Cargo.toml")),
     ),
   ]);
   await Promise.all(
@@ -142,13 +176,16 @@ export async function auditCargoRelease(metadata: ReleaseMetadata, root = metada
       try {
         await manifestAt(path);
       } catch {
-        manifestProblems.push(`Missing or invalid manifest: ${relative(root, path)}`);
+        manifestProblems.push(
+          `Missing or invalid manifest: ${relative(root, path)}`,
+        );
       }
     }),
   );
   for (const pkg of packages) {
     const manifest = parsed.get(resolve(pkg.manifest_path));
-    if (!manifest) throw new Error(`Cannot audit member manifest: ${pkg.manifest_path}`);
+    if (!manifest)
+      throw new Error(`Cannot audit member manifest: ${pkg.manifest_path}`);
     const info = object(manifest.package);
     const manifestVersion =
       typeof info.version === "string"
@@ -162,7 +199,9 @@ export async function auditCargoRelease(metadata: ReleaseMetadata, root = metada
       object(info.publish).workspace === true
         ? object(object(rootManifest.workspace).package).publish
         : info.publish;
-    const allowed = publish !== false && (!Array.isArray(publish) || publish.includes("crates-io"));
+    const allowed =
+      publish !== false &&
+      (!Array.isArray(publish) || publish.includes("crates-io"));
     packagePolicies.push({
       name: pkg.name,
       manifest: relative(root, pkg.manifest_path).replaceAll("\\", "/"),
@@ -185,13 +224,21 @@ export async function auditCargoRelease(metadata: ReleaseMetadata, root = metada
           const target = parsed.get(resolve(dep.path, "Cargo.toml"));
           if (!target) throw new Error("Missing dependency manifest");
           const targetVersion = object(target.package).version;
-          localVersion = typeof targetVersion === "string" ? targetVersion : null;
-          if (object(targetVersion).workspace === true && !path.startsWith("..")) {
-            const inherited = object(object(rootManifest.workspace).package).version;
+          localVersion =
+            typeof targetVersion === "string" ? targetVersion : null;
+          if (
+            object(targetVersion).workspace === true &&
+            !path.startsWith("..")
+          ) {
+            const inherited = object(
+              object(rootManifest.workspace).package,
+            ).version;
             if (typeof inherited === "string") localVersion = inherited;
           }
         } catch {
-          manifestProblems.push(`${pkg.name}: missing or invalid dependency manifest ${dep.path}`);
+          manifestProblems.push(
+            `${pkg.name}: missing or invalid dependency manifest ${dep.path}`,
+          );
         }
       }
       locations.push({
@@ -203,7 +250,8 @@ export async function auditCargoRelease(metadata: ReleaseMetadata, root = metada
         location: dep.path ? "path" : "git",
         source: dep.path ? path.replaceAll("\\", "/") : (dep.source ?? ""),
         external: Boolean(
-          dep.path && (path === ".." || /^\.\.[\\/]/.test(path) || isAbsolute(path)),
+          dep.path &&
+          (path === ".." || /^\.\.[\\/]/.test(path) || isAbsolute(path)),
         ),
         versionMissing: typeof spec.version !== "string",
         wildcardRegistryVersion: dep.req === "*",
@@ -213,11 +261,17 @@ export async function auditCargoRelease(metadata: ReleaseMetadata, root = metada
     }
   }
   const divergentRequirements = [...registry]
-    .filter(([, entries]) => new Set(entries.map((entry) => entry.req)).size > 1)
+    .filter(
+      ([, entries]) => new Set(entries.map((entry) => entry.req)).size > 1,
+    )
     .toSorted(([a], [b]) => a.localeCompare(b))
     .map(([key, entries]) =>
       Object.assign(
-        { name: key.split("\0")[1]!, source: key.split("\0")[0]!, consumers: entries },
+        {
+          name: key.split("\0")[1]!,
+          source: key.split("\0")[0]!,
+          consumers: entries,
+        },
         classifyRequirements(entries.map((entry) => entry.req)),
       ),
     );
@@ -235,11 +289,13 @@ export async function auditCargoRelease(metadata: ReleaseMetadata, root = metada
     ],
     summary: {
       members: packages.length,
-      cratesIoAllowed: packagePolicies.filter((pkg) => pkg.cratesIoAllowed).length,
+      cratesIoAllowed: packagePolicies.filter((pkg) => pkg.cratesIoAllowed)
+        .length,
       pathEdges: locations.filter((dep) => dep.location === "path").length,
       gitEdges: locations.filter((dep) => dep.location === "git").length,
-      pathWildcardEdges: locations.filter((dep) => dep.location === "path" && dep.req === "*")
-        .length,
+      pathWildcardEdges: locations.filter(
+        (dep) => dep.location === "path" && dep.req === "*",
+      ).length,
       missingRegistryVersionEdges: locations.filter(
         (dep) => dep.versionMissing && dep.publicationRequired,
       ).length,
@@ -270,7 +326,8 @@ export async function runCargoReleaseAudit(args: string[]): Promise<number> {
     const arg = args[index];
     if (arg === "--root" || arg === "--metadata" || arg === "--out") {
       const value = args[++index];
-      if (!value || value.startsWith("--")) throw new Error(`${arg} requires a value`);
+      if (!value || value.startsWith("--"))
+        throw new Error(`${arg} requires a value`);
       if (arg === "--root") root = resolve(value);
       else if (arg === "--metadata") metadataPath = resolve(value);
       else output = resolve(value);
@@ -289,7 +346,10 @@ export async function runCargoReleaseAudit(args: string[]): Promise<number> {
       "--metadata is required; generate metadata through scripts/build/rust/cargo-serial.sh metadata --no-deps --format-version 1",
     );
   const metadata = (await Bun.file(metadataPath).json()) as ReleaseMetadata;
-  const report = await auditCargoRelease(metadata, root ?? resolve(metadata.workspace_root));
+  const report = await auditCargoRelease(
+    metadata,
+    root ?? resolve(metadata.workspace_root),
+  );
   const json = JSON.stringify(report, null, 2) + "\n";
   if (output) await Bun.write(output, json);
   else process.stdout.write(json);
@@ -302,4 +362,5 @@ export async function runCargoReleaseAudit(args: string[]): Promise<number> {
     : 0;
 }
 
-if (import.meta.main) process.exit(await runCargoReleaseAudit(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runCargoReleaseAudit(process.argv.slice(2)));

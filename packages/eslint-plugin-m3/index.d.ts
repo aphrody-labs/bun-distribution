@@ -13,7 +13,10 @@ export interface M3LintPlugin {
   rules: Record<string, M3LintRule>;
   configs: Record<
     string,
-    { plugins: Record<string, M3LintPlugin>; rules: Record<string, "error" | "warn" | "off"> }
+    {
+      plugins: Record<string, M3LintPlugin>;
+      rules: Record<string, "error" | "warn" | "off">;
+    }
   >;
 }
 declare const plugin: M3LintPlugin;

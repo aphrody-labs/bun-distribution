@@ -1,7 +1,13 @@
 import type { LinksFunction } from "@remix-run/node";
 import { posthog } from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
-import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "@remix-run/react";
+import {
+  Links,
+  Meta,
+  Outlet,
+  Scripts,
+  ScrollRestoration,
+} from "@remix-run/react";
 
 import normalizeCss from "./styles/normalize.css?url";
 import tailwindCss from "./styles/tailwind.css?url";

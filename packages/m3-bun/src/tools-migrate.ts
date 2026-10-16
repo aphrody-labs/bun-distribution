@@ -34,16 +34,26 @@ export interface MigrateOptions {
 const SKIP = /(^|\/)(node_modules|dist|bin|release)\//;
 
 /** Run an `@aphrody/m3-codemods` transform over an app's sources. */
-export async function migrateApp(options: MigrateOptions = {}): Promise<MigrateReport> {
+export async function migrateApp(
+  options: MigrateOptions = {},
+): Promise<MigrateReport> {
   const dir = resolve(options.dir ?? process.cwd());
-  const { transformSource } = await loadTool("@aphrody/m3-codemods", () => import("@aphrody/m3-codemods"));
+  const { transformSource } = await loadTool(
+    "@aphrody/m3-codemods",
+    () => import("@aphrody/m3-codemods"),
+  );
   const kind = options.kind ?? "mui";
   const dryRun = options.dryRun ?? false;
   const paths = (
-    await Array.fromAsync(new Bun.Glob(options.glob ?? "**/*.{tsx,jsx}").scan({ cwd: dir, onlyFiles: true }))
+    await Array.fromAsync(
+      new Bun.Glob(options.glob ?? "**/*.{tsx,jsx}").scan({
+        cwd: dir,
+        onlyFiles: true,
+      }),
+    )
   )
-    .map(path => path.replaceAll("\\", "/"))
-    .filter(path => !SKIP.test(path))
+    .map((path) => path.replaceAll("\\", "/"))
+    .filter((path) => !SKIP.test(path))
     .toSorted();
   const changed: MigrateFile[] = [];
   for (const path of paths) {
@@ -75,8 +85,13 @@ export interface MigrateNextOptions {
  * Migrate a Next.js app with `migrateProject` of `@aphrody/m3-next-migrate`, on the native Bun web target. A dry run
  * (the default) returns the scan, routes, transforms and the native requirements without creating files.
  */
-export async function migrateNext(options: MigrateNextOptions): Promise<MigrateProjectReport> {
-  const { migrateProject } = await loadTool("@aphrody/m3-next-migrate", () => import("@aphrody/m3-next-migrate"));
+export async function migrateNext(
+  options: MigrateNextOptions,
+): Promise<MigrateProjectReport> {
+  const { migrateProject } = await loadTool(
+    "@aphrody/m3-next-migrate",
+    () => import("@aphrody/m3-next-migrate"),
+  );
   const sourceDir = resolve(options.source);
   const targetDir = resolve(options.target);
   return migrateProject({

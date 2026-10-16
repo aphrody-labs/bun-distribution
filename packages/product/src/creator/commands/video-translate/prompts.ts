@@ -88,7 +88,11 @@ export function buildWindowPrompt(input: WindowPromptInput): string {
     ? JSON.stringify(input.next.map(({ id, text }) => ({ id, src: text })))
     : "[]";
   const cues = JSON.stringify(
-    input.cues.map(({ id, text, maxChars }) => ({ id, src: text, max_chars: maxChars })),
+    input.cues.map(({ id, text, maxChars }) => ({
+      id,
+      src: text,
+      max_chars: maxChars,
+    })),
   );
   return `VIDEO SUMMARY (context only):
 ${input.summary || "(not available)"}

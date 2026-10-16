@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterEach, expect, test } from "bun:test";
 import { documentsFrom, loadCatalog, templatesFrom } from "./catalog";
-import { isPublicDestination, publicDestinations } from "../../public-navigation";
+import {
+  isPublicDestination,
+  publicDestinations,
+} from "../../public-navigation";
 import { deriveTitleFromPath } from "../../components/TabManager/route-title";
 
 const article = {
@@ -43,35 +46,48 @@ test("native catalogs preserve original markdown, CLI and source files", () => {
 
 test("catalogs reject duplicate IDs, broken shapes and unsafe route identifiers", () => {
   expect(() => documentsFrom([article, article])).toThrow("duplicate");
-  expect(() => documentsFrom([{ ...article, id: "../secrets" }])).toThrow("identifiers");
+  expect(() => documentsFrom([{ ...article, id: "../secrets" }])).toThrow(
+    "identifiers",
+  );
   expect(() => documentsFrom([{ ...article, tags: [2] }])).toThrow("invalid");
-  expect(() => templatesFrom([{ ...template, files: [{ path: "app.tsx" }] }])).toThrow("invalid");
-  expect(() => templatesFrom([{ ...template, dependencies: { react: null } }])).toThrow("invalid");
+  expect(() =>
+    templatesFrom([{ ...template, files: [{ path: "app.tsx" }] }]),
+  ).toThrow("invalid");
+  expect(() =>
+    templatesFrom([{ ...template, dependencies: { react: null } }]),
+  ).toThrow("invalid");
   expect(() => documentsFrom({ html: "an SPA fallback" })).toThrow("invalid");
 });
 
 test("catalog requests use only same-origin read-only endpoints and abort on disposal", async () => {
   const controller = new AbortController();
   let receivedSignal: AbortSignal | undefined;
-  globalThis.fetch = (async (path: string | URL | Request, options?: RequestInit) => {
+  globalThis.fetch = (async (
+    path: string | URL | Request,
+    options?: RequestInit,
+  ) => {
     expect(path).toBe("/api/docs");
     expect(options?.credentials).toBe("same-origin");
     expect(options?.method).toBeUndefined();
     receivedSignal = options?.signal as AbortSignal;
     return Response.json([article]);
   }) as typeof fetch;
-  expect(await loadCatalog("/api/docs", documentsFrom, controller.signal)).toEqual([article]);
+  expect(
+    await loadCatalog("/api/docs", documentsFrom, controller.signal),
+  ).toEqual([article]);
   expect(receivedSignal?.aborted).toBe(false);
   controller.abort();
   expect(receivedSignal?.aborted).toBe(true);
 });
 
 test("HTTP failure and malformed JSON cannot become an indefinite loading state", async () => {
-  globalThis.fetch = (async () => new Response("denied", { status: 403 })) as typeof fetch;
+  globalThis.fetch = (async () =>
+    new Response("denied", { status: 403 })) as typeof fetch;
   await expect(
     loadCatalog("/api/templates", templatesFrom, new AbortController().signal),
   ).rejects.toThrow("HTTP 403");
-  globalThis.fetch = (async () => new Response("<!doctype html>")) as typeof fetch;
+  globalThis.fetch = (async () =>
+    new Response("<!doctype html>")) as typeof fetch;
   await expect(
     loadCatalog("/api/docs", documentsFrom, new AbortController().signal),
   ).rejects.toThrow();
@@ -94,6 +110,8 @@ test("public deep links stay inside canonical navigation and have meaningful tab
     expect(isPublicDestination(route)).toBe(true);
   expect(isPublicDestination("/docs-private")).toBe(false);
   expect(isPublicDestination("/explorer")).toBe(false);
-  expect(deriveTitleFromPath("/docs/runtime-architecture", "")).toBe("Documentation");
+  expect(deriveTitleFromPath("/docs/runtime-architecture", "")).toBe(
+    "Documentation",
+  );
   expect(deriveTitleFromPath("/showcase/components", "")).toBe("Material 3");
 });

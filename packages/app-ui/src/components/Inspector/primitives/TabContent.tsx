@@ -18,12 +18,18 @@ export function TabContent({ id, activeTab, children }: TabContentProps) {
         animate={{
           opacity: 1,
           y: 0,
-          transition: { duration: m3Durations.medium1, ease: m3Easings.emphasizedDecelerate },
+          transition: {
+            duration: m3Durations.medium1,
+            ease: m3Easings.emphasizedDecelerate,
+          },
         }}
         exit={{
           opacity: 0,
           y: -10,
-          transition: { duration: m3Durations.short3, ease: m3Easings.emphasizedAccelerate },
+          transition: {
+            duration: m3Durations.short3,
+            ease: m3Easings.emphasizedAccelerate,
+          },
         }}
         className="flex-1 overflow-auto"
       >

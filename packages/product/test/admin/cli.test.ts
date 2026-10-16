@@ -5,8 +5,17 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import { guarded, help, main } from "../../src/admin/cli.ts";
-import { aliases, registry, summaries } from "../../src/admin/commands/index.ts";
-import { MAIN_MENU, TRAIN_MENU, mainMenu, renderMenu } from "../../src/admin/menu.ts";
+import {
+  aliases,
+  registry,
+  summaries,
+} from "../../src/admin/commands/index.ts";
+import {
+  MAIN_MENU,
+  TRAIN_MENU,
+  mainMenu,
+  renderMenu,
+} from "../../src/admin/menu.ts";
 import { saveProfile } from "../../src/admin/lib/profile.ts";
 import { samplePack, testContext, type TestContext } from "./helpers.ts";
 
@@ -21,13 +30,16 @@ const SONDE = [
   "jobs|0",
 ].join("\n");
 
-async function withPack(options: Parameters<typeof testContext>[0] = {}): Promise<TestContext> {
+async function withPack(
+  options: Parameters<typeof testContext>[0] = {},
+): Promise<TestContext> {
   const t = testContext(options);
   await saveProfile(t.ctx.paths, samplePack());
   return t;
 }
 
-const sshCalls = (t: TestContext) => t.sys.calls.filter((call) => call.argv[0] === "ssh");
+const sshCalls = (t: TestContext) =>
+  t.sys.calls.filter((call) => call.argv[0] === "ssh");
 const launches = (t: TestContext) =>
   sshCalls(t).filter((call) => call.options.input?.includes("setsid"));
 
@@ -37,7 +49,8 @@ test("version, help and unknown commands", async () => {
   expect(ui.lines).toEqual(["0.1.0"]);
   expect(await main([], ctx)).toBe(0);
   expect(help()).toContain("entrainement");
-  for (const name of Object.keys(summaries)) expect(registry[name]).toBeDefined();
+  for (const name of Object.keys(summaries))
+    expect(registry[name]).toBeDefined();
   expect(registry.interne).toBeDefined();
   expect(summaries.interne).toBeUndefined();
   expect(Object.values(aliases).every((target) => registry[target])).toBe(true);
@@ -61,7 +74,9 @@ test("training without an access file explains what to do first", async () => {
 
 test("start is a simulation by default: plan printed, nothing sent to the host", async () => {
   const t = await withPack();
-  expect(await main(["entrainement", "demarrer", "--type", "test"], t.ctx)).toBe(0);
+  expect(
+    await main(["entrainement", "demarrer", "--type", "test"], t.ctx),
+  ).toBe(0);
   const said = t.ui.lines.join("\n");
   expect(said).toContain("SIMULATION : rien n'a été lancé");
   expect(said).toContain("Test de l'entraînement");
@@ -71,17 +86,27 @@ test("start is a simulation by default: plan printed, nothing sent to the host",
 
 test("start validates before anything else", async () => {
   const t = await withPack();
-  expect(await main(["entrainement", "demarrer", "--type", "lora", "--etapes", "5"], t.ctx)).toBe(
-    2,
-  );
+  expect(
+    await main(
+      ["entrainement", "demarrer", "--type", "lora", "--etapes", "5"],
+      t.ctx,
+    ),
+  ).toBe(2);
   expect(t.ui.lines.join("\n")).toContain("il manque");
   const original = console.error;
   console.error = () => undefined;
   try {
-    expect(await main(["entrainement", "demarrer", "--type", "promote"], t.ctx)).toBe(2);
-    expect(await main(["entrainement", "demarrer", "--type", "embeddings"], t.ctx)).toBe(2);
     expect(
-      await main(["entrainement", "demarrer", "--type", "embeddings", "--etapes", "abc"], t.ctx),
+      await main(["entrainement", "demarrer", "--type", "promote"], t.ctx),
+    ).toBe(2);
+    expect(
+      await main(["entrainement", "demarrer", "--type", "embeddings"], t.ctx),
+    ).toBe(2);
+    expect(
+      await main(
+        ["entrainement", "demarrer", "--type", "embeddings", "--etapes", "abc"],
+        t.ctx,
+      ),
     ).toBe(2);
   } finally {
     console.error = original;
@@ -97,7 +122,8 @@ function hostScripts(t: TestContext, sonde = SONDE) {
       if (input.includes("setsid")) return { stdout: "OK|kit-x|4242\n" };
       if (input.includes('echo "user|')) return { stdout: sonde };
       if (input.includes("kill -s")) return { stdout: "STOPPED|4242\n" };
-      if (input.includes("JOURNAL|")) return { stdout: "JOURNAL|kit-x\nline one\nline two\n" };
+      if (input.includes("JOURNAL|"))
+        return { stdout: "JOURNAL|kit-x\nline one\nline two\n" };
       return {
         stdout: [
           "HOTE|gpu-1",
@@ -151,20 +177,30 @@ test("a real launch needs the host to be ready AND a typed OUI", async () => {
   expect(launch.argv.at(-1)).toContain(
     "'kit-20261006-120000-test' '/usr/local/bin/aphrody' '/home/ubuntu/apps/aphrody' '-' 'test' 'dry-run'",
   );
-  expect(yes.ui.lines.join("\n")).toContain("Lancé : kit-20261006-120000-test (processus 4242)");
+  expect(yes.ui.lines.join("\n")).toContain(
+    "Lancé : kit-20261006-120000-test (processus 4242)",
+  );
   expect(yes.ui.lines.join("\n")).toContain("Tu peux fermer cette fenêtre");
 });
 
 test("--oui confirms in advance; without a terminal and without --oui nothing is launched", async () => {
   const batch = await withPack({ interactive: false });
   hostScripts(batch);
-  expect(await main(["entrainement", "demarrer", "--type", "test", "--lancer"], batch.ctx)).toBe(2);
+  expect(
+    await main(
+      ["entrainement", "demarrer", "--type", "test", "--lancer"],
+      batch.ctx,
+    ),
+  ).toBe(2);
   expect(launches(batch)).toEqual([]);
   expect(batch.ui.lines.join("\n")).toContain("--oui");
   const scripted = await withPack({ interactive: false });
   hostScripts(scripted);
   expect(
-    await main(["entrainement", "demarrer", "--type", "test", "--lancer", "--oui"], scripted.ctx),
+    await main(
+      ["entrainement", "demarrer", "--type", "test", "--lancer", "--oui"],
+      scripted.ctx,
+    ),
   ).toBe(0);
   expect(launches(scripted)).toHaveLength(1);
 });
@@ -175,12 +211,23 @@ test("the pre-flight check refuses to launch on a full disk, a busy GPU, a missi
     ["jobs", SONDE.replace("jobs|0", "jobs|1"), ["déjà en cours"]],
     [
       "feature",
-      SONDE.replace(/train\|.*/, "train|× `aphrody train` requires --features train"),
+      SONDE.replace(
+        /train\|.*/,
+        "train|× `aphrody train` requires --features train",
+      ),
       ["pas disponible"],
     ],
     ["busy", SONDE.replace("false", "true"), ["déjà réservée"]],
-    ["nogpu", SONDE.replace(/gpu\|.*/, "gpu|aucun"), ["pas de carte graphique"]],
-    ["noaphrody", SONDE.replace(/aphrody\|.*/, "aphrody|absent"), ["pas installé"]],
+    [
+      "nogpu",
+      SONDE.replace(/gpu\|.*/, "gpu|aucun"),
+      ["pas de carte graphique"],
+    ],
+    [
+      "noaphrody",
+      SONDE.replace(/aphrody\|.*/, "aphrody|absent"),
+      ["pas installé"],
+    ],
   ];
   for (const [name, sonde, expected] of cases) {
     const t = await withPack({ answers: ["OUI"] });
@@ -231,7 +278,12 @@ test("ssh failures during launch are explained, not shown raw", async () => {
     match: /^ssh /,
     result: { code: 255, stderr: "omar@x: Permission denied (publickey)." },
   });
-  expect(await main(["entrainement", "demarrer", "--type", "test", "--lancer"], t.ctx)).toBe(1);
+  expect(
+    await main(
+      ["entrainement", "demarrer", "--type", "test", "--lancer"],
+      t.ctx,
+    ),
+  ).toBe(1);
   expect(t.ui.lines.join("\n")).toContain("refuse ta clé");
   expect(launches(t)).toEqual([]);
 });
@@ -241,20 +293,33 @@ test("status, log and aliases", async () => {
   hostScripts(t);
   expect(await main(["entrainement", "etat"], t.ctx)).toBe(0);
   const said = t.ui.lines.join("\n");
-  expect(said).toContain("[terminé] kit-20261006-100000-test - Test de l'entraînement");
+  expect(said).toContain(
+    "[terminé] kit-20261006-100000-test - Test de l'entraînement",
+  );
   expect(said).toContain("[en cours] kit-20261006-110000-embeddings");
   expect(said).toContain('dernier message : {"event":"progress"}');
   expect(await main(["train", "status", "--hote", "vps"], t.ctx)).toBe(0);
-  expect(await main(["entrainement", "journal", "kit-x", "--lignes", "5"], t.ctx)).toBe(0);
+  expect(
+    await main(["entrainement", "journal", "kit-x", "--lignes", "5"], t.ctx),
+  ).toBe(0);
   expect(t.ui.lines.join("\n")).toContain("Journal de kit-x :\nline one");
-  expect(await main(["entrainement", "etat", "--hote", "ghost"], t.ctx)).toBe(1);
+  expect(await main(["entrainement", "etat", "--hote", "ghost"], t.ctx)).toBe(
+    1,
+  );
 });
 
 test("stop asks for a typed OUI, says what happens, and keeps the files", async () => {
   const t = await withPack({ answers: ["pas sûr"] });
   hostScripts(t);
-  expect(await main(["entrainement", "arreter", "kit-20261006-110000-embeddings"], t.ctx)).toBe(0);
-  expect(sshCalls(t).filter((call) => call.options.input?.includes("kill -s"))).toEqual([]);
+  expect(
+    await main(
+      ["entrainement", "arreter", "kit-20261006-110000-embeddings"],
+      t.ctx,
+    ),
+  ).toBe(0);
+  expect(
+    sshCalls(t).filter((call) => call.options.input?.includes("kill -s")),
+  ).toEqual([]);
   const said = t.ui.lines.join("\n");
   expect(said).toContain("arrêt poli");
   expect(said).toContain("Annulé : rien n'a été arrêté");
@@ -262,13 +327,22 @@ test("stop asks for a typed OUI, says what happens, and keeps the files", async 
   const yes = await withPack({ answers: ["OUI"] });
   hostScripts(yes);
   expect(await main(["entrainement", "stop"], yes.ctx)).toBe(0);
-  const stop = sshCalls(yes).find((call) => call.options.input?.includes("kill -s"))!;
-  expect(stop.argv.at(-1)).toBe("sh -s -- 'kit-20261006-110000-embeddings' '0'");
-  expect(yes.ui.lines.join("\n")).toContain("fichiers déjà produits sont conservés");
+  const stop = sshCalls(yes).find((call) =>
+    call.options.input?.includes("kill -s"),
+  )!;
+  expect(stop.argv.at(-1)).toBe(
+    "sh -s -- 'kit-20261006-110000-embeddings' '0'",
+  );
+  expect(yes.ui.lines.join("\n")).toContain(
+    "fichiers déjà produits sont conservés",
+  );
 
   const forced = await withPack({ answers: ["OUI"] });
   hostScripts(forced);
-  await main(["entrainement", "arreter", "kit-20261006-110000-embeddings", "--force"], forced.ctx);
+  await main(
+    ["entrainement", "arreter", "kit-20261006-110000-embeddings", "--force"],
+    forced.ctx,
+  );
   expect(forced.ui.lines.join("\n")).toContain("ARRÊT FORCÉ");
   expect(
     sshCalls(forced)
@@ -278,7 +352,9 @@ test("stop asks for a typed OUI, says what happens, and keeps the files", async 
 });
 
 test("the training wizard walks through type, host, steps and inputs, then simulates and asks for OUI", async () => {
-  const t = await withPack({ answers: ["2", "", "50", "data/triples.jsonl", "", "n", "OUI"] });
+  const t = await withPack({
+    answers: ["2", "", "50", "data/triples.jsonl", "", "n", "OUI"],
+  });
   hostScripts(t);
   expect(await main(["entrainement"], t.ctx)).toBe(0);
   const said = t.ui.lines.join("\n");
@@ -305,8 +381,12 @@ test("access commands print only public keys and report the import state", async
 test("internal elevated entry refuses anything but its own arguments", async () => {
   const { ctx, ui } = testContext();
   expect(await main(["interne"], ctx)).toBe(2);
-  expect(await main(["interne", "wg-installer", "C:\\x.conf", "../bad"], ctx)).toBe(2);
-  expect(await main(["interne", "other", "C:\\x.conf", "aphrody"], ctx)).toBe(2);
+  expect(
+    await main(["interne", "wg-installer", "C:\\x.conf", "../bad"], ctx),
+  ).toBe(2);
+  expect(await main(["interne", "other", "C:\\x.conf", "aphrody"], ctx)).toBe(
+    2,
+  );
   expect(ui.lines.join("\n")).toContain("usage interne");
 });
 
@@ -315,7 +395,8 @@ test("the menu lists French choices, survives errors and unknown input, and quit
   await mainMenu(t.ctx);
   const said = t.ui.lines.join("\n");
   expect(said).toContain("Aphrody - kit administrateur (version 0.1.0)");
-  for (const item of MAIN_MENU) expect(said).toContain(`${item.key}. ${item.title}`);
+  for (const item of MAIN_MENU)
+    expect(said).toContain(`${item.key}. ${item.title}`);
   expect(said).toContain("Je n'ai pas compris");
   expect(said).toContain("Le guide n'est pas à côté du programme");
   expect(MAIN_MENU.map((item) => item.title)).toEqual([
@@ -368,7 +449,9 @@ test("the help message for the team contains the check and the log tail, and nev
   expect(text).toContain("étape cles : fait");
   expect(text).not.toContain("cNDOxEMQ7rC2");
   expect(text).not.toContain("ghp_abcdef");
-  expect(t.sys.calls.find((call) => call.argv[0] === "clip")!.options.input).toBe(text);
+  expect(
+    t.sys.calls.find((call) => call.argv[0] === "clip")!.options.input,
+  ).toBe(text);
   expect(t.ui.lines.join("\n")).toContain("ni mot de passe ni clé privée");
 });
 

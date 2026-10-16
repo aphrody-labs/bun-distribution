@@ -181,7 +181,6 @@ export function applyResolvedMediaUrls(
 const isEphemeralSrc = (src: string): boolean =>
   src.startsWith("blob:") || src === UNRESOLVED_MEDIA_SRC;
 
-
 function persistableBoardContent(board: Board): {
   itemOrder: string[];
   items: Record<string, BoardItem>;

@@ -1,12 +1,13 @@
 import type { FrameRate } from "opencut-wasm";
 import type { EditorCore } from "../index";
-import type { TProject, TProjectSettings, TTimelineViewState } from "../../project/types";
+import type {
+  TProject,
+  TProjectSettings,
+  TTimelineViewState,
+} from "../../project/types";
 import type { MediaAsset } from "../../media/types";
 import type { ProjectMeta } from "../../adapters/types";
-import type {
-  ExportOptions,
-  ExportResult,
-} from "../../export";
+import type { ExportOptions, ExportResult } from "../../export";
 import { UpdateProjectSettingsCommand } from "../../commands/project";
 import { getRaisedProjectFpsForImportedMedia } from "../../fps/utils";
 import { rehydrateProjectMedia } from "../../media/rehydrate";
@@ -317,11 +318,7 @@ export class ProjectManager {
     this.exportCancelRequested = true;
   }
 
-  async export({
-    options,
-  }: {
-    options: ExportOptions;
-  }): Promise<ExportResult> {
+  async export({ options }: { options: ExportOptions }): Promise<ExportResult> {
     if (this.exportState.isExporting) {
       return { success: false, error: "Export already in progress" };
     }

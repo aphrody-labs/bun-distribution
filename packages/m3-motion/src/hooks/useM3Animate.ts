@@ -20,7 +20,10 @@ import { useM3ReducedMotion } from "./useM3ReducedMotion";
  * Mirrors the overload set of the underlying motion animate, adding M3 defaults.
  */
 export interface M3AnimateFn {
-  (sequence: AnimationSequence, options?: SequenceOptions): AnimationPlaybackControlsWithThen;
+  (
+    sequence: AnimationSequence,
+    options?: SequenceOptions,
+  ): AnimationPlaybackControlsWithThen;
   (
     value: string | MotionValue<string>,
     keyframes: string | UnresolvedValueKeyframe<string>[],
@@ -54,7 +57,10 @@ export interface M3AnimateFn {
  *
  * SSR-safe: useAnimate creates refs; no DOM access occurs at module or render time.
  */
-export function useM3Animate<T extends Element = HTMLElement>(): [AnimationScope<T>, M3AnimateFn] {
+export function useM3Animate<T extends Element = HTMLElement>(): [
+  AnimationScope<T>,
+  M3AnimateFn,
+] {
   const [scope, animate] = useAnimate<T>();
   const reduced = useM3ReducedMotion();
 
@@ -63,12 +69,22 @@ export function useM3Animate<T extends Element = HTMLElement>(): [AnimationScope
     keyframes?: unknown,
     options?: unknown,
   ) => {
-    const defaults = { ease: m3Easings.emphasized, duration: m3Durations.medium2 };
-    const immediate = reduced ? { type: "tween", duration: 0, delay: 0, repeat: 0 } : {};
-    if (Array.isArray(elementOrSelector) && elementOrSelector.some(Array.isArray)) {
+    const defaults = {
+      ease: m3Easings.emphasized,
+      duration: m3Durations.medium2,
+    };
+    const immediate = reduced
+      ? { type: "tween", duration: 0, delay: 0, repeat: 0 }
+      : {};
+    if (
+      Array.isArray(elementOrSelector) &&
+      elementOrSelector.some(Array.isArray)
+    ) {
       // Sequence overload
       const sequenceOptions =
-        typeof keyframes === "object" && keyframes !== null ? (keyframes as SequenceOptions) : {};
+        typeof keyframes === "object" && keyframes !== null
+          ? (keyframes as SequenceOptions)
+          : {};
       const sequence = reduced
         ? elementOrSelector.map((segment) =>
             Array.isArray(segment)
@@ -78,7 +94,11 @@ export function useM3Animate<T extends Element = HTMLElement>(): [AnimationScope
         : elementOrSelector;
       return (animate as CallableFunction)(sequence, {
         ...sequenceOptions,
-        defaultTransition: { ...defaults, ...sequenceOptions.defaultTransition, ...immediate },
+        defaultTransition: {
+          ...defaults,
+          ...sequenceOptions.defaultTransition,
+          ...immediate,
+        },
       }) as AnimationPlaybackControlsWithThen;
     }
 

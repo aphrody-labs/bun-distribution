@@ -5,7 +5,10 @@ import { chmod, mkdir, rename, rm, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { replicateHome, type ReplicaConfig } from "./agent-home-replica.ts";
-import { readRagStatus, type RagMonitorConfig } from "./agent-home-rag-status.ts";
+import {
+  readRagStatus,
+  type RagMonitorConfig,
+} from "./agent-home-rag-status.ts";
 import {
   reconcileDriveReview,
   verifyReviewedProjection,
@@ -26,7 +29,11 @@ export interface SyncConfig {
   driveReview?: DriveReviewConfig;
   replica?: ReplicaConfig;
   ragMonitor?: RagMonitorConfig;
-  publication: { host: "vps" | "local"; directory: string; receiptName?: string };
+  publication: {
+    host: "vps" | "local";
+    directory: string;
+    receiptName?: string;
+  };
 }
 
 /** Resolve only local paths; remote stores and profile boundaries remain unchanged. */
@@ -45,12 +52,19 @@ export function resolveSyncContext(
   return {
     ...config,
     root,
-    aphrody: config.aphrody.startsWith("~/") ? local(config.aphrody) : config.aphrody,
+    aphrody: config.aphrody.startsWith("~/")
+      ? local(config.aphrody)
+      : config.aphrody,
     yolo: config.yolo.startsWith("~/") ? local(config.yolo) : config.yolo,
     receiptRoot: local(config.receiptRoot),
     drive: { ...config.drive, home: local(config.drive.home) },
     ...(config.retrieval
-      ? { retrieval: { ...config.retrieval, root: local(config.retrieval.root) } }
+      ? {
+          retrieval: {
+            ...config.retrieval,
+            root: local(config.retrieval.root),
+          },
+        }
       : {}),
     ...(config.replica
       ? {
@@ -64,7 +78,12 @@ export function resolveSyncContext(
         }
       : {}),
     ...(config.ragMonitor
-      ? { ragMonitor: { ...config.ragMonitor, reportPath: local(config.ragMonitor.reportPath) } }
+      ? {
+          ragMonitor: {
+            ...config.ragMonitor,
+            reportPath: local(config.ragMonitor.reportPath),
+          },
+        }
       : {}),
   };
 }
@@ -89,7 +108,10 @@ export interface JobState {
   waiting?: JobReceipt;
 }
 export type SyncState = Record<string, JobState>;
-export type Runner = (argv: string[], environment?: Record<string, string>) => Promise<string>;
+export type Runner = (
+  argv: string[],
+  environment?: Record<string, string>,
+) => Promise<string>;
 
 const numeric = [
   "indexed",
@@ -120,10 +142,14 @@ const numeric = [
   "review_blocked",
   "review_applied",
 ];
-export function counters(value: Record<string, unknown>): Record<string, number> {
+export function counters(
+  value: Record<string, unknown>,
+): Record<string, number> {
   return Object.fromEntries(
     numeric.flatMap((key) =>
-      typeof value[key] === "number" && Number.isSafeInteger(value[key]) && Number(value[key]) >= 0
+      typeof value[key] === "number" &&
+      Number.isSafeInteger(value[key]) &&
+      Number(value[key]) >= 0
         ? [[key, value[key]]]
         : [],
     ),
@@ -135,7 +161,8 @@ export function nativeAgentReport(text: string): Record<string, number> {
   const report =
     result.structuredContent ??
     JSON.parse(
-      result.content?.find((item: { type: string }) => item.type === "text")?.text ?? "null",
+      result.content?.find((item: { type: string }) => item.type === "text")
+        ?.text ?? "null",
     );
   if (
     !report ||
@@ -178,11 +205,21 @@ function jobs(config: SyncConfig) {
     ...(config.homes ?? []).map((home) => ({
       name: `home-${home.profile}`,
       interval: home.intervalSeconds,
-      argv: [config.aphrody, "home", "sync", "--profile", home.profile, "--apply"],
+      argv: [
+        config.aphrody,
+        "home",
+        "sync",
+        "--profile",
+        home.profile,
+        "--apply",
+      ],
       parse: (text: string) => {
         const report = JSON.parse(text);
         if (report.integrity !== "ok") throw new Error("Home integrity failed");
-        return counters({ ...report.sessions?.counts, verified: report.backups?.verified });
+        return counters({
+          ...report.sessions?.counts,
+          verified: report.backups?.verified,
+        });
       },
     })),
     ...(config.driveReview
@@ -258,7 +295,11 @@ function jobs(config: SyncConfig) {
       available.findIndex((job) => job.name === "drive-replica"),
       1,
     )[0]!;
-    available.splice(available.findIndex((job) => job.name === "drive-review") + 1, 0, replica);
+    available.splice(
+      available.findIndex((job) => job.name === "drive-review") + 1,
+      0,
+      replica,
+    );
   }
   if (config.jobs === undefined) return available;
   if (
@@ -267,7 +308,9 @@ function jobs(config: SyncConfig) {
     new Set(config.jobs).size !== config.jobs.length ||
     config.jobs.some((name) => !available.some((job) => job.name === name))
   )
-    throw new Error("Selected sync jobs must be unique configured capabilities");
+    throw new Error(
+      "Selected sync jobs must be unique configured capabilities",
+    );
   const wanted = new Set<string>(config.jobs);
   // Keep owner download/review before downstream consumers regardless of selection order.
   return available.filter((job) => wanted.has(job.name));
@@ -285,14 +328,17 @@ export async function syncPass(
     config.jobs === undefined
       ? previous
       : Object.fromEntries(
-          Object.entries(previous).filter(([name]) => selected.some((job) => job.name === name)),
+          Object.entries(previous).filter(([name]) =>
+            selected.some((job) => job.name === name),
+          ),
         ),
   );
   for (const job of selected) {
     if ((state[job.name]?.nextAt ?? 0) > now) continue;
     const old = state[job.name];
     const guarded =
-      config.driveReview && (job.name === "drive-replica" || job.name === "drive-retrieval");
+      config.driveReview &&
+      (job.name === "drive-replica" || job.name === "drive-retrieval");
     const review = state["drive-review"];
     if (
       guarded &&
@@ -308,7 +354,9 @@ export async function syncPass(
         waiting: {
           observedAt: new Date(now).toISOString(),
           report: {
-            [review?.lastSuccess?.report.review_blocked ? "review_blocked" : "review_pending"]: 1,
+            [review?.lastSuccess?.report.review_blocked
+              ? "review_blocked"
+              : "review_pending"]: 1,
           },
         },
       };
@@ -321,7 +369,12 @@ export async function syncPass(
       const report =
         "perform" in job && job.perform
           ? counters(await job.perform(run))
-          : job.parse(await run(job.argv, "environment" in job ? job.environment : undefined));
+          : job.parse(
+              await run(
+                job.argv,
+                "environment" in job ? job.environment : undefined,
+              ),
+            );
       state[job.name] = {
         ok: true,
         failures: 0,
@@ -335,7 +388,8 @@ export async function syncPass(
         waiting: undefined,
         ok: false,
         failures,
-        nextAt: now + Math.min(3600, 60 * 2 ** Math.min(failures - 1, 6)) * 1000,
+        nextAt:
+          now + Math.min(3600, 60 * 2 ** Math.min(failures - 1, 6)) * 1000,
       };
     }
     await persist(state);
@@ -344,7 +398,9 @@ export async function syncPass(
 }
 /** A job parked on a human review is waiting, not failed: only real failures make the timer fail. */
 export function hasFailedJob(state: SyncState) {
-  return Object.values(state).some((job) => !job.ok && job.waiting === undefined);
+  return Object.values(state).some(
+    (job) => !job.ok && job.waiting === undefined,
+  );
 }
 async function save(path: string, value: unknown) {
   await mkdir(dirname(path), { recursive: true, mode: 0o700 });
@@ -383,7 +439,11 @@ function validatePublication(config: SyncConfig) {
   )
     throw new Error("Invalid sync publication destination or receipt basename");
 }
-export async function publishSyncReceipts(config: SyncConfig, state: SyncState, run: Runner) {
+export async function publishSyncReceipts(
+  config: SyncConfig,
+  state: SyncState,
+  run: Runner,
+) {
   validatePublication(config);
   // Only counters travel; raw provider output and authentication remain in protected stores.
   const publicState: Record<string, JobState> = Object.fromEntries(
@@ -405,20 +465,37 @@ export async function publishSyncReceipts(config: SyncConfig, state: SyncState, 
         {
           ok: value.ok === true,
           failures:
-            Number.isSafeInteger(value.failures) && value.failures >= 0 ? value.failures : 0,
-          nextAt: Number.isSafeInteger(value.nextAt) && value.nextAt >= 0 ? value.nextAt : 0,
+            Number.isSafeInteger(value.failures) && value.failures >= 0
+              ? value.failures
+              : 0,
+          nextAt:
+            Number.isSafeInteger(value.nextAt) && value.nextAt >= 0
+              ? value.nextAt
+              : 0,
           ...Object.fromEntries(
             ["lastSuccess", "waiting"].flatMap((key) => {
               const receipt = value[key as "lastSuccess" | "waiting"];
-              return receipt && /^\d{4}-\d{2}-\d{2}T[0-9:.]+Z$/.test(receipt.observedAt)
-                ? [[key, { observedAt: receipt.observedAt, report: counters(receipt.report) }]]
+              return receipt &&
+                /^\d{4}-\d{2}-\d{2}T[0-9:.]+Z$/.test(receipt.observedAt)
+                ? [
+                    [
+                      key,
+                      {
+                        observedAt: receipt.observedAt,
+                        report: counters(receipt.report),
+                      },
+                    ],
+                  ]
                 : [];
             }),
           ),
         },
       ]),
   );
-  const automation = { observedAt: new Date().toISOString(), jobs: publicState };
+  const automation = {
+    observedAt: new Date().toISOString(),
+    jobs: publicState,
+  };
   const reports: Record<string, unknown> = {
     [config.publication.receiptName ?? "automation-sync.json"]: automation,
   };
@@ -492,7 +569,9 @@ if (import.meta.main) {
     process.exit(0);
   }
   if (process.argv.includes("daemon"))
-    throw new Error("Use the declared aphrody-agent-sync.timer for periodic synchronization");
+    throw new Error(
+      "Use the declared aphrody-agent-sync.timer for periodic synchronization",
+    );
   const at = process.argv.indexOf("--config");
   const config = resolveSyncContext(
     (await Bun.file(
@@ -501,7 +580,9 @@ if (import.meta.main) {
   );
   if (
     config.version !== 1 ||
-    (config.homes ?? []).some((home) => !["dbfr", "aphrody"].includes(home.profile))
+    (config.homes ?? []).some(
+      (home) => !["dbfr", "aphrody"].includes(home.profile),
+    )
   )
     throw new Error("Invalid sync scope");
   validatePublication(config);
@@ -510,7 +591,10 @@ if (import.meta.main) {
     console.log(
       JSON.stringify({
         planned: true,
-        jobs: selected.map((job) => ({ name: job.name, intervalSeconds: job.interval })),
+        jobs: selected.map((job) => ({
+          name: job.name,
+          intervalSeconds: job.interval,
+        })),
       }),
     );
     process.exit(0);
@@ -524,7 +608,9 @@ if (import.meta.main) {
       ? ((await Bun.file(path).json()) as SyncState)
       : {};
     const run = runner(config);
-    const state = await syncPass(config, previous, run, Date.now(), (next) => save(path, next));
+    const state = await syncPass(config, previous, run, Date.now(), (next) =>
+      save(path, next),
+    );
     let published = false;
     try {
       await publishSyncReceipts(config, state, run);
@@ -543,7 +629,11 @@ if (import.meta.main) {
         jobs: Object.fromEntries(
           Object.entries(state).map(([name, value]) => [
             name,
-            { ok: value.ok, failures: value.failures, observedAt: value.lastSuccess?.observedAt },
+            {
+              ok: value.ok,
+              failures: value.failures,
+              observedAt: value.lastSuccess?.observedAt,
+            },
           ]),
         ),
       }),

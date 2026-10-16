@@ -17,7 +17,7 @@
 # socket (PipeWire's pulse server on modern desktops), so no extra module is needed.
 id: ai.storyteller.soundcraft
 runtime: org.freedesktop.Platform
-runtime-version: '25.08'
+runtime-version: "25.08"
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.rust-stable
@@ -54,7 +54,7 @@ finish-args:
 add-extensions:
   org.freedesktop.LinuxAudio.Plugins:
     directory: extensions/Plugins
-    version: '25.08'
+    version: "25.08"
     add-ld-path: lib
     merge-dirs: vst3;clap
     subdirectories: true
@@ -67,7 +67,7 @@ modules:
     build-options:
       env:
         CARGO_HOME: /run/build/soundcraft/cargo
-        CARGO_NET_OFFLINE: 'true'
+        CARGO_NET_OFFLINE: "true"
     build-commands:
       - cargo --offline build --release --locked -p soundcraft -p soundcraft-cli
       - install -Dm755 target/release/soundcraft /app/bin/soundcraft

@@ -28,11 +28,23 @@ export function computeRippleAdjustments({
   beforeTracks: SceneTracks;
   afterTracks: SceneTracks;
 }): RippleAdjustment[] {
-  const beforeTrackList = [...beforeTracks.overlay, beforeTracks.main, ...beforeTracks.audio];
-  const afterTrackList = [...afterTracks.overlay, afterTracks.main, ...afterTracks.audio];
-  const afterTracksById = new Map(afterTrackList.map((track) => [track.id, track]));
+  const beforeTrackList = [
+    ...beforeTracks.overlay,
+    beforeTracks.main,
+    ...beforeTracks.audio,
+  ];
+  const afterTrackList = [
+    ...afterTracks.overlay,
+    afterTracks.main,
+    ...afterTracks.audio,
+  ];
+  const afterTracksById = new Map(
+    afterTrackList.map((track) => [track.id, track]),
+  );
   const allAfterElementIds = new Set(
-    afterTrackList.flatMap((track) => track.elements.map((element) => element.id)),
+    afterTrackList.flatMap((track) =>
+      track.elements.map((element) => element.id),
+    ),
   );
 
   return beforeTrackList.flatMap((beforeTrack): RippleAdjustment[] =>
@@ -189,7 +201,11 @@ function subtractIntervalSets({
   );
 }
 
-function normalizeIntervals({ intervals }: { intervals: Interval[] }): Interval[] {
+function normalizeIntervals({
+  intervals,
+}: {
+  intervals: Interval[];
+}): Interval[] {
   const validIntervals: Interval[] = [];
   for (const interval of intervals) {
     pushInterval({
@@ -200,7 +216,8 @@ function normalizeIntervals({ intervals }: { intervals: Interval[] }): Interval[
   }
 
   const sortedIntervals = validIntervals.sort(
-    (leftInterval, rightInterval) => leftInterval.startTime - rightInterval.startTime,
+    (leftInterval, rightInterval) =>
+      leftInterval.startTime - rightInterval.startTime,
   );
 
   if (sortedIntervals.length === 0) {
@@ -211,7 +228,10 @@ function normalizeIntervals({ intervals }: { intervals: Interval[] }): Interval[
   for (const interval of sortedIntervals.slice(1)) {
     const previousInterval = mergedIntervals[mergedIntervals.length - 1];
     if (interval.startTime <= previousInterval.endTime) {
-      previousInterval.endTime = Math.max(previousInterval.endTime, interval.endTime);
+      previousInterval.endTime = Math.max(
+        previousInterval.endTime,
+        interval.endTime,
+      );
       continue;
     }
 

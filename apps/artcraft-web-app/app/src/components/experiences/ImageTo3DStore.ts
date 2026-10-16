@@ -31,4 +31,3 @@ export const useImageTo3DStore = create<ImageTo3DState>((set) => ({
     })),
   reset: () => set({ results: [] }),
 }));
-

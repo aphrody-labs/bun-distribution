@@ -28,7 +28,10 @@ describe("statistics", () => {
 
 const measured = (values: Record<string, number>): Record<string, Metric> =>
   Object.fromEntries(
-    Object.entries(values).map(([k, value]) => [k, { value, unit: "ms" } satisfies Metric]),
+    Object.entries(values).map(([k, value]) => [
+      k,
+      { value, unit: "ms" } satisfies Metric,
+    ]),
   );
 
 describe("budget", () => {
@@ -45,7 +48,11 @@ describe("budget", () => {
   test("a metric within tolerance passes, beyond it fails", () => {
     const rows = compareBudget(
       budget,
-      measured({ "yolo.version": 11, "compile.server_tuned.size": 1101, "mcp.cold": 40 }),
+      measured({
+        "yolo.version": 11,
+        "compile.server_tuned.size": 1101,
+        "mcp.cold": 40,
+      }),
     );
     expect(rows.map((r) => [r.key, r.ok])).toEqual([
       ["yolo.version", true],
@@ -64,7 +71,11 @@ describe("budget", () => {
     expect(
       compareBudget(
         budget,
-        measured({ "yolo.version": 12, "compile.server_tuned.size": 1000, "mcp.cold": 50 }),
+        measured({
+          "yolo.version": 12,
+          "compile.server_tuned.size": 1000,
+          "mcp.cold": 50,
+        }),
         0.25,
       ).every((r) => r.ok),
     ).toBe(true);

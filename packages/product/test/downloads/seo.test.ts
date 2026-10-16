@@ -48,10 +48,18 @@ test("real handler corrects HTML even with stale compressed assets and keeps HEA
       join(root, "docs", "streams.html"),
       "<html><head><title>Streams</title></head><body><article><p>Read stream values.</p></article></body></html>",
     );
-    writeFileSync(join(root, "docs", "streams.html.gz"), "stale compressed payload");
-    const handler = createHandler(root, { root, hosts: new Set(["aphrody.test"]) });
+    writeFileSync(
+      join(root, "docs", "streams.html.gz"),
+      "stale compressed payload",
+    );
+    const handler = createHandler(root, {
+      root,
+      hosts: new Set(["aphrody.test"]),
+    });
     const response = await handler(
-      new Request("https://aphrody.test/docs/streams", { headers: { "accept-encoding": "gzip" } }),
+      new Request("https://aphrody.test/docs/streams", {
+        headers: { "accept-encoding": "gzip" },
+      }),
     );
     expect(response.headers.get("content-encoding")).toBeNull();
     expect(await response.text()).toContain('content="Read stream values."');

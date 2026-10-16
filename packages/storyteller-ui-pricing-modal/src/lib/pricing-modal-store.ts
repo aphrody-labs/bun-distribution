@@ -28,12 +28,14 @@ export const usePricingModalStore = create<PricingModalState>((set) => ({
   },
   title: undefined,
   subtitle: undefined,
-  openModal: (options) => set({ 
-    isOpen: true, 
-    title: options?.title, 
-    subtitle: options?.subtitle 
-  }),
-  closeModal: () => set({ isOpen: false, title: undefined, subtitle: undefined }),
+  openModal: (options) =>
+    set({
+      isOpen: true,
+      title: options?.title,
+      subtitle: options?.subtitle,
+    }),
+  closeModal: () =>
+    set({ isOpen: false, title: undefined, subtitle: undefined }),
   toggleModal: () => set((state) => ({ isOpen: !state.isOpen })),
   setSubscription: (subscription) =>
     set((state) => ({

@@ -3,9 +3,22 @@ import { readFile } from "node:fs/promises";
 import { type OptionSpec, parse, UsageError } from "../../shared/args.ts";
 import { runBot } from "./challonge/bot.ts";
 import { commandDefinitions } from "./challonge/bot-commands.ts";
-import { ChallongeClient, ChallongeError, type PlanEntry } from "./challonge/client.ts";
-import { authOf, type ChallongeConfig, loadConfig } from "./challonge/config.ts";
-import { assertWebhookUrl, DiscordError, DiscordRest, redactWebhook } from "./challonge/discord.ts";
+import {
+  ChallongeClient,
+  ChallongeError,
+  type PlanEntry,
+} from "./challonge/client.ts";
+import {
+  authOf,
+  type ChallongeConfig,
+  loadConfig,
+} from "./challonge/config.ts";
+import {
+  assertWebhookUrl,
+  DiscordError,
+  DiscordRest,
+  redactWebhook,
+} from "./challonge/discord.ts";
 import { redact } from "./challonge/http.ts";
 import { defaultIo, type Io } from "./challonge/io.ts";
 import {
@@ -147,7 +160,11 @@ async function prepare<S extends OptionSpec>(
   argv: string[],
   spec: S,
   options: { tournament: boolean },
-): Promise<{ run?: Run; values: ReturnType<typeof parse<S>>["values"]; positionals: string[] }> {
+): Promise<{
+  run?: Run;
+  values: ReturnType<typeof parse<S>>["values"];
+  positionals: string[];
+}> {
   const { values, positionals } = parse(argv, spec);
   const common = values as {
     help?: boolean;
@@ -165,7 +182,8 @@ async function prepare<S extends OptionSpec>(
   let tournamentId = "";
   let community = common.community ?? config.communityId;
   if (options.tournament) {
-    if (common.tournament) tournamentId = tournamentFromInput(common.tournament);
+    if (common.tournament)
+      tournamentId = tournamentFromInput(common.tournament);
     else {
       const last = (await store.read()).lastTournament;
       if (last) {
@@ -196,7 +214,17 @@ async function prepare<S extends OptionSpec>(
   return {
     values,
     positionals,
-    run: { io, config, store, client, dryRun, json: !!common.json, community, tournamentId, plan },
+    run: {
+      io,
+      config,
+      store,
+      client,
+      dryRun,
+      json: !!common.json,
+      community,
+      tournamentId,
+      plan,
+    },
   };
 }
 
@@ -208,7 +236,8 @@ function printPlan(run: Run): void {
   for (const entry of run.plan) {
     run.io.out(`  ${entry.method} ${entry.url}`);
     if (entry.body !== undefined) {
-      for (const line of JSON.stringify(entry.body, null, 2).split("\n")) run.io.out(`    ${line}`);
+      for (const line of JSON.stringify(entry.body, null, 2).split("\n"))
+        run.io.out(`    ${line}`);
     }
   }
 }
@@ -220,7 +249,8 @@ function summary(run: Run): string {
 function num(value: string | undefined, flag: string): number | undefined {
   if (value === undefined) return undefined;
   const n = Number(value);
-  if (!Number.isInteger(n)) throw new UsageError(`${flag} attend un entier (reçu « ${value} »).`);
+  if (!Number.isInteger(n))
+    throw new UsageError(`${flag} attend un entier (reçu « ${value} »).`);
   return n;
 }
 
@@ -256,13 +286,17 @@ async function seedEntries(
 ): Promise<SeedEntry[]> {
   if (values.shuffle && values["seed-by"])
     throw new UsageError("--shuffle et --seed-by s'excluent mutuellement.");
-  let names = values.participants ? await readParticipants(values.participants) : [];
+  let names = values.participants
+    ? await readParticipants(values.participants)
+    : [];
   if (values["seed-by"]) {
     let text: string;
     try {
       text = await readFile(values["seed-by"], "utf8");
     } catch (error) {
-      throw new UsageError(`Impossible de lire le fichier --seed-by : ${(error as Error).message}`);
+      throw new UsageError(
+        `Impossible de lire le fichier --seed-by : ${(error as Error).message}`,
+      );
     }
     const ranking = readSeedFile(text);
     if (!names.length) names = ranking;
@@ -273,7 +307,9 @@ async function seedEntries(
       );
     return entries;
   }
-  return values.shuffle ? shuffleSeeds(names, io.random) : names.map((name) => ({ name }));
+  return values.shuffle
+    ? shuffleSeeds(names, io.random)
+    : names.map((name) => ({ name }));
 }
 
 async function announce(
@@ -303,10 +339,15 @@ async function announce(
   };
   if (run.dryRun) {
     run.io.out(`  POST ${redactWebhook(assertWebhookUrl(webhook))}`);
-    for (const line of JSON.stringify(message, null, 2).split("\n")) run.io.out(`    ${line}`);
+    for (const line of JSON.stringify(message, null, 2).split("\n"))
+      run.io.out(`    ${line}`);
     return;
   }
-  const rest = new DiscordRest({ fetch: run.io.fetch, sleep: run.io.sleep, random: run.io.random });
+  const rest = new DiscordRest({
+    fetch: run.io.fetch,
+    sleep: run.io.sleep,
+    random: run.io.random,
+  });
   try {
     await rest.executeWebhook(webhook, message);
     run.io.out("Annonce Discord envoyée.");
@@ -319,7 +360,9 @@ async function announce(
 }
 
 async function create(io: Io, argv: string[]): Promise<number> {
-  const { run, values } = await prepare(io, argv, CREATE_SPEC, { tournament: false });
+  const { run, values } = await prepare(io, argv, CREATE_SPEC, {
+    tournament: false,
+  });
   if (!run) return help(io, "create");
   if (!values.name) throw new UsageError("Option --name obligatoire.");
   const type = normalizeType(values.type ?? "single_elimination");
@@ -328,7 +371,11 @@ async function create(io: Io, argv: string[]): Promise<number> {
   const webhook = values.announce ?? run.config.announceWebhook;
   if (webhook) assertWebhookUrl(webhook);
   const grandFinals = values["grand-finals"];
-  if (grandFinals !== undefined && grandFinals !== "skip" && grandFinals !== "single") {
+  if (
+    grandFinals !== undefined &&
+    grandFinals !== "skip" &&
+    grandFinals !== "single"
+  ) {
     throw new UsageError("--grand-finals attend « skip » ou « single ».");
   }
   const result = await createTournamentFlow(
@@ -347,7 +394,11 @@ async function create(io: Io, argv: string[]): Promise<number> {
       swissRounds: num(values["swiss-rounds"], "--swiss-rounds"),
       thirdPlace: values["third-place"],
       grandFinals:
-        grandFinals === undefined ? undefined : grandFinals === "skip" ? "skip" : "single match",
+        grandFinals === undefined
+          ? undefined
+          : grandFinals === "skip"
+            ? "skip"
+            : "single match",
       groupStage: values["group-stage"]
         ? {
             size: num(values["group-size"], "--group-size"),
@@ -383,7 +434,9 @@ async function create(io: Io, argv: string[]): Promise<number> {
       ),
     );
   } else {
-    run.io.out(`Tournoi créé : ${result.tournament.name ?? values.name} (${TYPE_LABEL[type]})`);
+    run.io.out(
+      `Tournoi créé : ${result.tournament.name ?? values.name} (${TYPE_LABEL[type]})`,
+    );
     run.io.out(`  id           : ${result.tournament.id}`);
     run.io.out(`  état         : ${result.state ?? "inconnu"}`);
     run.io.out(`  bracket      : ${result.tournament.bracketUrl}`);
@@ -408,21 +461,33 @@ async function add(io: Io, argv: string[]): Promise<number> {
   if (!run) return help(io, "add");
   const source = values.participants ?? positionals.join(",");
   if (!source)
-    throw new UsageError('Indiquez des noms (add Alice Bob) ou --participants <fichier|"a,b,c">.');
+    throw new UsageError(
+      'Indiquez des noms (add Alice Bob) ou --participants <fichier|"a,b,c">.',
+    );
   const names = await readParticipants(source);
   await addParticipants(
     run.client,
     run.tournamentId,
     names.map((name) => ({ name })),
   );
-  return finish(run, `${names.length} participant(s) ajouté(s) au tournoi ${run.tournamentId}.`);
+  return finish(
+    run,
+    `${names.length} participant(s) ajouté(s) au tournoi ${run.tournamentId}.`,
+  );
 }
 
-async function stateCommand(io: Io, argv: string[], name: "start" | "finalize"): Promise<number> {
+async function stateCommand(
+  io: Io,
+  argv: string[],
+  name: "start" | "finalize",
+): Promise<number> {
   const { run, values } = await prepare(
     io,
     argv,
-    withCommon({ shuffle: { type: "boolean" }, "group-stage": { type: "boolean" } }),
+    withCommon({
+      shuffle: { type: "boolean" },
+      "group-stage": { type: "boolean" },
+    }),
     { tournament: true },
   );
   if (!run) return help(io, name);
@@ -442,13 +507,21 @@ async function randomize(io: Io, argv: string[]): Promise<number> {
   const { run } = await prepare(io, argv, withCommon({}), { tournament: true });
   if (!run) return help(io, "randomize");
   await run.client.randomizeParticipants(run.tournamentId);
-  return finish(run, `Têtes de série tirées au sort pour le tournoi ${run.tournamentId}.`);
+  return finish(
+    run,
+    `Têtes de série tirées au sort pour le tournoi ${run.tournamentId}.`,
+  );
 }
 
 async function checkin(io: Io, argv: string[]): Promise<number> {
-  const { run, values } = await prepare(io, argv, withCommon({ abort: { type: "boolean" } }), {
-    tournament: true,
-  });
+  const { run, values } = await prepare(
+    io,
+    argv,
+    withCommon({ abort: { type: "boolean" } }),
+    {
+      tournament: true,
+    },
+  );
   if (!run) return help(io, "checkin");
   const target = values.abort ? "abort_checkin" : "process_checkin";
   await run.client.changeState(run.tournamentId, target);
@@ -521,9 +594,14 @@ async function report(io: Io, argv: string[]): Promise<number> {
 }
 
 async function matches(io: Io, argv: string[]): Promise<number> {
-  const { run, values } = await prepare(io, argv, withCommon({ state: { type: "string" } }), {
-    tournament: true,
-  });
+  const { run, values } = await prepare(
+    io,
+    argv,
+    withCommon({ state: { type: "string" } }),
+    {
+      tournament: true,
+    },
+  );
   if (!run) return help(io, "matches");
   const state = values.state;
   if (state !== undefined && !["open", "pending", "complete"].includes(state))
@@ -532,9 +610,13 @@ async function matches(io: Io, argv: string[]): Promise<number> {
     run.tournamentId,
     state as "open" | "pending" | "complete" | undefined,
   );
-  const participants = run.dryRun ? [] : await run.client.listParticipants(run.tournamentId);
+  const participants = run.dryRun
+    ? []
+    : await run.client.listParticipants(run.tournamentId);
   if (run.dryRun) return finish(run, "");
-  const names = new Map(participants.map((p) => [String(p.id), p.attributes.name ?? String(p.id)]));
+  const names = new Map(
+    participants.map((p) => [String(p.id), p.attributes.name ?? String(p.id)]),
+  );
   const rows = found.map((m) => {
     const { player1, player2 } = matchPlayers(m);
     return {
@@ -564,11 +646,18 @@ async function list(io: Io, argv: string[]): Promise<number> {
   const { run, values } = await prepare(
     io,
     argv,
-    withCommon({ state: { type: "string" }, type: { type: "string" }, page: { type: "string" } }),
+    withCommon({
+      state: { type: "string" },
+      type: { type: "string" },
+      page: { type: "string" },
+    }),
     { tournament: false },
   );
   if (!run) return help(io, "list");
-  if (values.state !== undefined && !["pending", "in_progress", "ended"].includes(values.state)) {
+  if (
+    values.state !== undefined &&
+    !["pending", "in_progress", "ended"].includes(values.state)
+  ) {
     throw new UsageError("--state attend pending, in_progress ou ended.");
   }
   const type = values.type ? normalizeType(values.type) : undefined;
@@ -653,9 +742,13 @@ async function bot(io: Io, argv: string[]): Promise<number> {
     process.once("SIGTERM", stop);
   }
   try {
-    return await runBot({ ...io, signal: io.signal ?? controller.signal }, config, {
-      register: !values["no-register"],
-    });
+    return await runBot(
+      { ...io, signal: io.signal ?? controller.signal },
+      config,
+      {
+        register: !values["no-register"],
+      },
+    );
   } finally {
     if (real) {
       process.off("SIGINT", stop);
@@ -671,9 +764,13 @@ function help(io: Io, topic?: string): number {
   return 0;
 }
 
-export async function runChallonge(argv: string[], io: Io = defaultIo()): Promise<number> {
+export async function runChallonge(
+  argv: string[],
+  io: Io = defaultIo(),
+): Promise<number> {
   const [sub, ...rest] = argv;
-  if (!sub || sub === "--help" || sub === "-h" || sub === "help") return help(io);
+  if (!sub || sub === "--help" || sub === "-h" || sub === "help")
+    return help(io);
   try {
     switch (sub) {
       case "create":

@@ -10,13 +10,7 @@ const SITEMAP_NS = "http://www.sitemaps.org/schemas/sitemap/0.9";
 export const M3_SITEMAP_MAX_URLS = 50_000;
 
 export type M3ChangeFrequency =
-  | "always"
-  | "hourly"
-  | "daily"
-  | "weekly"
-  | "monthly"
-  | "yearly"
-  | "never";
+  "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
 
 export interface M3Route {
   /** Path (`/docs`), or an absolute URL on the same origin. */
@@ -42,7 +36,9 @@ function parseOrigin(origin: string): URL {
   try {
     url = new URL(origin);
   } catch {
-    throw new TypeError(`origin ${JSON.stringify(origin)} is not an absolute URL`);
+    throw new TypeError(
+      `origin ${JSON.stringify(origin)} is not an absolute URL`,
+    );
   }
   if (url.protocol !== "http:" && url.protocol !== "https:")
     throw new TypeError(`origin ${origin} must be http or https`);
@@ -60,17 +56,21 @@ export function m3AbsoluteUrl(path: string, origin: string): string {
 }
 
 function singleLine(value: string, what: string): string {
-  if (/[\r\n]/.test(value)) throw new TypeError(`${what} must not contain a line break`);
+  if (/[\r\n]/.test(value))
+    throw new TypeError(`${what} must not contain a line break`);
   return value.trim();
 }
 
 function lastmodValue(value: string | Date): string {
   if (value instanceof Date) {
-    if (Number.isNaN(value.getTime())) throw new RangeError("lastmod is an invalid Date");
+    if (Number.isNaN(value.getTime()))
+      throw new RangeError("lastmod is an invalid Date");
     return value.toISOString();
   }
   if (!/^\d{4}-\d{2}-\d{2}(T[\d:.]+(Z|[+-]\d{2}:\d{2}))?$/.test(value))
-    throw new RangeError(`lastmod ${JSON.stringify(value)} is not a W3C datetime`);
+    throw new RangeError(
+      `lastmod ${JSON.stringify(value)} is not a W3C datetime`,
+    );
   return value;
 }
 
@@ -78,7 +78,10 @@ function lastmodValue(value: string | Date): string {
  * A Sitemaps 0.9 document. Routes are resolved against `origin`, de-duplicated by absolute URL
  * (the last definition wins) and sorted by URL so the output is stable whatever the input order.
  */
-export function m3SitemapXml(routes: readonly (string | M3Route)[], origin: string): string {
+export function m3SitemapXml(
+  routes: readonly (string | M3Route)[],
+  origin: string,
+): string {
   const entries = new Map<string, M3Route>();
   for (const route of routes) {
     const item = typeof route === "string" ? { path: route } : route;
@@ -129,12 +132,17 @@ export function m3RobotsTxt(options: M3RobotsOptions): string {
   const rules = options.rules ?? [{ userAgent: "*", allow: ["/"] }];
   const groups = rules.map((rule) => {
     const agents = (
-      typeof rule.userAgent === "string" ? [rule.userAgent] : [...rule.userAgent]
+      typeof rule.userAgent === "string"
+        ? [rule.userAgent]
+        : [...rule.userAgent]
     ).map((agent) => singleLine(agent, "user agent"));
     if (agents.length === 0 || agents.some((agent) => agent === ""))
-      throw new TypeError("a robots.txt group needs at least one non-empty user agent");
+      throw new TypeError(
+        "a robots.txt group needs at least one non-empty user agent",
+      );
     const lines = agents.map((agent) => `User-agent: ${agent}`);
-    for (const path of rule.allow ?? []) lines.push(`Allow: ${singleLine(path, "Allow path")}`);
+    for (const path of rule.allow ?? [])
+      lines.push(`Allow: ${singleLine(path, "Allow path")}`);
     for (const path of rule.disallow ?? [])
       lines.push(`Disallow: ${singleLine(path, "Disallow path")}`);
     if (rule.crawlDelay !== undefined) {
@@ -192,9 +200,12 @@ export function m3LlmsTxt(options: M3LlmsOptions): string {
         .join("\n"),
     );
   const details =
-    typeof options.details === "string" ? [options.details] : [...(options.details ?? [])];
+    typeof options.details === "string"
+      ? [options.details]
+      : [...(options.details ?? [])];
   for (const paragraph of details) {
-    if (/^\s*#/m.test(paragraph)) throw new TypeError("llms.txt details must not contain headings");
+    if (/^\s*#/m.test(paragraph))
+      throw new TypeError("llms.txt details must not contain headings");
     blocks.push(paragraph.trim());
   }
   const sections = options.sections ?? [];
@@ -210,7 +221,9 @@ export function m3LlmsTxt(options: M3LlmsOptions): string {
   ];
   const optional = ordered.filter((section) => section.optional);
   for (const section of ordered.filter((s) => !s.optional))
-    blocks.push(`## ${markdownText(section.title)}\n\n${section.links.map(link).join("\n")}`);
+    blocks.push(
+      `## ${markdownText(section.title)}\n\n${section.links.map(link).join("\n")}`,
+    );
   if (optional.length > 0)
     blocks.push(
       `## Optional\n\n${optional
@@ -227,7 +240,8 @@ export function m3LlmsTxt(options: M3LlmsOptions): string {
  */
 export function m3JsonLd(data: unknown): string {
   const json = JSON.stringify(data);
-  if (json === undefined) throw new TypeError("m3JsonLd: value is not serializable");
+  if (json === undefined)
+    throw new TypeError("m3JsonLd: value is not serializable");
   return json
     .replace(/</g, "\\u003c")
     .replace(/>/g, "\\u003e")

@@ -55,7 +55,8 @@ const run = (id, files) =>
       (kind, json) => kind !== "file" && resolve({ kind, json }),
     ),
   );
-const sent = (w) => w.posted.filter((m) => m.type === "file").map((m) => m.bytes[0]);
+const sent = (w) =>
+  w.posted.filter((m) => m.type === "file").map((m) => m.bytes[0]);
 
 // #218: equal-length replacement.
 const red = new Uint8Array(512).fill(1);
@@ -81,7 +82,10 @@ assert.equal(host.workerStats().running, 0);
 
 // #216, worker side: a rejected start is re-raised where the page's `onerror` sees it.
 const dir = mkdtempSync(join(tmpdir(), "ec-worker-"));
-await Bun.write(join(dir, "worker.js"), Bun.file(join(here, "../web/worker.js")));
+await Bun.write(
+  join(dir, "worker.js"),
+  Bun.file(join(here, "../web/worker.js")),
+);
 await Bun.write(
   join(dir, "effectcraft_web.js"),
   `export default async function init() {}
@@ -106,8 +110,15 @@ await tick();
 // (So a failed assertion below fails the run.)
 process.removeAllListeners("unhandledRejection");
 process.removeAllListeners("uncaughtException");
-assert.deepEqual(unhandled, [], "the failed start is handled, not left as an unhandled rejection");
+assert.deepEqual(
+  unhandled,
+  [],
+  "the failed start is handled, not left as an unhandled rejection",
+);
 assert.equal(err.message, "no device");
-assert.ok(!posted.some((m) => m.type === "ready"), "no ready after a failed start");
+assert.ok(
+  !posted.some((m) => m.type === "ready"),
+  "no ready after a failed start",
+);
 
 console.log("workers: ok");

@@ -55,12 +55,19 @@ describe("production progress accessibility", () => {
       [NaN, 0],
       [Infinity, 0],
     ]) {
-      flushSync(() => root!.render(<CircularProgress radius={20} progress={value!} />));
-      expect(host.querySelector('[role="progressbar"]')!.getAttribute("aria-valuenow")).toBe(
-        String(expected),
+      flushSync(() =>
+        root!.render(<CircularProgress radius={20} progress={value!} />),
       );
       expect(
-        Number(host.querySelector<SVGCircleElement>(".progress-stroke")!.style.strokeDashoffset),
+        host
+          .querySelector('[role="progressbar"]')!
+          .getAttribute("aria-valuenow"),
+      ).toBe(String(expected));
+      expect(
+        Number(
+          host.querySelector<SVGCircleElement>(".progress-stroke")!.style
+            .strokeDashoffset,
+        ),
       ).toBeCloseTo(((100 - expected!) / 100) * 40 * Math.PI, 5);
     }
   });

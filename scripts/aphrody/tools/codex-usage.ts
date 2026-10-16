@@ -6,11 +6,22 @@ type CommandResult = { command: string; code: number; output: string };
 const args = Bun.argv.slice(2);
 const jsonOnly = args.includes("--json");
 const repo = process.cwd();
-const creditsArgument = args.find((arg) => arg.startsWith("--credits="))?.split("=", 2)[1];
-const resetArgument = args.find((arg) => arg.startsWith("--reset-in="))?.split("=", 2)[1];
+const creditsArgument = args
+  .find((arg) => arg.startsWith("--credits="))
+  ?.split("=", 2)[1];
+const resetArgument = args
+  .find((arg) => arg.startsWith("--reset-in="))
+  ?.split("=", 2)[1];
 
-async function run(command: string, commandArgs: string[]): Promise<CommandResult> {
-  const proc = Bun.spawn([command, ...commandArgs], { cwd: repo, stdout: "pipe", stderr: "pipe" });
+async function run(
+  command: string,
+  commandArgs: string[],
+): Promise<CommandResult> {
+  const proc = Bun.spawn([command, ...commandArgs], {
+    cwd: repo,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
@@ -27,13 +38,16 @@ function numberAfter(text: string, patterns: RegExp[]): number | undefined {
   for (const pattern of patterns) {
     const match = text.match(pattern);
     const value = match?.[1];
-    if (value !== undefined) return Number(value.replace(/\s/g, "").replace(",", "."));
+    if (value !== undefined)
+      return Number(value.replace(/\s/g, "").replace(",", "."));
   }
 }
 
 function duration(text: string): string | undefined {
   return text
-    .match(/(?:reset(?:ting|s| in)?|réinitialisation[^\n]*?dans)\s*:?\s*([^\n]+)/i)?.[1]
+    .match(
+      /(?:reset(?:ting|s| in)?|réinitialisation[^\n]*?dans)\s*:?\s*([^\n]+)/i,
+    )?.[1]
     ?.trim();
 }
 
@@ -42,7 +56,10 @@ function resetHours(text: string | undefined): number | undefined {
   const days = text.match(/(\d+(?:[.,]\d+)?)\s*(?:j|d|days?)/i)?.[1];
   const hours = text.match(/(\d+(?:[.,]\d+)?)\s*(?:h|hours?)/i)?.[1];
   if (!days && !hours) return;
-  return Number(days?.replace(",", ".") ?? 0) * 24 + Number(hours?.replace(",", ".") ?? 0);
+  return (
+    Number(days?.replace(",", ".") ?? 0) * 24 +
+    Number(hours?.replace(",", ".") ?? 0)
+  );
 }
 
 const [status, usage, credits, graph] = await Promise.all([
@@ -82,8 +99,14 @@ const report = {
   credits: { remaining: creditBalance },
   graph: {
     command: graph.command,
-    nodes: graphNodes === undefined ? undefined : Number(graphNodes.replace(/[\s.,]/g, "")),
-    edges: graphEdges === undefined ? undefined : Number(graphEdges.replace(/[\s.,]/g, "")),
+    nodes:
+      graphNodes === undefined
+        ? undefined
+        : Number(graphNodes.replace(/[\s.,]/g, "")),
+    edges:
+      graphEdges === undefined
+        ? undefined
+        : Number(graphEdges.replace(/[\s.,]/g, "")),
     exitCode: graph.code,
   },
   commands: { status: status.code, usage: usage.code, credits: credits.code },
@@ -95,12 +118,18 @@ else {
   console.log(
     `Quota restant : ${remainingPercent === undefined ? "inconnu" : `${remainingPercent}%`}`,
   );
-  console.log(`Heures de quota consommables : ${report.quota.hoursRemaining ?? "non calculable"}`);
+  console.log(
+    `Heures de quota consommables : ${report.quota.hoursRemaining ?? "non calculable"}`,
+  );
   console.log(
     `Temps avant réinitialisation : ${resetIn ?? "inconnu"} (${resetHoursValue ?? "?"} h)`,
   );
-  console.log(`Crédits restants : ${creditBalance === undefined ? "inconnus" : creditBalance}`);
-  console.log(`Graphe : ${report.graph.nodes ?? "?"} nœuds, ${report.graph.edges ?? "?"} arêtes`);
+  console.log(
+    `Crédits restants : ${creditBalance === undefined ? "inconnus" : creditBalance}`,
+  );
+  console.log(
+    `Graphe : ${report.graph.nodes ?? "?"} nœuds, ${report.graph.edges ?? "?"} arêtes`,
+  );
   if (status.code || usage.code || credits.code)
     console.log(
       "Note : la CLI Codex locale ne supporte pas toutes les commandes status/usage/credits.",

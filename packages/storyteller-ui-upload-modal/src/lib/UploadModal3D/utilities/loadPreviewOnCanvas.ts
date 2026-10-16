@@ -3,7 +3,10 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { SplatFileType, SplatMesh } from "@sparkjsdev/spark";
-import { NodeHierarchyHelper, disposeObject3D } from "@storyteller/ui-viewer-3d";
+import {
+  NodeHierarchyHelper,
+  disposeObject3D,
+} from "@storyteller/ui-viewer-3d";
 
 interface LoaderInterface {
   file: File;
@@ -436,18 +439,13 @@ const imagePlaneLoader = ({
 }: LoaderInterface) => {
   const geometry = new THREE.PlaneGeometry(1, 1);
   const loader = new THREE.TextureLoader();
-  const texture = loader.load(
-    fileUrl,
-    undefined,
-    undefined,
-    (loaderError) => {
-      if (isCancelled?.()) return;
-      statusCallback({
-        type: "Image Plane Loader Error",
-        message: String(loaderError),
-      });
-    },
-  );
+  const texture = loader.load(fileUrl, undefined, undefined, (loaderError) => {
+    if (isCancelled?.()) return;
+    statusCallback({
+      type: "Image Plane Loader Error",
+      message: String(loaderError),
+    });
+  });
   texture.colorSpace = THREE.SRGBColorSpace;
 
   const image_material = new THREE.MeshBasicMaterial({

@@ -18,7 +18,9 @@ priority = 100
 id = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 name = "Microsoft PowerPoint (OpenXML)"
 extensions = ["pptx"]
-mime_types = ["application/vnd.openxmlformats-officedocument.presentationml.presentation"]
+mime_types = [
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+]
 uti = "org.openxmlformats.presentationml.presentation"
 category = "presentation"
 priority = 100
@@ -32,7 +34,9 @@ priority = 90
 id = "application/vnd.openxmlformats-officedocument.presentationml.template"
 name = "PowerPoint Template (OpenXML)"
 extensions = ["potx"]
-mime_types = ["application/vnd.openxmlformats-officedocument.presentationml.template"]
+mime_types = [
+  "application/vnd.openxmlformats-officedocument.presentationml.template",
+]
 category = "presentation"
 priority = 100
 
@@ -58,7 +62,9 @@ priority = 90
 id = "application/vnd.openxmlformats-officedocument.presentationml.slideshow"
 name = "PowerPoint Slideshow"
 extensions = ["ppsx"]
-mime_types = ["application/vnd.openxmlformats-officedocument.presentationml.slideshow"]
+mime_types = [
+  "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
+]
 category = "presentation"
 priority = 100
 

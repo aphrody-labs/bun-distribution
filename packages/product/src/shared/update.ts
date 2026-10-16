@@ -1,4 +1,13 @@
-import { lstat, mkdir, mkdtemp, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import {
+  lstat,
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  rename,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
 
@@ -80,12 +89,19 @@ export async function fetchLatest(
   timeoutMs = 4000,
 ): Promise<Release> {
   const res = await fetchImpl(`${baseUrl}/latest.json`, {
-    headers: { accept: "application/json", "user-agent": `creator-kit/${VERSION}` },
+    headers: {
+      accept: "application/json",
+      "user-agent": `creator-kit/${VERSION}`,
+    },
     signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status} sur ${baseUrl}/latest.json`);
   const release = (await res.json()) as Release;
-  if (release.schemaVersion !== 1 || !release.version || !Array.isArray(release.artifacts)) {
+  if (
+    release.schemaVersion !== 1 ||
+    !release.version ||
+    !Array.isArray(release.artifacts)
+  ) {
     throw new Error("latest.json invalide");
   }
   return release;
@@ -95,7 +111,9 @@ export function pickUpdate(
   release: Release,
   platform = currentPlatform(),
 ): ReleaseArtifact | undefined {
-  return release.artifacts.find((a) => a.kind === "update" && a.platform === platform);
+  return release.artifacts.find(
+    (a) => a.kind === "update" && a.platform === platform,
+  );
 }
 
 export async function downloadVerified(
@@ -111,18 +129,29 @@ export async function downloadVerified(
   const sha = new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
   if (sha !== artifact.sha256.toLowerCase())
     throw new Error(`SHA-256 invalide pour ${artifact.file}`);
-  if (bytes.byteLength !== artifact.size) throw new Error(`taille invalide pour ${artifact.file}`);
+  if (bytes.byteLength !== artifact.size)
+    throw new Error(`taille invalide pour ${artifact.file}`);
   await mkdir(dirname(dest), { recursive: true });
   await writeFile(dest, bytes);
 }
 
 /** Extract a gzip-compressed ustar archive (regular files and folders only) into `dest`, without any external tool. */
-export async function extractTarGz(archive: string, dest: string): Promise<void> {
-  const data = Bun.gunzipSync(new Uint8Array(await Bun.file(archive).arrayBuffer()));
+export async function extractTarGz(
+  archive: string,
+  dest: string,
+): Promise<void> {
+  const data = Bun.gunzipSync(
+    new Uint8Array(await Bun.file(archive).arrayBuffer()),
+  );
   const decoder = new TextDecoder();
   const field = (start: number, length: number) =>
     decoder.decode(data.subarray(start, start + length)).replace(/\0.*$/s, "");
-  const entries: { name: string; size: number; type: string; offset: number }[] = [];
+  const entries: {
+    name: string;
+    size: number;
+    type: string;
+    offset: number;
+  }[] = [];
   const seen = new Set<string>();
   let offset = 0;
   while (offset + 512 <= data.length) {
@@ -130,11 +159,14 @@ export async function extractTarGz(archive: string, dest: string): Promise<void>
     const prefix = field(offset + 345, 155);
     const name = (prefix ? `${prefix}/` : "") + field(offset, 100);
     const sizeField = field(offset + 124, 12).trim();
-    const size = /^[0-7]+$/.test(sizeField) ? Number.parseInt(sizeField, 8) : Number.NaN;
+    const size = /^[0-7]+$/.test(sizeField)
+      ? Number.parseInt(sizeField, 8)
+      : Number.NaN;
     const type = String.fromCharCode(data[offset + 156] || 48);
     const checksum = Number.parseInt(field(offset + 148, 8).trim(), 8);
     let sum = 0;
-    for (let i = 0; i < 512; i += 1) sum += i >= 148 && i < 156 ? 32 : data[offset + i]!;
+    for (let i = 0; i < 512; i += 1)
+      sum += i >= 148 && i < 156 ? 32 : data[offset + i]!;
     if (
       checksum !== sum ||
       !Number.isSafeInteger(size) ||
@@ -144,7 +176,8 @@ export async function extractTarGz(archive: string, dest: string): Promise<void>
       throw new Error(`archive tronquée ou en-tête invalide : ${name}`);
     offset += 512;
     const clean = name.replace(/^\.\//, "").replace(/\/$/, "");
-    if (!["0", "\0", "5"].includes(type)) throw new Error(`type d'entrée refusé : ${name}`);
+    if (!["0", "\0", "5"].includes(type))
+      throw new Error(`type d'entrée refusé : ${name}`);
     if (clean !== "" && clean !== ".") {
       if (
         clean.startsWith("/") ||
@@ -152,12 +185,15 @@ export async function extractTarGz(archive: string, dest: string): Promise<void>
         clean.includes(":") ||
         [...clean].some((char) => char.charCodeAt(0) < 32) ||
         /[<>"|?*]/.test(clean) ||
-        clean.split("/").some((part) => part === ".." || part === "" || part === ".") ||
+        clean
+          .split("/")
+          .some((part) => part === ".." || part === "" || part === ".") ||
         clean
           .split("/")
           .some(
             (part) =>
-              /[. ]$/.test(part) || /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)/i.test(part),
+              /[. ]$/.test(part) ||
+              /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)/i.test(part),
           ) ||
         seen.has(clean.toLowerCase())
       )
@@ -167,7 +203,10 @@ export async function extractTarGz(archive: string, dest: string): Promise<void>
     }
     offset += Math.ceil(size / 512) * 512;
   }
-  if (offset + 1024 > data.length || !data.subarray(offset).every((byte) => byte === 0))
+  if (
+    offset + 1024 > data.length ||
+    !data.subarray(offset).every((byte) => byte === 0)
+  )
     throw new Error("fin d'archive invalide");
   // Validate every header before the first write, then reject pre-existing symlink parents.
   for (const entry of entries) {
@@ -188,7 +227,10 @@ export async function extractTarGz(archive: string, dest: string): Promise<void>
       // oxlint-disable-next-line no-await-in-loop -- écriture séquentielle (même raison : ordre de l'archive, parents créés avant fichiers)
       await mkdir(dirname(target), { recursive: true });
       // oxlint-disable-next-line no-await-in-loop -- écriture séquentielle (même raison : ordre de l'archive)
-      await writeFile(target, data.subarray(entry.offset, entry.offset + entry.size));
+      await writeFile(
+        target,
+        data.subarray(entry.offset, entry.offset + entry.size),
+      );
     }
   }
 }
@@ -216,7 +258,10 @@ export async function applyPack(
   try {
     await extractTarGz(archive, staging);
     const entries = await readdir(staging);
-    if (!entries.includes(exeName) || !(await lstat(join(staging, exeName))).isFile())
+    if (
+      !entries.includes(exeName) ||
+      !(await lstat(join(staging, exeName))).isFile()
+    )
       throw new Error(`${exeName} absent de l'archive`);
     try {
       for (const entry of entries) {
@@ -271,7 +316,10 @@ export function stateFile(
   env: Record<string, string | undefined> = process.env,
   app: AppIdentity = CREATOR_APP,
 ): string {
-  const base = env.LOCALAPPDATA ?? env.XDG_CACHE_HOME ?? join(env.HOME ?? homedir(), ".cache");
+  const base =
+    env.LOCALAPPDATA ??
+    env.XDG_CACHE_HOME ??
+    join(env.HOME ?? homedir(), ".cache");
   return join(base, app.name, "update.json");
 }
 
@@ -351,7 +399,11 @@ export async function updateFromRelease(
 
 /** Download and install the newest release when there is one. `checkOnly` never modifies anything. */
 export async function updateNow(opts: UpdateOptions): Promise<UpdateResult> {
-  const release = await fetchLatest(opts.baseUrl, opts.fetchImpl ?? fetch, 10_000);
+  const release = await fetchLatest(
+    opts.baseUrl,
+    opts.fetchImpl ?? fetch,
+    10_000,
+  );
   return updateFromRelease(release, opts);
 }
 

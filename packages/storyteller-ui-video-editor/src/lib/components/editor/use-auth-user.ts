@@ -16,10 +16,7 @@ export function useAuthUser(adapter: AuthUserAdapter): AuthUser | null {
     [adapter],
   );
 
-  const getSnapshot = useCallback(
-    () => adapter.currentUser(),
-    [adapter],
-  );
+  const getSnapshot = useCallback(() => adapter.currentUser(), [adapter]);
 
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }

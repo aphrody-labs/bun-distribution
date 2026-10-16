@@ -16,7 +16,10 @@ export const TABLE_PADDING_X = 16;
 export const TABLE_PADDING_Y = 12;
 export const TABLE_HEADER_HEIGHT = 32;
 
-export const listTableFeatures = tableFeatures({ columnSizingFeature, columnResizingFeature });
+export const listTableFeatures = tableFeatures({
+  columnSizingFeature,
+  columnResizingFeature,
+});
 
 // Column definitions for the list view
 export function useTable(files: File[]) {

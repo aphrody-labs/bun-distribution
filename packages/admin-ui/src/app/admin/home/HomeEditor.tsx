@@ -62,7 +62,9 @@ async function loadConfig(): Promise<LoadResponse> {
   return r.json();
 }
 
-async function saveConfig(patch: HomeConfig): Promise<{ ok: boolean; config: HomeConfig }> {
+async function saveConfig(
+  patch: HomeConfig,
+): Promise<{ ok: boolean; config: HomeConfig }> {
   const r = await fetch("/api/home-config", {
     method: "PUT",
     credentials: "same-origin",
@@ -137,7 +139,9 @@ function ClipGrid({
         );
       })}
       {clips.length === 0 && (
-        <p className="col-span-full p-2 text-xs text-zinc-500">Aucun clip disponible.</p>
+        <p className="col-span-full p-2 text-xs text-zinc-500">
+          Aucun clip disponible.
+        </p>
       )}
     </div>
   );
@@ -160,11 +164,17 @@ function SceneBackground({
       <div className="flex items-center gap-3">
         <span className="relative h-12 w-20 shrink-0 overflow-hidden rounded border border-zinc-700 bg-black/40">
           {thumb ? (
-            <img src={assetUrl(thumb)} alt="" className="h-full w-full object-cover" />
+            <img
+              src={assetUrl(thumb)}
+              alt=""
+              className="h-full w-full object-cover"
+            />
           ) : null}
         </span>
         <div className="min-w-0 flex-1">
-          <code className="block truncate text-[11px] text-zinc-400">{scene.video ?? "—"}</code>
+          <code className="block truncate text-[11px] text-zinc-400">
+            {scene.video ?? "—"}
+          </code>
           <button
             type="button"
             onClick={() => setPicking((v) => !v)}
@@ -225,7 +235,10 @@ function CardsEditor({
         <button
           type="button"
           onClick={() =>
-            onChange([...cards, { href: "/", title: "Nouvelle carte", desc: "", kanji: "◆" }])
+            onChange([
+              ...cards,
+              { href: "/", title: "Nouvelle carte", desc: "", kanji: "◆" },
+            ])
           }
           className="btn btn-ghost px-2 py-1 text-xs"
         >
@@ -234,7 +247,10 @@ function CardsEditor({
       </div>
       <div className="space-y-2">
         {cards.map((c, i) => (
-          <div key={i} className="grid grid-cols-[3rem_1fr_1fr_auto] items-center gap-2">
+          <div
+            key={i}
+            className="grid grid-cols-[3rem_1fr_1fr_auto] items-center gap-2"
+          >
             <input
               className="input py-1 text-center text-sm"
               value={c.kanji}
@@ -296,7 +312,8 @@ function SectionCard({
 }) {
   const [open, setOpen] = useState(false);
   const isCustom = section.isCustom === true;
-  const gated = !isCustom && (section.id === "personnages" || section.id === "sagas");
+  const gated =
+    !isCustom && (section.id === "personnages" || section.id === "sagas");
   return (
     <div className={`card p-0 ${section.enabled ? "" : "opacity-60"}`}>
       <div className="flex items-center gap-2 p-3">
@@ -327,9 +344,14 @@ function SectionCard({
         >
           <span className="badge font-mono">{section.id}</span>
           <span className="font-semibold">{section.navLabel}</span>
-          <span className="text-lg leading-none text-dbz-yellow/70">{section.kanji}</span>
+          <span className="text-lg leading-none text-dbz-yellow/70">
+            {section.kanji}
+          </span>
           {gated && (
-            <span className="badge badge-warning text-[10px]" title="Route /wiki fermée en bêta">
+            <span
+              className="badge badge-warning text-[10px]"
+              title="Route /wiki fermée en bêta"
+            >
               route fermée
             </span>
           )}
@@ -340,7 +362,11 @@ function SectionCard({
           className={`btn btn-ghost px-2 ${section.enabled ? "text-emerald-400" : "text-zinc-500"}`}
           title={section.enabled ? "Section visible" : "Section masquée"}
         >
-          {section.enabled ? <Oeil className="h-4 w-4" /> : <OeilBarre className="h-4 w-4" />}
+          {section.enabled ? (
+            <Oeil className="h-4 w-4" />
+          ) : (
+            <OeilBarre className="h-4 w-4" />
+          )}
         </button>
         {isCustom && (
           <button
@@ -352,8 +378,14 @@ function SectionCard({
             <Corbeille className="h-4 w-4" />
           </button>
         )}
-        <button type="button" onClick={() => setOpen((v) => !v)} className="btn btn-ghost px-2">
-          <ChevronBas className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="btn btn-ghost px-2"
+        >
+          <ChevronBas
+            className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}
+          />
         </button>
       </div>
 
@@ -361,10 +393,13 @@ function SectionCard({
         <div className="space-y-3 border-t border-zinc-800 p-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-xs text-zinc-400">
-              Libellé de navigation{isCustom && <span className="ml-0.5 text-red-400">*</span>}
+              Libellé de navigation
+              {isCustom && <span className="ml-0.5 text-red-400">*</span>}
               <input
                 className={`input mt-1 ${
-                  isCustom && !section.navLabel.trim() ? "border-red-500/60" : ""
+                  isCustom && !section.navLabel.trim()
+                    ? "border-red-500/60"
+                    : ""
                 }`}
                 value={section.navLabel}
                 onChange={(e) => onChange({ navLabel: e.target.value })}
@@ -408,8 +443,8 @@ function SectionCard({
           </label>
           {isCustom && (
             <div className="block text-xs text-zinc-400">
-              Contenu (éditeur riche — mise en forme, images/gifs, embeds, aperçu live ; même moteur
-              que le wiki)
+              Contenu (éditeur riche — mise en forme, images/gifs, embeds,
+              aperçu live ; même moteur que le wiki)
               <div className="mt-1">
                 <MarkdownField
                   value={section.body ?? ""}
@@ -477,7 +512,10 @@ function BlockHeadingEditor({
   );
 }
 
-const CATALOGUE_LABELS: Record<HomeCatalogueConfig["destinations"][number]["href"], string> = {
+const CATALOGUE_LABELS: Record<
+  HomeCatalogueConfig["destinations"][number]["href"],
+  string
+> = {
   "/wiki/episodes": "Épisodes",
   "/wiki/films": "Films",
   "/wiki/manga": "Manga",
@@ -496,7 +534,9 @@ function CatalogueEditor({
       <div className="mb-4 flex items-start gap-3">
         <div className="flex-1">
           <h3 className="font-semibold text-dbz-yellow">Catalogue média</h3>
-          <p className="text-xs text-zinc-500">Rails alimentés par les données réelles du wiki.</p>
+          <p className="text-xs text-zinc-500">
+            Rails alimentés par les données réelles du wiki.
+          </p>
         </div>
         <button
           type="button"
@@ -504,10 +544,17 @@ function CatalogueEditor({
           className={`btn btn-ghost px-2 ${value.enabled ? "text-emerald-400" : "text-zinc-500"}`}
           title={value.enabled ? "Bloc visible" : "Bloc masqué"}
         >
-          {value.enabled ? <Oeil className="h-4 w-4" /> : <OeilBarre className="h-4 w-4" />}
+          {value.enabled ? (
+            <Oeil className="h-4 w-4" />
+          ) : (
+            <OeilBarre className="h-4 w-4" />
+          )}
         </button>
       </div>
-      <BlockHeadingEditor value={value} onChange={(patch) => onChange({ ...value, ...patch })} />
+      <BlockHeadingEditor
+        value={value}
+        onChange={(patch) => onChange({ ...value, ...patch })}
+      />
       <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {value.destinations.map((destination, index) => (
           <label
@@ -520,16 +567,19 @@ function CatalogueEditor({
               onChange={(event) =>
                 onChange({
                   ...value,
-                  destinations: value.destinations.map((entry, destinationIndex) =>
-                    destinationIndex === index
-                      ? { ...entry, enabled: event.target.checked }
-                      : entry,
+                  destinations: value.destinations.map(
+                    (entry, destinationIndex) =>
+                      destinationIndex === index
+                        ? { ...entry, enabled: event.target.checked }
+                        : entry,
                   ),
                 })
               }
             />
             <span>{CATALOGUE_LABELS[destination.href]}</span>
-            <code className="ml-auto text-[10px] text-zinc-600">{destination.href}</code>
+            <code className="ml-auto text-[10px] text-zinc-600">
+              {destination.href}
+            </code>
           </label>
         ))}
       </div>
@@ -583,7 +633,11 @@ function JourneyDestinationEditor({
           className={`btn btn-ghost px-2 ${destination.enabled ? "text-emerald-400" : "text-zinc-500"}`}
           title={destination.enabled ? "Panneau visible" : "Panneau masqué"}
         >
-          {destination.enabled ? <Oeil className="h-4 w-4" /> : <OeilBarre className="h-4 w-4" />}
+          {destination.enabled ? (
+            <Oeil className="h-4 w-4" />
+          ) : (
+            <OeilBarre className="h-4 w-4" />
+          )}
         </button>
       </div>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
@@ -668,23 +722,30 @@ function CanonEditor({
     <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-3">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h4 className="text-sm font-semibold text-zinc-200">Arbitre de canonicité</h4>
+          <h4 className="text-sm font-semibold text-zinc-200">
+            Arbitre de canonicité
+          </h4>
           <p className="text-xs text-zinc-500">
-            La barre « est-ce canon ? », les cinq rangs et quelques sujets tranchés. La doctrine
-            elle-même s'édite dans /admin/ia?tab=canon.
+            La barre « est-ce canon ? », les cinq rangs et quelques sujets
+            tranchés. La doctrine elle-même s'édite dans /admin/ia?tab=canon.
           </p>
         </div>
         <label className="flex items-center gap-2 text-xs text-zinc-400">
           <input
             type="checkbox"
             checked={value.enabled}
-            onChange={(event) => onChange({ ...value, enabled: event.target.checked })}
+            onChange={(event) =>
+              onChange({ ...value, enabled: event.target.checked })
+            }
           />
           Visible
         </label>
       </div>
       <div className="mt-3">
-        <BlockHeadingEditor value={value} onChange={(patch) => onChange({ ...value, ...patch })} />
+        <BlockHeadingEditor
+          value={value}
+          onChange={(patch) => onChange({ ...value, ...patch })}
+        />
       </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <label className="text-xs text-zinc-400">
@@ -695,7 +756,9 @@ function CanonEditor({
             min={0}
             max={12}
             value={value.sujets}
-            onChange={(event) => onChange({ ...value, sujets: Number(event.target.value) || 0 })}
+            onChange={(event) =>
+              onChange({ ...value, sujets: Number(event.target.value) || 0 })
+            }
           />
         </label>
         <label className="text-xs text-zinc-400">
@@ -703,7 +766,9 @@ function CanonEditor({
           <input
             className="input mt-1"
             value={value.placeholder}
-            onChange={(event) => onChange({ ...value, placeholder: event.target.value })}
+            onChange={(event) =>
+              onChange({ ...value, placeholder: event.target.value })
+            }
           />
         </label>
       </div>
@@ -733,10 +798,17 @@ function JourneyEditor({
           className={`btn btn-ghost px-2 ${value.enabled ? "text-emerald-400" : "text-zinc-500"}`}
           title={value.enabled ? "Bloc visible" : "Bloc masqué"}
         >
-          {value.enabled ? <Oeil className="h-4 w-4" /> : <OeilBarre className="h-4 w-4" />}
+          {value.enabled ? (
+            <Oeil className="h-4 w-4" />
+          ) : (
+            <OeilBarre className="h-4 w-4" />
+          )}
         </button>
       </div>
-      <BlockHeadingEditor value={value} onChange={(patch) => onChange({ ...value, ...patch })} />
+      <BlockHeadingEditor
+        value={value}
+        onChange={(patch) => onChange({ ...value, ...patch })}
+      />
       <div className="mt-4 space-y-2">
         {value.destinations.map((destination, index) => (
           <JourneyDestinationEditor
@@ -747,13 +819,17 @@ function JourneyEditor({
             onChange={(patch) =>
               onChange({
                 ...value,
-                destinations: value.destinations.map((entry, destinationIndex) =>
-                  destinationIndex === index ? { ...entry, ...patch } : entry,
+                destinations: value.destinations.map(
+                  (entry, destinationIndex) =>
+                    destinationIndex === index ? { ...entry, ...patch } : entry,
                 ),
               })
             }
             onMove={(direction) =>
-              onChange({ ...value, destinations: move(value.destinations, index, direction) })
+              onChange({
+                ...value,
+                destinations: move(value.destinations, index, direction),
+              })
             }
           />
         ))}
@@ -770,7 +846,10 @@ export default function HomeEditor() {
     refetchOnReconnect: false,
   });
   const [config, setConfig] = useState<HomeConfig | null>(null);
-  const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    msg: string;
+  } | null>(null);
 
   useEffect(() => {
     setConfig((cur) => seedConfig(cur, query.data?.config));
@@ -788,13 +867,21 @@ export default function HomeEditor() {
     mutationFn: () => saveConfig(config as HomeConfig),
     onSuccess: (res) => {
       setConfig(res.config);
-      setToast({ type: "success", msg: "Home enregistrée. La page publique est mise à jour." });
+      setToast({
+        type: "success",
+        msg: "Home enregistrée. La page publique est mise à jour.",
+      });
     },
-    onError: (e: Error) => setToast({ type: "error", msg: `Échec : ${e.message}` }),
+    onError: (e: Error) =>
+      setToast({ type: "error", msg: `Échec : ${e.message}` }),
   });
 
   if (query.isError && !config) {
-    return <div className="text-sm text-red-400">Erreur de chargement : {String(query.error)}</div>;
+    return (
+      <div className="text-sm text-red-400">
+        Erreur de chargement : {String(query.error)}
+      </div>
+    );
   }
   if (query.isLoading || !config) {
     return (
@@ -807,13 +894,22 @@ export default function HomeEditor() {
     setConfig((c) => (c ? { ...c, hero: { ...c.hero, ...patch } } : c));
   const patchSection = (i: number, patch: Partial<HomeSectionConfig>) =>
     setConfig((c) =>
-      c ? { ...c, sections: c.sections.map((s, j) => (j === i ? { ...s, ...patch } : s)) } : c,
+      c
+        ? {
+            ...c,
+            sections: c.sections.map((s, j) =>
+              j === i ? { ...s, ...patch } : s,
+            ),
+          }
+        : c,
     );
   const moveSection = (i: number, dir: -1 | 1) =>
     setConfig((c) => (c ? { ...c, sections: move(c.sections, i, dir) } : c));
 
   const deleteSection = (i: number) =>
-    setConfig((c) => (c ? { ...c, sections: c.sections.filter((_, j) => j !== i) } : c));
+    setConfig((c) =>
+      c ? { ...c, sections: c.sections.filter((_, j) => j !== i) } : c,
+    );
 
   // Enregistrement gardé : une section personnalisée doit avoir un titre ET un
   // libellé de navigation non vides (sinon la home publique affiche un <h2> vide
@@ -825,7 +921,8 @@ export default function HomeEditor() {
       (s) => s.isCustom && (!s.title.trim() || !s.navLabel.trim()),
     );
     if (invalid) {
-      const name = invalid.navLabel.trim() || invalid.title.trim() || invalid.id;
+      const name =
+        invalid.navLabel.trim() || invalid.title.trim() || invalid.id;
       setToast({
         type: "error",
         msg: `Section personnalisée « ${name} » : le titre et le libellé de navigation sont obligatoires.`,
@@ -881,19 +978,30 @@ export default function HomeEditor() {
       {/* Barre d'action */}
       <div className="dbz-panel flex flex-wrap items-center gap-3 p-4">
         <div className="flex-1">
-          <h2 className="font-saiyan text-lg uppercase text-dbz-orange">Page d'accueil</h2>
+          <h2 className="font-saiyan text-lg uppercase text-dbz-orange">
+            Page d'accueil
+          </h2>
           <p className="text-xs text-zinc-400">
-            Réorganise les sections, change les clips de fond et le contenu de chaque panneau. Les
-            changements s'appliquent au site public après enregistrement.
+            Réorganise les sections, change les clips de fond et le contenu de
+            chaque panneau. Les changements s'appliquent au site public après
+            enregistrement.
           </p>
         </div>
-        <a href="/" target="_blank" rel="noreferrer" className="btn btn-ghost" title="Voir la home">
+        <a
+          href="/"
+          target="_blank"
+          rel="noreferrer"
+          className="btn btn-ghost"
+          title="Voir la home"
+        >
           <LienExterne className="mr-1 h-4 w-4" /> Voir
         </a>
         <button
           type="button"
           onClick={() => {
-            if (confirm("Réinitialiser toute la home aux valeurs par défaut ?")) {
+            if (
+              confirm("Réinitialiser toute la home aux valeurs par défaut ?")
+            ) {
               setConfig(structuredClone(DEFAULT_HOME_CONFIG));
             }
           }}
@@ -914,7 +1022,9 @@ export default function HomeEditor() {
 
       {/* ── Héro ── */}
       <div className="card p-4">
-        <h3 className="mb-3 font-semibold text-dbz-yellow">Héro (premier panneau)</h3>
+        <h3 className="mb-3 font-semibold text-dbz-yellow">
+          Héro (premier panneau)
+        </h3>
         <div className="grid gap-3 sm:grid-cols-3">
           <label className="text-xs text-zinc-400 sm:col-span-3">
             Accroche (lede)
@@ -954,7 +1064,12 @@ export default function HomeEditor() {
               value={config.clips.desktop}
               onChange={(e) =>
                 setConfig((c) =>
-                  c ? { ...c, clips: { ...c.clips, desktop: Number(e.target.value) } } : c,
+                  c
+                    ? {
+                        ...c,
+                        clips: { ...c.clips, desktop: Number(e.target.value) },
+                      }
+                    : c,
                 )
               }
             />
@@ -969,7 +1084,12 @@ export default function HomeEditor() {
               value={config.clips.tablet}
               onChange={(e) =>
                 setConfig((c) =>
-                  c ? { ...c, clips: { ...c.clips, tablet: Number(e.target.value) } } : c,
+                  c
+                    ? {
+                        ...c,
+                        clips: { ...c.clips, tablet: Number(e.target.value) },
+                      }
+                    : c,
                 )
               }
             />
@@ -1049,7 +1169,9 @@ export default function HomeEditor() {
                   />
                   <button
                     type="button"
-                    onClick={() => patchHero({ scenes: move(heroScenes, i, -1) })}
+                    onClick={() =>
+                      patchHero({ scenes: move(heroScenes, i, -1) })
+                    }
                     disabled={i === 0}
                     className="text-zinc-500 hover:text-dbz-orange disabled:opacity-30"
                   >
@@ -1057,7 +1179,9 @@ export default function HomeEditor() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => patchHero({ scenes: move(heroScenes, i, 1) })}
+                    onClick={() =>
+                      patchHero({ scenes: move(heroScenes, i, 1) })
+                    }
                     disabled={i === heroScenes.length - 1}
                     className="text-zinc-500 hover:text-dbz-orange disabled:opacity-30"
                   >
@@ -1065,7 +1189,11 @@ export default function HomeEditor() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => patchHero({ scenes: heroScenes.filter((_, j) => j !== i) })}
+                    onClick={() =>
+                      patchHero({
+                        scenes: heroScenes.filter((_, j) => j !== i),
+                      })
+                    }
                     className="btn btn-ghost px-1 text-red-400"
                     title="Supprimer"
                   >
@@ -1076,15 +1204,17 @@ export default function HomeEditor() {
                   scene={sc}
                   clips={clips}
                   onChange={(scene) =>
-                    patchHero({ scenes: heroScenes.map((s, j) => (j === i ? scene : s)) })
+                    patchHero({
+                      scenes: heroScenes.map((s, j) => (j === i ? scene : s)),
+                    })
                   }
                 />
               </div>
             ))}
           </div>
           <p className="mt-2 text-[11px] text-zinc-500">
-            Les {config.clips.desktop} premières scènes servent aussi de clips flottants sur
-            desktop.
+            Les {config.clips.desktop} premières scènes servent aussi de clips
+            flottants sur desktop.
           </p>
         </div>
       </div>
@@ -1092,35 +1222,50 @@ export default function HomeEditor() {
       {/* ── Catalogue et destinations du menu ── */}
       <div className="space-y-2">
         <div>
-          <h3 className="font-semibold text-dbz-yellow">Après le deck cinématique</h3>
+          <h3 className="font-semibold text-dbz-yellow">
+            Après le deck cinématique
+          </h3>
           <p className="text-xs text-zinc-500">
-            Ces blocs prolongent l'accueil avec les rails du catalogue puis une porte d'entrée pour
-            chaque page du menu complet. Les routes restent fixes pour éviter les liens cassés.
+            Ces blocs prolongent l'accueil avec les rails du catalogue puis une
+            porte d'entrée pour chaque page du menu complet. Les routes restent
+            fixes pour éviter les liens cassés.
           </p>
         </div>
         <CatalogueEditor
           value={config.catalogue}
           onChange={(catalogue) =>
-            setConfig((current) => (current ? { ...current, catalogue } : current))
+            setConfig((current) =>
+              current ? { ...current, catalogue } : current,
+            )
           }
         />
         <JourneyEditor
           value={config.journey}
           onChange={(journey) =>
-            setConfig((current) => (current ? { ...current, journey } : current))
+            setConfig((current) =>
+              current ? { ...current, journey } : current,
+            )
           }
         />
         <CanonEditor
           value={config.canon}
-          onChange={(canon) => setConfig((current) => (current ? { ...current, canon } : current))}
+          onChange={(canon) =>
+            setConfig((current) => (current ? { ...current, canon } : current))
+          }
         />
       </div>
 
       {/* ── Sections ── */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-dbz-yellow">Sections (ordre du scroll)</h3>
-          <button type="button" onClick={addSection} className="btn btn-ghost px-2 py-1 text-xs">
+          <h3 className="font-semibold text-dbz-yellow">
+            Sections (ordre du scroll)
+          </h3>
+          <button
+            type="button"
+            onClick={addSection}
+            className="btn btn-ghost px-2 py-1 text-xs"
+          >
             <Plus className="mr-1 h-3 w-3" /> Ajouter une section
           </button>
         </div>

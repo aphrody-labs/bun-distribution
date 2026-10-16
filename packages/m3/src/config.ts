@@ -50,7 +50,8 @@ export interface M3Config {
   /** Function calls or statements to drop from the bundle (e.g. `["debugger"]`). */
   drop?: string[];
   /** Minification options or boolean override. */
-  minify?: boolean | { whitespace?: boolean; syntax?: boolean; identifiers?: boolean };
+  minify?:
+    boolean | { whitespace?: boolean; syntax?: boolean; identifiers?: boolean };
   /** Modules with barrel files whose unused exports should be skipped during bundling. */
   optimizeImports?: string[];
   /** Tauri webview build (`m3 build --tauri`). */
@@ -78,7 +79,12 @@ export function defineM3Config(config: M3Config): M3Config {
 }
 
 /** Config file names, in lookup order. */
-export const CONFIG_FILES = ["m3.config.ts", "m3.config.mts", "m3.config.js", "m3.config.mjs"] as const;
+export const CONFIG_FILES = [
+  "m3.config.ts",
+  "m3.config.mts",
+  "m3.config.js",
+  "m3.config.mjs",
+] as const;
 
 /** The first config file in `dir`, if any. */
 export function findM3Config(dir: string): string | undefined {
@@ -89,22 +95,36 @@ export function findM3Config(dir: string): string | undefined {
   return undefined;
 }
 
-function assertConfig(value: unknown, source: string): asserts value is M3Config {
-  if (typeof value !== "object" || value === null) throw new Error(`${source}: the default export must be an object`);
+function assertConfig(
+  value: unknown,
+  source: string,
+): asserts value is M3Config {
+  if (typeof value !== "object" || value === null)
+    throw new Error(`${source}: the default export must be an object`);
   const entry = (value as { entry?: unknown }).entry;
-  if (typeof entry !== "string" || entry.length === 0) throw new Error(`${source}: \`entry\` must be a non-empty string`);
+  if (typeof entry !== "string" || entry.length === 0)
+    throw new Error(`${source}: \`entry\` must be a non-empty string`);
   const proxy = (value as { proxy?: unknown }).proxy;
   if (proxy !== undefined) {
-    if (typeof proxy !== "object" || proxy === null) throw new Error(`${source}: \`proxy\` must be an object`);
+    if (typeof proxy !== "object" || proxy === null)
+      throw new Error(`${source}: \`proxy\` must be an object`);
     for (const [prefix, target] of Object.entries(proxy)) {
-      if (!prefix.startsWith("/")) throw new Error(`${source}: proxy prefix ${prefix} must start with "/"`);
-      if (typeof target !== "string" || !URL.canParse(target)) throw new Error(`${source}: proxy target for ${prefix} is not a URL`);
+      if (!prefix.startsWith("/"))
+        throw new Error(
+          `${source}: proxy prefix ${prefix} must start with "/"`,
+        );
+      if (typeof target !== "string" || !URL.canParse(target))
+        throw new Error(`${source}: proxy target for ${prefix} is not a URL`);
     }
   }
 }
 
 /** Resolve the relative paths of `config` against `dir`. */
-export function resolveM3Config(config: M3Config, dir: string, file?: string): ResolvedM3Config {
+export function resolveM3Config(
+  config: M3Config,
+  dir: string,
+  file?: string,
+): ResolvedM3Config {
   assertConfig(config, file ?? "m3 config");
   const abs = (path: string) => resolve(dir, path);
   return {
@@ -114,9 +134,16 @@ export function resolveM3Config(config: M3Config, dir: string, file?: string): R
     entry: abs(config.entry),
     pagesDir: config.pagesDir ? abs(config.pagesDir) : undefined,
     outdir: abs(config.outdir ?? "dist"),
-    routes: Object.fromEntries(Object.entries(config.routes ?? {}).map(([route, path]) => [route, abs(path)])),
+    routes: Object.fromEntries(
+      Object.entries(config.routes ?? {}).map(([route, path]) => [
+        route,
+        abs(path),
+      ]),
+    ),
     proxy: { ...config.proxy },
-    tauri: config.tauri ? { ...config.tauri, uiDist: abs(config.tauri.uiDist) } : undefined,
+    tauri: config.tauri
+      ? { ...config.tauri, uiDist: abs(config.tauri.uiDist) }
+      : undefined,
     root: config.root ? abs(config.root) : undefined,
   };
 }
@@ -125,7 +152,10 @@ export function resolveM3Config(config: M3Config, dir: string, file?: string): R
  * Load `m3.config.*` from `cwd` (or the explicit `file`) and resolve its paths.
  * Throws when no config exists.
  */
-export async function loadM3Config(cwd: string = process.cwd(), file?: string): Promise<ResolvedM3Config> {
+export async function loadM3Config(
+  cwd: string = process.cwd(),
+  file?: string,
+): Promise<ResolvedM3Config> {
   const path = file ? resolve(cwd, file) : findM3Config(cwd);
   if (!path || !existsSync(path)) {
     throw new Error(`no ${CONFIG_FILES[0]} in ${cwd}`);

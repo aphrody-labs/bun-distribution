@@ -5,7 +5,7 @@ import { FetchProxy as fetch } from "@storyteller/tauri-utils";
 export class PromptsApi extends ApiManager {
   public async pollJobSession(
     jobToken: string,
-    thumbnailWidth = 256
+    thumbnailWidth = 256,
   ): Promise<
     ApiResponse<{
       job_token: string;
@@ -40,7 +40,7 @@ export class PromptsApi extends ApiManager {
     const thumbnail_url =
       response.state.maybe_result?.media_links?.maybe_thumbnail_template?.replace(
         "{WIDTH}",
-        thumbnailWidth.toString()
+        thumbnailWidth.toString(),
       );
 
     const progress_percentage = response.state.status.progress_percentage;

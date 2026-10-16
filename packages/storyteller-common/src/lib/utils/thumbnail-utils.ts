@@ -142,10 +142,13 @@ export function getContextImageThumbnail(
   ) {
     const vp = contextImage.media_links.maybe_video_previews;
     const thumbnail = vp.still_thumbnail_template
-      ? getThumbnailUrl(vp.still_thumbnail_template, { width: size }) || vp.still
+      ? getThumbnailUrl(vp.still_thumbnail_template, { width: size }) ||
+        vp.still
       : vp.still;
     const fullSize = vp.still_thumbnail_template
-      ? getThumbnailUrl(vp.still_thumbnail_template, { width: fullSizeWidth }) || vp.still
+      ? getThumbnailUrl(vp.still_thumbnail_template, {
+          width: fullSizeWidth,
+        }) || vp.still
       : vp.still;
     return { thumbnail, fullSize };
   }
@@ -180,7 +183,14 @@ export function getPlaceholderForMediaClass(mediaClass?: string): string {
 }
 
 // File extensions for actual 3D-model assets (meshes + gaussian splats).
-export const MODEL_3D_EXTENSIONS = [".glb", ".gltf", ".fbx", ".spz", ".obj", ".ply"];
+export const MODEL_3D_EXTENSIONS = [
+  ".glb",
+  ".gltf",
+  ".fbx",
+  ".spz",
+  ".obj",
+  ".ply",
+];
 
 /** Whether a URL points at a real 3D-model asset (vs. e.g. a cover screenshot).
  *  Used to keep 3D-model cover images — which the backend can surface as

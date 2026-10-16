@@ -1,20 +1,10 @@
-import type {
-  ParamDefinition,
-  ParamValue,
-  ParamValues,
-} from "./index";
+import type { ParamDefinition, ParamValue, ParamValues } from "./index";
 import { MIN_TRANSFORM_SCALE } from "../animation/transform";
 import type { BlendMode } from "../rendering";
-import type {
-  ElementType,
-  TimelineElement,
-} from "../timeline/types";
+import type { ElementType, TimelineElement } from "../timeline/types";
 import { DEFAULTS } from "../timeline/defaults";
 import { VOLUME_DB_MAX, VOLUME_DB_MIN } from "../timeline/audio-constants";
-import {
-  CORNER_RADIUS_MAX,
-  CORNER_RADIUS_MIN,
-} from "../text/background";
+import { CORNER_RADIUS_MAX, CORNER_RADIUS_MIN } from "../text/background";
 
 // Per-element-type parameter registry. Each ElementType maps to an
 // ordered list of ParamDefinitions; the properties panel iterates these
@@ -56,13 +46,7 @@ export class DefinitionRegistry<TKey extends string, TDefinition> {
     this.entityName = entityName;
   }
 
-  register({
-    key,
-    definition,
-  }: {
-    key: TKey;
-    definition: TDefinition;
-  }): void {
+  register({ key, definition }: { key: TKey; definition: TDefinition }): void {
     this.definitions.set(key, definition);
   }
 
@@ -345,7 +329,10 @@ elementParamRegistry.register({
   key: "video",
   definition: [...visualElementParams, ...audioElementParams],
 });
-elementParamRegistry.register({ key: "image", definition: visualElementParams });
+elementParamRegistry.register({
+  key: "image",
+  definition: visualElementParams,
+});
 elementParamRegistry.register({
   key: "text",
   definition: [...textElementParams, ...visualElementParams],

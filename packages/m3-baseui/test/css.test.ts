@@ -24,7 +24,9 @@ describe("css pipeline", () => {
   });
 
   test("each sheet is valid CSS on its own", async () => {
-    for (const file of readdirSync(join(pkgDir, "css")).filter((f) => f.endsWith(".css"))) {
+    for (const file of readdirSync(join(pkgDir, "css")).filter((f) =>
+      f.endsWith(".css"),
+    )) {
       const out = await bundle(join(pkgDir, "css", file));
       expect(out.length).toBeGreaterThan(100);
       expect(out).toContain("@layer components");

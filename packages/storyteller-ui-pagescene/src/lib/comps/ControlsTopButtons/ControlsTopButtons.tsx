@@ -1,5 +1,10 @@
 import React, { useCallback, useContext, useState } from "react";
-import { FileIcon, KeyboardIcon, SquareCheckIcon, SquareIcon } from "lucide-react";
+import {
+  FileIcon,
+  KeyboardIcon,
+  SquareCheckIcon,
+  SquareIcon,
+} from "lucide-react";
 import { ButtonDropdown } from "@storyteller/ui-button-dropdown";
 import { Input } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";

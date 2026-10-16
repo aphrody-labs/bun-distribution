@@ -1,5 +1,6 @@
-
-export const EncodeImageBitmapToBase64 = async (imageBitmap: ImageBitmap): Promise<string> => {
+export const EncodeImageBitmapToBase64 = async (
+  imageBitmap: ImageBitmap,
+): Promise<string> => {
   // Create a temporary canvas
   const canvas = document.createElement("canvas");
   canvas.width = imageBitmap.width;
@@ -19,4 +20,4 @@ export const EncodeImageBitmapToBase64 = async (imageBitmap: ImageBitmap): Promi
 
   // Remove the data:image/png;base64, prefix if you want just the base64 string
   return base64String.split(",")[1];
-}
+};

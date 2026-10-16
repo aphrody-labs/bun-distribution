@@ -105,33 +105,48 @@ function number(
 
 const SUBTITLE_FILE = /\.(srt|vtt|ass|ssa)$/i;
 
-export function parseConfig(argv: string[]): { config?: Config; help: boolean } {
+export function parseConfig(argv: string[]): {
+  config?: Config;
+  help: boolean;
+} {
   const { values, positionals } = parse(argv, SPEC);
   if (values.help) return { help: true };
   if (positionals.length > 1)
-    throw new UsageError(`un seul fichier ou lien attendu (reçu : ${positionals.join(", ")})`);
+    throw new UsageError(
+      `un seul fichier ou lien attendu (reçu : ${positionals.join(", ")})`,
+    );
   let input = positionals[0];
   let subsFrom = values["subs-from"];
   if (input && SUBTITLE_FILE.test(input) && !/^https?:\/\//i.test(input)) {
     if (subsFrom)
-      throw new UsageError("fichier de sous-titres donné deux fois (positionnel et --subs-from)");
+      throw new UsageError(
+        "fichier de sous-titres donné deux fois (positionnel et --subs-from)",
+      );
     subsFrom = input;
     input = undefined;
   }
   if (!input && !subsFrom)
-    throw new UsageError("indiquer un fichier vidéo/audio, un lien, ou --subs-from <fichier>");
+    throw new UsageError(
+      "indiquer un fichier vidéo/audio, un lien, ou --subs-from <fichier>",
+    );
 
   const format = (values.format ?? "srt").toLowerCase();
   if (format !== "srt" && format !== "vtt" && format !== "ass")
     throw new UsageError(`--format : srt, vtt ou ass (reçu : ${format})`);
   const from = (values.from ?? "auto").toLowerCase();
   if (from !== "auto" && !/^[a-z]{2,3}(-[a-z0-9]+)?$/.test(from))
-    throw new UsageError(`--from : auto ou un code langue (ja, fr, ko, es...) (reçu : ${from})`);
+    throw new UsageError(
+      `--from : auto ou un code langue (ja, fr, ko, es...) (reçu : ${from})`,
+    );
   if (from === "en")
-    throw new UsageError("--from en : la source est déjà en anglais, rien à traduire");
+    throw new UsageError(
+      "--from en : la source est déjà en anglais, rien à traduire",
+    );
 
   const backend = (values.asr ?? "auto") as AsrOptions["backend"];
-  if (!["auto", "whisper-cli", "faster-whisper", "endpoint"].includes(backend)) {
+  if (
+    !["auto", "whisper-cli", "faster-whisper", "endpoint"].includes(backend)
+  ) {
     throw new UsageError(
       `--asr : auto, whisper-cli, faster-whisper ou endpoint (reçu : ${backend})`,
     );
@@ -153,8 +168,21 @@ export function parseConfig(argv: string[]): { config?: Config; help: boolean } 
     }
   }
 
-  const maxLine = number("max-line", values["max-line"], DEFAULT_LAYOUT.maxLine, 20, 80, true);
-  const maxCps = number("max-cps", values["max-cps"], DEFAULT_LAYOUT.maxCps, 8, 40);
+  const maxLine = number(
+    "max-line",
+    values["max-line"],
+    DEFAULT_LAYOUT.maxLine,
+    20,
+    80,
+    true,
+  );
+  const maxCps = number(
+    "max-cps",
+    values["max-cps"],
+    DEFAULT_LAYOUT.maxCps,
+    8,
+    40,
+  );
   const burn = values.burn ?? false;
   const mux = values.mux ?? false;
   if (burn && mux && values["video-out"])
@@ -170,7 +198,14 @@ export function parseConfig(argv: string[]): { config?: Config; help: boolean } 
     ...DEFAULT_TRANSLATE,
     sourceLang: from,
     userContext: values.context,
-    windowSize: number("window", values.window, DEFAULT_TRANSLATE.windowSize, 3, 60, true),
+    windowSize: number(
+      "window",
+      values.window,
+      DEFAULT_TRANSLATE.windowSize,
+      3,
+      60,
+      true,
+    ),
     before: number(
       "context-before",
       values["context-before"],
@@ -179,8 +214,22 @@ export function parseConfig(argv: string[]): { config?: Config; help: boolean } 
       20,
       true,
     ),
-    after: number("context-after", values["context-after"], DEFAULT_TRANSLATE.after, 0, 20, true),
-    retries: number("retries", values.retries, DEFAULT_TRANSLATE.retries, 0, 5, true),
+    after: number(
+      "context-after",
+      values["context-after"],
+      DEFAULT_TRANSLATE.after,
+      0,
+      20,
+      true,
+    ),
+    retries: number(
+      "retries",
+      values.retries,
+      DEFAULT_TRANSLATE.retries,
+      0,
+      5,
+      true,
+    ),
     maxCps,
     maxLine,
     review: (values.review ?? false) || (values["review-apply"] ?? false),
@@ -237,7 +286,8 @@ export function parseConfig(argv: string[]): { config?: Config; help: boolean } 
     llmUrl: values["llm-url"],
     llmModel: values["llm-model"],
     llmKeyEnv: values["llm-key-env"],
-    llmTimeoutMs: number("llm-timeout", values["llm-timeout"], 300, 5, 3600) * 1000,
+    llmTimeoutMs:
+      number("llm-timeout", values["llm-timeout"], 300, 5, 3600) * 1000,
     llmExtra,
     temperature: number("temperature", values.temperature, 0.2, 0, 2),
     seed,

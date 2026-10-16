@@ -28,11 +28,17 @@ export function DatabooksCatalogManager({
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<
-    "all" | "in-progress" | "completed" | "empty" | "completed-fr" | "in-progress-fr" | "empty-fr"
+    | "all"
+    | "in-progress"
+    | "completed"
+    | "empty"
+    | "completed-fr"
+    | "in-progress-fr"
+    | "empty-fr"
   >("all");
-  const [sortKey, setSortKey] = useState<"id" | "title" | "progress" | "traduites" | "fautives">(
-    "progress",
-  );
+  const [sortKey, setSortKey] = useState<
+    "id" | "title" | "progress" | "traduites" | "fautives"
+  >("progress");
   const [sortAsc, setSortAsc] = useState(false);
 
   // Campaign data query
@@ -92,15 +98,23 @@ export function DatabooksCatalogManager({
 
     if (statusFilter !== "all") {
       if (statusFilter === "completed") {
-        list = list.filter((f) => f.planches > 0 && f.transcrites >= f.planches);
+        list = list.filter(
+          (f) => f.planches > 0 && f.transcrites >= f.planches,
+        );
       } else if (statusFilter === "in-progress") {
-        list = list.filter((f) => f.transcrites > 0 && f.transcrites < f.planches);
+        list = list.filter(
+          (f) => f.transcrites > 0 && f.transcrites < f.planches,
+        );
       } else if (statusFilter === "empty") {
         list = list.filter((f) => f.transcrites === 0);
       } else if (statusFilter === "completed-fr") {
-        list = list.filter((f) => f.planches > 0 && (f.traduites ?? 0) >= f.planches);
+        list = list.filter(
+          (f) => f.planches > 0 && (f.traduites ?? 0) >= f.planches,
+        );
       } else if (statusFilter === "in-progress-fr") {
-        list = list.filter((f) => (f.traduites ?? 0) > 0 && (f.traduites ?? 0) < f.planches);
+        list = list.filter(
+          (f) => (f.traduites ?? 0) > 0 && (f.traduites ?? 0) < f.planches,
+        );
       } else if (statusFilter === "empty-fr") {
         list = list.filter((f) => (f.traduites ?? 0) === 0);
       }
@@ -137,7 +151,8 @@ export function DatabooksCatalogManager({
               </h2>
             </div>
             <p className="mt-1 text-xs text-white/50">
-              Suivi de la file de traduction en temps réel et ordonnancement des vagues par agents
+              Suivi de la file de traduction en temps réel et ordonnancement des
+              vagues par agents
             </p>
           </div>
 
@@ -151,7 +166,9 @@ export function DatabooksCatalogManager({
               <RefreshCw
                 className={`h-3.5 w-3.5 ${reindexMutation.isPending ? "animate-spin" : ""}`}
               />
-              {reindexMutation.isPending ? "Réindexation..." : "Réindexer Redis"}
+              {reindexMutation.isPending
+                ? "Réindexation..."
+                : "Réindexer Redis"}
             </button>
           </div>
         </div>
@@ -163,16 +180,22 @@ export function DatabooksCatalogManager({
               {campagne.ouvragesEnAttente} / {campagne.totalOuvrages}
             </div>
             <div className="mt-1 text-[11px] text-white/40">
-              {campagne.resteATraduire.toLocaleString("fr-FR")} planches à traduire
+              {campagne.resteATraduire.toLocaleString("fr-FR")} planches à
+              traduire
             </div>
           </div>
 
           <div className="rounded-lg bg-white/[0.02] p-3 border border-white/5">
             <div className="text-xs text-white/40">Volume Japonais Restant</div>
             <div className="mt-1 text-2xl font-bold text-dbz-orange">
-              {Math.round(campagne.signesJaRestants / 1000).toLocaleString("fr-FR")} k
+              {Math.round(campagne.signesJaRestants / 1000).toLocaleString(
+                "fr-FR",
+              )}{" "}
+              k
             </div>
-            <div className="mt-1 text-[11px] text-white/40">signes japonais sains</div>
+            <div className="mt-1 text-[11px] text-white/40">
+              signes japonais sains
+            </div>
           </div>
 
           <div className="rounded-lg bg-white/[0.02] p-3 border border-white/5">
@@ -182,7 +205,11 @@ export function DatabooksCatalogManager({
             </div>
             <div className="mt-1 text-[11px] text-emerald-400/60">
               {campagne.planchesTranscrites > 0
-                ? Math.round((campagne.planchesTraduites / campagne.planchesTranscrites) * 100)
+                ? Math.round(
+                    (campagne.planchesTraduites /
+                      campagne.planchesTranscrites) *
+                      100,
+                  )
                 : 0}
               % du corpus transcrit
             </div>
@@ -239,7 +266,9 @@ export function DatabooksCatalogManager({
             <option value="in-progress">OCR en cours</option>
             <option value="completed">OCR complet (100%)</option>
             <option value="empty">OCR non démarré</option>
-            <option value="completed-fr">Traductions FR terminées (100%)</option>
+            <option value="completed-fr">
+              Traductions FR terminées (100%)
+            </option>
             <option value="in-progress-fr">Traductions FR en cours</option>
             <option value="empty-fr">Traductions FR non démarrées</option>
           </select>
@@ -295,15 +324,24 @@ export function DatabooksCatalogManager({
               ) : (
                 filteredFiches.map((fiche) => {
                   const pct =
-                    fiche.planches > 0 ? Math.round((fiche.transcrites / fiche.planches) * 100) : 0;
+                    fiche.planches > 0
+                      ? Math.round((fiche.transcrites / fiche.planches) * 100)
+                      : 0;
                   const pctFr =
                     fiche.planches > 0
-                      ? Math.round(((fiche.traduites ?? 0) / fiche.planches) * 100)
+                      ? Math.round(
+                          ((fiche.traduites ?? 0) / fiche.planches) * 100,
+                        )
                       : 0;
 
                   return (
-                    <tr key={fiche.id} className="hover:bg-white/[0.02] transition">
-                      <td className="py-3 px-4 font-mono font-bold text-dbz-orange">#{fiche.id}</td>
+                    <tr
+                      key={fiche.id}
+                      className="hover:bg-white/[0.02] transition"
+                    >
+                      <td className="py-3 px-4 font-mono font-bold text-dbz-orange">
+                        #{fiche.id}
+                      </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           {fiche.cover && (
@@ -344,7 +382,11 @@ export function DatabooksCatalogManager({
                               {fiche.transcrites} / {fiche.planches}
                             </span>
                             <span
-                              className={pct >= 100 ? "text-green-400 font-bold" : "text-white/50"}
+                              className={
+                                pct >= 100
+                                  ? "text-green-400 font-bold"
+                                  : "text-white/50"
+                              }
                             >
                               {pct}%
                             </span>

@@ -4,11 +4,25 @@
 //   --seed <hex> --mode light|dark|auto [--name N] [--out DIR] [--variant V] [--dry-run|--apply]
 // In the Aphrody checkout: `yolo m3 os-themes ...` (runOsThemes, in-process).
 // `generate` writes only into --out. `install`/`uninstall` are dry-run unless --apply (then they run the generated scripts).
-import { mkdirSync, writeFileSync, chmodSync, lstatSync, readFileSync } from "node:fs";
+import {
+  mkdirSync,
+  writeFileSync,
+  chmodSync,
+  lstatSync,
+  readFileSync,
+} from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import { nativeThemeVariant, parseNativeThemeExport } from "@aphrody/m3-tokens/native-theme";
+import {
+  nativeThemeVariant,
+  parseNativeThemeExport,
+} from "@aphrody/m3-tokens/native-theme";
 import { generate } from "./generate.ts";
-import { TARGETS, type ActiveMode, type GeneratedFile, type Target } from "./types.ts";
+import {
+  TARGETS,
+  type ActiveMode,
+  type GeneratedFile,
+  type Target,
+} from "./types.ts";
 
 export type Exec = (cmd: string[]) => number;
 
@@ -23,19 +37,27 @@ const USAGE = `m3-os-themes <install|generate|uninstall> --target windows|gnome|
 install/uninstall only print the plan unless --apply is given. generate writes into --out (default ./m3-os-themes-out).`;
 
 const defaultExec: Exec = (cmd) =>
-  Bun.spawnSync(cmd, { windowsHide: true, stdio: ["inherit", "inherit", "inherit"] }).exitCode ?? 1;
+  Bun.spawnSync(cmd, {
+    windowsHide: true,
+    stdio: ["inherit", "inherit", "inherit"],
+  }).exitCode ?? 1;
 
-function parse(argv: string[]): { cmd: string; flags: Record<string, string | boolean> } {
+function parse(argv: string[]): {
+  cmd: string;
+  flags: Record<string, string | boolean>;
+} {
   const [cmd = "", ...rest] = argv;
   const flags: Record<string, string | boolean> = {};
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i]!;
     if (!a.startsWith("--")) throw new Error(`unexpected argument ${a}`);
     const key = a.slice(2);
-    if (key === "dry-run" || key === "apply" || key === "help") flags[key] = true;
+    if (key === "dry-run" || key === "apply" || key === "help")
+      flags[key] = true;
     else {
       const v = rest[++i];
-      if (v === undefined || v.startsWith("--")) throw new Error(`--${key} needs a value`);
+      if (v === undefined || v.startsWith("--"))
+        throw new Error(`--${key} needs a value`);
       flags[key] = v;
     }
   }
@@ -55,7 +77,10 @@ export function installCommand(
   switch (target) {
     case "windows":
       if (platform !== "win32")
-        return { cmd: [], reason: "needs a Windows host (run install-windows.ps1 there)" };
+        return {
+          cmd: [],
+          reason: "needs a Windows host (run install-windows.ps1 there)",
+        };
       return {
         cmd: [
           "powershell.exe",
@@ -71,7 +96,8 @@ export function installCommand(
       };
     case "gnome":
     case "cosmic":
-      if (platform !== "linux") return { cmd: [], reason: `needs a Linux ${target} session` };
+      if (platform !== "linux")
+        return { cmd: [], reason: `needs a Linux ${target} session` };
       return {
         cmd: [
           "bash",
@@ -86,7 +112,8 @@ export function installCommand(
       if (platform === "win32")
         return {
           cmd: [],
-          reason: "import policies/windows/*.reg as administrator (see install-chromium.md)",
+          reason:
+            "import policies/windows/*.reg as administrator (see install-chromium.md)",
         };
       return {
         cmd: [
@@ -103,14 +130,23 @@ export function writeFiles(files: GeneratedFile[], outDir: string): void {
   for (const f of files) {
     const p = join(outDir, f.path);
     const inside = relative(resolve(outDir), resolve(p));
-    if (inside === "" || inside === ".." || inside.startsWith(`..${sep}`) || isAbsolute(inside))
-      throw new Error(`m3-os-themes: generated path escapes its directory: ${f.path}`);
+    if (
+      inside === "" ||
+      inside === ".." ||
+      inside.startsWith(`..${sep}`) ||
+      isAbsolute(inside)
+    )
+      throw new Error(
+        `m3-os-themes: generated path escapes its directory: ${f.path}`,
+      );
     let ancestor = resolve(outDir);
     for (const part of inside.split(sep)) {
       ancestor = join(ancestor, part);
       try {
         if (lstatSync(ancestor).isSymbolicLink())
-          throw new Error(`m3-os-themes: generated path contains a symlink: ${f.path}`);
+          throw new Error(
+            `m3-os-themes: generated path contains a symlink: ${f.path}`,
+          );
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
       }
@@ -134,7 +170,10 @@ export function run(argv: string[], exec: Exec = defaultExec): CliResult {
   if (!["install", "generate", "uninstall"].includes(cmd) || flags["help"])
     return { code: cmd ? 2 : 0, out: [USAGE] };
   const targetFlag = String(flags["target"] ?? "all");
-  if (targetFlag !== "all" && !(TARGETS as readonly string[]).includes(targetFlag))
+  if (
+    targetFlag !== "all" &&
+    !(TARGETS as readonly string[]).includes(targetFlag)
+  )
     return { code: 2, out: [`unknown target ${targetFlag}`, USAGE] };
   const targets = targetFlag === "all" ? TARGETS : [targetFlag as Target];
   const mode = String(flags["mode"] ?? "auto") as ActiveMode;
@@ -142,18 +181,22 @@ export function run(argv: string[], exec: Exec = defaultExec): CliResult {
     return { code: 2, out: [`unknown mode ${mode}`, USAGE] };
   const outDir = resolve(String(flags["out"] ?? "m3-os-themes-out"));
   const apply = flags["apply"] === true && flags["dry-run"] !== true;
-  const icons = typeof flags["icons"] === "string" ? resolve(flags["icons"]) : undefined;
+  const icons =
+    typeof flags["icons"] === "string" ? resolve(flags["icons"]) : undefined;
   let files: GeneratedFile[];
   try {
     const nativeTheme =
       typeof flags["native-theme"] === "string"
-        ? parseNativeThemeExport(JSON.parse(readFileSync(flags["native-theme"], "utf8")))
+        ? parseNativeThemeExport(
+            JSON.parse(readFileSync(flags["native-theme"], "utf8")),
+          )
         : undefined;
     files = generate(
       {
         name: String(flags["name"] ?? "Aphrody"),
         seed: String(flags["seed"] ?? nativeTheme?.seed ?? "#6750a4"),
-        variant: (flags["variant"] ?? (nativeTheme && nativeThemeVariant(nativeTheme))) as never,
+        variant: (flags["variant"] ??
+          (nativeTheme && nativeThemeVariant(nativeTheme))) as never,
         contrastLevel:
           flags["contrast"] === undefined
             ? (nativeTheme?.contrast_level ?? 0)
@@ -180,10 +223,18 @@ export function run(argv: string[], exec: Exec = defaultExec): CliResult {
   const uninstall = cmd === "uninstall";
   let code = 0;
   if (!uninstall && apply) writeFiles(files, outDir);
-  else if (!uninstall) log(`[dry-run] would generate ${files.length} files into ${outDir}`);
+  else if (!uninstall)
+    log(`[dry-run] would generate ${files.length} files into ${outDir}`);
   else if (apply) writeFiles(files, outDir);
   for (const t of targets) {
-    const { cmd: c, reason } = installCommand(t, outDir, mode, uninstall, process.platform, icons);
+    const { cmd: c, reason } = installCommand(
+      t,
+      outDir,
+      mode,
+      uninstall,
+      process.platform,
+      icons,
+    );
     if (c.length === 0) {
       log(`${t}: skipped, ${reason}`);
       continue;
@@ -195,7 +246,8 @@ export function run(argv: string[], exec: Exec = defaultExec): CliResult {
     log(`${t}: ${c.join(" ")}`);
     if (exec(c) !== 0) code = 1;
   }
-  if (!apply) log("dry-run: nothing was written to the system. Pass --apply to run.");
+  if (!apply)
+    log("dry-run: nothing was written to the system. Pass --apply to run.");
   return { code, out };
 }
 

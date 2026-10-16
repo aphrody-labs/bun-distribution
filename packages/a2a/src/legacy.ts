@@ -36,7 +36,9 @@ import { isTerminalState, streamPayloadKind } from "./protocol.ts";
 // ---------------------------------------------------------------------------
 
 /** Legacy method name to the A2A 1.0 method that serves it. `agent/card` is answered locally. */
-export const LEGACY_METHODS: Readonly<Record<string, A2AMethod | "agent/card">> = {
+export const LEGACY_METHODS: Readonly<
+  Record<string, A2AMethod | "agent/card">
+> = {
   "message/send": "SendMessage",
   "message/stream": "SendStreamingMessage",
   "tasks/get": "GetTask",
@@ -129,7 +131,9 @@ export function taskStateToLegacy(
   state: TaskState | undefined,
   style: LegacyProfile["stateStyle"] = "kebab",
 ): string {
-  const name = (state ?? "TASK_STATE_UNSPECIFIED").replace(/^TASK_STATE_/, "").toLowerCase();
+  const name = (state ?? "TASK_STATE_UNSPECIFIED")
+    .replace(/^TASK_STATE_/, "")
+    .toLowerCase();
   const kebab = name === "unspecified" ? "unknown" : name.replaceAll("_", "-");
   return style === "snake" ? kebab.replaceAll("-", "_") : kebab;
 }
@@ -149,7 +153,9 @@ function str(value: unknown): string | undefined {
 }
 
 function strings(value: unknown): string[] | undefined {
-  return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : undefined;
+  return Array.isArray(value)
+    ? value.filter((v): v is string => typeof v === "string")
+    : undefined;
 }
 
 function object(value: unknown): JsonObject | undefined {
@@ -177,7 +183,8 @@ export function upgradePart(raw: unknown): Part {
       };
     case "file": {
       const file = isLoose(raw.file) ? raw.file : {};
-      const bytes = str(file.bytes) ?? str(file.bytesBase64) ?? str(file.fileWithBytes);
+      const bytes =
+        str(file.bytes) ?? str(file.bytesBase64) ?? str(file.fileWithBytes);
       const uri = str(file.uri) ?? str(file.fileWithUri);
       const common = {
         ...(str(file.name) ? { filename: str(file.name) } : {}),
@@ -189,7 +196,9 @@ export function upgradePart(raw: unknown): Part {
       throw new TypeError("a file part needs bytes or a uri");
     }
     case undefined: {
-      const known = ["text", "raw", "url", "data"].filter((key) => raw[key] !== undefined);
+      const known = ["text", "raw", "url", "data"].filter(
+        (key) => raw[key] !== undefined,
+      );
       if (known.length !== 1)
         throw new TypeError("a part needs exactly one of text, raw, url, data");
       return raw as unknown as Part;
@@ -199,7 +208,10 @@ export function upgradePart(raw: unknown): Part {
   }
 }
 
-function upgradeRole(role: unknown, metadata: JsonObject): "ROLE_USER" | "ROLE_AGENT" {
+function upgradeRole(
+  role: unknown,
+  metadata: JsonObject,
+): "ROLE_USER" | "ROLE_AGENT" {
   const name = typeof role === "string" ? role.toLowerCase() : "user";
   if (name === "agent" || name === "role_agent") return "ROLE_AGENT";
   // The hub also had a `system` role; 1.0 has none. The sender is the client side: keep a trace.
@@ -208,14 +220,19 @@ function upgradeRole(role: unknown, metadata: JsonObject): "ROLE_USER" | "ROLE_A
 }
 
 /** A legacy message as a 1.0 message. */
-export function upgradeMessage(raw: unknown, options: LegacyOptions = {}): Message {
+export function upgradeMessage(
+  raw: unknown,
+  options: LegacyOptions = {},
+): Message {
   if (!isLoose(raw)) throw new TypeError("message must be an object");
   const metadata: JsonObject = { ...object(raw.metadata) };
   const role = upgradeRole(raw.role, metadata);
   if (!Array.isArray(raw.parts) || raw.parts.length === 0)
     throw new TypeError("message.parts must not be empty");
   const message: Message = {
-    messageId: str(raw.messageId) ?? (options.newMessageId ?? crypto.randomUUID.bind(crypto))(),
+    messageId:
+      str(raw.messageId) ??
+      (options.newMessageId ?? crypto.randomUUID.bind(crypto))(),
     role,
     parts: raw.parts.map(upgradePart),
   };
@@ -234,7 +251,8 @@ export function upgradePushConfig(
   raw: unknown,
   taskId?: string,
 ): Omit<TaskPushNotificationConfig, "tenant"> {
-  if (!isLoose(raw)) throw new TypeError("pushNotificationConfig must be an object");
+  if (!isLoose(raw))
+    throw new TypeError("pushNotificationConfig must be an object");
   const url = str(raw.url);
   if (!url) throw new TypeError("pushNotificationConfig.url is required");
   const config: Omit<TaskPushNotificationConfig, "tenant"> = { url };
@@ -242,7 +260,9 @@ export function upgradePushConfig(
   if (taskId ?? str(raw.taskId)) config.taskId = taskId ?? str(raw.taskId);
   if (str(raw.token)) config.token = str(raw.token);
   if (isLoose(raw.authentication)) {
-    const scheme = str(raw.authentication.scheme) ?? strings(raw.authentication.schemes)?.[0];
+    const scheme =
+      str(raw.authentication.scheme) ??
+      strings(raw.authentication.schemes)?.[0];
     if (scheme) {
       const authentication: AuthenticationInfo = { scheme };
       if (str(raw.authentication.credentials))
@@ -253,12 +273,15 @@ export function upgradePushConfig(
   return config;
 }
 
-function upgradeConfiguration(raw: unknown): SendMessageConfiguration | undefined {
+function upgradeConfiguration(
+  raw: unknown,
+): SendMessageConfiguration | undefined {
   if (!isLoose(raw)) return undefined;
   const configuration: SendMessageConfiguration = {};
   const modes = strings(raw.acceptedOutputModes);
   if (modes) configuration.acceptedOutputModes = modes;
-  if (typeof raw.historyLength === "number") configuration.historyLength = raw.historyLength;
+  if (typeof raw.historyLength === "number")
+    configuration.historyLength = raw.historyLength;
   // 0.3 `blocking: false` is 1.0 `returnImmediately: true`; blocking is the default of both.
   if (raw.blocking === false) configuration.returnImmediately = true;
   if (typeof raw.returnImmediately === "boolean")
@@ -275,7 +298,9 @@ function upgradeConfiguration(raw: unknown): SendMessageConfiguration | undefine
 function artifactsToParts(artifacts: unknown): Part[] {
   if (!Array.isArray(artifacts)) return [];
   return artifacts.filter(isLoose).map((artifact): Part => {
-    const metadata: JsonObject = { artifactName: str(artifact.name) ?? "artifact" };
+    const metadata: JsonObject = {
+      artifactName: str(artifact.name) ?? "artifact",
+    };
     switch (artifact.type) {
       case "json":
         return {
@@ -284,14 +309,21 @@ function artifactsToParts(artifacts: unknown): Part[] {
           metadata,
         };
       case "markdown":
-        return { text: String(artifact.content ?? ""), mediaType: "text/markdown", metadata };
+        return {
+          text: String(artifact.content ?? ""),
+          mediaType: "text/markdown",
+          metadata,
+        };
       case "file":
         return { url: String(artifact.uri ?? ""), metadata };
       default:
         return {
           text: String(artifact.content ?? ""),
           mediaType: "text/plain",
-          metadata: { ...metadata, artifactType: String(artifact.type ?? "code") },
+          metadata: {
+            ...metadata,
+            artifactType: String(artifact.type ?? "code"),
+          },
         };
     }
   });
@@ -300,7 +332,11 @@ function artifactsToParts(artifacts: unknown): Part[] {
 /** Result of translating one legacy request. */
 export type UpgradedRequest =
   | { method: A2AMethod; params: Record<string, unknown>; legacyMethod: string }
-  | { method: "agent/card"; params: Record<string, never>; legacyMethod: string };
+  | {
+      method: "agent/card";
+      params: Record<string, never>;
+      legacyMethod: string;
+    };
 
 /**
  * Translate the method and params of a legacy request. Throws `TypeError` for params that cannot be
@@ -314,7 +350,8 @@ export function upgradeRequest(
   const target = LEGACY_METHODS[method];
   if (!target) throw new RangeError(`Method not found: ${method}`);
   const params: Loose = isLoose(rawParams) ? rawParams : {};
-  if (target === "agent/card") return { method: target, params: {}, legacyMethod: method };
+  if (target === "agent/card")
+    return { method: target, params: {}, legacyMethod: method };
   const out = (p: Record<string, unknown>): UpgradedRequest => ({
     method: target,
     params: p,
@@ -324,9 +361,16 @@ export function upgradeRequest(
   switch (method) {
     case "message/send":
     case "message/stream":
-      return out(upgradeSend(params, options) as unknown as Record<string, unknown>);
+      return out(
+        upgradeSend(params, options) as unknown as Record<string, unknown>,
+      );
     case "tasks/update":
-      return out(upgradeTaskUpdate(params, options) as unknown as Record<string, unknown>);
+      return out(
+        upgradeTaskUpdate(params, options) as unknown as Record<
+          string,
+          unknown
+        >,
+      );
     case "tasks/get": {
       const id = str(params.id) ?? str(params.taskId);
       if (!id) throw new TypeError("Missing taskId parameter");
@@ -340,10 +384,12 @@ export function upgradeRequest(
     case "tasks/list": {
       const list: Record<string, unknown> = {};
       if (str(params.contextId)) list.contextId = str(params.contextId);
-      if (str(params.status)) list.status = legacyStateToTaskState(params.status);
+      if (str(params.status))
+        list.status = legacyStateToTaskState(params.status);
       if (typeof params.pageSize === "number") list.pageSize = params.pageSize;
       if (str(params.pageToken)) list.pageToken = str(params.pageToken);
-      if (typeof params.historyLength === "number") list.historyLength = params.historyLength;
+      if (typeof params.historyLength === "number")
+        list.historyLength = params.historyLength;
       return out(list);
     }
     case "tasks/cancel":
@@ -361,18 +407,20 @@ export function upgradeRequest(
       const taskId = str(params.taskId) ?? str(params.id);
       if (!taskId) throw new TypeError("Missing taskId parameter");
       return out(
-        upgradePushConfig(params.pushNotificationConfig ?? params, taskId) as Record<
-          string,
-          unknown
-        >,
+        upgradePushConfig(
+          params.pushNotificationConfig ?? params,
+          taskId,
+        ) as Record<string, unknown>,
       );
     }
     case "tasks/pushNotificationConfig/get":
     case "tasks/pushNotificationConfig/delete": {
       const taskId = str(params.taskId) ?? str(params.id);
       const id =
-        str(params.pushNotificationConfigId) ?? (str(params.taskId) ? str(params.id) : undefined);
-      if (!taskId || !id) throw new TypeError("taskId and pushNotificationConfigId are required");
+        str(params.pushNotificationConfigId) ??
+        (str(params.taskId) ? str(params.id) : undefined);
+      if (!taskId || !id)
+        throw new TypeError("taskId and pushNotificationConfigId are required");
       return out({ taskId, id });
     }
     case "tasks/pushNotificationConfig/list": {
@@ -385,7 +433,10 @@ export function upgradeRequest(
   }
 }
 
-function upgradeSend(params: Loose, options: LegacyOptions): SendMessageRequest {
+function upgradeSend(
+  params: Loose,
+  options: LegacyOptions,
+): SendMessageRequest {
   const metadata: JsonObject = { ...object(params.metadata) };
   let message: Message;
   if (params.message !== undefined) {
@@ -397,7 +448,8 @@ function upgradeSend(params: Loose, options: LegacyOptions): SendMessageRequest 
     if (instruction) parts.push({ text: instruction });
     if (isLoose(params.data) && Object.keys(params.data).length > 0)
       parts.push(upgradePart({ kind: "data", data: params.data }));
-    if (parts.length === 0) throw new TypeError("message or instruction is required");
+    if (parts.length === 0)
+      throw new TypeError("message or instruction is required");
     message = {
       messageId: (options.newMessageId ?? crypto.randomUUID.bind(crypto))(),
       role: "ROLE_USER",
@@ -422,7 +474,10 @@ function upgradeSend(params: Loose, options: LegacyOptions): SendMessageRequest 
 }
 
 /** `tasks/update`: a worker reply bound to an existing task, carried as an agent message. */
-function upgradeTaskUpdate(params: Loose, options: LegacyOptions): SendMessageRequest {
+function upgradeTaskUpdate(
+  params: Loose,
+  options: LegacyOptions,
+): SendMessageRequest {
   const taskId = str(params.taskId) ?? str(params.id);
   if (!taskId) throw new TypeError("Missing taskId parameter");
   const parts: Part[] = [];
@@ -431,11 +486,16 @@ function upgradeTaskUpdate(params: Loose, options: LegacyOptions): SendMessageRe
   if (isLoose(params.data) && Object.keys(params.data).length > 0)
     parts.push(upgradePart({ kind: "data", data: params.data }));
   parts.push(...artifactsToParts(params.artifacts));
-  if (parts.length === 0) parts.push({ text: `Status ${str(params.status) ?? "update"}` });
+  if (parts.length === 0)
+    parts.push({ text: `Status ${str(params.status) ?? "update"}` });
   const metadata: JsonObject = { legacyMethod: "tasks/update" };
-  if (str(params.sourceAgent)) metadata.sourceAgent = str(params.sourceAgent) as string;
+  if (str(params.sourceAgent))
+    metadata.sourceAgent = str(params.sourceAgent) as string;
   if (str(params.status))
-    metadata.status = taskStateToLegacy(legacyStateToTaskState(params.status), "kebab");
+    metadata.status = taskStateToLegacy(
+      legacyStateToTaskState(params.status),
+      "kebab",
+    );
   if (str(params.verdict)) metadata.verdict = str(params.verdict) as string;
   return {
     message: {
@@ -457,9 +517,13 @@ function tag(profile: LegacyProfile, value: string): Record<string, string> {
 }
 
 /** A 1.0 part as a legacy part. A non-object `data` value is wrapped as `{ value }`. */
-export function downgradePart(part: Part, profile: LegacyProfile = A2A_03_PROFILE): JsonObject {
+export function downgradePart(
+  part: Part,
+  profile: LegacyProfile = A2A_03_PROFILE,
+): JsonObject {
   const metadata: JsonObject = part.metadata ? { metadata: part.metadata } : {};
-  if (part.text !== undefined) return { ...tag(profile, "text"), text: part.text, ...metadata };
+  if (part.text !== undefined)
+    return { ...tag(profile, "text"), text: part.text, ...metadata };
   if (part.data !== undefined) {
     const data = isLoose(part.data) ? part.data : { value: part.data };
     return { ...tag(profile, "data"), data: data as JsonValue, ...metadata };
@@ -491,14 +555,21 @@ export function downgradeMessage(
     ...(message.taskId ? { taskId: message.taskId } : {}),
     ...(message.metadata ? { metadata: message.metadata } : {}),
     ...(message.extensions ? { extensions: message.extensions } : {}),
-    ...(message.referenceTaskIds ? { referenceTaskIds: message.referenceTaskIds } : {}),
+    ...(message.referenceTaskIds
+      ? { referenceTaskIds: message.referenceTaskIds }
+      : {}),
   };
 }
 
-function downgradeStatus(status: TaskStatus, profile: LegacyProfile): JsonObject {
+function downgradeStatus(
+  status: TaskStatus,
+  profile: LegacyProfile,
+): JsonObject {
   return {
     state: taskStateToLegacy(status.state, profile.stateStyle),
-    ...(status.message ? { message: downgradeMessage(status.message, profile) } : {}),
+    ...(status.message
+      ? { message: downgradeMessage(status.message, profile) }
+      : {}),
     ...(status.timestamp ? { timestamp: status.timestamp } : {}),
   };
 }
@@ -517,7 +588,10 @@ export function downgradeArtifact(
   };
 }
 
-export function downgradeTask(task: Task, profile: LegacyProfile = A2A_03_PROFILE): JsonObject {
+export function downgradeTask(
+  task: Task,
+  profile: LegacyProfile = A2A_03_PROFILE,
+): JsonObject {
   return {
     ...(profile.discriminator === "kind" ? { kind: "task" } : {}),
     id: task.id,
@@ -526,7 +600,9 @@ export function downgradeTask(task: Task, profile: LegacyProfile = A2A_03_PROFIL
     ...(task.artifacts
       ? { artifacts: task.artifacts.map((a) => downgradeArtifact(a, profile)) }
       : {}),
-    ...(task.history ? { history: task.history.map((m) => downgradeMessage(m, profile)) } : {}),
+    ...(task.history
+      ? { history: task.history.map((m) => downgradeMessage(m, profile)) }
+      : {}),
     ...(task.metadata ? { metadata: task.metadata } : {}),
   };
 }
@@ -542,7 +618,9 @@ export function downgradeStreamResponse(
     case "message":
       return downgradeMessage(event.message as Message, profile);
     case "statusUpdate": {
-      const update = event.statusUpdate as NonNullable<StreamResponse["statusUpdate"]>;
+      const update = event.statusUpdate as NonNullable<
+        StreamResponse["statusUpdate"]
+      >;
       return {
         ...tag(profile, "status-update"),
         taskId: update.taskId,
@@ -553,14 +631,18 @@ export function downgradeStreamResponse(
       };
     }
     case "artifactUpdate": {
-      const update = event.artifactUpdate as NonNullable<StreamResponse["artifactUpdate"]>;
+      const update = event.artifactUpdate as NonNullable<
+        StreamResponse["artifactUpdate"]
+      >;
       return {
         ...tag(profile, "artifact-update"),
         taskId: update.taskId,
         contextId: update.contextId,
         artifact: downgradeArtifact(update.artifact, profile),
         ...(update.append !== undefined ? { append: update.append } : {}),
-        ...(update.lastChunk !== undefined ? { lastChunk: update.lastChunk } : {}),
+        ...(update.lastChunk !== undefined
+          ? { lastChunk: update.lastChunk }
+          : {}),
         ...(update.metadata ? { metadata: update.metadata } : {}),
       };
     }
@@ -582,11 +664,16 @@ export function downgradeSendResponse(
   // Hub style: { taskId, status, verdict?, response: { role, parts }, task? }
   const task = response.task;
   const text = task ? taskText(task) : messageText(response.message);
-  const data = task?.artifacts?.flatMap((a) => a.parts).find((p) => p.data !== undefined)?.data;
+  const data = task?.artifacts
+    ?.flatMap((a) => a.parts)
+    .find((p) => p.data !== undefined)?.data;
   const verdict = task?.metadata?.verdict;
   return {
     ...(task
-      ? { taskId: task.id, status: taskStateToLegacy(task.status.state, profile.stateStyle) }
+      ? {
+          taskId: task.id,
+          status: taskStateToLegacy(task.status.state, profile.stateStyle),
+        }
       : { status: "completed" }),
     ...(typeof verdict === "string" ? { verdict } : {}),
     response: {
@@ -613,9 +700,16 @@ export function downgradeAgentCard(card: AgentCard): JsonObject {
         }
       : {}),
     ...(rest.length > 0
-      ? { additionalInterfaces: rest.map((i) => ({ url: i.url, transport: i.protocolBinding })) }
+      ? {
+          additionalInterfaces: rest.map((i) => ({
+            url: i.url,
+            transport: i.protocolBinding,
+          })),
+        }
       : {}),
-    ...(card.capabilities?.extendedAgentCard ? { supportsAuthenticatedExtendedCard: true } : {}),
+    ...(card.capabilities?.extendedAgentCard
+      ? { supportsAuthenticatedExtendedCard: true }
+      : {}),
   };
 }
 
@@ -656,7 +750,11 @@ function rpcError(
   message: string,
   data?: unknown,
 ): LegacyRpcResponse {
-  return { jsonrpc: "2.0", id, error: { code, message, ...(data === undefined ? {} : { data }) } };
+  return {
+    jsonrpc: "2.0",
+    id,
+    error: { code, message, ...(data === undefined ? {} : { data }) },
+  };
 }
 
 /**
@@ -691,16 +789,28 @@ export class LegacyBridge {
 
   private parse(
     request: unknown,
-  ): { id: LegacyRpcResponse["id"]; method: string; params: unknown } | LegacyRpcResponse {
+  ):
+    | { id: LegacyRpcResponse["id"]; method: string; params: unknown }
+    | LegacyRpcResponse {
     if (!isLoose(request)) return rpcError(null, -32600, "Invalid Request");
-    const id = typeof request.id === "string" || typeof request.id === "number" ? request.id : null;
-    if (request.jsonrpc !== "2.0" || typeof request.method !== "string" || request.method === "") {
+    const id =
+      typeof request.id === "string" || typeof request.id === "number"
+        ? request.id
+        : null;
+    if (
+      request.jsonrpc !== "2.0" ||
+      typeof request.method !== "string" ||
+      request.method === ""
+    ) {
       return rpcError(id, -32600, "Invalid JSON-RPC 2.0 request");
     }
     return { id, method: request.method, params: request.params };
   }
 
-  private failure(id: LegacyRpcResponse["id"], cause: unknown): LegacyRpcResponse {
+  private failure(
+    id: LegacyRpcResponse["id"],
+    cause: unknown,
+  ): LegacyRpcResponse {
     if (cause instanceof A2AError) {
       return rpcError(
         id,
@@ -714,7 +824,11 @@ export class LegacyBridge {
     if (cause instanceof TypeError)
       return rpcError(id, A2A_ERROR_CODES.INVALID_PARAMS, cause.message);
     if (cause instanceof A2ATransportError) {
-      return rpcError(id, A2A_ERROR_CODES.INTERNAL_ERROR, `Internal error: ${cause.message}`);
+      return rpcError(
+        id,
+        A2A_ERROR_CODES.INTERNAL_ERROR,
+        `Internal error: ${cause.message}`,
+      );
     }
     return rpcError(
       id,
@@ -739,7 +853,11 @@ export class LegacyBridge {
       }
       const call = upgradeRequest(method, params, this.options);
       const result = await this.dispatch(call);
-      return { jsonrpc: "2.0", id, result: this.downgradeResult(call, result, params) };
+      return {
+        jsonrpc: "2.0",
+        id,
+        result: this.downgradeResult(call, result, params),
+      };
     } catch (cause) {
       return this.failure(id, cause);
     }
@@ -765,10 +883,16 @@ export class LegacyBridge {
       const call = upgradeRequest(method, params, this.options);
       const events =
         call.method === "SendStreamingMessage"
-          ? this.client.sendStreamingMessage(call.params as unknown as SendMessageRequest)
+          ? this.client.sendStreamingMessage(
+              call.params as unknown as SendMessageRequest,
+            )
           : this.client.subscribeToTask(call.params as { id: string });
       for await (const event of events) {
-        yield { jsonrpc: "2.0", id, result: downgradeStreamResponse(event, this.profile) };
+        yield {
+          jsonrpc: "2.0",
+          id,
+          result: downgradeStreamResponse(event, this.profile),
+        };
       }
     } catch (cause) {
       yield this.failure(id, cause);
@@ -810,7 +934,11 @@ export class LegacyBridge {
     }
   }
 
-  private downgradeResult(call: UpgradedRequest, result: unknown, legacyParams: unknown): unknown {
+  private downgradeResult(
+    call: UpgradedRequest,
+    result: unknown,
+    legacyParams: unknown,
+  ): unknown {
     const profile = this.profile;
     switch (call.method) {
       case "agent/card":
@@ -820,7 +948,10 @@ export class LegacyBridge {
         const response = result as SendMessageResponse;
         if (call.legacyMethod === "tasks/update") {
           // The hub answered a worker report with the updated task.
-          return downgradeSendResponse(response, { ...profile, sendResult: "hub" });
+          return downgradeSendResponse(response, {
+            ...profile,
+            sendResult: "hub",
+          });
         }
         return downgradeSendResponse(response, profile);
       }
@@ -829,21 +960,28 @@ export class LegacyBridge {
         return downgradeTask(result as Task, profile);
       case "ListTasks": {
         let tasks = (result as { tasks: Task[] }).tasks;
-        const target = isLoose(legacyParams) ? str(legacyParams.target) : undefined;
+        const target = isLoose(legacyParams)
+          ? str(legacyParams.target)
+          : undefined;
         // 1.0 has no `target` filter: match what the executor recorded on the task.
         if (target)
           tasks = tasks.filter(
-            (t) => t.metadata?.target === target || t.metadata?.aphrody_peer === target,
+            (t) =>
+              t.metadata?.target === target ||
+              t.metadata?.aphrody_peer === target,
           );
-        return { tasks: tasks.map((t) => downgradeTask(t, profile)), total: tasks.length };
+        return {
+          tasks: tasks.map((t) => downgradeTask(t, profile)),
+          total: tasks.length,
+        };
       }
       case "CreateTaskPushNotificationConfig":
       case "GetTaskPushNotificationConfig":
         return downgradePushConfig(result as TaskPushNotificationConfig);
       case "ListTaskPushNotificationConfigs":
-        return (result as { configs: TaskPushNotificationConfig[] }).configs.map(
-          downgradePushConfig,
-        );
+        return (
+          result as { configs: TaskPushNotificationConfig[] }
+        ).configs.map(downgradePushConfig);
       default:
         return result;
     }
@@ -851,7 +989,9 @@ export class LegacyBridge {
 }
 
 /** A 1.0 push config as the legacy `{ taskId, pushNotificationConfig }` pair. */
-export function downgradePushConfig(config: TaskPushNotificationConfig): JsonObject {
+export function downgradePushConfig(
+  config: TaskPushNotificationConfig,
+): JsonObject {
   const authentication: JsonObject = config.authentication
     ? {
         authentication: {

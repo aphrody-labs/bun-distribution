@@ -1,8 +1,18 @@
 import { afterAll, describe, expect, it } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { sshServiceArgs, splitExitSentinel, withExitSentinel } from "../src/aphrody";
+import {
+  sshServiceArgs,
+  splitExitSentinel,
+  withExitSentinel,
+} from "../src/aphrody";
 import {
   analyze,
   buildAudit,
@@ -414,7 +424,8 @@ const COLLECTED = [
   "",
 ].join("\n");
 
-const audit = (over: string = COLLECTED): Audit => buildAudit("vps", over, "2026-10-03T00:00:00Z");
+const audit = (over: string = COLLECTED): Audit =>
+  buildAudit("vps", over, "2026-10-03T00:00:00Z");
 
 // ------------------------------------------------------------------------------------------- helpers
 
@@ -506,9 +517,11 @@ describe("formatting and sections", () => {
     expect(parseSize("212kB")).toBe(212000);
     expect(parseSize("0B")).toBe(0);
     expect(parseSize("nonsense")).toBe(0);
-    expect(parseJournalUsage("Archived and active journals take up 3.8G in the file system.")).toBe(
-      parseSize("3.8G"),
-    );
+    expect(
+      parseJournalUsage(
+        "Archived and active journals take up 3.8G in the file system.",
+      ),
+    ).toBe(parseSize("3.8G"));
   });
 
   it("splits collector output into sections", () => {
@@ -546,7 +559,9 @@ describe("lsblk, df, swap, memory parsers", () => {
     expect(by["sda"]?.state).toBe("system");
     expect(by["sdb"]?.state).toBe("mounted");
     expect(by["sdb"]?.note).toContain("/dev/sdb13");
-    expect(by["sdb"]?.filesystems.find((f) => f.path === "/dev/sdb13")?.mounted).toBe(false);
+    expect(
+      by["sdb"]?.filesystems.find((f) => f.path === "/dev/sdb13")?.mounted,
+    ).toBe(false);
     expect(by["sdc"]?.state).toBe("unmounted-raw");
     expect(by["sdc"]?.holdsData).toBe(false);
     expect(by["sdd"]?.state).toBe("unmounted-data"); // whole-disk filesystem, not mounted
@@ -567,7 +582,9 @@ describe("lsblk, df, swap, memory parsers", () => {
     expect(root?.usePercent).toBe(75);
     expect(root?.real).toBe(true);
     expect(fs.find((f) => f.mount === "/run")?.real).toBe(false);
-    expect(fs.find((f) => f.mount === "/mnt/backup")?.inodes?.usePercent).toBe(88);
+    expect(fs.find((f) => f.mount === "/mnt/backup")?.inodes?.usePercent).toBe(
+      88,
+    );
   });
 
   it("parses swapon (with or without header), zramctl and meminfo", () => {
@@ -575,9 +592,15 @@ describe("lsblk, df, swap, memory parsers", () => {
       "NAME TYPE SIZE USED PRIO\n/swapfile2 file 8589930496 0 10\n/dev/zram0 partition 17179865088 803655680 100",
     );
     expect(sw).toHaveLength(2);
-    expect(sw[1]).toMatchObject({ name: "/dev/zram0", usedBytes: 803655680, priority: 100 });
+    expect(sw[1]).toMatchObject({
+      name: "/dev/zram0",
+      usedBytes: 803655680,
+      priority: 100,
+    });
     expect(parseSwapon("")).toEqual([]);
-    expect(parseZramctl("/dev/zram0 17179869184 798 600 zstd")[0]).toMatchObject({
+    expect(
+      parseZramctl("/dev/zram0 17179869184 798 600 zstd")[0],
+    ).toMatchObject({
       algorithm: "zstd",
       diskSizeBytes: 17179869184,
     });
@@ -628,16 +651,23 @@ describe("systemctl, ps, ports parsers", () => {
   });
 
   it("recognizes build processes but not daemons or the yolo CLI itself", () => {
-    const by = Object.fromEntries(parsePs(PS).map((p) => [p.pid, isBuildProcess(p)]));
+    const by = Object.fromEntries(
+      parsePs(PS).map((p) => [p.pid, isBuildProcess(p)]),
+    );
     expect(by[3000]).toBe(true); // cargo
     expect(by[3001]).toBe(true); // rustc
     expect(by[3500]).toBe(false); // sccache daemon
     expect(by[4000]).toBe(false); // bun run cli host audit
     expect(by[2]).toBe(false);
-    expect(isBuildProcess({ ...parsePs(PS)[0]!, args: "bun install --frozen-lockfile" })).toBe(
-      true,
-    );
-    expect(isBuildProcess({ ...parsePs(PS)[0]!, args: "/usr/bin/bun run build" })).toBe(true);
+    expect(
+      isBuildProcess({
+        ...parsePs(PS)[0]!,
+        args: "bun install --frozen-lockfile",
+      }),
+    ).toBe(true);
+    expect(
+      isBuildProcess({ ...parsePs(PS)[0]!, args: "/usr/bin/bun run build" }),
+    ).toBe(true);
   });
 
   it("parses ss output with IPv6, interface suffixes and process names", () => {
@@ -659,17 +689,27 @@ describe("systemctl, ps, ports parsers", () => {
 
 describe("probe parsers", () => {
   it("parses docker df, locks, artifacts, swap files and metrics", () => {
-    const d = parseDockerDf(COLLECTED.split("@@@ docker\n")[1]!.split("@@@")[0]!);
-    expect(d.find((x) => x.type === "Images")?.reclaimableBytes).toBe(1800000000);
-    expect(parseLocks("/l|held|123,456,\n/m|free|\n/n|absent|\ngarbage")).toEqual([
+    const d = parseDockerDf(
+      COLLECTED.split("@@@ docker\n")[1]!.split("@@@")[0]!,
+    );
+    expect(d.find((x) => x.type === "Images")?.reclaimableBytes).toBe(
+      1800000000,
+    );
+    expect(
+      parseLocks("/l|held|123,456,\n/m|free|\n/n|absent|\ngarbage"),
+    ).toEqual([
       { path: "/l", state: "held", pids: [123, 456] },
       { path: "/m", state: "free", pids: [] },
       { path: "/n", state: "absent", pids: [] },
     ]);
-    const art = parseArtifacts("900|cargo|old|/home/a/t\n1|npm|recent|/x|y/node_modules\nbad");
+    const art = parseArtifacts(
+      "900|cargo|old|/home/a/t\n1|npm|recent|/x|y/node_modules\nbad",
+    );
     expect(art).toHaveLength(2);
     expect(art[1]).toMatchObject({ recent: true, path: "/x|y/node_modules" });
-    expect(parseSwapFiles("4294967296|SWAPSPACE2|-|/swapfile.old")[0]).toMatchObject({
+    expect(
+      parseSwapFiles("4294967296|SWAPSPACE2|-|/swapfile.old")[0],
+    ).toMatchObject({
       swapSignature: true,
       inFstab: false,
     });
@@ -677,13 +717,22 @@ describe("probe parsers", () => {
       "mem_available=10\nswap_total=20\nswap_free=5\nload1=0.5\nfree:/mnt/x=1234",
       "t",
     );
-    expect(m).toMatchObject({ memAvailableBytes: 10, swapTotalBytes: 20, load1: 0.5 });
+    expect(m).toMatchObject({
+      memAvailableBytes: 10,
+      swapTotalBytes: 20,
+      load1: 0.5,
+    });
     expect(m.freeBytes["/mnt/x"]).toBe(1234);
   });
 
   it("builds a typed audit from a full collector output", () => {
     const a = audit();
-    expect(a.identity).toMatchObject({ user: "ubuntu", uid: 1000, cpus: 12, privileged: true });
+    expect(a.identity).toMatchObject({
+      user: "ubuntu",
+      uid: 1000,
+      cpus: 12,
+      privileged: true,
+    });
     expect(a.identity.load).toEqual([0.17, 1.83, 3.72]);
     expect(a.cron).toEqual({ files: ["e2scrub_all"], userEntries: 1 });
     expect(a.buildProcs.map((b) => b.pid)).toEqual([3000, 3001]);
@@ -708,7 +757,9 @@ describe("probe parsers", () => {
 
 describe("free-space floor finding", () => {
   it("is critical below 50 % free and names the space command with the largest non-nested paths", () => {
-    const f = analyze(audit(), 0.5).find((x) => x.id === "free-floor:/mnt/backup");
+    const f = analyze(audit(), 0.5).find(
+      (x) => x.id === "free-floor:/mnt/backup",
+    );
     expect(f?.severity).toBe("critical");
     expect(f?.action).toContain("yolo host space");
     expect(f?.action).toContain("--host vps --fs /mnt/backup");
@@ -716,8 +767,12 @@ describe("free-space floor finding", () => {
 
   it("follows the floor it is given: 93 % full is below 20 % free, a 1 % floor is met", () => {
     const a = audit();
-    expect(analyze(a, 0.2).some((x) => x.id === "free-floor:/mnt/backup")).toBe(true);
-    expect(analyze(a, 0.01).some((x) => x.id === "free-floor:/mnt/backup")).toBe(false);
+    expect(analyze(a, 0.2).some((x) => x.id === "free-floor:/mnt/backup")).toBe(
+      true,
+    );
+    expect(
+      analyze(a, 0.01).some((x) => x.id === "free-floor:/mnt/backup"),
+    ).toBe(false);
   });
 
   it("disappears once every filesystem keeps more than half free", () => {
@@ -725,10 +780,15 @@ describe("free-space floor finding", () => {
     const roomy = {
       ...a,
       filesystems: a.filesystems.map((x) =>
-        Object.assign({}, x, { availBytes: Math.floor(x.sizeBytes * 0.6), usePercent: 40 }),
+        Object.assign({}, x, {
+          availBytes: Math.floor(x.sizeBytes * 0.6),
+          usePercent: 40,
+        }),
       ),
     };
-    expect(analyze(roomy, 0.5).some((x) => x.id.startsWith("free-floor:"))).toBe(false);
+    expect(
+      analyze(roomy, 0.5).some((x) => x.id.startsWith("free-floor:")),
+    ).toBe(false);
   });
 });
 
@@ -758,7 +818,9 @@ describe("safety invariants", () => {
       expect(protectedReason(p, ctx)).not.toBeNull();
     }
     expect(protectedReason("/home/ubuntu/proj", ctx)).toBe("a home directory");
-    expect(protectedReason("/home/ubuntu/apps/app/releases", ctx)).toBe("a home directory");
+    expect(protectedReason("/home/ubuntu/apps/app/releases", ctx)).toBe(
+      "a home directory",
+    );
     expect(protectedReason("/tmp/x", ctx)).toBeNull();
     expect(isDatabasePath("/var/lib/docker/overlay2")).toBe(true);
     expect(isDatabasePath("/home/ubuntu/apps/x/data.sqlite3")).toBe(true);
@@ -774,25 +836,60 @@ describe("safety invariants", () => {
 
   it("a reclaim rule only deletes marked, aged build output in scan roots, never protected or kept data", () => {
     const roots = ["/home/ubuntu", "/tmp"];
-    expect(canDeleteBuildArtifact("/home/ubuntu/p/target", "cargo", roots, ctx).ok).toBe(true);
-    expect(canDeleteBuildArtifact("/home/ubuntu/src/x/node_modules", "npm", roots, ctx).ok).toBe(
-      true,
-    );
-    expect(canDeleteBuildArtifact("/home/other/p/target", "cargo", roots, ctx).ok).toBe(false);
-    expect(canDeleteBuildArtifact("/home/ubuntu/build/cache/target", "cargo", roots, ctx).ok).toBe(
-      false,
-    );
     expect(
-      canDeleteBuildArtifact("/home/ubuntu/apps/app/shared/target", "cargo", roots, ctx).ok,
-    ).toBe(false);
-    expect(canDeleteBuildArtifact("/var/lib/foo/target", "cargo", ["/var"], ctx).ok).toBe(false);
-    expect(canDeleteBuildArtifact("/home/ubuntu/p/src", "cargo", roots, ctx).ok).toBe(false); // wrong name for the marker
-    expect(canDeleteBuildArtifact("/opt/p/target", "cargo", roots, ctx).ok).toBe(false); // outside scan roots
+      canDeleteBuildArtifact("/home/ubuntu/p/target", "cargo", roots, ctx).ok,
+    ).toBe(true);
     expect(
-      canDeleteBuildArtifact("/home/ubuntu/.cargo/registry/target", "cargo", roots, ctx).ok,
+      canDeleteBuildArtifact(
+        "/home/ubuntu/src/x/node_modules",
+        "npm",
+        roots,
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      canDeleteBuildArtifact("/home/other/p/target", "cargo", roots, ctx).ok,
     ).toBe(false);
     expect(
-      canDeleteBuildArtifact("/home/ubuntu/.cache/sccache/target", "cargo", roots, ctx).ok,
+      canDeleteBuildArtifact(
+        "/home/ubuntu/build/cache/target",
+        "cargo",
+        roots,
+        ctx,
+      ).ok,
+    ).toBe(false);
+    expect(
+      canDeleteBuildArtifact(
+        "/home/ubuntu/apps/app/shared/target",
+        "cargo",
+        roots,
+        ctx,
+      ).ok,
+    ).toBe(false);
+    expect(
+      canDeleteBuildArtifact("/var/lib/foo/target", "cargo", ["/var"], ctx).ok,
+    ).toBe(false);
+    expect(
+      canDeleteBuildArtifact("/home/ubuntu/p/src", "cargo", roots, ctx).ok,
+    ).toBe(false); // wrong name for the marker
+    expect(
+      canDeleteBuildArtifact("/opt/p/target", "cargo", roots, ctx).ok,
+    ).toBe(false); // outside scan roots
+    expect(
+      canDeleteBuildArtifact(
+        "/home/ubuntu/.cargo/registry/target",
+        "cargo",
+        roots,
+        ctx,
+      ).ok,
+    ).toBe(false);
+    expect(
+      canDeleteBuildArtifact(
+        "/home/ubuntu/.cache/sccache/target",
+        "cargo",
+        roots,
+        ctx,
+      ).ok,
     ).toBe(false);
   });
 
@@ -813,16 +910,26 @@ describe("safety invariants", () => {
   });
 
   it("skips a path used by a build process, but not because of a daemon sitting in /", () => {
-    expect(pathInUse("/home/ubuntu/apps/w/target", ["/home/ubuntu/apps/w"])).toBe(true);
-    expect(pathInUse("/home/ubuntu/apps/w/target", ["/home/ubuntu/apps/w/target/debug"])).toBe(
-      true,
-    );
-    expect(pathInUse("/home/ubuntu/apps/w/target", ["/home/ubuntu/apps/other"])).toBe(false);
+    expect(
+      pathInUse("/home/ubuntu/apps/w/target", ["/home/ubuntu/apps/w"]),
+    ).toBe(true);
+    expect(
+      pathInUse("/home/ubuntu/apps/w/target", [
+        "/home/ubuntu/apps/w/target/debug",
+      ]),
+    ).toBe(true);
+    expect(
+      pathInUse("/home/ubuntu/apps/w/target", ["/home/ubuntu/apps/other"]),
+    ).toBe(false);
     expect(pathInUse("/home/ubuntu/apps/w/target", ["/", null])).toBe(false);
   });
 
   it("removes a source only when every verification passed", () => {
-    const ok = { zstdTest: true, entryCountMatches: true, manifestChecked: true };
+    const ok = {
+      zstdTest: true,
+      entryCountMatches: true,
+      manifestChecked: true,
+    };
     expect(canRemoveSource(ok)).toBe(true);
     expect(canRemoveSource({ ...ok, zstdTest: false })).toBe(false);
     expect(canRemoveSource({ ...ok, entryCountMatches: false })).toBe(false);
@@ -917,14 +1024,20 @@ keep = ["only-on-dbfr"]
   });
 
   it("cannot make ssh stoppable", () => {
-    const p = parsePolicy(`[services]\nstop = ["ssh", "ssh.service", "systemd-*"]`, "vps");
+    const p = parsePolicy(
+      `[services]\nstop = ["ssh", "ssh.service", "systemd-*"]`,
+      "vps",
+    );
     expect(canStopUnit("ssh.service", p.services).ok).toBe(false);
     expect(canStopUnit("systemd-networkd.service", p.services).ok).toBe(false);
   });
 
   it("the shipped host-policy.toml parses", async () => {
     const text = await Bun.file(
-      join(import.meta.dir, "../../../tools/aphrody/config/host/host-policy.toml"),
+      join(
+        import.meta.dir,
+        "../../../tools/aphrody/config/host/host-policy.toml",
+      ),
     ).text();
     const p = parsePolicy(text, "vps");
     expect(p.reclaim.excludeNames).toContain("aphrody-ui");
@@ -978,8 +1091,14 @@ describe("collector and transport helpers", () => {
     expect(w).toEndWith("| base64 -d | sh");
     const wrapped = withExitSentinel("false");
     expect(wrapped).toContain("@@yolo-rc=");
-    expect(splitExitSentinel("out\n@@yolo-rc=3\n")).toEqual({ stdout: "out", code: 3 });
-    expect(splitExitSentinel("no marker")).toEqual({ stdout: "no marker", code: null });
+    expect(splitExitSentinel("out\n@@yolo-rc=3\n")).toEqual({
+      stdout: "out",
+      code: 3,
+    });
+    expect(splitExitSentinel("no marker")).toEqual({
+      stdout: "no marker",
+      code: null,
+    });
   });
 
   it("quotes shell values and picks the privilege wrapper", () => {
@@ -992,12 +1111,25 @@ describe("collector and transport helpers", () => {
 
   it("stop and disable carry --confirm, start does not", () => {
     expect(sshServiceArgs("vps", "x.service", "stop")).toContain("--confirm");
-    expect(sshServiceArgs("vps", "x.service", "disable")).toContain("--confirm");
-    expect(sshServiceArgs("vps", "x.service", "start")).not.toContain("--confirm");
+    expect(sshServiceArgs("vps", "x.service", "disable")).toContain(
+      "--confirm",
+    );
+    expect(sshServiceArgs("vps", "x.service", "start")).not.toContain(
+      "--confirm",
+    );
   });
 
   it("parses flags with values, booleans and repeated flags", () => {
-    const f = parseFlags(["a", "--host", "vps", "--apply", "--stop", "x", "--stop=y", "b"]);
+    const f = parseFlags([
+      "a",
+      "--host",
+      "vps",
+      "--apply",
+      "--stop",
+      "x",
+      "--stop=y",
+      "b",
+    ]);
     expect(f.positional).toEqual(["a", "b"]);
     expect(f.values.get("host")).toEqual(["vps"]);
     expect(f.values.get("stop")).toEqual(["x", "y"]);
@@ -1016,16 +1148,23 @@ describe("reclaim plan", () => {
     expect(ids).toContain("rotated-logs");
     expect(ids).toContain("docker-images");
     expect(ids).toContain("swapfile:/swapfile.old");
-    expect(candidates.find((c) => c.id === "apt-cache")?.cmd).toBe("sudo -n sh -c 'apt-get clean'");
-    expect(candidates.find((c) => c.id === "docker-images")?.cmd).toBe("docker image prune -f");
+    expect(candidates.find((c) => c.id === "apt-cache")?.cmd).toBe(
+      "sudo -n sh -c 'apt-get clean'",
+    );
+    expect(candidates.find((c) => c.id === "docker-images")?.cmd).toBe(
+      "docker image prune -f",
+    );
     expect(candidates.find((c) => c.id === "journal")?.bytes).toBe(
       parseSize("1.5G") - parseSize("500M"),
     );
     // low risk first
     const risks = candidates.map((c) => c.risk);
-    expect(risks.indexOf("medium")).toBeGreaterThan(risks.lastIndexOf("low") - 1);
+    expect(risks.indexOf("medium")).toBeGreaterThan(
+      risks.lastIndexOf("low") - 1,
+    );
     // no command removes a volume
-    for (const c of candidates) expect(() => assertSafeCommand(c.cmd ?? "")).not.toThrow();
+    for (const c of candidates)
+      expect(() => assertSafeCommand(c.cmd ?? "")).not.toThrow();
   });
 
   it("leaves alone recent, other users', preserved, active and fstab-listed things", () => {
@@ -1041,25 +1180,35 @@ describe("reclaim plan", () => {
   it("blocks an artifact a build process works above, and an unreadable build cwd blocks all", () => {
     // the cargo build runs in /home/ubuntu/src/aphrody; the npm candidate is in .../workspaces/x
     expect(
-      candidates.find((c) => c.path === "/home/ubuntu/src/x/node_modules")?.blocked,
+      candidates.find((c) => c.path === "/home/ubuntu/src/x/node_modules")
+        ?.blocked,
     ).toBeUndefined();
     const inUse = audit(
-      COLLECTED.replace("3000 /home/ubuntu/src/aphrody", "3000 /home/ubuntu/src/x"),
+      COLLECTED.replace(
+        "3000 /home/ubuntu/src/aphrody",
+        "3000 /home/ubuntu/src/x",
+      ),
     );
     const c2 = reclaimCandidates(inUse, DEFAULT_POLICY, "vps").candidates;
-    expect(c2.find((c) => c.path === "/home/ubuntu/src/x/node_modules")?.blocked).toContain(
-      "build process",
+    expect(
+      c2.find((c) => c.path === "/home/ubuntu/src/x/node_modules")?.blocked,
+    ).toContain("build process");
+    const blind = audit(
+      COLLECTED.replace("3000 /home/ubuntu/src/aphrody\n", ""),
     );
-    const blind = audit(COLLECTED.replace("3000 /home/ubuntu/src/aphrody\n", ""));
     const c3 = reclaimCandidates(blind, DEFAULT_POLICY, "vps").candidates;
-    expect(c3.find((c) => c.kind === "build-artifact")?.blocked).toContain("cannot see");
+    expect(c3.find((c) => c.kind === "build-artifact")?.blocked).toContain(
+      "cannot see",
+    );
   });
 
   it("without root, root-only steps are blocked instead of being run", () => {
     const noRoot = audit(COLLECTED.replace("sudo=yes", "sudo=no"));
-    const apt = reclaimCandidates(noRoot, DEFAULT_POLICY, "vps").candidates.find(
-      (c) => c.id === "apt-cache",
-    );
+    const apt = reclaimCandidates(
+      noRoot,
+      DEFAULT_POLICY,
+      "vps",
+    ).candidates.find((c) => c.id === "apt-cache");
     expect(apt?.blocked).toContain("needs root");
   });
 
@@ -1079,7 +1228,10 @@ describe("services plan", () => {
       candidates: true,
     });
     expect(rows.find((r) => r.name === "ssh.service")?.cls).toBe("keep");
-    expect(plan.steps.map((s) => s.id)).toEqual(["stop:snapd.service", "disable:snapd.service"]);
+    expect(plan.steps.map((s) => s.id)).toEqual([
+      "stop:snapd.service",
+      "disable:snapd.service",
+    ]);
     expect(plan.steps[0]?.cmd).toBe(
       "aphrody-infra ssh service --host vps --action stop --confirm snapd.service",
     );
@@ -1097,7 +1249,11 @@ describe("services plan", () => {
     });
     expect(plan.steps.map((s) => s.id)).toEqual(["stop:mystery.service"]);
     expect(plan.skipped.map((s) => s.what)).toEqual(
-      expect.arrayContaining(["ssh.service", "nginx.service", "not-running.service"]),
+      expect.arrayContaining([
+        "ssh.service",
+        "nginx.service",
+        "not-running.service",
+      ]),
     );
   });
 
@@ -1146,7 +1302,12 @@ describe("tune plan", () => {
       recommended_value: "2097152",
       status: "NeedsUpdate",
     },
-    { key: "vm.swappiness", current_value: "1", recommended_value: "10", status: "NeedsUpdate" },
+    {
+      key: "vm.swappiness",
+      current_value: "1",
+      recommended_value: "10",
+      status: "NeedsUpdate",
+    },
     {
       key: "net.core.somaxconn",
       current_value: "65535",
@@ -1172,7 +1333,10 @@ describe("tune plan", () => {
       status: "ok",
     });
     expect(row("net.ipv4.tcp_rmem")?.status).toBe("ok"); // already larger
-    expect(row("net.core.netdev_max_backlog")).toMatchObject({ current: "1000", status: "change" });
+    expect(row("net.core.netdev_max_backlog")).toMatchObject({
+      current: "1000",
+      status: "change",
+    });
     expect(row("vm.swappiness")?.source).toBe("aphrody-infra");
     expect(row("transparent_hugepage")).toMatchObject({
       current: "always",
@@ -1193,7 +1357,9 @@ describe("tune plan", () => {
     expect(drop?.cmd).toContain("net.ipv4.tcp_congestion_control = bbr"); // already set: kept in the file so it persists
     expect(drop?.cmd).not.toContain("tcp_rmem");
     expect(drop?.undo).toContain('net.core.netdev_max_backlog="1000"');
-    expect(plan.steps.find((s) => s.id === "nginx-workers")?.cmd).toContain("nginx -t");
+    expect(plan.steps.find((s) => s.id === "nginx-workers")?.cmd).toContain(
+      "nginx -t",
+    );
   });
 
   it("only creates a swap file when there is no swap at all, never on btrfs", () => {
@@ -1203,9 +1369,23 @@ describe("tune plan", () => {
         "",
       ).replace("/dev/zram0 17179869184 798000000 600000000 zstd", ""),
     );
-    const withSwap = planTune(audit(), probe, [], DEFAULT_POLICY, "vps", new Date()).plan;
+    const withSwap = planTune(
+      audit(),
+      probe,
+      [],
+      DEFAULT_POLICY,
+      "vps",
+      new Date(),
+    ).plan;
     expect(withSwap.steps.find((s) => s.id === "swapfile")).toBeUndefined();
-    const plan = planTune(none, probe, [], DEFAULT_POLICY, "vps", new Date()).plan;
+    const plan = planTune(
+      none,
+      probe,
+      [],
+      DEFAULT_POLICY,
+      "vps",
+      new Date(),
+    ).plan;
     const step = plan.steps.find((s) => s.id === "swapfile");
     expect(step?.cmd).toContain("nofail");
     expect(step?.cmd).toContain("cp -a /etc/fstab /etc/fstab.yolo-bak-");
@@ -1224,12 +1404,20 @@ describe("tune plan", () => {
   it("satisfies and sizing rules", () => {
     expect(satisfies("fs.file-max", "4194304", "2097152")).toBe(true);
     expect(satisfies("vm.swappiness", "1", "10")).toBe(false);
-    expect(satisfies("net.ipv4.tcp_rmem", "4096\t1048576\t16777216", "4096 131072 16777216")).toBe(
-      true,
-    );
-    expect(satisfies("net.ipv4.tcp_rmem", "4096 87380 6291456", "4096 131072 16777216")).toBe(
-      false,
-    );
+    expect(
+      satisfies(
+        "net.ipv4.tcp_rmem",
+        "4096\t1048576\t16777216",
+        "4096 131072 16777216",
+      ),
+    ).toBe(true);
+    expect(
+      satisfies(
+        "net.ipv4.tcp_rmem",
+        "4096 87380 6291456",
+        "4096 131072 16777216",
+      ),
+    ).toBe(false);
     const GiB = 1024 ** 3;
     expect(suggestedSwapBytes(1 * GiB)).toBe(2 * GiB);
     expect(suggestedSwapBytes(4 * GiB)).toBe(4 * GiB);
@@ -1271,15 +1459,22 @@ describe("mount plan", () => {
       "vps",
       now,
     );
-    expect(rw.steps.find((s) => s.id === "mount")?.cmd).toContain("-o rw,nosuid,nodev,noexec");
+    expect(rw.steps.find((s) => s.id === "mount")?.cmd).toContain(
+      "-o rw,nosuid,nodev,noexec",
+    );
     const fstab = rw.steps.find((s) => s.id === "fstab")?.cmd ?? "";
-    expect(fstab.indexOf("cp -a /etc/fstab /etc/fstab.yolo-bak-")).toBeGreaterThanOrEqual(0);
+    expect(
+      fstab.indexOf("cp -a /etc/fstab /etc/fstab.yolo-bak-"),
+    ).toBeGreaterThanOrEqual(0);
     expect(fstab).toContain("nofail");
     expect(fstab.indexOf("cp -a")).toBeLessThan(fstab.indexOf(">> /etc/fstab"));
   });
 
   it("refuses to format: no filesystem, system disk, whole disks, mounted, volume layers, odd targets", () => {
-    const refusal = (device: string, extra: Partial<Parameters<typeof planMount>[1]> = {}) =>
+    const refusal = (
+      device: string,
+      extra: Partial<Parameters<typeof planMount>[1]> = {},
+    ) =>
       planMount(
         a,
         { device, rw: false, confirmBackup: false, fstab: false, ...extra },
@@ -1293,8 +1488,12 @@ describe("mount plan", () => {
     expect(refusal("/dev/sdb1")).toContain("already mounted");
     expect(refusal("/dev/nope")).toContain("not a disk or partition");
     expect(refusal("sdb13")).toContain("must look like /dev");
-    expect(refusal("/dev/sdb13", { target: "/etc" })).toContain("must be under /mnt");
-    expect(refusal("/dev/sdb13", { target: "/mnt/../etc" })).toContain("must be under /mnt");
+    expect(refusal("/dev/sdb13", { target: "/etc" })).toContain(
+      "must be under /mnt",
+    );
+    expect(refusal("/dev/sdb13", { target: "/mnt/../etc" })).toContain(
+      "must be under /mnt",
+    );
     const luks = audit(
       COLLECTED.replace(
         '"fstype":"ext4","fsused":null,"fsavail":null,"mountpoints":[null],"label":"old"',
@@ -1353,25 +1552,46 @@ describe("archive plan", () => {
     expect(create).toContain("zstd -T2 -q -3");
     expect(create).toContain("pipefail");
     expect(create).toContain(".tar.zst.part");
-    expect(plan.steps.find((s) => s.id.startsWith("verify-zstd"))?.cmd).toContain("zstd -t");
-    expect(plan.steps.find((s) => s.id.startsWith("manifest"))?.cmd).toContain("sha256sum -c");
+    expect(
+      plan.steps.find((s) => s.id.startsWith("verify-zstd"))?.cmd,
+    ).toContain("zstd -t");
+    expect(plan.steps.find((s) => s.id.startsWith("manifest"))?.cmd).toContain(
+      "sha256sum -c",
+    );
     expect(plan.steps.find((s) => s.id.startsWith("pg-dump"))?.cmd).toContain(
       "sudo -n -u 'postgres' pg_dump -Fc 'shenron'",
     );
-    expect(plan.steps.find((s) => s.id.startsWith("pg-verify"))?.cmd).toContain("pg_restore -l");
+    expect(plan.steps.find((s) => s.id.startsWith("pg-verify"))?.cmd).toContain(
+      "pg_restore -l",
+    );
     expect(plan.steps.find((s) => s.id.startsWith("pull:"))?.cmd).toContain(
       "--partial --append-verify",
     );
     expect(plan.steps.at(-1)?.id).toBe("remove:/home/ubuntu/archive/old");
     for (const s of plan.steps)
-      if (s.kind === "exec") expect(() => assertSafeCommand(s.cmd)).not.toThrow();
+      if (s.kind === "exec")
+        expect(() => assertSafeCommand(s.cmd)).not.toThrow();
   });
 
   it("does not plan a removal step without --remove-source and blocks it for protected system paths", () => {
-    const plain = planArchive(a, { ...opts, removeSource: false }, "vps", DEFAULT_POLICY, now);
+    const plain = planArchive(
+      a,
+      { ...opts, removeSource: false },
+      "vps",
+      DEFAULT_POLICY,
+      now,
+    );
     expect(plain.steps.some((s) => s.id.startsWith("remove"))).toBe(false);
-    const etc = planArchive(a, { ...opts, sources: ["/etc/nginx"] }, "vps", DEFAULT_POLICY, now);
-    expect(etc.steps.find((s) => s.id.startsWith("remove"))?.blocked).toBeDefined();
+    const etc = planArchive(
+      a,
+      { ...opts, sources: ["/etc/nginx"] },
+      "vps",
+      DEFAULT_POLICY,
+      now,
+    );
+    expect(
+      etc.steps.find((s) => s.id.startsWith("remove"))?.blocked,
+    ).toBeDefined();
     expect(etc.notes.join(" ")).toContain("--remove-source refused");
     const db = planArchive(
       a,
@@ -1380,7 +1600,9 @@ describe("archive plan", () => {
       DEFAULT_POLICY,
       now,
     );
-    expect(db.steps.find((s) => s.id.startsWith("remove"))?.blocked).toContain("database");
+    expect(db.steps.find((s) => s.id.startsWith("remove"))?.blocked).toContain(
+      "database",
+    );
     expect(db.notes.join(" ")).toContain("pg-dump");
   });
 
@@ -1399,10 +1621,17 @@ describe("archive plan", () => {
     expect(plan.steps).toHaveLength(0);
     expect(plan.skipped).toHaveLength(3);
     expect(
-      planArchive(a, { ...opts, to: "relative" }, "vps", DEFAULT_POLICY, now).steps,
+      planArchive(a, { ...opts, to: "relative" }, "vps", DEFAULT_POLICY, now)
+        .steps,
     ).toHaveLength(0);
     expect(
-      planArchive(a, { ...opts, to: "/mnt/with space" }, "vps", DEFAULT_POLICY, now).steps,
+      planArchive(
+        a,
+        { ...opts, to: "/mnt/with space" },
+        "vps",
+        DEFAULT_POLICY,
+        now,
+      ).steps,
     ).toHaveLength(0);
   });
 
@@ -1419,7 +1648,9 @@ describe("archive plan", () => {
       DEFAULT_POLICY,
       now,
     );
-    expect(plan.steps.filter((s) => s.id.startsWith("pg-dump"))).toHaveLength(1);
+    expect(plan.steps.filter((s) => s.id.startsWith("pg-dump"))).toHaveLength(
+      1,
+    );
     expect(plan.steps.filter((s) => s.id.startsWith("remove"))).toHaveLength(2);
     expect(new Set(plan.steps.map((s) => s.id)).size).toBe(plan.steps.length); // ids are unique
     const dumpOnly = planArchive(
@@ -1429,11 +1660,16 @@ describe("archive plan", () => {
       DEFAULT_POLICY,
       now,
     );
-    expect(dumpOnly.steps.map((s) => s.id)).toEqual(["pg-dump:shenron", "pg-verify:shenron"]);
+    expect(dumpOnly.steps.map((s) => s.id)).toEqual([
+      "pg-dump:shenron",
+      "pg-verify:shenron",
+    ]);
   });
 
   it("labels archives from the path", () => {
-    expect(archiveLabel("/home/ubuntu/build/cache")).toBe("home-ubuntu-build-cache");
+    expect(archiveLabel("/home/ubuntu/build/cache")).toBe(
+      "home-ubuntu-build-cache",
+    );
     expect(archiveLabel("/")).toBe("root");
   });
 });
@@ -1462,14 +1698,20 @@ describe("executing plans", () => {
     const lines: string[] = [];
     const code = await executePlan(plan, ctxFor(root, t, "vps", lines));
     expect(code).toBe(0);
-    const executed = t.calls.filter((c) => !c.includes("mem_available") && !c.includes("base64"));
-    const runnable = plan.steps.filter((s) => s.blocked === undefined).map((s) => s.cmd);
+    const executed = t.calls.filter(
+      (c) => !c.includes("mem_available") && !c.includes("base64"),
+    );
+    const runnable = plan.steps
+      .filter((s) => s.blocked === undefined)
+      .map((s) => s.cmd);
     expect(executed).toEqual(runnable);
     const j = await readJournal(root, "vps");
     expect(j.filter((e) => e.status === "ok")).toHaveLength(runnable.length);
     expect(j.every((e) => e.undo !== undefined && e.cmd !== "")).toBe(true);
     expect(j.find((e) => e.status === "ok")?.before?.freeBytes).toBeDefined();
-    expect(j.filter((e) => e.status === "skipped").every((e) => e.note !== null)).toBe(true);
+    expect(
+      j.filter((e) => e.status === "skipped").every((e) => e.note !== null),
+    ).toBe(true);
   });
 
   it("refuses to mutate while a build lock is held and journals the refusal", async () => {
@@ -1478,17 +1720,23 @@ describe("executing plans", () => {
       cmd.includes("base64")
         ? {
             code: 0,
-            stdout: "@@@ locks\n/home/ubuntu/build/locks/heavy.lock|held|4242,\n",
+            stdout:
+              "@@@ locks\n/home/ubuntu/build/locks/heavy.lock|held|4242,\n",
             stderr: "",
           }
         : { code: 0, stdout: "", stderr: "" },
     );
     const lines: string[] = [];
-    const code = await executePlan(reclaimPlan(), ctxFor(root, t, "vps", lines));
+    const code = await executePlan(
+      reclaimPlan(),
+      ctxFor(root, t, "vps", lines),
+    );
     expect(code).toBe(3);
     expect(t.calls).toHaveLength(1); // only the lock probe ran
     expect(lines.join("\n")).toContain("build lock held");
-    expect((await readJournal(root, "vps")).map((e) => e.status)).toEqual(["refused"]);
+    expect((await readJournal(root, "vps")).map((e) => e.status)).toEqual([
+      "refused",
+    ]);
   });
 
   it("a failed cleanup does not stop the independent ones, but the run reports the failure", async () => {
@@ -1503,7 +1751,10 @@ describe("executing plans", () => {
     expect(code).toBe(1);
     const j = await readJournal(root, "vps");
     expect(j.filter((e) => e.status === "failed")).toHaveLength(1);
-    expect(j.find((e) => e.status === "failed")).toMatchObject({ exit: 100, step: "apt-cache" });
+    expect(j.find((e) => e.status === "failed")).toMatchObject({
+      exit: 100,
+      step: "apt-cache",
+    });
     expect(j.filter((e) => e.status === "ok").length).toBeGreaterThan(1);
   });
 
@@ -1514,10 +1765,16 @@ describe("executing plans", () => {
       command: "x",
       notes: [],
       skipped: [],
-      steps: [planStep("a", "echo a"), planStep("b", "fail"), planStep("c", "echo c")],
+      steps: [
+        planStep("a", "echo a"),
+        planStep("b", "fail"),
+        planStep("c", "echo c"),
+      ],
     };
     const t = new FakeTransport("local", (cmd) =>
-      cmd === "fail" ? { code: 2, stdout: "", stderr: "no" } : { code: 0, stdout: "", stderr: "" },
+      cmd === "fail"
+        ? { code: 2, stdout: "", stderr: "no" }
+        : { code: 0, stdout: "", stderr: "" },
     );
     expect(await executePlan(plan, ctxFor(root, t))).toBe(1);
     expect(t.calls).toEqual(["echo a", "fail"]);
@@ -1570,7 +1827,10 @@ describe("executing plans", () => {
       (await Bun.file(journalPath(root, "local")).text()) + '{"torn":',
     );
     await appendJournal(root, { ...entry, step: "s2" });
-    expect((await readJournal(root, "local")).map((e) => e.step)).toEqual(["s", "s2"]);
+    expect((await readJournal(root, "local")).map((e) => e.step)).toEqual([
+      "s",
+      "s2",
+    ]);
   });
 });
 
@@ -1590,7 +1850,11 @@ const makeSource = (root: string): string => {
   writeFileSync(join(src, "sub/deep/c.txt"), "gamma");
   return src;
 };
-const archiveArgs = (src: string, dest: string, extra: string[] = []): string[] => [
+const archiveArgs = (
+  src: string,
+  dest: string,
+  extra: string[] = [],
+): string[] => [
   "archive",
   src,
   "--to",
@@ -1609,17 +1873,25 @@ describe.skipIf(!haveTools)("local apply in a temp directory", () => {
     const src = makeSource(root);
     const dest = join(root, "arc");
     const lines: string[] = [];
-    const code = await runHostCommand(archiveArgs(src, dest, ["--remove-source"]), root, {
-      out: (l) => void lines.push(l),
-      transport: new LocalTransport(),
-    });
+    const code = await runHostCommand(
+      archiveArgs(src, dest, ["--remove-source"]),
+      root,
+      {
+        out: (l) => void lines.push(l),
+        transport: new LocalTransport(),
+      },
+    );
     expect(code).toBe(0);
     const label = archiveLabel(src);
     expect(existsSync(join(dest, `${label}-20261003.tar.zst`))).toBe(true);
-    const manifest = await Bun.file(join(dest, `${label}-20261003.tar.zst.sha256`)).text();
+    const manifest = await Bun.file(
+      join(dest, `${label}-20261003.tar.zst.sha256`),
+    ).text();
     const hasher = new Bun.CryptoHasher("sha256");
     hasher.update(
-      new Uint8Array(await Bun.file(join(dest, `${label}-20261003.tar.zst`)).arrayBuffer()),
+      new Uint8Array(
+        await Bun.file(join(dest, `${label}-20261003.tar.zst`)).arrayBuffer(),
+      ),
     );
     expect(manifest.startsWith(hasher.digest("hex"))).toBe(true);
     expect(existsSync(src)).toBe(false); // removed after verification
@@ -1639,7 +1911,9 @@ describe.skipIf(!haveTools)("local apply in a temp directory", () => {
       { windowsHide: true },
     );
     expect(r.exitCode).toBe(0);
-    expect(await Bun.file(join(restored, "src/sub/deep/c.txt")).text()).toBe("gamma");
+    expect(await Bun.file(join(restored, "src/sub/deep/c.txt")).text()).toBe(
+      "gamma",
+    );
   });
 
   it("is idempotent: a second run reuses the archive and verifies it again", async () => {
@@ -1648,12 +1922,18 @@ describe.skipIf(!haveTools)("local apply in a temp directory", () => {
     const dest = join(root, "arc");
     const t = new LocalTransport();
     expect(
-      await runHostCommand(archiveArgs(src, dest), root, { out: () => {}, transport: t }),
+      await runHostCommand(archiveArgs(src, dest), root, {
+        out: () => {},
+        transport: t,
+      }),
     ).toBe(0);
     const arc = join(dest, `${archiveLabel(src)}-20261003.tar.zst`);
     const before = Bun.file(arc).lastModified;
     expect(
-      await runHostCommand(archiveArgs(src, dest), root, { out: () => {}, transport: t }),
+      await runHostCommand(archiveArgs(src, dest), root, {
+        out: () => {},
+        transport: t,
+      }),
     ).toBe(0);
     expect(Bun.file(arc).lastModified).toBe(before);
     expect(existsSync(src)).toBe(true); // no --remove-source
@@ -1665,20 +1945,27 @@ describe.skipIf(!haveTools)("local apply in a temp directory", () => {
     const dest = join(root, "arc");
     class Corrupting extends LocalTransport {
       override async exec(cmd: string, secs?: number): Promise<ExecResult> {
-        if (cmd.includes("zstd -t")) return { code: 1, stdout: "", stderr: "corrupt" };
+        if (cmd.includes("zstd -t"))
+          return { code: 1, stdout: "", stderr: "corrupt" };
         return super.exec(cmd, secs);
       }
     }
     const lines: string[] = [];
-    const code = await runHostCommand(archiveArgs(src, dest, ["--remove-source"]), root, {
-      out: (l) => void lines.push(l),
-      transport: new Corrupting(),
-    });
+    const code = await runHostCommand(
+      archiveArgs(src, dest, ["--remove-source"]),
+      root,
+      {
+        out: (l) => void lines.push(l),
+        transport: new Corrupting(),
+      },
+    );
     expect(code).not.toBe(0);
     expect(existsSync(join(src, "a.txt"))).toBe(true);
     const j = await readJournal(root, "local");
     expect(j.some((e) => e.status === "failed")).toBe(true);
-    expect(j.some((e) => e.step.startsWith("remove") && e.status === "ok")).toBe(false);
+    expect(
+      j.some((e) => e.step.startsWith("remove") && e.status === "ok"),
+    ).toBe(false);
   });
 
   it("keeps the source when the entry count does not match (source changed during archiving)", async () => {
@@ -1692,10 +1979,14 @@ describe.skipIf(!haveTools)("local apply in a temp directory", () => {
         return super.exec(cmd, secs);
       }
     }
-    const code = await runHostCommand(archiveArgs(src, dest, ["--remove-source"]), root, {
-      out: () => {},
-      transport: new Growing(),
-    });
+    const code = await runHostCommand(
+      archiveArgs(src, dest, ["--remove-source"]),
+      root,
+      {
+        out: () => {},
+        transport: new Growing(),
+      },
+    );
     expect(code).not.toBe(0);
     expect(existsSync(join(src, "late.txt"))).toBe(true);
     expect(
@@ -1712,7 +2003,11 @@ describe.skipIf(!haveTools)("local apply in a temp directory", () => {
     class NoPostgres extends LocalTransport {
       override async exec(cmd: string, secs?: number): Promise<ExecResult> {
         if (cmd.includes("pg_dump") || cmd.includes("pg_restore"))
-          return { code: cmd.includes("pg_dump") ? 0 : 1, stdout: "", stderr: "" };
+          return {
+            code: cmd.includes("pg_dump") ? 0 : 1,
+            stdout: "",
+            stderr: "",
+          };
         return super.exec(cmd, secs);
       }
     }
@@ -1790,12 +2085,22 @@ describe.skipIf(!haveTools)("local apply in a temp directory", () => {
         rotatedLogs: { count: 0, bytes: 0 },
         swapFiles: [],
         cacheDirs: [],
-        artifacts: [{ path: join(proj, "target"), bytes: 200_000, marker: "cargo", recent: false }],
+        artifacts: [
+          {
+            path: join(proj, "target"),
+            bytes: 200_000,
+            marker: "cargo",
+            recent: false,
+          },
+        ],
       },
     };
     const plan = planReclaim(
       a,
-      { ...DEFAULT_POLICY, reclaim: { ...DEFAULT_POLICY.reclaim, scanRoots: [tmpdir()] } },
+      {
+        ...DEFAULT_POLICY,
+        reclaim: { ...DEFAULT_POLICY.reclaim, scanRoots: [tmpdir()] },
+      },
       "local",
     );
     expect(plan.steps.map((s) => s.cmd)).toEqual([
@@ -1806,7 +2111,10 @@ describe.skipIf(!haveTools)("local apply in a temp directory", () => {
     expect(existsSync(join(proj, "target"))).toBe(false);
     expect(existsSync(join(proj, "Cargo.toml"))).toBe(true); // the source stays
     const j = await readJournal(root, "local");
-    expect(j[0]).toMatchObject({ status: "ok", step: `artifact:${join(proj, "target")}` });
+    expect(j[0]).toMatchObject({
+      status: "ok",
+      step: `artifact:${join(proj, "target")}`,
+    });
     expect(j[0]?.before?.freeBytes[join(proj, "target")]).toBeGreaterThan(0);
     expect(await executePlan(plan, ctxFor(root, new LocalTransport()))).toBe(0); // idempotent
   });
@@ -1817,53 +2125,88 @@ describe("net helpers and CLI wiring", () => {
     const s = parseCurlStats(
       "size=50000000 total=2.000000 connect=0.020000 ttfb=0.120000 speed=25000000.000",
     );
-    expect(s).toMatchObject({ sizeBytes: 50000000, totalSecs: 2, connectSecs: 0.02 });
+    expect(s).toMatchObject({
+      sizeBytes: 50000000,
+      totalSecs: 2,
+      connectSecs: 0.02,
+    });
     expect(mbit(s!.bytesPerSec)).toBe(200);
     expect(parseCurlStats("garbage")).toBeNull();
     expect(median([3, 1, 2])).toBe(2);
     expect(median([1, 2, 3, 4])).toBe(2.5);
-    expect(hostCurlCommand("https://x/y?bytes=1")).toContain("--max-time 90 -w");
+    expect(hostCurlCommand("https://x/y?bytes=1")).toContain(
+      "--max-time 90 -w",
+    );
   });
 
   it("net is a read-only plan on remote hosts", () => {
     const plan = planNet("vps", 1000, "https://x/y");
     expect(plan.steps.every((s) => !s.mutates)).toBe(true);
-    expect(plan.steps.map((s) => s.id)).toEqual(["tcp", "rtt", "down-host", "down-local"]);
+    expect(plan.steps.map((s) => s.id)).toEqual([
+      "tcp",
+      "rtt",
+      "down-host",
+      "down-local",
+    ]);
   });
 
   it("requires --host and rejects unknown subcommands", async () => {
     const quiet = { out: () => {} };
     expect(await runHostCommand(["audit"], tmp(), quiet)).toBe(2);
-    expect(await runHostCommand(["audit", "--host", "nowhere"], tmp(), quiet)).toBe(2);
-    expect(await runHostCommand(["bogus", "--host", "vps"], tmp(), quiet)).toBe(2);
+    expect(
+      await runHostCommand(["audit", "--host", "nowhere"], tmp(), quiet),
+    ).toBe(2);
+    expect(await runHostCommand(["bogus", "--host", "vps"], tmp(), quiet)).toBe(
+      2,
+    );
     expect(await runHostCommand([], tmp(), quiet)).toBe(2);
     expect(await runHostCommand(["help"], tmp(), quiet)).toBe(0);
   });
 
   it("audit through a transport returns typed JSON", async () => {
     const lines: string[] = [];
-    const t = new FakeTransport("vps", () => ({ code: 0, stdout: COLLECTED, stderr: "" }));
-    const code = await runHostCommand(["audit", "--host", "vps", "--json"], tmp(), {
-      out: (l) => void lines.push(l),
-      transport: t,
-    });
+    const t = new FakeTransport("vps", () => ({
+      code: 0,
+      stdout: COLLECTED,
+      stderr: "",
+    }));
+    const code = await runHostCommand(
+      ["audit", "--host", "vps", "--json"],
+      tmp(),
+      {
+        out: (l) => void lines.push(l),
+        transport: t,
+      },
+    );
     expect(code).toBe(0);
     const j = JSON.parse(lines.join("\n"));
     expect(j.identity.cpus).toBe(12);
-    expect(j.disks.find((d: { name: string }) => d.name === "sdb").state).toBe("mounted");
+    expect(j.disks.find((d: { name: string }) => d.name === "sdb").state).toBe(
+      "mounted",
+    );
     expect(j.reclaimPlan.length).toBeGreaterThan(0);
     expect(j.findings.length).toBeGreaterThan(0);
     expect(t.calls).toHaveLength(1);
   });
 
   it("the audit never mutates: every command it sends is the one read-only collector", async () => {
-    const t = new FakeTransport("vps", () => ({ code: 0, stdout: COLLECTED, stderr: "" }));
+    const t = new FakeTransport("vps", () => ({
+      code: 0,
+      stdout: COLLECTED,
+      stderr: "",
+    }));
     await runHostCommand(["audit", "--host", "vps", "--json"], tmp(), {
       out: () => {},
       transport: t,
     });
-    await runHostCommand(["reclaim", "--host", "vps"], tmp(), { out: () => {}, transport: t });
-    await runHostCommand(["services", "--host", "vps"], tmp(), { out: () => {}, transport: t });
+    await runHostCommand(["reclaim", "--host", "vps"], tmp(), {
+      out: () => {},
+      transport: t,
+    });
+    await runHostCommand(["services", "--host", "vps"], tmp(), {
+      out: () => {},
+      transport: t,
+    });
     expect(t.calls.every((c) => c.includes("base64 -d | sh"))).toBe(true);
     expect(t.services).toEqual([]);
   });

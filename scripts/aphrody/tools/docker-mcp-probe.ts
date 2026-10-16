@@ -9,8 +9,16 @@
  */
 import { spawn } from "node:child_process";
 
-export const PROBES: { server: string; tool: string; args: Record<string, unknown> }[] = [
-  { server: "fetch", tool: "fetch", args: { url: "https://example.com", max_length: 400 } },
+export const PROBES: {
+  server: string;
+  tool: string;
+  args: Record<string, unknown>;
+}[] = [
+  {
+    server: "fetch",
+    tool: "fetch",
+    args: { url: "https://example.com", max_length: 400 },
+  },
   {
     server: "context7",
     tool: "resolve-library-id",
@@ -19,7 +27,12 @@ export const PROBES: { server: string; tool: string; args: Record<string, unknow
   {
     server: "sequentialthinking",
     tool: "sequentialthinking",
-    args: { thought: "probe", nextThoughtNeeded: false, thoughtNumber: 1, totalThoughts: 1 },
+    args: {
+      thought: "probe",
+      nextThoughtNeeded: false,
+      thoughtNumber: 1,
+      totalThoughts: 1,
+    },
   },
   {
     server: "docker-docs",
@@ -56,7 +69,9 @@ const rpc = (method: string, params: unknown, ms = 240_000) =>
     const id = ++n;
     const t = setTimeout(() => rej(new Error(`timeout ${method}`)), ms);
     waiting.set(id, (m) => (clearTimeout(t), res(m)));
-    child.stdin.write(JSON.stringify({ jsonrpc: "2.0", id, method, params }) + "\n");
+    child.stdin.write(
+      JSON.stringify({ jsonrpc: "2.0", id, method, params }) + "\n",
+    );
   });
 
 await rpc("initialize", {
@@ -64,8 +79,13 @@ await rpc("initialize", {
   capabilities: {},
   clientInfo: { name: "probe", version: "1" },
 });
-child.stdin.write(JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) + "\n");
-const tools: string[] = (await rpc("tools/list", {})).result.tools.map((t: any) => t.name);
+child.stdin.write(
+  JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) +
+    "\n",
+);
+const tools: string[] = (await rpc("tools/list", {})).result.tools.map(
+  (t: any) => t.name,
+);
 console.log(`${tools.length} tools: ${tools.join(", ")}`);
 let failed = 0;
 // Sequential on purpose: one gateway session, ordered output.
@@ -85,7 +105,9 @@ for (const p of PROBES) {
       .slice(0, 100);
     const bad = r.error || r.result?.isError || text.startsWith("Error");
     if (bad) failed++;
-    console.log(`${bad ? "FAIL" : "OK  "} ${p.server}/${p.tool}: ${r.error?.message ?? text}`);
+    console.log(
+      `${bad ? "FAIL" : "OK  "} ${p.server}/${p.tool}: ${r.error?.message ?? text}`,
+    );
   } catch (e) {
     failed++;
     console.log(`FAIL ${p.server}/${p.tool}: ${(e as Error).message}`);

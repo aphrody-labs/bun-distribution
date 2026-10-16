@@ -1,5 +1,11 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { CloudUploadIcon, LoaderCircleIcon, RotateCwIcon, TrashIcon, TriangleAlertIcon } from "lucide-react";
+import {
+  CloudUploadIcon,
+  LoaderCircleIcon,
+  RotateCwIcon,
+  TrashIcon,
+  TriangleAlertIcon,
+} from "lucide-react";
 import { EngineContext } from "../../contexts/EngineContext";
 import { usePageSceneStore, type ProducedArtifact } from "../../PageSceneStore";
 
@@ -20,7 +26,10 @@ export const CompletionModal = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const autoStartedRef = useRef(false);
   const inFlightRef = useRef(false);
-  const uploadedRef = useRef<{ artifact: ProducedArtifact; token: string } | null>(null);
+  const uploadedRef = useRef<{
+    artifact: ProducedArtifact;
+    token: string;
+  } | null>(null);
 
   const isVideo = artifact?.kind === "video";
 
@@ -34,9 +43,10 @@ export const CompletionModal = () => {
         throw new Error("Uploading is unavailable in this editor.");
       }
       // A failed preview lookup must not upload the same large video again.
-      let token = uploadedRef.current?.artifact === artifact
-        ? uploadedRef.current.token
-        : undefined;
+      let token =
+        uploadedRef.current?.artifact === artifact
+          ? uploadedRef.current.token
+          : undefined;
       if (!token) {
         token = await editor.adapter.uploadMedia({
           kind: artifact.kind,
@@ -54,7 +64,9 @@ export const CompletionModal = () => {
       }
     } catch (error) {
       console.error("Scene output upload or preview failed:", error);
-      setErrorMessage(error instanceof Error ? error.message : "Upload failed. Please retry.");
+      setErrorMessage(
+        error instanceof Error ? error.message : "Upload failed. Please retry.",
+      );
       setStatus("error");
     } finally {
       inFlightRef.current = false;
@@ -108,17 +120,16 @@ export const CompletionModal = () => {
         {/* upload status */}
         {busy && (
           <div className="flex items-center gap-2 text-sm text-base-fg/70">
-            <LoaderCircleIcon
-              
-              className="h-4 w-4 animate-spin" />
+            <LoaderCircleIcon className="h-4 w-4 animate-spin" />
             Uploading to gallery…
           </div>
         )}
         {status === "error" && (
-          <div role="alert" className="flex items-center gap-2 text-sm text-red">
-            <TriangleAlertIcon
-              
-              className="h-4 w-4" />
+          <div
+            role="alert"
+            className="flex items-center gap-2 text-sm text-red"
+          >
+            <TriangleAlertIcon className="h-4 w-4" />
             {errorMessage}
           </div>
         )}
@@ -131,7 +142,7 @@ export const CompletionModal = () => {
             disabled={busy}
             className="flex h-9 items-center gap-2 rounded-[3px] px-3 text-sm text-base-fg/60 transition-colors hover:bg-white/10 hover:text-base-fg disabled:opacity-50"
           >
-            <TrashIcon  className="h-3.5 w-3.5" />
+            <TrashIcon className="h-3.5 w-3.5" />
             Discard
           </button>
 
@@ -141,7 +152,7 @@ export const CompletionModal = () => {
               onClick={() => void upload()}
               className="flex h-9 items-center gap-2 rounded-[3px] bg-brand-primary px-4 text-sm font-medium text-white transition-colors hover:brightness-110"
             >
-              <RotateCwIcon  className="h-3.5 w-3.5" />
+              <RotateCwIcon className="h-3.5 w-3.5" />
               Retry
             </button>
           ) : isVideo && status === "idle" ? (
@@ -150,7 +161,7 @@ export const CompletionModal = () => {
               onClick={() => void upload()}
               className="flex h-9 items-center gap-2 rounded-[3px] bg-brand-primary px-4 text-sm font-medium text-white transition-colors hover:brightness-110"
             >
-              <CloudUploadIcon  className="h-3.5 w-3.5" />
+              <CloudUploadIcon className="h-3.5 w-3.5" />
               Upload &amp; continue
             </button>
           ) : null}

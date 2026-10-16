@@ -40,19 +40,19 @@
     <p id="message"></p>
 
     <script>
-      const { invoke } = window.__TAURI__.core
+      const { invoke } = window.__TAURI__.core;
 
-      const form = document.querySelector('#form')
-      const nameEl = document.querySelector('#name')
-      const messageEl = document.querySelector('#message')
+      const form = document.querySelector("#form");
+      const nameEl = document.querySelector("#name");
+      const messageEl = document.querySelector("#message");
 
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault()
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-        const name = nameEl.value
-        const newMessage = await invoke('greet', { name })
-        messageEl.textContent = newMessage
-      })
+        const name = nameEl.value;
+        const newMessage = await invoke("greet", { name });
+        messageEl.textContent = newMessage;
+      });
     </script>
   </body>
 </html>

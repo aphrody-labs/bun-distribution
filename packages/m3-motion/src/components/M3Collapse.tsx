@@ -2,7 +2,10 @@ import * as React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { HTMLMotionProps } from "motion/react";
 import { m3Easings, m3Durations } from "../easings";
-import { motionVariants, useM3ReducedMotion } from "../hooks/useM3ReducedMotion";
+import {
+  motionVariants,
+  useM3ReducedMotion,
+} from "../hooks/useM3ReducedMotion";
 
 export interface M3CollapseProps extends HTMLMotionProps<"div"> {
   /**
@@ -23,7 +26,16 @@ export interface M3CollapseProps extends HTMLMotionProps<"div"> {
  * Animates the height and opacity of its children, perfect for accordions, menus, or disclosures.
  */
 export const M3Collapse = React.forwardRef<HTMLDivElement, M3CollapseProps>(
-  ({ in: inProp, appear = false, children, variants: customVariants, ...props }, ref) => {
+  (
+    {
+      in: inProp,
+      appear = false,
+      children,
+      variants: customVariants,
+      ...props
+    },
+    ref,
+  ) => {
     const reduced = useM3ReducedMotion();
     const variants = {
       initial: { height: 0, opacity: 0 },
@@ -72,7 +84,11 @@ export const M3Collapse = React.forwardRef<HTMLDivElement, M3CollapseProps>(
     );
 
     if (inProp !== undefined) {
-      return <AnimatePresence initial={appear}>{inProp ? content : null}</AnimatePresence>;
+      return (
+        <AnimatePresence initial={appear}>
+          {inProp ? content : null}
+        </AnimatePresence>
+      );
     }
 
     return content;

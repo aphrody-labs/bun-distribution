@@ -1,4 +1,11 @@
-import { type FormEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
+import {
+  type FormEvent,
+  type ReactNode,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import {
   FilledButton,
   LinearProgress,
@@ -34,7 +41,8 @@ interface BenchResult {
   latency_us: number;
 }
 
-type Outcome = { ok: true; result: BenchResult } | { ok: false; message: string };
+type Outcome =
+  { ok: true; result: BenchResult } | { ok: false; message: string };
 
 // The server clamps the iteration count to the same bound (src/app.ts).
 const MAX_ITERATIONS = 2_000_000_000;
@@ -62,9 +70,12 @@ function RuntimePanel() {
 
   useEffect(() => {
     const abort = new AbortController();
-    getJson<StatsResponse>("/api/stats", abort.signal).then(setData, (reason: unknown) => {
-      if (!abort.signal.aborted) setError(String(reason));
-    });
+    getJson<StatsResponse>("/api/stats", abort.signal).then(
+      setData,
+      (reason: unknown) => {
+        if (!abort.signal.aborted) setError(String(reason));
+      },
+    );
     return () => abort.abort();
   }, []);
 
@@ -97,7 +108,8 @@ function LivePanel() {
 
   useEffect(() => {
     const source = new EventSource("/api/events");
-    source.onmessage = (event: MessageEvent<string>) => setSample(JSON.parse(event.data) as Stats);
+    source.onmessage = (event: MessageEvent<string>) =>
+      setSample(JSON.parse(event.data) as Stats);
     return () => source.close();
   }, []);
 
@@ -144,7 +156,10 @@ function BenchmarkPanel() {
       if (current.current === abort) setOutcome({ ok: true, result });
     } catch (reason) {
       if (current.current === abort) {
-        setOutcome({ ok: false, message: abort.signal.aborted ? "Cancelled." : String(reason) });
+        setOutcome({
+          ok: false,
+          message: abort.signal.aborted ? "Cancelled." : String(reason),
+        });
       }
     } finally {
       if (current.current === abort) {
@@ -167,7 +182,9 @@ function BenchmarkPanel() {
           required
           supportingText={`1 to ${integer.format(MAX_ITERATIONS)}`}
           value={iterations}
-          onInput={(event) => setIterations((event.target as TextFieldElement).value)}
+          onInput={(event) =>
+            setIterations((event.target as TextFieldElement).value)
+          }
         />
         <div className="actions">
           <FilledButton type="submit" disabled={running}>
@@ -180,11 +197,18 @@ function BenchmarkPanel() {
           )}
         </div>
       </form>
-      {running && <LinearProgress indeterminate aria-label="Running the native benchmark" />}
+      {running && (
+        <LinearProgress
+          indeterminate
+          aria-label="Running the native benchmark"
+        />
+      )}
       <p className="result" aria-live="polite">
         {outcome?.ok === true &&
           `${outcome.result.message} (${integer.format(outcome.result.latency_us)} µs)`}
-        {outcome?.ok === false && <span className="error">{outcome.message}</span>}
+        {outcome?.ok === false && (
+          <span className="error">{outcome.message}</span>
+        )}
       </p>
     </Panel>
   );

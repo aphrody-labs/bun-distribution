@@ -1,4 +1,8 @@
-import type { JsonValue, ExtendedJobListItem, GenericProgress } from "@aphrody/drive-client";
+import type {
+  JsonValue,
+  ExtendedJobListItem,
+  GenericProgress,
+} from "@aphrody/drive-client";
 
 // Re-export for backwards compatibility
 export type JobListItem = ExtendedJobListItem;
@@ -22,25 +26,32 @@ export const PROGRESS_BAR_HEIGHT = 12; // px
  * Extracts a meaningful display name from the job's action context
  */
 export function getJobDisplayName(job: JobListItem): string {
-  const customDisplayName = (job.action_context?.context as Record<string, unknown> | null)?.display_name;
+  const customDisplayName = (
+    job.action_context?.context as Record<string, unknown> | null
+  )?.display_name;
   if (customDisplayName && typeof customDisplayName === "string") {
     return customDisplayName;
   }
 
   const jobName = job.name.toLowerCase();
-  if (jobName === "ocr" || jobName === "aphrody_ocr") return "Extraction de texte";
-  if (jobName === "transcription" || jobName === "speech_to_text") return "Transcription audio";
+  if (jobName === "ocr" || jobName === "aphrody_ocr")
+    return "Extraction de texte";
+  if (jobName === "transcription" || jobName === "speech_to_text")
+    return "Transcription audio";
   if (jobName === "rag_index" || jobName === "rag") return "Indexation RAG";
-  if (jobName === "model_download" || jobName === "model_pull") return "Téléchargement modèle";
-  if (jobName === "crawler" || jobName === "web_crawl") return "Exploration web";
+  if (jobName === "model_download" || jobName === "model_pull")
+    return "Téléchargement modèle";
+  if (jobName === "crawler" || jobName === "web_crawl")
+    return "Exploration web";
   if (jobName === "training" || jobName === "train_run") return "Entraînement";
   if (jobName === "indexer") return "Indexation";
   if (jobName === "thumbnail_generation") return "Génération de miniatures";
 
   if (!job.action_context?.action_type) {
-    return job.name.split("_").map(word =>
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(" ");
+    return job.name
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   }
 
   const { action_type, action_input } = job.action_context;
@@ -101,7 +112,10 @@ export function getJobDisplayName(job: JobListItem): string {
       case "indexing.start":
         return "Indexation d'emplacement";
       case "volumes.index": {
-        const context = job.action_context?.context as Record<string, unknown> | null;
+        const context = job.action_context?.context as Record<
+          string,
+          unknown
+        > | null;
         const volumeName = context?.volume_name;
         if (volumeName && typeof volumeName === "string") {
           return `Indexation ${volumeName}`;
@@ -129,8 +143,12 @@ export function getJobSubtext(job: JobListItem): string {
   const context = job.action_context?.context as Record<string, unknown> | null;
   const targetName =
     (context?.target_name as string) ||
-    (job.action_context?.action_input ? extractPath(job.action_context.action_input) : null) ||
-    (typeof job.current_path === "string" ? job.current_path.split(/[/\\]/).pop() : null);
+    (job.action_context?.action_input
+      ? extractPath(job.action_context.action_input)
+      : null) ||
+    (typeof job.current_path === "string"
+      ? job.current_path.split(/[/\\]/).pop()
+      : null);
 
   const prefix = targetName ? `${targetName} • ` : "";
 
@@ -225,7 +243,11 @@ function extractPath(input: JsonValue): string | null {
     // Handle Physical path: { Physical: { device_slug: "...", path: "..." } }
     if (typeof path === "object" && path !== null && "Physical" in path) {
       const physical = path.Physical;
-      if (typeof physical === "object" && physical !== null && "path" in physical) {
+      if (
+        typeof physical === "object" &&
+        physical !== null &&
+        "path" in physical
+      ) {
         return String(physical.path);
       }
     }

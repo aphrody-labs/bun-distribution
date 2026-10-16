@@ -19,11 +19,16 @@ export async function hideCommentAction(id: string): Promise<ModerationResult> {
   return run(id, "hide");
 }
 
-export async function restoreCommentAction(id: string): Promise<ModerationResult> {
+export async function restoreCommentAction(
+  id: string,
+): Promise<ModerationResult> {
   return run(id, "restore");
 }
 
-export async function pinCommentAction(id: string, pinned: boolean): Promise<ModerationResult> {
+export async function pinCommentAction(
+  id: string,
+  pinned: boolean,
+): Promise<ModerationResult> {
   return run(id, pinned ? "unpin" : "pin");
 }
 
@@ -42,7 +47,8 @@ async function run(
     revalidatePath("/admin/moderation/commentaires");
     return { ok: true };
   } catch (err) {
-    if (err instanceof SocialError) return { ok: false, error: socialErrorMessage(err.code) };
+    if (err instanceof SocialError)
+      return { ok: false, error: socialErrorMessage(err.code) };
     console.error("[admin] modération commentaire", err);
     return { ok: false, error: "Action impossible." };
   }

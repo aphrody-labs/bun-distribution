@@ -71,7 +71,11 @@ export const vhostModel = (c: TargetContext): NginxModel => {
             "ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem",
           ],
         }
-      : { ssl_certificate: c.tls.cert, ssl_certificate_key: c.tls.key, custom: [] };
+      : {
+          ssl_certificate: c.tls.cert,
+          ssl_certificate_key: c.tls.key,
+          custom: [],
+        };
   const listen = c.http2 === "listen" ? "443 ssl http2" : "443 ssl";
   return {
     upstreams: [upstream(c)],
@@ -88,7 +92,10 @@ export const vhostModel = (c: TargetContext): NginxModel => {
               "try_files $uri =404",
             ],
           },
-          { path: "/", custom_directives: [`return 301 https://${host}$request_uri`] },
+          {
+            path: "/",
+            custom_directives: [`return 301 https://${host}$request_uri`],
+          },
         ],
       },
       {
@@ -109,7 +116,10 @@ export const vhostModel = (c: TargetContext): NginxModel => {
 };
 
 /** Same proxy on a loopback HTTP port, for a smoke test with no certificate. */
-export const httpVhostModel = (c: TargetContext, listen = 8080): NginxModel => ({
+export const httpVhostModel = (
+  c: TargetContext,
+  listen = 8080,
+): NginxModel => ({
   upstreams: [upstream(c)],
   servers: [
     {
@@ -130,8 +140,11 @@ export function nginxRenderer(): string[] | undefined {
   if (aphrody) candidates.push([aphrody, "infra", "nginx", "render"]);
   return candidates.find(
     (argv) =>
-      Bun.spawnSync([...argv, "--help"], { windowsHide: true, stdout: "ignore", stderr: "ignore" })
-        .exitCode === 0,
+      Bun.spawnSync([...argv, "--help"], {
+        windowsHide: true,
+        stdout: "ignore",
+        stderr: "ignore",
+      }).exitCode === 0,
   );
 }
 
@@ -141,18 +154,22 @@ export async function renderNginx(
   model: NginxModel,
   comments: string[],
 ): Promise<string> {
-  const proc = Bun.spawn([...renderer, ...comments.flatMap((line) => ["--comment", line]), "-"], {
-    windowsHide: true,
-    stdin: new TextEncoder().encode(JSON.stringify(model)),
-    stdout: "pipe",
-    stderr: "pipe",
-  });
+  const proc = Bun.spawn(
+    [...renderer, ...comments.flatMap((line) => ["--comment", line]), "-"],
+    {
+      windowsHide: true,
+      stdin: new TextEncoder().encode(JSON.stringify(model)),
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  );
   const [stdout, stderr, code] = await Promise.all([
     Bun.readableStreamToText(proc.stdout),
     Bun.readableStreamToText(proc.stderr),
     proc.exited,
   ]);
-  if (code !== 0) throw new Error(`${renderer.join(" ")} failed (${code}): ${stderr.trim()}`);
+  if (code !== 0)
+    throw new Error(`${renderer.join(" ")} failed (${code}): ${stderr.trim()}`);
   return stdout;
 }
 
@@ -192,7 +209,10 @@ export const nginx: Target = {
         if (renderer) {
           return {
             path: v.file,
-            content: await renderNginx(renderer, v.model, [GENERATED_NOTE, v.comment]),
+            content: await renderNginx(renderer, v.model, [
+              GENERATED_NOTE,
+              v.comment,
+            ]),
           };
         }
         const json = v.file.replace(/\.conf$/, ".nginx.json");

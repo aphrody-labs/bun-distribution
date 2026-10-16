@@ -4,7 +4,10 @@ import { kitCatalog, type KitName } from "../../kit-bridge";
 import { isTauri } from "../../tauri-bridge";
 
 /** Whether a kit surface belongs in the navigation: the kit answers (and, for admin, its access pack is imported). */
-export function kitVisible(catalog: { admin?: boolean } | null, requireAdmin: boolean): boolean {
+export function kitVisible(
+  catalog: { admin?: boolean } | null,
+  requireAdmin: boolean,
+): boolean {
   return catalog !== null && (!requireAdmin || catalog.admin === true);
 }
 

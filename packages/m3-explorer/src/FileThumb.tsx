@@ -134,7 +134,9 @@ export function FileThumb({
             !thumbLoaded && "opacity-0",
           )}
           style={
-            frameClassName || useSmallCorner ? undefined : { borderRadius: `${borderRadius}px` }
+            frameClassName || useSmallCorner
+              ? undefined
+              : { borderRadius: `${borderRadius}px` }
           }
           onLoad={() => {
             setInternalLoaded(true);

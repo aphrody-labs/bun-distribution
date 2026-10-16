@@ -239,7 +239,8 @@ export function getEdgeHandlePosition({
   const angleRad = (bounds.rotation * Math.PI) / 180;
   const cos = Math.cos(angleRad);
   const sin = Math.sin(angleRad);
-  const localX = edge === "right" ? halfWidth : edge === "left" ? -halfWidth : 0;
+  const localX =
+    edge === "right" ? halfWidth : edge === "left" ? -halfWidth : 0;
   const localY = edge === "bottom" ? halfHeight : 0;
   return {
     x: bounds.cx + (localX * cos - localY * sin),

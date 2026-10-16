@@ -22,9 +22,11 @@ const flags: Record<string, string> = {
 const args = process.argv.slice(2);
 for (let index = 0; index < args.length; index++) {
   const flag = args[index]!;
-  if (!Object.hasOwn(flags, flag)) throw new Error(`Unknown brand theme option: ${flag}`);
+  if (!Object.hasOwn(flags, flag))
+    throw new Error(`Unknown brand theme option: ${flag}`);
   const value = args[++index];
-  if (value === undefined || value.startsWith("--")) throw new Error(`${flag} needs a value`);
+  if (value === undefined || value.startsWith("--"))
+    throw new Error(`${flag} needs a value`);
   flags[flag] = value;
 }
 

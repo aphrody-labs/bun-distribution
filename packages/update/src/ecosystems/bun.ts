@@ -14,7 +14,13 @@
  * Reuses ../tools.ts (runtime pin), ../tauri/sync.ts (Tauri family), ../deps/inventory.ts (OSV, pool, bun.lock),
  * ../deps/sync.ts (version order) and the workspace manifest listing. Report-only unless `apply`.
  */
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+} from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { Ctx } from "../context.ts";
 import { cmpVersion } from "../deps/sync.ts";
@@ -26,7 +32,11 @@ import { firstPartyManifests } from "../manifests.ts";
 
 // ---------------------------------------------------------------- types
 
-export const DEP_SECTIONS = ["dependencies", "devDependencies", "optionalDependencies"] as const;
+export const DEP_SECTIONS = [
+  "dependencies",
+  "devDependencies",
+  "optionalDependencies",
+] as const;
 export type DepSection = (typeof DEP_SECTIONS)[number];
 export type Manifest = Record<string, any>;
 
@@ -82,7 +92,13 @@ export const RUNTIME_TOOLS = ["bun", "typescript", "oxlint", "oxfmt"];
 /** Packages owned by `tauri sync` (its own gate, mirrors and release-age rules): never bumped here. */
 export const TAURI_OWNED = /^@tauri-apps\//;
 /** Packages whose version `tools/config/update/pins.json` rewrites everywhere (runtime and toolchain pins): moved by `tools --apply`. */
-export const PIN_OWNED = new Set(["bun-types", "@types/bun", "typescript", "oxlint", "oxfmt"]);
+export const PIN_OWNED = new Set([
+  "bun-types",
+  "@types/bun",
+  "typescript",
+  "oxlint",
+  "oxfmt",
+]);
 
 // ---------------------------------------------------------------- specs
 
@@ -98,11 +114,13 @@ export function specKind(spec: string): SpecKind {
   )
     return "git";
   if (/^https?:/.test(spec)) return "url";
-  if (/^[\^~>=<v\d*xX\s|.-]/.test(spec) && /\d|[*xX]/.test(spec)) return "version";
+  if (/^[\^~>=<v\d*xX\s|.-]/.test(spec) && /\d|[*xX]/.test(spec))
+    return "version";
   return "tag"; // latest, next, canary, ...
 }
 
-const numericOrZero = (s: string | undefined) => (s && /^\d+$/.test(s) ? s : "0");
+const numericOrZero = (s: string | undefined) =>
+  s && /^\d+$/.test(s) ? s : "0";
 
 /** Lowest bound of the highest alternative of a range (`^1.2.3`, `~1.2`, `>=1 <2 || ^3.1.0`); undefined when open. */
 export function specBase(spec: string): string | undefined {
@@ -111,7 +129,9 @@ export function specBase(spec: string): string | undefined {
       .split("||")
       .map((a) => a.trim())
       .findLast(Boolean) ?? "";
-  const m = /(\d+)(?:\.(\d+|[xX*]))?(?:\.(\d+|[xX*]))?(-[0-9A-Za-z.-]+)?/.exec(alt);
+  const m = /(\d+)(?:\.(\d+|[xX*]))?(?:\.(\d+|[xX*]))?(-[0-9A-Za-z.-]+)?/.exec(
+    alt,
+  );
   if (!m) return undefined;
   return `${m[1]}.${numericOrZero(m[2])}.${numericOrZero(m[3])}${m[4] ?? ""}`;
 }
@@ -124,7 +144,10 @@ export function rewriteSpec(spec: string, version: string): string {
   return `${op === "=" ? "" : op}${version}`;
 }
 
-export function bumpKind(base: string | undefined, latest: string | undefined): BumpKind {
+export function bumpKind(
+  base: string | undefined,
+  latest: string | undefined,
+): BumpKind {
   if (!base || !latest) return "none";
   const a = parseSemver(base);
   const b = parseSemver(latest);
@@ -153,7 +176,9 @@ export function satisfies(version: string, spec: string): boolean {
 
 /** Root `workspaces.catalog` plus every named catalog, flattened name -> spec (named ones keep the first spec seen). */
 export function catalogEntries(root: Manifest): Record<string, string> {
-  const out: Record<string, string> = { ...(root.workspaces?.catalog ?? root.catalog) };
+  const out: Record<string, string> = {
+    ...(root.workspaces?.catalog ?? root.catalog),
+  };
   for (const named of Object.values<Record<string, string>>(
     root.workspaces?.catalogs ?? root.catalogs ?? {},
   )) {
@@ -163,16 +188,24 @@ export function catalogEntries(root: Manifest): Record<string, string> {
 }
 
 /** name -> declared spec of one manifest with `catalog:` references resolved through the root catalog. */
-export function resolvedDeps(manifest: Manifest, root: Manifest): Map<string, string> {
+export function resolvedDeps(
+  manifest: Manifest,
+  root: Manifest,
+): Map<string, string> {
   const catalog = root.workspaces?.catalog ?? root.catalog ?? {};
-  const catalogs: Record<string, Record<string, string>> = root.workspaces?.catalogs ??
+  const catalogs: Record<string, Record<string, string>> = root.workspaces
+    ?.catalogs ??
   root.catalogs ??
   {};
   const out = new Map<string, string>();
   for (const section of DEP_SECTIONS) {
-    for (const [name, spec] of Object.entries<string>(manifest[section] ?? {})) {
-      if (spec === "catalog:" || spec === "catalog:default") out.set(name, catalog[name] ?? spec);
-      else if (spec.startsWith("catalog:")) out.set(name, catalogs[spec.slice(8)]?.[name] ?? spec);
+    for (const [name, spec] of Object.entries<string>(
+      manifest[section] ?? {},
+    )) {
+      if (spec === "catalog:" || spec === "catalog:default")
+        out.set(name, catalog[name] ?? spec);
+      else if (spec.startsWith("catalog:"))
+        out.set(name, catalogs[spec.slice(8)]?.[name] ?? spec);
       else out.set(name, spec);
     }
   }
@@ -180,7 +213,10 @@ export function resolvedDeps(manifest: Manifest, root: Manifest): Map<string, st
 }
 
 /** Direct dependencies of the whole workspace: catalog entries first, then literal ranges of each manifest. */
-export function collectDirect(root: Manifest, manifests: Record<string, Manifest>): Direct[] {
+export function collectDirect(
+  root: Manifest,
+  manifests: Record<string, Manifest>,
+): Direct[] {
   const map = new Map<string, Direct>();
   const add = (name: string, spec: string, where: string) => {
     const k = `${name}\u0000${spec}`;
@@ -188,7 +224,8 @@ export function collectDirect(root: Manifest, manifests: Record<string, Manifest
     if (!d.where.includes(where)) d.where.push(where);
     map.set(k, d);
   };
-  for (const [name, spec] of Object.entries(catalogEntries(root))) add(name, spec, "catalog");
+  for (const [name, spec] of Object.entries(catalogEntries(root)))
+    add(name, spec, "catalog");
   for (const [path, m] of Object.entries(manifests)) {
     for (const section of DEP_SECTIONS) {
       for (const [name, spec] of Object.entries<string>(m[section] ?? {})) {
@@ -213,7 +250,8 @@ export function touchedManifests(
     const b = before.manifests[path]
       ? resolvedDeps(before.manifests[path]!, before.root)
       : new Map<string, string>();
-    const changed = a.size !== b.size || [...a].some(([n, s]) => b.get(n) !== s);
+    const changed =
+      a.size !== b.size || [...a].some(([n, s]) => b.get(n) !== s);
     if (changed) out.push(path);
   }
   return out.toSorted();
@@ -223,7 +261,10 @@ export function touchedManifests(
 
 export function parseReleaseAge(bunfigText: string): ReleaseAge {
   const t = Bun.TOML.parse(bunfigText) as {
-    install?: { minimumReleaseAge?: number; minimumReleaseAgeExcludes?: string[] };
+    install?: {
+      minimumReleaseAge?: number;
+      minimumReleaseAgeExcludes?: string[];
+    };
   };
   return {
     seconds: t.install?.minimumReleaseAge ?? 0,
@@ -241,7 +282,11 @@ export function parseHolds(text: string): Holds {
 }
 
 /** Hold that applies to this row: a release in a major above `maxMajor`, or above `maxVersion`, is refused. */
-export function holdFor(holds: Hold[], name: string, latest: string | undefined): Hold | undefined {
+export function holdFor(
+  holds: Hold[],
+  name: string,
+  latest: string | undefined,
+): Hold | undefined {
   const major = latest ? parseSemver(latest)?.major : undefined;
   if (!latest || major === undefined) return undefined;
   return holds.find(
@@ -252,7 +297,10 @@ export function holdFor(holds: Hold[], name: string, latest: string | undefined)
   );
 }
 
-export function advisoryHeld(holds: AdvisoryHold[], name: string): AdvisoryHold | undefined {
+export function advisoryHeld(
+  holds: AdvisoryHold[],
+  name: string,
+): AdvisoryHold | undefined {
   return holds.find((h) => h.ecosystem === "npm" && h.name === name);
 }
 
@@ -271,7 +319,13 @@ export const FAMILIES: RegExp[][] = [
   [/^vitest$/, /^@vitest\//],
   [/^@colyseus\//],
   [/^@ai-sdk\//, /^ai$/],
-  [/^graphql$/, /^graphql-scalars$/, /^graphql-yoga$/, /^@graphql-yoga\//, /^@envelop\//],
+  [
+    /^graphql$/,
+    /^graphql-scalars$/,
+    /^graphql-yoga$/,
+    /^@graphql-yoga\//,
+    /^@envelop\//,
+  ],
 ];
 
 export function familyOf(name: string): RegExp[] | undefined {
@@ -285,7 +339,8 @@ export function expandMajors(requested: string[], rows: Row[]): string[] {
     const fam = familyOf(name);
     if (!fam) continue;
     for (const r of rows)
-      if (r.kind === "major" && !r.inRange && fam.some((re) => re.test(r.name))) out.add(r.name);
+      if (r.kind === "major" && !r.inRange && fam.some((re) => re.test(r.name)))
+        out.add(r.name);
   }
   return [...out].toSorted();
 }
@@ -320,7 +375,9 @@ export function eligibleVersion(
   const candidates = line.pre.length
     ? times
     : Object.fromEntries(
-        Object.entries(times).filter(([v]) => (parseSemver(v)?.pre.length ?? 1) === 0),
+        Object.entries(times).filter(
+          ([v]) => (parseSemver(v)?.pre.length ?? 1) === 0,
+        ),
       );
   const { eligible } = pickEligible(candidates, line.major, now, age.seconds);
   return { eligible: eligible ?? undefined, ageGated: eligible !== latest };
@@ -348,7 +405,13 @@ export function buildRows(input: RowInput): Row[] {
     else if (PIN_OWNED.has(d.name)) row.owner = "pins";
     row.hold = holdFor(input.holds, d.name, latest);
     if (latest && kind !== "none" && kind !== "ahead") {
-      const e = eligibleVersion(input.times?.get(d.name), latest, age, d.name, now);
+      const e = eligibleVersion(
+        input.times?.get(d.name),
+        latest,
+        age,
+        d.name,
+        now,
+      );
       row.eligible = e.eligible;
       row.ageGated = e.ageGated;
     }
@@ -362,7 +425,8 @@ export const behind = (rows: Row[]) =>
   rows.filter((r) => r.kind !== "none" && r.kind !== "ahead" && !r.owner);
 
 /** Version `apply` would install: the release-age-eligible one, else the latest. */
-export const targetOf = (r: Row): string | undefined => (r.ageGated ? r.eligible : r.latest);
+export const targetOf = (r: Row): string | undefined =>
+  r.ageGated ? r.eligible : r.latest;
 
 export type Plan = {
   /** A newer release inside the declared range: `bun update -r` moves it. */
@@ -379,7 +443,13 @@ export type Plan = {
 
 /** `waiting` rows are excluded from the other buckets because nothing newer can be installed today. */
 export function planRows(rows: Row[]): Plan {
-  const out: Plan = { inRange: [], pinned: [], majors: [], held: [], waiting: [] };
+  const out: Plan = {
+    inRange: [],
+    pinned: [],
+    majors: [],
+    held: [],
+    waiting: [],
+  };
   for (const r of behind(rows)) {
     const t = targetOf(r);
     if (r.hold) out.held.push(r);
@@ -422,13 +492,19 @@ export function specEdits(
       if (cmpVersion(v, r.base ?? "0.0.0") <= 0) continue;
       const to = rewriteSpec(r.spec, v);
       for (const file of r.where)
-        edits.push({ file: file === "catalog" ? "package.json" : file, name, from: r.spec, to });
+        edits.push({
+          file: file === "catalog" ? "package.json" : file,
+          name,
+          from: r.spec,
+          to,
+        });
     }
   }
   return { edits, errors };
 }
 
-const escapeForPattern = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const escapeForPattern = (s: string) =>
+  s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** Replace `"name": "from"` by `"name": "to"` in JSON text, keeping the formatting; returns the new text and the count. */
 export function applyEdit(
@@ -437,7 +513,10 @@ export function applyEdit(
   from: string,
   to: string,
 ): { text: string; count: number } {
-  const re = new RegExp(`("${escapeForPattern(name)}"\\s*:\\s*")${escapeForPattern(from)}(")`, "g");
+  const re = new RegExp(
+    `("${escapeForPattern(name)}"\\s*:\\s*")${escapeForPattern(from)}(")`,
+    "g",
+  );
   let count = 0;
   const out = text.replace(re, (_m, a: string, b: string) => {
     count++;
@@ -448,7 +527,10 @@ export function applyEdit(
 
 // ---------------------------------------------------------------- network (injectable)
 
-const UA = { "user-agent": "aphrody-bun-update (contact@aphrody.com)", accept: "application/json" };
+const UA = {
+  "user-agent": "aphrody-bun-update (contact@aphrody.com)",
+  accept: "application/json",
+};
 const noSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 /** GET with exponential backoff on 429, 5xx and network errors; honours Retry-After. 404 is returned as is. */
@@ -468,13 +550,19 @@ export async function fetchWithBackoff(
   let res: Response | undefined;
   for (let i = 0; i < attempts; i++) {
     // oxlint-disable-next-line no-await-in-loop -- relances séquentielles avec backoff : la tentative suivante dépend de la précédente
-    res = await f(url, { headers: UA, signal: AbortSignal.timeout(30_000) }).catch(() => undefined);
+    res = await f(url, {
+      headers: UA,
+      signal: AbortSignal.timeout(30_000),
+    }).catch(() => undefined);
     if (res && res.status !== 429 && res.status < 500) return res;
     if (i === attempts - 1) break;
     const retry = Number(res?.headers.get("retry-after"));
     // oxlint-disable-next-line no-await-in-loop -- attente de Retry-After entre deux relances séquentielles
     await sleep(
-      Math.min(60_000, Number.isFinite(retry) && retry > 0 ? retry * 1000 : base * 2 ** i),
+      Math.min(
+        60_000,
+        Number.isFinite(retry) && retry > 0 ? retry * 1000 : base * 2 ** i,
+      ),
     );
   }
   return res && res.ok ? res : undefined;
@@ -499,7 +587,9 @@ export async function npmTimes(
 ): Promise<Record<string, string> | undefined> {
   const res = await fetchWithBackoff(npmUrl(name), opts);
   if (!res?.ok) return undefined;
-  const t = { ...((await res.json()) as { time?: Record<string, string> }).time };
+  const t = {
+    ...((await res.json()) as { time?: Record<string, string> }).time,
+  };
   delete t.created;
   delete t.modified;
   return t;
@@ -554,9 +644,9 @@ export function describeOverrides(
       name,
       spec,
       local,
-      resolved: [...new Set(lock.filter((d) => d.name === name).map((d) => d.version))].toSorted(
-        cmpVersion,
-      ),
+      resolved: [
+        ...new Set(lock.filter((d) => d.name === name).map((d) => d.version)),
+      ].toSorted(cmpVersion),
       latest: latest.get(name)?.version,
       missing: local ? !c.exists(spec.replace(/^file:/, "")) : undefined,
     };
@@ -575,7 +665,10 @@ export type Advisory = {
 export async function openAdvisories(
   lock: Dep[],
   holds: AdvisoryHold[],
-  opts: { fetchLatest?: (n: string) => Promise<Latest>; query?: typeof osv } = {},
+  opts: {
+    fetchLatest?: (n: string) => Promise<Latest>;
+    query?: typeof osv;
+  } = {},
 ): Promise<{ open: Advisory[]; held: Advisory[] }> {
   const hits = await (opts.query ?? osv)(lock);
   const fetchLatest = opts.fetchLatest ?? ((n: string) => npmLatest(n));
@@ -628,7 +721,11 @@ export async function collectStatus(
   let runtime: ToolRow[] = [];
   if (!o.offline) {
     const names = [
-      ...new Set(directs.filter((d) => specKind(d.spec) === "version").map((d) => d.name)),
+      ...new Set(
+        directs
+          .filter((d) => specKind(d.spec) === "version")
+          .map((d) => d.name),
+      ),
     ];
     await pool(names, 8, async (n) => {
       latest.set(n, await npmLatest(n));
@@ -644,7 +741,9 @@ export async function collectStatus(
         if (t) times.set(r.name, t);
       },
     );
-    runtime = (await toolsPlan(c)).filter((r) => RUNTIME_TOOLS.includes(r.tool));
+    runtime = (await toolsPlan(c)).filter((r) =>
+      RUNTIME_TOOLS.includes(r.tool),
+    );
   }
   const rows = buildRows({ directs, latest, holds, age, times });
   const status: Status = {
@@ -672,7 +771,9 @@ export function renderStatus(s: Status): string[] {
       `runtime ${r.tool.padEnd(10)} pinned ${r.pinned ?? "?"}  installed ${r.installed ?? "-"}  latest ${r.latest ?? "?"}${lag ? "  <- behind" : ""}${r.installed && r.pinned && r.installed !== r.pinned ? "  <- installed differs from pin" : ""}`,
     );
   }
-  out.push(`manifests ${s.manifests} first-party, ${s.rows.length} direct registry ranges`);
+  out.push(
+    `manifests ${s.manifests} first-party, ${s.rows.length} direct registry ranges`,
+  );
   out.push(
     `release-age ${s.releaseAge.seconds}s (${Math.round(s.releaseAge.seconds / 86400)} d), ${s.releaseAge.excludes.length} exclude(s): ${s.releaseAge.excludes.join(", ") || "none"}`,
   );
@@ -681,14 +782,17 @@ export function renderStatus(s: Status): string[] {
       `override ${o.name} ${o.spec.length > 60 ? `${o.spec.slice(0, 57)}...` : o.spec}${o.local ? (o.missing ? "  <- tarball missing" : "  (local tarball)") : `  resolved ${o.resolved.join(", ") || "-"}  latest ${o.latest ?? "?"}`}`,
     );
   const b = behind(s.rows);
-  const owned = s.rows.filter((r) => r.owner && r.kind !== "none" && r.kind !== "ahead");
+  const owned = s.rows.filter(
+    (r) => r.owner && r.kind !== "none" && r.kind !== "ahead",
+  );
   out.push(
     `behind ${b.length} direct (in-range ${s.plan.inRange.length}, pinned ${s.plan.pinned.length}, majors ${s.plan.majors.length}, held ${s.plan.held.length}, waiting for release age ${s.plan.waiting.length})`,
   );
   for (const r of s.plan.inRange) out.push(`  in-range ${fmtRow(r)}`);
   for (const r of s.plan.pinned) out.push(`  pinned   ${fmtRow(r)}`);
   for (const r of s.plan.majors) out.push(`  major    ${fmtRow(r)}`);
-  for (const r of s.plan.held) out.push(`  held     ${fmtRow(r)}  - ${r.hold!.reason}`);
+  for (const r of s.plan.held)
+    out.push(`  held     ${fmtRow(r)}  - ${r.hold!.reason}`);
   for (const r of s.plan.waiting) out.push(`  waiting  ${fmtRow(r)}`);
   for (const r of owned)
     out.push(
@@ -711,7 +815,11 @@ export function renderStatus(s: Status): string[] {
 /** Files a bump may touch: every first-party manifest, the root manifest and bun.lock. */
 export async function bumpFiles(c: Ctx): Promise<string[]> {
   return [
-    ...new Set(["package.json", "bun.lock", ...(await firstPartyManifests(c.root))]),
+    ...new Set([
+      "package.json",
+      "bun.lock",
+      ...(await firstPartyManifests(c.root)),
+    ]),
   ].toSorted();
 }
 
@@ -744,7 +852,9 @@ export function latestSnapshot(c: Ctx): string | undefined {
 export function restoreSnapshot(c: Ctx, dir: string): string[] {
   const restored: string[] = [];
   const walk = (rel: string) => {
-    for (const e of readdirSync(join(c.root, dir, rel), { withFileTypes: true })) {
+    for (const e of readdirSync(join(c.root, dir, rel), {
+      withFileTypes: true,
+    })) {
       const r = join(rel, e.name);
       if (e.isDirectory()) walk(r);
       else {
@@ -768,7 +878,11 @@ export function restoreSnapshot(c: Ctx, dir: string): string[] {
 
 export type Step = { name: string; ok: boolean; detail?: string };
 
-function sh(c: Ctx, cmd: string, args: string[]): { ok: boolean; tail: string } {
+function sh(
+  c: Ctx,
+  cmd: string,
+  args: string[],
+): { ok: boolean; tail: string } {
   const r = c.run(cmd, args);
   const text = `${r.stdout ?? ""}${r.stderr ?? ""}`.trim().split("\n");
   return { ok: r.status === 0, tail: text.slice(-12).join("\n") };
@@ -811,7 +925,9 @@ export async function verify(
   run("bun run bun:check", "bun", ["run", "bun:check"]);
   run("bun run monorepo:layout", "bun", ["run", "monorepo:layout"]);
   if (!o.skipTests) run("bun run test (workspace)", "bun", ["run", "test"]);
-  const dirs = [...new Set([...touched.map((p) => dirname(p)), "packages/infra/update"])]
+  const dirs = [
+    ...new Set([...touched.map((p) => dirname(p)), "packages/infra/update"]),
+  ]
     .filter((d) => d !== ".")
     .toSorted();
   for (const d of dirs) {
@@ -897,7 +1013,9 @@ export function renderPlan(s: Status, majors: string[]): string[] {
   for (const r of s.plan.majors)
     out.push(`            ${want.includes(r.name) ? "*" : " "} ${fmtRow(r)}`);
   if (s.plan.held.length)
-    out.push(`5 held      ${s.plan.held.map((r) => `${r.name} (${r.hold!.reason})`).join("; ")}`);
+    out.push(
+      `5 held      ${s.plan.held.map((r) => `${r.name} (${r.hold!.reason})`).join("; ")}`,
+    );
   out.push(
     "6 verify    bun:check, monorepo:layout, workspace tests, typecheck of every package whose resolved deps changed",
   );
@@ -920,13 +1038,17 @@ async function applyBumps(c: Ctx, args: Args): Promise<number> {
     console.log("tauri  drift reported, applying through tauri sync");
     const code = await runTauriSync(["--apply", "--root", c.root]);
     if (code !== 0) {
-      console.error("tauri sync failed; nothing else was changed after the snapshot step");
+      console.error(
+        "tauri sync failed; nothing else was changed after the snapshot step",
+      );
       return code;
     }
   }
   const upd = c.run("bun", ["update", "-r"], { inherit: true });
   if (upd.status !== 0) {
-    console.error("bun update -r failed; restore with `yolo update bun rollback`");
+    console.error(
+      "bun update -r failed; restore with `yolo update bun rollback`",
+    );
     return 1;
   }
   {
@@ -946,9 +1068,13 @@ async function applyBumps(c: Ctx, args: Args): Promise<number> {
       if (r.count) {
         c.write(e.file, r.text);
         console.log(`bump   ${e.name} ${e.from} -> ${e.to} (${e.file})`);
-      } else console.error(`bump   ${e.name}: "${e.from}" not found in ${e.file}`);
+      } else
+        console.error(`bump   ${e.name}: "${e.from}" not found in ${e.file}`);
     }
-    if (edits.length && c.run("bun", ["install"], { inherit: true }).status !== 0) {
+    if (
+      edits.length &&
+      c.run("bun", ["install"], { inherit: true }).status !== 0
+    ) {
       console.error(
         "bun install failed after the spec edits; restore with `yolo update bun rollback`",
       );
@@ -975,16 +1101,28 @@ export async function runBun(argv: string[]): Promise<number> {
   const c = new Ctx(args.root, args.sub === "apply", args.json);
   switch (args.sub) {
     case "status": {
-      const s = await collectStatus(c, { offline: args.offline, advisories: !args.noAdvisories });
-      console.log(args.json ? JSON.stringify(s, null, 2) : renderStatus(s).join("\n"));
+      const s = await collectStatus(c, {
+        offline: args.offline,
+        advisories: !args.noAdvisories,
+      });
+      console.log(
+        args.json ? JSON.stringify(s, null, 2) : renderStatus(s).join("\n"),
+      );
       if (!args.offline && !args.json) await runSources(c, ["forks"]);
       return 0;
     }
     case "plan": {
-      const s = await collectStatus(c, { offline: args.offline, advisories: false });
+      const s = await collectStatus(c, {
+        offline: args.offline,
+        advisories: false,
+      });
       console.log(
         args.json
-          ? JSON.stringify({ plan: s.plan, majors: expandMajors(args.majors, s.rows) }, null, 2)
+          ? JSON.stringify(
+              { plan: s.plan, majors: expandMajors(args.majors, s.rows) },
+              null,
+              2,
+            )
           : renderPlan(s, args.majors).join("\n"),
       );
       return 0;
@@ -992,7 +1130,9 @@ export async function runBun(argv: string[]): Promise<number> {
     case "apply":
       return applyBumps(c, args);
     case "verify": {
-      const steps = await verify(c, await touchedSince(c), { skipTests: args.skipTests });
+      const steps = await verify(c, await touchedSince(c), {
+        skipTests: args.skipTests,
+      });
       return steps.every((x) => x.ok) ? 0 : 1;
     }
     case "rollback": {

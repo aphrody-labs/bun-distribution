@@ -53,16 +53,23 @@ export type Pins = {
 };
 
 /** Pins from the repository manifests: the image always matches what the checkout declares. */
-export function readPins(toolchain: string, packageJson: string, cargoLock: string): Pins {
+export function readPins(
+  toolchain: string,
+  packageJson: string,
+  cargoLock: string,
+): Pins {
   const channel = /^channel\s*=\s*"([^"]+)"/m.exec(toolchain)?.[1];
   const list = (key: string) =>
     [
-      ...(new RegExp(`^${key}\\s*=\\s*\\[([^\\]]*)\\]`, "m").exec(toolchain)?.[1] ?? "").matchAll(
-        /"([^"]+)"/g,
-      ),
+      ...(
+        new RegExp(`^${key}\\s*=\\s*\\[([^\\]]*)\\]`, "m").exec(
+          toolchain,
+        )?.[1] ?? ""
+      ).matchAll(/"([^"]+)"/g),
     ].map((m) => m[1]!);
   const bunMatch = /^bun@(\d+\.\d+\.\d+)(-aphrody\.\d+)?$/.exec(
-    (JSON.parse(packageJson) as { packageManager?: string }).packageManager ?? "",
+    (JSON.parse(packageJson) as { packageManager?: string }).packageManager ??
+      "",
   );
   const bun = bunMatch?.[1];
   const bunRelease = bun
@@ -70,12 +77,15 @@ export function readPins(toolchain: string, packageJson: string, cargoLock: stri
       ? `aphrody-v${bun}${bunMatch[2]}`
       : `bun-v${bun}`
     : undefined;
-  const wasmBindgen = /\[\[package\]\]\r?\nname = "wasm-bindgen"\r?\nversion = "([^"]+)"/.exec(
-    cargoLock,
-  )?.[1];
+  const wasmBindgen =
+    /\[\[package\]\]\r?\nname = "wasm-bindgen"\r?\nversion = "([^"]+)"/.exec(
+      cargoLock,
+    )?.[1];
   if (!channel) throw new Error("rust-toolchain.toml: channel introuvable");
   if (!bun || !bunRelease)
-    throw new Error("package.json: packageManager bun@x.y.z[-aphrody.N] introuvable");
+    throw new Error(
+      "package.json: packageManager bun@x.y.z[-aphrody.N] introuvable",
+    );
   if (!wasmBindgen) throw new Error("Cargo.lock: wasm-bindgen introuvable");
   return {
     rustChannel: channel,
@@ -138,16 +148,20 @@ export type RunOptions = {
 
 /** The `docker run` invocation of the shared build contract (see the module comment). */
 export function runArgs(o: RunOptions): string[] {
-  if (!o.repo.startsWith("/")) throw new Error("--repo doit être un chemin absolu");
+  if (!o.repo.startsWith("/"))
+    throw new Error("--repo doit être un chemin absolu");
   if (o.command.length === 0) throw new Error("commande manquante après --");
   if (o.targetVolume && !/^[a-z0-9][a-z0-9_.-]*$/.test(o.targetVolume))
     throw new Error("--target-volume : nom de volume invalide");
   const cpus = o.cpus ?? "6";
   const memory = o.memory ?? "16g";
-  if (!/^\d+(\.\d+)?$/.test(cpus) || Number(cpus) > 6) throw new Error("APHRODY_BUILD_CPUS ≤ 6");
-  if (!/^\d+[mg]$/.test(memory)) throw new Error("APHRODY_BUILD_MEMORY : <n>m ou <n>g");
+  if (!/^\d+(\.\d+)?$/.test(cpus) || Number(cpus) > 6)
+    throw new Error("APHRODY_BUILD_CPUS ≤ 6");
+  if (!/^\d+[mg]$/.test(memory))
+    throw new Error("APHRODY_BUILD_MEMORY : <n>m ou <n>g");
   const env = (o.env ?? []).flatMap((name) => {
-    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) throw new Error(`--env ${name} invalide`);
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name))
+      throw new Error(`--env ${name} invalide`);
     return ["--env", name];
   });
   const docker = [
@@ -208,7 +222,13 @@ export function gitToken(
   env: Record<string, string | undefined>,
   gh: () => string | undefined,
 ): string | undefined {
-  return env.APHRODY_GIT_TOKEN || env.GH_TOKEN || env.GITHUB_TOKEN || gh() || undefined;
+  return (
+    env.APHRODY_GIT_TOKEN ||
+    env.GH_TOKEN ||
+    env.GITHUB_TOKEN ||
+    gh() ||
+    undefined
+  );
 }
 
 function ghToken(): string | undefined {
@@ -228,7 +248,8 @@ function git(args: string[]): string {
     stdout: "pipe",
     stderr: "inherit",
   });
-  if (p.exitCode !== 0) throw new Error(`git ${args.join(" ")} : code ${p.exitCode}`);
+  if (p.exitCode !== 0)
+    throw new Error(`git ${args.join(" ")} : code ${p.exitCode}`);
   return p.stdout.toString().trim();
 }
 
@@ -248,7 +269,14 @@ async function image(): Promise<void> {
   });
   if (p.exitCode !== 0) process.exit(p.exitCode ?? 1);
   const inspect = Bun.spawnSync(
-    ["docker", "image", "inspect", "--format", "{{.Id}} {{.Size}}", imageTag(pins, revision)],
+    [
+      "docker",
+      "image",
+      "inspect",
+      "--format",
+      "{{.Id}} {{.Size}}",
+      imageTag(pins, revision),
+    ],
     { windowsHide: true, stdout: "pipe" },
   );
   const [id, size] = inspect.stdout.toString().trim().split(" ");
@@ -276,7 +304,8 @@ function run(argv: string[]): never {
     if (flag === "--env") env.push(flags[i + 1] ?? "");
   });
   const token = gitToken(process.env, ghToken);
-  if (token && !env.includes("APHRODY_GIT_TOKEN")) env.push("APHRODY_GIT_TOKEN");
+  if (token && !env.includes("APHRODY_GIT_TOKEN"))
+    env.push("APHRODY_GIT_TOKEN");
   const args = runArgs({
     repo: resolve(value("--repo") ?? ROOT),
     command,

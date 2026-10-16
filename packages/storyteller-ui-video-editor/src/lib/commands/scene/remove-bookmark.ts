@@ -2,7 +2,10 @@ import { Command, type CommandResult } from "../base-command";
 import { EditorCore } from "../../core";
 import type { TScene } from "../../timeline/types";
 import { updateSceneInArray } from "../../timeline/scenes";
-import { getFrameTime, removeBookmarkFromArray } from "../../timeline/bookmarks";
+import {
+  getFrameTime,
+  removeBookmarkFromArray,
+} from "../../timeline/bookmarks";
 import { type MediaTime, ZERO_MEDIA_TIME } from "../../wasm";
 
 export class RemoveBookmarkCommand extends Command {

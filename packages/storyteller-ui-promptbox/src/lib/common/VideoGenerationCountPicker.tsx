@@ -39,7 +39,7 @@ export const VideoGenerationCountPicker = ({
         onSelect={onSelect}
         mode="toggle"
         panelTitle="No. of videos"
-        triggerIcon={<CopyIcon  className="h-4 w-4" />}
+        triggerIcon={<CopyIcon className="h-4 w-4" />}
         buttonClassName={PROMPT_TOOLBAR_ICON_BUTTON_CLASSES}
       />
     </Tooltip>

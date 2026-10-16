@@ -51,34 +51,36 @@
 export type LettreMesuree = readonly [string, number];
 
 export const LETTRES_DRAGON_AVANT_BOULE: readonly LettreMesuree[] = [
-	["D", 1],
-	["R", 0.891],
-	["A", 0.756],
-	["G", 0.679],
+  ["D", 1],
+  ["R", 0.891],
+  ["A", 0.756],
+  ["G", 0.679],
 ];
-export const LETTRES_DRAGON_APRES_BOULE: readonly LettreMesuree[] = [["N", 0.641]];
+export const LETTRES_DRAGON_APRES_BOULE: readonly LettreMesuree[] = [
+  ["N", 0.641],
+];
 export const LETTRES_BALL: readonly LettreMesuree[] = [
-	["B", 0.641],
-	["A", 0.667],
-	["L", 0.712],
-	["L", 0.788],
+  ["B", 0.641],
+  ["A", 0.667],
+  ["L", 0.712],
+  ["L", 0.788],
 ];
 
 export function MotManga({ lettres }: { lettres: readonly LettreMesuree[] }) {
-	return (
-		<>
-			{lettres.map(([glyphe, echelle], i) => (
-				<span
-					// Les lettres d'un wordmark figé ne se réordonnent jamais : l'index
-					// est ici une clé stable.
-					key={`${glyphe}-${i}`}
-					className="wordmark-lettre"
-					data-texte={glyphe}
-					style={{ ["--e" as string]: echelle }}
-				>
-					{glyphe}
-				</span>
-			))}
-		</>
-	);
+  return (
+    <>
+      {lettres.map(([glyphe, echelle], i) => (
+        <span
+          // Les lettres d'un wordmark figé ne se réordonnent jamais : l'index
+          // est ici une clé stable.
+          key={`${glyphe}-${i}`}
+          className="wordmark-lettre"
+          data-texte={glyphe}
+          style={{ ["--e" as string]: echelle }}
+        >
+          {glyphe}
+        </span>
+      ))}
+    </>
+  );
 }

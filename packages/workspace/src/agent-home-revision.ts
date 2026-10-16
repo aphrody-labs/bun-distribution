@@ -57,7 +57,10 @@ const encoder = new TextEncoder();
 
 /** Byte-wise comparison of the UTF-8 encodings (the Rust sort order). */
 function compareUtf8(a: string, b: string): number {
-  return Buffer.compare(Buffer.from(encoder.encode(a)), Buffer.from(encoder.encode(b)));
+  return Buffer.compare(
+    Buffer.from(encoder.encode(a)),
+    Buffer.from(encoder.encode(b)),
+  );
 }
 
 /** Content files of `root` (relative `/` paths), sorted by UTF-8 bytes. Symlinks are skipped. */
@@ -69,11 +72,15 @@ export function contentFiles(root: string): string[] {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       if (entry.isSymbolicLink()) continue;
       const name = entry.name;
-      if (/[\r\n]/.test(name)) throw new Error(`home content path contains a line break: ${name}`);
+      if (/[\r\n]/.test(name))
+        throw new Error(`home content path contains a line break: ${name}`);
       const rel = prefix === "" ? name : `${prefix}/${name}`;
       if (entry.isDirectory()) {
         if (!EXCLUDED_DIRS.includes(name)) stack.push([join(dir, name), rel]);
-      } else if (entry.isFile() && !EXCLUDED_SUFFIXES.some((s) => name.endsWith(s))) {
+      } else if (
+        entry.isFile() &&
+        !EXCLUDED_SUFFIXES.some((s) => name.endsWith(s))
+      ) {
         out.push(rel);
       }
     }
@@ -83,7 +90,9 @@ export function contentFiles(root: string): string[] {
 
 /** `sha256-v1:` + SHA-256 of the manifest `<sha256> <size> <path>\n` per entry, in the given order. */
 export function manifestRevision(files: readonly FileDigest[]): string {
-  const manifest = files.map((f) => `${f.sha256} ${f.size} ${f.path}\n`).join("");
+  const manifest = files
+    .map((f) => `${f.sha256} ${f.size} ${f.path}\n`)
+    .join("");
   return `${REVISION_ALGORITHM}:${sha256Hex(manifest)}`;
 }
 
@@ -96,14 +105,21 @@ export function homeRevision(root: string): HomeRevision {
     const bytes = readFileSync(join(root, ...path.split("/")));
     return { path, size: bytes.byteLength, sha256: sha256Hex(bytes) };
   });
-  return { algorithm: REVISION_ALGORITHM, revision: manifestRevision(files), files };
+  return {
+    algorithm: REVISION_ALGORITHM,
+    revision: manifestRevision(files),
+    files,
+  };
 }
 
 /**
  * `SyncSnapshot.revision_sha256`: the same manifest over the seven synchronised documents, in contract
  * order (crates/ai/agent-home/sync-contract.json), without sorting.
  */
-export function syncRevision(root: string, documents: readonly string[]): string {
+export function syncRevision(
+  root: string,
+  documents: readonly string[],
+): string {
   return manifestRevision(
     documents.map((name) => {
       const bytes = readFileSync(join(root, name));
@@ -121,6 +137,10 @@ if (import.meta.main) {
   const rev = homeRevision(root);
   const out = process.argv.includes("--files")
     ? rev
-    : { algorithm: rev.algorithm, revision: rev.revision, file_count: rev.files.length };
+    : {
+        algorithm: rev.algorithm,
+        revision: rev.revision,
+        file_count: rev.files.length,
+      };
   console.log(JSON.stringify(out, null, 2));
 }

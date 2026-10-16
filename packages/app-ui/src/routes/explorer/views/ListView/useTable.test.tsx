@@ -29,7 +29,9 @@ function Probe() {
   return (
     <output>
       {rows.map((row) => `${row.id}:${row.getAllCells().length}`).join(",")};
-      {table.getHeaderGroups()[0]?.headers[0]?.column.getCanResize() ? "resizable" : "fixed"}
+      {table.getHeaderGroups()[0]?.headers[0]?.column.getCanResize()
+        ? "resizable"
+        : "fixed"}
     </output>
   );
 }

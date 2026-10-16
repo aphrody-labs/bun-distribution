@@ -60,22 +60,30 @@ const STATUS_LABEL: Record<Notice["status"], string> = {
 export default function AdminUrsafPage() {
   const qc = useQueryClient();
   const [status, setStatus] = useState<string>("all");
-  const [simulation, setSimulation] = useState<{ mode: string; assessments: Assessment[] } | null>(
-    null,
-  );
+  const [simulation, setSimulation] = useState<{
+    mode: string;
+    assessments: Assessment[];
+  } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   const notices = useQuery({
     queryKey: ["ursaf-notices", status],
-    queryFn: () => api.get<{ notices: Notice[] }>(`/ursaf/notices?status=${status}&limit=200`),
+    queryFn: () =>
+      api.get<{ notices: Notice[] }>(
+        `/ursaf/notices?status=${status}&limit=200`,
+      ),
   });
   const inflation = useQuery({
     queryKey: ["economy-inflation"],
     queryFn: () => api.get<Inflation>("/public/economy/inflation"),
   });
 
-  async function run<T>(label: string, fn: () => Promise<T>, done: (r: T) => string) {
+  async function run<T>(
+    label: string,
+    fn: () => Promise<T>,
+    done: (r: T) => string,
+  ) {
     setBusy(label);
     setMessage(null);
     try {
@@ -90,20 +98,28 @@ export default function AdminUrsafPage() {
     }
   }
 
-  const totalSimule = simulation?.assessments.reduce((s, a) => s + a.amount, 0) ?? 0;
+  const totalSimule =
+    simulation?.assessments.reduce((s, a) => s + a.amount, 0) ?? 0;
   const inf = inflation.data;
 
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="font-saiyan text-3xl text-dbz-orange">URSAF &amp; inflation</h1>
+        <h1 className="font-saiyan text-3xl text-dbz-orange">
+          URSAF &amp; inflation
+        </h1>
         <p className="mt-1 max-w-3xl text-sm text-white/55">
-          L&apos;URSAF transforme les signalements anti-triche en avis d&apos;imposition : seuls les
-          gains au-delà des seuils sont imposés, sans double comptage, au plus 95 % et jamais plus
-          de la moitié du solde. Les zénis recouvrés sont détruits. Le mode (
-          <code>economy.ursaf.mode</code> : off, notice ou collect) et l&apos;inflation (
-          <code>economy.inflation.enabled</code>) se règlent dans les{" "}
-          <Link href="/admin/settings" className="text-dbz-orange hover:underline">
+          L&apos;URSAF transforme les signalements anti-triche en avis
+          d&apos;imposition : seuls les gains au-delà des seuils sont imposés,
+          sans double comptage, au plus 95 % et jamais plus de la moitié du
+          solde. Les zénis recouvrés sont détruits. Le mode (
+          <code>economy.ursaf.mode</code> : off, notice ou collect) et
+          l&apos;inflation (<code>economy.inflation.enabled</code>) se règlent
+          dans les{" "}
+          <Link
+            href="/admin/settings"
+            className="text-dbz-orange hover:underline"
+          >
             paramètres
           </Link>
           .
@@ -129,8 +145,12 @@ export default function AdminUrsafPage() {
             onClick={() =>
               void run(
                 "snapshot",
-                () => api.post<{ index: number; supply: number }>("/economy/inflation/snapshot"),
-                (r) => `Instantané : masse ${formatZeni(r.supply)}, indice ×${nf.format(r.index)}.`,
+                () =>
+                  api.post<{ index: number; supply: number }>(
+                    "/economy/inflation/snapshot",
+                  ),
+                (r) =>
+                  `Instantané : masse ${formatZeni(r.supply)}, indice ×${nf.format(r.index)}.`,
               )
             }
             className="rounded-xl border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/70 hover:border-dbz-yellow hover:text-dbz-yellow disabled:opacity-50"
@@ -143,12 +163,20 @@ export default function AdminUrsafPage() {
             {[
               ["Statut", inf.enabled ? "Active" : "Inactive"],
               ["Indice", `×${nf.format(inf.index)}`],
-              ["7 jours", `${inf.change7d > 0 ? "+" : ""}${nf.format(inf.change7d)} %`],
+              [
+                "7 jours",
+                `${inf.change7d > 0 ? "+" : ""}${nf.format(inf.change7d)} %`,
+              ],
               ["Masse monétaire", formatZeni(inf.supply)],
               ["Plafond", `×${nf.format(inf.ceiling)}`],
             ].map(([k, v]) => (
-              <div key={k} className="rounded-xl border border-white/10 bg-black/25 p-3">
-                <dt className="text-[10px] uppercase tracking-wider text-white/45">{k}</dt>
+              <div
+                key={k}
+                className="rounded-xl border border-white/10 bg-black/25 p-3"
+              >
+                <dt className="text-[10px] uppercase tracking-wider text-white/45">
+                  {k}
+                </dt>
                 <dd className="mt-1 font-semibold text-white">{v}</dd>
               </div>
             ))}
@@ -159,9 +187,15 @@ export default function AdminUrsafPage() {
           </p>
         )}
         {inf && inf.history.length > 1 && (
-          <ol className="mt-4 flex h-16 items-end gap-1" aria-label="Historique de l'indice">
+          <ol
+            className="mt-4 flex h-16 items-end gap-1"
+            aria-label="Historique de l'indice"
+          >
             {inf.history.map((p) => {
-              const h = Math.max(6, ((p.index - 1) / Math.max(0.01, inf.ceiling - 1)) * 100);
+              const h = Math.max(
+                6,
+                ((p.index - 1) / Math.max(0.01, inf.ceiling - 1)) * 100,
+              );
               return (
                 <li
                   key={p.day}
@@ -179,11 +213,14 @@ export default function AdminUrsafPage() {
       <section className="rounded-xl border border-white/10 bg-[#151412] p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="font-saiyan text-xl text-white">Rattrapage des signalements</h2>
+            <h2 className="font-saiyan text-xl text-white">
+              Rattrapage des signalements
+            </h2>
             <p className="mt-1 max-w-2xl text-xs text-white/50">
-              L&apos;anti-triche n&apos;était branché sur aucun gain avant le 12/09 : le farm du
-              morpion n&apos;a levé aucun signalement. Le rattrapage rejoue les règles sur les gains
-              de jeu de la période (jamais sur les crédits admin), sans geler personne.
+              L&apos;anti-triche n&apos;était branché sur aucun gain avant le
+              12/09 : le farm du morpion n&apos;a levé aucun signalement. Le
+              rattrapage rejoue les règles sur les gains de jeu de la période
+              (jamais sur les crédits admin), sans geler personne.
             </p>
           </div>
           <div className="flex gap-2">
@@ -195,7 +232,9 @@ export default function AdminUrsafPage() {
                 onClick={() => {
                   if (
                     !dryRun &&
-                    !window.confirm("Écrire les signalements de rattrapage (7 jours) ?")
+                    !window.confirm(
+                      "Écrire les signalements de rattrapage (7 jours) ?",
+                    )
                   )
                     return;
                   void run(
@@ -226,7 +265,9 @@ export default function AdminUrsafPage() {
       {/* ── Simulation ────────────────────────────────────────────── */}
       <section className="rounded-xl border border-white/10 bg-[#151412] p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-saiyan text-xl text-white">Simulation des avis</h2>
+          <h2 className="font-saiyan text-xl text-white">
+            Simulation des avis
+          </h2>
           <div className="flex gap-2">
             <button
               type="button"
@@ -235,9 +276,12 @@ export default function AdminUrsafPage() {
                 void run(
                   "assess",
                   () =>
-                    api.post<{ mode: string; assessments: Assessment[] }>("/ursaf/assess", {
-                      dryRun: true,
-                    }),
+                    api.post<{ mode: string; assessments: Assessment[] }>(
+                      "/ursaf/assess",
+                      {
+                        dryRun: true,
+                      },
+                    ),
                   (r) => {
                     setSimulation(r);
                     return `Simulation : ${r.assessments.length} avis possibles (mode actuel : ${r.mode}).`;
@@ -261,7 +305,11 @@ export default function AdminUrsafPage() {
                 void run(
                   "run",
                   () =>
-                    api.post<{ mode: string; created: number; collected: number }>("/ursaf/run"),
+                    api.post<{
+                      mode: string;
+                      created: number;
+                      collected: number;
+                    }>("/ursaf/run"),
                   (r) =>
                     r.mode === "off"
                       ? "Mode off : aucun avis émis."
@@ -277,7 +325,8 @@ export default function AdminUrsafPage() {
         {simulation && (
           <>
             <p className="mt-3 text-sm text-white/60">
-              {simulation.assessments.length} avis · total {formatZeni(totalSimule)}
+              {simulation.assessments.length} avis · total{" "}
+              {formatZeni(totalSimule)}
             </p>
             {simulation.assessments.length > 0 && (
               <div className="mt-3 overflow-x-auto rounded-xl border border-white/10">
@@ -303,8 +352,12 @@ export default function AdminUrsafPage() {
                             {a.userId}
                           </Link>
                         </td>
-                        <td className="p-2 text-right font-mono">{formatZeni(a.taxable)}</td>
-                        <td className="p-2 text-right">{Math.round(a.rate * 100)} %</td>
+                        <td className="p-2 text-right font-mono">
+                          {formatZeni(a.taxable)}
+                        </td>
+                        <td className="p-2 text-right">
+                          {Math.round(a.rate * 100)} %
+                        </td>
                         <td className="p-2 text-right font-mono font-semibold text-dbz-yellow">
                           {formatZeni(a.amount)}
                         </td>
@@ -325,7 +378,9 @@ export default function AdminUrsafPage() {
       {/* ── Avis émis ─────────────────────────────────────────────── */}
       <section className="rounded-xl border border-white/10 bg-[#151412] p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-saiyan text-xl text-white">Avis d&apos;imposition</h2>
+          <h2 className="font-saiyan text-xl text-white">
+            Avis d&apos;imposition
+          </h2>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
@@ -362,8 +417,12 @@ export default function AdminUrsafPage() {
                   <tr key={n.id}>
                     <td className="p-2 font-mono text-xs">{n.reference}</td>
                     <td className="p-2 font-mono text-xs">{n.userId}</td>
-                    <td className="p-2 text-right font-mono">{formatZeni(n.amount)}</td>
-                    <td className="p-2 text-right font-mono">{formatZeni(n.collected)}</td>
+                    <td className="p-2 text-right font-mono">
+                      {formatZeni(n.amount)}
+                    </td>
+                    <td className="p-2 text-right font-mono">
+                      {formatZeni(n.collected)}
+                    </td>
                     <td className="p-2 text-xs">{STATUS_LABEL[n.status]}</td>
                     <td className="p-2 text-right">
                       {n.status !== "cancelled" && (
@@ -379,7 +438,10 @@ export default function AdminUrsafPage() {
                             if (note === null) return;
                             void run(
                               `cancel-${n.id}`,
-                              () => api.post(`/ursaf/notices/${n.id}/cancel`, { note }),
+                              () =>
+                                api.post(`/ursaf/notices/${n.id}/cancel`, {
+                                  note,
+                                }),
                               () =>
                                 `Avis ${n.reference} annulé${n.status === "collected" ? " et remboursé" : ""}.`,
                             );

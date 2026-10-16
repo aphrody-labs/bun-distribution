@@ -20,10 +20,17 @@ export function AgentsLoadFailure({
   const [pending, startTransition] = useTransition();
 
   return (
-    <div role="alert" className="rounded-lg border border-red-500/40 bg-red-950/30 p-5">
+    <div
+      role="alert"
+      className="rounded-lg border border-red-500/40 bg-red-950/30 p-5"
+    >
       <h2 className="text-[15px] font-semibold text-red-200">{title}</h2>
       <p className="mt-1.5 text-[13px] text-white/60">{message}</p>
-      {code && <p className="mt-1.5 font-mono text-[12px] text-white/40">Code : {code}</p>}
+      {code && (
+        <p className="mt-1.5 font-mono text-[12px] text-white/40">
+          Code : {code}
+        </p>
+      )}
       <button
         type="button"
         disabled={pending}

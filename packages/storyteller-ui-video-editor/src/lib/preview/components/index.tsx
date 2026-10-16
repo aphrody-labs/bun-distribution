@@ -12,13 +12,22 @@ import type { RootNode } from "../../services/renderer/nodes/root-node";
 import { buildScene } from "../../services/renderer/scene-builder";
 import { PreviewOverlayLayer } from "./overlay-layer";
 import { PreviewInteractionOverlay } from "./preview-interaction-overlay";
-import { ContextMenu, ContextMenuTrigger } from "../../components/ui/context-menu";
-import type { PreviewOverlayControl, PreviewOverlayInstance } from "../overlays";
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+} from "../../components/ui/context-menu";
+import type {
+  PreviewOverlayControl,
+  PreviewOverlayInstance,
+} from "../overlays";
 import { PreviewContextMenu } from "./context-menu";
 import { PreviewToolbar } from "./toolbar";
 import { DEFAULT_CANVAS_SIZE } from "../../canvas/sizes";
 import { DEFAULT_FPS } from "../../fps/defaults";
-import { PreviewViewportProvider, usePreviewViewportState } from "./preview-viewport";
+import {
+  PreviewViewportProvider,
+  usePreviewViewportState,
+} from "./preview-viewport";
 
 function usePreviewSize() {
   const canvasSize = useEditor(
@@ -58,7 +67,10 @@ export function PreviewPanel({
 }: {
   overlayControls: PreviewOverlayControl[];
   overlayInstances: PreviewOverlayInstance[];
-  onOverlayVisibilityChange: (params: { overlayId: string; isVisible: boolean }) => void;
+  onOverlayVisibilityChange: (params: {
+    overlayId: string;
+    isVisible: boolean;
+  }) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
@@ -125,7 +137,10 @@ function PreviewCanvas({
   onToggleFullscreen: () => void;
   overlayControls: PreviewOverlayControl[];
   overlayInstances: PreviewOverlayInstance[];
-  onOverlayVisibilityChange: (params: { overlayId: string; isVisible: boolean }) => void;
+  onOverlayVisibilityChange: (params: {
+    overlayId: string;
+    isVisible: boolean;
+  }) => void;
 }) {
   const canvasMountRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -239,7 +254,8 @@ function PreviewCanvas({
         if (zoomRafId === null) {
           zoomRafId = requestAnimationFrame(() => {
             const cappedDelta =
-              Math.sign(pendingZoomDelta) * Math.min(Math.abs(pendingZoomDelta), 30);
+              Math.sign(pendingZoomDelta) *
+              Math.min(Math.abs(pendingZoomDelta), 30);
             const zoomFactor = Math.exp(-cappedDelta / 300);
 
             scaleZoom({ factor: zoomFactor });
@@ -318,9 +334,15 @@ function PreviewCanvas({
                         : "transparent",
                   }}
                 />
-                <PreviewOverlayLayer instances={overlayInstances} plane="under-interaction" />
+                <PreviewOverlayLayer
+                  instances={overlayInstances}
+                  plane="under-interaction"
+                />
                 <PreviewInteractionOverlay />
-                <PreviewOverlayLayer instances={overlayInstances} plane="over-interaction" />
+                <PreviewOverlayLayer
+                  instances={overlayInstances}
+                  plane="over-interaction"
+                />
               </div>
             </ContextMenuTrigger>
             <PreviewContextMenu

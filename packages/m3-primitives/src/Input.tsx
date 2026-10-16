@@ -26,7 +26,8 @@ export interface InputBaseProps extends VariantProps<typeof inputStyles> {
   supportingText?: ReactNode;
 }
 
-export type InputProps = InputBaseProps & Omit<React.ComponentProps<"input">, "size">;
+export type InputProps = InputBaseProps &
+  Omit<React.ComponentProps<"input">, "size">;
 
 export type TextareaProps = InputBaseProps & React.ComponentProps<"textarea">;
 
@@ -41,7 +42,8 @@ export const inputSizes = {
 
 type InputSize = keyof typeof inputSizes;
 
-const isDense = (size: InputSize | null | undefined) => size === "xs" || size === "sm";
+const isDense = (size: InputSize | null | undefined) =>
+  size === "xs" || size === "sm";
 
 const outlined = [
   "rounded-extra-small border border-outline bg-transparent",
@@ -102,9 +104,20 @@ export const inputStyles = cva(
   },
 );
 
-function SupportingText({ error, children }: { error?: boolean | null; children: ReactNode }) {
+function SupportingText({
+  error,
+  children,
+}: {
+  error?: boolean | null;
+  children: ReactNode;
+}) {
   return (
-    <p className={clsx("px-4 text-body-small", error ? "text-error" : "text-on-surface-variant")}>
+    <p
+      className={clsx(
+        "px-4 text-body-small",
+        error ? "text-error" : "text-on-surface-variant",
+      )}
+    >
       {children}
     </p>
   );
@@ -215,9 +228,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 Input.displayName = "Input";
 
 /** @deprecated Use `SearchBar` instead. */
-export const SearchInput = forwardRef<HTMLInputElement, InputProps>((props, ref) => (
-  <Input {...props} ref={ref} icon="search" />
-));
+export const SearchInput = forwardRef<HTMLInputElement, InputProps>(
+  (props, ref) => <Input {...props} ref={ref} icon="search" />,
+);
 
 SearchInput.displayName = "SearchInput";
 
@@ -249,7 +262,9 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         }}
         className={clsx(
           "h-auto placeholder:text-on-surface-variant",
-          dense ? "min-h-9 px-3 py-2 text-body-medium" : "min-h-14 px-4 py-4 text-body-large",
+          dense
+            ? "min-h-9 px-3 py-2 text-body-medium"
+            : "min-h-14 px-4 py-4 text-body-large",
           inputStyles({ size: null, variant, error }),
           "disabled:cursor-not-allowed disabled:opacity-38",
           className,
@@ -270,7 +285,10 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 
 TextArea.displayName = "TextArea";
 
-export interface LabelProps extends Omit<React.ComponentProps<"label">, "htmlFor"> {
+export interface LabelProps extends Omit<
+  React.ComponentProps<"label">,
+  "htmlFor"
+> {
   slug?: string;
 }
 

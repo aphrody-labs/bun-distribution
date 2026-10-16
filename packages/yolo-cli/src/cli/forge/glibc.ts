@@ -78,7 +78,8 @@ function layout(bytes: Uint8Array): Layout | null {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   if (bytes.length < 64 || view.getUint32(0, false) !== 0x7f454c46)
     throw new Error("not an ELF file");
-  if (bytes[4] !== 2 || bytes[5] !== 1) throw new Error("only little-endian ELF64 is supported");
+  if (bytes[4] !== 2 || bytes[5] !== 1)
+    throw new Error("only little-endian ELF64 is supported");
   const shoff = Number(view.getBigUint64(0x28, true));
   const shentsize = view.getUint16(0x3a, true);
   const shnum = view.getUint16(0x3c, true);
@@ -121,26 +122,41 @@ function layout(bytes: Uint8Array): Layout | null {
   return {
     view,
     auxes,
-    dynsym: { offset: dynsym.offset, size: dynsym.size, entsize: dynsym.entsize },
+    dynsym: {
+      offset: dynsym.offset,
+      size: dynsym.size,
+      entsize: dynsym.entsize,
+    },
     dynstr,
     versym: versym.offset,
   };
 }
 
 /** Undefined dynamic symbols with the version index they are bound to. */
-function imports(bytes: Uint8Array, l: Layout): { name: string; index: number }[] {
+function imports(
+  bytes: Uint8Array,
+  l: Layout,
+): { name: string; index: number }[] {
   const out: { name: string; index: number }[] = [];
   const count = Math.floor(l.dynsym.size / (l.dynsym.entsize || 24));
   for (let i = 1; i < count; i++) {
     const at = l.dynsym.offset + i * 24;
     if (l.view.getUint16(at + 6, true) !== 0) continue;
     const name = cString(bytes, l.dynstr + l.view.getUint32(at, true));
-    if (name) out.push({ name, index: l.view.getUint16(l.versym + i * 2, true) & 0x7fff });
+    if (name)
+      out.push({
+        name,
+        index: l.view.getUint16(l.versym + i * 2, true) & 0x7fff,
+      });
   }
   return out;
 }
 
-function audit(bytes: Uint8Array, l: Layout | null, ceiling: string): GlibcAudit {
+function audit(
+  bytes: Uint8Array,
+  l: Layout | null,
+  ceiling: string,
+): GlibcAudit {
   if (!l) return { maxGlibc: null, above: [] };
   const limit = ceiling.split(".").map(Number);
   const byIndex = new Map(l.auxes.map((a) => [a.index, a.version]));
@@ -168,12 +184,17 @@ export function auditGlibc(bytes: Uint8Array, ceiling: string): GlibcAudit {
  * Rewrites, in place, the version requirement of the re-versioned libm symbols above `ceiling`. Returns what was
  * patched and the audit afterwards; throws when another import stays above the ceiling.
  */
-export function lowerGlibcCeiling(bytes: Uint8Array, ceiling: string): GlibcPatch {
+export function lowerGlibcCeiling(
+  bytes: Uint8Array,
+  ceiling: string,
+): GlibcPatch {
   const l = layout(bytes);
   const before = audit(bytes, l, ceiling);
   if (!l || before.above.length === 0) return { ...before, patched: [] };
   const limit = ceiling.split(".").map(Number);
-  const strange = before.above.filter((s) => !REVERSIONED_LIBM.has(s.split("@")[0]!));
+  const strange = before.above.filter(
+    (s) => !REVERSIONED_LIBM.has(s.split("@")[0]!),
+  );
   if (strange.length > 0)
     throw new Error(
       `imports above glibc ${ceiling} that are not known re-versioned libm symbols: ${strange.join(", ")}`,
@@ -182,7 +203,9 @@ export function lowerGlibcCeiling(bytes: Uint8Array, ceiling: string): GlibcPatc
   // Target: the lowest GLIBC version libm.so.6 is already required at (GLIBC_2.2.5 on x86_64, 2.17 on arm64).
   const libm = l.auxes
     .filter((a) => a.file.startsWith("libm.so") && parseVersion(a.version))
-    .toSorted((a, b) => compare(parseVersion(a.version)!, parseVersion(b.version)!));
+    .toSorted((a, b) =>
+      compare(parseVersion(a.version)!, parseVersion(b.version)!),
+    );
   const target = libm[0];
   if (!target || compare(parseVersion(target.version)!, limit) > 0)
     throw new Error("no libm requirement at or below the ceiling to rebind to");
@@ -192,7 +215,8 @@ export function lowerGlibcCeiling(bytes: Uint8Array, ceiling: string): GlibcPatc
   const patched: string[] = [];
   for (const { name, index } of imports(bytes, l)) {
     const aux = byIndex.get(index);
-    if (!aux || !aux.file.startsWith("libm.so") || !REVERSIONED_LIBM.has(name)) continue;
+    if (!aux || !aux.file.startsWith("libm.so") || !REVERSIONED_LIBM.has(name))
+      continue;
     const parsed = parseVersion(aux.version);
     if (!parsed || compare(parsed, limit) <= 0) continue;
     patched.push(`${name}: ${aux.version} -> ${target.version}`);

@@ -1,5 +1,11 @@
 import { afterAll, describe, expect, it } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import {
@@ -52,10 +58,9 @@ describe("yolo package commands", () => {
   it("every command and tool has a qualified owner runner or standalone CLI", async () => {
     const runners: [string, PackageRunner][] = [
       ...Object.entries(PACKAGE_COMMANDS),
-      ...Object.entries(M3_TOOLS).map(([tool, runner]): [string, PackageRunner] => [
-        `m3 ${tool}`,
-        runner,
-      ]),
+      ...Object.entries(M3_TOOLS).map(
+        ([tool, runner]): [string, PackageRunner] => [`m3 ${tool}`, runner],
+      ),
     ];
     for (const [name, { module, run, script }] of runners) {
       const path = join(root, module);
@@ -71,30 +76,44 @@ describe("yolo package commands", () => {
       }
       // oxlint-disable-next-line no-await-in-loop -- one owner module at a time keeps failures attributable.
       const loaded = (await import(path)) as Record<string, unknown>;
-      expect(typeof loaded[run], `${name}: ${module} exports ${run}`).toBe("function");
+      expect(typeof loaded[run], `${name}: ${module} exports ${run}`).toBe(
+        "function",
+      );
     }
   });
 
   it("yolo m3 resolves a tool by its first argument and everything else to the framework CLI", async () => {
     // Resolution rule: a first argument naming a tool selects it; tool names never shadow an m3 framework command.
-    const framework = (await import(join(root, PACKAGE_COMMANDS.m3.module))) as {
+    const framework = (await import(
+      join(root, PACKAGE_COMMANDS.m3.module)
+    )) as {
       COMMANDS: readonly string[];
     };
-    for (const tool of Object.keys(M3_TOOLS)) expect(framework.COMMANDS).not.toContain(tool);
+    for (const tool of Object.keys(M3_TOOLS))
+      expect(framework.COMMANDS).not.toContain(tool);
     const next = resolvePackageCommand("m3", ["next", "dev", "--port", "3001"]);
     expect(next).toMatchObject({
       label: "m3 next",
       module: M3_TOOLS.next.module,
       args: ["dev", "--port", "3001"],
     });
-    for (const args of [[], ["dev"], ["new", "next"], ["--help"], ["toString"]]) {
+    for (const args of [
+      [],
+      ["dev"],
+      ["new", "next"],
+      ["--help"],
+      ["toString"],
+    ]) {
       expect(resolvePackageCommand("m3", args)).toMatchObject({
         label: "m3",
         module: PACKAGE_COMMANDS.m3.module,
         args,
       });
     }
-    expect(resolvePackageCommand("ops", ["next"])).toMatchObject({ label: "ops", args: ["next"] });
+    expect(resolvePackageCommand("ops", ["next"])).toMatchObject({
+      label: "ops",
+      args: ["next"],
+    });
     expect(resolvePackageCommand("ovh", [])).toBeUndefined();
   });
 
@@ -102,8 +121,12 @@ describe("yolo package commands", () => {
     expect(resolvePackageCommand("m3", ["dev"])?.keepAlive).toBe(true);
     expect(resolvePackageCommand("m3", ["bun", "serve"])?.keepAlive).toBe(true);
     expect(resolvePackageCommand("forge", ["watch"])?.keepAlive).toBe(true);
-    expect(resolvePackageCommand("m3", ["scaffold", "list"])?.keepAlive).toBeUndefined();
-    expect(resolvePackageCommand("browser", ["open"])?.keepAlive).toBeUndefined();
+    expect(
+      resolvePackageCommand("m3", ["scaffold", "list"])?.keepAlive,
+    ).toBeUndefined();
+    expect(
+      resolvePackageCommand("browser", ["open"])?.keepAlive,
+    ).toBeUndefined();
   });
 
   it("dispatches in-process with the literal arguments and returns the runner status", async () => {
@@ -111,24 +134,38 @@ describe("yolo package commands", () => {
       "update",
       "export function runUpdate(argv) { globalThis.yoloPackageArgs = argv; return 23; }\n",
     );
-    const args = ["rust", "status", "--root", "/home/ubuntu/apps/repo", "$(literal)"];
+    const args = [
+      "rust",
+      "status",
+      "--root",
+      "/home/ubuntu/apps/repo",
+      "$(literal)",
+    ];
     expect(await runPackageCommand("update", args, fixtureRoot)).toBe(23);
-    expect((globalThis as { yoloPackageArgs?: unknown }).yoloPackageArgs).toEqual(args);
+    expect(
+      (globalThis as { yoloPackageArgs?: unknown }).yoloPackageArgs,
+    ).toEqual(args);
   });
 
   it("maps owner failures to exit statuses", async () => {
-    const throwing = owner("doc-ai", "export async function main() { throw new Error('boom'); }\n");
+    const throwing = owner(
+      "doc-ai",
+      "export async function main() { throw new Error('boom'); }\n",
+    );
     expect(await runPackageCommand("doc-ai", [], throwing)).toBe(1);
     const noExport = owner("google", "export const unrelated = 1;\n");
     expect(await runPackageCommand("google", [], noExport)).toBe(70);
-    expect(await runPackageCommand("browser", [], join(fixture, "empty"))).toBe(127);
+    expect(await runPackageCommand("browser", [], join(fixture, "empty"))).toBe(
+      127,
+    );
     expect(await runPackageCommand("unknown", [], root)).toBe(2);
   });
 
   it("qualification uses the native SDK in process and closes it after the awaited owner", async () => {
     const fixtureRoot = join(fixture, "native-jobs-qualified");
     const modules: Record<string, string> = {
-      [PACKAGE_COMMANDS.update.module]: `export async function runUpdate(argv, ports) {
+      [PACKAGE_COMMANDS.update.module]:
+        `export async function runUpdate(argv, ports) {
         const result = await ports.nativeJobTransport({config:"private.toml", server:"aphrody", tool:"aphrody_job_status", arguments:{}}, {timeoutMs:15000});
         if (result.native !== true) throw new Error("wrong transport");
         return 19;
@@ -147,11 +184,20 @@ describe("yolo package commands", () => {
     expect(
       await runPackageCommand(
         "update",
-        ["--root", fixtureRoot, "systemd", "jobs-clients", "--qualify", "--apply"],
+        [
+          "--root",
+          fixtureRoot,
+          "systemd",
+          "jobs-clients",
+          "--qualify",
+          "--apply",
+        ],
         fixtureRoot,
       ),
     ).toBe(19);
-    expect((globalThis as { yoloNativeJobRequest?: unknown }).yoloNativeJobRequest).toEqual({
+    expect(
+      (globalThis as { yoloNativeJobRequest?: unknown }).yoloNativeJobRequest,
+    ).toEqual({
       request: {
         config: "private.toml",
         server: "aphrody",
@@ -160,7 +206,9 @@ describe("yolo package commands", () => {
       },
       options: { timeoutMs: 15000 },
     });
-    expect((globalThis as { yoloNativeJobClosed?: boolean }).yoloNativeJobClosed).toBe(true);
+    expect(
+      (globalThis as { yoloNativeJobClosed?: boolean }).yoloNativeJobClosed,
+    ).toBe(true);
   });
 
   it("a dry-run qualification does not load the native library", async () => {
@@ -172,7 +220,11 @@ describe("yolo package commands", () => {
       "export function runUpdate(argv, ports) { if (ports !== undefined) throw new Error('native loaded during preview'); return 0; }",
     );
     expect(
-      await runPackageCommand("update", ["systemd", "jobs-clients", "--qualify"], fixtureRoot),
+      await runPackageCommand(
+        "update",
+        ["systemd", "jobs-clients", "--qualify"],
+        fixtureRoot,
+      ),
     ).toBe(0);
   });
 

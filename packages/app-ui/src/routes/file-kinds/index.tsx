@@ -11,7 +11,12 @@ import type {
   ContentKindStatsOutput,
   SearchFilters,
 } from "@aphrody/drive-client";
-import { Button, Icon, m3FocusRing, m3StateLayer } from "@aphrody/m3-primitives";
+import {
+  Button,
+  Icon,
+  m3FocusRing,
+  m3StateLayer,
+} from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import { useEffect } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
@@ -52,7 +57,10 @@ const CONTENT_KIND_ICONS: Record<ContentKind, string> = {
 const fileCount = new Intl.NumberFormat();
 
 function isContentKind(value: string | undefined): value is ContentKind {
-  return value !== undefined && Object.prototype.hasOwnProperty.call(CONTENT_KIND_ICONS, value);
+  return (
+    value !== undefined &&
+    Object.prototype.hasOwnProperty.call(CONTENT_KIND_ICONS, value)
+  );
 }
 
 function kindLabel(kind: ContentKind): string {
@@ -141,7 +149,11 @@ export function FileKindsView() {
             <span>Aucun contenu indexé.</span>
             <Link
               to="/sources"
-              className={clsx("rounded-medium px-3 py-2 text-primary", m3StateLayer, m3FocusRing)}
+              className={clsx(
+                "rounded-medium px-3 py-2 text-primary",
+                m3StateLayer,
+                m3FocusRing,
+              )}
             >
               Ajouter une source
             </Link>
@@ -157,7 +169,9 @@ export function FileKindsView() {
                     alt=""
                     className="mb-3 size-16"
                   />
-                  <span className="text-label-large capitalize">{kindLabel(stat.kind)}</span>
+                  <span className="text-label-large capitalize">
+                    {kindLabel(stat.kind)}
+                  </span>
                   <span className="mt-1 text-label-large text-on-surface-variant">
                     {fileCount.format(stat.file_count)}{" "}
                     {stat.file_count === 1 ? "contenu" : "contenus"}
@@ -215,7 +229,8 @@ function ContentKindExplorer({ kind }: { kind: ContentKind }) {
         <h1 className="capitalize">{kindLabel(kind)}</h1>
       </div>
       <div className="min-h-0 flex-1">
-        {mode.type === "filtered" && mode.filters.content_types?.[0] === kind ? (
+        {mode.type === "filtered" &&
+        mode.filters.content_types?.[0] === kind ? (
           <ExplorerView />
         ) : (
           <output className="block p-4 text-label-large text-on-surface-variant">

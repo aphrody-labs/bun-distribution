@@ -20,10 +20,14 @@ export function imageAspectRatioToCommonAspectRatio(
   }
   if (legacyAspectRatio) {
     switch (legacyAspectRatio) {
-      case "wide":   return CommonAspectRatio.Wide;
-      case "tall":   return CommonAspectRatio.Tall;
-      case "square": return CommonAspectRatio.Square;
-      case "auto":   return CommonAspectRatio.Auto;
+      case "wide":
+        return CommonAspectRatio.Wide;
+      case "tall":
+        return CommonAspectRatio.Tall;
+      case "square":
+        return CommonAspectRatio.Square;
+      case "auto":
+        return CommonAspectRatio.Auto;
     }
   }
   return null;

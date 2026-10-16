@@ -8,7 +8,11 @@
  */
 import { createVertex } from "@ai-sdk/google-vertex";
 import { generateText } from "ai";
-import { extractStatus, isTransientNetworkError, isRetryableStatus } from "./retry.js";
+import {
+  extractStatus,
+  isTransientNetworkError,
+  isRetryableStatus,
+} from "./retry.js";
 import { LlmError, toMessage } from "./errors.js";
 
 /** A single-turn text completion. */
@@ -60,8 +64,14 @@ function parsePositiveInt(value: string | undefined, fallback: number): number {
  */
 export function resolveLlmConfig(env: EnvSource = process.env): LlmEnvConfig {
   return {
-    project: env["APHRODY_VERTEX_PROJECT"]?.trim() || env["GOOGLE_CLOUD_PROJECT"]?.trim() || "aphrody",
-    location: env["APHRODY_VERTEX_LOCATION"]?.trim() || env["GOOGLE_CLOUD_LOCATION"]?.trim() || "us-central1",
+    project:
+      env["APHRODY_VERTEX_PROJECT"]?.trim() ||
+      env["GOOGLE_CLOUD_PROJECT"]?.trim() ||
+      "aphrody",
+    location:
+      env["APHRODY_VERTEX_LOCATION"]?.trim() ||
+      env["GOOGLE_CLOUD_LOCATION"]?.trim() ||
+      "us-central1",
     model: env["DOC_AI_MODEL"]?.trim() || DEFAULT_MODEL,
     requestTimeoutMs: parsePositiveInt(
       env["DOC_AI_REQUEST_TIMEOUT_MS"],
@@ -74,8 +84,8 @@ export function resolveLlmConfig(env: EnvSource = process.env): LlmEnvConfig {
 export function hasCredentials(env: EnvSource = process.env): boolean {
   return Boolean(
     env["GOOGLE_APPLICATION_CREDENTIALS"] ||
-      env["GOOGLE_CLOUD_PROJECT"] ||
-      env["APHRODY_VERTEX_PROJECT"],
+    env["GOOGLE_CLOUD_PROJECT"] ||
+    env["APHRODY_VERTEX_PROJECT"],
   );
 }
 
@@ -107,24 +117,33 @@ function withTimeout(
  * Build the default ADC-backed Gemini Vertex client.
  */
 export function createGeminiClient(config: LlmEnvConfig): LlmClient {
-  const vertex = createVertex({ project: config.project, location: config.location });
+  const vertex = createVertex({
+    project: config.project,
+    location: config.location,
+  });
 
   return {
     async complete({ prompt, signal }: LlmRequest): Promise<string> {
-      const { signal: reqSignal, cancel } = withTimeout(config.requestTimeoutMs, signal);
+      const { signal: reqSignal, cancel } = withTimeout(
+        config.requestTimeoutMs,
+        signal,
+      );
       try {
         const { text } = await generateText({
           // The workspace currently resolves AI SDK 6 while Vertex 5 exposes
           // the compatible runtime model as V4. The protocol is compatible;
           // keep the cast local until the provider publishes its SDK-6 type.
-          model: vertex(config.model) as unknown as Parameters<typeof generateText>[0]["model"],
+          model: vertex(config.model) as unknown as Parameters<
+            typeof generateText
+          >[0]["model"],
           prompt,
           abortSignal: reqSignal,
         });
         return text;
       } catch (err) {
         const status = extractStatus(err);
-        const retryable = isRetryableStatus(status) || isTransientNetworkError(err);
+        const retryable =
+          isRetryableStatus(status) || isTransientNetworkError(err);
         throw new LlmError(`Gemini request failed: ${toMessage(err)}`, {
           cause: err,
           status,

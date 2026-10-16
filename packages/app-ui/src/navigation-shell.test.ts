@@ -16,7 +16,10 @@ describe("Single Navigation & Shell Architecture (UI-DESIGN.md §3, §4.6, §10)
   const settingsRoutePath = resolve(__dirname, "routes/settings/index.tsx");
   const settingsRouteCode = readFileSync(settingsRoutePath, "utf-8");
 
-  const spaceSwitcherPath = resolve(__dirname, "components/SpacesSidebar/SpaceSwitcher.tsx");
+  const spaceSwitcherPath = resolve(
+    __dirname,
+    "components/SpacesSidebar/SpaceSwitcher.tsx",
+  );
   const spaceSwitcherCode = readFileSync(spaceSwitcherPath, "utf-8");
 
   it("enforces a single navigation sidebar with no secondary sidebar anywhere", () => {
@@ -123,7 +126,10 @@ describe("Single Navigation & Shell Architecture (UI-DESIGN.md §3, §4.6, §10)
   });
 
   it("eliminates technical slop across settings pages (no alpha versions, device slug or raw dumps)", () => {
-    const generalPath = resolve(__dirname, "Settings/pages/GeneralSettings.tsx");
+    const generalPath = resolve(
+      __dirname,
+      "Settings/pages/GeneralSettings.tsx",
+    );
     const generalCode = readFileSync(generalPath, "utf-8");
 
     // Zero slop assertions
@@ -137,7 +143,10 @@ describe("Single Navigation & Shell Architecture (UI-DESIGN.md §3, §4.6, §10)
   });
 
   it("conforms to LOW_VISION accessibility profile with text >= 18px", () => {
-    const appearancePath = resolve(__dirname, "Settings/pages/AppearanceSettings.tsx");
+    const appearancePath = resolve(
+      __dirname,
+      "Settings/pages/AppearanceSettings.tsx",
+    );
     const appearanceCode = readFileSync(appearancePath, "utf-8");
 
     // Appearance includes font size controls respecting 18px floor
@@ -150,7 +159,9 @@ describe("Single Navigation & Shell Architecture (UI-DESIGN.md §3, §4.6, §10)
     const appCssPath = resolve(__dirname, "app.css");
     const appCss = readFileSync(appCssPath, "utf-8");
     expect(appCss).toContain("LOW_VISION is a product invariant");
-    expect(appCss).toContain("font-size: max(var(--aphrody-base-font-size, 18px), 1em)");
+    expect(appCss).toContain(
+      "font-size: max(var(--aphrody-base-font-size, 18px), 1em)",
+    );
   });
 
   it("chat store handles thread grouping into projects and unread indicators", () => {

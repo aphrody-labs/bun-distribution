@@ -28,7 +28,10 @@ const en = {
   drive: "Drive tools",
 };
 export type ProductSearchMessages = { [K in keyof typeof en]: string };
-export const productSearchMessages: Record<SupportedLanguage, ProductSearchMessages> = {
+export const productSearchMessages: Record<
+  SupportedLanguage,
+  ProductSearchMessages
+> = {
   en,
   fr: {
     logo: "Logo Aphrody",

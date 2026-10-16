@@ -1209,7 +1209,7 @@ class TransformControlsGizmo extends Object3D {
       const gizmo = new Object3D();
 
       for (const name in gizmoMap) {
-        for (let i = gizmoMap[name].length; i--; ) {
+        for (let i = gizmoMap[name].length; i--;) {
           const object = gizmoMap[name][i][0].clone();
           const position = gizmoMap[name][i][1];
           const rotation = gizmoMap[name][i][2];

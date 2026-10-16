@@ -5,14 +5,18 @@
 import { join } from "node:path";
 
 const here = import.meta.dir;
-const source = process.argv[2] ?? join(here, "../../../web/creator/assets/icon-256.png");
+const source =
+  process.argv[2] ?? join(here, "../../../web/creator/assets/icon-256.png");
 const out = process.argv[3] ?? join(here, "../assets/creator-kit.ico");
 const SIZES = [16, 24, 32, 48, 64, 128, 256];
 
 const input = new Uint8Array(await Bun.file(source).arrayBuffer());
 const images = await Promise.all(
   SIZES.map(
-    async (size) => new Uint8Array(await new Bun.Image(input).resize(size, size).png().toBuffer()),
+    async (size) =>
+      new Uint8Array(
+        await new Bun.Image(input).resize(size, size).png().toBuffer(),
+      ),
   ),
 );
 

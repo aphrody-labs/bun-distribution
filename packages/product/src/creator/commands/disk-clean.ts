@@ -57,7 +57,9 @@ async function volume(path: string, io: Io): Promise<void> {
   }
 }
 
-async function targetStats(target: CacheTarget): Promise<{ paths: string[]; bytes: number }> {
+async function targetStats(
+  target: CacheTarget,
+): Promise<{ paths: string[]; bytes: number }> {
   const paths = (await Promise.all(target.patterns.map(expandStar))).flat();
   const sizes = await Promise.all(paths.map((path) => treeStats(path)));
   const bytes = sizes.reduce((sum, stats) => sum + stats.bytes, 0);
@@ -74,7 +76,9 @@ export async function scan(io: Io, root: string, top: number): Promise<number> {
     const { bytes } = sizes[index]!;
     total += bytes;
     if (bytes > 0)
-      io.log(`  ${formatBytes(bytes).padStart(9)}  ${target.id.padEnd(12)} ${target.label}`);
+      io.log(
+        `  ${formatBytes(bytes).padStart(9)}  ${target.id.padEnd(12)} ${target.label}`,
+      );
   }
   io.log(`  ${formatBytes(total).padStart(9)}  total`);
   io.log(`\nAnalyse de ${root} …`);
@@ -84,11 +88,16 @@ export async function scan(io: Io, root: string, top: number): Promise<number> {
   for (const dir of result.topDirs.slice(0, top))
     io.log(`  ${formatBytes(dir.bytes).padStart(9)}  ${dir.path}`);
   io.log("\nPlus gros fichiers :");
-  for (const file of result.files) io.log(`  ${formatBytes(file.bytes).padStart(9)}  ${file.path}`);
+  for (const file of result.files)
+    io.log(`  ${formatBytes(file.bytes).padStart(9)}  ${file.path}`);
   return 0;
 }
 
-export async function clean(io: Io, apply: boolean, only: string[] | undefined): Promise<number> {
+export async function clean(
+  io: Io,
+  apply: boolean,
+  only: string[] | undefined,
+): Promise<number> {
   const running = await io.list();
   let total = 0;
   let skipped = 0;
@@ -104,7 +113,9 @@ export async function clean(io: Io, apply: boolean, only: string[] | undefined):
     const olderThanMs = (target.minAgeDays ?? 0) * 86_400_000;
     let bytes = 0;
     // oxlint-disable-next-line no-await-in-loop -- nettoyage séquentiel par cible : les motifs peuvent se recouvrir, une suppression concurrente du même dossier échouerait
-    for (const path of (await Promise.all(target.patterns.map(expandStar))).flat()) {
+    for (const path of (
+      await Promise.all(target.patterns.map(expandStar))
+    ).flat()) {
       // oxlint-disable-next-line no-await-in-loop -- nettoyage séquentiel par cible : les motifs peuvent se recouvrir, une suppression concurrente du même dossier échouerait
       const result = await clearDir(path, apply, olderThanMs);
       bytes += result.bytes;
@@ -112,7 +123,9 @@ export async function clean(io: Io, apply: boolean, only: string[] | undefined):
     }
     total += bytes;
     if (bytes > 0)
-      io.log(`  ${formatBytes(bytes).padStart(9)}  ${target.id.padEnd(12)} ${target.label}`);
+      io.log(
+        `  ${formatBytes(bytes).padStart(9)}  ${target.id.padEnd(12)} ${target.label}`,
+      );
   }
   io.log(
     `${apply ? "Libéré" : "Récupérable"} : ${formatBytes(total)}${skipped ? `  (${skipped} élément(s) en cours d'utilisation ignorés)` : ""}`,
@@ -145,7 +158,10 @@ export async function dupes(
   return 0;
 }
 
-export async function run(argv: string[], io: Io = nativeIo()): Promise<number> {
+export async function run(
+  argv: string[],
+  io: Io = nativeIo(),
+): Promise<number> {
   const { values, positionals } = parse(argv, {
     root: { type: "string" },
     top: { type: "string" },
@@ -168,7 +184,13 @@ export async function run(argv: string[], io: Io = nativeIo()): Promise<number> 
     case "clean":
       return clean(io, values.apply === true, values.only?.split(","));
     case "dupes":
-      return dupes(io, root, Number(values["min-size"] ?? 1), top, values.report);
+      return dupes(
+        io,
+        root,
+        Number(values["min-size"] ?? 1),
+        top,
+        values.report,
+      );
     default:
       throw new UsageError(`Action inconnue : ${action}`);
   }
@@ -176,7 +198,8 @@ export async function run(argv: string[], io: Io = nativeIo()): Promise<number> 
 
 const command: Command = {
   name: "disk-clean",
-  summary: "Analyser et nettoyer le stockage (caches, temporaires, gros fichiers, doublons)",
+  summary:
+    "Analyser et nettoyer le stockage (caches, temporaires, gros fichiers, doublons)",
   run: (argv) => run(argv),
 };
 

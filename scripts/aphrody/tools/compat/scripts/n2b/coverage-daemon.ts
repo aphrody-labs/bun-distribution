@@ -20,9 +20,14 @@ import { dirname, join, resolve } from "node:path";
 const SCRIPT_DIR = dirname(import.meta.path);
 // scripts/tools/compat/scripts/n2b -> repository root is five levels up.
 const REPO_ROOT = resolve(SCRIPT_DIR, "..", "..", "..", "..", "..");
-const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT ?? pluginStorePath("aphrody");
-const COVERAGE_DIR = process.env.N2B_COVERAGE_DIR ?? join(REPO_ROOT, "var/audit/n2b-coverage");
-const CHECK_SCRIPT = join(REPO_ROOT, "scripts/audit/compat/scripts/n2b/coverage-check.ts");
+const PLUGIN_ROOT =
+  process.env.CLAUDE_PLUGIN_ROOT ?? pluginStorePath("aphrody");
+const COVERAGE_DIR =
+  process.env.N2B_COVERAGE_DIR ?? join(REPO_ROOT, "var/audit/n2b-coverage");
+const CHECK_SCRIPT = join(
+  REPO_ROOT,
+  "scripts/audit/compat/scripts/n2b/coverage-check.ts",
+);
 const SCHEDULE = process.env.N2B_COVERAGE_SCHEDULE ?? "0 4 * * 1"; // Mon 04:00
 const STATE_FILE = join(COVERAGE_DIR, ".daemon-state.json");
 
@@ -56,12 +61,18 @@ async function runCheck(): Promise<{ ok: boolean; summary?: any }> {
       cwd: REPO_ROOT,
       stdout: "pipe",
       stderr: "inherit",
-      env: { ...process.env, CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT, N2B_COVERAGE_DIR: COVERAGE_DIR },
+      env: {
+        ...process.env,
+        CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT,
+        N2B_COVERAGE_DIR: COVERAGE_DIR,
+      },
     });
     const out = await new Response(proc.stdout).text();
     const code = await proc.exited;
     if (code !== 0) {
-      console.error(`[${new Date().toISOString()}] coverage check exited ${code}`);
+      console.error(
+        `[${new Date().toISOString()}] coverage check exited ${code}`,
+      );
       return { ok: false };
     }
     const parsed = JSON.parse(out);
@@ -91,7 +102,9 @@ if (RUN_ONCE) {
   process.exit(0);
 }
 
-console.log(`[${new Date().toISOString()}] n2b coverage daemon — schedule: ${SCHEDULE}`);
+console.log(
+  `[${new Date().toISOString()}] n2b coverage daemon — schedule: ${SCHEDULE}`,
+);
 console.log(`  plugin root : ${PLUGIN_ROOT}`);
 console.log(`  script      : ${CHECK_SCRIPT}`);
 
@@ -116,4 +129,6 @@ const shutdown = () => {
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
 
-console.log(`[${new Date().toISOString()}] daemon running (${SCHEDULE}). Ctrl+C to stop.`);
+console.log(
+  `[${new Date().toISOString()}] daemon running (${SCHEDULE}). Ctrl+C to stop.`,
+);

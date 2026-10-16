@@ -4,12 +4,28 @@
 
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import { clsx } from "clsx";
-import { forwardRef, isValidElement, type PropsWithChildren, type ReactNode } from "react";
+import {
+  forwardRef,
+  isValidElement,
+  type PropsWithChildren,
+  type ReactNode,
+} from "react";
 
-import { type AsChildProp, asChildProps, createPortalScope, withClassName } from "./base-ui";
+import {
+  type AsChildProp,
+  asChildProps,
+  createPortalScope,
+  withClassName,
+} from "./base-ui";
 
 /** Keybind chip inside a plain tooltip (`inverse-surface`), in `inverse-on-surface` tones. */
-export const Kbd = ({ children, className }: { children: ReactNode; className?: string }) => (
+export const Kbd = ({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) => (
   <kbd
     className={clsx(
       "flex h-4.5 min-w-4.5 items-center justify-center rounded-extra-small px-1 font-plain text-label-small",
@@ -58,7 +74,9 @@ export interface TooltipProps extends PropsWithChildren {
   align?: Align;
 }
 
-const separateKeybinds = (keybinds: TooltipProps["keybinds"]): TooltipProps["keybinds"] => {
+const separateKeybinds = (
+  keybinds: TooltipProps["keybinds"],
+): TooltipProps["keybinds"] => {
   if (!keybinds) return;
   const arr: NonNullable<TooltipProps["keybinds"]> = [];
   for (const i of keybinds) {
@@ -79,7 +97,11 @@ const { Portal: TooltipPortal, EnsurePortal } = createPortalScope(
 );
 
 /** Plain M3 tooltip on Base UI: opens on hover and keyboard focus, closes on Escape. */
-export const Tooltip = ({ position = "bottom", sideOffset = 4, ...props }: TooltipProps) => {
+export const Tooltip = ({
+  position = "bottom",
+  sideOffset = 4,
+  ...props
+}: TooltipProps) => {
   const trigger =
     props.asChild && isValidElement(props.children) ? (
       props.children
@@ -91,10 +113,15 @@ export const Tooltip = ({ position = "bottom", sideOffset = 4, ...props }: Toolt
       disableHoverablePopup={props.disableHoverableContent}
       open={props.open}
       defaultOpen={props.defaultOpen}
-      onOpenChange={props.onOpenChange && ((open) => props.onOpenChange?.(open))}
+      onOpenChange={
+        props.onOpenChange && ((open) => props.onOpenChange?.(open))
+      }
       disabled={props.disabled}
     >
-      <TooltipPrimitive.Trigger delay={props.delay ?? props.delayDuration} render={trigger} />
+      <TooltipPrimitive.Trigger
+        delay={props.delay ?? props.delayDuration}
+        render={trigger}
+      />
       <TooltipPrimitive.Portal>
         <TooltipPrimitive.Positioner
           side={position}
@@ -152,19 +179,21 @@ export const TooltipProvider = ({
 
 export const TooltipRoot = TooltipPrimitive.Root;
 
-export interface TooltipTriggerProps extends TooltipPrimitive.Trigger.Props, AsChildProp {}
+export interface TooltipTriggerProps
+  extends TooltipPrimitive.Trigger.Props, AsChildProp {}
 
-export const TooltipTrigger = forwardRef<HTMLButtonElement, TooltipTriggerProps>(
-  ({ asChild, children, ...props }, ref) => {
-    // Tooltip triggers take no `nativeButton`: only the element is forwarded.
-    const child = asChildProps(asChild, children);
-    return (
-      <TooltipPrimitive.Trigger ref={ref} render={child.render} {...props}>
-        {child.children}
-      </TooltipPrimitive.Trigger>
-    );
-  },
-);
+export const TooltipTrigger = forwardRef<
+  HTMLButtonElement,
+  TooltipTriggerProps
+>(({ asChild, children, ...props }, ref) => {
+  // Tooltip triggers take no `nativeButton`: only the element is forwarded.
+  const child = asChildProps(asChild, children);
+  return (
+    <TooltipPrimitive.Trigger ref={ref} render={child.render} {...props}>
+      {child.children}
+    </TooltipPrimitive.Trigger>
+  );
+});
 TooltipTrigger.displayName = "TooltipTrigger";
 
 export { TooltipPortal };
@@ -181,7 +210,8 @@ type TooltipPositionerProps = Pick<
   | "anchor"
 >;
 
-export interface TooltipContentProps extends TooltipPositionerProps, TooltipPrimitive.Popup.Props {}
+export interface TooltipContentProps
+  extends TooltipPositionerProps, TooltipPrimitive.Popup.Props {}
 
 /** Composable tooltip surface: portal (unless inside `TooltipPortal`), positioner and popup. */
 export const TooltipContent = forwardRef<HTMLDivElement, TooltipContentProps>(
@@ -214,7 +244,10 @@ export const TooltipContent = forwardRef<HTMLDivElement, TooltipContentProps>(
       >
         <TooltipPrimitive.Popup
           ref={ref}
-          className={withClassName(clsx("overflow-hidden", tooltipClassNames), className)}
+          className={withClassName(
+            clsx("overflow-hidden", tooltipClassNames),
+            className,
+          )}
           {...props}
         />
       </TooltipPrimitive.Positioner>

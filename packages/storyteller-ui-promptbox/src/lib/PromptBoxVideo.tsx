@@ -9,8 +9,18 @@ import {
   GenerateIconButton,
   NEUTRAL_BUTTON_HOVER_CLASSES,
 } from "@storyteller/ui-button";
-import { GenerateVideo, GenerateVideoRequest, commandErrorMessage } from "@storyteller/tauri-api";
-import { AudioLinesIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon, InfoIcon } from "lucide-react";
+import {
+  GenerateVideo,
+  GenerateVideoRequest,
+  commandErrorMessage,
+} from "@storyteller/tauri-api";
+import {
+  AudioLinesIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  ClockIcon,
+  InfoIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { arrayMove } from "@dnd-kit/sortable";
 import {
@@ -373,15 +383,22 @@ export const PromptBoxVideo = ({
     const current = usePromptVideoStore.getState().outputFormat;
     const options = selectedModel?.outputFormatOptions;
     if (!current || !options?.includes(current)) {
-      setOutputFormat(selectedModel?.defaultOutputFormat ?? options?.[0] ?? null);
+      setOutputFormat(
+        selectedModel?.defaultOutputFormat ?? options?.[0] ?? null,
+      );
     }
   }, [selectedModel, setOutputFormat]);
 
   useEffect(() => {
     const current = usePromptVideoStore.getState().aspectRatio;
-    if (selectedModel?.sizeOptions.some((option) => option.textLabel === current)) return;
-    const option = selectedModel?.sizeOptions.find((option) => option.tauriValue === selectedModel.defaultAspectRatio)
-      ?? selectedModel?.sizeOptions[0];
+    if (
+      selectedModel?.sizeOptions.some((option) => option.textLabel === current)
+    )
+      return;
+    const option =
+      selectedModel?.sizeOptions.find(
+        (option) => option.tauriValue === selectedModel.defaultAspectRatio,
+      ) ?? selectedModel?.sizeOptions[0];
     if (option) setAspectRatio(option.textLabel);
   }, [selectedModel, setAspectRatio]);
 
@@ -415,22 +432,36 @@ export const PromptBoxVideo = ({
   // Keep the selected count within the API's options when switching models.
   useEffect(() => {
     const current = usePromptVideoStore.getState().generationCount;
-    const next = selectedModel ? resolveVideoGenerationCount(selectedModel, current) : 1;
+    const next = selectedModel
+      ? resolveVideoGenerationCount(selectedModel, current)
+      : 1;
     if (next !== current) setGenerationCount(next);
   }, [selectedModel, setGenerationCount]);
 
-  const generationCounts = selectedModel ? videoGenerationCounts(selectedModel) : [1];
+  const generationCounts = selectedModel
+    ? videoGenerationCounts(selectedModel)
+    : [1];
   const effectiveGenerationCount = selectedModel
-    ? resolveVideoGenerationCount(selectedModel, generationCount) : 1;
+    ? resolveVideoGenerationCount(selectedModel, generationCount)
+    : 1;
 
   const durationRange = selectedModel
     ? videoDurationRange(selectedModel, inputMode === "reference")
     : null;
   const effectiveDuration = selectedModel
-    ? resolveVideoDuration(selectedModel, duration, inputMode === "reference") ?? selectedModel.defaultDuration ?? 5
+    ? (resolveVideoDuration(
+        selectedModel,
+        duration,
+        inputMode === "reference",
+      ) ??
+      selectedModel.defaultDuration ??
+      5)
     : 5;
   const handleDurationSlide = (value: number) => {
-    if (selectedModel) setDuration(resolveVideoDuration(selectedModel, value, inputMode === "reference"));
+    if (selectedModel)
+      setDuration(
+        resolveVideoDuration(selectedModel, value, inputMode === "reference"),
+      );
   };
 
   const resolutionPickerOptions: PopoverItem[] | null =
@@ -1159,10 +1190,16 @@ export const PromptBoxVideo = ({
         request.duration_seconds = effectiveDuration;
       }
       if (selectedModel.bitrateOptions?.length) {
-        request.bitrate = bitrate ?? selectedModel.defaultBitrate ?? selectedModel.bitrateOptions[0];
+        request.bitrate =
+          bitrate ??
+          selectedModel.defaultBitrate ??
+          selectedModel.bitrateOptions[0];
       }
       if (selectedModel.outputFormatOptions?.length) {
-        request.output_format = resolveVideoOutputFormat(selectedModel, outputFormat);
+        request.output_format = resolveVideoOutputFormat(
+          selectedModel,
+          outputFormat,
+        );
       }
 
       // Pass the chosen resolution when the model exposes a resolution picker.
@@ -1193,8 +1230,11 @@ export const PromptBoxVideo = ({
           request.aspect_ratio =
             selectedOption.tauriValue as typeof request.aspect_ratio;
         } else {
-          const maybeDefault = selectedModel.sizeOptions.find((option) => option.tauriValue === selectedModel.defaultAspectRatio)
-            ?? selectedModel.sizeOptions[0];
+          const maybeDefault =
+            selectedModel.sizeOptions.find(
+              (option) =>
+                option.tauriValue === selectedModel.defaultAspectRatio,
+            ) ?? selectedModel.sizeOptions[0];
           if (maybeDefault) {
             request.aspect_ratio =
               maybeDefault.tauriValue as typeof request.aspect_ratio;
@@ -1224,11 +1264,18 @@ export const PromptBoxVideo = ({
     }
 
     const outcomes = await Promise.allSettled(enqueuePromises);
-    const acceptedIds = subscriberIds.filter((_, index) => outcomes[index].status === "fulfilled");
+    const acceptedIds = subscriberIds.filter(
+      (_, index) => outcomes[index].status === "fulfilled",
+    );
     const failure = outcomes.find((outcome) => outcome.status === "rejected");
     if (failure?.status === "rejected") {
       console.error("PromptBoxVideo - enqueue failed", failure.reason);
-      toast.error(commandErrorMessage(failure.reason, "Failed to start video generation. Please try again."));
+      toast.error(
+        commandErrorMessage(
+          failure.reason,
+          "Failed to start video generation. Please try again.",
+        ),
+      );
     }
     if (acceptedIds.length) onEnqueuePressed?.(prompt, acceptedIds);
 
@@ -1353,9 +1400,7 @@ export const PromptBoxVideo = ({
           {dropOverlay}
           {selectedModel?.textToVideoSupported === false && (
             <div className="mb-2 flex items-center gap-1.5 bg-ui-controls/60 px-2.5 py-1.5 text-xs text-base-fg/70">
-              <InfoIcon
-                
-                className="h-3 w-3 shrink-0" />
+              <InfoIcon className="h-3 w-3 shrink-0" />
               <span>
                 This model can&apos;t generate from text alone - add a starting
                 frame to animate your prompt.
@@ -1462,7 +1507,12 @@ export const PromptBoxVideo = ({
                     panelTitle="Bitrate"
                     mode="toggle"
                     items={selectedModel.bitrateOptions.map((value) => ({
-                      label: value === "normal" ? "Normal" : value === "high" ? "High" : value,
+                      label:
+                        value === "normal"
+                          ? "Normal"
+                          : value === "high"
+                            ? "High"
+                            : value,
                       action: value,
                       selected: value === bitrate,
                     }))}
@@ -1472,7 +1522,11 @@ export const PromptBoxVideo = ({
               )}
 
               {!!selectedModel?.outputFormatOptions?.length && (
-                <Tooltip content="Output format" position="top" className="z-50">
+                <Tooltip
+                  content="Output format"
+                  position="top"
+                  className="z-50"
+                >
                   <PopoverMenu
                     panelTitle="Output format"
                     mode="toggle"
@@ -1481,7 +1535,9 @@ export const PromptBoxVideo = ({
                       action: value,
                       selected: value === outputFormat,
                     }))}
-                    onSelect={(item) => setOutputFormat(item.action ?? item.label)}
+                    onSelect={(item) =>
+                      setOutputFormat(item.action ?? item.label)
+                    }
                   />
                 </Tooltip>
               )}
@@ -1491,9 +1547,7 @@ export const PromptBoxVideo = ({
                   <PopoverMenu
                     mode="default"
                     panelTitle="Duration"
-                    triggerIcon={
-                      <ClockIcon  className="h-3.5 w-3.5" />
-                    }
+                    triggerIcon={<ClockIcon className="h-3.5 w-3.5" />}
                     triggerLabel={`${effectiveDuration}s`}
                   >
                     <div className="w-[min(16rem,calc(100vw-2rem))] pb-0.5">

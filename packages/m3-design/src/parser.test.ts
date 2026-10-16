@@ -16,7 +16,9 @@ describe("Design brief semantic parser", () => {
   });
 
   test("should parse dashboard request with density and dark mode", () => {
-    const brief = parseBrief("Fais un console dashboard dense sombre avec un bouton rouge");
+    const brief = parseBrief(
+      "Fais un console dashboard dense sombre avec un bouton rouge",
+    );
     expect(brief.outputKind).toBe("dashboard");
     expect(brief.seedColor).toBe("#D32F2F");
     expect(brief.constraints).toContain("High density layout");
@@ -25,10 +27,14 @@ describe("Design brief semantic parser", () => {
   });
 
   test("should parse AR/VR/XR transparent screen request", () => {
-    const brief = parseBrief("Fais un app mobile pour transparent screen en réalité augmentée");
+    const brief = parseBrief(
+      "Fais un app mobile pour transparent screen en réalité augmentée",
+    );
     expect(brief.outputKind).toBe("mobile");
     expect(brief.platforms).toContain("ios");
-    expect(brief.constraints).toContain("Transparent screens additive contrast");
+    expect(brief.constraints).toContain(
+      "Transparent screens additive contrast",
+    );
   });
 
   test.each([
@@ -68,7 +74,9 @@ describe("Design brief semantic parser", () => {
     "A transparency-based display",
     "A Glimmer interface",
   ])("explicit brief %s requests immersive transparency", (prompt) => {
-    expect(parseBrief(prompt).constraints).toContain("Transparent screens additive contrast");
+    expect(parseBrief(prompt).constraints).toContain(
+      "Transparent screens additive contrast",
+    );
   });
 
   test.each([
@@ -83,16 +91,23 @@ describe("Design brief semantic parser", () => {
     ["A phone app", ["ios"]],
     ["A smartphone app", ["ios"]],
     ["An androidish prototype", ["responsive-web"]],
-  ])("brief %s preserves the requested mobile platforms", (prompt, platforms) => {
-    expect(parseBrief(prompt).platforms).toEqual(platforms);
-  });
+  ])(
+    "brief %s preserves the requested mobile platforms",
+    (prompt, platforms) => {
+      expect(parseBrief(prompt).platforms).toEqual(platforms);
+    },
+  );
 
   test("should extract all layout types correctly", () => {
     expect(parseBrief("Fais un feed de news").layoutType).toBe("feed");
     expect(parseBrief("Fais une grid de cartes").layoutType).toBe("feed");
-    expect(parseBrief("Split detail view screen").layoutType).toBe("list-detail");
+    expect(parseBrief("Split detail view screen").layoutType).toBe(
+      "list-detail",
+    );
     expect(parseBrief("List-detail layout").layoutType).toBe("list-detail");
-    expect(parseBrief("Supporting pane with sidebar").layoutType).toBe("supporting-pane");
+    expect(parseBrief("Supporting pane with sidebar").layoutType).toBe(
+      "supporting-pane",
+    );
     expect(parseBrief("Auxiliary column").layoutType).toBe("supporting-pane");
     expect(parseBrief("Standard scaffold").layoutType).toBe("scaffold");
     expect(parseBrief("Random prompt").layoutType).toBe("scaffold");
@@ -111,11 +126,15 @@ describe("Design brief semantic parser", () => {
     expect(briefWithThinking.hasThinkingIndicator).toBe(true);
     expect(briefWithThinking.hasStreaming).toBe(false);
 
-    const briefWithStreaming = parseBrief("Real-time streaming text response with caret");
+    const briefWithStreaming = parseBrief(
+      "Real-time streaming text response with caret",
+    );
     expect(briefWithStreaming.hasThinkingIndicator).toBe(false);
     expect(briefWithStreaming.hasStreaming).toBe(true);
 
-    const briefWithBoth = parseBrief("Gemini shimmer thinking and stream output");
+    const briefWithBoth = parseBrief(
+      "Gemini shimmer thinking and stream output",
+    );
     expect(briefWithBoth.hasThinkingIndicator).toBe(true);
     expect(briefWithBoth.hasStreaming).toBe(true);
 
@@ -126,7 +145,9 @@ describe("Design brief semantic parser", () => {
 
   test("should extract action-router delegation flags correctly", () => {
     expect(parseBrief("Central router active").hasActionRouter).toBe(true);
-    expect(parseBrief("Action delegation framework").hasActionRouter).toBe(true);
+    expect(parseBrief("Action delegation framework").hasActionRouter).toBe(
+      true,
+    );
     expect(parseBrief("Standard event delegation").hasActionRouter).toBe(true);
     expect(parseBrief("Simple React handlers").hasActionRouter).toBe(false);
   });

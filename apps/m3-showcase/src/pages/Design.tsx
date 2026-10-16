@@ -31,7 +31,8 @@ export default function Design({ adaptive }: PageProps) {
         signal: controller.signal,
       });
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error ?? "The brief could not be compiled.");
+      if (!response.ok)
+        throw new Error(payload.error ?? "The brief could not be compiled.");
       if (!controller.signal.aborted) {
         setResult(payload as GenerationResult);
         setFile("src/theme.css");
@@ -39,7 +40,9 @@ export default function Design({ adaptive }: PageProps) {
       }
     } catch (error) {
       if (!controller.signal.aborted)
-        setNotice(error instanceof Error ? error.message : "Generation failed.");
+        setNotice(
+          error instanceof Error ? error.message : "Generation failed.",
+        );
     } finally {
       if (active.current === controller) {
         active.current = null;
@@ -94,18 +97,20 @@ export default function Design({ adaptive }: PageProps) {
         <>
           <Section title="Primary tonal palette">
             <div className="grid grid-cols-3 gap-3 expanded:grid-cols-6">
-              {Object.entries(result.theme.palettes.primary.tones).map(([tone, value]) => (
-                <Swatch
-                  key={tone}
-                  name={"Tone " + tone}
-                  value={value}
-                  on={
-                    Number(tone) > 50
-                      ? result.theme.palettes.neutral.tones[10]
-                      : result.theme.palettes.neutral.tones[99]
-                  }
-                />
-              ))}
+              {Object.entries(result.theme.palettes.primary.tones).map(
+                ([tone, value]) => (
+                  <Swatch
+                    key={tone}
+                    name={"Tone " + tone}
+                    value={value}
+                    on={
+                      Number(tone) > 50
+                        ? result.theme.palettes.neutral.tones[10]
+                        : result.theme.palettes.neutral.tones[99]
+                    }
+                  />
+                ),
+              )}
             </div>
           </Section>
           <Section
@@ -125,11 +130,15 @@ export default function Design({ adaptive }: PageProps) {
                   ))}
                 </select>
               </label>
-              <Code>{result.files.find((item) => item.path === file)?.content}</Code>
+              <Code>
+                {result.files.find((item) => item.path === file)?.content}
+              </Code>
               <Button
                 variant="outlined"
                 onClick={() => {
-                  const content = result.files.find((item) => item.path === file)?.content ?? "";
+                  const content =
+                    result.files.find((item) => item.path === file)?.content ??
+                    "";
                   if (!navigator.clipboard) {
                     setNotice("Clipboard access is unavailable.");
                     return;

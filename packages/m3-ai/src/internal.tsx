@@ -15,12 +15,18 @@ export const expandMotion = {
   animate: {
     height: "auto",
     opacity: 1,
-    transition: { duration: m3Durations.medium2, ease: m3Easings.emphasizedDecelerate },
+    transition: {
+      duration: m3Durations.medium2,
+      ease: m3Easings.emphasizedDecelerate,
+    },
   },
   exit: {
     height: 0,
     opacity: 0,
-    transition: { duration: m3Durations.short4, ease: m3Easings.emphasizedAccelerate },
+    transition: {
+      duration: m3Durations.short4,
+      ease: m3Easings.emphasizedAccelerate,
+    },
   },
 } as const;
 
@@ -45,7 +51,10 @@ export function CircularIndicator({
       // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- M3 circular indeterminate indicator is an animated SVG arc; a native <progress> cannot render it.
       role="progressbar"
       aria-label={label}
-      className={clsx("m3-circular-indicator inline-flex shrink-0 text-primary", className)}
+      className={clsx(
+        "m3-circular-indicator inline-flex shrink-0 text-primary",
+        className,
+      )}
       style={{ width: size, height: size }}
     >
       <svg

@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
-import { ImageIcon, ImagesIcon, LoaderCircleIcon, PlusIcon, SparklesIcon, SquarePenIcon, VideoIcon, XIcon } from "lucide-react";
+import {
+  ImageIcon,
+  ImagesIcon,
+  LoaderCircleIcon,
+  PlusIcon,
+  SparklesIcon,
+  SquarePenIcon,
+  VideoIcon,
+  XIcon,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Button, GenerateButton } from "@storyteller/ui-button";
@@ -266,7 +275,7 @@ export const PromptBoxVFX = ({
                 className="flex h-5 w-5 items-center justify-center rounded-full text-base-fg/50 hover:bg-base-fg/10 hover:text-base-fg"
                 aria-label="Close prompt"
               >
-                <XIcon  className="h-3 w-3" />
+                <XIcon className="h-3 w-3" />
               </button>
             </div>
             <textarea
@@ -355,9 +364,7 @@ export const PromptBoxVFX = ({
               onSelect={handleModelSelect}
               mode="toggle"
               panelTitle="Model"
-              triggerIcon={
-                <SparklesIcon  className="h-3 w-3" />
-              }
+              triggerIcon={<SparklesIcon className="h-3 w-3" />}
               triggerLabel={selectedModel.label}
             />
           </Tooltip>
@@ -529,9 +536,7 @@ const UploadTile = ({
           )}
         >
           {uploading ? (
-            <LoaderCircleIcon
-              
-              className="h-6 w-6 animate-spin text-base-fg" />
+            <LoaderCircleIcon className="h-6 w-6 animate-spin text-base-fg" />
           ) : (
             <>
               {isVideo ? (
@@ -553,7 +558,7 @@ const UploadTile = ({
                 onClick={onClear}
                 className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity hover:bg-red-500/70 group-hover:opacity-100"
               >
-                <XIcon  className="h-2.5 w-2.5" />
+                <XIcon className="h-2.5 w-2.5" />
               </button>
             </>
           )}

@@ -15,7 +15,10 @@ const USER_AGENT = "DiscordBot (https://aphrody.com, 0.1.0)";
 
 export const EPHEMERAL = 64;
 /** Types de callback d'interaction (docs « Receiving and Responding »). */
-export const CallbackType = { ChannelMessage: 4, DeferredChannelMessage: 5 } as const;
+export const CallbackType = {
+  ChannelMessage: 4,
+  DeferredChannelMessage: 5,
+} as const;
 
 export interface DiscordUser {
   id: string;
@@ -123,13 +126,15 @@ export class DiscordRest {
   ): Promise<T | undefined> {
     const url = options.absolute ?? this.baseUrl + path;
     const headers: Record<string, string> = { "User-Agent": USER_AGENT };
-    if (options.body !== undefined) headers["Content-Type"] = "application/json";
+    if (options.body !== undefined)
+      headers["Content-Type"] = "application/json";
     if (options.bot !== false && this.token && !options.absolute)
       headers.Authorization = `Bot ${this.token}`;
     const init: RequestInit = {
       method,
       headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body:
+        options.body === undefined ? undefined : JSON.stringify(options.body),
     };
 
     for (let attempt = 0; ; attempt += 1) {
@@ -151,13 +156,15 @@ export class DiscordRest {
       }
       // oxlint-disable-next-line no-await-in-loop -- error body of this attempt is needed to decide retry or throw
       const text = await res.text().catch(() => "");
-      let parsed: { message?: string; code?: number; retry_after?: number } = {};
+      let parsed: { message?: string; code?: number; retry_after?: number } =
+        {};
       try {
         parsed = JSON.parse(text) as typeof parsed;
       } catch {
         // corps non JSON (page d'erreur Cloudflare…)
       }
-      const retryable = res.status === 429 || (res.status >= 500 && method !== "POST");
+      const retryable =
+        res.status === 429 || (res.status >= 500 && method !== "POST");
       if (retryable && attempt < this.maxRetries) {
         const waitMs =
           res.status === 429
@@ -173,7 +180,9 @@ export class DiscordRest {
         continue;
       }
       throw new DiscordError(
-        redact(frenchDiscord(res.status, parsed.message, parsed.code), [this.token]),
+        redact(frenchDiscord(res.status, parsed.message, parsed.code), [
+          this.token,
+        ]),
         res.status,
         parsed.code,
       );
@@ -184,33 +193,56 @@ export class DiscordRest {
 
   async getGatewayBot(): Promise<{
     url: string;
-    session_start_limit?: { remaining: number; total: number; reset_after: number };
+    session_start_limit?: {
+      remaining: number;
+      total: number;
+      reset_after: number;
+    };
   }> {
     const res = await this.call<{
       url: string;
-      session_start_limit?: { remaining: number; total: number; reset_after: number };
+      session_start_limit?: {
+        remaining: number;
+        total: number;
+        reset_after: number;
+      };
     }>("GET", "/gateway/bot");
     if (!res?.url) throw new DiscordError("Réponse /gateway/bot sans URL.", 0);
     return res;
   }
 
   /** PUT remplace TOUTES les commandes de l'application pour ce serveur (slash, utilisateur et message). */
-  async putGuildCommands(guildId: string, commands: unknown[]): Promise<unknown[]> {
+  async putGuildCommands(
+    guildId: string,
+    commands: unknown[],
+  ): Promise<unknown[]> {
     if (!this.appId) throw new UsageError("DISCORD_APP_ID manquant.");
     return (
-      (await this.call<unknown[]>("PUT", `/applications/${this.appId}/guilds/${guildId}/commands`, {
-        body: commands,
-      })) ?? []
+      (await this.call<unknown[]>(
+        "PUT",
+        `/applications/${this.appId}/guilds/${guildId}/commands`,
+        {
+          body: commands,
+        },
+      )) ?? []
     );
   }
 
   // --- Interactions (3 s pour le premier callback, jeton valable 15 min) -----------------------------------------
 
-  async callback(interaction: Interaction, type: number, data?: MessageData): Promise<void> {
-    await this.call("POST", `/interactions/${interaction.id}/${interaction.token}/callback`, {
-      body: { type, data },
-      bot: false,
-    });
+  async callback(
+    interaction: Interaction,
+    type: number,
+    data?: MessageData,
+  ): Promise<void> {
+    await this.call(
+      "POST",
+      `/interactions/${interaction.id}/${interaction.token}/callback`,
+      {
+        body: { type, data },
+        bot: false,
+      },
+    );
   }
 
   defer(interaction: Interaction, hidden: boolean): Promise<void> {
@@ -225,7 +257,10 @@ export class DiscordRest {
     return this.callback(interaction, CallbackType.ChannelMessage, data);
   }
 
-  async editOriginal(interaction: Interaction, data: MessageData): Promise<void> {
+  async editOriginal(
+    interaction: Interaction,
+    data: MessageData,
+  ): Promise<void> {
     await this.call(
       "PATCH",
       `/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`,
@@ -235,10 +270,14 @@ export class DiscordRest {
 
   /** Nouveau message après un premier editOriginal (public sauf drapeau éphémère). */
   async followup(interaction: Interaction, data: MessageData): Promise<void> {
-    await this.call("POST", `/webhooks/${interaction.application_id}/${interaction.token}`, {
-      body: data,
-      bot: false,
-    });
+    await this.call(
+      "POST",
+      `/webhooks/${interaction.application_id}/${interaction.token}`,
+      {
+        body: data,
+        bot: false,
+      },
+    );
   }
 
   // --- Webhooks d'annonce -----------------------------------------------------------------------------------------
@@ -247,7 +286,10 @@ export class DiscordRest {
     webhookUrl: string,
     data: MessageData & { username?: string },
   ): Promise<void> {
-    await this.call("POST", "", { body: data, absolute: assertWebhookUrl(webhookUrl) });
+    await this.call("POST", "", {
+      body: data,
+      absolute: assertWebhookUrl(webhookUrl),
+    });
   }
 }
 
@@ -285,7 +327,11 @@ export function redactWebhook(raw: string): string {
   return raw.replace(/(\/webhooks\/\d+\/)[\w-]+/, "$1***");
 }
 
-export function frenchDiscord(status: number, message?: string, code?: number): string {
+export function frenchDiscord(
+  status: number,
+  message?: string,
+  code?: number,
+): string {
   const detail = message ? ` (${message}${code ? `, code ${code}` : ""})` : "";
   switch (status) {
     case 401:
@@ -303,7 +349,11 @@ export function frenchDiscord(status: number, message?: string, code?: number): 
 
 /** Message éphémère (visible uniquement par l'invoquant), sans mention : pour un premier callback. */
 export function ephemeral(content: string): MessageData {
-  return { content: content.slice(0, 2000), flags: EPHEMERAL, allowed_mentions: { parse: [] } };
+  return {
+    content: content.slice(0, 2000),
+    flags: EPHEMERAL,
+    allowed_mentions: { parse: [] },
+  };
 }
 
 /** Texte simple sans mention, pour éditer un message déjà différé (son caractère éphémère est figé au defer). */

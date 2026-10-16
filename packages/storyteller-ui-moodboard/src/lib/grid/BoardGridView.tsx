@@ -101,19 +101,24 @@ export const BoardGridView = ({ active, adapter }: Props) => {
   );
   const tags = useMemo(() => (board ? collectTags(board) : []), [board]);
 
-  const openIndex = openId
-    ? filtered.findIndex((it) => it.id === openId)
-    : -1;
+  const openIndex = openId ? filtered.findIndex((it) => it.id === openId) : -1;
   const openItem = openIndex >= 0 ? filtered[openIndex] : null;
 
   const sendReference = (items: BoardItem[]) => {
     const refs = items
       .filter(
-        (it): it is BoardImageItem => it.kind === "image" && Boolean(it.mediaId),
+        (it): it is BoardImageItem =>
+          it.kind === "image" && Boolean(it.mediaId),
       )
-      .map((it) => ({ id: it.id, url: it.src, mediaToken: it.mediaId as string }));
+      .map((it) => ({
+        id: it.id,
+        url: it.src,
+        mediaToken: it.mediaId as string,
+      }));
     if (refs.length === 0) {
-      toast.error("Add images with a media reference to use them in a generation");
+      toast.error(
+        "Add images with a media reference to use them in a generation",
+      );
       return;
     }
     adapter.sendToGeneration(refs);
@@ -147,7 +152,8 @@ export const BoardGridView = ({ active, adapter }: Props) => {
     if (board) createSection(board.id);
   };
   const handleAssignToSection = (sectionId: string | null) => {
-    if (board) assignItemsToSection(board.id, Array.from(selectedItemIds), sectionId);
+    if (board)
+      assignItemsToSection(board.id, Array.from(selectedItemIds), sectionId);
   };
   const handleGroupSelectionIntoNewSection = () => {
     if (!board) return;

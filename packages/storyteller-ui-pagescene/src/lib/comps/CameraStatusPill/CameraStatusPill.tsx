@@ -26,7 +26,9 @@ export const CameraStatusPill = () => {
 
   return (
     <Tooltip
-      content={inCameraView ? "Looking through render camera" : "Free viewport camera"}
+      content={
+        inCameraView ? "Looking through render camera" : "Free viewport camera"
+      }
       position="bottom"
       delay={300}
     >

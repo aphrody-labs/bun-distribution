@@ -152,9 +152,9 @@ await client.setLibrary(bridgeConfig.library_id);
 // Now use hooks normally!
 const { data } = useNormalizedQuery({
   query: "files.directory_listing",
-	input: { path: { Physical: { path: "/some/path" } } },
-	resourceType: "file",
-	// ...
+  input: { path: { Physical: { path: "/some/path" } } },
+  resourceType: "file",
+  // ...
 });
 ```
 

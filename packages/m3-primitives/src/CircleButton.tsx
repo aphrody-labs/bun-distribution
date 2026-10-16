@@ -85,14 +85,26 @@ export interface CircleButtonProps
 
 export const CircleButton = forwardRef<HTMLButtonElement, CircleButtonProps>(
   (
-    { icon, active, activeAccent, variant, size, className, children, type = "button", ...props },
+    {
+      icon,
+      active,
+      activeAccent,
+      variant,
+      size,
+      className,
+      children,
+      type = "button",
+      ...props
+    },
     ref,
   ) => {
     // Resolve legacy active/activeAccent props to variant
     const resolvedVariant =
-      variant ?? (active && activeAccent ? "accent" : active ? "active" : "default");
+      variant ??
+      (active && activeAccent ? "accent" : active ? "active" : "default");
     const iconSize = iconSizes[size ?? "md"];
-    const selected = resolvedVariant === "active" || resolvedVariant === "accent";
+    const selected =
+      resolvedVariant === "active" || resolvedVariant === "accent";
 
     return (
       <button

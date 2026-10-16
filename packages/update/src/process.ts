@@ -51,7 +51,13 @@ export function spawnSync(
       stderr: r.stderr?.toString() ?? "",
     };
   } catch (error) {
-    return { status: null, signal: null, stdout: "", stderr: "", error: error as Error };
+    return {
+      status: null,
+      signal: null,
+      stdout: "",
+      stderr: "",
+      error: error as Error,
+    };
   }
 }
 
@@ -61,7 +67,11 @@ export function execFileSync(
   args: readonly string[],
   o: SpawnSyncOptions & { encoding: "utf8" | "utf-8" },
 ): string;
-export function execFileSync(cmd: string, args: readonly string[], o?: SpawnSyncOptions): Buffer;
+export function execFileSync(
+  cmd: string,
+  args: readonly string[],
+  o?: SpawnSyncOptions,
+): Buffer;
 export function execFileSync(
   cmd: string,
   args: readonly string[],
@@ -82,6 +92,8 @@ export function execFileSync(
 }
 
 /** Spawn options with `windowsHide: true` unless the caller overrides it (no console window on Windows). */
-export function hidden<T extends { windowsHide?: boolean }>(options?: T): T & { windowsHide: boolean } {
+export function hidden<T extends { windowsHide?: boolean }>(
+  options?: T,
+): T & { windowsHide: boolean } {
   return { windowsHide: true, ...options } as T & { windowsHide: boolean };
 }

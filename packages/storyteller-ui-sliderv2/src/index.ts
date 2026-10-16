@@ -1,2 +1,1 @@
-
-export * from './lib/slider-v2';
+export * from "./lib/slider-v2";

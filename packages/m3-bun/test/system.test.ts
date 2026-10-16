@@ -50,7 +50,12 @@ describe.skipIf(!enabled)("generated images run", () => {
       const app = await loadApp(dir);
       const { outfile } = await compileApp({ app });
       const out = join(dir, "release");
-      const report = await packageApp({ app, executable: outfile, out, rootfs: true });
+      const report = await packageApp({
+        app,
+        executable: outfile,
+        out,
+        rootfs: true,
+      });
       expect(report.rootfs?.libraries.length).toBeGreaterThanOrEqual(4);
       await generateTargets(["docker"], contextFor(app), join(dir, "deploy"));
       writeFileSync(
@@ -82,14 +87,28 @@ describe.skipIf(!enabled)("generated images run", () => {
         ).toBe(0);
         const health = await until(`http://127.0.0.1:${port}/healthz`);
         expect(health.status).toBe(200);
-        expect(await (await fetch(`http://127.0.0.1:${port}/api/hello/docker`)).json()).toEqual({
+        expect(
+          await (
+            await fetch(`http://127.0.0.1:${port}/api/hello/docker`)
+          ).json(),
+        ).toEqual({
           hello: "docker",
         });
-        expect((await fetch(`http://127.0.0.1:${port}/`)).headers.get("content-type")).toStartWith(
-          "text/html",
-        );
-        expect(sh(["docker", "exec", name, "/app/server", "--healthcheck"]).code).toBe(0);
-        const user = sh(["docker", "inspect", name, "--format", "{{.Config.User}}"]).out;
+        expect(
+          (await fetch(`http://127.0.0.1:${port}/`)).headers.get(
+            "content-type",
+          ),
+        ).toStartWith("text/html");
+        expect(
+          sh(["docker", "exec", name, "/app/server", "--healthcheck"]).code,
+        ).toBe(0);
+        const user = sh([
+          "docker",
+          "inspect",
+          name,
+          "--format",
+          "{{.Config.User}}",
+        ]).out;
         expect(user).toBe("10001:10001");
       } finally {
         sh(["docker", "rm", "-f", name]);
@@ -109,7 +128,11 @@ describe.skipIf(!enabled)("generated images run", () => {
       const dir = fixtureCopy();
       const app = await loadApp(dir);
       const { outfile } = await compileApp({ app });
-      await generateTargets(["linux-image"], contextFor(app), join(dir, "deploy"));
+      await generateTargets(
+        ["linux-image"],
+        contextFor(app),
+        join(dir, "deploy"),
+      );
       const build = sh([
         "bash",
         join(dir, "deploy/linux-image/build-image.sh"),
@@ -119,10 +142,18 @@ describe.skipIf(!enabled)("generated images run", () => {
       expect(build.code).toBe(0);
       const port = freePort();
       const qemu = Bun.spawn(
-        ["bash", join(dir, "deploy/linux-image/run-qemu.sh"), join(dir, "image/initramfs.cpio.gz")],
+        [
+          "bash",
+          join(dir, "deploy/linux-image/run-qemu.sh"),
+          join(dir, "image/initramfs.cpio.gz"),
+        ],
         {
           windowsHide: true,
-          env: { ...process.env, KERNEL: Bun.env.M3_BUN_KERNEL!, HOST_PORT: String(port) },
+          env: {
+            ...process.env,
+            KERNEL: Bun.env.M3_BUN_KERNEL!,
+            HOST_PORT: String(port),
+          },
           stdout: "ignore",
           stderr: "ignore",
         },
@@ -130,7 +161,9 @@ describe.skipIf(!enabled)("generated images run", () => {
       try {
         const health = await until(`http://127.0.0.1:${port}/healthz`, 300);
         expect(health.status).toBe(200);
-        expect(await (await fetch(`http://127.0.0.1:${port}/api/hello/qemu`)).json()).toEqual({
+        expect(
+          await (await fetch(`http://127.0.0.1:${port}/api/hello/qemu`)).json(),
+        ).toEqual({
           hello: "qemu",
         });
       } finally {
@@ -148,18 +181,29 @@ describe.skipIf(!enabled)("cross-compiled executables", () => {
     const app = await loadApp(dir);
     const win = await compileApp({ app, target: "windows-x64" });
     expect(win.outfile.endsWith("hello-m3-windows-x64.exe")).toBe(true);
-    const head = new Uint8Array(await Bun.file(win.outfile).slice(0, 2).arrayBuffer());
+    const head = new Uint8Array(
+      await Bun.file(win.outfile).slice(0, 2).arrayBuffer(),
+    );
     expect(String.fromCharCode(...head)).toBe("MZ");
     expect(win.bytes).toBeGreaterThan(50_000_000);
 
-    const musl = await compileApp({ app, target: "linux-x64-musl", build: false });
+    const musl = await compileApp({
+      app,
+      target: "linux-x64-musl",
+      build: false,
+    });
     const elf = sh(["readelf", "-d", "-l", musl.outfile]);
     expect(elf.out).toContain("/lib/ld-musl-x86_64.so.1");
     expect(elf.out).toContain("libstdc++.so.6");
     expect(elf.out).toContain("libc.musl-x86_64.so.1");
     const glibc = await compileApp({ app, target: "linux-x64", build: false });
     const needed = sh(["readelf", "-d", glibc.outfile]).out;
-    for (const lib of ["libc.so.6", "libm.so.6", "libpthread.so.0", "libdl.so.2"])
+    for (const lib of [
+      "libc.so.6",
+      "libm.so.6",
+      "libpthread.so.0",
+      "libdl.so.2",
+    ])
       expect(needed).toContain(lib);
   }, 240_000);
 
@@ -176,7 +220,10 @@ export const bun = defineM3Bun({ api: "src/api.ts", compile: { windows: { title:
     const app = await loadApp(dir);
     const win = await compileApp({ app, target: "windows-x64" });
     if (process.platform === "win32") expect(win.warnings).toEqual([]);
-    else expect(win.warnings.join(" ")).toContain("only applied when compiling on Windows");
+    else
+      expect(win.warnings.join(" ")).toContain(
+        "only applied when compiling on Windows",
+      );
     const plain = await compileApp({
       app: await loadApp(fixtureCopy()),
       target: "linux-x64",

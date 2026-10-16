@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import { assertConsumerFile, validateConsumerPins } from "./shenron-cdn-origin-consumer";
+import {
+  assertConsumerFile,
+  validateConsumerPins,
+} from "./shenron-cdn-origin-consumer";
 
 test("consumer activation rejects missing artifact pins and accepts a complete provenance boundary", () => {
   const pins = {
@@ -12,16 +15,28 @@ test("consumer activation rejects missing artifact pins and accepts a complete p
   };
   expect(() => validateConsumerPins(pins)).not.toThrow();
   for (const field of Object.keys(pins))
-    expect(() => validateConsumerPins({ ...pins, [field]: "invalid" })).toThrow("required");
+    expect(() => validateConsumerPins({ ...pins, [field]: "invalid" })).toThrow(
+      "required",
+    );
   expect(() =>
-    validateConsumerPins({ ...pins, candidateCodeSha256: pins.beforeCodeSha256 }),
+    validateConsumerPins({
+      ...pins,
+      candidateCodeSha256: pins.beforeCodeSha256,
+    }),
   ).toThrow("Distinct");
 });
 
 test("canonical runtime inputs reject symlinks, another owner and exposed configuration", () => {
-  const regular = { uid: 0, mode: 0o600, isFile: () => true, isSymbolicLink: () => false };
+  const regular = {
+    uid: 0,
+    mode: 0o600,
+    isFile: () => true,
+    isSymbolicLink: () => false,
+  };
   expect(() => assertConsumerFile(regular, true)).not.toThrow();
-  expect(() => assertConsumerFile({ ...regular, mode: 0o644 }, false)).not.toThrow();
+  expect(() =>
+    assertConsumerFile({ ...regular, mode: 0o644 }, false),
+  ).not.toThrow();
   for (const info of [
     { ...regular, uid: 1000 },
     { ...regular, mode: 0o644 },

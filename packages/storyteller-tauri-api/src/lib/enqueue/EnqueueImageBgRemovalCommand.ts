@@ -35,17 +35,19 @@ export interface EnqueueImageBgRemovalError extends CommandResult {
   error_message?: string;
 }
 
-export interface EnqueueImageBgRemovalPayload {
-}
+export interface EnqueueImageBgRemovalPayload {}
 
 export interface EnqueueImageBgRemovalSuccess extends CommandResult {
   payload: EnqueueImageBgRemovalPayload;
 }
 
-export type EnqueueImageBgRemovalResult = EnqueueImageBgRemovalSuccess | EnqueueImageBgRemovalError;
+export type EnqueueImageBgRemovalResult =
+  EnqueueImageBgRemovalSuccess | EnqueueImageBgRemovalError;
 
-export const EnqueueImageBgRemoval = async (request: EnqueueImageBgRemovalRequest) : Promise<EnqueueImageBgRemovalResult> => {
-  let mutableRequest : RawEnqueueImageBgRemovalRequest = {};
+export const EnqueueImageBgRemoval = async (
+  request: EnqueueImageBgRemovalRequest,
+): Promise<EnqueueImageBgRemovalResult> => {
+  let mutableRequest: RawEnqueueImageBgRemovalRequest = {};
 
   if (request.image_media_token) {
     mutableRequest.image_media_token = request.image_media_token;
@@ -63,9 +65,9 @@ export const EnqueueImageBgRemoval = async (request: EnqueueImageBgRemovalReques
     mutableRequest.frontend_subscriber_id = request.frontend_subscriber_id;
   }
 
-  const result = await invoke("enqueue_image_bg_removal_command", { 
+  const result = await invoke("enqueue_image_bg_removal_command", {
     request: mutableRequest,
   });
 
-  return (result as EnqueueImageBgRemovalResult);
-}
+  return result as EnqueueImageBgRemovalResult;
+};

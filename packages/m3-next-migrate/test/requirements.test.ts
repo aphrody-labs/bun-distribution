@@ -1,10 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
-import { migrationRequirements, assertMigrationRequirements } from "../src/requirements";
+import {
+  migrationRequirements,
+  assertMigrationRequirements,
+} from "../src/requirements";
 
 describe("native migration activation contracts", () => {
   test.each([
-    ["app/actions.ts", '"use server"; export async function save(){}', "server-action adapter"],
+    [
+      "app/actions.ts",
+      '"use server"; export async function save(){}',
+      "server-action adapter",
+    ],
     [
       "app/page.tsx",
       'import { cookies } from "next/headers"; export default function Page(){return null;}',
@@ -15,13 +22,21 @@ describe("native migration activation contracts", () => {
       'import { Inter } from "next/font/google"; export const font = Inter({});',
       "font asset adapter",
     ],
-    ["pages/index.tsx", "export default function Page(){return null;}", "Pages Router adapter"],
+    [
+      "pages/index.tsx",
+      "export default function Page(){return null;}",
+      "Pages Router adapter",
+    ],
     [
       "app/api/item/route.ts",
       'export function GET(){ return new Response("ok"); }',
       "request host adapter",
     ],
-    ["app/error.tsx", "export default function Error(){return null;}", "route boundary adapter"],
+    [
+      "app/error.tsx",
+      "export default function Error(){return null;}",
+      "route boundary adapter",
+    ],
     [
       "app/page.tsx",
       'import { useRouter } from "next/router"; export default useRouter;',
@@ -44,7 +59,9 @@ describe("native migration activation contracts", () => {
     ],
   ])("%s reports %s before activation", (file, source, expected) => {
     const requirements = migrationRequirements(file, source);
-    expect(requirements.some((requirement) => requirement.capability === expected)).toBe(true);
+    expect(
+      requirements.some((requirement) => requirement.capability === expected),
+    ).toBe(true);
     expect(() => assertMigrationRequirements(requirements)).toThrow(expected);
   });
   test("comments and illustrative strings do not create missing runtime requirements", () => {

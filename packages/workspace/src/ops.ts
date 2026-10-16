@@ -50,8 +50,17 @@ export async function runOps(argv: readonly string[]): Promise<number> {
   }
   if (operation === "agent-home-drive-sync" || operation === "drive-sync") {
     const task = Bun.spawn(
-      [process.execPath, join(import.meta.dir, "agent-home-drive-sync.ts"), ...rest],
-      { windowsHide: true, stdin: "inherit", stdout: "inherit", stderr: "inherit" },
+      [
+        process.execPath,
+        join(import.meta.dir, "agent-home-drive-sync.ts"),
+        ...rest,
+      ],
+      {
+        windowsHide: true,
+        stdin: "inherit",
+        stdout: "inherit",
+        stderr: "inherit",
+      },
     );
     return await task.exited;
   }
@@ -68,17 +77,28 @@ export async function runOps(argv: readonly string[]): Promise<number> {
     const [bridgeOperation, ...bridgeArgs] = rest;
     if (!bridgeOperation || bridgeOperation === "status") {
       if (bridgeArgs.length > 0)
-        throw new Error("usage: yolo ops bridge [status|rust <binary> [arguments...]]");
+        throw new Error(
+          "usage: yolo ops bridge [status|rust <binary> [arguments...]]",
+        );
       console.log(
-        JSON.stringify(await (await import("./bridges.ts")).loadAphrodyBridgeCatalog(), null, 2),
+        JSON.stringify(
+          await (await import("./bridges.ts")).loadAphrodyBridgeCatalog(),
+          null,
+          2,
+        ),
       );
       return 0;
     }
     if (bridgeOperation !== "rust") {
-      throw new Error("usage: yolo ops bridge [status|rust <binary> [arguments...]]");
+      throw new Error(
+        "usage: yolo ops bridge [status|rust <binary> [arguments...]]",
+      );
     }
     const [binary, ...args] = bridgeArgs;
-    if (!binary) throw new Error("usage: yolo ops bridge rust <aphrody-binary> [arguments...]");
+    if (!binary)
+      throw new Error(
+        "usage: yolo ops bridge rust <aphrody-binary> [arguments...]",
+      );
     return await (
       await import("./bridges.ts")
     ).runRustBridge(binary, args, { stdout: "inherit", stderr: "inherit" });
@@ -86,14 +106,18 @@ export async function runOps(argv: readonly string[]): Promise<number> {
   if (operation === "infra") {
     return await (
       await import("./bridges.ts")
-    ).runRustBridge("aphrody-infra", rest, { stdout: "inherit", stderr: "inherit" });
+    ).runRustBridge("aphrody-infra", rest, {
+      stdout: "inherit",
+      stderr: "inherit",
+    });
   }
   if (operation === "infra-audit")
     return await (await import("./infra-audit.ts")).runInfraAudit(rest);
   if (operation === "orchestrate") {
     const [action = "status", ...args] = rest;
     const usesTarget = action !== "catalog";
-    const target = usesTarget && !args.includes("--target") ? ["--target", "local"] : [];
+    const target =
+      usesTarget && !args.includes("--target") ? ["--target", "local"] : [];
     return await (
       await import("./bridges.ts")
     ).runRustBridge("aphrody-infra", ["service", action, ...args, ...target], {
@@ -104,7 +128,8 @@ export async function runOps(argv: readonly string[]): Promise<number> {
   if (operation === "audit-scripts") {
     const index = rest.indexOf("--repo");
     const repo = index === -1 ? undefined : rest[index + 1];
-    if (!repo || rest.length !== 2) throw new Error("usage: yolo ops audit-scripts --repo <name>");
+    if (!repo || rest.length !== 2)
+      throw new Error("usage: yolo ops audit-scripts --repo <name>");
     await (await import("./audit-scripts.ts")).runScriptAudit(repo);
     return 0;
   }
@@ -118,7 +143,9 @@ export async function runOps(argv: readonly string[]): Promise<number> {
     const args =
       rootIndex === -1
         ? rest
-        : rest.filter((_, index) => index !== rootIndex && index !== rootIndex + 1);
+        : rest.filter(
+            (_, index) => index !== rootIndex && index !== rootIndex + 1,
+          );
     await (await import("./imports-exports.ts")).runImportsExports(args, root);
     return 0;
   }
@@ -126,16 +153,24 @@ export async function runOps(argv: readonly string[]): Promise<number> {
     return await (await import("./monorepo-gate.ts")).runMonorepoGate(rest);
   }
   if (operation === "cargo-package-repair") {
-    return await (await import("./cargo-package-repair.ts")).runCargoPackageRepair(rest);
+    return await (
+      await import("./cargo-package-repair.ts")
+    ).runCargoPackageRepair(rest);
   }
   if (operation === "cargo-release-audit") {
-    return await (await import("./cargo-release-audit.ts")).runCargoReleaseAudit(rest);
+    return await (
+      await import("./cargo-release-audit.ts")
+    ).runCargoReleaseAudit(rest);
   }
   if (operation === "workspace-repair") {
-    return await (await import("./workspace-repair.ts")).runWorkspaceRepair(rest);
+    return await (
+      await import("./workspace-repair.ts")
+    ).runWorkspaceRepair(rest);
   }
   if (operation === "repository-health") {
-    return await (await import("./repository-health.ts")).runRepositoryHealth(rest);
+    return await (
+      await import("./repository-health.ts")
+    ).runRepositoryHealth(rest);
   }
   if (operation === "git-attribution") {
     return await (await import("./git-attribution.ts")).runGitAttribution(rest);
@@ -150,19 +185,25 @@ export async function runOps(argv: readonly string[]): Promise<number> {
     return (await import("./runtime-versions.ts")).runRuntimeVersions(rest);
   }
   if (operation === "gitignored-audit") {
-    return await (await import("./gitignored-audit.ts")).runGitignoredAudit(rest);
+    return await (
+      await import("./gitignored-audit.ts")
+    ).runGitignoredAudit(rest);
   }
   if (operation === "docs-overlaps") {
     return (await import("./docs-overlaps.ts")).runDocsOverlaps(rest);
   }
   if (operation === "docs-consolidate") {
-    return await (await import("./docs-consolidation.ts")).runDocsConsolidation(rest);
+    return await (
+      await import("./docs-consolidation.ts")
+    ).runDocsConsolidation(rest);
   }
   if (operation === "python-quality") {
     return (await import("./python-quality.ts")).runPythonQuality(rest);
   }
   if (operation === "agent-plugin-sync") {
-    return await (await import("./agent-plugin-sync.ts")).runAgentPluginSync(rest);
+    return await (
+      await import("./agent-plugin-sync.ts")
+    ).runAgentPluginSync(rest);
   }
   if (operation === "agent-home") {
     return (await import("./agent-home.ts")).runAgentHome(rest);
@@ -171,16 +212,22 @@ export async function runOps(argv: readonly string[]): Promise<number> {
     return (await import("./ai-release-gate.ts")).runAiReleaseGate(rest);
   }
   if (operation === "powershell-syntax") {
-    return await (await import("./powershell-syntax.ts")).runPowerShellSyntax(rest);
+    return await (
+      await import("./powershell-syntax.ts")
+    ).runPowerShellSyntax(rest);
   }
   if (operation === "workspace-clean") {
     return await (await import("./workspace-clean.ts")).runWorkspaceClean(rest);
   }
   if (operation === "pipeline-catalog") {
-    return await (await import("./pipeline-catalog.ts")).runPipelineCatalog(rest);
+    return await (
+      await import("./pipeline-catalog.ts")
+    ).runPipelineCatalog(rest);
   }
   if (operation === "repository-state") {
-    return await (await import("./repository-state.ts")).runRepositoryState(rest);
+    return await (
+      await import("./repository-state.ts")
+    ).runRepositoryState(rest);
   }
   if (operation === "iecode-doctor") {
     return await (await import("./iecode-doctor.ts")).runIecodeDoctor(rest);
@@ -189,37 +236,53 @@ export async function runOps(argv: readonly string[]): Promise<number> {
     return await (await import("./runtime-gate.ts")).runRuntimeGate(rest);
   }
   if (operation === "automation-inventory") {
-    return await (await import("./automation-inventory.ts")).runAutomationInventory(rest);
+    return await (
+      await import("./automation-inventory.ts")
+    ).runAutomationInventory(rest);
   }
   if (operation === "aphrody-packages") {
-    return await (await import("./aphrody-packages.ts")).runAphrodyPackages(rest);
+    return await (
+      await import("./aphrody-packages.ts")
+    ).runAphrodyPackages(rest);
   }
   if (operation === "system-packages") {
     return await (await import("./system-packages.ts")).runSystemPackages(rest);
   }
   if (operation === "workspace-subsystem") {
-    return await (await import("./workspace-subsystem.ts")).runWorkspaceSubsystem(rest);
+    return await (
+      await import("./workspace-subsystem.ts")
+    ).runWorkspaceSubsystem(rest);
   }
   if (operation === "cargo-boundaries") {
-    return await (await import("./cargo-boundaries.ts")).runCargoBoundaries(rest);
+    return await (
+      await import("./cargo-boundaries.ts")
+    ).runCargoBoundaries(rest);
   }
   if (operation === "docs-gen") {
-    return await (await import("./documentation.ts")).runDocumentation(["generate", ...rest]);
+    return await (
+      await import("./documentation.ts")
+    ).runDocumentation(["generate", ...rest]);
   }
   if (operation === "workspace-layout") {
-    return await (await import("./workspace-layout.ts")).runWorkspaceLayout(rest);
+    return await (
+      await import("./workspace-layout.ts")
+    ).runWorkspaceLayout(rest);
   }
   if (operation === "ecosystem-deps") {
     return await (await import("./ecosystem-deps.ts")).runEcosystemDeps(rest);
   }
   if (operation === "bun-upstream-docs") {
-    return await (await import("./bun-upstream-docs.ts")).runBunUpstreamDocs(rest);
+    return await (
+      await import("./bun-upstream-docs.ts")
+    ).runBunUpstreamDocs(rest);
   }
   if (operation === "workspace-deps") {
     return await (await import("./workspace-deps.ts")).runWorkspaceDeps(rest);
   }
   if (operation === "vendor-license-audit") {
-    return await (await import("./vendor-license-audit.ts")).runVendorLicenseAudit(rest);
+    return await (
+      await import("./vendor-license-audit.ts")
+    ).runVendorLicenseAudit(rest);
   }
   if (operation === "docs-links") {
     return await (await import("./docs-links.ts")).runDocsLinks(rest);
@@ -240,16 +303,24 @@ export async function runOps(argv: readonly string[]): Promise<number> {
     return await (await import("./tauri.ts")).runTauri(rest);
   }
   if (operation === "tauri-apps") {
-    return await (await import("@aphrody/update/src/tauri/apps.ts")).runTauriApps(rest);
+    return await (
+      await import("@aphrody/update/src/tauri/apps.ts")
+    ).runTauriApps(rest);
   }
   if (operation === "tauri-sync") {
-    return await (await import("@aphrody/update/src/tauri/sync.ts")).runTauriSync(rest);
+    return await (
+      await import("@aphrody/update/src/tauri/sync.ts")
+    ).runTauriSync(rest);
   }
   if (operation === "upstream-sources") {
-    return await (await import("@aphrody/update/src/sources/restore.ts")).runUpstreamSources(rest);
+    return await (
+      await import("@aphrody/update/src/sources/restore.ts")
+    ).runUpstreamSources(rest);
   }
   if (operation === "deps-sync") {
-    return await (await import("@aphrody/update/src/deps/sync.ts")).runDepsSync(rest);
+    return await (
+      await import("@aphrody/update/src/deps/sync.ts")
+    ).runDepsSync(rest);
   }
   if (operation === "update") {
     return await (await import("@aphrody/update/src/cli.ts")).runUpdate(rest);
@@ -262,7 +333,9 @@ export async function runOps(argv: readonly string[]): Promise<number> {
     return await (await import("./drive-daemon.ts")).runDriveDaemon(rest);
   }
   if (operation === "drive-upstream-audit") {
-    return await (await import("./drive-upstream-audit.ts")).runDriveUpstreamAudit(rest);
+    return await (
+      await import("./drive-upstream-audit.ts")
+    ).runDriveUpstreamAudit(rest);
   }
   if (operation === "bun-workspace") {
     return await (await import("./bun-workspace.ts")).runBunWorkspace(rest);
@@ -271,13 +344,19 @@ export async function runOps(argv: readonly string[]): Promise<number> {
     return await (await import("./monorepo-audit.ts")).runMonorepoAudit(rest);
   }
   if (operation === "fleet") {
-    console.log(JSON.stringify(await (await import("./fleet.ts")).loadFleet(), null, 2));
+    console.log(
+      JSON.stringify(await (await import("./fleet.ts")).loadFleet(), null, 2),
+    );
     return 0;
   }
   if (operation === "n2b") return await (await import("./n2b.ts")).runN2b(rest);
   if (operation === "binaries") {
     console.log(
-      JSON.stringify(await (await import("./binaries.ts")).discoverAphrodyBinaries(), null, 2),
+      JSON.stringify(
+        await (await import("./binaries.ts")).discoverAphrodyBinaries(),
+        null,
+        2,
+      ),
     );
     return 0;
   }
@@ -287,10 +366,13 @@ export async function runOps(argv: readonly string[]): Promise<number> {
       !packageOperation ||
       !["status", "install", "outdated", "audit"].includes(packageOperation)
     ) {
-      throw new Error("usage: yolo ops packages <status|install|outdated|audit> [--repo <name>]");
+      throw new Error(
+        "usage: yolo ops packages <status|install|outdated|audit> [--repo <name>]",
+      );
     }
     const repoIndex = packageArgs.indexOf("--repo");
-    const repository = repoIndex === -1 ? undefined : packageArgs[repoIndex + 1];
+    const repository =
+      repoIndex === -1 ? undefined : packageArgs[repoIndex + 1];
     if (repoIndex !== -1 && (!repository || packageArgs.length !== 2)) {
       throw new Error("usage: yolo ops packages <operation> [--repo <name>]");
     }
@@ -302,7 +384,8 @@ export async function runOps(argv: readonly string[]): Promise<number> {
   }
   if (operation === "binary") {
     const [binary, ...args] = rest;
-    if (!binary) throw new Error("usage: yolo ops binary <aphrody-binary> [arguments...]");
+    if (!binary)
+      throw new Error("usage: yolo ops binary <aphrody-binary> [arguments...]");
     return await (await import("./binaries.ts")).runAphrodyBinary(binary, args);
   }
   const aliases: Record<string, string[]> = {
@@ -316,7 +399,9 @@ export async function runOps(argv: readonly string[]): Promise<number> {
     operation && aliases[operation]
       ? [
           ...aliases[operation],
-          ...(operation === "pipeline" ? [rest.shift() ?? "plan", ...rest] : rest),
+          ...(operation === "pipeline"
+            ? [rest.shift() ?? "plan", ...rest]
+            : rest),
         ]
       : [...argv];
   const result = await (

@@ -79,7 +79,8 @@ export default function Audit() {
   const data = local.data;
   const isLoading = source === "local" ? local.isLoading : discord.isLoading;
 
-  if (isLoading) return <div className="text-zinc-500">Chargement en cours…</div>;
+  if (isLoading)
+    return <div className="text-zinc-500">Chargement en cours…</div>;
 
   return (
     <div className="space-y-4">
@@ -126,17 +127,26 @@ export default function Audit() {
             </thead>
             <tbody className="divide-y divide-zinc-800 font-mono text-xs">
               {discord.data.audit_log_entries.map((e) => {
-                const author = discord.data!.users.find((u) => u.id === e.user_id);
+                const author = discord.data!.users.find(
+                  (u) => u.id === e.user_id,
+                );
                 return (
                   <tr key={e.id} className="hover:bg-zinc-900/30">
                     <td className="px-3 py-2">
                       <span className="badge">
-                        {ACTION_TYPE_LABELS[e.action_type] ?? `type:${e.action_type}`}
+                        {ACTION_TYPE_LABELS[e.action_type] ??
+                          `type:${e.action_type}`}
                       </span>
                     </td>
-                    <td className="px-3 py-2">{author?.username ?? e.user_id ?? "—"}</td>
-                    <td className="px-3 py-2 text-zinc-400">{e.target_id ?? "—"}</td>
-                    <td className="px-3 py-2 text-zinc-400">{e.reason ?? "—"}</td>
+                    <td className="px-3 py-2">
+                      {author?.username ?? e.user_id ?? "—"}
+                    </td>
+                    <td className="px-3 py-2 text-zinc-400">
+                      {e.target_id ?? "—"}
+                    </td>
+                    <td className="px-3 py-2 text-zinc-400">
+                      {e.reason ?? "—"}
+                    </td>
                     <td className="px-3 py-2 text-zinc-500">
                       {e.changes?.map((c) => c.key).join(", ") ?? "—"}
                     </td>
@@ -148,13 +158,15 @@ export default function Audit() {
         </div>
       )}
 
-      {source === "discord" && (discord.error || !discord.data) && !discord.isLoading && (
-        <div className="card text-sm text-red-400">
-          {discord.error
-            ? `Erreur Discord : ${(discord.error as Error).message}`
-            : "Permission VIEW_AUDIT_LOG manquante sur le bot."}
-        </div>
-      )}
+      {source === "discord" &&
+        (discord.error || !discord.data) &&
+        !discord.isLoading && (
+          <div className="card text-sm text-red-400">
+            {discord.error
+              ? `Erreur Discord : ${(discord.error as Error).message}`
+              : "Permission VIEW_AUDIT_LOG manquante sur le bot."}
+          </div>
+        )}
 
       {source === "local" && (
         <>
@@ -184,8 +196,13 @@ export default function Audit() {
                     </td>
                     <td className="px-3 py-2">{r.userId ?? "—"}</td>
                     <td className="px-3 py-2">{r.moderatorId ?? "—"}</td>
-                    <td className="px-3 py-2 text-zinc-400">{r.reason ?? "—"}</td>
-                    <td className="max-w-xs truncate px-3 py-2 text-zinc-500" title={r.meta ?? ""}>
+                    <td className="px-3 py-2 text-zinc-400">
+                      {r.reason ?? "—"}
+                    </td>
+                    <td
+                      className="max-w-xs truncate px-3 py-2 text-zinc-500"
+                      title={r.meta ?? ""}
+                    >
                       {r.meta ?? "—"}
                     </td>
                   </tr>
@@ -204,7 +221,8 @@ export default function Audit() {
               Page précédente
             </button>
             <span className="text-sm text-zinc-400">
-              Page {page + 1} sur {Math.max(1, Math.ceil((data?.total ?? 0) / limit))}
+              Page {page + 1} sur{" "}
+              {Math.max(1, Math.ceil((data?.total ?? 0) / limit))}
             </span>
             <button
               type="button"

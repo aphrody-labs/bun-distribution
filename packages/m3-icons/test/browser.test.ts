@@ -15,13 +15,17 @@ describe("<M3IconSvg> (browser entry)", () => {
   });
 
   test("is accessible when a title is given", () => {
-    const markup = renderToString(React.createElement(M3IconSvg, { svg: SVG, title: "Home" }));
+    const markup = renderToString(
+      React.createElement(M3IconSvg, { svg: SVG, title: "Home" }),
+    );
     expect(markup).toContain('role="img"');
     expect(markup).toContain('aria-label="Home"');
   });
 
   test("source graph never imports @aphrody/bun", async () => {
-    const src = await Bun.file(new URL("../src/browser.tsx", import.meta.url)).text();
+    const src = await Bun.file(
+      new URL("../src/browser.tsx", import.meta.url),
+    ).text();
     expect(src).not.toMatch(/from\s+["']@aphrody\/bun["']/);
   });
 });
@@ -35,7 +39,9 @@ describe("<m3-icon-svg> (Lit browser entry)", () => {
     document.body.append(el);
     await el.updateComplete;
     expect(el.querySelector("svg")).not.toBeNull();
-    expect(el.querySelector('[role="img"]')?.getAttribute("aria-label")).toBe("Home");
+    expect(el.querySelector('[role="img"]')?.getAttribute("aria-label")).toBe(
+      "Home",
+    );
     el.remove();
   });
 });

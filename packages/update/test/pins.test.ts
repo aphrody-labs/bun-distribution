@@ -9,7 +9,9 @@ describe("pins", () => {
   test("capture and rewrite one group", () => {
     const text = '{ "packageManager": "bun@1.4.2", "other": "1.4.2" }';
     expect(capture(text, t)).toEqual(["1.4.2"]);
-    expect(rewrite(text, t, "1.5.0")).toBe('{ "packageManager": "bun@1.5.0", "other": "1.4.2" }');
+    expect(rewrite(text, t, "1.5.0")).toBe(
+      '{ "packageManager": "bun@1.5.0", "other": "1.4.2" }',
+    );
   });
   test("multiline rewrites every match", () => {
     const m = {
@@ -17,7 +19,8 @@ describe("pins", () => {
       re: '^nu-[a-z-]+ = \\{ version = "(\\d+\\.\\d+\\.\\d+)"',
       multiline: true,
     };
-    const text = 'nu-a = { version = "0.115.1" }\nnu-b = { version = "0.115.1", x = 1 }\n';
+    const text =
+      'nu-a = { version = "0.115.1" }\nnu-b = { version = "0.115.1", x = 1 }\n';
     expect(rewrite(text, m, "0.116.0")).toBe(
       'nu-a = { version = "0.116.0" }\nnu-b = { version = "0.116.0", x = 1 }\n',
     );
@@ -30,9 +33,9 @@ describe("wslDrift", () => {
     expect(wslDrift(tpl, "[boot]\nsystemd=true\n")).toEqual([
       "interop.enabled: want true, have (unset)",
     ]);
-    expect(wslDrift(tpl, "[boot]\nsystemd=false\n[interop]\nenabled=true\n")).toEqual([
-      "boot.systemd: want true, have false",
-    ]);
+    expect(
+      wslDrift(tpl, "[boot]\nsystemd=false\n[interop]\nenabled=true\n"),
+    ).toEqual(["boot.systemd: want true, have false"]);
   });
 });
 
@@ -63,7 +66,9 @@ describe("tools.install bun", () => {
       ),
     };
     expect(install(ctx as never, "bun", "1.4.3")).toBe(true);
-    expect(BUN_INSTALLER).toStartWith("https://raw.githubusercontent.com/aphrody-labs/bun/");
+    expect(BUN_INSTALLER).toStartWith(
+      "https://raw.githubusercontent.com/aphrody-labs/bun/",
+    );
     const line = calls[0].join(" ");
     expect(line).toContain(BUN_INSTALLER);
     expect(line).toContain("1.4.3");

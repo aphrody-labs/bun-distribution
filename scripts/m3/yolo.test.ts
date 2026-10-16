@@ -14,8 +14,14 @@ describe("yolo task plan", () => {
     expect(plan("build")[0]!.env).toEqual({ YOLO_HOME: REPO });
   });
   test("build then runs the cached package and app pipeline; typecheck uses the same owner", () => {
-    expect(plan("build")[1]!.cmd.slice(1)).toEqual(["scripts/build.ts", "build"]);
-    expect(plan("typecheck")[1]!.cmd.slice(1)).toEqual(["scripts/build.ts", "typecheck"]);
+    expect(plan("build")[1]!.cmd.slice(1)).toEqual([
+      "scripts/build.ts",
+      "build",
+    ]);
+    expect(plan("typecheck")[1]!.cmd.slice(1)).toEqual([
+      "scripts/build.ts",
+      "typecheck",
+    ]);
   });
   test("the root build includes every app and caches their compiled outputs", async () => {
     const root = await mkdtemp(join(tmpdir(), "m3-root-apps-"));
@@ -49,7 +55,9 @@ describe("yolo task plan", () => {
           );
         }),
       );
-      const build = plan("build").find((step) => step.cmd[1] === "scripts/build.ts")!;
+      const build = plan("build").find(
+        (step) => step.cmd[1] === "scripts/build.ts",
+      )!;
       const options = { root, apps: !build.cmd.includes("--no-apps") };
       const results = await pipeline(options);
       expect(results.map((result) => result.name).toSorted()).toEqual([
@@ -57,10 +65,12 @@ describe("yolo task plan", () => {
         "@aphrody/m3-web",
       ]);
       expect(results.every((result) => result.status === "built")).toBe(true);
-      expect(await Bun.file(join(root, "apps/m3-showcase/dist/index.js")).text()).toContain(
-        '"showcase"',
-      );
-      expect((await pipeline(options)).every((result) => result.status === "cached")).toBe(true);
+      expect(
+        await Bun.file(join(root, "apps/m3-showcase/dist/index.js")).text(),
+      ).toContain('"showcase"');
+      expect(
+        (await pipeline(options)).every((result) => result.status === "cached"),
+      ).toBe(true);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -68,7 +78,11 @@ describe("yolo task plan", () => {
   test("test runs the packages concurrently and still fails when one fails", () => {
     const steps = plan("test");
     expect(steps[1]!.cmd).toContain("./scripts/bench/lib.test.ts");
-    expect(steps[2]!.cmd.slice(1, 4)).toEqual(["run", "--parallel", "--no-exit-on-error"]);
+    expect(steps[2]!.cmd.slice(1, 4)).toEqual([
+      "run",
+      "--parallel",
+      "--no-exit-on-error",
+    ]);
   });
   test("bench and bench:check run the harness, the latter with --check", () => {
     expect(plan("bench", ["--only", "yolo"])[0]!.cmd.slice(1)).toEqual([
@@ -76,7 +90,10 @@ describe("yolo task plan", () => {
       "--only",
       "yolo",
     ]);
-    expect(plan("bench:check")[0]!.cmd.slice(1)).toEqual(["scripts/bench/run.ts", "--check"]);
+    expect(plan("bench:check")[0]!.cmd.slice(1)).toEqual([
+      "scripts/bench/run.ts",
+      "--check",
+    ]);
   });
   test("test runs every workspace package and ends with the repository gates", () => {
     const steps = plan("test");
@@ -95,7 +112,9 @@ describe("yolo task plan", () => {
   });
   test("install:theme defaults to a dry-run install", () => {
     const cmd = plan("install:theme")[0]!.cmd;
-    expect(cmd.join(" ")).toContain("m3-os-themes/src/cli.ts install --target all");
+    expect(cmd.join(" ")).toContain(
+      "m3-os-themes/src/cli.ts install --target all",
+    );
     expect(cmd).not.toContain("--apply");
   });
   test("unknown tasks throw", () => expect(() => plan("nope")).toThrow());

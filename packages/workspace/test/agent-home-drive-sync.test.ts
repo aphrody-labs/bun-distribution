@@ -25,7 +25,9 @@ test("local sync paths follow the selected context without rewriting remote stor
   );
   expect(resolved.root).toBe(cwd);
   expect(resolved.receiptRoot).toBe(join(home, ".aphrody", "automation"));
-  expect(resolved.drive.home).toBe(join(home, ".aphrody", "workspaces", "dbfr"));
+  expect(resolved.drive.home).toBe(
+    join(home, ".aphrody", "workspaces", "dbfr"),
+  );
   expect(resolved.publication).toEqual(config.publication);
   expect(resolved.aphrody).toBe("aphrody");
   const replica = {
@@ -36,9 +38,9 @@ test("local sync paths follow the selected context without rewriting remote stor
     shenronRoot: "/shenron",
     intervalSeconds: 300,
   };
-  expect(resolveSyncContext({ ...config, replica }, cwd, home).replica?.contract).toBe(
-    join(home, "contract.json"),
-  );
+  expect(
+    resolveSyncContext({ ...config, replica }, cwd, home).replica?.contract,
+  ).toBe(join(home, "contract.json"));
 });
 const config: SyncConfig = {
   version: 1,
@@ -117,9 +119,16 @@ test("successful jobs are not rerun while a failed job retries; backups remain d
 });
 test("native tool errors never become successful receipts; only counters are public", () => {
   expect(() => nativeAgentReport('{"result":{"isError":true}}')).toThrow();
-  expect(() => nativeAgentReport('{"result":{"structuredContent":{}}}')).toThrow();
-  expect(nativeAgentReport(agent)).toEqual({ records_ingested: 4, sources_scanned: 2 });
-  expect(counters({ token: "secret", uploaded: -1, staged: "2", unchanged: 3 })).toEqual({
+  expect(() =>
+    nativeAgentReport('{"result":{"structuredContent":{}}}'),
+  ).toThrow();
+  expect(nativeAgentReport(agent)).toEqual({
+    records_ingested: 4,
+    sources_scanned: 2,
+  });
+  expect(
+    counters({ token: "secret", uploaded: -1, staged: "2", unchanged: 3 }),
+  ).toEqual({
     unchanged: 3,
   });
 });

@@ -14,7 +14,12 @@ const DEFAULT_SKIPS = new Set([
   ".turbo",
   ".cache",
 ]);
-type Record = { path: string; bytes: number; extension: string; sha256: string };
+type Record = {
+  path: string;
+  bytes: number;
+  extension: string;
+  sha256: string;
+};
 
 export async function runGitignoredAudit(args: string[]): Promise<number> {
   let root = process.cwd();
@@ -24,21 +29,36 @@ export async function runGitignoredAudit(args: string[]): Promise<number> {
     if (arg === "--root") root = args[++index] ?? "";
     else if (arg === "--skip") skips.add(args[++index] ?? "");
     else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: yolo ops gitignored-audit [--root <repository>] [--skip <directory>]...");
+      console.log(
+        "Usage: yolo ops gitignored-audit [--root <repository>] [--skip <directory>]...",
+      );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }
   if (!root) throw new Error("--root requires a repository path");
   root = resolve(root);
   const result = Bun.spawnSync(
-    ["git", "-C", root, "ls-files", "--others", "--ignored", "--exclude-standard", "-z"],
+    [
+      "git",
+      "-C",
+      root,
+      "ls-files",
+      "--others",
+      "--ignored",
+      "--exclude-standard",
+      "-z",
+    ],
     { windowsHide: true, stdout: "pipe", stderr: "pipe" },
   );
-  if (result.exitCode !== 0) throw new Error(new TextDecoder().decode(result.stderr).trim());
+  if (result.exitCode !== 0)
+    throw new Error(new TextDecoder().decode(result.stderr).trim());
   const paths = new TextDecoder()
     .decode(result.stdout)
     .split("\0")
-    .filter((path) => path && !path.split(/[\\/]/).some((segment) => skips.has(segment)));
+    .filter(
+      (path) =>
+        path && !path.split(/[\\/]/).some((segment) => skips.has(segment)),
+    );
   const records: Record[] = [];
   for (const path of paths) {
     const full = resolve(root, path);
@@ -61,7 +81,10 @@ export async function runGitignoredAudit(args: string[]): Promise<number> {
     ...records
       .reduce(
         (groups, record) =>
-          groups.set(record.sha256, [...(groups.get(record.sha256) ?? []), record.path]),
+          groups.set(record.sha256, [
+            ...(groups.get(record.sha256) ?? []),
+            record.path,
+          ]),
         new Map<string, string[]>(),
       )
       .values(),
@@ -72,7 +95,9 @@ export async function runGitignoredAudit(args: string[]): Promise<number> {
         ignored: records.length,
         bytes: records.reduce((total, record) => total + record.bytes, 0),
         duplicates,
-        largest: [...records].toSorted((a, b) => b.bytes - a.bytes).slice(0, 20),
+        largest: [...records]
+          .toSorted((a, b) => b.bytes - a.bytes)
+          .slice(0, 20),
       },
       null,
       2,

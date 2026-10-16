@@ -4,10 +4,18 @@
  * Float32 vector utilities and arithmetic memory estimates.
  * This module neither executes a model nor allocates a KV cache or attention masks.
  */
-import { GEMMA4_E2B_CONFIG, validateGemma4Config, type Gemma4Config } from "./models";
+import {
+  GEMMA4_E2B_CONFIG,
+  validateGemma4Config,
+  type Gemma4Config,
+} from "./models";
 
 import { normalizeL2 } from "../math/vectors";
-export { normalizeL2, cosineSimilarity, euclideanDistance } from "../math/vectors";
+export {
+  normalizeL2,
+  cosineSimilarity,
+  euclideanDistance,
+} from "../math/vectors";
 
 /** Synthetic deterministic hash projection, without model weights or semantic embedding guarantees. */
 export function generateDeterministicEmbedding(
@@ -15,9 +23,13 @@ export function generateDeterministicEmbedding(
   dim: number = GEMMA4_E2B_CONFIG.embedDim,
 ): Float32Array {
   if (typeof text !== "string" || text.length > 1_048_576)
-    throw new Error("Synthetic projection text exceeds the budget or is not text");
+    throw new Error(
+      "Synthetic projection text exceeds the budget or is not text",
+    );
   if (!Number.isSafeInteger(dim) || dim < 1 || dim > 1_048_576)
-    throw new Error("Synthetic projection dimension must be between 1 and 1048576");
+    throw new Error(
+      "Synthetic projection dimension must be between 1 and 1048576",
+    );
   const vec = new Float32Array(dim);
   const utf8 = new TextEncoder().encode(text);
 
@@ -47,13 +59,21 @@ export function computeKVCacheFootprintBytes(
   batchSize: number = 1,
   seqLen: number = 512,
   bytesPerElem: number = 2, // 16-bit
-): { localBytes: number; globalBytes: number; totalBytes: number; totalMb: number } {
+): {
+  localBytes: number;
+  globalBytes: number;
+  totalBytes: number;
+  totalMb: number;
+} {
   validateGemma4Config(config);
   for (const value of [batchSize, seqLen]) {
     if (!Number.isSafeInteger(value) || value < 1)
-      throw new Error("Batch size and sequence length must be positive safe integers");
+      throw new Error(
+        "Batch size and sequence length must be positive safe integers",
+      );
   }
-  if (![1, 2, 4].includes(bytesPerElem)) throw new Error("bytesPerElem must be 1, 2 or 4");
+  if (![1, 2, 4].includes(bytesPerElem))
+    throw new Error("bytesPerElem must be 1, 2 or 4");
   const headDim = config.headDim;
   const numKvHeads = config.numKvHeads;
   const windowSize = Math.min(seqLen, config.slidingWindowSize);
@@ -62,22 +82,35 @@ export function computeKVCacheFootprintBytes(
   let localBytes = 0;
   let globalBytes = 0;
 
-  for (let layer = 0; layer < Math.min(config.numLayers, config.attentionPattern.length); layer++) {
+  for (
+    let layer = 0;
+    layer < Math.min(config.numLayers, config.attentionPattern.length);
+    layer++
+  ) {
     const pattern = config.attentionPattern[layer];
     const repeats =
       Math.floor(config.numLayers / config.attentionPattern.length) +
       (layer < config.numLayers % config.attentionPattern.length ? 1 : 0);
     if (pattern === "local_sliding") {
       // B * numKvHeads * windowSize * headDim * 2 * bytesPerElem
-      localBytes += repeats * batchSize * numKvHeads * windowSize * headDim * 2 * bytesPerElem;
+      localBytes +=
+        repeats *
+        batchSize *
+        numKvHeads *
+        windowSize *
+        headDim *
+        2 *
+        bytesPerElem;
     } else {
       // Full sequence length for global attention layers
-      globalBytes += repeats * batchSize * numKvHeads * seqLen * headDim * 2 * bytesPerElem;
+      globalBytes +=
+        repeats * batchSize * numKvHeads * seqLen * headDim * 2 * bytesPerElem;
     }
   }
 
   const totalBytes = localBytes + globalBytes;
-  if (!Number.isSafeInteger(totalBytes)) throw new Error("KV estimate exceeds safe integer range");
+  if (!Number.isSafeInteger(totalBytes))
+    throw new Error("KV estimate exceeds safe integer range");
   return {
     localBytes,
     globalBytes,

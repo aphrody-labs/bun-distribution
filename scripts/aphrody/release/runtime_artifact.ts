@@ -11,12 +11,16 @@ import { libraryFile, Runtime } from "@aphrody/runtime-sdk";
 import { peExports, runtimeCapabilities } from "./runtime-artifact-info.ts";
 
 const root = resolve(import.meta.dir, "../../../docs/aphrody");
-const sha256 = (bytes: Uint8Array) => new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
+const sha256 = (bytes: Uint8Array) =>
+  new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
 // A producer packages its build, independently of whichever version the user installed.
 const libraryPath =
-  process.env["YOLO_RUNTIME_LIB"] || resolve(root, "target/runtime", libraryFile());
+  process.env["YOLO_RUNTIME_LIB"] ||
+  resolve(root, "target/runtime", libraryFile());
 if (!(await Bun.file(libraryPath).exists())) {
-  console.error(`Missing ${libraryPath}: run \`just yolo::runtime-build\` first.`);
+  console.error(
+    `Missing ${libraryPath}: run \`just yolo::runtime-build\` first.`,
+  );
   process.exit(1);
 }
 
@@ -56,17 +60,23 @@ async function crossInfo(
   const exports = peExports(bytes, target);
   const header = await Bun.file(resolve(root, HEADER_SOURCE)).text();
   const capabilities = runtimeCapabilities(exports, header);
-  if (!text.includes(target)) throw new Error(`${path} does not embed the target ${target}`);
+  if (!text.includes(target))
+    throw new Error(`${path} does not embed the target ${target}`);
   const rustc = text.match(
     /rustc \d+\.\d+\.\d+(?:-[a-z]+)? \([0-9a-f]{9} \d{4}-\d{2}-\d{2}\)/,
   )?.[0];
   if (!rustc) throw new Error(`${path} embeds no rustc version`);
-  const lib = await Bun.file(resolve(root, "crates/engine/yolo-runtime/src/lib.rs")).text();
+  const lib = await Bun.file(
+    resolve(root, "crates/engine/yolo-runtime/src/lib.rs"),
+  ).text();
   const major = lib.match(/pub const ABI_MAJOR: u32 = (\d+);/)?.[1];
   const minor = lib.match(/pub const ABI_MINOR: u32 = (\d+);/)?.[1];
-  if (!major || !minor) throw new Error("ABI constants not found in yolo-runtime");
+  if (!major || !minor)
+    throw new Error("ABI constants not found in yolo-runtime");
   const workspace = await Bun.file(resolve(root, "Cargo.toml")).text();
-  const version = workspace.match(/\[workspace\.package\][^[]*?\nversion = "([^"]+)"/)?.[1];
+  const version = workspace.match(
+    /\[workspace\.package\][^[]*?\nversion = "([^"]+)"/,
+  )?.[1];
 
   if (!version || capabilities.length === 0)
     throw new Error("runtime version or capabilities not found");
@@ -135,7 +145,10 @@ const manifest = {
   target: info.target,
   abi: info.abi,
   /** A consumer refuses the artifact before any native call unless its major matches. */
-  compatibility: { abiMajor: Number(info.abi.split(".")[0]), negotiation: "yolo_abi_version" },
+  compatibility: {
+    abiMajor: Number(info.abi.split(".")[0]),
+    negotiation: "yolo_abi_version",
+  },
   toolchain: info.rustc,
   build: {
     command: process.env["YOLO_RUNTIME_BUILD_COMMAND"] ?? null,
@@ -154,12 +167,20 @@ const manifest = {
   files: {
     [libName]: { sha256: sha256(lib), bytes: lib.byteLength },
     "aphrody.h": { sha256: sha256(header), bytes: header.byteLength },
-    "yolo_runtime.h": { sha256: sha256(compatHeader), bytes: compatHeader.byteLength },
+    "yolo_runtime.h": {
+      sha256: sha256(compatHeader),
+      bytes: compatHeader.byteLength,
+    },
     LICENSE: { sha256: sha256(license), bytes: license.byteLength },
   },
   license: licenseId,
   notes:
     "Qualification, installation and activation are separate states; this manifest only identifies the artifact. sources.yolo.rev is the packaging checkout; artifactBuildRevision is reported by the loaded library where available. Cross-built metadata is inferred from source and PE exports, not a native execution probe; optional GPU backends require native negotiation.",
 };
-await Bun.write(resolve(outDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
-console.log(`Packaged ${info.name} ${info.version} (${info.target}, ABI ${info.abi}) -> ${outDir}`);
+await Bun.write(
+  resolve(outDir, "manifest.json"),
+  `${JSON.stringify(manifest, null, 2)}\n`,
+);
+console.log(
+  `Packaged ${info.name} ${info.version} (${info.target}, ABI ${info.abi}) -> ${outDir}`,
+);

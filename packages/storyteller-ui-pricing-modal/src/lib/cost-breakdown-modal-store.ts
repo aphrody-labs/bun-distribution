@@ -7,10 +7,7 @@ interface CostBreakdownModalState {
   closeModal: () => void;
   toggleModal: () => void;
   estimatedCreditsByPage: Partial<Record<ModelPage, number | null>>;
-  setEstimatedCreditsForPage: (
-    page: ModelPage,
-    credits: number | null,
-  ) => void;
+  setEstimatedCreditsForPage: (page: ModelPage, credits: number | null) => void;
 }
 
 export const useCostBreakdownModalStore = create<CostBreakdownModalState>(

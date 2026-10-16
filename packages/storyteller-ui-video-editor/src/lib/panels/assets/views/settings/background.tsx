@@ -69,9 +69,14 @@ const BlurPreview = memo(
         type="button"
         aria-label={`Select ${blur.label} blur`}
       >
-        <canvas ref={canvasRef} className="absolute inset-0 h-full w-full object-cover" />
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
         <div className="absolute right-1 bottom-1 left-1 text-center">
-          <span className="rounded bg-black/50 px-1 text-xs text-white">{blur.label}</span>
+          <span className="rounded bg-black/50 px-1 text-xs text-white">
+            {blur.label}
+          </span>
         </div>
       </button>
     );
@@ -120,7 +125,13 @@ const BackgroundPreviews = memo(
             aria-label={`Select background ${bg}`}
           />
         )),
-      [backgrounds, isColorBackground, currentBackgroundColor, onSelect, useBackgroundColor],
+      [
+        backgrounds,
+        isColorBackground,
+        currentBackgroundColor,
+        onSelect,
+        useBackgroundColor,
+      ],
     );
   },
 );
@@ -182,7 +193,12 @@ const COLOR_SECTIONS = [
     backgrounds: patternCraftGradients,
     showCustomPicker: false,
   },
-  { id: "syntax-ui", title: "Syntax UI", backgrounds: syntaxUIGradients, showCustomPicker: false },
+  {
+    id: "syntax-ui",
+    title: "Syntax UI",
+    backgrounds: syntaxUIGradients,
+    showCustomPicker: false,
+  },
 ] as const;
 
 export function BackgroundContent() {
@@ -226,7 +242,9 @@ export function BackgroundContent() {
     ? background.blurIntensity
     : DEFAULT_BACKGROUND_BLUR_INTENSITY;
 
-  const currentBackgroundColor = isColorBackground ? background.color : DEFAULT_BACKGROUND_COLOR;
+  const currentBackgroundColor = isColorBackground
+    ? background.color
+    : DEFAULT_BACKGROUND_COLOR;
 
   const hasPresetColorMatch = colors.some(
     (color) => color.toLowerCase() === currentBackgroundColor.toLowerCase(),
@@ -254,7 +272,12 @@ export function BackgroundContent() {
 
   return (
     <div className="flex flex-col">
-      <Section collapsible defaultOpen={true} sectionKey="background-blur" showTopBorder={false}>
+      <Section
+        collapsible
+        defaultOpen={true}
+        sectionKey="background-blur"
+        showTopBorder={false}
+      >
         <SectionHeader>
           <SectionTitle>Blur</SectionTitle>
         </SectionHeader>
@@ -288,7 +311,9 @@ export function BackgroundContent() {
                 isColorBackground={isColorBackground}
                 onSelect={handlePresetColorSelect}
                 useBackgroundColor={
-                  "useBackgroundColor" in section ? section.useBackgroundColor : false
+                  "useBackgroundColor" in section
+                    ? section.useBackgroundColor
+                    : false
                 }
               />
             </div>

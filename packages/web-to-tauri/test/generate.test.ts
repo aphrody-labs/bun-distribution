@@ -19,7 +19,9 @@ describe("generateProject: remote", () => {
   });
   afterAll(async () => {
     site.stop();
-    await Promise.all(dirs.map((dir) => rm(dir, { recursive: true, force: true })));
+    await Promise.all(
+      dirs.map((dir) => rm(dir, { recursive: true, force: true })),
+    );
   });
 
   async function generate(
@@ -29,7 +31,10 @@ describe("generateProject: remote", () => {
     const out = join(await tempDir("w2t-gen-"), "app");
     dirs.push(join(out, ".."));
     const plan = planConversion(await probeUrl(`${site.a}/home`), options);
-    const result = await generateProject(plan, out, { copyLock: false, ...extra });
+    const result = await generateProject(plan, out, {
+      copyLock: false,
+      ...extra,
+    });
     return { out, plan, result };
   }
 
@@ -57,11 +62,14 @@ describe("generateProject: remote", () => {
     expect(conf.app.windows).toEqual([]);
     expect(conf.identifier).toBe(plan.config.identifier);
     expect(conf.bundle.externalBin).toBeUndefined();
-    expect(JSON.parse(await read(out, "src-tauri/capabilities/default.json")).permissions).toEqual(
-      [],
-    );
+    expect(
+      JSON.parse(await read(out, "src-tauri/capabilities/default.json"))
+        .permissions,
+    ).toEqual([]);
     const main = await read(out, "src-tauri/src/main.rs");
-    expect(main).toContain('.plugin(aphrody_tauri_wrap::init(include_str!("../wrap.json")))');
+    expect(main).toContain(
+      '.plugin(aphrody_tauri_wrap::init(include_str!("../wrap.json")))',
+    );
     expect(main).toContain(".runtime(Wry::default())");
   });
 
@@ -69,24 +77,32 @@ describe("generateProject: remote", () => {
     const { out } = await generate();
     const cargo = await read(out, "src-tauri/Cargo.toml");
     expect(cargo).toContain(`tauri = { version = "=${TAURI_3.tauri}"`);
-    expect(cargo).toContain(`tauri-runtime-wry = { version = "=${TAURI_3.runtimeWry}"`);
+    expect(cargo).toContain(
+      `tauri-runtime-wry = { version = "=${TAURI_3.runtimeWry}"`,
+    );
     // A remote app loads the deployed origin: no bundle server, so no HTTP stack in the build.
     expect(cargo).toMatch(
       /aphrody-tauri-wrap = \{ path = "[^"]*crates\/ui\/tauri-wrap", default-features = false \}/,
     );
-    expect(cargo).toContain('debug-bridge = ["aphrody-tauri-wrap/debug-bridge"]');
+    expect(cargo).toContain(
+      'debug-bridge = ["aphrody-tauri-wrap/debug-bridge"]',
+    );
     expect(cargo).not.toContain("aphrody-tauri-debug");
     expect(cargo).toContain("[workspace]");
     const main = await read(out, "src-tauri/src/main.rs");
     expect(main).toContain('#[cfg(feature = "debug-bridge")]');
     expect(main).toContain("aphrody_tauri_wrap::debug::init()");
     expect(main).not.toContain("aphrody_tauri_debug");
-    expect(await read(out, "README.md")).toContain("without its `bundle` feature");
+    expect(await read(out, "README.md")).toContain(
+      "without its `bundle` feature",
+    );
   });
 
   it("uses the icon of the site when it is a usable PNG", async () => {
     const { out, result } = await generate();
-    const icon = new Uint8Array(await Bun.file(join(out, "src-tauri/icons/icon.png")).arrayBuffer());
+    const icon = new Uint8Array(
+      await Bun.file(join(out, "src-tauri/icons/icon.png")).arrayBuffer(),
+    );
     expect(pngInfo(icon)).toMatchObject({ width: 512, colorType: 6 });
     expect(isUsableAppIcon(icon)).toBe(true);
     expect(result.notes.join(" ")).not.toContain("placeholder");
@@ -95,9 +111,17 @@ describe("generateProject: remote", () => {
   it("falls back to a solid icon in the theme colour when the site has none", async () => {
     const out = join(await tempDir("w2t-gen-"), "app");
     dirs.push(join(out, ".."));
-    const probe = { ...(await probeUrl(`${site.a}/home`)), icons: [], manifest: null };
-    const result = await generateProject(planConversion(probe), out, { copyLock: false });
-    const icon = new Uint8Array(await Bun.file(join(out, "src-tauri/icons/icon.png")).arrayBuffer());
+    const probe = {
+      ...(await probeUrl(`${site.a}/home`)),
+      icons: [],
+      manifest: null,
+    };
+    const result = await generateProject(planConversion(probe), out, {
+      copyLock: false,
+    });
+    const icon = new Uint8Array(
+      await Bun.file(join(out, "src-tauri/icons/icon.png")).arrayBuffer(),
+    );
     expect(isUsableAppIcon(icon)).toBe(true);
     expect(Array.from(icon.subarray(0, 8))).toEqual([
       0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
@@ -108,8 +132,13 @@ describe("generateProject: remote", () => {
   it("copies the repository lock file so versions match the pins", async () => {
     const out = join(await tempDir("w2t-gen-"), "app");
     dirs.push(join(out, ".."));
-    const result = await generateProject(planConversion(await probeUrl(`${site.a}/home`)), out);
-    expect(await Bun.file(join(out, "src-tauri/Cargo.lock")).exists()).toBe(true);
+    const result = await generateProject(
+      planConversion(await probeUrl(`${site.a}/home`)),
+      out,
+    );
+    expect(await Bun.file(join(out, "src-tauri/Cargo.lock")).exists()).toBe(
+      true,
+    );
     expect(result.notes.join(" ")).toContain("Cargo.lock");
   });
 
@@ -129,12 +158,14 @@ describe("generateProject: remote", () => {
     await mkdir(out, { recursive: true });
     await writeFile(join(out, "keep.txt"), "mine");
     const plan = planConversion(await probeUrl(`${site.a}/home`));
-    await expect(generateProject(plan, out, { copyLock: false })).rejects.toThrow("not empty");
+    await expect(
+      generateProject(plan, out, { copyLock: false }),
+    ).rejects.toThrow("not empty");
     await generateProject(plan, out, { copyLock: false, force: true });
     expect(await read(out, "keep.txt")).toBe("mine");
-    await expect(generateProject(plan, out, { copyLock: false, force: true })).rejects.toThrow(
-      "refusing to overwrite",
-    );
+    await expect(
+      generateProject(plan, out, { copyLock: false, force: true }),
+    ).rejects.toThrow("refusing to overwrite");
   });
 
   it("fails clearly when the runtime crate cannot be found", async () => {
@@ -150,7 +181,9 @@ describe("generateProject: remote", () => {
 describe("generateProject: directories", () => {
   const dirs: string[] = [];
   afterAll(async () => {
-    await Promise.all(dirs.map((dir) => rm(dir, { recursive: true, force: true })));
+    await Promise.all(
+      dirs.map((dir) => rm(dir, { recursive: true, force: true })),
+    );
   });
 
   async function fixture(files: Record<string, string>) {
@@ -171,19 +204,31 @@ describe("generateProject: directories", () => {
     await generateProject(plan, out, { copyLock: false });
     expect(await read(out, "dist/index.html")).toBe("<html>shop</html>");
     expect(await read(out, "dist/assets/app.js")).toContain("/api/items");
-    const wrap = JSON.parse(await read(out, "src-tauri/wrap.json")) as WrapConfig;
+    const wrap = JSON.parse(
+      await read(out, "src-tauri/wrap.json"),
+    ) as WrapConfig;
     expect(wrap.mode).toBe("bundle");
-    expect(wrap.bundle).toMatchObject({ backend: "https://api.acme.test", proxy: ["/api"] });
-    expect(await Bun.file(join(out, "scripts/build-sidecar.ts")).exists()).toBe(false);
+    expect(wrap.bundle).toMatchObject({
+      backend: "https://api.acme.test",
+      proxy: ["/api"],
+    });
+    expect(await Bun.file(join(out, "scripts/build-sidecar.ts")).exists()).toBe(
+      false,
+    );
     // The bundle mode keeps the crate's default features: the loopback server.
     const cargo = await read(out, "src-tauri/Cargo.toml");
-    expect(cargo).toMatch(/aphrody-tauri-wrap = \{ path = "[^"]*crates\/ui\/tauri-wrap" \}/);
-    expect(await read(out, "README.md")).not.toContain("without its `bundle` feature");
+    expect(cargo).toMatch(
+      /aphrody-tauri-wrap = \{ path = "[^"]*crates\/ui\/tauri-wrap" \}/,
+    );
+    expect(await read(out, "README.md")).not.toContain(
+      "without its `bundle` feature",
+    );
   });
 
   it("builds a sidecar binary script and bundles it as an external binary", async () => {
     const { src, out, probe } = await fixture({
-      "server.ts": "Bun.serve({ port: Number(process.env.PORT), fetch: () => new Response('ok') })",
+      "server.ts":
+        "Bun.serve({ port: Number(process.env.PORT), fetch: () => new Response('ok') })",
       "app/api/x/route.ts": "export const GET = () => new Response('x')",
     });
     const plan = planConversion(probe, { port: 4317 });
@@ -191,15 +236,17 @@ describe("generateProject: directories", () => {
     const script = await read(out, "scripts/build-sidecar.ts");
     expect(script).toContain(JSON.stringify(src));
     expect(script).toContain('"server.ts"');
-    expect(JSON.parse(await read(out, "package.json")).scripts["build:sidecar"]).toBe(
-      "bun scripts/build-sidecar.ts",
-    );
-    expect(JSON.parse(await read(out, "src-tauri/tauri.conf.json")).bundle.externalBin).toEqual([
-      "binaries/server",
-    ]);
-    expect((JSON.parse(await read(out, "src-tauri/wrap.json")) as WrapConfig).sidecar?.port).toBe(
-      4317,
-    );
+    expect(
+      JSON.parse(await read(out, "package.json")).scripts["build:sidecar"],
+    ).toBe("bun scripts/build-sidecar.ts");
+    expect(
+      JSON.parse(await read(out, "src-tauri/tauri.conf.json")).bundle
+        .externalBin,
+    ).toEqual(["binaries/server"]);
+    expect(
+      (JSON.parse(await read(out, "src-tauri/wrap.json")) as WrapConfig).sidecar
+        ?.port,
+    ).toBe(4317);
     // The sidecar is std only: no bundle server in the build.
     expect(await read(out, "src-tauri/Cargo.toml")).toMatch(
       /aphrody-tauri-wrap = \{ path = "[^"]*crates\/ui\/tauri-wrap", default-features = false \}/,
@@ -213,9 +260,18 @@ describe("generateProject: directories", () => {
     dirs.push(src, join(out, ".."));
     await writeTree(src, { "dist/index.html": "<html></html>" });
     await mkdir(join(src, "public"), { recursive: true });
-    await writeFile(join(src, "public/icon.png"), solidIconPng(256, [1, 2, 3, 255]));
-    await generateProject(planConversion(await probeDirectory(src)), out, { copyLock: false });
-    const icon = new Uint8Array(await Bun.file(join(out, "src-tauri/icons/icon.png")).arrayBuffer());
-    expect(Array.from(icon)).toEqual(Array.from(solidIconPng(256, [1, 2, 3, 255])));
+    await writeFile(
+      join(src, "public/icon.png"),
+      solidIconPng(256, [1, 2, 3, 255]),
+    );
+    await generateProject(planConversion(await probeDirectory(src)), out, {
+      copyLock: false,
+    });
+    const icon = new Uint8Array(
+      await Bun.file(join(out, "src-tauri/icons/icon.png")).arrayBuffer(),
+    );
+    expect(Array.from(icon)).toEqual(
+      Array.from(solidIconPng(256, [1, 2, 3, 255])),
+    );
   });
 });

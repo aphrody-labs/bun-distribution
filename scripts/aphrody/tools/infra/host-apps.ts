@@ -3,10 +3,19 @@
 // Installs the host compose project ~/apps/compose.yaml (tools/config/host/apps/<host>/) and the compose file of every
 // app it includes, from the one checkout of its repository (~/src/<repo>). Runs ON the host, from ~/src/aphrody:
 //   bun scripts/tools/infra/host-apps.ts --host vps|dbfr [--apply]
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { hostLayout, type HostLayout } from "@aphrody/yolo-core/src/host/layout.ts";
+import {
+  hostLayout,
+  type HostLayout,
+} from "@aphrody/yolo-core/src/host/layout.ts";
 
 const REPO = join(import.meta.dir, "..", "..", "..");
 export const HOSTS = ["vps", "dbfr"] as const;
@@ -18,8 +27,14 @@ export function hostAppFiles(
   repo = REPO,
 ): [string, string][] {
   const files: [string, string][] = [
-    [join(repo, "tools/config/host/apps", host, "compose.yaml"), layout.compose],
-    [join(repo, "tools/config/host/apps", host, "env"), join(dirname(layout.compose), ".env")],
+    [
+      join(repo, "tools/config/host/apps", host, "compose.yaml"),
+      layout.compose,
+    ],
+    [
+      join(repo, "tools/config/host/apps", host, "env"),
+      join(dirname(layout.compose), ".env"),
+    ],
     [
       join(repo, "tools/config/container/compose.yaml"),
       join(layout.apps, "aphrody", "compose.yaml"),
@@ -44,11 +59,19 @@ export function hostAppFiles(
     ]);
     files.push(
       [
-        join(layout.src, "bun", "scripts/aphrody/deploy/docker/release-compose.yaml"),
+        join(
+          layout.src,
+          "bun",
+          "scripts/aphrody/deploy/docker/release-compose.yaml",
+        ),
         join(layout.apps, "aphrody-bun-release", "compose.yaml"),
       ],
       [
-        join(layout.src, "bun", "scripts/aphrody/deploy/docker/bun-release.conf"),
+        join(
+          layout.src,
+          "bun",
+          "scripts/aphrody/deploy/docker/bun-release.conf",
+        ),
         join(layout.apps, "aphrody-bun-release", "bun-release.conf"),
       ],
       [
@@ -92,10 +115,15 @@ if (import.meta.main) {
     const added = "    include /etc/aphrody-bun-release/bun-release.conf;";
     let config = current.stdout.toString();
     if (!config.includes(added)) {
-      if (config.split(include).length !== 2) throw new Error("Unexpected gateway configuration");
+      if (config.split(include).length !== 2)
+        throw new Error("Unexpected gateway configuration");
       config = config.replace(include, `${include}\n${added}`);
     }
-    const target = join(layout.apps, "aphrody-bun-release", "gateway-nginx.conf");
+    const target = join(
+      layout.apps,
+      "aphrody-bun-release",
+      "gateway-nginx.conf",
+    );
     console.log(`gateway configuration ${target}: inspected existing includes`);
     if (apply) {
       mkdirSync(dirname(target), { recursive: true });
@@ -117,11 +145,16 @@ if (import.meta.main) {
     renameSync(`${destination}.new`, destination);
   }
   if (apply) {
-    const check = Bun.spawnSync(["docker", "compose", "-f", layout.compose, "config", "--quiet"], {
-      stdout: "inherit",
-      stderr: "inherit",
-    });
+    const check = Bun.spawnSync(
+      ["docker", "compose", "-f", layout.compose, "config", "--quiet"],
+      {
+        stdout: "inherit",
+        stderr: "inherit",
+      },
+    );
     if (check.exitCode !== 0) process.exit(1);
-    console.log(`${layout.compose}: valid (docker compose -f ${layout.compose} up -d applies it)`);
+    console.log(
+      `${layout.compose}: valid (docker compose -f ${layout.compose} up -d applies it)`,
+    );
   }
 }

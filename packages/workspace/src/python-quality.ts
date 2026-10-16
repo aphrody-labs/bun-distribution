@@ -21,12 +21,20 @@ function configuredTestPaths(root: string): string[] {
   };
   const paths = parsed.tool?.pytest?.ini_options?.testpaths;
   if (paths === undefined) return [];
-  if (!Array.isArray(paths) || paths.some((path) => typeof path !== "string" || !path))
-    throw new Error("tool.pytest.ini_options.testpaths must contain non-empty paths");
+  if (
+    !Array.isArray(paths) ||
+    paths.some((path) => typeof path !== "string" || !path)
+  )
+    throw new Error(
+      "tool.pytest.ini_options.testpaths must contain non-empty paths",
+    );
   return paths as string[];
 }
 
-export function runPythonQuality(args: string[], run: PythonQualityRunner = command): number {
+export function runPythonQuality(
+  args: string[],
+  run: PythonQualityRunner = command,
+): number {
   let root = process.cwd();
   let action: "lint" | "test" = "lint";
   let noBuild = process.env.APHRODY_NO_BUILD === "1";
@@ -44,9 +52,14 @@ export function runPythonQuality(args: string[], run: PythonQualityRunner = comm
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }
-  if (!root || roots.some((entry) => !entry)) throw new Error("--root and --source require paths");
+  if (!root || roots.some((entry) => !entry))
+    throw new Error("--root and --source require paths");
   root = resolve(root);
-  const uv = ["uv", "run", ...(noBuild ? ["--frozen", "--no-sync"] : ["--only-group", "dev"])];
+  const uv = [
+    "uv",
+    "run",
+    ...(noBuild ? ["--frozen", "--no-sync"] : ["--only-group", "dev"]),
+  ];
   if (action === "lint") return run([...uv, "ruff", "check"], root);
   const configuredRoots = roots.length ? [] : configuredTestPaths(root);
   const testRoots = roots.length
@@ -55,13 +68,22 @@ export function runPythonQuality(args: string[], run: PythonQualityRunner = comm
       ? configuredRoots
       : ["tests", "src"].filter((path) => existsSync(resolve(root, path)));
   if (!testRoots.length)
-    throw new Error("No Python test roots found; use --source or pytest testpaths");
+    throw new Error(
+      "No Python test roots found; use --source or pytest testpaths",
+    );
   for (const path of testRoots) {
     if (!existsSync(resolve(root, path)))
       throw new Error(`Python test root does not exist: ${path}`);
   }
-  const sourceRoots = roots.length ? roots : existsSync(resolve(root, "src")) ? ["src"] : testRoots;
-  if (run([...uv, "python", "-m", "compileall", "-q", ...sourceRoots], root) !== 0) return 1;
+  const sourceRoots = roots.length
+    ? roots
+    : existsSync(resolve(root, "src"))
+      ? ["src"]
+      : testRoots;
+  if (
+    run([...uv, "python", "-m", "compileall", "-q", ...sourceRoots], root) !== 0
+  )
+    return 1;
   // pytest's exit code 5 (no tests collected) must remain a failure.
   return run([...uv, "pytest", "-q", ...testRoots], root);
 }

@@ -26,7 +26,11 @@ interface AphrodyNative {
     messages: Array<{ role: string; content: string }>,
     options?: { temperature?: number; maxTokens?: number },
   ): Promise<{ choices?: Array<{ message?: { content?: string } }> }>;
-  ragSearch(query: string, limit?: number, kind?: string | null): Promise<{ results: RagHit[] }>;
+  ragSearch(
+    query: string,
+    limit?: number,
+    kind?: string | null,
+  ): Promise<{ results: RagHit[] }>;
 }
 
 declare global {
@@ -51,7 +55,9 @@ export function NativeAiPanel() {
     const attach = () => {
       if (!window.aphrodyNative) return;
       setNative(window.aphrodyNative);
-      window.aphrodyNative.status().then(setStatus, (cause: unknown) => setError(String(cause)));
+      window.aphrodyNative
+        .status()
+        .then(setStatus, (cause: unknown) => setError(String(cause)));
     };
     attach();
     window.addEventListener("aphrody-native-ready", attach);
@@ -88,16 +94,19 @@ export function NativeAiPanel() {
     }
   };
 
-  const roles: Array<[string, { ready: boolean; model?: string } | undefined]> = [
-    ["Chat", status?.chat],
-    ["Embeddings", status?.embed],
-    ["Rerank", status?.rerank],
-  ];
+  const roles: Array<[string, { ready: boolean; model?: string } | undefined]> =
+    [
+      ["Chat", status?.chat],
+      ["Embeddings", status?.embed],
+      ["Rerank", status?.rerank],
+    ];
 
   return (
     <section className="mb-6 space-y-3 rounded-xl border border-white/10 bg-black/30 p-4">
       <header className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold">IA locale (application Aphrody)</h2>
+        <h2 className="text-lg font-semibold">
+          IA locale (application Aphrody)
+        </h2>
         <div className="flex flex-wrap gap-2 text-xs">
           {roles.map(([label, role]) => (
             <span

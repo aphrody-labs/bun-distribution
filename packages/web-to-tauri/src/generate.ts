@@ -52,7 +52,8 @@ function iconScore(icon: IconRef): number {
       .split(/\s+/)
       .map((part) => Number.parseInt(part.split("x")[0] ?? "0", 10) || 0),
   );
-  const png = /png/i.test(icon.type ?? "") || /\.png(?:$|\?)/i.test(icon.href) ? 1 : 0;
+  const png =
+    /png/i.test(icon.type ?? "") || /\.png(?:$|\?)/i.test(icon.href) ? 1 : 0;
   const apple = /apple-touch/.test(icon.rel) ? 50 : 0;
   return png * 1000 + Math.min(size, 1024) + apple;
 }
@@ -61,7 +62,10 @@ async function fetchIcon(
   site: SiteProbe,
   doFetch: typeof fetch,
   notes: string[],
-): Promise<{ png: Uint8Array | null; source: { ext: string; bytes: Uint8Array } | null }> {
+): Promise<{
+  png: Uint8Array | null;
+  source: { ext: string; bytes: Uint8Array } | null;
+}> {
   const candidates = [...(site.manifest?.icons ?? []), ...site.icons]
     .toSorted((a, b) => iconScore(b) - iconScore(a))
     .slice(0, 4);
@@ -75,7 +79,8 @@ async function fetchIcon(
       if (!res.ok) continue;
       const bytes = new Uint8Array(await res.arrayBuffer());
       if (bytes.length === 0 || bytes.length > 5_000_000) continue;
-      if (isUsableAppIcon(bytes)) return { png: bytes, source: { ext: "png", bytes } };
+      if (isUsableAppIcon(bytes))
+        return { png: bytes, source: { ext: "png", bytes } };
       if (!source) {
         const type = res.headers.get("content-type") ?? icon.type ?? "";
         const ext = /svg/i.test(type)
@@ -149,9 +154,13 @@ export async function generateProject(
   const { config } = plan;
   const notes: string[] = [];
   const doFetch = options.fetch ?? fetch;
-  const wrapCrate = resolve(options.wrapCrate ?? join(REPO_ROOT, "crates/ui/tauri-wrap"));
+  const wrapCrate = resolve(
+    options.wrapCrate ?? join(REPO_ROOT, "crates/ui/tauri-wrap"),
+  );
   if (!existsSync(join(wrapCrate, "Cargo.toml"))) {
-    throw new GenerateError(`aphrody-tauri-wrap crate not found at ${wrapCrate}`);
+    throw new GenerateError(
+      `aphrody-tauri-wrap crate not found at ${wrapCrate}`,
+    );
   }
   const tauriDir = join(out, "src-tauri");
   // The debug bridge is a feature of the wrap crate itself (`aphrody_tauri_wrap::debug`), wry only.
@@ -169,7 +178,9 @@ export async function generateProject(
   }
   if (!icon) {
     const color =
-      parseHexColor(plan.probe.kind === "site" ? plan.probe.themeColor : null) ?? undefined;
+      parseHexColor(
+        plan.probe.kind === "site" ? plan.probe.themeColor : null,
+      ) ?? undefined;
     icon = solidIconPng(256, color);
     notes.push(
       iconSource
@@ -218,7 +229,10 @@ export async function generateProject(
   let bundleDist: { from: string; to: string } | null = null;
   if (config.mode === "bundle" && plan.probe.kind === "directory") {
     const staticDir = plan.probe.staticDir ?? "dist";
-    bundleDist = { from: join(plan.probe.input, staticDir), to: join(out, "dist") };
+    bundleDist = {
+      from: join(plan.probe.input, staticDir),
+      to: join(out, "dist"),
+    };
   } else {
     files["dist/index.html"] =
       `<!doctype html><meta charset="utf-8"><title>${config.name.replace(/[<&]/g, "")}</title>\n`;
@@ -238,9 +252,17 @@ export async function generateProject(
   files["wrap-plan.json"] = `${JSON.stringify(plan, null, 2)}\n`;
   files["README.md"] = readme(plan);
 
-  const written = await writeFiles(out, files, options.force ? "merge" : "empty");
+  const written = await writeFiles(
+    out,
+    files,
+    options.force ? "merge" : "empty",
+  );
   if (bundleDist) {
-    await cp(bundleDist.from, bundleDist.to, { recursive: true, force: false, errorOnExist: true });
+    await cp(bundleDist.from, bundleDist.to, {
+      recursive: true,
+      force: false,
+      errorOnExist: true,
+    });
     notes.push(
       `copied ${relative(plan.probe.kind === "directory" ? plan.probe.input : out, bundleDist.from) || "."}/ to dist/; Tauri embeds it in the binary`,
     );
@@ -249,10 +271,16 @@ export async function generateProject(
   if (options.copyLock !== false) {
     const lock = join(REPO_ROOT, "Cargo.lock");
     const target = join(tauriDir, "Cargo.lock");
-    if (existsSync(lock) && wrapCrate.startsWith(REPO_ROOT) && !existsSync(target)) {
+    if (
+      existsSync(lock) &&
+      wrapCrate.startsWith(REPO_ROOT) &&
+      !existsSync(target)
+    ) {
       await copyFile(lock, target);
       written.push(target);
-      notes.push("Cargo.lock copied from the repository so dependency versions match its pins");
+      notes.push(
+        "Cargo.lock copied from the repository so dependency versions match its pins",
+      );
     }
   }
   if (config.engine === "cef")
@@ -270,7 +298,8 @@ export function readme(plan: ConversionPlan): string {
         `| ${risk.severity} | ${risk.area} | ${risk.summary} | ${risk.mitigation.kind}: ${risk.mitigation.detail} |`,
     )
     .join("\n");
-  const target = plan.probe.kind === "site" ? plan.probe.finalUrl : plan.probe.input;
+  const target =
+    plan.probe.kind === "site" ? plan.probe.finalUrl : plan.probe.input;
   const runtimeNote =
     config.mode === "bundle"
       ? ""

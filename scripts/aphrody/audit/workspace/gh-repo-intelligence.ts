@@ -34,7 +34,14 @@ const priorities = [
   "aphrody-code/n2b",
   "aphrody-code/aphrody",
 ];
-const packageTypes = ["npm", "container", "maven", "rubygems", "nuget", "docker"];
+const packageTypes = [
+  "npm",
+  "container",
+  "maven",
+  "rubygems",
+  "nuget",
+  "docker",
+];
 const packages = (
   await Promise.all(
     packageTypes.map(async (type) => {
@@ -75,11 +82,16 @@ const ranked = active
     priority: priorities.includes(repo.nameWithOwner),
     score: score(repo) + (priorities.includes(repo.nameWithOwner) ? 1000 : 0),
   }))
-  .toSorted((a, b) => b.score - a.score || a.nameWithOwner.localeCompare(b.nameWithOwner));
+  .toSorted(
+    (a, b) =>
+      b.score - a.score || a.nameWithOwner.localeCompare(b.nameWithOwner),
+  );
 const groups = new Map<string, string[]>();
 for (const repo of active) {
   const [, name = repo.nameWithOwner] = repo.nameWithOwner.split("/");
-  const key = name.toLowerCase().replace(/[-_.](cli|rs|cpp|csharp|py|ts)$/g, "");
+  const key = name
+    .toLowerCase()
+    .replace(/[-_.](cli|rs|cpp|csharp|py|ts)$/g, "");
   groups.set(key, [...(groups.get(key) ?? []), repo.nameWithOwner]);
 }
 const duplicates = [...groups]
@@ -103,7 +115,12 @@ const report = {
     url: gist.html_url,
   })),
 };
-const out = join(root, ".agents", "plugins", "github-repository-intelligence.json");
+const out = join(
+  root,
+  ".agents",
+  "plugins",
+  "github-repository-intelligence.json",
+);
 mkdirSync(join(root, ".agents", "plugins"), { recursive: true });
 writeFileSync(out, `${JSON.stringify(report, null, 2)}\n`);
 console.log(

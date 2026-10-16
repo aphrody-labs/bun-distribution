@@ -38,7 +38,11 @@ export type ListProps = TabsPrimitive.List.Props;
  * activate the focused tab (`activateOnFocus`, Radix `activationMode="automatic"`); pass
  * `activateOnFocus={false}` for manual activation.
  */
-export const List = ({ className, activateOnFocus = true, ...props }: ListProps) => (
+export const List = ({
+  className,
+  activateOnFocus = true,
+  ...props
+}: ListProps) => (
   <TabsPrimitive.List
     activateOnFocus={activateOnFocus}
     className={withClassName(

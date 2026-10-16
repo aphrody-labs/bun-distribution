@@ -48,7 +48,13 @@ export function eligibleTag(
   minAgeDays: number,
 ): string | undefined {
   return releases
-    .filter((r) => !r.prerelease && !r.draft && RUNTIME_TAG.test(r.tag_name) && r.published_at)
+    .filter(
+      (r) =>
+        !r.prerelease &&
+        !r.draft &&
+        RUNTIME_TAG.test(r.tag_name) &&
+        r.published_at,
+    )
     .map((r) => ({ tag: r.tag_name, at: Date.parse(r.published_at!) }))
     .filter((r) => now - r.at > minAgeDays * DAY_MS)
     .toSorted((a, b) => b.at - a.at)[0]?.tag;
@@ -65,7 +71,8 @@ export function isNewer(tag: string, current: string): boolean {
   const next = runtimeParts(tag);
   // A modern native build reports the base version without the historical fork suffix.
   const base = /^aphrody-v(\d+)\.(\d+)\.(\d+)$/.exec(current);
-  const now = runtimeParts(current) ?? (base ? base.slice(1).map(Number) : undefined);
+  const now =
+    runtimeParts(current) ?? (base ? base.slice(1).map(Number) : undefined);
   if (!next) return false;
   if (!now) return true;
   const diff = next.map((n, i) => n - (now[i] ?? 0)).find((d) => d !== 0);
@@ -76,7 +83,8 @@ export function isNewer(tag: string, current: string): boolean {
 export function expectedSum(sums: string, asset: string): string | undefined {
   for (const line of sums.split(/\r?\n/)) {
     const match = /^([0-9a-fA-F]{64})\s+\*?(.+?)\s*$/.exec(line);
-    if (match && match[2]!.split(/[\\/]/).pop() === asset) return match[1]!.toLowerCase();
+    if (match && match[2]!.split(/[\\/]/).pop() === asset)
+      return match[1]!.toLowerCase();
   }
   return undefined;
 }
@@ -85,7 +93,11 @@ export function expectedSum(sums: string, asset: string): string | undefined {
  * Puts `staged` in place of `binDir\bun.exe` and relinks the aliases. Every replaced file is renamed to
  * `<name>.old-<stamp>` first, so a running image is never overwritten; leftovers are removed by `sweepOld`.
  */
-export function swapExecutable(binDir: string, staged: string, stamp = Date.now()): string[] {
+export function swapExecutable(
+  binDir: string,
+  staged: string,
+  stamp = Date.now(),
+): string[] {
   const bun = join(binDir, "bun.exe");
   const aside = (path: string) => {
     if (existsSync(path)) renameSync(path, `${path}.old-${stamp}`);
@@ -94,7 +106,8 @@ export function swapExecutable(binDir: string, staged: string, stamp = Date.now(
   try {
     renameSync(staged, bun);
   } catch (error) {
-    if (existsSync(`${bun}.old-${stamp}`)) renameSync(`${bun}.old-${stamp}`, bun);
+    if (existsSync(`${bun}.old-${stamp}`))
+      renameSync(`${bun}.old-${stamp}`, bun);
     throw error;
   }
   const linked: string[] = [];
@@ -125,7 +138,10 @@ export function sweepOld(binDir: string): string[] {
 
 function treeSize(dir: string): number {
   let total = 0;
-  for (const entry of readdirSync(dir, { recursive: true, withFileTypes: true })) {
+  for (const entry of readdirSync(dir, {
+    recursive: true,
+    withFileTypes: true,
+  })) {
     if (!entry.isFile()) continue;
     try {
       total += statSync(join(entry.parentPath, entry.name)).size;
@@ -137,7 +153,11 @@ function treeSize(dir: string): number {
 }
 
 /** Top-level cache entries not accessed for 30 days, when the cache is above 5 GB. */
-export function cachePrunable(cache: string, now: number, size = treeSize(cache)): string[] {
+export function cachePrunable(
+  cache: string,
+  now: number,
+  size = treeSize(cache),
+): string[] {
   if (size <= CACHE_MAX_BYTES) return [];
   const cutoff = now - CACHE_IDLE_DAYS * DAY_MS;
   return readdirSync(cache, { withFileTypes: true })
@@ -181,15 +201,21 @@ export async function install(
     `${target}.zip`,
   );
   const got = new Bun.CryptoHasher("sha256").update(zip).digest("hex");
-  if (!want || want !== got) throw new Error(`checksum mismatch for ${target}.zip`);
+  if (!want || want !== got)
+    throw new Error(`checksum mismatch for ${target}.zip`);
   const work = mkdtempSync(join(tmpdir(), "aphrody-bun-"));
   try {
     const archive = join(work, `${target}.zip`);
     await Bun.write(archive, zip);
     // System bsdtar (not a Git/MSYS GNU tar from PATH) extracts zip archives.
-    const tar = join(process.env.SystemRoot ?? "C:\\Windows", "System32", "tar.exe");
+    const tar = join(
+      process.env.SystemRoot ?? "C:\\Windows",
+      "System32",
+      "tar.exe",
+    );
     const extracted = await run([tar, "-xf", archive, "-C", work]);
-    if (extracted.code !== 0) throw new Error(`extraction failed: ${extracted.text}`);
+    if (extracted.code !== 0)
+      throw new Error(`extraction failed: ${extracted.text}`);
     const fresh = join(work, target, "bun.exe");
     const version = await run([fresh, "--version"]);
     if (version.code !== 0 || tagOf(version.out) !== tag)
@@ -233,7 +259,10 @@ export async function main(argv = Bun.argv.slice(2)): Promise<number> {
         .join("\n")}`,
     );
 
-  const binDir = join(process.env.BUN_INSTALL ?? join(homedir(), ".bun"), "bin");
+  const binDir = join(
+    process.env.BUN_INSTALL ?? join(homedir(), ".bun"),
+    "bin",
+  );
   const bun = join(binDir, "bun.exe");
   const current = tagOf((await run([bun, "--version"])).out);
   log(`start host=${hostname()} bun=${current}${dryRun ? " dry-run" : ""}`);
@@ -250,7 +279,11 @@ export async function main(argv = Bun.argv.slice(2)): Promise<number> {
     },
   );
   if (!response.ok) throw new Error(`GitHub releases: HTTP ${response.status}`);
-  const target = eligibleTag((await response.json()) as Release[], Date.now(), minAgeDays);
+  const target = eligibleTag(
+    (await response.json()) as Release[],
+    Date.now(),
+    minAgeDays,
+  );
   // Never downgrades: a newer build installed by hand stays until an eligible release passes it.
   if (target && isNewer(target, current)) {
     log(`upgrade ${current} -> ${target}`);
@@ -261,10 +294,15 @@ export async function main(argv = Bun.argv.slice(2)): Promise<number> {
 
   block("global packages", (await run([bun, "pm", "ls", "-g"])).text);
   const global = join(homedir(), ".bun", "install", "global");
-  if (existsSync(global)) block("outdated (global)", (await run([bun, "outdated"], global)).text);
-  block("untrusted lifecycle scripts", (await run([bun, "pm", "-g", "untrusted"])).text);
+  if (existsSync(global))
+    block("outdated (global)", (await run([bun, "outdated"], global)).text);
+  block(
+    "untrusted lifecycle scripts",
+    (await run([bun, "pm", "-g", "untrusted"])).text,
+  );
 
-  const cache = (await run([bun, "pm", "cache"])).out.split(/\r?\n/).pop() ?? "";
+  const cache =
+    (await run([bun, "pm", "cache"])).out.split(/\r?\n/).pop() ?? "";
   if (cache && existsSync(cache)) {
     const size = treeSize(cache);
     log(`cache ${cache} ${(size / 1024 ** 3).toFixed(1)}GB`);
@@ -285,7 +323,9 @@ if (import.meta.main) {
   main().then(
     (code) => process.exit(code),
     (error: unknown) => {
-      console.error(`bun-hygiene: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(
+        `bun-hygiene: ${error instanceof Error ? error.message : String(error)}`,
+      );
       process.exit(1);
     },
   );

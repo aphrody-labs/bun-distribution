@@ -2,7 +2,11 @@ import { describe, expect, test } from "bun:test";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import { assertLanguage, assertPath, SUPPORTED_LANGUAGES } from "../src/validate.js";
+import {
+  assertLanguage,
+  assertPath,
+  SUPPORTED_LANGUAGES,
+} from "../src/validate.js";
 import { InvalidLanguageError, InvalidPathError } from "../src/errors.js";
 
 describe("assertLanguage", () => {
@@ -39,7 +43,9 @@ describe("assertPath", () => {
   });
 
   test("non-existent path throws InvalidPathError", async () => {
-    await expect(assertPath("/definitely/not/here/zzz")).rejects.toBeInstanceOf(InvalidPathError);
+    await expect(assertPath("/definitely/not/here/zzz")).rejects.toBeInstanceOf(
+      InvalidPathError,
+    );
   });
 
   test("resolves an existing file and enforces kind", async () => {
@@ -50,8 +56,12 @@ describe("assertPath", () => {
       expect(await assertPath(file, "file")).toBe(file);
       expect(await assertPath(dir, "directory")).toBe(dir);
       // kind mismatch
-      await expect(assertPath(file, "directory")).rejects.toBeInstanceOf(InvalidPathError);
-      await expect(assertPath(dir, "file")).rejects.toBeInstanceOf(InvalidPathError);
+      await expect(assertPath(file, "directory")).rejects.toBeInstanceOf(
+        InvalidPathError,
+      );
+      await expect(assertPath(dir, "file")).rejects.toBeInstanceOf(
+        InvalidPathError,
+      );
       // "any" accepts both
       expect(await assertPath(file, "any")).toBe(file);
       expect(await assertPath(dir, "any")).toBe(dir);

@@ -40,7 +40,10 @@ export default async function DatabooksAdminPage() {
         }
       />
 
-      <DatabooksCatalogManager initialFiches={progression.fiches} initialCampagne={campagne} />
+      <DatabooksCatalogManager
+        initialFiches={progression.fiches}
+        initialCampagne={campagne}
+      />
     </div>
   );
 }

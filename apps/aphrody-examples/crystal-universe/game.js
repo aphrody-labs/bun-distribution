@@ -109,8 +109,10 @@ const keys = {
   t: "transform",
 };
 for (const [key, field] of Object.entries(avatarFields))
-  field.value = key === "height" ? String(Math.round(avatar.height * 100)) : avatar[key];
-document.querySelector("#avatar-height-value").value = `${Math.round(avatar.height * 100)} %`;
+  field.value =
+    key === "height" ? String(Math.round(avatar.height * 100)) : avatar[key];
+document.querySelector("#avatar-height-value").value =
+  `${Math.round(avatar.height * 100)} %`;
 for (const field of Object.values(avatarFields)) {
   field.addEventListener("input", () => {
     const values = Object.fromEntries(
@@ -120,7 +122,8 @@ for (const field of Object.values(avatarFields)) {
       ]),
     );
     avatar = normalizeAvatar(values);
-    document.querySelector("#avatar-height-value").value = `${Math.round(avatar.height * 100)} %`;
+    document.querySelector("#avatar-height-value").value =
+      `${Math.round(avatar.height * 100)} %`;
     try {
       avatar = saveAvatar(localStorage, avatar);
     } catch {
@@ -152,7 +155,8 @@ document.querySelector("#pause").addEventListener("click", () => {
 document.querySelector("#join-room").addEventListener("click", async () => {
   const room = roomName.value.trim();
   if (!/^[A-Za-z0-9_-]{1,32}$/.test(room)) {
-    multiplayerStatus.textContent = "Utilise 1 à 32 lettres, chiffres, tirets ou traits bas.";
+    multiplayerStatus.textContent =
+      "Utilise 1 à 32 lettres, chiffres, tirets ou traits bas.";
     return;
   }
   const joinButton = document.querySelector("#join-room");
@@ -178,7 +182,9 @@ document.querySelector("#join-room").addEventListener("click", async () => {
     } catch {
       // An omitted config uses the local development port or the page's own host.
     }
-    const socket = new WebSocket(buildMultiplayerSocketUrl(window.location, room, configuredBase));
+    const socket = new WebSocket(
+      buildMultiplayerSocketUrl(window.location, room, configuredBase),
+    );
     multiplayerSocket = socket;
     socket.addEventListener("open", () => {
       if (multiplayerSocket !== socket) return;
@@ -203,7 +209,8 @@ document.querySelector("#join-room").addEventListener("click", async () => {
     });
     socket.addEventListener("error", () => {
       if (multiplayerSocket === socket)
-        multiplayerStatus.textContent = "Serveur Rust indisponible; le mode solo reste actif.";
+        multiplayerStatus.textContent =
+          "Serveur Rust indisponible; le mode solo reste actif.";
     });
     socket.addEventListener("close", () => {
       if (multiplayerSocket !== socket) return;
@@ -246,7 +253,10 @@ for (const arenaCanvas of [canvas, webGpuCanvas, bevyCanvas]) {
     }
     if (event.button !== 0) return;
     const bounds = arenaCanvas.getBoundingClientRect();
-    mouseTarget = Math.max(0, Math.min(960, ((event.clientX - bounds.left) / bounds.width) * 960));
+    mouseTarget = Math.max(
+      0,
+      Math.min(960, ((event.clientX - bounds.left) / bounds.width) * 960),
+    );
   });
   arenaCanvas.addEventListener("pointermove", (event) => {
     if (event.buttons & 1) {
@@ -257,10 +267,14 @@ for (const arenaCanvas of [canvas, webGpuCanvas, bevyCanvas]) {
       );
     }
   });
-  arenaCanvas.addEventListener("pointerup", (event) => held.delete(pointerAction(event.button)));
+  arenaCanvas.addEventListener("pointerup", (event) =>
+    held.delete(pointerAction(event.button)),
+  );
   for (const event of ["pointercancel", "lostpointercapture"])
     arenaCanvas.addEventListener(event, () => held.delete("blast"));
-  arenaCanvas.addEventListener("contextmenu", (event) => event.preventDefault());
+  arenaCanvas.addEventListener("contextmenu", (event) =>
+    event.preventDefault(),
+  );
 }
 window.addEventListener("gamepadconnected", () => {
   controllerConnected = true;
@@ -432,7 +446,8 @@ function draw() {
       canvas.hidden = false;
     }
   }
-  if (!bevyApi && webGpuArena) webGpuArena.render(game, avatar, multiplayerPlayers);
+  if (!bevyApi && webGpuArena)
+    webGpuArena.render(game, avatar, multiplayerPlayers);
   else if (!bevyApi) draw2d();
   drawAge1000Map(mapContext, mapCanvas.width, mapCanvas.height);
 }
@@ -441,15 +456,22 @@ function frame(now) {
   last = now;
   const gamepad = [...navigator.getGamepads()].find(Boolean);
   controllerConnected = Boolean(gamepad);
-  const { input: gamepadInput, startPressed: gamepadStartPressed } = readGamepadInput(gamepad);
+  const { input: gamepadInput, startPressed: gamepadStartPressed } =
+    readGamepadInput(gamepad);
   let networkInput = {};
-  if (gamepadStartPressed && !gamepadStartWasPressed && active && game.status === "playing")
+  if (
+    gamepadStartPressed &&
+    !gamepadStartWasPressed &&
+    active &&
+    game.status === "playing"
+  )
     pause(!paused);
   gamepadStartWasPressed = gamepadStartPressed;
   if (active && !paused) {
     const input = {};
     for (const action of [...held, ...pointers.values()]) input[action] = true;
-    for (const [action, pressed] of Object.entries(gamepadInput)) input[action] ||= pressed;
+    for (const [action, pressed] of Object.entries(gamepadInput))
+      input[action] ||= pressed;
     networkInput = input;
     const mouseDirection = pointerDirection(mouseTarget, game.player.x);
     if (mouseDirection) input[mouseDirection] = true;
@@ -475,7 +497,10 @@ function frame(now) {
   const p = game.player;
   const bevyReady = bevyApi?.bevy_renderer_ready() || false;
   hud.textContent = `${avatar.name} · Vie ${Math.ceil(p.hp)} / 100 · Énergie ${Math.floor(p.energy)} / 100 · Vague ${game.wave} / 5 · Score ${game.score}${p.transformed ? " · Transformation active" : ""} · ${bevyReady ? "Bevy 3D WebGPU" : webGpuArena ? "3D WebGPU" : "Canvas 2D"}`;
-  if (multiplayerSocket?.readyState === WebSocket.OPEN && now - lastNetworkSync >= 50) {
+  if (
+    multiplayerSocket?.readyState === WebSocket.OPEN &&
+    now - lastNetworkSync >= 50
+  ) {
     multiplayerSocket.send(
       JSON.stringify({
         type: "frame",
@@ -507,7 +532,8 @@ function renderLoreResults(payload) {
     const source = document.createElement("a");
     title.textContent = entry.title || entry.entity || "Passage Dragon Ball";
     kind.textContent = entry.kind || entry.sourceId || "archive";
-    passage.textContent = entry.snippet || entry.content || "Aucun extrait disponible.";
+    passage.textContent =
+      entry.snippet || entry.content || "Aucun extrait disponible.";
     source.href = entry.url || "https://dragonballfr.com/";
     source.textContent = "Ouvrir la source";
     source.target = "_blank";
@@ -531,10 +557,12 @@ loreForm.addEventListener("submit", async (event) => {
     if (sourceId) params.set("sourceId", sourceId);
     const response = await fetch(`/api/lore/search?${params}`);
     const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || "La recherche a échoué.");
+    if (!response.ok)
+      throw new Error(payload.error || "La recherche a échoué.");
     renderLoreResults(payload);
   } catch (error) {
-    loreStatus.textContent = error.message || "Les archives sont momentanément indisponibles.";
+    loreStatus.textContent =
+      error.message || "Les archives sont momentanément indisponibles.";
   }
 });
 
@@ -544,9 +572,12 @@ loreCatalogForm.addEventListener("submit", async (event) => {
   loreCatalogStatus.textContent = "Chargement des métadonnées de l’inventaire…";
   loreCatalogRows.replaceChildren();
   try {
-    const response = await fetch(`/api/lore/catalog?series=${encodeURIComponent(series)}`);
+    const response = await fetch(
+      `/api/lore/catalog?series=${encodeURIComponent(series)}`,
+    );
     const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || "Le catalogue n’a pas pu être chargé.");
+    if (!response.ok)
+      throw new Error(payload.error || "Le catalogue n’a pas pu être chargé.");
     if (payload.series !== series || !Array.isArray(payload.records))
       throw new Error("La réponse du catalogue est invalide.");
     const catalog = payload;
@@ -562,9 +593,16 @@ loreCatalogForm.addEventListener("submit", async (event) => {
       row.append(volume, pages, japanesePages);
       loreCatalogRows.append(row);
     }
-    const pages = catalog.records.reduce((total, record) => total + record.pages, 0);
-    const pagesWithJa = catalog.records.reduce((total, record) => total + record.pagesWithJa, 0);
-    const label = series === "DB" ? "volumes Dragon Ball" : "chapitres Dragon Ball Super";
+    const pages = catalog.records.reduce(
+      (total, record) => total + record.pages,
+      0,
+    );
+    const pagesWithJa = catalog.records.reduce(
+      (total, record) => total + record.pagesWithJa,
+      0,
+    );
+    const label =
+      series === "DB" ? "volumes Dragon Ball" : "chapitres Dragon Ball Super";
     const omitted = catalog.omittedCount
       ? ` ${catalog.omittedCount} fiche(s) hors série ou hors numérotation standard masquée(s).`
       : "";
@@ -583,18 +621,25 @@ loreCatalogForm.addEventListener("submit", async (event) => {
   }
 });
 
-document.querySelector("#lore-coverage-check").addEventListener("click", async () => {
-  loreCoverageStatus.textContent = "Lecture des compteurs globaux du RAG…";
-  try {
-    const response = await fetch("/api/lore/coverage", { cache: "no-store" });
-    const coverage = await response.json();
-    if (!response.ok) throw new Error(coverage.error || "La couverture n’a pas pu être chargée.");
-    if (!Number.isSafeInteger(coverage.chunks))
-      throw new Error("La réponse de couverture est invalide.");
-    const builtAt = coverage.builtAt ? ` · index daté ${coverage.builtAt}` : "";
-    loreCoverageStatus.textContent = `${formatCoverageCount(coverage.chunks)} passages au total · ${formatCoverageCount(coverage.mangaPagePassages)} pages manga · ${formatCoverageCount(coverage.mangaChapterPassages)} entrées chapitre · ${formatCoverageCount(coverage.mangaVolumePassages)} entrées volume${builtAt}. Compteurs globaux, non ventilés par série et non équivalents à une vérification OCR page par page.`;
-  } catch (error) {
-    loreCoverageStatus.textContent =
-      error.message || "La couverture du RAG est momentanément indisponible.";
-  }
-});
+document
+  .querySelector("#lore-coverage-check")
+  .addEventListener("click", async () => {
+    loreCoverageStatus.textContent = "Lecture des compteurs globaux du RAG…";
+    try {
+      const response = await fetch("/api/lore/coverage", { cache: "no-store" });
+      const coverage = await response.json();
+      if (!response.ok)
+        throw new Error(
+          coverage.error || "La couverture n’a pas pu être chargée.",
+        );
+      if (!Number.isSafeInteger(coverage.chunks))
+        throw new Error("La réponse de couverture est invalide.");
+      const builtAt = coverage.builtAt
+        ? ` · index daté ${coverage.builtAt}`
+        : "";
+      loreCoverageStatus.textContent = `${formatCoverageCount(coverage.chunks)} passages au total · ${formatCoverageCount(coverage.mangaPagePassages)} pages manga · ${formatCoverageCount(coverage.mangaChapterPassages)} entrées chapitre · ${formatCoverageCount(coverage.mangaVolumePassages)} entrées volume${builtAt}. Compteurs globaux, non ventilés par série et non équivalents à une vérification OCR page par page.`;
+    } catch (error) {
+      loreCoverageStatus.textContent =
+        error.message || "La couverture du RAG est momentanément indisponible.";
+    }
+  });

@@ -125,7 +125,10 @@ export function useDaemonStatus() {
           }));
         }
       } catch (error) {
-        console.error("[useDaemonStatus] Failed to check daemon installation:", error);
+        console.error(
+          "[useDaemonStatus] Failed to check daemon installation:",
+          error,
+        );
       }
     };
 
@@ -143,7 +146,10 @@ export function useDaemonStatus() {
         return;
       })
       .catch((error) => {
-        console.error("[useDaemonStatus] Failed to set up daemon listeners:", error);
+        console.error(
+          "[useDaemonStatus] Failed to set up daemon listeners:",
+          error,
+        );
       });
 
     // Fallback polling only when disconnected (event listeners should handle normal case)
@@ -174,14 +180,19 @@ export function useDaemonStatus() {
     try {
       console.log("[useDaemonStatus] Calling platform.installDaemonService()");
       await platform.installDaemonService?.();
-      console.log("[useDaemonStatus] installDaemonService completed, updating isInstalled state");
+      console.log(
+        "[useDaemonStatus] installDaemonService completed, updating isInstalled state",
+      );
       setStatus((prev) => ({
         ...prev,
         isInstalled: true,
       }));
       return true;
     } catch (error) {
-      console.error("[useDaemonStatus] Failed to install daemon service:", error);
+      console.error(
+        "[useDaemonStatus] Failed to install daemon service:",
+        error,
+      );
       setStatus((prev) => ({
         ...prev,
         isChecking: false,

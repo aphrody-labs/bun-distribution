@@ -11,7 +11,9 @@ interface Props {
   onStoryboardPageDisable?: () => void;
 }
 
-export const ExperimentalSettingsPane = ({ onStoryboardPageDisable }: Props) => {
+export const ExperimentalSettingsPane = ({
+  onStoryboardPageDisable,
+}: Props) => {
   const storyboardPageEnabled = useExperimentalStore(
     (s) => s.storyboardPageEnabled,
   );
@@ -48,7 +50,9 @@ export const ExperimentalSettingsPane = ({ onStoryboardPageDisable }: Props) => 
       <div className="space-y-4 text-base-fg">
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col gap-0.5">
-            <Label htmlFor="experimental-storyboard-page">Storyboard page</Label>
+            <Label htmlFor="experimental-storyboard-page">
+              Storyboard page
+            </Label>
             <p className="text-xs opacity-70">
               Show the Storyboard page in the apps menu. In-development; expect
               rough edges.

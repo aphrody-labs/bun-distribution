@@ -54,7 +54,8 @@ function tinyPe(): Uint8Array {
 }
 /** An executable whose `--version` succeeds: a shell script on POSIX, a minimal PE on Windows. */
 const runnable = (script: string) => (windows ? tinyPe() : script);
-const bytes = async (path: string) => new Uint8Array(await Bun.file(path).arrayBuffer());
+const bytes = async (path: string) =>
+  new Uint8Array(await Bun.file(path).arrayBuffer());
 const revision = "b".repeat(40);
 const release = "factory-bbbbbbbbbbbb";
 const config: BuildFactoryConfig = {
@@ -88,7 +89,10 @@ async function checkout() {
     `${root}/crates/ai/mcp/Cargo.toml`,
     '[package]\nname = "aphrody-mcp"\n\n[[bin]]\nname = "aphrody-mcp"\npath = "src/main.rs"\n',
   );
-  await Bun.write(`${root}/crates/infra/aphrody/Cargo.toml`, '[package]\nname = "aphrody-cli"\n');
+  await Bun.write(
+    `${root}/crates/infra/aphrody/Cargo.toml`,
+    '[package]\nname = "aphrody-cli"\n',
+  );
   await Bun.write(`${root}/crates/infra/aphrody/src/main.rs`, "fn main() {}\n");
   return root;
 }
@@ -106,14 +110,21 @@ test("derives artifacts from --bin, packages, profiles and targets", async () =>
   ).toEqual([
     {
       name: "aphrody-mcp",
-      remotePath: "/home/ubuntu/apps/factory/cache/cargo/aphrody/release/aphrody-mcp",
+      remotePath:
+        "/home/ubuntu/apps/factory/cache/cargo/aphrody/release/aphrody-mcp",
     },
   ]);
   expect(
     await factoryArtifacts(
       config,
       "aphrody",
-      ["cargo", "build", "--package=aphrody-cli", "--target", "x86_64-unknown-linux-gnu"],
+      [
+        "cargo",
+        "build",
+        "--package=aphrody-cli",
+        "--target",
+        "x86_64-unknown-linux-gnu",
+      ],
       root,
     ),
   ).toEqual([
@@ -131,13 +142,27 @@ test("derives artifacts from --bin, packages, profiles and targets", async () =>
       root,
     ),
   ).toEqual([
-    { name: "yolo", remotePath: "/home/ubuntu/apps/factory/workspaces/yolo/target/dist/yolo" },
+    {
+      name: "yolo",
+      remotePath: "/home/ubuntu/apps/factory/workspaces/yolo/target/dist/yolo",
+    },
   ]);
   await expect(
-    factoryArtifacts(config, "aphrody", ["cargo", "check", "-p", "aphrody-mcp"], root),
+    factoryArtifacts(
+      config,
+      "aphrody",
+      ["cargo", "check", "-p", "aphrody-mcp"],
+      root,
+    ),
   ).rejects.toThrow("Cargo build command");
   await expect(
-    factoryArtifacts(config, "aphrody", ["cargo", "build", "-p", "aphrody-mcp"], root, ["other"]),
+    factoryArtifacts(
+      config,
+      "aphrody",
+      ["cargo", "build", "-p", "aphrody-mcp"],
+      root,
+      ["other"],
+    ),
   ).rejects.toThrow("not produced");
 });
 
@@ -170,17 +195,33 @@ const artifact = [{ name: "tool", remotePath: "/x/tool" }];
 test("verifies, probes and atomically replaces; reinstall is unchanged", async () => {
   const tool = runnable("#!/bin/sh\necho tool 1.0\n");
   const { root, remote, install, fetches } = await remoteFixture(tool);
-  await Bun.write(`${install.binDir}/tool${EXE}`, "#!/bin/sh\necho old\n", { mode: 0o755 });
-  const [first] = await installFactoryArtifacts(artifact, revision, remote, install);
+  await Bun.write(`${install.binDir}/tool${EXE}`, "#!/bin/sh\necho old\n", {
+    mode: 0o755,
+  });
+  const [first] = await installFactoryArtifacts(
+    artifact,
+    revision,
+    remote,
+    install,
+  );
   expect(first!.error).toBeUndefined();
   expect(first!.status).toBe("installed");
   expect(await bytes(`${install.binDir}/tool${EXE}`)).toEqual(
     typeof tool === "string" ? new TextEncoder().encode(tool) : tool,
   );
-  expect(first!.previous).toBe(`${install.libRoot}/${release}/previous/tool${EXE}`);
+  expect(first!.previous).toBe(
+    `${install.libRoot}/${release}/previous/tool${EXE}`,
+  );
   expect(await Bun.file(first!.previous!).text()).toBe("#!/bin/sh\necho old\n");
-  expect(await Bun.file(`${root}/state/installs.jsonl`).text()).toContain('"status":"installed"');
-  const [second] = await installFactoryArtifacts(artifact, revision, remote, install);
+  expect(await Bun.file(`${root}/state/installs.jsonl`).text()).toContain(
+    '"status":"installed"',
+  );
+  const [second] = await installFactoryArtifacts(
+    artifact,
+    revision,
+    remote,
+    install,
+  );
   expect(second!.error).toBeUndefined();
   expect(second!.status).toBe("unchanged");
   expect(fetches()).toBe(1);
@@ -190,12 +231,23 @@ test("refuses an artifact that cannot start here and keeps the active binary", a
   const { remote, install } = await remoteFixture(
     "#!/bin/sh\necho 'GLIBC_2.43 not found' >&2\nexit 1\n",
   );
-  await Bun.write(`${install.binDir}/tool${EXE}`, "#!/bin/sh\necho ok\n", { mode: 0o755 });
-  const [record] = await installFactoryArtifacts(artifact, revision, remote, install);
+  await Bun.write(`${install.binDir}/tool${EXE}`, "#!/bin/sh\necho ok\n", {
+    mode: 0o755,
+  });
+  const [record] = await installFactoryArtifacts(
+    artifact,
+    revision,
+    remote,
+    install,
+  );
   expect(record!.status).toBe("refused");
   // Windows cannot start the foreign (non-PE) artifact at all; POSIX runs it and reports its error.
-  expect(record!.error).toContain(windows ? "Artifact cannot run on this host" : "GLIBC_2.43");
-  expect(await Bun.file(`${install.binDir}/tool${EXE}`).text()).toBe("#!/bin/sh\necho ok\n");
+  expect(record!.error).toContain(
+    windows ? "Artifact cannot run on this host" : "GLIBC_2.43",
+  );
+  expect(await Bun.file(`${install.binDir}/tool${EXE}`).text()).toBe(
+    "#!/bin/sh\necho ok\n",
+  );
 });
 
 test("rejects a download whose digest differs from the factory copy", async () => {
@@ -206,14 +258,21 @@ test("rejects a download whose digest differs from the factory copy", async () =
       await Bun.write(local, "#!/bin/sh\necho evil\n");
     },
   };
-  const [record] = await installFactoryArtifacts(artifact, revision, tampered, install);
+  const [record] = await installFactoryArtifacts(
+    artifact,
+    revision,
+    tampered,
+    install,
+  );
   expect(record!.status).toBe("refused");
   expect(record!.error).toContain("mismatch");
   expect(await Bun.file(`${install.binDir}/tool${EXE}`).exists()).toBe(false);
 });
 
 test("serializes concurrent host installs and removes its owned lock on completion", async () => {
-  const { remote, install } = await remoteFixture(runnable("#!/bin/sh\necho tool 1.0\n"));
+  const { remote, install } = await remoteFixture(
+    runnable("#!/bin/sh\necho tool 1.0\n"),
+  );
   let entered!: () => void;
   let releaseGate!: () => void;
   const waiting = new Promise<void>((resolve) => (entered = resolve));
@@ -228,25 +287,31 @@ test("serializes concurrent host installs and removes its owned lock on completi
   };
   const first = installFactoryArtifacts(artifact, revision, delayed, install);
   await waiting;
-  await expect(installFactoryArtifacts(artifact, revision, remote, install)).rejects.toThrow(
-    "Factory installation lock exists",
-  );
+  await expect(
+    installFactoryArtifacts(artifact, revision, remote, install),
+  ).rejects.toThrow("Factory installation lock exists");
   releaseGate();
   const [record] = await first;
   expect(record!.status).toBe("installed");
-  expect(await Bun.file(join(install.binDir, ".aphrody-factory-install.lock")).exists()).toBe(
-    false,
-  );
+  expect(
+    await Bun.file(
+      join(install.binDir, ".aphrody-factory-install.lock"),
+    ).exists(),
+  ).toBe(false);
 });
 
 test("preserves a preexisting host install lock without touching the active binary", async () => {
-  const { remote, install } = await remoteFixture(runnable("#!/bin/sh\necho tool 1.0\n"));
+  const { remote, install } = await remoteFixture(
+    runnable("#!/bin/sh\necho tool 1.0\n"),
+  );
   const lockPath = join(install.binDir, ".aphrody-factory-install.lock");
   const lock = JSON.stringify({ pid: 123, revision });
   await Bun.write(lockPath, lock);
-  await expect(installFactoryArtifacts(artifact, revision, remote, install)).rejects.toThrow(
-    "Factory installation lock exists",
-  );
+  await expect(
+    installFactoryArtifacts(artifact, revision, remote, install),
+  ).rejects.toThrow("Factory installation lock exists");
   expect(await Bun.file(lockPath).text()).toBe(lock);
-  expect(await Bun.file(join(install.binDir, `tool${EXE}`)).exists()).toBe(false);
+  expect(await Bun.file(join(install.binDir, `tool${EXE}`)).exists()).toBe(
+    false,
+  );
 });

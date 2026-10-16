@@ -46,8 +46,13 @@ export function formatGemma4ChatPrompt(
     )
       throw new Error("Message content and thought must be text");
     for (const count of [msg.imageCount, msg.audioCount]) {
-      if (count !== undefined && (!Number.isSafeInteger(count) || count < 0 || count > 1024))
-        throw new Error("Media placeholder counts must be integers between 0 and 1024");
+      if (
+        count !== undefined &&
+        (!Number.isSafeInteger(count) || count < 0 || count > 1024)
+      )
+        throw new Error(
+          "Media placeholder counts must be integers between 0 and 1024",
+        );
     }
     total +=
       msg.content.length +
@@ -55,7 +60,8 @@ export function formatGemma4ChatPrompt(
       (msg.imageCount ?? 0) * 7 +
       (msg.audioCount ?? 0) * 7 +
       80;
-    if (total > MAX_TEXT_LENGTH) throw new Error("Conversation exceeds the text budget");
+    if (total > MAX_TEXT_LENGTH)
+      throw new Error("Conversation exceeds the text budget");
   }
   const includeBos = options.includeBos ?? true;
   const addGenerationPrompt = options.addGenerationPrompt ?? true;
@@ -138,7 +144,8 @@ export class Gemma4ResponseParser {
 
   push(text: string): string {
     if (this.#finished) throw new Error("Response parser is already finished");
-    if (typeof text !== "string") throw new Error("Response delta must be text");
+    if (typeof text !== "string")
+      throw new Error("Response delta must be text");
     this.#pending += text;
     const markers = [
       GEMMA4_SPECIAL_TOKENS.THOUGHT_START,
@@ -161,19 +168,24 @@ export class Gemma4ResponseParser {
         let keep = 0;
         for (const candidate of markers) {
           for (let size = 1; size < candidate.length; size++) {
-            if (this.#pending.endsWith(candidate.slice(0, size))) keep = Math.max(keep, size);
+            if (this.#pending.endsWith(candidate.slice(0, size)))
+              keep = Math.max(keep, size);
           }
         }
-        output += this.#consume(this.#pending.slice(0, this.#pending.length - keep));
+        output += this.#consume(
+          this.#pending.slice(0, this.#pending.length - keep),
+        );
         this.#pending = keep ? this.#pending.slice(-keep) : "";
         break;
       }
       output += this.#consume(this.#pending.slice(0, index));
       this.#pending = this.#pending.slice(index + marker.length);
       if (marker === GEMMA4_SPECIAL_TOKENS.THOUGHT_START) {
-        if (!this.#inThought && this.collectThought && this.#thought) this.#thought += "\n";
+        if (!this.#inThought && this.collectThought && this.#thought)
+          this.#thought += "\n";
         this.#inThought = true;
-      } else if (marker === GEMMA4_SPECIAL_TOKENS.THOUGHT_END) this.#inThought = false;
+      } else if (marker === GEMMA4_SPECIAL_TOKENS.THOUGHT_END)
+        this.#inThought = false;
     }
     return output;
   }

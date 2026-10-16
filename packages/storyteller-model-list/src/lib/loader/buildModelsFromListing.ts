@@ -154,7 +154,11 @@ const build = <T extends { tauriId: string }, L extends ListingModelBase>(
   }
   // Append frontend-only models the backend has never heard of.
   for (const m of overlay) {
-    if (!ADMIN_ONLY_MODELS.has(m.tauriId) && !knownTauriIds.has(m.tauriId) && !seenTauriIds.has(m.tauriId)) {
+    if (
+      !ADMIN_ONLY_MODELS.has(m.tauriId) &&
+      !knownTauriIds.has(m.tauriId) &&
+      !seenTauriIds.has(m.tauriId)
+    ) {
       result.push(m);
     }
   }
@@ -196,7 +200,9 @@ const mergedImageModel = (
     canEditAngles: o?.canEditAngles ?? false,
 
     // Desktop-native provider knowledge.
-    providers: ["midjourney_7", "midjourney_7_niji", "midjourney_8"].includes(tauriId)
+    providers: ["midjourney_7", "midjourney_7_niji", "midjourney_8"].includes(
+      tauriId,
+    )
       ? [GenerationProvider.Artcraft, GenerationProvider.Midjourney]
       : o?.getProviders(),
 
@@ -204,24 +210,34 @@ const mergedImageModel = (
     // fallback where the backend config leaves a field unset.
     maxPromptLength: m.text_prompt_max_length ?? o?.maxPromptLength,
     maxGenerationCount: m.batch_size_max ?? o?.maxGenerationCount ?? 4,
-    defaultGenerationCount: m.batch_size_default ?? o?.defaultGenerationCount ?? 1,
-    predefinedGenerationCounts: m.batch_size_options ?? o?.predefinedGenerationCounts,
+    defaultGenerationCount:
+      m.batch_size_default ?? o?.defaultGenerationCount ?? 1,
+    predefinedGenerationCounts:
+      m.batch_size_options ?? o?.predefinedGenerationCounts,
     canUseImagePrompt: m.image_refs_supported ?? o?.canUseImagePrompt ?? false,
     maxImagePromptCount: m.image_refs_max ?? o?.maxImagePromptCount ?? 1,
     canChangeAspectRatio:
       aspectRatios.length > 0 || (o?.canChangeAspectRatio ?? false),
     aspectRatios:
-      aspectRatios.length > 0 ? (aspectRatios as CommonAspectRatio[]) : o?.aspectRatios,
+      aspectRatios.length > 0
+        ? (aspectRatios as CommonAspectRatio[])
+        : o?.aspectRatios,
     defaultAspectRatio:
-      (m.aspect_ratio_default as CommonAspectRatio | undefined) ?? o?.defaultAspectRatio,
+      (m.aspect_ratio_default as CommonAspectRatio | undefined) ??
+      o?.defaultAspectRatio,
     canChangeResolution:
       resolutions.length > 0 || (o?.canChangeResolution ?? false),
     resolutions:
-      resolutions.length > 0 ? (resolutions as CommonResolution[]) : o?.resolutions,
+      resolutions.length > 0
+        ? (resolutions as CommonResolution[])
+        : o?.resolutions,
     defaultResolution:
-      (m.resolution_default as CommonResolution | undefined) ?? o?.defaultResolution,
+      (m.resolution_default as CommonResolution | undefined) ??
+      o?.defaultResolution,
     qualityOptions:
-      qualityOptions.length > 0 ? (qualityOptions as CommonQuality[]) : o?.qualityOptions,
+      qualityOptions.length > 0
+        ? (qualityOptions as CommonQuality[])
+        : o?.qualityOptions,
     defaultQuality:
       (m.default_quality as CommonQuality | undefined) ?? o?.defaultQuality,
   });
@@ -263,12 +279,15 @@ const mergedVideoModel = (
     endFrame: m.ending_keyframe_supported ?? o?.endFrame ?? false,
     requiresImage: m.starting_keyframe_required ?? o?.requiresImage ?? false,
     textToVideoSupported: m.text_to_video_supported ?? o?.textToVideoSupported,
-    generateWithSound: m.show_generate_with_sound_toggle ?? o?.generateWithSound,
+    generateWithSound:
+      m.show_generate_with_sound_toggle ?? o?.generateWithSound,
     durationOptions: m.duration_seconds_options ?? o?.durationOptions,
     defaultDuration: m.duration_seconds_default ?? o?.defaultDuration,
     minDuration: m.duration_seconds_min ?? o?.minDuration,
     maxDuration: m.duration_seconds_max ?? o?.maxDuration,
-    maxDurationWithImageReferences: m.duration_seconds_max_with_image_references ?? o?.maxDurationWithImageReferences,
+    maxDurationWithImageReferences:
+      m.duration_seconds_max_with_image_references ??
+      o?.maxDurationWithImageReferences,
     bitrateOptions: m.bitrate_options ?? o?.bitrateOptions,
     defaultBitrate: m.bitrate_default ?? o?.defaultBitrate,
     outputFormatOptions: m.output_format_options ?? o?.outputFormatOptions,
@@ -276,7 +295,8 @@ const mergedVideoModel = (
     generationCountOptions: m.batch_size_options ?? o?.generationCountOptions,
     defaultGenerationCount: m.batch_size_default ?? o?.defaultGenerationCount,
     defaultAspectRatio: m.aspect_ratio_default ?? o?.defaultAspectRatio,
-    supportsReferenceMode: m.image_references_supported ?? o?.supportsReferenceMode,
+    supportsReferenceMode:
+      m.image_references_supported ?? o?.supportsReferenceMode,
     maxReferenceImages: m.image_references_max ?? o?.maxReferenceImages,
     maxReferenceVideos: m.video_references_max ?? o?.maxReferenceVideos,
     maxVideoRefDuration:
@@ -309,37 +329,101 @@ const mergedVideoModel = (
 const sizeOptionForAspectRatio = (value: string): SizeOption => {
   switch (value) {
     case "square":
-      return { tauriValue: value, textLabel: "1:1", icon: SizeIconOption.Square };
+      return {
+        tauriValue: value,
+        textLabel: "1:1",
+        icon: SizeIconOption.Square,
+      };
     case "square_hd":
-      return { tauriValue: value, textLabel: "1:1 HD", icon: SizeIconOption.Square };
+      return {
+        tauriValue: value,
+        textLabel: "1:1 HD",
+        icon: SizeIconOption.Square,
+      };
     case "wide_sixteen_by_nine":
-      return { tauriValue: value, textLabel: "16:9", icon: SizeIconOption.Landscape16x9 };
+      return {
+        tauriValue: value,
+        textLabel: "16:9",
+        icon: SizeIconOption.Landscape16x9,
+      };
     case "tall_nine_by_sixteen":
-      return { tauriValue: value, textLabel: "9:16", icon: SizeIconOption.Portrait9x16 };
+      return {
+        tauriValue: value,
+        textLabel: "9:16",
+        icon: SizeIconOption.Portrait9x16,
+      };
     case "wide_four_by_three":
-      return { tauriValue: value, textLabel: "4:3", icon: SizeIconOption.Standard4x3 };
+      return {
+        tauriValue: value,
+        textLabel: "4:3",
+        icon: SizeIconOption.Standard4x3,
+      };
     case "tall_three_by_four":
-      return { tauriValue: value, textLabel: "3:4", icon: SizeIconOption.Portrait3x4 };
+      return {
+        tauriValue: value,
+        textLabel: "3:4",
+        icon: SizeIconOption.Portrait3x4,
+      };
     case "wide_three_by_two":
-      return { tauriValue: value, textLabel: "3:2", icon: SizeIconOption.Landscape };
+      return {
+        tauriValue: value,
+        textLabel: "3:2",
+        icon: SizeIconOption.Landscape,
+      };
     case "tall_two_by_three":
-      return { tauriValue: value, textLabel: "2:3", icon: SizeIconOption.Portrait };
+      return {
+        tauriValue: value,
+        textLabel: "2:3",
+        icon: SizeIconOption.Portrait,
+      };
     case "wide_five_by_four":
-      return { tauriValue: value, textLabel: "5:4", icon: SizeIconOption.Landscape };
+      return {
+        tauriValue: value,
+        textLabel: "5:4",
+        icon: SizeIconOption.Landscape,
+      };
     case "tall_four_by_five":
-      return { tauriValue: value, textLabel: "4:5", icon: SizeIconOption.Portrait };
+      return {
+        tauriValue: value,
+        textLabel: "4:5",
+        icon: SizeIconOption.Portrait,
+      };
     case "wide_twenty_one_by_nine":
-      return { tauriValue: value, textLabel: "21:9", icon: SizeIconOption.Landscape16x9 };
+      return {
+        tauriValue: value,
+        textLabel: "21:9",
+        icon: SizeIconOption.Landscape16x9,
+      };
     case "tall_nine_by_twenty_one":
-      return { tauriValue: value, textLabel: "9:21", icon: SizeIconOption.Portrait9x16 };
+      return {
+        tauriValue: value,
+        textLabel: "9:21",
+        icon: SizeIconOption.Portrait9x16,
+      };
     case "wide":
-      return { tauriValue: value, textLabel: "Landscape", icon: SizeIconOption.Landscape };
+      return {
+        tauriValue: value,
+        textLabel: "Landscape",
+        icon: SizeIconOption.Landscape,
+      };
     case "tall":
-      return { tauriValue: value, textLabel: "Portrait", icon: SizeIconOption.Portrait };
+      return {
+        tauriValue: value,
+        textLabel: "Portrait",
+        icon: SizeIconOption.Portrait,
+      };
     case "auto":
-      return { tauriValue: value, textLabel: "Auto", icon: SizeIconOption.Square };
+      return {
+        tauriValue: value,
+        textLabel: "Auto",
+        icon: SizeIconOption.Square,
+      };
     default:
-      return { tauriValue: value, textLabel: value, icon: SizeIconOption.Square };
+      return {
+        tauriValue: value,
+        textLabel: value,
+        icon: SizeIconOption.Square,
+      };
   }
 };
 

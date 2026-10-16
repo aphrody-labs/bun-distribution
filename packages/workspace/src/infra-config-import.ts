@@ -37,17 +37,22 @@ function hash(bytes: Buffer): string {
 
 function classifyHost(host: string): string {
   const lower = host.toLowerCase().replace(/^\[|\]$/g, "");
-  if (lower === "localhost" || lower === "127.0.0.1" || lower === "::1") return "loopback";
-  if (lower.includes("${") || lower.startsWith("$")) return "environment-template";
+  if (lower === "localhost" || lower === "127.0.0.1" || lower === "::1")
+    return "loopback";
+  if (lower.includes("${") || lower.startsWith("$"))
+    return "environment-template";
   if (isIP(lower) === 4) {
-    if (/^(?:10\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.|169\.254\.)/.test(lower))
+    if (
+      /^(?:10\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.|169\.254\.)/.test(lower)
+    )
       return "private-network";
     return "public-ip-literal";
   }
   if (isIP(lower) === 6)
     return /^(?:f[cd]|fe[89ab])/.test(lower) ? "private-network" : "ip-literal";
   if (lower.includes(":")) return "compound-host-alias";
-  if (lower.endsWith(".local") || lower.endsWith(".internal")) return "private-name";
+  if (lower.endsWith(".local") || lower.endsWith(".internal"))
+    return "private-name";
   return lower.includes(".") ? "fqdn-unverified" : "host-alias";
 }
 
@@ -77,7 +82,9 @@ function endpointClasses(value: unknown): Record<string, number> {
     }
   }
   visit(value);
-  return Object.fromEntries([...counts].toSorted(([a], [b]) => a.localeCompare(b)));
+  return Object.fromEntries(
+    [...counts].toSorted(([a], [b]) => a.localeCompare(b)),
+  );
 }
 
 function textEndpointClasses(text: string): Record<string, number> {
@@ -98,7 +105,9 @@ function textEndpointClasses(text: string): Record<string, number> {
     const kind = classifyHost(host);
     counts.set(kind, (counts.get(kind) ?? 0) + 1);
   }
-  return Object.fromEntries([...counts].toSorted(([a], [b]) => a.localeCompare(b)));
+  return Object.fromEntries(
+    [...counts].toSorted(([a], [b]) => a.localeCompare(b)),
+  );
 }
 
 function remap(
@@ -106,27 +115,40 @@ function remap(
   source: Buffer,
 ): { bytes: Buffer; remaps: string[]; endpoints: Record<string, number> } {
   if (!path.endsWith(".json"))
-    return { bytes: source, remaps: [], endpoints: textEndpointClasses(source.toString("utf8")) };
+    return {
+      bytes: source,
+      remaps: [],
+      endpoints: textEndpointClasses(source.toString("utf8")),
+    };
   const value = JSON.parse(source.toString("utf8")) as Record<string, unknown>;
   const endpoints = endpointClasses(value);
   const remaps: string[] = [];
   if (path === "tools/config/pipeline.json") {
     if (value.workspaceRoot !== "../")
-      throw new Error("unexpected pipeline.workspaceRoot; review source before import");
+      throw new Error(
+        "unexpected pipeline.workspaceRoot; review source before import",
+      );
     value.workspaceRoot = ".";
     remaps.push("workspaceRoot: ../ -> .");
   }
   if (path === "tools/config/google-stack-release.json") {
     const repositories = value.sourceRepositories as Record<string, unknown>;
-    if (repositories?.ai !== "../aphrody-ai" || repositories?.web !== "../aphrody-web")
-      throw new Error("unexpected google-stack sourceRepositories; review source before import");
+    if (
+      repositories?.ai !== "../aphrody-ai" ||
+      repositories?.web !== "../aphrody-web"
+    )
+      throw new Error(
+        "unexpected google-stack sourceRepositories; review source before import",
+      );
     repositories.ai = "./aphrody-ai";
     repositories.web = "./aphrody-web";
     remaps.push("sourceRepositories.ai: ../aphrody-ai -> ./aphrody-ai");
     remaps.push("sourceRepositories.web: ../aphrody-web -> ./aphrody-web");
   }
   return {
-    bytes: remaps.length ? Buffer.from(`${JSON.stringify(value, null, 2)}\n`) : source,
+    bytes: remaps.length
+      ? Buffer.from(`${JSON.stringify(value, null, 2)}\n`)
+      : source,
     remaps,
     endpoints,
   };
@@ -144,14 +166,19 @@ function checkoutReferences(
     );
     for (const match of matches) {
       const original = match[0].replace(/[.,;]+$/, "");
-      const suffix = original.replace(/^\/home\/(?:aphro\/src|ubuntu)\/aphrody-infra\/?/, "");
+      const suffix = original.replace(
+        /^\/home\/(?:aphro\/src|ubuntu)\/aphrody-infra\/?/,
+        "",
+      );
       const sourcePath = suffix ? `aphrody-infra/${suffix}` : "aphrody-infra";
       const mappedTarget = sourceEntries.get(sourcePath)?.target ?? null;
       references.push({
         line: index + 1,
         sourcePath,
         mappedTarget,
-        targetExists: mappedTarget ? existsSync(join(targetRoot, mappedTarget)) : false,
+        targetExists: mappedTarget
+          ? existsSync(join(targetRoot, mappedTarget))
+          : false,
       });
     }
   }
@@ -187,11 +214,18 @@ export async function importInfraConfig(
     "systemd",
     "rust-toolchain.toml",
   ]);
-  if (dirty) throw new Error("Infra configuration source is dirty; review it before import");
+  if (dirty)
+    throw new Error(
+      "Infra configuration source is dirty; review it before import",
+    );
   const sourceHead = git(source, ["rev-parse", "HEAD"]).trim();
   const mapPath = join(target, "docs/migration/source-map.json");
-  const sourceMap = JSON.parse(await readFile(mapPath, "utf8")) as { entries: SourceEntry[] };
-  const bySource = new Map(sourceMap.entries.map((entry) => [entry.source, entry]));
+  const sourceMap = JSON.parse(await readFile(mapPath, "utf8")) as {
+    entries: SourceEntry[];
+  };
+  const bySource = new Map(
+    sourceMap.entries.map((entry) => [entry.source, entry]),
+  );
   const planned: Array<{
     path: string;
     sourceSize: number;
@@ -231,7 +265,10 @@ export async function importInfraConfig(
         (entry.importedSha256 && entry.importedSha256 !== existingHash)
       )
         throw new Error(`catalog target conflict: ${path}`);
-      if (entry.importedSourceSha256 && entry.importedSourceSha256 !== sourceHash)
+      if (
+        entry.importedSourceSha256 &&
+        entry.importedSourceSha256 !== sourceHash
+      )
         throw new Error(`catalog source changed since import: ${path}`);
     }
     planned.push({
@@ -242,7 +279,11 @@ export async function importInfraConfig(
       bytes: transformed.bytes,
       remaps: transformed.remaps,
       endpoints: transformed.endpoints,
-      sourceCheckoutReferences: checkoutReferences(sourceBytes, bySource, target),
+      sourceCheckoutReferences: checkoutReferences(
+        sourceBytes,
+        bySource,
+        target,
+      ),
       entry,
       existing,
     });

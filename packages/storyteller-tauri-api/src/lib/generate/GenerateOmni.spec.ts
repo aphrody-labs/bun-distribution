@@ -61,24 +61,31 @@ it.each(["gpt_image_2p5_flare", "gpt_image_2p5_sunburst"])(
     for (const quality of ["auto", "max", "xhigh", "high", "medium", "low"]) {
       const request = { model, quality, resolution: "four_k" };
       await GenerateImage(request);
-      expect(invoke).toHaveBeenLastCalledWith("generate_image_command", { request });
+      expect(invoke).toHaveBeenLastCalledWith("generate_image_command", {
+        request,
+      });
     }
   },
 );
 
-it.each(["wan_3p0", "wan_3p0_prime"])("forwards %s with reference media", async (model) => {
-  const request = {
-    model,
-    duration_seconds: 15,
-    resolution: "ten_eighty_p",
-    generate_audio: true,
-    reference_image_media_tokens: ["mf_image"],
-    reference_video_media_tokens: ["mf_video"],
-    reference_audio_media_tokens: ["mf_audio"],
-  };
-  await GenerateVideo(request);
-  expect(invoke).toHaveBeenLastCalledWith("generate_video_command", { request });
-});
+it.each(["wan_3p0", "wan_3p0_prime"])(
+  "forwards %s with reference media",
+  async (model) => {
+    const request = {
+      model,
+      duration_seconds: 15,
+      resolution: "ten_eighty_p",
+      generate_audio: true,
+      reference_image_media_tokens: ["mf_image"],
+      reference_video_media_tokens: ["mf_video"],
+      reference_audio_media_tokens: ["mf_audio"],
+    };
+    await GenerateVideo(request);
+    expect(invoke).toHaveBeenLastCalledWith("generate_video_command", {
+      request,
+    });
+  },
+);
 
 it("preserves reference duration hints in video pricing", async () => {
   const request = {
@@ -100,7 +107,12 @@ it("preserves reference duration hints in video pricing", async () => {
 it.each(["artcraft", "midjourney"])(
   "passes an explicit %s provider for Midjourney generation",
   async (provider) => {
-    const request = { model: "midjourney_8", provider, batch_size: 4, prompt: "sailboat" };
+    const request = {
+      model: "midjourney_8",
+      provider,
+      batch_size: 4,
+      prompt: "sailboat",
+    };
     await GenerateImage(request as Parameters<typeof GenerateImage>[0]);
     expect(invoke).toHaveBeenCalledWith("generate_image_command", { request });
   },

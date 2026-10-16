@@ -25,7 +25,9 @@ test("redact masks keys, tokens and credentials in URLs", () => {
   ])
     expect(clean).not.toContain(secret);
   expect(clean).toContain("[MASQUE]");
-  expect(redact("public key ssh-ed25519 AAAA is fine")).toBe("public key ssh-ed25519 AAAA is fine");
+  expect(redact("public key ssh-ed25519 AAAA is fine")).toBe(
+    "public key ssh-ed25519 AAAA is fine",
+  );
 });
 
 test("the logger redacts, timestamps and never throws", () => {

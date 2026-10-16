@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // JSX tags and attributes for codemods: names, attribute lists with their raw values, closing tags.
-import { inSkipped, matching, skippedSpans, type Span } from "@aphrody/next-bun/codemods/lex";
+import {
+  inSkipped,
+  matching,
+  skippedSpans,
+  type Span,
+} from "@aphrody/next-bun/codemods/lex";
 
 export interface Attr {
   name: string;

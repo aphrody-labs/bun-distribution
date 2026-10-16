@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0 AND MIT
 // Derived from SpaceUI (packages/aphrody-spaceui/packages/primitives/src/Layout.tsx), MIT, rebuilt on Material Design 3.
 
-import type { ForwardRefExoticComponent, HTMLAttributes, RefAttributes } from "react";
+import type {
+  ForwardRefExoticComponent,
+  HTMLAttributes,
+  RefAttributes,
+} from "react";
 
 import { tw } from "./utils";
 
@@ -14,6 +18,7 @@ export const Card = CardImpl as unknown as ForwardRefExoticComponent<
 
 const GridLayoutImpl = tw.div`grid grid-cols-2 gap-3 expanded:grid-cols-3`;
 
-export const GridLayout = GridLayoutImpl as unknown as ForwardRefExoticComponent<
-  HTMLAttributes<HTMLDivElement> & RefAttributes<HTMLDivElement>
->;
+export const GridLayout =
+  GridLayoutImpl as unknown as ForwardRefExoticComponent<
+    HTMLAttributes<HTMLDivElement> & RefAttributes<HTMLDivElement>
+  >;

@@ -26,7 +26,9 @@ test("a running RAG job never inherits completion from an old final report", () 
   expect(JSON.stringify(result)).not.toContain("private");
 });
 test("completion requires a successful terminal unit and a current final report", () => {
-  const terminal = started.replace("MainPID=42", "MainPID=0").replace("activating", "inactive");
+  const terminal = started
+    .replace("MainPID=42", "MainPID=0")
+    .replace("activating", "inactive");
   expect(
     ragCounters(terminal, {
       generatedAt: new Date(1_001_000).toISOString(),
@@ -35,10 +37,15 @@ test("completion requires a successful terminal unit and a current final report"
     }),
   ).toMatchObject({ running: 0, completed: 1, indexed: 8, source_count: 1 });
   expect(
-    ragCounters(terminal, { generatedAt: new Date(900_000).toISOString(), failed: false }),
+    ragCounters(terminal, {
+      generatedAt: new Date(900_000).toISOString(),
+      failed: false,
+    }),
   ).toMatchObject({ completed: 0 });
-  expect(ragCounters(terminal.replace("inactive", "failed"), {})).toMatchObject({
-    completed: 0,
-    failed: 1,
-  });
+  expect(ragCounters(terminal.replace("inactive", "failed"), {})).toMatchObject(
+    {
+      completed: 0,
+      failed: 1,
+    },
+  );
 });

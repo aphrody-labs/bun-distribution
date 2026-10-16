@@ -9,7 +9,13 @@ import { join } from "node:path";
 
 const HERE = import.meta.dir;
 const ROOT = join(HERE, "..");
-const SRC = join(ROOT, "..", "m3-codemods", "data", "material-symbols-names.json");
+const SRC = join(
+  ROOT,
+  "..",
+  "m3-codemods",
+  "data",
+  "material-symbols-names.json",
+);
 const OUT = join(ROOT, "data", "material-symbols-names.js");
 
 const names: string[] = JSON.parse(await Bun.file(SRC).text());

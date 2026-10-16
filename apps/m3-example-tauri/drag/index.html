@@ -208,7 +208,7 @@
           <span>data-tauri-drag-region="deep" with clickables</span>
           <div class="nested-content" style="margin-top: 10px">
             <button class="test-btn">Button (Blocks)</button>
-            <a href="#" onclick="return false">Link (Blocks)</a>
+            <a href="#" onclick="return false;">Link (Blocks)</a>
           </div>
         </div>
       </div>
@@ -281,7 +281,7 @@
           </button>
           <a
             href="#"
-            onclick="return false"
+            onclick="return false;"
             class="qa-testable border-blue"
             data-tauri-drag-region
             style="text-decoration: none; color: inherit; padding: 8px 12px"
@@ -381,38 +381,38 @@
     <script>
       // Clickable Tags from drag.js
       const CLICKABLE_TAGS = [
-        'a',
-        'button',
-        'input',
-        'select',
-        'textarea',
-        'label',
-        'summary'
-      ]
+        "a",
+        "button",
+        "input",
+        "select",
+        "textarea",
+        "label",
+        "summary",
+      ];
 
       // Interactive Roles from drag.js
       const INTERACTIVE_ROLES = [
-        'button',
-        'link',
-        'menuitem',
-        'tab',
-        'checkbox',
-        'radio',
-        'switch',
-        'option'
-      ]
+        "button",
+        "link",
+        "menuitem",
+        "tab",
+        "checkbox",
+        "radio",
+        "switch",
+        "option",
+      ];
 
-      const clickableTagsEl = document.querySelector('#clickableTags')
-      const interactiveRolesEl = document.querySelector('#interactiveRoles')
-      const pathEl = document.querySelector('#path')
-      const contentEl = document.querySelector('#content')
+      const clickableTagsEl = document.querySelector("#clickableTags");
+      const interactiveRolesEl = document.querySelector("#interactiveRoles");
+      const pathEl = document.querySelector("#path");
+      const contentEl = document.querySelector("#content");
 
-      clickableTagsEl.textContent = JSON.stringify(CLICKABLE_TAGS, null, 2)
+      clickableTagsEl.textContent = JSON.stringify(CLICKABLE_TAGS, null, 2);
       interactiveRolesEl.textContent = JSON.stringify(
         INTERACTIVE_ROLES,
         null,
-        2
-      )
+        2,
+      );
     </script>
   </body>
 </html>

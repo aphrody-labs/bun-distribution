@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterEach, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -8,7 +15,8 @@ import { composeUp, ensureToken, tokenPath } from "./container-service.ts";
 
 const dirs: string[] = [];
 afterEach(() => {
-  for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+  for (const dir of dirs.splice(0))
+    rmSync(dir, { recursive: true, force: true });
 });
 const home = () => {
   const dir = mkdtempSync(join(tmpdir(), "container-service-"));
@@ -26,7 +34,9 @@ test("the token is generated once under ~/.aphrody/private with a restricted ACL
   expect(first).toMatch(/^[0-9a-f]{64}$/);
   expect(await ensureToken(h, acl)).toBe(first);
   expect(restricted).toEqual([tokenPath(h)]);
-  expect(tokenPath(h)).toBe(join(h, ".aphrody", "private", "aphrody_mcp_http_token"));
+  expect(tokenPath(h)).toBe(
+    join(h, ".aphrody", "private", "aphrody_mcp_http_token"),
+  );
 });
 
 test("a token of the former runner is moved, keeping its value", async () => {

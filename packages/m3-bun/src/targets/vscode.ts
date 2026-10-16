@@ -6,7 +6,11 @@
 import type { GeneratedFile } from "../util.ts";
 import type { Target, TargetContext } from "./types.ts";
 
-const task = (label: string, args: string, extra: Record<string, unknown> = {}) => ({
+const task = (
+  label: string,
+  args: string,
+  extra: Record<string, unknown> = {},
+) => ({
   label,
   type: "shell",
   command: args,
@@ -38,9 +42,18 @@ export const tasksJson = (c: TargetContext) => ({
     }),
     task("m3-bun: build", `${c.cli} build`),
     task("m3-bun: compile", `${c.cli} compile`),
-    task("m3-bun: compile (windows-x64)", `${c.cli} compile --target windows-x64`),
-    task("m3-bun: compile (linux-x64-musl)", `${c.cli} compile --target linux-x64-musl`),
-    task("m3-bun: serve", `${c.cli} serve`, { isBackground: true, problemMatcher: [] }),
+    task(
+      "m3-bun: compile (windows-x64)",
+      `${c.cli} compile --target windows-x64`,
+    ),
+    task(
+      "m3-bun: compile (linux-x64-musl)",
+      `${c.cli} compile --target linux-x64-musl`,
+    ),
+    task("m3-bun: serve", `${c.cli} serve`, {
+      isBackground: true,
+      problemMatcher: [],
+    }),
     task("m3-bun: deploy (generate all targets)", `${c.cli} deploy all`),
     task("m3-bun: package", `${c.cli} package`),
     task("m3-bun: smoke (compiled executable)", `${c.cli} smoke`),
@@ -115,8 +128,14 @@ export const vscode: Target = {
     ".vscode/tasks.json (dev, build, compile, serve, deploy, package, smoke, test), launch.json (Bun debugger), settings.json (Bun extension), extensions.json",
   generate(c): GeneratedFile[] {
     return [
-      { path: ".vscode/tasks.json", content: `${JSON.stringify(tasksJson(c), null, 2)}\n` },
-      { path: ".vscode/launch.json", content: `${JSON.stringify(launchJson(c), null, 2)}\n` },
+      {
+        path: ".vscode/tasks.json",
+        content: `${JSON.stringify(tasksJson(c), null, 2)}\n`,
+      },
+      {
+        path: ".vscode/launch.json",
+        content: `${JSON.stringify(launchJson(c), null, 2)}\n`,
+      },
       {
         path: ".vscode/settings.json",
         content: `${JSON.stringify(settingsJson(c), null, 2)}

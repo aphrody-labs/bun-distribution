@@ -23,7 +23,10 @@ import {
 import { runDocsGen } from "./docs-gen.ts";
 import { importedUpstreamMatcher, runDocsLinks } from "./docs-links.ts";
 import { runDocsOverlaps } from "./docs-overlaps.ts";
-import { generateSourceReference, type SourceReferenceTarget } from "./docs-source.ts";
+import {
+  generateSourceReference,
+  type SourceReferenceTarget,
+} from "./docs-source.ts";
 import { exportDocumentationSite } from "./docs-site.ts";
 
 export interface DocumentationConfig {
@@ -53,7 +56,12 @@ export interface DocumentationManifest {
   owner: "@aphrody/workspace";
   visibility: "private";
   documents: DocumentRecord[];
-  duplicates: Array<{ sha256: string; paths: string[]; canonical: string; action: "retain" }>;
+  duplicates: Array<{
+    sha256: string;
+    paths: string[];
+    canonical: string;
+    action: "retain";
+  }>;
   sources: DocumentationConfig["sources"];
   excluded: Array<{ path: string; reason: string }>;
 }
@@ -99,17 +107,27 @@ export function loadDocumentationConfig(root: string): DocumentationConfig {
   )
     throw new Error("Invalid documentation configuration");
   if (
-    !/^docs\/reference\/workspace\/[a-zA-Z0-9_.-]+\.json$/.test(config.inventory) ||
+    !/^docs\/reference\/workspace\/[a-zA-Z0-9_.-]+\.json$/.test(
+      config.inventory,
+    ) ||
     config.agentIndex !== "docs/llms.txt"
   )
-    throw new Error("Generated documentation destinations must stay in their owned docs paths");
-  for (const path of [config.inventory, config.agentIndex, ...config.entrypoints])
+    throw new Error(
+      "Generated documentation destinations must stay in their owned docs paths",
+    );
+  for (const path of [
+    config.inventory,
+    config.agentIndex,
+    ...config.entrypoints,
+  ])
     documentationPath(root, path);
   // Sibling source roots are explicit read-only inputs, never import/publication destinations.
   const ids = new Set<string>();
   for (const source of config.sources) {
     if (!/^[a-z0-9][a-z0-9-]*$/.test(source.id) || ids.has(source.id))
-      throw new Error(`Duplicate or invalid documentation source id: ${source.id}`);
+      throw new Error(
+        `Duplicate or invalid documentation source id: ${source.id}`,
+      );
     ids.add(source.id);
     if (![".", "../iecode"].includes(source.root))
       throw new Error(`Unmanaged source root: ${source.root}`);
@@ -119,7 +137,11 @@ export function loadDocumentationConfig(root: string): DocumentationConfig {
 
 const documentRank = (doc: DocumentRecord) =>
   (doc.status === "canonical" ? 0 : 10) +
-  (/^(packages|crates|apps)\//.test(doc.path) ? 0 : doc.path.startsWith("docs/") ? 1 : 2);
+  (/^(packages|crates|apps)\//.test(doc.path)
+    ? 0
+    : doc.path.startsWith("docs/")
+      ? 1
+      : 2);
 
 export function buildDocumentationManifest(
   root: string,
@@ -127,7 +149,9 @@ export function buildDocumentationManifest(
 ): DocumentationManifest {
   const imported = importedUpstreamMatcher(root);
   const paths = listRepositoryFiles(root, true)
-    .files.filter((path) => /\.(md|mdx)$/.test(path) && !PRIVATE_CONTEXT.test(path))
+    .files.filter(
+      (path) => /\.(md|mdx)$/.test(path) && !PRIVATE_CONTEXT.test(path),
+    )
     .toSorted();
   const documents: DocumentRecord[] = [];
   const excluded: DocumentationManifest["excluded"] = [];
@@ -136,17 +160,25 @@ export function buildDocumentationManifest(
     try {
       absolute = documentationPath(root, path);
     } catch (error) {
-      if (!(error instanceof Error) || !error.message.startsWith("Documentation symlink refused:"))
+      if (
+        !(error instanceof Error) ||
+        !error.message.startsWith("Documentation symlink refused:")
+      )
         throw error;
-      excluded.push({ path, reason: "symlink alias inventoried without following its content" });
+      excluded.push({
+        path,
+        reason: "symlink alias inventoried without following its content",
+      });
       continue;
     }
     if (!existsSync(absolute) || !lstatSync(absolute).isFile()) continue;
     const text = readFileSync(absolute, "utf8");
     const upstream =
-      !!imported(path) || /(^|\/)(upstream[^/]*|third_party|third-party|vendor)(\/|$)/.test(path);
+      !!imported(path) ||
+      /(^|\/)(upstream[^/]*|third_party|third-party|vendor)(\/|$)/.test(path);
     const history =
-      /^docs\/(migration|history)\//.test(path) || /\/(archive|historical)\//.test(path);
+      /^docs\/(migration|history)\//.test(path) ||
+      /\/(archive|historical)\//.test(path);
     const status = history
       ? "historical"
       : deriveStatus({
@@ -178,11 +210,17 @@ export function buildDocumentationManifest(
     if (group.length < 2) continue;
     // This is an authority alias, not permission to remove runtime templates or notices.
     const ranked = [...group].toSorted(
-      (a, b) => documentRank(a) - documentRank(b) || a.path.localeCompare(b.path),
+      (a, b) =>
+        documentRank(a) - documentRank(b) || a.path.localeCompare(b.path),
     );
     const canonical = ranked[0]!.path;
     for (const doc of group) doc.canonical = canonical;
-    duplicates.push({ sha256, paths: group.map((doc) => doc.path), canonical, action: "retain" });
+    duplicates.push({
+      sha256,
+      paths: group.map((doc) => doc.path),
+      canonical,
+      action: "retain",
+    });
   }
   duplicates.sort((a, b) => a.canonical.localeCompare(b.canonical));
   return {
@@ -216,8 +254,14 @@ export function renderDocumentationAgentIndex(
   ];
   for (const path of selected) {
     const doc = byPath.get(path);
-    if (!doc) throw new Error(`Configured documentation entrypoint is missing: ${path}`);
-    const href = relative(dirname(config.agentIndex), path).replaceAll(sep, "/");
+    if (!doc)
+      throw new Error(
+        `Configured documentation entrypoint is missing: ${path}`,
+      );
+    const href = relative(dirname(config.agentIndex), path).replaceAll(
+      sep,
+      "/",
+    );
     lines.push(
       `- [${doc.title.replaceAll("[", "").replaceAll("]", "")}](<${href}>): ${doc.status}, ${doc.domain}.`,
     );
@@ -232,7 +276,12 @@ export function renderDocumentationAgentIndex(
   return lines.join("\n");
 }
 
-function generatedOutput(root: string, path: string, text: string, check: boolean): boolean {
+function generatedOutput(
+  root: string,
+  path: string,
+  text: string,
+  check: boolean,
+): boolean {
   const target = documentationPath(root, path);
   const same = existsSync(target) && readFileSync(target, "utf8") === text;
   if (same) return true;
@@ -255,23 +304,50 @@ export async function generateDocumentation(
   for (const target of config.sources) {
     // Sibling repositories (../iecode) are not checked out on every host.
     if (!existsSync(resolve(root, target.root))) {
-      console.warn(`docs: skipped ${target.root}: repository not present on this host`);
+      console.warn(
+        `docs: skipped ${target.root}: repository not present on this host`,
+      );
       continue;
     }
     // oxlint-disable-next-line no-await-in-loop -- sources traitées séquentiellement : les sorties générées sont écrites dans l'ordre de configuration
-    const outputs = await generateSourceReference(resolve(root, target.root), [target]);
-    for (const [path, text] of outputs) if (!generatedOutput(root, path, text, check)) failures++;
+    const outputs = await generateSourceReference(resolve(root, target.root), [
+      target,
+    ]);
+    for (const [path, text] of outputs)
+      if (!generatedOutput(root, path, text, check)) failures++;
   }
   // The existing documentation index counts files. Materialize new views before
   // it runs, then refresh their hashes after its generated pages are current.
   if (!check) {
     const initial = buildDocumentationManifest(root, config);
-    generatedOutput(root, config.inventory, `${JSON.stringify(initial, null, 2)}\n`, false);
-    generatedOutput(root, config.agentIndex, renderDocumentationAgentIndex(initial, config), false);
+    generatedOutput(
+      root,
+      config.inventory,
+      `${JSON.stringify(initial, null, 2)}\n`,
+      false,
+    );
+    generatedOutput(
+      root,
+      config.agentIndex,
+      renderDocumentationAgentIndex(initial, config),
+      false,
+    );
   }
-  failures += await runDocsGen(["--root", root, ...(check ? ["--check"] : []), ...extra]);
+  failures += await runDocsGen([
+    "--root",
+    root,
+    ...(check ? ["--check"] : []),
+    ...extra,
+  ]);
   const manifest = buildDocumentationManifest(root, config);
-  if (!generatedOutput(root, config.inventory, `${JSON.stringify(manifest, null, 2)}\n`, check))
+  if (
+    !generatedOutput(
+      root,
+      config.inventory,
+      `${JSON.stringify(manifest, null, 2)}\n`,
+      check,
+    )
+  )
     failures++;
   if (
     !generatedOutput(
@@ -294,7 +370,8 @@ export async function runDocumentation(argv: string[]): Promise<number> {
   let root = process.cwd();
   if (rootIndex >= 0) {
     const value = args[rootIndex + 1];
-    if (!value || value.startsWith("--")) throw new Error("--root requires a path");
+    if (!value || value.startsWith("--"))
+      throw new Error("--root requires a path");
     root = resolve(value);
     args.splice(rootIndex, 2);
   }
@@ -315,7 +392,8 @@ export async function runDocumentation(argv: string[]): Promise<number> {
     );
     return 0;
   }
-  if (command === "links") return runDocsLinks(["--root", root, "--scope", "repository", ...rest]);
+  if (command === "links")
+    return runDocsLinks(["--root", root, "--scope", "repository", ...rest]);
   if (command === "overlaps") return runDocsOverlaps(["--root", root, ...rest]);
   if (command === "consolidate")
     return runDocsConsolidation([
@@ -326,7 +404,11 @@ export async function runDocumentation(argv: string[]): Promise<number> {
     ]);
   const config = loadDocumentationConfig(root);
   if (command === "generate" || command === "check") {
-    if (rest.some((arg) => !["--check", "--deps", "--skip-ecosystem"].includes(arg)))
+    if (
+      rest.some(
+        (arg) => !["--check", "--deps", "--skip-ecosystem"].includes(arg),
+      )
+    )
       throw new Error("Unknown documentation generation argument");
     return generateDocumentation(
       root,
@@ -353,7 +435,8 @@ export async function runDocumentation(argv: string[]): Promise<number> {
                   .toSorted()
                   .map((status) => [
                     status,
-                    manifest.documents.filter((doc) => doc.status === status).length,
+                    manifest.documents.filter((doc) => doc.status === status)
+                      .length,
                   ]),
               ),
             },
@@ -366,10 +449,15 @@ export async function runDocumentation(argv: string[]): Promise<number> {
   if (command === "site") {
     if (
       rest.length &&
-      (rest.length !== 2 || rest[0] !== "--output" || !rest[1] || rest[1].startsWith("--"))
+      (rest.length !== 2 ||
+        rest[0] !== "--output" ||
+        !rest[1] ||
+        rest[1].startsWith("--"))
     )
       throw new Error("site accepts --output <directory>");
-    const includes = config.site.include.map((pattern) => new Bun.Glob(pattern));
+    const includes = config.site.include.map(
+      (pattern) => new Bun.Glob(pattern),
+    );
     const pages = manifest.documents.filter(
       (doc) =>
         includes.some((pattern) => pattern.match(doc.path)) &&
@@ -377,10 +465,16 @@ export async function runDocumentation(argv: string[]): Promise<number> {
         ["canonical", "generated"].includes(doc.status),
     );
     if (!pages.length)
-      throw new Error("No eligible documents in the explicit private site allowlist");
+      throw new Error(
+        "No eligible documents in the explicit private site allowlist",
+      );
     console.log(
       JSON.stringify(
-        await exportDocumentationSite(root, pages, resolve(root, rest[1] ?? config.site.output)),
+        await exportDocumentationSite(
+          root,
+          pages,
+          resolve(root, rest[1] ?? config.site.output),
+        ),
         null,
         2,
       ),
@@ -390,12 +484,20 @@ export async function runDocumentation(argv: string[]): Promise<number> {
   if (command === "ai") {
     const apply = rest.includes("--apply");
     const online = rest.includes("--online");
-    const invocation = rest.filter((arg) => arg !== "--apply" && arg !== "--online");
+    const invocation = rest.filter(
+      (arg) => arg !== "--apply" && arg !== "--online",
+    );
     const [operation, path, language] = invocation;
     if (operation !== "translate" || !path || invocation.length > 3)
-      throw new Error("ai accepts translate <file> [language] --apply --online");
+      throw new Error(
+        "ai accepts translate <file> [language] --apply --online",
+      );
     const doc = manifest.documents.find((entry) => entry.path === path);
-    if (!doc || doc.status !== "canonical" || !config.entrypoints.includes(path))
+    if (
+      !doc ||
+      doc.status !== "canonical" ||
+      !config.entrypoints.includes(path)
+    )
       throw new Error(
         "AI input must be an explicitly configured canonical documentation entrypoint",
       );
@@ -428,8 +530,19 @@ export async function runDocumentation(argv: string[]): Promise<number> {
   // Compatibility adapter: an explicit invocation retains doc-ai's original arguments.
   if (command === "assist") {
     const child = Bun.spawn(
-      [process.execPath, join(root, "packages/engine/yolo/src/index.ts"), "doc-ai", ...rest],
-      { windowsHide: true, cwd: root, stdin: "inherit", stdout: "inherit", stderr: "inherit" },
+      [
+        process.execPath,
+        join(root, "packages/engine/yolo/src/index.ts"),
+        "doc-ai",
+        ...rest,
+      ],
+      {
+        windowsHide: true,
+        cwd: root,
+        stdin: "inherit",
+        stdout: "inherit",
+        stderr: "inherit",
+      },
     );
     return child.exited;
   }

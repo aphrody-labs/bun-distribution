@@ -5,7 +5,9 @@ import { FilterEngineCategories, Visibility } from "~/enums";
 export class MediaUploadApi extends ApiManager {
   private sessionToken?: string;
 
-  private async getSessionTokenForUploadStudioShot(): Promise<ApiResponse<string>> {
+  private async getSessionTokenForUploadStudioShot(): Promise<
+    ApiResponse<string>
+  > {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/session_token`;
     return await this.get<{
       maybe_signed_session: string;
@@ -177,7 +179,8 @@ export class MediaUploadApi extends ApiManager {
   }): Promise<ApiResponse<string>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/upload/image`;
     const options: Record<string, string | number | undefined> = {
-      is_intermediate_system_file: EIntermediateFile[is_intermediate_system_file],
+      is_intermediate_system_file:
+        EIntermediateFile[is_intermediate_system_file],
       maybe_title,
       maybe_visibility: maybe_visibility?.toString(),
     };

@@ -2,7 +2,29 @@ import { Modal } from "@storyteller/ui-modal";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button } from "@storyteller/ui-button";
 import dayjs from "dayjs";
-import { ArrowDownToLineIcon, BoxIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, GlobeIcon, ImageIcon, InfoIcon, LinkIcon, LogOutIcon, MusicIcon, PauseIcon, PencilIcon, PlayIcon, RotateCwIcon, SearchIcon, Trash2Icon, UserIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
+import {
+  ArrowDownToLineIcon,
+  BoxIcon,
+  CheckIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CopyIcon,
+  GlobeIcon,
+  ImageIcon,
+  InfoIcon,
+  LinkIcon,
+  LogOutIcon,
+  MusicIcon,
+  PauseIcon,
+  PencilIcon,
+  PlayIcon,
+  RotateCwIcon,
+  SearchIcon,
+  Trash2Icon,
+  UserIcon,
+  VideoIcon,
+  WandSparklesIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { MediaFileDelete } from "@storyteller/tauri-api";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
@@ -60,7 +82,11 @@ interface LightboxModalProps {
   additionalInfo?: ReactNode;
   downloadUrl?: string;
   mediaId?: string;
-  onDownloadClicked?: (url: string, mediaClass?: string, model?: string) => Promise<void>;
+  onDownloadClicked?: (
+    url: string,
+    mediaClass?: string,
+    model?: string,
+  ) => Promise<void>;
   onAddToSceneClicked?: (
     url: string,
     media_id: string | undefined,
@@ -154,7 +180,9 @@ export function LightboxModal({
   const [creator, setCreator] = useState<UserInfo | null>(null);
   const [shareCopied, setShareCopied] = useState<boolean>(false);
   const shareCopiedTimeoutRef = useRef<number | null>(null);
-  const [playingAudioToken, setPlayingAudioToken] = useState<string | null>(null);
+  const [playingAudioToken, setPlayingAudioToken] = useState<string | null>(
+    null,
+  );
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
   const stopAudio = useCallback(() => {
@@ -602,9 +630,7 @@ export function LightboxModal({
               <div className="flex h-full w-full items-center justify-center px-4 sm:px-8">
                 <div className="w-full max-w-xl border border-white/15 bg-ui-controls px-4 py-10 sm:px-6">
                   <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center border border-white/15 bg-white/10">
-                    <MusicIcon
-                      
-                      className="text-2xl text-white/70" />
+                    <MusicIcon className="text-2xl text-white/70" />
                   </div>
                   <WaveformAudioPlayer
                     key={selectedImageUrl as string}
@@ -715,7 +741,7 @@ export function LightboxModal({
                 className="absolute left-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center bg-black/50 text-white/70 opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white group-hover/nav:opacity-100 focus:outline-none"
                 aria-label="Previous item"
               >
-                <ChevronLeftIcon  className="text-lg" />
+                <ChevronLeftIcon className="text-lg" />
               </button>
             )}
             {onNavigateNext && (
@@ -727,7 +753,7 @@ export function LightboxModal({
                 className="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center bg-black/50 text-white/70 opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white group-hover/nav:opacity-100 focus:outline-none"
                 aria-label="Next item"
               >
-                <ChevronRightIcon  className="text-lg" />
+                <ChevronRightIcon className="text-lg" />
               </button>
             )}
           </div>
@@ -813,9 +839,7 @@ export function LightboxModal({
                         </button>
                       )}
                     </div>
-                    <div
-                      className="text-sm text-base-fg/90 break-words px-4 py-3 bg-black/20 leading-relaxed border border-white/10"
-                    >
+                    <div className="text-sm text-base-fg/90 break-words px-4 py-3 bg-black/20 leading-relaxed border border-white/10">
                       {promptLoading ? (
                         <div className="animate-pulse space-y-2">
                           <div className="h-3 w-full bg-white/10" />
@@ -908,13 +932,16 @@ export function LightboxModal({
                           </div>
                           <div className="grid grid-cols-5 gap-1.5 w-fit">
                             {contextImages.map((contextImage, index) => {
-                              const isAudio = contextImage.semantic === "audioref";
-                              const isVideoRef = contextImage.semantic === "vid_ref";
+                              const isAudio =
+                                contextImage.semantic === "audioref";
+                              const isVideoRef =
+                                contextImage.semantic === "vid_ref";
                               const { thumbnail, fullSize } =
                                 getContextImageThumbnail(contextImage, {
                                   size: THUMBNAIL_SIZES.SMALL,
                                 });
-                              const isPlayingThis = playingAudioToken === contextImage.media_token;
+                              const isPlayingThis =
+                                playingAudioToken === contextImage.media_token;
 
                               return (
                                 <Tooltip
@@ -935,9 +962,7 @@ export function LightboxModal({
                                             setRefPreviewUrl(fullSize);
                                           }}
                                         >
-                                          <SearchIcon
-                                            
-                                            className="mr-1.5" />
+                                          <SearchIcon className="mr-1.5" />
                                           Preview image
                                         </button>
                                       )}
@@ -951,9 +976,7 @@ export function LightboxModal({
                                             );
                                           }}
                                         >
-                                          <LogOutIcon
-                                            
-                                            className="mr-1.5" />
+                                          <LogOutIcon className="mr-1.5" />
                                           View as media
                                         </button>
                                       )}
@@ -964,7 +987,10 @@ export function LightboxModal({
                                     className="relative aspect-square w-12 overflow-hidden border border-white/15 bg-white/5 transition-colors hover:border-white/40 group cursor-pointer"
                                     onClick={() => {
                                       if (isAudio) {
-                                        handleAudioToggle(contextImage.media_token, contextImage.media_links.cdn_url);
+                                        handleAudioToggle(
+                                          contextImage.media_token,
+                                          contextImage.media_links.cdn_url,
+                                        );
                                       } else if (!isVideoRef) {
                                         setRefPreviewUrl(fullSize);
                                       }
@@ -973,7 +999,9 @@ export function LightboxModal({
                                     {isAudio ? (
                                       <div className="h-full w-full flex items-center justify-center bg-white/5">
                                         <DynamicIcon
-                                          icon={isPlayingThis ? PauseIcon : PlayIcon}
+                                          icon={
+                                            isPlayingThis ? PauseIcon : PlayIcon
+                                          }
                                           className="text-base-fg/70 text-lg"
                                         />
                                       </div>
@@ -986,9 +1014,7 @@ export function LightboxModal({
                                         />
                                         {isVideoRef && (
                                           <div className="absolute inset-0 flex items-center justify-center">
-                                            <VideoIcon
-                                              
-                                              className="text-white/80 text-sm drop-shadow-lg" />
+                                            <VideoIcon className="text-white/80 text-sm drop-shadow-lg" />
                                           </div>
                                         )}
                                       </>
@@ -1176,7 +1202,11 @@ export function LightboxModal({
                     onClick={async (e) => {
                       e.stopPropagation();
                       gtagEvent("download_clicked");
-                      await onDownloadClicked(actionUrl, mediaClass, modelType ?? undefined);
+                      await onDownloadClicked(
+                        actionUrl,
+                        mediaClass,
+                        modelType ?? undefined,
+                      );
                     }}
                   >
                     Download

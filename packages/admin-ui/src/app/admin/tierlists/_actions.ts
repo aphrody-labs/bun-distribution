@@ -34,12 +34,20 @@ export async function saveOfficialTierlist(
   const me = await requireAdmin();
 
   const title = (input.title ?? "").trim();
-  if (title.length < 2) return { ok: false, error: "Donne un titre à la tier list." };
+  if (title.length < 2)
+    return { ok: false, error: "Donne un titre à la tier list." };
 
   const sane = sanitizeTiers(input.tiers);
-  if (!sane) return { ok: false, error: "Tier list invalide (aucun tier ou trop de cartes)." };
+  if (!sane)
+    return {
+      ok: false,
+      error: "Tier list invalide (aucun tier ou trop de cartes).",
+    };
   if (sane.totalItems === 0)
-    return { ok: false, error: "Place au moins une carte dans un tier avant d'enregistrer." };
+    return {
+      ok: false,
+      error: "Place au moins une carte dans un tier avant d'enregistrer.",
+    };
 
   const description = input.description?.trim() || null;
   // Depuis l'admin, une tier list est officielle par défaut.

@@ -47,9 +47,16 @@ export function ThemeCreateForm() {
   }
   return (
     <form onSubmit={onSubmit} className="dbz-panel p-5 space-y-3 mb-4">
-      <h3 className="font-saiyan text-xl text-fuchsia-300">+ Nouveau thème carte</h3>
+      <h3 className="font-saiyan text-xl text-fuchsia-300">
+        + Nouveau thème carte
+      </h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-        <TextInput name="id" label="ID (key unique, ex: galactic)" required pattern="[a-z0-9_-]+" />
+        <TextInput
+          name="id"
+          label="ID (key unique, ex: galactic)"
+          required
+          pattern="[a-z0-9_-]+"
+        />
         <TextInput name="name" label="Nom affiché" required />
         <ColorInput name="accent" label="Accent" defaultValue="#a855f7" />
         <ColorInput name="aura" label="Aura" defaultValue="#38bdf8" />
@@ -60,13 +67,29 @@ export function ThemeCreateForm() {
           <span className="font-scouter tracking-widest text-cyan-300 text-[10px] uppercase">
             Image de fond
           </span>
-          <ImageField value={bgFile} onChange={setBgFile} subdir="themes" column="image de fond" />
+          <ImageField
+            value={bgFile}
+            onChange={setBgFile}
+            subdir="themes"
+            column="image de fond"
+          />
           <input type="hidden" name="bgFile" value={bgFile} />
         </div>
-        <TextInput name="textShadow" label="Text shadow CSS" defaultValue="rgba(0,0,0,0.8)" />
+        <TextInput
+          name="textShadow"
+          label="Text shadow CSS"
+          defaultValue="rgba(0,0,0,0.8)"
+        />
         <label className="flex items-center gap-2 pt-5">
-          <input type="checkbox" name="enabled" defaultChecked className="w-4 h-4" />
-          <span className="font-scouter tracking-widest text-cyan-300 text-[10px]">ACTIVÉ</span>
+          <input
+            type="checkbox"
+            name="enabled"
+            defaultChecked
+            className="w-4 h-4"
+          />
+          <span className="font-scouter tracking-widest text-cyan-300 text-[10px]">
+            ACTIVÉ
+          </span>
         </label>
       </div>
       <div className="flex items-center gap-3 pt-2">
@@ -78,7 +101,9 @@ export function ThemeCreateForm() {
           {pending ? "…" : "Créer thème"}
         </button>
         {r && (
-          <span className={`text-xs ${r.ok ? "text-green-300" : "text-red-400"}`}>
+          <span
+            className={`text-xs ${r.ok ? "text-green-300" : "text-red-400"}`}
+          >
             {r.ok ? "✓ Thème créé" : `✗ ${r.error}`}
           </span>
         )}
@@ -206,7 +231,13 @@ export function ThemeRowActions({ theme }: { theme: Theme }) {
   );
 }
 
-function ThemeEditModal({ theme, onClose }: { theme: Theme; onClose: () => void }) {
+function ThemeEditModal({
+  theme,
+  onClose,
+}: {
+  theme: Theme;
+  onClose: () => void;
+}) {
   const [vals, setVals] = useState(theme);
   const [pending, start] = useTransition();
   const [r, setR] = useState<{ ok: boolean; error?: string } | null>(null);
@@ -233,7 +264,11 @@ function ThemeEditModal({ theme, onClose }: { theme: Theme; onClose: () => void 
           <h3 className="font-saiyan text-xl text-fuchsia-300">
             Éditer thème · <code className="text-cyan-300">{theme.id}</code>
           </h3>
-          <button type="button" onClick={onClose} className="text-white/50 hover:text-white">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-white/50 hover:text-white"
+          >
             ✗
           </button>
         </div>
@@ -245,31 +280,35 @@ function ThemeEditModal({ theme, onClose }: { theme: Theme; onClose: () => void 
               className="mt-1 w-full bg-dbz-bg border border-dbz-border focus:border-fuchsia-400 p-2"
             />
           </LabeledInput>
-          {(["accent", "aura", "bgGrad1", "bgGrad2", "bgGrad3"] as const).map((k) => (
-            <LabeledInput key={k} label={k}>
-              <div className="mt-1 flex gap-2">
-                <input
-                  value={vals[k]}
-                  onChange={(e) => setVals({ ...vals, [k]: e.target.value })}
-                  pattern="#[0-9a-fA-F]{6}"
-                  className="flex-1 bg-dbz-bg border border-dbz-border focus:border-fuchsia-400 p-2 font-mono"
-                />
-                <input
-                  type="color"
-                  value={vals[k]}
-                  onChange={(e) => setVals({ ...vals, [k]: e.target.value })}
-                  className="w-12 h-10 bg-dbz-bg border border-dbz-border cursor-pointer"
-                />
-              </div>
-            </LabeledInput>
-          ))}
+          {(["accent", "aura", "bgGrad1", "bgGrad2", "bgGrad3"] as const).map(
+            (k) => (
+              <LabeledInput key={k} label={k}>
+                <div className="mt-1 flex gap-2">
+                  <input
+                    value={vals[k]}
+                    onChange={(e) => setVals({ ...vals, [k]: e.target.value })}
+                    pattern="#[0-9a-fA-F]{6}"
+                    className="flex-1 bg-dbz-bg border border-dbz-border focus:border-fuchsia-400 p-2 font-mono"
+                  />
+                  <input
+                    type="color"
+                    value={vals[k]}
+                    onChange={(e) => setVals({ ...vals, [k]: e.target.value })}
+                    className="w-12 h-10 bg-dbz-bg border border-dbz-border cursor-pointer"
+                  />
+                </div>
+              </LabeledInput>
+            ),
+          )}
           <div className="sm:col-span-2">
             <span className="font-scouter tracking-widest text-cyan-300 text-[10px] uppercase">
               Image de fond
             </span>
             <ImageField
               value={vals.bgFile ?? ""}
-              onChange={(bgFile) => setVals({ ...vals, bgFile: bgFile || null })}
+              onChange={(bgFile) =>
+                setVals({ ...vals, bgFile: bgFile || null })
+              }
               subdir="themes"
               column="image de fond"
             />
@@ -289,15 +328,19 @@ function ThemeEditModal({ theme, onClose }: { theme: Theme; onClose: () => void 
             PREVIEW PALETTE
           </div>
           <div className="flex gap-2">
-            {(["accent", "aura", "bgGrad1", "bgGrad2", "bgGrad3"] as const).map((k) => (
-              <div key={k} className="flex-1 text-center">
-                <div
-                  className="h-12 rounded border border-dbz-border"
-                  style={{ background: vals[k] }}
-                />
-                <div className="text-[9px] text-white/50 mt-1 font-mono">{k}</div>
-              </div>
-            ))}
+            {(["accent", "aura", "bgGrad1", "bgGrad2", "bgGrad3"] as const).map(
+              (k) => (
+                <div key={k} className="flex-1 text-center">
+                  <div
+                    className="h-12 rounded border border-dbz-border"
+                    style={{ background: vals[k] }}
+                  />
+                  <div className="text-[9px] text-white/50 mt-1 font-mono">
+                    {k}
+                  </div>
+                </div>
+              ),
+            )}
           </div>
           <div
             className="h-16 rounded mt-3 border border-dbz-border"
@@ -308,13 +351,19 @@ function ThemeEditModal({ theme, onClose }: { theme: Theme; onClose: () => void 
         </div>
 
         {r && (
-          <span className={`text-xs ${r.ok ? "text-green-300" : "text-red-400"}`}>
+          <span
+            className={`text-xs ${r.ok ? "text-green-300" : "text-red-400"}`}
+          >
             {r.ok ? "✓ Sauvegardé" : `✗ ${r.error}`}
           </span>
         )}
 
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="dbz-button-ghost !text-xs">
+          <button
+            type="button"
+            onClick={onClose}
+            className="dbz-button-ghost !text-xs"
+          >
             Annuler
           </button>
           <button
@@ -331,7 +380,13 @@ function ThemeEditModal({ theme, onClose }: { theme: Theme; onClose: () => void 
   );
 }
 
-function LabeledInput({ label, children }: { label: string; children: React.ReactNode }) {
+function LabeledInput({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <label className="block">
       <span className="font-scouter tracking-widest text-cyan-300 text-[10px] uppercase">

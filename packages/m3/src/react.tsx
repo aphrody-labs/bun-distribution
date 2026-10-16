@@ -7,14 +7,31 @@
 //   - the motion defaults (`@aphrody/m3-motion` springs, `motion/react` `MotionConfig`), honouring
 //     the user's reduced-motion preference.
 import { m3Springs } from "@aphrody/m3-motion";
-import { useWindowSizeClass, type WindowSizeClass } from "@aphrody/m3-react/adaptive";
-import { M3ThemeProvider, type SchemeVariant, type ThemeMode } from "@aphrody/m3-theme/react";
+import {
+  useWindowSizeClass,
+  type WindowSizeClass,
+} from "@aphrody/m3-react/adaptive";
+import {
+  M3ThemeProvider,
+  type SchemeVariant,
+  type ThemeMode,
+} from "@aphrody/m3-theme/react";
 import { MotionConfig } from "motion/react";
-import { createContext, type ReactNode, StrictMode, useContext, useEffect } from "react";
+import {
+  createContext,
+  type ReactNode,
+  StrictMode,
+  useContext,
+  useEffect,
+} from "react";
 import { createRoot, type Root } from "react-dom/client";
 
 export { useM3Theme } from "@aphrody/m3-theme/react";
-export type { M3ThemeContextType, SchemeVariant, ThemeMode } from "@aphrody/m3-theme/react";
+export type {
+  M3ThemeContextType,
+  SchemeVariant,
+  ThemeMode,
+} from "@aphrody/m3-theme/react";
 export type { WindowSizeClass } from "@aphrody/m3-react/adaptive";
 
 /** Speed of the default spring (`m3Springs` of `@aphrody/m3-motion`). */
@@ -46,7 +63,8 @@ const SizeClassContext = createContext<WindowSizeClass | undefined>(undefined);
 /** The current M3 window size class, from the nearest `M3App`. */
 export function useM3SizeClass(): WindowSizeClass {
   const value = useContext(SizeClassContext);
-  if (value === undefined) throw new Error("useM3SizeClass must be used within an M3App");
+  if (value === undefined)
+    throw new Error("useM3SizeClass must be used within an M3App");
   return value;
 }
 
@@ -73,8 +91,13 @@ export function M3App({
       defaultVariant={theme.variant}
       target={target}
     >
-      <MotionConfig transition={m3Springs[motion].spatial} reducedMotion={reducedMotion}>
-        <SizeClassContext.Provider value={sizeClass}>{children}</SizeClassContext.Provider>
+      <MotionConfig
+        transition={m3Springs[motion].spatial}
+        reducedMotion={reducedMotion}
+      >
+        <SizeClassContext.Provider value={sizeClass}>
+          {children}
+        </SizeClassContext.Provider>
       </MotionConfig>
     </M3ThemeProvider>
   );
@@ -84,9 +107,17 @@ export function M3App({
  * Mount `app` inside `M3App` (and `StrictMode`) on `container` (an element or a selector).
  * Returns the React root.
  */
-export function mountM3App(container: Element | string, app: ReactNode, props: Omit<M3AppProps, "children"> = {}): Root {
-  const element = typeof container === "string" ? document.querySelector(container) : container;
-  if (!element) throw new Error(`mountM3App: no element matches ${String(container)}`);
+export function mountM3App(
+  container: Element | string,
+  app: ReactNode,
+  props: Omit<M3AppProps, "children"> = {},
+): Root {
+  const element =
+    typeof container === "string"
+      ? document.querySelector(container)
+      : container;
+  if (!element)
+    throw new Error(`mountM3App: no element matches ${String(container)}`);
   const root = createRoot(element);
   root.render(
     <StrictMode>

@@ -1,6 +1,11 @@
 import { expect, test } from "bun:test";
 import { fileURLToPath } from "node:url";
-import { loadRootDocs, renderMemory, renderPlan, renderReadme } from "../src/root-docs.ts";
+import {
+  loadRootDocs,
+  renderMemory,
+  renderPlan,
+  renderReadme,
+} from "../src/root-docs.ts";
 
 const root = fileURLToPath(new URL("../../../docs/aphrody/", import.meta.url));
 
@@ -32,6 +37,8 @@ test("README installation does not alter generated plan or evidence", () => {
   const data = loadRootDocs(root);
   const before = [renderPlan(data), renderMemory(data)];
   data.readme.installation = ["Installation fixture"];
-  expect(renderReadme(data, "Totals: fixture.")).toContain("Installation fixture");
+  expect(renderReadme(data, "Totals: fixture.")).toContain(
+    "Installation fixture",
+  );
   expect([renderPlan(data), renderMemory(data)]).toEqual(before);
 });

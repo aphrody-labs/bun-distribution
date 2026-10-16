@@ -44,7 +44,15 @@ export interface ScanOptions {
   readonly maxFiles?: number | undefined;
 }
 
-const DEFAULT_EXCLUDES = [".git", "node_modules", "target", "dist", ".cache", ".cargo", "var"];
+const DEFAULT_EXCLUDES = [
+  ".git",
+  "node_modules",
+  "target",
+  "dist",
+  ".cache",
+  ".cargo",
+  "var",
+];
 
 /**
  * Recursively scans a directory in parallel, computing line counts, byte sizes,
@@ -70,14 +78,20 @@ export async function scanDirectory(
   )
     throw new Error("maxFiles must be a positive integer");
 
-  const extsFilter = options.exts?.map((e) => (e.startsWith(".") ? e : `.${e}`).toLowerCase());
+  const extsFilter = options.exts?.map((e) =>
+    (e.startsWith(".") ? e : `.${e}`).toLowerCase(),
+  );
   const excludes = new Set(options.exclude ?? DEFAULT_EXCLUDES);
   const limit = limiter(parallel);
 
   const glob = new Bun.Glob("**/*");
   const candidates: string[] = [];
 
-  for (const relPath of glob.scanSync({ cwd: absTarget, onlyFiles: true, dot: false })) {
+  for (const relPath of glob.scanSync({
+    cwd: absTarget,
+    onlyFiles: true,
+    dot: false,
+  })) {
     const parts = relPath.split(/[/\\]/);
     if (parts.some((p) => excludes.has(p))) continue;
 
@@ -96,7 +110,10 @@ export async function scanDirectory(
     candidates.length = Math.min(candidates.length, options.maxFiles);
 
   const entries: FileEntry[] = [];
-  const extMap = new Map<string, { count: number; bytes: number; lines: number }>();
+  const extMap = new Map<
+    string,
+    { count: number; bytes: number; lines: number }
+  >();
 
   const scanFile = async (relPath: string): Promise<FileEntry | null> => {
     try {
@@ -153,7 +170,10 @@ export async function scanDirectory(
       bytes: stat.bytes,
       lines: stat.lines,
     }))
-    .toSorted((a, b) => b.bytes - a.bytes || (a.ext < b.ext ? -1 : a.ext > b.ext ? 1 : 0));
+    .toSorted(
+      (a, b) =>
+        b.bytes - a.bytes || (a.ext < b.ext ? -1 : a.ext > b.ext ? 1 : 0),
+    );
 
   const largestFiles = [...entries]
     .toSorted((a, b) => b.bytes - a.bytes || comparePaths(a, b))
@@ -177,7 +197,8 @@ export async function scanDirectory(
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
@@ -199,7 +220,10 @@ export function renderScanMarkdown(report: ScanReport): string {
   ];
 
   for (const s of report.byExtension) {
-    const pct = report.totalBytes > 0 ? ((s.bytes / report.totalBytes) * 100).toFixed(1) : "0.0";
+    const pct =
+      report.totalBytes > 0
+        ? ((s.bytes / report.totalBytes) * 100).toFixed(1)
+        : "0.0";
     lines.push(
       `| \`${s.ext}\` | ${s.count.toLocaleString()} | ${s.lines.toLocaleString()} | ${formatBytes(s.bytes)} | ${pct}% |`,
     );
@@ -214,7 +238,10 @@ export function renderScanMarkdown(report: ScanReport): string {
   );
 
   for (const f of report.largestFiles) {
-    const rel = relative(report.target, resolve(report.target, f.path)).replaceAll("\\", "/");
+    const rel = relative(
+      report.target,
+      resolve(report.target, f.path),
+    ).replaceAll("\\", "/");
     lines.push(
       `| \`${rel}\` | ${formatBytes(f.bytes)} | ${f.lines.toLocaleString()} | \`${f.hash}\` |`,
     );
@@ -223,7 +250,8 @@ export function renderScanMarkdown(report: ScanReport): string {
   return lines.join("\n");
 }
 
-const mb = (bytes: number): string => (bytes / (1024 * 1024)).toFixed(2) + " MB";
+const mb = (bytes: number): string =>
+  (bytes / (1024 * 1024)).toFixed(2) + " MB";
 const kb = (bytes: number): string => (bytes / 1024).toFixed(1) + " KB";
 
 export function renderScanTerminal(report: ScanReport): string {

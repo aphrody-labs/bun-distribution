@@ -1,7 +1,11 @@
 "use client";
 
 import { resolveAnimationPathValueAtTime } from "../../../animation";
-import { Section, SectionContent, SectionFields } from "../../../components/section";
+import {
+  Section,
+  SectionContent,
+  SectionFields,
+} from "../../../components/section";
 import { useElementPlayhead } from "../hooks/use-element-playhead";
 import { useKeyframedParamProperty } from "../hooks/use-keyframed-param-property";
 import { PropertyParamField } from "./property-param-field";

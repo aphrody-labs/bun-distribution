@@ -4,7 +4,10 @@
 id = "application/x-debian-package"
 name = "Debian Package"
 extensions = ["deb"]
-mime_types = ["application/x-debian-package", "application/vnd.debian.binary-package"]
+mime_types = [
+  "application/x-debian-package",
+  "application/vnd.debian.binary-package",
+]
 category = "package"
 priority = 100
 

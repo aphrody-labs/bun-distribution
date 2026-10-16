@@ -1,15 +1,23 @@
 import { useMemo, useRef, useState, ReactNode } from "react";
 import { toast } from "@storyteller/ui-toaster";
-import {
-  GalleryModal,
-  type GalleryItem,
-} from "@storyteller/ui-gallery-modal";
+import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GenerateIconButton, ToggleButton } from "@storyteller/ui-button";
-import { ChevronDownIcon, ChevronUpIcon, MicIcon, MicOffIcon, RepeatIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  MicIcon,
+  MicOffIcon,
+  RepeatIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
-import type { OmniGenAudioModelDetails, OmniGenAudioRequest, OmniGenAudioGenerateResponse, UploadMediaFn } from "@storyteller/api";
+import type {
+  OmniGenAudioModelDetails,
+  OmniGenAudioRequest,
+  OmniGenAudioGenerateResponse,
+  UploadMediaFn,
+} from "@storyteller/api";
 import {
   enqueueAudioGeneration,
   AUDIO_MODELS_REQUIRING_AUDIO_REF,
@@ -69,7 +77,9 @@ interface PromptBoxAudioProps {
   // Audio models from GET /v1/omni_gen/models/audio (useOmniGenAudioModels).
   models: OmniGenAudioModelDetails[];
   uploadAudio?: UploadMediaFn;
-  generateAudio?: (request: OmniGenAudioRequest) => Promise<OmniGenAudioGenerateResponse>;
+  generateAudio?: (
+    request: OmniGenAudioRequest,
+  ) => Promise<OmniGenAudioGenerateResponse>;
   uploadImage?: UploadMediaFn;
   // Fired after a successful enqueue with every created job token (one
   // request can create several Suno clips).
@@ -140,9 +150,7 @@ export const PromptBoxAudio = ({
       const chosen = models.find((m) => m.model === selectedModelId);
       if (chosen) return chosen;
     }
-    return (
-      models.find((m) => m.model === DEFAULT_AUDIO_MODEL_ID) ?? models[0]
-    );
+    return models.find((m) => m.model === DEFAULT_AUDIO_MODEL_ID) ?? models[0];
   }, [models, selectedModelId]);
 
   // Capability gating
@@ -292,7 +300,9 @@ export const PromptBoxAudio = ({
   const handleReferenceImagesChange = (images: typeof referenceImages) => {
     if (images.length > 0 && referenceAudios.length > 0) {
       setReferenceAudios([]);
-      toast.error("Removed audio reference — it can't be combined with an image");
+      toast.error(
+        "Removed audio reference — it can't be combined with an image",
+      );
     }
     setReferenceImages(images);
   };
@@ -402,7 +412,11 @@ export const PromptBoxAudio = ({
         pitch,
       };
 
-      const result = await enqueueAudioGeneration(selectedModel, settings, generateAudio);
+      const result = await enqueueAudioGeneration(
+        selectedModel,
+        settings,
+        generateAudio,
+      );
 
       if (!result.success) {
         if (result.errorCode === 402) {

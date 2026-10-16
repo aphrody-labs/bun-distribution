@@ -32,7 +32,10 @@ export function findDocumentOverlaps(
   documents: ReadonlyArray<{ file: string; text: string }>,
   threshold: number,
 ): DocumentOverlap[] {
-  const entries = documents.map(({ file, text }) => ({ file, words: keywords(text) }));
+  const entries = documents.map(({ file, text }) => ({
+    file,
+    words: keywords(text),
+  }));
   const overlaps: DocumentOverlap[] = [];
   for (let left = 0; left < entries.length; left++)
     for (let right = left + 1; right < entries.length; right++) {
@@ -41,7 +44,8 @@ export function findDocumentOverlaps(
       if (!a || !b || a.words.size === 0 || b.words.size === 0) continue;
       const common = [...a.words].filter((word) => b.words.has(word)).length;
       const similarity = common / Math.min(a.words.size, b.words.size);
-      if (similarity > threshold) overlaps.push({ left: a.file, right: b.file, similarity });
+      if (similarity > threshold)
+        overlaps.push({ left: a.file, right: b.file, similarity });
     }
   return overlaps;
 }
@@ -66,14 +70,16 @@ export function runDocsOverlaps(args: string[]): number {
   }
   if (!root || !Number.isFinite(threshold) || threshold < 0 || threshold > 1)
     throw new Error("invalid root or threshold");
-  if (includes.some((include) => !include)) throw new Error("--include requires a path substring");
+  if (includes.some((include) => !include))
+    throw new Error("--include requires a path substring");
   root = resolve(root);
   const result = Bun.spawnSync(["git", "-C", root, "ls-files", "*.md"], {
     windowsHide: true,
     stdout: "pipe",
     stderr: "pipe",
   });
-  if (result.exitCode !== 0) throw new Error(new TextDecoder().decode(result.stderr).trim());
+  if (result.exitCode !== 0)
+    throw new Error(new TextDecoder().decode(result.stderr).trim());
   const docs = new TextDecoder()
     .decode(result.stdout)
     .trim()
@@ -82,11 +88,15 @@ export function runDocsOverlaps(args: string[]): number {
       (file) =>
         file.startsWith("docs/") &&
         existsSync(resolve(root, file)) &&
-        (includes.length === 0 || includes.some((include) => file.includes(include))) &&
+        (includes.length === 0 ||
+          includes.some((include) => file.includes(include))) &&
         !excludes.some((exclude) => file.includes(exclude)),
     );
   const overlaps = findDocumentOverlaps(
-    docs.map((file) => ({ file, text: readFileSync(resolve(root, file), "utf8") })),
+    docs.map((file) => ({
+      file,
+      text: readFileSync(resolve(root, file), "utf8"),
+    })),
     threshold,
   );
   for (const overlap of overlaps)

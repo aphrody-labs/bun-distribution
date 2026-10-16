@@ -1,12 +1,10 @@
-import { render } from '@testing-library/react';
+import { render } from "@testing-library/react";
 
-import MenuIconSelector from './menu-icon-selector';
+import MenuIconSelector from "./menu-icon-selector";
 
-describe('MenuIconSelector', () => {
-  
-  it('should render successfully', () => {
+describe("MenuIconSelector", () => {
+  it("should render successfully", () => {
     const { baseElement } = render(<MenuIconSelector />);
     expect(baseElement).toBeTruthy();
   });
-  
 });

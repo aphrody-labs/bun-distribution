@@ -9,9 +9,16 @@ afterAll(cleanup);
 
 test("stopping a launched process is safe concurrently and after completion", async () => {
   const file = join(tmp(), "server.ts");
-  writeFileSync(file, 'Bun.serve({port:Number(Bun.env.PORT),fetch:()=>new Response("ok")});\n');
+  writeFileSync(
+    file,
+    'Bun.serve({port:Number(Bun.env.PORT),fetch:()=>new Response("ok")});\n',
+  );
   const port = freePort();
-  const child = await launch(process.execPath, { args: [file], port, env: { PORT: String(port) } });
+  const child = await launch(process.execPath, {
+    args: [file],
+    port,
+    env: { PORT: String(port) },
+  });
   const [first, second] = await Promise.all([child.stop(), child.stop()]);
   expect(second).toEqual(first);
   expect(await child.stop()).toEqual(first);
@@ -48,9 +55,13 @@ test("cancelling startup stops and joins the spawned process", async () => {
 }, 15_000);
 
 test("invalid readiness inputs fail before spawning a process", async () => {
-  await expect(launch("does-not-exist", { port: 0 })).rejects.toThrow("invalid readiness port");
-  await expect(launch("does-not-exist", { port: 4000, path: "//other/health" })).rejects.toThrow(
-    "absolute path",
+  await expect(launch("does-not-exist", { port: 0 })).rejects.toThrow(
+    "invalid readiness port",
   );
-  await expect(launch("does-not-exist", { port: 4000, timeoutMs: 0 })).rejects.toThrow("positive");
+  await expect(
+    launch("does-not-exist", { port: 4000, path: "//other/health" }),
+  ).rejects.toThrow("absolute path");
+  await expect(
+    launch("does-not-exist", { port: 4000, timeoutMs: 0 }),
+  ).rejects.toThrow("positive");
 });

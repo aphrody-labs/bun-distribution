@@ -49,7 +49,9 @@ function openZlib() {
     } catch {
       // Try the next platform name.
     }
-  throw new Error(`Canonical archives require the reference zlib (tried ${names.join(", ")})`);
+  throw new Error(
+    `Canonical archives require the reference zlib (tried ${names.join(", ")})`,
+  );
 }
 
 /** Raw DEFLATE at `level`, identical to zlib.compressobj(level, DEFLATED, -15, 8, 0). */
@@ -58,8 +60,15 @@ function deflateRaw(data: Uint8Array, level: number): Uint8Array {
   const bound = Number(zlib.compressBound(data.length));
   const output = new Uint8Array(bound);
   const length = new BigUint64Array([BigInt(bound)]);
-  const status = zlib.compress2(ptr(output), ptr(length), ptr(data), data.length, level);
-  if (status !== 0) throw new Error(`zlib compress2 failed with status ${status}`);
+  const status = zlib.compress2(
+    ptr(output),
+    ptr(length),
+    ptr(data),
+    data.length,
+    level,
+  );
+  if (status !== 0)
+    throw new Error(`zlib compress2 failed with status ${status}`);
   // compress2 frames the same DEFLATE stream as RFC 1950: drop its 2-byte header and Adler-32.
   return output.subarray(2, Number(length[0]) - 4);
 }
@@ -100,19 +109,27 @@ function paxRecords(payload: Uint8Array): Map<string, string> {
   const records = new Map<string, string>();
   for (let offset = 0; offset < payload.length && payload[offset] !== 0;) {
     const space = payload.indexOf(0x20, offset);
-    const length = Number(nts(payload.subarray(offset, space === -1 ? offset : space)));
-    if (space === -1 || !Number.isSafeInteger(length) || length <= space - offset)
+    const length = Number(
+      nts(payload.subarray(offset, space === -1 ? offset : space)),
+    );
+    if (
+      space === -1 ||
+      !Number.isSafeInteger(length) ||
+      length <= space - offset
+    )
       throw new Error("Invalid pax extended header");
     const record = payload.subarray(space + 1, offset + length);
     const equals = record.indexOf(0x3d);
-    if (equals === -1 || record.at(-1) !== 0x0a) throw new Error("Invalid pax extended header");
+    if (equals === -1 || record.at(-1) !== 0x0a)
+      throw new Error("Invalid pax extended header");
     records.set(
       strict.decode(record.subarray(0, equals)),
       strict.decode(record.subarray(equals + 1, -1)),
     );
     offset += length;
   }
-  if (records.has("hdrcharset")) throw new Error("Binary pax header charsets are unsupported");
+  if (records.has("hdrcharset"))
+    throw new Error("Binary pax header charsets are unsupported");
   return records;
 }
 
@@ -138,7 +155,8 @@ export function readTar(archive: Uint8Array): TarMember[] {
     const start = offset + BLOCK;
     let size = nti(header.subarray(124, 136));
     if (typeflag === "x" || typeflag === "L") {
-      if (start + size > archive.length) throw new Error("Truncated tar archive");
+      if (start + size > archive.length)
+        throw new Error("Truncated tar archive");
       const payload = archive.subarray(start, start + size);
       if (typeflag === "x") pax = paxRecords(payload);
       else longName = nts(payload);
@@ -149,11 +167,17 @@ export function readTar(archive: Uint8Array): TarMember[] {
     // V7 "AREGTYPE + trailing slash" directories are recognised only without a preceding pax or
     // GNU long-name header (tarfile's dircheck=False for follow-up headers).
     const dircheck = pax === undefined && longName === undefined;
-    const directory = typeflag === "5" || (dircheck && typeflag === "\0" && name.endsWith("/"));
-    const type = directory ? "directory" : ["0", "\0", "7"].includes(typeflag) ? "file" : "other";
+    const directory =
+      typeflag === "5" || (dircheck && typeflag === "\0" && name.endsWith("/"));
+    const type = directory
+      ? "directory"
+      : ["0", "\0", "7"].includes(typeflag)
+        ? "file"
+        : "other";
     if (directory) name = name.replace(/\/+$/, "");
     const prefix = nts(header.subarray(345, 500));
-    if (prefix && !["L", "K", "S"].includes(typeflag)) name = `${prefix}/${name}`;
+    if (prefix && !["L", "K", "S"].includes(typeflag))
+      name = `${prefix}/${name}`;
     if (longName !== undefined) {
       name = directory ? longName.replace(/\/$/, "") : longName;
       longName = undefined;
@@ -169,14 +193,19 @@ export function readTar(archive: Uint8Array): TarMember[] {
       pax = undefined;
     }
     // tarfile skips data blocks for regular files and unknown types, not for directories or links.
-    const skips = type === "file" || (type === "other" && !"123456K".includes(typeflag));
-    if (skips && start + size > archive.length) throw new Error("Truncated tar archive");
+    const skips =
+      type === "file" || (type === "other" && !"123456K".includes(typeflag));
+    if (skips && start + size > archive.length)
+      throw new Error("Truncated tar archive");
     members.push({
       name,
       type,
       mode: nti(header.subarray(100, 108)),
       size,
-      data: type === "file" ? archive.subarray(start, start + size) : new Uint8Array(),
+      data:
+        type === "file"
+          ? archive.subarray(start, start + size)
+          : new Uint8Array(),
     });
     offset = start + (skips ? blocks(size) : 0);
   }
@@ -187,10 +216,17 @@ function octal(value: number, digits: number): Uint8Array {
   return utf8.encode(`${value.toString(8).padStart(digits - 1, "0")}\0`);
 }
 
-function ustarHeader(name: string, mode: number, size: number, typeflag: string): Uint8Array {
+function ustarHeader(
+  name: string,
+  mode: number,
+  size: number,
+  typeflag: string,
+): Uint8Array {
   const block = new Uint8Array(BLOCK);
   // stn(name, 100, "ascii", "replace"): one "?" per non-ASCII code point, then truncate.
-  const ascii = Array.from(name, (char) => (char.codePointAt(0)! < 0x80 ? char : "?")).join("");
+  const ascii = Array.from(name, (char) =>
+    char.codePointAt(0)! < 0x80 ? char : "?",
+  ).join("");
   block.set(utf8.encode(ascii).subarray(0, 100), 0);
   block.set(octal(mode & 0o7777, 8), 100);
   block.set(octal(0, 8), 108);
@@ -233,7 +269,8 @@ export function canonicalTar(members: TarMember[]): Uint8Array {
     throw new Error("Duplicate archive entry");
   const parts: Uint8Array[] = [];
   for (const member of members.toSorted(byName)) {
-    if (member.type === "other") throw new Error(`Unsupported archive entry type: ${member.name}`);
+    if (member.type === "other")
+      throw new Error(`Unsupported archive entry type: ${member.name}`);
     const directory = member.type === "directory";
     const name = directory ? `${member.name}/` : member.name;
     const size = directory ? 0 : member.size;
@@ -241,11 +278,23 @@ export function canonicalTar(members: TarMember[]): Uint8Array {
     if (/\P{ASCII}/u.test(name) || name.length > 100) pax.push(["path", name]);
     if (size >= MAX_OCTAL_SIZE) pax.push(["size", String(size)]);
     if (pax.length) {
-      const records = Buffer.concat(pax.map(([keyword, value]) => paxRecord(keyword, value)));
-      parts.push(ustarHeader("././@PaxHeader", 0, records.length, "x"), padded(records));
+      const records = Buffer.concat(
+        pax.map(([keyword, value]) => paxRecord(keyword, value)),
+      );
+      parts.push(
+        ustarHeader("././@PaxHeader", 0, records.length, "x"),
+        padded(records),
+      );
     }
     const mode = directory || member.mode & 0o111 ? 0o755 : 0o644;
-    parts.push(ustarHeader(name, mode, size >= MAX_OCTAL_SIZE ? 0 : size, directory ? "5" : "0"));
+    parts.push(
+      ustarHeader(
+        name,
+        mode,
+        size >= MAX_OCTAL_SIZE ? 0 : size,
+        directory ? "5" : "0",
+      ),
+    );
     if (!directory) parts.push(padded(member.data));
   }
   parts.push(new Uint8Array(2 * BLOCK));

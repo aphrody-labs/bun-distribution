@@ -32,4 +32,9 @@ export const SHAPE = {
 export const READING_COLUMN = 760;
 
 /** Google Sans Flex variable weights (reference section 5). */
-export const WEIGHTS = { display: 280, headline: 350, body: 400, bodyStrong: 500 } as const;
+export const WEIGHTS = {
+  display: 280,
+  headline: 350,
+  body: 400,
+  bodyStrong: 500,
+} as const;

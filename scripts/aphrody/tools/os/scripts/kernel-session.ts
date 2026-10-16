@@ -12,7 +12,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { KernelClient } from "@aphrody/os";
 
-export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
+export type Json =
+  null | boolean | number | string | Json[] | { [key: string]: Json };
 
 export const repoRoot = resolve(import.meta.dir, "../../../../../docs/aphrody");
 
@@ -22,11 +23,17 @@ export function resolveAphrody(): string {
   const candidates = [
     process.env.APHRODY_BIN,
     Bun.which("aphrody") ?? undefined,
-    process.env.LOCALAPPDATA ? join(process.env.LOCALAPPDATA, "aphrody", "bin", exe) : undefined,
-    process.env.CARGO_TARGET_DIR ? join(process.env.CARGO_TARGET_DIR, "debug", exe) : undefined,
+    process.env.LOCALAPPDATA
+      ? join(process.env.LOCALAPPDATA, "aphrody", "bin", exe)
+      : undefined,
+    process.env.CARGO_TARGET_DIR
+      ? join(process.env.CARGO_TARGET_DIR, "debug", exe)
+      : undefined,
     join(repoRoot, "target", "debug", exe),
   ];
-  const found = candidates.find((path): path is string => Boolean(path) && existsSync(path!));
+  const found = candidates.find(
+    (path): path is string => Boolean(path) && existsSync(path!),
+  );
   if (!found) throw new Error("aphrody binary not found (set APHRODY_BIN)");
   return found;
 }
@@ -72,27 +79,44 @@ export async function withKernel<T>(
   const aphrody = resolveAphrody();
   const endpoint = privateEndpoint(label, stamp);
   const server = Bun.spawn(
-    [aphrody, "kernel", "--socket", endpoint, "serve", "--no-shell", "--no-browser"],
+    [
+      aphrody,
+      "kernel",
+      "--socket",
+      endpoint,
+      "serve",
+      "--no-shell",
+      "--no-browser",
+    ],
     { windowsHide: true, stdin: "ignore", stdout: "ignore", stderr: "ignore" },
   );
   let client: KernelClient | undefined;
   try {
     const deadline = Date.now() + 60_000;
     while (!client) {
-      if (server.exitCode !== null) throw new Error(`kernel exited with ${server.exitCode}`);
+      if (server.exitCode !== null)
+        throw new Error(`kernel exited with ${server.exitCode}`);
       try {
         // oxlint-disable-next-line no-await-in-loop -- each connection probe depends on the previous attempt.
         client = await KernelClient.connect(endpoint, `live-${label}`, 2_000);
       } catch (error) {
         if (Date.now() > deadline)
-          throw new Error(`kernel did not answer on ${endpoint}`, { cause: error });
+          throw new Error(`kernel did not answer on ${endpoint}`, {
+            cause: error,
+          });
         // oxlint-disable-next-line no-await-in-loop -- bound retries against the same live server process.
         await Bun.sleep(250);
       }
     }
     const connected = client;
-    const call = async (tool: string, args: Record<string, Json> = {}): Promise<Json> => {
-      const result = (await connected.request("tools/call", { name: tool, arguments: args })) as {
+    const call = async (
+      tool: string,
+      args: Record<string, Json> = {},
+    ): Promise<Json> => {
+      const result = (await connected.request("tools/call", {
+        name: tool,
+        arguments: args,
+      })) as {
         [key: string]: Json;
       };
       if (result?.isError === true) {
@@ -159,7 +183,10 @@ export function writeArtifacts(
 }
 
 /** `--name value` options of a small CLI; `--help` and unknown flags are reported by the caller. */
-export function parseOptions(argv: string[], known: string[]): Map<string, string> {
+export function parseOptions(
+  argv: string[],
+  known: string[],
+): Map<string, string> {
   const options = new Map<string, string>();
   for (let index = 0; index < argv.length; index += 1) {
     const flag = argv[index] as string;

@@ -23,7 +23,8 @@ test("migration CLI reports its actual package version", async () => {
   const result = await run(["--version"]);
   expect(result.code).toBe(0);
   expect(result.stdout.trim()).toBe(
-    (await Bun.file(resolve(import.meta.dir, "../package.json")).json()).version,
+    (await Bun.file(resolve(import.meta.dir, "../package.json")).json())
+      .version,
   );
 });
 
@@ -43,7 +44,14 @@ test("dry-run JSON inspects external source without activating or creating an ow
       join(source, "app/page.tsx"),
       "export default function Page(){return <h1>Inspect</h1>;}",
     );
-    const result = await run([source, target, "--target", "vite", "--dry-run", "--json"]);
+    const result = await run([
+      source,
+      target,
+      "--target",
+      "vite",
+      "--dry-run",
+      "--json",
+    ]);
     expect(result.code).toBe(0);
     expect(JSON.parse(result.stdout).requirements).toEqual([]);
     expect(await Bun.file(join(target, "package.json")).exists()).toBe(false);

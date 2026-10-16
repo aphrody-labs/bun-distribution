@@ -4,7 +4,14 @@
 "use client";
 
 import { clsx } from "clsx";
-import { forwardRef, isValidElement, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  forwardRef,
+  isValidElement,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
@@ -57,7 +64,10 @@ export function isExternalHref(href: string | undefined): boolean {
 }
 
 /** Safe defaults of an external link: a new browsing context without opener or referrer. */
-export const externalLinkProps = { target: "_blank", rel: "noopener noreferrer" } as const;
+export const externalLinkProps = {
+  target: "_blank",
+  rel: "noopener noreferrer",
+} as const;
 
 const bodyClass: Record<MarkdownSize, string> = {
   small: "text-body-small",
@@ -69,7 +79,8 @@ function extractText(node: ReactNode): string {
   if (typeof node === "string") return node;
   if (typeof node === "number") return String(node);
   if (Array.isArray(node)) return node.map(extractText).join("");
-  if (isValidElement(node)) return extractText((node.props as { children?: ReactNode }).children);
+  if (isValidElement(node))
+    return extractText((node.props as { children?: ReactNode }).children);
   return "";
 }
 
@@ -153,7 +164,10 @@ export function detectLanguage(raw?: string): { raw: string; label: string } {
 // CodeBlock component
 // ---------------------------------------------------------------------------
 
-export interface CodeBlockProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onCopy"> {
+export interface CodeBlockProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  "onCopy"
+> {
   code?: string;
   language?: string;
   onCopy?: (code: string) => void;
@@ -198,7 +212,9 @@ export function CodeBlock({
 
   const rawCode =
     explicitCode ??
-    (childProps?.children ? extractText(childProps.children) : extractText(children));
+    (childProps?.children
+      ? extractText(childProps.children)
+      : extractText(children));
 
   const codeContent = rawCode;
   const codeToCopy = rawCode.replace(/\n$/, "");
@@ -253,7 +269,9 @@ export function CodeBlock({
         </button>
       </div>
       <pre className="overflow-x-auto p-3 font-code text-body-small text-on-surface bg-surface-container-highest [&_code]:bg-transparent [&_code]:p-0 [&_code]:text-[length:inherit]">
-        <code className={rawLang ? `language-${rawLang}` : undefined}>{codeContent}</code>
+        <code className={rawLang ? `language-${rawLang}` : undefined}>
+          {codeContent}
+        </code>
       </pre>
     </div>
   );
@@ -349,7 +367,10 @@ function formatSubSup(text: string): ReactNode {
     occurrences.set(part, occurrence + 1);
     const key = `${part}:${occurrence}`;
     if (part.startsWith("^")) {
-      const val = part.startsWith("^{") && part.endsWith("}") ? part.slice(2, -1) : part.slice(1);
+      const val =
+        part.startsWith("^{") && part.endsWith("}")
+          ? part.slice(2, -1)
+          : part.slice(1);
       return (
         <sup key={key} className="text-[0.75em] leading-none">
           {val}
@@ -357,7 +378,10 @@ function formatSubSup(text: string): ReactNode {
       );
     }
     if (part.startsWith("_")) {
-      const val = part.startsWith("_{") && part.endsWith("}") ? part.slice(2, -1) : part.slice(1);
+      const val =
+        part.startsWith("_{") && part.endsWith("}")
+          ? part.slice(2, -1)
+          : part.slice(1);
       return (
         <sub key={key} className="text-[0.75em] leading-none">
           {val}
@@ -388,7 +412,9 @@ export function formatMathContent(math: string): ReactNode {
           key={`frac-${offset}`}
           className="inline-flex flex-col items-center align-middle mx-1 text-center text-[0.85em] leading-none not-italic"
         >
-          <span className="border-b border-current px-0.5 pb-0.5">{formatSubSup(num)}</span>
+          <span className="border-b border-current px-0.5 pb-0.5">
+            {formatSubSup(num)}
+          </span>
           <span className="px-0.5 pt-0.5">{formatSubSup(den)}</span>
         </span>,
       );
@@ -458,7 +484,11 @@ function transformBlocks(parent: any) {
           if (item.type === "text" && /\$\$[\s\S]+?\$\$/.test(item.value)) {
             const parts = item.value.split(/(\$\$[\s\S]+?\$\$)/g);
             for (const part of parts) {
-              if (part.startsWith("$$") && part.endsWith("$$") && part.length >= 4) {
+              if (
+                part.startsWith("$$") &&
+                part.endsWith("$$") &&
+                part.length >= 4
+              ) {
                 if (currentParagraphChildren.length > 0) {
                   newChildren.push({
                     type: "paragraph",
@@ -471,7 +501,10 @@ function transformBlocks(parent: any) {
                   type: "mathBlock",
                   data: {
                     hName: "div",
-                    hProperties: { className: "math-block", "data-math": mathVal },
+                    hProperties: {
+                      className: "math-block",
+                      "data-math": mathVal,
+                    },
                     hChildren: [{ type: "text", value: mathVal }],
                   },
                   children: [{ type: "text", value: mathVal }],
@@ -503,8 +536,14 @@ function transformInlines(node: any) {
   if (!node.children) return;
   const newChildren: any[] = [];
   for (const child of node.children) {
-    if (child.type === "text" && typeof child.value === "string" && child.value.includes("$")) {
-      const parts = child.value.split(/((?<!\\)\$(?!\s)[^$\n]+?(?<!\s)\$(?!\d))/g);
+    if (
+      child.type === "text" &&
+      typeof child.value === "string" &&
+      child.value.includes("$")
+    ) {
+      const parts = child.value.split(
+        /((?<!\\)\$(?!\s)[^$\n]+?(?<!\s)\$(?!\d))/g,
+      );
       for (const part of parts) {
         if (
           part.startsWith("$") &&
@@ -558,7 +597,10 @@ function m3Components(size: MarkdownSize, link: LinkOptions = {}): Components {
   return {
     h1: ({ node: _node, className, children, ...props }) => (
       <h1
-        className={clsx("mt-4 mb-2 text-headline-small text-on-surface first:mt-0", className)}
+        className={clsx(
+          "mt-4 mb-2 text-headline-small text-on-surface first:mt-0",
+          className,
+        )}
         {...props}
       >
         {children}
@@ -566,7 +608,10 @@ function m3Components(size: MarkdownSize, link: LinkOptions = {}): Components {
     ),
     h2: ({ node: _node, className, children, ...props }) => (
       <h2
-        className={clsx("mt-4 mb-2 text-title-large text-on-surface first:mt-0", className)}
+        className={clsx(
+          "mt-4 mb-2 text-title-large text-on-surface first:mt-0",
+          className,
+        )}
         {...props}
       >
         {children}
@@ -574,7 +619,10 @@ function m3Components(size: MarkdownSize, link: LinkOptions = {}): Components {
     ),
     h3: ({ node: _node, className, children, ...props }) => (
       <h3
-        className={clsx("mt-3 mb-1.5 text-title-medium text-on-surface first:mt-0", className)}
+        className={clsx(
+          "mt-3 mb-1.5 text-title-medium text-on-surface first:mt-0",
+          className,
+        )}
         {...props}
       >
         {children}
@@ -582,7 +630,10 @@ function m3Components(size: MarkdownSize, link: LinkOptions = {}): Components {
     ),
     h4: ({ node: _node, className, children, ...props }) => (
       <h4
-        className={clsx("mt-3 mb-1 text-title-small text-on-surface first:mt-0", className)}
+        className={clsx(
+          "mt-3 mb-1 text-title-small text-on-surface first:mt-0",
+          className,
+        )}
         {...props}
       >
         {children}
@@ -590,7 +641,10 @@ function m3Components(size: MarkdownSize, link: LinkOptions = {}): Components {
     ),
     h5: ({ node: _node, className, children, ...props }) => (
       <h5
-        className={clsx("mt-3 mb-1 text-title-small text-on-surface-variant first:mt-0", className)}
+        className={clsx(
+          "mt-3 mb-1 text-title-small text-on-surface-variant first:mt-0",
+          className,
+        )}
         {...props}
       >
         {children}
@@ -598,18 +652,25 @@ function m3Components(size: MarkdownSize, link: LinkOptions = {}): Components {
     ),
     h6: ({ node: _node, className, children, ...props }) => (
       <h6
-        className={clsx("mt-3 mb-1 text-label-large text-on-surface-variant first:mt-0", className)}
+        className={clsx(
+          "mt-3 mb-1 text-label-large text-on-surface-variant first:mt-0",
+          className,
+        )}
         {...props}
       >
         {children}
       </h6>
     ),
     p: ({ node: _node, className, ...props }) => (
-      <p className={clsx("my-2 first:mt-0 last:mb-0", body, className)} {...props} />
+      <p
+        className={clsx("my-2 first:mt-0 last:mb-0", body, className)}
+        {...props}
+      />
     ),
     a: ({ node: _node, className, children, href, onClick, ...props }) => {
       const external = isExternalHref(href);
-      if (link.renderLink) return <>{link.renderLink({ href: href ?? "", children, external })}</>;
+      if (link.renderLink)
+        return <>{link.renderLink({ href: href ?? "", children, external })}</>;
       return (
         <a
           className={clsx(
@@ -630,17 +691,28 @@ function m3Components(size: MarkdownSize, link: LinkOptions = {}): Components {
       );
     },
     strong: ({ node: _node, className, ...props }) => (
-      <strong className={clsx("font-semibold text-on-surface", className)} {...props} />
+      <strong
+        className={clsx("font-semibold text-on-surface", className)}
+        {...props}
+      />
     ),
     ul: ({ node: _node, className, ...props }) => (
       <ul
-        className={clsx("my-2 list-disc pl-6 marker:text-on-surface-variant", body, className)}
+        className={clsx(
+          "my-2 list-disc pl-6 marker:text-on-surface-variant",
+          body,
+          className,
+        )}
         {...props}
       />
     ),
     ol: ({ node: _node, className, ...props }) => (
       <ol
-        className={clsx("my-2 list-decimal pl-6 marker:text-on-surface-variant", body, className)}
+        className={clsx(
+          "my-2 list-decimal pl-6 marker:text-on-surface-variant",
+          body,
+          className,
+        )}
         {...props}
       />
     ),
@@ -671,11 +743,17 @@ function m3Components(size: MarkdownSize, link: LinkOptions = {}): Components {
       </CodeBlock>
     ),
     hr: ({ node: _node, className, ...props }) => (
-      <hr className={clsx("my-4 border-outline-variant", className)} {...props} />
+      <hr
+        className={clsx("my-4 border-outline-variant", className)}
+        {...props}
+      />
     ),
     table: ({ node: _node, className, ...props }) => (
       <div className="my-3 overflow-x-auto rounded-small border border-outline-variant">
-        <table className={clsx("w-full border-collapse", body, className)} {...props} />
+        <table
+          className={clsx("w-full border-collapse", body, className)}
+          {...props}
+        />
       </div>
     ),
     thead: ({ node: _node, className, ...props }) => (
@@ -692,7 +770,10 @@ function m3Components(size: MarkdownSize, link: LinkOptions = {}): Components {
     ),
     td: ({ node: _node, className, ...props }) => (
       <td
-        className={clsx("border-t border-outline-variant px-3 py-2 text-on-surface", className)}
+        className={clsx(
+          "border-t border-outline-variant px-3 py-2 text-on-surface",
+          className,
+        )}
         {...props}
       />
     ),
@@ -708,7 +789,8 @@ function m3Components(size: MarkdownSize, link: LinkOptions = {}): Components {
     ),
     div: ({ node: _node, className, children, ...props }) => {
       if (className?.includes("math-block")) {
-        const math = (props as Record<string, any>)["data-math"] ?? extractText(children);
+        const math =
+          (props as Record<string, any>)["data-math"] ?? extractText(children);
         return <BlockMath math={math} className={className} />;
       }
       return (
@@ -719,7 +801,8 @@ function m3Components(size: MarkdownSize, link: LinkOptions = {}): Components {
     },
     span: ({ node: _node, className, children, ...props }) => {
       if (className?.includes("math-inline")) {
-        const math = (props as Record<string, any>)["data-math"] ?? extractText(children);
+        const math =
+          (props as Record<string, any>)["data-math"] ?? extractText(children);
         return <InlineMath math={math} className={className} />;
       }
       return (
@@ -749,7 +832,11 @@ const Markdown = forwardRef<HTMLDivElement, MarkdownProps>(
     return (
       <div
         ref={ref}
-        className={clsx("markdown min-w-0 text-on-surface", bodyClass[size], className)}
+        className={clsx(
+          "markdown min-w-0 text-on-surface",
+          bodyClass[size],
+          className,
+        )}
       >
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkMathPlugin]}

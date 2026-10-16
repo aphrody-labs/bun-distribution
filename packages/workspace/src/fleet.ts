@@ -10,13 +10,19 @@ export type Fleet = {
 };
 
 type Ecosystem = { generatedAt?: string; repos?: Array<{ name?: string }> };
-type Pipeline = { stages?: Array<{ id?: string; steps?: Array<{ repo?: string }> }> };
+type Pipeline = {
+  stages?: Array<{ id?: string; steps?: Array<{ repo?: string }> }>;
+};
 
 /** Read the Infra-owned catalogue rather than maintaining another repository registry. */
 export async function loadFleet(root = infraRoot()): Promise<Fleet> {
   const [ecosystem, pipeline, binaries] = await Promise.all([
-    Bun.file(join(root, "docs", "ecosystem", "ecosystem.json")).json() as Promise<Ecosystem>,
-    Bun.file(join(root, "tools", "config", "pipeline.json")).json() as Promise<Pipeline>,
+    Bun.file(
+      join(root, "docs", "ecosystem", "ecosystem.json"),
+    ).json() as Promise<Ecosystem>,
+    Bun.file(
+      join(root, "tools", "config", "pipeline.json"),
+    ).json() as Promise<Pipeline>,
     discoverAphrodyBinaries(root),
   ]);
   return {
@@ -30,7 +36,11 @@ export async function loadFleet(root = infraRoot()): Promise<Fleet> {
             {
               id: stage.id,
               repositories: [
-                ...new Set((stage.steps ?? []).flatMap((step) => (step.repo ? [step.repo] : []))),
+                ...new Set(
+                  (stage.steps ?? []).flatMap((step) =>
+                    step.repo ? [step.repo] : [],
+                  ),
+                ),
               ].toSorted(),
             },
           ]

@@ -1,4 +1,8 @@
-import { M3ThemeProvider, useM3Theme, type ThemeMode } from "@aphrody/m3-theme/react";
+import {
+  M3ThemeProvider,
+  useM3Theme,
+  type ThemeMode,
+} from "@aphrody/m3-theme/react";
 import { useEffect } from "react";
 import { Shell } from "./shell/Shell.tsx";
 

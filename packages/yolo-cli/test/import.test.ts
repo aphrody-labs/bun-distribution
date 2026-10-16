@@ -6,7 +6,12 @@ import {
   type TransformContext,
 } from "../src/import";
 
-const mk = (source: string, srcDir: string, name: string, version: string): CrateInfo => ({
+const mk = (
+  source: string,
+  srcDir: string,
+  name: string,
+  version: string,
+): CrateInfo => ({
   source,
   srcDir,
   name,
@@ -24,7 +29,10 @@ const all = [tauri, plugin, cli, restart];
 function context(crate: CrateInfo, files: string[] = []): TransformContext {
   return {
     crate,
-    cfg: { prefix: "aphrody-", repository: "https://github.com/aphrody-labs/yolo" },
+    cfg: {
+      prefix: "aphrody-",
+      repository: "https://github.com/aphrody-labs/yolo",
+    },
     byName: new Map(all.map((c) => [c.name, c])),
     byDir: new Map(all.map((c) => [`${c.source}:${c.srcDir}`, c])),
     wsPackage: {
@@ -48,9 +56,9 @@ const parse = (text: string) => Bun.TOML.parse(text) as any;
 
 describe("serializeToml", () => {
   it("serializes inline tables, arrays and scalars", () => {
-    expect(serializeToml({ version: "1", features: ["a", "b"], optional: true })).toBe(
-      '{ version = "1", features = ["a", "b"], optional = true }',
-    );
+    expect(
+      serializeToml({ version: "1", features: ["a", "b"], optional: true }),
+    ).toBe('{ version = "1", features = ["a", "b"], optional = true }');
   });
 });
 
@@ -74,7 +82,10 @@ anyhow = "1"
 [workspace]
 members = []
 `;
-    const { text: out } = transformManifest(text, context(plugin, ["plugins/fs/src/lib.rs"]));
+    const { text: out } = transformManifest(
+      text,
+      context(plugin, ["plugins/fs/src/lib.rs"]),
+    );
     const m = parse(out);
     expect(m.package.name).toBe("aphrody-tauri-plugin-fs");
     expect(m.package.links).toBe("tauri-plugin-fs");
@@ -82,7 +93,10 @@ members = []
     expect(m.package.license).toBe("MIT OR Apache-2.0");
     expect(m.package.repository).toBe("https://github.com/aphrody-labs/yolo");
     expect(m.workspace).toBeUndefined();
-    expect(m.dependencies.serde).toEqual({ version: "1", features: ["derive", "rc"] });
+    expect(m.dependencies.serde).toEqual({
+      version: "1",
+      features: ["derive", "rc"],
+    });
     expect(m.dependencies.tauri).toEqual({
       version: "3.0.0-alpha.4",
       path: "../aphrody-tauri",
@@ -105,7 +119,10 @@ tauri-cli = { version = "~3.0.0-alpha.1", path = "../tauri-cli", default-feature
 [dev-dependencies]
 tauri = { path = ".", features = ["test"] }
 `;
-    const { text: out } = transformManifest(text, context(tauri, ["crates/tauri/src/lib.rs"]));
+    const { text: out } = transformManifest(
+      text,
+      context(tauri, ["crates/tauri/src/lib.rs"]),
+    );
     const m = parse(out);
     expect(m.dependencies["tauri-cli"]).toEqual({
       version: "~3.0.0-alpha.4",
@@ -151,7 +168,10 @@ path = "src/main.rs"
 `;
     const { text: out } = transformManifest(
       text,
-      context(cli, ["crates/tauri-cli/src/lib.rs", "crates/tauri-cli/src/main.rs"]),
+      context(cli, [
+        "crates/tauri-cli/src/lib.rs",
+        "crates/tauri-cli/src/main.rs",
+      ]),
     );
     const m = parse(out);
     expect(m.bin).toEqual([{ name: "cargo-tauri", path: "src/main.rs" }]);

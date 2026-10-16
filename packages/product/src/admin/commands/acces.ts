@@ -19,7 +19,9 @@ const command: Command = {
   name: "acces",
   summary: "Clés, fichier d'accès de l'équipe, tunnel privé",
   async run(argv, ctx) {
-    const { positionals, values } = parse(argv, { help: { type: "boolean", short: "h" } });
+    const { positionals, values } = parse(argv, {
+      help: { type: "boolean", short: "h" },
+    });
     const [action = "etat", file] = positionals;
     if (values.help) {
       ctx.ui.say(HELP);
@@ -28,7 +30,9 @@ const command: Command = {
     if (action === "cles") {
       const made = await makeKeys(ctx);
       ctx.ui.say(
-        made.created ? "Clés créées sur ce PC." : "Tes clés existent déjà (rien n'a été changé).",
+        made.created
+          ? "Clés créées sur ce PC."
+          : "Tes clés existent déjà (rien n'a été changé).",
       );
       ctx.ui.say(
         `Fichier à envoyer à l'équipe : ${made.file}${made.copied ? " (aussi dans le presse-papiers : colle-le dans un message)" : ""}`,
@@ -38,7 +42,10 @@ const command: Command = {
       return 0;
     }
     if (action === "importer") {
-      const state: InstallState = { repoReady: false, ...(file ? { packFile: file } : {}) };
+      const state: InstallState = {
+        repoReady: false,
+        ...(file ? { packFile: file } : {}),
+      };
       await makeKeys(ctx);
       const result = await stepAcces.run(ctx, "executer", state);
       ctx.ui.say(

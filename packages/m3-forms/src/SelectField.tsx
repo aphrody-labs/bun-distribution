@@ -7,7 +7,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@aphrody/m3-primitives";
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "./Form";
+import {
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "./Form";
 
 export interface SelectOption {
   value: string;
@@ -56,7 +63,9 @@ function SelectField({
                 ref={field.ref}
                 onBlur={field.onBlur}
                 aria-required={required || undefined}
-                className={fieldState.error ? "border-error text-error" : undefined}
+                className={
+                  fieldState.error ? "border-error text-error" : undefined
+                }
               >
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>
@@ -69,7 +78,9 @@ function SelectField({
               ))}
             </SelectContent>
           </SelectRoot>
-          {description && <FormDescription className="px-4">{description}</FormDescription>}
+          {description && (
+            <FormDescription className="px-4">{description}</FormDescription>
+          )}
           <FormMessage className="px-4" />
         </FormItem>
       )}

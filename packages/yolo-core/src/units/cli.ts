@@ -10,7 +10,9 @@ const cmd = args.shift();
 const outAt = args.indexOf("--out");
 const out = outAt >= 0 ? args.splice(outAt, 2)[1] : undefined;
 const units = renderAll().filter(
-  (u) => !args.length || args.some((a) => u.file === a || u.file.startsWith(`${a}/`)),
+  (u) =>
+    !args.length ||
+    args.some((a) => u.file === a || u.file.startsWith(`${a}/`)),
 );
 
 if (cmd === "list") for (const u of units) console.log(u.file);
@@ -21,8 +23,11 @@ else if (cmd === "render" && out) {
     writeFileSync(path, u.text);
   }
   console.log(`rendered ${units.length} unit files to ${out}`);
-} else if (cmd === "render" && units.length === 1) process.stdout.write(units[0]!.text);
+} else if (cmd === "render" && units.length === 1)
+  process.stdout.write(units[0]!.text);
 else {
-  console.error("usage: units list | units render --out DIR [unit...] | units render <unit>");
+  console.error(
+    "usage: units list | units render --out DIR [unit...] | units render <unit>",
+  );
   process.exit(2);
 }

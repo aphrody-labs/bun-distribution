@@ -41,7 +41,8 @@ export function TaskRow({
   className,
 }: TaskRowProps) {
   const completedSubtasks = task.subtasks.filter((s) => s.completed).length;
-  const assigneeName = resolveAgentName?.(task.assigned_agent_id) ?? task.assigned_agent_id;
+  const assigneeName =
+    resolveAgentName?.(task.assigned_agent_id) ?? task.assigned_agent_id;
   const hasActions = onStatusChange || onDelete;
   const isRowInteractive = typeof onClick === "function";
 
@@ -84,7 +85,9 @@ export function TaskRow({
           isActive ? "text-on-secondary-container" : "text-on-surface-variant",
         )}
       >
-        {task.subtasks.length > 0 ? `${completedSubtasks}/${task.subtasks.length}` : ""}
+        {task.subtasks.length > 0
+          ? `${completedSubtasks}/${task.subtasks.length}`
+          : ""}
       </span>
 
       <span
@@ -150,7 +153,11 @@ export function TaskRow({
 
   if (!isRowInteractive) {
     return (
-      <div aria-current={isActive ? "true" : undefined} className={rowClassName} style={rowStyle}>
+      <div
+        aria-current={isActive ? "true" : undefined}
+        className={rowClassName}
+        style={rowStyle}
+      >
         {mainContent}
         {actions}
       </div>

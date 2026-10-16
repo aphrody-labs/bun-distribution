@@ -15,6 +15,7 @@ Shared event collector for capturing and analyzing events from the event bus dur
 Collects all events emitted during test execution for analysis and verification.
 
 **Basic Usage (Statistics Only):**
+
 ```rust
 use helpers::EventCollector;
 
@@ -34,6 +35,7 @@ stats.print();
 ```
 
 **Advanced Usage (Full Event Capture for Debugging):**
+
 ```rust
 // Create collector with full event data capture
 let mut collector = EventCollector::with_capture(&harness.core.events);
@@ -58,6 +60,7 @@ let indexing_events = collector.get_events_by_type("IndexingCompleted").await;
 ```
 
 **Methods:**
+
 - `new()` - Create collector for statistics only (lightweight)
 - `with_capture()` - Create collector that captures full event data
 - `collect_events(duration)` - Collect events for specified duration
@@ -77,6 +80,7 @@ Statistics about collected events with formatted output:
 - **Entry** events (created/modified/deleted/moved)
 
 **Use Cases:**
+
 - Verifying watcher events during file operations
 - Testing normalized cache updates
 - Debugging event emission patterns
@@ -99,6 +103,7 @@ let harness = IndexingHarnessBuilder::new("my_test")
 ```
 
 Automatically handles:
+
 - Creating test directories
 - Initializing tracing
 - Setting up core and library
@@ -133,12 +138,14 @@ handle.reindex().await?;
 #### Helper Classes
 
 **`TestLocation`** - Builder for test locations:
+
 - `write_file()` - Create files
 - `create_dir()` - Create directories
 - `create_filtered_files()` - Create files that should be filtered
 - `index()` - Index the location
 
 **`LocationHandle`** - Handle to indexed location:
+
 - `count_files()`, `count_directories()`, `count_entries()`
 - `get_all_entries()` - Get all indexed entries
 - `verify_no_filtered_entries()` - Assert filtering worked

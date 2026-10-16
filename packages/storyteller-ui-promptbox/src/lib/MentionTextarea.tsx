@@ -145,7 +145,10 @@ function rendersAsChip(item: MentionItem): boolean {
 }
 
 /** Nearest chip element enclosing `node` (up to `root`), or null. */
-function chipContaining(root: HTMLElement, node: Node | null): HTMLElement | null {
+function chipContaining(
+  root: HTMLElement,
+  node: Node | null,
+): HTMLElement | null {
   let current: Node | null = node;
   while (current && current !== root) {
     if (isChip(current)) return current;
@@ -437,10 +440,7 @@ function MentionDropdown({
     const panelWidth = panel.offsetWidth;
     // scrollHeight, not offsetHeight: offsetHeight reflects a maxHeight this
     // effect previously applied, which would feed back into the next measure.
-    const naturalHeight = Math.min(
-      panel.scrollHeight + 2,
-      DROPDOWN_MAX_HEIGHT,
-    );
+    const naturalHeight = Math.min(panel.scrollHeight + 2, DROPDOWN_MAX_HEIGHT);
 
     const left = Math.max(
       vpLeft + DROPDOWN_MARGIN,
@@ -524,7 +524,9 @@ function MentionDropdown({
             type="button"
             className={twMerge(
               "flex w-full items-center gap-2 rounded-[3px] px-2 py-2 text-sm text-base-fg transition-colors cursor-pointer",
-              i === activeIndex ? "bg-ui-controls/80" : "hover:bg-ui-controls/60",
+              i === activeIndex
+                ? "bg-ui-controls/80"
+                : "hover:bg-ui-controls/60",
             )}
             // Selection happens on pointerup, not click: on mobile the
             // editor's blur (which closes this panel) fires BETWEEN pointerup
@@ -578,9 +580,7 @@ function MentionDropdown({
                   className="h-full w-full object-cover"
                 />
               ) : item.type === "character" ? (
-                <UserIcon
-                  
-                  className="h-3.5 w-3.5 text-base-fg/60" />
+                <UserIcon className="h-3.5 w-3.5 text-base-fg/60" />
               ) : item.type === "image" && item.preview ? (
                 <img
                   src={item.preview}

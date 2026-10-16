@@ -10,7 +10,8 @@ export async function runOwnedTunnel(
   cwd: string,
   logPath: string,
 ): Promise<number> {
-  if (process.platform !== "win32") throw new Error("Windows task ownership required");
+  if (process.platform !== "win32")
+    throw new Error("Windows task ownership required");
   const output = openSync(logPath, "a", 0o600);
   const child = Bun.spawn(argv, {
     cwd,
@@ -35,8 +36,10 @@ if (import.meta.main) {
   const repository = resolve(import.meta.dir, "../../../../docs/aphrody");
   const installed = join(homedir(), "AppData/Local/Aphrody/bin/aphrody.exe");
   const executable =
-    Bun.which("aphrody") ?? ((await Bun.file(installed).exists()) ? installed : null);
-  if (!executable) throw new Error("Installed Aphrody Infra executable required");
+    Bun.which("aphrody") ??
+    ((await Bun.file(installed).exists()) ? installed : null);
+  if (!executable)
+    throw new Error("Installed Aphrody Infra executable required");
   const command = [
     executable,
     "infra",

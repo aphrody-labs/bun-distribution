@@ -17,20 +17,8 @@
     "rounded": "Rounded",
     "sharp": "Sharp"
   },
-  "svgWeights": [
-    100,
-    300,
-    400,
-    500,
-    700
-  ],
-  "icoSizes": [
-    16,
-    24,
-    32,
-    48,
-    256
-  ],
+  "svgWeights": [100, 300, 400, 500, 700],
+  "icoSizes": [16, 24, 32, 48, 256],
   "icons": [
     {
       "name": "pet_idle",

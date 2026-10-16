@@ -39,7 +39,11 @@ export interface BuildFactoryConfig {
   lockPath: string;
   repositories: Record<string, string>;
   rust: { maxJobs: number };
-  resources?: { reserveMemoryGiB?: number; reserveDiskGiB?: number; memoryPerJobGiB?: number };
+  resources?: {
+    reserveMemoryGiB?: number;
+    reserveDiskGiB?: number;
+    memoryPerJobGiB?: number;
+  };
   commandTimeoutSeconds?: number;
   /** Local activation of built binaries (defaults: ~/.local/bin, ~/.local/lib/aphrody). */
   install?: unknown;
@@ -53,26 +57,44 @@ function shellQuote(value: string): string {
 
 function absolutePath(value: string, field: string): string {
   if (!value || !value.startsWith("/") || posix.normalize(value) !== value)
-    throw new Error(`Invalid build factory ${field}: expected a normalized absolute path`);
+    throw new Error(
+      `Invalid build factory ${field}: expected a normalized absolute path`,
+    );
   return value;
 }
 
-function sourceLockPath(config: BuildFactoryConfig, repository: string): string {
+function sourceLockPath(
+  config: BuildFactoryConfig,
+  repository: string,
+): string {
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(repository))
     throw new Error("Invalid factory repository lock identity");
-  return posix.join(posix.dirname(config.lockPath), `${repository}.source.lock`);
+  return posix.join(
+    posix.dirname(config.lockPath),
+    `${repository}.source.lock`,
+  );
 }
 
-export function factoryResourcePolicy(config: Pick<BuildFactoryConfig, "rust" | "resources">) {
+export function factoryResourcePolicy(
+  config: Pick<BuildFactoryConfig, "rust" | "resources">,
+) {
   const policy = {
     jobs: config.rust.maxJobs,
     reserveMemoryGiB: config.resources?.reserveMemoryGiB ?? 4,
     reserveDiskGiB: config.resources?.reserveDiskGiB ?? 20,
     memoryPerJobGiB: config.resources?.memoryPerJobGiB ?? 1,
   };
-  if (!Number.isSafeInteger(policy.jobs) || policy.jobs < 1 || policy.jobs > 1024)
+  if (
+    !Number.isSafeInteger(policy.jobs) ||
+    policy.jobs < 1 ||
+    policy.jobs > 1024
+  )
     throw new Error("Build factory rust.maxJobs must be between 1 and 1024");
-  for (const value of [policy.reserveMemoryGiB, policy.reserveDiskGiB, policy.memoryPerJobGiB])
+  for (const value of [
+    policy.reserveMemoryGiB,
+    policy.reserveDiskGiB,
+    policy.memoryPerJobGiB,
+  ])
     if (!Number.isFinite(value) || value < 1 || value > 1024)
       throw new Error("Invalid build factory resource reserve");
   return policy;
@@ -91,15 +113,19 @@ export function admitFactoryResources(
   if (
     !Number.isSafeInteger(observed.cpus) ||
     observed.cpus < 1 ||
-    [observed.availableMemoryGiB, observed.cacheDiskGiB, observed.artifactDiskGiB].some(
-      (value) => !Number.isFinite(value) || value < 0,
-    )
+    [
+      observed.availableMemoryGiB,
+      observed.cacheDiskGiB,
+      observed.artifactDiskGiB,
+    ].some((value) => !Number.isFinite(value) || value < 0)
   )
     throw new Error("Build factory host resource measurements are unavailable");
   if (
     policy.jobs > observed.cpus ||
-    observed.availableMemoryGiB < policy.reserveMemoryGiB + policy.jobs * policy.memoryPerJobGiB ||
-    Math.min(observed.cacheDiskGiB, observed.artifactDiskGiB) < policy.reserveDiskGiB
+    observed.availableMemoryGiB <
+      policy.reserveMemoryGiB + policy.jobs * policy.memoryPerJobGiB ||
+    Math.min(observed.cacheDiskGiB, observed.artifactDiskGiB) <
+      policy.reserveDiskGiB
   )
     throw new Error(
       "Build factory host capacity cannot preserve its declared CPU, memory or disk reserves",
@@ -142,11 +168,15 @@ export function buildFactoryPlan(
       `Build target ${config.target} is execution-only; designate a new factory host`,
     );
   if (config.schemaVersion !== 1 || !config.enabled || config.target !== "vps")
-    throw new Error("Build factory must be enabled on the canonical vps target");
+    throw new Error(
+      "Build factory must be enabled on the canonical vps target",
+    );
   if (!Object.hasOwn(config.repositories, repository))
     throw new Error(`Unknown build factory repository: ${repository}`);
-  if (!/^[a-f0-9]{40}$/.test(revision)) throw new Error("A full pinned Git revision is required");
-  if (!command.length || !command[0]) throw new Error("An owner command is required after --");
+  if (!/^[a-f0-9]{40}$/.test(revision))
+    throw new Error("A full pinned Git revision is required");
+  if (!command.length || !command[0])
+    throw new Error("An owner command is required after --");
   const resources = factoryResourcePolicy(config);
   const commandTimeoutSeconds = config.commandTimeoutSeconds ?? 21600;
   if (
@@ -154,7 +184,9 @@ export function buildFactoryPlan(
     commandTimeoutSeconds < 1 ||
     commandTimeoutSeconds > 86400
   )
-    throw new Error("Build factory commandTimeoutSeconds must be between 1 and 86400");
+    throw new Error(
+      "Build factory commandTimeoutSeconds must be between 1 and 86400",
+    );
   const root = absolutePath(config.repositories[repository]!, "repository");
   const cache = absolutePath(config.cacheRoot, "cacheRoot");
   const artifacts = absolutePath(config.artifactRoot, "artifactRoot");
@@ -239,7 +271,9 @@ export function factoryRemoteUrl(
       url,
     );
   if (!match || !owners.includes(match[1]!) || match[2] !== repository) {
-    throw new Error("Factory source remote is not the declared private owner repository");
+    throw new Error(
+      "Factory source remote is not the declared private owner repository",
+    );
   }
   return `https://github.com/${match[1]}/${match[2]}.git`;
 }
@@ -257,26 +291,51 @@ export function buildFactoryPreparePlan(
   repository: string,
   revision: string,
   source: FactorySource,
-  options: { initializeSubmodules?: boolean; submodules?: readonly string[] } = {},
+  options: {
+    initializeSubmodules?: boolean;
+    submodules?: readonly string[];
+  } = {},
 ) {
   const sourceScope = factorySourceScope(options.submodules);
   if (sourceScope.kind === "gitlinks" && options.initializeSubmodules === false)
-    throw new Error("Selected submodules cannot be combined with --no-submodules");
+    throw new Error(
+      "Selected submodules cannot be combined with --no-submodules",
+    );
   if (!["yolo", "aphrody", "bun-os"].includes(repository)) {
-    throw new Error("Factory preparation is limited to yolo, aphrody and bun-os");
+    throw new Error(
+      "Factory preparation is limited to yolo, aphrody and bun-os",
+    );
   }
-  const validation = buildFactoryPlan(config, repository, revision, ["git", "checkout"], options);
+  const validation = buildFactoryPlan(
+    config,
+    repository,
+    revision,
+    ["git", "checkout"],
+    options,
+  );
   const repositoryName = repository === "bun-os" ? "bun" : repository;
   const base =
     repository === "bun-os"
       ? posix.dirname(validation.workspace)
-      : posix.dirname(absolutePath(config.repositories.aphrody!, "aphrody repository"));
-  if (validation.workspace !== posix.join(base, repositoryName) || base === "/") {
-    throw new Error("Factory repository must stay in its declared sibling workspace");
+      : posix.dirname(
+          absolutePath(config.repositories.aphrody!, "aphrody repository"),
+        );
+  if (
+    validation.workspace !== posix.join(base, repositoryName) ||
+    base === "/"
+  ) {
+    throw new Error(
+      "Factory repository must stay in its declared sibling workspace",
+    );
   }
   for (const path of [config.cacheRoot, config.artifactRoot, config.lockPath]) {
-    if (path === validation.workspace || path.startsWith(`${validation.workspace}/`)) {
-      throw new Error("Factory caches, artifacts and locks must stay outside source checkouts");
+    if (
+      path === validation.workspace ||
+      path.startsWith(`${validation.workspace}/`)
+    ) {
+      throw new Error(
+        "Factory caches, artifacts and locks must stay outside source checkouts",
+      );
     }
   }
   if (
@@ -317,9 +376,13 @@ export function buildFactoryPreparePlan(
     `test "$(git rev-parse --show-toplevel)" = "$root" || { echo 'Factory source is not its declared Git root; preserved' >&2; exit 2; }`,
     "origin=$(git config --get-all remote.origin.url)",
     `case "$origin" in ${normalizedExisting.map(shellQuote).join("|")}) ;; *) echo 'Existing factory origin differs from the declared private repository; preserved' >&2; exit 2 ;; esac`,
-    ...(sourceScope.kind === "gitlinks" ? selectedSourceSetup(sourceScope, revision) : []),
+    ...(sourceScope.kind === "gitlinks"
+      ? selectedSourceSetup(sourceScope, revision)
+      : []),
     'if [ -f "$(git rev-parse --git-path index)" ]; then',
-    ...(sourceScope.kind === "gitlinks" ? selectedSourceClean() : [`  ${clean}`]),
+    ...(sourceScope.kind === "gitlinks"
+      ? selectedSourceClean()
+      : [`  ${clean}`]),
     "else",
     '  test -z "$(find . -mindepth 1 -maxdepth 1 ! -name .git -print -quit)" || { echo "Uninitialized factory checkout contains unowned files; preserved" >&2; exit 2; }',
     "fi",
@@ -330,7 +393,9 @@ export function buildFactoryPreparePlan(
     `git cat-file -e ${shellQuote(`${revision}^{commit}`)} 2>/dev/null || git fetch --filter=blob:none origin ${shellQuote(revision)}`,
     `git cat-file -e ${shellQuote(`${revision}^{commit}`)}`,
     `git merge-base --is-ancestor ${shellQuote(revision)} refs/remotes/origin/main || { echo 'Requested source revision is not on the declared remote main history' >&2; exit 2; }`,
-    ...(sourceScope.kind === "gitlinks" ? selectedSourcePrelude(sourceScope, revision) : []),
+    ...(sourceScope.kind === "gitlinks"
+      ? selectedSourcePrelude(sourceScope, revision)
+      : []),
     `git${sourceScope.kind === "gitlinks" ? " -c submodule.recurse=false" : ""} checkout --detach --no-overwrite-ignore ${shellQuote(revision)}`,
     ...(sourceScope.kind === "gitlinks"
       ? selectedSourceUpdate(FACTORY_GIT)
@@ -339,12 +404,17 @@ export function buildFactoryPreparePlan(
           `git submodule foreach --quiet --recursive ${shellQuote(guardedSubmodules)}`,
           ...(options.initializeSubmodules === false
             ? []
-            : ["git submodule update --init --recursive --jobs 4 --filter=blob:none"]),
+            : [
+                "git submodule update --init --recursive --jobs 4 --filter=blob:none",
+              ]),
         ]),
     `test "$(git rev-parse HEAD)" = ${shellQuote(revision)}`,
     ...(sourceScope.kind === "gitlinks"
       ? [...selectedSourceClean(), ...selectedSourceVerify()]
-      : [clean, `git submodule foreach --quiet --recursive ${shellQuote(clean)}`]),
+      : [
+          clean,
+          `git submodule foreach --quiet --recursive ${shellQuote(clean)}`,
+        ]),
     sourceScope.kind === "gitlinks"
       ? "echo 'Factory selected gitlink closure prepared; whole repository cleanliness not asserted; no build started'"
       : "echo 'Factory source prepared; no build started'",
@@ -375,7 +445,14 @@ export function buildFactoryPreparePlan(
     source: { path: resolve(source.path), remote: source.remote, url: remote },
     serialized: true,
     commandTimeoutSeconds: validation.commandTimeoutSeconds,
-    transport: ["ssh", "exec", "--host", validation.target, "--cmd", remoteCommand],
+    transport: [
+      "ssh",
+      "exec",
+      "--host",
+      validation.target,
+      "--cmd",
+      remoteCommand,
+    ],
   };
 }
 
@@ -398,16 +475,28 @@ async function declaredFactorySource(
       timeout: config.commandTimeoutMs,
     });
     const output = await new Response(child.stdout).text();
-    if ((await child.exited) !== 0) throw new Error("Cannot inspect declared factory source");
+    if ((await child.exited) !== 0)
+      throw new Error("Cannot inspect declared factory source");
     return output.trim();
   };
-  if (resolve(await git(["rev-parse", "--show-toplevel"])) !== resolve(source.path)) {
+  if (
+    resolve(await git(["rev-parse", "--show-toplevel"])) !==
+    resolve(source.path)
+  ) {
     throw new Error("Declared factory source must be the repository root");
   }
   await git(["cat-file", "-e", `${revision}^{commit}`]);
-  const urls = (await git(["config", "--get-all", `remote.${source.remote}.url`])).split("\n");
-  if (urls.length !== 1) throw new Error("Factory source requires one declared remote URL");
-  return { path: source.path, remote: source.remote, url: urls[0]!, owners: config.owners };
+  const urls = (
+    await git(["config", "--get-all", `remote.${source.remote}.url`])
+  ).split("\n");
+  if (urls.length !== 1)
+    throw new Error("Factory source requires one declared remote URL");
+  return {
+    path: source.path,
+    remote: source.remote,
+    url: urls[0]!,
+    owners: config.owners,
+  };
 }
 
 export interface BuildFactoryStatus {
@@ -420,9 +509,13 @@ export interface BuildFactoryStatus {
   reason: string;
 }
 
-export async function readFactoryConfig(root: string): Promise<BuildFactoryConfig | null> {
+export async function readFactoryConfig(
+  root: string,
+): Promise<BuildFactoryConfig | null> {
   const file = Bun.file(join(root, "tools/config/build-factory.json"));
-  return (await file.exists()) ? ((await file.json()) as BuildFactoryConfig) : null;
+  return (await file.exists())
+    ? ((await file.json()) as BuildFactoryConfig)
+    : null;
 }
 
 /** Heavy-work route; `localCargo` honours the scoped cargo-serial diagnostic override only. */
@@ -440,12 +533,18 @@ export function heavyBuildStatus(
     host,
     localCargo,
   };
-  const local = (reason: string) => ({ ...status, route: "local" as const, reason });
+  const local = (reason: string) => ({
+    ...status,
+    route: "local" as const,
+    reason,
+  });
   if (!config) return local("tools/config/build-factory.json is absent");
   if (env.CLAUDE_CODE_REMOTE === "true")
     return local("Claude Code cloud session: builds run in the session");
   if (env.APHRODY_CLOUD === "1")
-    return local("APHRODY_CLOUD=1 (cloud session or container): builds run in place");
+    return local(
+      "APHRODY_CLOUD=1 (cloud session or container): builds run in place",
+    );
   if (env.GITHUB_ACTIONS === "true" || env.CI === "true")
     return local("CI/GitHub Actions runner: builds run in place");
   if (
@@ -467,8 +566,13 @@ export function heavyBuildStatus(
   }
   if (host === "vps") return local("running on the factory host");
   if (!status.enabled) return local("build factory disabled");
-  if (localCargo) return local("APHRODY_LOCAL_CARGO=1 selects a scoped local diagnostic");
-  return { ...status, route: "factory", reason: `heavy work runs on ${config.target}` };
+  if (localCargo)
+    return local("APHRODY_LOCAL_CARGO=1 selects a scoped local diagnostic");
+  return {
+    ...status,
+    route: "factory",
+    reason: `heavy work runs on ${config.target}`,
+  };
 }
 
 /** Source-owner gates use this before heavy work; static/planning callers never dispatch. */
@@ -477,7 +581,8 @@ export async function routeHeavyBuild(
   root: string,
 ): Promise<number | undefined> {
   const config = await readFactoryConfig(root);
-  if (!config || heavyBuildStatus(config, process.env, false).route === "local") return undefined;
+  if (!config || heavyBuildStatus(config, process.env, false).route === "local")
+    return undefined;
   const git = async (args: string[]): Promise<string> => {
     const child = Bun.spawn(["git", ...args], {
       windowsHide: true,
@@ -496,18 +601,26 @@ export async function routeHeavyBuild(
       "Heavy builds run on vps from committed source. The local checkout is dirty; commit the scoped batch before dispatch, or inspect build-factory plan with an explicit revision. Uncommitted source will not be silently omitted.",
     );
   const plan = buildFactoryPlan(config, "aphrody", revision, command);
-  console.error(`Build factory: ${plan.repository} ${revision} on ${plan.target}`);
+  console.error(
+    `Build factory: ${plan.repository} ${revision} on ${plan.target}`,
+  );
   const built = (
     await runInfra({
       args: plan.transport,
       cwd: root,
       stdout: "inherit",
       stderr: "inherit",
-      env: { APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(plan.commandTimeoutSeconds) },
+      env: {
+        APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(plan.commandTimeoutSeconds),
+      },
     })
   ).exitCode;
   // Routed release builds activate their binaries locally; APHRODY_FACTORY_INSTALL=0 opts out.
-  if (built !== 0 || process.env.APHRODY_FACTORY_INSTALL === "0" || !isReleaseBuild(command))
+  if (
+    built !== 0 ||
+    process.env.APHRODY_FACTORY_INSTALL === "0" ||
+    !isReleaseBuild(command)
+  )
     return built;
   return installFactoryBuild(config, "aphrody", revision, command, [], root);
 }
@@ -518,7 +631,10 @@ function isReleaseBuild(command: readonly string[]): boolean {
     build !== -1 &&
     command
       .slice(build + 1)
-      .some((arg) => arg === "--release" || arg === "-r" || arg === "--profile=release")
+      .some(
+        (arg) =>
+          arg === "--release" || arg === "-r" || arg === "--profile=release",
+      )
   );
 }
 
@@ -534,7 +650,10 @@ interface FactoryJobTransport {
 }
 
 /** Transport failures are ambiguous after submission; a stable job is never automatically replayed. */
-async function runFactoryJobTransport(plan: FactoryJobTransport, root: string): Promise<number> {
+async function runFactoryJobTransport(
+  plan: FactoryJobTransport,
+  root: string,
+): Promise<number> {
   const unknown = (error: string, transportExitCode?: number) => {
     console.log(
       JSON.stringify({
@@ -551,7 +670,9 @@ async function runFactoryJobTransport(plan: FactoryJobTransport, root: string): 
         error: error.slice(-16384),
       }),
     );
-    return transportExitCode && transportExitCode > 0 && transportExitCode <= 255
+    return transportExitCode &&
+      transportExitCode > 0 &&
+      transportExitCode <= 255
       ? transportExitCode
       : 2;
   };
@@ -563,10 +684,15 @@ async function runFactoryJobTransport(plan: FactoryJobTransport, root: string): 
       env: { APHRODY_SSH_COMMAND_TIMEOUT_SECS: "60" },
     });
   } catch (error) {
-    return unknown(error instanceof Error ? error.message : "Factory job transport failed");
+    return unknown(
+      error instanceof Error ? error.message : "Factory job transport failed",
+    );
   }
   if (result.exitCode !== 0)
-    return unknown(result.stderr.slice(-16384) || "Factory job transport failed", result.exitCode);
+    return unknown(
+      result.stderr.slice(-16384) || "Factory job transport failed",
+      result.exitCode,
+    );
   try {
     if (Buffer.byteLength(result.stdout, "utf8") > 1048576)
       throw new Error("Factory job receipt exceeds its budget");
@@ -578,24 +704,36 @@ async function runFactoryJobTransport(plan: FactoryJobTransport, root: string): 
       receipt.jobId !== plan.jobId ||
       receipt.target !== plan.target ||
       !/^[a-f0-9]{64}$/u.test(receipt.fingerprint ?? "") ||
-      (plan.fingerprint !== undefined && receipt.fingerprint !== plan.fingerprint) ||
+      (plan.fingerprint !== undefined &&
+        receipt.fingerprint !== plan.fingerprint) ||
       !/^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(receipt.repository ?? "") ||
       !/^[a-f0-9]{40}$/u.test(receipt.revision ?? "") ||
-      (plan.repository !== undefined && receipt.repository !== plan.repository) ||
+      (plan.repository !== undefined &&
+        receipt.repository !== plan.repository) ||
       (plan.revision !== undefined && receipt.revision !== plan.revision) ||
-      !["queued", "active", "succeeded", "failed", "indeterminate"].includes(receipt.status) ||
+      !["queued", "active", "succeeded", "failed", "indeterminate"].includes(
+        receipt.status,
+      ) ||
       !["dispatch", "complete"].includes(receipt.phase) ||
       typeof receipt.requestedAt !== "string" ||
       !Number.isFinite(Date.parse(receipt.requestedAt)) ||
-      (plan.operation === "submit" && !["created", "existing"].includes(receipt.submission))
+      (plan.operation === "submit" &&
+        !["created", "existing"].includes(receipt.submission))
     )
-      throw new Error("Factory job receipt does not match the requested identity");
+      throw new Error(
+        "Factory job receipt does not match the requested identity",
+      );
     if (
       receipt.status === "active" &&
-      (!Number.isSafeInteger(receipt.pid) || receipt.pid < 1 || receipt.processAlive !== true)
+      (!Number.isSafeInteger(receipt.pid) ||
+        receipt.pid < 1 ||
+        receipt.processAlive !== true)
     )
-      throw new Error("Factory active receipt lacks a live supervisor identity");
-    const terminal = receipt.status === "succeeded" || receipt.status === "failed";
+      throw new Error(
+        "Factory active receipt lacks a live supervisor identity",
+      );
+    const terminal =
+      receipt.status === "succeeded" || receipt.status === "failed";
     if (
       terminal &&
       (receipt.phase !== "complete" ||
@@ -607,7 +745,10 @@ async function runFactoryJobTransport(plan: FactoryJobTransport, root: string): 
         !Number.isFinite(Date.parse(receipt.finishedAt)))
     )
       throw new Error("Factory job terminal receipt is invalid");
-    if (!terminal && (receipt.phase !== "dispatch" || receipt.exitCode !== undefined))
+    if (
+      !terminal &&
+      (receipt.phase !== "dispatch" || receipt.exitCode !== undefined)
+    )
       throw new Error("Factory job receipt asserts an unproven exit");
     console.log(
       JSON.stringify(
@@ -632,7 +773,11 @@ async function runFactoryJobTransport(plan: FactoryJobTransport, root: string): 
     );
     return 0;
   } catch (error) {
-    return unknown(error instanceof Error ? error.message : "Cannot decode factory job receipt");
+    return unknown(
+      error instanceof Error
+        ? error.message
+        : "Cannot decode factory job receipt",
+    );
   }
 }
 
@@ -661,7 +806,11 @@ async function waitFactoryJob(
           return "";
         }
       })();
-      if (status === "succeeded" || status === "failed" || status === "indeterminate")
+      if (
+        status === "succeeded" ||
+        status === "failed" ||
+        status === "indeterminate"
+      )
         return status;
     }
     if (Date.now() > deadline) return "indeterminate";
@@ -679,24 +828,47 @@ async function installFactoryBuild(
   only: readonly string[],
   root: string,
 ): Promise<number> {
-  const { factoryArtifacts, factoryInstallConfig, infraRemote, installFactoryArtifacts } =
-    await import("./build-factory-install.ts");
-  const artifacts = await factoryArtifacts(config, repository, command, root, only);
+  const {
+    factoryArtifacts,
+    factoryInstallConfig,
+    infraRemote,
+    installFactoryArtifacts,
+  } = await import("./build-factory-install.ts");
+  const artifacts = await factoryArtifacts(
+    config,
+    repository,
+    command,
+    root,
+    only,
+  );
   const records = await installFactoryArtifacts(
     artifacts,
     revision,
     infraRemote(config.target, (args) =>
-      runInfra({ args, cwd: root, env: { APHRODY_SSH_COMMAND_TIMEOUT_SECS: "900" } }),
+      runInfra({
+        args,
+        cwd: root,
+        env: { APHRODY_SSH_COMMAND_TIMEOUT_SECS: "900" },
+      }),
     ),
     factoryInstallConfig(config.install),
   );
   const success = records.every((record) => record.status !== "refused");
-  console.log(JSON.stringify({ operation: "install", success, revision, records }, null, 2));
+  console.log(
+    JSON.stringify(
+      { operation: "install", success, revision, records },
+      null,
+      2,
+    ),
+  );
   return success ? 0 : 1;
 }
 
 /** Plan by default; run dispatches exclusively through the installed Infra SSH owner. */
-async function runBuildFactoryAction(args: string[], root: string): Promise<number> {
+async function runBuildFactoryAction(
+  args: string[],
+  root: string,
+): Promise<number> {
   const separator = args.indexOf("--");
   const options = separator === -1 ? args : args.slice(0, separator);
   if (options.includes("--help") || options.includes("-h")) {
@@ -710,9 +882,14 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
     if (rest.some((arg) => arg !== "--apply"))
       throw new Error("Usage: build-factory cleanup [--apply]");
     const config = await readFactoryConfig(root);
-    if (!config?.cleanup) throw new Error("The factory cleanup policy is not declared");
+    if (!config?.cleanup)
+      throw new Error("The factory cleanup policy is not declared");
     const { factoryCleanupScript } = await import("./build-factory-cleanup.ts");
-    const script = factoryCleanupScript(config, config.cleanup, rest.includes("--apply"));
+    const script = factoryCleanupScript(
+      config,
+      config.cleanup,
+      rest.includes("--apply"),
+    );
     const result = await runInfra({
       args: ["ssh", "exec", "--host", config.target, "--cmd", script],
       cwd: root,
@@ -725,8 +902,13 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
   if (action === "status") {
     if (!rest.includes("--job")) {
       if (rest.some((arg) => arg !== "--route"))
-        throw new Error("Usage: build-factory status [--route] or --job <id> [--tail <0..200>]");
-      const status = heavyBuildStatus(await readFactoryConfig(root), process.env);
+        throw new Error(
+          "Usage: build-factory status [--route] or --job <id> [--tail <0..200>]",
+        );
+      const status = heavyBuildStatus(
+        await readFactoryConfig(root),
+        process.env,
+      );
       console.log(rest.length ? status.route : JSON.stringify(status, null, 2));
       return 0;
     }
@@ -736,22 +918,34 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
     for (let i = 0; i < rest.length; i++) {
       const arg = rest[i]!;
       if (!["--job", "--tail"].includes(arg) || seen.has(arg))
-        throw new Error("Usage: build-factory status --job <id> [--tail <0..200>]");
+        throw new Error(
+          "Usage: build-factory status --job <id> [--tail <0..200>]",
+        );
       seen.add(arg);
       const value = rest[++i];
-      if (!value || value.startsWith("--")) throw new Error(`${arg} requires a value`);
+      if (!value || value.startsWith("--"))
+        throw new Error(`${arg} requires a value`);
       if (arg === "--job") jobId = value;
       else {
-        if (!/^\d+$/u.test(value)) throw new Error("Factory log tail requires 0..200 lines");
+        if (!/^\d+$/u.test(value))
+          throw new Error("Factory log tail requires 0..200 lines");
         tailLines = Number(value);
       }
     }
     const config = await readFactoryConfig(root);
     if (!config) throw new Error("tools/config/build-factory.json is absent");
     const { factoryJobStatusPlan } = await import("./build-factory-jobs.ts");
-    return runFactoryJobTransport(factoryJobStatusPlan(config, jobId, { tailLines }), root);
+    return runFactoryJobTransport(
+      factoryJobStatusPlan(config, jobId, { tailLines }),
+      root,
+    );
   }
-  if (action !== "plan" && action !== "run" && action !== "prepare" && action !== "install")
+  if (
+    action !== "plan" &&
+    action !== "run" &&
+    action !== "prepare" &&
+    action !== "install"
+  )
     throw new Error("Expected build-factory plan, run, prepare or install");
   let repository = "aphrody";
   let revision = "";
@@ -788,7 +982,8 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
     }
     if ((action === "run" || action === "install") && arg === "--bin") {
       const value = rest[++i];
-      if (!value || value.startsWith("--")) throw new Error("--bin requires a value");
+      if (!value || value.startsWith("--"))
+        throw new Error("--bin requires a value");
       only = value.split(",").filter(Boolean);
       continue;
     }
@@ -804,7 +999,8 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
     )
       throw new Error(`Unknown argument: ${arg}`);
     const value = rest[++i];
-    if (!value || value.startsWith("--")) throw new Error(`${arg} requires a value`);
+    if (!value || value.startsWith("--"))
+      throw new Error(`${arg} requires a value`);
     if (arg === "--repo") repository = value;
     else if (arg === "--revision") revision = value;
     else if (arg === "--submodules") {
@@ -813,12 +1009,16 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
     } else jobId = value;
   }
   if (action !== "install" && detach !== Boolean(jobId))
-    throw new Error("Detached jobs require both --detach and an explicit --job <stable-id>");
-  if (only.length && !install) throw new Error("--bin selects binaries for --install");
+    throw new Error(
+      "Detached jobs require both --detach and an explicit --job <stable-id>",
+    );
+  if (only.length && !install)
+    throw new Error("--bin selects binaries for --install");
   const config = await readFactoryConfig(root);
   if (!config) throw new Error("tools/config/build-factory.json is absent");
   if (action === "prepare") {
-    if (!/^[a-f0-9]{40}$/.test(revision)) throw new Error("A full pinned Git revision is required");
+    if (!/^[a-f0-9]{40}$/.test(revision))
+      throw new Error("A full pinned Git revision is required");
     const source = await declaredFactorySource(root, repository, revision);
     const plan = buildFactoryPreparePlan(config, repository, revision, source, {
       initializeSubmodules,
@@ -831,7 +1031,9 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
     const result = await runInfra({
       args: plan.transport,
       cwd: root,
-      env: { APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(plan.commandTimeoutSeconds) },
+      env: {
+        APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(plan.commandTimeoutSeconds),
+      },
     });
     console.log(
       JSON.stringify(
@@ -852,11 +1054,22 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
     );
     return result.exitCode;
   }
-  const plan = buildFactoryPlan(config, repository, revision, command, { submodules });
+  const plan = buildFactoryPlan(config, repository, revision, command, {
+    submodules,
+  });
   if (action === "install") {
     if (jobId && (await waitFactoryJob(config, jobId, root, 0)) !== "succeeded")
-      throw new Error(`Factory job ${jobId} has not succeeded; nothing installed`);
-    return installFactoryBuild(config, repository, revision, command, only, root);
+      throw new Error(
+        `Factory job ${jobId} has not succeeded; nothing installed`,
+      );
+    return installFactoryBuild(
+      config,
+      repository,
+      revision,
+      command,
+      only,
+      root,
+    );
   }
   if (detach) {
     const { factoryJobPlan } = await import("./build-factory-jobs.ts");
@@ -900,14 +1113,19 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
       cwd: root,
       stdout: "inherit",
       stderr: "inherit",
-      env: { APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(plan.commandTimeoutSeconds) },
+      env: {
+        APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(plan.commandTimeoutSeconds),
+      },
     })
   ).exitCode;
   if (built !== 0 || !install) return built;
   return installFactoryBuild(config, repository, revision, command, only, root);
 }
 
-export async function runBuildFactory(args: string[], root = infraRoot()): Promise<number> {
+export async function runBuildFactory(
+  args: string[],
+  root = infraRoot(),
+): Promise<number> {
   try {
     return await runBuildFactoryAction(args, root);
   } catch (error) {
@@ -916,11 +1134,15 @@ export async function runBuildFactory(args: string[], root = infraRoot()): Promi
         schemaVersion: 1,
         success: false,
         executed: false,
-        error: error instanceof Error ? error.message : "Build factory request failed",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Build factory request failed",
       }),
     );
     return 2;
   }
 }
 
-if (import.meta.main) process.exit(await runBuildFactory(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runBuildFactory(process.argv.slice(2)));

@@ -59,7 +59,10 @@ export interface UpstreamSources {
 }
 
 /** `{name}`, `{NAME}`, `{version}`, `{source}` ... placeholders of a derived name. */
-export function expand(template: string, values: Record<string, string>): string {
+export function expand(
+  template: string,
+  values: Record<string, string>,
+): string {
   return template.replace(/\{([A-Za-z0-9]+)\}/g, (match, key: string) => {
     if (key === "NAME") return (values["name"] ?? "").toUpperCase();
     return values[key] ?? match;
@@ -69,28 +72,41 @@ export function expand(template: string, values: Record<string, string>): string
 const stripV = (tag: string): string => tag.replace(/^v/, "");
 
 /** Every inconsistency between the identity, the vendor pins and the provenance manifest. */
-export function checkPins(identity: Identity, vendor: Vendor, upstream: UpstreamSources): string[] {
+export function checkPins(
+  identity: Identity,
+  vendor: Vendor,
+  upstream: UpstreamSources,
+): string[] {
   const problems: string[] = [];
   if (!/^[a-z][a-z0-9]*$/.test(identity.name)) {
     problems.push(`vu.json: invalid runtime name "${identity.name}"`);
   }
-  const references = new Map((upstream.reference ?? []).map((entry) => [entry.id, entry]));
+  const references = new Map(
+    (upstream.reference ?? []).map((entry) => [entry.id, entry]),
+  );
   const forkIds = new Set<string>();
   for (const source of vendor.sources) {
     const where = `vendor.json ${source.name}`;
-    if (!SHA.test(source.ref)) problems.push(`${where}: ref must be a 40-hex commit`);
-    const repo = source.url.match(/^https:\/\/github\.com\/aphrody-labs\/([^/]+?)(?:\.git)?$/)?.[1];
+    if (!SHA.test(source.ref))
+      problems.push(`${where}: ref must be a 40-hex commit`);
+    const repo = source.url.match(
+      /^https:\/\/github\.com\/aphrody-labs\/([^/]+?)(?:\.git)?$/,
+    )?.[1];
     if (!repo) problems.push(`${where}: url must be an aphrody-labs fork`);
     const branch = expand(identity.derived["forkPinBranch"] ?? "", {
       name: identity.name,
       version: stripV(source.upstreamTag),
     });
     if (source.forkBranch !== branch) {
-      problems.push(`${where}: forkBranch ${source.forkBranch} must be ${branch}`);
+      problems.push(
+        `${where}: forkBranch ${source.forkBranch} must be ${branch}`,
+      );
     }
     const vcs = source.cratesIo?.cargoVcsInfoSha1;
     if (vcs !== undefined && vcs !== source.ref) {
-      problems.push(`${where}: crates.io vcs sha ${vcs} differs from ref ${source.ref}`);
+      problems.push(
+        `${where}: crates.io vcs sha ${vcs} differs from ref ${source.ref}`,
+      );
     }
     const id = expand(identity.derived["upstreamSourcesId"] ?? "", {
       name: identity.name,
@@ -99,28 +115,36 @@ export function checkPins(identity: Identity, vendor: Vendor, upstream: Upstream
     forkIds.add(id);
     const entry = references.get(id);
     if (!entry) {
-      problems.push(`tools/config/upstream-sources.json: missing reference ${id}`);
+      problems.push(
+        `tools/config/upstream-sources.json: missing reference ${id}`,
+      );
       continue;
     }
     if (entry.tier !== "build") problems.push(`${id}: tier must be build`);
-    if (entry.ref !== source.upstreamTag) problems.push(`${id}: ref must be ${source.upstreamTag}`);
+    if (entry.ref !== source.upstreamTag)
+      problems.push(`${id}: ref must be ${source.upstreamTag}`);
     if (entry.observedCommit !== source.ref)
       problems.push(`${id}: observedCommit must be ${source.ref}`);
-    if (entry.forkCommit !== source.ref) problems.push(`${id}: forkCommit must be ${source.ref}`);
+    if (entry.forkCommit !== source.ref)
+      problems.push(`${id}: forkCommit must be ${source.ref}`);
     if (entry.forkRef !== source.forkBranch)
       problems.push(`${id}: forkRef must be ${source.forkBranch}`);
     if (repo && entry.forkUrl !== `https://github.com/aphrody-labs/${repo}`) {
-      problems.push(`${id}: forkUrl must be https://github.com/aphrody-labs/${repo}`);
+      problems.push(
+        `${id}: forkUrl must be https://github.com/aphrody-labs/${repo}`,
+      );
     }
   }
   for (const release of vendor.releases) {
     const where = `vendor.json release ${release.name}`;
-    if (!SHA.test(release.commit)) problems.push(`${where}: commit must be a 40-hex SHA`);
+    if (!SHA.test(release.commit))
+      problems.push(`${where}: commit must be a 40-hex SHA`);
     const names = new Set<string>();
     for (const asset of release.assets) {
       if (!DIGEST.test(asset.sha256))
         problems.push(`${where}: ${asset.name} needs a sha256 digest`);
-      if (names.has(asset.name)) problems.push(`${where}: duplicate asset ${asset.name}`);
+      if (names.has(asset.name))
+        problems.push(`${where}: duplicate asset ${asset.name}`);
       names.add(asset.name);
     }
     const id = expand(identity.derived["upstreamSourcesId"] ?? "", {
@@ -128,9 +152,17 @@ export function checkPins(identity: Identity, vendor: Vendor, upstream: Upstream
       source: release.name,
     });
     const entry = references.get(id);
-    if (!entry) problems.push(`tools/config/upstream-sources.json: missing reference ${id}`);
-    else if (entry.ref !== release.tag || entry.observedCommit !== release.commit) {
-      problems.push(`${id}: ref and observedCommit must be the release tag and commit`);
+    if (!entry)
+      problems.push(
+        `tools/config/upstream-sources.json: missing reference ${id}`,
+      );
+    else if (
+      entry.ref !== release.tag ||
+      entry.observedCommit !== release.commit
+    ) {
+      problems.push(
+        `${id}: ref and observedCommit must be the release tag and commit`,
+      );
     }
   }
   // The runtime owns its prefix: no reference of the family may exist without a pin.
@@ -141,12 +173,17 @@ export function checkPins(identity: Identity, vendor: Vendor, upstream: Upstream
   const known = new Set([
     ...forkIds,
     ...vendor.releases.map((r) =>
-      expand(identity.derived["upstreamSourcesId"] ?? "", { name: identity.name, source: r.name }),
+      expand(identity.derived["upstreamSourcesId"] ?? "", {
+        name: identity.name,
+        source: r.name,
+      }),
     ),
   ]);
   for (const id of references.keys()) {
     if (id.startsWith(prefix) && !known.has(id))
-      problems.push(`tools/config/upstream-sources.json: ${id} has no pin in vendor.json`);
+      problems.push(
+        `tools/config/upstream-sources.json: ${id} has no pin in vendor.json`,
+      );
   }
   return problems;
 }
@@ -179,36 +216,57 @@ function api(route: string): unknown {
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,
   });
-  if (result.status !== 0) throw new Error(`${route}: ${result.stderr.trim().slice(0, 200)}`);
-  const parsed = JSON.parse(result.stdout) as { status?: number; body?: unknown };
+  if (result.status !== 0)
+    throw new Error(`${route}: ${result.stderr.trim().slice(0, 200)}`);
+  const parsed = JSON.parse(result.stdout) as {
+    status?: number;
+    body?: unknown;
+  };
   return parsed.body ?? parsed;
 }
 
 /** Remote checks: the fork branch and the upstream tag resolve to the pinned commit. */
-export function checkRemote(vendor: Vendor, read: (route: string) => unknown = api): string[] {
+export function checkRemote(
+  vendor: Vendor,
+  read: (route: string) => unknown = api,
+): string[] {
   const problems: string[] = [];
   for (const source of vendor.sources) {
     const repo = source.url.match(/\/aphrody-labs\/([^/]+?)(?:\.git)?$/)?.[1];
     const upstream = source.upstream.match(/github\.com\/([^/]+\/[^/.]+)/)?.[1];
     try {
-      const branch = read(`/repos/aphrody-labs/${repo}/branches/${source.forkBranch}`) as {
+      const branch = read(
+        `/repos/aphrody-labs/${repo}/branches/${source.forkBranch}`,
+      ) as {
         commit?: { sha?: string };
       };
       if (branch.commit?.sha !== source.ref)
-        problems.push(`${source.name}: fork branch ${source.forkBranch} is ${branch.commit?.sha}`);
-      const tag = read(`/repos/${upstream}/commits/${source.upstreamTag}`) as { sha?: string };
+        problems.push(
+          `${source.name}: fork branch ${source.forkBranch} is ${branch.commit?.sha}`,
+        );
+      const tag = read(`/repos/${upstream}/commits/${source.upstreamTag}`) as {
+        sha?: string;
+      };
       if (tag.sha !== source.ref)
-        problems.push(`${source.name}: upstream tag ${source.upstreamTag} is ${tag.sha}`);
+        problems.push(
+          `${source.name}: upstream tag ${source.upstreamTag} is ${tag.sha}`,
+        );
     } catch (error) {
-      problems.push(`${source.name}: ${error instanceof Error ? error.message : String(error)}`);
+      problems.push(
+        `${source.name}: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
   return problems;
 }
 
 async function main(argv: string[]): Promise<number> {
-  const identity = (await Bun.file(`${ROOT}/docs/plans/vu/scaffold/vu.json`).json()) as Identity;
-  const vendor = (await Bun.file(`${ROOT}/docs/plans/vu/scaffold/vendor.json`).json()) as Vendor;
+  const identity = (await Bun.file(
+    `${ROOT}/docs/plans/vu/scaffold/vu.json`,
+  ).json()) as Identity;
+  const vendor = (await Bun.file(
+    `${ROOT}/docs/plans/vu/scaffold/vendor.json`,
+  ).json()) as Vendor;
   const upstream = (await Bun.file(
     `${ROOT}/tools/config/upstream-sources.json`,
   ).json()) as UpstreamSources;
@@ -223,7 +281,12 @@ async function main(argv: string[]): Promise<number> {
   if (argv.includes("--json")) {
     console.log(
       JSON.stringify(
-        { schema: "aphrody.vu-pins/1", name: identity.name, ok: problems.length === 0, problems },
+        {
+          schema: "aphrody.vu-pins/1",
+          name: identity.name,
+          ok: problems.length === 0,
+          problems,
+        },
         null,
         2,
       ),

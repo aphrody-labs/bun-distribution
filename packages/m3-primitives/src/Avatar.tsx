@@ -33,14 +33,18 @@ const avatarVariants = cva(
   },
 );
 
-export type AvatarRootProps = AvatarPrimitive.Root.Props & VariantProps<typeof avatarVariants>;
+export type AvatarRootProps = AvatarPrimitive.Root.Props &
+  VariantProps<typeof avatarVariants>;
 
 export const AvatarRoot = forwardRef<HTMLSpanElement, AvatarRootProps>(
   ({ className, size, shape, ...props }, ref) => (
     <AvatarPrimitive.Root
       ref={ref}
       className={withClassName(
-        clsx(avatarVariants({ size, shape }), "bg-primary-container text-on-primary-container"),
+        clsx(
+          avatarVariants({ size, shape }),
+          "bg-primary-container text-on-primary-container",
+        ),
         className,
       )}
       data-m3-component="Avatar"
@@ -86,11 +90,20 @@ export interface AvatarProps extends AvatarRootProps {
 }
 
 /** Pre-composed M3 Avatar with automatic image and fallback. */
-export function Avatar({ src, alt, fallback, size, shape, ...props }: AvatarProps) {
+export function Avatar({
+  src,
+  alt,
+  fallback,
+  size,
+  shape,
+  ...props
+}: AvatarProps) {
   return (
     <AvatarRoot size={size} shape={shape} {...props}>
       {src && <AvatarImage src={src} alt={alt} />}
-      <AvatarFallback>{fallback ?? (alt ? alt.slice(0, 2).toUpperCase() : "?")}</AvatarFallback>
+      <AvatarFallback>
+        {fallback ?? (alt ? alt.slice(0, 2).toUpperCase() : "?")}
+      </AvatarFallback>
     </AvatarRoot>
   );
 }

@@ -6,16 +6,30 @@ import { m3Plugin, M3_MODULES, fontsCss } from "../src/plugin.ts";
 import { dataUrlFor, mimeFor, urlImportForm } from "../src/url-imports.ts";
 import { FIXTURE, fakeCss, REPO_ROOT, tempDir } from "./helpers.ts";
 
-async function bundle(outdir: string, plugin: ReturnType<typeof m3Plugin>, entry = join(FIXTURE, "index.html")) {
-  const result = await Bun.build({ entrypoints: [entry], outdir, target: "browser", plugins: [plugin] });
-  if (!result.success) throw new AggregateError(result.logs, "fixture build failed");
+async function bundle(
+  outdir: string,
+  plugin: ReturnType<typeof m3Plugin>,
+  entry = join(FIXTURE, "index.html"),
+) {
+  const result = await Bun.build({
+    entrypoints: [entry],
+    outdir,
+    target: "browser",
+    plugins: [plugin],
+  });
+  if (!result.success)
+    throw new AggregateError(result.logs, "fixture build failed");
   const files = await readdir(outdir, { recursive: true });
   const read = async (ext: string) => {
     const name = files.find((file) => file.endsWith(ext));
     if (!name) throw new Error(`no ${ext} output in ${files.join(", ")}`);
     return Bun.file(join(outdir, name)).text();
   };
-  return { files: files.map((f) => f.replaceAll("\\", "/")), css: await read(".css"), js: await read(".js") };
+  return {
+    files: files.map((f) => f.replaceAll("\\", "/")),
+    css: await read(".css"),
+    js: await read(".js"),
+  };
 }
 
 describe("m3Plugin virtual modules", () => {
@@ -23,8 +37,18 @@ describe("m3Plugin virtual modules", () => {
     await using tmp = await tempDir();
     const { css, calls } = fakeCss();
     const theme = { seed: "#abcdef", variant: "expressive", contrast: 0.5 };
-    const out = await bundle(tmp.dir, m3Plugin({ css, theme, root: REPO_ROOT }));
-    expect(calls).toEqual([{ sheet: "tokens", seed: "#abcdef", variant: "expressive", contrast: 0.5 }]);
+    const out = await bundle(
+      tmp.dir,
+      m3Plugin({ css, theme, root: REPO_ROOT }),
+    );
+    expect(calls).toEqual([
+      {
+        sheet: "tokens",
+        seed: "#abcdef",
+        variant: "expressive",
+        contrast: 0.5,
+      },
+    ]);
     expect(out.css).toContain("--fixture-primary: #123456");
     expect(out.css).toContain("expressive");
   });
@@ -32,29 +56,47 @@ describe("m3Plugin virtual modules", () => {
   test("the theme defaults to m3.config.ts of configDir", async () => {
     await using tmp = await tempDir();
     const { css, calls } = fakeCss();
-    await bundle(tmp.dir, m3Plugin({ css, configDir: FIXTURE, root: REPO_ROOT }));
-    expect(calls).toEqual([{ sheet: "tokens", seed: "#336699", variant: "vibrant", contrast: 0.5 }]);
+    await bundle(
+      tmp.dir,
+      m3Plugin({ css, configDir: FIXTURE, root: REPO_ROOT }),
+    );
+    expect(calls).toEqual([
+      { sheet: "tokens", seed: "#336699", variant: "vibrant", contrast: 0.5 },
+    ]);
   });
 
   test("the generator runs once per sheet and build", async () => {
     await using tmp = await tempDir();
     const { css, calls } = fakeCss();
     const entry = join(tmp.dir, "entry.ts");
-    await Bun.write(entry, 'import "m3:theme.css";\nimport "m3:tokens.css";\nimport "m3:tailwind.css";\n');
+    await Bun.write(
+      entry,
+      'import "m3:theme.css";\nimport "m3:tokens.css";\nimport "m3:tailwind.css";\n',
+    );
     const result = await Bun.build({
       entrypoints: [entry],
       outdir: join(tmp.dir, "out"),
       plugins: [m3Plugin({ css, theme: {}, root: REPO_ROOT, tailwind: false })],
     });
     expect(result.success).toBe(true);
-    expect(calls.map((c) => c.sheet).toSorted()).toEqual(["tailwind", "tokens"]);
+    expect(calls.map((c) => c.sheet).toSorted()).toEqual([
+      "tailwind",
+      "tokens",
+    ]);
   });
 
   test("m3:symbols.css and m3:fonts.css ship the crate fonts as assets", async () => {
     await using tmp = await tempDir();
-    const out = await bundle(tmp.dir, m3Plugin({ css: fakeCss().css, theme: {}, root: REPO_ROOT }));
-    expect(out.files.some((f) => /material-symbols-outlined.*\.woff2$/.test(f))).toBe(true);
-    expect(out.files.some((f) => /GoogleSansFlex-Variable.*\.ttf$/.test(f))).toBe(true);
+    const out = await bundle(
+      tmp.dir,
+      m3Plugin({ css: fakeCss().css, theme: {}, root: REPO_ROOT }),
+    );
+    expect(
+      out.files.some((f) => /material-symbols-outlined.*\.woff2$/.test(f)),
+    ).toBe(true);
+    expect(
+      out.files.some((f) => /GoogleSansFlex-Variable.*\.ttf$/.test(f)),
+    ).toBe(true);
     expect(out.css).toMatch(/font-family: "?Material Symbols Outlined"?/);
     expect(out.css).toMatch(/font-family: "?Google Sans Flex"?/);
     expect(out.css).toContain(".material-symbols-outlined");
@@ -62,7 +104,10 @@ describe("m3Plugin virtual modules", () => {
 
   test("Tailwind v4 is composed: utilities from the HTML are generated", async () => {
     await using tmp = await tempDir();
-    const out = await bundle(tmp.dir, m3Plugin({ css: fakeCss().css, theme: {}, root: REPO_ROOT }));
+    const out = await bundle(
+      tmp.dir,
+      m3Plugin({ css: fakeCss().css, theme: {}, root: REPO_ROOT }),
+    );
     expect(out.css).toContain(".bg-primary");
     expect(out.css).toContain(".p-4");
   });
@@ -74,7 +119,9 @@ describe("m3Plugin virtual modules", () => {
     const result = await Bun.build({
       entrypoints: [entry],
       outdir: join(tmp.dir, "out"),
-      plugins: [m3Plugin({ css: fakeCss().css, root: REPO_ROOT, tailwind: false })],
+      plugins: [
+        m3Plugin({ css: fakeCss().css, root: REPO_ROOT, tailwind: false }),
+      ],
       throw: false,
     });
     expect(result.success).toBe(false);
@@ -91,8 +138,13 @@ describe("m3Plugin virtual modules", () => {
 describe("?url imports", () => {
   test(".svg is emitted as a file; other assets are inlined; .scss line comments are stripped", async () => {
     await using tmp = await tempDir();
-    const out = await bundle(tmp.dir, m3Plugin({ css: fakeCss().css, theme: {}, root: REPO_ROOT }));
-    expect(out.files.some((file) => /^logo(-[a-z0-9]+)?\.svg$/.test(file))).toBe(true);
+    const out = await bundle(
+      tmp.dir,
+      m3Plugin({ css: fakeCss().css, theme: {}, root: REPO_ROOT }),
+    );
+    expect(
+      out.files.some((file) => /^logo(-[a-z0-9]+)?\.svg$/.test(file)),
+    ).toBe(true);
     expect(out.js).not.toContain("data:image/svg+xml");
     expect(urlImportForm("a.SVG")).toBe("file");
     expect(urlImportForm("a.png")).toBe("inline");

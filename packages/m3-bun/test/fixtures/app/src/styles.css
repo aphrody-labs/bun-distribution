@@ -4,5 +4,7 @@ body {
   margin: 0;
   background: var(--md-sys-color-surface);
   color: var(--md-sys-color-on-surface);
-  font: 400 1rem/1.5 system-ui, sans-serif;
+  font:
+    400 1rem/1.5 system-ui,
+    sans-serif;
 }

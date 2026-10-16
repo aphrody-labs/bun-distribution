@@ -7,7 +7,11 @@ export interface RagMonitorConfig {
   intervalSeconds: number;
 }
 /** Only the current unit execution can establish completion; previous reports cannot. */
-export function ragCounters(unit: string, report: Record<string, unknown>, journal = "") {
+export function ragCounters(
+  unit: string,
+  report: Record<string, unknown>,
+  journal = "",
+) {
   const properties = Object.fromEntries(
     unit
       .trim()
@@ -18,11 +22,18 @@ export function ragCounters(unit: string, report: Record<string, unknown>, journ
       }),
   );
   const pid = Number(properties.MainPID);
-  const running = ["active", "activating"].includes(properties.ActiveState ?? "") && pid > 1;
-  const start = Number(properties.ExecMainStartTimestamp?.replace(/^@/, "")) * 1000;
-  const observed = Date.parse(typeof report.generatedAt === "string" ? report.generatedAt : "");
+  const running =
+    ["active", "activating"].includes(properties.ActiveState ?? "") && pid > 1;
+  const start =
+    Number(properties.ExecMainStartTimestamp?.replace(/^@/, "")) * 1000;
+  const observed = Date.parse(
+    typeof report.generatedAt === "string" ? report.generatedAt : "",
+  );
   const current =
-    Number.isFinite(start) && start > 0 && Number.isFinite(observed) && observed >= start;
+    Number.isFinite(start) &&
+    start > 0 &&
+    Number.isFinite(observed) &&
+    observed >= start;
   const complete =
     !running &&
     properties.ActiveState === "inactive" &&
@@ -30,8 +41,11 @@ export function ragCounters(unit: string, report: Record<string, unknown>, journ
     properties.ExecMainStatus === "0" &&
     current &&
     report.failed === false;
-  const progress = running ? [...journal.matchAll(/(\d+)\/(\d+) indexed/g)].at(-1) : undefined;
-  const sources = current && Array.isArray(report.sources) ? report.sources : [];
+  const progress = running
+    ? [...journal.matchAll(/(\d+)\/(\d+) indexed/g)].at(-1)
+    : undefined;
+  const sources =
+    current && Array.isArray(report.sources) ? report.sources : [];
   const indexed = sources.reduce(
     (count: number, source: Record<string, unknown>) =>
       count +
@@ -43,17 +57,24 @@ export function ragCounters(unit: string, report: Record<string, unknown>, journ
   return {
     running: Number(running),
     completed: Number(complete),
-    failed: Number(properties.ActiveState === "failed" || (current && report.failed === true)),
+    failed: Number(
+      properties.ActiveState === "failed" ||
+        (current && report.failed === true),
+    ),
     source_count: sources.length,
     indexed,
     ...(progress
-      ? { progress_current: Number(progress[1]), progress_total: Number(progress[2]) }
+      ? {
+          progress_current: Number(progress[1]),
+          progress_total: Number(progress[2]),
+        }
       : {}),
   };
 }
 
 export async function readRagStatus(config: RagMonitorConfig, run: Runner) {
-  if (config.unit !== "shenron-rag-sync.service") throw Error("Invalid RAG monitor unit");
+  if (config.unit !== "shenron-rag-sync.service")
+    throw Error("Invalid RAG monitor unit");
   const unit = await run([
     "systemctl",
     "--user",

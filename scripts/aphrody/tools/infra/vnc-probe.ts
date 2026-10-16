@@ -8,7 +8,13 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-type Step = { target: string; action: string; ok: boolean; detail: string; ms: number };
+type Step = {
+  target: string;
+  action: string;
+  ok: boolean;
+  detail: string;
+  ms: number;
+};
 
 const argv = Bun.argv.slice(2);
 const flag = (name: string) => argv.includes(name);
@@ -20,16 +26,24 @@ const opt = (name: string) => {
 const valueIndexes = new Set(
   ["--out", "--wait"].flatMap((n) => {
     const i = argv.indexOf(n);
-    return i >= 0 && argv[i + 1] && !argv[i + 1]!.startsWith("--") ? [i + 1] : [];
+    return i >= 0 && argv[i + 1] && !argv[i + 1]!.startsWith("--")
+      ? [i + 1]
+      : [];
   }),
 );
-const targets = argv.filter((a, i) => !a.startsWith("--") && !valueIndexes.has(i));
-const out = opt("--out") ?? join(process.env.TEMP ?? process.env.TMPDIR ?? "/tmp", "aphrody-vnc");
+const targets = argv.filter(
+  (a, i) => !a.startsWith("--") && !valueIndexes.has(i),
+);
+const out =
+  opt("--out") ??
+  join(process.env.TEMP ?? process.env.TMPDIR ?? "/tmp", "aphrody-vnc");
 const act = flag("--act");
 const wait = flag("--wait");
 const waitSeconds = Number(opt("--wait") ?? 6 * 3600);
 if (targets.length === 0) {
-  console.error("usage: vnc-probe.ts <cible>... [--out dir] [--act] [--wait [s]] [--json]");
+  console.error(
+    "usage: vnc-probe.ts <cible>... [--out dir] [--act] [--wait [s]] [--json]",
+  );
   process.exit(2);
 }
 mkdirSync(out, { recursive: true });
@@ -75,7 +89,10 @@ class Mcp {
   request(method: string, params: object, timeoutMs = 60_000): Promise<any> {
     const id = ++this.id;
     return new Promise((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error(`${method}: délai dépassé`)), timeoutMs);
+      const t = setTimeout(
+        () => reject(new Error(`${method}: délai dépassé`)),
+        timeoutMs,
+      );
       this.pending.set(id, (m) => {
         clearTimeout(t);
         resolve(m);
@@ -96,15 +113,24 @@ class Mcp {
   }
 }
 
-async function call(mcp: Mcp, args: Record<string, unknown>, shot?: string): Promise<Step> {
+async function call(
+  mcp: Mcp,
+  args: Record<string, unknown>,
+  shot?: string,
+): Promise<Step> {
   const t0 = performance.now();
   const target = String(args.target);
   const action = String(args.action);
   try {
-    const m = await mcp.request("tools/call", { name: "aphrody_remote_vnc", arguments: args });
+    const m = await mcp.request("tools/call", {
+      name: "aphrody_remote_vnc",
+      arguments: args,
+    });
     const r = m.result ?? {};
     const text =
-      (r.content ?? []).find((c: any) => c.type === "text")?.text ?? m.error?.message ?? "";
+      (r.content ?? []).find((c: any) => c.type === "text")?.text ??
+      m.error?.message ??
+      "";
     const img = (r.content ?? []).find((c: any) => c.type === "image");
     if (img && shot) writeFileSync(shot, Buffer.from(img.data, "base64"));
     return {
@@ -138,9 +164,14 @@ for (const target of targets) {
     let ok = false;
     while (Date.now() < deadline && !ok) {
       await Bun.sleep(60_000);
-      ok = (await call(mcp, { target, action: "screenshot" }, `${base}-0.jpg`)).ok;
+      ok = (await call(mcp, { target, action: "screenshot" }, `${base}-0.jpg`))
+        .ok;
     }
-    steps.push({ ...s0, ok, detail: ok ? "accès VNC validé après réessai" : "délai dépassé" });
+    steps.push({
+      ...s0,
+      ok,
+      detail: ok ? "accès VNC validé après réessai" : "délai dépassé",
+    });
     if (!ok) continue;
   } else steps.push(s0);
   if (!act || !(wait ? true : s0.ok)) continue;
@@ -159,7 +190,9 @@ for (const target of targets) {
     { action: "wait", duration_ms: 500 },
   ];
   for (const p of plan) steps.push(await call(mcp, { target, ...p }));
-  steps.push(await call(mcp, { target, action: "screenshot" }, `${base}-1.jpg`));
+  steps.push(
+    await call(mcp, { target, action: "screenshot" }, `${base}-1.jpg`),
+  );
   await call(mcp, { target, action: "close" });
 }
 mcp.close();

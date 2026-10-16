@@ -1,7 +1,18 @@
 import { findDesktopModel } from "@storyteller/tauri-api";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { PopoverMenu } from "@storyteller/ui-popover";
-import { BombIcon, BrushIcon, CheckIcon, CircleAlertIcon, CopyIcon, ListChecksIcon, LoaderCircleIcon, Trash2Icon, TriangleAlertIcon, XIcon } from "lucide-react";
+import {
+  BombIcon,
+  BrushIcon,
+  CheckIcon,
+  CircleAlertIcon,
+  CopyIcon,
+  ListChecksIcon,
+  LoaderCircleIcon,
+  Trash2Icon,
+  TriangleAlertIcon,
+  XIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Modal } from "@storyteller/ui-modal";
 import {
@@ -207,10 +218,7 @@ const InProgressCard = ({
       />
       <div className="absolute inset-0 bg-black/30" />
       <div className="absolute inset-0 flex items-center justify-center">
-        <LoaderCircleIcon
-          
-          className="animate-spin text-white/80"
-          size="lg" />
+        <LoaderCircleIcon className="animate-spin text-white/80" size="lg" />
       </div>
       {task.refImageUrls!.length > 1 && (
         <div className="absolute bottom-0.5 right-0.5 bg-black/60 px-1 text-[9px] text-white/80">
@@ -220,10 +228,7 @@ const InProgressCard = ({
     </div>
   ) : (
     <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden bg-ui-controls">
-      <LoaderCircleIcon
-        
-        className="animate-spin text-base-fg/60"
-        size="lg" />
+      <LoaderCircleIcon className="animate-spin text-base-fg/60" size="lg" />
     </div>
   );
 
@@ -244,9 +249,7 @@ const InProgressCard = ({
                   zIndex={50}
                   delay={100}
                 >
-                  <TriangleAlertIcon
-                    
-                    className="h-3 w-3 shrink-0 text-yellow-400/60 transition-all hover:text-yellow-400" />
+                  <TriangleAlertIcon className="h-3 w-3 shrink-0 text-yellow-400/60 transition-all hover:text-yellow-400" />
                 </Tooltip>
               )}
             </div>
@@ -410,10 +413,7 @@ const FailedCard = ({
       />
       <div className="absolute inset-0 bg-red-900/40" />
       <div className="absolute inset-0 flex items-center justify-center">
-        <CircleAlertIcon
-          
-          className="text-red-400"
-          size="lg" />
+        <CircleAlertIcon className="text-red-400" size="lg" />
       </div>
       {task.refImageUrls!.length > 1 && (
         <div className="absolute bottom-0.5 right-0.5 bg-black/60 px-1 text-[9px] text-white/80">
@@ -423,10 +423,7 @@ const FailedCard = ({
     </div>
   ) : (
     <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden bg-red-500/10">
-      <CircleAlertIcon
-        
-        className="text-red-400"
-        size="lg" />
+      <CircleAlertIcon className="text-red-400" size="lg" />
     </div>
   );
 
@@ -664,7 +661,8 @@ export const TaskQueue = () => {
       }
 
       const modelDisplay = t.model_type
-        ? findDesktopModel(String(t.model_type))?.fullName ?? getModelDisplayName(String(t.model_type))
+        ? (findDesktopModel(String(t.model_type))?.fullName ??
+          getModelDisplayName(String(t.model_type)))
         : undefined;
 
       const title = kind || "Task";
@@ -1067,9 +1065,7 @@ export const TaskQueue = () => {
                                 className="text-xs tracking-wide text-red-400/70 transition-colors hover:text-red-300"
                                 onClick={() => handleClearFailed()}
                               >
-                                <XIcon
-                                  
-                                  className="mr-1" />
+                                <XIcon className="mr-1" />
                                 Clear failed
                               </button>
                             </div>
@@ -1092,9 +1088,7 @@ export const TaskQueue = () => {
                                 className="text-xs tracking-wide text-base-fg/50 transition-colors hover:text-base-fg/100"
                                 onClick={() => handleClearCompleted()}
                               >
-                                <XIcon
-                                  
-                                  className="mr-1" />
+                                <XIcon className="mr-1" />
                                 Clear completed
                               </button>
                             </div>
@@ -1171,28 +1165,28 @@ export const TaskQueue = () => {
                   className="flex h-9 items-center justify-center bg-green-500/10 px-3 text-green-500 hover:bg-green-500/20"
                   onClick={() => handleClearCompleted()}
                 >
-                  <BrushIcon  className="mr-1.5" />
+                  <BrushIcon className="mr-1.5" />
                   Clear completed
                 </Button>
                 <Button
                   className="flex h-9 items-center justify-center bg-orange-500/10 px-3 text-orange-500 hover:bg-orange-500/20"
                   onClick={() => handleClearStale()}
                 >
-                  <Trash2Icon  className="mr-1.5" />
+                  <Trash2Icon className="mr-1.5" />
                   Clear stale
                 </Button>
                 <Button
                   className="flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-400 hover:bg-red-500/20"
                   onClick={() => handleClearFailed()}
                 >
-                  <Trash2Icon  className="mr-1.5" />
+                  <Trash2Icon className="mr-1.5" />
                   Clear failed
                 </Button>
                 <Button
                   className="flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-500 hover:bg-red-500/20"
                   onClick={() => handleRemoveAll()}
                 >
-                  <BombIcon  className="mr-1.5" />
+                  <BombIcon className="mr-1.5" />
                   Remove all
                 </Button>
                 <div className="mr-2 h-4 w-[1px] bg-base-fg/10" />

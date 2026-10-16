@@ -23,7 +23,10 @@ import {
   DashboardSpeed02Icon,
 } from "@hugeicons/core-free-icons";
 import { ElementParamsTab } from "./components/element-params-tab";
-import { ClipEffectsTab, StandaloneEffectTab } from "../../effects/components/effects-tab";
+import {
+  ClipEffectsTab,
+  StandaloneEffectTab,
+} from "../../effects/components/effects-tab";
 import { MasksTab } from "../../masks/components/masks-tab";
 import { SpeedTab } from "../../speed/components/speed-tab";
 import { GraphicTab } from "../../graphics/components/graphic-tab";
@@ -144,9 +147,7 @@ function buildSpeedTab({
     id: "speed",
     label: "Speed",
     icon: <HugeiconsIcon icon={DashboardSpeed02Icon} size={16} />,
-    content: ({ trackId }) => (
-      <SpeedTab element={element} trackId={trackId} />
-    ),
+    content: ({ trackId }) => <SpeedTab element={element} trackId={trackId} />,
   };
 }
 
@@ -159,9 +160,7 @@ function buildMasksTab({
     id: "masks",
     label: "Masks",
     icon: <OcShapesIcon size={16} />,
-    content: ({ trackId }) => (
-      <MasksTab element={element} trackId={trackId} />
-    ),
+    content: ({ trackId }) => <MasksTab element={element} trackId={trackId} />,
   };
 }
 

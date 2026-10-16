@@ -19,12 +19,14 @@ const enc = (k) => encodeURIComponent(k);
 const dec = (n) => decodeURIComponent(n);
 
 async function opfs() {
-  if (!navigator.storage || !navigator.storage.getDirectory) throw new Error("no OPFS");
+  if (!navigator.storage || !navigator.storage.getDirectory)
+    throw new Error("no OPFS");
   const root = await navigator.storage.getDirectory();
   const dir = await root.getDirectoryHandle(DIR, { create: true });
   // Probe a write: some browsers expose OPFS but only write it from workers.
   const probe = await dir.getFileHandle(".probe", { create: true });
-  if (!probe.createWritable) throw new Error("OPFS is read-only on this thread");
+  if (!probe.createWritable)
+    throw new Error("OPFS is read-only on this thread");
   const w = await probe.createWritable();
   await w.write(new Uint8Array([1]));
   await w.close();
@@ -34,9 +36,18 @@ async function opfs() {
     async loadAll() {
       const out = [];
       for await (const [name, h] of dir.entries()) {
-        if (h.kind !== "file" || name.startsWith(".") || name.endsWith(".crswap")) continue;
+        if (
+          h.kind !== "file" ||
+          name.startsWith(".") ||
+          name.endsWith(".crswap")
+        )
+          continue;
         const f = await h.getFile();
-        out.push({ key: dec(name), data: new Uint8Array(await f.arrayBuffer()), modified: f.lastModified });
+        out.push({
+          key: dec(name),
+          data: new Uint8Array(await f.arrayBuffer()),
+          modified: f.lastModified,
+        });
       }
       return out;
     },
@@ -48,29 +59,43 @@ async function opfs() {
       await w.close();
     },
     async del(key) {
-      try { await dir.removeEntry(enc(key)); } catch (e) { if (e.name !== "NotFoundError") throw e; }
+      try {
+        await dir.removeEntry(enc(key));
+      } catch (e) {
+        if (e.name !== "NotFoundError") throw e;
+      }
     },
   };
 }
 
 function req(r) {
-  return new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  return new Promise((res, rej) => {
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
 }
 
 async function idb() {
   if (!self.indexedDB) throw new Error("no IndexedDB");
   const open = indexedDB.open(DB, 1);
-  open.onupgradeneeded = () => open.result.createObjectStore(STORE, { keyPath: "key" });
+  open.onupgradeneeded = () =>
+    open.result.createObjectStore(STORE, { keyPath: "key" });
   const db = await req(open);
   const tx = (mode) => db.transaction(STORE, mode).objectStore(STORE);
   return {
     name: "indexeddb",
     async loadAll() {
       const all = await req(tx("readonly").getAll());
-      return all.map((r) => ({ key: r.key, data: new Uint8Array(r.data), modified: r.modified }));
+      return all.map((r) => ({
+        key: r.key,
+        data: new Uint8Array(r.data),
+        modified: r.modified,
+      }));
     },
     async put(key, data, modified) {
-      await req(tx("readwrite").put({ key, data: data.slice().buffer, modified }));
+      await req(
+        tx("readwrite").put({ key, data: data.slice().buffer, modified }),
+      );
     },
     async del(key) {
       await req(tx("readwrite").delete(key));
@@ -82,33 +107,58 @@ function memory() {
   const m = new Map();
   return {
     name: "memory",
-    async loadAll() { return [...m.values()]; },
-    async put(key, data, modified) { m.set(key, { key, data: data.slice(), modified }); },
-    async del(key) { m.delete(key); },
+    async loadAll() {
+      return [...m.values()];
+    },
+    async put(key, data, modified) {
+      m.set(key, { key, data: data.slice(), modified });
+    },
+    async del(key) {
+      m.delete(key);
+    },
   };
 }
 
 /// Open the store: OPFS, else IndexedDB, else memory (nothing persists). Resolves with the
 /// backend's name. `prefer` ("opfs" | "indexeddb" | "memory") forces one (tests).
 export async function storeOpen(prefer) {
-  const order = { opfs: [opfs, idb, memory], indexeddb: [idb, memory], memory: [memory] }[prefer] ?? [opfs, idb, memory];
+  const order = {
+    opfs: [opfs, idb, memory],
+    indexeddb: [idb, memory],
+    memory: [memory],
+  }[prefer] ?? [opfs, idb, memory];
   for (const make of order) {
-    try { backend = await make(); break; } catch (e) { console.info(`storage: ${make.name}: ${e.message ?? e}`); }
+    try {
+      backend = await make();
+      break;
+    } catch (e) {
+      console.info(`storage: ${make.name}: ${e.message ?? e}`);
+    }
   }
   // Ask the browser not to evict the store under storage pressure (granted for installed apps).
-  try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch {}
+  try {
+    if (navigator.storage && navigator.storage.persist)
+      await navigator.storage.persist();
+  } catch {}
   return backend.name;
 }
 
 /// Every stored entry: [{key, data: Uint8Array, modified}].
-export async function storeLoadAll() { return backend.loadAll(); }
-export async function storePut(key, data, modified) { return backend.put(key, data, modified); }
-export async function storeDelete(key) { return backend.del(key); }
+export async function storeLoadAll() {
+  return backend.loadAll();
+}
+export async function storePut(key, data, modified) {
+  return backend.put(key, data, modified);
+}
+export async function storeDelete(key) {
+  return backend.del(key);
+}
 
 /// Ask the browser to keep the origin's storage under pressure; resolves with whether it is.
 export async function storePersist() {
   try {
-    if (navigator.storage && navigator.storage.persist) return await navigator.storage.persist();
+    if (navigator.storage && navigator.storage.persist)
+      return await navigator.storage.persist();
   } catch {}
   return false;
 }
@@ -118,7 +168,8 @@ export async function storeEstimate() {
   const out = { backend: backend ? backend.name : null };
   try {
     const e = await navigator.storage.estimate();
-    out.usage = e.usage; out.quota = e.quota;
+    out.usage = e.usage;
+    out.quota = e.quota;
     out.persisted = await navigator.storage.persisted();
   } catch {}
   return out;
@@ -206,11 +257,19 @@ export async function audioStart(workletUrl) {
         c.__ecWorklet = true;
       }
       if (gen !== generation) return;
-      node = new AudioWorkletNode(c, "effectcraft-output", { numberOfInputs: 0, outputChannelCount: [2] });
-      node.port.onmessage = (e) => { if (e.data && e.data.underrun) underruns += e.data.underrun; };
+      node = new AudioWorkletNode(c, "effectcraft-output", {
+        numberOfInputs: 0,
+        outputChannelCount: [2],
+      });
+      node.port.onmessage = (e) => {
+        if (e.data && e.data.underrun) underruns += e.data.underrun;
+      };
       kind = "worklet";
     } catch (e) {
-      console.warn("audio: AudioWorklet unavailable, using ScriptProcessorNode", e);
+      console.warn(
+        "audio: AudioWorklet unavailable, using ScriptProcessorNode",
+        e,
+      );
       node = null;
     }
   }
@@ -223,11 +282,22 @@ export async function audioStart(workletUrl) {
       while (i < l.length && spQueue.length) {
         const b = spQueue[0];
         const n = Math.min(l.length - i, (b.length - spOffset) >> 1);
-        for (let k = 0; k < n; k++) { l[i + k] = b[spOffset + 2 * k]; r[i + k] = b[spOffset + 2 * k + 1]; }
-        i += n; spOffset += 2 * n;
-        if (spOffset >= b.length) { spQueue.shift(); spOffset = 0; }
+        for (let k = 0; k < n; k++) {
+          l[i + k] = b[spOffset + 2 * k];
+          r[i + k] = b[spOffset + 2 * k + 1];
+        }
+        i += n;
+        spOffset += 2 * n;
+        if (spOffset >= b.length) {
+          spQueue.shift();
+          spOffset = 0;
+        }
       }
-      if (i < l.length) { underruns += l.length - i; l.fill(0, i); r.fill(0, i); }
+      if (i < l.length) {
+        underruns += l.length - i;
+        l.fill(0, i);
+        r.fill(0, i);
+      }
     };
     kind = "scriptProcessor";
   }
@@ -255,13 +325,18 @@ export function audioPush(samples) {
 /// Sample frames played since `audioStart`, by the context clock (AudioContext.currentTime).
 export function audioPlayed() {
   if (!ctx || !node || starting) return 0;
-  return Math.max(0, Math.round((ctx.currentTime - startTime) * ctx.sampleRate));
+  return Math.max(
+    0,
+    Math.round((ctx.currentTime - startTime) * ctx.sampleRate),
+  );
 }
 
 /// Output latency in sample frames (what's handed over but not audible yet comes on top).
 export function audioOutputLatency() {
   if (!ctx) return 0;
-  return Math.round(((ctx.outputLatency || 0) + (ctx.baseLatency || 0)) * ctx.sampleRate);
+  return Math.round(
+    ((ctx.outputLatency || 0) + (ctx.baseLatency || 0)) * ctx.sampleRate,
+  );
 }
 
 export function audioStop() {
@@ -269,7 +344,9 @@ export function audioStop() {
   starting = false;
   pendingPush = [];
   if (node) {
-    try { node.disconnect(); } catch {}
+    try {
+      node.disconnect();
+    } catch {}
     if (kind === "worklet") node.port.postMessage("stop");
   }
   node = null;
@@ -294,19 +371,30 @@ export function setJobWorkerGpu(on) {
 }
 
 function spawn(base) {
-  const worker = new Worker(new URL("worker.js", base), { type: "module", name: "effectcraft-worker" });
+  const worker = new Worker(new URL("worker.js", base), {
+    type: "module",
+    name: "effectcraft-worker",
+  });
   const w = { worker, files: new Map(), ready: null, gpu: null };
   w.ready = new Promise((res, rej) => {
     worker.onmessage = (e) => {
       if (e.data && e.data.type === "gpu") {
-        w.gpu = e.data.gpu ? { adapter: e.data.gpu } : { cpu: e.data.error || "no GPU" };
+        w.gpu = e.data.gpu
+          ? { adapter: e.data.gpu }
+          : { cpu: e.data.error || "no GPU" };
         jobGpu = w.gpu;
       }
       if (e.data && e.data.type === "ready") res();
     };
-    worker.onerror = (e) => rej(new Error(e.message || "worker failed to start"));
+    worker.onerror = (e) =>
+      rej(new Error(e.message || "worker failed to start"));
   });
-  worker.postMessage({ type: "init", module: self.effectcraftModule ?? null, base, gpu: jobWorkerGpu });
+  worker.postMessage({
+    type: "init",
+    module: self.effectcraftModule ?? null,
+    base,
+    gpu: jobWorkerGpu,
+  });
   return w;
 }
 
@@ -317,42 +405,51 @@ function spawn(base) {
 export function workerRun(id, json, files, base, onMessage) {
   const w = idle.pop() ?? spawn(base);
   running.set(id, w);
-  w.ready.then(() => {
-    w.worker.onmessage = (e) => {
-      const m = e.data;
-      if (m.type === "reply") {
-        onMessage("reply", m.json, null, null);
-        if (m.done) {
-          running.delete(id);
-          idle.push(w);
+  w.ready.then(
+    () => {
+      w.worker.onmessage = (e) => {
+        const m = e.data;
+        if (m.type === "reply") {
+          onMessage("reply", m.json, null, null);
+          if (m.done) {
+            running.delete(id);
+            idle.push(w);
+          }
+        } else if (m.type === "file") {
+          onMessage("file", null, m.path, new Uint8Array(m.bytes));
+        } else if (m.type === "store") {
+          onMessage("store", null, m.path, new Uint8Array(m.bytes));
+        } else if (m.type === "stats") {
+          jobStats.push({
+            kind: m.kind,
+            gpu: m.gpu,
+            passes: m.passes,
+            readbacks: m.readbacks,
+            ms: m.ms,
+          });
+          if (jobStats.length > 16) jobStats.shift();
         }
-      } else if (m.type === "file") {
-        onMessage("file", null, m.path, new Uint8Array(m.bytes));
-      } else if (m.type === "store") {
-        onMessage("store", null, m.path, new Uint8Array(m.bytes));
-      } else if (m.type === "stats") {
-        jobStats.push({ kind: m.kind, gpu: m.gpu, passes: m.passes, readbacks: m.readbacks, ms: m.ms });
-        if (jobStats.length > 16) jobStats.shift();
+      };
+      w.worker.onerror = (e) => {
+        running.delete(id);
+        onMessage("error", String(e.message || "worker error"), null, null);
+        w.worker.terminate();
+      };
+      for (const [path, bytes, version] of files) {
+        const tag = version ?? bytes.length;
+        if (w.files.get(path) === tag) continue;
+        w.files.set(path, tag);
+        w.worker.postMessage({ type: "file", path, bytes });
       }
-    };
-    w.worker.onerror = (e) => {
+      w.worker.postMessage({ type: "job", json });
+    },
+    (e) => {
+      // The worker didn't start (#216): the job fails and the worker goes.
       running.delete(id);
-      onMessage("error", String(e.message || "worker error"), null, null);
       w.worker.terminate();
-    };
-    for (const [path, bytes, version] of files) {
-      const tag = version ?? bytes.length;
-      if (w.files.get(path) === tag) continue;
-      w.files.set(path, tag);
-      w.worker.postMessage({ type: "file", path, bytes });
-    }
-    w.worker.postMessage({ type: "job", json });
-  }, (e) => {
-    // The worker didn't start (#216): the job fails and the worker goes.
-    running.delete(id);
-    w.worker.terminate();
-    onMessage("error", String(e.message || e), null, null);
-  });
+      onMessage("error", String(e.message || e), null, null);
+    },
+  );
 }
 
 /// Stop a job: its worker is terminated (it can't be interrupted mid-job).
@@ -365,7 +462,12 @@ export function workerCancel(id) {
 
 /// {running, idle, gpu, jobs: [{kind, gpu, passes, readbacks, ms}]}.
 export function workerStats() {
-  return { running: running.size, idle: idle.length, gpu: jobGpu, jobs: jobStats.slice() };
+  return {
+    running: running.size,
+    idle: idle.length,
+    gpu: jobGpu,
+    jobs: jobStats.slice(),
+  };
 }
 
 // ------------------------------------------------------------------ frame workers
@@ -380,16 +482,36 @@ const frameWorkers = [];
 /// GPU effects on it.
 export function frameWorkerStart(base, onMessage, gpu) {
   const index = frameWorkers.length;
-  const worker = new Worker(new URL("worker.js", base), { type: "module", name: `effectcraft-frames-${index}` });
+  const worker = new Worker(new URL("worker.js", base), {
+    type: "module",
+    name: `effectcraft-frames-${index}`,
+  });
   worker.onmessage = (e) => {
     const m = e.data;
-    if (m && m.type === "frameReply") onMessage(index, m.json, m.bytes ? new Uint8Array(m.bytes) : null, undefined);
+    if (m && m.type === "frameReply")
+      onMessage(
+        index,
+        m.json,
+        m.bytes ? new Uint8Array(m.bytes) : null,
+        undefined,
+      );
   };
   worker.onerror = (e) => {
-    onMessage(index, undefined, undefined, String(e.message || "frame worker failed"));
+    onMessage(
+      index,
+      undefined,
+      undefined,
+      String(e.message || "frame worker failed"),
+    );
     worker.terminate();
   };
-  worker.postMessage({ type: "init", module: self.effectcraftModule ?? null, base, frames: true, gpu: !!gpu });
+  worker.postMessage({
+    type: "init",
+    module: self.effectcraftModule ?? null,
+    base,
+    frames: true,
+    gpu: !!gpu,
+  });
   frameWorkers.push(worker);
   return index;
 }
@@ -409,16 +531,19 @@ const cacheDirHandles = {};
 
 async function cacheDir(kind = "frames") {
   if (cacheDirHandles[kind]) return cacheDirHandles[kind];
-  if (!navigator.storage || !navigator.storage.getDirectory) throw new Error("no Origin Private File System");
+  if (!navigator.storage || !navigator.storage.getDirectory)
+    throw new Error("no Origin Private File System");
   let d = await navigator.storage.getDirectory();
-  for (const n of [CACHE_ROOT, "v1", kind]) d = await d.getDirectoryHandle(n, { create: true });
+  for (const n of [CACHE_ROOT, "v1", kind])
+    d = await d.getDirectoryHandle(n, { create: true });
   cacheDirHandles[kind] = d;
   return d;
 }
 
 /// The folder and file name of an entry name (`layers/<hex>.ecc` or `<hex>.ecc`).
 async function entryDir(name) {
-  if (name.startsWith("layers/")) return [await cacheDir("layers"), name.slice(7)];
+  if (name.startsWith("layers/"))
+    return [await cacheDir("layers"), name.slice(7)];
   return [await cacheDir("frames"), name];
 }
 
@@ -439,7 +564,11 @@ export async function cacheList() {
       }
       out.push({ name: prefix + name, size: f.size, modified: f.lastModified });
     }
-    for (const n of stale) { try { await dir.removeEntry(n); } catch {} }
+    for (const n of stale) {
+      try {
+        await dir.removeEntry(n);
+      } catch {}
+    }
   }
   return out;
 }
@@ -455,8 +584,12 @@ export async function cacheRead(name) {
 /// resolves with its size.
 export async function cacheWrite(fullName, bytes) {
   const [dir, name] = await entryDir(fullName);
-  const canMove = typeof FileSystemHandle !== "undefined" && "move" in FileSystemHandle.prototype;
-  const tmp = canMove ? `${name}.tmp.${Math.random().toString(36).slice(2)}` : name;
+  const canMove =
+    typeof FileSystemHandle !== "undefined" &&
+    "move" in FileSystemHandle.prototype;
+  const tmp = canMove
+    ? `${name}.tmp.${Math.random().toString(36).slice(2)}`
+    : name;
   const fh = await dir.getFileHandle(tmp, { create: true });
   if (fh.createSyncAccessHandle) {
     const h = await fh.createSyncAccessHandle();
@@ -473,7 +606,14 @@ export async function cacheWrite(fullName, bytes) {
     await w.close();
   }
   if (canMove) {
-    try { await fh.move(dir, name); } catch (e) { try { await dir.removeEntry(tmp); } catch {} throw e; }
+    try {
+      await fh.move(dir, name);
+    } catch (e) {
+      try {
+        await dir.removeEntry(tmp);
+      } catch {}
+      throw e;
+    }
   }
   return bytes.length;
 }
@@ -521,7 +661,8 @@ const MAX_ENTRIES = 20000;
 
 async function handlesDb() {
   const open = indexedDB.open(HANDLES_DB, 1);
-  open.onupgradeneeded = () => open.result.createObjectStore("folders", { keyPath: "name" });
+  open.onupgradeneeded = () =>
+    open.result.createObjectStore("folders", { keyPath: "name" });
   return req(open);
 }
 
@@ -534,7 +675,12 @@ async function enumerate(dir, prefix, out, files, depth) {
       if (depth < 8) await enumerate(h, rel, out, files, depth + 1);
     } else {
       const f = await h.getFile();
-      out.push({ path: rel, dir: false, size: f.size, modified: Math.floor(f.lastModified / 1000) });
+      out.push({
+        path: rel,
+        dir: false,
+        size: f.size,
+        modified: Math.floor(f.lastModified / 1000),
+      });
       files.set(rel, h);
     }
   }
@@ -549,8 +695,15 @@ async function openFolder(handle, remember) {
   if (remember) {
     try {
       const db = await handlesDb();
-      await req(db.transaction("folders", "readwrite").objectStore("folders").put({ name, handle }));
-    } catch (e) { console.info("media browser: cannot remember the folder", e); }
+      await req(
+        db
+          .transaction("folders", "readwrite")
+          .objectStore("folders")
+          .put({ name, handle }),
+      );
+    } catch (e) {
+      console.info("media browser: cannot remember the folder", e);
+    }
   }
   return { name, entries };
 }
@@ -562,7 +715,10 @@ export function browseCanPickFolder() {
 
 /// Ask for a folder; resolves with {name, entries: [{path, dir, size, modified}]}.
 export async function browsePickFolder() {
-  const handle = await self.showDirectoryPicker({ id: "effectcraft-media", mode: "read" });
+  const handle = await self.showDirectoryPicker({
+    id: "effectcraft-media",
+    mode: "read",
+  });
   return openFolder(handle, true);
 }
 
@@ -572,14 +728,23 @@ export async function browseRestore() {
   let all = [];
   try {
     const db = await handlesDb();
-    all = await req(db.transaction("folders", "readonly").objectStore("folders").getAll());
-  } catch { return []; }
+    all = await req(
+      db.transaction("folders", "readonly").objectStore("folders").getAll(),
+    );
+  } catch {
+    return [];
+  }
   const out = [];
   for (const { name, handle } of all) {
     let granted = false;
-    try { granted = (await handle.queryPermission({ mode: "read" })) === "granted"; } catch {}
+    try {
+      granted = (await handle.queryPermission({ mode: "read" })) === "granted";
+    } catch {}
     if (granted) {
-      try { out.push({ granted, ...(await openFolder(handle, false)) }); continue; } catch {}
+      try {
+        out.push({ granted, ...(await openFolder(handle, false)) });
+        continue;
+      } catch {}
     }
     out.push({ name, granted: false });
   }
@@ -590,9 +755,12 @@ export async function browseRestore() {
 /// browsePickFolder.
 export async function browseReconnect(name) {
   const db = await handlesDb();
-  const rec = await req(db.transaction("folders", "readonly").objectStore("folders").get(name));
+  const rec = await req(
+    db.transaction("folders", "readonly").objectStore("folders").get(name),
+  );
   if (!rec) throw new Error(`${name} is not remembered`);
-  if ((await rec.handle.requestPermission({ mode: "read" })) !== "granted") throw new Error(`access to ${name} was not granted`);
+  if ((await rec.handle.requestPermission({ mode: "read" })) !== "granted")
+    throw new Error(`access to ${name} was not granted`);
   return openFolder(rec.handle, false);
 }
 
@@ -601,7 +769,12 @@ export async function browseForget(name) {
   folders.delete(name);
   try {
     const db = await handlesDb();
-    await req(db.transaction("folders", "readwrite").objectStore("folders").delete(name));
+    await req(
+      db
+        .transaction("folders", "readwrite")
+        .objectStore("folders")
+        .delete(name),
+    );
   } catch {}
 }
 
@@ -654,7 +827,9 @@ export function showDeviceLost(message, kept) {
   const text = document.createElement("p");
   text.textContent =
     "EffectCraft can't update the display any more. Your project is still open. " +
-    (kept ? "Reload to continue: the project and its unsaved changes come back." : "This session isn't kept in browser storage: save the project before you reload.");
+    (kept
+      ? "Reload to continue: the project and its unsaved changes come back."
+      : "This session isn't kept in browser storage: save the project before you reload.");
   const detail = document.createElement("small");
   detail.textContent = message;
   const save = document.createElement("button");
@@ -662,8 +837,14 @@ export function showDeviceLost(message, kept) {
   save.onclick = () =>
     self.effectcraft
       .execute("file.save", {})
-      .catch(() => self.effectcraft.execute("file.saveAs", { path: "/Untitled Project.ecproj" }))
-      .catch((e) => (text.textContent = `Saving failed: ${(e && e.message) || e}`));
+      .catch(() =>
+        self.effectcraft.execute("file.saveAs", {
+          path: "/Untitled Project.ecproj",
+        }),
+      )
+      .catch(
+        (e) => (text.textContent = `Saving failed: ${(e && e.message) || e}`),
+      );
   const reload = document.createElement("button");
   reload.textContent = "Reload";
   reload.onclick = async () => {

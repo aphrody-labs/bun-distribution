@@ -58,7 +58,9 @@ interface LoadResponse {
 }
 
 async function loadData(): Promise<LoadResponse> {
-  const r = await fetch("/api/chronologie-config", { credentials: "same-origin" });
+  const r = await fetch("/api/chronologie-config", {
+    credentials: "same-origin",
+  });
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   return r.json();
 }
@@ -89,10 +91,16 @@ const fromISO = (s: string): number | undefined => {
 type Overrides = Record<string, ChronoOverride>;
 
 export default function ChronologyEditor() {
-  const query = useQuery({ queryKey: ["chronology-config"], queryFn: loadData });
+  const query = useQuery({
+    queryKey: ["chronology-config"],
+    queryFn: loadData,
+  });
   const [overrides, setOverrides] = useState<Overrides>({});
   const [eraOrder, setEraOrder] = useState<Era[]>([...ERA_ORDER]);
-  const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    msg: string;
+  } | null>(null);
 
   // Filtres d'affichage (aides de navigation ; n'altèrent pas la config).
   const [q, setQ] = useState("");
@@ -105,7 +113,10 @@ export default function ChronologyEditor() {
   // État du glisser-déposer : entrée saisie + indicateur d'insertion (avant/après
   // une entrée, ou en tête d'une ère quand on survole son en-tête).
   const [dragKey, setDragKey] = useState<string | null>(null);
-  const [dropHint, setDropHint] = useState<{ key: string; pos: "before" | "after" } | null>(null);
+  const [dropHint, setDropHint] = useState<{
+    key: string;
+    pos: "before" | "after";
+  } | null>(null);
   const [dropEraTop, setDropEraTop] = useState<Era | null>(null);
 
   useEffect(() => {
@@ -136,10 +147,17 @@ export default function ChronologyEditor() {
       const { hidden: _hidden, ...rest } = v;
       visibleOverrides[k] = rest;
     }
-    return applyChronology(items, { version: 1, eraOrder, overrides: visibleOverrides });
+    return applyChronology(items, {
+      version: 1,
+      eraOrder,
+      overrides: visibleOverrides,
+    });
   }, [items, eraOrder, overrides]);
 
-  const isHidden = useCallback((key: string) => overrides[key]?.hidden === true, [overrides]);
+  const isHidden = useCallback(
+    (key: string) => overrides[key]?.hidden === true,
+    [overrides],
+  );
 
   const stats = useMemo(() => {
     const keys = Object.keys(overrides);
@@ -153,25 +171,29 @@ export default function ChronologyEditor() {
 
   // Réordonnancement fiable uniquement quand aucun filtre ne cache d'entrées
   // (sinon un glisser-déposer sauterait des voisins invisibles).
-  const reorderEnabled = !q.trim() && showEpisodes && showMovies && showManga && showHidden;
+  const reorderEnabled =
+    !q.trim() && showEpisodes && showMovies && showManga && showHidden;
 
   // ── Mutations de la config ────────────────────────────────────────────────
-  const patchOverride = useCallback((key: string, patch: Partial<ChronoOverride>) => {
-    setOverrides((prev) => {
-      const cur: ChronoOverride = { ...prev[key] };
-      for (const [k, v] of Object.entries(patch)) {
-        if (v === undefined || v === null || v === "") {
-          delete (cur as Record<string, unknown>)[k];
-        } else {
-          (cur as Record<string, unknown>)[k] = v;
+  const patchOverride = useCallback(
+    (key: string, patch: Partial<ChronoOverride>) => {
+      setOverrides((prev) => {
+        const cur: ChronoOverride = { ...prev[key] };
+        for (const [k, v] of Object.entries(patch)) {
+          if (v === undefined || v === null || v === "") {
+            delete (cur as Record<string, unknown>)[k];
+          } else {
+            (cur as Record<string, unknown>)[k] = v;
+          }
         }
-      }
-      const next = { ...prev };
-      if (Object.keys(cur).length === 0) delete next[key];
-      else next[key] = cur;
-      return next;
-    });
-  }, []);
+        const next = { ...prev };
+        if (Object.keys(cur).length === 0) delete next[key];
+        else next[key] = cur;
+        return next;
+      });
+    },
+    [],
+  );
 
   const toggleHide = useCallback((key: string) => {
     setOverrides((prev) => {
@@ -209,7 +231,9 @@ export default function ChronologyEditor() {
     (key: string, dir: -1 | 1) => {
       const target = resolved.find((r) => timelineKey(r) === key);
       if (!target) return;
-      const groupKeys = resolved.filter((r) => r.era === target.era).map(timelineKey);
+      const groupKeys = resolved
+        .filter((r) => r.era === target.era)
+        .map(timelineKey);
       const idx = groupKeys.indexOf(key);
       const j = idx + dir;
       if (j < 0 || j >= groupKeys.length) return;
@@ -298,9 +322,12 @@ export default function ChronologyEditor() {
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
       const r = e.currentTarget.getBoundingClientRect();
-      const pos: "before" | "after" = e.clientY - r.top < r.height / 2 ? "before" : "after";
+      const pos: "before" | "after" =
+        e.clientY - r.top < r.height / 2 ? "before" : "after";
       setDropEraTop(null);
-      setDropHint((h) => (h && h.key === key && h.pos === pos ? h : { key, pos }));
+      setDropHint((h) =>
+        h && h.key === key && h.pos === pos ? h : { key, pos },
+      );
     },
     [dragKey],
   );
@@ -366,9 +393,13 @@ export default function ChronologyEditor() {
     onSuccess: (res) => {
       setOverrides(res.config.overrides ?? {});
       setEraOrder(res.config.eraOrder ?? [...ERA_ORDER]);
-      setToast({ type: "success", msg: "Chronologie enregistrée. La page publique est à jour." });
+      setToast({
+        type: "success",
+        msg: "Chronologie enregistrée. La page publique est à jour.",
+      });
     },
-    onError: (e: Error) => setToast({ type: "error", msg: `Échec : ${e.message}` }),
+    onError: (e: Error) =>
+      setToast({ type: "error", msg: `Échec : ${e.message}` }),
   });
 
   // ── Rendu ─────────────────────────────────────────────────────────────────
@@ -380,7 +411,11 @@ export default function ChronologyEditor() {
     );
   }
   if (query.isError) {
-    return <div className="text-sm text-red-400">Erreur de chargement : {String(query.error)}</div>;
+    return (
+      <div className="text-sm text-red-400">
+        Erreur de chargement : {String(query.error)}
+      </div>
+    );
   }
 
   const needle = q.trim().toLowerCase();
@@ -478,12 +513,17 @@ export default function ChronologyEditor() {
       {/* Barre d'action */}
       <div className="dbz-panel flex flex-wrap items-center gap-3 p-4">
         <div className="flex-1 min-w-[240px]">
-          <h2 className="font-saiyan text-lg uppercase text-dbz-orange">Chronologie universelle</h2>
+          <h2 className="font-saiyan text-lg uppercase text-dbz-orange">
+            Chronologie universelle
+          </h2>
           <p className="text-xs text-zinc-400">
-            Ordre officiel de <strong className="text-white">{stats.total}</strong> entrées ·{" "}
-            {stats.curated} curatée{stats.curated > 1 ? "s" : ""} · {stats.hidden} masquée
-            {stats.hidden > 1 ? "s" : ""} · {stats.pinned} épinglée{stats.pinned > 1 ? "s" : ""}.
-            Les changements s'appliquent au public après enregistrement.
+            Ordre officiel de{" "}
+            <strong className="text-white">{stats.total}</strong> entrées ·{" "}
+            {stats.curated} curatée{stats.curated > 1 ? "s" : ""} ·{" "}
+            {stats.hidden} masquée
+            {stats.hidden > 1 ? "s" : ""} · {stats.pinned} épinglée
+            {stats.pinned > 1 ? "s" : ""}. Les changements s'appliquent au
+            public après enregistrement.
           </p>
         </div>
         <a
@@ -498,7 +538,11 @@ export default function ChronologyEditor() {
         <button
           type="button"
           onClick={() => {
-            if (confirm("Réinitialiser TOUTE la curation (ordre, masquages, dates, notes) ?")) {
+            if (
+              confirm(
+                "Réinitialiser TOUTE la curation (ordre, masquages, dates, notes) ?",
+              )
+            ) {
               setOverrides({});
               setEraOrder([...DEFAULT_CHRONOLOGY_CONFIG.eraOrder]);
             }
@@ -513,7 +557,8 @@ export default function ChronologyEditor() {
           disabled={save.isPending}
           className="btn btn-primary"
         >
-          <Save className="mr-1 h-4 w-4" /> {save.isPending ? "Enregistrement…" : "Enregistrer"}
+          <Save className="mr-1 h-4 w-4" />{" "}
+          {save.isPending ? "Enregistrement…" : "Enregistrer"}
         </button>
       </div>
 
@@ -545,7 +590,11 @@ export default function ChronologyEditor() {
           className={`btn btn-ghost px-2 ${showHidden ? "text-zinc-300" : "text-zinc-500"}`}
           title={showHidden ? "Masquées affichées" : "Masquées cachées"}
         >
-          {showHidden ? <Eye className="mr-1 h-4 w-4" /> : <EyeOff className="mr-1 h-4 w-4" />}
+          {showHidden ? (
+            <Eye className="mr-1 h-4 w-4" />
+          ) : (
+            <EyeOff className="mr-1 h-4 w-4" />
+          )}
           Masquées
         </button>
         <div className="relative min-w-[200px] flex-1">
@@ -558,20 +607,24 @@ export default function ChronologyEditor() {
             className="input w-full pl-9"
           />
         </div>
-        <span className="text-xs text-zinc-500">{visibleCount} affichée(s)</span>
+        <span className="text-xs text-zinc-500">
+          {visibleCount} affichée(s)
+        </span>
       </div>
 
       {reorderEnabled ? (
         <p className="flex items-center gap-2 rounded-lg border border-dbz-blue-light/25 bg-dbz-blue-light/5 px-3 py-2 text-[12px] text-dbz-blue-light/90">
           <GripVertical className="h-4 w-4 shrink-0" />
-          Glisse-dépose une entrée par sa poignée pour la réordonner. Dépose-la dans une AUTRE ère
-          (ou sur son en-tête) pour l'y déplacer — épisodes, films et tomes se mélangent librement.
+          Glisse-dépose une entrée par sa poignée pour la réordonner. Dépose-la
+          dans une AUTRE ère (ou sur son en-tête) pour l'y déplacer — épisodes,
+          films et tomes se mélangent librement.
         </p>
       ) : (
         <p className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-[12px] text-amber-300/90">
           <Info className="h-4 w-4 shrink-0" />
-          Le glisser-déposer est désactivé tant qu'un filtre masque des entrées. Réinitialise la
-          recherche et affiche épisodes + films + manga + masquées pour réordonner.
+          Le glisser-déposer est désactivé tant qu'un filtre masque des entrées.
+          Réinitialise la recherche et affiche épisodes + films + manga +
+          masquées pour réordonner.
         </p>
       )}
 
@@ -598,7 +651,9 @@ function FilterToggle({
       type="button"
       onClick={onClick}
       className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold transition-colors ${
-        on ? "bg-dbz-orange text-black" : "bg-black/30 text-zinc-400 hover:text-white"
+        on
+          ? "bg-dbz-orange text-black"
+          : "bg-black/30 text-zinc-400 hover:text-white"
       }`}
     >
       {icon}
@@ -633,9 +688,16 @@ function EraHeader({
       className={`flex items-center gap-3 rounded-md pt-5 pb-1 transition-colors ${
         isDropTarget ? "bg-white/[0.04] ring-1 ring-inset" : ""
       }`}
-      style={isDropTarget ? { boxShadow: `inset 0 -2px 0 0 ${ERA_ACCENT[era]}` } : undefined}
+      style={
+        isDropTarget
+          ? { boxShadow: `inset 0 -2px 0 0 ${ERA_ACCENT[era]}` }
+          : undefined
+      }
     >
-      <span className="h-4 w-1.5 rounded-full" style={{ backgroundColor: ERA_ACCENT[era] }} />
+      <span
+        className="h-4 w-1.5 rounded-full"
+        style={{ backgroundColor: ERA_ACCENT[era] }}
+      />
       <h3
         className="font-saiyan text-xl uppercase tracking-wide"
         style={{ color: ERA_ACCENT[era] }}
@@ -644,11 +706,17 @@ function EraHeader({
       </h3>
       <span className="text-[11px] text-zinc-500 font-mono">{count}</span>
       {isDropTarget && (
-        <span className="text-[10px] font-semibold uppercase" style={{ color: ERA_ACCENT[era] }}>
+        <span
+          className="text-[10px] font-semibold uppercase"
+          style={{ color: ERA_ACCENT[era] }}
+        >
           ↓ déposer en tête
         </span>
       )}
-      <span className="flex-1 h-px" style={{ backgroundColor: `${ERA_ACCENT[era]}33` }} />
+      <span
+        className="flex-1 h-px"
+        style={{ backgroundColor: `${ERA_ACCENT[era]}33` }}
+      />
       <div className="flex items-center gap-0.5">
         <button
           type="button"
@@ -771,7 +839,9 @@ function EntryRow({
                 : "cursor-not-allowed text-zinc-800"
             }`}
             title={
-              reorderEnabled ? "Glisser pour réordonner / mélanger" : "Désactivé (filtres actifs)"
+              reorderEnabled
+                ? "Glisser pour réordonner / mélanger"
+                : "Désactivé (filtres actifs)"
             }
             aria-label="Glisser pour réordonner"
           >
@@ -812,10 +882,16 @@ function EntryRow({
             ) : (
               <span
                 className={`flex h-12 w-8 items-center justify-center rounded ${
-                  isManga ? "bg-pink-500/15 text-pink-300" : "bg-dbz-orange/15 text-dbz-orange"
+                  isManga
+                    ? "bg-pink-500/15 text-pink-300"
+                    : "bg-dbz-orange/15 text-dbz-orange"
                 }`}
               >
-                {isManga ? <BookOpen className="h-4 w-4" /> : <Film className="h-4 w-4" />}
+                {isManga ? (
+                  <BookOpen className="h-4 w-4" />
+                ) : (
+                  <Film className="h-4 w-4" />
+                )}
               </span>
             )
           ) : it.image ? (
@@ -845,7 +921,11 @@ function EntryRow({
         </div>
 
         {/* Titre + méta */}
-        <button type="button" onClick={onToggleExpand} className="min-w-0 flex-1 text-left">
+        <button
+          type="button"
+          onClick={onToggleExpand}
+          className="min-w-0 flex-1 text-left"
+        >
           <div className="flex items-center gap-2">
             {isMovie && (
               <span className="rounded bg-dbz-orange px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-black">
@@ -869,7 +949,11 @@ function EntryRow({
           <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
             <span>{it.series}</span>
             {it.date && <span>{toISO(it.date)}</span>}
-            {it.note && <span className="text-dbz-yellow/70 not-italic normal-case">note</span>}
+            {it.note && (
+              <span className="text-dbz-yellow/70 not-italic normal-case">
+                note
+              </span>
+            )}
           </div>
         </button>
 
@@ -892,9 +976,17 @@ function EntryRow({
           type="button"
           onClick={onToggleHide}
           className={`btn btn-ghost px-2 ${hidden ? "text-zinc-500" : "text-emerald-400"}`}
-          title={hidden ? "Entrée masquée — réafficher" : "Masquer de la frise publique"}
+          title={
+            hidden
+              ? "Entrée masquée — réafficher"
+              : "Masquer de la frise publique"
+          }
         >
-          {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          {hidden ? (
+            <EyeOff className="h-4 w-4" />
+          ) : (
+            <Eye className="h-4 w-4" />
+          )}
         </button>
 
         <button
@@ -903,7 +995,9 @@ function EntryRow({
           className="btn btn-ghost px-2"
           aria-label="Déplier ou replier cette ère"
         >
-          <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
+          <ChevronDown
+            className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`}
+          />
         </button>
       </div>
 
@@ -915,7 +1009,9 @@ function EntryRow({
               type="date"
               value={toISO(it.date)}
               onChange={(e) =>
-                onSet({ date: e.target.value ? fromISO(e.target.value) : undefined })
+                onSet({
+                  date: e.target.value ? fromISO(e.target.value) : undefined,
+                })
               }
               className="input mt-1"
             />
@@ -950,7 +1046,9 @@ function EntryRow({
             />
           </label>
           <div className="sm:col-span-2 flex items-center justify-between">
-            <span className="text-[10px] text-zinc-600 font-mono">{timelineKey(it)}</span>
+            <span className="text-[10px] text-zinc-600 font-mono">
+              {timelineKey(it)}
+            </span>
             <div className="flex items-center gap-2">
               <a
                 href={it.href}

@@ -35,7 +35,11 @@ export class ApiError extends Error {
   }
 }
 
-async function requestAt<T>(base: string, path: string, opts: ApiOpts = {}): Promise<T> {
+async function requestAt<T>(
+  base: string,
+  path: string,
+  opts: ApiOpts = {},
+): Promise<T> {
   const headers = new Headers(opts.headers);
   let body: BodyInit | undefined = opts.body as BodyInit | undefined;
   if (opts.json !== undefined) {
@@ -55,7 +59,8 @@ async function requestAt<T>(base: string, path: string, opts: ApiOpts = {}): Pro
   // 204 No Content ou corps vide → renvoie null typé
   if (res.status === 204) return null as T;
   const ct = res.headers.get("content-type") ?? "";
-  if (!ct.includes("application/json")) return (await res.text()) as unknown as T;
+  if (!ct.includes("application/json"))
+    return (await res.text()) as unknown as T;
   return (await res.json()) as T;
 }
 

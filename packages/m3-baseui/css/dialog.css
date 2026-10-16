@@ -5,7 +5,8 @@
     position: fixed;
     inset: 0;
     background: color-mix(in srgb, var(--md-sys-color-scrim) 32%, transparent);
-    transition: opacity var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard);
+    transition: opacity var(--md-sys-motion-duration-medium2)
+      var(--md-sys-motion-easing-standard);
   }
   .m3-bui-dialog__backdrop[data-starting-style],
   .m3-bui-dialog__backdrop[data-ending-style] {
@@ -31,7 +32,8 @@
     transition:
       opacity var(--md-sys-motion-duration-medium2)
         var(--md-sys-motion-easing-emphasized-decelerate),
-      scale var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate);
+      scale var(--md-sys-motion-duration-medium2)
+        var(--md-sys-motion-easing-emphasized-decelerate);
   }
   .m3-bui-dialog__popup[data-starting-style],
   .m3-bui-dialog__popup[data-ending-style] {
@@ -40,7 +42,9 @@
   }
   .m3-bui-dialog__popup[data-ending-style] {
     transition-duration: var(--md-sys-motion-duration-short4);
-    transition-timing-function: var(--md-sys-motion-easing-emphasized-accelerate);
+    transition-timing-function: var(
+      --md-sys-motion-easing-emphasized-accelerate
+    );
   }
 
   /* Tall content: with a Viewport the popup scrolls with the page instead of being centred in the window. */

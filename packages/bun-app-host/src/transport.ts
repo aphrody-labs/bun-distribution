@@ -2,7 +2,10 @@
 import { timingSafeEqual } from "node:crypto";
 import { hashContent } from "@aphrody/bun-workspace";
 
-export const responseHeaders = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
+export const responseHeaders = {
+  "Cache-Control": "no-store",
+  "X-Content-Type-Options": "nosniff",
+};
 export function jsonReply(value: unknown, status = 200): Response {
   return Response.json(value, { status, headers: responseHeaders });
 }
@@ -12,11 +15,18 @@ export function validatePublicOrigin(value?: string): string | undefined {
   if (value === undefined) return;
   try {
     const url = new URL(value);
-    if (url.protocol !== "https:" || url.origin !== value || url.username || url.password)
+    if (
+      url.protocol !== "https:" ||
+      url.origin !== value ||
+      url.username ||
+      url.password
+    )
       throw new Error("Invalid origin.");
     return url.origin;
   } catch {
-    throw new Error("Product public origin must be an HTTPS origin without a path or credentials.");
+    throw new Error(
+      "Product public origin must be an HTTPS origin without a path or credentials.",
+    );
   }
 }
 
@@ -25,7 +35,8 @@ export function authenticateRequest(
   token: string,
   options: { publicOrigin?: string } = {},
 ): Response | undefined {
-  if (token.length < 32) throw new Error("Inject the application token from its protected store.");
+  if (token.length < 32)
+    throw new Error("Inject the application token from its protected store.");
   const authorization = request.headers.get("Authorization");
   if (
     !authorization?.startsWith("Bearer ") ||

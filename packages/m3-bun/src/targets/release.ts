@@ -16,7 +16,8 @@ export const RELEASE_MATRIX = [
 
 /** The release tag of the aphrody-labs Bun fork for `version` (`aphrody-v1.4.3-aphrody.2`), when it is known. */
 export function forkTag(version: string): string | undefined {
-  if (version.includes("-aphrody.")) return `aphrody-v${version.replace(/^v/, "")}`;
+  if (version.includes("-aphrody."))
+    return `aphrody-v${version.replace(/^v/, "")}`;
   const running = /^v?(\d+\.\d+\.\d+-aphrody\.\d+)/.exec(
     (Bun as { version_with_sha?: string }).version_with_sha ?? "",
   )?.[1];
@@ -24,9 +25,12 @@ export function forkTag(version: string): string | undefined {
 }
 
 /** The fork install.sh takes a fork tag, or `X.Y.Z` for the newest fork build of it. */
-export const forkBunVersion = (version: string): string => forkTag(version) ?? version;
+export const forkBunVersion = (version: string): string =>
+  forkTag(version) ?? version;
 
-export const releaseWorkflow = (c: TargetContext): string => `# ${GENERATED_NOTE}
+export const releaseWorkflow = (
+  c: TargetContext,
+): string => `# ${GENERATED_NOTE}
 # Release ${c.name}: \`git tag v${c.version} && git push --tags\`. Copy to .github/workflows/release.yml.
 name: release
 on:
@@ -89,6 +93,8 @@ export const release: Target = {
   description:
     ".github/workflows/release.yml: fork Bun via install.sh, m3-bun package for each target, archives and SHA256SUMS on the GitHub release",
   generate(c): TargetFile[] {
-    return [{ path: ".github/workflows/release.yml", content: releaseWorkflow(c) }];
+    return [
+      { path: ".github/workflows/release.yml", content: releaseWorkflow(c) },
+    ];
   },
 };

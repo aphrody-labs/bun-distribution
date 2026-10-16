@@ -157,18 +157,11 @@ export const useVFXStore = create<VFXState>()(
             const next: VFXResult = { ...r };
             // Only overwrite when the existing url looks like a dead blob:
             // URL or is missing. CDN URLs already in place are left alone.
-            const isBlob = (u?: string) =>
-              !!u && u.startsWith("blob:");
-            if (
-              media.source &&
-              (!r.source || isBlob(r.source.url))
-            ) {
+            const isBlob = (u?: string) => !!u && u.startsWith("blob:");
+            if (media.source && (!r.source || isBlob(r.source.url))) {
               next.source = media.source;
             }
-            if (
-              media.reference &&
-              (!r.reference || isBlob(r.reference.url))
-            ) {
+            if (media.reference && (!r.reference || isBlob(r.reference.url))) {
               next.reference = media.reference;
             }
             if (

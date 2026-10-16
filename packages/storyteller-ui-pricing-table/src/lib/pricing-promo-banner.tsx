@@ -21,7 +21,7 @@ export const PricingPromoBanner = ({ className }: PricingPromoBannerProps) => (
 
     <div className="relative flex flex-col gap-3">
       <span className="inline-flex w-fit items-center gap-1.5 bg-primary px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-white">
-        <TagIcon  className="text-[10px]" />
+        <TagIcon className="text-[10px]" />
         Limited-time offer
       </span>
 

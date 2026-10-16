@@ -1,13 +1,22 @@
 // SPDX-License-Identifier: Apache-2.0
 // Windows 11: Personalize registry values (dark/light, accent), DWM accent, .theme files, wallpaper script.
-import { abgr, allModes, argb, hex8, rgb, rolesFor, validate } from "./color.ts";
+import {
+  abgr,
+  allModes,
+  argb,
+  hex8,
+  rgb,
+  rolesFor,
+  validate,
+} from "./color.ts";
 import { gradientPng } from "./png.ts";
 import type { GeneratedFile, Mode, Roles, ThemeInput } from "./types.ts";
 
 export const PERSONALIZE_KEY =
   "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
 export const DWM_KEY = "HKCU\\Software\\Microsoft\\Windows\\DWM";
-export const ACCENT_KEY = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Accent";
+export const ACCENT_KEY =
+  "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Accent";
 
 export interface RegistryValue {
   key: string;
@@ -40,12 +49,32 @@ export function registryValues(input: ThemeInput, mode: Mode): RegistryValue[] {
   const light = mode === "light" ? 1 : 0;
   const accent = roles["primary"]!;
   return [
-    { key: PERSONALIZE_KEY, name: "AppsUseLightTheme", type: "DWord", value: light },
-    { key: PERSONALIZE_KEY, name: "SystemUsesLightTheme", type: "DWord", value: light },
+    {
+      key: PERSONALIZE_KEY,
+      name: "AppsUseLightTheme",
+      type: "DWord",
+      value: light,
+    },
+    {
+      key: PERSONALIZE_KEY,
+      name: "SystemUsesLightTheme",
+      type: "DWord",
+      value: light,
+    },
     { key: PERSONALIZE_KEY, name: "ColorPrevalence", type: "DWord", value: 1 },
     { key: DWM_KEY, name: "AccentColor", type: "DWord", value: abgr(accent) },
-    { key: DWM_KEY, name: "ColorizationColor", type: "DWord", value: argb(accent, 0xc4) },
-    { key: DWM_KEY, name: "ColorizationAfterglow", type: "DWord", value: argb(accent, 0xc4) },
+    {
+      key: DWM_KEY,
+      name: "ColorizationColor",
+      type: "DWord",
+      value: argb(accent, 0xc4),
+    },
+    {
+      key: DWM_KEY,
+      name: "ColorizationAfterglow",
+      type: "DWord",
+      value: argb(accent, 0xc4),
+    },
     {
       key: DWM_KEY,
       name: "AccentColorInactive",
@@ -53,14 +82,24 @@ export function registryValues(input: ThemeInput, mode: Mode): RegistryValue[] {
       value: abgr(roles["surfaceVariant"]!),
     },
     { key: DWM_KEY, name: "ColorPrevalence", type: "DWord", value: 1 },
-    { key: ACCENT_KEY, name: "AccentColorMenu", type: "DWord", value: abgr(accent) },
+    {
+      key: ACCENT_KEY,
+      name: "AccentColorMenu",
+      type: "DWord",
+      value: abgr(accent),
+    },
     {
       key: ACCENT_KEY,
       name: "StartColorMenu",
       type: "DWord",
       value: abgr(roles["primaryContainer"]!),
     },
-    { key: ACCENT_KEY, name: "AccentPalette", type: "Binary", value: accentPalette(roles) },
+    {
+      key: ACCENT_KEY,
+      name: "AccentPalette",
+      type: "Binary",
+      value: accentPalette(roles),
+    },
   ];
 }
 
@@ -247,7 +286,12 @@ export function generateWindows(input: ThemeInput): GeneratedFile[] {
     files.push({
       target: "windows",
       path: `${dir}/wallpaper-${input.name}-${mode}.png`,
-      content: gradientPng(64, 36, roles["primaryContainer"]!, roles["surface"]!),
+      content: gradientPng(
+        64,
+        36,
+        roles["primaryContainer"]!,
+        roles["surface"]!,
+      ),
     });
   }
   files.push({

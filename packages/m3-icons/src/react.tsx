@@ -28,7 +28,17 @@ export interface M3IconProps {
  * Renders a Material Symbols icon as inline SVG, generated from the variable font outlines by
  * the `icons` module of `aphrody-bun` through `@aphrody/bun` (no icon font requested, loaded or applied via CSS).
  */
-export function M3Icon({ name, style, fill, weight, grade, opticalSize, size, title, className }: M3IconProps) {
+export function M3Icon({
+  name,
+  style,
+  fill,
+  weight,
+  grade,
+  opticalSize,
+  size,
+  title,
+  className,
+}: M3IconProps) {
   const svg = useMemo(
     () => m3Icon({ name, style, fill, weight, grade, opticalSize, size }),
     [name, style, fill, weight, grade, opticalSize, size],

@@ -2,7 +2,11 @@ import { describe, expect, it } from "bun:test";
 import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { executeTool, ToolExecutionContext, TOOLS } from "../../core/src/tools/registry";
+import {
+  executeTool,
+  ToolExecutionContext,
+  TOOLS,
+} from "../../core/src/tools/registry";
 import { callTool } from "../../core/src/tools/host";
 import { NativeRedisClient } from "../../core/src/redis/client";
 import { createApiServer } from "../../core/src/server/http";
@@ -26,7 +30,11 @@ function fixture() {
 describe("shared native tool transports", () => {
   it("retrieves actual indexed records over MCP and HTTP without fake embeddings", async () => {
     const f = fixture();
-    const server = createApiServer({ port: 0, rootDir: f.root, toolContext: f.context });
+    const server = createApiServer({
+      port: 0,
+      rootDir: f.root,
+      toolContext: f.context,
+    });
     try {
       await f.context
         .vectorStore("docs")
@@ -36,7 +44,12 @@ describe("shared native tool transports", () => {
         .upsert("other", new Float32Array([0, 1]), { category: "python" });
       await f.context
         .trainDb("examples")
-        .addInstruction({ id: "one", instruction: "hello", output: "world", split: "val" });
+        .addInstruction({
+          id: "one",
+          instruction: "hello",
+          output: "world",
+          split: "val",
+        });
       const response = await callTool(
         "yolo_vector_search",
         { namespace: "docs", queryVector: [1, 0], filter: { category: "bun" } },
@@ -46,10 +59,16 @@ describe("shared native tool transports", () => {
       expect(JSON.parse(response.content[0]!.text).results).toEqual([
         { id: "native", score: 1, metadata: { category: "bun" } },
       ]);
-      const stats = await fetch(`http://127.0.0.1:${server.port}/api/tools/call`, {
-        method: "POST",
-        body: JSON.stringify({ name: "yolo_traindb_stats", arguments: { dataset: "examples" } }),
-      });
+      const stats = await fetch(
+        `http://127.0.0.1:${server.port}/api/tools/call`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            name: "yolo_traindb_stats",
+            arguments: { dataset: "examples" },
+          }),
+        },
+      );
       expect(stats.status).toBe(200);
       expect((await stats.json()).totalCount).toBe(1);
       await expect(
@@ -101,13 +120,20 @@ describe("shared native tool transports", () => {
           { path: [] },
           { unknown: true },
         ].map((args) =>
-          expect(executeTool("yolo_scan", args, f.root, f.context)).rejects.toThrow(),
+          expect(
+            executeTool("yolo_scan", args, f.root, f.context),
+          ).rejects.toThrow(),
         ),
       );
       await expect(
         executeTool("yolo_verify", { only: "missing-gate" }, f.root, f.context),
       ).rejects.toThrow("Unknown gates");
-      const result = await callTool("yolo_status", { unknown: true }, f.root, f.context);
+      const result = await callTool(
+        "yolo_status",
+        { unknown: true },
+        f.root,
+        f.context,
+      );
       expect(result.isError).toBe(true);
     } finally {
       f.cleanup();
@@ -119,34 +145,50 @@ describe("shared native tool transports", () => {
     const external = mkdtempSync(join(tmpdir(), "yolo-core-outside-"));
     writeFileSync(join(external, "private.ts"), "export const secret = 1;");
     symlinkSync(external, join(f.root, "escape"));
-    const server = createApiServer({ port: 0, rootDir: f.root, toolContext: f.context });
+    const server = createApiServer({
+      port: 0,
+      rootDir: f.root,
+      toolContext: f.context,
+    });
     const base = `http://127.0.0.1:${server.port}`;
     try {
       const spec = await (await fetch(`${base}/api/openapi.json`)).json();
       expect(spec).toEqual(buildOpenApiSpec(spec.info.version, Bun.version));
       expect(
-        spec.paths["/api/tools/call"].post.requestBody.content["application/json"].schema.oneOf
-          .length,
+        spec.paths["/api/tools/call"].post.requestBody.content[
+          "application/json"
+        ].schema.oneOf.length,
       ).toBe(TOOLS.length);
       await Promise.all(
         ["{", "null", "[]", '{"parallel":0}'].map(async (body) =>
-          expect((await fetch(`${base}/api/scan`, { method: "POST", body })).status).toBe(400),
+          expect(
+            (await fetch(`${base}/api/scan`, { method: "POST", body })).status,
+          ).toBe(400),
         ),
       );
       await Promise.all(
         ["yolo_scan", "yolo_parse", "yolo_host_space"].map(async (name) => {
           const args =
-            name === "yolo_host_space" ? { dir: "escape" } : { path: "escape/private.ts" };
+            name === "yolo_host_space"
+              ? { dir: "escape" }
+              : { path: "escape/private.ts" };
           const response = await fetch(`${base}/api/tools/call`, {
             method: "POST",
             body: JSON.stringify({ name, arguments: args }),
           });
           expect(response.status).toBe(400);
-          expect((await response.json()).error).toContain("Path traversal denied");
+          expect((await response.json()).error).toContain(
+            "Path traversal denied",
+          );
         }),
       );
-      expect((await fetch(`${base}/api/parse`, { method: "POST", body: "{}" })).status).toBe(400);
-      expect((await fetch(`${base}/api/bench?iterations=NaN`)).status).toBe(400);
+      expect(
+        (await fetch(`${base}/api/parse`, { method: "POST", body: "{}" }))
+          .status,
+      ).toBe(400);
+      expect((await fetch(`${base}/api/bench?iterations=NaN`)).status).toBe(
+        400,
+      );
       const cors = await fetch(`${base}/health`, {
         headers: { Origin: "http://localhost:3000@evil.example" },
       });

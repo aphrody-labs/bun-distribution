@@ -14,7 +14,11 @@ import {
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import type { Subprocess } from "bun";
-import { updateMain, validateUpdate, type UpdateConfig } from "./mesh-update.ts";
+import {
+  updateMain,
+  validateUpdate,
+  type UpdateConfig,
+} from "./mesh-update.ts";
 
 /** The complete native fork surface, loaded lazily; this does not execute any Windows operation. */
 export async function windows() {
@@ -43,9 +47,15 @@ export type NativeAdapter = {
   envFile?: string;
   intervalSeconds?: number;
 };
-export function adapterDue(adapter: NativeAdapter, exited: boolean, elapsedMs: number): boolean {
+export function adapterDue(
+  adapter: NativeAdapter,
+  exited: boolean,
+  elapsedMs: number,
+): boolean {
   return (
-    exited && (adapter.intervalSeconds === undefined || elapsedMs >= adapter.intervalSeconds * 1000)
+    exited &&
+    (adapter.intervalSeconds === undefined ||
+      elapsedMs >= adapter.intervalSeconds * 1000)
   );
 }
 export type MeshConfig = {
@@ -61,9 +71,14 @@ export type MeshConfig = {
 
 export function validateConfig(value: unknown): MeshConfig {
   const c = value as MeshConfig;
-  if (!c || c.version !== 1 || !["aphro-pc", "omar", "vps", "dbfr"].includes(c.member))
+  if (
+    !c ||
+    c.version !== 1 ||
+    !["aphro-pc", "omar", "vps", "dbfr"].includes(c.member)
+  )
     throw new Error("invalid mesh member/version");
-  if (!isAbsolute(c.root) || !isAbsolute(c.home)) throw new Error("root/home must be absolute");
+  if (!isAbsolute(c.root) || !isAbsolute(c.home))
+    throw new Error("root/home must be absolute");
   if (
     !Array.isArray(c.compose) ||
     !c.compose.length ||
@@ -77,7 +92,9 @@ export function validateConfig(value: unknown): MeshConfig {
       !isAbsolute(group.file) ||
       !Array.isArray(group.services) ||
       !group.services.length ||
-      [...group.services, ...(group.profiles ?? [])].some((s) => !identifier.test(s))
+      [...group.services, ...(group.profiles ?? [])].some(
+        (s) => !identifier.test(s),
+      )
     )
       throw new Error("invalid Compose selection");
     if ((group.overrides ?? []).some((file) => !isAbsolute(file)))
@@ -91,13 +108,17 @@ export function validateConfig(value: unknown): MeshConfig {
       !Array.isArray(adapter.argv) ||
       !adapter.argv.length ||
       adapter.argv.some(
-        (s) => typeof s !== "string" || /[\r\n\0]/.test(s) || /^(--token|--password)(=|$)/i.test(s),
+        (s) =>
+          typeof s !== "string" ||
+          /[\r\n\0]/.test(s) ||
+          /^(--token|--password)(=|$)/i.test(s),
       )
     )
       throw new Error("invalid adapter or credential in argv");
     if (
       adapter.intervalSeconds !== undefined &&
-      (!Number.isInteger(adapter.intervalSeconds) || adapter.intervalSeconds < 60)
+      (!Number.isInteger(adapter.intervalSeconds) ||
+        adapter.intervalSeconds < 60)
     )
       throw new Error("adapter interval must be at least 60 seconds");
     ids.add(adapter.id);
@@ -112,7 +133,9 @@ export function validateConfig(value: unknown): MeshConfig {
         ) ||
         !relative
       )
-        throw new Error("envFile must be in this host's protected home/private");
+        throw new Error(
+          "envFile must be in this host's protected home/private",
+        );
     }
   }
   for (const h of c.health) {
@@ -131,7 +154,10 @@ export function validateConfig(value: unknown): MeshConfig {
   return c;
 }
 
-export function composeArgs(group: ComposeGroup, action: "config" | "up"): string[] {
+export function composeArgs(
+  group: ComposeGroup,
+  action: "config" | "up",
+): string[] {
   return [
     "docker",
     "compose",
@@ -142,7 +168,15 @@ export function composeArgs(group: ComposeGroup, action: "config" | "up"): strin
     ...(group.profiles ?? []).flatMap((p) => ["--profile", p]),
     ...(action === "config"
       ? ["config", "--quiet"]
-      : ["up", "-d", "--no-build", "--wait", "--wait-timeout", "120", ...group.services]),
+      : [
+          "up",
+          "-d",
+          "--no-build",
+          "--wait",
+          "--wait-timeout",
+          "120",
+          ...group.services,
+        ]),
   ];
 }
 
@@ -151,7 +185,8 @@ export function environment(text: string): Record<string, string> {
   for (const line of text.split(/\r?\n/)) {
     if (!line.trim() || line.trimStart().startsWith("#")) continue;
     const match = /^([A-Z_][A-Z0-9_]*)=(.*)$/.exec(line);
-    if (!match) throw new Error("invalid protected env file (expected NAME=value)");
+    if (!match)
+      throw new Error("invalid protected env file (expected NAME=value)");
     let value = match[2]!;
     if (
       (value.startsWith('"') && value.endsWith('"')) ||
@@ -167,7 +202,11 @@ async function command(
   argv: string[],
   root: string,
   timeout = 15_000,
-  owned?: { children: Set<Subprocess>; signal: AbortSignal; assign(child: Subprocess): void },
+  owned?: {
+    children: Set<Subprocess>;
+    signal: AbortSignal;
+    assign(child: Subprocess): void;
+  },
 ): Promise<boolean> {
   if (owned?.signal.aborted) return false;
   let child: Subprocess | undefined;
@@ -208,7 +247,11 @@ export async function probes(
           signal: AbortSignal.timeout(5000),
         });
         await response.body?.cancel();
-        return { id: h.id, healthy: response.status === 200, status: response.status };
+        return {
+          id: h.id,
+          healthy: response.status === 200,
+          status: response.status,
+        };
       } catch {
         return { id: h.id, healthy: false, status: null };
       }
@@ -219,8 +262,14 @@ export async function probes(
 async function windowsLock(member: string): Promise<() => void> {
   const { dlopen, FFIType, ptr } = await import("bun:ffi");
   const api = dlopen("kernel32.dll", {
-    CreateMutexW: { args: [FFIType.ptr, FFIType.i32, FFIType.ptr], returns: FFIType.ptr },
-    WaitForSingleObject: { args: [FFIType.ptr, FFIType.u32], returns: FFIType.u32 },
+    CreateMutexW: {
+      args: [FFIType.ptr, FFIType.i32, FFIType.ptr],
+      returns: FFIType.ptr,
+    },
+    WaitForSingleObject: {
+      args: [FFIType.ptr, FFIType.u32],
+      returns: FFIType.u32,
+    },
     ReleaseMutex: { args: [FFIType.ptr], returns: FFIType.i32 },
     CloseHandle: { args: [FFIType.ptr], returns: FFIType.i32 },
   });
@@ -257,7 +306,9 @@ async function supervise(config: MeshConfig): Promise<void> {
   let composeAttempt: Promise<void> | undefined;
   let lastUpdate = Date.now();
   const job =
-    process.platform === "win32" ? new (await windows()).Job({ killOnClose: true }) : undefined;
+    process.platform === "win32"
+      ? new (await windows()).Job({ killOnClose: true })
+      : undefined;
   const abort = new AbortController();
   const owned = {
     children: commandChildren,
@@ -292,14 +343,21 @@ async function supervise(config: MeshConfig): Promise<void> {
         if (
           !previous &&
           adapterErrors.has(adapter.id) &&
-          Date.now() - (started.get(adapter.id) ?? 0) < (adapter.intervalSeconds ?? 5) * 1000
+          Date.now() - (started.get(adapter.id) ?? 0) <
+            (adapter.intervalSeconds ?? 5) * 1000
         )
           continue;
         try {
-          const env = adapter.envFile ? environment(readFileSync(adapter.envFile, "utf8")) : {};
+          const env = adapter.envFile
+            ? environment(readFileSync(adapter.envFile, "utf8"))
+            : {};
           let log = logs.get(adapter.id);
           if (log === undefined) {
-            log = openSync(join(config.home, "logs", `mesh-${adapter.id}.log`), "a", 0o600);
+            log = openSync(
+              join(config.home, "logs", `mesh-${adapter.id}.log`),
+              "a",
+              0o600,
+            );
             logs.set(adapter.id, log);
           }
           const child = Bun.spawn(adapter.argv, {
@@ -317,13 +375,19 @@ async function supervise(config: MeshConfig): Promise<void> {
         } catch {
           children.get(adapter.id)?.kill();
           started.set(adapter.id, Date.now());
-          adapterErrors.set(adapter.id, "native adapter or protected environment unavailable");
+          adapterErrors.set(
+            adapter.id,
+            "native adapter or protected environment unavailable",
+          );
         }
       }
       // A slow or absent engine never holds the native recovery plane hostage.
       // One owned attempt runs in the background, with bounded process deadlines
       // and a 30-second retry interval; existing containers are never removed.
-      if (!composeAttempt && compose.some((state) => Date.now() >= state.retryAt)) {
+      if (
+        !composeAttempt &&
+        compose.some((state) => Date.now() >= state.retryAt)
+      ) {
         composeAttempt = (async () => {
           const engine = await command(
             ["docker", "version", "--format", "{{.Server.Version}}"],
@@ -339,8 +403,18 @@ async function supervise(config: MeshConfig): Promise<void> {
             if (engine) {
               error = "Compose configuration or activation unavailable";
               healthy =
-                (await command(composeArgs(group, "config"), config.root, 15_000, owned)) &&
-                (await command(composeArgs(group, "up"), config.root, 150_000, owned));
+                (await command(
+                  composeArgs(group, "config"),
+                  config.root,
+                  15_000,
+                  owned,
+                )) &&
+                (await command(
+                  composeArgs(group, "up"),
+                  config.root,
+                  150_000,
+                  owned,
+                ));
             }
             state.status = healthy ? "ready" : "degraded";
             state.error = healthy ? null : error;
@@ -379,7 +453,10 @@ async function supervise(config: MeshConfig): Promise<void> {
         { mode: 0o600 },
       );
       renameSync(`${receipt}.new`, receipt);
-      if (config.update && Date.now() - lastUpdate >= config.update.intervalSeconds * 1000) {
+      if (
+        config.update &&
+        Date.now() - lastUpdate >= config.update.intervalSeconds * 1000
+      ) {
         lastUpdate = Date.now();
         let updated = false;
         try {
@@ -389,13 +466,16 @@ async function supervise(config: MeshConfig): Promise<void> {
             join(config.home, "run", "mesh-update-error.json"),
             JSON.stringify({
               observedAt: new Date().toISOString(),
-              error: error instanceof Error ? error.message : "main update failed",
+              error:
+                error instanceof Error ? error.message : "main update failed",
             }),
             { mode: 0o600 },
           );
         }
         if (updated)
-          throw new Error("qualified main bundle activated; scheduler restart requested");
+          throw new Error(
+            "qualified main bundle activated; scheduler restart requested",
+          );
       }
       await Bun.sleep(5000);
     }
@@ -403,8 +483,10 @@ async function supervise(config: MeshConfig): Promise<void> {
     stop();
     job?.close();
     const killDeadline = setTimeout(() => {
-      for (const child of children.values()) if (child.exitCode === null) child.kill("SIGKILL");
-      for (const child of commandChildren) if (child.exitCode === null) child.kill("SIGKILL");
+      for (const child of children.values())
+        if (child.exitCode === null) child.kill("SIGKILL");
+      for (const child of commandChildren)
+        if (child.exitCode === null) child.kill("SIGKILL");
     }, 5000);
     await Promise.all([...children.values()].map((child) => child.exited));
     await composeAttempt;
@@ -424,10 +506,16 @@ export async function main(argv = Bun.argv.slice(2)): Promise<number> {
   const at = argv.indexOf("--config");
   const path =
     at < 0
-      ? join(process.env.APHRODY_HOME ?? join(homedir(), ".aphrody"), "host", "mesh.json")
+      ? join(
+          process.env.APHRODY_HOME ?? join(homedir(), ".aphrody"),
+          "host",
+          "mesh.json",
+        )
       : argv[at + 1];
   if (!path || !["plan", "health", "run"].includes(action ?? ""))
-    throw new Error("usage: container-service.ts --mesh plan|health|run [--config path]");
+    throw new Error(
+      "usage: container-service.ts --mesh plan|health|run [--config path]",
+    );
   const config = validateConfig(JSON.parse(readFileSync(path, "utf8")));
   if (!existsSync(config.root)) throw new Error("configured checkout missing");
   if (action === "health") {
@@ -449,7 +537,10 @@ export async function main(argv = Bun.argv.slice(2)): Promise<number> {
         {
           member: config.member,
           compose: config.compose.map((g) => composeArgs(g, "up")),
-          adapters: config.adapters.map((a) => ({ id: a.id, executable: a.argv[0] })),
+          adapters: config.adapters.map((a) => ({
+            id: a.id,
+            executable: a.argv[0],
+          })),
           health: config.health,
         },
         null,
@@ -478,7 +569,8 @@ export async function main(argv = Bun.argv.slice(2)): Promise<number> {
     );
     return await child.exited;
   }
-  const release = process.platform === "win32" ? await windowsLock(config.member) : () => {};
+  const release =
+    process.platform === "win32" ? await windowsLock(config.member) : () => {};
   try {
     await supervise(config);
     return 0;

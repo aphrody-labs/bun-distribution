@@ -19,7 +19,11 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ImageField } from "@aphrody/admin-ui/components/admin/ImageField";
 import { apiAt } from "@aphrody/admin-ui/client";
-import { extractYoutubeId, youtubeEmbedUrl, youtubeThumbUrl } from "@/lib/youtube";
+import {
+  extractYoutubeId,
+  youtubeEmbedUrl,
+  youtubeThumbUrl,
+} from "@/lib/youtube";
 import { crudBase } from "@/lib/wiki-tables";
 
 export type GameMediaDraft = {
@@ -85,7 +89,10 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
   // et effaçait sans un mot les médias ajoutés depuis le dernier enregistrement.
   const row = useQuery({
     queryKey: ["wiki-studio", "db_games", gameId, "media"],
-    queryFn: () => client.get<Record<string, unknown>>(`/db_games/${encodeURIComponent(gameId)}`),
+    queryFn: () =>
+      client.get<Record<string, unknown>>(
+        `/db_games/${encodeURIComponent(gameId)}`,
+      ),
     refetchOnWindowFocus: false,
     staleTime: Number.POSITIVE_INFINITY,
   });
@@ -105,7 +112,10 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const dirty = useMemo(() => snapshot(items) !== savedSnap, [items, savedSnap]);
+  const dirty = useMemo(
+    () => snapshot(items) !== savedSnap,
+    [items, savedSnap],
+  );
   useEffect(() => {
     if (!dirty) return;
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -132,7 +142,11 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
             }
             url = `https://youtu.be/${id}`;
           }
-          const out: { type: "image" | "youtube"; url: string; caption?: string } = {
+          const out: {
+            type: "image" | "youtube";
+            url: string;
+            caption?: string;
+          } = {
             type: p.type,
             url,
           };
@@ -141,7 +155,9 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
           return out;
         })
         .filter((x): x is NonNullable<typeof x> => x != null);
-      return client.put(`/db_games/${encodeURIComponent(gameId)}`, { media: cleaned });
+      return client.put(`/db_games/${encodeURIComponent(gameId)}`, {
+        media: cleaned,
+      });
     },
     onSuccess: () => {
       // Re-normalise l'état local (URLs YouTube nettoyées) pour coller au save.
@@ -149,7 +165,9 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
       // doit rester pur, et `setSavedSnap` y était un effet de bord que React
       // peut rejouer.
       const next = items.map((p) =>
-        p.type === "youtube" && p.url.trim() ? { ...p, url: normalizeYoutubeUrl(p.url) } : p,
+        p.type === "youtube" && p.url.trim()
+          ? { ...p, url: normalizeYoutubeUrl(p.url) }
+          : p,
       );
       setItems(next);
       setSavedSnap(snapshot(next));
@@ -200,7 +218,8 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
   if (row.isLoading) {
     return (
       <div className="dbz-panel flex items-center gap-2 p-5 text-sm text-white/50">
-        <Chargement className="h-4 w-4 animate-spin" /> Chargement de la galerie…
+        <Chargement className="h-4 w-4 animate-spin" /> Chargement de la
+        galerie…
       </div>
     );
   }
@@ -232,9 +251,11 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
             Galerie médias
           </h3>
           <p className="mt-1 max-w-xl text-[11px] leading-relaxed text-white/50">
-            Style Steam : screenshots et trailers YouTube sous la description. Ajoute des{" "}
-            <strong className="text-white/60">images</strong> (upload) ou des{" "}
-            <strong className="text-white/60">liens YouTube</strong> (gameplay / trailer).
+            Style Steam : screenshots et trailers YouTube sous la description.
+            Ajoute des <strong className="text-white/60">images</strong>{" "}
+            (upload) ou des{" "}
+            <strong className="text-white/60">liens YouTube</strong> (gameplay /
+            trailer).
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -360,7 +381,10 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
                   column="media"
                 />
               ) : (
-                <YoutubeField value={item.url} onChange={(url) => update(i, { url })} />
+                <YoutubeField
+                  value={item.url}
+                  onChange={(url) => update(i, { url })}
+                />
               )}
 
               <label className="mt-3 block">
@@ -398,7 +422,13 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
  * type=text (pas url) pour accepter youtu.be / watch?v= / id brut sans
  * validation HTML5 trop stricte.
  */
-function YoutubeField({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+function YoutubeField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+}) {
   const trimmed = value.trim();
   const id = trimmed ? extractYoutubeId(trimmed) : null;
   const thumb = id ? youtubeThumbUrl(id) : null;
@@ -430,7 +460,8 @@ function YoutubeField({ value, onChange }: { value: string; onChange: (url: stri
         />
         {invalid && (
           <p className="mt-1 text-[11px] text-red-400">
-            Lien YouTube non reconnu — colle un lien watch, youtu.be, embed ou shorts.
+            Lien YouTube non reconnu — colle un lien watch, youtu.be, embed ou
+            shorts.
           </p>
         )}
       </label>
@@ -460,7 +491,9 @@ function YoutubeField({ value, onChange }: { value: string; onChange: (url: stri
             <p className="text-[11px] font-display font-semibold uppercase tracking-wider text-dbz-orange">
               Aperçu OK
             </p>
-            <p className="mt-0.5 break-all font-mono text-[11px] text-white/50">id&nbsp;: {id}</p>
+            <p className="mt-0.5 break-all font-mono text-[11px] text-white/50">
+              id&nbsp;: {id}
+            </p>
             <p className="mt-1 text-[11px] text-white/50">
               La vignette YouTube s&apos;affiche → le lien est valide.
             </p>

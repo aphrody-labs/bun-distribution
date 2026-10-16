@@ -10,7 +10,11 @@ type Cmd = {
   options?: unknown[];
 };
 
-export default async function BotDetail({ params }: { params: Promise<{ id: string }> }) {
+export default async function BotDetail({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
   const [bot, cmds] = await Promise.all([
     botAdmin.bot(id).catch(() => null),
@@ -27,7 +31,9 @@ export default async function BotDetail({ params }: { params: Promise<{ id: stri
           ← DASHBOARD
         </Link>
         <div className="dbz-panel p-8 text-center mt-8">
-          <p className="text-2xl font-saiyan text-red-500 uppercase">Bot introuvable: {id}</p>
+          <p className="text-2xl font-saiyan text-red-500 uppercase">
+            Bot introuvable: {id}
+          </p>
         </div>
       </div>
     );
@@ -45,13 +51,19 @@ export default async function BotDetail({ params }: { params: Promise<{ id: stri
       </Link>
 
       <div className="dbz-panel p-6 flex items-center gap-4">
-        <img src={bot.avatar} alt={bot.name} className="w-16 h-16 border-2 border-dbz-border" />
+        <img
+          src={bot.avatar}
+          alt={bot.name}
+          className="w-16 h-16 border-2 border-dbz-border"
+        />
         <div className="flex-1">
           <h1 className="text-4xl font-saiyan text-dbz-orange">{bot.name}</h1>
           <p className="text-xs text-gray-500 font-mono">{bot.username}</p>
         </div>
         <div className="text-right">
-          <div className={`text-2xl font-saiyan ${bot.online ? "text-green-500" : "text-red-500"}`}>
+          <div
+            className={`text-2xl font-saiyan ${bot.online ? "text-green-500" : "text-red-500"}`}
+          >
             {bot.online ? "ONLINE" : "OFFLINE"}
           </div>
           <div className="text-xs text-dbz-blue-light uppercase">
@@ -91,7 +103,10 @@ export default async function BotDetail({ params }: { params: Promise<{ id: stri
               ))}
               {commands.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="p-6 text-center text-gray-500 font-saiyan uppercase">
+                  <td
+                    colSpan={3}
+                    className="p-6 text-center text-gray-500 font-saiyan uppercase"
+                  >
                     Aucune commande
                   </td>
                 </tr>

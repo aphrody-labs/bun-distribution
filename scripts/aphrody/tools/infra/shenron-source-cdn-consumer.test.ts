@@ -21,11 +21,14 @@ test("transport hands off only a bounded JSON request to the exact pinned DBFR c
   expect(call.command).toContain("--stdin");
   expect(call.timeoutMs).toBe(930000);
   expect(() =>
-    sourceConsumerCommand({ ...transport, consumerModulePath: "/etc/owner/x;touch" }, request),
+    sourceConsumerCommand(
+      { ...transport, consumerModulePath: "/etc/owner/x;touch" },
+      request,
+    ),
   ).toThrow("Safe");
-  expect(() => sourceConsumerCommand({ ...transport, host: "foreign" } as never, request)).toThrow(
-    "DBFR",
-  );
+  expect(() =>
+    sourceConsumerCommand({ ...transport, host: "foreign" } as never, request),
+  ).toThrow("DBFR");
 });
 const sha = "a".repeat(64);
 const config: SourceConsumerConfiguration = {
@@ -51,7 +54,13 @@ test("qualified actual loader no-change result is retained without pretending a 
     },
     async execute() {
       calls.push("actual-loader");
-      return { complete: true, indexSha256: sha, inventorySha256: sha, noChange: true, writes: 0 };
+      return {
+        complete: true,
+        indexSha256: sha,
+        inventorySha256: sha,
+        noChange: true,
+        writes: 0,
+      };
     },
     async receipt() {
       calls.push("receipt");
@@ -62,14 +71,20 @@ test("qualified actual loader no-change result is retained without pretending a 
   expect(proof.noChange).toBe(true);
 });
 test("changed pins, protected scope escapes and foreign targets cannot invoke a product loader", async () => {
-  expect(() => validateSourceConsumer({ ...config, productModuleSha256: "bad" }, request)).toThrow(
-    "SHA256",
-  );
   expect(() =>
-    validateSourceConsumer(config, { ...request, publicRoot: "/protected/provider" }),
+    validateSourceConsumer({ ...config, productModuleSha256: "bad" }, request),
+  ).toThrow("SHA256");
+  expect(() =>
+    validateSourceConsumer(config, {
+      ...request,
+      publicRoot: "/protected/provider",
+    }),
   ).toThrow("scopes");
   expect(() =>
-    validateSourceConsumer(config, { ...request, job: "/private/cdn-publication-state" }),
+    validateSourceConsumer(config, {
+      ...request,
+      job: "/private/cdn-publication-state",
+    }),
   ).toThrow("scopes");
   expect(() =>
     validateSourceConsumer(config, {
@@ -84,7 +99,11 @@ test("unqualified product publication never yields a consumer receipt", async ()
     consumeSourcePublication(config, request, {
       async qualify() {},
       async execute() {
-        return { complete: true, indexSha256: "b".repeat(64), inventorySha256: sha };
+        return {
+          complete: true,
+          indexSha256: "b".repeat(64),
+          inventorySha256: sha,
+        };
       },
       async receipt() {
         receipt = true;

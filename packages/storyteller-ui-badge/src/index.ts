@@ -1,2 +1,1 @@
-
-export * from './lib/badge';
+export * from "./lib/badge";

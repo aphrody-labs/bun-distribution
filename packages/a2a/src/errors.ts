@@ -50,7 +50,9 @@ export function errorReasonForCode(code: number): A2AErrorReason | undefined {
 }
 
 export function errorCodeForReason(reason: string): number | undefined {
-  const known = (A2A_ERROR_CODES as Record<string, number>)[REASON_ALIASES[reason] ?? reason];
+  const known = (A2A_ERROR_CODES as Record<string, number>)[
+    REASON_ALIASES[reason] ?? reason
+  ];
   return known;
 }
 
@@ -93,7 +95,9 @@ export class A2AError extends Error {
     this.method = init.method;
     const info = this.details.find((d) => d["@type"] === ERROR_INFO_TYPE);
     const reason = typeof info?.reason === "string" ? info.reason : undefined;
-    this.reason = reason ? (REASON_ALIASES[reason] ?? reason) : errorReasonForCode(init.code);
+    this.reason = reason
+      ? (REASON_ALIASES[reason] ?? reason)
+      : errorReasonForCode(init.code);
     this.domain = typeof info?.domain === "string" ? info.domain : undefined;
     const metadata: Record<string, string> = {};
     const raw = info?.metadata;
@@ -114,7 +118,8 @@ export class A2AError extends Error {
   }
 }
 
-export type TransportErrorKind = "network" | "timeout" | "aborted" | "http" | "protocol" | "stream";
+export type TransportErrorKind =
+  "network" | "timeout" | "aborted" | "http" | "protocol" | "stream";
 
 /** The exchange failed before an A2A answer could be read (network, HTTP status, malformed body). */
 export class A2ATransportError extends Error {
@@ -127,7 +132,10 @@ export class A2ATransportError extends Error {
     message: string,
     options: { status?: number; method?: string; cause?: unknown } = {},
   ) {
-    super(message, options.cause === undefined ? undefined : { cause: options.cause });
+    super(
+      message,
+      options.cause === undefined ? undefined : { cause: options.cause },
+    );
     this.name = "A2ATransportError";
     this.kind = kind;
     this.status = options.status;
@@ -145,7 +153,10 @@ export class A2ADiscoveryError extends Error {
     message: string,
     options: { status?: number; cause?: unknown } = {},
   ) {
-    super(message, options.cause === undefined ? undefined : { cause: options.cause });
+    super(
+      message,
+      options.cause === undefined ? undefined : { cause: options.cause },
+    );
     this.name = "A2ADiscoveryError";
     this.kind = kind;
     this.status = options.status;
@@ -168,20 +179,37 @@ export function isRpcErrorShape(value: unknown): value is RpcErrorShape {
 }
 
 /** Build an {@link A2AError} from a JSON-RPC error object (`data` is an array of typed details). */
-export function a2aErrorFromRpc(error: RpcErrorShape, method?: string): A2AError {
+export function a2aErrorFromRpc(
+  error: RpcErrorShape,
+  method?: string,
+): A2AError {
   const details = Array.isArray(error.data) ? error.data.filter(isDetail) : [];
-  return new A2AError({ code: error.code, message: error.message, details, method });
+  return new A2AError({
+    code: error.code,
+    message: error.message,
+    details,
+    method,
+  });
 }
 
 /** Build an {@link A2AError} from an HTTP+JSON error body (`google.rpc.Status` JSON). */
-export function a2aErrorFromRest(status: number, body: unknown, method?: string): A2AError {
+export function a2aErrorFromRest(
+  status: number,
+  body: unknown,
+  method?: string,
+): A2AError {
   const error = (body as { error?: unknown } | null | undefined)?.error;
   if (typeof error === "object" && error !== null) {
-    const { message, details } = error as { message?: unknown; details?: unknown };
+    const { message, details } = error as {
+      message?: unknown;
+      details?: unknown;
+    };
     const typed = Array.isArray(details) ? details.filter(isDetail) : [];
     const info = typed.find((d) => d["@type"] === ERROR_INFO_TYPE);
     const reason = typeof info?.reason === "string" ? info.reason : undefined;
-    const code = (reason ? errorCodeForReason(reason) : undefined) ?? codeForHttpStatus(status);
+    const code =
+      (reason ? errorCodeForReason(reason) : undefined) ??
+      codeForHttpStatus(status);
     return new A2AError({
       code,
       message: typeof message === "string" ? message : `HTTP ${status}`,

@@ -16,7 +16,13 @@
  * Reuses ../tools.ts (installed uv, latest uv), ../pins.ts (uv pin), ../cargo.ts (lock diff), ../deps/sync.ts
  * (journal types) and ../deps/inventory.ts (OSV, bounded pool, cached HTTP). Report-only unless `apply`.
  */
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { Ctx } from "../context.ts";
@@ -33,7 +39,8 @@ export const ADVISORY_FILE = "tools/config/deps/advisory-holds.json";
 export const SNAPSHOT_DIR = "target/update/uv";
 /** Extras installed so that every member suite can be collected (networkx for the RAG tests, datasketch for train). */
 export const TEST_EXTRAS = ["rag", "dedup"] as const;
-const SKIP_DIRS = /(^|\/)(\.venv|venv|node_modules|docs|\.git|target|dist|build|__pycache__)(\/|$)/;
+const SKIP_DIRS =
+  /(^|\/)(\.venv|venv|node_modules|docs|\.git|target|dist|build|__pycache__)(\/|$)/;
 
 // ---------------------------------------------------------------- PEP 440 (versions and specifiers)
 
@@ -65,8 +72,15 @@ export function parsePy(v: string): PyVersion | undefined {
   return {
     epoch: Number(g.epoch ?? 0),
     release: g.release!.split(".").map(Number),
-    pre: g.preL ? [PRE_RANK[g.preL.toLowerCase()] ?? 0, Number(g.preN ?? 0)] : undefined,
-    post: g.postA !== undefined ? Number(g.postA) : g.postL ? Number(g.postB ?? 0) : undefined,
+    pre: g.preL
+      ? [PRE_RANK[g.preL.toLowerCase()] ?? 0, Number(g.preN ?? 0)]
+      : undefined,
+    post:
+      g.postA !== undefined
+        ? Number(g.postA)
+        : g.postL
+          ? Number(g.postB ?? 0)
+          : undefined,
     dev: g.devL ? Number(g.devN ?? 0) : undefined,
     local: g.local,
   };
@@ -77,8 +91,17 @@ const cmpNum = (a: number, b: number) => (a < b ? -1 : a > b ? 1 : 0);
 // Clé de comparaison de la phase PEP 440 (pre, post, dev) d'une version.
 const phase = (v: PyVersion): [number, number, number, number] => {
   // dev of a final release sorts before its pre-releases; a pre-release sorts before the final release.
-  const preKey = v.pre ? v.pre : v.post === undefined && v.dev !== undefined ? [-1, 0] : [3, 0];
-  return [preKey[0]!, preKey[1]!, v.post ?? -1, v.dev ?? Number.POSITIVE_INFINITY];
+  const preKey = v.pre
+    ? v.pre
+    : v.post === undefined && v.dev !== undefined
+      ? [-1, 0]
+      : [3, 0];
+  return [
+    preKey[0]!,
+    preKey[1]!,
+    v.post ?? -1,
+    v.dev ?? Number.POSITIVE_INFINITY,
+  ];
 };
 
 /** PEP 440 order: epoch, release (zero padded), dev < pre < final < post, then local. */
@@ -97,7 +120,15 @@ export function cmpPy(a: string, b: string): -1 | 0 | 1 {
     const d = cmpNum(p[i]!, q[i]!);
     if (d) return d;
   }
-  return x.local === y.local ? 0 : !x.local ? -1 : !y.local ? 1 : x.local < y.local ? -1 : 1;
+  return x.local === y.local
+    ? 0
+    : !x.local
+      ? -1
+      : !y.local
+        ? 1
+        : x.local < y.local
+          ? -1
+          : 1;
 }
 
 export const isPre = (v: string): boolean => {
@@ -117,20 +148,33 @@ export function satisfies(rawVersion: string, specifier: string): boolean {
     if (!m) return true; // unknown syntax never blocks
     const [, op, target] = m as unknown as [string, string, string];
     // a local label (`2.8.0+cu129`) is ignored unless the specifier names one (PEP 440)
-    const version = target.includes("+") ? rawVersion : rawVersion.split("+")[0]!;
+    const version = target.includes("+")
+      ? rawVersion
+      : rawVersion.split("+")[0]!;
     const wild = target.endsWith(".*");
     const base = wild ? target.slice(0, -2) : target;
     if (op === "==" || op === "!=" || op === "===") {
-      const eq = wild ? versionPrefix(version, base) : cmpPy(version, base) === 0;
+      const eq = wild
+        ? versionPrefix(version, base)
+        : cmpPy(version, base) === 0;
       return op === "!=" ? !eq : eq;
     }
     if (op === "~=") {
       const parts = base.split(".");
       if (parts.length < 2) return cmpPy(version, base) >= 0;
-      return cmpPy(version, base) >= 0 && versionPrefix(version, parts.slice(0, -1).join("."));
+      return (
+        cmpPy(version, base) >= 0 &&
+        versionPrefix(version, parts.slice(0, -1).join("."))
+      );
     }
     const d = cmpPy(version, base);
-    return op === "<=" ? d <= 0 : op === ">=" ? d >= 0 : op === "<" ? d < 0 : d > 0;
+    return op === "<="
+      ? d <= 0
+      : op === ">="
+        ? d >= 0
+        : op === "<"
+          ? d < 0
+          : d > 0;
   });
 }
 
@@ -158,9 +202,15 @@ export function pythonAccepts(
 
 // ---------------------------------------------------------------- requirements and pyproject
 
-export type Requirement = { name: string; extras: string[]; spec: string; marker?: string };
+export type Requirement = {
+  name: string;
+  extras: string[];
+  spec: string;
+  marker?: string;
+};
 
-export const normName = (n: string): string => n.toLowerCase().replace(/[-_.]+/g, "-");
+export const normName = (n: string): string =>
+  n.toLowerCase().replace(/[-_.]+/g, "-");
 
 /** PEP 508 name, extras, version specifier and marker. Direct URL requirements (`name @ url`) have no specifier. */
 export function parseRequirement(text: string): Requirement | undefined {
@@ -204,9 +254,13 @@ export function parsePyProject(file: string, text: string): PyProject {
     }
   };
   push("dependencies", t.project?.dependencies);
-  for (const [extra, list] of Object.entries<unknown>(t.project?.["optional-dependencies"] ?? {}))
+  for (const [extra, list] of Object.entries<unknown>(
+    t.project?.["optional-dependencies"] ?? {},
+  ))
     push(`extra:${extra}`, list);
-  for (const [group, list] of Object.entries<unknown>(t["dependency-groups"] ?? {}))
+  for (const [group, list] of Object.entries<unknown>(
+    t["dependency-groups"] ?? {},
+  ))
     push(`group:${group}`, list);
   push("group:dev", t.tool?.uv?.["dev-dependencies"]);
   push("build", t["build-system"]?.requires);
@@ -220,7 +274,9 @@ export function parsePyProject(file: string, text: string): PyProject {
 }
 
 /** `required-version = "==0.12.22"` -> `0.12.22` (only an exact pin is comparable to the installed uv). */
-export function exactRequired(requiredVersion: string | undefined): string | undefined {
+export function exactRequired(
+  requiredVersion: string | undefined,
+): string | undefined {
   return /^==\s*(\d+\.\d+\.\d+)$/.exec(requiredVersion ?? "")?.[1];
 }
 
@@ -231,7 +287,11 @@ export type LockPkg = {
   version: string;
   kind: "registry" | "git" | "workspace" | "url" | "other";
 };
-export type LockInfo = { revision?: number; requiresPython?: string; packages: LockPkg[] };
+export type LockInfo = {
+  revision?: number;
+  requiresPython?: string;
+  packages: LockPkg[];
+};
 
 export function parseLock(text: string): LockInfo {
   const t = parseToml(text);
@@ -248,16 +308,25 @@ export function parseLock(text: string): LockInfo {
           : s.url
             ? "url"
             : "other";
-    packages.push({ name: normName(String(p.name)), version: String(p.version), kind });
+    packages.push({
+      name: normName(String(p.name)),
+      version: String(p.version),
+      kind,
+    });
   }
-  return { revision: t.revision, requiresPython: t["requires-python"], packages };
+  return {
+    revision: t.revision,
+    requiresPython: t["requires-python"],
+    packages,
+  };
 }
 
 /** Versions of each registry package in a lock, by normalized name. */
 export function lockVersions(info: LockInfo): Map<string, string[]> {
   const m = new Map<string, string[]>();
   for (const p of info.packages)
-    if (p.kind === "registry") (m.get(p.name) ?? m.set(p.name, []).get(p.name)!).push(p.version);
+    if (p.kind === "registry")
+      (m.get(p.name) ?? m.set(p.name, []).get(p.name)!).push(p.version);
   return m;
 }
 
@@ -274,11 +343,21 @@ export function parseLockOutput(output: string): Change[] {
   for (const line of output.split("\n")) {
     const m = /^\s*(Updated?|Add(?:ed)?|Removed?)\s+(\S+)\s+v?(.*)$/.exec(line);
     if (!m) continue;
-    const [, verb, name, rest] = m as unknown as [string, string, string, string];
+    const [, verb, name, rest] = m as unknown as [
+      string,
+      string,
+      string,
+      string,
+    ];
     if (verb.startsWith("Add"))
       out.push({ ecosystem: "uv-lock", name, from: "(new)", to: strip(rest) });
     else if (verb.startsWith("Remove"))
-      out.push({ ecosystem: "uv-lock", name, from: strip(rest), to: "(removed)" });
+      out.push({
+        ecosystem: "uv-lock",
+        name,
+        from: strip(rest),
+        to: "(removed)",
+      });
     else {
       const [from, to] = rest.split("->").map((s) => strip(s));
       out.push({ ecosystem: "uv-lock", name, from: from ?? "", to: to ?? "" });
@@ -320,7 +399,11 @@ const nameMatches = (pattern: string, name: string) =>
     : normName(pattern) === name;
 
 /** Hold that refuses `latest` for `name`: a release in a major above `maxMajor`, or above `maxVersion`. */
-export function holdFor(holds: Hold[], name: string, latest: string | undefined): Hold | undefined {
+export function holdFor(
+  holds: Hold[],
+  name: string,
+  latest: string | undefined,
+): Hold | undefined {
   if (!latest) return undefined;
   const mj = major(latest);
   return holds.find(
@@ -332,8 +415,13 @@ export function holdFor(holds: Hold[], name: string, latest: string | undefined)
   );
 }
 
-export const advisoryHeld = (holds: AdvisoryHold[], name: string): AdvisoryHold | undefined =>
-  holds.find((h) => h.ecosystem === "PyPI" && normName(h.name) === normName(name));
+export const advisoryHeld = (
+  holds: AdvisoryHold[],
+  name: string,
+): AdvisoryHold | undefined =>
+  holds.find(
+    (h) => h.ecosystem === "PyPI" && normName(h.name) === normName(name),
+  );
 
 // ---------------------------------------------------------------- rows
 
@@ -414,7 +502,8 @@ export function classifyDirect(i: {
       cause: "python-floor",
       reason: `${latest} needs Python ${i.release?.requiresPython}; the project supports ${i.floor}`,
     };
-  if (hold) return { ...row, state: "held", cause: "hold", reason: hold.reason };
+  if (hold)
+    return { ...row, state: "held", cause: "hold", reason: hold.reason };
   return { ...row, state: "open" };
 }
 
@@ -453,7 +542,11 @@ export function transitiveBehind(i: {
 
 // ---------------------------------------------------------------- python policy
 
-export type PyInterpreter = { version: string; managed: boolean; installed: boolean };
+export type PyInterpreter = {
+  version: string;
+  managed: boolean;
+  installed: boolean;
+};
 
 /**
  * Python version policy: the interpreter named by `.python-version` is installed and satisfies every workspace
@@ -466,13 +559,20 @@ export function pythonPolicy(i: {
 }): string[] {
   const out: string[] = [];
   const have = i.interpreters.filter((x) => x.installed);
-  if (i.pinned && !have.some((x) => x.version.startsWith(`${i.pinned}.`) || x.version === i.pinned))
+  if (
+    i.pinned &&
+    !have.some(
+      (x) => x.version.startsWith(`${i.pinned}.`) || x.version === i.pinned,
+    )
+  )
     out.push(
       `.python-version ${i.pinned} has no installed interpreter (uv python install ${i.pinned})`,
     );
   for (const r of i.requires) {
     if (i.pinned && r.spec && !satisfies(`${i.pinned}.0`, r.spec))
-      out.push(`${r.file}: requires-python ${r.spec} excludes the pinned interpreter ${i.pinned}`);
+      out.push(
+        `${r.file}: requires-python ${r.spec} excludes the pinned interpreter ${i.pinned}`,
+      );
   }
   const newest = new Map<string, string>();
   for (const x of i.interpreters.filter((y) => y.managed)) {
@@ -483,7 +583,10 @@ export function pythonPolicy(i: {
   for (const x of have.filter((y) => y.managed)) {
     const minor = x.version.split(".").slice(0, 2).join(".");
     const top = newest.get(minor)!;
-    if (cmpPy(x.version, top) < 0 && !have.some((y) => y.managed && y.version === top))
+    if (
+      cmpPy(x.version, top) < 0 &&
+      !have.some((y) => y.managed && y.version === top)
+    )
       out.push(`managed ${x.version} is behind ${top} (uv python upgrade)`);
   }
   return out;
@@ -546,14 +649,21 @@ export function parseArgs(argv: string[]): UvArgs {
 export function lockArgs(packages: string[], extra: string[] = []): string[] {
   return [
     "lock",
-    ...(packages.length ? packages.flatMap((p) => ["--upgrade-package", p]) : ["--upgrade"]),
+    ...(packages.length
+      ? packages.flatMap((p) => ["--upgrade-package", p])
+      : ["--upgrade"]),
     ...extra,
   ];
 }
 
 /** `uv sync` arguments that install the whole workspace plus the test extras from the lock only. */
 export function syncArgs(extras: readonly string[] = TEST_EXTRAS): string[] {
-  return ["sync", "--all-packages", "--locked", ...extras.flatMap((e) => ["--extra", e])];
+  return [
+    "sync",
+    "--all-packages",
+    "--locked",
+    ...extras.flatMap((e) => ["--extra", e]),
+  ];
 }
 
 // ---------------------------------------------------------------- repository access
@@ -561,18 +671,30 @@ export function syncArgs(extras: readonly string[] = TEST_EXTRAS): string[] {
 export type Layout = { pyRoot: string; locks: string[]; projects: string[] };
 
 export function expandHome(p: string): string {
-  return p === "~" ? homedir() : p.startsWith("~/") ? join(homedir(), p.slice(2)) : p;
+  return p === "~"
+    ? homedir()
+    : p.startsWith("~/")
+      ? join(homedir(), p.slice(2))
+      : p;
 }
 
 export function pythonRoot(c: Ctx, override?: string): string | undefined {
   const configured =
-    c.jsonFile<{ inventory?: { pythonRoots?: string[] } }>("tools/config/deps/watch.json", {})
-      .inventory?.pythonRoots ?? [];
-  const candidates = [override, process.env.APHRODY_PY_ROOT, ...configured, "py"]
+    c.jsonFile<{ inventory?: { pythonRoots?: string[] } }>(
+      "tools/config/deps/watch.json",
+      {},
+    ).inventory?.pythonRoots ?? [];
+  const candidates = [
+    override,
+    process.env.APHRODY_PY_ROOT,
+    ...configured,
+    "py",
+  ]
     .filter((x): x is string => !!x)
     .map((x) => resolve(c.root, expandHome(x)));
   return candidates.find(
-    (d) => existsSync(join(d, "pyproject.toml")) && existsSync(join(d, "uv.lock")),
+    (d) =>
+      existsSync(join(d, "pyproject.toml")) && existsSync(join(d, "uv.lock")),
   );
 }
 
@@ -599,7 +721,12 @@ export function lockFor(project: string, locks: string[]): string | undefined {
 }
 
 type Run = { status: number | null; stdout: string; stderr: string };
-type Runner = (cmd: string, args: string[], cwd: string, inherit?: boolean) => Run;
+type Runner = (
+  cmd: string,
+  args: string[],
+  cwd: string,
+  inherit?: boolean,
+) => Run;
 const defaultRunner: Runner = (cmd, args, cwd, inherit) => {
   const r = Bun.spawnSync([cmd, ...args], {
     windowsHide: true,
@@ -620,14 +747,19 @@ const defaultRunner: Runner = (cmd, args, cwd, inherit) => {
 export function parsePypi(text: string): Release {
   const d = JSON.parse(text) as {
     info?: { version?: string; requires_python?: string };
-    releases?: Record<string, { requires_python?: string | null; yanked?: boolean }[]>;
+    releases?: Record<
+      string,
+      { requires_python?: string | null; yanked?: boolean }[]
+    >;
   };
   const latest = d.info?.version;
   const files = (latest && d.releases?.[latest]) || [];
   return {
     latest,
     requiresPython:
-      files.find((f) => f.requires_python)?.requires_python ?? d.info?.requires_python ?? undefined,
+      files.find((f) => f.requires_python)?.requires_python ??
+      d.info?.requires_python ??
+      undefined,
   };
 }
 
@@ -666,7 +798,12 @@ export type LockState = {
   packages: number;
   detail?: string;
 };
-export type Advisory = { name: string; version: string; ids: string[]; reason?: string };
+export type Advisory = {
+  name: string;
+  version: string;
+  ids: string[];
+  reason?: string;
+};
 export type UvStatus = {
   pyRoot: string;
   tool: UvTool;
@@ -689,19 +826,27 @@ function readInterpreters(pyRoot: string, run: Runner): PyInterpreter[] {
   const r = run("uv", ["python", "list", "--output-format", "json"], pyRoot);
   if (r.status !== 0) return [];
   try {
-    return (JSON.parse(r.stdout) as { version: string; path: string | null }[]).map((x) => ({
+    return (
+      JSON.parse(r.stdout) as { version: string; path: string | null }[]
+    ).map((x) => ({
       version: x.version,
       installed: !!x.path,
-      managed: x.path ? x.path.includes("/uv/python/") || x.path.includes("\\uv\\python\\") : true,
+      managed: x.path
+        ? x.path.includes("/uv/python/") || x.path.includes("\\uv\\python\\")
+        : true,
     }));
   } catch {
     return [];
   }
 }
 
-export const lockLabel = (dir: string): string => (dir === "." ? "uv.lock" : `${dir}/uv.lock`);
+export const lockLabel = (dir: string): string =>
+  dir === "." ? "uv.lock" : `${dir}/uv.lock`;
 
-export function lockStates(layout: Layout, run: Runner = defaultRunner): LockState[] {
+export function lockStates(
+  layout: Layout,
+  run: Runner = defaultRunner,
+): LockState[] {
   return layout.locks.map((dir) => {
     const cwd = join(layout.pyRoot, dir);
     const info = parseLock(readFileSync(join(cwd, "uv.lock"), "utf8"));
@@ -711,14 +856,22 @@ export function lockStates(layout: Layout, run: Runner = defaultRunner): LockSta
       fresh: r.status === 0,
       revision: info.revision,
       packages: info.packages.length,
-      detail: r.status === 0 ? undefined : (r.stderr || r.stdout).trim().split("\n").at(-1),
+      detail:
+        r.status === 0
+          ? undefined
+          : (r.stderr || r.stdout).trim().split("\n").at(-1),
     };
   });
 }
 
 export async function collectStatus(
   c: Ctx,
-  o: { pyRoot?: string; offline?: boolean; advisories?: boolean; run?: Runner } = {},
+  o: {
+    pyRoot?: string;
+    offline?: boolean;
+    advisories?: boolean;
+    run?: Runner;
+  } = {},
 ): Promise<UvStatus | undefined> {
   const run = o.run ?? defaultRunner;
   const pyRoot = pythonRoot(c, o.pyRoot);
@@ -731,11 +884,18 @@ export async function collectStatus(
     file: f,
     p: parsePyProject(f, readFileSync(join(pyRoot, f), "utf8")),
   }));
-  const members = new Set(projects.map((x) => x.p.name).filter((n): n is string => !!n));
-  const lockInfos = new Map(
-    layout.locks.map((d) => [d, parseLock(readFileSync(join(pyRoot, d, "uv.lock"), "utf8"))]),
+  const members = new Set(
+    projects.map((x) => x.p.name).filter((n): n is string => !!n),
   );
-  const lockVers = new Map([...lockInfos].map(([d, i]) => [d, lockVersions(i)]));
+  const lockInfos = new Map(
+    layout.locks.map((d) => [
+      d,
+      parseLock(readFileSync(join(pyRoot, d, "uv.lock"), "utf8")),
+    ]),
+  );
+  const lockVers = new Map(
+    [...lockInfos].map(([d, i]) => [d, lockVersions(i)]),
+  );
 
   const names = new Set<string>();
   for (const v of lockVers.values()) for (const n of v.keys()) names.add(n);
@@ -777,8 +937,11 @@ export async function collectStatus(
           .get(key)!;
       row.files.add(file);
       row.sections.add(d.section);
-      if (floor && (!row.floor || cmpPy(floor, row.floor) < 0)) row.floor = floor; // the lowest floor of the locks that carry it
-      for (const v of (lock ? lockVers.get(lock)?.get(d.req.name) : undefined) ?? [])
+      if (floor && (!row.floor || cmpPy(floor, row.floor) < 0))
+        row.floor = floor; // the lowest floor of the locks that carry it
+      for (const v of (lock
+        ? lockVers.get(lock)?.get(d.req.name)
+        : undefined) ?? [])
         row.locked.add(v);
     }
   }
@@ -805,7 +968,9 @@ export async function collectStatus(
   const allVersions = new Map<string, string[]>();
   for (const v of lockVers.values())
     for (const [n, list] of v)
-      allVersions.set(n, [...new Set([...(allVersions.get(n) ?? []), ...list])]);
+      allVersions.set(n, [
+        ...new Set([...(allVersions.get(n) ?? []), ...list]),
+      ]);
 
   const advisories: UvStatus["advisories"] = { open: [], held: [] };
   if (o.advisories !== false && !o.offline) {
@@ -836,13 +1001,17 @@ export async function collectStatus(
   const tool: UvTool = {
     installed: installed(c, "uv"),
     pinned,
-    latest: o.offline ? undefined : await latestTool("uv", { pypi: "uv", github: "astral-sh/uv" }),
+    latest: o.offline
+      ? undefined
+      : await latestTool("uv", { pypi: "uv", github: "astral-sh/uv" }),
     required,
   };
   const interpreters = readInterpreters(pyRoot, run);
   const pyFile = join(pyRoot, ".python-version");
   const python = pythonPolicy({
-    pinned: existsSync(pyFile) ? readFileSync(pyFile, "utf8").trim() : undefined,
+    pinned: existsSync(pyFile)
+      ? readFileSync(pyFile, "utf8").trim()
+      : undefined,
     requires: projects
       .filter((x) => x.p.requiresPython && x.p.name)
       .map((x) => ({ file: x.file, spec: x.p.requiresPython! })),
@@ -874,12 +1043,19 @@ export function problems(s: UvStatus): string[] {
         `${r.file}: required-version ${r.version} differs from the pin ${t.pinned} (yolo update pins apply uv ${t.pinned})`,
       );
   for (const l of s.locks)
-    if (!l.fresh) out.push(`${lockLabel(l.dir)} is stale: ${l.detail ?? "uv lock --check failed"}`);
+    if (!l.fresh)
+      out.push(
+        `${lockLabel(l.dir)} is stale: ${l.detail ?? "uv lock --check failed"}`,
+      );
   for (const d of s.direct)
     if (d.undocumented)
-      out.push(`${d.name} ${d.spec}: manifest cap without a reason in ${HOLDS_FILE}`);
+      out.push(
+        `${d.name} ${d.spec}: manifest cap without a reason in ${HOLDS_FILE}`,
+      );
   for (const a of s.advisories.open)
-    out.push(`advisory ${a.name} ${a.version}: ${a.ids.slice(0, 3).join(", ")}`);
+    out.push(
+      `advisory ${a.name} ${a.version}: ${a.ids.slice(0, 3).join(", ")}`,
+    );
   for (const p of s.python) out.push(`python: ${p}`);
   return out;
 }
@@ -890,13 +1066,15 @@ export function renderStatus(s: UvStatus): string[] {
   const lines = [
     `uv     installed ${t.installed ?? "-"}  pinned ${t.pinned ?? "?"}  latest ${t.latest ?? "?"}${behind ? "  <- behind" : ""}`,
   ];
-  for (const r of t.required) lines.push(`uv     required-version ${r.version} in ${r.file}`);
+  for (const r of t.required)
+    lines.push(`uv     required-version ${r.version} in ${r.file}`);
   lines.push(`root   ${s.pyRoot}`);
   for (const l of s.locks)
     lines.push(
       `lock   ${lockLabel(l.dir).padEnd(34)} revision ${l.revision ?? "?"}  ${l.packages} packages  ${l.fresh ? "fresh" : `STALE (${l.detail ?? "uv lock --check"})`}`,
     );
-  const group = (state: DirectState) => s.direct.filter((d) => d.state === state);
+  const group = (state: DirectState) =>
+    s.direct.filter((d) => d.state === state);
   lines.push(
     `direct ${s.direct.length} requirement(s): ${group("current").length} current, ${group("held").length} held, ${group("open").length} open, ${group("unlocked").length + group("unknown").length} unlocked or unknown`,
   );
@@ -922,7 +1100,9 @@ export function renderStatus(s: UvStatus): string[] {
     `osv    ${s.advisories.open.length} open, ${s.advisories.held.length} held (${ADVISORY_FILE})`,
   );
   for (const a of s.advisories.open)
-    lines.push(`       ${a.name} ${a.version}: ${a.ids.slice(0, 3).join(", ")}`);
+    lines.push(
+      `       ${a.name} ${a.version}: ${a.ids.slice(0, 3).join(", ")}`,
+    );
   lines.push(
     `python ${[...new Set(s.interpreters.filter((i) => i.installed).map((i) => i.version))].join(", ") || "none installed"}${s.python.length ? "" : "  policy ok"}`,
   );
@@ -940,7 +1120,11 @@ export function planLocks(
   run: Runner = defaultRunner,
 ): LockPlan[] {
   return layout.locks.map((dir) => {
-    const r = run("uv", lockArgs(packages, ["--dry-run"]), join(layout.pyRoot, dir));
+    const r = run(
+      "uv",
+      lockArgs(packages, ["--dry-run"]),
+      join(layout.pyRoot, dir),
+    );
     const out = `${r.stderr}\n${r.stdout}`;
     return {
       dir,
@@ -958,17 +1142,23 @@ export function renderPlan(s: UvStatus, locks: LockPlan[]): string[] {
       `step 1  uv ${t.pinned} -> ${t.latest}: yolo update tools uv --apply (installs, re-pins every target)`,
     );
   else lines.push(`step 1  uv ${t.pinned ?? "?"} is the latest`);
-  lines.push("step 2  uv python upgrade (managed interpreters, newest patch of each minor)");
+  lines.push(
+    "step 2  uv python upgrade (managed interpreters, newest patch of each minor)",
+  );
   for (const l of locks) {
     lines.push(
       `step 3  ${lockLabel(l.dir)}: ${l.error ? `dry run failed: ${l.error}` : `${l.changes.length} change(s) within the specifiers`}`,
     );
     for (const ch of l.changes.slice(0, 60))
-      lines.push(`        ${ch.name} ${ch.from} -> ${ch.to}  [${bumpKind(ch.from, ch.to)}]`);
+      lines.push(
+        `        ${ch.name} ${ch.from} -> ${ch.to}  [${bumpKind(ch.from, ch.to)}]`,
+      );
   }
   const open = s.direct.filter((d) => d.state === "open");
   const majors = open.filter((d) => d.kind === "major");
-  lines.push(`step 4  verify: uv lock --check, ruff, pytest of every member with tests`);
+  lines.push(
+    `step 4  verify: uv lock --check, ruff, pytest of every member with tests`,
+  );
   if (open.length)
     lines.push(
       `decide  ${open.length} direct requirement(s) behind latest and not held (${majors.length} major): read the release notes, edit the specifier, then apply --upgrade-package <name>`,
@@ -1004,7 +1194,9 @@ export function latestSnapshot(c: Ctx): string | undefined {
   const base = join(c.root, SNAPSHOT_DIR);
   if (!existsSync(base)) return undefined;
   const d = readdirSync(base, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && existsSync(join(base, e.name, "root.json")))
+    .filter(
+      (e) => e.isDirectory() && existsSync(join(base, e.name, "root.json")),
+    )
     .map((e) => e.name)
     .toSorted()
     .at(-1);
@@ -1012,9 +1204,15 @@ export function latestSnapshot(c: Ctx): string | undefined {
 }
 
 export function restoreSnapshot(c: Ctx, dir: string): string[] {
-  const meta = JSON.parse(c.read(join(dir, "root.json"))) as { pyRoot: string; locks: string[] };
+  const meta = JSON.parse(c.read(join(dir, "root.json"))) as {
+    pyRoot: string;
+    locks: string[];
+  };
   return meta.locks.map((l) => {
-    copyFileSync(join(c.root, dir, l, "uv.lock"), join(meta.pyRoot, l, "uv.lock"));
+    copyFileSync(
+      join(c.root, dir, l, "uv.lock"),
+      join(meta.pyRoot, l, "uv.lock"),
+    );
     return join(meta.pyRoot, l, "uv.lock");
   });
 }
@@ -1026,9 +1224,14 @@ export type Step = { name: string; ok: boolean; detail?: string };
 /** Workspace members that ship tests: the directory of each `members` entry with a `tests/` folder holding test files. */
 export function testDirs(layout: Layout): string[] {
   const root = layout.projects.includes("pyproject.toml")
-    ? parsePyProject("pyproject.toml", readFileSync(join(layout.pyRoot, "pyproject.toml"), "utf8"))
+    ? parsePyProject(
+        "pyproject.toml",
+        readFileSync(join(layout.pyRoot, "pyproject.toml"), "utf8"),
+      )
     : undefined;
-  const dirs = (root?.members ?? []).map((m) => `${m.replace(/\/$/, "")}/tests`);
+  const dirs = (root?.members ?? []).map(
+    (m) => `${m.replace(/\/$/, "")}/tests`,
+  );
   return dirs.filter(
     (d) =>
       existsSync(join(layout.pyRoot, d)) &&
@@ -1037,7 +1240,8 @@ export function testDirs(layout: Layout): string[] {
 }
 
 // Dernière ligne non vide de la sortie d'une commande.
-const tail = (r: Run) => (r.stdout + r.stderr).trim().split("\n").findLast(Boolean);
+const tail = (r: Run) =>
+  (r.stdout + r.stderr).trim().split("\n").findLast(Boolean);
 
 export function verify(
   c: Ctx,
@@ -1048,7 +1252,9 @@ export function verify(
   const steps: Step[] = [];
   const step = (name: string, ok: boolean, detail?: string) => {
     steps.push({ name, ok, detail });
-    console.log(`${ok ? "ok  " : "FAIL"}   ${name}${detail ? `  ${detail}` : ""}`);
+    console.log(
+      `${ok ? "ok  " : "FAIL"}   ${name}${detail ? `  ${detail}` : ""}`,
+    );
   };
   const pin = checkPins(c).find((r) => r.tool === "uv");
   step(
@@ -1066,7 +1272,11 @@ export function verify(
   );
   for (const l of layout.locks) {
     const r = run("uv", ["lock", "--check"], join(layout.pyRoot, l));
-    step(`uv lock --check ${lockLabel(l)}`, r.status === 0, r.status === 0 ? undefined : tail(r));
+    step(
+      `uv lock --check ${lockLabel(l)}`,
+      r.status === 0,
+      r.status === 0 ? undefined : tail(r),
+    );
   }
 
   const sync = run("uv", syncArgs(), layout.pyRoot);
@@ -1076,11 +1286,19 @@ export function verify(
     sync.status === 0 ? undefined : tail(sync),
   );
   if (sync.status !== 0) return steps;
-  const ruff = run("uv", ["run", "--no-sync", "ruff", "check", "."], layout.pyRoot);
+  const ruff = run(
+    "uv",
+    ["run", "--no-sync", "ruff", "check", "."],
+    layout.pyRoot,
+  );
   step("ruff check .", ruff.status === 0, tail(ruff));
   if (o.skipTests) return steps;
   for (const d of testDirs(layout)) {
-    const r = run("uv", ["run", "--no-sync", "pytest", d, "-p", "no:cacheprovider"], layout.pyRoot);
+    const r = run(
+      "uv",
+      ["run", "--no-sync", "pytest", d, "-p", "no:cacheprovider"],
+      layout.pyRoot,
+    );
     step(`pytest ${d}`, r.status === 0, tail(r));
   }
   return steps;
@@ -1117,7 +1335,9 @@ export async function applyBumps(
 
   if (!args.packages.length) {
     const py = run("uv", ["python", "upgrade"], pyRoot, true);
-    console.log(`python uv python upgrade ${py.status === 0 ? "ok" : "failed (continuing)"}`);
+    console.log(
+      `python uv python upgrade ${py.status === 0 ? "ok" : "failed (continuing)"}`,
+    );
   }
 
   const changes: Change[] = [];
@@ -1131,18 +1351,24 @@ export async function applyBumps(
       );
       return 1;
     }
-    const diff = lockDiff(before, lockMap(readFileSync(join(cwd, "uv.lock"), "utf8"))).map((ch) =>
-      Object.assign(ch, { ecosystem: "uv-lock" }),
-    );
+    const diff = lockDiff(
+      before,
+      lockMap(readFileSync(join(cwd, "uv.lock"), "utf8")),
+    ).map((ch) => Object.assign(ch, { ecosystem: "uv-lock" }));
     console.log(`lock   ${lockLabel(l)}: ${diff.length} package change(s)`);
     for (const ch of diff.slice(0, 80))
-      console.log(`       ${ch.name} ${ch.from} -> ${ch.to}  [${bumpKind(ch.from, ch.to)}]`);
+      console.log(
+        `       ${ch.name} ${ch.from} -> ${ch.to}  [${bumpKind(ch.from, ch.to)}]`,
+      );
     changes.push(...diff);
   }
 
   if (changes.length) {
     const j = c.journal();
-    j.runs.push({ date: new Date().toISOString().slice(0, 10), changes: changes.slice(0, 400) });
+    j.runs.push({
+      date: new Date().toISOString().slice(0, 10),
+      changes: changes.slice(0, 400),
+    });
     c.saveJournal(j);
   }
   const steps = verify(c, layout, { skipTests: args.skipTests, run });
@@ -1160,7 +1386,10 @@ export async function applyBumps(
 export async function runUvWith(c: Ctx, args: UvArgs): Promise<number> {
   switch (args.sub) {
     case "status": {
-      const s = await collectStatus(c, { pyRoot: args.pyRoot, offline: args.offline });
+      const s = await collectStatus(c, {
+        pyRoot: args.pyRoot,
+        offline: args.offline,
+      });
       if (!s) {
         console.error(
           "no Python root found (tools/config/deps/watch.json inventory.pythonRoots, --py-root or APHRODY_PY_ROOT)",
@@ -1169,7 +1398,9 @@ export async function runUvWith(c: Ctx, args: UvArgs): Promise<number> {
       }
       const bad = problems(s);
       console.log(
-        args.json ? JSON.stringify({ ...s, problems: bad }, null, 2) : renderStatus(s).join("\n"),
+        args.json
+          ? JSON.stringify({ ...s, problems: bad }, null, 2)
+          : renderStatus(s).join("\n"),
       );
       for (const p of bad) console.error(`problem ${p}`);
       return bad.length ? 1 : 0;
@@ -1187,7 +1418,11 @@ export async function runUvWith(c: Ctx, args: UvArgs): Promise<number> {
       const locks = planLocks(discover(s.pyRoot), args.packages);
       console.log(
         args.json
-          ? JSON.stringify({ locks, open: s.direct.filter((d) => d.state === "open") }, null, 2)
+          ? JSON.stringify(
+              { locks, open: s.direct.filter((d) => d.state === "open") },
+              null,
+              2,
+            )
           : renderPlan(s, locks).join("\n"),
       );
       return 0;
@@ -1200,7 +1435,11 @@ export async function runUvWith(c: Ctx, args: UvArgs): Promise<number> {
         console.error("no Python root found");
         return 1;
       }
-      return verify(c, discover(pyRoot), { skipTests: args.skipTests }).every((x) => x.ok) ? 0 : 1;
+      return verify(c, discover(pyRoot), { skipTests: args.skipTests }).every(
+        (x) => x.ok,
+      )
+        ? 0
+        : 1;
     }
     case "rollback": {
       const dir = latestSnapshot(c);
@@ -1215,7 +1454,9 @@ export async function runUvWith(c: Ctx, args: UvArgs): Promise<number> {
       return 0;
     }
     default:
-      console.error(`unknown subcommand ${args.sub} (status|plan|apply|verify|rollback)`);
+      console.error(
+        `unknown subcommand ${args.sub} (status|plan|apply|verify|rollback)`,
+      );
       return 2;
   }
 }

@@ -32,7 +32,11 @@ process.exit(result.exitCode ?? 1);
 `;
 
 /** Rebase the relative crate path `generateProject` wrote for the scratch directory onto the target directory. */
-function rebaseCrate(cargo: string, scratchTauri: string, finalTauri: string | undefined): string {
+function rebaseCrate(
+  cargo: string,
+  scratchTauri: string,
+  finalTauri: string | undefined,
+): string {
   return cargo.replace(
     /^(aphrody-tauri-wrap = \{ path = ")([^"]+)(")/m,
     (_, head: string, path: string, tail: string) => {
@@ -45,7 +49,9 @@ function rebaseCrate(cargo: string, scratchTauri: string, finalTauri: string | u
 
 async function generateTauri(c: TargetContext): Promise<TargetFile[]> {
   if (!c.appDir)
-    throw new Error("m3-bun: the tauri target reads the app directory (contextFor sets appDir)");
+    throw new Error(
+      "m3-bun: the tauri target reads the app directory (contextFor sets appDir)",
+    );
   let w2t: typeof import("@aphrody/web-to-tauri");
   let names: typeof import("@aphrody/scaffold/names");
   try {
@@ -70,21 +76,28 @@ async function generateTauri(c: TargetContext): Promise<TargetFile[]> {
       port: c.port,
     },
   );
-  if (plan.config.sidecar) plan.config.sidecar = { ...plan.config.sidecar, readyPath: "/healthz" };
+  if (plan.config.sidecar)
+    plan.config.sidecar = { ...plan.config.sidecar, readyPath: "/healthz" };
 
   const scratch = await mkdtemp(join(tmpdir(), "m3-bun-tauri-"));
   try {
     const offline: typeof fetch = Object.assign(
-      () => Promise.reject(new Error("m3-bun: the tauri target does not fetch")),
+      () =>
+        Promise.reject(new Error("m3-bun: the tauri target does not fetch")),
       { preconnect: () => {} },
     );
-    const result = await w2t.generateProject(plan, scratch, { copyLock: false, fetch: offline });
+    const result = await w2t.generateProject(plan, scratch, {
+      copyLock: false,
+      fetch: offline,
+    });
     const files: TargetFile[] = [];
     for (const file of result.files) {
       const path = relative(scratch, file).replaceAll("\\", "/");
       const blob = Bun.file(file);
       // oxlint-disable-next-line no-await-in-loop -- Read back a bounded set of generated files in order.
-      let content: string | Uint8Array = BINARY.test(path) ? await blob.bytes() : await blob.text();
+      let content: string | Uint8Array = BINARY.test(path)
+        ? await blob.bytes()
+        : await blob.text();
       if (path === "src-tauri/Cargo.toml")
         content = rebaseCrate(
           content as string,

@@ -35,7 +35,10 @@ export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
         aria-label={isPlaying ? "Pause timeline" : "Play timeline"}
         className="flex h-7 w-7 items-center justify-center rounded-[3px] text-base-fg/80 hover:bg-white/10"
       >
-        <DynamicIcon icon={isPlaying ? PauseIcon : PlayIcon} className="h-3.5 w-3.5" />
+        <DynamicIcon
+          icon={isPlaying ? PauseIcon : PlayIcon}
+          className="h-3.5 w-3.5"
+        />
       </button>
       <span className="w-9 shrink-0 font-mono tabular-nums text-xs text-base-fg/70">
         {formatTimecode(playhead)}
@@ -68,7 +71,7 @@ export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
           onClick={() => setExpanded(true)}
           className="flex h-7 w-7 items-center justify-center rounded-[3px] text-base-fg/60 hover:bg-white/10"
         >
-          <ChevronUpIcon  className="h-3 w-3" />
+          <ChevronUpIcon className="h-3 w-3" />
         </button>
       )}
     </div>

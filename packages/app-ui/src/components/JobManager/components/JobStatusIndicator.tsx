@@ -37,7 +37,8 @@ function getJobPhases(jobName: string) {
 function getJobIcon(jobName: string): string {
   const name = jobName.toLowerCase();
   if (name === "ocr" || name === "aphrody_ocr") return "document_scanner";
-  if (name === "transcription" || name === "speech_to_text") return "graphic_eq";
+  if (name === "transcription" || name === "speech_to_text")
+    return "graphic_eq";
   if (name === "rag_index" || name === "rag") return "hub";
   if (name === "model_download" || name === "model_pull") return "download";
   if (name === "crawler" || name === "web_crawl") return "language";
@@ -55,7 +56,7 @@ export function JobStatusIndicator({ job }: JobStatusIndicatorProps) {
 
   // If job has phases and we know the current phase, show carousel
   if (phases && currentPhase) {
-    const currentIndex = phases.findIndex(p => p.name === currentPhase);
+    const currentIndex = phases.findIndex((p) => p.name === currentPhase);
 
     // Show 3 icons: previous, current, next
     const PrevIcon = phases[currentIndex - 1]?.icon;
@@ -72,21 +73,37 @@ export function JobStatusIndicator({ job }: JobStatusIndicatorProps) {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -20, opacity: 0 }}
-              transition={{ duration: m3Durations.medium2, ease: m3Easings.emphasized }}
+              transition={{
+                duration: m3Durations.medium2,
+                ease: m3Easings.emphasized,
+              }}
             >
               {/* Previous phase (dimmed) */}
               {PrevIcon && (
-                <Icon name={PrevIcon} size={12} className="text-outline opacity-38" />
+                <Icon
+                  name={PrevIcon}
+                  size={12}
+                  className="text-outline opacity-38"
+                />
               )}
 
               {/* Current phase (highlighted) */}
               {CurrentIcon && (
-                <Icon name={CurrentIcon} size={16} filled className="text-primary" />
+                <Icon
+                  name={CurrentIcon}
+                  size={16}
+                  filled
+                  className="text-primary"
+                />
               )}
 
               {/* Next phase (dimmed) */}
               {NextIcon && (
-                <Icon name={NextIcon} size={12} className="text-outline opacity-38" />
+                <Icon
+                  name={NextIcon}
+                  size={12}
+                  className="text-outline opacity-38"
+                />
               )}
             </motion.div>
           </AnimatePresence>

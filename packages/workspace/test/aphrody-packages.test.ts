@@ -26,22 +26,34 @@ test("reserved registry timestamps do not imply approval or allow dependent publ
   const server = Bun.serve({
     port: 0,
     hostname: "127.0.0.1",
-    fetch: () => Response.json({ versions: {}, time: { "1.0.0": "2026-10-10T00:00:00Z" } }),
+    fetch: () =>
+      Response.json({
+        versions: {},
+        time: { "1.0.0": "2026-10-10T00:00:00Z" },
+      }),
   });
   try {
-    await writeFile(join(fixture, "package.json"), JSON.stringify({ workspaces: ["packages/*"] }));
+    await writeFile(
+      join(fixture, "package.json"),
+      JSON.stringify({ workspaces: ["packages/*"] }),
+    );
     await Promise.all(
       ["base", "consumer"].map(async (name) => {
         const directory = join(fixture, "packages", name);
         await mkdir(directory, { recursive: true });
-        await writeFile(join(directory, "index.js"), "export const ok = true;\n");
+        await writeFile(
+          join(directory, "index.js"),
+          "export const ok = true;\n",
+        );
         await writeFile(
           join(directory, "package.json"),
           JSON.stringify({
             name: `@aphrody/${name}`,
             version: "1.0.0",
             exports: "./index.js",
-            ...(name === "consumer" ? { dependencies: { "@aphrody/base": "1.0.0" } } : {}),
+            ...(name === "consumer"
+              ? { dependencies: { "@aphrody/base": "1.0.0" } }
+              : {}),
           }),
         );
       }),
@@ -50,10 +62,17 @@ test("reserved registry timestamps do not imply approval or allow dependent publ
       ["init", "--quiet"],
       ["add", "package.json", "packages"],
     ]) {
-      const initialized = Bun.spawnSync(["git", ...args], { cwd: fixture, windowsHide: true });
-      if (initialized.exitCode !== 0) throw new Error("registry fixture Git initialization failed");
+      const initialized = Bun.spawnSync(["git", ...args], {
+        cwd: fixture,
+        windowsHide: true,
+      });
+      if (initialized.exitCode !== 0)
+        throw new Error("registry fixture Git initialization failed");
     }
-    const results = await publishAphrodyPackages({ root: fixture, registry: server.url.origin });
+    const results = await publishAphrodyPackages({
+      root: fixture,
+      registry: server.url.origin,
+    });
     expect(results.map(({ name, status }) => ({ name, status }))).toEqual([
       { name: "@aphrody/base", status: "unverified" },
       { name: "@aphrody/consumer", status: "blocked" },
@@ -80,7 +99,9 @@ test("export targets cover every condition, main and module, but not patterns", 
 });
 
 test("the closure packs the runtime SDK as a workspace member and leaves sibling-checkout members external", async () => {
-  const { members, external } = await aphrodyClosure(root, ["@aphrody/yolo-core"]);
+  const { members, external } = await aphrodyClosure(root, [
+    "@aphrody/yolo-core",
+  ]);
   expect(members.map((member) => member.name)).toEqual([
     "@aphrody/runtime-sdk",
     "@aphrody/yolo-core",
@@ -100,13 +121,17 @@ test("members follow the root workspaces globs beyond packages/*/*", async () =>
     members: [],
     external: ["@aphrody/canvas"],
   });
-  expect(directories.get("@aphrody/api")).toBe(join(root, "crates/tauri/aphrody-tauri-api"));
+  expect(directories.get("@aphrody/api")).toBe(
+    join(root, "crates/tauri/aphrody-tauri-api"),
+  );
 });
 
 test("archive names are content addressed and pins detect missing or changed archives", async () => {
   const bytes = new TextEncoder().encode("archive");
   const sha256 = new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
-  expect(archiveName("@aphrody/paths", sha256)).toBe(`aphrody-paths-${sha256.slice(0, 16)}.tgz`);
+  expect(archiveName("@aphrody/paths", sha256)).toBe(
+    `aphrody-paths-${sha256.slice(0, 16)}.tgz`,
+  );
   const directory = await mkdtemp(join(tmpdir(), "aphrody-packages-test-"));
   try {
     const pin: AphrodyPackagesManifest = {
@@ -129,14 +154,26 @@ test("archive names are content addressed and pins detect missing or changed arc
 });
 
 const read = (archive: Uint8Array) =>
-  JSON.parse(new TextDecoder().decode(readTar(Bun.gunzipSync(new Uint8Array(archive)))[0]!.data));
+  JSON.parse(
+    new TextDecoder().decode(
+      readTar(Bun.gunzipSync(new Uint8Array(archive)))[0]!.data,
+    ),
+  );
 
 test("portable archives replace producer-relative file: specs with the pinned version", () => {
   const encoder = new TextEncoder();
   const manifest = (dependencies: Record<string, string>) => {
-    const data = encoder.encode(JSON.stringify({ name: "@aphrody/a", dependencies }));
+    const data = encoder.encode(
+      JSON.stringify({ name: "@aphrody/a", dependencies }),
+    );
     return [
-      { name: "package/package.json", type: "file" as const, mode: 0o644, size: data.length, data },
+      {
+        name: "package/package.json",
+        type: "file" as const,
+        mode: 0o644,
+        size: data.length,
+        data,
+      },
     ];
   };
   const pinned = new Map([["@aphrody/runtime-sdk", "0.1.0"]]);
@@ -149,9 +186,9 @@ test("portable archives replace producer-relative file: specs with the pinned ve
       ),
     ).dependencies,
   ).toEqual({ "@aphrody/runtime-sdk": "0.1.0", zod: "^4" });
-  expect(() => portableArchive(manifest({ other: "file:x.tgz" }), pinned, "@aphrody/a")).toThrow(
-    "unpinned",
-  );
+  expect(() =>
+    portableArchive(manifest({ other: "file:x.tgz" }), pinned, "@aphrody/a"),
+  ).toThrow("unpinned");
 });
 
 const sourceEntry = (text: string) => {
@@ -166,11 +203,16 @@ const sourceEntry = (text: string) => {
 };
 
 test("JSON imported from outside the package is embedded and its specifier rewritten", async () => {
-  const repository = await mkdtemp(join(tmpdir(), "aphrody-packages-external-"));
+  const repository = await mkdtemp(
+    join(tmpdir(), "aphrody-packages-external-"),
+  );
   try {
     const packageDirectory = join(repository, "packages/web/x");
     await mkdir(join(repository, "crates/web/x/data"), { recursive: true });
-    await writeFile(join(repository, "crates/web/x/data/catalog.json"), '{"operations":{}}');
+    await writeFile(
+      join(repository, "crates/web/x/data/catalog.json"),
+      '{"operations":{}}',
+    );
     const entries = await embedExternalImports(
       [
         sourceEntry(
@@ -208,7 +250,9 @@ const entry = (name: string) => ({
 });
 
 test("private or traversing entries are refused", () => {
-  expect(() => assertPublicEntries([entry("package/src/index.ts")], "@aphrody/a")).not.toThrow();
+  expect(() =>
+    assertPublicEntries([entry("package/src/index.ts")], "@aphrody/a"),
+  ).not.toThrow();
   for (const name of [
     "package/.env",
     "package/.env.local",
@@ -218,7 +262,9 @@ test("private or traversing entries are refused", () => {
     "other/x.ts",
     "package/../x",
   ])
-    expect(() => assertPublicEntries([entry(name)], "@aphrody/a")).toThrow("private or unsafe");
+    expect(() => assertPublicEntries([entry(name)], "@aphrody/a")).toThrow(
+      "private or unsafe",
+    );
 });
 
 const member = (name: string, text: string) => {
@@ -227,7 +273,8 @@ const member = (name: string, text: string) => {
 };
 
 test("publication audit refuses unshipped exports, workspace specs, credentials and host paths", () => {
-  const manifest = (value: object) => member("package/package.json", JSON.stringify(value));
+  const manifest = (value: object) =>
+    member("package/package.json", JSON.stringify(value));
   expect(
     auditArchive(
       [
@@ -249,13 +296,24 @@ test("publication audit refuses unshipped exports, workspace specs, credentials 
     ],
     "@aphrody/a",
   );
-  expect(problems.join("\n")).toContain("exports not shipped: guest-js/index.ts");
-  expect(problems.join("\n")).toContain("unpublishable spec @aphrody/b@workspace:*");
-  expect(problems.join("\n")).toContain("credential-like text in package/dist/a.js");
+  expect(problems.join("\n")).toContain(
+    "exports not shipped: guest-js/index.ts",
+  );
+  expect(problems.join("\n")).toContain(
+    "unpublishable spec @aphrody/b@workspace:*",
+  );
+  expect(problems.join("\n")).toContain(
+    "credential-like text in package/dist/a.js",
+  );
   expect(problems.join("\n")).toContain("host path in package/dist/b.js");
 });
 
 test("publication order puts @aphrody runtime dependencies first", async () => {
-  const order = await publishOrder(root, ["@aphrody/plugin-opener", "@aphrody/api"]);
-  expect(order.indexOf("@aphrody/api")).toBeLessThan(order.indexOf("@aphrody/plugin-opener"));
+  const order = await publishOrder(root, [
+    "@aphrody/plugin-opener",
+    "@aphrody/api",
+  ]);
+  expect(order.indexOf("@aphrody/api")).toBeLessThan(
+    order.indexOf("@aphrody/plugin-opener"),
+  );
 });

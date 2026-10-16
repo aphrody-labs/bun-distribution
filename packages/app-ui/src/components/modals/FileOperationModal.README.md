@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # File operation dialog
 
 `useFileOperationDialog` is an internal app-ui hook. It opens the dialog with a copy or move

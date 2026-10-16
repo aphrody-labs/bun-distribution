@@ -19,7 +19,14 @@ import {
   WEIGHTS,
 } from "./brand-tokens";
 
-export { BRAND_SEED, PET_ACCENTS, READING_COLUMN, SHAPE, TITLE_GRADIENT_STOPS, WEIGHTS };
+export {
+  BRAND_SEED,
+  PET_ACCENTS,
+  READING_COLUMN,
+  SHAPE,
+  TITLE_GRADIENT_STOPS,
+  WEIGHTS,
+};
 
 /** M3 spring names carried by @aphrody/m3-tokens/m3-tokens.css. */
 export const SPRING_NAMES = [
@@ -38,8 +45,13 @@ export function springsFromTokensCss(css: string): Record<SpringName, Spring> {
   const out = {} as Record<SpringName, Spring>;
   for (const name of SPRING_NAMES) {
     const read = (prop: string): number => {
-      const m = css.match(new RegExp(`--md-sys-motion-spring-${name}-${prop}:\\s*([0-9.]+)`));
-      if (!m) throw new Error(`m3-tokens.css lacks --md-sys-motion-spring-${name}-${prop}`);
+      const m = css.match(
+        new RegExp(`--md-sys-motion-spring-${name}-${prop}:\\s*([0-9.]+)`),
+      );
+      if (!m)
+        throw new Error(
+          `m3-tokens.css lacks --md-sys-motion-spring-${name}-${prop}`,
+        );
       return Number(m[1]);
     };
     out[name] = { damping: read("damping"), stiffness: read("stiffness") };
@@ -52,7 +64,11 @@ function springAt({ damping: z, stiffness }: Spring, t: number): number {
   const w = Math.sqrt(stiffness);
   if (z >= 1) return 1 - Math.exp(-w * t) * (1 + w * t);
   const wd = w * Math.sqrt(1 - z * z);
-  return 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + ((z * w) / wd) * Math.sin(wd * t));
+  return (
+    1 -
+    Math.exp(-z * w * t) *
+      (Math.cos(wd * t) + ((z * w) / wd) * Math.sin(wd * t))
+  );
 }
 
 /** Settle time (ms) where the envelope falls under 0.1 % of the travel. */
@@ -63,7 +79,8 @@ export function springDurationMs(s: Spring): number {
     while (Math.exp(-w * t) * (1 + w * t) > 0.001) t += 0.001;
     return Math.round(t * 1000);
   }
-  const t = Math.log(1000 / Math.sqrt(1 - s.damping * s.damping)) / (s.damping * w);
+  const t =
+    Math.log(1000 / Math.sqrt(1 - s.damping * s.damping)) / (s.damping * w);
   return Math.round(t * 1000);
 }
 
@@ -92,8 +109,12 @@ function brandTokens(springs: Record<SpringName, Spring>): string {
     `  --app-weight-body-strong: ${WEIGHTS.bodyStrong};`,
   ];
   for (const name of SPRING_NAMES) {
-    lines.push(`  --app-motion-spring-${name}: ${springLinear(springs[name])};`);
-    lines.push(`  --app-motion-spring-${name}-duration: ${springDurationMs(springs[name])}ms;`);
+    lines.push(
+      `  --app-motion-spring-${name}: ${springLinear(springs[name])};`,
+    );
+    lines.push(
+      `  --app-motion-spring-${name}-duration: ${springDurationMs(springs[name])}ms;`,
+    );
   }
   return `:root {\n${lines.join("\n")}\n}\n`;
 }
@@ -117,11 +138,21 @@ export function brandCss(tokensCss: string, themes: BrandThemes): string {
   const high = parseNativeThemeExport(themes.highContrastTheme);
   const { seed, contrast_level: contrastLevel } = native;
   const variant = nativeThemeVariant(native);
-  if (high.seed !== seed || high.variant !== native.variant || high.contrast_level !== 1)
-    throw new Error("Native high contrast theme does not match the requested brand theme");
-  const selectors = { lightSelector: ":root.light,\n.light", darkSelector: ":root,\n.dark" };
+  if (
+    high.seed !== seed ||
+    high.variant !== native.variant ||
+    high.contrast_level !== 1
+  )
+    throw new Error(
+      "Native high contrast theme does not match the requested brand theme",
+    );
+  const selectors = {
+    lightSelector: ":root.light,\n.light",
+    darkSelector: ":root,\n.dark",
+  };
   const standardCss = nativeThemeCss(native, selectors);
-  const highCss = contrastLevel === 1 ? undefined : nativeThemeCss(high, selectors);
+  const highCss =
+    contrastLevel === 1 ? undefined : nativeThemeCss(high, selectors);
   const header =
     "/* SPDX-License-Identifier: Apache-2.0 */\n" +
     "/*\n" +

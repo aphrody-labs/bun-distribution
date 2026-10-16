@@ -34,7 +34,8 @@ export interface LayoutStats {
   dropped: number;
 }
 
-export const visibleLength = (text: string): number => text.replaceAll("\n", "").length;
+export const visibleLength = (text: string): number =>
+  text.replaceAll("\n", "").length;
 
 export function cps(cue: Pick<Cue, "start" | "end" | "text">): number {
   const seconds = Math.max(cue.end - cue.start, 1) / 1000;
@@ -46,7 +47,11 @@ const clean = (text: string): string => text.replace(/\s+/g, " ").trim();
 const BREAK_AFTER = /[,;:.!?…—–)]$/;
 
 /** Balanced wrap into at most `maxLines` lines of `maxLine` characters (greedy fallback beyond that). */
-export function wrapLines(input: string, maxLine: number, maxLines = 2): string[] {
+export function wrapLines(
+  input: string,
+  maxLine: number,
+  maxLines = 2,
+): string[] {
   const text = clean(input);
   if (text.length <= maxLine) return [text];
   const words = text.split(" ");
@@ -63,7 +68,11 @@ export function wrapLines(input: string, maxLine: number, maxLines = 2): string[
         bonus;
       if (!best || score < best.score) best = { score, at };
     }
-    if (best) return [words.slice(0, best.at).join(" "), words.slice(best.at).join(" ")];
+    if (best)
+      return [
+        words.slice(0, best.at).join(" "),
+        words.slice(best.at).join(" "),
+      ];
   }
   const out: string[] = [];
   let line = "";
@@ -116,7 +125,11 @@ function pack(parts: string[], limit: number): string[] {
 }
 
 /** Orders cues, trims overlaps and removes empties. Empty cues extend the previous contiguous cue. */
-function sanitize(input: Cue[], options: LayoutOptions, stats: LayoutStats): Cue[] {
+function sanitize(
+  input: Cue[],
+  options: LayoutOptions,
+  stats: LayoutStats,
+): Cue[] {
   const sorted = input
     .map((cue) => ({ ...cue }))
     .toSorted((a, b) => a.start - b.start || a.end - b.end);
@@ -148,7 +161,10 @@ function sanitize(input: Cue[], options: LayoutOptions, stats: LayoutStats): Cue
 }
 
 function neededMs(text: string, options: LayoutOptions): number {
-  return Math.max(options.minDuration, Math.ceil((visibleLength(text) / options.maxCps) * 1000));
+  return Math.max(
+    options.minDuration,
+    Math.ceil((visibleLength(text) / options.maxCps) * 1000),
+  );
 }
 
 function shouldMerge(a: Cue, b: Cue, options: LayoutOptions): boolean {
@@ -160,14 +176,18 @@ function shouldMerge(a: Cue, b: Cue, options: LayoutOptions): boolean {
   const startsLate = a.end - a.start < 900;
   // Only merge when `a` is starved of time and the merged cue is readable.
   const starved = a.end - a.start < neededMs(a.text, options);
-  const mergedOk = b.end - a.start >= (visibleLength(text) / options.maxCps) * 1000;
+  const mergedOk =
+    b.end - a.start >= (visibleLength(text) / options.maxCps) * 1000;
   return (starved || startsLate) && mergedOk;
 }
 
 /** True when the text wraps into at most maxLines lines of maxLine characters. */
 function fits(text: string, options: LayoutOptions): boolean {
   const lines = wrapLines(text, options.maxLine, options.maxLines);
-  return lines.length <= options.maxLines && lines.every((line) => line.length <= options.maxLine);
+  return (
+    lines.length <= options.maxLines &&
+    lines.every((line) => line.length <= options.maxLine)
+  );
 }
 
 /** Splits a piece in two at the word boundary nearest to its middle until every part fits. */
@@ -198,24 +218,33 @@ function breakLongWords(text: string, max: number): string {
   return text
     .split(" ")
     .flatMap((word) =>
-      word.length > max ? (word.match(new RegExp(`.{1,${max}}`, "gu")) ?? [word]) : [word],
+      word.length > max
+        ? (word.match(new RegExp(`.{1,${max}}`, "gu")) ?? [word])
+        : [word],
     )
     .join(" ");
 }
 
 function splitCue(cue: Cue, options: LayoutOptions): Cue[] {
   const limit = options.maxLine * options.maxLines;
-  const pieces = splitText(breakLongWords(cue.text, options.maxLine), limit).flatMap((piece) =>
-    ensureFit(piece, options),
-  );
+  const pieces = splitText(
+    breakLongWords(cue.text, options.maxLine),
+    limit,
+  ).flatMap((piece) => ensureFit(piece, options));
   if (pieces.length <= 1) return [cue];
   const total = pieces.reduce((sum, piece) => sum + piece.length, 0);
   const span = cue.end - cue.start;
   let cursor = cue.start;
   return pieces.map((piece, index) => {
     const last = index === pieces.length - 1;
-    const end = last ? cue.end : cursor + Math.round((span * piece.length) / total);
-    const part: Cue = Object.assign({}, cue, { text: piece, start: cursor, end });
+    const end = last
+      ? cue.end
+      : cursor + Math.round((span * piece.length) / total);
+    const part: Cue = Object.assign({}, cue, {
+      text: piece,
+      start: cursor,
+      end,
+    });
     if (index > 0) delete part.orig;
     cursor = end;
     return part;
@@ -228,7 +257,13 @@ export function layoutCues(
   partial: Partial<LayoutOptions> = {},
 ): { cues: Cue[]; stats: LayoutStats } {
   const options = { ...DEFAULT_LAYOUT, ...partial };
-  const stats: LayoutStats = { merged: 0, split: 0, extended: 0, overCps: [], dropped: 0 };
+  const stats: LayoutStats = {
+    merged: 0,
+    split: 0,
+    extended: 0,
+    overCps: [],
+    dropped: 0,
+  };
   const base = sanitize(input, options, stats);
 
   // 1. merge starved fragments
@@ -274,9 +309,12 @@ export function layoutCues(
 
   // 4. wrap, renumber, report what could not be fixed
   const out = split.map((cue, index) => {
-    const wrapped = wrapLines(cue.text, options.maxLine, options.maxLines).join("\n");
+    const wrapped = wrapLines(cue.text, options.maxLine, options.maxLines).join(
+      "\n",
+    );
     return Object.assign({}, cue, { id: index + 1, text: wrapped });
   });
-  for (const cue of out) if (cps(cue) > options.maxCps + 0.01) stats.overCps.push(cue.id);
+  for (const cue of out)
+    if (cps(cue) > options.maxCps + 0.01) stats.overCps.push(cue.id);
   return { cues: out, stats };
 }

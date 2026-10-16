@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0 AND MIT
 // Derived from SpaceUI (packages/aphrody-spaceui/packages/forms/src/InputField.tsx), MIT, rebuilt on Material Design 3.
 import { Input } from "@aphrody/m3-primitives";
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "./Form";
+import {
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "./Form";
 
 export interface InputFieldProps {
   name: string;
@@ -45,7 +52,9 @@ function InputField({
               error={!!fieldState.error}
             />
           </FormControl>
-          {description && <FormDescription className="px-4">{description}</FormDescription>}
+          {description && (
+            <FormDescription className="px-4">{description}</FormDescription>
+          )}
           <FormMessage className="px-4" />
         </FormItem>
       )}

@@ -27,4 +27,5 @@ export function nativeMediaCacheRule(ownedHostExpression: string) {
   };
 }
 
-if (import.meta.main) console.log(JSON.stringify(nativeMediaCacheRule(Bun.argv[2] ?? "")));
+if (import.meta.main)
+  console.log(JSON.stringify(nativeMediaCacheRule(Bun.argv[2] ?? "")));

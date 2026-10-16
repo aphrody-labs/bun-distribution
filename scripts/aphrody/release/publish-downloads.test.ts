@@ -44,7 +44,13 @@ describe("publish-downloads", () => {
     );
     expect(id).toBe("20261006T010203Z-8f891f0d4f19");
     expect(
-      archiveName("aphrody", "1.0.0", "8f891f0d4f19e12", "x86_64-unknown-linux-gnu", "tar.gz"),
+      archiveName(
+        "aphrody",
+        "1.0.0",
+        "8f891f0d4f19e12",
+        "x86_64-unknown-linux-gnu",
+        "tar.gz",
+      ),
     ).toBe("aphrody-1.0.0-8f891f0d4-x86_64-unknown-linux-gnu.tar.gz");
   });
 
@@ -95,18 +101,30 @@ describe("publish-downloads", () => {
   });
 
   test("the secret scan rejects denied names and token shapes, and accepts plain files", () => {
-    expect(scanName("config/.env.local", cfg.secrets.deniedNames)).toHaveLength(1);
-    expect(scanName("keys/server.pem", cfg.secrets.deniedNames)).toHaveLength(1);
+    expect(scanName("config/.env.local", cfg.secrets.deniedNames)).toHaveLength(
+      1,
+    );
+    expect(scanName("keys/server.pem", cfg.secrets.deniedNames)).toHaveLength(
+      1,
+    );
     expect(scanName("models/a.gguf", cfg.secrets.deniedNames)).toHaveLength(1);
-    expect(scanName("skills/a/SKILL.md", cfg.secrets.deniedNames)).toHaveLength(0);
+    expect(scanName("skills/a/SKILL.md", cfg.secrets.deniedNames)).toHaveLength(
+      0,
+    );
     const token = `ghp_${"a".repeat(36)}`;
     expect(
-      scanBytes("f", new TextEncoder().encode(`x ${token} y`), cfg.secrets.contentPatterns),
+      scanBytes(
+        "f",
+        new TextEncoder().encode(`x ${token} y`),
+        cfg.secrets.contentPatterns,
+      ),
     ).toHaveLength(1);
     expect(
       scanBytes(
         "f",
-        new TextEncoder().encode(`-----BEGIN OPENSSH PRIVATE KEY-----\n${"A".repeat(70)}`),
+        new TextEncoder().encode(
+          `-----BEGIN OPENSSH PRIVATE KEY-----\n${"A".repeat(70)}`,
+        ),
         cfg.secrets.contentPatterns,
       ),
     ).toHaveLength(1);
@@ -143,12 +161,12 @@ describe("publish-downloads", () => {
   });
 
   test("host repair refuses a target outside the current service catalog", () => {
-    expect(() => downloadsHostPlan({ ...cfg, host: { ...cfg.host, target: "dbfr" } })).toThrow(
-      "catalog",
-    );
-    expect(() => downloadsHostPlan({ ...cfg, host: { ...cfg.host, port: 9999 } })).toThrow(
-      "catalog",
-    );
+    expect(() =>
+      downloadsHostPlan({ ...cfg, host: { ...cfg.host, target: "dbfr" } }),
+    ).toThrow("catalog");
+    expect(() =>
+      downloadsHostPlan({ ...cfg, host: { ...cfg.host, port: 9999 } }),
+    ).toThrow("catalog");
   });
 
   test("host plan has no transport mutation and failed preflight prevents upload", async () => {
@@ -164,7 +182,9 @@ describe("publish-downloads", () => {
     };
     await hostCommands(cfg, false, io);
     expect(calls).toEqual([]);
-    await expect(hostCommands(cfg, true, io)).rejects.toThrow("native unit unavailable");
+    await expect(hostCommands(cfg, true, io)).rejects.toThrow(
+      "native unit unavailable",
+    );
     expect(calls).toEqual(["preflight"]);
   });
 
@@ -194,9 +214,9 @@ describe("publish-downloads", () => {
     for (const source of Object.values(cfg.assets))
       expect(existsSync(join(root, source))).toBe(true);
     // The site's « Download Aphrody » button takes the first `desktop` artifact: the one-click installer.
-    expect(cfg.artifacts.filter((a) => a.kind === "desktop").map((a) => a.id)).toEqual([
-      "aphrody-setup",
-    ]);
+    expect(
+      cfg.artifacts.filter((a) => a.kind === "desktop").map((a) => a.id),
+    ).toEqual(["aphrody-setup"]);
     for (const a of cfg.artifacts.filter((x) => x.stage)) {
       expect(existsSync(join(root, a.stage!.script))).toBe(true);
       expect(a.versionFrom?.packageJson).toBeDefined();
@@ -216,18 +236,28 @@ describe("publish-downloads", () => {
       size: 1,
       sha256: "a".repeat(64),
     };
-    expect(stagedFiles(setup, windows, [entry, { ...entry, platform: "linux-x86_64" }])).toEqual([
-      entry,
-    ]);
-    expect(() => stagedFiles(setup, windows, [{ ...entry, name: "omar-kit" }])).toThrow("expected");
-    expect(() => stagedFiles(setup, windows, [{ ...entry, file: "../x.exe" }])).toThrow("invalid");
+    expect(
+      stagedFiles(setup, windows, [
+        entry,
+        { ...entry, platform: "linux-x86_64" },
+      ]),
+    ).toEqual([entry]);
+    expect(() =>
+      stagedFiles(setup, windows, [{ ...entry, name: "omar-kit" }]),
+    ).toThrow("expected");
+    expect(() =>
+      stagedFiles(setup, windows, [{ ...entry, file: "../x.exe" }]),
+    ).toThrow("invalid");
     expect(() => stagedFiles(setup, windows, [])).toThrow("nothing");
   });
 });
 
 function snapshotFixture() {
   // Remote paths are POSIX: on Windows the shell (readlink -f) answers with forward slashes.
-  const work = mkdtempSync(join(tmpdir(), "assets-snapshot-")).replaceAll("\\", "/");
+  const work = mkdtempSync(join(tmpdir(), "assets-snapshot-")).replaceAll(
+    "\\",
+    "/",
+  );
   const host = `${work}/host`;
   const old = join(host, "releases", "old");
   mkdirSync(join(old, "files"), { recursive: true });
@@ -254,14 +284,20 @@ function snapshotFixture() {
     notes: ["original build note"],
   };
   writeFileSync(join(old, "files", artifact.file), payload);
-  writeFileSync(join(old, "files", `${artifact.file}.sha256`), buildSums([artifact]));
+  writeFileSync(
+    join(old, "files", `${artifact.file}.sha256`),
+    buildSums([artifact]),
+  );
   writeFileSync(join(old, "latest.json"), JSON.stringify(manifest));
   writeFileSync(join(old, "SHA256SUMS"), buildSums([artifact]));
   writeFileSync(join(old, "install.sh"), "old installer");
   symlinkSync("releases/old", join(host, "current"));
   writeFileSync(join(work, "installer.sh"), "new installer");
   mkdirSync(join(work, "dist/downloads"), { recursive: true });
-  writeFileSync(join(work, "dist/downloads/last-release.json"), "existing GitHub stage pointer");
+  writeFileSync(
+    join(work, "dist/downloads/last-release.json"),
+    "existing GitHub stage pointer",
+  );
   const config = {
     ...cfg,
     host: { ...cfg.host, root: host, keepReleases: 5 },
@@ -269,7 +305,10 @@ function snapshotFixture() {
     // The staged-kit path stays covered although omar-kit is now fused into aphrody-setup.
     artifacts: cfg.artifacts.map((a) =>
       a.id === "omar-kit"
-        ? { ...a, platforms: a.platforms?.map((p) => ({ ...p, enabled: true })) }
+        ? {
+            ...a,
+            platforms: a.platforms?.map((p) => ({ ...p, enabled: true })),
+          }
         : a,
     ),
   };
@@ -289,24 +328,32 @@ function prebuiltFixture(f: ReturnType<typeof snapshotFixture>) {
   const inputs = ["aphrody-setup", "omar-kit"].map((name) => {
     const directory = join(f.work, `prebuilt-${name}`);
     mkdirSync(directory);
-    const entries = (name === "aphrody-setup" ? ["exe", "tar.gz"] : ["zip", "tar.gz"]).map(
-      (extension) => {
-        const file = `${name}-0.1.0-source-x86_64-pc-windows-msvc.${extension}`;
-        const bytes = new TextEncoder().encode(`${name} qualified ${extension}`);
-        writeFileSync(join(directory, file), bytes);
-        return {
-          name,
-          version: "0.1.0",
-          platform: "windows-x86_64",
-          target: "x86_64-pc-windows-msvc",
-          kind: name === "omar-kit" ? "kit" : extension === "exe" ? "desktop" : "update",
-          file,
-          size: bytes.length,
-          sha256: sha256Bytes(bytes),
-        };
-      },
+    const entries = (
+      name === "aphrody-setup" ? ["exe", "tar.gz"] : ["zip", "tar.gz"]
+    ).map((extension) => {
+      const file = `${name}-0.1.0-source-x86_64-pc-windows-msvc.${extension}`;
+      const bytes = new TextEncoder().encode(`${name} qualified ${extension}`);
+      writeFileSync(join(directory, file), bytes);
+      return {
+        name,
+        version: "0.1.0",
+        platform: "windows-x86_64",
+        target: "x86_64-pc-windows-msvc",
+        kind:
+          name === "omar-kit"
+            ? "kit"
+            : extension === "exe"
+              ? "desktop"
+              : "update",
+        file,
+        size: bytes.length,
+        sha256: sha256Bytes(bytes),
+      };
+    });
+    writeFileSync(
+      join(directory, `${name}.manifest.json`),
+      JSON.stringify(entries),
     );
-    writeFileSync(join(directory, `${name}.manifest.json`), JSON.stringify(entries));
     return { directory, commit: "8".repeat(40), entries };
   });
   return inputs;
@@ -335,7 +382,10 @@ describe("immutable installer snapshots", () => {
           sha256: sha256Bytes(bytes),
         };
         writeFileSync(join(directory, entry.file), bytes);
-        writeFileSync(join(directory, "aphrody-cli-wasm.manifest.json"), JSON.stringify([entry]));
+        writeFileSync(
+          join(directory, "aphrody-cli-wasm.manifest.json"),
+          JSON.stringify([entry]),
+        );
         const published = await publishAssetsSnapshot(f.config, {
           id: "wasm",
           assetCommit: "source",
@@ -348,9 +398,9 @@ describe("immutable installer snapshots", () => {
           ...entry,
           provenance: { revision: "8".repeat(40) },
         });
-        expect(statSync(join(f.host, "releases/wasm/files", f.artifact.file)).ino).toBe(
-          statSync(join(f.old, "files", f.artifact.file)).ino,
-        );
+        expect(
+          statSync(join(f.host, "releases/wasm/files", f.artifact.file)).ino,
+        ).toBe(statSync(join(f.old, "files", f.artifact.file)).ino);
         writeFileSync(
           join(directory, "aphrody-cli-wasm.manifest.json"),
           JSON.stringify([{ ...entry, kind: "desktop" }]),
@@ -364,7 +414,9 @@ describe("immutable installer snapshots", () => {
             staged: [{ directory, commit: "8".repeat(40) }],
           }),
         ).rejects.toThrow("invalid staged entry");
-        expect(realpathSync(join(f.host, "current"))).toBe(join(f.host, "releases/wasm"));
+        expect(realpathSync(join(f.host, "current"))).toBe(
+          join(f.host, "releases/wasm"),
+        );
       } finally {
         rmSync(f.work, { recursive: true, force: true });
       }
@@ -381,7 +433,10 @@ describe("immutable installer snapshots", () => {
           file: `inherited-${index}.tar.gz`,
         }));
         for (const artifact of inherited)
-          writeFileSync(join(f.old, "files", artifact.file), "original binary bytes");
+          writeFileSync(
+            join(f.old, "files", artifact.file),
+            "original binary bytes",
+          );
         writeFileSync(
           join(f.old, "latest.json"),
           JSON.stringify({ ...f.manifest, artifacts: inherited }),
@@ -407,7 +462,9 @@ describe("immutable installer snapshots", () => {
         for (const input of staged) {
           for (const entry of input.entries) {
             expect(
-              published.artifacts.find((artifact) => artifact.file === entry.file),
+              published.artifacts.find(
+                (artifact) => artifact.file === entry.file,
+              ),
             ).toMatchObject({
               name: entry.name,
               sha256: entry.sha256,
@@ -416,8 +473,12 @@ describe("immutable installer snapshots", () => {
             expect(f.uploads).toContain(join(next, "files", entry.file));
           }
         }
-        expect(readFileSync(join(next, "SHA256SUMS"), "utf8").trim().split("\n")).toHaveLength(13);
-        expect(readFileSync(join(next, "SHA256SUMS"), "utf8")).not.toContain("install.sh");
+        expect(
+          readFileSync(join(next, "SHA256SUMS"), "utf8").trim().split("\n"),
+        ).toHaveLength(13);
+        expect(readFileSync(join(next, "SHA256SUMS"), "utf8")).not.toContain(
+          "install.sh",
+        );
         expect(realpathSync(join(f.host, "current"))).toBe(next);
       } finally {
         rmSync(f.work, { recursive: true, force: true });
@@ -436,12 +497,18 @@ describe("immutable installer snapshots", () => {
           platform: "windows-x86_64",
           file: "old-setup.exe",
         };
-        writeFileSync(join(f.old, "files", oldSetup.file), "original binary bytes");
+        writeFileSync(
+          join(f.old, "files", oldSetup.file),
+          "original binary bytes",
+        );
         writeFileSync(
           join(f.old, "latest.json"),
           JSON.stringify({ ...f.manifest, artifacts: [f.artifact, oldSetup] }),
         );
-        writeFileSync(join(f.old, "SHA256SUMS"), buildSums([f.artifact, oldSetup]));
+        writeFileSync(
+          join(f.old, "SHA256SUMS"),
+          buildSums([f.artifact, oldSetup]),
+        );
         const published = await publishAssetsSnapshot(f.config, {
           id: "new",
           assetCommit: "source",
@@ -450,7 +517,11 @@ describe("immutable installer snapshots", () => {
           io: f.io,
         });
         expect(published.artifacts).toHaveLength(5);
-        expect(published.artifacts.some((artifact) => artifact.file === oldSetup.file)).toBe(false);
+        expect(
+          published.artifacts.some(
+            (artifact) => artifact.file === oldSetup.file,
+          ),
+        ).toBe(false);
         expect(existsSync(join(f.old, "files", oldSetup.file))).toBe(true);
         expect(published.artifacts[0]).toMatchObject({
           name: "aphrody",
@@ -464,51 +535,59 @@ describe("immutable installer snapshots", () => {
 
   test("rejects tampered staged bytes, mismatched metadata, unsafe paths and symlinks before publication", async () => {
     await Promise.all(
-      ["payload", "size", "name", "target", "file", "secret", "link", "commit"].map(
-        async (failure) => {
-          const f = snapshotFixture();
-          try {
-            const staged = prebuiltFixture(f);
-            const first = staged[0]!;
-            const entry = first.entries[0]!;
-            if (failure === "payload") writeFileSync(join(first.directory, entry.file), "tampered");
-            if (failure === "size") entry.size += 1;
-            if (failure === "name") entry.name = "unknown";
-            if (failure === "target") entry.target = "aarch64-pc-windows-msvc";
-            if (failure === "file") entry.file = "../escape.exe";
-            if (failure === "secret") {
-              const secret = `ghp_${"a".repeat(36)}`;
-              writeFileSync(join(first.directory, entry.file), secret);
-              entry.size = secret.length;
-              entry.sha256 = sha256Bytes(new TextEncoder().encode(secret));
-            }
-            if (failure === "link") {
-              const payload = join(first.directory, entry.file);
-              rmSync(payload);
-              symlinkSync(join(f.old, "files", f.artifact.file), payload);
-            }
-            if (failure === "commit") first.commit = "not-a-source-commit";
-            writeFileSync(
-              join(first.directory, "aphrody-setup.manifest.json"),
-              JSON.stringify(first.entries),
-            );
-            await expect(
-              publishAssetsSnapshot(f.config, {
-                id: "new",
-                assetCommit: "source",
-                sourceRoot: f.work,
-                staged,
-                io: f.io,
-              }),
-            ).rejects.toThrow();
-            expect(realpathSync(join(f.host, "current"))).toBe(f.old);
-            expect(existsSync(join(f.host, "releases", "new"))).toBe(false);
-            expect(f.uploads).toHaveLength(0);
-          } finally {
-            rmSync(f.work, { recursive: true, force: true });
+      [
+        "payload",
+        "size",
+        "name",
+        "target",
+        "file",
+        "secret",
+        "link",
+        "commit",
+      ].map(async (failure) => {
+        const f = snapshotFixture();
+        try {
+          const staged = prebuiltFixture(f);
+          const first = staged[0]!;
+          const entry = first.entries[0]!;
+          if (failure === "payload")
+            writeFileSync(join(first.directory, entry.file), "tampered");
+          if (failure === "size") entry.size += 1;
+          if (failure === "name") entry.name = "unknown";
+          if (failure === "target") entry.target = "aarch64-pc-windows-msvc";
+          if (failure === "file") entry.file = "../escape.exe";
+          if (failure === "secret") {
+            const secret = `ghp_${"a".repeat(36)}`;
+            writeFileSync(join(first.directory, entry.file), secret);
+            entry.size = secret.length;
+            entry.sha256 = sha256Bytes(new TextEncoder().encode(secret));
           }
-        },
-      ),
+          if (failure === "link") {
+            const payload = join(first.directory, entry.file);
+            rmSync(payload);
+            symlinkSync(join(f.old, "files", f.artifact.file), payload);
+          }
+          if (failure === "commit") first.commit = "not-a-source-commit";
+          writeFileSync(
+            join(first.directory, "aphrody-setup.manifest.json"),
+            JSON.stringify(first.entries),
+          );
+          await expect(
+            publishAssetsSnapshot(f.config, {
+              id: "new",
+              assetCommit: "source",
+              sourceRoot: f.work,
+              staged,
+              io: f.io,
+            }),
+          ).rejects.toThrow();
+          expect(realpathSync(join(f.host, "current"))).toBe(f.old);
+          expect(existsSync(join(f.host, "releases", "new"))).toBe(false);
+          expect(f.uploads).toHaveLength(0);
+        } finally {
+          rmSync(f.work, { recursive: true, force: true });
+        }
+      }),
     );
   });
 
@@ -527,7 +606,9 @@ describe("immutable installer snapshots", () => {
           io: f.io,
         }),
       ).rejects.toThrow();
-      expect(readFileSync(join(existing, "sentinel"), "utf8")).toBe("immutable");
+      expect(readFileSync(join(existing, "sentinel"), "utf8")).toBe(
+        "immutable",
+      );
       expect(realpathSync(join(f.host, "current"))).toBe(f.old);
     } finally {
       rmSync(f.work, { recursive: true, force: true });
@@ -550,9 +631,15 @@ describe("immutable installer snapshots", () => {
         const next = join(f.host, "releases", "new");
         expect(realpathSync(join(f.host, "current"))).toBe(next);
         expect(readFileSync(join(f.old, "latest.json"), "utf8")).toBe(previous);
-        expect(readFileSync(join(f.old, "install.sh"), "utf8")).toBe("old installer");
-        expect(statSync(join(next, "install.sh")).ino).not.toBe(oldInstallerInode);
-        expect(readFileSync(join(next, "install.sh"), "utf8")).toBe("new installer");
+        expect(readFileSync(join(f.old, "install.sh"), "utf8")).toBe(
+          "old installer",
+        );
+        expect(statSync(join(next, "install.sh")).ino).not.toBe(
+          oldInstallerInode,
+        );
+        expect(readFileSync(join(next, "install.sh"), "utf8")).toBe(
+          "new installer",
+        );
         expect(statSync(join(next, "files", f.artifact.file)).ino).toBe(
           statSync(join(f.old, "files", f.artifact.file)).ino,
         );
@@ -569,10 +656,15 @@ describe("immutable installer snapshots", () => {
           url: "https://example.test/releases/new/files/aphrody.tar.gz",
         });
         expect(published.notes).toEqual(f.manifest.notes);
-        expect(readFileSync(join(f.work, "dist/downloads/last-release.json"), "utf8")).toBe(
-          "existing GitHub stage pointer",
-        );
-        expect(JSON.parse(readFileSync(join(next, "latest.json"), "utf8"))).toEqual(published);
+        expect(
+          readFileSync(
+            join(f.work, "dist/downloads/last-release.json"),
+            "utf8",
+          ),
+        ).toBe("existing GitHub stage pointer");
+        expect(
+          JSON.parse(readFileSync(join(next, "latest.json"), "utf8")),
+        ).toEqual(published);
         expect(readFileSync(join(next, "SHA256SUMS"), "utf8")).toBe(
           readFileSync(join(f.old, "SHA256SUMS"), "utf8"),
         );
@@ -595,9 +687,9 @@ describe("immutable installer snapshots", () => {
           cfg.secrets,
         ),
       ).toThrow("secret scan");
-      expect(() => planAssetsSnapshot(f.manifest, sums, "old", "source", cfg.secrets)).toThrow(
-        "invalid",
-      );
+      expect(() =>
+        planAssetsSnapshot(f.manifest, sums, "old", "source", cfg.secrets),
+      ).toThrow("invalid");
       expect(() =>
         planAssetsSnapshot(
           f.manifest,
@@ -626,7 +718,13 @@ describe("immutable installer snapshots", () => {
         ),
       ).toThrow("unlisted");
       expect(() =>
-        planAssetsSnapshot(f.manifest, sums + sums, "new", "source", cfg.secrets),
+        planAssetsSnapshot(
+          f.manifest,
+          sums + sums,
+          "new",
+          "source",
+          cfg.secrets,
+        ),
       ).toThrow("duplicate");
     } finally {
       rmSync(f.work, { recursive: true, force: true });
@@ -640,7 +738,8 @@ describe("immutable installer snapshots", () => {
       const io = {
         ...f.io,
         put: async (config: typeof cfg, local: string, dest: string) => {
-          if (dest.endsWith("install.sh")) throw new Error("simulated upload failure");
+          if (dest.endsWith("install.sh"))
+            throw new Error("simulated upload failure");
           await f.io.put(config, local, dest);
         },
       };
@@ -654,7 +753,9 @@ describe("immutable installer snapshots", () => {
       ).rejects.toThrow("simulated");
       expect(realpathSync(join(f.host, "current"))).toBe(f.old);
       expect(readFileSync(join(f.old, "latest.json"), "utf8")).toBe(before);
-      expect(readFileSync(join(f.old, "install.sh"), "utf8")).toBe("old installer");
+      expect(readFileSync(join(f.old, "install.sh"), "utf8")).toBe(
+        "old installer",
+      );
       expect(existsSync(join(f.host, "releases", "new"))).toBe(false);
     } finally {
       rmSync(f.work, { recursive: true, force: true });
@@ -667,8 +768,15 @@ describe("immutable installer snapshots", () => {
         const f = snapshotFixture();
         try {
           if (failure === "secret")
-            writeFileSync(join(f.work, "installer.sh"), `ghp_${"a".repeat(36)}`);
-          else writeFileSync(join(f.old, "files", f.artifact.file), "corrupted payload");
+            writeFileSync(
+              join(f.work, "installer.sh"),
+              `ghp_${"a".repeat(36)}`,
+            );
+          else
+            writeFileSync(
+              join(f.old, "files", f.artifact.file),
+              "corrupted payload",
+            );
           await expect(
             publishAssetsSnapshot(f.config, {
               id: "new",
@@ -678,7 +786,9 @@ describe("immutable installer snapshots", () => {
             }),
           ).rejects.toThrow();
           expect(realpathSync(join(f.host, "current"))).toBe(f.old);
-          expect(readFileSync(join(f.old, "install.sh"), "utf8")).toBe("old installer");
+          expect(readFileSync(join(f.old, "install.sh"), "utf8")).toBe(
+            "old installer",
+          );
           expect(existsSync(join(f.host, "releases", "new"))).toBe(false);
         } finally {
           rmSync(f.work, { recursive: true, force: true });
@@ -712,7 +822,9 @@ describe("immutable installer snapshots", () => {
       ).rejects.toThrow();
       expect(realpathSync(join(f.host, "current"))).toBe(newer);
       expect(existsSync(join(f.host, "releases", "new"))).toBe(false);
-      expect(readFileSync(join(f.old, "install.sh"), "utf8")).toBe("old installer");
+      expect(readFileSync(join(f.old, "install.sh"), "utf8")).toBe(
+        "old installer",
+      );
     } finally {
       rmSync(f.work, { recursive: true, force: true });
     }

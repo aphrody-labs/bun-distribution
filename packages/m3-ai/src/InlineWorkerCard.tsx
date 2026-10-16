@@ -9,7 +9,13 @@ import { ToolCall } from "./ToolCall";
 import { Markdown } from "./Markdown";
 import type { TranscriptStep } from "./types";
 import { pairTranscriptSteps } from "./types";
-import { CircularIndicator, StatusChip, type ChipTone, expandMotion, focusRing } from "./internal";
+import {
+  CircularIndicator,
+  StatusChip,
+  type ChipTone,
+  expandMotion,
+  focusRing,
+} from "./internal";
 
 /** Collapse runs of 3+ spaces to 2, preventing Markdown 4-space code blocks. */
 function stripExcessWhitespace(text: string): string {
@@ -108,7 +114,9 @@ function InlineWorkerCard({
             </div>
             <div className="mt-1 flex items-center gap-2 text-body-small text-on-surface-variant">
               <span>{toolCallCount} tool calls</span>
-              {liveStatus ? <span className="truncate text-outline">{liveStatus}</span> : null}
+              {liveStatus ? (
+                <span className="truncate text-outline">{liveStatus}</span>
+              ) : null}
             </div>
           </div>
 
@@ -150,7 +158,9 @@ function InlineWorkerCard({
                     ),
                   )
                 ) : (
-                  <div className="text-body-small text-on-surface-variant">No tool calls yet.</div>
+                  <div className="text-body-small text-on-surface-variant">
+                    No tool calls yet.
+                  </div>
                 )}
               </div>
             </motion.div>
@@ -161,7 +171,12 @@ function InlineWorkerCard({
       {(onCopyLogs || (onCancel && isRunning)) && (
         <div className="mt-1 flex gap-1 opacity-0 transition-opacity duration-200 ease-standard group-focus-within:opacity-100 group-hover:opacity-100">
           {onCopyLogs && (
-            <Button variant="text" size="xs" onClick={onCopyLogs} title="Copy logs">
+            <Button
+              variant="text"
+              size="xs"
+              onClick={onCopyLogs}
+              title="Copy logs"
+            >
               <Icon name="content_copy" size={18} />
               Copy
             </Button>

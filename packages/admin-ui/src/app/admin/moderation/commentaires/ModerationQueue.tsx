@@ -13,7 +13,11 @@
  */
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { hideCommentAction, pinCommentAction, restoreCommentAction } from "./_actions";
+import {
+  hideCommentAction,
+  pinCommentAction,
+  restoreCommentAction,
+} from "./_actions";
 import { SOCIAL_KIND_LABELS, type SocialKind } from "@/lib/social-shared";
 import { Coeur } from "@/components/icones";
 
@@ -61,7 +65,8 @@ export function ModerationQueue({ rows }: { rows: readonly QueueRow[] }) {
   if (rows.length === 0) {
     return (
       <p className="rounded-lg border border-white/10 bg-white/[0.02] p-6 text-[14px] text-white/50">
-        Aucun commentaire pour l&apos;instant. La file se remplira dès la première discussion.
+        Aucun commentaire pour l&apos;instant. La file se remplira dès la
+        première discussion.
       </p>
     );
   }
@@ -95,7 +100,9 @@ export function ModerationQueue({ rows }: { rows: readonly QueueRow[] }) {
                 agent
               </span>
             )}
-            <time dateTime={row.createdAt}>{dateFormat.format(new Date(row.createdAt))}</time>
+            <time dateTime={row.createdAt}>
+              {dateFormat.format(new Date(row.createdAt))}
+            </time>
             <span className="text-white/30">·</span>
             <span>
               {SOCIAL_KIND_LABELS[row.targetKind]}

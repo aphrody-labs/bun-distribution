@@ -31,9 +31,13 @@ export function cookieLayout(
   env: NodeJS.ProcessEnv = process.env,
 ): CookieLayout {
   const home = options.home ?? env.APHRODY_HOME ?? join(homedir(), ".aphrody");
-  const cookies = resolve(options.dir ?? env.BXC_COOKIES_DIR ?? join(home, "cookies"));
+  const cookies = resolve(
+    options.dir ?? env.BXC_COOKIES_DIR ?? join(home, "cookies"),
+  );
   if (env.BXC_COOKIES_DIR && !same(env.BXC_COOKIES_DIR, cookies))
-    throw new Error("BXC_COOKIES_DIR désigne un autre répertoire ; ambiguïté refusée.");
+    throw new Error(
+      "BXC_COOKIES_DIR désigne un autre répertoire ; ambiguïté refusée.",
+    );
   return { home, cookies };
 }
 
@@ -50,14 +54,21 @@ export async function secureCookieStore(
     chmodSync(layout.cookies, 0o700);
     return null;
   }
-  const { restrictToCurrentUser, setUserEnvironment } = await import("./infra/win32-user.ts");
+  const { restrictToCurrentUser, setUserEnvironment } =
+    await import("./infra/win32-user.ts");
   const sddl = restrictToCurrentUser(layout.cookies, true);
-  if (persist) setUserEnvironment({ APHRODY_HOME: layout.home, BXC_COOKIES_DIR: layout.cookies });
+  if (persist)
+    setUserEnvironment({
+      APHRODY_HOME: layout.home,
+      BXC_COOKIES_DIR: layout.cookies,
+    });
   return sddl;
 }
 
 if (import.meta.main) {
-  const { values } = parseArgs({ options: { home: { type: "string" }, dir: { type: "string" } } });
+  const { values } = parseArgs({
+    options: { home: { type: "string" }, dir: { type: "string" } },
+  });
   try {
     const layout = cookieLayout(values);
     await secureCookieStore(layout);

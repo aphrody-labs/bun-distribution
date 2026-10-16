@@ -80,10 +80,13 @@ beforeAll(async () => {
   let failure = "no CPython interpreter found";
   for (const launcher of launchers) {
     try {
-      const oracle = Bun.spawnSync([...launcher, "-I", "-c", ORACLE, directory], {
-        windowsHide: true,
-        stderr: "pipe",
-      });
+      const oracle = Bun.spawnSync(
+        [...launcher, "-I", "-c", ORACLE, directory],
+        {
+          windowsHide: true,
+          stderr: "pipe",
+        },
+      );
       if (oracle.exitCode === 0) return;
       failure = oracle.stderr.toString();
     } catch (error) {
@@ -97,21 +100,37 @@ afterAll(() => rm(directory, { recursive: true, force: true }));
 test.each(["pax", "gnu", "ustar"])(
   "%s sources canonicalise to the CPython bytes",
   async (label) => {
-    const source = new Uint8Array(await readFile(join(directory, `${label}.tgz`)));
-    const oracle = new Uint8Array(await readFile(join(directory, `${label}.tgz.oracle`)));
+    const source = new Uint8Array(
+      await readFile(join(directory, `${label}.tgz`)),
+    );
+    const oracle = new Uint8Array(
+      await readFile(join(directory, `${label}.tgz.oracle`)),
+    );
     const members = readTar(Bun.gunzipSync(source));
     // After a pax header tarfile keeps the V7 slash-named entry as a regular file.
-    const legacy = members.find((member) => member.name.startsWith("package/legacy-dir"));
-    expect(legacy?.type).toBe(label === "pax" ? "file" : "directory");
-    expect(Buffer.from(gzipCanonical(canonicalTar(members))).equals(Buffer.from(oracle))).toBe(
-      true,
+    const legacy = members.find((member) =>
+      member.name.startsWith("package/legacy-dir"),
     );
+    expect(legacy?.type).toBe(label === "pax" ? "file" : "directory");
+    expect(
+      Buffer.from(gzipCanonical(canonicalTar(members))).equals(
+        Buffer.from(oracle),
+      ),
+    ).toBe(true);
   },
 );
 
 test("links are refused before canonicalisation, duplicates during it", async () => {
-  const linked = readTar(Bun.gunzipSync(await readFile(join(directory, "symlink.tgz"))));
-  expect(() => canonicalTar(linked)).toThrow("Unsupported archive entry type: package/link");
-  const [first] = readTar(Bun.gunzipSync(await readFile(join(directory, "pax.tgz"))));
-  expect(() => canonicalTar([first!, { ...first! }])).toThrow("Duplicate archive entry");
+  const linked = readTar(
+    Bun.gunzipSync(await readFile(join(directory, "symlink.tgz"))),
+  );
+  expect(() => canonicalTar(linked)).toThrow(
+    "Unsupported archive entry type: package/link",
+  );
+  const [first] = readTar(
+    Bun.gunzipSync(await readFile(join(directory, "pax.tgz"))),
+  );
+  expect(() => canonicalTar([first!, { ...first! }])).toThrow(
+    "Duplicate archive entry",
+  );
 });

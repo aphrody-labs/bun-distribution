@@ -28,7 +28,8 @@ import { dirname, isAbsolute, join, resolve } from "node:path";
 /** Pin directory: APHRODY-FORK.md, LICENSE.md and SOURCE.json only. */
 export const BUN_PIN_DIR = "docs/reference/upstream-bun";
 export const FORK_URL = "https://github.com/aphrody-labs/bun.git";
-const FORK_SOURCE = "https://github.com/aphrody-labs/bun (fork of https://github.com/oven-sh/bun)";
+const FORK_SOURCE =
+  "https://github.com/aphrody-labs/bun (fork of https://github.com/oven-sh/bun)";
 const KEEP = new Set(["APHRODY-FORK.md", "LICENSE.md", "SOURCE.json"]);
 /** Repository-root files copied next to the pin (Bun licence, shipped by scripts/release/release.ts). */
 const ROOT_FILES = ["LICENSE.md"];
@@ -40,7 +41,12 @@ export const SPARSE_PATTERNS = [
   "!/docs/logo/",
   "/LICENSE.md",
 ];
-const DEFAULT_PIN = join(import.meta.dir, "../../../docs/aphrody", BUN_PIN_DIR, "SOURCE.json");
+const DEFAULT_PIN = join(
+  import.meta.dir,
+  "../../../docs/aphrody",
+  BUN_PIN_DIR,
+  "SOURCE.json",
+);
 
 type Env = Record<string, string | undefined>;
 
@@ -80,7 +86,9 @@ function git(cwd: string, args: string[]): string {
     stderr: "pipe",
   });
   if (proc.exitCode !== 0)
-    throw new Error(`git ${args.join(" ")} failed: ${proc.stderr.toString().trim()}`);
+    throw new Error(
+      `git ${args.join(" ")} failed: ${proc.stderr.toString().trim()}`,
+    );
   return proc.stdout.toString().trim();
 }
 
@@ -91,8 +99,10 @@ export function localBunCheckout(
   _platform: string = process.platform,
 ): string | undefined {
   if (explicit) return resolve(explicit);
-  if (env.APHRODY_BUN_CHECKOUT?.trim()) return resolve(env.APHRODY_BUN_CHECKOUT.trim());
-  const workspace = env.APHRODY_WORKSPACE_ROOT?.trim() || env.APHRODY_ROOT?.trim();
+  if (env.APHRODY_BUN_CHECKOUT?.trim())
+    return resolve(env.APHRODY_BUN_CHECKOUT.trim());
+  const workspace =
+    env.APHRODY_WORKSPACE_ROOT?.trim() || env.APHRODY_ROOT?.trim();
   if (workspace) {
     const sibling = resolve(workspace, "..", "bun");
     if (existsSync(join(sibling, "docs", "docs.json"))) return sibling;
@@ -105,8 +115,12 @@ export function bunDataDir(
   env: Env = process.env,
   platform: string = process.platform,
 ): string | undefined {
-  if (platform === "win32") return env.APPDATA ? join(env.APPDATA, "aphrody", "bun") : undefined;
-  const xdg = env.XDG_DATA_HOME && isAbsolute(env.XDG_DATA_HOME) ? env.XDG_DATA_HOME : undefined;
+  if (platform === "win32")
+    return env.APPDATA ? join(env.APPDATA, "aphrody", "bun") : undefined;
+  const xdg =
+    env.XDG_DATA_HOME && isAbsolute(env.XDG_DATA_HOME)
+      ? env.XDG_DATA_HOME
+      : undefined;
   const home = env.HOME ?? homedir();
   const data = xdg ?? (home ? join(home, ".local", "share") : undefined);
   return data ? join(data, "aphrody", "bun") : undefined;
@@ -116,19 +130,26 @@ export async function readBunDocsPin(
   pinFile: string = DEFAULT_PIN,
 ): Promise<BunDocsPin | undefined> {
   const file = Bun.file(pinFile);
-  return (await file.exists()) ? ((await file.json()) as BunDocsPin) : undefined;
+  return (await file.exists())
+    ? ((await file.json()) as BunDocsPin)
+    : undefined;
 }
 
 const isDocsSite = (dir: string): boolean => existsSync(join(dir, "docs.json"));
 
 function run(args: string[], cwd?: string): void {
-  const proc = Bun.spawnSync(cwd ? ["git", "-C", cwd, ...args] : ["git", ...args], {
-    windowsHide: true,
-    stdout: "pipe",
-    stderr: "pipe",
-  });
+  const proc = Bun.spawnSync(
+    cwd ? ["git", "-C", cwd, ...args] : ["git", ...args],
+    {
+      windowsHide: true,
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  );
   if (proc.exitCode !== 0)
-    throw new Error(`git ${args.join(" ")} failed: ${proc.stderr.toString().trim()}`);
+    throw new Error(
+      `git ${args.join(" ")} failed: ${proc.stderr.toString().trim()}`,
+    );
 }
 
 /** Partial clone of `docs/` (and `LICENSE.md`) of the fork at `ref`, swapped into `dest` once complete. */
@@ -174,7 +195,8 @@ export async function resolveBunDocs(
   const platform = options.platform ?? process.platform;
   if (env.APHRODY_BUN_DOCS) {
     const dir = resolve(env.APHRODY_BUN_DOCS);
-    if (!existsSync(dir)) throw new Error(`APHRODY_BUN_DOCS=${dir} does not exist`);
+    if (!existsSync(dir))
+      throw new Error(`APHRODY_BUN_DOCS=${dir} does not exist`);
     return { dir, source: "override" };
   }
   const tried: string[] = [];
@@ -275,22 +297,41 @@ export async function runBunUpstreamDocs(args: string[]): Promise<number> {
   }
   try {
     if (!isDocsSite(join(checkout, "docs")))
-      throw new Error(`${checkout}/docs is not the Bun docs site (no docs.json)`);
+      throw new Error(
+        `${checkout}/docs is not the Bun docs site (no docs.json)`,
+      );
     // docs/aphrody holds the fork's work plans, not Bun documentation: their commits must not move the pin.
     const docsPaths = ["--", "docs", ":(exclude)docs/aphrody"];
-    const commit = git(checkout, ["log", "-1", "--format=%H", base, ...docsPaths]);
-    const date = git(checkout, ["log", "-1", "--format=%cs", base, ...docsPaths]);
+    const commit = git(checkout, [
+      "log",
+      "-1",
+      "--format=%H",
+      base,
+      ...docsPaths,
+    ]);
+    const date = git(checkout, [
+      "log",
+      "-1",
+      "--format=%cs",
+      base,
+      ...docsPaths,
+    ]);
     const target = join(repoRoot, BUN_PIN_DIR);
     const files: Record<string, string> = {};
     const contents = new Map<string, Uint8Array>();
     for (const name of ROOT_FILES) {
-      const show = Bun.spawnSync(["git", "-C", checkout, "show", `${base}:${name}`], {
-        windowsHide: true,
-        stdout: "pipe",
-        stderr: "pipe",
-      });
+      const show = Bun.spawnSync(
+        ["git", "-C", checkout, "show", `${base}:${name}`],
+        {
+          windowsHide: true,
+          stdout: "pipe",
+          stderr: "pipe",
+        },
+      );
       if (show.exitCode !== 0)
-        throw new Error(`git show ${base}:${name} failed: ${show.stderr.toString().trim()}`);
+        throw new Error(
+          `git show ${base}:${name} failed: ${show.stderr.toString().trim()}`,
+        );
       files[name] = sha256(show.stdout);
       contents.set(name, show.stdout);
     }
@@ -309,7 +350,8 @@ export async function runBunUpstreamDocs(args: string[]): Promise<number> {
       await Promise.all(
         Object.entries(files).map(async ([rel, hash]) => {
           const path = join(target, rel);
-          const same = existsSync(path) && sha256(await Bun.file(path).bytes()) === hash;
+          const same =
+            existsSync(path) && sha256(await Bun.file(path).bytes()) === hash;
           return same ? undefined : rel;
         }),
       )
@@ -325,7 +367,8 @@ export async function runBunUpstreamDocs(args: string[]): Promise<number> {
     };
     const pinText = `${JSON.stringify(pin, null, 2)}\n`;
     const pinPath = join(target, "SOURCE.json");
-    const pinStale = !existsSync(pinPath) || (await Bun.file(pinPath).text()) !== pinText;
+    const pinStale =
+      !existsSync(pinPath) || (await Bun.file(pinPath).text()) !== pinText;
     const summary = `docs/ of ${checkout} @ ${commit.slice(0, 11)} (${date}, ${base}): ${changed.length} changed, ${stale.length} stale`;
     if (check) {
       const ok = changed.length === 0 && stale.length === 0 && !pinStale;
@@ -333,12 +376,17 @@ export async function runBunUpstreamDocs(args: string[]): Promise<number> {
       return ok ? 0 : 1;
     }
     await Promise.all(
-      changed.map((rel) => Bun.write(join(target, rel), contents.get(rel) ?? new Uint8Array())),
+      changed.map((rel) =>
+        Bun.write(join(target, rel), contents.get(rel) ?? new Uint8Array()),
+      ),
     );
     await Bun.write(pinPath, pinText);
-    await Promise.all(stale.map((rel) => rm(join(target, rel), { force: true })));
+    await Promise.all(
+      stale.map((rel) => rm(join(target, rel), { force: true })),
+    );
     for (const entry of await readdir(target, { withFileTypes: true }))
-      if (entry.isDirectory()) await rm(join(target, entry.name), { recursive: true, force: true });
+      if (entry.isDirectory())
+        await rm(join(target, entry.name), { recursive: true, force: true });
     console.log(`Pinned ${BUN_PIN_DIR}: ${summary}`);
     return 0;
   } finally {
@@ -346,4 +394,5 @@ export async function runBunUpstreamDocs(args: string[]): Promise<number> {
   }
 }
 
-if (import.meta.main) process.exit(await runBunUpstreamDocs(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runBunUpstreamDocs(process.argv.slice(2)));

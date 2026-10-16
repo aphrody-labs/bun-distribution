@@ -232,15 +232,18 @@ class Editor {
     // FK/pose mode draws its own rig overlay for the posed character —
     // suppress our persistent helper for it so bones aren't double-drawn,
     // and restore when pose mode exits.
-    this.poseModeSubscription = this.bus.subscribe(PoseModeChangedEvent, (e) => {
-      if (e.mode === "pose") {
-        this.skeletonHelpers.suppress(
-          this.mouse_controls?.selected?.[0]?.uuid ?? null,
-        );
-      } else {
-        this.skeletonHelpers.suppress(null);
-      }
-    });
+    this.poseModeSubscription = this.bus.subscribe(
+      PoseModeChangedEvent,
+      (e) => {
+        if (e.mode === "pose") {
+          this.skeletonHelpers.suppress(
+            this.mouse_controls?.selected?.[0]?.uuid ?? null,
+          );
+        } else {
+          this.skeletonHelpers.suppress(null);
+        }
+      },
+    );
 
     // PostProcessingPipeline must exist before Scene because Scene's
     // load paths invoke updateSurfaceIdAttributeToMesh as a callback.

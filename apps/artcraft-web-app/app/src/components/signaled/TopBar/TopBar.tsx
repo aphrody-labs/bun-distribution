@@ -1,4 +1,18 @@
-import { CalculatorIcon, CheckIcon, ChevronRightIcon, CircleAlertIcon, CoinsIcon, GemIcon, HouseIcon, ImagesIcon, MinusIcon, PictureInPicture2Icon, SettingsIcon, SquareIcon, XIcon } from "lucide-react";
+import {
+  CalculatorIcon,
+  CheckIcon,
+  ChevronRightIcon,
+  CircleAlertIcon,
+  CoinsIcon,
+  GemIcon,
+  HouseIcon,
+  ImagesIcon,
+  MinusIcon,
+  PictureInPicture2Icon,
+  SettingsIcon,
+  SquareIcon,
+  XIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { signal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -75,12 +89,7 @@ interface Props {
 
 // Settings section type to match the SettingsModal component
 type SettingsSection =
-  | "general"
-  | "accounts"
-  | "alerts"
-  | "about"
-  | "provider_priority"
-  | "billing";
+  "general" | "accounts" | "alerts" | "about" | "provider_priority" | "billing";
 
 const SWITCHER_THROTTLE_TIME = 500; // milliseconds
 const CREDITS_POLL_INTERVAL = 60_000; // milliseconds

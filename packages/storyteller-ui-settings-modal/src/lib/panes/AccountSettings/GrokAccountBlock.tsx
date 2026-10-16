@@ -4,10 +4,15 @@ import { useEffect, useState } from "react";
 import { LoaderCircleIcon } from "lucide-react";
 import { useRefreshAccountStateEvent } from "@storyteller/tauri-events";
 import { RefreshAccountStateEvent } from "@storyteller/tauri-events";
-import { GrokGetCredentialInfo, GrokGetCredentialInfoSuccess } from "@storyteller/tauri-api";
+import {
+  GrokGetCredentialInfo,
+  GrokGetCredentialInfoSuccess,
+} from "@storyteller/tauri-api";
 
 export const GrokAccountBlock = () => {
-  const [grokSession, setGrokSession] = useState<GrokGetCredentialInfoSuccess| undefined>(undefined);
+  const [grokSession, setGrokSession] = useState<
+    GrokGetCredentialInfoSuccess | undefined
+  >(undefined);
   const [isCheckingGrokSession, setIsCheckingGrokSession] = useState(false);
 
   const fetchSession = async () => {
@@ -31,21 +36,21 @@ export const GrokAccountBlock = () => {
     fetchSession();
   });
 
-  const clearState = async() => {
+  const clearState = async () => {
     try {
       await invoke("grok_clear_credentials_command");
     } catch (e) {
       console.error("Error clearing Grok credentials", e);
     }
-  }
+  };
 
-  const openLogin = async() => {
+  const openLogin = async () => {
     try {
       await invoke("grok_open_login_command");
     } catch (e) {
       console.error("Error opening Grok login", e);
     }
-  }
+  };
 
   const handleGrokButton = async () => {
     if (grokSession?.payload?.can_clear_state) {
@@ -56,7 +61,7 @@ export const GrokAccountBlock = () => {
     }
   };
 
-  return(
+  return (
     <div className="flex items-center justify-between gap-3">
       <div className="flex min-w-0 flex-col gap-0.5">
         <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
@@ -71,8 +76,8 @@ export const GrokAccountBlock = () => {
           grokSession?.payload?.can_clear_state && !isCheckingGrokSession
             ? "destructive"
             : grokSession?.payload?.can_clear_state
-            ? "primary"
-            : "secondary"
+              ? "primary"
+              : "secondary"
         }
         className="h-9 shrink-0 px-3"
         onClick={handleGrokButton}
@@ -87,5 +92,5 @@ export const GrokAccountBlock = () => {
         )}
       </Button>
     </div>
-  )
-}
+  );
+};

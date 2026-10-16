@@ -43,7 +43,8 @@ function parseRateLimit(res: Response): RateLimitInfo {
     bucket: res.headers.get("X-RateLimit-Bucket"),
     remaining: numOrNull(res.headers.get("X-RateLimit-Remaining")),
     resetAfter: numOrNull(res.headers.get("X-RateLimit-Reset-After")),
-    scope: (res.headers.get("X-RateLimit-Scope") as RateLimitInfo["scope"]) ?? null,
+    scope:
+      (res.headers.get("X-RateLimit-Scope") as RateLimitInfo["scope"]) ?? null,
   };
 }
 
@@ -61,7 +62,11 @@ export async function discordFetch<T = unknown>(
     method?: string;
     body?: unknown;
     fetch?: typeof fetch;
-    onRateLimit?: (info: { path: string; retryAfter?: number; global?: boolean }) => void;
+    onRateLimit?: (info: {
+      path: string;
+      retryAfter?: number;
+      global?: boolean;
+    }) => void;
   },
 ): Promise<DiscordResponse<T>> {
   if (!path.startsWith("/")) path = "/" + path;
@@ -69,10 +74,12 @@ export async function discordFetch<T = unknown>(
   const headers: Record<string, string> = {};
 
   if (opts.mode === "Bot") {
-    if (!opts.token) throw new DiscordRESTError(500, null, "DISCORD_TOKEN absent");
+    if (!opts.token)
+      throw new DiscordRESTError(500, null, "DISCORD_TOKEN absent");
     headers["Authorization"] = `Bot ${opts.token}`;
   } else {
-    if (!opts.token) throw new DiscordRESTError(401, null, "access_token requis");
+    if (!opts.token)
+      throw new DiscordRESTError(401, null, "access_token requis");
     headers["Authorization"] = `Bearer ${opts.token}`;
   }
   if (opts.body !== undefined) headers["Content-Type"] = "application/json";
@@ -98,8 +105,14 @@ export async function discordFetch<T = unknown>(
     };
     const delay = limited.retry_after;
     const wait =
-      typeof delay === "number" && Number.isFinite(delay) && delay >= 0 ? Math.min(5, delay) : 1;
-    opts.onRateLimit?.({ path, retryAfter: limited.retry_after, global: limited.global });
+      typeof delay === "number" && Number.isFinite(delay) && delay >= 0
+        ? Math.min(5, delay)
+        : 1;
+    opts.onRateLimit?.({
+      path,
+      retryAfter: limited.retry_after,
+      global: limited.global,
+    });
     await new Promise((resolve) => setTimeout(resolve, wait * 1000));
     res = await request();
   }

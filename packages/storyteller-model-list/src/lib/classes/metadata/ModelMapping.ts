@@ -23,7 +23,10 @@ export const effectivePromptMaxLength = (
   modelMaxLength: number | undefined,
   prompt: string,
 ): number | undefined => {
-  if (isSeedanceVideoModelId(modelId) && CHINESE_CHARACTERS_REGEX.test(prompt)) {
+  if (
+    isSeedanceVideoModelId(modelId) &&
+    CHINESE_CHARACTERS_REGEX.test(prompt)
+  ) {
     return Infinity;
   }
   return modelMaxLength;

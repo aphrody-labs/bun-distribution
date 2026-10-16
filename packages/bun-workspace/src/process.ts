@@ -1,5 +1,10 @@
 export type ProcessErrorCode =
-  "INVALID_OPTIONS" | "INTERRUPTED" | "TIMEOUT" | "OUTPUT_LIMIT" | "START_FAILED" | "FAILED";
+  | "INVALID_OPTIONS"
+  | "INTERRUPTED"
+  | "TIMEOUT"
+  | "OUTPUT_LIMIT"
+  | "START_FAILED"
+  | "FAILED";
 
 export class ProcessError extends Error {
   constructor(
@@ -28,7 +33,10 @@ export interface ProcessOptions extends ProcessLimits {
   /** Record the owned child without implementing another process manager. */
   onStart?: (pid: number) => void | Promise<void>;
   /** Receive bounded raw output from captured or discarded streams. */
-  onOutput?: (channel: "stdout" | "stderr", bytes: Uint8Array) => void | Promise<void>;
+  onOutput?: (
+    channel: "stdout" | "stderr",
+    bytes: Uint8Array,
+  ) => void | Promise<void>;
 }
 
 export interface ProcessResult {
@@ -53,7 +61,7 @@ async function reap(child: Bun.Subprocess): Promise<void> {
   try {
     await Promise.race([
       child.exited.catch(() => {}),
-      new Promise<void>(resolve => {
+      new Promise<void>((resolve) => {
         timer = setTimeout(resolve, 5_000);
       }),
     ]);
@@ -66,17 +74,22 @@ async function createJob(): Promise<OwnedJob | undefined> {
   if (process.platform !== "win32") return;
   try {
     const windows = (await import("bun:windows")) as unknown as WindowsJobs;
-    if (windows.isSupported && windows.Job) return new windows.Job({ killOnClose: true });
+    if (windows.isSupported && windows.Job)
+      return new windows.Job({ killOnClose: true });
   } catch {
     // The native host can instead own this process tree through taskkill.
   }
 }
 
 /** One child lifetime owner. Captured and discarded streams share the same output cap. */
-export async function runProcess(argv: string[], cwd: string, options: ProcessOptions): Promise<ProcessResult> {
+export async function runProcess(
+  argv: string[],
+  cwd: string,
+  options: ProcessOptions,
+): Promise<ProcessResult> {
   if (
     !argv.length ||
-    argv.some(arg => typeof arg !== "string" || arg.includes("\0")) ||
+    argv.some((arg) => typeof arg !== "string" || arg.includes("\0")) ||
     !cwd ||
     cwd.includes("\0") ||
     !Number.isSafeInteger(options.timeoutMs) ||
@@ -84,22 +97,38 @@ export async function runProcess(argv: string[], cwd: string, options: ProcessOp
     options.timeoutMs > 43_200_000 ||
     !Number.isSafeInteger(options.maxOutputBytes) ||
     options.maxOutputBytes < 1 ||
-    (options.signal !== undefined && !(options.signal instanceof AbortSignal)) ||
+    (options.signal !== undefined &&
+      !(options.signal instanceof AbortSignal)) ||
     (options.onStart !== undefined && typeof options.onStart !== "function") ||
-    (options.onOutput !== undefined && typeof options.onOutput !== "function") ||
-    (options.forwardSignals !== undefined && typeof options.forwardSignals !== "boolean")
+    (options.onOutput !== undefined &&
+      typeof options.onOutput !== "function") ||
+    (options.forwardSignals !== undefined &&
+      typeof options.forwardSignals !== "boolean")
   ) {
-    throw new ProcessError("INVALID_OPTIONS", "Invalid native process options.");
+    throw new ProcessError(
+      "INVALID_OPTIONS",
+      "Invalid native process options.",
+    );
   }
-  if (options.signal?.aborted) throw new ProcessError("INTERRUPTED", "The native process was interrupted.");
+  if (options.signal?.aborted)
+    throw new ProcessError(
+      "INTERRUPTED",
+      "The native process was interrupted.",
+    );
   let job = await createJob();
   if (options.signal?.aborted) {
     job?.close();
-    throw new ProcessError("INTERRUPTED", "The native process was interrupted.");
+    throw new ProcessError(
+      "INTERRUPTED",
+      "The native process was interrupted.",
+    );
   }
   const taskkill = process.platform === "win32" ? Bun.which("taskkill") : null;
   if (process.platform === "win32" && !job && !taskkill) {
-    throw new ProcessError("START_FAILED", "Native process tree cancellation is unavailable.");
+    throw new ProcessError(
+      "START_FAILED",
+      "Native process tree cancellation is unavailable.",
+    );
   }
   const controller = new AbortController();
   const reads = new AbortController();
@@ -120,7 +149,10 @@ export async function runProcess(argv: string[], cwd: string, options: ProcessOp
     });
   } catch {
     job?.close();
-    throw new ProcessError("START_FAILED", "The native process could not start.");
+    throw new ProcessError(
+      "START_FAILED",
+      "The native process could not start.",
+    );
   }
   if (job) {
     try {
@@ -132,10 +164,17 @@ export async function runProcess(argv: string[], cwd: string, options: ProcessOp
         controller.abort();
         await Promise.allSettled([
           reap(child),
-          child.stdout instanceof ReadableStream ? child.stdout.cancel() : Promise.resolve(),
-          child.stderr instanceof ReadableStream ? child.stderr.cancel() : Promise.resolve(),
+          child.stdout instanceof ReadableStream
+            ? child.stdout.cancel()
+            : Promise.resolve(),
+          child.stderr instanceof ReadableStream
+            ? child.stderr.cancel()
+            : Promise.resolve(),
         ]);
-        throw new ProcessError("START_FAILED", "The native process could not be isolated.");
+        throw new ProcessError(
+          "START_FAILED",
+          "The native process could not be isolated.",
+        );
       }
     }
   }
@@ -156,14 +195,17 @@ export async function runProcess(argv: string[], cwd: string, options: ProcessOp
             /* The owned process group may already be gone. */
           }
         } else if (taskkill && child.exitCode === null) {
-          const killer = Bun.spawn([taskkill, "/PID", String(child.pid), "/T", "/F"], {
-            stdin: "ignore",
-            stdout: "ignore",
-            stderr: "ignore",
-            windowsHide: true,
-            signal: AbortSignal.timeout(5_000),
-            killSignal: "SIGKILL",
-          });
+          const killer = Bun.spawn(
+            [taskkill, "/PID", String(child.pid), "/T", "/F"],
+            {
+              stdin: "ignore",
+              stdout: "ignore",
+              stderr: "ignore",
+              windowsHide: true,
+              signal: AbortSignal.timeout(5_000),
+              killSignal: "SIGKILL",
+            },
+          );
           await killer.exited;
         }
       } catch {
@@ -193,8 +235,12 @@ export async function runProcess(argv: string[], cwd: string, options: ProcessOp
   };
   const sigint = () => interrupt("SIGINT");
   const sigterm = () => interrupt("SIGTERM");
-  const abort = () => fail("INTERRUPTED", "The native process was interrupted.");
-  const timer = setTimeout(() => fail("TIMEOUT", "The native process exceeded its deadline."), options.timeoutMs);
+  const abort = () =>
+    fail("INTERRUPTED", "The native process was interrupted.");
+  const timer = setTimeout(
+    () => fail("TIMEOUT", "The native process exceeded its deadline."),
+    options.timeoutMs,
+  );
   process.on("SIGINT", sigint);
   process.on("SIGTERM", sigterm);
   options.signal?.addEventListener("abort", abort, { once: true });
@@ -230,7 +276,8 @@ export async function runProcess(argv: string[], cwd: string, options: ProcessOp
           fail("OUTPUT_LIMIT", "The native process exceeded its output limit.");
           throw failure;
         }
-        if (options.onOutput) await stage(() => options.onOutput!(channel, chunk.value));
+        if (options.onOutput)
+          await stage(() => options.onOutput!(channel, chunk.value));
         if (retain) {
           chunks.push(chunk.value);
           retainedBytes += chunk.value.byteLength;
@@ -257,7 +304,7 @@ export async function runProcess(argv: string[], cwd: string, options: ProcessOp
   try {
     if (options.onStart) await stage(() => options.onStart!(child.pid));
     const [code, stdout, stderr] = await Promise.all([
-      child.exited.then(code => {
+      child.exited.then((code) => {
         // Close pipes inherited by remaining Windows children after the direct child exits.
         job?.close();
         job = undefined;

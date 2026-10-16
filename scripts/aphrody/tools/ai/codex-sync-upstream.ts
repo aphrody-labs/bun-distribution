@@ -62,7 +62,9 @@ function main() {
     process.exit(1);
   }
 
-  const absorption: CodexAbsorption = JSON.parse(readFileSync(ABSORPTION_JSON, "utf8"));
+  const absorption: CodexAbsorption = JSON.parse(
+    readFileSync(ABSORPTION_JSON, "utf8"),
+  );
   console.log(`Upstream : ${absorption.upstream}`);
   console.log(`Fork     : ${absorption.privateFork}`);
   console.log(`Commit   : ${absorption.upstreamRevision}`);

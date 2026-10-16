@@ -19,7 +19,7 @@ export const ListDropdown = ({ list, onSelect }: ListDropdownProps) => {
         <Listbox.Button className="relative h-10 w-full cursor-pointer rounded-[3px] border border-ui-controls-border bg-ui-controls py-2 pl-3 pr-10 text-left text-base-fg outline-none outline-offset-0 transition-colors duration-150 ease-in-out hover:border-white/40 focus:!outline-none sm:text-sm">
           <span className="block truncate">{Object.keys(selected)[0]}</span>
           <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-            <ChevronDownIcon  aria-hidden="true" />
+            <ChevronDownIcon aria-hidden="true" />
           </span>
         </Listbox.Button>
         <Transition
@@ -46,14 +46,15 @@ export const ListDropdown = ({ list, onSelect }: ListDropdownProps) => {
                 {({ selected }) => (
                   <>
                     <span
-                      className={`block truncate ${selected ? "font-medium" : "font-normal"
-                        }`}
+                      className={`block truncate ${
+                        selected ? "font-medium" : "font-normal"
+                      }`}
                     >
                       {Object.values(item)[0]}
                     </span>
                     {selected ? (
                       <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                        <CheckIcon  aria-hidden="true" />
+                        <CheckIcon aria-hidden="true" />
                       </span>
                     ) : null}
                   </>

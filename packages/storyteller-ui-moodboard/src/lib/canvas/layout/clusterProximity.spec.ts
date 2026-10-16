@@ -1,7 +1,4 @@
-import {
-  clusterByProximity,
-  defaultEpsForNodes,
-} from "./clusterProximity";
+import { clusterByProximity, defaultEpsForNodes } from "./clusterProximity";
 import { MoodboardNode } from "../types";
 
 const node = (id: string, x: number, y: number, size = 50): MoodboardNode => ({
@@ -45,7 +42,10 @@ describe("clusterByProximity", () => {
   });
 
   it("derives a positive default eps from median size", () => {
-    const eps = defaultEpsForNodes([node("a", 0, 0, 100), node("b", 0, 0, 200)]);
+    const eps = defaultEpsForNodes([
+      node("a", 0, 0, 100),
+      node("b", 0, 0, 200),
+    ]);
     expect(eps).toBeGreaterThan(0);
   });
 });

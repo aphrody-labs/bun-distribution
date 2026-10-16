@@ -7,12 +7,9 @@ import { guarded } from "../../src/creator/cli.ts";
 import { crashLogPath, logCrash, splitArgs } from "../../src/shared/crash.ts";
 
 test("splitArgs groups quoted words", () => {
-  expect(splitArgs('wiki-images "https://x.org/a b" --out "C:\\My Files"')).toEqual([
-    "wiki-images",
-    "https://x.org/a b",
-    "--out",
-    "C:\\My Files",
-  ]);
+  expect(
+    splitArgs('wiki-images "https://x.org/a b" --out "C:\\My Files"'),
+  ).toEqual(["wiki-images", "https://x.org/a b", "--out", "C:\\My Files"]);
   expect(splitArgs("   ")).toEqual([]);
 });
 

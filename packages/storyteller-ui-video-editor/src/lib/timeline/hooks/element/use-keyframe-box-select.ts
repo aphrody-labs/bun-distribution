@@ -4,7 +4,10 @@ import {
   useKeyframeSelection,
   getSelectedKeyframeId,
 } from "./use-keyframe-selection";
-import type { SelectedKeyframeRef, ElementKeyframe } from "../../../animation/types";
+import type {
+  SelectedKeyframeRef,
+  ElementKeyframe,
+} from "../../../animation/types";
 import type { ExpandedRow } from "../../components/expanded-layout";
 import { timelineTimeToSnappedPixels } from "../../pixel-utils";
 import {

@@ -9,10 +9,14 @@ describe("docker-sync", () => {
       pc: { "a:1": "sha256:x" },
       dbfr: { "a:1": "sha256:y" },
     });
-    expect(p).toEqual([{ host: "dbfr", image: "a:1", from: "sha256:x", to: "sha256:y" }]);
+    expect(p).toEqual([
+      { host: "dbfr", image: "a:1", from: "sha256:x", to: "sha256:y" },
+    ]);
   });
   test("missing image on a host is shipped", () => {
-    expect(plan("vps", { vps: { "a:1": "x" }, pc: {}, dbfr: { "a:1": "x" } })).toHaveLength(1);
+    expect(
+      plan("vps", { vps: { "a:1": "x" }, pc: {}, dbfr: { "a:1": "x" } }),
+    ).toHaveLength(1);
   });
   test("rejects unknown options and hosts", () => {
     expect(() => parseArgs(["--nope"])).toThrow();

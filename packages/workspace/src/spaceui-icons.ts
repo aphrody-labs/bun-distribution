@@ -19,7 +19,13 @@ type ArchiveManifest = {
 
 const sourceRel = "packages/aphrody-spaceui/packages/icons";
 const canonicalRel = "packages/assets";
-const ignoredDirs = new Set(["node_modules", ".git", "dist", "target", "ui-dist"]);
+const ignoredDirs = new Set([
+  "node_modules",
+  ".git",
+  "dist",
+  "target",
+  "ui-dist",
+]);
 const archiveMetadata = new Set(["README.md", "RETIRED-DUPLICATES.json"]);
 
 function sha256(data: Uint8Array): string {
@@ -47,7 +53,10 @@ async function inventory(root: string): Promise<Map<string, Fingerprint>> {
         } else if (entry.isFile()) {
           const content = await readFile(filePath);
           const path = relative(root, filePath).split(sep).join("/");
-          files.set(path, { sha256: sha256(content), size: content.byteLength });
+          files.set(path, {
+            sha256: sha256(content),
+            size: content.byteLength,
+          });
         }
       }),
     );
@@ -57,7 +66,9 @@ async function inventory(root: string): Promise<Map<string, Fingerprint>> {
   return files;
 }
 
-async function loadManifest(manifestPath: string): Promise<ArchiveManifest | null> {
+async function loadManifest(
+  manifestPath: string,
+): Promise<ArchiveManifest | null> {
   try {
     return JSON.parse(await readFile(manifestPath, "utf8")) as ArchiveManifest;
   } catch (error) {
@@ -67,7 +78,9 @@ async function loadManifest(manifestPath: string): Promise<ArchiveManifest | nul
 }
 
 function safeRelativePath(path: string): boolean {
-  return path.length > 0 && !path.startsWith("/") && !path.split("/").includes("..");
+  return (
+    path.length > 0 && !path.startsWith("/") && !path.split("/").includes("..")
+  );
 }
 
 async function verifyManifest(
@@ -75,11 +88,13 @@ async function verifyManifest(
   sourceFiles: Map<string, Fingerprint>,
   canonicalRoot: string,
 ) {
-  if (manifest.schemaVersion !== 1) throw new Error("Unsupported retired icon manifest version");
+  if (manifest.schemaVersion !== 1)
+    throw new Error("Unsupported retired icon manifest version");
 
   await Promise.all(
     Object.entries(manifest.files).map(async ([path, retired]) => {
-      if (!safeRelativePath(path)) throw new Error(`Unsafe retired path in manifest: ${path}`);
+      if (!safeRelativePath(path))
+        throw new Error(`Unsafe retired path in manifest: ${path}`);
       const canonicalPath = join(canonicalRoot, path);
       const canonical = await readFile(canonicalPath).catch(() => null);
       if (
@@ -87,12 +102,19 @@ async function verifyManifest(
         sha256(canonical) !== retired.sha256 ||
         canonical.byteLength !== retired.size
       ) {
-        throw new Error(`Canonical counterpart changed or is missing: ${canonicalRel}/${path}`);
+        throw new Error(
+          `Canonical counterpart changed or is missing: ${canonicalRel}/${path}`,
+        );
       }
       if (sourceFiles.has(path)) {
         const current = sourceFiles.get(path)!;
-        if (current.sha256 !== retired.sha256 || current.size !== retired.size) {
-          throw new Error(`Refusing to retire modified reference file: ${sourceRel}/${path}`);
+        if (
+          current.sha256 !== retired.sha256 ||
+          current.size !== retired.size
+        ) {
+          throw new Error(
+            `Refusing to retire modified reference file: ${sourceRel}/${path}`,
+          );
         }
       }
     }),
@@ -105,22 +127,34 @@ async function writeManifest(manifest: ArchiveManifest, manifestPath: string) {
   await rename(temporary, manifestPath);
 }
 
-async function removeDuplicateFiles(manifest: ArchiveManifest, sourceRoot: string) {
-  const candidates = Object.keys(manifest.files).toSorted((a, b) => a.localeCompare(b));
+async function removeDuplicateFiles(
+  manifest: ArchiveManifest,
+  sourceRoot: string,
+) {
+  const candidates = Object.keys(manifest.files).toSorted((a, b) =>
+    a.localeCompare(b),
+  );
   const verifiedPaths = await Promise.all(
     candidates.map(async (path) => {
       const fullPath = join(sourceRoot, path);
       const current = await readFile(fullPath).catch(() => null);
       if (!current) return null;
       const expected = manifest.files[path]!;
-      if (sha256(current) !== expected.sha256 || current.byteLength !== expected.size) {
-        throw new Error(`Refusing to remove changed reference file: ${sourceRel}/${path}`);
+      if (
+        sha256(current) !== expected.sha256 ||
+        current.byteLength !== expected.size
+      ) {
+        throw new Error(
+          `Refusing to remove changed reference file: ${sourceRel}/${path}`,
+        );
       }
       return fullPath;
     }),
   );
   await Promise.all(
-    verifiedPaths.filter((path): path is string => path !== null).map((path) => rm(path)),
+    verifiedPaths
+      .filter((path): path is string => path !== null)
+      .map((path) => rm(path)),
   );
 }
 
@@ -131,8 +165,10 @@ export async function runSpaceUiIcons(args: string[]): Promise<number> {
     const arg = args[index];
     if (!arg) continue;
     if (arg === "--root") repo = args[++index] ?? "";
-    else if (["--plan", "--prune", "--check", "--help"].includes(arg)) mode = arg;
-    else throw new Error(`Unknown mode ${arg}; use --plan, --prune, or --check`);
+    else if (["--plan", "--prune", "--check", "--help"].includes(arg))
+      mode = arg;
+    else
+      throw new Error(`Unknown mode ${arg}; use --plan, --prune, or --check`);
   }
   if (!repo) throw new Error("--root requires an aphrody-ui repository path");
   repo = resolve(repo);
@@ -140,7 +176,9 @@ export async function runSpaceUiIcons(args: string[]): Promise<number> {
   const canonicalRoot = join(repo, canonicalRel);
   const manifestPath = join(sourceRoot, "RETIRED-DUPLICATES.json");
   if (mode === "--help") {
-    console.log("Usage: bun scripts/archive-spaceui-icons.ts [--plan|--prune|--check]");
+    console.log(
+      "Usage: bun scripts/archive-spaceui-icons.ts [--plan|--prune|--check]",
+    );
     return 0;
   }
 
@@ -160,7 +198,8 @@ export async function runSpaceUiIcons(args: string[]): Promise<number> {
     })
     .toSorted(([a], [b]) => a.localeCompare(b));
   const divergent = [...sourceFiles.keys()].filter(
-    (path) => canonicalFiles.has(path) && !exact.some(([same]) => same === path),
+    (path) =>
+      canonicalFiles.has(path) && !exact.some(([same]) => same === path),
   );
   const sourceOnly = [...sourceFiles.keys()].filter(
     (path) => !canonicalFiles.has(path) && !archiveMetadata.has(path),
@@ -174,7 +213,8 @@ export async function runSpaceUiIcons(args: string[]): Promise<number> {
     console.log(
       `MIT notices: ${join(repo, "packages/aphrody-spaceui/LICENSE")} and ${join(repo, "packages/assets/LICENSE.spaceui")}`,
     );
-    if (manifest) console.log(`Archive manifest already exists at ${manifestPath}`);
+    if (manifest)
+      console.log(`Archive manifest already exists at ${manifestPath}`);
     return 0;
   }
 
@@ -191,7 +231,11 @@ export async function runSpaceUiIcons(args: string[]): Promise<number> {
     return 0;
   }
 
-  if (!(await stat(join(repo, "packages/aphrody-spaceui/LICENSE")).catch(() => null))) {
+  if (
+    !(await stat(join(repo, "packages/aphrody-spaceui/LICENSE")).catch(
+      () => null,
+    ))
+  ) {
     throw new Error("SpaceUI MIT source notice is missing");
   }
   if (!(await stat(join(canonicalRoot, "LICENSE.spaceui")).catch(() => null))) {
@@ -203,15 +247,21 @@ export async function runSpaceUiIcons(args: string[]): Promise<number> {
     await verifyManifest(archive, sourceFiles, canonicalRoot);
     const unrecordedExact = exact.filter(([path]) => !(path in archive!.files));
     if (unrecordedExact.length > 0)
-      throw new Error("Unrecorded exact copies found; rerun --plan and review first");
+      throw new Error(
+        "Unrecorded exact copies found; rerun --plan and review first",
+      );
   } else {
     const files = Object.fromEntries(
-      exact.map(([path, file]) => [path, { ...file, canonicalPath: `${canonicalRel}/${path}` }]),
+      exact.map(([path, file]) => [
+        path,
+        { ...file, canonicalPath: `${canonicalRel}/${path}` },
+      ]),
     ) as Record<string, RetiredFile>;
     archive = {
       schemaVersion: 1,
       date: new Date().toISOString().slice(0, 10),
-      upstream: "spacedriveapp/spaceui (commit recorded in packages/aphrody-spaceui/UPSTREAM.txt)",
+      upstream:
+        "spacedriveapp/spaceui (commit recorded in packages/aphrody-spaceui/UPSTREAM.txt)",
       source: sourceRel,
       canonical: canonicalRel,
       license:
@@ -236,4 +286,5 @@ export async function runSpaceUiIcons(args: string[]): Promise<number> {
   return 0;
 }
 
-if (import.meta.main) process.exit(await runSpaceUiIcons(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runSpaceUiIcons(process.argv.slice(2)));

@@ -27,9 +27,17 @@ import {
   type AccessMode,
   type AccessRule,
 } from "@/lib/wiki-launch";
-import { RoleBadge, RoleSelect } from "@aphrody/admin-ui/components/admin/RoleSelect";
+import {
+  RoleBadge,
+  RoleSelect,
+} from "@aphrody/admin-ui/components/admin/RoleSelect";
 
-const MODES: { value: AccessMode; label: string; hint: string; tone: string }[] = [
+const MODES: {
+  value: AccessMode;
+  label: string;
+  hint: string;
+  tone: string;
+}[] = [
   {
     value: "public",
     label: "Public",
@@ -86,7 +94,10 @@ export function LaunchManager({ initial }: { initial: LaunchConfigDto }) {
 
   function setMode(key: string, mode: AccessMode) {
     if (always.has(key)) return;
-    setAccess((prev) => ({ ...prev, [key]: { mode, roleIds: prev[key]?.roleIds ?? [] } }));
+    setAccess((prev) => ({
+      ...prev,
+      [key]: { mode, roleIds: prev[key]?.roleIds ?? [] },
+    }));
     setMsg(null);
   }
 
@@ -104,7 +115,10 @@ export function LaunchManager({ initial }: { initial: LaunchConfigDto }) {
     setAccess((prev) => {
       const cur = prev[key];
       if (!cur) return prev;
-      return { ...prev, [key]: { ...cur, roleIds: cur.roleIds.filter((r) => r !== roleId) } };
+      return {
+        ...prev,
+        [key]: { ...cur, roleIds: cur.roleIds.filter((r) => r !== roleId) },
+      };
     });
     setMsg(null);
   }
@@ -152,19 +166,21 @@ export function LaunchManager({ initial }: { initial: LaunchConfigDto }) {
     }
   }
 
-  const publicCount = ALL_ENTRIES.filter((e) => access[e.key]?.mode === "public").length;
+  const publicCount = ALL_ENTRIES.filter(
+    (e) => access[e.key]?.mode === "public",
+  ).length;
 
   return (
     <div className="space-y-5">
       <div className="dbz-panel flex flex-wrap items-center justify-between gap-3 p-4">
         <div>
           <p className="text-sm text-white/70">
-            <strong className="text-dbz-orange">{publicCount}</strong> / {ALL_ENTRIES.length}{" "}
-            rubriques publiques
+            <strong className="text-dbz-orange">{publicCount}</strong> /{" "}
+            {ALL_ENTRIES.length} rubriques publiques
           </p>
           <p className="text-[11px] text-white/50">
-            Le staff traverse toutes les restrictions. Les flèches changent l&apos;ordre de la
-            navigation.
+            Le staff traverse toutes les restrictions. Les flèches changent
+            l&apos;ordre de la navigation.
           </p>
         </div>
         <button
@@ -173,7 +189,11 @@ export function LaunchManager({ initial }: { initial: LaunchConfigDto }) {
           disabled={saving}
           className="dbz-button gap-2 disabled:opacity-50"
         >
-          {saving ? <Chargement className="h-4 w-4 animate-spin" /> : <Coche className="h-4 w-4" />}
+          {saving ? (
+            <Chargement className="h-4 w-4 animate-spin" />
+          ) : (
+            <Coche className="h-4 w-4" />
+          )}
           Enregistrer
         </button>
       </div>
@@ -182,7 +202,10 @@ export function LaunchManager({ initial }: { initial: LaunchConfigDto }) {
         {rows.map((entry, index) => {
           const key = entry.key;
           const locked = always.has(key);
-          const rule = access[key] ?? { mode: "public" as AccessMode, roleIds: [] };
+          const rule = access[key] ?? {
+            mode: "public" as AccessMode,
+            roleIds: [],
+          };
           return (
             <div key={key} className="dbz-panel space-y-3 p-3">
               <div className="flex flex-wrap items-center gap-3">
@@ -215,7 +238,9 @@ export function LaunchManager({ initial }: { initial: LaunchConfigDto }) {
                       {entry.scope === "site" ? "site" : "wiki"}
                     </span>
                   </p>
-                  <p className="truncate text-[10px] text-white/50">{entry.prefixes.join(" · ")}</p>
+                  <p className="truncate text-[10px] text-white/50">
+                    {entry.prefixes.join(" · ")}
+                  </p>
                 </div>
 
                 <div className="flex flex-wrap gap-1">
@@ -283,10 +308,15 @@ export function LaunchManager({ initial }: { initial: LaunchConfigDto }) {
         })}
       </div>
 
-      {msg && <p className={`text-sm ${msg.ok ? "text-green-400" : "text-red-400"}`}>{msg.text}</p>}
+      {msg && (
+        <p className={`text-sm ${msg.ok ? "text-green-400" : "text-red-400"}`}>
+          {msg.text}
+        </p>
+      )}
       <p className="text-xs text-white/50">
-        Les rubriques avec <Cadenas className="inline h-3 w-3" /> (Épisodes, Films, Chronologie,
-        Manga) sont en ligne depuis la bêta et restent publiques.
+        Les rubriques avec <Cadenas className="inline h-3 w-3" /> (Épisodes,
+        Films, Chronologie, Manga) sont en ligne depuis la bêta et restent
+        publiques.
       </p>
     </div>
   );

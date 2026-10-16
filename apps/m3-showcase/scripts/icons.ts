@@ -10,7 +10,10 @@ export const ICON_SOURCE = resolve(
   "../../../crates/ui/identity/assets/brand/icon.svg",
 );
 
-export function iconCommand(root = TAURI_ROOT, executable = Bun.which("tauri")): string[] {
+export function iconCommand(
+  root = TAURI_ROOT,
+  executable = Bun.which("tauri"),
+): string[] {
   if (!executable)
     throw new Error(
       "The installed Tauri CLI is missing. Qualify the declared Aphrody/Yolo toolchain before generating icons.",
@@ -26,13 +29,20 @@ export function iconCommand(root = TAURI_ROOT, executable = Bun.which("tauri")):
   ];
 }
 
-export async function generateIcons(args: string[] = [], root = TAURI_ROOT): Promise<void> {
+export async function generateIcons(
+  args: string[] = [],
+  root = TAURI_ROOT,
+): Promise<void> {
   if (!(await Bun.file(ICON_SOURCE).exists()))
     throw new Error(`Canonical Aphrody icon is missing: ${ICON_SOURCE}`);
   const command = iconCommand(root);
   if (args.includes("--plan")) {
     console.log(
-      JSON.stringify({ command, source: ICON_SOURCE, output: resolve(root, "icons") }, null, 2),
+      JSON.stringify(
+        { command, source: ICON_SOURCE, output: resolve(root, "icons") },
+        null,
+        2,
+      ),
     );
     return;
   }
@@ -43,7 +53,8 @@ export async function generateIcons(args: string[] = [], root = TAURI_ROOT): Pro
     stderr: "inherit",
   });
   const code = await process.exited;
-  if (code !== 0) throw new Error(`Tauri icon generation failed with exit ${code}`);
+  if (code !== 0)
+    throw new Error(`Tauri icon generation failed with exit ${code}`);
 }
 
 if (import.meta.main) {

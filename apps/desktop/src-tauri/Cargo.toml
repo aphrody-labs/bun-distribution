@@ -14,9 +14,7 @@ resolver = "3"
 tauri-build = { package = "aphrody-tauri-build", version = "=1.4.4", path = "../../../toolchains/bun/packages/bun-tauri/crates/aphrody-tauri-build" }
 
 [dependencies]
-tauri = { package = "aphrody-tauri", version = "=1.4.4", path = "../../../toolchains/bun/packages/bun-tauri/crates/aphrody-tauri", default-features = false, features = [
-  "compression",
-] }
+tauri = { package = "aphrody-tauri", version = "=1.4.4", path = "../../../toolchains/bun/packages/bun-tauri/crates/aphrody-tauri", default-features = false, features = ["compression"] }
 tauri-runtime-cef = { package = "aphrody-tauri-runtime-cef", version = "=1.4.4", path = "../../../toolchains/bun/packages/bun-tauri/crates/aphrody-tauri-runtime-cef" }
 tauri-plugin-aphrody = { version = "=1.4.4", path = "../../../toolchains/bun/packages/bun-tauri/crates/tauri-plugin-aphrody", default-features = false }
 

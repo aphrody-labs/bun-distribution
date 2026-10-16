@@ -1,8 +1,15 @@
-import { Command, createElementSelectionResult, type CommandResult } from "../../base-command";
+import {
+  Command,
+  createElementSelectionResult,
+  type CommandResult,
+} from "../../base-command";
 import type { SceneTracks, TimelineElement } from "../../../timeline/types";
 import { generateUUID } from "../../../utils/id";
 import { EditorCore } from "../../../core";
-import { applyPlacement, resolveTrackPlacement } from "../../../timeline/placement";
+import {
+  applyPlacement,
+  resolveTrackPlacement,
+} from "../../../timeline/placement";
 import { cloneAnimations } from "../../../animation";
 import type { MediaTime } from "../../../wasm";
 

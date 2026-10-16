@@ -8,7 +8,11 @@ import { File as FileComponent } from "../../File";
 import { useExplorer } from "../../context";
 import { useSelection } from "../../SelectionContext";
 import { TagPill } from "../../../../components/Tags";
-import { ROW_HEIGHT, TABLE_PADDING_X, type listTableFeatures } from "./useTable";
+import {
+  ROW_HEIGHT,
+  TABLE_PADDING_X,
+  type listTableFeatures,
+} from "./useTable";
 import { useFileContextMenu } from "../../hooks/useFileContextMenu";
 import { isVirtualFile } from "@aphrody/drive-client";
 import { InlineNameEdit } from "../../components/InlineNameEdit";
@@ -24,7 +28,12 @@ interface TableRowProps {
   isPreviousSelected: boolean;
   isNextSelected: boolean;
   measureRef: (node: HTMLElement | null) => void;
-  selectFile: (file: File, files: File[], multi?: boolean, range?: boolean) => void;
+  selectFile: (
+    file: File,
+    files: File[],
+    multi?: boolean,
+    range?: boolean,
+  ) => void;
 }
 
 export const TableRow = memo(
@@ -122,7 +131,9 @@ export const TableRow = memo(
             // Alternating background
             index % 2 === 0 && !isSelected && "bg-surface-container-low/50",
             // Selection styling
-            isSelected ? "border-transparent bg-secondary-container" : "border-transparent",
+            isSelected
+              ? "border-transparent bg-secondary-container"
+              : "border-transparent",
             // Connect adjacent selected rows
             isSelected && isPreviousSelected && "rounded-t-none border-t-0",
             isSelected && isNextSelected && "rounded-b-none border-b-0",
@@ -221,7 +232,9 @@ const NameCell = memo(function NameCell({ file }: { file: File }) {
             </TagPill>
           ))}
           {file.tags.length > 2 && (
-            <span className="text-label-small text-outline">+{file.tags.length - 2}</span>
+            <span className="text-label-small text-outline">
+              +{file.tags.length - 2}
+            </span>
           )}
         </div>
       )}

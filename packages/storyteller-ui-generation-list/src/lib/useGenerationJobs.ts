@@ -69,16 +69,9 @@ const taskDurationCache = new Map<string, number>();
 // (mesh) and "splat_generation" (gaussian splats). Both render as the
 // "dimensional" media class, but stay distinct here so the two 3D create pages
 // can each filter to only their own generations.
-export type JobMediaFilter =
-  | "image"
-  | "video"
-  | "audio"
-  | "object"
-  | "splat";
+export type JobMediaFilter = "image" | "video" | "audio" | "object" | "splat";
 
-function getJobMediaType(
-  job: Job,
-): JobMediaFilter | "other" {
+function getJobMediaType(job: Job): JobMediaFilter | "other" {
   const cat = job.request.inference_category?.toLowerCase() ?? "";
   if (cat.includes("video")) return "video";
   if (cat.includes("object")) return "object";

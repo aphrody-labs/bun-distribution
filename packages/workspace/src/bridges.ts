@@ -1,5 +1,12 @@
-import { discoverAphrodyBinaries, runAphrodyBinary, type AphrodyBinary } from "./binaries.ts";
-import { discoverBunPackageWorkspaces, type BunPackageWorkspace } from "./packages.ts";
+import {
+  discoverAphrodyBinaries,
+  runAphrodyBinary,
+  type AphrodyBinary,
+} from "./binaries.ts";
+import {
+  discoverBunPackageWorkspaces,
+  type BunPackageWorkspace,
+} from "./packages.ts";
 import { runInfra, type InfraInvocation, type InfraResult } from "./runtime.ts";
 
 export type AphrodyBridgeCatalog = {
@@ -42,8 +49,10 @@ export async function runRustBridge(
 ): Promise<number> {
   if (binary === "aphrody-infra") {
     const result: InfraResult = await runInfra({ ...infraInvocation, args });
-    if (infraInvocation.stdout !== "inherit" && result.stdout) process.stdout.write(result.stdout);
-    if (infraInvocation.stderr !== "inherit" && result.stderr) process.stderr.write(result.stderr);
+    if (infraInvocation.stdout !== "inherit" && result.stdout)
+      process.stdout.write(result.stdout);
+    if (infraInvocation.stderr !== "inherit" && result.stderr)
+      process.stderr.write(result.stderr);
     return result.exitCode;
   }
   return runAphrodyBinary(binary, args);

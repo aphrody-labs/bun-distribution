@@ -39,7 +39,9 @@ const table = (head: string[], rows: string[][]): string[] => [
 const finish = (lines: string[]): string => `${lines.join("\n").trimEnd()}\n`;
 
 export const loadRootDocs = (root: string): Data =>
-  JSON.parse(readFileSync(join(root, "tools/config/docs/root.json"), "utf8")) as Data;
+  JSON.parse(
+    readFileSync(join(root, "tools/config/docs/root.json"), "utf8"),
+  ) as Data;
 
 export function renderReadme(d: Data, totals: string): string {
   return finish([
@@ -48,7 +50,9 @@ export function renderReadme(d: Data, totals: string): string {
     "",
     d.readme.summary,
     "",
-    ...(d.readme.sections ?? []).flatMap((s) => [`## ${s.title}`, ""].concat(s.body, "")),
+    ...(d.readme.sections ?? []).flatMap((s) =>
+      [`## ${s.title}`, ""].concat(s.body, ""),
+    ),
     ...(d.readme.installation ?? []),
     "",
     "## Repository",
@@ -101,7 +105,9 @@ export function renderMemory(d: Data): string {
     m.intro,
     "",
     ...m.sections.flatMap((s) =>
-      [`## ${s.title}`, ""].concat(table(["Date", "Evidence", "Limit"], s.rows)),
+      [`## ${s.title}`, ""].concat(
+        table(["Date", "Evidence", "Limit"], s.rows),
+      ),
     ),
   ]);
 }

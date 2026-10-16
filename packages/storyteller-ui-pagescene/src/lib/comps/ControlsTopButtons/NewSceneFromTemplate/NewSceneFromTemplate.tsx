@@ -21,9 +21,9 @@ export const NewSceneFromTemplate = ({
   onSceneSelect,
 }: NewSceneFromTemplateProps) => {
   const editor = useContext(EngineContext);
-  const [featuredScenes, setFeaturedScenes] = useState<SceneTypes[] | undefined>(
-    undefined,
-  );
+  const [featuredScenes, setFeaturedScenes] = useState<
+    SceneTypes[] | undefined
+  >(undefined);
   const [bottomGradientOpacity, setBottomGradientOpacity] = useState(1);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 

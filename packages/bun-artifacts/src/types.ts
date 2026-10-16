@@ -1,4 +1,8 @@
-import type { AppCapability, RuntimeFacts, RuntimePin } from "@aphrody/bun-workspace";
+import type {
+  AppCapability,
+  RuntimeFacts,
+  RuntimePin,
+} from "@aphrody/bun-workspace";
 import type { AssetReference } from "@aphrody/bun-workspace/assets";
 
 export type ArtifactTarget =
@@ -29,7 +33,11 @@ export interface AppManifest {
   target: ArtifactTarget;
   runtime: RuntimePin & { sha256: string; sourceUrl: string };
   source: { revision: string; license: string; upstream: string; fork: string };
-  engine: { path: string; version: string; protocol: "cli" | "cli-json" | "jsonl" | "mcp-stdio" };
+  engine: {
+    path: string;
+    version: string;
+    protocol: "cli" | "cli-json" | "jsonl" | "mcp-stdio";
+  };
   native: NativeFile[];
   sharedAssets?: SharedAssetsReference;
 }
@@ -38,7 +46,11 @@ export interface RuntimeArtifactReceipt {
   target: ArtifactTarget;
   sha256: string;
   facts: RuntimeFacts;
-  qualification: { host: string; mode: "native" | "ssh" | "docker"; observedAt: string };
+  qualification: {
+    host: string;
+    mode: "native" | "ssh" | "docker";
+    observedAt: string;
+  };
 }
 
 export interface NativeArtifactReceipt {
@@ -46,7 +58,11 @@ export interface NativeArtifactReceipt {
   sourceRevision: string;
   sha256: string;
   version: string;
-  qualification: { host: string; mode: "native" | "ssh" | "docker"; observedAt: string };
+  qualification: {
+    host: string;
+    mode: "native" | "ssh" | "docker";
+    observedAt: string;
+  };
 }
 
 export interface NativeFileInput {

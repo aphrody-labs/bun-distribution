@@ -81,7 +81,9 @@ export function Demo() {
   const [name, setName] = useState("");
   return (
     <>
-      <MdFilledButton onClick={() => dialogRef.current?.show()}>Ouvrir</MdFilledButton>
+      <MdFilledButton onClick={() => dialogRef.current?.show()}>
+        Ouvrir
+      </MdFilledButton>
       <MdOutlinedTextField
         label="Nom"
         value={name}
@@ -101,7 +103,9 @@ export function Demo() {
         <div slot="headline">Titre</div>
         <div slot="content">Ouvert via ref impérative.</div>
         <div slot="actions">
-          <MdFilledButton onClick={() => dialogRef.current?.close()}>Fermer</MdFilledButton>
+          <MdFilledButton onClick={() => dialogRef.current?.close()}>
+            Fermer
+          </MdFilledButton>
         </div>
       </MdDialog>
     </>

@@ -55,11 +55,10 @@ export interface EnqueueImageToGaussianSuccess extends CommandResult {
 }
 
 export type EnqueueImageToGaussianResult =
-  | EnqueueImageToGaussianSuccess
-  | EnqueueImageToGaussianError;
+  EnqueueImageToGaussianSuccess | EnqueueImageToGaussianError;
 
 export const EnqueueImageToGaussian = async (
-  request: EnqueueImageToGaussianRequest
+  request: EnqueueImageToGaussianRequest,
 ): Promise<EnqueueImageToGaussianResult> => {
   const mutableRequest: RawEnqueueImageToGaussianRequest = {
     model: request.model?.tauriId,

@@ -3,10 +3,19 @@ import type { Catalog, Inspection, Library } from "../shared.ts";
 
 declare const __APHRODY_CATALOG__: Catalog;
 
-type Category = "all" | "image" | "design" | "motion" | "audio" | "documents" | "shared";
+type Category =
+  "all" | "image" | "design" | "motion" | "audio" | "documents" | "shared";
 const categories: { id: Category; title: string; path: string }[] = [
-  { id: "all", title: "All libraries", path: "M4 4h6v6H4zm10 0h6v6h-6zM4 14h6v6H4zm10 0h6v6h-6z" },
-  { id: "image", title: "Images and photos", path: "M3 4h18v16H3zM3 16l5-5 4 4 4-6 5 7M7 8h.01" },
+  {
+    id: "all",
+    title: "All libraries",
+    path: "M4 4h6v6H4zm10 0h6v6h-6zM4 14h6v6H4zm10 0h6v6h-6z",
+  },
+  {
+    id: "image",
+    title: "Images and photos",
+    path: "M3 4h18v16H3zM3 16l5-5 4 4 4-6 5 7M7 8h.01",
+  },
   {
     id: "design",
     title: "Design and geometry",
@@ -27,7 +36,11 @@ const categories: { id: Category; title: string; path: string }[] = [
     title: "Documents and tables",
     path: "M6 3h8l4 4v14H6zM14 3v5h4M9 12h6m-6 4h6",
   },
-  { id: "shared", title: "Shared resources", path: "M4 4h16v5H4zm0 11h16v5H4zM8 9v6m8-6v6" },
+  {
+    id: "shared",
+    title: "Shared resources",
+    path: "M4 4h16v5H4zm0 11h16v5H4zM8 9v6m8-6v6",
+  },
 ];
 const libraryCategories: Record<string, Category> = {
   artcraft: "design",
@@ -73,7 +86,7 @@ function category(library: Library): Category {
   return libraryCategories[library.id] ?? "shared";
 }
 function latest(id: string): Inspection | undefined {
-  return catalog.inspections.findLast(item => item.libraryId === id);
+  return catalog.inspections.findLast((item) => item.libraryId === id);
 }
 function notify(message: string, error = false) {
   const node = element("notification");
@@ -81,7 +94,11 @@ function notify(message: string, error = false) {
   node.classList.toggle("error", error);
   node.hidden = false;
 }
-async function request(path: string, method = "GET", body?: unknown): Promise<Response> {
+async function request(
+  path: string,
+  method = "GET",
+  body?: unknown,
+): Promise<Response> {
   const init = {
     method,
     headers: {
@@ -90,7 +107,9 @@ async function request(path: string, method = "GET", body?: unknown): Promise<Re
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   };
-  return "__TAURI_INTERNALS__" in window ? bunFetch(path, init) : fetch(path, init);
+  return "__TAURI_INTERNALS__" in window
+    ? bunFetch(path, init)
+    : fetch(path, init);
 }
 async function inspect(library: Library) {
   notify("Inspecting " + library.title + " CLI…");
@@ -102,7 +121,10 @@ async function inspect(library: Library) {
     render();
     schedulePoll();
   } catch (error) {
-    notify(error instanceof Error ? error.message : "CLI inspection failed.", true);
+    notify(
+      error instanceof Error ? error.message : "CLI inspection failed.",
+      true,
+    );
   }
 }
 function inspectButton(library: Library): HTMLButtonElement {
@@ -124,7 +146,9 @@ function libraryIcon(library: Library): HTMLDivElement {
   const node = document.createElement("div");
   node.className = "app-icon icon-" + category(library);
   node.setAttribute("aria-hidden", "true");
-  node.append(svg(categories.find(item => item.id === category(library))!.path));
+  node.append(
+    svg(categories.find((item) => item.id === category(library))!.path),
+  );
   return node;
 }
 function libraryState(library: Library): string {
@@ -166,7 +190,7 @@ function card(library: Library): HTMLElement {
 function render() {
   const navigation = element("categories");
   navigation.replaceChildren(
-    ...categories.map(item => {
+    ...categories.map((item) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = item.id === selected ? "nav-item active" : "nav-item";
@@ -180,13 +204,18 @@ function render() {
     }),
   );
   const matches = catalog.libraries.filter(
-    library =>
+    (library) =>
       (selected === "all" || category(library) === selected) &&
-      (library.title + " " + library.description).toLocaleLowerCase("en").includes(query),
+      (library.title + " " + library.description)
+        .toLocaleLowerCase("en")
+        .includes(query),
   );
   element("apps").replaceChildren(...matches.map(card));
-  element("library-title").textContent = categories.find(item => item.id === selected)!.title;
-  element("count").textContent = matches.length + (matches.length === 1 ? " library" : " libraries");
+  element("library-title").textContent = categories.find(
+    (item) => item.id === selected,
+  )!.title;
+  element("count").textContent =
+    matches.length + (matches.length === 1 ? " library" : " libraries");
   element("empty").hidden = matches.length > 0;
   const featured = element("featured");
   featured.hidden = selected !== "all" || Boolean(query);
@@ -206,12 +235,15 @@ function render() {
     mark.textContent = "a";
     featured.replaceChildren(copy, mark);
   }
-  element("runtime").textContent = connected ? "Local service connected" : "Local catalog";
+  element("runtime").textContent = connected
+    ? "Local service connected"
+    : "Local catalog";
   element("footer-runtime").textContent = "Bun " + catalog.runtime.version;
 }
 function schedulePoll() {
   if (poll) clearTimeout(poll);
-  if (catalog.inspections.some(item => item.state === "running")) poll = setTimeout(() => void refresh(true), 1500);
+  if (catalog.inspections.some((item) => item.state === "running"))
+    poll = setTimeout(() => void refresh(true), 1500);
 }
 async function refresh(quiet = false) {
   if (refreshing) return;
@@ -226,21 +258,34 @@ async function refresh(quiet = false) {
     catalog = result as Catalog;
     connected = true;
     for (const inspection of catalog.inspections) {
-      if (previous.find(item => item.id === inspection.id)?.state === "running" && inspection.state !== "running") {
-        const title = catalog.libraries.find(library => library.id === inspection.libraryId)?.title ?? "Library";
+      if (
+        previous.find((item) => item.id === inspection.id)?.state ===
+          "running" &&
+        inspection.state !== "running"
+      ) {
+        const title =
+          catalog.libraries.find(
+            (library) => library.id === inspection.libraryId,
+          )?.title ?? "Library";
         notify(
           inspection.state === "completed"
             ? title + ": CLI inspection completed."
             : title +
                 ": CLI inspection failed" +
-                (inspection.exitCode === undefined ? "." : " (exit " + inspection.exitCode + ")."),
+                (inspection.exitCode === undefined
+                  ? "."
+                  : " (exit " + inspection.exitCode + ")."),
           inspection.state === "failed",
         );
       }
     }
   } catch (error) {
     connected = false;
-    if (!quiet) notify(error instanceof Error ? error.message : "Catalog unavailable.", true);
+    if (!quiet)
+      notify(
+        error instanceof Error ? error.message : "Catalog unavailable.",
+        true,
+      );
   } finally {
     refreshing = false;
     button.disabled = false;
@@ -248,8 +293,10 @@ async function refresh(quiet = false) {
     schedulePoll();
   }
 }
-element<HTMLInputElement>("search").addEventListener("input", event => {
-  query = (event.currentTarget as HTMLInputElement).value.trim().toLocaleLowerCase("en");
+element<HTMLInputElement>("search").addEventListener("input", (event) => {
+  query = (event.currentTarget as HTMLInputElement).value
+    .trim()
+    .toLocaleLowerCase("en");
   render();
 });
 element("refresh").addEventListener("click", () => void refresh());

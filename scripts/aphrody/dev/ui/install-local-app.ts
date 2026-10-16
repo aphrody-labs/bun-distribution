@@ -2,13 +2,25 @@
 // Keep file IO and lifecycle probes bounded and ordered.
 /* oxlint-disable no-await-in-loop */
 // Local release adapter: verified assets, private credentials, atomic activation and systemd.
-import { chmod, cp, mkdir, readFile, readlink, rename, symlink, lstat, rm } from "node:fs/promises";
+import {
+  chmod,
+  cp,
+  mkdir,
+  readFile,
+  readlink,
+  rename,
+  symlink,
+  lstat,
+  rm,
+} from "node:fs/promises";
 import { homedir, networkInterfaces } from "node:os";
 import { join, resolve } from "node:path";
 
 const source = process.argv[2] && resolve(process.argv[2]);
 if (!source)
-  throw new Error("Usage: bun scripts/dev/ui/install-local-app.ts <extracted-release> [--apply]");
+  throw new Error(
+    "Usage: bun scripts/dev/ui/install-local-app.ts <extracted-release> [--apply]",
+  );
 const state = join(homedir(), ".local/share/aphrody/local-app");
 const privateDir = join(homedir(), ".config/aphrody/local-app");
 const manifest = (await Bun.file(join(source, "manifest.json")).json()) as {
@@ -16,7 +28,10 @@ const manifest = (await Bun.file(join(source, "manifest.json")).json()) as {
   revision: string;
   files: Record<string, { sha256: string; bytes: number }>;
 };
-if (!/^[a-f0-9]{12}-\d+$/.test(manifest.id) || !/^[a-f0-9]{40}$/.test(manifest.revision))
+if (
+  !/^[a-f0-9]{12}-\d+$/.test(manifest.id) ||
+  !/^[a-f0-9]{40}$/.test(manifest.revision)
+)
   throw new Error("Invalid release identity");
 for (const [path, expected] of Object.entries(manifest.files)) {
   if (path.startsWith("/") || path.split("/").includes(".."))
@@ -26,7 +41,8 @@ for (const [path, expected] of Object.entries(manifest.files)) {
   const data = await Bun.file(join(source, path)).arrayBuffer();
   if (
     data.byteLength !== expected.bytes ||
-    new Bun.CryptoHasher("sha256").update(data).digest("hex") !== expected.sha256
+    new Bun.CryptoHasher("sha256").update(data).digest("hex") !==
+      expected.sha256
   )
     throw new Error(`Release integrity failure: ${path}`);
 }
@@ -41,7 +57,8 @@ for (const required of [
   "ui/pkg/aphrody_shell_web_bg.wasm",
   "ui/shell/worker.js",
 ]) {
-  if (!manifest.files[required]) throw new Error(`Required release file absent: ${required}`);
+  if (!manifest.files[required])
+    throw new Error(`Required release file absent: ${required}`);
 }
 if (!process.argv.includes("--apply")) {
   console.log(
@@ -87,10 +104,14 @@ await chmod(join(destination, "bin/aphrody-mcp"), 0o755);
 await chmod(join(destination, "bin/aphrody-embed"), 0o755);
 const credentialPath = join(privateDir, "credentials.json");
 if (!(await Bun.file(credentialPath).exists())) {
-  const password = Array.from(crypto.getRandomValues(new Uint8Array(32)), (value) =>
-    value.toString(16).padStart(2, "0"),
+  const password = Array.from(
+    crypto.getRandomValues(new Uint8Array(32)),
+    (value) => value.toString(16).padStart(2, "0"),
   ).join("");
-  const hash = await run(["openssl", "passwd", "-6", "-stdin"], `${password}\n`);
+  const hash = await run(
+    ["openssl", "passwd", "-6", "-stdin"],
+    `${password}\n`,
+  );
   await Bun.write(join(privateDir, "htpasswd"), `aphrody:${hash}\n`);
   await Bun.write(
     credentialPath,
@@ -101,8 +122,9 @@ if (!(await Bun.file(credentialPath).exists())) {
 }
 const mcpEnv = join(privateDir, "mcp.env");
 if (!(await Bun.file(mcpEnv).exists())) {
-  const token = Array.from(crypto.getRandomValues(new Uint8Array(32)), (value) =>
-    value.toString(16).padStart(2, "0"),
+  const token = Array.from(
+    crypto.getRandomValues(new Uint8Array(32)),
+    (value) => value.toString(16).padStart(2, "0"),
   ).join("");
   await Bun.write(mcpEnv, `APHRODY_AI_HTTP_TOKEN=${token}\n`);
   await Bun.write(
@@ -139,11 +161,18 @@ if (!(await Bun.file(join(privateDir, "tls.key")).exists())) {
   await chmod(join(privateDir, "tls.key"), 0o600);
 }
 const yoloRoot =
-  process.env.YOLO_ROOT ?? process.env.APHRODY_YOLO_ROOT ?? join(homedir(), "src", "aphrody");
+  process.env.YOLO_ROOT ??
+  process.env.APHRODY_YOLO_ROOT ??
+  join(homedir(), "src", "aphrody");
 const configPath = join(privateDir, "nginx.conf");
 await Bun.write(
   configPath,
-  (await readFile(join(yoloRoot, "tools/config/host/nginx/aphrody/aphrody-local.conf"), "utf8"))
+  (
+    await readFile(
+      join(yoloRoot, "tools/config/host/nginx/aphrody/aphrody-local.conf"),
+      "utf8",
+    )
+  )
     .replaceAll("@STATE@", state)
     .replaceAll("@PRIVATE@", privateDir),
 );
@@ -151,7 +180,9 @@ await run(["nginx", "-t", "-p", `${state}/`, "-c", configPath]);
 const units = join(homedir(), ".config/systemd/user");
 await mkdir(units, { recursive: true });
 const kernelOverride = join(units, "aphrody-kernel.service.d/local-app.conf");
-const previousKernelOverride = await readFile(kernelOverride, "utf8").catch(() => undefined);
+const previousKernelOverride = await readFile(kernelOverride, "utf8").catch(
+  () => undefined,
+);
 await run([
   "bun",
   join(yoloRoot, "packages/engine/core/src/units/cli.ts"),
@@ -201,7 +232,8 @@ try {
   await run(["systemctl", "--user", "is-active", "aphrody-app-ui.service"]);
   await run(["systemctl", "--user", "is-active", "aphrody-kernel.service"]);
   await run(["systemctl", "--user", "is-active", "aphrody-local-mcp.service"]);
-  if (previous) await Bun.write(join(state, "previous-release.txt"), `${previous}\n`);
+  if (previous)
+    await Bun.write(join(state, "previous-release.txt"), `${previous}\n`);
 } catch (error) {
   if (previous) {
     await activate(previous);

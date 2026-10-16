@@ -1,11 +1,22 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
 import { PET } from "@aphrody/identity/pet";
-import { gazeToward, idleDelay, trackFor, walkDirection, walkDuration } from "./pet-behavior";
+import {
+  gazeToward,
+  idleDelay,
+  trackFor,
+  walkDirection,
+  walkDuration,
+} from "./pet-behavior";
 
 describe("pet behaviour", () => {
   test("maps modes to existing identity tracks", () => {
-    for (const [mode, hovering] of [["idle", false], ["walk-left", false], ["walk-right", false], ["idle", true]] as const) {
+    for (const [mode, hovering] of [
+      ["idle", false],
+      ["walk-left", false],
+      ["walk-right", false],
+      ["idle", true],
+    ] as const) {
       expect(PET.tracks[trackFor(mode, hovering)]).toBeDefined();
     }
     expect(trackFor("walk-left", false)).toBe("running-left");

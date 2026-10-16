@@ -3,7 +3,12 @@ import type { Program } from "@oxc-project/types";
 import { parseProgram as nativeParseProgram } from "./native.ts";
 
 /** Oxc runs only in the shared native provider. Bun owns ordinary transformation/bundling. */
-export { analyzeModule, formatSource, minifySource, lintSource } from "./native.ts";
+export {
+  analyzeModule,
+  formatSource,
+  minifySource,
+  lintSource,
+} from "./native.ts";
 export type { ModuleAnalysis } from "./native.ts";
 export type * from "@oxc-project/types";
 
@@ -18,6 +23,9 @@ export type ESTreeJson<T> = T extends bigint | RegExp
 export type ESTreeProgram = ESTreeJson<Program>;
 
 /** Official ESTree JSON, without a second N-API parser instance. */
-export function parseProgram(source: string, filename = "input.js"): ESTreeProgram {
+export function parseProgram(
+  source: string,
+  filename = "input.js",
+): ESTreeProgram {
   return nativeParseProgram<ESTreeProgram>(source, filename);
 }

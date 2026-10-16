@@ -3,7 +3,12 @@
 /** Read-only public SEO audit. No credentials, provider writes or browser cookies. */
 import { resolve4, resolveNs } from "node:dns/promises";
 
-type Finding = { url: string; check: string; severity: "error" | "warning"; detail: string };
+type Finding = {
+  url: string;
+  check: string;
+  severity: "error" | "warning";
+  detail: string;
+};
 const findings: Finding[] = [];
 const base = new URL(process.argv[2] ?? "https://aphrody.com");
 const limit = Number(process.argv[3] ?? 12);
@@ -29,7 +34,10 @@ const issue = (
   severity: Finding["severity"] = "error",
 ) => findings.push({ url, check, severity, detail });
 async function read(url: string) {
-  const response = await fetch(url, { signal: AbortSignal.timeout(15000), redirect: "follow" });
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(15000),
+    redirect: "follow",
+  });
   const text = await response.text();
   if (!response.ok) issue(url, "http", `HTTP ${response.status}`);
   return { response, text };
@@ -42,7 +50,9 @@ function attrs(tag: string): Record<string, string> {
 }
 function headTags(html: string, tag: string) {
   const head = /<head\b[^>]*>([\s\S]*?)<\/head>/i.exec(html)?.[1] ?? "";
-  return [...head.matchAll(new RegExp(`<${tag}\\b[^>]*>`, "gi"))].map((match) => attrs(match[0]));
+  return [...head.matchAll(new RegExp(`<${tag}\\b[^>]*>`, "gi"))].map((match) =>
+    attrs(match[0]),
+  );
 }
 const robotsUrl = new URL("robots.txt", base).href;
 const sitemapUrl = new URL("sitemap.xml", base).href;
@@ -54,7 +64,11 @@ const [dns, robots, sitemap] = await Promise.all([
   read(sitemapUrl),
 ]);
 if (!robots.text.includes(`Sitemap: ${sitemapUrl}`))
-  issue(robotsUrl, "sitemap-discovery", "Expected canonical sitemap declaration");
+  issue(
+    robotsUrl,
+    "sitemap-discovery",
+    "Expected canonical sitemap declaration",
+  );
 if (/Disallow:\s*\/\s*$/m.test(robots.text))
   issue(
     robotsUrl,
@@ -64,7 +78,9 @@ if (/Disallow:\s*\/\s*$/m.test(robots.text))
   );
 const routes = [
   ...new Set(
-    [...sitemap.text.matchAll(/<loc>\s*([^<]+)\s*<\/loc>/g)].map((match) => match[1]!.trim()),
+    [...sitemap.text.matchAll(/<loc>\s*([^<]+)\s*<\/loc>/g)].map((match) =>
+      match[1]!.trim(),
+    ),
   ),
 ];
 if (!routes.length)
@@ -94,17 +110,30 @@ for (const url of sampled) {
       issue(url, "content-type", "Expected HTML route");
     if (response.url !== url)
       issue(url, "sitemap-redirect", `Redirects to ${response.url}`, "warning");
-    const title = /<title\b[^>]*>([\s\S]*?)<\/title>/i.exec(text)?.[1]?.trim() ?? "";
+    const title =
+      /<title\b[^>]*>([\s\S]*?)<\/title>/i.exec(text)?.[1]?.trim() ?? "";
     if (!title) issue(url, "title", "Missing nonempty title");
     else if (titles.has(title))
-      issue(url, "title", `Duplicate title with ${titles.get(title)}`, "warning");
+      issue(
+        url,
+        "title",
+        `Duplicate title with ${titles.get(title)}`,
+        "warning",
+      );
     titles.set(title, url);
     const metas = headTags(text, "meta");
-    if (!metas.some((meta) => meta.name?.toLowerCase() === "description" && meta.content?.trim()))
+    if (
+      !metas.some(
+        (meta) =>
+          meta.name?.toLowerCase() === "description" && meta.content?.trim(),
+      )
+    )
       issue(url, "description", "Missing description");
     if (
       metas.some(
-        (meta) => meta.name?.toLowerCase() === "robots" && /noindex/i.test(meta.content ?? ""),
+        (meta) =>
+          meta.name?.toLowerCase() === "robots" &&
+          /noindex/i.test(meta.content ?? ""),
       )
     )
       issue(url, "indexability", "Sitemap route declares noindex");
@@ -112,10 +141,15 @@ for (const url of sampled) {
       (link) => link.rel?.toLowerCase() === "canonical",
     );
     if (canonicals.length !== 1 || canonicals[0]?.href !== url)
-      issue(url, "canonical", "Expected exactly one self-referencing canonical URL");
+      issue(
+        url,
+        "canonical",
+        "Expected exactly one self-referencing canonical URL",
+      );
     if (!/<html\b[^>]*\blang\s*=\s*["'][^"']+["']/i.test(text))
       issue(url, "language", "Missing HTML language");
-    if (!/<h1\b[^>]*>[\s\S]*?<\/h1>/i.test(text)) issue(url, "heading", "Missing H1", "warning");
+    if (!/<h1\b[^>]*>[\s\S]*?<\/h1>/i.test(text))
+      issue(url, "heading", "Missing H1", "warning");
     if (/noindex/i.test(response.headers.get("x-robots-tag") ?? ""))
       issue(url, "indexability", "HTTP header declares noindex");
   } catch (error) {
@@ -138,4 +172,6 @@ console.log(
     2,
   ),
 );
-process.exitCode = findings.some((finding) => finding.severity === "error") ? 1 : 0;
+process.exitCode = findings.some((finding) => finding.severity === "error")
+  ? 1
+  : 0;

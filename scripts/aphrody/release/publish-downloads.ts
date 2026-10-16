@@ -62,9 +62,20 @@ export interface ArtifactConfig {
    * `desktop`: what the « Download Aphrody » button of the site points at (Aphrody-Setup.exe); `kit`: a Bun kit exe;
    * `desktop-app`: the Tauri installer of the desktop app, installed by Aphrody-Setup when it is published.
    */
-  kind: "factory-binary" | "bun-compile" | "plugin" | "desktop" | "kit" | "desktop-app" | "wasm";
+  kind:
+    | "factory-binary"
+    | "bun-compile"
+    | "plugin"
+    | "desktop"
+    | "kit"
+    | "desktop-app"
+    | "wasm";
   description: string;
-  versionFrom?: { cargoWorkspace?: string; file?: string; packageJson?: string };
+  versionFrom?: {
+    cargoWorkspace?: string;
+    file?: string;
+    packageJson?: string;
+  };
   /** Local Bun stage script (`bun <script> --out <dir>`) and the manifest of entries it writes into `<dir>`. */
   stage?: { script: string; manifest: string };
   executable?: string;
@@ -108,7 +119,9 @@ export interface DownloadsConfig {
 }
 
 export const loadConfig = (): DownloadsConfig =>
-  JSON.parse(readFileSync(join(root, "tools/config/downloads.json"), "utf8")) as DownloadsConfig;
+  JSON.parse(
+    readFileSync(join(root, "tools/config/downloads.json"), "utf8"),
+  ) as DownloadsConfig;
 
 const expand = (path: string): string =>
   path.startsWith("~/") ? join(homedir(), path.slice(2)) : resolve(root, path);
@@ -176,7 +189,9 @@ export function buildManifest(args: {
     release: { id: args.id, commit: args.commit },
     baseUrl: args.baseUrl,
     artifacts: args.files
-      .toSorted((a, b) => (a.component + a.platform).localeCompare(b.component + b.platform))
+      .toSorted((a, b) =>
+        (a.component + a.platform).localeCompare(b.component + b.platform),
+      )
       .map((f) => ({
         name: f.component,
         version: f.version,
@@ -199,11 +214,17 @@ export interface SecretHit {
 }
 
 export function scanName(name: string, denied: string[]): SecretHit[] {
-  return denied.filter((p) => new RegExp(p, "i").test(name)).map((rule) => ({ where: name, rule }));
+  return denied
+    .filter((p) => new RegExp(p, "i").test(name))
+    .map((rule) => ({ where: name, rule }));
 }
 
 /** Scans bytes in 8 MiB windows (with overlap) so a binary of any size stays bounded in memory. */
-export function scanBytes(where: string, data: Uint8Array, patterns: string[]): SecretHit[] {
+export function scanBytes(
+  where: string,
+  data: Uint8Array,
+  patterns: string[],
+): SecretHit[] {
   const regexes = patterns.map((p) => ({ p, re: new RegExp(p) }));
   const hits: SecretHit[] = [];
   const window = 8 * 1024 * 1024;
@@ -212,7 +233,8 @@ export function scanBytes(where: string, data: Uint8Array, patterns: string[]): 
     const text = Buffer.from(
       data.subarray(start, Math.min(data.length, start + window + overlap)),
     ).toString("latin1");
-    for (const { p, re } of regexes) if (re.test(text)) hits.push({ where, rule: p });
+    for (const { p, re } of regexes)
+      if (re.test(text)) hits.push({ where, rule: p });
   }
   return hits;
 }
@@ -227,11 +249,20 @@ export function walk(dir: string, prefix = ""): string[] {
   return out;
 }
 
-export function scanTree(dir: string, cfg: DownloadsConfig["secrets"]): SecretHit[] {
+export function scanTree(
+  dir: string,
+  cfg: DownloadsConfig["secrets"],
+): SecretHit[] {
   const hits: SecretHit[] = [];
   for (const rel of walk(dir)) {
     hits.push(...scanName(rel, cfg.deniedNames));
-    hits.push(...scanBytes(rel, new Uint8Array(readFileSync(join(dir, rel))), cfg.contentPatterns));
+    hits.push(
+      ...scanBytes(
+        rel,
+        new Uint8Array(readFileSync(join(dir, rel))),
+        cfg.contentPatterns,
+      ),
+    );
   }
   return hits;
 }
@@ -241,7 +272,11 @@ export function scanTree(dir: string, cfg: DownloadsConfig["secrets"]): SecretHi
 
 export async function run(
   argv: string[],
-  opts: { cwd?: string; env?: Record<string, string>; allowFail?: boolean } = {},
+  opts: {
+    cwd?: string;
+    env?: Record<string, string>;
+    allowFail?: boolean;
+  } = {},
 ) {
   const proc = Bun.spawn(argv, {
     windowsHide: true,
@@ -256,7 +291,9 @@ export async function run(
     proc.exited,
   ]);
   if (code !== 0 && !opts.allowFail)
-    throw new Error(`${argv.slice(0, 4).join(" ")} failed (${code}):\n${stderr || stdout}`);
+    throw new Error(
+      `${argv.slice(0, 4).join(" ")} failed (${code}):\n${stderr || stdout}`,
+    );
   return { code, stdout, stderr };
 }
 
@@ -273,11 +310,18 @@ const buildFactory = (...args: string[]): string[] => [
 ];
 
 /** Runs a shell command on the host through `aphrody infra ssh exec` (never raw ssh). */
-export async function remote(cfg: DownloadsConfig, command: string, timeoutSecs = 120) {
+export async function remote(
+  cfg: DownloadsConfig,
+  command: string,
+  timeoutSecs = 120,
+) {
   if (onHost(cfg)) {
-    const local = await run(["timeout", String(timeoutSecs), "bash", "-c", command], {
-      allowFail: true,
-    });
+    const local = await run(
+      ["timeout", String(timeoutSecs), "bash", "-c", command],
+      {
+        allowFail: true,
+      },
+    );
     if (local.code !== 0)
       throw new Error(
         `remote command failed (${local.code}): ${command.slice(0, 200)}
@@ -286,16 +330,31 @@ ${local.stderr}${local.stdout}`,
     return local.stdout;
   }
   const result = await run(
-    ["aphrody", "infra", "ssh", "exec", "--host", cfg.host.target, "--json", "-c", command],
-    { env: { APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(timeoutSecs) }, allowFail: true },
+    [
+      "aphrody",
+      "infra",
+      "ssh",
+      "exec",
+      "--host",
+      cfg.host.target,
+      "--json",
+      "-c",
+      command,
+    ],
+    {
+      env: { APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(timeoutSecs) },
+      allowFail: true,
+    },
   );
-  let parsed: { exit_code?: number; stdout?: string; stderr?: string } | null = null;
+  let parsed: { exit_code?: number; stdout?: string; stderr?: string } | null =
+    null;
   try {
     parsed = JSON.parse(result.stdout);
   } catch {
     // transport failure: the CLI printed an error instead of JSON
   }
-  if (parsed === null) throw new Error(`ssh exec failed: ${result.stderr || result.stdout}`);
+  if (parsed === null)
+    throw new Error(`ssh exec failed: ${result.stderr || result.stdout}`);
   if ((parsed.exit_code ?? 1) !== 0) {
     throw new Error(
       `remote command failed (${parsed.exit_code}): ${command.slice(0, 200)}\n${parsed.stderr ?? ""}${parsed.stdout ?? ""}`,
@@ -338,11 +397,15 @@ function artifactVersion(artifact: ArtifactConfig): string {
   const from = artifact.versionFrom;
   if (from?.file) return readFileSync(join(root, from.file), "utf8").trim();
   if (from?.packageJson)
-    return (JSON.parse(readFileSync(join(root, from.packageJson), "utf8")) as { version: string })
-      .version;
+    return (
+      JSON.parse(readFileSync(join(root, from.packageJson), "utf8")) as {
+        version: string;
+      }
+    ).version;
   if (from?.cargoWorkspace) {
     const text = readFileSync(join(root, from.cargoWorkspace), "utf8");
-    const section = /\[workspace\.package\]([\s\S]*?)(\n\[|$)/.exec(text)?.[1] ?? "";
+    const section =
+      /\[workspace\.package\]([\s\S]*?)(\n\[|$)/.exec(text)?.[1] ?? "";
     const version = /^version\s*=\s*"([^"]+)"/m.exec(section)?.[1];
     if (!version) throw new Error("workspace.package.version not found");
     return version;
@@ -357,7 +420,13 @@ function pluginVersion(artifact: ArtifactConfig): string {
   const git = artifact.git!;
   const sub = git.subdir ? `${git.subdir}/` : "";
   const out = Bun.spawnSync(
-    ["git", "-C", expand(git.path), "show", `${git.ref}:${sub}${artifact.manifest}`],
+    [
+      "git",
+      "-C",
+      expand(git.path),
+      "show",
+      `${git.ref}:${sub}${artifact.manifest}`,
+    ],
     { windowsHide: true },
   );
   if (out.exitCode !== 0)
@@ -447,7 +516,15 @@ export async function stagePlugin(
   try {
     const sub = git.subdir ? [`${git.ref}:${git.subdir}`] : [git.ref];
     const tarball = join(work, "plugin.tar");
-    await run(["git", "-C", repo, "archive", "--format=tar", `--output=${tarball}`, ...sub]);
+    await run([
+      "git",
+      "-C",
+      repo,
+      "archive",
+      "--format=tar",
+      `--output=${tarball}`,
+      ...sub,
+    ]);
     const tree = join(work, "tree");
     mkdirSync(tree);
     await tar(["-xf", tarball, "-C", tree]);
@@ -510,12 +587,21 @@ export function stagedFiles(
   const mine = entries.filter((e) => e.platform === platform.platform);
   for (const entry of mine) {
     if (entry.name !== artifact.id)
-      throw new Error(`${artifact.stage!.manifest} names ${entry.name}, expected ${artifact.id}`);
-    if (!/^[A-Za-z0-9._-]+$/.test(entry.file) || !/^[0-9a-f]{64}$/.test(entry.sha256))
-      throw new Error(`${artifact.stage!.manifest}: invalid entry ${entry.file}`);
+      throw new Error(
+        `${artifact.stage!.manifest} names ${entry.name}, expected ${artifact.id}`,
+      );
+    if (
+      !/^[A-Za-z0-9._-]+$/.test(entry.file) ||
+      !/^[0-9a-f]{64}$/.test(entry.sha256)
+    )
+      throw new Error(
+        `${artifact.stage!.manifest}: invalid entry ${entry.file}`,
+      );
   }
   if (mine.length === 0)
-    throw new Error(`${artifact.id}: the stage produced nothing for ${platform.platform}`);
+    throw new Error(
+      `${artifact.id}: the stage produced nothing for ${platform.platform}`,
+    );
   return mine;
 }
 
@@ -542,7 +628,11 @@ export async function stageLocal(
         throw new Error(`${entry.file}: staged hash ${got} != ${entry.sha256}`);
       const hits = [
         ...scanName(entry.file, cfg.secrets.deniedNames),
-        ...scanBytes(entry.file, new Uint8Array(readFileSync(source)), cfg.secrets.contentPatterns),
+        ...scanBytes(
+          entry.file,
+          new Uint8Array(readFileSync(source)),
+          cfg.secrets.contentPatterns,
+        ),
       ];
       if (hits.length)
         throw new Error(
@@ -596,14 +686,18 @@ export async function stageYolo(
       Bun.spawnSync(["readlink", "-f", artifactDir], { windowsHide: true })
         .stdout.toString()
         .trim() || artifactDir;
-    if (!existsSync(join(real, "manifest.json"))) throw new Error(`no runtime artifact at ${real}`);
+    if (!existsSync(join(real, "manifest.json")))
+      throw new Error(`no runtime artifact at ${real}`);
     await run(["cp", "-r", real, join(work, "artifact")]);
     // the layout of the monorepo under YOLO_HOME: packages/engine/runtime (SDK) and m3/templates
     for (const rel of [artifact.sdk!, artifact.templates!]) {
       mkdirSync(join(work, rel, ".."), { recursive: true });
       await run(["cp", "-r", join(root, rel), join(work, rel)]);
     }
-    rmSync(join(work, artifact.sdk!, "node_modules"), { recursive: true, force: true });
+    rmSync(join(work, artifact.sdk!, "node_modules"), {
+      recursive: true,
+      force: true,
+    });
     writeFileSync(join(work, "VERSION"), `${version}\n`);
     await run(["cp", join(real, "LICENSE"), join(work, "LICENSE")]);
     writeFileSync(
@@ -661,7 +755,9 @@ async function stageFactoryBinary(
   const factory = factoryCfg(cfg);
   const split = factory !== cfg;
   if (split && !cfg.factory.pushTo)
-    throw new Error("factory.pushTo is required when factory.target differs from host.target");
+    throw new Error(
+      "factory.pushTo is required when factory.target differs from host.target",
+    );
   const releaseFiles = `${cfg.host.root}/releases/${id}/files`;
   const filesDir = split ? `/tmp/aphrody-downloads-stage/${id}` : releaseFiles;
   const ext = platform.archive ?? "tar.gz";
@@ -679,7 +775,9 @@ async function stageFactoryBinary(
   // Secret scan of the binary on the host. Multi-line patterns (PEM private keys) cannot match inside one
   // grep line: the header line is looked up and its next line must be a 64 character base64 row. Embedded
   // header literals of PEM/SSH parsers are not secrets and do not have such a row.
-  const linePatterns = cfg.secrets.contentPatterns.filter((p) => !p.includes("\\n"));
+  const linePatterns = cfg.secrets.contentPatterns.filter(
+    (p) => !p.includes("\\n"),
+  );
   const grepArgs = linePatterns.map((p) => `-e ${q(p)}`).join(" ");
   const found = await remote(
     factory,
@@ -752,7 +850,8 @@ const flag = (name: string): boolean => Bun.argv.includes(`--${name}`);
 
 async function revisionArg(): Promise<string> {
   const rev = arg("revision") ?? (await gitOut(root, "rev-parse", "HEAD"));
-  if (!/^[0-9a-f]{40}$/.test(rev)) throw new Error("--revision must be a full 40 character sha");
+  if (!/^[0-9a-f]{40}$/.test(rev))
+    throw new Error("--revision must be a full 40 character sha");
   return rev;
 }
 
@@ -787,17 +886,31 @@ async function waitForJob(job: string): Promise<void> {
       exitCode?: number;
       logs?: { stderr?: { text?: string } };
     };
-    if (status.status === "succeeded" || (status.status === "completed" && status.exitCode === 0))
+    if (
+      status.status === "succeeded" ||
+      (status.status === "completed" && status.exitCode === 0)
+    )
       return;
     if (status.status === "failed")
-      throw new Error(`factory job ${job} failed: ${status.logs?.stderr?.text ?? ""}`);
+      throw new Error(
+        `factory job ${job} failed: ${status.logs?.stderr?.text ?? ""}`,
+      );
     await Bun.sleep(30_000);
   }
 }
 
 async function build(cfg: DownloadsConfig) {
   const commit = await revisionArg();
-  await run(buildFactory("prepare", "--repo", cfg.factory.repo, "--revision", commit, "--apply"));
+  await run(
+    buildFactory(
+      "prepare",
+      "--repo",
+      cfg.factory.repo,
+      "--revision",
+      commit,
+      "--apply",
+    ),
+  );
   for (const a of cfg.artifacts.filter((x) => x.kind === "factory-binary")) {
     for (const p of (a.platforms ?? []).filter((x) => x.enabled && x.cargo)) {
       // Job ids are idempotent: a failed job is replayed only under a new --attempt suffix.
@@ -835,7 +948,10 @@ async function release(cfg: DownloadsConfig) {
   mkdirSync(stage); // Reserve a new local tree; an existing release is immutable.
   const rel = `${cfg.host.root}/releases/${id}`;
   try {
-    await remote(cfg, `mkdir -p ${q(`${cfg.host.root}/releases`)} && mkdir ${q(rel)}`);
+    await remote(
+      cfg,
+      `mkdir -p ${q(`${cfg.host.root}/releases`)} && mkdir ${q(rel)}`,
+    );
   } catch (error) {
     rmSync(stage, { recursive: true, force: true });
     throw error;
@@ -867,7 +983,9 @@ async function releaseTree(cfg: DownloadsConfig, commit: string, id: string) {
     }
     for (const p of a.platforms ?? []) {
       if (!p.enabled) {
-        notes.push(`${a.id} ${p.platform}: not published (${p.reason ?? "disabled"})`);
+        notes.push(
+          `${a.id} ${p.platform}: not published (${p.reason ?? "disabled"})`,
+        );
         continue;
       }
       if (a.kind === "factory-binary" && p.optional) {
@@ -893,7 +1011,9 @@ async function releaseTree(cfg: DownloadsConfig, commit: string, id: string) {
   }
 
   // plugin archives are scanned after extraction by `git archive` (tracked files only)
-  for (const f of files.filter((x) => x.kind === "plugin" && x.file.endsWith(".tar.gz"))) {
+  for (const f of files.filter(
+    (x) => x.kind === "plugin" && x.file.endsWith(".tar.gz"),
+  )) {
     const work = mkdtempSync(join(tmpdir(), "plugin-scan-"));
     try {
       await tar(["-xzf", join(stage, "files", f.file), "-C", work]);
@@ -918,22 +1038,39 @@ async function releaseTree(cfg: DownloadsConfig, commit: string, id: string) {
   // integrity on the host: every file must hash to the value in the manifest
   for (const f of files) {
     const got = (
-      await remote(cfg, `sha256sum ${q(`${remoteFiles}/${f.file}`)} | cut -d' ' -f1`, 600)
+      await remote(
+        cfg,
+        `sha256sum ${q(`${remoteFiles}/${f.file}`)} | cut -d' ' -f1`,
+        600,
+      )
     ).trim();
     if (got !== f.sha256)
-      throw new Error(`host checksum mismatch for ${f.file}: ${got} != ${f.sha256}`);
+      throw new Error(
+        `host checksum mismatch for ${f.file}: ${got} != ${f.sha256}`,
+      );
   }
 
-  const manifest = buildManifest({ baseUrl: cfg.site.baseUrl, id, commit, files, notes });
+  const manifest = buildManifest({
+    baseUrl: cfg.site.baseUrl,
+    id,
+    commit,
+    files,
+    notes,
+  });
   await finalizeRelease(cfg, id, stage, manifest, files);
 }
 
 type ReleaseTransport = {
-  remote: (cfg: DownloadsConfig, command: string, timeoutSecs?: number) => Promise<string>;
+  remote: (
+    cfg: DownloadsConfig,
+    command: string,
+    timeoutSecs?: number,
+  ) => Promise<string>;
   put: (cfg: DownloadsConfig, local: string, dest: string) => Promise<void>;
 };
 const releaseTransport: ReleaseTransport = { remote, put };
-const safeReleaseName = (name: string): boolean => /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(name);
+const safeReleaseName = (name: string): boolean =>
+  /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(name);
 const safePayloadName = (name: string): boolean =>
   !!name && !/[\\/\0\r\n]/.test(name) && !name.startsWith(".");
 
@@ -980,21 +1117,36 @@ async function finalizeRelease(
   recordLocalRelease = true,
 ) {
   const rel = `${cfg.host.root}/releases/${id}`;
-  writeFileSync(join(stage, "latest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  writeFileSync(
+    join(stage, "latest.json"),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
   writeFileSync(join(stage, "SHA256SUMS"), buildSums(files));
   for (const f of files)
-    writeFileSync(join(stage, "files", `${f.file}.sha256`), `${f.sha256}  ${f.file}\n`);
+    writeFileSync(
+      join(stage, "files", `${f.file}.sha256`),
+      `${f.sha256}  ${f.file}\n`,
+    );
   const small = ["latest.json", "SHA256SUMS", ...Object.keys(assetHashes)];
   for (const name of small) {
     const local = join(stage, name);
     await io.put(cfg, local, `${rel}/${name}`);
     const got = (
-      await io.remote(cfg, `sha256sum ${q(`${rel}/${name}`)} | cut -d' ' -f1`, 600)
+      await io.remote(
+        cfg,
+        `sha256sum ${q(`${rel}/${name}`)} | cut -d' ' -f1`,
+        600,
+      )
     ).trim();
-    if (got !== (await sha256File(local))) throw new Error(`host checksum mismatch for ${name}`);
+    if (got !== (await sha256File(local)))
+      throw new Error(`host checksum mismatch for ${name}`);
   }
   for (const f of files)
-    await io.put(cfg, join(stage, "files", `${f.file}.sha256`), `${rel}/files/${f.file}.sha256`);
+    await io.put(
+      cfg,
+      join(stage, "files", `${f.file}.sha256`),
+      `${rel}/files/${f.file}.sha256`,
+    );
   // All payloads and sidecars must agree before publishing this tree.
   await io.remote(
     cfg,
@@ -1013,7 +1165,9 @@ async function finalizeRelease(
       `cd ${q(cfg.host.root)}`,
       "exec 9> .publish.lock",
       "flock -x 9",
-      ...(expectedCurrent ? [`test "$(readlink -f current)" = ${q(expectedCurrent)}`] : []),
+      ...(expectedCurrent
+        ? [`test "$(readlink -f current)" = ${q(expectedCurrent)}`]
+        : []),
       `test -f ${q(`${rel}/latest.json`)}`,
       `ln -sfn ${q(`releases/${id}`)} current.new`,
       "mv -T current.new current",
@@ -1055,13 +1209,16 @@ async function adoptPrebuiltStages(
   const groups = new Set<string>();
   const names = new Set<string>();
   for (const input of inputs) {
-    if (!/^[0-9a-f]{40}$/.test(input.commit)) throw new Error("invalid staged source commit");
+    if (!/^[0-9a-f]{40}$/.test(input.commit))
+      throw new Error("invalid staged source commit");
     const directory = resolve(input.directory);
-    if (!lstatSync(directory).isDirectory()) throw new Error("staged directory must be regular");
+    if (!lstatSync(directory).isDirectory())
+      throw new Error("staged directory must be regular");
     let found = false;
     for (const artifact of cfg.artifacts.filter((item) => item.stage)) {
       const manifestName = artifact.stage!.manifest;
-      if (!safePayloadName(manifestName)) throw new Error("invalid staged manifest name");
+      if (!safePayloadName(manifestName))
+        throw new Error("invalid staged manifest name");
       const manifestPath = join(directory, manifestName);
       if (!existsSync(manifestPath)) continue;
       found = true;
@@ -1072,7 +1229,8 @@ async function adoptPrebuiltStages(
       if (scanBytes(manifestName, bytes, cfg.secrets.contentPatterns).length)
         throw new Error(`secret scan failed for ${manifestName}`);
       const entries: unknown = JSON.parse(new TextDecoder().decode(bytes));
-      if (!Array.isArray(entries) || !entries.length) throw new Error("empty staged manifest");
+      if (!Array.isArray(entries) || !entries.length)
+        throw new Error("empty staged manifest");
       const platformGroups = new Set<string>();
       for (const entry of entries as StagedEntry[]) {
         const platform = artifact.platforms?.find(
@@ -1084,11 +1242,16 @@ async function adoptPrebuiltStages(
           !platform ||
           entry.target !== platform.target ||
           typeof entry.version !== "string" ||
-          !/^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?$/.test(entry.version) ||
+          !/^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?$/.test(
+            entry.version,
+          ) ||
           !(
-            (artifact.kind === "desktop" && ["desktop", "update"].includes(entry.kind)) ||
+            (artifact.kind === "desktop" &&
+              ["desktop", "update"].includes(entry.kind)) ||
             (artifact.kind === "kit" && entry.kind === "kit") ||
-            (artifact.kind === "wasm" && entry.kind === "wasm" && entry.file?.endsWith(".tar.gz"))
+            (artifact.kind === "wasm" &&
+              entry.kind === "wasm" &&
+              entry.file?.endsWith(".tar.gz"))
           ) ||
           typeof entry.file !== "string" ||
           !safePayloadName(entry.file) ||
@@ -1105,12 +1268,18 @@ async function adoptPrebuiltStages(
         const copied = join(stage, "files", entry.file);
         // Verify the staged copy itself so later source changes cannot alter the release bytes.
         copyFileSync(source, copied);
-        if (statSync(copied).size !== entry.size || (await sha256File(copied)) !== entry.sha256)
+        if (
+          statSync(copied).size !== entry.size ||
+          (await sha256File(copied)) !== entry.sha256
+        )
           throw new Error(`staged size or checksum mismatch: ${entry.file}`);
         if (
           scanName(entry.file, cfg.secrets.deniedNames).length ||
-          scanBytes(entry.file, new Uint8Array(readFileSync(copied)), cfg.secrets.contentPatterns)
-            .length
+          scanBytes(
+            entry.file,
+            new Uint8Array(readFileSync(copied)),
+            cfg.secrets.contentPatterns,
+          ).length
         )
           throw new Error(`secret scan failed for ${entry.file}`);
         names.add(entry.file);
@@ -1135,15 +1304,21 @@ async function adoptPrebuiltStages(
           file: file.file,
           size: file.size,
           sha256: file.sha256,
-          provenance: { revision: input.commit, builder: "staged", manifest: manifestName },
+          provenance: {
+            revision: input.commit,
+            builder: "staged",
+            manifest: manifestName,
+          },
         });
       }
       for (const group of platformGroups) {
-        if (groups.has(group)) throw new Error(`duplicate staged component/platform: ${group}`);
+        if (groups.has(group))
+          throw new Error(`duplicate staged component/platform: ${group}`);
         groups.add(group);
       }
     }
-    if (!found) throw new Error(`no configured staged manifest in ${directory}`);
+    if (!found)
+      throw new Error(`no configured staged manifest in ${directory}`);
   }
   return { files, artifacts };
 }
@@ -1185,7 +1360,9 @@ export function planAssetsSnapshot(
   const files = source.artifacts.map((artifact): PublishedFile => {
     const file =
       artifact.file ??
-      (typeof artifact.url === "string" ? basename(new URL(artifact.url).pathname) : "");
+      (typeof artifact.url === "string"
+        ? basename(new URL(artifact.url).pathname)
+        : "");
     if (
       typeof file !== "string" ||
       !safePayloadName(file) ||
@@ -1201,7 +1378,9 @@ export function planAssetsSnapshot(
         (value) => typeof value === "string" && value.length,
       )
     )
-      throw new Error(`invalid or unchecked inherited artifact: ${String(file)}`);
+      throw new Error(
+        `invalid or unchecked inherited artifact: ${String(file)}`,
+      );
     names.add(file);
     return {
       component: artifact.name as string,
@@ -1212,16 +1391,24 @@ export function planAssetsSnapshot(
       file,
       sha256: artifact.sha256,
       size: artifact.size,
-      ...(Array.isArray(artifact.provides) ? { provides: artifact.provides as string[] } : {}),
+      ...(Array.isArray(artifact.provides)
+        ? { provides: artifact.provides as string[] }
+        : {}),
     };
   });
-  if (checksums.size !== names.size) throw new Error("unlisted inherited checksum payload");
+  if (checksums.size !== names.size)
+    throw new Error("unlisted inherited checksum payload");
   return {
     files,
     manifest: {
       ...source,
       generatedAt: now.toISOString(),
-      release: { ...source.release, id, assetsFrom: source.release.id, assetsCommit: assetCommit },
+      release: {
+        ...source.release,
+        id,
+        assetsFrom: source.release.id,
+        assetsCommit: assetCommit,
+      },
       artifacts: source.artifacts.map((artifact, index) => ({
         ...artifact,
         file: files[index]!.file,
@@ -1245,9 +1432,14 @@ export async function publishAssetsSnapshot(
   const io = options.io ?? releaseTransport;
   const sourceRoot = options.sourceRoot ?? root;
   if (!safeReleaseName(options.id)) throw new Error("invalid release ID");
-  const current = (await io.remote(cfg, `readlink -f ${q(`${cfg.host.root}/current`)}`)).trim();
+  const current = (
+    await io.remote(cfg, `readlink -f ${q(`${cfg.host.root}/current`)}`)
+  ).trim();
   const oldId = basename(current);
-  if (!safeReleaseName(oldId) || current !== `${cfg.host.root}/releases/${oldId}`)
+  if (
+    !safeReleaseName(oldId) ||
+    current !== `${cfg.host.root}/releases/${oldId}`
+  )
     throw new Error(`no current release (${current})`);
   await io.remote(
     cfg,
@@ -1262,7 +1454,8 @@ export async function publishAssetsSnapshot(
   const source = JSON.parse(
     await io.remote(cfg, `cat ${q(`${current}/latest.json`)}`),
   ) as SnapshotManifest;
-  if (source.release?.id !== oldId) throw new Error("current manifest release ID mismatch");
+  if (source.release?.id !== oldId)
+    throw new Error("current manifest release ID mismatch");
   const sums = await io.remote(cfg, `cat ${q(`${current}/SHA256SUMS`)}`);
   const { manifest, files: inherited } = planAssetsSnapshot(
     source,
@@ -1278,8 +1471,14 @@ export async function publishAssetsSnapshot(
   const rel = `${cfg.host.root}/releases/${options.id}`;
   let reserved = false;
   try {
-    const prebuilt = await adoptPrebuiltStages(cfg, options.staged ?? [], stage);
-    const replaced = new Set(prebuilt.files.map((file) => `${file.component}/${file.platform}`));
+    const prebuilt = await adoptPrebuiltStages(
+      cfg,
+      options.staged ?? [],
+      stage,
+    );
+    const replaced = new Set(
+      prebuilt.files.map((file) => `${file.component}/${file.platform}`),
+    );
     const inheritedFiles = inherited.filter(
       (file) => !replaced.has(`${file.component}/${file.platform}`),
     );
@@ -1325,8 +1524,22 @@ export async function publishAssetsSnapshot(
       );
     }
     for (const file of prebuilt.files)
-      await io.put(cfg, join(stage, "files", file.file), `${rel}/files/${file.file}`);
-    await finalizeRelease(cfg, options.id, stage, manifest, files, io, assetHashes, current, false);
+      await io.put(
+        cfg,
+        join(stage, "files", file.file),
+        `${rel}/files/${file.file}`,
+      );
+    await finalizeRelease(
+      cfg,
+      options.id,
+      stage,
+      manifest,
+      files,
+      io,
+      assetHashes,
+      current,
+      false,
+    );
     return manifest;
   } catch (error) {
     if (reserved)
@@ -1351,16 +1564,24 @@ async function assets(cfg: DownloadsConfig) {
   for (let index = 3; index < Bun.argv.length; index += 1) {
     if (Bun.argv[index] !== "--staged") continue;
     const directory = Bun.argv[++index];
-    if (!directory || directory.startsWith("--")) throw new Error("--staged requires a directory");
+    if (!directory || directory.startsWith("--"))
+      throw new Error("--staged requires a directory");
     directories.push(directory);
   }
   const stagedCommit = arg("staged-revision") ?? "";
   if (directories.length && !/^[0-9a-f]{40}$/.test(stagedCommit))
-    throw new Error("--staged requires --staged-revision with a full source commit");
+    throw new Error(
+      "--staged requires --staged-revision with a full source commit",
+    );
   await publishAssetsSnapshot(cfg, {
     assetCommit,
-    id: arg("id") ?? `${releaseId(assetCommit)}-assets-${randomUUID().slice(0, 8)}`,
-    staged: directories.map((directory) => ({ directory, commit: stagedCommit })),
+    id:
+      arg("id") ??
+      `${releaseId(assetCommit)}-assets-${randomUUID().slice(0, 8)}`,
+    staged: directories.map((directory) => ({
+      directory,
+      commit: stagedCommit,
+    })),
   });
 }
 
@@ -1384,8 +1605,13 @@ async function ghJson(
       return JSON.parse(out.stdout);
     } catch {
       // errors are printed as text by the CLI: keep the HTTP status
-      const status = Number(/HTTP (\d{3})/.exec(out.stderr + out.stdout)?.[1] ?? 0);
-      return { status, body: { message: (out.stderr + out.stdout).slice(0, 300) } };
+      const status = Number(
+        /HTTP (\d{3})/.exec(out.stderr + out.stdout)?.[1] ?? 0,
+      );
+      return {
+        status,
+        body: { message: (out.stderr + out.stdout).slice(0, 300) },
+      };
     }
   } finally {
     if (bodyFile) rmSync(bodyFile, { force: true });
@@ -1393,7 +1619,9 @@ async function ghJson(
 }
 
 async function github(cfg: DownloadsConfig) {
-  const last = JSON.parse(readFileSync(join(root, "dist/downloads/last-release.json"), "utf8")) as {
+  const last = JSON.parse(
+    readFileSync(join(root, "dist/downloads/last-release.json"), "utf8"),
+  ) as {
     id: string;
     commit: string;
     files: PublishedFile[];
@@ -1405,10 +1633,13 @@ async function github(cfg: DownloadsConfig) {
     const repo = target.repository;
     const meta = await ghJson(`/repos/${repo}`);
     if (meta.status !== 200)
-      throw new Error(`repository ${repo} is not reachable: HTTP ${meta.status}`);
+      throw new Error(
+        `repository ${repo} is not reachable: HTTP ${meta.status}`,
+      );
     // never create a repository, never change visibility: only releases on an existing one
-    const sourceCommit = (await ghJson(`/repos/${repo}/commits/${meta.body.default_branch}`)).body
-      .sha as string;
+    const sourceCommit = (
+      await ghJson(`/repos/${repo}/commits/${meta.body.default_branch}`)
+    ).body.sha as string;
     const tag = `${cfg.github.tagPrefix}${id}`;
     const existing = await ghJson(`/repos/${repo}/releases/tags/${tag}`);
     if (existing.status !== 200) {
@@ -1438,9 +1669,17 @@ async function github(cfg: DownloadsConfig) {
         .map((f) => join("files", f.file)),
       ...target.extra,
     ];
-    if (target.repository !== "aphrody-labs/aphrody" && target.extra.includes("SHA256SUMS")) {
-      const subset = last.files.filter((f) => target.artifacts.includes(f.component));
-      writeFileSync(join(stage, `SHA256SUMS.${repo.split("/")[1]}`), buildSums(subset));
+    if (
+      target.repository !== "aphrody-labs/aphrody" &&
+      target.extra.includes("SHA256SUMS")
+    ) {
+      const subset = last.files.filter((f) =>
+        target.artifacts.includes(f.component),
+      );
+      writeFileSync(
+        join(stage, `SHA256SUMS.${repo.split("/")[1]}`),
+        buildSums(subset),
+      );
     }
     for (const name of names) {
       const path =
@@ -1500,7 +1739,10 @@ export async function mcpHandshake(exe: string): Promise<string> {
       const line = buffer.split("\n").find((l) => l.includes('"jsonrpc"'));
       if (line) {
         const reply = JSON.parse(line) as {
-          result?: { protocolVersion?: string; serverInfo?: { name: string; version: string } };
+          result?: {
+            protocolVersion?: string;
+            serverInfo?: { name: string; version: string };
+          };
         };
         const info = reply.result?.serverInfo;
         return info
@@ -1518,10 +1760,17 @@ async function verify(cfg: DownloadsConfig) {
   const base = arg("url") ?? cfg.site.baseUrl;
   const manifest = (await (await fetch(`${base}/latest.json`)).json()) as {
     release: { id: string };
-    artifacts: { name: string; platform: string; url: string; sha256: string; size: number }[];
+    artifacts: {
+      name: string;
+      platform: string;
+      url: string;
+      sha256: string;
+      size: number;
+    }[];
   };
   const work = mkdtempSync(join(tmpdir(), "verify-downloads-"));
-  const wanted = process.platform === "win32" ? "windows-x86_64" : "linux-x86_64";
+  const wanted =
+    process.platform === "win32" ? "windows-x86_64" : "linux-x86_64";
   let failures = 0;
   for (const a of manifest.artifacts) {
     const response = await fetch(a.url);
@@ -1538,11 +1787,16 @@ async function verify(cfg: DownloadsConfig) {
       `${ok ? "OK  " : "FAIL"} ${a.name} ${a.platform} ${a.url} sha256=${sum.slice(0, 16)}...`,
     );
     if (!ok) failures++;
-    if (ok && a.platform === wanted && (a.name === "aphrody" || a.name === "yolo")) {
+    if (
+      ok &&
+      a.platform === wanted &&
+      (a.name === "aphrody" || a.name === "yolo")
+    ) {
       const dir = join(work, a.name);
       mkdirSync(dir);
       await run(["tar", "-xzf", dest, "-C", dir]);
-      const exe = a.name === "yolo" ? join(dir, "bin/yolo") : join(dir, "aphrody");
+      const exe =
+        a.name === "yolo" ? join(dir, "bin/yolo") : join(dir, "aphrody");
       console.log(
         `     ${a.name} --version: ${(await run([exe, "--version"], { allowFail: true })).stdout.trim().split("\n")[0]}`,
       );
@@ -1563,7 +1817,13 @@ export function downloadsHostPlan(cfg: DownloadsConfig) {
   const catalog = JSON.parse(
     readFileSync(join(root, "tools/config/service-catalog.json"), "utf8"),
   ) as {
-    services: { id: string; host?: string; unit?: string; port?: number; releaseRoot?: string }[];
+    services: {
+      id: string;
+      host?: string;
+      unit?: string;
+      port?: number;
+      releaseRoot?: string;
+    }[];
   };
   const service = catalog.services.find((item) => item.id === cfg.host.service);
   if (
@@ -1577,7 +1837,9 @@ export function downloadsHostPlan(cfg: DownloadsConfig) {
     !cfg.site.hosts.length ||
     cfg.site.hosts.some((host) => !/^[a-z0-9.-]+$/.test(host))
   )
-    throw new Error("downloads host does not match the declared native service catalog");
+    throw new Error(
+      "downloads host does not match the declared native service catalog",
+    );
   const rootDir = cfg.host.root;
   const certDir = `/etc/letsencrypt/live/${cfg.site.certName}`;
   const certificate = `${certDir}/fullchain.pem`;
@@ -1587,7 +1849,8 @@ export function downloadsHostPlan(cfg: DownloadsConfig) {
     `test -x ${q(cfg.host.bun)}`,
     `sudo test -s ${q(certificate)}`,
     ...cfg.site.hosts.map(
-      (host) => `sudo openssl x509 -in ${q(certificate)} -noout -checkend 0 -checkhost ${q(host)}`,
+      (host) =>
+        `sudo openssl x509 -in ${q(certificate)} -noout -checkend 0 -checkhost ${q(host)}`,
     ),
     "sudo nginx -t",
   ].join("\n");
@@ -1608,7 +1871,11 @@ export function downloadsHostPlan(cfg: DownloadsConfig) {
   return { preflight, setup, activate, steps };
 }
 
-export async function hostCommands(cfg: DownloadsConfig, apply: boolean, io = releaseTransport) {
+export async function hostCommands(
+  cfg: DownloadsConfig,
+  apply: boolean,
+  io = releaseTransport,
+) {
   const hostPlan = downloadsHostPlan(cfg);
   const rootDir = cfg.host.root;
   console.log(hostPlan.steps.map((s) => `- ${s}`).join("\n"));

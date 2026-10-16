@@ -35,14 +35,23 @@ export function loadCargoMetadata<P = CargoPackage>(
 ): { packages: P[]; workspace_members: string[] } | { error: string } {
   const result = Bun.spawnSync(
     ["cargo", "metadata", "--format-version", "1", "--no-deps", "--offline"],
-    { windowsHide: true, cwd: dir, env: process.env, stdout: "pipe", stderr: "pipe" },
+    {
+      windowsHide: true,
+      cwd: dir,
+      env: process.env,
+      stdout: "pipe",
+      stderr: "pipe",
+    },
   );
   if (result.exitCode !== 0) {
     return {
       error: `cargo metadata failed: ${result.stderr.toString().trim().split("\n").slice(-3).join(" | ")}`,
     };
   }
-  return JSON.parse(result.stdout.toString()) as { packages: P[]; workspace_members: string[] };
+  return JSON.parse(result.stdout.toString()) as {
+    packages: P[];
+    workspace_members: string[];
+  };
 }
 
 /** A path is inside root only when it resolves to root or a descendant. */
@@ -64,7 +73,9 @@ export function graphFromMetadata(
   const members = new Set(metadata.workspace_members);
   const byDirectory = new Map<string, string>();
   const packages = metadata.packages.filter((pkg) =>
-    pkg.id === undefined ? inside(root, pkg.manifest_path) : members.has(pkg.id),
+    pkg.id === undefined
+      ? inside(root, pkg.manifest_path)
+      : members.has(pkg.id),
   );
   for (const pkg of packages) {
     if (!inside(root, pkg.manifest_path)) {
@@ -73,7 +84,8 @@ export function graphFromMetadata(
     }
     const dir = resolve(dirname(pkg.manifest_path));
     const node = relative(root, dir).split(sep).join("/");
-    if (byDirectory.has(dir)) errors.push(`duplicate workspace directory: ${node}`);
+    if (byDirectory.has(dir))
+      errors.push(`duplicate workspace directory: ${node}`);
     byDirectory.set(dir, node);
   }
   const edges: Edge[] = [];
@@ -87,9 +99,16 @@ export function graphFromMetadata(
       const directory = resolve(dep.path);
       const to = byDirectory.get(directory);
       if (to && to !== from) {
-        edges.push({ from, to, kind: "dependency", evidence: `${pkg.name} -> ${dep.name}` });
+        edges.push({
+          from,
+          to,
+          kind: "dependency",
+          evidence: `${pkg.name} -> ${dep.name}`,
+        });
       } else if (inside(root, directory) && !to) {
-        errors.push(`workspace path dependency not indexed: ${from} -> ${dep.name} (${directory})`);
+        errors.push(
+          `workspace path dependency not indexed: ${from} -> ${dep.name} (${directory})`,
+        );
       } else if (!inside(root, directory)) {
         externalPaths.add(relative(root, directory).split(sep).join("/"));
       }
@@ -111,14 +130,24 @@ export function graphFromMetadata(
 export function collectEdges(root: string): WorkspaceGraph {
   const metadata = loadCargoMetadata<CargoPackage & { id: string }>(root);
   if ("error" in metadata) {
-    return { nodes: [], edges: [], externalPaths: [], errors: [metadata.error] };
+    return {
+      nodes: [],
+      edges: [],
+      externalPaths: [],
+      errors: [metadata.error],
+    };
   }
   return graphFromMetadata(root, metadata);
 }
 
 /** Strongly connected components with more than one crate (Tarjan). */
-export function cycles(nodes: readonly string[], edges: readonly Edge[]): string[][] {
-  const next = new Map<string, Set<string>>(nodes.map((node) => [node, new Set<string>()]));
+export function cycles(
+  nodes: readonly string[],
+  edges: readonly Edge[],
+): string[][] {
+  const next = new Map<string, Set<string>>(
+    nodes.map((node) => [node, new Set<string>()]),
+  );
   for (const edge of edges) next.get(edge.from)?.add(edge.to);
   let index = 0;
   const order = new Map<string, number>();

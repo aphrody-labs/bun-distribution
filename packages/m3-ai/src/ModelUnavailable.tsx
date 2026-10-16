@@ -24,8 +24,11 @@ export interface ModelUnavailableProps {
 }
 
 /** Clamp a progress fraction to 0..1; non-finite values give `null` (indeterminate). */
-export function clampProgress(progress: number | null | undefined): number | null {
-  if (progress === null || progress === undefined || !Number.isFinite(progress)) return null;
+export function clampProgress(
+  progress: number | null | undefined,
+): number | null {
+  if (progress === null || progress === undefined || !Number.isFinite(progress))
+    return null;
   return Math.min(1, Math.max(0, progress));
 }
 
@@ -70,7 +73,9 @@ export function ModelUnavailable({
         )}
         <div className="min-w-0 flex-1">
           <p className="m-0 text-title-medium">{title}</p>
-          {reason ? <p className="m-0 mt-1 text-body-medium opacity-90">{reason}</p> : null}
+          {reason ? (
+            <p className="m-0 mt-1 text-body-medium opacity-90">{reason}</p>
+          ) : null}
         </div>
         {percent !== null ? (
           <span className="shrink-0 text-label-large">

@@ -3,12 +3,12 @@
 `soundcraft-web-<version>.zip` (from the GitHub release, or `packaging/web/package.sh`) holds a
 static site in `soundcraft-web-<version>/`:
 
-| File | What it is |
-|---|---|
-| `index.html` | The page. It loads everything through relative URLs. |
-| `soundcraft-web-<hash>.js` | wasm-bindgen glue (generated, ES module) |
+| File                            | What it is                                                                |
+| ------------------------------- | ------------------------------------------------------------------------- |
+| `index.html`                    | The page. It loads everything through relative URLs.                      |
+| `soundcraft-web-<hash>.js`      | wasm-bindgen glue (generated, ES module)                                  |
 | `soundcraft-web-<hash>_bg.wasm` | The app (size: see the release; roughly a third of that with compression) |
-| `_headers`, `.htaccess` | Sample header rules for Netlify/Cloudflare Pages and Apache |
+| `_headers`, `.htaccess`         | Sample header rules for Netlify/Cloudflare Pages and Apache               |
 
 There is no server-side code. Upload the folder's contents anywhere that serves static files.
 
@@ -58,7 +58,8 @@ Local test: `python3 -m http.server 8765` inside the folder, then open http://lo
   title="SoundCraft"
   style="width: 100%; height: 720px; border: 0;"
   allow="fullscreen; autoplay; clipboard-read; clipboard-write"
-  allowfullscreen>
+  allowfullscreen
+>
 </iframe>
 ```
 
@@ -73,10 +74,10 @@ Local test: `python3 -m http.server 8765` inside the folder, then open http://lo
 SoundCraft renders with wgpu. It uses **WebGPU** when the browser has it and falls back to
 **WebGL2** on its own. URL query flags override this, and they work on the iframe `src` too:
 
-| Flag | Effect |
-|---|---|
-| *(none)* | WebGPU if available, otherwise WebGL2 |
-| `?webgl` | Force the WebGL2 backend (useful when a WebGPU driver misbehaves) |
+| Flag     | Effect                                                              |
+| -------- | ------------------------------------------------------------------- |
+| _(none)_ | WebGPU if available, otherwise WebGL2                               |
+| `?webgl` | Force the WebGL2 backend (useful when a WebGPU driver misbehaves)   |
 | `?empty` | Start with an empty session instead of the synthesised demo session |
 
 For example: `<iframe src="https://example.com/soundcraft/?webgl" ...>`.

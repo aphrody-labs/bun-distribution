@@ -1,11 +1,21 @@
-import { CameraAspectRatio, fromEngineActions, QueueNames, toEngineActions, toTimelineActions } from "../enums";
-import { IGenerationOptions, MediaItem, QueueClip, QueueKeyframe, UpdateTime } from "../interfaces";
+import {
+  CameraAspectRatio,
+  fromEngineActions,
+  QueueNames,
+  toEngineActions,
+  toTimelineActions,
+} from "../enums";
+import {
+  IGenerationOptions,
+  MediaItem,
+  QueueClip,
+  QueueKeyframe,
+  UpdateTime,
+} from "../interfaces";
 import { ToastDataType } from "./toast";
 
 export type UnionedActionTypes =
-  | fromEngineActions
-  | toEngineActions
-  | toTimelineActions;
+  fromEngineActions | toEngineActions | toTimelineActions;
 
 export type UnionedDataTypes =
   | QueueClip
@@ -35,22 +45,16 @@ class Queue {
       data: UnionedDataTypes;
     }>
   > = {
-      [QueueNames.FROM_ENGINE]: [],
-      [QueueNames.TO_ENGINE]: [],
-      [QueueNames.TO_TIMELINE]: []
-    };
+    [QueueNames.FROM_ENGINE]: [],
+    [QueueNames.TO_ENGINE]: [],
+    [QueueNames.TO_TIMELINE]: [],
+  };
 
-  private _subscribers: Record<
-    QueueNames,
-    Map<
-      string,
-      SubscribeHandler
-    >
-  > = {
-      [QueueNames.FROM_ENGINE]: new Map<string, SubscribeHandler>(),
-      [QueueNames.TO_ENGINE]: new Map<string, SubscribeHandler>(),
-      [QueueNames.TO_TIMELINE]: new Map<string, SubscribeHandler>(),
-    };
+  private _subscribers: Record<QueueNames, Map<string, SubscribeHandler>> = {
+    [QueueNames.FROM_ENGINE]: new Map<string, SubscribeHandler>(),
+    [QueueNames.TO_ENGINE]: new Map<string, SubscribeHandler>(),
+    [QueueNames.TO_TIMELINE]: new Map<string, SubscribeHandler>(),
+  };
 
   // Enqueues actions to a specified queue
   public publish({
@@ -89,7 +93,6 @@ class Queue {
     id: string,
     onMessage: (entry: QueueSubscribeType) => void,
   ) {
-
     // Queues for all QueueNames should be initialized above but this is a safeguard for future enum additions
     // Make sure the queue exists
     if (!this._subscribers[queueName]) {

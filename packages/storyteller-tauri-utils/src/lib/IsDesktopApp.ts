@@ -1,9 +1,8 @@
-
 export function IsDesktopApp(): boolean {
-  if (typeof window !== 'undefined') {
-    if ('__TAURI_INTERNALS__' in window) {
+  if (typeof window !== "undefined") {
+    if ("__TAURI_INTERNALS__" in window) {
       return true;
-    } else if ('__TAURI__' in window) {
+    } else if ("__TAURI__" in window) {
       return true;
     }
   }

@@ -45,11 +45,19 @@ describe("production form synchronization", () => {
     const trigger = host.querySelector<HTMLButtonElement>('[role="combobox"]')!;
     expect(trigger.textContent).toContain("Reader");
     const controls = [...host.querySelectorAll<HTMLButtonElement>("button")];
-    flushSync(() => controls.find((control) => control.textContent === "Reset to editor")!.click());
+    flushSync(() =>
+      controls
+        .find((control) => control.textContent === "Reset to editor")!
+        .click(),
+    );
     expect(trigger.textContent).toContain("Editor");
-    flushSync(() => controls.find((control) => control.textContent === "Focus role")!.click());
+    flushSync(() =>
+      controls.find((control) => control.textContent === "Focus role")!.click(),
+    );
     // react-hook-form 7.89 schedules setFocus with setTimeout.
     await Bun.sleep(10);
-    expect(document.activeElement === host!.querySelector('[role="combobox"]')).toBe(true);
+    expect(
+      document.activeElement === host!.querySelector('[role="combobox"]'),
+    ).toBe(true);
   });
 });

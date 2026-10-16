@@ -89,7 +89,10 @@ export function parsePluginArgs(argv: string[]): Args {
   const result: Args = {
     command: "status",
     store: pluginStorePath(),
-    config: resolve(import.meta.dir, "../../../tools/aphrody/config/ai/agent-plugin-providers.json"),
+    config: resolve(
+      import.meta.dir,
+      "../../../tools/aphrody/config/ai/agent-plugin-providers.json",
+    ),
     home: userHome(),
     cwd: process.cwd(),
     providers: [],
@@ -123,7 +126,8 @@ export function parsePluginArgs(argv: string[]): Args {
       continue;
     }
     const value = argv[++i];
-    if (!value || value.startsWith("--")) throw new Error(`Missing value for ${arg}`);
+    if (!value || value.startsWith("--"))
+      throw new Error(`Missing value for ${arg}`);
     switch (arg) {
       case "--store":
       case "--root":
@@ -194,7 +198,9 @@ export function applyAction(
       mkdirSync(join(home, ".codex"), { recursive: true });
     const result = runner(action.command, cwd, home);
     if (result.exitCode !== 0)
-      throw new Error(`Provider command failed: ${result.command.join(" ")}\n${result.output}`);
+      throw new Error(
+        `Provider command failed: ${result.command.join(" ")}\n${result.output}`,
+      );
     return { ...result };
   }
   if (action.type === "skill-link") {
@@ -203,22 +209,39 @@ export function applyAction(
       const info = lstatSync(action.path);
       if (
         !info.isSymbolicLink() ||
-        resolve(dirname(action.path), readlinkSync(action.path)) !== resolve(action.source)
+        resolve(dirname(action.path), readlinkSync(action.path)) !==
+          resolve(action.source)
       )
-        throw new Error(`Existing skill destination belongs to another source: ${action.path}`);
+        throw new Error(
+          `Existing skill destination belongs to another source: ${action.path}`,
+        );
       if (action.remove) rmSync(action.path);
-      return { path: action.path, status: action.remove ? "removed" : "already-installed" };
+      return {
+        path: action.path,
+        status: action.remove ? "removed" : "already-installed",
+      };
     } catch (e) {
-      if (!(e && typeof e === "object" && "code" in e && e.code === "ENOENT")) throw e;
+      if (!(e && typeof e === "object" && "code" in e && e.code === "ENOENT"))
+        throw e;
     }
     if (!action.remove)
-      symlinkSync(action.source, action.path, process.platform === "win32" ? "junction" : "dir");
-    return { path: action.path, status: action.remove ? "already-absent" : "installed" };
+      symlinkSync(
+        action.source,
+        action.path,
+        process.platform === "win32" ? "junction" : "dir",
+      );
+    return {
+      path: action.path,
+      status: action.remove ? "already-absent" : "installed",
+    };
   }
   if (action.type === "agy-project-mcp") {
     const manifest = join(action.path, "plugin.json"),
       config = join(action.path, "mcp_config.json");
-    if (existsSync(manifest) && readJson(manifest).managedBy !== "aphrody-workspace")
+    if (
+      existsSync(manifest) &&
+      readJson(manifest).managedBy !== "aphrody-workspace"
+    )
       throw new Error(`MCP plugin belongs to another source: ${action.path}`);
     if (action.remove) {
       if (existsSync(manifest)) {
@@ -241,10 +264,17 @@ export function applyAction(
       );
       writeText(
         config,
-        JSON.stringify({ mcpServers: { [action.name]: action.server } }, null, 2) + "\n",
+        JSON.stringify(
+          { mcpServers: { [action.name]: action.server } },
+          null,
+          2,
+        ) + "\n",
       );
     }
-    return { path: action.path, status: action.remove ? "removed" : "installed" };
+    return {
+      path: action.path,
+      status: action.remove ? "removed" : "installed",
+    };
   }
   if (action.type === "json-entry") {
     const value = existsSync(action.path) ? readJson(action.path) : {};
@@ -255,7 +285,8 @@ export function applyAction(
         const other = object(v);
         return (
           other.path === entry.path &&
-          JSON.stringify(other.include_only) === JSON.stringify(entry.include_only)
+          JSON.stringify(other.include_only) ===
+            JSON.stringify(entry.include_only)
         );
       };
       value.entries = current.filter((v) => !match(v));
@@ -272,16 +303,24 @@ export function applyAction(
       writeText(action.path, text);
       changes.push({ path: action.path, action: "write" });
     }
-    return { path: action.path, status: changes.length ? "updated" : "unchanged" };
+    return {
+      path: action.path,
+      status: changes.length ? "updated" : "unchanged",
+    };
   }
   const table =
     action.type === "toml-plugin"
       ? `plugins.${JSON.stringify(action.id)}`
       : `mcp_servers.${JSON.stringify(action.name)}`;
-  const value = action.type === "toml-plugin" ? { enabled: action.enabled } : action.server;
+  const value =
+    action.type === "toml-plugin" ? { enabled: action.enabled } : action.server;
   writeText(
     action.path,
-    replaceTomlTable(existingText(action.path), table, action.remove ? null : value),
+    replaceTomlTable(
+      existingText(action.path),
+      table,
+      action.remove ? null : value,
+    ),
   );
   return { path: action.path, status: "updated" };
 }
@@ -299,7 +338,8 @@ export function publicPlan(plan: InstallPlan): Json {
       if (action.type === "json-entry")
         return {
           ...action,
-          value: action.field === "entries" ? action.value : "[MCP configuration]",
+          value:
+            action.field === "entries" ? action.value : "[MCP configuration]",
         };
       if (action.type === "toml-mcp" || action.type === "agy-project-mcp")
         return { ...action, server: "[MCP configuration]" };
@@ -307,15 +347,26 @@ export function publicPlan(plan: InstallPlan): Json {
     }),
   };
 }
-export async function pluginOperation(args: Args, runner: Runner = runCommand): Promise<Json> {
+export async function pluginOperation(
+  args: Args,
+  runner: Runner = runCommand,
+): Promise<Json> {
   const config = providerConfig(args.config);
-  const requested = args.providers.filter((id) => id !== "auto" && id !== "all");
+  const requested = args.providers.filter(
+    (id) => id !== "auto" && id !== "all",
+  );
   for (const id of requested)
     if (!config.providers.some((p) => p.id === id))
       throw new Error(`Provider adapter not configured: ${id}`);
-  const selected = config.providers.filter((p) => !requested.length || requested.includes(p.id));
+  const selected = config.providers.filter(
+    (p) => !requested.length || requested.includes(p.id),
+  );
   return storeLock(args.store, args.apply, async () => {
-    const base = { command: args.command, store: args.store, apply: args.apply };
+    const base = {
+      command: args.command,
+      store: args.store,
+      apply: args.apply,
+    };
     if (args.command === "status")
       return {
         ...base,
@@ -328,8 +379,12 @@ export async function pluginOperation(args: Args, runner: Runner = runCommand): 
         })),
       };
     if (args.command === "fix-refs")
-      return { ...base, changes: fixReferences(args.store, args.apply, args.scanRoots) };
-    if (args.command === "clean") return { ...base, ...cleanStore(args.store, args.apply) };
+      return {
+        ...base,
+        changes: fixReferences(args.store, args.apply, args.scanRoots),
+      };
+    if (args.command === "clean")
+      return { ...base, ...cleanStore(args.store, args.apply) };
     if (args.command === "prepare") {
       const changes = [
         ...fixReferences(args.store, args.apply, args.scanRoots),
@@ -349,8 +404,12 @@ export async function pluginOperation(args: Args, runner: Runner = runCommand): 
           args.cwd,
           args.home,
         );
-        formatting = { ...result, status: result.exitCode === 0 ? "passed" : "failed" };
-        if (result.exitCode !== 0) throw new Error(`Plugin formatting failed: ${result.output}`);
+        formatting = {
+          ...result,
+          status: result.exitCode === 0 ? "passed" : "failed",
+        };
+        if (result.exitCode !== 0)
+          throw new Error(`Plugin formatting failed: ${result.output}`);
       }
       return { ...base, changes, formatting };
     }
@@ -369,7 +428,8 @@ export async function pluginOperation(args: Args, runner: Runner = runCommand): 
         ...base,
         problems,
         native,
-        success: problems.length === 0 && !native.some((r) => r.status === "failed"),
+        success:
+          problems.length === 0 && !native.some((r) => r.status === "failed"),
       };
     }
     if (args.command === "facts" || args.command === "refresh-facts") {
@@ -377,7 +437,11 @@ export async function pluginOperation(args: Args, runner: Runner = runCommand): 
         args.command === "refresh-facts"
           ? refreshPluginFacts(args.store, args.name, args.apply)
           : checkPluginFacts(args.store, args.name);
-      return { ...base, facts, success: facts.every((item) => item.status === "current") };
+      return {
+        ...base,
+        facts,
+        success: facts.every((item) => item.status === "current"),
+      };
     }
     if (!args.name) throw new Error("Installation and removal require --name");
     const remove = args.command === "uninstall",
@@ -399,10 +463,15 @@ export async function pluginOperation(args: Args, runner: Runner = runCommand): 
         ),
       );
     }
-    if (!plans.length) throw new Error("No configured provider CLI is installed");
+    if (!plans.length)
+      throw new Error("No configured provider CLI is installed");
     if (args.kind === "skill" && args.source) {
       const fm = skillFrontmatter(join(args.source, "SKILL.md"));
-      if (fm.name !== args.name || typeof fm.description !== "string" || !fm.description.trim())
+      if (
+        fm.name !== args.name ||
+        typeof fm.description !== "string" ||
+        !fm.description.trim()
+      )
         throw new Error("Skill metadata does not match requested name");
     }
     const results: Json[] = [];
@@ -423,7 +492,9 @@ export async function pluginOperation(args: Args, runner: Runner = runCommand): 
           [args.name],
         );
         if (native.some((r) => r.status === "failed"))
-          throw new Error("Native validation failed; no installation was started");
+          throw new Error(
+            "Native validation failed; no installation was started",
+          );
       }
       for (const plan of plans)
         for (const action of plan.actions)
@@ -459,7 +530,12 @@ export async function runAgentPlugins(argv: string[]): Promise<number> {
     const report = await pluginOperation(args);
     if (args.apply) {
       const changes: Change[] = [];
-      writeJson(join(args.store, "_state", `${args.command}-report.json`), report, true, changes);
+      writeJson(
+        join(args.store, "_state", `${args.command}-report.json`),
+        report,
+        true,
+        changes,
+      );
     }
     console.log(JSON.stringify(report, null, 2));
     return report.success === false ? 1 : 0;
@@ -468,4 +544,5 @@ export async function runAgentPlugins(argv: string[]): Promise<number> {
     return 1;
   }
 }
-if (import.meta.main) process.exit(await runAgentPlugins(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runAgentPlugins(process.argv.slice(2)));

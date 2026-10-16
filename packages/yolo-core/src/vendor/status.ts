@@ -27,7 +27,10 @@ export interface StatusReport {
   readonly timestamp: string;
   readonly root: string;
   readonly packages: readonly SubmoduleStatus[];
-  readonly vendor: { crates: number; sources: readonly VendorSourceStatus[] } | null;
+  readonly vendor: {
+    crates: number;
+    sources: readonly VendorSourceStatus[];
+  } | null;
   readonly cargo: WorkspaceCargoSummary | null;
 }
 
@@ -36,22 +39,31 @@ export async function resolveGitDir(worktree: string): Promise<string> {
   const dotGit = resolve(worktree, ".git");
   if (!existsSync(dotGit)) return dotGit;
   if (!statSync(dotGit).isFile()) return dotGit;
-  const pointer = (await Bun.file(dotGit).text()).trim().replace(/^gitdir:\s*/, "");
+  const pointer = (await Bun.file(dotGit).text())
+    .trim()
+    .replace(/^gitdir:\s*/, "");
   return resolve(worktree, pointer);
 }
 
 /** Git object id (SHA-1 or SHA-256), lower-cased; undefined for any other text. */
 const oid = (text: string): string | undefined =>
-  /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/i.test(text) ? text.toLowerCase() : undefined;
+  /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/i.test(text)
+    ? text.toLowerCase()
+    : undefined;
 
 /** Resolve full HEAD through loose/packed refs and the common directory of a linked worktree. */
-export async function readGitHead(worktree: string): Promise<string | undefined> {
+export async function readGitHead(
+  worktree: string,
+): Promise<string | undefined> {
   const gitDir = await resolveGitDir(worktree);
   const commonFile = Bun.file(join(gitDir, "commondir"));
   const commonDir = (await commonFile.exists())
     ? resolve(gitDir, (await commonFile.text()).trim())
     : gitDir;
-  const resolveRef = async (value: string, depth: number): Promise<string | undefined> => {
+  const resolveRef = async (
+    value: string,
+    depth: number,
+  ): Promise<string | undefined> => {
     const direct = oid(value);
     if (direct) return direct;
     if (depth > 8 || !value.startsWith("ref:")) return undefined;
@@ -87,7 +99,9 @@ export async function readGitHead(worktree: string): Promise<string | undefined>
     return undefined;
   };
   const head = Bun.file(join(gitDir, "HEAD"));
-  return (await head.exists()) ? resolveRef((await head.text()).trim(), 0) : undefined;
+  return (await head.exists())
+    ? resolveRef((await head.text()).trim(), 0)
+    : undefined;
 }
 
 /**
@@ -121,7 +135,9 @@ function countFiles(dir: string, limit: number): number {
 /**
  * Inspect monorepo submodules and forks using Bun file I/O & wyhash checksums.
  */
-export async function inspectPackages(vendorDir?: string): Promise<readonly SubmoduleStatus[]> {
+export async function inspectPackages(
+  vendorDir?: string,
+): Promise<readonly SubmoduleStatus[]> {
   const vDir = vendorDir ?? resolve(yoloHome(), "vendor");
   const catalog = Bun.file(resolve(vDir, "../tools/config/vendor.json"));
   const pkgs: string[] = (await catalog.exists())
@@ -194,7 +210,9 @@ export async function readVendorStatus(
   };
 }
 
-export async function collectStatusReport(rootDir: string = yoloHome()): Promise<StatusReport> {
+export async function collectStatusReport(
+  rootDir: string = yoloHome(),
+): Promise<StatusReport> {
   // Inspect the submodules once: the vendor comparison reuses the result instead of scanning them a second time.
   const packages = await inspectPackages(resolve(rootDir, "vendor"));
   const [vendor, cargo] = await Promise.all([
@@ -242,7 +260,9 @@ export function renderStatusMarkdown(report: StatusReport): string {
     );
     for (const s of report.vendor.sources) {
       const syncStatus = s.inSync ? "✔ in sync" : "⚠ drift";
-      lines.push(`| \`${s.name}\` | \`${s.lockedSha.slice(0, 10)}\` | ${syncStatus} |`);
+      lines.push(
+        `| \`${s.name}\` | \`${s.lockedSha.slice(0, 10)}\` | ${syncStatus} |`,
+      );
     }
   }
 

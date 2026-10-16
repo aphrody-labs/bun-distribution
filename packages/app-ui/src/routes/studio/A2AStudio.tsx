@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useEffect, useState } from "react";
-import { loadAgentInventory, type AgentInventory } from "../../backend-inventory";
+import {
+  loadAgentInventory,
+  type AgentInventory,
+} from "../../backend-inventory";
 
 const serverLabels: Record<string, string> = {
   disabled: "Désactivé",
@@ -53,7 +56,8 @@ export function A2AStudio() {
         <div className="min-w-0">
           <h2 className="text-headline-small">Outils des agents</h2>
           <p className="mt-2 max-w-prose text-on-surface-variant">
-            Consultez les outils disponibles pour vos conversations et les connexions configurées.
+            Consultez les outils disponibles pour vos conversations et les
+            connexions configurées.
           </p>
         </div>
         <button
@@ -65,10 +69,16 @@ export function A2AStudio() {
           {loading ? "Chargement…" : failed ? "Réessayer" : "Actualiser"}
         </button>
       </header>
-      {loading && <output className="block">Lecture des outils disponibles…</output>}
+      {loading && (
+        <output className="block">Lecture des outils disponibles…</output>
+      )}
       {failed && (
-        <p role="alert" className="rounded-2xl bg-error-container p-5 text-on-error-container">
-          Impossible de lire les outils. Vérifiez la connexion au service puis réessayez.
+        <p
+          role="alert"
+          className="rounded-2xl bg-error-container p-5 text-on-error-container"
+        >
+          Impossible de lire les outils. Vérifiez la connexion au service puis
+          réessayez.
         </p>
       )}
       {inventory && (
@@ -78,7 +88,9 @@ export function A2AStudio() {
               Connexions
             </h3>
             {inventory.servers.length === 0 ? (
-              <p className="mt-3 text-on-surface-variant">Aucune connexion externe configurée.</p>
+              <p className="mt-3 text-on-surface-variant">
+                Aucune connexion externe configurée.
+              </p>
             ) : (
               <ul className="mt-3 grid gap-3 sm:grid-cols-2">
                 {inventory.servers.map((server, index) => (
@@ -87,7 +99,9 @@ export function A2AStudio() {
                     key={server.name + index}
                     className="flex flex-wrap justify-between gap-3 rounded-2xl border border-outline-variant p-4"
                   >
-                    <span className="break-words font-medium">{server.name}</span>
+                    <span className="break-words font-medium">
+                      {server.name}
+                    </span>
                     <span className="text-on-surface-variant">
                       {serverLabels[server.status] ?? "État non reconnu"}
                     </span>

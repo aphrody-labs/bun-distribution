@@ -65,7 +65,9 @@ export function useSplatCostEstimate(
       .finally(() => {
         if (!cancelled) setIsLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [activePage, selectedModel?.id, selectedProvider]);
 
   return { isLoading };

@@ -1,9 +1,16 @@
 import { MagnifyingGlass, Plus } from "@phosphor-icons/react";
-import type { SearchTagsInput, SearchTagsOutput, Tag } from "@aphrody/drive-client";
+import type {
+  SearchTagsInput,
+  SearchTagsOutput,
+  Tag,
+} from "@aphrody/drive-client";
 import { Popover, usePopover } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import { useState } from "react";
-import { useLibraryMutation, useNormalizedQuery } from "../../contexts/SpacedriveContext";
+import {
+  useLibraryMutation,
+  useNormalizedQuery,
+} from "../../contexts/SpacedriveContext";
 import { useRefetchTagQueries } from "../../hooks/useRefetchTagQueries";
 
 interface TagSelectorProps {
@@ -22,7 +29,13 @@ interface TagSelectorProps {
  * Dropdown menu for searching and selecting tags
  * Features fuzzy search, context-aware suggestions, and keyboard navigation
  */
-export function TagSelector({ onSelect, onClose, className, fileId, contentId }: TagSelectorProps) {
+export function TagSelector({
+  onSelect,
+  onClose,
+  className,
+  fileId,
+  contentId,
+}: TagSelectorProps) {
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -32,7 +45,11 @@ export function TagSelector({ onSelect, onClose, className, fileId, contentId }:
   });
 
   // Fetch all tags using search with an empty query and normalize result wrappers.
-  const { data: allTags = [] } = useNormalizedQuery<SearchTagsInput, SearchTagsOutput, Tag[]>({
+  const { data: allTags = [] } = useNormalizedQuery<
+    SearchTagsInput,
+    SearchTagsOutput,
+    Tag[]
+  >({
     query: "tags.search",
     input: {
       query: "",
@@ -58,7 +75,9 @@ export function TagSelector({ onSelect, onClose, className, fileId, contentId }:
       ? allTags.filter(
           (tag) =>
             tag.canonical_name.toLowerCase().includes(query.toLowerCase()) ||
-            tag.aliases?.some((alias) => alias.toLowerCase().includes(query.toLowerCase())) ||
+            tag.aliases?.some((alias) =>
+              alias.toLowerCase().includes(query.toLowerCase()),
+            ) ||
             tag.abbreviation?.toLowerCase().includes(query.toLowerCase()),
         )
       : allTags;
@@ -165,7 +184,10 @@ export function TagSelector({ onSelect, onClose, className, fileId, contentId }:
     <div className={clsx("flex flex-col overflow-hidden", className)}>
       {/* Search Input */}
       <div className="border-outline-variant flex items-center gap-2 border-b px-3 py-2">
-        <MagnifyingGlass size={16} className="text-on-surface-variant flex-shrink-0" />
+        <MagnifyingGlass
+          size={16}
+          className="text-on-surface-variant flex-shrink-0"
+        />
         <input
           type="text"
           value={query}
@@ -227,7 +249,9 @@ export function TagSelector({ onSelect, onClose, className, fileId, contentId }:
               />
 
               {/* Tag name */}
-              <span className="flex-1 truncate text-left">{tag.canonical_name}</span>
+              <span className="flex-1 truncate text-left">
+                {tag.canonical_name}
+              </span>
 
               {/* Namespace badge */}
               {tag.namespace && (

@@ -28,7 +28,10 @@ const DEFAULT_PORT: Record<string, string> = { http: "80", https: "443" };
 
 /** Parses `scheme://host[:port][/path/*]`; returns `null` for anything else. */
 export function parsePattern(pattern: string): ParsedPattern | null {
-  const match = /^(https?):\/\/(\*\.)?([^/:*]+)(?::(\d+|\*))?(\/[^?#]*)?$/i.exec(pattern.trim());
+  const match =
+    /^(https?):\/\/(\*\.)?([^/:*]+)(?::(\d+|\*))?(\/[^?#]*)?$/i.exec(
+      pattern.trim(),
+    );
   if (!match) return null;
   const [, scheme, wildcard, host, port, path] = match;
   let prefix: string | null = null;
@@ -85,7 +88,8 @@ export function matchesPattern(pattern: string, url: URL): boolean {
     const actual = url.port || DEFAULT_PORT[parsed.scheme];
     if (wanted !== actual) return false;
   }
-  if (parsed.path !== null && !pathMatches(parsed.path, url.pathname)) return false;
+  if (parsed.path !== null && !pathMatches(parsed.path, url.pathname))
+    return false;
   return true;
 }
 
@@ -114,13 +118,21 @@ export function decide(
     return "deny";
   }
   if (url.protocol === "about:") {
-    return url.href === "about:blank" || url.href === "about:srcdoc" ? "allow" : "deny";
+    return url.href === "about:blank" || url.href === "about:srcdoc"
+      ? "allow"
+      : "deny";
   }
   if (ALLOWED_OPAQUE.has(url.protocol)) return "allow";
   if (url.protocol === "file:") return "deny";
   if (url.protocol === "http:" || url.protocol === "https:") {
-    const patterns = [...origins.app, ...origins.auth, ...origins.embeds, ...extraAllowed];
-    if (patterns.some((pattern) => matchesPattern(pattern, url))) return "allow";
+    const patterns = [
+      ...origins.app,
+      ...origins.auth,
+      ...origins.embeds,
+      ...extraAllowed,
+    ];
+    if (patterns.some((pattern) => matchesPattern(pattern, url)))
+      return "allow";
     return outside(origins.external);
   }
   // mailto:, tel:, custom application schemes: only the operating system can handle them.

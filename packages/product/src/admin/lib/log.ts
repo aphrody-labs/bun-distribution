@@ -22,7 +22,10 @@ export interface Logger {
 }
 
 /** Append-only log of what the kit did (never secrets: every line goes through `redact`). */
-export function createLogger(file: string, now: () => Date = () => new Date()): Logger {
+export function createLogger(
+  file: string,
+  now: () => Date = () => new Date(),
+): Logger {
   const log = ((line: string) => {
     try {
       mkdirSync(dirname(file), { recursive: true });
@@ -35,4 +38,6 @@ export function createLogger(file: string, now: () => Date = () => new Date()): 
   return log;
 }
 
-export const noLog: Logger = Object.assign(() => undefined, { file: "" }) as Logger;
+export const noLog: Logger = Object.assign(() => undefined, {
+  file: "",
+}) as Logger;

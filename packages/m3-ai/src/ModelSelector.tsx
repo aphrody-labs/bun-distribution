@@ -3,7 +3,12 @@
 
 "use client";
 
-import { Popover, usePopover, SelectPill, type SelectPillProps } from "@aphrody/m3-primitives";
+import {
+  Popover,
+  usePopover,
+  SelectPill,
+  type SelectPillProps,
+} from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 
@@ -44,7 +49,11 @@ export function groupModelsByProvider(
 ): Record<string, ModelOption[]> {
   const q = search.trim().toLowerCase();
   const filtered = q
-    ? models.filter((m) => m.name.toLowerCase().includes(q) || m.provider.toLowerCase().includes(q))
+    ? models.filter(
+        (m) =>
+          m.name.toLowerCase().includes(q) ||
+          m.provider.toLowerCase().includes(q),
+      )
     : models;
 
   return filtered.reduce(
@@ -96,7 +105,9 @@ export function ModelOptionList({
       onKeyDown={(event) => {
         if (event.defaultPrevented) return;
         const options = Array.from(
-          event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="option"]'),
+          event.currentTarget.querySelectorAll<HTMLButtonElement>(
+            '[role="option"]',
+          ),
         );
         const index = options.indexOf(event.target as HTMLButtonElement);
         if (index < 0) return;
@@ -128,9 +139,13 @@ export function ModelOptionList({
           // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- provider section of the custom listbox with a visible M3 header row; <optgroup> only exists inside a native <select>.
           role="group"
           aria-label={provider}
-          className={clsx(groupIndex > 0 && "mt-1 border-t border-outline-variant pt-1")}
+          className={clsx(
+            groupIndex > 0 && "mt-1 border-t border-outline-variant pt-1",
+          )}
         >
-          <div className="px-3 pt-2 pb-1 text-title-small text-on-surface-variant">{provider}</div>
+          <div className="px-3 pt-2 pb-1 text-title-small text-on-surface-variant">
+            {provider}
+          </div>
           {providerModels.map((model) => {
             const selected = model.id === value;
             return (
@@ -161,7 +176,9 @@ export function ModelOptionList({
                         <span
                           className={clsx(
                             "text-body-small",
-                            selected ? "text-on-secondary-container" : "text-on-surface-variant",
+                            selected
+                              ? "text-on-secondary-container"
+                              : "text-on-surface-variant",
                           )}
                         >
                           {formatLabel(l.contextTokens, {
@@ -174,7 +191,9 @@ export function ModelOptionList({
                           key={capability}
                           className={clsx(
                             "inline-flex h-5 items-center rounded-small border border-outline-variant px-1.5 text-label-small",
-                            selected ? "text-on-secondary-container" : "text-on-surface-variant",
+                            selected
+                              ? "text-on-secondary-container"
+                              : "text-on-surface-variant",
                           )}
                         >
                           {capability}
@@ -258,7 +277,10 @@ export const ModelSelector = forwardRef<HTMLButtonElement, ModelSelectorProps>(
 
     const selectedModel = models.find((m) => m.id === value);
 
-    const grouped = useMemo(() => groupModelsByProvider(models, search), [models, search]);
+    const grouped = useMemo(
+      () => groupModelsByProvider(models, search),
+      [models, search],
+    );
 
     return (
       <Popover.Root

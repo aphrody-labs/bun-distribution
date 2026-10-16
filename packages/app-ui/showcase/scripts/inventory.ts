@@ -27,11 +27,15 @@ export interface InventoryEntry {
 }
 
 function workspaceExclusions(root: string): Set<string> {
-  const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
+  const manifest = JSON.parse(
+    readFileSync(join(root, "package.json"), "utf8"),
+  ) as {
     workspaces?: { packages?: string[] };
   };
   return new Set(
-    (manifest.workspaces?.packages ?? []).filter((g) => g.startsWith("!")).map((g) => g.slice(1)),
+    (manifest.workspaces?.packages ?? [])
+      .filter((g) => g.startsWith("!"))
+      .map((g) => g.slice(1)),
   );
 }
 
@@ -61,7 +65,10 @@ export function collect(root: string = ROOT): InventoryEntry[] {
       entries.push({
         name: manifest.name,
         version: manifest.version ?? "0.0.0",
-        description: (manifest.description ?? "").replace(/\s+/g, " ").trim().slice(0, 220),
+        description: (manifest.description ?? "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 220),
         dir: rel,
         kind,
         workspace: !excluded.has(rel),
@@ -72,7 +79,10 @@ export function collect(root: string = ROOT): InventoryEntry[] {
             : exported
               ? 1
               : 0,
-        bin: typeof manifest.bin === "string" ? [manifest.name] : Object.keys(manifest.bin ?? {}),
+        bin:
+          typeof manifest.bin === "string"
+            ? [manifest.name]
+            : Object.keys(manifest.bin ?? {}),
       });
     }
   }

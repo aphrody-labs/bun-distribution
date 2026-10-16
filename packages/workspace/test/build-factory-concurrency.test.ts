@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import { mkdtemp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import {
+  mkdtemp,
+  mkdir,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -27,7 +34,10 @@ function launch(args: readonly string[], env: Environment, cwd?: string) {
   ]).then(([stdout, stderr, code]) => ({ stdout, stderr, code }));
   return { child, result };
 }
-async function until(label: string, predicate: () => Promise<boolean>): Promise<void> {
+async function until(
+  label: string,
+  predicate: () => Promise<boolean>,
+): Promise<void> {
   const deadline = performance.now() + 5_000;
   while (performance.now() < deadline) {
     // eslint-disable-next-line no-await-in-loop -- Poll a real process barrier, rather than infer ordering from a fixed delay.
@@ -52,7 +62,8 @@ async function fixture() {
   };
   async function git(cwd: string, ...args: string[]) {
     const result = await launch(["git", ...args], env, cwd).result;
-    if (result.code !== 0) throw new Error("Fixture Git failed: " + result.stderr);
+    if (result.code !== 0)
+      throw new Error("Fixture Git failed: " + result.stderr);
     return result.stdout.trim();
   }
   await git(root, "init", "--quiet", "-b", "main", source);
@@ -86,7 +97,9 @@ async function fixture() {
   async function lease(repository: string) {
     const held = join(root, repository + "-lease-held");
     const lock =
-      repository === "heavy" ? config.lockPath : join(root, "locks", repository + ".source.lock");
+      repository === "heavy"
+        ? config.lockPath
+        : join(root, "locks", repository + ".source.lock");
     const job = start([
       "flock",
       "--close",
@@ -137,7 +150,12 @@ async function fixture() {
   async function buildCheckout() {
     await git(root, "clone", "--quiet", source, config.repositories.yolo!);
     await git(config.repositories.yolo!, "config", "user.name", "fixture");
-    await git(config.repositories.yolo!, "config", "user.email", "fixture@localhost");
+    await git(
+      config.repositories.yolo!,
+      "config",
+      "user.email",
+      "fixture@localhost",
+    );
   }
   function build() {
     const marker = join(root, "owner-command-entered");
@@ -150,10 +168,16 @@ async function fixture() {
     return { marker, process: start(["bash", "-c", plan.transport[5]!]) };
   }
   async function buildOwnsHeavyLock() {
-    await until("build owns heavy lock while waiting for its source", async () => {
-      const probe = await launch(["flock", "-n", "--", config.lockPath, "true"], env).result;
-      return probe.code === 1;
-    });
+    await until(
+      "build owns heavy lock while waiting for its source",
+      async () => {
+        const probe = await launch(
+          ["flock", "-n", "--", config.lockPath, "true"],
+          env,
+        ).result;
+        return probe.code === 1;
+      },
+    );
   }
   return {
     root,
@@ -214,16 +238,26 @@ test.skipIf(process.platform === "win32")(
       const aphrody = await f.prepare("aphrody").result;
       expect(aphrody.code).toBe(0);
       expect(yoloFinished).toBe(false);
-      expect(await Bun.file(join(f.config.repositories.yolo!, "source.txt")).exists()).toBe(false);
-      expect(await f.git(f.config.repositories.aphrody!, "rev-parse", "HEAD")).toBe(f.revision);
+      expect(
+        await Bun.file(
+          join(f.config.repositories.yolo!, "source.txt"),
+        ).exists(),
+      ).toBe(false);
+      expect(
+        await f.git(f.config.repositories.aphrody!, "rev-parse", "HEAD"),
+      ).toBe(f.revision);
       // The independent fresh preparation completed despite the existing heavy job.
-      const heavyProbe = await launch(["flock", "-n", "--", f.config.lockPath, "true"], process.env)
-        .result;
+      const heavyProbe = await launch(
+        ["flock", "-n", "--", f.config.lockPath, "true"],
+        process.env,
+      ).result;
       expect(heavyProbe.code).toBe(1);
       expect((await heavy.release()).code).toBe(0);
       expect((await lease.release()).code).toBe(0);
       expect((await yoloResult).code).toBe(0);
-      expect(await f.git(f.config.repositories.yolo!, "rev-parse", "HEAD")).toBe(f.revision);
+      expect(
+        await f.git(f.config.repositories.yolo!, "rev-parse", "HEAD"),
+      ).toBe(f.revision);
     } finally {
       await f.cleanup();
     }
@@ -240,9 +274,18 @@ test.skipIf(process.platform === "win32")(
       const lease = await f.lease("yolo");
       const build = f.build();
       await f.buildOwnsHeavyLock();
-      await writeFile(join(f.config.repositories.yolo!, "source.txt"), "new prepared source\n");
+      await writeFile(
+        join(f.config.repositories.yolo!, "source.txt"),
+        "new prepared source\n",
+      );
       await f.git(f.config.repositories.yolo!, "add", "source.txt");
-      await f.git(f.config.repositories.yolo!, "commit", "--quiet", "-m", "changed source pin");
+      await f.git(
+        f.config.repositories.yolo!,
+        "commit",
+        "--quiet",
+        "-m",
+        "changed source pin",
+      );
       expect((await lease.release()).code).toBe(0);
       const result = await build.process.result;
       expect(result.code).toBe(2);
@@ -265,25 +308,36 @@ test.skipIf(process.platform !== "linux")(
       await f.git(f.source, "add", "source.txt");
       await f.git(f.source, "commit", "--quiet", "-m", "next source");
       const next = await f.git(f.source, "rev-parse", "HEAD");
-      await f.git(f.source, "push", "--quiet", join(f.root, "remote.git"), "main");
+      await f.git(
+        f.source,
+        "push",
+        "--quiet",
+        join(f.root, "remote.git"),
+        "main",
+      );
       const heavy = await f.lease("heavy");
       const pending = f.prepare("yolo", next);
       const inode = (await stat(f.config.lockPath)).ino;
-      await until("existing preparation queued on the legacy heavy lock", async () => {
-        const locks = await Bun.file("/proc/locks").text();
-        return locks
-          .split("\n")
-          .some(
-            (line) =>
-              /->\s+FLOCK\s/.test(line) &&
-              line.split(/\s+/).some((field) => field.endsWith(":" + inode)),
-          );
-      });
-      expect(pending.child.exitCode).toBeNull();
-      expect(await f.git(f.config.repositories.yolo!, "rev-parse", "HEAD")).toBe(f.revision);
-      expect(await readFile(join(f.config.repositories.yolo!, "source.txt"), "utf8")).toBe(
-        "pinned source\n",
+      await until(
+        "existing preparation queued on the legacy heavy lock",
+        async () => {
+          const locks = await Bun.file("/proc/locks").text();
+          return locks
+            .split("\n")
+            .some(
+              (line) =>
+                /->\s+FLOCK\s/.test(line) &&
+                line.split(/\s+/).some((field) => field.endsWith(":" + inode)),
+            );
+        },
       );
+      expect(pending.child.exitCode).toBeNull();
+      expect(
+        await f.git(f.config.repositories.yolo!, "rev-parse", "HEAD"),
+      ).toBe(f.revision);
+      expect(
+        await readFile(join(f.config.repositories.yolo!, "source.txt"), "utf8"),
+      ).toBe("pinned source\n");
       // The compatibility probe must release the source mutex before waiting for heavy: no inverse lock order.
       const sourceProbe = await launch(
         ["flock", "-n", "--", join(f.root, "locks/yolo.source.lock"), "true"],
@@ -293,10 +347,12 @@ test.skipIf(process.platform !== "linux")(
       expect((await heavy.release()).code).toBe(0);
       const prepared = await pending.result;
       expect(prepared.code).toBe(0);
-      expect(await f.git(f.config.repositories.yolo!, "rev-parse", "HEAD")).toBe(next);
-      expect(await readFile(join(f.config.repositories.yolo!, "source.txt"), "utf8")).toBe(
-        "next prepared pin\n",
-      );
+      expect(
+        await f.git(f.config.repositories.yolo!, "rev-parse", "HEAD"),
+      ).toBe(next);
+      expect(
+        await readFile(join(f.config.repositories.yolo!, "source.txt"), "utf8"),
+      ).toBe("next prepared pin\n");
     } finally {
       await f.cleanup();
     }

@@ -13,12 +13,19 @@ export type M3InputProps = ComponentProps<typeof Input> & {
   variant?: InputVariant;
 };
 
-export function M3Input({ variant = "outlined", className, ...props }: M3InputProps) {
+export function M3Input({
+  variant = "outlined",
+  className,
+  ...props
+}: M3InputProps) {
   return (
     <Input
       {...props}
       className={mergeClassName(
-        cx("m3-bui-input", variant !== "outlined" && `m3-bui-input--${variant}`),
+        cx(
+          "m3-bui-input",
+          variant !== "outlined" && `m3-bui-input--${variant}`,
+        ),
         className,
       )}
     />

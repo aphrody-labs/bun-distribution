@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { composeUnit, hostRoot, loadCatalog } from "../src/host/index.ts";
@@ -54,12 +60,18 @@ beforeAll(() => {
       ],
     }),
   );
-  writeFileSync(join(root, "systemd/aphrody/aphrody-a2a.service"), unitText("127.0.0.1:8788"));
+  writeFileSync(
+    join(root, "systemd/aphrody/aphrody-a2a.service"),
+    unitText("127.0.0.1:8788"),
+  );
   writeFileSync(
     join(root, "systemd/aphrody/aphrody-mcp-http.service"),
     unitText("127.0.0.1:8789").replace("aphrody a2a serve", "aphrody-mcp http"),
   );
-  writeFileSync(join(root, "systemd/aphrody/other.service"), unitText("127.0.0.1:9000"));
+  writeFileSync(
+    join(root, "systemd/aphrody/other.service"),
+    unitText("127.0.0.1:9000"),
+  );
   writeFileSync(
     join(root, "systemd/aphrody/aphrody-ai-gateway-dbfr.service"),
     `[Unit]\nDescription=fixture\n\n[Service]\nUser=ubuntu\nEnvironmentFile=/etc/aphrody/aphrody-ai-gateway.env\nExecStart=/home/ubuntu/.local/bin/aphrody gateway serve --addr 127.0.0.1:8786 --provider openai\n`,
@@ -69,7 +81,11 @@ beforeAll(() => {
     JSON.stringify({
       services: [
         { id: "aphrody-a2a", port: 8788, health: "http://127.0.0.1:8788/ping" },
-        { id: "aphrody-mcp-http", port: 8789, health: "http://127.0.0.1:8789/healthz" },
+        {
+          id: "aphrody-mcp-http",
+          port: 8789,
+          health: "http://127.0.0.1:8789/healthz",
+        },
         { id: "other", port: 9001 },
         {
           id: "aphrody-ai-gateway-dbfr",
@@ -81,7 +97,10 @@ beforeAll(() => {
     }),
   );
   writeFileSync(join(dir, "ai.json"), '{"id":"fixture"}\n');
-  writeFileSync(join(dir, "scripts/tools/infra/mcp-tools-count.ts"), "// fixture\n");
+  writeFileSync(
+    join(dir, "scripts/tools/infra/mcp-tools-count.ts"),
+    "// fixture\n",
+  );
 });
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
@@ -90,7 +109,9 @@ test("unit facts: binary, loopback bind, env files and writable paths come from 
   const facts = unitFacts(entry, unitText("127.0.0.1:8788"));
   expect(facts.binary).toBe("/home/ubuntu/.local/bin/aphrody");
   expect(facts.bind).toEqual({ host: "127.0.0.1", port: 8788 });
-  expect(facts.envFiles).toEqual([{ path: "/etc/aphrody/x.env", optional: true }]);
+  expect(facts.envFiles).toEqual([
+    { path: "/etc/aphrody/x.env", optional: true },
+  ]);
   expect(facts.writePaths).toEqual([
     "/home/ubuntu/apps/x/shared/a2a",
     "/home/ubuntu/apps/x/shared/coord",
@@ -101,7 +122,10 @@ test("unit facts: binary, loopback bind, env files and writable paths come from 
 test("gateway unit facts: --addr is treated as a private loopback bind", () => {
   const entry = loadCatalog(root).units[0];
   const text = unitText("127.0.0.1:8786").replace("--bind", "--addr");
-  expect(unitFacts(entry, text).bind).toEqual({ host: "127.0.0.1", port: 8786 });
+  expect(unitFacts(entry, text).bind).toEqual({
+    host: "127.0.0.1",
+    port: 8786,
+  });
 });
 
 test("gateway host plan pins and authenticates the installed binary and generation smoke test", () => {
@@ -117,15 +141,18 @@ test("gateway host plan pins and authenticates the installed binary and generati
   expect(ids).toContain("aphrody-ai-gateway-dbfr/auth-required");
   expect(ids).toContain("aphrody-ai-gateway-dbfr/auth-wrong-token");
   expect(ids).toContain("aphrody-ai-gateway-dbfr/authenticated-generation");
-  expect(plan.steps.find((step) => step.id.endsWith("authenticated-generation"))?.run).toContain(
-    "shenron-chat-v2",
-  );
+  expect(
+    plan.steps.find((step) => step.id.endsWith("authenticated-generation"))
+      ?.run,
+  ).toContain("shenron-chat-v2");
 });
 
 test("a unit that would bind anything but loopback is refused", () => {
   const entry = loadCatalog(root).units[0];
   for (const bind of ["0.0.0.0:8788", "51.77.147.152:8788", "[::]:8788"]) {
-    expect(() => unitFacts(entry, unitText(bind))).toThrow("not a loopback address");
+    expect(() => unitFacts(entry, unitText(bind))).toThrow(
+      "not a loopback address",
+    );
   }
   for (const bind of ["127.0.0.1:8788", "[::1]:8788", "localhost:8788"]) {
     expect(unitFacts(entry, unitText(bind)).bind?.port).toBe(8788);
@@ -133,15 +160,24 @@ test("a unit that would bind anything but loopback is refused", () => {
 });
 
 test("plan: preflight checks come first, then provision, install, verify and a rollback", () => {
-  const plan = hostPlan(["aphrody-mcp-http", "aphrody-a2a"], { root, expectTools: 137 });
+  const plan = hostPlan(["aphrody-mcp-http", "aphrody-a2a"], {
+    root,
+    expectTools: 137,
+  });
   expect(plan.target).toBe("vps");
   const mcp = plan.steps.filter((s) => s.unit === "aphrody-mcp-http.service");
   const phases = mcp.map((s) => s.phase);
   expect(phases).toEqual(phases.toSorted((a, b) => order(a) - order(b)));
-  expect(mcp.find((s) => s.id.endsWith("/port-free"))?.run).toContain("sport = :8789");
-  expect(mcp.find((s) => s.id.endsWith("/tools-count"))?.run).toContain("--expect 137");
+  expect(mcp.find((s) => s.id.endsWith("/port-free"))?.run).toContain(
+    "sport = :8789",
+  );
+  expect(mcp.find((s) => s.id.endsWith("/tools-count"))?.run).toContain(
+    "--expect 137",
+  );
   expect(mcp.find((s) => s.id.endsWith("/tools-count"))?.kind).toBe("check");
-  expect(mcp.find((s) => s.id.endsWith("/health"))?.run).toContain("http://127.0.0.1:8789/healthz");
+  expect(mcp.find((s) => s.id.endsWith("/health"))?.run).toContain(
+    "http://127.0.0.1:8789/healthz",
+  );
   const a2a = plan.steps.filter((s) => s.unit === "aphrody-a2a.service");
   expect(a2a.find((s) => s.id.endsWith("/ai-json"))?.run).toContain(
     Buffer.from('{"id":"fixture"}\n').toString("base64"),
@@ -162,7 +198,9 @@ test("tools-count is informative, not a gate, when no expected count is given", 
 test("plan refuses an unknown unit, a foreign target and a port that differs from the service catalog", () => {
   expect(() => hostPlan(["nope"], { root })).toThrow("unknown unit");
   expect(() => hostPlan(["aphrody-a2a", "other"], { root })).toThrow("target");
-  expect(() => hostPlan(["aphrody-a2a"], { root, target: "dbfr" })).toThrow("not dbfr");
+  expect(() => hostPlan(["aphrody-a2a"], { root, target: "dbfr" })).toThrow(
+    "not dbfr",
+  );
   expect(() => hostPlan(["other"], { root })).toThrow("declares :9001");
 });
 
@@ -173,7 +211,8 @@ test("rendering names every step and marks mutations", () => {
   expect(text).toContain("[check ] aphrody-a2a/port-free");
 });
 
-const order = (p: string) => ["preflight", "provision", "install", "verify", "rollback"].indexOf(p);
+const order = (p: string) =>
+  ["preflight", "provision", "install", "verify", "rollback"].indexOf(p);
 const recorder = (fail: (command: string) => boolean = () => false) => {
   const commands: string[] = [];
   const run: Runner = async (_host, command) => {
@@ -194,7 +233,9 @@ test("apply: a failed preflight check stops before any mutation", async () => {
   expect(
     commands.some(
       (c) =>
-        c.includes("systemctl enable") || c.includes("sudo install") || c.includes("base64 -d"),
+        c.includes("systemctl enable") ||
+        c.includes("sudo install") ||
+        c.includes("base64 -d"),
     ),
   ).toBe(false);
 });
@@ -215,15 +256,23 @@ test("apply: a failed verify check rolls the unit back and reports the step", as
   const plan = hostPlan(["aphrody-a2a"], { root });
   const { commands, run } = recorder((c) => c.startsWith("curl -fsS"));
   expect(await applyPlan(plan, run, quiet)).toEqual(["aphrody-a2a/health"]);
-  expect(commands.at(-1)).toContain("systemctl disable --now aphrody-a2a.service");
+  expect(commands.at(-1)).toContain(
+    "systemctl disable --now aphrody-a2a.service",
+  );
 });
 
 const freePorts = (plan: Plan) =>
-  plan.steps.filter((s) => s.id.endsWith("/port-free")).map((s) => /:(\d+)"/.exec(s.run)?.[1]);
+  plan.steps
+    .filter((s) => s.id.endsWith("/port-free"))
+    .map((s) => /:(\d+)"/.exec(s.run)?.[1]);
 
 test("the declared loopback units plan against the real catalog", () => {
-  expect(freePorts(hostPlan(["aphrody-a2a"], { root: hostRoot() }))).toEqual(["8788"]);
-  expect(freePorts(hostPlan(["aphrody-mcp-http-dbfr"], { root: hostRoot() }))).toEqual(["8793"]);
+  expect(freePorts(hostPlan(["aphrody-a2a"], { root: hostRoot() }))).toEqual([
+    "8788",
+  ]);
+  expect(
+    freePorts(hostPlan(["aphrody-mcp-http-dbfr"], { root: hostRoot() })),
+  ).toEqual(["8793"]);
   for (const name of ["aphrody-mcp-http-dbfr.service", "aphrody-a2a.service"]) {
     const text = composeUnit(name);
     expect(text).toContain("User=ubuntu");
@@ -240,7 +289,9 @@ test("the persistent VPS build runner restarts after a clean wrapper exit", () =
     join(hostRoot(), "systemd/aphrody/aphrody-shenron-build-runner.service"),
     "utf8",
   );
-  expect(unit).toContain("ConditionPathExists=/home/ubuntu/build/runners/shenron/.runner");
+  expect(unit).toContain(
+    "ConditionPathExists=/home/ubuntu/build/runners/shenron/.runner",
+  );
   expect(unit).toContain("User=ubuntu");
   expect(unit).toContain("WorkingDirectory=/home/ubuntu/build/runners/shenron");
   expect(unit).toContain("Restart=always");
@@ -268,7 +319,9 @@ test("mcp-http: a token generated on the host, the build installed, authenticati
   expect(run("generate-token")).not.toMatch(/[0-9a-f]{64}/);
   expect(id("install-binary")).toBeLessThan(id("install"));
   expect(run("install-binary")).toContain(".prev");
-  expect(plan.steps.some((s) => s.id === "aphrody-mcp-http-dbfr/binary")).toBe(false);
+  expect(plan.steps.some((s) => s.id === "aphrody-mcp-http-dbfr/binary")).toBe(
+    false,
+  );
   expect(run("binary-artifact")).toContain(BUILD.sha256);
   // 401 without a token and with a wrong one, then the count with the token, which is read on the host and never printed
   expect(run("auth-required")).toContain("= 401");
@@ -276,7 +329,9 @@ test("mcp-http: a token generated on the host, the build installed, authenticati
   expect(id("auth-required")).toBeLessThan(id("tools-count"));
   expect(run("tools-count")).toContain("--token-env APHRODY_MCP_HTTP_TOKEN");
   expect(run("tools-count")).toContain("--expect 137");
-  expect(run("tools-count")).toContain("sudo -n sed -n 's/^APHRODY_MCP_HTTP_TOKEN=//p'");
+  expect(run("tools-count")).toContain(
+    "sudo -n sed -n 's/^APHRODY_MCP_HTTP_TOKEN=//p'",
+  );
   // no step carries a real token: the only Bearer literal is the all-zero wrong token of the 401 check
   for (const s of plan.steps)
     for (const [, bearer] of s.run.matchAll(/Bearer ([0-9a-f]{20,})/g))
@@ -300,13 +355,15 @@ test("a2a: require a protected credential before activating autonomous execution
     "BindReadOnlyPaths=/home/ubuntu/.local/bin/aphrody /home/ubuntu/.local/bin/aphrody-mcp",
   );
   expect(text).not.toContain("Environment=APHRODY_A2A_DRY_RUN=1");
-  expect(plan.steps.find((s) => s.id === "aphrody-a2a/auth-required")?.run).toContain("= 401");
-  expect(plan.steps.find((s) => s.id === "aphrody-a2a/auth-wrong-token")?.run).toContain(
-    "Bearer 0000",
-  );
-  expect(plan.steps.find((s) => s.id === "aphrody-a2a/auth-valid-token")?.run).toContain(
-    "-o /dev/null",
-  );
+  expect(
+    plan.steps.find((s) => s.id === "aphrody-a2a/auth-required")?.run,
+  ).toContain("= 401");
+  expect(
+    plan.steps.find((s) => s.id === "aphrody-a2a/auth-wrong-token")?.run,
+  ).toContain("Bearer 0000");
+  expect(
+    plan.steps.find((s) => s.id === "aphrody-a2a/auth-valid-token")?.run,
+  ).toContain("-o /dev/null");
 });
 
 test("native hub units require a verified build and retain their previous binaries", () => {
@@ -317,9 +374,9 @@ test("native hub units require a verified build and retain their previous binari
     }),
   ).toThrow("64 hex");
   const a2a = hostPlan(["aphrody-a2a"], { root: hostRoot(), binary: BUILD });
-  expect(a2a.steps.find((s) => s.id.endsWith("/install-binary"))?.run).toContain(
-    "/home/ubuntu/.local/bin/aphrody.prev",
-  );
+  expect(
+    a2a.steps.find((s) => s.id.endsWith("/install-binary"))?.run,
+  ).toContain("/home/ubuntu/.local/bin/aphrody.prev");
   expect(() =>
     hostPlan(["aphrody-a2a"], {
       root: hostRoot(),
@@ -330,10 +387,14 @@ test("native hub units require a verified build and retain their previous binari
 
 test("mcp-http: without a build the installed binary is checked; the unit's env file is required", () => {
   const plan = hostPlan(["aphrody-mcp-http-dbfr"], { root: hostRoot() });
-  expect(plan.steps.some((s) => s.id === "aphrody-mcp-http-dbfr/binary")).toBe(true);
+  expect(plan.steps.some((s) => s.id === "aphrody-mcp-http-dbfr/binary")).toBe(
+    true,
+  );
   expect(plan.steps.some((s) => s.id.endsWith("/install-binary"))).toBe(false);
   const text = composeUnit("aphrody-mcp-http-dbfr.service");
-  expect(text).toMatch(/^EnvironmentFile=\/etc\/aphrody\/aphrody-mcp-http\.env$/m);
+  expect(text).toMatch(
+    /^EnvironmentFile=\/etc\/aphrody\/aphrody-mcp-http\.env$/m,
+  );
   expect(text).toContain("aphrody-mcp http --bind 127.0.0.1:8793");
   expect(text).not.toMatch(/--bind 127\.0\.0\.1:8789/);
 });
@@ -345,7 +406,9 @@ test("socket gates preserve the declared WireGuard relay and reject occupied, wi
   mkdirSync(join(root, "wireguard"), { recursive: true });
   const socket = join(fixture, "ss");
   const sleep = join(fixture, "sleep");
-  writeFileSync(socket, '#!/bin/sh\nprintf "%s\\n" "$TASK_SOCKET_ROWS"\n', { mode: 0o700 });
+  writeFileSync(socket, '#!/bin/sh\nprintf "%s\\n" "$TASK_SOCKET_ROWS"\n', {
+    mode: 0o700,
+  });
   writeFileSync(sleep, "#!/bin/sh\nexit 0\n", { mode: 0o700 });
   const relay = {
     host: "vps",
@@ -372,7 +435,9 @@ test("socket gates preserve the declared WireGuard relay and reject occupied, wi
       windowsHide: true,
       env: {
         ...process.env,
-        TASK_SOCKET_ROWS: addresses.map((address) => `LISTEN 0 128 ${address}:8789 *:*`).join("\n"),
+        TASK_SOCKET_ROWS: addresses
+          .map((address) => `LISTEN 0 128 ${address}:8789 *:*`)
+          .join("\n"),
       },
       stdout: "ignore",
       stderr: "ignore",
@@ -389,16 +454,27 @@ test("socket gates preserve the declared WireGuard relay and reject occupied, wi
         ),
       ),
     ).toEqual([1, 1, 1, 1, 1]);
-    expect(await execute("listen-loopback", ["127.0.0.1", "10.200.77.1"])).toBe(0);
+    expect(await execute("listen-loopback", ["127.0.0.1", "10.200.77.1"])).toBe(
+      0,
+    );
     expect(await execute("listen-loopback", ["127.0.0.1"])).toBe(0);
     expect(await execute("listen-loopback", ["10.200.77.1"])).toBe(1);
-    expect(await execute("listen-loopback", ["127.0.0.1", "51.77.147.152"])).toBe(1);
-    expect(await execute("listen-loopback", ["127.0.0.1", "10.200.77.99"])).toBe(1);
+    expect(
+      await execute("listen-loopback", ["127.0.0.1", "51.77.147.152"]),
+    ).toBe(1);
+    expect(
+      await execute("listen-loopback", ["127.0.0.1", "10.200.77.99"]),
+    ).toBe(1);
     writeFileSync(
       policy,
-      JSON.stringify({ ...declaration, services: [{ ...relay, address: "51.77.147.152" }] }),
+      JSON.stringify({
+        ...declaration,
+        services: [{ ...relay, address: "51.77.147.152" }],
+      }),
     );
-    expect(() => hostPlan(["aphrody-mcp-http"], { root })).toThrow("private WireGuard address");
+    expect(() => hostPlan(["aphrody-mcp-http"], { root })).toThrow(
+      "private WireGuard address",
+    );
   } finally {
     rmSync(policy, { force: true });
   }

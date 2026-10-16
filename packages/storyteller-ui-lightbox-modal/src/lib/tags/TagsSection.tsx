@@ -177,8 +177,8 @@ export function TagsSection({
           // Keep the self-fetched suggestion list fresh with new tags.
           setOwnTags((prev) => {
             const known = new Set(prev.map((s) => s.value.toLowerCase()));
-            const added = res.data!.tags
-              .filter((t) => !known.has(t.tag_value_lowercase))
+            const added = res
+              .data!.tags.filter((t) => !known.has(t.tag_value_lowercase))
               .map((t) => ({ value: t.tag_value, useCount: t.use_count }));
             return added.length > 0 ? [...prev, ...added] : prev;
           });

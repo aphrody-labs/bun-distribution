@@ -28,7 +28,8 @@ export async function writeBunCommand(
       [process.execPath, "build", "--compile", script, "--outfile", path],
       { windowsHide: true, stdout: "ignore", stderr: "pipe" },
     );
-    if (build.exitCode !== 0) throw new Error(`fixture compile failed: ${build.stderr}`);
+    if (build.exitCode !== 0)
+      throw new Error(`fixture compile failed: ${build.stderr}`);
     await rm(script);
     return path;
   }
@@ -38,6 +39,10 @@ export async function writeBunCommand(
 }
 
 /** Copy `env` without any PATH spelling (Windows exposes `Path`) so an added `PATH` is the only one. */
-export function withoutPath(env: NodeJS.ProcessEnv): Record<string, string | undefined> {
-  return Object.fromEntries(Object.entries(env).filter(([key]) => key.toUpperCase() !== "PATH"));
+export function withoutPath(
+  env: NodeJS.ProcessEnv,
+): Record<string, string | undefined> {
+  return Object.fromEntries(
+    Object.entries(env).filter(([key]) => key.toUpperCase() !== "PATH"),
+  );
 }

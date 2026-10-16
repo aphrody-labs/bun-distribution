@@ -40,10 +40,7 @@ const TABLES: { name: string; label: string }[] = [
 
 const client = apiAt("/api/wiki-admin");
 const norm = (s: string) =>
-  s
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
+  s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 export function VisibilityManager() {
   const [table, setTable] = useState(TABLES[0]!.name);
@@ -53,7 +50,8 @@ export function VisibilityManager() {
 
   const list = useQuery({
     queryKey,
-    queryFn: () => client.get<{ items: VisibilityRow[] }>(`/${table}?as=visibility`),
+    queryFn: () =>
+      client.get<{ items: VisibilityRow[] }>(`/${table}?as=visibility`),
     staleTime: 30_000,
   });
 
@@ -69,13 +67,18 @@ export function VisibilityManager() {
 
   // Bascule d'une entité — mise à jour optimiste du cache pour un rendu instantané.
   const toggle = useMutation({
-    mutationFn: (v: { id: string; visible: boolean }) => client.post(`/${table}?as=visibility`, v),
+    mutationFn: (v: { id: string; visible: boolean }) =>
+      client.post(`/${table}?as=visibility`, v),
     onMutate: async (v) => {
       await qc.cancelQueries({ queryKey });
       const prev = qc.getQueryData<{ items: VisibilityRow[] }>(queryKey);
       qc.setQueryData<{ items: VisibilityRow[] }>(queryKey, (old) =>
         old
-          ? { items: old.items.map((it) => (it.id === v.id ? { ...it, visible: v.visible } : it)) }
+          ? {
+              items: old.items.map((it) =>
+                it.id === v.id ? { ...it, visible: v.visible } : it,
+              ),
+            }
           : old,
       );
       return { prev };
@@ -190,10 +193,14 @@ export function VisibilityManager() {
           <Chargement className="h-5 w-5 animate-spin" /> Chargement…
         </div>
       ) : list.isError ? (
-        <p className="dbz-panel py-12 text-center text-red-400">Erreur de chargement. Réessaie.</p>
+        <p className="dbz-panel py-12 text-center text-red-400">
+          Erreur de chargement. Réessaie.
+        </p>
       ) : filtered.length === 0 ? (
         <p className="dbz-panel py-12 text-center text-white/50">
-          {items.length === 0 ? "Aucune entité." : "Aucun résultat pour cette recherche."}
+          {items.length === 0
+            ? "Aucune entité."
+            : "Aucun résultat pour cette recherche."}
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -201,7 +208,9 @@ export function VisibilityManager() {
             <VisibilityCard
               key={it.id}
               row={it}
-              onToggle={() => toggle.mutate({ id: it.id, visible: !it.visible })}
+              onToggle={() =>
+                toggle.mutate({ id: it.id, visible: !it.visible })
+              }
             />
           ))}
         </div>
@@ -210,7 +219,13 @@ export function VisibilityManager() {
   );
 }
 
-function VisibilityCard({ row, onToggle }: { row: VisibilityRow; onToggle: () => void }) {
+function VisibilityCard({
+  row,
+  onToggle,
+}: {
+  row: VisibilityRow;
+  onToggle: () => void;
+}) {
   const { label, image, extra, visible } = row;
   return (
     <button
@@ -243,7 +258,9 @@ function VisibilityCard({ row, onToggle }: { row: VisibilityRow; onToggle: () =>
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-display text-[14px] font-semibold text-white">{label}</p>
+        <p className="truncate font-display text-[14px] font-semibold text-white">
+          {label}
+        </p>
         <p className="truncate text-[11px] text-white/50">
           {extra ? `${extra} · ` : ""}#{row.id}
         </p>
@@ -255,7 +272,11 @@ function VisibilityCard({ row, onToggle }: { row: VisibilityRow; onToggle: () =>
             : "bg-white/5 text-white/50 group-hover:bg-white/10"
         }`}
       >
-        {visible ? <Oeil className="h-4 w-4" /> : <OeilBarre className="h-4 w-4" />}
+        {visible ? (
+          <Oeil className="h-4 w-4" />
+        ) : (
+          <OeilBarre className="h-4 w-4" />
+        )}
       </span>
     </button>
   );

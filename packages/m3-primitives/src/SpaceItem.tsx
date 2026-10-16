@@ -37,42 +37,65 @@ const isImageUrl = (icon: unknown): icon is string =>
  * M3 navigation-drawer item at desktop density: 40 dp row, full-shape active indicator on
  * `secondary-container`, `label-large`, filled icon when active.
  */
-export const SpaceItem = forwardRef<HTMLButtonElement, SpaceItemProps>(function SpaceItem(
-  { icon, label, active, color, iconElement, right, onClick, onContextMenu, className },
-  ref,
-) {
-  return (
-    <button
-      ref={ref}
-      type="button"
-      aria-current={active ? "page" : undefined}
-      onClick={onClick}
-      onContextMenu={onContextMenu}
-      className={clsx(
-        "flex h-10 w-full cursor-default items-center gap-3 rounded-full px-4 text-label-large",
-        "transition-colors duration-200 ease-standard",
-        m3StateLayer,
-        m3FocusRing,
-        active ? "bg-secondary-container text-on-secondary-container" : "text-on-surface-variant",
-        className,
-      )}
-    >
-      {iconElement ? (
-        iconElement
-      ) : color ? (
-        <span className="size-4 shrink-0 rounded-full" style={{ backgroundColor: color }} />
-      ) : isImageUrl(icon) ? (
-        <img src={icon} alt="" width={20} height={20} className="size-5 shrink-0" />
-      ) : (
-        icon !== undefined &&
-        renderIcon(icon as IconSource, {
-          size: 20,
-          filled: active || undefined,
-          className: "shrink-0",
-        })
-      )}
-      <span className="flex-1 truncate text-left">{label}</span>
-      {right}
-    </button>
-  );
-});
+export const SpaceItem = forwardRef<HTMLButtonElement, SpaceItemProps>(
+  function SpaceItem(
+    {
+      icon,
+      label,
+      active,
+      color,
+      iconElement,
+      right,
+      onClick,
+      onContextMenu,
+      className,
+    },
+    ref,
+  ) {
+    return (
+      <button
+        ref={ref}
+        type="button"
+        aria-current={active ? "page" : undefined}
+        onClick={onClick}
+        onContextMenu={onContextMenu}
+        className={clsx(
+          "flex h-10 w-full cursor-default items-center gap-3 rounded-full px-4 text-label-large",
+          "transition-colors duration-200 ease-standard",
+          m3StateLayer,
+          m3FocusRing,
+          active
+            ? "bg-secondary-container text-on-secondary-container"
+            : "text-on-surface-variant",
+          className,
+        )}
+      >
+        {iconElement ? (
+          iconElement
+        ) : color ? (
+          <span
+            className="size-4 shrink-0 rounded-full"
+            style={{ backgroundColor: color }}
+          />
+        ) : isImageUrl(icon) ? (
+          <img
+            src={icon}
+            alt=""
+            width={20}
+            height={20}
+            className="size-5 shrink-0"
+          />
+        ) : (
+          icon !== undefined &&
+          renderIcon(icon as IconSource, {
+            size: 20,
+            filled: active || undefined,
+            className: "shrink-0",
+          })
+        )}
+        <span className="flex-1 truncate text-left">{label}</span>
+        {right}
+      </button>
+    );
+  },
+);

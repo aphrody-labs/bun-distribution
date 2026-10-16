@@ -1,11 +1,20 @@
-import { Command, createElementSelectionResult, type CommandResult } from "../../base-command";
+import {
+  Command,
+  createElementSelectionResult,
+  type CommandResult,
+} from "../../base-command";
 import type { SceneTracks, TimelineElement } from "../../../timeline/types";
 import { generateUUID } from "../../../utils/id";
 import { EditorCore } from "../../../core";
 import { isRetimableElement } from "../../../timeline/element-utils";
 import { splitAnimationsAtTime } from "../../../animation";
 import { getSourceSpanAtClipTime } from "../../../retime";
-import { addMediaTime, type MediaTime, roundMediaTime, subMediaTime } from "../../../wasm";
+import {
+  addMediaTime,
+  type MediaTime,
+  roundMediaTime,
+  subMediaTime,
+} from "../../../wasm";
 
 export class SplitElementsCommand extends Command {
   private savedState: SceneTracks | null = null;
@@ -38,17 +47,23 @@ export class SplitElementsCommand extends Command {
     this.savedState = editor.scenes.getActiveScene().tracks;
     this.rightSideElements = [];
 
-    const splitTrack = <TTrack extends { id: string; elements: TimelineElement[] }>(
+    const splitTrack = <
+      TTrack extends { id: string; elements: TimelineElement[] },
+    >(
       track: TTrack,
     ): TTrack => {
-      const elementsToSplit = this.elements.filter((target) => target.trackId === track.id);
+      const elementsToSplit = this.elements.filter(
+        (target) => target.trackId === track.id,
+      );
 
       if (elementsToSplit.length === 0) {
         return track;
       }
 
       const elements = track.elements.flatMap((element) => {
-        const shouldSplit = elementsToSplit.some((target) => target.elementId === element.id);
+        const shouldSplit = elementsToSplit.some(
+          (target) => target.elementId === element.id,
+        );
 
         if (!shouldSplit) {
           return [element];
@@ -57,7 +72,10 @@ export class SplitElementsCommand extends Command {
         const effectiveStart = element.startTime;
         const effectiveEnd = element.startTime + element.duration;
 
-        if (this.splitTime <= effectiveStart || this.splitTime >= effectiveEnd) {
+        if (
+          this.splitTime <= effectiveStart ||
+          this.splitTime >= effectiveEnd
+        ) {
           return [element];
         }
 
@@ -70,7 +88,9 @@ export class SplitElementsCommand extends Command {
           a: element.duration,
           b: relativeTime,
         });
-        const retimeRef = isRetimableElement(element) ? element.retime : undefined;
+        const retimeRef = isRetimableElement(element)
+          ? element.retime
+          : undefined;
         // Snap the source-side split point exactly once and derive the right
         // half from it. Independently rounding both spans (left and total)
         // would let a 1-tick rounding error desynchronise them, breaking the

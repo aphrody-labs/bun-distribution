@@ -28,7 +28,8 @@ describe("hoistHtml", () => {
     expect(hoistHtml(html, 0)).toBe(html);
   });
   test("absolute and external references are left alone", () => {
-    const html = '<script src="https://cdn.example.com/x.js"></script><img src="/logo.svg">';
+    const html =
+      '<script src="https://cdn.example.com/x.js"></script><img src="/logo.svg">';
     expect(hoistHtml(html, 1)).toBe(html);
   });
   test("only attributes are rewritten: script text and comments that look like attributes stay as they are", () => {
@@ -57,8 +58,16 @@ describe("checkEngine", () => {
 describe("minifyOptions", () => {
   test("none, basic and full", () => {
     expect(minifyOptions("none")).toBe(false);
-    expect(minifyOptions("basic")).toEqual({ whitespace: true, syntax: true, identifiers: false });
-    expect(minifyOptions("full")).toEqual({ whitespace: true, syntax: true, identifiers: true });
+    expect(minifyOptions("basic")).toEqual({
+      whitespace: true,
+      syntax: true,
+      identifiers: false,
+    });
+    expect(minifyOptions("full")).toEqual({
+      whitespace: true,
+      syntax: true,
+      identifiers: true,
+    });
   });
 });
 
@@ -97,36 +106,50 @@ describe("buildApp", () => {
         .toSorted(),
     );
     for (const file of manifest.files) {
-      const bytes = new Uint8Array(readFileSync(join(report.outdir, file.path)));
+      const bytes = new Uint8Array(
+        readFileSync(join(report.outdir, file.path)),
+      );
       expect(file.bytes).toBe(bytes.length);
       expect(file.sha256).toBe(sha256(bytes));
       expect(file.gzipBytes).toBe(Bun.gzipSync(bytes).length);
       expect(file.zstdBytes).toBe(Bun.zstdCompressSync(bytes).length);
     }
-    expect(report.totalZstdBytes).toBe(manifest.files.reduce((n, f) => n + f.zstdBytes, 0));
+    expect(report.totalZstdBytes).toBe(
+      manifest.files.reduce((n, f) => n + f.zstdBytes, 0),
+    );
     expect(report.memory.heapSize).toBeGreaterThan(0);
     expect(report.memory.objectCount).toBeGreaterThan(0);
     expect(report.memory.peakRss).toBeGreaterThanOrEqual(report.memory.rss);
     expect(report.warnings).toEqual([]);
     expect(manifest.buildId).toBe(
-      sha256(manifest.files.map((f) => `${f.path}:${f.sha256}`).join("\n")).slice(0, 16),
+      sha256(
+        manifest.files.map((f) => `${f.path}:${f.sha256}`).join("\n"),
+      ).slice(0, 16),
     );
     expect(await listBuild(report.outdir)).toEqual(manifest.files);
-    expect(report.totalBytes).toBe(manifest.files.reduce((n, f) => n + f.bytes, 0));
+    expect(report.totalBytes).toBe(
+      manifest.files.reduce((n, f) => n + f.bytes, 0),
+    );
   });
 
   test("the one plugin is in the build: theme sheet from the seed, the icon as an SVG string", async () => {
     const dir = fixtureCopy();
     const report = await buildApp({ dir });
     const css = readFileSync(
-      join(report.outdir, report.manifest.files.find((f) => f.path.endsWith(".css"))!.path),
+      join(
+        report.outdir,
+        report.manifest.files.find((f) => f.path.endsWith(".css"))!.path,
+      ),
       "utf8",
     );
     expect(css).toContain("--md-sys-color-primary:#65558f");
     // The Rust token sheet's `@theme inline` twins are compiled by Tailwind, not left to Bun's CSS parser.
     expect(css).not.toContain("@theme");
     const js = readFileSync(
-      join(report.outdir, report.manifest.files.find((f) => f.path.endsWith(".js"))!.path),
+      join(
+        report.outdir,
+        report.manifest.files.find((f) => f.path.endsWith(".js"))!.path,
+      ),
       "utf8",
     );
     expect(js).toContain('<svg xmlns="http://www.w3.org/2000/svg"');
@@ -158,7 +181,11 @@ describe("buildApp", () => {
       );
       expect(proc.exitCode).toBe(0);
       ids.push(
-        (JSON.parse(proc.stdout.toString()) as { manifest: { buildId: string } }).manifest.buildId,
+        (
+          JSON.parse(proc.stdout.toString()) as {
+            manifest: { buildId: string };
+          }
+        ).manifest.buildId,
       );
     }
     expect(ids[0]).toBe(ids[1]!);

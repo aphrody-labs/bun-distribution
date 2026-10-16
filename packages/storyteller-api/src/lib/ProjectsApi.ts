@@ -12,10 +12,7 @@ import { Visibility } from "./enums/Visibility.js";
  * save endpoint yet.
  */
 export type ProjectType =
-  | "scene_3d"
-  | "mood_board"
-  | "editor_2d"
-  | "video_timeline";
+  "scene_3d" | "mood_board" | "editor_2d" | "video_timeline";
 
 /** One project row from `GET /v1/media_files/project/list`. */
 export interface ProjectMediaFileInfo {

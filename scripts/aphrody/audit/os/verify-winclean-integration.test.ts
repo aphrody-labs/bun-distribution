@@ -10,17 +10,23 @@ describe("verify-winclean-integration", () => {
   });
 
   test("accepts an agreeing ledger and reports each drift", () => {
-    const ledger = { catalog_sha256: catalogHash(text), catalog_tool_count: 2, tools: ["b", "a"] };
+    const ledger = {
+      catalog_sha256: catalogHash(text),
+      catalog_tool_count: 2,
+      tools: ["b", "a"],
+    };
     expect(ledgerDrift(["a", "b"], text, ledger)).toEqual([]);
-    expect(ledgerDrift(["a", "b"], `${text} `, ledger)).toEqual(["ledger schema hash drift"]);
+    expect(ledgerDrift(["a", "b"], `${text} `, ledger)).toEqual([
+      "ledger schema hash drift",
+    ]);
     expect(ledgerDrift(["a", "c"], text, ledger)).toEqual([
       "ledger names diverge from the frozen catalog",
     ]);
     expect(ledgerDrift(["a", "b", "c"], text, ledger)).toContain(
       "ledger count drift: declared=2 ledger=2 catalog=3",
     );
-    expect(ledgerDrift(["a", "b"], text, { ...ledger, tools: ["a", "a"] })).toEqual([
-      "ledger names diverge from the frozen catalog",
-    ]);
+    expect(
+      ledgerDrift(["a", "b"], text, { ...ledger, tools: ["a", "a"] }),
+    ).toEqual(["ledger names diverge from the frozen catalog"]);
   });
 });

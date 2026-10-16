@@ -21,7 +21,14 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { Ctx } from "../context.ts";
 import { lockDiff, lockMap, runCargo } from "../cargo.ts";
-import { Cache, cachedText, osv, parseCargoLock, sparsePath, type Dep } from "../deps/inventory.ts";
+import {
+  Cache,
+  cachedText,
+  osv,
+  parseCargoLock,
+  sparsePath,
+  type Dep,
+} from "../deps/inventory.ts";
 import { cmpVersion } from "../deps/sync.ts";
 import { cargoGitRemotes, driftRows } from "../sources/drift.ts";
 
@@ -40,10 +47,14 @@ export function parseVersion(input: string): Parsed | undefined {
       input,
     );
   if (!m) return undefined;
-  return { v: [Number(m[1]), Number(m[2] ?? 0), Number(m[3] ?? 0)], pre: m[4] ?? "" };
+  return {
+    v: [Number(m[1]), Number(m[2] ?? 0), Number(m[3] ?? 0)],
+    pre: m[4] ?? "",
+  };
 }
 
-const cmpTriple = (a: Triple, b: Triple) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+const cmpTriple = (a: Triple, b: Triple) =>
+  a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
 
 type Comparator = {
   test: (v: Triple) => boolean;
@@ -89,11 +100,20 @@ export function comparators(req: string): Comparator[] | undefined {
       else if (min > 0 || !patchGiven) out.push(between([0, min + 1, 0]));
       else out.push(between([0, 0, pat + 1]));
     } else if (op === "~") {
-      out.push(minorGiven ? between([maj, min + 1, 0]) : between([maj + 1, 0, 0]));
+      out.push(
+        minorGiven ? between([maj, min + 1, 0]) : between([maj + 1, 0, 0]),
+      );
     } else if (op === "=") {
       if (patchGiven)
-        out.push({ test: (v) => cmpTriple(v, lo) === 0, pre, post: (p) => p.pre === preStr });
-      else out.push(minorGiven ? between([maj, min + 1, 0]) : between([maj + 1, 0, 0]));
+        out.push({
+          test: (v) => cmpTriple(v, lo) === 0,
+          pre,
+          post: (p) => p.pre === preStr,
+        });
+      else
+        out.push(
+          minorGiven ? between([maj, min + 1, 0]) : between([maj + 1, 0, 0]),
+        );
     } else {
       // Comparison operators: a partial version rounds up for > and down for <=.
       const next: Triple = patchGiven
@@ -101,10 +121,12 @@ export function comparators(req: string): Comparator[] | undefined {
         : minorGiven
           ? [maj, min + 1, 0]
           : [maj + 1, 0, 0];
-      if (op === ">=") out.push({ test: (v) => cmpTriple(v, lo) >= 0, pre, post: lower });
+      if (op === ">=")
+        out.push({ test: (v) => cmpTriple(v, lo) >= 0, pre, post: lower });
       else if (op === ">")
         out.push({
-          test: (v) => cmpTriple(v, next) >= 0 || (patchGiven && cmpTriple(v, lo) > 0),
+          test: (v) =>
+            cmpTriple(v, next) >= 0 || (patchGiven && cmpTriple(v, lo) > 0),
           pre,
         });
       else if (op === "<") out.push({ test: (v) => cmpTriple(v, lo) < 0, pre });
@@ -119,7 +141,8 @@ export function satisfies(version: string, req: string): boolean {
   const p = parseVersion(version);
   const cs = comparators(req);
   if (!p || !cs) return false;
-  if (p.pre && !cs.some((c) => c.pre && cmpTriple(c.pre, p.v) === 0)) return false;
+  if (p.pre && !cs.some((c) => c.pre && cmpTriple(c.pre, p.v) === 0))
+    return false;
   return cs.every((c) => c.test(p.v) && (c.post?.(p) ?? true));
 }
 
@@ -128,7 +151,9 @@ export function satisfies(version: string, req: string): boolean {
  * (`0.7` -> `0.8`, `1` -> `2`, `=1.7.0` -> `=1.19.0`). Compound requirements return undefined: edit them by hand.
  */
 export function bumpReq(req: string, target: string): string | undefined {
-  const m = /^(\^|~|=)?\s*(\d+(?:\.\d+){0,2})(?:-[0-9A-Za-z.-]+)?$/.exec(req.trim());
+  const m = /^(\^|~|=)?\s*(\d+(?:\.\d+){0,2})(?:-[0-9A-Za-z.-]+)?$/.exec(
+    req.trim(),
+  );
   const t = parseVersion(target);
   if (!m || !t) return undefined;
   const parts = m[2]!.split(".").length;
@@ -140,15 +165,27 @@ export function bumpReq(req: string, target: string): string | undefined {
   return `${m[1] ?? ""}${body}`;
 }
 
-export type IndexVersion = { vers: string; yanked: boolean; rustVersion?: string };
+export type IndexVersion = {
+  vers: string;
+  yanked: boolean;
+  rustVersion?: string;
+};
 
 export function parseIndex(text: string): IndexVersion[] {
   const out: IndexVersion[] = [];
   for (const line of text.trim().split("\n")) {
     if (!line) continue;
     try {
-      const j = JSON.parse(line) as { vers: string; yanked?: boolean; rust_version?: string };
-      out.push({ vers: j.vers, yanked: !!j.yanked, rustVersion: j.rust_version });
+      const j = JSON.parse(line) as {
+        vers: string;
+        yanked?: boolean;
+        rust_version?: string;
+      };
+      out.push({
+        vers: j.vers,
+        yanked: !!j.yanked,
+        rustVersion: j.rust_version,
+      });
     } catch {
       /* skip a corrupt line */
     }
@@ -200,10 +237,21 @@ export function readDecls(manifest: string, text: string): DepDecl[] {
   }
   const pkg: string = doc.package?.name ?? "(workspace)";
   const out: DepDecl[] = [];
-  const take = (section: string, table: Record<string, unknown> | undefined) => {
+  const take = (
+    section: string,
+    table: Record<string, unknown> | undefined,
+  ) => {
     for (const [name, spec] of Object.entries(table ?? {})) {
       if (typeof spec === "string")
-        out.push({ manifest, pkg, section, name, crate: name, req: spec, workspace: false });
+        out.push({
+          manifest,
+          pkg,
+          section,
+          name,
+          crate: name,
+          req: spec,
+          workspace: false,
+        });
       else if (spec && typeof spec === "object") {
         const s = spec as {
           version?: string;
@@ -213,7 +261,9 @@ export function readDecls(manifest: string, text: string): DepDecl[] {
           git?: string;
           optional?: boolean;
         };
-        const enabledBy = s.optional ? featuresEnabling(doc.features, name) : undefined;
+        const enabledBy = s.optional
+          ? featuresEnabling(doc.features, name)
+          : undefined;
         if (s.workspace)
           out.push({
             manifest,
@@ -260,7 +310,8 @@ export type DirectDep = {
  */
 export function directDeps(decls: DepDecl[]): DirectDep[] {
   const ws = new Map<string, DepDecl>();
-  for (const d of decls) if (d.section === "workspace.dependencies" && d.req) ws.set(d.name, d);
+  for (const d of decls)
+    if (d.section === "workspace.dependencies" && d.req) ws.set(d.name, d);
   const map = new Map<string, DirectDep>();
   const add = (
     crate: string,
@@ -271,14 +322,21 @@ export function directDeps(decls: DepDecl[]): DirectDep[] {
   ) => {
     const k = `${crate}\u0000${req}`;
     const row =
-      map.get(k) ?? map.set(k, { crate, req, declaredIn: [], consumers: [], optional: {} }).get(k)!;
+      map.get(k) ??
+      map
+        .set(k, { crate, req, declaredIn: [], consumers: [], optional: {} })
+        .get(k)!;
     if (!row.declaredIn.includes(manifest)) row.declaredIn.push(manifest);
-    if (consumer && !row.consumers.includes(consumer)) row.consumers.push(consumer);
+    if (consumer && !row.consumers.includes(consumer))
+      row.consumers.push(consumer);
     if (consumer && enabledBy)
-      row.optional[consumer] = [...new Set([...(row.optional[consumer] ?? []), ...enabledBy])];
+      row.optional[consumer] = [
+        ...new Set([...(row.optional[consumer] ?? []), ...enabledBy]),
+      ];
   };
   for (const d of decls) {
-    if (d.section === "workspace.dependencies" && d.req) add(d.crate, d.req, d.manifest);
+    if (d.section === "workspace.dependencies" && d.req)
+      add(d.crate, d.req, d.manifest);
     else if (d.workspace) {
       const w = ws.get(d.name);
       if (w?.req) add(w.crate, w.req, w.manifest, d.pkg, d.enabledBy);
@@ -313,9 +371,12 @@ export function rewriteReq(
     const h = /^\s*\[([^\]]+)\]\s*(?:#.*)?$/.exec(line);
     if (h) {
       const sec = h[1]!.replace(/^'|'$/g, "");
-      tableDep = new RegExp(`(^|\\.)(dev-|build-)?dependencies\\.${key}$`).test(sec);
+      tableDep = new RegExp(`(^|\\.)(dev-|build-)?dependencies\\.${key}$`).test(
+        sec,
+      );
       inDeps =
-        /(^|\.)(dev-|build-)?dependencies$/.test(sec) || /^workspace\.dependencies$/.test(sec);
+        /(^|\.)(dev-|build-)?dependencies$/.test(sec) ||
+        /^workspace\.dependencies$/.test(sec);
       return line;
     }
     if (tableDep) {
@@ -339,7 +400,10 @@ export function rewriteReq(
 
 // ---------------------------------------------------------------- lock graph (pure, unit-tested)
 
-export type LockGraph = { members: Set<string>; reverse: Map<string, Set<string>> };
+export type LockGraph = {
+  members: Set<string>;
+  reverse: Map<string, Set<string>>;
+};
 
 /** Workspace members (lock packages without a source) and the name-level reverse dependency edges of Cargo.lock. */
 export function lockGraph(text: string): LockGraph {
@@ -359,7 +423,10 @@ export function lockGraph(text: string): LockGraph {
 }
 
 /** Workspace members that (transitively) depend on any of `changed` crate names. */
-export function touchedMembers(graph: LockGraph, changed: Iterable<string>): string[] {
+export function touchedMembers(
+  graph: LockGraph,
+  changed: Iterable<string>,
+): string[] {
   const seen = new Set<string>();
   const queue = [...changed];
   while (queue.length) {
@@ -378,13 +445,20 @@ export function touchedMembers(graph: LockGraph, changed: Iterable<string>): str
 export function parseUpdateLines(
   output: string,
 ): { action: string; name: string; from?: string; to?: string }[] {
-  const out: { action: string; name: string; from?: string; to?: string }[] = [];
+  const out: { action: string; name: string; from?: string; to?: string }[] =
+    [];
   for (const l of output.split("\n")) {
-    const m = /^\s*(Updating|Adding|Removing|Downgrading)\s+(\S+)\s+v(\S+)(?:\s+->\s+v(\S+))?/.exec(
-      l,
-    );
+    const m =
+      /^\s*(Updating|Adding|Removing|Downgrading)\s+(\S+)\s+v(\S+)(?:\s+->\s+v(\S+))?/.exec(
+        l,
+      );
     if (m)
-      out.push({ action: m[1]!, name: m[2]!, from: m[4] ? m[3] : undefined, to: m[4] ?? m[3] });
+      out.push({
+        action: m[1]!,
+        name: m[2]!,
+        from: m[4] ? m[3] : undefined,
+        to: m[4] ?? m[3],
+      });
   }
   return out;
 }
@@ -396,7 +470,12 @@ export function parseUpdateLines(
  * parent). `relock`: specs to `cargo update -p <spec> --recursive` after the pin, to repair collateral re-resolution
  * (pinning yara-x-macros re-picks bindgen's syn/prettyplease pair).
  */
-export type Hold = { crate: string; reason: string; lockVersion?: string; relock?: string[] };
+export type Hold = {
+  crate: string;
+  reason: string;
+  lockVersion?: string;
+  relock?: string[];
+};
 
 /** Lock entries that drifted from a `lockVersion` hold: every locked release of the crate that is not the pinned one. */
 export function lockPinDrift(
@@ -406,7 +485,9 @@ export function lockPinDrift(
   return holds.flatMap((h) =>
     h.lockVersion
       ? lock
-          .filter((p) => p.name === h.crate && noBuild(p.version) !== h.lockVersion)
+          .filter(
+            (p) => p.name === h.crate && noBuild(p.version) !== h.lockVersion,
+          )
           .map((p) => ({ crate: h.crate, from: p.version, to: h.lockVersion! }))
       : [],
   );
@@ -452,7 +533,9 @@ export function classify(i: ClassifyInput): OutdatedRow[] {
     const locked = i.lock
       .filter(
         (p) =>
-          p.name === d.crate && p.source?.startsWith("registry+") && satisfies(p.version, d.req),
+          p.name === d.crate &&
+          p.source?.startsWith("registry+") &&
+          satisfies(p.version, d.req),
       )
       .map((p) => noBuild(p.version))
       .toSorted(cmpVersion)
@@ -466,7 +549,8 @@ export function classify(i: ClassifyInput): OutdatedRow[] {
       .toSorted((a, b) => cmpVersion(a.vers, b.vers));
     const within = stable.findLast((v) => satisfies(v.vers, d.req));
     const beyondV = stable.findLast(
-      (v) => !satisfies(v.vers, d.req) && cmpVersion(v.vers, locked ?? "0.0.0") > 0,
+      (v) =>
+        !satisfies(v.vers, d.req) && cmpVersion(v.vers, locked ?? "0.0.0") > 0,
     );
     const exact = /^\s*=/.test(d.req);
     const row: OutdatedRow = {
@@ -476,15 +560,22 @@ export function classify(i: ClassifyInput): OutdatedRow[] {
       consumers: d.consumers,
       optional: d.optional,
       declaredIn: d.declaredIn,
-      inRange: locked && within && cmpVersion(locked, within.vers) < 0 ? within.vers : undefined,
+      inRange:
+        locked && within && cmpVersion(locked, within.vers) < 0
+          ? within.vers
+          : undefined,
       beyond: beyondV?.vers,
       beyondMsrv:
-        beyondV?.rustVersion && i.toolchain && cmpVersion(i.toolchain, beyondV.rustVersion) < 0
+        beyondV?.rustVersion &&
+        i.toolchain &&
+        cmpVersion(i.toolchain, beyondV.rustVersion) < 0
           ? beyondV.rustVersion
           : undefined,
       yanked:
         !!locked &&
-        (i.versions.get(d.crate) ?? []).some((v) => v.yanked && noBuild(v.vers) === locked),
+        (i.versions.get(d.crate) ?? []).some(
+          (v) => v.yanked && noBuild(v.vers) === locked,
+        ),
       held: holds.get(d.crate),
       exactPin: exact || undefined,
       owner: i.owners?.get(d.crate),
@@ -507,7 +598,9 @@ export function splitAdvisories(
     const m = /^crates\.io:(.+)@([^@]+)$/.exec(key);
     if (!m) continue;
     const a = { crate: m[1]!, version: m[2]!, ids };
-    const h = holds.find((x) => x.ecosystem === "crates.io" && x.name === a.crate);
+    const h = holds.find(
+      (x) => x.ecosystem === "crates.io" && x.name === a.crate,
+    );
     if (h) held.push({ ...a, reason: h.reason });
     else open.push(a);
   }
@@ -541,7 +634,10 @@ export function parseToolchainChannel(text: string): string | undefined {
 }
 
 /** `channel-rust-*.toml` manifest: release version and date. */
-export function parseChannelManifest(text: string): { version?: string; date?: string } {
+export function parseChannelManifest(text: string): {
+  version?: string;
+  date?: string;
+} {
   return {
     date: /^date\s*=\s*"([^"]+)"/m.exec(text)?.[1],
     version: /\[pkg\.rust\]\s*\nversion\s*=\s*"([^" ]+)/.exec(text)?.[1],
@@ -561,7 +657,13 @@ export type RustReport = {
   };
   outdated: OutdatedRow[];
   advisories: { open: Advisory[]; held: (Advisory & { reason: string })[] };
-  git: { url: string; how: string; pinned: string[]; head?: string; moved: boolean }[];
+  git: {
+    url: string;
+    how: string;
+    pinned: string[];
+    head?: string;
+    moved: boolean;
+  }[];
   sources: { id: string; current: string; latest?: string; note?: string }[];
   lockPins: { crate: string; from: string; to: string }[];
 };
@@ -585,14 +687,27 @@ const say = (line: string) => console.error(line);
  * the holds that moved. Shared by `apply` and by the doctor.
  */
 export function restoreLockPins(c: Ctx): { restored: number; failed: number } {
-  const drift = lockPinDrift(parseCargoLock(c.read("Cargo.lock")), loadHolds(c));
+  const drift = lockPinDrift(
+    parseCargoLock(c.read("Cargo.lock")),
+    loadHolds(c),
+  );
   let failed = 0;
   for (const d of drift) {
-    const res = cargo(c, ["update", "-p", `${d.crate}@${d.from}`, "--precise", d.to]);
-    say(`${res.status === 0 ? "lockpin" : "FAILED "} ${d.crate} ${d.from} -> ${d.to}`);
+    const res = cargo(c, [
+      "update",
+      "-p",
+      `${d.crate}@${d.from}`,
+      "--precise",
+      d.to,
+    ]);
+    say(
+      `${res.status === 0 ? "lockpin" : "FAILED "} ${d.crate} ${d.from} -> ${d.to}`,
+    );
     if (res.status !== 0) failed++;
   }
-  const relock = drift.length ? loadHolds(c).filter((h) => h.lockVersion && h.relock?.length) : [];
+  const relock = drift.length
+    ? loadHolds(c).filter((h) => h.lockVersion && h.relock?.length)
+    : [];
   for (const spec of new Set(relock.flatMap((h) => h.relock!))) {
     const res = cargo(c, ["update", "-p", spec, "--recursive"]);
     say(`${res.status === 0 ? "relock " : "FAILED "} ${spec} --recursive`);
@@ -622,9 +737,15 @@ export function memberManifests(c: Ctx): string[] {
     if (pattern.endsWith("/*")) {
       const base = pattern.slice(0, -2);
       if (!existsSync(join(c.root, base))) continue;
-      for (const e of readdirSync(join(c.root, base), { withFileTypes: true })) {
+      for (const e of readdirSync(join(c.root, base), {
+        withFileTypes: true,
+      })) {
         const rel = `${base}/${e.name}`;
-        if (e.isDirectory() && !exclude.has(rel) && c.exists(`${rel}/Cargo.toml`))
+        if (
+          e.isDirectory() &&
+          !exclude.has(rel) &&
+          c.exists(`${rel}/Cargo.toml`)
+        )
           out.push(`${rel}/Cargo.toml`);
       }
     } else if (c.exists(`${pattern}/Cargo.toml`) && !exclude.has(pattern))
@@ -637,7 +758,10 @@ export function collectDecls(c: Ctx): DepDecl[] {
   return memberManifests(c).flatMap((m) => readDecls(m, c.read(m)));
 }
 
-async function fetchVersions(c: Ctx, crates: string[]): Promise<Map<string, IndexVersion[]>> {
+async function fetchVersions(
+  c: Ctx,
+  crates: string[],
+): Promise<Map<string, IndexVersion[]>> {
   const cache = new Cache(join(c.root, "target", "deps-inventory", "cache"));
   const out = new Map<string, IndexVersion[]>();
   const queue = [...crates];
@@ -645,7 +769,10 @@ async function fetchVersions(c: Ctx, crates: string[]): Promise<Map<string, Inde
     Array.from({ length: 16 }, async () => {
       for (let n = queue.pop(); n; n = queue.pop()) {
         // oxlint-disable-next-line no-await-in-loop -- each pool worker fetches its queue one crate at a time; the 16 workers are the concurrency limit
-        const t = await cachedText(cache, `https://index.crates.io/${sparsePath(n)}`);
+        const t = await cachedText(
+          cache,
+          `https://index.crates.io/${sparsePath(n)}`,
+        );
         out.set(n, t ? parseIndex(t) : []);
       }
     }),
@@ -653,40 +780,69 @@ async function fetchVersions(c: Ctx, crates: string[]): Promise<Map<string, Inde
   return out;
 }
 
-async function channel(name: "stable" | "nightly"): Promise<{ version?: string; date?: string }> {
-  const res = await fetch(`https://static.rust-lang.org/dist/channel-rust-${name}.toml`, {
-    signal: AbortSignal.timeout(30_000),
-  }).catch(() => undefined);
+async function channel(
+  name: "stable" | "nightly",
+): Promise<{ version?: string; date?: string }> {
+  const res = await fetch(
+    `https://static.rust-lang.org/dist/channel-rust-${name}.toml`,
+    {
+      signal: AbortSignal.timeout(30_000),
+    },
+  ).catch(() => undefined);
   return res?.ok ? parseChannelManifest(await res.text()) : {};
 }
 
-export async function outdated(c: Ctx, toolchain?: string): Promise<OutdatedRow[]> {
+export async function outdated(
+  c: Ctx,
+  toolchain?: string,
+): Promise<OutdatedRow[]> {
   const direct = directDeps(collectDecls(c));
   const lock = parseCargoLock(c.read("Cargo.lock"));
-  const versions = await fetchVersions(c, [...new Set(direct.map((d) => d.crate))]);
-  return classify({ direct, lock, versions, holds: loadHolds(c), owners: owners(c), toolchain });
+  const versions = await fetchVersions(c, [
+    ...new Set(direct.map((d) => d.crate)),
+  ]);
+  return classify({
+    direct,
+    lock,
+    versions,
+    holds: loadHolds(c),
+    owners: owners(c),
+    toolchain,
+  });
 }
 
 export async function rustStatus(c: Ctx): Promise<RustReport> {
   const pinned = parseToolchainChannel(c.read("rust-toolchain.toml"));
-  const [stable, nightly] = await Promise.all([channel("stable"), channel("nightly")]);
-  const installed = /rustc (\S+)/.exec(c.run("rustc", ["--version"]).stdout)?.[1];
+  const [stable, nightly] = await Promise.all([
+    channel("stable"),
+    channel("nightly"),
+  ]);
+  const installed = /rustc (\S+)/.exec(
+    c.run("rustc", ["--version"]).stdout,
+  )?.[1];
   const rows = await outdated(c, pinned);
   const lock = parseCargoLock(c.read("Cargo.lock"));
   const deps: Dep[] = lock
     .filter((p) => p.source?.startsWith("registry+"))
     .map((p) => ({ ecosystem: "crates.io", name: p.name, version: p.version }));
   const advisories = splitAdvisories(await osv(deps), loadAdvisoryHolds(c));
-  const git = cargoGitRemotes(c).map(({ url, how, pinned: p, head, moved }) => ({
-    url,
-    how,
-    pinned: p,
-    head,
-    moved,
-  }));
+  const git = cargoGitRemotes(c).map(
+    ({ url, how, pinned: p, head, moved }) => ({
+      url,
+      how,
+      pinned: p,
+      head,
+      moved,
+    }),
+  );
   const sources = (await driftRows(c))
     .filter((r) => r.behind || r.note)
-    .map((r) => ({ id: r.id, current: r.current, latest: r.latest, note: r.note }));
+    .map((r) => ({
+      id: r.id,
+      current: r.current,
+      latest: r.latest,
+      note: r.note,
+    }));
   return {
     toolchain: {
       pinned,
@@ -694,7 +850,8 @@ export async function rustStatus(c: Ctx): Promise<RustReport> {
       stable: stable.version,
       nightly: nightly.version,
       nightlyDate: nightly.date,
-      behind: !!pinned && !!stable.version && cmpVersion(pinned, stable.version) < 0,
+      behind:
+        !!pinned && !!stable.version && cmpVersion(pinned, stable.version) < 0,
     },
     outdated: rows,
     advisories,
@@ -719,12 +876,15 @@ function printStatus(r: RustReport) {
   );
   for (const x of inRange) console.log(`  range    ${fmtRow(x)}`);
   for (const x of beyond) console.log(`  beyond   ${fmtRow(x)}`);
-  for (const x of r.outdated.filter((y) => y.yanked)) console.log(`  yanked   ${fmtRow(x)}`);
+  for (const x of r.outdated.filter((y) => y.yanked))
+    console.log(`  yanked   ${fmtRow(x)}`);
   console.log(
     `advisories ${r.advisories.open.length} open, ${r.advisories.held.length} held (tools/config/deps/advisory-holds.json)`,
   );
   for (const a of r.advisories.open)
-    console.log(`  open     ${a.crate} ${a.version}: ${a.ids.slice(0, 4).join(", ")}`);
+    console.log(
+      `  open     ${a.crate} ${a.version}: ${a.ids.slice(0, 4).join(", ")}`,
+    );
   for (const d of r.lockPins)
     console.log(`lockpin    ${d.crate} ${d.from} should be ${d.to}: run apply`);
   for (const g of r.git)
@@ -756,12 +916,19 @@ export type RustPlan = {
   held: OutdatedRow[];
 };
 
-export function buildPlan(rows: OutdatedRow[], lock: RustPlan["lock"]): RustPlan {
-  const lockedNames = new Set(lock.filter((l) => l.action === "Updating").map((l) => l.name));
+export function buildPlan(
+  rows: OutdatedRow[],
+  lock: RustPlan["lock"],
+): RustPlan {
+  const lockedNames = new Set(
+    lock.filter((l) => l.action === "Updating").map((l) => l.name),
+  );
   return {
     lock,
     precise: rows
-      .filter((r) => r.inRange && !r.held && !r.owner && !lockedNames.has(r.crate))
+      .filter(
+        (r) => r.inRange && !r.held && !r.owner && !lockedNames.has(r.crate),
+      )
       .map((r) => ({ crate: r.crate, from: r.locked!, to: r.inRange! })),
     majors: rows
       .filter((r) => r.beyond)
@@ -785,7 +952,9 @@ export function buildPlan(rows: OutdatedRow[], lock: RustPlan["lock"]): RustPlan
 async function plan(c: Ctx, args: string[]): Promise<number> {
   const pinned = parseToolchainChannel(c.read("rust-toolchain.toml"));
   const rows = await outdated(c, pinned);
-  const dry = args.includes("--no-cargo") ? undefined : cargo(c, ["update", "--dry-run"]);
+  const dry = args.includes("--no-cargo")
+    ? undefined
+    : cargo(c, ["update", "--dry-run"]);
   const lock = dry ? parseUpdateLines(dry.stderr + dry.stdout) : [];
   const p = buildPlan(rows, lock);
   if (c.json) {
@@ -800,7 +969,9 @@ async function plan(c: Ctx, args: string[]): Promise<number> {
   if (lock.length > 60) console.log(`  ... ${lock.length - 60} more`);
   console.log(`plan  precise updates after the refresh: ${p.precise.length}`);
   for (const x of p.precise)
-    console.log(`  precise  cargo update -p ${x.crate}@${x.from} --precise ${x.to}`);
+    console.log(
+      `  precise  cargo update -p ${x.crate}@${x.from} --precise ${x.to}`,
+    );
   console.log(
     `plan  majors (never part of a plain apply; use \`apply --majors a,b+c\`): ${p.majors.length}`,
   );
@@ -812,12 +983,18 @@ async function plan(c: Ctx, args: string[]): Promise<number> {
       `           consumers: ${m.consumers.join(", ") || "(workspace only)"}; manifests: ${m.manifests.join(", ")}`,
     );
   }
-  const drift = lockPinDrift(parseCargoLock(c.read("Cargo.lock")), loadHolds(c));
+  const drift = lockPinDrift(
+    parseCargoLock(c.read("Cargo.lock")),
+    loadHolds(c),
+  );
   console.log(`plan  lock pins to restore after the refresh: ${drift.length}`);
   for (const d of drift)
-    console.log(`  lockpin  cargo update -p ${d.crate}@${d.from} --precise ${d.to}`);
+    console.log(
+      `  lockpin  cargo update -p ${d.crate}@${d.from} --precise ${d.to}`,
+    );
   console.log(`plan  held (stay as they are): ${p.held.length}`);
-  for (const h of p.held) console.log(`  held     ${h.crate} ${h.req}: ${h.held}`);
+  for (const h of p.held)
+    console.log(`  held     ${h.crate} ${h.req}: ${h.held}`);
   return 0;
 }
 
@@ -843,13 +1020,21 @@ function restore(c: Ctx, s: Snapshot) {
 function recordTouched(c: Ctx, names: string[]) {
   const f = "target/update/rust-touched.json";
   const prev = c.jsonFile<{ crates: string[] }>(f, { crates: [] }).crates;
-  c.write(f, JSON.stringify({ crates: [...new Set([...prev, ...names])].toSorted() }, null, 2));
+  c.write(
+    f,
+    JSON.stringify(
+      { crates: [...new Set([...prev, ...names])].toSorted() },
+      null,
+      2,
+    ),
+  );
 }
 
 async function apply(c: Ctx, args: string[]): Promise<number> {
   const mi = args.indexOf("--majors");
   // Comma separates transactions; `+` joins crates that must move together (`nu-command+nu-engine`).
-  const wantMajors = mi >= 0 ? (args[mi + 1] ?? "").split(",").filter(Boolean) : [];
+  const wantMajors =
+    mi >= 0 ? (args[mi + 1] ?? "").split(",").filter(Boolean) : [];
   const pinned = parseToolchainChannel(c.read("rust-toolchain.toml"));
   mkdirSync(join(c.root, "target", "update"), { recursive: true });
   let failed = 0;
@@ -863,8 +1048,16 @@ async function apply(c: Ctx, args: string[]): Promise<number> {
 
     // 2. direct crates the bulk refresh left behind. Most are held back by a transitive exact or tilde requirement
     //    (cargo says which); that is reported, not fatal, and clears when the blocking crate moves.
-    for (const r of (await outdated(c, pinned)).filter((x) => x.inRange && !x.held && !x.owner)) {
-      const res = cargo(c, ["update", "-p", `${r.crate}@${r.locked}`, "--precise", r.inRange!]);
+    for (const r of (await outdated(c, pinned)).filter(
+      (x) => x.inRange && !x.held && !x.owner,
+    )) {
+      const res = cargo(c, [
+        "update",
+        "-p",
+        `${r.crate}@${r.locked}`,
+        "--precise",
+        r.inRange!,
+      ]);
       console.log(
         `${res.status === 0 ? "precise" : "blocked"} ${r.crate} ${r.locked} -> ${r.inRange}${res.status === 0 ? "" : `  ${(res.stderr.split("\n").find((l) => /required by|didn't match|conflict/.test(l)) ?? "transitive requirement").trim()}`}`,
       );
@@ -876,13 +1069,18 @@ async function apply(c: Ctx, args: string[]): Promise<number> {
     // 3. check the workspace: a `-p` subset unifies features differently and can fail on crates (bindgen, syn) that rely on
     //    another member to enable a feature, so a refresh is always verified as a whole
     const graph = lockGraph(c.read("Cargo.lock"));
-    const changed = lockDiff(lockBefore, lockMap(c.read("Cargo.lock"))).map((x) => x.name);
+    const changed = lockDiff(lockBefore, lockMap(c.read("Cargo.lock"))).map(
+      (x) => x.name,
+    );
     const touched = touchedMembers(graph, changed);
     recordTouched(c, touched);
     console.log(
       `apply  ${changed.length} package(s) changed, ${touched.length}/${graph.members.size} workspace member(s) touched`,
     );
-    if (changed.length && cargo(c, ["check", "--workspace"], true).status !== 0) {
+    if (
+      changed.length &&
+      cargo(c, ["check", "--workspace"], true).status !== 0
+    ) {
       console.error(
         "apply  cargo check FAILED after the in-range refresh. Roll back: cp target/update/Cargo.lock.before Cargo.lock",
       );
@@ -915,7 +1113,9 @@ async function applyMajor(
   keep = false,
 ): Promise<boolean> {
   const label = group.join("+");
-  const rows = (await outdated(c, pinned)).filter((r) => group.includes(r.crate) && r.beyond);
+  const rows = (await outdated(c, pinned)).filter(
+    (r) => group.includes(r.crate) && r.beyond,
+  );
   const missing = group.filter((g) => !rows.some((r) => r.crate === g));
   if (missing.length) {
     console.error(
@@ -925,11 +1125,16 @@ async function applyMajor(
   }
   const blocked = rows.find((r) => r.held || r.owner);
   if (blocked) {
-    console.error(`major  ${label}: refused, ${blocked.crate} (${blocked.held ?? blocked.owner})`);
+    console.error(
+      `major  ${label}: refused, ${blocked.crate} (${blocked.held ?? blocked.owner})`,
+    );
     return false;
   }
   const manifests = [...new Set(rows.flatMap((r) => r.declaredIn))];
-  const snap = snapshot(c, `major-${label.slice(0, 60)}`, ["Cargo.lock", ...manifests]);
+  const snap = snapshot(c, `major-${label.slice(0, 60)}`, [
+    "Cargo.lock",
+    ...manifests,
+  ]);
   const fail = (why: string) => {
     if (keep) {
       console.error(
@@ -945,7 +1150,10 @@ async function applyMajor(
   };
   for (const r of rows) {
     const nr = bumpReq(r.req, r.beyond!);
-    if (!nr) return fail(`requirement ${r.req} of ${r.crate} is compound; edit it by hand`);
+    if (!nr)
+      return fail(
+        `requirement ${r.req} of ${r.crate} is compound; edit it by hand`,
+      );
     let edited = 0;
     for (const m of r.declaredIn) {
       const out = rewriteReq(c.read(m), r.crate, r.req, nr);
@@ -954,25 +1162,36 @@ async function applyMajor(
         edited += out.count;
       }
     }
-    if (!edited) return fail(`could not locate the ${r.crate} requirement ${r.req}`);
+    if (!edited)
+      return fail(`could not locate the ${r.crate} requirement ${r.req}`);
   }
   const specs = [...new Set(rows.map((r) => `${r.crate}@${r.locked}`))];
   // The edited requirements exclude the locked versions, so cargo re-resolves exactly these packages.
   const up = cargo(c, ["update", ...specs.flatMap((x) => ["-p", x])], true);
-  if (up.status !== 0) return fail("cargo update could not resolve the new requirements");
+  if (up.status !== 0)
+    return fail("cargo update could not resolve the new requirements");
   const members = lockGraph(c.read("Cargo.lock")).members;
-  const direct = [...new Set(rows.flatMap((r) => r.consumers))].filter((n) => members.has(n));
+  const direct = [...new Set(rows.flatMap((r) => r.consumers))].filter((n) =>
+    members.has(n),
+  );
   // An optional dependency is only compiled with the feature that enables it: check those consumers with it switched on.
   const optional = new Map<string, Set<string>>();
   for (const r of rows)
     for (const [pkg, f] of Object.entries(r.optional))
-      (optional.get(pkg) ?? optional.set(pkg, new Set()).get(pkg)!).add(f.join(",") || "*");
+      (optional.get(pkg) ?? optional.set(pkg, new Set()).get(pkg)!).add(
+        f.join(",") || "*",
+      );
   const plain = direct.filter((n) => !optional.has(n));
   const runs: string[][] = [];
   if (plain.length || !direct.length)
-    runs.push(["check", ...(plain.length ? plain.flatMap((n) => ["-p", n]) : ["--workspace"])]);
+    runs.push([
+      "check",
+      ...(plain.length ? plain.flatMap((n) => ["-p", n]) : ["--workspace"]),
+    ]);
   for (const [pkg, f] of optional) {
-    const feats = [...f].flatMap((x) => x.split(",")).filter((x) => x && x !== "*");
+    const feats = [...f]
+      .flatMap((x) => x.split(","))
+      .filter((x) => x && x !== "*");
     runs.push([
       "check",
       "-p",
@@ -981,7 +1200,8 @@ async function applyMajor(
     ]);
   }
   for (const a of runs)
-    if (cargo(c, a, true).status !== 0) return fail(`cargo ${a.join(" ")} failed`);
+    if (cargo(c, a, true).status !== 0)
+      return fail(`cargo ${a.join(" ")} failed`);
   recordTouched(c, direct);
   console.log(
     `major  ${label} ${rows.map((r) => `${r.crate} ${r.locked} -> ${r.beyond}`).join(", ")} done; consumers checked: ${direct.join(", ") || "(workspace)"}`,
@@ -997,7 +1217,9 @@ async function verify(c: Ctx, args: string[]): Promise<number> {
   const touched =
     ci >= 0
       ? (args[ci + 1] ?? "").split(",").filter(Boolean)
-      : c.jsonFile<{ crates: string[] }>("target/update/rust-touched.json", { crates: [] }).crates;
+      : c.jsonFile<{ crates: string[] }>("target/update/rust-touched.json", {
+          crates: [],
+        }).crates;
   const step = (label: string, a: string[]) => {
     const r = cargo(c, a, true);
     console.log(`verify ${r.status === 0 ? "ok    " : "FAILED"} ${label}`);
@@ -1030,7 +1252,9 @@ async function verify(c: Ctx, args: string[]): Promise<number> {
     );
     if (open.length) code = 1;
   } else
-    console.log("verify skip   cargo deny (cargo-deny not installed: cargo install cargo-deny)");
+    console.log(
+      "verify skip   cargo deny (cargo-deny not installed: cargo install cargo-deny)",
+    );
   return code;
 }
 
@@ -1040,7 +1264,9 @@ async function verify(c: Ctx, args: string[]): Promise<number> {
 export async function runRust(args: string[]): Promise<number> {
   const ri = args.indexOf("--root");
   const root = resolve(ri >= 0 ? args[ri + 1]! : process.cwd());
-  const rest = args.filter((a, i) => !(a === "--root" || (ri >= 0 && i === ri + 1)));
+  const rest = args.filter(
+    (a, i) => !(a === "--root" || (ri >= 0 && i === ri + 1)),
+  );
   const c = new Ctx(root, true, rest.includes("--json"));
   const [sub = "status", ...flags] = rest;
   switch (sub) {
@@ -1060,7 +1286,10 @@ export async function runRust(args: string[]): Promise<number> {
     case "doctor":
       return (await import("./rust-doctor.ts")).runDoctor(c, flags);
     case "fix":
-      return (await import("./rust-doctor.ts")).runDoctor(c, ["--fix", ...flags]);
+      return (await import("./rust-doctor.ts")).runDoctor(c, [
+        "--fix",
+        ...flags,
+      ]);
     default:
       console.error(
         "usage: rust [status [--strict]|plan [--no-cargo]|apply [--majors a,b+c] [--skip-refresh] [--keep]|verify [--crates a,b]|doctor [--fix] [--only a,b] [--skip a,b] [--strict] [--allow-dirty] [--verbose]|fix] [--root <repo>] [--json]",

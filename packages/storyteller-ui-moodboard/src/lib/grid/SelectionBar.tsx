@@ -1,5 +1,11 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
-import { LayersIcon, PlusIcon, Trash2Icon, WandSparklesIcon, XIcon } from "lucide-react";
+import {
+  LayersIcon,
+  PlusIcon,
+  Trash2Icon,
+  WandSparklesIcon,
+  XIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { BoardSection } from "../boards/boardTypes";
 
@@ -53,7 +59,7 @@ export const SelectionBar = ({
             onClick={onUseReference}
             className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <WandSparklesIcon  className="text-xs" />
+            <WandSparklesIcon className="text-xs" />
             Use as reference
           </button>
         )}
@@ -62,7 +68,7 @@ export const SelectionBar = ({
           onClick={onDelete}
           className="flex items-center gap-2 rounded-full bg-red/90 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red"
         >
-          <Trash2Icon  className="text-xs" />
+          <Trash2Icon className="text-xs" />
           Delete
         </button>
         <button
@@ -93,7 +99,8 @@ const MoveToMenu = ({
   useEffect(() => {
     if (!open) return undefined;
     const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -120,7 +127,7 @@ const MoveToMenu = ({
         aria-expanded={open}
         className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
-        <LayersIcon  className="text-xs" />
+        <LayersIcon className="text-xs" />
         Move to
       </button>
 

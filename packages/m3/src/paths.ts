@@ -20,8 +20,10 @@ const M3_SANS_FLEX_DIR = `${M3_FONTS_UPSTREAM_DIR}/google-sans-flex`;
 
 /** Whether `dir` holds the fonts in the Aphrody OS layout (`os`) or the aphrody-m3 layout (`m3`). */
 export function fontLayout(dir: string): "os" | "m3" | undefined {
-  if (existsSync(join(dir, SYMBOLS_DIR, "material-symbols-outlined.woff2"))) return "os";
-  if (existsSync(join(dir, M3_SYMBOLS_DIR, "material-symbols-outlined.woff2"))) return "m3";
+  if (existsSync(join(dir, SYMBOLS_DIR, "material-symbols-outlined.woff2")))
+    return "os";
+  if (existsSync(join(dir, M3_SYMBOLS_DIR, "material-symbols-outlined.woff2")))
+    return "m3";
   return undefined;
 }
 
@@ -65,7 +67,10 @@ export function fontPaths(root: string) {
   return {
     symbolsDir: symbols,
     symbols: Object.fromEntries(
-      SYMBOL_STYLES.map((style) => [style, join(symbols, `material-symbols-${style}.woff2`)]),
+      SYMBOL_STYLES.map((style) => [
+        style,
+        join(symbols, `material-symbols-${style}.woff2`),
+      ]),
     ) as Record<SymbolStyle, string>,
     sansFlexDir,
     sansFlex: join(sansFlexDir, "GoogleSansFlex-Variable.ttf"),

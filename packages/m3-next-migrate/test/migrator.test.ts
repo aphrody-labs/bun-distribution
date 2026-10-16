@@ -59,8 +59,12 @@ export default function Nav() {
       const result = transformComponent(source, { target: "tauri" });
       expect(result.modified).toBe(true);
       expect(result.code).not.toContain("'use client'");
-      expect(result.code).toContain("from '@aphrody/m3-next-migrate/shims/navigation'");
-      expect(result.code).toContain("from '@aphrody/m3-next-migrate/shims/link'");
+      expect(result.code).toContain(
+        "from '@aphrody/m3-next-migrate/shims/navigation'",
+      );
+      expect(result.code).toContain(
+        "from '@aphrody/m3-next-migrate/shims/link'",
+      );
       expect(result.transformations.length).toBeGreaterThanOrEqual(3);
     });
 
@@ -81,8 +85,12 @@ export function Hero() {
 `;
 
       const result = transformComponent(source, { target: "tauri" });
-      expect(result.code).toContain("from '@aphrody/m3-next-migrate/shims/image'");
-      expect(result.code).toContain("from '@aphrody/m3-next-migrate/shims/dynamic'");
+      expect(result.code).toContain(
+        "from '@aphrody/m3-next-migrate/shims/image'",
+      );
+      expect(result.code).toContain(
+        "from '@aphrody/m3-next-migrate/shims/dynamic'",
+      );
     });
 
     it("transforms next/font/google and next/font/local", () => {
@@ -94,7 +102,9 @@ const customFont = localFont({ src: './custom.woff2' });
 `;
 
       const result = transformComponent(source, { target: "vite" });
-      expect(result.code).toContain("from '@aphrody/m3-next-migrate/shims/font'");
+      expect(result.code).toContain(
+        "from '@aphrody/m3-next-migrate/shims/font'",
+      );
     });
 
     it("rewrites process.env.NEXT_PUBLIC_* to import.meta.env", () => {
@@ -116,7 +126,9 @@ export const isProd = process.env.NODE_ENV === 'production';
 `;
 
       const result = transformComponent(source);
-      expect(result.code).toContain("export default function Page({ params, searchParams }");
+      expect(result.code).toContain(
+        "export default function Page({ params, searchParams }",
+      );
       expect(result.code).not.toContain("await params");
       expect(result.code).not.toContain("await searchParams");
     });
@@ -204,7 +216,9 @@ export default function Panel() {
       expect(result.code).not.toContain("<body");
       expect(result.code).not.toContain("</body>");
       expect(result.code).not.toContain("suppressHydrationWarning");
-      expect(result.code).toContain('<div data-root-layout className="m3-app-root" lang="en">');
+      expect(result.code).toContain(
+        '<div data-root-layout className="m3-app-root" lang="en">',
+      );
       expect(result.code).toContain(
         '<div className={["m3-app-body", "font-sans antialiased"].filter(Boolean).join(" ")} >',
       );
@@ -225,7 +239,9 @@ export default function Home() {
 
       const result = transformComponent(source, { syncMetadataTitle: true });
       expect(result.modified).toBe(true);
-      expect(result.code).toContain("from '@aphrody/m3-next-migrate/shims/metadata'");
+      expect(result.code).toContain(
+        "from '@aphrody/m3-next-migrate/shims/metadata'",
+      );
       expect(result.code).toContain("useMetadata(metadata)");
     });
 
@@ -261,7 +277,9 @@ export async function GET(request: NextRequest) {
       const result = transformComponent(source, { n2b: true });
       expect(result.modified).toBe(true);
       expect(result.code).toContain("#!/usr/bin/env bun");
-      expect(result.code).toContain("from '@aphrody/m3-next-migrate/shims/server'");
+      expect(result.code).toContain(
+        "from '@aphrody/m3-next-migrate/shims/server'",
+      );
       expect(result.code).toContain("from 'node:fs'");
       expect(result.code).toContain("from 'node:path'");
       expect(result.code).toContain("import.meta.dirname");
@@ -290,17 +308,29 @@ export async function GET(request: NextRequest) {
       expect(homeRoute?.layouts).toEqual(["app/layout.tsx"]);
 
       // Dashboard route
-      const dashRoute = hierarchy.routes.find((r) => r.routePath === "/dashboard");
+      const dashRoute = hierarchy.routes.find(
+        (r) => r.routePath === "/dashboard",
+      );
       expect(dashRoute).toBeDefined();
-      expect(dashRoute?.layouts).toEqual(["app/layout.tsx", "app/dashboard/layout.tsx"]);
+      expect(dashRoute?.layouts).toEqual([
+        "app/layout.tsx",
+        "app/dashboard/layout.tsx",
+      ]);
 
       // Dashboard settings route
-      const dashSettingsRoute = hierarchy.routes.find((r) => r.routePath === "/dashboard/settings");
+      const dashSettingsRoute = hierarchy.routes.find(
+        (r) => r.routePath === "/dashboard/settings",
+      );
       expect(dashSettingsRoute).toBeDefined();
-      expect(dashSettingsRoute?.layouts).toEqual(["app/layout.tsx", "app/dashboard/layout.tsx"]);
+      expect(dashSettingsRoute?.layouts).toEqual([
+        "app/layout.tsx",
+        "app/dashboard/layout.tsx",
+      ]);
 
       // Dynamic item route
-      const itemRoute = hierarchy.routes.find((r) => r.routePath === "/items/:id");
+      const itemRoute = hierarchy.routes.find(
+        (r) => r.routePath === "/items/:id",
+      );
       expect(itemRoute).toBeDefined();
       expect(itemRoute?.params).toEqual(["id"]);
       expect(itemRoute?.layouts).toEqual(["app/layout.tsx"]);
@@ -326,7 +356,9 @@ export async function GET(request: NextRequest) {
       expect(code).toContain(
         "import { usePathname } from '@aphrody/m3-next-migrate/shims/navigation'",
       );
-      expect(code).toContain("import { composeLayouts } from '@aphrody/m3-next-migrate/layout'");
+      expect(code).toContain(
+        "import { composeLayouts } from '@aphrody/m3-next-migrate/layout'",
+      );
       expect(code).toContain("import '@aphrody/m3-theme/m3.css'");
       expect(code).toContain("Layout_0");
       expect(code).toContain("Layout_1");
@@ -340,9 +372,9 @@ export async function GET(request: NextRequest) {
     it("resolves title strings and templates", () => {
       expect(resolveTitle("Direct Title")).toBe("Direct Title");
       expect(resolveTitle({ default: "Default Title" })).toBe("Default Title");
-      expect(resolveTitle({ default: "App", template: "%s | App" }, "Dashboard")).toBe(
-        "Dashboard | App",
-      );
+      expect(
+        resolveTitle({ default: "App", template: "%s | App" }, "Dashboard"),
+      ).toBe("Dashboard | App");
       expect(resolveTitle({ absolute: "Exact Title" })).toBe("Exact Title");
     });
 
@@ -353,7 +385,9 @@ export async function GET(request: NextRequest) {
 
         setMetaTag("description", "A modern desktop application");
         const meta = document.querySelector('meta[name="description"]');
-        expect(meta?.getAttribute("content")).toBe("A modern desktop application");
+        expect(meta?.getAttribute("content")).toBe(
+          "A modern desktop application",
+        );
 
         await syncMetadata({
           title: "New Title",
@@ -407,7 +441,10 @@ export async function GET(request: NextRequest) {
       expect(inter.variable).toBe("--font-inter");
       expect(inter.className).toBe("font-inter");
 
-      const local = localFont({ src: "./my-font.woff2", variable: "--font-brand" });
+      const local = localFont({
+        src: "./my-font.woff2",
+        variable: "--font-brand",
+      });
       expect(local.variable).toBe("--font-brand");
       expect(local.className).toBe("font-local");
     });
@@ -562,15 +599,27 @@ export default function DashboardPage() {
         expect(report.hierarchy.layouts.length).toBe(2);
 
         // Verify destination structure
-        const pkgJsonExists = await Bun.file(join(tempDestDir, "package.json")).exists();
-        const viteConfigExists = await Bun.file(join(tempDestDir, "m3.config.ts")).exists();
+        const pkgJsonExists = await Bun.file(
+          join(tempDestDir, "package.json"),
+        ).exists();
+        const viteConfigExists = await Bun.file(
+          join(tempDestDir, "m3.config.ts"),
+        ).exists();
         const tauriConfExists = await Bun.file(
           join(tempDestDir, "src-tauri/tauri.conf.json"),
         ).exists();
-        const cargoTomlExists = await Bun.file(join(tempDestDir, "src-tauri/Cargo.toml")).exists();
-        const mainTsxExists = await Bun.file(join(tempDestDir, "src/main.tsx")).exists();
-        const appTsxExists = await Bun.file(join(tempDestDir, "src/App.tsx")).exists();
-        const serverTsExists = await Bun.file(join(tempDestDir, "bunfig.toml")).exists();
+        const cargoTomlExists = await Bun.file(
+          join(tempDestDir, "src-tauri/Cargo.toml"),
+        ).exists();
+        const mainTsxExists = await Bun.file(
+          join(tempDestDir, "src/main.tsx"),
+        ).exists();
+        const appTsxExists = await Bun.file(
+          join(tempDestDir, "src/App.tsx"),
+        ).exists();
+        const serverTsExists = await Bun.file(
+          join(tempDestDir, "bunfig.toml"),
+        ).exists();
 
         expect(pkgJsonExists).toBe(true);
         expect(viteConfigExists).toBe(true);
@@ -581,12 +630,20 @@ export default function DashboardPage() {
         expect(serverTsExists).toBe(true);
 
         // Check package.json dependencies for M3 packages
-        const pkgJsonContent = await Bun.file(join(tempDestDir, "package.json")).json();
-        expect(pkgJsonContent.dependencies["@aphrody/m3-primitives"]).toBe("workspace:*");
-        expect(pkgJsonContent.dependencies["@aphrody/m3-theme"]).toBe("workspace:*");
+        const pkgJsonContent = await Bun.file(
+          join(tempDestDir, "package.json"),
+        ).json();
+        expect(pkgJsonContent.dependencies["@aphrody/m3-primitives"]).toBe(
+          "workspace:*",
+        );
+        expect(pkgJsonContent.dependencies["@aphrody/m3-theme"]).toBe(
+          "workspace:*",
+        );
 
         // Check generated App.tsx router content
-        const appContent = await Bun.file(join(tempDestDir, "src/App.tsx")).text();
+        const appContent = await Bun.file(
+          join(tempDestDir, "src/App.tsx"),
+        ).text();
         expect(appContent).toContain("composeLayouts");
         expect(appContent).toContain("usePathname");
         expect(appContent).toContain("@aphrody/m3-theme/m3.css");

@@ -6,7 +6,7 @@ import { useSubscriptionState } from "@storyteller/subscription";
 import { clearGalleryCache } from "@storyteller/ui-gallery-modal";
 
 export const updateAuthStatus = (newStatus: AUTH_STATUS) => {
-  console.log('updateAuthStatus()', newStatus)
+  console.log("updateAuthStatus()", newStatus);
   authentication.status.value = newStatus;
 };
 
@@ -14,7 +14,7 @@ export const updateUserInfo = (
   newInfo: UserInfo | undefined,
   flush?: boolean,
 ) => {
-  console.log('updateUserInfo()', newInfo)
+  console.log("updateUserInfo()", newInfo);
   if (newInfo && !flush) {
     //case of updating UserInfo partly
     authentication.userInfo.value = {

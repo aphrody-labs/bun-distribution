@@ -75,8 +75,7 @@ export class PasswordResetApi extends ApiManager {
         return {
           success: false,
           errorMessage:
-            data.message ||
-            "Failed to reset password. Please try again.",
+            data.message || "Failed to reset password. Please try again.",
         };
       }
 

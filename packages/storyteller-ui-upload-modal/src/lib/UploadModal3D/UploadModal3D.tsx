@@ -100,7 +100,6 @@ export function UploadModal3D(props: Props) {
     }
   }, [isOpen, initialCategory]);
 
-
   const UploaderModalContent = () => {
     switch (uploaderState.status) {
       case UploaderStates.ready:

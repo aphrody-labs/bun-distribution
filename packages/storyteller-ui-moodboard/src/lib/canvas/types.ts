@@ -58,11 +58,7 @@ export type CardNode = BaseNode & {
 };
 
 export type MoodboardNode =
-  | ImageNode
-  | VideoNode
-  | TextNode
-  | GroupNode
-  | CardNode;
+  ImageNode | VideoNode | TextNode | GroupNode | CardNode;
 
 export interface MoodboardSnapshot {
   nodes: Record<string, MoodboardNode>;

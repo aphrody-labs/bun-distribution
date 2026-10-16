@@ -102,7 +102,9 @@ function launcherUnder(root: string): string | undefined {
 }
 
 /** The headless launcher path, or `undefined` when Ghidra is not installed. */
-export function findAnalyzeHeadless(env: NodeJS.ProcessEnv = process.env): string | undefined {
+export function findAnalyzeHeadless(
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
   for (const variable of ["GHIDRA_INSTALL_DIR", "GHIDRA_HOME"]) {
     const hit = launcherIn(env[variable]);
     if (hit) return hit;

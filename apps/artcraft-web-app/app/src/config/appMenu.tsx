@@ -1,4 +1,18 @@
-import { BoxIcon, CrosshairIcon, DropletIcon, FilmIcon, GlobeIcon, GroupIcon, ImageIcon, ImagesIcon, MusicIcon, PenToolIcon, PencilIcon, SparklesIcon, WandSparklesIcon } from "lucide-react";
+import {
+  BoxIcon,
+  CrosshairIcon,
+  DropletIcon,
+  FilmIcon,
+  GlobeIcon,
+  GroupIcon,
+  ImageIcon,
+  ImagesIcon,
+  MusicIcon,
+  PenToolIcon,
+  PencilIcon,
+  SparklesIcon,
+  WandSparklesIcon,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useMemo } from "react";
 import {

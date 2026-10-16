@@ -19,7 +19,12 @@ import { api, apiAt } from "@aphrody/admin-ui/client";
 import { assetUrl } from "@/lib/assets";
 import { TABLE_LABELS, colLabel } from "@/lib/db-labels";
 import { WIKI_TABLE_SPECS, crudBase, isWikiTable } from "@/lib/wiki-tables";
-import { buildSubmitBody, IMAGE_COL_RE, isImageColumn, isStudioTable } from "@/lib/wiki-fields";
+import {
+  buildSubmitBody,
+  IMAGE_COL_RE,
+  isImageColumn,
+  isStudioTable,
+} from "@/lib/wiki-fields";
 
 interface TableSpec {
   name: string;
@@ -39,13 +44,17 @@ export default function TablePage() {
   const studio = isStudioTable(table);
   const client = wiki ? apiAt(crudBase(table)) : api;
   const collection = wiki ? `/${table}` : `/database/${table}`;
-  const rowPath = (id: unknown) => `${collection}/${encodeURIComponent(String(id))}`;
+  const rowPath = (id: unknown) =>
+    `${collection}/${encodeURIComponent(String(id))}`;
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState(initialSearch);
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Record<string, unknown> | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
   const [toast, setToast] = useState<{
     type: "success" | "error";
     msg: string;
@@ -70,7 +79,9 @@ export default function TablePage() {
   const spec: TableSpec | undefined = wikiSpecRaw
     ? {
         name: wikiSpecRaw.name,
-        pk: Array.isArray(wikiSpecRaw.pk) ? wikiSpecRaw.pk.join(",") : wikiSpecRaw.pk,
+        pk: Array.isArray(wikiSpecRaw.pk)
+          ? wikiSpecRaw.pk.join(",")
+          : wikiSpecRaw.pk,
         readonly: false,
         mutableColumns: wikiSpecRaw.mutableColumns,
         description: null,
@@ -104,7 +115,9 @@ export default function TablePage() {
     studio ? router.push(`/admin/wiki/studio/${table}/new`) : setCreating(true);
   const openEdit = (row: Record<string, unknown>) => {
     if (studio && spec)
-      router.push(`/admin/wiki/studio/${table}/${encodeURIComponent(rowId(row))}`);
+      router.push(
+        `/admin/wiki/studio/${table}/${encodeURIComponent(rowId(row))}`,
+      );
     else setEditing(row);
   };
 
@@ -126,7 +139,8 @@ export default function TablePage() {
   });
 
   const create = useMutation({
-    mutationFn: (body: Record<string, unknown>) => client.post(collection, body),
+    mutationFn: (body: Record<string, unknown>) =>
+      client.post(collection, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["db", table] });
       setCreating(false);
@@ -199,16 +213,24 @@ export default function TablePage() {
           <span className="sr-only">Retour</span>
         </button>
         <div className="flex-1 min-w-0">
-          <h2 className="font-saiyan text-xl uppercase text-dbz-orange">{humanLabel}</h2>
-          {spec?.description && <p className="text-xs text-white/50">{spec.description}</p>}
+          <h2 className="font-saiyan text-xl uppercase text-dbz-orange">
+            {humanLabel}
+          </h2>
+          {spec?.description && (
+            <p className="text-xs text-white/50">{spec.description}</p>
+          )}
           <code className="text-[10px] text-white/25 font-mono">{table}</code>
         </div>
         <div className="text-sm text-white/50 tabular-nums">
-          {total.toLocaleString("fr-FR")} entrée{total > 1 ? "s" : ""} · page {page + 1} sur{" "}
-          {Math.max(1, totalPages)}
+          {total.toLocaleString("fr-FR")} entrée{total > 1 ? "s" : ""} · page{" "}
+          {page + 1} sur {Math.max(1, totalPages)}
         </div>
         {spec && !spec.readonly && (
-          <button type="button" onClick={openCreate} className="btn btn-primary">
+          <button
+            type="button"
+            onClick={openCreate}
+            className="btn btn-primary"
+          >
             <Plus className="h-4 w-4" />
             Nouvelle entrée
           </button>
@@ -241,15 +263,27 @@ export default function TablePage() {
         <div className="card animate-pulse h-64" />
       ) : rows.isError ? (
         <div className="card text-center py-12">
-          <p className="text-dbz-orange font-saiyan uppercase mb-1">Erreur de chargement</p>
-          <p className="text-white/50 text-sm">Impossible de récupérer les données.</p>
+          <p className="text-dbz-orange font-saiyan uppercase mb-1">
+            Erreur de chargement
+          </p>
+          <p className="text-white/50 text-sm">
+            Impossible de récupérer les données.
+          </p>
         </div>
       ) : rows.data?.rows.length === 0 ? (
         <div className="card text-center py-12">
-          <p className="font-saiyan text-xl uppercase text-white/50 mb-1">Aucune entrée</p>
-          <p className="text-white/50 text-sm mb-4">Cette section est vide pour l&apos;instant.</p>
+          <p className="font-saiyan text-xl uppercase text-white/50 mb-1">
+            Aucune entrée
+          </p>
+          <p className="text-white/50 text-sm mb-4">
+            Cette section est vide pour l&apos;instant.
+          </p>
           {spec && !spec.readonly && (
-            <button type="button" onClick={openCreate} className="btn btn-primary">
+            <button
+              type="button"
+              onClick={openCreate}
+              className="btn btn-primary"
+            >
               <Plus className="h-4 w-4" />
               Créer la première entrée
             </button>
@@ -279,7 +313,10 @@ export default function TablePage() {
                   className="hover:bg-dbz-orange/5 transition-colors"
                 >
                   {cols.map((c) => (
-                    <td key={c} className="max-w-[200px] truncate px-3 py-2 text-xs">
+                    <td
+                      key={c}
+                      className="max-w-[200px] truncate px-3 py-2 text-xs"
+                    >
                       {renderCell(row[c], c, table)}
                     </td>
                   ))}
@@ -323,7 +360,8 @@ export default function TablePage() {
           Page précédente
         </button>
         <span className="text-xs text-white/50 tabular-nums">
-          {offset + 1}–{Math.min(offset + limit, total)} / {total.toLocaleString("fr-FR")}
+          {offset + 1}–{Math.min(offset + limit, total)} /{" "}
+          {total.toLocaleString("fr-FR")}
         </span>
         <button
           type="button"
@@ -375,19 +413,24 @@ export default function TablePage() {
 }
 
 function renderCell(v: unknown, col?: string, table?: string): ReactNode {
-  if (v === null || v === undefined) return <span className="text-white/25">—</span>;
+  if (v === null || v === undefined)
+    return <span className="text-white/25">—</span>;
   if (typeof v === "boolean") return v ? "Oui" : "Non";
   if (typeof v === "object")
     return (
-      <code className="text-[10px] text-white/50 font-mono">{JSON.stringify(v).slice(0, 60)}</code>
+      <code className="text-[10px] text-white/50 font-mono">
+        {JSON.stringify(v).slice(0, 60)}
+      </code>
     );
   const s = String(v);
 
   // Détection image : chemin DB relatif ("./assets/dbz/characters/goku.webp")
   // → résolu vers le host du bot via assetUrl ; ou URL http(s) pointant une image.
-  const isImageCol = !!col && (table ? isImageColumn(table, col) : IMAGE_COL_RE.test(col));
+  const isImageCol =
+    !!col && (table ? isImageColumn(table, col) : IMAGE_COL_RE.test(col));
   const isImagePath = /\.(png|jpe?g|webp|gif|avif|svg)$/i.test(s);
-  const isHttpImage = /^https?:\/\/.+\.(png|jpe?g|webp|gif|avif|svg)(\?.*)?$/i.test(s);
+  const isHttpImage =
+    /^https?:\/\/.+\.(png|jpe?g|webp|gif|avif|svg)(\?.*)?$/i.test(s);
   if (isImageCol && (isImagePath || isHttpImage) && s.length < 300) {
     const src = assetUrl(s);
     return (
@@ -419,7 +462,11 @@ function renderCell(v: unknown, col?: string, table?: string): ReactNode {
   // Timestamp numérique Unix ms ou s
   if (col && /date|at$/i.test(col) && /^\d{10,13}$/.test(s)) {
     const ms = s.length === 10 ? Number(s) * 1000 : Number(s);
-    return <span className="text-white/70">{new Date(ms).toLocaleDateString("fr-FR")}</span>;
+    return (
+      <span className="text-white/70">
+        {new Date(ms).toLocaleDateString("fr-FR")}
+      </span>
+    );
   }
 
   return <span className="font-mono text-white/80">{s}</span>;
@@ -436,9 +483,19 @@ interface EditProps {
   mode: "create" | "edit";
 }
 
-function EditModal({ row, rowId, spec, onClose, onSave, saving, mode }: EditProps) {
+function EditModal({
+  row,
+  rowId,
+  spec,
+  onClose,
+  onSave,
+  saving,
+  mode,
+}: EditProps) {
   const [draft, setDraft] = useState<Record<string, string>>(() =>
-    Object.fromEntries(spec.mutableColumns.map((c) => [c, row[c] != null ? String(row[c]) : ""])),
+    Object.fromEntries(
+      spec.mutableColumns.map((c) => [c, row[c] != null ? String(row[c]) : ""]),
+    ),
   );
 
   const submit = () => {
@@ -454,7 +511,9 @@ function EditModal({ row, rowId, spec, onClose, onSave, saving, mode }: EditProp
               {mode === "create" ? "Nouvelle entrée" : "Modifier l'entrée"}
             </h3>
             <p className="text-xs text-white/50 font-mono mt-0.5">
-              {mode === "create" ? spec.name : `${spec.name} · ${spec.pk} = ${rowId ?? ""}`}
+              {mode === "create"
+                ? spec.name
+                : `${spec.name} · ${spec.pk} = ${rowId ?? ""}`}
             </p>
           </div>
           <button
@@ -472,7 +531,9 @@ function EditModal({ row, rowId, spec, onClose, onSave, saving, mode }: EditProp
             <div key={c}>
               <label className="mb-1 block text-xs font-semibold text-dbz-blue-light uppercase tracking-wider">
                 {colLabel(c)}
-                <span className="ml-2 text-white/25 font-mono normal-case font-normal">{c}</span>
+                <span className="ml-2 text-white/25 font-mono normal-case font-normal">
+                  {c}
+                </span>
               </label>
               <SmartField
                 table={spec.name}
@@ -489,7 +550,12 @@ function EditModal({ row, rowId, spec, onClose, onSave, saving, mode }: EditProp
           <button type="button" onClick={onClose} className="btn btn-ghost">
             Annuler
           </button>
-          <button type="button" onClick={submit} disabled={saving} className="btn btn-primary">
+          <button
+            type="button"
+            onClick={submit}
+            disabled={saving}
+            className="btn btn-primary"
+          >
             <Enregistrer className="h-3 w-3" />
             {saving ? "Enregistrement…" : "Enregistrer les modifications"}
           </button>
@@ -507,25 +573,45 @@ interface DeleteProps {
   deleting: boolean;
 }
 
-function DeleteModal({ rowId, tableName, onClose, onConfirm, deleting }: DeleteProps) {
+function DeleteModal({
+  rowId,
+  tableName,
+  onClose,
+  onConfirm,
+  deleting,
+}: DeleteProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur">
       <div className="dbz-panel w-full max-w-md p-6">
         <div className="mb-4 flex items-center gap-3">
           <Alerte className="h-6 w-6 text-red-400 shrink-0" />
-          <h3 className="font-saiyan text-lg uppercase text-red-400">Supprimer cette entrée ?</h3>
+          <h3 className="font-saiyan text-lg uppercase text-red-400">
+            Supprimer cette entrée ?
+          </h3>
         </div>
         <p className="text-sm text-white/70 mb-1">
           Vous êtes sur le point de supprimer l&apos;entrée{" "}
-          <code className="text-dbz-orange font-mono text-xs">{rowId}</code> de la section{" "}
-          <strong className="text-white">{tableName}</strong>.
+          <code className="text-dbz-orange font-mono text-xs">{rowId}</code> de
+          la section <strong className="text-white">{tableName}</strong>.
         </p>
-        <p className="text-sm text-red-400/80 font-semibold mb-6">Cette action est irréversible.</p>
+        <p className="text-sm text-red-400/80 font-semibold mb-6">
+          Cette action est irréversible.
+        </p>
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="btn btn-ghost" disabled={deleting}>
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn btn-ghost"
+            disabled={deleting}
+          >
             Annuler
           </button>
-          <button type="button" onClick={onConfirm} disabled={deleting} className="btn btn-danger">
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={deleting}
+            className="btn btn-danger"
+          >
             <Corbeille className="h-3.5 w-3.5" />
             {deleting ? "Suppression…" : "Oui, supprimer définitivement"}
           </button>

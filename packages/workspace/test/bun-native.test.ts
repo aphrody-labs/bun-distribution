@@ -1,6 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import { chmod, cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  chmod,
+  cp,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { createReadStream, existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { availableParallelism, tmpdir } from "node:os";
@@ -17,8 +25,18 @@ test("SDK staging resolves transitive source dependencies without copying runtim
     const helper = join(consumer, "node_modules/@fixture/helper");
     const leaf = join(helper, "node_modules/@fixture/leaf");
     const packages = [
-      [consumer, "@aphrody/bun", "@fixture/helper", 'export { value } from "@fixture/helper";'],
-      [helper, "@fixture/helper", "@fixture/leaf", 'export { value } from "@fixture/leaf";'],
+      [
+        consumer,
+        "@aphrody/bun",
+        "@fixture/helper",
+        'export { value } from "@fixture/helper";',
+      ],
+      [
+        helper,
+        "@fixture/helper",
+        "@fixture/leaf",
+        'export { value } from "@fixture/leaf";',
+      ],
       [leaf, "@fixture/leaf", "", "export const value = 42;"],
     ] as const;
     await Promise.all(
@@ -52,9 +70,13 @@ test("SDK staging resolves transitive source dependencies without copying runtim
     expect(child.exitCode).toBe(0);
     expect(child.stderr.toString()).toBe("");
     expect(
-      await Bun.file(join(root, "isolated/node_modules/@fixture/leaf/src/index.ts")).text(),
+      await Bun.file(
+        join(root, "isolated/node_modules/@fixture/leaf/src/index.ts"),
+      ).text(),
     ).toBe("export const value = 42;");
-    expect(await Bun.file(join(staged, "runtime-state.json")).exists()).toBe(false);
+    expect(await Bun.file(join(staged, "runtime-state.json")).exists()).toBe(
+      false,
+    );
     expect(existsSync(join(staged, "node_modules"))).toBe(false);
   } finally {
     await rm(root, { recursive: true, force: true });
@@ -88,7 +110,10 @@ async function fixture() {
       : "scripts/build/rust/cargo-serial.sh";
   const serialScript = join(root, wrapper);
   await mkdir(dirname(serialScript), { recursive: true });
-  await cp(join(import.meta.dir, "../../../docs/aphrody", wrapper), serialScript);
+  await cp(
+    join(import.meta.dir, "../../../docs/aphrody", wrapper),
+    serialScript,
+  );
   await writeFile(
     join(root, "Cargo.toml"),
     '[workspace]\nresolver="3"\nmembers=["crates/interop/ffi"]\n',
@@ -140,7 +165,9 @@ test("inference builds reject a crate that lacks its native model owner", async 
   try {
     const result = await run([`--root=${root}`, "--inference", "--unlocked"]);
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain("aphrody-ffi does not expose the native llama inference owner");
+    expect(result.stderr).toContain(
+      "aphrody-ffi does not expose the native llama inference owner",
+    );
     expect(existsSync(join(root, "target"))).toBe(false);
   } finally {
     await rm(root, { recursive: true, force: true });
@@ -167,10 +194,13 @@ test("native builder fails before build when the serialization wrapper is absent
           : "scripts/build/rust/cargo-serial.sh",
       ),
     );
-    const result = await run([`--root=${root}`, "--debug", "--offline", "--unlocked"], {
-      ...process.env,
-      CARGO_TARGET_DIR: join(root, "target"),
-    });
+    const result = await run(
+      [`--root=${root}`, "--debug", "--offline", "--unlocked"],
+      {
+        ...process.env,
+        CARGO_TARGET_DIR: join(root, "target"),
+      },
+    );
     expect(result.code).toBe(1);
     expect(result.stderr).toContain("Cargo serialization wrapper missing");
     expect(result.stdout).not.toContain("[bun-native]");
@@ -197,7 +227,9 @@ test("native builder requires the aggregate monorepo owner", async () => {
       code: 1,
     });
     expect(
-      await Bun.file(join(root, "packages/interop/native/native/manifest.json")).exists(),
+      await Bun.file(
+        join(root, "packages/interop/native/native/manifest.json"),
+      ).exists(),
     ).toBe(false);
   } finally {
     await rm(root, { recursive: true, force: true });
@@ -206,7 +238,9 @@ test("native builder requires the aggregate monorepo owner", async () => {
 
 test("existing artifacts cannot claim release or GPU qualification", async () => {
   const results = await Promise.all(
-    [[], ["--debug", "--gpu"]].map((flags) => run(["--stage-existing=/missing", ...flags])),
+    [[], ["--debug", "--gpu"]].map((flags) =>
+      run(["--stage-existing=/missing", ...flags]),
+    ),
   );
   for (const result of results) {
     expect(result.code).toBe(1);
@@ -216,7 +250,8 @@ test("existing artifacts cannot claim release or GPU qualification", async () =>
 
 async function waitForMarker(path: string, expires: number): Promise<string> {
   if (await Bun.file(path).exists()) return Bun.file(path).text();
-  if (Date.now() > expires) throw new Error("fake Cargo did not start its descendant");
+  if (Date.now() > expires)
+    throw new Error("fake Cargo did not start its descendant");
   await Bun.sleep(25);
   return waitForMarker(path, expires);
 }
@@ -254,7 +289,14 @@ test.skipIf(process.platform !== "linux")(
     );
     await chmod(fakeCargo, 0o755);
     const child = Bun.spawn(
-      [process.execPath, builder, `--root=${root}`, "--debug", "--offline", "--unlocked"],
+      [
+        process.execPath,
+        builder,
+        `--root=${root}`,
+        "--debug",
+        "--offline",
+        "--unlocked",
+      ],
       {
         windowsHide: true,
         env: {
@@ -269,14 +311,28 @@ test.skipIf(process.platform !== "linux")(
       },
     );
     let descendants:
-      | { cargo: number; descendant: number; wrapper: string; jobs: string; incremental: string }
+      | {
+          cargo: number;
+          descendant: number;
+          wrapper: string;
+          jobs: string;
+          incremental: string;
+        }
       | undefined;
     try {
-      descendants = JSON.parse(await waitForMarker(marker, Date.now() + 10_000));
+      descendants = JSON.parse(
+        await waitForMarker(marker, Date.now() + 10_000),
+      );
       // cargo-serial.sh defaults to 6 jobs, or to the CPU count (max 6) in a Claude cloud session.
-      const cloud = process.env.CLAUDE_CODE_REMOTE === "true" || process.env.APHRODY_CLOUD === "1";
-      const defaultJobs = cloud ? String(Math.min(availableParallelism(), 6)) : "6";
-      expect(descendants?.jobs).toBe(process.env.APHRODY_CARGO_JOBS ?? defaultJobs);
+      const cloud =
+        process.env.CLAUDE_CODE_REMOTE === "true" ||
+        process.env.APHRODY_CLOUD === "1";
+      const defaultJobs = cloud
+        ? String(Math.min(availableParallelism(), 6))
+        : "6";
+      expect(descendants?.jobs).toBe(
+        process.env.APHRODY_CARGO_JOBS ?? defaultJobs,
+      );
       expect(descendants?.incremental).toBe("0");
       child.kill("SIGTERM");
       const [stdout, stderr, code] = await Promise.all([
@@ -299,7 +355,9 @@ test.skipIf(process.platform !== "linux")(
         // A killed child can briefly remain a zombie until its adopting init reaps it.
         expect(state === "" || /\) Z /.test(state)).toBe(true);
       }
-      const markers = await Array.fromAsync(new Bun.Glob("**/manifest.json").scan({ cwd: root }));
+      const markers = await Array.fromAsync(
+        new Bun.Glob("**/manifest.json").scan({ cwd: root }),
+      );
       expect(markers).toEqual([]);
     } finally {
       if (child.exitCode === null) {
@@ -315,14 +373,21 @@ test.skipIf(process.platform !== "linux")(
 test("expected artifact checksum is only accepted for explicitly reused artifacts", async () => {
   const result = await run([`--artifact-sha256=${"a".repeat(64)}`]);
   expect(result.code).toBe(1);
-  expect(result.stderr).toContain("--artifact-sha256 requires --stage-existing");
+  expect(result.stderr).toContain(
+    "--artifact-sha256 requires --stage-existing",
+  );
 });
 
 test("native builder refuses a foreign consumer before Cargo or staging", async () => {
   const { root, consumer } = await fixture();
   try {
-    await writeFile(join(consumer, "package.json"), '{"name":"@foreign/package"}');
-    expect(await run([`--root=${root}`, "--debug", "--offline", "--unlocked"])).toEqual({
+    await writeFile(
+      join(consumer, "package.json"),
+      '{"name":"@foreign/package"}',
+    );
+    expect(
+      await run([`--root=${root}`, "--debug", "--offline", "--unlocked"]),
+    ).toEqual({
       stdout: "",
       stderr: `bun-native: consumer is not @aphrody/bun: ${consumer}\n`,
       code: 1,
@@ -335,9 +400,18 @@ test("native builder refuses a foreign consumer before Cargo or staging", async 
 test("native builder requires actual GPU forwarding rather than accepting an unused feature", async () => {
   const { root } = await fixture();
   try {
-    expect(await run([`--root=${root}`, "--gpu", "--debug", "--offline", "--unlocked"])).toEqual({
+    expect(
+      await run([
+        `--root=${root}`,
+        "--gpu",
+        "--debug",
+        "--offline",
+        "--unlocked",
+      ]),
+    ).toEqual({
       stdout: "",
-      stderr: "bun-native: aphrody-ffi does not forward the GPU feature to aphrody-bun\n",
+      stderr:
+        "bun-native: aphrody-ffi does not forward the GPU feature to aphrody-bun\n",
       code: 1,
     });
   } finally {
@@ -348,10 +422,13 @@ test("native builder requires actual GPU forwarding rather than accepting an unu
 test("native builder refuses an ABI-incomplete artifact and leaves no success manifest", async () => {
   const { root, consumer } = await fixture();
   try {
-    const result = await run([`--root=${root}`, "--debug", "--offline", "--unlocked"], {
-      ...process.env,
-      CARGO_TARGET_DIR: join(root, "target"),
-    });
+    const result = await run(
+      [`--root=${root}`, "--debug", "--offline", "--unlocked"],
+      {
+        ...process.env,
+        CARGO_TARGET_DIR: join(root, "target"),
+      },
+    );
     expect(result.stderr).toContain("staged native consumer failed");
     expect(result.stderr).toContain("aphrody_abi_version");
     expect(result.code).toBe(1);
@@ -380,10 +457,19 @@ test("native builder refuses an ABI-incomplete artifact and leaves no success ma
 test("jobs qualification requires actual forwarding and cannot attest reused artifacts", async () => {
   const { root } = await fixture();
   try {
-    const missing = await run([`--root=${root}`, "--jobs", "--offline", "--unlocked"]);
+    const missing = await run([
+      `--root=${root}`,
+      "--jobs",
+      "--offline",
+      "--unlocked",
+    ]);
     expect(missing.code).toBe(1);
     expect(missing.stderr).toContain("does not forward the jobs feature");
-    const reused = await run(["--debug", "--jobs", "--stage-existing=/missing"]);
+    const reused = await run([
+      "--debug",
+      "--jobs",
+      "--stage-existing=/missing",
+    ]);
     expect(reused.code).toBe(1);
     expect(reused.stderr).toContain("forbids --jobs");
   } finally {
@@ -479,7 +565,11 @@ test.skipIf(!nativeRoot)(
         new Response(child.stderr).text(),
         child.exited,
       ]);
-      expect({ stdout, stderr, code }).toEqual({ stdout: artifact + "\n", stderr: "", code: 0 });
+      expect({ stdout, stderr, code }).toEqual({
+        stdout: artifact + "\n",
+        stderr: "",
+        code: 0,
+      });
     } finally {
       await rm(temporary, { recursive: true, force: true });
     }

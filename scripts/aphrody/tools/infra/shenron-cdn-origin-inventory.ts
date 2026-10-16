@@ -77,9 +77,12 @@ export async function activateOriginInventory(
     pins.inventorySha256,
     pins.backupReceiptSha256,
   ])
-    if (!/^[a-f0-9]{64}$/.test(hash)) throw Error("Complete origin activation pins required");
+    if (!/^[a-f0-9]{64}$/.test(hash))
+      throw Error("Complete origin activation pins required");
   if (
-    !/^_migration\/manifests\/(?:publication|site)-[a-f0-9]{24}\/$/.test(pins.manifestPrefix) ||
+    !/^_migration\/manifests\/(?:publication|site)-[a-f0-9]{24}\/$/.test(
+      pins.manifestPrefix,
+    ) ||
     !pins.manifestPrefix.includes(pins.inventorySha256.slice(0, 24))
   )
     throw Error("Candidate manifest prefix differs from inventory SHA");
@@ -95,9 +98,15 @@ export async function activateOriginInventory(
     current.manifestPrefix === pins.manifestPrefix
   ) {
     await ports.attest(current);
-    return { applied: false, replay: true, writes: 0, inventorySha256: pins.inventorySha256 };
+    return {
+      applied: false,
+      replay: true,
+      writes: 0,
+      inventorySha256: pins.inventorySha256,
+    };
   }
-  if (before.sha256 !== pins.configSha256) throw Error("Concurrent origin configuration changed");
+  if (before.sha256 !== pins.configSha256)
+    throw Error("Concurrent origin configuration changed");
   const candidate = {
     ...current,
     inventoryPath: path,
@@ -106,22 +115,40 @@ export async function activateOriginInventory(
   };
   await ports.qualifyBackup(pins);
   if (!apply)
-    return { applied: false, replay: false, writes: 0, inventorySha256: pins.inventorySha256 };
+    return {
+      applied: false,
+      replay: false,
+      writes: 0,
+      inventorySha256: pins.inventorySha256,
+    };
   await ports.replaceConfig(candidate, pins.configSha256);
   await ports.restart();
   await ports.attest(candidate);
-  return { applied: true, replay: false, writes: 1, inventorySha256: pins.inventorySha256 };
+  return {
+    applied: true,
+    replay: false,
+    writes: 1,
+    inventorySha256: pins.inventorySha256,
+  };
 }
 
 async function guarded(path: string, expected?: string) {
   assertConsumerFile(await lstat(path), true);
   const bytes = await Bun.file(path).bytes();
-  if (expected && digest(bytes) !== expected) throw Error("Concurrent protected input changed");
+  if (expected && digest(bytes) !== expected)
+    throw Error("Concurrent protected input changed");
   return bytes;
 }
 async function service(args: string[]) {
-  const p = Bun.spawn(["systemctl", ...args], { stdout: "pipe", stderr: "pipe", timeout: 15000 });
-  const [out, exit] = await Promise.all([new Response(p.stdout).text(), p.exited]);
+  const p = Bun.spawn(["systemctl", ...args], {
+    stdout: "pipe",
+    stderr: "pipe",
+    timeout: 15000,
+  });
+  const [out, exit] = await Promise.all([
+    new Response(p.stdout).text(),
+    p.exited,
+  ]);
   if (exit !== 0) throw Error("Catalogue service operation failed");
   return out.trim();
 }
@@ -132,7 +159,10 @@ export function nativeOriginInventoryPorts(): OriginInventoryPorts {
   return {
     async readConfig() {
       const bytes = await guarded(CONFIG);
-      return { config: JSON.parse(new TextDecoder().decode(bytes)), sha256: digest(bytes) };
+      return {
+        config: JSON.parse(new TextDecoder().decode(bytes)),
+        sha256: digest(bytes),
+      };
     },
     async qualifyInventory(path, pins) {
       const lock = await lstat(pins.publisherLock);
@@ -144,14 +174,18 @@ export function nativeOriginInventoryPorts(): OriginInventoryPorts {
         !pins.publisherLock.endsWith("/publish.lock")
       )
         throw Error("Canonical publisher lock required");
-      const scoped = relative(await realpath(pins.inventoryRoot), await realpath(path));
+      const scoped = relative(
+        await realpath(pins.inventoryRoot),
+        await realpath(path),
+      );
       if (!scoped || scoped.startsWith("..") || isAbsolute(scoped))
         throw Error("Inventory escaped owner root");
       await guarded(CODE, pins.consumerCodeSha256);
       assertConsumerFile(await lstat(UNIT), false);
       if (
         digest(await Bun.file(UNIT).bytes()) !== pins.unitSha256 ||
-        (await service(["show", SERVICE, "--value", "-p", "FragmentPath"])) !== UNIT
+        (await service(["show", SERVICE, "--value", "-p", "FragmentPath"])) !==
+          UNIT
       )
         throw Error("Catalogue consumer unit changed");
       await guarded(path, pins.inventorySha256);
@@ -171,13 +205,17 @@ export function nativeOriginInventoryPorts(): OriginInventoryPorts {
       if (!r.ok) throw Error("Worker manifest unavailable");
       const settings = (await r.json()).result;
       if (
-        settings.bindings.find((b: { name: string; text?: string }) => b.name === "MANIFEST_PREFIX")
-          ?.text !== pins.manifestPrefix
+        settings.bindings.find(
+          (b: { name: string; text?: string }) => b.name === "MANIFEST_PREFIX",
+        )?.text !== pins.manifestPrefix
       )
         throw Error("Worker candidate pointer differs");
       const publisherModule = "/etc/aphrody/cloudflare/cli/publish-catalog.ts";
       const owner = await import(publisherModule);
-      owner.inventoryMatchesBindings((await Bun.file(path).json()).entries, settings.bindings);
+      owner.inventoryMatchesBindings(
+        (await Bun.file(path).json()).entries,
+        settings.bindings,
+      );
     },
     async qualifyBackup(pins) {
       const bytes = await guarded(pins.backupReceipt, pins.backupReceiptSha256);
@@ -217,31 +255,32 @@ export function nativeOriginInventoryPorts(): OriginInventoryPorts {
       const codeSha256 = digest(await guarded(CODE));
       await originReadiness(async (signal) =>
         Promise.all(
-          ["https://cdn.dragonballfr.com", "https://origin-cdn.dragonballfr.com"].map(
-            async (origin) => {
-              let r: Response;
-              try {
-                r = await fetch(origin + "/.well-known/shenron-cdn-origin.json", {
-                  credentials: "omit",
-                  redirect: "error",
-                  signal: AbortSignal.any([signal, AbortSignal.timeout(10000)]),
-                  headers: { "Cache-Control": "no-cache" },
-                });
-              } catch {
-                throw new OriginNotReadyError("Native CDN socket is warming");
-              }
-              if ([502, 503, 504].includes(r.status))
-                throw new OriginNotReadyError("Native CDN service is warming");
-              if (!r.ok) throw Error("Native CDN attestation unavailable");
-              const actual = await r.json();
-              if (
-                actual.manifestPrefix !== config.manifestPrefix ||
-                actual.inventorySha256 !== config.inventorySha256 ||
-                actual.codeSha256 !== codeSha256
-              )
-                throw Error("Native CDN attestation differs");
-            },
-          ),
+          [
+            "https://cdn.dragonballfr.com",
+            "https://origin-cdn.dragonballfr.com",
+          ].map(async (origin) => {
+            let r: Response;
+            try {
+              r = await fetch(origin + "/.well-known/shenron-cdn-origin.json", {
+                credentials: "omit",
+                redirect: "error",
+                signal: AbortSignal.any([signal, AbortSignal.timeout(10000)]),
+                headers: { "Cache-Control": "no-cache" },
+              });
+            } catch {
+              throw new OriginNotReadyError("Native CDN socket is warming");
+            }
+            if ([502, 503, 504].includes(r.status))
+              throw new OriginNotReadyError("Native CDN service is warming");
+            if (!r.ok) throw Error("Native CDN attestation unavailable");
+            const actual = await r.json();
+            if (
+              actual.manifestPrefix !== config.manifestPrefix ||
+              actual.inventorySha256 !== config.inventorySha256 ||
+              actual.codeSha256 !== codeSha256
+            )
+              throw Error("Native CDN attestation differs");
+          }),
         ),
       );
     },
@@ -274,7 +313,8 @@ export function createOriginInventoryActivation(value: unknown) {
     Object.keys(value).length !== keys.length ||
     !keys.every(
       (key) =>
-        Object.hasOwn(value, key) && typeof (value as Record<string, unknown>)[key] === "string",
+        Object.hasOwn(value, key) &&
+        typeof (value as Record<string, unknown>)[key] === "string",
     )
   )
     throw Error("Exact origin activation configuration required");
@@ -292,14 +332,20 @@ export function createOriginInventoryActivation(value: unknown) {
     throw Error("Qualified origin configuration pins required");
   return {
     async activate(candidate: OriginInventoryCandidate) {
-      const candidateKeys = ["inventoryPath", "inventorySha256", "manifestPrefix", "publisherLock"];
+      const candidateKeys = [
+        "inventoryPath",
+        "inventorySha256",
+        "manifestPrefix",
+        "publisherLock",
+      ];
       if (
         !candidate ||
         Object.keys(candidate).length !== candidateKeys.length ||
         !candidateKeys.every(
           (key) =>
             Object.hasOwn(candidate, key) &&
-            typeof candidate[key as keyof OriginInventoryCandidate] === "string",
+            typeof candidate[key as keyof OriginInventoryCandidate] ===
+              "string",
         )
       )
         throw Error("Exact publisher candidate required");

@@ -294,7 +294,11 @@ export async function collectAudioMixSources({
           if (!uploadAsset) continue;
 
           audioMixSources.push(
-            collectMediaAudioSource({ element, mediaAsset: uploadAsset, volume }),
+            collectMediaAudioSource({
+              element,
+              mediaAsset: uploadAsset,
+              volume,
+            }),
           );
         } else {
           pendingLibrarySources.push(

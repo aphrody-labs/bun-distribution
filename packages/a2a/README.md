@@ -21,10 +21,14 @@ const client = await A2AClient.connect("http://127.0.0.1:8788"); // Agent Card d
 const answer = await client.sendMessage("@claude: summarise PLAN.md");
 console.log(responseText(answer)); // task artifacts, else the agent message
 
-for await (const event of client.sendStreamingMessage("@agy: review the diff")) {
+for await (const event of client.sendStreamingMessage(
+  "@agy: review the diff",
+)) {
   if (event.statusUpdate) console.log(event.statusUpdate.status.state);
 }
-const final = await collectStream(client.sendStreamingMessage("@grok: refactor")); // task or message
+const final = await collectStream(
+  client.sendStreamingMessage("@grok: refactor"),
+); // task or message
 ```
 
 ## Operations
@@ -121,11 +125,14 @@ shape. It replaces a method-renaming proxy (which left the payloads untranslated
 import { A2AClient } from "@aphrody/a2a";
 import { LegacyBridge, SHENRON_HUB_PROFILE } from "@aphrody/a2a/legacy";
 
-const bridge = new LegacyBridge(await A2AClient.connect(url), { profile: SHENRON_HUB_PROFILE });
+const bridge = new LegacyBridge(await A2AClient.connect(url), {
+  profile: SHENRON_HUB_PROFILE,
+});
 // route handler of a legacy endpoint:
 const body = await request.json();
 if (bridge.isStreaming(body)) {
-  for await (const reply of bridge.handleStream(body)) send(`data: ${JSON.stringify(reply)}\n\n`);
+  for await (const reply of bridge.handleStream(body))
+    send(`data: ${JSON.stringify(reply)}\n\n`);
 } else {
   return Response.json(await bridge.handle(body)); // never throws: errors are JSON-RPC errors
 }

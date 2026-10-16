@@ -14,14 +14,21 @@ export function memorySource(bytes: Uint8Array): ByteSource {
   return {
     size: bytes.byteLength,
     read: (offset, length) =>
-      bytes.subarray(Math.max(0, offset), Math.min(bytes.byteLength, offset + Math.max(0, length))),
+      bytes.subarray(
+        Math.max(0, offset),
+        Math.min(bytes.byteLength, offset + Math.max(0, length)),
+      ),
   };
 }
 
 export type PeKind = "exe" | "dll" | "sys" | "efi" | "mui";
 
 export type PeImport = { module: string; delay: boolean; functions: string[] };
-export type PeExport = { ordinal: number; name: string | null; forwarder: string | null };
+export type PeExport = {
+  ordinal: number;
+  name: string | null;
+  forwarder: string | null;
+};
 export type Section = {
   name: string;
   virtualAddress: number;
@@ -111,7 +118,8 @@ class Reader {
   }
 
   bytes(offset: number, length: number): Uint8Array {
-    if (offset < 0 || length < 0 || offset >= this.src.size) return new Uint8Array(0);
+    if (offset < 0 || length < 0 || offset >= this.src.size)
+      return new Uint8Array(0);
     if (offset + length <= this.headerCache.byteLength) {
       return this.headerCache.subarray(offset, offset + length);
     }
@@ -129,7 +137,9 @@ class Reader {
     const b = this.bytes(offset, max);
     const end = b.indexOf(0);
     if (end < 0 && b.byteLength < max) return null;
-    return new TextDecoder("latin1").decode(b.subarray(0, end < 0 ? b.byteLength : end));
+    return new TextDecoder("latin1").decode(
+      b.subarray(0, end < 0 ? b.byteLength : end),
+    );
   }
 }
 
@@ -161,7 +171,9 @@ export function parsePe(src: ByteSource, fileName = ""): PeInfo | null {
   if (magic !== 0x10b && magic !== 0x20b) return null;
   if (optSize < (is64 ? 112 : 96)) return null;
   const entryRva = opt.getUint32(16, true);
-  const imageBase = is64 ? opt.getBigUint64(24, true) : BigInt(opt.getUint32(28, true));
+  const imageBase = is64
+    ? opt.getBigUint64(24, true)
+    : BigInt(opt.getUint32(28, true));
   const imageSize = opt.getUint32(56, true);
   const headersSize = opt.getUint32(60, true);
   const checksum = opt.getUint32(64, true);
@@ -207,7 +219,15 @@ export function parsePe(src: ByteSource, fileName = ""): PeInfo | null {
     return -1;
   };
 
-  const imports = readImports(r, dirs[1]!, dirs[13]!, is64, imageBase, rvaToOff, warnings);
+  const imports = readImports(
+    r,
+    dirs[1]!,
+    dirs[13]!,
+    is64,
+    imageBase,
+    rvaToOff,
+    warnings,
+  );
   const { exports, exportName } = readExports(r, dirs[0]!, rvaToOff, warnings);
   let version: VersionInfo | null = null;
   try {
@@ -261,7 +281,9 @@ function classify(
   if (ext === "mui") return "mui";
   if (subsystem >= 10 && subsystem <= 13) return "efi";
   const kernelImport = imports.some((i) =>
-    /^(ntoskrnl\.exe|hal\.dll|ntkrnlpa\.exe|wdfldr\.sys|fltmgr\.sys|ndis\.sys)$/.test(i.module),
+    /^(ntoskrnl\.exe|hal\.dll|ntkrnlpa\.exe|wdfldr\.sys|fltmgr\.sys|ndis\.sys)$/.test(
+      i.module,
+    ),
   );
   if (ext === "sys" || (subsystem === 1 && kernelImport)) return "sys";
   if (characteristics & IMAGE_FILE_DLL) return "dll";
@@ -436,7 +458,9 @@ function readVersion(
   if (!dir.rva) return null;
   const rsrc = rvaToOff(dir.rva);
   if (rsrc < 0) return null;
-  const type = resourceEntries(r, rsrc, 0).find((e) => e.id === RT_VERSION && e.isDir);
+  const type = resourceEntries(r, rsrc, 0).find(
+    (e) => e.id === RT_VERSION && e.isDir,
+  );
   if (!type) return null;
   const name = resourceEntries(r, rsrc, type.dataRel).find((e) => e.isDir);
   if (!name) return null;
@@ -469,7 +493,11 @@ function readBlock(b: Uint8Array, v: DataView, off: number): Block | null {
   let p = off + 6;
   const keyStart = p;
   while (p + 1 < off + length && v.getUint16(p, true) !== 0) p += 2;
-  const key = Buffer.from(b.buffer, b.byteOffset + keyStart, p - keyStart).toString("utf16le");
+  const key = Buffer.from(
+    b.buffer,
+    b.byteOffset + keyStart,
+    p - keyStart,
+  ).toString("utf16le");
   p += 2;
   const valueOff = (p + 3) & ~3;
   const valueBytes = type === 1 ? valueLength * 2 : valueLength;
@@ -498,7 +526,10 @@ export function parseVersionInfo(b: Uint8Array): VersionInfo | null {
   const root = readBlock(b, v, 0);
   if (!root || root.key !== "VS_VERSION_INFO") return null;
   const info: VersionInfo = { strings: {} };
-  if (root.valueBytes >= 52 && v.getUint32(root.valueOff, true) === 0xfeef04bd) {
+  if (
+    root.valueBytes >= 52 &&
+    v.getUint32(root.valueOff, true) === 0xfeef04bd
+  ) {
     info.fileVersion = verString(
       v.getUint32(root.valueOff + 8, true),
       v.getUint32(root.valueOff + 12, true),
@@ -555,7 +586,10 @@ export function parseApiSetSchema(b: Uint8Array): Map<string, string[]> {
       const ve = valueOff + j * 20;
       if (ve + 20 > b.byteLength) break;
       const importerLen = v.getUint32(ve + 8, true);
-      const host = str(v.getUint32(ve + 12, true), v.getUint32(ve + 16, true)).toLowerCase();
+      const host = str(
+        v.getUint32(ve + 12, true),
+        v.getUint32(ve + 16, true),
+      ).toLowerCase();
       if (!host) continue;
       if (importerLen === 0) fallback = host;
       else hosts.push(host);

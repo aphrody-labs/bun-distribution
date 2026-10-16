@@ -7,7 +7,12 @@
 import { AphrodyPet, spriteStyle, type PetFrame, PET } from "@aphrody/identity";
 import { PET_ATLAS_URL } from "@aphrody/identity/atlas";
 import { Button, Icon } from "@aphrody/m3-primitives";
-import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
+import {
+  type PointerEvent as ReactPointerEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   GAZE_RADIUS,
   gazeToward,
@@ -86,7 +91,9 @@ export function DesktopPet() {
   const [mode, setMode] = useState<PetMode>("idle");
   const [hovering, setHovering] = useState(false);
   const [gaze, setGaze] = useState<PetFrame | null>(null);
-  const press = useRef<{ x: number; y: number; dragging: boolean } | null>(null);
+  const press = useRef<{ x: number; y: number; dragging: boolean } | null>(
+    null,
+  );
 
   // Report the sprite rectangle so the native poller makes everything else click-through.
   useEffect(() => {
@@ -120,7 +127,8 @@ export function DesktopPet() {
       const result = await tauriInvoke<{ blocked: boolean }>("aphrody_pet", {
         action: { action: "step", dx },
       });
-      if (result?.blocked) setMode(mode === "walk-left" ? "walk-right" : "walk-left");
+      if (result?.blocked)
+        setMode(mode === "walk-left" ? "walk-right" : "walk-left");
     }, WALK_PERIOD);
     const stop = setTimeout(() => setMode("idle"), walkDuration());
     return () => {
@@ -135,7 +143,10 @@ export function DesktopPet() {
       listen<{ x: number; y: number }>(PET_CURSOR_EVENT, (cursor) => {
         const rect = sprite.current?.getBoundingClientRect();
         if (!rect) return;
-        const eyes = { x: rect.x + rect.width / 2, y: rect.y + rect.height * 0.36 };
+        const eyes = {
+          x: rect.x + rect.width / 2,
+          y: rect.y + rect.height * 0.36,
+        };
         const inside =
           cursor.x >= rect.left &&
           cursor.x < rect.right &&
@@ -156,7 +167,9 @@ export function DesktopPet() {
     if (!current || current.dragging || (event.buttons & 1) === 0) return;
     if (Math.hypot(event.screenX - current.x, event.screenY - current.y) > 4) {
       current.dragging = true;
-      void tauriInvoke("aphrody_pet", { action: { action: "start_dragging" } }).finally(() => {
+      void tauriInvoke("aphrody_pet", {
+        action: { action: "start_dragging" },
+      }).finally(() => {
         press.current = null;
       });
     }
@@ -214,7 +227,9 @@ interface IntegrationState {
 }
 
 function widgetAction(action: string) {
-  return tauriInvoke<IntegrationState>("aphrody_widget", { action: { action } });
+  return tauriInvoke<IntegrationState>("aphrody_widget", {
+    action: { action },
+  });
 }
 
 /** Desktop widget: clock, host and quick actions. */
@@ -227,7 +242,9 @@ export function DesktopWidget() {
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
     if (isTauri())
-      void tauriInvoke<string>("plugin:os|hostname").then((name) => setHost(name ?? ""));
+      void tauriInvoke<string>("plugin:os|hostname").then((name) =>
+        setHost(name ?? ""),
+      );
     return () => clearInterval(timer);
   }, []);
 
@@ -245,7 +262,10 @@ export function DesktopWidget() {
         <header
           className="flex cursor-grab items-center gap-2"
           onPointerDown={(event) => {
-            if (event.button === 0 && (event.target as HTMLElement).closest("button") === null)
+            if (
+              event.button === 0 &&
+              (event.target as HTMLElement).closest("button") === null
+            )
               run("start_dragging");
           }}
         >
@@ -262,10 +282,17 @@ export function DesktopWidget() {
           />
           <div className="flex min-w-0 flex-1 flex-col">
             <span className="text-title-large leading-none tabular-nums">
-              {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              {now.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
             </span>
             <span className="truncate text-label-small text-on-surface-variant">
-              {now.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}
+              {now.toLocaleDateString([], {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+              })}
               {host ? ` · ${host}` : ""}
             </span>
           </div>

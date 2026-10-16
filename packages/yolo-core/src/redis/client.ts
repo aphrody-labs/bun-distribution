@@ -34,17 +34,25 @@ export class NativeRedisClient {
     this.port = options.port ?? 6379;
     this.#timeoutMs = options.timeoutMs ?? 1_000;
     this.#offline = options.offline ?? false;
-    if (!Number.isSafeInteger(this.port) || this.port < 1 || this.port > 65_535) {
+    if (
+      !Number.isSafeInteger(this.port) ||
+      this.port < 1 ||
+      this.port > 65_535
+    ) {
       throw new RangeError("Redis port must be between 1 and 65535");
     }
     if (!Number.isSafeInteger(this.#timeoutMs) || this.#timeoutMs < 1) {
       throw new RangeError("Redis timeout must be a positive integer");
     }
-    const host = this.hostname.includes(":") ? `[${this.hostname}]` : this.hostname;
+    const host = this.hostname.includes(":")
+      ? `[${this.hostname}]`
+      : this.hostname;
     this.#url =
       options.url ??
       (options.hostname === undefined && options.port === undefined
-        ? (process.env.VALKEY_URL ?? process.env.REDIS_URL ?? `redis://${host}:${this.port}`)
+        ? (process.env.VALKEY_URL ??
+          process.env.REDIS_URL ??
+          `redis://${host}:${this.port}`)
         : `redis://${host}:${this.port}`);
   }
 
@@ -84,7 +92,8 @@ export class NativeRedisClient {
     this.#connecting = (async () => {
       try {
         await this.#bounded(native.connect(), native);
-        if (this.#closed || this.#native !== native) throw new RedisUnavailableError();
+        if (this.#closed || this.#native !== native)
+          throw new RedisUnavailableError();
         return this;
       } catch {
         native.close();
@@ -96,16 +105,26 @@ export class NativeRedisClient {
     return this.#connecting;
   }
 
-  async sendCommand<T = any>(command: string, ...args: Array<string | number>): Promise<T> {
+  async sendCommand<T = any>(
+    command: string,
+    ...args: Array<string | number>
+  ): Promise<T> {
     if (this.#closed || this.#offline) throw new RedisUnavailableError();
     await this.connect();
     const native = this.#native;
     if (!native) throw new RedisUnavailableError();
     try {
-      return await this.#bounded(native.send(command, args.map(String)), native);
+      return await this.#bounded(
+        native.send(command, args.map(String)),
+        native,
+      );
     } catch (error) {
       // Server/type/script errors must remain visible rather than become offline writes.
-      if (error instanceof Error && "code" in error && error.code === "ERR_REDIS_SERVER_ERROR") {
+      if (
+        error instanceof Error &&
+        "code" in error &&
+        error.code === "ERR_REDIS_SERVER_ERROR"
+      ) {
         throw error;
       }
       throw new RedisUnavailableError();
@@ -141,13 +160,17 @@ export class NativeRedisClient {
     return this.sendCommand("HGET", key, field);
   }
   async hgetall(key: string): Promise<Record<string, string>> {
-    const raw = await this.sendCommand<string[] | Record<string, string>>("HGETALL", key);
+    const raw = await this.sendCommand<string[] | Record<string, string>>(
+      "HGETALL",
+      key,
+    );
     if (!Array.isArray(raw)) return raw;
     const entries: Array<[string, string]> = [];
     for (let index = 0; index < raw.length; index += 2) {
       const field = raw[index];
       const value = raw[index + 1];
-      if (field !== undefined && value !== undefined) entries.push([field, value]);
+      if (field !== undefined && value !== undefined)
+        entries.push([field, value]);
     }
     return Object.fromEntries(entries);
   }

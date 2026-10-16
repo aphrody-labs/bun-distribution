@@ -11,7 +11,10 @@ async function save(path: string, body: string) {
   await chmod(path, 0o600);
 }
 async function dockerEnvironment(container: string) {
-  const p = Bun.spawn(["docker", "inspect", container], { stdout: "pipe", stderr: "ignore" });
+  const p = Bun.spawn(["docker", "inspect", container], {
+    stdout: "pipe",
+    stderr: "ignore",
+  });
   const objects = JSON.parse(await new Response(p.stdout).text());
   if ((await p.exited) !== 0) throw Error("Existing container unavailable");
   return Object.fromEntries(
@@ -32,13 +35,19 @@ export async function prepareRuntime(apply = false) {
   ).json();
   const bot = await dockerEnvironment("aphrody-bot-1"),
     site = await dockerEnvironment("aphrody-site-1");
-  if (new URL(bot.DATABASE_URL!).hostname !== "127.0.0.1" || !site.SHENRON_ADMIN_TOKEN)
+  if (
+    new URL(bot.DATABASE_URL!).hostname !== "127.0.0.1" ||
+    !site.SHENRON_ADMIN_TOKEN
+  )
     throw Error("Current local production credentials missing");
-  const admin = await fetch("https://dragonballfr.com/api/wiki-admin/db_manga_volumes/701", {
-    headers: { authorization: "Bearer " + site.SHENRON_ADMIN_TOKEN },
-    redirect: "error",
-    signal: AbortSignal.timeout(30000),
-  });
+  const admin = await fetch(
+    "https://dragonballfr.com/api/wiki-admin/db_manga_volumes/701",
+    {
+      headers: { authorization: "Bearer " + site.SHENRON_ADMIN_TOKEN },
+      redirect: "error",
+      signal: AbortSignal.timeout(30000),
+    },
+  );
   if (!admin.ok) throw Error("Existing editorial credential readback failed");
   const catalogue = await (
     await fetch("https://dragonballfr.com/api/manga", {
@@ -47,7 +56,9 @@ export async function prepareRuntime(apply = false) {
     })
   ).json();
   const allowedSeries = [
-    ...new Set<string>(catalogue.catalog.map((row: { series: string }) => row.series)),
+    ...new Set<string>(
+      catalogue.catalog.map((row: { series: string }) => row.series),
+    ),
   ];
   const domains = [
     "www.glenat.com",
@@ -88,7 +99,11 @@ export async function prepareRuntime(apply = false) {
             : "bibliography",
       reviewed: true,
       evidence: "https://dragonballfr.com/wiki/manga",
-      rights: { ragPermitted: false, trainingPermitted: false, publicImagesPermitted: true },
+      rights: {
+        ragPermitted: false,
+        trainingPermitted: false,
+        publicImagesPermitted: true,
+      },
     })),
   };
   const source = {
@@ -107,7 +122,8 @@ export async function prepareRuntime(apply = false) {
   };
   const sourceBody = JSON.stringify(source),
     policyBody = JSON.stringify(policy);
-  const inbox = "/home/ubuntu/.aphrody/profiles/dbfr/jobs/manga-source-handoff-incoming",
+  const inbox =
+      "/home/ubuntu/.aphrody/profiles/dbfr/jobs/manga-source-handoff-incoming",
     importRoot = join(root, "pool");
   const backupModule = join(root, "runtime/editorial-backup.mjs");
   const configuration = {
@@ -184,4 +200,6 @@ export async function prepareRuntime(apply = false) {
   };
 }
 if (import.meta.main)
-  console.log(JSON.stringify(await prepareRuntime(Bun.argv.includes("--apply"))));
+  console.log(
+    JSON.stringify(await prepareRuntime(Bun.argv.includes("--apply"))),
+  );

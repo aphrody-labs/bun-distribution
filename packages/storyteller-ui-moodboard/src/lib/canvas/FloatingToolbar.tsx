@@ -1,9 +1,5 @@
 import { ReactNode } from "react";
-import {
-  ToolbarShell,
-  ToolbarIconButton,
-  ToolbarDivider,
-} from "../ui/Toolbar";
+import { ToolbarShell, ToolbarIconButton, ToolbarDivider } from "../ui/Toolbar";
 
 interface FloatingToolbarProps {
   children: ReactNode;

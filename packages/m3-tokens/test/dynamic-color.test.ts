@@ -23,9 +23,13 @@ describe("schemeFromSeed", () => {
   test("light and dark differ for the same seed", () => {
     const light = schemeFromSeed("#6750A4", { dark: false });
     const dark = schemeFromSeed("#6750A4", { dark: true });
-    expect(light["--md-sys-color-surface"]).not.toBe(dark["--md-sys-color-surface"]);
+    expect(light["--md-sys-color-surface"]).not.toBe(
+      dark["--md-sys-color-surface"],
+    );
     // Dark surfaces are darker than light surfaces.
-    expect(dark["--md-sys-color-surface"] < light["--md-sys-color-surface"]).toBe(true);
+    expect(
+      dark["--md-sys-color-surface"] < light["--md-sys-color-surface"],
+    ).toBe(true);
   });
 
   test("different seeds produce different primaries", () => {
@@ -59,11 +63,16 @@ describe("cssFromSeed", () => {
   });
 
   test("custom selectors carry the same roles as the defaults", () => {
-    const css = cssFromSeed("#17335C", { lightSelector: ".light", darkSelector: ":root,\n.dark" });
+    const css = cssFromSeed("#17335C", {
+      lightSelector: ".light",
+      darkSelector: ":root,\n.dark",
+    });
     expect(css.startsWith(".light {\n  color-scheme: light;")).toBe(true);
     expect(css).toContain(":root,\n.dark {\n  color-scheme: dark;");
     expect(css).not.toContain("data-theme");
     const dark = schemeFromSeed("#17335C", { dark: true });
-    expect(css).toContain(`--md-sys-color-primary: ${dark["--md-sys-color-primary"]};`);
+    expect(css).toContain(
+      `--md-sys-color-primary: ${dark["--md-sys-color-primary"]};`,
+    );
   });
 });

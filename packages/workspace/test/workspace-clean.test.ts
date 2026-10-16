@@ -27,7 +27,9 @@ test("tracked target sources survive cleanup, ignored nested artifacts are remov
   const root = await fixture();
   await mkdir(join(root, "src/target"), { recursive: true });
   await writeFile(join(root, "src/target/mod.rs"), "pub struct Target;");
-  Bun.spawnSync(["git", "-C", root, "add", "-f", "src/target/mod.rs"], { windowsHide: true });
+  Bun.spawnSync(["git", "-C", root, "add", "-f", "src/target/mod.rs"], {
+    windowsHide: true,
+  });
   await mkdir(join(root, "crates/a/target"), { recursive: true });
   await writeFile(join(root, "crates/a/target/object.o"), "generated");
   const preview = await cleanWorkspace(root);

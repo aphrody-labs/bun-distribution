@@ -206,7 +206,10 @@ function onPointerMove(event: PointerEvent) {
     // folder) the modal stays fully visible and interactive so folders can be
     // targeted. Once hidden it stays hidden for the rest of the drag, so
     // re-entering the (now transparent) panel area doesn't flicker it back.
-    if (!dragState.modalHidden && isOutsideModal(event.clientX, event.clientY)) {
+    if (
+      !dragState.modalHidden &&
+      isOutsideModal(event.clientX, event.clientY)
+    ) {
       dragState.modalHidden = true;
       galleryModalDraggingUnder.value = true;
     }

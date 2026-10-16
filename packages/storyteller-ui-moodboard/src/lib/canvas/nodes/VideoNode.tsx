@@ -62,9 +62,8 @@ const VideoNodeInner = ({ node, draggable, selected, onSelect }: Props) => {
     };
   }, [video]);
 
-  const handleSelect = (
-    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
-  ) => onSelect(node.id, e);
+  const handleSelect = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) =>
+    onSelect(node.id, e);
 
   return (
     <>

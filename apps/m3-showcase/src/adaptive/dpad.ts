@@ -11,7 +11,12 @@ export interface Box {
   bottom: number;
 }
 
-export const boxOf = (rect: { left: number; top: number; right: number; bottom: number }): Box => ({
+export const boxOf = (rect: {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}): Box => ({
   left: rect.left,
   top: rect.top,
   right: rect.right,
@@ -41,7 +46,9 @@ export function pickNext<T>(
   let best: { item: T; score: number } | undefined;
   for (const { item, box } of candidates) {
     if (box === from) continue;
-    const along = horizontal ? centerX(box) - centerX(from) : centerY(box) - centerY(from);
+    const along = horizontal
+      ? centerX(box) - centerX(from)
+      : centerY(box) - centerY(from);
     if (along * sign <= 1) continue;
     // Near edge of the candidate relative to the far edge of the origin, along the movement axis.
     const gap = horizontal
@@ -51,7 +58,14 @@ export function pickNext<T>(
       : sign > 0
         ? box.top - from.bottom
         : from.top - box.bottom;
-    if (gap < -Math.min(horizontal ? from.right - from.left : from.bottom - from.top, 24)) continue;
+    if (
+      gap <
+      -Math.min(
+        horizontal ? from.right - from.left : from.bottom - from.top,
+        24,
+      )
+    )
+      continue;
     const across = horizontal
       ? Math.abs(centerY(box) - centerY(from))
       : Math.abs(centerX(box) - centerX(from));
@@ -65,7 +79,13 @@ export function pickNext<T>(
 }
 
 /** Keys that mean "back" on TV platforms. */
-export const BACK_KEYS = new Set(["Escape", "Backspace", "BrowserBack", "GoBack", "XF86Back"]);
+export const BACK_KEYS = new Set([
+  "Escape",
+  "Backspace",
+  "BrowserBack",
+  "GoBack",
+  "XF86Back",
+]);
 export const BACK_KEY_CODES = new Set([4, 10009, 461]);
 
 const FOCUSABLE = [
@@ -102,7 +122,9 @@ function disabledByFieldset(element: HTMLElement): boolean {
     fieldset;
     fieldset = fieldset.parentElement?.closest("fieldset[disabled]") ?? null
   ) {
-    const legend = [...fieldset.children].find((child) => child.tagName === "LEGEND");
+    const legend = [...fieldset.children].find(
+      (child) => child.tagName === "LEGEND",
+    );
     if (!legend?.contains(element)) return true;
   }
   return false;
@@ -110,7 +132,12 @@ function disabledByFieldset(element: HTMLElement): boolean {
 /** The visible, enabled focusable elements under `root`. */
 export function focusables(root: ParentNode): HTMLElement[] {
   return [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => {
-    if (el.closest("[hidden], [inert], [aria-hidden='true'], [aria-disabled='true']")) return false;
+    if (
+      el.closest(
+        "[hidden], [inert], [aria-hidden='true'], [aria-disabled='true']",
+      )
+    )
+      return false;
     if (
       disabledByFieldset(el) ||
       el.matches(":disabled") ||
@@ -128,9 +155,12 @@ export function focusables(root: ParentNode): HTMLElement[] {
 /** The topmost modal: an open dialog or an `aria-modal` container. Focus is confined to it. */
 export function activeModal(doc: Document): HTMLElement | null {
   const modals = [
-    ...doc.querySelectorAll<HTMLElement>("dialog[open], md-dialog[open], [aria-modal='true']"),
+    ...doc.querySelectorAll<HTMLElement>(
+      "dialog[open], md-dialog[open], [aria-modal='true']",
+    ),
   ].filter((element) => {
-    if (element.closest("[hidden], [inert], [aria-hidden='true']")) return false;
+    if (element.closest("[hidden], [inert], [aria-hidden='true']"))
+      return false;
     const style = getComputedStyle(element);
     return style.display !== "none" && style.visibility !== "hidden";
   });
@@ -157,7 +187,8 @@ export function attachDpad(options: DpadOptions = {}): () => void {
         ? current
         : (current?.closest<HTMLElement>(FOCUSABLE) ?? null);
     if (!origin) {
-      (items.find((el) => el.hasAttribute("data-dpad-start")) ?? items[0])!.focus();
+      (items.find((el) => el.hasAttribute("data-dpad-start")) ??
+        items[0])!.focus();
       return true;
     }
     const from = boxOf(origin.getBoundingClientRect());
@@ -175,12 +206,25 @@ export function attachDpad(options: DpadOptions = {}): () => void {
   };
 
   const onKeyDown = (event: KeyboardEvent): void => {
-    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
-    const editing = (event.composedPath()[0] as HTMLElement | undefined)?.closest?.(
+    if (
+      event.defaultPrevented ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey
+    )
+      return;
+    const editing = (
+      event.composedPath()[0] as HTMLElement | undefined
+    )?.closest?.(
       "input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, [contenteditable='true']",
     );
     const direction = (
-      { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" } as const
+      {
+        ArrowUp: "up",
+        ArrowDown: "down",
+        ArrowLeft: "left",
+        ArrowRight: "right",
+      } as const
     )[event.key as "ArrowUp"];
     if (direction) {
       // Inside a text field the arrows belong to the caret; leave through the field's edges with Tab or Back.
@@ -208,7 +252,8 @@ export function attachDpad(options: DpadOptions = {}): () => void {
       const modal = activeModal(doc);
       if (modal) {
         event.preventDefault();
-        if ("close" in modal && typeof modal.close === "function") modal.close();
+        if ("close" in modal && typeof modal.close === "function")
+          modal.close();
         else modal.dispatchEvent(new Event("close", { bubbles: true }));
         return;
       }

@@ -22,18 +22,25 @@ import {
   workspaceState,
 } from "./apps.ts";
 
-const USER_AGENT = "aphrody-tauri-sync (https://github.com/aphrody-labs/aphrody)";
+const USER_AGENT =
+  "aphrody-tauri-sync (https://github.com/aphrody-labs/aphrody)";
 
 // ---------------------------------------------------------------------------
 // Pure logic
 // ---------------------------------------------------------------------------
 
-export type Semver = { major: number; minor: number; patch: number; pre: string[] };
+export type Semver = {
+  major: number;
+  minor: number;
+  patch: number;
+  pre: string[];
+};
 
 export function parseSemver(input: string): Semver | null {
-  const match = /^[=^~v\s]*(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?\s*$/.exec(
-    input,
-  );
+  const match =
+    /^[=^~v\s]*(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?\s*$/.exec(
+      input,
+    );
   if (!match) return null;
   return {
     major: Number(match[1]),
@@ -74,7 +81,9 @@ export function pickEligible(
   const latest = pickLatest(versions, line);
   const old = versions.filter((version) => {
     const published = Date.parse(times[version] ?? "");
-    return Number.isFinite(published) && now - published >= minAgeSeconds * 1000;
+    return (
+      Number.isFinite(published) && now - published >= minAgeSeconds * 1000
+    );
   });
   return { latest, eligible: pickLatest(old, line) };
 }
@@ -86,23 +95,41 @@ export type CargoDep = {
 };
 
 /** Parse the `[workspace.dependencies]` table for the requested crate names (single-line entries). */
-export function parseWorkspaceDeps(cargoToml: string, names: string[]): CargoDep[] {
-  const section = /\[workspace\.dependencies\]([\s\S]*?)(?=^\[|(?![\s\S]))/m.exec(cargoToml);
+export function parseWorkspaceDeps(
+  cargoToml: string,
+  names: string[],
+): CargoDep[] {
+  const section =
+    /\[workspace\.dependencies\]([\s\S]*?)(?=^\[|(?![\s\S]))/m.exec(cargoToml);
   const body = section?.[1] ?? "";
   const out: CargoDep[] = [];
   for (const name of names) {
-    const line = new RegExp(`^${escapeRegExp(name)}\\s*=\\s*(.+)$`, "m").exec(body)?.[1];
+    const line = new RegExp(`^${escapeRegExp(name)}\\s*=\\s*(.+)$`, "m").exec(
+      body,
+    )?.[1];
     if (line === undefined) continue;
-    const version = /(?:^"|version\s*=\s*")([^"]+)"/.exec(line.trim())?.[1] ?? null;
-    const source = /\bgit\s*=/.test(line) ? "git" : /\bpath\s*=/.test(line) ? "path" : "crates.io";
+    const version =
+      /(?:^"|version\s*=\s*")([^"]+)"/.exec(line.trim())?.[1] ?? null;
+    const source = /\bgit\s*=/.test(line)
+      ? "git"
+      : /\bpath\s*=/.test(line)
+        ? "path"
+        : "crates.io";
     out.push({ name, version: version?.replace(/^[=^~]/, "") ?? null, source });
   }
   return out;
 }
 
 /** Rewrite the version of one `[workspace.dependencies]` entry, keeping the `=` pin and other fields. */
-export function rewriteWorkspaceDep(cargoToml: string, name: string, version: string): string {
-  const section = /(\[workspace\.dependencies\])([\s\S]*?)(?=^\[|(?![\s\S]))/m.exec(cargoToml);
+export function rewriteWorkspaceDep(
+  cargoToml: string,
+  name: string,
+  version: string,
+): string {
+  const section =
+    /(\[workspace\.dependencies\])([\s\S]*?)(?=^\[|(?![\s\S]))/m.exec(
+      cargoToml,
+    );
   if (!section) throw new Error("[workspace.dependencies] not found");
   const start = section.index + section[1]!.length;
   const body = section[2]!;
@@ -110,22 +137,40 @@ export function rewriteWorkspaceDep(cargoToml: string, name: string, version: st
     `^(${escapeRegExp(name)}\\s*=\\s*(?:"|\\{[^}\\n]*?version\\s*=\\s*"))=?[^"]+"`,
     "m",
   );
-  if (!pattern.test(body)) throw new Error(`${name} not found in [workspace.dependencies]`);
-  const next = body.replace(pattern, (_all, head: string) => `${head}=${version}"`);
-  return cargoToml.slice(0, start) + next + cargoToml.slice(start + body.length);
+  if (!pattern.test(body))
+    throw new Error(`${name} not found in [workspace.dependencies]`);
+  const next = body.replace(
+    pattern,
+    (_all, head: string) => `${head}=${version}"`,
+  );
+  return (
+    cargoToml.slice(0, start) + next + cargoToml.slice(start + body.length)
+  );
 }
 
-export function parseCatalog(packageJson: string, names: string[]): Record<string, string> {
-  const catalog = (JSON.parse(packageJson).workspaces?.catalog ?? {}) as Record<string, string>;
+export function parseCatalog(
+  packageJson: string,
+  names: string[],
+): Record<string, string> {
+  const catalog = (JSON.parse(packageJson).workspaces?.catalog ?? {}) as Record<
+    string,
+    string
+  >;
   const out: Record<string, string> = {};
-  for (const name of names) if (catalog[name] !== undefined) out[name] = catalog[name]!;
+  for (const name of names)
+    if (catalog[name] !== undefined) out[name] = catalog[name]!;
   return out;
 }
 
 /** Textual rewrite of one catalog entry so the file keeps its formatting. */
-export function rewriteCatalogEntry(packageJson: string, name: string, version: string): string {
+export function rewriteCatalogEntry(
+  packageJson: string,
+  name: string,
+  version: string,
+): string {
   const pattern = new RegExp(`("${escapeRegExp(name)}"\\s*:\\s*")[^"]*(")`);
-  if (!pattern.test(packageJson)) throw new Error(`${name} not found in catalog`);
+  if (!pattern.test(packageJson))
+    throw new Error(`${name} not found in catalog`);
   return packageJson.replace(pattern, `$1${version}$2`);
 }
 
@@ -139,7 +184,12 @@ export type PatchSpec = {
   appliedMarker?: string;
   rationale?: string;
   disposition?: string;
-  upstreamContains?: { crate?: string; file?: string; url?: string; regex: string };
+  upstreamContains?: {
+    crate?: string;
+    file?: string;
+    url?: string;
+    regex: string;
+  };
 };
 
 export type MirrorSpec = { file: string; keys: Record<string, string> };
@@ -149,7 +199,12 @@ export type TauriUpstreamConfig = {
   line: number;
   upstream: Record<
     string,
-    { repository: string; trackedRef: string; observedCommit?: string; lineOfDev?: number }
+    {
+      repository: string;
+      trackedRef: string;
+      observedCommit?: string;
+      lineOfDev?: number;
+    }
   >;
   policy: { npmMinimumReleaseAgeSeconds: number };
   rust: { crates: string[]; forks: string[] };
@@ -164,10 +219,20 @@ export type TauriUpstreamConfig = {
 
 export function parseConfig(text: string): TauriUpstreamConfig {
   const value = JSON.parse(text) as Partial<TauriUpstreamConfig>;
-  if (value.schemaVersion !== 1) throw new Error("tauri-upstream.json: unsupported schemaVersion");
-  if (typeof value.line !== "number") throw new Error("tauri-upstream.json: line must be a number");
-  for (const key of ["upstream", "policy", "rust", "js", "gate", "patches"] as const) {
-    if (value[key] === undefined) throw new Error(`tauri-upstream.json: missing ${key}`);
+  if (value.schemaVersion !== 1)
+    throw new Error("tauri-upstream.json: unsupported schemaVersion");
+  if (typeof value.line !== "number")
+    throw new Error("tauri-upstream.json: line must be a number");
+  for (const key of [
+    "upstream",
+    "policy",
+    "rust",
+    "js",
+    "gate",
+    "patches",
+  ] as const) {
+    if (value[key] === undefined)
+      throw new Error(`tauri-upstream.json: missing ${key}`);
   }
   if (!Array.isArray(value.rust?.crates))
     throw new Error("tauri-upstream.json: rust.crates must be an array");
@@ -196,14 +261,23 @@ export function classify(
   if (compareSemver(current, latest) >= 0) return { status: "ok" };
   if (hold) return { status: "held", note: hold };
   if (target === null || compareSemver(current, target) >= 0) {
-    return { status: "too-fresh", note: "newest release is younger than minimumReleaseAge" };
+    return {
+      status: "too-fresh",
+      note: "newest release is younger than minimumReleaseAge",
+    };
   }
   return { status: "behind" };
 }
 
 export type PatchResult = {
   id: string;
-  state: "applied" | "missing" | "unapplied" | "upstream-contains" | "newer-base" | "unchecked";
+  state:
+    | "applied"
+    | "missing"
+    | "unapplied"
+    | "upstream-contains"
+    | "newer-base"
+    | "unchecked";
   detail: string;
 };
 
@@ -217,7 +291,11 @@ export function evaluatePatch(input: {
   const { spec } = input;
   if (spec.kind === "vendored-crate") {
     if (input.fileText === null)
-      return { id: spec.id, state: "missing", detail: `${spec.appliedFile} not found` };
+      return {
+        id: spec.id,
+        state: "missing",
+        detail: `${spec.appliedFile} not found`,
+      };
     if (spec.appliedMarker && !input.fileText.includes(spec.appliedMarker)) {
       return {
         id: spec.id,
@@ -229,7 +307,8 @@ export function evaluatePatch(input: {
       return {
         id: spec.id,
         state: "unapplied",
-        detail: "vendored copy is neither a path dependency nor a workspace member",
+        detail:
+          "vendored copy is neither a path dependency nor a workspace member",
       };
     }
   }
@@ -240,7 +319,11 @@ export function evaluatePatch(input: {
       detail: spec.disposition ?? "upstream contains the fix",
     };
   }
-  if (spec.base && input.latestPublished && compareSemver(input.latestPublished, spec.base) > 0) {
+  if (
+    spec.base &&
+    input.latestPublished &&
+    compareSemver(input.latestPublished, spec.base) > 0
+  ) {
     return {
       id: spec.id,
       state: "newer-base",
@@ -250,7 +333,10 @@ export function evaluatePatch(input: {
   return {
     id: spec.id,
     state: input.upstreamContainsFix === null ? "unchecked" : "applied",
-    detail: input.upstreamContainsFix === null ? "upstream not queried" : "still required",
+    detail:
+      input.upstreamContainsFix === null
+        ? "upstream not queried"
+        : "still required",
   };
 }
 
@@ -272,8 +358,11 @@ export function mirrorDrift(
   for (const [key, name] of Object.entries(spec.keys)) {
     const expected = central[name];
     if (!expected) continue;
-    const mirror = new RegExp(`\\b${escapeRegExp(key)}:\\s*"([^"]+)"`).exec(text)?.[1] ?? null;
-    if (mirror !== expected) out.push({ file: spec.file, key, name, mirror, expected });
+    const mirror =
+      new RegExp(`\\b${escapeRegExp(key)}:\\s*"([^"]+)"`).exec(text)?.[1] ??
+      null;
+    if (mirror !== expected)
+      out.push({ file: spec.file, key, name, mirror, expected });
   }
   return out;
 }
@@ -288,7 +377,8 @@ export function rewriteMirror(
     const value = central[name];
     if (!value) continue;
     const pattern = new RegExp(`(\\b${escapeRegExp(key)}:\\s*")[^"]+(")`);
-    if (!pattern.test(next)) throw new Error(`${spec.file}: key ${key} not found`);
+    if (!pattern.test(next))
+      throw new Error(`${spec.file}: key ${key} not found`);
     next = next.replace(pattern, `$1${value}$2`);
   }
   return next;
@@ -297,7 +387,12 @@ export function rewriteMirror(
 export type Report = {
   rows: Row[];
   patches: PatchResult[];
-  refs: { name: string; ref: string; commit: string | null; line?: string | null }[];
+  refs: {
+    name: string;
+    ref: string;
+    commit: string | null;
+    line?: string | null;
+  }[];
   behind: number;
   brokenPatches: number;
   drift: Drift[];
@@ -331,7 +426,9 @@ export function renderReport(report: Report): string {
     );
   }
   lines.push("");
-  lines.push(`${"name".padEnd(width)}  kind   current           latest            status`);
+  lines.push(
+    `${"name".padEnd(width)}  kind   current           latest            status`,
+  );
   for (const row of report.rows) {
     lines.push(
       `${row.name.padEnd(width)}  ${row.kind.padEnd(5)}  ${(row.current ?? "-").padEnd(16)}  ${(row.latest ?? "-").padEnd(16)}  ${row.status}${row.note ? ` (${row.note})` : ""}`,
@@ -339,7 +436,8 @@ export function renderReport(report: Report): string {
   }
   lines.push("");
   lines.push("patches");
-  for (const patch of report.patches) lines.push(`  ${patch.id}: ${patch.state} - ${patch.detail}`);
+  for (const patch of report.patches)
+    lines.push(`  ${patch.id}: ${patch.state} - ${patch.detail}`);
   if (report.drift.length > 0) {
     lines.push("");
     lines.push("mirror drift");
@@ -365,7 +463,13 @@ export type Args = {
 };
 
 export function parseArgs(argv: string[], cwd = process.cwd()): Args {
-  const args: Args = { root: cwd, check: false, apply: false, json: false, offline: false };
+  const args: Args = {
+    root: cwd,
+    check: false,
+    apply: false,
+    json: false,
+    offline: false,
+  };
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index];
     if (arg === "--root") {
@@ -380,8 +484,10 @@ export function parseArgs(argv: string[], cwd = process.cwd()): Args {
       throw new Error("help");
     } else throw new Error(`Unknown argument: ${arg}`);
   }
-  if (args.apply && args.offline) throw new Error("--apply needs network access; drop --offline");
-  if (args.apply && args.check) throw new Error("--apply and --check are mutually exclusive");
+  if (args.apply && args.offline)
+    throw new Error("--apply needs network access; drop --offline");
+  if (args.apply && args.check)
+    throw new Error("--apply and --check are mutually exclusive");
   args.root = resolve(args.root);
   return args;
 }
@@ -414,14 +520,18 @@ async function fetchText(url: string): Promise<string> {
 }
 
 async function crateVersions(name: string): Promise<string[]> {
-  const body = await fetchJson(`https://crates.io/api/v1/crates/${name}/versions`);
+  const body = await fetchJson(
+    `https://crates.io/api/v1/crates/${name}/versions`,
+  );
   return (body.versions as { num: string; yanked: boolean }[])
     .filter((v) => !v.yanked)
     .map((v) => v.num);
 }
 
 async function npmTimes(name: string): Promise<Record<string, string>> {
-  const body = await fetchJson(`https://registry.npmjs.org/${name.replace("/", "%2F")}`);
+  const body = await fetchJson(
+    `https://registry.npmjs.org/${name.replace("/", "%2F")}`,
+  );
   const times = { ...(body.time as Record<string, string>) };
   delete times.created;
   delete times.modified;
@@ -430,7 +540,12 @@ async function npmTimes(name: string): Promise<Record<string, string>> {
 
 function lsRemote(repository: string, ref: string): string | null {
   const result = Bun.spawnSync(
-    ["git", "ls-remote", `https://github.com/${repository}.git`, `refs/heads/${ref}`],
+    [
+      "git",
+      "ls-remote",
+      `https://github.com/${repository}.git`,
+      `refs/heads/${ref}`,
+    ],
     { windowsHide: true, stdout: "pipe", stderr: "pipe" },
   );
   if (result.exitCode !== 0) return null;
@@ -452,7 +567,11 @@ export async function readCrateArchiveFile(
   }
 }
 
-async function crateFile(crate: string, version: string, file: string): Promise<string | null> {
+async function crateFile(
+  crate: string,
+  version: string,
+  file: string,
+): Promise<string | null> {
   const response = await fetch(
     `https://static.crates.io/crates/${crate}/${crate}-${version}.crate`,
     {
@@ -460,7 +579,10 @@ async function crateFile(crate: string, version: string, file: string): Promise<
     },
   );
   if (!response.ok) return null;
-  return readCrateArchiveFile(await response.arrayBuffer(), `${crate}-${version}/${file}`);
+  return readCrateArchiveFile(
+    await response.arrayBuffer(),
+    `${crate}-${version}/${file}`,
+  );
 }
 
 function run(command: string[], cwd: string): { ok: boolean; output: string } {
@@ -472,7 +594,9 @@ function run(command: string[], cwd: string): { ok: boolean; output: string } {
     stderr: "pipe",
     env: { ...process.env, RUSTC_WRAPPER: process.env.RUSTC_WRAPPER ?? "" },
   });
-  const output = new TextDecoder().decode(result.stdout) + new TextDecoder().decode(result.stderr);
+  const output =
+    new TextDecoder().decode(result.stdout) +
+    new TextDecoder().decode(result.stderr);
   return { ok: result.exitCode === 0, output };
 }
 
@@ -494,11 +618,15 @@ export async function buildReport(
   const packageJson = await readFile(join(root, "package.json"), "utf8");
   const held = new Map<string, string>();
   for (const spec of config.patches) {
-    if (spec.kind === "vendored-crate") held.set(spec.crate, `held by patch ${spec.id}`);
+    if (spec.kind === "vendored-crate")
+      held.set(spec.crate, `held by patch ${spec.id}`);
   }
   const rows: Row[] = [];
   const now = Date.now();
-  const deps = parseWorkspaceDeps(cargoToml, [...config.rust.crates, ...config.rust.forks]);
+  const deps = parseWorkspaceDeps(cargoToml, [
+    ...config.rust.crates,
+    ...config.rust.forks,
+  ]);
   const latestPublished = new Map<string, string | null>();
   for (const dep of deps) {
     if (dep.source === "git") {
@@ -547,7 +675,8 @@ export async function buildReport(
   const catalog = parseCatalog(packageJson, config.js.catalog);
   const npmTargets: [string, "npm" | "cli", string | null][] = [
     ...config.js.catalog.map(
-      (name) => [name, "npm", catalog[name] ?? null] as [string, "npm", string | null],
+      (name) =>
+        [name, "npm", catalog[name] ?? null] as [string, "npm", string | null],
     ),
     [config.js.cli.package, "cli", config.js.cli.version],
   ];
@@ -557,9 +686,10 @@ export async function buildReport(
     : "";
   const ageExcluded = new Set(
     [
-      ...(bunfig.match(/^minimumReleaseAgeExcludes\s*=\s*\[([^\]]*)\]/m)?.[1] ?? "").matchAll(
-        /"([^"]+)"/g,
-      ),
+      ...(
+        bunfig.match(/^minimumReleaseAgeExcludes\s*=\s*\[([^\]]*)\]/m)?.[1] ??
+        ""
+      ).matchAll(/"([^"]+)"/g),
     ].map((m) => m[1]!),
   );
   for (const [name, kind, current] of npmTargets) {
@@ -615,8 +745,11 @@ export async function buildReport(
     // [patch.crates-io]) or as a workspace member of the fork under crates/tauri.
     const cargoPatchPresent =
       spec.kind !== "vendored-crate" ||
-      new RegExp(`\\bpath\\s*=\\s*"${escapeRegExp(spec.path ?? "")}"`).test(cargoToml) ||
-      (spec.path !== undefined && workspaceState(cargoToml, spec.path) === "member");
+      new RegExp(`\\bpath\\s*=\\s*"${escapeRegExp(spec.path ?? "")}"`).test(
+        cargoToml,
+      ) ||
+      (spec.path !== undefined &&
+        workspaceState(cargoToml, spec.path) === "member");
     let contains: boolean | null = null;
     const check = spec.upstreamContains;
     if (!offline && check) {
@@ -630,9 +763,12 @@ export async function buildReport(
             // oxlint-disable-next-line no-await-in-loop -- interrogation séquentielle de crates.io, limite de débit du registre
             pickLatest(await crateVersions(check.crate), config.line);
           // oxlint-disable-next-line no-await-in-loop -- téléchargement séquentiel du fichier amont de la version retenue
-          text = latest ? await crateFile(check.crate, latest, check.file) : null;
+          text = latest
+            ? await crateFile(check.crate, latest, check.file)
+            : null;
         }
-        contains = text === null ? null : new RegExp(check.regex, "m").test(text);
+        contains =
+          text === null ? null : new RegExp(check.regex, "m").test(text);
       } catch {
         contains = null;
       }
@@ -642,7 +778,9 @@ export async function buildReport(
         spec,
         fileText,
         cargoPatchPresent,
-        latestPublished: spec.crate ? (latestPublished.get(spec.crate) ?? null) : null,
+        latestPublished: spec.crate
+          ? (latestPublished.get(spec.crate) ?? null)
+          : null,
         upstreamContainsFix: contains,
       }),
     );
@@ -674,7 +812,13 @@ export async function buildReport(
   for (const spec of config.mirrors ?? []) {
     const path = join(root, spec.file);
     if (!existsSync(path)) {
-      drift.push({ file: spec.file, key: "*", name: "*", mirror: null, expected: "file present" });
+      drift.push({
+        file: spec.file,
+        key: "*",
+        name: "*",
+        mirror: null,
+        expected: "file present",
+      });
       continue;
     }
     // oxlint-disable-next-line no-await-in-loop -- lecture séquentielle des miroirs : l'ordre des dérives reste celui de la configuration
@@ -682,8 +826,18 @@ export async function buildReport(
   }
   const registry = await loadRegistry(root);
   if (registry && central["tauri"]) {
-    for (const { file, tag } of await confSchemaDrift(root, registry, central["tauri"])) {
-      drift.push({ file, key: "$schema", name: "tauri", mirror: tag, expected: central["tauri"] });
+    for (const { file, tag } of await confSchemaDrift(
+      root,
+      registry,
+      central["tauri"],
+    )) {
+      drift.push({
+        file,
+        key: "$schema",
+        name: "tauri",
+        mirror: tag,
+        expected: central["tauri"],
+      });
     }
   }
   return summarize(rows, patches, refs, drift);
@@ -698,11 +852,17 @@ async function snapshot(root: string, files: string[]): Promise<Snapshot> {
       return existsSync(path) ? readFile(path, "utf8") : null;
     }),
   );
-  return new Map(files.map((file, index): [string, string | null] => [file, texts[index] ?? null]));
+  return new Map(
+    files.map((file, index): [string, string | null] => [
+      file,
+      texts[index] ?? null,
+    ]),
+  );
 }
 
 async function restore(root: string, saved: Snapshot): Promise<void> {
-  for (const [file, text] of saved) if (text !== null) await writeFile(join(root, file), text);
+  for (const [file, text] of saved)
+    if (text !== null) await writeFile(join(root, file), text);
 }
 
 export async function applyReport(
@@ -710,7 +870,9 @@ export async function applyReport(
   config: TauriUpstreamConfig,
   report: Report,
 ): Promise<number> {
-  const todo = report.rows.filter((row) => row.status === "behind" && row.target);
+  const todo = report.rows.filter(
+    (row) => row.status === "behind" && row.target,
+  );
   if (todo.length === 0 && report.drift.length === 0) {
     console.log("[tauri-sync] nothing to apply");
     return 0;
@@ -734,7 +896,8 @@ export async function applyReport(
     let packageJson = saved.get("package.json")!;
     let configText = saved.get("tools/config/tauri-upstream.json")!;
     for (const row of todo) {
-      if (row.kind === "crate") cargoToml = rewriteWorkspaceDep(cargoToml, row.name, row.target!);
+      if (row.kind === "crate")
+        cargoToml = rewriteWorkspaceDep(cargoToml, row.name, row.target!);
       else if (row.kind === "npm")
         packageJson = rewriteCatalogEntry(packageJson, row.name, row.target!);
       else
@@ -763,11 +926,17 @@ export async function applyReport(
       }
     }
     if (registry && central["tauri"]) {
-      for (const file of await fixConfSchemas(root, registry, central["tauri"])) {
+      for (const file of await fixConfSchemas(
+        root,
+        registry,
+        central["tauri"],
+      )) {
         console.log(`[tauri-sync] $schema updated: ${file}`);
       }
     }
-    const gate = registry ? gateFromRegistry(registry) : { cargoPackages: [], generatedPaths: [] };
+    const gate = registry
+      ? gateFromRegistry(registry)
+      : { cargoPackages: [], generatedPaths: [] };
     const gates: string[][] = [
       ...(gate.cargoPackages.length > 0
         ? [
@@ -817,10 +986,14 @@ export async function runTauriSync(argv: string[]): Promise<number> {
     await readFile(join(args.root, "tools/config/tauri-upstream.json"), "utf8"),
   );
   const report = await buildReport(args.root, config, args.offline);
-  console.log(args.json ? JSON.stringify(report, null, 2) : renderReport(report));
+  console.log(
+    args.json ? JSON.stringify(report, null, 2) : renderReport(report),
+  );
   if (args.apply) {
     if (report.brokenPatches > 0) {
-      console.error("[tauri-sync] refusing to apply while a local patch is missing or unapplied");
+      console.error(
+        "[tauri-sync] refusing to apply while a local patch is missing or unapplied",
+      );
       return 1;
     }
     return applyReport(args.root, config, report);

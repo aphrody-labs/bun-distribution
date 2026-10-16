@@ -27,7 +27,9 @@ export default async function AdminPosts({
   searchParams: Promise<{ statut?: string }>;
 }) {
   const { statut } = await searchParams;
-  const filter: FilterKey = FILTERS.some((f) => f.key === statut) ? (statut as FilterKey) : "all";
+  const filter: FilterKey = FILTERS.some((f) => f.key === statut)
+    ? (statut as FilterKey)
+    : "all";
 
   const all = await db.query.posts.findMany({
     orderBy: (p, { desc }) => desc(p.updatedAt),
@@ -36,8 +38,13 @@ export default async function AdminPosts({
 
   const now = new Date();
   /** Le statut *effectif* : un « publié » daté dans le futur est en réalité programmé. */
-  const effectiveStatus = (p: { status: PostStatus; publishedAt: Date | null }): PostStatus =>
-    p.status === "published" && p.publishedAt && p.publishedAt > now ? "scheduled" : p.status;
+  const effectiveStatus = (p: {
+    status: PostStatus;
+    publishedAt: Date | null;
+  }): PostStatus =>
+    p.status === "published" && p.publishedAt && p.publishedAt > now
+      ? "scheduled"
+      : p.status;
 
   const counts = {
     all: all.length,
@@ -46,13 +53,16 @@ export default async function AdminPosts({
     draft: all.filter((p) => effectiveStatus(p) === "draft").length,
   };
 
-  const posts = filter === "all" ? all : all.filter((p) => effectiveStatus(p) === filter);
+  const posts =
+    filter === "all" ? all : all.filter((p) => effectiveStatus(p) === filter);
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-[28px] font-bold tracking-tight text-white">Articles</h1>
+          <h1 className="text-[28px] font-bold tracking-tight text-white">
+            Articles
+          </h1>
           <p className="mt-1 text-[14px] text-white/50">
             Le journal du site. Rédaction, programmation et référencement.
           </p>
@@ -67,7 +77,9 @@ export default async function AdminPosts({
         {FILTERS.map((f) => (
           <Link
             key={f.key}
-            href={f.key === "all" ? "/admin/posts" : `/admin/posts?statut=${f.key}`}
+            href={
+              f.key === "all" ? "/admin/posts" : `/admin/posts?statut=${f.key}`
+            }
             className={cn(
               "inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors",
               filter === f.key
@@ -85,14 +97,20 @@ export default async function AdminPosts({
         <div className="grid place-items-center gap-3 rounded-xl border border-dashed border-white/15 px-6 py-16 text-center">
           <Document className="size-8 text-white/25" />
           <p className="text-[15px] font-medium text-white">
-            {filter === "all" ? "Aucun article pour l'instant" : "Aucun article dans ce statut"}
+            {filter === "all"
+              ? "Aucun article pour l'instant"
+              : "Aucun article dans ce statut"}
           </p>
           {filter === "all" && (
             <>
               <p className="max-w-md text-[14px] text-white/50">
                 Le journal est vide. Le premier article donnera le ton du site.
               </p>
-              <Button size="lg" render={<Link href="/admin/posts/new" />} className="mt-2">
+              <Button
+                size="lg"
+                render={<Link href="/admin/posts/new" />}
+                className="mt-2"
+              >
                 <Plus className="size-4" />
                 Écrire le premier article
               </Button>
@@ -135,7 +153,9 @@ export default async function AdminPosts({
                       )}
                       {post.title}
                     </p>
-                    <p className="mt-0.5 truncate text-[13px] text-white/50">{post.excerpt}</p>
+                    <p className="mt-0.5 truncate text-[13px] text-white/50">
+                      {post.excerpt}
+                    </p>
                     <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-white/50">
                       <span>{post.author?.username ?? "—"}</span>
                       <span aria-hidden>·</span>
@@ -145,7 +165,9 @@ export default async function AdminPosts({
                       {post.tags?.length > 0 && (
                         <>
                           <span aria-hidden>·</span>
-                          <span className="truncate">{post.tags.join(", ")}</span>
+                          <span className="truncate">
+                            {post.tags.join(", ")}
+                          </span>
                         </>
                       )}
                     </p>

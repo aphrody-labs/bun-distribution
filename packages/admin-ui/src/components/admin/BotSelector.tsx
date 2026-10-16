@@ -32,7 +32,9 @@ export function useBotId(defaultId = "shenron") {
 
   useEffect(() => {
     const onPop = () => {
-      setId(new URLSearchParams(window.location.search).get("bot") ?? defaultId);
+      setId(
+        new URLSearchParams(window.location.search).get("bot") ?? defaultId,
+      );
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -73,7 +75,10 @@ export function BotSelector({ value, onChange, className }: BotSelectorProps) {
     return (
       <div className={`flex gap-2 ${className ?? ""}`}>
         {["a", "b", "c", "d", "e", "f"].map((k) => (
-          <div key={k} className="h-10 w-32 animate-pulse rounded-lg bg-dbz-card" />
+          <div
+            key={k}
+            className="h-10 w-32 animate-pulse rounded-lg bg-dbz-card"
+          />
         ))}
       </div>
     );

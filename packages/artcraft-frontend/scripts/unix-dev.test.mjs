@@ -11,7 +11,9 @@ import { setTimeout as delay } from "node:timers/promises";
 import { test } from "node:test";
 import WebSocket from "ws";
 
-const rootDir = Bun.fileURLToPath(new URL("../../../docs/libraries/artcraft/", import.meta.url));
+const rootDir = Bun.fileURLToPath(
+  new URL("../../../docs/libraries/artcraft/", import.meta.url),
+);
 const launcher = path.join(rootDir, "script/artcraft/unix_dev.sh");
 
 test(
@@ -29,17 +31,34 @@ test(
     assert.equal(config.build.beforeDevCommand, "");
     assert.ok(!record.args.includes("--no-watch"));
     assert.ok(!record.args.includes("--no-dev-server-wait"));
-    assert.equal(record.env.TAURI_APP_PATH, path.join(rootDir, "crates/desktop/artcraft"));
-    assert.equal(record.env.TAURI_FRONTEND_PATH, path.join(rootDir, "frontend"));
-    assert.ok(config.app.security.devCsp["connect-src"].includes(url.replace("http:", "ws:")));
+    assert.equal(
+      record.env.TAURI_APP_PATH,
+      path.join(rootDir, "crates/desktop/artcraft"),
+    );
+    assert.equal(
+      record.env.TAURI_FRONTEND_PATH,
+      path.join(rootDir, "frontend"),
+    );
+    assert.ok(
+      config.app.security.devCsp["connect-src"].includes(
+        url.replace("http:", "ws:"),
+      ),
+    );
     assert.match(await (await fetch(url)).text(), /\/src\/index\.tsx/);
-    assert.match(await (await fetch(`${url}/@vite/client`)).text(), /WebSocket/);
+    assert.match(
+      await (await fetch(`${url}/@vite/client`)).text(),
+      /WebSocket/,
+    );
 
     run.proc.kill("SIGINT");
     assert.deepEqual(await run.exited, [130, null], run.output());
     await until(() => !alive(record.pid) && !alive(record.childPid));
     await assert.rejects(fetch(url));
-    assert.equal(occupied.listening, true, "must not terminate the existing listener");
+    assert.equal(
+      occupied.listening,
+      true,
+      "must not terminate the existing listener",
+    );
   },
 );
 
@@ -55,20 +74,28 @@ test(
   },
 );
 
-test("SIGTERM shuts down the complete process tree", { timeout: 40000 }, async (t) => {
-  const run = await fixture(t);
-  const record = await run.record();
-  run.proc.kill("SIGTERM");
-  assert.deepEqual(await run.exited, [143, null], run.output());
-  await until(() => !alive(record.pid) && !alive(record.childPid));
-  await assert.rejects(fetch(overrides(record).build.devUrl));
-});
+test(
+  "SIGTERM shuts down the complete process tree",
+  { timeout: 40000 },
+  async (t) => {
+    const run = await fixture(t);
+    const record = await run.record();
+    run.proc.kill("SIGTERM");
+    assert.deepEqual(await run.exited, [143, null], run.output());
+    await until(() => !alive(record.pid) && !alive(record.childPid));
+    await assert.rejects(fetch(overrides(record).build.devUrl));
+  },
+);
 
-test("invalid ports fail before starting Tauri", { timeout: 40000 }, async (t) => {
-  const run = await fixture(t, { ARTCRAFT_DEV_PORT: "65536" });
-  assert.deepEqual(await run.exited, [1, null]);
-  assert.match(run.output(), /ARTCRAFT_DEV_PORT must be an integer/);
-});
+test(
+  "invalid ports fail before starting Tauri",
+  { timeout: 40000 },
+  async (t) => {
+    const run = await fixture(t, { ARTCRAFT_DEV_PORT: "65536" });
+    assert.deepEqual(await run.exited, [1, null]);
+    assert.match(run.output(), /ARTCRAFT_DEV_PORT must be an integer/);
+  },
+);
 
 test(
   "concurrent launchers use different ports without replacing either frontend",
@@ -98,27 +125,44 @@ test(
     const run = await fixture(t);
     const record = await run.record();
     const url = overrides(record).build.devUrl;
-    const probeDir = await mkdtemp(path.join(rootDir, "frontend/apps/artcraft/app/src/dev-probe-"));
+    const probeDir = await mkdtemp(
+      path.join(rootDir, "frontend/apps/artcraft/app/src/dev-probe-"),
+    );
     t.after(() => rm(probeDir, { recursive: true, force: true }));
     const probe = path.join(probeDir, "Probe.tsx");
     const moduleUrl = `/src/${path.basename(probeDir)}/Probe.tsx`;
-    await writeFile(probe, "export default function Probe() { return <div>before</div>; }\n");
+    await writeFile(
+      probe,
+      "export default function Probe() { return <div>before</div>; }\n",
+    );
     const code = await (await fetch(`${url}${moduleUrl}`)).text();
     assert.match(code, /\$RefreshReg\$/);
 
     const client = await (await fetch(`${url}/@vite/client`)).text();
     const token = client.match(/const wsToken = "([^"]+)"/)[1];
-    const ws = new WebSocket(`${url.replace("http:", "ws:")}/?token=${token}`, "vite-hmr");
+    const ws = new WebSocket(
+      `${url.replace("http:", "ws:")}/?token=${token}`,
+      "vite-hmr",
+    );
     t.after(() => ws.terminate());
     const messages = [];
     ws.on("message", (data) => messages.push(JSON.parse(data.toString())));
     await once(ws, "open");
-    await writeFile(probe, "export default function Probe() { return <div>after</div>; }\n");
+    await writeFile(
+      probe,
+      "export default function Probe() { return <div>after</div>; }\n",
+    );
     await until(() =>
-      messages.some((m) => m.type === "update" && m.updates.some((u) => u.path === moduleUrl)),
+      messages.some(
+        (m) =>
+          m.type === "update" && m.updates.some((u) => u.path === moduleUrl),
+      ),
     );
     assert.match(await (await fetch(`${url}${moduleUrl}`)).text(), /after/);
-    assert.ok(alive(record.pid), "JS edits must leave the Rust watcher running");
+    assert.ok(
+      alive(record.pid),
+      "JS edits must leave the Rust watcher running",
+    );
     assert.equal((await run.record()).pid, record.pid);
   },
 );
@@ -127,12 +171,19 @@ test(
   "Rust watcher arguments include SQLx inputs and preserve caller overrides",
   { timeout: 40000 },
   async (t) => {
-    const run = await fixture(t, { SQLX_OFFLINE: "false", RUSTFLAGS: "-C debuginfo=1" });
+    const run = await fixture(t, {
+      SQLX_OFFLINE: "false",
+      RUSTFLAGS: "-C debuginfo=1",
+    });
     const record = await run.record();
     assert.equal(record.env.SQLX_OFFLINE, "false");
     assert.equal(record.env.RUSTFLAGS, "-C debuginfo=1");
     assert.ok(record.args.includes(path.join(rootDir, ".sqlx")));
-    assert.ok(record.args.includes(path.join(rootDir, "_database/sql/artcraft_migrations")));
+    assert.ok(
+      record.args.includes(
+        path.join(rootDir, "_database/sql/artcraft_migrations"),
+      ),
+    );
     const ignores = await readFile(
       path.join(rootDir, "crates/desktop/artcraft/.taurignore"),
       "utf8",
@@ -175,7 +226,12 @@ setInterval(() => {}, 1000);
   const proc = spawn(launcher, [], {
     // Prove the launcher is independent of the invoking working directory.
     cwd: dir,
-    env: { ...process.env, ...env, PATH: `${dir}:${process.env.PATH}`, TEST_RECORD: recordFile },
+    env: {
+      ...process.env,
+      ...env,
+      PATH: `${dir}:${process.env.PATH}`,
+      TEST_RECORD: recordFile,
+    },
     stdio: ["ignore", "pipe", "pipe"],
   });
   let output = "";
@@ -187,7 +243,8 @@ setInterval(() => {}, 1000);
   });
   const exited = once(proc, "exit");
   t.after(async () => {
-    if (proc.exitCode === null && proc.signalCode === null) proc.kill("SIGTERM");
+    if (proc.exitCode === null && proc.signalCode === null)
+      proc.kill("SIGTERM");
     await exited;
   });
   return {

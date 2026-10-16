@@ -5,7 +5,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import packageMetadata from "../package.json";
 import { NativeInference } from "../src/inference";
-import { NATIVE_ABI_VERSIONS, nativeHostTriple, nativeTargetLibc } from "../src/native-artifact";
+import {
+  NATIVE_ABI_VERSIONS,
+  nativeHostTriple,
+  nativeTargetLibc,
+} from "../src/native-artifact";
 
 const directories: string[] = [];
 const previousLibrary = process.env.APHRODY_INFERENCE_LIBRARY;

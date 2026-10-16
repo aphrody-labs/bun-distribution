@@ -8,10 +8,16 @@ export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Modifier l'article" };
 
-export default async function EditPostPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditPostPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   await requireAdmin();
   const { id } = await params;
-  const post = await db.query.posts.findFirst({ where: (p, { eq }) => eq(p.id, id) });
+  const post = await db.query.posts.findFirst({
+    where: (p, { eq }) => eq(p.id, id),
+  });
   if (!post) notFound();
 
   return (

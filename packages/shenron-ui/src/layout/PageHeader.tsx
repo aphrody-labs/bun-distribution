@@ -14,27 +14,27 @@ import { HeroTitles } from "./HeroTitles";
  * (`"CLASSEMENTS"`) ont été repassés en casse normale côté appelant.
  */
 export function PageHeader({
-	eyebrow,
-	title,
-	subtitle,
-	size = "lg",
-	className = "mb-12",
+  eyebrow,
+  title,
+  subtitle,
+  size = "lg",
+  className = "mb-12",
 }: {
-	/** Surtitre orange. Omis, l'en-tête garde le filet mais pas la ligne d'accent. */
-	eyebrow?: ReactNode;
-	title: ReactNode;
-	subtitle?: ReactNode;
-	size?: "md" | "lg";
-	className?: string;
+  /** Surtitre orange. Omis, l'en-tête garde le filet mais pas la ligne d'accent. */
+  eyebrow?: ReactNode;
+  title: ReactNode;
+  subtitle?: ReactNode;
+  size?: "md" | "lg";
+  className?: string;
 }) {
-	return (
-		<header className={`border-b border-white/[0.08] pb-6 ${className}`}>
-			<HeroTitles
-				eyebrow={eyebrow}
-				title={title}
-				lead={subtitle}
-				regime={size === "md" ? "compact" : "plain"}
-			/>
-		</header>
-	);
+  return (
+    <header className={`border-b border-white/[0.08] pb-6 ${className}`}>
+      <HeroTitles
+        eyebrow={eyebrow}
+        title={title}
+        lead={subtitle}
+        regime={size === "md" ? "compact" : "plain"}
+      />
+    </header>
+  );
 }

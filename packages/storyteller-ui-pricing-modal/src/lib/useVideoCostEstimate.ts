@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { ModelPage } from "@storyteller/ui-model-selector";
-import { Model, VideoModel, resolveVideoDuration, resolveVideoGenerationCount, resolveVideoOutputFormat, videoResolutionValue } from "@storyteller/model-list";
+import {
+  Model,
+  VideoModel,
+  resolveVideoDuration,
+  resolveVideoGenerationCount,
+  resolveVideoOutputFormat,
+  videoResolutionValue,
+} from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { usePromptVideoStore } from "@storyteller/ui-promptbox";
 import {
@@ -44,11 +51,18 @@ export function useVideoCostEstimate(
 
     const videoModel = selectedModel as VideoModel;
     const commonAspectRatio = videoModel.supportsCommonAspectRatio
-      ? videoAspectRatioToCommonAspectRatio(aspectRatio, videoModel.sizeOptions)
-        ?? videoModel.defaultAspectRatio ?? videoModel.sizeOptions[0]?.tauriValue
+      ? (videoAspectRatioToCommonAspectRatio(
+          aspectRatio,
+          videoModel.sizeOptions,
+        ) ??
+        videoModel.defaultAspectRatio ??
+        videoModel.sizeOptions[0]?.tauriValue)
       : undefined;
-    const commonResolution = videoModel.resolutionOptions?.length ? videoResolutionValue(resolution) : undefined;
-    const isReferenceMode = inputMode === "reference" && !!videoModel.supportsReferenceMode;
+    const commonResolution = videoModel.resolutionOptions?.length
+      ? videoResolutionValue(resolution)
+      : undefined;
+    const isReferenceMode =
+      inputMode === "reference" && !!videoModel.supportsReferenceMode;
     const generationMode = videoStoreToGenerationMode(
       inputMode,
       referenceImages,
@@ -70,27 +84,60 @@ export function useVideoCostEstimate(
       generation_mode: generationMode,
       aspect_ratio: commonAspectRatio ?? undefined,
       resolution: commonResolution ?? undefined,
-      duration_seconds: resolveVideoDuration(videoModel, duration, isReferenceMode) ?? undefined,
-      generate_audio: videoModel.generateWithSound ? generateWithSound : undefined,
-      bitrate: videoModel.bitrateOptions?.length ? bitrate ?? videoModel.defaultBitrate ?? videoModel.bitrateOptions[0] : undefined,
+      duration_seconds:
+        resolveVideoDuration(videoModel, duration, isReferenceMode) ??
+        undefined,
+      generate_audio: videoModel.generateWithSound
+        ? generateWithSound
+        : undefined,
+      bitrate: videoModel.bitrateOptions?.length
+        ? (bitrate ?? videoModel.defaultBitrate ?? videoModel.bitrateOptions[0])
+        : undefined,
       output_format: resolveVideoOutputFormat(videoModel, outputFormat),
-      start_frame_image_media_token: !isReferenceMode ? referenceImages[0]?.mediaToken : undefined,
-      end_frame_image_media_token: !isReferenceMode ? endFrameImage?.mediaToken : undefined,
-      reference_image_media_tokens: isReferenceMode ? referenceImages.map((image) => image.mediaToken) : undefined,
-      reference_video_media_tokens: isReferenceMode ? referenceVideos.map((video) => video.mediaToken) : undefined,
-      reference_audio_media_tokens: isReferenceMode ? referenceAudios.map((audio) => audio.mediaToken) : undefined,
-      estimate_only: isReferenceMode ? {
-        total_input_video_duration_millis: referenceVideos.length
-          ? Math.round(referenceVideos.reduce((sum, video) => sum + video.duration, 0) * 1000) : undefined,
-        total_input_audio_duration_millis: referenceAudios.length
-          ? Math.round(referenceAudios.reduce((sum, audio) => sum + audio.duration, 0) * 1000) : undefined,
-      } : undefined,
+      start_frame_image_media_token: !isReferenceMode
+        ? referenceImages[0]?.mediaToken
+        : undefined,
+      end_frame_image_media_token: !isReferenceMode
+        ? endFrameImage?.mediaToken
+        : undefined,
+      reference_image_media_tokens: isReferenceMode
+        ? referenceImages.map((image) => image.mediaToken)
+        : undefined,
+      reference_video_media_tokens: isReferenceMode
+        ? referenceVideos.map((video) => video.mediaToken)
+        : undefined,
+      reference_audio_media_tokens: isReferenceMode
+        ? referenceAudios.map((audio) => audio.mediaToken)
+        : undefined,
+      estimate_only: isReferenceMode
+        ? {
+            total_input_video_duration_millis: referenceVideos.length
+              ? Math.round(
+                  referenceVideos.reduce(
+                    (sum, video) => sum + video.duration,
+                    0,
+                  ) * 1000,
+                )
+              : undefined,
+            total_input_audio_duration_millis: referenceAudios.length
+              ? Math.round(
+                  referenceAudios.reduce(
+                    (sum, audio) => sum + audio.duration,
+                    0,
+                  ) * 1000,
+                )
+              : undefined,
+          }
+        : undefined,
     })
       .then((result) => {
         if (cancelled) return;
         if (isEstimateVideoCostSuccess(result)) {
           const unitCredits = result.payload.cost_in_credits;
-          const count = resolveVideoGenerationCount(videoModel, generationCount);
+          const count = resolveVideoGenerationCount(
+            videoModel,
+            generationCount,
+          );
           const credits = unitCredits == null ? null : unitCredits * count;
           setEstimatedCreditsForPage(ModelPage.ImageToVideo, credits);
         } else {
@@ -104,7 +151,9 @@ export function useVideoCostEstimate(
       .finally(() => {
         if (!cancelled) setIsLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [
     activePage,
     selectedModel,

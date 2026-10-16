@@ -48,8 +48,14 @@ export function searchModelCatalog<
   const rank = (document: (typeof documents)[number]) => {
     const names = document.names.map((name) => name.trim().toLowerCase());
     if (names.includes(query)) return 0;
-    if (document.variants.some((variant) => variant.trim().toLowerCase() === query)) return 1;
-    if (names.some((name) => name.startsWith(query) || query.startsWith(name))) return 2;
+    if (
+      document.variants.some(
+        (variant) => variant.trim().toLowerCase() === query,
+      )
+    )
+      return 1;
+    if (names.some((name) => name.startsWith(query) || query.startsWith(name)))
+      return 2;
     return 3;
   };
   return fuse
@@ -83,7 +89,10 @@ export function entryBytes(entry: Pick<CatalogEntry, "files">): number | null {
   return total;
 }
 
-export function startDownload(total: number | null, now: number): DownloadState {
+export function startDownload(
+  total: number | null,
+  now: number,
+): DownloadState {
   return {
     roles: {},
     downloaded: 0,
@@ -102,7 +111,10 @@ export function applyProgress(
   now: number,
 ): DownloadState {
   const roles = { ...state.roles, [event.role ?? "file"]: event.downloaded };
-  const downloaded = Object.values(roles).reduce((sum, bytes) => sum + bytes, 0);
+  const downloaded = Object.values(roles).reduce(
+    (sum, bytes) => sum + bytes,
+    0,
+  );
   const elapsed = (now - state.sampledAt) / 1000;
   const delta = downloaded - state.downloaded;
   let speedBps = state.speedBps;
@@ -110,19 +122,25 @@ export function applyProgress(
     const instant = delta / elapsed;
     speedBps = speedBps === null ? instant : speedBps * 0.7 + instant * 0.3;
   }
-  const remaining = state.total === null ? null : Math.max(0, state.total - downloaded);
-  const etaSeconds = remaining !== null && speedBps ? Math.ceil(remaining / speedBps) : null;
+  const remaining =
+    state.total === null ? null : Math.max(0, state.total - downloaded);
+  const etaSeconds =
+    remaining !== null && speedBps ? Math.ceil(remaining / speedBps) : null;
   return { ...state, roles, downloaded, speedBps, etaSeconds, sampledAt: now };
 }
 
 export function installedIds(installed: InstalledModels | null): Set<string> {
   return new Set(
-    (installed?.models ?? []).flatMap((model) => (model.catalog_id ? [model.catalog_id] : [])),
+    (installed?.models ?? []).flatMap((model) =>
+      model.catalog_id ? [model.catalog_id] : [],
+    ),
   );
 }
 
 /** Largest probed GPU memory in bytes; `null` when the GPU probe failed. */
-export function maxVramBytes(hardware: HardwareTelemetry | null): number | null {
+export function maxVramBytes(
+  hardware: HardwareTelemetry | null,
+): number | null {
   if (!hardware || hardware.gpus === null) return null;
   const fromGpus = Math.max(0, ...hardware.gpus.map((gpu) => gpu.vram_bytes));
   const fromCuda = (hardware.cudaVramTotalMb ?? 0) * 1024 * 1024;
@@ -199,7 +217,10 @@ export interface DetectedExternalStore {
 }
 
 /** Resolve external model store path against a base user home directory, respecting platform separators. */
-export function resolveExternalModelPath(homeDir: string, defaultSubpath: string): string {
+export function resolveExternalModelPath(
+  homeDir: string,
+  defaultSubpath: string,
+): string {
   const isWindows = homeDir.includes("\\") || /^[a-zA-Z]:/.test(homeDir);
   const sep = isWindows ? "\\" : "/";
   const cleanHome = homeDir.replace(/[/\\]+$/, "");
@@ -210,9 +231,13 @@ export function resolveExternalModelPath(homeDir: string, defaultSubpath: string
 }
 
 /** Given a home directory, build candidate paths for all standard external model stores. */
-export function buildStandardExternalCandidates(homeDir: string): ExternalStoreCandidate[] {
+export function buildStandardExternalCandidates(
+  homeDir: string,
+): ExternalStoreCandidate[] {
   return STANDARD_EXTERNAL_MODEL_DIRS.map((def) =>
-    Object.assign(def, { path: resolveExternalModelPath(homeDir, def.defaultSubpath) }),
+    Object.assign(def, {
+      path: resolveExternalModelPath(homeDir, def.defaultSubpath),
+    }),
   );
 }
 
@@ -241,8 +266,12 @@ export function evaluateDetectedStores(
 ): DetectedExternalStore[] {
   return candidates.map((candidate) => {
     const probe = probes[candidate.path] ?? probes[candidate.id];
-    const exists = typeof probe === "boolean" ? probe : (probe?.exists ?? false);
-    const modelCount = typeof probe === "object" && probe !== null ? probe.modelCount : undefined;
+    const exists =
+      typeof probe === "boolean" ? probe : (probe?.exists ?? false);
+    const modelCount =
+      typeof probe === "object" && probe !== null
+        ? probe.modelCount
+        : undefined;
     return {
       id: candidate.id,
       name: candidate.name,

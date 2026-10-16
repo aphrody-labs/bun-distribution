@@ -46,7 +46,7 @@ export interface EnqueueImageToVideoRequest {
   // Optional. Whether to generate audio alongside the video (used by some models like Veo2)
   generate_audio?: boolean;
 
-  // Optional. Common aspect ratio for other models. 
+  // Optional. Common aspect ratio for other models.
   // Not all are supported by all models, but Artcraft will compensate.
   aspect_ratio?: string; // TODO: Typesafety.
 
@@ -97,8 +97,7 @@ export interface EnqueueImageToVideoSuccess extends CommandResult {
 }
 
 export type EnqueueImageToVideoResult =
-  | EnqueueImageToVideoSuccess
-  | EnqueueImageToVideoError;
+  EnqueueImageToVideoSuccess | EnqueueImageToVideoError;
 
 export const EnqueueImageToVideo = async (
   request: EnqueueImageToVideoRequest,
@@ -153,31 +152,35 @@ export const EnqueueImageToVideo = async (
     request.reference_image_media_tokens &&
     request.reference_image_media_tokens.length > 0
   ) {
-    mutableRequest.reference_image_media_tokens =
-      uniqueTokens(request.reference_image_media_tokens);
+    mutableRequest.reference_image_media_tokens = uniqueTokens(
+      request.reference_image_media_tokens,
+    );
   }
 
   if (
     request.reference_video_media_tokens &&
     request.reference_video_media_tokens.length > 0
   ) {
-    mutableRequest.reference_video_media_tokens =
-      uniqueTokens(request.reference_video_media_tokens);
+    mutableRequest.reference_video_media_tokens = uniqueTokens(
+      request.reference_video_media_tokens,
+    );
   }
 
   if (
     request.reference_audio_media_tokens &&
     request.reference_audio_media_tokens.length > 0
   ) {
-    mutableRequest.reference_audio_media_tokens =
-      uniqueTokens(request.reference_audio_media_tokens);
+    mutableRequest.reference_audio_media_tokens = uniqueTokens(
+      request.reference_audio_media_tokens,
+    );
   }
 
   if (
     request.reference_character_tokens &&
     request.reference_character_tokens.length > 0
   ) {
-    mutableRequest.reference_character_tokens = request.reference_character_tokens;
+    mutableRequest.reference_character_tokens =
+      request.reference_character_tokens;
   }
 
   const result = await invoke("enqueue_image_to_video_command", {

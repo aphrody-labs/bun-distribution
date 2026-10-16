@@ -13,7 +13,10 @@ interface CircleButtonGroupProps {
  * A connected row of icon buttons on one `surface-container-high` pill (M3 connected button group
  * / floating toolbar). Children lose their own container; their state layer still shows.
  */
-export function CircleButtonGroup({ children, className }: CircleButtonGroupProps) {
+export function CircleButtonGroup({
+  children,
+  className,
+}: CircleButtonGroupProps) {
   const childArray = Children.toArray(children);
 
   return (

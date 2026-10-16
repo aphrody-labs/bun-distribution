@@ -6,7 +6,9 @@ import { loadProfile, trainHostId } from "./lib/profile.ts";
 export async function resolveActive(ctx: Context): Promise<string | undefined> {
   const pack = await loadProfile(ctx.paths);
   if (!pack) {
-    ctx.ui.say("Pas encore de fichier d'accès : choisis d'abord « Tout installer ou réparer ».");
+    ctx.ui.say(
+      "Pas encore de fichier d'accès : choisis d'abord « Tout installer ou réparer ».",
+    );
     return undefined;
   }
   return trainHostId(pack);

@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterEach, expect, spyOn, test } from "bun:test";
-import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -10,11 +17,16 @@ import {
   type BuildFactoryConfig,
 } from "../src/build-factory.ts";
 import { factorySourceScope } from "../src/build-factory-source.ts";
-import { factoryJobPlan, factoryJobStatusPlan } from "../src/build-factory-jobs.ts";
+import {
+  factoryJobPlan,
+  factoryJobStatusPlan,
+} from "../src/build-factory-jobs.ts";
 
 const roots: string[] = [];
 afterEach(async () => {
-  await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+  await Promise.all(
+    roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
+  );
 });
 
 async function fixture() {
@@ -69,7 +81,14 @@ async function fixture() {
   const nested = await repository("nested-source");
   const selected = await repository("selected-source");
   const sibling = await repository("sibling-source");
-  await git(selected.local, "submodule", "add", "--quiet", `file://${nested.bare}`, "nested");
+  await git(
+    selected.local,
+    "submodule",
+    "add",
+    "--quiet",
+    `file://${nested.bare}`,
+    "nested",
+  );
   await git(selected.local, "commit", "--quiet", "-am", "nested gitlink");
   await git(selected.local, "push", "--quiet", "origin", "main");
   selected.revision = await git(selected.local, "rev-parse", "HEAD");
@@ -78,8 +97,22 @@ async function fixture() {
   await git(source, "config", "user.name", "fixture");
   await git(source, "config", "user.email", "fixture@localhost");
   await writeFile(join(source, "owner.txt"), "parent glue\n");
-  await git(source, "submodule", "add", "--quiet", `file://${selected.bare}`, "vendor/bun");
-  await git(source, "submodule", "add", "--quiet", `file://${sibling.bare}`, "design/m3");
+  await git(
+    source,
+    "submodule",
+    "add",
+    "--quiet",
+    `file://${selected.bare}`,
+    "vendor/bun",
+  );
+  await git(
+    source,
+    "submodule",
+    "add",
+    "--quiet",
+    `file://${sibling.bare}`,
+    "design/m3",
+  );
   await git(source, "add", ".");
   await git(source, "commit", "--quiet", "-m", "parent sources");
   await git(source, "remote", "add", "origin", remoteUrl);
@@ -95,7 +128,12 @@ async function fixture() {
     lockPath: join(root, "locks/heavy.lock"),
     repositories: { aphrody: join(root, "workspaces/aphrody"), yolo: checkout },
   };
-  const pin = { path: source, remote: "origin", url: remoteUrl, owners: ["aphrody-labs"] };
+  const pin = {
+    path: source,
+    remote: "origin",
+    url: remoteUrl,
+    owners: ["aphrody-labs"],
+  };
   const execute = async (command: string) => {
     const child = Bun.spawn(["bash", "-c", command], {
       windowsHide: true,
@@ -111,10 +149,14 @@ async function fixture() {
     ]);
     return { output, error, exitCode };
   };
-  const prepare = (parent = revision, paths: readonly string[] | null = ["vendor/bun"]) =>
+  const prepare = (
+    parent = revision,
+    paths: readonly string[] | null = ["vendor/bun"],
+  ) =>
     execute(
-      buildFactoryPreparePlan(config, "yolo", parent, pin, { submodules: paths ?? undefined })
-        .transport[5]!,
+      buildFactoryPreparePlan(config, "yolo", parent, pin, {
+        submodules: paths ?? undefined,
+      }).transport[5]!,
     );
   const commit = async (message: string) => {
     await git(source, "add", ".");
@@ -175,15 +217,19 @@ test.skipIf(process.platform === "win32")(
     const result = await f.prepare(revision);
     expect(result.exitCode).toBe(0);
     expect(await f.git(f.checkout, "rev-parse", "HEAD")).toBe(revision);
-    expect(await f.git(join(f.checkout, "vendor/bun"), "rev-parse", "HEAD")).toBe(
-      f.selected.revision,
+    expect(
+      await f.git(join(f.checkout, "vendor/bun"), "rev-parse", "HEAD"),
+    ).toBe(f.selected.revision);
+    expect(
+      await f.git(join(f.checkout, "vendor/bun/nested"), "rev-parse", "HEAD"),
+    ).toBe(f.nested.revision);
+    expect(await Bun.file(join(f.checkout, "design/m3/.git")).exists()).toBe(
+      false,
     );
-    expect(await f.git(join(f.checkout, "vendor/bun/nested"), "rev-parse", "HEAD")).toBe(
-      f.nested.revision,
-    );
-    expect(await Bun.file(join(f.checkout, "design/m3/.git")).exists()).toBe(false);
     const receipt = JSON.parse(
-      result.output.split("\n").find((line) => line.startsWith('{"sourceScope"'))!,
+      result.output
+        .split("\n")
+        .find((line) => line.startsWith('{"sourceScope"'))!,
     );
     expect(receipt.sourceScope).toEqual({
       kind: "gitlinks",
@@ -191,7 +237,12 @@ test.skipIf(process.platform === "win32")(
       gitlinks: [{ path: "vendor/bun", revision: f.selected.revision }],
       wholeRepositoryQualified: false,
     });
-    const defaultPlan = buildFactoryPreparePlan(f.config, "yolo", revision, f.pin);
+    const defaultPlan = buildFactoryPreparePlan(
+      f.config,
+      "yolo",
+      revision,
+      f.pin,
+    );
     expect(defaultPlan.sourceScope).toEqual({ kind: "all" });
     expect(defaultPlan.transport[5]).toContain(
       "git submodule update --init --recursive --jobs 4 --filter=blob:none\n",
@@ -206,15 +257,26 @@ test.skipIf(process.platform === "win32")(
     expect((await f.prepare(f.revision, null)).exitCode).toBe(0);
     const sibling = join(f.checkout, "design/m3");
     await writeFile(join(sibling, "source.txt"), "concurrent unrelated work\n");
-    await writeFile(join(sibling, "untracked.txt"), "unrelated untracked work\n");
+    await writeFile(
+      join(sibling, "untracked.txt"),
+      "unrelated untracked work\n",
+    );
     expect((await f.prepare()).exitCode).toBe(0);
-    const run = buildFactoryPlan(f.config, "yolo", f.revision, ["bash", "-c", "printf qualified"], {
-      submodules: ["vendor/bun"],
-    });
+    const run = buildFactoryPlan(
+      f.config,
+      "yolo",
+      f.revision,
+      ["bash", "-c", "printf qualified"],
+      {
+        submodules: ["vendor/bun"],
+      },
+    );
     const result = await f.execute(run.transport[5]!);
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain("qualified");
-    expect(await readFile(join(sibling, "source.txt"), "utf8")).toBe("concurrent unrelated work\n");
+    expect(await readFile(join(sibling, "source.txt"), "utf8")).toBe(
+      "concurrent unrelated work\n",
+    );
     expect(await readFile(join(sibling, "untracked.txt"), "utf8")).toBe(
       "unrelated untracked work\n",
     );
@@ -231,9 +293,14 @@ test.skipIf(process.platform === "win32")(
     await f.git(f.checkout, "config", "submodule.vendor/bun.ignore", "all");
     await writeFile(join(selected, "source.txt"), "selected concurrent work\n");
     expect((await f.prepare()).exitCode).toBe(2);
-    expect(await readFile(join(selected, "source.txt"), "utf8")).toBe("selected concurrent work\n");
+    expect(await readFile(join(selected, "source.txt"), "utf8")).toBe(
+      "selected concurrent work\n",
+    );
     await f.git(selected, "restore", "source.txt");
-    await writeFile(join(selected, "nested/source.txt"), "nested concurrent work\n");
+    await writeFile(
+      join(selected, "nested/source.txt"),
+      "nested concurrent work\n",
+    );
     expect((await f.prepare()).exitCode).toBe(2);
     await f.git(join(selected, "nested"), "restore", "source.txt");
     await f.git(
@@ -244,13 +311,21 @@ test.skipIf(process.platform === "win32")(
     );
     const stagedPinRefusal = await f.prepare();
     expect(stagedPinRefusal.exitCode).toBe(2);
-    expect(stagedPinRefusal.error).toContain("gitlink differs from the parent index or pin");
-    expect(await f.git(f.checkout, "rev-parse", ":vendor/bun")).toBe(f.nested.revision);
-    expect(await f.git(selected, "rev-parse", "HEAD")).toBe(f.selected.revision);
+    expect(stagedPinRefusal.error).toContain(
+      "gitlink differs from the parent index or pin",
+    );
+    expect(await f.git(f.checkout, "rev-parse", ":vendor/bun")).toBe(
+      f.nested.revision,
+    );
+    expect(await f.git(selected, "rev-parse", "HEAD")).toBe(
+      f.selected.revision,
+    );
     await f.git(f.checkout, "restore", "--staged", "vendor/bun");
     await writeFile(join(f.checkout, "owner.txt"), "concurrent glue\n");
     expect((await f.prepare()).exitCode).toBe(2);
-    expect(await readFile(join(f.checkout, "owner.txt"), "utf8")).toBe("concurrent glue\n");
+    expect(await readFile(join(f.checkout, "owner.txt"), "utf8")).toBe(
+      "concurrent glue\n",
+    );
   },
 );
 
@@ -271,7 +346,9 @@ test.skipIf(process.platform === "win32")(
     const escaped = await f.prepare();
     expect(escaped.exitCode).toBe(2);
     expect(escaped.error).toContain("resolves elsewhere");
-    expect(await readFile(join(outside, "preserved.txt"), "utf8")).toBe("outside work\n");
+    expect(await readFile(join(outside, "preserved.txt"), "utf8")).toBe(
+      "outside work\n",
+    );
   },
 );
 
@@ -281,13 +358,28 @@ test.skipIf(process.platform === "win32")(
     const f = await fixture();
     expect((await f.prepare()).exitCode).toBe(0);
     await mkdir(join(f.selected.local, "ignored"));
-    await writeFile(join(f.selected.local, "ignored/collision.txt"), "new tracked input\n");
+    await writeFile(
+      join(f.selected.local, "ignored/collision.txt"),
+      "new tracked input\n",
+    );
     await f.git(f.selected.local, "add", "-f", "ignored/collision.txt");
-    await f.git(f.selected.local, "commit", "--quiet", "-m", "tracked ignored path");
+    await f.git(
+      f.selected.local,
+      "commit",
+      "--quiet",
+      "-m",
+      "tracked ignored path",
+    );
     await f.git(f.selected.local, "push", "--quiet", "origin", "main");
     const next = await f.git(f.selected.local, "rev-parse", "HEAD");
     await f.git(join(f.source, "vendor/bun"), "fetch", "origin");
-    await f.git(join(f.source, "vendor/bun"), "checkout", "--quiet", "--detach", next);
+    await f.git(
+      join(f.source, "vendor/bun"),
+      "checkout",
+      "--quiet",
+      "--detach",
+      next,
+    );
     const parent = await f.commit("next selected pin");
     await mkdir(join(f.checkout, "vendor/bun/ignored"));
     await writeFile(
@@ -295,12 +387,15 @@ test.skipIf(process.platform === "win32")(
       "protected ignored output\n",
     );
     expect((await f.prepare(parent)).exitCode).not.toBe(0);
-    expect(await readFile(join(f.checkout, "vendor/bun/ignored/collision.txt"), "utf8")).toBe(
-      "protected ignored output\n",
-    );
-    expect(await f.git(join(f.checkout, "vendor/bun"), "rev-parse", "HEAD")).toBe(
-      f.selected.revision,
-    );
+    expect(
+      await readFile(
+        join(f.checkout, "vendor/bun/ignored/collision.txt"),
+        "utf8",
+      ),
+    ).toBe("protected ignored output\n");
+    expect(
+      await f.git(join(f.checkout, "vendor/bun"), "rev-parse", "HEAD"),
+    ).toBe(f.selected.revision);
   },
 );
 
@@ -314,13 +409,21 @@ test.skipIf(process.platform === "win32")(
     });
     const all = buildFactoryPlan(f.config, "yolo", f.revision, ["true"]);
     const job = factoryJobPlan(f.config, selected, "selected-fixture");
-    expect(job.fingerprint).not.toBe(factoryJobPlan(f.config, all, "all-fixture").fingerprint);
+    expect(job.fingerprint).not.toBe(
+      factoryJobPlan(f.config, all, "all-fixture").fingerprint,
+    );
     expect(() =>
-      factoryJobPlan(f.config, { ...selected, sourceScope: { kind: "all" } }, "tampered"),
+      factoryJobPlan(
+        f.config,
+        { ...selected, sourceScope: { kind: "all" } },
+        "tampered",
+      ),
     ).toThrow("intact");
     const submitted = await f.execute(job.transport[5]!);
     expect(submitted.exitCode).toBe(0);
-    expect(JSON.parse(submitted.output).sourceScope).toEqual(selected.sourceScope);
+    expect(JSON.parse(submitted.output).sourceScope).toEqual(
+      selected.sourceScope,
+    );
     let receipt: any;
     for (let i = 0; i < 100; i++) {
       // oxlint-disable-next-line no-await-in-loop
@@ -340,7 +443,9 @@ test.skipIf(process.platform === "win32")(
 test("CLI selection rejects an incompatible --no-submodules combination before dispatch", async () => {
   const root = await mkdtemp(join(tmpdir(), "aphrody-factory-selection-cli-"));
   roots.push(root);
-  expect(await runBuildFactory(["prepare", "--submodules", "../outside"], root)).toBe(2);
+  expect(
+    await runBuildFactory(["prepare", "--submodules", "../outside"], root),
+  ).toBe(2);
   expect(() =>
     buildFactoryPreparePlan(
       { schemaVersion: 1 } as BuildFactoryConfig,
@@ -363,7 +468,10 @@ test.skipIf(process.platform === "win32")(
     const f = await fixture();
     const root = join(f.root, "owner-config");
     await mkdir(join(root, "tools", "config"), { recursive: true });
-    await writeFile(join(root, "tools/config/build-factory.json"), JSON.stringify(f.config));
+    await writeFile(
+      join(root, "tools/config/build-factory.json"),
+      JSON.stringify(f.config),
+    );
     await writeFile(
       join(root, "tools/config/commit-sync.json"),
       JSON.stringify({
@@ -389,13 +497,22 @@ test.skipIf(process.platform === "win32")(
       logs.push(String(value));
     });
     try {
-      const args = ["--repo", "yolo", "--revision", f.revision, "--submodules", "vendor/bun"];
+      const args = [
+        "--repo",
+        "yolo",
+        "--revision",
+        f.revision,
+        "--submodules",
+        "vendor/bun",
+      ];
       expect(await runBuildFactory(["prepare", ...args], root)).toBe(0);
       expect(JSON.parse(logs.at(-1)!).sourceScope).toEqual({
         kind: "gitlinks",
         paths: ["vendor/bun"],
       });
-      expect(await runBuildFactory(["plan", ...args, "--", "true"], root)).toBe(0);
+      expect(await runBuildFactory(["plan", ...args, "--", "true"], root)).toBe(
+        0,
+      );
       expect(JSON.parse(logs.at(-1)!).sourceScope).toEqual({
         kind: "gitlinks",
         paths: ["vendor/bun"],
@@ -407,10 +524,17 @@ test.skipIf(process.platform === "win32")(
         ),
       ).toBe(0);
       const job = JSON.parse(logs.at(-1)!);
-      expect(job.sourceScope).toEqual({ kind: "gitlinks", paths: ["vendor/bun"] });
+      expect(job.sourceScope).toEqual({
+        kind: "gitlinks",
+        paths: ["vendor/bun"],
+      });
       expect(job.fingerprint).toMatch(/^[a-f0-9]{64}$/u);
-      expect(await Bun.file(join(f.checkout, ".git/HEAD")).exists()).toBe(false);
-      expect(await runBuildFactory(["prepare", ...args, "--no-submodules"], root)).toBe(2);
+      expect(await Bun.file(join(f.checkout, ".git/HEAD")).exists()).toBe(
+        false,
+      );
+      expect(
+        await runBuildFactory(["prepare", ...args, "--no-submodules"], root),
+      ).toBe(2);
       expect(JSON.parse(logs.at(-1)!).error).toContain("cannot be combined");
     } finally {
       log.mockRestore();
@@ -424,14 +548,26 @@ test.skipIf(process.platform === "win32")(
     const f = await fixture();
     expect((await f.prepare()).exitCode).toBe(0);
     const selected = join(f.checkout, "vendor/bun");
-    const plan = buildFactoryPlan(f.config, "yolo", f.revision, ["bash", "-c", "printf EXECUTED"], {
-      submodules: ["vendor/bun"],
-    });
+    const plan = buildFactoryPlan(
+      f.config,
+      "yolo",
+      f.revision,
+      ["bash", "-c", "printf EXECUTED"],
+      {
+        submodules: ["vendor/bun"],
+      },
+    );
     await f.git(selected, "checkout", "--quiet", "--detach", "HEAD^");
     const wrongPin = await f.execute(plan.transport[5]!);
     expect(wrongPin.exitCode).not.toBe(0);
     expect(wrongPin.output).not.toContain("EXECUTED");
-    await f.git(selected, "checkout", "--quiet", "--detach", f.selected.revision);
+    await f.git(
+      selected,
+      "checkout",
+      "--quiet",
+      "--detach",
+      f.selected.revision,
+    );
     await rm(join(selected, "nested"), { recursive: true });
     const absent = await f.execute(plan.transport[5]!);
     expect(absent.exitCode).not.toBe(0);

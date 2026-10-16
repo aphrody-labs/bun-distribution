@@ -8,7 +8,12 @@ import {
   SUPPORTED_LANGUAGES,
   type TargetLanguage,
 } from "./validate.js";
-import { DocAiError, InvalidArgumentsError, IoError, toMessage } from "./errors.js";
+import {
+  DocAiError,
+  InvalidArgumentsError,
+  IoError,
+  toMessage,
+} from "./errors.js";
 
 export const USAGE = `
 AI-First Documentation & Translation System CLI
@@ -114,9 +119,17 @@ async function readPackageVersion(): Promise<string> {
   }
 }
 
-async function handleTranslate(targetPath: string, lang: TargetLanguage): Promise<void> {
+async function handleTranslate(
+  targetPath: string,
+  lang: TargetLanguage,
+): Promise<void> {
   if (excludedTranslationPath(targetPath)) return;
-  if ((await fs.lstat(path.resolve(targetPath)).catch(() => undefined))?.isSymbolicLink()) return;
+  if (
+    (
+      await fs.lstat(path.resolve(targetPath)).catch(() => undefined)
+    )?.isSymbolicLink()
+  )
+    return;
   const absolutePath = await assertPath(targetPath, "any");
   const stat = await fs.stat(absolutePath);
   if (stat.isFile()) {
@@ -146,7 +159,12 @@ const EXCLUDED_TRANSLATION_DIRECTORIES = new Set([
 
 /** Standalone guards; the workspace owner selects the wider documentation scope. */
 function excludedTranslationPath(filePath: string): boolean {
-  if (/^(?:MEMORY|CONVERSATIONS|TRANSCRIPTS|LIVE)\.md$/i.test(path.basename(filePath))) return true;
+  if (
+    /^(?:MEMORY|CONVERSATIONS|TRANSCRIPTS|LIVE)\.md$/i.test(
+      path.basename(filePath),
+    )
+  )
+    return true;
   return filePath
     .split(/[\\/]/)
     .some(
@@ -168,7 +186,10 @@ function excludedTranslationContent(content: string): boolean {
   );
 }
 
-async function translateFile(filePath: string, lang: TargetLanguage): Promise<void> {
+async function translateFile(
+  filePath: string,
+  lang: TargetLanguage,
+): Promise<void> {
   const ext = path.extname(filePath);
   if (ext !== ".md") {
     console.log(`Skipping non-markdown file: ${filePath}`);
@@ -178,13 +199,17 @@ async function translateFile(filePath: string, lang: TargetLanguage): Promise<vo
   if (
     excludedTranslationPath(filePath) ||
     /\.(?:en|fr)\.md$/i.test(filePath) ||
-    /^(?:LICENSE|NOTICE|COPYING|COPYRIGHT)(?:[.-]|$)/i.test(path.basename(filePath))
+    /^(?:LICENSE|NOTICE|COPYING|COPYRIGHT)(?:[.-]|$)/i.test(
+      path.basename(filePath),
+    )
   ) {
     return;
   }
 
   if ((await fs.lstat(filePath)).isSymbolicLink()) return;
-  console.log(`Translating: ${path.basename(filePath)} -> Target Language: ${lang}...`);
+  console.log(
+    `Translating: ${path.basename(filePath)} -> Target Language: ${lang}...`,
+  );
   let content: string;
   try {
     content = await fs.readFile(filePath, "utf-8");
@@ -203,11 +228,14 @@ async function translateFile(filePath: string, lang: TargetLanguage): Promise<vo
   if (baseName.endsWith(".fr")) baseName = baseName.slice(0, -3);
 
   const outPath = path.join(path.dirname(filePath), `${baseName}.${lang}.md`);
-  const outputStat = await fs.lstat(outPath).catch((error: NodeJS.ErrnoException) => {
-    if (error.code !== "ENOENT") throw error;
-    return undefined;
-  });
-  if (outputStat?.isSymbolicLink()) throw new IoError(`Refusing symbolic-link output: ${outPath}`);
+  const outputStat = await fs
+    .lstat(outPath)
+    .catch((error: NodeJS.ErrnoException) => {
+      if (error.code !== "ENOENT") throw error;
+      return undefined;
+    });
+  if (outputStat?.isSymbolicLink())
+    throw new IoError(`Refusing symbolic-link output: ${outPath}`);
   try {
     await fs.writeFile(outPath, translated, "utf-8");
   } catch (err) {
@@ -218,7 +246,10 @@ async function translateFile(filePath: string, lang: TargetLanguage): Promise<vo
   console.log(`Saved translation: ${outPath}`);
 }
 
-async function translateDirectory(dirPath: string, lang: TargetLanguage): Promise<void> {
+async function translateDirectory(
+  dirPath: string,
+  lang: TargetLanguage,
+): Promise<void> {
   if (excludedTranslationPath(dirPath)) return;
   const entries = await fs.readdir(dirPath, { withFileTypes: true });
   for (const entry of entries) {
@@ -255,7 +286,9 @@ async function handleGenerate(tsFile: string, outFile?: string): Promise<void> {
 }
 
 async function handleSync(lang: TargetLanguage): Promise<void> {
-  console.log(`Starting full monorepo documentation synchronization. Target language: ${lang}`);
+  console.log(
+    `Starting full monorepo documentation synchronization. Target language: ${lang}`,
+  );
   const pathsToSync = [path.resolve("docs")];
 
   for (const folder of pathsToSync) {
@@ -268,7 +301,8 @@ async function handleSync(lang: TargetLanguage): Promise<void> {
       console.log(`Path not found: ${folder}, skipping.`);
       continue;
     }
-    if (!stat.isDirectory()) throw new IoError(`Expected documentation directory: ${folder}`);
+    if (!stat.isDirectory())
+      throw new IoError(`Expected documentation directory: ${folder}`);
     console.log(`Syncing folder: ${folder}`);
     // oxlint-disable-next-line no-await-in-loop -- synchronisation séquentielle des dossiers (traductions LLM rate-limitées)
     await translateDirectory(folder, lang);

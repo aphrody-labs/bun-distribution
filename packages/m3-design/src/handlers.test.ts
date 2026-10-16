@@ -5,7 +5,11 @@ import { createFetchHandler } from "./handlers.ts";
 
 const originalFetch = globalThis.fetch;
 const handle = createFetchHandler(new DesignCompiler());
-const finalizeBody = { projectId: "test-project", apiKey: "test-key", model: "test-model" };
+const finalizeBody = {
+  projectId: "test-project",
+  apiKey: "test-key",
+  model: "test-model",
+};
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
@@ -27,7 +31,9 @@ function replaceFetch(
   ) => Promise<Response>,
 ) {
   const replacement = mock(implementation);
-  globalThis.fetch = Object.assign(replacement, { preconnect: originalFetch.preconnect });
+  globalThis.fetch = Object.assign(replacement, {
+    preconnect: originalFetch.preconnect,
+  });
   return replacement;
 }
 
@@ -47,7 +53,9 @@ describe("design HTTP routing", () => {
   test.each(["/api/unknown", "/api/generate/unknown", "/missing"])(
     "unknown route %s returns 404",
     async (path) => {
-      expect((await handle(new Request(`http://design.test${path}`))).status).toBe(404);
+      expect(
+        (await handle(new Request(`http://design.test${path}`))).status,
+      ).toBe(404);
     },
   );
 
@@ -56,7 +64,9 @@ describe("design HTTP routing", () => {
     ["/api/generate", "GET", "POST"],
     ["/api/generate/finalize", "PUT", "POST"],
   ])("route %s rejects %s and advertises %s", async (path, method, allowed) => {
-    const response = await handle(new Request(`http://design.test${path}`, { method }));
+    const response = await handle(
+      new Request(`http://design.test${path}`, { method }),
+    );
     expect(response.status).toBe(405);
     expect(response.headers.get("allow")).toBe(allowed);
   });
@@ -129,7 +139,9 @@ describe("design generation request contract", () => {
         },
       }),
     );
-    const response = await failing(request("/api/generate", { prompt: "A dashboard" }));
+    const response = await failing(
+      request("/api/generate", { prompt: "A dashboard" }),
+    );
     expect(response.status).toBe(500);
     expect((await response.json()).error).toBe("validator unavailable");
   });
@@ -173,7 +185,9 @@ describe("design finalization request contract", () => {
     const network = replaceFetch(async () => {
       throw new Error("unexpected network access");
     });
-    expect((await handle(request("/api/generate/finalize", body))).status).toBe(400);
+    expect((await handle(request("/api/generate/finalize", body))).status).toBe(
+      400,
+    );
     expect(network).not.toHaveBeenCalled();
   });
 
@@ -194,61 +208,70 @@ describe("design finalization request contract", () => {
   test.each([
     ["anthropic", { content: [{ type: "text", text: "# DESIGN.md" }] }],
     ["openai", { choices: [{ message: { content: "# DESIGN.md" } }] }],
-    ["google", { candidates: [{ content: { parts: [{ text: "# DESIGN.md" }] } }] }],
-  ])("%s preserves its provider payload and the request signal", async (protocol, reply) => {
-    const controller = new AbortController();
-    const req = request(
-      "/api/generate/finalize",
-      {
-        ...finalizeBody,
-        protocol,
-        transcriptJsonl: '{"role":"user","content":"A dashboard"}',
-        transcriptMessageCount: 1,
-        designSystemId: "material",
-        designSystemBody: "Design roles",
-        artifact: { name: "index.tsx", body: "<main>Dashboard</main>" },
-      },
-      controller.signal,
-    );
-    const network = replaceFetch(async () => Response.json(reply));
-    const response = await handle(req);
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
-      success: true,
-      designMd: "# DESIGN.md",
-      projectId: "test-project",
-      designSystemId: "material",
-    });
-    const [endpoint, init] = network.mock.calls[0]!;
-    expect(init?.signal).toBe(req.signal);
-    expect(init?.method).toBe("POST");
-    const payload = JSON.parse(String(init?.body));
-    const headers = new Headers(init?.headers);
-    if (protocol === "anthropic") {
-      expect(String(endpoint)).toBe("https://api.anthropic.com/v1/messages");
-      expect(headers.get("x-api-key")).toBe("test-key");
-      expect(headers.get("anthropic-version")).toBe("2023-06-01");
-      expect(payload.model).toBe("test-model");
-      expect(payload.system).toContain("DESIGN.md");
-      expect(payload.messages[0].content).toContain("<main>Dashboard</main>");
-    } else if (protocol === "openai") {
-      expect(String(endpoint)).toBe("https://api.openai.com/v1/chat/completions");
-      expect(headers.get("authorization")).toBe("Bearer test-key");
-      expect(payload.model).toBe("test-model");
-      expect(payload.messages.map((message: { role: string }) => message.role)).toEqual([
-        "system",
-        "user",
-      ]);
-      expect(payload.messages[1].content).toContain("Transcript message count: 1");
-    } else {
-      expect(String(endpoint)).toBe(
-        "https://generativelanguage.googleapis.com/v1beta/models/test-model:generateContent?key=test-key",
+    [
+      "google",
+      { candidates: [{ content: { parts: [{ text: "# DESIGN.md" }] } }] },
+    ],
+  ])(
+    "%s preserves its provider payload and the request signal",
+    async (protocol, reply) => {
+      const controller = new AbortController();
+      const req = request(
+        "/api/generate/finalize",
+        {
+          ...finalizeBody,
+          protocol,
+          transcriptJsonl: '{"role":"user","content":"A dashboard"}',
+          transcriptMessageCount: 1,
+          designSystemId: "material",
+          designSystemBody: "Design roles",
+          artifact: { name: "index.tsx", body: "<main>Dashboard</main>" },
+        },
+        controller.signal,
       );
-      expect(payload.contents[0].parts[0].text).toContain("Design roles");
-      expect(payload.systemInstruction.parts[0].text).toContain("DESIGN.md");
-      expect(payload.generationConfig.maxOutputTokens).toBe(4000);
-    }
-  });
+      const network = replaceFetch(async () => Response.json(reply));
+      const response = await handle(req);
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({
+        success: true,
+        designMd: "# DESIGN.md",
+        projectId: "test-project",
+        designSystemId: "material",
+      });
+      const [endpoint, init] = network.mock.calls[0]!;
+      expect(init?.signal).toBe(req.signal);
+      expect(init?.method).toBe("POST");
+      const payload = JSON.parse(String(init?.body));
+      const headers = new Headers(init?.headers);
+      if (protocol === "anthropic") {
+        expect(String(endpoint)).toBe("https://api.anthropic.com/v1/messages");
+        expect(headers.get("x-api-key")).toBe("test-key");
+        expect(headers.get("anthropic-version")).toBe("2023-06-01");
+        expect(payload.model).toBe("test-model");
+        expect(payload.system).toContain("DESIGN.md");
+        expect(payload.messages[0].content).toContain("<main>Dashboard</main>");
+      } else if (protocol === "openai") {
+        expect(String(endpoint)).toBe(
+          "https://api.openai.com/v1/chat/completions",
+        );
+        expect(headers.get("authorization")).toBe("Bearer test-key");
+        expect(payload.model).toBe("test-model");
+        expect(
+          payload.messages.map((message: { role: string }) => message.role),
+        ).toEqual(["system", "user"]);
+        expect(payload.messages[1].content).toContain(
+          "Transcript message count: 1",
+        );
+      } else {
+        expect(String(endpoint)).toBe(
+          "https://generativelanguage.googleapis.com/v1beta/models/test-model:generateContent?key=test-key",
+        );
+        expect(payload.contents[0].parts[0].text).toContain("Design roles");
+        expect(payload.systemInstruction.parts[0].text).toContain("DESIGN.md");
+        expect(payload.generationConfig.maxOutputTokens).toBe(4000);
+      }
+    },
+  );
 
   test("default Anthropic and nullable optional synthesis inputs remain supported", async () => {
     const network = replaceFetch(async () =>
@@ -265,7 +288,9 @@ describe("design finalization request contract", () => {
     expect(response.status).toBe(200);
     expect((await response.json()).designSystemId).toBeNull();
     const payload = JSON.parse(String(network.mock.calls[0]![1]?.body));
-    expect(payload.messages[0].content).toContain("Transcript message count: 0");
+    expect(payload.messages[0].content).toContain(
+      "Transcript message count: 0",
+    );
     expect(payload.messages[0].content).toContain("Current artifact: none");
   });
 
@@ -287,8 +312,12 @@ describe("design finalization request contract", () => {
   });
 
   test("provider HTTP errors remain gateway errors with their response details", async () => {
-    replaceFetch(async () => new Response("Provider unavailable", { status: 503 }));
-    const response = await handle(request("/api/generate/finalize", finalizeBody));
+    replaceFetch(
+      async () => new Response("Provider unavailable", { status: 503 }),
+    );
+    const response = await handle(
+      request("/api/generate/finalize", finalizeBody),
+    );
     expect(response.status).toBe(502);
     expect((await response.json()).details).toBe("Provider unavailable");
   });
@@ -300,15 +329,23 @@ describe("design finalization request contract", () => {
         if (failure === "transport") throw new Error("fetch unavailable");
         if (failure === "blank-text")
           return Response.json({ content: [{ type: "text", text: " \n\t" }] });
-        return failure === "malformed-json" ? new Response("{") : Response.json({});
+        return failure === "malformed-json"
+          ? new Response("{")
+          : Response.json({});
       });
-      expect((await handle(request("/api/generate/finalize", finalizeBody))).status).toBe(502);
+      expect(
+        (await handle(request("/api/generate/finalize", finalizeBody))).status,
+      ).toBe(502);
     },
   );
 
   test("aborting the request interrupts the provider fetch", async () => {
     const controller = new AbortController();
-    const req = request("/api/generate/finalize", finalizeBody, controller.signal);
+    const req = request(
+      "/api/generate/finalize",
+      finalizeBody,
+      controller.signal,
+    );
     let started!: () => void;
     const providerStarted = new Promise<void>((resolve) => {
       started = resolve;
@@ -316,7 +353,11 @@ describe("design finalization request contract", () => {
     const network = replaceFetch(async (_endpoint, init) => {
       started();
       return new Promise<Response>((_resolve, reject) => {
-        init!.signal!.addEventListener("abort", () => reject(init!.signal!.reason), { once: true });
+        init!.signal!.addEventListener(
+          "abort",
+          () => reject(init!.signal!.reason),
+          { once: true },
+        );
       });
     });
     const pending = handle(req);

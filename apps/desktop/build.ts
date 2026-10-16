@@ -1,5 +1,9 @@
 import { join } from "node:path";
-import { loadConfig, assertRuntime, repositoryRoot } from "@aphrody/bun-workspace";
+import {
+  loadConfig,
+  assertRuntime,
+  repositoryRoot,
+} from "@aphrody/bun-workspace";
 import { capabilityFor, type Catalog } from "./shared.ts";
 import { nativeVideoCapabilities } from "@aphrody/bun-video-project/native";
 
@@ -10,11 +14,14 @@ export async function buildDesktop() {
   const config = await loadConfig(repositoryRoot);
   assertRuntime(config);
   const catalog: Catalog = {
-    runtime: { version: config.runtime.version, repository: config.runtime.repository },
+    runtime: {
+      version: config.runtime.version,
+      repository: config.runtime.repository,
+    },
     video: { nativeAvailable: nativeVideoCapabilities().available },
     libraries: config.modules
-      .filter(module => module.kind === "library")
-      .map(module => ({
+      .filter((module) => module.kind === "library")
+      .map((module) => ({
         id: module.id,
         priority: config.priorities?.includes(module.id) ?? false,
         ...capabilityFor(module.id),
@@ -32,10 +39,17 @@ export async function buildDesktop() {
     minify: true,
     define: { __APHRODY_CATALOG__: JSON.stringify(catalog) },
   });
-  if (!web.success) throw new AggregateError(web.logs, "Bun frontend build failed");
+  if (!web.success)
+    throw new AggregateError(web.logs, "Bun frontend build failed");
   await Promise.all([
-    Bun.write(join(desktopOutput, "web/index.html"), Bun.file(join(desktopRoot, "src/index.html"))),
-    Bun.write(join(desktopOutput, "web/style.css"), Bun.file(join(desktopRoot, "src/style.css"))),
+    Bun.write(
+      join(desktopOutput, "web/index.html"),
+      Bun.file(join(desktopRoot, "src/index.html")),
+    ),
+    Bun.write(
+      join(desktopOutput, "web/style.css"),
+      Bun.file(join(desktopRoot, "src/style.css")),
+    ),
   ]);
   const server = await Bun.build({
     entrypoints: [join(desktopRoot, "server.ts")],
@@ -44,7 +58,8 @@ export async function buildDesktop() {
     format: "esm",
     minify: true,
   });
-  if (!server.success) throw new AggregateError(server.logs, "Bun backend build failed");
+  if (!server.success)
+    throw new AggregateError(server.logs, "Bun backend build failed");
   console.log("Aphrody: " + catalog.libraries.length + " libraries bundled.");
   return desktopOutput;
 }

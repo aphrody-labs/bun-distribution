@@ -134,7 +134,7 @@ This enables:
 
 ```json
 {
-	"device_id": "uuid-of-paired-device"
+  "device_id": "uuid-of-paired-device"
 }
 ```
 
@@ -142,23 +142,23 @@ This enables:
 
 ```json
 {
-	"device_id": "uuid",
-	"device_name": "Device Name",
-	"libraries": [
-		{
-			"id": "uuid",
-			"name": "My Library",
-			"description": "Optional description",
-			"created_at": "2025-01-01T00:00:00Z",
-			"statistics": {
-				"total_entries": 1000,
-				"total_locations": 5,
-				"total_size_bytes": 1000000,
-				"device_count": 2
-			}
-		}
-	],
-	"is_online": true
+  "device_id": "uuid",
+  "device_name": "Device Name",
+  "libraries": [
+    {
+      "id": "uuid",
+      "name": "My Library",
+      "description": "Optional description",
+      "created_at": "2025-01-01T00:00:00Z",
+      "statistics": {
+        "total_entries": 1000,
+        "total_locations": 5,
+        "total_size_bytes": 1000000,
+        "device_count": 2
+      }
+    }
+  ],
+  "is_online": true
 }
 ```
 
@@ -168,14 +168,14 @@ This enables:
 
 ```json
 {
-	"local_device_id": "uuid",
-	"remote_device_id": "uuid",
-	"local_library_id": "uuid",
-	"remote_library_id": "uuid",
-	"action": {
-		"type": "RegisterOnly"
-	},
-	"leader_device_id": "uuid"
+  "local_device_id": "uuid",
+  "remote_device_id": "uuid",
+  "local_library_id": "uuid",
+  "remote_library_id": "uuid",
+  "action": {
+    "type": "RegisterOnly"
+  },
+  "leader_device_id": "uuid"
 }
 ```
 
@@ -183,11 +183,11 @@ This enables:
 
 ```json
 {
-	"success": true,
-	"local_library_id": "uuid",
-	"remote_library_id": "uuid",
-	"devices_registered": true,
-	"message": "Devices successfully registered for library access"
+  "success": true,
+  "local_library_id": "uuid",
+  "remote_library_id": "uuid",
+  "devices_registered": true,
+  "message": "Devices successfully registered for library access"
 }
 ```
 

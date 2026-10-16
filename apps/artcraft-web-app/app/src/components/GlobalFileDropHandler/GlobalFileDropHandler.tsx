@@ -51,7 +51,8 @@ export function GlobalFileDropHandler() {
 
       const setup = async () => {
         try {
-          const { getCurrentWebviewWindow } = await import("@tauri-apps/api/webviewWindow");
+          const { getCurrentWebviewWindow } =
+            await import("@tauri-apps/api/webviewWindow");
           const { convertFileSrc } = await import("@tauri-apps/api/core");
           const appWindow = getCurrentWebviewWindow();
 
@@ -73,7 +74,9 @@ export function GlobalFileDropHandler() {
               // Find first path with a recognised extension
               let modalKind: ModalType = null;
               for (const p of payload.paths) {
-                modalKind = getModalTypeForFileName(p.split(/[/\\]/).pop() ?? "");
+                modalKind = getModalTypeForFileName(
+                  p.split(/[/\\]/).pop() ?? "",
+                );
                 if (modalKind) break;
               }
               if (!modalKind) return;
@@ -88,7 +91,7 @@ export function GlobalFileDropHandler() {
               if (skippedCount > 0) {
                 toast(
                   `${skippedCount} file${skippedCount > 1 ? "s" : ""} skipped — unsupported or mixed types`,
-                  { icon: "⚠️" }
+                  { icon: "⚠️" },
                 );
               }
 
@@ -98,10 +101,11 @@ export function GlobalFileDropHandler() {
                     const fileName = path.split(/[/\\]/).pop() ?? "file";
                     const assetUrl = convertFileSrc(path);
                     const response = await fetch(assetUrl);
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    if (!response.ok)
+                      throw new Error(`HTTP ${response.status}`);
                     const blob = await response.blob();
                     return new File([blob], fileName);
-                  })
+                  }),
                 );
                 await appWindow.setFocus();
                 setModalType(modalKind);
@@ -121,8 +125,9 @@ export function GlobalFileDropHandler() {
       };
 
       setup();
-      return () => { unlisteners.forEach((fn) => fn()); };
-
+      return () => {
+        unlisteners.forEach((fn) => fn());
+      };
     } else {
       // HTML5 path (browser dev mode)
       const handleDragEnter = (e: DragEvent) => {
@@ -135,7 +140,10 @@ export function GlobalFileDropHandler() {
       const handleDragLeave = (e: DragEvent) => {
         if (!e.dataTransfer?.types.includes("Files")) return;
         dragCounter.current--;
-        if (dragCounter.current <= 0) { dragCounter.current = 0; setIsDragging(false); }
+        if (dragCounter.current <= 0) {
+          dragCounter.current = 0;
+          setIsDragging(false);
+        }
       };
       const handleDragOver = (e: DragEvent) => {
         e.preventDefault();
@@ -161,14 +169,14 @@ export function GlobalFileDropHandler() {
 
         // Keep only files matching the detected modal type
         const matchingFiles = allFiles.filter(
-          (f) => getModalTypeForFileName(f.name) === modalKind
+          (f) => getModalTypeForFileName(f.name) === modalKind,
         );
 
         const skippedCount = allFiles.length - matchingFiles.length;
         if (skippedCount > 0) {
           toast(
             `${skippedCount} file${skippedCount > 1 ? "s" : ""} skipped — unsupported or mixed types`,
-            { icon: "⚠️" }
+            { icon: "⚠️" },
           );
         }
 
@@ -194,8 +202,12 @@ export function GlobalFileDropHandler() {
         <div className="pointer-events-none fixed inset-0 z-[9999] flex items-center justify-center bg-black/70">
           <div className="flex flex-col items-center gap-3 border border-dashed border-white/60 bg-ui-panel px-16 py-12 text-white">
             <Maximize2Icon className="text-3xl opacity-60" />
-            <div className="font-display text-2xl tracking-tight">Drop to Upload</div>
-            <div className="hud-label text-white/50">GLB, PNG, JPG, JPEG, SPZ</div>
+            <div className="font-display text-2xl tracking-tight">
+              Drop to Upload
+            </div>
+            <div className="hud-label text-white/50">
+              GLB, PNG, JPG, JPEG, SPZ
+            </div>
           </div>
         </div>
       )}

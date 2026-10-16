@@ -1,7 +1,23 @@
 #!/usr/bin/env bun
-import { lstat, mkdir, open, readdir, realpath, rename, rm, rmdir, unlink } from "node:fs/promises";
+import {
+  lstat,
+  mkdir,
+  open,
+  readdir,
+  realpath,
+  rename,
+  rm,
+  rmdir,
+  unlink,
+} from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import { assertRuntimeFacts, currentRuntimeFacts, hashFile, loadConfig, repositoryRoot } from "@aphrody/bun-workspace";
+import {
+  assertRuntimeFacts,
+  currentRuntimeFacts,
+  hashFile,
+  loadConfig,
+  repositoryRoot,
+} from "@aphrody/bun-workspace";
 import { runProcess } from "@aphrody/bun-workspace/process";
 
 const packageSpecs = {
@@ -18,7 +34,13 @@ type PackagePlan = {
   status: "ready" | "blocked";
   packagePath: string;
   outputPath: string;
-  entries: Array<{ export: string; source: string; sha256: string; typesSource: string; typesSHA256: string }>;
+  entries: Array<{
+    export: string;
+    source: string;
+    sha256: string;
+    typesSource: string;
+    typesSHA256: string;
+  }>;
   diagnostics: Diagnostic[];
   existing?: { schemaVersion: number; treeHash: string; identityKey?: string };
   disposition?: "compile" | "recompile" | "reuse";
@@ -34,7 +56,11 @@ const excludedDirectories = new Set([".git", "node_modules", "dist", "build"]);
 function inside(base: string, target: string, allowEqual = false): boolean {
   const local = relative(resolve(base), resolve(target));
   return (
-    (allowEqual && local === "") || (!!local && local !== ".." && !local.startsWith(`..${sep}`) && !isAbsolute(local))
+    (allowEqual && local === "") ||
+    (!!local &&
+      local !== ".." &&
+      !local.startsWith(`..${sep}`) &&
+      !isAbsolute(local))
   );
 }
 
@@ -46,42 +72,64 @@ function fail(code: string, message: string, path?: string): Diagnostic {
   return path ? { code, message, path } : { code, message };
 }
 
-async function assertNoSymlinkComponents(root: string, path: string): Promise<void> {
-  if (!inside(root, path, true)) throw new Error(`Path escapes the checkout: ${path}`);
+async function assertNoSymlinkComponents(
+  root: string,
+  path: string,
+): Promise<void> {
+  if (!inside(root, path, true))
+    throw new Error(`Path escapes the checkout: ${path}`);
   const local = relative(root, path);
   let current = root;
   for (const part of local.split(sep).filter(Boolean)) {
     current = join(current, part);
     try {
-      if ((await lstat(current)).isSymbolicLink()) throw new Error(`Symlink path is not allowed: ${current}`);
+      if ((await lstat(current)).isSymbolicLink())
+        throw new Error(`Symlink path is not allowed: ${current}`);
     } catch (error) {
-      if (error instanceof Error && error.message.startsWith("Symlink path")) throw error;
+      if (error instanceof Error && error.message.startsWith("Symlink path"))
+        throw error;
       if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
       throw error;
     }
   }
 }
 
-async function workspaceMemberPaths(root: string, patterns: string[]): Promise<Set<string>> {
+async function workspaceMemberPaths(
+  root: string,
+  patterns: string[],
+): Promise<Set<string>> {
   const included = new Set<string>();
   const excluded: Bun.Glob[] = [];
   for (const pattern of patterns) {
     const omit = pattern.startsWith("!");
-    const normalized = (omit ? pattern.slice(1) : pattern).replaceAll("\\", "/").replace(/\/$/, "");
-    if (!normalized || normalized.startsWith("/") || normalized.split("/").includes(".."))
+    const normalized = (omit ? pattern.slice(1) : pattern)
+      .replaceAll("\\", "/")
+      .replace(/\/$/, "");
+    if (
+      !normalized ||
+      normalized.startsWith("/") ||
+      normalized.split("/").includes("..")
+    )
       throw new Error(`Invalid Bun workspace pattern: ${pattern}`);
     const manifestGlob = new Bun.Glob(`${normalized}/package.json`);
     if (omit) {
       excluded.push(manifestGlob);
       continue;
     }
-    for await (const manifest of manifestGlob.scan({ cwd: root, onlyFiles: true })) {
-      included.add(manifest.replaceAll("\\", "/").slice(0, -"/package.json".length));
+    for await (const manifest of manifestGlob.scan({
+      cwd: root,
+      onlyFiles: true,
+    })) {
+      included.add(
+        manifest.replaceAll("\\", "/").slice(0, -"/package.json".length),
+      );
     }
   }
   for (const pattern of excluded) {
     for await (const manifest of pattern.scan({ cwd: root, onlyFiles: true })) {
-      included.delete(manifest.replaceAll("\\", "/").slice(0, -"/package.json".length));
+      included.delete(
+        manifest.replaceAll("\\", "/").slice(0, -"/package.json".length),
+      );
     }
   }
   return included;
@@ -98,33 +146,54 @@ function exportTargets(value: unknown): { runtime?: string; types?: string } {
   for (const condition of ["bun", "import", "node", "default"]) {
     if (!(condition in value)) continue;
     const nested = exportTargets(value[condition]);
-    if (nested.runtime) return { runtime: nested.runtime, types: types ?? nested.types };
+    if (nested.runtime)
+      return { runtime: nested.runtime, types: types ?? nested.types };
   }
   return types ? { types } : {};
 }
 
 function exportRows(exportsValue: unknown): Array<[string, unknown]> {
   if (typeof exportsValue === "string") return [[".", exportsValue]];
-  if (!record(exportsValue)) throw new Error("package.json exports must be a string or object.");
+  if (!record(exportsValue))
+    throw new Error("package.json exports must be a string or object.");
   const entries = Object.entries(exportsValue);
-  if (entries.some(([key]) => key === "." || key.startsWith("./"))) return entries;
+  if (entries.some(([key]) => key === "." || key.startsWith("./")))
+    return entries;
   return [[".", exportsValue]];
 }
 
-async function resolveSource(packageDir: string, target: string, label: string): Promise<string> {
-  if (!target.startsWith("./") || target.includes("\\") || target.includes("\0"))
-    throw new Error(`${label} must be a package-relative export path: ${target}`);
+async function resolveSource(
+  packageDir: string,
+  target: string,
+  label: string,
+): Promise<string> {
+  if (
+    !target.startsWith("./") ||
+    target.includes("\\") ||
+    target.includes("\0")
+  )
+    throw new Error(
+      `${label} must be a package-relative export path: ${target}`,
+    );
   const path = resolve(packageDir, target.slice(2));
-  if (!inside(packageDir, path)) throw new Error(`${label} escapes its package: ${target}`);
+  if (!inside(packageDir, path))
+    throw new Error(`${label} escapes its package: ${target}`);
   await assertNoSymlinkComponents(packageDir, path);
   const real = await realpath(path);
-  if (!inside(packageDir, real)) throw new Error(`${label} resolves outside its package: ${target}`);
+  if (!inside(packageDir, real))
+    throw new Error(`${label} resolves outside its package: ${target}`);
   if (!/\.(?:ts|tsx|mts|js|jsx|mjs|cjs)$/.test(real))
-    throw new Error(`${label} must point to TypeScript or JavaScript: ${target}`);
+    throw new Error(
+      `${label} must point to TypeScript or JavaScript: ${target}`,
+    );
   return real;
 }
 
-async function packagePlan(root: string, rootPackage: Record<string, unknown>, id: PackageId): Promise<PackagePlan> {
+async function packagePlan(
+  root: string,
+  rootPackage: Record<string, unknown>,
+  id: PackageId,
+): Promise<PackagePlan> {
   const spec = packageSpecs[id];
   const packagePath = `packages/${spec.directory}`;
   const packageDir = resolve(root, packagePath);
@@ -142,48 +211,86 @@ async function packagePlan(root: string, rootPackage: Record<string, unknown>, i
   };
 
   const workspacePatterns = rootPackage.workspaces;
-  if (!Array.isArray(workspacePatterns) || workspacePatterns.some(pattern => typeof pattern !== "string")) {
-    diagnostics.push(fail("ROOT_WORKSPACES_INVALID", "Root package.json must declare Bun workspace patterns."));
+  if (
+    !Array.isArray(workspacePatterns) ||
+    workspacePatterns.some((pattern) => typeof pattern !== "string")
+  ) {
+    diagnostics.push(
+      fail(
+        "ROOT_WORKSPACES_INVALID",
+        "Root package.json must declare Bun workspace patterns.",
+      ),
+    );
     return result;
   }
-  const members = await workspaceMemberPaths(root, workspacePatterns as string[]);
+  const members = await workspaceMemberPaths(
+    root,
+    workspacePatterns as string[],
+  );
   if (!members.has(packagePath))
-    diagnostics.push(fail("WORKSPACE_MEMBER_MISSING", `${packagePath} is not an actual root Bun workspace member.`));
+    diagnostics.push(
+      fail(
+        "WORKSPACE_MEMBER_MISSING",
+        `${packagePath} is not an actual root Bun workspace member.`,
+      ),
+    );
 
   try {
     await assertNoSymlinkComponents(root, packageDir);
     const manifestPath = join(packageDir, "package.json");
     await assertNoSymlinkComponents(packageDir, manifestPath);
     const packageJSON = await Bun.file(manifestPath).json();
-    if (!record(packageJSON)) throw new Error("Package manifest must be a JSON object.");
-    if (packageJSON.name !== spec.name) throw new Error(`Expected package name ${spec.name}.`);
+    if (!record(packageJSON))
+      throw new Error("Package manifest must be a JSON object.");
+    if (packageJSON.name !== spec.name)
+      throw new Error(`Expected package name ${spec.name}.`);
     if (packageJSON.version !== rootPackage.version)
       throw new Error("Package version differs from the root product version.");
     const rows = exportRows(packageJSON.exports);
     const seenEntries = new Set<string>();
     for (const [key, value] of rows) {
-      if (key !== "." && !key.startsWith("./")) throw new Error(`Unsupported package export key: ${key}`);
+      if (key !== "." && !key.startsWith("./"))
+        throw new Error(`Unsupported package export key: ${key}`);
       const targets = exportTargets(value);
       const runtime = targets.runtime ?? targets.types;
-      if (!runtime) throw new Error(`Export ${key} has no Bun/import/default JavaScript entry.`);
+      if (!runtime)
+        throw new Error(
+          `Export ${key} has no Bun/import/default JavaScript entry.`,
+        );
       const source = await resolveSource(packageDir, runtime, `Export ${key}`);
-      const typesSource = await resolveSource(packageDir, targets.types ?? runtime, `Types export ${key}`);
+      const typesSource = await resolveSource(
+        packageDir,
+        targets.types ?? runtime,
+        `Types export ${key}`,
+      );
       if (!/\.(?:ts|tsx|mts)$/.test(typesSource))
-        throw new Error(`Types export ${key} must point to a TypeScript source.`);
-      if (seenEntries.has(source)) throw new Error(`Two exports resolve to the same build entry: ${runtime}`);
+        throw new Error(
+          `Types export ${key} must point to a TypeScript source.`,
+        );
+      if (seenEntries.has(source))
+        throw new Error(
+          `Two exports resolve to the same build entry: ${runtime}`,
+        );
       seenEntries.add(source);
       result.entries.push({
         export: key,
         source,
         sha256: await hashFile(source, { maxBytes: 20 * 1024 * 1024 }),
         typesSource,
-        typesSHA256: await hashFile(typesSource, { maxBytes: 20 * 1024 * 1024 }),
+        typesSHA256: await hashFile(typesSource, {
+          maxBytes: 20 * 1024 * 1024,
+        }),
       });
     }
-    if (result.entries.length === 0) throw new Error("Package exports no JavaScript entrypoints.");
+    if (result.entries.length === 0)
+      throw new Error("Package exports no JavaScript entrypoints.");
   } catch (error) {
     diagnostics.push(
-      fail("PACKAGE_PREFLIGHT_FAILED", error instanceof Error ? error.message : String(error), packagePath),
+      fail(
+        "PACKAGE_PREFLIGHT_FAILED",
+        error instanceof Error ? error.message : String(error),
+        packagePath,
+      ),
     );
   }
 
@@ -198,7 +305,13 @@ async function packagePlan(root: string, rootPackage: Record<string, unknown>, i
       };
     }
   } catch (error) {
-    diagnostics.push(fail("OUTPUT_PATH_INVALID", error instanceof Error ? error.message : String(error), outputPath));
+    diagnostics.push(
+      fail(
+        "OUTPUT_PATH_INVALID",
+        error instanceof Error ? error.message : String(error),
+        outputPath,
+      ),
+    );
   }
 
   result.status = diagnostics.length === 0 ? "ready" : "blocked";
@@ -207,12 +320,17 @@ async function packagePlan(root: string, rootPackage: Record<string, unknown>, i
       const identity = await captureIdentity(root, result);
       result.disposition = !result.existing
         ? "compile"
-        : result.existing.schemaVersion === 2 && result.existing.identityKey === identity.key
+        : result.existing.schemaVersion === 2 &&
+            result.existing.identityKey === identity.key
           ? "reuse"
           : "recompile";
     } catch (error) {
       diagnostics.push(
-        fail("BUILD_IDENTITY_INVALID", error instanceof Error ? error.message : String(error), packagePath),
+        fail(
+          "BUILD_IDENTITY_INVALID",
+          error instanceof Error ? error.message : String(error),
+          packagePath,
+        ),
       );
       result.status = "blocked";
     }
@@ -222,9 +340,19 @@ async function packagePlan(root: string, rootPackage: Record<string, unknown>, i
 
 type SourceSnapshot = Map<string, { sha256: string; bytes: number }>;
 type FileProof = { path: string; sha256: string; bytes: number };
-type ReceiptEntry = { export: string; path: string; sha256: string; typesPath: string; typesSHA256: string };
+type ReceiptEntry = {
+  export: string;
+  path: string;
+  sha256: string;
+  typesPath: string;
+  typesSHA256: string;
+};
 const buildOptions = {
-  naming: { entry: "[dir]/[name].js", chunk: "chunk-[hash].js", asset: "asset-[name]-[hash]" },
+  naming: {
+    entry: "[dir]/[name].js",
+    chunk: "chunk-[hash].js",
+    asset: "asset-[name]-[hash]",
+  },
   target: "bun",
   packages: "external",
   metafile: true,
@@ -243,7 +371,11 @@ type BuildIdentity = {
   inputs: {
     packageSnapshot: FileProof[];
     ownerSnapshot: FileProof[];
-    rootFiles: Array<{ path: string; sha256: string | null; bytes: number | null }>;
+    rootFiles: Array<{
+      path: string;
+      sha256: string | null;
+      bytes: number | null;
+    }>;
     runtime: { facts: ReturnType<typeof currentRuntimeFacts>; sha256: string };
     entries: ReceiptEntry[];
     options: typeof buildOptions;
@@ -264,15 +396,21 @@ function canonical(value: unknown): string {
   if (record(value))
     return `{${Object.keys(value)
       .sort()
-      .map(key => `${JSON.stringify(key)}:${canonical(value[key])}`)
+      .map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`)
       .join(",")}}`;
   return JSON.stringify(value);
 }
 function digest(value: unknown): string {
   return new Bun.CryptoHasher("sha256").update(canonical(value)).digest("hex");
 }
-function exact(value: unknown, keys: string[]): asserts value is Record<string, unknown> {
-  if (!record(value) || canonical(Object.keys(value).sort()) !== canonical(keys.sort()))
+function exact(
+  value: unknown,
+  keys: string[],
+): asserts value is Record<string, unknown> {
+  if (
+    !record(value) ||
+    canonical(Object.keys(value).sort()) !== canonical(keys.sort())
+  )
     throw new Error("Receipt has unknown or missing fields.");
 }
 function sha(value: unknown): value is string {
@@ -284,14 +422,20 @@ function validPath(path: unknown, prefix: string): path is string {
     path.startsWith(`${prefix}/`) &&
     !path.includes("\\") &&
     !path.includes("\0") &&
-    path.split("/").every(part => part && part !== "." && part !== "..")
+    path.split("/").every((part) => part && part !== "." && part !== "..")
   );
 }
 function rows(value: unknown, prefix: string, output = false): void {
-  if (!Array.isArray(value) || !value.length || value.length > 4096) throw new Error("Receipt file ledger is invalid.");
+  if (!Array.isArray(value) || !value.length || value.length > 4096)
+    throw new Error("Receipt file ledger is invalid.");
   const seen = new Set<string>();
   for (const item of value) {
-    exact(item, output ? ["path", "sha256", "bytes", "kind"] : ["path", "sha256", "bytes"]);
+    exact(
+      item,
+      output
+        ? ["path", "sha256", "bytes", "kind"]
+        : ["path", "sha256", "bytes"],
+    );
     if (
       !validPath(item.path, prefix) ||
       !sha(item.sha256) ||
@@ -301,13 +445,19 @@ function rows(value: unknown, prefix: string, output = false): void {
       seen.has(item.path)
     )
       throw new Error("Receipt file proof is invalid.");
-    if (output && !["entry-point", "chunk", "asset", "sourcemap"].includes(String(item.kind)))
+    if (
+      output &&
+      !["entry-point", "chunk", "asset", "sourcemap"].includes(
+        String(item.kind),
+      )
+    )
       throw new Error("Unknown output artifact kind.");
     seen.add(item.path);
   }
 }
 function entries(value: unknown, prefix: string): void {
-  if (!Array.isArray(value) || !value.length || value.length > 256) throw new Error("Receipt exports are invalid.");
+  if (!Array.isArray(value) || !value.length || value.length > 256)
+    throw new Error("Receipt exports are invalid.");
   const seen = new Set<string>();
   for (const item of value) {
     exact(item, ["export", "path", "sha256", "typesPath", "typesSHA256"]);
@@ -325,7 +475,10 @@ function entries(value: unknown, prefix: string): void {
   }
 }
 function validateReceipt(value: unknown, plan: PackagePlan): Receipt {
-  if (!record(value) || (value.schemaVersion !== 1 && value.schemaVersion !== 2))
+  if (
+    !record(value) ||
+    (value.schemaVersion !== 1 && value.schemaVersion !== 2)
+  )
     throw new Error("Unknown output receipt version.");
   exact(value, [
     "schemaVersion",
@@ -337,10 +490,15 @@ function validateReceipt(value: unknown, plan: PackagePlan): Receipt {
     ...(value.schemaVersion === 2 ? ["identity"] : []),
   ]);
   exact(value.package, ["id", "name", "version"]);
-  if (value.package.id !== plan.id || value.package.name !== plan.name || value.package.version !== "1.4.4")
+  if (
+    value.package.id !== plan.id ||
+    value.package.name !== plan.name ||
+    value.package.version !== "1.4.4"
+  )
     throw new Error("Receipt belongs to another package owner.");
   exact(value.source, ["packagePath", "entries", "inputs"]);
-  if (value.source.packagePath !== plan.packagePath) throw new Error("Receipt source owner differs.");
+  if (value.source.packagePath !== plan.packagePath)
+    throw new Error("Receipt source owner differs.");
   entries(value.source.entries, plan.packagePath);
   rows(value.source.inputs, plan.packagePath);
   rows(value.outputs, plan.outputPath, true);
@@ -356,7 +514,7 @@ function validateReceipt(value: unknown, plan: PackagePlan): Receipt {
   const parsed = value as unknown as Receipt;
   const expectedEntries = parsed.source.entries
     .map(
-      entry =>
+      (entry) =>
         `${plan.outputPath}/${entry.path.slice(plan.packagePath.length + 1).replace(/\.(?:ts|tsx|mts|js|jsx|mjs|cjs)$/, ".js")}`,
     )
     .sort();
@@ -364,19 +522,31 @@ function validateReceipt(value: unknown, plan: PackagePlan): Receipt {
     canonical(expectedEntries) !==
     canonical(
       parsed.outputs
-        .filter(item => item.kind === "entry-point")
-        .map(item => item.path)
+        .filter((item) => item.kind === "entry-point")
+        .map((item) => item.path)
         .sort(),
     )
   )
     throw new Error("Receipt entry outputs do not match its exports.");
   for (const entry of parsed.source.entries)
-    if (!parsed.source.inputs.some(input => input.path === entry.path && input.sha256 === entry.sha256))
+    if (
+      !parsed.source.inputs.some(
+        (input) => input.path === entry.path && input.sha256 === entry.sha256,
+      )
+    )
       throw new Error("Receipt entry lacks a compiler input proof.");
   if (value.schemaVersion === 2) {
     exact(value.identity, ["key", "inputs"]);
-    if (!sha(value.identity.key)) throw new Error("Invalid build identity hash.");
-    exact(value.identity.inputs, ["packageSnapshot", "ownerSnapshot", "rootFiles", "runtime", "entries", "options"]);
+    if (!sha(value.identity.key))
+      throw new Error("Invalid build identity hash.");
+    exact(value.identity.inputs, [
+      "packageSnapshot",
+      "ownerSnapshot",
+      "rootFiles",
+      "runtime",
+      "entries",
+      "options",
+    ]);
     const identityInputs = value.identity.inputs;
     rows(identityInputs.packageSnapshot, plan.packagePath);
     rows(identityInputs.ownerSnapshot, "packages/bun-workspace");
@@ -386,7 +556,10 @@ function validateReceipt(value: unknown, plan: PackagePlan): Receipt {
       canonical(identityInputs.options) !== canonical(buildOptions)
     )
       throw new Error("Receipt compiler options or entries differ.");
-    if (!Array.isArray(identityInputs.rootFiles) || identityInputs.rootFiles.length !== rootInputFiles.length)
+    if (
+      !Array.isArray(identityInputs.rootFiles) ||
+      identityInputs.rootFiles.length !== rootInputFiles.length
+    )
       throw new Error("Root input proofs are incomplete.");
     const rootPaths = new Set<string>();
     for (const row of identityInputs.rootFiles) {
@@ -396,7 +569,10 @@ function validateReceipt(value: unknown, plan: PackagePlan): Receipt {
         !rootInputFiles.includes(row.path) ||
         rootPaths.has(row.path) ||
         !(
-          (sha(row.sha256) && typeof row.bytes === "number" && Number.isSafeInteger(row.bytes) && row.bytes >= 0) ||
+          (sha(row.sha256) &&
+            typeof row.bytes === "number" &&
+            Number.isSafeInteger(row.bytes) &&
+            row.bytes >= 0) ||
           (row.sha256 === null && row.bytes === null)
         )
       )
@@ -404,7 +580,12 @@ function validateReceipt(value: unknown, plan: PackagePlan): Receipt {
       rootPaths.add(row.path);
     }
     exact(identityInputs.runtime, ["facts", "sha256"]);
-    exact(identityInputs.runtime.facts, ["version", "revision", "sourceUrl", "executable"]);
+    exact(identityInputs.runtime.facts, [
+      "version",
+      "revision",
+      "sourceUrl",
+      "executable",
+    ]);
     const facts = identityInputs.runtime.facts;
     if (
       !sha(identityInputs.runtime.sha256) ||
@@ -419,13 +600,16 @@ function validateReceipt(value: unknown, plan: PackagePlan): Receipt {
       throw new Error("Receipt runtime or identity is invalid.");
     const sourceRows = parsed.identity!.inputs.packageSnapshot;
     for (const input of parsed.source.inputs)
-      if (!sourceRows.some(row => canonical(row) === canonical(input)))
+      if (!sourceRows.some((row) => canonical(row) === canonical(input)))
         throw new Error("Compiler input is outside the identity snapshot.");
   }
   return parsed;
 }
 
-async function captureIdentity(root: string, plan: PackagePlan): Promise<BuildIdentity> {
+async function captureIdentity(
+  root: string,
+  plan: PackagePlan,
+): Promise<BuildIdentity> {
   const config = await loadConfig(root);
   const facts = currentRuntimeFacts();
   assertRuntimeFacts(config.runtime, facts);
@@ -439,23 +623,38 @@ async function captureIdentity(root: string, plan: PackagePlan): Promise<BuildId
     await assertNoSymlinkComponents(root, absolute);
     try {
       const metadata = await lstat(absolute);
-      if (!metadata.isFile()) throw new Error("Root compiler input is not a regular file.");
+      if (!metadata.isFile())
+        throw new Error("Root compiler input is not a regular file.");
       rootFiles.push({
         path,
-        sha256: await hashFile(absolute, { maxBytes: maxSnapshotFileBytes, expectedBytes: metadata.size }),
+        sha256: await hashFile(absolute, {
+          maxBytes: maxSnapshotFileBytes,
+          expectedBytes: metadata.size,
+        }),
         bytes: metadata.size,
       });
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "ENOENT" || path !== "bunfig.toml") throw error;
+      if (
+        (error as NodeJS.ErrnoException).code !== "ENOENT" ||
+        path !== "bunfig.toml"
+      )
+        throw error;
       rootFiles.push({ path, sha256: null, bytes: null });
     }
   }
   const inputs: BuildIdentity["inputs"] = {
-    packageSnapshot: ledger(await snapshotPackageSources(resolve(root, plan.packagePath))),
-    ownerSnapshot: ledger(await snapshotPackageSources(join(root, "packages/bun-workspace"))),
+    packageSnapshot: ledger(
+      await snapshotPackageSources(resolve(root, plan.packagePath)),
+    ),
+    ownerSnapshot: ledger(
+      await snapshotPackageSources(join(root, "packages/bun-workspace")),
+    ),
     rootFiles,
-    runtime: { facts, sha256: await hashFile(facts.executable, { maxBytes: 512 * 1024 * 1024 }) },
-    entries: plan.entries.map(entry => ({
+    runtime: {
+      facts,
+      sha256: await hashFile(facts.executable, { maxBytes: 512 * 1024 * 1024 }),
+    },
+    entries: plan.entries.map((entry) => ({
       export: entry.export,
       path: relativePath(root, entry.source),
       sha256: entry.sha256,
@@ -466,8 +665,13 @@ async function captureIdentity(root: string, plan: PackagePlan): Promise<BuildId
   };
   for (const entry of inputs.entries) {
     if (
-      !inputs.packageSnapshot.some(row => row.path === entry.path && row.sha256 === entry.sha256) ||
-      !inputs.packageSnapshot.some(row => row.path === entry.typesPath && row.sha256 === entry.typesSHA256)
+      !inputs.packageSnapshot.some(
+        (row) => row.path === entry.path && row.sha256 === entry.sha256,
+      ) ||
+      !inputs.packageSnapshot.some(
+        (row) =>
+          row.path === entry.typesPath && row.sha256 === entry.typesSHA256,
+      )
     )
       throw new Error("Entry source changed after planning.");
   }
@@ -480,18 +684,34 @@ async function inspectOwnedOutput(
   directory: string,
 ): Promise<{ receipt: Receipt; treeHash: string }> {
   await assertNoSymlinkComponents(root, directory);
-  if (!(await lstat(directory)).isDirectory() || !inside(root, await realpath(directory)))
+  if (
+    !(await lstat(directory)).isDirectory() ||
+    !inside(root, await realpath(directory))
+  )
     throw new Error("Output directory is not a real owned directory.");
   const receiptPath = join(directory, "build-receipt.json");
   await assertNoSymlinkComponents(root, receiptPath);
   const receiptFile = Bun.file(receiptPath);
-  if (receiptFile.size > 2 * 1024 * 1024) throw new Error("Output receipt exceeds its limit.");
+  if (receiptFile.size > 2 * 1024 * 1024)
+    throw new Error("Output receipt exceeds its limit.");
   const receiptBytes = await receiptFile.arrayBuffer();
-  if (receiptBytes.byteLength > 2 * 1024 * 1024) throw new Error("Output receipt exceeds its limit.");
-  const receiptHash = new Bun.CryptoHasher("sha256").update(receiptBytes).digest("hex");
-  const receipt = validateReceipt(JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(receiptBytes)), plan);
-  const expected = new Map(receipt.outputs.map(item => [item.path.slice(plan.outputPath.length + 1), item]));
-  if (expected.has("build-receipt.json")) throw new Error("Receipt cannot declare itself as an artifact.");
+  if (receiptBytes.byteLength > 2 * 1024 * 1024)
+    throw new Error("Output receipt exceeds its limit.");
+  const receiptHash = new Bun.CryptoHasher("sha256")
+    .update(receiptBytes)
+    .digest("hex");
+  const receipt = validateReceipt(
+    JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(receiptBytes)),
+    plan,
+  );
+  const expected = new Map(
+    receipt.outputs.map((item) => [
+      item.path.slice(plan.outputPath.length + 1),
+      item,
+    ]),
+  );
+  if (expected.has("build-receipt.json"))
+    throw new Error("Receipt cannot declare itself as an artifact.");
   const expectedDirectories = new Set<string>();
   for (const path of expected.keys())
     for (let parent = dirname(path); parent !== "."; parent = dirname(parent))
@@ -506,24 +726,39 @@ async function inspectOwnedOutput(
       const metadata = await lstat(path);
       const local = relativePath(directory, path);
       if (metadata.isDirectory()) {
-        if (!expectedDirectories.has(local)) throw new Error("Output tree contains an undeclared directory.");
+        if (!expectedDirectories.has(local))
+          throw new Error("Output tree contains an undeclared directory.");
         pending.push(path);
       } else if (metadata.isFile()) {
         const item = expected.get(local);
-        if (local !== "build-receipt.json" && !item) throw new Error("Output tree contains a foreign file.");
-        const hash = await hashFile(path, { maxBytes: 200 * 1024 * 1024, expectedBytes: item?.bytes ?? metadata.size });
-        if (item && hash !== item.sha256) throw new Error("Output artifact hash differs from its receipt.");
-        if (local === "build-receipt.json" && (hash !== receiptHash || metadata.size !== receiptBytes.byteLength))
+        if (local !== "build-receipt.json" && !item)
+          throw new Error("Output tree contains a foreign file.");
+        const hash = await hashFile(path, {
+          maxBytes: 200 * 1024 * 1024,
+          expectedBytes: item?.bytes ?? metadata.size,
+        });
+        if (item && hash !== item.sha256)
+          throw new Error("Output artifact hash differs from its receipt.");
+        if (
+          local === "build-receipt.json" &&
+          (hash !== receiptHash || metadata.size !== receiptBytes.byteLength)
+        )
           throw new Error("Receipt changed during output verification.");
         found.push({ path: local, sha256: hash, bytes: metadata.size });
       } else throw new Error("Output tree contains a non-regular node.");
     }
   }
-  if (found.length !== expected.size + 1) throw new Error("Output tree is incomplete.");
-  return { receipt, treeHash: digest(found.sort((a, b) => a.path.localeCompare(b.path))) };
+  if (found.length !== expected.size + 1)
+    throw new Error("Output tree is incomplete.");
+  return {
+    receipt,
+    treeHash: digest(found.sort((a, b) => a.path.localeCompare(b.path))),
+  };
 }
 
-async function snapshotPackageSources(packageDir: string): Promise<SourceSnapshot> {
+async function snapshotPackageSources(
+  packageDir: string,
+): Promise<SourceSnapshot> {
   const snapshot: SourceSnapshot = new Map();
   let totalBytes = 0;
   const pending = [packageDir];
@@ -531,19 +766,30 @@ async function snapshotPackageSources(packageDir: string): Promise<SourceSnapsho
     const directory = pending.pop()!;
     for (const entry of await readdir(directory, { withFileTypes: true })) {
       if (excludedDirectories.has(entry.name)) continue;
-      if (/^(?:\.env(?:\..*)?|\.ovh\.conf|credentials(?:\..*)?|profiles\.json)$/i.test(entry.name))
-        throw new Error("Protected configuration is outside the package compiler snapshot contract.");
+      if (
+        /^(?:\.env(?:\..*)?|\.ovh\.conf|credentials(?:\..*)?|profiles\.json)$/i.test(
+          entry.name,
+        )
+      )
+        throw new Error(
+          "Protected configuration is outside the package compiler snapshot contract.",
+        );
       const path = join(directory, entry.name);
       const metadata = await lstat(path);
-      if (metadata.isSymbolicLink()) throw new Error(`Package source tree contains a symlink: ${path}`);
+      if (metadata.isSymbolicLink())
+        throw new Error(`Package source tree contains a symlink: ${path}`);
       if (metadata.isDirectory()) {
         pending.push(path);
         continue;
       }
       if (!metadata.isFile()) continue;
-      const sha256 = await hashFile(path, { maxBytes: maxSnapshotFileBytes, expectedBytes: metadata.size });
+      const sha256 = await hashFile(path, {
+        maxBytes: maxSnapshotFileBytes,
+        expectedBytes: metadata.size,
+      });
       totalBytes += metadata.size;
-      if (totalBytes > maxSnapshotBytes) throw new Error("Package source snapshot exceeds the 512 MiB limit.");
+      if (totalBytes > maxSnapshotBytes)
+        throw new Error("Package source snapshot exceeds the 512 MiB limit.");
       snapshot.set(await realpath(path), { sha256, bytes: metadata.size });
     }
   }
@@ -556,7 +802,9 @@ async function resolveMetafileInput(
   input: string,
   snapshot: SourceSnapshot,
 ): Promise<string> {
-  const candidates = isAbsolute(input) ? [resolve(input)] : [resolve(root, input), resolve(packageDir, input)];
+  const candidates = isAbsolute(input)
+    ? [resolve(input)]
+    : [resolve(root, input), resolve(packageDir, input)];
   for (const candidate of candidates) {
     if (!inside(packageDir, candidate)) continue;
     try {
@@ -567,11 +815,19 @@ async function resolveMetafileInput(
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     }
   }
-  throw new Error(`Bundler input is not a pre-snapshotted file inside its package: ${input}`);
+  throw new Error(
+    `Bundler input is not a pre-snapshotted file inside its package: ${input}`,
+  );
 }
 
-async function resolveBuildOutput(root: string, outputDir: string, output: string): Promise<string> {
-  const candidates = isAbsolute(output) ? [resolve(output)] : [resolve(outputDir, output), resolve(root, output)];
+async function resolveBuildOutput(
+  root: string,
+  outputDir: string,
+  output: string,
+): Promise<string> {
+  const candidates = isAbsolute(output)
+    ? [resolve(output)]
+    : [resolve(outputDir, output), resolve(root, output)];
   for (const candidate of candidates) {
     if (!inside(outputDir, candidate)) continue;
     try {
@@ -582,13 +838,15 @@ async function resolveBuildOutput(root: string, outputDir: string, output: strin
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     }
   }
-  throw new Error(`Bundler output is not a file inside its package output directory: ${output}`);
+  throw new Error(
+    `Bundler output is not a file inside its package output directory: ${output}`,
+  );
 }
 
 function diagnosticsFromBuild(
   logs: Bun.BuildOutput["logs"],
 ): Array<Diagnostic & { level?: string; position?: unknown }> {
-  return logs.map(log => ({
+  return logs.map((log) => ({
     code: "code" in log ? log.code : "BUN_BUILD_DIAGNOSTIC",
     message: log.message,
     level: log.level,
@@ -604,21 +862,31 @@ async function compilePackage(
 ): Promise<Record<string, unknown>> {
   const packageDir = resolve(root, plan.packagePath);
   if (resolve(process.cwd()) !== root)
-    throw new Error("Run package builds from the Bun OS repository root so metafile paths have a stable base.");
+    throw new Error(
+      "Run package builds from the Bun OS repository root so metafile paths have a stable base.",
+    );
   const identity = await captureIdentity(root, plan);
-  if (identity.key !== expectedIdentity) throw new Error("Compiler inputs changed before the bounded worker started.");
+  if (identity.key !== expectedIdentity)
+    throw new Error(
+      "Compiler inputs changed before the bounded worker started.",
+    );
   const inputSnapshot = await snapshotPackageSources(packageDir);
   for (const entry of plan.entries) {
     const initial = inputSnapshot.get(entry.source);
     const typeInitial = inputSnapshot.get(entry.typesSource);
-    if (!initial || initial.sha256 !== entry.sha256 || !typeInitial || typeInitial.sha256 !== entry.typesSHA256)
+    if (
+      !initial ||
+      initial.sha256 !== entry.sha256 ||
+      !typeInitial ||
+      typeInitial.sha256 !== entry.typesSHA256
+    )
       throw new Error(`Package entry changed after planning: ${entry.export}`);
   }
   await assertNoSymlinkComponents(root, dirname(outputDir));
   await mkdir(outputDir);
   await assertNoSymlinkComponents(root, outputDir);
   const result = await Bun.build({
-    entrypoints: plan.entries.map(entry => entry.source),
+    entrypoints: plan.entries.map((entry) => entry.source),
     outdir: outputDir,
     root: packageDir,
     ...buildOptions,
@@ -634,33 +902,60 @@ async function compilePackage(
     };
   }
 
-  const inputHashes: Array<{ path: string; sha256: string; bytes: number }> = [];
+  const inputHashes: Array<{ path: string; sha256: string; bytes: number }> =
+    [];
   for (const [input, metadata] of Object.entries(result.metafile.inputs)) {
-    const source = await resolveMetafileInput(root, packageDir, input, inputSnapshot);
+    const source = await resolveMetafileInput(
+      root,
+      packageDir,
+      input,
+      inputSnapshot,
+    );
     const before = inputSnapshot.get(source)!;
-    if (before.bytes !== metadata.bytes) throw new Error(`Bundler input size changed after snapshot: ${input}`);
-    const sha256 = await hashFile(source, { maxBytes: maxSnapshotFileBytes, expectedBytes: metadata.bytes });
-    if (sha256 !== before.sha256) throw new Error(`Bundler input changed while compiling: ${input}`);
-    inputHashes.push({ path: relativePath(root, source), sha256, bytes: metadata.bytes });
+    if (before.bytes !== metadata.bytes)
+      throw new Error(`Bundler input size changed after snapshot: ${input}`);
+    const sha256 = await hashFile(source, {
+      maxBytes: maxSnapshotFileBytes,
+      expectedBytes: metadata.bytes,
+    });
+    if (sha256 !== before.sha256)
+      throw new Error(`Bundler input changed while compiling: ${input}`);
+    inputHashes.push({
+      path: relativePath(root, source),
+      sha256,
+      bytes: metadata.bytes,
+    });
   }
 
-  const outputs: Array<{ path: string; sha256: string; bytes: number; kind: string }> = [];
+  const outputs: Array<{
+    path: string;
+    sha256: string;
+    bytes: number;
+    kind: string;
+  }> = [];
   let compiledJS = false;
   for (const artifact of result.outputs) {
     const path = await resolveBuildOutput(root, outputDir, artifact.path);
     const sha256 = await hashFile(path, { maxBytes: 200 * 1024 * 1024 });
     const bytes = Bun.file(path).size;
-    if (artifact.kind === "entry-point" && /\.(?:js|mjs|cjs)$/.test(path)) compiledJS = true;
-    outputs.push({ path: `${plan.outputPath}/${relativePath(outputDir, path)}`, sha256, bytes, kind: artifact.kind });
+    if (artifact.kind === "entry-point" && /\.(?:js|mjs|cjs)$/.test(path))
+      compiledJS = true;
+    outputs.push({
+      path: `${plan.outputPath}/${relativePath(outputDir, path)}`,
+      sha256,
+      bytes,
+      kind: artifact.kind,
+    });
   }
-  if (!compiledJS) throw new Error("Bun.build produced no JavaScript entry-point artifact.");
+  if (!compiledJS)
+    throw new Error("Bun.build produced no JavaScript entry-point artifact.");
 
   const receipt = {
     schemaVersion: 2,
     package: { id: plan.id, name: plan.name, version: "1.4.4" },
     source: {
       packagePath: plan.packagePath,
-      entries: plan.entries.map(entry => ({
+      entries: plan.entries.map((entry) => ({
         export: entry.export,
         path: relativePath(root, entry.source),
         sha256: entry.sha256,
@@ -697,7 +992,11 @@ async function compilePackage(
   };
 }
 
-async function guardOwnedMutation(root: string, id: PackageId, path: string): Promise<void> {
+async function guardOwnedMutation(
+  root: string,
+  id: PackageId,
+  path: string,
+): Promise<void> {
   const base = resolve(root, "build/packages");
   const local = relativePath(base, resolve(path));
   const stage = new RegExp(
@@ -720,39 +1019,72 @@ async function missing(path: string): Promise<boolean> {
     throw error;
   }
 }
-async function moveOwned(root: string, id: PackageId, from: string, to: string): Promise<void> {
+async function moveOwned(
+  root: string,
+  id: PackageId,
+  from: string,
+  to: string,
+): Promise<void> {
   await guardOwnedMutation(root, id, from);
   await guardOwnedMutation(root, id, to);
-  if (!(await missing(to))) throw new Error("Refusing to overwrite an existing move destination.");
+  if (!(await missing(to)))
+    throw new Error("Refusing to overwrite an existing move destination.");
   await rename(from, to);
   await guardOwnedMutation(root, id, to);
 }
-async function removeOwnedOutput(root: string, plan: PackagePlan, path: string, expectedTree: string): Promise<void> {
+async function removeOwnedOutput(
+  root: string,
+  plan: PackagePlan,
+  path: string,
+  expectedTree: string,
+): Promise<void> {
   await guardOwnedMutation(root, plan.id, path);
   if ((await inspectOwnedOutput(root, plan, path)).treeHash !== expectedTree)
     throw new Error("Owned output changed before removal.");
   await guardOwnedMutation(root, plan.id, path);
   await rm(path, { recursive: true });
 }
-async function removeEmptyStage(root: string, plan: PackagePlan, stage: string, lease: string): Promise<void> {
+async function removeEmptyStage(
+  root: string,
+  plan: PackagePlan,
+  stage: string,
+  lease: string,
+): Promise<void> {
   await guardOwnedMutation(root, plan.id, stage);
   const names = await readdir(stage);
-  if (names.length !== 1 || names[0] !== "lease.json" || (await Bun.file(join(stage, "lease.json")).text()) !== lease)
-    throw new Error("Staging contains unqualified files; preservation is required.");
+  if (
+    names.length !== 1 ||
+    names[0] !== "lease.json" ||
+    (await Bun.file(join(stage, "lease.json")).text()) !== lease
+  )
+    throw new Error(
+      "Staging contains unqualified files; preservation is required.",
+    );
   await guardOwnedMutation(root, plan.id, join(stage, "lease.json"));
   await unlink(join(stage, "lease.json"));
   await guardOwnedMutation(root, plan.id, stage);
   // The sole owned lease has been removed; no foreign or previous outputs remain.
-  if ((await readdir(stage)).length) throw new Error("Staging changed before empty removal.");
+  if ((await readdir(stage)).length)
+    throw new Error("Staging changed before empty removal.");
   await rmdir(stage);
 }
-async function releasePackageLock(root: string, plan: PackagePlan, lockPath: string, nonce: string): Promise<void> {
+async function releasePackageLock(
+  root: string,
+  plan: PackagePlan,
+  lockPath: string,
+  nonce: string,
+): Promise<void> {
   await guardOwnedMutation(root, plan.id, lockPath);
-  if ((await Bun.file(lockPath).text()) !== nonce) throw new Error("Package lock ownership changed; lock preserved.");
+  if ((await Bun.file(lockPath).text()) !== nonce)
+    throw new Error("Package lock ownership changed; lock preserved.");
   await unlink(lockPath);
 }
-async function buildPackage(root: string, plan: PackagePlan): Promise<Record<string, unknown>> {
-  if (resolve(process.cwd()) !== root) throw new Error("Run package builds from the repository root.");
+async function buildPackage(
+  root: string,
+  plan: PackagePlan,
+): Promise<Record<string, unknown>> {
+  if (resolve(process.cwd()) !== root)
+    throw new Error("Run package builds from the repository root.");
   const outputDir = resolve(root, plan.outputPath);
   await assertNoSymlinkComponents(root, dirname(outputDir));
   await mkdir(dirname(outputDir), { recursive: true });
@@ -769,14 +1101,23 @@ async function buildPackage(root: string, plan: PackagePlan): Promise<Record<str
     outcome = await (async () => {
       const identity = await captureIdentity(root, plan);
       const exists = !(await missing(outputDir));
-      const old = exists ? await inspectOwnedOutput(root, plan, outputDir) : undefined;
-      if (old?.treeHash !== plan.existing?.treeHash) throw new Error("Output changed after planning.");
-      if (old?.receipt.schemaVersion === 2 && old.receipt.identity?.key === identity.key) {
+      const old = exists
+        ? await inspectOwnedOutput(root, plan, outputDir)
+        : undefined;
+      if (old?.treeHash !== plan.existing?.treeHash)
+        throw new Error("Output changed after planning.");
+      if (
+        old?.receipt.schemaVersion === 2 &&
+        old.receipt.identity?.key === identity.key
+      ) {
         if (
           (await captureIdentity(root, plan)).key !== identity.key ||
-          (await inspectOwnedOutput(root, plan, outputDir)).treeHash !== old.treeHash
+          (await inspectOwnedOutput(root, plan, outputDir)).treeHash !==
+            old.treeHash
         )
-          throw new Error("Reuse inputs or outputs changed during verification.");
+          throw new Error(
+            "Reuse inputs or outputs changed during verification.",
+          );
         return {
           id: plan.id,
           name: plan.name,
@@ -788,10 +1129,17 @@ async function buildPackage(root: string, plan: PackagePlan): Promise<Record<str
           qualification: old.receipt.qualification,
         };
       }
-      stage = join(dirname(outputDir), `.stage-${plan.id}-${crypto.randomUUID()}`);
+      stage = join(
+        dirname(outputDir),
+        `.stage-${plan.id}-${crypto.randomUUID()}`,
+      );
       await guardOwnedMutation(root, plan.id, stage);
       await mkdir(stage);
-      lease = JSON.stringify({ schemaVersion: 1, id: plan.id, identityKey: identity.key });
+      lease = JSON.stringify({
+        schemaVersion: 1,
+        id: plan.id,
+        identityKey: identity.key,
+      });
       const leasePath = join(stage, "lease.json");
       await guardOwnedMutation(root, plan.id, leasePath);
       const leaseHandle = await open(leasePath, "wx", 0o600);
@@ -801,21 +1149,37 @@ async function buildPackage(root: string, plan: PackagePlan): Promise<Record<str
         await leaseHandle.close();
       }
       const worker = await runProcess(
-        [process.execPath, import.meta.path, "_compile-package", plan.id, stage, identity.key],
+        [
+          process.execPath,
+          import.meta.path,
+          "_compile-package",
+          plan.id,
+          stage,
+          identity.key,
+        ],
         root,
         { timeoutMs: 30000, maxOutputBytes: 2 * 1024 * 1024 },
       );
       if (worker.code !== 0)
-        throw new Error("Bounded package compiler failed; unqualified staging is preserved for review.");
+        throw new Error(
+          "Bounded package compiler failed; unqualified staging is preserved for review.",
+        );
       const payload = join(stage, "payload");
       const candidate = await inspectOwnedOutput(root, plan, payload);
-      if (candidate.receipt.identity?.key !== identity.key || (await captureIdentity(root, plan)).key !== identity.key)
+      if (
+        candidate.receipt.identity?.key !== identity.key ||
+        (await captureIdentity(root, plan)).key !== identity.key
+      )
         throw new Error("Staged output does not match stable compiler inputs.");
       if (old) {
-        if ((await inspectOwnedOutput(root, plan, outputDir)).treeHash !== old.treeHash)
+        if (
+          (await inspectOwnedOutput(root, plan, outputDir)).treeHash !==
+          old.treeHash
+        )
           throw new Error("Previous output changed before replacement.");
         await moveOwned(root, plan.id, outputDir, join(stage, "prior"));
-      } else if (!(await missing(outputDir))) throw new Error("Foreign output appeared before installation.");
+      } else if (!(await missing(outputDir)))
+        throw new Error("Foreign output appeared before installation.");
       await moveOwned(root, plan.id, payload, outputDir);
       const installed = await inspectOwnedOutput(root, plan, outputDir);
       if (
@@ -823,8 +1187,11 @@ async function buildPackage(root: string, plan: PackagePlan): Promise<Record<str
         installed.receipt.identity?.key !== identity.key ||
         (await captureIdentity(root, plan)).key !== identity.key
       )
-        throw new Error("Output switch failed verification; prior transient output is preserved.");
-      if (old) await removeOwnedOutput(root, plan, join(stage, "prior"), old.treeHash);
+        throw new Error(
+          "Output switch failed verification; prior transient output is preserved.",
+        );
+      if (old)
+        await removeOwnedOutput(root, plan, join(stage, "prior"), old.treeHash);
       await removeEmptyStage(root, plan, stage, lease);
       stage = undefined;
       return {
@@ -847,7 +1214,8 @@ async function buildPackage(root: string, plan: PackagePlan): Promise<Record<str
       await lock.close();
       await releasePackageLock(root, plan, lockPath, nonce);
     } catch (error) {
-      const cleanup = error instanceof Error ? error.message : "Package lock cleanup failed.";
+      const cleanup =
+        error instanceof Error ? error.message : "Package lock cleanup failed.";
       failure = new Error(failure ? `${failure.message} ${cleanup}` : cleanup);
     }
   }
@@ -856,15 +1224,25 @@ async function buildPackage(root: string, plan: PackagePlan): Promise<Record<str
   return outcome;
 }
 
-async function compileWorker(root: string, args: string[], rootPackage: Record<string, unknown>): Promise<number> {
-  if (args.length !== 3 || !Object.hasOwn(packageSpecs, args[0]!) || !sha(args[2]))
+async function compileWorker(
+  root: string,
+  args: string[],
+  rootPackage: Record<string, unknown>,
+): Promise<number> {
+  if (
+    args.length !== 3 ||
+    !Object.hasOwn(packageSpecs, args[0]!) ||
+    !sha(args[2])
+  )
     throw new Error("Invalid internal compiler selection.");
   const id = args[0] as PackageId;
   const stage = resolve(args[1]!);
   const identityKey = args[2]!;
   await guardOwnedMutation(root, id, stage);
   if (
-    !relativePath(resolve(root, "build/packages"), stage).startsWith(`.stage-${id}-`) ||
+    !relativePath(resolve(root, "build/packages"), stage).startsWith(
+      `.stage-${id}-`,
+    ) ||
     !(await lstat(stage)).isDirectory()
   )
     throw new Error("Worker requires its exclusive stage directory.");
@@ -882,31 +1260,49 @@ async function compileWorker(root: string, args: string[], rootPackage: Record<s
   )
     throw new Error("Worker stage lease is invalid or contains foreign files.");
   const plan = await packagePlan(root, rootPackage, id);
-  if (plan.status !== "ready") throw new Error("Worker package preflight failed.");
-  const result = await compilePackage(root, plan, join(stage, "payload"), identityKey);
+  if (plan.status !== "ready")
+    throw new Error("Worker package preflight failed.");
+  const result = await compilePackage(
+    root,
+    plan,
+    join(stage, "payload"),
+    identityKey,
+  );
   return result.status === "built" ? 0 : 1;
 }
 
-function parseArgs(args: string[]): { action: "plan" | "build"; packages: PackageId[] } {
+function parseArgs(args: string[]): {
+  action: "plan" | "build";
+  packages: PackageId[];
+} {
   const action = args.shift();
   if (action !== "plan" && action !== "build") throw new Error(usage);
   const selections: string[] = [];
   while (args.length) {
     const flag = args.shift();
-    if (flag !== "--package") throw new Error(`Unexpected argument: ${flag ?? ""}\n${usage}`);
+    if (flag !== "--package")
+      throw new Error(`Unexpected argument: ${flag ?? ""}\n${usage}`);
     const value = args.shift();
-    if (!value || value.startsWith("--")) throw new Error(`--package requires an explicit selection.\n${usage}`);
+    if (!value || value.startsWith("--"))
+      throw new Error(`--package requires an explicit selection.\n${usage}`);
     selections.push(
       ...value
         .split(",")
-        .map(item => item.trim())
+        .map((item) => item.trim())
         .filter(Boolean),
     );
   }
-  if (selections.length === 0) throw new Error(`Select at least one package explicitly.\n${usage}`);
-  if (new Set(selections).size !== selections.length) throw new Error("Duplicate package selection.");
-  const unknown = selections.filter(value => !Object.hasOwn(packageSpecs, value));
-  if (unknown.length) throw new Error(`Unknown package selection: ${unknown.join(", ")}\n${usage}`);
+  if (selections.length === 0)
+    throw new Error(`Select at least one package explicitly.\n${usage}`);
+  if (new Set(selections).size !== selections.length)
+    throw new Error("Duplicate package selection.");
+  const unknown = selections.filter(
+    (value) => !Object.hasOwn(packageSpecs, value),
+  );
+  if (unknown.length)
+    throw new Error(
+      `Unknown package selection: ${unknown.join(", ")}\n${usage}`,
+    );
   return { action, packages: selections as PackageId[] };
 }
 
@@ -915,37 +1311,60 @@ async function main(): Promise<number> {
   const rootPackage = await Bun.file(join(root, "package.json")).json();
   if (!record(rootPackage) || rootPackage.version !== "1.4.4")
     throw new Error("Root Bun package version must be 1.4.4.");
-  if (Bun.argv[2] === "_compile-package") return compileWorker(root, Bun.argv.slice(3), rootPackage);
+  if (Bun.argv[2] === "_compile-package")
+    return compileWorker(root, Bun.argv.slice(3), rootPackage);
   const { action, packages } = parseArgs(Bun.argv.slice(2));
-  const plans = await Promise.all(packages.map(id => packagePlan(root, rootPackage, id)));
+  const plans = await Promise.all(
+    packages.map((id) => packagePlan(root, rootPackage, id)),
+  );
   if (action === "plan") {
     console.log(
       JSON.stringify(
-        { schemaVersion: 1, action, root, complete: plans.every(plan => plan.status === "ready"), packages: plans },
+        {
+          schemaVersion: 1,
+          action,
+          root,
+          complete: plans.every((plan) => plan.status === "ready"),
+          packages: plans,
+        },
         null,
         2,
       ),
     );
     return 0;
   }
-  const blocked = plans.filter(plan => plan.status !== "ready");
+  const blocked = plans.filter((plan) => plan.status !== "ready");
   if (blocked.length) {
-    console.log(JSON.stringify({ schemaVersion: 1, action, root, complete: false, packages: plans }, null, 2));
+    console.log(
+      JSON.stringify(
+        { schemaVersion: 1, action, root, complete: false, packages: plans },
+        null,
+        2,
+      ),
+    );
     return 1;
   }
   const config = await loadConfig(root);
   assertRuntimeFacts(config.runtime, currentRuntimeFacts());
   const results: Array<Record<string, unknown>> = [];
   for (const plan of plans) results.push(await buildPackage(root, plan));
-  const complete = results.every(result => result.status === "built" || result.status === "reused");
-  console.log(JSON.stringify({ schemaVersion: 1, action, root, complete, packages: results }, null, 2));
+  const complete = results.every(
+    (result) => result.status === "built" || result.status === "reused",
+  );
+  console.log(
+    JSON.stringify(
+      { schemaVersion: 1, action, root, complete, packages: results },
+      null,
+      2,
+    ),
+  );
   return complete ? 0 : 1;
 }
 
 if (import.meta.main) {
   main()
-    .then(code => (process.exitCode = code))
-    .catch(error => {
+    .then((code) => (process.exitCode = code))
+    .catch((error) => {
       console.error(
         JSON.stringify({
           code: "PACKAGE_BUILD_OWNER_FAILED",

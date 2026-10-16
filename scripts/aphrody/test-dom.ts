@@ -66,7 +66,10 @@ for (const nom of PRIMITIVES_RESEAU) {
  */
 export function rendreReseauNatif(): void {
   for (const [nom, descripteur] of descripteursNatifs) {
-    Object.defineProperty(globalThis, nom, { ...descripteur, configurable: true });
+    Object.defineProperty(globalThis, nom, {
+      ...descripteur,
+      configurable: true,
+    });
   }
 }
 
@@ -81,7 +84,11 @@ await import("element-internals-polyfill");
 // On enveloppe le Blob en File avec le nom attendu.
 if (typeof FormData !== "undefined" && FormData.prototype.append) {
   const origAppend = FormData.prototype.append;
-  FormData.prototype.append = function (name: string, value: unknown, filename?: string) {
+  FormData.prototype.append = function (
+    name: string,
+    value: unknown,
+    filename?: string,
+  ) {
     if (value instanceof Blob && filename && !(value instanceof File)) {
       value = new File([value], filename, { type: value.type });
     }

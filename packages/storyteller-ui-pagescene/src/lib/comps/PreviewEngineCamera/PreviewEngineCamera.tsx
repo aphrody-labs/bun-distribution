@@ -1,5 +1,10 @@
 import { twMerge } from "tailwind-merge";
-import { BlindsIcon, FocusIcon, LoaderCircleIcon, PanelTopOpenIcon } from "lucide-react";
+import {
+  BlindsIcon,
+  FocusIcon,
+  LoaderCircleIcon,
+  PanelTopOpenIcon,
+} from "lucide-react";
 import { useShallow } from "zustand/shallow";
 import { usePageSceneStore } from "../../PageSceneStore";
 import { useViewportSize } from "../../hooks/useViewportSize";
@@ -98,7 +103,7 @@ export const PreviewEngineCamera = () => {
                 "-ms-1 justify-center",
             )}
           >
-            <FocusIcon  className="text-sm" />
+            <FocusIcon className="text-sm" />
             <p className="mt-[2px] text-sm font-medium">Camera View</p>
           </div>
 

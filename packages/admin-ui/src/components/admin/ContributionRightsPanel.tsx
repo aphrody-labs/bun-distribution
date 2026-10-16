@@ -11,7 +11,10 @@
  */
 import { useEffect, useState } from "react";
 import { Chargement, Croix, Enregistrer, Plus } from "@/components/icones";
-import { RoleSelect, RoleBadge } from "@aphrody/admin-ui/components/admin/RoleSelect";
+import {
+  RoleSelect,
+  RoleBadge,
+} from "@aphrody/admin-ui/components/admin/RoleSelect";
 import { UserSelect } from "@aphrody/admin-ui/components/admin/UserSelect";
 import {
   CONTRIBUTION_SCOPES,
@@ -27,7 +30,9 @@ import {
 const MODES: ContributionMode[] = ["members", "restricted", "admin"];
 
 export function ContributionRightsPanel() {
-  const [rights, setRights] = useState<ContributionRights>(DEFAULT_CONTRIBUTION_RIGHTS);
+  const [rights, setRights] = useState<ContributionRights>(
+    DEFAULT_CONTRIBUTION_RIGHTS,
+  );
   const [chargement, setChargement] = useState(true);
   const [envoi, setEnvoi] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -37,7 +42,8 @@ export function ContributionRightsPanel() {
     fetch("/api/admin/contribution-rights")
       .then((r) => r.json())
       .then((d) => {
-        if (vivant && d?.ok && d.rights) setRights(d.rights as ContributionRights);
+        if (vivant && d?.ok && d.rights)
+          setRights(d.rights as ContributionRights);
       })
       .catch(() => {})
       .finally(() => vivant && setChargement(false));
@@ -139,7 +145,9 @@ function BlocScope({
       <h3 className="font-display text-[15px] font-semibold text-white">
         {SCOPE_LABELS[scope].label}
       </h3>
-      <p className="mt-1 text-[12px] leading-relaxed text-white/45">{SCOPE_LABELS[scope].hint}</p>
+      <p className="mt-1 text-[12px] leading-relaxed text-white/45">
+        {SCOPE_LABELS[scope].hint}
+      </p>
 
       <div className="mt-4 space-y-2">
         {MODES.map((m) => (
@@ -158,7 +166,9 @@ function BlocScope({
               <span className="block text-[14px] font-medium text-white/90">
                 {MODE_LABELS[m].label}
               </span>
-              <span className="block text-[12px] text-white/45">{MODE_LABELS[m].hint}</span>
+              <span className="block text-[12px] text-white/45">
+                {MODE_LABELS[m].hint}
+              </span>
             </span>
           </label>
         ))}
@@ -182,7 +192,11 @@ function BlocScope({
                   <RoleBadge roleId={id} />
                   <button
                     type="button"
-                    onClick={() => onChange({ roleIds: rule.roleIds.filter((r) => r !== id) })}
+                    onClick={() =>
+                      onChange({
+                        roleIds: rule.roleIds.filter((r) => r !== id),
+                      })
+                    }
                     aria-label="Retirer ce rôle"
                     className="grid h-5 w-5 place-items-center rounded-full text-white/50 hover:bg-white/10 hover:text-white"
                   >
@@ -192,7 +206,11 @@ function BlocScope({
               ))}
             </div>
             <div className="flex items-center gap-2">
-              <RoleSelect value={roleEnCours} onChange={setRoleEnCours} className="flex-1" />
+              <RoleSelect
+                value={roleEnCours}
+                onChange={setRoleEnCours}
+                className="flex-1"
+              />
               <button
                 type="button"
                 onClick={() => ajouterRole(roleEnCours)}
@@ -222,7 +240,9 @@ function BlocScope({
                   <button
                     type="button"
                     onClick={() =>
-                      onChange({ discordIds: rule.discordIds.filter((d) => d !== id) })
+                      onChange({
+                        discordIds: rule.discordIds.filter((d) => d !== id),
+                      })
                     }
                     aria-label="Retirer ce membre"
                     className="grid h-5 w-5 place-items-center rounded-full text-white/50 hover:bg-white/10 hover:text-white"
@@ -233,7 +253,11 @@ function BlocScope({
               ))}
             </div>
             <div className="flex items-center gap-2">
-              <UserSelect value={membreEnCours} onChange={setMembreEnCours} className="flex-1" />
+              <UserSelect
+                value={membreEnCours}
+                onChange={setMembreEnCours}
+                className="flex-1"
+              />
               <button
                 type="button"
                 onClick={() => ajouterMembre(membreEnCours)}
@@ -248,7 +272,8 @@ function BlocScope({
 
           {rule.roleIds.length === 0 && rule.discordIds.length === 0 && (
             <p className="rounded-lg border border-dbz-red/30 bg-dbz-red/[0.06] px-3 py-2 text-[12px] text-white/70">
-              Aucun rôle ni membre listé : ce périmètre est fermé à tout le monde sauf au staff.
+              Aucun rôle ni membre listé : ce périmètre est fermé à tout le
+              monde sauf au staff.
             </p>
           )}
         </div>

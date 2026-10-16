@@ -3,10 +3,7 @@ import type { StickerProvider } from "../types";
 import { logosProvider } from "./logos";
 import { shapesProvider } from "./shapes";
 
-const defaultProviders: StickerProvider[] = [
-  logosProvider,
-  shapesProvider,
-];
+const defaultProviders: StickerProvider[] = [logosProvider, shapesProvider];
 
 export function registerDefaultStickerProviders({
   providersToRegister = defaultProviders,

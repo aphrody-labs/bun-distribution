@@ -373,7 +373,12 @@
     },
     {
       "id": "char-goldlewis",
-      "src": ["ゴールドルイス＝ディキンソン", "ゴールドルイス", "Goldlewis", "Goldlewis Dickinson"],
+      "src": [
+        "ゴールドルイス＝ディキンソン",
+        "ゴールドルイス",
+        "Goldlewis",
+        "Goldlewis Dickinson"
+      ],
       "en": "Goldlewis",
       "alt": ["Goldlewis Dickinson"],
       "note": "Guilty Gear -Strive- character (full name: Goldlewis Dickinson). Keep this English name; never transliterate or translate it.",
@@ -481,7 +486,12 @@
     },
     {
       "id": "char-elphelt",
-      "src": ["エルフェルト＝ヴァレンタイン", "エルフェルト", "Elphelt", "Elphelt Valentine"],
+      "src": [
+        "エルフェルト＝ヴァレンタイン",
+        "エルフェルト",
+        "Elphelt",
+        "Elphelt Valentine"
+      ],
       "en": "Elphelt",
       "alt": ["Elphelt Valentine"],
       "note": "Guilty Gear -Strive- character (full name: Elphelt Valentine). Keep this English name; never transliterate or translate it.",
@@ -605,7 +615,12 @@
       "kind": "system",
       "game": "ggst",
       "id": "gg-rc-purple",
-      "src": ["紫ロマ", "紫ロマンキャンセル", "Purple RC", "Purple Roman Cancel"],
+      "src": [
+        "紫ロマ",
+        "紫ロマンキャンセル",
+        "Purple RC",
+        "Purple Roman Cancel"
+      ],
       "en": "Purple RC",
       "alt": ["Purple Roman Cancel", "Purple Roman"],
       "note": "Strive Roman Cancel colour (Purple RC). YRC = Yellow Roman Cancel, a defensive 'get off me' during blockstun.",
@@ -617,7 +632,12 @@
       "kind": "system",
       "game": "ggst",
       "id": "gg-rc-yellow",
-      "src": ["黄ロマ", "黄ロマンキャンセル", "Yellow RC", "Yellow Roman Cancel"],
+      "src": [
+        "黄ロマ",
+        "黄ロマンキャンセル",
+        "Yellow RC",
+        "Yellow Roman Cancel"
+      ],
       "en": "Yellow RC",
       "alt": ["Yellow Roman Cancel", "Yellow Roman"],
       "note": "Strive Roman Cancel colour (Yellow RC). YRC = Yellow Roman Cancel, a defensive 'get off me' during blockstun.",
@@ -766,7 +786,12 @@
       "kind": "system",
       "game": "ggst",
       "id": "gg-faultless-defense",
-      "src": ["フォルトレスディフェンス", "faultless defense", "faultless defence", "FD"],
+      "src": [
+        "フォルトレスディフェンス",
+        "faultless defense",
+        "faultless defence",
+        "FD"
+      ],
       "en": "Faultless Defense",
       "alt": ["FD", "faultless defence", "faultless"],
       "note": "Special block that negates chip damage and pushes the opponent back, at a Tension cost. IBFD = Instant Faultless Defense.",
@@ -778,7 +803,12 @@
       "kind": "system",
       "game": "ggst",
       "id": "gg-ibfd",
-      "src": ["IBFD", "インスタントFD", "instant faultless defense", "instant faultless defence"],
+      "src": [
+        "IBFD",
+        "インスタントFD",
+        "instant faultless defense",
+        "instant faultless defence"
+      ],
       "en": "IBFD",
       "alt": ["Instant Faultless Defense", "instant FD"],
       "note": "Instant Block while holding Faultless Defense.",
@@ -963,7 +993,12 @@
       "kind": "system",
       "game": "ggst",
       "id": "gg-dead-angle",
-      "src": ["デッドアングルアタック", "dead angle attack", "dead angle", "DAA"],
+      "src": [
+        "デッドアングルアタック",
+        "dead angle attack",
+        "dead angle",
+        "DAA"
+      ],
       "en": "Dead Angle Attack",
       "alt": ["DAA", "Dead Angle"],
       "note": "Invincible attack out of blockstun in older Guilty Gear games.",
@@ -1313,7 +1348,12 @@
     },
     {
       "id": "mv-potemkin-potemkin-buster",
-      "src": ["Potemkin Buster", "pot buster", "ポチョムキンバスター", "ポチバス"],
+      "src": [
+        "Potemkin Buster",
+        "pot buster",
+        "ポチョムキンバスター",
+        "ポチバス"
+      ],
       "en": "Potemkin Buster",
       "note": "Guilty Gear -Strive- Potemkin's move (official English name). Keep it as written; never translate it literally.",
       "kind": "move",

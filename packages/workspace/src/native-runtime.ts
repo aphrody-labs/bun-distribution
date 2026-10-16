@@ -48,7 +48,10 @@ interface RuntimeSdk {
     directory: string,
     options: { home: string; manifestSha256: string },
   ): Promise<string>;
-  rollbackArtifact(options: { home: string; manifestSha256: string }): Promise<unknown>;
+  rollbackArtifact(options: {
+    home: string;
+    manifestSha256: string;
+  }): Promise<unknown>;
 }
 export interface NativeRuntimeOptions {
   root: string;
@@ -60,16 +63,22 @@ export interface NativeRuntimeOptions {
   apply?: boolean;
 }
 
-const digest = (bytes: Uint8Array) => new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
+const digest = (bytes: Uint8Array) =>
+  new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
 async function regular(path: string) {
   const status = await lstat(path);
-  if (!status.isFile()) throw new Error("Expected a regular runtime file: " + path);
+  if (!status.isFile())
+    throw new Error("Expected a regular runtime file: " + path);
   return status;
 }
 async function realDirectory(path: string) {
-  if (!(await lstat(path)).isDirectory()) throw new Error("Expected a real directory: " + path);
+  if (!(await lstat(path)).isDirectory())
+    throw new Error("Expected a real directory: " + path);
 }
-async function runtimeSdk(root: string, checkout?: string): Promise<RuntimeSdk> {
+async function runtimeSdk(
+  root: string,
+  checkout?: string,
+): Promise<RuntimeSdk> {
   const selected = checkout || process.env["APHRODY_BUN_CHECKOUT"];
   let artifact: string;
   let release: string;
@@ -110,7 +119,11 @@ function readContract(value: unknown): RuntimeContract {
   return contract;
 }
 
-async function inspectArtifact(directory: string, contract: RuntimeContract, sdk: RuntimeSdk) {
+async function inspectArtifact(
+  directory: string,
+  contract: RuntimeContract,
+  sdk: RuntimeSdk,
+) {
   await realDirectory(directory);
   const manifestPath = join(directory, "manifest.json");
   await regular(manifestPath);
@@ -118,11 +131,15 @@ async function inspectArtifact(directory: string, contract: RuntimeContract, sdk
   const manifestSha256 = digest(bytes);
   const pin = contract.artifacts.find(
     (candidate) =>
-      candidate.target === sdk.hostTarget() && candidate.manifestSha256 === manifestSha256,
+      candidate.target === sdk.hostTarget() &&
+      candidate.manifestSha256 === manifestSha256,
   );
   if (!pin) throw new Error("Runtime artifact is not pinned for this host");
   const manifest = JSON.parse(bytes.toString()) as NativeManifest;
-  const source = manifest.name === "buv-runtime" ? manifest.sources?.bun : manifest.sources?.yolo;
+  const source =
+    manifest.name === "buv-runtime"
+      ? manifest.sources?.bun
+      : manifest.sources?.yolo;
   if (
     (manifest.name !== "buv-runtime" && manifest.name !== "yolo-runtime") ||
     manifest.target !== pin.target ||
@@ -132,13 +149,16 @@ async function inspectArtifact(directory: string, contract: RuntimeContract, sdk
     source?.dirty !== false ||
     manifest.build?.panicRecovery !== true
   )
-    throw new Error("Runtime manifest differs from the pinned clean, recoverable build");
+    throw new Error(
+      "Runtime manifest differs from the pinned clean, recoverable build",
+    );
   await Promise.all(
     Object.entries(manifest.files).map(async ([name, file]) => {
       if (!/^[a-zA-Z0-9_.-]+$/.test(name) || name === "." || name === "..")
         throw new Error("Unsafe runtime manifest path");
       const status = await regular(join(directory, name));
-      if (status.size !== file.bytes) throw new Error("Runtime file size differs: " + name);
+      if (status.size !== file.bytes)
+        throw new Error("Runtime file size differs: " + name);
     }),
   );
   // The SDK owns file checksums, target validation and ABI negotiation.
@@ -159,8 +179,11 @@ async function inspectArtifact(directory: string, contract: RuntimeContract, sdk
     const missing = contract.requiredCapabilities.filter(
       (capability) => !capabilities.includes(capability),
     );
-    if (missing.length) throw new Error("Runtime capabilities missing: " + missing.join(", "));
-    const library = Object.entries(manifest.files).find(([name]) => /\.(so|dylib|dll)$/.test(name));
+    if (missing.length)
+      throw new Error("Runtime capabilities missing: " + missing.join(", "));
+    const library = Object.entries(manifest.files).find(([name]) =>
+      /\.(so|dylib|dll)$/.test(name),
+    );
     if (!library) throw new Error("Runtime manifest has no shared library");
     const installationName = pin.version + "-" + library[1].sha256.slice(0, 8);
     return {
@@ -176,15 +199,24 @@ async function inspectArtifact(directory: string, contract: RuntimeContract, sdk
   }
 }
 
-async function selectedDirectory(home: string, target: string, which: "current" | "previous") {
-  const name = await readlink(join(home, target, which)).catch((error: NodeJS.ErrnoException) => {
-    if (error.code === "ENOENT") throw new Error("No installed " + which + " native runtime");
-    throw error;
-  });
+async function selectedDirectory(
+  home: string,
+  target: string,
+  which: "current" | "previous",
+) {
+  const name = await readlink(join(home, target, which)).catch(
+    (error: NodeJS.ErrnoException) => {
+      if (error.code === "ENOENT")
+        throw new Error("No installed " + which + " native runtime");
+      throw error;
+    },
+  );
   const slot = basename(name);
   if (
     !/^\d+\.\d+\.\d+-[a-f0-9]{8}$/.test(slot) ||
-    (isAbsolute(name) ? resolve(name) !== resolve(home, target, slot) : name !== slot)
+    (isAbsolute(name)
+      ? resolve(name) !== resolve(home, target, slot)
+      : name !== slot)
   )
     throw new Error("Unsafe runtime slot target");
   return join(home, target, slot);
@@ -193,9 +225,15 @@ async function selectedDirectory(home: string, target: string, which: "current" 
 export async function acquireNativeRuntime(options: NativeRuntimeOptions) {
   const root = resolve(options.root);
   const contract = readContract(
-    JSON.parse(await readFile(join(root, "tools/config/native-runtime.json"), "utf8")),
+    JSON.parse(
+      await readFile(join(root, "tools/config/native-runtime.json"), "utf8"),
+    ),
   );
-  if (options.action !== "install" && options.action !== "verify" && options.action !== "rollback")
+  if (
+    options.action !== "install" &&
+    options.action !== "verify" &&
+    options.action !== "rollback"
+  )
     throw new Error("Expected install, verify or rollback");
   if (options.action === "install" && !options.artifact)
     throw new Error("install requires --artifact");
@@ -234,14 +272,18 @@ export async function acquireNativeRuntime(options: NativeRuntimeOptions) {
       };
     if (options.action === "install") {
       const destination = join(home, target, before.installationName);
-      const existing = await lstat(destination).catch((error: NodeJS.ErrnoException) => {
-        if (error.code === "ENOENT") return undefined;
-        throw error;
-      });
+      const existing = await lstat(destination).catch(
+        (error: NodeJS.ErrnoException) => {
+          if (error.code === "ENOENT") return undefined;
+          throw error;
+        },
+      );
       if (existing) {
         const installed = await inspectArtifact(destination, contract, sdk);
         if (installed.manifestSha256 !== before.manifestSha256)
-          throw new Error("Installed runtime directory conflicts with the requested artifact");
+          throw new Error(
+            "Installed runtime directory conflicts with the requested artifact",
+          );
       }
     }
     if (options.action === "install")
@@ -272,7 +314,9 @@ export async function acquireNativeRuntime(options: NativeRuntimeOptions) {
   }
 }
 
-export async function runNativeRuntime(input: readonly string[]): Promise<number> {
+export async function runNativeRuntime(
+  input: readonly string[],
+): Promise<number> {
   const args = [...input];
   if (args.includes("--help")) {
     console.log(
@@ -288,7 +332,10 @@ export async function runNativeRuntime(input: readonly string[]): Promise<number
     const arg = args.shift();
     if (arg === "--apply") options.apply = true;
     else {
-      const keys: Record<string, "root" | "artifact" | "runtimeHome" | "yolo" | "bunCheckout"> = {
+      const keys: Record<
+        string,
+        "root" | "artifact" | "runtimeHome" | "yolo" | "bunCheckout"
+      > = {
         "--root": "root",
         "--artifact": "artifact",
         "--runtime-home": "runtimeHome",
@@ -298,7 +345,8 @@ export async function runNativeRuntime(input: readonly string[]): Promise<number
       const key = keys[arg ?? ""];
       if (!key) throw new Error("Unknown option: " + arg);
       const value = args.shift();
-      if (!value || value.startsWith("--")) throw new Error("Missing value for " + arg);
+      if (!value || value.startsWith("--"))
+        throw new Error("Missing value for " + arg);
       options[key] = value;
     }
   }

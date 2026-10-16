@@ -35,7 +35,8 @@ export function minWidthQuery(sizeClass: WindowSizeClass): string {
   return mediaQuery(sizeClass);
 }
 
-const isClient = typeof window !== "undefined" && typeof window.matchMedia === "function";
+const isClient =
+  typeof window !== "undefined" && typeof window.matchMedia === "function";
 
 /**
  * Reactive boolean for a CSS media query. SSR-safe (returns `false` until
@@ -63,7 +64,9 @@ export function useMediaQuery(query: string): boolean {
  * return sizeClass === "compact" ? <MdNavigationBar/> : <MdNavigationRail/>;
  * ```
  */
-export function useWindowSizeClass(ssrSizeClass: WindowSizeClass = "compact"): WindowSizeClass {
+export function useWindowSizeClass(
+  ssrSizeClass: WindowSizeClass = "compact",
+): WindowSizeClass {
   const [sizeClass, setSizeClass] = useState<WindowSizeClass>(ssrSizeClass);
   useEffect(() => {
     if (!isClient) return;

@@ -29,8 +29,10 @@ const ignored = new Set([
   "vendor",
   "forks",
 ]);
-const envAccess = /(?:process\.env|Bun\.env|import\.meta\.env)\.([A-Z][A-Z0-9_]*)/g;
-const rustEnvAccess = /(?:std::env|env)::(?:var|var_os|remove_var)\s*\(\s*"([A-Z][A-Z0-9_]*)"/g;
+const envAccess =
+  /(?:process\.env|Bun\.env|import\.meta\.env)\.([A-Z][A-Z0-9_]*)/g;
+const rustEnvAccess =
+  /(?:std::env|env)::(?:var|var_os|remove_var)\s*\(\s*"([A-Z][A-Z0-9_]*)"/g;
 const compileEnvAccess = /\benv!\s*\(\s*"([A-Z][A-Z0-9_]*)"/g;
 const mapEnvAccess = /\benv\s*\[\s*["']([A-Z][A-Z0-9_]*)["']\s*\]/g;
 const rustEnvConstant =
@@ -49,14 +51,30 @@ function addMatches(text: string, pattern: RegExp): void {
   for (const match of text.matchAll(pattern)) keys.add(match[1]!);
 }
 
-for (const sourceRoot of ["apps", "crates", "packages", "scripts", "config", "m3", "py"]) {
+for (const sourceRoot of [
+  "apps",
+  "crates",
+  "packages",
+  "scripts",
+  "config",
+  "m3",
+  "py",
+]) {
   for await (const path of sourceGlob.scan({
     cwd: join(root, sourceRoot),
     onlyFiles: true,
     dot: true,
   })) {
-    if (ignoredPath(path) || path.includes(".test.") || path.endsWith("_test.rs")) continue;
-    const rel = relative(root, join(root, sourceRoot, path)).replaceAll("\\", "/");
+    if (
+      ignoredPath(path) ||
+      path.includes(".test.") ||
+      path.endsWith("_test.rs")
+    )
+      continue;
+    const rel = relative(root, join(root, sourceRoot, path)).replaceAll(
+      "\\",
+      "/",
+    );
     if (rel.startsWith("scripts/build/")) continue;
     const text = await Bun.file(join(root, sourceRoot, path)).text();
     for (const pattern of [
@@ -75,7 +93,15 @@ for (const sourceRoot of ["apps", "crates", "packages", "scripts", "config", "m3
 
 // Maintained app examples only; ignored trees hold private host state. The root .env.example (this
 // script's output) is read below, keeping only names a tracked first-party file still mentions.
-for (const exampleRoot of ["apps", "crates", "packages", "scripts", "config", "m3", "py"]) {
+for (const exampleRoot of [
+  "apps",
+  "crates",
+  "packages",
+  "scripts",
+  "config",
+  "m3",
+  "py",
+]) {
   for await (const path of dotenvGlob.scan({
     cwd: join(root, exampleRoot),
     onlyFiles: true,
@@ -91,13 +117,18 @@ for (const exampleRoot of ["apps", "crates", "packages", "scripts", "config", "m
 // a tracked first-party file outside the docs still mentions it, so retired products drop out.
 const mentioned = new Set<string>();
 const tracked = (
-  await Bun.$`git ls-files -z -- apps crates packages scripts config m3 py`.cwd(root).quiet().text()
+  await Bun.$`git ls-files -z -- apps crates packages scripts config m3 py`
+    .cwd(root)
+    .quiet()
+    .text()
 )
   .split("\0")
   .filter(
     (path) =>
       path &&
-      !/\.(md|mdx|png|jpe?g|gif|webp|ico|svg|woff2?|ttf|otf|wasm|gz|zip|lock)$/i.test(path) &&
+      !/\.(md|mdx|png|jpe?g|gif|webp|ico|svg|woff2?|ttf|otf|wasm|gz|zip|lock)$/i.test(
+        path,
+      ) &&
       !/(^|\/)docs\//.test(path),
   );
 for (const path of tracked) {
@@ -150,7 +181,10 @@ const sections: [string, (key: string) => boolean][] = [
         key,
       ),
   ],
-  ["Rust and Bun toolchain", (key) => /^(CARGO_|RUST|BUN_|N2B_|NAPI_|TURBO_|NODE_|NPM_)/.test(key)],
+  [
+    "Rust and Bun toolchain",
+    (key) => /^(CARGO_|RUST|BUN_|N2B_|NAPI_|TURBO_|NODE_|NPM_)/.test(key),
+  ],
   [
     "Google Cloud and AI providers",
     (key) =>
@@ -160,7 +194,10 @@ const sections: [string, (key: string) => boolean][] = [
   ],
   [
     "Databases, storage and services",
-    (key) => /DATABASE|POSTGRES|SUPABASE|REDIS|SQLITE|STORAGE|CDN|RAG_DB|KNOWLEDGE_DB/.test(key),
+    (key) =>
+      /DATABASE|POSTGRES|SUPABASE|REDIS|SQLITE|STORAGE|CDN|RAG_DB|KNOWLEDGE_DB/.test(
+        key,
+      ),
   ],
   [
     "Rose Griffon and game data",
@@ -169,11 +206,16 @@ const sections: [string, (key: string) => boolean][] = [
         key,
       ),
   ],
-  ["Shenron host plane and gateway", (key) => /^(SHENRON_|APHRODY_SHENRON_|DBFR_)/.test(key)],
+  [
+    "Shenron host plane and gateway",
+    (key) => /^(SHENRON_|APHRODY_SHENRON_|DBFR_)/.test(key),
+  ],
   [
     "Discord and notifications",
     (key) =>
-      /^(DISCORD_|GUILD_|OWNER_|BOT_|CRON_|MAIL_|SMTP_|RESEND_|TELEGRAM_|MATRIX_|SLACK_)/.test(key),
+      /^(DISCORD_|GUILD_|OWNER_|BOT_|CRON_|MAIL_|SMTP_|RESEND_|TELEGRAM_|MATRIX_|SLACK_)/.test(
+        key,
+      ),
   ],
   [
     "Web, identity and payments",
@@ -216,4 +258,6 @@ if (remaining.size)
 
 const target = join(root, ".env.example");
 await Bun.write(target, `${output.join("\n")}\n`);
-console.log(`Wrote ${target} with ${keys.size} variable names; private values were not emitted.`);
+console.log(
+  `Wrote ${target} with ${keys.size} variable names; private values were not emitted.`,
+);

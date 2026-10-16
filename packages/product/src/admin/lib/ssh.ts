@@ -40,7 +40,10 @@ const BEGIN = "# >>> aphrody-omar >>>";
 const END = "# <<< aphrody-omar <<<";
 
 /** Pure: put (or refresh) our marked Include block at the top of a user ssh config. Everything else is kept as is. */
-export function withIncludeBlock(existing: string, includePath: string): string {
+export function withIncludeBlock(
+  existing: string,
+  includePath: string,
+): string {
   const block = `${BEGIN}\nInclude "${slashes(includePath)}"\n${END}\n`;
   const eol = existing.includes("\r\n") ? "\r\n" : "\n";
   const stripped = removeIncludeBlock(existing);
@@ -68,9 +71,12 @@ export async function writeSshFiles(
   await writeFile(paths.sshConfigFile, renderSshConfig(pack, paths));
   if (pack.hostKeys.length > 0)
     await writeFile(paths.knownHostsFile, `${pack.hostKeys.join("\n")}\n`);
-  else if (!existsSync(paths.knownHostsFile)) await writeFile(paths.knownHostsFile, "");
+  else if (!existsSync(paths.knownHostsFile))
+    await writeFile(paths.knownHostsFile, "");
   await mkdir(dirname(paths.userSshConfig), { recursive: true });
-  const before = existsSync(paths.userSshConfig) ? await readFile(paths.userSshConfig, "utf8") : "";
+  const before = existsSync(paths.userSshConfig)
+    ? await readFile(paths.userSshConfig, "utf8")
+    : "";
   const after = withIncludeBlock(before, paths.sshConfigFile);
   if (after === before) return { changedUserConfig: false };
   let backup: string | undefined;
@@ -90,7 +96,11 @@ export interface SshOptions {
 }
 
 /** argv of `ssh` running `sh -s -- <args>` on the host, the script itself being sent on stdin (nothing is interpolated). */
-export function sshArgv(paths: KitPaths, hostId: string, options: SshOptions = {}): string[] {
+export function sshArgv(
+  paths: KitPaths,
+  hostId: string,
+  options: SshOptions = {},
+): string[] {
   const argv = [
     "ssh",
     "-F",
@@ -98,7 +108,8 @@ export function sshArgv(paths: KitPaths, hostId: string, options: SshOptions = {
     "-o",
     `BatchMode=${options.batch === false ? "no" : "yes"}`,
   ];
-  if (options.connectTimeoutSecs) argv.push("-o", `ConnectTimeout=${options.connectTimeoutSecs}`);
+  if (options.connectTimeoutSecs)
+    argv.push("-o", `ConnectTimeout=${options.connectTimeoutSecs}`);
   argv.push(
     hostAlias(hostId),
     `sh -s -- ${(options.args ?? []).map(shellQuote).join(" ")}`.trimEnd(),
@@ -108,13 +119,23 @@ export function sshArgv(paths: KitPaths, hostId: string, options: SshOptions = {
 
 export interface RemoteResult extends RunResult {
   /** Plain-language reason when ssh itself failed (not the remote script). */
-  problem?: "cle-refusee" | "hote-inconnu" | "injoignable" | "delai" | "ssh-absent" | "autre";
+  problem?:
+    | "cle-refusee"
+    | "hote-inconnu"
+    | "injoignable"
+    | "delai"
+    | "ssh-absent"
+    | "autre";
 }
 
 export function classifySshFailure(result: RunResult): RemoteResult["problem"] {
   const text = `${result.stderr}`.toLowerCase();
   if (result.timedOut) return "delai";
-  if (result.code === 127 && !text.includes("not found") && result.stdout === "")
+  if (
+    result.code === 127 &&
+    !text.includes("not found") &&
+    result.stdout === ""
+  )
     return "ssh-absent";
   if (text.includes("permission denied")) return "cle-refusee";
   if (
@@ -148,10 +169,17 @@ export async function runRemote(
     ...(options.inherit ? { inherit: true } : {}),
   });
   const problem = result.code === 0 ? undefined : classifySshFailure(result);
-  return { ...result, stderr: redact(result.stderr), ...(problem ? { problem } : {}) };
+  return {
+    ...result,
+    stderr: redact(result.stderr),
+    ...(problem ? { problem } : {}),
+  };
 }
 
-export const SSH_PROBLEM_TEXT: Record<NonNullable<RemoteResult["problem"]>, string> = {
+export const SSH_PROBLEM_TEXT: Record<
+  NonNullable<RemoteResult["problem"]>,
+  string
+> = {
   "cle-refusee":
     "le serveur refuse ta clé : elle n'est pas encore autorisée (envoie le fichier de clés à l'équipe)",
   "hote-inconnu":
@@ -177,7 +205,9 @@ export async function ensureSshKey(
     // private key without its public half: derive it, never overwrite the private key
     const derived = await sys.run([keygen, "-y", "-f", paths.sshKey]);
     if (derived.code !== 0)
-      throw new Error("clé SSH existante illisible (protégée par une phrase secrète ?)");
+      throw new Error(
+        "clé SSH existante illisible (protégée par une phrase secrète ?)",
+      );
     const line = `${derived.stdout.trim()} ${comment}`;
     await writeFile(pub, `${line}\n`);
     return { created: false, publicKey: line };

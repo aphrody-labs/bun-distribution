@@ -13,30 +13,30 @@ import DatabaseIcon from "@aphrody/assets/icons/Database.png";
 import ServerIcon from "@aphrody/assets/icons/Server.png";
 
 export type VolumeIcon =
-	| typeof DriveAmazonS3
-	| typeof DriveGoogleDrive
-	| typeof DriveDropbox
-	| typeof DriveOneDrive
-	| typeof DriveBackBlaze
-	| typeof DrivePCloud
-	| typeof DriveBox
-	| typeof HDDIcon
-	| typeof DriveIcon
-	| typeof DatabaseIcon
-	| typeof ServerIcon;
+  | typeof DriveAmazonS3
+  | typeof DriveGoogleDrive
+  | typeof DriveDropbox
+  | typeof DriveOneDrive
+  | typeof DriveBackBlaze
+  | typeof DrivePCloud
+  | typeof DriveBox
+  | typeof HDDIcon
+  | typeof DriveIcon
+  | typeof DatabaseIcon
+  | typeof ServerIcon;
 
 // Map cloud service types to icons
 const cloudProviderIcons: Record<CloudServiceType, string> = {
-	s3: DriveAmazonS3,
-	gdrive: DriveGoogleDrive,
-	dropbox: DriveDropbox,
-	onedrive: DriveOneDrive,
-	gcs: DriveGoogleDrive,
-	azblob: DriveBox,
-	b2: DriveBackBlaze,
-	wasabi: DriveAmazonS3,
-	spaces: DriveAmazonS3,
-	cloud: DrivePCloud,
+  s3: DriveAmazonS3,
+  gdrive: DriveGoogleDrive,
+  dropbox: DriveDropbox,
+  onedrive: DriveOneDrive,
+  gcs: DriveGoogleDrive,
+  azblob: DriveBox,
+  b2: DriveBackBlaze,
+  wasabi: DriveAmazonS3,
+  spaces: DriveAmazonS3,
+  cloud: DrivePCloud,
 };
 
 /**
@@ -44,33 +44,33 @@ const cloudProviderIcons: Record<CloudServiceType, string> = {
  * Cloud volumes typically have mount points like "s3://bucket-name"
  */
 function parseCloudService(mountPoint: string | null): CloudServiceType | null {
-	if (!mountPoint) return null;
+  if (!mountPoint) return null;
 
-	// Parse mount_point for cloud service (format: "s3://bucket-name")
-	const match = mountPoint.match(/^(\w+):\/\//);
-	if (!match) return null;
+  // Parse mount_point for cloud service (format: "s3://bucket-name")
+  const match = mountPoint.match(/^(\w+):\/\//);
+  if (!match) return null;
 
-	const scheme = match[1];
+  const scheme = match[1];
 
-	// Verify it's a cloud scheme (not file:// or other local schemes)
-	const cloudSchemes: CloudServiceType[] = [
-		"s3",
-		"gdrive",
-		"dropbox",
-		"onedrive",
-		"gcs",
-		"azblob",
-		"b2",
-		"wasabi",
-		"spaces",
-		"cloud",
-	];
+  // Verify it's a cloud scheme (not file:// or other local schemes)
+  const cloudSchemes: CloudServiceType[] = [
+    "s3",
+    "gdrive",
+    "dropbox",
+    "onedrive",
+    "gcs",
+    "azblob",
+    "b2",
+    "wasabi",
+    "spaces",
+    "cloud",
+  ];
 
-	if (cloudSchemes.includes(scheme as CloudServiceType)) {
-		return scheme as CloudServiceType;
-	}
+  if (cloudSchemes.includes(scheme as CloudServiceType)) {
+    return scheme as CloudServiceType;
+  }
 
-	return null;
+  return null;
 }
 
 /**
@@ -82,22 +82,22 @@ function parseCloudService(mountPoint: string | null): CloudServiceType | null {
  * 3. Default to generic drive icon
  */
 export function getVolumeIcon(volume: {
-	mount_point: string | null;
-	volume_type?: import("./generated/types").VolumeType;
+  mount_point: string | null;
+  volume_type?: import("./generated/types").VolumeType;
 }): VolumeIcon {
-	// Check if it's a cloud volume
-	const cloudService = parseCloudService(volume.mount_point);
-	if (cloudService) {
-		return cloudProviderIcons[cloudService] || DriveIcon;
-	}
-	if (volume.volume_type === "Network") return ServerIcon;
-	if (volume.volume_type === "Virtual") return DatabaseIcon;
+  // Check if it's a cloud volume
+  const cloudService = parseCloudService(volume.mount_point);
+  if (cloudService) {
+    return cloudProviderIcons[cloudService] || DriveIcon;
+  }
+  if (volume.volume_type === "Network") return ServerIcon;
+  if (volume.volume_type === "Virtual") return DatabaseIcon;
 
-	// For external/removable drives, use HDD icon
-	if (volume.volume_type === "External" || volume.volume_type === "Removable") {
-		return HDDIcon;
-	}
+  // For external/removable drives, use HDD icon
+  if (volume.volume_type === "External" || volume.volume_type === "Removable") {
+    return HDDIcon;
+  }
 
-	// Default to generic drive icon
-	return DriveIcon;
+  // Default to generic drive icon
+  return DriveIcon;
 }

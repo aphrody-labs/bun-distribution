@@ -14,14 +14,23 @@ test.each([false, true])(
       gzip ? { compress: "gzip" } : undefined,
     ).blob();
     const bytes = await blob.arrayBuffer();
-    expect(await readCrateArchiveFile(bytes, "fixture-1.0.0/src/lib.rs")).toBe("// été\n");
-    expect(await readCrateArchiveFile(bytes, "fixture-1.0.0/src/[name].rs")).toBe("literal name");
-    expect(await readCrateArchiveFile(bytes, "fixture-1.0.0/missing.rs")).toBeNull();
+    expect(await readCrateArchiveFile(bytes, "fixture-1.0.0/src/lib.rs")).toBe(
+      "// été\n",
+    );
+    expect(
+      await readCrateArchiveFile(bytes, "fixture-1.0.0/src/[name].rs"),
+    ).toBe("literal name");
+    expect(
+      await readCrateArchiveFile(bytes, "fixture-1.0.0/missing.rs"),
+    ).toBeNull();
   },
 );
 
 test("invalid crate archives retain the unavailable-file result", async () => {
   expect(
-    await readCrateArchiveFile(new TextEncoder().encode("not a tarball").buffer, "src/lib.rs"),
+    await readCrateArchiveFile(
+      new TextEncoder().encode("not a tarball").buffer,
+      "src/lib.rs",
+    ),
   ).toBeNull();
 });

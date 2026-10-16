@@ -23,7 +23,10 @@ export interface CollectionReaderProps {
   contentsLabel: string;
   previousLabel: string;
   nextLabel: string;
-  onSelectionChange?: (edition: ReaderCollectionEdition, chapter: ReaderCollectionChapter) => void;
+  onSelectionChange?: (
+    edition: ReaderCollectionEdition,
+    chapter: ReaderCollectionChapter,
+  ) => void;
   renderChapter: (
     edition: ReaderCollectionEdition,
     chapter: ReaderCollectionChapter,
@@ -56,17 +59,26 @@ export function CollectionReader({
     [editions],
   );
   const [editionId, setEditionId] = useState(
-    () => available.find((edition) => edition.id === initialEdition)?.id ?? available[0]?.id ?? "",
+    () =>
+      available.find((edition) => edition.id === initialEdition)?.id ??
+      available[0]?.id ??
+      "",
   );
-  const edition = available.find((item) => item.id === editionId) ?? available[0];
+  const edition =
+    available.find((item) => item.id === editionId) ?? available[0];
   const [chapterIndex, setChapterIndex] = useState(() =>
     Math.max(
       0,
-      edition?.chapters.findIndex((chapter) => String(chapter.id) === String(initialChapter)) ?? 0,
+      edition?.chapters.findIndex(
+        (chapter) => String(chapter.id) === String(initialChapter),
+      ) ?? 0,
     ),
   );
   const [contentsOpen, setContentsOpen] = useState(false);
-  const safeIndex = Math.min(chapterIndex, Math.max(0, (edition?.chapters.length ?? 0) - 1));
+  const safeIndex = Math.min(
+    chapterIndex,
+    Math.max(0, (edition?.chapters.length ?? 0) - 1),
+  );
   const chapter = edition?.chapters[safeIndex];
 
   useEffect(() => {
@@ -103,7 +115,11 @@ export function CollectionReader({
             <button
               key={item.id}
               type="button"
-              className={item.id === edition.id ? "m3-reader-btn-active" : "m3-reader-btn"}
+              className={
+                item.id === edition.id
+                  ? "m3-reader-btn-active"
+                  : "m3-reader-btn"
+              }
               aria-pressed={item.id === edition.id}
               onClick={() => {
                 setEditionId(item.id);
@@ -137,7 +153,9 @@ export function CollectionReader({
             <button
               key={item.id}
               type="button"
-              className={index === safeIndex ? "m3-reader-btn-active" : "m3-reader-btn"}
+              className={
+                index === safeIndex ? "m3-reader-btn-active" : "m3-reader-btn"
+              }
               aria-current={index === safeIndex ? "page" : undefined}
               disabled={item.pageCount === 0}
               onClick={() => {
@@ -151,7 +169,10 @@ export function CollectionReader({
         </div>
       )}
       {renderChapter(edition, chapter, safeIndex)}
-      <nav className="m3-reader-collection-navigation" aria-label={contentsLabel}>
+      <nav
+        className="m3-reader-collection-navigation"
+        aria-label={contentsLabel}
+      >
         <button
           type="button"
           className="m3-reader-btn"

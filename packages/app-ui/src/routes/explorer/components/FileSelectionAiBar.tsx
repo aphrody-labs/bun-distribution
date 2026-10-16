@@ -43,10 +43,14 @@ export function FileSelectionAiBar() {
         <div className="pointer-events-auto flex max-w-full flex-wrap items-center gap-2 rounded-full border border-outline-variant/60 bg-surface-container-high/95 p-1.5 pl-4 pr-2 shadow-md3-3 backdrop-blur-md">
           {/* Selection counter badge */}
           <span className="text-label-large font-medium text-on-surface whitespace-nowrap pr-1 select-none">
-            {selectedFiles.length} {selectedFiles.length === 1 ? "élément" : "éléments"}
+            {selectedFiles.length}{" "}
+            {selectedFiles.length === 1 ? "élément" : "éléments"}
           </span>
 
-          <div className="h-5 w-px bg-outline-variant/60 shrink-0" aria-hidden="true" />
+          <div
+            className="h-5 w-px bg-outline-variant/60 shrink-0"
+            aria-hidden="true"
+          />
 
           {/* Demander à Aphrody */}
           <Button

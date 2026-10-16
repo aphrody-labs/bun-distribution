@@ -11,7 +11,10 @@ export interface SourceReferenceTarget {
 }
 
 function fence(text: string, language = ""): string {
-  const length = Math.max(3, ...[...text.matchAll(/`+/g)].map((match) => match[0].length + 1));
+  const length = Math.max(
+    3,
+    ...[...text.matchAll(/`+/g)].map((match) => match[0].length + 1),
+  );
   const delimiter = "`".repeat(length);
   return `${delimiter}${language}\n${text.trimEnd()}\n${delimiter}`;
 }
@@ -19,7 +22,8 @@ function fence(text: string, language = ""): string {
 function typescriptReference(text: string, path: string): string {
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true);
   const printer = ts.createPrinter({ removeComments: true });
-  const print = (node: ts.Node) => printer.printNode(ts.EmitHint.Unspecified, node, source);
+  const print = (node: ts.Node) =>
+    printer.printNode(ts.EmitHint.Unspecified, node, source);
   const signature = (node: ts.Node): string => {
     if (ts.isFunctionDeclaration(node))
       return print(
@@ -50,7 +54,12 @@ function typescriptReference(text: string, path: string): string {
       );
     if (ts.isConstructorDeclaration(node))
       return print(
-        ts.factory.updateConstructorDeclaration(node, node.modifiers, node.parameters, undefined),
+        ts.factory.updateConstructorDeclaration(
+          node,
+          node.modifiers,
+          node.parameters,
+          undefined,
+        ),
       );
     if (ts.isGetAccessorDeclaration(node))
       return print(
@@ -127,7 +136,8 @@ function typescriptReference(text: string, path: string): string {
               modifier.kind === ts.SyntaxKind.DefaultKeyword,
           ));
     if (!exported) continue;
-    const line = source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
+    const line =
+      source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
     const docs = ts
       .getJSDocCommentsAndTags(node)
       .filter(ts.isJSDoc)
@@ -178,10 +188,16 @@ async function pythonReference(text: string): Promise<string> {
     new Response(child.stderr).text(),
     child.exited,
   ]);
-  if (code !== 0) throw new Error(`Python AST extraction failed: ${error.trim()}`);
+  if (code !== 0)
+    throw new Error(`Python AST extraction failed: ${error.trim()}`);
   const parsed = JSON.parse(stdout) as {
     doc: string | null;
-    items: Array<{ name: string; line: number; signature: string; doc: string | null }>;
+    items: Array<{
+      name: string;
+      line: number;
+      signature: string;
+      doc: string | null;
+    }>;
   };
   return (
     [
@@ -225,7 +241,10 @@ export async function generateSourceReference(
     if (!/^[a-z0-9][a-z0-9-]*$/.test(target.id) || ids.has(target.id))
       throw new Error(`Invalid or duplicate source reference id: ${target.id}`);
     ids.add(target.id);
-    if (!["typescript", "rust", "python"].includes(target.language) || !target.paths.length)
+    if (
+      !["typescript", "rust", "python"].includes(target.language) ||
+      !target.paths.length
+    )
       throw new Error(`Invalid source reference target: ${target.id}`);
     // Validation and file reads are independent per path: run them concurrently, keep sorted order.
     // oxlint-disable-next-line no-await-in-loop -- targets are generated in declared order so the first failing target reports deterministically
@@ -255,7 +274,10 @@ export async function generateSourceReference(
         if (
           local
             .split(sep)
-            .some((part) => part === ".git" || part === ".npmrc" || part.startsWith(".env"))
+            .some(
+              (part) =>
+                part === ".git" || part === ".npmrc" || part.startsWith(".env"),
+            )
         )
           throw new Error(`Unsafe resolved source reference path: ${path}`);
         const bytes = await readFile(absolute);
@@ -269,7 +291,8 @@ export async function generateSourceReference(
     const sections: string[] = [];
     for (const { path, text, hash } of sources) {
       let facts: string;
-      if (target.language === "typescript") facts = typescriptReference(text, path);
+      if (target.language === "typescript")
+        facts = typescriptReference(text, path);
       else if (target.language === "python") {
         // oxlint-disable-next-line no-await-in-loop -- one Python interpreter per file, kept sequential to bound concurrent processes
         facts = await pythonReference(text);

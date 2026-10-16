@@ -3,7 +3,7 @@ import { Board, BoardItem } from "./boardTypes";
 
 export const useActiveBoard = (): Board | null =>
   useBoardLibraryStore((s) =>
-    s.activeBoardId ? s.boards[s.activeBoardId] ?? null : null,
+    s.activeBoardId ? (s.boards[s.activeBoardId] ?? null) : null,
   );
 
 // Items in display order, narrowed by search query, tag filters, and a minimum
@@ -42,7 +42,9 @@ const itemMatchesText = (it: BoardItem, q: string): boolean => {
     case "text":
       return it.text.toLowerCase().includes(q);
     case "link":
-      return `${it.title} ${it.description} ${it.url}`.toLowerCase().includes(q);
+      return `${it.title} ${it.description} ${it.url}`
+        .toLowerCase()
+        .includes(q);
     case "image":
       return it.caption.toLowerCase().includes(q);
     case "color":

@@ -106,7 +106,10 @@ async function git(
   signal?.addEventListener("abort", abort, { once: true });
   if (signal?.aborted) abort();
   try {
-    const [stdout, code] = await Promise.all([new Response(child.stdout).text(), child.exited]);
+    const [stdout, code] = await Promise.all([
+      new Response(child.stdout).text(),
+      child.exited,
+    ]);
     return { code, stdout: stdout.trim() };
   } finally {
     clearTimeout(timer);
@@ -116,10 +119,15 @@ async function git(
   }
 }
 function must(result: GitResult, label: string): string {
-  if (result.code !== 0) throw new Error(`${label} failed (exit ${result.code})`);
+  if (result.code !== 0)
+    throw new Error(`${label} failed (exit ${result.code})`);
   return result.stdout;
 }
-function ownerRemote(url: string, owners: string[], repository: SyncRepository): boolean {
+function ownerRemote(
+  url: string,
+  owners: string[],
+  repository: SyncRepository,
+): boolean {
   const match =
     /^(?:https:\/\/github\.com\/|git@(?:github\.com|github-dev):)([A-Za-z0-9-]+)\/([A-Za-z0-9._-]+?)(?:\.git)?\/?$/u.exec(
       url,
@@ -130,7 +138,9 @@ function ownerRemote(url: string, owners: string[], repository: SyncRepository):
     match[2] === (repository.repositoryName ?? repository.id)
   );
 }
-export async function loadSourceSyncConfig(root = sourceRoot): Promise<SourceSyncConfig> {
+export async function loadSourceSyncConfig(
+  root = sourceRoot,
+): Promise<SourceSyncConfig> {
   const config: SourceSyncConfig = await Bun.file(
     join(root, "tools/config/commit-sync.json"),
   ).json();
@@ -169,14 +179,18 @@ export async function loadSourceSyncConfig(root = sourceRoot): Promise<SourceSyn
       !/^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(repository.repositoryName)
     )
       throw new Error("Invalid source repository name");
-    if (repository.buildEnabled !== undefined && typeof repository.buildEnabled !== "boolean")
+    if (
+      repository.buildEnabled !== undefined &&
+      typeof repository.buildEnabled !== "boolean"
+    )
       throw new Error("Invalid factory build activation policy");
     if (
       repository.buildCommand !== undefined &&
       (!Array.isArray(repository.buildCommand) ||
         !repository.buildCommand.length ||
         repository.buildCommand.some(
-          (value) => typeof value !== "string" || !value || value.includes("\0"),
+          (value) =>
+            typeof value !== "string" || !value || value.includes("\0"),
         ))
     )
       throw new Error("Invalid declared factory build command");
@@ -203,16 +217,34 @@ export async function syncRepository(
     git(repository.path, args, config.commandTimeoutMs, options.signal);
   try {
     if (!existsSync(repository.path)) return { ...row, status: "absent" };
-    const root = must(await run(["rev-parse", "--show-toplevel"]), "Repository root");
+    const root = must(
+      await run(["rev-parse", "--show-toplevel"]),
+      "Repository root",
+    );
     if (resolve(root) !== resolve(repository.path))
       return { ...row, status: "not-repository-root" };
-    for (const branch of [repository.sourceBranch, repository.destinationBranch])
+    for (const branch of [
+      repository.sourceBranch,
+      repository.destinationBranch,
+    ])
       if ((await run(["check-ref-format", `refs/heads/${branch}`])).code !== 0)
         return { ...row, status: "invalid-branch" };
     const trusted =
-      options.remoteValidator ?? ((url: string) => ownerRemote(url, config.owners, repository));
-    const fetchUrls = await run(["remote", "get-url", "--all", repository.remote]);
-    const pushUrls = await run(["remote", "get-url", "--push", "--all", repository.remote]);
+      options.remoteValidator ??
+      ((url: string) => ownerRemote(url, config.owners, repository));
+    const fetchUrls = await run([
+      "remote",
+      "get-url",
+      "--all",
+      repository.remote,
+    ]);
+    const pushUrls = await run([
+      "remote",
+      "get-url",
+      "--push",
+      "--all",
+      repository.remote,
+    ]);
     if (
       repository.remote === "legacy-aphrody" ||
       fetchUrls.code !== 0 ||
@@ -230,14 +262,22 @@ export async function syncRepository(
       "rebase-apply",
     ]) {
       const path = must(
-        await run(["rev-parse", "--path-format=absolute", "--git-path", marker]),
+        await run([
+          "rev-parse",
+          "--path-format=absolute",
+          "--git-path",
+          marker,
+        ]),
         "Git operation",
       );
       if (existsSync(path)) return { ...row, status: "operation-in-progress" };
     }
     const source = `refs/heads/${repository.sourceBranch}`;
     const destination = `refs/remotes/${repository.remote}/${repository.destinationBranch}`;
-    row.sourceHead = must(await run(["rev-parse", "--verify", source]), "Source branch");
+    row.sourceHead = must(
+      await run(["rev-parse", "--verify", source]),
+      "Source branch",
+    );
     row.dirty = !!must(
       await run([
         "status",
@@ -256,10 +296,12 @@ export async function syncRepository(
         repository.remote,
         `+refs/heads/${repository.destinationBranch}:${destination}`,
       ]);
-      if (fetched.code !== 0) return { ...row, status: "fetch-error", action: "fetch-failed" };
+      if (fetched.code !== 0)
+        return { ...row, status: "fetch-error", action: "fetch-failed" };
     }
     const remoteHead = await run(["rev-parse", "--verify", destination]);
-    if (remoteHead.code !== 0) return { ...row, status: "no-destination", action: "preserved" };
+    if (remoteHead.code !== 0)
+      return { ...row, status: "no-destination", action: "preserved" };
     row.destinationHead = remoteHead.stdout;
     const counts = must(
       await run([
@@ -283,18 +325,21 @@ export async function syncRepository(
             ? "behind"
             : "current";
     row.action = options.apply ? "current" : "planned";
-    if (!options.apply || row.status === "diverged" || row.status === "current") return row;
+    if (!options.apply || row.status === "diverged" || row.status === "current")
+      return row;
     if (row.status === "behind") {
       if (
         !repository.fastForward ||
         repository.sourceBranch !== repository.destinationBranch ||
         row.dirty ||
-        must(await run(["branch", "--show-current"]), "Current branch") !== repository.sourceBranch
+        must(await run(["branch", "--show-current"]), "Current branch") !==
+          repository.sourceBranch
       )
         return { ...row, action: "local-worktree-preserved" };
       // Recheck immediately before the only worktree-changing operation.
       if (
-        must(await run(["rev-parse", source]), "Source revision") !== row.sourceHead ||
+        must(await run(["rev-parse", source]), "Source revision") !==
+          row.sourceHead ||
         must(
           await run([
             "status",
@@ -307,7 +352,14 @@ export async function syncRepository(
       )
         return { ...row, action: "concurrent-work-preserved" };
       if (
-        (await run(["merge-base", "--is-ancestor", row.sourceHead, row.destinationHead])).code !== 0
+        (
+          await run([
+            "merge-base",
+            "--is-ancestor",
+            row.sourceHead,
+            row.destinationHead,
+          ])
+        ).code !== 0
       )
         return { ...row, status: "diverged", action: "preserved" };
       const merged = await run(["merge", "--ff-only", row.destinationHead]);
@@ -320,11 +372,22 @@ export async function syncRepository(
       };
     }
     if (
-      (await run(["merge-base", "--is-ancestor", row.destinationHead, row.sourceHead])).code !== 0
+      (
+        await run([
+          "merge-base",
+          "--is-ancestor",
+          row.destinationHead,
+          row.sourceHead,
+        ])
+      ).code !== 0
     )
       return { ...row, status: "diverged", action: "preserved" };
-    if (options.push === false) return { ...row, action: "fetched; push not selected" };
-    if (must(await run(["rev-parse", source]), "Source revision") !== row.sourceHead)
+    if (options.push === false)
+      return { ...row, action: "fetched; push not selected" };
+    if (
+      must(await run(["rev-parse", source]), "Source revision") !==
+      row.sourceHead
+    )
       return { ...row, status: "changed", action: "concurrent-work-preserved" };
     const pushed = await run([
       "push",
@@ -471,7 +534,11 @@ export async function watchSources(
 }
 
 export function sourceSyncStateRoot(): string {
-  return join(process.env.APHRODY_HOME ?? join(homedir(), ".aphrody"), "state", "commit-sync");
+  return join(
+    process.env.APHRODY_HOME ?? join(homedir(), ".aphrody"),
+    "state",
+    "commit-sync",
+  );
 }
 export function acquireSourceSyncLock(root: string): () => void {
   mkdirSync(root, { recursive: true, mode: 0o700 });
@@ -511,7 +578,11 @@ export function acquireSourceSyncLock(root: string): () => void {
     closeSync(descriptor);
   }
   return () => {
-    if (existsSync(path) && JSON.parse(readFileSync(path, "utf8")).token === token) rmSync(path);
+    if (
+      existsSync(path) &&
+      JSON.parse(readFileSync(path, "utf8")).token === token
+    )
+      rmSync(path);
   };
 }
 function persistReport(root: string, report: SyncReport): void {
@@ -520,13 +591,17 @@ function persistReport(root: string, report: SyncReport): void {
   writeFileSync(temporary, data, { mode: 0o600 });
   renameSync(temporary, join(root, "latest.json"));
   const log = join(root, "events.jsonl");
-  if (existsSync(log) && statSync(log).size > 2 * 1024 * 1024) renameSync(log, `${log}.previous`);
+  if (existsSync(log) && statSync(log).size > 2 * 1024 * 1024)
+    renameSync(log, `${log}.previous`);
   appendFileSync(log, data, { mode: 0o600 });
 }
 const usage =
   "Usage: yolo ops repo-sync <plan|once|watch> [--apply] [--repo NAME] [--json]\n       bun scripts/tools/workspace/source-sync.ts [--apply --push] [--watch] [--interval SECONDS] [--repo NAME] [--json]";
 export interface SourceSyncCallbacks {
-  onReport?: (report: SyncReport, config: SourceSyncConfig) => void | Promise<void>;
+  onReport?: (
+    report: SyncReport,
+    config: SourceSyncConfig,
+  ) => void | Promise<void>;
   onStop?: () => void | Promise<void>;
 }
 export async function runSourceSync(
@@ -550,7 +625,8 @@ export async function runSourceSync(
             : "plan";
     if (!["plan", "once", "watch"].includes(action)) throw new Error(usage);
     const apply = args.includes("--apply");
-    if (action === "plan" && apply) throw new Error("plan cannot apply; use once or watch --apply");
+    if (action === "plan" && apply)
+      throw new Error("plan cannot apply; use once or watch --apply");
     const selected: string[] = [];
     let interval: number | undefined;
     for (let i = 0; i < args.length; i++) {
@@ -563,10 +639,16 @@ export async function runSourceSync(
       } else if (arg === "--interval") interval = Number(args[++i]) * 1000;
       else throw new Error(usage);
     }
-    if (args.includes("--push") && !apply) throw new Error("--push requires --apply");
+    if (args.includes("--push") && !apply)
+      throw new Error("--push requires --apply");
     const config = await loadSourceSyncConfig(root);
     if (selected.length) {
-      if (selected.some((id) => !config.repositories.some((repository) => repository.id === id)))
+      if (
+        selected.some(
+          (id) =>
+            !config.repositories.some((repository) => repository.id === id),
+        )
+      )
         throw new Error("Unknown source-sync repository");
       config.repositories = config.repositories.filter((repository) =>
         selected.includes(repository.id),
@@ -637,7 +719,9 @@ export async function runSourceSync(
       }
     }
   } catch (error) {
-    console.error(error instanceof Error ? error.message : "Source synchronization failed");
+    console.error(
+      error instanceof Error ? error.message : "Source synchronization failed",
+    );
     return 2;
   }
 }

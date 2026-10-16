@@ -13,7 +13,16 @@
  * Runbook: docs/operations/infra/CREATOR.md. Remote commands go through `aphrody infra ssh` only.
  */
 import { createHash } from "node:crypto";
-import { cp, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import {
+  cp,
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
 
@@ -72,13 +81,20 @@ export interface PackFile {
   sha256: string;
 }
 
-export function buildLatest(version: string, files: PackFile[], now = new Date()) {
+export function buildLatest(
+  version: string,
+  files: PackFile[],
+  now = new Date(),
+) {
   return {
     schemaVersion: 1,
     name: "creator-kit",
     version,
     releasedAt: now.toISOString(),
-    artifacts: files.map((f) => ({ ...f, url: `${SITE.baseUrl}/files/${f.file}` })),
+    artifacts: files.map((f) => ({
+      ...f,
+      url: `${SITE.baseUrl}/files/${f.file}`,
+    })),
     notes: [
       "pack = folder to unzip by hand; update = what `creator-kit self-update` installs (same content, flat)",
     ],
@@ -91,7 +107,11 @@ export async function sha256File(path: string): Promise<string> {
   return hasher.digest("hex");
 }
 
-async function run(argv: string[], cwd = repo, env: Record<string, string> = {}) {
+async function run(
+  argv: string[],
+  cwd = repo,
+  env: Record<string, string> = {},
+) {
   const proc = Bun.spawn(argv, {
     windowsHide: true,
     cwd,
@@ -105,19 +125,35 @@ async function run(argv: string[], cwd = repo, env: Record<string, string> = {})
     proc.exited,
   ]);
   if (code !== 0)
-    throw new Error(`${argv.slice(0, 4).join(" ")} failed (${code}):\n${stderr || stdout}`);
+    throw new Error(
+      `${argv.slice(0, 4).join(" ")} failed (${code}):\n${stderr || stdout}`,
+    );
   return stdout;
 }
 
 async function remote(command: string, timeoutSecs = 120): Promise<string> {
   const out = await run(
-    ["aphrody", "infra", "ssh", "exec", "--host", SITE.host, "--json", "-c", command],
+    [
+      "aphrody",
+      "infra",
+      "ssh",
+      "exec",
+      "--host",
+      SITE.host,
+      "--json",
+      "-c",
+      command,
+    ],
     repo,
     {
       APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(timeoutSecs),
     },
   );
-  const parsed = JSON.parse(out) as { exit_code?: number; stdout?: string; stderr?: string };
+  const parsed = JSON.parse(out) as {
+    exit_code?: number;
+    stdout?: string;
+    stderr?: string;
+  };
   if ((parsed.exit_code ?? 1) !== 0)
     throw new Error(
       `remote failed (${parsed.exit_code}): ${command.slice(0, 160)}\n${parsed.stderr ?? ""}${parsed.stdout ?? ""}`,
@@ -151,11 +187,13 @@ async function* walk(dir: string): AsyncGenerator<string> {
 /** Refuse a pack holding a denied file name or a token-shaped string. */
 export async function scanPack(dir: string): Promise<void> {
   for await (const file of walk(dir)) {
-    if (DENIED_NAME.test(file)) throw new Error(`denied file in pack: ${relative(dir, file)}`);
+    if (DENIED_NAME.test(file))
+      throw new Error(`denied file in pack: ${relative(dir, file)}`);
     if (file.endsWith(".exe")) continue;
     const text = await readFile(file, "utf8").catch(() => "");
     for (const shape of TOKEN_SHAPES) {
-      if (shape.test(text)) throw new Error(`token-shaped string in ${relative(dir, file)}`);
+      if (shape.test(text))
+        throw new Error(`token-shaped string in ${relative(dir, file)}`);
     }
   }
 }
@@ -177,8 +215,11 @@ async function brand(exe: string, ver: string): Promise<void> {
 }
 
 async function version(): Promise<string> {
-  return (JSON.parse(await readFile(join(appDir, "package.json"), "utf8")) as { version: string })
-    .version;
+  return (
+    JSON.parse(await readFile(join(appDir, "package.json"), "utf8")) as {
+      version: string;
+    }
+  ).version;
 }
 
 async function stage(): Promise<{
@@ -208,7 +249,9 @@ async function stage(): Promise<{
   await brand(join(pack, TARGET.exe), ver);
   for (const path of PACK_PATHS) {
     await mkdir(join(pack, path, ".."), { recursive: true });
-    await cp(join(appDir, "resources/creator", path), join(pack, path), { recursive: true });
+    await cp(join(appDir, "resources/creator", path), join(pack, path), {
+      recursive: true,
+    });
   }
   // Windows M3 theme (light and dark) from the logo source colour; installers are dry-run until -Apply and revert with -Uninstall.
   const themeOut = join(dir, "theme");
@@ -229,7 +272,9 @@ async function stage(): Promise<{
     "--out",
     themeOut,
   ]);
-  await cp(join(themeOut, "windows"), join(pack, "windows/theme"), { recursive: true });
+  await cp(join(themeOut, "windows"), join(pack, "windows/theme"), {
+    recursive: true,
+  });
   await scanPack(pack);
   const out = join(dir, "out");
   await mkdir(join(out, "files"), { recursive: true });
@@ -238,10 +283,20 @@ async function stage(): Promise<{
   const wrap = join(dir, "wrap");
   await mkdir(wrap, { recursive: true });
   await cp(pack, join(wrap, "creator-kit"), { recursive: true });
-  await run(["zip", "-q", "-r", "-X", join(out, "files", `${base}.zip`), "creator-kit"], wrap);
+  await run(
+    ["zip", "-q", "-r", "-X", join(out, "files", `${base}.zip`), "creator-kit"],
+    wrap,
+  );
   // update pack: flat top-level entries, installed next to the running exe
   const entries = (await readdir(pack)).toSorted();
-  await run(["tar", "-czf", join(out, "files", `${base}.update.tar.gz`), "-C", pack, ...entries]);
+  await run([
+    "tar",
+    "-czf",
+    join(out, "files", `${base}.update.tar.gz`),
+    "-C",
+    pack,
+    ...entries,
+  ]);
   const files: PackFile[] = [];
   for (const [id, kind, format, name] of [
     [`pack-${TARGET.platform}`, "pack", "zip", `${base}.zip`],
@@ -290,7 +345,10 @@ async function release(): Promise<void> {
     const dest = `${SITE.root}/releases/${staged.releaseId}`;
     await remote(`install -d ${dest}/files ${dest}/download`);
     for (const file of staged.files)
-      await put(join(staged.dir, "files", file.file), `${dest}/files/${file.file}`);
+      await put(
+        join(staged.dir, "files", file.file),
+        `${dest}/files/${file.file}`,
+      );
     const site: string[] = [];
     for await (const file of walk(staged.dir)) {
       const rel = relative(staged.dir, file);
@@ -315,9 +373,12 @@ async function release(): Promise<void> {
       300,
     );
     console.log(`published ${staged.releaseId}`);
-    for (const f of staged.files) console.log(`  ${f.file}  ${f.size} B  ${f.sha256}`);
+    for (const f of staged.files)
+      console.log(`  ${f.file}  ${f.size} B  ${f.sha256}`);
   } finally {
-    await rm(join(staged.dir, ".."), { recursive: true, force: true }).catch(() => undefined);
+    await rm(join(staged.dir, ".."), { recursive: true, force: true }).catch(
+      () => undefined,
+    );
   }
 }
 
@@ -353,7 +414,9 @@ async function hostCommands(apply: boolean): Promise<void> {
   ];
   console.log(steps.map((s) => `- ${s}`).join("\n"));
   if (!apply) return console.log("plan only: pass --apply to execute");
-  await remote(`sudo install -d -o ubuntu -g ubuntu ${SITE.root} ${SITE.root}/releases`);
+  await remote(
+    `sudo install -d -o ubuntu -g ubuntu ${SITE.root} ${SITE.root}/releases`,
+  );
   await put(join(repo, SITE.certScript), "/tmp/issue-creator-certificate.sh");
   await remote(
     "sudo test -d /etc/letsencrypt/live/creator.aphrody.com || sudo bash /tmp/issue-creator-certificate.sh",
@@ -373,7 +436,8 @@ if (import.meta.main) {
     case "stage": {
       const staged = await stage();
       console.log(staged.dir);
-      for (const f of staged.files) console.log(`${f.file}  ${f.size} B  ${f.sha256}`);
+      for (const f of staged.files)
+        console.log(`${f.file}  ${f.size} B  ${f.sha256}`);
       break;
     }
     case "release":

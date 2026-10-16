@@ -7,7 +7,10 @@ import { verifyNativeArtifact } from "./native-artifact";
 
 const symbols = {
   aphrody_inference_abi_version: { args: [], returns: FFIType.u32 },
-  aphrody_inference_submit: { args: [FFIType.ptr, FFIType.u32], returns: FFIType.ptr },
+  aphrody_inference_submit: {
+    args: [FFIType.ptr, FFIType.u32],
+    returns: FFIType.ptr,
+  },
   aphrody_inference_poll: { args: [FFIType.u64], returns: FFIType.ptr },
   aphrody_inference_cancel: { args: [FFIType.u64], returns: FFIType.void },
   aphrody_inference_free: { args: [FFIType.ptr], returns: FFIType.void },
@@ -15,8 +18,10 @@ const symbols = {
 
 function openLibrary() {
   const filename = `${process.platform === "win32" ? "" : "lib"}aphrody_ffi.${suffix}`;
-  const path = process.env.APHRODY_INFERENCE_LIBRARY ?? statePath("lib", filename);
-  if (!isAbsolute(path)) throw new Error("APHRODY_INFERENCE_LIBRARY must be an absolute path");
+  const path =
+    process.env.APHRODY_INFERENCE_LIBRARY ?? statePath("lib", filename);
+  if (!isAbsolute(path))
+    throw new Error("APHRODY_INFERENCE_LIBRARY must be an absolute path");
   verifyNativeArtifact(path, packageMetadata.version);
   const opened = dlopen(path, symbols);
   if (opened.symbols.aphrody_inference_abi_version() !== 1) {
@@ -55,12 +60,15 @@ async function request(
 ) {
   options.signal?.throwIfAborted();
   const bytes = new TextEncoder().encode(JSON.stringify(value));
-  if (bytes.length > 1024 * 1024) throw new Error("Native inference request exceeds 1 MiB");
+  if (bytes.length > 1024 * 1024)
+    throw new Error("Native inference request exceeds 1 MiB");
   const timeout = options.timeoutMs ?? 120_000;
   if (!Number.isFinite(timeout) || timeout <= 0)
     throw new RangeError("timeoutMs must be positive and finite");
   const native = library().symbols;
-  const started = read(native.aphrody_inference_submit(ptr(bytes), bytes.length));
+  const started = read(
+    native.aphrody_inference_submit(ptr(bytes), bytes.length),
+  );
   if (!Number.isSafeInteger(started.job) || Number(started.job) <= 0)
     throw new Error("Native inference returned an invalid job id");
   const job = BigInt(started.job as number);
@@ -69,7 +77,10 @@ async function request(
     for (;;) {
       options.signal?.throwIfAborted();
       if (performance.now() >= deadline)
-        throw new DOMException("Native inference deadline exceeded", "TimeoutError");
+        throw new DOMException(
+          "Native inference deadline exceeded",
+          "TimeoutError",
+        );
       const result = read(native.aphrody_inference_poll(job));
       if (result.pending !== true) return result;
       // oxlint-disable-next-line no-await-in-loop -- poll native work without blocking Bun/Discord heartbeats
@@ -121,7 +132,10 @@ export class NativeInference implements AsyncDisposable {
     options: NativeInferenceOptions,
     controls: { signal?: AbortSignal; timeoutMs?: number } = {},
   ) {
-    if (!options.model.trim() || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(options.profile))
+    if (
+      !options.model.trim() ||
+      !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(options.profile)
+    )
       throw new Error("A model and explicit Agent Home profile are required");
     const result = await request(
       {
@@ -141,7 +155,11 @@ export class NativeInference implements AsyncDisposable {
       result.backend !== "in-process"
     )
       throw new Error("Invalid native model identity");
-    return new NativeInference(result.session as number, options.model, options.profile);
+    return new NativeInference(
+      result.session as number,
+      options.model,
+      options.profile,
+    );
   }
 
   async chat(input: NativeChatInput): Promise<NativeChatResult> {
@@ -195,15 +213,18 @@ export class NativeInference implements AsyncDisposable {
       model: this.model,
       profile: this.profile,
       usage,
-      finishReason: typeof result.finish_reason === "string" ? result.finish_reason : null,
+      finishReason:
+        typeof result.finish_reason === "string" ? result.finish_reason : null,
     };
   }
 
   close(): Promise<void> {
-    return (this.#closing ??= Promise.allSettled(this.#pending).then(async () => {
-      await request({ operation: "close", session: this.#session });
-      return undefined;
-    }));
+    return (this.#closing ??= Promise.allSettled(this.#pending).then(
+      async () => {
+        await request({ operation: "close", session: this.#session });
+        return undefined;
+      },
+    ));
   }
   [Symbol.asyncDispose]() {
     return this.close();

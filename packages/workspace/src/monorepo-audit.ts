@@ -45,11 +45,16 @@ async function findRoot(start: string): Promise<string> {
 
 function bunCli(explicit?: string): string {
   const candidate = explicit ?? process.env.BUN_BINARY ?? Bun.which("bun");
-  if (!candidate) throw new Error("Bun CLI is required; install Bun or pass --bun <path>.");
+  if (!candidate)
+    throw new Error("Bun CLI is required; install Bun or pass --bun <path>.");
   return resolve(candidate);
 }
 
-async function runStep(root: string, name: MonorepoAuditStep, bun?: string): Promise<Result> {
+async function runStep(
+  root: string,
+  name: MonorepoAuditStep,
+  bun?: string,
+): Promise<Result> {
   const started = performance.now();
   let command: string[];
   try {
@@ -88,7 +93,9 @@ async function runStep(root: string, name: MonorepoAuditStep, bun?: string): Pro
       durationMs: Math.round(performance.now() - started),
       stdout,
       stderr,
-      ...(exitCode === 0 ? {} : { error: `process exited with status ${exitCode}` }),
+      ...(exitCode === 0
+        ? {}
+        : { error: `process exited with status ${exitCode}` }),
     };
   } catch (error) {
     return {
@@ -118,7 +125,8 @@ function parseArgs(args: string[]) {
     const arg = args[index];
     if (arg === "--root") root = args[++index];
     else if (arg === "--bun") bun = args[++index];
-    else if (arg === "--only") steps = (args[++index] ?? "").split(",") as MonorepoAuditStep[];
+    else if (arg === "--only")
+      steps = (args[++index] ?? "").split(",") as MonorepoAuditStep[];
     else if (arg === "--jobs") jobs = Number(args[++index]);
     else if (arg === "--compile") compile = true;
     else if (arg === "--docs") docs = args[++index] ?? "";
@@ -161,25 +169,31 @@ export async function runMonorepoAudit(args: string[]): Promise<number> {
       minify: true,
       sourcemap: "none",
     });
-    if (!result.success) throw new AggregateError(result.logs, "Could not compile monorepo-audit");
+    if (!result.success)
+      throw new AggregateError(result.logs, "Could not compile monorepo-audit");
     console.log(output);
     return 0;
   }
-  const root = options.root ? resolve(options.root) : await findRoot(process.cwd());
+  const root = options.root
+    ? resolve(options.root)
+    : await findRoot(process.cwd());
   const results: Result[] = [];
   let cursor = 0;
   const started = performance.now();
   await Promise.all(
-    Array.from({ length: Math.min(options.jobs, options.steps.length) }, async () => {
-      while (cursor < options.steps.length) {
-        const index = cursor++;
-        const name = options.steps[index];
-        if (!name) continue;
-        if (!options.quiet && !options.json) console.error(`▶ ${name}`);
-        // oxlint-disable-next-line no-await-in-loop -- pool de workers borné par --jobs (1..5) : chaque worker enchaîne ses étapes, la concurrence est volontairement limitée
-        results[index] = await runStep(root, name, options.bun);
-      }
-    }),
+    Array.from(
+      { length: Math.min(options.jobs, options.steps.length) },
+      async () => {
+        while (cursor < options.steps.length) {
+          const index = cursor++;
+          const name = options.steps[index];
+          if (!name) continue;
+          if (!options.quiet && !options.json) console.error(`▶ ${name}`);
+          // oxlint-disable-next-line no-await-in-loop -- pool de workers borné par --jobs (1..5) : chaque worker enchaîne ses étapes, la concurrence est volontairement limitée
+          results[index] = await runStep(root, name, options.bun);
+        }
+      },
+    ),
   );
   const report = {
     root,
@@ -200,4 +214,5 @@ export async function runMonorepoAudit(args: string[]): Promise<number> {
   return report.passed ? 0 : 1;
 }
 
-if (import.meta.main) process.exit(await runMonorepoAudit(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runMonorepoAudit(process.argv.slice(2)));

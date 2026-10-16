@@ -13,18 +13,26 @@ const touch = (path: string) => {
   writeFileSync(path, "x");
 };
 const said = (events: KitEvent[]) =>
-  events.flatMap((event) => (event.type === "say" ? [event.text] : [])).join("\n");
+  events
+    .flatMap((event) => (event.type === "say" ? [event.text] : []))
+    .join("\n");
 
 test("the catalog is the console menus, sub-menus as groups, admin once the access pack is imported", async () => {
   const t = testContext();
   const catalog = omarCatalog(t.ctx);
   expect(catalog.protocol).toBe("aphrody.kit/1");
   expect(catalog.admin).toBe(false);
-  expect(catalog.groups.map((group) => group.id)).toEqual(["principal", "entrainement", "pc"]);
+  expect(catalog.groups.map((group) => group.id)).toEqual([
+    "principal",
+    "entrainement",
+    "pc",
+  ]);
   const titles = catalog.actions.map((action) => action.title);
   expect(titles).toContain("Tout installer ou réparer");
   expect(titles).toContain("Santé des serveurs (vps, dbfr)");
-  expect(titles.some((title) => title.startsWith("Mon PC et mes serveurs"))).toBe(false);
+  expect(
+    titles.some((title) => title.startsWith("Mon PC et mes serveurs")),
+  ).toBe(false);
   expect(catalog.actions.find((a) => a.id === "pc.1")?.windowsOnly).toBe(true);
   await saveProfile(t.ctx.paths, samplePack());
   expect(omarCatalog(t.ctx).admin).toBe(true);
@@ -41,7 +49,9 @@ test("a typed OUI question becomes a typed dialog; the answer runs the action an
   expect(await desktopMain(["run", memory!.id], channel, () => t.ctx)).toBe(0);
   const ask = channel.events.find((event) => event.type === "ask");
   expect(ask).toMatchObject({ type: "ask", kind: "typed", expect: "OUI" });
-  expect(t.sys.calls.every((call) => call.options.inherit === false)).toBe(true);
+  expect(t.sys.calls.every((call) => call.options.inherit === false)).toBe(
+    true,
+  );
   expect(said(channel.events)).toContain("purge ok");
   expect(channel.events.at(-1)).toEqual({ type: "done", code: 0 });
 });

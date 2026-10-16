@@ -25,7 +25,11 @@ describe("showcase package computations", () => {
     });
     expect(design.status).toBe(200);
     const output = await design.json();
-    expect(output.files.some((file: { path: string }) => file.path === "src/theme.css")).toBe(true);
+    expect(
+      output.files.some(
+        (file: { path: string }) => file.path === "src/theme.css",
+      ),
+    ).toBe(true);
     expect(output.theme.palettes.primary.tones[40]).toMatch(/^#[a-f\d]{6}$/i);
     const migrated = await post("/api/migrate", {
       source:
@@ -42,14 +46,20 @@ describe("showcase package computations", () => {
     const response = await request("/api/system?target=cosmic&seed=%238c6c88");
     expect(response.status).toBe(200);
     const data = await response.json();
-    expect(data.mcpTools.map((tool: { name: string }) => tool.name)).toContain("m3_symbol_search");
+    expect(data.mcpTools.map((tool: { name: string }) => tool.name)).toContain(
+      "m3_symbol_search",
+    );
     expect(data.lintRules.length).toBeGreaterThan(0);
     expect(data.themeFiles.length).toBeGreaterThan(0);
-    expect(data.themeFiles.every((file: { target: string }) => file.target === "cosmic")).toBe(
-      true,
-    );
+    expect(
+      data.themeFiles.every(
+        (file: { target: string }) => file.target === "cosmic",
+      ),
+    ).toBe(true);
     expect(data.scaffold["m3.config.ts"]).toContain("@aphrody/m3/config");
-    const file = data.themeFiles.find((entry: { binary: boolean }) => !entry.binary);
+    const file = data.themeFiles.find(
+      (entry: { binary: boolean }) => !entry.binary,
+    );
     const theme = await request(
       "/api/os-theme?target=cosmic&path=" + encodeURIComponent(file.path),
     );
@@ -70,26 +80,44 @@ describe("showcase package computations", () => {
 
 describe("showcase request boundaries", () => {
   test("rejects malformed, missing, oversized and non-object JSON", async () => {
-    for (const body of ["{", "null", "[]", JSON.stringify({ prompt: "x".repeat(70_000) })]) {
+    for (const body of [
+      "{",
+      "null",
+      "[]",
+      JSON.stringify({ prompt: "x".repeat(70_000) }),
+    ]) {
       // eslint-disable-next-line no-await-in-loop -- Exercise each independent malformed body against the bounded request reader.
-      expect((await request("/api/ai/stream", { method: "POST", body })).status).toBe(400);
+      expect(
+        (await request("/api/ai/stream", { method: "POST", body })).status,
+      ).toBe(400);
     }
-    expect((await request("/api/ai/stream", { method: "POST" })).status).toBe(400);
-  });
-
-  test("rejects invalid themes, migration syntax and files outside generated output", async () => {
-    expect((await post("/api/design", { brief: "Dashboard", seed: "oops" })).status).toBe(400);
-    expect((await request("/api/next?seed=invalid")).status).toBe(400);
-    expect((await request("/api/system?target=unknown")).status).toBe(400);
-    expect((await request("/api/os-theme?path=../../secrets")).status).toBe(404);
-    expect((await post("/api/migrate", { source: "export default <" })).status).toBe(400);
-    expect((await post("/api/migrate", { source: "const x = 1;", kind: "unknown" })).status).toBe(
+    expect((await request("/api/ai/stream", { method: "POST" })).status).toBe(
       400,
     );
   });
 
+  test("rejects invalid themes, migration syntax and files outside generated output", async () => {
+    expect(
+      (await post("/api/design", { brief: "Dashboard", seed: "oops" })).status,
+    ).toBe(400);
+    expect((await request("/api/next?seed=invalid")).status).toBe(400);
+    expect((await request("/api/system?target=unknown")).status).toBe(400);
+    expect((await request("/api/os-theme?path=../../secrets")).status).toBe(
+      404,
+    );
+    expect(
+      (await post("/api/migrate", { source: "export default <" })).status,
+    ).toBe(400);
+    expect(
+      (await post("/api/migrate", { source: "const x = 1;", kind: "unknown" }))
+        .status,
+    ).toBe(400);
+  });
+
   test("AG-UI fixture completes and abort closes its producer", async () => {
-    const response = await post("/api/ai/stream", { prompt: "Inspect the package inventory." });
+    const response = await post("/api/ai/stream", {
+      prompt: "Inspect the package inventory.",
+    });
     expect(response.headers.get("x-m3-fixture")).toBe("true");
     const events = (await response.text())
       .split("\n\n")
@@ -97,9 +125,9 @@ describe("showcase request boundaries", () => {
       .map((frame) => JSON.parse(frame.replace(/^data:\s*/, "")));
     expect(events[0].type).toBe("RUN_STARTED");
     expect(events.at(-1).type).toBe("RUN_FINISHED");
-    expect(events.find((event) => event.type === "TOOL_CALL_RESULT").content).toContain(
-      "build inventory",
-    );
+    expect(
+      events.find((event) => event.type === "TOOL_CALL_RESULT").content,
+    ).toContain("build inventory");
     const controller = new AbortController();
     const interrupted = await request("/api/ai/stream", {
       method: "POST",
@@ -111,7 +139,9 @@ describe("showcase request boundaries", () => {
     controller.abort(new Error("fixture stopped"));
     await expect(reader.read()).rejects.toThrow("fixture stopped");
     reader.releaseLock();
-    const cancelled = await post("/api/ai/stream", { prompt: "Cancel without abort." });
+    const cancelled = await post("/api/ai/stream", {
+      prompt: "Cancel without abort.",
+    });
     await cancelled.body!.cancel();
   });
 });

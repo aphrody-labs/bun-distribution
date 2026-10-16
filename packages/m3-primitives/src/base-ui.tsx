@@ -19,8 +19,12 @@ export type StateClassName<S> = string | ((state: S) => string | undefined);
  * Prepends the M3 classes to a Base UI `className`, keeping the state-function form Base UI
  * accepts, so callers can style from the component state as well as from data attributes.
  */
-export function withClassName<S>(base: string, className?: StateClassName<S>): StateClassName<S> {
-  if (typeof className === "function") return (state: S) => clsx(base, className(state));
+export function withClassName<S>(
+  base: string,
+  className?: StateClassName<S>,
+): StateClassName<S> {
+  if (typeof className === "function")
+    return (state: S) => clsx(base, className(state));
   return clsx(base, className);
 }
 
@@ -50,15 +54,17 @@ export interface AsChildProp {
  * Base UI positioners live inside a portal. Composable `*Content` parts render their own portal
  * unless the caller already wrapped them in the matching exported `*Portal` (the Radix pattern).
  */
-export function createPortalScope<P extends { children?: ReactNode; keepMounted?: boolean }>(
-  BasePortal: ComponentType<P>,
-  displayName: string,
-) {
+export function createPortalScope<
+  P extends { children?: ReactNode; keepMounted?: boolean },
+>(BasePortal: ComponentType<P>, displayName: string) {
   const InPortal = createContext(false);
 
   const Portal = ({ forceMount, ...props }: P & { forceMount?: boolean }) => (
     <InPortal.Provider value={true}>
-      <BasePortal {...(props as P)} keepMounted={props.keepMounted ?? forceMount} />
+      <BasePortal
+        {...(props as P)}
+        keepMounted={props.keepMounted ?? forceMount}
+      />
     </InPortal.Provider>
   );
   Portal.displayName = displayName;

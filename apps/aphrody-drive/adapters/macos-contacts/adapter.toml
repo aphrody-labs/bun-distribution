@@ -48,5 +48,12 @@ primary_model = "contact"
 title = "name"
 preview = "notes"
 subtitle = "organization"
-search_fields = ["name", "organization", "job_title", "emails", "phones", "notes"]
+search_fields = [
+  "name",
+  "organization",
+  "job_title",
+  "emails",
+  "phones",
+  "notes",
+]
 date_field = "modified"

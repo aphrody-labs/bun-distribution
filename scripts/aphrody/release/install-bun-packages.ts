@@ -3,8 +3,16 @@
 /* oxlint-disable no-await-in-loop -- Registry requests run in bounded batches of six. */
 import { resolve } from "node:path";
 
-export type ReleasedPackage = { name: string; version: string; status: string; integrity?: string };
-export function installSpecs(packages: ReleasedPackage[], only?: string[]): string[] {
+export type ReleasedPackage = {
+  name: string;
+  version: string;
+  status: string;
+  integrity?: string;
+};
+export function installSpecs(
+  packages: ReleasedPackage[],
+  only?: string[],
+): string[] {
   const released = packages.filter((entry) => entry.status === "published");
   if (only)
     for (const name of only)
@@ -22,7 +30,8 @@ if (import.meta.main) {
   const value = (flag: string) => {
     if (!args.includes(flag)) return undefined;
     const result = args[args.indexOf(flag) + 1];
-    if (!result || result.startsWith("--")) throw new Error(`${flag} requires a value`);
+    if (!result || result.startsWith("--"))
+      throw new Error(`${flag} requires a value`);
     return result;
   };
   if (args.includes("--help")) {
@@ -31,7 +40,10 @@ if (import.meta.main) {
     );
   } else {
     const catalog = (await Bun.file(
-      resolve(import.meta.dir, "../../../tools/aphrody/config/npm-packages.json"),
+      resolve(
+        import.meta.dir,
+        "../../../tools/aphrody/config/npm-packages.json",
+      ),
     ).json()) as { packages: ReleasedPackage[] };
     const specs = installSpecs(catalog.packages, value("--only")?.split(","));
     if (args.includes("--list")) console.log(specs.join("\n"));
@@ -55,20 +67,29 @@ if (import.meta.main) {
               { signal: AbortSignal.timeout(30000) },
             );
             if (!response.ok)
-              throw new Error(`Registry preflight failed: ${specifier} (HTTP ${response.status})`);
-            const metadata = (await response.json()) as { dist?: { integrity?: string } };
-            const expected = catalog.packages.find((entry) => entry.name === name)?.integrity;
+              throw new Error(
+                `Registry preflight failed: ${specifier} (HTTP ${response.status})`,
+              );
+            const metadata = (await response.json()) as {
+              dist?: { integrity?: string };
+            };
+            const expected = catalog.packages.find(
+              (entry) => entry.name === name,
+            )?.integrity;
             if (expected && metadata.dist?.integrity !== expected)
               throw new Error(`Registry integrity mismatch: ${specifier}`);
           }),
         );
       }
-      const child = Bun.spawn([Bun.which("bun") ?? process.execPath, "add", ...specs], {
-        windowsHide: true,
-        cwd: resolve(cwd),
-        stdout: "inherit",
-        stderr: "inherit",
-      });
+      const child = Bun.spawn(
+        [Bun.which("bun") ?? process.execPath, "add", ...specs],
+        {
+          windowsHide: true,
+          cwd: resolve(cwd),
+          stdout: "inherit",
+          stderr: "inherit",
+        },
+      );
       process.exitCode = await child.exited;
     }
   }

@@ -12,7 +12,11 @@ import {
   QuickPreviewSyncer,
 } from "./components/QuickPreview";
 import { SpacesSidebar } from "./components/SpacesSidebar";
-import { TabBar, TabDefaultsSync, TabNavigationSync } from "./components/TabManager";
+import {
+  TabBar,
+  TabDefaultsSync,
+  TabNavigationSync,
+} from "./components/TabManager";
 import { usePlatform } from "./contexts/PlatformContext";
 import { useNormalizedQuery } from "./contexts/SpacedriveContext";
 import { WebContextMenuProvider } from "./contexts/WebContextMenuContext";
@@ -79,7 +83,9 @@ function ShellLayoutContent() {
 
     // First try to match by route param (for /location/:id routes)
     if (params.locationId) {
-      const matchedLocation = locations.find((entry) => entry.id === params.locationId);
+      const matchedLocation = locations.find(
+        (entry) => entry.id === params.locationId,
+      );
       if (matchedLocation) return matchedLocation;
     }
 
@@ -95,8 +101,10 @@ function ShellLayoutContent() {
             return pathStr.startsWith(locPath);
           })
           .toSorted((a, b) => {
-            const aPath = "Physical" in a.sd_path! ? a.sd_path!.Physical.path : "";
-            const bPath = "Physical" in b.sd_path! ? b.sd_path!.Physical.path : "";
+            const aPath =
+              "Physical" in a.sd_path! ? a.sd_path!.Physical.path : "";
+            const bPath =
+              "Physical" in b.sd_path! ? b.sd_path!.Physical.path : "";
             return bPath.length - aPath.length;
           })[0] || null
       );
@@ -113,10 +121,13 @@ function ShellLayoutContent() {
 
     (async () => {
       try {
-        unlisten = await platform.onWindowEvent!("inspector-window-closed", () => {
-          // Show embedded inspector when floating window closes
-          setInspectorVisible(true);
-        });
+        unlisten = await platform.onWindowEvent!(
+          "inspector-window-closed",
+          () => {
+            // Show embedded inspector when floating window closes
+            setInspectorVisible(true);
+          },
+        );
       } catch (err) {
         console.error("Failed to setup inspector close listener:", err);
       }
@@ -195,7 +206,9 @@ function ShellLayoutContent() {
       )}
       <TopBar
         sidebarWidth={narrow ? 56 : railWidth}
-        inspectorWidth={inspectorVisible && !isOverview && !isKnowledgeView ? 284 : 0}
+        inspectorWidth={
+          inspectorVisible && !isOverview && !isKnowledgeView ? 284 : 0
+        }
         isPreviewActive={isPreviewActive || isSizeViewActive}
       />
 
@@ -206,7 +219,8 @@ function ShellLayoutContent() {
           style={{
             top: 48, // TopBar height
             paddingLeft: railWidth,
-            paddingRight: inspectorVisible && !isOverview && !isKnowledgeView ? 280 : 0,
+            paddingRight:
+              inspectorVisible && !isOverview && !isKnowledgeView ? 280 : 0,
             transition:
               "padding var(--md-sys-motion-duration-medium2, 300ms) var(--md-sys-motion-easing-emphasized)",
           }}
@@ -218,12 +232,18 @@ function ShellLayoutContent() {
       {/* Main content area with sidebar and content */}
       <div className="flex flex-1 overflow-hidden">
         {narrow ? (
-          <RailDrawer open={drawerOpen} onOpenChange={setDrawerOpen} label="Historique et espaces">
+          <RailDrawer
+            open={drawerOpen}
+            onOpenChange={setDrawerOpen}
+            label="Historique et espaces"
+          >
             <SpacesSidebar isPreviewActive={false} />
           </RailDrawer>
         ) : (
           <Rail expanded={sidebarVisible} label="Historique et espaces">
-            <SpacesSidebar isPreviewActive={isPreviewActive || isSizeViewActive} />
+            <SpacesSidebar
+              isPreviewActive={isPreviewActive || isSizeViewActive}
+            />
           </Rail>
         )}
 
@@ -243,7 +263,10 @@ function ShellLayoutContent() {
             <Outlet />
 
             {/* Tag Assignment Mode - positioned at bottom of main content area */}
-            <TagAssignmentMode isActive={tagModeActive} onExit={() => setTagModeActive(false)} />
+            <TagAssignmentMode
+              isActive={tagModeActive}
+              onExit={() => setTagModeActive(false)}
+            />
           </div>
         </div>
 
@@ -265,7 +288,9 @@ function ShellLayoutContent() {
               <div className="bg-surface-container-low flex h-full w-[280px] min-w-[280px] flex-col p-2">
                 <Inspector
                   currentLocation={currentLocation}
-                  onPopOut={platform.showWindow ? handlePopOutInspector : undefined}
+                  onPopOut={
+                    platform.showWindow ? handlePopOutInspector : undefined
+                  }
                   isPreviewActive={isPreviewActive || isSizeViewActive}
                 />
               </div>
@@ -277,7 +302,9 @@ function ShellLayoutContent() {
       {/* Quick Preview - isolated component to prevent frame rerenders on selection change */}
       <QuickPreviewController
         sidebarWidth={railWidth}
-        inspectorWidth={inspectorVisible && !isOverview && !isKnowledgeView ? 280 : 0}
+        inspectorWidth={
+          inspectorVisible && !isOverview && !isKnowledgeView ? 280 : 0
+        }
       />
 
       {/* Command Palette (Ctrl+K / Cmd+K Spotlight unified launcher) */}

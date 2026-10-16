@@ -22,7 +22,9 @@ export async function pipelineCatalog(root: string) {
   const rootManifest = await Bun.file(join(root, "package.json")).json();
   const rootName = rootManifest.name?.replace(/-workspace$/, "");
   const repository =
-    typeof rootName === "string" && /^[a-z0-9-]+$/.test(rootName) ? rootName : basename(root);
+    typeof rootName === "string" && /^[a-z0-9-]+$/.test(rootName)
+      ? rootName
+      : basename(root);
   const rootScripts: Record<string, string> = rootManifest.scripts ?? {};
   const isAphrody = repository === "aphrody";
   const stages: {
@@ -65,24 +67,36 @@ export async function pipelineCatalog(root: string) {
   for (const { path, pkg } of manifests) {
     const domain = path.split("/")[1] ?? "other";
     const scripts: Record<string, string> = pkg.scripts ?? {};
-    const selected = [["lint"], ["typecheck", "type-check"], ["test"], ["build"]].map(
-      (alternatives) => alternatives.find((name) => scripts[name]),
-    );
+    const selected = [
+      ["lint"],
+      ["typecheck", "type-check"],
+      ["test"],
+      ["build"],
+    ].map((alternatives) => alternatives.find((name) => scripts[name]));
     absent.push({
       path,
-      missing: ["lint", "typecheck", "test", "build"].filter((_, i) => !selected[i]),
+      missing: ["lint", "typecheck", "test", "build"].filter(
+        (_, i) => !selected[i],
+      ),
     });
     const steps = groups.get(domain) ?? [];
     for (const name of selected)
-      if (name) steps.push({ repo: repository, command: ["run", "--filter", pkg.name, name] });
+      if (name)
+        steps.push({
+          repo: repository,
+          command: ["run", "--filter", pkg.name, name],
+        });
     groups.set(domain, steps);
   }
   for (const domain of [
     ...DOMAIN_ORDER,
-    ...[...groups.keys()].filter((known) => !DOMAIN_ORDER.includes(known)).toSorted(),
+    ...[...groups.keys()]
+      .filter((known) => !DOMAIN_ORDER.includes(known))
+      .toSorted(),
   ]) {
     const steps = groups.get(domain);
-    if (steps?.length) stages.push({ id: `bun-${domain}`, parallel: false, steps });
+    if (steps?.length)
+      stages.push({ id: `bun-${domain}`, parallel: false, steps });
   }
   return {
     config: {
@@ -125,4 +139,5 @@ export async function runPipelineCatalog(args: string[]): Promise<number> {
   );
   return 0;
 }
-if (import.meta.main) process.exit(await runPipelineCatalog(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runPipelineCatalog(process.argv.slice(2)));

@@ -33,7 +33,8 @@ export async function runAphrody(
     return {
       code: 127,
       stdout: "",
-      stderr: "aphrody binary not found: install it (aphrody self install-path) or set APHRODY_BIN",
+      stderr:
+        "aphrody binary not found: install it (aphrody self install-path) or set APHRODY_BIN",
     };
   }
   const proc = Bun.spawn([bin, ...args], {
@@ -45,6 +46,9 @@ export async function runAphrody(
   });
   const [stdout, stderr] = opts.inherit
     ? ["", ""]
-    : await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text()]);
+    : await Promise.all([
+        new Response(proc.stdout).text(),
+        new Response(proc.stderr).text(),
+      ]);
   return { code: await proc.exited, stdout, stderr };
 }

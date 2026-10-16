@@ -55,6 +55,7 @@ fn process_receipt(ctx: &ExtensionContext, pdf_data: &[u8]) -> Result<Uuid> {
 ## No Unsafe, No FFI, Just Clean Rust
 
 **Before (raw C bindings):**
+
 ```rust
 #[link(wasm_import_module = "spacedrive")]
 extern "C" {
@@ -77,6 +78,7 @@ extern "C" {
 ```
 
 **After (with SDK):**
+
 ```rust
 let entry = ctx.vdfs().create_entry(CreateEntry { ... })?;
 let ocr = ctx.ai().ocr(&pdf_data, OcrOptions::default())?;
@@ -252,4 +254,3 @@ See `extensions/test-extension/` for a complete working example.
 ---
 
 **Beautiful API. Zero unsafe code. Just Rust. **
-

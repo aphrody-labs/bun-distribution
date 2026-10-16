@@ -7,8 +7,11 @@ describe("DesignCompiler React code generation", () => {
   const compiler = new DesignCompiler();
 
   test("should compile list-detail layout with appropriate elements", () => {
-    const result = compiler.compile("Crée un split detail screen en mode compact aéré");
-    const code = result.files.find((f) => f.path === "src/index.tsx")?.content || "";
+    const result = compiler.compile(
+      "Crée un split detail screen en mode compact aéré",
+    );
+    const code =
+      result.files.find((f) => f.path === "src/index.tsx")?.content || "";
 
     expect(code).toContain("<ListDetail");
     expect(code).toContain("List View");
@@ -18,7 +21,8 @@ describe("DesignCompiler React code generation", () => {
 
   test("should compile supporting-pane layout with appropriate elements", () => {
     const result = compiler.compile("Crée un sidebar layout");
-    const code = result.files.find((f) => f.path === "src/index.tsx")?.content || "";
+    const code =
+      result.files.find((f) => f.path === "src/index.tsx")?.content || "";
 
     expect(code).toContain("<SupportingPane");
     expect(code).toContain("Main Application Workspace");
@@ -28,7 +32,8 @@ describe("DesignCompiler React code generation", () => {
 
   test("should compile feed layout with cards", () => {
     const result = compiler.compile("Crée un grid cards feed");
-    const code = result.files.find((f) => f.path === "src/index.tsx")?.content || "";
+    const code =
+      result.files.find((f) => f.path === "src/index.tsx")?.content || "";
 
     expect(code).toContain("Feed Item 1");
     expect(code).toContain("Feed Item 2");
@@ -37,19 +42,22 @@ describe("DesignCompiler React code generation", () => {
 
   test("should inject density overrides", () => {
     const resultHigh = compiler.compile("Crée un layout dense");
-    const codeHigh = resultHigh.files.find((f) => f.path === "src/index.tsx")?.content || "";
+    const codeHigh =
+      resultHigh.files.find((f) => f.path === "src/index.tsx")?.content || "";
     expect(codeHigh).toContain("'--md-sys-density': -2");
     expect(/\bp-6\b/.test(codeHigh)).toBe(false);
 
     const resultLow = compiler.compile("Crée un layout aéré");
-    const codeLow = resultLow.files.find((f) => f.path === "src/index.tsx")?.content || "";
+    const codeLow =
+      resultLow.files.find((f) => f.path === "src/index.tsx")?.content || "";
     expect(codeLow).toContain("'--md-sys-density': 1");
     expect(/\bp-6\b/.test(codeLow)).toBe(false);
   });
 
   test("should inject thinking indicator", () => {
     const result = compiler.compile("Crée un layout avec gemini shimmer");
-    const code = result.files.find((f) => f.path === "src/index.tsx")?.content || "";
+    const code =
+      result.files.find((f) => f.path === "src/index.tsx")?.content || "";
 
     expect(code).toContain("ThinkingIndicator");
     expect(code).toContain("Reflecting...");
@@ -57,7 +65,8 @@ describe("DesignCompiler React code generation", () => {
 
   test("should inject streaming hook and component", () => {
     const result = compiler.compile("Crée un layout avec streaming caret");
-    const code = result.files.find((f) => f.path === "src/index.tsx")?.content || "";
+    const code =
+      result.files.find((f) => f.path === "src/index.tsx")?.content || "";
 
     expect(code).toContain("StreamingText");
     expect(code).toContain("useStreamingText");
@@ -69,7 +78,8 @@ describe("DesignCompiler React code generation", () => {
 
   test("should inject action registry and router", () => {
     const result = compiler.compile("Crée un layout avec action router");
-    const code = result.files.find((f) => f.path === "src/index.tsx")?.content || "";
+    const code =
+      result.files.find((f) => f.path === "src/index.tsx")?.content || "";
 
     expect(code).toContain("actionRegistry");
     expect(code).toContain("instance-local actions");
@@ -93,11 +103,15 @@ describe("DesignCompiler React code generation", () => {
 
   test("should load custom design system overrides and fall back to its accent color", () => {
     // Custom design system "material" has --accent: #1a73e8; in design-systems/material/tokens.css
-    const withDisk = new DesignCompiler({ loadDesignSystem: loadDesignSystemFromDisk });
+    const withDisk = new DesignCompiler({
+      loadDesignSystem: loadDesignSystemFromDisk,
+    });
     const result = withDisk.compile("Crée un layout", undefined, "material");
     const themeFile = result.files.find((f) => f.path === "src/theme.css");
     expect(themeFile).toBeDefined();
-    expect(themeFile!.content).toContain("/* --- Design System Override: material --- */");
+    expect(themeFile!.content).toContain(
+      "/* --- Design System Override: material --- */",
+    );
     expect(themeFile!.content).toContain("--accent: #1a73e8;");
 
     // Seed color should fall back to the design system's accent color (#1a73e8)

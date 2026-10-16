@@ -87,14 +87,26 @@ test("flags follow `aphrody train run`", () => {
 test("validation lists what is missing or unsafe, in French", () => {
   expect(validateRequest(base(), hosts)).toEqual([]);
   expect(validateRequest(base({ type: "lora" }), hosts)).toHaveLength(3);
-  expect(validateRequest(base({ type: "embeddings", entree: "a;b" }), hosts).join(" ")).toContain(
-    "chemin",
+  expect(
+    validateRequest(base({ type: "embeddings", entree: "a;b" }), hosts).join(
+      " ",
+    ),
+  ).toContain("chemin");
+  expect(validateRequest(base({ steps: 0 }), hosts).join(" ")).toContain(
+    "étapes",
   );
-  expect(validateRequest(base({ steps: 0 }), hosts).join(" ")).toContain("étapes");
-  expect(validateRequest(base({ steps: 1.5 }), hosts).join(" ")).toContain("étapes");
-  expect(validateRequest(base({ host: "ghost" }), hosts).join(" ")).toContain("serveur inconnu");
-  expect(validateRequest(base({ id: "Bad Id" }), hosts).join(" ")).toContain("numéro");
-  expect(validateRequest(base({ domaine: "x; id" }), hosts).join(" ")).toContain("domaine");
+  expect(validateRequest(base({ steps: 1.5 }), hosts).join(" ")).toContain(
+    "étapes",
+  );
+  expect(validateRequest(base({ host: "ghost" }), hosts).join(" ")).toContain(
+    "serveur inconnu",
+  );
+  expect(validateRequest(base({ id: "Bad Id" }), hosts).join(" ")).toContain(
+    "numéro",
+  );
+  expect(
+    validateRequest(base({ domaine: "x; id" }), hosts).join(" "),
+  ).toContain("domaine");
   expect(
     validateRequest(
       base({ type: "lora", entree: "d", reference: "g", modeleBase: "../x" }),
@@ -116,7 +128,10 @@ test("validation lists what is missing or unsafe, in French", () => {
 
 test("the plan says what, where, and that nothing is deleted; GPU jobs warn about suspended inference", () => {
   const host = hosts.gpu!;
-  const lines = planLines(base({ type: "embeddings", entree: "data/t.jsonl" }), host);
+  const lines = planLines(
+    base({ type: "embeddings", entree: "data/t.jsonl" }),
+    host,
+  );
   const text = lines.join("\n");
   expect(text).toContain("Modèle d'embeddings");
   expect(text).toContain("omar@198.51.100.2");

@@ -5,7 +5,10 @@
 // stylesheet. Nothing here computes a colour or writes a colour role inline, so the Rust
 // `@media (prefers-contrast: more)` blocks keep their effect.
 
-export { M3_PLATFORM_CONTRACT, platformState } from "@aphrody/m3-tokens/platform-contract";
+export {
+  M3_PLATFORM_CONTRACT,
+  platformState,
+} from "@aphrody/m3-tokens/platform-contract";
 export type { M3PlatformState } from "@aphrody/m3-tokens/platform-contract";
 export { M3_UI_CATALOG, resolveM3Layer } from "./catalog";
 export type { M3UiLayer } from "./catalog";
@@ -42,7 +45,9 @@ export interface M3SchemeRequest {
  * Returns the Rust `scheme` sheet for a request: `m3Css` of `@aphrody/bun` on the server or in a
  * desktop host, or a route of the app server that answers with it.
  */
-export type M3SchemeSheet = (request: M3SchemeRequest) => string | Promise<string>;
+export type M3SchemeSheet = (
+  request: M3SchemeRequest,
+) => string | Promise<string>;
 
 export interface ApplyDynamicFusionThemeOptions {
   dark?: boolean;
@@ -61,7 +66,8 @@ let scopes = 0;
 /** `#rrggbb` from `#rgb` / `rrggbb` input; throws on anything else. */
 export function normalizeSeed(seed: string): string {
   const hex = SEED.exec(seed.trim())?.[1];
-  if (!hex) throw new TypeError(`Invalid M3 seed color: ${JSON.stringify(seed)}`);
+  if (!hex)
+    throw new TypeError(`Invalid M3 seed color: ${JSON.stringify(seed)}`);
   const full =
     hex.length === 3
       ? hex
@@ -86,16 +92,25 @@ export function applyM3Mode(dark: boolean, target: HTMLElement): void {
 
 /** Declarations of the single `:root` block of a Rust `scheme` sheet. */
 export function schemeDeclarations(css: string): string {
-  const body = /:root\s*\{([^{}]*)\}/.exec(css.replace(/\/\*[\s\S]*?\*\//g, ""))?.[1];
-  if (body === undefined || !/--md-sys-color-primary\s*:\s*#[0-9a-f]{6}\s*;/i.test(body))
-    throw new Error("@aphrody/m3-theme: the scheme sheet is not a Rust m3Css `scheme` sheet");
+  const body = /:root\s*\{([^{}]*)\}/.exec(
+    css.replace(/\/\*[\s\S]*?\*\//g, ""),
+  )?.[1];
+  if (
+    body === undefined ||
+    !/--md-sys-color-primary\s*:\s*#[0-9a-f]{6}\s*;/i.test(body)
+  )
+    throw new Error(
+      "@aphrody/m3-theme: the scheme sheet is not a Rust m3Css `scheme` sheet",
+    );
   return body.trim().replace(/\s*\n\s*/g, "\n  ");
 }
 
 function styleElement(target: HTMLElement): HTMLStyleElement | null {
   const id = target.getAttribute(STYLE_ATTRIBUTE);
   if (!id) return null;
-  return target.ownerDocument.head.querySelector(`style[${STYLE_ATTRIBUTE}="${id}"]`);
+  return target.ownerDocument.head.querySelector(
+    `style[${STYLE_ATTRIBUTE}="${id}"]`,
+  );
 }
 
 /** `--md-sys-color-*` roles of a Rust `scheme` sheet, in sheet order. */
@@ -128,7 +143,9 @@ export function httpSchemeSheet(
     const response = await fetcher(`${endpoint}?${query}`);
     const body = await response.text();
     if (!response.ok)
-      throw new Error(`@aphrody/m3-theme: ${endpoint} answered ${response.status}: ${body.trim()}`);
+      throw new Error(
+        `@aphrody/m3-theme: ${endpoint} answered ${response.status}: ${body.trim()}`,
+      );
     return body;
   };
 }
@@ -150,7 +167,8 @@ export async function applyDynamicFusionTheme(
   options: ApplyDynamicFusionThemeOptions = {},
 ): Promise<void> {
   const target =
-    options.target ?? (typeof document !== "undefined" ? document.documentElement : null);
+    options.target ??
+    (typeof document !== "undefined" ? document.documentElement : null);
   if (!target) return;
   if (!options.sheet)
     throw new Error(
@@ -158,11 +176,14 @@ export async function applyDynamicFusionTheme(
     );
   const contrast = options.contrastLevel ?? 0;
   if (!Number.isFinite(contrast) || contrast < -1 || contrast > 1)
-    throw new RangeError(`M3 contrast level must be between -1 and 1, got ${contrast}`);
+    throw new RangeError(
+      `M3 contrast level must be between -1 and 1, got ${contrast}`,
+    );
   const dark =
     options.dark ??
     (target.classList.contains("dark") ||
-      (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches));
+      (typeof window !== "undefined" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches));
   const request: M3SchemeRequest = {
     sheet: "scheme",
     seed: normalizeSeed(seed),
@@ -175,11 +196,14 @@ export async function applyDynamicFusionTheme(
     contrast < 1 ? options.sheet({ ...request, contrast: 1 }) : undefined,
   ]);
   const standardBody = schemeDeclarations(standard);
-  const higherBody = higher === undefined ? undefined : schemeDeclarations(higher);
+  const higherBody =
+    higher === undefined ? undefined : schemeDeclarations(higher);
 
   const id = target.getAttribute(STYLE_ATTRIBUTE) ?? String(++scopes);
   const scope =
-    target === target.ownerDocument.documentElement ? ":root" : `[${STYLE_ATTRIBUTE}="${id}"]`;
+    target === target.ownerDocument.documentElement
+      ? ":root"
+      : `[${STYLE_ATTRIBUTE}="${id}"]`;
   const selector = `${scope},\n${scope}.light,\n${scope}.dark`;
   let text = `${selector} {\n  ${standardBody}\n}\n`;
   if (higherBody)

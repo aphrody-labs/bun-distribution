@@ -19,7 +19,8 @@
     box-sizing: border-box;
     padding: 2px;
     opacity: 0;
-    transition: opacity var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
+    transition: opacity var(--md-sys-motion-duration-short3)
+      var(--md-sys-motion-easing-standard);
   }
   .m3-bui-scroll__bar[data-orientation="vertical"] {
     inline-size: 10px;
@@ -34,6 +35,10 @@
   .m3-bui-scroll__thumb {
     flex: 1;
     border-radius: var(--md-sys-shape-corner-full);
-    background: color-mix(in srgb, var(--md-sys-color-on-surface-variant) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--md-sys-color-on-surface-variant) 40%,
+      transparent
+    );
   }
 }

@@ -32,10 +32,12 @@ export function parseAgentInventory(
   return {
     tools: tools.map((entry: unknown) => {
       const tool = record(entry);
-      if (typeof tool.name !== "string" || !tool.name.trim()) throw new Error("Outil sans nom.");
+      if (typeof tool.name !== "string" || !tool.name.trim())
+        throw new Error("Outil sans nom.");
       return {
         name: tool.name,
-        description: typeof tool.description === "string" ? tool.description : "",
+        description:
+          typeof tool.description === "string" ? tool.description : "",
       };
     }),
     servers: servers.map((entry: unknown) => {

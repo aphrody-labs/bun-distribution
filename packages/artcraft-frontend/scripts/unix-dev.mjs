@@ -1,13 +1,24 @@
 #!/usr/bin/env bun
 // Combined native desktop launcher. Invoked through Bun on Windows, macOS and Linux.
 import { resolve, join } from "node:path";
-import { buildFrontend, serveFrontend, watchDevelopment, frontendDir } from "./artcraft.ts";
+import {
+  buildFrontend,
+  serveFrontend,
+  watchDevelopment,
+  frontendDir,
+} from "./artcraft.ts";
 
 const rootDir = resolve(frontendDir, "..");
 const rustDir = join(rootDir, "crates/desktop/artcraft");
 const startingPort = Number(Bun.env.ARTCRAFT_DEV_PORT ?? "5193");
-if (!Number.isInteger(startingPort) || startingPort < 0 || startingPort > 65535) {
-  throw new Error("ARTCRAFT_DEV_PORT must be a valid port (0 chooses a free port).");
+if (
+  !Number.isInteger(startingPort) ||
+  startingPort < 0 ||
+  startingPort > 65535
+) {
+  throw new Error(
+    "ARTCRAFT_DEV_PORT must be a valid port (0 chooses a free port).",
+  );
 }
 Bun.env.VITE_ENVIRONMENT_TYPE ??= "production";
 await buildFrontend({ development: true });
@@ -34,7 +45,11 @@ const overrides = {
     security: {
       devCsp: {
         ...csp,
-        "connect-src": [...csp["connect-src"], devUrl, devUrl.replace("http:", "ws:")],
+        "connect-src": [
+          ...csp["connect-src"],
+          devUrl,
+          devUrl.replace("http:", "ws:"),
+        ],
       },
     },
   },

@@ -30,7 +30,9 @@ export function runAiReleaseGate(args: string[]): number {
     if (arg === "--root") root = args[++index] ?? "";
     else if (arg === "--scoped") scoped = true;
     else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: yolo ops ai-release-gate [--root <repository>] [--scoped]");
+      console.log(
+        "Usage: yolo ops ai-release-gate [--root <repository>] [--scoped]",
+      );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }
@@ -70,6 +72,8 @@ export function runAiReleaseGate(args: string[]): number {
       ],
     });
   const failures = checks.filter((check) => !run(check, root)).length;
-  console.log(`\nRelease gate: ${failures === 0 ? "PASS" : "FAILED"} (${failures} failure(s))`);
+  console.log(
+    `\nRelease gate: ${failures === 0 ? "PASS" : "FAILED"} (${failures} failure(s))`,
+  );
   return failures === 0 ? 0 : 1;
 }

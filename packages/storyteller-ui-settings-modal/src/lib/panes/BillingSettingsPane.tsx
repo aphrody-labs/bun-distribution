@@ -133,7 +133,11 @@ const CancelPlanButton = () => {
   };
 
   return (
-    <Button variant="secondary" className="h-9 shrink-0 px-3" onClick={handleClick}>
+    <Button
+      variant="secondary"
+      className="h-9 shrink-0 px-3"
+      onClick={handleClick}
+    >
       Cancel plan
     </Button>
   );
@@ -160,13 +164,17 @@ const CreditsTally = ({ creditsStore }: { creditsStore: CreditsState }) => {
         <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
           Monthly credits (refilled monthly)
         </span>
-        <span className="text-sm font-medium">{creditsStore.monthlyCredits}</span>
+        <span className="text-sm font-medium">
+          {creditsStore.monthlyCredits}
+        </span>
       </li>
       <li className="flex items-baseline justify-between gap-3 px-3 py-2">
         <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
           Purchased credits
         </span>
-        <span className="text-sm font-medium">{creditsStore.bankedCredits}</span>
+        <span className="text-sm font-medium">
+          {creditsStore.bankedCredits}
+        </span>
       </li>
     </ul>
   );

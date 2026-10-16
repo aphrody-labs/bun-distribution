@@ -7,7 +7,12 @@ import { CircleButton } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 
 import { type ChatLabels, resolveChatLabels } from "./chatLabels";
-import { type Citation, CitationList, CitedMarkdown, RefusalNotice } from "./citations";
+import {
+  type Citation,
+  CitationList,
+  CitedMarkdown,
+  RefusalNotice,
+} from "./citations";
 import { ChatIcon } from "./chatIcons";
 import { Markdown, type MarkdownLinkHandler } from "./Markdown";
 
@@ -97,9 +102,15 @@ export function MessageBubble({
                 className="break-words font-sans"
               />
             )}
-            {refusal && content.trim() ? <RefusalNotice labels={labels} className="mt-2" /> : null}
+            {refusal && content.trim() ? (
+              <RefusalNotice labels={labels} className="mt-2" />
+            ) : null}
             {cited && !isStreaming ? (
-              <CitationList citations={cited} labels={labels} onSelect={onCitationSelect} />
+              <CitationList
+                citations={cited}
+                labels={labels}
+                onSelect={onCitationSelect}
+              />
             ) : null}
           </>
         )}

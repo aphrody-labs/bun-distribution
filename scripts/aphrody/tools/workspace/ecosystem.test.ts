@@ -3,7 +3,13 @@
  * Unit tests for the ecosystem catalog extractors, plus the staleness gate: the committed
  * `docs/ecosystem/` output must match a fresh generation from the active roots.
  */
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, test } from "bun:test";
@@ -36,12 +42,20 @@ describe("clap extraction", () => {
       "test",
     ))
       index.add(item);
-    expect(reexportedParser(index, "pub use shared_command::*;", "demo", "test")?.crate).toBe(
-      "shared-command",
-    );
-    expect(reexportedParser(index, "pub use other_command::*;", "demo", "test")).toBeUndefined();
     expect(
-      reexportedParser(index, "pub use shared_command::*;", "demo", "other-repo"),
+      reexportedParser(index, "pub use shared_command::*;", "demo", "test")
+        ?.crate,
+    ).toBe("shared-command");
+    expect(
+      reexportedParser(index, "pub use other_command::*;", "demo", "test"),
+    ).toBeUndefined();
+    expect(
+      reexportedParser(
+        index,
+        "pub use shared_command::*;",
+        "demo",
+        "other-repo",
+      ),
     ).toBeUndefined();
   });
   const src = `
@@ -90,7 +104,8 @@ describe("clap extraction", () => {
 
   test("builds the exact tree, honouring renames, hide, aliases and cfg", () => {
     const index = new ClapIndex();
-    for (const item of clapItems(src, "src/lib.rs", "demo", "repo")) index.add(item);
+    for (const item of clapItems(src, "src/lib.rs", "demo", "repo"))
+      index.add(item);
     const cli = index.parsers()[0];
     expect(cli?.name).toBe("Cli");
     const tree = index.commandsOf(cli!);
@@ -125,7 +140,11 @@ describe("MCP extraction", () => {
           pub async fn inner(&self) {}
       }`);
     expect(tools).toEqual([
-      { server: "GoogleServer", name: "web_fetch", description: "Fetch a page as Markdown." },
+      {
+        server: "GoogleServer",
+        name: "web_fetch",
+        description: "Fetch a page as Markdown.",
+      },
       { server: "GoogleServer", name: "renamed", description: "Other." },
     ]);
   });
@@ -134,13 +153,17 @@ describe("MCP extraction", () => {
     const src = `fn name(&self) -> &'static str { "cloud" }
       fn tools(&self) -> Vec<ToolDefinition> { vec![ToolDefinition::new("github_status", "Inspect \\
          a repo", json!({}))] }`;
-    expect(kernelTools(src)).toEqual([{ name: "github_status", description: "Inspect a repo" }]);
+    expect(kernelTools(src)).toEqual([
+      { name: "github_status", description: "Inspect a repo" },
+    ]);
     expect(subsystemName(src)).toBe("cloud");
   });
 
   test("JSON catalogs require an inputSchema", () => {
     const src = `[{"name": "a_tool", "description": "Does \\"a\\".", "inputSchema": {}}, {"name": "x", "description": "not a tool"}]`;
-    expect(jsonCatalogTools(src)).toEqual([{ name: "a_tool", description: 'Does "a".' }]);
+    expect(jsonCatalogTools(src)).toEqual([
+      { name: "a_tool", description: 'Does "a".' },
+    ]);
   });
 
   test("Bun kernel subsystem registrations", () => {
@@ -157,7 +180,9 @@ describe("MCP extraction", () => {
         { name: "ws_two", description: "Second." },
       ],
     });
-    expect(bunSubsystemTools("export async function registerSubsystem(spec) {}")).toBeUndefined();
+    expect(
+      bunSubsystemTools("export async function registerSubsystem(spec) {}"),
+    ).toBeUndefined();
   });
 
   test("Bun registerTool and .tool registrations", () => {
@@ -174,30 +199,47 @@ test("pyproject name, description and scripts", () => {
   const py = readPyproject(
     `[project]\nname = "aphrody-ocr"\ndescription = "OCR"\n\n[project.scripts]\nb = "m:b"\na = "m:a"\n`,
   );
-  expect(py).toEqual({ name: "aphrody-ocr", description: "OCR", scripts: ["a", "b"] });
+  expect(py).toEqual({
+    name: "aphrody-ocr",
+    description: "OCR",
+    scripts: ["a", "b"],
+  });
 });
 
 const root = resolve(import.meta.dir, "..", "..", "..", "..");
-const activeRootsPresent = ["aphrody", "iecode"].every((repo) => existsSync(join(root, repo)));
+const activeRootsPresent = ["aphrody", "iecode"].every((repo) =>
+  existsSync(join(root, repo)),
+);
 
 describe.skipIf(!activeRootsPresent)("ecosystem catalog", () => {
   test("committed docs/ecosystem output is up to date (run: bun scripts/tools/workspace/ecosystem.ts)", () => {
     const eco = collect(root);
     expect(eco.repos.flatMap((r) => r.errors)).toEqual([]);
-    expect(eco.cli.some((b) => b.binary === "aphrody" && b.commands.length > 0)).toBe(true);
+    expect(
+      eco.cli.some((b) => b.binary === "aphrody" && b.commands.length > 0),
+    ).toBe(true);
     expect(eco.counts.mcpTools).toBeGreaterThan(0);
     expect(
-      staleFiles(join(import.meta.dir, "..", "..", "..", "docs", "ecosystem"), render(eco)),
+      staleFiles(
+        join(import.meta.dir, "..", "..", "..", "docs", "ecosystem"),
+        render(eco),
+      ),
     ).toEqual([]);
   }, 180_000);
 });
 
-test.skipIf(!existsSync(join(root, "aphrody/crates/infra/aphrody-command/src/wsl/cli.rs")))(
+test.skipIf(
+  !existsSync(
+    join(root, "aphrody/crates/infra/aphrody-command/src/wsl/cli.rs"),
+  ),
+)(
   "current folded WSL source preserves every public subcommand in the catalog",
   () => {
     const wsl = collect(root).cli.find((bin) => bin.binary === "aphrody wsl");
     expect(wsl?.crate).toBe("aphrody-command");
-    expect(wsl?.source).toBe("crates/infra/aphrody-command/src/wsl/cli.rs#Args");
+    expect(wsl?.source).toBe(
+      "crates/infra/aphrody-command/src/wsl/cli.rs#Args",
+    );
     expect(wsl?.commands.map((command) => command.name)).toEqual([
       "doctor",
       "sources",
@@ -229,17 +271,29 @@ describe("multicallTools", () => {
           `tool("unresolved", &[], Target::Entry(crate::unresolved::cli_main)),`,
         ].join("\n"),
       );
-      writeFileSync(join(src, "wsl/mod.rs"), "pub mod cli; pub use cli::cli_main;");
+      writeFileSync(
+        join(src, "wsl/mod.rs"),
+        "pub mod cli; pub use cli::cli_main;",
+      );
       writeFileSync(join(src, "wsl/cli.rs"), "pub fn cli_main() {}");
       writeFileSync(join(src, "direct.rs"), "pub fn cli_main() {}");
-      writeFileSync(join(src, "unresolved.rs"), "pub mod cli; pub use cli::cli_main;");
+      writeFileSync(
+        join(src, "unresolved.rs"),
+        "pub mod cli; pub use cli::cli_main;",
+      );
       const targets = multicallTools(dir, "aphrody", [
         {
           name: "aphrody-command",
           description: null,
           manifest_path: join(src, "../Cargo.toml"),
           features: {},
-          targets: [{ name: "aphrody_command", kind: ["lib"], src_path: join(src, "lib.rs") }],
+          targets: [
+            {
+              name: "aphrody_command",
+              kind: ["lib"],
+              src_path: join(src, "lib.rs"),
+            },
+          ],
           dependencies: [{ name: "clap" }],
         },
       ]);
@@ -256,7 +310,9 @@ describe("multicallTools", () => {
   test("indexes former binaries under their aphrody multi-call name", () => {
     const dir = mkdtempSync(join(tmpdir(), "eco-multicall-"));
     try {
-      mkdirSync(join(dir, "crates/infra/aphrody-command/src"), { recursive: true });
+      mkdirSync(join(dir, "crates/infra/aphrody-command/src"), {
+        recursive: true,
+      });
       writeFileSync(
         join(dir, "crates/infra/aphrody-command/src/multicall.rs"),
         [
@@ -270,7 +326,9 @@ describe("multicallTools", () => {
         description: null,
         manifest_path: join(dir, "crates/infra/infra/Cargo.toml"),
         features: {},
-        targets: [{ name: "aphrody_infra", kind: ["lib"], src_path: "/x/src/lib.rs" }],
+        targets: [
+          { name: "aphrody_infra", kind: ["lib"], src_path: "/x/src/lib.rs" },
+        ],
         dependencies: [{ name: "clap" }],
       };
       expect(multicallTools(dir, "aphrody", [pkg])).toEqual([

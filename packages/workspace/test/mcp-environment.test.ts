@@ -31,17 +31,21 @@ async function fixtureExecutable(path: string, source: string) {
   }
   const entry = `${path}.ts`;
   writeFileSync(entry, source);
-  const build = Bun.spawnSync([process.execPath, "build", "--compile", entry, "--outfile", path], {
-    windowsHide: true,
-    stdout: "ignore",
-    stderr: "pipe",
-  });
+  const build = Bun.spawnSync(
+    [process.execPath, "build", "--compile", entry, "--outfile", path],
+    {
+      windowsHide: true,
+      stdout: "ignore",
+      stderr: "pipe",
+    },
+  );
   if (build.exitCode !== 0) throw new Error(build.stderr.toString());
 }
 
 const roots: string[] = [];
 afterEach(() => {
-  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+  for (const root of roots.splice(0))
+    rmSync(root, { recursive: true, force: true });
 });
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), "mcp-environment-"));
@@ -74,9 +78,9 @@ test("private JSON profile keeps values out of metadata and has deterministic fi
     prepared = profile(root);
   expect(hasMode(statSync(prepared.path).mode, 0o600)).toBe(true);
   expect(hasMode(statSync(join(root, "private")).mode, 0o700)).toBe(true);
-  expect(JSON.parse(readFileSync(prepared.path, "utf8")).APHRODY_MCP_DATABASE_URL).toBe(
-    "fixture-only-password",
-  );
+  expect(
+    JSON.parse(readFileSync(prepared.path, "utf8")).APHRODY_MCP_DATABASE_URL,
+  ).toBe("fixture-only-password");
   expect(JSON.stringify(prepared)).not.toContain("fixture-only-password");
   expect(prepared.missingRequired).toEqual([]);
   expect(
@@ -91,9 +95,13 @@ test("private JSON profile keeps values out of metadata and has deterministic fi
 test("explicit sources fill missing keys and cannot replace domain or host environment", () => {
   const root = fixture(),
     path = join(root, "source.json");
-  writeFileSync(path, JSON.stringify({ APHRODY_MCP_DATABASE_URL: "fixture-only-password" }), {
-    mode: 0o600,
-  });
+  writeFileSync(
+    path,
+    JSON.stringify({ APHRODY_MCP_DATABASE_URL: "fixture-only-password" }),
+    {
+      mode: 0o600,
+    },
+  );
   const options = {
     profile: "aphrody" as const,
     repoRoot: root,
@@ -102,12 +110,16 @@ test("explicit sources fill missing keys and cannot replace domain or host envir
     env: { HOME: root, PATH: "/fixture/bin" },
     sourceFiles: [path],
   };
-  expect(prepareMcpEnvironment(options).sources[1]?.keys).toEqual(["APHRODY_MCP_DATABASE_URL"]);
+  expect(prepareMcpEnvironment(options).sources[1]?.keys).toEqual([
+    "APHRODY_MCP_DATABASE_URL",
+  ]);
   writeFileSync(path, JSON.stringify({ HOME: "another-home" }));
-  expect(() => prepareMcpEnvironment(options)).toThrow("inherited host or domain");
-  expect(() => prepareMcpEnvironment({ ...options, env: { APHRODY_PROFILE: "dbfr" } })).toThrow(
-    "inherited domain",
+  expect(() => prepareMcpEnvironment(options)).toThrow(
+    "inherited host or domain",
   );
+  expect(() =>
+    prepareMcpEnvironment({ ...options, env: { APHRODY_PROFILE: "dbfr" } }),
+  ).toThrow("inherited domain");
 });
 
 test("public, symbolic and malformed private source files fail without exposing values", () => {
@@ -124,7 +136,8 @@ test("public, symbolic and malformed private source files fail without exposing 
       sourceFiles: [source],
     });
   writeFileSync(path, "fixture-only-password", { mode: 0o644 });
-  if (POSIX_MODES) expect(run.bind(null, path)).toThrow("owned, private regular file");
+  if (POSIX_MODES)
+    expect(run.bind(null, path)).toThrow("owned, private regular file");
   chmodSync(path, 0o600);
   expect(run.bind(null, path)).toThrow("invalid JSON");
   symlinkSync(path, alias);
@@ -134,14 +147,20 @@ test("public, symbolic and malformed private source files fail without exposing 
 });
 
 test("real contracts name canonical credentials without inventing endpoint defaults", () => {
-  const contract = loadMcpEnvironmentRequirements(join(import.meta.dir, "../../../docs/aphrody"), [
-    "aphrody-mcp-http",
-  ]);
+  const contract = loadMcpEnvironmentRequirements(
+    join(import.meta.dir, "../../../docs/aphrody"),
+    ["aphrody-mcp-http"],
+  );
   expect(contract.required).toContain("APHRODY_MCP_HTTP_TOKEN");
   expect(contract.processKeys).toContain("APHRODY_MCP_DATABASE_URL");
-  expect(contract.aliases.APHRODY_AI_HTTP_TOKEN).toContain("APHRODY_SHENRON_API_TOKEN");
+  expect(contract.aliases.APHRODY_AI_HTTP_TOKEN).toContain(
+    "APHRODY_SHENRON_API_TOKEN",
+  );
   expect(() =>
-    loadMcpEnvironmentRequirements(join(import.meta.dir, "../../../docs/aphrody"), ["shenron-bot"]),
+    loadMcpEnvironmentRequirements(
+      join(import.meta.dir, "../../../docs/aphrody"),
+      ["shenron-bot"],
+    ),
   ).toThrow("another domain");
 });
 
@@ -166,10 +185,14 @@ test("provider configuration preserves canonical options and unrelated TOML and 
     }),
     { mode: 0o600 },
   );
-  const plan = planMcpEnvironmentConfiguration(prepared, "/fixture/aphrody-mcp", [
-    { provider: "codex", path: codex },
-    { provider: "agy", path: agy },
-  ]);
+  const plan = planMcpEnvironmentConfiguration(
+    prepared,
+    "/fixture/aphrody-mcp",
+    [
+      { provider: "codex", path: codex },
+      { provider: "agy", path: agy },
+    ],
+  );
   const toml = Bun.TOML.parse(plan[0]!.content) as {
     mcp_servers: Record<string, Record<string, unknown>>;
   };
@@ -189,7 +212,10 @@ test("unpreserved inline credentials and tampered profiles prevent configuration
     config,
     JSON.stringify({
       mcpServers: {
-        aphrody: { command: "/fixture/aphrody-mcp", env: { TOKEN: "fixture-unpreserved" } },
+        aphrody: {
+          command: "/fixture/aphrody-mcp",
+          env: { TOKEN: "fixture-unpreserved" },
+        },
       },
     }),
     { mode: 0o600 },
@@ -200,26 +226,34 @@ test("unpreserved inline credentials and tampered profiles prevent configuration
     ]),
   ).toThrow("absent from the prepared profile");
   writeFileSync(prepared.path, "{}\n");
-  expect(() => planMcpEnvironmentConfiguration(prepared, "/fixture/aphrody-mcp", [])).toThrow(
-    "changed after preparation",
-  );
+  expect(() =>
+    planMcpEnvironmentConfiguration(prepared, "/fixture/aphrody-mcp", []),
+  ).toThrow("changed after preparation");
 });
 
 test("existing targets do not invent provider files and wrong process source fails closed", () => {
   const root = fixture();
   mkdirSync(join(root, ".codex"));
   writeFileSync(join(root, ".codex/config.toml"), "", { mode: 0o600 });
-  expect(existingMcpConfigTargets(root).map((target) => target.provider)).toEqual(["codex"]);
-  expect(() => readMcpProcessEnvironment(process.pid, process.execPath, ["TOKEN"])).toThrow(
-    "canonical-server validation",
+  expect(
+    existingMcpConfigTargets(root).map((target) => target.provider),
+  ).toEqual(["codex"]);
+  expect(() =>
+    readMcpProcessEnvironment(process.pid, process.execPath, ["TOKEN"]),
+  ).toThrow("canonical-server validation");
+  expect(() => readMcpProcessEnvironment(-1, process.execPath, [])).toThrow(
+    "invalid",
   );
-  expect(() => readMcpProcessEnvironment(-1, process.execPath, [])).toThrow("invalid");
 });
 
 test("unsupported native loader cannot activate provider configuration", async () => {
   const root = fixture(),
     prepared = profile(root);
-  const result = await probeMcpEnvironment(prepared, join(root, "aphrody-mcp"), 100);
+  const result = await probeMcpEnvironment(
+    prepared,
+    join(root, "aphrody-mcp"),
+    100,
+  );
   expect(result.completed).toBe(false);
   expect(result.failure).toBe("native-probe-unavailable");
   expect(JSON.stringify(result)).not.toContain("fixture-only-password");
@@ -229,7 +263,10 @@ test("native verification uses structured config for paths with spaces and repor
   const root = fixture(),
     directory = join(root, "binary with spaces");
   mkdirSync(directory);
-  const binary = join(directory, process.platform === "win32" ? "aphrody-mcp.exe" : "aphrody-mcp"),
+  const binary = join(
+      directory,
+      process.platform === "win32" ? "aphrody-mcp.exe" : "aphrody-mcp",
+    ),
     prepared = profile(root);
   await fixtureExecutable(
     binary,
@@ -278,7 +315,12 @@ else {
 
 test("explicit process sources cannot import generic database or routing keys", () => {
   const root = fixture();
-  for (const key of ["DATABASE_URL", "HOME", "APHRODY_PROFILE", "UNDECLARED_TOKEN"]) {
+  for (const key of [
+    "DATABASE_URL",
+    "HOME",
+    "APHRODY_PROFILE",
+    "UNDECLARED_TOKEN",
+  ]) {
     expect(() =>
       prepareMcpEnvironment({
         profile: "aphrody",
@@ -290,11 +332,17 @@ test("explicit process sources cannot import generic database or routing keys", 
       }),
     ).toThrow("supported authentication references");
   }
-  const contract = loadMcpEnvironmentRequirements(join(import.meta.dir, "../../../docs/aphrody"));
+  const contract = loadMcpEnvironmentRequirements(
+    join(import.meta.dir, "../../../docs/aphrody"),
+  );
   expect(contract.required).not.toContain("APHRODY_MCP_HTTP_TOKEN");
   expect(contract.processKeys).toContain("APHRODY_SHENRON_PRODUCTION_READY");
   expect(
-    loadMcpEnvironmentRequirements(join(import.meta.dir, "../../../docs/aphrody"), [], true).required,
+    loadMcpEnvironmentRequirements(
+      join(import.meta.dir, "../../../docs/aphrody"),
+      [],
+      true,
+    ).required,
   ).toContain("APHRODY_MCP_DATABASE_URL");
 });
 
@@ -306,7 +354,10 @@ test("recurring preparation preserves auth after agents contain only profile ref
     config,
     JSON.stringify({
       mcpServers: {
-        aphrody: { command: "/fixture/aphrody-mcp", env: { APHRODY_MCP_ENV_FILE: first.path } },
+        aphrody: {
+          command: "/fixture/aphrody-mcp",
+          env: { APHRODY_MCP_ENV_FILE: first.path },
+        },
       },
     }),
     { mode: 0o600 },
@@ -366,7 +417,10 @@ test("prepared-profile inspection neither refreshes launch environment nor repor
   ).toThrow("another domain");
   writeFileSync(
     prepared.path,
-    JSON.stringify({ APHRODY_AGENT_DOMAIN: "aphrody", APHRODY_MCP_ENV_FILE: prepared.path }),
+    JSON.stringify({
+      APHRODY_AGENT_DOMAIN: "aphrody",
+      APHRODY_MCP_ENV_FILE: prepared.path,
+    }),
   );
   expect(() =>
     loadPreparedMcpEnvironment({

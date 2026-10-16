@@ -17,7 +17,10 @@ export default function Logs() {
   const [lines, setLines] = useState(100);
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["logs", lines],
-    queryFn: () => api.get<{ logs: LogEntry[]; count: number }>(`/health/logs?lines=${lines}`),
+    queryFn: () =>
+      api.get<{ logs: LogEntry[]; count: number }>(
+        `/health/logs?lines=${lines}`,
+      ),
     refetchInterval: 10_000,
   });
 
@@ -29,8 +32,8 @@ export default function Logs() {
           <h2 className="text-lg font-semibold">Journaux du service</h2>
         </div>
         <p className="mt-1 text-sm text-zinc-400">
-          Sortie de <code>journalctl -u shenron</code> en temps réel. Actualisation automatique
-          toutes les 10 secondes.
+          Sortie de <code>journalctl -u shenron</code> en temps réel.
+          Actualisation automatique toutes les 10 secondes.
         </p>
       </div>
 
@@ -53,7 +56,9 @@ export default function Logs() {
           disabled={isFetching}
           className="btn btn-ghost ml-auto"
         >
-          <RefreshCw className={`h-3 w-3 ${isFetching ? "animate-spin" : ""}`} />
+          <RefreshCw
+            className={`h-3 w-3 ${isFetching ? "animate-spin" : ""}`}
+          />
           Actualiser
         </button>
       </div>
@@ -70,13 +75,17 @@ export default function Logs() {
                 <>
                   <span className="text-zinc-500">{log.time}</span>
                   {" — "}
-                  <span className={colorize(log.message ?? "")}>{log.message}</span>
+                  <span className={colorize(log.message ?? "")}>
+                    {log.message}
+                  </span>
                 </>
               )}
             </div>
           ))}
           {data?.logs.length === 0 && (
-            <p className="italic text-zinc-500">Aucun journal pour l'instant.</p>
+            <p className="italic text-zinc-500">
+              Aucun journal pour l'instant.
+            </p>
           )}
         </div>
       )}
@@ -85,7 +94,8 @@ export default function Logs() {
 }
 
 function colorize(message: string): string {
-  if (/\bERROR\b|\berror\b|\bFAIL\b|\bfail\b/.test(message)) return "text-red-400";
+  if (/\bERROR\b|\berror\b|\bFAIL\b|\bfail\b/.test(message))
+    return "text-red-400";
   if (/\bWARN\b|\bwarn\b/.test(message)) return "text-amber-400";
   if (/\bINFO\b|\binfo\b|✓/.test(message)) return "text-green-400";
   return "text-zinc-300";

@@ -3,7 +3,7 @@
 /**
  * Return the CDN origin (scheme + host + optional port, but no path)
  * See: https://web.dev/articles/url-parts
- * 
+ *
  * TODO(bt,2025-02-10): Make this easier to configure in development
  */
 class CdnHostHelper {
@@ -15,7 +15,7 @@ class CdnHostHelper {
       return CdnHostHelper.instance;
     }
 
-    const origin = 'https://cdn-2.fakeyou.com';
+    const origin = "https://cdn-2.fakeyou.com";
     const instance = new CdnHostHelper(origin);
 
     CdnHostHelper.instance = instance;
@@ -32,6 +32,6 @@ class CdnHostHelper {
 }
 
 // TODO(bt,2025-02-10): Consolidate all of this logic.
-export function GetCdnOrigin() : string {
+export function GetCdnOrigin(): string {
   return CdnHostHelper.getInstance().getOrigin();
 }

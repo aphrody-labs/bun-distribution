@@ -42,7 +42,9 @@ export function createM3Proxy(
     const headers = new Headers(request.headers);
     const others = (headers.get("cookie") ?? "")
       .split(/;\s*/)
-      .filter((cookie) => cookie !== "" && !cookie.startsWith(`${cookieName}=`));
+      .filter(
+        (cookie) => cookie !== "" && !cookie.startsWith(`${cookieName}=`),
+      );
     headers.set("cookie", [...others, `${cookieName}=${mode}`].join("; "));
 
     const response = NextResponse.next({ request: { headers } });

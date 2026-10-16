@@ -10,10 +10,10 @@ export { TcpSocketTransport, UnixSocketTransport };
 
 /** Client over a Unix socket. */
 export function clientFromSocket(socketPath: string): SpacedriveClient {
-	return new SpacedriveClient(new UnixSocketTransport(socketPath));
+  return new SpacedriveClient(new UnixSocketTransport(socketPath));
 }
 
 /** Client over TCP, e.g. "127.0.0.1:6969". */
 export function clientFromTcpSocket(socketAddr: string): SpacedriveClient {
-	return new SpacedriveClient(new TcpSocketTransport(socketAddr));
+  return new SpacedriveClient(new TcpSocketTransport(socketAddr));
 }

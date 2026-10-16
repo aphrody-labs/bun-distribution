@@ -126,6 +126,8 @@ export class PostProcessingPipeline {
   private refreshSurfaceIds() {
     if (this.surfaceFinder === undefined) return;
     this.surfaceFinder.surfaceId = 0;
-    this.customOutlinerPass?.updateMaxSurfaceId(this.surfaceFinder.surfaceId + 1);
+    this.customOutlinerPass?.updateMaxSurfaceId(
+      this.surfaceFinder.surfaceId + 1,
+    );
   }
 }

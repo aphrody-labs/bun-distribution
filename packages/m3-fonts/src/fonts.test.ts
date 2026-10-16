@@ -22,9 +22,12 @@ const lock = (await Bun.file(join(root, "fonts.lock.json")).json()) as {
 const fork = join(root, "../..", lock.sources["google-fonts"].submodule);
 const forkMaterialised = existsSync(join(fork, "ofl")); // directory: Bun.file().exists() is false for dirs
 const sha256 = async (path: string) =>
-  new Bun.CryptoHasher("sha256").update(await Bun.file(path).bytes()).digest("hex");
+  new Bun.CryptoHasher("sha256")
+    .update(await Bun.file(path).bytes())
+    .digest("hex");
 const size = (path: string) => Bun.file(path).size;
-const magic = async (path: string) => (await Bun.file(path).slice(0, 4).bytes()).toHex();
+const magic = async (path: string) =>
+  (await Bun.file(path).slice(0, 4).bytes()).toHex();
 const SYNC_HINT = "run `bun scripts/fonts-sync.ts` at the repository root";
 const WOFF2 = "774f4632";
 const sheetBytes = (sheet: FontSheet) =>
@@ -38,11 +41,15 @@ describe("@aphrody/m3-fonts upstream sources (fonts.lock.json)", () => {
     await Promise.all(
       lock.files.map(async (entry) => {
         const file = join(root, UPSTREAM_DIR, entry.dest);
-        expect(await Bun.file(file).exists(), `${entry.dest} missing: ${SYNC_HINT}`).toBe(true);
+        expect(
+          await Bun.file(file).exists(),
+          `${entry.dest} missing: ${SYNC_HINT}`,
+        ).toBe(true);
         expect(size(file), entry.dest).toBe(entry.bytes);
-        expect(await sha256(file), `${entry.dest} differs from fonts.lock.json: ${SYNC_HINT}`).toBe(
-          entry.sha256,
-        );
+        expect(
+          await sha256(file),
+          `${entry.dest} differs from fonts.lock.json: ${SYNC_HINT}`,
+        ).toBe(entry.sha256);
       }),
     );
   });
@@ -110,7 +117,9 @@ describe("@aphrody/m3-fonts", () => {
   test("every face, source and license file exists and is a real font", async () => {
     await Promise.all(
       FONTS.map(async (fam) => {
-        expect([WOFF2, ...SFNT]).toContain(await magic(join(root, fam.sourceFile)));
+        expect([WOFF2, ...SFNT]).toContain(
+          await magic(join(root, fam.sourceFile)),
+        );
         await Promise.all(
           fam.faces.map(async (f) => {
             const p = join(root, f.file);
@@ -118,9 +127,9 @@ describe("@aphrody/m3-fonts", () => {
             expect(await magic(p)).toBe(WOFF2);
             expect(f.format).toBe("woff2");
             if (f.licenseFile) {
-              expect(await Bun.file(join(root, f.licenseFile)).text()).toContain(
-                "SIL OPEN FONT LICENSE",
-              );
+              expect(
+                await Bun.file(join(root, f.licenseFile)).text(),
+              ).toContain("SIL OPEN FONT LICENSE");
             }
           }),
         );
@@ -131,9 +140,13 @@ describe("@aphrody/m3-fonts", () => {
   test("core sheet stays small; Japanese and icon fonts live in their own sheets", () => {
     expect(sheetBytes("core")).toBeLessThan(3 * 1024 * 1024);
     for (const f of FONTS)
-      expect(f.sheet).toBe(f.role === "icon" ? "symbols" : f.script === "japanese" ? "jp" : "core");
+      expect(f.sheet).toBe(
+        f.role === "icon" ? "symbols" : f.script === "japanese" ? "jp" : "core",
+      );
     // No Japanese chunk exceeds 300 KiB, so a page only pulls the blocks it renders.
-    for (const f of FONTS.filter((x) => x.sheet === "jp").flatMap((x) => x.faces)) {
+    for (const f of FONTS.filter((x) => x.sheet === "jp").flatMap(
+      (x) => x.faces,
+    )) {
       expect(size(join(root, f.file))).toBeLessThan(300 * 1024);
     }
   });
@@ -141,7 +154,9 @@ describe("@aphrody/m3-fonts", () => {
   test("Japanese faces are range-limited and fall back after Latin faces, then system faces", () => {
     for (const f of FONTS.filter((x) => x.script === "japanese")) {
       for (const face of f.faces) expect(face.unicodeRange).toBeDefined();
-      expect(f.faces.some((x) => x.unicodeRange?.includes("U+3042"))).toBe(false); // folded into a range
+      expect(f.faces.some((x) => x.unicodeRange?.includes("U+3042"))).toBe(
+        false,
+      ); // folded into a range
       expect(f.faces[0]?.unicodeRange).toContain("U+3041-");
     }
     expect(FONT_STACKS.plain.indexOf("Roboto Flex")).toBeLessThan(
@@ -164,10 +179,16 @@ describe("@aphrody/m3-fonts", () => {
 
   test("stylesheets are in sync with the manifest", async () => {
     await Promise.all(
-      (Object.entries(SHEET_FILES) as [FontSheet, string][]).map(async ([sheet, file]) => {
-        expect(await Bun.file(join(root, "src", file)).text()).toBe(renderStylesheet("../", sheet));
-      }),
+      (Object.entries(SHEET_FILES) as [FontSheet, string][]).map(
+        async ([sheet, file]) => {
+          expect(await Bun.file(join(root, "src", file)).text()).toBe(
+            renderStylesheet("../", sheet),
+          );
+        },
+      ),
     );
-    expect(await Bun.file(join(root, "src", SHEET_FILES.core)).text()).not.toContain(".ttf");
+    expect(
+      await Bun.file(join(root, "src", SHEET_FILES.core)).text(),
+    ).not.toContain(".ttf");
   });
 });

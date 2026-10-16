@@ -1,18 +1,33 @@
 import { afterAll, describe, expect, it } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 const work = mkdtempSync(join(tmpdir(), "yolo-upgrade-"));
 const modulePath = resolve(import.meta.dir, "../src/distribution.ts");
-const installerName = process.platform === "win32" ? "install.ps1" : "install.sh";
+const installerName =
+  process.platform === "win32" ? "install.ps1" : "install.sh";
 const installer =
   process.platform === "win32"
     ? 'Set-Content -Path (Join-Path $env:YOLO_HOME "upgrade.marker") -Value @($env:YOLO_VERSION, $env:YOLO_RELEASE_DIR, $env:YOLO_REPO)\n'
     : 'printf "%s\\n" "$YOLO_VERSION" "$YOLO_RELEASE_DIR" "$YOLO_REPO" > "$YOLO_HOME/upgrade.marker"\n';
 let sequence = 0;
 
-afterAll(() => rmSync(work, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
+afterAll(() =>
+  rmSync(work, {
+    recursive: true,
+    force: true,
+    maxRetries: 5,
+    retryDelay: 100,
+  }),
+);
 
 function fixture(version = "2.0.0", current = "1.0.0") {
   const dir = join(work, `case-${sequence++}`);
@@ -21,7 +36,10 @@ function fixture(version = "2.0.0", current = "1.0.0") {
   mkdirSync(release, { recursive: true });
   mkdirSync(home);
   writeFileSync(join(home, "VERSION"), `${current}\n`);
-  writeFileSync(join(release, "release.json"), JSON.stringify({ name: "yolo", version }));
+  writeFileSync(
+    join(release, "release.json"),
+    JSON.stringify({ name: "yolo", version }),
+  );
   writeFileSync(join(release, installerName), installer);
   const hash = new Bun.CryptoHasher("sha256").update(installer).digest("hex");
   writeFileSync(join(release, "SHA256SUMS"), `${hash}  ${installerName}\n`);
@@ -46,7 +64,9 @@ runUpgrade(${JSON.stringify(args)}).then(code => { process.exitCode = code; }).c
     cwd: entry.dir,
     env: {
       PATH: process.env["PATH"] ?? "",
-      ...(process.platform === "win32" ? { SystemRoot: process.env["SystemRoot"] } : {}),
+      ...(process.platform === "win32"
+        ? { SystemRoot: process.env["SystemRoot"] }
+        : {}),
       HOME: entry.home,
       YOLO_HOME: entry.home,
       YOLO_REPO: "aphrody-labs/yolo",
@@ -67,7 +87,8 @@ function remoteMock(
   const scriptUrl = options.foreignUrl
     ? "https://untrusted.invalid/install.sh"
     : "https://api.github.com/repos/aphrody-labs/yolo/releases/assets/1";
-  const sumsUrl = "https://api.github.com/repos/aphrody-labs/yolo/releases/assets/2";
+  const sumsUrl =
+    "https://api.github.com/repos/aphrody-labs/yolo/releases/assets/2";
   const hash = new Bun.CryptoHasher("sha256").update(installer).digest("hex");
   return `
 globalThis.fetch = async (input, init) => {
@@ -96,7 +117,9 @@ describe("verified native upgrade", () => {
     const entry = fixture();
     const result = run(entry, ["--release-dir", entry.release, "--check"]);
     expect(result.exitCode).toBe(10);
-    expect(result.stdout.toString()).toContain("installed 1.0.0, available 2.0.0");
+    expect(result.stdout.toString()).toContain(
+      "installed 1.0.0, available 2.0.0",
+    );
     expect(existsSync(entry.marker)).toBe(false);
   });
 
@@ -113,7 +136,9 @@ describe("verified native upgrade", () => {
 
   it("honors YOLO_RELEASE_DIR and reinstalls an explicitly selected same-version release", () => {
     const entry = fixture("1.0.0");
-    expect(run(entry, ["--check"], { releaseEnv: entry.release }).exitCode).toBe(0);
+    expect(
+      run(entry, ["--check"], { releaseEnv: entry.release }).exitCode,
+    ).toBe(0);
     expect(existsSync(entry.marker)).toBe(false);
     expect(run(entry, [], { releaseEnv: entry.release }).exitCode).toBe(0);
     expect(existsSync(entry.marker)).toBe(true);
@@ -121,21 +146,31 @@ describe("verified native upgrade", () => {
 
   it("rejects a tampered installer, missing hash and duplicate hashes before execution", () => {
     const tampered = fixture();
-    writeFileSync(join(tampered.release, installerName), `${installer}\n# tampered`);
+    writeFileSync(
+      join(tampered.release, installerName),
+      `${installer}\n# tampered`,
+    );
     const result = run(tampered, ["--release-dir", tampered.release]);
     expect(result.exitCode).toBe(1);
-    expect(result.stderr.toString()).toContain(`Checksum mismatch for ${installerName}`);
+    expect(result.stderr.toString()).toContain(
+      `Checksum mismatch for ${installerName}`,
+    );
     expect(existsSync(tampered.marker)).toBe(false);
 
     const missing = fixture();
-    writeFileSync(join(missing.release, "SHA256SUMS"), `${"0".repeat(64)}  other-asset\n`);
+    writeFileSync(
+      join(missing.release, "SHA256SUMS"),
+      `${"0".repeat(64)}  other-asset\n`,
+    );
     expect(run(missing, ["--release-dir", missing.release]).exitCode).toBe(1);
     expect(existsSync(missing.marker)).toBe(false);
 
     const duplicate = fixture();
     const sums = readFileSync(join(duplicate.release, "SHA256SUMS"), "utf8");
     writeFileSync(join(duplicate.release, "SHA256SUMS"), `${sums}${sums}`);
-    expect(run(duplicate, ["--release-dir", duplicate.release]).exitCode).toBe(1);
+    expect(run(duplicate, ["--release-dir", duplicate.release]).exitCode).toBe(
+      1,
+    );
     expect(existsSync(duplicate.marker)).toBe(false);
   });
 
@@ -159,8 +194,13 @@ describe("verified native upgrade", () => {
     expect(run(missing, ["--release-dir", missing.release]).exitCode).toBe(1);
     expect(existsSync(missing.marker)).toBe(false);
     const malformed = fixture();
-    writeFileSync(join(malformed.release, "SHA256SUMS"), "not a checksum manifest\n");
-    expect(run(malformed, ["--release-dir", malformed.release]).exitCode).toBe(1);
+    writeFileSync(
+      join(malformed.release, "SHA256SUMS"),
+      "not a checksum manifest\n",
+    );
+    expect(run(malformed, ["--release-dir", malformed.release]).exitCode).toBe(
+      1,
+    );
     expect(existsSync(malformed.marker)).toBe(false);
   });
 
@@ -179,21 +219,32 @@ describe("verified native upgrade", () => {
       expect(existsSync(entry.marker)).toBe(false);
     }
     const mismatch = fixture();
-    const result = run(mismatch, ["--release-dir", mismatch.release, "--version", "v3.0.0"]);
+    const result = run(mismatch, [
+      "--release-dir",
+      mismatch.release,
+      "--version",
+      "v3.0.0",
+    ]);
     expect(result.exitCode).toBe(1);
-    expect(result.stderr.toString()).toContain("does not match offline release");
+    expect(result.stderr.toString()).toContain(
+      "does not match offline release",
+    );
     expect(existsSync(mismatch.marker)).toBe(false);
   });
 
   it("compares prerelease versions through native Bun semver", () => {
     const entry = fixture("1.0.0", "1.0.0-rc.1");
-    expect(run(entry, ["--release-dir", entry.release, "--check"]).exitCode).toBe(10);
+    expect(
+      run(entry, ["--release-dir", entry.release, "--check"]).exitCode,
+    ).toBe(10);
     expect(existsSync(entry.marker)).toBe(false);
   });
 
   it("fetches the explicitly requested tag and verifies its installer before execution", () => {
     const entry = fixture();
-    const result = run(entry, ["--version", "v2.0.0"], { mockRemote: remoteMock("v2.0.0") });
+    const result = run(entry, ["--version", "v2.0.0"], {
+      mockRemote: remoteMock("v2.0.0"),
+    });
     expect(result.exitCode).toBe(0);
     expect(result.stdout.toString()).toContain("/releases/tags/v2.0.0");
     expect(result.stdout.toString()).not.toContain("/releases/latest");
@@ -207,7 +258,9 @@ describe("verified native upgrade", () => {
       mockRemote: remoteMock("v2.0.0", { tampered: true }),
     });
     expect(result.exitCode).toBe(1);
-    expect(result.stderr.toString()).toContain(`Checksum mismatch for ${installerName}`);
+    expect(result.stderr.toString()).toContain(
+      `Checksum mismatch for ${installerName}`,
+    );
     expect(existsSync(entry.marker)).toBe(false);
 
     const foreign = fixture();
@@ -216,7 +269,9 @@ describe("verified native upgrade", () => {
     });
     expect(denied.exitCode).toBe(1);
     expect(denied.stderr.toString()).toContain("Invalid GitHub asset URL");
-    expect(denied.stdout.toString()).not.toContain("FETCH https://untrusted.invalid");
+    expect(denied.stdout.toString()).not.toContain(
+      "FETCH https://untrusted.invalid",
+    );
     expect(existsSync(foreign.marker)).toBe(false);
   });
 });

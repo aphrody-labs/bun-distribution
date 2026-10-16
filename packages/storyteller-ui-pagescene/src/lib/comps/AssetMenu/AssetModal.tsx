@@ -1,6 +1,19 @@
 import { Checkbox } from "@storyteller/ui-checkbox";
 import { Modal } from "@storyteller/ui-modal";
-import { ArrowUpFromLineIcon, BoxIcon, ChevronLeftIcon, ChevronRightIcon, DogIcon, FootprintsIcon, LaughIcon, LayersIcon, MountainIcon, SearchIcon, SunIcon, UserIcon } from "lucide-react";
+import {
+  ArrowUpFromLineIcon,
+  BoxIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  DogIcon,
+  FootprintsIcon,
+  LaughIcon,
+  LayersIcon,
+  MountainIcon,
+  SearchIcon,
+  SunIcon,
+  UserIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { CloseButton } from "@storyteller/ui-close-button";
@@ -217,13 +230,11 @@ export const AssetModal = () => {
     defaultErrorMessage: "Error fetching featured characters",
   });
 
-  const {
-    featuredObjects,
-    featuredFetchStatus: featuredObjectsFetchStatus,
-  } = useFeaturedObjects({
-    filterEngineCategories: [FilterEngineCategories.OBJECT],
-    defaultErrorMessage: "Error fetching featured objects",
-  });
+  const { featuredObjects, featuredFetchStatus: featuredObjectsFetchStatus } =
+    useFeaturedObjects({
+      filterEngineCategories: [FilterEngineCategories.OBJECT],
+      defaultErrorMessage: "Error fetching featured objects",
+    });
 
   const {
     featuredObjects: featuredSets,
@@ -272,105 +283,106 @@ export const AssetModal = () => {
     ...animationFetchStatuses,
   ]);
 
-  const assetTabs = useMemo<AssetTab[]>(() => {
-    const allCharacterCandidates =
-      activeLibraryTab === "library"
-        ? [...demoCharacterItems, ...(featuredCharacters ?? [])]
-        : (userCharacters ?? []);
+  const assetTabs = useMemo<AssetTab[]>(
+    () => {
+      const allCharacterCandidates =
+        activeLibraryTab === "library"
+          ? [...demoCharacterItems, ...(featuredCharacters ?? [])]
+          : (userCharacters ?? []);
 
-    const memeOverrideItems = allCharacterCandidates.filter((item) =>
-      MEME_OVERRIDES.includes(item.name?.toLowerCase() ?? ""),
-    );
-    const characterCandidates = allCharacterCandidates.filter(
-      (item) => !MEME_OVERRIDES.includes(item.name?.toLowerCase() ?? ""),
-    );
-
-    const priorityCharacters: MediaItem[] = [];
-    for (const name of CHARACTER_PRIORITY_ORDER) {
-      const found = characterCandidates.find(
-        (item) => item.name?.toLowerCase() === name,
+      const memeOverrideItems = allCharacterCandidates.filter((item) =>
+        MEME_OVERRIDES.includes(item.name?.toLowerCase() ?? ""),
       );
-      if (found) priorityCharacters.push(found);
-    }
-    const remainingCharacters = characterCandidates.filter(
-      (item) =>
-        !CHARACTER_PRIORITY_ORDER.includes(item.name?.toLowerCase() ?? ""),
-    );
-    const orderedCharacters = [...priorityCharacters, ...remainingCharacters];
+      const characterCandidates = allCharacterCandidates.filter(
+        (item) => !MEME_OVERRIDES.includes(item.name?.toLowerCase() ?? ""),
+      );
 
-    return [
-      { id: "all", label: "All", icon: LayersIcon, items: [] },
-      {
-        id: "character",
-        label: "Characters",
-        labelSingle: "Character",
-        icon: UserIcon,
-        engineCategory: FilterEngineCategories.CHARACTER,
-        items: orderedCharacters,
-      },
-      {
-        id: "objects",
-        label: "Objects",
-        labelSingle: "Object",
-        icon: BoxIcon,
-        engineCategory: FilterEngineCategories.OBJECT,
-        items:
-          activeLibraryTab === "library"
-            ? [...demoShapeItems, ...(featuredObjects ?? [])]
-            : (userObjects ?? []),
-      },
-      {
-        id: "memes",
-        label: "Memes",
-        labelSingle: "Meme",
-        icon: LaughIcon,
-        engineCategory: FilterEngineCategories.CHARACTER,
-        items:
-          activeLibraryTab === "library"
-            ? [...demoMemeItems, ...memeOverrideItems]
-            : [],
-      },
-      {
-        id: "sets",
-        label: "Sets",
-        labelSingle: "Set",
-        icon: MountainIcon,
-        engineCategory: FilterEngineCategories.LOCATION,
-        items:
-          activeLibraryTab === "library"
-            ? (featuredSets ?? [])
-            : (userSets ?? []),
-      },
-      {
-        id: "creatures",
-        label: "Creatures",
-        labelSingle: "Creature",
-        icon: DogIcon,
-        engineCategory: FilterEngineCategories.CREATURE,
-        items:
-          activeLibraryTab === "library"
-            ? (featuredCreatures ?? [])
-            : (userCreatures ?? []),
-      },
-      {
-        id: "animations",
-        label: "Animations",
-        labelSingle: "Animation",
-        icon: FootprintsIcon,
-        engineCategory: FilterEngineCategories.ANIMATION,
-        // Uploads-first ordering with the demo-clip fallback lives in
-        // useAnimationLibrary (shared with the standalone AnimationsModal).
-        items: activeLibraryTab === "library" ? allAnimations : [],
-      },
-      {
-        id: "skybox",
-        label: "Skybox",
-        labelSingle: "Skybox",
-        icon: SunIcon,
-        items: activeLibraryTab === "library" ? demoSkyboxItems : [],
-      },
-    ];
-  },
+      const priorityCharacters: MediaItem[] = [];
+      for (const name of CHARACTER_PRIORITY_ORDER) {
+        const found = characterCandidates.find(
+          (item) => item.name?.toLowerCase() === name,
+        );
+        if (found) priorityCharacters.push(found);
+      }
+      const remainingCharacters = characterCandidates.filter(
+        (item) =>
+          !CHARACTER_PRIORITY_ORDER.includes(item.name?.toLowerCase() ?? ""),
+      );
+      const orderedCharacters = [...priorityCharacters, ...remainingCharacters];
+
+      return [
+        { id: "all", label: "All", icon: LayersIcon, items: [] },
+        {
+          id: "character",
+          label: "Characters",
+          labelSingle: "Character",
+          icon: UserIcon,
+          engineCategory: FilterEngineCategories.CHARACTER,
+          items: orderedCharacters,
+        },
+        {
+          id: "objects",
+          label: "Objects",
+          labelSingle: "Object",
+          icon: BoxIcon,
+          engineCategory: FilterEngineCategories.OBJECT,
+          items:
+            activeLibraryTab === "library"
+              ? [...demoShapeItems, ...(featuredObjects ?? [])]
+              : (userObjects ?? []),
+        },
+        {
+          id: "memes",
+          label: "Memes",
+          labelSingle: "Meme",
+          icon: LaughIcon,
+          engineCategory: FilterEngineCategories.CHARACTER,
+          items:
+            activeLibraryTab === "library"
+              ? [...demoMemeItems, ...memeOverrideItems]
+              : [],
+        },
+        {
+          id: "sets",
+          label: "Sets",
+          labelSingle: "Set",
+          icon: MountainIcon,
+          engineCategory: FilterEngineCategories.LOCATION,
+          items:
+            activeLibraryTab === "library"
+              ? (featuredSets ?? [])
+              : (userSets ?? []),
+        },
+        {
+          id: "creatures",
+          label: "Creatures",
+          labelSingle: "Creature",
+          icon: DogIcon,
+          engineCategory: FilterEngineCategories.CREATURE,
+          items:
+            activeLibraryTab === "library"
+              ? (featuredCreatures ?? [])
+              : (userCreatures ?? []),
+        },
+        {
+          id: "animations",
+          label: "Animations",
+          labelSingle: "Animation",
+          icon: FootprintsIcon,
+          engineCategory: FilterEngineCategories.ANIMATION,
+          // Uploads-first ordering with the demo-clip fallback lives in
+          // useAnimationLibrary (shared with the standalone AnimationsModal).
+          items: activeLibraryTab === "library" ? allAnimations : [],
+        },
+        {
+          id: "skybox",
+          label: "Skybox",
+          labelSingle: "Skybox",
+          icon: SunIcon,
+          items: activeLibraryTab === "library" ? demoSkyboxItems : [],
+        },
+      ];
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       activeLibraryTab,
@@ -525,10 +537,7 @@ export const AssetModal = () => {
                   )}
                   onClick={() => setActiveAssetTab(tab.id)}
                 >
-                  <DynamicIcon
-                    icon={tab.icon}
-                    className="mr-2 opacity-70"
-                  />
+                  <DynamicIcon icon={tab.icon} className="mr-2 opacity-70" />
                   {tab.label}
                 </Button>
               ))}
@@ -585,9 +594,7 @@ export const AssetModal = () => {
                           className="flex items-center gap-2 border-none bg-transparent px-3 py-1.5 text-sm text-white/70 hover:bg-transparent hover:text-white/100"
                           onClick={() => setActiveAssetTab("all")}
                         >
-                          <ChevronLeftIcon
-                            
-                            className="text-sm font-semibold opacity-70" />
+                          <ChevronLeftIcon className="text-sm font-semibold opacity-70" />
                         </Button>
                         {currentTab.label}
                       </div>

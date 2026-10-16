@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: MIT
 import { afterAll, expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createApiServer } from "../../core/src/server/http";
@@ -11,7 +17,11 @@ const outside = mkdtempSync(join(tmpdir(), "yolo-tooling-outside-"));
 const original = "#!/usr/bin/env node\nconsole.log('kept');\n";
 writeFileSync(join(root, "entry.js"), original);
 writeFileSync(join(outside, "private.js"), original);
-const server = createApiServer({ port: 0, hostname: "127.0.0.1", rootDir: root });
+const server = createApiServer({
+  port: 0,
+  hostname: "127.0.0.1",
+  rootDir: root,
+});
 afterAll(() => {
   server.stop(true);
   rmSync(root, { recursive: true, force: true });
@@ -26,7 +36,9 @@ async function post(args: Record<string, unknown>) {
 }
 test("native migration transport rejects writes and unbounded worker options", async () => {
   const responses = await Promise.all(
-    [{ mode: "fix" }, { dry_run: false }, { jobs: 7 }, { jobs: 1.5 }].map((args) => post(args)),
+    [{ mode: "fix" }, { dry_run: false }, { jobs: 7 }, { jobs: 1.5 }].map(
+      (args) => post(args),
+    ),
   );
   for (const response of responses) expect(response.status).toBe(400);
   expect(readFileSync(join(root, "entry.js"), "utf8")).toBe(original);

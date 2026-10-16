@@ -18,7 +18,11 @@ import { spawn, spawnSync } from "node:child_process";
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 
 const TICKS =
-  Number(spawnSync("getconf", ["CLK_TCK"], { windowsHide: true }).stdout.toString().trim()) || 100;
+  Number(
+    spawnSync("getconf", ["CLK_TCK"], { windowsHide: true })
+      .stdout.toString()
+      .trim(),
+  ) || 100;
 
 export interface Run {
   /** ms from spawn to the first window mapped for the process tree (xdotool), `null` when none appeared. */
@@ -102,25 +106,35 @@ export function summarize(values: readonly (number | null)[]): Summary {
   if (sorted.length === 0) return { median: null, min: null, max: null };
   const middle = Math.floor(sorted.length / 2);
   const median =
-    sorted.length % 2 === 1 ? sorted[middle]! : (sorted[middle - 1]! + sorted[middle]!) / 2;
+    sorted.length % 2 === 1
+      ? sorted[middle]!
+      : (sorted[middle - 1]! + sorted[middle]!) / 2;
   return { median, min: sorted[0]!, max: sorted.at(-1)! };
 }
 
-const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 
 /** First contentful paint as ms after `startedAt` (epoch ms), read over the DevTools protocol. */
-async function firstContentfulPaint(port: number, startedAt: number): Promise<number | null> {
+async function firstContentfulPaint(
+  port: number,
+  startedAt: number,
+): Promise<number | null> {
   const deadline = Date.now() + 60_000;
   while (Date.now() < deadline) {
     try {
-      const targets = (await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()) as {
+      const targets = (await (
+        await fetch(`http://127.0.0.1:${port}/json/list`)
+      ).json()) as {
         type: string;
         url: string;
         webSocketDebuggerUrl?: string;
       }[];
       const page = targets.find(
         (target) =>
-          target.type === "page" && target.webSocketDebuggerUrl && !target.url.includes("view="),
+          target.type === "page" &&
+          target.webSocketDebuggerUrl &&
+          !target.url.includes("view="),
       );
       if (page?.webSocketDebuggerUrl) {
         const value = await evaluate(
@@ -169,32 +183,45 @@ function evaluate(url: string, expression: string): Promise<unknown> {
 
 function windowMapped(pids: number[]): boolean {
   for (const pid of pids) {
-    const found = spawnSync("xdotool", ["search", "--onlyvisible", "--pid", String(pid)], {
-      windowsHide: true,
-    });
-    if (found.status === 0 && found.stdout.toString().trim() !== "") return true;
+    const found = spawnSync(
+      "xdotool",
+      ["search", "--onlyvisible", "--pid", String(pid)],
+      {
+        windowsHide: true,
+      },
+    );
+    if (found.status === 0 && found.stdout.toString().trim() !== "")
+      return true;
   }
   return false;
 }
 
 function ppollCalls(pid: number, seconds: number): number | null {
-  const run = spawnSync("strace", ["-c", "-p", String(pid), "-e", "trace=ppoll"], {
-    windowsHide: true,
-    timeout: (seconds + 5) * 1000,
-    killSignal: "SIGINT",
-    env: process.env,
-  });
+  const run = spawnSync(
+    "strace",
+    ["-c", "-p", String(pid), "-e", "trace=ppoll"],
+    {
+      windowsHide: true,
+      timeout: (seconds + 5) * 1000,
+      killSignal: "SIGINT",
+      env: process.env,
+    },
+  );
   // `-c` prints its table on stderr after the SIGINT that ends the attachment.
   const text = run.stderr.toString();
-  if (/Operation not permitted|ptrace/i.test(text) && !/calls/.test(text)) return null;
-  const row = /^\s*[\d.]+\s+[\d.]+\s+\d+\s+(\d+)\s+(?:\d+\s+)?ppoll/m.exec(text);
+  if (/Operation not permitted|ptrace/i.test(text) && !/calls/.test(text))
+    return null;
+  const row = /^\s*[\d.]+\s+[\d.]+\s+\d+\s+(\d+)\s+(?:\d+\s+)?ppoll/m.exec(
+    text,
+  );
   return row ? Number(row[1]) : 0;
 }
 
 async function measureOnce(options: Options): Promise<Run> {
   const env: Record<string, string | undefined> = {
     ...process.env,
-    APHRODY_CEF_UNSAFE_NO_SANDBOX: process.env["APHRODY_CEF_UNSAFE_NO_SANDBOX"] ?? "1",
+    APHRODY_CEF_UNSAFE_NO_SANDBOX:
+      process.env["APHRODY_CEF_UNSAFE_NO_SANDBOX"] ?? "1",
   };
   if (options.cdpPort !== undefined)
     env["APHRODY_CEF_REMOTE_DEBUGGING_PORT"] = String(options.cdpPort);
@@ -226,11 +253,16 @@ async function measureOnce(options: Options): Promise<Run> {
   await sleep(options.idleSeconds * 1000);
   const seconds = (performance.now() - t0) / 1000;
   const after = processTree(pid);
-  const treeCpuPercent = ((treeTicks(after) - ticksStart) / TICKS / seconds) * 100;
+  const treeCpuPercent =
+    ((treeTicks(after) - ticksStart) / TICKS / seconds) * 100;
   const mainThreadCpuPercent =
-    ((cpuTicks(`/proc/${pid}/task/${pid}/stat`) - mainStart) / TICKS / seconds) * 100;
+    ((cpuTicks(`/proc/${pid}/task/${pid}/stat`) - mainStart) /
+      TICKS /
+      seconds) *
+    100;
   const pssEndMiB = treePssMiB(after);
-  const polls = options.straceSeconds > 0 ? ppollCalls(pid, options.straceSeconds) : null;
+  const polls =
+    options.straceSeconds > 0 ? ppollCalls(pid, options.straceSeconds) : null;
   const processes = processTree(pid).length;
   child.kill("SIGTERM");
   await sleep(1500);
@@ -309,7 +341,8 @@ if (import.meta.main) {
   } finally {
     xvfb?.kill("SIGTERM");
   }
-  const field = (pick: (run: Run) => number | null) => summarize(runs.map(pick));
+  const field = (pick: (run: Run) => number | null) =>
+    summarize(runs.map(pick));
   const report = {
     schema: "aphrody.desktop-footprint/1",
     label: options.label,

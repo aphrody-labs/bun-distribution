@@ -5,7 +5,12 @@
 import { GENERATED_NOTE } from "../util.ts";
 import type { Target, TargetContext, TargetFile } from "./types.ts";
 
-const HOST = { windows: "win32", gnome: "linux", cosmic: "linux", chromium: "linux" } as const;
+const HOST = {
+  windows: "win32",
+  gnome: "linux",
+  cosmic: "linux",
+  chromium: "linux",
+} as const;
 
 async function load() {
   try {
@@ -30,7 +35,9 @@ async function load() {
 export const themeName = (name: string): string =>
   name.replace(/^@/, "").replace(/[^A-Za-z0-9_-]+/g, "-");
 
-export async function generateOsThemes(c: TargetContext): Promise<TargetFile[]> {
+export async function generateOsThemes(
+  c: TargetContext,
+): Promise<TargetFile[]> {
   const { generate, targets, installCommand } = await load();
   const name = themeName(c.name);
   const seed = c.seed ?? "#6750a4";
@@ -41,7 +48,13 @@ export async function generateOsThemes(c: TargetContext): Promise<TargetFile[]> 
     ...(c.variant ? { variant: c.variant as never } : {}),
   });
   const commands = targets.map((target) => {
-    const { cmd, reason } = installCommand(target, ".", "auto", false, HOST[target]);
+    const { cmd, reason } = installCommand(
+      target,
+      ".",
+      "auto",
+      false,
+      HOST[target],
+    );
     return `- **${target}**: ${cmd.length > 0 ? `\`${cmd.join(" ").replaceAll("\\", "/")}\`` : reason}`;
   });
   const readme = `<!-- ${GENERATED_NOTE} -->

@@ -272,7 +272,8 @@ export function allWrappers(): Set<string> {
   }
   for (const w of Object.values(SIMPLE_COMPONENTS)) s.add(w);
   for (const w of Object.values(RENAME_CHILDREN)) s.add(w);
-  for (const w of Object.values(LAYOUT_COMPONENTS)) if (w.startsWith("Md")) s.add(w);
+  for (const w of Object.values(LAYOUT_COMPONENTS))
+    if (w.startsWith("Md")) s.add(w);
   // les sous-composants slottés remplacés par un vrai élément md (pas un <div>)
   for (const r of Object.values(SLOTTED_CHILDREN))
     if (r.replaceWith.startsWith("Md")) s.add(r.replaceWith);

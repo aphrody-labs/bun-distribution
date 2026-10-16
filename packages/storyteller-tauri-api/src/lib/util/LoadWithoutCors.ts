@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 
-export const LoadWithoutCors = async (url: string) : Promise<ArrayBuffer> => {
+export const LoadWithoutCors = async (url: string): Promise<ArrayBuffer> => {
   try {
     // Tauri Result<Success, Error> - success case.
     let result = await invoke("load_without_cors_command", { url });
@@ -10,4 +10,4 @@ export const LoadWithoutCors = async (url: string) : Promise<ArrayBuffer> => {
     console.error("LoadWithoutCors error", error);
     throw error;
   }
-}
+};

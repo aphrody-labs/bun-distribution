@@ -9,10 +9,15 @@ export interface SourceControllerProfile {
   jobConfig: { path: string; sha256: string };
 }
 export interface SourceControllerPorts {
-  remote?: (host: "dbfr", command: string, signal?: AbortSignal) => Promise<string>;
+  remote?: (
+    host: "dbfr",
+    command: string,
+    signal?: AbortSignal,
+  ) => Promise<string>;
   signal?: AbortSignal;
 }
-const shellQuote = (value: string) => "'" + value.replaceAll("'", "'\\''") + "'";
+const shellQuote = (value: string) =>
+  "'" + value.replaceAll("'", "'\\''") + "'";
 export function sourceControllerCommand(profile: SourceControllerProfile) {
   if (profile.host !== "dbfr")
     throw new Error("The source controller targets only the declared DBFR bot");
@@ -22,7 +27,9 @@ export function sourceControllerCommand(profile: SourceControllerProfile) {
       artifact.path.split("/").includes("..") ||
       !/^[a-f0-9]{64}$/.test(artifact.sha256)
     )
-      throw new Error("Source controller requires fixed absolute pinned artifacts");
+      throw new Error(
+        "Source controller requires fixed absolute pinned artifacts",
+      );
   }
   const guards = [profile.runtime, profile.owner, profile.jobConfig].map(
     (artifact) =>
@@ -47,13 +54,13 @@ export async function drainSourceController(
         ["aphrody", "infra", "ssh", "exec", "--host", host, "-c", text],
         { timeoutMs: 1100000, signal },
       );
-      if (result.code !== 0) throw new Error("Source controller remote owner failed");
+      if (result.code !== 0)
+        throw new Error("Source controller remote owner failed");
       return result.stdout;
     });
-  const result = JSON.parse(await remote(profile.host, command, ports.signal)) as Record<
-    string,
-    unknown
-  >;
+  const result = JSON.parse(
+    await remote(profile.host, command, ports.signal),
+  ) as Record<string, unknown>;
   if (
     !["idle", "busy", "complete", "failed"].includes(String(result.status)) ||
     ![0, 1].includes(Number(result.handled))
@@ -86,7 +93,8 @@ export async function startSourceControllerWorker(
       if (
         message &&
         typeof message === "object" &&
-        (message as { schema?: unknown }).schema === "shenron-source-controller-ready/v1"
+        (message as { schema?: unknown }).schema ===
+          "shenron-source-controller-ready/v1"
       )
         ready();
     },
@@ -127,7 +135,8 @@ export async function startSourceControllerWorker(
         child.exited,
         new Promise<never>((_, reject) => {
           reap = setTimeout(
-            () => reject(new Error("Source controller startup teardown uncertain")),
+            () =>
+              reject(new Error("Source controller startup teardown uncertain")),
             limits.reapMs ?? 2500,
           );
         }),
@@ -142,7 +151,8 @@ export async function startSourceControllerWorker(
   return {
     async stop() {
       if (exited) {
-        if ((await child.exited) !== 0) throw new Error("Source controller worker failed");
+        if ((await child.exited) !== 0)
+          throw new Error("Source controller worker failed");
         return;
       }
       child.kill("SIGUSR1");
@@ -176,7 +186,10 @@ export async function startSourceControllerWorker(
               child.exited,
               new Promise<never>((_, reject) => {
                 reap = setTimeout(
-                  () => reject(new Error("Source controller group teardown uncertain")),
+                  () =>
+                    reject(
+                      new Error("Source controller group teardown uncertain"),
+                    ),
                   limits.reapMs ?? 2500,
                 );
               }),
@@ -186,7 +199,8 @@ export async function startSourceControllerWorker(
           }
           throw new Error("Source controller exceeded its join deadline");
         }
-        if (finished.code !== 0) throw new Error("Source controller worker failed");
+        if (finished.code !== 0)
+          throw new Error("Source controller worker failed");
       } finally {
         if (timer) clearTimeout(timer);
       }
@@ -249,6 +263,7 @@ export async function runSourceControllerLoop(
   } finally {
     process.off("SIGUSR1", stop);
     ports.signal?.removeEventListener("abort", abort);
-    if (typeof process.disconnect === "function" && process.connected) process.disconnect();
+    if (typeof process.disconnect === "function" && process.connected)
+      process.disconnect();
   }
 }

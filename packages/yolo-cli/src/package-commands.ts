@@ -48,13 +48,15 @@ export const M3_TOOLS = {
   bun: {
     module: "../material/packages/m3-bun/src/cli.ts",
     run: "runCli",
-    summary: "Build, serve, compile, package and deploy configs of an M3 app [m3-bun]",
+    summary:
+      "Build, serve, compile, package and deploy configs of an M3 app [m3-bun]",
     keepAlive: true,
   },
   "os-themes": {
     module: "../material/packages/m3-os-themes/src/cli.ts",
     run: "runOsThemes",
-    summary: "M3 OS themes: install | generate | uninstall (dry-run unless --apply) [m3-os-themes]",
+    summary:
+      "M3 OS themes: install | generate | uninstall (dry-run unless --apply) [m3-os-themes]",
   },
   "next-migrate": {
     module: "../material/packages/m3-next-migrate/src/cli.ts",
@@ -65,18 +67,22 @@ export const M3_TOOLS = {
   "svg-to-ico": {
     module: "../material/packages/material-design-icons/scripts/svg-to-ico.ts",
     run: "runSvgToIco",
-    summary: "Material Symbol or SVG to Tauri icons (ico, icns, PNG) [m3-svg-to-ico]",
+    summary:
+      "Material Symbol or SVG to Tauri icons (ico, icns, PNG) [m3-svg-to-ico]",
   },
   "web-to-tauri": {
-    module: "../bun/packages/web/rust/integrations/m3/packages/web-to-tauri/src/cli.ts",
+    module:
+      "../bun/packages/web/rust/integrations/m3/packages/web-to-tauri/src/cli.ts",
     run: "runWebToTauri",
-    summary: "Website or bundle to a Tauri 3 app: probe | plan | convert | parity [web-to-tauri]",
+    summary:
+      "Website or bundle to a Tauri 3 app: probe | plan | convert | parity [web-to-tauri]",
   },
   scaffold: {
     module: "../material/packages/m3/packages/scaffold/src/cli.ts",
     run: "runScaffold",
     script: true,
-    summary: "The single project scaffolder: list | example | new [aphrody-scaffold]",
+    summary:
+      "The single project scaffolder: list | example | new [aphrody-scaffold]",
   },
 } as const satisfies Record<string, PackageRunner>;
 
@@ -90,22 +96,26 @@ export const PACKAGE_COMMANDS = {
   workspace: {
     module: "packages/infra/workspace/src/cli.ts",
     run: "runWorkspace",
-    summary: "optimize | plugins | code-edit; other commands go to aphrody-infra unchanged",
+    summary:
+      "optimize | plugins | code-edit; other commands go to aphrody-infra unchanged",
   },
   optimize: {
     module: "packages/infra/workspace/src/optimize.ts",
     run: "runOptimize",
-    summary: "Run the optimize-workspace skill through `aphrody exec` (--print previews it)",
+    summary:
+      "Run the optimize-workspace skill through `aphrody exec` (--print previews it)",
   },
   update: {
     module: "packages/infra/update/src/cli.ts",
     run: "runUpdate",
-    summary: "Tool pins, dependencies, Cargo lock, user systemd units, upstream sources",
+    summary:
+      "Tool pins, dependencies, Cargo lock, user systemd units, upstream sources",
   },
   google: {
     module: "../bun/packages/bun-google/aphrody/packages/google/src/cli.ts",
     run: "runGoogle",
-    summary: "Google Drive projection and Fonts proxy (Gemini runtime: aphrody google)",
+    summary:
+      "Google Drive projection and Fonts proxy (Gemini runtime: aphrody google)",
   },
   "doc-ai": {
     module: "packages/ai/doc-ai/src/cli.ts",
@@ -120,7 +130,8 @@ export const PACKAGE_COMMANDS = {
   forge: {
     module: "packages/engine/yolo/src/cli/forge/main.ts",
     run: "runForge",
-    summary: "Build the aphrody-labs/bun fork: doctor | bootstrap | build | watch | status | unit",
+    summary:
+      "Build the aphrody-labs/bun fork: doctor | bootstrap | build | watch | status | unit",
     keepAlive: true,
   },
   m3: {
@@ -156,7 +167,11 @@ export function resolvePackageCommand(
   if (!isPackageCommand(name)) return undefined;
   const command: PackageCommand = PACKAGE_COMMANDS[name];
   const [first, ...rest] = args;
-  if (command.tools && first !== undefined && Object.hasOwn(command.tools, first)) {
+  if (
+    command.tools &&
+    first !== undefined &&
+    Object.hasOwn(command.tools, first)
+  ) {
     return { ...command.tools[first]!, label: `${name} ${first}`, args: rest };
   }
   return { ...command, label: name, args: [...args] };
@@ -169,12 +184,18 @@ export function resolvePackageCommand(
 export function packageRoot(cwd: string = process.cwd()): string {
   if (!isCompiled()) return resolve(import.meta.dir, "../../../docs/aphrody");
   return (
-    findCheckout(cwd) ?? resolve(process.env["YOLO_APHRODY_ROOT"] ?? join(homedir(), "aphrody"))
+    findCheckout(cwd) ??
+    resolve(process.env["YOLO_APHRODY_ROOT"] ?? join(homedir(), "aphrody"))
   );
 }
 
 type NativeJobTransport = (
-  request: { config: string; server: string; tool: string; arguments: Record<string, unknown> },
+  request: {
+    config: string;
+    server: string;
+    tool: string;
+    arguments: Record<string, unknown>;
+  },
   options: { timeoutMs: number; signal?: AbortSignal },
 ) => Promise<unknown>;
 type Runner = (
@@ -192,14 +213,22 @@ async function nativeJobPort(root: string): Promise<{
   const pipeline = (await import(pathToFileURL(pipelinePath).href)) as {
     mcpTool?: NativeJobTransport;
   };
-  const engine = (await import(pathToFileURL(enginePath).href)) as { close?: () => void };
-  if (typeof pipeline.mcpTool !== "function" || typeof engine.close !== "function")
-    throw new Error("Native jobs qualification requires the canonical pipeline SDK");
+  const engine = (await import(pathToFileURL(enginePath).href)) as {
+    close?: () => void;
+  };
+  if (
+    typeof pipeline.mcpTool !== "function" ||
+    typeof engine.close !== "function"
+  )
+    throw new Error(
+      "Native jobs qualification requires the canonical pipeline SDK",
+    );
   return { nativeJobTransport: pipeline.mcpTool, close: engine.close };
 }
 
 const isHelpRequest = (args: readonly string[]): boolean =>
-  args.length === 0 || (args.length === 1 && ["help", "--help", "-h"].includes(args[0]!));
+  args.length === 0 ||
+  (args.length === 1 && ["help", "--help", "-h"].includes(args[0]!));
 
 /** Runs `yolo <name> ...args` in-process and returns the exit status. */
 export async function runPackageCommand(
@@ -228,7 +257,9 @@ export async function runPackageCommand(
     }).exited;
   }
   const owner = (
-    name === "forge" ? await import("./cli/forge/main.ts") : await import(pathToFileURL(path).href)
+    name === "forge"
+      ? await import("./cli/forge/main.ts")
+      : await import(pathToFileURL(path).href)
   ) as Record<string, unknown>;
   const runner = owner[run];
   if (typeof runner !== "function") {
@@ -240,7 +271,8 @@ export async function runPackageCommand(
   try {
     const rootOption = resolved.args.indexOf("--root");
     const updateArgs = resolved.args.filter(
-      (arg, index) => !(arg === "--root" || (rootOption >= 0 && index === rootOption + 1)),
+      (arg, index) =>
+        !(arg === "--root" || (rootOption >= 0 && index === rootOption + 1)),
     );
     if (
       name === "update" &&
@@ -253,7 +285,9 @@ export async function runPackageCommand(
     const returned = await (runner as Runner)(resolved.args, native);
     status = typeof returned === "number" ? returned : 0;
   } catch (error) {
-    console.error(`yolo ${label}: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(
+      `yolo ${label}: ${error instanceof Error ? error.message : String(error)}`,
+    );
     return 1;
   } finally {
     native?.close();

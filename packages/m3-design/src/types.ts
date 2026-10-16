@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Core type definitions for design compiler engine.
 
-export type OutputKind = "deck" | "prototype" | "dashboard" | "mobile" | "editorial" | "other";
+export type OutputKind =
+  "deck" | "prototype" | "dashboard" | "mobile" | "editorial" | "other";
 
 export interface DesignBrief {
   /** The type of artifact we are generating */

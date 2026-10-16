@@ -24,7 +24,10 @@ test("native qualification loads all modules from the selected consumer despite 
       join(decoy, "package.json"),
       JSON.stringify({ name: "@aphrody/bun", main: "index.ts" }),
     );
-    await writeFile(join(decoy, "index.ts"), 'throw new Error("wrong consumer loaded");');
+    await writeFile(
+      join(decoy, "index.ts"),
+      'throw new Error("wrong consumer loaded");',
+    );
     const script = `${renderNativeConsumerImports(selected)}\nconsole.log([m3, oxc, n2b, cli, web].map(module => module.origin).join(","));`;
     const result = Bun.spawnSync([process.execPath, "-e", script], {
       windowsHide: true,

@@ -24,12 +24,17 @@ export function backupScope(job: string, inventoryRoot: string) {
 export function qualifyBackupInventory(list: string) {
   if (
     !["db_manga_volumes", "db_manga_chapters", "wiki_revisions"].every((name) =>
-      list.split("\n").some((line) => line.includes("TABLE DATA ") && line.includes(name)),
+      list
+        .split("\n")
+        .some((line) => line.includes("TABLE DATA ") && line.includes(name)),
     )
   )
     throw Error("Full editorial backup inventory is incomplete");
 }
-export async function prepareMangaEditorialBackup(input: { job: string; inventoryRoot: string }) {
+export async function prepareMangaEditorialBackup(input: {
+  job: string;
+  inventoryRoot: string;
+}) {
   backupScope(input.job, input.inventoryRoot);
   if (hostname() !== "vps-6732365f" || process.getuid?.() !== 0)
     throw Error("DBFR root capability required");
@@ -46,7 +51,10 @@ export async function prepareMangaEditorialBackup(input: { job: string; inventor
     receiptPath = join(input.job, "backup.json");
   if (await Bun.file(receiptPath).exists()) {
     const receipt = await Bun.file(receiptPath).json();
-    if (!receipt.inventoryVerified || (await fileDigest(path)) !== receipt.sha256)
+    if (
+      !receipt.inventoryVerified ||
+      (await fileDigest(path)) !== receipt.sha256
+    )
       throw Error("Existing backup changed");
     return { ...receipt, replay: true };
   }
@@ -69,16 +77,32 @@ export async function prepareMangaEditorialBackup(input: { job: string; inventor
   await Bun.write(pending, dump.stdout);
   await chmod(pending, 0o600);
   await errors;
-  if ((await dump.exited) !== 0) throw Error("Canonical PostgreSQL backup failed");
+  if ((await dump.exited) !== 0)
+    throw Error("Canonical PostgreSQL backup failed");
   const inventory = Bun.spawn(
-    ["docker", "exec", "-i", "-u", "postgres", "aphrody-postgres-1", "pg_restore", "--list"],
-    { stdin: Bun.file(pending), stdout: "pipe", stderr: "pipe", timeout: 300000 },
+    [
+      "docker",
+      "exec",
+      "-i",
+      "-u",
+      "postgres",
+      "aphrody-postgres-1",
+      "pg_restore",
+      "--list",
+    ],
+    {
+      stdin: Bun.file(pending),
+      stdout: "pipe",
+      stderr: "pipe",
+      timeout: 300000,
+    },
   );
   const [list] = await Promise.all([
     new Response(inventory.stdout).text(),
     new Response(inventory.stderr).text(),
   ]);
-  if ((await inventory.exited) !== 0) throw Error("Canonical backup inventory failed");
+  if ((await inventory.exited) !== 0)
+    throw Error("Canonical backup inventory failed");
   qualifyBackupInventory(list);
   await rename(pending, path);
   const receipt = {

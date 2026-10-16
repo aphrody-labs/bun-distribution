@@ -11,7 +11,13 @@ describe("flagValue", () => {
 });
 
 describe("runApp command line", () => {
-  const base = { name: "demo", version: "1.0.0", buildId: "abc", port: 3000, files: {} };
+  const base = {
+    name: "demo",
+    version: "1.0.0",
+    buildId: "abc",
+    port: 3000,
+    files: {},
+  };
   const capture = async (argv: string[]) => {
     const lines: string[] = [];
     const original = console.log;

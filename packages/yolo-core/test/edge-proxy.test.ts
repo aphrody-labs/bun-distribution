@@ -1,5 +1,9 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { createEdgeProxy, edgeDiskPath, validEdgeKey } from "../src/server/edge-proxy";
+import {
+  createEdgeProxy,
+  edgeDiskPath,
+  validEdgeKey,
+} from "../src/server/edge-proxy";
 
 let upstream: ReturnType<typeof Bun.serve>;
 let hits = 0;
@@ -13,7 +17,9 @@ beforeAll(() => {
       "/style.css": async () => {
         hits++;
         await Bun.sleep(30);
-        return new Response(CSS, { headers: { "content-type": "text/css; charset=utf-8" } });
+        return new Response(CSS, {
+          headers: { "content-type": "text/css; charset=utf-8" },
+        });
       },
       "/font.woff2": () =>
         new Response(new Uint8Array([119, 79, 70, 50]), {
@@ -34,10 +40,16 @@ const proxy = () =>
     cacheDir,
     route: (url) => {
       if (url.pathname === "/escape")
-        return { upstream: new URL("/style.css", upstream.url), cacheKey: "../x", kind: "text" };
-      const target = { "/css": "/style.css", "/f.woff2": "/font.woff2", "/gone": "/missing" }[
-        url.pathname
-      ];
+        return {
+          upstream: new URL("/style.css", upstream.url),
+          cacheKey: "../x",
+          kind: "text",
+        };
+      const target = {
+        "/css": "/style.css",
+        "/f.woff2": "/font.woff2",
+        "/gone": "/missing",
+      }[url.pathname];
       if (!target) return null;
       return {
         upstream: new URL(target, upstream.url),
@@ -45,7 +57,8 @@ const proxy = () =>
         kind: url.pathname === "/f.woff2" ? "immutable" : "text",
         transform:
           url.pathname === "/css"
-            ? (s: string) => s.replaceAll("https://up.example", "https://cdn.test")
+            ? (s: string) =>
+                s.replaceAll("https://up.example", "https://cdn.test")
             : undefined,
       };
     },
@@ -79,13 +92,17 @@ test("brotli twin is served when accepted, identity otherwise", async () => {
   ).text();
   expect(plain).toContain("https://cdn.test/s/a.woff2");
   expect(raw.byteLength).toBeLessThan(plain.length / 10);
-  const id = await handle(new Request("http://x/css", { headers: { "accept-encoding": "gzip" } }));
+  const id = await handle(
+    new Request("http://x/css", { headers: { "accept-encoding": "gzip" } }),
+  );
   expect(id.headers.get("content-encoding")).toBeNull();
 });
 
 test("binary immutable entries carry no brotli twin and a one-year cache", async () => {
   const handle = proxy();
-  const r = await handle(new Request("http://x/f.woff2", { headers: { "accept-encoding": "br" } }));
+  const r = await handle(
+    new Request("http://x/f.woff2", { headers: { "accept-encoding": "br" } }),
+  );
   expect(r.headers.get("content-encoding")).toBeNull();
   expect(r.headers.get("cache-control")).toContain("immutable");
   expect([...new Uint8Array(await r.arrayBuffer())]).toEqual([119, 79, 70, 50]);
@@ -96,7 +113,9 @@ test("upstream 404, unknown routes, escaping keys and other methods", async () =
   expect((await handle(new Request("http://x/gone"))).status).toBe(404);
   expect((await handle(new Request("http://x/nope"))).status).toBe(404);
   expect((await handle(new Request("http://x/escape"))).status).toBe(404);
-  expect((await handle(new Request("http://x/css", { method: "POST" }))).status).toBe(405);
+  expect(
+    (await handle(new Request("http://x/css", { method: "POST" }))).status,
+  ).toBe(405);
   expect(validEdgeKey("s/roboto/v1/a.woff2")).toBe(true);
   for (const k of ["../a", "a/../b", "/abs", "a//b", "a/./b", "a b"])
     expect(validEdgeKey(k)).toBe(false);
@@ -114,10 +133,17 @@ test("cache keys longer than a file name are stored under a digest name", async 
   });
   const path = edgeDiskPath(cacheDir, `s/v1/${long}`);
   expect(path.slice(path.lastIndexOf("/") + 1).length).toBeLessThanOrEqual(97);
-  expect(edgeDiskPath(cacheDir, "s/v1/short.woff2")).toBe(`${cacheDir}/s/v1/short.woff2`);
+  expect(edgeDiskPath(cacheDir, "s/v1/short.woff2")).toBe(
+    `${cacheDir}/s/v1/short.woff2`,
+  );
   const miss = await handle(new Request(`http://edge/s/v1/${long}`));
-  expect([miss.status, miss.headers.get("x-edge-cache")]).toEqual([200, "MISS"]);
-  expect(new Uint8Array(await miss.arrayBuffer())).toEqual(new Uint8Array([119, 79, 70, 50]));
+  expect([miss.status, miss.headers.get("x-edge-cache")]).toEqual([
+    200,
+    "MISS",
+  ]);
+  expect(new Uint8Array(await miss.arrayBuffer())).toEqual(
+    new Uint8Array([119, 79, 70, 50]),
+  );
   const hit = await handle(new Request(`http://edge/s/v1/${long}`));
   expect(hit.headers.get("x-edge-cache")).toBe("HIT");
 });

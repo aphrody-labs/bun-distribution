@@ -7,7 +7,9 @@
     "_root_folder": { "iconPath": "./icons/root_folder.svg" },
     "_root_folder_open": { "iconPath": "./icons/root_folder_open.svg" },
     "_root_folder_light": { "iconPath": "./icons/root_folder_light.svg" },
-    "_root_folder_light_open": { "iconPath": "./icons/root_folder_light_open.svg" },
+    "_root_folder_light_open": {
+      "iconPath": "./icons/root_folder_light_open.svg"
+    },
     "ace": { "iconPath": "./icons/ace.svg" },
     "acemanifest": { "iconPath": "./icons/acemanifest.svg" },
     "adoc": { "iconPath": "./icons/adoc.svg" },
@@ -308,7 +310,9 @@
     "ron": { "iconPath": "./icons/ron.svg" },
     "root_folder": { "iconPath": "./icons/root_folder.svg" },
     "root_folder_light": { "iconPath": "./icons/root_folder_light.svg" },
-    "root_folder_light_open": { "iconPath": "./icons/root_folder_light_open.svg" },
+    "root_folder_light_open": {
+      "iconPath": "./icons/root_folder_light_open.svg"
+    },
     "root_folder_open": { "iconPath": "./icons/root_folder_open.svg" },
     "ruby": { "iconPath": "./icons/ruby.svg" },
     "rust": { "iconPath": "./icons/rust.svg" },

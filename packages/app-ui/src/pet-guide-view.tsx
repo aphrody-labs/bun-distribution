@@ -18,7 +18,9 @@ import {
 } from "./pet-guide";
 
 const PET_HEIGHT = 96;
-const PET_WIDTH = Math.round((PET_HEIGHT * PET.atlas.cellWidth) / PET.atlas.cellHeight);
+const PET_WIDTH = Math.round(
+  (PET_HEIGHT * PET.atlas.cellWidth) / PET.atlas.cellHeight,
+);
 const TICK_MS = 500;
 const SCROLL_FRESH_MS = 400;
 const MESSAGE_VISIBLE_MS = 6000;
@@ -37,7 +39,13 @@ function obstaclesInView(): Box[] {
   const boxes: Box[] = [];
   for (const el of document.querySelectorAll<HTMLElement>(OBSTACLE_SELECTOR)) {
     const r = el.getBoundingClientRect();
-    if (r.width === 0 || r.height === 0 || r.bottom < 0 || r.top > window.innerHeight) continue;
+    if (
+      r.width === 0 ||
+      r.height === 0 ||
+      r.bottom < 0 ||
+      r.top > window.innerHeight
+    )
+      continue;
     boxes.push({ x: r.left, y: r.top, width: r.width, height: r.height });
     if (boxes.length >= 400) break;
   }
@@ -45,7 +53,9 @@ function obstaclesInView(): Box[] {
 }
 
 function labelOf(el: HTMLElement): string {
-  return (el.getAttribute("aria-label") ?? el.textContent ?? "").replace(/\s+/g, " ").trim();
+  return (el.getAttribute("aria-label") ?? el.textContent ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export function PetGuide() {
@@ -100,7 +110,8 @@ export function PetGuide() {
 
     const onActivity = (e: Event) => {
       lastActivityRef.current = performance.now();
-      if (e instanceof PointerEvent) pointerRef.current = { x: e.clientX, y: e.clientY };
+      if (e instanceof PointerEvent)
+        pointerRef.current = { x: e.clientX, y: e.clientY };
     };
     const onScroll = () => {
       const now = performance.now();
@@ -132,10 +143,14 @@ export function PetGuide() {
       const typing = !!active?.matches(FIELD_SELECTOR);
       const s = scrollRef.current;
       const speed =
-        s.prev && s.last && now - s.last.t < SCROLL_FRESH_MS ? scrollSpeed(s.prev, s.last) : 0;
+        s.prev && s.last && now - s.last.t < SCROLL_FRESH_MS
+          ? scrollSpeed(s.prev, s.last)
+          : 0;
 
       const pointer = pointerRef.current;
-      const hovered = pointer ? document.elementFromPoint(pointer.x, pointer.y) : null;
+      const hovered = pointer
+        ? document.elementFromPoint(pointer.x, pointer.y)
+        : null;
       const control = hovered?.closest<HTMLElement>(CONTROL_SELECTOR) ?? null;
       const target = control?.getBoundingClientRect();
 
@@ -149,7 +164,12 @@ export function PetGuide() {
         idleMs: now - lastActivityRef.current,
         hesitationTarget:
           target && target.width > 0
-            ? { x: target.left, y: target.top, width: target.width, height: target.height }
+            ? {
+                x: target.left,
+                y: target.top,
+                width: target.width,
+                height: target.height,
+              }
             : null,
       });
 
@@ -190,7 +210,9 @@ export function PetGuide() {
     return () => window.clearTimeout(timer);
   }, [message]);
 
-  const bubbleLeft = position ? Math.min(position.x, window.innerWidth - 260) : 0;
+  const bubbleLeft = position
+    ? Math.min(position.x, window.innerWidth - 260)
+    : 0;
   const bubbleTop = position ? Math.max(position.y - 56, 8) : 0;
 
   return (

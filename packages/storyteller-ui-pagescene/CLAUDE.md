@@ -15,8 +15,8 @@ had gated `PreviewEngineCamera` behind `!isRecord`, wiping the scene on record�
 ## Keybinds (unified registry)
 
 Every viewport shortcut is a remappable action in `@storyteller/keybinds`
-(`frontend/libs/components/keybinds`): the registry owns *which key* (preset +
-user overrides, Settings → Keybinds), `engine/keymap.ts` owns *what it does*
+(`frontend/libs/components/keybinds`): the registry owns _which key_ (preset +
+user overrides, Settings → Keybinds), `engine/keymap.ts` owns _what it does_
 (action id → handler), and `useViewportKeyboard` dispatches with a per-event
 `KeybindContext` (sceneMode / encoding / timelineExpanded / timelineSelection /
 modalTransformActive). Rules:
@@ -148,7 +148,7 @@ auto-import; audio in recordings; `snapShotOfCurrentFrame` render-camera reconci
 ### Persistence + undo (timeline & split camera)
 
 - **Timeline persists in scene JSON**: `save_manager.getSceneJson` now writes `timeline:
-  getTimeline() ?? null` (was a `""` stub); `loadFromJson` restores via `loadTimeline` (guards
+getTimeline() ?? null` (was a `""` stub); `loadFromJson` restores via `loadTimeline` (guards
   legacy `""`/null). Flows through both backend save and the unmount→cache→remount roundtrip.
   Loaded objects keep their saved `object_uuid` (proxy load, `obj.uuid = json_object.object_uuid`),
   so timeline tracks (keyed by uuid) resolve.
@@ -220,8 +220,8 @@ Characters can carry skeletal (Mixamo) animation clips on the timeline, alongsid
 keyframe tracks. Answers locked with the user: retarget onto the character's skeleton; clips +
 keyframes coexist; default clip source = the 37 curated demo clips. **Playback is sequential, one
 clip at a time** — a character's clips live on a **single row** and cannot overlap (see the overlap
-guard below). The earlier "stacked lanes" idea was dropped: stacking only pays off for *additive
-layering* (e.g. a base walk + an upper-body wave playing together), which needs per-lane weights +
+guard below). The earlier "stacked lanes" idea was dropped: stacking only pays off for _additive
+layering_ (e.g. a base walk + an upper-body wave playing together), which needs per-lane weights +
 bone masking and is out of scope. If layering is ever wanted, that's the feature to build; until
 then one row per character is the right model.
 
@@ -436,15 +436,17 @@ Treat all of the above as needing a live pass before shipping.
 ### Animation timeline
 
 **Collapsed state** (a slim bar that sits above the prompt box, replacing the "Add animation timeline" button once a timeline exists):
+
 - ▶ play/pause · current-time readout (`0:00`) · scrubber (blue fill to playhead) · total duration (`0:10`) · **chevron ▾**.
 - The **chevron ▾ expands the timeline downward, collapsing the prompt box** (they trade vertical space).
 
 **Expanded state** (full multi-track keyframe editor):
+
 - **Transport (top-left):** skip-to-start ⏮ · play ▶ · skip-to-end ⏭.
 - **Time ruler** with a draggable **playhead** (`0:00 … 0:04 … 0:10`).
 - **One track per object.** A track can hold either:
   - **Diamond keyframes** — each diamond stores the object's **full transform (position, rotation, scale)** at that moment. Tapping a diamond jumps the playhead to it. Each row has an "add keyframe" diamond button at its right edge.
-  - **Natural-language motion clip** — a text clip spanning a time range (e.g. *"walks to car - opens door - gets in"*) that drives generated motion.
+  - **Natural-language motion clip** — a text clip spanning a time range (e.g. _"walks to car - opens door - gets in"_) that drives generated motion.
   - **Any object can have either type.** For simplicity, an early version may show only raw keyframes and drop the natural-language grouping.
 - **Motion popover** — appears when a keyframe is selected; edits the **easing/interpolation curve into the next keyframe**. Contains ~4 **easing presets** at top plus a large **editable bezier curve** with draggable **handles**; a **dotted line** shows the linear reference.
 - **Cancel / Save** (bottom-right):
@@ -465,9 +467,9 @@ Render cameras appear in the **Outliner** (left "Scene" panel). A camera row sho
 **This is the big architectural change** — but the engine is **already partially scaffolded** for it. Verify these anchors before building on them:
 
 - **Two cameras already exist** in `engine/editor/CameraController.ts`: `camera` (viewport/free-fly, sees layer 1 incl. gizmos) and `render_camera` (layer 0 only, clean output, its own aspect ratio). Created in `editor.ts` `initialize()` from the store's camera configs.
-- **`Camera` type** lives in `frontend/libs/common/src/lib/interfaces/Camera.ts`: `{ id, label, focalLength, position, rotation, lookAt }`. Store seeds two: `"main"` (Main View, viewport) and `"cam2"` (Camera 2, render). So the store models multiple camera *configs*, but only **one** `render_camera` THREE object is currently instantiated (first non-main).
+- **`Camera` type** lives in `frontend/libs/common/src/lib/interfaces/Camera.ts`: `{ id, label, focalLength, position, rotation, lookAt }`. Store seeds two: `"main"` (Main View, viewport) and `"cam2"` (Camera 2, render). So the store models multiple camera _configs_, but only **one** `render_camera` THREE object is currently instantiated (first non-main).
 - **Placeholder object `"::CAM::"`** is referenced throughout (`scene.getObjectByName("::CAM::")`, `CameraController.refreshCamObj`, layer 1 so it's editor-only/excluded from render) — **but `_create_camera_obj()` is commented out** in `scene.ts`, so no camera mesh is actually in the scene graph today. The Outliner already knows to render a `::CAM::` object as a "Camera" row (`scene_manager_api.ts` `convert_object`) — it just never appears because the object isn't created.
-- **`CAMERA_VIEW` state** (`enums/EditorState.ts`) + `CameraController.switchCameraView()` already implement enter/exit: on enter it copies `cam_obj` transform → viewport camera, hides `cam_obj`/objects/gizmo; on exit it restores. **Caveat:** today it *repositions the single viewport camera* rather than truly swapping to render through a separate scene camera. `PreviewEngineCamera.tsx` + an unused `camViewCanvasEl` exist as a secondary preview surface.
+- **`CAMERA_VIEW` state** (`enums/EditorState.ts`) + `CameraController.switchCameraView()` already implement enter/exit: on enter it copies `cam_obj` transform → viewport camera, hides `cam_obj`/objects/gizmo; on exit it restores. **Caveat:** today it _repositions the single viewport camera_ rather than truly swapping to render through a separate scene camera. `PreviewEngineCamera.tsx` + an unused `camViewCanvasEl` exist as a secondary preview surface.
 - **Letterbox/aspect overlay** already built: `comps/SceneContainer/Letterbox.tsx` reads `cameraAspectRatio`, draws mattes, toggled via `editorLetterBox`. `CameraAspectRatio` enum + `getRenderDimensions()` map to pixel sizes.
 - **Focal length** is per-camera (`Camera.focalLength`), converted via `CameraController.focalLengthToFov()`, applied per-frame in `tickPerFrame()`; `focalLengthDragging` tracks the slider. The `35mm` overlay label maps to this.
 - **Render path**: `editor.ts` `renderScene()` renders `activeScene.scene` through `render_camera`; but `snapShotOfCurrentFrame()` currently snapshots through the **viewport** `camera`, not `render_camera` — reconcile so exports use the render camera.

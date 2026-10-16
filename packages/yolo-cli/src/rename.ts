@@ -15,7 +15,10 @@ export const PRESETS: Record<string, readonly RenameRule[]> = {
   aphrody: [{ from: "@tauri-apps/", to: "@aphrody/" }],
 };
 
-export const APHRODY_EXCLUDES: readonly string[] = ["**/audits/**", "**/.changes/*.md"];
+export const APHRODY_EXCLUDES: readonly string[] = [
+  "**/audits/**",
+  "**/.changes/*.md",
+];
 export const DEFAULT_TARGET = "crates/tauri";
 export const JOURNAL_DIR = ".cache/rename";
 
@@ -61,18 +64,23 @@ export function bunRenameArgs(args: readonly string[]): string[] {
     else if (arg === "--journal-dir") journal = true;
     else if (!arg.startsWith("-")) targets = true;
     out.push(arg);
-    if (VALUE_FLAGS.has(arg) && i + 1 < args.length) out.push(args[++i] as string);
+    if (VALUE_FLAGS.has(arg) && i + 1 < args.length)
+      out.push(args[++i] as string);
   }
   if (restore) return [...out, ...tail];
   if (!rules)
-    for (const rule of PRESETS.aphrody!) out.unshift("--from", rule.from, "--to", rule.to);
+    for (const rule of PRESETS.aphrody!)
+      out.unshift("--from", rule.from, "--to", rule.to);
   if (!journal) out.push("--journal-dir", JOURNAL_DIR);
   for (const glob of APHRODY_EXCLUDES) out.push("--exclude", glob);
   if (!targets) out.push(DEFAULT_TARGET);
   return [...out, ...tail];
 }
 
-export async function runRenameCommand(args: readonly string[], rootDir: string): Promise<number> {
+export async function runRenameCommand(
+  args: readonly string[],
+  rootDir: string,
+): Promise<number> {
   let bunArgs: string[];
   try {
     bunArgs = bunRenameArgs(args);

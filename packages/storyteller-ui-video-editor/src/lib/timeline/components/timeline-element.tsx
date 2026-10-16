@@ -80,7 +80,10 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { uppercase } from "../../utils/string";
 import { useMemo, type ComponentProps, type ReactNode } from "react";
-import type { SelectedKeyframeRef, ElementKeyframe } from "../../animation/types";
+import type {
+  SelectedKeyframeRef,
+  ElementKeyframe,
+} from "../../animation/types";
 import { cn } from "../../utils/ui";
 import { usePropertiesStore } from "../../panels/properties/stores/properties-store";
 import { getTrackTypeForElementType } from "../placement/compatibility";
@@ -911,7 +914,9 @@ function TextElementContent({
   return (
     <div className="flex size-full items-center justify-start pl-2">
       <span className="truncate text-xs text-white">
-        {typeof element.params.content === "string" ? element.params.content : ""}
+        {typeof element.params.content === "string"
+          ? element.params.content
+          : ""}
       </span>
     </div>
   );

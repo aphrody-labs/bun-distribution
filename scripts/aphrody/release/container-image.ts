@@ -17,7 +17,12 @@ import { resolve } from "node:path";
 const ROOT = resolve(import.meta.dir, "../../../docs/aphrody");
 export const DOCKERFILE = "tools/config/container/Dockerfile";
 
-export type Options = { release: string; hosts: string[]; ref?: string; on?: string };
+export type Options = {
+  release: string;
+  hosts: string[];
+  ref?: string;
+  on?: string;
+};
 
 /** Files the `runtime` target copies from the build context: enough to build on a host without a checkout. */
 export const RUNTIME_CONTEXT = [
@@ -26,14 +31,20 @@ export const RUNTIME_CONTEXT = [
   "packages/infra/workspace/assets/downloads/install-full.sh",
 ];
 
-export function parseArgs(argv: string[]): { command: string; options: Options } {
+export function parseArgs(argv: string[]): {
+  command: string;
+  options: Options;
+} {
   const [command = "release", ...rest] = argv;
   const options: Options = { release: "", hosts: [] };
   for (let i = 0; i < rest.length; i++) {
     const flag = rest[i];
     const value = rest[i + 1];
     const known =
-      (flag === "--on" || flag === "--release" || flag === "--host" || flag === "--ref") &&
+      (flag === "--on" ||
+        flag === "--release" ||
+        flag === "--host" ||
+        flag === "--ref") &&
       value !== undefined;
     if (!known) throw new Error(`unknown or incomplete option: `);
     if (flag === "--on") options.on = value;
@@ -53,7 +64,11 @@ export function releaseTag(explicit: string, commit: string): string {
   return tag;
 }
 
-export function buildArgs(tag: string, release: string, context = "."): string[] {
+export function buildArgs(
+  tag: string,
+  release: string,
+  context = ".",
+): string[] {
   return [
     "build",
     "-f",
@@ -70,8 +85,13 @@ export function buildArgs(tag: string, release: string, context = "."): string[]
 }
 
 function run(cmd: string[]): void {
-  const r = Bun.spawnSync(cmd, { cwd: ROOT, stdout: "inherit", stderr: "inherit" });
-  if (r.exitCode !== 0) throw new Error(`${cmd.join(" ")} failed (${r.exitCode})`);
+  const r = Bun.spawnSync(cmd, {
+    cwd: ROOT,
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  if (r.exitCode !== 0)
+    throw new Error(`${cmd.join(" ")} failed (${r.exitCode})`);
 }
 
 function imageTag(options: Options): string {
@@ -95,7 +115,11 @@ function buildOn(host: string, t: string, release: string): void {
   const args = buildArgs(t, release, "-")
     .map((a) => `'${a}'`)
     .join(" ");
-  run(["sh", "-c", `tar -cf - ${RUNTIME_CONTEXT.join(" ")} | ssh ${host} 'docker ${args}'`]);
+  run([
+    "sh",
+    "-c",
+    `tar -cf - ${RUNTIME_CONTEXT.join(" ")} | ssh ${host} 'docker ${args}'`,
+  ]);
 }
 
 function push(ref: string, t: string): void {
@@ -114,7 +138,8 @@ if (import.meta.main) {
   }
   if (command === "ship" || command === "release")
     for (const host of options.hosts) ship(host, t, options.on);
-  if ((command === "push" || command === "release") && options.ref) push(options.ref, t);
+  if ((command === "push" || command === "release") && options.ref)
+    push(options.ref, t);
   if (!["build", "ship", "push", "release"].includes(command))
     throw new Error(`unknown command: ${command}`);
   console.log(`aphrody:${t}`);

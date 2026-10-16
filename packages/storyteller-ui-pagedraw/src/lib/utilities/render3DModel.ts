@@ -80,10 +80,7 @@ function normalizeAndPlaceModel(
 // The renderer and its canvas are throwaway, so free the scene and then the
 // context itself; otherwise each render holds a WebGL context until the
 // canvas is garbage collected.
-function disposeScene(
-  scene: THREE.Scene,
-  renderer: THREE.WebGLRenderer,
-): void {
+function disposeScene(scene: THREE.Scene, renderer: THREE.WebGLRenderer): void {
   disposeObject3D(scene);
   renderer.dispose();
   renderer.forceContextLoss();

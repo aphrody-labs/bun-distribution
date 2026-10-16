@@ -33,7 +33,10 @@ export const M3ContainerTransformContext =
 /**
  * Helper function to generate spec-compliant cross-fade timings.
  */
-function getDefaultTransition(isActive: boolean, speed: "fast" | "default" | "slow"): Transition {
+function getDefaultTransition(
+  isActive: boolean,
+  speed: "fast" | "default" | "slow",
+): Transition {
   if (speed === "fast") {
     return isActive
       ? { delay: 0.05, duration: 0.15, ease: m3Easings.emphasizedDecelerate }
@@ -55,7 +58,10 @@ function getDefaultTransition(isActive: boolean, speed: "fast" | "default" | "sl
  * Implements the Material 3 Container Transform motion pattern using shared element transitions.
  * Use the same layoutId on both source and target containers to morph them smoothly.
  */
-export const M3ContainerTransform = React.forwardRef<HTMLDivElement, M3ContainerTransformProps>(
+export const M3ContainerTransform = React.forwardRef<
+  HTMLDivElement,
+  M3ContainerTransformProps
+>(
   (
     {
       layoutId,
@@ -72,7 +78,10 @@ export const M3ContainerTransform = React.forwardRef<HTMLDivElement, M3Container
     // Select the M3 spatial spring configuration based on speed
     const springConfig = m3Springs[speed].spatial;
 
-    const contextValue = React.useMemo(() => ({ isExpanded, speed }), [isExpanded, speed]);
+    const contextValue = React.useMemo(
+      () => ({ isExpanded, speed }),
+      [isExpanded, speed],
+    );
 
     return (
       <M3ContainerTransformContext.Provider value={contextValue}>
@@ -81,7 +90,9 @@ export const M3ContainerTransform = React.forwardRef<HTMLDivElement, M3Container
           layoutId={reduced ? undefined : layoutId}
           layout={!reduced}
           transition={
-            reduced ? { type: "tween", duration: 0, delay: 0 } : transition || springConfig
+            reduced
+              ? { type: "tween", duration: 0, delay: 0 }
+              : transition || springConfig
           }
           style={{
             position: "relative",
@@ -122,45 +133,61 @@ export interface M3ContainerTransformEndProps extends HTMLMotionProps<"div"> {
 const ContainerTransformLayer = React.forwardRef<
   HTMLDivElement,
   M3ContainerTransformStartProps & { layer: "start" | "end" }
->(({ layer, active, children, style, transition, layout = "position", ...props }, ref) => {
-  const reduced = useM3ReducedMotion();
-  const context = React.useContext(M3ContainerTransformContext);
-  const isActive = active ?? (context ? context.isExpanded === (layer === "end") : true);
-  const speed = context?.speed ?? "default";
+>(
+  (
+    {
+      layer,
+      active,
+      children,
+      style,
+      transition,
+      layout = "position",
+      ...props
+    },
+    ref,
+  ) => {
+    const reduced = useM3ReducedMotion();
+    const context = React.useContext(M3ContainerTransformContext);
+    const isActive =
+      active ?? (context ? context.isExpanded === (layer === "end") : true);
+    const speed = context?.speed ?? "default";
 
-  const baseStyle: MotionStyle = {
-    width: "100%",
-    height: "100%",
-    boxSizing: "border-box",
-    pointerEvents: isActive ? "auto" : "none",
-    ...(!isActive && {
-      position: "absolute",
-      top: 0,
-      left: 0,
-    }),
-    ...style,
-  };
+    const baseStyle: MotionStyle = {
+      width: "100%",
+      height: "100%",
+      boxSizing: "border-box",
+      pointerEvents: isActive ? "auto" : "none",
+      ...(!isActive && {
+        position: "absolute",
+        top: 0,
+        left: 0,
+      }),
+      ...style,
+    };
 
-  return (
-    <motion.div
-      ref={ref}
-      layout={reduced ? false : layout}
-      {...(layer === "end" ? { initial: reduced ? false : { opacity: 0 } } : {})}
-      animate={{ opacity: isActive ? 1 : 0 }}
-      transition={
-        reduced
-          ? { type: "tween", duration: 0, delay: 0 }
-          : transition || getDefaultTransition(isActive, speed)
-      }
-      style={baseStyle}
-      {...props}
-      inert={!isActive || props.inert}
-      aria-hidden={!isActive || props["aria-hidden"]}
-    >
-      {children}
-    </motion.div>
-  );
-});
+    return (
+      <motion.div
+        ref={ref}
+        layout={reduced ? false : layout}
+        {...(layer === "end"
+          ? { initial: reduced ? false : { opacity: 0 } }
+          : {})}
+        animate={{ opacity: isActive ? 1 : 0 }}
+        transition={
+          reduced
+            ? { type: "tween", duration: 0, delay: 0 }
+            : transition || getDefaultTransition(isActive, speed)
+        }
+        style={baseStyle}
+        {...props}
+        inert={!isActive || props.inert}
+        aria-hidden={!isActive || props["aria-hidden"]}
+      >
+        {children}
+      </motion.div>
+    );
+  },
+);
 
 /**
  * M3ContainerTransformStart component.
@@ -170,7 +197,9 @@ const ContainerTransformLayer = React.forwardRef<
 export const M3ContainerTransformStart = React.forwardRef<
   HTMLDivElement,
   M3ContainerTransformStartProps
->((props, ref) => <ContainerTransformLayer layer="start" ref={ref} {...props} />);
+>((props, ref) => (
+  <ContainerTransformLayer layer="start" ref={ref} {...props} />
+));
 
 M3ContainerTransformStart.displayName = "M3ContainerTransformStart";
 

@@ -14,7 +14,13 @@ import { ADMIN_ROUTES, PUBLIC_ROUTES } from "./_bot-routes";
 
 type Route = { method: string; path: string; desc: string };
 
-function RouteTable({ rows, tone }: { rows: readonly Route[]; tone: "public" | "admin" }) {
+function RouteTable({
+  rows,
+  tone,
+}: {
+  rows: readonly Route[];
+  tone: "public" | "admin";
+}) {
   return (
     <div className="overflow-x-auto border-2 border-black bg-dbz-card/60">
       <table className="w-full min-w-[680px] border-collapse text-[0.8125rem]">
@@ -27,7 +33,10 @@ function RouteTable({ rows, tone }: { rows: readonly Route[]; tone: "public" | "
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={`${r.method}-${r.path}`} className="border-b border-white/[0.06]">
+            <tr
+              key={`${r.method}-${r.path}`}
+              className="border-b border-white/[0.06]"
+            >
               <td className="p-2.5 align-top">
                 <span
                   className={`border-2 px-1.5 py-0.5 font-mono text-[0.625rem] font-bold ${
@@ -39,7 +48,9 @@ function RouteTable({ rows, tone }: { rows: readonly Route[]; tone: "public" | "
                   {r.method}
                 </span>
               </td>
-              <td className="p-2.5 align-top font-mono text-[0.75rem] text-dbz-orange">{r.path}</td>
+              <td className="p-2.5 align-top font-mono text-[0.75rem] text-dbz-orange">
+                {r.path}
+              </td>
               <td className="p-2.5 align-top text-white/60">{r.desc}</td>
             </tr>
           ))}
@@ -61,13 +72,17 @@ export function StaffRoutes() {
             API du bot
           </h2>
           <p className="mt-2 max-w-[56ch] text-[0.9375rem] text-white/60">
-            Routes servies par <code className="text-dbz-orange">shenron.service</code>. Les
+            Routes servies par{" "}
+            <code className="text-dbz-orange">shenron.service</code>. Les
             écritures passent par le proxy server-only{" "}
-            <code className="text-dbz-orange">/api/bot-admin</code> : aucun jeton ne doit atteindre
-            le navigateur.
+            <code className="text-dbz-orange">/api/bot-admin</code> : aucun
+            jeton ne doit atteindre le navigateur.
           </p>
         </div>
-        <Link href="/admin/agents" className="toriyama-btn-secondary !text-[0.75rem]">
+        <Link
+          href="/admin/agents"
+          className="toriyama-btn-secondary !text-[0.75rem]"
+        >
           Gérer les clés d&apos;agent
         </Link>
       </header>
@@ -76,7 +91,8 @@ export function StaffRoutes() {
         Routes publiques du bot ({PUBLIC_ROUTES.length})
       </h3>
       <p className="mb-3 mt-1 text-[0.8125rem] text-white/45">
-        CORS ouvert · 60 req/min/IP · cache 30 s à 1 h selon l&apos;endpoint · sans jeton.
+        CORS ouvert · 60 req/min/IP · cache 30 s à 1 h selon l&apos;endpoint ·
+        sans jeton.
       </p>
       <RouteTable rows={PUBLIC_ROUTES} tone="public" />
 
@@ -84,8 +100,10 @@ export function StaffRoutes() {
         Routes d&apos;administration ({ADMIN_ROUTES.length}+)
       </h3>
       <p className="mb-3 mt-1 text-[0.8125rem] text-white/45">
-        <code className="text-dbz-orange">Authorization: Bearer $API_ADMIN_TOKEN</code> — ou le
-        proxy site si <strong>roleAdmin</strong>.
+        <code className="text-dbz-orange">
+          Authorization: Bearer $API_ADMIN_TOKEN
+        </code>{" "}
+        — ou le proxy site si <strong>roleAdmin</strong>.
       </p>
       <RouteTable rows={ADMIN_ROUTES} tone="admin" />
     </section>

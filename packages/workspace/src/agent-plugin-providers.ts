@@ -3,7 +3,14 @@ import { spawnSync } from "@aphrody/update/process";
 import { userHome } from "@aphrody/paths";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
-import { inside, object, plugins, readJson, validName, type Json } from "./agent-plugin-store.ts";
+import {
+  inside,
+  object,
+  plugins,
+  readJson,
+  validName,
+  type Json,
+} from "./agent-plugin-store.ts";
 
 export type Provider = {
   id: string;
@@ -25,11 +32,23 @@ export type ProviderConfig = {
   providers: Provider[];
   scopes: Record<string, string[]>;
 };
-export type CommandResult = { command: string[]; exitCode: number; output: string };
-export type Runner = (command: string[], cwd: string, home: string) => CommandResult;
+export type CommandResult = {
+  command: string[];
+  exitCode: number;
+  output: string;
+};
+export type Runner = (
+  command: string[],
+  cwd: string,
+  home: string,
+) => CommandResult;
 export function redact(text: string): string {
   for (const [key, value] of Object.entries(process.env))
-    if (value && value.length >= 8 && /token|secret|password|credential|api.?key/i.test(key))
+    if (
+      value &&
+      value.length >= 8 &&
+      /token|secret|password|credential|api.?key/i.test(key)
+    )
       text = text.replaceAll(value, "[redacted]");
   return text
     .replace(/(Bearer\s+)[^\s"']+/gi, "$1[redacted]")
@@ -60,16 +79,21 @@ export const runCommand: Runner = (command, cwd, home) => {
     encoding: "utf8",
   });
   return {
-    command: command.map((arg) => (arg.startsWith("{") ? "[MCP configuration]" : redact(arg))),
+    command: command.map((arg) =>
+      arg.startsWith("{") ? "[MCP configuration]" : redact(arg),
+    ),
     exitCode: result.status ?? 1,
-    output: redact(result.stdout + result.stderr + (result.error?.message ?? "")),
+    output: redact(
+      result.stdout + result.stderr + (result.error?.message ?? ""),
+    ),
   };
 };
 export function providerConfig(path: string): ProviderConfig {
   const raw = readJson(path);
   if (raw.version !== 1 || !validName(String(raw.marketplace)))
     throw new Error("Unsupported provider config version or marketplace name");
-  if (!Array.isArray(raw.providers)) throw new Error("Provider list is required");
+  if (!Array.isArray(raw.providers))
+    throw new Error("Provider list is required");
   const seen = new Set<string>();
   for (const value of raw.providers) {
     const p = object(value);
@@ -81,8 +105,17 @@ export function providerConfig(path: string): ProviderConfig {
     )
       throw new Error("Invalid or duplicate provider");
     seen.add(String(p.id));
-    for (const key of ["versionArgs", "pluginHelp", "pluginRemove", "mcpAdd", "mcpRemove"])
-      if (!Array.isArray(p[key]) || !(p[key] as unknown[]).every((a) => typeof a === "string"))
+    for (const key of [
+      "versionArgs",
+      "pluginHelp",
+      "pluginRemove",
+      "mcpAdd",
+      "mcpRemove",
+    ])
+      if (
+        !Array.isArray(p[key]) ||
+        !(p[key] as unknown[]).every((a) => typeof a === "string")
+      )
         throw new Error(`Invalid ${key} for ${p.id}`);
     if (
       p.pluginValidation !== null &&
@@ -93,7 +126,8 @@ export function providerConfig(path: string): ProviderConfig {
     if (
       !Array.isArray(p.pluginInstall) ||
       !p.pluginInstall.every(
-        (cmd) => Array.isArray(cmd) && cmd.every((arg) => typeof arg === "string"),
+        (cmd) =>
+          Array.isArray(cmd) && cmd.every((arg) => typeof arg === "string"),
       )
     )
       throw new Error(`Invalid install command for ${p.id}`);
@@ -111,14 +145,19 @@ export function providerConfig(path: string): ProviderConfig {
       throw new Error(`Invalid scope for ${name}`);
   return raw as unknown as ProviderConfig;
 }
-export function template(args: string[], values: Record<string, string | string[]>): string[] {
+export function template(
+  args: string[],
+  values: Record<string, string | string[]>,
+): string[] {
   return args.flatMap((arg) => {
     const exact = arg.match(/^\{(\w+)\}$/);
-    if (exact && Array.isArray(values[exact[1]!])) return values[exact[1]!] as string[];
+    if (exact && Array.isArray(values[exact[1]!]))
+      return values[exact[1]!] as string[];
     return [
       arg.replace(/\{(\w+)\}/g, (_, key: string) => {
         const value = values[key];
-        if (typeof value !== "string") throw new Error(`Missing command template value: ${key}`);
+        if (typeof value !== "string")
+          throw new Error(`Missing command template value: ${key}`);
         return value;
       }),
     ];
@@ -163,7 +202,8 @@ export function detectProviders(
 ): Json[] {
   return config.providers.map((provider) => {
     const binary = Bun.which(provider.binary);
-    if (!binary) return { id: provider.id, installed: false, docs: provider.docs };
+    if (!binary)
+      return { id: provider.id, installed: false, docs: provider.docs };
     const help = runner([binary, ...provider.pluginHelp], cwd, home);
     const version = runner([binary, ...provider.versionArgs], cwd, home);
     return {
@@ -171,7 +211,10 @@ export function detectProviders(
       binary,
       installed: true,
       pluginCli: help.exitCode === 0,
-      version: version.exitCode === 0 ? version.output.trim().split("\n")[0] : "not advertised",
+      version:
+        version.exitCode === 0
+          ? version.output.trim().split("\n")[0]
+          : "not advertised",
       nativePluginValidation: provider.pluginValidation !== null,
       docs: provider.docs,
     };
@@ -189,7 +232,9 @@ export function nativeValidation(
   names: string[] = [],
 ): Json[] {
   const reports: Json[] = [];
-  const entries = plugins(store).filter((p) => !names.length || names.includes(p.name));
+  const entries = plugins(store).filter(
+    (p) => !names.length || names.includes(p.name),
+  );
   for (const provider of config.providers.filter(
     (p) => !selected.length || selected.includes(p.id),
   )) {
@@ -201,7 +246,8 @@ export function nativeValidation(
       reports.push({
         provider: provider.id,
         status: "no-native-validator",
-        managerValidation: "JSON/YAML, component paths, versions, skills and local links",
+        managerValidation:
+          "JSON/YAML, component paths, versions, skills and local links",
       });
       continue;
     }
@@ -231,7 +277,10 @@ export function nativeValidation(
           const path = join(plugin.path, component);
           if (!existsSync(path)) continue;
           const checked = runner(
-            [provider.binary, ...template(provider.pluginValidation, { ...values, path })],
+            [
+              provider.binary,
+              ...template(provider.pluginValidation, { ...values, path }),
+            ],
             cwd,
             home,
           );
@@ -279,9 +328,27 @@ export type InstallAction =
       value: unknown;
       remove?: boolean;
     }
-  | { type: "toml-plugin"; path: string; id: string; enabled: boolean; remove?: boolean }
-  | { type: "toml-mcp"; path: string; name: string; server: Json; remove?: boolean }
-  | { type: "agy-project-mcp"; path: string; name: string; server: Json; remove?: boolean }
+  | {
+      type: "toml-plugin";
+      path: string;
+      id: string;
+      enabled: boolean;
+      remove?: boolean;
+    }
+  | {
+      type: "toml-mcp";
+      path: string;
+      name: string;
+      server: Json;
+      remove?: boolean;
+    }
+  | {
+      type: "agy-project-mcp";
+      path: string;
+      name: string;
+      server: Json;
+      remove?: boolean;
+    }
   | { type: "skill-link"; path: string; source: string; remove?: boolean };
 export type InstallPlan = {
   provider: string;
@@ -337,9 +404,13 @@ export function installationPlan(
       if (
         scope === "project" &&
         !["codex", "claude"].includes(provider.id) &&
-        !provider.pluginInstall.some((cmd) => cmd.some((arg) => arg.includes("{scope}")))
+        !provider.pluginInstall.some((cmd) =>
+          cmd.some((arg) => arg.includes("{scope}")),
+        )
       )
-        throw new Error(`Provider ${provider.id} needs an explicit project plugin adapter`);
+        throw new Error(
+          `Provider ${provider.id} needs an explicit project plugin adapter`,
+        );
       if (!remove && scope === "project" && provider.id === "codex")
         actions.push({
           type: "toml-plugin",
@@ -354,7 +425,10 @@ export function installationPlan(
             ? [provider.pluginRemove]
             : provider.pluginInstall;
       for (const cmd of commands)
-        actions.push({ type: "command", command: [provider.binary, ...template(cmd, values)] });
+        actions.push({
+          type: "command",
+          command: [provider.binary, ...template(cmd, values)],
+        });
       if (scope === "project" && provider.id === "codex") {
         const id = `${name}@${config.marketplace}`;
         if (!remove)
@@ -374,22 +448,34 @@ export function installationPlan(
       }
     }
   } else if (kind === "skill") {
-    if (!source) throw new Error("Standalone skill requires --source <skill-directory>");
+    if (!source)
+      throw new Error("Standalone skill requires --source <skill-directory>");
     const dir = resolve(source),
       path = join(dir, "SKILL.md");
-    if (!existsSync(path)) throw new Error("Skill source must contain SKILL.md");
+    if (!existsSync(path))
+      throw new Error("Skill source must contain SKILL.md");
     const parts = relative(store, dir).split(/[\\/]/);
     const owner = parts[0];
     const effective =
-      owner && inside(store, dir) ? scopeFor(config, owner, cwd, home, requestedScope) : scope;
+      owner && inside(store, dir)
+        ? scopeFor(config, owner, cwd, home, requestedScope)
+        : scope;
     if (effective !== scope && requestedScope === "user")
       throw new Error("Restricted plugin skills cannot be installed globally");
     const skillRoot =
       effective === "project"
         ? (provider.projectSkillsDirectory?.replaceAll("{cwd}", cwd) ??
-          join(cwd, provider.id === "claude" ? ".claude/skills" : ".agents/skills"))
+          join(
+            cwd,
+            provider.id === "claude" ? ".claude/skills" : ".agents/skills",
+          ))
         : provider.skillsDirectory.replaceAll("{home}", home);
-    actions.push({ type: "skill-link", path: join(skillRoot, name), source: dir, remove });
+    actions.push({
+      type: "skill-link",
+      path: join(skillRoot, name),
+      source: dir,
+      remove,
+    });
     return { provider: provider.id, kind, name, scope: effective, actions };
   } else if (kind === "mcp") {
     if (!source) throw new Error("MCP requires --source <JSON-file>");
@@ -426,7 +512,10 @@ export function installationPlan(
           path: join(cwd, ".agents/plugins.json"),
           field: "entries",
           key: name,
-          value: { path: join(cwd, ".agents/aphrody-mcp"), include_only: [name] },
+          value: {
+            path: join(cwd, ".agents/aphrody-mcp"),
+            include_only: [name],
+          },
           remove,
         });
       } else {
@@ -446,12 +535,20 @@ export function installationPlan(
       const cmd = remove ? provider.mcpRemove : provider.mcpAdd;
       if (
         !remove &&
-        Object.keys(server).some((k) => !["command", "args", "url", "type"].includes(k)) &&
+        Object.keys(server).some(
+          (k) => !["command", "args", "url", "type"].includes(k),
+        ) &&
         !cmd.includes("{mcpJson}")
       )
-        throw new Error("Provider MCP adapter must preserve the complete JSON configuration");
-      if (!cmd.length) throw new Error(`Provider ${provider.id} has no MCP adapter`);
-      actions.push({ type: "command", command: [provider.binary, ...template(cmd, values)] });
+        throw new Error(
+          "Provider MCP adapter must preserve the complete JSON configuration",
+        );
+      if (!cmd.length)
+        throw new Error(`Provider ${provider.id} has no MCP adapter`);
+      actions.push({
+        type: "command",
+        command: [provider.binary, ...template(cmd, values)],
+      });
     }
   } else throw new Error("Kind must be plugin, skill or mcp");
   return { provider: provider.id, kind, name, scope, actions };
@@ -459,11 +556,20 @@ export function installationPlan(
 
 /** Render one owned TOML table without replacing unrelated settings or comments. */
 function tomlParts(s: string): string[] {
-  return (s.match(/"(?:\\.|[^"\\])*"|'[^']*'|[a-zA-Z0-9_-]+/g) ?? []).map((x) =>
-    x.startsWith('"') ? (JSON.parse(x) as string) : x.startsWith("'") ? x.slice(1, -1) : x,
+  return (s.match(/"(?:\\.|[^"\\])*"|'[^']*'|[a-zA-Z0-9_-]+/g) ?? []).map(
+    (x) =>
+      x.startsWith('"')
+        ? (JSON.parse(x) as string)
+        : x.startsWith("'")
+          ? x.slice(1, -1)
+          : x,
   );
 }
-export function replaceTomlTable(text: string, table: string, value: Json | null): string {
+export function replaceTomlTable(
+  text: string,
+  table: string,
+  value: Json | null,
+): string {
   const parsed = object(Bun.TOML.parse(text));
   void parsed; // Parse before editing; malformed private configuration must never be overwritten.
   const heading = `[${table}]`;
@@ -471,8 +577,12 @@ export function replaceTomlTable(text: string, table: string, value: Json | null
   if (owned[0] === "plugins" && value) {
     let current: unknown = parsed;
     for (const part of owned)
-      current = current && typeof current === "object" ? (current as Json)[part] : undefined;
-    if (current && typeof current === "object") value = { ...object(current), ...value };
+      current =
+        current && typeof current === "object"
+          ? (current as Json)[part]
+          : undefined;
+    if (current && typeof current === "object")
+      value = { ...object(current), ...value };
   }
   const lines = text.split(/\r?\n/),
     kept: string[] = [];
@@ -490,13 +600,19 @@ export function replaceTomlTable(text: string, table: string, value: Json | null
   }
   const body = kept.join("\n").trimEnd();
   if (value === null) return body ? `${body}\n` : "";
-  const pairs = Object.entries(value).map(([key, v]) => `${JSON.stringify(key)} = ${tomlValue(v)}`);
+  const pairs = Object.entries(value).map(
+    ([key, v]) => `${JSON.stringify(key)} = ${tomlValue(v)}`,
+  );
   const result = `${body}${body ? "\n\n" : ""}${heading}\n${pairs.join("\n")}\n`;
   Bun.TOML.parse(result);
   return result;
 }
 function tomlValue(value: unknown): string {
-  if (typeof value === "string" || typeof value === "boolean" || typeof value === "number")
+  if (
+    typeof value === "string" ||
+    typeof value === "boolean" ||
+    typeof value === "number"
+  )
     return JSON.stringify(value);
   if (Array.isArray(value)) return `[${value.map(tomlValue).join(", ")}]`;
   const map = object(value);

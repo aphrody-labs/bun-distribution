@@ -25,7 +25,9 @@ export type OmniGenErrorNotifier = (message: string) => void;
 
 let errorNotifier: OmniGenErrorNotifier = () => {};
 
-export const setOmniGenErrorNotifier = (notifier: OmniGenErrorNotifier): void => {
+export const setOmniGenErrorNotifier = (
+  notifier: OmniGenErrorNotifier,
+): void => {
   errorNotifier = notifier;
 };
 

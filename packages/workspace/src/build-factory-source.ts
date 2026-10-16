@@ -1,34 +1,51 @@
 // SPDX-License-Identifier: Apache-2.0
 
-export type FactorySourceScope = { kind: "all" } | { kind: "gitlinks"; paths: readonly string[] };
+export type FactorySourceScope =
+  { kind: "all" } | { kind: "gitlinks"; paths: readonly string[] };
 
 function quote(value: string): string {
   return `'${value.replaceAll("'", "'\\''")}'`;
 }
 
 /** Select root-tree gitlinks, never arbitrary directories, patterns or descendant paths. */
-export function factorySourceScope(paths?: readonly string[]): FactorySourceScope {
+export function factorySourceScope(
+  paths?: readonly string[],
+): FactorySourceScope {
   if (paths === undefined) return { kind: "all" };
   if (
     paths.length === 0 ||
     paths.some(
       (path) =>
-        !/^[A-Za-z0-9][A-Za-z0-9._-]*(?:\/[A-Za-z0-9][A-Za-z0-9._-]*)*$/u.test(path) ||
-        path.split("/").some((part) => part === "." || part === ".." || part === ".git"),
+        !/^[A-Za-z0-9][A-Za-z0-9._-]*(?:\/[A-Za-z0-9][A-Za-z0-9._-]*)*$/u.test(
+          path,
+        ) ||
+        path
+          .split("/")
+          .some((part) => part === "." || part === ".." || part === ".git"),
     )
   )
-    throw new Error("Selected submodules require normalized relative gitlink paths");
+    throw new Error(
+      "Selected submodules require normalized relative gitlink paths",
+    );
   const selected = [...new Set(paths)].toSorted();
   if (
-    selected.some((path, i) => selected.slice(i + 1).some((other) => other.startsWith(`${path}/`)))
+    selected.some((path, i) =>
+      selected.slice(i + 1).some((other) => other.startsWith(`${path}/`)),
+    )
   )
-    throw new Error("Select root-tree gitlinks without overlapping descendant paths");
+    throw new Error(
+      "Select root-tree gitlinks without overlapping descendant paths",
+    );
   return { kind: "gitlinks", paths: selected };
 }
 
 /** Run after entering the declared parent checkout, before touching selected sources. */
-export function selectedSourceSetup(scope: FactorySourceScope, revision: string): string[] {
-  if (scope.kind !== "gitlinks") throw new Error("An explicit gitlink source scope is required");
+export function selectedSourceSetup(
+  scope: FactorySourceScope,
+  revision: string,
+): string[] {
+  if (scope.kind !== "gitlinks")
+    throw new Error("An explicit gitlink source scope is required");
   return [
     "export GIT_OPTIONAL_LOCKS=0",
     "factory_scope_root=$(git rev-parse --show-toplevel)",
@@ -41,7 +58,10 @@ export function selectedSourceSetup(scope: FactorySourceScope, revision: string)
   ];
 }
 
-export function selectedSourcePrelude(scope: FactorySourceScope, revision: string): string[] {
+export function selectedSourcePrelude(
+  scope: FactorySourceScope,
+  revision: string,
+): string[] {
   return [
     ...selectedSourceSetup(scope, revision),
     'for factory_scope_path in "${factory_scope_paths[@]}"; do',

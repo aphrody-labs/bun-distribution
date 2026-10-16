@@ -4,7 +4,13 @@
 
 "use client";
 
-import { Button, DialogClose, DialogContent, DialogRoot, Icon } from "@aphrody/m3-primitives";
+import {
+  Button,
+  DialogClose,
+  DialogContent,
+  DialogRoot,
+  Icon,
+} from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import { useState } from "react";
 
@@ -49,9 +55,15 @@ export function GeminiPersonalContextEdit({
   const [context, setContext] = useState(initialContext);
   const [isSaving, setIsSaving] = useState(false);
 
-  const [previousInputs, setPreviousInputs] = useState({ initialContext, open });
+  const [previousInputs, setPreviousInputs] = useState({
+    initialContext,
+    open,
+  });
   // Reset the draft before committing a changed source or open state, while preserving the editor node and focus.
-  if (previousInputs.initialContext !== initialContext || previousInputs.open !== open) {
+  if (
+    previousInputs.initialContext !== initialContext ||
+    previousInputs.open !== open
+  ) {
     setPreviousInputs({ initialContext, open });
     setContext(initialContext);
   }
@@ -137,7 +149,12 @@ export function GeminiPersonalContextEdit({
               Cancel
             </Button>
           </DialogClose>
-          <Button variant="filled" onClick={handleSave} disabled={!canSave} className="px-6">
+          <Button
+            variant="filled"
+            onClick={handleSave}
+            disabled={!canSave}
+            className="px-6"
+          >
             {isSaving ? "Saving..." : "Save"}
           </Button>
         </div>

@@ -7,7 +7,10 @@ import type { DesignBrief, OutputKind } from "./types.ts";
  * Parses a raw natural language prompt and extracts structured design directives.
  * Bypasses the turn-1 blocking forms by automating parameter extraction.
  */
-export function parseBrief(rawBrief: string, optionalSeedColor?: string): DesignBrief {
+export function parseBrief(
+  rawBrief: string,
+  optionalSeedColor?: string,
+): DesignBrief {
   const lowercase = rawBrief.toLowerCase();
   const normalized = lowercase.normalize("NFD").replace(/\p{M}/gu, "");
   const words = new Set(normalized.match(/[\p{L}\p{N}]+/gu) ?? []);
@@ -56,8 +59,10 @@ export function parseBrief(rawBrief: string, optionalSeedColor?: string): Design
   // 2. Detect target platforms
   const platforms: string[] = [];
   const androidRequested = words.has("android");
-  const iosRequested = words.has("ios") || words.has("iphone") || words.has("ipad");
-  const genericMobileRequested = lowercase.includes("mobile") || lowercase.includes("phone");
+  const iosRequested =
+    words.has("ios") || words.has("iphone") || words.has("ipad");
+  const genericMobileRequested =
+    lowercase.includes("mobile") || lowercase.includes("phone");
   if (iosRequested || (genericMobileRequested && !androidRequested)) {
     platforms.push("ios");
   }
@@ -130,7 +135,11 @@ export function parseBrief(rawBrief: string, optionalSeedColor?: string): Design
   ) {
     tones.push("minimal");
   }
-  if (lowercase.includes("utility") || lowercase.includes("tech") || lowercase.includes("dense")) {
+  if (
+    lowercase.includes("utility") ||
+    lowercase.includes("tech") ||
+    lowercase.includes("dense")
+  ) {
     tones.push("tech-utility");
   }
   if (
@@ -171,7 +180,9 @@ export function parseBrief(rawBrief: string, optionalSeedColor?: string): Design
 
   // 6. Extract scale
   let scale = "1 screen";
-  const slideMatch = rawBrief.match(/(\d+)\s*(slide|page|screen|deck|transparence|écran)/);
+  const slideMatch = rawBrief.match(
+    /(\d+)\s*(slide|page|screen|deck|transparence|écran)/,
+  );
   if (slideMatch) {
     scale = `${slideMatch[1]} ${slideMatch[2]}s`;
   } else if (outputKind === "deck") {
@@ -214,10 +225,13 @@ export function parseBrief(rawBrief: string, optionalSeedColor?: string): Design
     );
   }
   const constraints =
-    constraintList.length > 0 ? constraintList.join(", ") : "Standard M3 styling rules";
+    constraintList.length > 0
+      ? constraintList.join(", ")
+      : "Standard M3 styling rules";
 
   // 8. Extract layoutType
-  let layoutType: "feed" | "list-detail" | "supporting-pane" | "scaffold" = "scaffold";
+  let layoutType: "feed" | "list-detail" | "supporting-pane" | "scaffold" =
+    "scaffold";
   if (
     lowercase.includes("list-detail") ||
     lowercase.includes("split") ||
@@ -242,7 +256,11 @@ export function parseBrief(rawBrief: string, optionalSeedColor?: string): Design
 
   // 9. Extract density
   let density: "default" | "high" | "low" = "default";
-  if (lowercase.includes("dense") || lowercase.includes("compact") || lowercase.includes("serré")) {
+  if (
+    lowercase.includes("dense") ||
+    lowercase.includes("compact") ||
+    lowercase.includes("serré")
+  ) {
     density = "high";
   } else if (
     lowercase.includes("low") ||

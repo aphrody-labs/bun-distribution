@@ -24,19 +24,28 @@ export function detectPythonEnvironment(): PythonEnvironmentStatus {
   const ruffBin = Bun.which("ruff");
 
   const pythonVersion = pyBin
-    ? Bun.spawnSync([pyBin, "--version"], { windowsHide: true }).stdout.toString().trim() || null
+    ? Bun.spawnSync([pyBin, "--version"], { windowsHide: true })
+        .stdout.toString()
+        .trim() || null
     : null;
   const uvVersion = uvBin
-    ? Bun.spawnSync([uvBin, "--version"], { windowsHide: true }).stdout.toString().trim() || null
+    ? Bun.spawnSync([uvBin, "--version"], { windowsHide: true })
+        .stdout.toString()
+        .trim() || null
     : null;
   const maturinVersion = maturinBin
-    ? Bun.spawnSync([maturinBin, "--version"], { windowsHide: true }).stdout.toString().trim() ||
-      null
+    ? Bun.spawnSync([maturinBin, "--version"], { windowsHide: true })
+        .stdout.toString()
+        .trim() || null
     : null;
   const ruffVersion = ruffBin
-    ? Bun.spawnSync([ruffBin, "--version"], { windowsHide: true }).stdout.toString().trim() || null
+    ? Bun.spawnSync([ruffBin, "--version"], { windowsHide: true })
+        .stdout.toString()
+        .trim() || null
     : null;
-  const venvActive = Boolean(process.env.VIRTUAL_ENV && existsSync(process.env.VIRTUAL_ENV));
+  const venvActive = Boolean(
+    process.env.VIRTUAL_ENV && existsSync(process.env.VIRTUAL_ENV),
+  );
 
   return {
     schema: "yolo.python/1",

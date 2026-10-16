@@ -1,4 +1,3 @@
-
 import { ApiManager, ApiResponse } from "./ApiManager";
 import { Visibility } from "~/enums";
 

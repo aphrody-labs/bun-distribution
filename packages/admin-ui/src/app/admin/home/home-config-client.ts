@@ -18,6 +18,9 @@ export function errorMessageFromBody(text: string, status: number): string {
  * Premier chargement uniquement : un refetch (focus de fenêtre, reconnexion)
  * ne doit jamais écraser les modifications non enregistrées.
  */
-export function seedConfig<T>(current: T | null, loaded: T | undefined): T | null {
+export function seedConfig<T>(
+  current: T | null,
+  loaded: T | undefined,
+): T | null {
   return current ?? loaded ?? null;
 }

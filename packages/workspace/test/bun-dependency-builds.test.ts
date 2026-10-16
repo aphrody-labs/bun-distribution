@@ -3,7 +3,10 @@ import { expect, test } from "bun:test";
 import { mkdtemp, mkdir, rm, writeFile, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { buildDependencies, dependencyBuildPlan } from "../src/bun-dependency-builds.ts";
+import {
+  buildDependencies,
+  dependencyBuildPlan,
+} from "../src/bun-dependency-builds.ts";
 
 async function fixture(run: (root: string) => Promise<void>, failure = false) {
   const root = await mkdtemp(join(tmpdir(), "aphrody-dependency-builds-"));
@@ -28,9 +31,21 @@ async function fixture(run: (root: string) => Promise<void>, failure = false) {
         dependencies: { base: "workspace:*" },
         scripts: { build: "bun build.ts" },
       },
-      base: { name: "base", types: "./dist/index.d.ts", scripts: { build: "bun build.ts" } },
-      archive: { name: "archived", main: "./dist/index.js", scripts: { build: "bun build.ts" } },
-      excluded: { name: "excluded", main: "./dist/index.js", scripts: { build: "bun build.ts" } },
+      base: {
+        name: "base",
+        types: "./dist/index.d.ts",
+        scripts: { build: "bun build.ts" },
+      },
+      archive: {
+        name: "archived",
+        main: "./dist/index.js",
+        scripts: { build: "bun build.ts" },
+      },
+      excluded: {
+        name: "excluded",
+        main: "./dist/index.js",
+        scripts: { build: "bun build.ts" },
+      },
     });
     await Promise.all(
       packages.map(async ([name, manifest]) => {
@@ -58,10 +73,14 @@ async function fixture(run: (root: string) => Promise<void>, failure = false) {
 test("source dependencies lead to compiled owners in dependency order, with archive ownership kept separate", async () => {
   await fixture(async (root) => {
     expect(
-      (await dependencyBuildPlan(root, ["fixture-app", "bridge"])).map((item) => item.name),
+      (await dependencyBuildPlan(root, ["fixture-app", "bridge"])).map(
+        (item) => item.name,
+      ),
     ).toEqual(["base", "middle"]);
     expect(await buildDependencies(root, ["fixture-app", "bridge"])).toBe(0);
-    expect(await readFile(join(root, "builds.log"), "utf8")).toBe("base\nmiddle\n");
+    expect(await readFile(join(root, "builds.log"), "utf8")).toBe(
+      "base\nmiddle\n",
+    );
   });
 });
 
@@ -120,7 +139,10 @@ test("a missing workspace owner fails before any build", async () => {
   await fixture(async (root) => {
     await writeFile(
       join(root, "packages/base/package.json"),
-      JSON.stringify({ name: "base", dependencies: { missing: "workspace:*" } }),
+      JSON.stringify({
+        name: "base",
+        dependencies: { missing: "workspace:*" },
+      }),
     );
     await expect(dependencyBuildPlan(root, ["fixture-app"])).rejects.toThrow(
       "Workspace dependency has no active owner: missing",
@@ -131,7 +153,10 @@ test("a missing workspace owner fails before any build", async () => {
 
 test("duplicate workspace owners fail before any build", async () => {
   await fixture(async (root) => {
-    await writeFile(join(root, "packages/archive/package.json"), JSON.stringify({ name: "base" }));
+    await writeFile(
+      join(root, "packages/archive/package.json"),
+      JSON.stringify({ name: "base" }),
+    );
     await expect(dependencyBuildPlan(root, ["fixture-app"])).rejects.toThrow(
       "Duplicate workspace artifact owner: base",
     );

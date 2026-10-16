@@ -17,7 +17,13 @@
  */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PageShell, SectionHeading, Stack, Chip, ChipRow } from "@/components/kit";
+import {
+  PageShell,
+  SectionHeading,
+  Stack,
+  Chip,
+  ChipRow,
+} from "@/components/kit";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { AGENT_SCOPES } from "@/db/schema";
 import { SCOPE_DESCRIPTIONS, AGENT_API_VERSION } from "@/lib/agent-openapi";
@@ -38,16 +44,25 @@ export const metadata: Metadata = {
  * Ne pas le remettre ici : ce n'est plus joignable.
  */
 const OPEN_READ = [
-  { path: "/api/agent/v1/openapi.json", desc: "Schéma OpenAPI 3.1 de l'API agents." },
+  {
+    path: "/api/agent/v1/openapi.json",
+    desc: "Schéma OpenAPI 3.1 de l'API agents.",
+  },
   {
     path: "/llms.txt",
     desc: "Carte du site et règles éditoriales, au format attendu par les agents.",
   },
-  { path: "/api/canon", desc: "Doctrine canon, corpus de preuves et verdicts." },
+  {
+    path: "/api/canon",
+    desc: "Doctrine canon, corpus de preuves et verdicts.",
+  },
   { path: "/api/search?q=", desc: "Recherche transversale du wiki." },
   { path: "/api/databooks", desc: "Databooks, planches et transcriptions." },
   { path: "/news/rss.xml", desc: "Flux RSS des articles publiés." },
-  { path: "/sitemap.xml", desc: "Toutes les URL publiques, dérivées du registre d'accès." },
+  {
+    path: "/sitemap.xml",
+    desc: "Toutes les URL publiques, dérivées du registre d'accès.",
+  },
 ];
 
 /** Les trois gestes d'un agent, dans l'ordre où il les apprend. */
@@ -68,7 +83,8 @@ const EXAMPLES = [
   -H "Authorization: Bearer $DBFR_AGENT_TOKEN"`,
   },
   {
-    title: "4. Proposer une correction du wiki (rien n'est écrit sans relecture)",
+    title:
+      "4. Proposer une correction du wiki (rien n'est écrit sans relecture)",
     code: `curl -s -X POST ${SITE_URL}/api/agent/v1/wiki/contributions \\
   -H "Authorization: Bearer $DBFR_AGENT_TOKEN" \\
   -H "content-type: application/json" \\
@@ -106,10 +122,16 @@ export default function ApiDocsPage() {
         standfirst="Le site est conçu pour être alimenté par des humains comme par des agents. La lecture est ouverte ; l'écriture passe par une clé à portées explicites, et tout ce qui touche au wiki entre dans une file de relecture humaine."
         actions={
           <>
-            <Link href="/api/agent/v1/openapi.json" className="toriyama-btn !text-[0.75rem]">
+            <Link
+              href="/api/agent/v1/openapi.json"
+              className="toriyama-btn !text-[0.75rem]"
+            >
               Schéma OpenAPI
             </Link>
-            <Link href="/llms.txt" className="toriyama-btn-secondary !text-[0.75rem]">
+            <Link
+              href="/llms.txt"
+              className="toriyama-btn-secondary !text-[0.75rem]"
+            >
               llms.txt
             </Link>
           </>
@@ -125,23 +147,32 @@ export default function ApiDocsPage() {
           />
           <ul className="mt-6 space-y-3 text-[0.9375rem] leading-relaxed text-white/70">
             <li className="border-l-2 border-dbz-orange/60 pl-4">
-              <strong className="text-white">Ne jamais inventer une donnée éditoriale.</strong> Un
-              champ vide vaut mieux qu&apos;une valeur plausible. C&apos;est la règle la plus
-              souvent violée par une IA, et celle qui coûte le plus cher à réparer.
+              <strong className="text-white">
+                Ne jamais inventer une donnée éditoriale.
+              </strong>{" "}
+              Un champ vide vaut mieux qu&apos;une valeur plausible. C&apos;est
+              la règle la plus souvent violée par une IA, et celle qui coûte le
+              plus cher à réparer.
             </li>
             <li className="border-l-2 border-white/15 pl-4">
-              <strong className="text-white">Citer sa source</strong> : tome et planche, databook et
-              page, interview datée. Les wikis tiers ne sont pas une source.
+              <strong className="text-white">Citer sa source</strong> : tome et
+              planche, databook et page, interview datée. Les wikis tiers ne
+              sont pas une source.
             </li>
             <li className="border-l-2 border-white/15 pl-4">
-              <strong className="text-white">Un agent propose, un humain tranche.</strong> Les
-              corrections du wiki entrent dans la file de modération ; les articles sont des
-              brouillons, sauf portée <code className="text-dbz-orange">publish:articles</code>.
+              <strong className="text-white">
+                Un agent propose, un humain tranche.
+              </strong>{" "}
+              Les corrections du wiki entrent dans la file de modération ; les
+              articles sont des brouillons, sauf portée{" "}
+              <code className="text-dbz-orange">publish:articles</code>.
             </li>
             <li className="border-l-2 border-white/15 pl-4">
-              <strong className="text-white">Les écritures sont signées.</strong> Le nom de la clé
-              apparaît publiquement à côté des commentaires et sur les brouillons. Aucun agent ne se
-              fait passer pour un membre.
+              <strong className="text-white">
+                Les écritures sont signées.
+              </strong>{" "}
+              Le nom de la clé apparaît publiquement à côté des commentaires et
+              sur les brouillons. Aucun agent ne se fait passer pour un membre.
             </li>
           </ul>
         </section>
@@ -154,9 +185,14 @@ export default function ApiDocsPage() {
           />
           <dl className="mt-6 grid gap-3 sm:grid-cols-2">
             {AGENT_SCOPES.map((scope) => (
-              <div key={scope} className="border border-white/[0.08] bg-dbz-card/80 p-4">
+              <div
+                key={scope}
+                className="border border-white/[0.08] bg-dbz-card/80 p-4"
+              >
                 <dt>
-                  <code className="font-mono text-[0.875rem] text-dbz-orange">{scope}</code>
+                  <code className="font-mono text-[0.875rem] text-dbz-orange">
+                    {scope}
+                  </code>
                 </dt>
                 <dd className="mt-1.5 text-[0.875rem] leading-relaxed text-white/60">
                   {SCOPE_DESCRIPTIONS[scope]}
@@ -165,8 +201,9 @@ export default function ApiDocsPage() {
             ))}
           </dl>
           <p className="mt-5 text-[0.875rem] text-white/55">
-            Les clés sont créées par le staff depuis l&apos;espace d&apos;administration. Le jeton
-            n&apos;est affiché qu&apos;une fois : seul son hachage SHA-256 est conservé.{" "}
+            Les clés sont créées par le staff depuis l&apos;espace
+            d&apos;administration. Le jeton n&apos;est affiché qu&apos;une fois
+            : seul son hachage SHA-256 est conservé.{" "}
             <Link
               href="/credits#contact"
               className="text-dbz-orange underline-offset-4 hover:underline"
@@ -186,7 +223,9 @@ export default function ApiDocsPage() {
           <div className="mt-6 space-y-5">
             {EXAMPLES.map((ex) => (
               <div key={ex.title}>
-                <h3 className="font-display text-[0.9375rem] font-bold text-white">{ex.title}</h3>
+                <h3 className="font-display text-[0.9375rem] font-bold text-white">
+                  {ex.title}
+                </h3>
                 <pre className="mt-2 overflow-x-auto border-2 border-black bg-black/50 p-4 font-mono text-[0.8125rem] leading-relaxed text-white/80">
                   <code>{ex.code}</code>
                 </pre>
@@ -210,7 +249,9 @@ export default function ApiDocsPage() {
                 <code className="shrink-0 font-mono text-[0.8125rem] text-dbz-orange">
                   {row.path}
                 </code>
-                <span className="text-[0.875rem] leading-relaxed text-white/60">{row.desc}</span>
+                <span className="text-[0.875rem] leading-relaxed text-white/60">
+                  {row.desc}
+                </span>
               </li>
             ))}
           </ul>
@@ -243,14 +284,26 @@ export default function ApiDocsPage() {
                     "401",
                     "Vérifier l'en-tête Authorization et que la clé n'est pas révoquée.",
                   ],
-                  ["scope_missing", "403", "Demander la portée manquante — le message la nomme."],
+                  [
+                    "scope_missing",
+                    "403",
+                    "Demander la portée manquante — le message la nomme.",
+                  ],
                   [
                     "rate_limited",
                     "429",
                     "Attendre la fin de l'heure glissante ; GET /whoami donne le reste.",
                   ],
-                  ["bad_request", "400", "Lire `message` : il dit le champ fautif."],
-                  ["not_found", "404", "La cible n'existe pas ou n'est pas publique."],
+                  [
+                    "bad_request",
+                    "400",
+                    "Lire `message` : il dit le champ fautif.",
+                  ],
+                  [
+                    "not_found",
+                    "404",
+                    "La cible n'existe pas ou n'est pas publique.",
+                  ],
                   [
                     "server_error",
                     "500",
@@ -259,7 +312,9 @@ export default function ApiDocsPage() {
                 ].map(([code, http, todo]) => (
                   <tr key={code} className="border-b border-white/[0.06]">
                     <td className="py-2 pr-4">
-                      <code className="font-mono text-[0.8125rem] text-dbz-orange">{code}</code>
+                      <code className="font-mono text-[0.8125rem] text-dbz-orange">
+                        {code}
+                      </code>
                     </td>
                     <td className="py-2 pr-4 tabular-nums">{http}</td>
                     <td className="py-2">{todo}</td>

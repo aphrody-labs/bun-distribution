@@ -11,7 +11,12 @@ export interface DensityConfig {
 // actual column count + width from the container, so these are targets not hard
 // sizes (Savee-style adjustable density).
 export const DENSITY_CONFIG: Record<GridDensity, DensityConfig> = {
-  comfortable: { targetColumnWidth: 280, gap: 20, minColumns: 1, maxColumns: 8 },
+  comfortable: {
+    targetColumnWidth: 280,
+    gap: 20,
+    minColumns: 1,
+    maxColumns: 8,
+  },
   cozy: { targetColumnWidth: 216, gap: 14, minColumns: 1, maxColumns: 10 },
   compact: { targetColumnWidth: 164, gap: 10, minColumns: 2, maxColumns: 14 },
 };
@@ -45,7 +50,9 @@ export const computeMasonryLayout = (
   density: DensityConfig,
 ): MasonryLayout => {
   const usable = Math.max(containerWidth, density.targetColumnWidth);
-  const rawColumns = Math.round(usable / (density.targetColumnWidth + density.gap));
+  const rawColumns = Math.round(
+    usable / (density.targetColumnWidth + density.gap),
+  );
   const columnCount = Math.min(
     density.maxColumns,
     Math.max(density.minColumns, rawColumns || 1),
@@ -64,7 +71,8 @@ export const computeMasonryLayout = (
     }
     // Guard against a non-finite aspect (a single NaN would poison totalHeight
     // and collapse the whole virtualized slice).
-    const aspect = Number.isFinite(item.aspect) && item.aspect > 0 ? item.aspect : 1;
+    const aspect =
+      Number.isFinite(item.aspect) && item.aspect > 0 ? item.aspect : 1;
     const height = Math.max(columnWidth * aspect, MIN_ITEM_HEIGHT);
     const pos: PositionedItem = {
       id: item.id,

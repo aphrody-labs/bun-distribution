@@ -26,7 +26,8 @@ describe("Preflight intent & token checks", () => {
       PRIVILEGED_GRANT_BITS.messageContent[0];
 
     const mockFetch = mock(
-      async () => new Response(JSON.stringify({ flags: allBits }), { status: 200 }),
+      async () =>
+        new Response(JSON.stringify({ flags: allBits }), { status: 200 }),
     );
 
     const intents = await resolveGrantedIntents("token_ok", {
@@ -37,7 +38,9 @@ describe("Preflight intent & token checks", () => {
   });
 
   it("filters out privileged intents when flags are 0", async () => {
-    const mockFetch = mock(async () => new Response(JSON.stringify({ flags: 0 }), { status: 200 }));
+    const mockFetch = mock(
+      async () => new Response(JSON.stringify({ flags: 0 }), { status: 200 }),
+    );
 
     const warnings: string[] = [];
     const intents = await resolveGrantedIntents("token_restricted", {
@@ -69,7 +72,9 @@ describe("Preflight intent & token checks", () => {
   });
 
   it("falls back to non-privileged intents when Discord rejects the preflight", async () => {
-    const mockFetch = mock(async () => new Response("unavailable", { status: 503 }));
+    const mockFetch = mock(
+      async () => new Response("unavailable", { status: 503 }),
+    );
     const intents = await resolveGrantedIntents("token_err", {
       fetchImpl: mockFetch as unknown as typeof fetch,
     });
@@ -80,7 +85,9 @@ describe("Preflight intent & token checks", () => {
   it("asserts token matches configured client profile", async () => {
     const mockFetch = mock(
       async () =>
-        new Response(JSON.stringify({ id: "123456789", name: "Shenron" }), { status: 200 }),
+        new Response(JSON.stringify({ id: "123456789", name: "Shenron" }), {
+          status: 200,
+        }),
     );
 
     await expect(
@@ -211,7 +218,9 @@ describe("Safe interaction execution", () => {
   });
 
   it("logs reply failures other than an expired interaction", async () => {
-    const mockClient = { executeInteraction: mock(async () => {}) } as unknown as Client;
+    const mockClient = {
+      executeInteraction: mock(async () => {}),
+    } as unknown as Client;
     const reply = mock(async () => {
       throw Object.assign(new Error("Missing Access"), { code: 50001 });
     });
@@ -231,7 +240,9 @@ describe("Safe interaction execution", () => {
   });
 
   it("silently ignores Discord's expired interaction response", async () => {
-    const mockClient = { executeInteraction: mock(async () => {}) } as unknown as Client;
+    const mockClient = {
+      executeInteraction: mock(async () => {}),
+    } as unknown as Client;
     const reply = mock(async () => {
       throw Object.assign(new Error("Unknown interaction"), { code: 10062 });
     });
@@ -260,7 +271,9 @@ describe("Guards: NotBot & MonoGuild", () => {
       id: "2",
       bot: true,
     } as any);
-    expect(extractUserFromPayload([{ member: { user: { id: "3", bot: false } } }])).toEqual({
+    expect(
+      extractUserFromPayload([{ member: { user: { id: "3", bot: false } } }]),
+    ).toEqual({
       id: "3",
       bot: false,
     } as any);
@@ -268,10 +281,20 @@ describe("Guards: NotBot & MonoGuild", () => {
 
   it("NotBot guard prevents bot execution", async () => {
     const next = mock(async () => {});
-    await NotBot({ user: { id: "bot_1", bot: true } } as any, {} as any, next, {});
+    await NotBot(
+      { user: { id: "bot_1", bot: true } } as any,
+      {} as any,
+      next,
+      {},
+    );
     expect(next).not.toHaveBeenCalled();
 
-    await NotBot({ user: { id: "human_1", bot: false } } as any, {} as any, next, {});
+    await NotBot(
+      { user: { id: "human_1", bot: false } } as any,
+      {} as any,
+      next,
+      {},
+    );
     expect(next).toHaveBeenCalled();
   });
 
@@ -281,7 +304,12 @@ describe("Guards: NotBot & MonoGuild", () => {
 
     // Unauthorized guild
     const replied = mock(async () => {});
-    await guard({ guildId: "guild_other", reply: replied } as any, {} as any, next, {});
+    await guard(
+      { guildId: "guild_other", reply: replied } as any,
+      {} as any,
+      next,
+      {},
+    );
     expect(next).not.toHaveBeenCalled();
     expect(replied).toHaveBeenCalled();
 
@@ -323,9 +351,13 @@ describe("Commands registration and cleanup", () => {
       clearApplicationCommands: clearMock,
     } as unknown as Client;
 
-    const cleanedCount = await clearGuildCommandsSafe(mockClient, ["guild_1", "guild_missing_3"], {
-      logger: {},
-    });
+    const cleanedCount = await clearGuildCommandsSafe(
+      mockClient,
+      ["guild_1", "guild_missing_3"],
+      {
+        logger: {},
+      },
+    );
 
     expect(cleanedCount).toBe(1);
     expect(clearMock).toHaveBeenCalledWith("guild_1");

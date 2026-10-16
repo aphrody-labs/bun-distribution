@@ -61,23 +61,36 @@ async function loadSdk(): Promise<Sdk | undefined> {
 }
 
 /** Start `program`, wait until `port` answers, and hand back a handle. */
-export async function launch(program: string, options: LaunchOptions): Promise<Launched> {
+export async function launch(
+  program: string,
+  options: LaunchOptions,
+): Promise<Launched> {
   const path = options.path ?? "/healthz";
   const timeoutMs = options.timeoutMs ?? 15_000;
-  if (!Number.isInteger(options.port) || options.port < 1 || options.port > 65535)
+  if (
+    !Number.isInteger(options.port) ||
+    options.port < 1 ||
+    options.port > 65535
+  )
     throw new RangeError(`m3-bun: invalid readiness port ${options.port}`);
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0)
     throw new RangeError("m3-bun: timeoutMs must be positive");
   if (!path.startsWith("/") || path.startsWith("//"))
-    throw new Error("m3-bun: readiness path must be an absolute path on the local server");
+    throw new Error(
+      "m3-bun: readiness path must be an absolute path on the local server",
+    );
   options.signal?.throwIfAborted();
   const sdk = await loadSdk();
   if (sdk) {
-    let runtime: (Disposable & { spawn(options: unknown): ManagedLike }) | undefined;
+    let runtime:
+      (Disposable & { spawn(options: unknown): ManagedLike }) | undefined;
     try {
       runtime = sdk.Runtime.load();
     } catch (error) {
-      if ((error as { status?: number }).status === 2 || process.env["BUV_RUNTIME_LIB"])
+      if (
+        (error as { status?: number }).status === 2 ||
+        process.env["BUV_RUNTIME_LIB"]
+      )
         throw error;
       runtime = undefined;
     }
@@ -154,9 +167,13 @@ export async function launch(program: string, options: LaunchOptions): Promise<L
       }
       let response: Response;
       try {
-        const timeout = AbortSignal.timeout(Math.min(1000, Math.max(1, deadline - Date.now())));
+        const timeout = AbortSignal.timeout(
+          Math.min(1000, Math.max(1, deadline - Date.now())),
+        );
         response = await fetch(`http://127.0.0.1:${options.port}${path}`, {
-          signal: options.signal ? AbortSignal.any([timeout, options.signal]) : timeout,
+          signal: options.signal
+            ? AbortSignal.any([timeout, options.signal])
+            : timeout,
         });
       } catch {
         options.signal?.throwIfAborted();
@@ -172,7 +189,10 @@ export async function launch(program: string, options: LaunchOptions): Promise<L
         stop() {
           return (stopping ??= (async () => {
             if (proc.exitCode === null) proc.kill("SIGTERM");
-            const exited = await Promise.race([proc.exited, Bun.sleep(2000).then(() => undefined)]);
+            const exited = await Promise.race([
+              proc.exited,
+              Bun.sleep(2000).then(() => undefined),
+            ]);
             if (exited === undefined) {
               proc.kill("SIGKILL");
               await proc.exited;
@@ -233,7 +253,8 @@ export async function smoke(
         path,
         status: response.status,
         contentType,
-        ok: response.status === 200 && contentType.startsWith(expect[path] ?? ""),
+        ok:
+          response.status === 200 && contentType.startsWith(expect[path] ?? ""),
       });
     }
     /* eslint-enable no-await-in-loop */
@@ -253,7 +274,8 @@ export async function smoke(
 /** One line per check, then the verdict. */
 export function formatSmoke(report: SmokeReport): string {
   const lines = report.checks.map(
-    (c) => `  ${c.ok ? "ok  " : "FAIL"} GET ${c.path} -> ${c.status} ${c.contentType}`,
+    (c) =>
+      `  ${c.ok ? "ok  " : "FAIL"} GET ${c.path} -> ${c.status} ${c.contentType}`,
   );
   return [
     `m3-bun smoke: pid ${report.pid} on :${report.port} via ${report.via}`,

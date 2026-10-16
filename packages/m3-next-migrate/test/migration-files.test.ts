@@ -9,7 +9,8 @@ import { migrateProject } from "../src/migrator";
 let directory: string | undefined;
 let workspaceTarget: string | undefined;
 afterEach(async () => {
-  if (workspaceTarget) await rm(workspaceTarget, { recursive: true, force: true });
+  if (workspaceTarget)
+    await rm(workspaceTarget, { recursive: true, force: true });
   workspaceTarget = undefined;
   if (directory) await rm(directory, { recursive: true, force: true });
   directory = undefined;
@@ -18,7 +19,11 @@ afterEach(async () => {
 async function fixture() {
   directory = await mkdtemp(join(tmpdir(), "m3-migration-files-"));
   const source = join(directory, "source");
-  const target = join(PRIVATE_OWNER_ROOT, "apps", "m3-migrate-contract-" + basename(directory));
+  const target = join(
+    PRIVATE_OWNER_ROOT,
+    "apps",
+    "m3-migrate-contract-" + basename(directory),
+  );
   workspaceTarget = target;
   await mkdir(join(source, "app"), { recursive: true });
   await mkdir(join(source, "public"));
@@ -28,37 +33,66 @@ async function fixture() {
   );
   await writeFile(join(source, "app/page.css"), "h1 { color: red; }");
   await writeFile(join(source, "app/labels.json"), '{"title":"Hello"}');
-  await writeFile(join(source, "public/logo.svg"), '<svg xmlns="http://www.w3.org/2000/svg"/>');
-  await writeFile(join(source, "public/worker.js"), "self.postMessage('ready');");
+  await writeFile(
+    join(source, "public/logo.svg"),
+    '<svg xmlns="http://www.w3.org/2000/svg"/>',
+  );
+  await writeFile(
+    join(source, "public/worker.js"),
+    "self.postMessage('ready');",
+  );
   await writeFile(join(source, ".env.local"), "PRIVATE_FIXTURE=value");
   await writeFile(join(source, "package.json"), '{"name":"source-only"}');
   await writeFile(join(source, "tsconfig.json"), "{}");
   await writeFile(join(directory, "external.json"), '{"external":true}');
-  await symlink(join(directory, "external.json"), join(source, "app/external.json"));
+  await symlink(
+    join(directory, "external.json"),
+    join(source, "app/external.json"),
+  );
   return { source, target };
 }
 
 describe("migrated consumer file graph", () => {
   test("keeps local imports adjacent, public URLs rooted, and protected source files out of output", async () => {
     const { source, target } = await fixture();
-    const report = await migrateProject({ sourceDir: source, targetDir: target, target: "vite" });
-    expect(await Bun.file(join(target, "src/components/app/page.css")).exists()).toBe(true);
-    expect(await Bun.file(join(target, "src/components/app/labels.json")).exists()).toBe(true);
+    const report = await migrateProject({
+      sourceDir: source,
+      targetDir: target,
+      target: "vite",
+    });
+    expect(
+      await Bun.file(join(target, "src/components/app/page.css")).exists(),
+    ).toBe(true);
+    expect(
+      await Bun.file(join(target, "src/components/app/labels.json")).exists(),
+    ).toBe(true);
     expect(await Bun.file(join(target, "public/logo.svg")).exists()).toBe(true);
-    expect(await Bun.file(join(target, "public/worker.js")).exists()).toBe(true);
-    expect(await Bun.file(join(target, "public/public/logo.svg")).exists()).toBe(false);
-    expect(await Bun.file(join(target, "public/.env.local")).exists()).toBe(false);
-    expect(await Bun.file(join(target, "src/components/app/external.json")).exists()).toBe(false);
-    expect(JSON.parse(await Bun.file(join(target, "package.json")).text()).name).toBe(
-      "migrated-app",
+    expect(await Bun.file(join(target, "public/worker.js")).exists()).toBe(
+      true,
     );
+    expect(
+      await Bun.file(join(target, "public/public/logo.svg")).exists(),
+    ).toBe(false);
+    expect(await Bun.file(join(target, "public/.env.local")).exists()).toBe(
+      false,
+    );
+    expect(
+      await Bun.file(join(target, "src/components/app/external.json")).exists(),
+    ).toBe(false);
+    expect(
+      JSON.parse(await Bun.file(join(target, "package.json")).text()).name,
+    ).toBe("migrated-app");
     expect(report.skippedFiles).toContain(".env.local");
     expect(report.skippedFiles).toContain("app/external.json");
   });
 
   test("without scaffolding preserves original source and asset paths", async () => {
     const { source, target } = await fixture();
-    await migrateProject({ sourceDir: source, targetDir: target, scaffold: false });
+    await migrateProject({
+      sourceDir: source,
+      targetDir: target,
+      scaffold: false,
+    });
     expect(await Bun.file(join(target, "app/page.tsx")).exists()).toBe(true);
     expect(await Bun.file(join(target, "app/page.css")).exists()).toBe(true);
     expect(await Bun.file(join(target, "app/labels.json")).exists()).toBe(true);
@@ -82,13 +116,20 @@ describe("migrated consumer file graph", () => {
     const { source, target } = await fixture();
     await mkdir(join(source, "src/app"), { recursive: true });
     await mkdir(join(source, "src/ui"));
-    await writeFile(join(source, "src/ui/title.ts"), 'export const title = "Alias resolved";');
+    await writeFile(
+      join(source, "src/ui/title.ts"),
+      'export const title = "Alias resolved";',
+    );
     await writeFile(join(source, "src/ui/style.css"), "h1 { color: blue; }");
     await writeFile(
       join(source, "src/app/page.tsx"),
       'import { title } from "@/ui/title"; import "@/ui/style.css"; export default function Page() { return <h1>{title}</h1>; }',
     );
-    await migrateProject({ sourceDir: source, targetDir: target, target: "vite" });
+    await migrateProject({
+      sourceDir: source,
+      targetDir: target,
+      target: "vite",
+    });
     const page = join(target, "src/components/src/app/page.tsx");
     expect(await Bun.file(page).text()).toContain('from "../ui/title"');
     expect(await Bun.file(page).text()).toContain('import "../ui/style.css"');
@@ -103,8 +144,14 @@ describe("migrated consumer file graph", () => {
 
   test("configuration and illustrative aliases stay outside transformed imports", async () => {
     const { source, target } = await fixture();
-    await writeFile(join(source, "next.config.ts"), 'import fs from "node:fs"; export default {};');
-    await writeFile(join(source, "app/title.ts"), 'export const title = "Actual";');
+    await writeFile(
+      join(source, "next.config.ts"),
+      'import fs from "node:fs"; export default {};',
+    );
+    await writeFile(
+      join(source, "app/title.ts"),
+      'export const title = "Actual";',
+    );
     await writeFile(
       join(source, "app/page.tsx"),
       [
@@ -114,8 +161,14 @@ describe("migrated consumer file graph", () => {
         "export default function Page() { return <h1>{title}{example}</h1>; }",
       ].join("\n"),
     );
-    const report = await migrateProject({ sourceDir: source, targetDir: target, target: "vite" });
-    const migrated = await Bun.file(join(target, "src/components/app/page.tsx")).text();
+    const report = await migrateProject({
+      sourceDir: source,
+      targetDir: target,
+      target: "vite",
+    });
+    const migrated = await Bun.file(
+      join(target, "src/components/app/page.tsx"),
+    ).text();
     expect(migrated).toContain('require("./title")');
     expect(migrated).toContain('from "@/does-not-exist"');
     expect(migrated).toContain("from '@/illustration-only'");
@@ -129,10 +182,14 @@ describe("migrated consumer file graph", () => {
       join(source, "app/page.tsx"),
       'import { createElement } from "react"; export default function Page() { return createElement("h1", null, "Owner"); }',
     );
-    await migrateProject({ sourceDir: source, targetDir: target, target: "vite" });
-    expect((await Bun.file(join(target, "package.json")).json()).dependencies.react).toBe(
-      "catalog:",
-    );
+    await migrateProject({
+      sourceDir: source,
+      targetDir: target,
+      target: "vite",
+    });
+    expect(
+      (await Bun.file(join(target, "package.json")).json()).dependencies.react,
+    ).toBe("catalog:");
     const build = await Bun.build({
       entrypoints: [join(target, "src/components/app/page.tsx")],
       target: "browser",
@@ -168,7 +225,10 @@ describe("migrated consumer file graph", () => {
       join(source, "app/page.tsx"),
       'import { createElement } from "react"; export default createElement;',
     );
-    await writeFile(join(source, "package.json"), '{"dependencies":{"react":"<1.0.0"}}');
+    await writeFile(
+      join(source, "package.json"),
+      '{"dependencies":{"react":"<1.0.0"}}',
+    );
     await expect(
       migrateProject({ sourceDir: source, targetDir: target, target: "vite" }),
     ).rejects.toThrow("incompatible with installed owner version");
@@ -192,7 +252,9 @@ describe("migrated consumer file graph", () => {
       dryRun: true,
     });
     expect(
-      preview.transformDetails.find((file) => file.file === "app/actions.ts")?.warnings.join("; "),
+      preview.transformDetails
+        .find((file) => file.file === "app/actions.ts")
+        ?.warnings.join("; "),
     ).toContain("native host adapter");
     await rm(join(source, "app/actions.ts"));
     await writeFile(
@@ -209,14 +271,16 @@ describe("migrated consumer file graph", () => {
     const { source } = await fixture();
     await Promise.all(
       [source, join(source, "output")].map((target) =>
-        expect(migrateProject({ sourceDir: source, targetDir: target })).rejects.toThrow(
-          "outside the source tree",
-        ),
+        expect(
+          migrateProject({ sourceDir: source, targetDir: target }),
+        ).rejects.toThrow("outside the source tree"),
       ),
     );
-    expect(await Bun.file(join(source, "output/package.json")).exists()).toBe(false);
-    expect(JSON.parse(await Bun.file(join(source, "package.json")).text()).name).toBe(
-      "source-only",
+    expect(await Bun.file(join(source, "output/package.json")).exists()).toBe(
+      false,
     );
+    expect(
+      JSON.parse(await Bun.file(join(source, "package.json")).text()).name,
+    ).toBe("source-only");
   });
 });

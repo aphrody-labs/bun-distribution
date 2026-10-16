@@ -14,7 +14,13 @@ export const GAZE_RADIUS = 360;
 
 /** Track name for a mode; hovering the sprite waves. Falls back to `idle` when missing. */
 export function trackFor(mode: PetMode, hovering: boolean): string {
-  const wanted = hovering ? "waving" : mode === "walk-left" ? "running-left" : mode === "walk-right" ? "running-right" : "idle";
+  const wanted = hovering
+    ? "waving"
+    : mode === "walk-left"
+      ? "running-left"
+      : mode === "walk-right"
+        ? "running-right"
+        : "idle";
   return PET.tracks[wanted] ? wanted : "idle";
 }
 
@@ -37,7 +43,11 @@ export function walkDirection(random: () => number = Math.random): PetMode {
  * Gaze pose toward `cursor` from `eyes` (same coordinate space), or `null` when the pointer is
  * farther than `radius` or the atlas has no direction ring.
  */
-export function gazeToward(cursor: { x: number; y: number }, eyes: { x: number; y: number }, radius = GAZE_RADIUS): PetFrame | null {
+export function gazeToward(
+  cursor: { x: number; y: number },
+  eyes: { x: number; y: number },
+  radius = GAZE_RADIUS,
+): PetFrame | null {
   if (PET.directions.length === 0) return null;
   const dx = cursor.x - eyes.x;
   const dy = cursor.y - eyes.y;

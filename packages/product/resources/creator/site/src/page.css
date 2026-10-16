@@ -5,8 +5,10 @@ body {
   place-items: center;
   background: var(--md-sys-color-surface);
   color: var(--md-sys-color-on-surface);
-  font: var(--md-sys-typescale-body-large-weight, 400) var(--md-sys-typescale-body-large-size, 1rem)
-    / var(--md-sys-typescale-body-large-line-height, 1.5rem) var(--md-sys-typescale-body-large-font);
+  font: var(--md-sys-typescale-body-large-weight, 400)
+    var(--md-sys-typescale-body-large-size, 1rem) /
+    var(--md-sys-typescale-body-large-line-height, 1.5rem)
+    var(--md-sys-typescale-body-large-font);
 }
 
 main {
@@ -36,7 +38,8 @@ img {
   letter-spacing: var(--md-sys-typescale-label-large-tracking);
   text-decoration: none;
   overflow: hidden;
-  transition: box-shadow var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+  transition: box-shadow var(--md-sys-motion-duration-short4)
+    var(--md-sys-motion-easing-standard);
 }
 
 .button::before {
@@ -45,7 +48,8 @@ img {
   inset: 0;
   background: var(--md-sys-color-on-primary);
   opacity: 0;
-  transition: opacity var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+  transition: opacity var(--md-sys-motion-duration-short2)
+    var(--md-sys-motion-easing-standard);
 }
 
 .button:hover {
@@ -77,6 +81,8 @@ img {
 p {
   margin: 0;
   color: var(--md-sys-color-on-surface-variant);
-  font: var(--md-sys-typescale-body-medium-weight) var(--md-sys-typescale-body-medium-size) /
-    var(--md-sys-typescale-body-medium-line-height) var(--md-sys-typescale-body-medium-font);
+  font: var(--md-sys-typescale-body-medium-weight)
+    var(--md-sys-typescale-body-medium-size) /
+    var(--md-sys-typescale-body-medium-line-height)
+    var(--md-sys-typescale-body-medium-font);
 }

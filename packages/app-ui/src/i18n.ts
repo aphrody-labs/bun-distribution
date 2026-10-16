@@ -81,7 +81,8 @@ const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     "common.failure": "Failure",
     "terminal.eyebrow": "APHRODY OS · TOOLS",
     "terminal.title": "Terminal",
-    "terminal.description": "Rust shell in WebAssembly, with access to the browser filesystem.",
+    "terminal.description":
+      "Rust shell in WebAssembly, with access to the browser filesystem.",
     "terminal.help": "Help",
     "terminal.clear": "Clear",
     "terminal.copy": "Copy",
@@ -98,7 +99,8 @@ const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
       "Enter to run · ↑/↓ for history · Ctrl+L to clear · Ctrl+Shift+C to copy",
     "terminal.copied": "Screen copied",
     "terminal.clipboardUnavailable": "Clipboard is unavailable in this browser",
-    "terminal.temporaryNotice": "Files in this session will not be kept after closing.",
+    "terminal.temporaryNotice":
+      "Files in this session will not be kept after closing.",
     "groups.devices": "Devices",
     "groups.locations": "Locations",
     "groups.volumes": "Volumes",

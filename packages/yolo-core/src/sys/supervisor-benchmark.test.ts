@@ -4,7 +4,10 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { COMPILE_FLAGS } from "../../../../../scripts/release/compile-flags";
-import { runSupervisorBenchCli, runSupervisorBenchmark } from "./supervisor-benchmark";
+import {
+  runSupervisorBenchCli,
+  runSupervisorBenchmark,
+} from "./supervisor-benchmark";
 
 describe("native supervisor benchmark", () => {
   test("the direct entrypoint reports help and usage failures without acquiring artifacts", () => {
@@ -31,27 +34,47 @@ describe("native supervisor benchmark", () => {
     const temporary = mkdtempSync(join(tmpdir(), "yolo-bench-import-"));
     try {
       const entry = join(temporary, "entry.ts");
-      const binary = join(temporary, process.platform === "win32" ? "import.exe" : "import");
+      const binary = join(
+        temporary,
+        process.platform === "win32" ? "import.exe" : "import",
+      );
       writeFileSync(
         entry,
         `import { runSupervisorBenchmark } from ${JSON.stringify(join(import.meta.dir, "supervisor-benchmark.ts"))};\nconsole.log("BENCHMARK_IMPORTED", typeof runSupervisorBenchmark);\n`,
       );
       const compiled = Bun.spawnSync(
-        [process.execPath, "build", "--compile", ...COMPILE_FLAGS, entry, "--outfile", binary],
+        [
+          process.execPath,
+          "build",
+          "--compile",
+          ...COMPILE_FLAGS,
+          entry,
+          "--outfile",
+          binary,
+        ],
         { windowsHide: true, stdout: "pipe", stderr: "pipe", timeout: 30000 },
       );
-      expect({ code: compiled.exitCode, error: compiled.stderr.toString() }).toEqual({
+      expect({
+        code: compiled.exitCode,
+        error: compiled.stderr.toString(),
+      }).toEqual({
         code: 0,
         error: "",
       });
-      const imported = Bun.spawnSync([binary, "--artifact", "/absent-runtime"], {
-        windowsHide: true,
-        cwd: temporary,
-        env: { PATH: process.platform === "win32" ? process.env.PATH : "/usr/bin:/bin" },
-        stdout: "pipe",
-        stderr: "pipe",
-        timeout: 5000,
-      });
+      const imported = Bun.spawnSync(
+        [binary, "--artifact", "/absent-runtime"],
+        {
+          windowsHide: true,
+          cwd: temporary,
+          env: {
+            PATH:
+              process.platform === "win32" ? process.env.PATH : "/usr/bin:/bin",
+          },
+          stdout: "pipe",
+          stderr: "pipe",
+          timeout: 5000,
+        },
+      );
       expect(imported.exitCode).toBe(0);
       expect(imported.stdout.toString()).toBe("BENCHMARK_IMPORTED function\n");
       expect(imported.stderr.toString()).toBe("");
@@ -67,8 +90,12 @@ describe("native supervisor benchmark", () => {
     await expect(
       runSupervisorBenchmark({ artifact: "/absent-runtime", samples: 10.5 }),
     ).rejects.toThrow("samples must be an integer in 10..100");
-    await expect(runSupervisorBenchCli(["--artifact"])).rejects.toThrow("Missing value");
-    await expect(runSupervisorBenchCli(["--unrecognized"])).rejects.toThrow("Unknown benchmark");
+    await expect(runSupervisorBenchCli(["--artifact"])).rejects.toThrow(
+      "Missing value",
+    );
+    await expect(runSupervisorBenchCli(["--unrecognized"])).rejects.toThrow(
+      "Unknown benchmark",
+    );
   });
 
   const artifact = process.env.YOLO_BENCH_ARTIFACT;
@@ -91,16 +118,24 @@ describe("native supervisor benchmark", () => {
         expect(phase.summary.pairedNativeMinusDirectMs.count).toBe(10);
         expect(phase.summary.directMs.p50).toBeGreaterThan(0);
         expect(phase.summary.nativeMs.p50).toBeGreaterThan(0);
-        expect(phase.summary.directMs.max).toBeGreaterThanOrEqual(phase.summary.directMs.p95);
-        expect(phase.summary.nativeMs.max).toBeGreaterThanOrEqual(phase.summary.nativeMs.p95);
+        expect(phase.summary.directMs.max).toBeGreaterThanOrEqual(
+          phase.summary.directMs.p95,
+        );
+        expect(phase.summary.nativeMs.max).toBeGreaterThanOrEqual(
+          phase.summary.nativeMs.p95,
+        );
         for (const pair of phase.pairs) {
           expect(pair.order).toEqual(
             pair.pair % 2 === 0 ? ["direct", "native"] : ["native", "direct"],
           );
           for (const sample of [pair.direct, pair.native]) {
             expect(sample.exitCode).toBe(0);
-            expect(sample.stdoutSha256).toBe(result.protocol.identity.stdoutSha256);
-            expect(sample.stderrSha256).toBe(result.protocol.identity.stderrSha256);
+            expect(sample.stdoutSha256).toBe(
+              result.protocol.identity.stdoutSha256,
+            );
+            expect(sample.stderrSha256).toBe(
+              result.protocol.identity.stderrSha256,
+            );
             expect(sample.stdoutBytes).toBe(4096);
             expect(sample.stderrBytes).toBe(2048);
             expect(sample.rssBytes).toBeGreaterThan(0);

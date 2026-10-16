@@ -40,7 +40,9 @@ export const resolveFolderThumb = (
   width: number,
 ): string | null => {
   if (!thumb) return null;
-  const fromTemplate = getThumbnailUrl(thumb.maybe_thumbnail_template, { width });
+  const fromTemplate = getThumbnailUrl(thumb.maybe_thumbnail_template, {
+    width,
+  });
   if (fromTemplate) return fromTemplate;
   if (thumb.media_class === "video") return null;
   return thumb.cdn_url;

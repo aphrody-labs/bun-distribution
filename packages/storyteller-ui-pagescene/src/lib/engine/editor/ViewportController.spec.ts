@@ -1,5 +1,8 @@
 import { vi, describe, it, expect, afterEach } from "bun:test";
-import { stubGlobal, restoreGlobals } from "../../../../../../../tools/testing/globals";
+import {
+  stubGlobal,
+  restoreGlobals,
+} from "../../../../../../../tools/testing/globals";
 import { ViewportController } from "./ViewportController";
 
 describe("ViewportController", () => {
@@ -9,7 +12,8 @@ describe("ViewportController", () => {
     const viewport = new ViewportController({
       getCamera: () => null,
       getRenderCamera: () => null,
-      getRenderer: () => ({ setSize: vi.fn(), setPixelRatio: vi.fn() }) as never,
+      getRenderer: () =>
+        ({ setSize: vi.fn(), setPixelRatio: vi.fn() }) as never,
       getRenderAspectRatio: () => 1,
       resizePostProcessing: vi.fn(),
       renderScene,

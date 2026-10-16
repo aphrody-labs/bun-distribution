@@ -19,9 +19,7 @@ export const PreviewImages = () => {
         <canvas id="raw-preview" width={imageWidth} height={imageHeight} />
       </div>
       <div className="flex w-[60px] flex-col justify-center">
-        <MoveRightIcon
-          
-          className="text-3xl opacity-60" />
+        <MoveRightIcon className="text-3xl opacity-60" />
       </div>
       <div
         className="block w-full overflow-hidden rounded-lg border border-ui-controls/25 bg-ui-controls"

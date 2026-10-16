@@ -23,150 +23,163 @@
  */
 
 @theme inline {
-	/* Accordion animation tokens — utilisés par packages/rg-ui/src/components/accordion.tsx.
+  /* Accordion animation tokens — utilisés par packages/rg-ui/src/components/accordion.tsx.
 	 * Présents dans le package partagé pour que toute app qui importe @rosegriffon/ui/styles.css
 	 * obtienne les keyframes sans dépendre de tw-animate-css / tailwindcss-animate. */
-	--animate-accordion-down: accordion-down 0.2s ease-out;
-	--animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
 
-	/* ─── M3 Shape scale ─────────────────────────────────────────────────── */
-	--md-sys-shape-corner-none: 0;
-	--md-sys-shape-corner-extra-small: 4px;
-	--md-sys-shape-corner-small: 8px;
-	--md-sys-shape-corner-medium: 12px;
-	--md-sys-shape-corner-large: 16px;
-	--md-sys-shape-corner-extra-large: 28px;
-	--md-sys-shape-corner-full: 9999px;
+  /* ─── M3 Shape scale ─────────────────────────────────────────────────── */
+  --md-sys-shape-corner-none: 0;
+  --md-sys-shape-corner-extra-small: 4px;
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
+  --md-sys-shape-corner-extra-large: 28px;
+  --md-sys-shape-corner-full: 9999px;
 
-	/* ─── M3 Motion — easings ────────────────────────────────────────────── */
-	--md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
-	--md-sys-motion-easing-standard-accelerate: cubic-bezier(0.3, 0, 1, 1);
-	--md-sys-motion-easing-standard-decelerate: cubic-bezier(0, 0, 0, 1);
-	--md-sys-motion-easing-emphasized: cubic-bezier(0.3, 0, 0, 1);
-	--md-sys-motion-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
-	--md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  /* ─── M3 Motion — easings ────────────────────────────────────────────── */
+  --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-standard-accelerate: cubic-bezier(0.3, 0, 1, 1);
+  --md-sys-motion-easing-standard-decelerate: cubic-bezier(0, 0, 0, 1);
+  --md-sys-motion-easing-emphasized: cubic-bezier(0.3, 0, 0, 1);
+  --md-sys-motion-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
 
-	/* ─── M3 Motion — durations ──────────────────────────────────────────── */
-	--md-sys-motion-duration-short1: 50ms;
-	--md-sys-motion-duration-short2: 100ms;
-	--md-sys-motion-duration-short3: 150ms;
-	--md-sys-motion-duration-short4: 200ms;
-	--md-sys-motion-duration-medium1: 250ms;
-	--md-sys-motion-duration-medium2: 300ms;
-	--md-sys-motion-duration-medium3: 350ms;
-	--md-sys-motion-duration-medium4: 400ms;
-	--md-sys-motion-duration-long1: 450ms;
-	--md-sys-motion-duration-long2: 500ms;
-	--md-sys-motion-duration-long3: 550ms;
-	--md-sys-motion-duration-long4: 600ms;
-	--md-sys-motion-duration-extra-long1: 700ms;
-	--md-sys-motion-duration-extra-long2: 800ms;
-	--md-sys-motion-duration-extra-long3: 900ms;
-	--md-sys-motion-duration-extra-long4: 1000ms;
+  /* ─── M3 Motion — durations ──────────────────────────────────────────── */
+  --md-sys-motion-duration-short1: 50ms;
+  --md-sys-motion-duration-short2: 100ms;
+  --md-sys-motion-duration-short3: 150ms;
+  --md-sys-motion-duration-short4: 200ms;
+  --md-sys-motion-duration-medium1: 250ms;
+  --md-sys-motion-duration-medium2: 300ms;
+  --md-sys-motion-duration-medium3: 350ms;
+  --md-sys-motion-duration-medium4: 400ms;
+  --md-sys-motion-duration-long1: 450ms;
+  --md-sys-motion-duration-long2: 500ms;
+  --md-sys-motion-duration-long3: 550ms;
+  --md-sys-motion-duration-long4: 600ms;
+  --md-sys-motion-duration-extra-long1: 700ms;
+  --md-sys-motion-duration-extra-long2: 800ms;
+  --md-sys-motion-duration-extra-long3: 900ms;
+  --md-sys-motion-duration-extra-long4: 1000ms;
 
-	/* ─── Breakpoint custom xs (375px / iPhone) ──────────────────────────── */
-	/* Tailwind defaults : sm 640 / md 768 / lg 1024 / xl 1280 / 2xl 1536.
+  /* ─── Breakpoint custom xs (375px / iPhone) ──────────────────────────── */
+  /* Tailwind defaults : sm 640 / md 768 / lg 1024 / xl 1280 / 2xl 1536.
 	 * Ajout `xs` 375px pour cibler les iPhones standard et améliorer le
 	 * fine-grained responsive sur petites screens. */
-	--breakpoint-xs: 23.4375rem;
+  --breakpoint-xs: 23.4375rem;
 
-	/* ─── Fluid typography ───────────────────────────────────────────────── */
-	/* Type scale fluide qui interpole entre 320px (mobile) et 1920px (desktop)
+  /* ─── Fluid typography ───────────────────────────────────────────────── */
+  /* Type scale fluide qui interpole entre 320px (mobile) et 1920px (desktop)
 	 * via `clamp(min, preferred, max)`. Évite les cascades sm:/md:/lg: dans le
 	 * markup. À utiliser sur les titres hero, landing, design-system, shop.
 	 * Min = mobile lisible · Preferred = fluide vw · Max = desktop majestueux. */
-	--text-fluid-display-2xl: clamp(3rem, 7vw + 1rem, 9.75rem); /* 48 → 156 */
-	--text-fluid-display-xl: clamp(2.5rem, 5.5vw + 1rem, 7.5rem); /* 40 → 120 */
-	--text-fluid-display-lg: clamp(2.25rem, 4vw + 1rem, 5rem); /* 36 → 80 */
-	--text-fluid-headline-xl: clamp(1.75rem, 3vw + 0.5rem, 3.5rem); /* 28 → 56 */
-	--text-fluid-headline-lg: clamp(1.5rem, 2vw + 0.5rem, 2.5rem); /* 24 → 40 */
-	--text-fluid-headline-md: clamp(1.25rem, 1.2vw + 0.5rem, 2rem); /* 20 → 32 */
-	/* `headline-sm`, `title-md` et `title-sm` étaient déjà utilisés dans les
+  --text-fluid-display-2xl: clamp(3rem, 7vw + 1rem, 9.75rem); /* 48 → 156 */
+  --text-fluid-display-xl: clamp(2.5rem, 5.5vw + 1rem, 7.5rem); /* 40 → 120 */
+  --text-fluid-display-lg: clamp(2.25rem, 4vw + 1rem, 5rem); /* 36 → 80 */
+  --text-fluid-headline-xl: clamp(1.75rem, 3vw + 0.5rem, 3.5rem); /* 28 → 56 */
+  --text-fluid-headline-lg: clamp(1.5rem, 2vw + 0.5rem, 2.5rem); /* 24 → 40 */
+  --text-fluid-headline-md: clamp(1.25rem, 1.2vw + 0.5rem, 2rem); /* 20 → 32 */
+  /* `headline-sm`, `title-md` et `title-sm` étaient déjà utilisés dans les
 	 * fiches du wiki alors qu'aucun token ne les définissait : la classe était
 	 * inerte et la taille retombait sur l'héritage du parent. */
-	--text-fluid-headline-sm: clamp(1.125rem, 0.8vw + 0.5rem, 1.5rem); /* 18 → 24 */
-	--text-fluid-title-md: clamp(1rem, 0.5vw + 0.5rem, 1.25rem); /* 16 → 20 */
-	--text-fluid-title-sm: clamp(0.875rem, 0.3vw + 0.5rem, 1rem); /* 14 → 16 */
-	--text-fluid-body-lg: clamp(1rem, 0.5vw + 0.875rem, 1.25rem); /* 16 → 20 */
-	--text-fluid-body-md: clamp(0.9375rem, 0.25vw + 0.875rem, 1rem); /* 15 → 16 */
+  --text-fluid-headline-sm: clamp(
+    1.125rem,
+    0.8vw + 0.5rem,
+    1.5rem
+  ); /* 18 → 24 */
+  --text-fluid-title-md: clamp(1rem, 0.5vw + 0.5rem, 1.25rem); /* 16 → 20 */
+  --text-fluid-title-sm: clamp(0.875rem, 0.3vw + 0.5rem, 1rem); /* 14 → 16 */
+  --text-fluid-body-lg: clamp(1rem, 0.5vw + 0.875rem, 1.25rem); /* 16 → 20 */
+  --text-fluid-body-md: clamp(0.9375rem, 0.25vw + 0.875rem, 1rem); /* 15 → 16 */
 
-	/* Spacing fluide section padding-block (mobile généreux → desktop spacieux) */
-	--space-fluid-section-y: clamp(3rem, 6vw + 1rem, 8rem); /* 48 → 128 */
-	--space-fluid-section-x: clamp(1rem, 3vw + 0.5rem, 5rem); /* 16 → 80 */
+  /* Spacing fluide section padding-block (mobile généreux → desktop spacieux) */
+  --space-fluid-section-y: clamp(3rem, 6vw + 1rem, 8rem); /* 48 → 128 */
+  --space-fluid-section-x: clamp(1rem, 3vw + 0.5rem, 5rem); /* 16 → 80 */
 
-	/* ─── M3 Elevation ───────────────────────────────────────────────────── */
-	--md-sys-elevation-level0: none;
-	--md-sys-elevation-level1: 0 1px 2px 0 rgb(0 0 0 / 0.3), 0 1px 3px 1px rgb(0 0 0 / 0.15);
-	--md-sys-elevation-level2: 0 1px 2px 0 rgb(0 0 0 / 0.3), 0 2px 6px 2px rgb(0 0 0 / 0.15);
-	--md-sys-elevation-level3: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 4px 8px 3px rgb(0 0 0 / 0.15);
-	--md-sys-elevation-level4: 0 2px 3px 0 rgb(0 0 0 / 0.3), 0 6px 10px 4px rgb(0 0 0 / 0.15);
-	--md-sys-elevation-level5: 0 4px 4px 0 rgb(0 0 0 / 0.3), 0 8px 12px 6px rgb(0 0 0 / 0.15);
+  /* ─── M3 Elevation ───────────────────────────────────────────────────── */
+  --md-sys-elevation-level0: none;
+  --md-sys-elevation-level1:
+    0 1px 2px 0 rgb(0 0 0 / 0.3), 0 1px 3px 1px rgb(0 0 0 / 0.15);
+  --md-sys-elevation-level2:
+    0 1px 2px 0 rgb(0 0 0 / 0.3), 0 2px 6px 2px rgb(0 0 0 / 0.15);
+  --md-sys-elevation-level3:
+    0 1px 3px 0 rgb(0 0 0 / 0.3), 0 4px 8px 3px rgb(0 0 0 / 0.15);
+  --md-sys-elevation-level4:
+    0 2px 3px 0 rgb(0 0 0 / 0.3), 0 6px 10px 4px rgb(0 0 0 / 0.15);
+  --md-sys-elevation-level5:
+    0 4px 4px 0 rgb(0 0 0 / 0.3), 0 8px 12px 6px rgb(0 0 0 / 0.15);
 
-	/* ─── Pont MD3 → utilities Tailwind v4 ───────────────────────────────── */
-	/* Expose chaque rôle MD3 comme utility Tailwind (`bg-primary-container`,
+  /* ─── Pont MD3 → utilities Tailwind v4 ───────────────────────────────── */
+  /* Expose chaque rôle MD3 comme utility Tailwind (`bg-primary-container`,
 	 * `text-on-surface-variant`, `border-outline-variant`, etc.) — source unique
 	 * de vérité pour TOUTE app qui importe @rosegriffon/ui/styles.css. Évite la
 	 * duplication du pont dans chaque globals.css. */
-	--color-primary: var(--md-sys-color-primary);
-	--color-on-primary: var(--md-sys-color-on-primary);
-	--color-primary-container: var(--md-sys-color-primary-container);
-	--color-on-primary-container: var(--md-sys-color-on-primary-container);
-	--color-secondary: var(--md-sys-color-secondary);
-	--color-on-secondary: var(--md-sys-color-on-secondary);
-	--color-secondary-container: var(--md-sys-color-secondary-container);
-	--color-on-secondary-container: var(--md-sys-color-on-secondary-container);
-	--color-tertiary: var(--md-sys-color-tertiary);
-	--color-on-tertiary: var(--md-sys-color-on-tertiary);
-	--color-tertiary-container: var(--md-sys-color-tertiary-container);
-	--color-on-tertiary-container: var(--md-sys-color-on-tertiary-container);
-	--color-error: var(--md-sys-color-error);
-	--color-on-error: var(--md-sys-color-on-error);
-	--color-error-container: var(--md-sys-color-error-container);
-	--color-on-error-container: var(--md-sys-color-on-error-container);
-	--color-background: var(--md-sys-color-background);
-	--color-on-background: var(--md-sys-color-on-background);
-	--color-surface: var(--md-sys-color-surface);
-	--color-on-surface: var(--md-sys-color-on-surface);
-	--color-surface-variant: var(--md-sys-color-surface-variant);
-	--color-on-surface-variant: var(--md-sys-color-on-surface-variant);
-	--color-outline: var(--md-sys-color-outline);
-	--color-outline-variant: var(--md-sys-color-outline-variant);
-	--color-scrim: var(--md-sys-color-scrim);
-	--color-shadow: var(--md-sys-color-shadow);
-	--color-inverse-surface: var(--md-sys-color-inverse-surface);
-	--color-inverse-on-surface: var(--md-sys-color-inverse-on-surface);
-	--color-inverse-primary: var(--md-sys-color-inverse-primary);
-	--color-surface-dim: var(--md-sys-color-surface-dim);
-	--color-surface-bright: var(--md-sys-color-surface-bright);
-	--color-surface-container-lowest: var(--md-sys-color-surface-container-lowest);
-	--color-surface-container-low: var(--md-sys-color-surface-container-low);
-	--color-surface-container: var(--md-sys-color-surface-container);
-	--color-surface-container-high: var(--md-sys-color-surface-container-high);
-	--color-surface-container-highest: var(--md-sys-color-surface-container-highest);
+  --color-primary: var(--md-sys-color-primary);
+  --color-on-primary: var(--md-sys-color-on-primary);
+  --color-primary-container: var(--md-sys-color-primary-container);
+  --color-on-primary-container: var(--md-sys-color-on-primary-container);
+  --color-secondary: var(--md-sys-color-secondary);
+  --color-on-secondary: var(--md-sys-color-on-secondary);
+  --color-secondary-container: var(--md-sys-color-secondary-container);
+  --color-on-secondary-container: var(--md-sys-color-on-secondary-container);
+  --color-tertiary: var(--md-sys-color-tertiary);
+  --color-on-tertiary: var(--md-sys-color-on-tertiary);
+  --color-tertiary-container: var(--md-sys-color-tertiary-container);
+  --color-on-tertiary-container: var(--md-sys-color-on-tertiary-container);
+  --color-error: var(--md-sys-color-error);
+  --color-on-error: var(--md-sys-color-on-error);
+  --color-error-container: var(--md-sys-color-error-container);
+  --color-on-error-container: var(--md-sys-color-on-error-container);
+  --color-background: var(--md-sys-color-background);
+  --color-on-background: var(--md-sys-color-on-background);
+  --color-surface: var(--md-sys-color-surface);
+  --color-on-surface: var(--md-sys-color-on-surface);
+  --color-surface-variant: var(--md-sys-color-surface-variant);
+  --color-on-surface-variant: var(--md-sys-color-on-surface-variant);
+  --color-outline: var(--md-sys-color-outline);
+  --color-outline-variant: var(--md-sys-color-outline-variant);
+  --color-scrim: var(--md-sys-color-scrim);
+  --color-shadow: var(--md-sys-color-shadow);
+  --color-inverse-surface: var(--md-sys-color-inverse-surface);
+  --color-inverse-on-surface: var(--md-sys-color-inverse-on-surface);
+  --color-inverse-primary: var(--md-sys-color-inverse-primary);
+  --color-surface-dim: var(--md-sys-color-surface-dim);
+  --color-surface-bright: var(--md-sys-color-surface-bright);
+  --color-surface-container-lowest: var(
+    --md-sys-color-surface-container-lowest
+  );
+  --color-surface-container-low: var(--md-sys-color-surface-container-low);
+  --color-surface-container: var(--md-sys-color-surface-container);
+  --color-surface-container-high: var(--md-sys-color-surface-container-high);
+  --color-surface-container-highest: var(
+    --md-sys-color-surface-container-highest
+  );
 
-	/* ─── Couleurs de marque Rose Griffon ────────────────────────────────── */
-	/* Le pont vit ici et non dans le `globals.css` d'une app : les composants
+  /* ─── Couleurs de marque Rose Griffon ────────────────────────────────── */
+  /* Le pont vit ici et non dans le `globals.css` d'une app : les composants
 	 * partagés (page « Mon compte », en-têtes de section…) s'en servent, donc
 	 * `bg-rg-or` doit être généré côté website ET côté azalée. Les variables
 	 * source sont déclarées plus bas dans `@layer base :root`. */
-	--color-rg-marine: var(--rg-marine);
-	--color-rg-marine-clair: var(--rg-marine-clair);
-	--color-rg-or: var(--rg-griffon);
-	--color-rg-rose: var(--rg-rose);
-	--color-rg-brique: var(--rg-brique);
-	--color-rg-brique-clair: var(--rg-brique-clair);
-	--color-rg-sur-marine: var(--rg-sur-marine);
-	--color-succes: var(--rg-succes);
-	--color-info: var(--rg-info);
-	--color-alerte: var(--rg-alerte);
-	/* Contrastes associés : sans eux, `bg-succes` n'avait aucun `text-*`
+  --color-rg-marine: var(--rg-marine);
+  --color-rg-marine-clair: var(--rg-marine-clair);
+  --color-rg-or: var(--rg-griffon);
+  --color-rg-rose: var(--rg-rose);
+  --color-rg-brique: var(--rg-brique);
+  --color-rg-brique-clair: var(--rg-brique-clair);
+  --color-rg-sur-marine: var(--rg-sur-marine);
+  --color-succes: var(--rg-succes);
+  --color-info: var(--rg-info);
+  --color-alerte: var(--rg-alerte);
+  /* Contrastes associés : sans eux, `bg-succes` n'avait aucun `text-*`
 	 * légitime et les composants retombaient sur `text-white` codé en dur. */
-	--color-on-succes: var(--rg-sur-succes);
-	--color-on-info: var(--rg-sur-info);
-	--color-on-alerte: var(--rg-sur-alerte);
+  --color-on-succes: var(--rg-sur-succes);
+  --color-on-info: var(--rg-sur-info);
+  --color-on-alerte: var(--rg-sur-alerte);
 
-	/* ─── Éléments d'Inazuma Eleven ──────────────────────────────────────── */
-	/* Comme les marques tierces ci-dessous : ces quatre teintes ne sont pas des
+  /* ─── Éléments d'Inazuma Eleven ──────────────────────────────────────── */
+  /* Comme les marques tierces ci-dessous : ces quatre teintes ne sont pas des
 	 * choix de design system, ce sont celles du JEU. Elles ont été relevées sur
 	 * ses propres icônes (`public/spirit_type/*.webp` : feu #b50100, vent
 	 * #0244b0, forêt #207d00, montagne #ab5200), puis remontées à une clarté
@@ -178,557 +191,557 @@
 	 * `opengraph-image`), et le VENT y était tantôt bleu, tantôt vert. L'icône du
 	 * jeu tranche : il est bleu. Toute nouvelle surface qui colore un élément
 	 * doit lire ces tokens, pas réinventer sa palette. */
-	--color-element-feu: oklch(0.6 0.16 29.3);
-	--color-element-vent: oklch(0.6 0.16 261);
-	--color-element-foret: oklch(0.6 0.16 140.4);
-	--color-element-montagne: oklch(0.6 0.139 52);
+  --color-element-feu: oklch(0.6 0.16 29.3);
+  --color-element-vent: oklch(0.6 0.16 261);
+  --color-element-foret: oklch(0.6 0.16 140.4);
+  --color-element-montagne: oklch(0.6 0.139 52);
 
-	/* ─── Postes d'Inazuma Eleven ────────────────────────────────────────── */
-	/* Les quatre couleurs de poste du jeu, reprises telles quelles de
+  /* ─── Postes d'Inazuma Eleven ────────────────────────────────────────── */
+  /* Les quatre couleurs de poste du jeu, reprises telles quelles de
 	 * `CharacterSheet.tsx` (« matching game exactly ») où elles étaient écrites
 	 * en hexadécimal au milieu d'un composant. Comme les éléments ci-dessus :
 	 * ce sont des constantes du jeu, pas des choix de design system, mais elles
 	 * n'ont aucune raison de vivre en six exemplaires. */
-	--color-poste-gardien: #fdd835;
-	--color-poste-defenseur: #1e88e5;
-	--color-poste-milieu: #43a047;
-	--color-poste-attaquant: #e53935;
+  --color-poste-gardien: #fdd835;
+  --color-poste-defenseur: #1e88e5;
+  --color-poste-milieu: #43a047;
+  --color-poste-attaquant: #e53935;
 
-	/* Couleurs de marque tierces — constantes imposées par chaque marque, pas
+  /* Couleurs de marque tierces — constantes imposées par chaque marque, pas
 	 * des choix de design system : elles ne varient donc pas selon le thème. */
-	--color-discord: #5865f2;
-	--color-patreon: #ff424d;
-	--color-twitch: #9146ff;
-	--color-youtube: #ff0000;
-	/* Instagram est un dégradé : on retient la teinte dominante de sa charte,
+  --color-discord: #5865f2;
+  --color-patreon: #ff424d;
+  --color-twitch: #9146ff;
+  --color-youtube: #ff0000;
+  /* Instagram est un dégradé : on retient la teinte dominante de sa charte,
 	 * celle que la marque emploie pour ses aplats monochromes. Un dégradé en
 	 * `hover:bg-linear-to-tr hover:from-[…]` écrit dans un composant serait trois
 	 * hex de plus, recopiés à chaque nouvel usage. */
-	--color-instagram: #e4405f;
+  --color-instagram: #e4405f;
 }
 
 @keyframes accordion-down {
-	from {
-		height: 0;
-	}
-	to {
-		height: var(--radix-accordion-content-height);
-	}
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
 }
 
 @keyframes accordion-up {
-	from {
-		height: var(--radix-accordion-content-height);
-	}
-	to {
-		height: 0;
-	}
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
 }
 
 @layer base {
-	:root {
-		/* Rose Griffon — branding tokens (seed M3).
+  :root {
+    /* Rose Griffon — branding tokens (seed M3).
 		 * Ces quatre teintes sont la DA de l'association : elles ne suivent PAS
 		 * le thème (une bannière de marque reste identique en Roy comme en
 		 * Azalée sombre). Elles existent en tokens pour qu'aucun composant
 		 * n'ait à écrire l'hexadécimal en dur. */
-		--rg-marine: oklch(0.2 0.05 264); /* #0c1730 — neutral dark */
-		--rg-rose: oklch(0.65 0.22 0); /* #e91e63 — primary seed */
-		--rg-griffon: oklch(0.78 0.13 90); /* #d4af37 — or, tertiary seed */
-		--rg-brique: oklch(0.5 0.11 30); /* #a14b3f — rouge brique RG */
-		--rg-marine-clair: oklch(0.31 0.07 264); /* #16264a — dégradé de marine */
-		--rg-brique-clair: oklch(0.63 0.12 35); /* #d16854 — dégradé de brique */
-		--rg-sur-marine: oklch(0.98 0.004 90); /* blanc cassé — texte sur marine */
+    --rg-marine: oklch(0.2 0.05 264); /* #0c1730 — neutral dark */
+    --rg-rose: oklch(0.65 0.22 0); /* #e91e63 — primary seed */
+    --rg-griffon: oklch(0.78 0.13 90); /* #d4af37 — or, tertiary seed */
+    --rg-brique: oklch(0.5 0.11 30); /* #a14b3f — rouge brique RG */
+    --rg-marine-clair: oklch(0.31 0.07 264); /* #16264a — dégradé de marine */
+    --rg-brique-clair: oklch(0.63 0.12 35); /* #d16854 — dégradé de brique */
+    --rg-sur-marine: oklch(0.98 0.004 90); /* blanc cassé — texte sur marine */
 
-		/* États sémantiques partagés (succès / info / alerte). L'erreur passe par
+    /* États sémantiques partagés (succès / info / alerte). L'erreur passe par
 		 * `--destructive`, déjà thémé. Sans ces tokens, les composants retombent
 		 * sur `bg-green-500` & consorts, qui ignorent le thème. */
-		--rg-succes: oklch(0.62 0.15 150);
-		--rg-info: oklch(0.6 0.14 240);
-		--rg-alerte: oklch(0.75 0.15 75);
-		/* `--rg-alerte` est un ambre clair : du blanc dessus tombe sous le ratio
+    --rg-succes: oklch(0.62 0.15 150);
+    --rg-info: oklch(0.6 0.14 240);
+    --rg-alerte: oklch(0.75 0.15 75);
+    /* `--rg-alerte` est un ambre clair : du blanc dessus tombe sous le ratio
 		 * 4.5:1. Il prend donc un texte sombre, les deux autres un texte clair. */
-		--rg-sur-succes: oklch(0.98 0.004 90);
-		--rg-sur-info: oklch(0.98 0.004 90);
-		--rg-sur-alerte: oklch(0.22 0.04 75);
+    --rg-sur-succes: oklch(0.98 0.004 90);
+    --rg-sur-info: oklch(0.98 0.004 90);
+    --rg-sur-alerte: oklch(0.22 0.04 75);
 
-		/* ─── Palette ranking Achilléa — 11 paliers ────────────────────────── */
-		--achillea-rank-1-stops: #959595, #919191, #d4d4d4, #494949, #797979;
-		--achillea-rank-2-stops: #b17253, #8c4a34, #cb8254, #6d483d, #8c503c;
-		--achillea-rank-3-stops: #7facb8, #546b71, #90aeb6, #6e8389, #cbe0e6;
-		--achillea-rank-4-stops: #c2ad88, #76685b, #7d735d, #554f42, #898063;
-		--achillea-rank-5-stops: #897e8b, #8a8297, #5b5663, #898195, #c5b4c9;
-		--achillea-rank-6-stops: #88f6ff, #547e8e, #5db0d0, #c3fbff, #5cd2dc;
-		--achillea-rank-7-stops: #2d925c, #23574a, #3f9c85, #54d38f, #25896f;
-		--achillea-rank-8-stops: #ff5648, #f5232a, #ff8485, #a6181e, #d0313a;
-		--achillea-rank-9-stops: #7edcb5, #b4ffe7, #4bc2b1, #368464, #3f9e9d;
-		--achillea-rank-10-stops: #f010ff, #f66aff, #d700af, #930e9c, #c731b2;
-		--achillea-rank-11-stops: #ffa910, #e18204, #ffe150, #a15b0e, #dab338;
+    /* ─── Palette ranking Achilléa — 11 paliers ────────────────────────── */
+    --achillea-rank-1-stops: #959595, #919191, #d4d4d4, #494949, #797979;
+    --achillea-rank-2-stops: #b17253, #8c4a34, #cb8254, #6d483d, #8c503c;
+    --achillea-rank-3-stops: #7facb8, #546b71, #90aeb6, #6e8389, #cbe0e6;
+    --achillea-rank-4-stops: #c2ad88, #76685b, #7d735d, #554f42, #898063;
+    --achillea-rank-5-stops: #897e8b, #8a8297, #5b5663, #898195, #c5b4c9;
+    --achillea-rank-6-stops: #88f6ff, #547e8e, #5db0d0, #c3fbff, #5cd2dc;
+    --achillea-rank-7-stops: #2d925c, #23574a, #3f9c85, #54d38f, #25896f;
+    --achillea-rank-8-stops: #ff5648, #f5232a, #ff8485, #a6181e, #d0313a;
+    --achillea-rank-9-stops: #7edcb5, #b4ffe7, #4bc2b1, #368464, #3f9e9d;
+    --achillea-rank-10-stops: #f010ff, #f66aff, #d700af, #930e9c, #c731b2;
+    --achillea-rank-11-stops: #ffa910, #e18204, #ffe150, #a15b0e, #dab338;
 
-		/* ─── M3 sys-color — LIGHT scheme (35 tokens) ────────────────────── */
-		--md-sys-color-primary: oklch(0.5 0.22 0);
-		--md-sys-color-on-primary: oklch(1 0 0);
-		--md-sys-color-primary-container: oklch(0.9 0.08 0);
-		--md-sys-color-on-primary-container: oklch(0.2 0.18 0);
-		--md-sys-color-secondary: oklch(0.5 0.08 0);
-		--md-sys-color-on-secondary: oklch(1 0 0);
-		--md-sys-color-secondary-container: oklch(0.9 0.04 0);
-		--md-sys-color-on-secondary-container: oklch(0.2 0.06 0);
-		--md-sys-color-tertiary: oklch(0.5 0.13 90);
-		--md-sys-color-on-tertiary: oklch(1 0 0);
-		--md-sys-color-tertiary-container: oklch(0.9 0.06 90);
-		--md-sys-color-on-tertiary-container: oklch(0.2 0.1 90);
-		--md-sys-color-error: oklch(0.5 0.22 27);
-		--md-sys-color-on-error: oklch(1 0 0);
-		--md-sys-color-error-container: oklch(0.9 0.06 27);
-		--md-sys-color-on-error-container: oklch(0.2 0.18 27);
-		--md-sys-color-background: oklch(0.99 0.003 264);
-		--md-sys-color-on-background: oklch(0.2 0.02 264);
-		--md-sys-color-surface: oklch(0.99 0.003 264);
-		--md-sys-color-on-surface: oklch(0.2 0.02 264);
-		--md-sys-color-surface-variant: oklch(0.9 0.01 264);
-		--md-sys-color-on-surface-variant: oklch(0.3 0.02 264);
-		--md-sys-color-outline: oklch(0.5 0.01 264);
-		--md-sys-color-outline-variant: oklch(0.8 0.01 264);
-		--md-sys-color-scrim: oklch(0 0 0);
-		--md-sys-color-shadow: oklch(0 0 0);
-		--md-sys-color-inverse-surface: oklch(0.2 0.02 264);
-		--md-sys-color-inverse-on-surface: oklch(0.95 0.005 264);
-		--md-sys-color-inverse-primary: oklch(0.8 0.15 0);
-		--md-sys-color-surface-dim: oklch(0.87 0.005 264);
-		--md-sys-color-surface-bright: oklch(0.99 0.003 264);
-		--md-sys-color-surface-container-lowest: oklch(1 0 0);
-		--md-sys-color-surface-container-low: oklch(0.96 0.004 264);
-		--md-sys-color-surface-container: oklch(0.94 0.005 264);
-		--md-sys-color-surface-container-high: oklch(0.92 0.006 264);
-		--md-sys-color-surface-container-highest: oklch(0.9 0.007 264);
-	}
+    /* ─── M3 sys-color — LIGHT scheme (35 tokens) ────────────────────── */
+    --md-sys-color-primary: oklch(0.5 0.22 0);
+    --md-sys-color-on-primary: oklch(1 0 0);
+    --md-sys-color-primary-container: oklch(0.9 0.08 0);
+    --md-sys-color-on-primary-container: oklch(0.2 0.18 0);
+    --md-sys-color-secondary: oklch(0.5 0.08 0);
+    --md-sys-color-on-secondary: oklch(1 0 0);
+    --md-sys-color-secondary-container: oklch(0.9 0.04 0);
+    --md-sys-color-on-secondary-container: oklch(0.2 0.06 0);
+    --md-sys-color-tertiary: oklch(0.5 0.13 90);
+    --md-sys-color-on-tertiary: oklch(1 0 0);
+    --md-sys-color-tertiary-container: oklch(0.9 0.06 90);
+    --md-sys-color-on-tertiary-container: oklch(0.2 0.1 90);
+    --md-sys-color-error: oklch(0.5 0.22 27);
+    --md-sys-color-on-error: oklch(1 0 0);
+    --md-sys-color-error-container: oklch(0.9 0.06 27);
+    --md-sys-color-on-error-container: oklch(0.2 0.18 27);
+    --md-sys-color-background: oklch(0.99 0.003 264);
+    --md-sys-color-on-background: oklch(0.2 0.02 264);
+    --md-sys-color-surface: oklch(0.99 0.003 264);
+    --md-sys-color-on-surface: oklch(0.2 0.02 264);
+    --md-sys-color-surface-variant: oklch(0.9 0.01 264);
+    --md-sys-color-on-surface-variant: oklch(0.3 0.02 264);
+    --md-sys-color-outline: oklch(0.5 0.01 264);
+    --md-sys-color-outline-variant: oklch(0.8 0.01 264);
+    --md-sys-color-scrim: oklch(0 0 0);
+    --md-sys-color-shadow: oklch(0 0 0);
+    --md-sys-color-inverse-surface: oklch(0.2 0.02 264);
+    --md-sys-color-inverse-on-surface: oklch(0.95 0.005 264);
+    --md-sys-color-inverse-primary: oklch(0.8 0.15 0);
+    --md-sys-color-surface-dim: oklch(0.87 0.005 264);
+    --md-sys-color-surface-bright: oklch(0.99 0.003 264);
+    --md-sys-color-surface-container-lowest: oklch(1 0 0);
+    --md-sys-color-surface-container-low: oklch(0.96 0.004 264);
+    --md-sys-color-surface-container: oklch(0.94 0.005 264);
+    --md-sys-color-surface-container-high: oklch(0.92 0.006 264);
+    --md-sys-color-surface-container-highest: oklch(0.9 0.007 264);
+  }
 
-	:root.dark,
-	.dark {
-		--md-sys-color-primary: oklch(0.8 0.15 0);
-		--md-sys-color-on-primary: oklch(0.2 0.18 0);
-		--md-sys-color-primary-container: oklch(0.3 0.18 0);
-		--md-sys-color-on-primary-container: oklch(0.9 0.08 0);
-		--md-sys-color-secondary: oklch(0.8 0.04 0);
-		--md-sys-color-on-secondary: oklch(0.2 0.06 0);
-		--md-sys-color-secondary-container: oklch(0.3 0.06 0);
-		--md-sys-color-on-secondary-container: oklch(0.9 0.04 0);
-		--md-sys-color-tertiary: oklch(0.8 0.1 90);
-		--md-sys-color-on-tertiary: oklch(0.2 0.1 90);
-		--md-sys-color-tertiary-container: oklch(0.3 0.1 90);
-		--md-sys-color-on-tertiary-container: oklch(0.9 0.06 90);
-		--md-sys-color-error: oklch(0.8 0.15 27);
-		--md-sys-color-on-error: oklch(0.2 0.18 27);
-		--md-sys-color-error-container: oklch(0.3 0.18 27);
-		--md-sys-color-on-error-container: oklch(0.9 0.06 27);
-		--md-sys-color-background: oklch(0.13 0.02 264);
-		--md-sys-color-on-background: oklch(0.9 0.01 264);
-		--md-sys-color-surface: oklch(0.13 0.02 264);
-		--md-sys-color-on-surface: oklch(0.9 0.01 264);
-		--md-sys-color-surface-variant: oklch(0.3 0.02 264);
-		--md-sys-color-on-surface-variant: oklch(0.8 0.01 264);
-		--md-sys-color-outline: oklch(0.6 0.01 264);
-		--md-sys-color-outline-variant: oklch(0.3 0.02 264);
-		--md-sys-color-scrim: oklch(0 0 0);
-		--md-sys-color-shadow: oklch(0 0 0);
-		--md-sys-color-inverse-surface: oklch(0.9 0.01 264);
-		--md-sys-color-inverse-on-surface: oklch(0.2 0.02 264);
-		--md-sys-color-inverse-primary: oklch(0.5 0.22 0);
-		--md-sys-color-surface-dim: oklch(0.13 0.02 264);
-		--md-sys-color-surface-bright: oklch(0.27 0.02 264);
-		--md-sys-color-surface-container-lowest: oklch(0.1 0.02 264);
-		--md-sys-color-surface-container-low: oklch(0.16 0.02 264);
-		--md-sys-color-surface-container: oklch(0.18 0.02 264);
-		--md-sys-color-surface-container-high: oklch(0.22 0.02 264);
-		--md-sys-color-surface-container-highest: oklch(0.27 0.02 264);
-	}
+  :root.dark,
+  .dark {
+    --md-sys-color-primary: oklch(0.8 0.15 0);
+    --md-sys-color-on-primary: oklch(0.2 0.18 0);
+    --md-sys-color-primary-container: oklch(0.3 0.18 0);
+    --md-sys-color-on-primary-container: oklch(0.9 0.08 0);
+    --md-sys-color-secondary: oklch(0.8 0.04 0);
+    --md-sys-color-on-secondary: oklch(0.2 0.06 0);
+    --md-sys-color-secondary-container: oklch(0.3 0.06 0);
+    --md-sys-color-on-secondary-container: oklch(0.9 0.04 0);
+    --md-sys-color-tertiary: oklch(0.8 0.1 90);
+    --md-sys-color-on-tertiary: oklch(0.2 0.1 90);
+    --md-sys-color-tertiary-container: oklch(0.3 0.1 90);
+    --md-sys-color-on-tertiary-container: oklch(0.9 0.06 90);
+    --md-sys-color-error: oklch(0.8 0.15 27);
+    --md-sys-color-on-error: oklch(0.2 0.18 27);
+    --md-sys-color-error-container: oklch(0.3 0.18 27);
+    --md-sys-color-on-error-container: oklch(0.9 0.06 27);
+    --md-sys-color-background: oklch(0.13 0.02 264);
+    --md-sys-color-on-background: oklch(0.9 0.01 264);
+    --md-sys-color-surface: oklch(0.13 0.02 264);
+    --md-sys-color-on-surface: oklch(0.9 0.01 264);
+    --md-sys-color-surface-variant: oklch(0.3 0.02 264);
+    --md-sys-color-on-surface-variant: oklch(0.8 0.01 264);
+    --md-sys-color-outline: oklch(0.6 0.01 264);
+    --md-sys-color-outline-variant: oklch(0.3 0.02 264);
+    --md-sys-color-scrim: oklch(0 0 0);
+    --md-sys-color-shadow: oklch(0 0 0);
+    --md-sys-color-inverse-surface: oklch(0.9 0.01 264);
+    --md-sys-color-inverse-on-surface: oklch(0.2 0.02 264);
+    --md-sys-color-inverse-primary: oklch(0.5 0.22 0);
+    --md-sys-color-surface-dim: oklch(0.13 0.02 264);
+    --md-sys-color-surface-bright: oklch(0.27 0.02 264);
+    --md-sys-color-surface-container-lowest: oklch(0.1 0.02 264);
+    --md-sys-color-surface-container-low: oklch(0.16 0.02 264);
+    --md-sys-color-surface-container: oklch(0.18 0.02 264);
+    --md-sys-color-surface-container-high: oklch(0.22 0.02 264);
+    --md-sys-color-surface-container-highest: oklch(0.27 0.02 264);
+  }
 
-	:root.theme-roy,
-	.theme-roy,
-	:root.roy,
-	.roy {
-		--md-sys-color-primary: oklch(0.45 0.12 250);
-		--md-sys-color-on-primary: oklch(0.985 0 0);
-		--md-sys-color-primary-container: oklch(0.85 0.08 250);
-		--md-sys-color-on-primary-container: oklch(0.18 0.1 250);
-		--md-sys-color-secondary: oklch(0.8 0.1 80);
-		--md-sys-color-on-secondary: oklch(0.2 0.05 250);
-		--md-sys-color-secondary-container: oklch(0.92 0.06 80);
-		--md-sys-color-on-secondary-container: oklch(0.2 0.08 80);
-		--md-sys-color-tertiary: oklch(0.55 0.1 240);
-		--md-sys-color-on-tertiary: oklch(1 0 0);
-		--md-sys-color-tertiary-container: oklch(0.88 0.06 240);
-		--md-sys-color-on-tertiary-container: oklch(0.18 0.08 240);
-		--md-sys-color-error: oklch(0.577 0.245 27.325);
-		--md-sys-color-on-error: oklch(1 0 0);
-		--md-sys-color-error-container: oklch(0.92 0.06 27);
-		--md-sys-color-on-error-container: oklch(0.2 0.18 27);
-		--md-sys-color-background: oklch(0.97 0.01 80);
-		--md-sys-color-on-background: oklch(0.2 0.05 250);
-		--md-sys-color-surface: oklch(0.97 0.01 80);
-		--md-sys-color-on-surface: oklch(0.2 0.05 250);
-		--md-sys-color-surface-variant: oklch(0.92 0.02 250);
-		--md-sys-color-on-surface-variant: oklch(0.4 0.04 250);
-		--md-sys-color-outline: oklch(0.55 0.04 250);
-		--md-sys-color-outline-variant: oklch(0.85 0.02 250);
-		/* Roy et Gaëlle omettaient scrim/shadow : `bg-scrim` (overlays de
+  :root.theme-roy,
+  .theme-roy,
+  :root.roy,
+  .roy {
+    --md-sys-color-primary: oklch(0.45 0.12 250);
+    --md-sys-color-on-primary: oklch(0.985 0 0);
+    --md-sys-color-primary-container: oklch(0.85 0.08 250);
+    --md-sys-color-on-primary-container: oklch(0.18 0.1 250);
+    --md-sys-color-secondary: oklch(0.8 0.1 80);
+    --md-sys-color-on-secondary: oklch(0.2 0.05 250);
+    --md-sys-color-secondary-container: oklch(0.92 0.06 80);
+    --md-sys-color-on-secondary-container: oklch(0.2 0.08 80);
+    --md-sys-color-tertiary: oklch(0.55 0.1 240);
+    --md-sys-color-on-tertiary: oklch(1 0 0);
+    --md-sys-color-tertiary-container: oklch(0.88 0.06 240);
+    --md-sys-color-on-tertiary-container: oklch(0.18 0.08 240);
+    --md-sys-color-error: oklch(0.577 0.245 27.325);
+    --md-sys-color-on-error: oklch(1 0 0);
+    --md-sys-color-error-container: oklch(0.92 0.06 27);
+    --md-sys-color-on-error-container: oklch(0.2 0.18 27);
+    --md-sys-color-background: oklch(0.97 0.01 80);
+    --md-sys-color-on-background: oklch(0.2 0.05 250);
+    --md-sys-color-surface: oklch(0.97 0.01 80);
+    --md-sys-color-on-surface: oklch(0.2 0.05 250);
+    --md-sys-color-surface-variant: oklch(0.92 0.02 250);
+    --md-sys-color-on-surface-variant: oklch(0.4 0.04 250);
+    --md-sys-color-outline: oklch(0.55 0.04 250);
+    --md-sys-color-outline-variant: oklch(0.85 0.02 250);
+    /* Roy et Gaëlle omettaient scrim/shadow : `bg-scrim` (overlays de
 		 * dialogue, tiroirs) n'y était donc pas surchargeable et restait figé sur
 		 * la valeur du :root. Les cinq thèmes couvrent maintenant les mêmes vars. */
-		--md-sys-color-scrim: oklch(0 0 0);
-		--md-sys-color-shadow: oklch(0 0 0);
-		--md-sys-color-surface-dim: oklch(0.88 0.01 80);
-		--md-sys-color-surface-bright: oklch(0.99 0.005 80);
-		--md-sys-color-surface-container-lowest: oklch(1 0 0);
-		--md-sys-color-surface-container-low: oklch(0.97 0.008 80);
-		--md-sys-color-surface-container: oklch(0.95 0.01 80);
-		--md-sys-color-surface-container-high: oklch(0.93 0.012 80);
-		--md-sys-color-surface-container-highest: oklch(0.91 0.014 80);
-		--md-sys-color-inverse-surface: oklch(0.25 0.05 250);
-		--md-sys-color-inverse-on-surface: oklch(0.96 0.01 80);
-		--md-sys-color-inverse-primary: oklch(0.75 0.1 250);
-		--background: oklch(0.97 0.01 80);
-		--foreground: oklch(0.2 0.05 250);
-		--card: oklch(1 0 0);
-		--card-foreground: oklch(0.2 0.05 250);
-		--popover: oklch(1 0 0);
-		--popover-foreground: oklch(0.2 0.05 250);
-		--primary: oklch(0.45 0.12 250);
-		--primary-foreground: oklch(0.985 0 0);
-		--secondary: oklch(0.8 0.1 80);
-		--secondary-foreground: oklch(0.2 0.05 250);
-		--muted: oklch(0.95 0.01 80);
-		--muted-foreground: oklch(0.5 0.05 250);
-		--accent: oklch(0.8 0.1 80);
-		--accent-foreground: oklch(0.2 0.05 250);
-		--destructive: oklch(0.577 0.245 27.325);
-		/* Texte posé SUR `--destructive`. Absent des thèmes RG jusqu'ici, alors que
+    --md-sys-color-scrim: oklch(0 0 0);
+    --md-sys-color-shadow: oklch(0 0 0);
+    --md-sys-color-surface-dim: oklch(0.88 0.01 80);
+    --md-sys-color-surface-bright: oklch(0.99 0.005 80);
+    --md-sys-color-surface-container-lowest: oklch(1 0 0);
+    --md-sys-color-surface-container-low: oklch(0.97 0.008 80);
+    --md-sys-color-surface-container: oklch(0.95 0.01 80);
+    --md-sys-color-surface-container-high: oklch(0.93 0.012 80);
+    --md-sys-color-surface-container-highest: oklch(0.91 0.014 80);
+    --md-sys-color-inverse-surface: oklch(0.25 0.05 250);
+    --md-sys-color-inverse-on-surface: oklch(0.96 0.01 80);
+    --md-sys-color-inverse-primary: oklch(0.75 0.1 250);
+    --background: oklch(0.97 0.01 80);
+    --foreground: oklch(0.2 0.05 250);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.2 0.05 250);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.2 0.05 250);
+    --primary: oklch(0.45 0.12 250);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.8 0.1 80);
+    --secondary-foreground: oklch(0.2 0.05 250);
+    --muted: oklch(0.95 0.01 80);
+    --muted-foreground: oklch(0.5 0.05 250);
+    --accent: oklch(0.8 0.1 80);
+    --accent-foreground: oklch(0.2 0.05 250);
+    --destructive: oklch(0.577 0.245 27.325);
+    /* Texte posé SUR `--destructive`. Absent des thèmes RG jusqu'ici, alors que
 		 * la variante `destructive` du Badge partagé s'en sert : elle rendait son
 		 * libellé sans couleur. Blanc cassé, comme sur les deux thèmes Azalée. */
-		--destructive-foreground: oklch(0.985 0 0);
-		--border: oklch(0.9 0.02 250);
-		--input: oklch(0.9 0.02 250);
-		--ring: oklch(0.45 0.12 250);
-		--chart-1: oklch(0.45 0.12 250);
-		--chart-2: oklch(0.8 0.1 80);
-		--chart-3: oklch(0.6 0.08 250);
-		--chart-4: oklch(0.7 0.09 260);
-		--chart-5: oklch(0.55 0.1 240);
-		--sidebar: #183f78;
-		--sidebar-foreground: #ffffff;
-		--sidebar-primary: #102d59;
-		--sidebar-primary-foreground: #ffffff;
-		--sidebar-accent: rgba(255, 196, 110, 0.2);
-		--sidebar-accent-foreground: #ffffff;
-		--sidebar-border: rgba(255, 196, 110, 0.3);
-		--sidebar-ring: rgba(255, 196, 110, 0.4);
-	}
+    --destructive-foreground: oklch(0.985 0 0);
+    --border: oklch(0.9 0.02 250);
+    --input: oklch(0.9 0.02 250);
+    --ring: oklch(0.45 0.12 250);
+    --chart-1: oklch(0.45 0.12 250);
+    --chart-2: oklch(0.8 0.1 80);
+    --chart-3: oklch(0.6 0.08 250);
+    --chart-4: oklch(0.7 0.09 260);
+    --chart-5: oklch(0.55 0.1 240);
+    --sidebar: #183f78;
+    --sidebar-foreground: #ffffff;
+    --sidebar-primary: #102d59;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: rgba(255, 196, 110, 0.2);
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: rgba(255, 196, 110, 0.3);
+    --sidebar-ring: rgba(255, 196, 110, 0.4);
+  }
 
-	:root.theme-gaelle,
-	.theme-gaelle,
-	:root.gaelle,
-	.gaelle {
-		--md-sys-color-primary: oklch(0.5 0.18 25);
-		--md-sys-color-on-primary: oklch(0.985 0 0);
-		--md-sys-color-primary-container: oklch(0.88 0.08 25);
-		--md-sys-color-on-primary-container: oklch(0.2 0.15 25);
-		--md-sys-color-secondary: oklch(0.8 0.12 50);
-		--md-sys-color-on-secondary: oklch(0.25 0.15 25);
-		--md-sys-color-secondary-container: oklch(0.92 0.06 50);
-		--md-sys-color-on-secondary-container: oklch(0.2 0.1 50);
-		--md-sys-color-tertiary: oklch(0.6 0.15 35);
-		--md-sys-color-on-tertiary: oklch(1 0 0);
-		--md-sys-color-tertiary-container: oklch(0.9 0.06 35);
-		--md-sys-color-on-tertiary-container: oklch(0.2 0.1 35);
-		--md-sys-color-error: oklch(0.35 0.2 15);
-		--md-sys-color-on-error: oklch(1 0 0);
-		--md-sys-color-error-container: oklch(0.9 0.1 15);
-		--md-sys-color-on-error-container: oklch(0.18 0.18 15);
-		--md-sys-color-background: oklch(0.95 0.03 40);
-		--md-sys-color-on-background: oklch(0.25 0.15 25);
-		--md-sys-color-surface: oklch(0.95 0.03 40);
-		--md-sys-color-on-surface: oklch(0.25 0.15 25);
-		--md-sys-color-surface-variant: oklch(0.9 0.04 30);
-		--md-sys-color-on-surface-variant: oklch(0.4 0.08 25);
-		--md-sys-color-outline: oklch(0.55 0.06 25);
-		--md-sys-color-outline-variant: oklch(0.85 0.04 30);
-		/* Roy et Gaëlle omettaient scrim/shadow : `bg-scrim` (overlays de
+  :root.theme-gaelle,
+  .theme-gaelle,
+  :root.gaelle,
+  .gaelle {
+    --md-sys-color-primary: oklch(0.5 0.18 25);
+    --md-sys-color-on-primary: oklch(0.985 0 0);
+    --md-sys-color-primary-container: oklch(0.88 0.08 25);
+    --md-sys-color-on-primary-container: oklch(0.2 0.15 25);
+    --md-sys-color-secondary: oklch(0.8 0.12 50);
+    --md-sys-color-on-secondary: oklch(0.25 0.15 25);
+    --md-sys-color-secondary-container: oklch(0.92 0.06 50);
+    --md-sys-color-on-secondary-container: oklch(0.2 0.1 50);
+    --md-sys-color-tertiary: oklch(0.6 0.15 35);
+    --md-sys-color-on-tertiary: oklch(1 0 0);
+    --md-sys-color-tertiary-container: oklch(0.9 0.06 35);
+    --md-sys-color-on-tertiary-container: oklch(0.2 0.1 35);
+    --md-sys-color-error: oklch(0.35 0.2 15);
+    --md-sys-color-on-error: oklch(1 0 0);
+    --md-sys-color-error-container: oklch(0.9 0.1 15);
+    --md-sys-color-on-error-container: oklch(0.18 0.18 15);
+    --md-sys-color-background: oklch(0.95 0.03 40);
+    --md-sys-color-on-background: oklch(0.25 0.15 25);
+    --md-sys-color-surface: oklch(0.95 0.03 40);
+    --md-sys-color-on-surface: oklch(0.25 0.15 25);
+    --md-sys-color-surface-variant: oklch(0.9 0.04 30);
+    --md-sys-color-on-surface-variant: oklch(0.4 0.08 25);
+    --md-sys-color-outline: oklch(0.55 0.06 25);
+    --md-sys-color-outline-variant: oklch(0.85 0.04 30);
+    /* Roy et Gaëlle omettaient scrim/shadow : `bg-scrim` (overlays de
 		 * dialogue, tiroirs) n'y était donc pas surchargeable et restait figé sur
 		 * la valeur du :root. Les cinq thèmes couvrent maintenant les mêmes vars. */
-		--md-sys-color-scrim: oklch(0 0 0);
-		--md-sys-color-shadow: oklch(0 0 0);
-		--md-sys-color-surface-dim: oklch(0.88 0.03 40);
-		--md-sys-color-surface-bright: oklch(0.97 0.02 40);
-		--md-sys-color-surface-container-lowest: oklch(1 0 0);
-		--md-sys-color-surface-container-low: oklch(0.96 0.025 40);
-		--md-sys-color-surface-container: oklch(0.94 0.03 40);
-		--md-sys-color-surface-container-high: oklch(0.92 0.035 40);
-		--md-sys-color-surface-container-highest: oklch(0.9 0.04 40);
-		--md-sys-color-inverse-surface: oklch(0.25 0.05 25);
-		--md-sys-color-inverse-on-surface: oklch(0.96 0.02 40);
-		--md-sys-color-inverse-primary: oklch(0.75 0.12 25);
-		--background: oklch(0.95 0.03 40);
-		--foreground: oklch(0.25 0.15 25);
-		--card: oklch(1 0 0);
-		--card-foreground: oklch(0.25 0.15 25);
-		--popover: oklch(1 0 0);
-		--popover-foreground: oklch(0.25 0.15 25);
-		--primary: oklch(0.5 0.18 25);
-		--primary-foreground: oklch(0.985 0 0);
-		--secondary: oklch(0.8 0.12 50);
-		--secondary-foreground: oklch(0.25 0.15 25);
-		--muted: oklch(0.92 0.03 40);
-		--muted-foreground: oklch(0.5 0.1 25);
-		--accent: oklch(0.8 0.12 50);
-		--accent-foreground: oklch(0.25 0.15 25);
-		--destructive: oklch(0.35 0.2 15);
-		/* Texte posé SUR `--destructive`. Absent des thèmes RG jusqu'ici, alors que
+    --md-sys-color-scrim: oklch(0 0 0);
+    --md-sys-color-shadow: oklch(0 0 0);
+    --md-sys-color-surface-dim: oklch(0.88 0.03 40);
+    --md-sys-color-surface-bright: oklch(0.97 0.02 40);
+    --md-sys-color-surface-container-lowest: oklch(1 0 0);
+    --md-sys-color-surface-container-low: oklch(0.96 0.025 40);
+    --md-sys-color-surface-container: oklch(0.94 0.03 40);
+    --md-sys-color-surface-container-high: oklch(0.92 0.035 40);
+    --md-sys-color-surface-container-highest: oklch(0.9 0.04 40);
+    --md-sys-color-inverse-surface: oklch(0.25 0.05 25);
+    --md-sys-color-inverse-on-surface: oklch(0.96 0.02 40);
+    --md-sys-color-inverse-primary: oklch(0.75 0.12 25);
+    --background: oklch(0.95 0.03 40);
+    --foreground: oklch(0.25 0.15 25);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.25 0.15 25);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.25 0.15 25);
+    --primary: oklch(0.5 0.18 25);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.8 0.12 50);
+    --secondary-foreground: oklch(0.25 0.15 25);
+    --muted: oklch(0.92 0.03 40);
+    --muted-foreground: oklch(0.5 0.1 25);
+    --accent: oklch(0.8 0.12 50);
+    --accent-foreground: oklch(0.25 0.15 25);
+    --destructive: oklch(0.35 0.2 15);
+    /* Texte posé SUR `--destructive`. Absent des thèmes RG jusqu'ici, alors que
 		 * la variante `destructive` du Badge partagé s'en sert : elle rendait son
 		 * libellé sans couleur. Blanc cassé, comme sur les deux thèmes Azalée. */
-		--destructive-foreground: oklch(0.985 0 0);
-		--border: oklch(0.88 0.05 30);
-		--input: oklch(0.88 0.05 30);
-		--ring: oklch(0.5 0.18 25);
-		--chart-1: oklch(0.5 0.18 25);
-		--chart-2: oklch(0.8 0.12 50);
-		--chart-3: oklch(0.35 0.2 15);
-		--chart-4: oklch(0.6 0.15 35);
-		--chart-5: oklch(0.7 0.14 45);
-		--sidebar: #922817;
-		--sidebar-foreground: #ffffff;
-		--sidebar-primary: #65110d;
-		--sidebar-primary-foreground: #ffffff;
-		--sidebar-accent: rgba(255, 196, 110, 0.2);
-		--sidebar-accent-foreground: #ffffff;
-		--sidebar-border: rgba(255, 196, 110, 0.3);
-		--sidebar-ring: rgba(255, 196, 110, 0.4);
-	}
-	:root.theme-azalee-light,
-	.theme-azalee-light,
-	:root.azalee-light,
-	.azalee-light {
-		--md-sys-color-primary: #f2a93b;
-		--md-sys-color-on-primary: #2d1600;
-		--md-sys-color-primary-container: #ffddb2;
-		--md-sys-color-on-primary-container: #2d1600;
-		--md-sys-color-secondary: #a92335;
-		--md-sys-color-on-secondary: #ffffff;
-		--md-sys-color-secondary-container: #ffd9df;
-		--md-sys-color-on-secondary-container: #3b0718;
-		--md-sys-color-tertiary: #765b28;
-		--md-sys-color-on-tertiary: #ffffff;
-		--md-sys-color-tertiary-container: #ffdea6;
-		--md-sys-color-on-tertiary-container: #281900;
-		--md-sys-color-error: #ba1a1a;
-		--md-sys-color-on-error: #ffffff;
-		--md-sys-color-error-container: #ffdad6;
-		--md-sys-color-on-error-container: #410002;
-		--md-sys-color-background: #fff8f5;
-		--md-sys-color-on-background: #241a15;
-		--md-sys-color-surface: #fff8f5;
-		--md-sys-color-on-surface: #241a15;
-		--md-sys-color-surface-variant: #f4ded2;
-		--md-sys-color-on-surface-variant: #52443c;
-		--md-sys-color-outline: #84746a;
-		--md-sys-color-outline-variant: #d7c3b7;
-		--md-sys-color-scrim: #000000;
-		--md-sys-color-shadow: #000000;
-		--md-sys-color-inverse-surface: #3d2e27;
-		--md-sys-color-inverse-on-surface: #ffede6;
-		--md-sys-color-inverse-primary: #ffc66c;
-		--md-sys-color-surface-dim: #ead8d0;
-		--md-sys-color-surface-bright: #fff8f5;
-		--md-sys-color-surface-container-lowest: #ffffff;
-		--md-sys-color-surface-container-low: #fff2ed;
-		--md-sys-color-surface-container: #f9ece6;
-		--md-sys-color-surface-container-high: #f3e6df;
-		--md-sys-color-surface-container-highest: #ede0d9;
-		--background: var(--md-sys-color-surface);
-		--foreground: var(--md-sys-color-on-surface);
-		--card: var(--md-sys-color-surface-container-low);
-		--card-foreground: var(--md-sys-color-on-surface);
-		--popover: var(--md-sys-color-surface-container-high);
-		--popover-foreground: var(--md-sys-color-on-surface);
-		--primary: var(--md-sys-color-primary);
-		--primary-foreground: var(--md-sys-color-on-primary);
-		--secondary: var(--md-sys-color-secondary-container);
-		--secondary-foreground: var(--md-sys-color-on-secondary-container);
-		--muted: var(--md-sys-color-surface-container);
-		--muted-foreground: var(--md-sys-color-on-surface-variant);
-		--accent: var(--md-sys-color-tertiary-container);
-		--accent-foreground: var(--md-sys-color-on-tertiary-container);
-		--destructive: var(--md-sys-color-error);
-		--destructive-foreground: var(--md-sys-color-on-error);
-		--border: var(--md-sys-color-outline-variant);
-		--input: var(--md-sys-color-outline);
-		--ring: var(--md-sys-color-primary);
-		--chart-1: #f2a93b;
-		--chart-2: #a92335;
-		--chart-3: #398679;
-		--chart-4: #8b6ec1;
-		--chart-5: #d46c43;
-		--sidebar: var(--md-sys-color-surface);
-		--sidebar-foreground: var(--md-sys-color-on-surface);
-		--sidebar-primary: var(--md-sys-color-primary);
-		--sidebar-primary-foreground: var(--md-sys-color-on-primary);
-		--sidebar-accent: var(--md-sys-color-tertiary-container);
-		--sidebar-accent-foreground: var(--md-sys-color-on-tertiary-container);
-		--sidebar-border: var(--md-sys-color-outline-variant);
-		--sidebar-ring: var(--md-sys-color-primary);
-	}
-	:root.theme-azalee-dark,
-	.theme-azalee-dark,
-	:root.azalee-dark,
-	.azalee-dark {
-		--md-sys-color-primary: #ffc66c;
-		--md-sys-color-on-primary: #412d00;
-		--md-sys-color-primary-container: #5d4200;
-		--md-sys-color-on-primary-container: #ffe0aa;
-		--md-sys-color-secondary: #ffb2be;
-		--md-sys-color-on-secondary: #5e1123;
-		--md-sys-color-secondary-container: #7c2939;
-		--md-sys-color-on-secondary-container: #ffd9df;
-		--md-sys-color-tertiary: #edc26e;
-		--md-sys-color-on-tertiary: #422d00;
-		--md-sys-color-tertiary-container: #5e4200;
-		--md-sys-color-on-tertiary-container: #ffdea6;
-		--md-sys-color-error: #ffb4ab;
-		--md-sys-color-on-error: #690005;
-		--md-sys-color-error-container: #93000a;
-		--md-sys-color-on-error-container: #ffdad6;
-		--md-sys-color-background: #1a120d;
-		--md-sys-color-on-background: #ede0db;
-		--md-sys-color-surface: #1a120d;
-		--md-sys-color-on-surface: #ede0db;
-		--md-sys-color-surface-variant: #52443c;
-		--md-sys-color-on-surface-variant: #d7c3b7;
-		--md-sys-color-outline: #9f8d83;
-		--md-sys-color-outline-variant: #52443c;
-		--md-sys-color-scrim: #000000;
-		--md-sys-color-shadow: #000000;
-		--md-sys-color-inverse-surface: #ede0db;
-		--md-sys-color-inverse-on-surface: #1a120d;
-		--md-sys-color-inverse-primary: #8b5023;
-		--md-sys-color-surface-dim: #1a120d;
-		--md-sys-color-surface-bright: #413732;
-		--md-sys-color-surface-container-lowest: #140d09;
-		--md-sys-color-surface-container-low: #221a15;
-		--md-sys-color-surface-container: #271e19;
-		--md-sys-color-surface-container-high: #322823;
-		--md-sys-color-surface-container-highest: #3d332d;
-		--background: var(--md-sys-color-surface);
-		--foreground: var(--md-sys-color-on-surface);
-		--card: var(--md-sys-color-surface-container-low);
-		--card-foreground: var(--md-sys-color-on-surface);
-		--popover: var(--md-sys-color-surface-container-high);
-		--popover-foreground: var(--md-sys-color-on-surface);
-		--primary: var(--md-sys-color-primary);
-		--primary-foreground: var(--md-sys-color-on-primary);
-		--secondary: var(--md-sys-color-secondary-container);
-		--secondary-foreground: var(--md-sys-color-on-secondary-container);
-		--muted: var(--md-sys-color-surface-container);
-		--muted-foreground: var(--md-sys-color-on-surface-variant);
-		--accent: var(--md-sys-color-tertiary-container);
-		--accent-foreground: var(--md-sys-color-on-tertiary-container);
-		--destructive: var(--md-sys-color-error);
-		--destructive-foreground: var(--md-sys-color-on-error);
-		--border: var(--md-sys-color-outline-variant);
-		--input: var(--md-sys-color-outline);
-		--ring: var(--md-sys-color-primary);
-		/* Les thèmes Roy et Gaëlle définissent `--chart-*` mais pas les thèmes
+    --destructive-foreground: oklch(0.985 0 0);
+    --border: oklch(0.88 0.05 30);
+    --input: oklch(0.88 0.05 30);
+    --ring: oklch(0.5 0.18 25);
+    --chart-1: oklch(0.5 0.18 25);
+    --chart-2: oklch(0.8 0.12 50);
+    --chart-3: oklch(0.35 0.2 15);
+    --chart-4: oklch(0.6 0.15 35);
+    --chart-5: oklch(0.7 0.14 45);
+    --sidebar: #922817;
+    --sidebar-foreground: #ffffff;
+    --sidebar-primary: #65110d;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: rgba(255, 196, 110, 0.2);
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: rgba(255, 196, 110, 0.3);
+    --sidebar-ring: rgba(255, 196, 110, 0.4);
+  }
+  :root.theme-azalee-light,
+  .theme-azalee-light,
+  :root.azalee-light,
+  .azalee-light {
+    --md-sys-color-primary: #f2a93b;
+    --md-sys-color-on-primary: #2d1600;
+    --md-sys-color-primary-container: #ffddb2;
+    --md-sys-color-on-primary-container: #2d1600;
+    --md-sys-color-secondary: #a92335;
+    --md-sys-color-on-secondary: #ffffff;
+    --md-sys-color-secondary-container: #ffd9df;
+    --md-sys-color-on-secondary-container: #3b0718;
+    --md-sys-color-tertiary: #765b28;
+    --md-sys-color-on-tertiary: #ffffff;
+    --md-sys-color-tertiary-container: #ffdea6;
+    --md-sys-color-on-tertiary-container: #281900;
+    --md-sys-color-error: #ba1a1a;
+    --md-sys-color-on-error: #ffffff;
+    --md-sys-color-error-container: #ffdad6;
+    --md-sys-color-on-error-container: #410002;
+    --md-sys-color-background: #fff8f5;
+    --md-sys-color-on-background: #241a15;
+    --md-sys-color-surface: #fff8f5;
+    --md-sys-color-on-surface: #241a15;
+    --md-sys-color-surface-variant: #f4ded2;
+    --md-sys-color-on-surface-variant: #52443c;
+    --md-sys-color-outline: #84746a;
+    --md-sys-color-outline-variant: #d7c3b7;
+    --md-sys-color-scrim: #000000;
+    --md-sys-color-shadow: #000000;
+    --md-sys-color-inverse-surface: #3d2e27;
+    --md-sys-color-inverse-on-surface: #ffede6;
+    --md-sys-color-inverse-primary: #ffc66c;
+    --md-sys-color-surface-dim: #ead8d0;
+    --md-sys-color-surface-bright: #fff8f5;
+    --md-sys-color-surface-container-lowest: #ffffff;
+    --md-sys-color-surface-container-low: #fff2ed;
+    --md-sys-color-surface-container: #f9ece6;
+    --md-sys-color-surface-container-high: #f3e6df;
+    --md-sys-color-surface-container-highest: #ede0d9;
+    --background: var(--md-sys-color-surface);
+    --foreground: var(--md-sys-color-on-surface);
+    --card: var(--md-sys-color-surface-container-low);
+    --card-foreground: var(--md-sys-color-on-surface);
+    --popover: var(--md-sys-color-surface-container-high);
+    --popover-foreground: var(--md-sys-color-on-surface);
+    --primary: var(--md-sys-color-primary);
+    --primary-foreground: var(--md-sys-color-on-primary);
+    --secondary: var(--md-sys-color-secondary-container);
+    --secondary-foreground: var(--md-sys-color-on-secondary-container);
+    --muted: var(--md-sys-color-surface-container);
+    --muted-foreground: var(--md-sys-color-on-surface-variant);
+    --accent: var(--md-sys-color-tertiary-container);
+    --accent-foreground: var(--md-sys-color-on-tertiary-container);
+    --destructive: var(--md-sys-color-error);
+    --destructive-foreground: var(--md-sys-color-on-error);
+    --border: var(--md-sys-color-outline-variant);
+    --input: var(--md-sys-color-outline);
+    --ring: var(--md-sys-color-primary);
+    --chart-1: #f2a93b;
+    --chart-2: #a92335;
+    --chart-3: #398679;
+    --chart-4: #8b6ec1;
+    --chart-5: #d46c43;
+    --sidebar: var(--md-sys-color-surface);
+    --sidebar-foreground: var(--md-sys-color-on-surface);
+    --sidebar-primary: var(--md-sys-color-primary);
+    --sidebar-primary-foreground: var(--md-sys-color-on-primary);
+    --sidebar-accent: var(--md-sys-color-tertiary-container);
+    --sidebar-accent-foreground: var(--md-sys-color-on-tertiary-container);
+    --sidebar-border: var(--md-sys-color-outline-variant);
+    --sidebar-ring: var(--md-sys-color-primary);
+  }
+  :root.theme-azalee-dark,
+  .theme-azalee-dark,
+  :root.azalee-dark,
+  .azalee-dark {
+    --md-sys-color-primary: #ffc66c;
+    --md-sys-color-on-primary: #412d00;
+    --md-sys-color-primary-container: #5d4200;
+    --md-sys-color-on-primary-container: #ffe0aa;
+    --md-sys-color-secondary: #ffb2be;
+    --md-sys-color-on-secondary: #5e1123;
+    --md-sys-color-secondary-container: #7c2939;
+    --md-sys-color-on-secondary-container: #ffd9df;
+    --md-sys-color-tertiary: #edc26e;
+    --md-sys-color-on-tertiary: #422d00;
+    --md-sys-color-tertiary-container: #5e4200;
+    --md-sys-color-on-tertiary-container: #ffdea6;
+    --md-sys-color-error: #ffb4ab;
+    --md-sys-color-on-error: #690005;
+    --md-sys-color-error-container: #93000a;
+    --md-sys-color-on-error-container: #ffdad6;
+    --md-sys-color-background: #1a120d;
+    --md-sys-color-on-background: #ede0db;
+    --md-sys-color-surface: #1a120d;
+    --md-sys-color-on-surface: #ede0db;
+    --md-sys-color-surface-variant: #52443c;
+    --md-sys-color-on-surface-variant: #d7c3b7;
+    --md-sys-color-outline: #9f8d83;
+    --md-sys-color-outline-variant: #52443c;
+    --md-sys-color-scrim: #000000;
+    --md-sys-color-shadow: #000000;
+    --md-sys-color-inverse-surface: #ede0db;
+    --md-sys-color-inverse-on-surface: #1a120d;
+    --md-sys-color-inverse-primary: #8b5023;
+    --md-sys-color-surface-dim: #1a120d;
+    --md-sys-color-surface-bright: #413732;
+    --md-sys-color-surface-container-lowest: #140d09;
+    --md-sys-color-surface-container-low: #221a15;
+    --md-sys-color-surface-container: #271e19;
+    --md-sys-color-surface-container-high: #322823;
+    --md-sys-color-surface-container-highest: #3d332d;
+    --background: var(--md-sys-color-surface);
+    --foreground: var(--md-sys-color-on-surface);
+    --card: var(--md-sys-color-surface-container-low);
+    --card-foreground: var(--md-sys-color-on-surface);
+    --popover: var(--md-sys-color-surface-container-high);
+    --popover-foreground: var(--md-sys-color-on-surface);
+    --primary: var(--md-sys-color-primary);
+    --primary-foreground: var(--md-sys-color-on-primary);
+    --secondary: var(--md-sys-color-secondary-container);
+    --secondary-foreground: var(--md-sys-color-on-secondary-container);
+    --muted: var(--md-sys-color-surface-container);
+    --muted-foreground: var(--md-sys-color-on-surface-variant);
+    --accent: var(--md-sys-color-tertiary-container);
+    --accent-foreground: var(--md-sys-color-on-tertiary-container);
+    --destructive: var(--md-sys-color-error);
+    --destructive-foreground: var(--md-sys-color-on-error);
+    --border: var(--md-sys-color-outline-variant);
+    --input: var(--md-sys-color-outline);
+    --ring: var(--md-sys-color-primary);
+    /* Les thèmes Roy et Gaëlle définissent `--chart-*` mais pas les thèmes
 		 * Azalée : les graphiques retombaient alors sur le `:root` gris de
 		 * shadcn côté website, et sur RIEN côté azalee. Rampe catégorielle de 5
 		 * teintes distinctes, ancrée sur l'ambre de la marque Azalée. */
-		--chart-1: var(--md-sys-color-primary);
-		--chart-2: oklch(0.74 0.12 200);
-		--chart-3: oklch(0.75 0.14 145);
-		--chart-4: oklch(0.72 0.15 300);
-		--chart-5: oklch(0.75 0.14 25);
-		--sidebar: var(--md-sys-color-surface);
-		--sidebar-foreground: var(--md-sys-color-on-surface);
-		--sidebar-primary: var(--md-sys-color-primary);
-		--sidebar-primary-foreground: var(--md-sys-color-on-primary);
-		--sidebar-accent: var(--md-sys-color-tertiary-container);
-		--sidebar-accent-foreground: var(--md-sys-color-on-tertiary-container);
-		--sidebar-border: var(--md-sys-color-outline-variant);
-		--sidebar-ring: var(--md-sys-color-primary);
-	}
+    --chart-1: var(--md-sys-color-primary);
+    --chart-2: oklch(0.74 0.12 200);
+    --chart-3: oklch(0.75 0.14 145);
+    --chart-4: oklch(0.72 0.15 300);
+    --chart-5: oklch(0.75 0.14 25);
+    --sidebar: var(--md-sys-color-surface);
+    --sidebar-foreground: var(--md-sys-color-on-surface);
+    --sidebar-primary: var(--md-sys-color-primary);
+    --sidebar-primary-foreground: var(--md-sys-color-on-primary);
+    --sidebar-accent: var(--md-sys-color-tertiary-container);
+    --sidebar-accent-foreground: var(--md-sys-color-on-tertiary-container);
+    --sidebar-border: var(--md-sys-color-outline-variant);
+    --sidebar-ring: var(--md-sys-color-primary);
+  }
 
-	:root.theme-achillea,
-	.theme-achillea,
-	:root.achillea,
-	.achillea {
-		--md-sys-color-primary: #b875ff;
-		--md-sys-color-on-primary: #2c005e;
-		--md-sys-color-primary-container: #4f0099;
-		--md-sys-color-on-primary-container: #eedcff;
-		--md-sys-color-secondary: #dfff57;
-		--md-sys-color-on-secondary: #1f2700;
-		--md-sys-color-secondary-container: #354000;
-		--md-sys-color-on-secondary-container: #efffad;
-		--md-sys-color-tertiary: #7edcb5;
-		--md-sys-color-on-tertiary: #003827;
-		--md-sys-color-tertiary-container: #00513b;
-		--md-sys-color-on-tertiary-container: #9af9d1;
-		--md-sys-color-error: #ffb4ab;
-		--md-sys-color-on-error: #690005;
-		--md-sys-color-error-container: #93000a;
-		--md-sys-color-on-error-container: #ffdad6;
-		--md-sys-color-background: #0d0814;
-		--md-sys-color-on-background: #f3edf7;
-		--md-sys-color-surface: #0d0814;
-		--md-sys-color-on-surface: #f3edf7;
-		--md-sys-color-surface-variant: #271e31;
-		--md-sys-color-on-surface-variant: #cbc1d4;
-		--md-sys-color-outline: #948b9d;
-		--md-sys-color-outline-variant: #494352;
-		--md-sys-color-scrim: #000000;
-		--md-sys-color-shadow: #000000;
-		--md-sys-color-inverse-surface: #f3edf7;
-		--md-sys-color-inverse-on-surface: #0d0814;
-		--md-sys-color-inverse-primary: #6d00ce;
-		--md-sys-color-surface-dim: #0d0814;
-		--md-sys-color-surface-bright: #32273e;
-		--md-sys-color-surface-container-lowest: #08040d;
-		--md-sys-color-surface-container-low: #150d20;
-		--md-sys-color-surface-container: #1b1227;
-		--md-sys-color-surface-container-high: #241834;
-		--md-sys-color-surface-container-highest: #2e2041;
-		--background: var(--md-sys-color-surface);
-		--foreground: var(--md-sys-color-on-surface);
-		--card: var(--md-sys-color-surface-container-low);
-		--card-foreground: var(--md-sys-color-on-surface);
-		--popover: var(--md-sys-color-surface-container-high);
-		--popover-foreground: var(--md-sys-color-on-surface);
-		--primary: var(--md-sys-color-primary);
-		--primary-foreground: var(--md-sys-color-on-primary);
-		--secondary: var(--md-sys-color-secondary-container);
-		--secondary-foreground: var(--md-sys-color-on-secondary-container);
-		--muted: var(--md-sys-color-surface-container);
-		--muted-foreground: var(--md-sys-color-on-surface-variant);
-		--accent: var(--md-sys-color-tertiary-container);
-		--accent-foreground: var(--md-sys-color-on-tertiary-container);
-		--destructive: var(--md-sys-color-error);
-		--destructive-foreground: var(--md-sys-color-on-error);
-		--border: var(--md-sys-color-outline-variant);
-		--input: var(--md-sys-color-outline);
-		--ring: var(--md-sys-color-primary);
-		--chart-1: var(--md-sys-color-primary);
-		--chart-2: #dfff57;
-		--chart-3: #7edcb5;
-		--chart-4: #f010ff;
-		--chart-5: #ffa910;
-		--sidebar: var(--md-sys-color-surface);
-		--sidebar-foreground: var(--md-sys-color-on-surface);
-		--sidebar-primary: var(--md-sys-color-primary);
-		--sidebar-primary-foreground: var(--md-sys-color-on-primary);
-		--sidebar-accent: var(--md-sys-color-tertiary-container);
-		--sidebar-accent-foreground: var(--md-sys-color-on-tertiary-container);
-		--sidebar-border: var(--md-sys-color-outline-variant);
-		--sidebar-ring: var(--md-sys-color-primary);
-	}
+  :root.theme-achillea,
+  .theme-achillea,
+  :root.achillea,
+  .achillea {
+    --md-sys-color-primary: #b875ff;
+    --md-sys-color-on-primary: #2c005e;
+    --md-sys-color-primary-container: #4f0099;
+    --md-sys-color-on-primary-container: #eedcff;
+    --md-sys-color-secondary: #dfff57;
+    --md-sys-color-on-secondary: #1f2700;
+    --md-sys-color-secondary-container: #354000;
+    --md-sys-color-on-secondary-container: #efffad;
+    --md-sys-color-tertiary: #7edcb5;
+    --md-sys-color-on-tertiary: #003827;
+    --md-sys-color-tertiary-container: #00513b;
+    --md-sys-color-on-tertiary-container: #9af9d1;
+    --md-sys-color-error: #ffb4ab;
+    --md-sys-color-on-error: #690005;
+    --md-sys-color-error-container: #93000a;
+    --md-sys-color-on-error-container: #ffdad6;
+    --md-sys-color-background: #0d0814;
+    --md-sys-color-on-background: #f3edf7;
+    --md-sys-color-surface: #0d0814;
+    --md-sys-color-on-surface: #f3edf7;
+    --md-sys-color-surface-variant: #271e31;
+    --md-sys-color-on-surface-variant: #cbc1d4;
+    --md-sys-color-outline: #948b9d;
+    --md-sys-color-outline-variant: #494352;
+    --md-sys-color-scrim: #000000;
+    --md-sys-color-shadow: #000000;
+    --md-sys-color-inverse-surface: #f3edf7;
+    --md-sys-color-inverse-on-surface: #0d0814;
+    --md-sys-color-inverse-primary: #6d00ce;
+    --md-sys-color-surface-dim: #0d0814;
+    --md-sys-color-surface-bright: #32273e;
+    --md-sys-color-surface-container-lowest: #08040d;
+    --md-sys-color-surface-container-low: #150d20;
+    --md-sys-color-surface-container: #1b1227;
+    --md-sys-color-surface-container-high: #241834;
+    --md-sys-color-surface-container-highest: #2e2041;
+    --background: var(--md-sys-color-surface);
+    --foreground: var(--md-sys-color-on-surface);
+    --card: var(--md-sys-color-surface-container-low);
+    --card-foreground: var(--md-sys-color-on-surface);
+    --popover: var(--md-sys-color-surface-container-high);
+    --popover-foreground: var(--md-sys-color-on-surface);
+    --primary: var(--md-sys-color-primary);
+    --primary-foreground: var(--md-sys-color-on-primary);
+    --secondary: var(--md-sys-color-secondary-container);
+    --secondary-foreground: var(--md-sys-color-on-secondary-container);
+    --muted: var(--md-sys-color-surface-container);
+    --muted-foreground: var(--md-sys-color-on-surface-variant);
+    --accent: var(--md-sys-color-tertiary-container);
+    --accent-foreground: var(--md-sys-color-on-tertiary-container);
+    --destructive: var(--md-sys-color-error);
+    --destructive-foreground: var(--md-sys-color-on-error);
+    --border: var(--md-sys-color-outline-variant);
+    --input: var(--md-sys-color-outline);
+    --ring: var(--md-sys-color-primary);
+    --chart-1: var(--md-sys-color-primary);
+    --chart-2: #dfff57;
+    --chart-3: #7edcb5;
+    --chart-4: #f010ff;
+    --chart-5: #ffa910;
+    --sidebar: var(--md-sys-color-surface);
+    --sidebar-foreground: var(--md-sys-color-on-surface);
+    --sidebar-primary: var(--md-sys-color-primary);
+    --sidebar-primary-foreground: var(--md-sys-color-on-primary);
+    --sidebar-accent: var(--md-sys-color-tertiary-container);
+    --sidebar-accent-foreground: var(--md-sys-color-on-tertiary-container);
+    --sidebar-border: var(--md-sys-color-outline-variant);
+    --sidebar-ring: var(--md-sys-color-primary);
+  }
 
-	/* ─────────────────────────────────────────────────────────────────────────
+  /* ─────────────────────────────────────────────────────────────────────────
 	 * Un thème posé AILLEURS que sur <html> doit peindre son propre fond.
 	 *
 	 * LE DÉFAUT QUE CES CINQ RÈGLES CORRIGENT
@@ -758,261 +771,266 @@
 	 *     serait découpé par `analyserBlocs` (`scripts/generer-tokens.ts`) et
 	 *     produirait de faux blocs de thème.
 	 * ───────────────────────────────────────────────────────────────────────── */
-	:where(.theme-roy:not(:root)) {
-		background-color: var(--background);
-		color: var(--foreground);
-	}
-	:where(.theme-gaelle:not(:root)) {
-		background-color: var(--background);
-		color: var(--foreground);
-	}
-	:where(.theme-azalee-light:not(:root)) {
-		background-color: var(--background);
-		color: var(--foreground);
-	}
-	:where(.theme-azalee-dark:not(:root)) {
-		background-color: var(--background);
-		color: var(--foreground);
-	}
-	:where(.theme-achillea:not(:root)) {
-		background-color: var(--background);
-		color: var(--foreground);
-	}
+  :where(.theme-roy:not(:root)) {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+  :where(.theme-gaelle:not(:root)) {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+  :where(.theme-azalee-light:not(:root)) {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+  :where(.theme-azalee-dark:not(:root)) {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+  :where(.theme-achillea:not(:root)) {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
 
-	html {
-		scroll-behavior: smooth;
-		text-rendering: optimizeLegibility;
-		-webkit-font-smoothing: antialiased;
-		-moz-osx-font-smoothing: grayscale;
-	}
+  html {
+    scroll-behavior: smooth;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-	body {
-		font-feature-settings:
-			"rlig" 1,
-			"calt" 1;
-	}
+  body {
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
+  }
 
-	h1,
-	h2,
-	h3,
-	h4,
-	h5,
-	h6 {
-		text-wrap: balance;
-	}
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    text-wrap: balance;
+  }
 
-	p,
-	blockquote,
-	li {
-		text-wrap: pretty;
-	}
+  p,
+  blockquote,
+  li {
+    text-wrap: pretty;
+  }
 
-	:focus-visible {
-		outline: 2px solid var(--rg-rose);
-		outline-offset: 2px;
-	}
+  :focus-visible {
+    outline: 2px solid var(--rg-rose);
+    outline-offset: 2px;
+  }
 }
 
 @layer components {
-	.type-display-large {
-		font: 400 57px/64px var(--font-sans);
-		letter-spacing: -0.25px;
-	}
-	.type-display-medium {
-		font: 400 45px/52px var(--font-sans);
-	}
-	.type-display-small {
-		font: 400 36px/44px var(--font-sans);
-	}
-	.type-headline-large {
-		font: 400 32px/40px var(--font-sans);
-	}
-	.type-headline-medium {
-		font: 400 28px/36px var(--font-sans);
-	}
-	.type-headline-small {
-		font: 400 24px/32px var(--font-sans);
-	}
-	.type-title-large {
-		font: 400 22px/28px var(--font-sans);
-	}
-	.type-title-medium {
-		font: 500 16px/24px var(--font-sans);
-		letter-spacing: 0.15px;
-	}
-	.type-title-small {
-		font: 500 14px/20px var(--font-sans);
-		letter-spacing: 0.1px;
-	}
-	.type-body-large {
-		font: 400 16px/24px var(--font-sans);
-		letter-spacing: 0.5px;
-	}
-	.type-body-medium {
-		font: 400 14px/20px var(--font-sans);
-		letter-spacing: 0.25px;
-	}
-	.type-body-small {
-		font: 400 12px/16px var(--font-sans);
-		letter-spacing: 0.4px;
-	}
-	.type-label-large {
-		font: 500 14px/20px var(--font-sans);
-		letter-spacing: 0.1px;
-	}
-	.type-label-medium {
-		font: 500 12px/16px var(--font-sans);
-		letter-spacing: 0.5px;
-	}
-	.type-label-small {
-		font: 500 11px/16px var(--font-sans);
-		letter-spacing: 0.5px;
-	}
+  .type-display-large {
+    font: 400 57px/64px var(--font-sans);
+    letter-spacing: -0.25px;
+  }
+  .type-display-medium {
+    font: 400 45px/52px var(--font-sans);
+  }
+  .type-display-small {
+    font: 400 36px/44px var(--font-sans);
+  }
+  .type-headline-large {
+    font: 400 32px/40px var(--font-sans);
+  }
+  .type-headline-medium {
+    font: 400 28px/36px var(--font-sans);
+  }
+  .type-headline-small {
+    font: 400 24px/32px var(--font-sans);
+  }
+  .type-title-large {
+    font: 400 22px/28px var(--font-sans);
+  }
+  .type-title-medium {
+    font: 500 16px/24px var(--font-sans);
+    letter-spacing: 0.15px;
+  }
+  .type-title-small {
+    font: 500 14px/20px var(--font-sans);
+    letter-spacing: 0.1px;
+  }
+  .type-body-large {
+    font: 400 16px/24px var(--font-sans);
+    letter-spacing: 0.5px;
+  }
+  .type-body-medium {
+    font: 400 14px/20px var(--font-sans);
+    letter-spacing: 0.25px;
+  }
+  .type-body-small {
+    font: 400 12px/16px var(--font-sans);
+    letter-spacing: 0.4px;
+  }
+  .type-label-large {
+    font: 500 14px/20px var(--font-sans);
+    letter-spacing: 0.1px;
+  }
+  .type-label-medium {
+    font: 500 12px/16px var(--font-sans);
+    letter-spacing: 0.5px;
+  }
+  .type-label-small {
+    font: 500 11px/16px var(--font-sans);
+    letter-spacing: 0.5px;
+  }
 
-	.state-layer {
-		position: relative;
-	}
-	.state-layer::before {
-		content: "";
-		position: absolute;
-		inset: 0;
-		background: currentColor;
-		opacity: 0;
-		transition: opacity var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
-		pointer-events: none;
-		border-radius: inherit;
-	}
-	.state-layer:hover::before {
-		opacity: 0.08;
-	}
-	.state-layer:focus-visible::before {
-		opacity: 0.12;
-	}
-	.state-layer:active::before {
-		opacity: 0.12;
-	}
+  .state-layer {
+    position: relative;
+  }
+  .state-layer::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: currentColor;
+    opacity: 0;
+    transition: opacity var(--md-sys-motion-duration-short4)
+      var(--md-sys-motion-easing-standard);
+    pointer-events: none;
+    border-radius: inherit;
+  }
+  .state-layer:hover::before {
+    opacity: 0.08;
+  }
+  .state-layer:focus-visible::before {
+    opacity: 0.12;
+  }
+  .state-layer:active::before {
+    opacity: 0.12;
+  }
 }
 
 @utility pt-safe {
-	padding-top: env(safe-area-inset-top);
+  padding-top: env(safe-area-inset-top);
 }
 
 @utility pb-safe {
-	padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 @utility pl-safe {
-	padding-left: env(safe-area-inset-left);
+  padding-left: env(safe-area-inset-left);
 }
 
 @utility pr-safe {
-	padding-right: env(safe-area-inset-right);
+  padding-right: env(safe-area-inset-right);
 }
 
 @layer utilities {
-	/* ─── MD3 Motion — timing functions ───────────────────────────────── */
-	.motion-standard {
-		transition-timing-function: var(--md-sys-motion-easing-standard);
-	}
-	.motion-standard-accelerate {
-		transition-timing-function: var(--md-sys-motion-easing-standard-accelerate);
-	}
-	.motion-standard-decelerate {
-		transition-timing-function: var(--md-sys-motion-easing-standard-decelerate);
-	}
-	.motion-emphasized {
-		transition-timing-function: var(--md-sys-motion-easing-emphasized);
-	}
-	.motion-emphasized-accelerate {
-		transition-timing-function: var(--md-sys-motion-easing-emphasized-accelerate);
-	}
-	.motion-emphasized-decelerate {
-		transition-timing-function: var(--md-sys-motion-easing-emphasized-decelerate);
-	}
+  /* ─── MD3 Motion — timing functions ───────────────────────────────── */
+  .motion-standard {
+    transition-timing-function: var(--md-sys-motion-easing-standard);
+  }
+  .motion-standard-accelerate {
+    transition-timing-function: var(--md-sys-motion-easing-standard-accelerate);
+  }
+  .motion-standard-decelerate {
+    transition-timing-function: var(--md-sys-motion-easing-standard-decelerate);
+  }
+  .motion-emphasized {
+    transition-timing-function: var(--md-sys-motion-easing-emphasized);
+  }
+  .motion-emphasized-accelerate {
+    transition-timing-function: var(
+      --md-sys-motion-easing-emphasized-accelerate
+    );
+  }
+  .motion-emphasized-decelerate {
+    transition-timing-function: var(
+      --md-sys-motion-easing-emphasized-decelerate
+    );
+  }
 
-	/* ─── Typographie expressive ──────────────────────────────────────── */
-	.font-expressive-title {
-		font-variation-settings:
-			"wdth" 115,
-			"wght" 600,
-			"opsz" 48;
-		letter-spacing: -0.02em;
-	}
-	.font-width-expanded {
-		font-variation-settings: "wdth" 150;
-	}
+  /* ─── Typographie expressive ──────────────────────────────────────── */
+  .font-expressive-title {
+    font-variation-settings:
+      "wdth" 115,
+      "wght" 600,
+      "opsz" 48;
+    letter-spacing: -0.02em;
+  }
+  .font-width-expanded {
+    font-variation-settings: "wdth" 150;
+  }
 
-	/* ─── Masquage de barre de défilement cross-browser ────────────────── */
-	.scrollbar-hide {
-		-ms-overflow-style: none;
-		scrollbar-width: none;
-	}
-	.scrollbar-hide::-webkit-scrollbar {
-		display: none;
-	}
+  /* ─── Masquage de barre de défilement cross-browser ────────────────── */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 
-	/* ─── Modern Web Custom Scrollbars (CSS standard + WebKit fallback) ── */
-	.scrollbar-thin {
-		scrollbar-width: thin;
-		scrollbar-color: var(--color-outline-variant, #888888) transparent;
-	}
-	.scrollbar-thin::-webkit-scrollbar {
-		width: 6px;
-		height: 6px;
-	}
-	.scrollbar-thin::-webkit-scrollbar-thumb {
-		background: var(--color-outline-variant, #888888);
-		border-radius: 9999px;
-	}
-	.scrollbar-thin::-webkit-scrollbar-track {
-		background: transparent;
-	}
+  /* ─── Modern Web Custom Scrollbars (CSS standard + WebKit fallback) ── */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-outline-variant, #888888) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: var(--color-outline-variant, #888888);
+    border-radius: 9999px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-	/* ─── Modern Web Performance: Defer heavy off-screen rendering ──── */
-	.content-deferred {
-		content-visibility: auto;
-		contain-intrinsic-size: auto 500px;
-	}
+  /* ─── Modern Web Performance: Defer heavy off-screen rendering ──── */
+  .content-deferred {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 500px;
+  }
 
-	/* ─── Modern Web Glassmorphism surface ───────────────────────────── */
-	.glass-surface {
-		background-color: color-mix(in srgb, var(--background) 80%, transparent);
-		backdrop-filter: blur(12px);
-		-webkit-backdrop-filter: blur(12px);
-	}
+  /* ─── Modern Web Glassmorphism surface ───────────────────────────── */
+  .glass-surface {
+    background-color: color-mix(in srgb, var(--background) 80%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
 
-	/* ─── Achilléa Ranking Gradients ──────────────────────────────────── */
-	.rank-gradient-1 {
-		background: linear-gradient(135deg, var(--achillea-rank-1-stops));
-	}
-	.rank-gradient-2 {
-		background: linear-gradient(135deg, var(--achillea-rank-2-stops));
-	}
-	.rank-gradient-3 {
-		background: linear-gradient(135deg, var(--achillea-rank-3-stops));
-	}
-	.rank-gradient-4 {
-		background: linear-gradient(135deg, var(--achillea-rank-4-stops));
-	}
-	.rank-gradient-5 {
-		background: linear-gradient(135deg, var(--achillea-rank-5-stops));
-	}
-	.rank-gradient-6 {
-		background: linear-gradient(135deg, var(--achillea-rank-6-stops));
-	}
-	.rank-gradient-7 {
-		background: linear-gradient(135deg, var(--achillea-rank-7-stops));
-	}
-	.rank-gradient-8 {
-		background: linear-gradient(135deg, var(--achillea-rank-8-stops));
-	}
-	.rank-gradient-9 {
-		background: linear-gradient(135deg, var(--achillea-rank-9-stops));
-	}
-	.rank-gradient-10 {
-		background: linear-gradient(135deg, var(--achillea-rank-10-stops));
-	}
-	.rank-gradient-11 {
-		background: linear-gradient(135deg, var(--achillea-rank-11-stops));
-	}
+  /* ─── Achilléa Ranking Gradients ──────────────────────────────────── */
+  .rank-gradient-1 {
+    background: linear-gradient(135deg, var(--achillea-rank-1-stops));
+  }
+  .rank-gradient-2 {
+    background: linear-gradient(135deg, var(--achillea-rank-2-stops));
+  }
+  .rank-gradient-3 {
+    background: linear-gradient(135deg, var(--achillea-rank-3-stops));
+  }
+  .rank-gradient-4 {
+    background: linear-gradient(135deg, var(--achillea-rank-4-stops));
+  }
+  .rank-gradient-5 {
+    background: linear-gradient(135deg, var(--achillea-rank-5-stops));
+  }
+  .rank-gradient-6 {
+    background: linear-gradient(135deg, var(--achillea-rank-6-stops));
+  }
+  .rank-gradient-7 {
+    background: linear-gradient(135deg, var(--achillea-rank-7-stops));
+  }
+  .rank-gradient-8 {
+    background: linear-gradient(135deg, var(--achillea-rank-8-stops));
+  }
+  .rank-gradient-9 {
+    background: linear-gradient(135deg, var(--achillea-rank-9-stops));
+  }
+  .rank-gradient-10 {
+    background: linear-gradient(135deg, var(--achillea-rank-10-stops));
+  }
+  .rank-gradient-11 {
+    background: linear-gradient(135deg, var(--achillea-rank-11-stops));
+  }
 }

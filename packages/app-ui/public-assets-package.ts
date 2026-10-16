@@ -15,14 +15,17 @@ export function prunePublicFontCopies(
     for (const match of css.matchAll(/url\(["']?([^"'()]+\.woff2)["']?\)/g)) {
       const url = match[1]!;
       if (url.startsWith(prefix)) remote.add(url.slice(prefix.length));
-      else if (url.startsWith("./fonts/")) local.add(url.slice("./fonts/".length));
-      else throw new Error("Unqualified font URL prevents public asset trimming");
+      else if (url.startsWith("./fonts/"))
+        local.add(url.slice("./fonts/".length));
+      else
+        throw new Error("Unqualified font URL prevents public asset trimming");
     }
   const directory = resolve(outdir, "fonts");
   let files = 0;
   let bytes = 0;
   for (const name of readdirSync(directory)) {
-    if (!/^[\w.-]+\.woff2$/.test(name) || !remote.has(name) || local.has(name)) continue;
+    if (!/^[\w.-]+\.woff2$/.test(name) || !remote.has(name) || local.has(name))
+      continue;
     const file = join(directory, name);
     bytes += statSync(file).size;
     unlinkSync(file);

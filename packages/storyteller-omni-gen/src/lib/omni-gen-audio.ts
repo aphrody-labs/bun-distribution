@@ -97,7 +97,9 @@ export function buildAudioRequest(
 export async function enqueueAudioGeneration(
   model: OmniGenAudioModelDetails,
   settings: AudioGenerationSettings,
-  generate: (body: OmniGenAudioRequest) => Promise<OmniGenAudioGenerateResponse> = generateAudioOverHttp,
+  generate: (
+    body: OmniGenAudioRequest,
+  ) => Promise<OmniGenAudioGenerateResponse> = generateAudioOverHttp,
 ): Promise<{
   success: boolean;
   // One request can create several jobs (Suno-style multi-clip) — callers
@@ -145,12 +147,16 @@ export interface AudioCostParams {
   sampleRateHz?: number | null;
 }
 
-const generateAudioOverHttp = (body: OmniGenAudioRequest) => new OmniGenApi().generateAudio(body);
-const estimateAudioOverHttp = (body: OmniGenAudioRequest) => new OmniGenApi().estimateAudioCost(body);
+const generateAudioOverHttp = (body: OmniGenAudioRequest) =>
+  new OmniGenApi().generateAudio(body);
+const estimateAudioOverHttp = (body: OmniGenAudioRequest) =>
+  new OmniGenApi().estimateAudioCost(body);
 
 export function useAudioCostEstimate(
   params: AudioCostParams,
-  estimate: (body: OmniGenAudioRequest) => Promise<OmniGenAudioCostResponse> = estimateAudioOverHttp,
+  estimate: (
+    body: OmniGenAudioRequest,
+  ) => Promise<OmniGenAudioCostResponse> = estimateAudioOverHttp,
 ): number | null {
   const [credits, setCredits] = useState<number | null>(null);
   const abortRef = useRef(0);
@@ -165,7 +171,10 @@ export function useAudioCostEstimate(
     const body: OmniGenAudioRequest = {
       model: params.model,
       audio_media_tokens: params.audioReferenceCount
-        ? Array.from({ length: params.audioReferenceCount }, () => "placeholder")
+        ? Array.from(
+            { length: params.audioReferenceCount },
+            () => "placeholder",
+          )
         : null,
       image_media_tokens: params.hasImageReference ? ["placeholder"] : null,
       sample_rate_hz: params.sampleRateHz ?? null,
@@ -185,7 +194,9 @@ export function useAudioCostEstimate(
         setCredits(null);
       },
     );
-    return () => { abortRef.current++; };
+    return () => {
+      abortRef.current++;
+    };
   }, [
     estimate,
     params.model,

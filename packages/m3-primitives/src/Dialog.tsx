@@ -15,7 +15,12 @@ import {
 } from "react";
 import { type FieldValues, type UseFormHandleSubmit } from "react-hook-form";
 
-import { type AsChildProp, asChildProps, createPortalScope, withClassName } from "./base-ui";
+import {
+  type AsChildProp,
+  asChildProps,
+  createPortalScope,
+  withClassName,
+} from "./base-ui";
 import { Icon, type IconSource, renderIcon } from "./Icon";
 import { Loader } from "./Loader";
 import { Form, type FormProps } from "./forms/Form";
@@ -38,7 +43,10 @@ class DialogManager {
   private states = new Map<number, DialogState>();
   private components = new Map<number, React.FC>();
 
-  create(dialog: (props: UseDialogProps) => ReactElement, options?: DialogOptions) {
+  create(
+    dialog: (props: UseDialogProps) => ReactElement,
+    options?: DialogOptions,
+  ) {
     const id = this.getId();
 
     this.components.set(id, () => dialog({ id, ...options }));
@@ -210,8 +218,10 @@ const dialogActionStyles = cva(
   {
     variants: {
       tone: {
-        primary: "text-primary hover:bg-primary/8 active:bg-primary/10 focus-visible:bg-primary/10",
-        danger: "text-error hover:bg-error/8 active:bg-error/10 focus-visible:bg-error/10",
+        primary:
+          "text-primary hover:bg-primary/8 active:bg-primary/10 focus-visible:bg-primary/10",
+        danger:
+          "text-error hover:bg-error/8 active:bg-error/10 focus-visible:bg-error/10",
       },
     },
     defaultVariants: { tone: "primary" },
@@ -225,7 +235,10 @@ const DialogAction = forwardRef<
   <button
     ref={ref}
     type={type}
-    className={clsx(dialogActionStyles({ tone: danger ? "danger" : "primary" }), className)}
+    className={clsx(
+      dialogActionStyles({ tone: danger ? "danger" : "primary" }),
+      className,
+    )}
     {...props}
   />
 ));
@@ -233,7 +246,9 @@ const DialogAction = forwardRef<
 DialogAction.displayName = "DialogAction";
 
 export interface DialogProps<S extends FieldValues>
-  extends Omit<DialogPrimitive.Root.Props, "children">, Omit<FormProps<S>, "onSubmit"> {
+  extends
+    Omit<DialogPrimitive.Root.Props, "children">,
+    Omit<FormProps<S>, "onSubmit"> {
   title?: string;
   dialog: ReturnType<typeof useDialog>;
   loading?: boolean;
@@ -272,7 +287,8 @@ export function Dialog<S extends FieldValues>({
   invertButtonFocus,
   ...props
 }: DialogProps<S>) {
-  const setOpen = (v: boolean) => dialogManager.setState(dialog.id, { open: v });
+  const setOpen = (v: boolean) =>
+    dialogManager.setState(dialog.id, { open: v });
 
   const cancelButton = (
     <DialogClose asChild>
@@ -303,7 +319,8 @@ export function Dialog<S extends FieldValues>({
       )
     : !form.formState.isValid;
 
-  const submitDisabled = form.formState.isSubmitting || props.submitDisabled || disableCheck;
+  const submitDisabled =
+    form.formState.isSubmitting || props.submitDisabled || disableCheck;
 
   const submitButton = props.ctaLabel ? (
     !props.ctaSecondLabel ? (
@@ -407,7 +424,9 @@ export function Dialog<S extends FieldValues>({
               {showActions && (
                 <div className="mt-6 flex items-center justify-end gap-2">
                   {form.formState.isSubmitting && <Loader />}
-                  {props.buttonsSideContent && <div>{props.buttonsSideContent}</div>}
+                  {props.buttonsSideContent && (
+                    <div>{props.buttonsSideContent}</div>
+                  )}
                   <div className="grow" />
                   {!props.hideButtons && (
                     <div
@@ -444,11 +463,16 @@ export function Dialog<S extends FieldValues>({
 
 export const DialogRoot = DialogPrimitive.Root;
 
-export interface DialogTriggerProps extends DialogPrimitive.Trigger.Props, AsChildProp {}
+export interface DialogTriggerProps
+  extends DialogPrimitive.Trigger.Props, AsChildProp {}
 
 export const DialogTrigger = forwardRef<HTMLButtonElement, DialogTriggerProps>(
   ({ asChild, children, ...props }, ref) => (
-    <DialogPrimitive.Trigger ref={ref} {...asChildProps(asChild, children)} {...props} />
+    <DialogPrimitive.Trigger
+      ref={ref}
+      {...asChildProps(asChild, children)}
+      {...props}
+    />
   ),
 );
 DialogTrigger.displayName = "DialogTrigger";
@@ -459,19 +483,30 @@ const { Portal: DialogPortal, EnsurePortal } = createPortalScope(
 );
 export { DialogPortal };
 
-export interface DialogCloseProps extends DialogPrimitive.Close.Props, AsChildProp {}
+export interface DialogCloseProps
+  extends DialogPrimitive.Close.Props, AsChildProp {}
 
 export const DialogClose = forwardRef<HTMLButtonElement, DialogCloseProps>(
   ({ asChild, children, ...props }, ref) => (
-    <DialogPrimitive.Close ref={ref} {...asChildProps(asChild, children)} {...props} />
+    <DialogPrimitive.Close
+      ref={ref}
+      {...asChildProps(asChild, children)}
+      {...props}
+    />
   ),
 );
 DialogClose.displayName = "DialogClose";
 
 /** M3 scrim (Base UI `Dialog.Backdrop`): `scrim` at 32 %. */
-export const DialogOverlay = ({ className, ...props }: DialogPrimitive.Backdrop.Props) => (
+export const DialogOverlay = ({
+  className,
+  ...props
+}: DialogPrimitive.Backdrop.Props) => (
   <DialogPrimitive.Backdrop
-    className={withClassName(clsx("fixed inset-0 z-50 bg-scrim/32", scrimMotion), className)}
+    className={withClassName(
+      clsx("fixed inset-0 z-50 bg-scrim/32", scrimMotion),
+      className,
+    )}
     {...props}
   />
 );
@@ -526,22 +561,37 @@ export const DialogContent = ({
 
 DialogContent.displayName = "DialogContent";
 
-export const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={clsx("flex flex-col gap-4 text-left", className)} {...props} />
+export const DialogHeader = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={clsx("flex flex-col gap-4 text-left", className)}
+    {...props}
+  />
 );
 
 DialogHeader.displayName = "DialogHeader";
 
-export const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+export const DialogFooter = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={clsx("flex flex-row flex-wrap items-center justify-end gap-2 pt-2", className)}
+    className={clsx(
+      "flex flex-row flex-wrap items-center justify-end gap-2 pt-2",
+      className,
+    )}
     {...props}
   />
 );
 
 DialogFooter.displayName = "DialogFooter";
 
-export const DialogTitle = ({ className, ...props }: DialogPrimitive.Title.Props) => (
+export const DialogTitle = ({
+  className,
+  ...props
+}: DialogPrimitive.Title.Props) => (
   <DialogPrimitive.Title
     className={withClassName("text-headline-small text-on-surface", className)}
     {...props}
@@ -550,9 +600,15 @@ export const DialogTitle = ({ className, ...props }: DialogPrimitive.Title.Props
 
 DialogTitle.displayName = "DialogTitle";
 
-export const DialogDescription = ({ className, ...props }: DialogPrimitive.Description.Props) => (
+export const DialogDescription = ({
+  className,
+  ...props
+}: DialogPrimitive.Description.Props) => (
   <DialogPrimitive.Description
-    className={withClassName("text-body-medium text-on-surface-variant", className)}
+    className={withClassName(
+      "text-body-medium text-on-surface-variant",
+      className,
+    )}
     {...props}
   />
 );

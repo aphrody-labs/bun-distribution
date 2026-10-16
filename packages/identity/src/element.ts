@@ -10,7 +10,14 @@
 //
 // Attributes: `src` (atlas URL, required), `size` (height in CSS px, default 208), `state`,
 // `animation`, `label`, `no-gaze`. Registration is explicit: `defineAphrodyPet()`.
-import { Ambient, gaze, PET_WEB, type PetWebData, resolve, type Tick } from "./runtime";
+import {
+  Ambient,
+  gaze,
+  PET_WEB,
+  type PetWebData,
+  resolve,
+  type Tick,
+} from "./runtime";
 import { publicPetAtlas } from "./public-assets";
 
 /** Pointer distance (CSS px at scale 1) beyond which the pet stops following it. */
@@ -30,7 +37,10 @@ function spriteSheet(data: PetWebData): CSSStyleSheet | string {
   const css = `:host{display:inline-block;position:relative;overflow:hidden;vertical-align:middle}
 .nie-sprite{position:absolute;left:0;top:0;transform-origin:0 0}
 ${data.css}`;
-  if (typeof CSSStyleSheet === "undefined" || !("replaceSync" in CSSStyleSheet.prototype))
+  if (
+    typeof CSSStyleSheet === "undefined" ||
+    !("replaceSync" in CSSStyleSheet.prototype)
+  )
     return css;
   if (!sheet) {
     sheet = new CSSStyleSheet();
@@ -40,7 +50,14 @@ ${data.css}`;
 }
 
 export class AphrodyPetElement extends HostBase {
-  static observedAttributes = ["src", "size", "state", "animation", "label", "no-gaze"];
+  static observedAttributes = [
+    "src",
+    "size",
+    "state",
+    "animation",
+    "label",
+    "no-gaze",
+  ];
 
   readonly data: PetWebData = PET_WEB;
   #sprite: HTMLDivElement | null = null;
@@ -76,9 +93,13 @@ export class AphrodyPetElement extends HostBase {
     this.#ambient = new Ambient(performance.now(), this.data.states);
     this.#applyState(this.getAttribute("state"));
     const animation = this.getAttribute("animation");
-    this.#played = animation ? { name: animation, start: performance.now() } : null;
+    this.#played = animation
+      ? { name: animation, start: performance.now() }
+      : null;
     this.#motion =
-      typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : null;
+      typeof matchMedia === "function"
+        ? matchMedia("(prefers-reduced-motion: reduce)")
+        : null;
     this.#motion?.addEventListener("change", this.#onMotion);
     this.#syncGaze();
     this.#layout();
@@ -91,11 +112,16 @@ export class AphrodyPetElement extends HostBase {
     globalThis.removeEventListener?.("pointermove", this.#onPointer);
   }
 
-  attributeChangedCallback(name: string, old: string | null, value: string | null): void {
+  attributeChangedCallback(
+    name: string,
+    old: string | null,
+    value: string | null,
+  ): void {
     if (old === value || !this.#sprite) return;
     const now = performance.now();
     if (name === "state") this.#applyState(value);
-    else if (name === "animation") this.#played = value ? { name: value, start: now } : null;
+    else if (name === "animation")
+      this.#played = value ? { name: value, start: now } : null;
     else if (name === "no-gaze") this.#syncGaze();
     this.#layout();
     this.#render();
@@ -119,14 +145,18 @@ export class AphrodyPetElement extends HostBase {
 
   /** Plays a track by name from its start (unknown names play `idle`); `null` returns to the ambient state. */
   play(animation: string | null): void {
-    this.#played = animation ? { name: animation, start: performance.now() } : null;
+    this.#played = animation
+      ? { name: animation, start: performance.now() }
+      : null;
     this.#render();
   }
 
   /** CSS scale of the 192x208 cell. */
   get scale(): number {
     const size = Number(this.getAttribute("size"));
-    return Number.isFinite(size) && size > 0 ? size / this.data.atlas.cellHeight : 1;
+    return Number.isFinite(size) && size > 0
+      ? size / this.data.atlas.cellHeight
+      : 1;
   }
 
   #applyState(state: string | null): void {
@@ -138,7 +168,9 @@ export class AphrodyPetElement extends HostBase {
   #syncGaze(): void {
     globalThis.removeEventListener?.("pointermove", this.#onPointer);
     if (!this.hasAttribute("no-gaze"))
-      globalThis.addEventListener?.("pointermove", this.#onPointer, { passive: true });
+      globalThis.addEventListener?.("pointermove", this.#onPointer, {
+        passive: true,
+      });
   }
 
   #layout(): void {
@@ -146,24 +178,42 @@ export class AphrodyPetElement extends HostBase {
     const { cellWidth, cellHeight } = this.data.atlas;
     this.style.width = `${cellWidth * s}px`;
     this.style.height = `${cellHeight * s}px`;
-    this.setAttribute("aria-label", this.getAttribute("label") ?? this.data.displayName);
+    this.setAttribute(
+      "aria-label",
+      this.getAttribute("label") ?? this.data.displayName,
+    );
     if (!this.#sprite) return;
     this.#sprite.style.transform = s === 1 ? "" : `scale(${s})`;
     const src = this.getAttribute("src") || publicPetAtlas("");
-    this.#sprite.style.backgroundImage = src ? `url(${JSON.stringify(src)})` : "";
+    this.#sprite.style.backgroundImage = src
+      ? `url(${JSON.stringify(src)})`
+      : "";
   }
 
   /** The gaze cell when the pet is at rest and the pointer moved recently within reach, else null. */
-  #gazeCell(now: number, animation: string): { cell: number; until: number } | null {
+  #gazeCell(
+    now: number,
+    animation: string,
+  ): { cell: number; until: number } | null {
     const p = this.#pointer;
-    if (!p || animation !== "idle" || this.hasAttribute("no-gaze") || now - p.at > GAZE_HOLD_MS)
+    if (
+      !p ||
+      animation !== "idle" ||
+      this.hasAttribute("no-gaze") ||
+      now - p.at > GAZE_HOLD_MS
+    )
       return null;
     const box = this.getBoundingClientRect();
     const s = this.scale;
     const dx = p.x - (box.left + box.width / 2);
     const dy = p.y - (box.top + box.height * EYES_Y);
     if (Math.hypot(dx, dy) > GAZE_RADIUS * s) return null;
-    const i = gaze(dx, dy, this.data.gazeDeadzone * s, this.data.directions.length);
+    const i = gaze(
+      dx,
+      dy,
+      this.data.gazeDeadzone * s,
+      this.data.directions.length,
+    );
     const cell = i === null ? this.data.neutral : this.data.directions[i];
     return cell === undefined ? null : { cell, until: p.at + GAZE_HOLD_MS };
   }
@@ -175,7 +225,11 @@ export class AphrodyPetElement extends HostBase {
     const reduced = this.#motion?.matches ?? false;
     const [ambientName, ambientElapsed] = this.#ambient.animation(now);
     const name = this.#played?.name ?? ambientName;
-    const elapsed = reduced ? 0 : this.#played ? now - this.#played.start : ambientElapsed;
+    const elapsed = reduced
+      ? 0
+      : this.#played
+        ? now - this.#played.start
+        : ambientElapsed;
 
     const looking = reduced ? null : this.#gazeCell(now, name);
     let tick: Tick | null;
@@ -194,14 +248,19 @@ export class AphrodyPetElement extends HostBase {
     }
     if (reduced) return;
     // A frozen frame still has to notice its state expiring.
-    const expiry = this.#played ? undefined : this.#ambient.state(now)?.remaining;
-    if (expiry !== undefined) wake = wake === null ? expiry : Math.min(wake, expiry);
+    const expiry = this.#played
+      ? undefined
+      : this.#ambient.state(now)?.remaining;
+    if (expiry !== undefined)
+      wake = wake === null ? expiry : Math.min(wake, expiry);
     if (wake !== null) this.#timer = setTimeout(() => this.#render(), wake);
   }
 }
 
 /** Registers `<aphrody-pet>` (or `tag`) once; returns the class. */
-export function defineAphrodyPet(tag = "aphrody-pet"): typeof AphrodyPetElement {
+export function defineAphrodyPet(
+  tag = "aphrody-pet",
+): typeof AphrodyPetElement {
   if (typeof customElements !== "undefined" && !customElements.get(tag)) {
     customElements.define(tag, AphrodyPetElement);
   }

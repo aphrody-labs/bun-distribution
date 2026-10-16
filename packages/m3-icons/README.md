@@ -1,16 +1,17 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # @aphrody/m3-icons
 
 Material Symbols as inline SVG, generated from the `aphrody-bun` icons module (variable-font
 outlines). No icon font is shipped at runtime.
 
-| Entry | Runs in | Native binding |
-| --- | --- | --- |
-| `@aphrody/m3-icons` | Bun / server | Yes: `m3Icon`, `m3IconNames`, `<M3Icon>`, `<m3-icon>` render through `@aphrody/bun` |
-| `@aphrody/m3-icons/browser` | Browser, `use client` | No: `<M3IconSvg svg={…}>` renders SVG generated ahead of time |
-| `@aphrody/m3-icons/browser/lit` | Browser | No: `<m3-icon-svg>` (Lit) inlines SVG set on its `svg` property |
-| `@aphrody/m3-icons/codegen` | Build time (Bun) | Yes: writes one ESM module per icon |
-| `@aphrody/m3-icons/plugin` | Build time (Bun) | Yes: resolves `m3:icon/<style>/<name>` imports |
+| Entry                           | Runs in               | Native binding                                                                      |
+| ------------------------------- | --------------------- | ----------------------------------------------------------------------------------- |
+| `@aphrody/m3-icons`             | Bun / server          | Yes: `m3Icon`, `m3IconNames`, `<M3Icon>`, `<m3-icon>` render through `@aphrody/bun` |
+| `@aphrody/m3-icons/browser`     | Browser, `use client` | No: `<M3IconSvg svg={…}>` renders SVG generated ahead of time                       |
+| `@aphrody/m3-icons/browser/lit` | Browser               | No: `<m3-icon-svg>` (Lit) inlines SVG set on its `svg` property                     |
+| `@aphrody/m3-icons/codegen`     | Build time (Bun)      | Yes: writes one ESM module per icon                                                 |
+| `@aphrody/m3-icons/plugin`      | Build time (Bun)      | Yes: resolves `m3:icon/<style>/<name>` imports                                      |
 
 Client bundles must use `./browser` with SVG produced by `./codegen`, the plugin,
 or a server call to `m3Icon`; the root entry loads the Bun FFI library when an

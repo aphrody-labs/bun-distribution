@@ -82,7 +82,9 @@ export async function startNextApp(options: M3NextOptions): Promise<M3NextApp> {
   try {
     command = run.nextCommand(args, options.dir);
   } catch (error) {
-    throw new Error(`m3-bun next: ${options.dir} has no next dependency`, { cause: error });
+    throw new Error(`m3-bun next: ${options.dir} has no next dependency`, {
+      cause: error,
+    });
   }
   const child = Bun.spawn(command.cmd, {
     windowsHide: true,

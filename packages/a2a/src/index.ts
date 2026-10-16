@@ -28,6 +28,11 @@ export {
   type TransportOptions,
   type UnaryMethod,
 } from "./transport.ts";
-export { A2AClient, type A2AClientOptions, type ConnectOptions, type Params } from "./client.ts";
+export {
+  A2AClient,
+  type A2AClientOptions,
+  type ConnectOptions,
+  type Params,
+} from "./client.ts";
 export * from "./helpers.ts";
 export { parsePushNotification, verifyPushAuthorization } from "./push.ts";

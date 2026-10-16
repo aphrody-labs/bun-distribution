@@ -11,16 +11,27 @@ export function wstr(s: string): Buffer {
 }
 
 /** Reads a NUL-terminated UTF-16LE string from `buf` starting at `offset` (at most `maxChars`). */
-export function readWstr(buf: Uint8Array, offset = 0, maxChars = buf.length / 2): string {
+export function readWstr(
+  buf: Uint8Array,
+  offset = 0,
+  maxChars = buf.length / 2,
+): string {
   const view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
   let end = offset;
   const limit = Math.min(buf.byteLength, offset + maxChars * 2);
   while (end + 1 < limit && view.getUint16(end, true) !== 0) end += 2;
-  return Buffer.from(buf.buffer, buf.byteOffset + offset, end - offset).toString("utf16le");
+  return Buffer.from(
+    buf.buffer,
+    buf.byteOffset + offset,
+    end - offset,
+  ).toString("utf16le");
 }
 
 const k32Symbols = {
-  CreateFileW: { args: ["ptr", "u32", "u32", "ptr", "u32", "u32", "ptr"], returns: "ptr" },
+  CreateFileW: {
+    args: ["ptr", "u32", "u32", "ptr", "u32", "u32", "ptr"],
+    returns: "ptr",
+  },
   CloseHandle: { args: ["ptr"], returns: "i32" },
   DeviceIoControl: {
     args: ["ptr", "u32", "ptr", "u32", "ptr", "u32", "ptr", "ptr"],
@@ -43,20 +54,35 @@ const advSymbols = {
     args: ["u64", "u32", "ptr", "ptr", "ptr", "ptr", "ptr", "ptr"],
     returns: "i32",
   },
-  RegQueryValueExW: { args: ["u64", "ptr", "ptr", "ptr", "ptr", "ptr"], returns: "i32" },
+  RegQueryValueExW: {
+    args: ["u64", "ptr", "ptr", "ptr", "ptr", "ptr"],
+    returns: "i32",
+  },
   RegCloseKey: { args: ["u64"], returns: "i32" },
 } as const;
 
 const wintrustSymbols = {
-  CryptCATAdminAcquireContext2: { args: ["ptr", "ptr", "ptr", "ptr", "u32"], returns: "i32" },
+  CryptCATAdminAcquireContext2: {
+    args: ["ptr", "ptr", "ptr", "ptr", "u32"],
+    returns: "i32",
+  },
   CryptCATAdminReleaseContext: { args: ["ptr", "u32"], returns: "i32" },
   CryptCATAdminCalcHashFromFileHandle2: {
     args: ["ptr", "ptr", "ptr", "ptr", "u32"],
     returns: "i32",
   },
-  CryptCATAdminEnumCatalogFromHash: { args: ["ptr", "ptr", "u32", "u32", "ptr"], returns: "ptr" },
-  CryptCATCatalogInfoFromContext: { args: ["ptr", "ptr", "u32"], returns: "i32" },
-  CryptCATAdminReleaseCatalogContext: { args: ["ptr", "ptr", "u32"], returns: "i32" },
+  CryptCATAdminEnumCatalogFromHash: {
+    args: ["ptr", "ptr", "u32", "u32", "ptr"],
+    returns: "ptr",
+  },
+  CryptCATCatalogInfoFromContext: {
+    args: ["ptr", "ptr", "u32"],
+    returns: "i32",
+  },
+  CryptCATAdminReleaseCatalogContext: {
+    args: ["ptr", "ptr", "u32"],
+    returns: "i32",
+  },
 } as const;
 
 type K32 = ReturnType<typeof dlopen<typeof k32Symbols>>["symbols"];
@@ -83,7 +109,9 @@ export function advapi(): Adv {
 export function wintrust(): WinTrust | null {
   if (trustLib !== undefined) return trustLib;
   try {
-    trustLib = isWindows ? dlopen("wintrust.dll", wintrustSymbols).symbols : null;
+    trustLib = isWindows
+      ? dlopen("wintrust.dll", wintrustSymbols).symbols
+      : null;
   } catch {
     trustLib = null;
   }
@@ -109,7 +137,15 @@ export function openHandle(
   flags = FILE_FLAG_BACKUP_SEMANTICS,
 ): { handle: Pointer } | { error: number } {
   const lib = k32();
-  const h = lib.CreateFileW(wstr(path), access, FILE_SHARE_ALL, null, OPEN_EXISTING, flags, null);
+  const h = lib.CreateFileW(
+    wstr(path),
+    access,
+    FILE_SHARE_ALL,
+    null,
+    OPEN_EXISTING,
+    flags,
+    null,
+  );
   if (!validHandle(h)) return { error: lib.GetLastError() };
   return { handle: h };
 }
@@ -150,7 +186,16 @@ export function fileAttributes(path: string): number | undefined {
 /** Volume serial number of `C:\` style roots, as 8 hex digits. */
 export function volumeSerial(root: string): string | undefined {
   const serial = new Uint32Array(1);
-  const ok = k32().GetVolumeInformationW(wstr(root), null, 0, serial, null, null, null, 0);
+  const ok = k32().GetVolumeInformationW(
+    wstr(root),
+    null,
+    0,
+    serial,
+    null,
+    null,
+    null,
+    0,
+  );
   return ok ? serial[0]!.toString(16).padStart(8, "0") : undefined;
 }
 

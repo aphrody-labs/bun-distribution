@@ -21,14 +21,18 @@ export function artifactHandler(root: string, token: string) {
   const expected = Buffer.from(`Bearer ${token}`);
   return async (request: Request) => {
     const provided = Buffer.from(request.headers.get("authorization") ?? "");
-    if (provided.length !== expected.length || !timingSafeEqual(provided, expected))
+    if (
+      provided.length !== expected.length ||
+      !timingSafeEqual(provided, expected)
+    )
       return new Response("Unauthorized", { status: 401 });
     if (request.method !== "GET" && request.method !== "HEAD")
       return new Response("Method not allowed", { status: 405 });
     const name = new URL(request.url).pathname.slice(1);
     if (!files.has(name)) return new Response("Not found", { status: 404 });
     const file = Bun.file(join(root, name));
-    if (!(await file.exists())) return new Response("Not found", { status: 404 });
+    if (!(await file.exists()))
+      return new Response("Not found", { status: 404 });
     const headers = {
       "Cache-Control": "private, no-store",
       "Content-Type": "application/octet-stream",
@@ -50,7 +54,9 @@ export function artifactHandler(root: string, token: string) {
         ...headers,
         "Accept-Ranges": "bytes",
         "Content-Length": String(file.size - offset),
-        ...(range ? { "Content-Range": `bytes ${offset}-${file.size - 1}/${file.size}` } : {}),
+        ...(range
+          ? { "Content-Range": `bytes ${offset}-${file.size - 1}/${file.size}` }
+          : {}),
       },
     });
   };
@@ -58,7 +64,12 @@ export function artifactHandler(root: string, token: string) {
 
 export async function serveArtifacts(argv: string[]) {
   const [root, tokenPath, address] = argv;
-  if (!root || !tokenPath || !isAbsolute(tokenPath) || address !== "10.200.77.1")
+  if (
+    !root ||
+    !tokenPath ||
+    !isAbsolute(tokenPath) ||
+    address !== "10.200.77.1"
+  )
     throw new Error(
       "usage: aphrody-product admin flotte depot <pinned depot> <protected token file> 10.200.77.1",
     );

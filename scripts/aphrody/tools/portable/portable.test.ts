@@ -1,9 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { excluded, linksTo, storedPath, totals, treeBytes } from "./portable.ts";
+import {
+  excluded,
+  linksTo,
+  storedPath,
+  totals,
+  treeBytes,
+} from "./portable.ts";
 
 describe("portable", () => {
   test("stored paths separate home and system trees", () => {
@@ -52,7 +64,11 @@ describe("portable", () => {
   test("heavy subtrees are reported apart from their category", () => {
     expect(
       totals([
-        { category: "data", bytes: 100, heavy: { models: 60, "private/backups": 10 } },
+        {
+          category: "data",
+          bytes: 100,
+          heavy: { models: 60, "private/backups": 10 },
+        },
         { category: "essential", bytes: 5 },
       ]),
     ).toEqual({ essential: 5, data: 30, heavy: 70 });

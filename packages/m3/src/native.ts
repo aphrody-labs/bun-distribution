@@ -21,7 +21,11 @@ export type M3CssFn = (config: M3CssConfig) => string;
 /** The subset of `@aphrody/bun` this package uses. `m3Css` is declared optional: older builds lack it. */
 interface AphrodyBunModule {
   m3Css?: M3CssFn;
-  sassRustPlugin?: (options?: { loadPaths?: string[]; style?: "expanded" | "compressed"; quiet?: boolean }) => {
+  sassRustPlugin?: (options?: {
+    loadPaths?: string[];
+    style?: "expanded" | "compressed";
+    quiet?: boolean;
+  }) => {
     name: string;
     setup(build: unknown): void;
   };
@@ -42,7 +46,9 @@ export function loadAphrodyBun(): Promise<AphrodyBunModule> {
 export async function defaultM3Css(): Promise<M3CssFn> {
   const mod = await loadAphrodyBun();
   if (typeof mod.m3Css !== "function") {
-    throw new Error("@aphrody/m3: this build of @aphrody/bun does not export m3Css (rebuild crates/ui/bun)");
+    throw new Error(
+      "@aphrody/m3: this build of @aphrody/bun does not export m3Css (rebuild crates/ui/bun)",
+    );
   }
   return mod.m3Css;
 }
@@ -62,7 +68,8 @@ export function cssRequest(
 ): M3CssConfig {
   const config: M3CssConfig = { sheet };
   if (theme.seed !== undefined) config.seed = theme.seed;
-  if (theme.variant !== undefined) config.variant = normalizeVariant(theme.variant);
+  if (theme.variant !== undefined)
+    config.variant = normalizeVariant(theme.variant);
   if (theme.contrast !== undefined) config.contrast = theme.contrast;
   if (theme.dark !== undefined) config.dark = theme.dark;
   return config;

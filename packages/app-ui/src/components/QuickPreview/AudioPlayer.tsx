@@ -32,7 +32,9 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
 
   // Load SRT transcripts if available
   useEffect(() => {
-    const srtSidecar = file.sidecars?.find((s) => s.kind === "transcript" && s.variant === "srt");
+    const srtSidecar = file.sidecars?.find(
+      (s) => s.kind === "transcript" && s.variant === "srt",
+    );
 
     if (!srtSidecar || !file.content_identity?.uuid) {
       return;
@@ -60,7 +62,9 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
         setCues(parsed);
         return;
       })
-      .catch((err) => console.log("[AudioPlayer] Lyrics not available:", err.message));
+      .catch((err) =>
+        console.log("[AudioPlayer] Lyrics not available:", err.message),
+      );
   }, [file, buildSidecarUrl]);
 
   // Sync lyrics with audio playback
@@ -70,14 +74,18 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
 
     const updateLyrics = () => {
       const time = audioRef.current!.currentTime;
-      const index = cues.findIndex((cue) => time >= cue.startTime && time <= cue.endTime);
+      const index = cues.findIndex(
+        (cue) => time >= cue.startTime && time <= cue.endTime,
+      );
 
       if (index !== currentCueIndex) {
         setCurrentCueIndex(index);
 
         // Auto-scroll to active lyric
         if (index >= 0 && lyricsContainerRef.current) {
-          const activeElement = lyricsContainerRef.current.children[index] as HTMLElement;
+          const activeElement = lyricsContainerRef.current.children[
+            index
+          ] as HTMLElement;
           if (activeElement) {
             activeElement.scrollIntoView({
               behavior: "smooth",
@@ -128,11 +136,17 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
           break;
         case "ArrowLeft":
           e.preventDefault();
-          audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 10);
+          audioRef.current.currentTime = Math.max(
+            0,
+            audioRef.current.currentTime - 10,
+          );
           break;
         case "ArrowRight":
           e.preventDefault();
-          audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + 10);
+          audioRef.current.currentTime = Math.min(
+            duration,
+            audioRef.current.currentTime + 10,
+          );
           break;
         case "ArrowUp":
           e.preventDefault();
@@ -162,12 +176,18 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
 
   const skipBack = () => {
     if (!audioRef.current) return;
-    audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 10);
+    audioRef.current.currentTime = Math.max(
+      0,
+      audioRef.current.currentTime - 10,
+    );
   };
 
   const skipForward = () => {
     if (!audioRef.current) return;
-    audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + 10);
+    audioRef.current.currentTime = Math.min(
+      duration,
+      audioRef.current.currentTime + 10,
+    );
   };
 
   return (
@@ -180,7 +200,9 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
         autoPlay
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
-        onTimeUpdate={(e) => !seeking && setCurrentTime(e.currentTarget.currentTime)}
+        onTimeUpdate={(e) =>
+          !seeking && setCurrentTime(e.currentTarget.currentTime)
+        }
         onDurationChange={(e) => setDuration(e.currentTarget.duration)}
         onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
       />
@@ -237,8 +259,12 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
               </div>
             ) : (
               <div className="text-center">
-                <div className="mb-4 text-display-medium font-bold text-outline">♪</div>
-                <p className="text-body-large text-on-surface-variant">No lyrics available</p>
+                <div className="mb-4 text-display-medium font-bold text-outline">
+                  ♪
+                </div>
+                <p className="text-body-large text-on-surface-variant">
+                  No lyrics available
+                </p>
               </div>
             )}
           </div>
@@ -306,7 +332,12 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
               className={`relative rounded-full bg-primary p-3 text-on-primary shadow-md3-1 transition-shadow ease-standard before:absolute before:inset-0 before:rounded-[inherit] before:bg-on-primary before:opacity-0 before:transition-opacity hover:shadow-md3-2 hover:before:opacity-8 active:before:opacity-10 ${m3FocusRing}`}
               aria-label={playing ? "Pause" : "Play"}
             >
-              <Icon name={playing ? "pause" : "play_arrow"} size={28} filled className="relative" />
+              <Icon
+                name={playing ? "pause" : "play_arrow"}
+                size={28}
+                filled
+                className="relative"
+              />
             </button>
 
             <button
@@ -333,7 +364,11 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
                 className={`rounded-full p-2 text-on-surface-variant transition-colors ease-standard hover:bg-on-surface-variant/8 hover:text-on-surface active:bg-on-surface-variant/10 ${m3FocusRing}`}
                 aria-label={muted || volume === 0 ? "Unmute" : "Mute"}
               >
-                <Icon name={muted || volume === 0 ? "volume_off" : "volume_up"} size={20} filled />
+                <Icon
+                  name={muted || volume === 0 ? "volume_off" : "volume_up"}
+                  size={20}
+                  filled
+                />
               </button>
 
               {/* Volume Slider */}

@@ -314,9 +314,8 @@ export function usePromptBoxDrop({
 
     const setup = async () => {
       try {
-        const { getCurrentWebviewWindow } = await import(
-          "@tauri-apps/api/webviewWindow"
-        );
+        const { getCurrentWebviewWindow } =
+          await import("@tauri-apps/api/webviewWindow");
         const { convertFileSrc } = await import("@tauri-apps/api/core");
         const appWindow = getCurrentWebviewWindow();
 

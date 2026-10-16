@@ -122,7 +122,10 @@ export class EditorStateChangedEvent extends EngineEvent {
 }
 
 export class EditorLoaderEvent extends EngineEvent {
-  constructor(readonly visible: boolean, readonly message?: string) {
+  constructor(
+    readonly visible: boolean,
+    readonly message?: string,
+  ) {
     super();
   }
 }

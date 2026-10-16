@@ -342,8 +342,7 @@ export interface ClickArgs {
 }
 
 /** Arguments for `computer_capture_screen`. */
-export interface ComputerCaptureScreenArgs {
-}
+export interface ComputerCaptureScreenArgs {}
 
 /** Arguments for `computer_click`. */
 export interface ComputerClickArgs {
@@ -670,8 +669,7 @@ export interface CoordAssignTaskArgs {
 }
 
 /** Arguments for `coord_query_stop`. */
-export interface CoordQueryStopArgs {
-}
+export interface CoordQueryStopArgs {}
 
 /** Arguments for `coord_read_status`. */
 export interface CoordReadStatusArgs {
@@ -682,8 +680,7 @@ export interface CoordReadStatusArgs {
 }
 
 /** Arguments for `coord_read_task`. */
-export interface CoordReadTaskArgs {
-}
+export interface CoordReadTaskArgs {}
 
 /** Arguments for `coord_report_status`. */
 export interface CoordReportStatusArgs {
@@ -774,12 +771,10 @@ export interface GamepadDestroyArgs {
 }
 
 /** Arguments for `gamepad_destroy_all`. */
-export interface GamepadDestroyAllArgs {
-}
+export interface GamepadDestroyAllArgs {}
 
 /** Arguments for `gamepad_environment`. */
-export interface GamepadEnvironmentArgs {
-}
+export interface GamepadEnvironmentArgs {}
 
 /** Arguments for `gamepad_press_button`. */
 export interface GamepadPressButtonArgs {
@@ -841,16 +836,13 @@ export interface GamepadSendXbox360StateArgs {
 }
 
 /** Arguments for `get_active_power_plan`. */
-export interface GetActivePowerPlanArgs {
-}
+export interface GetActivePowerPlanArgs {}
 
 /** Arguments for `get_clipboard_text`. */
-export interface GetClipboardTextArgs {
-}
+export interface GetClipboardTextArgs {}
 
 /** Arguments for `get_cpu_info`. */
-export interface GetCpuInfoArgs {
-}
+export interface GetCpuInfoArgs {}
 
 /** Arguments for `get_cpu_usage`. */
 export interface GetCpuUsageArgs {
@@ -862,12 +854,10 @@ export interface GetCpuUsageArgs {
 }
 
 /** Arguments for `get_defender_status`. */
-export interface GetDefenderStatusArgs {
-}
+export interface GetDefenderStatusArgs {}
 
 /** Arguments for `get_disk_info`. */
-export interface GetDiskInfoArgs {
-}
+export interface GetDiskInfoArgs {}
 
 /** Arguments for `get_file_info`. */
 export interface GetFileInfoArgs {
@@ -878,24 +868,19 @@ export interface GetFileInfoArgs {
 }
 
 /** Arguments for `get_gpu_preferences`. */
-export interface GetGpuPreferencesArgs {
-}
+export interface GetGpuPreferencesArgs {}
 
 /** Arguments for `get_hags_mode`. */
-export interface GetHagsModeArgs {
-}
+export interface GetHagsModeArgs {}
 
 /** Arguments for `get_memory_info`. */
-export interface GetMemoryInfoArgs {
-}
+export interface GetMemoryInfoArgs {}
 
 /** Arguments for `get_network_adapters`. */
-export interface GetNetworkAdaptersArgs {
-}
+export interface GetNetworkAdaptersArgs {}
 
 /** Arguments for `get_os_info`. */
-export interface GetOsInfoArgs {
-}
+export interface GetOsInfoArgs {}
 
 /** Arguments for `get_registry_value`. */
 export interface GetRegistryValueArgs {
@@ -910,8 +895,7 @@ export interface GetRegistryValueArgs {
 }
 
 /** Arguments for `get_system_profile`. */
-export interface GetSystemProfileArgs {
-}
+export interface GetSystemProfileArgs {}
 
 /** Arguments for `golang_scan`. */
 export interface GolangScanArgs {
@@ -1026,12 +1010,10 @@ export interface ListDirectoryArgs {
 }
 
 /** Arguments for `list_listening_ports`. */
-export interface ListListeningPortsArgs {
-}
+export interface ListListeningPortsArgs {}
 
 /** Arguments for `list_power_plans`. */
-export interface ListPowerPlansArgs {
-}
+export interface ListPowerPlansArgs {}
 
 /** Arguments for `list_processes`. */
 export interface ListProcessesArgs {
@@ -1093,8 +1075,7 @@ export interface ListTcpConnectionsArgs {
 }
 
 /** Arguments for `list_windows`. */
-export interface ListWindowsArgs {
-}
+export interface ListWindowsArgs {}
 
 /** Arguments for `mem_allocate`. */
 export interface MemAllocateArgs {
@@ -1140,8 +1121,7 @@ export interface MemDumpRegionArgs {
 }
 
 /** Arguments for `mem_enable_debug_privilege`. */
-export interface MemEnableDebugPrivilegeArgs {
-}
+export interface MemEnableDebugPrivilegeArgs {}
 
 /** Arguments for `mem_free`. */
 export interface MemFreeArgs {
@@ -1560,16 +1540,13 @@ export interface MultiSelectArgs {
 }
 
 /** Arguments for `perf_dwm_flush`. */
-export interface PerfDwmFlushArgs {
-}
+export interface PerfDwmFlushArgs {}
 
 /** Arguments for `perf_empty_working_sets`. */
-export interface PerfEmptyWorkingSetsArgs {
-}
+export interface PerfEmptyWorkingSetsArgs {}
 
 /** Arguments for `perf_memory_status`. */
-export interface PerfMemoryStatusArgs {
-}
+export interface PerfMemoryStatusArgs {}
 
 /** Arguments for `perf_purge_standby_list`. */
 export interface PerfPurgeStandbyListArgs {
@@ -2167,8 +2144,7 @@ export interface WindowGetTextArgs {
 }
 
 /** Arguments for `window_minimise_all`. */
-export interface WindowMinimiseAllArgs {
-}
+export interface WindowMinimiseAllArgs {}
 
 /** Arguments for `window_move`. */
 export interface WindowMoveArgs {
@@ -2283,8 +2259,7 @@ export interface WindowSetTopmostArgs {
 }
 
 /** Arguments for `winml_get_version`. */
-export interface WinmlGetVersionArgs {
-}
+export interface WinmlGetVersionArgs {}
 
 /** Arguments for `winml_inspect_onnx`. */
 export interface WinmlInspectOnnxArgs {
@@ -2295,8 +2270,7 @@ export interface WinmlInspectOnnxArgs {
 }
 
 /** Arguments for `winml_list_providers`. */
-export interface WinmlListProvidersArgs {
-}
+export interface WinmlListProvidersArgs {}
 
 /** Arguments for `winml_run_float32`. */
 export interface WinmlRunFloat32Args {
@@ -2345,12 +2319,10 @@ export interface WslExecuteArgs {
 }
 
 /** Arguments for `wsl_get_status`. */
-export interface WslGetStatusArgs {
-}
+export interface WslGetStatusArgs {}
 
 /** Arguments for `wsl_list_distributions`. */
-export interface WslListDistributionsArgs {
-}
+export interface WslListDistributionsArgs {}
 
 /** Arguments for `wsl_list_processes`. */
 export interface WslListProcessesArgs {
@@ -2390,177 +2362,180 @@ export interface WslSendSignalArgs {
 }
 
 export type ToolArgsMap = {
-  "analyze_pe": AnalyzePeArgs;
-  "aob_scan": AobScanArgs;
-  "asar_list": AsarListArgs;
-  "binary_aes_ctr_decrypt": BinaryAesCtrDecryptArgs;
-  "binary_entropy_map": BinaryEntropyMapArgs;
-  "binary_extract_strings": BinaryExtractStringsArgs;
-  "binary_hash_multi": BinaryHashMultiArgs;
-  "binary_list_cpk": BinaryListCpkArgs;
-  "binary_parse_pe_header": BinaryParsePeHeaderArgs;
-  "binary_section_dump": BinarySectionDumpArgs;
-  "binary_xor_decrypt": BinaryXorDecryptArgs;
-  "click": ClickArgs;
-  "computer_capture_screen": ComputerCaptureScreenArgs;
-  "computer_click": ComputerClickArgs;
-  "computer_click_element": ComputerClickElementArgs;
-  "computer_drag": ComputerDragArgs;
-  "computer_key": ComputerKeyArgs;
-  "computer_observe": ComputerObserveArgs;
-  "computer_ocr": ComputerOcrArgs;
-  "computer_record_clip": ComputerRecordClipArgs;
-  "computer_scroll": ComputerScrollArgs;
-  "computer_speak": ComputerSpeakArgs;
-  "computer_type": ComputerTypeArgs;
-  "coord_assign_task": CoordAssignTaskArgs;
-  "coord_query_stop": CoordQueryStopArgs;
-  "coord_read_status": CoordReadStatusArgs;
-  "coord_read_task": CoordReadTaskArgs;
-  "coord_report_status": CoordReportStatusArgs;
-  "copy_path": CopyPathArgs;
-  "delete_path": DeletePathArgs;
-  "delete_registry_entry": DeleteRegistryEntryArgs;
-  "disable_scheduled_task": DisableScheduledTaskArgs;
-  "enable_scheduled_task": EnableScheduledTaskArgs;
-  "gamepad_create_xbox360": GamepadCreateXbox360Args;
-  "gamepad_destroy": GamepadDestroyArgs;
-  "gamepad_destroy_all": GamepadDestroyAllArgs;
-  "gamepad_environment": GamepadEnvironmentArgs;
-  "gamepad_press_button": GamepadPressButtonArgs;
-  "gamepad_send_xbox360_state": GamepadSendXbox360StateArgs;
-  "get_active_power_plan": GetActivePowerPlanArgs;
-  "get_clipboard_text": GetClipboardTextArgs;
-  "get_cpu_info": GetCpuInfoArgs;
-  "get_cpu_usage": GetCpuUsageArgs;
-  "get_defender_status": GetDefenderStatusArgs;
-  "get_disk_info": GetDiskInfoArgs;
-  "get_file_info": GetFileInfoArgs;
-  "get_gpu_preferences": GetGpuPreferencesArgs;
-  "get_hags_mode": GetHagsModeArgs;
-  "get_memory_info": GetMemoryInfoArgs;
-  "get_network_adapters": GetNetworkAdaptersArgs;
-  "get_os_info": GetOsInfoArgs;
-  "get_registry_value": GetRegistryValueArgs;
-  "get_system_profile": GetSystemProfileArgs;
-  "golang_scan": GolangScanArgs;
-  "keyboard_hold": KeyboardHoldArgs;
-  "keyboard_release": KeyboardReleaseArgs;
-  "keyboard_scan_code": KeyboardScanCodeArgs;
-  "kill_process": KillProcessArgs;
-  "launch_app": LaunchAppArgs;
-  "list_directory": ListDirectoryArgs;
-  "list_listening_ports": ListListeningPortsArgs;
-  "list_power_plans": ListPowerPlansArgs;
-  "list_processes": ListProcessesArgs;
-  "list_registry_key": ListRegistryKeyArgs;
-  "list_scheduled_tasks": ListScheduledTasksArgs;
-  "list_services": ListServicesArgs;
-  "list_tcp_connections": ListTcpConnectionsArgs;
-  "list_windows": ListWindowsArgs;
-  "mem_allocate": MemAllocateArgs;
-  "mem_dump_region": MemDumpRegionArgs;
-  "mem_enable_debug_privilege": MemEnableDebugPrivilegeArgs;
-  "mem_free": MemFreeArgs;
-  "mem_get_module_base": MemGetModuleBaseArgs;
-  "mem_list_modules": MemListModulesArgs;
-  "mem_list_processes": MemListProcessesArgs;
-  "mem_protect": MemProtectArgs;
-  "mem_query_region": MemQueryRegionArgs;
-  "mem_read_bytes": MemReadBytesArgs;
-  "mem_read_c_string": MemReadCStringArgs;
-  "mem_read_double": MemReadDoubleArgs;
-  "mem_read_float": MemReadFloatArgs;
-  "mem_read_int32": MemReadInt32Args;
-  "mem_read_int64": MemReadInt64Args;
-  "mem_read_utf16": MemReadUtf16Args;
-  "mem_resume_process": MemResumeProcessArgs;
-  "mem_scan_aob": MemScanAobArgs;
-  "mem_scan_value_int32": MemScanValueInt32Args;
-  "mem_suspend_process": MemSuspendProcessArgs;
-  "mem_write_bytes": MemWriteBytesArgs;
-  "mem_write_double": MemWriteDoubleArgs;
-  "mem_write_float": MemWriteFloatArgs;
-  "mem_write_int32": MemWriteInt32Args;
-  "mem_write_int64": MemWriteInt64Args;
-  "mouse_drag_to": MouseDragToArgs;
-  "mouse_move_smooth": MouseMoveSmoothArgs;
-  "move": MoveArgs;
-  "move_path": MovePathArgs;
-  "multi_edit": MultiEditArgs;
-  "multi_select": MultiSelectArgs;
-  "perf_dwm_flush": PerfDwmFlushArgs;
-  "perf_empty_working_sets": PerfEmptyWorkingSetsArgs;
-  "perf_memory_status": PerfMemoryStatusArgs;
-  "perf_purge_standby_list": PerfPurgeStandbyListArgs;
-  "perf_set_eco_mode": PerfSetEcoModeArgs;
-  "power_shell": PowerShellArgs;
-  "query_event_log": QueryEventLogArgs;
-  "read_file": ReadFileArgs;
-  "resize_window": ResizeWindowArgs;
-  "restart_service": RestartServiceArgs;
-  "run_scheduled_task": RunScheduledTaskArgs;
-  "scrape": ScrapeArgs;
-  "screenshot": ScreenshotArgs;
-  "scroll": ScrollArgs;
-  "search_files": SearchFilesArgs;
-  "search_windows": SearchWindowsArgs;
-  "send_notification": SendNotificationArgs;
-  "set_active_power_plan": SetActivePowerPlanArgs;
-  "set_clipboard_text": SetClipboardTextArgs;
-  "set_gpu_preference": SetGpuPreferenceArgs;
-  "set_hags_mode": SetHagsModeArgs;
-  "set_process_affinity": SetProcessAffinityArgs;
-  "set_process_priority": SetProcessPriorityArgs;
-  "set_registry_value": SetRegistryValueArgs;
-  "shortcut": ShortcutArgs;
-  "snapshot": SnapshotArgs;
-  "start_service": StartServiceArgs;
-  "steam_get_game": SteamGetGameArgs;
-  "steam_get_game_status": SteamGetGameStatusArgs;
-  "steam_kill_game": SteamKillGameArgs;
-  "steam_launch_and_wait": SteamLaunchAndWaitArgs;
-  "steam_launch_by_app_id": SteamLaunchByAppIdArgs;
-  "steam_list_games": SteamListGamesArgs;
-  "steam_list_libraries": SteamListLibrariesArgs;
-  "steam_open_uri": SteamOpenUriArgs;
-  "steam_scan_summary": SteamScanSummaryArgs;
-  "steam_vault_status": SteamVaultStatusArgs;
-  "steam_wait_for_launch": SteamWaitForLaunchArgs;
-  "stop_service": StopServiceArgs;
-  "switch_to_window": SwitchToWindowArgs;
-  "trim_process_working_set": TrimProcessWorkingSetArgs;
-  "type": TypeArgs;
-  "wait": WaitArgs;
-  "window_capture": WindowCaptureArgs;
-  "window_close": WindowCloseArgs;
-  "window_enum_all": WindowEnumAllArgs;
-  "window_enum_children": WindowEnumChildrenArgs;
-  "window_find_by_class": WindowFindByClassArgs;
-  "window_get_text": WindowGetTextArgs;
-  "window_minimise_all": WindowMinimiseAllArgs;
-  "window_move": WindowMoveArgs;
-  "window_post_message": WindowPostMessageArgs;
-  "window_send_message": WindowSendMessageArgs;
-  "window_set_opacity": WindowSetOpacityArgs;
-  "window_set_text": WindowSetTextArgs;
-  "window_set_topmost": WindowSetTopmostArgs;
-  "winml_get_version": WinmlGetVersionArgs;
-  "winml_inspect_onnx": WinmlInspectOnnxArgs;
-  "winml_list_providers": WinmlListProvidersArgs;
-  "winml_run_float32": WinmlRunFloat32Args;
-  "write_file": WriteFileArgs;
-  "wsl_execute": WslExecuteArgs;
-  "wsl_get_status": WslGetStatusArgs;
-  "wsl_list_distributions": WslListDistributionsArgs;
-  "wsl_list_processes": WslListProcessesArgs;
-  "wsl_read_only_probe": WslReadOnlyProbeArgs;
-  "wsl_send_signal": WslSendSignalArgs;
+  analyze_pe: AnalyzePeArgs;
+  aob_scan: AobScanArgs;
+  asar_list: AsarListArgs;
+  binary_aes_ctr_decrypt: BinaryAesCtrDecryptArgs;
+  binary_entropy_map: BinaryEntropyMapArgs;
+  binary_extract_strings: BinaryExtractStringsArgs;
+  binary_hash_multi: BinaryHashMultiArgs;
+  binary_list_cpk: BinaryListCpkArgs;
+  binary_parse_pe_header: BinaryParsePeHeaderArgs;
+  binary_section_dump: BinarySectionDumpArgs;
+  binary_xor_decrypt: BinaryXorDecryptArgs;
+  click: ClickArgs;
+  computer_capture_screen: ComputerCaptureScreenArgs;
+  computer_click: ComputerClickArgs;
+  computer_click_element: ComputerClickElementArgs;
+  computer_drag: ComputerDragArgs;
+  computer_key: ComputerKeyArgs;
+  computer_observe: ComputerObserveArgs;
+  computer_ocr: ComputerOcrArgs;
+  computer_record_clip: ComputerRecordClipArgs;
+  computer_scroll: ComputerScrollArgs;
+  computer_speak: ComputerSpeakArgs;
+  computer_type: ComputerTypeArgs;
+  coord_assign_task: CoordAssignTaskArgs;
+  coord_query_stop: CoordQueryStopArgs;
+  coord_read_status: CoordReadStatusArgs;
+  coord_read_task: CoordReadTaskArgs;
+  coord_report_status: CoordReportStatusArgs;
+  copy_path: CopyPathArgs;
+  delete_path: DeletePathArgs;
+  delete_registry_entry: DeleteRegistryEntryArgs;
+  disable_scheduled_task: DisableScheduledTaskArgs;
+  enable_scheduled_task: EnableScheduledTaskArgs;
+  gamepad_create_xbox360: GamepadCreateXbox360Args;
+  gamepad_destroy: GamepadDestroyArgs;
+  gamepad_destroy_all: GamepadDestroyAllArgs;
+  gamepad_environment: GamepadEnvironmentArgs;
+  gamepad_press_button: GamepadPressButtonArgs;
+  gamepad_send_xbox360_state: GamepadSendXbox360StateArgs;
+  get_active_power_plan: GetActivePowerPlanArgs;
+  get_clipboard_text: GetClipboardTextArgs;
+  get_cpu_info: GetCpuInfoArgs;
+  get_cpu_usage: GetCpuUsageArgs;
+  get_defender_status: GetDefenderStatusArgs;
+  get_disk_info: GetDiskInfoArgs;
+  get_file_info: GetFileInfoArgs;
+  get_gpu_preferences: GetGpuPreferencesArgs;
+  get_hags_mode: GetHagsModeArgs;
+  get_memory_info: GetMemoryInfoArgs;
+  get_network_adapters: GetNetworkAdaptersArgs;
+  get_os_info: GetOsInfoArgs;
+  get_registry_value: GetRegistryValueArgs;
+  get_system_profile: GetSystemProfileArgs;
+  golang_scan: GolangScanArgs;
+  keyboard_hold: KeyboardHoldArgs;
+  keyboard_release: KeyboardReleaseArgs;
+  keyboard_scan_code: KeyboardScanCodeArgs;
+  kill_process: KillProcessArgs;
+  launch_app: LaunchAppArgs;
+  list_directory: ListDirectoryArgs;
+  list_listening_ports: ListListeningPortsArgs;
+  list_power_plans: ListPowerPlansArgs;
+  list_processes: ListProcessesArgs;
+  list_registry_key: ListRegistryKeyArgs;
+  list_scheduled_tasks: ListScheduledTasksArgs;
+  list_services: ListServicesArgs;
+  list_tcp_connections: ListTcpConnectionsArgs;
+  list_windows: ListWindowsArgs;
+  mem_allocate: MemAllocateArgs;
+  mem_dump_region: MemDumpRegionArgs;
+  mem_enable_debug_privilege: MemEnableDebugPrivilegeArgs;
+  mem_free: MemFreeArgs;
+  mem_get_module_base: MemGetModuleBaseArgs;
+  mem_list_modules: MemListModulesArgs;
+  mem_list_processes: MemListProcessesArgs;
+  mem_protect: MemProtectArgs;
+  mem_query_region: MemQueryRegionArgs;
+  mem_read_bytes: MemReadBytesArgs;
+  mem_read_c_string: MemReadCStringArgs;
+  mem_read_double: MemReadDoubleArgs;
+  mem_read_float: MemReadFloatArgs;
+  mem_read_int32: MemReadInt32Args;
+  mem_read_int64: MemReadInt64Args;
+  mem_read_utf16: MemReadUtf16Args;
+  mem_resume_process: MemResumeProcessArgs;
+  mem_scan_aob: MemScanAobArgs;
+  mem_scan_value_int32: MemScanValueInt32Args;
+  mem_suspend_process: MemSuspendProcessArgs;
+  mem_write_bytes: MemWriteBytesArgs;
+  mem_write_double: MemWriteDoubleArgs;
+  mem_write_float: MemWriteFloatArgs;
+  mem_write_int32: MemWriteInt32Args;
+  mem_write_int64: MemWriteInt64Args;
+  mouse_drag_to: MouseDragToArgs;
+  mouse_move_smooth: MouseMoveSmoothArgs;
+  move: MoveArgs;
+  move_path: MovePathArgs;
+  multi_edit: MultiEditArgs;
+  multi_select: MultiSelectArgs;
+  perf_dwm_flush: PerfDwmFlushArgs;
+  perf_empty_working_sets: PerfEmptyWorkingSetsArgs;
+  perf_memory_status: PerfMemoryStatusArgs;
+  perf_purge_standby_list: PerfPurgeStandbyListArgs;
+  perf_set_eco_mode: PerfSetEcoModeArgs;
+  power_shell: PowerShellArgs;
+  query_event_log: QueryEventLogArgs;
+  read_file: ReadFileArgs;
+  resize_window: ResizeWindowArgs;
+  restart_service: RestartServiceArgs;
+  run_scheduled_task: RunScheduledTaskArgs;
+  scrape: ScrapeArgs;
+  screenshot: ScreenshotArgs;
+  scroll: ScrollArgs;
+  search_files: SearchFilesArgs;
+  search_windows: SearchWindowsArgs;
+  send_notification: SendNotificationArgs;
+  set_active_power_plan: SetActivePowerPlanArgs;
+  set_clipboard_text: SetClipboardTextArgs;
+  set_gpu_preference: SetGpuPreferenceArgs;
+  set_hags_mode: SetHagsModeArgs;
+  set_process_affinity: SetProcessAffinityArgs;
+  set_process_priority: SetProcessPriorityArgs;
+  set_registry_value: SetRegistryValueArgs;
+  shortcut: ShortcutArgs;
+  snapshot: SnapshotArgs;
+  start_service: StartServiceArgs;
+  steam_get_game: SteamGetGameArgs;
+  steam_get_game_status: SteamGetGameStatusArgs;
+  steam_kill_game: SteamKillGameArgs;
+  steam_launch_and_wait: SteamLaunchAndWaitArgs;
+  steam_launch_by_app_id: SteamLaunchByAppIdArgs;
+  steam_list_games: SteamListGamesArgs;
+  steam_list_libraries: SteamListLibrariesArgs;
+  steam_open_uri: SteamOpenUriArgs;
+  steam_scan_summary: SteamScanSummaryArgs;
+  steam_vault_status: SteamVaultStatusArgs;
+  steam_wait_for_launch: SteamWaitForLaunchArgs;
+  stop_service: StopServiceArgs;
+  switch_to_window: SwitchToWindowArgs;
+  trim_process_working_set: TrimProcessWorkingSetArgs;
+  type: TypeArgs;
+  wait: WaitArgs;
+  window_capture: WindowCaptureArgs;
+  window_close: WindowCloseArgs;
+  window_enum_all: WindowEnumAllArgs;
+  window_enum_children: WindowEnumChildrenArgs;
+  window_find_by_class: WindowFindByClassArgs;
+  window_get_text: WindowGetTextArgs;
+  window_minimise_all: WindowMinimiseAllArgs;
+  window_move: WindowMoveArgs;
+  window_post_message: WindowPostMessageArgs;
+  window_send_message: WindowSendMessageArgs;
+  window_set_opacity: WindowSetOpacityArgs;
+  window_set_text: WindowSetTextArgs;
+  window_set_topmost: WindowSetTopmostArgs;
+  winml_get_version: WinmlGetVersionArgs;
+  winml_inspect_onnx: WinmlInspectOnnxArgs;
+  winml_list_providers: WinmlListProvidersArgs;
+  winml_run_float32: WinmlRunFloat32Args;
+  write_file: WriteFileArgs;
+  wsl_execute: WslExecuteArgs;
+  wsl_get_status: WslGetStatusArgs;
+  wsl_list_distributions: WslListDistributionsArgs;
+  wsl_list_processes: WslListProcessesArgs;
+  wsl_read_only_probe: WslReadOnlyProbeArgs;
+  wsl_send_signal: WslSendSignalArgs;
 };
 
 /** One typed async method per WinClean tool. */
 export abstract class GeneratedTools {
-  abstract call<N extends ToolName>(name: N, args?: ToolArgsMap[N]): Promise<ToolResult>;
+  abstract call<N extends ToolName>(
+    name: N,
+    args?: ToolArgsMap[N],
+  ): Promise<ToolResult>;
 
   /**
    * Performs static analysis and symbol recovery on a target Windows PE binary (.exe or .dll). Recovers sections, imports, entry point disassembly, and maps symbols using heuristics (no execution).
@@ -2831,7 +2806,9 @@ export abstract class GeneratedTools {
   /**
    * Sends a full Xbox 360 controller state update. buttons bitmask: DPAD_UP=1, DPAD_DOWN=2, DPAD_LEFT=4, DPAD_RIGHT=8, START=16, BACK=32, L3=64, R3=128, LB=256, RB=512, GUIDE=1024, A=4096, B=8192, X=16384, Y=32768. Axes lx/ly/rx/ry: [-32768, 32767]. Triggers lt/rt: [0, 255].
    */
-  gamepadSendXbox360State(args: GamepadSendXbox360StateArgs): Promise<ToolResult> {
+  gamepadSendXbox360State(
+    args: GamepadSendXbox360StateArgs,
+  ): Promise<ToolResult> {
     return this.call("gamepad_send_xbox360_state", args);
   }
 
@@ -3055,7 +3032,9 @@ export abstract class GeneratedTools {
   /**
    * Enables SeDebugPrivilege on the current MCP process so subsequent OpenProcess calls can attach to protected processes (most non-PPL user-mode targets). Idempotent — safe to call repeatedly.
    */
-  memEnableDebugPrivilege(args?: MemEnableDebugPrivilegeArgs): Promise<ToolResult> {
+  memEnableDebugPrivilege(
+    args?: MemEnableDebugPrivilegeArgs,
+  ): Promise<ToolResult> {
     return this.call("mem_enable_debug_privilege", args);
   }
 

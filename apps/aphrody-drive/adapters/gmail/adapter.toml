@@ -18,8 +18,8 @@ requires = ["python3 >= 3.9"]
 [adapter.oauth]
 token_url = "https://oauth2.googleapis.com/token"
 scopes = [
-    "https://www.googleapis.com/auth/gmail.readonly",
-    "https://www.googleapis.com/auth/gmail.metadata",
+  "https://www.googleapis.com/auth/gmail.readonly",
+  "https://www.googleapis.com/auth/gmail.metadata",
 ]
 token_key = "oauth_token"
 

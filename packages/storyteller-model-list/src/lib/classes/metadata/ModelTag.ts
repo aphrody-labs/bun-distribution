@@ -1,4 +1,3 @@
-
 // TODO: It might be better to have top-level boolean fields on the models.
 
 export enum ModelTag {

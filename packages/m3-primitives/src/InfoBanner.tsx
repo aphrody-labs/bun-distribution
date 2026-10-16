@@ -43,7 +43,12 @@ interface InfoBannerProps extends VariantProps<typeof infoBannerStyles> {
   className?: string;
 }
 
-export function InfoBanner({ icon, children, variant, className }: InfoBannerProps) {
+export function InfoBanner({
+  icon,
+  children,
+  variant,
+  className,
+}: InfoBannerProps) {
   return (
     <div role="note" className={clsx(infoBannerStyles({ variant }), className)}>
       <div className="p-4">

@@ -1,29 +1,47 @@
-import { createContext, useContext, useMemo, type ReactNode, type RefObject } from "react";
+import {
+  createContext,
+  useContext,
+  useMemo,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import type Selecto from "react-selecto";
 
 interface DragSelectContextValue {
-	selectoRef: RefObject<Selecto> | null;
-	isWindows: boolean;
+  selectoRef: RefObject<Selecto> | null;
+  isWindows: boolean;
 }
 
 const DragSelectContext = createContext<DragSelectContextValue | null>(null);
 
 export function useDragSelectContext() {
-	const context = useContext(DragSelectContext);
-	if (!context) {
-		throw new Error("useDragSelectContext must be used within DragSelectProvider");
-	}
-	return context;
+  const context = useContext(DragSelectContext);
+  if (!context) {
+    throw new Error(
+      "useDragSelectContext must be used within DragSelectProvider",
+    );
+  }
+  return context;
 }
 
 interface DragSelectProviderProps {
-	children: ReactNode;
-	selectoRef: RefObject<Selecto>;
+  children: ReactNode;
+  selectoRef: RefObject<Selecto>;
 }
 
-export function DragSelectProvider({ children, selectoRef }: DragSelectProviderProps) {
-	const isWindows = navigator.platform.toLowerCase().includes("win");
-	const value = useMemo(() => ({ selectoRef, isWindows }), [selectoRef, isWindows]);
+export function DragSelectProvider({
+  children,
+  selectoRef,
+}: DragSelectProviderProps) {
+  const isWindows = navigator.platform.toLowerCase().includes("win");
+  const value = useMemo(
+    () => ({ selectoRef, isWindows }),
+    [selectoRef, isWindows],
+  );
 
-	return <DragSelectContext.Provider value={value}>{children}</DragSelectContext.Provider>;
+  return (
+    <DragSelectContext.Provider value={value}>
+      {children}
+    </DragSelectContext.Provider>
+  );
 }

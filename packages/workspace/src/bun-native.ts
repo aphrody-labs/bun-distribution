@@ -58,7 +58,9 @@ async function execute(
     if (signal.aborted) stop();
     const [stdout, stderr] = await Promise.all([
       new Response(child.stdout).text(),
-      child.stderr instanceof ReadableStream ? new Response(child.stderr).text() : "",
+      child.stderr instanceof ReadableStream
+        ? new Response(child.stderr).text()
+        : "",
       child.exited,
     ]);
     signal.throwIfAborted();
@@ -69,15 +71,24 @@ async function execute(
   }
 }
 
-async function output(command: string[], cwd: string, signal: AbortSignal): Promise<string> {
+async function output(
+  command: string[],
+  cwd: string,
+  signal: AbortSignal,
+): Promise<string> {
   const { stdout, stderr, code } = await execute(command, cwd, signal);
-  if (code !== 0) throw new Error(`${command[0]} ${command[1]} failed (${code}): ${stderr.trim()}`);
+  if (code !== 0)
+    throw new Error(
+      `${command[0]} ${command[1]} failed (${code}): ${stderr.trim()}`,
+    );
   return stdout;
 }
 
 async function sha256(path: string): Promise<string> {
   const hash = new Bun.CryptoHasher("sha256");
-  for await (const chunk of Bun.file(path).stream() as unknown as AsyncIterable<Uint8Array>)
+  for await (const chunk of Bun.file(
+    path,
+  ).stream() as unknown as AsyncIterable<Uint8Array>)
     hash.update(chunk);
   return hash.digest("hex");
 }
@@ -100,11 +111,16 @@ export function renderNativeConsumerImports(packageRoot: string): string {
 }
 
 /** Copy the selected SDK's source dependency closure, never the host's runtime state. */
-export async function stageNativeConsumer(packageRoot: string, staging: string): Promise<string> {
+export async function stageNativeConsumer(
+  packageRoot: string,
+  staging: string,
+): Promise<string> {
   const seen = new Map<string, string>();
   async function stage(source: string): Promise<string> {
     source = realpathSync(source);
-    const pkg = JSON.parse(readFileSync(join(source, "package.json"), "utf8")) as {
+    const pkg = JSON.parse(
+      readFileSync(join(source, "package.json"), "utf8"),
+    ) as {
       name: string;
       dependencies?: Record<string, string>;
     };
@@ -116,14 +132,21 @@ export async function stageNativeConsumer(packageRoot: string, staging: string):
     const destination = join(staging, "node_modules", pkg.name);
     if (previous) return destination;
     seen.set(pkg.name, source);
-    await cp(join(source, "src"), join(destination, "src"), { recursive: true });
-    await copyFile(join(source, "package.json"), join(destination, "package.json"));
+    await cp(join(source, "src"), join(destination, "src"), {
+      recursive: true,
+    });
+    await copyFile(
+      join(source, "package.json"),
+      join(destination, "package.json"),
+    );
     // Build the Paths package from its own source for the isolated consumer.
     if (pkg.name === "@aphrody/paths") {
       const entrypoint = join(source, "src/index.ts");
       const inputs = [entrypoint].map((path) => ({
         path: relative(source, path).replaceAll(sep, "/"),
-        sha256: new Bun.CryptoHasher("sha256").update(readFileSync(path)).digest("hex"),
+        sha256: new Bun.CryptoHasher("sha256")
+          .update(readFileSync(path))
+          .digest("hex"),
       }));
       const bundle = await Bun.build({
         entrypoints: [entrypoint],
@@ -131,7 +154,9 @@ export async function stageNativeConsumer(packageRoot: string, staging: string):
         packages: "external",
       });
       if (!bundle.success || bundle.outputs.length !== 1)
-        throw new Error("Cannot build canonical Paths facade for the native SDK");
+        throw new Error(
+          "Cannot build canonical Paths facade for the native SDK",
+        );
       const bytes = new Uint8Array(await bundle.outputs[0]!.arrayBuffer());
       await Bun.write(join(destination, "src/index.ts"), bytes);
       await Bun.write(
@@ -153,10 +178,12 @@ export async function stageNativeConsumer(packageRoot: string, staging: string):
       let dependency = dirname(require.resolve(name));
       while (
         !existsSync(join(dependency, "package.json")) ||
-        JSON.parse(readFileSync(join(dependency, "package.json"), "utf8")).name !== name
+        JSON.parse(readFileSync(join(dependency, "package.json"), "utf8"))
+          .name !== name
       ) {
         const parent = dirname(dependency);
-        if (parent === dependency) throw new Error(`native SDK dependency owner missing: ${name}`);
+        if (parent === dependency)
+          throw new Error(`native SDK dependency owner missing: ${name}`);
         dependency = parent;
       }
       // Keep dependency ownership checks and shared staging mutations ordered.
@@ -217,15 +244,22 @@ import { pathToFileURL } from "node:url";
       await rm(root, { recursive: true, force: true });
     }
   `;
-  const { stdout, stderr, code } = await execute([process.execPath, "-e", source], cwd, signal, {
-    ...process.env,
-    APHRODY_FFI_LIB: undefined,
-    APHRODY_FFI_DEV: debug ? "1" : undefined,
-    YOLO_TOOLING_LIB: artifact,
-    CARGO_TARGET_DIR: join(cwd, "no-cargo-artifacts"),
-  });
+  const { stdout, stderr, code } = await execute(
+    [process.execPath, "-e", source],
+    cwd,
+    signal,
+    {
+      ...process.env,
+      APHRODY_FFI_LIB: undefined,
+      APHRODY_FFI_DEV: debug ? "1" : undefined,
+      YOLO_TOOLING_LIB: artifact,
+      CARGO_TARGET_DIR: join(cwd, "no-cargo-artifacts"),
+    },
+  );
   if (code !== 0 || stdout.trim() !== "aggregate native consumer verified") {
-    throw new Error(`staged native consumer failed (${code}): ${stderr.trim()} ${stdout.trim()}`);
+    throw new Error(
+      `staged native consumer failed (${code}): ${stderr.trim()} ${stdout.trim()}`,
+    );
   }
 }
 
@@ -249,13 +283,24 @@ export async function runBunNative(
     const flags = new Set<string>();
     for (const arg of argv) {
       if (arg.startsWith("--root=") && arg.slice(7)) repo = arg.slice(7);
-      else if (arg.startsWith("--package-root=") && arg.slice(15)) packageRoot = arg.slice(15);
+      else if (arg.startsWith("--package-root=") && arg.slice(15))
+        packageRoot = arg.slice(15);
       else if (arg.startsWith("--stage-existing=") && arg.slice(17))
         existingArtifact = arg.slice(17);
-      else if (arg.startsWith("--artifact-sha256=") && /^[a-f0-9]{64}$/.test(arg.slice(18)))
+      else if (
+        arg.startsWith("--artifact-sha256=") &&
+        /^[a-f0-9]{64}$/.test(arg.slice(18))
+      )
         expectedHash = arg.slice(18);
       else if (
-        ["--unlocked", "--gpu", "--jobs", "--inference", "--debug", "--offline"].includes(arg)
+        [
+          "--unlocked",
+          "--gpu",
+          "--jobs",
+          "--inference",
+          "--debug",
+          "--offline",
+        ].includes(arg)
       )
         flags.add(arg);
       else {
@@ -274,15 +319,24 @@ export async function runBunNative(
     if (expectedHash && !existingArtifact)
       throw new Error("--artifact-sha256 requires --stage-existing");
     if (existingArtifact && flags.has("--jobs"))
-      throw new Error("staging an existing artifact forbids --jobs; build features are unknown");
+      throw new Error(
+        "staging an existing artifact forbids --jobs; build features are unknown",
+      );
     packageRoot = resolve(packageRoot ?? join(repo, "packages/interop/native"));
     const manifest = join(repo, "Cargo.toml");
     const ffiManifest = join(repo, "crates/interop/ffi/Cargo.toml");
-    if (!existsSync(ffiManifest)) throw new Error(`aggregate crate missing: ${ffiManifest}`);
+    if (!existsSync(ffiManifest))
+      throw new Error(`aggregate crate missing: ${ffiManifest}`);
     const pkg = await Bun.file(join(packageRoot, "package.json")).json();
     if (pkg.name !== "@aphrody/bun")
       throw new Error(`consumer is not @aphrody/bun: ${packageRoot}`);
-    for (const file of ["library.ts", "native-artifact.ts", "index.ts", "n2b.ts", "oxc.ts"]) {
+    for (const file of [
+      "library.ts",
+      "native-artifact.ts",
+      "index.ts",
+      "n2b.ts",
+      "oxc.ts",
+    ]) {
       if (!existsSync(join(packageRoot, "src", file)))
         throw new Error(`consumer source missing: ${file}`);
     }
@@ -307,33 +361,60 @@ export async function runBunNative(
             signal,
           ),
         ) as CargoMetadata);
-    const ffi = metadata?.packages.find((candidate) => candidate.name === "aphrody-ffi");
-    if (!existingArtifact && (!ffi || resolve(ffi.manifest_path) !== ffiManifest))
+    const ffi = metadata?.packages.find(
+      (candidate) => candidate.name === "aphrody-ffi",
+    );
+    if (
+      !existingArtifact &&
+      (!ffi || resolve(ffi.manifest_path) !== ffiManifest)
+    )
       throw new Error("Cargo metadata did not resolve the aggregate owner");
     if (flags.has("--gpu") && !ffi?.features.gpu?.includes("aphrody-bun/gpu")) {
-      throw new Error("aphrody-ffi does not forward the GPU feature to aphrody-bun");
+      throw new Error(
+        "aphrody-ffi does not forward the GPU feature to aphrody-bun",
+      );
     }
-    if (flags.has("--jobs") && !ffi?.features.jobs?.includes("aphrody-command/jobs")) {
-      throw new Error("aphrody-ffi does not forward the jobs feature to aphrody-command");
+    if (
+      flags.has("--jobs") &&
+      !ffi?.features.jobs?.includes("aphrody-command/jobs")
+    ) {
+      throw new Error(
+        "aphrody-ffi does not forward the jobs feature to aphrody-command",
+      );
     }
     if (
       flags.has("--inference") &&
       !ffi?.features.inference?.includes("dep:aphrody-llama-server")
     ) {
-      throw new Error("aphrody-ffi does not expose the native llama inference owner");
+      throw new Error(
+        "aphrody-ffi does not expose the native llama inference owner",
+      );
     }
-    const rustc = await output(["rustc", "--version", "--verbose"], repo, signal);
+    const rustc = await output(
+      ["rustc", "--version", "--verbose"],
+      repo,
+      signal,
+    );
     const triple = rustc.match(/^host: (\S+)$/m)?.[1];
     if (!triple) throw new Error("rustc did not report its host target");
     const profile = flags.has("--debug") ? "debug" : "release";
-    const features = ["gpu", "jobs", "inference"].filter((feature) => flags.has(`--${feature}`));
+    const features = ["gpu", "jobs", "inference"].filter((feature) =>
+      flags.has(`--${feature}`),
+    );
     const sourceBefore = existingArtifact
       ? null
-      : (await output(["git", "rev-parse", "HEAD"], repo, signal).catch(() => "")).trim();
+      : (
+          await output(["git", "rev-parse", "HEAD"], repo, signal).catch(
+            () => "",
+          )
+        ).trim();
     const dirtyBefore = existingArtifact
       ? true
-      : (await output(["git", "status", "--porcelain"], repo, signal).catch(() => "unknown")).trim()
-          .length > 0;
+      : (
+          await output(["git", "status", "--porcelain"], repo, signal).catch(
+            () => "unknown",
+          )
+        ).trim().length > 0;
     const command = [
       "cargo",
       "build",
@@ -380,20 +461,28 @@ export async function runBunNative(
               },
           )
           .find(
-            (message) => message.reason === "compiler-artifact" && message.package_id === ffi!.id,
+            (message) =>
+              message.reason === "compiler-artifact" &&
+              message.package_id === ffi!.id,
           )
           ?.filenames?.find((path) => basename(path) === filename);
-    if (!artifact) throw new Error("Cargo did not produce the aggregate cdylib");
+    if (!artifact)
+      throw new Error("Cargo did not produce the aggregate cdylib");
     const artifactTarget = metadata
       ? relative(metadata.target_directory, artifact).split(sep)[0]
       : triple;
     if (artifactTarget !== profile && artifactTarget !== triple) {
-      throw new Error(`cross target ${artifactTarget} cannot be qualified on ${triple}`);
+      throw new Error(
+        `cross target ${artifactTarget} cannot be qualified on ${triple}`,
+      );
     }
     // Observe the build's source before temporary package copies introduce untracked files.
-    const observedSourceHead = (await output(["git", "rev-parse", "HEAD"], repo, signal)).trim();
+    const observedSourceHead = (
+      await output(["git", "rev-parse", "HEAD"], repo, signal)
+    ).trim();
     const observedSourceDirty =
-      (await output(["git", "status", "--porcelain"], repo, signal)).trim().length > 0;
+      (await output(["git", "status", "--porcelain"], repo, signal)).trim()
+        .length > 0;
     const cargoLockSha256 = await sha256(join(repo, "Cargo.lock"));
     const directory = join(packageRoot, "native", triple);
     await mkdir(directory, { recursive: true });
@@ -404,14 +493,23 @@ export async function runBunNative(
       await mkdir(isolatedNative, { recursive: true });
       const staged = join(isolatedNative, filename);
       await copyFile(artifact, staged);
-      const [originalHash, stagedHash] = await Promise.all([sha256(artifact), sha256(staged)]);
-      if (originalHash !== stagedHash) throw new Error("native artifact changed during staging");
+      const [originalHash, stagedHash] = await Promise.all([
+        sha256(artifact),
+        sha256(staged),
+      ]);
+      if (originalHash !== stagedHash)
+        throw new Error("native artifact changed during staging");
       if (expectedHash && stagedHash !== expectedHash)
         throw new Error("native artifact does not match --artifact-sha256");
-      const contract = (await import(join(isolatedConsumer, "src/native-artifact.ts"))) as {
+      const contract = (await import(
+        join(isolatedConsumer, "src/native-artifact.ts")
+      )) as {
         NATIVE_ABI_VERSIONS: Record<string, number>;
       };
-      if (!contract.NATIVE_ABI_VERSIONS || !Object.keys(contract.NATIVE_ABI_VERSIONS).length)
+      if (
+        !contract.NATIVE_ABI_VERSIONS ||
+        !Object.keys(contract.NATIVE_ABI_VERSIONS).length
+      )
         throw new Error("consumer native ABI contract is missing");
       const attestation = {
         schemaVersion: 1,
@@ -421,7 +519,11 @@ export async function runBunNative(
         packageVersion: pkg.version,
         target: triple,
         profile,
-        libc: triple.includes("-linux-") ? (triple.endsWith("-musl") ? "musl" : "gnu") : null,
+        libc: triple.includes("-linux-")
+          ? triple.endsWith("-musl")
+            ? "musl"
+            : "gnu"
+          : null,
         features: existingArtifact ? null : features,
         artifact: filename,
         sha256: stagedHash,
@@ -443,13 +545,31 @@ export async function runBunNative(
       };
       // The temporary manifest is invisible to the installed consumer until every smoke passes.
       const stagedManifest = join(isolatedNative, "manifest.json");
-      await Bun.write(stagedManifest, JSON.stringify(attestation, null, 2) + "\n");
-      await smokeNativeConsumer(isolatedConsumer, staged, staging, signal, true);
+      await Bun.write(
+        stagedManifest,
+        JSON.stringify(attestation, null, 2) + "\n",
+      );
+      await smokeNativeConsumer(
+        isolatedConsumer,
+        staged,
+        staging,
+        signal,
+        true,
+      );
       attestation.consumerSmoke = "passed";
-      await Bun.write(stagedManifest, JSON.stringify(attestation, null, 2) + "\n");
+      await Bun.write(
+        stagedManifest,
+        JSON.stringify(attestation, null, 2) + "\n",
+      );
       // Release installation must also pass with development overrides disabled.
       if (profile === "release")
-        await smokeNativeConsumer(isolatedConsumer, staged, staging, signal, false);
+        await smokeNativeConsumer(
+          isolatedConsumer,
+          staged,
+          staging,
+          signal,
+          false,
+        );
       signal.throwIfAborted();
       const publication = await mkdtemp(join(directory, ".stage-"));
       try {
@@ -460,13 +580,18 @@ export async function runBunNative(
           if ((error as NodeJS.ErrnoException).code !== "EXDEV") throw error;
           await copyFile(staged, finalArtifact);
           if ((await sha256(finalArtifact)) !== stagedHash)
-            throw new Error("native publication copy changed", { cause: error });
+            throw new Error("native publication copy changed", {
+              cause: error,
+            });
         }
         await copyFile(stagedManifest, join(publication, "manifest.json"));
         signal.throwIfAborted();
         await rename(finalArtifact, join(directory, filename));
         // Publish the verified manifest last; failures never create a success marker.
-        await rename(join(publication, "manifest.json"), join(directory, "manifest.json"));
+        await rename(
+          join(publication, "manifest.json"),
+          join(directory, "manifest.json"),
+        );
       } finally {
         await rm(publication, { recursive: true, force: true });
       }
@@ -478,7 +603,9 @@ export async function runBunNative(
     }
     return 0;
   } catch (error) {
-    console.error(`bun-native: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(
+      `bun-native: ${error instanceof Error ? error.message : String(error)}`,
+    );
     return 1;
   } finally {
     options.signal?.removeEventListener("abort", abort);

@@ -74,7 +74,10 @@ const DEFAULT_PEERS: AgentPeer[] = [
   },
 ];
 
-const KIND_COLORS: Record<EnvelopeKind, { bg: string; text: string; border: string }> = {
+const KIND_COLORS: Record<
+  EnvelopeKind,
+  { bg: string; text: string; border: string }
+> = {
   ask: {
     bg: "bg-[var(--md-sys-color-primary-container,#eaddff)]",
     text: "text-[var(--md-sys-color-on-primary-container,#21005d)]",
@@ -144,7 +147,10 @@ export const A2APeerInspector: React.FC<A2APeerInspectorProps> = ({
   };
 
   const filteredEnvelopes = envelopes.filter(
-    (env) => env.from === selectedPeerId || env.to === selectedPeerId || env.to === "fleet",
+    (env) =>
+      env.from === selectedPeerId ||
+      env.to === selectedPeerId ||
+      env.to === "fleet",
   );
 
   return (
@@ -164,7 +170,9 @@ export const A2APeerInspector: React.FC<A2APeerInspectorProps> = ({
             <span className="material-symbols-outlined text-xl text-[var(--md-sys-color-primary,#6750a4)]">
               hub
             </span>
-            <h2 className="text-base font-semibold tracking-tight">A2A Fleet Coordinator</h2>
+            <h2 className="text-base font-semibold tracking-tight">
+              A2A Fleet Coordinator
+            </h2>
             <span className="rounded-full bg-[var(--md-sys-color-surface-container-high,#ece6f0)] px-2 py-0.5 text-xs font-mono text-[var(--md-sys-color-on-surface-variant,#49454f)]">
               v1.0 (JSONL + RPC)
             </span>
@@ -214,20 +222,25 @@ export const A2APeerInspector: React.FC<A2APeerInspectorProps> = ({
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-sm">{currentPeer.name}</span>
+                <span className="font-semibold text-sm">
+                  {currentPeer.name}
+                </span>
                 <span className="text-xs text-[var(--md-sys-color-on-surface-variant,#49454f)]">
                   ({currentPeer.role})
                 </span>
               </div>
               <div className="text-xs text-[var(--md-sys-color-outline,#79747e)] mt-0.5">
-                Peer ID: <code className="font-mono text-xs">{currentPeer.id}</code> · Version:{" "}
-                {currentPeer.version || "1.0.0"}
+                Peer ID:{" "}
+                <code className="font-mono text-xs">{currentPeer.id}</code> ·
+                Version: {currentPeer.version || "1.0.0"}
               </div>
             </div>
             {currentPeer.activeClaim && (
               <div className="flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-2 py-1 text-xs text-amber-700 dark:text-amber-400 border border-amber-500/20">
                 <span className="material-symbols-outlined text-sm">lock</span>
-                <span className="font-mono text-[11px]">{currentPeer.activeClaim}</span>
+                <span className="font-mono text-[11px]">
+                  {currentPeer.activeClaim}
+                </span>
               </div>
             )}
           </div>
@@ -263,12 +276,15 @@ export const A2APeerInspector: React.FC<A2APeerInspectorProps> = ({
             <span className="material-symbols-outlined text-2xl mb-1 opacity-50">
               mark_email_read
             </span>
-            No pending envelopes for @{selectedPeerId}. Fleet mailbox is synchronized.
+            No pending envelopes for @{selectedPeerId}. Fleet mailbox is
+            synchronized.
           </div>
         ) : (
           <div className="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
             {filteredEnvelopes.map((env) => {
-              const kind = (env.kind in KIND_COLORS ? env.kind : "ping") as EnvelopeKind;
+              const kind = (
+                env.kind in KIND_COLORS ? env.kind : "ping"
+              ) as EnvelopeKind;
               const style = KIND_COLORS[kind];
 
               return (

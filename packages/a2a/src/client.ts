@@ -19,11 +19,20 @@ import type {
   Task,
   TaskPushNotificationConfig,
 } from "./generated/a2a.ts";
-import { AgentCardCache, fetchAgentCard, selectInterface, type SelectOptions } from "./card.ts";
+import {
+  AgentCardCache,
+  fetchAgentCard,
+  selectInterface,
+  type SelectOptions,
+} from "./card.ts";
 import type { CallOptions, HttpOptions } from "./http.ts";
 import { sendMessageRequest } from "./helpers.ts";
 import type { SupportedBinding } from "./protocol.ts";
-import { JsonRpcTransport, RestTransport, type Transport } from "./transport.ts";
+import {
+  JsonRpcTransport,
+  RestTransport,
+  type Transport,
+} from "./transport.ts";
 
 /** A request without its `tenant`: the client fills it from the selected interface. */
 export type Params<T> = Omit<T, "tenant">;
@@ -56,9 +65,15 @@ export class A2AClient {
 
   constructor(options: A2AClientOptions);
   /** Use a custom transport (tests, tunnels). */
-  constructor(options: { transport: Transport; tenant?: string; card?: AgentCard });
+  constructor(options: {
+    transport: Transport;
+    tenant?: string;
+    card?: AgentCard;
+  });
   constructor(
-    options: A2AClientOptions | { transport: Transport; tenant?: string; card?: AgentCard },
+    options:
+      | A2AClientOptions
+      | { transport: Transport; tenant?: string; card?: AgentCard },
   ) {
     this.tenant = options.tenant;
     this.card = options.card;
@@ -74,8 +89,18 @@ export class A2AClient {
   }
 
   /** Discover the Agent Card of `baseUrl` and connect to its preferred interface. */
-  static async connect(baseUrl: string, options: ConnectOptions = {}): Promise<A2AClient> {
-    const { bindings, protocolVersion, discoveryTimeoutMs, signal, cache, ...http } = options;
+  static async connect(
+    baseUrl: string,
+    options: ConnectOptions = {},
+  ): Promise<A2AClient> {
+    const {
+      bindings,
+      protocolVersion,
+      discoveryTimeoutMs,
+      signal,
+      cache,
+      ...http
+    } = options;
     const card = await fetchAgentCard(baseUrl, {
       fetch: http.fetch,
       headers: http.headers,
@@ -87,10 +112,22 @@ export class A2AClient {
   }
 
   /** Connect to the first interface of `card` this client can use. */
-  static fromCard(card: AgentCard, options: HttpOptions & SelectOptions = {}): A2AClient {
+  static fromCard(
+    card: AgentCard,
+    options: HttpOptions & SelectOptions = {},
+  ): A2AClient {
     const { bindings, protocolVersion, ...http } = options;
-    const { interface: selected, binding } = selectInterface(card, { bindings, protocolVersion });
-    return new A2AClient({ ...http, url: selected.url, binding, tenant: selected.tenant, card });
+    const { interface: selected, binding } = selectInterface(card, {
+      bindings,
+      protocolVersion,
+    });
+    return new A2AClient({
+      ...http,
+      url: selected.url,
+      binding,
+      tenant: selected.tenant,
+      card,
+    });
   }
 
   get binding(): SupportedBinding {
@@ -115,7 +152,8 @@ export class A2AClient {
     request: Params<SendMessageRequest> | string,
     options?: CallOptions,
   ): Promise<SendMessageResponse> {
-    const body = typeof request === "string" ? sendMessageRequest(request) : request;
+    const body =
+      typeof request === "string" ? sendMessageRequest(request) : request;
     return this.transport.call("SendMessage", this.tenanted(body), options);
   }
 
@@ -124,11 +162,19 @@ export class A2AClient {
     request: Params<SendMessageRequest> | string,
     options?: CallOptions,
   ): AsyncGenerator<StreamResponse> {
-    const body = typeof request === "string" ? sendMessageRequest(request) : request;
-    return this.transport.stream("SendStreamingMessage", this.tenanted(body), options);
+    const body =
+      typeof request === "string" ? sendMessageRequest(request) : request;
+    return this.transport.stream(
+      "SendStreamingMessage",
+      this.tenanted(body),
+      options,
+    );
   }
 
-  getTask(request: string | Params<GetTaskRequest>, options?: CallOptions): Promise<Task> {
+  getTask(
+    request: string | Params<GetTaskRequest>,
+    options?: CallOptions,
+  ): Promise<Task> {
     const body = typeof request === "string" ? { id: request } : request;
     return this.transport.call("GetTask", this.tenanted(body), options);
   }
@@ -138,7 +184,11 @@ export class A2AClient {
     params: Params<ListTasksRequest> = {},
     options?: CallOptions,
   ): Promise<ListTasksResponse> {
-    const page = await this.transport.call("ListTasks", this.tenanted(params), options);
+    const page = await this.transport.call(
+      "ListTasks",
+      this.tenanted(params),
+      options,
+    );
     return {
       ...page,
       tasks: page.tasks ?? [],
@@ -164,7 +214,10 @@ export class A2AClient {
     } while (pageToken);
   }
 
-  cancelTask(request: string | Params<CancelTaskRequest>, options?: CallOptions): Promise<Task> {
+  cancelTask(
+    request: string | Params<CancelTaskRequest>,
+    options?: CallOptions,
+  ): Promise<Task> {
     const body = typeof request === "string" ? { id: request } : request;
     return this.transport.call("CancelTask", this.tenanted(body), options);
   }
@@ -175,21 +228,33 @@ export class A2AClient {
     options?: CallOptions,
   ): AsyncGenerator<StreamResponse> {
     const body = typeof request === "string" ? { id: request } : request;
-    return this.transport.stream("SubscribeToTask", this.tenanted(body), options);
+    return this.transport.stream(
+      "SubscribeToTask",
+      this.tenanted(body),
+      options,
+    );
   }
 
   createPushNotificationConfig(
     config: Params<TaskPushNotificationConfig>,
     options?: CallOptions,
   ): Promise<TaskPushNotificationConfig> {
-    return this.transport.call("CreateTaskPushNotificationConfig", this.tenanted(config), options);
+    return this.transport.call(
+      "CreateTaskPushNotificationConfig",
+      this.tenanted(config),
+      options,
+    );
   }
 
   getPushNotificationConfig(
     request: Params<GetTaskPushNotificationConfigRequest>,
     options?: CallOptions,
   ): Promise<TaskPushNotificationConfig> {
-    return this.transport.call("GetTaskPushNotificationConfig", this.tenanted(request), options);
+    return this.transport.call(
+      "GetTaskPushNotificationConfig",
+      this.tenanted(request),
+      options,
+    );
   }
 
   async listPushNotificationConfigs(
@@ -202,18 +267,30 @@ export class A2AClient {
       this.tenanted(body),
       options,
     );
-    return { ...page, configs: page.configs ?? [], nextPageToken: page.nextPageToken ?? "" };
+    return {
+      ...page,
+      configs: page.configs ?? [],
+      nextPageToken: page.nextPageToken ?? "",
+    };
   }
 
   async deletePushNotificationConfig(
     request: Params<DeleteTaskPushNotificationConfigRequest>,
     options?: CallOptions,
   ): Promise<void> {
-    await this.transport.call("DeleteTaskPushNotificationConfig", this.tenanted(request), options);
+    await this.transport.call(
+      "DeleteTaskPushNotificationConfig",
+      this.tenanted(request),
+      options,
+    );
   }
 
   /** The authenticated, richer card (`capabilities.extendedAgentCard`). */
   getExtendedAgentCard(options?: CallOptions): Promise<AgentCard> {
-    return this.transport.call("GetExtendedAgentCard", this.tenanted({}), options);
+    return this.transport.call(
+      "GetExtendedAgentCard",
+      this.tenanted({}),
+      options,
+    );
   }
 }

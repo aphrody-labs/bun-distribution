@@ -57,7 +57,9 @@ function readStoredMode(cookieName: string): ThemeMode | undefined {
     .split(/;\s*/)
     .find((cookie) => cookie.startsWith(prefix))
     ?.slice(prefix.length);
-  return value === "light" || value === "dark" || value === "system" ? value : undefined;
+  return value === "light" || value === "dark" || value === "system"
+    ? value
+    : undefined;
 }
 
 const M3ThemeContext = createContext<M3ThemeContextType | undefined>(undefined);
@@ -105,7 +107,11 @@ export function M3ThemeProvider({
     contrast: defaultContrastLevel,
   });
 
-  const systemDark = useSyncExternalStore(subscribeToColorScheme, prefersDark, serverPrefersDark);
+  const systemDark = useSyncExternalStore(
+    subscribeToColorScheme,
+    prefersDark,
+    serverPrefersDark,
+  );
   const resolvedTheme: "light" | "dark" =
     themeMode === "system" ? (systemDark ? "dark" : "light") : themeMode;
 
@@ -178,13 +184,16 @@ export function M3ThemeProvider({
     }),
     [themeMode, seedColor, resolvedTheme, contrastLevel, variant],
   );
-  return <M3ThemeContext.Provider value={value}>{children}</M3ThemeContext.Provider>;
+  return (
+    <M3ThemeContext.Provider value={value}>{children}</M3ThemeContext.Provider>
+  );
 }
 
 /** The theme state and its setters; throws outside {@link M3ThemeProvider}. */
 export function useM3Theme(): M3ThemeContextType {
   const context = useContext(M3ThemeContext);
-  if (context === undefined) throw new Error("useM3Theme must be used within an M3ThemeProvider");
+  if (context === undefined)
+    throw new Error("useM3Theme must be used within an M3ThemeProvider");
   return context;
 }
 
@@ -225,7 +234,11 @@ export function M3NextThemeProvider({
   );
 }
 
-const CYCLE: Record<M3ThemeMode, M3ThemeMode> = { light: "dark", dark: "system", system: "light" };
+const CYCLE: Record<M3ThemeMode, M3ThemeMode> = {
+  light: "dark",
+  dark: "system",
+  system: "light",
+};
 
 /** The current mode, the resolved light / dark value and a `light -> dark -> system` cycle. */
 export function useM3ThemeToggle(): {
@@ -235,6 +248,14 @@ export function useM3ThemeToggle(): {
   toggle: () => void;
 } {
   const { themeMode, resolvedTheme, setThemeMode } = useM3Theme();
-  const toggle = useCallback(() => setThemeMode(CYCLE[themeMode]), [setThemeMode, themeMode]);
-  return { mode: themeMode, resolved: resolvedTheme, setMode: setThemeMode, toggle };
+  const toggle = useCallback(
+    () => setThemeMode(CYCLE[themeMode]),
+    [setThemeMode, themeMode],
+  );
+  return {
+    mode: themeMode,
+    resolved: resolvedTheme,
+    setMode: setThemeMode,
+    toggle,
+  };
 }

@@ -1,13 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
-type RegistryValue = { type: string; value: string | string[] | number | bigint | Uint8Array };
+type RegistryValue = {
+  type: string;
+  value: string | string[] | number | bigint | Uint8Array;
+};
 
 export interface BunWindowsApi {
   version: Record<string, unknown>;
   systemInfo: Record<string, unknown>;
   registry: {
     get(path: string, name?: string): RegistryValue | null;
-    list(path: string): { keys: string[]; values: Array<RegistryValue & { name: string }> } | null;
+    list(
+      path: string,
+    ): {
+      keys: string[];
+      values: Array<RegistryValue & { name: string }>;
+    } | null;
     set(
       path: string,
       name: string,
@@ -40,7 +48,9 @@ function registryData(value: RegistryValue["value"]): string {
   if (Array.isArray(value)) return value.join("\n");
   if (typeof value === "bigint") return `0x${value.toString(16)}`;
   if (value instanceof Uint8Array)
-    return [...value].map((byte) => byte.toString(16).padStart(2, "0")).join(" ");
+    return [...value]
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join(" ");
   if (typeof value === "number") return `0x${value.toString(16)}`;
   return value;
 }
@@ -50,7 +60,8 @@ function registryType(type: string): string {
 }
 
 function registryValue(value: RegistryValue, name: string) {
-  const normalized = typeof value.value === "bigint" ? Number(value.value) : value.value;
+  const normalized =
+    typeof value.value === "bigint" ? Number(value.value) : value.value;
   return {
     Name: name || "(default)",
     Type: registryType(value.type),
@@ -59,14 +70,21 @@ function registryValue(value: RegistryValue, name: string) {
   };
 }
 
-function registryInput(value: string, type: string): string | string[] | number | bigint {
+function registryInput(
+  value: string,
+  type: string,
+): string | string[] | number | bigint {
   switch (type.toLowerCase()) {
     case "dword":
       return Number.parseInt(value, 0);
     case "qword":
       return BigInt(value);
     case "multistring":
-      return value.replace(/\r\n/g, "\n").replace(/\n$/, "").split("\n").filter(Boolean);
+      return value
+        .replace(/\r\n/g, "\n")
+        .replace(/\n$/, "")
+        .split("\n")
+        .filter(Boolean);
     default:
       return value;
   }
@@ -79,7 +97,8 @@ export async function callBunWindows(
   injected?: BunWindowsApi,
 ): Promise<{ handled: boolean; value?: unknown }> {
   if (process.platform !== "win32" && !injected) return { handled: false };
-  const windows = injected ?? ((await import("bun:windows")) as unknown as BunWindowsApi);
+  const windows =
+    injected ?? ((await import("bun:windows")) as unknown as BunWindowsApi);
   const text = (key: string) => String(args[key] ?? "");
 
   switch (name) {
@@ -102,8 +121,12 @@ export async function callBunWindows(
         handled: true,
         value: {
           Path: path,
-          SubKeys: listing.keys.map((key) => `${path.replace(/\\$/, "")}\\${key}`),
-          Values: listing.values.map((value) => registryValue(value, value.name)),
+          SubKeys: listing.keys.map(
+            (key) => `${path.replace(/\\$/, "")}\\${key}`,
+          ),
+          Values: listing.values.map((value) =>
+            registryValue(value, value.name),
+          ),
         },
       };
     }
@@ -111,13 +134,23 @@ export async function callBunWindows(
       const type = text("type") || "String";
       const name = text("name") === "(default)" ? "" : text("name");
       const nativeType = `REG_${type.replace(/([a-z])([A-Z])/g, "$1_$2").toUpperCase()}`;
-      windows.registry.set(text("path"), name, registryInput(text("value"), type), nativeType);
-      return { handled: true, value: `Set registry value ${text("path")}\\${text("name")}` };
+      windows.registry.set(
+        text("path"),
+        name,
+        registryInput(text("value"), type),
+        nativeType,
+      );
+      return {
+        handled: true,
+        value: `Set registry value ${text("path")}\\${text("name")}`,
+      };
     }
     case "delete_registry_entry": {
       const path = text("path");
-      const entry = args.name == null || text("name") === "" ? null : text("name");
-      if (entry) windows.registry.deleteValue(path, entry === "(default)" ? "" : entry);
+      const entry =
+        args.name == null || text("name") === "" ? null : text("name");
+      if (entry)
+        windows.registry.deleteValue(path, entry === "(default)" ? "" : entry);
       else windows.registry.deleteKey(path, { recursive: true });
       return {
         handled: true,
@@ -129,10 +162,14 @@ export async function callBunWindows(
       const statusFilter = text("statusFilter").toLowerCase();
       const services = windows.services
         .list()
-        .filter((service) => !nameFilter || service.name.toLowerCase().includes(nameFilter))
         .filter(
           (service) =>
-            !statusFilter || service.state.replaceAll("-", "").toLowerCase() === statusFilter,
+            !nameFilter || service.name.toLowerCase().includes(nameFilter),
+        )
+        .filter(
+          (service) =>
+            !statusFilter ||
+            service.state.replaceAll("-", "").toLowerCase() === statusFilter,
         )
         .map((service) => ({
           Name: service.name,
@@ -143,7 +180,10 @@ export async function callBunWindows(
             .join(""),
           StartType: windows.services.get(service.name)?.startType ?? "Unknown",
         }));
-      return { handled: true, value: { Count: services.length, Services: services } };
+      return {
+        handled: true,
+        value: { Count: services.length, Services: services },
+      };
     }
     case "start_service":
     case "stop_service":
@@ -152,7 +192,11 @@ export async function callBunWindows(
       if (name !== "start_service") windows.services.stop(service);
       if (name !== "stop_service") windows.services.start(service);
       const verb =
-        name === "start_service" ? "Started" : name === "stop_service" ? "Stopped" : "Restarted";
+        name === "start_service"
+          ? "Started"
+          : name === "stop_service"
+            ? "Stopped"
+            : "Restarted";
       return { handled: true, value: `${verb} service '${service}'.` };
     }
     case "get_clipboard_text":
@@ -160,7 +204,10 @@ export async function callBunWindows(
     case "set_clipboard_text": {
       const value = text("text");
       windows.clipboard.writeText(value);
-      return { handled: true, value: `Copied ${[...value].length} characters to the clipboard.` };
+      return {
+        handled: true,
+        value: `Copied ${[...value].length} characters to the clipboard.`,
+      };
     }
     case "get_disk_info": {
       const disks = windows.storage.drives().map((drive) => ({

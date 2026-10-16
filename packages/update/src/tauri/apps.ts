@@ -44,20 +44,33 @@ export type RegistryProject = {
   note?: string;
 };
 
-export type Registry = { schemaVersion: number; scanSkip: string[]; projects: RegistryProject[] };
+export type Registry = {
+  schemaVersion: number;
+  scanSkip: string[];
+  projects: RegistryProject[];
+};
 
 export function parseRegistry(text: string): Registry {
   const value = JSON.parse(text) as Partial<Registry>;
-  if (value.schemaVersion !== 1) throw new Error("tauri-apps.json: unsupported schemaVersion");
-  if (!Array.isArray(value.projects)) throw new Error("tauri-apps.json: projects must be an array");
+  if (value.schemaVersion !== 1)
+    throw new Error("tauri-apps.json: unsupported schemaVersion");
+  if (!Array.isArray(value.projects))
+    throw new Error("tauri-apps.json: projects must be an array");
   const seen = new Set<string>();
   for (const project of value.projects) {
     if (!project.id || !project.path || !project.kind)
-      throw new Error(`tauri-apps.json: incomplete project ${JSON.stringify(project)}`);
-    if (seen.has(project.id)) throw new Error(`tauri-apps.json: duplicate id ${project.id}`);
+      throw new Error(
+        `tauri-apps.json: incomplete project ${JSON.stringify(project)}`,
+      );
+    if (seen.has(project.id))
+      throw new Error(`tauri-apps.json: duplicate id ${project.id}`);
     seen.add(project.id);
   }
-  return { schemaVersion: 1, scanSkip: value.scanSkip ?? [], projects: value.projects };
+  return {
+    schemaVersion: 1,
+    scanSkip: value.scanSkip ?? [],
+    projects: value.projects,
+  };
 }
 
 /** Cargo packages and generated paths that tauri-sync's gate derives from the registry. */
@@ -65,10 +78,14 @@ export function gateFromRegistry(registry: Registry): {
   cargoPackages: string[];
   generatedPaths: string[];
 } {
-  const gated = registry.projects.filter((project) => project.gate && project.package);
+  const gated = registry.projects.filter(
+    (project) => project.gate && project.package,
+  );
   return {
     cargoPackages: gated.map((project) => project.package as string),
-    generatedPaths: registry.projects.flatMap((project) => project.generated ?? []),
+    generatedPaths: registry.projects.flatMap(
+      (project) => project.generated ?? [],
+    ),
   };
 }
 
@@ -79,11 +96,14 @@ export function gateFromRegistry(registry: Registry): {
 export type Via = "conf" | "cargo" | "npm";
 export type Discovered = { dir: string; via: Via[]; confs: string[] };
 
-const CONF_FILE = /^tauri(\.[a-z0-9-]+)?\.conf\.json5?$|^Tauri(\.[a-z0-9-]+)?\.toml$/;
+const CONF_FILE =
+  /^tauri(\.[a-z0-9-]+)?\.conf\.json5?$|^Tauri(\.[a-z0-9-]+)?\.toml$/;
 const TAURI_CRATE = /^(tauri|tauri-[a-z0-9-]+)$/;
 
 /** Dependency table lines (`[dependencies]`, `[build-dependencies]`, `[dev-dependencies]`, target tables). */
-export function tauriCargoDeps(cargoToml: string): { name: string; inherited: boolean }[] {
+export function tauriCargoDeps(
+  cargoToml: string,
+): { name: string; inherited: boolean }[] {
   const out: { name: string; inherited: boolean }[] = [];
   let inDeps = false;
   for (const raw of cargoToml.split("\n")) {
@@ -97,7 +117,8 @@ export function tauriCargoDeps(cargoToml: string): { name: string; inherited: bo
         /^\[(?:target\.[^\]]+\.)?(?:dependencies|build-dependencies|dev-dependencies)\.([\w-]+)\]$/.exec(
           line,
         );
-      if (named?.[1] && TAURI_CRATE.test(named[1])) out.push({ name: named[1], inherited: false });
+      if (named?.[1] && TAURI_CRATE.test(named[1]))
+        out.push({ name: named[1], inherited: false });
       continue;
     }
     if (!inDeps) continue;
@@ -106,17 +127,28 @@ export function tauriCargoDeps(cargoToml: string): { name: string; inherited: bo
     out.push({
       name: dep[1],
       // A path dependency points at the vendored fork, whose version is the pin itself.
-      inherited: Boolean(dep[2]) || /\b(?:workspace\s*=\s*true\b|path\s*=)/.test(dep[3] ?? ""),
+      inherited:
+        Boolean(dep[2]) ||
+        /\b(?:workspace\s*=\s*true\b|path\s*=)/.test(dep[3] ?? ""),
     });
   }
   return out;
 }
 
 /** Tauri npm dependencies a package.json declares (peer ranges are not versions we pin). */
-export function npmTauriDeps(packageJson: string): { name: string; version: string }[] {
-  const manifest = JSON.parse(packageJson) as Record<string, Record<string, string> | undefined>;
+export function npmTauriDeps(
+  packageJson: string,
+): { name: string; version: string }[] {
+  const manifest = JSON.parse(packageJson) as Record<
+    string,
+    Record<string, string> | undefined
+  >;
   const out: { name: string; version: string }[] = [];
-  for (const table of ["dependencies", "devDependencies", "optionalDependencies"]) {
+  for (const table of [
+    "dependencies",
+    "devDependencies",
+    "optionalDependencies",
+  ]) {
     for (const [name, version] of Object.entries(manifest[table] ?? {})) {
       if (name.startsWith("@tauri-apps/") || name.startsWith("tauri-plugin-"))
         out.push({ name, version });
@@ -151,7 +183,10 @@ async function walk(
   }
 }
 
-export async function discover(root: string, scanSkip: string[]): Promise<Discovered[]> {
+export async function discover(
+  root: string,
+  scanSkip: string[],
+): Promise<Discovered[]> {
   const found = new Map<string, Discovered>();
   const touch = (dir: string, via: Via) => {
     const key = dir === "" ? "." : dir;
@@ -165,10 +200,12 @@ export async function discover(root: string, scanSkip: string[]): Promise<Discov
     if (CONF_FILE.test(name)) {
       touch(dir, "conf").confs.push(name);
     } else if (name === "Cargo.toml" && dir !== "") {
-      if (tauriCargoDeps(await readFile(path, "utf8")).length > 0) touch(dir, "cargo");
+      if (tauriCargoDeps(await readFile(path, "utf8")).length > 0)
+        touch(dir, "cargo");
     } else if (name === "package.json" && dir !== "") {
       try {
-        if (npmTauriDeps(await readFile(path, "utf8")).length > 0) touch(dir, "npm");
+        if (npmTauriDeps(await readFile(path, "utf8")).length > 0)
+          touch(dir, "npm");
       } catch {
         // not a parseable manifest (template fragments); not a Tauri consumer
       }
@@ -182,8 +219,12 @@ export async function discover(root: string, scanSkip: string[]): Promise<Discov
 // ---------------------------------------------------------------------------------------------------------
 
 function stringArray(cargoToml: string, key: "members" | "exclude"): string[] {
-  const workspace = /\[workspace\]([\s\S]*?)(?=^\[|(?![\s\S]))/m.exec(cargoToml)?.[1] ?? "";
-  const array = new RegExp(`^${key}\\s*=\\s*\\[([\\s\\S]*?)\\]`, "m").exec(workspace)?.[1] ?? "";
+  const workspace =
+    /\[workspace\]([\s\S]*?)(?=^\[|(?![\s\S]))/m.exec(cargoToml)?.[1] ?? "";
+  const array =
+    new RegExp(`^${key}\\s*=\\s*\\[([\\s\\S]*?)\\]`, "m").exec(
+      workspace,
+    )?.[1] ?? "";
   return [...array.matchAll(/"([^"]+)"/g)].map((match) => match[1] as string);
 }
 
@@ -191,18 +232,32 @@ export type WorkspaceState = "member" | "excluded" | "upstream" | "outside";
 
 /** Whether a crate directory is a member of the root Cargo workspace, excluded from it, or elsewhere. */
 export function workspaceState(cargoToml: string, dir: string): WorkspaceState {
-  if (stringArray(cargoToml, "exclude").some((glob) => new Bun.Glob(glob).match(dir)))
+  if (
+    stringArray(cargoToml, "exclude").some((glob) =>
+      new Bun.Glob(glob).match(dir),
+    )
+  )
     return "excluded";
-  if (stringArray(cargoToml, "members").some((glob) => new Bun.Glob(glob).match(dir)))
+  if (
+    stringArray(cargoToml, "members").some((glob) =>
+      new Bun.Glob(glob).match(dir),
+    )
+  )
     return "member";
-  return dir === "upstream" || dir.startsWith("upstream/") ? "upstream" : "outside";
+  return dir === "upstream" || dir.startsWith("upstream/")
+    ? "upstream"
+    : "outside";
 }
 
 /** The registry project covering a discovered directory (exact path, or any depth below a subtree). */
-export function owner(registry: Registry, dir: string): RegistryProject | undefined {
+export function owner(
+  registry: Registry,
+  dir: string,
+): RegistryProject | undefined {
   return registry.projects.find(
     (project) =>
-      project.path === dir || (project.subtree === true && dir.startsWith(`${project.path}/`)),
+      project.path === dir ||
+      (project.subtree === true && dir.startsWith(`${project.path}/`)),
   );
 }
 
@@ -228,9 +283,13 @@ export function schemaUrl(version: string): string {
 /** Pinned `tauri` version from the root `[workspace.dependencies]`. */
 export function pinnedTauriVersion(rootCargoToml: string): string | null {
   const body =
-    /\[workspace\.dependencies\]([\s\S]*?)(?=^\[|(?![\s\S]))/m.exec(rootCargoToml)?.[1] ?? "";
+    /\[workspace\.dependencies\]([\s\S]*?)(?=^\[|(?![\s\S]))/m.exec(
+      rootCargoToml,
+    )?.[1] ?? "";
   const line = /^tauri\s*=\s*(.+)$/m.exec(body)?.[1];
-  return /(?:^"|version\s*=\s*")=?([^"]+)"/.exec(line?.trim() ?? "")?.[1] ?? null;
+  return (
+    /(?:^"|version\s*=\s*")=?([^"]+)"/.exec(line?.trim() ?? "")?.[1] ?? null
+  );
 }
 
 /** First-party configs whose `$schema` tag differs from the pinned Tauri version. */
@@ -251,7 +310,9 @@ export async function confSchemaDrift(
       return tag !== version ? { file, tag } : undefined;
     }),
   );
-  return drift.filter((item): item is { file: string; tag: string | null } => item !== undefined);
+  return drift.filter(
+    (item): item is { file: string; tag: string | null } => item !== undefined,
+  );
 }
 
 /** Rewrite drifted first-party `$schema` tags; returns the files changed. */
@@ -268,7 +329,10 @@ export async function fixConfSchemas(
       const text = await readFile(path, "utf8");
       const next = SCHEMA_TAG.test(text)
         ? rewriteSchemaTag(text, version)
-        : text.replace(/^\{\n/, `{\n  "$schema": ${JSON.stringify(schemaUrl(version))},\n`);
+        : text.replace(
+            /^\{\n/,
+            `{\n  "$schema": ${JSON.stringify(schemaUrl(version))},\n`,
+          );
       if (next === text) return undefined;
       await writeFile(path, next);
       return file;
@@ -326,18 +390,26 @@ function git(root: string, args: string[], input?: string): string {
 export function gitStates(root: string, dirs: string[]): Map<string, GitState> {
   const tracked = git(root, ["ls-files", "-z"]).split("\0");
   const ignored = new Set(
-    git(root, ["check-ignore", "-z", "--stdin"], dirs.join("\0")).split("\0").filter(Boolean),
+    git(root, ["check-ignore", "-z", "--stdin"], dirs.join("\0"))
+      .split("\0")
+      .filter(Boolean),
   );
   const states = new Map<string, GitState>();
   for (const dir of dirs) {
     const prefix = `${dir}/`;
     const isTracked = tracked.some((file) => file.startsWith(prefix));
-    states.set(dir, isTracked ? "tracked" : ignored.has(dir) ? "ignored" : "untracked");
+    states.set(
+      dir,
+      isTracked ? "tracked" : ignored.has(dir) ? "ignored" : "untracked",
+    );
   }
   return states;
 }
 
-export async function audit(root: string, registry: Registry): Promise<AuditReport> {
+export async function audit(
+  root: string,
+  registry: Registry,
+): Promise<AuditReport> {
   const rootCargo = await readFile(join(root, "Cargo.toml"), "utf8");
   const tauri = pinnedTauriVersion(rootCargo);
   const discovered = await discover(root, registry.scanSkip);
@@ -367,7 +439,9 @@ export async function audit(root: string, registry: Registry): Promise<AuditRepo
       });
       continue;
     }
-    const unlisted = item.confs.filter((conf) => !(project.confs ?? []).includes(conf));
+    const unlisted = item.confs.filter(
+      (conf) => !(project.confs ?? []).includes(conf),
+    );
     if (!project.subtree && unlisted.length > 0) {
       violations.push({
         code: "unregistered-conf",
@@ -408,7 +482,9 @@ export async function audit(root: string, registry: Registry): Promise<AuditRepo
   }
 
   // Duplication rules for first-party projects (upstream trees keep their own manifests).
-  for (const project of registry.projects.filter((entry) => FIRST_PARTY.has(entry.kind))) {
+  for (const project of registry.projects.filter((entry) =>
+    FIRST_PARTY.has(entry.kind),
+  )) {
     const cargo = join(root, project.path, "Cargo.toml");
     if (existsSync(cargo)) {
       // oxlint-disable-next-line no-await-in-loop -- violations are appended in registry order, so the report keeps a stable order
@@ -458,8 +534,9 @@ export async function audit(root: string, registry: Registry): Promise<AuditRepo
       }
       if (conf === "tauri.conf.json") {
         try {
-          const dist = (JSON.parse(text) as { build?: { frontendDist?: unknown } }).build
-            ?.frontendDist;
+          const dist = (
+            JSON.parse(text) as { build?: { frontendDist?: unknown } }
+          ).build?.frontendDist;
           if (
             typeof dist === "string" &&
             !/^https?:/.test(dist) &&
@@ -499,14 +576,21 @@ export function renderAudit(report: AuditReport): string {
   ] as const) {
     if (list.length > 0) {
       lines.push("", `${label} (${list.length})`);
-      for (const item of list) lines.push(`  [${item.code}] ${item.subject}: ${item.detail}`);
+      for (const item of list)
+        lines.push(`  [${item.code}] ${item.subject}: ${item.detail}`);
     }
   }
-  if (report.violations.length === 0) lines.push("", "registry matches the tree: no violation");
+  if (report.violations.length === 0)
+    lines.push("", "registry matches the tree: no violation");
   return lines.join("\n");
 }
 
-export type Args = { root: string; check: boolean; fix: boolean; json: boolean };
+export type Args = {
+  root: string;
+  check: boolean;
+  fix: boolean;
+  json: boolean;
+};
 
 export function parseArgs(argv: string[], cwd = process.cwd()): Args {
   const args: Args = { root: cwd, check: false, fix: false, json: false };
@@ -519,7 +603,8 @@ export function parseArgs(argv: string[], cwd = process.cwd()): Args {
     else if (arg === "--help" || arg === "-h") throw new Error("help");
     else throw new Error(`Unknown argument: ${arg}`);
   }
-  if (args.fix && args.check) throw new Error("--fix and --check are mutually exclusive");
+  if (args.fix && args.check)
+    throw new Error("--fix and --check are mutually exclusive");
   return args;
 }
 
@@ -529,20 +614,27 @@ export async function runTauriApps(argv: string[]): Promise<number> {
     args = parseArgs(argv);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.log("Usage: yolo ops tauri-apps [--root <repo>] [--check] [--fix] [--json]");
+    console.log(
+      "Usage: yolo ops tauri-apps [--root <repo>] [--check] [--fix] [--json]",
+    );
     return message === "help" ? 0 : (console.error(message), 2);
   }
   const registry = parseRegistry(
     await readFile(join(args.root, "tools/config/tauri-apps.json"), "utf8"),
   );
   if (args.fix) {
-    const version = pinnedTauriVersion(await readFile(join(args.root, "Cargo.toml"), "utf8"));
-    if (!version) throw new Error("root Cargo.toml has no pinned tauri version");
+    const version = pinnedTauriVersion(
+      await readFile(join(args.root, "Cargo.toml"), "utf8"),
+    );
+    if (!version)
+      throw new Error("root Cargo.toml has no pinned tauri version");
     for (const file of await fixConfSchemas(args.root, registry, version))
       console.log(`[tauri-apps] $schema updated: ${file}`);
   }
   const report = await audit(args.root, registry);
-  console.log(args.json ? JSON.stringify(report, null, 2) : renderAudit(report));
+  console.log(
+    args.json ? JSON.stringify(report, null, 2) : renderAudit(report),
+  );
   return args.check && report.violations.length > 0 ? 1 : 0;
 }
 

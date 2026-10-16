@@ -11,10 +11,17 @@ test("browser chat receives its native SSE notifications and releases the connec
     },
   };
   const messages: unknown[] = [];
-  const stop = browserSessionStream("owned", (message) => messages.push(message), source);
+  const stop = browserSessionStream(
+    "owned",
+    (message) => messages.push(message),
+    source,
+  );
   const deliver = source.onmessage!;
-  const send = (data: string) => deliver.call(source as EventSource, { data } as MessageEvent);
-  send('{"method":"item/agentMessage/delta","params":{"threadId":"owned","delta":"hello"}}');
+  const send = (data: string) =>
+    deliver.call(source as EventSource, { data } as MessageEvent);
+  send(
+    '{"method":"item/agentMessage/delta","params":{"threadId":"owned","delta":"hello"}}',
+  );
   send('{"method":"turn/completed","params":{"threadId":"other"}}');
   send("broken JSON");
   send("null");

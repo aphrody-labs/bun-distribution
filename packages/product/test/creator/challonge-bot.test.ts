@@ -48,9 +48,12 @@ interface Call {
   body?: any;
 }
 
-const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status });
 
-function fakes(overrides: { challonge?: (call: Call) => Response | undefined } = {}) {
+function fakes(
+  overrides: { challonge?: (call: Call) => Response | undefined } = {},
+) {
   const calls: Call[] = [];
   let participantId = 7000;
   let tournamentSeq = 0;
@@ -67,11 +70,20 @@ function fakes(overrides: { challonge?: (call: Call) => Response | undefined } =
     calls.push(call);
     if (call.host === "discord.com") {
       if (call.path.startsWith("/applications/") && call.method === "PUT")
-        return json((call.body as object[]).map((c, i) => Object.assign({ id: String(i) }, c)));
+        return json(
+          (call.body as object[]).map((c, i) =>
+            Object.assign({ id: String(i) }, c),
+          ),
+        );
       if (call.path === "/gateway/bot")
         return json({
           url: "wss://gateway.invalid",
-          session_start_limit: { remaining: 999, total: 1000, reset_after: 1, max_concurrency: 1 },
+          session_start_limit: {
+            remaining: 999,
+            total: 1000,
+            reset_after: 1,
+            max_concurrency: 1,
+          },
         });
       return call.method === "POST" && !call.path.includes("/callback")
         ? json({ id: "m1" })
@@ -156,7 +168,9 @@ async function context(
     defaultGame: "Guilty Gear Strive",
   };
   const logs: string[] = [];
-  const store = new StateStore(join(await mkdtemp(join(dir, "s-")), "state.json"));
+  const store = new StateStore(
+    join(await mkdtemp(join(dir, "s-")), "state.json"),
+  );
   const ctx: BotContext = {
     config,
     challonge: new ChallongeClient({
@@ -186,7 +200,11 @@ const organiser: DiscordMember = {
   roles: [ROLE],
   permissions: "0",
 };
-const member = (id: string, username: string, nick?: string): DiscordMember => ({
+const member = (
+  id: string,
+  username: string,
+  nick?: string,
+): DiscordMember => ({
   user: { id, username, global_name: username },
   nick,
   roles: [],
@@ -208,7 +226,10 @@ function command(
     guild_id: guild,
     channel_id: "C1",
     member: who,
-    data: { name: "tournoi", options: [{ type: 1, name: sub, options: options as never }] },
+    data: {
+      name: "tournoi",
+      options: [{ type: 1, name: sub, options: options as never }],
+    },
   };
 }
 
@@ -225,8 +246,10 @@ function button(tournamentId: string, who: DiscordMember): Interaction {
   };
 }
 
-const discordCalls = (calls: Call[]) => calls.filter((c) => c.host === "discord.com");
-const challongeCalls = (calls: Call[]) => calls.filter((c) => c.host !== "discord.com");
+const discordCalls = (calls: Call[]) =>
+  calls.filter((c) => c.host === "discord.com");
+const challongeCalls = (calls: Call[]) =>
+  calls.filter((c) => c.host !== "discord.com");
 const kind = (c: Call) =>
   c.path.endsWith("/callback")
     ? `callback:${c.body.type}`
@@ -236,7 +259,10 @@ const kind = (c: Call) =>
         ? "followup"
         : c.path;
 
-async function createTournament(c: Awaited<ReturnType<typeof context>>, name = "Coupe") {
+async function createTournament(
+  c: Awaited<ReturnType<typeof context>>,
+  name = "Coupe",
+) {
   await handleInteraction(
     c.ctx,
     command("creer", [
@@ -250,20 +276,39 @@ async function createTournament(c: Awaited<ReturnType<typeof context>>, name = "
 // --- Droits et définition des commandes ----------------------------------------------------------------------------
 
 test("isOrganiser : rôle configuré, administrateur toujours, « Gérer le serveur » à défaut de rôle", () => {
-  const withRole: BotConfig = { guildId: GUILD, organiserRoleId: ROLE, batchRegistrations: false };
+  const withRole: BotConfig = {
+    guildId: GUILD,
+    organiserRoleId: ROLE,
+    batchRegistrations: false,
+  };
   const noRole: BotConfig = { guildId: GUILD, batchRegistrations: false };
   expect(isOrganiser(withRole, organiser)).toBe(true);
   expect(isOrganiser(withRole, member("u", "x"))).toBe(false);
-  expect(isOrganiser(withRole, { ...member("u", "x"), permissions: "8" })).toBe(true); // ADMINISTRATOR
-  expect(isOrganiser(withRole, { ...member("u", "x"), permissions: "32" })).toBe(false); // MANAGE_GUILD ne suffit pas si un rôle est exigé
-  expect(isOrganiser(noRole, { ...member("u", "x"), permissions: "32" })).toBe(true);
+  expect(isOrganiser(withRole, { ...member("u", "x"), permissions: "8" })).toBe(
+    true,
+  ); // ADMINISTRATOR
+  expect(
+    isOrganiser(withRole, { ...member("u", "x"), permissions: "32" }),
+  ).toBe(false); // MANAGE_GUILD ne suffit pas si un rôle est exigé
+  expect(isOrganiser(noRole, { ...member("u", "x"), permissions: "32" })).toBe(
+    true,
+  );
   expect(isOrganiser(noRole, member("u", "x"))).toBe(false);
   expect(isOrganiser(withRole, undefined)).toBe(false);
-  expect(isOrganiser(withRole, { ...member("u", "x"), permissions: "n'importe quoi" })).toBe(false);
+  expect(
+    isOrganiser(withRole, {
+      ...member("u", "x"),
+      permissions: "n'importe quoi",
+    }),
+  ).toBe(false);
 });
 
 test("définition de /tournoi : noms, longueurs et ordre des options conformes aux règles Discord", () => {
-  const [root] = commandDefinitions() as { name: string; description: string; options: any[] }[];
+  const [root] = commandDefinitions() as {
+    name: string;
+    description: string;
+    options: any[];
+  }[];
   expect(root!.name).toBe("tournoi");
   expect(root!.options.map((o) => o.name)).toEqual([
     "creer",
@@ -314,7 +359,12 @@ test("botConfigOf : variables manquantes listées, valeurs reprises", () => {
   expect(ok).toMatchObject({
     token: "t",
     appId: "a",
-    bot: { guildId: "g", organiserRoleId: "r", batchRegistrations: true, defaultGame: "SF6" },
+    bot: {
+      guildId: "g",
+      organiserRoleId: "r",
+      batchRegistrations: true,
+      defaultGame: "SF6",
+    },
   });
 });
 
@@ -332,9 +382,16 @@ test("/tournoi creer : accusé éphémère AVANT l'appel Challonge, confirmation
   );
 
   const order = c.calls.map((call) =>
-    call.host === "discord.com" ? kind(call) : `challonge:${call.method} ${call.path}`,
+    call.host === "discord.com"
+      ? kind(call)
+      : `challonge:${call.method} ${call.path}`,
   );
-  expect(order).toEqual(["callback:5", "challonge:POST /tournaments", "edit", "followup"]);
+  expect(order).toEqual([
+    "callback:5",
+    "challonge:POST /tournaments",
+    "edit",
+    "followup",
+  ]);
 
   const [defer, , edit, followup] = c.calls;
   expect(defer!.body.data.flags).toBe(64);
@@ -346,7 +403,9 @@ test("/tournoi creer : accusé éphémère AVANT l'appel Challonge, confirmation
     url: "coupe_ete",
   });
   expect(edit!.method).toBe("PATCH");
-  expect(edit!.path).toBe(`/webhooks/${APP}/itok-${counter}/messages/@original`);
+  expect(edit!.path).toBe(
+    `/webhooks/${APP}/itok-${counter}/messages/@original`,
+  );
   expect(edit!.body.content).toContain("https://challonge.com/coupe_ete");
   expect(edit!.body.flags).toBeUndefined(); // le caractère éphémère est fixé au defer
   expect(followup!.body.flags).toBeUndefined(); // annonce publique
@@ -362,7 +421,10 @@ test("/tournoi creer : accusé éphémère AVANT l'appel Challonge, confirmation
   expect(followup!.body.allowed_mentions).toEqual({ parse: [] });
 
   const state = await c.store.read();
-  expect(state.guilds[GUILD]!.tournament).toMatchObject({ id: "901", url: "coupe_ete" });
+  expect(state.guilds[GUILD]!.tournament).toMatchObject({
+    id: "901",
+    url: "coupe_ete",
+  });
   expect(state.lastTournament?.id).toBe("901");
 });
 
@@ -372,7 +434,11 @@ test("commandes d'organisateur : refusées immédiatement (éphémère) sans tou
     // oxlint-disable-next-line no-await-in-loop -- commandes d'organisateur séquentielles : chaque sous-commande suit la précédente
     await handleInteraction(
       c.ctx,
-      command(sub, [{ type: 3, name: "nom", value: "x" }], member("U2", "joueur")),
+      command(
+        sub,
+        [{ type: 3, name: "nom", value: "x" }],
+        member("U2", "joueur"),
+      ),
     );
   }
   expect(challongeCalls(c.calls)).toHaveLength(0);
@@ -435,11 +501,17 @@ test("saisies invalides : URL non conforme et format inconnu signalés en éphé
 test("/tournoi inscrire : participant créé avec misc discord:<id>, correspondance enregistrée, doublon refusé", async () => {
   const c = await context();
   await createTournament(c);
-  await handleInteraction(c.ctx, command("inscrire", [], member("U1", "alice", "Alice la Rapide")));
+  await handleInteraction(
+    c.ctx,
+    command("inscrire", [], member("U1", "alice", "Alice la Rapide")),
+  );
 
   const create = challongeCalls(c.calls)[0]!;
   expect(create.path).toBe("/tournaments/901/participants");
-  expect(create.body.data.attributes).toEqual({ name: "Alice la Rapide", misc: "discord:U1" });
+  expect(create.body.data.attributes).toEqual({
+    name: "Alice la Rapide",
+    misc: "discord:U1",
+  });
   const edit = discordCalls(c.calls).find((x) => kind(x) === "edit")!;
   expect(edit.body.content).toContain("Inscrit·e sous « Alice la Rapide »");
   expect((await c.store.read()).players["901"]!["U1"]).toEqual({
@@ -448,11 +520,14 @@ test("/tournoi inscrire : participant créé avec misc discord:<id>, corresponda
   });
 
   c.calls.length = 0;
-  await handleInteraction(c.ctx, command("inscrire", [], member("U1", "alice", "Alice la Rapide")));
-  expect(challongeCalls(c.calls)).toHaveLength(0);
-  expect(discordCalls(c.calls).find((x) => kind(x) === "edit")!.body.content).toContain(
-    "déjà inscrit",
+  await handleInteraction(
+    c.ctx,
+    command("inscrire", [], member("U1", "alice", "Alice la Rapide")),
   );
+  expect(challongeCalls(c.calls)).toHaveLength(0);
+  expect(
+    discordCalls(c.calls).find((x) => kind(x) === "edit")!.body.content,
+  ).toContain("déjà inscrit");
 });
 
 test("inscription : pseudo choisi, nom déjà pris distingué par le nom d'utilisateur, double clic simultané ignoré", async () => {
@@ -460,11 +535,19 @@ test("inscription : pseudo choisi, nom déjà pris distingué par le nom d'utili
   await createTournament(c);
   await handleInteraction(
     c.ctx,
-    command("inscrire", [{ type: 3, name: "pseudo", value: "Ryu" }], member("U1", "alice")),
+    command(
+      "inscrire",
+      [{ type: 3, name: "pseudo", value: "Ryu" }],
+      member("U1", "alice"),
+    ),
   );
   await handleInteraction(
     c.ctx,
-    command("inscrire", [{ type: 3, name: "pseudo", value: "ryu" }], member("U2", "bob")),
+    command(
+      "inscrire",
+      [{ type: 3, name: "pseudo", value: "ryu" }],
+      member("U2", "bob"),
+    ),
   );
   const sent = challongeCalls(c.calls).map((x) => x.body.data.attributes.name);
   expect(sent).toEqual(["Ryu", "ryu (bob)"]);
@@ -476,35 +559,48 @@ test("inscription : pseudo choisi, nom déjà pris distingué par le nom d'utili
     handleInteraction(race.ctx, command("inscrire", [], user)),
     handleInteraction(race.ctx, command("inscrire", [], user)),
   ]);
-  expect(challongeCalls(race.calls).filter((x) => x.method === "POST")).toHaveLength(1);
+  expect(
+    challongeCalls(race.calls).filter((x) => x.method === "POST"),
+  ).toHaveLength(1);
 });
 
 test("inscription sans tournoi : message clair ; bouton d'un ancien tournoi refusé ; bouton valide inscrit", async () => {
   const empty = await context();
-  await handleInteraction(empty.ctx, command("inscrire", [], member("U1", "alice")));
-  expect(discordCalls(empty.calls).find((x) => kind(x) === "edit")!.body.content).toContain(
-    "Aucun tournoi en cours",
+  await handleInteraction(
+    empty.ctx,
+    command("inscrire", [], member("U1", "alice")),
   );
+  expect(
+    discordCalls(empty.calls).find((x) => kind(x) === "edit")!.body.content,
+  ).toContain("Aucun tournoi en cours");
 
   const c = await context();
   await createTournament(c);
   await handleInteraction(c.ctx, button("123", member("U1", "alice")));
-  expect(discordCalls(c.calls).find((x) => kind(x) === "edit")!.body.content).toContain(
-    "ancien tournoi",
-  );
+  expect(
+    discordCalls(c.calls).find((x) => kind(x) === "edit")!.body.content,
+  ).toContain("ancien tournoi");
   expect(challongeCalls(c.calls)).toHaveLength(0);
 
   c.calls.length = 0;
   await handleInteraction(c.ctx, button("901", member("U1", "alice")));
-  expect(discordCalls(c.calls)[0]!.body).toMatchObject({ type: 5, data: { flags: 64 } });
-  expect(challongeCalls(c.calls)[0]!.body.data.attributes.misc).toBe("discord:U1");
+  expect(discordCalls(c.calls)[0]!.body).toMatchObject({
+    type: 5,
+    data: { flags: 64 },
+  });
+  expect(challongeCalls(c.calls)[0]!.body.data.attributes.misc).toBe(
+    "discord:U1",
+  );
 });
 
 test("/tournoi score : le joueur Discord désigné est converti en participant Challonge (advancing sur lui)", async () => {
   const c = await context();
   await createTournament(c);
   // Participants 7000 (Alice) et 7001 (Bob), correspondant aux joueurs du match A du faux serveur.
-  await handleInteraction(c.ctx, command("inscrire", [], member("U1", "alice")));
+  await handleInteraction(
+    c.ctx,
+    command("inscrire", [], member("U1", "alice")),
+  );
   await handleInteraction(c.ctx, command("inscrire", [], member("U2", "bob")));
   c.calls.length = 0;
 
@@ -536,9 +632,9 @@ test("/tournoi score : le joueur Discord désigné est converti en participant C
     ]),
   );
   expect(challongeCalls(c.calls).some((x) => x.method === "PUT")).toBe(false);
-  expect(discordCalls(c.calls).find((x) => kind(x) === "edit")!.body.content).toContain(
-    "Score à égalité",
-  );
+  expect(
+    discordCalls(c.calls).find((x) => kind(x) === "edit")!.body.content,
+  ).toContain("Score à égalité");
 
   // Joueur non inscrit via le bot.
   c.calls.length = 0;
@@ -550,21 +646,28 @@ test("/tournoi score : le joueur Discord désigné est converti en participant C
       { type: 6, name: "gagnant", value: "U-INCONNU" },
     ]),
   );
-  expect(discordCalls(c.calls).find((x) => kind(x) === "edit")!.body.content).toContain(
-    "pas inscrit via le bot",
-  );
+  expect(
+    discordCalls(c.calls).find((x) => kind(x) === "edit")!.body.content,
+  ).toContain("pas inscrit via le bot");
 });
 
 test("/tournoi demarrer : démarrage direct, ou randomize d'abord avec melanger ; annonce publique", async () => {
   const c = await context();
   await createTournament(c);
-  await handleInteraction(c.ctx, command("demarrer", [{ type: 5, name: "melanger", value: true }]));
+  await handleInteraction(
+    c.ctx,
+    command("demarrer", [{ type: 5, name: "melanger", value: true }]),
+  );
   expect(challongeCalls(c.calls).map((x) => `${x.method} ${x.path}`)).toEqual([
     "PUT /tournaments/901/participants/randomize",
     "PUT /tournaments/901/change_state",
   ]);
   expect(challongeCalls(c.calls)[1]!.body.data.attributes.state).toBe("start");
-  expect(discordCalls(c.calls).map(kind)).toEqual(["callback:5", "edit", "followup"]);
+  expect(discordCalls(c.calls).map(kind)).toEqual([
+    "callback:5",
+    "edit",
+    "followup",
+  ]);
   expect(discordCalls(c.calls)[2]!.body.content).toContain("est lancé");
 });
 
@@ -573,12 +676,15 @@ test("inscriptions groupées : mises en attente, envoyées par lots de 20 (bulk_
   await createTournament(c);
   for (let i = 1; i <= 25; i += 1)
     // oxlint-disable-next-line no-await-in-loop -- inscriptions séquentielles : chaque écriture du magasin doit précéder la suivante (ordre des correspondances)
-    await handleInteraction(c.ctx, command("inscrire", [], member(`U${i}`, `joueur${i}`)));
+    await handleInteraction(
+      c.ctx,
+      command("inscrire", [], member(`U${i}`, `joueur${i}`)),
+    );
   expect(challongeCalls(c.calls)).toHaveLength(0);
   expect(Object.keys((await c.store.read()).pending["901"]!)).toHaveLength(25);
-  expect(discordCalls(c.calls).find((x) => kind(x) === "edit")!.body.content).toContain(
-    "enregistrée",
-  );
+  expect(
+    discordCalls(c.calls).find((x) => kind(x) === "edit")!.body.content,
+  ).toContain("enregistrée");
 
   c.calls.length = 0;
   await handleInteraction(c.ctx, command("demarrer"));
@@ -605,10 +711,15 @@ test("/tournoi terminer clôture et oublie le tournoi actif ; /tournoi bracket p
   const c = await context();
   await handleInteraction(c.ctx, command("bracket"));
   expect(discordCalls(c.calls)[0]!.body.data.flags).toBe(64);
-  expect(discordCalls(c.calls)[0]!.body.data.content).toContain("Aucun tournoi en cours");
+  expect(discordCalls(c.calls)[0]!.body.data.content).toContain(
+    "Aucun tournoi en cours",
+  );
 
   await createTournament(c);
-  await handleInteraction(c.ctx, command("bracket", [], member("U5", "curieux")));
+  await handleInteraction(
+    c.ctx,
+    command("bracket", [], member("U5", "curieux")),
+  );
   const shown = discordCalls(c.calls)[0]!;
   expect(shown.body.type).toBe(4);
   expect(shown.body.data.flags).toBeUndefined();
@@ -616,7 +727,9 @@ test("/tournoi terminer clôture et oublie le tournoi actif ; /tournoi bracket p
 
   c.calls.length = 0;
   await handleInteraction(c.ctx, command("terminer"));
-  expect(challongeCalls(c.calls)[0]!.body.data.attributes.state).toBe("finalize");
+  expect(challongeCalls(c.calls)[0]!.body.data.attributes.state).toBe(
+    "finalize",
+  );
   expect((await c.store.read()).guilds[GUILD]).toBeUndefined();
 });
 
@@ -624,7 +737,9 @@ test("interaction d'un autre serveur : refusée sans travail", async () => {
   const c = await context();
   await handleInteraction(c.ctx, command("bracket", [], organiser, "AUTRE"));
   expect(challongeCalls(c.calls)).toHaveLength(0);
-  expect(discordCalls(c.calls)[0]!.body.data.content).toContain("pas configuré pour ce serveur");
+  expect(discordCalls(c.calls)[0]!.body.data.content).toContain(
+    "pas configuré pour ce serveur",
+  );
 });
 
 test("Discord expiré (404) à l'accusé : journalisé, aucun travail Challonge lancé", async () => {
@@ -633,7 +748,10 @@ test("Discord expiré (404) à l'accusé : journalisé, aucun travail Challonge 
   c.ctx.discord.defer = async () => {
     throw new DiscordError("Ressource Discord introuvable (404)", 404, 10062);
   };
-  await handleInteraction(c.ctx, command("creer", [{ type: 3, name: "nom", value: "X" }]));
+  await handleInteraction(
+    c.ctx,
+    command("creer", [{ type: 3, name: "nom", value: "X" }]),
+  );
   c.ctx.discord.defer = original;
   expect(challongeCalls(c.calls)).toHaveLength(0);
   expect(c.logs.join("\n")).toContain("Impossible d'accuser réception");
@@ -647,19 +765,30 @@ test("REST Discord : 429 avec retry_after, jeton jamais divulgué dans les erreu
   let n = 0;
   const fetchFn: Fetch = async (input, init) => {
     const url = new URL(String(input));
-    seen.push({ path: url.pathname, auth: new Headers(init?.headers).get("authorization") });
+    seen.push({
+      path: url.pathname,
+      auth: new Headers(init?.headers).get("authorization"),
+    });
     n += 1;
     if (n === 1)
       return new Response(
-        JSON.stringify({ message: "You are being rate limited.", retry_after: 1.5, global: false }),
+        JSON.stringify({
+          message: "You are being rate limited.",
+          retry_after: 1.5,
+          global: false,
+        }),
         { status: 429 },
       );
     if (url.pathname.endsWith("/gateway/bot"))
       return new Response(JSON.stringify({ url: "wss://x" }));
-    if (url.pathname.endsWith("/callback")) return new Response(null, { status: 204 });
-    return new Response(JSON.stringify({ message: `Invalid token ${TOKEN}`, code: 0 }), {
-      status: 401,
-    });
+    if (url.pathname.endsWith("/callback"))
+      return new Response(null, { status: 204 });
+    return new Response(
+      JSON.stringify({ message: `Invalid token ${TOKEN}`, code: 0 }),
+      {
+        status: 401,
+      },
+    );
   };
   const rest = new DiscordRest({
     token: TOKEN,
@@ -671,23 +800,31 @@ test("REST Discord : 429 avec retry_after, jeton jamais divulgué dans les erreu
   expect(sleeps).toEqual([1500]);
   expect(seen[0]!.auth).toBe(`Bot ${TOKEN}`);
 
-  const error = (await rest.putGuildCommands("G", []).catch((e: Error) => e)) as DiscordError;
+  const error = (await rest
+    .putGuildCommands("G", [])
+    .catch((e: Error) => e)) as DiscordError;
   expect(error).toBeInstanceOf(DiscordError);
   expect(error.status).toBe(401);
   expect(error.message).toContain("Token Discord refusé (401)");
   expect(error.message).not.toContain(TOKEN);
 
-  await rest.respond({ id: "i", token: "t", application_id: APP, type: 2 }, { content: "x" });
-  expect(seen.at(-1)).toEqual({ path: "/api/v10/interactions/i/t/callback", auth: null });
+  await rest.respond(
+    { id: "i", token: "t", application_id: APP, type: 2 },
+    { content: "x" },
+  );
+  expect(seen.at(-1)).toEqual({
+    path: "/api/v10/interactions/i/t/callback",
+    auth: null,
+  });
 });
 
 test("webhooks : seules les URL discord.com/api/webhooks/<id>/<jeton> sont acceptées ; jeton masqué à l'affichage", () => {
-  expect(assertWebhookUrl("https://discord.com/api/webhooks/123/abc-DEF_9")).toBe(
-    "https://discord.com/api/webhooks/123/abc-DEF_9",
-  );
-  expect(assertWebhookUrl("https://discord.com/api/v10/webhooks/123/abc")).toContain(
-    "/webhooks/123/abc",
-  );
+  expect(
+    assertWebhookUrl("https://discord.com/api/webhooks/123/abc-DEF_9"),
+  ).toBe("https://discord.com/api/webhooks/123/abc-DEF_9");
+  expect(
+    assertWebhookUrl("https://discord.com/api/v10/webhooks/123/abc"),
+  ).toContain("/webhooks/123/abc");
   for (const bad of [
     "http://discord.com/api/webhooks/1/a",
     "https://evil.example/api/webhooks/1/a",
@@ -697,9 +834,9 @@ test("webhooks : seules les URL discord.com/api/webhooks/<id>/<jeton> sont accep
   ]) {
     expect(() => assertWebhookUrl(bad)).toThrow(UsageError);
   }
-  expect(redactWebhook("https://discord.com/api/webhooks/123/SECRETTOKEN")).toBe(
-    "https://discord.com/api/webhooks/123/***",
-  );
+  expect(
+    redactWebhook("https://discord.com/api/webhooks/123/SECRETTOKEN"),
+  ).toBe("https://discord.com/api/webhooks/123/***");
 });
 
 // --- Bout en bout : Gateway locale + REST simulée -------------------------------------------------------------------
@@ -717,7 +854,9 @@ test("runBot : enregistre /tournoi, se connecte à la Gateway locale et répond 
   gatewayServer = Bun.serve<undefined>({
     port: 0,
     fetch: (req, srv) =>
-      srv.upgrade(req, { data: undefined }) ? undefined : new Response("x", { status: 426 }),
+      srv.upgrade(req, { data: undefined })
+        ? undefined
+        : new Response("x", { status: 426 }),
     websocket: {
       open(ws) {
         ws.send(JSON.stringify({ op: 10, d: { heartbeat_interval: 30 } }));
@@ -739,7 +878,14 @@ test("runBot : enregistre /tournoi, se connecte à la Gateway locale et répond 
               },
             }),
           );
-          ws.send(JSON.stringify({ op: 0, s: 2, t: "INTERACTION_CREATE", d: interaction }));
+          ws.send(
+            JSON.stringify({
+              op: 0,
+              s: 2,
+              t: "INTERACTION_CREATE",
+              d: interaction,
+            }),
+          );
         }
       },
     },
@@ -778,21 +924,28 @@ test("runBot : enregistre /tournoi, se connecte à la Gateway locale et répond 
     },
   );
   const deadline = Date.now() + 4000;
-  while (Date.now() < deadline && !f.calls.some((c) => c.path.endsWith("/callback")))
+  while (
+    Date.now() < deadline &&
+    !f.calls.some((c) => c.path.endsWith("/callback"))
+  )
     // oxlint-disable-next-line no-await-in-loop -- sondage du rappel : délai entre deux vérifications séquentielles
     await Bun.sleep(10);
   controller.abort();
   expect(await running).toBe(0);
 
   const put = f.calls.find(
-    (c) => c.method === "PUT" && c.path === `/applications/${APP}/guilds/${GUILD}/commands`,
+    (c) =>
+      c.method === "PUT" &&
+      c.path === `/applications/${APP}/guilds/${GUILD}/commands`,
   )!;
   expect(put.body[0].name).toBe("tournoi");
   expect(put.headers.get("authorization")).toBe(`Bot ${TOKEN}`);
   const identify = gatewayFrames.find((fr) => fr.op === 2);
   expect(identify.d.token).toBe(TOKEN);
   const reply = f.calls.find((c) => c.path.endsWith("/callback"))!;
-  expect(reply.path).toBe(`/interactions/${interaction.id}/${interaction.token}/callback`);
+  expect(reply.path).toBe(
+    `/interactions/${interaction.id}/${interaction.token}/callback`,
+  );
   expect(reply.body.data.content).toContain("Aucun tournoi en cours");
   expect(out.join("\n")).not.toContain(TOKEN);
 });
@@ -802,13 +955,16 @@ test("runBot : token refusé par la Gateway (4004) -> code de sortie 1 et messag
   gatewayServer = Bun.serve<undefined>({
     port: 0,
     fetch: (req, srv) =>
-      srv.upgrade(req, { data: undefined }) ? undefined : new Response("x", { status: 426 }),
+      srv.upgrade(req, { data: undefined })
+        ? undefined
+        : new Response("x", { status: 426 }),
     websocket: {
       open(ws) {
         ws.send(JSON.stringify({ op: 10, d: { heartbeat_interval: 10_000 } }));
       },
       message(ws, raw) {
-        if (JSON.parse(String(raw)).op === 2) ws.close(4004, "Authentication failed");
+        if (JSON.parse(String(raw)).op === 2)
+          ws.close(4004, "Authentication failed");
       },
     },
   });
@@ -828,7 +984,12 @@ test("runBot : token refusé par la Gateway (4004) -> code de sortie 1 et messag
     },
     {
       apiKey: "ck-key-123456",
-      discord: { token: TOKEN, appId: APP, guildId: GUILD, batchRegistrations: false },
+      discord: {
+        token: TOKEN,
+        appId: APP,
+        guildId: GUILD,
+        batchRegistrations: false,
+      },
       dir: await mkdtemp(join(dir, "run-")),
       warnings: [],
     },

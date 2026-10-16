@@ -47,7 +47,12 @@ export const TruchetPattern = ({
             <g key={`${ri}-${ci}`}>
               <polygon points={triA} fill={fillA} />
               <polygon points={triB} fill={fillB} />
-              <path d={diag} stroke={diagStroke} strokeWidth="0.6" fill="none" />
+              <path
+                d={diag}
+                stroke={diagStroke}
+                strokeWidth="0.6"
+                fill="none"
+              />
             </g>
           );
         }),

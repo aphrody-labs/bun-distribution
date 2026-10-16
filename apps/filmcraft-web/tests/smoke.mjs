@@ -48,7 +48,13 @@ await using proc = Bun.spawn(
     "--window-size=1600,1000",
     "about:blank",
   ],
-  { stdin: "ignore", stdout: "ignore", stderr: "ignore", windowsHide: true, timeout: 1200000 },
+  {
+    stdin: "ignore",
+    stdout: "ignore",
+    stderr: "ignore",
+    windowsHide: true,
+    timeout: 1200000,
+  },
 );
 
 const sleep = (ms) => Bun.sleep(ms);
@@ -60,7 +66,9 @@ const logs = [];
 async function connect() {
   for (let i = 0; i < 100; i++) {
     try {
-      const list = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
+      const list = await (
+        await fetch(`http://127.0.0.1:${port}/json/list`)
+      ).json();
       const page = list.find((t) => t.type === "page");
       if (page) {
         ws = new WebSocket(page.webSocketDebuggerUrl);
@@ -74,7 +82,11 @@ async function connect() {
             waiting.get(msg.id)(msg);
             waiting.delete(msg.id);
           } else if (msg.method === "Runtime.consoleAPICalled") {
-            logs.push(msg.params.args.map((a) => a.value ?? a.description ?? "").join(" "));
+            logs.push(
+              msg.params.args
+                .map((a) => a.value ?? a.description ?? "")
+                .join(" "),
+            );
           } else if (msg.method === "Runtime.exceptionThrown") {
             logs.push(
               "EXCEPTION " +
@@ -138,9 +150,10 @@ try {
   await connect();
   await send("Page.enable");
   await send("Runtime.enable");
-  await send("Browser.setDownloadBehavior", { behavior: "allow", downloadPath: downloads }).catch(
-    () => {},
-  );
+  await send("Browser.setDownloadBehavior", {
+    behavior: "allow",
+    downloadPath: downloads,
+  }).catch(() => {});
   await send("Emulation.setDeviceMetricsOverride", {
     width: 1600,
     height: 1000,
@@ -192,7 +205,9 @@ try {
   await js("filmcraft.request('ui.playback', {action: 'play'})");
   await sleep(1500);
   report.steps.importPlay = {
-    ...(await js("filmcraft.inspect().then(i => ({playhead: i.playhead, playback: i.playback}))")),
+    ...(await js(
+      "filmcraft.inspect().then(i => ({playhead: i.playhead, playback: i.playback}))",
+    )),
     screenshot: await shot("03-imported"),
   };
   await js("filmcraft.request('ui.playback', {action: 'stop'})");
@@ -248,7 +263,9 @@ try {
   report.steps.modes = { screenshot: await shot("05-modes") };
   report.steps.importBins = await checkImportBins({ evaluate: js, media });
   if (!report.steps.importBins.ok)
-    throw new Error("import bin regression: " + JSON.stringify(report.steps.importBins.gates));
+    throw new Error(
+      "import bin regression: " + JSON.stringify(report.steps.importBins.gates),
+    );
   report.steps.importCollision = await checkImportCollision({
     evaluate: js,
     url,
@@ -264,7 +281,8 @@ try {
   });
   if (!report.steps.importCollision.ok)
     throw new Error(
-      "import collision regression: " + JSON.stringify(report.steps.importCollision.gates),
+      "import collision regression: " +
+        JSON.stringify(report.steps.importCollision.gates),
     );
   // still alive? (a panicked app never answers)
   await Promise.race([
@@ -273,10 +291,15 @@ try {
       throw new Error("app stopped answering");
     }),
   ]);
-  const fatal = logs.filter((l) => /panicked at|RuntimeError|EXCEPTION/.test(l));
+  const fatal = logs.filter((l) =>
+    /panicked at|RuntimeError|EXCEPTION/.test(l),
+  );
   if (fatal.length)
-    throw new Error("panic / uncaught exception:\n" + fatal.join("\n").slice(0, 4000));
-  if (await js("window.filmcraftLoad.fatal || null")) throw new Error("fatal overlay shown");
+    throw new Error(
+      "panic / uncaught exception:\n" + fatal.join("\n").slice(0, 4000),
+    );
+  if (await js("window.filmcraftLoad.fatal || null"))
+    throw new Error("fatal overlay shown");
   report.ok = true;
 } catch (e) {
   report.ok = false;

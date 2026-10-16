@@ -3,7 +3,11 @@ import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { auditGlibc, elfHash, lowerGlibcCeiling } from "../../src/cli/forge/glibc.ts";
+import {
+  auditGlibc,
+  elfHash,
+  lowerGlibcCeiling,
+} from "../../src/cli/forge/glibc.ts";
 import { firstPartyTests } from "../../src/cli/forge/run.ts";
 
 /** Minimal ELF64 with .dynstr, .dynsym, .gnu.version, .gnu.version_r: libm needs GLIBC_2.2.5 and GLIBC_2.43. */
@@ -24,7 +28,9 @@ function fixture(symbols: { name: string; index: number }[]): Uint8Array {
   }
   const dynsym = new Uint8Array(24 * (symbols.length + 1));
   const dsv = new DataView(dynsym.buffer);
-  symbols.forEach((s, i) => dsv.setUint32(24 * (i + 1), offsets.get(s.name)!, true));
+  symbols.forEach((s, i) =>
+    dsv.setUint32(24 * (i + 1), offsets.get(s.name)!, true),
+  );
   const versym = new Uint8Array(2 * (symbols.length + 1));
   const vv = new DataView(versym.buffer);
   symbols.forEach((s, i) => vv.setUint16(2 * (i + 1), s.index, true));
@@ -77,7 +83,10 @@ describe("first-party suites", () => {
   test("skips files that need bun:internal-for-testing (debug builds only)", () => {
     const tree = mkdtempSync(join(tmpdir(), "forge-fp-"));
     mkdirSync(join(tree, "test/js/first_party/ws"), { recursive: true });
-    writeFileSync(join(tree, "test/js/first_party/ws/a.test.ts"), "export {};\n");
+    writeFileSync(
+      join(tree, "test/js/first_party/ws/a.test.ts"),
+      "export {};\n",
+    );
     writeFileSync(
       join(tree, "test/js/first_party/ws/b.test.ts"),
       'import "bun:internal-for-testing";\n',
@@ -97,7 +106,10 @@ describe("glibc ceiling", () => {
       { name: "atan2f", index: 3 },
       { name: "floor", index: 2 },
     ]);
-    expect(auditGlibc(bytes, "2.39").above).toEqual(["acosf@GLIBC_2.43", "atan2f@GLIBC_2.43"]);
+    expect(auditGlibc(bytes, "2.39").above).toEqual([
+      "acosf@GLIBC_2.43",
+      "atan2f@GLIBC_2.43",
+    ]);
     const result = lowerGlibcCeiling(bytes, "2.39");
     expect(result.patched).toEqual([
       "acosf: GLIBC_2.43 -> GLIBC_2.2.5",
@@ -117,6 +129,8 @@ describe("glibc ceiling", () => {
 
   test("refuses an unknown symbol above the ceiling", () => {
     const bytes = fixture([{ name: "exp10f", index: 3 }]);
-    expect(() => lowerGlibcCeiling(bytes, "2.39")).toThrow(/not known re-versioned/);
+    expect(() => lowerGlibcCeiling(bytes, "2.39")).toThrow(
+      /not known re-versioned/,
+    );
   });
 });

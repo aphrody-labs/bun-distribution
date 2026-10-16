@@ -89,13 +89,26 @@ export interface GpuJobResult<T> {
 }
 
 const SYMBOLS = {
-  yolo_runtime_create: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.i32 },
-  yolo_runtime_destroy: { args: [FFIType.u64], returns: FFIType.i32 },
-  yolo_gpu_call_start: {
-    args: [FFIType.u64, FFIType.ptr, FFIType.u64, FFIType.ptr, FFIType.u64, FFIType.ptr],
+  yolo_runtime_create: {
+    args: [FFIType.ptr, FFIType.ptr],
     returns: FFIType.i32,
   },
-  yolo_operation_wait: { args: [FFIType.u64, FFIType.u32, FFIType.ptr], returns: FFIType.i32 },
+  yolo_runtime_destroy: { args: [FFIType.u64], returns: FFIType.i32 },
+  yolo_gpu_call_start: {
+    args: [
+      FFIType.u64,
+      FFIType.ptr,
+      FFIType.u64,
+      FFIType.ptr,
+      FFIType.u64,
+      FFIType.ptr,
+    ],
+    returns: FFIType.i32,
+  },
+  yolo_operation_wait: {
+    args: [FFIType.u64, FFIType.u32, FFIType.ptr],
+    returns: FFIType.i32,
+  },
   yolo_operation_cancel: { args: [FFIType.u64], returns: FFIType.i32 },
   yolo_operation_release: { args: [FFIType.u64], returns: FFIType.i32 },
   yolo_buffer_free: { args: [FFIType.ptr], returns: FFIType.void },
@@ -109,7 +122,9 @@ function readBuffer(symbols: Symbols, buffer: Uint8Array): string {
   const length = Number(new DataView(buffer.buffer).getBigUint64(8, true));
   const data = read.ptr(ptr(buffer), 0);
   try {
-    return data && length > 0 ? new TextDecoder().decode(toArrayBuffer(data, 0, length)) : "";
+    return data && length > 0
+      ? new TextDecoder().decode(toArrayBuffer(data, 0, length))
+      : "";
   } finally {
     symbols.yolo_buffer_free(ptr(buffer));
   }
@@ -121,7 +136,8 @@ function check(symbols: Symbols, status: number): void {
   let message = "native GPU operation failed";
   if (symbols.yolo_last_error(ptr(buffer)) === Status.Ok) {
     try {
-      message = (JSON.parse(readBuffer(symbols, buffer)) as { message: string }).message;
+      message = (JSON.parse(readBuffer(symbols, buffer)) as { message: string })
+        .message;
     } catch {
       // Preserve the native status if an invalid diagnostic buffer cannot be decoded.
     }
@@ -140,7 +156,11 @@ export class GpuRuntime implements Disposable {
   readonly #capabilities: readonly string[];
   #closed = false;
 
-  private constructor(library: Library, handle: bigint, capabilities: readonly string[]) {
+  private constructor(
+    library: Library,
+    handle: bigint,
+    capabilities: readonly string[],
+  ) {
     this.#library = library;
     this.#handle = handle;
     this.#capabilities = capabilities;
@@ -155,7 +175,9 @@ export class GpuRuntime implements Disposable {
       using probe = Runtime.load(options);
       capabilities = probe.capabilities();
     }
-    const missing = GPU_CAPABILITIES.filter((capability) => !capabilities.includes(capability));
+    const missing = GPU_CAPABILITIES.filter(
+      (capability) => !capabilities.includes(capability),
+    );
     if (missing.length > 0) {
       throw new RuntimeError(
         Status.AbiMismatch,
@@ -171,7 +193,10 @@ export class GpuRuntime implements Disposable {
     ]);
     const out = new BigUint64Array(1);
     try {
-      check(library.symbols, library.symbols.yolo_runtime_create(ptr(createInfo), ptr(out)));
+      check(
+        library.symbols,
+        library.symbols.yolo_runtime_create(ptr(createInfo), ptr(out)),
+      );
       return new GpuRuntime(library, out[0] as bigint, capabilities);
     } catch (error) {
       library.close();
@@ -211,10 +236,18 @@ export class GpuRuntime implements Disposable {
 
   async cuda(job: CudaJob): Promise<GpuJobResult<Float32Array>> {
     if (!this.hasCuda) {
-      throw new RuntimeError(Status.AbiMismatch, "this runtime was built without gpu.cuda");
+      throw new RuntimeError(
+        Status.AbiMismatch,
+        "this runtime was built without gpu.cuda",
+      );
     }
     const result = await this.#call<{ data: string; elapsedMs: number }>(
-      { op: "cuda", source: job.source, kernel: job.kernel, blockSize: job.blockSize ?? 0 },
+      {
+        op: "cuda",
+        source: job.source,
+        kernel: job.kernel,
+        blockSize: job.blockSize ?? 0,
+      },
       bytesOf(job.data),
       job,
     );
@@ -225,8 +258,13 @@ export class GpuRuntime implements Disposable {
     return { data: values, elapsedMs: result.elapsedMs };
   }
 
-  async #call<T>(command: unknown, data?: Uint8Array, options: GpuCallOptions = {}): Promise<T> {
-    if (this.#closed) throw new RuntimeError(Status.InvalidHandle, "GPU runtime is closed");
+  async #call<T>(
+    command: unknown,
+    data?: Uint8Array,
+    options: GpuCallOptions = {},
+  ): Promise<T> {
+    if (this.#closed)
+      throw new RuntimeError(Status.InvalidHandle, "GPU runtime is closed");
     options.signal?.throwIfAborted();
     const json = new TextEncoder().encode(JSON.stringify(command));
     if (json.length === 0 || json.length > MAX_COMMAND_BYTES) {
@@ -256,11 +294,13 @@ export class GpuRuntime implements Disposable {
     options.signal?.addEventListener("abort", cancel, { once: true });
     try {
       for (;;) {
-        if (this.#closed) throw new RuntimeError(Status.InvalidHandle, "GPU runtime is closed");
+        if (this.#closed)
+          throw new RuntimeError(Status.InvalidHandle, "GPU runtime is closed");
         const buffer = new Uint8Array(24);
         const status = symbols.yolo_operation_wait(operation, 0, ptr(buffer));
         if (status !== Status.Timeout) {
-          const raw = status === Status.Ok ? readBuffer(symbols, buffer) : undefined;
+          const raw =
+            status === Status.Ok ? readBuffer(symbols, buffer) : undefined;
           options.signal?.throwIfAborted();
           check(symbols, status);
           return JSON.parse(raw as string) as T;
@@ -270,13 +310,17 @@ export class GpuRuntime implements Disposable {
       }
     } finally {
       options.signal?.removeEventListener("abort", cancel);
-      if (!this.#closed) check(symbols, symbols.yolo_operation_release(operation));
+      if (!this.#closed)
+        check(symbols, symbols.yolo_operation_release(operation));
     }
   }
 
   close(): void {
     if (this.#closed) return;
-    check(this.#library.symbols, this.#library.symbols.yolo_runtime_destroy(this.#handle));
+    check(
+      this.#library.symbols,
+      this.#library.symbols.yolo_runtime_destroy(this.#handle),
+    );
     this.#closed = true;
     this.#library.close();
   }

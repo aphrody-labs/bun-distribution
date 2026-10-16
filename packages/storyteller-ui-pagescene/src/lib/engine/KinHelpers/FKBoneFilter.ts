@@ -19,5 +19,5 @@ export const FKBoneBlacklistStrings = [
   "cheek",
   "forehead",
   "nose",
-  "temple"
+  "temple",
 ];

@@ -9,14 +9,20 @@ const header = readFileSync(
   "utf8",
 );
 const core = [
-  ...new Set(header.match(/\b(?:yolo_[a-z0-9_]+|ffi_sum_squares)(?=\()/g) ?? []),
-].filter((name) => !name.startsWith("yolo_browser_") && name !== "yolo_gpu_call_start");
+  ...new Set(
+    header.match(/\b(?:yolo_[a-z0-9_]+|ffi_sum_squares)(?=\()/g) ?? [],
+  ),
+].filter(
+  (name) => !name.startsWith("yolo_browser_") && name !== "yolo_gpu_call_start",
+);
 
 function dll(names: string[]) {
   const bytes = new Uint8Array(8192);
   const view = new DataView(bytes.buffer);
-  const u16 = (offset: number, value: number) => view.setUint16(offset, value, true);
-  const u32 = (offset: number, value: number) => view.setUint32(offset, value, true);
+  const u16 = (offset: number, value: number) =>
+    view.setUint16(offset, value, true);
+  const u32 = (offset: number, value: number) =>
+    view.setUint32(offset, value, true);
   u16(0, 0x5a4d);
   u32(0x3c, 0x80);
   u32(0x80, 0x4550);
@@ -54,19 +60,16 @@ function dll(names: string[]) {
 describe("cross-target runtime PE qualification", () => {
   test("packages a core DLL without requiring optional browser/GPU exports", () => {
     const image = dll(core);
-    expect(runtimeCapabilities(peExports(image.bytes, target), header)).toEqual([
-      "system.stats",
-      "bench.compute",
-      "process.supervise",
-      "http.probe",
-    ]);
+    expect(runtimeCapabilities(peExports(image.bytes, target), header)).toEqual(
+      ["system.stats", "bench.compute", "process.supervise", "http.probe"],
+    );
   });
   test("incidental symbol strings cannot satisfy missing exports", () => {
     const image = dll(core.filter((name) => name !== "yolo_abi_version"));
     image.bytes.set(new TextEncoder().encode("yolo_abi_version"), 0x1900);
-    expect(() => runtimeCapabilities(peExports(image.bytes, target), header)).toThrow(
-      "yolo_abi_version",
-    );
+    expect(() =>
+      runtimeCapabilities(peExports(image.bytes, target), header),
+    ).toThrow("yolo_abi_version");
   });
   test("complete browser exports enable browser capabilities", () => {
     const image = dll([
@@ -75,24 +78,34 @@ describe("cross-target runtime PE qualification", () => {
       "yolo_browser_call_start",
       "yolo_browser_close",
     ]);
-    expect(runtimeCapabilities(peExports(image.bytes, target), header)).toContain(
-      "browser.contexts",
-    );
+    expect(
+      runtimeCapabilities(peExports(image.bytes, target), header),
+    ).toContain("browser.contexts");
   });
   test("partial browser providers fail", () => {
     expect(() =>
-      runtimeCapabilities(peExports(dll([...core, "yolo_browser_create"]).bytes, target), header),
+      runtimeCapabilities(
+        peExports(dll([...core, "yolo_browser_create"]).bytes, target),
+        header,
+      ),
     ).toThrow("Incomplete browser");
   });
   test("one GPU export does not falsely promise CUDA", () => {
     expect(
-      runtimeCapabilities(peExports(dll([...core, "yolo_gpu_call_start"]).bytes, target), header),
+      runtimeCapabilities(
+        peExports(dll([...core, "yolo_gpu_call_start"]).bytes, target),
+        header,
+      ),
     ).not.toContain("gpu.cuda");
   });
   test("rejects architecture mismatch and unsupported target", () => {
     const image = dll(core);
-    expect(() => peExports(image.bytes, "aarch64-pc-windows-msvc")).toThrow("machine");
-    expect(() => peExports(image.bytes, "aarch64-apple-darwin")).toThrow("Unsupported");
+    expect(() => peExports(image.bytes, "aarch64-pc-windows-msvc")).toThrow(
+      "machine",
+    );
+    expect(() => peExports(image.bytes, "aarch64-apple-darwin")).toThrow(
+      "Unsupported",
+    );
   });
   test("rejects executables and corrupted signatures", () => {
     const image = dll(core);

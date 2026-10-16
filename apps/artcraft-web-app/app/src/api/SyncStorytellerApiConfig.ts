@@ -21,7 +21,7 @@ class Cache {
     return instance;
   }
 
-  public canCall() : boolean {
+  public canCall(): boolean {
     if (this.lastFetchSuccess === undefined) {
       return true;
     }
@@ -38,7 +38,7 @@ class Cache {
  * Runs any necessary user session functions if things change.
  */
 export const SyncStorytellerApiConfig = async () => {
-  console.log("SyncStorytellerApiConfig()")
+  console.log("SyncStorytellerApiConfig()");
 
   const cache = Cache.getInstance();
   const oldValue = StorytellerApiHostStore.getInstance().getApiSchemeAndHost();
@@ -52,7 +52,7 @@ export const SyncStorytellerApiConfig = async () => {
 
     const schemeAndHost = appInfo.payload.storyteller_host;
     if (!schemeAndHost) {
-      return ;
+      return;
     }
 
     console.log(`Updating hostname to ${schemeAndHost}`);
@@ -61,10 +61,10 @@ export const SyncStorytellerApiConfig = async () => {
     cache.setCallSuccess();
 
     if (oldValue !== schemeAndHost) {
-      console.log("SyncStorytellerApiConfig() - force session refresh")
-      // NB: This is a hack that might prevent the login screen from being shown 
+      console.log("SyncStorytellerApiConfig() - force session refresh");
+      // NB: This is a hack that might prevent the login screen from being shown
       // if the user is working in development.
       await forceGetUserInfoAndSubcriptions();
     }
   });
-}
+};

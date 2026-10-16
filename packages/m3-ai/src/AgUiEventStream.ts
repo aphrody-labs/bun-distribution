@@ -246,27 +246,45 @@ export class AgUiEventAccumulator {
    */
   private inspectA2uiOperations(content: unknown): void {
     if (!content) return;
-    const parsed = typeof content === "string" ? tryParseJson(content) : content;
+    const parsed =
+      typeof content === "string" ? tryParseJson(content) : content;
     if (parsed && typeof parsed === "object" && "a2ui_operations" in parsed) {
-      const ops = (parsed as { a2ui_operations: Array<Record<string, unknown>> }).a2ui_operations;
+      const ops = (
+        parsed as { a2ui_operations: Array<Record<string, unknown>> }
+      ).a2ui_operations;
       if (Array.isArray(ops)) {
         for (const op of ops) {
           if (op.createSurface && typeof op.createSurface === "object") {
-            const surface = op.createSurface as { surfaceId: string; catalogId?: string };
+            const surface = op.createSurface as {
+              surfaceId: string;
+              catalogId?: string;
+            };
             this.a2uiSurfaces.set(surface.surfaceId, {
               surfaceId: surface.surfaceId,
               catalogId: surface.catalogId,
               components: [],
               dataModel: {},
             });
-          } else if (op.updateComponents && typeof op.updateComponents === "object") {
-            const update = op.updateComponents as { surfaceId: string; components: unknown[] };
+          } else if (
+            op.updateComponents &&
+            typeof op.updateComponents === "object"
+          ) {
+            const update = op.updateComponents as {
+              surfaceId: string;
+              components: unknown[];
+            };
             const existing = this.a2uiSurfaces.get(update.surfaceId);
             if (existing) {
               existing.components = update.components;
             }
-          } else if (op.updateDataModel && typeof op.updateDataModel === "object") {
-            const update = op.updateDataModel as { surfaceId: string; value: unknown };
+          } else if (
+            op.updateDataModel &&
+            typeof op.updateDataModel === "object"
+          ) {
+            const update = op.updateDataModel as {
+              surfaceId: string;
+              value: unknown;
+            };
             const existing = this.a2uiSurfaces.get(update.surfaceId);
             if (existing) {
               existing.dataModel = update.value;
@@ -324,7 +342,9 @@ export class AgUiEventAccumulator {
 /**
  * Converts a static list of AG-UI events into TranscriptSteps.
  */
-export function agUiEventsToTranscriptSteps(events: BaseEvent[]): TranscriptStep[] {
+export function agUiEventsToTranscriptSteps(
+  events: BaseEvent[],
+): TranscriptStep[] {
   const acc = new AgUiEventAccumulator();
   for (const event of events) {
     acc.push(event);
@@ -335,7 +355,9 @@ export function agUiEventsToTranscriptSteps(events: BaseEvent[]): TranscriptStep
 /**
  * Converts a static list of AG-UI events into paired TranscriptItems.
  */
-export function agUiEventsToTranscriptItems(events: BaseEvent[]): TranscriptItem[] {
+export function agUiEventsToTranscriptItems(
+  events: BaseEvent[],
+): TranscriptItem[] {
   const acc = new AgUiEventAccumulator();
   for (const event of events) {
     acc.push(event);
@@ -432,7 +454,10 @@ export function agUiEventToCoordEnvelope(
   const ts = new Date().toISOString();
   const id = `env-${Date.now().toString(16)}`;
 
-  if (event.type === EventType.CUSTOM && (event as any).name?.startsWith("a2a_")) {
+  if (
+    event.type === EventType.CUSTOM &&
+    (event as any).name?.startsWith("a2a_")
+  ) {
     const val = (event as any).value || {};
     const kind = (event as any).name.replace(/^a2a_/, "");
     return {
@@ -473,7 +498,10 @@ export function agUiEventToCoordEnvelope(
       to,
       kind: "fact",
       topic: (res.metadata?.toolName as string) || `tool:${res.toolCallId}`,
-      body: typeof res.content === "string" ? res.content : JSON.stringify(res.content),
+      body:
+        typeof res.content === "string"
+          ? res.content
+          : JSON.stringify(res.content),
       re: res.toolCallId,
     };
   }

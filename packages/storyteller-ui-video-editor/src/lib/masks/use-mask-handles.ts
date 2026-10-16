@@ -5,8 +5,14 @@ import { useEditor } from "../editor/use-editor";
 import { useShiftKey } from "../hooks/use-shift-key";
 import { getMaskDefinition } from "./index";
 import { appendPointToFreeformPathMask } from "./freeform/definition";
-import { getVisibleElementsWithBounds, type ElementBounds } from "../preview/element-bounds";
-import { SNAP_THRESHOLD_SCREEN_PIXELS, type SnapLine } from "../preview/preview-snap";
+import {
+  getVisibleElementsWithBounds,
+  type ElementBounds,
+} from "../preview/element-bounds";
+import {
+  SNAP_THRESHOLD_SCREEN_PIXELS,
+  type SnapLine,
+} from "../preview/preview-snap";
 import type { SelectedMaskPointSelection } from "../selection/editor-selection";
 import type { Mask, MaskHandleId, MaskInteractionResult } from "./types";
 import type { MaskableElement } from "../timeline/types";
@@ -65,7 +71,9 @@ function replaceElementMask({
   masks: MaskableElement["masks"];
   updatedMask: Mask;
 }): Mask[] {
-  return (masks ?? []).map((mask) => (mask.id === updatedMask.id ? updatedMask : mask));
+  return (masks ?? []).map((mask) =>
+    mask.id === updatedMask.id ? updatedMask : mask,
+  );
 }
 
 function withUpdatedMaskParams<TMask extends Mask>({
@@ -89,10 +97,16 @@ export function useMaskHandles({
   const editor = useEditor();
   const isShiftHeldRef = useShiftKey();
   const viewport = usePreviewViewport();
-  const [activeHandleId, setActiveHandleId] = useState<MaskHandleId | null>(null);
+  const [activeHandleId, setActiveHandleId] = useState<MaskHandleId | null>(
+    null,
+  );
   const dragStateRef = useRef<DragState | null>(null);
-  const pendingSegmentInsertRef = useRef<PendingSegmentInsertState | null>(null);
-  const captureRef = useRef<{ element: Element; pointerId: number } | null>(null);
+  const pendingSegmentInsertRef = useRef<PendingSegmentInsertState | null>(
+    null,
+  );
+  const captureRef = useRef<{ element: Element; pointerId: number } | null>(
+    null,
+  );
 
   const tracks = useEditor(
     (e) => e.timeline.getPreviewTracks() ?? e.scenes.getActiveScene().tracks,
@@ -103,7 +117,9 @@ export function useMaskHandles({
     (e) => e.project.getActive()?.settings.canvasSize ?? DEFAULT_CANVAS_SIZE,
   );
   const selectedElements = useEditor((e) => e.selection.getSelectedElements());
-  const selectedMaskPointSelection = useEditor((e) => e.selection.getSelectedMaskPointSelection());
+  const selectedMaskPointSelection = useEditor((e) =>
+    e.selection.getSelectedMaskPointSelection(),
+  );
 
   const elementsWithBounds = getVisibleElementsWithBounds({
     tracks,
@@ -117,7 +133,8 @@ export function useMaskHandles({
       ? (() => {
           const sel = selectedElements[0];
           const entry = elementsWithBounds.find(
-            (item) => item.trackId === sel.trackId && item.elementId === sel.elementId,
+            (item) =>
+              item.trackId === sel.trackId && item.elementId === sel.elementId,
           );
           if (!entry) return null;
           if (!isMaskableElement(entry.element)) return null;
@@ -134,25 +151,28 @@ export function useMaskHandles({
           )
             ? selectedMaskPointSelection?.maskId
             : masks[0].id;
-          const mask = masks.find((candidate) => candidate.id === activeMaskId) ?? masks[0];
+          const mask =
+            masks.find((candidate) => candidate.id === activeMaskId) ??
+            masks[0];
           return { ...entry, element, mask };
         })()
       : null;
 
-  const { handles: baseHandlePositions, overlays }: MaskInteractionResult = selectedWithMask
-    ? (() => {
-        const def = getMaskDefinition(selectedWithMask.mask.type);
-        const { x: scaleX, y: scaleY } = viewport.getDisplayScale();
-        const displayScale = (scaleX + scaleY) / 2;
-        return def.interaction.getInteraction({
-          params: selectedWithMask.mask.params,
-          bounds: selectedWithMask.bounds,
-          displayScale,
-          scaleX,
-          scaleY,
-        });
-      })()
-    : { handles: [], overlays: [] };
+  const { handles: baseHandlePositions, overlays }: MaskInteractionResult =
+    selectedWithMask
+      ? (() => {
+          const def = getMaskDefinition(selectedWithMask.mask.type);
+          const { x: scaleX, y: scaleY } = viewport.getDisplayScale();
+          const displayScale = (scaleX + scaleY) / 2;
+          return def.interaction.getInteraction({
+            params: selectedWithMask.mask.params,
+            bounds: selectedWithMask.bounds,
+            displayScale,
+            scaleX,
+            scaleY,
+          });
+        })()
+      : { handles: [], overlays: [] };
 
   const selectedPointIds = new Set(
     selectedWithMask &&
@@ -211,10 +231,12 @@ export function useMaskHandles({
     }
 
     const availablePointIds = new Set(customMaskPointIds);
-    const nextSelectedPointIds = selectedMaskPointSelection.pointIds.filter((pointId) =>
-      availablePointIds.has(pointId),
+    const nextSelectedPointIds = selectedMaskPointSelection.pointIds.filter(
+      (pointId) => availablePointIds.has(pointId),
     );
-    if (nextSelectedPointIds.length === selectedMaskPointSelection.pointIds.length) {
+    if (
+      nextSelectedPointIds.length === selectedMaskPointSelection.pointIds.length
+    ) {
       return;
     }
     if (nextSelectedPointIds.length === 0) {
@@ -228,10 +250,21 @@ export function useMaskHandles({
         pointIds: nextSelectedPointIds,
       },
     });
-  }, [customMaskPointIds, editor.selection, selectedMaskPointSelection, selectedWithMask]);
+  }, [
+    customMaskPointIds,
+    editor.selection,
+    selectedMaskPointSelection,
+    selectedWithMask,
+  ]);
 
   const updateFreeformPathMaskPointSelection = useCallback(
-    ({ pointId, toggleSelection }: { pointId: string; toggleSelection: boolean }) => {
+    ({
+      pointId,
+      toggleSelection,
+    }: {
+      pointId: string;
+      toggleSelection: boolean;
+    }) => {
       if (!selectedWithMask || selectedWithMask.mask.type !== "freeform") {
         return;
       }
@@ -247,7 +280,9 @@ export function useMaskHandles({
         : [];
       const nextPointIds = toggleSelection
         ? currentPointIds.includes(pointId)
-          ? currentPointIds.filter((currentPointId) => currentPointId !== pointId)
+          ? currentPointIds.filter(
+              (currentPointId) => currentPointId !== pointId,
+            )
           : [...currentPointIds, pointId]
         : [pointId];
 
@@ -296,17 +331,32 @@ export function useMaskHandles({
         releaseCapturedPointer();
       },
     });
-  }, [activeHandleId, clearMaskHandleState, editor.timeline, releaseCapturedPointer]);
+  }, [
+    activeHandleId,
+    clearMaskHandleState,
+    editor.timeline,
+    releaseCapturedPointer,
+  ]);
 
   const handlePointerDown = useCallback(
-    ({ event, handleId }: { event: React.PointerEvent; handleId: MaskHandleId }) => {
+    ({
+      event,
+      handleId,
+    }: {
+      event: React.PointerEvent;
+      handleId: MaskHandleId;
+    }) => {
       if (!selectedWithMask) return;
       if (event.button !== 0) return;
       event.stopPropagation();
       const anchorHandle =
-        selectedWithMask.mask.type === "freeform" && handleId.kind === "anchor" ? handleId : null;
+        selectedWithMask.mask.type === "freeform" && handleId.kind === "anchor"
+          ? handleId
+          : null;
       const segmentHandle =
-        selectedWithMask.mask.type === "freeform" && handleId.kind === "segment" ? handleId : null;
+        selectedWithMask.mask.type === "freeform" && handleId.kind === "segment"
+          ? handleId
+          : null;
       if (isCreatingFreeformPathMask) {
         const firstPointId = customMaskPointIds[0];
         if (
@@ -540,7 +590,14 @@ export function useMaskHandles({
         ],
       });
     },
-    [selectedWithMask, canvasSize, editor, isShiftHeldRef, onSnapLinesChange, viewport],
+    [
+      selectedWithMask,
+      canvasSize,
+      editor,
+      isShiftHeldRef,
+      onSnapLinesChange,
+      viewport,
+    ],
   );
 
   const handlePointerUp = useCallback(() => {

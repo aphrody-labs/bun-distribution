@@ -398,18 +398,18 @@ fn test_counter(ctx: &JobContext, state: &mut CounterState) -> Result<()> {
 
 ## Implementation Status
 
-| Module | Status | Notes |
-|--------|--------|-------|
-| `ffi.rs` | Implemented | Low-level WASM imports |
-| `job_context.rs` | Expanded | New methods added, existing preserved |
-| `types.rs` | Expanded | All common types added |
-| `vdfs.rs` | Stubs | Type-checks, `todo!()` for host calls |
-| `ai.rs` | Stubs | Type-checks, `todo!()` for inference |
-| `agent.rs` | Stubs | Type-checks, memory system defined |
-| `models.rs` | Stubs | Type-checks, registration stubs |
-| `actions.rs` | Stubs | Type-checks, preview/execute defined |
-| `tasks.rs` | Stubs | Type-checks, task context defined |
-| `query.rs` | Stubs | Type-checks, query context defined |
+| Module           | Status      | Notes                                 |
+| ---------------- | ----------- | ------------------------------------- |
+| `ffi.rs`         | Implemented | Low-level WASM imports                |
+| `job_context.rs` | Expanded    | New methods added, existing preserved |
+| `types.rs`       | Expanded    | All common types added                |
+| `vdfs.rs`        | Stubs       | Type-checks, `todo!()` for host calls |
+| `ai.rs`          | Stubs       | Type-checks, `todo!()` for inference  |
+| `agent.rs`       | Stubs       | Type-checks, memory system defined    |
+| `models.rs`      | Stubs       | Type-checks, registration stubs       |
+| `actions.rs`     | Stubs       | Type-checks, preview/execute defined  |
+| `tasks.rs`       | Stubs       | Type-checks, task context defined     |
+| `query.rs`       | Stubs       | Type-checks, query context defined    |
 
 **Macros:** All defined as pass-through (no codegen yet)
 
@@ -436,6 +436,7 @@ fn test_counter(ctx: &JobContext, state: &mut CounterState) -> Result<()> {
 ### Phase 1: Core Host Functions
 
 Implement in `core/src/infra/extension/host_functions.rs`:
+
 ```rust
 #[no_mangle]
 pub extern "C" fn vdfs_query_entries(...) -> u32;
@@ -454,6 +455,7 @@ pub extern "C" fn ai_infer(...) -> u32;
 ### Phase 2: SDK Implementation
 
 Replace `todo!()` with actual WASM host calls:
+
 ```rust
 pub async fn get_model_by_content<T>(content_uuid: Uuid) -> Result<T> {
     // Serialize request
@@ -476,6 +478,7 @@ pub async fn get_model_by_content<T>(content_uuid: Uuid) -> Result<T> {
 ### Phase 3: Macro Code Generation
 
 Implement real macros:
+
 ```rust
 #[model(scope = "content")]
 struct PhotoAnalysis { ... }
@@ -526,16 +529,16 @@ cargo build --target wasm32-unknown-unknown --release
 ## Breaking Changes
 
 **None!** The existing test-extension API is preserved:
-- `ctx.log()` 
-- `ctx.checkpoint()` 
-- `ctx.check_interrupt()` 
-- `ctx.report_progress()` 
-- `ctx.increment_items()` 
-- `ctx.increment_bytes()` 
+
+- `ctx.log()`
+- `ctx.checkpoint()`
+- `ctx.check_interrupt()`
+- `ctx.report_progress()`
+- `ctx.increment_items()`
+- `ctx.increment_bytes()`
 
 New methods are additive only.
 
 ---
 
-**The SDK is now complete for type-checking. Extensions can be written and will compile. Runtime implementation is the next phase.** 
-
+**The SDK is now complete for type-checking. Extensions can be written and will compile. Runtime implementation is the next phase.**

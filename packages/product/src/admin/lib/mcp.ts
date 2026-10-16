@@ -31,7 +31,14 @@ export function desktopConfigFiles(paths: KitPaths): string[] {
     for (const name of readdirSync(packages)) {
       if (/^(?:Claude|AnthropicPBC\.Claude)/i.test(name))
         files.push(
-          join(packages, name, "LocalCache", "Roaming", "Claude", "claude_desktop_config.json"),
+          join(
+            packages,
+            name,
+            "LocalCache",
+            "Roaming",
+            "Claude",
+            "claude_desktop_config.json",
+          ),
         );
     }
   } catch {
@@ -49,7 +56,11 @@ export function mergeDesktopConfig(
   if (existing !== undefined && existing.trim() !== "") {
     try {
       const parsed: unknown = JSON.parse(existing);
-      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed))
+      if (
+        typeof parsed !== "object" ||
+        parsed === null ||
+        Array.isArray(parsed)
+      )
         throw new Error("objet attendu");
       root = parsed as Record<string, unknown>;
     } catch (error) {
@@ -64,7 +75,8 @@ export function mergeDesktopConfig(
     !Array.isArray(root.mcpServers)
       ? (root.mcpServers as Record<string, unknown>)
       : {};
-  const current = servers[MCP_NAME] as { command?: unknown; args?: unknown } | undefined;
+  const current = servers[MCP_NAME] as
+    { command?: unknown; args?: unknown } | undefined;
   const same =
     current !== undefined &&
     current.command === spec.command &&
@@ -72,7 +84,10 @@ export function mergeDesktopConfig(
   if (same) return { text: existing ?? "", changed: false };
   const next = {
     ...root,
-    mcpServers: { ...servers, [MCP_NAME]: { command: spec.command, args: spec.args } },
+    mcpServers: {
+      ...servers,
+      [MCP_NAME]: { command: spec.command, args: spec.args },
+    },
   };
   return { text: `${JSON.stringify(next, null, 2)}\n`, changed: true };
 }
@@ -93,7 +108,9 @@ export async function configureDesktop(
   for (const file of desktopConfigFiles(paths)) {
     if (!existsSync(dirname(file))) continue;
     try {
-      const before = existsSync(file) ? await readFile(file, "utf8") : undefined;
+      const before = existsSync(file)
+        ? await readFile(file, "utf8")
+        : undefined;
       const { text, changed } = mergeDesktopConfig(before, spec);
       if (!changed) {
         results.push({ client: "claude-desktop", state: "deja", detail: file });
@@ -106,9 +123,17 @@ export async function configureDesktop(
           `${file}.avant-aphrody-${now.toISOString().replace(/[-:T]/g, "").slice(0, 14)}`,
         );
       await writeFile(file, text);
-      results.push({ client: "claude-desktop", state: "configure", detail: file });
+      results.push({
+        client: "claude-desktop",
+        state: "configure",
+        detail: file,
+      });
     } catch (error) {
-      results.push({ client: "claude-desktop", state: "echec", detail: (error as Error).message });
+      results.push({
+        client: "claude-desktop",
+        state: "echec",
+        detail: (error as Error).message,
+      });
     }
   }
   return results;
@@ -121,20 +146,42 @@ export async function configureClaudeCode(
   spec: McpSpec,
 ): Promise<McpConfigResult> {
   if (!claudeExe)
-    return { client: "claude-code", state: "ignore", detail: "Claude Code n'est pas installé" };
-  const known = await sys.run([claudeExe, "mcp", "get", MCP_NAME], { timeoutMs: 30_000 });
+    return {
+      client: "claude-code",
+      state: "ignore",
+      detail: "Claude Code n'est pas installé",
+    };
+  const known = await sys.run([claudeExe, "mcp", "get", MCP_NAME], {
+    timeoutMs: 30_000,
+  });
   if (known.code === 0 && known.stdout.includes(spec.command))
     return { client: "claude-code", state: "deja", detail: "déjà déclaré" };
   if (known.code === 0)
-    await sys.run([claudeExe, "mcp", "remove", MCP_NAME, "--scope", "user"], { timeoutMs: 30_000 });
+    await sys.run([claudeExe, "mcp", "remove", MCP_NAME, "--scope", "user"], {
+      timeoutMs: 30_000,
+    });
   const added = await sys.run(
-    [claudeExe, "mcp", "add", "--scope", "user", MCP_NAME, "--", spec.command, ...spec.args],
+    [
+      claudeExe,
+      "mcp",
+      "add",
+      "--scope",
+      "user",
+      MCP_NAME,
+      "--",
+      spec.command,
+      ...spec.args,
+    ],
     {
       timeoutMs: 60_000,
     },
   );
   return added.code === 0
-    ? { client: "claude-code", state: "configure", detail: "ajouté pour ton compte" }
+    ? {
+        client: "claude-code",
+        state: "configure",
+        detail: "ajouté pour ton compte",
+      }
     : {
         client: "claude-code",
         state: "echec",
@@ -145,13 +192,18 @@ export async function configureClaudeCode(
 export type ClientState = "configure" | "pas-declare" | "aucun";
 
 /** Read-only: is the server declared in Claude Desktop (any installed flavour)? */
-export async function desktopState(paths: KitPaths, spec: McpSpec): Promise<ClientState> {
+export async function desktopState(
+  paths: KitPaths,
+  spec: McpSpec,
+): Promise<ClientState> {
   let found = false;
   for (const file of desktopConfigFiles(paths)) {
     if (!existsSync(dirname(file))) continue;
     found = true;
     try {
-      const before = existsSync(file) ? await readFile(file, "utf8") : undefined;
+      const before = existsSync(file)
+        ? await readFile(file, "utf8")
+        : undefined;
       if (!mergeDesktopConfig(before, spec).changed) return "configure";
     } catch {
       // unreadable config counts as not declared
@@ -167,8 +219,12 @@ export async function claudeCodeState(
   spec: McpSpec,
 ): Promise<ClientState> {
   if (!claudeExe) return "aucun";
-  const known = await sys.run([claudeExe, "mcp", "get", MCP_NAME], { timeoutMs: 30_000 });
-  return known.code === 0 && known.stdout.includes(spec.command) ? "configure" : "pas-declare";
+  const known = await sys.run([claudeExe, "mcp", "get", MCP_NAME], {
+    timeoutMs: 30_000,
+  });
+  return known.code === 0 && known.stdout.includes(spec.command)
+    ? "configure"
+    : "pas-declare";
 }
 
 export interface McpProbe {
@@ -178,7 +234,10 @@ export interface McpProbe {
 }
 
 /** Start the server like a client does (initialize, then tools/list over stdio) and count the tools it offers. */
-export async function probeMcp(spec: McpSpec, timeoutMs = 20_000): Promise<McpProbe> {
+export async function probeMcp(
+  spec: McpSpec,
+  timeoutMs = 20_000,
+): Promise<McpProbe> {
   let proc: ReturnType<typeof Bun.spawn>;
   try {
     proc = Bun.spawn([spec.command, ...spec.args], {
@@ -195,12 +254,15 @@ export async function probeMcp(spec: McpSpec, timeoutMs = 20_000): Promise<McpPr
     proc.kill();
     return { ok: false, error: "entrée standard indisponible" };
   }
-  const send = (message: unknown) => stdin.write(`${JSON.stringify(message)}\n`);
+  const send = (message: unknown) =>
+    stdin.write(`${JSON.stringify(message)}\n`);
   const decoder = new TextDecoder();
   const reader = (proc.stdout as ReadableStream<Uint8Array>).getReader();
   let buffer = "";
   const timer = setTimeout(() => proc.kill(), timeoutMs);
-  const readResponse = async (id: number): Promise<Record<string, unknown> | undefined> => {
+  const readResponse = async (
+    id: number,
+  ): Promise<Record<string, unknown> | undefined> => {
     for (;;) {
       let newline = buffer.indexOf("\n");
       while (newline !== -1) {
@@ -234,7 +296,10 @@ export async function probeMcp(spec: McpSpec, timeoutMs = 20_000): Promise<McpPr
     stdin.flush();
     const init = await readResponse(1);
     if (!init || init.error)
-      return { ok: false, error: "le serveur n'a pas répondu à la prise de contact" };
+      return {
+        ok: false,
+        error: "le serveur n'a pas répondu à la prise de contact",
+      };
     send({ jsonrpc: "2.0", method: "notifications/initialized" });
     send({ jsonrpc: "2.0", id: 2, method: "tools/list", params: {} });
     stdin.flush();

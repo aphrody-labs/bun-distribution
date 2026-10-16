@@ -13,7 +13,9 @@ test("migrated host plans resolve repository assets above tools/config", () => {
   const commands = plan.steps.map((step) => step.run).join("\n");
   expect(commands).not.toContain(join(root, "tools/scripts"));
   expect(commands).not.toContain(join(root, "tools/ai.json"));
-  expect(plan.steps.some((step) => step.id.endsWith("/tools-count"))).toBe(true);
+  expect(plan.steps.some((step) => step.id.endsWith("/tools-count"))).toBe(
+    true,
+  );
 });
 
 test("legacy host directory overrides keep their existing repository root", () => {

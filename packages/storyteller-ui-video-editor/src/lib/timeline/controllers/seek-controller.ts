@@ -1,7 +1,12 @@
 import type { MouseEvent as ReactMouseEvent } from "react";
 import type { FrameRate } from "opencut-wasm";
 import { BASE_TIMELINE_PIXELS_PER_SECOND } from "../scale";
-import { mediaTime, snapSeekMediaTime, TICKS_PER_SECOND, type MediaTime } from "../../wasm";
+import {
+  mediaTime,
+  snapSeekMediaTime,
+  TICKS_PER_SECOND,
+  type MediaTime,
+} from "../../wasm";
 
 // Click-vs-drag arbiter for the timeline ruler and tracks area. Owns
 // "pending" mouse-down state; the actual scrubbing-while-dragging path

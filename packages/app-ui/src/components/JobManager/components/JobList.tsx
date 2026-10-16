@@ -13,7 +13,13 @@ interface JobListProps {
   getSpeedHistory: (jobId: string) => SpeedSample[];
 }
 
-export function JobList({ jobs, onPause, onResume, onCancel, getSpeedHistory }: JobListProps) {
+export function JobList({
+  jobs,
+  onPause,
+  onResume,
+  onCancel,
+  getSpeedHistory,
+}: JobListProps) {
   if (jobs.length === 0) {
     return <EmptyState />;
   }
@@ -28,15 +34,27 @@ export function JobList({ jobs, onPause, onResume, onCancel, getSpeedHistory }: 
             animate={{
               opacity: 1,
               y: 0,
-              transition: { duration: m3Durations.short4, ease: m3Easings.emphasizedDecelerate },
+              transition: {
+                duration: m3Durations.short4,
+                ease: m3Easings.emphasizedDecelerate,
+              },
             }}
             exit={{
               opacity: 0,
               x: -10,
-              transition: { duration: m3Durations.short3, ease: m3Easings.emphasizedAccelerate },
+              transition: {
+                duration: m3Durations.short3,
+                ease: m3Easings.emphasizedAccelerate,
+              },
             }}
           >
-            <JobCard job={job} onPause={onPause} onResume={onResume} onCancel={onCancel} getSpeedHistory={getSpeedHistory} />
+            <JobCard
+              job={job}
+              onPause={onPause}
+              onResume={onResume}
+              onCancel={onCancel}
+              getSpeedHistory={getSpeedHistory}
+            />
           </motion.div>
         ))}
       </AnimatePresence>

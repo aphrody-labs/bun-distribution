@@ -46,7 +46,9 @@ export function VirtualPathBar({ view, devices }: VirtualPathBarProps) {
       )}
     >
       <img src={icon} alt="" className="size-5 opacity-60 flex-shrink-0" />
-      <span className="text-label-large text-on-surface whitespace-nowrap">{label}</span>
+      <span className="text-label-large text-on-surface whitespace-nowrap">
+        {label}
+      </span>
     </motion.div>
   );
 }

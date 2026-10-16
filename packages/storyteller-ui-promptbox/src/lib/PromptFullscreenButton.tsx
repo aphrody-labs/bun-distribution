@@ -27,9 +27,7 @@ export const PromptFullscreenButton = ({
           onClick={onClick}
           className="flex h-6 w-6 items-center justify-center bg-base-fg/5 text-base-fg/50 transition-colors hover:bg-base-fg/10 hover:text-base-fg/90 focus:outline-none"
         >
-          <Maximize2Icon
-            
-            className="h-3 w-3" />
+          <Maximize2Icon className="h-3 w-3" />
         </button>
       </Tooltip>
     </div>

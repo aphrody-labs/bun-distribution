@@ -146,7 +146,7 @@ export const DeckSlotCard = ({
         tiltClass,
       )}
     >
-      <PlusIcon  className="text-lg opacity-80" />
+      <PlusIcon className="text-lg opacity-80" />
       <span className="px-0.5 text-center text-[8px] font-medium leading-tight opacity-70">
         {label}
       </span>

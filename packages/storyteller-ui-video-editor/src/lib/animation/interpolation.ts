@@ -180,7 +180,9 @@ export function normalizeDiscreteChannel({
   };
 }
 
-export function isScalarChannel(channel: AnimationChannel): channel is ScalarAnimationChannel {
+export function isScalarChannel(
+  channel: AnimationChannel,
+): channel is ScalarAnimationChannel {
   return (
     "extrapolation" in channel ||
     channel.keys.some((keyframe) => "segmentToNext" in keyframe)
@@ -232,7 +234,10 @@ function extrapolateScalarEdge({
     return edgeKey.value;
   }
 
-  return edgeKey.value + ((time - edgeKey.time) / span) * (neighborKey.value - edgeKey.value);
+  return (
+    edgeKey.value +
+    ((time - edgeKey.time) / span) * (neighborKey.value - edgeKey.value)
+  );
 }
 
 export function getScalarSegmentInterpolation({

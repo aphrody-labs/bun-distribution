@@ -6,13 +6,9 @@ interface LoadingSpinnerProps {
   thickness?: number;
 }
 
-export const LoadingSpinner = ({
-  className,
-}: LoadingSpinnerProps) => {
+export const LoadingSpinner = ({ className }: LoadingSpinnerProps) => {
   return (
-    <LoaderCircleIcon
-      
-      className={twMerge("h-6 w-6 animate-spin", className)} />
+    <LoaderCircleIcon className={twMerge("h-6 w-6 animate-spin", className)} />
   );
 };
 

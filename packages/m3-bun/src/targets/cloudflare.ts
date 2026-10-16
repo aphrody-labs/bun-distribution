@@ -69,7 +69,10 @@ export const cloudflare: Target = {
         path: "pages/_headers",
         content: `# ${GENERATED_NOTE}\n/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n/chunk-*\n  Cache-Control: public, max-age=31536000, immutable\n/index.html\n  Cache-Control: no-cache\n`,
       },
-      { path: "pages/_redirects", content: `# ${GENERATED_NOTE}\n/* /index.html 200\n` },
+      {
+        path: "pages/_redirects",
+        content: `# ${GENERATED_NOTE}\n/* /index.html 200\n`,
+      },
       { path: "pages/functions/[[path]].ts", content: pagesFunction(c) },
     ];
   },

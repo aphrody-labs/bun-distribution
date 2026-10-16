@@ -3,7 +3,10 @@
 // the dbfr folder as a Spacedrive cloud volume (OpenDAL gdrive) with an indexed location.
 import { useState } from "react";
 import { Button, Card } from "@aphrody/m3-primitives";
-import type { LocationAddInput, VolumeAddCloudInput } from "@aphrody/drive-client";
+import type {
+  LocationAddInput,
+  VolumeAddCloudInput,
+} from "@aphrody/drive-client";
 import { StudioHeader } from "./StudioHeader";
 import { useLibraryMutation } from "../../contexts/SpacedriveContext";
 import { isTauri } from "../../tauri-bridge";
@@ -58,7 +61,9 @@ export function DriveStudio() {
         job_policies: {},
       };
       await addLocation.mutateAsync(location);
-      setDone(`Dossier ${folder} monté et en cours d’indexation dans Fichiers.`);
+      setDone(
+        `Dossier ${folder} monté et en cours d’indexation dans Fichiers.`,
+      );
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
@@ -82,7 +87,11 @@ export function DriveStudio() {
             onChange={(event) => setRoot(event.target.value)}
           />
         </label>
-        <Button className={buttonClass} disabled={step !== null} onClick={() => void connect()}>
+        <Button
+          className={buttonClass}
+          disabled={step !== null}
+          onClick={() => void connect()}
+        >
           {step ?? "Connecter et monter"}
         </Button>
         {done ? <p className="text-[18px] text-primary">{done}</p> : null}

@@ -13,7 +13,11 @@ export interface MenuItem {
   run(ctx: Context): Promise<unknown>;
 }
 
-async function runCommand(ctx: Context, name: string, argv: string[] = []): Promise<number> {
+async function runCommand(
+  ctx: Context,
+  name: string,
+  argv: string[] = [],
+): Promise<number> {
   const loader = registry[name];
   if (!loader) return 2;
   const { default: command } = await loader();
@@ -21,8 +25,16 @@ async function runCommand(ctx: Context, name: string, argv: string[] = []): Prom
 }
 
 export const MAIN_MENU: MenuItem[] = [
-  { key: "1", title: "Tout installer ou réparer", run: (ctx) => runCommand(ctx, "installer") },
-  { key: "2", title: "Vérifier que tout est prêt", run: (ctx) => runCommand(ctx, "verifier") },
+  {
+    key: "1",
+    title: "Tout installer ou réparer",
+    run: (ctx) => runCommand(ctx, "installer"),
+  },
+  {
+    key: "2",
+    title: "Vérifier que tout est prêt",
+    run: (ctx) => runCommand(ctx, "verifier"),
+  },
   { key: "3", title: "Entraîner un modèle", run: (ctx) => trainingMenu(ctx) },
   {
     key: "4",
@@ -34,13 +46,21 @@ export const MAIN_MENU: MenuItem[] = [
     title: "Préparer le message d'aide pour l'équipe",
     run: (ctx) => runCommand(ctx, "diagnostic"),
   },
-  { key: "6", title: "Ouvrir le guide", run: (ctx) => runCommand(ctx, "guide") },
+  {
+    key: "6",
+    title: "Ouvrir le guide",
+    run: (ctx) => runCommand(ctx, "guide"),
+  },
   {
     key: "7",
     title: "Mon PC et mes serveurs (état, mémoire, WSL, diagnostic)",
     run: (ctx) => pcMenu(ctx),
   },
-  { key: "8", title: "Mettre ce programme à jour", run: (ctx) => runCommand(ctx, "mise-a-jour") },
+  {
+    key: "8",
+    title: "Mettre ce programme à jour",
+    run: (ctx) => runCommand(ctx, "mise-a-jour"),
+  },
 ];
 
 export const TRAIN_MENU: MenuItem[] = [
@@ -84,7 +104,11 @@ export const PC_MENU: MenuItem[] = [
   },
 ];
 
-export function renderMenu(title: string, items: MenuItem[], quitLabel: string): string[] {
+export function renderMenu(
+  title: string,
+  items: MenuItem[],
+  quitLabel: string,
+): string[] {
   return [
     "",
     "==============================================",
@@ -119,7 +143,9 @@ async function loop(
     } catch (error) {
       ctx.log(`erreur dans « ${item.title} » : ${(error as Error).message}`);
       ctx.ui.say(`Un problème est survenu : ${(error as Error).message}`);
-      ctx.ui.say("Choisis « Préparer le message d'aide pour l'équipe » si ça se reproduit.");
+      ctx.ui.say(
+        "Choisis « Préparer le message d'aide pour l'équipe » si ça se reproduit.",
+      );
     }
     ctx.ui.pause("\nAppuie sur Entrée pour revenir au menu...");
   }
@@ -134,5 +160,10 @@ export async function pcMenu(ctx: Context): Promise<void> {
 }
 
 export async function mainMenu(ctx: Context): Promise<void> {
-  await loop(ctx, `Aphrody - kit administrateur (version ${ctx.version})`, MAIN_MENU, "Quitter");
+  await loop(
+    ctx,
+    `Aphrody - kit administrateur (version ${ctx.version})`,
+    MAIN_MENU,
+    "Quitter",
+  );
 }

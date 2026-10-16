@@ -85,7 +85,11 @@ export default function Reader({ adaptive }: PageProps) {
                   onPageChange={setPage}
                 />
               ) : (
-                <DatabookReader key={chapter.id} pages={NOTES} title={chapter.label} />
+                <DatabookReader
+                  key={chapter.id}
+                  pages={NOTES}
+                  title={chapter.label}
+                />
               )
             }
           />

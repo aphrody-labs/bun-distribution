@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRightIcon, BookIcon, ChevronLeftIcon, CircleHelpIcon, NewspaperIcon } from "lucide-react";
+import {
+  ArrowRightIcon,
+  BookIcon,
+  ChevronLeftIcon,
+  CircleHelpIcon,
+  NewspaperIcon,
+} from "lucide-react";
 import { DiscordIcon, GithubIcon, YoutubeIcon } from "@storyteller/icons";
 import { OpenUrl } from "@storyteller/tauri-api";
 import { Modal } from "@storyteller/ui-modal";
@@ -66,9 +72,13 @@ const NewsView = (_props: { onBack: () => void }) => {
         </button>
 
         <div className="article-content">
-          <h1 className="font-display text-2xl font-bold mb-2">{selectedPost.title}</h1>
+          <h1 className="font-display text-2xl font-bold mb-2">
+            {selectedPost.title}
+          </h1>
           {selectedPost.date && (
-            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/50 mb-4">{selectedPost.date}</p>
+            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/50 mb-4">
+              {selectedPost.date}
+            </p>
           )}
 
           {selectedPost.thumbnail && (
@@ -117,9 +127,9 @@ const NewsView = (_props: { onBack: () => void }) => {
             <h3 className="text-lg font-semibold group-hover:text-white transition-colors flex items-center gap-2">
               {item.title}
               <ArrowRightIcon
-                
                 size="xs"
-                className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-white" />
+                className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-white"
+              />
             </h3>
             {item.date && (
               <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/40 whitespace-nowrap ml-2">
@@ -179,31 +189,31 @@ export function HelpMenuButton({
     {
       label: "Tutorials",
       selected: false,
-      icon: <BookIcon  className="text-base" />,
+      icon: <BookIcon className="text-base" />,
       action: "tutorials",
     },
     {
       label: "News & Updates",
       selected: false,
-      icon: <NewspaperIcon  className="text-base" />,
+      icon: <NewspaperIcon className="text-base" />,
       action: "news",
     },
     {
       label: "Discord",
       selected: false,
-      icon: <DiscordIcon  className="text-base" />,
+      icon: <DiscordIcon className="text-base" />,
       action: "discord",
     },
     {
       label: "GitHub",
       selected: false,
-      icon: <GithubIcon  className="text-base" />,
+      icon: <GithubIcon className="text-base" />,
       action: "github",
     },
     {
       label: "ArtCraft Studios",
       selected: false,
-      icon: <YoutubeIcon  className="text-base" />,
+      icon: <YoutubeIcon className="text-base" />,
       action: "artcraft",
     },
   ];
@@ -342,9 +352,7 @@ export function HelpMenuButton({
         showIconsInList
         position="top"
         align="end"
-        triggerIcon={
-          <CircleHelpIcon  className="text-base-fg" />
-        }
+        triggerIcon={<CircleHelpIcon className="text-base-fg" />}
         triggerLabel="Help"
         buttonClassName="h-9"
       />

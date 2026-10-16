@@ -77,7 +77,11 @@ describe("production motion accessibility", () => {
     reducedPreference(true);
     const el = render(
       <>
-        <M3Transition stateKey="a" pattern="shared-axis-x" data-testid="transition">
+        <M3Transition
+          stateKey="a"
+          pattern="shared-axis-x"
+          data-testid="transition"
+        >
           A
         </M3Transition>
         <M3FadeThrough stateKey="a" data-testid="fade">
@@ -93,18 +97,30 @@ describe("production motion accessibility", () => {
     );
     for (const box of el.querySelectorAll<HTMLElement>("[data-testid]")) {
       expect(box.style.opacity).toBe("1");
-      expect(box.style.transform === "none" || box.style.transform === "").toBe(true);
+      expect(box.style.transform === "none" || box.style.transform === "").toBe(
+        true,
+      );
     }
   });
 
   test("inactive container content is excluded from keyboard focus and the accessibility tree", () => {
     reducedPreference(true);
     const el = render(view(false));
-    expect(el.querySelector('[data-testid="end"]')!.hasAttribute("inert")).toBe(true);
-    expect(el.querySelector('[data-testid="end"]')!.getAttribute("aria-hidden")).toBe("true");
-    expect(el.querySelector('[data-testid="start"]')!.hasAttribute("inert")).toBe(false);
+    expect(el.querySelector('[data-testid="end"]')!.hasAttribute("inert")).toBe(
+      true,
+    );
+    expect(
+      el.querySelector('[data-testid="end"]')!.getAttribute("aria-hidden"),
+    ).toBe("true");
+    expect(
+      el.querySelector('[data-testid="start"]')!.hasAttribute("inert"),
+    ).toBe(false);
     flushSync(() => root!.render(view(true)));
-    expect(el.querySelector('[data-testid="start"]')!.hasAttribute("inert")).toBe(true);
-    expect(el.querySelector('[data-testid="end"]')!.hasAttribute("inert")).toBe(false);
+    expect(
+      el.querySelector('[data-testid="start"]')!.hasAttribute("inert"),
+    ).toBe(true);
+    expect(el.querySelector('[data-testid="end"]')!.hasAttribute("inert")).toBe(
+      false,
+    );
   });
 });

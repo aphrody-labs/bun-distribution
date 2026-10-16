@@ -11,7 +11,12 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { applyAction, parsePluginArgs, pluginOperation, publicPlan } from "../src/agent-plugins.ts";
+import {
+  applyAction,
+  parsePluginArgs,
+  pluginOperation,
+  publicPlan,
+} from "../src/agent-plugins.ts";
 import { checkPluginFacts, refreshPluginFacts } from "../src/plugin-facts.ts";
 import {
   cleanStore,
@@ -57,9 +62,13 @@ function plugin(store: string, name = "example"): string {
   );
   return path;
 }
-const configPath = join(import.meta.dir, "../../../tools/aphrody/config/ai/agent-plugin-providers.json");
+const configPath = join(
+  import.meta.dir,
+  "../../../tools/aphrody/config/ai/agent-plugin-providers.json",
+);
 afterEach(() => {
-  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+  for (const root of roots.splice(0))
+    rmSync(root, { recursive: true, force: true });
 });
 
 test("prepare synchronizes portable/provider versions without registering a provider", () => {
@@ -73,20 +82,30 @@ test("prepare synchronizes portable/provider versions without registering a prov
       license: "Apache-2.0",
       icon: "icon.webp",
       userConfig: {
-        endpoint: { type: "string", title: "Endpoint", description: "Private local endpoint" },
+        endpoint: {
+          type: "string",
+          title: "Endpoint",
+          description: "Private local endpoint",
+        },
       },
     }),
   );
   file(
     join(p, ".mcp.json"),
-    JSON.stringify({ mcpServers: { example: { command: "fixture", args: [] } } }),
+    JSON.stringify({
+      mcpServers: { example: { command: "fixture", args: [] } },
+    }),
   );
   expect(prepareStore(f.store, "owner-local", false).length).toBeGreaterThan(0);
   expect(existsSync(join(f.store, ".agents"))).toBe(false);
   prepareStore(f.store, "owner-local", true);
   expect(readJson(join(p, ".claude-plugin/plugin.json")).version).toBe("2.0.0");
-  expect(readJson(join(p, ".claude-plugin/plugin.json")).license).toBe("Apache-2.0");
-  expect(readJson(join(p, ".claude-plugin/plugin.json")).userConfig).toBeDefined();
+  expect(readJson(join(p, ".claude-plugin/plugin.json")).license).toBe(
+    "Apache-2.0",
+  );
+  expect(
+    readJson(join(p, ".claude-plugin/plugin.json")).userConfig,
+  ).toBeDefined();
   expect(readJson(join(p, ".codex-plugin/plugin.json")).version).toBe("2.0.0");
   expect(validateStore(f.store)).toEqual([]);
   expect(existsSync(join(f.home, ".codex"))).toBe(false);
@@ -98,7 +117,9 @@ test("reference repair fixes exact old paths and colon descriptions and is idemp
     old = join(f.cwd, "plugins/aphrody");
   file(
     join(f.store, "relocation-2026-10-03.json"),
-    JSON.stringify({ moves: [{ kind: "canonical-plugin", source: old, destination: p }] }),
+    JSON.stringify({
+      moves: [{ kind: "canonical-plugin", source: old, destination: p }],
+    }),
   );
   file(
     join(p, "agents/profile.md"),
@@ -109,8 +130,12 @@ test("reference repair fixes exact old paths and colon descriptions and is idemp
     "Measure performance: use a reproducible benchmark.",
   );
   expect(readFileSync(join(p, "agents/profile.md"), "utf8")).toContain(p);
-  expect(readFileSync(join(p, "agents/profile.md"), "utf8")).not.toContain("~/.gemini/plugins");
-  expect(readFileSync(join(p, "agents/profile.md"), "utf8")).toContain(`${old}-other`);
+  expect(readFileSync(join(p, "agents/profile.md"), "utf8")).not.toContain(
+    "~/.gemini/plugins",
+  );
+  expect(readFileSync(join(p, "agents/profile.md"), "utf8")).toContain(
+    `${old}-other`,
+  );
   expect(fixReferences(f.store, true)).toEqual([]);
 });
 test("cleanup preserves unique source bytes and deletes only detached cache directories", () => {
@@ -129,9 +154,12 @@ test("cleanup preserves unique source bytes and deletes only detached cache dire
   expect(plan.recovered).toBe(1);
   expect(existsSync(join(f.store, "_copies"))).toBe(true);
   cleanStore(f.store, true);
-  expect(readFileSync(join(f.store, "_recovered/old/plugins/example/unique.txt"), "utf8")).toBe(
-    "Unique historical customization\n",
-  );
+  expect(
+    readFileSync(
+      join(f.store, "_recovered/old/plugins/example/unique.txt"),
+      "utf8",
+    ),
+  ).toBe("Unique historical customization\n");
   expect(existsSync(join(f.store, "_copies"))).toBe(false);
   expect(existsSync(join(f.store, "unrelated.txt"))).toBe(true);
   expect(cleanStore(f.store, true).bytes).toBe(0);
@@ -142,15 +170,27 @@ test("component validation refuses path traversal and escaping symlinks", () => 
   file(join(f.root, "outside.md"), "private");
   file(
     join(p, ".codex-plugin/plugin.json"),
-    JSON.stringify({ name: "example", version: "2.0.0", skills: "./../../outside.md" }),
+    JSON.stringify({
+      name: "example",
+      version: "2.0.0",
+      skills: "./../../outside.md",
+    }),
   );
-  expect(validateStore(f.store).some((problem) => problem.message.includes("escapes"))).toBe(true);
+  expect(
+    validateStore(f.store).some((problem) =>
+      problem.message.includes("escapes"),
+    ),
+  ).toBe(true);
   symlinkSync(f.root, join(p, "outside"), "dir");
   file(
     join(p, ".codex-plugin/plugin.json"),
     JSON.stringify({ name: "example", version: "2.0.0", skills: "./outside" }),
   );
-  expect(validateStore(f.store).some((problem) => problem.message.includes("Symlink"))).toBe(true);
+  expect(
+    validateStore(f.store).some((problem) =>
+      problem.message.includes("Symlink"),
+    ),
+  ).toBe(true);
 });
 test("cleanup refuses a symlink that could erase external data", () => {
   const f = fixture();
@@ -164,11 +204,25 @@ test("restricted plugins and their standalone skills retain project activation",
     p = plugin(f.store, "aphrody"),
     config = providerConfig(configPath),
     codex = config.providers.find((provider) => provider.id === "codex")!;
-  expect(() => scopeFor(config, "aphrody", f.cwd, f.home, "user")).toThrow("restricted");
-  expect(() => scopeFor(config, "iecode", f.cwd, f.home)).toThrow("not allowed");
-  const plan = installationPlan(config, codex, f.store, f.home, f.cwd, "plugin", "aphrody");
+  expect(() => scopeFor(config, "aphrody", f.cwd, f.home, "user")).toThrow(
+    "restricted",
+  );
+  expect(() => scopeFor(config, "iecode", f.cwd, f.home)).toThrow(
+    "not allowed",
+  );
+  const plan = installationPlan(
+    config,
+    codex,
+    f.store,
+    f.home,
+    f.cwd,
+    "plugin",
+    "aphrody",
+  );
   expect(plan.scope).toBe("project");
-  expect(plan.actions.some((a) => a.type === "toml-plugin" && !a.enabled)).toBe(true);
+  expect(plan.actions.some((a) => a.type === "toml-plugin" && !a.enabled)).toBe(
+    true,
+  );
   const skill = installationPlan(
     config,
     codex,
@@ -207,7 +261,10 @@ test("TOML reconciliation preserves unrelated private values and handles unquote
     args: ["mcp"],
     env: { TOKEN: "${PRIVATE_TOKEN}" },
   });
-  const parsed = Bun.TOML.parse(result) as { model: string; mcp_servers: Record<string, unknown> };
+  const parsed = Bun.TOML.parse(result) as {
+    model: string;
+    mcp_servers: Record<string, unknown>;
+  };
   expect(parsed.model).toBe("keep");
   expect(parsed.mcp_servers.other).toEqual({ command: "other" });
   expect(parsed.mcp_servers.fixture).toEqual({
@@ -216,7 +273,9 @@ test("TOML reconciliation preserves unrelated private values and handles unquote
     env: { TOKEN: "${PRIVATE_TOKEN}" },
   });
   expect(result).toContain("# private config");
-  expect(() => replaceTomlTable("invalid = [", 'mcp_servers."x"', {})).toThrow();
+  expect(() =>
+    replaceTomlTable("invalid = [", 'mcp_servers."x"', {}),
+  ).toThrow();
 });
 test("MCP planning preserves transport/options without exposing secrets", () => {
   const f = fixture(),
@@ -231,8 +290,19 @@ test("MCP planning preserves transport/options without exposing secrets", () => 
       headers: { Authorization: "private-fixture-token" },
     }),
   );
-  const plan = installationPlan(config, codex, f.store, f.home, f.cwd, "mcp", "fixture", source);
-  expect(JSON.stringify(publicPlan(plan))).not.toContain("private-fixture-token");
+  const plan = installationPlan(
+    config,
+    codex,
+    f.store,
+    f.home,
+    f.cwd,
+    "mcp",
+    "fixture",
+    source,
+  );
+  expect(JSON.stringify(publicPlan(plan))).not.toContain(
+    "private-fixture-token",
+  );
   for (const action of plan.actions) applyAction(action, f.cwd, f.home);
   const text = readFileSync(join(f.home, ".codex/config.toml"), "utf8");
   expect(text).toContain("private-fixture-token");
@@ -291,16 +361,27 @@ test("cleanup records exact aliases and never overwrites a historical recovery",
     join(f.store, "_copies/old/plugins/example/plugin.json"),
     readFileSync(join(p, "plugin.json"), "utf8"),
   );
-  file(join(f.store, "_copies/old/plugins/example/unique.txt"), "new historical variant");
-  file(join(f.store, "_recovered/old/plugins/example/unique.txt"), "older retained variant");
-  const report = cleanStore(f.store, true);
-  expect(report.aliases[0]?.canonical).toBe(join(p, "plugin.json"));
-  expect(readFileSync(join(f.store, "_recovered/old/plugins/example/unique.txt"), "utf8")).toBe(
+  file(
+    join(f.store, "_copies/old/plugins/example/unique.txt"),
+    "new historical variant",
+  );
+  file(
+    join(f.store, "_recovered/old/plugins/example/unique.txt"),
     "older retained variant",
   );
+  const report = cleanStore(f.store, true);
+  expect(report.aliases[0]?.canonical).toBe(join(p, "plugin.json"));
+  expect(
+    readFileSync(
+      join(f.store, "_recovered/old/plugins/example/unique.txt"),
+      "utf8",
+    ),
+  ).toBe("older retained variant");
   expect(
     report.changes.some(
-      (c) => c.action === "recover" && readFileSync(c.path, "utf8") === "new historical variant",
+      (c) =>
+        c.action === "recover" &&
+        readFileSync(c.path, "utf8") === "new historical variant",
     ),
   ).toBe(true);
 });
@@ -309,7 +390,9 @@ test("preparation refuses an overlay whose ancestor links outside the store", ()
     p = plugin(f.store);
   mkdirSync(join(f.root, "private"));
   symlinkSync(join(f.root, "private"), join(p, ".claude-plugin"), "dir");
-  expect(() => prepareStore(f.store, "owner-local", true)).toThrow("Symlink escapes");
+  expect(() => prepareStore(f.store, "owner-local", true)).toThrow(
+    "Symlink escapes",
+  );
   expect(existsSync(join(f.root, "private/plugin.json"))).toBe(false);
 });
 test("Codex project removal preserves the shared package and nested policy", () => {
@@ -333,7 +416,9 @@ test("Codex project removal preserves the shared package and nested policy", () 
   const text =
     '[plugins."aphrody@aphrody-user"]\nenabled = true\nother = "keep"\n[plugins."aphrody@aphrody-user".mcp_servers.aphrody]\nenabled = false\n';
   const parsed = Bun.TOML.parse(
-    replaceTomlTable(text, 'plugins."aphrody@aphrody-user"', { enabled: false }),
+    replaceTomlTable(text, 'plugins."aphrody@aphrody-user"', {
+      enabled: false,
+    }),
   ) as Json;
   expect((parsed.plugins as Json)["aphrody@aphrody-user"]).toEqual({
     enabled: false,
@@ -413,7 +498,14 @@ test("declarative adapters support another scoped CLI without changing code", ()
   );
   expect(plan.actions[0]).toEqual({
     type: "command",
-    command: ["custom-cli", "plugins", "install", "--scope", "project", join(f.store, "example")],
+    command: [
+      "custom-cli",
+      "plugins",
+      "install",
+      "--scope",
+      "project",
+      join(f.store, "example"),
+    ],
   });
 });
 test("native validation failure prevents every installation command", async () => {

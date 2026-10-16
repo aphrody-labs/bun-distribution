@@ -120,7 +120,10 @@ bun src/server.ts
   "theme": {
     "seed": "#0F52BA",
     "palettes": {
-      "primary": { "name": "primary", "tones": { "0": "#000000", "40": "#0A3B85" } }
+      "primary": {
+        "name": "primary",
+        "tones": { "0": "#000000", "40": "#0A3B85" }
+      }
     },
     "cssCustomProperties": ":root {\n  --md-ref-palette-primary-0: #000000; ..."
   },
@@ -284,7 +287,11 @@ export default function GeneratedArtifact() {
       </TopAppBar>
 
       <List>
-        <ListItem headline="Spring Config" data-action="select-item" data-id="spring-item" />
+        <ListItem
+          headline="Spring Config"
+          data-action="select-item"
+          data-id="spring-item"
+        />
       </List>
     </div>
   );

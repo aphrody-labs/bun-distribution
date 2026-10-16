@@ -13,11 +13,14 @@ export class GenerationApi extends ApiManager {
   ): Promise<EnqueueGenerationResult> {
     const fullEndpoint = `${this.getApiSchemeAndHost()}${endpoint}`;
 
-    return this.post<Record<string, unknown>, {
-      success: boolean;
-      inference_job_token?: string;
-      BadInput?: string;
-    }>({ endpoint: fullEndpoint, body })
+    return this.post<
+      Record<string, unknown>,
+      {
+        success: boolean;
+        inference_job_token?: string;
+        BadInput?: string;
+      }
+    >({ endpoint: fullEndpoint, body })
       .then((response) => {
         if (response.success && response.inference_job_token) {
           return { success: true, jobToken: response.inference_job_token };

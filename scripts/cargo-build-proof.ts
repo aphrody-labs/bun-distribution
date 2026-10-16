@@ -11,9 +11,13 @@ import {
   runProcess,
 } from "@aphrody/bun-workspace";
 
-const receiptPath = join(repositoryRoot, "build/vendor/cargo-build-receipt.json");
+const receiptPath = join(
+  repositoryRoot,
+  "build/vendor/cargo-build-receipt.json",
+);
 const overridePath = join(repositoryRoot, "build/vendor/cargo-config.toml");
-const digest = (value: unknown) => Bun.CryptoHasher.hash("sha256", JSON.stringify(value), "hex");
+const digest = (value: unknown) =>
+  Bun.CryptoHasher.hash("sha256", JSON.stringify(value), "hex");
 const sha = /^[a-f0-9]{64}$/;
 const buildArgs = [
   "--config",
@@ -39,9 +43,20 @@ interface Inputs {
   platform: string;
   arch: string;
   toolchain: Toolchain;
-  runtime: { version: string; revision: string; executable: string; sha256: string };
+  runtime: {
+    version: string;
+    revision: string;
+    executable: string;
+    sha256: string;
+  };
   files: Record<string, string>;
-  members: { path: string; name: string; revision: string; treeSHA256: string; files: number }[];
+  members: {
+    path: string;
+    name: string;
+    revision: string;
+    treeSHA256: string;
+    files: number;
+  }[];
   vendor: { treeSHA256: string; files: number };
   environment: Record<string, string>;
   activeSourceReplacement: boolean;
@@ -86,17 +101,25 @@ function deadline(timeout = 30000) {
 }
 type Deadline = ReturnType<typeof deadline>;
 
-async function inspect(argv: string[], bound: Deadline, cwd = repositoryRoot): Promise<string> {
+async function inspect(
+  argv: string[],
+  bound: Deadline,
+  cwd = repositoryRoot,
+): Promise<string> {
   const result = await runProcess(argv, cwd, {
     timeoutMs: Math.min(15000, bound.remaining()),
     maxOutputBytes: 1048576,
     signal: bound.signal,
   });
-  if (result.code !== 0) throw new Error("Cargo proof source inspection failed.");
+  if (result.code !== 0)
+    throw new Error("Cargo proof source inspection failed.");
   return result.stdout.trim();
 }
 
-async function tree(path: string, bound: Deadline): Promise<{ treeSHA256: string; files: number }> {
+async function tree(
+  path: string,
+  bound: Deadline,
+): Promise<{ treeSHA256: string; files: number }> {
   const entries: string[] = [];
   for await (const entry of new Bun.Glob("**/*").scan({
     cwd: path,
@@ -106,7 +129,8 @@ async function tree(path: string, bound: Deadline): Promise<{ treeSHA256: string
   })) {
     if (entry.split(/[\\/]/).includes(".git")) continue;
     const info = await lstat(join(path, entry));
-    if (info.isSymbolicLink()) throw new Error("Cargo proof cannot omit linked source entries.");
+    if (info.isSymbolicLink())
+      throw new Error("Cargo proof cannot omit linked source entries.");
     if (info.isFile()) entries.push(entry);
     bound.remaining();
   }
@@ -121,9 +145,15 @@ async function tree(path: string, bound: Deadline): Promise<{ treeSHA256: string
         const entry = entries[index]!;
         const file = join(path, entry);
         bound.remaining();
-        if ((await lstat(file)).isSymbolicLink() || (await realpath(file)) !== resolve(file))
+        if (
+          (await lstat(file)).isSymbolicLink() ||
+          (await realpath(file)) !== resolve(file)
+        )
           throw new Error("Cargo proof source ownership is ambiguous.");
-        records[index] = [entry.replaceAll("\\", "/"), await hashFile(file, { signal: bound.signal })];
+        records[index] = [
+          entry.replaceAll("\\", "/"),
+          await hashFile(file, { signal: bound.signal }),
+        ];
       }
     }),
   );
@@ -132,14 +162,28 @@ async function tree(path: string, bound: Deadline): Promise<{ treeSHA256: string
 
 async function sourceReplacementAt(path: string): Promise<boolean> {
   const config = Bun.TOML.parse(await Bun.file(path).text()) as {
-    source?: Record<string, { "replace-with"?: string; directory?: string; git?: string; rev?: string }>;
+    source?: Record<
+      string,
+      {
+        "replace-with"?: string;
+        directory?: string;
+        git?: string;
+        rev?: string;
+      }
+    >;
   };
-  const lock = Bun.TOML.parse(await Bun.file(join(repositoryRoot, "Cargo.lock")).text()) as {
+  const lock = Bun.TOML.parse(
+    await Bun.file(join(repositoryRoot, "Cargo.lock")).text(),
+  ) as {
     package: { source?: string }[];
   };
   const owner = config.source?.["crates-io"]?.["replace-with"];
   const directory = owner && config.source?.[owner]?.directory;
-  if (!directory || resolve(repositoryRoot, directory) !== join(repositoryRoot, "vendor/cargo")) return false;
+  if (
+    !directory ||
+    resolve(repositoryRoot, directory) !== join(repositoryRoot, "vendor/cargo")
+  )
+    return false;
   for (const pkg of lock.package) {
     if (!pkg.source?.startsWith("git+")) continue;
     const key = pkg.source.split("#")[0]!;
@@ -155,16 +199,24 @@ export async function activeCargoSourceReplacement(): Promise<boolean> {
 async function capture(bound: Deadline): Promise<Inputs> {
   const buildEnvironment = normalizeRustCacheEnvironment(Bun.env);
   const rootRevision = await inspect(["git", "rev-parse", "HEAD"], bound);
-  const rootManifest = Bun.TOML.parse(await Bun.file(join(repositoryRoot, "Cargo.toml")).text()) as {
+  const rootManifest = Bun.TOML.parse(
+    await Bun.file(join(repositoryRoot, "Cargo.toml")).text(),
+  ) as {
     workspace: { members: string[] };
   };
-  const toolchainFile = Bun.TOML.parse(await Bun.file(join(repositoryRoot, "rust-toolchain.toml")).text()) as {
+  const toolchainFile = Bun.TOML.parse(
+    await Bun.file(join(repositoryRoot, "rust-toolchain.toml")).text(),
+  ) as {
     toolchain: { channel: string };
   };
   const channel = toolchainFile.toolchain.channel;
   if (!channel) throw new Error("Root Rust toolchain is unavailable.");
-  const cargo = await realpath(await inspect(["rustup", "which", "--toolchain", channel, "cargo"], bound));
-  const rustc = await realpath(await inspect(["rustup", "which", "--toolchain", channel, "rustc"], bound));
+  const cargo = await realpath(
+    await inspect(["rustup", "which", "--toolchain", channel, "cargo"], bound),
+  );
+  const rustc = await realpath(
+    await inspect(["rustup", "which", "--toolchain", channel, "rustc"], bound),
+  );
   const files: Record<string, string> = {};
   for (const path of [
     "Cargo.toml",
@@ -182,34 +234,52 @@ async function capture(bound: Deadline): Promise<Inputs> {
     "aphrody.config.json",
     "build/vendor/cargo-config.toml",
   ])
-    files[path] = await hashFile(join(repositoryRoot, path), { signal: bound.signal });
-  const cargoHome = Bun.env.CARGO_HOME ?? join(Bun.env.USERPROFILE ?? Bun.env.HOME ?? "", ".cargo");
+    files[path] = await hashFile(join(repositoryRoot, path), {
+      signal: bound.signal,
+    });
+  const cargoHome =
+    Bun.env.CARGO_HOME ??
+    join(Bun.env.USERPROFILE ?? Bun.env.HOME ?? "", ".cargo");
   for (const name of ["config", "config.toml"]) {
     const path = join(cargoHome, name);
-    if (await Bun.file(path).exists()) files["cargo-home:" + name] = await hashFile(path, { signal: bound.signal });
+    if (await Bun.file(path).exists())
+      files["cargo-home:" + name] = await hashFile(path, {
+        signal: bound.signal,
+      });
   }
   for (let parent = dirname(repositoryRoot); ; parent = dirname(parent)) {
     for (const name of ["config", "config.toml"]) {
       const path = join(parent, ".cargo", name);
       if (await Bun.file(path).exists())
-        files["ancestor-config:" + path] = await hashFile(path, { signal: bound.signal });
+        files["ancestor-config:" + path] = await hashFile(path, {
+          signal: bound.signal,
+        });
     }
     if (dirname(parent) === parent) break;
   }
   for (const name of ["sccache", "cl", "link", "cc", "ar", "clang"]) {
     const executable = Bun.which(name);
-    if (executable) files["native-tool:" + name] = await hashFile(executable, { signal: bound.signal });
+    if (executable)
+      files["native-tool:" + name] = await hashFile(executable, {
+        signal: bound.signal,
+      });
   }
   for (const name of ["RUSTC_WRAPPER", "RUSTC_WORKSPACE_WRAPPER"]) {
     const value = buildEnvironment[name];
     const executable = value && Bun.which(value);
-    if (executable) files["native-wrapper:" + name] = await hashFile(executable, { signal: bound.signal });
+    if (executable)
+      files["native-wrapper:" + name] = await hashFile(executable, {
+        signal: bound.signal,
+      });
   }
   const members: Inputs["members"] = [];
   for (const path of [...rootManifest.workspace.members].sort()) {
-    if (!/^crates\/[A-Za-z0-9_-]+$/.test(path)) throw new Error("Cargo proof requires flat crate members.");
+    if (!/^crates\/[A-Za-z0-9_-]+$/.test(path))
+      throw new Error("Cargo proof requires flat crate members.");
     const member = join(repositoryRoot, path);
-    const manifest = Bun.TOML.parse(await Bun.file(join(member, "Cargo.toml")).text()) as { package: { name: string } };
+    const manifest = Bun.TOML.parse(
+      await Bun.file(join(member, "Cargo.toml")).text(),
+    ) as { package: { name: string } };
     members.push({
       path,
       name: manifest.package.name,
@@ -268,7 +338,8 @@ export async function cargoBuildQualification(): Promise<{
   try {
     const bound = deadline();
     const file = Bun.file(receiptPath);
-    if (file.size > 8 * 1024 * 1024) throw new Error("Cargo proof receipt exceeds its bound.");
+    if (file.size > 8 * 1024 * 1024)
+      throw new Error("Cargo proof receipt exceeds its bound.");
     const receiptSHA256 = await hashFile(receiptPath, { signal: bound.signal });
     const receipt = (await file.json()) as Receipt;
     if (
@@ -290,11 +361,22 @@ export async function cargoBuildQualification(): Promise<{
     const actual = await capture(bound);
     if (
       inputKey(actual) !== receipt.inputsSHA256 ||
-      JSON.stringify(receipt.command) !== JSON.stringify([actual.toolchain.cargo, ...buildArgs]) ||
-      JSON.stringify(receipt.memberNames) !== JSON.stringify(actual.members.map(member => member.name).sort())
+      JSON.stringify(receipt.command) !==
+        JSON.stringify([actual.toolchain.cargo, ...buildArgs]) ||
+      JSON.stringify(receipt.memberNames) !==
+        JSON.stringify(actual.members.map((member) => member.name).sort())
     )
       throw new Error("Cargo proof inputs or command changed.");
-    await inspect(["git", "merge-base", "--is-ancestor", receipt.inputs.rootRevision, actual.rootRevision], bound);
+    await inspect(
+      [
+        "git",
+        "merge-base",
+        "--is-ancestor",
+        receipt.inputs.rootRevision,
+        actual.rootRevision,
+      ],
+      bound,
+    );
     const artifactMembers = new Set<string>();
     const artifactPaths = new Set<string>();
     for (const artifact of receipt.artifacts) {
@@ -308,10 +390,15 @@ export async function cargoBuildQualification(): Promise<{
         throw new Error("Cargo proof artifact is invalid.");
       artifactMembers.add(artifact.member);
       artifactPaths.add(artifact.path);
-      if ((await hashFile(join(repositoryRoot, artifact.path), { signal: bound.signal })) !== artifact.sha256)
+      if (
+        (await hashFile(join(repositoryRoot, artifact.path), {
+          signal: bound.signal,
+        })) !== artifact.sha256
+      )
         throw new Error("Cargo proof artifact changed.");
     }
-    if (artifactMembers.size !== actual.members.length) throw new Error("Cargo proof omits workspace artifacts.");
+    if (artifactMembers.size !== actual.members.length)
+      throw new Error("Cargo proof omits workspace artifacts.");
     if (
       inputKey(await capture(bound)) !== receipt.inputsSHA256 ||
       (await hashFile(receiptPath, { signal: bound.signal })) !== receiptSHA256
@@ -337,7 +424,15 @@ async function build(): Promise<void> {
   );
   if (
     committed !==
-    (await inspect(["git", "hash-object", "--path=scripts/cargo-build-proof.ts", import.meta.path], beforeBound))
+    (await inspect(
+      [
+        "git",
+        "hash-object",
+        "--path=scripts/cargo-build-proof.ts",
+        import.meta.path,
+      ],
+      beforeBound,
+    ))
   )
     throw new Error("Commit the Cargo proof owner before executing it.");
   if (!(await sourceReplacementAt(overridePath)))
@@ -348,10 +443,17 @@ async function build(): Promise<void> {
   const result = await runNativeResult(
     await loadConfig(),
     command,
-    { root: repositoryRoot, timeoutMs: 300000, env: { RUSTC: before.toolchain.rustc } },
+    {
+      root: repositoryRoot,
+      timeoutMs: 300000,
+      env: { RUSTC: before.toolchain.rustc },
+    },
     true,
   );
-  if (result.code !== 0) throw new Error("Cargo build did not succeed; no build receipt was issued.");
+  if (result.code !== 0)
+    throw new Error(
+      "Cargo build did not succeed; no build receipt was issued.",
+    );
   const bound = deadline();
   const outputs = new Map<string, Artifact>();
   const completedMembers = new Set<string>();
@@ -364,11 +466,19 @@ async function build(): Promise<void> {
       filenames?: string[];
       target?: { kind?: string[] };
     };
-    if (message.reason === "build-finished" && message.success === true) finished = true;
-    if (message.reason !== "compiler-artifact" || !message.manifest_path || !Array.isArray(message.filenames)) continue;
+    if (message.reason === "build-finished" && message.success === true)
+      finished = true;
+    if (
+      message.reason !== "compiler-artifact" ||
+      !message.manifest_path ||
+      !Array.isArray(message.filenames)
+    )
+      continue;
     if (message.target?.kind?.includes("custom-build")) continue;
     const member = before.members.find(
-      member => resolve(message.manifest_path!) === join(repositoryRoot, member.path, "Cargo.toml"),
+      (member) =>
+        resolve(message.manifest_path!) ===
+        join(repositoryRoot, member.path, "Cargo.toml"),
     );
     if (!member) continue;
     if (!message.filenames.length) continue;
@@ -381,14 +491,34 @@ async function build(): Promise<void> {
       if (!path.startsWith("target/") || path.split("/").includes(".."))
         throw new Error("Cargo artifact leaves the root target owner.");
       completedMembers.add(member.name);
-      outputs.set(path, { member: member.name, path, sha256: await hashFile(file, { signal: bound.signal }) });
+      outputs.set(path, {
+        member: member.name,
+        path,
+        sha256: await hashFile(file, { signal: bound.signal }),
+      });
     }
   }
-  if (!finished || completedMembers.size !== before.members.length || !outputs.size)
-    throw new Error("Cargo build did not provide all workspace artifact evidence.");
+  if (
+    !finished ||
+    completedMembers.size !== before.members.length ||
+    !outputs.size
+  )
+    throw new Error(
+      "Cargo build did not provide all workspace artifact evidence.",
+    );
   const after = await capture(bound);
-  if (inputKey(before) !== inputKey(after)) throw new Error("Cargo build inputs changed; no receipt was issued.");
-  await inspect(["git", "merge-base", "--is-ancestor", before.rootRevision, after.rootRevision], bound);
+  if (inputKey(before) !== inputKey(after))
+    throw new Error("Cargo build inputs changed; no receipt was issued.");
+  await inspect(
+    [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      before.rootRevision,
+      after.rootRevision,
+    ],
+    bound,
+  );
   const receipt: Receipt = {
     schemaVersion: 1,
     owner: "root-cargo-build",
@@ -400,10 +530,14 @@ async function build(): Promise<void> {
     outputSHA256: digest(result.stdout),
     inputs: before,
     inputsSHA256: inputKey(before),
-    artifacts: [...outputs.values()].sort((a, b) => a.path.localeCompare(b.path)),
+    artifacts: [...outputs.values()].sort((a, b) =>
+      a.path.localeCompare(b.path),
+    ),
     memberNames: [...completedMembers].sort(),
   };
-  if ((await inspect(["git", "rev-parse", "HEAD"], bound)) !== after.rootRevision)
+  if (
+    (await inspect(["git", "rev-parse", "HEAD"], bound)) !== after.rootRevision
+  )
     throw new Error("Cargo proof root changed before receipt issuance.");
   await Bun.write(receiptPath, JSON.stringify(receipt, null, 2) + "\n");
   console.log(
@@ -418,14 +552,18 @@ async function build(): Promise<void> {
 
 if (import.meta.main) {
   const action = Bun.argv[2] ?? "help";
-  if (action === "status") console.log(JSON.stringify(await cargoBuildQualification()));
+  if (action === "status")
+    console.log(JSON.stringify(await cargoBuildQualification()));
   else if (action === "plan") {
     const inputs = await capture(deadline());
     console.log(
       JSON.stringify({
         compiled: false,
         members: inputs.members.length,
-        sourceFiles: inputs.members.reduce((count, member) => count + member.files, 0),
+        sourceFiles: inputs.members.reduce(
+          (count, member) => count + member.files,
+          0,
+        ),
         vendorFiles: inputs.vendor.files,
         inputsSHA256: inputKey(inputs),
         activeSourceReplacement: inputs.activeSourceReplacement,

@@ -18,7 +18,11 @@ export interface WalkResult {
 /** Walk `root` without following links; keep the `topFiles` largest files and `keepAll` files >= `minKeep` bytes. */
 export async function walk(
   root: string,
-  opts: { topFiles: number; minKeep?: number; onFile?: (file: BigFile) => void },
+  opts: {
+    topFiles: number;
+    minKeep?: number;
+    onFile?: (file: BigFile) => void;
+  },
 ): Promise<WalkResult> {
   const files: BigFile[] = [];
   const dirBytes = new Map<string, number>();
@@ -46,7 +50,8 @@ export async function walk(
         const info = await lstat(full);
         totalBytes += info.size;
         totalFiles += 1;
-        if (bucket) dirBytes.set(bucket, (dirBytes.get(bucket) ?? 0) + info.size);
+        if (bucket)
+          dirBytes.set(bucket, (dirBytes.get(bucket) ?? 0) + info.size);
         const file = { path: full, bytes: info.size, mtimeMs: info.mtimeMs };
         opts.onFile?.(file);
         if (opts.minKeep === undefined) {
@@ -102,7 +107,10 @@ export interface DuplicateGroup {
 }
 
 /** Same size -> same head/tail -> same full hash. Read-only. */
-export async function findDuplicates(root: string, minBytes: number): Promise<DuplicateGroup[]> {
+export async function findDuplicates(
+  root: string,
+  minBytes: number,
+): Promise<DuplicateGroup[]> {
   const bySize = new Map<number, string[]>();
   await walk(root, {
     topFiles: 0,
@@ -141,7 +149,12 @@ export async function findDuplicates(root: string, minBytes: number): Promise<Du
       }
       for (const [hash, same] of byFull) {
         if (same.length > 1)
-          groups.push({ bytes, hash, paths: same.toSorted(), wasted: bytes * (same.length - 1) });
+          groups.push({
+            bytes,
+            hash,
+            paths: same.toSorted(),
+            wasted: bytes * (same.length - 1),
+          });
       }
     }
   }

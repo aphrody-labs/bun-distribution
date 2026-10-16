@@ -37,7 +37,9 @@ const span = (file: string, line: number, applicability?: string) => ({
   suggestion_applicability: applicability ?? null,
 });
 const crateOf = (manifest: string, id: string) =>
-  manifest === "/repo/crates/ai/foo/Cargo.toml" ? "aphrody-foo" : crateFromPackageId(id);
+  manifest === "/repo/crates/ai/foo/Cargo.toml"
+    ? "aphrody-foo"
+    : crateFromPackageId(id);
 const pkg = (name: string, targets: (string | null)[]): MetaPackage => ({
   name,
   manifest_path: `/repo/${name}/Cargo.toml`,
@@ -71,7 +73,12 @@ describe("parseDiagnostics", () => {
         },
       }),
       message({
-        message: { level: "warning", message: "1 warning emitted", code: null, spans: [] },
+        message: {
+          level: "warning",
+          message: "1 warning emitted",
+          code: null,
+          spans: [],
+        },
       }),
       message({
         message: {
@@ -89,14 +96,22 @@ describe("parseDiagnostics", () => {
           spans: [],
         },
       }),
-      message({ message: { level: "note", message: "some note", code: null, spans: [] } }),
+      message({
+        message: { level: "note", message: "some note", code: null, spans: [] },
+      }),
       JSON.stringify({ reason: "compiler-artifact", package_id: "x" }),
       "   Compiling foo v1.0.0",
       "{not json",
     ].join("\n");
     const d = parseDiagnostics(text, crateOf);
     expect(d.map((x) => [x.level, x.code, x.crate, x.file, x.line])).toEqual([
-      ["warning", "unused_variables", "aphrody-foo", "crates/ai/foo/src/lib.rs", 12],
+      [
+        "warning",
+        "unused_variables",
+        "aphrody-foo",
+        "crates/ai/foo/src/lib.rs",
+        12,
+      ],
       ["error", "E0308", "aphrody-foo", "crates/ai/foo/src/lib.rs", 40],
     ]);
   });
@@ -129,7 +144,11 @@ describe("parseDiagnostics", () => {
         code: { code: "clippy::collapsible_if" },
         spans: [span("b.rs", 2)],
         children: [
-          { message: "collapse", spans: [span("b.rs", 2, "MachineApplicable")], children: [] },
+          {
+            message: "collapse",
+            spans: [span("b.rs", 2, "MachineApplicable")],
+            children: [],
+          },
         ],
       },
     });
@@ -142,7 +161,9 @@ describe("parseDiagnostics", () => {
       },
     });
     expect(
-      parseDiagnostics([direct, child, manual].join("\n"), crateOf).map((x) => x.fixable),
+      parseDiagnostics([direct, child, manual].join("\n"), crateOf).map(
+        (x) => x.fixable,
+      ),
     ).toEqual([true, true, false]);
   });
 
@@ -161,12 +182,18 @@ describe("parseDiagnostics", () => {
 
 describe("crateFromPackageId", () => {
   test("handles the three id shapes Cargo prints", () => {
-    expect(crateFromPackageId("path+file:///repo/crates/ai/engine#aphrody-engine@1.0.0")).toBe(
-      "aphrody-engine",
-    );
-    expect(crateFromPackageId("path+file:///repo/crates/web/taffy#0.9.2")).toBe("taffy");
     expect(
-      crateFromPackageId("registry+https://github.com/rust-lang/crates.io-index#serde@1.0.229"),
+      crateFromPackageId(
+        "path+file:///repo/crates/ai/engine#aphrody-engine@1.0.0",
+      ),
+    ).toBe("aphrody-engine");
+    expect(crateFromPackageId("path+file:///repo/crates/web/taffy#0.9.2")).toBe(
+      "taffy",
+    );
+    expect(
+      crateFromPackageId(
+        "registry+https://github.com/rust-lang/crates.io-index#serde@1.0.229",
+      ),
     ).toBe("serde");
   });
 });
@@ -210,10 +237,16 @@ describe("targetPackages", () => {
   ];
   test("auto selects members with a dependency gated on the target family", () => {
     expect(
-      targetPackages(packages, { triple: "wasm32-unknown-unknown", packages: "auto" }).packages,
+      targetPackages(packages, {
+        triple: "wasm32-unknown-unknown",
+        packages: "auto",
+      }).packages,
     ).toEqual(["host", "web"]);
     expect(
-      targetPackages(packages, { triple: "x86_64-pc-windows-msvc", packages: "auto" }).packages,
+      targetPackages(packages, {
+        triple: "x86_64-pc-windows-msvc",
+        packages: "auto",
+      }).packages,
     ).toEqual(["win"]);
   });
   test("include adds members that carry no target-gated dependency", () => {
@@ -233,9 +266,10 @@ describe("targetPackages", () => {
     });
     expect(all.packages).toEqual(["plain", "web", "win"]);
     expect(all.excluded).toEqual([{ crate: "host", reason: "host only" }]);
-    expect(targetPackages(packages, { triple: "x", packages: ["web", "web"] }).packages).toEqual([
-      "web",
-    ]);
+    expect(
+      targetPackages(packages, { triple: "x", packages: ["web", "web"] })
+        .packages,
+    ).toEqual(["web"]);
   });
 });
 
@@ -278,7 +312,11 @@ describe("parseJunit", () => {
     ]);
   });
   test("an empty report has no case", () => {
-    expect(parseJunit("<testsuites></testsuites>")).toEqual({ tests: 0, failures: [], flaky: [] });
+    expect(parseJunit("<testsuites></testsuites>")).toEqual({
+      tests: 0,
+      failures: [],
+      flaky: [],
+    });
   });
 });
 
@@ -293,7 +331,10 @@ describe("parseLibtest", () => {
       "test result: FAILED. 0 passed; 1 failed",
     ].join("\n");
     expect(parseLibtest(text)).toEqual([
-      { suite: "aphrody_foo", name: "crates/ai/foo/src/lib.rs - Foo::baz (line 30)" },
+      {
+        suite: "aphrody_foo",
+        name: "crates/ai/foo/src/lib.rs - Foo::baz (line 30)",
+      },
       { suite: "aphrody_bar", name: "crates/ai/bar/src/lib.rs - run (line 5)" },
     ]);
   });
@@ -326,16 +367,16 @@ describe("format and git helpers", () => {
     expect(crateOfFile("docs/a.md", dirs)).toBeUndefined();
   });
   test("parsePorcelain keeps both sides of a rename and untracked paths", () => {
-    expect(parsePorcelain(" M a/b.rs\n?? new/\nR  old.rs -> fresh.rs\n")).toEqual([
-      "a/b.rs",
-      "new/",
-      "old.rs",
-      "fresh.rs",
-    ]);
+    expect(
+      parsePorcelain(" M a/b.rs\n?? new/\nR  old.rs -> fresh.rs\n"),
+    ).toEqual(["a/b.rs", "new/", "old.rs", "fresh.rs"]);
   });
   test("errorLines starts at the first error, or falls back to the tail", () => {
     expect(
-      errorLines("Compiling x\nerror[E0432]: unresolved import\n --> src/lib.rs:1:5\nmore", 2),
+      errorLines(
+        "Compiling x\nerror[E0432]: unresolved import\n --> src/lib.rs:1:5\nmore",
+        2,
+      ),
     ).toEqual(["error[E0432]: unresolved import", " --> src/lib.rs:1:5"]);
     expect(errorLines("a\nb\nc", 2)).toEqual(["b", "c"]);
   });
@@ -343,7 +384,9 @@ describe("format and git helpers", () => {
 
 describe("newestLlvm", () => {
   test("picks the highest installed LLVM, numerically", () => {
-    expect(newestLlvm(["llvm-18", "llvm-9", "llvm-23", "gcc", "llvm-toolchain"])).toBe("llvm-23");
+    expect(
+      newestLlvm(["llvm-18", "llvm-9", "llvm-23", "gcc", "llvm-toolchain"]),
+    ).toBe("llvm-23");
     expect(newestLlvm(["gcc"])).toBeUndefined();
   });
 });
@@ -369,11 +412,20 @@ describe("classification", () => {
     expect(stageStatus([p("info")])).toBe("ok");
     expect(stageStatus([p("info"), p("warning")])).toBe("problems");
     expect(stageStatus([p("warning"), p("error")])).toBe("failed");
-    const t = totals([stage([p("error"), p("warning")], 2), stage([p("info"), p("warning")], 1)]);
+    const t = totals([
+      stage([p("error"), p("warning")], 2),
+      stage([p("info"), p("warning")], 1),
+    ]);
     expect(t).toEqual({ errors: 1, warnings: 2, notes: 1, fixed: 3 });
     expect(exitCode(t, false)).toBe(1);
-    expect(exitCode({ errors: 0, warnings: 2, notes: 0, fixed: 0 }, false)).toBe(0);
-    expect(exitCode({ errors: 0, warnings: 2, notes: 0, fixed: 0 }, true)).toBe(1);
-    expect(exitCode({ errors: 0, warnings: 0, notes: 5, fixed: 0 }, true)).toBe(0);
+    expect(
+      exitCode({ errors: 0, warnings: 2, notes: 0, fixed: 0 }, false),
+    ).toBe(0);
+    expect(exitCode({ errors: 0, warnings: 2, notes: 0, fixed: 0 }, true)).toBe(
+      1,
+    );
+    expect(exitCode({ errors: 0, warnings: 0, notes: 5, fixed: 0 }, true)).toBe(
+      0,
+    );
   });
 });

@@ -8,7 +8,11 @@ import { ApiManager, ApiResponse } from "./ApiManager";
 import { authentication } from "~/signals";
 import { Visibility } from "~/enums";
 
-import { FilterEngineCategories, FilterMediaClasses, FilterMediaType } from "~/enums";
+import {
+  FilterEngineCategories,
+  FilterMediaClasses,
+  FilterMediaType,
+} from "~/enums";
 
 interface ListMediaQuery {
   sort_ascending?: boolean;
@@ -89,7 +93,9 @@ export class MediaFilesApi extends ApiManager {
       filter_media_classes: query.filter_media_classes
         ? query.filter_media_classes.join(",")
         : undefined,
-      filter_media_type: query.filter_media_type ? query.filter_media_type.join(",") : undefined,
+      filter_media_type: query.filter_media_type
+        ? query.filter_media_type.join(",")
+        : undefined,
       filter_engine_categories: query.filter_engine_categories
         ? query.filter_engine_categories.join(",")
         : undefined,
@@ -121,7 +127,9 @@ export class MediaFilesApi extends ApiManager {
       filter_media_classes: query.filter_media_classes
         ? query.filter_media_classes.join(",")
         : undefined,
-      filter_media_type: query.filter_media_type ? query.filter_media_type.join(",") : undefined,
+      filter_media_type: query.filter_media_type
+        ? query.filter_media_type.join(",")
+        : undefined,
       filter_engine_categories: query.filter_engine_categories
         ? query.filter_engine_categories.join(",")
         : undefined,
@@ -155,7 +163,9 @@ export class MediaFilesApi extends ApiManager {
       filter_media_classes: query.filter_media_classes
         ? query.filter_media_classes.join(",")
         : undefined,
-      filter_media_type: query.filter_media_type ? query.filter_media_type.join(",") : undefined,
+      filter_media_type: query.filter_media_type
+        ? query.filter_media_type.join(",")
+        : undefined,
       filter_engine_categories: query.filter_engine_categories
         ? query.filter_engine_categories.join(",")
         : undefined,
@@ -187,7 +197,9 @@ export class MediaFilesApi extends ApiManager {
       filter_media_classes: query.filter_media_classes
         ? query.filter_media_classes.join(",")
         : undefined,
-      filter_media_type: query.filter_media_type ? query.filter_media_type.join(",") : undefined,
+      filter_media_type: query.filter_media_type
+        ? query.filter_media_type.join(",")
+        : undefined,
       filter_engine_categories: query.filter_engine_categories
         ? query.filter_engine_categories.join(",")
         : undefined,
@@ -217,7 +229,9 @@ export class MediaFilesApi extends ApiManager {
       filter_media_classes: query.filter_media_classes
         ? query.filter_media_classes.join(",")
         : undefined,
-      filter_media_type: query.filter_media_type ? query.filter_media_type.join(",") : undefined,
+      filter_media_type: query.filter_media_type
+        ? query.filter_media_type.join(",")
+        : undefined,
       filter_engine_categories: query.filter_engine_categories
         ? query.filter_engine_categories.join(",")
         : undefined,

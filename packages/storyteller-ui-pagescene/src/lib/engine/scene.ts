@@ -13,7 +13,10 @@ import type { Camera } from "@storyteller/common";
 import toast from "react-hot-toast";
 import { SplatMesh } from "@sparkjsdev/spark";
 import { ensureInternalBbox } from "./internalBbox";
-import { collectObjectTextures, disposeObject3D } from "@storyteller/ui-viewer-3d";
+import {
+  collectObjectTextures,
+  disposeObject3D,
+} from "@storyteller/ui-viewer-3d";
 
 // Capabilities Scene needs from outside its own state. Editor wires
 // these in inline at construction (Phase 2 idiom — same shape as
@@ -27,7 +30,10 @@ export type SceneDeps = {
   // Adapter-supplied binary fetch. Optional `init.signal` lets the
   // scene loader cancel in-flight downloads when its load is
   // superseded.
-  fetchAsset: (url: string, init?: { signal?: AbortSignal }) => Promise<Response>;
+  fetchAsset: (
+    url: string,
+    init?: { signal?: AbortSignal },
+  ) => Promise<Response>;
   getMediaUrlByToken: (token: string) => Promise<string>;
   // Optional batch resolver — when provided, the proxy scene loader
   // warms a URL cache with one roundtrip instead of N. When absent,
@@ -155,7 +161,9 @@ class Scene {
   disposeObject(root: THREE.Object3D) {
     const inTree = new Set<THREE.Object3D>();
     root.traverse((child) => inTree.add(child));
-    this.shader_objects = this.shader_objects.filter((water) => !inTree.has(water));
+    this.shader_objects = this.shader_objects.filter(
+      (water) => !inTree.has(water),
+    );
     // Removing an animation mutates the owner's collection; traverse a snapshot.
     for (const mesh of this.helper?.meshes.slice() ?? []) {
       if (inTree.has(mesh)) this.helper?.remove(mesh);
@@ -186,7 +194,10 @@ class Scene {
     }
   }
 
-  async instantiate(name: string, pos: THREE.Vector3 = new THREE.Vector3(0, 0, 0)) {
+  async instantiate(
+    name: string,
+    pos: THREE.Vector3 = new THREE.Vector3(0, 0, 0),
+  ) {
     const material = new THREE.MeshPhongMaterial({ color: 0xdacbce });
     material.shininess = 0.0;
     let geometry;
@@ -397,7 +408,10 @@ class Scene {
   deletePoint(keyframe_uuid: string) {
     this.scene.children.forEach((object) => {
       if (object.userData.media_id) {
-        const obj_keyframe_uuid = object.userData.media_id.replace("Point::", "");
+        const obj_keyframe_uuid = object.userData.media_id.replace(
+          "Point::",
+          "",
+        );
         if (obj_keyframe_uuid === keyframe_uuid) {
           this.scene.remove(object);
           return;
@@ -410,7 +424,10 @@ class Scene {
     let keyframe_point = undefined;
     this.scene.children.forEach((object) => {
       if (object.userData.media_id) {
-        const obj_keyframe_uuid = object.userData.media_id.replace("Point::", "");
+        const obj_keyframe_uuid = object.userData.media_id.replace(
+          "Point::",
+          "",
+        );
         if (obj_keyframe_uuid === keyframe_uuid) {
           keyframe_point = object;
           return;
@@ -428,7 +445,10 @@ class Scene {
   ) {
     this.scene.traverse((object) => {
       if (object.userData.media_id) {
-        const obj_keyframe_uuid = object.userData.media_id.replace("Point::", "");
+        const obj_keyframe_uuid = object.userData.media_id.replace(
+          "Point::",
+          "",
+        );
         if (obj_keyframe_uuid === keyframe_uuid) {
           const first_quat = new THREE.Euler(
             THREE.MathUtils.degToRad(keyframe_rot.x),
@@ -468,8 +488,16 @@ class Scene {
     const group = this._buildCameraFrustum();
     group.name = "::CAM::";
     group.userData["name"] = "Camera";
-    group.position.set(renderCam.position.x, renderCam.position.y, renderCam.position.z);
-    group.rotation.set(renderCam.rotation.x, renderCam.rotation.y, renderCam.rotation.z);
+    group.position.set(
+      renderCam.position.x,
+      renderCam.position.y,
+      renderCam.position.z,
+    );
+    group.rotation.set(
+      renderCam.rotation.x,
+      renderCam.rotation.y,
+      renderCam.rotation.z,
+    );
     group.layers.set(1);
     group.children.forEach((child) => child.layers.set(1));
     this.scene.add(group);
@@ -712,7 +740,12 @@ class Scene {
     const url = await this.getMediaURL(media_id);
 
     if (url.includes(".pmd") || url.includes(".pmx")) {
-      return await this.loadMMDWithPlaceholder(media_id, name, auto_add, position);
+      return await this.loadMMDWithPlaceholder(
+        media_id,
+        name,
+        auto_add,
+        position,
+      );
     } else if (
       url.includes(".png") ||
       url.includes(".jpg") ||
@@ -730,10 +763,23 @@ class Scene {
       }
       return obj;
     } else if (url.includes(".spz")) {
-      return await this.loadSplatWithPlaceholder(media_id, name, auto_add, position, signal);
+      return await this.loadSplatWithPlaceholder(
+        media_id,
+        name,
+        auto_add,
+        position,
+        signal,
+      );
     }
 
-    return await this.loadGlbWithPlaceholder(media_id, name, auto_add, position, version, signal);
+    return await this.loadGlbWithPlaceholder(
+      media_id,
+      name,
+      auto_add,
+      position,
+      version,
+      signal,
+    );
   }
 
   addChildrenToScene(parent: THREE.Object3D, scene: THREE.Scene): void {
@@ -960,7 +1006,10 @@ class Scene {
   // WITHOUT adding it to the scene or attaching a loading placeholder. Used to
   // source skeletal animation clips (their `animations[0]`) for retargeting
   // onto characters — the clip's own mesh/armature is never rendered.
-  async loadRawGlb(media_id: string, signal?: AbortSignal): Promise<GLTF | null> {
+  async loadRawGlb(
+    media_id: string,
+    signal?: AbortSignal,
+  ): Promise<GLTF | null> {
     try {
       const url = await this.getMediaURL(media_id);
       return await this.load_glb_wrapped_no_cors(url, () => {}, signal);
@@ -979,7 +1028,9 @@ class Scene {
   ): Promise<GLTF> {
     let buffer: ArrayBuffer;
     try {
-      buffer = await (await this.deps.fetchAsset(media_url, { signal })).arrayBuffer();
+      buffer = await (
+        await this.deps.fetchAsset(media_url, { signal })
+      ).arrayBuffer();
     } catch (error) {
       if ((error as { name?: string })?.name !== "AbortError") {
         console.error("load GLB from Tauri error:", error);
@@ -1016,7 +1067,9 @@ class Scene {
   ): Promise<SplatMesh> {
     let buffer: ArrayBuffer;
     try {
-      buffer = await (await this.deps.fetchAsset(media_url, { signal })).arrayBuffer();
+      buffer = await (
+        await this.deps.fetchAsset(media_url, { signal })
+      ).arrayBuffer();
     } catch (error) {
       if ((error as { name?: string })?.name !== "AbortError") {
         console.error("load Splat from Tauri error:", error);

@@ -1,2 +1,1 @@
-
-export * from './lib/provider-billing-modal';
+export * from "./lib/provider-billing-modal";

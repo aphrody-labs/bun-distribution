@@ -11,7 +11,10 @@ test("binary catalogue excludes sibling builds and normalizes Windows executable
   try {
     const files = {
       "relocated/docs/ecosystem/ecosystem.json": JSON.stringify({
-        cli: [{ binary: "aphrody-fixture-owned" }, { binary: "aphrody-fixture-windows" }],
+        cli: [
+          { binary: "aphrody-fixture-owned" },
+          { binary: "aphrody-fixture-windows" },
+        ],
       }),
       "relocated/target/debug/aphrody-fixture-owned": "debug",
       "relocated/target/release/aphrody-fixture-owned": "release",
@@ -36,9 +39,13 @@ test("binary catalogue excludes sibling builds and normalizes Windows executable
       "aphrody-fixture-windows",
     ]);
     expect(found[0]?.source).toBe("release");
-    expect(found[0]?.path).toBe(join(root, "target/release/aphrody-fixture-owned"));
+    expect(found[0]?.path).toBe(
+      join(root, "target/release/aphrody-fixture-owned"),
+    );
     expect(found[1]?.catalogued).toBe(true);
-    expect(found[1]?.path).toBe(join(root, "target/debug/aphrody-fixture-windows.exe"));
+    expect(found[1]?.path).toBe(
+      join(root, "target/debug/aphrody-fixture-windows.exe"),
+    );
   } finally {
     await rm(parent, { recursive: true, force: true });
   }

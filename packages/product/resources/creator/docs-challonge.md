@@ -71,7 +71,12 @@ Variables d'environnement (prioritaires), puis fichier optionnel `~/.config/crea
   "communityId": "ma-communaute",
   "game": "Guilty Gear Strive",
   "announceWebhook": "https://discord.com/api/webhooks/<id>/<jeton>",
-  "discord": { "appId": "…", "guildId": "…", "organiserRoleId": "…", "batchRegistrations": false }
+  "discord": {
+    "appId": "…",
+    "guildId": "…",
+    "organiserRoleId": "…",
+    "batchRegistrations": false
+  }
 }
 ```
 

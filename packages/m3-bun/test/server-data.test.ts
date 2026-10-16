@@ -17,31 +17,56 @@ describe("m3Db (bun:sqlite)", () => {
     const migrations = [
       "CREATE TABLE lists (id INTEGER PRIMARY KEY, name TEXT NOT NULL)",
       (db: import("bun:sqlite").Database) =>
-        db.run("CREATE TABLE items (id INTEGER PRIMARY KEY, list INTEGER NOT NULL REFERENCES lists(id))"),
+        db.run(
+          "CREATE TABLE items (id INTEGER PRIMARY KEY, list INTEGER NOT NULL REFERENCES lists(id))",
+        ),
     ];
     const db = m3Db({ path, migrations });
     expect(existsSync(path)).toBe(true);
-    expect(db.query("PRAGMA journal_mode").get()).toEqual({ journal_mode: "wal" });
+    expect(db.query("PRAGMA journal_mode").get()).toEqual({
+      journal_mode: "wal",
+    });
     expect(db.query("PRAGMA user_version").get()).toEqual({ user_version: 2 });
-    expect(() => db.run("INSERT INTO items (list) VALUES (42)")).toThrow(/FOREIGN KEY/);
-    db.query("INSERT INTO lists (name) VALUES ($name)").run({ name: "strict params" });
+    expect(() => db.run("INSERT INTO items (list) VALUES (42)")).toThrow(
+      /FOREIGN KEY/,
+    );
+    db.query("INSERT INTO lists (name) VALUES ($name)").run({
+      name: "strict params",
+    });
     db.close();
 
-    const again = m3Db({ path, migrations: [...migrations, "ALTER TABLE lists ADD COLUMN color TEXT"] });
-    expect(again.query("PRAGMA user_version").get()).toEqual({ user_version: 3 });
-    expect(again.query("SELECT name, color FROM lists").all()).toEqual([{ name: "strict params", color: null }]);
+    const again = m3Db({
+      path,
+      migrations: [...migrations, "ALTER TABLE lists ADD COLUMN color TEXT"],
+    });
+    expect(again.query("PRAGMA user_version").get()).toEqual({
+      user_version: 3,
+    });
+    expect(again.query("SELECT name, color FROM lists").all()).toEqual([
+      { name: "strict params", color: null },
+    ]);
     again.close();
-    expect(() => m3Db({ path, migrations })).toThrow(/schema version 3, newer than the 2 migrations/);
+    expect(() => m3Db({ path, migrations })).toThrow(
+      /schema version 3, newer than the 2 migrations/,
+    );
   });
 
   test("a failing migration rolls back, closes the database and names the step", () => {
     const path = join(tmp(), "fail.sqlite");
-    expect(() => m3Db({ path, migrations: ["CREATE TABLE a (x)", "CREATE TABLE b (y); SELECT nope FROM missing"] })).toThrow(
-      "m3Db: migration 2 of",
-    );
+    expect(() =>
+      m3Db({
+        path,
+        migrations: [
+          "CREATE TABLE a (x)",
+          "CREATE TABLE b (y); SELECT nope FROM missing",
+        ],
+      }),
+    ).toThrow("m3Db: migration 2 of");
     const db = m3Db({ path, migrations: ["CREATE TABLE a (x)"] });
     expect(db.query("PRAGMA user_version").get()).toEqual({ user_version: 1 });
-    expect(db.query("SELECT name FROM sqlite_master WHERE type = 'table'").all()).toEqual([{ name: "a" }]);
+    expect(
+      db.query("SELECT name FROM sqlite_master WHERE type = 'table'").all(),
+    ).toEqual([{ name: "a" }]);
     db.close();
   });
 });
@@ -54,11 +79,16 @@ describe("m3Auth (Bun.password, Bun.CookieMap, Bun.CSRF)", () => {
       hostname: "127.0.0.1",
       api: {
         ...auth.routes,
-        "/api/whoami": request => Response.json({ email: auth.user(request)?.email ?? null }),
+        "/api/whoami": (request) =>
+          Response.json({ email: auth.user(request)?.email ?? null }),
       },
     });
     const base = `http://127.0.0.1:${server.port}/api/m3/auth`;
-    const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>
+    const post = (
+      path: string,
+      body: unknown,
+      headers: Record<string, string> = {},
+    ) =>
       fetch(`${base}/${path}`, {
         method: "POST",
         headers: { "content-type": "application/json", ...headers },
@@ -67,43 +97,86 @@ describe("m3Auth (Bun.password, Bun.CookieMap, Bun.CSRF)", () => {
     try {
       const account = { email: "ada@example.com", password: "correct horse" };
       expect((await post("register", account)).status).toBe(201);
-      expect((await post("register", { ...account, email: "ADA@example.com" })).status).toBe(409);
-      expect((await post("register", { email: "nope", password: "x" })).status).toBe(400);
-      expect((await post("login", { ...account, password: "wrong password" })).status).toBe(401);
-      expect((await post("login", { email: "who@example.com", password: "whatever1" })).status).toBe(401);
+      expect(
+        (await post("register", { ...account, email: "ADA@example.com" }))
+          .status,
+      ).toBe(409);
+      expect(
+        (await post("register", { email: "nope", password: "x" })).status,
+      ).toBe(400);
+      expect(
+        (await post("login", { ...account, password: "wrong password" }))
+          .status,
+      ).toBe(401);
+      expect(
+        (
+          await post("login", {
+            email: "who@example.com",
+            password: "whatever1",
+          })
+        ).status,
+      ).toBe(401);
 
       const login = await post("login", account);
       expect(login.status).toBe(200);
       const setCookie = login.headers.getSetCookie()[0]!;
-      expect(setCookie).toMatch(/^m3-session=[\w-]{43}; Path=\/; Max-Age=604800; .*HttpOnly; SameSite=Strict/);
-      const { csrf, user } = (await login.json()) as { csrf: string; user: { email: string } };
+      expect(setCookie).toMatch(
+        /^m3-session=[\w-]{43}; Path=\/; Max-Age=604800; .*HttpOnly; SameSite=Strict/,
+      );
+      const { csrf, user } = (await login.json()) as {
+        csrf: string;
+        user: { email: string };
+      };
       expect(user.email).toBe("ada@example.com");
       const cookie = setCookie.split(";")[0]!;
 
       const me = await fetch(`${base}/me`, { headers: { cookie } });
-      expect(((await me.json()) as { user: { email: string } }).user.email).toBe("ada@example.com");
-      expect(await (await fetch(`http://127.0.0.1:${server.port}/api/whoami`, { headers: { cookie } })).json()).toEqual(
-        {
-          email: "ada@example.com",
-        },
-      );
+      expect(
+        ((await me.json()) as { user: { email: string } }).user.email,
+      ).toBe("ada@example.com");
+      expect(
+        await (
+          await fetch(`http://127.0.0.1:${server.port}/api/whoami`, {
+            headers: { cookie },
+          })
+        ).json(),
+      ).toEqual({
+        email: "ada@example.com",
+      });
 
       expect((await post("logout", {}, { cookie })).status).toBe(403);
-      expect((await post("logout", {}, { cookie, "x-csrf-token": auth.csrf.token("another-session") })).status).toBe(
-        403,
-      );
+      expect(
+        (
+          await post(
+            "logout",
+            {},
+            { cookie, "x-csrf-token": auth.csrf.token("another-session") },
+          )
+        ).status,
+      ).toBe(403);
       const logout = await post("logout", {}, { cookie, "x-csrf-token": csrf });
       expect(logout.status).toBe(204);
       expect(logout.headers.getSetCookie()[0]).toStartWith("m3-session=;");
-      expect((await fetch(`${base}/me`, { headers: { cookie } })).status).toBe(401);
+      expect((await fetch(`${base}/me`, { headers: { cookie } })).status).toBe(
+        401,
+      );
     } finally {
       await server.stop(true);
     }
   });
 
   test("register: false leaves account creation to the app", () => {
-    const auth = m3Auth({ db: m3Db(), secret: "s", register: false, prefix: "/auth" });
-    expect(Object.keys(auth.routes).toSorted()).toEqual(["/auth/login", "/auth/logout", "/auth/me"]);
+    const auth = m3Auth({
+      db: m3Db(),
+      secret: "s",
+      register: false,
+      prefix: "/auth",
+    });
+    expect(Object.keys(auth.routes).toSorted()).toEqual([
+      "/auth/login",
+      "/auth/logout",
+      "/auth/me",
+    ]);
   });
 });
 
@@ -126,7 +199,9 @@ describe("m3Secret (environment, Bun.secrets)", () => {
       created = await ensureSecret(name, { service, env: false });
     } catch (error) {
       // No credential store on this machine (headless Linux without a Secret Service): the error must say so.
-      expect(String(error)).toContain("cannot store the secret session-key in the OS credential store");
+      expect(String(error)).toContain(
+        "cannot store the secret session-key in the OS credential store",
+      );
       return;
     }
     try {
@@ -174,14 +249,19 @@ describe.skipIf(!(await redisAvailable()))("m3Cache (Bun.RedisClient)", () => {
 
       let calls = 0;
       const handler = cache.route(() => Response.json({ calls: ++calls }));
-      const request = () => handler(new Request("http://m3.test/api/feed?x=1") as never);
+      const request = () =>
+        handler(new Request("http://m3.test/api/feed?x=1") as never);
       const miss = await request();
       expect(miss.headers.get("x-cache")).toBe("MISS");
       const hit = await request();
       expect(hit.headers.get("x-cache")).toBe("HIT");
       expect(await hit.json()).toEqual({ calls: 1 });
       expect(
-        (await handler(new Request("http://m3.test/api/feed", { method: "POST" }) as never)).headers.has("x-cache"),
+        (
+          await handler(
+            new Request("http://m3.test/api/feed", { method: "POST" }) as never,
+          )
+        ).headers.has("x-cache"),
       ).toBe(false);
     } finally {
       cache.close();

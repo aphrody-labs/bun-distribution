@@ -37,7 +37,8 @@ import {
 
 const DAY = 86_400;
 const NOW = Date.parse("2026-10-02T00:00:00Z");
-const iso = (daysAgo: number) => new Date(NOW - daysAgo * DAY * 1000).toISOString();
+const iso = (daysAgo: number) =>
+  new Date(NOW - daysAgo * DAY * 1000).toISOString();
 const age = { seconds: 3 * DAY, excludes: ["next"] };
 
 describe("specs", () => {
@@ -108,7 +109,11 @@ describe("manifests", () => {
   };
   const manifests = {
     "packages/a/package.json": {
-      dependencies: { react: "catalog:", zod: "^4.6.5", "@aphrody/x": "workspace:*" },
+      dependencies: {
+        react: "catalog:",
+        zod: "^4.6.5",
+        "@aphrody/x": "workspace:*",
+      },
       devDependencies: { left: "catalog:legacy" },
     },
     "packages/b/package.json": {
@@ -118,7 +123,11 @@ describe("manifests", () => {
   };
 
   test("catalogEntries flattens default and named catalogs, default first", () => {
-    expect(catalogEntries(root)).toEqual({ react: "^19.3.0", next: "16.3.8", left: "^1.0.0" });
+    expect(catalogEntries(root)).toEqual({
+      react: "^19.3.0",
+      next: "16.3.8",
+      left: "^1.0.0",
+    });
   });
 
   test("resolvedDeps resolves catalog: and named catalogs", () => {
@@ -133,7 +142,10 @@ describe("manifests", () => {
     const d = collectDirect(root, manifests);
     const zod = d.filter((x) => x.name === "zod");
     expect(zod).toHaveLength(1);
-    expect(zod[0]!.where).toEqual(["packages/a/package.json", "packages/b/package.json"]);
+    expect(zod[0]!.where).toEqual([
+      "packages/a/package.json",
+      "packages/b/package.json",
+    ]);
     expect(d.find((x) => x.name === "react")!.where).toEqual(["catalog"]);
     expect(d.find((x) => x.name === "sharp")!.spec).toBe("~0.35.0");
     expect(d.map((x) => x.name)).toEqual(d.map((x) => x.name).toSorted());
@@ -149,7 +161,9 @@ describe("manifests", () => {
       },
       manifests,
     };
-    expect(touchedManifests({ root, manifests }, after)).toEqual(["packages/a/package.json"]);
+    expect(touchedManifests({ root, manifests }, after)).toEqual([
+      "packages/a/package.json",
+    ]);
     const literal = {
       root,
       manifests: {
@@ -160,8 +174,12 @@ describe("manifests", () => {
         },
       },
     };
-    expect(touchedManifests({ root, manifests }, literal)).toEqual(["packages/b/package.json"]);
-    expect(touchedManifests({ root, manifests }, { root, manifests })).toEqual([]);
+    expect(touchedManifests({ root, manifests }, literal)).toEqual([
+      "packages/b/package.json",
+    ]);
+    expect(touchedManifests({ root, manifests }, { root, manifests })).toEqual(
+      [],
+    );
   });
 });
 
@@ -173,17 +191,30 @@ describe("config", () => {
     expect(a).toEqual({ seconds: 259200, excludes: ["next", "undici"] });
     expect(isExcluded("next", a)).toBe(true);
     expect(isExcluded("next-intl", a)).toBe(false);
-    expect(parseReleaseAge("[jsx]\nruntime = 'automatic'\n")).toEqual({ seconds: 0, excludes: [] });
+    expect(parseReleaseAge("[jsx]\nruntime = 'automatic'\n")).toEqual({
+      seconds: 0,
+      excludes: [],
+    });
   });
 
   test("holdFor refuses releases above maxMajor only", () => {
-    const holds = parseHolds('{"holds":[{"name":"graphql","maxMajor":16,"reason":"yoga"}]}').holds;
+    const holds = parseHolds(
+      '{"holds":[{"name":"graphql","maxMajor":16,"reason":"yoga"}]}',
+    ).holds;
     expect(holdFor(holds, "graphql", "17.0.2")?.reason).toBe("yoga");
     expect(holdFor(holds, "graphql", "16.14.3")).toBeUndefined();
     expect(holdFor(holds, "zod", "99.0.0")).toBeUndefined();
     expect(parseHolds("{}").holds).toEqual([]);
-    const pin = [{ name: "undici-types", maxVersion: "8.9.0", reason: "types/node nests 8.9.0" }];
-    expect(holdFor(pin, "undici-types", "8.11.2")?.reason).toBe("types/node nests 8.9.0");
+    const pin = [
+      {
+        name: "undici-types",
+        maxVersion: "8.9.0",
+        reason: "types/node nests 8.9.0",
+      },
+    ];
+    expect(holdFor(pin, "undici-types", "8.11.2")?.reason).toBe(
+      "types/node nests 8.9.0",
+    );
     expect(holdFor(pin, "undici-types", "8.9.0")).toBeUndefined();
   });
 
@@ -207,11 +238,21 @@ describe("release age", () => {
   };
 
   test("eligible is the newest release old enough, inside the latest's major", () => {
-    expect(eligibleVersion(times, "1.2.0", { seconds: 3 * DAY, excludes: [] }, "x", NOW)).toEqual({
+    expect(
+      eligibleVersion(
+        times,
+        "1.2.0",
+        { seconds: 3 * DAY, excludes: [] },
+        "x",
+        NOW,
+      ),
+    ).toEqual({
       eligible: "1.1.0",
       ageGated: true,
     });
-    expect(eligibleVersion(times, "1.2.0", { seconds: 0, excludes: [] }, "x", NOW)).toEqual({
+    expect(
+      eligibleVersion(times, "1.2.0", { seconds: 0, excludes: [] }, "x", NOW),
+    ).toEqual({
       eligible: "1.2.0",
       ageGated: false,
     });
@@ -223,14 +264,21 @@ describe("release age", () => {
       ageGated: false,
     });
     expect(
-      eligibleVersion(undefined, "1.2.0", { seconds: 3 * DAY, excludes: [] }, "x", NOW),
+      eligibleVersion(
+        undefined,
+        "1.2.0",
+        { seconds: 3 * DAY, excludes: [] },
+        "x",
+        NOW,
+      ),
     ).toEqual({ eligible: "1.2.0", ageGated: false });
   });
 
   test("a prerelease is never the answer for a stable latest", () => {
     const t = { "9.0.0": iso(40), "10.0.0-rc.3": iso(20), "10.0.0": iso(1) };
     expect(
-      eligibleVersion(t, "10.0.0", { seconds: 3 * DAY, excludes: [] }, "x", NOW).eligible,
+      eligibleVersion(t, "10.0.0", { seconds: 3 * DAY, excludes: [] }, "x", NOW)
+        .eligible,
     ).toBeUndefined();
   });
 });
@@ -289,7 +337,9 @@ describe("rows and plan", () => {
   });
 
   test("targetOf is the installable release, and nothing while a whole major is too young", () => {
-    expect(targetOf({ ...by("waiting"), eligible: "1.0.5", ageGated: true } as Row)).toBe("1.0.5");
+    expect(
+      targetOf({ ...by("waiting"), eligible: "1.0.5", ageGated: true } as Row),
+    ).toBe("1.0.5");
     expect(targetOf(by("major"))).toBe("9.1.0");
     expect(
       targetOf({ ...by("major"), eligible: undefined, ageGated: true } as Row),
@@ -345,7 +395,11 @@ describe("families", () => {
       makeRow("@types/react-dom", "patch"),
       makeRow("zod"),
     ];
-    expect(expandMajors(["react"], rows)).toEqual(["@types/react", "react", "react-dom"]);
+    expect(expandMajors(["react"], rows)).toEqual([
+      "@types/react",
+      "react",
+      "react-dom",
+    ]);
     expect(expandMajors(["zod"], rows)).toEqual(["zod"]);
   });
 });
@@ -403,13 +457,25 @@ describe("spec edits", () => {
         base: "1.0.0",
       },
     ];
-    const { edits, errors } = specEdits(rows, ["a", "b", "h", "w", "ghost"], (r) =>
-      r.name === "w" ? undefined : (r.eligible ?? r.latest),
+    const { edits, errors } = specEdits(
+      rows,
+      ["a", "b", "h", "w", "ghost"],
+      (r) => (r.name === "w" ? undefined : (r.eligible ?? r.latest)),
     );
     expect(edits).toEqual([
       { file: "package.json", name: "a", from: "^1.0.0", to: "^2.1.0" },
-      { file: "packages/x/package.json", name: "b", from: "^1.0.0", to: "^2.0.0" },
-      { file: "packages/y/package.json", name: "b", from: "^1.0.0", to: "^2.0.0" },
+      {
+        file: "packages/x/package.json",
+        name: "b",
+        from: "^1.0.0",
+        to: "^2.0.0",
+      },
+      {
+        file: "packages/y/package.json",
+        name: "b",
+        from: "^1.0.0",
+        to: "^2.0.0",
+      },
     ]);
     expect(errors).toEqual([
       "h: held (peer)",
@@ -419,8 +485,11 @@ describe("spec edits", () => {
   });
 });
 
-const jsonResponse = (status: number, body: unknown = {}, headers: Record<string, string> = {}) =>
-  new Response(JSON.stringify(body), { status, headers });
+const jsonResponse = (
+  status: number,
+  body: unknown = {},
+  headers: Record<string, string> = {},
+) => new Response(JSON.stringify(body), { status, headers });
 
 const advisoryQuery = async () =>
   new Map([
@@ -429,7 +498,9 @@ const advisoryQuery = async () =>
     ["npm:dead@1.0.0", ["GHSA-4"]],
   ]);
 
-const latestStub = async (n: string) => ({ version: n === "dead" ? "1.0.0" : "2.0.0" });
+const latestStub = async (n: string) => ({
+  version: n === "dead" ? "1.0.0" : "2.0.0",
+});
 
 describe("registry access", () => {
   const sleeps: number[] = [];
@@ -493,7 +564,12 @@ describe("registry access", () => {
     });
     expect(ok).toEqual({ version: "2.0.0", deprecated: "use y" });
     expect(urls).toEqual(["https://registry.npmjs.org/@scope%2fpkg/latest"]);
-    expect(await npmLatest("gone", { fetcher: async () => jsonResponse(404), sleep })).toEqual({});
+    expect(
+      await npmLatest("gone", {
+        fetcher: async () => jsonResponse(404),
+        sleep,
+      }),
+    ).toEqual({});
   });
 
   test("openAdvisories splits held from open and marks fixable ones", async () => {
@@ -551,7 +627,9 @@ describe("arguments", () => {
       root: resolve("/r"),
     });
     expect(parseArgs([], "/r").sub).toBe("status");
-    expect(parseArgs(["verify", "--skip-tests", "--root", "/x/y"], "/r")).toMatchObject({
+    expect(
+      parseArgs(["verify", "--skip-tests", "--root", "/x/y"], "/r"),
+    ).toMatchObject({
       sub: "verify",
       skipTests: true,
       root: resolve("/x/y"),

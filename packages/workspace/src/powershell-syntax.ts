@@ -18,7 +18,8 @@ const parser = [
 
 function executable(explicit?: string): string {
   if (explicit) return explicit;
-  const found = Bun.which("pwsh") ?? Bun.which("powershell") ?? Bun.which("powershell.exe");
+  const found =
+    Bun.which("pwsh") ?? Bun.which("powershell") ?? Bun.which("powershell.exe");
   if (!found)
     throw new Error(
       "PowerShell 7 (pwsh) or Windows PowerShell is required to parse PowerShell sources",
@@ -43,7 +44,14 @@ export async function runPowerShellSyntax(args: string[]): Promise<number> {
   if (!root) throw new Error("--root requires a repository path");
   root = resolve(root);
   const child = Bun.spawn(
-    [executable(selectedRuntime), "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", parser],
+    [
+      executable(selectedRuntime),
+      "-NoLogo",
+      "-NoProfile",
+      "-NonInteractive",
+      "-Command",
+      parser,
+    ],
     {
       windowsHide: true,
       cwd: root,
@@ -58,10 +66,13 @@ export async function runPowerShellSyntax(args: string[]): Promise<number> {
     new Response(child.stderr).text(),
   ]);
   if (exitCode !== 0)
-    throw new Error(stderr.trim() || "PowerShell parser exited with status " + exitCode);
+    throw new Error(
+      stderr.trim() || "PowerShell parser exited with status " + exitCode,
+    );
   const report = (JSON.parse(stdout) as ParseError[] | null) ?? [];
   console.log(JSON.stringify(report));
   return report.length ? 1 : 0;
 }
 
-if (import.meta.main) process.exit(await runPowerShellSyntax(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runPowerShellSyntax(process.argv.slice(2)));

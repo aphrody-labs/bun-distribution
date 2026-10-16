@@ -30,7 +30,8 @@ import { API_URL as API } from "@/lib/config";
 export function assetCdnUrl(path: string): string {
   const propre = path.replace(/^\.?\//, "");
   // oxlint-disable-next-line no-control-regex
-  const encode = (s: string) => s.replace(/[^\x00-\x7F]/g, (c) => encodeURIComponent(c));
+  const encode = (s: string) =>
+    s.replace(/[^\x00-\x7F]/g, (c) => encodeURIComponent(c));
   if (propre.startsWith("assets/")) return `${API}/${encode(propre)}`;
   return `${API}/db/${encode(propre)}`;
 }

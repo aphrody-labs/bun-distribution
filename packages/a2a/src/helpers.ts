@@ -34,8 +34,14 @@ export function urlPart(url: string, extras: PartExtras = {}): Part {
 }
 
 /** File content part: bytes are base64-encoded for the wire. */
-export function rawPart(content: Uint8Array | string, extras: PartExtras = {}): Part {
-  return { raw: typeof content === "string" ? content : encodeBase64(content), ...extras };
+export function rawPart(
+  content: Uint8Array | string,
+  extras: PartExtras = {},
+): Part {
+  return {
+    raw: typeof content === "string" ? content : encodeBase64(content),
+    ...extras,
+  };
 }
 
 export function encodeBase64(bytes: Uint8Array): string {
@@ -82,7 +88,9 @@ function buildMessage(
     ...(options.taskId ? { taskId: options.taskId } : {}),
     ...(options.metadata ? { metadata: options.metadata } : {}),
     ...(options.extensions ? { extensions: options.extensions } : {}),
-    ...(options.referenceTaskIds ? { referenceTaskIds: options.referenceTaskIds } : {}),
+    ...(options.referenceTaskIds
+      ? { referenceTaskIds: options.referenceTaskIds }
+      : {}),
   };
 }
 
@@ -139,7 +147,9 @@ export function artifactText(artifact: Artifact): string {
 
 /** Text produced by a task: its artifacts first, else the status message. */
 export function taskText(task: Task): string {
-  const fromArtifacts = (task.artifacts ?? []).map(artifactText).filter((t) => t !== "");
+  const fromArtifacts = (task.artifacts ?? [])
+    .map(artifactText)
+    .filter((t) => t !== "");
   if (fromArtifacts.length > 0) return fromArtifacts.join("\n");
   return messageText(task.status.message);
 }
@@ -150,13 +160,17 @@ export function responseTask(response: SendMessageResponse): Task | undefined {
 }
 
 /** The direct message of a `SendMessage` answer, when the agent did not create a task. */
-export function responseMessage(response: SendMessageResponse): Message | undefined {
+export function responseMessage(
+  response: SendMessageResponse,
+): Message | undefined {
   return response.message;
 }
 
 /** Text of an answer, whichever form the agent chose. */
 export function responseText(response: SendMessageResponse): string {
-  return response.task ? taskText(response.task) : messageText(response.message);
+  return response.task
+    ? taskText(response.task)
+    : messageText(response.message);
 }
 
 /**
@@ -190,10 +204,15 @@ export function applyStreamResponse(
           status: { state: "TASK_STATE_WORKING" },
         } as Task);
       const artifacts = [...(base.artifacts ?? [])];
-      const index = artifacts.findIndex((a) => a.artifactId === update.artifact.artifactId);
+      const index = artifacts.findIndex(
+        (a) => a.artifactId === update.artifact.artifactId,
+      );
       const existing = index >= 0 ? artifacts[index] : undefined;
       if (existing && update.append) {
-        artifacts[index] = { ...existing, parts: [...existing.parts, ...update.artifact.parts] };
+        artifacts[index] = {
+          ...existing,
+          parts: [...existing.parts, ...update.artifact.parts],
+        };
       } else if (index >= 0) {
         artifacts[index] = update.artifact;
       } else {

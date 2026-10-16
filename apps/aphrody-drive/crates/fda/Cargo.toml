@@ -1,10 +1,10 @@
 [package]
-name    = "sd-fda"
+name = "sd-fda"
 version = "0.1.0"
 
-authors              = ["Jake Robinson <jake@spacedrive.com>"]
-edition.workspace    = true
-license.workspace    = true
+authors = ["Jake Robinson <jake@spacedrive.com>"]
+edition.workspace = true
+license.workspace = true
 repository.workspace = true
 
 [dependencies]

@@ -16,9 +16,7 @@ export const Favicon = ({ url, className = "h-4 w-4" }: Props) => {
   useEffect(() => setFailed(false), [url]);
 
   if (!src || failed) {
-    return (
-      <LinkIcon  className={`${className} text-base-fg/45`} />
-    );
+    return <LinkIcon className={`${className} text-base-fg/45`} />;
   }
   return (
     <img

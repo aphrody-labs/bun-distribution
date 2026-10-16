@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Bun docs pages of the aphrody-labs/bun fork, read from the corpus chosen by `resolveBunDocs` (no copy in Aphrody). */
 import { join } from "node:path";
-import { resolveBunDocs, type ResolveBunDocsOptions } from "./bun-upstream-docs.ts";
+import {
+  resolveBunDocs,
+  type ResolveBunDocsOptions,
+} from "./bun-upstream-docs.ts";
 
 export const BUN_DOCUMENTS = [
   {
@@ -76,7 +79,9 @@ export interface BunDocument {
 }
 
 /** The pages of {@link BUN_DOCUMENTS} with their Markdown, from the fork checkout or its versioned download. */
-export async function loadBunDocuments(options?: ResolveBunDocsOptions): Promise<BunDocument[]> {
+export async function loadBunDocuments(
+  options?: ResolveBunDocsOptions,
+): Promise<BunDocument[]> {
   const { dir } = await resolveBunDocs(options);
   return await Promise.all(
     BUN_DOCUMENTS.map(async (document) =>
@@ -104,12 +109,17 @@ export async function searchBunDocs(
         const normalized = line.toLocaleLowerCase();
         const score = terms.reduce(
           (total, term) =>
-            total + (normalized.includes(term) ? 2 : 0) + (title.includes(term) ? 1 : 0),
+            total +
+            (normalized.includes(term) ? 2 : 0) +
+            (title.includes(term) ? 1 : 0),
           0,
         );
-        if (score > best.score) best = { score, excerpt: line.trim().slice(0, 320) };
+        if (score > best.score)
+          best = { score, excerpt: line.trim().slice(0, 320) };
       }
-      return best.score > 0 ? [{ title: document.title, source: document.source, ...best }] : [];
+      return best.score > 0
+        ? [{ title: document.title, source: document.source, ...best }]
+        : [];
     })
     .toSorted((left, right) => right.score - left.score)
     .slice(0, limit);

@@ -1,5 +1,9 @@
 import { MediaUploadApi } from "@storyteller/api";
-import { FilterEngineCategories, MediaFileAnimationType, getFileExtension } from "../../Types";
+import {
+  FilterEngineCategories,
+  MediaFileAnimationType,
+  getFileExtension,
+} from "../../Types";
 
 export const uploadAsset = async ({
   file,

@@ -40,7 +40,8 @@ import {
 import { crudBase, WIKI_TABLE_SPECS } from "@/lib/wiki-tables";
 
 /** jsonb gérés par un panneau dédié — pas de champ SmartField (sinon corruption string). */
-const JSONB_PANEL_COLS = /^(pages|media|stats|links|articleSources|frames|players|subtitles)$/;
+const JSONB_PANEL_COLS =
+  /^(pages|media|stats|links|articleSources|frames|players|subtitles)$/;
 
 interface Props {
   table: string;
@@ -50,7 +51,9 @@ interface Props {
 type Row = Record<string, unknown>;
 
 function toDraft(cols: string[], row: Row | null): Record<string, string> {
-  return Object.fromEntries(cols.map((c) => [c, row?.[c] != null ? String(row[c]) : ""]));
+  return Object.fromEntries(
+    cols.map((c) => [c, row?.[c] != null ? String(row[c]) : ""]),
+  );
 }
 
 export function WikiStudio({ table, id }: Props) {
@@ -66,8 +69,13 @@ export function WikiStudio({ table, id }: Props) {
     [spec],
   );
 
-  const [draft, setDraft] = useState<Record<string, string>>(() => toDraft(cols, null));
-  const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const [draft, setDraft] = useState<Record<string, string>>(() =>
+    toDraft(cols, null),
+  );
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    msg: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -101,8 +109,12 @@ export function WikiStudio({ table, id }: Props) {
   const save = useMutation({
     mutationFn: async () => {
       const body = buildSubmitBody(draft, row, cols, { mode });
-      if (mode === "create") return client.post<{ ok: boolean; row?: Row }>(`/${table}`, body);
-      return client.put<{ ok: boolean; row?: Row }>(`/${table}/${encodeURIComponent(id)}`, body);
+      if (mode === "create")
+        return client.post<{ ok: boolean; row?: Row }>(`/${table}`, body);
+      return client.put<{ ok: boolean; row?: Row }>(
+        `/${table}/${encodeURIComponent(id)}`,
+        body,
+      );
     },
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["db", table] });
@@ -114,9 +126,12 @@ export function WikiStudio({ table, id }: Props) {
         qc.setQueryData(["wiki-studio", table, String(newId)], savedRow);
       // Création → bascule sur l'URL d'édition de la nouvelle entrée.
       if (mode === "create" && newId != null)
-        router.replace(`/admin/wiki/studio/${table}/${encodeURIComponent(String(newId))}`);
+        router.replace(
+          `/admin/wiki/studio/${table}/${encodeURIComponent(String(newId))}`,
+        );
     },
-    onError: (err: Error) => setToast({ type: "error", msg: `Erreur : ${err.message}` }),
+    onError: (err: Error) =>
+      setToast({ type: "error", msg: `Erreur : ${err.message}` }),
   });
 
   // Le studio ne pilote que les entités « contenu » à pk simple (cf. STUDIO_TABLES) ;
@@ -124,11 +139,16 @@ export function WikiStudio({ table, id }: Props) {
   if (!spec || !isStudioTable(table)) {
     return (
       <div className="card py-12 text-center">
-        <p className="mb-1 font-saiyan uppercase text-dbz-orange">Table non éditable ici</p>
+        <p className="mb-1 font-saiyan uppercase text-dbz-orange">
+          Table non éditable ici
+        </p>
         <p className="text-sm text-white/50">
-          <code className="font-mono">{table}</code> n&apos;est pas une entité wiki gérée par le
-          studio.{" "}
-          <a href={`/admin/database/${table}`} className="text-dbz-orange hover:underline">
+          <code className="font-mono">{table}</code> n&apos;est pas une entité
+          wiki gérée par le studio.{" "}
+          <a
+            href={`/admin/database/${table}`}
+            className="text-dbz-orange hover:underline"
+          >
             Ouvrir l&apos;éditeur classique
           </a>
           .
@@ -139,7 +159,8 @@ export function WikiStudio({ table, id }: Props) {
 
   const humanTable = TABLE_LABELS[table] ?? table;
   const title = (draft.name ?? draft.title ?? "").trim();
-  const publicUrl = mode === "edit" ? publicEntityUrl(table, { id, slug: draft.slug }) : null;
+  const publicUrl =
+    mode === "edit" ? publicEntityUrl(table, { id, slug: draft.slug }) : null;
   // En édition, on ne peut enregistrer qu'une fois la ligne chargée (sinon le
   // body serait vide → écrasement potentiel par valeurs vides).
   const notReady = mode === "edit" && !rowQuery.data;
@@ -181,7 +202,9 @@ export function WikiStudio({ table, id }: Props) {
         </button>
         <div className="min-w-0 flex-1">
           <h2 className="truncate font-saiyan text-xl uppercase text-dbz-orange">
-            {mode === "create" ? `Nouvelle entrée · ${humanTable}` : title || humanTable}
+            {mode === "create"
+              ? `Nouvelle entrée · ${humanTable}`
+              : title || humanTable}
           </h2>
           <code className="font-mono text-[10px] text-white/25">
             {table}
@@ -189,7 +212,12 @@ export function WikiStudio({ table, id }: Props) {
           </code>
         </div>
         {publicUrl && (
-          <a href={publicUrl} target="_blank" rel="noreferrer" className="btn btn-ghost">
+          <a
+            href={publicUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="btn btn-ghost"
+          >
             <LienExterne className="h-3.5 w-3.5" />
             Page publique
           </a>
@@ -209,8 +237,12 @@ export function WikiStudio({ table, id }: Props) {
         <div className="card h-96 animate-pulse" />
       ) : mode === "edit" && rowQuery.isError ? (
         <div className="card py-12 text-center">
-          <p className="mb-1 font-saiyan uppercase text-dbz-orange">Entrée introuvable</p>
-          <p className="text-sm text-white/50">Impossible de charger cette ligne.</p>
+          <p className="mb-1 font-saiyan uppercase text-dbz-orange">
+            Entrée introuvable
+          </p>
+          <p className="text-sm text-white/50">
+            Impossible de charger cette ligne.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -255,14 +287,18 @@ export function WikiStudio({ table, id }: Props) {
                 <RelationsPanel table={table} entityId={id} />
               ) : (
                 <div className="dbz-panel p-5 text-xs text-white/50">
-                  Enregistre d&apos;abord cette entrée pour gérer ses relations (techniques,
-                  personnages…).
+                  Enregistre d&apos;abord cette entrée pour gérer ses relations
+                  (techniques, personnages…).
                 </div>
               ))}
             {secType &&
               (mode === "edit" ? (
                 <>
-                  <WikiSectionsPanel table={table} entityId={id} entityType={secType} />
+                  <WikiSectionsPanel
+                    table={table}
+                    entityId={id}
+                    entityType={secType}
+                  />
                   <WikiAiAssistant
                     entityType={secType}
                     entityId={id}
@@ -275,14 +311,15 @@ export function WikiStudio({ table, id }: Props) {
                 </>
               ) : (
                 <div className="dbz-panel p-5 text-xs text-white/50">
-                  Enregistre d&apos;abord cette entrée pour ajouter ses sections de contenu
-                  (histoire, personnalité, anecdotes…).
+                  Enregistre d&apos;abord cette entrée pour ajouter ses sections
+                  de contenu (histoire, personnalité, anecdotes…).
                 </div>
               ))}
             {mode === "edit" && (
               <details className="dbz-panel p-5">
                 <summary className="flex cursor-pointer items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-dbz-blue-light">
-                  <Historique className="h-3.5 w-3.5" /> Historique des révisions
+                  <Historique className="h-3.5 w-3.5" /> Historique des
+                  révisions
                 </summary>
                 <div className="mt-4">
                   <WikiHistory table={table} rowId={id} compact />
@@ -301,8 +338,8 @@ export function WikiStudio({ table, id }: Props) {
           </div>
         ) : (
           <div className="dbz-panel mt-2 p-5 text-xs text-white/50">
-            Enregistre d&apos;abord cette entrée pour ajouter les pages du lecteur (numéro + image +
-            texte sous chaque planche).
+            Enregistre d&apos;abord cette entrée pour ajouter les pages du
+            lecteur (numéro + image + texte sous chaque planche).
           </div>
         ))}
 
@@ -314,7 +351,8 @@ export function WikiStudio({ table, id }: Props) {
           </div>
         ) : (
           <div className="dbz-panel mt-2 p-5 text-xs text-white/50">
-            Enregistre d&apos;abord ce jeu pour ajouter la galerie (screenshots + trailers YouTube).
+            Enregistre d&apos;abord ce jeu pour ajouter la galerie (screenshots
+            + trailers YouTube).
           </div>
         ))}
 
@@ -327,8 +365,8 @@ export function WikiStudio({ table, id }: Props) {
           </div>
         ) : (
           <div className="dbz-panel mt-2 p-5 text-xs text-white/50">
-            Enregistre d&apos;abord ce personnage pour gérer ses stats scouter et ses
-            transformations.
+            Enregistre d&apos;abord ce personnage pour gérer ses stats scouter
+            et ses transformations.
           </div>
         ))}
     </div>
@@ -353,9 +391,17 @@ function Field({
     <div>
       <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-dbz-blue-light">
         {colLabel(col)}
-        <span className="ml-2 font-mono font-normal normal-case text-white/25">{col}</span>
+        <span className="ml-2 font-mono font-normal normal-case text-white/25">
+          {col}
+        </span>
       </label>
-      <SmartField table={table} col={col} value={value} original={original} onChange={onChange} />
+      <SmartField
+        table={table}
+        col={col}
+        value={value}
+        original={original}
+        onChange={onChange}
+      />
     </div>
   );
 }

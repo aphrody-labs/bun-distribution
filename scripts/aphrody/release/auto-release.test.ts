@@ -24,21 +24,38 @@ test("the host catalog stays consistent with the self-update units", () => {
     ["", "vps"],
     ["-dbfr", "dbfr"],
   ] as const) {
-    const service = catalog.units.find((u) => u.unit === `aphrody-self-update${suffix}.service`);
-    const timer = catalog.units.find((u) => u.unit === `aphrody-self-update${suffix}.timer`);
+    const service = catalog.units.find(
+      (u) => u.unit === `aphrody-self-update${suffix}.service`,
+    );
+    const timer = catalog.units.find(
+      (u) => u.unit === `aphrody-self-update${suffix}.timer`,
+    );
     expect(service?.targetHost).toBe(target);
     expect(timer?.pairs).toBe(`aphrody-self-update${suffix}.service`);
     expect(
-      read(`tools/config/host/systemd/aphrody/aphrody-self-update${suffix}.service`),
+      read(
+        `tools/config/host/systemd/aphrody/aphrody-self-update${suffix}.service`,
+      ),
     ).toContain("aphrody self update");
   }
-  const task = catalog.scheduledTasks.find((t) => t.task === "Aphrody self update");
+  const task = catalog.scheduledTasks.find(
+    (t) => t.task === "Aphrody self update",
+  );
   expect(task?.command).toBe("aphrody self update");
   // Registered by `aphrody infra boot apply` from the boot catalog entry (hidden S4U task).
   const boot = JSON.parse(read("tools/config/service-catalog.json")) as {
-    boot: { entries: { host: string; name?: string; arguments?: string; triggers?: string[] }[] };
+    boot: {
+      entries: {
+        host: string;
+        name?: string;
+        arguments?: string;
+        triggers?: string[];
+      }[];
+    };
   };
-  const entry = boot.boot.entries.find((e) => `${e.host}:${e.name}` === task!.bootEntry);
+  const entry = boot.boot.entries.find(
+    (e) => `${e.host}:${e.name}` === task!.bootEntry,
+  );
   expect(`aphrody ${entry?.arguments}`).toBe(task!.command);
   expect(entry?.triggers).toContain(`every:${task!.intervalMinutes}m`);
 });
@@ -56,7 +73,9 @@ test("release-main.yml has gates, a build matrix, publication and host deploymen
     "cancel-in-progress: false",
   ])
     expect(workflow).toContain(needle);
-  expect(workflow).not.toMatch(/(ghp_|github_pat_|BEGIN [A-Z ]*PRIVATE KEY|sk-[A-Za-z0-9]{20})/);
+  expect(workflow).not.toMatch(
+    /(ghp_|github_pat_|BEGIN [A-Z ]*PRIVATE KEY|sk-[A-Za-z0-9]{20})/,
+  );
   // every credential comes from the secrets / vars context
   expect(workflow).toContain("secrets.RELEASE_SSH_KEY");
 });

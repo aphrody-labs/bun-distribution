@@ -29,7 +29,14 @@ const ENVIRONMENT = "Environment";
 const openAdvapi32 = () =>
   dlopen("advapi32.dll", {
     RegSetKeyValueW: {
-      args: [FFIType.i64, FFIType.ptr, FFIType.ptr, FFIType.u32, FFIType.ptr, FFIType.u32],
+      args: [
+        FFIType.i64,
+        FFIType.ptr,
+        FFIType.ptr,
+        FFIType.u32,
+        FFIType.ptr,
+        FFIType.u32,
+      ],
       returns: FFIType.i32,
     },
     RegGetValueW: {
@@ -44,14 +51,23 @@ const openAdvapi32 = () =>
       ],
       returns: FFIType.i32,
     },
-    RegDeleteKeyValueW: { args: [FFIType.i64, FFIType.ptr, FFIType.ptr], returns: FFIType.i32 },
+    RegDeleteKeyValueW: {
+      args: [FFIType.i64, FFIType.ptr, FFIType.ptr],
+      returns: FFIType.i32,
+    },
     RegDeleteKeyW: { args: [FFIType.i64, FFIType.ptr], returns: FFIType.i32 },
-    OpenProcessToken: { args: [FFIType.i64, FFIType.u32, FFIType.ptr], returns: FFIType.i32 },
+    OpenProcessToken: {
+      args: [FFIType.i64, FFIType.u32, FFIType.ptr],
+      returns: FFIType.i32,
+    },
     GetTokenInformation: {
       args: [FFIType.ptr, FFIType.i32, FFIType.ptr, FFIType.u32, FFIType.ptr],
       returns: FFIType.i32,
     },
-    ConvertSidToStringSidW: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.i32 },
+    ConvertSidToStringSidW: {
+      args: [FFIType.ptr, FFIType.ptr],
+      returns: FFIType.i32,
+    },
     ConvertStringSecurityDescriptorToSecurityDescriptorW: {
       args: [FFIType.ptr, FFIType.u32, FFIType.ptr, FFIType.ptr],
       returns: FFIType.i32,
@@ -142,10 +158,14 @@ function slot(cell: BigUint64Array): Pointer {
 }
 
 /** Writes REG_SZ values under `HKCU\<subKey>` (created when missing). */
-export function setUserValues(subKey: string, values: Record<string, string>): void {
+export function setUserValues(
+  subKey: string,
+  values: Record<string, string>,
+): void {
   const key = wide(subKey);
   for (const [name, value] of Object.entries(values)) {
-    if (!name || name.includes("=")) throw new Error(`nom de variable invalide : ${name}`);
+    if (!name || name.includes("="))
+      throw new Error(`nom de variable invalide : ${name}`);
     const data = wide(value);
     const status = api().RegSetKeyValueW(
       HKEY_CURRENT_USER,
@@ -155,7 +175,8 @@ export function setUserValues(subKey: string, values: Record<string, string>): v
       ptr(data),
       data.byteLength,
     );
-    if (status !== 0) throw new Error(`RegSetKeyValueW(HKCU\\${subKey}\\${name}) : ${status}`);
+    if (status !== 0)
+      throw new Error(`RegSetKeyValueW(HKCU\\${subKey}\\${name}) : ${status}`);
   }
 }
 
@@ -174,7 +195,8 @@ export function userValue(subKey: string, name: string): string | null {
     ptr(size),
   );
   if (probe === ERROR_FILE_NOT_FOUND) return null;
-  if (probe !== 0) throw new Error(`RegGetValueW(HKCU\\${subKey}\\${name}) : ${probe}`);
+  if (probe !== 0)
+    throw new Error(`RegGetValueW(HKCU\\${subKey}\\${name}) : ${probe}`);
   const data = new Uint8Array(size[0]!);
   const status = api().RegGetValueW(
     HKEY_CURRENT_USER,
@@ -185,17 +207,26 @@ export function userValue(subKey: string, name: string): string | null {
     ptr(data),
     ptr(size),
   );
-  if (status !== 0) throw new Error(`RegGetValueW(HKCU\\${subKey}\\${name}) : ${status}`);
-  return Buffer.from(data.buffer, 0, Math.max(0, size[0]! - 2)).toString("utf16le");
+  if (status !== 0)
+    throw new Error(`RegGetValueW(HKCU\\${subKey}\\${name}) : ${status}`);
+  return Buffer.from(data.buffer, 0, Math.max(0, size[0]! - 2)).toString(
+    "utf16le",
+  );
 }
 
 /** Removes values under `HKCU\<subKey>`; absent values are not an error. */
 export function deleteUserValues(subKey: string, names: string[]): void {
   const key = wide(subKey);
   for (const name of names) {
-    const status = api().RegDeleteKeyValueW(HKEY_CURRENT_USER, ptr(key), ptr(wide(name)));
+    const status = api().RegDeleteKeyValueW(
+      HKEY_CURRENT_USER,
+      ptr(key),
+      ptr(wide(name)),
+    );
     if (status !== 0 && status !== ERROR_FILE_NOT_FOUND)
-      throw new Error(`RegDeleteKeyValueW(HKCU\\${subKey}\\${name}) : ${status}`);
+      throw new Error(
+        `RegDeleteKeyValueW(HKCU\\${subKey}\\${name}) : ${status}`,
+      );
   }
 }
 
@@ -247,7 +278,15 @@ export function currentUserSid(): string {
     const size = new Uint32Array(1);
     api().GetTokenInformation(handle, TOKEN_USER, null, 0, ptr(size));
     const info = new BigUint64Array(Math.ceil(size[0]! / 8));
-    if (!api().GetTokenInformation(handle, TOKEN_USER, ptr(info), size[0]!, ptr(size)))
+    if (
+      !api().GetTokenInformation(
+        handle,
+        TOKEN_USER,
+        ptr(info),
+        size[0]!,
+        ptr(size),
+      )
+    )
       throw new Error(`GetTokenInformation : ${kernel().GetLastError()}`);
     // TOKEN_USER { SID_AND_ATTRIBUTES { PSID Sid; DWORD Attributes } }
     const text = new BigUint64Array(1);
@@ -274,7 +313,10 @@ export function ownerOnlySddl(sid: string, directory: boolean): string {
  * user full control: inherited entries are dropped, nothing else (SYSTEM, Administrators) keeps
  * access. Same effect as `icacls /inheritance:r /grant:r <user>:F`.
  */
-export function restrictToCurrentUser(path: string, directory: boolean): string {
+export function restrictToCurrentUser(
+  path: string,
+  directory: boolean,
+): string {
   const sddl = ownerOnlySddl(currentUserSid(), directory);
   const descriptor = new BigUint64Array(1);
   if (
@@ -293,7 +335,12 @@ export function restrictToCurrentUser(path: string, directory: boolean): string 
     const defaulted = new Int32Array(1);
     const dacl = new BigUint64Array(1);
     if (
-      !api().GetSecurityDescriptorDacl(slot(descriptor), ptr(present), ptr(dacl), ptr(defaulted)) ||
+      !api().GetSecurityDescriptorDacl(
+        slot(descriptor),
+        ptr(present),
+        ptr(dacl),
+        ptr(defaulted),
+      ) ||
       !present[0]
     )
       throw new Error("GetSecurityDescriptorDacl");
@@ -306,7 +353,8 @@ export function restrictToCurrentUser(path: string, directory: boolean): string 
       slot(dacl),
       null,
     );
-    if (status !== 0) throw new Error(`SetNamedSecurityInfoW(${path}) : ${status}`);
+    if (status !== 0)
+      throw new Error(`SetNamedSecurityInfoW(${path}) : ${status}`);
     return sddl;
   } finally {
     kernel().LocalFree(slot(descriptor));
@@ -326,7 +374,8 @@ export function daclSddl(path: string): string {
     null,
     ptr(descriptor),
   );
-  if (status !== 0) throw new Error(`GetNamedSecurityInfoW(${path}) : ${status}`);
+  if (status !== 0)
+    throw new Error(`GetNamedSecurityInfoW(${path}) : ${status}`);
   try {
     const text = new BigUint64Array(1);
     if (

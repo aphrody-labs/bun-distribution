@@ -5,7 +5,12 @@
 // This ambient module supplies the one type it needs (simplified: methods returning the vanilla
 // instance keep their vanilla signature). build.ts resolves the runtime import the same way.
 declare module "framework-utils" {
-  export type MethodInterface<Methods, _Target extends Methods, _ReturnTarget, _Duplicate = {}> = {
+  export type MethodInterface<
+    Methods,
+    _Target extends Methods,
+    _ReturnTarget,
+    _Duplicate = {},
+  > = {
     [K in keyof Methods]: Methods[K];
   };
 }

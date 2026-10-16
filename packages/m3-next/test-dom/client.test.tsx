@@ -10,14 +10,16 @@ import {
   type M3ThemeContextType,
 } from "../src/client";
 
-(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 const { act } = await import("react");
 const { createRoot } = await import("react-dom/client");
 
 // happy-dom stores cookies only for http(s) documents.
-(window as unknown as { happyDOM: { setURL(url: string): void } }).happyDOM.setURL(
-  "http://localhost/",
-);
+(
+  window as unknown as { happyDOM: { setURL(url: string): void } }
+).happyDOM.setURL("http://localhost/");
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 let root: ReturnType<typeof createRoot> | undefined;
@@ -195,13 +197,19 @@ describe("M3ThemeProvider", () => {
 
   test("schemeInlined={false} computes the roles on mount", async () => {
     await mount(
-      <M3ThemeProvider defaultThemeMode="dark" defaultSeedColor="#0b57d0" schemeInlined={false}>
+      <M3ThemeProvider
+        defaultThemeMode="dark"
+        defaultSeedColor="#0b57d0"
+        schemeInlined={false}
+      >
         <Probe />
       </M3ThemeProvider>,
     );
     await act(async () => {
       await sleep(50);
     });
-    expect(html.style.getPropertyValue("--md-sys-color-primary")).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(html.style.getPropertyValue("--md-sys-color-primary")).toMatch(
+      /^#[0-9a-f]{6}$/i,
+    );
   });
 });

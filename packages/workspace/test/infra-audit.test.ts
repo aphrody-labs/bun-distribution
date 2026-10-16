@@ -15,7 +15,9 @@ import {
 import { sensitiveInventoryPath } from "../../../scripts/aphrody/tools/infra/check-infra.ts";
 
 test("tracked inventory allows templates and SQL source but detects private runtime files", () => {
-  expect(sensitiveInventoryPath("tools/config/local-ai.env.example")).toBe(false);
+  expect(sensitiveInventoryPath("tools/config/local-ai.env.example")).toBe(
+    false,
+  );
   expect(sensitiveInventoryPath("config/schema.sql")).toBe(false);
   expect(sensitiveInventoryPath("config/.env.production")).toBe(true);
   expect(sensitiveInventoryPath("inventory/private.key")).toBe(true);
@@ -28,7 +30,9 @@ test("host roles exclude retired/staged services and do not expect VPS applicati
     { id: "old", unit: "old.service", status: "retired" },
     { id: "stage", unit: "stage.service", staged: true },
   ];
-  expect(hostServices(services, "vps").map((service) => service.id)).toEqual(["app"]);
+  expect(hostServices(services, "vps").map((service) => service.id)).toEqual([
+    "app",
+  ]);
   expect(hostServices(services, "dbfr")).toEqual([]);
   expect(hostServices(services, "wsl")).toEqual([]);
 });
@@ -60,7 +64,11 @@ test.skipIf(process.platform !== "win32")(
       await writeFile(join(bin, executable), "@echo off\r\necho local-bin\r\n");
       const command = process.env.ComSpec;
       expect(command).toBeTruthy();
-      const result = await observeCommand("local-bin", [command!, "/d", "/c", executable], root);
+      const result = await observeCommand(
+        "local-bin",
+        [command!, "/d", "/c", executable],
+        root,
+      );
       expect(result.exitCode).toBe(0);
       expect(result.stdout.trim()).toBe("local-bin");
     } finally {
@@ -95,7 +103,11 @@ test("audit execution rejects Cargo compilation and Next builds before spawning 
 
 test("remote probe transports URL data literally and parses as Python", async () => {
   const command = hostProbeCommand("vps", [
-    { id: "test", unit: "test.service", health: "http://127.0.0.1/?x='$(touch /tmp/never)'" },
+    {
+      id: "test",
+      unit: "test.service",
+      health: "http://127.0.0.1/?x='$(touch /tmp/never)'",
+    },
   ]);
   const encoded = command.match(/b64decode\("([A-Za-z0-9+/=]+)"\)/)![1]!;
   const script = Buffer.from(encoded, "base64").toString();
@@ -103,7 +115,9 @@ test("remote probe transports URL data literally and parses as Python", async ()
     "syntax",
     // Python is run through uv (repository policy; Windows' python3 is a Store stub) when available.
     [
-      ...(Bun.which("uv") ? ["uv", "run", "--no-project", "--quiet", "python"] : ["python3"]),
+      ...(Bun.which("uv")
+        ? ["uv", "run", "--no-project", "--quiet", "python"]
+        : ["python3"]),
       "-c",
       "import ast,sys;ast.parse(sys.argv[1])",
       script,
@@ -121,14 +135,25 @@ function healthyHost() {
   return {
     hostname: "fixture-vps",
     observedAt: new Date().toISOString(),
-    units: ["nginx.service", "postgresql.service", "redis-server.service", "app.service"].map(
-      (name) => ({
-        name,
-        exitCode: 0,
-        properties: { LoadState: "loaded", ActiveState: "active" },
-      }),
-    ),
-    health: [{ id: "app", kind: "health", url: "http://127.0.0.1/health", status: 200, ok: true }],
+    units: [
+      "nginx.service",
+      "postgresql.service",
+      "redis-server.service",
+      "app.service",
+    ].map((name) => ({
+      name,
+      exitCode: 0,
+      properties: { LoadState: "loaded", ActiveState: "active" },
+    })),
+    health: [
+      {
+        id: "app",
+        kind: "health",
+        url: "http://127.0.0.1/health",
+        status: 200,
+        ok: true,
+      },
+    ],
     paths: [{ id: "app", path: "/home/ubuntu/apps/app/current", exists: true }],
     failedUnits: { exitCode: 0, units: [] as string[] },
     postgresqlReady: { exitCode: 0 },
@@ -158,10 +183,17 @@ test("readiness missing, redirects and stopped units cannot qualify VPS producti
   const snapshot = healthyHost();
   snapshot.health[0]!.status = 302;
   snapshot.units[3]!.properties.ActiveState = "inactive";
-  const result = qualifyHost("vps", snapshot, [{ ...app, readiness: "http://127.0.0.1/ready" }], 0);
+  const result = qualifyHost(
+    "vps",
+    snapshot,
+    [{ ...app, readiness: "http://127.0.0.1/ready" }],
+    0,
+  );
   expect(result.failures).toContain("app readiness failed (not observed)");
   expect(result.failures).toContain("app health failed (302)");
-  expect(result.failures).toContain("Unit app.service is unavailable or inactive");
+  expect(result.failures).toContain(
+    "Unit app.service is unavailable or inactive",
+  );
 });
 
 test("optional service faults and absent WSL database roles remain explicit optional findings", () => {
@@ -173,7 +205,11 @@ test("optional service faults and absent WSL database roles remain explicit opti
   expect(result.optionalFailures).toContain("app health failed (503)");
   const wsl = qualifyHost(
     "wsl",
-    { hostname: "wsl", observedAt: "2026-10-01", failedUnits: { exitCode: 0, units: [] } },
+    {
+      hostname: "wsl",
+      observedAt: "2026-10-01",
+      failedUnits: { exitCode: 0, units: [] },
+    },
     [],
     0,
   );
@@ -197,8 +233,18 @@ test("historical reports identify excluded commands without qualifying current s
   const prior = {
     results: [
       { ...current, status: "passed" },
-      { name: "TS", command: ["tsc", "--build"], cwd: "/fixture", status: "passed" },
-      { name: "Rust check", command: ["cargo", "check"], cwd: "/fixture", status: "passed" },
+      {
+        name: "TS",
+        command: ["tsc", "--build"],
+        cwd: "/fixture",
+        status: "passed",
+      },
+      {
+        name: "Rust check",
+        command: ["cargo", "check"],
+        cwd: "/fixture",
+        status: "passed",
+      },
     ],
   };
   const result = classifyGateEvidence(prior, [current]);
@@ -222,7 +268,10 @@ test("source inventory parses actual TS/TSX syntax without executing adapters", 
     await mkdir(join(root, "packages/infra/fixture"), { recursive: true });
     await mkdir(join(root, "scripts/tools"), { recursive: true });
     await Bun.write(join(root, "Cargo.toml"), "[workspace]\nmembers=[]\n");
-    await Bun.write(join(root, "packages/infra/fixture/invalid.ts"), "const value = ;");
+    await Bun.write(
+      join(root, "packages/infra/fixture/invalid.ts"),
+      "const value = ;",
+    );
     await Bun.write(
       join(root, "packages/infra/fixture/view.tsx"),
       "export const View = () => <div />;",
@@ -232,13 +281,17 @@ test("source inventory parses actual TS/TSX syntax without executing adapters", 
       `await Bun.write(${JSON.stringify(join(root, "executed"))}, "executed");\n`,
     );
     const result = await sourceInventory(root);
-    expect(result.infraSources.find((source) => source.path.endsWith("invalid.ts"))?.syntax).toBe(
-      "failed",
+    expect(
+      result.infraSources.find((source) => source.path.endsWith("invalid.ts"))
+        ?.syntax,
+    ).toBe("failed");
+    expect(
+      result.infraSources.find((source) => source.path.endsWith("view.tsx"))
+        ?.syntax,
+    ).toBe("parsed");
+    expect(result.scripts[0]?.qualification).toBe(
+      "syntax-parsed; adapter not executed",
     );
-    expect(result.infraSources.find((source) => source.path.endsWith("view.tsx"))?.syntax).toBe(
-      "parsed",
-    );
-    expect(result.scripts[0]?.qualification).toBe("syntax-parsed; adapter not executed");
     expect(await Bun.file(join(root, "executed")).exists()).toBe(false);
   } finally {
     await rm(root, { recursive: true, force: true });

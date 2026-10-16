@@ -4,7 +4,9 @@ import path from "node:path";
 const root = path.resolve(import.meta.dir, "..");
 const cli = process.argv[2];
 if (!cli || !(await Bun.file(cli).exists()))
-  throw new Error("Usage: bun examples/check-ae-ease.mjs <aesync/server/dist/cli.js>");
+  throw new Error(
+    "Usage: bun examples/check-ae-ease.mjs <aesync/server/dist/cli.js>",
+  );
 const tolerance = 1e-7;
 function run(command, args) {
   const result = Bun.spawnSync([command, ...args], {
@@ -19,7 +21,9 @@ function run(command, args) {
   const decoder = new TextDecoder();
   const stdout = decoder.decode(result.stdout);
   if (result.exitCode !== 0)
-    throw new Error(decoder.decode(result.stderr) || stdout || "Process failed");
+    throw new Error(
+      decoder.decode(result.stderr) || stdout || "Process failed",
+    );
   return JSON.parse(stdout.replace(/^\uFEFF/, "").trim());
 }
 const ec = run("cargo", [
@@ -38,15 +42,31 @@ const ae = run(process.execPath, [
   "--raw",
 ]);
 const local = path.join(root, "plan", "aftereffects", "ref", "ease");
-await Bun.write(path.join(local, "ae-observations.json"), JSON.stringify(ae, null, 2) + "\n");
-await Bun.write(path.join(local, "effectcraft-samples.json"), JSON.stringify(ec, null, 2) + "\n");
+await Bun.write(
+  path.join(local, "ae-observations.json"),
+  JSON.stringify(ae, null, 2) + "\n",
+);
+await Bun.write(
+  path.join(local, "effectcraft-samples.json"),
+  JSON.stringify(ec, null, 2) + "\n",
+);
 if (ae.cases.length !== ec.cases.length) throw new Error("Case count mismatch");
 const scores = ae.cases.map((reference) => {
   const candidate = ec.cases.find((c) => c.name === reference.name);
   if (!candidate || reference.values.length !== candidate.values.length)
     throw new Error("Missing or truncated case: " + reference.name);
-  for (const key of ["from", "to", "outSpeed", "outInfluence", "inSpeed", "inInfluence"]) {
-    if (!Number.isFinite(reference[key]) || Math.abs(reference[key] - candidate[key]) > 1e-9)
+  for (const key of [
+    "from",
+    "to",
+    "outSpeed",
+    "outInfluence",
+    "inSpeed",
+    "inInfluence",
+  ]) {
+    if (
+      !Number.isFinite(reference[key]) ||
+      Math.abs(reference[key] - candidate[key]) > 1e-9
+    )
       throw new Error("Case metadata mismatch: " + reference.name + "/" + key);
   }
   for (const key of ["outSpeed", "outInfluence", "inSpeed", "inInfluence"]) {
@@ -54,7 +74,9 @@ const scores = ae.cases.map((reference) => {
       !Number.isFinite(reference.applied[key]) ||
       Math.abs(reference.applied[key] - reference[key]) > 1e-9
     )
-      throw new Error("AE changed requested ease: " + reference.name + "/" + key);
+      throw new Error(
+        "AE changed requested ease: " + reference.name + "/" + key,
+      );
   }
   if (
     reference.applied.outAuto ||

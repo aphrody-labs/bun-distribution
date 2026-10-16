@@ -1,8 +1,25 @@
-import { type ComponentProps, forwardRef, useEffect, useRef, useState } from "react";
+import {
+  type ComponentProps,
+  forwardRef,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { cn } from "../../utils/ui";
 import { Input } from "./input";
-import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from "./popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
+import {
+  Popover,
+  PopoverClose,
+  PopoverContent,
+  PopoverTrigger,
+} from "./popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./select";
 import { Button } from "./button";
 import { Cancel01Icon, ColorPickerIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -44,7 +61,9 @@ function ColorPickerContent({
   side = "left",
   align = "center",
 }: ColorPickerContentProps) {
-  const [isDragging, setIsDragging] = useState<"saturation" | "hue" | "opacity" | null>(null);
+  const [isDragging, setIsDragging] = useState<
+    "saturation" | "hue" | "opacity" | null
+  >(null);
   const [internalHue, setInternalHue] = useState(0);
   const [inputValue, setInputValue] = useState(value);
   const [colorFormat, setColorFormat] = useState<ColorFormat>("hex");
@@ -81,8 +100,14 @@ function ColorPickerContent({
 
       if (isDragging === "saturation" && saturationRef.current) {
         const rect = saturationRef.current.getBoundingClientRect();
-        const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-        const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
+        const x = Math.max(
+          0,
+          Math.min(1, (event.clientX - rect.left) / rect.width),
+        );
+        const y = Math.max(
+          0,
+          Math.min(1, (event.clientY - rect.top) / rect.height),
+        );
         const newHex = appendAlpha({
           rgbHex: hsvToHex({ h: displayHue, s: x, v: 1 - y }),
           alpha,
@@ -93,7 +118,10 @@ function ColorPickerContent({
 
       if (isDragging === "hue" && hueRef.current) {
         const rect = hueRef.current.getBoundingClientRect();
-        const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+        const x = Math.max(
+          0,
+          Math.min(1, (event.clientX - rect.left) / rect.width),
+        );
         const newH = x * 360;
         setInternalHue(newH);
         if (s > 0) {
@@ -108,7 +136,10 @@ function ColorPickerContent({
 
       if (isDragging === "opacity" && opacityRef.current) {
         const rect = opacityRef.current.getBoundingClientRect();
-        const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+        const x = Math.max(
+          0,
+          Math.min(1, (event.clientX - rect.left) / rect.width),
+        );
         const newHex = appendAlpha({ rgbHex: rgbValue, alpha: x });
         latestDragColorRef.current = newHex;
         onChange?.(newHex);
@@ -154,8 +185,14 @@ function ColorPickerContent({
     if (!saturationElement) return;
     setIsDragging("saturation");
     const rect = saturationElement.getBoundingClientRect();
-    const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-    const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
+    const x = Math.max(
+      0,
+      Math.min(1, (event.clientX - rect.left) / rect.width),
+    );
+    const y = Math.max(
+      0,
+      Math.min(1, (event.clientY - rect.top) / rect.height),
+    );
     const newHex = appendAlpha({
       rgbHex: hsvToHex({ h: displayHue, s: x, v: 1 - y }),
       alpha,
@@ -170,7 +207,10 @@ function ColorPickerContent({
     if (!hueElement) return;
     setIsDragging("hue");
     const rect = hueElement.getBoundingClientRect();
-    const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    const x = Math.max(
+      0,
+      Math.min(1, (event.clientX - rect.left) / rect.width),
+    );
     const newH = x * 360;
     setInternalHue(newH);
     if (s > 0) {
@@ -189,14 +229,21 @@ function ColorPickerContent({
     if (!opacityElement) return;
     setIsDragging("opacity");
     const rect = opacityElement.getBoundingClientRect();
-    const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    const x = Math.max(
+      0,
+      Math.min(1, (event.clientX - rect.left) / rect.width),
+    );
     const newHex = appendAlpha({ rgbHex: rgbValue, alpha: x });
     latestDragColorRef.current = newHex;
     onChange?.(newHex);
   };
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(colorFormat === "hex" ? event.target.value.replace("#", "") : event.target.value);
+    setInputValue(
+      colorFormat === "hex"
+        ? event.target.value.replace("#", "")
+        : event.target.value,
+    );
   };
 
   const commitInputValue = () => {
@@ -211,7 +258,9 @@ function ColorPickerContent({
     const extracted = extractColorFromText({ text: inputValue });
     if (extracted) {
       const hasExplicitAlpha = extracted.length > 6;
-      const finalHex = hasExplicitAlpha ? extracted : appendAlpha({ rgbHex: extracted, alpha });
+      const finalHex = hasExplicitAlpha
+        ? extracted
+        : appendAlpha({ rgbHex: extracted, alpha });
       onChange?.(finalHex);
       onChangeEnd?.(finalHex);
     }
@@ -233,7 +282,9 @@ function ColorPickerContent({
 
     event.preventDefault();
     const hasExplicitAlpha = extractedHex.length > 6;
-    const finalHex = hasExplicitAlpha ? extractedHex : appendAlpha({ rgbHex: extractedHex, alpha });
+    const finalHex = hasExplicitAlpha
+      ? extractedHex
+      : appendAlpha({ rgbHex: extractedHex, alpha });
     onChange?.(finalHex);
     onChangeEnd?.(finalHex);
   };
@@ -275,7 +326,12 @@ function ColorPickerContent({
         </Select>
         <div>
           {isEyeDropperSupported && (
-            <Button variant="ghost" size="icon" type="button" onClick={handleEyeDropper}>
+            <Button
+              variant="ghost"
+              size="icon"
+              type="button"
+              onClick={handleEyeDropper}
+            >
               <HugeiconsIcon icon={ColorPickerIcon} />
             </Button>
           )}
@@ -323,7 +379,10 @@ function ColorPickerContent({
           type="button"
           onMouseDown={handleOpacityMouseDown}
         >
-          <div className="absolute inset-0 dark:invert" style={CHECKERBOARD_STYLE} />
+          <div
+            className="absolute inset-0 dark:invert"
+            style={CHECKERBOARD_STYLE}
+          />
           <div
             className="absolute inset-0 rounded-lg"
             style={{
@@ -342,7 +401,9 @@ function ColorPickerContent({
         <div className="flex items-center gap-2">
           <Select
             value={colorFormat}
-            onValueChange={(selectedFormat) => setColorFormat(selectedFormat as ColorFormat)}
+            onValueChange={(selectedFormat) =>
+              setColorFormat(selectedFormat as ColorFormat)
+            }
           >
             <SelectTrigger variant="outline" className="min-w-18 max-w-18">
               <SelectValue />
@@ -356,7 +417,10 @@ function ColorPickerContent({
           </Select>
 
           <Input
-            className={cn("h-7 rounded-sm p-2.5", colorFormat === "hex" && "uppercase")}
+            className={cn(
+              "h-7 rounded-sm p-2.5",
+              colorFormat === "hex" && "uppercase",
+            )}
             type="text"
             value={inputValue}
             onChange={handleInputChange}
@@ -381,7 +445,15 @@ interface ColorPickerProps {
 
 const ColorPicker = forwardRef<HTMLDivElement, ColorPickerProps>(
   (
-    { className, value = "FFFFFF", onChange, onChangeEnd, contentSide, contentAlign, ...props },
+    {
+      className,
+      value = "FFFFFF",
+      onChange,
+      onChangeEnd,
+      contentSide,
+      contentAlign,
+      ...props
+    },
     ref,
   ) => {
     const { alpha } = parseHexAlpha({ hex: value });
@@ -404,7 +476,9 @@ const ColorPicker = forwardRef<HTMLDivElement, ColorPickerProps>(
       const extracted = extractColorFromText({ text: input });
       if (extracted) {
         const hasExplicitAlpha = extracted.length > 6;
-        const finalHex = hasExplicitAlpha ? extracted : appendAlpha({ rgbHex: extracted, alpha });
+        const finalHex = hasExplicitAlpha
+          ? extracted
+          : appendAlpha({ rgbHex: extracted, alpha });
         onChange?.(finalHex);
         onChangeEnd?.(finalHex);
       }
@@ -416,7 +490,9 @@ const ColorPicker = forwardRef<HTMLDivElement, ColorPickerProps>(
 
     const handleInputBlur = () => commitInputValue(inputValue);
 
-    const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleInputKeyDown = (
+      event: React.KeyboardEvent<HTMLInputElement>,
+    ) => {
       if (event.key === "Enter") {
         commitInputValue(inputValue);
         event.currentTarget.blur();
@@ -451,8 +527,14 @@ const ColorPicker = forwardRef<HTMLDivElement, ColorPickerProps>(
               className="size-4.5 relative cursor-pointer overflow-hidden rounded-sm border hover:ring-1 hover:ring-foreground/20"
               type="button"
             >
-              <span className="absolute inset-0 dark:invert" style={CHECKERBOARD_STYLE} />
-              <span className="absolute inset-0" style={{ backgroundColor: `#${value}` }} />
+              <span
+                className="absolute inset-0 dark:invert"
+                style={CHECKERBOARD_STYLE}
+              />
+              <span
+                className="absolute inset-0"
+                style={{ backgroundColor: `#${value}` }}
+              />
             </button>
           </PopoverTrigger>
           <div className="flex flex-1 items-center">

@@ -44,7 +44,8 @@
     border-radius: 50%;
     background: var(--md-sys-color-primary);
     outline: none;
-    transition: box-shadow var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
+    transition: box-shadow var(--md-sys-motion-duration-short3)
+      var(--md-sys-motion-easing-standard);
   }
   .m3-bui-slider__thumb::after {
     content: "";
@@ -54,7 +55,8 @@
     background: var(--md-sys-color-primary);
     opacity: 0;
     pointer-events: none;
-    transition: opacity var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+    transition: opacity var(--md-sys-motion-duration-short2)
+      var(--md-sys-motion-easing-standard);
   }
   @media (hover: hover) {
     .m3-bui-slider__thumb:hover::after {

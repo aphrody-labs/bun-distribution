@@ -28,12 +28,13 @@ export const SYSTEM_PRESETS: Record<string, SystemPreset> = {
   },
 };
 
-export const TOKEN_LIMIT_OPTIONS = [1024, 2048, 4096, 8192, 16384, 32768] as const;
+export const TOKEN_LIMIT_OPTIONS = [
+  1024, 2048, 4096, 8192, 16384, 32768,
+] as const;
 
-export function filterSessionsList<T extends { id: string; preview?: string; cwd?: string }>(
-  sessions: T[],
-  query: string,
-): T[] {
+export function filterSessionsList<
+  T extends { id: string; preview?: string; cwd?: string },
+>(sessions: T[], query: string): T[] {
   if (!query.trim()) return sessions;
   const q = query.toLowerCase();
   return sessions.filter(

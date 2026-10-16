@@ -21,10 +21,19 @@ describe("yolo scan CLI arguments", () => {
     mkdirSync(resolve(fixtureDir, "-target"));
     await Promise.all([
       Bun.write(resolve(fixtureDir, "alpha.ts"), "export const alpha = 1;\n"),
-      Bun.write(resolve(fixtureDir, "nested/beta.ts"), "export const beta = 2;\n"),
-      Bun.write(resolve(fixtureDir, "skip/generated.ts"), "export const generated = true;\n"),
+      Bun.write(
+        resolve(fixtureDir, "nested/beta.ts"),
+        "export const beta = 2;\n",
+      ),
+      Bun.write(
+        resolve(fixtureDir, "skip/generated.ts"),
+        "export const generated = true;\n",
+      ),
       Bun.write(resolve(fixtureDir, "README.md"), "# scan fixture\n"),
-      Bun.write(resolve(fixtureDir, "-target/gamma.ts"), "export const gamma = 3;\n"),
+      Bun.write(
+        resolve(fixtureDir, "-target/gamma.ts"),
+        "export const gamma = 3;\n",
+      ),
     ]);
   });
 
@@ -36,8 +45,19 @@ describe("yolo scan CLI arguments", () => {
     stderr: string;
   }> {
     const proc = Bun.spawn(
-      [process.execPath, resolve(rootDir, "packages/engine/yolo/src/index.ts"), "scan", ...args],
-      { windowsHide: true, cwd: fixtureDir, stdin: "ignore", stdout: "pipe", stderr: "pipe" },
+      [
+        process.execPath,
+        resolve(rootDir, "packages/engine/yolo/src/index.ts"),
+        "scan",
+        ...args,
+      ],
+      {
+        windowsHide: true,
+        cwd: fixtureDir,
+        stdin: "ignore",
+        stdout: "pipe",
+        stderr: "pipe",
+      },
     );
     const [code, stdout, stderr] = await Promise.all([
       proc.exited,
@@ -48,9 +68,36 @@ describe("yolo scan CLI arguments", () => {
   }
 
   it.each([
-    ["before dir", ["--exts", "ts", "--exclude", "skip,-target", "--parallel", "2", ".", "--json"]],
-    ["after dir", [".", "--exts", ".ts", "--exclude", "skip,-target", "--parallel", "2", "--json"]],
-    ["mixed with equals", ["--exts= ts ", ".", "--exclude=skip,-target", "--parallel=2", "--json"]],
+    [
+      "before dir",
+      [
+        "--exts",
+        "ts",
+        "--exclude",
+        "skip,-target",
+        "--parallel",
+        "2",
+        ".",
+        "--json",
+      ],
+    ],
+    [
+      "after dir",
+      [
+        ".",
+        "--exts",
+        ".ts",
+        "--exclude",
+        "skip,-target",
+        "--parallel",
+        "2",
+        "--json",
+      ],
+    ],
+    [
+      "mixed with equals",
+      ["--exts= ts ", ".", "--exclude=skip,-target", "--parallel=2", "--json"],
+    ],
   ])("consumes option values %s", async (_label, args) => {
     const result = await invoke(args as string[]);
     expect(result.code).toBe(0);
@@ -68,7 +115,15 @@ describe("yolo scan CLI arguments", () => {
   it("uses the supplied default root when option values are the only arguments", async () => {
     const output: string[] = [];
     const code = await runScanCommand(
-      ["--exts", "ts", "--exclude", "skip,-target", "--parallel", "2", "--json"],
+      [
+        "--exts",
+        "ts",
+        "--exclude",
+        "skip,-target",
+        "--parallel",
+        "2",
+        "--json",
+      ],
       fixtureDir,
       (text) => output.push(text),
     );
@@ -90,7 +145,9 @@ describe("yolo scan CLI arguments", () => {
   it("prints scan help without scanning the default root", async () => {
     const output: string[] = [];
     expect(
-      await runScanCommand(["--help"], resolve(fixtureDir, "missing"), (text) => output.push(text)),
+      await runScanCommand(["--help"], resolve(fixtureDir, "missing"), (text) =>
+        output.push(text),
+      ),
     ).toBe(0);
     expect(output.join("\n")).toContain("Usage: yolo scan [dir] [options]");
     expect(output.join("\n")).toContain("--parallel N");
@@ -116,15 +173,23 @@ describe("yolo scan CLI arguments", () => {
     },
   );
 
-  it.each(["0", "-1", "1.5", "2workers", "NaN", "Infinity", "", "9007199254740992"])(
-    "rejects invalid worker count %j",
-    async (value) => {
-      const result = await invoke([".", `--parallel=${value}`, "--json"]);
-      expect(result.code).toBe(1);
-      expect(result.stdout).toBe("");
-      expect(result.stderr).toContain("--parallel requires a positive safe integer");
-    },
-  );
+  it.each([
+    "0",
+    "-1",
+    "1.5",
+    "2workers",
+    "NaN",
+    "Infinity",
+    "",
+    "9007199254740992",
+  ])("rejects invalid worker count %j", async (value) => {
+    const result = await invoke([".", `--parallel=${value}`, "--json"]);
+    expect(result.code).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain(
+      "--parallel requires a positive safe integer",
+    );
+  });
 
   it.each([
     ["--exts", ""],
@@ -135,7 +200,9 @@ describe("yolo scan CLI arguments", () => {
     const result = await invoke([".", option, value, "--json"]);
     expect(result.code).toBe(1);
     expect(result.stdout).toBe("");
-    expect(result.stderr).toContain(`${option} requires a non-empty comma-separated list`);
+    expect(result.stderr).toContain(
+      `${option} requires a non-empty comma-separated list`,
+    );
   });
 
   it("rejects unknown options, extra directories and conflicting formats", async () => {
@@ -163,7 +230,9 @@ describe("yolo scan CLI arguments", () => {
 
 describe("yolo scan (Native Bun Parallel Recursive Scanner)", () => {
   it("should scan directory and return schema yolo.scan/1 with lines and fingerprint", async () => {
-    const report = await scanDirectory(resolve(rootDir, "packages/engine/yolo/src"));
+    const report = await scanDirectory(
+      resolve(rootDir, "packages/engine/yolo/src"),
+    );
     expect(report.schema).toBe("yolo.scan/1");
     expect(report.totalFiles).toBeGreaterThan(5);
     expect(report.totalBytes).toBeGreaterThan(10000);
@@ -175,9 +244,12 @@ describe("yolo scan (Native Bun Parallel Recursive Scanner)", () => {
   });
 
   it("should filter by extension correctly", async () => {
-    const report = await scanDirectory(resolve(rootDir, "packages/engine/yolo/src"), {
-      exts: ["ts"],
-    });
+    const report = await scanDirectory(
+      resolve(rootDir, "packages/engine/yolo/src"),
+      {
+        exts: ["ts"],
+      },
+    );
     expect(report.totalFiles).toBeGreaterThan(0);
     for (const extStat of report.byExtension) {
       expect(extStat.ext).toBe(".ts");
@@ -185,9 +257,12 @@ describe("yolo scan (Native Bun Parallel Recursive Scanner)", () => {
   });
 
   it("should render markdown and terminal outputs without errors", async () => {
-    const report = await scanDirectory(resolve(rootDir, "packages/engine/yolo/src"), {
-      maxFiles: 5,
-    });
+    const report = await scanDirectory(
+      resolve(rootDir, "packages/engine/yolo/src"),
+      {
+        maxFiles: 5,
+      },
+    );
     const md = renderScanMarkdown(report);
     expect(md).toContain("# yolo scan:");
     expect(md).toContain("| Extension |");
@@ -199,7 +274,10 @@ describe("yolo scan (Native Bun Parallel Recursive Scanner)", () => {
 
 describe("yolo scan --ingest delegates to the aphrody home pipeline", () => {
   const dir = mkdtempSync(resolve(tmpdir(), "yolo-scan-ingest-"));
-  const fake = resolve(dir, process.platform === "win32" ? "aphrody.cmd" : "aphrody");
+  const fake = resolve(
+    dir,
+    process.platform === "win32" ? "aphrody.cmd" : "aphrody",
+  );
   const log = resolve(dir, "args.log");
 
   beforeAll(async () => {
@@ -229,9 +307,20 @@ describe("yolo scan --ingest delegates to the aphrody home pipeline", () => {
         (s) => lines.push(s),
       );
       expect(code).toBe(0);
-      expect(JSON.parse(lines.join("\n"))).toEqual({ source: "fake", indexed: 1 });
+      expect(JSON.parse(lines.join("\n"))).toEqual({
+        source: "fake",
+        indexed: 1,
+      });
       const args = (await Bun.file(log).text()).trim().split(/\r?\n/);
-      expect(args).toEqual(["home", "--profile", "dbfr", "index", dir, "--label", "repo"]);
+      expect(args).toEqual([
+        "home",
+        "--profile",
+        "dbfr",
+        "index",
+        dir,
+        "--label",
+        "repo",
+      ]);
     } finally {
       if (previous === undefined) delete process.env.APHRODY_BIN;
       else process.env.APHRODY_BIN = previous;
@@ -239,7 +328,9 @@ describe("yolo scan --ingest delegates to the aphrody home pipeline", () => {
   });
 
   it("rejects --profile without --ingest and reports a missing binary", async () => {
-    expect(await runScanCommand(["--profile", "dbfr", dir], dir, () => {})).toBe(1);
+    expect(
+      await runScanCommand(["--profile", "dbfr", dir], dir, () => {}),
+    ).toBe(1);
     const previous = {
       a: process.env.APHRODY_BIN,
       y: process.env.YOLO_APHRODY_BIN,

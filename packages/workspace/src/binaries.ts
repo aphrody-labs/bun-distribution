@@ -22,14 +22,17 @@ async function cataloguedNames(root: string): Promise<Set<string>> {
     join(root, "docs", "ecosystem", "ecosystem.json"),
   ).json()) as Ecosystem;
   return new Set(
-    [...(ecosystem.cli ?? []), ...(ecosystem.binariesWithoutClap ?? [])].flatMap((entry) =>
-      entry.binary ? [entry.binary] : [],
-    ),
+    [
+      ...(ecosystem.cli ?? []),
+      ...(ecosystem.binariesWithoutClap ?? []),
+    ].flatMap((entry) => (entry.binary ? [entry.binary] : [])),
   );
 }
 
 /** Discover only trusted installed binaries and the supplied workspace build outputs, never arbitrary PATH files. */
-export async function discoverAphrodyBinaries(root = infraRoot()): Promise<AphrodyBinary[]> {
+export async function discoverAphrodyBinaries(
+  root = infraRoot(),
+): Promise<AphrodyBinary[]> {
   const catalogued = await cataloguedNames(root);
   const found = new Map<string, AphrodyBinary>();
   const resolveCandidate = async (
@@ -37,7 +40,11 @@ export async function discoverAphrodyBinaries(root = infraRoot()): Promise<Aphro
     source: AphrodyBinary["source"],
   ): Promise<AphrodyBinary | undefined> => {
     const name = basename(path).replace(/\.exe$/i, "");
-    if (!isAphrodyBinary(name) || name.includes(".") || !(await Bun.file(path).exists()))
+    if (
+      !isAphrodyBinary(name) ||
+      name.includes(".") ||
+      !(await Bun.file(path).exists())
+    )
       return undefined;
     return { name, path, source, catalogued: catalogued.has(name) };
   };
@@ -51,7 +58,12 @@ export async function discoverAphrodyBinaries(root = infraRoot()): Promise<Aphro
     const localBins = await Promise.all(
       [...new Set([...catalogued, "n2b"])].map((name) =>
         resolveCandidate(
-          join(home, ".local", "bin", `${name}${process.platform === "win32" ? ".exe" : ""}`),
+          join(
+            home,
+            ".local",
+            "bin",
+            `${name}${process.platform === "win32" ? ".exe" : ""}`,
+          ),
           "local-bin",
         ),
       ),
@@ -67,12 +79,20 @@ export async function discoverAphrodyBinaries(root = infraRoot()): Promise<Aphro
     }),
   );
   for (const binary of profileCandidates.flat()) register(binary);
-  return [...found.values()].toSorted((left, right) => left.name.localeCompare(right.name));
+  return [...found.values()].toSorted((left, right) =>
+    left.name.localeCompare(right.name),
+  );
 }
 
-export async function runAphrodyBinary(name: string, args: string[]): Promise<number> {
-  if (!isAphrodyBinary(name)) throw new Error(`unsupported Aphrody binary name: ${name}`);
-  const binary = (await discoverAphrodyBinaries()).find((entry) => entry.name === name);
+export async function runAphrodyBinary(
+  name: string,
+  args: string[],
+): Promise<number> {
+  if (!isAphrodyBinary(name))
+    throw new Error(`unsupported Aphrody binary name: ${name}`);
+  const binary = (await discoverAphrodyBinaries()).find(
+    (entry) => entry.name === name,
+  );
   if (!binary) throw new Error(`Aphrody binary is not installed: ${name}`);
   const child = Bun.spawn([binary.path, ...args], {
     windowsHide: true,

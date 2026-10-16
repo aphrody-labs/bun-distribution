@@ -1,11 +1,7 @@
 import * as THREE from "three";
 import type Editor from "..";
 import type { UndoableAction } from "../HistoryManager";
-import {
-  ObjectSnap,
-  recreateFromSnapshot,
-  snapshotObject,
-} from "./snapshots";
+import { ObjectSnap, recreateFromSnapshot, snapshotObject } from "./snapshots";
 
 // Records the deletion of an object. Mirror of CreateAction with
 // apply/revert swapped. apply() removes via utils.deleteObject (the

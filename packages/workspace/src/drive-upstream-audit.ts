@@ -131,7 +131,10 @@ function localSource(
     return { path: join(driveRoot, entry.path), owner: "ui/mobile-host" };
   }
   if (entry.path.startsWith("apps/tauri/")) {
-    return { path: join(driveRoot, entry.path), owner: "ui/desktop-host-replacement" };
+    return {
+      path: join(driveRoot, entry.path),
+      owner: "ui/desktop-host-replacement",
+    };
   }
   if (entry.path.startsWith("apps/server/")) {
     return { path: join(driveRoot, entry.path), owner: "web/site" };
@@ -186,7 +189,9 @@ async function fetchTree(revision: string): Promise<GitTree> {
   }
   const tree = (await response.json()) as GitTree;
   if (tree.truncated)
-    throw new Error("GitHub returned a truncated tree; audit would be incomplete");
+    throw new Error(
+      "GitHub returned a truncated tree; audit would be incomplete",
+    );
   if (!Array.isArray(tree.tree) || tree.sha !== revision) {
     throw new Error("GitHub response does not match the requested revision");
   }
@@ -205,7 +210,12 @@ async function compare(
       upstreamPath: entry.path,
       localPath: local.path,
       owner: local.owner,
-      status: localSha === null ? "missing" : localSha === entry.sha ? "identical" : "changed",
+      status:
+        localSha === null
+          ? "missing"
+          : localSha === entry.sha
+            ? "identical"
+            : "changed",
       upstreamSha: entry.sha,
       ...(localSha ? { localSha } : {}),
     };
@@ -225,12 +235,15 @@ export async function runDriveUpstreamAudit(args: string[]): Promise<number> {
   const options = parseOptions(args);
   const tree = await fetchTree(options.revision);
   const allBlobs = tree.tree.filter(
-    (entry) => entry.type === "blob" && ["100644", "100755", "120000"].includes(entry.mode),
+    (entry) =>
+      entry.type === "blob" &&
+      ["100644", "100755", "120000"].includes(entry.mode),
   );
   const blobs = options.owner
     ? allBlobs.filter(
         (entry) =>
-          localSource(entry, options.repositoryRoot, options.driveRoot).owner === options.owner,
+          localSource(entry, options.repositoryRoot, options.driveRoot)
+            .owner === options.owner,
       )
     : allBlobs;
   if (options.owner && blobs.length === 0)
@@ -244,7 +257,9 @@ export async function runDriveUpstreamAudit(args: string[]): Promise<number> {
       ...(await Promise.all(
         blobs
           .slice(index, index + width)
-          .map((entry) => compare(entry, options.repositoryRoot, options.driveRoot)),
+          .map((entry) =>
+            compare(entry, options.repositoryRoot, options.driveRoot),
+          ),
       )),
     );
   }
@@ -284,15 +299,22 @@ export async function runDriveUpstreamAudit(args: string[]): Promise<number> {
       );
     }
     if (options.list) {
-      for (const result of results.filter((item) => item.status !== "identical")) {
-        console.log(`${result.status}\t${result.owner}\t${result.upstreamPath}`);
+      for (const result of results.filter(
+        (item) => item.status !== "identical",
+      )) {
+        console.log(
+          `${result.status}\t${result.owner}\t${result.upstreamPath}`,
+        );
       }
     }
-    for (const result of results.filter((item) => item.status === "unreadable")) {
+    for (const result of results.filter(
+      (item) => item.status === "unreadable",
+    )) {
       console.error(`Unreadable ${result.localPath}: ${result.error}`);
     }
   }
   return counts.unreadable || (options.failOnMissing && counts.missing) ? 1 : 0;
 }
 
-if (import.meta.main) process.exit(await runDriveUpstreamAudit(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runDriveUpstreamAudit(process.argv.slice(2)));

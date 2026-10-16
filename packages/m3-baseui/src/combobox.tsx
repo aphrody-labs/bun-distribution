@@ -9,7 +9,10 @@ import { part } from "./part";
 export const Arrow = B.Arrow;
 export const Backdrop = B.Backdrop;
 export const Chip = part(B.Chip, "m3-bui-combobox__chip");
-export const ChipRemove = part(B.ChipRemove, "m3-bui-combobox__chip-remove m3-bui-state");
+export const ChipRemove = part(
+  B.ChipRemove,
+  "m3-bui-combobox__chip-remove m3-bui-state",
+);
 export const Chips = part(B.Chips, "m3-bui-combobox__chips");
 export const Clear = part(B.Clear, "m3-bui-combobox__clear m3-bui-state");
 export const Collection = B.Collection;
@@ -20,7 +23,10 @@ export const Icon = part(B.Icon, "m3-bui-combobox__icon");
 export const Input = part(B.Input, "m3-bui-combobox__input");
 export const InputGroup = part(B.InputGroup, "m3-bui-combobox__input-group");
 export const Item = part(B.Item, "m3-bui-combobox__item m3-bui-item");
-export const ItemIndicator = part(B.ItemIndicator, "m3-bui-combobox__item-indicator");
+export const ItemIndicator = part(
+  B.ItemIndicator,
+  "m3-bui-combobox__item-indicator",
+);
 export const Label = part(B.Label, "m3-bui-combobox__label");
 export const List = part(B.List, "m3-bui-combobox__list");
 export const Popup = part(B.Popup, "m3-bui-combobox__popup m3-bui-popup");

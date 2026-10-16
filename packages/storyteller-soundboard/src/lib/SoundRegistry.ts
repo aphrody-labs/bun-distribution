@@ -9,12 +9,12 @@ export class SoundRegistry {
   }
 
   public static getInstance() {
-    // NB(bt,2026-01-03): Our `nx` build setup is deeply flawed and in need 
-    // of repair: Production builds will compile libraries to multiple 
+    // NB(bt,2026-01-03): Our `nx` build setup is deeply flawed and in need
+    // of repair: Production builds will compile libraries to multiple
     // independent symbolic spaces, making singleton pattern unreliable.
     // Effectively, the singletons cannot be used across bundle boundaries.
     // We're going to be gross and bind everything to the global namespace.
-    // 
+    //
     // To be clear, this does not work:
     //
     //    class SoundRegistry {
@@ -35,7 +35,7 @@ export class SoundRegistry {
     return (window as any).artcraft_sound_registry;
   }
 
-  public hasSound(key: string) : boolean {
+  public hasSound(key: string): boolean {
     return this.#sounds.has(key);
   }
 
@@ -49,11 +49,11 @@ export class SoundRegistry {
     }
   }
 
-  public getSound(key: string) : SoundEffect | undefined {
+  public getSound(key: string): SoundEffect | undefined {
     return this.#sounds.get(key);
   }
 
   public playSound(key: string) {
-    this.#sounds.get(key)?.play()
+    this.#sounds.get(key)?.play();
   }
 }

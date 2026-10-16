@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # @aphrody/m3-reader
 
 Material 3 React readers for paged and vertical manga and illustrated books. This package owns the reader UI, paging, virtual scrolling, zoom, fullscreen, thumbnails, keyboard controls, and lightbox focus. It does not own an asset server, editorial API, persistence, or OCR policy.

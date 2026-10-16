@@ -18,9 +18,11 @@ export default function AdminA2APage() {
           Supervision Protocole A2A (Agent2Agent)
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Réseau de communication inter-agents standardisé conforme à la spécification A2A 1.0.
-          Orchestration autonome YOLO, synchronisation temps réel Discord{" "}
-          <span className="font-mono text-primary">#bot-admin</span> et boîtes aux lettres locales{" "}
+          Réseau de communication inter-agents standardisé conforme à la
+          spécification A2A 1.0. Orchestration autonome YOLO, synchronisation
+          temps réel Discord{" "}
+          <span className="font-mono text-primary">#bot-admin</span> et boîtes
+          aux lettres locales{" "}
           <span className="font-mono text-primary">.coord</span>.
         </p>
       </div>

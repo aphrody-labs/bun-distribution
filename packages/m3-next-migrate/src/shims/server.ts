@@ -3,7 +3,8 @@
 import { realpath, stat } from "node:fs/promises";
 import { extname, resolve, sep } from "node:path";
 
-const inside = (base: string, path: string) => path === base || path.startsWith(`${base}${sep}`);
+const inside = (base: string, path: string) =>
+  path === base || path.startsWith(`${base}${sep}`);
 
 export class NextRequest extends Request {
   private _nextUrl?: URL;
@@ -16,7 +17,9 @@ export class NextRequest extends Request {
   }
 
   get ip(): string | undefined {
-    return this.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
+    return (
+      this.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1"
+    );
   }
 
   get geo(): { city?: string; country?: string; region?: string } {
@@ -104,24 +107,41 @@ export interface BunServerOptions {
  * and serves desktop static frontend assets with Bun.file.
  */
 export function createNextBunServer(options: BunServerOptions = {}) {
-  const { port = 1420, hostname = "127.0.0.1", staticDir = "./dist", routes = {} } = options;
+  const {
+    port = 1420,
+    hostname = "127.0.0.1",
+    staticDir = "./dist",
+    routes = {},
+  } = options;
 
   if (typeof Bun === "undefined") {
-    throw new Error("createNextBunServer requires the Bun runtime (Bun.serve).");
+    throw new Error(
+      "createNextBunServer requires the Bun runtime (Bun.serve).",
+    );
   }
 
   const root = resolve(staticDir);
-  async function staticResponse(pathname: string, head: boolean): Promise<Response | null> {
+  async function staticResponse(
+    pathname: string,
+    head: boolean,
+  ): Promise<Response | null> {
     const path = resolve(root, `.${pathname}`);
     if (!inside(root, path)) return new Response("Forbidden", { status: 403 });
     try {
-      const [canonicalRoot, canonicalPath] = await Promise.all([realpath(root), realpath(path)]);
-      if (!inside(canonicalRoot, canonicalPath)) return new Response("Forbidden", { status: 403 });
+      const [canonicalRoot, canonicalPath] = await Promise.all([
+        realpath(root),
+        realpath(path),
+      ]);
+      if (!inside(canonicalRoot, canonicalPath))
+        return new Response("Forbidden", { status: 403 });
       const metadata = await stat(canonicalPath);
       if (!metadata.isFile()) return null;
       const file = Bun.file(canonicalPath);
       return new Response(head ? null : file, {
-        headers: { "content-type": file.type, "content-length": String(metadata.size) },
+        headers: {
+          "content-type": file.type,
+          "content-length": String(metadata.size),
+        },
       });
     } catch {
       return null;
@@ -148,13 +168,17 @@ export function createNextBunServer(options: BunServerOptions = {}) {
         if (method === "OPTIONS" && !handler.OPTIONS) {
           return new Response(null, { status: 204, headers: { Allow: allow } });
         }
-        const methodFn = handler[method] ?? (method === "HEAD" ? handler.GET : undefined);
+        const methodFn =
+          handler[method] ?? (method === "HEAD" ? handler.GET : undefined);
         if (typeof methodFn === "function") {
           try {
             const response = await methodFn(nextReq);
             return method === "HEAD" ? new Response(null, response) : response;
           } catch {
-            return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+            return NextResponse.json(
+              { error: "Internal Server Error" },
+              { status: 500 },
+            );
           }
         }
         return new Response(`Method ${req.method} Not Allowed`, {
@@ -164,7 +188,10 @@ export function createNextBunServer(options: BunServerOptions = {}) {
       }
 
       if (req.method !== "GET" && req.method !== "HEAD") {
-        return new Response("Method Not Allowed", { status: 405, headers: { Allow: "GET, HEAD" } });
+        return new Response("Method Not Allowed", {
+          status: 405,
+          headers: { Allow: "GET, HEAD" },
+        });
       }
       let pathname: string;
       try {
@@ -180,7 +207,10 @@ export function createNextBunServer(options: BunServerOptions = {}) {
         return new Response("Forbidden", { status: 403 });
       }
       const head = req.method === "HEAD";
-      const asset = await staticResponse(pathname === "/" ? "/index.html" : pathname, head);
+      const asset = await staticResponse(
+        pathname === "/" ? "/index.html" : pathname,
+        head,
+      );
       if (asset) return asset;
       // App routes receive the SPA shell; a missing asset must keep its 404 status.
       if (extname(pathname) === "") {

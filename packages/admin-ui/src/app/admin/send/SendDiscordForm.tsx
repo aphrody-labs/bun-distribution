@@ -18,7 +18,10 @@ const PERSONAS = [
   { id: "kaio", label: "Kaïo", description: "Dieu des Planètes" },
 ] as const;
 
-type Result = { ok: true; messageId: string; url: string } | { ok: false; error: string } | null;
+type Result =
+  | { ok: true; messageId: string; url: string }
+  | { ok: false; error: string }
+  | null;
 
 interface Channel {
   id: string;
@@ -32,7 +35,8 @@ const TEXT_CHANNEL_TYPES = new Set([0, 5, 15]);
 export function SendDiscordForm() {
   const [channelId, setChannelId] = useState("");
   const [content, setContent] = useState("");
-  const [persona, setPersona] = useState<(typeof PERSONAS)[number]["id"]>("shenron");
+  const [persona, setPersona] =
+    useState<(typeof PERSONAS)[number]["id"]>("shenron");
   const [result, setResult] = useState<Result>(null);
   const [pending, startTransition] = useTransition();
   const [confirmed, setConfirmed] = useState(false);
@@ -50,7 +54,9 @@ export function SendDiscordForm() {
   );
 
   const filteredChannels = channelSearch
-    ? textChannels.filter((c) => c.name.toLowerCase().includes(channelSearch.toLowerCase()))
+    ? textChannels.filter((c) =>
+        c.name.toLowerCase().includes(channelSearch.toLowerCase()),
+      )
     : textChannels;
 
   const selectedChannel = textChannels.find((c) => c.id === channelId);
@@ -100,8 +106,9 @@ export function SendDiscordForm() {
           Persona expéditrice
         </legend>
         <p className="text-xs text-white/50 mb-2">
-          Le message est publié par le compte du bot Shenron, quelle que soit la persona choisie :
-          les six identifiants historiques ne sont plus que des aliases acceptés par l&apos;API.
+          Le message est publié par le compte du bot Shenron, quelle que soit la
+          persona choisie : les six identifiants historiques ne sont plus que
+          des aliases acceptés par l&apos;API.
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {PERSONAS.map((p) => (
@@ -135,10 +142,13 @@ export function SendDiscordForm() {
         <p className="text-xs text-white/50 mb-2">
           Sélectionnez le salon Discord où envoyer le message.
         </p>
-        {channelsQuery.isLoading && <p className="text-xs text-white/50">Chargement des salons…</p>}
+        {channelsQuery.isLoading && (
+          <p className="text-xs text-white/50">Chargement des salons…</p>
+        )}
         {channelsQuery.isError && (
           <p className="text-xs text-red-400">
-            Impossible de charger les salons. Entrez l&apos;identifiant manuellement ci-dessous.
+            Impossible de charger les salons. Entrez l&apos;identifiant
+            manuellement ci-dessous.
           </p>
         )}
         {/* Le repli manuel (plus bas) et ce menu se partageaient `channelId` : quand
@@ -204,7 +214,8 @@ export function SendDiscordForm() {
           Contenu du message
         </label>
         <p className="text-xs text-white/50 mb-2">
-          Le Markdown Discord est supporté : **gras**, *italique*, &gt;citation, etc.
+          Le Markdown Discord est supporté : **gras**, *italique*, &gt;citation,
+          etc.
         </p>
         <PlainField
           id="message-contenu"
@@ -223,20 +234,33 @@ export function SendDiscordForm() {
       {/* Confirmation avant envoi */}
       {confirmed && channelId && content && (
         <div className="dbz-panel p-4 border-2 border-dbz-yellow/60 bg-dbz-yellow/5">
-          <p className="font-saiyan text-dbz-yellow text-base mb-2">Confirmer l&apos;envoi ?</p>
+          <p className="font-saiyan text-dbz-yellow text-base mb-2">
+            Confirmer l&apos;envoi ?
+          </p>
           <p className="text-sm text-white/70 mb-3">
             Le bot <strong>Shenron</strong> va envoyer ce message dans{" "}
             <strong>#{selectedChannel?.name ?? channelId}</strong>
-            {persona !== "shenron" ? <> (alias {selectedPersona?.label})</> : null}.
+            {persona !== "shenron" ? (
+              <> (alias {selectedPersona?.label})</>
+            ) : null}
+            .
           </p>
           <div className="bg-black/40 rounded p-3 text-sm text-white font-mono whitespace-pre-wrap mb-3 border border-dbz-border">
             {content}
           </div>
           <div className="flex gap-3">
-            <button type="submit" disabled={pending} className="dbz-button disabled:opacity-40">
+            <button
+              type="submit"
+              disabled={pending}
+              className="dbz-button disabled:opacity-40"
+            >
               {pending ? "Envoi en cours…" : "Confirmer l'envoi"}
             </button>
-            <button type="button" onClick={() => setConfirmed(false)} className="dbz-button-ghost">
+            <button
+              type="button"
+              onClick={() => setConfirmed(false)}
+              className="dbz-button-ghost"
+            >
               Annuler
             </button>
           </div>
@@ -259,7 +283,9 @@ export function SendDiscordForm() {
       {/* Résultat */}
       {result?.ok && (
         <div className="dbz-panel p-4 border-l-4 border-green-500">
-          <p className="text-sm text-green-400 font-semibold mb-1">Message envoyé avec succès.</p>
+          <p className="text-sm text-green-400 font-semibold mb-1">
+            Message envoyé avec succès.
+          </p>
           <a
             href={result.url}
             target="_blank"
@@ -272,7 +298,9 @@ export function SendDiscordForm() {
       )}
       {result && !result.ok && (
         <div className="dbz-panel p-4 border-l-4 border-red-500">
-          <p className="text-sm text-red-400 font-semibold mb-1">Erreur d&apos;envoi</p>
+          <p className="text-sm text-red-400 font-semibold mb-1">
+            Erreur d&apos;envoi
+          </p>
           <p className="text-xs text-white/50">{result.error}</p>
         </div>
       )}

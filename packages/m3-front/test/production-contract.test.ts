@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterEach, describe, expect, test } from "bun:test";
 import { schemeFromSeed } from "@aphrody/m3-tokens/dynamic-color";
-import { defineM3Theme, M3ThemeElement, observeWindowClass, registerM3 } from "../src/index.ts";
+import {
+  defineM3Theme,
+  M3ThemeElement,
+  observeWindowClass,
+  registerM3,
+} from "../src/index.ts";
 
 const originalMatchMedia = window.matchMedia;
 afterEach(() => {
@@ -63,7 +68,9 @@ describe("front production contract", () => {
     const element = document.createElement("m3-custom-theme");
     expect(element).toBeInstanceOf(M3ThemeElement);
     document.body.append(element);
-    expect(element.style.getPropertyValue("--md-sys-color-primary")).toMatch(/^#[0-9a-f]{6}$/);
+    expect(element.style.getPropertyValue("--md-sys-color-primary")).toMatch(
+      /^#[0-9a-f]{6}$/,
+    );
   });
 
   test("reacts to contrast and variant and announces complete roles across shadow boundaries", () => {
@@ -74,18 +81,25 @@ describe("front production contract", () => {
     const element = document.createElement("m3-theme") as M3ThemeElement;
     element.dir = "rtl";
     const changes: Array<{ variant: string; contrastLevel: number }> = [];
-    const onChange = (event: Event) => changes.push((event as CustomEvent).detail);
+    const onChange = (event: Event) =>
+      changes.push((event as CustomEvent).detail);
     document.addEventListener("m3-theme-change", onChange);
     try {
       shadow.append(element);
       element.variant = "fidelity";
       element.contrast = 1;
-      const roles = schemeFromSeed(element.seed, { variant: "fidelity", contrastLevel: 1 });
+      const roles = schemeFromSeed(element.seed, {
+        variant: "fidelity",
+        contrastLevel: 1,
+      });
       for (const [role, value] of Object.entries(roles)) {
         expect(element.style.getPropertyValue(role)).toBe(value);
       }
       expect(element.dir).toBe("rtl");
-      expect(changes.at(-1)).toMatchObject({ variant: "fidelity", contrastLevel: 1 });
+      expect(changes.at(-1)).toMatchObject({
+        variant: "fidelity",
+        contrastLevel: 1,
+      });
     } finally {
       document.removeEventListener("m3-theme-change", onChange);
     }
@@ -122,7 +136,9 @@ describe("front production contract", () => {
     const style = element.style.cssText;
     let events = 0;
     element.addEventListener("m3-theme-change", () => events++);
-    expect(() => element.setAttribute("contrast", "invalid")).toThrow("contrast");
+    expect(() => element.setAttribute("contrast", "invalid")).toThrow(
+      "contrast",
+    );
     expect(element.style.cssText).toBe(style);
     expect(events).toBe(0);
     element.contrast = 0.5;
@@ -165,7 +181,11 @@ describe("front production contract", () => {
   });
 
   test("rejects prototype names as catalog keys", async () => {
-    await expect(registerM3("__proto__" as "all")).rejects.toThrow("invalid M3 catalog");
-    await expect(registerM3("constructor" as "all")).rejects.toThrow("invalid M3 catalog");
+    await expect(registerM3("__proto__" as "all")).rejects.toThrow(
+      "invalid M3 catalog",
+    );
+    await expect(registerM3("constructor" as "all")).rejects.toThrow(
+      "invalid M3 catalog",
+    );
   });
 });

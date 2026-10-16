@@ -31,7 +31,8 @@ const dateFormat = new Intl.DateTimeFormat("fr-FR", {
   minute: "2-digit",
 });
 
-const fmt = (iso: string | null) => (iso ? dateFormat.format(new Date(iso)) : "—");
+const fmt = (iso: string | null) =>
+  iso ? dateFormat.format(new Date(iso)) : "—";
 
 export function AgentKeysManager({
   keys,
@@ -43,7 +44,10 @@ export function AgentKeysManager({
   scopeDescriptions: Record<string, string>;
 }) {
   const [pending, startTransition] = useTransition();
-  const [created, setCreated] = useState<Extract<CreateResult, { ok: true }> | null>(null);
+  const [created, setCreated] = useState<Extract<
+    CreateResult,
+    { ok: true }
+  > | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [note, setNote] = useState("");
@@ -91,8 +95,8 @@ export function AgentKeysManager({
             Clé « {created.name} » créée — copie-la maintenant
           </h2>
           <p className="mt-1.5 text-[13px] text-white/60">
-            Ce jeton ne sera plus affiché : seul son hachage est conservé. Si tu le perds, il faudra
-            en créer un autre.
+            Ce jeton ne sera plus affiché : seul son hachage est conservé. Si tu
+            le perds, il faudra en créer un autre.
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <code className="min-w-0 flex-1 break-all rounded border border-white/15 bg-black/40 px-3 py-2 font-mono text-[13px] text-dbz-orange">
@@ -104,7 +108,11 @@ export function AgentKeysManager({
                 navigator.clipboard
                   .writeText(created.token)
                   .then(() => setCopied(true))
-                  .catch(() => setError("Copie refusée par le navigateur — sélectionne le texte."));
+                  .catch(() =>
+                    setError(
+                      "Copie refusée par le navigateur — sélectionne le texte.",
+                    ),
+                  );
               }}
               className="toriyama-btn !text-[0.75rem]"
             >
@@ -118,8 +126,8 @@ export function AgentKeysManager({
       <section className="rounded-lg border border-white/10 bg-white/[0.02] p-5">
         <h2 className="text-[15px] font-semibold text-white">Nouvelle clé</h2>
         <p className="mt-1 text-[13px] text-white/50">
-          Le nom signe publiquement les écritures de l&apos;agent (il apparaît à côté de ses
-          commentaires et sur ses brouillons d&apos;articles).
+          Le nom signe publiquement les écritures de l&apos;agent (il apparaît à
+          côté de ses commentaires et sur ses brouillons d&apos;articles).
         </p>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -182,7 +190,9 @@ export function AgentKeysManager({
                   className="mt-0.5 size-4 accent-[var(--color-dbz-orange)]"
                 />
                 <span className="min-w-0">
-                  <code className="block font-mono text-[13px] text-white">{scope}</code>
+                  <code className="block font-mono text-[13px] text-white">
+                    {scope}
+                  </code>
                   <span className="mt-0.5 block text-[12px] leading-snug text-white/55">
                     {scopeDescriptions[scope]}
                   </span>
@@ -212,7 +222,9 @@ export function AgentKeysManager({
 
       {/* ---- Clés existantes --------------------------------------------- */}
       <section>
-        <h2 className="text-[15px] font-semibold text-white">Clés existantes</h2>
+        <h2 className="text-[15px] font-semibold text-white">
+          Clés existantes
+        </h2>
         {keys.length === 0 ? (
           <p className="mt-3 text-[14px] text-white/50">
             Aucune clé. Les agents ne peuvent rien écrire pour l&apos;instant.
@@ -223,11 +235,15 @@ export function AgentKeysManager({
               <li
                 key={key.id}
                 className={`rounded-lg border p-4 ${
-                  key.revokedAt ? "border-white/10 opacity-55" : "border-white/15 bg-white/[0.02]"
+                  key.revokedAt
+                    ? "border-white/10 opacity-55"
+                    : "border-white/15 bg-white/[0.02]"
                 }`}
               >
                 <header className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                  <span className="text-[15px] font-semibold text-white">{key.name}</span>
+                  <span className="text-[15px] font-semibold text-white">
+                    {key.name}
+                  </span>
                   <code className="rounded bg-black/40 px-2 py-0.5 font-mono text-[12px] text-white/50">
                     {key.prefix}…
                   </code>
@@ -256,7 +272,9 @@ export function AgentKeysManager({
                   ))}
                 </div>
 
-                {key.note && <p className="mt-2.5 text-[13px] text-white/55">{key.note}</p>}
+                {key.note && (
+                  <p className="mt-2.5 text-[13px] text-white/55">{key.note}</p>
+                )}
 
                 <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-[12px] text-white/45 sm:grid-cols-3">
                   <div>
@@ -282,7 +300,8 @@ export function AgentKeysManager({
                         setError(null);
                         startTransition(async () => {
                           const res = await revokeAgentKeyAction(key.id);
-                          if (!res.ok) setError(res.error ?? "Révocation impossible.");
+                          if (!res.ok)
+                            setError(res.error ?? "Révocation impossible.");
                         });
                       }}
                       className="text-white/60 hover:text-red-300 disabled:opacity-40"
@@ -300,9 +319,12 @@ export function AgentKeysManager({
                           startTransition(async () => {
                             const res = await updateScopesAction(
                               key.id,
-                              key.scopes.filter((s) => s !== "publish:articles"),
+                              key.scopes.filter(
+                                (s) => s !== "publish:articles",
+                              ),
                             );
-                            if (!res.ok) setError(res.error ?? "Modification impossible.");
+                            if (!res.ok)
+                              setError(res.error ?? "Modification impossible.");
                           });
                         }}
                         className="text-white/60 hover:text-amber-300 disabled:opacity-40"

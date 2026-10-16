@@ -18,12 +18,20 @@ interface SelectionContextValue {
   selectedFileIds: Set<string>;
   isSelected: (fileId: string) => boolean;
   setSelectedFiles: (files: File[]) => void;
-  selectFile: (file: File, files: File[], multi?: boolean, range?: boolean) => void;
+  selectFile: (
+    file: File,
+    files: File[],
+    multi?: boolean,
+    range?: boolean,
+  ) => void;
   clearSelection: () => void;
   selectAll: (files: File[]) => void;
   focusedIndex: number;
   setFocusedIndex: (index: number) => void;
-  moveFocus: (direction: "up" | "down" | "left" | "right", files: File[]) => void;
+  moveFocus: (
+    direction: "up" | "down" | "left" | "right",
+    files: File[],
+  ) => void;
   // Rename state
   renamingFileId: string | null;
   startRename: (fileId: string) => void;
@@ -41,7 +49,10 @@ interface SelectionProviderProps {
   isActiveTab?: boolean;
 }
 
-export function SelectionProvider({ children, isActiveTab = true }: SelectionProviderProps) {
+export function SelectionProvider({
+  children,
+  isActiveTab = true,
+}: SelectionProviderProps) {
   const platform = usePlatform();
   useClipboard();
   const tabManager = useTabManager();
@@ -72,7 +83,9 @@ export function SelectionProvider({ children, isActiveTab = true }: SelectionPro
     (filesOrUpdater: File[] | ((prev: File[]) => File[])) => {
       setSelectedFilesInternal((prev) => {
         const nextFiles =
-          typeof filesOrUpdater === "function" ? filesOrUpdater(prev) : filesOrUpdater;
+          typeof filesOrUpdater === "function"
+            ? filesOrUpdater(prev)
+            : filesOrUpdater;
 
         // Sync to TabManager
         updateSelectionIds(
@@ -194,9 +207,12 @@ export function SelectionProvider({ children, isActiveTab = true }: SelectionPro
         let newIndex = currentFocusedIndex;
 
         if (direction === "up") newIndex = Math.max(0, currentFocusedIndex - 1);
-        if (direction === "down") newIndex = Math.min(files.length - 1, currentFocusedIndex + 1);
-        if (direction === "left") newIndex = Math.max(0, currentFocusedIndex - 1);
-        if (direction === "right") newIndex = Math.min(files.length - 1, currentFocusedIndex + 1);
+        if (direction === "down")
+          newIndex = Math.min(files.length - 1, currentFocusedIndex + 1);
+        if (direction === "left")
+          newIndex = Math.max(0, currentFocusedIndex - 1);
+        if (direction === "right")
+          newIndex = Math.min(files.length - 1, currentFocusedIndex + 1);
 
         if (newIndex !== currentFocusedIndex) {
           setSelectedFiles([files[newIndex]]);
@@ -235,7 +251,9 @@ export function SelectionProvider({ children, isActiveTab = true }: SelectionPro
       }
 
       // Don't submit if name is empty or unchanged
-      const currentFullName = file.extension ? `${file.name}.${file.extension}` : file.name;
+      const currentFullName = file.extension
+        ? `${file.name}.${file.extension}`
+        : file.name;
       if (!newName.trim() || newName === currentFullName) {
         setRenamingFileId(null);
         return;
@@ -292,7 +310,10 @@ export function SelectionProvider({ children, isActiveTab = true }: SelectionPro
           const newIds = new Set(matchingFiles.map((f) => f.id));
 
           // Skip update if selection already matches
-          if (prevIds.size === newIds.size && [...newIds].every((id) => prevIds.has(id))) {
+          if (
+            prevIds.size === newIds.size &&
+            [...newIds].every((id) => prevIds.has(id))
+          ) {
             return prev;
           }
 
@@ -345,11 +366,16 @@ export function SelectionProvider({ children, isActiveTab = true }: SelectionPro
     ],
   );
 
-  return <SelectionContext.Provider value={value}>{children}</SelectionContext.Provider>;
+  return (
+    <SelectionContext.Provider value={value}>
+      {children}
+    </SelectionContext.Provider>
+  );
 }
 
 export function useSelection() {
   const context = useContext(SelectionContext);
-  if (!context) throw new Error("useSelection must be used within SelectionProvider");
+  if (!context)
+    throw new Error("useSelection must be used within SelectionProvider");
   return context;
 }

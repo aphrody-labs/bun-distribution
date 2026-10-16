@@ -2,7 +2,11 @@
 import { expect, test } from "bun:test";
 import { resolve } from "node:path";
 import { UnifiedInferenceEngine } from "../../core/src/gemma4/inference";
-import { executeTool, TOOLS, ToolExecutionContext } from "../../core/src/tools/registry";
+import {
+  executeTool,
+  TOOLS,
+  ToolExecutionContext,
+} from "../../core/src/tools/registry";
 import { callTool } from "../../core/src/tools/host";
 import { NativeRedisClient } from "../../core/src/redis/client";
 import { createApiServer } from "../../core/src/server/http";
@@ -32,7 +36,10 @@ test("SDK, CLI, MCP and HTTP use the same provider contract and schema", async (
   const endpointUrl = `http://127.0.0.1:${provider.port}/v1`;
   const engine = new UnifiedInferenceEngine("provider-model", { endpointUrl });
   const redis = new NativeRedisClient({ offline: true });
-  const context = new ToolExecutionContext({ inference: engine, redisClient: redis });
+  const context = new ToolExecutionContext({
+    inference: engine,
+    redisClient: redis,
+  });
   const api = createApiServer({ port: 0, rootDir: root, toolContext: context });
   const args = {
     prompt: "question",
@@ -46,15 +53,25 @@ test("SDK, CLI, MCP and HTTP use the same provider contract and schema", async (
     const core = await executeTool("yolo_ai_infer", args, root, context);
     const host = await callTool("yolo_ai_infer", args, root, context);
     const fromMcp = JSON.parse(host.content[0]!.text);
-    const response = await fetch(`http://127.0.0.1:${api.port}/api/tools/call`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: "yolo_ai_infer", arguments: args }),
-    });
+    const response = await fetch(
+      `http://127.0.0.1:${api.port}/api/tools/call`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "yolo_ai_infer", arguments: args }),
+      },
+    );
     expect(response.status).toBe(200);
     const fromHttp = await response.json();
     const child = Bun.spawn(
-      [process.execPath, entry, "ai", "call", "yolo_ai_infer", JSON.stringify(args)],
+      [
+        process.execPath,
+        entry,
+        "ai",
+        "call",
+        "yolo_ai_infer",
+        JSON.stringify(args),
+      ],
       {
         windowsHide: true,
         cwd: root,
@@ -94,15 +111,24 @@ test("AI CLI lists the owner schemas and rejects invalid input without a provide
   });
   const catalog = JSON.parse(await new Response(list.stdout).text());
   expect(await list.exited).toBe(0);
-  expect(catalog.find((tool: { name: string }) => tool.name === "yolo_ai_infer")).toEqual(
-    TOOLS.find((tool) => tool.name === "yolo_ai_infer"),
-  );
+  expect(
+    catalog.find((tool: { name: string }) => tool.name === "yolo_ai_infer"),
+  ).toEqual(TOOLS.find((tool) => tool.name === "yolo_ai_infer"));
   const invalid = Bun.spawn(
-    [process.execPath, entry, "ai", "call", "yolo_ai_infer", '{"prompt":"question","maxTokens":0}'],
+    [
+      process.execPath,
+      entry,
+      "ai",
+      "call",
+      "yolo_ai_infer",
+      '{"prompt":"question","maxTokens":0}',
+    ],
     { windowsHide: true, cwd: root, stdout: "pipe", stderr: "pipe" },
   );
   expect(await invalid.exited).toBe(1);
-  expect(await new Response(invalid.stderr).text()).toContain("outside the allowed range");
+  expect(await new Response(invalid.stderr).text()).toContain(
+    "outside the allowed range",
+  );
 });
 
 test("HTTP capability adapter bundles without the tool host", async () => {

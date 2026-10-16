@@ -24,18 +24,23 @@ const git = (...a: string[]) => {
     stdout: "pipe",
     stderr: "pipe",
   });
-  if (r.exitCode !== 0) throw new Error(`git ${a.join(" ")}: ${r.stderr.toString().trim()}`);
+  if (r.exitCode !== 0)
+    throw new Error(`git ${a.join(" ")}: ${r.stderr.toString().trim()}`);
   return r.stdout.toString();
 };
 
-if (!existsSync(join(FORK, ".git")) && !existsSync(join(FORK, "..", "..", ".git"))) {
+if (
+  !existsSync(join(FORK, ".git")) &&
+  !existsSync(join(FORK, "..", "..", ".git"))
+) {
   console.error(
     "vendor/material-design-icons is not vendored: clone aphrody-labs/material-design-icons (--no-checkout --filter=blob:none) there first",
   );
   process.exit(1);
 }
 
-const gradeTag = (g: string) => `grad${g.startsWith("-") ? `N${g.slice(1)}` : g}`;
+const gradeTag = (g: string) =>
+  `grad${g.startsWith("-") ? `N${g.slice(1)}` : g}`;
 const wanted = new Set<string>();
 const variants: string[] = [];
 for (const size of sizes) {
@@ -44,7 +49,8 @@ for (const size of sizes) {
     for (const g of grades) variants.push(`_${gradeTag(g)}${fill}_${size}px`);
     for (const w of weights) {
       variants.push(`_wght${w}${fill}_${size}px`);
-      for (const g of grades) variants.push(`_wght${w}_${gradeTag(g)}${fill}_${size}px`);
+      for (const g of grades)
+        variants.push(`_wght${w}_${gradeTag(g)}${fill}_${size}px`);
     }
   }
 }
@@ -94,27 +100,43 @@ for (let i = 0; i < oids.length; i += CHUNK) {
       "--filter=blob:none",
       "--stdin",
     ],
-    { windowsHide: true, stdin: new TextEncoder().encode(body), stdout: "pipe", stderr: "pipe" },
+    {
+      windowsHide: true,
+      stdin: new TextEncoder().encode(body),
+      stdout: "pipe",
+      stderr: "pipe",
+    },
   );
-  if (r.exitCode !== 0) throw new Error(`fetch chunk ${i / CHUNK}: ${r.stderr.toString().trim()}`);
+  if (r.exitCode !== 0)
+    throw new Error(`fetch chunk ${i / CHUNK}: ${r.stderr.toString().trim()}`);
 }
 git("config", "core.sparseCheckoutCone", "false");
-const set = Bun.spawnSync(["git", "-C", FORK, "sparse-checkout", "set", "--no-cone", "--stdin"], {
-  windowsHide: true,
-  stdin: new TextEncoder().encode(patterns.join("\n") + "\n"),
-  stdout: "pipe",
-  stderr: "pipe",
-});
-if (set.exitCode !== 0) throw new Error(`sparse-checkout: ${set.stderr.toString().trim()}`);
+const set = Bun.spawnSync(
+  ["git", "-C", FORK, "sparse-checkout", "set", "--no-cone", "--stdin"],
+  {
+    windowsHide: true,
+    stdin: new TextEncoder().encode(patterns.join("\n") + "\n"),
+    stdout: "pipe",
+    stderr: "pipe",
+  },
+);
+if (set.exitCode !== 0)
+  throw new Error(`sparse-checkout: ${set.stderr.toString().trim()}`);
 // `sparse-checkout set` leaves entries that were already in the index without writing them; write the gaps.
 const missing = [...wanted].filter((p) => !existsSync(join(FORK, p)));
 if (missing.length > 0) {
-  const w = Bun.spawnSync(["git", "-C", FORK, "checkout-index", "-f", "-q", "--stdin"], {
-    windowsHide: true,
-    stdin: new TextEncoder().encode(missing.join("\n") + "\n"),
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-  if (w.exitCode !== 0) throw new Error(`checkout-index: ${w.stderr.toString().trim()}`);
+  const w = Bun.spawnSync(
+    ["git", "-C", FORK, "checkout-index", "-f", "-q", "--stdin"],
+    {
+      windowsHide: true,
+      stdin: new TextEncoder().encode(missing.join("\n") + "\n"),
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  );
+  if (w.exitCode !== 0)
+    throw new Error(`checkout-index: ${w.stderr.toString().trim()}`);
 }
-console.log(`materialised ${wanted.size} svg files for ${symbols.size} symbols in ${FORK}`);
+console.log(
+  `materialised ${wanted.size} svg files for ${symbols.size} symbols in ${FORK}`,
+);

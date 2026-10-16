@@ -32,9 +32,13 @@ export interface StackManifest {
 
 /** Source checkouts consume Material; installed distributions retain their asset layout. */
 export function templatesRoot(rootDir: string): string {
-  if (!existsSync(join(rootDir, "Cargo.toml"))) return resolve(rootDir, "m3/templates");
+  if (!existsSync(join(rootDir, "Cargo.toml")))
+    return resolve(rootDir, "m3/templates");
   return join(
-    checkoutRoot("material", { ...process.env, APHRODY_WORKSPACE_ROOT: rootDir }),
+    checkoutRoot("material", {
+      ...process.env,
+      APHRODY_WORKSPACE_ROOT: rootDir,
+    }),
     "packages/m3/templates",
   );
 }
@@ -80,7 +84,10 @@ function stageTemplates(rootDir: string): { dir: string; cleanup(): void } {
   try {
     web = resolve(
       dirname(
-        Bun.resolveSync("@aphrody/web-source/integrations/m3/templates/web/src/home.ts", rootDir),
+        Bun.resolveSync(
+          "@aphrody/web-source/integrations/m3/templates/web/src/home.ts",
+          rootDir,
+        ),
       ),
       "../..",
     );
@@ -92,7 +99,10 @@ function stageTemplates(rootDir: string): { dir: string; cleanup(): void } {
   const dir = join(staged, "m3", "templates");
   cpSync(own, dir, { recursive: true });
   cpSync(web, dir, { recursive: true });
-  return { dir, cleanup: () => rmSync(staged, { recursive: true, force: true }) };
+  return {
+    dir,
+    cleanup: () => rmSync(staged, { recursive: true, force: true }),
+  };
 }
 
 /** Writes the project with `bun create aphrody/...` and returns the relative paths of the files created. */
@@ -122,11 +132,22 @@ async function createFromTemplates(
       "--aphrody",
       options.yoloPath,
     ],
-    { windowsHide: true, stdout: "ignore", stderr: "pipe", env: { ...process.env, NO_COLOR: "1" } },
+    {
+      windowsHide: true,
+      stdout: "ignore",
+      stderr: "pipe",
+      env: { ...process.env, NO_COLOR: "1" },
+    },
   );
-  const [stderr, exitCode] = await Promise.all([new Response(proc.stderr).text(), proc.exited]);
+  const [stderr, exitCode] = await Promise.all([
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
   if (exitCode !== 0) {
-    throw new Error(stderr.replace(/^error: /, "").trim() || `bun create exited with ${exitCode}`);
+    throw new Error(
+      stderr.replace(/^error: /, "").trim() ||
+        `bun create exited with ${exitCode}`,
+    );
   }
   return walk(options.target).toSorted();
 }
@@ -174,10 +195,14 @@ export async function runCreateCommand(
       `\x1b[1m${stack.meta["name"]}\x1b[0m (Bun ${stack.meta["bun"]}, runtime ABI ${stack.meta["runtime_abi"]})`,
     );
     for (const [id, t] of Object.entries(stack.template)) {
-      console.log(`  ${id.padEnd(8)} ${t.required ? "(always) " : "         "}${t.description}`);
+      console.log(
+        `  ${id.padEnd(8)} ${t.required ? "(always) " : "         "}${t.description}`,
+      );
     }
     for (const [id, layer] of Object.entries(stack.layer)) {
-      console.log(`  layer ${id.padEnd(9)} ${String(layer["plan"]).padEnd(3)} ${layer["status"]}`);
+      console.log(
+        `  layer ${id.padEnd(9)} ${String(layer["plan"]).padEnd(3)} ${layer["status"]}`,
+      );
     }
     return 0;
   }

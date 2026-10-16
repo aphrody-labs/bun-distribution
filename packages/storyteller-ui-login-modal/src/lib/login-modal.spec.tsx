@@ -1,5 +1,14 @@
-import { stubGlobal, restoreGlobals } from "../../../../../tools/testing/globals";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  stubGlobal,
+  restoreGlobals,
+} from "../../../../../tools/testing/globals";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
 import { LoginModal } from "./login-modal";
 import { useLoginModalStore } from "./useLoginModalStore";
@@ -19,16 +28,27 @@ vi.mock("@headlessui/react", () => ({
   Transition: ({ show, children }: any) => (show ? children : null),
   TransitionChild: ({ children }: any) => children,
 }));
-vi.mock("@storyteller/icons", () => ({ DynamicIcon: () => null, DiscordIcon: () => null }));
+vi.mock("@storyteller/icons", () => ({
+  DynamicIcon: () => null,
+  DiscordIcon: () => null,
+}));
 vi.mock("@storyteller/ui-button", () => ({
-  Button: ({ children, variant: _variant, icon: _icon, iconFlip: _iconFlip, ...props }: any) => (
-    <button {...props}>{children}</button>
-  ),
+  Button: ({
+    children,
+    variant: _variant,
+    icon: _icon,
+    iconFlip: _iconFlip,
+    ...props
+  }: any) => <button {...props}>{children}</button>,
 }));
 vi.mock("@storyteller/ui-input", () => ({
-  Input: ({ inputClassName: _inputClassName, ...props }: any) => <input {...props} />,
+  Input: ({ inputClassName: _inputClassName, ...props }: any) => (
+    <input {...props} />
+  ),
 }));
-vi.mock("qrcode.react", () => ({ QRCodeSVG: () => <svg role="img" aria-label="Login QR" /> }));
+vi.mock("qrcode.react", () => ({
+  QRCodeSVG: () => <svg role="img" aria-label="Login QR" />,
+}));
 
 const USER = { username: "google_user", user_token: "u_test" };
 
@@ -77,13 +97,19 @@ describe("native login modal integration", () => {
       render(<LoginModal />);
     });
     expect(screen.getByText("Create your account")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Login with Website" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Login with Website" }),
+    ).toBeNull();
     expect(screen.queryByRole("button", { name: "Scan to Login" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Log in" }));
-    expect(screen.getByRole("button", { name: "Login with Website" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Login with Website" }),
+    ).toBeTruthy();
     expect(screen.getByRole("button", { name: "Scan to Login" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Sign up" }));
-    expect(screen.queryByRole("button", { name: "Login with Website" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Login with Website" }),
+    ).toBeNull();
   });
 
   it.each(["Login with Website", "Scan to Login"])(
@@ -93,26 +119,39 @@ describe("native login modal integration", () => {
       await act(async () => {
         render(<LoginModal isSignUp={false} onArtCraftAuthSuccess={success} />);
       });
-      expect(screen.getByPlaceholderText("you@example.com or username")).toBeTruthy();
+      expect(
+        screen.getByPlaceholderText("you@example.com or username"),
+      ).toBeTruthy();
       await act(async () => {
         fireEvent.click(screen.getByRole("button", { name: label }));
       });
       expect(screen.getByRole("img", { name: "Login QR" })).toBeTruthy();
-      expect(screen.queryByPlaceholderText("you@example.com or username")).toBeNull();
+      expect(
+        screen.queryByPlaceholderText("you@example.com or username"),
+      ).toBeNull();
       expect(screen.queryByPlaceholderText("Min. 8 characters")).toBeNull();
       expect(screen.queryByRole("button", { name: "Sign up" })).toBeNull();
 
       await act(async () => {
         fireEvent.click(screen.getByRole("button", { name: "Back" }));
       });
-      expect(screen.getByPlaceholderText("you@example.com or username")).toBeTruthy();
+      expect(
+        screen.getByPlaceholderText("you@example.com or username"),
+      ).toBeTruthy();
       expect(screen.getByPlaceholderText("Min. 8 characters")).toBeTruthy();
-      expect(screen.getByRole("button", { name: "Login with Website" })).toBeTruthy();
-      expect(screen.getByRole("button", { name: "Scan to Login" })).toBeTruthy();
+      expect(
+        screen.getByRole("button", { name: "Login with Website" }),
+      ).toBeTruthy();
+      expect(
+        screen.getByRole("button", { name: "Scan to Login" }),
+      ).toBeTruthy();
       expect(screen.queryByRole("img", { name: "Login QR" })).toBeNull();
-      expect(native).toHaveBeenCalledWith("storyteller_cancel_login_challenge_command", {
-        challengeId: "native_handle",
-      });
+      expect(native).toHaveBeenCalledWith(
+        "storyteller_cancel_login_challenge_command",
+        {
+          challengeId: "native_handle",
+        },
+      );
       await act(async () => {
         await vi.advanceTimersByTimeAsync(30_000);
       });
@@ -137,7 +176,9 @@ describe("native login modal integration", () => {
         }),
     );
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Login with Website" }));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Login with Website" }),
+      );
     });
     expect(screen.getByText("Preparing login…")).toBeTruthy();
     expect(screen.queryByPlaceholderText("Min. 8 characters")).toBeNull();
@@ -149,11 +190,16 @@ describe("native login modal integration", () => {
     });
     expect(screen.getByPlaceholderText("Min. 8 characters")).toBeTruthy();
     expect(screen.queryByRole("img", { name: "Login QR" })).toBeNull();
-    expect(native).toHaveBeenCalledWith("storyteller_cancel_login_challenge_command", {
-      challengeId: "late_handle",
-    });
+    expect(native).toHaveBeenCalledWith(
+      "storyteller_cancel_login_challenge_command",
+      {
+        challengeId: "late_handle",
+      },
+    );
     expect(
-      native.mock.calls.filter(([command]) => command === "plugin:opener|open_url"),
+      native.mock.calls.filter(
+        ([command]) => command === "plugin:opener|open_url",
+      ),
     ).toHaveLength(0);
   });
 
@@ -187,22 +233,31 @@ describe("native login modal integration", () => {
         await act(async () => {
           resolveSession(null);
         });
-      expect(screen.getByRole("heading", { name: "Logged in as google_user" })).toBeTruthy();
+      expect(
+        screen.getByRole("heading", { name: "Logged in as google_user" }),
+      ).toBeTruthy();
       expect(screen.queryByRole("img", { name: "Login QR" })).toBeNull();
       expect(useLoginModalStore.getState().isOpen).toBe(true);
       await act(async () => {
         await vi.advanceTimersByTimeAsync(2999);
       });
-      expect(screen.getByRole("heading", { name: "Logged in as google_user" })).toBeTruthy();
+      expect(
+        screen.getByRole("heading", { name: "Logged in as google_user" }),
+      ).toBeTruthy();
       await act(async () => {
         await vi.advanceTimersByTimeAsync(1);
       });
       expect(useLoginModalStore.getState().isOpen).toBe(false);
-      expect(screen.queryByRole("heading", { name: "Logged in as google_user" })).toBeNull();
+      expect(
+        screen.queryByRole("heading", { name: "Logged in as google_user" }),
+      ).toBeNull();
       expect(screen.queryByText("Create your account")).toBeNull();
-      expect(native).toHaveBeenCalledWith("storyteller_poll_login_challenge_command", {
-        challengeId: "native_handle",
-      });
+      expect(native).toHaveBeenCalledWith(
+        "storyteller_poll_login_challenge_command",
+        {
+          challengeId: "native_handle",
+        },
+      );
     },
   );
 
@@ -211,7 +266,9 @@ describe("native login modal integration", () => {
     async (signup) => {
       const success = vi.fn();
       await act(async () => {
-        render(<LoginModal isSignUp={signup} onArtCraftAuthSuccess={success} />);
+        render(
+          <LoginModal isSignUp={signup} onArtCraftAuthSuccess={success} />,
+        );
       });
       if (signup) {
         fireEvent.change(screen.getByPlaceholderText("Username"), {
@@ -224,9 +281,12 @@ describe("native login modal integration", () => {
           target: { value: "password123" },
         });
       } else {
-        fireEvent.change(screen.getByPlaceholderText("you@example.com or username"), {
-          target: { value: "native_user" },
-        });
+        fireEvent.change(
+          screen.getByPlaceholderText("you@example.com or username"),
+          {
+            target: { value: "native_user" },
+          },
+        );
       }
       fireEvent.change(screen.getByPlaceholderText("Min. 8 characters"), {
         target: { value: "password123" },
@@ -239,7 +299,9 @@ describe("native login modal integration", () => {
       });
       expect(success).toHaveBeenCalledExactlyOnceWith(USER);
       expect(native).toHaveBeenCalledWith(
-        signup ? "storyteller_password_signup_command" : "storyteller_password_login_command",
+        signup
+          ? "storyteller_password_signup_command"
+          : "storyteller_password_login_command",
         {
           request: signup
             ? {
@@ -253,7 +315,9 @@ describe("native login modal integration", () => {
         },
       );
       if (!signup) {
-        expect(screen.getByRole("heading", { name: "Logged in as google_user" })).toBeTruthy();
+        expect(
+          screen.getByRole("heading", { name: "Logged in as google_user" }),
+        ).toBeTruthy();
         expect(screen.queryByText("Join Our Community")).toBeNull();
         await act(async () => {
           await vi.advanceTimersByTimeAsync(3000);
@@ -268,21 +332,33 @@ describe("native login modal integration", () => {
     const latestClose = vi.fn();
     const success = vi.fn();
     const view = render(
-      <LoginModal isSignUp={false} onClose={firstClose} onArtCraftAuthSuccess={success} />,
+      <LoginModal
+        isSignUp={false}
+        onClose={firstClose}
+        onArtCraftAuthSuccess={success}
+      />,
     );
     await act(async () => {});
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Login with Website" }));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Login with Website" }),
+      );
     });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(5000);
     });
-    expect(screen.getByRole("status").textContent).toContain("Logged in as google_user");
+    expect(screen.getByRole("status").textContent).toContain(
+      "Logged in as google_user",
+    );
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1500);
     });
     view.rerender(
-      <LoginModal isSignUp={false} onClose={latestClose} onArtCraftAuthSuccess={success} />,
+      <LoginModal
+        isSignUp={false}
+        onClose={latestClose}
+        onArtCraftAuthSuccess={success}
+      />,
     );
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1500);
@@ -307,7 +383,9 @@ describe("native login modal integration", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(5000);
     });
-    expect(screen.getByRole("heading", { name: "Logged in as google_user" })).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Logged in as google_user" }),
+    ).toBeTruthy();
     view.unmount();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(10_000);
@@ -323,6 +401,8 @@ describe("native login modal integration", () => {
     });
     expect(success).toHaveBeenCalledExactlyOnceWith(USER);
     expect(useLoginModalStore.getState().isOpen).toBe(false);
-    expect(screen.queryByRole("heading", { name: "Logged in as google_user" })).toBeNull();
+    expect(
+      screen.queryByRole("heading", { name: "Logged in as google_user" }),
+    ).toBeNull();
   });
 });

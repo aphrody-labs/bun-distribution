@@ -7,7 +7,8 @@ import { isAbsolute, join, resolve } from "node:path";
 import type { PythonAsync } from "bun:python";
 
 export async function tunnelKey(home: string, owner: string) {
-  if (!isAbsolute(home)) throw new Error("configured protected home must be absolute");
+  if (!isAbsolute(home))
+    throw new Error("configured protected home must be absolute");
   const directory = join(home, "private", "gpu-fleet");
   mkdirSync(directory, { recursive: true, mode: 0o700 });
   const path = join(directory, "wireguard.key");
@@ -24,7 +25,10 @@ export async function tunnelKey(home: string, owner: string) {
     }
     const timeout = setTimeout(() => child.kill("SIGKILL"), 8000);
     try {
-      const [value, code] = await Promise.all([new Response(child.stdout).text(), child.exited]);
+      const [value, code] = await Promise.all([
+        new Response(child.stdout).text(),
+        child.exited,
+      ]);
       if (code !== 0 || !/^[A-Za-z0-9+/]{43}=$/.test(value.trim()))
         throw new Error("native WireGuard key operation failed");
       return value.trim();
@@ -32,9 +36,11 @@ export async function tunnelKey(home: string, owner: string) {
       clearTimeout(timeout);
     }
   }
-  if (!existsSync(path)) writeFileSync(path, await keyCommand(["genkey"]), { mode: 0o600 });
+  if (!existsSync(path))
+    writeFileSync(path, await keyCommand(["genkey"]), { mode: 0o600 });
   const token = join(directory, "api.token");
-  if (!existsSync(token)) writeFileSync(token, randomBytes(32).toString("hex"), { mode: 0o600 });
+  if (!existsSync(token))
+    writeFileSync(token, randomBytes(32).toString("hex"), { mode: 0o600 });
   if (process.platform === "win32") {
     const w = await import("bun:windows");
     const identity = w.systemInfo();
@@ -49,7 +55,8 @@ export async function tunnelKey(home: string, owner: string) {
       ],
       { stdout: "ignore", stderr: "ignore", windowsHide: true },
     );
-    if ((await child.exited) !== 0) throw new Error("protected GPU key ACL failed");
+    if ((await child.exited) !== 0)
+      throw new Error("protected GPU key ACL failed");
     await Promise.all(
       [path, token].map(async (file) => {
         const acl = Bun.spawn(
@@ -63,18 +70,26 @@ export async function tunnelKey(home: string, owner: string) {
           ],
           { stdout: "ignore", stderr: "ignore", windowsHide: true },
         );
-        if ((await acl.exited) !== 0) throw new Error("protected GPU key file ACL failed");
+        if ((await acl.exited) !== 0)
+          throw new Error("protected GPU key file ACL failed");
       }),
     );
   }
-  const publicKey = await keyCommand(["pubkey"], readFileSync(path, "utf8").trim());
+  const publicKey = await keyCommand(
+    ["pubkey"],
+    readFileSync(path, "utf8").trim(),
+  );
   writeFileSync(join(directory, "wireguard.pub"), publicKey, { mode: 0o600 });
   return { publicKey };
 }
 
-export async function nativeInventory(member: "aphro-pc" | "omar", root: string) {
+export async function nativeInventory(
+  member: "aphro-pc" | "omar",
+  root: string,
+) {
   const w = await import("bun:windows");
-  if (!w.isSupported) throw new Error("Windows inventory requires the qualified Windows fork");
+  if (!w.isSupported)
+    throw new Error("Windows inventory requires the qualified Windows fork");
   const child = Bun.spawn(
     [
       "nvidia-smi",
@@ -86,7 +101,10 @@ export async function nativeInventory(member: "aphro-pc" | "omar", root: string)
   const deadline = setTimeout(() => child.kill("SIGKILL"), 8000);
   let output: string;
   try {
-    const [text, code] = await Promise.all([new Response(child.stdout).text(), child.exited]);
+    const [text, code] = await Promise.all([
+      new Response(child.stdout).text(),
+      child.exited,
+    ]);
     if (code !== 0) throw new Error("native NVIDIA probe failed");
     output = text.trim();
   } finally {
@@ -94,7 +112,9 @@ export async function nativeInventory(member: "aphro-pc" | "omar", root: string)
   }
   const rows = output.split(/\r?\n/);
   if (rows.length !== 1)
-    throw new Error("fleet requires an explicit GPU selection on multi-GPU hosts");
+    throw new Error(
+      "fleet requires an explicit GPU selection on multi-GPU hosts",
+    );
   const [gpu, total, free, driver] = rows[0]!.split(",").map((s) => s.trim());
   const memory = w.memory.status();
   const toolchain =
@@ -128,21 +148,33 @@ export async function nativeInventory(member: "aphro-pc" | "omar", root: string)
       windows11: w.isWindows11(),
       processors: w.systemInfo().processors,
       localAppData: w.knownFolder("LocalAppData"),
-      services: w.services.list().filter((s) => /^(sshd|WireGuard|com\.docker)/i.test(s.name)),
-      toolchain: { arch: toolchain?.arch ?? null, msvc: toolchain?.msvc?.version ?? null },
+      services: w.services
+        .list()
+        .filter((s) => /^(sshd|WireGuard|com\.docker)/i.test(s.name)),
+      toolchain: {
+        arch: toolchain?.arch ?? null,
+        msvc: toolchain?.msvc?.version ?? null,
+      },
       // Registry-only enumeration does not start WSL.
-      wslRegistrations: w.wsl.distributions().map((d) => ({ name: d.name, version: d.version })),
+      wslRegistrations: w.wsl
+        .distributions()
+        .map((d) => ({ name: d.name, version: d.version })),
     },
   };
 }
 
 export async function openPlanner(source: string): Promise<PythonAsync> {
-  if (!isAbsolute(source) || !existsSync(join(source, "aphrody", "inference", "fleet.py")))
+  if (
+    !isAbsolute(source) ||
+    !existsSync(join(source, "aphrody", "inference", "fleet.py"))
+  )
     throw new Error("configured Aphrody Python source missing");
   const { Python } = await import("bun:python");
   const py = await Python.async();
   try {
-    await py.exec(`import sys, os\nsys.path.insert(0, ${JSON.stringify(source)})`);
+    await py.exec(
+      `import sys, os\nsys.path.insert(0, ${JSON.stringify(source)})`,
+    );
     const environment = process.env.VIRTUAL_ENV;
     if (environment) {
       const site = join(environment, "Lib", "site-packages");
@@ -150,7 +182,8 @@ export async function openPlanner(source: string): Promise<PythonAsync> {
         await py.exec(`import site\nsite.addsitedir(${JSON.stringify(site)})`);
     }
     const pid = Number(await py.eval("os.getpid()"));
-    if (pid !== process.pid) throw new Error("Python host is not in the dedicated Bun process");
+    if (pid !== process.pid)
+      throw new Error("Python host is not in the dedicated Bun process");
     await py.exec("import aphrody.inference.fleet");
     return py;
   } catch (error) {
@@ -164,7 +197,9 @@ export async function main(argv = Bun.argv.slice(2)): Promise<number> {
     const at = argv.indexOf(name);
     return at < 0 ? undefined : argv[at + 1];
   };
-  const root = resolve(flag("--root") ?? process.env.APHRODY_INFRA_ROOT ?? process.cwd());
+  const root = resolve(
+    flag("--root") ?? process.env.APHRODY_INFRA_ROOT ?? process.cwd(),
+  );
   if (argv[0] === "tunnel-key") {
     console.log(
       JSON.stringify(
@@ -176,10 +211,13 @@ export async function main(argv = Bun.argv.slice(2)): Promise<number> {
     );
     return 0;
   }
-  const source = resolve(flag("--python-source") ?? join(root, "py/packages/aphrody/src"));
+  const source = resolve(
+    flag("--python-source") ?? join(root, "py/packages/aphrody/src"),
+  );
   if (argv[0] === "inventory") {
     const member = flag("--member") ?? "aphro-pc";
-    if (member !== "aphro-pc" && member !== "omar") throw new Error("unknown member");
+    if (member !== "aphro-pc" && member !== "omar")
+      throw new Error("unknown member");
     console.log(JSON.stringify(await nativeInventory(member, root)));
     return 0;
   }
@@ -192,7 +230,13 @@ export async function main(argv = Bun.argv.slice(2)): Promise<number> {
     const path = flag("--snapshot");
     if (!path || !isAbsolute(path))
       throw new Error("plan requires an absolute measured snapshot path");
-    console.log(await py.call("aphrody.inference.fleet", "plan_json", readFileSync(path, "utf8")));
+    console.log(
+      await py.call(
+        "aphrody.inference.fleet",
+        "plan_json",
+        readFileSync(path, "utf8"),
+      ),
+    );
     return 0;
   }
   throw new Error(

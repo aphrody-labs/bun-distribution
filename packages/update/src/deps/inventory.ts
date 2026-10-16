@@ -11,12 +11,23 @@
  *
  * Read-only. Responses are cached for six hours under target/deps-inventory/cache.
  */
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { spawnSync } from "../process.ts";
 import { cmpVersion } from "./sync.ts";
 
-export type Dep = { ecosystem: "crates.io" | "npm" | "PyPI"; name: string; version: string };
+export type Dep = {
+  ecosystem: "crates.io" | "npm" | "PyPI";
+  name: string;
+  version: string;
+};
 export type Row = Dep & {
   latest?: string;
   behind?: boolean;
@@ -38,7 +49,11 @@ const TTL_MS = 6 * 3600 * 1000;
 
 // ---------------------------------------------------------------- helpers
 
-export async function pool<T, R>(items: T[], size: number, fn: (x: T) => Promise<R>): Promise<R[]> {
+export async function pool<T, R>(
+  items: T[],
+  size: number,
+  fn: (x: T) => Promise<R>,
+): Promise<R[]> {
   const out: R[] = [];
   out.length = items.length;
   let next = 0;
@@ -63,7 +78,9 @@ export function sparsePath(name: string): string {
 }
 
 /** Parse the [[package]] blocks of a Cargo.lock. */
-export function parseCargoLock(text: string): { name: string; version: string; source?: string }[] {
+export function parseCargoLock(
+  text: string,
+): { name: string; version: string; source?: string }[] {
   const pkgs: { name: string; version: string; source?: string }[] = [];
   for (const block of text.split("[[package]]").slice(1)) {
     const name = /^name = "([^"]+)"/m.exec(block)?.[1];
@@ -77,7 +94,9 @@ export function parseCargoLock(text: string): { name: string; version: string; s
 /** Resolved name@version pairs from a bun.lock (JSONC, one package per line). */
 export function parseBunLock(text: string): Dep[] {
   const out = new Map<string, Dep>();
-  for (const m of text.matchAll(/^\s{4}"[^"]+":\s*\["((?:@[^/"]+\/)?[^@"]+)@([^"@,]+)"/gm)) {
+  for (const m of text.matchAll(
+    /^\s{4}"[^"]+":\s*\["((?:@[^/"]+\/)?[^@"]+)@([^"@,]+)"/gm,
+  )) {
     const [, name, version] = m;
     if (name && version && /^\d/.test(version))
       out.set(`${name}@${version}`, { ecosystem: "npm", name, version });
@@ -85,10 +104,16 @@ export function parseBunLock(text: string): Dep[] {
   return [...out.values()];
 }
 
-export function parseRequirements(text: string): { name: string; version: string }[] {
+export function parseRequirements(
+  text: string,
+): { name: string; version: string }[] {
   return text.split("\n").flatMap((l) => {
-    const m = /^([A-Za-z0-9_.-]+)(?:\[[^\]]*\])?==([0-9][^\s;\\]*)/.exec(l.trim());
-    return m ? [{ name: m[1]!.toLowerCase().replace(/_/g, "-"), version: m[2]! }] : [];
+    const m = /^([A-Za-z0-9_.-]+)(?:\[[^\]]*\])?==([0-9][^\s;\\]*)/.exec(
+      l.trim(),
+    );
+    return m
+      ? [{ name: m[1]!.toLowerCase().replace(/_/g, "-"), version: m[2]! }]
+      : [];
   });
 }
 
@@ -96,10 +121,14 @@ export function parseUvLock(text: string): { name: string; version: string }[] {
   return parseCargoLock(text).map(({ name, version }) => ({ name, version }));
 }
 
-export function gitSources(pkgs: { name: string; source?: string }[]): Map<string, Set<string>> {
+export function gitSources(
+  pkgs: { name: string; source?: string }[],
+): Map<string, Set<string>> {
   const repos = new Map<string, Set<string>>();
   for (const p of pkgs) {
-    const m = /^git\+([^?#]+)(?:\?[^#]*)?#?([0-9a-f]{7,40})?/.exec(p.source ?? "");
+    const m = /^git\+([^?#]+)(?:\?[^#]*)?#?([0-9a-f]{7,40})?/.exec(
+      p.source ?? "",
+    );
     if (!m) continue;
     const url = m[1]!.replace(/\.git$/, "");
     (repos.get(url) ?? repos.set(url, new Set()).get(url)!).add(m[2] ?? "");
@@ -118,7 +147,8 @@ export class Cache {
   }
   get(key: string): string | undefined {
     const f = this.file(key);
-    if (!existsSync(f) || Date.now() - statSync(f).mtimeMs > TTL_MS) return undefined;
+    if (!existsSync(f) || Date.now() - statSync(f).mtimeMs > TTL_MS)
+      return undefined;
     return readFileSync(f, "utf8");
   }
   set(key: string, v: string) {
@@ -142,7 +172,10 @@ export async function cachedText(
       signal: AbortSignal.timeout(30_000),
     }).catch(() => undefined);
     if (res && res.status !== 429 && res.status < 500) break;
-    const wait = Math.min(60, Number(res?.headers.get("retry-after")) || 2 ** attempt * 2); // honour Retry-After, else exponential backoff
+    const wait = Math.min(
+      60,
+      Number(res?.headers.get("retry-after")) || 2 ** attempt * 2,
+    ); // honour Retry-After, else exponential backoff
     // oxlint-disable-next-line no-await-in-loop -- attente de Retry-After entre deux relances séquentielles
     await new Promise((r) => setTimeout(r, wait * 1000));
   }
@@ -163,7 +196,10 @@ async function crateInfo(
   cache: Cache,
   name: string,
 ): Promise<{ latest?: string; yanked: Set<string>; exists: boolean }> {
-  const text = await cachedText(cache, `https://index.crates.io/${sparsePath(name)}`);
+  const text = await cachedText(
+    cache,
+    `https://index.crates.io/${sparsePath(name)}`,
+  );
   if (!text) return { yanked: new Set(), exists: false };
   const yanked = new Set<string>();
   let latest: string | undefined;
@@ -173,7 +209,8 @@ async function crateInfo(
       yanked.add(v.vers);
       continue;
     }
-    if (!v.vers.includes("-") && (!latest || cmpVersion(latest, v.vers) < 0)) latest = v.vers;
+    if (!v.vers.includes("-") && (!latest || cmpVersion(latest, v.vers) < 0))
+      latest = v.vers;
   }
   return { latest, yanked, exists: true };
 }
@@ -202,7 +239,10 @@ async function pypiInfo(
     info: { version: string };
     releases?: Record<string, { yanked?: boolean }[]>;
   };
-  return { latest: d.info.version, yanked: !!d.releases?.[version]?.some((f) => f.yanked) };
+  return {
+    latest: d.info.version,
+    yanked: !!d.releases?.[version]?.some((f) => f.yanked),
+  };
 }
 
 export async function osv(deps: Dep[]): Promise<Map<string, string[]>> {
@@ -223,7 +263,9 @@ export async function osv(deps: Dep[]): Promise<Map<string, string[]>> {
     }).catch(() => undefined);
     if (!res?.ok) continue;
     // oxlint-disable-next-line no-await-in-loop -- lecture de la réponse du lot OSV courant avant d'émettre le lot suivant
-    const body = (await res.json()) as { results: { vulns?: { id: string }[] }[] };
+    const body = (await res.json()) as {
+      results: { vulns?: { id: string }[] }[];
+    };
     body.results.forEach((r, j) => {
       if (r.vulns?.length)
         out.set(
@@ -247,7 +289,10 @@ export function lsRemote(url: string): { head?: string; latestTag?: string } {
   for (const l of r.stdout.split("\n")) {
     const [sha, ref] = l.split("\t");
     if (ref === "HEAD") head = sha;
-    const t = /^refs\/tags\/(?:[\w.-]*?[-@v])?(\d+\.\d+\.\d+(?:-[\w.]+)?)$/.exec(ref ?? "");
+    const t =
+      /^refs\/tags\/(?:[\w.-]*?[-@v])?(\d+\.\d+\.\d+(?:-[\w.]+)?)$/.exec(
+        ref ?? "",
+      );
     if (t && (!latestTag || cmpVersion(latestTag, t[1]!) < 0))
       latestTag = ref!.replace("refs/tags/", "");
   }
@@ -266,7 +311,14 @@ function walk(
   root: string,
   match: (f: string) => boolean,
   out: string[] = [],
-  skip = new Set(["node_modules", "target", ".git", "upstream", "dist", ".next"]),
+  skip = new Set([
+    "node_modules",
+    "target",
+    ".git",
+    "upstream",
+    "dist",
+    ".next",
+  ]),
 ): string[] {
   for (const e of readdirSync(root, { withFileTypes: true })) {
     if (skip.has(e.name)) continue;
@@ -283,7 +335,12 @@ export type Inventory = {
   bun: Row[];
   python: Row[];
   git: GitRow[];
-  firstParty: { crates: number; versionDrift: string[]; nameTaken: string[]; aiCrates: number };
+  firstParty: {
+    crates: number;
+    versionDrift: string[];
+    nameTaken: string[];
+    aiCrates: number;
+  };
 };
 
 export async function inventory(
@@ -294,16 +351,21 @@ export async function inventory(
   const cache = new Cache(join(root, "target", "deps-inventory", "cache"));
 
   // ---- Rust
-  const lockPkgs = parseCargoLock(readFileSync(join(root, "Cargo.lock"), "utf8"));
+  const lockPkgs = parseCargoLock(
+    readFileSync(join(root, "Cargo.lock"), "utf8"),
+  );
   const wsToml = readFileSync(join(root, "Cargo.toml"), "utf8");
   const direct = new Set(
     [
-      ...(/\[workspace\.dependencies\]([\s\S]*?)(?:\n\[|$)/.exec(wsToml)?.[1] ?? "").matchAll(
-        /^([A-Za-z0-9_-]+)\s*=/gm,
-      ),
+      ...(
+        /\[workspace\.dependencies\]([\s\S]*?)(?:\n\[|$)/.exec(wsToml)?.[1] ??
+        ""
+      ).matchAll(/^([A-Za-z0-9_-]+)\s*=/gm),
     ].map((m) => m[1]!),
   );
-  const registryPkgs = lockPkgs.filter((p) => p.source?.startsWith("registry+"));
+  const registryPkgs = lockPkgs.filter((p) =>
+    p.source?.startsWith("registry+"),
+  );
   const names = [...new Set(registryPkgs.map((p) => p.name))];
   log(
     `rust: ${registryPkgs.length} registry packages (${names.length} crates), querying the sparse index`,
@@ -328,16 +390,22 @@ export async function inventory(
   // ---- git sources (any host)
   const repos = gitSources(lockPkgs);
   log(`git: ${repos.size} remote(s)`);
-  const git: GitRow[] = await pool([...repos.entries()], 4, async ([url, pinned]) => {
-    const r = lsRemote(url);
-    return {
-      url,
-      pinned: [...pinned].filter(Boolean).map((s) => s.slice(0, 12)),
-      head: r.head?.slice(0, 12),
-      latestTag: r.latestTag,
-      stale: !!r.head && ![...pinned].some((p) => p && r.head!.startsWith(p.slice(0, 12))),
-    };
-  });
+  const git: GitRow[] = await pool(
+    [...repos.entries()],
+    4,
+    async ([url, pinned]) => {
+      const r = lsRemote(url);
+      return {
+        url,
+        pinned: [...pinned].filter(Boolean).map((s) => s.slice(0, 12)),
+        head: r.head?.slice(0, 12),
+        latestTag: r.latestTag,
+        stale:
+          !!r.head &&
+          ![...pinned].some((p) => p && r.head!.startsWith(p.slice(0, 12))),
+      };
+    },
+  );
 
   // ---- first-party crates
   const manifests = walk(join(root, "crates"), (f) => f.endsWith("Cargo.toml"));
@@ -364,9 +432,13 @@ export async function inventory(
 
   // ---- Bun
   const bunLock = join(root, "bun.lock");
-  const bunDeps = existsSync(bunLock) ? parseBunLock(readFileSync(bunLock, "utf8")) : [];
+  const bunDeps = existsSync(bunLock)
+    ? parseBunLock(readFileSync(bunLock, "utf8"))
+    : [];
   const bunNames = [...new Set(bunDeps.map((d) => d.name))];
-  log(`bun: ${bunDeps.length} resolved packages (${bunNames.length} names), querying npm`);
+  log(
+    `bun: ${bunDeps.length} resolved packages (${bunNames.length} names), querying npm`,
+  );
   const npm = new Map<string, Awaited<ReturnType<typeof npmInfo>>>();
   await pool(bunNames, 8, async (n) => {
     npm.set(n, await npmInfo(cache, n));
@@ -401,16 +473,21 @@ export async function inventory(
   });
 
   // ---- Python
-  const pyRoots = [root, ...(opts.pythonRoots ?? [])].filter((r) => existsSync(r));
+  const pyRoots = [root, ...(opts.pythonRoots ?? [])].filter((r) =>
+    existsSync(r),
+  );
   const py = new Map<string, Dep>();
   for (const r of pyRoots) {
     for (const f of walk(
       r,
       (p) =>
-        /(^|\/)(requirements[^/]*\.txt|uv\.lock)$/.test(p) && !p.startsWith(join(r, "docs") + "/"),
+        /(^|\/)(requirements[^/]*\.txt|uv\.lock)$/.test(p) &&
+        !p.startsWith(join(r, "docs") + "/"),
     ) /* docs/ holds vendored reference copies, never installed */) {
       const text = readFileSync(f, "utf8");
-      for (const d of f.endsWith("uv.lock") ? parseUvLock(text) : parseRequirements(text))
+      for (const d of f.endsWith("uv.lock")
+        ? parseUvLock(text)
+        : parseRequirements(text))
         py.set(`${d.name}@${d.version}`, { ecosystem: "PyPI", ...d });
     }
   }
@@ -448,9 +525,10 @@ export async function inventory(
 
 export function summarise(inv: Inventory, root: string): string {
   const holdFile = join(root, "tools/config/deps/advisory-holds.json");
-  const holds: { ecosystem: string; name: string; reason: string }[] = existsSync(holdFile)
-    ? (JSON.parse(readFileSync(holdFile, "utf8")).holds ?? [])
-    : [];
+  const holds: { ecosystem: string; name: string; reason: string }[] =
+    existsSync(holdFile)
+      ? (JSON.parse(readFileSync(holdFile, "utf8")).holds ?? [])
+      : [];
   const sect = (title: string, rows: Row[]) => {
     const behind = rows.filter((r) => r.behind);
     const direct = behind.filter((r) => r.direct);
@@ -462,9 +540,12 @@ export function summarise(inv: Inventory, root: string): string {
       `- resolved: ${rows.length}, behind latest: ${behind.length} (direct: ${direct.length}), with advisories: ${vuln.length}, yanked/deprecated: ${bad.length}`,
       "",
     ];
-    const held = (r: Row) => holds.find((h) => h.ecosystem === r.ecosystem && h.name === r.name);
+    const held = (r: Row) =>
+      holds.find((h) => h.ecosystem === r.ecosystem && h.name === r.name);
     const open = vuln.filter((r) => !held(r));
-    const fixable = open.filter((r) => r.latest && cmpVersion(r.version, r.latest) < 0);
+    const fixable = open.filter(
+      (r) => r.latest && cmpVersion(r.version, r.latest) < 0,
+    );
     const unfixed = open.filter((r) => !fixable.includes(r));
     const fmt = (r: Row) =>
       `- ${r.name} ${r.version}: ${r.vulns!.slice(0, 3).join(", ")}${r.latest ? ` (latest ${r.latest})` : ""}`;
@@ -475,7 +556,11 @@ export function summarise(inv: Inventory, root: string): string {
         "",
       );
     if (unfixed.length)
-      lines.push("Open advisories with no newer release:", ...unfixed.slice(0, 40).map(fmt), "");
+      lines.push(
+        "Open advisories with no newer release:",
+        ...unfixed.slice(0, 40).map(fmt),
+        "",
+      );
     const heldRows = vuln.filter((r) => held(r));
     if (heldRows.length)
       lines.push(
@@ -497,7 +582,9 @@ export function summarise(inv: Inventory, root: string): string {
     if (direct.length)
       lines.push(
         "Direct dependencies behind latest:",
-        ...direct.slice(0, 60).map((r) => `- ${r.name} ${r.version} -> ${r.latest}`),
+        ...direct
+          .slice(0, 60)
+          .map((r) => `- ${r.name} ${r.version} -> ${r.latest}`),
         "",
       );
     return lines;

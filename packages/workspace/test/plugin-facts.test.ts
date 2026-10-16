@@ -18,7 +18,10 @@ test("relative evidence roots resolve inside the plugin, independent of the work
     '{"name":"demo","version":"1.0.0","description":"d"}\n',
   );
   await Bun.write(`${store}/demo/references/upstream-main.json`, "{}\n");
-  await Bun.write(`${store}/demo/skills/a/SKILL.md`, "---\nname: a\ndescription: d\n---\n");
+  await Bun.write(
+    `${store}/demo/skills/a/SKILL.md`,
+    "---\nname: a\ndescription: d\n---\n",
+  );
   await Bun.write(
     `${store}/demo/source-of-truth.json`,
     JSON.stringify({

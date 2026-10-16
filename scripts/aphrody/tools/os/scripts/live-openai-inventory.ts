@@ -28,13 +28,31 @@ const SENSITIVE =
 const KINDS: Array<[string, Set<string>]> = [
   ["binary", new Set([".exe", ".dll", ".sys", ".node", ".msi", ".appx"])],
   ["archive", new Set([".asar", ".zip", ".7z", ".pak"])],
-  ["database-metadata-only", new Set([".db", ".sqlite", ".sqlite3", ".wal", ".shm"])],
+  [
+    "database-metadata-only",
+    new Set([".db", ".sqlite", ".sqlite3", ".wal", ".shm"]),
+  ],
   [
     "configuration-metadata-only",
-    new Set([".json", ".jsonl", ".toml", ".yaml", ".yml", ".ini", ".cfg", ".conf"]),
+    new Set([
+      ".json",
+      ".jsonl",
+      ".toml",
+      ".yaml",
+      ".yml",
+      ".ini",
+      ".cfg",
+      ".conf",
+    ]),
   ],
-  ["application-source", new Set([".js", ".mjs", ".cjs", ".ts", ".tsx", ".css", ".html"])],
-  ["asset", new Set([".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg", ".webp"])],
+  [
+    "application-source",
+    new Set([".js", ".mjs", ".cjs", ".ts", ".tsx", ".css", ".html"]),
+  ],
+  [
+    "asset",
+    new Set([".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg", ".webp"]),
+  ],
 ];
 const PE_EXTENSIONS = new Set([".exe", ".dll", ".sys"]);
 const MAX_HASH_BYTES = 1024 ** 3;
@@ -43,8 +61,11 @@ const MAX_HASH_BYTES = 1024 ** 3;
 export function classify(path: string, rootKind: string): string {
   if (SENSITIVE.test(path)) return "sensitive-metadata-only";
   const extension = extname(path).toLowerCase();
-  for (const [kind, extensions] of KINDS) if (extensions.has(extension)) return kind;
-  return rootKind.startsWith("msix-") ? "application-data" : "user-data-metadata-only";
+  for (const [kind, extensions] of KINDS)
+    if (extensions.has(extension)) return kind;
+  return rootKind.startsWith("msix-")
+    ? "application-data"
+    : "user-data-metadata-only";
 }
 
 /** Every regular file under `base`, without following links; unreadable entries are skipped. */
@@ -80,15 +101,26 @@ async function main(): Promise<number> {
   const userRoots = [
     { kind: "user-appdata", path: join(appData, "OpenAI") },
     { kind: "user-local", path: join(localAppData, "OpenAI") },
-    { kind: "msix-localcache", path: join(localAppData, "Packages", pkg.family, "LocalCache") },
-    { kind: "msix-localstate", path: join(localAppData, "Packages", pkg.family, "LocalState") },
+    {
+      kind: "msix-localcache",
+      path: join(localAppData, "Packages", pkg.family, "LocalCache"),
+    },
+    {
+      kind: "msix-localstate",
+      path: join(localAppData, "Packages", pkg.family, "LocalState"),
+    },
     { kind: "codex-home", path: join(home, ".codex") },
     { kind: "chatgpt-home", path: join(home, ".chatgpt") },
-  ].filter((root) => existsSync(root.path) && statSync(root.path).isDirectory());
+  ].filter(
+    (root) => existsSync(root.path) && statSync(root.path).isDirectory(),
+  );
   const scanRoots = [{ kind: "msix-install", path: installRoot }, ...userRoots];
 
   const stamp = sessionStamp();
-  const dirs = artifactDirs(options.get("artifact-root") ?? "var/winclean-live/openai", stamp);
+  const dirs = artifactDirs(
+    options.get("artifact-root") ?? "var/winclean-live/openai",
+    stamp,
+  );
   return withKernel("openai-inventory", stamp, async (kernel) => {
     const yolo = Bun.spawnSync(
       [
@@ -135,7 +167,11 @@ async function main(): Promise<number> {
           classification,
           sensitive,
         });
-        if (classification === "binary" && !sensitive && info.size <= MAX_HASH_BYTES) {
+        if (
+          classification === "binary" &&
+          !sensitive &&
+          info.size <= MAX_HASH_BYTES
+        ) {
           const hash = await kernel.tryCall("binary_hash_multi", { path });
           const pe = PE_EXTENSIONS.has(extension)
             ? await kernel.tryCall("binary_parse_pe_header", { path })
@@ -149,19 +185,23 @@ async function main(): Promise<number> {
     const asar = existsSync(asarPath)
       ? await kernel.call("asar_list", { path: asarPath })
       : { success: false, error: "app.asar not found" };
-    const asarPayload = ((asar as Record<string, Json>).structuredContent ?? asar) as Record<
-      string,
-      Json
-    >;
+    const asarPayload = ((asar as Record<string, Json>).structuredContent ??
+      asar) as Record<string, Json>;
     const profile = await kernel.call("get_system_profile");
     const os = await kernel.call("get_os_info");
     const sensitiveCount = records.filter((record) => record.sensitive).length;
-    const asarFiles = typeof asarPayload.totalFiles === "number" ? asarPayload.totalFiles : 0;
+    const asarFiles =
+      typeof asarPayload.totalFiles === "number" ? asarPayload.totalFiles : 0;
     const manifest = {
       schema: "aphrody.openai.local.inventory.v1",
       status: "verified-live-read-only",
       session: stamp,
-      package: { name: pkg.name, version: pkg.version, family: pkg.family, installRoot },
+      package: {
+        name: pkg.name,
+        version: pkg.version,
+        family: pkg.family,
+        installRoot,
+      },
       roots: scanRoots,
       counts: {
         files: records.length,

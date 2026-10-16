@@ -50,9 +50,7 @@ export function getEditableScalarChannels({
   }
 
   const channelEntries: Array<[string, ChannelData | undefined]> =
-    isLeafChannelData(data)
-      ? [["value", data]]
-      : Object.entries(data);
+    isLeafChannelData(data) ? [["value", data]] : Object.entries(data);
   const channels: ScalarGraphChannel[] = [];
   for (const [componentKey, channel] of channelEntries) {
     if (!isScalarAnimationChannel(channel)) {
@@ -74,7 +72,10 @@ export function getEditableScalarChannel({
   componentKey: string;
 }): ScalarGraphChannel | null {
   const result = getEditableScalarChannels({ animations, propertyPath });
-  return result?.channels.find((channel) => channel.componentKey === componentKey) ?? null;
+  return (
+    result?.channels.find((channel) => channel.componentKey === componentKey) ??
+    null
+  );
 }
 
 export function getScalarKeyframeContext({

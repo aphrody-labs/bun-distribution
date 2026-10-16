@@ -22,7 +22,10 @@ export class DesignCompiler {
    * @param options.loadDesignSystem Optional design-system token loader (e.g. `node.ts`, from disk).
    */
   constructor(
-    options: { validateSpec?: SpecValidator; loadDesignSystem?: DesignSystemLoader } = {},
+    options: {
+      validateSpec?: SpecValidator;
+      loadDesignSystem?: DesignSystemLoader;
+    } = {},
   ) {
     this.validateSpec = options.validateSpec;
     this.loadDesignSystem = options.loadDesignSystem;
@@ -33,7 +36,11 @@ export class DesignCompiler {
    * Runs the automated HCT theme generator, resolves prompt guidelines,
    * and outputs React components + CSS sheets.
    */
-  public compile(rawBrief: string, seedColor?: string, designSystemId?: string): GenerationResult {
+  public compile(
+    rawBrief: string,
+    seedColor?: string,
+    designSystemId?: string,
+  ): GenerationResult {
     // 1. Zero-Click semantic extraction
     const brief = parseBrief(rawBrief, seedColor);
     if (designSystemId) {
@@ -49,8 +56,14 @@ export class DesignCompiler {
         // Ignore loader failures, fall back to standard M3 colors
       }
       // If no seedColor was specified, fall back to the design system's accent color
-      if (systemCss && !seedColor && !rawBrief.match(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/)) {
-        const accentMatch = systemCss.match(/--accent:\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3})/);
+      if (
+        systemCss &&
+        !seedColor &&
+        !rawBrief.match(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/)
+      ) {
+        const accentMatch = systemCss.match(
+          /--accent:\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3})/,
+        );
         if (accentMatch) {
           brief.seedColor = accentMatch[1];
         }
@@ -206,7 +219,10 @@ export class DesignCompiler {
 }`,
       );
     }
-    code = code.replace("// GENERATED INTERACTION HELPERS", inlineHelpers.join("\n\n"));
+    code = code.replace(
+      "// GENERATED INTERACTION HELPERS",
+      inlineHelpers.join("\n\n"),
+    );
     const consumerProps = ["onAction"];
     if (brief.hasStreaming) consumerProps.unshift("stream");
     if (brief.hasThinkingIndicator) consumerProps.push("thinking");
@@ -217,8 +233,11 @@ export class DesignCompiler {
 
     // Apply specific title
     const titleMatch =
-      brief.rawBrief.match(/pour ([\w\s-]+)/i) || brief.rawBrief.match(/for ([\w\s-]+)/i);
-    const parsedTitle = titleMatch ? titleMatch[1].trim() : "Automated M3 Design";
+      brief.rawBrief.match(/pour ([\w\s-]+)/i) ||
+      brief.rawBrief.match(/for ([\w\s-]+)/i);
+    const parsedTitle = titleMatch
+      ? titleMatch[1].trim()
+      : "Automated M3 Design";
 
     code = code.replace("Automated M3 Design", parsedTitle);
     code = code.replace(
@@ -305,7 +324,8 @@ export class DesignCompiler {
           </Pane>
         </ListDetail>`;
     } else if (brief.layoutType === "supporting-pane") {
-      layoutState = "const [selectedTask, setSelectedTask] = React.useState<string | null>(null);";
+      layoutState =
+        "const [selectedTask, setSelectedTask] = React.useState<string | null>(null);";
       layoutActions = `'inspect-task': (id) => {
       if (id !== 'task-1') return;
       setSelectedTask(id);
@@ -411,7 +431,10 @@ export class DesignCompiler {
       const endIndex = code.indexOf("        </Scaffold>", startIndex);
       if (startIndex !== -1 && endIndex !== -1) {
         const length = endIndex + "        </Scaffold>".length - startIndex;
-        code = code.substring(0, startIndex) + layoutMarkup + code.substring(startIndex + length);
+        code =
+          code.substring(0, startIndex) +
+          layoutMarkup +
+          code.substring(startIndex + length);
       }
     }
     code = code.replace("// GENERATED ITEM DETAILS", itemDetails);
@@ -495,7 +518,10 @@ export class DesignCompiler {
       const usedImports = importBlock[1].split(",").filter((entry) => {
         const alias = entry.trim().match(/^\w+ as (\w+)$/)?.[1];
         return (
-          alias && new RegExp(`<${alias}(?=[\\s/>])|\\btypeof\\s+${alias}\\b`).test(componentBody)
+          alias &&
+          new RegExp(`<${alias}(?=[\\s/>])|\\btypeof\\s+${alias}\\b`).test(
+            componentBody,
+          )
         );
       });
       code = code.replace(

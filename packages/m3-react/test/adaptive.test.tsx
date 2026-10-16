@@ -43,7 +43,11 @@ describe("classifyWidth — canonical M3 boundaries (600/840/1200/1600)", () => 
 });
 
 function Probe() {
-  return React.createElement("span", { "data-testid": "size-class" }, useWindowSizeClass());
+  return React.createElement(
+    "span",
+    { "data-testid": "size-class" },
+    useWindowSizeClass(),
+  );
 }
 
 describe("useWindowSizeClass", () => {

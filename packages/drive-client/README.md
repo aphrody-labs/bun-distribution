@@ -19,7 +19,7 @@ bun add @aphrody/drive-client
 ## Quick Start
 
 ```typescript
-import { SpacedriveClient } from '@spacedrive/client';
+import { SpacedriveClient } from "@spacedrive/client";
 
 const client = new SpacedriveClient();
 
@@ -28,48 +28,50 @@ await client.ping();
 
 // Get libraries (fully typed)
 const libraries = await client.getLibraries();
-console.log('Libraries:', libraries);
+console.log("Libraries:", libraries);
 
 // Get jobs with status filtering
-const jobs = await client.getJobs('running');
-console.log('Running jobs:', jobs);
+const jobs = await client.getJobs("running");
+console.log("Running jobs:", jobs);
 
 // Create a new library
-const newLibrary = await client.createLibrary('My Photos', '~/Photos');
-console.log('Created library:', newLibrary);
+const newLibrary = await client.createLibrary("My Photos", "~/Photos");
+console.log("Created library:", newLibrary);
 ```
 
 ## Event Subscription
 
 ```typescript
 // Subscribe to specific event types
-await client.subscribe(['JobStarted', 'JobProgress', 'JobCompleted']);
+await client.subscribe(["JobStarted", "JobProgress", "JobCompleted"]);
 
 // Listen for events (fully typed)
-client.on('event', (event) => {
+client.on("event", (event) => {
   switch (event) {
-    case 'CoreStarted':
-      console.log('Daemon started');
+    case "CoreStarted":
+      console.log("Daemon started");
       break;
     default:
-      if ('JobStarted' in event) {
-        console.log(`Job started: ${event.JobStarted.job_type} (${event.JobStarted.job_id})`);
-      } else if ('JobProgress' in event) {
+      if ("JobStarted" in event) {
+        console.log(
+          `Job started: ${event.JobStarted.job_type} (${event.JobStarted.job_id})`,
+        );
+      } else if ("JobProgress" in event) {
         console.log(`Job progress: ${event.JobProgress.progress * 100}%`);
-      } else if ('JobCompleted' in event) {
+      } else if ("JobCompleted" in event) {
         console.log(`Job completed: ${event.JobCompleted.job_type}`);
-        console.log('Output:', event.JobCompleted.output);
+        console.log("Output:", event.JobCompleted.output);
       }
       break;
   }
 });
 
-client.on('error', (error) => {
-  console.error('Client error:', error);
+client.on("error", (error) => {
+  console.error("Client error:", error);
 });
 
-client.on('disconnected', () => {
-  console.log('Disconnected from daemon');
+client.on("disconnected", () => {
+  console.log("Disconnected from daemon");
 });
 ```
 

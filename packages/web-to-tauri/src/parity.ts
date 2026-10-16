@@ -150,7 +150,8 @@ function stripVolatile(url: string): string {
     // Cache busters and timestamps differ run to run, not between the two sides.
     const volatile: string[] = [];
     parsed.searchParams.forEach((_value, key) => {
-      if (/^(?:_|t|ts|v|cb|cachebust|nonce|rnd|random)$/i.test(key)) volatile.push(key);
+      if (/^(?:_|t|ts|v|cb|cachebust|nonce|rnd|random)$/i.test(key))
+        volatile.push(key);
     });
     for (const key of volatile) parsed.searchParams.delete(key);
     return `${parsed.origin}${parsed.pathname}${parsed.search}`;
@@ -165,9 +166,13 @@ function countBy<T>(items: T[], key: (item: T) => string): Map<string, number> {
   return out;
 }
 
-function missing(reference: Map<string, number>, wrapped: Map<string, number>): string[] {
+function missing(
+  reference: Map<string, number>,
+  wrapped: Map<string, number>,
+): string[] {
   const out: string[] = [];
-  for (const [key, count] of reference) if ((wrapped.get(key) ?? 0) < count) out.push(key);
+  for (const [key, count] of reference)
+    if ((wrapped.get(key) ?? 0) < count) out.push(key);
   return out;
 }
 
@@ -188,7 +193,11 @@ export function compareSnapshots(
     findings.push({ severity, check, message });
 
   if (reference.title !== wrapped.title)
-    add("regression", "title", `title differs: "${reference.title}" vs "${wrapped.title}"`);
+    add(
+      "regression",
+      "title",
+      `title differs: "${reference.title}" vs "${wrapped.title}"`,
+    );
   if ((reference.lang ?? "") !== (wrapped.lang ?? ""))
     add("info", "lang", `lang differs: ${reference.lang} vs ${wrapped.lang}`);
 
@@ -215,7 +224,11 @@ export function compareSnapshots(
     normalizeText(wrapped.text, options.ignoreText),
   );
   if (similarity < min)
-    add("regression", "text", `visible text similarity ${similarity.toFixed(3)} is below ${min}`);
+    add(
+      "regression",
+      "text",
+      `visible text similarity ${similarity.toFixed(3)} is below ${min}`,
+    );
 
   const refTree = countBy(reference.tree, treeKey);
   const wrapTree = countBy(wrapped.tree, treeKey);
@@ -241,7 +254,9 @@ export function compareSnapshots(
 
   return {
     path,
-    status: findings.some((finding) => finding.severity === "regression") ? "fail" : "pass",
+    status: findings.some((finding) => finding.severity === "regression")
+      ? "fail"
+      : "pass",
     textSimilarity: similarity,
     findings,
   };
@@ -274,11 +289,18 @@ export function verifyPolicy(plan: ConversionPlan): Finding[] {
   check(config.start, "navigation", "start page");
   for (const hop of probe.redirects) {
     check(hop.url, "navigation", "redirect hop");
-    if (hop.location) check(new URL(hop.location, hop.url).href, "navigation", "redirect target");
+    if (hop.location)
+      check(
+        new URL(hop.location, hop.url).href,
+        "navigation",
+        "redirect target",
+      );
   }
   const base = new URL(probe.finalUrl);
-  for (const path of probe.links) check(new URL(path, base).href, "navigation", "same-origin link");
-  for (const origin of probe.formOrigins) check(`${origin}/`, "navigation", "form action");
+  for (const path of probe.links)
+    check(new URL(path, base).href, "navigation", "same-origin link");
+  for (const origin of probe.formOrigins)
+    check(`${origin}/`, "navigation", "form action");
   for (const idp of probe.idps) {
     const rule = IDP_RULES.find((entry) => entry.id === idp.id);
     for (const pattern of rule?.patterns ?? []) {

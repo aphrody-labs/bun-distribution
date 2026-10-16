@@ -5,7 +5,8 @@ import { describe, expect, test } from "bun:test";
 
 const normalizeDestination = (dest: string): "chat" | "files" => {
   if (dest === "agent" || dest === "chat") return "chat";
-  if (dest === "drive" || dest === "files" || dest === "windows") return "files";
+  if (dest === "drive" || dest === "files" || dest === "windows")
+    return "files";
   return "chat";
 };
 

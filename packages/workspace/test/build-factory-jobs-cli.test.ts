@@ -3,7 +3,10 @@ import { afterAll, afterEach, expect, test } from "bun:test";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { buildFactoryPlan, type BuildFactoryConfig } from "../src/build-factory.ts";
+import {
+  buildFactoryPlan,
+  type BuildFactoryConfig,
+} from "../src/build-factory.ts";
 import { factoryJobPlan } from "../src/build-factory-jobs.ts";
 import { writeBunCommand } from "./fixtures/bun-command.ts";
 
@@ -52,14 +55,19 @@ process.exitCode = reply.code ?? 0;
 afterAll(() => rm(fixtureHome, { recursive: true, force: true }));
 
 afterEach(async () => {
-  await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+  await Promise.all(
+    roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
+  );
 });
 
 async function fixture() {
   const root = await mkdtemp(join(tmpdir(), "aphrody-factory-job-cli-"));
   roots.push(root);
   await mkdir(join(root, "tools", "config"), { recursive: true });
-  await writeFile(join(root, "tools/config/build-factory.json"), JSON.stringify(config));
+  await writeFile(
+    join(root, "tools/config/build-factory.json"),
+    JSON.stringify(config),
+  );
   const marker = join(root, "invocation.json");
   const response = join(root, "response.json");
   const receipt = {
@@ -74,10 +82,17 @@ async function fixture() {
     phase: "dispatch",
     submission: "created",
   };
-  await writeFile(response, JSON.stringify({ stdout: JSON.stringify(receipt) }));
+  await writeFile(
+    response,
+    JSON.stringify({ stdout: JSON.stringify(receipt) }),
+  );
   const run = async (...args: string[]) => {
     const child = Bun.spawn(
-      [process.execPath, join(import.meta.dir, "../src/build-factory.ts"), ...args],
+      [
+        process.execPath,
+        join(import.meta.dir, "../src/build-factory.ts"),
+        ...args,
+      ],
       {
         windowsHide: true,
         env: {
@@ -144,7 +159,13 @@ test("detached run confirms submission through the installed native Infra owner 
   expect(result.value.executed).toBeUndefined();
   expect(result.value.exitCode).toBeUndefined();
   const invocation = await f.invocation();
-  expect(invocation.args.slice(2, 7)).toEqual(["ssh", "exec", "--host", "vps", "--cmd"]);
+  expect(invocation.args.slice(2, 7)).toEqual([
+    "ssh",
+    "exec",
+    "--host",
+    "vps",
+    "--cmd",
+  ]);
   expect(invocation.timeout).toBe("60");
   expect(await f.invocations()).toHaveLength(1);
 });
@@ -162,7 +183,13 @@ test("detached install request returns after durable submission without polling 
     next: "Poll build-factory status --job <id>; after succeeded, run the matching build-factory install --job <id> command.",
   });
   const invocation = await f.invocation();
-  expect(invocation.args.slice(2, 7)).toEqual(["ssh", "exec", "--host", "vps", "--cmd"]);
+  expect(invocation.args.slice(2, 7)).toEqual([
+    "ssh",
+    "exec",
+    "--host",
+    "vps",
+    "--cmd",
+  ]);
   expect(invocation.timeout).toBe("60");
   expect(await f.invocations()).toHaveLength(1);
 });
@@ -191,7 +218,13 @@ test("status uses a bounded read-only native observation and preserves a termina
   expect(Buffer.byteLength(result.value.logs.stderr.text)).toBe(65536);
   expect(result.value.dispatchConfirmed).toBe(false);
   const invocation = await f.invocation();
-  expect(invocation.args.slice(2, 7)).toEqual(["ssh", "exec", "--host", "vps", "--cmd"]);
+  expect(invocation.args.slice(2, 7)).toEqual([
+    "ssh",
+    "exec",
+    "--host",
+    "vps",
+    "--cmd",
+  ]);
   expect(invocation.args[7]).toContain('"tailLines":12');
   expect(invocation.args[7]).not.toContain("setsid");
   expect(invocation.timeout).toBe("60");
@@ -220,8 +253,18 @@ test("malformed, conflicting or contradictory acknowledgements require reconcili
     JSON.stringify({ ...f.receipt, repository: "yolo" }),
     JSON.stringify({ ...f.receipt, revision: "c".repeat(40) }),
     JSON.stringify({ ...f.receipt, status: "active", exitCode: 0 }),
-    JSON.stringify({ ...f.receipt, status: "active", pid: 123, processAlive: false }),
-    JSON.stringify({ ...f.receipt, status: "active", pid: -1, processAlive: true }),
+    JSON.stringify({
+      ...f.receipt,
+      status: "active",
+      pid: 123,
+      processAlive: false,
+    }),
+    JSON.stringify({
+      ...f.receipt,
+      status: "active",
+      pid: -1,
+      processAlive: true,
+    }),
     JSON.stringify({ ...f.receipt, padding: "😀".repeat(300000) }),
     JSON.stringify({
       ...f.receipt,
@@ -249,13 +292,30 @@ test("invalid IDs, missing detach pairs, duplicate options and excessive tails f
   const requests = [
     ["run", "--revision", revision, "--detach", "--", ...ownerCommand],
     ["run", "--revision", revision, "--job", jobId, "--", ...ownerCommand],
-    ["run", "--revision", revision, "--detach", "--job", "../escape", "--", ...ownerCommand],
+    [
+      "run",
+      "--revision",
+      revision,
+      "--detach",
+      "--job",
+      "../escape",
+      "--",
+      ...ownerCommand,
+    ],
     ["status", "--job", jobId, "--tail", "201"],
     ["status", "--job", jobId, "--tail", "-1"],
     ["status", "--job", jobId, "--tail", "1e2"],
     ["status", "--job", jobId, "--route"],
     ["status", "--job", jobId, "--job", jobId],
-    ["run", "--revision", revision, "--revision", revision, "--", ...ownerCommand],
+    [
+      "run",
+      "--revision",
+      revision,
+      "--revision",
+      revision,
+      "--",
+      ...ownerCommand,
+    ],
   ];
   await Promise.all(
     requests.map(async (args) => {

@@ -30,7 +30,10 @@ const png = await canvas.encode("png"); // also "webp", "avif", "jpeg"
 reaches a site bundle:
 
 ```ts
-import { createBrowserCanvas, createM3CanvasSurface } from "@aphrody/canvas/site";
+import {
+  createBrowserCanvas,
+  createM3CanvasSurface,
+} from "@aphrody/canvas/site";
 ```
 
 The package ships TypeScript sources for Bun (`"default"` conditions) and hand-written

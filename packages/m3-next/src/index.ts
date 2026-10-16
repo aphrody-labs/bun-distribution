@@ -98,8 +98,13 @@ function union(...lists: (readonly string[] | undefined)[]): string[] {
 }
 
 /** `true` when the Tauri CLI drives this process (it sets `TAURI_ENV_PLATFORM` for `beforeBuildCommand` and `beforeDevCommand`). */
-export function isTauriBuild(env: Record<string, string | undefined> = process.env): boolean {
-  return env["TAURI_ENV_PLATFORM"] !== undefined || env["TAURI_ENV_ARCH"] !== undefined;
+export function isTauriBuild(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  return (
+    env["TAURI_ENV_PLATFORM"] !== undefined ||
+    env["TAURI_ENV_ARCH"] !== undefined
+  );
 }
 
 /**
@@ -109,16 +114,20 @@ export function isTauriBuild(env: Record<string, string | undefined> = process.e
  * build) needs no loader for the M3 sheets because they are plain CSS processed by the app's PostCSS /
  * Tailwind v4 pipeline.
  */
-export function withM3(config: NextConfig = {}, options: WithM3Options = {}): NextConfig {
+export function withM3(
+  config: NextConfig = {},
+  options: WithM3Options = {},
+): NextConfig {
   const { optimizePackageImports = true, turbopackRoot } = options;
   const transpile = union(
     config.transpilePackages,
     M3_TRANSPILE_PACKAGES,
     options.transpilePackages,
   );
-  const external = union(config.serverExternalPackages, M3_SERVER_EXTERNAL_PACKAGES).filter(
-    (name) => !transpile.includes(name),
-  );
+  const external = union(
+    config.serverExternalPackages,
+    M3_SERVER_EXTERNAL_PACKAGES,
+  ).filter((name) => !transpile.includes(name));
   const next: NextConfig = {
     reactStrictMode: true,
     ...config,
@@ -140,14 +149,19 @@ export function withM3(config: NextConfig = {}, options: WithM3Options = {}): Ne
       ...(turbopackRoot !== undefined ? { root: turbopackRoot } : {}),
     };
   }
-  if (options.reactCompiler !== undefined) next.reactCompiler ??= options.reactCompiler;
-  if (options.typedRoutes !== undefined) next.typedRoutes ??= options.typedRoutes;
-  if (options.cacheComponents !== undefined) next.cacheComponents ??= options.cacheComponents;
+  if (options.reactCompiler !== undefined)
+    next.reactCompiler ??= options.reactCompiler;
+  if (options.typedRoutes !== undefined)
+    next.typedRoutes ??= options.typedRoutes;
+  if (options.cacheComponents !== undefined)
+    next.cacheComponents ??= options.cacheComponents;
 
   const tauri = options.tauri === "auto" ? isTauriBuild() : options.tauri;
   if (tauri !== undefined && tauri !== false) {
-    const { devHost = process.env["TAURI_DEV_HOST"], devPort = 3000 }: M3TauriOptions =
-      tauri === true ? {} : tauri;
+    const {
+      devHost = process.env["TAURI_DEV_HOST"],
+      devPort = 3000,
+    }: M3TauriOptions = tauri === true ? {} : tauri;
     next.output ??= "export";
     next.trailingSlash ??= true;
     next.images = { unoptimized: true, ...config.images };
@@ -161,7 +175,9 @@ export function withM3(config: NextConfig = {}, options: WithM3Options = {}): Ne
 }
 
 /** The `color-scheme` value for a mode: `system` lets the UA follow the OS. */
-export function colorSchemeFor(mode: M3ThemeMode): "light" | "dark" | "light dark" {
+export function colorSchemeFor(
+  mode: M3ThemeMode,
+): "light" | "dark" | "light dark" {
   return mode === "system" ? "light dark" : mode;
 }
 
@@ -175,17 +191,28 @@ export interface M3SchemeOptions {
 }
 
 /** The M3 colour roles of one scheme, computed in JS (material-color-utilities). */
-export function m3SchemeColors(options: M3SchemeOptions & { dark?: boolean } = {}): ColorRoleMap {
-  const { seed = M3_BASELINE_SEED, variant = "tonalSpot", contrast = 0, dark = false } = options;
+export function m3SchemeColors(
+  options: M3SchemeOptions & { dark?: boolean } = {},
+): ColorRoleMap {
+  const {
+    seed = M3_BASELINE_SEED,
+    variant = "tonalSpot",
+    contrast = 0,
+    dark = false,
+  } = options;
   return schemeFromSeed(seed, { dark, variant, contrastLevel: contrast });
 }
 
 /** The `theme-color` pair of a scheme: the `surface` role in light and in dark. */
-export function m3ThemeColors(options: M3SchemeOptions = {}): { light: string; dark: string } {
+export function m3ThemeColors(options: M3SchemeOptions = {}): {
+  light: string;
+  dark: string;
+} {
   const surface = "--md-sys-color-surface";
   const light = m3SchemeColors({ ...options, dark: false })[surface];
   const dark = m3SchemeColors({ ...options, dark: true })[surface];
-  if (!light || !dark) throw new Error("m3ThemeColors: the scheme has no surface role");
+  if (!light || !dark)
+    throw new Error("m3ThemeColors: the scheme has no surface role");
   return { light, dark };
 }
 
@@ -240,14 +267,21 @@ export function generateM3Metadata(options: M3MetadataOptions): Metadata {
     title: { default: name, template: `%s · ${name}` },
     applicationName: name,
     ...(description !== undefined ? { description } : {}),
-    ...(url !== undefined ? { metadataBase: typeof url === "string" ? new URL(url) : url } : {}),
+    ...(url !== undefined
+      ? { metadataBase: typeof url === "string" ? new URL(url) : url }
+      : {}),
     appleWebApp: { capable: true, title: name, statusBarStyle: "default" },
     formatDetection: { telephone: false },
     ...metadata,
   };
 }
 
-function block(selector: string, vars: ColorRoleMap, colorScheme: string, indent = ""): string {
+function block(
+  selector: string,
+  vars: ColorRoleMap,
+  colorScheme: string,
+  indent = "",
+): string {
   const body = Object.entries(vars)
     .map(([name, value]) => `${indent}  ${name}: ${value};`)
     .join("\n");
@@ -260,7 +294,10 @@ function block(selector: string, vars: ColorRoleMap, colorScheme: string, indent
  * roles on `:root.light`. The class selectors outrank the `:root` blocks of `tokens.css`, so a
  * forced mode wins over the OS preference whatever the stylesheet order.
  */
-export function m3SchemeStylesheet(light: ColorRoleMap, dark: ColorRoleMap): string {
+export function m3SchemeStylesheet(
+  light: ColorRoleMap,
+  dark: ColorRoleMap,
+): string {
   return [
     block(":root", light, "light"),
     `@media (prefers-color-scheme: dark) {\n${block(":root:not(.light)", dark, "dark", "  ")}\n}`,
@@ -274,8 +311,11 @@ export function m3SchemeStylesheet(light: ColorRoleMap, dark: ColorRoleMap): str
  * sheet is one such block). `color-scheme` is skipped: {@link m3SchemeStylesheet} writes it.
  */
 export function rootDeclarations(css: string): ColorRoleMap {
-  const body = /:root\s*\{([^}]*)\}/.exec(css.replace(/\/\*[\s\S]*?\*\//g, ""))?.[1];
-  if (body === undefined) throw new Error("rootDeclarations: no :root block in the sheet");
+  const body = /:root\s*\{([^}]*)\}/.exec(
+    css.replace(/\/\*[\s\S]*?\*\//g, ""),
+  )?.[1];
+  if (body === undefined)
+    throw new Error("rootDeclarations: no :root block in the sheet");
   const vars: ColorRoleMap = {};
   for (const match of body.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g))
     vars[match[1]!] = match[2]!.trim();
@@ -289,7 +329,9 @@ export function rootDeclarations(css: string): ColorRoleMap {
  * read in the browser, the shell can stay static (Cache Components, Tauri static export) and still honour a saved
  * preference.
  */
-export function colorSchemeScript(cookieName: string = M3_THEME_COOKIE): string {
+export function colorSchemeScript(
+  cookieName: string = M3_THEME_COOKIE,
+): string {
   const name = JSON.stringify(`${validateThemeCookieName(cookieName)}=`);
   return (
     "(function(){try{var d=document.documentElement," +

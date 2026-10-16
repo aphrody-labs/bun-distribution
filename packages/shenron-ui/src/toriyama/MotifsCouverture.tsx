@@ -23,12 +23,12 @@
 import type { CSSProperties, ReactNode } from "react";
 import { uiAssetUrl } from "../assets";
 import {
-	PASTILLE,
-	anneauPastille,
-	anneauxCadre,
-	etoilePath,
-	etoileViewBox,
-	ombreCadre,
+  PASTILLE,
+  anneauPastille,
+  anneauxCadre,
+  etoilePath,
+  etoileViewBox,
+  ombreCadre,
 } from "../toriyama-svg/couverture";
 
 // ─────────────────────────── 1. Cadre de case ───────────────────────────────
@@ -43,26 +43,26 @@ import {
  * épaisseurs — donner la largeur RENDUE, pas celle de l'image source.
  */
 export function CadreCase({
-	children,
-	largeur = 320,
-	className = "",
-	style,
+  children,
+  largeur = 320,
+  className = "",
+  style,
 }: {
-	children: ReactNode;
-	/** Largeur rendue de la vignette, en px : elle pilote les épaisseurs. */
-	largeur?: number;
-	className?: string;
-	style?: CSSProperties;
+  children: ReactNode;
+  /** Largeur rendue de la vignette, en px : elle pilote les épaisseurs. */
+  largeur?: number;
+  className?: string;
+  style?: CSSProperties;
 }) {
-	const a = anneauxCadre(largeur);
-	return (
-		<div
-			className={`relative ${className}`}
-			style={{ boxShadow: ombreCadre(a), borderRadius: a.rayon, ...style }}
-		>
-			{children}
-		</div>
-	);
+  const a = anneauxCadre(largeur);
+  return (
+    <div
+      className={`relative ${className}`}
+      style={{ boxShadow: ombreCadre(a), borderRadius: a.rayon, ...style }}
+    >
+      {children}
+    </div>
+  );
 }
 
 // ───────────────────────── 2. Volutes de nuage ──────────────────────────────
@@ -75,34 +75,34 @@ export function CadreCase({
  * seuls ils flotteraient sur le noir du site.
  */
 export function BancNuages({
-	hauteur = 56,
-	className = "",
-	opacite = 1,
-	cloudUrl = uiAssetUrl("dbz/marque/banc-nuage.svg"),
-	/** Retourne la frise (lobes vers le bas) : bas de section plutôt que haut. */
-	retourne = false,
+  hauteur = 56,
+  className = "",
+  opacite = 1,
+  cloudUrl = uiAssetUrl("dbz/marque/banc-nuage.svg"),
+  /** Retourne la frise (lobes vers le bas) : bas de section plutôt que haut. */
+  retourne = false,
 }: {
-	hauteur?: number;
-	className?: string;
-	opacite?: number;
-	cloudUrl?: string;
-	retourne?: boolean;
+  hauteur?: number;
+  className?: string;
+  opacite?: number;
+  cloudUrl?: string;
+  retourne?: boolean;
 }) {
-	return (
-		<div
-			aria-hidden
-			className={`w-full ${className}`}
-			style={{
-				height: hauteur,
-				opacity: opacite,
-				backgroundColor: "var(--color-case-ciel)",
-				backgroundImage: `url("${cloudUrl}")`,
-				backgroundRepeat: "repeat-x",
-				backgroundSize: "auto 100%",
-				transform: retourne ? "scaleY(-1)" : undefined,
-			}}
-		/>
-	);
+  return (
+    <div
+      aria-hidden
+      className={`w-full ${className}`}
+      style={{
+        height: hauteur,
+        opacity: opacite,
+        backgroundColor: "var(--color-case-ciel)",
+        backgroundImage: `url("${cloudUrl}")`,
+        backgroundRepeat: "repeat-x",
+        backgroundSize: "auto 100%",
+        transform: retourne ? "scaleY(-1)" : undefined,
+      }}
+    />
+  );
 }
 
 // ─────────────────────── 3. Pastille de numéro de tome ──────────────────────
@@ -117,47 +117,49 @@ export function BancNuages({
  * coupe : sur une couverture, l'encre suffit.
  */
 export function PastilleTome({
-	numero,
-	taille = 44,
-	className = "",
-	surImage = false,
-	decorative = false,
+  numero,
+  taille = 44,
+  className = "",
+  surImage = false,
+  decorative = false,
 }: {
-	numero: number | string;
-	/** Diamètre rendu, en px. */
-	taille?: number;
-	className?: string;
-	/** Posée sur une image : pas d'anneau clair. */
-	surImage?: boolean;
-	decorative?: boolean;
+  numero: number | string;
+  /** Diamètre rendu, en px. */
+  taille?: number;
+  className?: string;
+  /** Posée sur une image : pas d'anneau clair. */
+  surImage?: boolean;
+  decorative?: boolean;
 }) {
-	const a = anneauPastille(taille);
-	const arrets = PASTILLE.degradeJetons.map(([r, c]) => `${c} ${Math.round(r * 100)}%`).join(", ");
-	const texte = String(numero);
-	// Le chiffre mesure la moitié du diamètre ; au-delà d'un chiffre, il faut
-	// bien le réduire, sinon « 42 » déborde du cerne.
-	const facteur = texte.length >= 3 ? 0.42 : texte.length === 2 ? 0.56 : 0.68;
-	const anneaux = surImage
-		? `0 0 0 ${a.cerne}px var(--color-encre)`
-		: `0 0 0 ${a.cerne}px var(--color-encre), 0 0 0 ${a.cerne * 1.7}px var(--color-os)`;
-	return (
-		<span
-			className={`inline-grid shrink-0 place-items-center rounded-full font-display font-black leading-none tabular-nums ${className}`}
-			style={{
-				width: taille,
-				height: taille,
-				background: `radial-gradient(circle closest-side at 50% 50%, ${arrets})`,
-				boxShadow: anneaux,
-				color: "var(--color-encre)",
-				fontSize: Math.round(taille * facteur),
-			}}
-			{...(decorative
-				? { "aria-hidden": true }
-				: { role: "img" as const, "aria-label": `Tome ${texte}` })}
-		>
-			<span aria-hidden>{texte}</span>
-		</span>
-	);
+  const a = anneauPastille(taille);
+  const arrets = PASTILLE.degradeJetons
+    .map(([r, c]) => `${c} ${Math.round(r * 100)}%`)
+    .join(", ");
+  const texte = String(numero);
+  // Le chiffre mesure la moitié du diamètre ; au-delà d'un chiffre, il faut
+  // bien le réduire, sinon « 42 » déborde du cerne.
+  const facteur = texte.length >= 3 ? 0.42 : texte.length === 2 ? 0.56 : 0.68;
+  const anneaux = surImage
+    ? `0 0 0 ${a.cerne}px var(--color-encre)`
+    : `0 0 0 ${a.cerne}px var(--color-encre), 0 0 0 ${a.cerne * 1.7}px var(--color-os)`;
+  return (
+    <span
+      className={`inline-grid shrink-0 place-items-center rounded-full font-display font-black leading-none tabular-nums ${className}`}
+      style={{
+        width: taille,
+        height: taille,
+        background: `radial-gradient(circle closest-side at 50% 50%, ${arrets})`,
+        boxShadow: anneaux,
+        color: "var(--color-encre)",
+        fontSize: Math.round(taille * facteur),
+      }}
+      {...(decorative
+        ? { "aria-hidden": true }
+        : { role: "img" as const, "aria-label": `Tome ${texte}` })}
+    >
+      <span aria-hidden>{texte}</span>
+    </span>
+  );
 }
 
 // ──────────────────────────── 4. Étoile ─────────────────────────────────────
@@ -175,31 +177,31 @@ export function PastilleTome({
  * quand on veut l'aplat exact plutôt que la couleur du texte porteur.
  */
 export function Etoile({
-	taille = 12,
-	className = "",
-	title,
-	decorative = true,
+  taille = 12,
+  className = "",
+  title,
+  decorative = true,
 }: {
-	/** Hauteur rendue en px ; la largeur suit le ratio mesuré (1,05). */
-	taille?: number;
-	className?: string;
-	title?: string;
-	decorative?: boolean;
+  /** Hauteur rendue en px ; la largeur suit le ratio mesuré (1,05). */
+  taille?: number;
+  className?: string;
+  title?: string;
+  decorative?: boolean;
 }) {
-	const e = etoileViewBox(50);
-	const [, , w, h] = e.viewBox.split(" ").map(Number);
-	return (
-		<svg
-			viewBox={e.viewBox}
-			width={Math.round((taille * w) / h)}
-			height={taille}
-			className={`inline-block shrink-0 ${className}`}
-			fill="currentColor"
-			{...(decorative
-				? { "aria-hidden": true as const }
-				: { role: "img" as const, "aria-label": title ?? "Étoile" })}
-		>
-			<path d={etoilePath(e.cx, e.cy, 50)} />
-		</svg>
-	);
+  const e = etoileViewBox(50);
+  const [, , w, h] = e.viewBox.split(" ").map(Number);
+  return (
+    <svg
+      viewBox={e.viewBox}
+      width={Math.round((taille * w) / h)}
+      height={taille}
+      className={`inline-block shrink-0 ${className}`}
+      fill="currentColor"
+      {...(decorative
+        ? { "aria-hidden": true as const }
+        : { role: "img" as const, "aria-label": title ?? "Étoile" })}
+    >
+      <path d={etoilePath(e.cx, e.cy, 50)} />
+    </svg>
+  );
 }

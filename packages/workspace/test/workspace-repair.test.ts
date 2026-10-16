@@ -5,9 +5,14 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { runHostPaths } from "../src/host-paths.ts";
 import { scanImportsExports } from "../src/imports-exports.ts";
-import { runWorkspaceRepair, type WorkspaceRepairOwners } from "../src/workspace-repair.ts";
+import {
+  runWorkspaceRepair,
+  type WorkspaceRepairOwners,
+} from "../src/workspace-repair.ts";
 
-function owners(overrides: Partial<WorkspaceRepairOwners> = {}): WorkspaceRepairOwners {
+function owners(
+  overrides: Partial<WorkspaceRepairOwners> = {},
+): WorkspaceRepairOwners {
   return {
     hostPaths: async () => 0,
     imports: async () => {},
@@ -23,7 +28,9 @@ test("context repair previews, then applies only clean tracked references and in
   const home = ["", "home", "fixture"].join("/");
   const original = `Open ${home}/aphrody/README.md\n`;
   const git = (...args: string[]) => {
-    const result = Bun.spawnSync(["git", "-C", root, ...args], { windowsHide: true });
+    const result = Bun.spawnSync(["git", "-C", root, ...args], {
+      windowsHide: true,
+    });
     expect(result.exitCode).toBe(0);
   };
   const logs: unknown[] = [];
@@ -31,7 +38,10 @@ test("context repair previews, then applies only clean tracked references and in
   try {
     await mkdir(join(root, "docs"));
     await mkdir(join(root, "packages/example/src"), { recursive: true });
-    await writeFile(join(root, "package.json"), JSON.stringify({ workspaces: ["packages/*"] }));
+    await writeFile(
+      join(root, "package.json"),
+      JSON.stringify({ workspaces: ["packages/*"] }),
+    );
     await writeFile(
       join(root, "packages/example/package.json"),
       JSON.stringify({ name: "fixture", exports: "./src/index.ts" }),
@@ -68,7 +78,10 @@ test("context repair previews, then applies only clean tracked references and in
       hostPaths: runHostPaths,
       imports: async (args, selectedRoot) => {
         expect(args).toEqual(["--workspace", "fixture"]);
-        const summary = await scanImportsExports(selectedRoot ?? process.cwd(), "fixture");
+        const summary = await scanImportsExports(
+          selectedRoot ?? process.cwd(),
+          "fixture",
+        );
         expect(summary.packageCount).toBe(1);
         expect(summary.packages[0]?.imports[0]?.resolution).toBe("unresolved");
         expect(summary.packages[0]?.imports[0]?.specifier).toBe("./missing.ts");
@@ -80,7 +93,12 @@ test("context repair previews, then applies only clean tracked references and in
         return 0;
       },
       links: async (args) => {
-        expect(args).toEqual(["--root", resolve(root), "--scope", "repository"]);
+        expect(args).toEqual([
+          "--root",
+          resolve(root),
+          "--scope",
+          "repository",
+        ]);
         linkRuns++;
         return 0;
       },
@@ -90,7 +108,9 @@ test("context repair previews, then applies only clean tracked references and in
     expect(await readFile(join(root, "docs/clean.md"), "utf8")).toBe(original);
     expect(await readFile(join(root, "docs/dirty.md"), "utf8")).toBe(dirty);
     expect(await runWorkspaceRepair([...args, "--apply"], selected)).toBe(0);
-    expect(await readFile(join(root, "docs/clean.md"), "utf8")).toBe("Open README.md\n");
+    expect(await readFile(join(root, "docs/clean.md"), "utf8")).toBe(
+      "Open README.md\n",
+    );
     expect(await readFile(join(root, "docs/dirty.md"), "utf8")).toBe(dirty);
     const report = JSON.parse(logs[1] as string);
     expect(report.skippedDirty).toEqual(["docs/dirty.md"]);
@@ -147,8 +167,13 @@ test("retired two-checkout and dirty override arguments fail before touching an 
     },
   });
   await Promise.all(
-    [["--ai-root", "old"], ["--include-dirty"], ["--root"], ["--workspace", "--apply"]].map(
-      (args) => expect(runWorkspaceRepair(args, selected)).rejects.toThrow(),
+    [
+      ["--ai-root", "old"],
+      ["--include-dirty"],
+      ["--root"],
+      ["--workspace", "--apply"],
+    ].map((args) =>
+      expect(runWorkspaceRepair(args, selected)).rejects.toThrow(),
     ),
   );
   expect(called).toBe(false);

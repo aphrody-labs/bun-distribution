@@ -19,7 +19,8 @@ export function JobRow({ job, onPause, onResume, onCancel }: JobRowProps) {
   const showActionButton = job.status === "running" || job.status === "paused";
   const canPause = job.status === "running" && onPause;
   const canResume = job.status === "paused" && onResume;
-  const canCancel = (job.status === "running" || job.status === "paused") && onCancel;
+  const canCancel =
+    (job.status === "running" || job.status === "paused") && onCancel;
 
   const handleAction = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -72,14 +73,20 @@ export function JobRow({ job, onPause, onResume, onCancel }: JobRowProps) {
         {/* Job name and details */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-title-small mt-1 text-on-surface truncate">{displayName}</h3>
+            <h3 className="text-title-small mt-1 text-on-surface truncate">
+              {displayName}
+            </h3>
             {phase && (
               <span className="text-label-small text-on-surface-variant px-2 py-0.5 rounded-small border border-outline-variant">
                 {phase}
               </span>
             )}
           </div>
-          {message && <p className="text-body-small text-on-surface-variant truncate">{message}</p>}
+          {message && (
+            <p className="text-body-small text-on-surface-variant truncate">
+              {message}
+            </p>
+          )}
         </div>
 
         {/* Progress / Duration column */}
@@ -114,7 +121,9 @@ export function JobRow({ job, onPause, onResume, onCancel }: JobRowProps) {
             </span>
           ) : job.status === "queued" ? (
             // Show waiting status for queued jobs
-            <span className="text-body-small text-on-surface-variant">Waiting...</span>
+            <span className="text-body-small text-on-surface-variant">
+              Waiting...
+            </span>
           ) : (
             // Show dash for failed/cancelled jobs
             <span className="text-body-small text-on-surface-variant">—</span>
@@ -139,12 +148,16 @@ export function JobRow({ job, onPause, onResume, onCancel }: JobRowProps) {
           <span
             className={clsx(
               "inline-flex items-center px-2 py-1 rounded-small text-label-medium",
-              job.status === "running" && "bg-primary-container text-on-primary-container",
-              job.status === "completed" && "bg-success-container text-on-success-container",
+              job.status === "running" &&
+                "bg-primary-container text-on-primary-container",
+              job.status === "completed" &&
+                "bg-success-container text-on-success-container",
               (job.status === "failed" || job.status === "cancelled") &&
                 "bg-error-container text-on-error-container",
-              job.status === "paused" && "bg-warning-container text-on-warning-container",
-              job.status === "queued" && "bg-surface-container-highest text-on-surface-variant",
+              job.status === "paused" &&
+                "bg-warning-container text-on-warning-container",
+              job.status === "queued" &&
+                "bg-surface-container-highest text-on-surface-variant",
             )}
           >
             {job.status}

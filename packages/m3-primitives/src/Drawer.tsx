@@ -58,9 +58,11 @@ export type DrawerPopupProps = DrawerPrimitive.Popup.Props & {
 export const DrawerPopup = forwardRef<HTMLDivElement, DrawerPopupProps>(
   ({ className, children, side = "bottom", ...props }, ref) => {
     const sideStyles = {
-      bottom: "fixed inset-x-0 bottom-0 max-h-[90vh] rounded-t-extra-large border-t border-outline-variant/30 data-[starting-style]:translate-y-full data-[ending-style]:translate-y-full",
+      bottom:
+        "fixed inset-x-0 bottom-0 max-h-[90vh] rounded-t-extra-large border-t border-outline-variant/30 data-[starting-style]:translate-y-full data-[ending-style]:translate-y-full",
       left: "fixed inset-y-0 left-0 w-80 max-w-[85vw] rounded-r-large border-r border-outline-variant/30 data-[starting-style]:-translate-x-full data-[ending-style]:-translate-x-full",
-      right: "fixed inset-y-0 right-0 w-80 max-w-[85vw] rounded-l-large border-l border-outline-variant/30 data-[starting-style]:translate-x-full data-[ending-style]:translate-x-full",
+      right:
+        "fixed inset-y-0 right-0 w-80 max-w-[85vw] rounded-l-large border-l border-outline-variant/30 data-[starting-style]:translate-x-full data-[ending-style]:translate-x-full",
     }[side];
 
     return (
@@ -91,7 +93,10 @@ export const DrawerTitle = forwardRef<HTMLHeadingElement, DrawerTitleProps>(
   ({ className, ...props }, ref) => (
     <DrawerPrimitive.Title
       ref={ref}
-      className={withClassName("m-0 text-title-large font-semibold text-on-surface", className)}
+      className={withClassName(
+        "m-0 text-title-large font-semibold text-on-surface",
+        className,
+      )}
       {...props}
     />
   ),
@@ -99,15 +104,19 @@ export const DrawerTitle = forwardRef<HTMLHeadingElement, DrawerTitleProps>(
 DrawerTitle.displayName = "DrawerTitle";
 
 export type DrawerDescriptionProps = DrawerPrimitive.Description.Props;
-export const DrawerDescription = forwardRef<HTMLParagraphElement, DrawerDescriptionProps>(
-  ({ className, ...props }, ref) => (
-    <DrawerPrimitive.Description
-      ref={ref}
-      className={withClassName("m-0 text-body-medium text-on-surface-variant", className)}
-      {...props}
-    />
-  ),
-);
+export const DrawerDescription = forwardRef<
+  HTMLParagraphElement,
+  DrawerDescriptionProps
+>(({ className, ...props }, ref) => (
+  <DrawerPrimitive.Description
+    ref={ref}
+    className={withClassName(
+      "m-0 text-body-medium text-on-surface-variant",
+      className,
+    )}
+    {...props}
+  />
+));
 DrawerDescription.displayName = "DrawerDescription";
 
 export type DrawerCloseProps = DrawerPrimitive.Close.Props & AsChildProp;

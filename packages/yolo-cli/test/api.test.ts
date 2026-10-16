@@ -104,7 +104,9 @@ describe("yolo api (Native Bun HTTP / OpenAPI Server)", () => {
     const res = await fetch(`${baseUrl}/health`, {
       headers: { Origin: "http://127.0.0.1:3000" },
     });
-    expect(res.headers.get("access-control-allow-origin")).toBe("http://127.0.0.1:3000");
+    expect(res.headers.get("access-control-allow-origin")).toBe(
+      "http://127.0.0.1:3000",
+    );
   });
 
   it("should enforce token authentication on POST when configured", async () => {

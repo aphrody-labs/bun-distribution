@@ -63,8 +63,7 @@ const BASE_MOVEMENT_SPEED = 1.15;
 const BOOSTED_MOVEMENT_SPEED = BASE_MOVEMENT_SPEED * 3;
 const PRECISE_MOVEMENT_SPEED = BASE_MOVEMENT_SPEED / 10;
 
-const isAltKey = (code: string) =>
-  code === "AltLeft" || code === "AltRight";
+const isAltKey = (code: string) => code === "AltLeft" || code === "AltRight";
 
 // Pick the camera speed based on the modifier state on this event.
 // Precise wins over boost — if both are somehow held the user is
@@ -196,8 +195,16 @@ export const useFreeCam = (
       if (Math.abs(dx) + Math.abs(dy) === 0) return;
 
       const pan = panFromDrag(dx, dy, state.movementSpeed);
-      state.velocity.x = MathUtils.lerp(state.velocity.x, pan.x, state.smoothing);
-      state.velocity.y = MathUtils.lerp(state.velocity.y, pan.y, state.smoothing);
+      state.velocity.x = MathUtils.lerp(
+        state.velocity.x,
+        pan.x,
+        state.smoothing,
+      );
+      state.velocity.y = MathUtils.lerp(
+        state.velocity.y,
+        pan.y,
+        state.smoothing,
+      );
       camera.translateX(state.velocity.x);
       camera.translateY(state.velocity.y);
     };

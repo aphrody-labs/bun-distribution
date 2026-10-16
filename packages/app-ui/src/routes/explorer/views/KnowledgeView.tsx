@@ -1,4 +1,9 @@
-import { Icon, renderIcon, m3FocusRing, m3StateLayer } from "@aphrody/m3-primitives";
+import {
+  Icon,
+  renderIcon,
+  m3FocusRing,
+  m3StateLayer,
+} from "@aphrody/m3-primitives";
 import type { IconSource } from "@aphrody/m3-primitives";
 import { KnowledgeInspector } from "../../../components/Inspector/variants/KnowledgeInspector";
 import { useExplorer } from "../context";
@@ -112,7 +117,10 @@ export function KnowledgeView() {
 
   // Collect all unique tags
   const allTags = useMemo(() => {
-    const tagMap = new Map<string, { id: string; name: string; color: string; count: number }>();
+    const tagMap = new Map<
+      string,
+      { id: string; name: string; color: string; count: number }
+    >();
 
     files.forEach((file) => {
       file.tags?.forEach((tag) => {
@@ -139,9 +147,16 @@ export function KnowledgeView() {
         <div className="max-w-5xl space-y-6">
           {/* Header */}
           <div className="flex items-center gap-3">
-            <Icon name="auto_awesome" size={32} filled className="text-primary" />
+            <Icon
+              name="auto_awesome"
+              size={32}
+              filled
+              className="text-primary"
+            />
             <div>
-              <h1 className="text-headline-small text-on-surface">Knowledge view</h1>
+              <h1 className="text-headline-small text-on-surface">
+                Knowledge view
+              </h1>
               <p className="text-body-medium text-on-surface-variant">
                 AI-powered insights for {files.length} items
               </p>
@@ -181,8 +196,12 @@ export function KnowledgeView() {
                         backgroundColor: tag.color,
                       }}
                     />
-                    <span className="text-label-large text-on-surface-variant">{tag.name}</span>
-                    <span className="text-body-small text-on-surface-variant">({tag.count})</span>
+                    <span className="text-label-large text-on-surface-variant">
+                      {tag.name}
+                    </span>
+                    <span className="text-body-small text-on-surface-variant">
+                      ({tag.count})
+                    </span>
                   </button>
                 ))}
               </div>
@@ -195,8 +214,8 @@ export function KnowledgeView() {
             <Section title="Summary" icon="auto_awesome">
               <div className="space-y-2 text-body-medium text-on-surface-variant">
                 <p>
-                  This directory contains {files.length} items across {filesByKind.length} content
-                  types.
+                  This directory contains {files.length} items across{" "}
+                  {filesByKind.length} content types.
                 </p>
                 {filesByKind.length > 0 && (
                   <p>
@@ -205,7 +224,10 @@ export function KnowledgeView() {
                   </p>
                 )}
                 {allTags.length > 0 && (
-                  <p>Tagged items: {allTags.reduce((sum, tag) => sum + tag.count, 0)}</p>
+                  <p>
+                    Tagged items:{" "}
+                    {allTags.reduce((sum, tag) => sum + tag.count, 0)}
+                  </p>
                 )}
               </div>
             </Section>
@@ -283,7 +305,11 @@ function Section({
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        {renderIcon(icon, { size: 16, weight: 600, className: "text-on-surface-variant" })}
+        {renderIcon(icon, {
+          size: 16,
+          weight: 600,
+          className: "text-on-surface-variant",
+        })}
         <h2 className="text-title-small text-on-surface">{title}</h2>
       </div>
       {children}
@@ -333,7 +359,12 @@ function ContentPile({
           ))
         ) : (
           <div className="flex items-center justify-center w-full h-full">
-            <Icon name={iconName} size={48} weight={200} className="text-outline" />
+            <Icon
+              name={iconName}
+              size={48}
+              weight={200}
+              className="text-outline"
+            />
           </div>
         )}
       </div>
@@ -341,7 +372,9 @@ function ContentPile({
       {/* Label */}
       <div className="text-center">
         <div className="text-label-medium text-on-surface">{label}</div>
-        <div className="text-label-small text-on-surface-variant">{totalCount} items</div>
+        <div className="text-label-small text-on-surface-variant">
+          {totalCount} items
+        </div>
       </div>
     </button>
   );
@@ -368,7 +401,9 @@ function ConversationCard({
         <div className="text-title-small text-on-surface truncate">{title}</div>
         <Icon name="auto_awesome" size={12} filled className="text-primary" />
       </div>
-      <p className="text-body-small text-on-surface-variant line-clamp-2">{preview}</p>
+      <p className="text-body-small text-on-surface-variant line-clamp-2">
+        {preview}
+      </p>
       <span className="text-label-small text-outline">{time}</span>
     </button>
   );
@@ -398,8 +433,10 @@ function SidecarItem({
       <span
         className={clsx(
           "text-label-small px-2 py-0.5 rounded-small shrink-0",
-          status === "ready" && "bg-secondary-container text-on-secondary-container",
-          status === "pending" && "bg-surface-container-highest text-on-surface-variant",
+          status === "ready" &&
+            "bg-secondary-container text-on-secondary-container",
+          status === "pending" &&
+            "bg-surface-container-highest text-on-surface-variant",
         )}
       >
         {status}

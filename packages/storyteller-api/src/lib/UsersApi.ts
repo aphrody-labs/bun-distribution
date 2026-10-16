@@ -1,4 +1,10 @@
-import { ApiManager, ApiResponse, buildSessionHeaders, storeSignedSession, clearSignedSession } from "./ApiManager.js";
+import {
+  ApiManager,
+  ApiResponse,
+  buildSessionHeaders,
+  storeSignedSession,
+  clearSignedSession,
+} from "./ApiManager.js";
 import { UserInfo } from "./models/Users.js";
 import { FetchProxy as fetch } from "@storyteller/tauri-utils";
 

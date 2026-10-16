@@ -13,11 +13,20 @@
 // Cache: a package is rebuilt only when its files (not `dist`, `node_modules`, tests), the hashes of the
 // workspace packages it depends on, `bun.lock`, the Bun version or this pipeline changed. The state lives
 // in `node_modules/.cache/m3-build/state.json`. `--no-cache` rebuilds everything.
-import { existsSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+} from "node:fs";
 import { cpus } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { m3BunBuild, type M3PackageConfig } from "../packages/m3-config/bun-build.ts";
+import {
+  m3BunBuild,
+  type M3PackageConfig,
+} from "../packages/m3-config/bun-build.ts";
 import {
   REPO,
   levels,
@@ -36,7 +45,8 @@ export interface Outcome {
   detail?: string;
 }
 
-const cacheFile = (root: string) => join(root, "node_modules/.cache/m3-build/state.json");
+const cacheFile = (root: string) =>
+  join(root, "node_modules/.cache/m3-build/state.json");
 const SKIP_DIRS = new Set([
   "node_modules",
   "dist",
@@ -59,12 +69,15 @@ export function sourceFiles(dir: string, task: Task = "build"): string[] {
       if (entry.isDirectory()) {
         if (
           !SKIP_DIRS.has(entry.name) ||
-          (task === "typecheck" && ["test", "tests", "__tests__"].includes(entry.name))
+          (task === "typecheck" &&
+            ["test", "tests", "__tests__"].includes(entry.name))
         )
           walk(rel);
       } else if (
         entry.isFile() &&
-        !(task === "build" ? SKIP_FILES : /\.tsbuildinfo$|\.md$/).test(entry.name)
+        !(task === "build" ? SKIP_FILES : /\.tsbuildinfo$|\.md$/).test(
+          entry.name,
+        )
       )
         out.push(rel);
     }
@@ -121,7 +134,9 @@ export function closureHashes(
     hasher.update(own.get(name)!);
     for (const dep of workspaceDeps(pkg, known)) {
       // Dependency cycles contribute their own hash only, so the walk terminates.
-      hasher.update(trail.has(dep) ? own.get(dep)! : visit(dep, new Set([...trail, name])));
+      hasher.update(
+        trail.has(dep) ? own.get(dep)! : visit(dep, new Set([...trail, name])),
+      );
     }
     const digest = hasher.digest("hex");
     memo.set(name, digest);
@@ -150,7 +165,10 @@ const TSC = (() => {
   return existsSync(local) ? [local] : [Bun.which("tsc") ?? "tsc"];
 })();
 
-async function run(cmd: string[], cwd: string): Promise<{ code: number; text: string }> {
+async function run(
+  cmd: string[],
+  cwd: string,
+): Promise<{ code: number; text: string }> {
   const proc = Bun.spawn(cmd, { cwd, stdout: "pipe", stderr: "pipe" });
   const [out, err, code] = await Promise.all([
     new Response(proc.stdout).text(),
@@ -183,10 +201,14 @@ export async function pool<T, R>(
   return results;
 }
 
-async function loadConfig(pkg: WorkspacePackage): Promise<M3PackageConfig | undefined> {
+async function loadConfig(
+  pkg: WorkspacePackage,
+): Promise<M3PackageConfig | undefined> {
   const file = join(pkg.dir, "build.config.ts");
   if (!existsSync(file)) return undefined;
-  return ((await import(pathToFileURL(file).href)) as { default: M3PackageConfig }).default;
+  return (
+    (await import(pathToFileURL(file).href)) as { default: M3PackageConfig }
+  ).default;
 }
 
 async function buildPackage(
@@ -205,7 +227,10 @@ async function buildPackage(
     if (dts.code !== 0) return { ok: false, detail: dts.text };
     dtsMs = Math.round(performance.now() - t);
   }
-  return { ok: true, detail: `js ${jsMs} ms${dtsMs ? `, d.ts ${dtsMs} ms` : ""}` };
+  return {
+    ok: true,
+    detail: `js ${jsMs} ms${dtsMs ? `, d.ts ${dtsMs} ms` : ""}`,
+  };
 }
 
 export interface PipelineOptions {
@@ -234,7 +259,9 @@ const matches = (pkg: WorkspacePackage, only: string[] | undefined) =>
       );
 
 /** Run the pipeline; resolves to one outcome per package or app. */
-export async function pipeline(options: PipelineOptions = {}): Promise<Outcome[]> {
+export async function pipeline(
+  options: PipelineOptions = {},
+): Promise<Outcome[]> {
   const task = options.task ?? "build";
   const useCache = options.cache !== false;
   const root = options.root ?? REPO;
@@ -262,18 +289,25 @@ export async function pipeline(options: PipelineOptions = {}): Promise<Outcome[]
 
     if (task === "typecheck") {
       // Opt-in: a package takes part by declaring a `typecheck` script (the command itself is the pipeline's).
-      if (!pkg.manifest.scripts?.typecheck) return done("skipped", "no typecheck script");
-      if (!existsSync(join(pkg.dir, "tsconfig.json"))) return done("skipped", "no tsconfig.json");
+      if (!pkg.manifest.scripts?.typecheck)
+        return done("skipped", "no typecheck script");
+      if (!existsSync(join(pkg.dir, "tsconfig.json")))
+        return done("skipped", "no tsconfig.json");
       if (state[key] === hash) return done("cached");
-      const res = await run([...TSC, "-p", "tsconfig.json", "--noEmit"], pkg.dir);
+      const res = await run(
+        [...TSC, "-p", "tsconfig.json", "--noEmit"],
+        pkg.dir,
+      );
       if (res.code !== 0) return done("failed", res.text);
       state[key] = hash;
       return done("built");
     }
 
     if (isApp(pkg)) {
-      if (!pkg.manifest.scripts?.build) return done("skipped", "no build script");
-      if (state[key] === hash && existsSync(join(pkg.dir, "dist"))) return done("cached");
+      if (!pkg.manifest.scripts?.build)
+        return done("skipped", "no build script");
+      if (state[key] === hash && existsSync(join(pkg.dir, "dist")))
+        return done("cached");
       const res = await run(["bun", "run", "build"], pkg.dir);
       if (res.code !== 0) return done("failed", res.text);
       state[key] = hash;
@@ -282,7 +316,8 @@ export async function pipeline(options: PipelineOptions = {}): Promise<Outcome[]
 
     const config = await loadConfig(pkg);
     if (!config) return done("skipped", "no build.config.ts");
-    if (state[key] === hash && existsSync(join(pkg.dir, "dist"))) return done("cached");
+    if (state[key] === hash && existsSync(join(pkg.dir, "dist")))
+      return done("cached");
     const res = await buildPackage(pkg, config);
     if (!res.ok) return done("failed", res.detail);
     state[key] = hash;
@@ -295,9 +330,14 @@ export async function pipeline(options: PipelineOptions = {}): Promise<Outcome[]
   const ordered = levels(all)
     .map((level) => level.filter((p) => wantedNames.has(p.name)))
     .filter((l) => l.length > 0);
-  const packageLevels = ordered.map((l) => l.filter((p) => !isApp(p))).filter((l) => l.length > 0);
+  const packageLevels = ordered
+    .map((l) => l.filter((p) => !isApp(p)))
+    .filter((l) => l.length > 0);
   const appLevel = ordered.flatMap((l) => l.filter(isApp));
-  for (const level of [...packageLevels, ...(appLevel.length > 0 ? [appLevel] : [])]) {
+  for (const level of [
+    ...packageLevels,
+    ...(appLevel.length > 0 ? [appLevel] : []),
+  ]) {
     // Dependency levels must finish before their consumers start.
     // oxlint-disable-next-line no-await-in-loop
     const results = await pool(level, limit, process_);
@@ -317,7 +357,10 @@ export function clean(root: string = REPO): number {
       removed++;
     }
   }
-  rmSync(join(root, "node_modules/.cache/m3-build"), { recursive: true, force: true });
+  rmSync(join(root, "node_modules/.cache/m3-build"), {
+    recursive: true,
+    force: true,
+  });
   return removed;
 }
 
@@ -328,7 +371,8 @@ function formatOutcomes(outcomes: Outcome[], totalMs: number): string {
       (o) =>
         `${(o.task === "typecheck" && o.status === "built" ? "ok" : o.status).padEnd(6)} ${o.name.padEnd(30)} ${String(o.ms).padStart(5)} ms  ${o.status === "failed" ? "" : (o.detail ?? "")}`,
     );
-  const count = (s: Outcome["status"]) => outcomes.filter((o) => o.status === s).length;
+  const count = (s: Outcome["status"]) =>
+    outcomes.filter((o) => o.status === s).length;
   rows.push(
     `${outcomes[0]?.task ?? "build"}: ${count("built")} run, ${count("cached")} cached, ${count("failed")} failed, ${count("skipped")} skipped in ${totalMs} ms`,
   );
@@ -359,7 +403,8 @@ if (import.meta.main) {
     apps: !flag("no-apps"),
   });
   const totalMs = Math.round(performance.now() - started);
-  if (flag("json")) console.log(JSON.stringify({ task, totalMs, outcomes }, null, 2));
+  if (flag("json"))
+    console.log(JSON.stringify({ task, totalMs, outcomes }, null, 2));
   else console.log(formatOutcomes(outcomes, totalMs));
   for (const o of outcomes.filter((x) => x.status === "failed"))
     console.error(`\n${o.name}: ${o.detail}`);

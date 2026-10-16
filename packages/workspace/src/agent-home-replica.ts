@@ -13,7 +13,10 @@ export interface ReplicaConfig {
   shenronRoot: string;
   intervalSeconds: number;
 }
-type Run = (argv: string[], environment?: Record<string, string>) => Promise<string>;
+type Run = (
+  argv: string[],
+  environment?: Record<string, string>,
+) => Promise<string>;
 const remoteBun = (source: string) =>
   "/home/ubuntu/.bun/bin/bun -e '" + source.replaceAll("'", "'\\''") + "'";
 const remoteCheck = [
@@ -45,7 +48,8 @@ export async function snapshotFiles(
 ) {
   const sources: { source: string; relative: string }[] = [];
   for (const name of names) {
-    if (!/^[A-Z][A-Z0-9_-]*\.md$/.test(name)) throw new Error("Unsafe home document name");
+    if (!/^[A-Z][A-Z0-9_-]*\.md$/.test(name))
+      throw new Error("Unsafe home document name");
     sources.push({ source: join(home, name), relative: `active/${name}` });
   }
   const folders = await readdir(incoming, { withFileTypes: true }).catch(
@@ -55,7 +59,10 @@ export async function snapshotFiles(
     },
   );
   for (const folder of folders) {
-    if (!folder.isDirectory() || !names.some((name) => folder.name.startsWith(name + "-")))
+    if (
+      !folder.isDirectory() ||
+      !names.some((name) => folder.name.startsWith(name + "-"))
+    )
       continue;
     const document = names.find((name) => folder.name.startsWith(name + "-"))!;
     const suffix = folder.name.slice(document.length + 1);
@@ -107,11 +114,16 @@ export async function replicateHome(
     join(receiptRoot, "replica-outgoing"),
   );
   const manifest = files.map(({ local: _local, ...file }) => file);
-  const digest = createHash("sha256").update(JSON.stringify(manifest)).digest("hex");
+  const digest = createHash("sha256")
+    .update(JSON.stringify(manifest))
+    .digest("hex");
   const root = `${config.directory}/${digest}`;
   const environment = { APHRODY_DBFR_HOST: "10.200.77.3" };
   const exec = (command: string) =>
-    run([aphrody, "infra", "ssh", "exec", "--host", "dbfr", "--cmd", command], environment);
+    run(
+      [aphrody, "infra", "ssh", "exec", "--host", "dbfr", "--cmd", command],
+      environment,
+    );
   const path64 = Buffer.from(root).toString("base64");
   const manifest64 = Buffer.from(JSON.stringify(manifest)).toString("base64");
   const input = [
@@ -185,11 +197,14 @@ export async function replicateHome(
       "drive-dbfr-replica",
       ...flags,
     ];
-    const command = argv.map((arg) => "'" + arg.replaceAll("'", "'\\''") + "'").join(" ");
+    const command = argv
+      .map((arg) => "'" + arg.replaceAll("'", "'\\''") + "'")
+      .join(" ");
     const report = JSON.parse(await exec(command));
     if (!Array.isArray(report.errors) || report.errors.length)
       throw new Error("Remote home index failed");
-    if (Number.isSafeInteger(report.indexed) && report.indexed >= 0) indexed += report.indexed;
+    if (Number.isSafeInteger(report.indexed) && report.indexed >= 0)
+      indexed += report.indexed;
   }
   return { files_copied: copied, homes_indexed: 2, indexed };
 }

@@ -48,8 +48,15 @@ export function parsePackageFullName(
     string,
     string,
   ];
-  if (!name || !/^\d+(\.\d+){3}$/.test(version) || !publisherId) return undefined;
-  return { name, version, architecture, family: `${name}_${publisherId}`, fullName };
+  if (!name || !/^\d+(\.\d+){3}$/.test(version) || !publisherId)
+    return undefined;
+  return {
+    name,
+    version,
+    architecture,
+    family: `${name}_${publisherId}`,
+    fullName,
+  };
 }
 
 /** Numeric comparison of dotted versions (`26.930.7945.0`). */
@@ -98,9 +105,16 @@ export function listMsixPackages(): MsixPackage[] {
     },
     RegCloseKey: { args: [FFIType.u64], returns: FFIType.i32 },
   });
-  const { RegOpenKeyExW, RegEnumKeyExW, RegGetValueW, RegCloseKey } = advapi.symbols;
+  const { RegOpenKeyExW, RegEnumKeyExW, RegGetValueW, RegCloseKey } =
+    advapi.symbols;
   const handle = new BigUint64Array(1);
-  const opened = RegOpenKeyExW(HKEY_CURRENT_USER, wide(REPOSITORY), 0, KEY_READ, handle);
+  const opened = RegOpenKeyExW(
+    HKEY_CURRENT_USER,
+    wide(REPOSITORY),
+    0,
+    KEY_READ,
+    handle,
+  );
   if (opened !== ERROR_SUCCESS) {
     advapi.close();
     return [];
@@ -112,7 +126,16 @@ export function listMsixPackages(): MsixPackage[] {
     for (let index = 0; ; index += 1) {
       const name = Buffer.alloc(512 * 2);
       const length = new Uint32Array([512]);
-      const status = RegEnumKeyExW(key, index, name, length, null, null, null, null);
+      const status = RegEnumKeyExW(
+        key,
+        index,
+        name,
+        length,
+        null,
+        null,
+        null,
+        null,
+      );
       if (status === ERROR_NO_MORE_ITEMS) break;
       if (status !== ERROR_SUCCESS) continue;
       const fullName = narrow(name, length[0] as number);
@@ -120,11 +143,27 @@ export function listMsixPackages(): MsixPackage[] {
       if (!identity) continue;
       let size = new Uint32Array([1024]);
       let value = Buffer.alloc(size[0] as number);
-      let read = RegGetValueW(key, wide(fullName), valueName, RRF_RT_REG_SZ, null, value, size);
+      let read = RegGetValueW(
+        key,
+        wide(fullName),
+        valueName,
+        RRF_RT_REG_SZ,
+        null,
+        value,
+        size,
+      );
       if (read === ERROR_MORE_DATA) {
         value = Buffer.alloc(size[0] as number);
         size = new Uint32Array([value.length]);
-        read = RegGetValueW(key, wide(fullName), valueName, RRF_RT_REG_SZ, null, value, size);
+        read = RegGetValueW(
+          key,
+          wide(fullName),
+          valueName,
+          RRF_RT_REG_SZ,
+          null,
+          value,
+          size,
+        );
       }
       if (read !== ERROR_SUCCESS) continue;
       const installLocation = value

@@ -3,13 +3,13 @@
 `photocraft-web-<version>.zip` (from the GitHub release, or `packaging/web/package.sh`) holds a
 static site in `photocraft-web-<version>/`:
 
-| File | What it is |
-|---|---|
-| `index.html` | The page. It loads everything through relative URLs. |
-| `photocraft-web-<hash>.js` | wasm-bindgen glue (generated, ES module) |
-| `photocraft-web-<hash>_bg.wasm` | The app: about 23 MiB raw, 10.5 MiB with gzip (see [Sizes](#sizes)) |
-| `_headers`, `.htaccess` | Sample header rules for Netlify/Cloudflare Pages and Apache |
-| `fonts/` (optional) | Fonts loaded on demand, listed in `fonts/manifest.txt` (see [Fonts](#fonts)) |
+| File                            | What it is                                                                   |
+| ------------------------------- | ---------------------------------------------------------------------------- |
+| `index.html`                    | The page. It loads everything through relative URLs.                         |
+| `photocraft-web-<hash>.js`      | wasm-bindgen glue (generated, ES module)                                     |
+| `photocraft-web-<hash>_bg.wasm` | The app: about 23 MiB raw, 10.5 MiB with gzip (see [Sizes](#sizes))          |
+| `_headers`, `.htaccess`         | Sample header rules for Netlify/Cloudflare Pages and Apache                  |
+| `fonts/` (optional)             | Fonts loaded on demand, listed in `fonts/manifest.txt` (see [Fonts](#fonts)) |
 
 There is no server-side code. Upload the folder's contents anywhere that serves static files.
 
@@ -76,10 +76,10 @@ To verify the browser deployment, open the page, open an image and save/export i
 
 Measured on 2026-10-12 (0.8.0, `packaging/web/package.sh`; gzip `-9`):
 
-| File | Raw | gzip |
-|---|---|---|
+| File                            | Raw                         | gzip                  |
+| ------------------------------- | --------------------------- | --------------------- |
 | `photocraft-web-<hash>_bg.wasm` | 24,167,186 bytes (23.0 MiB) | 10,998,053 (10.5 MiB) |
-| `photocraft-web-<hash>.js` | about 170 KB | about 26 KB |
+| `photocraft-web-<hash>.js`      | about 170 KB                | about 26 KB           |
 
 Per-file upload limits: Cloudflare Pages and Workers static assets reject any file over
 **25 MiB** (26,214,400 bytes). The wasm fits, and `packaging/web/package.sh` fails the build if
@@ -150,6 +150,7 @@ it is picked or a document's text needs it, so starting the app costs one small 
    font menu shows once the file is in. The path is relative to the site root and can't leave it
    (no `..`, no `/` at the start, no other host). A variable font is one line: the style menu offers
    the weights of its `wght` axis.
+
 3. Put each font's licence next to it; the SIL Open Font License, for one, requires that.
 
 A craft-fonts checkout is already laid out this way, and so is any folder with a
@@ -170,7 +171,8 @@ fetches them with `fetch()`, so a Content Security Policy needs them allowed by 
   title="PhotoCraft image editor"
   style="width: 100%; height: 720px; border: 0;"
   allow="fullscreen; clipboard-read; clipboard-write"
-  allowfullscreen>
+  allowfullscreen
+>
 </iframe>
 ```
 
@@ -190,11 +192,11 @@ fetches them with `fetch()`, so a Content Security Policy needs them allowed by 
 PhotoCraft renders with wgpu. It uses **WebGPU** when the browser has it and falls back to
 **WebGL2** on its own. URL query flags override this, and they work on the iframe `src` too:
 
-| Flag | Effect |
-|---|---|
-| *(none)* | WebGPU if available, otherwise WebGL2 |
+| Flag     | Effect                                                            |
+| -------- | ----------------------------------------------------------------- |
+| _(none)_ | WebGPU if available, otherwise WebGL2                             |
 | `?webgl` | Force the WebGL2 backend (useful when a WebGPU driver misbehaves) |
-| `?cpu` | Force the CPU canvas path (slowest, most compatible) |
+| `?cpu`   | Force the CPU canvas path (slowest, most compatible)              |
 
 For example: `<iframe src="https://example.com/photocraft/?webgl" ...>`.
 

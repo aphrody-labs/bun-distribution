@@ -46,9 +46,7 @@ export const ToggleButton = ({
             className={twMerge("text-base", hasLabel && "text-sm")}
           />
         )}
-        {label && (
-          <span className="whitespace-nowrap">{label}</span>
-        )}
+        {label && <span className="whitespace-nowrap">{label}</span>}
       </span>
     </Button>
   );

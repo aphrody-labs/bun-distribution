@@ -12,7 +12,11 @@ interface SpaceSwitcherProps {
   onSwitch: (spaceId: string) => void;
 }
 
-export function SpaceSwitcher({ spaces, currentSpace, onSwitch }: SpaceSwitcherProps) {
+export function SpaceSwitcher({
+  spaces,
+  currentSpace,
+  onSwitch,
+}: SpaceSwitcherProps) {
   const openCreateSpaceDialog = useCreateSpaceDialog();
   const spaceName = currentSpace?.name || "Aphrody";
 

@@ -22,7 +22,13 @@ export interface RenameInputProps {
  * - Only edits the name portion (extension shown as read-only)
  * - Enter saves, Escape cancels, blur cancels (macOS Finder behavior)
  */
-export function RenameInput({ name, extension, onSave, onCancel, className }: RenameInputProps) {
+export function RenameInput({
+  name,
+  extension,
+  onSave,
+  onCancel,
+  className,
+}: RenameInputProps) {
   const hasExtension = extension && extension.length > 0;
 
   const [value, setValue] = useState(name);
@@ -46,7 +52,9 @@ export function RenameInput({ name, extension, onSave, onCancel, className }: Re
       return;
     }
 
-    const fullNewName = hasExtension ? `${trimmedValue}.${extension}` : trimmedValue;
+    const fullNewName = hasExtension
+      ? `${trimmedValue}.${extension}`
+      : trimmedValue;
     const currentFullName = hasExtension ? `${name}.${extension}` : name;
 
     if (fullNewName === currentFullName) {
@@ -110,7 +118,9 @@ export function RenameInput({ name, extension, onSave, onCancel, className }: Re
         )}
       />
       {hasExtension && (
-        <span className="text-body-medium text-on-surface-variant">.{extension}</span>
+        <span className="text-body-medium text-on-surface-variant">
+          .{extension}
+        </span>
       )}
     </div>
   );

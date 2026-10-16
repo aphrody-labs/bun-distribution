@@ -20,13 +20,15 @@ afterAll(cleanup);
 
 // `bun:windows` exists only in the aphrody-labs fork (run with C:/bun/build/debug/bun-debug.exe).
 const bunWindows = await import("bun:windows" as string).then(
-  (m: { default?: { isSupported?: boolean } }) => m.default?.isSupported === true,
+  (m: { default?: { isSupported?: boolean } }) =>
+    m.default?.isSupported === true,
   () => false,
 );
 
 let ctx: TargetContext;
 let out = "";
-const read = (id: string, file: string) => readFileSync(join(out, id, file), "utf8");
+const read = (id: string, file: string) =>
+  readFileSync(join(out, id, file), "utf8");
 
 beforeAll(async () => {
   out = tmp("m3-bun-desktop-");
@@ -55,13 +57,17 @@ describe("tauri", () => {
     const cargo = read("tauri", "src-tauri/Cargo.toml");
     expect(cargo).toContain(`tauri = { version = "=${TAURI_3.tauri}"`);
     const crate = /aphrody-tauri-wrap = \{ path = "([^"]+)"/.exec(cargo)![1]!;
-    expect(existsSync(join(resolve(out, "tauri/src-tauri", crate), "Cargo.toml"))).toBe(true);
+    expect(
+      existsSync(join(resolve(out, "tauri/src-tauri", crate), "Cargo.toml")),
+    ).toBe(true);
     const sidecar = read("tauri", "scripts/build-sidecar.ts");
     expect(sidecar).toContain("/host: (\\S+)/");
     expect(sidecar).toContain('"compile", "--outfile"');
-    expect(new Bun.Transpiler({ loader: "ts" }).scan(sidecar).imports.map((i) => i.path)).toEqual([
-      "node:path",
-    ]);
+    expect(
+      new Bun.Transpiler({ loader: "ts" })
+        .scan(sidecar)
+        .imports.map((i) => i.path),
+    ).toEqual(["node:path"]);
   });
 });
 
@@ -72,7 +78,9 @@ describe("webos", () => {
     expect(desktop).toContain("headless: false");
     expect(desktop).toContain('"Target.detachedFromTarget"');
     expect(desktop).toContain('import("@aphrody/m3-bun/targets")');
-    expect(() => new Bun.Transpiler({ loader: "ts" }).transformSync(desktop)).not.toThrow();
+    expect(() =>
+      new Bun.Transpiler({ loader: "ts" }).transformSync(desktop),
+    ).not.toThrow();
     expect(read("webos", "README.md")).toContain("no external-app manifest");
   });
 
@@ -100,8 +108,13 @@ describe("webos", () => {
           ),
         },
       });
-      const report = await verifyWebView(`http://127.0.0.1:${server.port}/`, { screenshot: true });
-      expect({ ...report, screenshot: report.screenshot?.slice(0, 4) }).toMatchObject({
+      const report = await verifyWebView(`http://127.0.0.1:${server.port}/`, {
+        screenshot: true,
+      });
+      expect({
+        ...report,
+        screenshot: report.screenshot?.slice(0, 4),
+      }).toMatchObject({
         title: "Hello M3",
         status: 200,
         healthy: true,
@@ -124,11 +137,18 @@ describe("windows", () => {
     expect(pngSvg(new Uint8Array([1]), 8)).toContain('viewBox="0 0 8 8"');
     const dir = tmp();
     await Bun.write(join(dir, "app.ico"), new Uint8Array([0, 0, 1, 0]));
-    const ico = await iconFile({ ...ctx, appDir: dir, windows: { icon: "app.ico" } });
-    expect(ico).toEqual({ path: "icons/icon.ico", content: new Uint8Array([0, 0, 1, 0]) });
-    await expect(iconFile({ ...ctx, appDir: dir, windows: { icon: "app.png" } })).rejects.toThrow(
-      /does not exist/,
-    );
+    const ico = await iconFile({
+      ...ctx,
+      appDir: dir,
+      windows: { icon: "app.ico" },
+    });
+    expect(ico).toEqual({
+      path: "icons/icon.ico",
+      content: new Uint8Array([0, 0, 1, 0]),
+    });
+    await expect(
+      iconFile({ ...ctx, appDir: dir, windows: { icon: "app.png" } }),
+    ).rejects.toThrow(/does not exist/);
   });
 
   const tauriCli = Bun.which("tauri");
@@ -136,7 +156,10 @@ describe("windows", () => {
     "windowsIcon turns the generated icon.svg into icon.ico through m3-svg-to-ico",
     () => {
       const dir = tmp();
-      const ico = windowsIcon(join(out, "windows", "icon.svg"), join(dir, "icons"));
+      const ico = windowsIcon(
+        join(out, "windows", "icon.svg"),
+        join(dir, "icons"),
+      );
       const bytes = readFileSync(ico);
       expect([...bytes.subarray(0, 4)]).toEqual([0, 0, 1, 0]);
       expect(bytes.readUInt16LE(4)).toBeGreaterThan(1);
@@ -164,11 +187,14 @@ describe("windows", () => {
       );
     },
   );
-  test.skipIf(bunWindows)("inspectWindows names the runtime it needs", async () => {
-    await expect(inspectWindows({ name: "x", version: "1" })).rejects.toThrow(
-      /bun:windows|Windows only/,
-    );
-  });
+  test.skipIf(bunWindows)(
+    "inspectWindows names the runtime it needs",
+    async () => {
+      await expect(inspectWindows({ name: "x", version: "1" })).rejects.toThrow(
+        /bun:windows|Windows only/,
+      );
+    },
+  );
 });
 
 describe("os-themes", () => {
@@ -181,10 +207,14 @@ describe("os-themes", () => {
       "chromium/install-chromium.sh",
     ])
       expect(existsSync(join(out, "os-themes", file))).toBe(true);
-    const wallpaper = readFileSync(join(out, "os-themes", "windows/wallpaper-hello-m3-dark.png"));
+    const wallpaper = readFileSync(
+      join(out, "os-themes", "windows/wallpaper-hello-m3-dark.png"),
+    );
     expect([...wallpaper.subarray(1, 4)]).toEqual([0x50, 0x4e, 0x47]);
     if (process.platform !== "win32")
-      expect(statSync(join(out, "os-themes", "gnome/install-gnome.sh")).mode & 0o111).not.toBe(0);
+      expect(
+        statSync(join(out, "os-themes", "gnome/install-gnome.sh")).mode & 0o111,
+      ).not.toBe(0);
     const readme = read("os-themes", "README.md");
     expect(readme).toContain("seed `#6750a4`");
     expect(readme).toContain("`bash gnome/install-gnome.sh --mode auto`");

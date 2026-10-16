@@ -14,8 +14,19 @@ import { faceRule, fontFace } from "@aphrody/m3-fonts";
 import { existsSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { findM3Config, loadM3Config, type M3ThemeConfig } from "./config.js";
-import { cssRequest, defaultM3Css, loadAphrodyBun, type M3CssFn, type M3Sheet } from "./native.js";
-import { fontPaths, resolveRepoRoot, SYMBOL_STYLES, type SymbolStyle } from "./paths.js";
+import {
+  cssRequest,
+  defaultM3Css,
+  loadAphrodyBun,
+  type M3CssFn,
+  type M3Sheet,
+} from "./native.js";
+import {
+  fontPaths,
+  resolveRepoRoot,
+  SYMBOL_STYLES,
+  type SymbolStyle,
+} from "./paths.js";
 import { setupUrlImports } from "./url-imports.js";
 import { tailwindM3Plugin } from "./tailwind.js";
 
@@ -64,7 +75,13 @@ export interface M3PluginOptions {
   /** Compose the separately resolved Tailwind engine and Oxide scanner (default true). */
   tailwind?: boolean;
   /** Compile `.scss` through `@aphrody/bun` (default true), or pass its options. */
-  sass?: boolean | { loadPaths?: string[]; style?: "expanded" | "compressed"; quiet?: boolean };
+  sass?:
+    | boolean
+    | {
+        loadPaths?: string[];
+        style?: "expanded" | "compressed";
+        quiet?: boolean;
+      };
   /** `?url` imports (default true): `.svg` as file assets, other assets inlined as data URLs. */
   urlImports?: boolean;
 }
@@ -76,7 +93,10 @@ export function fontsCss(): string {
   return `${faceRule({ ...face, format: "truetype" }, "./GoogleSansFlex-Variable.ttf")}\n`;
 }
 
-type LoadCallback = (args: { path: string; namespace: string }) => OnLoadResult | Promise<OnLoadResult>;
+type LoadCallback = (args: {
+  path: string;
+  namespace: string;
+}) => OnLoadResult | Promise<OnLoadResult>;
 
 /** Build the plugin. */
 export function m3Plugin(options: M3PluginOptions = {}): BunPlugin {
@@ -84,7 +104,8 @@ export function m3Plugin(options: M3PluginOptions = {}): BunPlugin {
   let theme: Promise<M3ThemeConfig> | undefined;
   const sheets = new Map<string, Promise<string>>();
 
-  const getGenerator = () => (generator ??= options.css ? Promise.resolve(options.css) : defaultM3Css());
+  const getGenerator = () =>
+    (generator ??= options.css ? Promise.resolve(options.css) : defaultM3Css());
   const getTheme = () =>
     (theme ??= (async () => {
       if (options.theme) return options.theme;
@@ -109,12 +130,16 @@ export function m3Plugin(options: M3PluginOptions = {}): BunPlugin {
       // font sheet from disk.
       build.onResolve({ filter: /^m3:/ }, (args) => {
         const name = args.path.slice("m3:".length);
-        if (name in SHEET_MODULES) return { path: name, namespace: M3_NAMESPACE };
+        if (name in SHEET_MODULES)
+          return { path: name, namespace: M3_NAMESPACE };
         const fonts = fontPaths(resolveRepoRoot(options.root));
         const style = SYMBOL_MODULES[name];
         if (style) return { path: join(fonts.symbolsDir, `${style}.css`) };
-        if (name === FONTS_MODULE) return { path: join(fonts.sansFlexDir, FONTS_VIRTUAL) };
-        throw new Error(`@aphrody/m3: unknown module ${args.path} (known: ${M3_MODULES.join(", ")})`);
+        if (name === FONTS_MODULE)
+          return { path: join(fonts.sansFlexDir, FONTS_VIRTUAL) };
+        throw new Error(
+          `@aphrody/m3: unknown module ${args.path} (known: ${M3_MODULES.join(", ")})`,
+        );
       });
       build.onResolve({ filter: /\.(woff2?|ttf|otf|eot)$/ }, (args) => {
         if (args.importer) {
@@ -134,27 +159,38 @@ export function m3Plugin(options: M3PluginOptions = {}): BunPlugin {
       });
       build.onLoad({ filter: /.*/, namespace: M3_NAMESPACE }, async (args) => {
         const kind = SHEET_MODULES[args.path];
-        if (!kind) throw new Error(`@aphrody/m3: unknown sheet m3:${args.path}`);
+        if (!kind)
+          throw new Error(`@aphrody/m3: unknown sheet m3:${args.path}`);
         return { contents: await sheet(kind), loader: "css" };
       });
-      build.onLoad({ filter: /__m3-fonts\.css$/ }, () => ({ contents: fontsCss(), loader: "css" }));
+      build.onLoad({ filter: /__m3-fonts\.css$/ }, () => ({
+        contents: fontsCss(),
+        loader: "css",
+      }));
 
       if (options.urlImports !== false) setupUrlImports(build);
 
       if (options.sass !== false) {
-        const sassOptions = typeof options.sass === "object" ? options.sass : {};
+        const sassOptions =
+          typeof options.sass === "object" ? options.sass : {};
         let compile: Promise<LoadCallback> | undefined;
         build.onLoad({ filter: /\.scss$/ }, async (args) => {
           compile ??= (async () => {
             const { sassRustPlugin } = await loadAphrodyBun();
-            if (typeof sassRustPlugin !== "function") throw new Error("@aphrody/m3: @aphrody/bun has no sassRustPlugin");
+            if (typeof sassRustPlugin !== "function")
+              throw new Error(
+                "@aphrody/m3: @aphrody/bun has no sassRustPlugin",
+              );
             let captured: LoadCallback | undefined;
             sassRustPlugin(sassOptions).setup({
               onLoad(_filter: unknown, callback: LoadCallback) {
                 captured = callback;
               },
             });
-            if (!captured) throw new Error("@aphrody/m3: sassRustPlugin registered no loader");
+            if (!captured)
+              throw new Error(
+                "@aphrody/m3: sassRustPlugin registered no loader",
+              );
             return captured;
           })();
           return (await compile)(args);

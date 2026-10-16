@@ -4,7 +4,15 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { Alerte, Bulle, Chargement, Flamme, Micro, Piece, Trophee } from "@/components/icones";
+import {
+  Alerte,
+  Bulle,
+  Chargement,
+  Flamme,
+  Micro,
+  Piece,
+  Trophee,
+} from "@/components/icones";
 import { api } from "@aphrody/admin-ui/client";
 import { formatDuration } from "@aphrody/admin-ui/format";
 import { formatZeni } from "@/lib/zeni";
@@ -19,7 +27,12 @@ const METRICS = [
     color: "text-violet-300",
     icon: Bulle,
   },
-  { key: "streak", label: "Streak quête", color: "text-pink-300", icon: Flamme },
+  {
+    key: "streak",
+    label: "Streak quête",
+    color: "text-pink-300",
+    icon: Flamme,
+  },
 ] as const;
 
 type Metric = (typeof METRICS)[number]["key"];
@@ -53,8 +66,10 @@ function formatValue(u: TopUser, metric: Metric): string {
 function LeaderboardInner() {
   const searchParams = useSearchParams();
   const metricParam = searchParams.get("metric") ?? "xp";
-  const metric = (METRICS.find((m) => m.key === metricParam)?.key ?? "xp") as Metric;
-  const tint = METRICS.find((m) => m.key === metric)?.color ?? "text-fuchsia-300";
+  const metric = (METRICS.find((m) => m.key === metricParam)?.key ??
+    "xp") as Metric;
+  const tint =
+    METRICS.find((m) => m.key === metric)?.color ?? "text-fuchsia-300";
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["leaderboard", metric],
@@ -71,10 +86,13 @@ function LeaderboardInner() {
       <div className="dbz-panel p-4">
         <div className="flex items-center gap-3 mb-1">
           <Trophee className="h-6 w-6 text-dbz-orange" />
-          <h1 className="font-saiyan text-2xl text-dbz-orange tracking-widest">CLASSEMENTS</h1>
+          <h1 className="font-saiyan text-2xl text-dbz-orange tracking-widest">
+            CLASSEMENTS
+          </h1>
         </div>
         <p className="text-sm text-white/60">
-          Top 50 membres du serveur. Clique sur une métrique pour changer le classement.
+          Top 50 membres du serveur. Clique sur une métrique pour changer le
+          classement.
         </p>
       </div>
 
@@ -112,7 +130,9 @@ function LeaderboardInner() {
         <div className="dbz-panel p-6 flex items-center gap-3 text-red-400 border-red-500/40">
           <Alerte className="h-5 w-5 shrink-0" />
           <div>
-            <p className="font-semibold">Impossible de charger le classement.</p>
+            <p className="font-semibold">
+              Impossible de charger le classement.
+            </p>
             <p className="text-xs text-white/50 mt-0.5">
               Vérifiez que le bot est en ligne puis rechargez la page.
             </p>
@@ -135,14 +155,19 @@ function LeaderboardInner() {
                 <th className="p-3 text-right font-bold uppercase tracking-widest text-dbz-blue-light">
                   Niveau
                 </th>
-                <th className={`p-3 text-right font-bold uppercase tracking-widest ${tint}`}>
+                <th
+                  className={`p-3 text-right font-bold uppercase tracking-widest ${tint}`}
+                >
                   {METRICS.find((m) => m.key === metric)?.label ?? metric}
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-dbz-border">
               {data.users.map((u, i) => (
-                <tr key={u.id} className="hover:bg-dbz-blue-light/5 transition-colors">
+                <tr
+                  key={u.id}
+                  className="hover:bg-dbz-blue-light/5 transition-colors"
+                >
                   <td className="p-3 text-right font-saiyan text-dbz-blue-light">
                     {i === 0 ? (
                       <span className="text-yellow-400">1</span>
@@ -156,12 +181,16 @@ function LeaderboardInner() {
                   </td>
                   <td className="p-3">
                     {/* Affiche l'ID Discord de façon discrète — pas d'info pseudo disponible ici */}
-                    <span className="font-mono text-white/80 text-[11px]">{u.id}</span>
+                    <span className="font-mono text-white/80 text-[11px]">
+                      {u.id}
+                    </span>
                   </td>
                   <td className="p-3 text-right font-saiyan text-fuchsia-300">
                     {u.lastLevelReached > 0 ? u.lastLevelReached : "—"}
                   </td>
-                  <td className={`p-3 text-right font-mono font-semibold ${tint}`}>
+                  <td
+                    className={`p-3 text-right font-mono font-semibold ${tint}`}
+                  >
                     {formatValue(u, metric)}
                   </td>
                 </tr>
@@ -177,7 +206,8 @@ function LeaderboardInner() {
           </table>
           {data.users.length > 0 && (
             <p className="p-3 text-[10px] text-white/50 text-right border-t border-dbz-border">
-              {data.users.length} membre{data.users.length !== 1 ? "s" : ""} affichés
+              {data.users.length} membre{data.users.length !== 1 ? "s" : ""}{" "}
+              affichés
             </p>
           )}
         </div>

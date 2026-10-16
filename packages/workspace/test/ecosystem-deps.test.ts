@@ -38,7 +38,9 @@ test("redirects a migrated AI crate and retains infra ownership", () => {
   expect(result.text).toContain(
     'aphrody-gemini-web = { path = "../ai/crates/aphrody-gemini-web" }',
   );
-  expect(result.text).toContain('aphrody-ssh = { path = "../infra/crates/aphrody-ssh"');
+  expect(result.text).toContain(
+    'aphrody-ssh = { path = "../infra/crates/aphrody-ssh"',
+  );
 });
 
 test("reports absent targets without editing the dependency", () => {
@@ -49,10 +51,13 @@ test("reports absent targets without editing the dependency", () => {
 });
 
 test("switches the xAI package's @aphrody/x dependency between the web checkout and the registry", () => {
-  const source = '{"name":"@aphrody/xai","dependencies":{"@aphrody/x":"1.3.0"}}';
+  const source =
+    '{"name":"@aphrody/xai","dependencies":{"@aphrody/x":"1.3.0"}}';
   const local = syncXaiPackage(source, roots, false);
   expect(local.text).toContain('"@aphrody/x":"file:../../../web/packages/x"');
-  expect(local.change).toBe("@aphrody/x: 1.3.0 -> file:../../../web/packages/x");
+  expect(local.change).toBe(
+    "@aphrody/x: 1.3.0 -> file:../../../web/packages/x",
+  );
   const registry = syncXaiPackage(local.text, roots, true);
   expect(registry.text).toBe(source);
   expect(syncXaiPackage(registry.text, roots, true).change).toBeUndefined();

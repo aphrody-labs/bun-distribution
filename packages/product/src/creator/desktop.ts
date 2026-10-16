@@ -76,7 +76,13 @@ export const CREATOR_ACTIONS: CreatorAction[] = [
     description: "Crée le tournoi, ajoute les participants et peut le lancer.",
     argv: ["challonge", "create"],
     fields: [
-      { name: "name", label: "Nom du tournoi", kind: "text", flag: "--name", required: true },
+      {
+        name: "name",
+        label: "Nom du tournoi",
+        kind: "text",
+        flag: "--name",
+        required: true,
+      },
       { name: "game", label: "Jeu", kind: "text", flag: "--game" },
       {
         name: "type",
@@ -102,7 +108,12 @@ export const CREATOR_ACTIONS: CreatorAction[] = [
         kind: "boolean",
         flag: "--shuffle",
       },
-      { name: "start", label: "Lancer tout de suite", kind: "boolean", flag: "--start" },
+      {
+        name: "start",
+        label: "Lancer tout de suite",
+        kind: "boolean",
+        flag: "--start",
+      },
       dryRun,
     ],
   },
@@ -139,9 +150,19 @@ export const CREATOR_ACTIONS: CreatorAction[] = [
     title: "Saisir un score",
     argv: ["challonge", "report"],
     fields: [
-      { name: "match", label: "Match (numéro ou id)", kind: "text", required: true },
+      {
+        name: "match",
+        label: "Match (numéro ou id)",
+        kind: "text",
+        required: true,
+      },
       { name: "score", label: "Score (ex. 2-1)", kind: "text", required: true },
-      { name: "winner", label: "Vainqueur (1, 2, nom ou id)", kind: "text", flag: "--winner" },
+      {
+        name: "winner",
+        label: "Vainqueur (1, 2, nom ou id)",
+        kind: "text",
+        flag: "--winner",
+      },
       tournament,
     ],
   },
@@ -152,9 +173,16 @@ export const CREATOR_ACTIONS: CreatorAction[] = [
     argv: ["challonge", "start"],
     fields: [
       tournament,
-      { name: "shuffle", label: "Tirage au sort juste avant", kind: "boolean", flag: "--shuffle" },
+      {
+        name: "shuffle",
+        label: "Tirage au sort juste avant",
+        kind: "boolean",
+        flag: "--shuffle",
+      },
     ],
-    confirm: { message: "Lancer le tournoi ? Les inscriptions seront fermées." },
+    confirm: {
+      message: "Lancer le tournoi ? Les inscriptions seront fermées.",
+    },
   },
   {
     id: "challonge-finalize",
@@ -180,7 +208,12 @@ export const CREATOR_ACTIONS: CreatorAction[] = [
       "Télécharge les images d'une page, d'une galerie ou d'une catégorie (MediaWiki, Fandom).",
     argv: ["wiki-images"],
     fields: [
-      { name: "url", label: "Adresse de la page du wiki", kind: "url", required: true },
+      {
+        name: "url",
+        label: "Adresse de la page du wiki",
+        kind: "url",
+        required: true,
+      },
       {
         name: "category",
         label: "Catégories (séparées par des virgules)",
@@ -188,8 +221,18 @@ export const CREATOR_ACTIONS: CreatorAction[] = [
         flag: "--category",
         repeat: true,
       },
-      { name: "prefix", label: "Préfixe des fichiers", kind: "text", flag: "--prefix" },
-      { name: "out", label: "Dossier de destination", kind: "path", flag: "--out" },
+      {
+        name: "prefix",
+        label: "Préfixe des fichiers",
+        kind: "text",
+        flag: "--prefix",
+      },
+      {
+        name: "out",
+        label: "Dossier de destination",
+        kind: "path",
+        flag: "--out",
+      },
       dryRun,
     ],
   },
@@ -197,7 +240,8 @@ export const CREATOR_ACTIONS: CreatorAction[] = [
     id: "img-compress",
     group: "images",
     title: "Compresser des images",
-    description: "En local ; les originaux ne sont pas modifiés sauf « remplacer ».",
+    description:
+      "En local ; les originaux ne sont pas modifiés sauf « remplacer ».",
     argv: ["img-compress"],
     fields: [
       {
@@ -219,9 +263,19 @@ export const CREATOR_ACTIONS: CreatorAction[] = [
           { value: "png", label: "PNG" },
         ],
       },
-      { name: "quality", label: "Qualité (1-100)", kind: "number", flag: "--quality" },
+      {
+        name: "quality",
+        label: "Qualité (1-100)",
+        kind: "number",
+        flag: "--quality",
+      },
       { name: "out", label: "Dossier de sortie", kind: "path", flag: "--out" },
-      { name: "recursive", label: "Sous-dossiers compris", kind: "boolean", flag: "--recursive" },
+      {
+        name: "recursive",
+        label: "Sous-dossiers compris",
+        kind: "boolean",
+        flag: "--recursive",
+      },
       {
         name: "inPlace",
         label: "Remplacer l'original s'il est plus gros",
@@ -247,7 +301,8 @@ export const CREATOR_ACTIONS: CreatorAction[] = [
     id: "adobe-apply",
     group: "nettoyage",
     title: "Nettoyer Adobe",
-    description: "Ferme l'arrière-plan Creative Cloud et vide les caches régénérables.",
+    description:
+      "Ferme l'arrière-plan Creative Cloud et vide les caches régénérables.",
     argv: ["adobe-clean", "all", "--apply"],
     confirm: {
       message:
@@ -260,7 +315,12 @@ export const CREATOR_ACTIONS: CreatorAction[] = [
     title: "Analyser le stockage",
     argv: ["disk-clean", "scan"],
     fields: [
-      { name: "root", label: "Dossier analysé (vide : ton dossier)", kind: "path", flag: "--root" },
+      {
+        name: "root",
+        label: "Dossier analysé (vide : ton dossier)",
+        kind: "path",
+        flag: "--root",
+      },
     ],
   },
   {
@@ -290,7 +350,10 @@ export const CREATOR_ACTIONS: CreatorAction[] = [
         flag: "--only",
       },
     ],
-    confirm: { message: "Vider les caches régénérables ? Tes documents ne sont pas touchés." },
+    confirm: {
+      message:
+        "Vider les caches régénérables ? Tes documents ne sont pas touchés.",
+    },
   },
   {
     id: "disk-dupes",
@@ -300,7 +363,12 @@ export const CREATOR_ACTIONS: CreatorAction[] = [
     argv: ["disk-clean", "dupes"],
     fields: [
       { name: "root", label: "Dossier analysé", kind: "path", flag: "--root" },
-      { name: "minSize", label: "Taille minimale (Mo)", kind: "number", flag: "--min-size" },
+      {
+        name: "minSize",
+        label: "Taille minimale (Mo)",
+        kind: "number",
+        flag: "--min-size",
+      },
     ],
   },
   {
@@ -318,7 +386,12 @@ export const CREATOR_ACTIONS: CreatorAction[] = [
         kind: "path",
         flag: "--subs-from",
       },
-      { name: "from", label: "Langue d'origine (vide : auto)", kind: "text", flag: "--from" },
+      {
+        name: "from",
+        label: "Langue d'origine (vide : auto)",
+        kind: "text",
+        flag: "--from",
+      },
       {
         name: "format",
         label: "Format",
@@ -330,7 +403,12 @@ export const CREATOR_ACTIONS: CreatorAction[] = [
           { value: "ass", label: "ASS" },
         ],
       },
-      { name: "context", label: "Contexte (jeu, événement)", kind: "text", flag: "--context" },
+      {
+        name: "context",
+        label: "Contexte (jeu, événement)",
+        kind: "text",
+        flag: "--context",
+      },
       { name: "out", label: "Fichier de sortie", kind: "path", flag: "--out" },
     ],
   },
@@ -345,18 +423,22 @@ export const CREATOR_ACTIONS: CreatorAction[] = [
     group: "kit",
     title: "Mettre à jour",
     argv: ["self-update"],
-    confirm: { message: "Télécharger et installer la dernière version vérifiée du kit ?" },
+    confirm: {
+      message: "Télécharger et installer la dernière version vérifiée du kit ?",
+    },
   },
   {
     id: "crash-report",
     group: "kit",
     title: "Rapport de plantage",
-    description: "Le dernier journal d'erreur, à envoyer si quelque chose a planté.",
+    description:
+      "Le dernier journal d'erreur, à envoyer si quelque chose a planté.",
     argv: [],
   },
 ];
 
-const publicAction = ({ argv: _argv, ...action }: CreatorAction): KitAction => action;
+const publicAction = ({ argv: _argv, ...action }: CreatorAction): KitAction =>
+  action;
 
 export function creatorCatalog(): KitCatalog {
   return {
@@ -371,7 +453,9 @@ export function creatorCatalog(): KitCatalog {
 }
 
 /** The end of the crash log (or a sentence saying there is none). */
-export function crashReport(env: Record<string, string | undefined> = process.env): string[] {
+export function crashReport(
+  env: Record<string, string | undefined> = process.env,
+): string[] {
   const path = crashLogPath(env);
   if (!existsSync(path)) return ["Aucun plantage enregistré."];
   const text = readFileSync(path, "utf8");
@@ -387,7 +471,11 @@ export function creatorArgv(actionId: string, input: KitInput): string[] {
 
 export const creatorBridge: KitBridge = {
   catalog: creatorCatalog,
-  async run(action: KitAction, input: KitInput, channel: KitChannel): Promise<number> {
+  async run(
+    action: KitAction,
+    input: KitInput,
+    channel: KitChannel,
+  ): Promise<number> {
     if (action.id === "crash-report") {
       for (const text of crashReport()) channel.emit({ type: "say", text });
       return 0;
@@ -413,5 +501,7 @@ export const creatorBridge: KitBridge = {
   },
 };
 
-export const desktopMain = (argv: string[], channel?: KitChannel): Promise<number> =>
-  runDesktop(argv, creatorBridge, channel);
+export const desktopMain = (
+  argv: string[],
+  channel?: KitChannel,
+): Promise<number> => runDesktop(argv, creatorBridge, channel);

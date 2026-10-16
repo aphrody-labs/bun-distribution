@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // Knowledge Inspector: Aphrody local AI assistant for Spacedrive
-import { Icon, m3FocusRing, CircularProgress, toast } from "@aphrody/m3-primitives";
+import {
+  Icon,
+  m3FocusRing,
+  CircularProgress,
+  toast,
+} from "@aphrody/m3-primitives";
 import { useState } from "react";
 import { clsx } from "clsx";
 import { askLocalAi, runRagSearch } from "../../../tauri-bridge";
@@ -14,7 +19,11 @@ interface Message {
 }
 
 /** Build a chat message stamped now; called from event handlers, never during render. */
-function createMessage(id: number, role: Message["role"], content: string): Message {
+function createMessage(
+  id: number,
+  role: Message["role"],
+  content: string,
+): Message {
   return { id, role, content, timestamp: new Date() };
 }
 
@@ -71,7 +80,9 @@ export function KnowledgeInspector() {
           createMessage(userMessageId + 1, "assistant", fallbackText),
         ]);
       } catch (innerErr) {
-        toast.error("Erreur de communication avec le backend IA : " + String(innerErr));
+        toast.error(
+          "Erreur de communication avec le backend IA : " + String(innerErr),
+        );
       }
     } finally {
       setLoading(false);
@@ -80,18 +91,33 @@ export function KnowledgeInspector() {
 
   const handleQuickAction = async (action: string) => {
     if (action === "Smart search") {
-      await handleSend("Recherche les documents clés et résume la structure du corpus.");
+      await handleSend(
+        "Recherche les documents clés et résume la structure du corpus.",
+      );
     } else if (action === "Find duplicates") {
-      toast.error("La commande de déduplication n'est pas exposée par le backend Aphrody actuel.");
+      toast.error(
+        "La commande de déduplication n'est pas exposée par le backend Aphrody actuel.",
+      );
     } else if (action === "Organize files") {
-      await handleSend("Propose un classement optimal des fichiers selon les tags et métadonnées.");
+      await handleSend(
+        "Propose un classement optimal des fichiers selon les tags et métadonnées.",
+      );
     }
   };
 
   const quickActions = [
-    { label: t("inspector.organize_files", "Organiser les fichiers"), action: "Organize files" },
-    { label: t("inspector.find_duplicates", "Trouver des doublons"), action: "Find duplicates" },
-    { label: t("inspector.smart_search", "Recherche sémantique"), action: "Smart search" },
+    {
+      label: t("inspector.organize_files", "Organiser les fichiers"),
+      action: "Organize files",
+    },
+    {
+      label: t("inspector.find_duplicates", "Trouver des doublons"),
+      action: "Find duplicates",
+    },
+    {
+      label: t("inspector.smart_search", "Recherche sémantique"),
+      action: "Smart search",
+    },
   ];
 
   return (
@@ -103,7 +129,9 @@ export function KnowledgeInspector() {
             <Icon name="auto_awesome" size={20} filled />
           </div>
           <div>
-            <div className="text-title-medium font-semibold text-on-surface">Assistant Aphrody</div>
+            <div className="text-title-medium font-semibold text-on-surface">
+              Assistant Aphrody
+            </div>
             <div className="text-body-small text-on-surface-variant">
               RAG & connaissances souveraines
             </div>
@@ -116,7 +144,10 @@ export function KnowledgeInspector() {
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={clsx("flex gap-3", msg.role === "user" ? "flex-row-reverse" : "flex-row")}
+            className={clsx(
+              "flex gap-3",
+              msg.role === "user" ? "flex-row-reverse" : "flex-row",
+            )}
           >
             {/* Avatar */}
             <div
@@ -127,7 +158,11 @@ export function KnowledgeInspector() {
                   : "bg-secondary-container text-on-secondary-container",
               )}
             >
-              {msg.role === "assistant" ? <Icon name="auto_awesome" size={16} filled /> : "U"}
+              {msg.role === "assistant" ? (
+                <Icon name="auto_awesome" size={16} filled />
+              ) : (
+                "U"
+              )}
             </div>
 
             {/* Message content */}
@@ -159,7 +194,9 @@ export function KnowledgeInspector() {
         {loading && (
           <div className="flex items-center gap-2 text-on-surface-variant text-body-small italic px-2">
             <CircularProgress radius={10} progress={65} />
-            <span>{t("inspector.generating_answer", "Analyse du fichier...")}</span>
+            <span>
+              {t("inspector.generating_answer", "Analyse du fichier...")}
+            </span>
           </div>
         )}
       </div>
@@ -178,7 +215,10 @@ export function KnowledgeInspector() {
                   handleSend();
                 }
               }}
-              placeholder={t("inspector.ask_ai", "Poser une question sur vos documents...")}
+              placeholder={t(
+                "inspector.ask_ai",
+                "Poser une question sur vos documents...",
+              )}
               className="flex-1 bg-transparent text-body-medium text-on-surface outline-none placeholder:text-on-surface-variant"
             />
           </div>

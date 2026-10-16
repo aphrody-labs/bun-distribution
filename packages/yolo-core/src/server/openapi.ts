@@ -35,7 +35,11 @@ export function buildOpenApiSpec(version: string, bunVersion: string) {
         get: {
           summary: "Run native Bun micro-benchmark",
           parameters: [
-            { name: "iterations", in: "query", schema: { type: "integer", default: 200000 } },
+            {
+              name: "iterations",
+              in: "query",
+              schema: { type: "integer", default: 200000 },
+            },
           ],
           responses: { "200": { description: "Benchmark results" } },
         },
@@ -67,7 +71,8 @@ export function buildOpenApiSpec(version: string, bunVersion: string) {
             required: true,
             content: {
               "application/json": {
-                schema: TOOLS.find((tool) => tool.name === "yolo_parse")!.inputSchema,
+                schema: TOOLS.find((tool) => tool.name === "yolo_parse")!
+                  .inputSchema,
               },
             },
           },
@@ -84,7 +89,8 @@ export function buildOpenApiSpec(version: string, bunVersion: string) {
             required: true,
             content: {
               "application/json": {
-                schema: TOOLS.find((tool) => tool.name === "yolo_verify")!.inputSchema,
+                schema: TOOLS.find((tool) => tool.name === "yolo_verify")!
+                  .inputSchema,
               },
             },
           },
@@ -105,7 +111,10 @@ export function buildOpenApiSpec(version: string, bunVersion: string) {
                   oneOf: TOOLS.map((tool) => ({
                     type: "object",
                     required: ["name"],
-                    properties: { name: { const: tool.name }, arguments: tool.inputSchema },
+                    properties: {
+                      name: { const: tool.name },
+                      arguments: tool.inputSchema,
+                    },
                   })),
                 },
               },

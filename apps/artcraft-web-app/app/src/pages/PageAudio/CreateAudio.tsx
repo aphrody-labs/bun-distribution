@@ -7,7 +7,10 @@ import {
   UploadImageMedia,
   FilterMediaClasses,
 } from "@storyteller/api";
-import { useOmniGenAudioModels, useAudioCostEstimate } from "@storyteller/omni-gen";
+import {
+  useOmniGenAudioModels,
+  useAudioCostEstimate,
+} from "@storyteller/omni-gen";
 import {
   galleryModalLightboxImage,
   galleryModalLightboxMediaId,
@@ -26,8 +29,10 @@ import { useDesktopUsername } from "~/components/generation-feed/useDesktopUsern
 import { DesktopCreatePageShell } from "~/components/generation-feed/DesktopCreatePageShell";
 import { DesktopGenerationGallery } from "~/components/generation-feed/DesktopGenerationGallery";
 
-const generateAudio = async (request: OmniGenAudioRequest) => (await GenerateAudio(request)).payload;
-const estimateAudio = async (request: OmniGenAudioRequest) => (await EstimateAudioCost(request)).payload;
+const generateAudio = async (request: OmniGenAudioRequest) =>
+  (await GenerateAudio(request)).payload;
+const estimateAudio = async (request: OmniGenAudioRequest) =>
+  (await EstimateAudioCost(request)).payload;
 
 const AUDIO_FILTER = [FilterMediaClasses.AUDIO];
 
@@ -48,14 +53,17 @@ const CreateAudio = () => {
       models[0],
     [models, selectedModelId],
   );
-  const audioCredits = useAudioCostEstimate({
-    model: selectedModel?.model ?? "",
-    audioReferenceCount: referenceAudios.length,
-    hasImageReference: referenceImages.length > 0,
-    sampleRateHz: selectedModel?.sample_rate_hz_options?.length
-      ? (selectedModel.sample_rate_hz_default ?? undefined)
-      : undefined,
-  }, estimateAudio);
+  const audioCredits = useAudioCostEstimate(
+    {
+      model: selectedModel?.model ?? "",
+      audioReferenceCount: referenceAudios.length,
+      hasImageReference: referenceImages.length > 0,
+      sampleRateHz: selectedModel?.sample_rate_hz_options?.length
+        ? (selectedModel.sample_rate_hz_default ?? undefined)
+        : undefined,
+    },
+    estimateAudio,
+  );
 
   // Track the promptbox height so the feed can pad past it.
   useEffect(() => {

@@ -12,8 +12,8 @@
       <p class="eyebrow">Le mini-jeu d'Omar · Prototype original</p>
       <h1>Dragon <span>Pixel</span></h1>
       <p>
-        Charge ton énergie. Transforme-toi. Repousse cinq vagues de guerriers; clique dans l’arène
-        pour te déplacer.
+        Charge ton énergie. Transforme-toi. Repousse cinq vagues de guerriers;
+        clique dans l’arène pour te déplacer.
       </p>
     </header>
     <main>
@@ -47,10 +47,18 @@
         <div>
           <p class="eyebrow">Atelier de personnage · sauvegarde locale</p>
           <h2 id="avatar-title">Créer ton avatar</h2>
-          <p>Personnage original : ces choix restent dans le stockage local de ce navigateur.</p>
+          <p>
+            Personnage original : ces choix restent dans le stockage local de ce
+            navigateur.
+          </p>
         </div>
         <label for="avatar-name">Nom</label>
-        <input id="avatar-name" maxlength="20" value="Patrouilleur" autocomplete="off" />
+        <input
+          id="avatar-name"
+          maxlength="20"
+          value="Patrouilleur"
+          autocomplete="off"
+        />
         <label for="avatar-race">Race</label>
         <select id="avatar-race">
           <option value="saiyan">Saiyan</option>
@@ -72,11 +80,15 @@
           <option value="athletic">Athlétique</option>
           <option value="broad">Robuste</option>
         </select>
-        <label for="avatar-height">Taille <output id="avatar-height-value">100 %</output></label>
+        <label for="avatar-height"
+          >Taille <output id="avatar-height-value">100 %</output></label
+        >
         <input id="avatar-height" type="range" min="85" max="115" value="100" />
-        <label for="avatar-skin">Peau</label><input id="avatar-skin" type="color" value="#f0c19a" />
+        <label for="avatar-skin">Peau</label
+        ><input id="avatar-skin" type="color" value="#f0c19a" />
         <label for="avatar-hair">Cheveux</label
-        ><input id="avatar-hair" type="color" value="#242b46" /> <label for="color">Tenue</label
+        ><input id="avatar-hair" type="color" value="#242b46" />
+        <label for="color">Tenue</label
         ><input id="color" type="color" value="#63e6ff" />
       </section>
       <p id="hud">Prêt à entrer dans l'arène.</p>
@@ -105,16 +117,17 @@
         hidden
       ></canvas>
       <p class="render-note">
-        Rendu 3D Bevy/WebGPU si disponible; repli WebGPU ou Canvas 2D sinon. J/K/L/T ou les boutons
-        à l’écran servent à combattre.
+        Rendu 3D Bevy/WebGPU si disponible; repli WebGPU ou Canvas 2D sinon.
+        J/K/L/T ou les boutons à l’écran servent à combattre.
       </p>
       <section class="world-map" aria-labelledby="world-map-title">
         <div>
           <p class="eyebrow">Carte d’expédition · AGE 1000</p>
           <h2 id="world-map-title">West City et la porte glaciaire</h2>
           <p>
-            Schéma original inspiré des lieux décrits publiquement : campus, quartiers urbains,
-            complexe Capsule et point de départ vers les missions.
+            Schéma original inspiré des lieux décrits publiquement : campus,
+            quartiers urbains, complexe Capsule et point de départ vers les
+            missions.
           </p>
         </div>
         <canvas
@@ -125,8 +138,8 @@
           aria-label="Carte schématique originale de West City en Age 1000 avec campus, quartier Capsule, centre-ville, esplanade et avant-poste glaciaire."
         ></canvas>
         <small
-          >Carte de prototype dessinée pour Dragon Pixel, sans captures ni ressources
-          extraites.</small
+          >Carte de prototype dessinée pour Dragon Pixel, sans captures ni
+          ressources extraites.</small
         >
       </section>
       <section class="lore" aria-labelledby="lore-title">
@@ -134,9 +147,9 @@
           <p class="eyebrow">Archives Shenron · lecture en direct</p>
           <h2 id="lore-title">Explorer les archives Dragon Ball</h2>
           <p>
-            Recherche dans le corpus Dragon Ball accessible par le service Shenron. Les résultats
-            restent de courts extraits sourcés ; les planches et images ne sont pas copiées dans le
-            jeu.
+            Recherche dans le corpus Dragon Ball accessible par le service
+            Shenron. Les résultats restent de courts extraits sourcés ; les
+            planches et images ne sont pas copiées dans le jeu.
           </p>
         </div>
         <form id="lore-search">
@@ -153,7 +166,9 @@
           <label for="lore-source">Corpus</label>
           <select id="lore-source" name="sourceId">
             <option value="">Tout le RAG Dragon Ball</option>
-            <option value="manga">Pages OCR des mangas (Dragon Ball et Super)</option>
+            <option value="manga">
+              Pages OCR des mangas (Dragon Ball et Super)
+            </option>
             <option value="dragonball">Dragon Ball — 42 tomes</option>
             <option value="dragonballsuper">Dragon Ball Super</option>
           </select>
@@ -165,10 +180,12 @@
         <ol id="lore-results" aria-label="Résultats des archives"></ol>
         <div class="lore-coverage">
           <h3>Mesurer la couverture du RAG</h3>
-          <button id="lore-coverage-check" type="button">Vérifier l’index Shenron</button>
+          <button id="lore-coverage-check" type="button">
+            Vérifier l’index Shenron
+          </button>
           <p id="lore-coverage-status" role="status" aria-live="polite">
-            Les compteurs globaux ne prouvent pas la transcription complète de chaque tome ou
-            chapitre.
+            Les compteurs globaux ne prouvent pas la transcription complète de
+            chaque tome ou chapitre.
           </p>
         </div>
         <div class="lore-catalog">
@@ -182,8 +199,8 @@
             <button type="submit">Afficher l’inventaire</button>
           </form>
           <p id="lore-catalog-status" role="status" aria-live="polite">
-            L’inventaire indique les pages déclarées par Shenron; il ne certifie pas une
-            transcription OCR complète de chaque page.
+            L’inventaire indique les pages déclarées par Shenron; il ne certifie
+            pas une transcription OCR complète de chaque page.
           </p>
           <div
             class="lore-table-wrap"
@@ -209,26 +226,30 @@
       </section>
       <p id="result" role="status">Choisis ton style puis lance la partie.</p>
       <div class="controls" aria-label="Commandes tactiles">
-        <button data-action="left">← Gauche</button><button data-action="right">Droite →</button
-        ><button data-action="jump">Saut</button><button data-action="punch">Combo</button
-        ><button data-action="blast">Projectile</button><button data-action="charge">Charger</button
+        <button data-action="left">← Gauche</button
+        ><button data-action="right">Droite →</button
+        ><button data-action="jump">Saut</button
+        ><button data-action="punch">Combo</button
+        ><button data-action="blast">Projectile</button
+        ><button data-action="charge">Charger</button
         ><button data-action="transform">Transformer</button>
       </div>
       <details>
         <summary>Comment jouer</summary>
         <p>
-          Flèches gauche/droite ou Q/D : déplacement · clic gauche/glisser : bouger · clic droit :
-          tir · Espace : saut · J : combo · K : projectile (20 énergie) · L : charge · T :
-          transformation (80 énergie, 8 secondes) · P : pause. Sur manette : stick gauche ou croix
-          pour bouger, A sauter, X combo, B projectile, Y charger, Start pause/reprise. Sur mobile,
-          maintiens les boutons. Élimine cinq vagues pour gagner. Les styles changent la vitesse ou
-          la puissance.
+          Flèches gauche/droite ou Q/D : déplacement · clic gauche/glisser :
+          bouger · clic droit : tir · Espace : saut · J : combo · K : projectile
+          (20 énergie) · L : charge · T : transformation (80 énergie, 8
+          secondes) · P : pause. Sur manette : stick gauche ou croix pour
+          bouger, A sauter, X combo, B projectile, Y charger, Start
+          pause/reprise. Sur mobile, maintiens les boutons. Élimine cinq vagues
+          pour gagner. Les styles changent la vitesse ou la puissance.
         </p>
       </details>
     </main>
     <footer>
-      Inspiré des mécaniques de Dragon Crystal et Warriors of the Universe. Personnages et
-      graphismes originaux. Solo contre IA, sans compte.
+      Inspiré des mécaniques de Dragon Crystal et Warriors of the Universe.
+      Personnages et graphismes originaux. Solo contre IA, sans compte.
     </footer>
     <script type="module" src="game.js"></script>
   </body>

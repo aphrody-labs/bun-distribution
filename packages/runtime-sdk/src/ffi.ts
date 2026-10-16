@@ -4,7 +4,14 @@
  * Consumers (iecode NIE, Aphrody engines) declare their symbols and library names; discovery,
  * lazy loading with a diagnostic, C strings and owned-byte reads live here once.
  */
-import { CString, dlopen, suffix, toArrayBuffer, type FFIFunction, type Pointer } from "bun:ffi";
+import {
+  CString,
+  dlopen,
+  suffix,
+  toArrayBuffer,
+  type FFIFunction,
+  type Pointer,
+} from "bun:ffi";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
@@ -19,11 +26,18 @@ export function embeddedNativeLibraryPath(
   const pattern = new RegExp(`^${escaped}(?:-[A-Za-z0-9_-]+)?\\.${suffix}$`);
   const matches = files.flatMap((file) => {
     const path = (file as Blob & { name?: string }).name;
-    return typeof path === "string" && pattern.test(basename(path)) ? [path] : [];
+    return typeof path === "string" && pattern.test(basename(path))
+      ? [path]
+      : [];
   });
-  if (matches.length > 1) throw new Error(`Multiple embedded native libraries for ${name}`);
+  if (matches.length > 1)
+    throw new Error(`Multiple embedded native libraries for ${name}`);
   const path = matches[0];
-  return path === undefined ? null : isAbsolute(path) ? path : join(dirname(Bun.main), path);
+  return path === undefined
+    ? null
+    : isAbsolute(path)
+      ? path
+      : join(dirname(Bun.main), path);
 }
 
 const encoder = new TextEncoder();
@@ -77,7 +91,11 @@ function withOwnedView<T>(
     return null;
   }
   try {
-    return read(new Uint8Array(toArrayBuffer(Number(data) as unknown as Pointer, 0, Number(len))));
+    return read(
+      new Uint8Array(
+        toArrayBuffer(Number(data) as unknown as Pointer, 0, Number(len)),
+      ),
+    );
   } finally {
     free(data, len, cap);
   }
@@ -107,7 +125,9 @@ export function readNativeBytes(
 ): Uint8Array {
   const addr = Number(address);
   try {
-    return new Uint8Array(toArrayBuffer(addr as unknown as Pointer, 0, len)).slice();
+    return new Uint8Array(
+      toArrayBuffer(addr as unknown as Pointer, 0, len),
+    ).slice();
   } finally {
     free(addr);
   }
@@ -159,7 +179,9 @@ export function nativeLibrary<S extends Record<string, FFIFunction>>(
   options: NativeLibraryOptions<S>,
 ): NativeLibrary<S> {
   const defaultFile =
-    process.platform === "win32" ? `${options.name}.dll` : `lib${options.name}.${suffix}`;
+    process.platform === "win32"
+      ? `${options.name}.dll`
+      : `lib${options.name}.${suffix}`;
   const files = options.fileNames?.length ? options.fileNames : [defaultFile];
   const file = files[0]!;
   let attempted = false;
@@ -180,7 +202,9 @@ export function nativeLibrary<S extends Record<string, FFIFunction>>(
       resolve(homedir(), ".local/bin"),
       ...(options.searchDirs ?? []),
     ];
-    const candidates = dirs.flatMap((dir) => files.map((name) => resolve(dir, name)));
+    const candidates = dirs.flatMap((dir) =>
+      files.map((name) => resolve(dir, name)),
+    );
     return candidates.find((candidate) => existsSync(candidate)) ?? null;
   };
   const load = () => {

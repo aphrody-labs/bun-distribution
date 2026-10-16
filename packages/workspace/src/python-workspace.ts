@@ -5,7 +5,10 @@
  * through the verified Yolo runtime artifact with a timeout, an output budget, cancellation and a JSON receipt.
  */
 import { RuntimeError, Status } from "@aphrody/runtime-sdk";
-import { installedArtifactDir, loadArtifact } from "@aphrody/runtime-sdk/artifact";
+import {
+  installedArtifactDir,
+  loadArtifact,
+} from "@aphrody/runtime-sdk/artifact";
 
 export interface MeasureOptions {
   signal?: AbortSignal;
@@ -14,12 +17,23 @@ export interface MeasureOptions {
   diagnostics?: (bytes: Uint8Array) => void;
 }
 
-export async function supervise(command: string[], cwd: string, options: MeasureOptions = {}) {
+export async function supervise(
+  command: string[],
+  cwd: string,
+  options: MeasureOptions = {},
+) {
   const startedAt = new Date().toISOString();
   const start = performance.now();
   const timeoutMs = options.timeoutMs ?? 30 * 60 * 1000;
   const maxOutputBytes = options.maxOutputBytes ?? 64 * 1024 * 1024;
-  const base = { command, cwd, startedAt, timeoutMs, maxOutputBytes, resourceUsage: null };
+  const base = {
+    command,
+    cwd,
+    startedAt,
+    timeoutMs,
+    maxOutputBytes,
+    resourceUsage: null,
+  };
   const failure = (exitCode: number, reason: string) => ({
     ...base,
     durationMs: performance.now() - start,
@@ -77,7 +91,10 @@ export async function supervise(command: string[], cwd: string, options: Measure
       processExitCode: status.exitCode,
       signal: status.signal || null,
       pid: status.pid,
-      outputBytes: { stdout: output.stdout.length, stderr: output.stderr.length },
+      outputBytes: {
+        stdout: output.stdout.length,
+        stderr: output.stderr.length,
+      },
       runtime: runtime.buildInfo(),
       success: status.exitCode === 0 && status.signal === 0,
       reason: "exited",
@@ -96,7 +113,13 @@ export async function supervise(command: string[], cwd: string, options: Measure
 
 /** The supervised actions, with `uv` as the program (replaced by the vu runtime's absolute path by the caller). */
 export function pythonWorkspaceCommands(uv = "uv") {
-  const python = [uv, "run", "--locked", "python", "tools/packaging/modernize_workspace.py"];
+  const python = [
+    uv,
+    "run",
+    "--locked",
+    "python",
+    "tools/packaging/modernize_workspace.py",
+  ];
   return {
     build: [uv, "build", "--wheel", "packages/aphrody", "--out-dir", "dist"],
     check: [...python, "check"],
@@ -106,7 +129,16 @@ export function pythonWorkspaceCommands(uv = "uv") {
     test: [uv, "run", "--locked", "--no-sync", "pytest"],
     lint: [uv, "run", "--locked", "--no-sync", "ruff", "check", "."],
     fmt: [uv, "run", "--locked", "--no-sync", "ruff", "format", "."],
-    "format:check": [uv, "run", "--locked", "--no-sync", "ruff", "format", "--check", "."],
+    "format:check": [
+      uv,
+      "run",
+      "--locked",
+      "--no-sync",
+      "ruff",
+      "format",
+      "--check",
+      ".",
+    ],
     typecheck: [uv, "run", "--locked", "--no-sync", "mypy"],
   } satisfies Record<string, string[]>;
 }
@@ -130,8 +162,18 @@ export async function runPythonWorkspace(
   const timeoutFlag = args.indexOf("--timeout-ms");
   if (timeoutFlag >= 0) {
     const timeoutMs = Number(args[timeoutFlag + 1]);
-    if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > 2_147_483_647) {
-      console.log(JSON.stringify({ schemaVersion: 2, success: false, error: "Invalid timeout" }));
+    if (
+      !Number.isSafeInteger(timeoutMs) ||
+      timeoutMs <= 0 ||
+      timeoutMs > 2_147_483_647
+    ) {
+      console.log(
+        JSON.stringify({
+          schemaVersion: 2,
+          success: false,
+          error: "Invalid timeout",
+        }),
+      );
       return 2;
     }
     args.splice(timeoutFlag, 2);
@@ -139,14 +181,26 @@ export async function runPythonWorkspace(
   }
   let [action, ...extra] = args;
   // Preserve the former CI invocation: fmt -- --check.
-  if (action === "fmt" && (extra.join(" ") === "-- --check" || extra.join(" ") === "--check")) {
+  if (
+    action === "fmt" &&
+    (extra.join(" ") === "-- --check" || extra.join(" ") === "--check")
+  ) {
     action = "format:check";
     extra = [];
   }
-  if (args.length === 0 || action === "plan" || action === "--help" || action === "-h") {
+  if (
+    args.length === 0 ||
+    action === "plan" ||
+    action === "--help" ||
+    action === "-h"
+  ) {
     if (extra.length) {
       console.log(
-        JSON.stringify({ schemaVersion: 2, success: false, error: "Unexpected arguments" }),
+        JSON.stringify({
+          schemaVersion: 2,
+          success: false,
+          error: "Unexpected arguments",
+        }),
       );
       return 2;
     }
@@ -175,7 +229,11 @@ export async function runPythonWorkspace(
     );
     return 2;
   }
-  const result = await supervise(commands[action as keyof typeof commands], context.root, options);
+  const result = await supervise(
+    commands[action as keyof typeof commands],
+    context.root,
+    options,
+  );
   console.log(JSON.stringify({ schemaVersion: 2, action, ...result }, null, 2));
   return result.exitCode || (result.success ? 0 : 1);
 }

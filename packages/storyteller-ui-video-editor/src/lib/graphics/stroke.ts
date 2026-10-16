@@ -7,8 +7,7 @@ import type { GraphicStrokeAlign } from "./definitions/shared";
 // only the outer half (matching how Figma/Illustrator align strokes).
 
 type GraphicRenderContext =
-  | CanvasRenderingContext2D
-  | OffscreenCanvasRenderingContext2D;
+  CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 
 function createTempCanvas({
   width,
@@ -78,7 +77,9 @@ export function applyAlignedStroke({
       width: ctx.canvas.width,
       height: ctx.canvas.height,
     });
-    const strokeCtx = strokeCanvas.getContext("2d") as GraphicRenderContext | null;
+    const strokeCtx = strokeCanvas.getContext(
+      "2d",
+    ) as GraphicRenderContext | null;
     if (!strokeCtx) {
       return;
     }

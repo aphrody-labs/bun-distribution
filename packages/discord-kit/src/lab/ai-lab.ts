@@ -38,7 +38,11 @@ interface Role {
   name: string;
   permissions: string;
 }
-export type LabApi = <T>(path: string, method?: string, body?: unknown) => Promise<T>;
+export type LabApi = <T>(
+  path: string,
+  method?: string,
+  body?: unknown,
+) => Promise<T>;
 export interface LabState {
   guildId: string;
   botId: string;
@@ -60,7 +64,10 @@ const researcherPermissions = String(
     274877906944n,
 );
 
-export function unique<T extends { name: string }>(items: T[], name: string): T | undefined {
+export function unique<T extends { name: string }>(
+  items: T[],
+  name: string,
+): T | undefined {
   const matches = items.filter((item) => item.name === name);
   if (matches.length > 1) throw new Error(`Ambiguous Discord object: ${name}`);
   return matches[0];
@@ -106,7 +113,14 @@ export async function configureLab(
       { id: bot.id, type: 1, deny: "0", allow: String(view | 2048 | 65536) },
       ...(category.adminOnly
         ? []
-        : [{ id: state.researcherRoleId, type: 0, deny: "0", allow: String(view) }]),
+        : [
+            {
+              id: state.researcherRoleId,
+              type: 0,
+              deny: "0",
+              allow: String(view),
+            },
+          ]),
     ];
     let parent = unique(channels, category.name);
     if (parent && parent.type !== 4) throw new Error("Category type mismatch");
@@ -118,7 +132,9 @@ export async function configureLab(
       });
       channels.push(parent);
     } else if (parent && apply)
-      await api(`/channels/${parent.id}`, "PATCH", { permission_overwrites: overwrites });
+      await api(`/channels/${parent.id}`, "PATCH", {
+        permission_overwrites: overwrites,
+      });
     for (const spec of category.channels) {
       let channel = unique(channels, spec.name);
       if (channel && (channel.type !== 0 || channel.parent_id !== parent?.id))
@@ -140,10 +156,14 @@ export async function configureLab(
         });
       state.channels[spec.name] = channel?.id ?? "planned";
       if (spec.guide && channel && apply && !state.guides[spec.name]) {
-        const message = await api<{ id: string }>(`/channels/${channel.id}/messages`, "POST", {
-          content: spec.guide,
-          allowed_mentions: { parse: [] },
-        });
+        const message = await api<{ id: string }>(
+          `/channels/${channel.id}/messages`,
+          "POST",
+          {
+            content: spec.guide,
+            allowed_mentions: { parse: [] },
+          },
+        );
         state.guides[spec.name] = message.id;
       }
     }
@@ -151,7 +171,9 @@ export async function configureLab(
   return state;
 }
 
-export async function loadCredentials(path: string): Promise<Record<string, string>> {
+export async function loadCredentials(
+  path: string,
+): Promise<Record<string, string>> {
   const env: Record<string, string> = {};
   for (const line of (await Bun.file(path).text()).split("\n")) {
     const match = /^([A-Z_]+)=(.*)$/.exec(line.trim());
@@ -178,7 +200,9 @@ if (import.meta.main) {
     !process.argv.includes("--env-file") ||
     !process.argv.includes("--state")
   )
-    throw new Error("Required: --policy FILE --env-file FILE --state PRIVATE_FILE [--apply]");
+    throw new Error(
+      "Required: --policy FILE --env-file FILE --state PRIVATE_FILE [--apply]",
+    );
   const policy = (await Bun.file(flag("--policy")!).json()) as LabPolicy;
   const env = await loadCredentials(flag("--env-file")!);
   if (env.DISCORD_GUILD_ID !== policy.guildId || !env.DISCORD_BOT_TOKEN)
@@ -194,5 +218,7 @@ if (import.meta.main) {
     previous,
   );
   if (process.argv.includes("--apply")) await saveState(statePath, state);
-  console.log(JSON.stringify({ apply: process.argv.includes("--apply"), ...state }));
+  console.log(
+    JSON.stringify({ apply: process.argv.includes("--apply"), ...state }),
+  );
 }

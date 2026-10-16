@@ -23,7 +23,10 @@ export function filterSpecifiers(
   }
   const head = kept.filter((s) => s.kind !== "named").map((s) => s.text);
   const named = kept.filter((s) => s.kind === "named").map((s) => s.text);
-  const clause = [...head, ...(named.length > 0 ? [`{ ${named.join(", ")} }`] : [])].join(", ");
+  const clause = [
+    ...head,
+    ...(named.length > 0 ? [`{ ${named.join(", ")} }`] : []),
+  ].join(", ");
   const q = decl.quote;
   edits.replace(
     decl.start,
@@ -43,13 +46,18 @@ export const MD_ICON_IMPORT =
  * doit rester en tête pour rester une directive). `blocks` sont des statements complets terminés
  * par `\n` ; un bloc multi-ligne est séparé du suivant par une ligne vide.
  */
-export function insertImports(edits: Edits, scan: ScanResult, blocks: string[]): void {
+export function insertImports(
+  edits: Edits,
+  scan: ScanResult,
+  blocks: string[],
+): void {
   if (blocks.length === 0) return;
   let text = "";
   blocks.forEach((block, i) => {
     text += block;
     const last = i === blocks.length - 1;
-    if (block.trimEnd().includes("\n") && (!last || scan.directivesEnd > 0)) text += "\n";
+    if (block.trimEnd().includes("\n") && (!last || scan.directivesEnd > 0))
+      text += "\n";
   });
   if (scan.directivesEnd === 0) edits.insert(0, text);
   else edits.insert(scan.directivesEnd, `\n${text.replace(/\n$/, "")}`);

@@ -5,7 +5,11 @@ import { toast } from "@storyteller/ui-toaster";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GenerateIconButton } from "@storyteller/ui-button";
-import { GenerateImage, GenerateImageRequest, commandErrorMessage } from "@storyteller/tauri-api";
+import {
+  GenerateImage,
+  GenerateImageRequest,
+  commandErrorMessage,
+} from "@storyteller/tauri-api";
 import { ChevronDownIcon, ChevronUpIcon, MaximizeIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { ImageModel, imageModelForProvider } from "@storyteller/model-list";
@@ -17,7 +21,10 @@ import {
   useEnterToGenerateStore,
 } from "./promptStore";
 import { useAutoGrowEditorHeight } from "./useAutoGrowEditorHeight";
-import { PromptFullscreenModal, useFullscreenPrompt } from "./PromptFullscreenModal";
+import {
+  PromptFullscreenModal,
+  useFullscreenPrompt,
+} from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
 import { PromptClearAllButton } from "./PromptClearAllButton";
 import { gtagEvent } from "@storyteller/google-analytics";
@@ -80,7 +87,6 @@ export const PromptBoxImage = ({
     [catalogModel, selectedProvider],
   );
   const isDirectMidjourney = selectedProvider === GenerationProvider.Midjourney;
-
 
   console.debug(
     "Selected model and provider:",
@@ -258,17 +264,17 @@ export const PromptBoxImage = ({
     {
       label: "1K",
       selected: resolution === "1k",
-      icon: <MaximizeIcon  className="h-4 w-4" />,
+      icon: <MaximizeIcon className="h-4 w-4" />,
     },
     {
       label: "2K",
       selected: resolution === "2k",
-      icon: <MaximizeIcon  className="h-4 w-4" />,
+      icon: <MaximizeIcon className="h-4 w-4" />,
     },
     {
       label: "4K",
       selected: resolution === "4k",
-      icon: <MaximizeIcon  className="h-4 w-4" />,
+      icon: <MaximizeIcon className="h-4 w-4" />,
     },
   ]);
 
@@ -435,7 +441,12 @@ export const PromptBoxImage = ({
       await onEnqueuePressed?.(prompt, generationCount, subscriberId);
     } catch (err) {
       console.error("PromptBoxImage - enqueue failed", err);
-      toast.error(commandErrorMessage(err, "Failed to start image generation. Please try again."));
+      toast.error(
+        commandErrorMessage(
+          err,
+          "Failed to start image generation. Please try again.",
+        ),
+      );
     } finally {
       setIsEnqueueing(false);
     }
@@ -551,9 +562,7 @@ export const PromptBoxImage = ({
                       mode="toggle"
                       panelTitle="Resolution"
                       showIconsInList
-                      triggerIcon={
-                        <MaximizeIcon  className="h-4 w-4" />
-                      }
+                      triggerIcon={<MaximizeIcon className="h-4 w-4" />}
                     />
                   </Tooltip>
                 )}

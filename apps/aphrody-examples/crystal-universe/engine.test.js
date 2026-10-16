@@ -2,8 +2,16 @@
 import { test, expect } from "bun:test";
 import { createGame, pointerAction, pointerDirection, step } from "./engine.js";
 import { readGamepadInput } from "./gamepad.js";
-import { DEFAULT_AVATAR, loadAvatar, normalizeAvatar, saveAvatar } from "./avatar.js";
-import { buildLoreSearchRequest, filterLoreSearchPayload } from "./lore-search.js";
+import {
+  DEFAULT_AVATAR,
+  loadAvatar,
+  normalizeAvatar,
+  saveAvatar,
+} from "./avatar.js";
+import {
+  buildLoreSearchRequest,
+  filterLoreSearchPayload,
+} from "./lore-search.js";
 import {
   buildLoreCatalogRequest,
   normalizeLoreCatalogPayload,
@@ -121,7 +129,9 @@ test("avatar creation validates and persists local character choices", () => {
   };
   expect(saveAvatar(storage, values)).toEqual({ ...values, name: "Nova" });
   expect(loadAvatar(storage)).toEqual({ ...values, name: "Nova" });
-  expect(normalizeAvatar({ ...values, name: "", race: "alien", skin: "red" })).toEqual({
+  expect(
+    normalizeAvatar({ ...values, name: "", race: "alien", skin: "red" }),
+  ).toEqual({
     ...DEFAULT_AVATAR,
     hair: values.hair,
     outfit: values.outfit,
@@ -130,13 +140,24 @@ test("avatar creation validates and persists local character choices", () => {
     height: values.height,
   });
   expect(loadAvatar({ getItem: () => "{" })).toEqual(DEFAULT_AVATAR);
-  for (const race of ["saiyan", "earthling", "namekian", "majin", "frieza", "android"])
+  for (const race of [
+    "saiyan",
+    "earthling",
+    "namekian",
+    "majin",
+    "frieza",
+    "android",
+  ])
     expect(normalizeAvatar({ ...values, race }).race).toBe(race);
-  expect(normalizeAvatar({ ...values, build: "slim", height: 0.85 })).toMatchObject({
+  expect(
+    normalizeAvatar({ ...values, build: "slim", height: 0.85 }),
+  ).toMatchObject({
     build: "slim",
     height: 0.85,
   });
-  expect(normalizeAvatar({ ...values, build: "unknown", height: 1.5 })).toMatchObject({
+  expect(
+    normalizeAvatar({ ...values, build: "unknown", height: 1.5 }),
+  ).toMatchObject({
     build: "athletic",
     height: 1.15,
   });
@@ -179,7 +200,9 @@ test("manga series search scopes the query and filters mixed RAG results", () =>
 });
 
 test("manga series search rejects unsupported source identifiers", () => {
-  expect(buildLoreSearchRequest("Goku", "manga-dbs").error).toContain("n'est pas disponible");
+  expect(buildLoreSearchRequest("Goku", "manga-dbs").error).toContain(
+    "n'est pas disponible",
+  );
   expect(buildLoreSearchRequest("x", "dragonball").error).toContain("2 et 120");
 });
 
@@ -239,7 +262,9 @@ test("Super catalogue sorts chapter IDs and rejects malformed entries", () => {
     completeStandardSet: false,
     contiguousObservedRange: false,
   });
-  expect(() => normalizeLoreCatalogPayload({ volumes: [] }, "invalid")).toThrow();
+  expect(() =>
+    normalizeLoreCatalogPayload({ volumes: [] }, "invalid"),
+  ).toThrow();
 });
 
 test("RAG coverage reports global manga passage counts without inventing missing data", () => {
@@ -262,12 +287,15 @@ test("RAG coverage reports global manga passage counts without inventing missing
 });
 
 test("multiplayer uses the local port in development and same-origin TLS in production", () => {
-  expect(buildMultiplayerSocketUrl(new URL("http://localhost:4317/"), "test-room")).toBe(
-    "ws://localhost:4320/ws/test-room",
-  );
-  expect(buildMultiplayerSocketUrl(new URL("https://game.example.com/"), "test-room")).toBe(
-    "wss://game.example.com/ws/test-room",
-  );
+  expect(
+    buildMultiplayerSocketUrl(new URL("http://localhost:4317/"), "test-room"),
+  ).toBe("ws://localhost:4320/ws/test-room");
+  expect(
+    buildMultiplayerSocketUrl(
+      new URL("https://game.example.com/"),
+      "test-room",
+    ),
+  ).toBe("wss://game.example.com/ws/test-room");
   expect(
     buildMultiplayerSocketUrl(
       new URL("https://game.example.com/"),
@@ -276,7 +304,11 @@ test("multiplayer uses the local port in development and same-origin TLS in prod
     ),
   ).toBe("wss://socket.example.net/rooms/ws/test-room");
   expect(
-    buildMultiplayerSocketUrl(new URL("https://game.example.com/"), "test-room", "/multiplayer"),
+    buildMultiplayerSocketUrl(
+      new URL("https://game.example.com/"),
+      "test-room",
+      "/multiplayer",
+    ),
   ).toBe("wss://game.example.com/multiplayer/ws/test-room");
   expect(() =>
     buildMultiplayerSocketUrl(new URL("https://game.example.com/"), "bad room"),

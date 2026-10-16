@@ -14,7 +14,10 @@ export interface ExecResult {
 }
 
 /** Resolves an executable on `env.PATH` (Bun.which, so `.exe` and PATHEXT work on Windows). */
-export function which(name: string, env: Env = process.env): string | undefined {
+export function which(
+  name: string,
+  env: Env = process.env,
+): string | undefined {
   return Bun.which(name, { PATH: env.PATH ?? "" }) ?? undefined;
 }
 
@@ -49,7 +52,8 @@ export async function exec(
 
 export function requireTool(name: string, env: Env, hint: string): string {
   const path = which(name, env);
-  if (!path) throw new ToolError(`${name} est introuvable dans le PATH. ${hint}`);
+  if (!path)
+    throw new ToolError(`${name} est introuvable dans le PATH. ${hint}`);
   return path;
 }
 
@@ -65,21 +69,42 @@ export function failure(label: string, result: ExecResult): ToolError {
 export const isUrl = (value: string): boolean => /^https?:\/\//i.test(value);
 
 /** Media duration in milliseconds (ffprobe, then the `Duration:` line of ffmpeg). */
-export async function probeDuration(file: string, env: Env = process.env): Promise<number> {
+export async function probeDuration(
+  file: string,
+  env: Env = process.env,
+): Promise<number> {
   const ffprobe = which("ffprobe", env);
   if (ffprobe) {
     const result = await exec(
-      [ffprobe, "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file],
+      [
+        ffprobe,
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "csv=p=0",
+        file,
+      ],
       { env },
     );
     const seconds = Number.parseFloat(result.stdout.trim());
-    if (result.code === 0 && Number.isFinite(seconds)) return Math.round(seconds * 1000);
+    if (result.code === 0 && Number.isFinite(seconds))
+      return Math.round(seconds * 1000);
   }
-  const ffmpeg = requireTool("ffmpeg", env, "Installer ffmpeg (https://ffmpeg.org).");
+  const ffmpeg = requireTool(
+    "ffmpeg",
+    env,
+    "Installer ffmpeg (https://ffmpeg.org).",
+  );
   const result = await exec([ffmpeg, "-hide_banner", "-i", file], { env });
-  const match = /Duration:\s*(\d+):(\d{2}):(\d{2}(?:\.\d+)?)/.exec(result.stderr);
+  const match = /Duration:\s*(\d+):(\d{2}):(\d{2}(?:\.\d+)?)/.exec(
+    result.stderr,
+  );
   if (!match) throw new ToolError(`durée illisible pour ${file}`);
-  return Math.round((Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3])) * 1000);
+  return Math.round(
+    (Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3])) * 1000,
+  );
 }
 
 /** Extracts 16 kHz mono PCM wav for [startMs, startMs + lengthMs). */
@@ -90,9 +115,14 @@ export async function extractWav(
   lengthMs: number | undefined,
   env: Env = process.env,
 ): Promise<void> {
-  const ffmpeg = requireTool("ffmpeg", env, "Installer ffmpeg (https://ffmpeg.org).");
+  const ffmpeg = requireTool(
+    "ffmpeg",
+    env,
+    "Installer ffmpeg (https://ffmpeg.org).",
+  );
   const seek = startMs > 0 ? ["-ss", (startMs / 1000).toFixed(3)] : [];
-  const length = lengthMs === undefined ? [] : ["-t", (lengthMs / 1000).toFixed(3)];
+  const length =
+    lengthMs === undefined ? [] : ["-t", (lengthMs / 1000).toFixed(3)];
   const result = await exec(
     [
       ffmpeg,
@@ -133,7 +163,12 @@ export async function download(
   );
   await mkdir(dir, { recursive: true });
   const format = wantVideo
-    ? ["-f", "bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b", "--merge-output-format", "mkv"]
+    ? [
+        "-f",
+        "bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b",
+        "--merge-output-format",
+        "mkv",
+      ]
     : ["-f", "ba/b"];
   const result = await exec(
     [
@@ -160,7 +195,8 @@ export async function download(
   return resolve(path);
 }
 
-const STYLE = "force_style='FontName=Arial,FontSize=22,Outline=2,Shadow=0,MarginV=24'";
+const STYLE =
+  "force_style='FontName=Arial,FontSize=22,Outline=2,Shadow=0,MarginV=24'";
 
 /**
  * Hard-sub burn. The subtitle file is copied to a temp dir under a fixed safe name and ffmpeg runs with that dir
@@ -174,13 +210,18 @@ export async function burnSubtitles(options: {
   env?: Env;
 }): Promise<void> {
   const env = options.env ?? process.env;
-  const ffmpeg = requireTool("ffmpeg", env, "Installer ffmpeg avec libass (https://ffmpeg.org).");
+  const ffmpeg = requireTool(
+    "ffmpeg",
+    env,
+    "Installer ffmpeg avec libass (https://ffmpeg.org).",
+  );
   const dir = await mkdtemp(join(tmpdir(), "vt-burn-"));
   try {
     const ext = extname(options.subtitles).toLowerCase() || ".srt";
     const name = `vt-subs${ext}`;
     await copyFile(options.subtitles, join(dir, name));
-    const filter = ext === ".ass" ? `subtitles=${name}` : `subtitles=${name}:${STYLE}`;
+    const filter =
+      ext === ".ass" ? `subtitles=${name}` : `subtitles=${name}:${STYLE}`;
     const mp4 = extname(options.output).toLowerCase() === ".mp4";
     const result = await exec(
       [
@@ -207,7 +248,8 @@ export async function burnSubtitles(options: {
       ],
       { cwd: dir, env },
     );
-    if (result.code !== 0) throw failure("ffmpeg (incrustation des sous-titres)", result);
+    if (result.code !== 0)
+      throw failure("ffmpeg (incrustation des sous-titres)", result);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -221,11 +263,21 @@ export async function muxSubtitles(options: {
   env?: Env;
 }): Promise<void> {
   const env = options.env ?? process.env;
-  const ffmpeg = requireTool("ffmpeg", env, "Installer ffmpeg (https://ffmpeg.org).");
+  const ffmpeg = requireTool(
+    "ffmpeg",
+    env,
+    "Installer ffmpeg (https://ffmpeg.org).",
+  );
   const container = extname(options.output).toLowerCase();
   const ext = extname(options.subtitles).toLowerCase();
   const codec =
-    container === ".mp4" ? "mov_text" : ext === ".ass" ? "ass" : ext === ".vtt" ? "webvtt" : "srt";
+    container === ".mp4"
+      ? "mov_text"
+      : ext === ".ass"
+        ? "ass"
+        : ext === ".vtt"
+          ? "webvtt"
+          : "srt";
   const result = await exec(
     [
       ffmpeg,
@@ -260,5 +312,6 @@ export async function muxSubtitles(options: {
     ],
     { env },
   );
-  if (result.code !== 0) throw failure("ffmpeg (ajout de la piste de sous-titres)", result);
+  if (result.code !== 0)
+    throw failure("ffmpeg (ajout de la piste de sous-titres)", result);
 }

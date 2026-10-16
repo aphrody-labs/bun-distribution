@@ -30,7 +30,11 @@ test("YOLO_ROOT overrides the default monorepo checkout", () => {
 
 test("composed units carry every dropped-in directive", () => {
   const text = composeUnit("shenron-site.service");
-  for (const d of ["User=ubuntu", "NoNewPrivileges=true", "SystemCallFilter=@system-service"])
+  for (const d of [
+    "User=ubuntu",
+    "NoNewPrivileges=true",
+    "SystemCallFilter=@system-service",
+  ])
     expect(text).toContain(d);
   expect(text.indexOf("[Service]")).toBeLessThan(text.indexOf("User=ubuntu"));
 });
@@ -45,7 +49,9 @@ test("every composed unit has no duplicate scalar directives from drop-ins", () 
 });
 
 test("nginx includes inline to the snippet body", () => {
-  const out = composeNginx("  location / {\n    include snippets/proxy-upstream.inc;\n  }\n");
+  const out = composeNginx(
+    "  location / {\n    include snippets/proxy-upstream.inc;\n  }\n",
+  );
   expect(out).toContain("    proxy_http_version 1.1;");
   expect(out).not.toContain("include snippets");
 });
@@ -54,7 +60,11 @@ test("inventory records and the toolchain manifest are part of the host catalog"
   const inv = loadCatalog().inventory;
   expect(inv?.files).toContain("targets.json");
   expect(inv?.toolchain).toBe("toolchain.json");
-  const targets = JSON.parse(readFileSync(join(hostRoot(), inv!.dir, "targets.json"), "utf8"));
+  const targets = JSON.parse(
+    readFileSync(join(hostRoot(), inv!.dir, "targets.json"), "utf8"),
+  );
   expect(Array.isArray(targets.targets)).toBe(true);
-  expect(JSON.parse(readFileSync(join(hostRoot(), inv!.toolchain), "utf8"))).toBeObject();
+  expect(
+    JSON.parse(readFileSync(join(hostRoot(), inv!.toolchain), "utf8")),
+  ).toBeObject();
 });

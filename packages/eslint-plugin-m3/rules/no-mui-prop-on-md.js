@@ -22,7 +22,8 @@ export default {
     type: "problem",
     fixable: "code",
     docs: {
-      description: "Disallow MUI prop names on material-web wrappers (renamed props).",
+      description:
+        "Disallow MUI prop names on material-web wrappers (renamed props).",
     },
     schema: [],
   },

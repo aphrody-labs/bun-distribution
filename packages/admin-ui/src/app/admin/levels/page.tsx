@@ -25,7 +25,10 @@ import {
 import { type FormEvent, useRef, useState } from "react";
 import { api } from "@aphrody/admin-ui/client";
 import { formatDuration } from "@aphrody/admin-ui/format";
-import { RoleBadge, RoleSelect } from "@aphrody/admin-ui/components/admin/RoleSelect";
+import {
+  RoleBadge,
+  RoleSelect,
+} from "@aphrody/admin-ui/components/admin/RoleSelect";
 import { RolePicker } from "@aphrody/admin-ui/components/admin/RolePicker";
 import { formatZeni } from "@/lib/zeni";
 
@@ -70,7 +73,8 @@ const RACE_OPTIONS: { id: string; label: string }[] = [
   { id: "majin", label: "Majin" },
 ];
 
-const raceLabel = (race: string): string => RACE_OPTIONS.find((r) => r.id === race)?.label ?? race;
+const raceLabel = (race: string): string =>
+  RACE_OPTIONS.find((r) => r.id === race)?.label ?? race;
 
 interface TopUser {
   id: string;
@@ -140,7 +144,8 @@ export default function LevelsPage() {
   });
   const distribution = useQuery({
     queryKey: ["levels", "distribution"],
-    queryFn: () => api.get<{ buckets: DistributionBucket[] }>("/levels/distribution"),
+    queryFn: () =>
+      api.get<{ buckets: DistributionBucket[] }>("/levels/distribution"),
   });
   const rewards = useQuery({
     queryKey: ["levels", "rewards"],
@@ -160,10 +165,11 @@ export default function LevelsPage() {
           <h2 className="text-lg font-semibold">Niveaux et XP</h2>
         </div>
         <p className="mt-1 text-sm text-zinc-400">
-          Cette page vous permet de consulter les paliers d&apos;expérience, la répartition des
-          joueurs, gérer les récompenses de niveau et modifier manuellement l&apos;XP ou les zénis
-          d&apos;un membre. Le palier ultime &laquo;&nbsp;It&apos;s over 9
-          millions&nbsp;!&nbsp;&raquo; correspond à 9&nbsp;000&nbsp;000 XP.
+          Cette page vous permet de consulter les paliers d&apos;expérience, la
+          répartition des joueurs, gérer les récompenses de niveau et modifier
+          manuellement l&apos;XP ou les zénis d&apos;un membre. Le palier ultime
+          &laquo;&nbsp;It&apos;s over 9 millions&nbsp;!&nbsp;&raquo; correspond
+          à 9&nbsp;000&nbsp;000 XP.
         </p>
       </div>
 
@@ -181,8 +187,14 @@ export default function LevelsPage() {
         distribution={distribution.data?.buckets}
         loading={distribution.isLoading}
       />
-      <RewardsCard rewards={rewards.data?.rewards ?? []} loading={rewards.isLoading} />
-      <RaceRewardsCard rewards={raceRewards.data?.rewards ?? []} loading={raceRewards.isLoading} />
+      <RewardsCard
+        rewards={rewards.data?.rewards ?? []}
+        loading={rewards.isLoading}
+      />
+      <RaceRewardsCard
+        rewards={raceRewards.data?.rewards ?? []}
+        loading={raceRewards.isLoading}
+      />
       <TopsCard />
       <ManualActionsCard />
     </div>
@@ -238,8 +250,14 @@ const TUNING_SECTIONS: TuningSection[] = [
     icon: Groupe,
     hint: "Bonus par membre au-delà du premier : 0,1 donne ×1,1 à deux et ×1,3 à quatre.",
     fields: [
-      { key: "xp.voice.group.bonus_per_member", label: "Bonus par membre en plus" },
-      { key: "xp.voice.group.max_multiplier", label: "Multiplicateur de groupe maximal" },
+      {
+        key: "xp.voice.group.bonus_per_member",
+        label: "Bonus par membre en plus",
+      },
+      {
+        key: "xp.voice.group.max_multiplier",
+        label: "Multiplicateur de groupe maximal",
+      },
     ],
   },
   {
@@ -267,7 +285,10 @@ const TUNING_SECTIONS: TuningSection[] = [
       { key: "xp.sleepcall.multiplier", label: "Multiplicateur sleepcall" },
       { key: "xp.sleepcall.announce", label: "Annoncer début et bilan" },
       { key: "xp.sleepcall.grace_minutes", label: "Creux toléré (minutes)" },
-      { key: "xp.sleepcall.summary_min_minutes", label: "Durée minimale du bilan (minutes)" },
+      {
+        key: "xp.sleepcall.summary_min_minutes",
+        label: "Durée minimale du bilan (minutes)",
+      },
     ],
   },
   {
@@ -277,7 +298,10 @@ const TUNING_SECTIONS: TuningSection[] = [
     hint: "Boost booster et rôles boostés ne se cumulent pas : le plus fort s'applique. Le plafond borne le produit de tous les multiplicateurs.",
     fields: [
       { key: "xp.boost.boosters", label: "Multiplicateur booster serveur" },
-      { key: "xp.fusion.bonus_ratio", label: "Part reversée au partenaire de fusion" },
+      {
+        key: "xp.fusion.bonus_ratio",
+        label: "Part reversée au partenaire de fusion",
+      },
       { key: "xp.zenkai.multiplier", label: "Multiplicateur Zenkai" },
       { key: "xp.zenkai.minutes", label: "Durée du Zenkai (minutes)" },
       { key: "xp.multiplier.max", label: "Plafond du multiplicateur cumulé" },
@@ -308,7 +332,10 @@ const TUNING_SECTIONS: TuningSection[] = [
     fields: [
       { key: "zeni.daily_quest", label: "Quête quotidienne" },
       { key: "zeni.per_level", label: "Bonus par montée de niveau" },
-      { key: "zeni.fusion.bonus_ratio", label: "Part reversée au partenaire de fusion" },
+      {
+        key: "zeni.fusion.bonus_ratio",
+        label: "Part reversée au partenaire de fusion",
+      },
       { key: "zeni.game.win", label: "Victoire à un mini-jeu" },
       { key: "zeni.game.loss_penalty", label: "Pénalité de défaite" },
       { key: "zeni.message_chance", label: "Chance de drop par message" },
@@ -343,17 +370,21 @@ function XpTuningCard({
     void qc.invalidateQueries({ queryKey: ["settings"] });
   };
   const dropDrafts = (keys: string[]) =>
-    setDrafts((d) => Object.fromEntries(Object.entries(d).filter(([k]) => !keys.includes(k))));
+    setDrafts((d) =>
+      Object.fromEntries(Object.entries(d).filter(([k]) => !keys.includes(k))),
+    );
 
   const save = useMutation({
     mutationFn: async (entries: [string, string][]) => {
-      for (const [key, value] of entries) await api.post("/services/settings/set", { key, value });
+      for (const [key, value] of entries)
+        await api.post("/services/settings/set", { key, value });
     },
     onSuccess: (_, entries) => {
       setErr(null);
       dropDrafts(entries.map(([k]) => k));
     },
-    onError: (e) => setErr(e instanceof Error ? e.message : "Échec de l'enregistrement."),
+    onError: (e) =>
+      setErr(e instanceof Error ? e.message : "Échec de l'enregistrement."),
     onSettled: refresh,
   });
   const reset = useMutation({
@@ -362,7 +393,8 @@ function XpTuningCard({
       setErr(null);
       dropDrafts([key]);
     },
-    onError: (e) => setErr(e instanceof Error ? e.message : "Échec de la remise à zéro."),
+    onError: (e) =>
+      setErr(e instanceof Error ? e.message : "Échec de la remise à zéro."),
     onSettled: refresh,
   });
 
@@ -377,9 +409,12 @@ function XpTuningCard({
 
   const defs = new Map((schema.data?.keys ?? []).map((k) => [k.key, k]));
   const saved = (key: string) => {
-    const raw = config.overrides[key] ?? config.defaults[key] ?? defs.get(key)?.default;
+    const raw =
+      config.overrides[key] ?? config.defaults[key] ?? defs.get(key)?.default;
     const value = raw === undefined ? "" : String(raw);
-    return defs.get(key)?.type === "bool" ? String(/^(true|1)$/i.test(value)) : value;
+    return defs.get(key)?.type === "bool"
+      ? String(/^(true|1)$/i.test(value))
+      : value;
   };
   const read = (key: string) => drafts[key] ?? saved(key);
   const pending = save.isPending || reset.isPending;
@@ -391,9 +426,9 @@ function XpTuningCard({
         Gains, bonus et multiplicateurs d&apos;XP
       </h3>
       <p className="mb-3 text-xs text-zinc-500">
-        Chaque valeur s&apos;applique au gain suivant (cache du bot : 30 s). Une valeur
-        personnalisée se remet au défaut d&apos;un clic. Les membres voient leurs multiplicateurs
-        avec <code>/boosts</code> sur Discord.
+        Chaque valeur s&apos;applique au gain suivant (cache du bot : 30 s). Une
+        valeur personnalisée se remet au défaut d&apos;un clic. Les membres
+        voient leurs multiplicateurs avec <code>/boosts</code> sur Discord.
       </p>
 
       <XpSimulation read={read} />
@@ -402,7 +437,8 @@ function XpTuningCard({
         {TUNING_SECTIONS.map((section) => {
           const Icon = section.icon;
           const dirty = section.fields.filter(
-            (f) => drafts[f.key] !== undefined && drafts[f.key] !== saved(f.key),
+            (f) =>
+              drafts[f.key] !== undefined && drafts[f.key] !== saved(f.key),
           );
           return (
             <section
@@ -413,12 +449,15 @@ function XpTuningCard({
                 <Icon className="h-4 w-4 text-brand-400" />
                 {section.title}
               </div>
-              <p className="mb-3 mt-0.5 text-xs text-zinc-500">{section.hint}</p>
+              <p className="mb-3 mt-0.5 text-xs text-zinc-500">
+                {section.hint}
+              </p>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {section.fields.map((f) => {
                   const def = defs.get(f.key);
                   const overridden = config.overrides[f.key] !== undefined;
-                  const onChange = (v: string) => setDrafts((d) => ({ ...d, [f.key]: v }));
+                  const onChange = (v: string) =>
+                    setDrafts((d) => ({ ...d, [f.key]: v }));
                   return (
                     <div
                       key={f.key}
@@ -454,7 +493,11 @@ function XpTuningCard({
                         <input
                           id={f.key}
                           className={tuningInput}
-                          type={def?.type === "int" || def?.type === "float" ? "number" : "text"}
+                          type={
+                            def?.type === "int" || def?.type === "float"
+                              ? "number"
+                              : "text"
+                          }
                           step={def?.type === "float" ? "0.05" : "1"}
                           min={def?.min}
                           max={def?.max}
@@ -463,8 +506,10 @@ function XpTuningCard({
                         />
                       )}
                       <p className="mt-1 text-[10px] text-zinc-600">
-                        défaut : {def?.default === undefined ? "—" : String(def.default)}
-                        {def?.min !== undefined && ` · de ${def.min} à ${def.max ?? "∞"}`}
+                        défaut :{" "}
+                        {def?.default === undefined ? "—" : String(def.default)}
+                        {def?.min !== undefined &&
+                          ` · de ${def.min} à ${def.max ?? "∞"}`}
                       </p>
                     </div>
                   );
@@ -474,7 +519,9 @@ function XpTuningCard({
                 <button
                   type="button"
                   disabled={dirty.length === 0 || pending}
-                  onClick={() => save.mutate(dirty.map((f) => [f.key, drafts[f.key]!]))}
+                  onClick={() =>
+                    save.mutate(dirty.map((f) => [f.key, drafts[f.key]!]))
+                  }
                   className="inline-flex items-center gap-1 rounded bg-brand-600 px-3 py-1 text-xs font-bold text-white hover:bg-brand-500 disabled:opacity-40"
                 >
                   <Enregistrer className="h-3.5 w-3.5" />
@@ -574,9 +621,14 @@ function XpSimulation({ read }: { read: (key: string) => string }) {
       </p>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {cases.map((c) => (
-          <div key={c.label} className="flex items-baseline justify-between gap-2 text-xs">
+          <div
+            key={c.label}
+            className="flex items-baseline justify-between gap-2 text-xs"
+          >
             <span className="text-zinc-400">{c.label}</span>
-            <span className="font-mono font-bold text-brand-400">{c.value}</span>
+            <span className="font-mono font-bold text-brand-400">
+              {c.value}
+            </span>
           </div>
         ))}
       </div>
@@ -596,7 +648,10 @@ function XpRoleBoostEditor({
   const [err, setErr] = useState<string | null>(null);
   const entries = Object.entries(overrides)
     .filter(([k]) => k.startsWith(XP_BOOST_ROLE_PREFIX))
-    .map(([k, v]) => ({ roleId: k.slice(XP_BOOST_ROLE_PREFIX.length), multiplier: v }))
+    .map(([k, v]) => ({
+      roleId: k.slice(XP_BOOST_ROLE_PREFIX.length),
+      multiplier: v,
+    }))
     .toSorted((a, b) => Number(b.multiplier) - Number(a.multiplier));
 
   const set = useMutation({
@@ -606,13 +661,17 @@ function XpRoleBoostEditor({
         value: e.multiplier,
       }),
     onSuccess: () => setErr(null),
-    onError: (e) => setErr(e instanceof Error ? e.message : "Échec de l'enregistrement."),
+    onError: (e) =>
+      setErr(e instanceof Error ? e.message : "Échec de l'enregistrement."),
     onSettled: onChanged,
   });
   const unset = useMutation({
     mutationFn: (id: string) =>
-      api.post("/services/settings/unset", { key: `${XP_BOOST_ROLE_PREFIX}${id}` }),
-    onError: (e) => setErr(e instanceof Error ? e.message : "Échec de la suppression."),
+      api.post("/services/settings/unset", {
+        key: `${XP_BOOST_ROLE_PREFIX}${id}`,
+      }),
+    onError: (e) =>
+      setErr(e instanceof Error ? e.message : "Échec de la suppression."),
     onSettled: onChanged,
   });
 
@@ -622,8 +681,8 @@ function XpRoleBoostEditor({
         Rôles boostés ({entries.length})
       </summary>
       <p className="mb-3 mt-1 text-xs text-zinc-500">
-        Multiplicateur par rôle. Un membre qui porte plusieurs rôles boostés prend le plus fort,
-        sans cumul avec le boost booster.
+        Multiplicateur par rôle. Un membre qui porte plusieurs rôles boostés
+        prend le plus fort, sans cumul avec le boost booster.
       </p>
       <div className="grid gap-2 sm:grid-cols-2">
         {entries.map((e) => (
@@ -712,14 +771,17 @@ function ThresholdCurveCard() {
 
   const save = useMutation({
     mutationFn: (next: Threshold[]) =>
-      api.put<{ ok: boolean; thresholds: Threshold[] }>("/levels/thresholds", { thresholds: next }),
+      api.put<{ ok: boolean; thresholds: Threshold[] }>("/levels/thresholds", {
+        thresholds: next,
+      }),
     onSuccess: (res) => {
       setErr(null);
       setRows(res.thresholds);
       void qc.invalidateQueries({ queryKey: ["levels"] });
       void qc.invalidateQueries({ queryKey: ["levels", "config"] });
     },
-    onError: (e) => setErr(e instanceof Error ? e.message : "Échec de l'enregistrement."),
+    onError: (e) =>
+      setErr(e instanceof Error ? e.message : "Échec de l'enregistrement."),
   });
 
   function edit(i: number, field: keyof Threshold, value: number) {
@@ -743,9 +805,10 @@ function ThresholdCurveCard() {
         Courbe de niveaux — paliers XP éditables
       </h3>
       <p className="mb-3 text-xs text-zinc-500">
-        Définissez l&apos;XP requis pour chaque niveau. La progression de tous les joueurs se recale
-        immédiatement (recalcul du niveau + rôles de palier au prochain gain d&apos;XP).
-        Jusqu&apos;à 50 paliers ; l&apos;XP doit croître avec le niveau.
+        Définissez l&apos;XP requis pour chaque niveau. La progression de tous
+        les joueurs se recale immédiatement (recalcul du niveau + rôles de
+        palier au prochain gain d&apos;XP). Jusqu&apos;à 50 paliers ; l&apos;XP
+        doit croître avec le niveau.
       </p>
 
       {query.isLoading ? (
@@ -842,7 +905,10 @@ function ThresholdsCard({
 }) {
   if (!config) return null;
   const total = (distribution ?? []).reduce((s, b) => s + b.count, 0);
-  const max = Math.max(...(distribution ?? [{ count: 1 }]).map((b) => b.count), 1);
+  const max = Math.max(
+    ...(distribution ?? [{ count: 1 }]).map((b) => b.count),
+    1,
+  );
 
   return (
     <div className="card">
@@ -851,7 +917,8 @@ function ThresholdsCard({
         Paliers DBZ — répartition des joueurs
       </h3>
       <p className="mb-3 text-xs text-zinc-500">
-        Chaque barre représente le nombre de joueurs dans ce palier d&apos;XP. Total :{" "}
+        Chaque barre représente le nombre de joueurs dans ce palier d&apos;XP.
+        Total :{" "}
         <strong>
           {total} joueur{total !== 1 ? "s" : ""}
         </strong>{" "}
@@ -870,7 +937,9 @@ function ThresholdsCard({
           const count = bucket?.count ?? 0;
           return (
             <div key={t.level} className="flex items-center gap-3">
-              <span className="w-20 font-mono text-xs text-zinc-400">niveau {t.level}</span>
+              <span className="w-20 font-mono text-xs text-zinc-400">
+                niveau {t.level}
+              </span>
               <span className="w-32 text-right font-mono text-xs text-zinc-500">
                 {minXp.toLocaleString("fr-FR")} – {t.xp.toLocaleString("fr-FR")}
               </span>
@@ -888,8 +957,12 @@ function ThresholdsCard({
         })}
         {distribution?.find((b) => b.level === 11)?.count ? (
           <div className="flex items-center gap-3">
-            <span className="w-20 font-mono text-xs text-amber-400">au-delà</span>
-            <span className="w-32 text-right font-mono text-xs text-zinc-500">&gt; 9 000 000</span>
+            <span className="w-20 font-mono text-xs text-amber-400">
+              au-delà
+            </span>
+            <span className="w-32 text-right font-mono text-xs text-zinc-500">
+              &gt; 9 000 000
+            </span>
             <div className="relative h-5 flex-1 overflow-hidden rounded bg-zinc-800">
               <div
                 className="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all"
@@ -908,7 +981,13 @@ function ThresholdsCard({
   );
 }
 
-function RewardsCard({ rewards, loading }: { rewards: LevelReward[]; loading: boolean }) {
+function RewardsCard({
+  rewards,
+  loading,
+}: {
+  rewards: LevelReward[];
+  loading: boolean;
+}) {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<LevelReward | null>(null);
   const [adding, setAdding] = useState(false);
@@ -966,10 +1045,15 @@ function RewardsCard({ rewards, loading }: { rewards: LevelReward[]; loading: bo
             Récompenses de palier ({rewards.length})
           </h3>
           <p className="mt-0.5 text-xs text-zinc-500">
-            Rôles et bonus zénis attribués automatiquement à chaque montée de niveau.
+            Rôles et bonus zénis attribués automatiquement à chaque montée de
+            niveau.
           </p>
         </div>
-        <button type="button" onClick={() => setAdding(true)} className="btn btn-primary">
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          className="btn btn-primary"
+        >
           <Plus className="h-3 w-3" />
           Ajouter une récompense
         </button>
@@ -1019,7 +1103,9 @@ function RewardsCard({ rewards, loading }: { rewards: LevelReward[]; loading: bo
             <tbody className="divide-y divide-zinc-800">
               {rewards.map((r) => (
                 <tr key={r.level}>
-                  <td className="px-3 py-2 font-bold text-brand-400">{r.level}</td>
+                  <td className="px-3 py-2 font-bold text-brand-400">
+                    {r.level}
+                  </td>
                   <td className="px-3 py-2 text-sm">
                     <RoleBadge roleId={r.roleId} />
                   </td>
@@ -1060,7 +1146,9 @@ function RewardsCard({ rewards, loading }: { rewards: LevelReward[]; loading: bo
         <RewardForm
           initial={editing ?? undefined}
           niveauxPris={rewards.map((r) => r.level)}
-          onSubmit={(r) => upsert.mutate({ reward: r, ancienNiveau: editing?.level })}
+          onSubmit={(r) =>
+            upsert.mutate({ reward: r, ancienNiveau: editing?.level })
+          }
           onCancel={() => {
             setEditing(null);
             setAdding(false);
@@ -1091,8 +1179,12 @@ function RewardForm({
 }) {
   const [level, setLevel] = useState(String(initial?.level ?? ""));
   const [roleId, setRoleId] = useState(initial?.roleId ?? "");
-  const [xpThreshold, setXpThreshold] = useState(String(initial?.xpThreshold ?? ""));
-  const [zeniBonus, setZeniBonus] = useState(String(initial?.zeniBonus ?? "1000"));
+  const [xpThreshold, setXpThreshold] = useState(
+    String(initial?.xpThreshold ?? ""),
+  );
+  const [zeniBonus, setZeniBonus] = useState(
+    String(initial?.zeniBonus ?? "1000"),
+  );
   const [conflit, setConflit] = useState<string | null>(null);
 
   const submit = (e: FormEvent) => {
@@ -1139,11 +1231,15 @@ function RewardForm({
           />
         </div>
         <div className="sm:col-span-3">
-          <label className="mb-1 block text-xs text-zinc-400">Rôle Discord à attribuer</label>
+          <label className="mb-1 block text-xs text-zinc-400">
+            Rôle Discord à attribuer
+          </label>
           <RolePicker value={roleId} onChange={setRoleId} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-400">Seuil XP requis</label>
+          <label className="mb-1 block text-xs text-zinc-400">
+            Seuil XP requis
+          </label>
           <input
             className="input"
             type="number"
@@ -1154,7 +1250,9 @@ function RewardForm({
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-400">Bonus zénis offerts</label>
+          <label className="mb-1 block text-xs text-zinc-400">
+            Bonus zénis offerts
+          </label>
           <input
             className="input"
             type="number"
@@ -1178,7 +1276,13 @@ function RewardForm({
   );
 }
 
-function RaceRewardsCard({ rewards, loading }: { rewards: RaceReward[]; loading: boolean }) {
+function RaceRewardsCard({
+  rewards,
+  loading,
+}: {
+  rewards: RaceReward[];
+  loading: boolean;
+}) {
   const qc = useQueryClient();
   const [race, setRace] = useState<string>(RACE_OPTIONS[0]!.id);
   const [level, setLevel] = useState("");
@@ -1206,8 +1310,13 @@ function RaceRewardsCard({ rewards, loading }: { rewards: RaceReward[]; loading:
       ancienne: RaceReward | null;
     }) => {
       await api.post("/levels/race-rewards", entree);
-      if (ancienne && (ancienne.race !== entree.race || ancienne.level !== entree.level)) {
-        await api.delete(`/levels/race-rewards/${ancienne.race}/${ancienne.level}`);
+      if (
+        ancienne &&
+        (ancienne.race !== entree.race || ancienne.level !== entree.level)
+      ) {
+        await api.delete(
+          `/levels/race-rewards/${ancienne.race}/${ancienne.level}`,
+        );
       }
     },
     onSuccess: () => {
@@ -1219,7 +1328,8 @@ function RaceRewardsCard({ rewards, loading }: { rewards: RaceReward[]; loading:
     },
   });
 
-  const existe = (ra: string, lv: number) => rewards.some((r) => r.race === ra && r.level === lv);
+  const existe = (ra: string, lv: number) =>
+    rewards.some((r) => r.race === ra && r.level === lv);
 
   const modifier = (r: RaceReward) => {
     setEditing(r);
@@ -1238,7 +1348,8 @@ function RaceRewardsCard({ rewards, loading }: { rewards: RaceReward[]; loading:
   };
 
   const remove = useMutation({
-    mutationFn: (r: RaceReward) => api.delete(`/levels/race-rewards/${r.race}/${r.level}`),
+    mutationFn: (r: RaceReward) =>
+      api.delete(`/levels/race-rewards/${r.race}/${r.level}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["levels", "race-rewards"] });
       showSuccess("Rôle de palier supprimé.");
@@ -1248,9 +1359,12 @@ function RaceRewardsCard({ rewards, loading }: { rewards: RaceReward[]; loading:
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const lv = Number(level);
-    const memeCle = editing != null && editing.race === race && editing.level === lv;
+    const memeCle =
+      editing != null && editing.race === race && editing.level === lv;
     if (editing && !memeCle && existe(race, lv)) {
-      setConflit(`Le palier ${lv} (${raceLabel(race)}) existe déjà — modifie-le directement.`);
+      setConflit(
+        `Le palier ${lv} (${raceLabel(race)}) existe déjà — modifie-le directement.`,
+      );
       return;
     }
     setConflit(null);
@@ -1263,7 +1377,9 @@ function RaceRewardsCard({ rewards, loading }: { rewards: RaceReward[]; loading:
   // Regroupe par race (dans l'ordre canonique) puis trie par niveau.
   const grouped = RACE_OPTIONS.map((opt) => ({
     ...opt,
-    rows: rewards.filter((r) => r.race === opt.id).toSorted((a, b) => a.level - b.level),
+    rows: rewards
+      .filter((r) => r.race === opt.id)
+      .toSorted((a, b) => a.level - b.level),
   })).filter((g) => g.rows.length > 0);
 
   return (
@@ -1273,9 +1389,10 @@ function RaceRewardsCard({ rewards, loading }: { rewards: RaceReward[]; loading:
           Rôles de palier par race ({rewards.length})
         </h3>
         <p className="mt-0.5 text-xs text-zinc-500">
-          Rôle de transformation attribué à chaque montée de palier, propre à chaque race.
-          C&apos;est cette table qui pilote les rôles distribués lors des level-up (indépendante des
-          bonus zénis ci-dessus). Une race sans palier configuré ne reçoit ni ne perd aucun rôle de
+          Rôle de transformation attribué à chaque montée de palier, propre à
+          chaque race. C&apos;est cette table qui pilote les rôles distribués
+          lors des level-up (indépendante des bonus zénis ci-dessus). Une race
+          sans palier configuré ne reçoit ni ne perd aucun rôle de
           transformation.
         </p>
       </div>
@@ -1323,7 +1440,11 @@ function RaceRewardsCard({ rewards, loading }: { rewards: RaceReward[]; loading:
         <div className="grid gap-3 sm:grid-cols-4">
           <div>
             <label className="mb-1 block text-xs text-zinc-400">Race</label>
-            <select className="input" value={race} onChange={(e) => setRace(e.target.value)}>
+            <select
+              className="input"
+              value={race}
+              onChange={(e) => setRace(e.target.value)}
+            >
               {RACE_OPTIONS.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.label}
@@ -1332,7 +1453,9 @@ function RaceRewardsCard({ rewards, loading }: { rewards: RaceReward[]; loading:
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-zinc-400">Niveau (palier)</label>
+            <label className="mb-1 block text-xs text-zinc-400">
+              Niveau (palier)
+            </label>
             <input
               className="input"
               type="number"
@@ -1343,7 +1466,9 @@ function RaceRewardsCard({ rewards, loading }: { rewards: RaceReward[]; loading:
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs text-zinc-400">Rôle Discord à attribuer</label>
+            <label className="mb-1 block text-xs text-zinc-400">
+              Rôle Discord à attribuer
+            </label>
             <RolePicker value={roleId} onChange={setRoleId} />
           </div>
         </div>
@@ -1358,7 +1483,11 @@ function RaceRewardsCard({ rewards, loading }: { rewards: RaceReward[]; loading:
             disabled={!level || !roleId || upsert.isPending}
             className="btn btn-primary"
           >
-            {editing ? <Enregistrer className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+            {editing ? (
+              <Enregistrer className="h-3 w-3" />
+            ) : (
+              <Plus className="h-3 w-3" />
+            )}
             {upsert.isPending
               ? "Enregistrement…"
               : editing
@@ -1391,7 +1520,9 @@ function RaceRewardsCard({ rewards, loading }: { rewards: RaceReward[]; loading:
                   <thead className="text-xs uppercase tracking-wide text-zinc-500">
                     <tr>
                       <th className="px-3 py-2 text-left">Palier</th>
-                      <th className="px-3 py-2 text-left">Rôle Discord attribué</th>
+                      <th className="px-3 py-2 text-left">
+                        Rôle Discord attribué
+                      </th>
                       <th className="px-3 py-2" />
                     </tr>
                   </thead>
@@ -1405,7 +1536,9 @@ function RaceRewardsCard({ rewards, loading }: { rewards: RaceReward[]; loading:
                             : undefined
                         }
                       >
-                        <td className="px-3 py-2 font-bold text-brand-400">{r.level}</td>
+                        <td className="px-3 py-2 font-bold text-brand-400">
+                          {r.level}
+                        </td>
                         <td className="px-3 py-2 text-sm">
                           <RoleBadge roleId={r.roleId} />
                         </td>
@@ -1447,7 +1580,10 @@ function TopsCard() {
   const [limit, setLimit] = useState(10);
   const top = useQuery({
     queryKey: ["levels", "top", metric, limit],
-    queryFn: () => api.get<{ users: TopUser[] }>(`/levels/top?metric=${metric}&limit=${limit}`),
+    queryFn: () =>
+      api.get<{ users: TopUser[] }>(
+        `/levels/top?metric=${metric}&limit=${limit}`,
+      ),
   });
 
   const formatMetric = (u: TopUser): string => {
@@ -1520,8 +1656,13 @@ function TopsCard() {
       <div className="space-y-1.5">
         {top.data?.users.map((u, i) => (
           <div key={u.id} className="flex items-center gap-3 text-sm">
-            <span className="w-8 text-right font-mono text-xs text-zinc-500">#{i + 1}</span>
-            <span className="w-44 truncate font-mono text-xs text-zinc-300" title={u.id}>
+            <span className="w-8 text-right font-mono text-xs text-zinc-500">
+              #{i + 1}
+            </span>
+            <span
+              className="w-44 truncate font-mono text-xs text-zinc-300"
+              title={u.id}
+            >
               {u.id.slice(0, 6)}…{u.id.slice(-4)}
               <span
                 className="ml-1 text-[10px] text-zinc-600"
@@ -1531,9 +1672,12 @@ function TopsCard() {
               </span>
             </span>
             <span className="flex-1 truncate text-xs text-zinc-400">
-              niveau {u.lastLevelReached} · {u.xp.toLocaleString("fr-FR")} XP · {formatZeni(u.zeni)}
+              niveau {u.lastLevelReached} · {u.xp.toLocaleString("fr-FR")} XP ·{" "}
+              {formatZeni(u.zeni)}
             </span>
-            <span className="text-right font-mono text-sm text-brand-400">{formatMetric(u)}</span>
+            <span className="text-right font-mono text-sm text-brand-400">
+              {formatMetric(u)}
+            </span>
           </div>
         ))}
         {top.data?.users.length === 0 && (
@@ -1595,17 +1739,22 @@ function ManualActionsCard() {
         Modification manuelle d&apos;un joueur
       </h3>
       <p className="text-xs text-zinc-500">
-        Permet d&apos;ajouter, retirer ou définir directement l&apos;XP ou les zénis d&apos;un
-        membre. Renseignez son identifiant Discord (suite de chiffres visible dans les paramètres
-        Discord avec le mode développeur activé).
+        Permet d&apos;ajouter, retirer ou définir directement l&apos;XP ou les
+        zénis d&apos;un membre. Renseignez son identifiant Discord (suite de
+        chiffres visible dans les paramètres Discord avec le mode développeur
+        activé).
       </p>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="lg:col-span-2">
-          <label className="mb-1 block text-xs text-zinc-400">Identifiant Discord du joueur</label>
+          <label className="mb-1 block text-xs text-zinc-400">
+            Identifiant Discord du joueur
+          </label>
           <UserSelect value={userId} onChange={setUserId} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-400">Ce que l&apos;on modifie</label>
+          <label className="mb-1 block text-xs text-zinc-400">
+            Ce que l&apos;on modifie
+          </label>
           <select
             className="input"
             value={target}
@@ -1627,7 +1776,9 @@ function ManualActionsCard() {
           </select>
         </div>
         <div className="lg:col-span-2">
-          <label className="mb-1 block text-xs text-zinc-400">Montant (négatif pour retirer)</label>
+          <label className="mb-1 block text-xs text-zinc-400">
+            Montant (négatif pour retirer)
+          </label>
           <input
             className="input"
             type="number"
@@ -1644,7 +1795,9 @@ function ManualActionsCard() {
         className="btn btn-primary"
       >
         <Enregistrer className="h-3 w-3" />
-        {mutation.isPending ? "Application en cours…" : "Appliquer la modification"}
+        {mutation.isPending
+          ? "Application en cours…"
+          : "Appliquer la modification"}
       </button>
       {lastResult && (
         <div

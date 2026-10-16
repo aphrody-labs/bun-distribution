@@ -45,16 +45,31 @@ export async function importInfraScripts(
   if (SCRIPT_PATHS.some((path) => !tracked.has(path)))
     throw new Error("one or more Infra service scripts are not tracked");
   const dirty = () =>
-    git(source, ["status", "--porcelain=v1", "-z", "--untracked-files=all", "--", ...SCRIPT_PATHS]);
-  if (dirty()) throw new Error("Infra service script source is dirty; review it before import");
+    git(source, [
+      "status",
+      "--porcelain=v1",
+      "-z",
+      "--untracked-files=all",
+      "--",
+      ...SCRIPT_PATHS,
+    ]);
+  if (dirty())
+    throw new Error(
+      "Infra service script source is dirty; review it before import",
+    );
 
   const mapPath = join(target, "docs/migration/source-map.json");
-  const sourceMap = JSON.parse(await readFile(mapPath, "utf8")) as { entries: SourceEntry[] };
-  const bySource = new Map(sourceMap.entries.map((entry) => [entry.source, entry]));
+  const sourceMap = JSON.parse(await readFile(mapPath, "utf8")) as {
+    entries: SourceEntry[];
+  };
+  const bySource = new Map(
+    sourceMap.entries.map((entry) => [entry.source, entry]),
+  );
   const planned = [];
   for (const path of SCRIPT_PATHS) {
     const entry = bySource.get(`aphrody-infra/${path}`);
-    if (!entry?.sha256) throw new Error(`script absent from hashed source map: ${path}`);
+    if (!entry?.sha256)
+      throw new Error(`script absent from hashed source map: ${path}`);
     // oxlint-disable-next-line no-await-in-loop -- contrôle préalable séquentiel : la première anomalie arrête l'import dans l'ordre des scripts
     const sourceBytes = await readFile(join(source, path));
     const sourceHash = hash(sourceBytes);
@@ -71,18 +86,33 @@ export async function importInfraScripts(
     if (existing && hash(await readFile(targetPath)) !== sourceHash)
       throw new Error(`Infra service script target conflict: ${destination}`);
     if (entry.importedSha256 && entry.importedSha256 !== sourceHash)
-      throw new Error(`recorded Infra service script target changed: ${destination}`);
-    planned.push({ path, destination, targetPath, sourceHash, entry, existing });
+      throw new Error(
+        `recorded Infra service script target changed: ${destination}`,
+      );
+    planned.push({
+      path,
+      destination,
+      targetPath,
+      sourceHash,
+      entry,
+      existing,
+    });
   }
   if (git(source, ["rev-parse", "HEAD"]).trim() !== sourceHead || dirty())
-    throw new Error("Infra service scripts changed during preflight; import aborted");
+    throw new Error(
+      "Infra service scripts changed during preflight; import aborted",
+    );
 
   for (const item of planned) {
     if (!item.existing) {
       // oxlint-disable-next-line no-await-in-loop -- copies séquentielles avec COPYFILE_EXCL : chaque écriture doit réussir avant la suivante
       await mkdir(dirname(item.targetPath), { recursive: true });
       // oxlint-disable-next-line no-await-in-loop -- copies séquentielles avec COPYFILE_EXCL : chaque écriture doit réussir avant la suivante
-      await copyFile(join(source, item.path), item.targetPath, constants.COPYFILE_EXCL);
+      await copyFile(
+        join(source, item.path),
+        item.targetPath,
+        constants.COPYFILE_EXCL,
+      );
     }
     item.entry.target = item.destination;
     item.entry.importedSha256 = item.sourceHash;
@@ -107,7 +137,10 @@ export async function importInfraScripts(
     })),
   };
   const reportPath = "docs/migration/infra-scripts-import.json";
-  await writeFile(join(target, reportPath), `${JSON.stringify(report, null, 2)}\n`);
+  await writeFile(
+    join(target, reportPath),
+    `${JSON.stringify(report, null, 2)}\n`,
+  );
   return {
     fileCount: report.fileCount,
     copied: report.copied,

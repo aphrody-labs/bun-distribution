@@ -6,15 +6,19 @@ import { Button } from "@storyteller/ui-button";
 import { usePageSceneStore } from "@storyteller/ui-pagescene";
 
 export function ErrorDialog() {
-  const { showErrorDialog, errorDialogTitle, errorDialogMessage, setShowErrorDialog } =
-    usePageSceneStore(
-      useShallow((s) => ({
-        showErrorDialog: s.showErrorDialog,
-        errorDialogTitle: s.errorDialogTitle,
-        errorDialogMessage: s.errorDialogMessage,
-        setShowErrorDialog: s.setShowErrorDialog,
-      })),
-    );
+  const {
+    showErrorDialog,
+    errorDialogTitle,
+    errorDialogMessage,
+    setShowErrorDialog,
+  } = usePageSceneStore(
+    useShallow((s) => ({
+      showErrorDialog: s.showErrorDialog,
+      errorDialogTitle: s.errorDialogTitle,
+      errorDialogMessage: s.errorDialogMessage,
+      setShowErrorDialog: s.setShowErrorDialog,
+    })),
+  );
 
   return (
     <Modal

@@ -103,15 +103,25 @@ export function M3ThemeProvider({
   const [variant, setVariantState] = useState<SchemeVariant>(defaultVariant);
   const [failure, setFailure] = useState<{ key: string; error: Error }>();
 
-  const systemDark = useSyncExternalStore(subscribeToColorScheme, prefersDark, () => false);
+  const systemDark = useSyncExternalStore(
+    subscribeToColorScheme,
+    prefersDark,
+    () => false,
+  );
   const resolvedTheme: "light" | "dark" =
     themeMode === "system" ? (systemDark ? "dark" : "light") : themeMode;
   const compiled =
     seedColor.toLowerCase() === defaultSeedColor.toLowerCase() &&
     variant === defaultVariant &&
     contrastLevel === defaultContrastLevel;
-  const schemeKey = JSON.stringify([seedColor, variant, contrastLevel, resolvedTheme]);
-  const schemeError = !compiled && failure?.key === schemeKey ? failure.error : undefined;
+  const schemeKey = JSON.stringify([
+    seedColor,
+    variant,
+    contrastLevel,
+    resolvedTheme,
+  ]);
+  const schemeError =
+    !compiled && failure?.key === schemeKey ? failure.error : undefined;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -138,7 +148,16 @@ export function M3ThemeProvider({
     return () => {
       current = false;
     };
-  }, [compiled, schemeKey, seedColor, resolvedTheme, target, contrastLevel, variant, sheet]);
+  }, [
+    compiled,
+    schemeKey,
+    seedColor,
+    resolvedTheme,
+    target,
+    contrastLevel,
+    variant,
+    sheet,
+  ]);
 
   const setSeedColor = useMemo(
     () => guard(sheet, setSeed, defaultSeedColor),
@@ -181,7 +200,9 @@ export function M3ThemeProvider({
     ],
   );
 
-  return <M3ThemeContext.Provider value={value}>{children}</M3ThemeContext.Provider>;
+  return (
+    <M3ThemeContext.Provider value={value}>{children}</M3ThemeContext.Provider>
+  );
 }
 
 export function useM3Theme(): M3ThemeContextType {

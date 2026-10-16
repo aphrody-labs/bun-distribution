@@ -5,7 +5,12 @@ export type SourceRuntimeDeployment = {
   schema: "shenron-source-runtime/v1";
   id: string;
   commit: string;
-  runtime: { sha256: string; version: string; revision: string; sourceUrl: string };
+  runtime: {
+    sha256: string;
+    version: string;
+    revision: string;
+    sourceUrl: string;
+  };
 };
 export type DeploymentSelection = {
   commit: string;
@@ -21,7 +26,9 @@ function sourceRuntimeIdentity(
   if (
     commit.length !== 40 ||
     !/^[a-f0-9]{40}$/.test(commit) ||
-    Object.values(runtime).some((value) => typeof value !== "string" || /\s/.test(value)) ||
+    Object.values(runtime).some(
+      (value) => typeof value !== "string" || /\s/.test(value),
+    ) ||
     !/^[a-f0-9]{64}$/.test(runtime.sha256) ||
     !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(runtime.version) ||
     !/^[a-f0-9]{40}$/.test(runtime.revision) ||
@@ -29,13 +36,20 @@ function sourceRuntimeIdentity(
       runtime.sourceUrl,
     )
   )
-    throw Error("Source/runtime deployment requires exact qualified runtime pins");
+    throw Error(
+      "Source/runtime deployment requires exact qualified runtime pins",
+    );
   const schema = "shenron-source-runtime/v1";
   const id = new Bun.CryptoHasher("sha256")
     .update(
-      [schema, commit, runtime.sha256, runtime.version, runtime.revision, runtime.sourceUrl].join(
-        "\n",
-      ),
+      [
+        schema,
+        commit,
+        runtime.sha256,
+        runtime.version,
+        runtime.revision,
+        runtime.sourceUrl,
+      ].join("\n"),
     )
     .digest("hex");
   return {
@@ -57,7 +71,11 @@ export function deploymentSelection(
   config: {
     deploymentIdentity?: string;
     runtimeSha256?: string;
-    runtimeExpected?: { version?: string; revision?: string; sourceUrl?: string };
+    runtimeExpected?: {
+      version?: string;
+      revision?: string;
+      sourceUrl?: string;
+    };
   },
 ): DeploymentSelection {
   if (commit.length !== 40 || !/^[a-f0-9]{40}$/.test(commit))
@@ -88,7 +106,10 @@ export function activeDeployment(value: {
 }) {
   let selected: DeploymentSelection;
   if (value.deployment !== undefined && value.deployment !== null) {
-    const expected = sourceRuntimeIdentity(value.commit, value.deployment.runtime);
+    const expected = sourceRuntimeIdentity(
+      value.commit,
+      value.deployment.runtime,
+    );
     if (!Bun.deepEquals(expected, value.deployment))
       throw Error("Active deployment identity differs");
     selected = {
@@ -99,9 +120,10 @@ export function activeDeployment(value: {
     };
   } else selected = deploymentSelection(value.commit, {});
   if (
-    ![selected.releaseName, ...(selected.deployment ? [] : [value.commit])].includes(
-      basename(value.release),
-    )
+    ![
+      selected.releaseName,
+      ...(selected.deployment ? [] : [value.commit]),
+    ].includes(basename(value.release))
   )
     throw Error("Active release name differs from its sealed identity");
   return { ...selected, release: value.release };

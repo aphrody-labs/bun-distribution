@@ -41,26 +41,26 @@ const r1 = (v: number) => Math.round(v * 10) / 10;
  * s'applique donc telle quelle, bornée pour rester dessinable en petit.
  */
 export const CADRE_CASE = {
-	/** Liseré jaune : 12 px sur 679 de large. */
-	lisere: 0.0177,
-	/** Trait d'encre de part et d'autre du liseré : 2 px sur 679. */
-	trait: 0.0037,
-	/** Coins vifs : le masque jaune se referme à 90° sur 1 px, aucun rayon. */
-	rayon: 0,
-	/** Jaune du cadre : #FFF007, à 2 points du jaune du titre (#FEFD03). */
-	jaune: "var(--color-logo-jaune)",
-	encre: "var(--color-encre)",
+  /** Liseré jaune : 12 px sur 679 de large. */
+  lisere: 0.0177,
+  /** Trait d'encre de part et d'autre du liseré : 2 px sur 679. */
+  trait: 0.0037,
+  /** Coins vifs : le masque jaune se referme à 90° sur 1 px, aucun rayon. */
+  rayon: 0,
+  /** Jaune du cadre : #FFF007, à 2 points du jaune du titre (#FEFD03). */
+  jaune: "var(--color-logo-jaune)",
+  encre: "var(--color-encre)",
 } as const;
 
 export interface AnneauxCadre {
-	/** Épaisseur d'un trait d'encre, en px. */
-	trait: number;
-	/** Épaisseur du liseré jaune, en px. */
-	lisere: number;
-	/** Rayon des coins, en px (nul : mesuré vif). */
-	rayon: number;
-	/** Épaisseur totale du cadre (trait + liseré + trait). */
-	total: number;
+  /** Épaisseur d'un trait d'encre, en px. */
+  trait: number;
+  /** Épaisseur du liseré jaune, en px. */
+  lisere: number;
+  /** Rayon des coins, en px (nul : mesuré vif). */
+  rayon: number;
+  /** Épaisseur totale du cadre (trait + liseré + trait). */
+  total: number;
 }
 
 /**
@@ -72,9 +72,14 @@ export interface AnneauxCadre {
  * mangerait l'image.
  */
 export function anneauxCadre(largeur: number): AnneauxCadre {
-	const trait = Math.max(1.5, r1(largeur * CADRE_CASE.trait));
-	const lisere = Math.min(14, Math.max(3, r1(largeur * CADRE_CASE.lisere)));
-	return { trait, lisere, rayon: CADRE_CASE.rayon, total: r1(2 * trait + lisere) };
+  const trait = Math.max(1.5, r1(largeur * CADRE_CASE.trait));
+  const lisere = Math.min(14, Math.max(3, r1(largeur * CADRE_CASE.lisere)));
+  return {
+    trait,
+    lisere,
+    rayon: CADRE_CASE.rayon,
+    total: r1(2 * trait + lisere),
+  };
 }
 
 /**
@@ -83,14 +88,14 @@ export function anneauxCadre(largeur: number): AnneauxCadre {
  * cadre ne prend pas de place dans le flux et suit n'importe quel ratio.
  */
 export function ombreCadre(a: AnneauxCadre): string {
-	const t1 = a.trait;
-	const t2 = r1(t1 + a.lisere);
-	const t3 = r1(t2 + a.trait);
-	return [
-		`0 0 0 ${t1}px ${CADRE_CASE.encre}`,
-		`0 0 0 ${t2}px ${CADRE_CASE.jaune}`,
-		`0 0 0 ${t3}px ${CADRE_CASE.encre}`,
-	].join(", ");
+  const t1 = a.trait;
+  const t2 = r1(t1 + a.lisere);
+  const t3 = r1(t2 + a.trait);
+  return [
+    `0 0 0 ${t1}px ${CADRE_CASE.encre}`,
+    `0 0 0 ${t2}px ${CADRE_CASE.jaune}`,
+    `0 0 0 ${t3}px ${CADRE_CASE.encre}`,
+  ].join(", ");
 }
 
 // ───────────────────────── 2. Volutes de nuage ──────────────────────────────
@@ -113,27 +118,27 @@ export function ombreCadre(a: AnneauxCadre): string {
  *    **9 % de la corde**, une encre très grasse pour un décor de fond.
  */
 export const NUAGE_MESURES = {
-	corde: 46,
-	fleche: 22,
-	spiraleSurCorde: 0.7,
-	traitSurCorde: 0.09,
-	tours: 1.25,
-	fond: "#CFCFE7",
-	trait: "#4141A1",
-	ciel: "#3760B2",
+  corde: 46,
+  fleche: 22,
+  spiraleSurCorde: 0.7,
+  traitSurCorde: 0.09,
+  tours: 1.25,
+  fond: "#CFCFE7",
+  trait: "#4141A1",
+  ciel: "#3760B2",
 } as const;
 
 export interface BancNuage {
-	largeur: number;
-	hauteur: number;
-	/** Silhouette fermée (aplat) : chaîne de lobes fermée par la base. */
-	silhouette: string;
-	/** Contour d'encre : la chaîne de lobes SEULE, ouverte. */
-	contour: string;
-	/** Volutes d'encre : une par creux, plus les enroulements intérieurs. */
-	volutes: string[];
-	/** Épaisseur du trait, dans l'unité du viewBox. */
-	trait: number;
+  largeur: number;
+  hauteur: number;
+  /** Silhouette fermée (aplat) : chaîne de lobes fermée par la base. */
+  silhouette: string;
+  /** Contour d'encre : la chaîne de lobes SEULE, ouverte. */
+  contour: string;
+  /** Volutes d'encre : une par creux, plus les enroulements intérieurs. */
+  volutes: string[];
+  /** Épaisseur du trait, dans l'unité du viewBox. */
+  trait: number;
 }
 
 /**
@@ -152,60 +157,64 @@ export interface BancNuage {
  *    jamais — et le rendu le montre immédiatement.
  */
 export function bancNuage({
-	creuxX = [-16, 30, 74, 108, 164, 224],
-	fleches = [22, 21, 16, 27, 29],
-	largeur = 240,
-	base = 128,
-	creux = 78,
+  creuxX = [-16, 30, 74, 108, 164, 224],
+  fleches = [22, 21, 16, 27, 29],
+  largeur = 240,
+  base = 128,
+  creux = 78,
 }: {
-	/** Abscisses des creux ; le dernier vaut le premier + `largeur` (couture). */
-	creuxX?: readonly number[];
-	/** Flèches des lobes entre creux successifs. */
-	fleches?: readonly number[];
-	largeur?: number;
-	/** Ordonnée du bas de la tuile. */
-	base?: number;
-	/** Ordonnée des creux. */
-	creux?: number;
+  /** Abscisses des creux ; le dernier vaut le premier + `largeur` (couture). */
+  creuxX?: readonly number[];
+  /** Flèches des lobes entre creux successifs. */
+  fleches?: readonly number[];
+  largeur?: number;
+  /** Ordonnée du bas de la tuile. */
+  base?: number;
+  /** Ordonnée des creux. */
+  creux?: number;
 } = {}): BancNuage {
-	// Un lobe de plus que la liste : le dernier creux vaut le premier + largeur,
-	// donc l'arc qui le suit est le PREMIER arc décalé d'une tuile. Sans lui, la
-	// tuile s'arrête net sur son bord droit — vu au rendu comme une falaise à
-	// chaque raccord, alors que la couture, elle, était bonne.
-	const xs = [...creuxX, creuxX[1] + largeur];
-	const f = [...fleches, fleches[0]];
-	const sommets: Point[] = xs.map((x) => [x, creux]);
-	const contour = arcs(sommets, f, false);
-	const premier = xs[0];
-	const dernier = xs[xs.length - 1];
-	const silhouette = `${contour}L${r1(dernier)} ${base}L${r1(premier)} ${base}Z`;
+  // Un lobe de plus que la liste : le dernier creux vaut le premier + largeur,
+  // donc l'arc qui le suit est le PREMIER arc décalé d'une tuile. Sans lui, la
+  // tuile s'arrête net sur son bord droit — vu au rendu comme une falaise à
+  // chaque raccord, alors que la couture, elle, était bonne.
+  const xs = [...creuxX, creuxX[1] + largeur];
+  const f = [...fleches, fleches[0]];
+  const sommets: Point[] = xs.map((x) => [x, creux]);
+  const contour = arcs(sommets, f, false);
+  const premier = xs[0];
+  const dernier = xs[xs.length - 1];
+  const silhouette = `${contour}L${r1(dernier)} ${base}L${r1(premier)} ${base}Z`;
 
-	const volutes: string[] = [];
-	for (let i = 0; i < sommets.length; i++) {
-		const p = sommets[i];
-		// Rayon : 0,45 × la corde moyenne des deux lobes voisins — le facteur
-		// mesuré, le même que les volutes du Kinto-Un.
-		const g = i > 0 ? xs[i] - xs[i - 1] : xs[1] - xs[0];
-		const d = i < xs.length - 1 ? xs[i + 1] - xs[i] : g;
-		const r = (((g + d) / 2) * NUAGE_MESURES.spiraleSurCorde) / 2;
-		// Le creux s'enroule vers l'intérieur de la masse (vers le bas), sens
-		// alterné : deux spirales voisines qui tournent pareil font un ressort.
-		volutes.push(volute(p, [p[0], base], r, NUAGE_MESURES.tours, i % 2 === 0 ? 1 : -1));
-	}
-	const trait = r1(NUAGE_MESURES.corde * NUAGE_MESURES.traitSurCorde);
-	for (let i = 0; i < f.length; i++) {
-		// Enroulement intérieur sous chaque crête : plus petit (0,62), il donne la
-		// profondeur du banc sans redoubler le contour. Sous 2,5 fois l'épaisseur
-		// du trait, la spirale se referme sur elle-même et rend un point d'encre —
-		// vu au rendu sur les lobes courts : on la supprime plutôt que la tasser.
-		const corde = xs[i + 1] - xs[i];
-		const r = (corde * NUAGE_MESURES.spiraleSurCorde * 0.62) / 2;
-		if (r < trait * 2.5) continue;
-		const cx = (xs[i] + xs[i + 1]) / 2;
-		const cy = creux + (base - creux) * 0.34;
-		volutes.push(volute([cx, cy], [cx, base], r, NUAGE_MESURES.tours, i % 2 ? 1 : -1));
-	}
-	return { largeur, hauteur: base, silhouette, contour, volutes, trait };
+  const volutes: string[] = [];
+  for (let i = 0; i < sommets.length; i++) {
+    const p = sommets[i];
+    // Rayon : 0,45 × la corde moyenne des deux lobes voisins — le facteur
+    // mesuré, le même que les volutes du Kinto-Un.
+    const g = i > 0 ? xs[i] - xs[i - 1] : xs[1] - xs[0];
+    const d = i < xs.length - 1 ? xs[i + 1] - xs[i] : g;
+    const r = (((g + d) / 2) * NUAGE_MESURES.spiraleSurCorde) / 2;
+    // Le creux s'enroule vers l'intérieur de la masse (vers le bas), sens
+    // alterné : deux spirales voisines qui tournent pareil font un ressort.
+    volutes.push(
+      volute(p, [p[0], base], r, NUAGE_MESURES.tours, i % 2 === 0 ? 1 : -1),
+    );
+  }
+  const trait = r1(NUAGE_MESURES.corde * NUAGE_MESURES.traitSurCorde);
+  for (let i = 0; i < f.length; i++) {
+    // Enroulement intérieur sous chaque crête : plus petit (0,62), il donne la
+    // profondeur du banc sans redoubler le contour. Sous 2,5 fois l'épaisseur
+    // du trait, la spirale se referme sur elle-même et rend un point d'encre —
+    // vu au rendu sur les lobes courts : on la supprime plutôt que la tasser.
+    const corde = xs[i + 1] - xs[i];
+    const r = (corde * NUAGE_MESURES.spiraleSurCorde * 0.62) / 2;
+    if (r < trait * 2.5) continue;
+    const cx = (xs[i] + xs[i + 1]) / 2;
+    const cy = creux + (base - creux) * 0.34;
+    volutes.push(
+      volute([cx, cy], [cx, base], r, NUAGE_MESURES.tours, i % 2 ? 1 : -1),
+    );
+  }
+  return { largeur, hauteur: base, silhouette, contour, volutes, trait };
 }
 
 /** Tuile par défaut : quatre lobes de 36 à 72, 240 × 128. */
@@ -217,11 +226,11 @@ export const BANC_NUAGE = bancNuage();
  * statique de `public/dbz/marque/`, qui n'hérite d'aucune variable CSS.
  */
 export function corpsBancNuage(
-	n: BancNuage = BANC_NUAGE,
-	fond = NUAGE_MESURES.fond,
-	trait = NUAGE_MESURES.trait
+  n: BancNuage = BANC_NUAGE,
+  fond = NUAGE_MESURES.fond,
+  trait = NUAGE_MESURES.trait,
 ): string {
-	return `<path d="${n.silhouette}" fill="${fond}"/>
+  return `<path d="${n.silhouette}" fill="${fond}"/>
 <g fill="none" stroke="${trait}" stroke-width="${n.trait}" stroke-linecap="round" stroke-linejoin="round">
 <path d="${n.contour}"/>
 ${n.volutes.map((d) => `<path d="${d}"/>`).join("\n")}
@@ -237,7 +246,7 @@ ${n.volutes.map((d) => `<path d="${d}"/>`).join("\n")}
  * la tuile bave hors de sa boîte à la génération des PNG de contrôle.
  */
 export function svgBancNuage(n: BancNuage = BANC_NUAGE): string {
-	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n.largeur} ${n.hauteur}" width="${n.largeur}" height="${n.hauteur}" role="img" aria-labelledby="bn-t">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n.largeur} ${n.hauteur}" width="${n.largeur}" height="${n.hauteur}" role="img" aria-labelledby="bn-t">
 <title id="bn-t">Banc de nuages</title>
 <desc>Volutes de fond de case : lobes bombés finis en spirales rentrantes, relevés sur la couverture du tome.</desc>
 <defs><clipPath id="bn-c"><rect width="${n.largeur}" height="${n.hauteur}"/></clipPath></defs>
@@ -262,31 +271,31 @@ ${corpsBancNuage(n)}
  * `--color-gi-ombre` en tient lieu.
  */
 export const PASTILLE = {
-	diametre: 113,
-	cerne: 0.0575,
-	/** Hauteur du chiffre rapportée au diamètre. */
-	chiffre: 0.496,
-	/** Arrêts mesurés : rayon relatif → couleur du support. */
-	degradeMesure: [
-		[0.05, "#FCF5AA"],
-		[0.27, "#FEF01D"],
-		[0.48, "#FBB502"],
-		[0.69, "#F17102"],
-		[0.8, "#ED5102"],
-	] as const,
-	/** Les mêmes arrêts, portés sur les jetons du site. */
-	degradeJetons: [
-		[0.05, "color-mix(in srgb, var(--color-logo-jaune) 78%, var(--color-os))"],
-		[0.27, "var(--color-logo-jaune)"],
-		[0.48, "var(--color-gi-clair)"],
-		[0.8, "var(--color-gi-ombre)"],
-	] as const,
+  diametre: 113,
+  cerne: 0.0575,
+  /** Hauteur du chiffre rapportée au diamètre. */
+  chiffre: 0.496,
+  /** Arrêts mesurés : rayon relatif → couleur du support. */
+  degradeMesure: [
+    [0.05, "#FCF5AA"],
+    [0.27, "#FEF01D"],
+    [0.48, "#FBB502"],
+    [0.69, "#F17102"],
+    [0.8, "#ED5102"],
+  ] as const,
+  /** Les mêmes arrêts, portés sur les jetons du site. */
+  degradeJetons: [
+    [0.05, "color-mix(in srgb, var(--color-logo-jaune) 78%, var(--color-os))"],
+    [0.27, "var(--color-logo-jaune)"],
+    [0.48, "var(--color-gi-clair)"],
+    [0.8, "var(--color-gi-ombre)"],
+  ] as const,
 } as const;
 
 /** Rayon du tracé et épaisseur du cerne pour un diamètre de viewBox donné. */
 export function anneauPastille(diametre: number = PASTILLE.diametre) {
-	const cerne = r1(diametre * PASTILLE.cerne);
-	return { centre: diametre / 2, cerne, rayon: r1(diametre / 2 - cerne / 2) };
+  const cerne = r1(diametre * PASTILLE.cerne);
+  return { centre: diametre / 2, cerne, rayon: r1(diametre / 2 - cerne / 2) };
 }
 
 // ──────────────────────────── 4. Étoile ─────────────────────────────────────
@@ -305,19 +314,19 @@ export const ETOILE_INTERIEUR = 0.45;
 
 /** Tracé d'une étoile à `branches` pointes, centrée en (cx, cy). */
 export function etoilePath(
-	cx: number,
-	cy: number,
-	R: number,
-	interieur = ETOILE_INTERIEUR,
-	branches = 5
+  cx: number,
+  cy: number,
+  R: number,
+  interieur = ETOILE_INTERIEUR,
+  branches = 5,
 ): string {
-	const pts: string[] = [];
-	for (let i = 0; i < branches * 2; i++) {
-		const rayon = i % 2 === 0 ? R : R * interieur;
-		const a = -Math.PI / 2 + (i * Math.PI) / branches;
-		pts.push(`${r1(cx + rayon * Math.cos(a))} ${r1(cy + rayon * Math.sin(a))}`);
-	}
-	return `M${pts.join("L")}Z`;
+  const pts: string[] = [];
+  for (let i = 0; i < branches * 2; i++) {
+    const rayon = i % 2 === 0 ? R : R * interieur;
+    const a = -Math.PI / 2 + (i * Math.PI) / branches;
+    pts.push(`${r1(cx + rayon * Math.cos(a))} ${r1(cy + rayon * Math.sin(a))}`);
+  }
+  return `M${pts.join("L")}Z`;
 }
 
 /**
@@ -326,14 +335,18 @@ export function etoilePath(
  * 0,809 R et monte à R), et un viewBox carré lui laisserait 10 % de vide en
  * bas — le défaut « ratio du viewBox et non de l'encre » du cycle de dessin.
  */
-export function etoileViewBox(R = 50): { viewBox: string; cx: number; cy: number } {
-	const cx = R;
-	const cy = R;
-	const demiLargeur = R * Math.sin((2 * Math.PI) / 5);
-	const bas = R * Math.cos(Math.PI / 5);
-	return {
-		viewBox: `${r1(cx - demiLargeur)} 0 ${r1(2 * demiLargeur)} ${r1(R + bas)}`,
-		cx,
-		cy,
-	};
+export function etoileViewBox(R = 50): {
+  viewBox: string;
+  cx: number;
+  cy: number;
+} {
+  const cx = R;
+  const cy = R;
+  const demiLargeur = R * Math.sin((2 * Math.PI) / 5);
+  const bas = R * Math.cos(Math.PI / 5);
+  return {
+    viewBox: `${r1(cx - demiLargeur)} 0 ${r1(2 * demiLargeur)} ${r1(R + bas)}`,
+    cx,
+    cy,
+  };
 }

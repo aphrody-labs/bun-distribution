@@ -3,7 +3,14 @@
 "use client";
 
 import { clsx } from "clsx";
-import { type CSSProperties, forwardRef, type ReactNode, useEffect, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  forwardRef,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { toast as SonnerToast } from "sonner";
 
 import { Icon, type IconSource, renderIcon } from "./Icon";
@@ -36,7 +43,8 @@ type ToastAction = {
   onClick: () => void;
   className?: string;
 };
-type ToastCloseEvent = "on-dismiss" | "on-auto-close" | "on-action" | "on-cancel";
+type ToastCloseEvent =
+  "on-dismiss" | "on-auto-close" | "on-action" | "on-cancel";
 
 interface ToastOptions {
   id?: ToastId;
@@ -100,7 +108,12 @@ const icons: Record<ToastType, { name: string; className: string }> = {
 };
 
 const typeIcon = (type: ToastType) => (
-  <Icon name={icons[type].name} size={20} filled className={icons[type].className} />
+  <Icon
+    name={icons[type].name}
+    size={20}
+    filled
+    className={icons[type].className}
+  />
 );
 
 /** Small indeterminate circular indicator shown while a promise toast is pending. */
@@ -115,13 +128,20 @@ const ToastLoader = () => (
 
 const ToastComponent = forwardRef<HTMLDivElement, ToastProps>(
   ({ closable = true, action, cancel, ...props }, ref) => {
-    const message = typeof props.message === "function" ? props.message(props.id) : props.message;
+    const message =
+      typeof props.message === "function"
+        ? props.message(props.id)
+        : props.message;
 
     const title =
-      message && typeof message === "object" && "title" in message ? message.title : message;
+      message && typeof message === "object" && "title" in message
+        ? message.title
+        : message;
 
     const body =
-      message && typeof message === "object" && "body" in message ? message.body : undefined;
+      message && typeof message === "object" && "body" in message
+        ? message.body
+        : undefined;
 
     const multiline = !!body;
 
@@ -135,7 +155,9 @@ const ToastComponent = forwardRef<HTMLDivElement, ToastProps>(
       >
         {(props.icon || props.type) && (
           <div className={clsx("flex shrink-0", multiline && "mt-2.5")}>
-            {props.icon ? renderIcon(props.icon, { size: 20 }) : props.type && typeIcon(props.type)}
+            {props.icon
+              ? renderIcon(props.icon, { size: 20 })
+              : props.type && typeIcon(props.type)}
           </div>
         )}
 

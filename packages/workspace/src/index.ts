@@ -6,7 +6,10 @@ export { runN2b } from "./n2b.ts";
 export { discoverAphrodyBinaries, runAphrodyBinary } from "./binaries.ts";
 export type { AphrodyBinary } from "./binaries.ts";
 
-export { discoverBunPackageWorkspaces, runPackageOperation } from "./packages.ts";
+export {
+  discoverBunPackageWorkspaces,
+  runPackageOperation,
+} from "./packages.ts";
 export type { BunPackageWorkspace, PackageOperation } from "./packages.ts";
 export { loadAphrodyBridgeCatalog, runRustBridge } from "./bridges.ts";
 export type { AphrodyBridgeCatalog } from "./bridges.ts";
@@ -29,7 +32,11 @@ export { runDocsLinks } from "./docs-links.ts";
 export { runVendorLicenseAudit } from "./vendor-license-audit.ts";
 export { runWorkspaceDeps } from "./workspace-deps.ts";
 export { runBunUpstreamDocs } from "./bun-upstream-docs.ts";
-export { runEcosystemDeps, syncManifest, syncXaiPackage } from "./ecosystem-deps.ts";
+export {
+  runEcosystemDeps,
+  syncManifest,
+  syncXaiPackage,
+} from "./ecosystem-deps.ts";
 export { runWorkspaceLayout } from "./workspace-layout.ts";
 export { runCargoBoundaries } from "./cargo-boundaries.ts";
 export { runAutomationInventory } from "./automation-inventory.ts";
@@ -47,12 +54,23 @@ export { runDocsConsolidation } from "./docs-consolidation.ts";
 export { runGitignoredAudit } from "./gitignored-audit.ts";
 export { runRuntimeVersions } from "./runtime-versions.ts";
 export { runMonorepoGate } from "./monorepo-gate.ts";
-export { runInfraAudit, sourceInventory, observeCommand } from "./infra-audit.ts";
+export {
+  runInfraAudit,
+  sourceInventory,
+  observeCommand,
+} from "./infra-audit.ts";
 
 export { runWindowsPaths, scanWindowsPaths } from "./windows-paths.ts";
 export type { WindowsPathFinding } from "./windows-paths.ts";
-export { runGitAttribution, stripAttributionTrailers } from "./git-attribution.ts";
-export { runCleanPublicAi, auditPublicSurfaces, scanFileForAiLeaks } from "./clean-public-ai.ts";
+export {
+  runGitAttribution,
+  stripAttributionTrailers,
+} from "./git-attribution.ts";
+export {
+  runCleanPublicAi,
+  auditPublicSurfaces,
+  scanFileForAiLeaks,
+} from "./clean-public-ai.ts";
 export { runRepositoryHealth } from "./repository-health.ts";
 export { runWorkspaceRepair } from "./workspace-repair.ts";
 export { runCargoPackageRepair } from "./cargo-package-repair.ts";

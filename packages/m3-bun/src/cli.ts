@@ -120,7 +120,8 @@ export function parseArgs(argv: readonly string[]): Parsed {
       else if (BOOLEAN.has(name)) flags.set(name, true);
       else {
         const next = argv[i + 1];
-        if (next === undefined || next.startsWith("--")) throw new Error(`--${name} needs a value`);
+        if (next === undefined || next.startsWith("--"))
+          throw new Error(`--${name} needs a value`);
         flags.set(name, next);
         i++;
       }
@@ -128,7 +129,10 @@ export function parseArgs(argv: readonly string[]): Parsed {
     }
     if (arg === "-h") flags.set("help", true);
     else if (arg === "-v") flags.set("version", true);
-    else if (command === undefined && (COMMANDS as readonly string[]).includes(arg))
+    else if (
+      command === undefined &&
+      (COMMANDS as readonly string[]).includes(arg)
+    )
       command = arg as Command;
     else positionals.push(arg);
   }
@@ -164,14 +168,20 @@ Compile targets: ${COMPILE_TARGETS.join(", ")}
 Deploy targets:  ${TARGETS.map((t) => t.id).join(", ")} (generated, never applied)
 Commands run in the directory of the app's m3.config.ts.`;
 
-const str = (flags: Map<string, string | true>, name: string): string | undefined => {
+const str = (
+  flags: Map<string, string | true>,
+  name: string,
+): string | undefined => {
   const value = flags.get(name);
   if (value === undefined) return undefined;
   if (value === true) throw new Error(`--${name} needs a value`);
   return value;
 };
 
-const num = (flags: Map<string, string | true>, name: string): number | undefined => {
+const num = (
+  flags: Map<string, string | true>,
+  name: string,
+): number | undefined => {
   const value = str(flags, name);
   if (value === undefined) return undefined;
   const parsed = Number(value);
@@ -188,11 +198,15 @@ const level = (flags: Map<string, string | true>): MinifyLevel | undefined => {
   return value;
 };
 
-const target = (flags: Map<string, string | true>): CompileTargetName | undefined => {
+const target = (
+  flags: Map<string, string | true>,
+): CompileTargetName | undefined => {
   const value = str(flags, "target");
   if (value === undefined) return undefined;
   if (!(COMPILE_TARGETS as readonly string[]).includes(value))
-    throw new Error(`--target must be one of ${COMPILE_TARGETS.join(", ")}, got ${value}`);
+    throw new Error(
+      `--target must be one of ${COMPILE_TARGETS.join(", ")}, got ${value}`,
+    );
   return value as CompileTargetName;
 };
 
@@ -233,7 +247,11 @@ export function bunfigHasPlugin(dir: string): boolean {
 
 async function run(cmd: string[], cwd: string): Promise<number> {
   console.log(`$ ${cmd.join(" ")}  (${cwd})`);
-  const proc = Bun.spawn(cmd, { windowsHide: true, cwd, stdio: ["inherit", "inherit", "inherit"] });
+  const proc = Bun.spawn(cmd, {
+    windowsHide: true,
+    cwd,
+    stdio: ["inherit", "inherit", "inherit"],
+  });
   return proc.exited;
 }
 
@@ -255,14 +273,21 @@ export async function runCli(
       return 0;
     }
     case "targets": {
-      for (const t of TARGETS) console.log(`${t.id.padEnd(12)} ${t.description}`);
+      for (const t of TARGETS)
+        console.log(`${t.id.padEnd(12)} ${t.description}`);
       return 0;
     }
     case "dev": {
       if (flags.has("inspect")) {
-        const args = argv.filter((a) => a !== "--inspect" && a !== "--inspector-ui");
+        const args = argv.filter(
+          (a) => a !== "--inspect" && a !== "--inspector-ui",
+        );
         const inspected = await launchInspected({
-          cmd: [process.execPath, join(import.meta.dir, "..", "bin", "m3-bun.ts"), ...args],
+          cmd: [
+            process.execPath,
+            join(import.meta.dir, "..", "bin", "m3-bun.ts"),
+            ...args,
+          ],
           cwd,
           onConsole: (entry) => console.log(`[${entry.level}] ${entry.text}`),
           onException: (e) =>
@@ -270,7 +295,9 @@ export async function runCli(
               `[exception] ${e.name}: ${e.message}${e.frames.map((frame) => "\n  " + frame).join("")}`,
             ),
         });
-        console.log(`m3-bun dev --inspect: inspector ${inspected.inspectorUrl}`);
+        console.log(
+          `m3-bun dev --inspect: inspector ${inspected.inspectorUrl}`,
+        );
         if (flags.has("inspector-ui"))
           console.log(
             `  web inspector ${serveInspectorFrontend({ ws: inspected.inspectorUrl }).url}`,
@@ -285,7 +312,9 @@ export async function runCli(
         return 1;
       }
       const index = (
-        (await import(pathToFileURL(app.m3.entry).href)) as { default: import("bun").HTMLBundle }
+        (await import(pathToFileURL(app.m3.entry).href)) as {
+          default: import("bun").HTMLBundle;
+        }
       ).default;
       const api = await importApi(app);
       const port = num(flags, "port");
@@ -312,7 +341,9 @@ export async function runCli(
         app,
         ...(minify ? { minify } : {}),
         ...(outdir ? { outdir } : {}),
-        ...(graph !== undefined ? { graph: graph === true ? true : resolve(cwd, graph) } : {}),
+        ...(graph !== undefined
+          ? { graph: graph === true ? true : resolve(cwd, graph) }
+          : {}),
         dev: flags.has("dev"),
       });
       if (flags.has("json"))
@@ -341,7 +372,8 @@ export async function runCli(
         console.log(
           `m3-bun build ${app.name}@${app.version}: ${report.manifest.files.length} files, ${kib(report.totalBytes)} (${kib(report.totalGzipBytes)} gzip, ${kib(report.totalZstdBytes)} zstd), minify ${report.manifest.minify}, build ${report.manifest.buildId}, ${report.ms} ms -> ${report.outdir}`,
         );
-        for (const warning of report.warnings) console.warn(`warning: ${warning}`);
+        for (const warning of report.warnings)
+          console.warn(`warning: ${warning}`);
         if (report.graph)
           console.log(
             `  graph ${report.graph.nodes} nodes, ${report.graph.edges} edges, run ${report.graph.runId} -> ${report.graph.path}`,
@@ -385,7 +417,8 @@ export async function runCli(
       console.log(
         `m3-bun compile ${app.name}: ${report.outfile} (${kib(report.bytes)}, ${report.files} embedded files, target ${report.target}, ${report.bytecode ? "bytecode" : "no bytecode"}) in ${report.ms} ms`,
       );
-      for (const warning of report.warnings) console.warn(`warning: ${warning}`);
+      for (const warning of report.warnings)
+        console.warn(`warning: ${warning}`);
       return 0;
     }
     case "package": {
@@ -417,7 +450,10 @@ export async function runCli(
     case "deploy": {
       const app = await loadApp(cwd);
       const ids = positionals.length > 0 ? positionals : ["all"];
-      const out = resolve(cwd, str(flags, "out") ?? app.bun.deploy?.out ?? "deploy");
+      const out = resolve(
+        cwd,
+        str(flags, "out") ?? app.bun.deploy?.out ?? "deploy",
+      );
       const cert = str(flags, "tls-cert");
       const key = str(flags, "tls-key");
       if ((cert === undefined) !== (key === undefined))
@@ -466,15 +502,23 @@ export async function runCli(
       if (flags.has("json")) console.log(JSON.stringify(found, null, 2));
       else
         for (const node of found)
-          console.log(`${"  ".repeat(node.depth - 1)}${node.label}  (${node.kind})`);
+          console.log(
+            `${"  ".repeat(node.depth - 1)}${node.label}  (${node.kind})`,
+          );
       return 0;
     }
     case "smoke": {
       const app = await loadApp(cwd);
-      const executable = resolve(cwd, positionals[0] ?? defaultOutfile(app, undefined));
+      const executable = resolve(
+        cwd,
+        positionals[0] ?? defaultOutfile(app, undefined),
+      );
       if (!existsSync(executable))
-        throw new Error(`m3-bun smoke: ${executable} does not exist (m3-bun compile first)`);
-      const port = num(flags, "port") ?? 38000 + Math.floor(Math.random() * 2000);
+        throw new Error(
+          `m3-bun smoke: ${executable} does not exist (m3-bun compile first)`,
+        );
+      const port =
+        num(flags, "port") ?? 38000 + Math.floor(Math.random() * 2000);
       const report = await smoke(executable, port);
       console.log(formatSmoke(report));
       return report.ok ? 0 : 1;
@@ -483,7 +527,9 @@ export async function runCli(
       const root = findWorkspaceRoot(cwd);
       const script = root ? join(root, "scripts", "build.ts") : undefined;
       if (!root || !script || !existsSync(script))
-        throw new Error("m3-bun workspace: no scripts/build.ts above the working directory");
+        throw new Error(
+          "m3-bun workspace: no scripts/build.ts above the working directory",
+        );
       const task = positionals[0] ?? "build";
       const only = str(flags, "only");
       return run(
@@ -499,12 +545,19 @@ export async function runCli(
     }
     case "pack": {
       const dir = resolve(cwd, positionals[0] ?? ".");
-      const manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as {
+      const manifest = JSON.parse(
+        readFileSync(join(dir, "package.json"), "utf8"),
+      ) as {
         name: string;
       };
       const root = findWorkspaceRoot(dir);
       const script = root ? join(root, "scripts", "build.ts") : undefined;
-      if (root && script && existsSync(script) && existsSync(join(dir, "build.config.ts"))) {
+      if (
+        root &&
+        script &&
+        existsSync(script) &&
+        existsSync(join(dir, "build.config.ts"))
+      ) {
         const code = await run(
           ["bun", script, "build", "--only", manifest.name, "--no-apps"],
           root,
@@ -523,7 +576,9 @@ export async function runCli(
         correctness: flags.has("correctness"),
       });
       for (const d of report.diagnostics)
-        console.log(`${d.file}:${d.line}:${d.column} ${d.severity} ${d.rule}: ${d.message}`);
+        console.log(
+          `${d.file}:${d.line}:${d.column} ${d.severity} ${d.rule}: ${d.message}`,
+        );
       console.log(
         `m3-bun lint: ${report.files} files, ${report.rules} rules, ${report.errors} errors, ${report.warnings} warnings`,
       );
@@ -532,7 +587,8 @@ export async function runCli(
     case "migrate": {
       if (flags.has("next")) {
         const [source, destination] = positionals;
-        if (!source || !destination) throw new Error("m3-bun migrate --next <source> <target>");
+        if (!source || !destination)
+          throw new Error("m3-bun migrate --next <source> <target>");
         const name = str(flags, "name");
         const report = await migrateNext({
           source: resolve(cwd, source),
@@ -564,7 +620,8 @@ export async function runCli(
     }
     case "create": {
       const [template, dir] = positionals;
-      if (!template || !dir) throw new Error("m3-bun create <web|app|spa|example> <dir>");
+      if (!template || !dir)
+        throw new Error("m3-bun create <web|app|spa|example> <dir>");
       if (!["web", "app", "spa", "example"].includes(template))
         throw new Error(
           `m3-bun create: template must be web, app, spa or example, got ${template}`,
@@ -598,7 +655,8 @@ export async function runCli(
         validate: flags.has("validate"),
         ...(out ? { out: resolve(cwd, out) } : {}),
       });
-      for (const file of report.files) console.log(`  ${file.path.padEnd(34)} ${kib(file.bytes)}`);
+      for (const file of report.files)
+        console.log(`  ${file.path.padEnd(34)} ${kib(file.bytes)}`);
       console.log(
         `m3-bun design: seed ${report.seed}, ${report.files.length} files${report.written.length ? `, ${report.written.length} written` : ""}`,
       );
@@ -636,7 +694,9 @@ export async function runCli(
         console.log(
           `  ${file.path.padEnd(34)} ${kib(file.bytes).padStart(11)}  zstd ${kib(file.zstdBytes)}`,
         );
-      console.log(`m3-bun lib: ${report.files.length} files -> ${report.outDir}`);
+      console.log(
+        `m3-bun lib: ${report.files.length} files -> ${report.outDir}`,
+      );
       return report.success ? 0 : 1;
     }
   }

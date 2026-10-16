@@ -25,7 +25,7 @@ export function ButtonIconSelect({
   buttonClassName,
 }: ButtonIconSelectProps) {
   const [internalSelectedOption, setInternalSelectedOption] = useState<string>(
-    selectedOption || options[0].value
+    selectedOption || options[0].value,
   );
 
   useEffect(() => {
@@ -85,7 +85,7 @@ export function ButtonIconSelect({
               <span className="text-nowrap text-sm font-medium">{text}</span>
             )}
           </button>
-        )
+        ),
       )}
     </div>
   );

@@ -6,5 +6,11 @@
       "@aphrody/m3-next/client": ["./src/client.tsx"]
     }
   },
-  "include": ["src/**/*", "test/**/*", "test-dom/**/*", "bin/**/*", "scripts/**/*"]
+  "include": [
+    "src/**/*",
+    "test/**/*",
+    "test-dom/**/*",
+    "bin/**/*",
+    "scripts/**/*"
+  ]
 }

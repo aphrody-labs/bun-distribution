@@ -35,7 +35,15 @@ const splatFileTypes = Object.values(SPLAT_FILE_TYPE);
 
 export function UploadModalSplat(props: Props) {
   const selectedCategory = FilterEngineCategories.SPLAT;
-  const { isOpen, onClose, onSuccess, title, titleIcon, initialFiles, options } = props;
+  const {
+    isOpen,
+    onClose,
+    onSuccess,
+    title,
+    titleIcon,
+    initialFiles,
+    options,
+  } = props;
   const [uploaderState, setUploaderState] =
     useState<UploaderState>(initialUploaderState);
 
@@ -52,7 +60,6 @@ export function UploadModalSplat(props: Props) {
       resetModalState();
     }
   }, [isOpen]);
-
 
   const UploaderModalContent = () => {
     switch (uploaderState.status) {

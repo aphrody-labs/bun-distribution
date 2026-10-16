@@ -9,7 +9,14 @@ import { SUBSET_JOBS } from "../src/index";
 const root = join(import.meta.dir, "..");
 await rm(join(root, "fonts", "web"), { recursive: true, force: true });
 const proc = Bun.spawn(
-  ["uv", "run", "--quiet", "--script", join(import.meta.dir, "subset.py"), root],
+  [
+    "uv",
+    "run",
+    "--quiet",
+    "--script",
+    join(import.meta.dir, "subset.py"),
+    root,
+  ],
   {
     windowsHide: true,
     stdin: new TextEncoder().encode(JSON.stringify(SUBSET_JOBS)),
@@ -20,7 +27,10 @@ const proc = Bun.spawn(
 const out = await new Response(proc.stdout).text();
 if ((await proc.exited) !== 0) throw new Error("scripts/subset.py failed");
 const faces = JSON.parse(out) as { file: string; bytes: number }[];
-await Bun.write(join(root, "src", "subsets.json"), `${JSON.stringify(faces, null, 2)}\n`);
+await Bun.write(
+  join(root, "src", "subsets.json"),
+  `${JSON.stringify(faces, null, 2)}\n`,
+);
 const total = faces.reduce((n, f) => n + f.bytes, 0);
 console.log(`${faces.length} faces, ${(total / 1024 / 1024).toFixed(2)} MiB`);
 // A fresh process: this one already loaded the manifest with the previous subsets.json.

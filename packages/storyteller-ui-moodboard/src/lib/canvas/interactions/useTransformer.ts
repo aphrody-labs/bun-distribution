@@ -14,7 +14,9 @@ interface NodePatch {
 // scaleX/scaleY into width/height — and for groups, propagates the scale
 // into each child's position/size so the resize sticks (Figma/Excalidraw
 // behavior) instead of snapping back when the Group's scale resets to 1.
-export const useTransformer = (stageRef: React.RefObject<Konva.Stage | null>) => {
+export const useTransformer = (
+  stageRef: React.RefObject<Konva.Stage | null>,
+) => {
   const transformerRef = useRef<Konva.Transformer | null>(null);
   const selectedIds = useMoodboardStore((s) => s.selectedIds);
   // rootOrder is included so a re-attach happens after group()/ungroup()
@@ -81,8 +83,9 @@ export const useTransformer = (stageRef: React.RefObject<Konva.Stage | null>) =>
             // Text inside a scaled group needs fontSize to track the scale,
             // otherwise the text stays the same size and overflows / floats.
             if (child.kind === "text") {
-              (childPatch as Partial<MoodboardNode> & { fontSize?: number })
-                .fontSize = child.fontSize * uniformScale;
+              (
+                childPatch as Partial<MoodboardNode> & { fontSize?: number }
+              ).fontSize = child.fontSize * uniformScale;
             }
             patches.push({ id: childId, patch: childPatch });
           }

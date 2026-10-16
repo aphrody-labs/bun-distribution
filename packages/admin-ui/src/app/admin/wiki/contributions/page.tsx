@@ -108,7 +108,11 @@ export default function PageContributions() {
   });
 
   const moderer = useMutation({
-    mutationFn: async (v: { id: string; action: "accept" | "reject"; note?: string }) => {
+    mutationFn: async (v: {
+      id: string;
+      action: "accept" | "reject";
+      note?: string;
+    }) => {
       const res = await fetch("/api/admin/wiki-contributions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -127,10 +131,12 @@ export default function PageContributions() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="font-saiyan text-2xl text-white">Contributions de la communauté</h1>
+        <h1 className="font-saiyan text-2xl text-white">
+          Contributions de la communauté
+        </h1>
         <p className="mt-1 text-sm text-white/50">
-          Les corrections proposées depuis les fiches. Une acceptation applique le texte et crédite
-          son auteur dans{" "}
+          Les corrections proposées depuis les fiches. Une acceptation applique
+          le texte et crédite son auteur dans{" "}
           <Link
             href="/admin/wiki/history"
             className="text-dbz-orange underline-offset-2 hover:underline"
@@ -194,7 +200,9 @@ export default function PageContributions() {
             <CarteContribution
               key={r.id}
               row={r}
-              onModerer={(action, note) => moderer.mutate({ id: r.id, action, note })}
+              onModerer={(action, note) =>
+                moderer.mutate({ id: r.id, action, note })
+              }
               enCours={moderer.isPending}
               erreur={moderer.isError ? (moderer.error as Error).message : null}
             />
@@ -239,7 +247,9 @@ function CarteContribution({
             {row.status !== "pending" ? (
               <>
                 {" · "}
-                <span className="text-white/60">{CONTRIBUTION_STATUS_LABELS[row.status]}</span>
+                <span className="text-white/60">
+                  {CONTRIBUTION_STATUS_LABELS[row.status]}
+                </span>
                 {row.reviewerName ? ` par ${row.reviewerName}` : ""}
               </>
             ) : null}
@@ -268,12 +278,17 @@ function CarteContribution({
       )}
 
       {row.comment ? (
-        <p className="mt-2 text-xs italic leading-relaxed text-white/55">« {row.comment} »</p>
+        <p className="mt-2 text-xs italic leading-relaxed text-white/55">
+          « {row.comment} »
+        </p>
       ) : null}
 
       <div className="mt-3 overflow-hidden rounded-lg border border-white/8 bg-black/40 font-mono text-[11px] leading-relaxed">
         {diff.contexteAvant.map((l, i) => (
-          <pre key={`c-${i}`} className="whitespace-pre-wrap px-3 py-0.5 text-white/30">
+          <pre
+            key={`c-${i}`}
+            className="whitespace-pre-wrap px-3 py-0.5 text-white/30"
+          >
             {l || " "}
           </pre>
         ))}
@@ -294,7 +309,10 @@ function CarteContribution({
           </pre>
         ))}
         {diff.contexteApres.map((l, i) => (
-          <pre key={`d-${i}`} className="whitespace-pre-wrap px-3 py-0.5 text-white/30">
+          <pre
+            key={`d-${i}`}
+            className="whitespace-pre-wrap px-3 py-0.5 text-white/30"
+          >
             {l || " "}
           </pre>
         ))}
@@ -304,7 +322,8 @@ function CarteContribution({
             onClick={() => setDeplie(true)}
             className="w-full bg-white/[0.03] px-3 py-1.5 text-center text-[11px] font-semibold text-white/50 hover:text-white"
           >
-            Afficher les {Math.max(diff.retire.length, diff.ajoute.length) - 12} lignes restantes
+            Afficher les {Math.max(diff.retire.length, diff.ajoute.length) - 12}{" "}
+            lignes restantes
           </button>
         ) : null}
       </div>
@@ -344,7 +363,9 @@ function CarteContribution({
             >
               <Croix className="h-3.5 w-3.5" /> Refuser
             </button>
-            {erreur ? <span className="text-xs text-dbz-red">{erreur}</span> : null}
+            {erreur ? (
+              <span className="text-xs text-dbz-red">{erreur}</span>
+            ) : null}
           </div>
         </div>
       ) : row.reviewNote ? (

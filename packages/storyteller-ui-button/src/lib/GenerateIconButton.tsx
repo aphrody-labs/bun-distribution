@@ -40,7 +40,7 @@ export const GenerateIconButton = ({
               isDisabled && "opacity-50",
             )}
           >
-            <CoinsIcon  className="text-xs" />
+            <CoinsIcon className="text-xs" />
             {credits}
           </span>
         </Tooltip>

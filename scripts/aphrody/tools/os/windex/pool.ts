@@ -55,7 +55,10 @@ export class Pool {
     const id = this.nextId++;
     slot.busy++;
     const done = new Promise<T[]>((resolve, reject) =>
-      this.pending.set(id, { resolve: resolve as (r: unknown[]) => void, reject }),
+      this.pending.set(id, {
+        resolve: resolve as (r: unknown[]) => void,
+        reject,
+      }),
     );
     slot.w.postMessage({ id, ...message });
     return { done };
@@ -77,7 +80,9 @@ export class Pool {
   }
 
   /** Deferred catalog lookups of a batch of paths (same order). */
-  catalogs(paths: string[]): Promise<{ done: Promise<(CatalogSignature | null)[]> }> {
+  catalogs(
+    paths: string[],
+  ): Promise<{ done: Promise<(CatalogSignature | null)[]> }> {
     return this.post<CatalogSignature | null>({ catalog: paths });
   }
 

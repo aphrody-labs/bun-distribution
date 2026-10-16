@@ -49,7 +49,6 @@ export function UploadModalImage(props: Props) {
     }
   }, [isOpen]);
 
-
   const UploaderModalContent = () => {
     switch (uploaderState.status) {
       case UploaderStates.ready:

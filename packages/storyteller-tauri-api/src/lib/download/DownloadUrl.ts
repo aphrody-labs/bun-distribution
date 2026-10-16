@@ -5,8 +5,7 @@ export interface DownloadUrlSuccess extends CommandResult {
   payload: DownloadUrlPayload;
 }
 
-export interface DownloadUrlPayload {
-}
+export interface DownloadUrlPayload {}
 
 export interface DownloadOptions {
   model?: string;
@@ -14,14 +13,20 @@ export interface DownloadOptions {
   directory?: string;
 }
 
-export const GetDownloadPath = (url: string, options: DownloadOptions = {}): Promise<{ filename: string; path: string }> =>
+export const GetDownloadPath = (
+  url: string,
+  options: DownloadOptions = {},
+): Promise<{ filename: string; path: string }> =>
   invoke("get_download_path_command", { request: { url, ...options } });
 
-export const DownloadUrl = async (url: string, options: DownloadOptions = {}) : Promise<DownloadUrlSuccess> => {
-  return await invoke("download_url_command", {
+export const DownloadUrl = async (
+  url: string,
+  options: DownloadOptions = {},
+): Promise<DownloadUrlSuccess> => {
+  return (await invoke("download_url_command", {
     request: {
       url,
       ...options,
-    }
-  }) as DownloadUrlSuccess;
-}
+    },
+  })) as DownloadUrlSuccess;
+};

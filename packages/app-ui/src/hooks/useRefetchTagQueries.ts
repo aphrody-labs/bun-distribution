@@ -6,12 +6,28 @@ import { useQueryClient } from "@tanstack/react-query";
  * Used by FileInspector, useFileContextMenu, TagsGroup, TagSelector.
  */
 export function useRefetchTagQueries() {
-	const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
-	return useCallback(() => {
-		queryClient.refetchQueries({ queryKey: ["query:files.directory_listing"], exact: false, type: 'all' });
-		queryClient.refetchQueries({ queryKey: ["query:files.by_tag"], exact: false, type: 'all' });
-		queryClient.refetchQueries({ queryKey: ["query:files.by_id"], exact: false, type: 'all' });
-		queryClient.refetchQueries({ queryKey: ["query:tags.search"], exact: false, type: 'all' });
-	}, [queryClient]);
+  return useCallback(() => {
+    queryClient.refetchQueries({
+      queryKey: ["query:files.directory_listing"],
+      exact: false,
+      type: "all",
+    });
+    queryClient.refetchQueries({
+      queryKey: ["query:files.by_tag"],
+      exact: false,
+      type: "all",
+    });
+    queryClient.refetchQueries({
+      queryKey: ["query:files.by_id"],
+      exact: false,
+      type: "all",
+    });
+    queryClient.refetchQueries({
+      queryKey: ["query:tags.search"],
+      exact: false,
+      type: "all",
+    });
+  }, [queryClient]);
 }

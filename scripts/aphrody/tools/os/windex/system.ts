@@ -24,10 +24,15 @@ export function readApiSet(windir = "C:\\Windows"): Map<string, string[]> {
   const pe = parsePe(memorySource(bytes), "apisetschema.dll");
   const section = pe?.sections.find((s) => s.name === ".apiset");
   if (!section) throw new Error(`section .apiset absente de ${file}`);
-  return parseApiSetSchema(bytes.subarray(section.rawOffset, section.rawOffset + section.rawSize));
+  return parseApiSetSchema(
+    bytes.subarray(section.rawOffset, section.rawOffset + section.rawSize),
+  );
 }
 
-export async function loadApiSet(sql: SQL, windir = "C:\\Windows"): Promise<number> {
+export async function loadApiSet(
+  sql: SQL,
+  windir = "C:\\Windows",
+): Promise<number> {
   const map = readApiSet(windir);
   const rows = [...map].map(([contract, hosts]) => ({ contract, hosts }));
   await sql.begin(async (tx) => {
@@ -62,7 +67,16 @@ class RegKey {
     const len = new Uint32Array(1);
     for (let i = 0; ; i++) {
       len[0] = 256;
-      const rc = advapi().RegEnumKeyExW(this.hkey, i, buf, len, null, null, null, null);
+      const rc = advapi().RegEnumKeyExW(
+        this.hkey,
+        i,
+        buf,
+        len,
+        null,
+        null,
+        null,
+        null,
+      );
       if (rc === ERROR_NO_MORE_ITEMS) break;
       if (rc !== ERROR_SUCCESS) continue;
       names.push(readWstr(buf, 0, len[0]!));
@@ -76,7 +90,14 @@ class RegKey {
     let buf = new Uint8Array(1024);
     for (let attempt = 0; attempt < 4; attempt++) {
       size[0] = buf.byteLength;
-      const rc = advapi().RegQueryValueExW(this.hkey, wstr(name), null, type, buf, size);
+      const rc = advapi().RegQueryValueExW(
+        this.hkey,
+        wstr(name),
+        null,
+        type,
+        buf,
+        size,
+      );
       if (rc === ERROR_MORE_DATA) {
         buf = new Uint8Array(size[0]! + 16);
         continue;
@@ -122,7 +143,10 @@ export function serviceKind(type: number | null): string {
  * Resolves a registry ImagePath/ServiceDll to an absolute file path: strips quotes and arguments, expands
  * `%SystemRoot%`/`%windir%`/`%ProgramFiles%`, `\SystemRoot\`, `\??\` and the System32-relative driver form.
  */
-export function resolveImagePath(raw: string | null, windir = "C:\\Windows"): string | null {
+export function resolveImagePath(
+  raw: string | null,
+  windir = "C:\\Windows",
+): string | null {
   if (!raw) return null;
   let p = raw.trim();
   if (p.startsWith('"')) {
@@ -140,9 +164,13 @@ export function resolveImagePath(raw: string | null, windir = "C:\\Windows"): st
     programdata: "C:\\ProgramData",
     systemdrive: "C:",
   };
-  p = p.replace(/%([^%]+)%/g, (all, name: string) => env[name.toLowerCase()] ?? all);
+  p = p.replace(
+    /%([^%]+)%/g,
+    (all, name: string) => env[name.toLowerCase()] ?? all,
+  );
   p = p.replace(/^\\\?\?\\/, "");
-  if (/^\\systemroot\\/i.test(p)) p = `${windir}${p.slice("\\SystemRoot".length)}`;
+  if (/^\\systemroot\\/i.test(p))
+    p = `${windir}${p.slice("\\SystemRoot".length)}`;
   if (/^system32\\/i.test(p) || /^syswow64\\/i.test(p)) p = `${windir}\\${p}`;
   if (!/^[a-z]:\\/i.test(p)) return null;
   return p;
@@ -169,13 +197,18 @@ export type ServiceRow = {
 
 const str = (v: RegValue) => (typeof v === "string" ? v : null);
 const num = (v: RegValue) => (typeof v === "number" ? v : null);
-const list = (v: RegValue) => (Array.isArray(v) ? v : typeof v === "string" && v ? [v] : []);
+const list = (v: RegValue) =>
+  Array.isArray(v) ? v : typeof v === "string" && v ? [v] : [];
 
 /** Reads every service and driver key; indirect strings (`@dll,-id`) are kept as stored. */
 export function readServices(windir = "C:\\Windows"): ServiceRow[] {
   if (!isWindows) return [];
-  const root = RegKey.open(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services");
-  if (!root) throw new Error("clé HKLM\\SYSTEM\\CurrentControlSet\\Services illisible");
+  const root = RegKey.open(
+    HKEY_LOCAL_MACHINE,
+    "SYSTEM\\CurrentControlSet\\Services",
+  );
+  if (!root)
+    throw new Error("clé HKLM\\SYSTEM\\CurrentControlSet\\Services illisible");
   const out: ServiceRow[] = [];
   try {
     for (const name of root.subkeys()) {
@@ -205,7 +238,8 @@ export function readServices(windir = "C:\\Windows"): ServiceRow[] {
           type,
           kind: serviceKind(type),
           start,
-          start_mode: start === null ? null : (START_MODES[start] ?? String(start)),
+          start_mode:
+            start === null ? null : (START_MODES[start] ?? String(start)),
           error_control: num(key.value("ErrorControl")),
           grp: str(key.value("Group")),
           image_path: image,
@@ -227,7 +261,10 @@ export function readServices(windir = "C:\\Windows"): ServiceRow[] {
 }
 
 /** Replaces the service table (ids of surviving names are kept) and recomputes the service/driver edges. */
-export async function loadServices(sql: SQL, windir = "C:\\Windows"): Promise<number> {
+export async function loadServices(
+  sql: SQL,
+  windir = "C:\\Windows",
+): Promise<number> {
   const rows = readServices(windir);
   await sql.begin(async (tx) => {
     await tx.unsafe(
@@ -250,7 +287,8 @@ export async function loadServices(sql: SQL, windir = "C:\\Windows"): Promise<nu
          seen_at = now()`,
       [rows],
     );
-    const gone = await tx`DELETE FROM windex.service WHERE seen_at < now() RETURNING id`;
+    const gone =
+      await tx`DELETE FROM windex.service WHERE seen_at < now() RETURNING id`;
     if (gone.length) {
       const ids = `{${gone.map((r: { id: string }) => r.id).join(",")}}`;
       await tx.unsafe(

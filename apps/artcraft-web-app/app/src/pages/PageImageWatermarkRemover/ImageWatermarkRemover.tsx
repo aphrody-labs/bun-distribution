@@ -180,9 +180,7 @@ export const ImageWatermarkRemover = () => {
                 <div className="border border-ui-panel-border bg-ui-panel p-6">
                   <div>
                     <div className="mb-4 flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
-                      <ImagesIcon
-                        
-                        className="text-ui-accent-ink" />
+                      <ImagesIcon className="text-ui-accent-ink" />
                       Image Information
                     </div>
                     {imageDimensions ? (

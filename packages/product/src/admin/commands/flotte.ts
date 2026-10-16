@@ -14,7 +14,9 @@ export default {
     if (argv[0] === "disque")
       return (await import("../lib/fleet/disks.ts")).diskMain(argv.slice(1));
     if (argv[0] === "depot") {
-      await (await import("../lib/fleet/artifacts.ts")).serveArtifacts(argv.slice(1));
+      await (
+        await import("../lib/fleet/artifacts.ts")
+      ).serveArtifacts(argv.slice(1));
       return 0;
     }
     return (await import("../lib/fleet/native.ts")).main(argv);

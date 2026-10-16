@@ -2,7 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/lopdf.svg)](https://crates.io/crates/lopdf)
 [![CI](https://github.com/J-F-Liu/lopdf/actions/workflows/ci.yml/badge.svg)](https://github.com/J-F-Liu/lopdf/actions/workflows/ci.yml)
-[![Docs]( https://docs.rs/lopdf/badge.svg)](https://docs.rs/lopdf)
+[![Docs](https://docs.rs/lopdf/badge.svg)](https://docs.rs/lopdf)
 
 A Rust library for PDF document manipulation.
 
@@ -19,18 +19,18 @@ The PDF 2.0 specification is available [here](https://www.pdfa.org/announcing-no
 
 ## Cargo features
 
-| Feature | Default | What it adds |
-| --- | :---: | --- |
-| `chrono-clock` | ✅ | `chrono` plus its `clock` feature: conversions to and from `DateTime<Local>`, the reading machine's own zone. Brings `iana-time-zone` and its per-platform chain. |
-| `rayon` | ✅ | Parallel object-stream and cross-reference parsing. |
-| `chrono` | | Conversions to and from `DateTime<FixedOffset>` and `DateTime<Utc>`, which is all a PDF date can express. Costs `chrono` and `num-traits`, nothing else. |
-| `jiff` | | Conversions to and from `jiff::Zoned` and `jiff::Timestamp`. Resolves named zones, so it needs a timezone database — bundled into the binary on Windows and on any wasm target. |
-| `time` | | Conversions to and from `time::OffsetDateTime` and `time::PrimitiveDateTime`. |
-| `serde` | | `Serialize`/`Deserialize` for the object model. |
-| `async` | | Tokio-based asynchronous document loading. |
-| `embed_image` | | Embedding raster images, via the `image` crate. |
-| `font_embedding` | | Embedding TrueType fonts, via `skrifa`. |
-| `wasm_js` | | Selects `getrandom`'s `wasm_js` backend, needed for encryption on wasm. |
+| Feature          | Default | What it adds                                                                                                                                                                    |
+| ---------------- | :-----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `chrono-clock`   |   ✅    | `chrono` plus its `clock` feature: conversions to and from `DateTime<Local>`, the reading machine's own zone. Brings `iana-time-zone` and its per-platform chain.               |
+| `rayon`          |   ✅    | Parallel object-stream and cross-reference parsing.                                                                                                                             |
+| `chrono`         |         | Conversions to and from `DateTime<FixedOffset>` and `DateTime<Utc>`, which is all a PDF date can express. Costs `chrono` and `num-traits`, nothing else.                        |
+| `jiff`           |         | Conversions to and from `jiff::Zoned` and `jiff::Timestamp`. Resolves named zones, so it needs a timezone database — bundled into the binary on Windows and on any wasm target. |
+| `time`           |         | Conversions to and from `time::OffsetDateTime` and `time::PrimitiveDateTime`.                                                                                                   |
+| `serde`          |         | `Serialize`/`Deserialize` for the object model.                                                                                                                                 |
+| `async`          |         | Tokio-based asynchronous document loading.                                                                                                                                      |
+| `embed_image`    |         | Embedding raster images, via the `image` crate.                                                                                                                                 |
+| `font_embedding` |         | Embedding TrueType fonts, via `skrifa`.                                                                                                                                         |
+| `wasm_js`        |         | Selects `getrandom`'s `wasm_js` backend, needed for encryption on wasm.                                                                                                         |
 
 The date backends are alternatives, not layers: each supplies conversions for the same [`DateTime`] value, so enabling more than one only adds dependencies. Enabling none is supported too — `Object::as_datetime` needs no backend, and `DateTime::as_str` returns the raw date for a caller that would rather parse it itself.
 
@@ -38,7 +38,7 @@ A PDF date states a fixed offset from UT and never a named zone (ISO 32000-1, 7.
 
 ## Example Code
 
-* Create PDF document
+- Create PDF document
 
 ```rust
 use lopdf::dictionary;
@@ -174,14 +174,14 @@ doc.compress();
 if false {
     // Traditional save
     doc.save("example.pdf").unwrap();
-    
+
     // Or save with object streams for smaller file size
     let mut file = std::fs::File::create("example_compressed.pdf").unwrap();
     doc.save_modern(&mut file).unwrap();
 }
 ```
 
-* Merge PDF documents
+- Merge PDF documents
 
 ```rust
 use lopdf::dictionary;
@@ -423,7 +423,7 @@ fn main() -> std::io::Result<()> {
 }
 ```
 
-* Decrypt PDF documents
+- Decrypt PDF documents
 
 ```rust
 use lopdf::Document;
@@ -433,26 +433,26 @@ use lopdf::Document;
 {
     // Load an encrypted PDF - automatically attempts decryption with empty password
     let doc = Document::load("assets/encrypted.pdf").unwrap();
-    
+
     // Check if the document is encrypted
     if doc.is_encrypted() {
         println!("Document is encrypted");
-        
+
         // The document has been automatically decrypted if the password was empty
         if doc.encryption_state.is_some() {
             println!("Successfully decrypted with empty password");
         }
     }
-    
+
     // Access decrypted content
     let pages = doc.get_pages();
     println!("Number of pages: {}", pages.len());
-    
+
     // Extract text from decrypted document
     let page_numbers: Vec<u32> = pages.keys().cloned().collect();
     let text = doc.extract_text(&page_numbers).unwrap();
     println!("Extracted {} characters of text", text.len());
-    
+
     // Access individual objects
     for i in 1..=10 {
         if let Ok(obj) = doc.get_object((i, 0)) {
@@ -469,14 +469,14 @@ use lopdf::Document;
         .block_on(async move {
             // Async version
             let doc = Document::load("assets/encrypted.pdf").await.unwrap();
-            
+
             if doc.is_encrypted() {
                 println!("Document is encrypted");
                 if doc.encryption_state.is_some() {
                     println!("Successfully decrypted with empty password");
                 }
             }
-            
+
             let pages = doc.get_pages();
             let page_numbers: Vec<u32> = pages.keys().cloned().collect();
             let text = doc.extract_text(&page_numbers).unwrap();
@@ -485,7 +485,7 @@ use lopdf::Document;
 }
 ```
 
-* Modify PDF document
+- Modify PDF document
 
 ```rust
 use lopdf::Document;
@@ -513,7 +513,7 @@ use lopdf::Document;
         .expect("Failed to create runtime")
         .block_on(async move {
             let mut doc = Document::load("assets/example.pdf").await.unwrap();
-            
+
             doc.version = "1.4".to_string();
             doc.replace_text(1, "Hello World!", "Modified text!", None);
             // Store file in current working directory.
@@ -531,14 +531,14 @@ use lopdf::Document;
     let mut doc = Document::load("assets/example.pdf").unwrap();
 
     doc.version = "1.4".to_string();
-    
+
     // Replace exact text matches
     doc.replace_text(1, "Hello World!", "Modified text!", None);
-    
+
     // Replace partial text matches (new method)
     let count = doc.replace_partial_text(1, "Hello", "Hi", None).unwrap();
     println!("Replaced {} occurrences", count);
-    
+
     // Store file in current working directory.
     // Note: Line is excluded when running tests
     if false {
@@ -554,16 +554,16 @@ use lopdf::Document;
         .expect("Failed to create runtime")
         .block_on(async move {
             let mut doc = Document::load("assets/example.pdf").await.unwrap();
-            
+
             doc.version = "1.4".to_string();
-            
+
             // Replace exact text matches
             doc.replace_text(1, "Hello World!", "Modified text!", None);
-            
+
             // Replace partial text matches (new method)
             let count = doc.replace_partial_text(1, "Hello", "Hi", None).unwrap();
             println!("Replaced {} occurrences", count);
-            
+
             // Store file in current working directory.
             // Note: Line is excluded when running tests
             if false {
@@ -573,7 +573,7 @@ use lopdf::Document;
 }
 ```
 
-* Save PDF with Object Streams (Modern Format)
+- Save PDF with Object Streams (Modern Format)
 
 Object streams allow multiple non-stream objects to be compressed together, significantly reducing file size.
 
@@ -600,7 +600,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut file2 = std::fs::File::create("output_custom.pdf")?;
     doc.save_with_options(&mut file2, options)?;
-    
+
     Ok(())
 }
 
@@ -645,12 +645,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let reduction = 100.0 - (modern_size as f64 / traditional_size as f64 * 100.0);
         println!("Size reduction: {:.1}%", reduction);
     }
-    
+
     Ok(())
 }
 ```
 
 For more examples, see:
+
 - [`examples/object_streams.rs`](examples/object_streams.rs) - Creating PDFs with object streams
 - [`examples/compress_existing_pdf.rs`](examples/compress_existing_pdf.rs) - Compress existing PDFs
 - [`examples/analyze_object_streams.rs`](examples/analyze_object_streams.rs) - Analyze object stream usage
@@ -739,6 +740,7 @@ lopdf now includes enhanced support for reading encrypted PDF documents. The lib
 ### How It Works
 
 When loading an encrypted PDF, lopdf:
+
 1. Detects encryption via the `Encrypt` entry in the trailer
 2. Extracts raw object bytes before parsing
 3. Attempts authentication with an empty password
@@ -754,24 +756,24 @@ use lopdf::Document;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load an encrypted PDF - automatically attempts decryption
     let doc = Document::load("assets/encrypted.pdf")?;
-    
+
     // Check encryption status
     if doc.is_encrypted() {
         println!("Document is encrypted");
-        
+
         // Check if decryption was successful
         if doc.encryption_state.is_some() {
             println!("Successfully decrypted");
-            
+
             // Now you can work with the document normally
             let pages = doc.get_pages();
             println!("Pages: {}", pages.len());
-            
+
             // Extract text
             let page_nums: Vec<u32> = pages.keys().cloned().collect();
             let text = doc.extract_text(&page_nums)?;
             println!("Text length: {} chars", text.len());
-            
+
             // Access objects
             for i in 1..=10 {
                 if let Ok(_) = doc.get_object((i, 0)) {
@@ -782,7 +784,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Decryption failed - password required");
         }
     }
-    
+
     Ok(())
 }
 
@@ -791,24 +793,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load an encrypted PDF - automatically attempts decryption
     let doc = Document::load("assets/encrypted.pdf").await?;
-    
+
     // Check encryption status
     if doc.is_encrypted() {
         println!("Document is encrypted");
-        
+
         // Check if decryption was successful
         if doc.encryption_state.is_some() {
             println!("Successfully decrypted");
-            
+
             // Now you can work with the document normally
             let pages = doc.get_pages();
             println!("Pages: {}", pages.len());
-            
+
             // Extract text
             let page_nums: Vec<u32> = pages.keys().cloned().collect();
             let text = doc.extract_text(&page_nums)?;
             println!("Text length: {} chars", text.len());
-            
+
             // Access objects
             for i in 1..=10 {
                 if let Ok(_) = doc.get_object((i, 0)) {
@@ -819,7 +821,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Decryption failed - password required");
         }
     }
-    
+
     Ok(())
 }
 ```
@@ -831,31 +833,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 - Some encryption algorithms may not be fully supported
 
 For more examples, see:
+
 - [`examples/test_decryption.rs`](examples/test_decryption.rs) - Testing decryption functionality
 - [`examples/verify_decryption.rs`](examples/verify_decryption.rs) - Comprehensive decryption verification
 - [`tests/decryption.rs`](tests/decryption.rs) - Decryption test suite
 
 ## FAQ
 
-* Why does the library keep everything in memory as high-level objects until finally serializing the entire document?
+- Why does the library keep everything in memory as high-level objects until finally serializing the entire document?
 
-  Normally, a PDF document won't be very large, ranging from tens of KB to hundreds of MB. Memory size is not a bottle neck for today's computer.
-  By keeping the whole document in memory, the stream length can be pre-calculated, no need to use a reference object for the Length entry.
-  The resulting PDF file is smaller for distribution and faster for PDF consumers to process.
+    Normally, a PDF document won't be very large, ranging from tens of KB to hundreds of MB. Memory size is not a bottle neck for today's computer.
+    By keeping the whole document in memory, the stream length can be pre-calculated, no need to use a reference object for the Length entry.
+    The resulting PDF file is smaller for distribution and faster for PDF consumers to process.
 
-  Producing is a one-time effort, while consuming is many more.
+    Producing is a one-time effort, while consuming is many more.
 
-* How do object streams affect memory usage?
+- How do object streams affect memory usage?
 
-  Object streams actually help reduce memory usage during document creation. When enabled, multiple small objects are grouped and compressed together, reducing the overall memory footprint. The compression happens during the save operation, so the in-memory representation remains the same until `save_with_options()` or `save_modern()` is called.
+    Object streams actually help reduce memory usage during document creation. When enabled, multiple small objects are grouped and compressed together, reducing the overall memory footprint. The compression happens during the save operation, so the in-memory representation remains the same until `save_with_options()` or `save_modern()` is called.
 
-* What PDF versions support object streams?
+- What PDF versions support object streams?
 
-  Object streams were introduced in PDF 1.5. When using `save_modern()` or object streams, lopdf automatically ensures the document version is at least 1.5. For maximum compatibility with older PDF readers, you can use the traditional `save()` method.
+    Object streams were introduced in PDF 1.5. When using `save_modern()` or object streams, lopdf automatically ensures the document version is at least 1.5. For maximum compatibility with older PDF readers, you can use the traditional `save()` method.
 
-* Can I analyze existing PDFs to see if they use object streams?
+- Can I analyze existing PDFs to see if they use object streams?
 
-  Yes! lopdf can read and parse object streams from existing PDFs. Use the `Document::load()` method to open any PDF, and lopdf will automatically handle object streams if present. See the examples directory for analysis tools.
+    Yes! lopdf can read and parse object streams from existing PDFs. Use the `Document::load()` method to open any PDF, and lopdf will automatically handle object streams if present. See the examples directory for analysis tools.
 
 ## License
 

@@ -8,12 +8,9 @@ import { usePageSceneStore } from "../PageSceneStore";
 // `if (node)` filter dropped null and leaked the Editor.
 
 export const EditorCanvas = () => {
-  const canvasCallbackRef = useCallback(
-    (node: HTMLCanvasElement | null) => {
-      usePageSceneStore.getState().setEditorCanvasEl(node);
-    },
-    [],
-  );
+  const canvasCallbackRef = useCallback((node: HTMLCanvasElement | null) => {
+    usePageSceneStore.getState().setEditorCanvasEl(node);
+  }, []);
 
   return (
     <canvas
@@ -26,12 +23,9 @@ export const EditorCanvas = () => {
 };
 
 export const CameraViewCanvas = ({ className }: { className?: string }) => {
-  const canvasCallbackRef = useCallback(
-    (node: HTMLCanvasElement | null) => {
-      usePageSceneStore.getState().setCamViewCanvasEl(node);
-    },
-    [],
-  );
+  const canvasCallbackRef = useCallback((node: HTMLCanvasElement | null) => {
+    usePageSceneStore.getState().setCamViewCanvasEl(node);
+  }, []);
 
   return (
     <canvas className={className} ref={canvasCallbackRef} id="camera-view" />

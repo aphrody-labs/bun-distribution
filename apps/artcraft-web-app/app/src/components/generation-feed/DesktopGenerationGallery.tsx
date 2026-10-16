@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowDownToLineIcon, CheckIcon, LinkIcon, LoaderCircleIcon, RotateCwIcon, VideoIcon } from "lucide-react";
+import {
+  ArrowDownToLineIcon,
+  CheckIcon,
+  LinkIcon,
+  LoaderCircleIcon,
+  RotateCwIcon,
+  VideoIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { toast } from "@storyteller/ui-toaster";
@@ -271,7 +278,11 @@ function ItemActions({
       if (!item.fullImage || isDownloading) return;
       setIsDownloading(true);
       try {
-        await downloadMediaFileToDisk(item.fullImage, item.mediaClass, item.modelId);
+        await downloadMediaFileToDisk(
+          item.fullImage,
+          item.mediaClass,
+          item.modelId,
+        );
       } finally {
         setIsDownloading(false);
       }

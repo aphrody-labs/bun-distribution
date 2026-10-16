@@ -6,7 +6,10 @@ import { MouseControls } from "./keybinds_controls";
 import { ClipGroup } from "../enums";
 import { XYZ } from "../datastructures/common";
 import type { EngineEventBus } from "./events/EngineEventBus";
-import { CameraViewToggleRequestedEvent, ObjectAddedEvent } from "./events/EngineEvent";
+import {
+  CameraViewToggleRequestedEvent,
+  ObjectAddedEvent,
+} from "./events/EngineEvent";
 import { isInternalBbox } from "./internalBbox";
 
 export type SceneObject = {
@@ -51,7 +54,12 @@ export class SceneManager implements SceneManagerAPI {
   private copiedObject: THREE.Object3D | undefined;
   private bus: EngineEventBus;
 
-  constructor(version: number, mouse_controls: MouseControls, scene: Scene, bus: EngineEventBus) {
+  constructor(
+    version: number,
+    mouse_controls: MouseControls,
+    scene: Scene,
+    bus: EngineEventBus,
+  ) {
     this.mouse_controls = mouse_controls;
     this.scene = scene;
     this.version = version;
@@ -78,7 +86,13 @@ export class SceneManager implements SceneManagerAPI {
         return obj as THREE.Object3D<THREE.Object3DEventMap>;
       }
 
-      const obj = await this.scene.loadObject(media_token, name, true, position, this.version);
+      const obj = await this.scene.loadObject(
+        media_token,
+        name,
+        true,
+        position,
+        this.version,
+      );
       if (obj) {
         obj.name = name;
         obj.userData["name"] = name;

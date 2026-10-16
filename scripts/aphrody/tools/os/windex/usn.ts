@@ -65,9 +65,16 @@ export type UsnRecord = {
 export const recordOf = (frn: bigint): number => Number(frn & RECORD_MASK);
 
 /** Decodes one record at the start of `buf`; undefined when the bytes are not a valid V2/V3 record. */
-export function parseUsnRecord(buf: Uint8Array, offset = 0): UsnRecord | undefined {
+export function parseUsnRecord(
+  buf: Uint8Array,
+  offset = 0,
+): UsnRecord | undefined {
   if (buf.byteLength - offset < 8) return undefined;
-  const v = new DataView(buf.buffer, buf.byteOffset + offset, buf.byteLength - offset);
+  const v = new DataView(
+    buf.buffer,
+    buf.byteOffset + offset,
+    buf.byteLength - offset,
+  );
   const length = v.getUint32(0, true);
   const major = v.getUint16(4, true);
   if (length < 8 || length > v.byteLength) return undefined;
@@ -94,9 +101,11 @@ export function parseUsnRecord(buf: Uint8Array, offset = 0): UsnRecord | undefin
   const nameLength = v.getUint16(base + 32, true);
   const nameOffset = v.getUint16(base + 34, true);
   if (nameOffset + nameLength > length) return undefined;
-  const name = Buffer.from(buf.buffer, buf.byteOffset + offset + nameOffset, nameLength).toString(
-    "utf16le",
-  );
+  const name = Buffer.from(
+    buf.buffer,
+    buf.byteOffset + offset + nameOffset,
+    nameLength,
+  ).toString("utf16le");
   return {
     major,
     frn,

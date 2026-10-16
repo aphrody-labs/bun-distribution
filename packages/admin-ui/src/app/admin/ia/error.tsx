@@ -4,7 +4,10 @@
 
 import { SectionError } from "@/components/SectionError";
 
-export default function Error(props: { error: Error & { digest?: string }; reset: () => void }) {
+export default function Error(props: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
   return (
     <SectionError
       {...props}

@@ -3,7 +3,12 @@ import { parse, UsageError } from "../../shared/args.ts";
 import type { Context } from "../lib/context.ts";
 import { GIB, parseProbe, readTrainStatus } from "../lib/doctor.ts";
 import { formatBytes } from "../../shared/format.ts";
-import { loadProfile, trainHostId, type AccessPack, type HostEntry } from "../lib/profile.ts";
+import {
+  loadProfile,
+  trainHostId,
+  type AccessPack,
+  type HostEntry,
+} from "../lib/profile.ts";
 import { SCRIPTS } from "../lib/remote.ts";
 import { runRemote, SSH_PROBLEM_TEXT } from "../lib/ssh.ts";
 import {
@@ -51,7 +56,10 @@ type Resolved =
   | { ok: true; pack: AccessPack; id: string; host: HostEntry }
   | { ok: false; message: string };
 
-async function resolveHost(ctx: Context, requested?: string): Promise<Resolved> {
+async function resolveHost(
+  ctx: Context,
+  requested?: string,
+): Promise<Resolved> {
   const pack = await loadProfile(ctx.paths);
   if (!pack)
     return {
@@ -63,7 +71,8 @@ async function resolveHost(ctx: Context, requested?: string): Promise<Resolved> 
   if (!id)
     return {
       ok: false,
-      message: "Aucun hôte d’entraînement déclaré. Demande à l’équipe un accès au WSL d’Omar.",
+      message:
+        "Aucun hôte d’entraînement déclaré. Demande à l’équipe un accès au WSL d’Omar.",
     };
   const host = pack.hosts[id];
   if (!host)
@@ -75,10 +84,13 @@ async function resolveHost(ctx: Context, requested?: string): Promise<Resolved> 
 }
 
 export function renderJobs(hostId: string, jobs: JobLine[]): string[] {
-  if (jobs.length === 0) return [`Serveur ${hostId} : aucun entraînement lancé avec ce kit.`];
+  if (jobs.length === 0)
+    return [`Serveur ${hostId} : aucun entraînement lancé avec ce kit.`];
   const lines = [`Serveur ${hostId} :`];
   for (const job of jobs) {
-    const title = isTrainType(job.type) ? TRAIN_TYPES[job.type].titre : job.type;
+    const title = isTrainType(job.type)
+      ? TRAIN_TYPES[job.type].titre
+      : job.type;
     lines.push(
       `  [${STATE_TEXT[job.state]}] ${job.id} - ${title}${job.started ? `, démarré ${job.started}` : ""}`,
     );
@@ -105,7 +117,10 @@ export async function preflight(
     connectTimeoutSecs: 8,
   });
   if (result.problem || result.code !== 0)
-    return { problems: [SSH_PROBLEM_TEXT[result.problem ?? "autre"]], notes: [] };
+    return {
+      problems: [SSH_PROBLEM_TEXT[result.problem ?? "autre"]],
+      notes: [],
+    };
   const probe = parseProbe(result.stdout);
   const info = TRAIN_TYPES[request.type];
   const problems: string[] = [];
@@ -113,20 +128,28 @@ export async function preflight(
   if (probe.aphrodyAbsent)
     problems.push("aphrody n'est pas installé pour ton compte sur ce serveur");
   else if (probe.repo === false)
-    problems.push(`le dossier du dépôt (${host.repoDir}) n'existe pas sur le serveur`);
+    problems.push(
+      `le dossier du dépôt (${host.repoDir}) n'existe pas sur le serveur`,
+    );
   else {
     const train = readTrainStatus(probe.train ?? "");
     if (!train.json)
-      problems.push("la fonction d'entraînement n'est pas disponible dans l'aphrody du serveur");
+      problems.push(
+        "la fonction d'entraînement n'est pas disponible dans l'aphrody du serveur",
+      );
     else if (train.json.python_train_project === false)
-      problems.push("le projet d'entraînement Python est introuvable sur le serveur");
+      problems.push(
+        "le projet d'entraînement Python est introuvable sur le serveur",
+      );
     else if (train.json.gpu_lock_active)
       (info.gpu ? problems : notes).push(
         "la carte graphique est déjà réservée par un autre travail",
       );
   }
   if ((probe.jobs ?? 0) > 0)
-    problems.push("un entraînement du kit est déjà en cours : attends sa fin ou arrête-le");
+    problems.push(
+      "un entraînement du kit est déjà en cours : attends sa fin ou arrête-le",
+    );
   const free = probe.diskAvailKb ? probe.diskAvailKb * 1024 : undefined;
   if (free !== undefined && free < 10 * GIB)
     problems.push(
@@ -198,7 +221,9 @@ async function startFlow(
     ui.say(`${MARK.fail} ${launched.message ?? "le lancement a échoué"}`);
     return 1;
   }
-  ui.say(`${MARK.ok} Lancé : ${request.id}${launched.pid ? ` (processus ${launched.pid})` : ""}.`);
+  ui.say(
+    `${MARK.ok} Lancé : ${request.id}${launched.pid ? ` (processus ${launched.pid})` : ""}.`,
+  );
   ui.say(
     "Tu peux fermer cette fenêtre : le travail continue sur le serveur. Pour suivre : « Entraînement > Voir l'état ».",
   );
@@ -211,10 +236,12 @@ function numberOption(
   label: string,
 ): number {
   if (value === undefined) {
-    if (fallback === undefined) throw new UsageError(`${label} : valeur obligatoire`);
+    if (fallback === undefined)
+      throw new UsageError(`${label} : valeur obligatoire`);
     return fallback;
   }
-  if (!/^\d{1,7}$/.test(value)) throw new UsageError(`${label} : nombre entier attendu`);
+  if (!/^\d{1,7}$/.test(value))
+    throw new UsageError(`${label} : nombre entier attendu`);
   return Number(value);
 }
 
@@ -228,9 +255,13 @@ export async function wizard(ctx: Context): Promise<number> {
   }
   ui.say("Quel entraînement ?");
   TRAIN_TYPE_IDS.forEach((type, index) =>
-    ui.say(`  ${index + 1}. ${TRAIN_TYPES[type].titre}\n       ${TRAIN_TYPES[type].detail}`),
+    ui.say(
+      `  ${index + 1}. ${TRAIN_TYPES[type].titre}\n       ${TRAIN_TYPES[type].detail}`,
+    ),
   );
-  const choice = Number(ui.ask("Ton choix (numéro, vide pour annuler)")?.trim());
+  const choice = Number(
+    ui.ask("Ton choix (numéro, vide pour annuler)")?.trim(),
+  );
   const type = TRAIN_TYPE_IDS[choice - 1];
   if (!type) {
     ui.say("Annulé.");
@@ -240,7 +271,9 @@ export async function wizard(ctx: Context): Promise<number> {
   const hosts = Object.keys(first.pack.hosts);
   let hostId = first.id;
   if (hosts.length > 1) {
-    const answer = ui.ask(`Sur quel serveur ? (${hosts.join(", ")}) [${hostId}]`)?.trim();
+    const answer = ui
+      .ask(`Sur quel serveur ? (${hosts.join(", ")}) [${hostId}]`)
+      ?.trim();
     if (answer) hostId = answer;
   }
   const resolved = await resolveHost(ctx, hostId);
@@ -250,7 +283,9 @@ export async function wizard(ctx: Context): Promise<number> {
   }
   const defaultSteps = type === "test" ? 10 : undefined;
   const stepsText = ui
-    .ask(`Combien d'étapes ?${defaultSteps ? ` [${defaultSteps}]` : " (ex : 100)"}`)
+    .ask(
+      `Combien d'étapes ?${defaultSteps ? ` [${defaultSteps}]` : " (ex : 100)"}`,
+    )
     ?.trim();
   const steps = stepsText ? Number(stepsText) : (defaultSteps ?? Number.NaN);
   const ask = (label: string): string | undefined =>
@@ -261,9 +296,15 @@ export async function wizard(ctx: Context): Promise<number> {
     id: newJobId(type, ctx.sys.now()),
     steps,
     allowCpu: type === "test",
-    ...(info.needs.includes("entree") ? { entree: ask("Fichier ou dossier d'entrée") } : {}),
-    ...(info.needs.includes("reference") ? { reference: ask("Fichier de référence") } : {}),
-    ...(info.needs.includes("modele-base") ? { modeleBase: ask("Modèle de base") } : {}),
+    ...(info.needs.includes("entree")
+      ? { entree: ask("Fichier ou dossier d'entrée") }
+      : {}),
+    ...(info.needs.includes("reference")
+      ? { reference: ask("Fichier de référence") }
+      : {}),
+    ...(info.needs.includes("modele-base")
+      ? { modeleBase: ask("Modèle de base") }
+      : {}),
   } as TrainRequest;
   const domaine = ui.ask("Domaine (ex : dbfr, vide si aucun)")?.trim();
   if (domaine) request.domaine = domaine;
@@ -291,11 +332,17 @@ async function pickJob(
   }
   const pool = wanted ? jobs.filter((job) => job.state === wanted) : jobs;
   if (pool.length === 0) {
-    ctx.ui.say(wanted ? "Aucun entraînement en cours." : "Aucun entraînement lancé avec ce kit.");
+    ctx.ui.say(
+      wanted
+        ? "Aucun entraînement en cours."
+        : "Aucun entraînement lancé avec ce kit.",
+    );
     return undefined;
   }
   if (pool.length === 1) return pool[0]!.id;
-  pool.forEach((job, index) => ctx.ui.say(`  ${index + 1}. ${job.id} [${STATE_TEXT[job.state]}]`));
+  pool.forEach((job, index) =>
+    ctx.ui.say(`  ${index + 1}. ${job.id} [${STATE_TEXT[job.state]}]`),
+  );
   return pool[Number(ctx.ui.ask("Lequel ? (numéro)")?.trim()) - 1]?.id;
 }
 
@@ -311,10 +358,18 @@ export async function stopFlow(
   );
   if (!options.oui) {
     if (!ui.interactive) {
-      ui.say(`${MARK.fail} Confirmation impossible sans fenêtre : ajoute --oui.`);
+      ui.say(
+        `${MARK.fail} Confirmation impossible sans fenêtre : ajoute --oui.`,
+      );
       return 2;
     }
-    if (!typedYes(ui.ask("Tape OUI (en majuscules) pour arrêter, autre chose pour annuler"))) {
+    if (
+      !typedYes(
+        ui.ask(
+          "Tape OUI (en majuscules) pour arrêter, autre chose pour annuler",
+        ),
+      )
+    ) {
       ui.say("Annulé : rien n'a été arrêté.");
       return 0;
     }
@@ -337,7 +392,8 @@ export async function stopFlow(
 
 const command: Command = {
   name: "entrainement",
-  summary: "Entraîner un modèle sur un serveur (état, démarrer, journal, arrêter)",
+  summary:
+    "Entraîner un modèle sur un serveur (état, démarrer, journal, arrêter)",
   async run(argv, ctx) {
     const { values, positionals } = parse(argv, {
       hote: { type: "string" },
@@ -380,7 +436,11 @@ const command: Command = {
     }
     switch (action) {
       case "etat": {
-        const { outcome, jobs } = await listJobs(ctx.sys, ctx.paths, resolved.id);
+        const { outcome, jobs } = await listJobs(
+          ctx.sys,
+          ctx.paths,
+          resolved.id,
+        );
         if (!outcome.ok) {
           ctx.ui.say(`${MARK.fail} ${outcome.message}`);
           return 1;
@@ -391,16 +451,24 @@ const command: Command = {
       case "demarrer": {
         const type = values.type;
         if (!type || !isTrainType(type))
-          throw new UsageError(`--type obligatoire : ${TRAIN_TYPE_IDS.join(", ")}`);
+          throw new UsageError(
+            `--type obligatoire : ${TRAIN_TYPE_IDS.join(", ")}`,
+          );
         const request: TrainRequest = {
           type,
           host: resolved.id,
           id: values.id ?? newJobId(type, ctx.sys.now()),
-          steps: numberOption(values.etapes, type === "test" ? 10 : undefined, "--etapes"),
+          steps: numberOption(
+            values.etapes,
+            type === "test" ? 10 : undefined,
+            "--etapes",
+          ),
           allowCpu: values.cpu === true,
           ...(values.entree ? { entree: values.entree } : {}),
           ...(values.reference ? { reference: values.reference } : {}),
-          ...(values["modele-base"] ? { modeleBase: values["modele-base"] } : {}),
+          ...(values["modele-base"]
+            ? { modeleBase: values["modele-base"] }
+            : {}),
           ...(values.domaine ? { domaine: values.domaine } : {}),
         };
         return startFlow(ctx, request, resolved, {
@@ -416,11 +484,21 @@ const command: Command = {
           ctx.ui.say(
             "Suivi du journal en direct (Ctrl+C pour arrêter de suivre : le travail continue).",
           );
-          const followed = await runRemote(ctx.sys, ctx.paths, resolved.id, SCRIPTS.journal, {
-            args: [id ?? "-", String(numberOption(values.lignes, 50, "--lignes")), "1"],
-            inherit: true,
-            timeoutMs: 6 * 3_600_000,
-          });
+          const followed = await runRemote(
+            ctx.sys,
+            ctx.paths,
+            resolved.id,
+            SCRIPTS.journal,
+            {
+              args: [
+                id ?? "-",
+                String(numberOption(values.lignes, 50, "--lignes")),
+                "1",
+              ],
+              inherit: true,
+              timeoutMs: 6 * 3_600_000,
+            },
+          );
           return followed.code === 0 ? 0 : 1;
         }
         const log = await readLog(
@@ -434,7 +512,11 @@ const command: Command = {
           ctx.ui.say(`${MARK.fail} ${log.message}`);
           return 1;
         }
-        ctx.ui.say(log.stdout.replace(/^JOURNAL\|(.*)\r?\n/, "Journal de $1 :\n").trimEnd());
+        ctx.ui.say(
+          log.stdout
+            .replace(/^JOURNAL\|(.*)\r?\n/, "Journal de $1 :\n")
+            .trimEnd(),
+        );
         return 0;
       }
       case "arreter": {

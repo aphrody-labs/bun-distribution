@@ -14,7 +14,9 @@ function expectM3(html: string) {
 
 describe("TagPill", () => {
   test("is an M3 chip with the tag color kept on the dot", () => {
-    const html = renderToStaticMarkup(<TagPill color="#ef4444">Important</TagPill>);
+    const html = renderToStaticMarkup(
+      <TagPill color="#ef4444">Important</TagPill>,
+    );
     expect(html).toContain("rounded-small");
     expect(html).toContain("border-outline-variant");
     expect(html).toContain("text-label-large");
@@ -46,7 +48,9 @@ describe("TagPill", () => {
         Work
       </TagPill>,
     );
-    expect(html).toContain("bg-secondary-container text-on-secondary-container");
+    expect(html).toContain(
+      "bg-secondary-container text-on-secondary-container",
+    );
     expect(html).toContain("border-transparent");
     expect(html).toContain('aria-pressed="true"');
     expectM3(html);
@@ -56,7 +60,12 @@ describe("TagPill", () => {
 describe("RenameInput", () => {
   test("is an M3 inline text field with the extension as suffix", () => {
     const html = renderToStaticMarkup(
-      <RenameInput name="report" extension="pdf" onSave={async () => {}} onCancel={() => {}} />,
+      <RenameInput
+        name="report"
+        extension="pdf"
+        onSave={async () => {}}
+        onCancel={() => {}}
+      />,
     );
     expect(html).toContain("bg-surface-container-highest");
     expect(html).toContain("rounded-extra-small");

@@ -1,4 +1,19 @@
-import { ChevronDownIcon, ChevronUpIcon, EraserIcon, FrameIcon, MaximizeIcon, MousePointerIcon, MoveIcon, PenIcon, RectangleHorizontalIcon, RectangleVerticalIcon, Redo2Icon, RotateCcwIcon, SquareIcon, SquarePenIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  EraserIcon,
+  FrameIcon,
+  MaximizeIcon,
+  MousePointerIcon,
+  MoveIcon,
+  PenIcon,
+  RectangleHorizontalIcon,
+  RectangleVerticalIcon,
+  Redo2Icon,
+  RotateCcwIcon,
+  SquareIcon,
+  SquarePenIcon,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Button, GenerateButton } from "@storyteller/ui-button";
@@ -9,7 +24,11 @@ import { useEffect, useRef, useState } from "react";
 import { CommonAspectRatio, ImageModel } from "@storyteller/model-list";
 import { twMerge } from "tailwind-merge";
 import { ImagePromptRow, type UploadImageFn } from "./ImagePromptRow";
-import { RefImage, usePromptEditStore, useEnterToGenerateStore } from "./promptStore";
+import {
+  RefImage,
+  usePromptEditStore,
+  useEnterToGenerateStore,
+} from "./promptStore";
 import { toast } from "@storyteller/ui-toaster";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { AspectRatioPicker } from "./common/AspectRatioPicker";
@@ -104,24 +123,22 @@ export const PromptBoxEdit = ({
     {
       label: "Auto",
       selected: aspectRatio === "auto",
-      icon: (
-        <MoveIcon  className="h-4 w-4" />
-      ),
+      icon: <MoveIcon className="h-4 w-4" />,
     },
     {
       label: "Wide",
       selected: aspectRatio === "wide",
-      icon: <RectangleHorizontalIcon  className="h-4 w-4" />,
+      icon: <RectangleHorizontalIcon className="h-4 w-4" />,
     },
     {
       label: "Tall",
       selected: aspectRatio === "tall",
-      icon: <RectangleVerticalIcon  className="h-4 w-4" />,
+      icon: <RectangleVerticalIcon className="h-4 w-4" />,
     },
     {
       label: "Square",
       selected: aspectRatio === "square",
-      icon: <SquareIcon  className="h-4 w-4" />,
+      icon: <SquareIcon className="h-4 w-4" />,
     },
   ]);
 
@@ -129,17 +146,17 @@ export const PromptBoxEdit = ({
     {
       label: "1K",
       selected: resolution === "1k",
-      icon: <MaximizeIcon  className="h-4 w-4" />,
+      icon: <MaximizeIcon className="h-4 w-4" />,
     },
     {
       label: "2K",
       selected: resolution === "2k",
-      icon: <MaximizeIcon  className="h-4 w-4" />,
+      icon: <MaximizeIcon className="h-4 w-4" />,
     },
     {
       label: "4K",
       selected: resolution === "4k",
-      icon: <MaximizeIcon  className="h-4 w-4" />,
+      icon: <MaximizeIcon className="h-4 w-4" />,
     },
   ]);
 
@@ -349,7 +366,7 @@ export const PromptBoxEdit = ({
                   className="flex h-8 w-8 items-center justify-center rounded-[3px] text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                   disabled={!onUndo}
                 >
-                  <RotateCcwIcon  className="h-4 w-4" />
+                  <RotateCcwIcon className="h-4 w-4" />
                 </button>
               </Tooltip>
               <Tooltip content="Redo" position="top" delay={200}>
@@ -358,7 +375,7 @@ export const PromptBoxEdit = ({
                   className="flex h-8 w-8 items-center justify-center rounded-[3px] text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                   disabled={!onRedo}
                 >
-                  <Redo2Icon  className="h-4 w-4" />
+                  <Redo2Icon className="h-4 w-4" />
                 </button>
               </Tooltip>
             </div>
@@ -489,9 +506,7 @@ export const PromptBoxEdit = ({
                       mode="toggle"
                       panelTitle="Resolution"
                       showIconsInList
-                      triggerIcon={
-                        <MaximizeIcon  className="h-4 w-4" />
-                      }
+                      triggerIcon={<MaximizeIcon className="h-4 w-4" />}
                     />
                   </Tooltip>
                 )}
@@ -509,7 +524,7 @@ export const PromptBoxEdit = ({
                       className="h-9 bg-ui-controls/60 px-3 text-base-fg hover:bg-ui-controls/90"
                       onClick={onFitPressed}
                     >
-                      <FrameIcon  className="h-4 w-4" />
+                      <FrameIcon className="h-4 w-4" />
                       Fit
                     </Button>
                   </Tooltip>

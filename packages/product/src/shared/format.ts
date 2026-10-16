@@ -7,6 +7,9 @@ export function formatBytes(bytes: number): string {
     value /= 1024;
     unit += 1;
   }
-  const text = unit === 0 ? String(Math.round(value)) : value.toFixed(value >= 100 ? 0 : 1);
+  const text =
+    unit === 0
+      ? String(Math.round(value))
+      : value.toFixed(value >= 100 ? 0 : 1);
   return `${bytes < 0 ? "-" : ""}${text} ${UNITS[unit]}`;
 }

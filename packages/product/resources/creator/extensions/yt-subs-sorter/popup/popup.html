@@ -11,7 +11,9 @@
     <main>
       <h1>Mes groupes</h1>
       <ul id="groups" class="groups"></ul>
-      <p id="empty" class="dim" hidden>Aucun groupe pour l'instant. Crée-en un ci-dessous.</p>
+      <p id="empty" class="dim" hidden>
+        Aucun groupe pour l'instant. Crée-en un ci-dessous.
+      </p>
       <form id="add-group" class="row">
         <input
           id="new-name"
@@ -21,7 +23,11 @@
           aria-label="Nom du nouveau groupe"
           required
         />
-        <input id="new-color" type="color" aria-label="Couleur du nouveau groupe" />
+        <input
+          id="new-color"
+          type="color"
+          aria-label="Couleur du nouveau groupe"
+        />
         <button type="submit">Ajouter</button>
       </form>
       <p id="group-error" class="error" role="alert" hidden></p>
@@ -29,10 +35,12 @@
 
       <h2>Réglages</h2>
       <label class="line"
-        ><input id="hideShorts" type="checkbox" /> Masquer les Shorts du flux</label
+        ><input id="hideShorts" type="checkbox" /> Masquer les Shorts du
+        flux</label
       >
       <label class="line"
-        ><input id="hideWatched" type="checkbox" /> Masquer les vidéos déjà vues</label
+        ><input id="hideWatched" type="checkbox" /> Masquer les vidéos déjà
+        vues</label
       >
       <label class="line">
         Vue à partir de
@@ -40,7 +48,8 @@
         <output id="threshold-out"></output>
       </label>
       <label class="line"
-        ><input id="badges" type="checkbox" /> Pastilles de groupe sur les miniatures</label
+        ><input id="badges" type="checkbox" /> Pastilles de groupe sur les
+        miniatures</label
       >
       <label class="line">
         Tri de la liste des chaînes
@@ -66,12 +75,16 @@
       ></textarea>
       <div class="row">
         <label class="file"
-          >Fichier… <input id="file" type="file" accept="application/json,.json"
+          >Fichier…
+          <input id="file" type="file" accept="application/json,.json"
         /></label>
         <label class="line"
-          ><input type="radio" name="mode" value="merge" checked /> Fusionner</label
+          ><input type="radio" name="mode" value="merge" checked />
+          Fusionner</label
         >
-        <label class="line"><input type="radio" name="mode" value="replace" /> Remplacer</label>
+        <label class="line"
+          ><input type="radio" name="mode" value="replace" /> Remplacer</label
+        >
         <button id="import" type="button">Importer</button>
       </div>
       <p id="io-status" class="dim" role="status"></p>

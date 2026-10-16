@@ -64,14 +64,17 @@ export const getCreatorIconSource = (
 ): CreatorIconSource => {
   const colorFile = CREATOR_COLOR_ICON_FILES[creator];
   if (colorFile) {
-    return { src: `${getServicesBasePath()}/color/${colorFile}`, isColor: true };
+    return {
+      src: `${getServicesBasePath()}/color/${colorFile}`,
+      isColor: true,
+    };
   }
   return { src: getCreatorIconPath(creator), isColor: false };
 };
 
 export const getCreatorIcon = (
   creator: ModelCreator,
-  className = "h-4 w-4 icon-auto-contrast"
+  className = "h-4 w-4 icon-auto-contrast",
 ): ReactNode | null => {
   const path = getCreatorIconPath(creator);
   return React.createElement("img", {

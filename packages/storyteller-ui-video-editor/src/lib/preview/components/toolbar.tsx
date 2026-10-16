@@ -6,7 +6,11 @@ import { formatTimecode } from "opencut-wasm";
 import { invokeAction } from "../../actions";
 import { EditableTimecode } from "../../components/editable-timecode";
 import { Button } from "../../components/ui/button";
-import { FullScreenIcon, PauseIcon, PlayIcon } from "@hugeicons/core-free-icons";
+import {
+  FullScreenIcon,
+  PauseIcon,
+  PlayIcon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Separator } from "../../components/ui/separator";
 import {
@@ -21,7 +25,11 @@ import { usePreviewViewport } from "./preview-viewport";
 import type { MediaTime } from "../../wasm";
 import { DEFAULT_FPS } from "../../fps/defaults";
 
-export function PreviewToolbar({ onToggleFullscreen }: { onToggleFullscreen: () => void }) {
+export function PreviewToolbar({
+  onToggleFullscreen,
+}: {
+  onToggleFullscreen: () => void;
+}) {
   return (
     <div className="grid grid-cols-[1fr_auto_1fr] items-center pb-3 pt-5 px-5">
       <TimecodeDisplay />
@@ -53,8 +61,12 @@ export function PreviewToolbar({ onToggleFullscreen }: { onToggleFullscreen: () 
 function TimecodeDisplay() {
   const editor = useEditor();
   const totalDuration = useEditor((e) => e.timeline.getTotalDuration());
-  const fps = useEditor((e) => e.project.getActive()?.settings.fps ?? DEFAULT_FPS);
-  const [currentTime, setCurrentTime] = useState<MediaTime>(() => editor.playback.getCurrentTime());
+  const fps = useEditor(
+    (e) => e.project.getActive()?.settings.fps ?? DEFAULT_FPS,
+  );
+  const [currentTime, setCurrentTime] = useState<MediaTime>(() =>
+    editor.playback.getCurrentTime(),
+  );
 
   useEffect(() => {
     const unsubscribeUpdate = editor.playback.onUpdate(setCurrentTime);
@@ -86,7 +98,8 @@ function TimecodeDisplay() {
 }
 
 function ZoomSelect() {
-  const { isAtFit, zoomPercent, fitToScreen, setViewportPercent } = usePreviewViewport();
+  const { isAtFit, zoomPercent, fitToScreen, setViewportPercent } =
+    usePreviewViewport();
 
   const displayLabel = isAtFit ? "Fit" : `${zoomPercent}%`;
 
@@ -99,7 +112,10 @@ function ZoomSelect() {
   };
 
   return (
-    <Select value={isAtFit ? "fit" : String(zoomPercent)} onValueChange={onValueChange}>
+    <Select
+      value={isAtFit ? "fit" : String(zoomPercent)}
+      onValueChange={onValueChange}
+    >
       <SelectTrigger className="tabular-nums">{displayLabel}</SelectTrigger>
       <SelectContent>
         <SelectItem value="fit">Fit</SelectItem>

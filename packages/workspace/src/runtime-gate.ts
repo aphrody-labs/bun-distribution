@@ -19,7 +19,9 @@ export async function runRuntimeGate(args: string[]): Promise<number> {
     if (arg === "--root") root = args[++index] ?? "";
     else if (arg === "--python-root") pythonRoot = args[++index] ?? "";
     else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: yolo ops runtime-gate [--root <aphrody>] [--python-root <py>]");
+      console.log(
+        "Usage: yolo ops runtime-gate [--root <aphrody>] [--python-root <py>]",
+      );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }
@@ -27,7 +29,11 @@ export async function runRuntimeGate(args: string[]): Promise<number> {
   pythonRoot = resolve(root, pythonRoot ?? "py");
   const checks: Check[] = [
     { name: "Bun runtime", command: "bun", args: ["--version"] },
-    { name: "Bun Google tests", command: "bun", args: ["test", "packages/google/test"] },
+    {
+      name: "Bun Google tests",
+      command: "bun",
+      args: ["test", "packages/google/test"],
+    },
     {
       name: "Bun Google bundle",
       command: "bun",
@@ -43,7 +49,12 @@ export async function runRuntimeGate(args: string[]): Promise<number> {
       ],
     },
     { name: "uv runtime", command: "uv", args: ["--version"] },
-    { name: "uv Python workspace lock", command: "uv", args: ["lock", "--check"], cwd: pythonRoot },
+    {
+      name: "uv Python workspace lock",
+      command: "uv",
+      args: ["lock", "--check"],
+      cwd: pythonRoot,
+    },
     {
       name: "uv training import",
       command: "uv",
@@ -86,9 +97,12 @@ export async function runRuntimeGate(args: string[]): Promise<number> {
       stderr: "pipe",
       env: { ...process.env, RUSTC_WRAPPER: "" },
     });
-    const output = `${result.stdout.toString()}${result.stderr.toString()}`.trim();
+    const output =
+      `${result.stdout.toString()}${result.stderr.toString()}`.trim();
     if (result.exitCode === 0) {
-      console.log(`PASS ${check.name}${output ? `: ${output.split("\n").at(-1)}` : ""}`);
+      console.log(
+        `PASS ${check.name}${output ? `: ${output.split("\n").at(-1)}` : ""}`,
+      );
     } else {
       failures += 1;
       console.error(`FAIL ${check.name} (exit ${result.exitCode})`);
@@ -96,7 +110,9 @@ export async function runRuntimeGate(args: string[]): Promise<number> {
     }
   }
 
-  console.log(`Runtime gate: ${failures === 0 ? "PASS" : "FAILED"} (${failures} failure(s))`);
+  console.log(
+    `Runtime gate: ${failures === 0 ? "PASS" : "FAILED"} (${failures} failure(s))`,
+  );
   return failures === 0 ? 0 : 1;
 }
 

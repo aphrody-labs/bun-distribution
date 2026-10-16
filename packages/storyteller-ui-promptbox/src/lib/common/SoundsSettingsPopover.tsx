@@ -61,7 +61,7 @@ export function SoundsSettingsPopover({
     <PopoverMenu
       mode="default"
       panelTitle="Beat & Key"
-      triggerIcon={<DrumIcon  className="h-3.5 w-3.5" />}
+      triggerIcon={<DrumIcon className="h-3.5 w-3.5" />}
       triggerLabel={triggerLabel || "Beat"}
     >
       <div className="w-60 space-y-3.5 pb-0.5">

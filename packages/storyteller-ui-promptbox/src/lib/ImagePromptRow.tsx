@@ -10,13 +10,21 @@ import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { downloadFileFromUrl } from "@storyteller/tauri-api";
-import { ImageIcon, ImagesIcon, LoaderCircleIcon, MusicIcon, PlayIcon, PlusIcon, SquareIcon, Trash2Icon, VideoIcon, XIcon } from "lucide-react";
+import {
+  ImageIcon,
+  ImagesIcon,
+  LoaderCircleIcon,
+  MusicIcon,
+  PlayIcon,
+  PlusIcon,
+  SquareIcon,
+  Trash2Icon,
+  VideoIcon,
+  XIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { RefImage, RefVideo, RefAudio } from "./promptStore";
-import {
-  createImagePreviewUrl,
-  revokeIfBlobUrl,
-} from "./common/imagePreview";
+import { createImagePreviewUrl, revokeIfBlobUrl } from "./common/imagePreview";
 import { toast } from "@storyteller/ui-toaster";
 import { twMerge } from "tailwind-merge";
 import { UploaderStates } from "@storyteller/common";
@@ -148,7 +156,7 @@ const AudioRefTile = ({
         }}
         className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
       >
-        <XIcon  className="h-2.5 w-2.5" />
+        <XIcon className="h-2.5 w-2.5" />
       </button>
     </div>
   );
@@ -304,7 +312,7 @@ export const ImagePromptRow = ({
           }}
           className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
         >
-          <XIcon  className="h-2.5 w-2.5" />
+          <XIcon className="h-2.5 w-2.5" />
         </button>
       </div>
     );
@@ -326,7 +334,11 @@ export const ImagePromptRow = ({
         maxImagePromptCount,
         referenceImages.length + visibleUploadingImages.length,
       ),
-    [maxImagePromptCount, referenceImages.length, visibleUploadingImages.length],
+    [
+      maxImagePromptCount,
+      referenceImages.length,
+      visibleUploadingImages.length,
+    ],
   );
   const availableSlotsRender = useMemo(
     () =>
@@ -336,7 +348,11 @@ export const ImagePromptRow = ({
           referenceImages.length -
           visibleUploadingImages.length,
       ),
-    [maxImagePromptCount, referenceImages.length, visibleUploadingImages.length],
+    [
+      maxImagePromptCount,
+      referenceImages.length,
+      visibleUploadingImages.length,
+    ],
   );
 
   useEffect(() => {
@@ -615,8 +631,7 @@ export const ImagePromptRow = ({
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
-    const currentCount =
-      referenceImages.length + visibleUploadingImages.length;
+    const currentCount = referenceImages.length + visibleUploadingImages.length;
     const availableSlots = Math.max(0, maxImagePromptCount - currentCount);
     if (availableSlots <= 0 && uploadTarget !== "end") {
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -883,7 +898,7 @@ export const ImagePromptRow = ({
             <div className="flex gap-2 py-2 px-3">
               <div className="flex flex-col grow gap-1">
                 <div className="flex items-center gap-2 opacity-90 text-base-fg">
-                  <ImageIcon  className="h-3.5 w-3.5" />
+                  <ImageIcon className="h-3.5 w-3.5" />
                   <span className="text-sm font-medium flex items-center gap-1.5">
                     {isVideo
                       ? isReferenceMode
@@ -956,9 +971,7 @@ export const ImagePromptRow = ({
                           }}
                           className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
                         >
-                          <XIcon
-                            
-                            className="h-2.5 w-2.5" />
+                          <XIcon className="h-2.5 w-2.5" />
                         </button>
                       </div>
                     ))
@@ -983,9 +996,7 @@ export const ImagePromptRow = ({
                         </div>
                       )}
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                        <LoaderCircleIcon
-
-                          className="h-6 w-6 animate-spin text-white" />
+                        <LoaderCircleIcon className="h-6 w-6 animate-spin text-white" />
                       </div>
                     </div>
                   ))}
@@ -1034,9 +1045,7 @@ export const ImagePromptRow = ({
                         }
                       }}
                     >
-                      <PlusIcon
-                        
-                        className="text-2xl opacity-80 text-base-fg" />
+                      <PlusIcon className="text-2xl opacity-80 text-base-fg" />
                     </Button>
                   </Tooltip>
                 )}
@@ -1048,7 +1057,7 @@ export const ImagePromptRow = ({
                   <div className="w-[1px] h-full bg-white/10" />
                   <div className="flex flex-col grow gap-1 p-2">
                     <div className="flex items-center gap-2 opacity-90 text-base-fg">
-                      <ImageIcon  className="h-3.5 w-3.5" />
+                      <ImageIcon className="h-3.5 w-3.5" />
                       <span className="text-sm font-medium flex items-center gap-1.5">
                         End Frame{" "}
                         <span className="text-base-fg/60 text-xs">
@@ -1079,9 +1088,7 @@ export const ImagePromptRow = ({
                         }}
                         className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
                       >
-                        <XIcon
-                          
-                          className="h-2.5 w-2.5" />
+                        <XIcon className="h-2.5 w-2.5" />
                       </button>
                     </div>
                   ) : uploadingEnd ? (
@@ -1096,9 +1103,7 @@ export const ImagePromptRow = ({
                         </div>
                       )}
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                        <LoaderCircleIcon
-
-                          className="h-6 w-6 animate-spin text-white" />
+                        <LoaderCircleIcon className="h-6 w-6 animate-spin text-white" />
                       </div>
                     </div>
                   ) : (
@@ -1145,9 +1150,7 @@ export const ImagePromptRow = ({
                           }
                         }}
                       >
-                        <PlusIcon
-                          
-                          className="text-2xl opacity-80 text-base-fg" />
+                        <PlusIcon className="text-2xl opacity-80 text-base-fg" />
                       </Button>
                     </Tooltip>
                   )}
@@ -1161,7 +1164,7 @@ export const ImagePromptRow = ({
               <div className="flex gap-2 py-2 px-3">
                 <div className="flex flex-col grow gap-1">
                   <div className="flex items-center gap-2 opacity-90 text-base-fg">
-                    <VideoIcon  className="h-3.5 w-3.5" />
+                    <VideoIcon className="h-3.5 w-3.5" />
                     <span className="text-sm font-medium flex items-center gap-1.5">
                       Video Ref{" "}
                       <span className="text-base-fg/60 font-semibold">
@@ -1195,9 +1198,7 @@ export const ImagePromptRow = ({
                         }}
                         className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
                       >
-                        <XIcon
-                          
-                          className="h-2.5 w-2.5" />
+                        <XIcon className="h-2.5 w-2.5" />
                       </button>
                     </div>
                   ))}
@@ -1212,9 +1213,7 @@ export const ImagePromptRow = ({
                         />
                       </div>
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                        <LoaderCircleIcon
-                          
-                          className="h-6 w-6 animate-spin text-white" />
+                        <LoaderCircleIcon className="h-6 w-6 animate-spin text-white" />
                       </div>
                     </div>
                   )}
@@ -1255,9 +1254,7 @@ export const ImagePromptRow = ({
                           className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-[3px] w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
                           onClick={handleUploadClickVideo}
                         >
-                          <PlusIcon
-                            
-                            className="text-2xl opacity-80 text-base-fg" />
+                          <PlusIcon className="text-2xl opacity-80 text-base-fg" />
                         </Button>
                       </Tooltip>
                     )}
@@ -1269,7 +1266,7 @@ export const ImagePromptRow = ({
                   <div className="w-[1px] h-full bg-white/10" />
                   <div className="flex flex-col grow gap-1 p-2">
                     <div className="flex items-center gap-2 opacity-90 text-base-fg">
-                      <MusicIcon  className="h-3.5 w-3.5" />
+                      <MusicIcon className="h-3.5 w-3.5" />
                       <span className="text-sm font-medium flex items-center gap-1.5">
                         Audio Ref{" "}
                         <span className="text-base-fg/60 font-semibold">
@@ -1293,9 +1290,7 @@ export const ImagePromptRow = ({
                   ))}
                   {uploadingAudio && (
                     <div className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 flex items-center justify-center">
-                      <LoaderCircleIcon
-                        
-                        className="h-6 w-6 animate-spin text-white" />
+                      <LoaderCircleIcon className="h-6 w-6 animate-spin text-white" />
                     </div>
                   )}
                   {referenceAudios.length < maxAudioCount &&
@@ -1305,9 +1300,7 @@ export const ImagePromptRow = ({
                         className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-[3px] w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
                         onClick={handleUploadClickAudio}
                       >
-                        <PlusIcon
-                          
-                          className="text-2xl opacity-80 text-base-fg" />
+                        <PlusIcon className="text-2xl opacity-80 text-base-fg" />
                       </Button>
                     )}
                 </div>

@@ -22,7 +22,9 @@ export interface PagedrawKeybindHandlers {
   onBrushSizeDown: () => void;
 }
 
-export const usePagedrawKeybinds = (handlers: PagedrawKeybindHandlers): void => {
+export const usePagedrawKeybinds = (
+  handlers: PagedrawKeybindHandlers,
+): void => {
   const { matchAction } = useResolvedKeybinds();
   const {
     undo,

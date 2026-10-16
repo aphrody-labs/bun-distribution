@@ -19,8 +19,15 @@ interface Props {
   };
 }
 
-export function UploadModalMedia({ isOpen, onClose, onSuccess, title, fileTypes }: Props) {
-  const [uploaderState, setUploaderState] = useState<UploaderState>(initialUploaderState);
+export function UploadModalMedia({
+  isOpen,
+  onClose,
+  onSuccess,
+  title,
+  fileTypes,
+}: Props) {
+  const [uploaderState, setUploaderState] =
+    useState<UploaderState>(initialUploaderState);
 
   const updateUploaderState = (newState: UploaderState) => {
     setUploaderState(newState);
@@ -52,7 +59,9 @@ export function UploadModalMedia({ isOpen, onClose, onSuccess, title, fileTypes 
         return (
           <>
             <LoadingDots className="mb-1 bg-transparent" />
-            <div className="hud-label w-full text-center text-base-fg/50">Uploading...</div>
+            <div className="hud-label w-full text-center text-base-fg/50">
+              Uploading...
+            </div>
           </>
         );
       case UploaderStates.success:

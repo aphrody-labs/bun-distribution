@@ -52,7 +52,11 @@ export interface Entry {
 }
 
 export interface Problem {
-  kind: "missing-source" | "cross-source-duplicate" | "invalid-scope" | "duplicate-path";
+  kind:
+    | "missing-source"
+    | "cross-source-duplicate"
+    | "invalid-scope"
+    | "duplicate-path";
   message: string;
 }
 
@@ -92,26 +96,35 @@ export async function loadCatalog(root = INFRA_ROOT): Promise<Catalog> {
 }
 
 function excluded(path: string, patterns: string[]): boolean {
-  return patterns.some(pattern => new Bun.Glob(pattern).match(path));
+  return patterns.some((pattern) => new Bun.Glob(pattern).match(path));
 }
 
 /** Tracked files of one source, hashed. `workspace` contains the active repository. */
-export async function scanSource(source: Source, workspace: string): Promise<Entry[] | null> {
+export async function scanSource(
+  source: Source,
+  workspace: string,
+): Promise<Entry[] | null> {
   const repoRoot = join(workspace, source.repo);
   const dir = join(repoRoot, source.path);
-  if ((await $`git -C ${repoRoot} rev-parse --git-dir`.quiet().nothrow()).exitCode !== 0) return null;
-  const listed = await $`git -C ${repoRoot} ls-files -z -- ${source.path}`.quiet().nothrow();
+  if (
+    (await $`git -C ${repoRoot} rev-parse --git-dir`.quiet().nothrow())
+      .exitCode !== 0
+  )
+    return null;
+  const listed = await $`git -C ${repoRoot} ls-files -z -- ${source.path}`
+    .quiet()
+    .nothrow();
   if (listed.exitCode !== 0) return null;
   const prefix = `${source.path.replace(/\/$/, "")}/`;
   const paths = listed.stdout
     .toString()
     .split("\0")
     .filter(Boolean)
-    .map(p => p.slice(prefix.length));
+    .map((p) => p.slice(prefix.length));
   const entries = await Promise.all(
     paths
-      .filter(path => !excluded(path, source.exclude))
-      .map(async path => {
+      .filter((path) => !excluded(path, source.exclude))
+      .map(async (path) => {
         const file = join(dir, path);
         const handle = Bun.file(file);
         if (!(await handle.exists())) return null; // deleted in the working tree
@@ -127,15 +140,23 @@ export async function scanSource(source: Source, workspace: string): Promise<Ent
         } satisfies Entry;
       }),
   );
-  return entries.filter((entry): entry is Entry => entry !== null).toSorted((a, b) => a.path.localeCompare(b.path));
+  return entries
+    .filter((entry): entry is Entry => entry !== null)
+    .toSorted((a, b) => a.path.localeCompare(b.path));
 }
 
 /** Every source scanned, plus the contract violations. */
-export async function scan(catalog: Catalog, workspace = resolve(INFRA_ROOT, "..")) {
+export async function scan(
+  catalog: Catalog,
+  workspace = resolve(INFRA_ROOT, ".."),
+) {
   const problems: Problem[] = [];
   const entries: Entry[] = [];
   for (const source of catalog.sources) {
-    if (!/^[a-z0-9][a-z0-9-]*$/.test(source.scope) || (source.mount && !/^[a-z0-9][a-z0-9/_-]*$/.test(source.mount))) {
+    if (
+      !/^[a-z0-9][a-z0-9-]*$/.test(source.scope) ||
+      (source.mount && !/^[a-z0-9][a-z0-9/_-]*$/.test(source.mount))
+    ) {
       problems.push({
         kind: "invalid-scope",
         message: `scope ${JSON.stringify(source.scope)} or mount ${JSON.stringify(source.mount)} is invalid`,
@@ -179,14 +200,21 @@ export interface Manifest {
   schemaVersion: 1;
   host: string;
   generatedAt: string;
-  files: Record<string, { sha256: string; size: number; type: string; hashed: string }>;
+  files: Record<
+    string,
+    { sha256: string; size: number; type: string; hashed: string }
+  >;
 }
 
 export function hashedName(entry: Entry, length: number): string {
   return `${entry.sha256.slice(0, length)}${extname(entry.path).toLowerCase()}`;
 }
 
-export function buildManifest(catalog: Catalog, entries: Entry[], now = new Date()): Manifest {
+export function buildManifest(
+  catalog: Catalog,
+  entries: Entry[],
+  now = new Date(),
+): Manifest {
   const files: Manifest["files"] = {};
   for (const entry of entries) {
     files[`${entry.scope}/${entry.path}`] = {
@@ -196,7 +224,12 @@ export function buildManifest(catalog: Catalog, entries: Entry[], now = new Date
       hashed: `${catalog.cdn.paths.hashed}${hashedName(entry, catalog.cdn.hashLength)}`,
     };
   }
-  return { schemaVersion: 1, host: catalog.cdn.host, generatedAt: now.toISOString(), files };
+  return {
+    schemaVersion: 1,
+    host: catalog.cdn.host,
+    generatedAt: now.toISOString(),
+    files,
+  };
 }
 
 async function place(from: string, to: string) {
@@ -206,7 +239,11 @@ async function place(from: string, to: string) {
 }
 
 /** Write the release tree and return its manifest. */
-export async function build(catalog: Catalog, entries: Entry[], out: string): Promise<Manifest> {
+export async function build(
+  catalog: Catalog,
+  entries: Entry[],
+  out: string,
+): Promise<Manifest> {
   await rm(out, { recursive: true, force: true });
   const manifest = buildManifest(catalog, entries);
   const hashed = new Set<string>();
@@ -218,8 +255,14 @@ export async function build(catalog: Catalog, entries: Entry[], out: string): Pr
       await place(entry.file, join(out, "h", name));
     }
   }
-  await Bun.write(join(out, "s", "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
-  const sha = createHash("sha256").update(JSON.stringify(manifest.files)).digest("hex").slice(0, 12);
+  await Bun.write(
+    join(out, "s", "manifest.json"),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
+  const sha = createHash("sha256")
+    .update(JSON.stringify(manifest.files))
+    .digest("hex")
+    .slice(0, 12);
   await Bun.write(join(out, "RELEASE_SHA"), `${sha}\n`);
   return manifest;
 }
@@ -227,19 +270,32 @@ export async function build(catalog: Catalog, entries: Entry[], out: string): Pr
 function arg(name: string): string | undefined {
   const i = Bun.argv.indexOf(name);
   if (i >= 0) return Bun.argv[i + 1];
-  return Bun.argv.find(a => a.startsWith(`${name}=`))?.slice(name.length + 1);
+  return Bun.argv.find((a) => a.startsWith(`${name}=`))?.slice(name.length + 1);
 }
 
 function safe(value: string): string {
-  if (!/^[A-Za-z0-9_./:=+@-]+$/.test(value)) throw new Error(`refused value: ${value}`);
+  if (!/^[A-Za-z0-9_./:=+@-]+$/.test(value))
+    throw new Error(`refused value: ${value}`);
   return value;
 }
 
-async function publish(catalog: Catalog, out: string, vps: string, dryRun: boolean) {
+async function publish(
+  catalog: Catalog,
+  out: string,
+  vps: string,
+  dryRun: boolean,
+) {
   const release = (await Bun.file(join(out, "RELEASE_SHA")).text()).trim();
   const root = safe(catalog.cdn.releaseRoot);
   const target = `${root}/releases/${safe(release)}`;
-  const ssh = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", safe(vps)];
+  const ssh = [
+    "ssh",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "ConnectTimeout=15",
+    safe(vps),
+  ];
   // On Windows rsync reads `C:/...` as a remote host `C`: a tar stream over ssh instead, with the
   // modes reset on the host.
   const copy: string[][] =
@@ -247,7 +303,14 @@ async function publish(catalog: Catalog, out: string, vps: string, dryRun: boole
       ? [
           // `--chmod`: a tree built on a Windows/DrvFs checkout reaches the host 0777 otherwise.
           // `-H`: `s/` and `h/` are hardlinks of the same bytes; without it the release doubles.
-          ["rsync", "-aH", "--chmod=D755,F644", "--delete", `${out.replaceAll("\\", "/")}/`, `${vps}:${target}/`],
+          [
+            "rsync",
+            "-aH",
+            "--chmod=D755,F644",
+            "--delete",
+            `${out.replaceAll("\\", "/")}/`,
+            `${vps}:${target}/`,
+          ],
         ]
       : [
           ["tar", "-C", out, "-cf", "-", "."],
@@ -259,10 +322,15 @@ async function publish(catalog: Catalog, out: string, vps: string, dryRun: boole
   const steps = [
     [[...ssh, `mkdir -p ${target}`]],
     copy,
-    [[...ssh, `ln -sfn ${target} ${root}/.current.new && mv -T ${root}/.current.new ${root}/current`]],
+    [
+      [
+        ...ssh,
+        `ln -sfn ${target} ${root}/.current.new && mv -T ${root}/.current.new ${root}/current`,
+      ],
+    ],
   ];
   for (const step of steps) {
-    const line = step.map(cmd => cmd.join(" ")).join(" | ");
+    const line = step.map((cmd) => cmd.join(" ")).join(" | ");
     if (dryRun) {
       console.log(`dry-run: ${line}`);
       continue;
@@ -279,8 +347,8 @@ async function publish(catalog: Catalog, out: string, vps: string, dryRun: boole
         }),
       );
     }
-    const codes = await Promise.all(procs.map(p => p.exited));
-    if (codes.some(code => code !== 0)) throw new Error(`failed: ${line}`);
+    const codes = await Promise.all(procs.map((p) => p.exited));
+    if (codes.some((code) => code !== 0)) throw new Error(`failed: ${line}`);
   }
   return { release, target };
 }
@@ -291,7 +359,7 @@ if (import.meta.main) {
   const catalog = await loadCatalog();
   const { entries, problems } = await scan(catalog);
   const bytes = entries.reduce((n, e) => n + e.size, 0);
-  const unique = new Set(entries.map(e => e.sha256)).size;
+  const unique = new Set(entries.map((e) => e.sha256)).size;
   const summary = { files: entries.length, unique, bytes, problems };
 
   if (command === "check") {
@@ -318,10 +386,18 @@ if (import.meta.main) {
     };
     if (command === "publish") {
       const vps = arg("--vps") ?? Bun.env.APHRODY_VPS_SSH;
-      if (!vps) throw new Error("publish needs --vps <ssh-host> or APHRODY_VPS_SSH");
-      Object.assign(result, await publish(catalog, out, vps, Bun.argv.includes("--dry-run")));
+      if (!vps)
+        throw new Error("publish needs --vps <ssh-host> or APHRODY_VPS_SSH");
+      Object.assign(
+        result,
+        await publish(catalog, out, vps, Bun.argv.includes("--dry-run")),
+      );
     }
-    console.log(json ? JSON.stringify(result, null, 2) : `${command}: ${entries.length} files -> ${out}`);
+    console.log(
+      json
+        ? JSON.stringify(result, null, 2)
+        : `${command}: ${entries.length} files -> ${out}`,
+    );
     process.exit(0);
   }
   console.error(`unknown command ${command}: check | build | publish`);

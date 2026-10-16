@@ -26,7 +26,8 @@ export class RemoveMediaAssetCommand extends Command {
     this.savedAssets = [...assets];
     this.savedTracks = editor.scenes.getActiveScene().tracks;
 
-    this.removedAsset = assets.find((media: MediaAsset) => media.id === this.assetId) ?? null;
+    this.removedAsset =
+      assets.find((media: MediaAsset) => media.id === this.assetId) ?? null;
 
     if (!this.removedAsset) {
       console.error("Media asset not found:", this.assetId);
@@ -84,7 +85,9 @@ export class RemoveMediaAssetCommand extends Command {
       };
 
       editor.media.setAssets({
-        assets: this.savedAssets.map((a) => (a.id === this.assetId ? restoredAsset : a)),
+        assets: this.savedAssets.map((a) =>
+          a.id === this.assetId ? restoredAsset : a,
+        ),
       });
 
       // Persistence handled by host via ProjectStorageAdapter

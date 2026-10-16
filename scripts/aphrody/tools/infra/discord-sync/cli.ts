@@ -44,16 +44,31 @@ const opt = (n: string) => {
 };
 const flag = (n: string) => argv.includes(`--${n}`);
 
-const stateDir = process.env.STATE_DIRECTORY?.split(":")[0] ?? join(homedir(), ".aphrody", "sync");
+const stateDir =
+  process.env.STATE_DIRECTORY?.split(":")[0] ??
+  join(homedir(), ".aphrody", "sync");
 const configPath =
   process.env.APHRODY_SYNC_CONFIG ??
-  join(import.meta.dir, "..", "..", "..", "..", "tools", "config", "host", "discord-sync.json");
+  join(
+    import.meta.dir,
+    "..",
+    "..",
+    "..",
+    "..",
+    "tools",
+    "config",
+    "host",
+    "discord-sync.json",
+  );
 const cfg = JSON.parse(readFileSync(configPath, "utf8")) as SyncConfig;
 const statePath = join(stateDir, "state.json");
 
 function loadState(): SyncState {
   try {
-    return { ...emptyState(), ...(JSON.parse(readFileSync(statePath, "utf8")) as SyncState) };
+    return {
+      ...emptyState(),
+      ...(JSON.parse(readFileSync(statePath, "utf8")) as SyncState),
+    };
   } catch {
     return emptyState();
   }
@@ -69,7 +84,9 @@ function client(): Discord {
   const token = process.env.DISCORD_BOT_TOKEN ?? process.env.DISCORD_TOKEN;
   const guild = process.env.DISCORD_GUILD_ID ?? process.env.GUILD_ID;
   if (!token || !guild)
-    throw new Error("DISCORD_BOT_TOKEN / DISCORD_GUILD_ID absents de l'environnement");
+    throw new Error(
+      "DISCORD_BOT_TOKEN / DISCORD_GUILD_ID absents de l'environnement",
+    );
   return new Discord(token, guild);
 }
 
@@ -85,17 +102,22 @@ const io: Io = {
       ? readdirSync(join(stateDir, "outbox"))
           .filter((n) => n.endsWith(".json"))
           .toSorted()
-          .map((name) => ({ name, body: readFileSync(join(stateDir, "outbox", name), "utf8") }))
+          .map((name) => ({
+            name,
+            body: readFileSync(join(stateDir, "outbox", name), "utf8"),
+          }))
       : [],
   dropOutbox: (name) => rmSync(join(stateDir, "outbox", name), { force: true }),
-  writeInbox: (name, body) => writeFileSync(join(dir("inbox"), name), body, { mode: 0o600 }),
+  writeInbox: (name, body) =>
+    writeFileSync(join(dir("inbox"), name), body, { mode: 0o600 }),
   writeAgreement: (name, body) =>
     writeFileSync(join(dir("agreements"), name), body, { mode: 0o600 }),
   readFiche: () =>
     existsSync(join(stateDir, "fiche-owner.md"))
       ? readFileSync(join(stateDir, "fiche-owner.md"), "utf8")
       : undefined,
-  writeMerged: (body) => writeFileSync(join(stateDir, "fiche-merged.md"), body, { mode: 0o600 }),
+  writeMerged: (body) =>
+    writeFileSync(join(stateDir, "fiche-merged.md"), body, { mode: 0o600 }),
 };
 
 async function run(cmdline: string[], timeoutMs: number): Promise<string> {
@@ -114,7 +136,11 @@ async function run(cmdline: string[], timeoutMs: number): Promise<string> {
   }
 }
 
-async function tcp(host: string, port: number, timeoutMs: number): Promise<boolean> {
+async function tcp(
+  host: string,
+  port: number,
+  timeoutMs: number,
+): Promise<boolean> {
   return await new Promise<boolean>((resolve) => {
     const timer = setTimeout(() => resolve(false), timeoutMs);
     Bun.connect({
@@ -204,7 +230,11 @@ if (cmd === "setup") {
       const fx = opt("fixture");
       if (fx) applyFixture(snap, fx);
       try {
-        console.log(JSON.stringify(await tick(api, cfg, state, snap, io, api.guildId, template)));
+        console.log(
+          JSON.stringify(
+            await tick(api, cfg, state, snap, io, api.guildId, template),
+          ),
+        );
       } finally {
         saveState(state);
       }
@@ -218,7 +248,9 @@ if (cmd === "setup") {
   const type = opt("type");
   const text = opt("text");
   if (!channelKey || !KINDS.includes(kind) || !type || text === undefined)
-    throw new Error('usage : post <etat|evenements|demandes|fiche> --kind K --type T --text "…"');
+    throw new Error(
+      'usage : post <etat|evenements|demandes|fiche> --kind K --type T --text "…"',
+    );
   const spec = {
     channel: channelKey,
     kind,
@@ -227,10 +259,15 @@ if (cmd === "setup") {
     from: opt("from"),
     to: opt("to")?.split(","),
     needsAck: flag("ack") || undefined,
-    data: opt("json") ? (JSON.parse(opt("json")!) as Record<string, unknown>) : undefined,
+    data: opt("json")
+      ? (JSON.parse(opt("json")!) as Record<string, unknown>)
+      : undefined,
   };
   if (flag("outbox")) {
-    const f = join(dir("outbox"), `${Date.now()}-${Math.floor(Math.random() * 1e6)}.json`);
+    const f = join(
+      dir("outbox"),
+      `${Date.now()}-${Math.floor(Math.random() * 1e6)}.json`,
+    );
     writeFileSync(f, JSON.stringify(spec), { mode: 0o600 });
     console.log(`outbox ${f}`);
   } else {
@@ -259,7 +296,12 @@ if (cmd === "setup") {
     const env = decode(m.content);
     if (env && (!kind || env.kind === kind))
       console.log(
-        JSON.stringify({ message: m.id, author: m.author.username, posted: m.timestamp, ...env }),
+        JSON.stringify({
+          message: m.id,
+          author: m.author.username,
+          posted: m.timestamp,
+          ...env,
+        }),
       );
   }
 } else if (cmd === "status") {
@@ -274,6 +316,8 @@ if (cmd === "setup") {
     }),
   );
 } else {
-  console.error("usage : cli.ts setup | tick [--fixture F] | post | read | status");
+  console.error(
+    "usage : cli.ts setup | tick [--fixture F] | post | read | status",
+  );
   process.exit(2);
 }

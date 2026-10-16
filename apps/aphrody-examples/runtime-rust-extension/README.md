@@ -24,4 +24,3 @@ chargeur d'extensions d'une application.
 La qualification Linux et ses limites sont consignées dans
 [le reçu](../../../docs/aphrody/operations/workspace/rust-extension-2026-10-07.md).
 Les artefacts SDK et leur provenance restent dans leur store existant.
-

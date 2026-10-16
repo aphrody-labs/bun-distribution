@@ -38,7 +38,3 @@ name = "analyze_sync_log"
 required-features = ["cli"]
 
 
-
-
-
-

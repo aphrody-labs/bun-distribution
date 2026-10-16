@@ -1,2 +1,1 @@
-
-export * from './lib/close-button';
+export * from "./lib/close-button";

@@ -10,7 +10,7 @@ A crate for rendering PDF files.
 This crate allows you to render pages of a PDF file into bitmaps. It is supposed to be relatively
 lightweight, since we do not have any dependencies on the GPU. All the rendering happens on the CPU.
 
-The ultimate goal of this crate is to be a *feature-complete* and *performant* PDF rasterizer.
+The ultimate goal of this crate is to be a _feature-complete_ and _performant_ PDF rasterizer.
 With that said, we are currently still very far away from reaching that goal: So far, no effort
 has been put into performance optimizations, as we are still working on implementing missing features.
 However, this crate is currently the most comprehensive and feature-complete
@@ -25,22 +25,27 @@ of smaller features such as color key masking. But you should be able to render 
 of PDF files without too many issues.
 
 ### Safety
+
 This crate forbids unsafe code via a crate-level attribute.
 
 ### Examples
+
 For usage examples, see the [example](https://github.com/LaurenzV/hayro/tree/master/hayro/examples) in
 the GitHub repository.
 
 ### Cargo features
+
 This crate has one optional feature:
+
 - `embed-fonts`: See the description of [`hayro-interpret`](https://docs.rs/hayro-interpret/latest/hayro_interpret/#cargo-features) for more information.
 
 <!-- cargo-rdme end -->
 
 ## License
+
 Licensed under either of
 
 - Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0>)
 - MIT license ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
 
-at your option. 
+at your option.

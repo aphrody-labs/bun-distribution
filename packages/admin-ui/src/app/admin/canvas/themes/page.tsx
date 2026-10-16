@@ -12,13 +12,15 @@ export default async function CanvasThemesPage() {
       <header>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-4xl font-saiyan text-dbz-orange mb-2">THÈMES DE CARTE</h1>
+            <h1 className="text-4xl font-saiyan text-dbz-orange mb-2">
+              THÈMES DE CARTE
+            </h1>
             <p className="text-sm text-white/60 mb-1">
               Gérez les thèmes visuels des cartes de profil des membres.
             </p>
             <p className="text-xs text-white/50 uppercase tracking-widest">
-              {data.rows.length} thème{data.rows.length !== 1 ? "s" : ""} en base · rechargé par le
-              bot dans les 60 secondes
+              {data.rows.length} thème{data.rows.length !== 1 ? "s" : ""} en
+              base · rechargé par le bot dans les 60 secondes
             </p>
           </div>
           <Link href="/admin/canvas" className="dbz-button-ghost !text-xs">
@@ -29,9 +31,10 @@ export default async function CanvasThemesPage() {
 
       <div className="dbz-panel p-4 border-l-4 border-dbz-blue-light/50">
         <p className="text-xs text-white/50">
-          <strong className="text-white/70">Comment ça marche ?</strong> Chaque thème définit les
-          couleurs du fond, de l&apos;accent et de l&apos;aura de la carte de profil. Un membre peut
-          équiper un thème via la boutique du bot (<code>/boutique</code>). Le thème
+          <strong className="text-white/70">Comment ça marche ?</strong> Chaque
+          thème définit les couleurs du fond, de l&apos;accent et de l&apos;aura
+          de la carte de profil. Un membre peut équiper un thème via la boutique
+          du bot (<code>/boutique</code>). Le thème
           &laquo;&nbsp;default&nbsp;&raquo; ne peut pas être supprimé.
         </p>
       </div>
@@ -40,9 +43,12 @@ export default async function CanvasThemesPage() {
 
       {data.rows.length === 0 ? (
         <div className="dbz-panel p-8 text-center">
-          <p className="font-saiyan text-dbz-yellow text-xl mb-2">AUCUN THÈME</p>
+          <p className="font-saiyan text-dbz-yellow text-xl mb-2">
+            AUCUN THÈME
+          </p>
           <p className="text-sm text-white/50">
-            Aucun thème en base — les cartes utilisent les thèmes intégrés par défaut du bot.
+            Aucun thème en base — les cartes utilisent les thèmes intégrés par
+            défaut du bot.
           </p>
         </div>
       ) : (
@@ -64,7 +70,9 @@ export default async function CanvasThemesPage() {
                     >
                       {t.name}
                     </div>
-                    <code className="text-[10px] text-white/50 font-mono">{t.id}</code>
+                    <code className="text-[10px] text-white/50 font-mono">
+                      {t.id}
+                    </code>
                   </div>
                   <div className="flex gap-1" title="Couleurs accent et aura">
                     <div
@@ -83,7 +91,10 @@ export default async function CanvasThemesPage() {
               {/* Infos et actions */}
               <div className="p-3 space-y-2">
                 {t.bgFile && (
-                  <p className="text-[10px] text-white/50 font-mono truncate" title={t.bgFile}>
+                  <p
+                    className="text-[10px] text-white/50 font-mono truncate"
+                    title={t.bgFile}
+                  >
                     Image de fond : {t.bgFile}
                   </p>
                 )}

@@ -12,7 +12,9 @@ export function isPublicDestination(pathname: string): boolean {
     pathname === "/" ||
     publicDestinations
       .slice(1)
-      .some(({ route }) => pathname === route || pathname.startsWith(`${route}/`)) ||
+      .some(
+        ({ route }) => pathname === route || pathname.startsWith(`${route}/`),
+      ) ||
     pathname === "/showcase" ||
     pathname.startsWith("/showcase/")
   );

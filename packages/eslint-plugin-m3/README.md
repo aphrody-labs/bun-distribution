@@ -69,7 +69,10 @@ Ou à la carte :
 ```js
 import m3 from "@aphrody/eslint-plugin-m3";
 export default [
-  { plugins: { m3 }, rules: { "m3/no-sx-prop": "error", "m3/valid-icon-name": "error" } },
+  {
+    plugins: { m3 },
+    rules: { "m3/no-sx-prop": "error", "m3/valid-icon-name": "error" },
+  },
 ];
 ```
 

@@ -33,11 +33,18 @@ const OWNER_BY_ARTIFACT = {
   "os-info.json": "aphrody-winclean",
   "a2a-codex-gui-electron.json": "aphrody-re",
 };
-const BINARY_OUTPUTS = ["xor-output.bin", "aes-output.bin", "pe-text-section.bin"];
+const BINARY_OUTPUTS = [
+  "xor-output.bin",
+  "aes-output.bin",
+  "pe-text-section.bin",
+];
 const ZERO_128 = "0".repeat(32);
 
 async function main(): Promise<number> {
-  const options = parseOptions(process.argv.slice(2), ["source", "artifact-root"]);
+  const options = parseOptions(process.argv.slice(2), [
+    "source",
+    "artifact-root",
+  ]);
   if (options.has("help")) {
     console.log(
       "Usage: bun scripts/tools/os/scripts/live-winclean-artifacts.ts [--source <file>] [--artifact-root var/winclean-live]",
@@ -53,7 +60,9 @@ async function main(): Promise<number> {
   } else {
     const pkg = findMsixPackage("OpenAI.Codex");
     if (!pkg)
-      throw new Error("OpenAI.Codex MSIX package not installed; --source <file> is required.");
+      throw new Error(
+        "OpenAI.Codex MSIX package not installed; --source <file> is required.",
+      );
     source = join(pkg.installLocation, "app", "ChatGPT.exe");
   }
   if (!existsSync(source) || !statSync(source).isFile())
@@ -61,18 +70,26 @@ async function main(): Promise<number> {
   const asarPath = join(dirname(source), "resources", "app.asar");
 
   const stamp = sessionStamp();
-  const dirs = artifactDirs(options.get("artifact-root") ?? "var/winclean-live", stamp);
+  const dirs = artifactDirs(
+    options.get("artifact-root") ?? "var/winclean-live",
+    stamp,
+  );
   return withKernel("winclean-live", stamp, async (kernel) => {
     const tools = await kernel.client.request("tools/list", {});
     const toolCount = ((tools as { tools?: unknown[] })?.tools ?? []).length;
     const outputs = {
       "kernel-tools.json": tools,
-      "binary-hash-multi.json": await kernel.call("binary_hash_multi", { path: source }),
-      "binary-extract-strings.json": await kernel.call("binary_extract_strings", {
+      "binary-hash-multi.json": await kernel.call("binary_hash_multi", {
         path: source,
-        minLength: 4,
-        maxResults: 32,
       }),
+      "binary-extract-strings.json": await kernel.call(
+        "binary_extract_strings",
+        {
+          path: source,
+          minLength: 4,
+          maxResults: 32,
+        },
+      ),
       "binary-entropy-map.json": await kernel.call("binary_entropy_map", {
         path: source,
         blockSize: 256,
@@ -82,18 +99,24 @@ async function main(): Promise<number> {
         outputPath: join(dirs.session, "xor-output.bin"),
         keyHex: "A5 5A",
       }),
-      "binary-aes-ctr-decrypt.json": await kernel.call("binary_aes_ctr_decrypt", {
-        inputPath: source,
-        outputPath: join(dirs.session, "aes-output.bin"),
-        keyHex: ZERO_128,
-        ivHex: ZERO_128,
-      }),
+      "binary-aes-ctr-decrypt.json": await kernel.call(
+        "binary_aes_ctr_decrypt",
+        {
+          inputPath: source,
+          outputPath: join(dirs.session, "aes-output.bin"),
+          keyHex: ZERO_128,
+          ivHex: ZERO_128,
+        },
+      ),
       "binary-section-dump.json": await kernel.call("binary_section_dump", {
         path: source,
         sectionName: ".text",
         outputPath: join(dirs.session, "pe-text-section.bin"),
       }),
-      "binary-parse-pe-header.json": await kernel.call("binary_parse_pe_header", { path: source }),
+      "binary-parse-pe-header.json": await kernel.call(
+        "binary_parse_pe_header",
+        { path: source },
+      ),
       "aob-scan.json": await kernel.call("aob_scan", {
         path: source,
         pattern: "4D 5A ?",
@@ -101,7 +124,11 @@ async function main(): Promise<number> {
       }),
       "asar-list.json": existsSync(asarPath)
         ? await kernel.call("asar_list", { path: asarPath })
-        : { success: false, skipped: true, error: `app.asar not found: ${asarPath}` },
+        : {
+            success: false,
+            skipped: true,
+            error: `app.asar not found: ${asarPath}`,
+          },
       "os-info.json": await kernel.call("get_os_info"),
       // The GUI consumer asks the kernel, which routes to the owning subsystem.
       "a2a-codex-gui-electron.json": await kernel.a2a(
@@ -130,7 +157,11 @@ async function main(): Promise<number> {
         ...BINARY_OUTPUTS,
       ],
     };
-    writeArtifacts(dirs, { "manifest.json": manifest, ...outputs }, BINARY_OUTPUTS);
+    writeArtifacts(
+      dirs,
+      { "manifest.json": manifest, ...outputs },
+      BINARY_OUTPUTS,
+    );
     console.log(
       JSON.stringify({
         status: "verified-live",

@@ -4,11 +4,10 @@ import { useEffect } from "react";
 
 const EVENT_NAME: string = "subscription_plan_changed_event";
 
-export interface SubscriptionPlanChangedEvent {
-}
+export interface SubscriptionPlanChangedEvent {}
 
 export const useSubscriptionPlanChangedEvent = (
-  asyncCallback: (event: SubscriptionPlanChangedEvent) => Promise<void>
+  asyncCallback: (event: SubscriptionPlanChangedEvent) => Promise<void>,
 ) => {
   useEffect(() => {
     let isUnmounted = false;
@@ -19,7 +18,7 @@ export const useSubscriptionPlanChangedEvent = (
         EVENT_NAME,
         async (wrappedEvent) => {
           await asyncCallback(wrappedEvent.payload.data);
-        }
+        },
       );
 
       if (isUnmounted) {

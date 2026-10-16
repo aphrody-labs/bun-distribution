@@ -82,7 +82,10 @@ function ProviderTooltipContent({
   // Reset selections that are no longer offered for this model.
   useEffect(() => {
     if (!modelId) return;
-    if ((!selectedProvider || !allowedProviders.includes(selectedProvider)) && allowedProviders.length > 0) {
+    if (
+      (!selectedProvider || !allowedProviders.includes(selectedProvider)) &&
+      allowedProviders.length > 0
+    ) {
       setSelectedProvider(page, modelId, allowedProviders[0]);
     }
   }, [page, modelId, selectedProvider, allowedProviders, setSelectedProvider]);
@@ -118,7 +121,11 @@ function ProviderTooltipContent({
             </span>
             {selectedProvider === p && (
               <span className="ml-2 flex h-5 w-5 shrink-0 items-center justify-center text-white">
-                <CheckIcon aria-hidden="true" className="h-4 w-4" strokeWidth={2.5} />
+                <CheckIcon
+                  aria-hidden="true"
+                  className="h-4 w-4"
+                  strokeWidth={2.5}
+                />
               </span>
             )}
           </button>

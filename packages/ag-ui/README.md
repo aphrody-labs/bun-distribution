@@ -9,7 +9,11 @@ One import for the AG-UI protocol in Aphrody surfaces: the `@ag-ui/core` event s
 import { EventEncoder, EventType, decodeProto } from "@aphrody/ag-ui";
 
 const encoder = new EventEncoder();
-const frame = encoder.encodeSSE({ type: EventType.RUN_STARTED, threadId: "t", runId: "r" });
+const frame = encoder.encodeSSE({
+  type: EventType.RUN_STARTED,
+  threadId: "t",
+  runId: "r",
+});
 ```
 
 - Source: `src/index.ts` (re-exports only; no protocol code is copied).

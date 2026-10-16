@@ -5,9 +5,8 @@ interface GenericProviderBillingBlockProps {
 }
 
 export function GenericProviderBillingBlock({
-  provider
+  provider,
 }: GenericProviderBillingBlockProps) {
-
   const serviceProviderName = getServiceProviderName(provider);
 
   return (
@@ -24,7 +23,7 @@ export function GenericProviderBillingBlock({
   );
 }
 
-function getServiceProviderName(provider: GenerationProvider) : string {
+function getServiceProviderName(provider: GenerationProvider): string {
   switch (provider) {
     case GenerationProvider.Sora:
       return "Sora";

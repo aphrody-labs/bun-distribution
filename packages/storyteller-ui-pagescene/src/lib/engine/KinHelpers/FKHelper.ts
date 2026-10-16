@@ -5,7 +5,6 @@ import { TransformControls } from "../TransformControls";
 export const FKHelperSphereName = "__FKHelperSphere__";
 
 export class FKHelper {
-
   private targetBoneSpheres: THREE.Object3D<THREE.Object3DEventMap>[];
   private transformControls: TransformControls;
   private raycaster: THREE.Raycaster;
@@ -26,7 +25,7 @@ export class FKHelper {
     camera,
     domElement,
     scene,
-    onDragChange
+    onDragChange,
   }: {
     camera: THREE.Camera;
     domElement: HTMLElement;
@@ -41,9 +40,12 @@ export class FKHelper {
     this.transformControls.setSpace("local");
     this.transformControls.setMode("rotate");
     this.transformControls.setSize(0.5);
-    this.transformControls.addEventListener("dragging-changed", (event: any) => {
-      onDragChange(event.value);
-    });
+    this.transformControls.addEventListener(
+      "dragging-changed",
+      (event: any) => {
+        onDragChange(event.value);
+      },
+    );
   }
 
   // Set FK target
@@ -68,7 +70,11 @@ export class FKHelper {
 
       // For each target bone, display a sphere to show the FK target and raycast intersect
       const geometry = new THREE.SphereGeometry(0.015, 16, 16);
-      const material = new THREE.MeshBasicMaterial({ color: 0xff0000, depthTest: false, transparent: true });
+      const material = new THREE.MeshBasicMaterial({
+        color: 0xff0000,
+        depthTest: false,
+        transparent: true,
+      });
       const sphere = new THREE.Mesh(geometry, material);
 
       // FIX: Set the sphere scale to counter parent's world scale to remain constant in size
@@ -87,14 +93,20 @@ export class FKHelper {
 
     this.skeletonHelper = new THREE.SkeletonHelper(target);
     this.scene.add(this.skeletonHelper);
-    console.log("All bones:", this.skeletonHelper.bones.map((b) => b.name));
+    console.log(
+      "All bones:",
+      this.skeletonHelper.bones.map((b) => b.name),
+    );
   }
 
   onMouseClick(mouse: THREE.Vector2) {
     // @ts-expect-error — TransformControls.camera is set by the local copy
     // under engine/TransformControls.js but isn't declared in three's types.
     this.raycaster.setFromCamera(mouse, this.transformControls.camera);
-    const intersections = this.raycaster.intersectObjects(this.targetBoneSpheres, false);
+    const intersections = this.raycaster.intersectObjects(
+      this.targetBoneSpheres,
+      false,
+    );
 
     if (intersections.length < 1) {
       console.log("No intersections");
@@ -126,7 +138,7 @@ export class FKHelper {
   private highlightSphere(sphere: THREE.Object3D) {
     this.targetBoneSpheres.forEach((s) => {
       // @ts-expect-error Material on object3d, but it's fine since this is a mesh
-      s.material.opacity = 0.2
+      s.material.opacity = 0.2;
     });
     // @ts-expect-error Material on object3d, but it's fine since this is a mesh
     sphere.material.opacity = 1;

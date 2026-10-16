@@ -1,11 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Database } from "bun:sqlite";
-import { chownSync, linkSync, lstatSync, realpathSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  chownSync,
+  linkSync,
+  lstatSync,
+  realpathSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { join, sep } from "node:path";
 import { parseVerified } from "./shenron-offsite-backup";
 
 const STORES = ["memory.sqlite", "conversations.sqlite"] as const;
-const sha256 = (bytes: Uint8Array) => new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
+const sha256 = (bytes: Uint8Array) =>
+  new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
 function absent(path: string) {
   try {
     lstatSync(path);
@@ -23,13 +31,19 @@ export async function restoreMissingStores(
   owner: { uid: number; gid: number },
   apply = false,
 ) {
-  if (![owner.uid, owner.gid].every((value) => Number.isSafeInteger(value) && value >= 0))
+  if (
+    ![owner.uid, owner.gid].every(
+      (value) => Number.isSafeInteger(value) && value >= 0,
+    )
+  )
     throw Error("Explicit qualified runtime UID/GID required");
   if (lstatSync(snapshot).isSymbolicLink() || lstatSync(data).isSymbolicLink())
     throw Error("Canonical directories must not be symlinks");
   const source = realpathSync(snapshot),
     destination = realpathSync(data);
-  const { files } = parseVerified(await Bun.file(join(source, "VERIFIED.json")).text());
+  const { files } = parseVerified(
+    await Bun.file(join(source, "VERIFIED.json")).text(),
+  );
   const prepared = await Promise.all(
     STORES.map(async (name) => {
       const key = `server/data/${name}.gz`,
@@ -43,7 +57,10 @@ export async function restoreMissingStores(
       )
         throw Error(`Snapshot does not declare canonical store: ${name}`);
       const compressed = await Bun.file(path).bytes();
-      if (compressed.length > 16 * 1024 * 1024 || sha256(compressed) !== files[key])
+      if (
+        compressed.length > 16 * 1024 * 1024 ||
+        sha256(compressed) !== files[key]
+      )
         throw Error(`Snapshot checksum or size differs: ${name}`);
       const bytes = Bun.gunzipSync(compressed);
       if (bytes.length > 64 * 1024 * 1024)
@@ -58,16 +75,25 @@ export async function restoreMissingStores(
       const check = Database.deserialize(validationBytes, { readonly: true });
       let tables: { name: string; rows: number }[] = [];
       try {
-        const result = check.query("PRAGMA quick_check").get() as { quick_check: string };
-        if (result.quick_check !== "ok") throw Error(`SQLite integrity differs: ${name}`);
+        const result = check.query("PRAGMA quick_check").get() as {
+          quick_check: string;
+        };
+        if (result.quick_check !== "ok")
+          throw Error(`SQLite integrity differs: ${name}`);
         tables = (
           check
-            .query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+            .query(
+              "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+            )
             .all() as { name: string }[]
         ).map(({ name: tableName }) => ({
           name: tableName,
           rows: (
-            check.query(`SELECT COUNT(*) AS n FROM "${tableName.replaceAll('"', '""')}"`).get() as {
+            check
+              .query(
+                `SELECT COUNT(*) AS n FROM "${tableName.replaceAll('"', '""')}"`,
+              )
+              .get() as {
               n: number;
             }
           ).n,
@@ -87,7 +113,10 @@ export async function restoreMissingStores(
   );
   for (const store of prepared) {
     if (!apply) continue;
-    const temporary = join(destination, `.restore-${store.name}-${crypto.randomUUID()}`);
+    const temporary = join(
+      destination,
+      `.restore-${store.name}-${crypto.randomUUID()}`,
+    );
     try {
       writeFileSync(temporary, store.bytes, { flag: "wx", mode: 0o600 });
       chownSync(temporary, owner.uid, owner.gid);
@@ -114,7 +143,13 @@ export async function restoreMissingStores(
 
 if (import.meta.main) {
   const [snapshot, data, uid, gid, flag] = process.argv.slice(2);
-  if (!snapshot || !data || uid === undefined || gid === undefined || (flag && flag !== "--apply"))
+  if (
+    !snapshot ||
+    !data ||
+    uid === undefined ||
+    gid === undefined ||
+    (flag && flag !== "--apply")
+  )
     throw Error("Expected SNAPSHOT CANONICAL_DATA UID GID [--apply]");
   console.log(
     JSON.stringify(

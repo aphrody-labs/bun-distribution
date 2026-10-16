@@ -42,9 +42,22 @@ test("passes task literally to the owner CLI and preserves its failure", async (
 
 test("preview needs no owner executable", async () => {
   const child = Bun.spawn(
-    [process.execPath, yolo, "optimize", "--print", "deduplicate selected imports"],
-    { windowsHide: true, env: { ...process.env, PATH: "" }, stdout: "pipe", stderr: "pipe" },
+    [
+      process.execPath,
+      yolo,
+      "optimize",
+      "--print",
+      "deduplicate selected imports",
+    ],
+    {
+      windowsHide: true,
+      env: { ...process.env, PATH: "" },
+      stdout: "pipe",
+      stderr: "pipe",
+    },
   );
   expect(await child.exited).toBe(0);
-  expect(await new Response(child.stdout).text()).toContain("deduplicate selected imports");
+  expect(await new Response(child.stdout).text()).toContain(
+    "deduplicate selected imports",
+  );
 });

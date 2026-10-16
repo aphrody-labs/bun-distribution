@@ -1,12 +1,26 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
-import { mkdirSync, readdirSync, lstatSync, copyFileSync, rmSync } from "node:fs";
+import {
+  mkdirSync,
+  readdirSync,
+  lstatSync,
+  copyFileSync,
+  rmSync,
+} from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { activeDeployment, deploymentSelection } from "./shenron-deployment-identity.ts";
+import {
+  activeDeployment,
+  deploymentSelection,
+} from "./shenron-deployment-identity.ts";
 
-const infra = resolve(dirname(fileURLToPath(import.meta.url)), "../../../docs/aphrody");
-const config = await Bun.file(join(infra, "tools/config/shenron-auto-deploy.json")).json();
+const infra = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  "../../../docs/aphrody",
+);
+const config = await Bun.file(
+  join(infra, "tools/config/shenron-auto-deploy.json"),
+).json();
 const [sha, image, work, job, previous] = process.argv.slice(2);
 const selection = deploymentSelection(sha ?? "", config);
 if (
@@ -19,13 +33,29 @@ if (
   throw new Error("Invalid promotion identity");
 const env = { ...process.env, APHRODY_SSH_COMMAND_TIMEOUT_SECS: "1800" };
 function command(args: string[], inherit = false): string {
-  const p = Bun.spawnSync(args, { env, stdout: inherit ? "inherit" : "pipe", stderr: "inherit" });
-  if (p.exitCode !== 0) throw new Error(`Promotion command failed: ${args[0]} ${args[1] ?? ""}`);
+  const p = Bun.spawnSync(args, {
+    env,
+    stdout: inherit ? "inherit" : "pipe",
+    stderr: "inherit",
+  });
+  if (p.exitCode !== 0)
+    throw new Error(`Promotion command failed: ${args[0]} ${args[1] ?? ""}`);
   return inherit ? "" : (p.stdout?.toString().trim() ?? "");
 }
 function remote(code: string, inherit = false): string {
   return command(
-    ["aphrody", "infra", "--root", infra, "ssh", "exec", "--host", config.targetHost, "-c", code],
+    [
+      "aphrody",
+      "infra",
+      "--root",
+      infra,
+      "ssh",
+      "exec",
+      "--host",
+      config.targetHost,
+      "-c",
+      code,
+    ],
     inherit,
   );
 }
@@ -62,7 +92,10 @@ if (
   !Object.keys(entries).some((p) => p.startsWith("_next/static/"))
 )
   throw new Error("CDN artifact incomplete");
-await Bun.Archive.write(join(upload, "cdn.tar.gz"), entries, { compress: "gzip", level: 3 });
+await Bun.Archive.write(join(upload, "cdn.tar.gz"), entries, {
+  compress: "gzip",
+  level: 3,
+});
 for (const name of [
   "prepare-shenron-auto-release.py",
   "stage-shenron-cdn.py",
@@ -71,17 +104,25 @@ for (const name of [
 ])
   copyFileSync(join(infra, "scripts/release", name), join(upload, name));
 if (selection.deployment)
-  await Bun.write(join(upload, "deployment.json"), JSON.stringify(selection.deployment) + "\n");
+  await Bun.write(
+    join(upload, "deployment.json"),
+    JSON.stringify(selection.deployment) + "\n",
+  );
 const checksums: Record<string, string> = {};
 await Promise.all(
   readdirSync(upload).map(async (name) => {
     checksums[name] = await digest(join(upload, name));
   }),
 );
-await Bun.write(join(upload, "checksums.json"), JSON.stringify(checksums) + "\n");
+await Bun.write(
+  join(upload, "checksums.json"),
+  JSON.stringify(checksums) + "\n",
+);
 const destination = `/tmp/shenron-auto-${selection.id}`;
 remote(
-  js(`require("node:fs").mkdirSync(${JSON.stringify(destination)},{recursive:true,mode:0o700})`),
+  js(
+    `require("node:fs").mkdirSync(${JSON.stringify(destination)},{recursive:true,mode:0o700})`,
+  ),
 );
 command(
   [
@@ -120,7 +161,9 @@ const activeIdentity = activeDeployment(
 if (activeIdentity.id !== previous)
   throw new Error("Production changed during build; candidate preserved");
 remote(`sudo -n docker image load --input ${destination}/image.tar`, true);
-const remoteImage = remote(`sudo -n docker image inspect -f '{{.Id}}' ${image}`);
+const remoteImage = remote(
+  `sudo -n docker image inspect -f '{{.Id}}' ${image}`,
+);
 if (remoteImage !== image) throw new Error("Loaded image differs");
 const release = `${config.remoteRoot}/releases/${selection.releaseName}`;
 const prepare = [
@@ -139,13 +182,18 @@ const prepare = [
   image!,
   "--artifact",
   `${destination}/cdn`,
-  ...(selection.deployment ? ["--deployment", `${destination}/deployment.json`] : []),
+  ...(selection.deployment
+    ? ["--deployment", `${destination}/deployment.json`]
+    : []),
 ]
   .map(quote)
   .join(" ");
 remote(prepare + " --plan", true);
 remote(prepare + " --apply", true);
-remote(`sudo -n /usr/local/sbin/aphrody-infra-deploy-shenron verify ${release}`, true);
+remote(
+  `sudo -n /usr/local/sbin/aphrody-infra-deploy-shenron verify ${release}`,
+  true,
+);
 command(
   [
     "aphrody",
@@ -181,6 +229,10 @@ await Bun.write(
     2,
   ) + "\n",
 );
-remote(js(`require("node:fs").rmSync(${JSON.stringify(destination)},{recursive:true})`));
+remote(
+  js(
+    `require("node:fs").rmSync(${JSON.stringify(destination)},{recursive:true})`,
+  ),
+);
 rmSync(upload, { recursive: true });
 console.log(`Activated Shenron ${sha}`);

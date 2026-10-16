@@ -28,9 +28,7 @@ export function StylePromptRow({
         className,
       )}
     >
-      <TagsIcon
-        
-        className="h-3.5 w-3.5 shrink-0 text-base-fg/40" />
+      <TagsIcon className="h-3.5 w-3.5 shrink-0 text-base-fg/40" />
       <input
         type="text"
         value={value}
@@ -45,7 +43,7 @@ export function StylePromptRow({
           onClick={() => onChange("")}
           className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[3px] text-base-fg/40 transition-colors hover:bg-white/10 hover:text-base-fg"
         >
-          <XIcon  className="h-3 w-3" />
+          <XIcon className="h-3 w-3" />
         </button>
       )}
     </div>

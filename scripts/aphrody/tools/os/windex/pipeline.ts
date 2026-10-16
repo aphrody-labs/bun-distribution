@@ -65,13 +65,19 @@ export type ScanReport = ScanStats & {
 };
 
 /** Hash policy of a path: the deepest registered root containing it wins, else the request's own. */
-export function hashPolicy(registered: Root[], fallback: HashMode): (path: string) => HashMode {
+export function hashPolicy(
+  registered: Root[],
+  fallback: HashMode,
+): (path: string) => HashMode {
   const sorted = registered.toSorted((a, b) => b.path.length - a.path.length);
-  return (path) => sorted.find((r) => underRoot(path, r.path))?.hashMode ?? fallback;
+  return (path) =>
+    sorted.find((r) => underRoot(path, r.path))?.hashMode ?? fallback;
 }
 
 /** Records the journal position before a walk so the watcher replays whatever changes during it. */
-function journalCheckpoint(drive: string): { journalId: bigint; nextUsn: bigint } | null {
+function journalCheckpoint(
+  drive: string,
+): { journalId: bigint; nextUsn: bigint } | null {
   try {
     const vol = Volume.open(drive);
     try {
@@ -104,14 +110,20 @@ export async function scan(
     const stored = await getVolume(sql, drive);
     // Keep an older watcher checkpoint (it replays more); seed one when there is none or the journal changed.
     if (!stored || stored.journalId !== checkpoint.journalId) {
-      await setVolume(sql, { letter: drive, serial: volumeSerial(`${drive}:\\`), ...checkpoint });
+      await setVolume(sql, {
+        letter: drive,
+        serial: volumeSerial(`${drive}:\\`),
+        ...checkpoint,
+      });
     }
   }
   let mft: MftIndex | undefined;
   if (isVolume && checkpoint) {
     log(`lecture de la MFT ${drive}: ...`);
     mft = readMft(drive);
-    log(`MFT ${drive}: ${mft.records} enregistrements en ${Math.round(mft.ms)} ms`);
+    log(
+      `MFT ${drive}: ${mft.records} enregistrements en ${Math.round(mft.ms)} ms`,
+    );
   }
   const prev = req.full ? undefined : await previousState(sql, root);
   if (prev) log(`état précédent : ${prev.size} fichiers`);
@@ -175,8 +187,13 @@ export async function scan(
     services = await loadServices(sql);
     log(`services et pilotes : ${services}`);
   }
-  const catalog = req.catalog === false ? null : await catalogPass(sql, pool, root, log);
-  await upsertRoot(sql, { path: root, hashMode: req.hash, graph: req.graph }, stats);
+  const catalog =
+    req.catalog === false ? null : await catalogPass(sql, pool, root, log);
+  await upsertRoot(
+    sql,
+    { path: root, hashMode: req.hash, graph: req.graph },
+    stats,
+  );
 
   let invalidated: number | null = null;
   if (redis) {
@@ -187,8 +204,11 @@ export async function scan(
     }
   }
   const snapshot =
-    (req.export ?? isVolume) ? await exportSnapshot(sql, root, driveDir(cfg.dir, drive)) : null;
-  if (snapshot) log(`instantané NDJSON : ${snapshot.file} (${snapshot.entries} entrées)`);
+    (req.export ?? isVolume)
+      ? await exportSnapshot(sql, root, driveDir(cfg.dir, drive))
+      : null;
+  if (snapshot)
+    log(`instantané NDJSON : ${snapshot.file} (${snapshot.entries} entrées)`);
   return {
     ...stats,
     peWritten: peIds.length,
@@ -239,7 +259,9 @@ export async function catalogPass(
       );
     }
     await Promise.all(jobs);
-    log(`catalogues : ${stats.checked} images vérifiées, ${stats.catalog} signées par catalogue`);
+    log(
+      `catalogues : ${stats.checked} images vérifiées, ${stats.catalog} signées par catalogue`,
+    );
   }
   stats.ms = performance.now() - t0;
   return stats;

@@ -12,19 +12,35 @@ interface SortMenuPanelProps {
   viewMode: "grid" | "list" | "media" | "column";
 }
 
-export function SortMenuPanel({ sortBy, onSortChange, viewMode }: SortMenuPanelProps) {
+export function SortMenuPanel({
+  sortBy,
+  onSortChange,
+  viewMode,
+}: SortMenuPanelProps) {
   const sortOptions =
     viewMode === "media"
       ? [
           { value: "datetaken", label: "Date de prise", icon: "photo_camera" },
-          { value: "modified", label: "Date de modification", icon: "calendar_today" },
-          { value: "created", label: "Date de création", icon: "calendar_today" },
+          {
+            value: "modified",
+            label: "Date de modification",
+            icon: "calendar_today",
+          },
+          {
+            value: "created",
+            label: "Date de création",
+            icon: "calendar_today",
+          },
           { value: "name", label: "Nom", icon: "sort_by_alpha" },
           { value: "size", label: "Taille", icon: "straighten" },
         ]
       : [
           { value: "name", label: "Nom", icon: "sort_by_alpha" },
-          { value: "modified", label: "Date de modification", icon: "calendar_today" },
+          {
+            value: "modified",
+            label: "Date de modification",
+            icon: "calendar_today",
+          },
           { value: "size", label: "Taille", icon: "straighten" },
           { value: "type", label: "Type", icon: "description" },
         ];
@@ -78,7 +94,12 @@ interface SortMenuProps {
   className?: string;
 }
 
-export function SortMenu({ sortBy, onSortChange, viewMode, className }: SortMenuProps) {
+export function SortMenu({
+  sortBy,
+  onSortChange,
+  viewMode,
+  className,
+}: SortMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -110,7 +131,8 @@ export function SortMenu({ sortBy, onSortChange, viewMode, className }: SortMenu
 
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [isOpen]);
 
@@ -135,12 +157,18 @@ export function SortMenu({ sortBy, onSortChange, viewMode, className }: SortMenu
               animate={{
                 opacity: 1,
                 y: 0,
-                transition: { duration: m3Durations.medium1, ease: m3Easings.emphasizedDecelerate },
+                transition: {
+                  duration: m3Durations.medium1,
+                  ease: m3Easings.emphasizedDecelerate,
+                },
               }}
               exit={{
                 opacity: 0,
                 y: -8,
-                transition: { duration: m3Durations.short3, ease: m3Easings.emphasizedAccelerate },
+                transition: {
+                  duration: m3Durations.short3,
+                  ease: m3Easings.emphasizedAccelerate,
+                },
               }}
               style={{
                 position: "fixed",
@@ -149,7 +177,11 @@ export function SortMenu({ sortBy, onSortChange, viewMode, className }: SortMenu
               }}
               className="z-50"
             >
-              <SortMenuPanel sortBy={sortBy} onSortChange={onSortChange} viewMode={viewMode} />
+              <SortMenuPanel
+                sortBy={sortBy}
+                onSortChange={onSortChange}
+                viewMode={viewMode}
+              />
             </motion.div>
           </AnimatePresence>,
           document.body,

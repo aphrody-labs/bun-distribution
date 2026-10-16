@@ -158,7 +158,7 @@ export class MediaFilesApi extends ApiManager {
   }
 
   public async ListMediaFiles(
-    query: ListMediaQuery
+    query: ListMediaQuery,
   ): Promise<ApiResponse<MediaFile[], PaginationInfinite>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/list`;
     const queryWithStrings = {
@@ -192,7 +192,7 @@ export class MediaFilesApi extends ApiManager {
   }
 
   public async ListFeaturedMediaFiles(
-    query: ListMediaQuery
+    query: ListMediaQuery,
   ): Promise<ApiResponse<MediaFile[], PaginationInfinite>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/list_featured`;
     const queryWithStrings = {
@@ -227,7 +227,7 @@ export class MediaFilesApi extends ApiManager {
 
   /** List the session user's mesh files (`media_class = 'mesh'`), paginated. */
   public async ListSessionMeshMediaFiles(
-    query: ListSessionMediaByClassQuery = {}
+    query: ListSessionMediaByClassQuery = {},
   ): Promise<ApiResponse<MediaFile[], PaginationInfinite>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/mesh/list`;
     return await this.get<{
@@ -250,7 +250,7 @@ export class MediaFilesApi extends ApiManager {
 
   /** List the session user's gaussian splat files (`media_class = 'splat'`), paginated. */
   public async ListSessionSplatMediaFiles(
-    query: ListSessionMediaByClassQuery = {}
+    query: ListSessionMediaByClassQuery = {},
   ): Promise<ApiResponse<MediaFile[], PaginationInfinite>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/splat/list`;
     return await this.get<{
@@ -272,7 +272,7 @@ export class MediaFilesApi extends ApiManager {
   }
 
   public async ListUserMediaFiles(
-    query: ListUserMediaQuery
+    query: ListUserMediaQuery,
   ): Promise<ApiResponse<MediaFile[], Pagination>> {
     const userName = query.username;
     const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/list/user/${userName}`;
@@ -314,7 +314,7 @@ export class MediaFilesApi extends ApiManager {
   }
 
   public async SearchFeaturedMediaFiles(
-    query: SearchFeaturedMediaQuery
+    query: SearchFeaturedMediaQuery,
   ): Promise<ApiResponse<MediaFile[], Pagination>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/search_featured`;
     const queryWithStrings = {
@@ -346,7 +346,7 @@ export class MediaFilesApi extends ApiManager {
   }
 
   public async SearchUserMediaFiles(
-    query: SearchFeaturedMediaQuery
+    query: SearchFeaturedMediaQuery,
   ): Promise<ApiResponse<MediaFile[], Pagination>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/search_session`;
     const queryWithStrings = {

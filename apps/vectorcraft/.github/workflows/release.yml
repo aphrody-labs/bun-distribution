@@ -65,7 +65,7 @@ jobs:
   macos:
     name: macOS universal
     needs: version
-    runs-on: macos-15-xlarge  # M2 Pro larger runner; use only in release.yml (actions_macos_xl budget caps spend)
+    runs-on: macos-15-xlarge # M2 Pro larger runner; use only in release.yml (actions_macos_xl budget caps spend)
     environment: release
     env:
       VECTORCRAFT_VERSION: ${{ needs.version.outputs.version }}
@@ -461,7 +461,8 @@ jobs:
     name: Draft GitHub Release
     # Needs the signed jobs, so a branch dry run (where the environment refuses them) never
     # drafts a release.
-    needs: [version, macos, windows, linux, linux-riscv64, flatpak, freebsd, web]
+    needs:
+      [version, macos, windows, linux, linux-riscv64, flatpak, freebsd, web]
     runs-on: ubuntu-latest
     environment: release
     permissions:

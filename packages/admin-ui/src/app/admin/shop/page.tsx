@@ -34,7 +34,10 @@ export interface ShopItem {
   enabled: boolean | number;
 }
 
-const TYPE_META: Record<ShopItem["type"], { label: string; color: string; kanji: string }> = {
+const TYPE_META: Record<
+  ShopItem["type"],
+  { label: string; color: string; kanji: string }
+> = {
   title: { label: "Titre", color: "text-purple-400", kanji: "号" },
   badge: { label: "Badge", color: "text-fuchsia-400", kanji: "章" },
   card: { label: "Carte de profil", color: "text-amber-400", kanji: "札" },
@@ -50,16 +53,36 @@ const BADGE_PRESETS = [
 ];
 
 const CARD_THEME_PRESETS = [
-  { id: "default", name: "DB Classic", accent: "#F3E603", banner: "assets/banners/banner-17.jpg" },
-  { id: "goku", name: "Son Goku", accent: "#F85B1A", banner: "assets/banners/banner-08.jpg" },
+  {
+    id: "default",
+    name: "DB Classic",
+    accent: "#F3E603",
+    banner: "assets/banners/banner-17.jpg",
+  },
+  {
+    id: "goku",
+    name: "Son Goku",
+    accent: "#F85B1A",
+    banner: "assets/banners/banner-08.jpg",
+  },
   {
     id: "vegeta",
     name: "Prince Vegeta",
     accent: "#2955DC",
     banner: "assets/banners/banner-03.png",
   },
-  { id: "kaio", name: "Kaio-ken", accent: "#FA0011", banner: "assets/banners/banner-10.jpg" },
-  { id: "ssj", name: "Super Saiyan", accent: "#F9EE54", banner: "assets/banners/banner-04.jpg" },
+  {
+    id: "kaio",
+    name: "Kaio-ken",
+    accent: "#FA0011",
+    banner: "assets/banners/banner-10.jpg",
+  },
+  {
+    id: "ssj",
+    name: "Super Saiyan",
+    accent: "#F9EE54",
+    banner: "assets/banners/banner-04.jpg",
+  },
   {
     id: "blue",
     name: "Super Saiyan Blue",
@@ -80,7 +103,11 @@ const CARD_THEME_PRESETS = [
   },
 ];
 
-const FALLBACK_TYPE_META = { label: "Inconnu", color: "text-zinc-400", kanji: "物" };
+const FALLBACK_TYPE_META = {
+  label: "Inconnu",
+  color: "text-zinc-400",
+  kanji: "物",
+};
 
 type MainTab = "all" | "titles_and_badges" | "card" | "banner" | "color";
 
@@ -145,7 +172,8 @@ export default function ShopPage() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<ShopItem | null>(null);
   const [creating, setCreating] = useState(false);
-  const [creatingDefaultType, setCreatingDefaultType] = useState<ShopItem["type"]>("title");
+  const [creatingDefaultType, setCreatingDefaultType] =
+    useState<ShopItem["type"]>("title");
   const [search, setSearch] = useState("");
   const [mainTab, setMainTab] = useState<MainTab>("titles_and_badges");
   const [subFilter, setSubFilter] = useState<"all" | "title" | "badge">("all");
@@ -178,7 +206,9 @@ export default function ShopPage() {
       try {
         return await api.delete(`/shop/${encodeURIComponent(key)}`);
       } catch {
-        return await api.delete(`/database/shop_items/${encodeURIComponent(key)}`);
+        return await api.delete(
+          `/database/shop_items/${encodeURIComponent(key)}`,
+        );
       }
     },
     onSuccess: () => {
@@ -193,9 +223,12 @@ export default function ShopPage() {
       try {
         return await api.patch(`/shop/${encodeURIComponent(item.key)}`);
       } catch {
-        return await api.put(`/database/shop_items/${encodeURIComponent(item.key)}`, {
-          enabled: newEnabled,
-        });
+        return await api.put(
+          `/database/shop_items/${encodeURIComponent(item.key)}`,
+          {
+            enabled: newEnabled,
+          },
+        );
       }
     },
     onSuccess: () => {
@@ -224,7 +257,11 @@ export default function ShopPage() {
 
       if (search) {
         const s = search.toLowerCase();
-        if (!r.key.toLowerCase().includes(s) && !r.name.toLowerCase().includes(s)) return false;
+        if (
+          !r.key.toLowerCase().includes(s) &&
+          !r.name.toLowerCase().includes(s)
+        )
+          return false;
       }
       return true;
     });
@@ -241,7 +278,9 @@ export default function ShopPage() {
         },
         {} as Record<string, number>,
       ),
-      titlesAndBadges: allRows.filter((r) => r.type === "title" || r.type === "badge").length,
+      titlesAndBadges: allRows.filter(
+        (r) => r.type === "title" || r.type === "badge",
+      ).length,
     };
   }, [allRows]);
 
@@ -265,7 +304,9 @@ export default function ShopPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Sac className="h-5 w-5 text-brand-400" />
-            <h2 className="text-lg font-semibold">Gestion de la Boutique Shenron</h2>
+            <h2 className="text-lg font-semibold">
+              Gestion de la Boutique Shenron
+            </h2>
             <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400">
               {stats.total} articles · {stats.enabled} actifs
             </span>
@@ -296,8 +337,9 @@ export default function ShopPage() {
         </div>
 
         <p className="text-xs text-zinc-400">
-          Gérez les cosmétiques achetables avec des Zénis. Un article masqué reste en base pour les
-          inventaires existants mais n&apos;apparaît plus à la vente.
+          Gérez les cosmétiques achetables avec des Zénis. Un article masqué
+          reste en base pour les inventaires existants mais n&apos;apparaît plus
+          à la vente.
         </p>
 
         {/* Onglets principaux de navigation avec fusion Titres & Badges */}
@@ -437,8 +479,8 @@ export default function ShopPage() {
               </div>
             </div>
             <span className="text-[11px] text-zinc-400">
-              Badges d&apos;emblèmes (Kame, Kaiô...) et Titres textuels honorifiques (Budokai,
-              Capsule...)
+              Badges d&apos;emblèmes (Kame, Kaiô...) et Titres textuels
+              honorifiques (Budokai, Capsule...)
             </span>
           </div>
         )}
@@ -483,7 +525,8 @@ export default function ShopPage() {
           const meta = parseMeta(item.meta);
           const isEnabled = Boolean(item.enabled);
           const badgePath = (meta?.badgePath as string) || null;
-          const bannerPath = (meta?.bannerPath as string) || (meta?.bgFile as string) || null;
+          const bannerPath =
+            (meta?.bannerPath as string) || (meta?.bgFile as string) || null;
           const cardAccent = (meta?.accent as string) || null;
 
           return (
@@ -509,9 +552,13 @@ export default function ShopPage() {
                   </div>
                   <div className="flex items-center gap-1">
                     {isEnabled ? (
-                      <span className="badge badge-success text-[10px]">Actif</span>
+                      <span className="badge badge-success text-[10px]">
+                        Actif
+                      </span>
                     ) : (
-                      <span className="badge badge-error text-[10px]">Masqué</span>
+                      <span className="badge badge-error text-[10px]">
+                        Masqué
+                      </span>
                     )}
                   </div>
                 </div>
@@ -568,7 +615,9 @@ export default function ShopPage() {
                         background: cardAccent
                           ? `linear-gradient(135deg, ${cardAccent}33, #0a0a0c)`
                           : "#121215",
-                        borderLeft: cardAccent ? `4px solid ${cardAccent}` : undefined,
+                        borderLeft: cardAccent
+                          ? `4px solid ${cardAccent}`
+                          : undefined,
                       }}
                     >
                       {bannerPath && (
@@ -582,9 +631,13 @@ export default function ShopPage() {
                         <span className="text-[10px] uppercase tracking-wider text-amber-300/80">
                           Fond de carte
                         </span>
-                        <p className="text-xs font-bold text-white truncate">{item.name}</p>
+                        <p className="text-xs font-bold text-white truncate">
+                          {item.name}
+                        </p>
                       </div>
-                      <span className="relative z-10 font-saiyan text-2xl text-amber-400">札</span>
+                      <span className="relative z-10 font-saiyan text-2xl text-amber-400">
+                        札
+                      </span>
                     </div>
                   )}
 
@@ -594,7 +647,9 @@ export default function ShopPage() {
                         <span
                           className="h-3.5 w-3.5 rounded-full"
                           style={{
-                            background: item.name.toLowerCase().includes("rouge")
+                            background: item.name
+                              .toLowerCase()
+                              .includes("rouge")
                               ? "#ef4444"
                               : item.name.toLowerCase().includes("bleu")
                                 ? "#3b82f6"
@@ -602,28 +657,40 @@ export default function ShopPage() {
                                   ? "#22c55e"
                                   : item.name.toLowerCase().includes("orange")
                                     ? "#f97316"
-                                    : item.name.toLowerCase().includes("violet") ||
+                                    : item.name
+                                          .toLowerCase()
+                                          .includes("violet") ||
                                         item.name.toLowerCase().includes("rose")
                                       ? "#a855f7"
                                       : item.name.toLowerCase().includes("noir")
                                         ? "#18181b"
-                                        : item.name.toLowerCase().includes("blanc")
+                                        : item.name
+                                              .toLowerCase()
+                                              .includes("blanc")
                                           ? "#fafafa"
                                           : "#eab308",
                           }}
                         />
-                        <span className="text-xs font-medium text-white">{item.name}</span>
+                        <span className="text-xs font-medium text-white">
+                          {item.name}
+                        </span>
                       </div>
                     </div>
                   )}
                 </div>
 
                 {/* Titre & slug */}
-                <h3 className="font-semibold text-white leading-tight truncate">{item.name}</h3>
-                <code className="block truncate text-[10px] text-zinc-500 mt-0.5">{item.key}</code>
+                <h3 className="font-semibold text-white leading-tight truncate">
+                  {item.name}
+                </h3>
+                <code className="block truncate text-[10px] text-zinc-500 mt-0.5">
+                  {item.key}
+                </code>
 
                 {item.description && (
-                  <p className="mt-1.5 line-clamp-2 text-xs text-zinc-400">{item.description}</p>
+                  <p className="mt-1.5 line-clamp-2 text-xs text-zinc-400">
+                    {item.description}
+                  </p>
                 )}
               </div>
 
@@ -648,7 +715,11 @@ export default function ShopPage() {
                         ? "text-emerald-400 hover:text-emerald-300"
                         : "text-zinc-500 hover:text-zinc-300",
                     )}
-                    title={isEnabled ? "Désactiver (masquer)" : "Activer (rendre visible)"}
+                    title={
+                      isEnabled
+                        ? "Désactiver (masquer)"
+                        : "Activer (rendre visible)"
+                    }
                   >
                     {isEnabled ? (
                       <Alimentation className="h-3.5 w-3.5" />
@@ -700,7 +771,11 @@ export default function ShopPage() {
           }}
           onSaved={() => {
             qc.invalidateQueries({ queryKey: ["shop"] });
-            showSuccess(editing ? "Article modifié avec succès." : "Article créé avec succès.");
+            showSuccess(
+              editing
+                ? "Article modifié avec succès."
+                : "Article créé avec succès.",
+            );
           }}
         />
       )}
@@ -758,7 +833,10 @@ function ShopItemEditor({
       try {
         return await api.put(`/shop/${encodeURIComponent(payload.key)}`, data);
       } catch {
-        return await api.put(`/database/shop_items/${encodeURIComponent(payload.key)}`, data);
+        return await api.put(
+          `/database/shop_items/${encodeURIComponent(payload.key)}`,
+          data,
+        );
       }
     },
     onSuccess: () => {
@@ -867,11 +945,15 @@ function ShopItemEditor({
           </div>
 
           <div>
-            <label className="block text-xs text-zinc-400 mb-1">Type d&apos;article</label>
+            <label className="block text-xs text-zinc-400 mb-1">
+              Type d&apos;article
+            </label>
             <select
               className="input w-full"
               value={draft.type}
-              onChange={(e) => setDraft({ ...draft, type: e.target.value as ShopItem["type"] })}
+              onChange={(e) =>
+                setDraft({ ...draft, type: e.target.value as ShopItem["type"] })
+              }
             >
               <optgroup label="Distinctions (Unifié)">
                 <option value="title">📜 Titre honorifique</option>
@@ -886,13 +968,17 @@ function ShopItemEditor({
           </div>
 
           <div className="sm:col-span-2">
-            <label className="block text-xs text-zinc-400 mb-1">Nom affiché dans la boutique</label>
+            <label className="block text-xs text-zinc-400 mb-1">
+              Nom affiché dans la boutique
+            </label>
             <input
               className="input w-full"
               value={draft.name}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
               placeholder={
-                draft.type === "title" ? "Champion du Tenkaichi Budokai" : "Nom du cosmétique"
+                draft.type === "title"
+                  ? "Champion du Tenkaichi Budokai"
+                  : "Nom du cosmétique"
               }
             />
           </div>
@@ -940,7 +1026,9 @@ function ShopItemEditor({
           )}
 
           <div className="sm:col-span-2">
-            <label className="block text-xs text-zinc-400 mb-1">Description (optionnelle)</label>
+            <label className="block text-xs text-zinc-400 mb-1">
+              Description (optionnelle)
+            </label>
             <PlainField
               value={draft.description ?? ""}
               onChange={(v) => setDraft({ ...draft, description: v })}
@@ -951,18 +1039,24 @@ function ShopItemEditor({
           </div>
 
           <div>
-            <label className="block text-xs text-zinc-400 mb-1">Prix en zénis</label>
+            <label className="block text-xs text-zinc-400 mb-1">
+              Prix en zénis
+            </label>
             <input
               className="input w-full font-mono"
               type="number"
               min={0}
               value={draft.price}
-              onChange={(e) => setDraft({ ...draft, price: Number(e.target.value) || 0 })}
+              onChange={(e) =>
+                setDraft({ ...draft, price: Number(e.target.value) || 0 })
+              }
             />
           </div>
 
           <div>
-            <label className="block text-xs text-zinc-400 mb-1">Visibilité dans la boutique</label>
+            <label className="block text-xs text-zinc-400 mb-1">
+              Visibilité dans la boutique
+            </label>
             <button
               type="button"
               className={`btn ${draft.enabled ? "btn-primary" : "btn-ghost"} w-full justify-center`}
@@ -974,14 +1068,17 @@ function ShopItemEditor({
                 </>
               ) : (
                 <>
-                  <AlimentationCoupee className="h-3.5 w-3.5" /> Masqué (inactif)
+                  <AlimentationCoupee className="h-3.5 w-3.5" /> Masqué
+                  (inactif)
                 </>
               )}
             </button>
           </div>
 
           {/* Rôle Discord associé : disponible pour couleurs, titres ET badges */}
-          {(draft.type === "color" || draft.type === "title" || draft.type === "badge") && (
+          {(draft.type === "color" ||
+            draft.type === "title" ||
+            draft.type === "badge") && (
             <div className="sm:col-span-2">
               <label className="block text-xs text-zinc-400 mb-1">
                 Rôle Discord attribué à l&apos;achat / équipement
@@ -1001,7 +1098,9 @@ function ShopItemEditor({
           <div className="sm:col-span-2">
             <label className="block text-xs text-zinc-400 mb-1">
               Données Méta (JSON optionnel)
-              <span className="ml-1 text-zinc-500">— badgePath, bannerPath, themeId, accent…</span>
+              <span className="ml-1 text-zinc-500">
+                — badgePath, bannerPath, themeId, accent…
+              </span>
             </label>
             <PlainField
               value={draft.meta ?? ""}
@@ -1016,7 +1115,11 @@ function ShopItemEditor({
         </div>
 
         <div className="flex items-center gap-2 border-t border-zinc-800 pt-3">
-          <button type="submit" className="btn btn-primary" disabled={save.isPending}>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={save.isPending}
+          >
             <Enregistrer className="h-3.5 w-3.5" />
             {save.isPending
               ? "Enregistrement…"

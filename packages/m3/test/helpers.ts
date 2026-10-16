@@ -22,7 +22,12 @@ export function fakeCss() {
 }
 
 /** A fresh temporary directory, removed by the returned disposer. */
-export async function tempDir(prefix = "m3-test-"): Promise<{ dir: string; [Symbol.asyncDispose](): Promise<void> }> {
+export async function tempDir(
+  prefix = "m3-test-",
+): Promise<{ dir: string; [Symbol.asyncDispose](): Promise<void> }> {
   const dir = await mkdtemp(join(tmpdir(), prefix));
-  return { dir, [Symbol.asyncDispose]: () => rm(dir, { recursive: true, force: true }) };
+  return {
+    dir,
+    [Symbol.asyncDispose]: () => rm(dir, { recursive: true, force: true }),
+  };
 }

@@ -1,7 +1,12 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, Ticket as TicketIcon, RefreshCw, ExternalLink } from "lucide-react";
+import {
+  Lock,
+  Ticket as TicketIcon,
+  RefreshCw,
+  ExternalLink,
+} from "lucide-react";
 import { useState } from "react";
 import { api } from "@aphrody/admin-ui/client";
 import { TicketAccessPanel } from "./TicketAccessPanel";
@@ -18,29 +23,31 @@ interface TicketRow {
   createdAt: string;
 }
 
-const KIND_LABEL: Record<TicketRow["kind"], { label: string; color: string; description: string }> =
-  {
-    report: {
-      label: "Signalement",
-      color: "text-red-400 border-red-500/40",
-      description: "Signalement d'un problème ou d'un utilisateur",
-    },
-    achat: {
-      label: "Achat",
-      color: "text-blue-400 border-blue-500/40",
-      description: "Demande liée à un achat dans la boutique",
-    },
-    shop: {
-      label: "Boutique",
-      color: "text-dbz-yellow border-dbz-yellow/40",
-      description: "Question ou problème sur la boutique",
-    },
-    abus: {
-      label: "Abus de permission",
-      color: "text-orange-400 border-orange-500/40",
-      description: "Signalement d'un abus de modération",
-    },
-  };
+const KIND_LABEL: Record<
+  TicketRow["kind"],
+  { label: string; color: string; description: string }
+> = {
+  report: {
+    label: "Signalement",
+    color: "text-red-400 border-red-500/40",
+    description: "Signalement d'un problème ou d'un utilisateur",
+  },
+  achat: {
+    label: "Achat",
+    color: "text-blue-400 border-blue-500/40",
+    description: "Demande liée à un achat dans la boutique",
+  },
+  shop: {
+    label: "Boutique",
+    color: "text-dbz-yellow border-dbz-yellow/40",
+    description: "Question ou problème sur la boutique",
+  },
+  abus: {
+    label: "Abus de permission",
+    color: "text-orange-400 border-orange-500/40",
+    description: "Signalement d'un abus de modération",
+  },
+};
 
 export default function TicketsPage() {
   const qc = useQueryClient();
@@ -50,7 +57,9 @@ export default function TicketsPage() {
     queryKey: ["tickets", filter],
     queryFn: () =>
       api.get<{ rows: TicketRow[]; total: number }>(
-        filter === "all" ? "/tickets" : `/tickets?closed=${filter === "closed"}`,
+        filter === "all"
+          ? "/tickets"
+          : `/tickets?closed=${filter === "closed"}`,
       ),
   });
 
@@ -64,7 +73,8 @@ export default function TicketsPage() {
       <header>
         <h1 className="text-4xl font-saiyan text-dbz-orange mb-2">TICKETS</h1>
         <p className="text-sm text-white/60 mb-1">
-          Gérez les tickets d&apos;assistance ouverts par les membres du serveur.
+          Gérez les tickets d&apos;assistance ouverts par les membres du
+          serveur.
         </p>
         <p className="text-xs text-white/50 uppercase tracking-widest">
           Un ticket = un salon Discord dédié entre le membre et les modérateurs
@@ -105,7 +115,9 @@ export default function TicketsPage() {
 
       {tickets.isLoading && (
         <div className="dbz-panel p-8 text-center">
-          <p className="font-saiyan text-dbz-orange text-xl mb-2">CHARGEMENT…</p>
+          <p className="font-saiyan text-dbz-orange text-xl mb-2">
+            CHARGEMENT…
+          </p>
           <p className="text-sm text-white/50">Récupération des tickets.</p>
         </div>
       )}
@@ -114,29 +126,36 @@ export default function TicketsPage() {
         <div className="dbz-panel p-6 text-center border-l-4 border-red-500">
           <p className="font-saiyan text-red-400 mb-2">Erreur de chargement</p>
           <p className="text-sm text-white/50">
-            Impossible de récupérer les tickets. Vérifiez que le bot est en ligne.
+            Impossible de récupérer les tickets. Vérifiez que le bot est en
+            ligne.
           </p>
         </div>
       )}
 
-      {!tickets.isLoading && !tickets.isError && tickets.data?.rows.length === 0 && (
-        <div className="dbz-panel p-8 text-center">
-          <p className="font-saiyan text-dbz-yellow text-xl mb-2">AUCUN TICKET</p>
-          <p className="text-sm text-white/50">
-            {filter === "open"
-              ? "Aucun ticket ouvert. Tout va bien !"
-              : filter === "closed"
-                ? "Aucun ticket fermé pour le moment."
-                : "Aucun ticket enregistré."}
-          </p>
-        </div>
-      )}
+      {!tickets.isLoading &&
+        !tickets.isError &&
+        tickets.data?.rows.length === 0 && (
+          <div className="dbz-panel p-8 text-center">
+            <p className="font-saiyan text-dbz-yellow text-xl mb-2">
+              AUCUN TICKET
+            </p>
+            <p className="text-sm text-white/50">
+              {filter === "open"
+                ? "Aucun ticket ouvert. Tout va bien !"
+                : filter === "closed"
+                  ? "Aucun ticket fermé pour le moment."
+                  : "Aucun ticket enregistré."}
+            </p>
+          </div>
+        )}
 
       {close.isError && (
         <div className="dbz-panel p-3 border-l-4 border-red-500">
           <p className="text-sm text-red-400">
             Erreur lors de la fermeture :{" "}
-            {close.error instanceof Error ? close.error.message : "erreur inconnue"}
+            {close.error instanceof Error
+              ? close.error.message
+              : "erreur inconnue"}
           </p>
         </div>
       )}
@@ -166,10 +185,14 @@ export default function TicketsPage() {
                 <div className="flex-1 min-w-0">
                   {/* En-tête */}
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className={`font-semibold text-sm ${meta.color.split(" ")[0]}`}>
+                    <span
+                      className={`font-semibold text-sm ${meta.color.split(" ")[0]}`}
+                    >
                       {meta.label}
                     </span>
-                    <span className="text-xs text-white/50 font-mono">#{t.id}</span>
+                    <span className="text-xs text-white/50 font-mono">
+                      #{t.id}
+                    </span>
                     {t.closed ? (
                       <span className="px-2 py-0.5 text-xs font-bold bg-white/5 text-white/50 border border-white/10 rounded uppercase">
                         Fermé
@@ -182,7 +205,9 @@ export default function TicketsPage() {
                   </div>
 
                   {meta.description && (
-                    <p className="text-xs text-white/50 mb-2">{meta.description}</p>
+                    <p className="text-xs text-white/50 mb-2">
+                      {meta.description}
+                    </p>
                   )}
 
                   {/* Dates */}

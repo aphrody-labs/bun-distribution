@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Grid2x2Icon, Grid3x3Icon, GripHorizontalIcon, ImagesIcon, LayersIcon, StarIcon, StickyNoteIcon, UploadIcon } from "lucide-react";
+import {
+  Grid2x2Icon,
+  Grid3x3Icon,
+  GripHorizontalIcon,
+  ImagesIcon,
+  LayersIcon,
+  StarIcon,
+  StickyNoteIcon,
+  UploadIcon,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { GridDensity } from "../boards/boardTypes";
@@ -123,10 +132,7 @@ export const BoardGridToolbar = ({
                     : "text-base-fg/50 hover:text-base-fg",
                 ].join(" ")}
               >
-                <DynamicIcon
-                  icon={DENSITY_ICON[d]}
-                  className="h-3.5 w-3.5"
-                />
+                <DynamicIcon icon={DENSITY_ICON[d]} className="h-3.5 w-3.5" />
               </button>
             );
           })}
@@ -152,7 +158,7 @@ export const BoardGridToolbar = ({
               : "text-base-fg/55 hover:bg-base-fg/10 hover:text-base-fg",
           ].join(" ")}
         >
-          <StarIcon  className="h-3.5 w-3.5" />
+          <StarIcon className="h-3.5 w-3.5" />
           <span className="text-xs font-semibold tabular-nums">
             {ratingFilter > 0 ? `${ratingFilter}+` : "All"}
           </span>

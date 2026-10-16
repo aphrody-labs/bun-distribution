@@ -1,3 +1,3 @@
-import checkerboard from './checkerboard.png';
+import checkerboard from "./checkerboard.png";
 
 export { checkerboard };

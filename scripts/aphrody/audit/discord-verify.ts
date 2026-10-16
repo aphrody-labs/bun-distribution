@@ -8,11 +8,18 @@ const rootPkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 const catalog = rootPkg.workspaces?.catalog ?? {};
 
 // 1. Verify that canonical Discord packages are defined in the root catalog
-const requiredCatalog = ["discordx", "discord.js", "discord-api-types", "@discordjs/rest"];
+const requiredCatalog = [
+  "discordx",
+  "discord.js",
+  "discord-api-types",
+  "@discordjs/rest",
+];
 
 for (const pkg of requiredCatalog) {
   if (!catalog[pkg]) {
-    throw new Error(`Discord catalog contract violation: '${pkg}' missing in workspaces.catalog`);
+    throw new Error(
+      `Discord catalog contract violation: '${pkg}' missing in workspaces.catalog`,
+    );
   }
 }
 console.log(
@@ -21,7 +28,11 @@ console.log(
 
 function run(cwd: string, ...args: string[]): void {
   console.log(`\n${cwd}: bun ${args.join(" ")}`);
-  const result = spawnSync(process.execPath, args, { windowsHide: true, cwd, stdio: "inherit" });
+  const result = spawnSync(process.execPath, args, {
+    windowsHide: true,
+    cwd,
+    stdio: "inherit",
+  });
   if (result.error) throw result.error;
   if (result.status !== 0) process.exit(result.status ?? 1);
 }

@@ -3,7 +3,10 @@ import type {
   ExportSinkAdapter,
 } from "@storyteller/ui-video-editor";
 import { kindFromMime } from "@storyteller/ui-video-editor";
-import { promptDownloadLocationIfNeeded, downloadUrlToPath } from "@storyteller/tauri-api";
+import {
+  promptDownloadLocationIfNeeded,
+  downloadUrlToPath,
+} from "@storyteller/tauri-api";
 import { downloadDir } from "@tauri-apps/api/path";
 import { uploadByKind } from "./upload-by-kind";
 
@@ -89,7 +92,10 @@ export const tauriExportSinkAdapter: ExportSinkAdapter = {
       if (saveToDisk) {
         onProgress?.({ destination: "disk", status: "pending" });
         try {
-          const targetPath = await ensureSavePath(downloadUrl, artifact.filename);
+          const targetPath = await ensureSavePath(
+            downloadUrl,
+            artifact.filename,
+          );
           if (targetPath) {
             await downloadUrlToPath(downloadUrl, targetPath);
             savedPath = targetPath;

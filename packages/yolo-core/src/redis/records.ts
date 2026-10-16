@@ -2,7 +2,10 @@
 import { NativeRedisClient, RedisUnavailableError } from "./client";
 
 export function validateNamespace(value: string): void {
-  if (typeof value !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(value)) {
+  if (
+    typeof value !== "string" ||
+    !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(value)
+  ) {
     throw new TypeError(
       "Redis namespace must contain 1-128 letters, numbers, dots, underscores or hyphens",
     );
@@ -94,7 +97,9 @@ export class IndexedRecords {
   }
 
   #view(): Map<string, string> {
-    const view = this.#clearPending ? new Map<string, string>() : new Map(this.#snapshot);
+    const view = this.#clearPending
+      ? new Map<string, string>()
+      : new Map(this.#snapshot);
     for (const [id, value] of this.#pending) {
       if (value === null) view.delete(id);
       else view.set(id, value);

@@ -8,7 +8,10 @@ test("state reports byte duplicates, missing Cargo dependencies and malformed li
   const root = await mkdtemp(join(tmpdir(), "repository-state-"));
   try {
     await mkdir(join(root, "packages", "one"), { recursive: true });
-    await writeFile(join(root, "package.json"), JSON.stringify({ workspaces: ["packages/*"] }));
+    await writeFile(
+      join(root, "package.json"),
+      JSON.stringify({ workspaces: ["packages/*"] }),
+    );
     await writeFile(
       join(root, "packages/one/package.json"),
       JSON.stringify({ name: "@fixture/one", scripts: { test: "bun test" } }),
@@ -36,13 +39,17 @@ test("state reports byte duplicates, missing Cargo dependencies and malformed li
         "fixture",
       ],
     ]) {
-      expect(Bun.spawnSync(["git", "-C", root, ...args], { windowsHide: true }).exitCode).toBe(0);
+      expect(
+        Bun.spawnSync(["git", "-C", root, ...args], { windowsHide: true })
+          .exitCode,
+      ).toBe(0);
     }
     const state = await scanRepository(root);
     expect(state.bun.packages).toHaveLength(1);
     expect(
       state.exactDuplicates.some(
-        (group) => group.paths.includes("a.txt") && group.paths.includes("b.txt"),
+        (group) =>
+          group.paths.includes("a.txt") && group.paths.includes("b.txt"),
       ),
     ).toBe(true);
     expect(state.cargo.missingPaths).toEqual([

@@ -58,7 +58,11 @@ export interface NativeVideoOptions {
 
 export interface NativeVideo {
   frame(seconds: number): this;
-  resize(width: number, height?: number, options?: NativeVideoResizeOptions): this;
+  resize(
+    width: number,
+    height?: number,
+    options?: NativeVideoResizeOptions,
+  ): this;
   extract(rectangle: NativeVideoRectangle): this;
   rotate(degrees: number): this;
   flip(): this;
@@ -97,7 +101,16 @@ export interface NativeVideoRectangle {
 
 export interface NativeVideoResizeOptions {
   filter?:
-    "nearest" | "box" | "bilinear" | "linear" | "cubic" | "mitchell" | "lanczos2" | "lanczos3" | "mks2013" | "mks2021";
+    | "nearest"
+    | "box"
+    | "bilinear"
+    | "linear"
+    | "cubic"
+    | "mitchell"
+    | "lanczos2"
+    | "lanczos3"
+    | "mks2013"
+    | "mks2021";
   fit?: "fill" | "inside";
   withoutEnlargement?: boolean;
 }
@@ -125,7 +138,10 @@ export interface NativeVideoWebpOptions {
 }
 
 interface NativeVideoConstructor {
-  new (input: string | ArrayBuffer | ArrayBufferView | Blob, options?: NativeVideoOptions): NativeVideo;
+  new (
+    input: string | ArrayBuffer | ArrayBufferView | Blob,
+    options?: NativeVideoOptions,
+  ): NativeVideo;
   readonly available: boolean;
   readonly decoder: "filmcraft";
   backend: "system" | "bun";
@@ -135,25 +151,46 @@ function videoConstructor(): NativeVideoConstructor | undefined {
   return (Bun as unknown as { Video?: NativeVideoConstructor }).Video;
 }
 
-function validateInput(input: string | ArrayBuffer | ArrayBufferView | Blob): void {
+function validateInput(
+  input: string | ArrayBuffer | ArrayBufferView | Blob,
+): void {
   if (typeof input === "string") {
     if (!input.trim() || input.length > 32_768 || input.includes("\0"))
       throw new TypeError("A valid local media path is required.");
     return;
   }
-  const bytes = input instanceof Blob ? input.size : input instanceof ArrayBuffer ? input.byteLength : input.byteLength;
-  if (bytes > 256 * 1024 * 1024) throw new RangeError("In-memory video input exceeds the 256 MiB limit.");
+  const bytes =
+    input instanceof Blob
+      ? input.size
+      : input instanceof ArrayBuffer
+        ? input.byteLength
+        : input.byteLength;
+  if (bytes > 256 * 1024 * 1024)
+    throw new RangeError("In-memory video input exceeds the 256 MiB limit.");
 }
 
 export function nativeVideoCapabilities() {
   const video = videoConstructor();
   if (typeof video !== "function") {
-    return { owner: "Bun.Video", available: false, reason: "This Bun binary has no native video API." };
+    return {
+      owner: "Bun.Video",
+      available: false,
+      reason: "This Bun binary has no native video API.",
+    };
   }
   if (video.available !== true) {
-    return { owner: "Bun.Video", available: false, reason: "The native video provider is disabled." };
+    return {
+      owner: "Bun.Video",
+      available: false,
+      reason: "The native video provider is disabled.",
+    };
   }
-  return { owner: "Bun.Video", available: true, decoder: video.decoder, backend: video.backend };
+  return {
+    owner: "Bun.Video",
+    available: true,
+    decoder: video.decoder,
+    backend: video.backend,
+  };
 }
 
 /** Use the runtime owner directly; codec profiles and output behavior retain separate qualification. */

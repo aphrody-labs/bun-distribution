@@ -1,6 +1,7 @@
 export {};
 
-const text = (id: string): HTMLElement => document.getElementById(id) as HTMLElement;
+const text = (id: string): HTMLElement =>
+  document.getElementById(id) as HTMLElement;
 
 const first = (await (await fetch("/api/stats")).json()) as {
   runtime: { name: string; version: string; abi: string; target: string };

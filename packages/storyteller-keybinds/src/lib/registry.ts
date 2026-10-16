@@ -58,16 +58,38 @@ const defs: ActionDef[] = [
   cam("pagescene.camera.yawRight", "Look right", cameraLook),
 
   // ── PageScene: transform ──────────────────────────────────────────────────
-  act("pagescene.transform.grab", "Grab / move (modal)", "Transform", { important: true, when: inBuild }),
-  act("pagescene.transform.translate", "Move (translate)", "Transform", { important: true, when: inBuild }),
-  act("pagescene.transform.rotate", "Rotate", "Transform", { important: true, when: inBuild }),
-  act("pagescene.transform.scale", "Scale", "Transform", { important: true, when: inBuild }),
-  act("pagescene.transform.toggleSpace", "Toggle local / world", "Transform", { when: inBuild }),
-  act("pagescene.transform.poseFK", "Toggle pose (FK)", "Transform", { when: inBuild }),
+  act("pagescene.transform.grab", "Grab / move (modal)", "Transform", {
+    important: true,
+    when: inBuild,
+  }),
+  act("pagescene.transform.translate", "Move (translate)", "Transform", {
+    important: true,
+    when: inBuild,
+  }),
+  act("pagescene.transform.rotate", "Rotate", "Transform", {
+    important: true,
+    when: inBuild,
+  }),
+  act("pagescene.transform.scale", "Scale", "Transform", {
+    important: true,
+    when: inBuild,
+  }),
+  act("pagescene.transform.toggleSpace", "Toggle local / world", "Transform", {
+    when: inBuild,
+  }),
+  act("pagescene.transform.poseFK", "Toggle pose (FK)", "Transform", {
+    when: inBuild,
+  }),
 
   // ── PageScene: view ───────────────────────────────────────────────────────
-  act("pagescene.view.focus", "Focus selection", "View", { important: true, when: inBuild }),
-  act("pagescene.view.assetMenu", "Open asset menu", "View", { important: true, when: inBuild }),
+  act("pagescene.view.focus", "Focus selection", "View", {
+    important: true,
+    when: inBuild,
+  }),
+  act("pagescene.view.assetMenu", "Open asset menu", "View", {
+    important: true,
+    when: inBuild,
+  }),
   act("pagescene.view.toggleCameraView", "Toggle camera view", "View", {
     important: true,
     preventDefault: true,
@@ -82,11 +104,18 @@ const defs: ActionDef[] = [
   // Build-only: its first branch leaves camera view, which in record mode
   // would break the render-cam lock (record forces camera view). Mid-encode
   // Escape belongs to record.cancelEncode instead.
-  act("pagescene.selection.clearOrExit", "Clear selection / exit pose", "Selection", {
-    important: true,
+  act(
+    "pagescene.selection.clearOrExit",
+    "Clear selection / exit pose",
+    "Selection",
+    {
+      important: true,
+      when: inBuild,
+    },
+  ),
+  act("pagescene.selection.deselectAll", "Deselect all", "Selection", {
     when: inBuild,
   }),
-  act("pagescene.selection.deselectAll", "Deselect all", "Selection", { when: inBuild }),
 
   // ── PageScene: edit ───────────────────────────────────────────────────────
   // Scene-object delete owns Del/Backspace EXCEPT when the expanded timeline
@@ -98,13 +127,32 @@ const defs: ActionDef[] = [
     when: (ctx) =>
       inBuild(ctx) && !(ctx.timelineExpanded && ctx.timelineSelection),
   }),
-  act("pagescene.edit.duplicate", "Duplicate selected", "Edit", { important: true, when: inBuild }),
-  act("pagescene.edit.toggleSnapping", "Toggle grid snapping", "Edit", { when: inBuild }),
+  act("pagescene.edit.duplicate", "Duplicate selected", "Edit", {
+    important: true,
+    when: inBuild,
+  }),
+  act("pagescene.edit.toggleSnapping", "Toggle grid snapping", "Edit", {
+    when: inBuild,
+  }),
   act("pagescene.view.toggleGrid", "Toggle grid", "View"),
-  act("pagescene.edit.undo", "Undo", "History", { important: true, preventDefault: true, when: inBuild }),
-  act("pagescene.edit.redo", "Redo", "History", { important: true, preventDefault: true, when: inBuild }),
-  act("pagescene.edit.copy", "Copy", "Edit", { preventDefault: true, when: inBuild }),
-  act("pagescene.edit.paste", "Paste", "Edit", { preventDefault: true, when: inBuild }),
+  act("pagescene.edit.undo", "Undo", "History", {
+    important: true,
+    preventDefault: true,
+    when: inBuild,
+  }),
+  act("pagescene.edit.redo", "Redo", "History", {
+    important: true,
+    preventDefault: true,
+    when: inBuild,
+  }),
+  act("pagescene.edit.copy", "Copy", "Edit", {
+    preventDefault: true,
+    when: inBuild,
+  }),
+  act("pagescene.edit.paste", "Paste", "Edit", {
+    preventDefault: true,
+    when: inBuild,
+  }),
 
   // ── PageScene: timeline ───────────────────────────────────────────────────
   // Transport works wherever playback exists (expanded editor, record mode).
@@ -142,19 +190,34 @@ const defs: ActionDef[] = [
     preventDefault: true,
     when: inPlayback,
   }),
-  act("pagescene.timeline.addKeyframe", "Add keyframe (selected object)", "Timeline", {
-    important: true,
-    when: (ctx) => inBuild(ctx) && !!ctx.timelineExpanded,
-  }),
+  act(
+    "pagescene.timeline.addKeyframe",
+    "Add keyframe (selected object)",
+    "Timeline",
+    {
+      important: true,
+      when: (ctx) => inBuild(ctx) && !!ctx.timelineExpanded,
+    },
+  ),
   // Exact complement of pagescene.edit.delete (see its note above).
-  act("pagescene.timeline.deleteSelected", "Delete keyframe / clip", "Timeline", {
-    preventDefault: true,
-    when: (ctx) =>
-      inBuild(ctx) && !!ctx.timelineExpanded && !!ctx.timelineSelection,
-  }),
-  act("pagescene.timeline.toggleExpanded", "Expand / collapse timeline", "Timeline", {
-    when: inBuild,
-  }),
+  act(
+    "pagescene.timeline.deleteSelected",
+    "Delete keyframe / clip",
+    "Timeline",
+    {
+      preventDefault: true,
+      when: (ctx) =>
+        inBuild(ctx) && !!ctx.timelineExpanded && !!ctx.timelineSelection,
+    },
+  ),
+  act(
+    "pagescene.timeline.toggleExpanded",
+    "Expand / collapse timeline",
+    "Timeline",
+    {
+      when: inBuild,
+    },
+  ),
 
   // ── PageScene: record ─────────────────────────────────────────────────────
   act("pagescene.record.toggleMode", "Toggle build / record mode", "Record", {
@@ -195,10 +258,22 @@ const defs: ActionDef[] = [
     preventDefault: true, // Ctrl+- is browser zoom
   }),
   act("pagedraw.edit.delete", "Delete selected", "Edit", { important: true }),
-  act("pagedraw.edit.copy", "Copy", "Edit", { important: true, preventDefault: true }),
-  act("pagedraw.edit.paste", "Paste", "Edit", { important: true, preventDefault: true }),
-  act("pagedraw.history.undo", "Undo", "History", { important: true, preventDefault: true }),
-  act("pagedraw.history.redo", "Redo", "History", { important: true, preventDefault: true }),
+  act("pagedraw.edit.copy", "Copy", "Edit", {
+    important: true,
+    preventDefault: true,
+  }),
+  act("pagedraw.edit.paste", "Paste", "Edit", {
+    important: true,
+    preventDefault: true,
+  }),
+  act("pagedraw.history.undo", "Undo", "History", {
+    important: true,
+    preventDefault: true,
+  }),
+  act("pagedraw.history.redo", "Redo", "History", {
+    important: true,
+    preventDefault: true,
+  }),
 
   // ── Moodboard ─────────────────────────────────────────────────────────────
   act("moodboard.tools.select", "Select tool", "Tools", { important: true }),
@@ -208,7 +283,9 @@ const defs: ActionDef[] = [
     important: true,
     preventDefault: true,
   }),
-  act("moodboard.selection.clear", "Clear selection", "Selection", { important: true }),
+  act("moodboard.selection.clear", "Clear selection", "Selection", {
+    important: true,
+  }),
   act("moodboard.edit.delete", "Delete selection", "Edit", { important: true }),
   act("moodboard.edit.group", "Group selection", "Edit", {
     important: true,
@@ -222,8 +299,14 @@ const defs: ActionDef[] = [
     important: true,
     preventDefault: true,
   }),
-  act("moodboard.history.undo", "Undo", "History", { important: true, preventDefault: true }),
-  act("moodboard.history.redo", "Redo", "History", { important: true, preventDefault: true }),
+  act("moodboard.history.undo", "Undo", "History", {
+    important: true,
+    preventDefault: true,
+  }),
+  act("moodboard.history.redo", "Redo", "History", {
+    important: true,
+    preventDefault: true,
+  }),
   act("moodboard.view.resetViewport", "Reset zoom & pan", "View", {
     important: true,
     preventDefault: true,
@@ -235,23 +318,44 @@ const defs: ActionDef[] = [
   // contextual action: clear the grid selection, or close whichever viewer
   // is open. The grid's own arrow-key roving focus is a11y navigation, not a
   // shortcut — nav.prev/next are ignored (not consumed) when no viewer is up.
-  act("moodboard-grid.selection.clearOrClose", "Clear selection / close viewer", "Selection", {
+  act(
+    "moodboard-grid.selection.clearOrClose",
+    "Clear selection / close viewer",
+    "Selection",
+    {
+      important: true,
+    },
+  ),
+  act("moodboard-grid.edit.delete", "Delete selected items", "Edit", {
     important: true,
   }),
-  act("moodboard-grid.edit.delete", "Delete selected items", "Edit", { important: true }),
-  act("moodboard-grid.rate.pick", "Pick (rate 5)", "Rating", { important: true }),
-  act("moodboard-grid.rate.0", "Rate 0 (clear rating)", "Rating", { important: true }),
+  act("moodboard-grid.rate.pick", "Pick (rate 5)", "Rating", {
+    important: true,
+  }),
+  act("moodboard-grid.rate.0", "Rate 0 (clear rating)", "Rating", {
+    important: true,
+  }),
   act("moodboard-grid.rate.1", "Rate 1", "Rating"),
   act("moodboard-grid.rate.2", "Rate 2", "Rating"),
   act("moodboard-grid.rate.3", "Rate 3", "Rating"),
   act("moodboard-grid.rate.4", "Rate 4", "Rating"),
   act("moodboard-grid.rate.5", "Rate 5", "Rating", { important: true }),
-  act("moodboard-grid.nav.prev", "Previous item (viewer / presentation)", "Navigation", {
-    important: true,
-  }),
-  act("moodboard-grid.nav.next", "Next item (viewer / presentation)", "Navigation", {
-    important: true,
-  }),
+  act(
+    "moodboard-grid.nav.prev",
+    "Previous item (viewer / presentation)",
+    "Navigation",
+    {
+      important: true,
+    },
+  ),
+  act(
+    "moodboard-grid.nav.next",
+    "Next item (viewer / presentation)",
+    "Navigation",
+    {
+      important: true,
+    },
+  ),
 ];
 
 export const ACTIONS: Record<ActionId, ActionDef> = Object.fromEntries(
@@ -281,18 +385,19 @@ export function actionAvailable(def: ActionDef, ctx: KeybindContext): boolean {
 // Representative context grid for co-availability checks. Covers every field
 // the registry's `when` gates read — extend it when a new KeybindContext
 // field gains a gate, or exclusivity checks will silently miss it.
-const SAMPLE_CONTEXTS: KeybindContext[] = (["build", "record"] as const).flatMap(
-  (sceneMode) =>
-    [false, true].flatMap((encoding) =>
-      [false, true].flatMap((timelineExpanded) =>
-        [false, true].map((timelineSelection) => ({
-          sceneMode,
-          encoding,
-          timelineExpanded,
-          timelineSelection,
-        })),
-      ),
+const SAMPLE_CONTEXTS: KeybindContext[] = (
+  ["build", "record"] as const
+).flatMap((sceneMode) =>
+  [false, true].flatMap((encoding) =>
+    [false, true].flatMap((timelineExpanded) =>
+      [false, true].map((timelineSelection) => ({
+        sceneMode,
+        encoding,
+        timelineExpanded,
+        timelineSelection,
+      })),
     ),
+  ),
 );
 
 /** Whether two actions can ever be live in the same context. Actions that are

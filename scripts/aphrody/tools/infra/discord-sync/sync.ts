@@ -3,7 +3,12 @@
 // Un passage de synchronisation (idempotent) : salons, message d'état épinglé édité en place, événements, courrier
 // entrant (rapports d'Omar), accusés de réception ✅ et dépôt sortant. L'état vit dans un seul fichier JSON écrit par
 // ce seul processus ; les dépendances sont injectées pour les tests.
-import { DiscordError, type Channel, type Discord, type Message } from "./api.ts";
+import {
+  DiscordError,
+  type Channel,
+  type Discord,
+  type Message,
+} from "./api.ts";
 import type { SyncConfig } from "./collect.ts";
 import { syncFiche } from "./fiche.ts";
 import {
@@ -68,7 +73,8 @@ export async function ensureChannels(
   });
   for (const [key, def] of Object.entries(cfg.channels)) {
     const found: Channel | undefined = all.find(
-      (c) => c.type === 0 && c.name === def.name && c.parent_id === category!.id,
+      (c) =>
+        c.type === 0 && c.name === def.name && c.parent_id === category!.id,
     );
     const ch =
       found ??
@@ -83,10 +89,23 @@ export async function ensureChannels(
   }
 }
 
-const post = async (api: Api, channel: string, env: Envelope, text: string): Promise<Message> =>
-  await api.post(channel, { content: encode(env, text), allowed_mentions: { parse: [] } });
+const post = async (
+  api: Api,
+  channel: string,
+  env: Envelope,
+  text: string,
+): Promise<Message> =>
+  await api.post(channel, {
+    content: encode(env, text),
+    allowed_mentions: { parse: [] },
+  });
 
-async function publish(api: Api, state: SyncState, events: Event[], now: Date): Promise<number> {
+async function publish(
+  api: Api,
+  state: SyncState,
+  events: Event[],
+  now: Date,
+): Promise<number> {
   const channel = state.channels.evenements!;
   for (const e of events)
     await post(
@@ -152,9 +171,16 @@ async function scanInbound(
     const cursor = state.cursors[w.id];
     let msgs: Message[];
     try {
-      msgs = await api.messages(w.id, cursor ? `after=${cursor}&limit=50` : "limit=1");
+      msgs = await api.messages(
+        w.id,
+        cursor ? `after=${cursor}&limit=50` : "limit=1",
+      );
     } catch (error) {
-      if (error instanceof DiscordError && (error.status === 403 || error.status === 404)) continue;
+      if (
+        error instanceof DiscordError &&
+        (error.status === 403 || error.status === 404)
+      )
+        continue;
       throw error;
     }
     msgs.sort((a, b) => (BigInt(a.id) < BigInt(b.id) ? -1 : 1));
@@ -175,9 +201,9 @@ async function scanInbound(
       ) {
         if (!state.pendingAcks[m.id]) {
           const all = Object.keys(cfg.users);
-          const to = (env.to?.length ? env.to : all.filter((u) => u !== env.from)).filter(
-            (u) => u in cfg.users,
-          );
+          const to = (
+            env.to?.length ? env.to : all.filter((u) => u !== env.from)
+          ).filter((u) => u in cfg.users);
           state.pendingAcks[m.id] = {
             id: env.id,
             title: String(env.data?.title ?? env.type).slice(0, 60),
@@ -191,7 +217,8 @@ async function scanInbound(
       }
       if (mine || m.author.bot || m.type === 6) continue;
       if (env?.kind === "report") {
-        if (env.type === "fiche" && m.author.id === omarId && env.data) state.omarFiche = env.data;
+        if (env.type === "fiche" && m.author.id === omarId && env.data)
+          state.omarFiche = env.data;
         io.writeInbox(
           `${m.id}.json`,
           JSON.stringify({
@@ -240,7 +267,9 @@ async function processAcks(
   now: Date,
 ): Promise<Event[]> {
   const events: Event[] = [];
-  const userByDiscord = new Map(Object.entries(cfg.users).map(([name, u]) => [u.id, name]));
+  const userByDiscord = new Map(
+    Object.entries(cfg.users).map(([name, u]) => [u.id, name]),
+  );
   for (const [messageId, p] of Object.entries(state.pendingAcks)) {
     let users: { id: string; bot?: boolean }[];
     try {
@@ -254,7 +283,14 @@ async function processAcks(
     }
     for (const u of users) {
       const name = userByDiscord.get(u.id);
-      if (!name || u.id === botId || u.bot || p.by.includes(name) || !p.to.includes(name)) continue;
+      if (
+        !name ||
+        u.id === botId ||
+        u.bot ||
+        p.by.includes(name) ||
+        !p.to.includes(name)
+      )
+        continue;
       p.by.push(name);
       await api.post(p.channelId, {
         content: encode(
@@ -278,7 +314,12 @@ async function processAcks(
       });
       io.writeAgreement(
         `${p.id}.json`,
-        JSON.stringify({ ref: p.id, title: p.title, by: p.by, at: now.toISOString() }),
+        JSON.stringify({
+          ref: p.id,
+          title: p.title,
+          by: p.by,
+          at: now.toISOString(),
+        }),
       );
       delete state.pendingAcks[messageId];
     }
@@ -286,7 +327,11 @@ async function processAcks(
   return events;
 }
 
-async function flushOutbox(api: Api, state: SyncState, io: Io): Promise<number> {
+async function flushOutbox(
+  api: Api,
+  state: SyncState,
+  io: Io,
+): Promise<number> {
   let n = 0;
   for (const item of io.outbox()) {
     try {
@@ -365,10 +410,19 @@ export async function tick(
     const outbox = await flushOutbox(api, state, io);
     const fiche = await syncFiche(api, state, io.readFiche?.(), now);
     if (fiche.merged) io.writeMerged?.(fiche.merged);
-    return { status, events: all.map((e) => e.type), inbound: inbound.seen, outbox, baseline };
+    return {
+      status,
+      events: all.map((e) => e.type),
+      inbound: inbound.seen,
+      outbox,
+      baseline,
+    };
   } catch (error) {
     // Les événements non publiés seront recalculés au prochain passage : on rend l'état d'avant.
-    const keep = { channels: state.channels, statusMessageId: state.statusMessageId };
+    const keep = {
+      channels: state.channels,
+      statusMessageId: state.statusMessageId,
+    };
     Object.assign(state, before, keep);
     throw error;
   }

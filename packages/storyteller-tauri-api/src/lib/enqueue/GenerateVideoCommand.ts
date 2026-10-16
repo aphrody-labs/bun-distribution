@@ -100,9 +100,7 @@ export interface GenerateVideoSuccess extends CommandResult {
   payload: GenerateVideoPayload;
 }
 
-export type GenerateVideoResult =
-  | GenerateVideoSuccess
-  | GenerateVideoError;
+export type GenerateVideoResult = GenerateVideoSuccess | GenerateVideoError;
 
 export const GenerateVideoCommand = async (
   request: GenerateVideoRequest,
@@ -158,31 +156,35 @@ export const GenerateVideoCommand = async (
     request.reference_image_media_tokens &&
     request.reference_image_media_tokens.length > 0
   ) {
-    mutableRequest.reference_image_media_tokens =
-      uniqueTokens(request.reference_image_media_tokens);
+    mutableRequest.reference_image_media_tokens = uniqueTokens(
+      request.reference_image_media_tokens,
+    );
   }
 
   if (
     request.reference_video_media_tokens &&
     request.reference_video_media_tokens.length > 0
   ) {
-    mutableRequest.reference_video_media_tokens =
-      uniqueTokens(request.reference_video_media_tokens);
+    mutableRequest.reference_video_media_tokens = uniqueTokens(
+      request.reference_video_media_tokens,
+    );
   }
 
   if (
     request.reference_audio_media_tokens &&
     request.reference_audio_media_tokens.length > 0
   ) {
-    mutableRequest.reference_audio_media_tokens =
-      uniqueTokens(request.reference_audio_media_tokens);
+    mutableRequest.reference_audio_media_tokens = uniqueTokens(
+      request.reference_audio_media_tokens,
+    );
   }
 
   if (
     request.reference_character_tokens &&
     request.reference_character_tokens.length > 0
   ) {
-    mutableRequest.reference_character_tokens = request.reference_character_tokens;
+    mutableRequest.reference_character_tokens =
+      request.reference_character_tokens;
   }
 
   const result = await invoke("generate_video_command", {

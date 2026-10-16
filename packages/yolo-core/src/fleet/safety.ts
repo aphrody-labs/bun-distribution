@@ -95,7 +95,8 @@ export interface PathContext {
 }
 
 export function normalizePath(p: string): string {
-  if (p.includes("\0") || p.includes("\n")) throw new Error("path contains a control character");
+  if (p.includes("\0") || p.includes("\n"))
+    throw new Error("path contains a control character");
   if (!p.startsWith("/")) throw new Error(`path must be absolute: ${p}`);
   const n = posix.normalize(p);
   return n.length > 1 ? n.replace(/\/+$/, "") : n;
@@ -108,7 +109,9 @@ export function isDatabasePath(path: string): boolean {
   const p = normalizePath(path);
   return (
     DATABASE_TREES.some((d) => within(p, d)) ||
-    /(^|\/)(pgdata|postgresql|mysql|mariadb|mongodb|clickhouse)(\/|$)/.test(p) ||
+    /(^|\/)(pgdata|postgresql|mysql|mariadb|mongodb|clickhouse)(\/|$)/.test(
+      p,
+    ) ||
     /\.(sqlite3?|db|mdb)(-wal|-shm)?$/.test(p)
   );
 }
@@ -119,17 +122,21 @@ export function protectedReason(path: string, ctx: PathContext): string | null {
   if (p === "/") return "the filesystem root";
   // checked before /home so build output inside an app's persistent data is never reclaimed as "own home"
   const apps = hostLayout(ctx.home).apps;
-  const app = p.startsWith(`${apps}/`) ? p.slice(apps.length + 1).split("/") : [];
+  const app = p.startsWith(`${apps}/`)
+    ? p.slice(apps.length + 1).split("/")
+    : [];
   if (app.length >= 2 && (app[1] === "shared" || app[1] === "data"))
     return `an app data tree (${apps}/*/${app[1]})`;
   for (const extra of ctx.preserve ?? [])
-    if (within(p, normalizePath(extra))) return `preserved by policy (${extra})`;
+    if (within(p, normalizePath(extra)))
+      return `preserved by policy (${extra})`;
   for (const root of PROTECTED_TREES) {
     if (within(p, root)) {
       // own home is protected too, but reported precisely
       if (root === "/home") {
         const m = /^\/home\/([^/]+)/.exec(p);
-        if (m !== null && m[1] !== ctx.user) return `another user's directory (/home/${m[1]})`;
+        if (m !== null && m[1] !== ctx.user)
+          return `another user's directory (/home/${m[1]})`;
         return "a home directory";
       }
       return `inside protected ${root}`;
@@ -200,8 +207,16 @@ export function canDeleteCacheDir(path: string, ctx: PathContext): Verdict {
   } catch (e) {
     return { ok: false, reason: (e as Error).message };
   }
-  if (ctx.home === "" || ctx.home === "/" || !within(p, ctx.home) || p === ctx.home)
-    return { ok: false, reason: `${p} is not a cache below the account's home` };
+  if (
+    ctx.home === "" ||
+    ctx.home === "/" ||
+    !within(p, ctx.home) ||
+    p === ctx.home
+  )
+    return {
+      ok: false,
+      reason: `${p} is not a cache below the account's home`,
+    };
   const kept = keptCacheReason(p, ctx);
   if (kept !== null) return { ok: false, reason: kept };
   const rel = posix.relative(ctx.home, p);
@@ -211,10 +226,15 @@ export function canDeleteCacheDir(path: string, ctx: PathContext): Verdict {
 }
 
 /** Is a process working inside (or above) the path? Such a path is skipped. */
-export function pathInUse(path: string, cwds: readonly (string | null)[]): boolean {
+export function pathInUse(
+  path: string,
+  cwds: readonly (string | null)[],
+): boolean {
   const p = normalizePath(path);
   // a daemon sitting in "/" is not working in every tree
-  return cwds.some((c) => c !== null && c !== "/" && (within(c, p) || within(p, c)));
+  return cwds.some(
+    (c) => c !== null && c !== "/" && (within(c, p) || within(p, c)),
+  );
 }
 
 // ------------------------------------------------------------------------------- removal after archive
@@ -251,16 +271,21 @@ export function removalRefusals(path: string, ctx: PathContext): string[] {
   }
   if ((NEVER_REMOVE as readonly string[]).includes(p))
     out.push(`${p} is a system directory that is never removed`);
-  if (isDatabasePath(p)) out.push("database state is archived with pg_dump, never removed by path");
+  if (isDatabasePath(p))
+    out.push("database state is archived with pg_dump, never removed by path");
   if (
     ctx.home !== "" &&
     (p === ctx.home ||
       within(posix.join(ctx.home, ".ssh"), p) ||
       within(p, posix.join(ctx.home, ".ssh")))
   )
-    out.push("the home directory and ~/.ssh carry the transport and are never removed");
-  if (within(p, "/etc/ssh") || within("/etc/ssh", p)) out.push("/etc/ssh carries the transport");
-  if (/^\/home\/[^/]+$/.test(p)) out.push("home directories themselves are not removed");
+    out.push(
+      "the home directory and ~/.ssh carry the transport and are never removed",
+    );
+  if (within(p, "/etc/ssh") || within("/etc/ssh", p))
+    out.push("/etc/ssh carries the transport");
+  if (/^\/home\/[^/]+$/.test(p))
+    out.push("home directories themselves are not removed");
   for (const root of [
     "/etc",
     "/boot",
@@ -366,10 +391,17 @@ export function isDestructiveDeviceCommand(cmd: string): boolean {
 /** The final gate: a command containing a device wipe or a forbidden docker form is never executed. */
 export function assertSafeCommand(cmd: string): void {
   if (isDestructiveDeviceCommand(cmd))
-    throw new Error(`refused: command would format or wipe a device: ${cmd.slice(0, 120)}`);
+    throw new Error(
+      `refused: command would format or wipe a device: ${cmd.slice(0, 120)}`,
+    );
   if (isForbiddenDockerCommand(cmd))
-    throw new Error(`refused: docker volume deletion is never issued: ${cmd.slice(0, 120)}`);
-  if (/\brm\s+(-[a-zA-Z]*\s+)*\/(\s|$)/.test(cmd) || /\brm\b[^;&|]*\s\/(\*|\s|$)/.test(cmd))
+    throw new Error(
+      `refused: docker volume deletion is never issued: ${cmd.slice(0, 120)}`,
+    );
+  if (
+    /\brm\s+(-[a-zA-Z]*\s+)*\/(\s|$)/.test(cmd) ||
+    /\brm\b[^;&|]*\s\/(\*|\s|$)/.test(cmd)
+  )
     throw new Error(`refused: rm on the root directory: ${cmd.slice(0, 120)}`);
 }
 
@@ -459,18 +491,27 @@ export const DEFAULT_POLICY: Policy = {
     swapFileGlobs: ["/swapfile*", "/swap.img", "/var/swapfile*"],
   },
   space: { minFree: 0.2, parallel: 8, splitDepth: 2 },
-  tune: { nginxWorkers: "auto", governor: "performance", thp: "madvise", swappiness: 10 },
+  tune: {
+    nginxWorkers: "auto",
+    governor: "performance",
+    thp: "madvise",
+    swappiness: 10,
+  },
 };
 
 type Json = Record<string, unknown>;
 const strings = (v: unknown): string[] | null =>
-  Array.isArray(v) && v.every((x) => typeof x === "string") ? (v as string[]) : null;
+  Array.isArray(v) && v.every((x) => typeof x === "string")
+    ? (v as string[])
+    : null;
 
 const merge = (base: readonly string[], extra: unknown): string[] => [
   ...new Set([...base, ...(strings(extra) ?? [])]),
 ];
-const numberOr = (v: unknown, d: number): number => (typeof v === "number" && v >= 0 ? v : d);
-const stringOr = (v: unknown, d: string): string => (typeof v === "string" ? v : d);
+const numberOr = (v: unknown, d: number): number =>
+  typeof v === "number" && v >= 0 ? v : d;
+const stringOr = (v: unknown, d: string): string =>
+  typeof v === "string" ? v : d;
 
 /**
  * Parse host-policy.toml (Bun.TOML). Top-level tables apply to every host; `[hosts.<name>.*]` add to them.
@@ -482,7 +523,8 @@ export function parsePolicy(toml: string | null, host: string): Policy {
   const root = Bun.TOML.parse(toml) as Json;
   const layers: Json[] = [root];
   const hosts = root["hosts"] as Json | undefined;
-  if (hosts !== undefined && typeof hosts[host] === "object") layers.push(hosts[host] as Json);
+  if (hosts !== undefined && typeof hosts[host] === "object")
+    layers.push(hosts[host] as Json);
 
   let p: Policy = DEFAULT_POLICY;
   for (const layer of layers) {
@@ -499,16 +541,27 @@ export function parsePolicy(toml: string | null, host: string): Policy {
       locks: merge(p.locks, locks["paths"]),
       protect: merge(
         p.protect,
-        layer["protect"] === undefined ? undefined : (layer["protect"] as Json)["paths"],
+        layer["protect"] === undefined
+          ? undefined
+          : (layer["protect"] as Json)["paths"],
       ),
       reclaim: {
         buildArtifactMinAgeDays: numberOr(
           rec["build_artifact_min_age_days"],
           p.reclaim.buildArtifactMinAgeDays,
         ),
-        journalMaxSize: stringOr(rec["journal_max_size"], p.reclaim.journalMaxSize),
-        journalMaxAgeDays: numberOr(rec["journal_max_age_days"], p.reclaim.journalMaxAgeDays),
-        rotatedLogAgeDays: numberOr(rec["rotated_log_age_days"], p.reclaim.rotatedLogAgeDays),
+        journalMaxSize: stringOr(
+          rec["journal_max_size"],
+          p.reclaim.journalMaxSize,
+        ),
+        journalMaxAgeDays: numberOr(
+          rec["journal_max_age_days"],
+          p.reclaim.journalMaxAgeDays,
+        ),
+        rotatedLogAgeDays: numberOr(
+          rec["rotated_log_age_days"],
+          p.reclaim.rotatedLogAgeDays,
+        ),
         scanRoots: merge(p.reclaim.scanRoots, rec["scan_roots"]),
         excludeNames: merge(p.reclaim.excludeNames, rec["exclude_names"]),
         cacheDirs: merge(p.reclaim.cacheDirs, rec["cache_dirs"]),
@@ -516,9 +569,17 @@ export function parsePolicy(toml: string | null, host: string): Policy {
       },
       space: {
         minFree: ((v: unknown, d: number): number =>
-          typeof v === "number" && v >= 0 && v <= 1 ? v : d)(space["min_free"], p.space.minFree),
-        parallel: Math.max(1, Math.floor(numberOr(space["parallel"], p.space.parallel))),
-        splitDepth: Math.floor(numberOr(space["split_depth"], p.space.splitDepth)),
+          typeof v === "number" && v >= 0 && v <= 1 ? v : d)(
+          space["min_free"],
+          p.space.minFree,
+        ),
+        parallel: Math.max(
+          1,
+          Math.floor(numberOr(space["parallel"], p.space.parallel)),
+        ),
+        splitDepth: Math.floor(
+          numberOr(space["split_depth"], p.space.splitDepth),
+        ),
       },
       tune: {
         nginxWorkers: stringOr(tune["nginx_workers"], p.tune.nginxWorkers),

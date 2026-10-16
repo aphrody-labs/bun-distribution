@@ -1,6 +1,11 @@
 import { resolve } from "node:path";
 
-type CargoPackage = { name: string; version: string; source: string | null; manifest_path: string };
+type CargoPackage = {
+  name: string;
+  version: string;
+  source: string | null;
+  manifest_path: string;
+};
 type CargoMetadata = { workspace_root: string; packages: CargoPackage[] };
 
 function inside(root: string, path: string): boolean {
@@ -42,15 +47,22 @@ export async function runCargoBoundaries(args: string[]): Promise<number> {
           { windowsHide: true, stdout: "pipe", stderr: "pipe" },
         );
         if (result.exitCode !== 0)
-          throw new Error(result.stderr.toString().trim() || "cargo metadata failed");
+          throw new Error(
+            result.stderr.toString().trim() || "cargo metadata failed",
+          );
         return result.stdout.toString();
       })();
   const metadata = JSON.parse(raw) as CargoMetadata;
   const local = metadata.packages.filter((pkg) => pkg.source === null);
-  const outside = local.filter((pkg) => !inside(metadata.workspace_root, pkg.manifest_path));
+  const outside = local.filter(
+    (pkg) => !inside(metadata.workspace_root, pkg.manifest_path),
+  );
   if (outside.length) {
-    console.error(`error: path dependencies outside ${metadata.workspace_root}:`);
-    for (const pkg of outside) console.error(`  ${pkg.name} ${pkg.version} ${pkg.manifest_path}`);
+    console.error(
+      `error: path dependencies outside ${metadata.workspace_root}:`,
+    );
+    for (const pkg of outside)
+      console.error(`  ${pkg.name} ${pkg.version} ${pkg.manifest_path}`);
     return 1;
   }
   console.log(
@@ -59,4 +71,5 @@ export async function runCargoBoundaries(args: string[]): Promise<number> {
   return 0;
 }
 
-if (import.meta.main) process.exit(await runCargoBoundaries(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runCargoBoundaries(process.argv.slice(2)));

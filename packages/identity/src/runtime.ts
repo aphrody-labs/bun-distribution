@@ -54,7 +54,8 @@ export interface Tick {
 
 const DEFAULT_TRACK = "idle";
 
-const own = <T>(o: Record<string, T>, k: string): T | undefined => (Object.hasOwn(o, k) ? o[k] : undefined);
+const own = <T>(o: Record<string, T>, k: string): T | undefined =>
+  Object.hasOwn(o, k) ? o[k] : undefined;
 
 /** Sum of the declared durations (no floor), as `Piste::duree_totale_ms`. */
 export function trackTotal(track: WebTrack): number {
@@ -77,7 +78,8 @@ function frameAtTime(track: WebTrack, elapsed: number): Tick | null {
 /** The frame `elapsed` ms into `track`: loops replay only the `loopStart..` segment; single passes freeze. */
 export function currentFrame(track: WebTrack, elapsed: number): Tick | null {
   const frames = track.frames;
-  if (frames.length <= 1) return frames[0] ? { sprite: frames[0][0], delay: null } : null;
+  if (frames.length <= 1)
+    return frames[0] ? { sprite: frames[0][0], delay: null } : null;
   const t = Math.max(0, Math.floor(elapsed));
   const total = trackTotal(track);
   const start = track.loopStart;
@@ -89,7 +91,8 @@ export function currentFrame(track: WebTrack, elapsed: number): Tick | null {
       if (i < start) prefix += ms;
       else loop += ms;
     });
-    if (t >= total && loop > 0) effective = prefix + (Math.max(0, t - prefix) % loop);
+    if (t >= total && loop > 0)
+      effective = prefix + (Math.max(0, t - prefix) % loop);
   } else if (start === null && t >= total) {
     const last = frames.at(-1);
     return last ? { sprite: last[0], delay: null } : null;
@@ -120,7 +123,12 @@ export function resolve(
 }
 
 /** Index in the gaze ring for a pointer at (dx, dy) from the eyes (y grows downwards); null in the dead zone. */
-export function gaze(dx: number, dy: number, deadzone: number, n: number): number | null {
+export function gaze(
+  dx: number,
+  dy: number,
+  deadzone: number,
+  n: number,
+): number | null {
   if (n === 0 || Math.hypot(dx, dy) < deadzone) return null;
   const degrees = (Math.atan2(dx, -dy) * 180) / Math.PI;
   const step = 360 / n;
@@ -145,7 +153,9 @@ export class Ambient {
 
   set(state: string, now: number): void {
     if (!own(this.states, state)) {
-      throw new RangeError(`unknown pet state "${state}" (expected ${Object.keys(this.states).join(", ")})`);
+      throw new RangeError(
+        `unknown pet state "${state}" (expected ${Object.keys(this.states).join(", ")})`,
+      );
     }
     const t = Math.floor(now);
     this.#state = { name: state, since: t };
@@ -163,7 +173,9 @@ export class Ambient {
     const lifetime = own(this.states, s.name)?.lifetimeMs;
     if (lifetime === undefined) return null;
     const age = Math.max(0, Math.floor(now) - s.since);
-    return age < lifetime ? { name: s.name, age, remaining: lifetime - age } : null;
+    return age < lifetime
+      ? { name: s.name, age, remaining: lifetime - age }
+      : null;
   }
 
   /** Animation to play at `now` and the time elapsed in it. */

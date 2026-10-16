@@ -39,12 +39,16 @@ const ToggleGroup = forwardRef<HTMLDivElement, ToggleGroupProps>(
       <ToggleGroupPrimitive
         ref={ref}
         value={[value]}
-        onValueChange={(values) => values[0] !== undefined && onChange(values[0])}
+        onValueChange={(values) =>
+          values[0] !== undefined && onChange(values[0])
+        }
         disabled={disabled}
         data-m3-component="ToggleGroup"
         className={clsx(
           "inline-flex h-8 items-stretch divide-x rounded-full border",
-          disabled ? "divide-on-surface/12 border-on-surface/12" : "divide-outline border-outline",
+          disabled
+            ? "divide-on-surface/12 border-on-surface/12"
+            : "divide-outline border-outline",
           className,
         )}
       >
@@ -71,7 +75,10 @@ const ToggleGroup = forwardRef<HTMLDivElement, ToggleGroupProps>(
                 <Icon name="check" size={18} />
               ) : (
                 option.icon !== undefined &&
-                renderIcon(option.icon as IconSource, { size: 18, className: "size-[18px]" })
+                renderIcon(option.icon as IconSource, {
+                  size: 18,
+                  className: "size-[18px]",
+                })
               )}
               {option.label}
             </Toggle>

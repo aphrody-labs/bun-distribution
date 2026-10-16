@@ -46,7 +46,12 @@ test("the next model cannot open until native destruction completes", async () =
   release.resolve();
   const answers = await Promise.all([first, second]);
   expect(answers.map((answer) => answer.profile)).toEqual(["aphrody", "dbfr"]);
-  expect(order).toEqual(["open:aphrody", "close:aphrody", "open:dbfr", "close:dbfr"]);
+  expect(order).toEqual([
+    "open:aphrody",
+    "close:aphrody",
+    "open:dbfr",
+    "close:dbfr",
+  ]);
   expect(resident).toBe(0);
   await ai.close();
   await expect(ai.chat(gemma, input)).rejects.toThrow("closing");
@@ -128,9 +133,15 @@ test("invalid profile or output identity fails closed and native session is free
       },
     };
   });
-  await expect(ai.chat({ ...gemma, profile: "../dbfr" }, input)).rejects.toThrow("required");
-  await expect(ai.chat({ ...gemma, context: 256 }, input)).rejects.toThrow("context");
-  await expect(ai.chat({ ...gemma, context: 1000000 }, input)).rejects.toThrow("context");
+  await expect(
+    ai.chat({ ...gemma, profile: "../dbfr" }, input),
+  ).rejects.toThrow("required");
+  await expect(ai.chat({ ...gemma, context: 256 }, input)).rejects.toThrow(
+    "context",
+  );
+  await expect(ai.chat({ ...gemma, context: 1000000 }, input)).rejects.toThrow(
+    "context",
+  );
   expect(opens).toBe(0);
   await expect(ai.chat(gemma, input)).rejects.toThrow("identity");
   expect(closed).toBe(1);

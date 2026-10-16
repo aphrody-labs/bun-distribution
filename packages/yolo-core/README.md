@@ -32,7 +32,12 @@ through `POST /api/tools/call` on `yolo api`:
 ```json
 {
   "name": "yolo_package_sync",
-  "arguments": { "path": ".", "managers": "bun,uv,cargo", "offline": true, "apply": false }
+  "arguments": {
+    "path": ".",
+    "managers": "bun,uv,cargo",
+    "offline": true,
+    "apply": false
+  }
 }
 ```
 

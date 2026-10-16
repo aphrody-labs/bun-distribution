@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { posix } from "node:path";
-import { readFileSync, statSync, mkdirSync, lstatSync, realpathSync } from "node:fs";
+import {
+  readFileSync,
+  statSync,
+  mkdirSync,
+  lstatSync,
+  realpathSync,
+} from "node:fs";
 import type { BuildFactoryConfig } from "./build-factory.ts";
 
 export interface FactoryCleanupPolicy {
@@ -12,28 +18,47 @@ const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
 const overlaps = (a: string, b: string) =>
   a === b || a.startsWith(b + "/") || b.startsWith(a + "/");
 
-export function validateFactoryCleanup(config: BuildFactoryConfig, policy: FactoryCleanupPolicy) {
+export function validateFactoryCleanup(
+  config: BuildFactoryConfig,
+  policy: FactoryCleanupPolicy,
+) {
   const base = posix.dirname(config.cacheRoot);
   if (
     policy.privilegeBinary &&
     !["/usr/bin/sudo-rs", "/usr/bin/sudo"].includes(policy.privilegeBinary)
   )
-    throw new Error("Factory privilege binary must be a declared installed sudo owner");
+    throw new Error(
+      "Factory privilege binary must be a declared installed sudo owner",
+    );
   if (policy.transientRoot !== posix.join(base, "transient"))
-    throw new Error("The factory has one declared transient resource below its root");
+    throw new Error(
+      "The factory has one declared transient resource below its root",
+    );
   for (const entry of policy.retiredOutputs) {
-    const name = posix.relative(posix.join(config.cacheRoot, "cargo"), entry.path);
-    if (!/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(name) || posix.normalize(entry.path) !== entry.path)
+    const name = posix.relative(
+      posix.join(config.cacheRoot, "cargo"),
+      entry.path,
+    );
+    if (
+      !/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(name) ||
+      posix.normalize(entry.path) !== entry.path
+    )
       throw new Error(
         "Cleanup accepts only explicitly retired Cargo intermediate target directories",
       );
-    if (Object.values(config.repositories).some((source) => overlaps(source, entry.path)))
+    if (
+      Object.values(config.repositories).some((source) =>
+        overlaps(source, entry.path),
+      )
+    )
       throw new Error("Factory source checkouts are preserved");
     if (
       !entry.terminalReceipt.startsWith(base + "/") ||
       posix.normalize(entry.terminalReceipt) !== entry.terminalReceipt
     )
-      throw new Error("Terminal evidence must remain inside the declared factory");
+      throw new Error(
+        "Terminal evidence must remain inside the declared factory",
+      );
   }
 }
 
@@ -160,7 +185,11 @@ export function factoryTransientShell(
   sudoBinary = "/usr/bin/sudo-rs",
   leaseSupervisor?: number,
 ) {
-  if (!root.startsWith("/") || posix.normalize(root) !== root || !root.endsWith("/transient"))
+  if (
+    !root.startsWith("/") ||
+    posix.normalize(root) !== root ||
+    !root.endsWith("/transient")
+  )
     throw new Error("Invalid factory transient root");
   const cleanup = String.raw`
 import { readdirSync, readlinkSync, readFileSync, statSync, rmSync } from "node:fs";
@@ -267,7 +296,9 @@ function supervisedFactoryGuardian(
   lockPath: string,
   ancestors: Set<number>,
 ): boolean {
-  const fields = readFileSync(`/proc/${owner}/stat`, "utf8").split(") ")[1]?.split(" ");
+  const fields = readFileSync(`/proc/${owner}/stat`, "utf8")
+    .split(") ")[1]
+    ?.split(" ");
   const supervisor = Number(fields?.[1]);
   if (!ancestors.has(supervisor)) return false;
   const uid = process.getuid?.();
@@ -279,9 +310,14 @@ function supervisedFactoryGuardian(
     return false;
   const executable = statSync(`/proc/${supervisor}/exe`, { bigint: true });
   const currentExecutable = statSync(`/proc/self/exe`, { bigint: true });
-  if (executable.dev !== currentExecutable.dev || executable.ino !== currentExecutable.ino)
+  if (
+    executable.dev !== currentExecutable.dev ||
+    executable.ino !== currentExecutable.ino
+  )
     return false;
-  const args = readFileSync(`/proc/${owner}/cmdline`, "utf8").split("\0").filter(Boolean);
+  const args = readFileSync(`/proc/${owner}/cmdline`, "utf8")
+    .split("\0")
+    .filter(Boolean);
   return (
     posix.basename(args[0] ?? "") === "flock" &&
     args[1] === "--exclusive" &&
@@ -299,17 +335,23 @@ function supervisedFactoryGuardian(
 }
 
 /** A marker alone cannot bypass serialization: match the kernel lease to its actual inode and owner. */
-export function factoryLeaseHeld(lockPath: string, directOwner?: number): boolean {
+export function factoryLeaseHeld(
+  lockPath: string,
+  directOwner?: number,
+): boolean {
   try {
     const stat = statSync(lockPath, { bigint: true });
     // Linux encodes major/minor device numbers in dev_t, while /proc/locks prints them in hex.
-    const major = ((stat.dev >> 8n) & 0xfffn) | ((stat.dev >> 32n) & 0xfffff000n);
+    const major =
+      ((stat.dev >> 8n) & 0xfffn) | ((stat.dev >> 32n) & 0xfffff000n);
     const minor = (stat.dev & 0xffn) | ((stat.dev >> 12n) & 0xffffff00n);
     const ancestors = new Set<number>([process.pid]);
     let parent = process.ppid;
     while (parent > 1 && !ancestors.has(parent)) {
       ancestors.add(parent);
-      const fields = readFileSync(`/proc/${parent}/stat`, "utf8").split(") ")[1]?.split(" ");
+      const fields = readFileSync(`/proc/${parent}/stat`, "utf8")
+        .split(") ")[1]
+        ?.split(" ");
       parent = Number(fields?.[1]);
     }
     return readFileSync("/proc/locks", "utf8")
@@ -333,13 +375,16 @@ export function factoryLeaseHeld(lockPath: string, directOwner?: number): boolea
   }
 }
 
-export function inheritedFactoryResourceHeld(config?: BuildFactoryConfig): boolean {
+export function inheritedFactoryResourceHeld(
+  config?: BuildFactoryConfig,
+): boolean {
   const root = process.env.APHRODY_FACTORY_RESOURCE;
   const lock = process.env.APHRODY_FACTORY_LOCK_PATH;
   let declaredLayout = false;
   if (config?.cleanup) {
     validateFactoryCleanup(config, config.cleanup);
-    declaredLayout = config.cleanup.transientRoot === root && config.lockPath === lock;
+    declaredLayout =
+      config.cleanup.transientRoot === root && config.lockPath === lock;
   }
   return (
     !!root &&
@@ -347,7 +392,8 @@ export function inheritedFactoryResourceHeld(config?: BuildFactoryConfig): boole
     posix.isAbsolute(root) &&
     posix.normalize(root) === root &&
     root.endsWith("/transient") &&
-    (declaredLayout || lock === posix.join(posix.dirname(root), "locks/heavy.lock")) &&
+    (declaredLayout ||
+      lock === posix.join(posix.dirname(root), "locks/heavy.lock")) &&
     factoryLeaseHeld(lock)
   );
 }
@@ -393,7 +439,13 @@ export async function withFactoryResource<T>(
         ),
       ].join("\n"),
     ],
-    { windowsHide: true, env: leaseEnv, stdin: "pipe", stdout: "pipe", stderr: "inherit" },
+    {
+      windowsHide: true,
+      env: leaseEnv,
+      stdin: "pipe",
+      stdout: "pipe",
+      stderr: "inherit",
+    },
   );
   const reader = lease.stdout.getReader();
   const ready = await reader.read();
@@ -446,9 +498,11 @@ export async function withFactoryResource<T>(
   } finally {
     if (previous.tmp === undefined) delete process.env.TMPDIR;
     else process.env.TMPDIR = previous.tmp;
-    if (previous.resource === undefined) delete process.env.APHRODY_FACTORY_RESOURCE;
+    if (previous.resource === undefined)
+      delete process.env.APHRODY_FACTORY_RESOURCE;
     else process.env.APHRODY_FACTORY_RESOURCE = previous.resource;
-    if (previous.lock === undefined) delete process.env.APHRODY_FACTORY_LOCK_PATH;
+    if (previous.lock === undefined)
+      delete process.env.APHRODY_FACTORY_LOCK_PATH;
     else process.env.APHRODY_FACTORY_LOCK_PATH = previous.lock;
     try {
       if (bodyStarted) clean();
@@ -467,10 +521,18 @@ export async function withFactoryResource<T>(
 }
 
 /** Persistent sccache control-plane metadata must never retain a job's disposable lease. */
-export async function prewarmFactorySccache(config: BuildFactoryConfig, binary = "sccache") {
+export async function prewarmFactorySccache(
+  config: BuildFactoryConfig,
+  binary = "sccache",
+) {
   const inheritedLease = inheritedFactoryResourceHeld(config);
-  if (!inheritedLease && !factoryLeaseHeld(config.lockPath, localLeases.get(config.lockPath)))
-    throw new Error("Shared sccache startup requires the actual factory heavy lease");
+  if (
+    !inheritedLease &&
+    !factoryLeaseHeld(config.lockPath, localLeases.get(config.lockPath))
+  )
+    throw new Error(
+      "Shared sccache startup requires the actual factory heavy lease",
+    );
   // Secondary hosts inherit their own proven lease and persistent cache root.
   const cacheRoot = inheritedLease
     ? posix.join(posix.dirname(process.env.APHRODY_FACTORY_RESOURCE!), "cache")
@@ -480,8 +542,13 @@ export async function prewarmFactorySccache(config: BuildFactoryConfig, binary =
   const cache = realpathSync(posix.join(cacheRoot, "sccache"));
   const controlTmp = posix.join(cache, "control-plane-tmp");
   mkdirSync(controlTmp, { recursive: true, mode: 0o700 });
-  if (lstatSync(controlTmp).isSymbolicLink() || realpathSync(controlTmp) !== controlTmp)
-    throw new Error("Shared sccache control-plane temporary directory must be canonical");
+  if (
+    lstatSync(controlTmp).isSymbolicLink() ||
+    realpathSync(controlTmp) !== controlTmp
+  )
+    throw new Error(
+      "Shared sccache control-plane temporary directory must be canonical",
+    );
   const env: Record<string, string | undefined> = {
     ...process.env,
     SCCACHE_DIR: cache,
@@ -519,13 +586,19 @@ export async function prewarmFactorySccache(config: BuildFactoryConfig, binary =
   // The owner reports a nonzero status when its server already exists. With no idle timeout, a server started
   // for an earlier cache root (the retired /srv layout) outlives it and fails every compile: replace it.
   const stats = await run("--show-stats");
-  if (stats.code === 0 && stats.output.includes(`Local disk: ${JSON.stringify(cache)}`)) return;
+  if (
+    stats.code === 0 &&
+    stats.output.includes(`Local disk: ${JSON.stringify(cache)}`)
+  )
+    return;
   if (stats.code === 0) {
     await run("--stop-server");
     started = await run("--start-server");
     if (started.code === 0) return;
   }
-  throw new Error(`Shared sccache server could not start: ${started.error.trim()}`);
+  throw new Error(
+    `Shared sccache server could not start: ${started.error.trim()}`,
+  );
 }
 
 async function resourceMain() {
@@ -543,7 +616,9 @@ async function resourceMain() {
     throw new Error("usage: factory-resource <config> <command...>");
   const config = (await Bun.file(configPath).json()) as BuildFactoryConfig;
   if (!config.cleanup)
-    throw new Error("Factory transient policy is required for direct resource routing");
+    throw new Error(
+      "Factory transient policy is required for direct resource routing",
+    );
   if (sccacheOnly) {
     await prewarmFactorySccache(config, command[0]);
     return;

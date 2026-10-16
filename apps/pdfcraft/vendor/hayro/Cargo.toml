@@ -28,10 +28,7 @@ repository = "https://github.com/LaurenzV/hayro"
 resolver = "2"
 
 [features]
-default = [
-    "embed-fonts",
-    "embed-cmaps",
-]
+default = ["embed-fonts", "embed-cmaps"]
 embed-cmaps = ["hayro-interpret/embed-cmaps"]
 embed-fonts = ["hayro-interpret/embed-fonts"]
 logging = ["hayro-interpret/logging"]
@@ -66,21 +63,12 @@ version = "0.4"
 
 [dependencies.pic-scale]
 version = "0.7.9"
-features = [
-    "neon",
-    "rdm",
-    "sse",
-    "avx",
-]
+features = ["neon", "rdm", "sse", "avx"]
 default-features = false
 
 [dependencies.vello_cpu]
 version = "0.0.8"
-features = [
-    "std",
-    "png",
-    "u8_pipeline",
-]
+features = ["std", "png", "u8_pipeline"]
 default-features = false
 
 # PdfCraft patch: the upstream-only `[dev-dependencies.log]` entry is removed (log is a normal

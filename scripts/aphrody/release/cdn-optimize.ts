@@ -40,10 +40,23 @@ import {
 } from "node:fs/promises";
 import { availableParallelism } from "node:os";
 import { dirname, extname, join, resolve, sep } from "node:path";
-import { brotliCompressSync, brotliDecompressSync, constants as zlib, gunzipSync } from "node:zlib";
+import {
+  brotliCompressSync,
+  brotliDecompressSync,
+  constants as zlib,
+  gunzipSync,
+} from "node:zlib";
 
 type Kind = "jpeg" | "png" | "gif" | "webp" | "mp4" | "text" | "other";
-const KINDS: readonly Kind[] = ["jpeg", "png", "gif", "webp", "mp4", "text", "other"];
+const KINDS: readonly Kind[] = [
+  "jpeg",
+  "png",
+  "gif",
+  "webp",
+  "mp4",
+  "text",
+  "other",
+];
 
 const TEXT_EXT = new Set([
   ".js",
@@ -177,7 +190,10 @@ async function run(cmd: string[]): Promise<RunResult> {
     stderr: "pipe",
     stdin: "ignore",
   });
-  const [code, stderr] = await Promise.all([proc.exited, new Response(proc.stderr).text()]);
+  const [code, stderr] = await Promise.all([
+    proc.exited,
+    new Response(proc.stderr).text(),
+  ]);
   return { code, stderr: stderr.slice(0, 2000) };
 }
 
@@ -271,14 +287,23 @@ interface WebpInfo {
 
 async function webpInfo(path: string): Promise<WebpInfo> {
   const file = Bun.file(path);
-  const info: WebpInfo = { lossless: false, animated: false, icc: false, exif: false, xmp: false };
+  const info: WebpInfo = {
+    lossless: false,
+    animated: false,
+    icc: false,
+    exif: false,
+    xmp: false,
+  };
   let at = 12;
   const size = file.size;
   while (at + 8 <= size) {
     const h = await file.slice(at, at + 21).bytes();
     const type = ascii(h, 0, 4);
     const len =
-      (h[4] ?? 0) | ((h[5] ?? 0) << 8) | ((h[6] ?? 0) << 16) | (((h[7] ?? 0) << 24) >>> 0);
+      (h[4] ?? 0) |
+      ((h[5] ?? 0) << 8) |
+      ((h[6] ?? 0) << 16) |
+      (((h[7] ?? 0) << 24) >>> 0);
     if (type === "VP8L") info.lossless = true;
     if (type === "ANIM" || type === "ANMF") info.animated = true;
     if (type === "ICCP") info.icc = true;
@@ -296,7 +321,11 @@ async function mp4NeedsFaststart(path: string): Promise<boolean> {
   let sawMdat = false;
   while (at + 8 <= file.size) {
     const h = await file.slice(at, at + 16).bytes();
-    let len = (((h[0] ?? 0) << 24) >>> 0) + ((h[1] ?? 0) << 16) + ((h[2] ?? 0) << 8) + (h[3] ?? 0);
+    let len =
+      (((h[0] ?? 0) << 24) >>> 0) +
+      ((h[1] ?? 0) << 16) +
+      ((h[2] ?? 0) << 8) +
+      (h[3] ?? 0);
     const type = ascii(h, 4, 4);
     if (len === 1) {
       len = Number(new DataView(h.buffer, h.byteOffset + 8, 8).getBigUint64(0));
@@ -319,7 +348,13 @@ async function decodedHash(kind: Kind, path: string): Promise<string | null> {
       return tools.djpeg ? await hashStdout([tools.djpeg, "-pnm", path]) : null;
     case "png":
       return tools.magick
-        ? await hashStdout([tools.magick, `png:${path}`, "-depth", "16", "RGBA:-"])
+        ? await hashStdout([
+            tools.magick,
+            `png:${path}`,
+            "-depth",
+            "16",
+            "RGBA:-",
+          ])
         : null;
     case "gif": {
       if (!tools.magick) return null;
@@ -389,11 +424,21 @@ class Workspace {
   }
 }
 
-async function optimize(kind: Kind, src: string, ext: string, ws: Workspace): Promise<Candidate[]> {
+async function optimize(
+  kind: Kind,
+  src: string,
+  ext: string,
+  ws: Workspace,
+): Promise<Candidate[]> {
   const out: Candidate[] = [];
-  const attempt = async (tool: string, path: string, cmd: string[]): Promise<void> => {
+  const attempt = async (
+    tool: string,
+    path: string,
+    cmd: string[],
+  ): Promise<void> => {
     const r = await run(cmd);
-    if (r.code === 0 && (await Bun.file(path).exists())) out.push({ path, tool });
+    if (r.code === 0 && (await Bun.file(path).exists()))
+      out.push({ path, tool });
     else await rm(path, { force: true });
   };
   switch (kind) {
@@ -466,7 +511,10 @@ async function optimize(kind: Kind, src: string, ext: string, ws: Workspace): Pr
       if (info.lossless && !info.animated) {
         const pam = ws.file(".pam");
         const enc = ws.file(".webp");
-        if ((await run([tools.dwebp, "-quiet", src, "-pam", "-o", pam])).code === 0) {
+        if (
+          (await run([tools.dwebp, "-quiet", src, "-pam", "-o", pam])).code ===
+          0
+        ) {
           const r = await run([
             tools.cwebp,
             "-quiet",
@@ -490,18 +538,37 @@ async function optimize(kind: Kind, src: string, ext: string, ws: Workspace): Pr
             const blob = ws.file(`.${chunk}`);
             const next = ws.file(".webp");
             const ok =
-              (await run([tools.webpmux, "-get", chunk, src, "-o", blob])).code === 0 &&
-              (await run([tools.webpmux, "-set", chunk, blob, result, "-o", next])).code === 0;
+              (await run([tools.webpmux, "-get", chunk, src, "-o", blob]))
+                .code === 0 &&
+              (
+                await run([
+                  tools.webpmux,
+                  "-set",
+                  chunk,
+                  blob,
+                  result,
+                  "-o",
+                  next,
+                ])
+              ).code === 0;
             await rm(blob, { force: true });
             await rm(result, { force: true });
             result = ok ? next : null;
           }
-          if (result) out.push({ path: result, tool: "cwebp -lossless -z 9 -exact" });
+          if (result)
+            out.push({ path: result, tool: "cwebp -lossless -z 9 -exact" });
         }
         await rm(pam, { force: true });
       } else if (info.xmp) {
         const s = ws.file(".webp");
-        await attempt("webpmux -strip xmp", s, [tools.webpmux, "-strip", "xmp", src, "-o", s]);
+        await attempt("webpmux -strip xmp", s, [
+          tools.webpmux,
+          "-strip",
+          "xmp",
+          src,
+          "-o",
+          s,
+        ]);
       }
       break;
     }
@@ -548,13 +615,18 @@ async function choose(
   const sorted = candidates
     .filter((c) => Bun.file(c.path).size <= limit)
     .toSorted((a, b) => Bun.file(a.path).size - Bun.file(b.path).size);
-  for (const c of candidates) if (!sorted.includes(c)) await rm(c.path, { force: true });
+  for (const c of candidates)
+    if (!sorted.includes(c)) await rm(c.path, { force: true });
   let rejected = 0;
   let best: Candidate | null = null;
   if (sorted.length) {
     const reference = await decodedHash(kind, src);
     for (const c of sorted) {
-      if (!best && reference && (await decodedHash(kind, c.path)) === reference) {
+      if (
+        !best &&
+        reference &&
+        (await decodedHash(kind, c.path)) === reference
+      ) {
         best = c;
         continue;
       }
@@ -572,13 +644,18 @@ function brotli(bytes: Uint8Array, font: boolean): Uint8Array {
     params: {
       [zlib.BROTLI_PARAM_QUALITY]: zlib.BROTLI_MAX_QUALITY,
       [zlib.BROTLI_PARAM_LGWIN]: zlib.BROTLI_MAX_WINDOW_BITS,
-      [zlib.BROTLI_PARAM_MODE]: font ? zlib.BROTLI_MODE_FONT : zlib.BROTLI_MODE_TEXT,
+      [zlib.BROTLI_PARAM_MODE]: font
+        ? zlib.BROTLI_MODE_FONT
+        : zlib.BROTLI_MODE_TEXT,
       [zlib.BROTLI_PARAM_SIZE_HINT]: bytes.length,
     },
   });
 }
 
-async function gzip(src: string, bytes: Uint8Array<ArrayBuffer>): Promise<Uint8Array | null> {
+async function gzip(
+  src: string,
+  bytes: Uint8Array<ArrayBuffer>,
+): Promise<Uint8Array | null> {
   if (tools.zopfli) {
     const proc = Bun.spawn([tools.zopfli, "--i15", "-c", src], {
       windowsHide: true,
@@ -609,9 +686,15 @@ async function writeSiblings(
   const variants: [(typeof SIBLINGS)[number], Uint8Array | null][] = [];
   if (bytes.length >= SIBLING_MIN_SOURCE) {
     const br = brotli(bytes, font);
-    variants.push([".br", Buffer.compare(brotliDecompressSync(br), bytes) === 0 ? br : null]);
+    variants.push([
+      ".br",
+      Buffer.compare(brotliDecompressSync(br), bytes) === 0 ? br : null,
+    ]);
     const gz = await gzip(src, bytes);
-    variants.push([".gz", gz && Buffer.compare(gunzipSync(gz), bytes) === 0 ? gz : null]);
+    variants.push([
+      ".gz",
+      gz && Buffer.compare(gunzipSync(gz), bytes) === 0 ? gz : null,
+    ]);
   }
   for (const suffix of SIBLINGS) {
     const data = variants.find(([s]) => s === suffix)?.[1] ?? null;
@@ -652,7 +735,8 @@ async function walk(root: string): Promise<string[]> {
 
 function inside(root: string, rel: string): string {
   const p = resolve(root, rel);
-  if (p !== root && !p.startsWith(root + sep)) throw new Error(`path escapes the tree: ${rel}`);
+  if (p !== root && !p.startsWith(root + sep))
+    throw new Error(`path escapes the tree: ${rel}`);
   return p;
 }
 
@@ -714,7 +798,9 @@ async function main(): Promise<void> {
       "--src, --out and the state directory must share one filesystem (hardlinks, atomic renames)",
     );
 
-  const db = new Database(opts.dryRun ? ":memory:" : opts.state, { create: true });
+  const db = new Database(opts.dryRun ? ":memory:" : opts.state, {
+    create: true,
+  });
   db.exec("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;");
   db.exec(`CREATE TABLE IF NOT EXISTS files (
     path TEXT PRIMARY KEY, src_size INTEGER NOT NULL, src_mtime_ms REAL NOT NULL, src_ino INTEGER NOT NULL,
@@ -728,13 +814,23 @@ async function main(): Promise<void> {
 
   const sources = await walk(opts.src);
   if (sources.length === 0)
-    throw new Error(`no file under ${opts.src}: refusing to mirror an empty source`);
+    throw new Error(
+      `no file under ${opts.src}: refusing to mirror an empty source`,
+    );
   const selected = opts.limit > 0 ? sources.slice(0, opts.limit) : sources;
 
   const stats = Object.fromEntries(
     KINDS.map((k) => [
       k,
-      { files: 0, processed: 0, optimized: 0, srcBytes: 0, outBytes: 0, rejected: 0, errors: 0 },
+      {
+        files: 0,
+        processed: 0,
+        optimized: 0,
+        srcBytes: 0,
+        outBytes: 0,
+        rejected: 0,
+        errors: 0,
+      },
     ]),
   ) as Record<Kind, KindStats>;
   const siblings = { br: 0, brBytes: 0, gz: 0, gzBytes: 0, textBytes: 0 };
@@ -827,7 +923,9 @@ async function main(): Promise<void> {
       note = e instanceof Error ? e.message : String(e);
       errors.push({ path: rel, error: note.slice(0, 300) });
       if (!opts.dryRun)
-        await install(ws, { linkTo: srcPath }, outPath, st.mtime).catch(() => undefined);
+        await install(ws, { linkTo: srcPath }, outPath, st.mtime).catch(
+          () => undefined,
+        );
     }
     s.outBytes += outSize;
     if (sizes.br !== null) {
@@ -915,7 +1013,9 @@ async function main(): Promise<void> {
     out: opts.out,
     dryRun: opts.dryRun,
     files: selected.length,
-    tools: Object.fromEntries(Object.entries(tools).map(([k, v]) => [k, v !== null])),
+    tools: Object.fromEntries(
+      Object.entries(tools).map(([k, v]) => [k, v !== null]),
+    ),
     kinds: stats,
     totals: { ...totals, savedBytes: totals.srcBytes - totals.outBytes },
     siblings,
@@ -931,4 +1031,11 @@ async function main(): Promise<void> {
 
 if (import.meta.main) await main();
 
-export { decodedHash, detect, jpegHasExif, mp4NeedsFaststart, pngIsAnimated, webpInfo };
+export {
+  decodedHash,
+  detect,
+  jpegHasExif,
+  mp4NeedsFaststart,
+  pngIsAnimated,
+  webpInfo,
+};

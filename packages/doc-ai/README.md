@@ -28,13 +28,13 @@ language `fr`).
 
 ## Configuration
 
-| Env var                              | Effect                                           |
-| ------------------------------------ | ------------------------------------------------ |
-| `GOOGLE_APPLICATION_CREDENTIALS` | Google ADC credential file used by Vertex AI. |
-| `GOOGLE_CLOUD_PROJECT` or `APHRODY_VERTEX_PROJECT` | Vertex AI project and online mode. |
-| `GOOGLE_CLOUD_LOCATION` or `APHRODY_VERTEX_LOCATION` | Vertex AI region (default `us-central1`). |
-| `DOC_AI_MODEL` | Override the model (default `gemini-2.5-flash`). |
-| `DOC_AI_REQUEST_TIMEOUT_MS` | Per-request network timeout (default `60000`). |
+| Env var                                              | Effect                                           |
+| ---------------------------------------------------- | ------------------------------------------------ |
+| `GOOGLE_APPLICATION_CREDENTIALS`                     | Google ADC credential file used by Vertex AI.    |
+| `GOOGLE_CLOUD_PROJECT` or `APHRODY_VERTEX_PROJECT`   | Vertex AI project and online mode.               |
+| `GOOGLE_CLOUD_LOCATION` or `APHRODY_VERTEX_LOCATION` | Vertex AI region (default `us-central1`).        |
+| `DOC_AI_MODEL`                                       | Override the model (default `gemini-2.5-flash`). |
+| `DOC_AI_REQUEST_TIMEOUT_MS`                          | Per-request network timeout (default `60000`).   |
 
 Without credentials, `generate`/`translate` fall back to a deterministic static
 template so the pipeline stays runnable offline and in CI.

@@ -154,45 +154,49 @@ function ApplyTagsButton({ entryIds }: { entryIds: number[] }) {
 ## Type Safety Benefits
 
 ### Input Validation
+
 ```typescript
 // This works
 useCoreQuery({
-  type: 'libraries.list',
-  input: {}
+  type: "libraries.list",
+  input: {},
 });
 
 // TypeScript error: input must match ListLibrariesInput
 useCoreQuery({
-  type: 'libraries.list',
-  input: { invalid_field: true }
+  type: "libraries.list",
+  input: { invalid_field: true },
 });
 ```
 
 ### Output Types
+
 ```typescript
 const { data: files } = useLibraryQuery({
-  type: 'files.directory_listing',
-  input: { path: '/' }
+  type: "files.directory_listing",
+  input: { path: "/" },
 });
 
 // TypeScript knows the exact type!
-files?.entries  // File[]
-files?.total_count  // number
-files?.cursor  // string | null
+files?.entries; // File[]
+files?.total_count; // number
+files?.cursor; // string | null
 ```
 
 ### Wire Methods (Auto-Generated)
+
 ```typescript
-import { WIRE_METHODS } from '@aphrody/drive-client';
+import { WIRE_METHODS } from "@aphrody/drive-client";
 
 // All wire methods are in the WIRE_METHODS constant
-WIRE_METHODS.coreQueries['libraries.list']  // => 'query:libraries.list'
-WIRE_METHODS.libraryActions['files.copy']  // => 'action:files.copy.input'
+WIRE_METHODS.coreQueries["libraries.list"]; // => 'query:libraries.list'
+WIRE_METHODS.libraryActions["files.copy"]; // => 'action:files.copy.input'
 ```
 
 ## Comparison: Swift vs TypeScript
 
 ### Swift (Auto-Generated API)
+
 ```swift
 let client = SpacedriveClient(socketPath: "/tmp/sd.sock")
 
@@ -202,13 +206,17 @@ let files = try await client.files.directoryListing(input)
 ```
 
 ### TypeScript (React Query + Auto-Generated Types)
+
 ```typescript
-import { clientFromSocket } from '@aphrody/drive-client/bun';
-const client = clientFromSocket('/tmp/sd.sock');
+import { clientFromSocket } from "@aphrody/drive-client/bun";
+const client = clientFromSocket("/tmp/sd.sock");
 
 // React Query hooks with auto-generated types
-const { data: libraries } = useCoreQuery({ type: 'libraries.list', input: {} });
-const { data: files } = useLibraryQuery({ type: 'files.directory_listing', input: { path: '/' } });
+const { data: libraries } = useCoreQuery({ type: "libraries.list", input: {} });
+const { data: files } = useLibraryQuery({
+  type: "files.directory_listing",
+  input: { path: "/" },
+});
 ```
 
 **Both are fully type-safe and auto-generated from the same Rust types!**
@@ -236,8 +244,8 @@ function CustomComponent() {
 ## Event Subscription
 
 ```typescript
-import { useSpacedriveClient } from '@aphrody/drive-client';
-import { useEffect } from 'react';
+import { useSpacedriveClient } from "@aphrody/drive-client";
+import { useEffect } from "react";
 
 function EventListener() {
   const client = useSpacedriveClient();
@@ -245,10 +253,10 @@ function EventListener() {
   useEffect(() => {
     const unlisten = client.subscribe((event) => {
       // event is fully typed as Event union!
-      console.log('Received event:', event);
+      console.log("Received event:", event);
     });
 
-    return () => unlisten.then(fn => fn());
+    return () => unlisten.then((fn) => fn());
   }, [client]);
 
   return null;

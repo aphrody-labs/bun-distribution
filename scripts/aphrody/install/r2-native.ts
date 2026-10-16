@@ -13,7 +13,10 @@ if (args.includes("--help")) {
   );
 } else {
   const ctx = defaultContext();
-  const plans = await Promise.all([r2Plan("bun", ctx.fetchImpl), r2Plan("aphrody", ctx.fetchImpl)]);
+  const plans = await Promise.all([
+    r2Plan("bun", ctx.fetchImpl),
+    r2Plan("aphrody", ctx.fetchImpl),
+  ]);
   if (!args.includes("--stage"))
     console.log(
       JSON.stringify(
@@ -36,7 +39,10 @@ if (args.includes("--help")) {
     }
     console.log(
       JSON.stringify(
-        { staged, activation: "Verified stage ready; existing PATH binaries preserved" },
+        {
+          staged,
+          activation: "Verified stage ready; existing PATH binaries preserved",
+        },
         null,
         2,
       ),

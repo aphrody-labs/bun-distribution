@@ -1,5 +1,10 @@
 import { useCallback, useLayoutEffect, useRef } from "react";
-import { useTopBar, useTopBarInternal, TopBarItem, TopBarPosition } from "./Context";
+import {
+  useTopBar,
+  useTopBarInternal,
+  TopBarItem,
+  TopBarPosition,
+} from "./Context";
 
 const GAP = 8;
 const OVERFLOW_BUTTON_WIDTH = 44;
@@ -33,9 +38,13 @@ function calculateFitting(
     if (item.priority === "high") continue;
 
     const itemWidth = item.width + GAP;
-    const reservedSpace = overflow.length > 0 || willHaveOverflow ? OVERFLOW_BUTTON_WIDTH : 0;
+    const reservedSpace =
+      overflow.length > 0 || willHaveOverflow ? OVERFLOW_BUTTON_WIDTH : 0;
 
-    if (usedWidth + itemWidth + reservedSpace + SAFETY_MARGIN <= containerWidth) {
+    if (
+      usedWidth + itemWidth + reservedSpace + SAFETY_MARGIN <=
+      containerWidth
+    ) {
       visible.push(item);
       usedWidth += itemWidth;
     } else {
@@ -49,14 +58,19 @@ function calculateFitting(
 
 export function useOverflowCalculation() {
   const { items, leftContainerRef, rightContainerRef } = useTopBar();
-  const { setVisibleItems, setOverflowItems, recalculationTrigger } = useTopBarInternal();
+  const { setVisibleItems, setOverflowItems, recalculationTrigger } =
+    useTopBarInternal();
   const parentContainerRef = useRef<HTMLDivElement>(null);
 
   const lastVisibleRef = useRef<Set<string>>(new Set());
   const lastOverflowRef = useRef<Map<TopBarPosition, TopBarItem[]>>(new Map());
 
   const calculateOverflow = useCallback(() => {
-    if (!leftContainerRef?.current || !rightContainerRef?.current || !parentContainerRef.current)
+    if (
+      !leftContainerRef?.current ||
+      !rightContainerRef?.current ||
+      !parentContainerRef.current
+    )
       return;
 
     const parentWidth = parentContainerRef.current.offsetWidth;
@@ -76,7 +90,9 @@ export function useOverflowCalculation() {
       .filter((item) => item.position === "right")
       .toSorted(sortByPriority);
 
-    const centerItems = Array.from(items.values()).filter((item) => item.position === "center");
+    const centerItems = Array.from(items.values()).filter(
+      (item) => item.position === "center",
+    );
 
     // Each side gets up to 45% of total space, but we need to account for the overflow button
     // when items start overflowing
@@ -100,12 +116,16 @@ export function useOverflowCalculation() {
     // Only update if visible items actually changed
     const visibleChanged =
       newVisibleItems.size !== lastVisibleRef.current.size ||
-      !Array.from(newVisibleItems).every((id) => lastVisibleRef.current.has(id));
+      !Array.from(newVisibleItems).every((id) =>
+        lastVisibleRef.current.has(id),
+      );
 
     // Only update if overflow items actually changed
     const overflowChanged =
-      leftResult.overflow.length !== (lastOverflowRef.current.get("left")?.length ?? 0) ||
-      rightResult.overflow.length !== (lastOverflowRef.current.get("right")?.length ?? 0);
+      leftResult.overflow.length !==
+        (lastOverflowRef.current.get("left")?.length ?? 0) ||
+      rightResult.overflow.length !==
+        (lastOverflowRef.current.get("right")?.length ?? 0);
 
     if (visibleChanged) {
       lastVisibleRef.current = newVisibleItems;
@@ -116,7 +136,13 @@ export function useOverflowCalculation() {
       lastOverflowRef.current = newOverflowItems;
       setOverflowItems(newOverflowItems);
     }
-  }, [items, leftContainerRef, rightContainerRef, setVisibleItems, setOverflowItems]);
+  }, [
+    items,
+    leftContainerRef,
+    rightContainerRef,
+    setVisibleItems,
+    setOverflowItems,
+  ]);
 
   useLayoutEffect(() => {
     calculateOverflow();

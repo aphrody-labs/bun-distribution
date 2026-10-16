@@ -3,7 +3,10 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
-import { GeneralSettings, type GeneralSettingsBackend } from "./GeneralSettings";
+import {
+  GeneralSettings,
+  type GeneralSettingsBackend,
+} from "./GeneralSettings";
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -14,7 +17,9 @@ function deferred<T>() {
   });
   return { promise, resolve, reject };
 }
-const services = (changes: Partial<GeneralSettingsBackend> = {}): GeneralSettingsBackend => ({
+const services = (
+  changes: Partial<GeneralSettingsBackend> = {},
+): GeneralSettingsBackend => ({
   isDesktop: () => true,
   readAutostart: async () => false,
   writeAutostart: async () => {},
@@ -25,7 +30,10 @@ const services = (changes: Partial<GeneralSettingsBackend> = {}): GeneralSetting
 let root: Root | undefined;
 let container: HTMLDivElement | undefined;
 const hasDom = typeof document !== "undefined";
-if (hasDom) (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+if (hasDom)
+  (
+    globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
+  ).IS_REACT_ACT_ENVIRONMENT = true;
 afterEach(async () => {
   if (root) await act(async () => root!.unmount());
   root = undefined;
@@ -38,9 +46,12 @@ async function mount(backend: GeneralSettingsBackend) {
   root = createRoot(container);
   await act(async () =>
     root!.render(
-      createElement<NonNullable<Parameters<typeof GeneralSettings>[0]>>(GeneralSettings, {
-        services: backend,
-      }),
+      createElement<NonNullable<Parameters<typeof GeneralSettings>[0]>>(
+        GeneralSettings,
+        {
+          services: backend,
+        },
+      ),
     ),
   );
 }
@@ -53,12 +64,16 @@ async function ready(predicate: () => boolean) {
     });
   expect(predicate()).toBe(true);
 }
-const switchControl = () => container!.querySelector<HTMLButtonElement>('[role="switch"]');
+const switchControl = () =>
+  container!.querySelector<HTMLButtonElement>('[role="switch"]');
 test("browser settings expose no native-only or unsupported controls", () => {
   const html = renderToStaticMarkup(
-    createElement<NonNullable<Parameters<typeof GeneralSettings>[0]>>(GeneralSettings, {
-      services: services({ isDesktop: () => false }),
-    }),
+    createElement<NonNullable<Parameters<typeof GeneralSettings>[0]>>(
+      GeneralSettings,
+      {
+        services: services({ isDesktop: () => false }),
+      },
+    ),
   );
   expect(html).toContain("application de bureau");
   expect(html).not.toContain('role="switch"');
@@ -112,7 +127,9 @@ describe.skipIf(!hasDom)("General settings native acknowledgements", () => {
     await mount(services({ writeAutostart: () => write.promise }));
     await ready(() => switchControl() !== null);
     await act(async () => switchControl()!.click());
-    await act(async () => write.reject(new Error("autorisation système refusée")));
+    await act(async () =>
+      write.reject(new Error("autorisation système refusée")),
+    );
     await ready(() => Boolean(container!.querySelector('[role="alert"]')));
     expect(switchControl()!.getAttribute("aria-checked")).toBe("false");
     expect(switchControl()!.disabled).toBe(false);
@@ -147,14 +164,16 @@ describe.skipIf(!hasDom)("General settings native acknowledgements", () => {
   test("update failure never reports an up-to-date application", async () => {
     const check = deferred<null>();
     await mount(services({ checkUpdate: () => check.promise }));
-    const button = Array.from(container!.querySelectorAll("button")).find((item) =>
-      item.textContent!.includes("Vérifier les mises"),
+    const button = Array.from(container!.querySelectorAll("button")).find(
+      (item) => item.textContent!.includes("Vérifier les mises"),
     )!;
     await act(async () => button.click());
     expect(button.disabled).toBe(true);
     expect(container!.textContent).not.toContain("application est à jour");
     await act(async () => check.reject(new Error("release feed unavailable")));
-    await ready(() => container!.textContent!.includes("Vérification impossible"));
+    await ready(() =>
+      container!.textContent!.includes("Vérification impossible"),
+    );
     expect(button.disabled).toBe(false);
     expect(container!.textContent).not.toContain("application est à jour");
   });

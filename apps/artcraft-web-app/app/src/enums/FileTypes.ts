@@ -54,7 +54,7 @@ export enum CHARACTER_MMD_FILE_TYPE {
 
 export enum CHARACTER_MIXAMO_FILE_TYPE {
   GLB = "glb",
-// FBX = "FBX",
-// OBJ = "OBJ",
-// ZIP = "ZIP",
+  // FBX = "FBX",
+  // OBJ = "OBJ",
+  // ZIP = "ZIP",
 }

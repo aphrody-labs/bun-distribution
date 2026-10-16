@@ -3,9 +3,16 @@ import { mkdir, mkdtemp, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { clean, dupes, type Io } from "../../src/creator/commands/disk-clean.ts";
+import {
+  clean,
+  dupes,
+  type Io,
+} from "../../src/creator/commands/disk-clean.ts";
 import { catalog } from "../../src/creator/commands/disk-clean/catalog.ts";
-import { findDuplicates, walk } from "../../src/creator/commands/disk-clean/scan.ts";
+import {
+  findDuplicates,
+  walk,
+} from "../../src/creator/commands/disk-clean/scan.ts";
 
 const io = (env: Record<string, string>, names: string[] = []) => {
   const logs: string[] = [];
@@ -20,7 +27,12 @@ const io = (env: Record<string, string>, names: string[] = []) => {
 
 test("windows catalog never targets user document folders", () => {
   const targets = catalog(
-    { LOCALAPPDATA: "C:\\L", APPDATA: "C:\\R", USERPROFILE: "C:\\U", TEMP: "C:\\T" },
+    {
+      LOCALAPPDATA: "C:\\L",
+      APPDATA: "C:\\R",
+      USERPROFILE: "C:\\U",
+      TEMP: "C:\\T",
+    },
     "win32",
   );
   const all = targets.flatMap((t) => t.patterns).join("\n");

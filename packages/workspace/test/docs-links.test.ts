@@ -34,9 +34,13 @@ test("generated migration index and URL metadata resolve actual local files", as
     await writeFile(join(migration, "source-map.json"), "{}");
     await writeFile(join(root, "docs/llms.txt"), "");
     await mkdir(join(root, "docs/reference/workspace"), { recursive: true });
-    await writeFile(join(root, "docs/reference/workspace/documentation.json"), "{}");
+    await writeFile(
+      join(root, "docs/reference/workspace/documentation.json"),
+      "{}",
+    );
     // NTFS forbids "?" in file names; "#" alone still exercises literal query characters there.
-    const literal = process.platform === "win32" ? "question#.md" : "question?#.md";
+    const literal =
+      process.platform === "win32" ? "question#.md" : "question?#.md";
     const entries = [
       {
         source: "owner/Guide (draft)[1].md",
@@ -78,14 +82,23 @@ test("generated migration index and URL metadata resolve actual local files", as
       "```md\n[fenced code](missing.md)\n```",
     ].join("\n");
     await writeFile(join(migration, "links.md"), additional);
-    expect(await runDocsLinks(["--root", root, "--web-routes", "--json"])).toBe(0);
+    expect(await runDocsLinks(["--root", root, "--web-routes", "--json"])).toBe(
+      0,
+    );
     await writeFile(
       join(migration, "broken.md"),
       '[missing](<../guides/owner/Missing (draft).md#intro> "Title")',
     );
-    expect(await runDocsLinks(["--root", root, "--web-routes", "--json"])).toBe(1);
-    await writeFile(join(migration, "broken.md"), "[invalid encoding](../bad%ZZ.md)");
-    expect(await runDocsLinks(["--root", root, "--web-routes", "--json"])).toBe(1);
+    expect(await runDocsLinks(["--root", root, "--web-routes", "--json"])).toBe(
+      1,
+    );
+    await writeFile(
+      join(migration, "broken.md"),
+      "[invalid encoding](../bad%ZZ.md)",
+    );
+    expect(await runDocsLinks(["--root", root, "--web-routes", "--json"])).toBe(
+      1,
+    );
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -95,22 +108,32 @@ test("explicit historical exclusions do not hide active failures or accept stale
   const root = await mkdtemp(join(tmpdir(), "docs-links-exclusions-"));
   try {
     await mkdir(join(root, "docs/migration"), { recursive: true });
-    await writeFile(join(root, "docs/migration/snapshot.md"), "[legacy](missing.md)");
+    await writeFile(
+      join(root, "docs/migration/snapshot.md"),
+      "[legacy](missing.md)",
+    );
     await writeFile(join(root, "docs/active.md"), "# Active");
     const args = ["--root", root, "--json"];
     expect(await runDocsLinks(args)).toBe(1);
-    const excludedArgs = [...args, "--exclude-file", "docs/migration/snapshot.md"];
+    const excludedArgs = [
+      ...args,
+      "--exclude-file",
+      "docs/migration/snapshot.md",
+    ];
     expect(await runDocsLinks(excludedArgs)).toBe(0);
     await writeFile(join(root, "docs/active.md"), "[broken](missing.md)");
     expect(await runDocsLinks(excludedArgs)).toBe(1);
     await Promise.all(
-      ["docs/migration/absent.md", "docs/migration", "../outside.md"].map((path) =>
-        expect(runDocsLinks([...args, "--exclude-file", path])).rejects.toThrow(
-          "not an inventoried Markdown document",
-        ),
+      ["docs/migration/absent.md", "docs/migration", "../outside.md"].map(
+        (path) =>
+          expect(
+            runDocsLinks([...args, "--exclude-file", path]),
+          ).rejects.toThrow("not an inventoried Markdown document"),
       ),
     );
-    await expect(runDocsLinks([...args, "--exclude-file"])).rejects.toThrow("requires a path");
+    await expect(runDocsLinks([...args, "--exclude-file"])).rejects.toThrow(
+      "requires a path",
+    );
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -146,9 +169,9 @@ test("coverage includes imported, historical and active pages unless individuall
     expect(full.checked).toBe(paths.length);
     expect(full.checkedFiles.toSorted()).toEqual([...paths].toSorted());
     expect(full.broken).toBe(paths.length);
-    expect(full.findings.map((finding: { file: string }) => finding.file).toSorted()).toEqual(
-      [...paths].toSorted(),
-    );
+    expect(
+      full.findings.map((finding: { file: string }) => finding.file).toSorted(),
+    ).toEqual([...paths].toSorted());
 
     const scoped = [...args, "--exclude-file", "docs/migration/snapshot.md"];
     expect(await runDocsLinks(scoped)).toBe(1);
@@ -183,14 +206,20 @@ test("declared imported upstream trees are skipped and dead backtick paths fail 
   try {
     await mkdir(join(root, "tools/config/docs"), { recursive: true });
     await mkdir(join(root, "docs/reference/upstream-x"), { recursive: true });
-    await mkdir(join(root, "docs/reference/upstream-x/local"), { recursive: true });
+    await mkdir(join(root, "docs/reference/upstream-x/local"), {
+      recursive: true,
+    });
     await mkdir(join(root, "packages/real"), { recursive: true });
     await writeFile(join(root, "packages/real/index.ts"), "");
     await writeFile(
       join(root, "tools/config/docs/imported-upstream-docs.json"),
       JSON.stringify({
         trees: [
-          { id: "x", include: ["docs/*/upstream-x/**"], except: ["docs/*/upstream-x/local/**"] },
+          {
+            id: "x",
+            include: ["docs/*/upstream-x/**"],
+            except: ["docs/*/upstream-x/local/**"],
+          },
         ],
       }),
     );
@@ -198,7 +227,10 @@ test("declared imported upstream trees are skipped and dead backtick paths fail 
       join(root, "docs/reference/upstream-x/page.md"),
       "[up](absent.md) `packages/gone.ts`",
     );
-    await writeFile(join(root, "docs/reference/upstream-x/local/ours.md"), "# Ours");
+    await writeFile(
+      join(root, "docs/reference/upstream-x/local/ours.md"),
+      "# Ours",
+    );
     await writeFile(
       join(root, "docs/active.md"),
       "`packages/real/index.ts:3` and `packages/gone/x.ts`",
@@ -208,16 +240,24 @@ test("declared imported upstream trees are skipped and dead backtick paths fail 
     const report = JSON.parse(output.pop()!);
     expect(report.importedSkipped).toEqual({ x: 1 });
     expect(report.broken).toBe(0);
-    expect(report.deadPaths).toEqual([{ file: "docs/active.md", path: "packages/gone/x.ts" }]);
+    expect(report.deadPaths).toEqual([
+      { file: "docs/active.md", path: "packages/gone/x.ts" },
+    ]);
 
-    await writeFile(join(root, "docs/active.md"), "`packages/gone/x.ts` (not in repo)");
+    await writeFile(
+      join(root, "docs/active.md"),
+      "`packages/gone/x.ts` (not in repo)",
+    );
     expect(await runDocsLinks(args)).toBe(0);
     await writeFile(
       join(root, "docs/active.md"),
       "<!-- docs-links: external-paths — another repository -->\n`packages/gone/x.ts`",
     );
     expect(await runDocsLinks(args)).toBe(0);
-    await writeFile(join(root, "docs/reference/upstream-x/local/ours.md"), "[x](absent.md)");
+    await writeFile(
+      join(root, "docs/reference/upstream-x/local/ours.md"),
+      "[x](absent.md)",
+    );
     expect(await runDocsLinks(args)).toBe(1);
   } finally {
     logger.mockRestore();
@@ -233,7 +273,10 @@ test("MCP operations do not become filesystem paths when tools is a repository r
     const doc = join(root, "docs/protocol.md");
     await writeFile(doc, "MCP operations: `tools/list` and `tools/call`.\n");
     expect(await runDocsLinks(["--root", root, "--json"])).toBe(0);
-    await writeFile(doc, "MCP `tools/call`; repository script `tools/missing.ts`.\n");
+    await writeFile(
+      doc,
+      "MCP `tools/call`; repository script `tools/missing.ts`.\n",
+    );
     expect(await runDocsLinks(["--root", root, "--json"])).toBe(1);
     await writeFile(join(root, "tools/missing.ts"), "export {};\n");
     expect(await runDocsLinks(["--root", root, "--json"])).toBe(0);

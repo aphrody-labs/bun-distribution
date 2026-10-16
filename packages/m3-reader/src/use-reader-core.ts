@@ -54,13 +54,18 @@ export function useFullscreen(containerRef: RefObject<HTMLElement | null>) {
       }
       if (mounted.current && current === operation.current) {
         setIsFullscreen(
-          Boolean(containerRef.current && doc.fullscreenElement === containerRef.current),
+          Boolean(
+            containerRef.current &&
+            doc.fullscreenElement === containerRef.current,
+          ),
         );
       }
       return true;
     } catch (reason) {
       if (mounted.current && current === operation.current) {
-        setFullscreenError(reason instanceof Error ? reason : new Error(String(reason)));
+        setFullscreenError(
+          reason instanceof Error ? reason : new Error(String(reason)),
+        );
       }
       return false;
     }
@@ -72,7 +77,10 @@ export function useFullscreen(containerRef: RefObject<HTMLElement | null>) {
     mounted.current = true;
     const onChange = () =>
       setIsFullscreen(
-        Boolean(containerRef.current && doc.fullscreenElement === containerRef.current),
+        Boolean(
+          containerRef.current &&
+          doc.fullscreenElement === containerRef.current,
+        ),
       );
     onChange();
     doc.addEventListener("fullscreenchange", onChange);
@@ -122,7 +130,9 @@ export function useVerticalScrollSync(
     const onScroll = () => {
       if (restoring?.current) return;
       const mid = el.scrollTop + el.clientHeight / 2;
-      const item = virtualizer.getVirtualItems().find((vi) => vi.start <= mid && vi.end >= mid);
+      const item = virtualizer
+        .getVirtualItems()
+        .find((vi) => vi.start <= mid && vi.end >= mid);
       if (item) setCurrent(item.index);
     };
     el.addEventListener("scroll", onScroll, { passive: true });

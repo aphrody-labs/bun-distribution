@@ -2,11 +2,14 @@ import { motion } from "motion/react";
 import { BallBlue } from "@aphrody/assets/images";
 import Orb from "../../components/Orb";
 import { CircleButton } from "@aphrody/m3-primitives";
-import { GlobeHemisphereWest, GithubLogo, DiscordLogo } from "@phosphor-icons/react";
+import {
+  GlobeHemisphereWest,
+  GithubLogo,
+  DiscordLogo,
+} from "@phosphor-icons/react";
 import contributors from "../../contributors.json";
 
 export function AboutSettings() {
-
   return (
     <div className="flex flex-col items-center justify-center min-h-[600px]">
       {/* Animated orb with ball */}
@@ -44,7 +47,9 @@ export function AboutSettings() {
         transition={{ duration: 0.5, delay: 0.3 }}
         className="text-center mb-6"
       >
-        <h3 className="text-headline-small font-bold text-white mb-2">Spacedrive</h3>
+        <h3 className="text-headline-small font-bold text-white mb-2">
+          Spacedrive
+        </h3>
         <p className="text-body-medium text-white/60">
           A file explorer from the future.
         </p>
@@ -58,7 +63,10 @@ export function AboutSettings() {
         className="max-w-md text-center mb-8 px-4"
       >
         <p className="text-body-medium text-white/70 leading-relaxed">
-          Infrastructure for the next era of computing. An architecture designed for multi-device environments from the ground up—not cloud services retrofitted with offline support, but local-first sync that scales to the cloud when you want it.
+          Infrastructure for the next era of computing. An architecture designed
+          for multi-device environments from the ground up—not cloud services
+          retrofitted with offline support, but local-first sync that scales to
+          the cloud when you want it.
         </p>
       </motion.div>
 
@@ -74,27 +82,21 @@ export function AboutSettings() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <CircleButton icon={GlobeHemisphereWest}>
-            Website
-          </CircleButton>
+          <CircleButton icon={GlobeHemisphereWest}>Website</CircleButton>
         </a>
         <a
           href="https://github.com/spacedriveapp/spacedrive"
           target="_blank"
           rel="noopener noreferrer"
         >
-          <CircleButton icon={GithubLogo}>
-            GitHub
-          </CircleButton>
+          <CircleButton icon={GithubLogo}>GitHub</CircleButton>
         </a>
         <a
           href="https://discord.gg/spacedrive"
           target="_blank"
           rel="noopener noreferrer"
         >
-          <CircleButton icon={DiscordLogo}>
-            Discord
-          </CircleButton>
+          <CircleButton icon={DiscordLogo}>Discord</CircleButton>
         </a>
       </motion.div>
 

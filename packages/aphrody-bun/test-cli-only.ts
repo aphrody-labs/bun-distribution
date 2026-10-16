@@ -10,6 +10,9 @@ if (cli.getAphrodyAbiVersion() !== cli.EXPECTED_APHRODY_ABI_VERSION) {
   throw new Error("CLI-only Aphrody ABI mismatch");
 }
 const result = cli.runAphrodyCaptured(["version", "--json"]);
-if (result.code !== 0 || typeof JSON.parse(result.stdout).version !== "string") {
+if (
+  result.code !== 0 ||
+  typeof JSON.parse(result.stdout).version !== "string"
+) {
   throw new Error("CLI-only Aphrody captured execution failed");
 }

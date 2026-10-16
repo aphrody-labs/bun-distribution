@@ -30,18 +30,25 @@ export default function System({ adaptive }: PageProps) {
   const [scaffoldFile, setScaffoldFile] = useState("m3.config.ts");
   const [notice, setNotice] = useState("");
   const [source, setSource] = useState(sample);
-  const [migration, setMigration] = useState<SystemOutput["migration"] | null>(null);
+  const [migration, setMigration] = useState<SystemOutput["migration"] | null>(
+    null,
+  );
   const [busy, setBusy] = useState(false);
   const active = useRef<AbortController | null>(null);
   useEffect(() => () => active.current?.abort(), []);
-  const query = "seed=" + encodeURIComponent(seedColor) + "&target=" + encodeURIComponent(target);
+  const query =
+    "seed=" +
+    encodeURIComponent(seedColor) +
+    "&target=" +
+    encodeURIComponent(target);
   useEffect(() => {
     const controller = new AbortController();
     setNotice("Computing local system outputs…");
     void fetch("/api/system?" + query, { signal: controller.signal })
       .then(async (response) => {
         const payload = await response.json();
-        if (!response.ok) throw new Error(payload.error ?? "System outputs are unavailable.");
+        if (!response.ok)
+          throw new Error(payload.error ?? "System outputs are unavailable.");
         if (!controller.signal.aborted) {
           const result = payload as SystemOutput;
           setData(result);
@@ -57,7 +64,11 @@ export default function System({ adaptive }: PageProps) {
       })
       .catch((error: unknown) => {
         if (!controller.signal.aborted)
-          setNotice(error instanceof Error ? error.message : "System outputs are unavailable.");
+          setNotice(
+            error instanceof Error
+              ? error.message
+              : "System outputs are unavailable.",
+          );
       });
     return () => controller.abort();
   }, [query]);
@@ -74,13 +85,18 @@ export default function System({ adaptive }: PageProps) {
     })
       .then(async (response) => {
         const payload = await response.json();
-        if (!response.ok) throw new Error(payload.error ?? "Theme file is unavailable.");
+        if (!response.ok)
+          throw new Error(payload.error ?? "Theme file is unavailable.");
         if (!controller.signal.aborted) setContent(payload.content);
         return payload;
       })
       .catch((error: unknown) => {
         if (!controller.signal.aborted)
-          setNotice(error instanceof Error ? error.message : "Theme file is unavailable.");
+          setNotice(
+            error instanceof Error
+              ? error.message
+              : "Theme file is unavailable.",
+          );
       });
     return () => controller.abort();
   }, [path, query, selected?.binary]);
@@ -182,7 +198,12 @@ export default function System({ adaptive }: PageProps) {
               </label>
               {selected?.binary ? (
                 <img
-                  src={"/api/os-theme?" + query + "&path=" + encodeURIComponent(path)}
+                  src={
+                    "/api/os-theme?" +
+                    query +
+                    "&path=" +
+                    encodeURIComponent(path)
+                  }
                   width={256}
                   height={144}
                   className="rounded-medium"
@@ -225,7 +246,9 @@ export default function System({ adaptive }: PageProps) {
               {data.mcpTools.map((tool) => (
                 <Card key={tool.name}>
                   <h3 className="text-title-medium">{tool.name}</h3>
-                  <p className="text-body-medium text-on-surface-variant">{tool.description}</p>
+                  <p className="text-body-medium text-on-surface-variant">
+                    {tool.description}
+                  </p>
                 </Card>
               ))}
             </div>
@@ -235,7 +258,9 @@ export default function System({ adaptive }: PageProps) {
               {data.lintRules.map((rule) => (
                 <Card key={rule.name}>
                   <h3 className="text-title-medium">{rule.name}</h3>
-                  <p className="text-body-medium text-on-surface-variant">{rule.description}</p>
+                  <p className="text-body-medium text-on-surface-variant">
+                    {rule.description}
+                  </p>
                 </Card>
               ))}
             </div>

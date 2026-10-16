@@ -127,7 +127,9 @@ export class Gateway {
 
   /** URL de connexion : `resume_gateway_url` pendant une session, sinon l'URL Gateway (récupérée une fois). */
   private async connectionBase(): Promise<string> {
-    return this.session ? this.session.resumeUrl : (this.cachedUrl ??= await this.options.getUrl());
+    return this.session
+      ? this.session.resumeUrl
+      : (this.cachedUrl ??= await this.options.getUrl());
   }
 
   private async abortableSleep(ms: number): Promise<void> {
@@ -213,7 +215,8 @@ export class Gateway {
         switch (payload.op) {
           case Op.Hello: {
             const interval = Number(
-              (payload.d as { heartbeat_interval?: number })?.heartbeat_interval ?? 41_250,
+              (payload.d as { heartbeat_interval?: number })
+                ?.heartbeat_interval ?? 41_250,
             );
             // Premier battement après interval * jitter (0..1), puis un par intervalle.
             firstBeat = setTimeout(
@@ -226,7 +229,11 @@ export class Gateway {
             if (this.session && this.seq !== null) {
               send({
                 op: Op.Resume,
-                d: { token: this.options.token, session_id: this.session.id, seq: this.seq },
+                d: {
+                  token: this.options.token,
+                  session_id: this.session.id,
+                  seq: this.seq,
+                },
               });
             } else {
               send({
@@ -265,7 +272,8 @@ export class Gateway {
           }
           case Op.Dispatch:
             this.dispatch(payload);
-            if (payload.t === "READY" || payload.t === "RESUMED") this.stable = true;
+            if (payload.t === "READY" || payload.t === "RESUMED")
+              this.stable = true;
             break;
           default:
             break;
@@ -290,7 +298,8 @@ export class Gateway {
       };
       this.session = {
         id: data.session_id,
-        resumeUrl: data.resume_gateway_url || this.cachedUrl || FALLBACK_GATEWAY,
+        resumeUrl:
+          data.resume_gateway_url || this.cachedUrl || FALLBACK_GATEWAY,
       };
       this.options.onReady?.(data);
       return;

@@ -16,10 +16,17 @@ export interface StandaloneCompileOptions {
 export async function compileStandaloneApp(
   options: StandaloneCompileOptions,
 ): Promise<Awaited<ReturnType<typeof Bun.build>>> {
-  for (const path of [options.entrypoint, options.executablePath, options.outfile, ...(options.assets ?? [])]) {
-    if (!path || !isAbsolute(path)) throw new Error("Standalone compiler paths must be absolute.");
+  for (const path of [
+    options.entrypoint,
+    options.executablePath,
+    options.outfile,
+    ...(options.assets ?? []),
+  ]) {
+    if (!path || !isAbsolute(path))
+      throw new Error("Standalone compiler paths must be absolute.");
   }
-  if (!options.target.startsWith("bun-")) throw new Error("Select an explicit Bun compile target.");
+  if (!options.target.startsWith("bun-"))
+    throw new Error("Select an explicit Bun compile target.");
 
   const result = await Bun.build({
     entrypoints: [options.entrypoint],
@@ -48,10 +55,13 @@ export async function compileStandaloneApp(
             {
               name: "standalone-input-owner",
               setup(build) {
-                build.onLoad({ filter: /.*/, namespace: "file" }, async args => {
-                  await options.onInput!(args.path);
-                  return undefined;
-                });
+                build.onLoad(
+                  { filter: /.*/, namespace: "file" },
+                  async (args) => {
+                    await options.onInput!(args.path);
+                    return undefined;
+                  },
+                );
               },
             },
           ],
@@ -61,12 +71,21 @@ export async function compileStandaloneApp(
 
   if (!result.success || !result.metafile) {
     for (const diagnostic of result.logs) console.error(diagnostic.message);
-    throw new Error("Standalone compilation failed or emitted no source graph.");
+    throw new Error(
+      "Standalone compilation failed or emitted no source graph.",
+    );
   }
 
   const unresolved = Object.values(result.metafile.inputs)
-    .flatMap(input => input.imports)
-    .filter(item => item.external && !item.path.startsWith("bun:") && item.path !== "bun" && !isBuiltin(item.path));
-  if (unresolved.length) throw new Error("Standalone artifact has unresolved JavaScript imports.");
+    .flatMap((input) => input.imports)
+    .filter(
+      (item) =>
+        item.external &&
+        !item.path.startsWith("bun:") &&
+        item.path !== "bun" &&
+        !isBuiltin(item.path),
+    );
+  if (unresolved.length)
+    throw new Error("Standalone artifact has unresolved JavaScript imports.");
   return result;
 }

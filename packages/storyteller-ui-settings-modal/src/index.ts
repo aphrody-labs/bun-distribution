@@ -1,6 +1,5 @@
-
-export * from './lib/settings-modal';
+export * from "./lib/settings-modal";
 export {
   useExperimentalStore,
   useStoryboardPageEnabled,
-} from './lib/experimental-store';
+} from "./lib/experimental-store";

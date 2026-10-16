@@ -15,8 +15,7 @@ import { twMerge } from "tailwind-merge";
 // Shared look for quiet icon-only toolbar controls. Also passed as
 // `buttonClassName` to PopoverMenu triggers (e.g. the generation count
 // picker) so they match this button.
-export const PROMPT_TOOLBAR_ICON_BUTTON_CLASSES =
-  `flex h-9 w-9 items-center justify-center rounded-[3px] border border-transparent bg-transparent px-0 text-base-fg/50 shadow-none transition-colors ${NEUTRAL_BUTTON_HOVER_CLASSES} hover:text-base-fg/90`;
+export const PROMPT_TOOLBAR_ICON_BUTTON_CLASSES = `flex h-9 w-9 items-center justify-center rounded-[3px] border border-transparent bg-transparent px-0 text-base-fg/50 shadow-none transition-colors ${NEUTRAL_BUTTON_HOVER_CLASSES} hover:text-base-fg/90`;
 
 interface PromptClearAllButtonProps {
   onClick: () => void;
@@ -60,7 +59,7 @@ export const PromptClearAllButton = ({
             className,
           )}
         >
-          <EraserIcon  className="h-4 w-4" />
+          <EraserIcon className="h-4 w-4" />
         </button>
       </Tooltip>
       {/* Separates the destructive clear control from the generate side of

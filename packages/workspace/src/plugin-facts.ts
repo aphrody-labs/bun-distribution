@@ -2,9 +2,20 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { inside, object, plugins, readJson, type Json } from "./agent-plugin-store.ts";
+import {
+  inside,
+  object,
+  plugins,
+  readJson,
+  type Json,
+} from "./agent-plugin-store.ts";
 
-type FactRecord = { plugin: string; status: string; message?: string; receipt?: Json };
+type FactRecord = {
+  plugin: string;
+  status: string;
+  message?: string;
+  receipt?: Json;
+};
 const digest = (path: string): string =>
   createHash("sha256").update(readFileSync(path)).digest("hex");
 
@@ -20,7 +31,8 @@ export function checkPluginFacts(store: string, only?: string): FactRecord[] {
         return {
           plugin: plugin.name,
           status: "undocumented",
-          message: "Add source-of-truth.json with owner roots and evidence files",
+          message:
+            "Add source-of-truth.json with owner roots and evidence files",
         };
       try {
         const declaration = readJson(sourcePath);
@@ -42,18 +54,22 @@ export function checkPluginFacts(store: string, only?: string): FactRecord[] {
           // Relative roots are plugin-local, so a portable plugin needs no host path.
           const root = resolve(plugin.path, source.root);
           for (const item of source.evidence) {
-            if (typeof item !== "string") throw new Error("Evidence paths must be strings");
+            if (typeof item !== "string")
+              throw new Error("Evidence paths must be strings");
             const path = resolve(root, item);
             if (!inside(root, path) || !existsSync(path))
               throw new Error(`Missing/outside evidence: ${item}`);
             inputs[`${root}:${item}`] = digest(path);
           }
         }
-        const knowledge = Array.isArray(declaration.knowledge) ? declaration.knowledge : [];
+        const knowledge = Array.isArray(declaration.knowledge)
+          ? declaration.knowledge
+          : [];
         if (!knowledge.length)
           throw new Error("List plugin knowledge files to keep source-aligned");
         for (const item of knowledge) {
-          if (typeof item !== "string") throw new Error("Knowledge paths must be strings");
+          if (typeof item !== "string")
+            throw new Error("Knowledge paths must be strings");
           const path = resolve(plugin.path, item);
           if (!inside(plugin.path, path) || !existsSync(path))
             throw new Error(`Missing/outside knowledge file: ${item}`);
@@ -100,7 +116,9 @@ export function refreshPluginFacts(
   }
   if (apply) {
     mkdirSync(join(store, "_state"), { recursive: true });
-    writeFileSync(lockPath, `${JSON.stringify(lock, null, 2)}\n`, { mode: 0o600 });
+    writeFileSync(lockPath, `${JSON.stringify(lock, null, 2)}\n`, {
+      mode: 0o600,
+    });
   }
   return updates;
 }

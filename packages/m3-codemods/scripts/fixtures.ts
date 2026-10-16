@@ -6,7 +6,14 @@
  * autres par `transforms/orchestrator.ts`. Les deux côtés sont normalisés par oxfmt avant
  * comparaison : on teste la sémantique du codemod, pas le style d'impression.
  */
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import icons from "../transforms/icons";
@@ -40,7 +47,10 @@ export function fixtureCases(): FixtureCase[] {
 }
 
 /** Sortie brute du transform de la fixture. */
-export function runCase(c: FixtureCase, source = readFileSync(c.inputPath, "utf8")): string {
+export function runCase(
+  c: FixtureCase,
+  source = readFileSync(c.inputPath, "utf8"),
+): string {
   const transform = c.transform === "icons" ? icons : orchestrator;
   return transform({ path: c.inputPath, source });
 }
@@ -48,7 +58,10 @@ export function runCase(c: FixtureCase, source = readFileSync(c.inputPath, "utf8
 /** Normalise un source TSX via oxfmt (style canonique du dépôt). */
 export function format(source: string): string {
   const oxfmt = Bun.which("oxfmt");
-  if (!oxfmt) throw new Error("oxfmt introuvable sur PATH (requis pour comparer les fixtures)");
+  if (!oxfmt)
+    throw new Error(
+      "oxfmt introuvable sur PATH (requis pour comparer les fixtures)",
+    );
   // oxfmt ne lit pas le source sur stdin : formatage d'un fichier temporaire, configuration du dépôt.
   const dir = mkdtempSync(join(tmpdir(), "codemod-fixture-"));
   const file = join(dir, "f.tsx");
@@ -61,7 +74,9 @@ export function format(source: string): string {
       stderr: "pipe",
     });
     if (!run.success)
-      throw new Error(`oxfmt failed (exit ${run.exitCode}): ${run.stderr.toString()}`);
+      throw new Error(
+        `oxfmt failed (exit ${run.exitCode}): ${run.stderr.toString()}`,
+      );
     return readFileSync(file, "utf8");
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -75,7 +90,8 @@ function repoConfig(): string {
     const candidate = join(dir, ".oxfmtrc.json");
     if (existsSync(candidate)) return candidate;
     const parent = dirname(dir);
-    if (parent === dir) throw new Error("`.oxfmtrc.json` introuvable au-dessus de ROOT");
+    if (parent === dir)
+      throw new Error("`.oxfmtrc.json` introuvable au-dessus de ROOT");
     dir = parent;
   }
 }

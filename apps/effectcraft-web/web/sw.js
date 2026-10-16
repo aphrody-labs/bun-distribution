@@ -12,7 +12,9 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE)
-      .then((c) => c.addAll(FILES.map((f) => new Request(f, { cache: "reload" }))))
+      .then((c) =>
+        c.addAll(FILES.map((f) => new Request(f, { cache: "reload" }))),
+      )
       .then(() => self.skipWaiting()),
   );
 });
@@ -21,7 +23,13 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k.startsWith("effectcraft-") && k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((k) => k.startsWith("effectcraft-") && k !== CACHE)
+            .map((k) => caches.delete(k)),
+        ),
+      )
       .then(() => self.clients.claim()),
   );
 });
@@ -34,8 +42,13 @@ self.addEventListener("fetch", (event) => {
     (async () => {
       const cache = await caches.open(CACHE);
       // The page itself regardless of its query (?empty, ?demo…).
-      const key = req.mode === "navigate" ? new URL(".//", self.registration.scope).href : req;
-      const hit = await cache.match(key, { ignoreSearch: req.mode === "navigate" });
+      const key =
+        req.mode === "navigate"
+          ? new URL(".//", self.registration.scope).href
+          : req;
+      const hit = await cache.match(key, {
+        ignoreSearch: req.mode === "navigate",
+      });
       if (hit) return hit;
       const res = await fetch(req);
       if (res.ok && res.type === "basic") cache.put(req, res.clone());

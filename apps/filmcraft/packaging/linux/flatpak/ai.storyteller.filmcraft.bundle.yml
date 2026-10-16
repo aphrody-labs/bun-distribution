@@ -14,7 +14,7 @@
 # runtime-version and finish-args identical in both (packaging-lint checks this).
 id: ai.storyteller.filmcraft
 runtime: org.freedesktop.Platform
-runtime-version: '25.08'
+runtime-version: "25.08"
 sdk: org.freedesktop.Sdk
 command: filmcraft
 finish-args:

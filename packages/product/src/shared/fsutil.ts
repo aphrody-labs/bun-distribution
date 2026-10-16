@@ -48,7 +48,11 @@ export interface ClearResult extends TreeStats {
  * Remove the CONTENT of `dir` (never `dir` itself), entries older than `olderThanMs` only when given.
  * Locked entries are skipped, not fatal. Nothing is touched unless `apply` is true.
  */
-export async function clearDir(dir: string, apply: boolean, olderThanMs = 0): Promise<ClearResult> {
+export async function clearDir(
+  dir: string,
+  apply: boolean,
+  olderThanMs = 0,
+): Promise<ClearResult> {
   const result: ClearResult = { bytes: 0, files: 0, skipped: 0 };
   let entries;
   try {
@@ -64,9 +68,12 @@ export async function clearDir(dir: string, apply: boolean, olderThanMs = 0): Pr
       const info = await lstat(full);
       if (olderThanMs > 0 && info.mtimeMs > limit) continue;
       // oxlint-disable-next-line no-await-in-loop -- entries are measured and pruned one at a time in directory order (bounded I/O on large trees; deterministic removal)
-      const stats = entry.isDirectory() ? await treeStats(full) : { bytes: info.size, files: 1 };
+      const stats = entry.isDirectory()
+        ? await treeStats(full)
+        : { bytes: info.size, files: 1 };
       // oxlint-disable-next-line no-await-in-loop -- entries are measured and pruned one at a time in directory order (bounded I/O on large trees; deterministic removal)
-      if (apply) await rm(full, { recursive: true, force: true, maxRetries: 1 });
+      if (apply)
+        await rm(full, { recursive: true, force: true, maxRetries: 1 });
       result.bytes += stats.bytes;
       result.files += stats.files;
     } catch {
@@ -86,7 +93,11 @@ export async function expandStar(pattern: string): Promise<string[]> {
   const rest = normalized.slice(rootEnd + 1);
   const out: string[] = [];
   try {
-    for await (const match of new Bun.Glob(rest).scan({ cwd: root, onlyFiles: false, dot: true })) {
+    for await (const match of new Bun.Glob(rest).scan({
+      cwd: root,
+      onlyFiles: false,
+      dot: true,
+    })) {
       out.push(join(root, match));
     }
   } catch {

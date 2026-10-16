@@ -64,7 +64,10 @@ function formatBytes(bytes: number): string {
   return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
 }
 
-export async function runDiscord(args: string[] = [], root = infraRoot()): Promise<number> {
+export async function runDiscord(
+  args: string[] = [],
+  root = infraRoot(),
+): Promise<number> {
   const [subcommand, ...rest] = args;
 
   if (subcommand === "--help" || subcommand === "-h") {
@@ -85,7 +88,9 @@ export async function runDiscord(args: string[] = [], root = infraRoot()): Promi
         console.log(`  State:     ✓ Ready (${formatBytes(s.binarySizeBytes)})`);
         console.log(`  Modified:  ${s.lastModified}`);
       } else {
-        console.log(`  State:     ✗ Not compiled (run \`aphrody discord compile ${s.id}\`)`);
+        console.log(
+          `  State:     ✗ Not compiled (run \`aphrody discord compile ${s.id}\`)`,
+        );
       }
     }
     console.log();
@@ -103,14 +108,20 @@ export async function runDiscord(args: string[] = [], root = infraRoot()): Promi
 
     const proc = Bun.spawn(
       [cmd, "discord", "compile", target, smoke ? "--smoke" : "--smoke=false"],
-      { windowsHide: true, cwd: root, stdio: ["inherit", "inherit", "inherit"] },
+      {
+        windowsHide: true,
+        cwd: root,
+        stdio: ["inherit", "inherit", "inherit"],
+      },
     );
     const exitCode = await proc.exited;
     return exitCode;
   }
 
   if (subcommand === "verify") {
-    console.log("\n🔍 Running Discord monorepo gates via native aphrody CLI...\n");
+    console.log(
+      "\n🔍 Running Discord monorepo gates via native aphrody CLI...\n",
+    );
     const cliPath = join(root, "target/debug/aphrody");
     const cmd = existsSync(cliPath) ? cliPath : "aphrody";
 

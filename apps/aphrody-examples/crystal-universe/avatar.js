@@ -10,7 +10,14 @@ export const DEFAULT_AVATAR = {
   height: 1,
 };
 
-const races = new Set(["saiyan", "earthling", "namekian", "majin", "frieza", "android"]);
+const races = new Set([
+  "saiyan",
+  "earthling",
+  "namekian",
+  "majin",
+  "frieza",
+  "android",
+]);
 const hairstyles = new Set(["spiky", "short", "crest"]);
 const builds = new Set(["slim", "athletic", "broad"]);
 const colorPattern = /^#[0-9a-f]{6}$/i;
@@ -25,8 +32,12 @@ export function normalizeAvatar(value) {
     race: races.has(avatar.race) ? avatar.race : DEFAULT_AVATAR.race,
     skin: colorPattern.test(avatar.skin) ? avatar.skin : DEFAULT_AVATAR.skin,
     hair: colorPattern.test(avatar.hair) ? avatar.hair : DEFAULT_AVATAR.hair,
-    outfit: colorPattern.test(avatar.outfit) ? avatar.outfit : DEFAULT_AVATAR.outfit,
-    hairstyle: hairstyles.has(avatar.hairstyle) ? avatar.hairstyle : DEFAULT_AVATAR.hairstyle,
+    outfit: colorPattern.test(avatar.outfit)
+      ? avatar.outfit
+      : DEFAULT_AVATAR.outfit,
+    hairstyle: hairstyles.has(avatar.hairstyle)
+      ? avatar.hairstyle
+      : DEFAULT_AVATAR.hairstyle,
     build: builds.has(avatar.build) ? avatar.build : DEFAULT_AVATAR.build,
     height: Number.isFinite(Number(avatar.height))
       ? Math.max(0.85, Math.min(1.15, Number(avatar.height)))
@@ -36,7 +47,9 @@ export function normalizeAvatar(value) {
 
 export function loadAvatar(storage) {
   try {
-    return normalizeAvatar(JSON.parse(storage.getItem("dragon-pixel-avatar") || "null"));
+    return normalizeAvatar(
+      JSON.parse(storage.getItem("dragon-pixel-avatar") || "null"),
+    );
   } catch {
     return { ...DEFAULT_AVATAR };
   }

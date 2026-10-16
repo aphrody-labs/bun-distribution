@@ -1,17 +1,55 @@
 /* Généré par scripts/pet-symbols.py : ne pas éditer à la main. */
-@font-face { font-family: "Aphrody Pet Symbols Outlined"; src: url("../fonts/AphrodyPetSymbols-Outlined.woff2") format("woff2"); font-weight: 100 700; font-style: normal; font-display: block; }
-@font-face { font-family: "Aphrody Pet Symbols Rounded"; src: url("../fonts/AphrodyPetSymbols-Rounded.woff2") format("woff2"); font-weight: 100 700; font-style: normal; font-display: block; }
-@font-face { font-family: "Aphrody Pet Symbols Sharp"; src: url("../fonts/AphrodyPetSymbols-Sharp.woff2") format("woff2"); font-weight: 100 700; font-style: normal; font-display: block; }
+@font-face {
+  font-family: "Aphrody Pet Symbols Outlined";
+  src: url("../fonts/AphrodyPetSymbols-Outlined.woff2") format("woff2");
+  font-weight: 100 700;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: "Aphrody Pet Symbols Rounded";
+  src: url("../fonts/AphrodyPetSymbols-Rounded.woff2") format("woff2");
+  font-weight: 100 700;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: "Aphrody Pet Symbols Sharp";
+  src: url("../fonts/AphrodyPetSymbols-Sharp.woff2") format("woff2");
+  font-weight: 100 700;
+  font-style: normal;
+  font-display: block;
+}
 .aphrody-pet-symbol {
-  display: inline-block; font-size: 24px; line-height: 1; width: 1em; height: 1em;
-  font-style: normal; font-weight: 400; white-space: nowrap; direction: ltr;
-  -webkit-font-smoothing: antialiased; font-feature-settings: "liga";
+  display: inline-block;
+  font-size: 24px;
+  line-height: 1;
+  width: 1em;
+  height: 1em;
+  font-style: normal;
+  font-weight: 400;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "liga";
   font-family: "Aphrody Pet Symbols Outlined";
   font-variation-settings: "wght" var(--aphrody-pet-wght, 400);
 }
-.aphrody-pet-symbol--rounded { font-family: "Aphrody Pet Symbols Rounded"; }
-.aphrody-pet-symbol--sharp { font-family: "Aphrody Pet Symbols Sharp"; }
-.aphrody-pet-idle::before { content: "\e900"; }
-.aphrody-pet-wave::before { content: "\e901"; }
-.aphrody-pet-run::before { content: "\e902"; }
-.aphrody-pet-jump::before { content: "\e903"; }
+.aphrody-pet-symbol--rounded {
+  font-family: "Aphrody Pet Symbols Rounded";
+}
+.aphrody-pet-symbol--sharp {
+  font-family: "Aphrody Pet Symbols Sharp";
+}
+.aphrody-pet-idle::before {
+  content: "\e900";
+}
+.aphrody-pet-wave::before {
+  content: "\e901";
+}
+.aphrody-pet-run::before {
+  content: "\e902";
+}
+.aphrody-pet-jump::before {
+  content: "\e903";
+}

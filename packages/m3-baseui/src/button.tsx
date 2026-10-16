@@ -5,7 +5,13 @@ import { Button } from "@base-ui/react/button";
 import type { ComponentProps } from "react";
 import { cx, mergeClassName } from "./part";
 
-export const BUTTON_VARIANTS = ["filled", "tonal", "outlined", "text", "elevated"] as const;
+export const BUTTON_VARIANTS = [
+  "filled",
+  "tonal",
+  "outlined",
+  "text",
+  "elevated",
+] as const;
 export const BUTTON_SIZES = ["xs", "sm", "md", "lg", "xl"] as const;
 export type ButtonVariant = (typeof BUTTON_VARIANTS)[number];
 export type ButtonSize = (typeof BUTTON_SIZES)[number];
@@ -17,7 +23,12 @@ export type M3ButtonProps = ComponentProps<typeof Button> & {
   size?: ButtonSize;
 };
 
-export function M3Button({ variant = "filled", size = "sm", className, ...props }: M3ButtonProps) {
+export function M3Button({
+  variant = "filled",
+  size = "sm",
+  className,
+  ...props
+}: M3ButtonProps) {
   // `sm` is the base size: only the other four sizes add a class.
   const base = cx(
     "m3-bui-button m3-bui-state",

@@ -279,7 +279,10 @@ export function KeybindsSettings({
               Reset all customizations
             </span>
             <span className="text-xs leading-relaxed text-base-fg/50">
-              Removes {overriddenCount === 1 ? "your 1 custom binding" : `all ${overriddenCount} custom bindings`}{" "}
+              Removes{" "}
+              {overriddenCount === 1
+                ? "your 1 custom binding"
+                : `all ${overriddenCount} custom bindings`}{" "}
               on every surface. Your preset stays selected. This can’t be
               undone.
             </span>
@@ -740,9 +743,7 @@ function ConfirmResetButton({
       className={twMerge(
         "relative shrink-0 overflow-hidden whitespace-nowrap rounded-[3px] font-medium transition-all active:scale-[0.97]",
         EASE,
-        prominent
-          ? "h-9 px-4 text-[13px]"
-          : "h-7 px-2.5 text-[12px]",
+        prominent ? "h-9 px-4 text-[13px]" : "h-7 px-2.5 text-[12px]",
         armed
           ? ready
             ? "bg-red/25 text-white shadow-[0_0_0_3px_rgba(0,0,0,0.15)]"
@@ -757,9 +758,21 @@ function ConfirmResetButton({
           fresh transition. */}
       {armed &&
         (ready ? (
-          <TimedFill key="drain" from={1} to={0} durationMs={DISARM_MS} className="bg-red" />
+          <TimedFill
+            key="drain"
+            from={1}
+            to={0}
+            durationMs={DISARM_MS}
+            className="bg-red"
+          />
         ) : (
-          <TimedFill key="charge" from={0} to={1} durationMs={confirmDelayMs} className="bg-red/40" />
+          <TimedFill
+            key="charge"
+            from={0}
+            to={1}
+            durationMs={confirmDelayMs}
+            className="bg-red/40"
+          />
         ))}
       <span className="relative">{armed ? confirmLabel : idleLabel}</span>
     </button>

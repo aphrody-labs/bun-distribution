@@ -1,5 +1,13 @@
 import { ReactNode, useState } from "react";
-import { CheckIcon, CloudUploadIcon, Grid3x3Icon, LoaderCircleIcon, PlayIcon, SquareDashedIcon, TriangleAlertIcon } from "lucide-react";
+import {
+  CheckIcon,
+  CloudUploadIcon,
+  Grid3x3Icon,
+  LoaderCircleIcon,
+  PlayIcon,
+  SquareDashedIcon,
+  TriangleAlertIcon,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Cheatsheet, useCheatsheetVisibility } from "@storyteller/keybinds";
@@ -81,11 +89,10 @@ export const MoodboardWorkspace = ({ adapter, topBarEndSlot }: Props) => {
   );
 };
 
-const OPTIONS: Array<{ mode: ViewMode; label: string; icon: LucideIcon }> =
-  [
-    { mode: "grid", label: "Grid", icon: Grid3x3Icon },
-    { mode: "canvas", label: "Canvas", icon: SquareDashedIcon },
-  ];
+const OPTIONS: Array<{ mode: ViewMode; label: string; icon: LucideIcon }> = [
+  { mode: "grid", label: "Grid", icon: Grid3x3Icon },
+  { mode: "canvas", label: "Canvas", icon: SquareDashedIcon },
+];
 
 // Top-left chrome: the board picker plus the Grid/Canvas view switch, sharing
 // one glass island.
@@ -202,7 +209,7 @@ const TopRightCluster = ({
         aria-label="Present"
         className="flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-sm font-medium text-base-fg/55 transition-colors duration-150 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
-        <PlayIcon  className="h-3 w-3" />
+        <PlayIcon className="h-3 w-3" />
         Present
       </button>
     </div>

@@ -121,7 +121,11 @@ import { M3ThemeProvider, useM3Theme } from "@aphrody/m3-theme/react";
 
 function App() {
   return (
-    <M3ThemeProvider defaultSeedColor="#6750a4" defaultThemeMode="system" sheet={sheet}>
+    <M3ThemeProvider
+      defaultSeedColor="#6750a4"
+      defaultThemeMode="system"
+      sheet={sheet}
+    >
       <YourMainAppLayout />
     </M3ThemeProvider>
   );

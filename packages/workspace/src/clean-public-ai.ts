@@ -74,7 +74,10 @@ async function walkDir(dir: string): Promise<string[]> {
         }
         const fullPath = resolve(dir, entry.name);
         if (entry.isDirectory()) return walkDir(fullPath);
-        if (entry.isFile() && /\.(tsx?|jsx?|json|html|md|txt)$/i.test(entry.name))
+        if (
+          entry.isFile() &&
+          /\.(tsx?|jsx?|json|html|md|txt)$/i.test(entry.name)
+        )
           return [fullPath];
         return [];
       }),
@@ -90,15 +93,26 @@ export async function auditPublicSurfaces(
   rootDir: string,
 ): Promise<{ hits: ScanHit[]; scannedCount: number }> {
   const root = resolve(rootDir);
-  const publicDirs = [resolve(root, "apps/site/public"), resolve(root, "apps/site/src")];
+  const publicDirs = [
+    resolve(root, "apps/site/public"),
+    resolve(root, "apps/site/src"),
+  ];
 
-  const allFiles = (await Promise.all(publicDirs.map((dir) => walkDir(dir)))).flat();
+  const allFiles = (
+    await Promise.all(publicDirs.map((dir) => walkDir(dir)))
+  ).flat();
 
   // Skip internal admin console files
   const scannable = allFiles.filter(
-    (file) => !(file.includes("/src/app/admin/") || file.includes("/src/components/admin/")),
+    (file) =>
+      !(
+        file.includes("/src/app/admin/") ||
+        file.includes("/src/components/admin/")
+      ),
   );
-  const hits = (await Promise.all(scannable.map((file) => scanFileForAiLeaks(file)))).flat();
+  const hits = (
+    await Promise.all(scannable.map((file) => scanFileForAiLeaks(file)))
+  ).flat();
 
   return { hits, scannedCount: allFiles.length };
 }
@@ -122,13 +136,17 @@ export async function runCleanPublicAi(args: string[]): Promise<number> {
 
   console.log(`Scanned ${scannedCount} public files.`);
   if (hits.length === 0) {
-    console.log("PASS: No private AI mentions or attribution trailers found in public surfaces.");
+    console.log(
+      "PASS: No private AI mentions or attribution trailers found in public surfaces.",
+    );
     return 0;
   }
 
   console.error(`FAIL: Found ${hits.length} leak(s) in public surfaces:`);
   for (const hit of hits) {
-    console.error(`  - ${relative(root, hit.file)}:${hit.line}: ${hit.matchedText}`);
+    console.error(
+      `  - ${relative(root, hit.file)}:${hit.line}: ${hit.matchedText}`,
+    );
   }
   return 1;
 }

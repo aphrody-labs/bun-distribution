@@ -3,10 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useEditor } from "../../editor/use-editor";
-import {
-  getDbFromLinePos,
-  getLinePosFromDb,
-} from "../audio-display";
+import { getDbFromLinePos, getLinePosFromDb } from "../audio-display";
 import { VOLUME_DB_MAX, VOLUME_DB_MIN } from "../audio-constants";
 import { getElementVolume, hasAnimatedVolume } from "../audio-state";
 import type { AudioElement } from "../types";

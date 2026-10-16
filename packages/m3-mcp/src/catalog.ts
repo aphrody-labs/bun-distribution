@@ -8,7 +8,9 @@ const roots = [
   resolve(process.cwd(), "m3"),
   resolve(import.meta.dir, "../aphrody-m3"),
 ].filter((root): root is string => !!root);
-export const ROOT = roots.find((root) => existsSync(join(root, "packages/m3-tokens"))) ?? roots[0]!;
+export const ROOT =
+  roots.find((root) => existsSync(join(root, "packages/m3-tokens"))) ??
+  roots[0]!;
 
 const read = (p: string) => (existsSync(p) ? readFileSync(p, "utf8") : "");
 
@@ -40,11 +42,14 @@ const kebab = (s: string) => s.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 /** Local CSS targets of the token package's exports, including conditional exports and aliases. */
 function exportedSheets(exports: unknown): string[] {
   if (typeof exports === "string")
-    return exports.startsWith("./") && exports.endsWith(".css") && !exports.includes("*")
+    return exports.startsWith("./") &&
+      exports.endsWith(".css") &&
+      !exports.includes("*")
       ? [exports]
       : [];
   if (Array.isArray(exports)) return exports.flatMap(exportedSheets);
-  if (exports && typeof exports === "object") return Object.values(exports).flatMap(exportedSheets);
+  if (exports && typeof exports === "object")
+    return Object.values(exports).flatMap(exportedSheets);
   return [];
 }
 
@@ -72,12 +77,19 @@ export function loadTokens(root = ROOT): Token[] {
       continue;
     const css = read(file).replace(/\/\*[\s\S]*?\*\//g, "");
     for (const m of css.matchAll(/(--md-[\w-]+)\s*:\s*([^;]+);/g)) {
-      add({ name: m[1]!, value: m[2]!.trim(), source: `packages/m3-tokens/${path}` });
+      add({
+        name: m[1]!,
+        value: m[2]!.trim(),
+        source: `packages/m3-tokens/${path}`,
+      });
     }
   }
   // `dynamic-color.ts` is the public module of the roles; it re-exports the list from `native-theme.ts`.
   const list = ["src/dynamic-color.ts", "src/native-theme.ts"]
-    .map((file) => /export const ROLES = \[([\s\S]*?)\]/.exec(read(join(pkg, file)))?.[1])
+    .map(
+      (file) =>
+        /export const ROLES = \[([\s\S]*?)\]/.exec(read(join(pkg, file)))?.[1],
+    )
     .find((roles) => roles !== undefined);
   const roles = (list ?? "").replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, "");
   for (const m of roles.matchAll(/["'](\w+)["']/g)) {
@@ -103,7 +115,9 @@ export function validateTokens(
   root = ROOT,
 ): { checked: string[]; unknown: string[] } {
   const known = new Set(loadTokens(root).map((t) => t.name));
-  const checked = [...new Set([...input.matchAll(/--md-[\w-]+/g)].map((m) => m[0]))];
+  const checked = [
+    ...new Set([...input.matchAll(/--md-[\w-]+/g)].map((m) => m[0])),
+  ];
   return { checked, unknown: checked.filter((n) => !known.has(n)) };
 }
 
@@ -111,10 +125,16 @@ function* walk(dir: string, includeJson = false): Generator<string> {
   for (const e of readdirSync(dir, { withFileTypes: true }).toSorted((a, b) =>
     a.name.localeCompare(b.name),
   )) {
-    if (e.name === "node_modules" || e.name.startsWith(".git") || e.isSymbolicLink()) continue;
+    if (
+      e.name === "node_modules" ||
+      e.name.startsWith(".git") ||
+      e.isSymbolicLink()
+    )
+      continue;
     const p = join(dir, e.name);
     if (e.isDirectory()) yield* walk(p, includeJson);
-    else if ((includeJson ? /\.(md|mdx|json)$/ : /\.(md|mdx)$/).test(e.name)) yield p;
+    else if ((includeJson ? /\.(md|mdx|json)$/ : /\.(md|mdx)$/).test(e.name))
+      yield p;
   }
 }
 
@@ -123,8 +143,11 @@ export function designCorpusRoot(
   root = ROOT,
   configured = process.env.APHRODY_DESIGN_CORPUS,
 ): string | undefined {
-  const corpus = resolve(configured ?? join(root, "../var/mirrors/design-sync"));
-  return existsSync(join(corpus, "AI_READY.md")) && statSync(corpus).isDirectory()
+  const corpus = resolve(
+    configured ?? join(root, "../var/mirrors/design-sync"),
+  );
+  return existsSync(join(corpus, "AI_READY.md")) &&
+    statSync(corpus).isDirectory()
     ? corpus
     : undefined;
 }
@@ -179,22 +202,31 @@ export function researchLinks(
       ),
     ].toSorted();
     return {
-      files: documents.map((file) => `design-sync/${relative(corpus, file).replaceAll("\\", "/")}`),
+      files: documents.map(
+        (file) => `design-sync/${relative(corpus, file).replaceAll("\\", "/")}`,
+      ),
       links,
     };
   }
   const dir = join(root, "docs/research");
-  const files = existsSync(dir) ? [...walk(dir)].map((f) => relative(root, f)) : [];
+  const files = existsSync(dir)
+    ? [...walk(dir)].map((f) => relative(root, f))
+    : [];
   // The link index moved with the M3 integrations to the Bun fork checkout next to this repository.
   const index = [
     dir,
-    join(root, "../../bun/packages/bun-aphrody-web/integrations/m3/docs/research"),
+    join(
+      root,
+      "../../bun/packages/bun-aphrody-web/integrations/m3/docs/research",
+    ),
   ]
     .map((research) => join(research, "GOOGLE-LINKS.md"))
     .find((file) => existsSync(file));
   if (index && !index.startsWith(dir)) files.push(relative(root, index));
   const links = [
-    ...read(index ?? "").matchAll(/^\|\s*([^|]+?)\s*\|\s*(https?:\/\/\S+)\s*\|/gm),
+    ...read(index ?? "").matchAll(
+      /^\|\s*([^|]+?)\s*\|\s*(https?:\/\/\S+)\s*\|/gm,
+    ),
   ].map((m) => `${m[1]}  ${m[2]}`);
   return { files, links };
 }
@@ -205,7 +237,10 @@ export function listTemplates(root = ROOT): string[] {
     const dir = join(root, base);
     if (!existsSync(dir)) continue;
     for (const e of readdirSync(dir)) {
-      if (statSync(join(dir, e)).isDirectory() && !(base === "examples" && e === "tauri"))
+      if (
+        statSync(join(dir, e)).isDirectory() &&
+        !(base === "examples" && e === "tauri")
+      )
         rows.push(`${base}/${e}`);
     }
   }

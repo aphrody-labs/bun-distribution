@@ -190,7 +190,9 @@ export class ApiManager {
     );
   }
 
-  protected parseBodyValues<T extends object, B extends object>(params: NonNullableObject<T>): B {
+  protected parseBodyValues<T extends object, B extends object>(
+    params: NonNullableObject<T>,
+  ): B {
     return Object.entries(params).reduce((allParams, [key, value]) => {
       if (!value) {
         return allParams;

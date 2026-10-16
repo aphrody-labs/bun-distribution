@@ -11,7 +11,10 @@ function chunk(type: string, data: Uint8Array): Uint8Array {
   view.setUint32(0, data.length);
   for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
   out.set(data, 8);
-  view.setUint32(8 + data.length, Bun.hash.crc32(out.subarray(4, 8 + data.length)) >>> 0);
+  view.setUint32(
+    8 + data.length,
+    Bun.hash.crc32(out.subarray(4, 8 + data.length)) >>> 0,
+  );
   return out;
 }
 

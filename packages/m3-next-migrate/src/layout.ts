@@ -1,9 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
-import React, { type ComponentType, type ReactElement, type ReactNode } from "react";
+import React, {
+  type ComponentType,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import type { RouteParams } from "./shims/provider";
 
 const rank = (part: string) =>
-  part.endsWith("*?") ? 0 : part.endsWith("*") ? 1 : part.startsWith(":") ? 2 : 3;
+  part.endsWith("*?")
+    ? 0
+    : part.endsWith("*")
+      ? 1
+      : part.startsWith(":")
+        ? 2
+        : 3;
 
 export interface RouteDefinition {
   /** Matched URL path; :id is dynamic, :slug* is catch-all and :slug*? is optional catch-all. */
@@ -44,7 +54,9 @@ export function buildRouteHierarchy(files: string[]): RouteHierarchy {
   );
 
   // Identify all page files
-  const pageFiles = normalizedFiles.filter((f) => /(^|\/)page\.(tsx|jsx|js|ts)$/.test(f));
+  const pageFiles = normalizedFiles.filter((f) =>
+    /(^|\/)page\.(tsx|jsx|js|ts)$/.test(f),
+  );
 
   const routes: RouteDefinition[] = [];
 
@@ -58,9 +70,16 @@ export function buildRouteHierarchy(files: string[]): RouteHierarchy {
     }
 
     const segments = seg ? seg.split("/").filter(Boolean) : [];
-    if (segments.some((part) => part.startsWith("_") && !part.startsWith("%5F"))) continue;
-    if (segments.some((part) => part.startsWith("@") || /^\(\.{1,3}\)/.test(part))) {
-      throw new Error(`Parallel and intercepted routes require a host adapter: ${pageFile}`);
+    if (
+      segments.some((part) => part.startsWith("_") && !part.startsWith("%5F"))
+    )
+      continue;
+    if (
+      segments.some((part) => part.startsWith("@") || /^\(\.{1,3}\)/.test(part))
+    ) {
+      throw new Error(
+        `Parallel and intercepted routes require a host adapter: ${pageFile}`,
+      );
     }
     const params: string[] = [];
 
@@ -86,14 +105,19 @@ export function buildRouteHierarchy(files: string[]): RouteHierarchy {
         return part;
       });
 
-    const routePath = mappedSegments.length === 0 ? "/" : `/${mappedSegments.join("/")}`;
+    const routePath =
+      mappedSegments.length === 0 ? "/" : `/${mappedSegments.join("/")}`;
 
     // Find all layouts that apply to this page:
     // A layout applies if the page directory starts with the layout's directory.
-    const pageDir = pageFile.includes("/") ? pageFile.slice(0, pageFile.lastIndexOf("/")) : "";
+    const pageDir = pageFile.includes("/")
+      ? pageFile.slice(0, pageFile.lastIndexOf("/"))
+      : "";
 
     const applicableLayouts = layoutFiles.filter((layout) => {
-      const layoutDir = layout.includes("/") ? layout.slice(0, layout.lastIndexOf("/")) : "";
+      const layoutDir = layout.includes("/")
+        ? layout.slice(0, layout.lastIndexOf("/"))
+        : "";
       if (!layoutDir) return true;
       return pageDir === layoutDir || pageDir.startsWith(`${layoutDir}/`);
     });
@@ -126,7 +150,10 @@ export function buildRouteHierarchy(files: string[]): RouteHierarchy {
 }
 
 /** Matches paths without inserting filesystem names into regular expressions. */
-export function matchRoutePath(routePath: string, pathname: string): RouteParams | null {
+export function matchRoutePath(
+  routePath: string,
+  pathname: string,
+): RouteParams | null {
   const pattern = routePath.split("/").filter(Boolean);
   const segments = pathname.replace(/\/$/, "").split("/").slice(1);
   if (segments.length === 1 && segments[0] === "") segments.pop();
@@ -146,7 +173,10 @@ export function matchRoutePath(routePath: string, pathname: string): RouteParams
           if (!segments[offset]) return null;
           params[part.slice(1)] = decodeURIComponent(segments[offset++]!);
         }
-      } else if (decodeURIComponent(segments[offset++] ?? "") !== decodeURIComponent(part)) {
+      } else if (
+        decodeURIComponent(segments[offset++] ?? "") !==
+        decodeURIComponent(part)
+      ) {
         return null;
       }
     }
@@ -167,7 +197,11 @@ export function composeLayouts(
 ): ReactElement {
   return layouts.reduceRight<ReactElement>(
     (children, Layout) =>
-      React.createElement(Layout, { params: pageProps.params } as any, children),
+      React.createElement(
+        Layout,
+        { params: pageProps.params } as any,
+        children,
+      ),
     React.createElement(Page, pageProps),
   );
 }
@@ -220,7 +254,9 @@ export default function App() {
   // Generate route matching cases
   const routeBranches = routes.map((route) => {
     const pageVar = pageVarMap.get(route.pageFile)!;
-    const layoutVars = route.layouts.map((l) => layoutVarMap.get(l)!).filter(Boolean);
+    const layoutVars = route.layouts
+      .map((l) => layoutVarMap.get(l)!)
+      .filter(Boolean);
 
     return `    {
       const routeParams = matchRoutePath(${JSON.stringify(route.routePath)}, cleanPath);
@@ -232,7 +268,9 @@ export default function App() {
     }`;
   });
 
-  const m3Import = options.modernizeM3 ? `import '@aphrody/m3-theme/m3.css';\n` : "";
+  const m3Import = options.modernizeM3
+    ? `import '@aphrody/m3-theme/m3.css';\n`
+    : "";
 
   return `// SPDX-License-Identifier: Apache-2.0
 import React from 'react';

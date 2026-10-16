@@ -36,9 +36,16 @@ import {
   useSelectedModel,
   useSelectedProviderForModel,
 } from "@storyteller/ui-model-selector";
-import { CostCalculatorButton, useCostBreakdownModalStore } from "@storyteller/ui-pricing-modal";
+import {
+  CostCalculatorButton,
+  useCostBreakdownModalStore,
+} from "@storyteller/ui-pricing-modal";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
-import { HistoryStack, type ImageBundle, type BaseSelectorImage } from "@storyteller/ui-pagedraw";
+import {
+  HistoryStack,
+  type ImageBundle,
+  type BaseSelectorImage,
+} from "@storyteller/ui-pagedraw";
 
 const ANGLES_MODEL_PAGE = ModelPage.Angles;
 
@@ -47,7 +54,9 @@ const ANGLES_MODEL_PAGE = ModelPage.Angles;
 export const Angles = () => {
   const anglesModelList = useAnglesPageModelList();
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
-  const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>([]);
+  const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
+    [],
+  );
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
     height: window.innerHeight,
@@ -57,7 +66,10 @@ export const Angles = () => {
 
   // Model selector
   const selectedModel = useSelectedModel(ANGLES_MODEL_PAGE);
-  const selectedProvider = useSelectedProviderForModel(ANGLES_MODEL_PAGE, selectedModel?.id);
+  const selectedProvider = useSelectedProviderForModel(
+    ANGLES_MODEL_PAGE,
+    selectedModel?.id,
+  );
 
   // Cost estimation
   const anglesCredits = useCostBreakdownModalStore(
@@ -67,7 +79,9 @@ export const Angles = () => {
   // State selectors (only re-render when specific values change)
   const sourceImageUrl = useAnglesStore((s) => s.sourceImageUrl);
   const sourceMediaToken = useAnglesStore((s) => s.sourceMediaToken);
-  const sourceThumbnailUrlTemplate = useAnglesStore((s) => s.sourceThumbnailUrlTemplate);
+  const sourceThumbnailUrlTemplate = useAnglesStore(
+    (s) => s.sourceThumbnailUrlTemplate,
+  );
   const imageDimensions = useAnglesStore((s) => s.imageDimensions);
   const angleConfig = useAnglesStore((s) => s.angleConfig);
   // const generateFromBestAngles = useAnglesStore(
@@ -196,8 +210,12 @@ export const Angles = () => {
                   maybe_thumbnail_template?: string;
                 }
               | undefined;
-            cdnUrl = links?.cdn_url || (mediaFile.data as any).public_bucket_url || objectUrl;
-            thumbnailUrlTemplate = links?.thumbnail_template || links?.maybe_thumbnail_template;
+            cdnUrl =
+              links?.cdn_url ||
+              (mediaFile.data as any).public_bucket_url ||
+              objectUrl;
+            thumbnailUrlTemplate =
+              links?.thumbnail_template || links?.maybe_thumbnail_template;
           }
         } catch {
           // Fall back to blob URL if fetching CDN info fails
@@ -399,7 +417,8 @@ export const Angles = () => {
   const handleRotationStep = useCallback(
     (direction: 1 | -1) => {
       const idx = ROTATION_VALUES.indexOf(angleConfig.rotation);
-      const next = (idx + direction + ROTATION_VALUES.length) % ROTATION_VALUES.length;
+      const next =
+        (idx + direction + ROTATION_VALUES.length) % ROTATION_VALUES.length;
       setRotation(ROTATION_VALUES[next]);
     },
     [angleConfig.rotation, setRotation],
@@ -408,7 +427,10 @@ export const Angles = () => {
   const handleTiltStep = useCallback(
     (direction: 1 | -1) => {
       const idx = TILT_VALUES.indexOf(angleConfig.tilt);
-      const next = Math.max(0, Math.min(TILT_VALUES.length - 1, idx + direction));
+      const next = Math.max(
+        0,
+        Math.min(TILT_VALUES.length - 1, idx + direction),
+      );
       setTilt(TILT_VALUES[next]);
     },
     [angleConfig.tilt, setTilt],
@@ -429,7 +451,12 @@ export const Angles = () => {
       ],
     };
     return [sourceBundle, ...historyBundles];
-  }, [sourceImageUrl, sourceMediaToken, sourceThumbnailUrlTemplate, historyBundles]);
+  }, [
+    sourceImageUrl,
+    sourceMediaToken,
+    sourceThumbnailUrlTemplate,
+    historyBundles,
+  ]);
 
   const handleHistoryImageSelect = useCallback(
     (image: BaseSelectorImage) => {
@@ -494,7 +521,10 @@ export const Angles = () => {
 
             {/* Full-bleed image display */}
             <div className="flex h-full w-full items-center justify-center px-16 pb-56 pt-16">
-              <div className="relative overflow-hidden" style={imageContainerStyle}>
+              <div
+                className="relative overflow-hidden"
+                style={imageContainerStyle}
+              >
                 {activeAngle ? (
                   <img
                     src={activeAngle.imageUrl}

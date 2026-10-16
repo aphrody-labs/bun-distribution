@@ -1,11 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
-import { loadModelInventories, stopModelDownload, isChatModel } from "./models-hub-actions";
+import {
+  loadModelInventories,
+  stopModelDownload,
+  isChatModel,
+} from "./models-hub-actions";
 import { listAllThreads } from "./history-panel";
 import { useChatStore, getProjectGroups } from "./stores/chat-store";
 
 describe("Jan UI absorption: owner contract behavior", () => {
-  const installed = { root: "/synthetic/models", count: 0, total_bytes: 0, models: [] };
+  const installed = {
+    root: "/synthetic/models",
+    count: 0,
+    total_bytes: 0,
+    models: [],
+  };
   test("catalog failure preserves a successful installed inventory and reports failure", async () => {
     const result = await loadModelInventories(
       async () => {
@@ -45,7 +54,11 @@ describe("Jan UI absorption: owner contract behavior", () => {
   });
   test("OCR, embedding and unknown models cannot become a chat default", () => {
     expect(isChatModel({ task: "text-generation" })).toBe(true);
-    for (const task of ["visual-transcription", "text-embedding", "speech-to-text"])
+    for (const task of [
+      "visual-transcription",
+      "text-embedding",
+      "speech-to-text",
+    ])
       expect(isChatModel({ task })).toBe(false);
     expect(isChatModel(undefined)).toBe(false);
   });
@@ -56,7 +69,10 @@ describe("Jan UI absorption: owner contract behavior", () => {
         expect(method).toBe("thread/list");
         calls.push(params!);
         return calls.length === 1
-          ? { threads: [{ id: "old", name: "Old", updatedAt: 1 }], nextCursor: "page2" }
+          ? {
+              threads: [{ id: "old", name: "Old", updatedAt: 1 }],
+              nextCursor: "page2",
+            }
           : { threads: [{ id: "new", name: "New", updatedAt: 2 }] };
       },
       10,

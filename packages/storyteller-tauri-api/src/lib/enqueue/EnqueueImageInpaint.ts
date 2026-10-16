@@ -29,7 +29,6 @@ export interface EnqueueImageInpaintRequest {
   frontend_subscriber_id?: string;
 }
 
-
 // Shape of request sent to Tauri
 // (We do some transformations from the public-facing request object.)
 interface RawEnqueueImageInpaintRequest {
@@ -64,37 +63,47 @@ export interface EnqueueImageInpaintError extends CommandResult {
   error_message?: string;
 }
 
-export interface EnqueueImageInpaintPayload {
-}
+export interface EnqueueImageInpaintPayload {}
 
 export interface EnqueueImageInpaintSuccess extends CommandResult {
   payload: EnqueueImageInpaintPayload;
 }
 
-export type EnqueueImageInpaintResult = EnqueueImageInpaintSuccess | EnqueueImageInpaintError;
+export type EnqueueImageInpaintResult =
+  EnqueueImageInpaintSuccess | EnqueueImageInpaintError;
 
-export const EnqueueImageInpaint = async (request: EnqueueImageInpaintRequest) : Promise<EnqueueImageInpaintResult> => {
+export const EnqueueImageInpaint = async (
+  request: EnqueueImageInpaintRequest,
+): Promise<EnqueueImageInpaintResult> => {
   let modelName = undefined;
 
   if (request.model) {
     if (typeof request.model === "string") {
       modelName = request.model;
-    } else if ("tauriId" in request.model && typeof request.model.tauriId === "string") {
+    } else if (
+      "tauriId" in request.model &&
+      typeof request.model.tauriId === "string"
+    ) {
       modelName = request.model.tauriId;
-    } else if ("tauri_id" in request.model && typeof request.model.tauri_id === "string") {
+    } else if (
+      "tauri_id" in request.model &&
+      typeof request.model.tauri_id === "string"
+    ) {
       modelName = request.model.tauri_id;
     }
   }
 
   if (!modelName) {
-    throw new Error("No model specified in request: " + JSON.stringify(request));
+    throw new Error(
+      "No model specified in request: " + JSON.stringify(request),
+    );
   }
 
-  let mutableRequest : RawEnqueueImageInpaintRequest = {
+  let mutableRequest: RawEnqueueImageInpaintRequest = {
     model: modelName,
     prompt: request.prompt,
   };
-  
+
   if (request.provider) {
     mutableRequest.provider = request.provider;
   }
@@ -119,9 +128,9 @@ export const EnqueueImageInpaint = async (request: EnqueueImageInpaintRequest) :
     mutableRequest.frontend_subscriber_id = request.frontend_subscriber_id;
   }
 
-  const result = await invoke("enqueue_image_inpaint_command", { 
+  const result = await invoke("enqueue_image_inpaint_command", {
     request: mutableRequest,
   });
-  
-  return (result as EnqueueImageInpaintResult);
-}
+
+  return result as EnqueueImageInpaintResult;
+};

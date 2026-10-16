@@ -33,7 +33,12 @@ export const omarApp = (version: string): AppIdentity => ({
 /** `base` overrides the site (tests, and a pack that names another one): default is the access pack's, then the public site. */
 export async function updateKit(
   ctx: Context,
-  options: { checkOnly?: boolean; base?: string; artifact?: string; app?: AppIdentity } = {},
+  options: {
+    checkOnly?: boolean;
+    base?: string;
+    artifact?: string;
+    app?: AppIdentity;
+  } = {},
 ): Promise<UpdateResult> {
   const name = options.artifact ?? KIT_ARTIFACT;
   const base =
@@ -44,7 +49,10 @@ export async function updateKit(
   const manifest = snapshot.manifest;
   const release = toRelease(manifest, name, currentPlatform());
   if (!release)
-    return { status: "skipped", detail: "aucune mise à jour de ce programme n'est publiée" };
+    return {
+      status: "skipped",
+      detail: "aucune mise à jour de ce programme n'est publiée",
+    };
   const artifact = pickArtifact(manifest, name, WINDOWS_PLATFORM, ".tar.gz");
   if (artifact) checkArtifact(snapshot.base, artifact, snapshot.sums);
   return updateFromRelease(release, {

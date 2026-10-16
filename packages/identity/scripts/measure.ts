@@ -12,14 +12,17 @@ import type { WebTrack } from "../src/runtime";
 
 const root = join(import.meta.dir, "..");
 const args = process.argv.slice(2);
-const wasmPath = args.includes("--wasm") ? args[args.indexOf("--wasm") + 1] : undefined;
+const wasmPath = args.includes("--wasm")
+  ? args[args.indexOf("--wasm") + 1]
+  : undefined;
 const asJson = args.includes("--json");
 
 const sizes = (bytes: Uint8Array<ArrayBuffer>) => ({
   raw: bytes.byteLength,
   gzip: Bun.gzipSync(bytes, { level: 9 }).byteLength,
-  brotli: brotliCompressSync(bytes, { params: { [constants.BROTLI_PARAM_QUALITY]: 11 } })
-    .byteLength,
+  brotli: brotliCompressSync(bytes, {
+    params: { [constants.BROTLI_PARAM_QUALITY]: 11 },
+  }).byteLength,
 });
 
 const median = (xs: number[]) =>
@@ -47,7 +50,9 @@ async function importTime(code: Uint8Array, runs = 15): Promise<number> {
   const probe = `const t=performance.now();await import(${JSON.stringify(file)});console.log(performance.now()-t)`;
   const times: number[] = [];
   for (let i = 0; i < runs; i++) {
-    const p = Bun.spawnSync([process.execPath, "-e", probe], { stderr: "inherit" });
+    const p = Bun.spawnSync([process.execPath, "-e", probe], {
+      stderr: "inherit",
+    });
     times.push(Number(p.stdout.toString().trim()));
   }
   return Number(median(times).toFixed(2));
@@ -59,10 +64,18 @@ const fixture: {
     tracks: Record<string, WebTrack>;
     ticks: [number, string, string | null, number | null, number | null][];
   }[];
-} = await Bun.file(join(findWorkspaceRoot(), "crates/ui/identity/tests/fixtures/parite-web.json")).json();
+} = await Bun.file(
+  join(
+    findWorkspaceRoot(),
+    "crates/ui/identity/tests/fixtures/parite-web.json",
+  ),
+).json();
 const aphrody = fixture.cases[0]!;
 
-function tickCost(step: (name: string, t: number) => unknown, n = 1_000_000): number {
+function tickCost(
+  step: (name: string, t: number) => unknown,
+  n = 1_000_000,
+): number {
   const names = Object.keys(aphrody.tracks);
   const t0 = performance.now();
   for (let i = 0; i < n; i++) step(names[i % names.length]!, (i * 37) % 20_000);
@@ -71,7 +84,11 @@ function tickCost(step: (name: string, t: number) => unknown, n = 1_000_000): nu
 
 const element = await bundle("src/element.ts");
 const clock = await bundle("src/runtime.ts");
-const strip = (b: Awaited<ReturnType<typeof bundle>>) => { const rest: Partial<typeof b> = { ...b }; delete rest.code; return rest; };
+const strip = (b: Awaited<ReturnType<typeof bundle>>) => {
+  const rest: Partial<typeof b> = { ...b };
+  delete rest.code;
+  return rest;
+};
 const report: Record<string, unknown> = {
   optionB: {
     element: { ...strip(element), importMs: await importTime(element.code) },
@@ -97,7 +114,9 @@ if (wasmPath) {
         return r.exitCode === 0 ? out : undefined;
       })()
     : undefined;
-  const bytes = optimised ? new Uint8Array(await Bun.file(optimised).arrayBuffer()) : raw;
+  const bytes = optimised
+    ? new Uint8Array(await Bun.file(optimised).arrayBuffer())
+    : raw;
   const compile: number[] = [];
   let instance: WebAssembly.Instance | undefined;
   for (let i = 0; i < 15; i++) {
@@ -128,7 +147,9 @@ if (wasmPath) {
     const sprite = x.pet_resolve(b.length, t);
     if (sprite < 0) return null;
     const q = x.pet_buffer(0);
-    const track = dec.decode(new Uint8Array(x.memory.buffer, q, x.pet_track_len()));
+    const track = dec.decode(
+      new Uint8Array(x.memory.buffer, q, x.pet_track_len()),
+    );
     const delay = x.pet_delay();
     return { track, sprite, delay: delay < 0 ? null : delay };
   };

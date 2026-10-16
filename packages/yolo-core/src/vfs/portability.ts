@@ -87,7 +87,11 @@ export async function auditPortability(
   async function checkFile(fullPath: string, relPath: string): Promise<void> {
     if (!options.includeTests && relPath.startsWith("test/")) return;
     if (relPath.startsWith("crates/aphrody-")) return; // Vendored upstream fork crates
-    if (relPath.endsWith("portability.ts") || relPath.endsWith("audit_portability.ts")) return;
+    if (
+      relPath.endsWith("portability.ts") ||
+      relPath.endsWith("audit_portability.ts")
+    )
+      return;
 
     try {
       const file = Bun.file(fullPath);
@@ -176,7 +180,10 @@ export function renderPortabilityMarkdown(report: PortabilityReport): string {
     return lines.join("\n");
   }
 
-  lines.push("| Severity | Rule | File | Line | Snippet |", "| :--- | :--- | :--- | :--- | :--- |");
+  lines.push(
+    "| Severity | Rule | File | Line | Snippet |",
+    "| :--- | :--- | :--- | :--- | :--- |",
+  );
 
   for (const issue of report.issues) {
     const icon = issue.severity === "error" ? "❌ ERROR" : "⚠️ WARN";

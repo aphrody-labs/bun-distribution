@@ -81,7 +81,11 @@ export interface Manifest {
 const ROOT = resolve(import.meta.dir, "../../../../docs/aphrody");
 
 /** Where an item lives inside the portable directory. */
-export function storedPath(base: string, item: Item, kind: "home" | "system"): string {
+export function storedPath(
+  base: string,
+  item: Item,
+  kind: "home" | "system",
+): string {
   return kind === "home"
     ? join(base, "home", item.path)
     : join(base, "system", item.path.replace(/^\/+/, ""));
@@ -120,7 +124,8 @@ export function treeBytes(path: string, exclude?: string[]): number {
       try {
         names = readdirSync(abs);
       } catch {}
-      for (const name of names) walk(join(abs, name), rel ? `${rel}/${name}` : name);
+      for (const name of names)
+        walk(join(abs, name), rel ? `${rel}/${name}` : name);
     } else {
       total += st.size;
     }
@@ -144,18 +149,22 @@ export function totals(
 export const gib = (bytes: number) => `${(bytes / 2 ** 30).toFixed(2)} GiB`;
 
 function sudoSelf(args: string[]): boolean {
-  const r = Bun.spawnSync(["sudo", "-n", process.execPath, import.meta.path, ...args], {
-    windowsHide: true,
-    stdout: "inherit",
-    stderr: "inherit",
-  });
+  const r = Bun.spawnSync(
+    ["sudo", "-n", process.execPath, import.meta.path, ...args],
+    {
+      windowsHide: true,
+      stdout: "inherit",
+      stderr: "inherit",
+    },
+  );
   return r.exitCode === 0;
 }
 
 function copyTree(src: string, dest: string, exclude?: string[]): void {
   mkdirSync(dirname(dest), { recursive: true });
   // cpSync stats an existing destination link and fails when it dangles: replace links outright.
-  if (lstatSync(dest, { throwIfNoEntry: false })?.isSymbolicLink()) rmSync(dest);
+  if (lstatSync(dest, { throwIfNoEntry: false })?.isSymbolicLink())
+    rmSync(dest);
   cpSync(src, dest, {
     recursive: true,
     force: true,
@@ -192,14 +201,17 @@ function chownTree(path: string, own: string): void {
   const gid = idOf(g, "/etc/group");
   const walk = (p: string) => {
     lchownSync(p, uid, gid);
-    if (lstatSync(p).isDirectory()) for (const name of readdirSync(p)) walk(join(p, name));
+    if (lstatSync(p).isDirectory())
+      for (const name of readdirSync(p)) walk(join(p, name));
   };
   walk(path);
 }
 
 function serviceActive(name: string): boolean {
   return (
-    Bun.spawnSync(["systemctl", "is-active", "--quiet", name], { windowsHide: true }).exitCode === 0
+    Bun.spawnSync(["systemctl", "is-active", "--quiet", name], {
+      windowsHide: true,
+    }).exitCode === 0
   );
 }
 
@@ -226,7 +238,11 @@ function plan(config: PortableConfig): void {
     for (const item of items) {
       const src = kind === "home" ? join(home, item.path) : item.path;
       const dest = storedPath(base, item, kind);
-      const state = linksTo(src, dest) ? "saved" : existsSync(src) ? "pending" : "absent";
+      const state = linksTo(src, dest)
+        ? "saved"
+        : existsSync(src)
+          ? "pending"
+          : "absent";
       const bytes =
         state === "pending"
           ? treeBytes(src, item.exclude)
@@ -239,7 +255,9 @@ function plan(config: PortableConfig): void {
     }
   }
   for (const dump of config.dumps)
-    console.log(`dump     -     ${dump.category.padEnd(9)} ${"".padStart(11)}  ${dump.name}`);
+    console.log(
+      `dump     -     ${dump.category.padEnd(9)} ${"".padStart(11)}  ${dump.name}`,
+    );
 }
 
 async function save(config: PortableConfig, apply: boolean): Promise<number> {
@@ -272,7 +290,9 @@ async function save(config: PortableConfig, apply: boolean): Promise<number> {
         copyTree(src, dest, item.exclude);
       }
       const heavy = item.heavy
-        ? Object.fromEntries(item.heavy.map((h) => [h, treeBytes(join(dest, h))]))
+        ? Object.fromEntries(
+            item.heavy.map((h) => [h, treeBytes(join(dest, h))]),
+          )
         : undefined;
       entries.push({
         source: `~/${item.path}`,
@@ -293,13 +313,20 @@ async function save(config: PortableConfig, apply: boolean): Promise<number> {
     if (!existsSync(item.path)) continue;
     if (item.service && serviceActive(item.service)) {
       failures++;
-      console.error(`FAILED  ${item.path}: stop ${item.service} first for a consistent copy`);
+      console.error(
+        `FAILED  ${item.path}: stop ${item.service} first for a consistent copy`,
+      );
       continue;
     }
     // Parents are created here, as the user, so the root helper only writes the tree itself.
     mkdirSync(dirname(dest), { recursive: true });
     const ok = item.root
-      ? sudoSelf(["_copy", item.path, dest, `${process.getuid?.()}:${process.getgid?.()}`])
+      ? sudoSelf([
+          "_copy",
+          item.path,
+          dest,
+          `${process.getuid?.()}:${process.getgid?.()}`,
+        ])
       : (copyTree(item.path, dest), true);
     if (!ok) {
       failures++;
@@ -321,11 +348,18 @@ async function save(config: PortableConfig, apply: boolean): Promise<number> {
     if (
       dump.when &&
       new TextDecoder()
-        .decode(Bun.spawnSync(dump.when, { windowsHide: true, stderr: "ignore" }).stdout)
+        .decode(
+          Bun.spawnSync(dump.when, { windowsHide: true, stderr: "ignore" })
+            .stdout,
+        )
         .trim() !== "true"
     )
       continue;
-    const r = Bun.spawnSync(dump.command, { windowsHide: true, stdout: "pipe", stderr: "pipe" });
+    const r = Bun.spawnSync(dump.command, {
+      windowsHide: true,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
     if (r.exitCode !== 0 && r.stdout.length === 0) {
       console.error(
         `skipped dump ${dump.name}: ${r.stderr.toString().trim().split("\n")[0] ?? "failed"}`,
@@ -342,14 +376,19 @@ async function save(config: PortableConfig, apply: boolean): Promise<number> {
     host: hostname(),
     user: userInfo().username,
     home,
-    revision: Bun.spawnSync(["git", "-C", ROOT, "rev-parse", "HEAD"], { windowsHide: true })
+    revision: Bun.spawnSync(["git", "-C", ROOT, "rev-parse", "HEAD"], {
+      windowsHide: true,
+    })
       .stdout.toString()
       .trim(),
     entries,
     dumps,
     totals: totals(entries),
   };
-  writeFileSync(join(base, "MANIFEST.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  writeFileSync(
+    join(base, "MANIFEST.json"),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
   console.log(
     `\nessential ${gib(manifest.totals.essential)}  data ${gib(manifest.totals.data)}  heavy ${gib(manifest.totals.heavy)}`,
   );
@@ -373,13 +412,16 @@ async function restore(
       if (linksTo(src, stored)) continue;
       if (lstatSync(src, { throwIfNoEntry: false }) && !force) {
         failures++;
-        console.error(`exists  ~/${item.path} (use --force to replace it with the link)`);
+        console.error(
+          `exists  ~/${item.path} (use --force to replace it with the link)`,
+        );
         continue;
       }
       console.log(`link    ~/${item.path} -> ${stored}`);
       if (!apply) continue;
       mkdirSync(dirname(src), { recursive: true });
-      if (existsSync(src)) renameSync(src, `${src}.before-portable-${Date.now()}`);
+      if (existsSync(src))
+        renameSync(src, `${src}.before-portable-${Date.now()}`);
       symlinkSync(stored, src);
     } else {
       if (existsSync(src) && !force) continue;
@@ -394,7 +436,9 @@ async function restore(
       console.log(`system  ${item.path}`);
       if (!apply) continue;
       if (item.service)
-        Bun.spawnSync(["sudo", "-n", "systemctl", "stop", item.service], { windowsHide: true });
+        Bun.spawnSync(["sudo", "-n", "systemctl", "stop", item.service], {
+          windowsHide: true,
+        });
       const own = item.path.startsWith("/var/lib/postgresql")
         ? "postgres:postgres"
         : item.path.startsWith("/var/lib/redis")
@@ -422,7 +466,9 @@ async function status(config: PortableConfig): Promise<number> {
     return 1;
   }
   const m: Manifest = await file.json();
-  console.log(`${m.savedAt} ${m.user}@${m.host} rev ${m.revision.slice(0, 12)}`);
+  console.log(
+    `${m.savedAt} ${m.user}@${m.host} rev ${m.revision.slice(0, 12)}`,
+  );
   for (const e of m.entries)
     console.log(
       `${e.mode.padEnd(5)} ${e.category.padEnd(9)} ${gib(e.bytes).padStart(11)}  ${e.source}`,

@@ -7,7 +7,12 @@ import {
   type LinkRecord,
 } from "../src/host-space";
 
-const link = (ino: number, nlink: number, blocks: number, dev = "2049"): LinkRecord => ({
+const link = (
+  ino: number,
+  nlink: number,
+  blocks: number,
+  dev = "2049",
+): LinkRecord => ({
   dev,
   ino: String(ino),
   nlink,
@@ -18,7 +23,8 @@ const transport = (find: string, dfOutput: string) => ({
   host: "local" as const,
   remote: false,
   async exec(cmd: string) {
-    if (cmd.includes("-printf '%y'")) return { code: 0, stdout: "d", stderr: "" };
+    if (cmd.includes("-printf '%y'"))
+      return { code: 0, stdout: "d", stderr: "" };
     if (cmd.includes("%D %i")) return { code: 0, stdout: find, stderr: "" };
     return { code: 0, stdout: dfOutput, stderr: "" };
   },
@@ -29,11 +35,18 @@ const transport = (find: string, dfOutput: string) => ({
     return { code: 1, stdout: "", stderr: "unused" };
   },
 });
-const dfText = (total: number, avail: number) => `1B-blocks Avail\n${total} ${avail}\n`;
-const df = (total: number, avail: number) => `1B-blocks Avail\n${total} ${avail}\n`;
-const run = async (cmd: string): Promise<string> => await Bun.$`sh -c ${cmd}`.quiet().text();
-const key = (r: { dev: string; ino: string; nlink: number; blocks: number }): string =>
-  `${r.dev}:${r.ino}:${r.nlink}:${r.blocks}`;
+const dfText = (total: number, avail: number) =>
+  `1B-blocks Avail\n${total} ${avail}\n`;
+const df = (total: number, avail: number) =>
+  `1B-blocks Avail\n${total} ${avail}\n`;
+const run = async (cmd: string): Promise<string> =>
+  await Bun.$`sh -c ${cmd}`.quiet().text();
+const key = (r: {
+  dev: string;
+  ino: string;
+  nlink: number;
+  blocks: number;
+}): string => `${r.dev}:${r.ino}:${r.nlink}:${r.blocks}`;
 
 describe("estimateReclaim", () => {
   it("frees everything when no file has another link", () => {
@@ -97,7 +110,9 @@ describe("estimateReclaim", () => {
 
 describe("parseFindLinks", () => {
   it("parses find -printf '%D %i %n %b' lines and ignores noise", () => {
-    expect(parseFindLinks("2049 123 2 8\nfind: warning\n2049 124 1 16\n\n")).toEqual([
+    expect(
+      parseFindLinks("2049 123 2 8\nfind: warning\n2049 124 1 16\n\n"),
+    ).toEqual([
       { dev: "2049", ino: "123", nlink: 2, blocks: 8 },
       { dev: "2049", ino: "124", nlink: 1, blocks: 16 },
     ]);
@@ -128,18 +143,21 @@ describe("spaceGate", () => {
 
 describe("parseDfSizeAvail", () => {
   it("reads the size and avail columns", () => {
-    expect(parseDfSizeAvail("     1B-blocks         Avail\n 311385612288  107270053888\n")).toEqual(
-      {
-        totalBytes: 311385612288,
-        freeBytes: 107270053888,
-      },
-    );
+    expect(
+      parseDfSizeAvail(
+        "     1B-blocks         Avail\n 311385612288  107270053888\n",
+      ),
+    ).toEqual({
+      totalBytes: 311385612288,
+      freeBytes: 107270053888,
+    });
     expect(() => parseDfSizeAvail("nothing")).toThrow();
   });
 });
 
 describe("yolo host space", () => {
-  const { runHostCommand } = require("../src/host") as typeof import("../src/host");
+  const { runHostCommand } =
+    require("../src/host") as typeof import("../src/host");
   const root = new URL("..", import.meta.url).pathname;
   const GIB = 1024 ** 3;
 
@@ -160,7 +178,10 @@ describe("yolo host space", () => {
         "--json",
       ],
       root,
-      { transport: transport(find, dfText(290 * GIB, 100 * GIB)), out: (s) => (printed += s) },
+      {
+        transport: transport(find, dfText(290 * GIB, 100 * GIB)),
+        out: (s) => (printed += s),
+      },
     );
     const r = JSON.parse(printed);
     expect(r.estimate.freedBytes).toBe(5 * GIB);
@@ -184,7 +205,10 @@ describe("yolo host space", () => {
         "--json",
       ],
       root,
-      { transport: transport(find, dfText(290 * GIB, 100 * GIB)), out: () => {} },
+      {
+        transport: transport(find, dfText(290 * GIB, 100 * GIB)),
+        out: () => {},
+      },
     );
     expect(code).toBe(0);
   });
@@ -218,7 +242,9 @@ describe("ship disk gate", () => {
   });
 
   it("quotes hostile paths", () => {
-    expect(diskProbeCommand("/x'; rm -rf / #")).toContain(`'/x'\\''; rm -rf / #'`);
+    expect(diskProbeCommand("/x'; rm -rf / #")).toContain(
+      `'/x'\\''; rm -rf / #'`,
+    );
   });
 });
 
@@ -246,21 +272,35 @@ describe("variable floor", () => {
   });
 
   it("fails loudly on an invalid value instead of falling through to a laxer source", () => {
-    expect(() => resolveMinFree({ flag: "lots", policy: 0.4 })).toThrow(/--min-free/);
+    expect(() => resolveMinFree({ flag: "lots", policy: 0.4 })).toThrow(
+      /--min-free/,
+    );
     expect(() => resolveMinFree({ env: "200%" })).toThrow(/YOLO_MIN_FREE/);
   });
 
   it("is read from host-policy.toml per host", () => {
-    const { parsePolicy } = require("../src/host-safety") as typeof import("../src/host-safety");
+    const { parsePolicy } =
+      require("../src/host-safety") as typeof import("../src/host-safety");
     const toml = `[space]\nmin_free = 0.3\nparallel = 4\n[hosts.vps.space]\nmin_free = 0.5\nsplit_depth = 3\n`;
-    expect(parsePolicy(toml, "dbfr").space).toEqual({ minFree: 0.3, parallel: 4, splitDepth: 2 });
-    expect(parsePolicy(toml, "vps").space).toEqual({ minFree: 0.5, parallel: 4, splitDepth: 3 });
-    expect(parsePolicy("[space]\nmin_free = 7\n", "vps").space.minFree).toBe(0.2);
+    expect(parsePolicy(toml, "dbfr").space).toEqual({
+      minFree: 0.3,
+      parallel: 4,
+      splitDepth: 2,
+    });
+    expect(parsePolicy(toml, "vps").space).toEqual({
+      minFree: 0.5,
+      parallel: 4,
+      splitDepth: 3,
+    });
+    expect(parsePolicy("[space]\nmin_free = 7\n", "vps").space.minFree).toBe(
+      0.2,
+    );
   });
 });
 
 describe("limiter", () => {
-  const { limiter } = require("../src/host-space") as typeof import("../src/host-space");
+  const { limiter } =
+    require("../src/host-space") as typeof import("../src/host-space");
 
   it("never runs more than the limit at once, keeps every result and runs all tasks", async () => {
     await Promise.all(
@@ -288,15 +328,24 @@ describe("limiter", () => {
 
   it("releases the slot when a task throws", async () => {
     const gate = limiter(1);
-    await expect(gate(async () => Promise.reject(new Error("boom")))).rejects.toThrow("boom");
+    await expect(
+      gate(async () => Promise.reject(new Error("boom"))),
+    ).rejects.toThrow("boom");
     expect(await gate(async () => "next")).toBe("next");
   });
 });
 
 describe("scanLinks", () => {
-  const { scanLinks } = require("../src/host-space") as typeof import("../src/host-space");
-  const { mkdtempSync, mkdirSync, writeFileSync, linkSync, symlinkSync, rmSync } =
-    require("node:fs") as typeof import("node:fs");
+  const { scanLinks } =
+    require("../src/host-space") as typeof import("../src/host-space");
+  const {
+    mkdtempSync,
+    mkdirSync,
+    writeFileSync,
+    linkSync,
+    symlinkSync,
+    rmSync,
+  } = require("node:fs") as typeof import("node:fs");
   const { tmpdir } = require("node:os") as typeof import("node:os");
   const { join } = require("node:path") as typeof import("node:path");
 
@@ -327,14 +376,24 @@ describe("scanLinks", () => {
       for (const depth of [0, 1, 2, 5]) {
         for (const parallel of [1, 4]) {
           // oxlint-disable-next-line no-await-in-loop -- scans find réels sur disque : séquentiels pour rester dans le délai du test et mesurer chaque combinaison isolément
-          const got = await scanLinks([root], { run, depth, parallel, batch: 2 });
+          const got = await scanLinks([root], {
+            run,
+            depth,
+            parallel,
+            batch: 2,
+          });
           expect(got.map(key).toSorted()).toEqual(want);
           expect(estimateReclaim(got)).toEqual(estimateReclaim(reference));
         }
       }
       // a file as the root, and a path that does not exist
-      expect((await scanLinks([join(root, "top")], { run, depth: 2, parallel: 2 })).length).toBe(1);
-      expect(await scanLinks([join(root, "nope")], { run, depth: 2, parallel: 2 })).toEqual([]);
+      expect(
+        (await scanLinks([join(root, "top")], { run, depth: 2, parallel: 2 }))
+          .length,
+      ).toBe(1);
+      expect(
+        await scanLinks([join(root, "nope")], { run, depth: 2, parallel: 2 }),
+      ).toEqual([]);
       // hard-link semantics through the split: deleting only a/ keeps the shared inode alive
       const onlyA = estimateReclaim(
         await scanLinks([join(root, "a")], { run, depth: 3, parallel: 4 }),
@@ -354,7 +413,8 @@ describe("scanLinks", () => {
       await Bun.sleep(5);
       active--;
       if (cmd.includes("-maxdepth 0 -printf '%y'")) return "d";
-      if (cmd.includes("-mindepth 1")) return "d\t/r/a\nd\t/r/b\nd\t/r/c\nd\t/r/d\n";
+      if (cmd.includes("-mindepth 1"))
+        return "d\t/r/a\nd\t/r/b\nd\t/r/c\nd\t/r/d\n";
       return "";
     };
     await scanLinks(["/r"], { run: fake, depth: 2, parallel: 3 });

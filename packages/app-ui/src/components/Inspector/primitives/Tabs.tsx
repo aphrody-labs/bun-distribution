@@ -1,5 +1,9 @@
 import { m3Durations, m3Easings } from "@aphrody/m3-motion";
-import { type IconSource, m3FocusRing, renderIcon } from "@aphrody/m3-primitives";
+import {
+  type IconSource,
+  m3FocusRing,
+  renderIcon,
+} from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import { motion } from "motion/react";
 import { useState } from "react";
@@ -29,7 +33,10 @@ export function Tabs({ tabs, activeTab, onChange, className }: TabsProps) {
   return (
     <div
       role="tablist"
-      className={clsx("flex gap-0.5 rounded-full bg-surface-container p-0.5", className)}
+      className={clsx(
+        "flex gap-0.5 rounded-full bg-surface-container p-0.5",
+        className,
+      )}
     >
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
@@ -57,7 +64,10 @@ export function Tabs({ tabs, activeTab, onChange, className }: TabsProps) {
                 <motion.div
                   layoutId="activeTab"
                   className="absolute inset-0 rounded-full bg-secondary-container"
-                  transition={{ duration: m3Durations.short4, ease: m3Easings.standard }}
+                  transition={{
+                    duration: m3Durations.short4,
+                    ease: m3Easings.standard,
+                  }}
                 />
               )}
               <div className="relative z-10 flex items-center justify-center">

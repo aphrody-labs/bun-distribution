@@ -52,26 +52,48 @@ describe("laboratory assistant boundary", () => {
   test("unprivileged member cannot trigger model", async () => {
     let calls = 0;
     expect(
-      await processMessage(message, state, policy, "admin", emptyRolesApi, async () => {
-        calls++;
-        return "answer";
-      }),
+      await processMessage(
+        message,
+        state,
+        policy,
+        "admin",
+        emptyRolesApi,
+        async () => {
+          calls++;
+          return "answer";
+        },
+      ),
     ).toBe(false);
     expect(calls).toBe(0);
   });
   test("migration targets general and accepts an explicit Aphrody address", async () => {
-    const migrated = { ...policy, assistant: { ...policy.assistant, channelId: "general" } };
+    const migrated = {
+      ...policy,
+      assistant: { ...policy.assistant, channelId: "general" },
+    };
     let calls = 0;
     const infer = async () => {
       calls++;
       return "answer";
     };
-    expect(await processMessage(message, state, migrated, "admin", researcherApi, infer)).toBe(
-      false,
-    );
     expect(
       await processMessage(
-        { ...message, channel_id: "general", content: "Aphrody, bonjour", mentions: [] },
+        message,
+        state,
+        migrated,
+        "admin",
+        researcherApi,
+        infer,
+      ),
+    ).toBe(false);
+    expect(
+      await processMessage(
+        {
+          ...message,
+          channel_id: "general",
+          content: "Aphrody, bonjour",
+          mentions: [],
+        },
         state,
         migrated,
         "admin",
@@ -83,7 +105,11 @@ describe("laboratory assistant boundary", () => {
   });
   test("researcher response is bounded, referenced and cannot ping anyone", async () => {
     let payload: Record<string, unknown> | undefined;
-    const api: LabApi = async <T>(_path: string, method?: string, body?: unknown) => {
+    const api: LabApi = async <T>(
+      _path: string,
+      method?: string,
+      body?: unknown,
+    ) => {
       if (method === "POST") payload = body as Record<string, unknown>;
       return { roles: ["researcher"] } as T;
     };
@@ -98,12 +124,19 @@ describe("laboratory assistant boundary", () => {
       ),
     ).toBe(true);
     expect((payload!.content as string).length).toBe(1900);
-    expect(payload!.allowed_mentions).toEqual({ parse: [], replied_user: false });
+    expect(payload!.allowed_mentions).toEqual({
+      parse: [],
+      replied_user: false,
+    });
     expect(payload!.enforce_nonce).toBe(true);
   });
   test("missing model backend answers once and releases the message", async () => {
     let payload: Record<string, unknown> | undefined;
-    const api: LabApi = async <T>(_path: string, method?: string, body?: unknown) => {
+    const api: LabApi = async <T>(
+      _path: string,
+      method?: string,
+      body?: unknown,
+    ) => {
       if (method === "POST") payload = body as Record<string, unknown>;
       return { roles: ["researcher"] } as T;
     };
@@ -113,13 +146,23 @@ describe("laboratory assistant boundary", () => {
       }),
     ).toBe(true);
     expect(payload!.content).toBe(MODEL_UNAVAILABLE_REPLY);
-    expect(payload!.allowed_mentions).toEqual({ parse: [], replied_user: false });
+    expect(payload!.allowed_mentions).toEqual({
+      parse: [],
+      replied_user: false,
+    });
     expect(payload!.nonce).toBe("1");
     expect(payload!.enforce_nonce).toBe(true);
   });
   test("discord failures still propagate for retry", async () => {
     await expect(
-      processMessage(message, state, policy, "admin", unavailableApi, async () => "answer"),
+      processMessage(
+        message,
+        state,
+        policy,
+        "admin",
+        unavailableApi,
+        async () => "answer",
+      ),
     ).rejects.toThrow("Discord 503");
   });
   test("error summary is bounded and masks credentials", () => {
@@ -129,7 +172,9 @@ describe("laboratory assistant boundary", () => {
       ),
     );
     expect(summary.length).toBe(200);
-    expect(summary.startsWith("Error: Bot [masqué] failed [masqué] ")).toBe(true);
+    expect(summary.startsWith("Error: Bot [masqué] failed [masqué] ")).toBe(
+      true,
+    );
     expect(errorSummary("plain")).toBe("plain");
   });
   test("assistant preserves selected model/profile and system instructions through native adapter", async () => {
@@ -149,8 +194,14 @@ describe("laboratory assistant boundary", () => {
       },
     };
     expect(await askModel(policy, "test", inference)).toBe("LAB_OK");
-    expect(selection).toMatchObject({ model: "gemma-4-e2b-it-q4km", profile: "aphrody" });
-    expect(input).toMatchObject({ system: "Lab", messages: [{ role: "user", content: "test" }] });
+    expect(selection).toMatchObject({
+      model: "gemma-4-e2b-it-q4km",
+      profile: "aphrody",
+    });
+    expect(input).toMatchObject({
+      system: "Lab",
+      messages: [{ role: "user", content: "test" }],
+    });
     await expect(
       askModel(policy, "test", {
         async chat() {

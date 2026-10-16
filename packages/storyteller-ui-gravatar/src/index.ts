@@ -1,2 +1,1 @@
-
-export * from './lib/gravatar';
+export * from "./lib/gravatar";

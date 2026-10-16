@@ -29,10 +29,19 @@ function git(root: string, args: string[]): string {
 }
 
 export function sourcePath(path: string, prefixes: string[]): boolean {
-  if (isAbsolute(path) || path.split("/").some((part) => part === ".." || part === ".git"))
+  if (
+    isAbsolute(path) ||
+    path.split("/").some((part) => part === ".." || part === ".git")
+  )
     return false;
-  const selected = prefixes.some((prefix) => prefix === "." || path.startsWith(`${prefix}/`));
-  return selected && (Boolean(languages[extname(path)]) || manifests.has(path.split("/").at(-1)!));
+  const selected = prefixes.some(
+    (prefix) => prefix === "." || path.startsWith(`${prefix}/`),
+  );
+  return (
+    selected &&
+    (Boolean(languages[extname(path)]) ||
+      manifests.has(path.split("/").at(-1)!))
+  );
 }
 
 /** Lexical candidate extraction only; comments/strings can resemble declarations. */
@@ -43,7 +52,10 @@ export function declarationCandidates(text: string, language: string) {
     typescript:
       /^\s*export\s+(?:default\s+)?(?:declare\s+)?(?:async\s+)?(function|class|interface|type|const|enum)\s+([A-Za-z_$][A-Za-z0-9_$]*)/,
   };
-  const rule = rules[language === "tsx" || language === "javascript" ? "typescript" : language];
+  const rule =
+    rules[
+      language === "tsx" || language === "javascript" ? "typescript" : language
+    ];
   if (!rule) return [];
   return text.split("\n").flatMap((line, index) => {
     const match = line.match(rule);
@@ -53,8 +65,13 @@ export function declarationCandidates(text: string, language: string) {
 
 export async function inventorySources(root: string, prefixes: string[]) {
   const revision = git(root, ["rev-parse", "HEAD"]).trim();
-  const dirty = Boolean(git(root, ["status", "--porcelain", "--untracked-files=no"]).trim());
-  const tracked = git(root, ["ls-files", "-z"]).split("\0").filter(Boolean).toSorted();
+  const dirty = Boolean(
+    git(root, ["status", "--porcelain", "--untracked-files=no"]).trim(),
+  );
+  const tracked = git(root, ["ls-files", "-z"])
+    .split("\0")
+    .filter(Boolean)
+    .toSorted();
   const paths = tracked.filter((path) => sourcePath(path, prefixes));
   const files: Array<{
     path: string;
@@ -77,7 +94,11 @@ export async function inventorySources(root: string, prefixes: string[]) {
         // Each worker processes one file at a time to enforce the eight-reader bound.
         // eslint-disable-next-line no-await-in-loop
         const stat = await lstat(absolute);
-        if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 4 * 1024 * 1024) {
+        if (
+          !stat.isFile() ||
+          stat.isSymbolicLink() ||
+          stat.size > 4 * 1024 * 1024
+        ) {
           skipped.push({ path, reason: "not_regular_or_over_4_mib" });
           continue;
         }
@@ -134,7 +155,13 @@ export async function inventorySources(root: string, prefixes: string[]) {
 }
 
 export async function runJanAbsorption(args: string[]): Promise<number> {
-  const options = { root: process.cwd(), pythonRoot: "", janRoot: "", out: "", summary: false };
+  const options = {
+    root: process.cwd(),
+    pythonRoot: "",
+    janRoot: "",
+    out: "",
+    summary: false,
+  };
   for (let index = 0; index < args.length; index++) {
     const flag = args[index];
     if (flag === "--help" || flag === "-h") {
@@ -154,7 +181,8 @@ export async function runJanAbsorption(args: string[]): Promise<number> {
       continue;
     }
     const value = args[++index];
-    if (!value || value.startsWith("--")) throw new Error("Missing option value");
+    if (!value || value.startsWith("--"))
+      throw new Error("Missing option value");
     if (flag === "--root") options.root = value;
     else if (flag === "--python-root") options.pythonRoot = value;
     else if (flag === "--jan-root") options.janRoot = value;
@@ -195,7 +223,10 @@ export async function runJanAbsorption(args: string[]): Promise<number> {
     }).flatMap(([name, paths]) =>
       paths
         .filter(
-          (path) => !roots[name as keyof typeof roots].files.some((file) => file.path === path),
+          (path) =>
+            !roots[name as keyof typeof roots].files.some(
+              (file) => file.path === path,
+            ),
         )
         .map((path) => ({
           id: comparison.id,
@@ -217,7 +248,10 @@ export async function runJanAbsorption(args: string[]): Promise<number> {
     declarationCandidates: Object.fromEntries(
       Object.entries(roots).map(([name, inventory]) => [
         name,
-        inventory.files.reduce((count, file) => count + file.declarations.length, 0),
+        inventory.files.reduce(
+          (count, file) => count + file.declarations.length,
+          0,
+        ),
       ]),
     ),
     comparisonGroups: comparisons.comparisons.length,
@@ -245,7 +279,11 @@ export async function runJanAbsorption(args: string[]): Promise<number> {
     await Bun.write(
       join(destination, "sources.json"),
       JSON.stringify(
-        { ...summary, repositories: roots, comparisons: comparisons.comparisons },
+        {
+          ...summary,
+          repositories: roots,
+          comparisons: comparisons.comparisons,
+        },
         null,
         2,
       ) + "\n",
@@ -268,7 +306,11 @@ export async function runJanAbsorption(args: string[]): Promise<number> {
   else
     console.log(
       JSON.stringify(
-        { ...summary, repositories: roots, comparisons: comparisons.comparisons },
+        {
+          ...summary,
+          repositories: roots,
+          comparisons: comparisons.comparisons,
+        },
         null,
         2,
       ),

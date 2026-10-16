@@ -22,7 +22,8 @@ export function fmtBytes(n: number): string {
     v /= 1024;
     i++;
   }
-  const text = i === 0 ? String(Math.round(v)) : v >= 100 ? v.toFixed(0) : v.toFixed(1);
+  const text =
+    i === 0 ? String(Math.round(v)) : v >= 100 ? v.toFixed(0) : v.toFixed(1);
   return `${n < 0 ? "-" : ""}${text} ${UNITS[i]}`;
 }
 
@@ -101,8 +102,10 @@ export interface BlockDevice {
 export const LSBLK_COLUMNS =
   "NAME,KNAME,PATH,TYPE,SIZE,FSTYPE,FSUSED,FSAVAIL,MOUNTPOINTS,LABEL,UUID,RO,RM,ROTA,PKNAME,MODEL";
 
-const bool = (v: unknown): boolean => v === true || v === "1" || v === 1 || v === "true";
-const str = (v: unknown): string | null => (typeof v === "string" && v !== "" ? v : null);
+const bool = (v: unknown): boolean =>
+  v === true || v === "1" || v === 1 || v === "true";
+const str = (v: unknown): string | null =>
+  typeof v === "string" && v !== "" ? v : null;
 
 /** `lsblk -J -b -o LSBLK_COLUMNS`: the device tree flattened (children follow their parent). */
 export function parseLsblk(json: string): BlockDevice[] {
@@ -112,7 +115,9 @@ export function parseLsblk(json: string): BlockDevice[] {
   const walk = (nodes: unknown[]): void => {
     for (const raw of nodes) {
       const n = raw as Record<string, unknown>;
-      const mp = Array.isArray(n["mountpoints"]) ? (n["mountpoints"] as unknown[]) : [];
+      const mp = Array.isArray(n["mountpoints"])
+        ? (n["mountpoints"] as unknown[])
+        : [];
       const name = String(n["name"] ?? "");
       out.push({
         name,
@@ -120,9 +125,17 @@ export function parseLsblk(json: string): BlockDevice[] {
         type: String(n["type"] ?? ""),
         size: num(n["size"]),
         fstype: str(n["fstype"]),
-        fsused: n["fsused"] === null || n["fsused"] === undefined ? null : num(n["fsused"]),
-        fsavail: n["fsavail"] === null || n["fsavail"] === undefined ? null : num(n["fsavail"]),
-        mountpoints: mp.filter((x): x is string => typeof x === "string" && x !== ""),
+        fsused:
+          n["fsused"] === null || n["fsused"] === undefined
+            ? null
+            : num(n["fsused"]),
+        fsavail:
+          n["fsavail"] === null || n["fsavail"] === undefined
+            ? null
+            : num(n["fsavail"]),
+        mountpoints: mp.filter(
+          (x): x is string => typeof x === "string" && x !== "",
+        ),
         label: str(n["label"]),
         uuid: str(n["uuid"]),
         ro: bool(n["ro"]),
@@ -138,7 +151,8 @@ export function parseLsblk(json: string): BlockDevice[] {
   return out;
 }
 
-export type DiskState = "system" | "mounted" | "unmounted-data" | "unmounted-raw" | "swap";
+export type DiskState =
+  "system" | "mounted" | "unmounted-data" | "unmounted-raw" | "swap";
 
 export interface DiskReport {
   readonly name: string;
@@ -174,7 +188,8 @@ const isZram = (d: BlockDevice): boolean => d.name.startsWith("zram");
 export function classifyDisks(devs: readonly BlockDevice[]): DiskReport[] {
   const out: DiskReport[] = [];
   for (const [i, disk] of devs.entries()) {
-    if (disk.type !== "disk" || NOT_DISKS.has(disk.type) || isZram(disk)) continue;
+    if (disk.type !== "disk" || NOT_DISKS.has(disk.type) || isZram(disk))
+      continue;
     // descendants follow the parent in the flattened tree; stop at the next top-level device (pkname null)
     const family: BlockDevice[] = [disk];
     const names = new Set([disk.name]);
@@ -199,8 +214,12 @@ export function classifyDisks(devs: readonly BlockDevice[]): DiskReport[] {
         usedBytes: d.fsused,
         mounted: d.mountpoints.some((m) => m !== "[SWAP]"),
       }));
-    const hasSwap = family.some((d) => d.fstype === "swap" || d.mountpoints.includes("[SWAP]"));
-    const isSystem = real.some((m) => m === "/" || m === "/boot" || m.startsWith("/boot/"));
+    const hasSwap = family.some(
+      (d) => d.fstype === "swap" || d.mountpoints.includes("[SWAP]"),
+    );
+    const isSystem = real.some(
+      (m) => m === "/" || m === "/boot" || m.startsWith("/boot/"),
+    );
     let state: DiskState;
     let note: string;
     if (isSystem) {
@@ -226,7 +245,8 @@ export function classifyDisks(devs: readonly BlockDevice[]): DiskReport[] {
     out.push({
       name: disk.name,
       path: disk.path,
-      unallocatedBytes: parts.length > 0 ? Math.max(0, disk.size - allocated) : 0,
+      unallocatedBytes:
+        parts.length > 0 ? Math.max(0, disk.size - allocated) : 0,
       sizeBytes: disk.size,
       model: disk.model,
       rotational: disk.rota,
@@ -254,7 +274,11 @@ export interface FsUsage {
   readonly mount: string;
   /** false for tmpfs, squashfs, overlay and other pseudo or read-only image filesystems */
   readonly real: boolean;
-  readonly inodes?: { readonly total: number; readonly used: number; readonly usePercent: number };
+  readonly inodes?: {
+    readonly total: number;
+    readonly used: number;
+    readonly usePercent: number;
+  };
 }
 
 const PSEUDO_FS = new Set([
@@ -293,7 +317,10 @@ export function parseDf(text: string): FsUsage[] {
 
 /** `df -Pi`: merged into the byte usage by mount point. */
 export function mergeInodes(fs: readonly FsUsage[], text: string): FsUsage[] {
-  const byMount = new Map<string, { total: number; used: number; usePercent: number }>();
+  const byMount = new Map<
+    string,
+    { total: number; used: number; usePercent: number }
+  >();
   for (const line of text.split("\n").slice(1)) {
     const f = line.trim().split(/\s+/);
     if (f.length < 6) continue;
@@ -371,7 +398,8 @@ export function parseMeminfo(text: string): Memory {
   const kb: Record<string, number> = {};
   for (const line of text.split("\n")) {
     const m = /^(\w+):\s+(\d+)/.exec(line);
-    if (m !== null) kb[m[1] as string] = Number.parseInt(m[2] as string, 10) * 1024;
+    if (m !== null)
+      kb[m[1] as string] = Number.parseInt(m[2] as string, 10) * 1024;
   }
   return {
     totalBytes: kb["MemTotal"] ?? 0,
@@ -422,7 +450,8 @@ export function parseTimers(text: string): Timer[] {
     const f = line.trim().split(/\s+/);
     if (f.length < 2) continue;
     const unit = f[f.length - 2] as string;
-    if (unit.endsWith(".timer")) out.push({ unit, activates: f[f.length - 1] as string });
+    if (unit.endsWith(".timer"))
+      out.push({ unit, activates: f[f.length - 1] as string });
   }
   return out;
 }
@@ -445,7 +474,10 @@ export interface Proc {
 export function parsePs(text: string): Proc[] {
   const out: Proc[] = [];
   for (const line of text.split("\n")) {
-    const m = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+([\d.]+)\s+(\d+)\s+(\S+)\s+(\S+)\s*(.*)$/.exec(line);
+    const m =
+      /^\s*(\d+)\s+(\d+)\s+(\d+)\s+([\d.]+)\s+(\d+)\s+(\S+)\s+(\S+)\s*(.*)$/.exec(
+        line,
+      );
     if (m === null) continue;
     const pid = Number.parseInt(m[1] as string, 10);
     const ppid = Number.parseInt(m[2] as string, 10);
@@ -460,7 +492,10 @@ export function parsePs(text: string): Proc[] {
       stat: m[6] as string,
       user: m[7] as string,
       args,
-      kernel: pid === 2 || ppid === 2 || (rss === 0 && args.startsWith("[") && args.endsWith("]")),
+      kernel:
+        pid === 2 ||
+        ppid === 2 ||
+        (rss === 0 && args.startsWith("[") && args.endsWith("]")),
     });
   }
   return out;
@@ -472,7 +507,12 @@ export interface ProcSummary {
   readonly userland: number;
   readonly zombies: number;
   readonly byUser: Readonly<Record<string, number>>;
-  readonly topRss: readonly { pid: number; user: string; rssBytes: number; command: string }[];
+  readonly topRss: readonly {
+    pid: number;
+    user: string;
+    rssBytes: number;
+    command: string;
+  }[];
 }
 
 export function summarizeProcs(procs: readonly Proc[], top = 8): ProcSummary {
@@ -524,8 +564,17 @@ export function isBuildProcess(p: Proc): boolean {
   const first = p.args.split(/\s+/)[0] ?? "";
   const comm = first.slice(first.lastIndexOf("/") + 1);
   if (BUILD_COMMS.has(comm)) return true;
-  if (comm === "bun" || comm === "bunx" || comm === "npm" || comm === "pnpm" || comm === "yarn") {
-    return /\s(build|install|add|i|ci)(\s|$)/.test(p.args) || /\srun\s+build/.test(p.args);
+  if (
+    comm === "bun" ||
+    comm === "bunx" ||
+    comm === "npm" ||
+    comm === "pnpm" ||
+    comm === "yarn"
+  ) {
+    return (
+      /\s(build|install|add|i|ci)(\s|$)/.test(p.args) ||
+      /\srun\s+build/.test(p.args)
+    );
   }
   return false;
 }
@@ -542,7 +591,8 @@ export function parseCwds(text: string): Map<number, string> {
   const out = new Map<number, string>();
   for (const line of text.split("\n")) {
     const i = line.indexOf(" ");
-    if (i > 0) out.set(Number.parseInt(line.slice(0, i), 10), line.slice(i + 1));
+    if (i > 0)
+      out.set(Number.parseInt(line.slice(0, i), 10), line.slice(i + 1));
   }
   return out;
 }
@@ -605,7 +655,11 @@ export function parseDu(text: string): { path: string; bytes: number }[] {
   const out: { path: string; bytes: number }[] = [];
   for (const line of text.split("\n")) {
     const m = /^(\d+)\s+(\/.*)$/.exec(line);
-    if (m !== null) out.push({ bytes: Number.parseInt(m[1] as string, 10), path: m[2] as string });
+    if (m !== null)
+      out.push({
+        bytes: Number.parseInt(m[1] as string, 10),
+        path: m[2] as string,
+      });
   }
   return out;
 }
@@ -658,7 +712,11 @@ export function parseLocks(text: string): LockState[] {
   const out: LockState[] = [];
   for (const line of text.split("\n")) {
     const f = line.split("|");
-    if (f.length < 2 || !(f[1] === "held" || f[1] === "free" || f[1] === "absent")) continue;
+    if (
+      f.length < 2 ||
+      !(f[1] === "held" || f[1] === "free" || f[1] === "absent")
+    )
+      continue;
     out.push({
       path: f[0] as string,
       state: f[1],
@@ -683,7 +741,11 @@ export function parseArtifacts(text: string): Artifact[] {
   const out: Artifact[] = [];
   for (const line of text.split("\n")) {
     const f = line.split("|");
-    if (f.length < 4 || !/^\d*$/.test(f[0] as string) || !(f[2] === "recent" || f[2] === "old"))
+    if (
+      f.length < 4 ||
+      !/^\d*$/.test(f[0] as string) ||
+      !(f[2] === "recent" || f[2] === "old")
+    )
       continue;
     out.push({
       bytes: Number.parseInt((f[0] as string) || "0", 10),
@@ -719,12 +781,17 @@ export function parseSwapFiles(text: string): SwapFile[] {
 }
 
 /** `<bytes>|<path>` */
-export function parseCacheDirs(text: string): { path: string; bytes: number }[] {
+export function parseCacheDirs(
+  text: string,
+): { path: string; bytes: number }[] {
   const out: { path: string; bytes: number }[] = [];
   for (const line of text.split("\n")) {
     const i = line.indexOf("|");
     if (i > 0 && /^\d+$/.test(line.slice(0, i)))
-      out.push({ bytes: Number.parseInt(line.slice(0, i), 10), path: line.slice(i + 1) });
+      out.push({
+        bytes: Number.parseInt(line.slice(0, i), 10),
+        path: line.slice(i + 1),
+      });
   }
   return out;
 }
@@ -739,10 +806,14 @@ export interface Metrics {
 }
 
 /** `key=value` lines: mem_available, swap_total, swap_free, load1, free:<path> */
-export function parseMetrics(text: string, at = new Date().toISOString()): Metrics {
+export function parseMetrics(
+  text: string,
+  at = new Date().toISOString(),
+): Metrics {
   const kv = parseKeyValues(text);
   const free: Record<string, number> = {};
-  for (const [k, v] of Object.entries(kv)) if (k.startsWith("free:")) free[k.slice(5)] = num(v);
+  for (const [k, v] of Object.entries(kv))
+    if (k.startsWith("free:")) free[k.slice(5)] = num(v);
   return {
     at,
     freeBytes: free,
@@ -798,14 +869,31 @@ export interface Audit {
   readonly memory: Memory;
   readonly disks: readonly DiskReport[];
   readonly filesystems: readonly FsUsage[];
-  readonly mounts: readonly { target: string; source: string; fstype: string; options: string }[];
-  readonly swap: { readonly devices: readonly SwapDevice[]; readonly zram: readonly ZramDevice[] };
-  readonly services: { readonly running: readonly Unit[]; readonly failed: readonly Unit[] };
+  readonly mounts: readonly {
+    target: string;
+    source: string;
+    fstype: string;
+    options: string;
+  }[];
+  readonly swap: {
+    readonly devices: readonly SwapDevice[];
+    readonly zram: readonly ZramDevice[];
+  };
+  readonly services: {
+    readonly running: readonly Unit[];
+    readonly failed: readonly Unit[];
+  };
   readonly timers: readonly Timer[];
-  readonly cron: { readonly files: readonly string[]; readonly userEntries: number };
+  readonly cron: {
+    readonly files: readonly string[];
+    readonly userEntries: number;
+  };
   readonly ports: readonly Listener[];
   readonly processes: ProcSummary;
-  readonly docker: { readonly available: boolean; readonly usage: readonly DockerUsage[] };
+  readonly docker: {
+    readonly available: boolean;
+    readonly usage: readonly DockerUsage[];
+  };
   readonly biggest: readonly { path: string; bytes: number }[];
   readonly locks: readonly LockState[];
   readonly buildProcs: readonly BuildProc[];
@@ -820,7 +908,12 @@ export interface Audit {
 }
 
 export function parseMounts(text: string): Audit["mounts"] {
-  const out: { target: string; source: string; fstype: string; options: string }[] = [];
+  const out: {
+    target: string;
+    source: string;
+    fstype: string;
+    options: string;
+  }[] = [];
   for (const line of text.split("\n")) {
     const f = line.trim().split(" ");
     if (f.length >= 4)
@@ -870,13 +963,22 @@ export function buildAudit(
     disks: classifyDisks(parseLsblk(get("lsblk"))),
     filesystems: mergeInodes(parseDf(get("df")), get("dfi")),
     mounts: parseMounts(get("mounts")),
-    swap: { devices: parseSwapon(get("swapon")), zram: parseZramctl(get("zram")) },
-    services: { running: parseUnits(get("services")), failed: parseUnits(get("failed")) },
+    swap: {
+      devices: parseSwapon(get("swapon")),
+      zram: parseZramctl(get("zram")),
+    },
+    services: {
+      running: parseUnits(get("services")),
+      failed: parseUnits(get("failed")),
+    },
     timers: parseTimers(get("timers")),
     cron: parseCron(get("cron")),
     ports: parseSs(get("ports")),
     processes: summarizeProcs(procs),
-    docker: { available: dockerText.includes("{"), usage: parseDockerDf(dockerText) },
+    docker: {
+      available: dockerText.includes("{"),
+      usage: parseDockerDf(dockerText),
+    },
     biggest: parseDu(get("du")).slice(0, 25),
     locks: parseLocks(get("locks")),
     buildProcs: findBuildProcs(procs, parseCwds(get("cwds"))),
@@ -907,7 +1009,10 @@ export interface Finding {
 }
 
 /** Readable findings derived from an audit, most severe first. */
-export function analyze(a: Audit, minFree: number = DEFAULT_MIN_FREE): Finding[] {
+export function analyze(
+  a: Audit,
+  minFree: number = DEFAULT_MIN_FREE,
+): Finding[] {
   const out: Finding[] = [];
   const add = (f: Finding): number => out.push(f);
 
@@ -926,7 +1031,10 @@ export function analyze(a: Audit, minFree: number = DEFAULT_MIN_FREE): Finding[]
         if (!b.path.startsWith(base) && b.path !== fs.mount) continue;
         if (
           picked.some(
-            (q) => q === b.path || b.path.startsWith(`${q}/`) || q.startsWith(`${b.path}/`),
+            (q) =>
+              q === b.path ||
+              b.path.startsWith(`${q}/`) ||
+              q.startsWith(`${b.path}/`),
           )
         )
           continue;
@@ -950,7 +1058,8 @@ export function analyze(a: Audit, minFree: number = DEFAULT_MIN_FREE): Finding[]
         severity: "critical",
         title: `${fs.mount} is ${fs.usePercent}% full`,
         detail: `${fmtBytes(fs.availBytes)} free of ${fmtBytes(fs.sizeBytes)}`,
-        action: "yolo host reclaim, then archive the largest directories off this disk",
+        action:
+          "yolo host reclaim, then archive the largest directories off this disk",
       });
     else if (fs.usePercent >= 80)
       add({
@@ -994,7 +1103,8 @@ export function analyze(a: Audit, minFree: number = DEFAULT_MIN_FREE): Finding[]
         id: `unallocated:${d.name}`,
         severity: "info",
         title: `${d.path} has ${fmtBytes(d.unallocatedBytes)} outside any partition`,
-        detail: "free for growing a partition or adding one; yolo does not repartition",
+        detail:
+          "free for growing a partition or adding one; yolo does not repartition",
       });
   }
 
@@ -1058,7 +1168,9 @@ export function analyze(a: Audit, minFree: number = DEFAULT_MIN_FREE): Finding[]
       id: "exposed-ports",
       severity: "info",
       title: `${exposed.length} TCP port(s) listen on all interfaces`,
-      detail: exposed.map((p) => `${p.port}${p.process ? `/${p.process}` : ""}`).join(", "),
+      detail: exposed
+        .map((p) => `${p.port}${p.process ? `/${p.process}` : ""}`)
+        .join(", "),
     });
 
   for (const l of a.locks)

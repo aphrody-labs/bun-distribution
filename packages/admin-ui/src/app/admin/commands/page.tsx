@@ -14,7 +14,10 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { api } from "@aphrody/admin-ui/client";
-import { RoleBadge, RoleSelect } from "@aphrody/admin-ui/components/admin/RoleSelect";
+import {
+  RoleBadge,
+  RoleSelect,
+} from "@aphrody/admin-ui/components/admin/RoleSelect";
 
 interface CommandLeaf {
   name: string;
@@ -37,23 +40,29 @@ export default function CommandsPage() {
 
   const commands = useQuery({
     queryKey: ["bot", "commands", "expanded"],
-    queryFn: () => api.get<{ commands: CommandLeaf[] }>("/bot/commands/expanded"),
+    queryFn: () =>
+      api.get<{ commands: CommandLeaf[] }>("/bot/commands/expanded"),
     staleTime: 60_000,
   });
 
   const rules = useQuery({
     queryKey: ["commands", "permissions"],
-    queryFn: () => api.get<{ rules: PermissionRule[] }>("/bot/commands/permissions"),
+    queryFn: () =>
+      api.get<{ rules: PermissionRule[] }>("/bot/commands/permissions"),
     staleTime: 30_000,
   });
 
   const upsert = useMutation({
-    mutationFn: (rule: PermissionRule) => api.post("/bot/commands/permissions", rule),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["commands", "permissions"] }),
+    mutationFn: (rule: PermissionRule) =>
+      api.post("/bot/commands/permissions", rule),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["commands", "permissions"] }),
   });
   const remove = useMutation({
-    mutationFn: (name: string) => api.post("/bot/commands/permissions/delete", { name }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["commands", "permissions"] }),
+    mutationFn: (name: string) =>
+      api.post("/bot/commands/permissions/delete", { name }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["commands", "permissions"] }),
   });
 
   const ruleByName = useMemo(() => {
@@ -77,11 +86,14 @@ export default function CommandsPage() {
       .toSorted((a, b) => a.group.localeCompare(b.group));
   }, [commands.data]);
 
-  const overriddenCount = ruleByName.size - (ruleByName.has(GLOBAL_KEY) ? 1 : 0);
+  const overriddenCount =
+    ruleByName.size - (ruleByName.has(GLOBAL_KEY) ? 1 : 0);
   const globalRule = ruleByName.get(GLOBAL_KEY);
 
   if (commands.isLoading || rules.isLoading) {
-    return <div className="text-zinc-500 text-sm">Chargement des commandes…</div>;
+    return (
+      <div className="text-zinc-500 text-sm">Chargement des commandes…</div>
+    );
   }
 
   return (
@@ -94,16 +106,19 @@ export default function CommandsPage() {
           </h2>
         </div>
         <p className="text-sm text-zinc-300">
-          Définissez qui peut utiliser chaque commande slash du bot : activer / désactiver une
-          commande, l'autoriser uniquement à certains rôles ou l'interdire à des utilisateurs
-          spécifiques. Les propriétaires du serveur et les membres avec la permission{" "}
-          <strong>Administrateur</strong> Discord contournent toujours ces règles.
+          Définissez qui peut utiliser chaque commande slash du bot : activer /
+          désactiver une commande, l'autoriser uniquement à certains rôles ou
+          l'interdire à des utilisateurs spécifiques. Les propriétaires du
+          serveur et les membres avec la permission{" "}
+          <strong>Administrateur</strong> Discord contournent toujours ces
+          règles.
         </p>
         <p className="mt-1 text-xs text-dbz-blue-light">
-          {commands.data?.commands.length ?? 0} commandes disponibles · {overriddenCount} règle
+          {commands.data?.commands.length ?? 0} commandes disponibles ·{" "}
+          {overriddenCount} règle
           {overriddenCount > 1 ? "s" : ""} personnalisée
-          {overriddenCount > 1 ? "s" : ""} · cache bot 30 s · hiérarchie : règle exacte → joker du
-          groupe → joker global
+          {overriddenCount > 1 ? "s" : ""} · cache bot 30 s · hiérarchie : règle
+          exacte → joker du groupe → joker global
         </p>
       </div>
 
@@ -151,7 +166,8 @@ function GlobalRuleCard({
         <Shield className="h-5 w-5 shrink-0 text-amber-400" />
         <div className="flex-1">
           <h3 className="font-semibold text-zinc-100">
-            Règle par défaut (s'applique à toutes les commandes sans règle spécifique)
+            Règle par défaut (s'applique à toutes les commandes sans règle
+            spécifique)
           </h3>
           <p className="text-xs text-zinc-500">
             Si une commande n'a pas de règle propre, cette règle s'applique.
@@ -202,7 +218,8 @@ function GroupSection({
   const [open, setOpen] = useState(false);
   const wildcardName = `${group} *`;
   const wildcardRule = ruleByName.get(wildcardName);
-  const overridden = items.filter((c) => ruleByName.has(c.name)).length + (wildcardRule ? 1 : 0);
+  const overridden =
+    items.filter((c) => ruleByName.has(c.name)).length + (wildcardRule ? 1 : 0);
   const hasMultipleLeaves = items.length > 1 || items[0]?.name !== group;
 
   return (
@@ -326,7 +343,9 @@ function RuleEditor({
               </span>
             )}
           </div>
-          {description && <p className="mt-0.5 text-xs text-zinc-400">{description}</p>}
+          {description && (
+            <p className="mt-0.5 text-xs text-zinc-400">{description}</p>
+          )}
           {summary && <p className="mt-1 text-xs text-zinc-500">{summary}</p>}
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -335,7 +354,11 @@ function RuleEditor({
             onClick={editing ? () => setEditing(false) : startEdit}
             className="text-xs px-2 py-1 border border-dbz-border text-zinc-300 hover:text-dbz-orange hover:border-dbz-orange/50 rounded transition-colors"
           >
-            {editing ? "Fermer" : isOverridden ? "Modifier" : "Définir une règle"}
+            {editing
+              ? "Fermer"
+              : isOverridden
+                ? "Modifier"
+                : "Définir une règle"}
           </button>
           {isOverridden && (
             <button
@@ -356,14 +379,17 @@ function RuleEditor({
             <input
               type="checkbox"
               checked={draft.enabled}
-              onChange={(e) => setDraft({ ...draft, enabled: e.target.checked })}
+              onChange={(e) =>
+                setDraft({ ...draft, enabled: e.target.checked })
+              }
               className="h-4 w-4 accent-dbz-orange"
             />
             <Power className="h-4 w-4 text-zinc-500" />
             <span className="text-zinc-200">
               Commande activée
               <span className="ml-1 text-xs text-zinc-500">
-                (décocher pour la désactiver pour tout le monde, sauf administrateurs)
+                (décocher pour la désactiver pour tout le monde, sauf
+                administrateurs)
               </span>
             </span>
           </label>

@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import {
@@ -37,10 +43,17 @@ describe("bun-upstream-docs", () => {
   test("the pin directory holds only the fork page, the licence and the pinned commit", async () => {
     const pin = await readBunDocsPin(join(root, BUN_PIN_DIR, "SOURCE.json"));
     expect(pin?.commit).toMatch(/^[0-9a-f]{40}$/);
-    const licence = await Bun.file(join(root, BUN_PIN_DIR, "LICENSE.md")).bytes();
-    expect(pin?.files["LICENSE.md"]).toBe(createHash("sha256").update(licence).digest("hex"));
+    const licence = await Bun.file(
+      join(root, BUN_PIN_DIR, "LICENSE.md"),
+    ).bytes();
+    expect(pin?.files["LICENSE.md"]).toBe(
+      createHash("sha256").update(licence).digest("hex"),
+    );
     const files = [
-      ...new Bun.Glob("**/*").scanSync({ cwd: join(root, BUN_PIN_DIR), dot: true }),
+      ...new Bun.Glob("**/*").scanSync({
+        cwd: join(root, BUN_PIN_DIR),
+        dot: true,
+      }),
     ].toSorted();
     expect(files).toEqual(["APHRODY-FORK.md", "LICENSE.md", "SOURCE.json"]);
   });
@@ -50,12 +63,12 @@ describe("bun-upstream-docs", () => {
       join("C:/Users/a/AppData/Roaming", "aphrody", "bun"),
     );
     expect(bunDataDir({}, "win32")).toBeUndefined();
-    expect(bunDataDir({ XDG_DATA_HOME: "/data", HOME: "/home/a" }, "linux")).toBe(
-      join("/data", "aphrody", "bun"),
-    );
-    expect(bunDataDir({ XDG_DATA_HOME: "relative", HOME: "/home/a" }, "linux")).toBe(
-      join("/home/a", ".local", "share", "aphrody", "bun"),
-    );
+    expect(
+      bunDataDir({ XDG_DATA_HOME: "/data", HOME: "/home/a" }, "linux"),
+    ).toBe(join("/data", "aphrody", "bun"));
+    expect(
+      bunDataDir({ XDG_DATA_HOME: "relative", HOME: "/home/a" }, "linux"),
+    ).toBe(join("/home/a", ".local", "share", "aphrody", "bun"));
   });
 
   test("resolution order: override, checkout, installed, previous download, then explicit failure", async () => {
@@ -63,7 +76,9 @@ describe("bun-upstream-docs", () => {
       "bun/docs/docs.json": "{}",
       "data/aphrody/bun/docs/index.mdx": "# Installed",
       "data/aphrody/bun/docs-0123456789ab/docs/docs.json": "{}",
-      "pin.json": JSON.stringify({ commit: "0123456789abcdef0123456789abcdef01234567" }),
+      "pin.json": JSON.stringify({
+        commit: "0123456789abcdef0123456789abcdef01234567",
+      }),
     });
     try {
       const pinFile = join(dir, "pin.json");
@@ -75,29 +90,39 @@ describe("bun-upstream-docs", () => {
         download: false,
       });
       expect(
-        await resolveBunDocs(opts({ ...base, APHRODY_BUN_DOCS: join(dir, "bun/docs") })),
+        await resolveBunDocs(
+          opts({ ...base, APHRODY_BUN_DOCS: join(dir, "bun/docs") }),
+        ),
       ).toEqual({
         dir: join(dir, "bun/docs"),
         source: "override",
       });
       await expect(
-        resolveBunDocs(opts({ ...base, APHRODY_BUN_DOCS: join(dir, "absent") })),
+        resolveBunDocs(
+          opts({ ...base, APHRODY_BUN_DOCS: join(dir, "absent") }),
+        ),
       ).rejects.toThrow("APHRODY_BUN_DOCS");
       expect(
-        await resolveBunDocs(opts({ ...base, APHRODY_BUN_CHECKOUT: join(dir, "bun") })),
+        await resolveBunDocs(
+          opts({ ...base, APHRODY_BUN_CHECKOUT: join(dir, "bun") }),
+        ),
       ).toEqual({
         dir: join(dir, "bun", "docs"),
         source: "checkout",
       });
       expect(
-        await resolveBunDocs(opts({ ...base, APHRODY_BUN_CHECKOUT: join(dir, "absent") })),
+        await resolveBunDocs(
+          opts({ ...base, APHRODY_BUN_CHECKOUT: join(dir, "absent") }),
+        ),
       ).toEqual({
         dir: join(dir, "data", "aphrody", "bun", "docs"),
         source: "installed",
       });
       rmSync(join(dir, "data/aphrody/bun/docs"), { recursive: true });
       expect(
-        await resolveBunDocs(opts({ ...base, APHRODY_BUN_CHECKOUT: join(dir, "absent") })),
+        await resolveBunDocs(
+          opts({ ...base, APHRODY_BUN_CHECKOUT: join(dir, "absent") }),
+        ),
       ).toEqual({
         dir: join(dir, "data", "aphrody", "bun", "docs-0123456789ab", "docs"),
         source: "download",
@@ -152,7 +177,11 @@ describe("bun-upstream-docs", () => {
       expect(existsSync(join(dest, "docs/images"))).toBe(false);
       expect(existsSync(join(dest, "src"))).toBe(false);
       await expect(
-        fetchForkDocs("main", join(dir, "other", "docs-x"), "file:///absent-fork"),
+        fetchForkDocs(
+          "main",
+          join(dir, "other", "docs-x"),
+          "file:///absent-fork",
+        ),
       ).rejects.toThrow("git clone");
     } finally {
       rmSync(dir, { recursive: true, force: true });

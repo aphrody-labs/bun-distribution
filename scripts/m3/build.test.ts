@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import {
@@ -72,7 +79,11 @@ afterAll(() => rmSync(root, { recursive: true, force: true }));
 describe("workspace", () => {
   test("members, dependency edges and levels", () => {
     const all = workspacePackages(root);
-    expect(all.map((p) => p.name)).toEqual(["@aphrody/m3-a", "@aphrody/m3-b", "@foreign/other"]);
+    expect(all.map((p) => p.name)).toEqual([
+      "@aphrody/m3-a",
+      "@aphrody/m3-b",
+      "@foreign/other",
+    ]);
     const known = new Set(all.map((p) => p.name));
     expect(workspaceDeps(all[1]!, known)).toEqual(["@aphrody/m3-a"]);
     expect(levels(all).map((l) => l.map((p) => p.name))).toEqual([
@@ -135,16 +146,16 @@ describe("pipeline", () => {
       ["@aphrody/m3-b", "built"],
     ]);
     expect(existsSync(join(root, "packages/m3-a/dist/index.js"))).toBe(true);
-    expect(readFileSync(join(root, "packages/m3-b/dist/react.js"), "utf8")).toStartWith(
-      "'use client';\n",
-    );
-    expect(readFileSync(join(root, "packages/m3-b/dist/index.js"), "utf8")).not.toStartWith(
-      "'use client';",
-    );
+    expect(
+      readFileSync(join(root, "packages/m3-b/dist/react.js"), "utf8"),
+    ).toStartWith("'use client';\n");
+    expect(
+      readFileSync(join(root, "packages/m3-b/dist/index.js"), "utf8"),
+    ).not.toStartWith("'use client';");
     // The workspace scope is external, so the dependent keeps its import of `@aphrody/m3-a`.
-    expect(readFileSync(join(root, "packages/m3-b/dist/index.js"), "utf8")).toContain(
-      'from "@aphrody/m3-a"',
-    );
+    expect(
+      readFileSync(join(root, "packages/m3-b/dist/index.js"), "utf8"),
+    ).toContain('from "@aphrody/m3-a"');
     const second = await pipeline({ root });
     expect(second.map((o) => o.status)).toEqual(["cached", "cached"]);
   });
@@ -165,7 +176,9 @@ describe("pipeline", () => {
     const forced = await pipeline({ root, cache: false });
     expect(forced.map((o) => o.status)).toEqual(["built", "built"]);
     const only = await pipeline({ root, only: ["other"] });
-    expect(only.map((o) => [o.name, o.status])).toEqual([["@foreign/other", "built"]]);
+    expect(only.map((o) => [o.name, o.status])).toEqual([
+      ["@foreign/other", "built"],
+    ]);
   });
 
   test("a failing build is reported and stops later levels", async () => {
@@ -178,7 +191,10 @@ describe("pipeline", () => {
   test("typechecking a changed test cannot reuse a stale success", async () => {
     write(
       "packages/m3-a/package.json",
-      JSON.stringify({ ...pkg("@aphrody/m3-a"), scripts: { typecheck: "tsc --noEmit" } }),
+      JSON.stringify({
+        ...pkg("@aphrody/m3-a"),
+        scripts: { typecheck: "tsc --noEmit" },
+      }),
     );
     write(
       "packages/m3-a/tsconfig.json",
@@ -191,14 +207,19 @@ describe("pipeline", () => {
     const options = { root, task: "typecheck" as const, only: ["m3-a"] };
     expect((await pipeline(options))[0]!.status).toBe("built");
     expect((await pipeline(options))[0]!.status).toBe("cached");
-    write("packages/m3-a/test/typed.ts", 'const n: number = "invalid"; export {};\n');
+    write(
+      "packages/m3-a/test/typed.ts",
+      'const n: number = "invalid"; export {};\n',
+    );
     const failed = (await pipeline(options))[0]!;
     expect(failed.status).toBe("failed");
     expect(failed.detail).toContain("TS2322");
   });
 
   test("an invalid pool limit fails instead of dropping jobs", async () => {
-    await expect(pool([1], 0, async (value) => value)).rejects.toThrow(RangeError);
+    await expect(pool([1], 0, async (value) => value)).rejects.toThrow(
+      RangeError,
+    );
   });
 
   test("clean removes dist and the cache", () => {

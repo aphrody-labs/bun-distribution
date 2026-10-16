@@ -13,7 +13,15 @@
 import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
-import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import {
+  basename,
+  dirname,
+  isAbsolute,
+  join,
+  relative,
+  resolve,
+  sep,
+} from "node:path";
 
 export type Patch = {
   id: string;
@@ -67,19 +75,25 @@ export type Manifest = {
 
 export function parseManifest(text: string): Manifest {
   const raw = JSON.parse(text) as Manifest;
-  if (raw.schemaVersion !== 1) throw new Error("upstream-sources: schemaVersion must be 1");
-  if (typeof raw.root !== "string" || raw.root === "") throw new Error("upstream-sources: root");
+  if (raw.schemaVersion !== 1)
+    throw new Error("upstream-sources: schemaVersion must be 1");
+  if (typeof raw.root !== "string" || raw.root === "")
+    throw new Error("upstream-sources: root");
   const seen = new Set<string>();
   for (const ref of raw.reference ?? []) {
     if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(ref.id))
       throw new Error(`upstream-sources: invalid reference id ${ref.id}`);
-    if (seen.has(ref.id)) throw new Error(`upstream-sources: duplicate id ${ref.id}`);
+    if (seen.has(ref.id))
+      throw new Error(`upstream-sources: duplicate id ${ref.id}`);
     seen.add(ref.id);
     if (ref.kind !== "git" || !ref.url)
       throw new Error(`${ref.id}: reference needs kind git and url`);
     if (ref.tier !== "build" && ref.tier !== "reference")
       throw new Error(`${ref.id}: tier must be build or reference`);
-    if (ref.observedCommit !== undefined && !/^[0-9a-f]{40}$/.test(ref.observedCommit)) {
+    if (
+      ref.observedCommit !== undefined &&
+      !/^[0-9a-f]{40}$/.test(ref.observedCommit)
+    ) {
       throw new Error(`${ref.id}: observedCommit must be a 40-hex SHA`);
     }
     if (!ref.purpose || !ref.consumers)
@@ -96,22 +110,30 @@ export function parseManifest(text: string): Manifest {
     if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(source.id)) {
       throw new Error(`upstream-sources: invalid id ${source.id}`);
     }
-    if (seen.has(source.id)) throw new Error(`upstream-sources: duplicate id ${source.id}`);
+    if (seen.has(source.id))
+      throw new Error(`upstream-sources: duplicate id ${source.id}`);
     seen.add(source.id);
     if (source.kind === "git") {
       if (!source.url) throw new Error(`${source.id}: git source needs url`);
-      if (source.commit !== undefined && !/^[0-9a-f]{40}$/.test(source.commit)) {
+      if (
+        source.commit !== undefined &&
+        !/^[0-9a-f]{40}$/.test(source.commit)
+      ) {
         throw new Error(`${source.id}: commit must be a 40-hex SHA`);
       }
-      if (source.pinned && !source.commit) throw new Error(`${source.id}: pinned needs commit`);
+      if (source.pinned && !source.commit)
+        throw new Error(`${source.id}: pinned needs commit`);
     } else if (source.kind === "crate") {
-      if (!source.crate || !source.version) throw new Error(`${source.id}: crate needs version`);
+      if (!source.crate || !source.version)
+        throw new Error(`${source.id}: crate needs version`);
     } else {
       throw new Error(`${source.id}: unknown kind`);
     }
     for (const patch of source.patches ?? []) {
       if (isAbsolute(patch.file) || patch.file.includes("..")) {
-        throw new Error(`${source.id}: patch ${patch.id} must be repo-relative`);
+        throw new Error(
+          `${source.id}: patch ${patch.id} must be repo-relative`,
+        );
       }
       if (!Number.isInteger(patch.strip) || patch.strip < 0) {
         throw new Error(`${source.id}: patch ${patch.id} strip`);
@@ -121,21 +143,32 @@ export function parseManifest(text: string): Manifest {
   return raw;
 }
 
-export function resolveSourceRoot(repo: string, manifest: Manifest, override?: string): string {
+export function resolveSourceRoot(
+  repo: string,
+  manifest: Manifest,
+  override?: string,
+): string {
   const chosen = override ?? process.env.APHRODY_SOURCE_ROOT ?? manifest.root;
   const expanded =
-    chosen === "~" || chosen.startsWith("~/") ? join(homedir(), chosen.slice(1)) : chosen;
+    chosen === "~" || chosen.startsWith("~/")
+      ? join(homedir(), chosen.slice(1))
+      : chosen;
   return resolve(repo, expanded);
 }
 
 /** Path of a Cargo path dependency as written in the root Cargo.toml (forward slashes). */
-export function cargoPathFor(repo: string, root: string, source: Source): string | undefined {
+export function cargoPathFor(
+  repo: string,
+  root: string,
+  source: Source,
+): string | undefined {
   if (source.cargoPathDep === undefined) return undefined;
   const base = relative(repo, join(root, source.id, source.cargoPathDep));
   return base.split(sep).join("/");
 }
 
-export type State = "ok" | "missing" | "drift" | "dirty" | "patch-missing" | "tracked";
+export type State =
+  "ok" | "missing" | "drift" | "dirty" | "patch-missing" | "tracked";
 
 export type Row = {
   id: string;
@@ -149,7 +182,12 @@ async function run(
   cmd: string[],
   cwd?: string,
 ): Promise<{ code: number; out: string; err: string }> {
-  const proc = Bun.spawn(cmd, { windowsHide: true, cwd, stdout: "pipe", stderr: "pipe" });
+  const proc = Bun.spawn(cmd, {
+    windowsHide: true,
+    cwd,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const [out, err, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
@@ -167,10 +205,13 @@ async function patchState(dir: string, patch: Patch): Promise<boolean> {
 export async function inspect(root: string, source: Source): Promise<Row> {
   const dir = join(root, source.id);
   const patches: Record<string, boolean> = {};
-  if (!existsSync(dir)) return { id: source.id, state: "missing", detail: dir, patches };
+  if (!existsSync(dir))
+    return { id: source.id, state: "missing", detail: dir, patches };
   // Lectures seules et indépendantes : l'état de chaque patch est lu en parallèle, dans l'ordre déclaré.
   const states = await Promise.all(
-    (source.patches ?? []).map(async (patch) => [patch.id, await patchState(dir, patch)] as const),
+    (source.patches ?? []).map(
+      async (patch) => [patch.id, await patchState(dir, patch)] as const,
+    ),
   );
   for (const [id, applied] of states) patches[id] = applied;
   const unapplied = Object.entries(patches)
@@ -180,7 +221,12 @@ export async function inspect(root: string, source: Source): Promise<Row> {
   if (source.kind === "git") {
     const rev = await run(["git", "rev-parse", "HEAD"], dir);
     if (rev.code !== 0)
-      return { id: source.id, state: "drift", detail: "not a git checkout", patches };
+      return {
+        id: source.id,
+        state: "drift",
+        detail: "not a git checkout",
+        patches,
+      };
     head = rev.out;
     if (source.pinned && head !== source.commit) {
       return {
@@ -204,7 +250,13 @@ export async function inspect(root: string, source: Source): Promise<Row> {
     }
   }
   if (unapplied.length > 0) {
-    return { id: source.id, state: "patch-missing", detail: unapplied.join(", "), head, patches };
+    return {
+      id: source.id,
+      state: "patch-missing",
+      detail: unapplied.join(", "),
+      head,
+      patches,
+    };
   }
   return {
     id: source.id,
@@ -218,14 +270,23 @@ export async function inspect(root: string, source: Source): Promise<Row> {
 async function fetchCrate(source: Source, dir: string): Promise<void> {
   const { crate, version } = source;
   const url = `https://static.crates.io/crates/${crate}/${crate}-${version}.crate`;
-  const response = await fetch(url, { headers: { "User-Agent": "aphrody-upstream-sources" } });
+  const response = await fetch(url, {
+    headers: { "User-Agent": "aphrody-upstream-sources" },
+  });
   if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
   const tmp = await mkdtemp(join(tmpdir(), "aphrody-crate-"));
   try {
     const archive = join(tmp, "crate.tgz");
     await Bun.write(archive, response);
     await mkdir(dir, { recursive: true });
-    const untar = await run(["tar", "xzf", archive, "--strip-components=1", "-C", dir]);
+    const untar = await run([
+      "tar",
+      "xzf",
+      archive,
+      "--strip-components=1",
+      "-C",
+      dir,
+    ]);
     if (untar.code !== 0) throw new Error(`tar: ${untar.err}`);
   } finally {
     await rm(tmp, { recursive: true, force: true });
@@ -245,24 +306,48 @@ async function cloneGit(source: Source, dir: string): Promise<void> {
   const cloned = await run(clone);
   if (cloned.code !== 0) throw new Error(`git clone: ${cloned.err}`);
   if (source.sparse?.length) {
-    const sparse = await run(["git", "sparse-checkout", "set", "--cone", ...source.sparse], dir);
+    const sparse = await run(
+      ["git", "sparse-checkout", "set", "--cone", ...source.sparse],
+      dir,
+    );
     if (sparse.code !== 0) throw new Error(`sparse-checkout: ${sparse.err}`);
   }
-  const target = source.pinned ? source.commit! : (source.commit ?? source.ref ?? "HEAD");
-  const checkout = await run(["git", "checkout", "--quiet", "--detach", target], dir);
+  const target = source.pinned
+    ? source.commit!
+    : (source.commit ?? source.ref ?? "HEAD");
+  const checkout = await run(
+    ["git", "checkout", "--quiet", "--detach", target],
+    dir,
+  );
   if (checkout.code !== 0) throw new Error(`git checkout: ${checkout.err}`);
 }
 
-async function applyPatches(repo: string, dir: string, source: Source): Promise<string[]> {
+async function applyPatches(
+  repo: string,
+  dir: string,
+  source: Source,
+): Promise<string[]> {
   const applied: string[] = [];
   // oxlint-disable no-await-in-loop -- patchs appliqués dans l'ordre déclaré : chacun dépend de l'état laissé par le précédent, et une erreur arrête la suite
   for (const patch of source.patches ?? []) {
     if (await patchState(dir, patch)) continue;
-    const args = ["patch", `-p${patch.strip}`, "-s", "-d", dir, "-i", join(repo, patch.file)];
+    const args = [
+      "patch",
+      `-p${patch.strip}`,
+      "-s",
+      "-d",
+      dir,
+      "-i",
+      join(repo, patch.file),
+    ];
     const dry = await run([...args, "--dry-run"]);
-    if (dry.code !== 0) throw new Error(`patch ${patch.id} does not apply: ${dry.out || dry.err}`);
+    if (dry.code !== 0)
+      throw new Error(
+        `patch ${patch.id} does not apply: ${dry.out || dry.err}`,
+      );
     const real = await run(args);
-    if (real.code !== 0) throw new Error(`patch ${patch.id}: ${real.out || real.err}`);
+    if (real.code !== 0)
+      throw new Error(`patch ${patch.id}: ${real.out || real.err}`);
     applied.push(patch.id);
   }
   // oxlint-enable no-await-in-loop
@@ -270,7 +355,11 @@ async function applyPatches(repo: string, dir: string, source: Source): Promise<
 }
 
 /** Restores one source: clone/extract when missing, then apply missing patches. Never touches an existing checkout's history. */
-export async function syncSource(repo: string, root: string, source: Source): Promise<string> {
+export async function syncSource(
+  repo: string,
+  root: string,
+  source: Source,
+): Promise<string> {
   const dir = join(root, source.id);
   const actions: string[] = [];
   if (!existsSync(dir)) {
@@ -296,7 +385,9 @@ export function cargoProblems(
     const expected = cargoPathFor(repo, root, source);
     if (expected === undefined) continue;
     if (!cargoToml.includes(`path = "${expected}"`)) {
-      problems.push(`Cargo.toml: no path dependency "${expected}" for ${source.id}`);
+      problems.push(
+        `Cargo.toml: no path dependency "${expected}" for ${source.id}`,
+      );
     }
   }
   for (const source of manifest.integrated ?? []) {
@@ -310,7 +401,9 @@ export function cargoProblems(
       cargoToml,
     )
   ) {
-    problems.push("Cargo.toml: path dependency still points at a moved upstream/ tree");
+    problems.push(
+      "Cargo.toml: path dependency still points at a moved upstream/ tree",
+    );
   }
   return problems;
 }
@@ -325,7 +418,12 @@ type Args = {
 };
 
 export function parseArgs(argv: string[]): Args {
-  const args: Args = { repo: process.cwd(), action: "status", apply: false, json: false };
+  const args: Args = {
+    repo: process.cwd(),
+    action: "status",
+    apply: false,
+    json: false,
+  };
   const rest = [...argv];
   if (rest[0] && !rest[0].startsWith("-")) {
     const action = rest.shift();
@@ -358,7 +456,10 @@ export async function runUpstreamSources(argv: string[]): Promise<number> {
     return message === "help" ? 0 : (console.error(message), 2);
   }
   const manifest = parseManifest(
-    await readFile(join(args.repo, "tools/config/upstream-sources.json"), "utf8"),
+    await readFile(
+      join(args.repo, "tools/config/upstream-sources.json"),
+      "utf8",
+    ),
   );
   const root = resolveSourceRoot(args.repo, manifest, args.sourceRoot);
   // A build-tier reference (WSL build inputs) is restored only when named explicitly.
@@ -425,10 +526,16 @@ export async function runUpstreamSources(argv: string[]): Promise<number> {
         .filter((entry) => entry.isDirectory() && !known.has(entry.name))
         .map((entry) => entry.name)
     : [];
-  const bad = rows.filter((row) => row.state !== "ok" && row.state !== "tracked");
-  const failed = Object.values(actions).some((value) => value.startsWith("FAILED"));
+  const bad = rows.filter(
+    (row) => row.state !== "ok" && row.state !== "tracked",
+  );
+  const failed = Object.values(actions).some((value) =>
+    value.startsWith("FAILED"),
+  );
   if (args.json) {
-    console.log(JSON.stringify({ root, rows, actions, problems, unmanaged }, null, 2));
+    console.log(
+      JSON.stringify({ root, rows, actions, problems, unmanaged }, null, 2),
+    );
   } else {
     console.log(`source root: ${root}`);
     for (const row of rows)
@@ -447,4 +554,5 @@ export async function runUpstreamSources(argv: string[]): Promise<number> {
   return bad.length > 0 || problems.length > 0 || failed ? 1 : 0;
 }
 
-if (import.meta.main) process.exit(await runUpstreamSources(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runUpstreamSources(process.argv.slice(2)));

@@ -1,5 +1,5 @@
-import { forwardRef } from 'react';
-import type { LucideIcon, LucideProps } from 'lucide-react';
+import { forwardRef } from "react";
+import type { LucideIcon, LucideProps } from "lucide-react";
 
 /**
  * Icons with no Lucide equivalent, drawn in Lucide's stroke style so they sit
@@ -18,9 +18,9 @@ function createBadgeIcon(displayName: string, label: string): LucideIcon {
         strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
-        width={width ?? size ?? '1em'}
-        height={height ?? size ?? '1em'}
-        className={className ? `lucide ${className}` : 'lucide'}
+        width={width ?? size ?? "1em"}
+        height={height ?? size ?? "1em"}
+        className={className ? `lucide ${className}` : "lucide"}
         {...rest}
       >
         <rect x="2" y="5" width="20" height="14" rx="3" />
@@ -37,14 +37,17 @@ function createBadgeIcon(displayName: string, label: string): LucideIcon {
           {label}
         </text>
       </svg>
-    )
+    ),
   );
   Icon.displayName = displayName;
   return Icon as LucideIcon;
 }
 
 /** "HD" quality badge. */
-export const HighDefinitionIcon = createBadgeIcon('HighDefinitionIcon', 'HD');
+export const HighDefinitionIcon = createBadgeIcon("HighDefinitionIcon", "HD");
 
 /** "SD" quality badge. */
-export const StandardDefinitionIcon = createBadgeIcon('StandardDefinitionIcon', 'SD');
+export const StandardDefinitionIcon = createBadgeIcon(
+  "StandardDefinitionIcon",
+  "SD",
+);

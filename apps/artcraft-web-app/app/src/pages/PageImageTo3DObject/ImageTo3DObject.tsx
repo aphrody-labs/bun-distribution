@@ -11,4 +11,3 @@ export const ImageTo3DObject = () => {
 };
 
 export default ImageTo3DObject;
-

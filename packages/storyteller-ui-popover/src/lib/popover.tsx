@@ -412,7 +412,11 @@ function RichListRow({
         (item.selected &&
           (item.selectedRight ?? (
             <span className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center">
-              <CheckIcon aria-hidden="true" className="h-4 w-4 text-white" strokeWidth={2.5} />
+              <CheckIcon
+                aria-hidden="true"
+                className="h-4 w-4 text-white"
+                strokeWidth={2.5}
+              />
             </span>
           )))}
     </div>
@@ -1348,7 +1352,11 @@ export const PopoverMenu = ({
                                   {item.selected &&
                                     (item.selectedRight ?? (
                                       <span className="text-white text-xl flex items-center justify-center mr-1">
-                                        <CheckIcon aria-hidden="true" className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                                        <CheckIcon
+                                          aria-hidden="true"
+                                          className="h-4 w-4 shrink-0"
+                                          strokeWidth={2.5}
+                                        />
                                       </span>
                                     ))}
                                 </div>
@@ -1507,11 +1515,13 @@ export const PopoverMenu = ({
                                   )}
 
                                   {mode === "toggle" && (
-                                    <span
-                                      className="ml-2 flex h-5 w-5 shrink-0 items-center justify-center"
-                                    >
+                                    <span className="ml-2 flex h-5 w-5 shrink-0 items-center justify-center">
                                       {item.selected && (
-                                        <CheckIcon aria-hidden="true" className="h-4 w-4 text-white" strokeWidth={2.5} />
+                                        <CheckIcon
+                                          aria-hidden="true"
+                                          className="h-4 w-4 text-white"
+                                          strokeWidth={2.5}
+                                        />
                                       )}
                                     </span>
                                   )}
@@ -1564,11 +1574,13 @@ export const PopoverMenu = ({
                                 )}
 
                                 {mode === "toggle" && (
-                                  <span
-                                    className="ml-2 flex h-5 w-5 shrink-0 items-center justify-center"
-                                  >
+                                  <span className="ml-2 flex h-5 w-5 shrink-0 items-center justify-center">
                                     {item.selected && (
-                                      <CheckIcon aria-hidden="true" className="h-4 w-4 text-white" strokeWidth={2.5} />
+                                      <CheckIcon
+                                        aria-hidden="true"
+                                        className="h-4 w-4 text-white"
+                                        strokeWidth={2.5}
+                                      />
                                     )}
                                   </span>
                                 )}

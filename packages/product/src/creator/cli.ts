@@ -7,7 +7,9 @@ import { autoUpdateInBackground, VERSION } from "../shared/update.ts";
 
 function help(): string {
   const width = Math.max(...Object.keys(summaries).map((name) => name.length));
-  const lines = Object.entries(summaries).map(([name, text]) => `  ${name.padEnd(width)}  ${text}`);
+  const lines = Object.entries(summaries).map(
+    ([name, text]) => `  ${name.padEnd(width)}  ${text}`,
+  );
   return `creator-kit <commande> [options]\n\nCommandes :\n${lines.join("\n")}\n\n"creator-kit <commande> --help" détaille les options.`;
 }
 
@@ -22,7 +24,8 @@ export async function main(argv: string[]): Promise<number> {
     return 0;
   }
   // Kit bridge of the desktop app (route `creator`), not listed in the help.
-  if (name === "desktop") return (await import("./desktop.ts")).desktopMain(rest);
+  if (name === "desktop")
+    return (await import("./desktop.ts")).desktopMain(rest);
   const load = registry[name];
   if (!load) {
     console.error(`Commande inconnue : ${name}\n\n${help()}`);
@@ -40,7 +43,9 @@ export async function main(argv: string[]): Promise<number> {
       error instanceof UsageError ||
       (error as { code?: string }).code?.startsWith("ERR_PARSE_ARGS")
     ) {
-      console.error(`${(error as Error).message}\n(creator-kit ${name} --help)`);
+      console.error(
+        `${(error as Error).message}\n(creator-kit ${name} --help)`,
+      );
       return 2;
     }
     throw error;
@@ -53,7 +58,9 @@ export async function guarded(argv: string[]): Promise<number> {
     return await main(argv);
   } catch (error) {
     const log = logCrash(error, argv);
-    console.error(`Erreur inattendue : ${error instanceof Error ? error.message : String(error)}`);
+    console.error(
+      `Erreur inattendue : ${error instanceof Error ? error.message : String(error)}`,
+    );
     if (log) console.error(`Détails : ${log}`);
     return 1;
   }
@@ -73,7 +80,9 @@ async function interactive(): Promise<number> {
 
 function crash(error: unknown): void {
   logCrash(error, Bun.argv.slice(2));
-  console.error(`Erreur inattendue : ${error instanceof Error ? error.message : String(error)}`);
+  console.error(
+    `Erreur inattendue : ${error instanceof Error ? error.message : String(error)}`,
+  );
   process.exit(1);
 }
 

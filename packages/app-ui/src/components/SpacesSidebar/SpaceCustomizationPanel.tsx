@@ -2,7 +2,11 @@ import { motion, AnimatePresence } from "motion/react";
 import { X, Plus } from "@phosphor-icons/react";
 import { useDraggable } from "@dnd-kit/core";
 import { clsx } from "clsx";
-import type { ItemType, SpaceItem as SpaceItemType, GroupType } from "@aphrody/drive-client";
+import type {
+  ItemType,
+  SpaceItem as SpaceItemType,
+  GroupType,
+} from "@aphrody/drive-client";
 import { SpaceItem } from "./SpaceItem";
 import { createPortal } from "react-dom";
 import { useState } from "react";
@@ -64,7 +68,10 @@ function DraggablePaletteItem({ item }: { item: PaletteItem }) {
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      className={clsx("cursor-move transition-opacity", isDragging && "opacity-50")}
+      className={clsx(
+        "cursor-move transition-opacity",
+        isDragging && "opacity-50",
+      )}
     >
       <SpaceItem
         item={mockSpaceItem}
@@ -124,7 +131,9 @@ export function SpaceCustomizationPanel({
       // Scroll to the newly created group in the sidebar after a brief delay
       // (allows time for the group to be added to the DOM)
       setTimeout(() => {
-        const groupElement = document.querySelector(`[data-group-id="${result.group.id}"]`);
+        const groupElement = document.querySelector(
+          `[data-group-id="${result.group.id}"]`,
+        );
         if (groupElement) {
           groupElement.scrollIntoView({
             behavior: "smooth",
@@ -168,8 +177,12 @@ export function SpaceCustomizationPanel({
               {/* Header */}
               <div className="flex items-center justify-between px-2 py-2 mb-2">
                 <div>
-                  <h2 className="text-label-large font-semibold text-on-surface">Customize</h2>
-                  <p className="text-body-small text-sidebar-inkDull mt-0.5">Drag to sidebar</p>
+                  <h2 className="text-label-large font-semibold text-on-surface">
+                    Customize
+                  </h2>
+                  <p className="text-body-small text-sidebar-inkDull mt-0.5">
+                    Drag to sidebar
+                  </p>
                 </div>
                 <button
                   onClick={onClose}
@@ -207,8 +220,12 @@ export function SpaceCustomizationPanel({
                   ) : (
                     <div className="space-y-2 px-2">
                       <select
-                        value={typeof groupType === "string" ? groupType : "Custom"}
-                        onChange={(e) => setGroupType(e.target.value as GroupType)}
+                        value={
+                          typeof groupType === "string" ? groupType : "Custom"
+                        }
+                        onChange={(e) =>
+                          setGroupType(e.target.value as GroupType)
+                        }
                         className="w-full rounded-small border border-outline-variant bg-surface-container px-2 py-1.5 text-body-small text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
                       >
                         <option value="Devices">All devices</option>

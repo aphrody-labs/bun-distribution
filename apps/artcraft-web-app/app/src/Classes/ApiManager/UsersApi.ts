@@ -7,7 +7,7 @@ interface SignupRequest {
   password: string;
   password_confirmation: string;
   signup_source?: string;
-};
+}
 
 export class UsersApi extends ApiManager {
   public GetSession(): Promise<

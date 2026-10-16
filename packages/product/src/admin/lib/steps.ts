@@ -46,7 +46,8 @@ import {
 } from "./tunnel.ts";
 import { MARK } from "./ui.ts";
 
-export type StepState = "fait" | "deja" | "a-faire" | "attente" | "echec" | "ignore";
+export type StepState =
+  "fait" | "deja" | "a-faire" | "attente" | "echec" | "ignore";
 
 export interface StepResult {
   state: StepState;
@@ -88,9 +89,12 @@ export async function createShortcut(
   description = "Aphrody - kit administrateur",
 ): Promise<boolean> {
   const script = `$s=(New-Object -ComObject WScript.Shell).CreateShortcut(${psQuote(lnk)}); $s.TargetPath=${psQuote(target)}; $s.WorkingDirectory=${psQuote(dirname(target))}; $s.Description=${psQuote(description)}; $s.Save()`;
-  const result = await ctx.sys.run(["powershell", "-NoProfile", "-Command", script], {
-    timeoutMs: 30_000,
-  });
+  const result = await ctx.sys.run(
+    ["powershell", "-NoProfile", "-Command", script],
+    {
+      timeoutMs: 30_000,
+    },
+  );
   return result.code === 0;
 }
 
@@ -99,7 +103,8 @@ export const stepKit: Step = {
   id: "kit",
   titre: "Aphrody",
   async run(ctx, mode, state) {
-    const { stepSetup, setupDirs, SETUP_EXE } = await import("../../setup/steps.ts");
+    const { stepSetup, setupDirs, SETUP_EXE } =
+      await import("../../setup/steps.ts");
     const result = await stepSetup.run(ctx, mode, state);
     if (result.state !== "fait") return result;
     const dir = setupDirs(ctx).setup;
@@ -107,10 +112,21 @@ export const stepKit: Step = {
     if (existsSync(guide)) await copyFile(guide, join(dir, "Guide.html"));
     if (ctx.sys.platform === "win32") {
       const target = join(dir, SETUP_EXE);
-      await createShortcut(ctx, join(ctx.paths.desktopDir, "Aphrody.lnk"), target);
       await createShortcut(
         ctx,
-        join(ctx.paths.appData, "Microsoft", "Windows", "Start Menu", "Programs", "Aphrody.lnk"),
+        join(ctx.paths.desktopDir, "Aphrody.lnk"),
+        target,
+      );
+      await createShortcut(
+        ctx,
+        join(
+          ctx.paths.appData,
+          "Microsoft",
+          "Windows",
+          "Start Menu",
+          "Programs",
+          "Aphrody.lnk",
+        ),
         target,
       );
     }
@@ -128,7 +144,8 @@ async function wingetInstall(
   if (!winget)
     return {
       state: "echec",
-      detail: "le gestionnaire d'applications de Windows (winget) est introuvable",
+      detail:
+        "le gestionnaire d'applications de Windows (winget) est introuvable",
       action:
         "Ouvre le Microsoft Store, cherche « Programme d'installation d'application », mets-le à jour, puis relance.",
     };
@@ -140,7 +157,8 @@ async function wingetInstall(
     { inherit: true, timeoutMs: 1_200_000 },
   );
   ctx.log(`winget ${id} -> ${result.code}`);
-  if (findTool(sys, paths, tool)) return { state: "fait", detail: `${id} installé` };
+  if (findTool(sys, paths, tool))
+    return { state: "fait", detail: `${id} installé` };
   return {
     state: "echec",
     detail: `${id} n'a pas pu être installé (code ${result.code})`,
@@ -158,9 +176,14 @@ export const stepPrerequis: Step = {
       return { state: "ignore", detail: "installation Windows seulement" };
     const needs = [
       { id: "Git.Git", tool: "git" as const, label: "Git" },
-      { id: "WireGuard.WireGuard", tool: "wireguard" as const, label: "WireGuard" },
+      {
+        id: "WireGuard.WireGuard",
+        tool: "wireguard" as const,
+        label: "WireGuard",
+      },
     ].filter((item) => !findTool(sys, paths, item.tool));
-    if (needs.length === 0) return { state: "deja", detail: "Git et WireGuard sont installés" };
+    if (needs.length === 0)
+      return { state: "deja", detail: "Git et WireGuard sont installés" };
     if (mode === "simuler")
       return {
         state: "a-faire",
@@ -205,9 +228,15 @@ export function keysMessage(args: {
 }
 
 /** Clipboard through clip.exe (Windows) so Omar can paste straight into a message. */
-export async function copyToClipboard(ctx: Context, value: string): Promise<boolean> {
+export async function copyToClipboard(
+  ctx: Context,
+  value: string,
+): Promise<boolean> {
   if (ctx.sys.platform !== "win32") return false;
-  const result = await ctx.sys.run(["clip"], { input: value, timeoutMs: 10_000 });
+  const result = await ctx.sys.run(["clip"], {
+    input: value,
+    timeoutMs: 10_000,
+  });
   return result.code === 0;
 }
 
@@ -276,7 +305,9 @@ export const stepAcces: Step = {
   titre: "Accès de l'équipe (tunnel privé et SSH)",
   async run(ctx, mode, state) {
     const { sys, paths, log } = ctx;
-    const candidates = state.packFile ? [state.packFile] : findPackFiles(packSearchDirs(ctx));
+    const candidates = state.packFile
+      ? [state.packFile]
+      : findPackFiles(packSearchDirs(ctx));
     const existing = await loadProfile(paths);
     let pack = existing;
     let fromFile: string | undefined;
@@ -303,7 +334,9 @@ export const stepAcces: Step = {
     if (mode === "simuler")
       return {
         state: "a-faire",
-        detail: fromFile ? `importer ${fromFile}` : "réappliquer l'accès déjà importé",
+        detail: fromFile
+          ? `importer ${fromFile}`
+          : "réappliquer l'accès déjà importé",
       };
     await saveProfile(paths, pack);
     const files = await writeSshFiles(pack, paths, sys.now());
@@ -311,16 +344,24 @@ export const stepAcces: Step = {
       `accès importé (${Object.keys(pack.hosts).join(", ")})${files.changedUserConfig ? ", ~/.ssh/config mis à jour" : ""}`,
     );
     const notes = [`serveurs : ${Object.keys(pack.hosts).join(", ")}`];
-    if (files.changedUserConfig) notes.push("ssh_config relié à ton fichier SSH");
+    if (files.changedUserConfig)
+      notes.push("ssh_config relié à ton fichier SSH");
     if (!pack.wireguard)
-      return { state: "fait", detail: `${notes.join(" ; ")} (pas de tunnel dans ce fichier)` };
+      return {
+        state: "fait",
+        detail: `${notes.join(" ; ")} (pas de tunnel dans ce fichier)`,
+      };
 
     const tunnel = pack.wireguard.tunnelName;
     const key = await ensureWgKey(sys, paths);
-    if (pack.wireguard.expectedPublicKey && key.publicKey !== pack.wireguard.expectedPublicKey)
+    if (
+      pack.wireguard.expectedPublicKey &&
+      key.publicKey !== pack.wireguard.expectedPublicKey
+    )
       return {
         state: "attente",
-        detail: "la clé publique de ce PC ne correspond pas encore au pair autorisé",
+        detail:
+          "la clé publique de ce PC ne correspond pas encore au pair autorisé",
         action:
           "Envoie a-envoyer-a-l-equipe.txt pour autoriser cette clé. Le tunnel existant est conservé.",
       };
@@ -328,15 +369,21 @@ export const stepAcces: Step = {
     const running = (await tunnelState(sys, tunnel)) === "RUNNING";
     if (running && (await lastFingerprint(paths)) === staged.fingerprint) {
       await rm(staged.path, { force: true });
-      return { state: "deja", detail: `${notes.join(" ; ")} ; tunnel « ${tunnel} » déjà actif` };
+      return {
+        state: "deja",
+        detail: `${notes.join(" ; ")} ; tunnel « ${tunnel} » déjà actif`,
+      };
     }
-    ctx.ui.say("  Windows va te demander l'autorisation d'installer le tunnel : clique « Oui ».");
+    ctx.ui.say(
+      "  Windows va te demander l'autorisation d'installer le tunnel : clique « Oui ».",
+    );
     const result = await importTunnel(ctx, staged, tunnel);
     if (!result.ok)
       return {
         state: "echec",
         detail: result.detail,
-        action: "Relance « Tout installer ou réparer » et clique « Oui » dans la fenêtre Windows.",
+        action:
+          "Relance « Tout installer ou réparer » et clique « Oui » dans la fenêtre Windows.",
       };
     await rememberFingerprint(paths, staged.fingerprint);
     return { state: "fait", detail: `${notes.join(" ; ")} ; ${result.detail}` };
@@ -361,11 +408,17 @@ export const stepAphrody: Step = {
         action: "Vérifie ta connexion Internet puis relance.",
       };
     }
-    const artifact = pickArtifact(snapshot.manifest, "aphrody", WINDOWS_PLATFORM, ".zip");
+    const artifact = pickArtifact(
+      snapshot.manifest,
+      "aphrody",
+      WINDOWS_PLATFORM,
+      ".zip",
+    );
     if (!artifact)
       return {
         state: "attente",
-        detail: "aphrody n'est pas encore publié pour Windows sur le site de téléchargement",
+        detail:
+          "aphrody n'est pas encore publié pour Windows sur le site de téléchargement",
         action:
           "Rien à faire de ton côté : l'équipe doit le publier ; le kit l'installera à ce moment-là (relance « Tout installer ou réparer » plus tard).",
       };
@@ -391,7 +444,10 @@ export const stepAphrody: Step = {
     try {
       script = await verifiedScript(snapshot, "install.ps1", fetchImpl);
     } catch (error) {
-      return { state: "echec", detail: `vérification refusée : ${(error as Error).message}` };
+      return {
+        state: "echec",
+        detail: `vérification refusée : ${(error as Error).message}`,
+      };
     }
     if (!script.includes("SHA256SUMS") || !script.includes("Get-FileHash"))
       return {
@@ -430,7 +486,8 @@ export const stepAphrody: Step = {
     return {
       state: "echec",
       detail: `l'installation d'aphrody a échoué (code ${run.code})`,
-      action: "Relance ; si ça recommence, envoie le message d'aide à l'équipe.",
+      action:
+        "Relance ; si ça recommence, envoie le message d'aide à l'équipe.",
     };
   },
 };
@@ -459,22 +516,33 @@ export const stepDepot: Step = {
         return {
           state: "echec",
           detail: `${paths.repoDir} contient un autre dépôt`,
-          action: "Déplace ce dossier ailleurs (je n'y touche pas) puis relance.",
+          action:
+            "Déplace ce dossier ailleurs (je n'y touche pas) puis relance.",
         };
-      const dirty = await sys.run([git, "-C", paths.repoDir, "status", "--porcelain"], {
-        timeoutMs: 60_000,
-      });
+      const dirty = await sys.run(
+        [git, "-C", paths.repoDir, "status", "--porcelain"],
+        {
+          timeoutMs: 60_000,
+        },
+      );
       if (dirty.stdout.trim() !== "")
         return {
           state: "deja",
-          detail: "dépôt présent (des fichiers modifiés : pas de mise à jour automatique)",
+          detail:
+            "dépôt présent (des fichiers modifiés : pas de mise à jour automatique)",
         };
       if (mode === "simuler")
-        return { state: "a-faire", detail: "mettre le dépôt à jour (sans écraser)" };
-      const pull = await sys.run([git, "-C", paths.repoDir, "pull", "--ff-only"], {
-        inherit: true,
-        timeoutMs: 600_000,
-      });
+        return {
+          state: "a-faire",
+          detail: "mettre le dépôt à jour (sans écraser)",
+        };
+      const pull = await sys.run(
+        [git, "-C", paths.repoDir, "pull", "--ff-only"],
+        {
+          inherit: true,
+          timeoutMs: 600_000,
+        },
+      );
       return pull.code === 0
         ? { state: "deja", detail: "dépôt à jour" }
         : {
@@ -505,14 +573,23 @@ export const stepDepot: Step = {
       "  Copie du dépôt : une fenêtre ou ton navigateur va te demander de te connecter à GitHub. Ça peut prendre plusieurs minutes...",
     );
     const clone = await sys.run(
-      [git, "-c", "core.longpaths=true", "clone", "--filter=blob:none", url, paths.repoDir],
+      [
+        git,
+        "-c",
+        "core.longpaths=true",
+        "clone",
+        "--filter=blob:none",
+        url,
+        paths.repoDir,
+      ],
       { inherit: true, timeoutMs: 3_600_000 },
     );
     ctx.log(`git clone ${repository} -> ${clone.code}`);
     if (clone.code !== 0)
       return {
         state: "echec",
-        detail: "la copie du dépôt a échoué (connexion GitHub refusée ou interrompue)",
+        detail:
+          "la copie du dépôt a échoué (connexion GitHub refusée ou interrompue)",
         action:
           "Vérifie que tu as accepté l'invitation à l'organisation aphrody-labs (mail de GitHub), puis relance et connecte-toi dans la fenêtre.",
       };
@@ -541,18 +618,24 @@ export const stepMcp: Step = {
       return {
         state: "attente",
         detail: "ni Claude Desktop ni Claude Code ne sont installés",
-        action: "Installe ton assistant, puis relance « Tout installer ou réparer ».",
+        action:
+          "Installe ton assistant, puis relance « Tout installer ou réparer ».",
       };
     if (desktop !== "pas-declare" && code !== "pas-declare")
       return { state: "deja", detail: "déjà déclaré" };
     if (mode === "simuler")
       return {
         state: "a-faire",
-        detail: "déclarer le MCP aphrody (une sauvegarde de ta configuration est faite avant)",
+        detail:
+          "déclarer le MCP aphrody (une sauvegarde de ta configuration est faite avant)",
       };
     const results = [
-      ...(desktop === "pas-declare" ? await configureDesktop(paths, spec, sys.now()) : []),
-      ...(code === "pas-declare" ? [await configureClaudeCode(sys, claude, spec)] : []),
+      ...(desktop === "pas-declare"
+        ? await configureDesktop(paths, spec, sys.now())
+        : []),
+      ...(code === "pas-declare"
+        ? [await configureClaudeCode(sys, claude, spec)]
+        : []),
     ];
     const failed = results.filter((entry) => entry.state === "echec");
     if (failed.length > 0)
@@ -561,7 +644,10 @@ export const stepMcp: Step = {
         detail: redact(failed.map((entry) => entry.detail).join(" ; ")),
         action: "Envoie le message d'aide à l'équipe.",
       };
-    return { state: "fait", detail: "déclaré : ferme puis rouvre ton assistant pour le voir" };
+    return {
+      state: "fait",
+      detail: "déclaré : ferme puis rouvre ton assistant pour le voir",
+    };
   },
 };
 

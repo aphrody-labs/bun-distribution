@@ -9,9 +9,15 @@ export function resolveBunMembers(
   const members = new Set<string>();
   for (const declaration of declarations) {
     const matches = [
-      ...new Bun.Glob(`${declaration}/package.json`).scanSync({ cwd: root, onlyFiles: true }),
+      ...new Bun.Glob(`${declaration}/package.json`).scanSync({
+        cwd: root,
+        onlyFiles: true,
+      }),
     ];
-    if (!matches.length) failures.push(`missing Bun workspace member: ${declaration}/package.json`);
+    if (!matches.length)
+      failures.push(
+        `missing Bun workspace member: ${declaration}/package.json`,
+      );
     for (const match of matches)
       members.add(match.replaceAll("\\", "/").replace(/\/package\.json$/, ""));
   }
@@ -74,17 +80,22 @@ export async function runIecodeDoctor(args: string[]): Promise<number> {
       failures.push(`Rust prefix violation: ${member}`);
   }
 
-  const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
+  const packageJson = JSON.parse(
+    readFileSync(join(root, "package.json"), "utf8"),
+  ) as {
     packageManager?: string;
     workspaces?: { packages?: string[] };
   };
   if (!packageJson.packageManager?.startsWith("bun@"))
     failures.push("package.json must pin Bun with packageManager");
   if (
-    JSON.stringify(resolveBunMembers(root, packageJson.workspaces?.packages ?? [], failures)) !==
-    JSON.stringify(bunMembers)
+    JSON.stringify(
+      resolveBunMembers(root, packageJson.workspaces?.packages ?? [], failures),
+    ) !== JSON.stringify(bunMembers)
   ) {
-    failures.push("package.json and workspace.manifest.json Bun members differ");
+    failures.push(
+      "package.json and workspace.manifest.json Bun members differ",
+    );
   }
   if (readdirSync(join(root, "src")).includes("iecode"))
     failures.push("stale redundant src/iecode directory");
@@ -101,7 +112,9 @@ export async function runIecodeDoctor(args: string[]): Promise<number> {
       stderr: "pipe",
     });
     if (result.exitCode !== 0) {
-      failures.push(`git ${args.join(" ")} failed: ${result.stderr.toString().trim()}`);
+      failures.push(
+        `git ${args.join(" ")} failed: ${result.stderr.toString().trim()}`,
+      );
       return [];
     }
     return result.stdout.toString().split("\0").filter(Boolean);
@@ -115,20 +128,30 @@ export async function runIecodeDoctor(args: string[]): Promise<number> {
     "--",
     "src",
   ]);
-  const forbiddenSourceDirectories = ["bin", "obj", "node_modules", ".turbo", "__pycache__"];
+  const forbiddenSourceDirectories = [
+    "bin",
+    "obj",
+    "node_modules",
+    ".turbo",
+    "__pycache__",
+  ];
   for (const directory of forbiddenSourceDirectories) {
     const offenders = sourceFiles.filter((path) =>
       path.split("/").slice(0, -1).includes(directory),
     );
     if (offenders.length) {
-      failures.push(`generated directory under src: ${directory}: ${describe(offenders)}`);
+      failures.push(
+        `generated directory under src: ${directory}: ${describe(offenders)}`,
+      );
     }
   }
 
   const declaredSubmodules = new Set(
     existsSync(join(root, ".gitmodules"))
       ? [
-          ...readFileSync(join(root, ".gitmodules"), "utf8").matchAll(/^\s*path\s*=\s*(.+?)\s*$/gm),
+          ...readFileSync(join(root, ".gitmodules"), "utf8").matchAll(
+            /^\s*path\s*=\s*(.+?)\s*$/gm,
+          ),
         ].map((m) => m[1])
       : [],
   );
@@ -140,13 +163,16 @@ export async function runIecodeDoctor(args: string[]): Promise<number> {
     ...sourceFiles.filter((path) => path.endsWith("/")),
   ];
   if (nestedRepositories.length) {
-    failures.push(`undeclared nested repository under src: ${describe(nestedRepositories)}`);
+    failures.push(
+      `undeclared nested repository under src: ${describe(nestedRepositories)}`,
+    );
   }
 
   const nativeEmulatorRoots = ["src/iecode-cpp/emulation/melonds/"];
   const managedInNative = sourceFiles.filter(
     (path) =>
-      nativeEmulatorRoots.some((rootPath) => path.startsWith(rootPath)) && path.endsWith(".cs"),
+      nativeEmulatorRoots.some((rootPath) => path.startsWith(rootPath)) &&
+      path.endsWith(".cs"),
   );
   if (managedInNative.length) {
     failures.push(
@@ -155,7 +181,8 @@ export async function runIecodeDoctor(args: string[]): Promise<number> {
   }
 
   const nativeInManaged = sourceFiles.filter(
-    (path) => path.startsWith("src/IECODE/") && /\.(?:c|cc|cpp|cxx)$/i.test(path),
+    (path) =>
+      path.startsWith("src/IECODE/") && /\.(?:c|cc|cpp|cxx)$/i.test(path),
   );
   if (nativeInManaged.length) {
     failures.push(
@@ -165,10 +192,19 @@ export async function runIecodeDoctor(args: string[]): Promise<number> {
 
   for (const needle of ["../rg", "../iecode/src", "src/iecode/nie-"]) {
     const result = Bun.spawnSync(
-      ["rg", "-n", "--fixed-strings", needle, "src", "Cargo.toml", "package.json"],
+      [
+        "rg",
+        "-n",
+        "--fixed-strings",
+        needle,
+        "src",
+        "Cargo.toml",
+        "package.json",
+      ],
       { windowsHide: true, cwd: root, stdout: "pipe", stderr: "ignore" },
     );
-    if (result.exitCode === 0) failures.push(`forbidden source reference: ${needle}`);
+    if (result.exitCode === 0)
+      failures.push(`forbidden source reference: ${needle}`);
   }
 
   if (failures.length) {
@@ -181,4 +217,5 @@ export async function runIecodeDoctor(args: string[]): Promise<number> {
   return 0;
 }
 
-if (import.meta.main) process.exit(await runIecodeDoctor(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runIecodeDoctor(process.argv.slice(2)));

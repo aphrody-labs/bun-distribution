@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 "use client";
 
-import { lazy, Suspense, useEffect, useState, type ComponentType, type ReactNode } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useState,
+  type ComponentType,
+  type ReactNode,
+} from "react";
 
 export interface DynamicOptions<P = {}> {
   loader?: () => Promise<{ default: ComponentType<P> } | ComponentType<P>>;
@@ -47,7 +54,9 @@ export function dynamic<P extends object = {}>(
     useEffect(() => {
       setMounted(true);
     }, []);
-    const fallback = LoadingFallback ? LoadingFallback({ isLoading: true }) : null;
+    const fallback = LoadingFallback
+      ? LoadingFallback({ isLoading: true })
+      : null;
     if (mergedOptions.ssr === false && !mounted) return fallback;
     return (
       <Suspense fallback={fallback}>

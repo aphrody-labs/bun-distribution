@@ -19,11 +19,23 @@ todo = "warn"
 # every test binary (each UI test binary had a 500-600 MB PDB on Windows, #454).
 
 [dependencies]
-ureq = { version = "3.4", default-features = false, features = ["rustls-no-provider", "_ring"] }
+ureq = { version = "3.4", default-features = false, features = [
+  "rustls-no-provider",
+  "_ring",
+] }
 rustls-native-certs = "0.8"
 pdfcraft-ui-egui = { path = "../../crates/pdfcraft-ui-egui", version = "0.7.0" }
 pdfcraft-engine = { path = "../../crates/pdfcraft-engine", version = "0.7.0" }
-eframe = { version = "0.36", default-features = false, features = ["default_fonts", "wgpu", "glow", "accesskit", "wayland", "x11", "persistence", "links"] }
+eframe = { version = "0.36", default-features = false, features = [
+  "default_fonts",
+  "wgpu",
+  "glow",
+  "accesskit",
+  "wayland",
+  "x11",
+  "persistence",
+  "links",
+] }
 egui = "0.36"
 serde_json = "1"
 log = "0.4"

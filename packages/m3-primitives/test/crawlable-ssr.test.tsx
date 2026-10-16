@@ -41,12 +41,12 @@ describe("crawlable SSR markup (m3-primitives)", () => {
 
   test("hooks are plain data attributes that consumers can override", () => {
     expect(renderToStaticMarkup(<Badge>New</Badge>)).toContain(hook("Badge"));
-    expect(renderToStaticMarkup(<Badge data-m3-component="Mine">New</Badge>)).toContain(
-      hook("Mine"),
-    );
-    expect(renderToStaticMarkup(<Badge data-m3-component="Mine">New</Badge>)).not.toContain(
-      hook("Badge"),
-    );
+    expect(
+      renderToStaticMarkup(<Badge data-m3-component="Mine">New</Badge>),
+    ).toContain(hook("Mine"));
+    expect(
+      renderToStaticMarkup(<Badge data-m3-component="Mine">New</Badge>),
+    ).not.toContain(hook("Badge"));
     expect(
       renderToStaticMarkup(
         <Card>
@@ -55,15 +55,23 @@ describe("crawlable SSR markup (m3-primitives)", () => {
       ),
     ).toMatch(/data-m3-component="Card"[^>]*>.*data-m3-component="CardTitle"/);
     expect(renderToStaticMarkup(<Divider />)).toContain(hook("Divider"));
-    expect(renderToStaticMarkup(<Banner variant="info">Saved</Banner>)).toContain(hook("Banner"));
+    expect(
+      renderToStaticMarkup(<Banner variant="info">Saved</Banner>),
+    ).toContain(hook("Banner"));
   });
 
   test("controls keep the names their API can supply", () => {
-    const icon = renderToStaticMarkup(<CircleButton icon="more_horiz" aria-label="More actions" />);
+    const icon = renderToStaticMarkup(
+      <CircleButton icon="more_horiz" aria-label="More actions" />,
+    );
     expect(icon).toContain('aria-label="More actions"');
     expect(icon).toContain('aria-hidden="true"'); // the glyph ligature text is hidden from readers
-    expect(renderToStaticMarkup(<Switch aria-label="Notifications" />)).toContain(hook("Switch"));
-    expect(renderToStaticMarkup(<SearchBar aria-label="Search" />)).toContain(hook("SearchBar"));
+    expect(
+      renderToStaticMarkup(<Switch aria-label="Notifications" />),
+    ).toContain(hook("Switch"));
+    expect(renderToStaticMarkup(<SearchBar aria-label="Search" />)).toContain(
+      hook("SearchBar"),
+    );
     const field = renderToStaticMarkup(
       <div>
         <Label slug="email">Email</Label>
@@ -78,13 +86,17 @@ describe("crawlable SSR markup (m3-primitives)", () => {
     expect(renderToStaticMarkup(<ProgressBar value={1} total={2} />)).toMatch(
       /role="progressbar"[^>]*aria-label="Progress"/,
     );
-    expect(renderToStaticMarkup(<ProgressBar pending />)).toContain('aria-label="Loading"');
-    const circular = renderToStaticMarkup(<CircularProgress radius={20} progress={50} />);
+    expect(renderToStaticMarkup(<ProgressBar pending />)).toContain(
+      'aria-label="Loading"',
+    );
+    const circular = renderToStaticMarkup(
+      <CircularProgress radius={20} progress={50} />,
+    );
     expect(circular).toContain('aria-label="Progress"');
     expect(circular).toContain('<svg aria-hidden="true"');
-    expect(renderToStaticMarkup(<Meter label="Storage used" value={62} />)).toContain(
-      'aria-label="Storage used"',
-    );
+    expect(
+      renderToStaticMarkup(<Meter label="Storage used" value={62} />),
+    ).toContain('aria-label="Storage used"');
   });
 
   test("tabs expose the tablist, tab and tabpanel roles in the first HTML", () => {

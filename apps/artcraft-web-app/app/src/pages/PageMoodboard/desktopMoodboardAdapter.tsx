@@ -40,7 +40,9 @@ const sendToGeneration = (refs: MoodboardReference[]): void => {
     mediaToken: r.mediaToken,
   }));
   const store = usePromptImageStore.getState();
-  store.setReferenceImages(dedupeByToken([...store.referenceImages, ...newRefs]));
+  store.setReferenceImages(
+    dedupeByToken([...store.referenceImages, ...newRefs]),
+  );
   void useTabStore.getState().setActiveTab("IMAGE");
   toast.success(
     `${refs.length} reference${refs.length > 1 ? "s" : ""} added to the prompt`,

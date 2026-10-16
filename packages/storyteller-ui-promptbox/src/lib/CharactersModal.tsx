@@ -50,12 +50,21 @@ interface PendingCharacter {
 
 const POLL_INTERVAL_MS = 5000;
 const PENDING_STALE_MS = 3 * 60 * 1000;
-const FIELD_LABEL_CLASSES = "mb-0 text-[11px] tracking-[0.12em] text-base-fg/70";
+const FIELD_LABEL_CLASSES =
+  "mb-0 text-[11px] tracking-[0.12em] text-base-fg/70";
 
-export const CharactersModal = ({ isOpen, onClose, onSelectCharacter }: CharactersModalProps) => {
+export const CharactersModal = ({
+  isOpen,
+  onClose,
+  onSelectCharacter,
+}: CharactersModalProps) => {
   const [view, setView] = useState<ModalView>("list");
-  const [editingCharacter, setEditingCharacter] = useState<Character | null>(null);
-  const [pendingCharacters, setPendingCharacters] = useState<PendingCharacter[]>([]);
+  const [editingCharacter, setEditingCharacter] = useState<Character | null>(
+    null,
+  );
+  const [pendingCharacters, setPendingCharacters] = useState<
+    PendingCharacter[]
+  >([]);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleClose = () => {
@@ -76,7 +85,10 @@ export const CharactersModal = ({ isOpen, onClose, onSelectCharacter }: Characte
   };
 
   const handleCreated = (pending: { name: string; previewUrl?: string }) => {
-    setPendingCharacters((prev) => [{ ...pending, createdAt: Date.now() }, ...prev]);
+    setPendingCharacters((prev) => [
+      { ...pending, createdAt: Date.now() },
+      ...prev,
+    ]);
     setView("list");
     setRefreshKey((k) => k + 1);
   };
@@ -176,7 +188,10 @@ export const CharactersModal = ({ isOpen, onClose, onSelectCharacter }: Characte
             onPendingResolved={removePending}
           />
         ) : view === "create" ? (
-          <NewCharacterView onBack={() => setView("list")} onCreated={handleCreated} />
+          <NewCharacterView
+            onBack={() => setView("list")}
+            onCreated={handleCreated}
+          />
         ) : editingCharacter ? (
           <EditCharacterView
             character={editingCharacter}
@@ -211,7 +226,9 @@ const CharacterListView = ({
 }) => {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
-  const [previewCharacter, setPreviewCharacter] = useState<Character | null>(null);
+  const [previewCharacter, setPreviewCharacter] = useState<Character | null>(
+    null,
+  );
 
   const storeSetCharacters = useCharactersStore((s) => s.setCharacters);
   const storeSetLoaded = useCharactersStore((s) => s.setLoaded);
@@ -265,8 +282,8 @@ const CharacterListView = ({
       title: "Delete character?",
       message: (
         <p className="text-sm text-white/70">
-          This will permanently delete <strong>{character.name}</strong>. This action cannot be
-          undone.
+          This will permanently delete <strong>{character.name}</strong>. This
+          action cannot be undone.
         </p>
       ),
       primaryActionText: "Delete",
@@ -287,7 +304,9 @@ const CharacterListView = ({
           });
 
           if (res.success) {
-            setCharacters((prev) => prev.filter((c) => c.token !== character.token));
+            setCharacters((prev) =>
+              prev.filter((c) => c.token !== character.token),
+            );
             storeRemoveCharacter(character.token);
             toast.success(`Character "${character.name}" deleted`);
           } else {
@@ -369,11 +388,15 @@ const CharacterListView = ({
                 )}
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40">
                   <LoaderCircleIcon className="text-lg text-white/80 animate-spin" />
-                  <span className="text-xs font-medium text-white/80">Creating...</span>
+                  <span className="text-xs font-medium text-white/80">
+                    Creating...
+                  </span>
                 </div>
               </div>
               <div className="px-2 py-1.5 text-center">
-                <p className="truncate text-xs font-medium text-base-fg/50">{pending.name}</p>
+                <p className="truncate text-xs font-medium text-base-fg/50">
+                  {pending.name}
+                </p>
               </div>
             </div>
           ))}
@@ -405,7 +428,9 @@ const CharacterListView = ({
                     )}
                   </div>
                   <div className="px-2 py-1.5">
-                    <p className="truncate text-xs font-medium text-base-fg/80">{character.name}</p>
+                    <p className="truncate text-xs font-medium text-base-fg/80">
+                      {character.name}
+                    </p>
                   </div>
                 </button>
 
@@ -487,7 +512,9 @@ const EditCharacterView = ({
 }) => {
   const updateCharacterInStore = useCharactersStore((s) => s.updateCharacter);
   const [name, setName] = useState(character.name);
-  const [description, setDescription] = useState(character.maybe_description ?? "");
+  const [description, setDescription] = useState(
+    character.maybe_description ?? "",
+  );
   const [saving, setSaving] = useState(false);
 
   const hasChanges =
@@ -569,8 +596,12 @@ const EditCharacterView = ({
 
         {/* Description input */}
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="edit-character-description" className={FIELD_LABEL_CLASSES}>
-            Description <span className="font-normal text-base-fg/40">(optional)</span>
+          <Label
+            htmlFor="edit-character-description"
+            className={FIELD_LABEL_CLASSES}
+          >
+            Description{" "}
+            <span className="font-normal text-base-fg/40">(optional)</span>
           </Label>
           <textarea
             id="edit-character-description"
@@ -622,11 +653,15 @@ const NewCharacterView = ({
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-  const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>([]);
+  const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
+    [],
+  );
 
   const processFiles = useCallback(
     async (files: FileList | File[]) => {
-      const imageFiles = Array.from(files).filter((f) => f.type.startsWith("image/"));
+      const imageFiles = Array.from(files).filter((f) =>
+        f.type.startsWith("image/"),
+      );
       if (imageFiles.length === 0) {
         toast.error("Please upload image files");
         return;
@@ -634,7 +669,9 @@ const NewCharacterView = ({
 
       // Only keep the first file (single image)
       const file = imageFiles[0]!;
-      const newImages: UploadedImage[] = [{ file, url: URL.createObjectURL(file) }];
+      const newImages: UploadedImage[] = [
+        { file, url: URL.createObjectURL(file) },
+      ];
 
       // Replace any existing image
       setImages((prev) => {
@@ -835,8 +872,13 @@ const NewCharacterView = ({
             <div className="flex h-full w-full flex-col items-center justify-center text-base-fg/60">
               <UploadIcon className="mb-2 text-xl text-base-fg/40" />
               <p className="text-sm">Upload reference image</p>
-              <p className="mb-3 text-xs text-base-fg/40">Click or drag an image here</p>
-              <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+              <p className="mb-3 text-xs text-base-fg/40">
+                Click or drag an image here
+              </p>
+              <div
+                className="flex items-center gap-3"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <button
                   onClick={() => setIsGalleryOpen(true)}
                   className="flex items-center gap-2 rounded-[3px] border border-base-fg/15 bg-transparent px-3 py-1.5 text-sm text-base-fg/80 transition-colors hover:border-base-fg/25 hover:bg-base-fg/[0.07] hover:text-base-fg"
@@ -881,8 +923,12 @@ const NewCharacterView = ({
 
         {/* Description input */}
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="character-description" className={FIELD_LABEL_CLASSES}>
-            Description <span className="font-normal text-base-fg/40">(optional)</span>
+          <Label
+            htmlFor="character-description"
+            className={FIELD_LABEL_CLASSES}
+          >
+            Description{" "}
+            <span className="font-normal text-base-fg/40">(optional)</span>
           </Label>
           <textarea
             id="character-description"
@@ -906,7 +952,10 @@ const NewCharacterView = ({
           onClick={handleCreate}
           loading={creating}
           disabled={
-            creating || uploading || !name.trim() || images.filter((i) => i.mediaToken).length < 1
+            creating ||
+            uploading ||
+            !name.trim() ||
+            images.filter((i) => i.mediaToken).length < 1
           }
         >
           Create

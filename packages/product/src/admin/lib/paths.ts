@@ -54,7 +54,8 @@ export function kitPaths(env: Env): KitPaths {
     userSshConfig: join(home, ".ssh", "config"),
     repoDir: join(home, "Aphrody"),
     downloadsDir: join(home, "Downloads"),
-    desktopDir: desktopCandidates.find((dir) => existsSync(dir)) ?? desktopCandidates[0]!,
+    desktopDir:
+      desktopCandidates.find((dir) => existsSync(dir)) ?? desktopCandidates[0]!,
     programFiles: env.ProgramFiles ?? "C:\\Program Files",
     programData: env.ProgramData ?? "C:\\ProgramData",
     appData,

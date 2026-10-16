@@ -14,7 +14,7 @@
 # (packaging-lint checks this).
 id: ai.storyteller.effectcraft
 runtime: org.freedesktop.Platform
-runtime-version: '25.08'
+runtime-version: "25.08"
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.rust-stable
@@ -51,7 +51,7 @@ modules:
     build-options:
       env:
         CARGO_HOME: /run/build/effectcraft/cargo
-        CARGO_NET_OFFLINE: 'true'
+        CARGO_NET_OFFLINE: "true"
     build-commands:
       - cargo --offline build --release --locked -p effectcraft -p effectcraft-cli
       - install -Dm755 target/release/effectcraft /app/bin/effectcraft

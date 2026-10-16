@@ -42,7 +42,9 @@ it("reads complete Git state and reports invalid repositories explicitly", async
     expect(state.dirty).toBe(false);
     writeFileSync(join(root, "changed.txt"), "changed");
     expect((await engine.getGitState(root)).uncommittedCount).toBe(1);
-    expect((await engine.getGitState(join(root, "missing"))).error).toContain("failed");
+    expect((await engine.getGitState(join(root, "missing"))).error).toContain(
+      "failed",
+    );
   } finally {
     await engine.stop();
     rmSync(root, { recursive: true, force: true });
@@ -139,12 +141,17 @@ describe("isolated agent watcher", () => {
       mkdirSync(join(root, sessionId));
       writeFileSync(join(root, sessionId, "event.jsonl"), "fixture");
       await until(() =>
-        watcher.getActiveSessions().some((session) => session.sessionId === sessionId),
+        watcher
+          .getActiveSessions()
+          .some((session) => session.sessionId === sessionId),
       );
       await watcher.stop();
       expect(
-        (db.query("SELECT COUNT(*) as count FROM agent_telemetry").get() as { count: number })
-          .count,
+        (
+          db.query("SELECT COUNT(*) as count FROM agent_telemetry").get() as {
+            count: number;
+          }
+        ).count,
       ).toBeGreaterThan(0);
       const snapshot = watcher.getActiveSessions();
       snapshot[0]!.path = "changed";

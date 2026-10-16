@@ -76,11 +76,17 @@ export function useImageCostEstimate(
     switch (activePage) {
       case ModelPage.TextToImage:
         // Match GenerateImage exactly; omitted values use the API defaults.
-        aspectRatioStr = imageModel.supportsNewAspectRatio() ? imageAspectRatio : undefined;
-        resolutionStr = imageModel.supportsNewResolution() ? imageResolution : undefined;
+        aspectRatioStr = imageModel.supportsNewAspectRatio()
+          ? imageAspectRatio
+          : undefined;
+        resolutionStr = imageModel.supportsNewResolution()
+          ? imageResolution
+          : undefined;
         qualityStr = imageModel.resolveQuality(imageQuality);
         referenceImageCount = imageModel.canUseImagePrompt
-          ? imageReferenceImages.filter((image) => image.mediaToken.length > 0).length : 0;
+          ? imageReferenceImages.filter((image) => image.mediaToken.length > 0)
+              .length
+          : 0;
         generationCount = imageGenerationCount;
         break;
       case ModelPage.Canvas2D:
@@ -110,8 +116,7 @@ export function useImageCostEstimate(
       aspectRatioStr,
       legacyAspectRatioStr,
     );
-    const commonResolution =
-      stringToCommonVideoResolution(resolutionStr);
+    const commonResolution = stringToCommonVideoResolution(resolutionStr);
     const commonQuality = stringToCommonQuality(qualityStr);
     const generationMode =
       referenceImageCount > 0
@@ -128,7 +133,12 @@ export function useImageCostEstimate(
 
     EstimateImageCost({
       model: selectedModel.tauriId,
-      image_media_tokens: referenceImageCount ? Array.from({ length: referenceImageCount }, (_, i) => `mf_estimate_${i}`) : undefined,
+      image_media_tokens: referenceImageCount
+        ? Array.from(
+            { length: referenceImageCount },
+            (_, i) => `mf_estimate_${i}`,
+          )
+        : undefined,
       image_batch_count: generationCount,
       provider,
       generation_mode: generationMode,
@@ -139,7 +149,10 @@ export function useImageCostEstimate(
       .then((result) => {
         if (cancelled) return;
         if (isEstimateImageCostSuccess(result)) {
-          setEstimatedCreditsForPage(activePage, result.payload.cost_in_credits ?? null);
+          setEstimatedCreditsForPage(
+            activePage,
+            result.payload.cost_in_credits ?? null,
+          );
         } else {
           setEstimatedCreditsForPage(activePage, null);
         }
@@ -151,7 +164,9 @@ export function useImageCostEstimate(
       .finally(() => {
         if (!cancelled) setIsLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [
     activePage,
     selectedModel,

@@ -39,7 +39,12 @@ it.each([
     mime: "video/mp4",
     endpoint: "new_video",
   },
-  { kind: "image" as const, fileName: "scene-capture.png", mime: "image/png", endpoint: "image" },
+  {
+    kind: "image" as const,
+    fileName: "scene-capture.png",
+    mime: "image/png",
+    endpoint: "image",
+  },
 ])(
   "uploads a $kind as a library output through authenticated multipart HTTP",
   async ({ kind, fileName, mime, endpoint }) => {
@@ -52,7 +57,11 @@ it.each([
       ),
     );
     const blob = new Blob(["rendered scene"], { type: mime });
-    const token = await sceneOutputAdapter.uploadMedia({ kind, blob, fileName });
+    const token = await sceneOutputAdapter.uploadMedia({
+      kind,
+      blob,
+      fileName,
+    });
     expect(token).toBe("mf_scene_output");
     const [url, request] = mocks.fetch.mock.calls[0];
     expect(url).toMatch(new RegExp(`/v1/media_files/upload/${endpoint}$`));
@@ -104,7 +113,9 @@ it("opens the uploaded video in the desktop lightbox using its CDN URL", async (
     ),
   );
   await sceneOutputAdapter.openMediaLightbox("mf_scene_output", "video");
-  expect(mocks.fetch.mock.calls[0][0]).toMatch(/\/v1\/media_files\/file\/mf_scene_output$/);
+  expect(mocks.fetch.mock.calls[0][0]).toMatch(
+    /\/v1\/media_files\/file\/mf_scene_output$/,
+  );
   expect(mocks.image.value).toMatchObject({
     id: "mf_scene_output",
     label: "My recording",
@@ -116,9 +127,11 @@ it("opens the uploaded video in the desktop lightbox using its CDN URL", async (
 });
 
 it("reports a failed preview lookup so the local recording can be retained", async () => {
-  mocks.fetch.mockResolvedValue(new Response(JSON.stringify({ success: false }), { status: 503 }));
-  await expect(sceneOutputAdapter.openMediaLightbox("mf_scene_output", "video")).rejects.toThrow(
-    "Upload succeeded, but the preview could not be loaded",
+  mocks.fetch.mockResolvedValue(
+    new Response(JSON.stringify({ success: false }), { status: 503 }),
   );
+  await expect(
+    sceneOutputAdapter.openMediaLightbox("mf_scene_output", "video"),
+  ).rejects.toThrow("Upload succeeded, but the preview could not be loaded");
   expect(mocks.visible.value).toBe(false);
 });

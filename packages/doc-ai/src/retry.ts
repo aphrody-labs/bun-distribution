@@ -18,7 +18,11 @@ export interface RetryOptions {
   /** Random source in [0, 1) for jitter (injectable for deterministic tests). */
   readonly random?: () => number;
   /** Invoked before each retry, after the delay is computed. */
-  readonly onRetry?: (info: { attempt: number; delayMs: number; error: unknown }) => void;
+  readonly onRetry?: (info: {
+    attempt: number;
+    delayMs: number;
+    error: unknown;
+  }) => void;
 }
 
 const DEFAULT_SLEEP = (ms: number): Promise<void> =>
@@ -27,7 +31,12 @@ const DEFAULT_SLEEP = (ms: number): Promise<void> =>
 /** HTTP status codes considered transient and therefore retryable. */
 export function isRetryableStatus(status: number | undefined): boolean {
   if (status === undefined) return false;
-  return status === 408 || status === 425 || status === 429 || (status >= 500 && status <= 599);
+  return (
+    status === 408 ||
+    status === 425 ||
+    status === 429 ||
+    (status >= 500 && status <= 599)
+  );
 }
 
 /**
@@ -54,9 +63,18 @@ export function isTransientNetworkError(err: unknown): boolean {
   const anyErr = err as { name?: unknown; code?: unknown; message?: unknown };
   const name = typeof anyErr.name === "string" ? anyErr.name : "";
   const code = typeof anyErr.code === "string" ? anyErr.code : "";
-  const message = typeof anyErr.message === "string" ? anyErr.message.toLowerCase() : "";
+  const message =
+    typeof anyErr.message === "string" ? anyErr.message.toLowerCase() : "";
   if (name === "AbortError" || name === "TimeoutError") return true;
-  if (["ETIMEDOUT", "ECONNRESET", "ECONNREFUSED", "EAI_AGAIN", "ENOTFOUND"].includes(code)) {
+  if (
+    [
+      "ETIMEDOUT",
+      "ECONNRESET",
+      "ECONNREFUSED",
+      "EAI_AGAIN",
+      "ENOTFOUND",
+    ].includes(code)
+  ) {
     return true;
   }
   return (

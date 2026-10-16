@@ -42,16 +42,23 @@ async function main(): Promise<void> {
   const value = (name: string) => args[args.indexOf(name) + 1];
   const envFile = args.includes("--env-file") ? value("--env-file") : undefined;
   const guildId = args.includes("--guild-id") ? value("--guild-id") : undefined;
-  const tokenKey = args.includes("--token-key") ? value("--token-key") : undefined;
-  const members = args.flatMap((arg, index) => (arg === "--member" ? [args[index + 1]] : []));
+  const tokenKey = args.includes("--token-key")
+    ? value("--token-key")
+    : undefined;
+  const members = args.flatMap((arg, index) =>
+    arg === "--member" ? [args[index + 1]] : [],
+  );
   if (
     !envFile ||
     !guildId ||
     !/^\d{17,20}$/.test(guildId) ||
-    (args.includes("--token-key") && (!tokenKey || !/^[A-Z_]+$/.test(tokenKey))) ||
+    (args.includes("--token-key") &&
+      (!tokenKey || !/^[A-Z_]+$/.test(tokenKey))) ||
     members.some((id) => !id || !/^\d{17,20}$/.test(id))
   ) {
-    console.log(JSON.stringify({ available: false, error: "invalid arguments" }));
+    console.log(
+      JSON.stringify({ available: false, error: "invalid arguments" }),
+    );
     process.exitCode = 1;
     return;
   }
@@ -76,7 +83,8 @@ async function main(): Promise<void> {
         id: application.id,
         botPublic: application.bot_public,
         requiresCodeGrant: application.bot_require_code_grant,
-        ownerId: application.owner?.id ?? application.team?.owner_user_id ?? null,
+        ownerId:
+          application.owner?.id ?? application.team?.owner_user_id ?? null,
       },
     };
     stage = "guild";
@@ -97,28 +105,35 @@ async function main(): Promise<void> {
     const roles = await api<DiscordRole[]>(`/guilds/${guildId}/roles`);
     stage = "member";
     const membership = await Promise.all(
-      [...new Set([bot.id, ...members])].map(async (id): Promise<Record<string, unknown>> => {
-        try {
-          const member = await api<DiscordMember>(`/guilds/${guildId}/members/${id}`);
-          const permissions = roles
-            .filter((role) => role.id === guildId || member.roles.includes(role.id))
-            .reduce((result, role) => result | BigInt(role.permissions), 0n);
-          return {
-            id,
-            available: true,
-            bot: member.user?.bot === true,
-            pending: member.pending === true,
-            roleCount: member.roles.length,
-            canManageGuild: guild.owner_id === id || (permissions & (8n | 32n)) !== 0n,
-          };
-        } catch (error) {
-          return {
-            id,
-            available: false,
-            status: error instanceof DiscordRESTError ? error.status : null,
-          };
-        }
-      }),
+      [...new Set([bot.id, ...members])].map(
+        async (id): Promise<Record<string, unknown>> => {
+          try {
+            const member = await api<DiscordMember>(
+              `/guilds/${guildId}/members/${id}`,
+            );
+            const permissions = roles
+              .filter(
+                (role) => role.id === guildId || member.roles.includes(role.id),
+              )
+              .reduce((result, role) => result | BigInt(role.permissions), 0n);
+            return {
+              id,
+              available: true,
+              bot: member.user?.bot === true,
+              pending: member.pending === true,
+              roleCount: member.roles.length,
+              canManageGuild:
+                guild.owner_id === id || (permissions & (8n | 32n)) !== 0n,
+            };
+          } catch (error) {
+            return {
+              id,
+              available: false,
+              status: error instanceof DiscordRESTError ? error.status : null,
+            };
+          }
+        },
+      ),
     );
     report.membership = membership;
     console.log(JSON.stringify(report));

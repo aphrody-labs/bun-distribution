@@ -37,7 +37,11 @@
     cursor: default;
   }
   .m3-bui-radio:is(:disabled, [data-disabled])::before {
-    border-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--md-sys-color-on-surface) 38%,
+      transparent
+    );
   }
   .m3-bui-radio__indicator {
     position: relative;
@@ -47,7 +51,11 @@
     background: var(--md-sys-color-primary);
   }
   .m3-bui-radio:is(:disabled, [data-disabled]) .m3-bui-radio__indicator {
-    background: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--md-sys-color-on-surface) 38%,
+      transparent
+    );
   }
   .m3-bui-radio__indicator[data-unchecked] {
     display: none;

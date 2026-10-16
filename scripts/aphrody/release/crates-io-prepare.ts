@@ -36,7 +36,12 @@ export function docDescription(source: string): string | undefined {
   for (const line of source.split("\n")) {
     const m = /^\s*\/\/!\s?(.*)$/.exec(line);
     if (!m) {
-      if (line.trim() === "" || line.startsWith("#![") || line.startsWith("// ")) continue;
+      if (
+        line.trim() === "" ||
+        line.startsWith("#![") ||
+        line.startsWith("// ")
+      )
+        continue;
       break;
     }
     const text = m[1]!.replace(/[`*_#]/g, "").trim();
@@ -53,28 +58,39 @@ export function versionPathDeps(
   return toml.replace(
     /^(\s*[\w-]+\s*=\s*\{)([^}\n]*\bpath\s*=\s*"([^"]+)"[^}\n]*)\}/gm,
     (all, head: string, body: string, path: string) => {
-      if (/\bversion\s*=/.test(body) || /\bworkspace\s*=\s*true/.test(body)) return all;
+      if (/\bversion\s*=/.test(body) || /\bworkspace\s*=\s*true/.test(body))
+        return all;
       const version = versionOf(path);
-      return version ? `${head}${body.replace(/\s*$/, "")}, version = "${version}" }` : all;
+      return version
+        ? `${head}${body.replace(/\s*$/, "")}, version = "${version}" }`
+        : all;
     },
   );
 }
 
 /** Inserts `key` into the [package] table right after its `name`. */
 function addPackageKey(toml: string, line: string): string {
-  return toml.replace(/^(\[package\][^[]*?^name\s*=\s*"[^"]*"\s*$)/m, `$1\n${line}`);
+  return toml.replace(
+    /^(\[package\][^[]*?^name\s*=\s*"[^"]*"\s*$)/m,
+    `$1\n${line}`,
+  );
 }
 
 if (import.meta.main) {
   const apply = Bun.argv.includes("--apply");
   const meta: Meta = JSON.parse(
-    Bun.spawnSync(["cargo", "metadata", "--format-version", "1", "--no-deps", "--offline"], {
-      windowsHide: true,
-      cwd: ROOT,
-      stdout: "pipe",
-    }).stdout.toString(),
+    Bun.spawnSync(
+      ["cargo", "metadata", "--format-version", "1", "--no-deps", "--offline"],
+      {
+        windowsHide: true,
+        cwd: ROOT,
+        stdout: "pipe",
+      },
+    ).stdout.toString(),
   );
-  const versionByDir = new Map(meta.packages.map((p) => [dirname(p.manifest_path), p.version]));
+  const versionByDir = new Map(
+    meta.packages.map((p) => [dirname(p.manifest_path), p.version]),
+  );
   const counts = {
     publish: 0,
     repository: 0,
@@ -98,14 +114,19 @@ if (import.meta.main) {
     }
     if (!p.license && !p.license_file) {
       const fork = forkLicense(dir);
-      toml = addPackageKey(toml, fork ? `license = "${fork}"` : "license.workspace = true");
+      toml = addPackageKey(
+        toml,
+        fork ? `license = "${fork}"` : "license.workspace = true",
+      );
       counts.license++;
     }
     if (!p.description) {
       const rootFile = ["src/lib.rs", "src/main.rs", "lib.rs"]
         .map((f) => join(dirname(p.manifest_path), f))
         .find(existsSync);
-      const doc = rootFile ? docDescription(readFileSync(rootFile, "utf8")) : undefined;
+      const doc = rootFile
+        ? docDescription(readFileSync(rootFile, "utf8"))
+        : undefined;
       toml = addPackageKey(
         toml,
         `description = ${JSON.stringify(doc ?? `Aphrody platform crate ${p.name}.`)}`,

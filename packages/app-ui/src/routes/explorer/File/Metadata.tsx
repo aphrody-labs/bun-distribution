@@ -10,11 +10,24 @@ interface MetadataProps {
 
 const DEFAULT_SHOW: NonNullable<MetadataProps["show"]> = ["size"];
 
-export function Metadata({ file, show = DEFAULT_SHOW, className }: MetadataProps) {
+export function Metadata({
+  file,
+  show = DEFAULT_SHOW,
+  className,
+}: MetadataProps) {
   return (
-    <div className={clsx("flex gap-2 text-body-small text-on-surface-variant", className)}>
-      {show.includes("size") && file.size > 0 && <span>{formatBytes(file.size)}</span>}
-      {show.includes("modified") && <span>{formatRelativeTime(file.modified_at)}</span>}
+    <div
+      className={clsx(
+        "flex gap-2 text-body-small text-on-surface-variant",
+        className,
+      )}
+    >
+      {show.includes("size") && file.size > 0 && (
+        <span>{formatBytes(file.size)}</span>
+      )}
+      {show.includes("modified") && (
+        <span>{formatRelativeTime(file.modified_at)}</span>
+      )}
       {show.includes("kind") && <span>{file.extension || "Folder"}</span>}
     </div>
   );

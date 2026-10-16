@@ -1,7 +1,4 @@
-import {
-  BASE_TIMELINE_PIXELS_PER_SECOND,
-  TIMELINE_ZOOM_MAX,
-} from "./scale";
+import { BASE_TIMELINE_PIXELS_PER_SECOND, TIMELINE_ZOOM_MAX } from "./scale";
 import { TICKS_PER_SECOND } from "../wasm";
 
 const PADDING_MAX_RATIO = 0.75;

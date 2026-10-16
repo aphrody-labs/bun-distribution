@@ -20,20 +20,29 @@ import { BaseImageSelector } from "./BaseImageSelector";
 // ─── Aspect ratio / resolution mappers ────────────────────────────────────────
 const mapAspectRatio = (ratio?: string): CommonAspectRatio | undefined => {
   switch (ratio) {
-    case "auto":   return CommonAspectRatio.Auto;
-    case "wide":   return CommonAspectRatio.Wide;
-    case "tall":   return CommonAspectRatio.Tall;
-    case "square": return CommonAspectRatio.Square;
-    default:       return undefined;
+    case "auto":
+      return CommonAspectRatio.Auto;
+    case "wide":
+      return CommonAspectRatio.Wide;
+    case "tall":
+      return CommonAspectRatio.Tall;
+    case "square":
+      return CommonAspectRatio.Square;
+    default:
+      return undefined;
   }
 };
 
 const mapResolution = (res?: string): CommonResolution | undefined => {
   switch (res) {
-    case "1k": return CommonResolution.OneK;
-    case "2k": return CommonResolution.TwoK;
-    case "4k": return CommonResolution.FourK;
-    default:   return undefined;
+    case "1k":
+      return CommonResolution.OneK;
+    case "2k":
+      return CommonResolution.TwoK;
+    case "4k":
+      return CommonResolution.FourK;
+    default:
+      return undefined;
   }
 };
 
@@ -117,7 +126,9 @@ const useTauriAdapter = (): PageDrawAdapter => {
       enqueueInpaint: async (req) => {
         const request: GenerateImageRequest = {
           model: req.model,
-          image_media_tokens: req.imageMediaToken ? [req.imageMediaToken] : undefined,
+          image_media_tokens: req.imageMediaToken
+            ? [req.imageMediaToken]
+            : undefined,
           inpainting_mask_image_raw_bytes: req.maskImageRawBytes,
           prompt: req.prompt,
           batch_size: req.imageCount,

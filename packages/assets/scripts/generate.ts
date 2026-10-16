@@ -22,13 +22,14 @@ const readdir = async (dir: string): Promise<string[] | null> => {
     .stat()
     .catch(() => null);
   if (!info?.isDirectory()) return null;
-  return Array.fromAsync(new Bun.Glob("*").scan({ cwd: dir, onlyFiles: false, dot: true })).catch(
-    () => null,
-  );
+  return Array.fromAsync(
+    new Bun.Glob("*").scan({ cwd: dir, onlyFiles: false, dot: true }),
+  ).catch(() => null);
 };
 
 /** `Video-20.png` → `Video20`. */
-const variableName = (fileName: string): string => fileName.split(".")[0]!.replaceAll("-", "");
+const variableName = (fileName: string): string =>
+  fileName.split(".")[0]!.replaceAll("-", "");
 
 /**
  * Canonical icon alias table: maps legacy/duplicate icon names to canonical
@@ -60,7 +61,9 @@ function render(folder: string, lazy: boolean, fileNames: string[]): string {
 
   const aliases =
     folder === "icons"
-      ? Object.entries(ICON_ALIASES).map(([alias, target]) => `const ${alias} = ${target};`)
+      ? Object.entries(ICON_ALIASES).map(
+          ([alias, target]) => `const ${alias} = ${target};`,
+        )
       : [];
 
   const exportNames = [
@@ -89,7 +92,9 @@ async function generate(folder: string, lazy: boolean): Promise<string | null> {
   const dir = join(root, folder);
   const entries = await readdir(dir);
   if (!entries) return null;
-  const fileNames = entries.filter((f) => !SKIP.has(f) && !f.startsWith(".")).toSorted();
+  const fileNames = entries
+    .filter((f) => !SKIP.has(f) && !f.startsWith("."))
+    .toSorted();
   const out = join(dir, "index.ts");
   await Bun.write(out, render(folder, lazy, fileNames));
   return out;
@@ -134,7 +139,9 @@ const folders: [string, boolean][] = [
 const written = (
   await Promise.all([
     ...folders.map(([f, lazy]) => generate(f, lazy)),
-    ...(only.size === 0 || only.has("svgs/ext/Extras") ? [generateBeardedUrls()] : []),
+    ...(only.size === 0 || only.has("svgs/ext/Extras")
+      ? [generateBeardedUrls()]
+      : []),
   ])
 ).filter((f): f is string => f !== null);
 if (written.length > 0) {

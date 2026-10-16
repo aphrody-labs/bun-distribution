@@ -1,4 +1,7 @@
-import { stubGlobal, restoreGlobals } from "../../../../../../tools/testing/globals";
+import {
+  stubGlobal,
+  restoreGlobals,
+} from "../../../../../../tools/testing/globals";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "bun:test";
@@ -32,7 +35,8 @@ beforeEach(() => {
   let preferences = {
     preferred_download_directory: { custom: "/existing/downloads" },
     auto_download: false,
-    preferred_download_filename: "artcraft_convention" as string | { custom_format: string },
+    preferred_download_filename: "artcraft_convention" as
+      string | { custom_format: string },
   };
   api.get.mockImplementation(async () => ({ preferences: { ...preferences } }));
   api.update.mockImplementation(async ({ preference, value }) => {
@@ -53,24 +57,35 @@ it("persists Auto Download using Tauri and keeps the existing directory", async 
   await screen.findByText("/existing/downloads");
   const toggle = screen.getByRole("switch", { name: "Auto Download" });
   expect(toggle.getAttribute("aria-checked")).toBe("false");
-  expect(screen.getByText("Downloads to your system the minute generations complete")).toBeTruthy();
+  expect(
+    screen.getByText(
+      "Downloads to your system the minute generations complete",
+    ),
+  ).toBeTruthy();
 
   await user.click(toggle);
   await waitFor(() => expect(toggle.getAttribute("aria-checked")).toBe("true"));
-  expect(api.update).toHaveBeenCalledWith({ preference: "auto_download", value: true });
+  expect(api.update).toHaveBeenCalledWith({
+    preference: "auto_download",
+    value: true,
+  });
   cleanup();
   render(<DownloadsSettingsPane />);
   await screen.findByText("/existing/downloads");
-  expect(screen.getByRole("switch", { name: "Auto Download" }).getAttribute("aria-checked")).toBe(
-    "true",
-  );
+  expect(
+    screen
+      .getByRole("switch", { name: "Auto Download" })
+      .getAttribute("aria-checked"),
+  ).toBe("true");
 });
 
 it("saves a custom format explicitly, reloads it, and restores the app convention", async () => {
   const user = userEvent.setup();
   render(<DownloadsSettingsPane />);
   await screen.findByText("/existing/downloads");
-  await user.click(screen.getByRole("button", { name: "Preferred download naming scheme" }));
+  await user.click(
+    screen.getByRole("button", { name: "Preferred download naming scheme" }),
+  );
   await user.click(screen.getByRole("option", { name: "Custom format" }));
   const input = screen.getByRole("textbox", { name: "Custom format" });
   await user.clear(input);
@@ -87,11 +102,19 @@ it("saves a custom format explicitly, reloads it, and restores the app conventio
   cleanup();
   render(<DownloadsSettingsPane />);
   expect(
-    ((await screen.findByRole("textbox", { name: "Custom format" })) as HTMLInputElement).value,
+    (
+      (await screen.findByRole("textbox", {
+        name: "Custom format",
+      })) as HTMLInputElement
+    ).value,
   ).toBe("project_{model}_{YYYY}_{batch_index}");
-  await user.click(screen.getByRole("button", { name: "Preferred download naming scheme" }));
+  await user.click(
+    screen.getByRole("button", { name: "Preferred download naming scheme" }),
+  );
   await user.click(screen.getByRole("option", { name: "ArtCraft convention" }));
-  await waitFor(() => expect(screen.queryByRole("textbox", { name: "Custom format" })).toBeNull());
+  await waitFor(() =>
+    expect(screen.queryByRole("textbox", { name: "Custom format" })).toBeNull(),
+  );
   expect(api.update).toHaveBeenLastCalledWith({
     preference: "preferred_download_filename",
     value: "artcraft_convention",
@@ -102,7 +125,9 @@ it("rejects unsafe names and shows persistence failures without enabling Auto Do
   const user = userEvent.setup();
   render(<DownloadsSettingsPane />);
   await screen.findByText("/existing/downloads");
-  await user.click(screen.getByRole("button", { name: "Preferred download naming scheme" }));
+  await user.click(
+    screen.getByRole("button", { name: "Preferred download naming scheme" }),
+  );
   await user.click(screen.getByRole("option", { name: "Custom format" }));
   await user.clear(screen.getByRole("textbox", { name: "Custom format" }));
   await user.paste("../escape");
@@ -113,7 +138,9 @@ it("rejects unsafe names and shows persistence failures without enabling Auto Do
   api.update.mockRejectedValueOnce(new Error("Cannot save preferences"));
   await user.click(screen.getByRole("switch", { name: "Auto Download" }));
   await screen.findByText("Error: Cannot save preferences");
-  expect(screen.getByRole("switch", { name: "Auto Download" }).getAttribute("aria-checked")).toBe(
-    "false",
-  );
+  expect(
+    screen
+      .getByRole("switch", { name: "Auto Download" })
+      .getAttribute("aria-checked"),
+  ).toBe("false");
 });

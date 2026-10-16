@@ -68,7 +68,9 @@ test("current committed build inputs retain immutable historical transfer proven
     expect(input.docs.gitBlob).toBe(git("rev-parse", `${revision}:${docs}`));
     expect(input.docs.path).toBe(docs);
     expect(readFileSync(join(root, receipt), "utf8")).toBe(receiptBefore);
-    expect(() => canonicalBunInputs(root, "c".repeat(40))).toThrow("revision mismatch");
+    expect(() => canonicalBunInputs(root, "c".repeat(40))).toThrow(
+      "revision mismatch",
+    );
     put(docs, "uncommitted replacement");
     expect(() => canonicalBunInputs(root, revision)).toThrow("pinned Git blob");
     put(docs, '{"current":"committed documentation after transfer"}');
@@ -78,7 +80,9 @@ test("current committed build inputs retain immutable historical transfer proven
     unlinkSync(join(root, docs));
     writeFileSync(join(outside, "docs.json"), "private unrelated file");
     symlinkSync(join(outside, "docs.json"), join(root, docs));
-    expect(() => canonicalBunInputs(root, revision)).toThrow("escapes the checkout");
+    expect(() => canonicalBunInputs(root, revision)).toThrow(
+      "escapes the checkout",
+    );
   } finally {
     rmSync(root, { recursive: true, force: true });
     rmSync(outside, { recursive: true, force: true });

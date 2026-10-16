@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // Cursor pages and Discord rate limits require sequential requests; AbortSignal changes externally.
 /* oxlint-disable no-await-in-loop, no-unmodified-loop-condition */
-import { DiscordAPIError, HTTPError, REST, type ResponseLike } from "@discordjs/rest";
+import {
+  DiscordAPIError,
+  HTTPError,
+  REST,
+  type ResponseLike,
+} from "@discordjs/rest";
 
 export type ParseMode = "Markdown" | "Html";
 
@@ -36,7 +41,8 @@ export interface InboundMessage {
   timestamp: Date;
 }
 
-export type RoomKind = "channel" | "direct_message" | "group_direct" | "thread" | "other";
+export type RoomKind =
+  "channel" | "direct_message" | "group_direct" | "thread" | "other";
 
 export interface RoomInfo {
   id: string;
@@ -140,7 +146,8 @@ export class DiscordChannel {
     if (!config.token) throw new ChannelError("DISCORD_BOT_TOKEN is required");
     const base = new URL(config.apiBase ?? DEFAULT_API_BASE);
     const match = /^(.*)\/v(\d+)\/?$/.exec(base.pathname);
-    if (!match) throw new ChannelError("apiBase must end with a Discord API version");
+    if (!match)
+      throw new ChannelError("apiBase must end with a Discord API version");
     const fetchImpl = config.fetch;
     this.rest =
       config.rest ??
@@ -151,7 +158,10 @@ export class DiscordChannel {
         ...(fetchImpl
           ? {
               makeRequest: async (url, init): Promise<ResponseLike> =>
-                (await fetchImpl(url, init as globalThis.RequestInit)) as unknown as ResponseLike,
+                (await fetchImpl(
+                  url,
+                  init as globalThis.RequestInit,
+                )) as unknown as ResponseLike,
             }
           : {}),
       });
@@ -159,9 +169,12 @@ export class DiscordChannel {
     this.pollIntervalMs = config.pollIntervalMs ?? 1_000;
   }
 
-  static fromEnv(env: Record<string, string | undefined> = Bun.env): DiscordChannel {
+  static fromEnv(
+    env: Record<string, string | undefined> = Bun.env,
+  ): DiscordChannel {
     const token = env.DISCORD_BOT_TOKEN;
-    if (!token) throw new ChannelError("missing environment variable: DISCORD_BOT_TOKEN");
+    if (!token)
+      throw new ChannelError("missing environment variable: DISCORD_BOT_TOKEN");
     return new DiscordChannel(token);
   }
 
@@ -176,12 +189,17 @@ export class DiscordChannel {
     return { id: msg.id, room: msg.channel_id, channelId: this.id };
   }
 
-  async sendFile(room: string, file: Blob | File | string, mime: string): Promise<MessageRef> {
+  async sendFile(
+    room: string,
+    file: Blob | File | string,
+    mime: string,
+  ): Promise<MessageRef> {
     let upload: Blob;
     let filename: string;
     if (typeof file === "string") {
       const bunFile = Bun.file(file);
-      if (!(await bunFile.exists())) throw new ChannelError(`file does not exist: ${file}`);
+      if (!(await bunFile.exists()))
+        throw new ChannelError(`file does not exist: ${file}`);
       upload = new Blob([await bunFile.arrayBuffer()], { type: mime });
       filename = file.split(/[\\/]/).at(-1) || "file";
     } else {
@@ -194,7 +212,11 @@ export class DiscordChannel {
         method: "POST",
         body: {},
         files: [
-          { data: new Uint8Array(await upload.arrayBuffer()), name: filename, contentType: mime },
+          {
+            data: new Uint8Array(await upload.arrayBuffer()),
+            name: filename,
+            contentType: mime,
+          },
         ],
       },
     );
@@ -214,7 +236,9 @@ export class DiscordChannel {
     if (signal?.aborted) return [];
     let guilds: DiscordGuild[];
     try {
-      guilds = await this.request<DiscordGuild[]>("users/@me/guilds", { signal });
+      guilds = await this.request<DiscordGuild[]>("users/@me/guilds", {
+        signal,
+      });
     } catch (error) {
       if (signal?.aborted) return [];
       throw error;
@@ -240,7 +264,9 @@ export class DiscordChannel {
         }
       } catch (error) {
         if (signal?.aborted) return rooms;
-        console.warn(`Discord list-channels failed for guild ${guild.id}: ${errorMessage(error)}`);
+        console.warn(
+          `Discord list-channels failed for guild ${guild.id}: ${errorMessage(error)}`,
+        );
       }
     }
     return rooms;
@@ -302,7 +328,8 @@ export class DiscordChannel {
         signal,
       });
       messages.push(...page);
-      if (page.length === 0 || compareSnowflakes(page.at(-1)!.id, oldest) >= 0) break;
+      if (page.length === 0 || compareSnowflakes(page.at(-1)!.id, oldest) >= 0)
+        break;
     }
     return messages
       .filter((message) => compareSnowflakes(message.id, after) > 0)
@@ -332,7 +359,9 @@ export class DiscordChannel {
         : this.rest.get(route, requestOptions))) as T;
     } catch (error) {
       if (error instanceof DiscordAPIError) {
-        throw new ChannelError(error.message, String(error.code), { cause: error });
+        throw new ChannelError(error.message, String(error.code), {
+          cause: error,
+        });
       }
       if (error instanceof HTTPError) {
         throw new ChannelError(
@@ -343,9 +372,13 @@ export class DiscordChannel {
           },
         );
       }
-      throw new ChannelError(`Discord HTTP transport error: ${errorMessage(error)}`, undefined, {
-        cause: error,
-      });
+      throw new ChannelError(
+        `Discord HTTP transport error: ${errorMessage(error)}`,
+        undefined,
+        {
+          cause: error,
+        },
+      );
     }
   }
 
@@ -354,7 +387,10 @@ export class DiscordChannel {
       id: message.id,
       room: message.channel_id,
       sender:
-        message.author?.global_name || message.author?.username || message.author?.id || "unknown",
+        message.author?.global_name ||
+        message.author?.username ||
+        message.author?.id ||
+        "unknown",
       text: message.content,
       attachments: (message.attachments ?? []).map((attachment) => ({
         id: attachment.id,

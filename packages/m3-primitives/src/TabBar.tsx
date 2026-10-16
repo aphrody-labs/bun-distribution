@@ -29,7 +29,9 @@ function handleTabKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
   if (!current || !event.currentTarget.contains(current)) return;
 
   const tabs = Array.from(
-    event.currentTarget.querySelectorAll<HTMLButtonElement>('button[role="tab"]:not(:disabled)'),
+    event.currentTarget.querySelectorAll<HTMLButtonElement>(
+      'button[role="tab"]:not(:disabled)',
+    ),
   );
   const index = tabs.indexOf(current);
   if (index < 0) return;
@@ -111,7 +113,10 @@ export interface TabBarItemProps extends Omit<
  * `primary` active indicator with rounded top corners that slides between tabs.
  */
 export const TabBarItem = forwardRef<HTMLButtonElement, TabBarItemProps>(
-  ({ active, label, onClose, closable, closeIcon, className, ...props }, ref) => {
+  (
+    { active, label, onClose, closable, closeIcon, className, ...props },
+    ref,
+  ) => {
     const reduced = useM3ReducedMotion();
     const showClose = closable ?? !!onClose;
 
@@ -133,7 +138,9 @@ export const TabBarItem = forwardRef<HTMLButtonElement, TabBarItemProps>(
             "transition-colors duration-200 ease-standard",
             m3StateLayer,
             m3FocusRing,
-            active ? "text-primary" : "text-on-surface-variant hover:text-on-surface",
+            active
+              ? "text-primary"
+              : "text-on-surface-variant hover:text-on-surface",
           )}
           {...props}
         >

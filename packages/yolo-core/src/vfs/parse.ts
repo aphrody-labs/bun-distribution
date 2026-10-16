@@ -16,7 +16,10 @@ export interface TsParseResult {
 export async function parseTsSource(filePath: string): Promise<TsParseResult> {
   const t0 = Bun.nanoseconds();
   const raw = new Uint8Array(await Bun.file(filePath).arrayBuffer());
-  const content = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(raw);
+  const content = new TextDecoder("utf-8", {
+    fatal: true,
+    ignoreBOM: true,
+  }).decode(raw);
   const bytes = raw.byteLength;
   const lines = content.length === 0 ? 0 : content.split("\n").length;
 

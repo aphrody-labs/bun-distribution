@@ -1,6 +1,11 @@
 import { Checkbox } from "@storyteller/ui-checkbox";
 import { Modal } from "@storyteller/ui-modal";
-import { ArrowUpFromLineIcon, FootprintsIcon, LayersIcon, SearchIcon } from "lucide-react";
+import {
+  ArrowUpFromLineIcon,
+  FootprintsIcon,
+  LayersIcon,
+  SearchIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { CloseButton } from "@storyteller/ui-close-button";
@@ -196,7 +201,9 @@ export const AnimationsModal = () => {
         items={displayedItems}
         busy={isFetching}
         debug={`animations-modal-${currentTab.id}`}
-        hasMore={currentTab.id === "uploaded" ? hasMoreUserAnimations : undefined}
+        hasMore={
+          currentTab.id === "uploaded" ? hasMoreUserAnimations : undefined
+        }
         onLoadMore={
           currentTab.id === "uploaded" ? loadMoreUserAnimations : undefined
         }
@@ -246,10 +253,7 @@ export const AnimationsModal = () => {
                   )}
                   onClick={() => setActiveTab(tab.id)}
                 >
-                  <DynamicIcon
-                    icon={tab.icon}
-                    className="mr-2 opacity-70"
-                  />
+                  <DynamicIcon icon={tab.icon} className="mr-2 opacity-70" />
                   {tab.label}
                 </Button>
               ))}

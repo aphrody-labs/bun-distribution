@@ -113,10 +113,14 @@ export default function AuditInternalPage() {
       <div className="card">
         <div className="flex items-center gap-2">
           <FileSearch className="h-5 w-5 text-brand-400" />
-          <h2 className="text-lg font-semibold">Journal des actions internes</h2>
+          <h2 className="text-lg font-semibold">
+            Journal des actions internes
+          </h2>
           <button
             type="button"
-            onClick={() => qc.invalidateQueries({ queryKey: ["audit", "internal"] })}
+            onClick={() =>
+              qc.invalidateQueries({ queryKey: ["audit", "internal"] })
+            }
             className="ml-auto btn btn-ghost px-2"
             title="Rafraîchir"
           >
@@ -124,14 +128,17 @@ export default function AuditInternalPage() {
           </button>
         </div>
         <p className="mt-1 text-sm text-zinc-400">
-          Toutes les actions enregistrées par le bot : modération, montées de niveau, opérations sur
-          l&apos;économie. Pour le journal d&apos;audit officiel Discord, consultez la page{" "}
+          Toutes les actions enregistrées par le bot : modération, montées de
+          niveau, opérations sur l&apos;économie. Pour le journal d&apos;audit
+          officiel Discord, consultez la page{" "}
           <strong>Journal d&apos;audit</strong>.
         </p>
         {/* Filtres */}
         <div className="mt-3 grid gap-2 sm:grid-cols-3">
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Type d&apos;action</label>
+            <label className="mb-1 block text-xs text-zinc-500">
+              Type d&apos;action
+            </label>
             <select
               className="input w-full"
               value={action}
@@ -205,7 +212,9 @@ export default function AuditInternalPage() {
             <tr>
               <th className="px-3 py-2 font-medium text-zinc-400">Action</th>
               <th className="px-3 py-2 font-medium text-zinc-400">Membre</th>
-              <th className="px-3 py-2 font-medium text-zinc-400">Modérateur</th>
+              <th className="px-3 py-2 font-medium text-zinc-400">
+                Modérateur
+              </th>
               <th className="px-3 py-2 font-medium text-zinc-400">Motif</th>
               <th className="px-3 py-2 font-medium text-zinc-400">Données</th>
               <th className="px-3 py-2 font-medium text-zinc-400">Date</th>
@@ -238,19 +247,27 @@ export default function AuditInternalPage() {
                   <td className="px-3 py-2 font-mono">
                     {row.moderatorId ? (
                       <span title={row.moderatorId}>
-                        {row.moderatorId.slice(0, 6)}…{row.moderatorId.slice(-4)}
+                        {row.moderatorId.slice(0, 6)}…
+                        {row.moderatorId.slice(-4)}
                       </span>
                     ) : (
                       "—"
                     )}
                   </td>
-                  <td className="px-3 py-2 max-w-xs truncate" title={row.reason ?? ""}>
-                    {row.reason ?? <span className="italic text-zinc-600">Aucun motif</span>}
+                  <td
+                    className="px-3 py-2 max-w-xs truncate"
+                    title={row.reason ?? ""}
+                  >
+                    {row.reason ?? (
+                      <span className="italic text-zinc-600">Aucun motif</span>
+                    )}
                   </td>
                   <td className="px-3 py-2 max-w-xs">
                     {row.meta ? <MetaCell raw={row.meta} /> : "—"}
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-zinc-500">{createdAt}</td>
+                  <td className="px-3 py-2 whitespace-nowrap text-zinc-500">
+                    {createdAt}
+                  </td>
                 </tr>
               );
             })}
@@ -305,7 +322,10 @@ function MetaCell({ raw }: { raw: string }) {
     /* keep raw */
   }
   return (
-    <details open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+    <details
+      open={open}
+      onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
+    >
       <summary className="cursor-pointer text-zinc-400 hover:text-zinc-200">
         {open ? "Masquer" : `${raw.slice(0, 50)}${raw.length > 50 ? "…" : ""}`}
       </summary>

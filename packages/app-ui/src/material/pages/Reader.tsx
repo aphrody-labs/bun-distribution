@@ -83,13 +83,19 @@ export default function Reader({ adaptive }: PageProps) {
                   onPageChange={setPage}
                 />
               ) : (
-                <CaptionedReader key={chapter.id} pages={NOTES} title={chapter.label} />
+                <CaptionedReader
+                  key={chapter.id}
+                  pages={NOTES}
+                  title={chapter.label}
+                />
               )
             }
           />
         </Card>
         {kind === "manga" ? (
-          <output className="block text-body-medium">Illustration page: {page}</output>
+          <output className="block text-body-medium">
+            Illustration page: {page}
+          </output>
         ) : null}
       </Section>
     </Page>

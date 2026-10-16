@@ -3,10 +3,28 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "@aphrody/update/process";
 import { existsSync } from "node:fs";
-import { copyFile, mkdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
-import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import {
+  copyFile,
+  mkdir,
+  readFile,
+  stat,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
+import {
+  basename,
+  dirname,
+  isAbsolute,
+  join,
+  relative,
+  resolve,
+  sep,
+} from "node:path";
 import { homedir } from "node:os";
-import { inventoryNestedFiles, inventorySubmodules } from "./submodule-inventory.ts";
+import {
+  inventoryNestedFiles,
+  inventorySubmodules,
+} from "./submodule-inventory.ts";
 import { importInfraConfig } from "./infra-config-import.ts";
 import { importInfraScripts } from "./infra-scripts-import.ts";
 import { importSourceLicenses } from "./source-licenses-import.ts";
@@ -17,7 +35,12 @@ function inside(root: string, target: string): boolean {
   return path !== "" && !isAbsolute(path) && path.split(sep)[0] !== "..";
 }
 
-type Mode = "extract" | "orchestrator-split" | "upstream-pinned" | "deferred" | "classify";
+type Mode =
+  | "extract"
+  | "orchestrator-split"
+  | "upstream-pinned"
+  | "deferred"
+  | "classify";
 type RootSpec = {
   key: string;
   path: string;
@@ -43,8 +66,21 @@ type Entry = {
   duplicateOf?: string;
   targetReason?: string;
 };
-const DOC_EXTENSIONS = new Set([".md", ".mdx", ".rst", ".adoc", ".txt", ".pdf"]);
-const UPSTREAM_DOC_TEXT_EXTENSIONS = new Set([".md", ".mdx", ".rst", ".adoc", ".txt"]);
+const DOC_EXTENSIONS = new Set([
+  ".md",
+  ".mdx",
+  ".rst",
+  ".adoc",
+  ".txt",
+  ".pdf",
+]);
+const UPSTREAM_DOC_TEXT_EXTENSIONS = new Set([
+  ".md",
+  ".mdx",
+  ".rst",
+  ".adoc",
+  ".txt",
+]);
 const UPSTREAM_AGENT_INSTRUCTION_FILE =
   /(?:^|\/)(?:(?:CLAUDE|AGENTS|GEMINI|CODEX)\.md|copilot-instructions\.md|\.cursorrules)$|(?:^|\/)\.(?:cursor|claude|agents|codex|gemini)\/|(?:^|\/)\.env/;
 const UPSTREAM_EXCLUDED_DOC_SOURCES = new Set(["upstream-WSL2-Linux-Kernel"]);
@@ -61,7 +97,13 @@ const SCRIPT_EXTENSIONS = new Set([
   ".py",
   ".ps1",
 ]);
-const EXTERNAL_PARTS = new Set(["vendor", "third_party", "thirdparty", "upstream", "node_modules"]);
+const EXTERNAL_PARTS = new Set([
+  "vendor",
+  "third_party",
+  "thirdparty",
+  "upstream",
+  "node_modules",
+]);
 const WITHDRAWN_IECODE_BUN_PATHS = [
   "packages/nie/",
   "packages/nie-plugin/",
@@ -81,26 +123,32 @@ function argsOf(args: string[]): Map<string, string> {
     if (arg === "--help" || arg === "-h") continue;
     if (!arg.startsWith("--")) throw new Error(`Unexpected argument: ${arg}`);
     const value = args[++i];
-    if (!value || value.startsWith("--")) throw new Error(`${arg} requires a value`);
+    if (!value || value.startsWith("--"))
+      throw new Error(`${arg} requires a value`);
     result.set(arg, value);
   }
   return result;
 }
 function classifyDoc(path: string): string {
   const lower = path.toLowerCase();
-  if (/\b(plan|roadmap|backlog)\b/.test(lower) || /(^|\/)plans?\//.test(lower)) return "plans";
+  if (/\b(plan|roadmap|backlog)\b/.test(lower) || /(^|\/)plans?\//.test(lower))
+    return "plans";
   if (/architect|design|system-map/.test(lower)) return "architecture";
   if (/api|protocol|schema|contract|format/.test(lower)) return "apis";
   if (/decision|adr|rfc/.test(lower)) return "decisions";
-  if (/guide|tutorial|howto|contribut|setup|install/.test(lower)) return "guides";
-  if (/deploy|operations?|infra|release|ci-cd|runbook/.test(lower)) return "operations";
-  if (/audit|research|report|benchmark|security|parity/.test(lower)) return "research";
+  if (/guide|tutorial|howto|contribut|setup|install/.test(lower))
+    return "guides";
+  if (/deploy|operations?|infra|release|ci-cd|runbook/.test(lower))
+    return "operations";
+  if (/audit|research|report|benchmark|security|parity/.test(lower))
+    return "research";
   if (/readme|product|app\//.test(lower)) return "products";
   return "reference";
 }
 function classifyScript(path: string): string {
   const s = path.toLowerCase();
-  if (/audit|check|lint|test|verify|scan|validate|doctor/.test(s)) return "audit";
+  if (/audit|check|lint|test|verify|scan|validate|doctor/.test(s))
+    return "audit";
   if (/release|publish|version|tag/.test(s)) return "release";
   if (/migrat|import|extract|transfer/.test(s)) return "migration";
   if (/build|bundle|compile|package/.test(s)) return "build";
@@ -110,28 +158,44 @@ function classifyScript(path: string): string {
 function kindOf(path: string): { kind: string; category?: string } {
   const parts = path.split("/");
   const name = basename(path);
-  const ext = name.includes(".") ? `.${name.split(".").at(-1)!.toLowerCase()}` : "";
+  const ext = name.includes(".")
+    ? `.${name.split(".").at(-1)!.toLowerCase()}`
+    : "";
   // Keep proprietary game dumps and derived fixture datasets in their protected
   // stores. Import adjacent Markdown analysis, but never move structured game
   // data into the source/documentation workspace.
-  if (/^docs\/game-data\/(?:oc|menu-fixtures)\//.test(path) && !DOC_EXTENSIONS.has(ext))
+  if (
+    /^docs\/game-data\/(?:oc|menu-fixtures)\//.test(path) &&
+    !DOC_EXTENSIONS.has(ext)
+  )
     return { kind: "protected-game-data" };
   if (
     DOC_EXTENSIONS.has(ext) ||
     /^(AGENTS|CONTRIBUTING|ARCHITECTURE|PLAN|README)(\.|$)/i.test(name)
   )
     return { kind: "documentation", category: classifyDoc(path) };
-  if (parts.includes("scripts") || parts.includes("script") || parts.includes("tools"))
-    if (SCRIPT_EXTENSIONS.has(ext)) return { kind: "script", category: classifyScript(path) };
+  if (
+    parts.includes("scripts") ||
+    parts.includes("script") ||
+    parts.includes("tools")
+  )
+    if (SCRIPT_EXTENSIONS.has(ext))
+      return { kind: "script", category: classifyScript(path) };
   if (name === "Cargo.toml") return { kind: "cargo-manifest" };
   if (name === "package.json") return { kind: "bun-manifest" };
   if (name === "pyproject.toml") return { kind: "python-manifest" };
   if (parts[0] === "packages") return { kind: "bun-package" };
   if (parts[0] === "apps") return { kind: "bun-app" };
   if (ext === ".rs") return { kind: "rust-source" };
-  if (parts.includes("scripts") || parts.includes("script") || parts.includes("tools"))
-    if (SCRIPT_EXTENSIONS.has(ext)) return { kind: "script", category: classifyScript(path) };
-  if (parts[0] === "docs") return { kind: "documentation", category: classifyDoc(path) };
+  if (
+    parts.includes("scripts") ||
+    parts.includes("script") ||
+    parts.includes("tools")
+  )
+    if (SCRIPT_EXTENSIONS.has(ext))
+      return { kind: "script", category: classifyScript(path) };
+  if (parts[0] === "docs")
+    return { kind: "documentation", category: classifyDoc(path) };
   return { kind: "source-or-config" };
 }
 function safeKey(path: string): string {
@@ -154,7 +218,8 @@ export function targetPath(
       return "../aphrody-py/tools/infra/scripts/python-workspace-dispatch.py";
     return `../aphrody-py/${parts[0] === "scripts" ? "tools" : parts[0] === "apps" ? "apps" : "packages"}/${owner}/${path}`;
   }
-  if (info.kind === "script") return `scripts/${info.category ?? "tools"}/${owner}/${path}`;
+  if (info.kind === "script")
+    return `scripts/${info.category ?? "tools"}/${owner}/${path}`;
   if (info.kind === "rust-source") {
     const remainder =
       parts[0] === "crates"
@@ -164,25 +229,43 @@ export function targetPath(
           : path;
     return `crates/${owner}/${remainder}`;
   }
-  if (info.kind === "bun-package") return `packages/${owner}/${path.slice("packages/".length)}`;
-  if (info.kind === "bun-app") return `apps/${owner}/${path.slice("apps/".length)}`;
-  if (info.kind === "cargo-manifest" && ["crates", "apps"].includes(parts[0]!)) {
+  if (info.kind === "bun-package")
+    return `packages/${owner}/${path.slice("packages/".length)}`;
+  if (info.kind === "bun-app")
+    return `apps/${owner}/${path.slice("apps/".length)}`;
+  if (
+    info.kind === "cargo-manifest" &&
+    ["crates", "apps"].includes(parts[0]!)
+  ) {
     const remainder =
-      parts[0] === "crates" ? parts.slice(1).join("/") : `apps/${parts.slice(1).join("/")}`;
+      parts[0] === "crates"
+        ? parts.slice(1).join("/")
+        : `apps/${parts.slice(1).join("/")}`;
     return `crates/${owner}/${remainder}`;
   }
-  if (info.kind === "bun-manifest" && ["packages", "apps"].includes(parts[0]!)) {
+  if (
+    info.kind === "bun-manifest" &&
+    ["packages", "apps"].includes(parts[0]!)
+  ) {
     const kind = parts[0] === "crates" ? "crates" : parts[0]!;
     return `${kind}/${owner}/${path.slice(kind.length + 1)}`;
   }
-  if (parts[0] === "crates") return `crates/${owner}/${parts.slice(1).join("/")}`;
-  if (parts[0] === "packages") return `packages/${owner}/${parts.slice(1).join("/")}`;
+  if (parts[0] === "crates")
+    return `crates/${owner}/${parts.slice(1).join("/")}`;
+  if (parts[0] === "packages")
+    return `packages/${owner}/${parts.slice(1).join("/")}`;
   if (parts[0] === "apps") return `apps/${owner}/${parts.slice(1).join("/")}`;
-  if (info.kind.endsWith("manifest")) return `migration/manifests/${owner}/${path}`;
+  if (info.kind.endsWith("manifest"))
+    return `migration/manifests/${owner}/${path}`;
   return `migration/source-refs/${owner}/${path}`;
 }
-export function isInfraPythonScript(path: string, info: ReturnType<typeof kindOf>): boolean {
-  return info.kind === "script" && /^scripts\/.*\.(?:py|pyi|ipynb)$/i.test(path);
+export function isInfraPythonScript(
+  path: string,
+  info: ReturnType<typeof kindOf>,
+): boolean {
+  return (
+    info.kind === "script" && /^scripts\/.*\.(?:py|pyi|ipynb)$/i.test(path)
+  );
 }
 function parseStatus(raw: string): Map<string, string> {
   const result = new Map<string, string>();
@@ -199,10 +282,22 @@ async function rootSnapshot(
   const top = resolve(spec.path);
   const gitRoot = resolve(git(top, ["rev-parse", "--show-toplevel"]).trim());
   const head = git(gitRoot, ["rev-parse", "HEAD"]).trim();
-  const branch = git(gitRoot, ["branch", "--show-current"]).trim() || "detached";
-  const statusRaw = git(gitRoot, ["status", "--porcelain=v1", "-z", "--untracked-files=all"]);
+  const branch =
+    git(gitRoot, ["branch", "--show-current"]).trim() || "detached";
+  const statusRaw = git(gitRoot, [
+    "status",
+    "--porcelain=v1",
+    "-z",
+    "--untracked-files=all",
+  ]);
   const statuses = parseStatus(statusRaw);
-  const tracked = git(gitRoot, ["ls-files", "-z", "--cached", "--others", "--exclude-standard"])
+  const tracked = git(gitRoot, [
+    "ls-files",
+    "-z",
+    "--cached",
+    "--others",
+    "--exclude-standard",
+  ])
     .split("\0")
     .filter(Boolean)
     .map(safeKey);
@@ -213,11 +308,15 @@ async function rootSnapshot(
       spec.rootDocsOnly &&
       !(
         /^(?:docs?|documentation)\//i.test(path) ||
-        /^(README|PLAN|AGENTS|ARCHITECTURE|\.gitmodules|manifest\.json)/i.test(path) ||
+        /^(README|PLAN|AGENTS|ARCHITECTURE|\.gitmodules|manifest\.json)/i.test(
+          path,
+        ) ||
         (spec.markdownDocsAnywhere &&
           (/\.(?:md|mdx)$/i.test(path) ||
             (/^(?:docs?|documentation)\//i.test(path) &&
-              DOC_EXTENSIONS.has(`.${path.split(".").at(-1)?.toLowerCase() ?? ""}`))))
+              DOC_EXTENSIONS.has(
+                `.${path.split(".").at(-1)?.toLowerCase() ?? ""}`,
+              ))))
       )
     )
       continue;
@@ -230,9 +329,14 @@ async function rootSnapshot(
       const st = await stat(source);
       size = st.size;
       const firstPartyCode =
-        ["rust-source", "cargo-manifest", "bun-manifest", "bun-package", "bun-app"].includes(
-          info.kind,
-        ) || ["crates", "apps", "packages"].includes(path.split("/")[0]!);
+        [
+          "rust-source",
+          "cargo-manifest",
+          "bun-manifest",
+          "bun-package",
+          "bun-app",
+        ].includes(info.kind) ||
+        ["crates", "apps", "packages"].includes(path.split("/")[0]!);
       const infraCatalog =
         spec.mode === "orchestrator-split" &&
         (path.startsWith("config/") ||
@@ -240,7 +344,9 @@ async function rootSnapshot(
           path.startsWith("systemd/") ||
           path === "rust-toolchain.toml");
       if (
-        (["documentation", "script"].includes(info.kind) || firstPartyCode || infraCatalog) &&
+        (["documentation", "script"].includes(info.kind) ||
+          firstPartyCode ||
+          infraCatalog) &&
         st.isFile() &&
         st.size <= 10 * 1024 * 1024
       ) {
@@ -265,7 +371,8 @@ async function rootSnapshot(
       /^LICENSE(?:[.-][A-Za-z0-9._-]+)?$/i.test(path);
     const infraOwnedControl =
       spec.mode === "orchestrator-split" &&
-      (path.startsWith("scripts/") || path.startsWith("packages/aphrody-workspace/"));
+      (path.startsWith("scripts/") ||
+        path.startsWith("packages/aphrody-workspace/"));
     const withdrawnIecodeBunStage =
       spec.key === "iecode" &&
       info.kind !== "documentation" &&
@@ -274,7 +381,9 @@ async function rootSnapshot(
       info.kind === "documentation" &&
       (spec.excludedPrefixes ?? []).some((prefix) => path.startsWith(prefix));
     const unavailableUpstreamDocumentation =
-      spec.key.startsWith("upstream-") && info.kind === "documentation" && !exists;
+      spec.key.startsWith("upstream-") &&
+      info.kind === "documentation" &&
+      !exists;
     const oversizedUpstreamDocumentation =
       spec.key.startsWith("upstream-") &&
       info.kind === "documentation" &&
@@ -285,7 +394,9 @@ async function rootSnapshot(
     const policyExcludedUpstreamDocumentation =
       spec.key.startsWith("upstream-") &&
       info.kind === "documentation" &&
-      (!UPSTREAM_DOC_TEXT_EXTENSIONS.has(`.${path.split(".").at(-1)?.toLowerCase() ?? ""}`) ||
+      (!UPSTREAM_DOC_TEXT_EXTENSIONS.has(
+        `.${path.split(".").at(-1)?.toLowerCase() ?? ""}`,
+      ) ||
         UPSTREAM_AGENT_INSTRUCTION_FILE.test(path) ||
         UPSTREAM_EXCLUDED_DOC_SOURCES.has(spec.key));
     const destination =
@@ -307,31 +418,44 @@ async function rootSnapshot(
               : spec.mode === "upstream-pinned" && info.kind !== "documentation"
                 ? `upstream/${spec.owner}/${path}`
                 : targetPath(
-                    spec.mode === "upstream-pinned" ? `upstream-${spec.owner}` : spec.owner,
+                    spec.mode === "upstream-pinned"
+                      ? `upstream-${spec.owner}`
+                      : spec.owner,
                     path,
                     info,
                   );
     entries.push({
       source: `${spec.key}/${path}`,
-      kind: external && info.kind !== "documentation" ? "upstream-source" : info.kind,
+      kind:
+        external && info.kind !== "documentation"
+          ? "upstream-source"
+          : info.kind,
       ...(info.category ? { category: info.category } : {}),
       size,
       status: exists ? (statuses.get(path) ?? "clean") : "missing",
       ...(sha256 ? { sha256 } : {}),
       target: destination,
       ...(withdrawnIecodeBunStage
-        ? { targetReason: "withdrawn-unqualified-bun-stage-no-aphrody-consumer" }
+        ? {
+            targetReason: "withdrawn-unqualified-bun-stage-no-aphrody-consumer",
+          }
         : excludedDocumentation
           ? { targetReason: "excluded-by-source-license-boundary" }
-          : spec.key.startsWith("upstream-") && info.kind === "documentation" && external
+          : spec.key.startsWith("upstream-") &&
+              info.kind === "documentation" &&
+              external
             ? { targetReason: "external-vendor-document-stays-with-source" }
             : unavailableUpstreamDocumentation
               ? { targetReason: "not-present-in-source-worktree" }
               : oversizedUpstreamDocumentation
-                ? { targetReason: "documentation-asset-over-10-mib-import-limit" }
+                ? {
+                    targetReason:
+                      "documentation-asset-over-10-mib-import-limit",
+                  }
                 : policyExcludedUpstreamDocumentation
                   ? { targetReason: "excluded-by-upstream-docs-import-policy" }
-                  : spec.key === "upstream-openfox" && info.kind === "documentation"
+                  : spec.key === "upstream-openfox" &&
+                      info.kind === "documentation"
                     ? { targetReason: "source-license-unverified-no-copy" }
                     : {}),
     });
@@ -354,15 +478,25 @@ async function rootSnapshot(
     dirty: statuses.size > 0,
     dirtyPathCount: statuses.size,
     trackedAndUntrackedPathCount: entries.length,
-    documentationCount: entries.filter((entry) => entry.kind === "documentation").length,
-    rustManifestCount: entries.filter((entry) => entry.kind === "cargo-manifest").length,
-    bunManifestCount: entries.filter((entry) => entry.kind === "bun-manifest").length,
-    pythonManifestCount: entries.filter((entry) => entry.kind === "python-manifest").length,
+    documentationCount: entries.filter(
+      (entry) => entry.kind === "documentation",
+    ).length,
+    rustManifestCount: entries.filter(
+      (entry) => entry.kind === "cargo-manifest",
+    ).length,
+    bunManifestCount: entries.filter((entry) => entry.kind === "bun-manifest")
+      .length,
+    pythonManifestCount: entries.filter(
+      (entry) => entry.kind === "python-manifest",
+    ).length,
   };
   return { root: summary, entries };
 }
 
-export type DocumentationIndexEntry = Pick<Entry, "source" | "kind" | "target"> &
+export type DocumentationIndexEntry = Pick<
+  Entry,
+  "source" | "kind" | "target"
+> &
   Partial<Pick<Entry, "importedTarget">>;
 const DOCUMENTATION_INDEX_MARKER =
   "<!-- Generated from migration/source-map.json by yolo ops consolidation docs-import. -->";
@@ -374,8 +508,11 @@ export function renderDocumentationIndex(
 ): string {
   for (const entry of entries) {
     const destination = entry.importedTarget ?? entry.target;
-    if (entry.kind !== "documentation" || !destination?.startsWith("docs/")) continue;
-    if (!inside(resolve(aphrodyRoot, "docs"), resolve(aphrodyRoot, destination)))
+    if (entry.kind !== "documentation" || !destination?.startsWith("docs/"))
+      continue;
+    if (
+      !inside(resolve(aphrodyRoot, "docs"), resolve(aphrodyRoot, destination))
+    )
       throw new Error(`documentation destination escaped docs: ${destination}`);
   }
   return [
@@ -430,8 +567,12 @@ export async function runConsolidation(args: string[]): Promise<number> {
   const options = argsOf(rest);
   const ownerFilter = options.get("--owner");
   const upstreamsOnly = options.get("--upstreams-only") === "true";
-  const sourceRoot = resolve(options.get("--source-root") ?? join(homedir(), "src"));
-  const iecodeRoot = resolve(options.get("--iecode-root") ?? join(dirname(sourceRoot), "iecode"));
+  const sourceRoot = resolve(
+    options.get("--source-root") ?? join(homedir(), "src"),
+  );
+  const iecodeRoot = resolve(
+    options.get("--iecode-root") ?? join(dirname(sourceRoot), "iecode"),
+  );
   const aphrodyRoot = resolve(
     options.get("--aphrody-root") ?? join(dirname(sourceRoot), "aphrody"),
   );
@@ -439,12 +580,19 @@ export async function runConsolidation(args: string[]): Promise<number> {
     options.get("--python-root") ?? join(dirname(sourceRoot), "aphrody-py"),
   );
   const output = join(aphrodyRoot, "docs/migration/source-map.json");
-  const nestedOutput = join(aphrodyRoot, "docs/migration/nested-source-map.json");
+  const nestedOutput = join(
+    aphrodyRoot,
+    "docs/migration/nested-source-map.json",
+  );
   const pythonOutput = join(pythonRoot, "docs/migration/source-map.json");
   if (action === "docs-index") {
     if (ownerFilter)
-      throw new Error("docs-index regenerates the complete map; --owner is unsupported");
-    const report = JSON.parse(await readFile(output, "utf8")) as { entries: Entry[] };
+      throw new Error(
+        "docs-index regenerates the complete map; --owner is unsupported",
+      );
+    const report = JSON.parse(await readFile(output, "utf8")) as {
+      entries: Entry[];
+    };
     const entries = report.entries.filter(
       (entry) =>
         entry.kind === "documentation" &&
@@ -471,8 +619,14 @@ export async function runConsolidation(args: string[]): Promise<number> {
     return failure || missingTargets.length ? 1 : 0;
   }
   const upstreamManifest = JSON.parse(
-    await readFile(join(aphrodyRoot, "tools/config/upstream-sources.json"), "utf8"),
-  ) as { root?: string; sources?: Array<{ id: string; kind: string; license?: string }> };
+    await readFile(
+      join(aphrodyRoot, "tools/config/upstream-sources.json"),
+      "utf8",
+    ),
+  ) as {
+    root?: string;
+    sources?: Array<{ id: string; kind: string; license?: string }>;
+  };
   const upstreamRoot = resolve(
     options.get("--upstreams-root") ??
       resolve(aphrodyRoot, upstreamManifest.root ?? ".cache/upstream"),
@@ -503,7 +657,10 @@ export async function runConsolidation(args: string[]): Promise<number> {
     ]);
     for (const root of report.roots)
       if (root.key.startsWith("upstream-"))
-        sourceRoots.set(root.key, join(upstreamRoot, root.key.slice("upstream-".length)));
+        sourceRoots.set(
+          root.key,
+          join(upstreamRoot, root.key.slice("upstream-".length)),
+        );
       else if (root.key !== "src-root-docs" && root.key !== "iecode")
         sourceRoots.set(root.key, join(sourceRoot, root.key));
     const index = [
@@ -520,14 +677,20 @@ export async function runConsolidation(args: string[]): Promise<number> {
     let conflicts = 0;
     // oxlint-disable no-await-in-loop -- script import is stateful: each step reads targets written by earlier steps and updates shared counters and index order
     for (const entry of report.entries) {
-      if (entry.kind !== "script" || (ownerFilter && !entry.source.startsWith(`${ownerFilter}/`)))
+      if (
+        entry.kind !== "script" ||
+        (ownerFilter && !entry.source.startsWith(`${ownerFilter}/`))
+      )
         continue;
       if (entry.duplicateOf) {
         aliases++;
         continue;
       }
       const planned = entry.target;
-      if (!planned || !(planned.startsWith("scripts/") || planned.startsWith("../aphrody-py")))
+      if (
+        !planned ||
+        !(planned.startsWith("scripts/") || planned.startsWith("../aphrody-py"))
+      )
         continue;
       if (!entry.sha256) {
         failures.push(`no safe script hash: ${entry.source}`);
@@ -553,7 +716,9 @@ export async function runConsolidation(args: string[]): Promise<number> {
       }
       const intoPython = planned.startsWith("../aphrody-py");
       const destinationRoot = intoPython ? pythonRoot : aphrodyRoot;
-      let destination = intoPython ? planned.slice("../aphrody-py".length) : planned;
+      let destination = intoPython
+        ? planned.slice("../aphrody-py".length)
+        : planned;
       let target = resolve(destinationRoot, destination);
       if (!inside(destinationRoot, target)) {
         failures.push(`script target escaped: ${planned}`);
@@ -563,7 +728,10 @@ export async function runConsolidation(args: string[]): Promise<number> {
         const existingHash = createHash("sha256")
           .update(await readFile(target))
           .digest("hex");
-        if (existingHash === sourceHash || existingHash === entry.importedSha256) {
+        if (
+          existingHash === sourceHash ||
+          existingHash === entry.importedSha256
+        ) {
           identical++;
           entry.importedSha256 = existingHash;
           entry.importedSourceSha256 = sourceHash;
@@ -587,7 +755,9 @@ export async function runConsolidation(args: string[]): Promise<number> {
               .digest("hex");
             if (fallbackHash === sourceHash) {
               identical++;
-              entry.importedTarget = intoPython ? `../aphrody-py/${destination}` : destination;
+              entry.importedTarget = intoPython
+                ? `../aphrody-py/${destination}`
+                : destination;
               entry.importedSha256 = sourceHash;
               entry.importedSourceSha256 = sourceHash;
               continue;
@@ -595,7 +765,9 @@ export async function runConsolidation(args: string[]): Promise<number> {
             destination = `${destination}.${sourceHash.slice(0, 12)}`;
             target = resolve(destinationRoot, destination);
           }
-          entry.importedTarget = intoPython ? `../aphrody-py/${destination}` : destination;
+          entry.importedTarget = intoPython
+            ? `../aphrody-py/${destination}`
+            : destination;
           await mkdir(dirname(target), { recursive: true });
           await copyFile(source, target);
           copied++;
@@ -614,14 +786,23 @@ export async function runConsolidation(args: string[]): Promise<number> {
       );
     }
     // oxlint-enable no-await-in-loop
-    const indexPath = join(aphrodyRoot, "docs/migration/IMPORTED-SCRIPTS-INDEX.md");
+    const indexPath = join(
+      aphrodyRoot,
+      "docs/migration/IMPORTED-SCRIPTS-INDEX.md",
+    );
     await mkdir(dirname(indexPath), { recursive: true });
     let indexContent = index;
     if (ownerFilter && existsSync(indexPath)) {
       const priorRows = (await readFile(indexPath, "utf8"))
         .split("\n")
-        .filter((line) => line.startsWith("- `") && !line.includes(`\`${ownerFilter}/`));
-      indexContent = [...index.slice(0, 5), ...priorRows.concat(index.slice(5)).toSorted()];
+        .filter(
+          (line) =>
+            line.startsWith("- `") && !line.includes(`\`${ownerFilter}/`),
+        );
+      indexContent = [
+        ...index.slice(0, 5),
+        ...priorRows.concat(index.slice(5)).toSorted(),
+      ];
     }
     await writeFile(indexPath, `${indexContent.join("\n")}\n`);
     await writeFile(output, `${JSON.stringify(report)}\n`);
@@ -651,7 +832,10 @@ export async function runConsolidation(args: string[]): Promise<number> {
     ]);
     for (const root of report.roots)
       if (root.key.startsWith("upstream-"))
-        sourceRoots.set(root.key, join(upstreamRoot, root.key.slice("upstream-".length)));
+        sourceRoots.set(
+          root.key,
+          join(upstreamRoot, root.key.slice("upstream-".length)),
+        );
       else if (root.key !== "src-root-docs" && root.key !== "iecode")
         sourceRoots.set(root.key, join(sourceRoot, root.key));
     let copied = 0;
@@ -705,7 +889,9 @@ export async function runConsolidation(args: string[]): Promise<number> {
         .update(await readFile(source))
         .digest("hex");
       if (sourceHash !== entry.sha256) {
-        failures.push(`generated fallback kept because source changed: ${entry.source}`);
+        failures.push(
+          `generated fallback kept because source changed: ${entry.source}`,
+        );
         continue;
       }
       const preferredHash = createHash("sha256")
@@ -720,7 +906,10 @@ export async function runConsolidation(args: string[]): Promise<number> {
         const fallbackHash = createHash("sha256")
           .update(await readFile(fallback))
           .digest("hex");
-        if (fallbackHash !== sourceHash && fallbackHash !== entry.importedSha256) {
+        if (
+          fallbackHash !== sourceHash &&
+          fallbackHash !== entry.importedSha256
+        ) {
           conflicts++;
           failures.push(`preserved edited imported fallback: ${entry.source}`);
           continue;
@@ -756,7 +945,9 @@ export async function runConsolidation(args: string[]): Promise<number> {
         continue;
       }
       if (!existsSync(source)) {
-        failures.push(`source vanished after inventory; preserved mapping: ${entry.source}`);
+        failures.push(
+          `source vanished after inventory; preserved mapping: ${entry.source}`,
+        );
         continue;
       }
       const sourceBytes = await readFile(source);
@@ -769,7 +960,10 @@ export async function runConsolidation(args: string[]): Promise<number> {
         const existingHash = createHash("sha256")
           .update(await readFile(target))
           .digest("hex");
-        if (entry.importedSha256 === existingHash && entry.importedSourceSha256 !== actualHash) {
+        if (
+          entry.importedSha256 === existingHash &&
+          entry.importedSourceSha256 !== actualHash
+        ) {
           await copyFile(source, target);
           entry.importedSha256 = actualHash;
           entry.importedSourceSha256 = actualHash;
@@ -802,7 +996,10 @@ export async function runConsolidation(args: string[]): Promise<number> {
           const fallbackHash = createHash("sha256")
             .update(await readFile(target))
             .digest("hex");
-          if (fallbackHash === actualHash || fallbackHash === entry.importedSha256) {
+          if (
+            fallbackHash === actualHash ||
+            fallbackHash === entry.importedSha256
+          ) {
             identical++;
             entry.importedTarget = destination;
             entry.importedSha256 = fallbackHash;
@@ -827,7 +1024,8 @@ export async function runConsolidation(args: string[]): Promise<number> {
     const importedBySource = new Map<string, string>();
     for (const entry of report.entries) {
       const destination = entry.importedTarget ?? entry.target;
-      if (entry.kind !== "documentation" || !destination?.startsWith("docs/")) continue;
+      if (entry.kind !== "documentation" || !destination?.startsWith("docs/"))
+        continue;
       const category = destination.split("/")[1] ?? "reference";
       const group = docsByCategory.get(category) ?? [];
       group.push(entry);
@@ -835,44 +1033,69 @@ export async function runConsolidation(args: string[]): Promise<number> {
       const slash = entry.source.indexOf("/");
       const sourceBase = sourceRoots.get(entry.source.slice(0, slash));
       if (sourceBase)
-        importedBySource.set(resolve(sourceBase, entry.source.slice(slash + 1)), destination);
+        importedBySource.set(
+          resolve(sourceBase, entry.source.slice(slash + 1)),
+          destination,
+        );
     }
     for (const entry of report.entries) {
       if (entry.kind !== "documentation" || !entry.duplicateOf) continue;
       const canonicalTarget = report.entries.find(
         (candidate) =>
-          candidate.target === entry.duplicateOf || candidate.importedTarget === entry.duplicateOf,
+          candidate.target === entry.duplicateOf ||
+          candidate.importedTarget === entry.duplicateOf,
       );
-      const destination = canonicalTarget?.importedTarget ?? canonicalTarget?.target;
+      const destination =
+        canonicalTarget?.importedTarget ?? canonicalTarget?.target;
       if (!destination?.startsWith("docs/")) continue;
       const slash = entry.source.indexOf("/");
       const sourceBase = sourceRoots.get(entry.source.slice(0, slash));
       if (sourceBase)
-        importedBySource.set(resolve(sourceBase, entry.source.slice(slash + 1)), destination);
+        importedBySource.set(
+          resolve(sourceBase, entry.source.slice(slash + 1)),
+          destination,
+        );
     }
     // oxlint-disable no-await-in-loop -- later duplicates override earlier importedBySource mappings, so entries are processed in order
     for (const entry of report.entries) {
-      if (entry.kind === "documentation" || entry.duplicateOf || !entry.sha256) continue;
+      if (entry.kind === "documentation" || entry.duplicateOf || !entry.sha256)
+        continue;
       const destination = entry.importedTarget ?? entry.target;
-      if (!destination || !/^(?:apps|crates|packages|scripts)\//.test(destination)) continue;
+      if (
+        !destination ||
+        !/^(?:apps|crates|packages|scripts)\//.test(destination)
+      )
+        continue;
       const slash = entry.source.indexOf("/");
       const sourceBase = sourceRoots.get(entry.source.slice(0, slash));
       if (!sourceBase) continue;
       const source = resolve(sourceBase, entry.source.slice(slash + 1));
       const target = resolve(aphrodyRoot, destination);
-      if (!target.startsWith(`${aphrodyRoot}/`) || !existsSync(source) || !existsSync(target))
+      if (
+        !target.startsWith(`${aphrodyRoot}/`) ||
+        !existsSync(source) ||
+        !existsSync(target)
+      )
         continue;
       const sourceBytes = await readFile(source);
-      if (createHash("sha256").update(sourceBytes).digest("hex") !== entry.sha256) continue;
+      if (
+        createHash("sha256").update(sourceBytes).digest("hex") !== entry.sha256
+      )
+        continue;
       const targetBytes = await readFile(target);
       const targetHash = createHash("sha256").update(targetBytes).digest("hex");
       let matchesImport =
         targetHash === entry.sha256 ||
-        (entry.importedSourceSha256 === entry.sha256 && entry.importedSha256 === targetHash);
+        (entry.importedSourceSha256 === entry.sha256 &&
+          entry.importedSha256 === targetHash);
       if (!matchesImport && entry.kind === "bun-manifest") {
         try {
-          const sourceName = (JSON.parse(sourceBytes.toString()) as { name?: string }).name;
-          const targetName = (JSON.parse(targetBytes.toString()) as { name?: string }).name;
+          const sourceName = (
+            JSON.parse(sourceBytes.toString()) as { name?: string }
+          ).name;
+          const targetName = (
+            JSON.parse(targetBytes.toString()) as { name?: string }
+          ).name;
           matchesImport = !!sourceName && sourceName === targetName;
         } catch {
           // A manifest without a matching package identity is not an imported file target.
@@ -885,9 +1108,18 @@ export async function runConsolidation(args: string[]): Promise<number> {
     const unresolvedLinks: string[] = [];
     // oxlint-disable no-await-in-loop -- link rewrites read and write target documents and share per-source replacement state and counters
     for (const entry of report.entries) {
-      if (!isSelected(entry) || entry.kind !== "documentation" || entry.duplicateOf) continue;
+      if (
+        !isSelected(entry) ||
+        entry.kind !== "documentation" ||
+        entry.duplicateOf
+      )
+        continue;
       const destination = entry.importedTarget ?? entry.target;
-      if (!destination?.startsWith("docs/") || !/\.(md|mdx)$/i.test(destination)) continue;
+      if (
+        !destination?.startsWith("docs/") ||
+        !/\.(md|mdx)$/i.test(destination)
+      )
+        continue;
       const slash = entry.source.indexOf("/");
       const sourceBase = sourceRoots.get(entry.source.slice(0, slash));
       if (!sourceBase) continue;
@@ -895,7 +1127,8 @@ export async function runConsolidation(args: string[]): Promise<number> {
       const target = resolve(aphrodyRoot, destination);
       if (!existsSync(source) || !existsSync(target)) continue;
       const original = await readFile(source, "utf8");
-      if (createHash("sha256").update(original).digest("hex") !== entry.sha256) continue;
+      if (createHash("sha256").update(original).digest("hex") !== entry.sha256)
+        continue;
       const linkReplacements = new Map<string, string>();
       const rewritten = original.replace(
         /(!?\[[^\]]*\]\()([^\s)]+)(\s+[^)]*\)|\))/g,
@@ -912,7 +1145,9 @@ export async function runConsolidation(args: string[]): Promise<number> {
           } catch {
             return whole;
           }
-          const sourceTarget = importedBySource.get(resolve(dirname(source), decoded));
+          const sourceTarget = importedBySource.get(
+            resolve(dirname(source), decoded),
+          );
           if (!sourceTarget) {
             if (localPart) unresolvedLinks.push(`${entry.source}: ${url}`);
             return whole;
@@ -921,7 +1156,8 @@ export async function runConsolidation(args: string[]): Promise<number> {
             dirname(target),
             resolve(aphrodyRoot, sourceTarget),
           ).replaceAll("\\", "/");
-          if (!relativeTarget.startsWith(".")) relativeTarget = `./${relativeTarget}`;
+          if (!relativeTarget.startsWith("."))
+            relativeTarget = `./${relativeTarget}`;
           rewrittenLinks++;
           const replacement = wrapped
             ? `<${relativeTarget}${suffix}>`
@@ -932,8 +1168,13 @@ export async function runConsolidation(args: string[]): Promise<number> {
       );
       if (rewritten !== original) {
         const currentTarget = await readFile(target, "utf8");
-        const currentTargetHash = createHash("sha256").update(currentTarget).digest("hex");
-        if (currentTargetHash === entry.sha256 || currentTargetHash === entry.importedSha256) {
+        const currentTargetHash = createHash("sha256")
+          .update(currentTarget)
+          .digest("hex");
+        if (
+          currentTargetHash === entry.sha256 ||
+          currentTargetHash === entry.importedSha256
+        ) {
           const updatedTarget = currentTarget.replace(
             /(!?\[[^\]]*\]\()([^\s)]+)(\s+[^)]*\)|\))/g,
             (whole, before: string, rawUrl: string, after: string) => {
@@ -943,11 +1184,15 @@ export async function runConsolidation(args: string[]): Promise<number> {
           );
           if (updatedTarget !== currentTarget) {
             await writeFile(target, updatedTarget);
-            entry.importedSha256 = createHash("sha256").update(updatedTarget).digest("hex");
+            entry.importedSha256 = createHash("sha256")
+              .update(updatedTarget)
+              .digest("hex");
           }
         } else if (rewriteSources.has(entry.source)) {
           conflicts++;
-          failures.push(`link rewrite preserved target edited outside importer: ${destination}`);
+          failures.push(
+            `link rewrite preserved target edited outside importer: ${destination}`,
+          );
         }
       }
       entry.importedSourceSha256 = entry.sha256;
@@ -955,7 +1200,10 @@ export async function runConsolidation(args: string[]): Promise<number> {
     // oxlint-enable no-await-in-loop
     const indexFailure = await writeDocumentationIndex(
       aphrodyRoot,
-      renderDocumentationIndex([...docsByCategory.values()].flat(), aphrodyRoot),
+      renderDocumentationIndex(
+        [...docsByCategory.values()].flat(),
+        aphrodyRoot,
+      ),
     );
     if (indexFailure) failures.push(indexFailure);
     const preservedTargetConflicts = report.entries.filter(
@@ -987,11 +1235,20 @@ export async function runConsolidation(args: string[]): Promise<number> {
       linkRewriting:
         "relative Markdown links to imported documents and verified local files rewritten; anchors preserved; unresolved attachments and reference-style links are not rewritten",
     };
-    const importReport = join(aphrodyRoot, "docs/migration/document-import.json");
+    const importReport = join(
+      aphrodyRoot,
+      "docs/migration/document-import.json",
+    );
     await writeFile(output, `${JSON.stringify(report)}\n`, { flag: "w" });
-    await writeFile(importReport, `${JSON.stringify(result, null, 2)}\n`, { flag: "w" });
+    await writeFile(importReport, `${JSON.stringify(result, null, 2)}\n`, {
+      flag: "w",
+    });
     console.log(
-      JSON.stringify({ ...result, report: relative(aphrodyRoot, importReport) }, null, 2),
+      JSON.stringify(
+        { ...result, report: relative(aphrodyRoot, importReport) },
+        null,
+        2,
+      ),
     );
     return failures.length > 0 ? 1 : 0;
   }
@@ -1034,12 +1291,14 @@ export async function runConsolidation(args: string[]): Promise<number> {
     ...(upstreamManifest.sources ?? []).flatMap((source) => {
       if (source.kind !== "git") return [];
       const sourcePath = join(upstreamRoot, source.id);
-      const rootLicense = ["LICENSE", "LICENSE.md", "COPYING", "NOTICE"].some((file) =>
-        existsSync(join(sourcePath, file)),
+      const rootLicense = ["LICENSE", "LICENSE.md", "COPYING", "NOTICE"].some(
+        (file) => existsSync(join(sourcePath, file)),
       );
       const license =
         source.license ??
-        (rootLicense ? "See root license file; SPDX expression not normalized" : "unverified");
+        (rootLicense
+          ? "See root license file; SPDX expression not normalized"
+          : "unverified");
       return [
         {
           key: `upstream-${source.id}`,
@@ -1051,7 +1310,9 @@ export async function runConsolidation(args: string[]): Promise<number> {
               : ("upstream-pinned" as const),
           rootDocsOnly: true,
           markdownDocsAnywhere: true,
-          ...(source.id === "litellm" ? { excludedPrefixes: ["enterprise/"] } : {}),
+          ...(source.id === "litellm"
+            ? { excludedPrefixes: ["enterprise/"] }
+            : {}),
           license,
           sourcePath: relative(aphrodyRoot, sourcePath).replaceAll("\\", "/"),
         },
@@ -1063,15 +1324,22 @@ export async function runConsolidation(args: string[]): Promise<number> {
       ? spec.key.startsWith("upstream-")
       : !ownerFilter || spec.key === ownerFilter || spec.owner === ownerFilter,
   );
-  if (ownerFilter && !specs.length) throw new Error(`unknown consolidation owner: ${ownerFilter}`);
+  if (ownerFilter && !specs.length)
+    throw new Error(`unknown consolidation owner: ${ownerFilter}`);
   if (action === "submodules-inventory") {
     const result = inventorySubmodules(specs);
     const nested = await inventoryNestedFiles(result.submodules, specs);
-    const reportPath = join(aphrodyRoot, "docs/migration/submodule-inventory.json");
+    const reportPath = join(
+      aphrodyRoot,
+      "docs/migration/submodule-inventory.json",
+    );
     await writeFile(reportPath, `${JSON.stringify(result, null, 2)}\n`);
     await writeFile(nestedOutput, `${JSON.stringify(nested)}\n`);
     if (existsSync(output)) {
-      const sourceMap = JSON.parse(await readFile(output, "utf8")) as Record<string, unknown>;
+      const sourceMap = JSON.parse(await readFile(output, "utf8")) as Record<
+        string,
+        unknown
+      >;
       sourceMap.submoduleInventory = relative(aphrodyRoot, reportPath);
       sourceMap.submoduleInventoryObservedAt = result.observedAt;
       sourceMap.submodules = result.submodules;
@@ -1112,17 +1380,25 @@ export async function runConsolidation(args: string[]): Promise<number> {
   let previousRoots: Array<Record<string, unknown>> = [];
   if (existsSync(output)) {
     try {
-      previousReport = JSON.parse(await readFile(output, "utf8")) as Record<string, unknown>;
+      previousReport = JSON.parse(await readFile(output, "utf8")) as Record<
+        string,
+        unknown
+      >;
       previousEntries = (previousReport.entries as Entry[] | undefined) ?? [];
-      previousRoots = (previousReport.roots as Array<Record<string, unknown>> | undefined) ?? [];
-      const priorBySource = new Map(previousEntries.map((entry) => [entry.source, entry]));
+      previousRoots =
+        (previousReport.roots as Array<Record<string, unknown>> | undefined) ??
+        [];
+      const priorBySource = new Map(
+        previousEntries.map((entry) => [entry.source, entry]),
+      );
       for (const entry of entries) {
         const prior = priorBySource.get(entry.source);
         if (!prior || prior.target !== entry.target || !entry.target) continue;
         if (prior.importedTarget) entry.importedTarget = prior.importedTarget;
         if (prior.importedSha256) entry.importedSha256 = prior.importedSha256;
         if (prior.importedSourceSha256 || prior.sha256)
-          entry.importedSourceSha256 = prior.importedSourceSha256 ?? prior.sha256;
+          entry.importedSourceSha256 =
+            prior.importedSourceSha256 ?? prior.sha256;
       }
     } catch (error) {
       console.error(`could not preserve prior import state: ${String(error)}`);
@@ -1130,7 +1406,9 @@ export async function runConsolidation(args: string[]): Promise<number> {
   }
   const seen = new Map<string, string>();
   const seenScripts = new Map<string, { target: string; python: boolean }>();
-  const replacedRootKeys = new Set(snapshots.map((snapshot) => snapshot.root.key));
+  const replacedRootKeys = new Set(
+    snapshots.map((snapshot) => snapshot.root.key),
+  );
   if (upstreamsOnly) {
     for (const entry of previousEntries) {
       if (
@@ -1153,7 +1431,8 @@ export async function runConsolidation(args: string[]): Promise<number> {
       } else seen.set(entry.sha256, entry.target);
     } else if (
       entry.kind === "script" &&
-      (entry.target.startsWith("scripts/") || entry.target.startsWith("../aphrody-py"))
+      (entry.target.startsWith("scripts/") ||
+        entry.target.startsWith("../aphrody-py"))
     ) {
       const python = entry.target.startsWith("../aphrody-py");
       const first = seenScripts.get(entry.sha256);
@@ -1163,14 +1442,20 @@ export async function runConsolidation(args: string[]): Promise<number> {
       } else seenScripts.set(entry.sha256, { target: entry.target, python });
     }
   }
-  const submoduleInventory = upstreamsOnly ? undefined : inventorySubmodules(specs);
+  const submoduleInventory = upstreamsOnly
+    ? undefined
+    : inventorySubmodules(specs);
   const nestedSourceMap = upstreamsOnly
     ? undefined
     : await inventoryNestedFiles(submoduleInventory!.submodules, specs);
-  if (nestedSourceMap) await writeFile(nestedOutput, `${JSON.stringify(nestedSourceMap)}\n`);
+  if (nestedSourceMap)
+    await writeFile(nestedOutput, `${JSON.stringify(nestedSourceMap)}\n`);
   const retainedEntries = upstreamsOnly
     ? previousEntries.filter(
-        (entry) => ![...replacedRootKeys].some((key) => entry.source.startsWith(`${key}/`)),
+        (entry) =>
+          ![...replacedRootKeys].some((key) =>
+            entry.source.startsWith(`${key}/`),
+          ),
       )
     : [];
   const allEntries = upstreamsOnly ? [...retainedEntries, ...entries] : entries;
@@ -1180,9 +1465,13 @@ export async function runConsolidation(args: string[]): Promise<number> {
   const roots = upstreamsOnly
     ? [
         ...retainedRoots,
-        ...snapshots.map((snapshot) => snapshot.root as unknown as Record<string, unknown>),
+        ...snapshots.map(
+          (snapshot) => snapshot.root as unknown as Record<string, unknown>,
+        ),
       ]
-    : snapshots.map((snapshot) => snapshot.root as unknown as Record<string, unknown>);
+    : snapshots.map(
+        (snapshot) => snapshot.root as unknown as Record<string, unknown>,
+      );
   const report = {
     ...previousReport,
     schemaVersion: 1,
@@ -1200,7 +1489,10 @@ export async function runConsolidation(args: string[]): Promise<number> {
       byKind: Object.fromEntries(
         [...new Set(allEntries.map((entry) => entry.kind))]
           .toSorted()
-          .map((kind) => [kind, allEntries.filter((entry) => entry.kind === kind).length]),
+          .map((kind) => [
+            kind,
+            allEntries.filter((entry) => entry.kind === kind).length,
+          ]),
       ),
     },
     ...(submoduleInventory
@@ -1223,7 +1515,9 @@ export async function runConsolidation(args: string[]): Promise<number> {
   await mkdir(dirname(pythonOutput), { recursive: true });
   await writeFile(output, `${JSON.stringify(report)}\n`, { flag: "w" });
   const pythonEntries = entries.filter(
-    (entry) => entry.kind === "python-manifest" || /\.py(i)?$|\.ipynb$/i.test(entry.source),
+    (entry) =>
+      entry.kind === "python-manifest" ||
+      /\.py(i)?$|\.ipynb$/i.test(entry.source),
   );
   const pythonReport = {
     ...report,
@@ -1231,7 +1525,9 @@ export async function runConsolidation(args: string[]): Promise<number> {
     totals: { roots: snapshots.length, paths: pythonEntries.length },
   };
   if (!upstreamsOnly)
-    await writeFile(pythonOutput, `${JSON.stringify(pythonReport)}\n`, { flag: "w" });
+    await writeFile(pythonOutput, `${JSON.stringify(pythonReport)}\n`, {
+      flag: "w",
+    });
   console.log(
     JSON.stringify(
       {
@@ -1253,4 +1549,5 @@ export async function runConsolidation(args: string[]): Promise<number> {
   return 0;
 }
 
-if (import.meta.main) process.exit(await runConsolidation(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runConsolidation(process.argv.slice(2)));

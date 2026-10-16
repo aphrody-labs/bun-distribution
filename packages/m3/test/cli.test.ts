@@ -23,14 +23,24 @@ describe("parseArgs", () => {
       positionals: [],
     });
     expect(
-      parseArgs(["tokens", "--seed=#ff0000", "--dark", "--sheet", "scheme", "-o", "out.css"]).flags,
+      parseArgs([
+        "tokens",
+        "--seed=#ff0000",
+        "--dark",
+        "--sheet",
+        "scheme",
+        "-o",
+        "out.css",
+      ]).flags,
     ).toEqual({
       seed: "#ff0000",
       dark: true,
       sheet: "scheme",
       out: "out.css",
     });
-    expect(parseArgs(["tokens", "--bundle", "dir", "--contrast", "-0.5"]).flags).toEqual({
+    expect(
+      parseArgs(["tokens", "--bundle", "dir", "--contrast", "-0.5"]).flags,
+    ).toEqual({
       bundle: "dir",
       contrast: "-0.5",
     });
@@ -38,15 +48,23 @@ describe("parseArgs", () => {
 
   test("--tauri takes an optional directory", () => {
     expect(parseArgs(["build", "--tauri"]).flags).toEqual({ tauri: true });
-    expect(parseArgs(["build", "--tauri", "--dev"]).flags).toEqual({ tauri: true, dev: true });
-    expect(parseArgs(["build", "--tauri", "../ui-dist"]).flags).toEqual({ tauri: "../ui-dist" });
+    expect(parseArgs(["build", "--tauri", "--dev"]).flags).toEqual({
+      tauri: true,
+      dev: true,
+    });
+    expect(parseArgs(["build", "--tauri", "../ui-dist"]).flags).toEqual({
+      tauri: "../ui-dist",
+    });
   });
 
   test("help, version, errors and positionals", () => {
     expect(parseArgs([]).command).toBe("help");
     expect(parseArgs(["build", "-h"]).command).toBe("help");
     expect(parseArgs(["--version"]).command).toBe("version");
-    expect(parseArgs(["check", "extra", "--", "--raw"]).positionals).toEqual(["extra", "--raw"]);
+    expect(parseArgs(["check", "extra", "--", "--raw"]).positionals).toEqual([
+      "extra",
+      "--raw",
+    ]);
     expect(() => parseArgs(["deploy"])).toThrow("unknown command deploy");
     expect(() => parseArgs(["dev", "--port"])).toThrow("--port needs a value");
   });
@@ -72,7 +90,9 @@ describe("parseArgs", () => {
   test("--sheet validation", () => {
     expect(sheetFlag({})).toBe("tokens");
     expect(sheetFlag({ sheet: "spaceui" })).toBe("spaceui");
-    expect(() => sheetFlag({ sheet: "nope" })).toThrow("--sheet must be one of");
+    expect(() => sheetFlag({ sheet: "nope" })).toThrow(
+      "--sheet must be one of",
+    );
   });
 });
 
@@ -82,7 +102,10 @@ describe("runCli", () => {
     const uiDist = join(tmp.dir, "ui");
     // m3.plain.config.ts: the fixture without m3:theme.css (the CLI takes no generator injection).
     expect(
-      await runCli(["build", "--tauri", uiDist, "--config", "m3.plain.config.ts"], FIXTURE),
+      await runCli(
+        ["build", "--tauri", uiDist, "--config", "m3.plain.config.ts"],
+        FIXTURE,
+      ),
     ).toBe(0);
     expect((await readdir(uiDist)).toSorted()).toEqual([
       "app.css",
@@ -91,13 +114,20 @@ describe("runCli", () => {
       "index.html",
     ]);
     // plain.html became index.html.
-    expect(await Bun.file(join(uiDist, "index.html")).text()).toContain('src="./app.js"');
+    expect(await Bun.file(join(uiDist, "index.html")).text()).toContain(
+      'src="./app.js"',
+    );
   });
 
   test("m3 build --tauri without a directory needs tauri.uiDist", async () => {
     await using tmp = await tempDir();
-    await Bun.write(join(tmp.dir, "m3.config.ts"), 'export default { entry: "index.html" };\n');
-    await expect(runCli(["build", "--tauri"], tmp.dir)).rejects.toThrow("tauri.uiDist");
+    await Bun.write(
+      join(tmp.dir, "m3.config.ts"),
+      'export default { entry: "index.html" };\n',
+    );
+    await expect(runCli(["build", "--tauri"], tmp.dir)).rejects.toThrow(
+      "tauri.uiDist",
+    );
   });
 
   test("help and version", async () => {
@@ -114,7 +144,10 @@ describe("runCli", () => {
       join(tmp.dir, "package.json"),
       JSON.stringify({ scripts: { "bun:check": "true" } }),
     );
-    await Bun.write(join(tmp.dir, "apps/app/package.json"), JSON.stringify({ name: "app" }));
+    await Bun.write(
+      join(tmp.dir, "apps/app/package.json"),
+      JSON.stringify({ name: "app" }),
+    );
     expect(findWorkspaceRoot(join(tmp.dir, "apps/app"))).toBe(tmp.dir);
     expect(
       findWorkspaceRoot(FIXTURE) === undefined ||
@@ -150,10 +183,18 @@ describe("runCli", () => {
         scripts: { dev: "m3 dev", build: "m3 build" },
         dependencies: { "@aphrody/m3": "workspace:*" },
       });
-      expect(await Bun.file(join(project, "bunfig.toml")).text()).toContain('"@aphrody/m3/plugin"');
-      expect(await Bun.file(join(project, "m3.config.ts")).text()).toContain('entry: "index.html"');
-      expect(await Bun.file(join(project, "index.html")).text()).toContain("./src/main.ts");
-      expect(await Bun.file(join(project, "src/main.ts")).text()).toContain("m3:theme.css");
+      expect(await Bun.file(join(project, "bunfig.toml")).text()).toContain(
+        '"@aphrody/m3/plugin"',
+      );
+      expect(await Bun.file(join(project, "m3.config.ts")).text()).toContain(
+        'entry: "index.html"',
+      );
+      expect(await Bun.file(join(project, "index.html")).text()).toContain(
+        "./src/main.ts",
+      );
+      expect(await Bun.file(join(project, "src/main.ts")).text()).toContain(
+        "m3:theme.css",
+      );
       // Build the generated app; native FFI parity is separately covered by native.test.ts.
       const built = await buildM3({
         entry: join(project, "index.html"),
@@ -161,10 +202,18 @@ describe("runCli", () => {
         cwd: project,
         plugin: { css: fakeCss().css, root: REPO_ROOT },
       });
-      expect(built.outputs.some((output) => output.path === "index.html")).toBe(true);
-      await expect(runCli(["new", relativeProject], REPO_ROOT)).rejects.toThrow();
-      expect((await Bun.file(join(project, "package.json")).json()).name).toBe(name);
-      await expect(runCli(["new"], REPO_ROOT)).rejects.toThrow("expected one project directory");
+      expect(built.outputs.some((output) => output.path === "index.html")).toBe(
+        true,
+      );
+      await expect(
+        runCli(["new", relativeProject], REPO_ROOT),
+      ).rejects.toThrow();
+      expect((await Bun.file(join(project, "package.json")).json()).name).toBe(
+        name,
+      );
+      await expect(runCli(["new"], REPO_ROOT)).rejects.toThrow(
+        "expected one project directory",
+      );
     } finally {
       await rm(project, { recursive: true, force: true });
     }
@@ -174,12 +223,17 @@ describe("runCli", () => {
     await using tmp = await tempDir();
     const outfile = join(tmp.dir, "test-bin");
     expect(
-      await runCli(["compile", "--outfile", outfile, "--config", "m3.plain.config.ts"], FIXTURE),
+      await runCli(
+        ["compile", "--outfile", outfile, "--config", "m3.plain.config.ts"],
+        FIXTURE,
+      ),
     ).toBe(0);
     expect(existsSync(outfile)).toBe(true);
 
     // An executable of this platform (ELF, PE or Mach-O), carrying the Bun runtime: the old output was ~130 KB of HTML.
-    const magic = [...new Uint8Array(await Bun.file(outfile).slice(0, 4).arrayBuffer())];
+    const magic = [
+      ...new Uint8Array(await Bun.file(outfile).slice(0, 4).arrayBuffer()),
+    ];
     const native =
       process.platform === "win32"
         ? [0x4d, 0x5a]
@@ -188,7 +242,8 @@ describe("runCli", () => {
           : [0x7f, 0x45, 0x4c, 0x46];
     expect(magic.slice(0, native.length)).toEqual(native);
     expect(statSync(outfile).size).toBeGreaterThan(10_000_000);
-    if (process.platform !== "win32") expect(statSync(outfile).mode & 0o111).not.toBe(0);
+    if (process.platform !== "win32")
+      expect(statSync(outfile).mode & 0o111).not.toBe(0);
 
     const probe = Bun.serve({ port: 0, fetch: () => new Response("") });
     const port = probe.port;
@@ -210,7 +265,9 @@ describe("runCli", () => {
       expect(page?.status).toBe(200);
       expect(page?.headers.get("content-type")).toStartWith("text/html");
       expect(await page!.text()).toContain("<title>m3 fixture</title>");
-      expect((await fetch(`http://127.0.0.1:${port}/healthz`)).status).toBe(200);
+      expect((await fetch(`http://127.0.0.1:${port}/healthz`)).status).toBe(
+        200,
+      );
     } finally {
       server.kill();
       await server.exited;
@@ -219,7 +276,10 @@ describe("runCli", () => {
 
   test("m3 desktop requires tauri config and builds webview", async () => {
     await using tmp = await tempDir();
-    await Bun.write(join(tmp.dir, "m3.config.ts"), 'export default { entry: "index.html" };\n');
+    await Bun.write(
+      join(tmp.dir, "m3.config.ts"),
+      'export default { entry: "index.html" };\n',
+    );
     await expect(runCli(["desktop"], tmp.dir)).rejects.toThrow("tauri.uiDist");
 
     const uiDist = join(tmp.dir, "desktop-ui");
@@ -236,9 +296,14 @@ describe("token bundle", () => {
   test("writes every sheet, both schemes, the fonts and a manifest", async () => {
     await using tmp = await tempDir();
     const { css, calls } = fakeCss();
-    const files = await writeTokenBundle(tmp.dir, { css, seed: "#00ff00", root: REPO_ROOT });
+    const files = await writeTokenBundle(tmp.dir, {
+      css,
+      seed: "#00ff00",
+      root: REPO_ROOT,
+    });
     expect(files).toEqual([...BUNDLE_FILES]);
-    for (const file of files) expect(existsSync(join(tmp.dir, file))).toBe(true);
+    for (const file of files)
+      expect(existsSync(join(tmp.dir, file))).toBe(true);
     expect(calls).toEqual([
       { sheet: "tokens", seed: "#00ff00" },
       { sheet: "tailwind", seed: "#00ff00" },

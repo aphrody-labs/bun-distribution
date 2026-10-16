@@ -50,7 +50,11 @@ class FilmcraftOutput extends AudioWorkletProcessor {
       right[i] = 0;
     }
     if (++this.quanta % 4 === 0) {
-      this.port.postMessage({ gen: this.gen, played: this.played, time: currentTime });
+      this.port.postMessage({
+        gen: this.gen,
+        played: this.played,
+        time: currentTime,
+      });
     }
     return true;
   }

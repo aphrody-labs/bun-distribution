@@ -53,7 +53,7 @@ export const QualityPicker = ({
         onSelect={handleSelectAdapter}
         mode="toggle"
         panelTitle="Quality"
-        triggerIcon={<GemIcon  className="h-3.5 w-3.5" />}
+        triggerIcon={<GemIcon className="h-3.5 w-3.5" />}
       />
     </Tooltip>
   );

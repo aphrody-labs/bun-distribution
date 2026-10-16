@@ -5,7 +5,7 @@ export type TauriPlatform = "windows" | "macos" | "linux";
 
 export function useTauriPlatform(): TauriPlatform | undefined {
   const [platform, setPlatform] = useState<TauriPlatform | undefined>(
-    undefined
+    undefined,
   );
 
   useEffect(() => {

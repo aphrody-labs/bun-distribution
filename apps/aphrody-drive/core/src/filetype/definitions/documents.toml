@@ -90,7 +90,9 @@ priority = 90
 id = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 name = "Word Document (OOXML)"
 extensions = ["docx"]
-mime_types = ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+mime_types = [
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]
 uti = "org.openxmlformats.wordprocessingml.document"
 category = "document"
 priority = 100
@@ -104,7 +106,9 @@ priority = 90
 id = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 name = "Excel Spreadsheet (OOXML)"
 extensions = ["xlsx"]
-mime_types = ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]
+mime_types = [
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]
 uti = "org.openxmlformats.spreadsheetml.sheet"
 category = "document"
 priority = 100
@@ -118,7 +122,9 @@ priority = 90
 id = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 name = "PowerPoint Presentation (OOXML)"
 extensions = ["pptx"]
-mime_types = ["application/vnd.openxmlformats-officedocument.presentationml.presentation"]
+mime_types = [
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+]
 uti = "org.openxmlformats.presentationml.presentation"
 category = "document"
 priority = 100
@@ -219,7 +225,7 @@ category = "document"
 priority = 100
 
 [[file_types.magic_bytes]]
-pattern = "53 44 4D 45 4D 01"  # "SDMEM\x01"
+pattern = "53 44 4D 45 4D 01" # "SDMEM\x01"
 offset = 0
 priority = 100
 

@@ -1,4 +1,20 @@
-import { Grid3x3Icon, GripVerticalIcon, GroupIcon, ImagesIcon, MagnetIcon, MousePointerIcon, PenToolIcon, PlusIcon, RotateCcwIcon, RotateCwIcon, TrashIcon, TypeIcon, UngroupIcon, UploadIcon, WorkflowIcon } from "lucide-react";
+import {
+  Grid3x3Icon,
+  GripVerticalIcon,
+  GroupIcon,
+  ImagesIcon,
+  MagnetIcon,
+  MousePointerIcon,
+  PenToolIcon,
+  PlusIcon,
+  RotateCcwIcon,
+  RotateCwIcon,
+  TrashIcon,
+  TypeIcon,
+  UngroupIcon,
+  UploadIcon,
+  WorkflowIcon,
+} from "lucide-react";
 import { ButtonIconSelect } from "@storyteller/ui-button-icon-select";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -98,24 +114,20 @@ export const MoodboardToolbar = ({ onUploadClick, onGalleryClick }: Props) => {
             {
               label: "Upload Image",
               selected: false,
-              icon: (
-                <UploadIcon
-                  
-                  className="h-4 w-4" />
-              ),
+              icon: <UploadIcon className="h-4 w-4" />,
               action: "upload",
             },
             {
               label: "Pick from Library",
               selected: false,
-              icon: <ImagesIcon  className="h-4 w-4" />,
+              icon: <ImagesIcon className="h-4 w-4" />,
               action: "library",
             },
           ]}
           onPanelAction={handleAddAction}
           showIconsInList
           buttonClassName="h-9 w-9 rounded-[10px] border-transparent bg-primary/90 text-lg text-white hover:bg-primary/70"
-          triggerIcon={<PlusIcon  className="text-xl" />}
+          triggerIcon={<PlusIcon className="text-xl" />}
         />
       </Tooltip>
 

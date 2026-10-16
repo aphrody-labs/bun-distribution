@@ -23,5 +23,5 @@ plugin.install {"path": "examples/plugins/invert-rs/target/wasm32-unknown-unknow
 plugin.run {"id": "org.photocraft.example.invert"}
 ```
 
-Or copy the `.wasm` into the folder set in Edit › Preferences › Plug-ins (with *Use Additional
-Plug-ins Folder* on); it then appears under Filter › Plug-ins.
+Or copy the `.wasm` into the folder set in Edit › Preferences › Plug-ins (with _Use Additional
+Plug-ins Folder_ on); it then appears under Filter › Plug-ins.

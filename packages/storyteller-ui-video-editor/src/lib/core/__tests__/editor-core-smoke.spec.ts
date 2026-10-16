@@ -189,7 +189,9 @@ describe("EditorCore smoke", () => {
         selectedElements: [{ trackId: "t1", elementId: "e1" }],
       },
     });
-    expect(editor.selection.getSelectedElements()).toEqual([{ trackId: "t1", elementId: "e1" }]);
+    expect(editor.selection.getSelectedElements()).toEqual([
+      { trackId: "t1", elementId: "e1" },
+    ]);
 
     editor.selection.restoreSnapshot({ snapshot });
     expect(editor.selection.getSelectedElements()).toEqual([]);

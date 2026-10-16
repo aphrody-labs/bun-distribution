@@ -75,9 +75,8 @@ export const getFaqItems = (): FaqItem[] => {
 
 export const getFaqItemBySlug = (slug: string): FaqItem | null => {
   const items = getFaqItems();
-  return items.find(i => i.slug === slug) || null;
+  return items.find((i) => i.slug === slug) || null;
 };
-
 
 // TUTORIALS
 const tutorialFiles = import.meta.glob("../content/tutorials/*.md", {
@@ -111,7 +110,12 @@ export const getTutorialItems = (): TutorialItem[] => {
       thumbnail: frontmatter.thumbnail,
       videoUrl: frontmatter.videoUrl,
       youtubeId: frontmatter.youtubeId,
-      aliases: frontmatter.aliases ? frontmatter.aliases.split(/[\s,]+/).map(s => s.trim().toLowerCase()).filter(Boolean) : [],
+      aliases: frontmatter.aliases
+        ? frontmatter.aliases
+            .split(/[\s,]+/)
+            .map((s) => s.trim().toLowerCase())
+            .filter(Boolean)
+        : [],
       body,
       isPublished: frontmatter.isPublished !== "false",
     };
@@ -119,7 +123,9 @@ export const getTutorialItems = (): TutorialItem[] => {
 };
 
 export const getTutorialItemBySlug = (slug: string): TutorialItem | null => {
-    const items = getTutorialItems();
-    const wanted = slug.toLowerCase();
-    return items.find(t => t.slug === wanted || t.aliases?.includes(wanted)) || null;
+  const items = getTutorialItems();
+  const wanted = slug.toLowerCase();
+  return (
+    items.find((t) => t.slug === wanted || t.aliases?.includes(wanted)) || null
+  );
 };

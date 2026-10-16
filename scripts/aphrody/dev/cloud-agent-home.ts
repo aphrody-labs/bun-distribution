@@ -2,7 +2,14 @@
 // Automated agent-home initialization for cloud sessions and containers.
 // Follows docs/operations/cloud/AGENT-HOME-SETUP.md: secret-free, idempotent, non-interactive.
 
-import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { join, resolve } from "node:path";
 
 export interface AgentHomeInitOptions {
@@ -36,7 +43,9 @@ const FORBIDDEN_SECRETS = [
   ".env",
 ];
 
-export function initCloudAgentHome(options: AgentHomeInitOptions = {}): AgentHomeReport {
+export function initCloudAgentHome(
+  options: AgentHomeInitOptions = {},
+): AgentHomeReport {
   const root = resolve(import.meta.dir, "../../../docs/aphrody");
   const homeDir =
     options.homeDir ??
@@ -73,7 +82,9 @@ export function initCloudAgentHome(options: AgentHomeInitOptions = {}): AgentHom
 
   // Seed persona and configuration templates
   if (existsSync(templatesDir)) {
-    const templateFiles = readdirSync(templatesDir).filter((f) => f.endsWith(".md"));
+    const templateFiles = readdirSync(templatesDir).filter((f) =>
+      f.endsWith(".md"),
+    );
     for (const file of templateFiles) {
       const targetPath = join(workspaceDir, file);
       if (existsSync(targetPath)) {
@@ -118,7 +129,11 @@ export function initCloudAgentHome(options: AgentHomeInitOptions = {}): AgentHom
       const entries = readdirSync(dir);
       for (const entry of entries) {
         const lower = entry.toLowerCase();
-        if (FORBIDDEN_SECRETS.includes(lower) || lower.endsWith(".pem") || lower.endsWith(".key")) {
+        if (
+          FORBIDDEN_SECRETS.includes(lower) ||
+          lower.endsWith(".pem") ||
+          lower.endsWith(".key")
+        ) {
           violations.push(join(dir, entry));
         }
         const full = join(dir, entry);
@@ -152,7 +167,10 @@ if (import.meta.main) {
   const verifyOnly = args.includes("--verify");
   const json = args.includes("--json");
   const homeIdx = args.indexOf("--home");
-  const homeDir = homeIdx !== -1 && args[homeIdx + 1] ? resolve(args[homeIdx + 1]!) : undefined;
+  const homeDir =
+    homeIdx !== -1 && args[homeIdx + 1]
+      ? resolve(args[homeIdx + 1]!)
+      : undefined;
 
   const report = initCloudAgentHome({ apply, verifyOnly, homeDir });
 
@@ -161,17 +179,27 @@ if (import.meta.main) {
   } else {
     console.log(`[cloud-agent-home] Home root: ${report.homeDir}`);
     console.log(`[cloud-agent-home] Workspace: ${report.workspaceDir}`);
-    console.log(`[cloud-agent-home] Directories created: ${report.directoriesCreated.length}`);
-    console.log(`[cloud-agent-home] Files seeded: ${report.seededFiles.length} (${report.seededFiles.join(", ") || "none"})`);
-    console.log(`[cloud-agent-home] Existing files: ${report.existingFiles.length}`);
-    console.log(`[cloud-agent-home] Security audit: ${report.securityAudit.clean ? "CLEAN (no credentials, cookies, or private keys)" : "VIOLATIONS FOUND"}`);
+    console.log(
+      `[cloud-agent-home] Directories created: ${report.directoriesCreated.length}`,
+    );
+    console.log(
+      `[cloud-agent-home] Files seeded: ${report.seededFiles.length} (${report.seededFiles.join(", ") || "none"})`,
+    );
+    console.log(
+      `[cloud-agent-home] Existing files: ${report.existingFiles.length}`,
+    );
+    console.log(
+      `[cloud-agent-home] Security audit: ${report.securityAudit.clean ? "CLEAN (no credentials, cookies, or private keys)" : "VIOLATIONS FOUND"}`,
+    );
     if (!report.securityAudit.clean) {
       for (const v of report.securityAudit.violations) {
         console.error(`  FAIL: forbidden secret found at ${v}`);
       }
     }
     if (!apply && !verifyOnly) {
-      console.log("\nNote: Dry-run mode. Pass --apply to create directories and seed files.");
+      console.log(
+        "\nNote: Dry-run mode. Pass --apply to create directories and seed files.",
+      );
     }
   }
 

@@ -43,11 +43,18 @@ import {
 } from "../src/openaiChatStream";
 import { type UseOpenAIChatResult, useOpenAIChat } from "../src/useOpenAIChat";
 
-const dictionaries = { fr: chatLabelsFr, en: chatLabelsEn, ja: chatLabelsJa } as const;
+const dictionaries = {
+  fr: chatLabelsFr,
+  en: chatLabelsEn,
+  ja: chatLabelsJa,
+} as const;
 const noop = () => {};
 const render = (element: ReactElement) => renderToStaticMarkup(element);
 const escaped = (text: string) =>
-  text.replaceAll("&", "&amp;").replaceAll("'", "&#x27;").replaceAll('"', "&quot;");
+  text
+    .replaceAll("&", "&amp;")
+    .replaceAll("'", "&#x27;")
+    .replaceAll('"', "&quot;");
 
 const chunk = (delta: Record<string, unknown>, finish: string | null = null) =>
   `data: ${JSON.stringify({ choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`;
@@ -67,7 +74,9 @@ function sseResponse(parts: string[], init: ResponseInit = {}): Response {
   });
 }
 
-async function collect(iterable: AsyncIterable<ChatStreamEvent>): Promise<ChatStreamEvent[]> {
+async function collect(
+  iterable: AsyncIterable<ChatStreamEvent>,
+): Promise<ChatStreamEvent[]> {
   const out: ChatStreamEvent[] = [];
   for await (const event of iterable) out.push(event);
   return out;
@@ -135,7 +144,13 @@ describe("SSE parser", () => {
               delta: {
                 reasoning_content: "hmm",
                 content: "Hi",
-                tool_calls: [{ index: 1, id: "c1", function: { name: "rag", arguments: '{"q"' } }],
+                tool_calls: [
+                  {
+                    index: 1,
+                    id: "c1",
+                    function: { name: "rag", arguments: '{"q"' },
+                  },
+                ],
               },
               finish_reason: "tool_calls",
             },
@@ -147,7 +162,13 @@ describe("SSE parser", () => {
     ).toEqual([
       { type: "reasoning", text: "hmm" },
       { type: "content", text: "Hi" },
-      { type: "tool_call_delta", index: 1, id: "c1", name: "rag", arguments: '{"q"' },
+      {
+        type: "tool_call_delta",
+        index: 1,
+        id: "c1",
+        name: "rag",
+        arguments: '{"q"',
+      },
       { type: "finish", reason: "tool_calls" },
       { type: "citations", citations },
       { type: "refusal" },
@@ -167,25 +188,41 @@ describe("SSE parser", () => {
   });
 
   test("tool-call deltas accumulate by index", () => {
-    let calls = accumulateToolCall([], { type: "tool_call_delta", index: 0, id: "x", name: "se" });
+    let calls = accumulateToolCall([], {
+      type: "tool_call_delta",
+      index: 0,
+      id: "x",
+      name: "se",
+    });
     calls = accumulateToolCall(calls, {
       type: "tool_call_delta",
       index: 0,
       name: "arch",
       arguments: '{"q":',
     });
-    calls = accumulateToolCall(calls, { type: "tool_call_delta", index: 0, arguments: '"Goku"}' });
+    calls = accumulateToolCall(calls, {
+      type: "tool_call_delta",
+      index: 0,
+      arguments: '"Goku"}',
+    });
     expect(calls).toEqual([
-      { id: "x", type: "function", function: { name: "search", arguments: '{"q":"Goku"}' } },
+      {
+        id: "x",
+        type: "function",
+        function: { name: "search", arguments: '{"q":"Goku"}' },
+      },
     ]);
   });
 });
 
 const status = (code: number) =>
-  (async () => new Response("model loading", { status: code })) as unknown as typeof fetch;
+  (async () =>
+    new Response("model loading", { status: code })) as unknown as typeof fetch;
 async function failure(f: typeof fetch): Promise<ChatStreamError> {
   try {
-    await collect(streamChatCompletion({ baseUrl: "http://x/v1", messages: [], fetch: f }));
+    await collect(
+      streamChatCompletion({ baseUrl: "http://x/v1", messages: [], fetch: f }),
+    );
   } catch (error) {
     return error as ChatStreamError;
   }
@@ -268,14 +305,24 @@ describe("streamChatCompletion", () => {
   });
 
   test("chatCompletionsUrl tolerates trailing slashes", () => {
-    expect(chatCompletionsUrl("http://h/v1//")).toBe("http://h/v1/chat/completions");
+    expect(chatCompletionsUrl("http://h/v1//")).toBe(
+      "http://h/v1/chat/completions",
+    );
   });
 });
 
 describe("chatReducer", () => {
-  const user: ChatMessage = { id: "u", role: "user", content: "Qui est Goku ?" };
+  const user: ChatMessage = {
+    id: "u",
+    role: "user",
+    content: "Qui est Goku ?",
+  };
   test("start, events and finish build the assistant turn", () => {
-    let state = chatReducer(initialChatState(), { type: "start", user, assistantId: "a" });
+    let state = chatReducer(initialChatState(), {
+      type: "start",
+      user,
+      assistantId: "a",
+    });
     expect(state.status).toBe("streaming");
     for (const event of [
       { type: "content", text: "Son Goku [1]" },
@@ -297,8 +344,15 @@ describe("chatReducer", () => {
   });
 
   test("an unavailable failure drops the empty turn and sets the status", () => {
-    let state = chatReducer(initialChatState(), { type: "start", user, assistantId: "a" });
-    state = chatReducer(state, { type: "fail", error: new ChatStreamError("network", "down") });
+    let state = chatReducer(initialChatState(), {
+      type: "start",
+      user,
+      assistantId: "a",
+    });
+    state = chatReducer(state, {
+      type: "fail",
+      error: new ChatStreamError("network", "down"),
+    });
     expect(state.status).toBe("unavailable");
     expect(state.messages).toEqual([user]);
     state = chatReducer(state, { type: "start", user, assistantId: "b" });
@@ -387,13 +441,19 @@ describe("citations", () => {
   for (const [lang, labels] of Object.entries(dictionaries)) {
     test(`CitedMarkdown, CitationList and RefusalNotice render in ${lang}`, () => {
       const cited = render(
-        <CitedMarkdown content="Goku [1]." citations={citations} labels={labels} />,
+        <CitedMarkdown
+          content="Goku [1]."
+          citations={citations}
+          labels={labels}
+        />,
       );
       expect(cited).toContain(
         `aria-label="${formatLabel(labels.citation, { n: 1 })}: ${citations[0]!.title}"`,
       );
       expect(cited).toContain('href="https://example.org/1"');
-      const list = render(<CitationList citations={citations} labels={labels} />);
+      const list = render(
+        <CitationList citations={citations} labels={labels} />,
+      );
       expect(list).toContain(labels.sources);
       expect(list).toContain('id="citation-2"');
       expect(list).toContain("bg-surface-container-low");
@@ -425,12 +485,19 @@ describe("citations", () => {
 
 describe("chat components", () => {
   const conversations = [
-    { id: "1", title: "Cell Game", updatedAt: "2026-10-01T10:00:00Z", preview: "Gohan" },
+    {
+      id: "1",
+      title: "Cell Game",
+      updatedAt: "2026-10-01T10:00:00Z",
+      preview: "Gohan",
+    },
     { id: "2", title: "", updatedAt: 1_759_000_000_000 },
   ];
 
   test("filterConversations matches title and preview", () => {
-    expect(filterConversations(conversations, "gohan").map((c) => c.id)).toEqual(["1"]);
+    expect(
+      filterConversations(conversations, "gohan").map((c) => c.id),
+    ).toEqual(["1"]);
     expect(filterConversations(conversations, " ")).toHaveLength(2);
   });
 
@@ -453,26 +520,40 @@ describe("chat components", () => {
       expect(html).toContain(labels.newConversation);
       expect(html).toContain(`placeholder="${labels.searchConversations}"`);
       expect(html).toContain(labels.untitledConversation);
-      expect(html).toContain(`aria-label="${labels.deleteConversation}: Cell Game"`);
+      expect(html).toContain(
+        `aria-label="${labels.deleteConversation}: Cell Game"`,
+      );
       expect(html).toContain('aria-current="page"');
       expect(html).toContain("bg-secondary-container");
-      const empty = render(<ConversationList conversations={[]} onSelect={noop} labels={labels} />);
+      const empty = render(
+        <ConversationList conversations={[]} onSelect={noop} labels={labels} />,
+      );
       expect(empty).toContain(escaped(labels.noConversations));
     });
 
     test(`ModelUnavailable renders in ${lang}`, () => {
       const down = render(
-        <ModelUnavailable reason="llama-server" onRetry={noop} labels={labels} />,
+        <ModelUnavailable
+          reason="llama-server"
+          onRetry={noop}
+          labels={labels}
+        />,
       );
       expect(down).toContain(labels.modelUnavailable);
       expect(down).toContain(labels.retry);
       expect(down).toContain("bg-error-container");
       const pulling = render(
-        <ModelUnavailable phase="downloading" progress={0.425} labels={labels} />,
+        <ModelUnavailable
+          phase="downloading"
+          progress={0.425}
+          labels={labels}
+        />,
       );
       expect(pulling).toContain(labels.modelDownloading);
       expect(pulling).toContain('aria-valuenow="43"');
-      expect(pulling).toContain(formatLabel(labels.progressPercent, { percent: 43 }));
+      expect(pulling).toContain(
+        formatLabel(labels.progressPercent, { percent: 43 }),
+      );
       expect(pulling).not.toContain(labels.retry);
     });
 
@@ -497,10 +578,12 @@ describe("chat components", () => {
       expect(html).toContain(`aria-label="${labels.deleteMemory}"`);
       expect(html).toContain(labels.clearMemory);
       expect(html).toContain("style");
-      expect(render(<MemoryPanel memories={[]} labels={labels} />)).toContain(labels.memoryEmpty);
-      expect(render(<MemoryPanel memories={[]} loading labels={labels} />)).toContain(
-        labels.memoryLoading,
+      expect(render(<MemoryPanel memories={[]} labels={labels} />)).toContain(
+        labels.memoryEmpty,
       );
+      expect(
+        render(<MemoryPanel memories={[]} loading labels={labels} />),
+      ).toContain(labels.memoryLoading);
     });
 
     test(`ChatComposer takes its strings from the ${lang} labels`, () => {
@@ -533,7 +616,9 @@ describe("chat components", () => {
       ),
     );
     const byText = (text: string) =>
-      [...host.querySelectorAll("button")].find((button) => button.textContent === text);
+      [...host.querySelectorAll("button")].find(
+        (button) => button.textContent === text,
+      );
     flushSync(() => byText(chatLabelsFr.clearMemory)!.click());
     expect(host.textContent).toContain(chatLabelsFr.clearMemoryConfirm);
     expect(cleared).toBe(0);
@@ -559,7 +644,10 @@ describe("chat components", () => {
       </>,
     );
     for (const key of keys) {
-      if (chatLabelsEn[key] !== chatLabelsFr[key] && chatLabelsEn[key].length > 6)
+      if (
+        chatLabelsEn[key] !== chatLabelsFr[key] &&
+        chatLabelsEn[key].length > 6
+      )
         expect(html, key).not.toContain(chatLabelsEn[key]);
     }
   });
@@ -580,9 +668,27 @@ describe("integration requirements of the desktop chat", () => {
   test("chat icons are inline SVG, never font ligatures", () => {
     const html = render(
       <>
-        <ChatComposer draft="x" onDraftChange={noop} onSend={noop} onOpenVoice={noop} heading="h" />
-        <ChatComposer draft="x" onDraftChange={noop} onSend={noop} isSending onStop={noop} />
-        <MessageBubble content="a" isUser={false} onCopy={noop} onDislike={noop} onFork={noop} />
+        <ChatComposer
+          draft="x"
+          onDraftChange={noop}
+          onSend={noop}
+          onOpenVoice={noop}
+          heading="h"
+        />
+        <ChatComposer
+          draft="x"
+          onDraftChange={noop}
+          onSend={noop}
+          isSending
+          onStop={noop}
+        />
+        <MessageBubble
+          content="a"
+          isUser={false}
+          onCopy={noop}
+          onDislike={noop}
+          onFork={noop}
+        />
         <MessageBubble content="```ts\nx\n```" isUser={false} />
         <ConversationList
           conversations={[{ id: "1", title: "t", updatedAt: 0 }]}
@@ -593,7 +699,10 @@ describe("integration requirements of the desktop chat", () => {
           searchable
         />
         <ModelUnavailable onRetry={noop} />
-        <MemoryPanel memories={[{ id: "m", content: "c", createdAt: 0 }]} onDelete={noop} />
+        <MemoryPanel
+          memories={[{ id: "m", content: "c", createdAt: 0 }]}
+          onDelete={noop}
+        />
         <CitationList citations={citations} />
         <RefusalNotice />
       </>,
@@ -655,7 +764,11 @@ describe("integration requirements of the desktop chat", () => {
 
   test("code blocks inside an answer are localized", () => {
     const html = render(
-      <MessageBubble content={"```ts\nx\n```"} isUser={false} labels={chatLabelsFr} />,
+      <MessageBubble
+        content={"```ts\nx\n```"}
+        isUser={false}
+        labels={chatLabelsFr}
+      />,
     );
     expect(html).toContain(`aria-label="${chatLabelsFr.copyCode}"`);
     expect(html).toContain(`>${chatLabelsFr.copy}</span>`);
@@ -668,7 +781,9 @@ describe("integration requirements of the desktop chat", () => {
         isUser={false}
       />,
     );
-    expect(html).toMatch(/href="https:\/\/example.org" target="_blank" rel="noopener noreferrer"/);
+    expect(html).toMatch(
+      /href="https:\/\/example.org" target="_blank" rel="noopener noreferrer"/,
+    );
     expect(html).toMatch(/href="\/wiki\/goku">/);
     expect(html).toMatch(/href="#x">/);
   });
@@ -713,7 +828,11 @@ describe("integration requirements of the desktop chat", () => {
       <Markdown
         content="[go](https://example.org)"
         renderLink={({ href, children, external }) => (
-          <button type="button" data-href={href} data-external={String(external)}>
+          <button
+            type="button"
+            data-href={href}
+            data-external={String(external)}
+          >
             {children}
           </button>
         )}
@@ -747,23 +866,37 @@ describe("integration requirements of the desktop chat", () => {
     mount({ disabled: true });
     const textarea = host.querySelector("textarea")!;
     expect(textarea.disabled).toBe(true);
-    expect(host.querySelector(`[aria-label="${chatLabelsEn.send}"]`)).toBeNull();
     expect(
-      host.querySelector<HTMLButtonElement>(`[aria-label="${chatLabelsEn.openVoice}"]`)!.disabled,
+      host.querySelector(`[aria-label="${chatLabelsEn.send}"]`),
+    ).toBeNull();
+    expect(
+      host.querySelector<HTMLButtonElement>(
+        `[aria-label="${chatLabelsEn.openVoice}"]`,
+      )!.disabled,
     ).toBe(true);
-    textarea.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    textarea.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+    );
     expect(sent).toBe(0);
 
     mount({ disabled: true, isSending: true });
-    expect(host.querySelector(`[aria-label="${chatLabelsEn.stop}"]`)).toBeNull();
+    expect(
+      host.querySelector(`[aria-label="${chatLabelsEn.stop}"]`),
+    ).toBeNull();
 
     mount({ isSending: true });
     expect(host.querySelector("textarea")!.disabled).toBe(false);
-    expect(host.querySelector(`[aria-label="${chatLabelsEn.stop}"]`)).not.toBeNull();
+    expect(
+      host.querySelector(`[aria-label="${chatLabelsEn.stop}"]`),
+    ).not.toBeNull();
 
     mount({});
     flushSync(() =>
-      host.querySelector<HTMLButtonElement>(`[aria-label="${chatLabelsEn.send}"]`)!.click(),
+      host
+        .querySelector<HTMLButtonElement>(
+          `[aria-label="${chatLabelsEn.send}"]`,
+        )!
+        .click(),
     );
     expect(sent).toBe(1);
     flushSync(() => root.unmount());
@@ -771,14 +904,23 @@ describe("integration requirements of the desktop chat", () => {
 
   test("ModelSelector strings come from labels", () => {
     const html = render(
-      <ModelSelector models={[]} value="" onChange={noop} labels={chatLabelsFr} />,
+      <ModelSelector
+        models={[]}
+        value=""
+        onChange={noop}
+        labels={chatLabelsFr}
+      />,
     );
     expect(html).toContain(chatLabelsFr.selectModel);
     expect(html).toContain('data-m3-icon="expand_more"');
     expect(html).not.toMatch(ligatures);
     const list = render(
       <ModelOptionList
-        grouped={{ Local: [{ id: "q", name: "Qwen3", provider: "Local", context_window: 8192 }] }}
+        grouped={{
+          Local: [
+            { id: "q", name: "Qwen3", provider: "Local", context_window: 8192 },
+          ],
+        }}
         value="q"
         onSelect={noop}
         labels={chatLabelsFr}
@@ -786,10 +928,19 @@ describe("integration requirements of the desktop chat", () => {
     );
     expect(list).toContain(`aria-label="${chatLabelsFr.models}"`);
     expect(list).toContain(
-      formatLabel(chatLabelsFr.contextTokens, { count: (8192).toLocaleString() }),
+      formatLabel(chatLabelsFr.contextTokens, {
+        count: (8192).toLocaleString(),
+      }),
     );
     expect(
-      render(<ModelOptionList grouped={{}} value="" onSelect={noop} labels={chatLabelsJa} />),
+      render(
+        <ModelOptionList
+          grouped={{}}
+          value=""
+          onSelect={noop}
+          labels={chatLabelsJa}
+        />,
+      ),
     ).toContain(chatLabelsJa.noModels);
   });
 });

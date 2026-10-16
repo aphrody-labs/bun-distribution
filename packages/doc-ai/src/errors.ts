@@ -22,7 +22,12 @@ export class DocAiError extends Error {
   /** Process exit code the CLI should use for this error. */
   readonly exitCode: number;
 
-  constructor(message: string, code: DocAiErrorCode, exitCode = 1, options?: { cause?: unknown }) {
+  constructor(
+    message: string,
+    code: DocAiErrorCode,
+    exitCode = 1,
+    options?: { cause?: unknown },
+  ) {
     super(message, options);
     this.name = new.target.name;
     this.code = code;
@@ -85,7 +90,11 @@ export class LlmError extends DocAiError {
 export class RetryExhaustedError extends DocAiError {
   readonly attempts: number;
 
-  constructor(message: string, attempts: number, options?: { cause?: unknown }) {
+  constructor(
+    message: string,
+    attempts: number,
+    options?: { cause?: unknown },
+  ) {
     super(message, "LLM_RETRY_EXHAUSTED", 1, options);
     this.attempts = attempts;
   }

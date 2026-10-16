@@ -1,11 +1,55 @@
 // SPDX-License-Identifier: Apache-2.0
 // @aphrody/m3-bun: build, serve, compile, package and deploy configs of M3 apps, with one Bun plugin.
-export { createM3App, dirSource, embeddedSource, startM3Server, DEFAULT_CSP, cacheControl, pickEncoding, resolvePort } from "./server.ts";
-export type { FileSource, M3App as M3AppHandle, M3AppOptions, M3ServerOptions } from "./server.ts";
-export { defineM3Api, jsonl, m3Csrf, normalizeApi, readBody, reply, requestCookies, routesToFetch, withCookies, yaml } from "./api.ts";
-export type { M3ApiModule, M3Csrf, M3CsrfOptions, M3Handler, M3Methods, M3Request, M3Route, M3Routes } from "./api.ts";
-export { cspWithNonce, createNonce, injectHtml, resolveTheme } from "./server-html.ts";
-export type { HtmlInjection, M3ResolvedTheme, M3ThemeMode, M3ThemeOptions } from "./server-html.ts";
+export {
+  createM3App,
+  dirSource,
+  embeddedSource,
+  startM3Server,
+  DEFAULT_CSP,
+  cacheControl,
+  pickEncoding,
+  resolvePort,
+} from "./server.ts";
+export type {
+  FileSource,
+  M3App as M3AppHandle,
+  M3AppOptions,
+  M3ServerOptions,
+} from "./server.ts";
+export {
+  defineM3Api,
+  jsonl,
+  m3Csrf,
+  normalizeApi,
+  readBody,
+  reply,
+  requestCookies,
+  routesToFetch,
+  withCookies,
+  yaml,
+} from "./api.ts";
+export type {
+  M3ApiModule,
+  M3Csrf,
+  M3CsrfOptions,
+  M3Handler,
+  M3Methods,
+  M3Request,
+  M3Route,
+  M3Routes,
+} from "./api.ts";
+export {
+  cspWithNonce,
+  createNonce,
+  injectHtml,
+  resolveTheme,
+} from "./server-html.ts";
+export type {
+  HtmlInjection,
+  M3ResolvedTheme,
+  M3ThemeMode,
+  M3ThemeOptions,
+} from "./server-html.ts";
 export { renderMarkdown } from "./server-markdown.ts";
 export type { M3MarkdownOptions, M3MarkdownPage } from "./server-markdown.ts";
 export { crawlRoutes, pagePath } from "./server-crawl.ts";
@@ -29,32 +73,120 @@ export type { M3NextApp, M3NextOptions } from "./server-next.ts";
 export { m3ServerRoutes } from "./server-m3.ts";
 export type { M3ServerRoutesOptions } from "./server-m3.ts";
 export { launchInspected, serveInspectorFrontend } from "./dev-inspect.ts";
-export type { M3ConsoleEntry, M3ConsoleLevel, M3InspectedException, M3Inspected, M3InspectOptions, M3InspectorFrontend } from "./dev-inspect.ts";
+export type {
+  M3ConsoleEntry,
+  M3ConsoleLevel,
+  M3InspectedException,
+  M3Inspected,
+  M3InspectOptions,
+  M3InspectorFrontend,
+} from "./dev-inspect.ts";
 export { failingApi, loadDevApi } from "./dev-error.ts";
-export { COMPILE_TARGETS, compileTarget, defineM3Bun, findWorkspaceRoot, loadApp } from "./config.ts";
-export type { CompileTargetName, M3App, M3BunConfig, M3BunDeploy } from "./config.ts";
+export {
+  COMPILE_TARGETS,
+  compileTarget,
+  defineM3Bun,
+  findWorkspaceRoot,
+  loadApp,
+} from "./config.ts";
+export type {
+  CompileTargetName,
+  M3App,
+  M3BunConfig,
+  M3BunDeploy,
+} from "./config.ts";
 export { m3Bun, m3BunExtras } from "./plugin.ts";
 export type { M3BunPluginOptions } from "./plugin.ts";
-export { M3_OPTIMIZE_IMPORTS, forkPlugins, lazyPlugin, m3OptimizeImports, recordPlugin } from "./plugins.ts";
-export type { ForkPluginOptions, LazyPluginSpec, N2BOptions, OxcOptions, RecordedPlugin, SvelteOptions } from "./plugins.ts";
+export {
+  M3_OPTIMIZE_IMPORTS,
+  forkPlugins,
+  lazyPlugin,
+  m3OptimizeImports,
+  recordPlugin,
+} from "./plugins.ts";
+export type {
+  ForkPluginOptions,
+  LazyPluginSpec,
+  N2BOptions,
+  OxcOptions,
+  RecordedPlugin,
+  SvelteOptions,
+} from "./plugins.ts";
 export { M3_PACKAGE_MODULES, m3PackagesPlugin } from "./plugins-m3.ts";
 export type { M3PackagePluginOptions } from "./plugins-m3.ts";
-export { exportedScheme, m3CssFor, mcuM3Css, nativeM3Css, nativeThemeExport, tsM3Css } from "./theme-css.ts";
+export {
+  exportedScheme,
+  m3CssFor,
+  mcuM3Css,
+  nativeM3Css,
+  nativeThemeExport,
+  tsM3Css,
+} from "./theme-css.ts";
 export type { M3CssEngine } from "./theme-css.ts";
-export { iconCacheFile, iconsOrigin, iconsRoot, parseIconSpecifier, readIcon } from "./icons.ts";
-export { buildApp, checkEngine, hoistHtml, listBuild, minifyOptions, readManifest } from "./build.ts";
-export type { BuildAppOptions, BuildManifest, BuildMemory, BuildReport, MinifyLevel } from "./build.ts";
-export { dependents, graphPath, graphReport, moduleGraph, openGraph, recordBuild, repositoryId } from "./graph.ts";
+export {
+  iconCacheFile,
+  iconsOrigin,
+  iconsRoot,
+  parseIconSpecifier,
+  readIcon,
+} from "./icons.ts";
+export {
+  buildApp,
+  checkEngine,
+  hoistHtml,
+  listBuild,
+  minifyOptions,
+  readManifest,
+} from "./build.ts";
+export type {
+  BuildAppOptions,
+  BuildManifest,
+  BuildMemory,
+  BuildReport,
+  MinifyLevel,
+} from "./build.ts";
+export {
+  dependents,
+  graphPath,
+  graphReport,
+  moduleGraph,
+  openGraph,
+  recordBuild,
+  repositoryId,
+} from "./graph.ts";
 export type { GraphRecord, ModuleGraph } from "./graph.ts";
 export { compileApp, defaultOutfile, renderEntry } from "./compile.ts";
 export type { CompileOptions, CompileReport } from "./compile.ts";
-export { archiveDir, bunArchiveSupported, buildRootfs, packageApp, parseLdd } from "./package.ts";
-export type { ArchiveFormat, Archiver, PackageOptions, PackageReport, RootfsReport } from "./package.ts";
+export {
+  archiveDir,
+  bunArchiveSupported,
+  buildRootfs,
+  packageApp,
+  parseLdd,
+} from "./package.ts";
+export type {
+  ArchiveFormat,
+  Archiver,
+  PackageOptions,
+  PackageReport,
+  RootfsReport,
+} from "./package.ts";
 export { loadTool } from "./tools-load.ts";
 export { lintApp, oxlintBinary } from "./tools-lint.ts";
-export type { LintDiagnostic, LintOptions, LintPreset, LintReport } from "./tools-lint.ts";
+export type {
+  LintDiagnostic,
+  LintOptions,
+  LintPreset,
+  LintReport,
+} from "./tools-lint.ts";
 export { migrateApp, migrateNext } from "./tools-migrate.ts";
-export type { CodemodKind, MigrateFile, MigrateNextOptions, MigrateOptions, MigrateReport } from "./tools-migrate.ts";
+export type {
+  CodemodKind,
+  MigrateFile,
+  MigrateNextOptions,
+  MigrateOptions,
+  MigrateReport,
+} from "./tools-migrate.ts";
 export { createApp, createTemplates } from "./tools-create.ts";
 export type { CreateOptions, CreateReport } from "./tools-create.ts";
 export { designApp } from "./tools-design.ts";
@@ -66,5 +198,14 @@ export type { LibraryOptions, LibraryReport } from "./tools-lib.ts";
 export { launch, runtimeSdkPath, smoke } from "./runtime.ts";
 export type { LaunchOptions, Launched, SmokeReport } from "./runtime.ts";
 export { runApp } from "./entry.ts";
-export { TARGETS, contextFor, generateTargets, getTarget } from "./targets/index.ts";
-export type { GeneratedTarget, Target, TargetContext } from "./targets/index.ts";
+export {
+  TARGETS,
+  contextFor,
+  generateTargets,
+  getTarget,
+} from "./targets/index.ts";
+export type {
+  GeneratedTarget,
+  Target,
+  TargetContext,
+} from "./targets/index.ts";

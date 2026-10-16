@@ -16,7 +16,7 @@
 # runtime's system fonts.
 id: ai.storyteller.figcraft
 runtime: org.freedesktop.Platform
-runtime-version: '26.08'
+runtime-version: "26.08"
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.rust-stable
@@ -46,7 +46,7 @@ modules:
     build-options:
       env:
         CARGO_HOME: /run/build/figcraft/cargo
-        CARGO_NET_OFFLINE: 'true'
+        CARGO_NET_OFFLINE: "true"
         # .cargo/config.toml points CRAFT_FONTS_DIR at ../craft-fonts for local builds; there is
         # none here, so build without it (a warning, not an error).
         CRAFT_FONTS_DIR: /nonexistent

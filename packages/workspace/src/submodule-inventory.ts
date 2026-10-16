@@ -9,7 +9,12 @@ import { Glob } from "bun";
 
 export type SubmoduleRoot = { key: string; path: string };
 
-type Declaration = { name: string; path: string; url?: string; branch?: string };
+type Declaration = {
+  name: string;
+  path: string;
+  url?: string;
+  branch?: string;
+};
 export type Submodule = {
   root: string;
   path: string;
@@ -38,7 +43,8 @@ function git(root: string, args: string[]): string | null {
 
 function classifyNestedFile(path: string): string {
   const name = path.split("/").at(-1) ?? path;
-  if (/^(?:LICENSE|LICENCE|COPYING|NOTICE)(?:\.|$)/i.test(name)) return "license";
+  if (/^(?:LICENSE|LICENCE|COPYING|NOTICE)(?:\.|$)/i.test(name))
+    return "license";
   if (
     /^(?:Cargo\.toml|package\.json|pyproject\.toml|bun\.lock|Cargo\.lock|pnpm-workspace\.yaml|tsconfig\.json)$/.test(
       name,
@@ -46,7 +52,8 @@ function classifyNestedFile(path: string): string {
   )
     return "manifest-or-lockfile";
   if (/\.(?:md|mdx|rst|adoc|txt|pdf)$/i.test(name)) return "documentation";
-  if (path.split("/").some((part) => part === "scripts" || part === "script")) return "script";
+  if (path.split("/").some((part) => part === "scripts" || part === "script"))
+    return "script";
   if (name.endsWith(".rs")) return "rust-source";
   if (path.startsWith("crates/")) return "crate-file";
   if (path.startsWith("packages/")) return "package-file";
@@ -54,7 +61,10 @@ function classifyNestedFile(path: string): string {
   return "source-or-config";
 }
 
-function fileObjects(root: string, args: string[]): Map<string, { mode: string; oid: string }> {
+function fileObjects(
+  root: string,
+  args: string[],
+): Map<string, { mode: string; oid: string }> {
   const result = new Map<string, { mode: string; oid: string }>();
   const raw = git(root, args);
   if (!raw) return result;
@@ -67,7 +77,12 @@ function fileObjects(root: string, args: string[]): Map<string, { mode: string; 
 
 function fileStatuses(root: string): Map<string, string> {
   const result = new Map<string, string>();
-  const raw = git(root, ["status", "--porcelain=v1", "-z", "--untracked-files=all"]);
+  const raw = git(root, [
+    "status",
+    "--porcelain=v1",
+    "-z",
+    "--untracked-files=all",
+  ]);
   if (raw === null) return result;
   const records = raw.split("\0");
   for (let i = 0; i < records.length; i++) {
@@ -92,11 +107,19 @@ function strings(value: unknown): string[] {
     : [];
 }
 
-function manifestSummary(path: string, content: Buffer): Record<string, unknown> | null {
+function manifestSummary(
+  path: string,
+  content: Buffer,
+): Record<string, unknown> | null {
   const name = path.split("/").at(-1);
   if (
     !name ||
-    !["Cargo.toml", "package.json", "pyproject.toml", "pnpm-workspace.yaml"].includes(name)
+    ![
+      "Cargo.toml",
+      "package.json",
+      "pyproject.toml",
+      "pnpm-workspace.yaml",
+    ].includes(name)
   )
     return null;
   try {
@@ -118,7 +141,9 @@ function manifestSummary(path: string, content: Buffer): Record<string, unknown>
         defaultMembers: strings(workspace["default-members"]),
         ...(typeof pkg.name === "string" ? { packageName: pkg.name } : {}),
         ...(typeof pkg.license === "string" ? { license: pkg.license } : {}),
-        ...(typeof pkg["license-file"] === "string" ? { licenseFile: pkg["license-file"] } : {}),
+        ...(typeof pkg["license-file"] === "string"
+          ? { licenseFile: pkg["license-file"] }
+          : {}),
       };
     }
     if (name === "package.json") {
@@ -130,9 +155,15 @@ function manifestSummary(path: string, content: Buffer): Record<string, unknown>
         format: "bun-or-node",
         workspaceDeclared: "workspaces" in parsed,
         members: strings(workspaces),
-        ...(typeof parsed.name === "string" ? { packageName: parsed.name } : {}),
-        ...(typeof parsed.license === "string" ? { license: parsed.license } : {}),
-        ...(typeof parsed.private === "boolean" ? { private: parsed.private } : {}),
+        ...(typeof parsed.name === "string"
+          ? { packageName: parsed.name }
+          : {}),
+        ...(typeof parsed.license === "string"
+          ? { license: parsed.license }
+          : {}),
+        ...(typeof parsed.private === "boolean"
+          ? { private: parsed.private }
+          : {}),
         ...(typeof parsed.packageManager === "string"
           ? { packageManager: parsed.packageManager }
           : {}),
@@ -147,7 +178,9 @@ function manifestSummary(path: string, content: Buffer): Record<string, unknown>
         workspaceDeclared: Object.keys(uv).length > 0,
         members: strings(uv.members),
         exclude: strings(uv.exclude),
-        ...(typeof project.name === "string" ? { packageName: project.name } : {}),
+        ...(typeof project.name === "string"
+          ? { packageName: project.name }
+          : {}),
       };
     }
     return {
@@ -161,21 +194,36 @@ function manifestSummary(path: string, content: Buffer): Record<string, unknown>
   }
 }
 
-export async function inventoryNestedFiles(submodules: Submodule[], roots: SubmoduleRoot[]) {
-  const rootPaths = new Map(roots.map((root) => [root.key, resolve(root.path)]));
+export async function inventoryNestedFiles(
+  submodules: Submodule[],
+  roots: SubmoduleRoot[],
+) {
+  const rootPaths = new Map(
+    roots.map((root) => [root.key, resolve(root.path)]),
+  );
   const checkoutPaths = new Map<string, string>();
   const entries: Array<Record<string, unknown>> = [];
   const checkoutSummaries: Array<Record<string, unknown>> = [];
   const manifests: Array<Record<string, unknown>> = [];
   for (const submodule of submodules) {
-    if (submodule.depth < 2 || !submodule.observedHead || submodule.path.startsWith("aphrody-ui/"))
+    if (
+      submodule.depth < 2 ||
+      !submodule.observedHead ||
+      submodule.path.startsWith("aphrody-ui/")
+    )
       continue;
     const rootPath = rootPaths.get(submodule.root);
     if (!rootPath) continue;
     const checkout = resolve(rootPath, submodule.path);
     if (!checkout.startsWith(`${rootPath}/`)) continue;
     checkoutPaths.set(submodule.path, checkout);
-    const raw = git(checkout, ["ls-files", "-z", "--cached", "--others", "--exclude-standard"]);
+    const raw = git(checkout, [
+      "ls-files",
+      "-z",
+      "--cached",
+      "--others",
+      "--exclude-standard",
+    ]);
     if (raw === null) continue;
     const paths = [...new Set(raw.split("\0").filter(Boolean))].toSorted();
     const indexed = fileObjects(checkout, ["ls-files", "--stage", "-z"]);
@@ -214,7 +262,8 @@ export async function inventoryNestedFiles(submodules: Submodule[], roots: Submo
           entry.size = bytes.length;
           entry.sha256 = createHash("sha256").update(bytes).digest("hex");
           const manifest = manifestSummary(path, bytes);
-          if (manifest) manifests.push({ submodule: submodule.path, ...manifest });
+          if (manifest)
+            manifests.push({ submodule: submodule.path, ...manifest });
           regularFiles++;
         } else {
           entry.kind = "gitlink";
@@ -243,7 +292,8 @@ export async function inventoryNestedFiles(submodules: Submodule[], roots: Submo
     const checkout = checkoutPaths.get(manifest.submodule as string);
     if (!checkout) continue;
     const workspace = resolve(checkout, dirname(manifest.path as string));
-    const expected = manifest.format === "cargo" ? "Cargo.toml" : "package.json";
+    const expected =
+      manifest.format === "cargo" ? "Cargo.toml" : "package.json";
     for (const pattern of strings(manifest.members)) {
       const candidatePaths = /[*?[\]{}]/.test(pattern)
         ? [
@@ -258,7 +308,8 @@ export async function inventoryNestedFiles(submodules: Submodule[], roots: Submo
         .filter((candidate) => {
           const directory = resolve(workspace, candidate);
           return (
-            (directory === workspace || directory.startsWith(`${workspace}/`)) &&
+            (directory === workspace ||
+              directory.startsWith(`${workspace}/`)) &&
             existsSync(join(directory, expected))
           );
         })
@@ -282,16 +333,26 @@ export async function inventoryNestedFiles(submodules: Submodule[], roots: Submo
     totals: {
       checkouts: checkoutSummaries.length,
       paths: entries.length,
-      parsedManifests: manifests.filter((manifest) => !("parseError" in manifest)).length,
-      manifestParseFailures: manifests.filter((manifest) => "parseError" in manifest).length,
-      declaredWorkspaces: manifests.filter((manifest) => manifest.workspaceDeclared === true)
-        .length,
+      parsedManifests: manifests.filter(
+        (manifest) => !("parseError" in manifest),
+      ).length,
+      manifestParseFailures: manifests.filter(
+        (manifest) => "parseError" in manifest,
+      ).length,
+      declaredWorkspaces: manifests.filter(
+        (manifest) => manifest.workspaceDeclared === true,
+      ).length,
       memberPatterns: memberResolutions.length,
-      unresolvedMemberPatterns: memberResolutions.filter((member) => "unresolved" in member).length,
+      unresolvedMemberPatterns: memberResolutions.filter(
+        (member) => "unresolved" in member,
+      ).length,
       byKind: Object.fromEntries(
         [...new Set(entries.map((entry) => entry.kind as string))]
           .toSorted()
-          .map((kind) => [kind, entries.filter((entry) => entry.kind === kind).length]),
+          .map((kind) => [
+            kind,
+            entries.filter((entry) => entry.kind === kind).length,
+          ]),
       ),
     },
     entries,
@@ -325,7 +386,8 @@ function declarations(root: string): Map<string, Declaration> {
     byName.set(name, record);
   }
   for (const record of byName.values()) {
-    if (record.name && record.path) result.set(record.path, record as Declaration);
+    if (record.name && record.path)
+      result.set(record.path, record as Declaration);
   }
   return result;
 }
@@ -352,14 +414,23 @@ export function inventorySubmodules(roots: SubmoduleRoot[]): {
   const missingRoots: Array<{ key: string; path: string; state: string }> = [];
   const visited = new Set<string>();
 
-  function walk(rootKey: string, root: string, prefix: string, depth: number): void {
+  function walk(
+    rootKey: string,
+    root: string,
+    prefix: string,
+    depth: number,
+  ): void {
     const top = resolve(root);
     if (visited.has(top)) return;
     visited.add(top);
     const declared = declarations(top);
     const indexed = gitlinks(top, ["ls-files", "--stage", "-z"]);
     const committed = gitlinks(top, ["ls-tree", "-r", "-z", "HEAD"]);
-    const paths = new Set([...declared.keys(), ...indexed.keys(), ...committed.keys()]);
+    const paths = new Set([
+      ...declared.keys(),
+      ...indexed.keys(),
+      ...committed.keys(),
+    ]);
     for (const path of [...paths].toSorted()) {
       const location = resolve(top, path);
       const relativePath = join(prefix, path).replaceAll("\\", "/");
@@ -387,12 +458,21 @@ export function inventorySubmodules(roots: SubmoduleRoot[]): {
         record.state !== "delegated-uninspected" &&
         existsSync(join(location, ".git"))
       ) {
-        const actualTop = git(location, ["rev-parse", "--show-toplevel"])?.trim();
+        const actualTop = git(location, [
+          "rev-parse",
+          "--show-toplevel",
+        ])?.trim();
         if (actualTop === location) {
           const observedHead = git(location, ["rev-parse", "HEAD"])?.trim();
           if (observedHead) record.observedHead = observedHead;
-          const status = git(location, ["status", "--porcelain=v1", "-z", "--untracked-files=all"]);
-          if (status !== null) record.dirtyPathCount = status.split("\0").filter(Boolean).length;
+          const status = git(location, [
+            "status",
+            "--porcelain=v1",
+            "-z",
+            "--untracked-files=all",
+          ]);
+          if (status !== null)
+            record.dirtyPathCount = status.split("\0").filter(Boolean).length;
           record.state = !declaration
             ? "gitlink-without-declaration"
             : !indexPin
@@ -416,8 +496,12 @@ export function inventorySubmodules(roots: SubmoduleRoot[]): {
     }
     walk(root.key, path, "", 1);
   }
-  submodules.sort((a, b) => a.path.localeCompare(b.path) || a.root.localeCompare(b.root));
-  const states = [...new Set(submodules.map((entry) => entry.state))].toSorted();
+  submodules.sort(
+    (a, b) => a.path.localeCompare(b.path) || a.root.localeCompare(b.root),
+  );
+  const states = [
+    ...new Set(submodules.map((entry) => entry.state)),
+  ].toSorted();
   return {
     observedAt: new Date().toISOString(),
     scope:
@@ -425,7 +509,10 @@ export function inventorySubmodules(roots: SubmoduleRoot[]): {
     submodules,
     missingRoots,
     counts: Object.fromEntries(
-      states.map((state) => [state, submodules.filter((entry) => entry.state === state).length]),
+      states.map((state) => [
+        state,
+        submodules.filter((entry) => entry.state === state).length,
+      ]),
     ),
   };
 }

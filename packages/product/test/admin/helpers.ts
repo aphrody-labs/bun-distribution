@@ -6,7 +6,10 @@ import { join } from "node:path";
 import type { Context } from "../../src/admin/lib/context.ts";
 import { createLogger } from "../../src/admin/lib/log.ts";
 import { kitPaths } from "../../src/admin/lib/paths.ts";
-import { parseAccessPack, type AccessPack } from "../../src/admin/lib/profile.ts";
+import {
+  parseAccessPack,
+  type AccessPack,
+} from "../../src/admin/lib/profile.ts";
 import { fakeSystem, type FakeSystem } from "../../src/admin/lib/system.ts";
 import { memoryUi, type MemoryUi } from "../../src/admin/lib/ui.ts";
 import { generateKeyPair } from "../../src/admin/lib/wireguard.ts";
@@ -14,7 +17,9 @@ import { generateKeyPair } from "../../src/admin/lib/wireguard.ts";
 export const hubKey = generateKeyPair().publicKey;
 
 /** Documentation addresses only (RFC 5737): no real address of the infrastructure appears in tests. */
-export function packJson(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+export function packJson(
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
   return {
     schemaVersion: 1,
     kind: "aphrody-omar-access",
@@ -43,16 +48,23 @@ export function packJson(overrides: Record<string, unknown> = {}): Record<string
     },
     trainHost: "gpu",
     services: {
-      mcpHttp: { url: "http://198.51.100.1:8789/mcp", health: "http://198.51.100.1:8789/healthz" },
-      a2a: { url: "http://198.51.100.1:8788", health: "http://198.51.100.1:8788/ping" },
+      mcpHttp: {
+        url: "http://198.51.100.1:8789/mcp",
+        health: "http://198.51.100.1:8789/healthz",
+      },
+      a2a: {
+        url: "http://198.51.100.1:8788",
+        health: "http://198.51.100.1:8788/ping",
+      },
     },
     hostKeys: [],
     ...overrides,
   };
 }
 
-export const samplePack = (overrides: Record<string, unknown> = {}): AccessPack =>
-  parseAccessPack(packJson(overrides));
+export const samplePack = (
+  overrides: Record<string, unknown> = {},
+): AccessPack => parseAccessPack(packJson(overrides));
 
 export interface TestContext {
   ctx: Context;
@@ -93,7 +105,9 @@ export function testContext(
     version: "0.1.0",
     exePath: join(root, "downloads", "Aphrody-Omar.exe"),
     exeDir: join(root, "downloads"),
-    fetchImpl: options.fetchImpl ?? (async () => new Response("not found", { status: 404 })),
+    fetchImpl:
+      options.fetchImpl ??
+      (async () => new Response("not found", { status: 404 })),
     mcpProbe: async () => ({ ok: true, tools: 3 }),
   };
   return { ctx, sys, ui, root };

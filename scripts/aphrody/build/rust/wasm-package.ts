@@ -22,7 +22,10 @@ const repositoryRoot = resolve(import.meta.dir, "../../../../docs/aphrody");
 const triple = "wasm32-unknown-unknown";
 
 export type ToolResult = { exitCode: number; stdout: string; stderr?: string };
-export type ToolRunner = (command: string[], cwd: string) => Promise<ToolResult>;
+export type ToolRunner = (
+  command: string[],
+  cwd: string,
+) => Promise<ToolResult>;
 export type BuildOptions = {
   crate: string;
   out: string;
@@ -59,7 +62,11 @@ export type BuildDependencies = {
 
 const runTool: ToolRunner = async (command, cwd) => {
   const result = await $`${command}`.cwd(cwd).nothrow().quiet();
-  return { exitCode: result.exitCode, stdout: result.text(), stderr: result.stderr.toString() };
+  return {
+    exitCode: result.exitCode,
+    stdout: result.text(),
+    stderr: result.stderr.toString(),
+  };
 };
 
 const bunWasm: Packer = async (options) => {
@@ -100,7 +107,9 @@ export async function buildWasmPackage(
   const run = dependencies.run ?? runTool;
   const pack = dependencies.pack ?? bunWasm;
   const platform = dependencies.platform ?? process.platform;
-  env.RUSTFLAGS = [env.RUSTFLAGS, ...remapFlags(root, env)].filter(Boolean).join(" ");
+  env.RUSTFLAGS = [env.RUSTFLAGS, ...remapFlags(root, env)]
+    .filter(Boolean)
+    .join(" ");
   const crate = options.crate;
   const name = options.name ?? crate.replaceAll("-", "_");
   const profile = options.profile ?? "wasm-release";
@@ -110,7 +119,9 @@ export async function buildWasmPackage(
     );
   const out = resolve(root, options.out);
   if (out === root || out === dirname(out) || root.startsWith(`${out}${sep}`))
-    throw new Error("output must be a package directory, not the repository or its parent");
+    throw new Error(
+      "output must be a package directory, not the repository or its parent",
+    );
   const checked = async (command: string[]) => {
     const result = await run(command, root);
     if (result.exitCode !== 0)
@@ -125,15 +136,28 @@ export async function buildWasmPackage(
     : undefined;
   if (
     manifest !== undefined &&
-    (manifest.startsWith("..") || isAbsolute(manifest) || !manifest.endsWith("Cargo.toml"))
+    (manifest.startsWith("..") ||
+      isAbsolute(manifest) ||
+      !manifest.endsWith("Cargo.toml"))
   )
-    throw new Error("--manifest-path must be a Cargo.toml inside the repository");
+    throw new Error(
+      "--manifest-path must be a Cargo.toml inside the repository",
+    );
 
   const artifactName = `${crate.replaceAll("-", "_")}.wasm`;
   const manifestArgs = manifest ? ["--manifest-path", manifest] : [];
   const cargoArgs =
     profile === "release"
-      ? ["build", "--locked", ...manifestArgs, "-p", crate, "--target", triple, "--release"]
+      ? [
+          "build",
+          "--locked",
+          ...manifestArgs,
+          "-p",
+          crate,
+          "--target",
+          triple,
+          "--release",
+        ]
       : [
           "build",
           "--locked",
@@ -147,13 +171,18 @@ export async function buildWasmPackage(
         ];
   const targetDir = resolve(root, env.CARGO_TARGET_DIR ?? "target");
   // The VPS factory sets CARGO_TARGET_DIR remotely; local builds of an excluded crate must not use its own target/.
-  const localArgs = manifest ? [...cargoArgs, "--target-dir", targetDir] : cargoArgs;
+  const localArgs = manifest
+    ? [...cargoArgs, "--target-dir", targetDir]
+    : cargoArgs;
   let fetchDir: string | undefined;
   try {
     let artifact: string;
     if (env.CLAUDE_CODE_REMOTE === "true" || env.APHRODY_CLOUD === "1") {
       if (!options.skipCargo)
-        await checked([join(root, "scripts/build/rust/cargo-serial.sh"), ...localArgs]);
+        await checked([
+          join(root, "scripts/build/rust/cargo-serial.sh"),
+          ...localArgs,
+        ]);
       artifact = join(targetDir, triple, profile, artifactName);
     } else if (platform === "win32" || env.APHRODY_LOCAL_CARGO === "1") {
       if (!options.skipCargo)
@@ -170,7 +199,8 @@ export async function buildWasmPackage(
       artifact = join(targetDir, triple, profile, artifactName);
     } else {
       const vps = join(root, "scripts/build/rust/vps-cargo.ts");
-      if (!options.skipCargo) await checked(["bun", vps, "run", "--", ...cargoArgs]);
+      if (!options.skipCargo)
+        await checked(["bun", vps, "run", "--", ...cargoArgs]);
       fetchDir = await mkdtemp(join(tmpdir(), "aphrody-wasm-fetch-"));
       // Exit 3 means a checksum-verified file was fetched but cannot run on the local host (WASM).
       const fetched = await run(
@@ -188,7 +218,9 @@ export async function buildWasmPackage(
         root,
       );
       if (fetched.exitCode !== 0 && fetched.exitCode !== 3)
-        throw new Error(`fetching the wasm artifact failed (${fetched.exitCode})`);
+        throw new Error(
+          `fetching the wasm artifact failed (${fetched.exitCode})`,
+        );
       artifact = join(fetchDir, artifactName);
     }
 
@@ -212,7 +244,8 @@ export async function buildWasmPackage(
       rawBytes: raw,
       bytes: built.bytes,
       previousBytes,
-      delta: previousBytes !== undefined ? built.bytes - previousBytes : undefined,
+      delta:
+        previousBytes !== undefined ? built.bytes - previousBytes : undefined,
       optimization: options.noOpt
         ? "skipped (--no-opt)"
         : built.bytes < raw

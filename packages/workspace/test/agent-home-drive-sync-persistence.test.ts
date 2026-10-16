@@ -32,7 +32,10 @@ const state: SyncState = {
     ok: true,
     failures: 0,
     nextAt: 300_000,
-    lastSuccess: { observedAt: "2026-10-07T13:00:00.000Z", report: { unchanged: 3 } },
+    lastSuccess: {
+      observedAt: "2026-10-07T13:00:00.000Z",
+      report: { unchanged: 3 },
+    },
   },
 };
 const temporary: string[] = [];
@@ -42,7 +45,11 @@ async function directory() {
   return path;
 }
 afterEach(async () => {
-  await Promise.all(temporary.splice(0).map((path) => rm(path, { recursive: true, force: true })));
+  await Promise.all(
+    temporary
+      .splice(0)
+      .map((path) => rm(path, { recursive: true, force: true })),
+  );
 });
 
 test("a selected Drive worker needs no agent settings and cannot retain unrelated job receipts", async () => {
@@ -71,7 +78,16 @@ test("a selected Drive worker needs no agent settings and cannot retain unrelate
   );
   expect(calls.map(({ argv }) => argv)).toEqual([
     ["yolo", "google", "drive", "sync", "--download-only"],
-    ["aphrody", "home", "index", "/staged", "--label", "drive-dbfr-staged", "--profile", "dbfr"],
+    [
+      "aphrody",
+      "home",
+      "index",
+      "/staged",
+      "--label",
+      "drive-dbfr-staged",
+      "--profile",
+      "dbfr",
+    ],
   ]);
   expect(calls[0]?.env).toEqual({
     APHRODY_AGENT_HOME: "/dbfr",
@@ -79,7 +95,10 @@ test("a selected Drive worker needs no agent settings and cannot retain unrelate
   });
   expect(Object.keys(next)).toEqual(["drive", "drive-retrieval"]);
   expect(next.drive?.lastSuccess?.report).toEqual({ unchanged: 3 });
-  expect(next["drive-retrieval"]?.lastSuccess?.report).toEqual({ indexed: 1, chunks: 4 });
+  expect(next["drive-retrieval"]?.lastSuccess?.report).toEqual({
+    indexed: 1,
+    chunks: 4,
+  });
   expect(previous.agents?.failures).toBe(3);
   expect(Object.keys(previous)).toEqual(["agents", "rag-monitor"]);
 });
@@ -119,12 +138,20 @@ test("invalid selections fail before calling any capability", async () => {
 
 test("local publication atomically replaces only its distinct private receipt without SSH", async () => {
   const path = await directory();
-  const legacy = ["drive-sync.json", "agent-sync.json", "rag-sync.json", "automation-sync.json"];
-  await Promise.all(legacy.map((name) => Bun.write(join(path, name), "owned-by-wsl")));
+  const legacy = [
+    "drive-sync.json",
+    "agent-sync.json",
+    "rag-sync.json",
+    "automation-sync.json",
+  ];
+  await Promise.all(
+    legacy.map((name) => Bun.write(join(path, name), "owned-by-wsl")),
+  );
   const receipt = join(path, "agent-sync-vps-status.json");
   await Bun.write(receipt, "previous-complete-receipt", { mode: 0o666 });
   // Windows cannot rename over a file another handle holds open; the open-reader proof is POSIX-only.
-  const reader = process.platform === "win32" ? undefined : await open(receipt, "r");
+  const reader =
+    process.platform === "win32" ? undefined : await open(receipt, "r");
   try {
     await publishSyncReceipts(
       { ...config, publication: { ...config.publication, directory: path } },
@@ -133,7 +160,8 @@ test("local publication atomically replaces only its distinct private receipt wi
         throw new Error("Local publication must not use SSH");
       },
     );
-    if (reader) expect(await reader.readFile("utf8")).toBe("previous-complete-receipt");
+    if (reader)
+      expect(await reader.readFile("utf8")).toBe("previous-complete-receipt");
     expect((await Bun.file(receipt).json()).jobs).toEqual(state);
     expect(hasMode((await stat(receipt)).mode, 0o600)).toBe(true);
     expect((await readdir(path)).toSorted()).toEqual(
@@ -158,9 +186,16 @@ test("omitting a receipt name preserves the legacy per-capability publication co
       throw new Error("Local publication must not use SSH");
     },
   );
-  expect((await readdir(path)).toSorted()).toEqual(["automation-sync.json", "drive-sync.json"]);
-  expect(await Bun.file(join(path, "drive-sync.json")).json()).toEqual(state.drive?.lastSuccess);
-  expect(hasMode((await stat(join(path, "automation-sync.json"))).mode, 0o600)).toBe(true);
+  expect((await readdir(path)).toSorted()).toEqual([
+    "automation-sync.json",
+    "drive-sync.json",
+  ]);
+  expect(await Bun.file(join(path, "drive-sync.json")).json()).toEqual(
+    state.drive?.lastSuccess,
+  );
+  expect(
+    hasMode((await stat(join(path, "automation-sync.json"))).mode, 0o600),
+  ).toBe(true);
 });
 
 test("unsafe receipt names cannot escape the destination or invoke a remote command", async () => {
@@ -181,7 +216,10 @@ test("unsafe receipt names cannot escape the destination or invoke a remote comm
     ].map((receiptName) =>
       expect(
         publishSyncReceipts(
-          { ...config, publication: { host: "vps", directory: path, receiptName } },
+          {
+            ...config,
+            publication: { host: "vps", directory: path, receiptName },
+          },
           state,
           async () => {
             calls++;
@@ -209,46 +247,46 @@ test("review pending and blocked receipts gate downstream consumers even between
     validatorModule: { path: "/private/validator", sha256: "b".repeat(64) },
   };
   await Promise.all(
-    ([{ review_pending: 1 }, { review_blocked: 1 }] as Record<string, number>[]).map(
-      async (report) => {
-        const previous: SyncState = {
-          "drive-review": {
-            ok: true,
-            nextAt: 5000,
-            failures: 0,
-            lastSuccess: { observedAt: "2026-10-07T13:00:00.000Z", report },
+    (
+      [{ review_pending: 1 }, { review_blocked: 1 }] as Record<string, number>[]
+    ).map(async (report) => {
+      const previous: SyncState = {
+        "drive-review": {
+          ok: true,
+          nextAt: 5000,
+          failures: 0,
+          lastSuccess: { observedAt: "2026-10-07T13:00:00.000Z", report },
+        },
+      };
+      let calls = 0;
+      const next = await syncPass(
+        {
+          ...config,
+          driveReview,
+          jobs: ["drive-review", "drive-retrieval", "drive-replica"],
+          replica: {
+            incoming: "/private/incoming",
+            directory: "/private/dest",
+            stateRoot: "/private/stateRoot",
+            shenronRoot: "/private/shenron",
+            contract: "/private/contract",
+            intervalSeconds: 300,
           },
-        };
-        let calls = 0;
-        const next = await syncPass(
-          {
-            ...config,
-            driveReview,
-            jobs: ["drive-review", "drive-retrieval", "drive-replica"],
-            replica: {
-              incoming: "/private/incoming",
-              directory: "/private/dest",
-              stateRoot: "/private/stateRoot",
-              shenronRoot: "/private/shenron",
-              contract: "/private/contract",
-              intervalSeconds: 300,
-            },
-          },
-          previous,
-          async () => {
-            calls++;
-            return "{}";
-          },
-          1000,
-        );
-        expect(calls).toBe(0);
-        for (const job of ["drive-retrieval", "drive-replica"]) {
-          expect(next[job]?.ok).toBe(false);
-          expect(next[job]?.waiting?.report).toEqual(report);
-          expect(next[job]?.lastSuccess).toBeUndefined();
-        }
-      },
-    ),
+        },
+        previous,
+        async () => {
+          calls++;
+          return "{}";
+        },
+        1000,
+      );
+      expect(calls).toBe(0);
+      for (const job of ["drive-retrieval", "drive-replica"]) {
+        expect(next[job]?.ok).toBe(false);
+        expect(next[job]?.waiting?.report).toEqual(report);
+        expect(next[job]?.lastSuccess).toBeUndefined();
+      }
+    }),
   );
 });
 test("reviewed indexing requires an intact managed generation rather than prior success alone", async () => {
@@ -292,7 +330,10 @@ test("reviewed indexing requires an intact managed generation rather than prior 
   expect(next["drive-retrieval"]?.ok).toBe(false);
 });
 test("a job parked on review is waiting, not failed; a real failure clears the wait and fails the timer", async () => {
-  const waiting = { observedAt: "2026-10-09T00:00:00.000Z", report: { review_blocked: 1 } };
+  const waiting = {
+    observedAt: "2026-10-09T00:00:00.000Z",
+    report: { review_blocked: 1 },
+  };
   expect(
     hasFailedJob({
       drive: { ok: true, failures: 0, nextAt: 0 },
@@ -328,12 +369,18 @@ test("remote receipts use native Bun atomic writes and expose only whitelisted p
       ok: false,
       failures: 0,
       nextAt: 60000,
-      waiting: { observedAt: "2026-10-07T13:00:00.000Z", report: { review_pending: 1 } },
+      waiting: {
+        observedAt: "2026-10-07T13:00:00.000Z",
+        report: { review_pending: 1 },
+      },
     },
     secret: { ok: true, failures: 0, nextAt: 1, token: "private" } as never,
   };
   await publishSyncReceipts(
-    { ...config, publication: { ...config.publication, host: "vps", directory: path } },
+    {
+      ...config,
+      publication: { ...config.publication, host: "vps", directory: path },
+    },
     next,
     async (argv) => {
       const command = argv[argv.indexOf("--cmd") + 1]!;
@@ -358,11 +405,19 @@ test("remote receipts use native Bun atomic writes and expose only whitelisted p
       return output;
     },
   );
-  const receipt = await Bun.file(join(path, "agent-sync-vps-status.json")).json();
+  const receipt = await Bun.file(
+    join(path, "agent-sync-vps-status.json"),
+  ).json();
   expect(JSON.stringify(receipt)).not.toContain("private");
   expect(receipt.jobs.secret).toBeUndefined();
-  expect(receipt.jobs["drive-review"].lastSuccess.report).toEqual({ review_pending: 1 });
-  expect(receipt.jobs["drive-retrieval"].waiting.report).toEqual({ review_pending: 1 });
-  expect(hasMode((await stat(join(path, "agent-sync-vps-status.json"))).mode, 0o600)).toBe(true);
+  expect(receipt.jobs["drive-review"].lastSuccess.report).toEqual({
+    review_pending: 1,
+  });
+  expect(receipt.jobs["drive-retrieval"].waiting.report).toEqual({
+    review_pending: 1,
+  });
+  expect(
+    hasMode((await stat(join(path, "agent-sync-vps-status.json"))).mode, 0o600),
+  ).toBe(true);
   expect(await readdir(path)).toEqual(["agent-sync-vps-status.json"]);
 });

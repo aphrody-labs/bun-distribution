@@ -36,7 +36,10 @@ export interface FactoryJob {
   reconciliationRequired?: boolean;
 }
 /** Bind native CI to the existing durable job rather than an independently sampled HEAD. */
-export function factoryBuildCommand(repository: SyncRepository, job: FactoryJob): string[] {
+export function factoryBuildCommand(
+  repository: SyncRepository,
+  job: FactoryJob,
+): string[] {
   if (!repository.buildCommand?.length || repository.buildEnabled === false)
     throw new Error("Factory job has no enabled owner build command");
   if (repository.id !== "bun-os") return [...repository.buildCommand];
@@ -46,7 +49,9 @@ export function factoryBuildCommand(repository: SyncRepository, job: FactoryJob)
     !/^[a-f0-9]{40}$/u.test(job.revision) ||
     !Number.isFinite(Date.parse(job.requestedAt))
   )
-    throw new Error("Invalid native CI owner command or durable source identity");
+    throw new Error(
+      "Invalid native CI owner command or durable source identity",
+    );
   const requested = new Bun.CryptoHasher("sha256")
     .update(job.requestedAt)
     .digest("hex")
@@ -84,7 +89,10 @@ function observedJob(path: string, job: FactoryJob): FactoryJob {
 }
 function readJob(path: string): FactoryJob | undefined {
   if (!existsSync(path)) return undefined;
-  return observedJob(path, JSON.parse(readFileSync(path, "utf8")) as FactoryJob);
+  return observedJob(
+    path,
+    JSON.parse(readFileSync(path, "utf8")) as FactoryJob,
+  );
 }
 function writePrivate(path: string, value: unknown): void {
   const temporary = `${path}.${process.pid}.${crypto.randomUUID()}.tmp`;
@@ -101,9 +109,15 @@ function live(pid: number | undefined): boolean {
   }
 }
 type WorkerProbe = { token: string; nonce: string };
-type WorkerProof = WorkerProbe & { repo: string; revision: string; pid: number };
+type WorkerProof = WorkerProbe & {
+  repo: string;
+  revision: string;
+  pid: number;
+};
 function validToken(token: string | undefined): token is string {
-  return !!token && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/u.test(token);
+  return (
+    !!token && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/u.test(token)
+  );
 }
 function readPrivate<T>(path: string): T | undefined {
   try {
@@ -114,13 +128,18 @@ function readPrivate<T>(path: string): T | undefined {
   }
 }
 /** A fresh challenge proves the worker identity across platforms, without trusting a reused PID. */
-export function answerFactoryJobProbe(path: string, job: FactoryJob): () => void {
-  if (!validToken(job.token)) throw new Error("Factory worker has no immutable job token");
+export function answerFactoryJobProbe(
+  path: string,
+  job: FactoryJob,
+): () => void {
+  if (!validToken(job.token))
+    throw new Error("Factory worker has no immutable job token");
   const respond = () => {
     const probe = readPrivate<WorkerProbe>(`${path}.probe.json`);
     if (!probe || probe.token !== job.token || !validToken(probe.nonce)) return;
     const previous = readPrivate<WorkerProof>(`${path}.owner.json`);
-    if (previous?.token === probe.token && previous.nonce === probe.nonce) return;
+    if (previous?.token === probe.token && previous.nonce === probe.nonce)
+      return;
     writePrivate(`${path}.owner.json`, {
       ...probe,
       repo: job.repo,
@@ -144,7 +163,8 @@ function launchFactoryWorker(jobPath: string, logPath: string): JobHandle {
   const descriptor = openSync(logPath, "a", 0o600);
   try {
     const job = readJob(jobPath);
-    if (!validToken(job?.token)) throw new Error("Factory launch has no immutable job token");
+    if (!validToken(job?.token))
+      throw new Error("Factory launch has no immutable job token");
     return Bun.spawn(
       [
         process.execPath,
@@ -183,11 +203,16 @@ export class FactoryBuildQueue {
     mkdirSync(directory, { recursive: true, mode: 0o700 });
     const path = join(directory, "pending.json");
     if (existsSync(path)) {
-      const pending: Record<string, string> = JSON.parse(readFileSync(path, "utf8"));
+      const pending: Record<string, string> = JSON.parse(
+        readFileSync(path, "utf8"),
+      );
       for (const [repo, revision] of Object.entries(pending))
         if (
           config.repositories.some(
-            (value) => value.id === repo && value.buildCommand && value.buildEnabled !== false,
+            (value) =>
+              value.id === repo &&
+              value.buildCommand &&
+              value.buildEnabled !== false,
           ) &&
           /^[a-f0-9]{40}$/u.test(revision)
         )
@@ -197,7 +222,10 @@ export class FactoryBuildQueue {
     this.timer.unref();
   }
   private persist(): void {
-    writePrivate(join(this.directory, "pending.json"), Object.fromEntries(this.pending));
+    writePrivate(
+      join(this.directory, "pending.json"),
+      Object.fromEntries(this.pending),
+    );
   }
   enqueue(report: SyncReport): void {
     if (this.stopped || report.mode !== "apply") return;
@@ -234,7 +262,8 @@ export class FactoryBuildQueue {
             token: job.token,
             revision: job.revision,
             pid: job.pid,
-            status: live(job.pid) && job.status !== "lost" ? job.status : "lost",
+            status:
+              live(job.pid) && job.status !== "lost" ? job.status : "lost",
             reconciliationRequired: true,
           });
         if (!validToken(job.token)) {
@@ -270,14 +299,18 @@ export class FactoryBuildQueue {
         return;
       }
     }
-    const selected = this.pending.entries().next().value as [string, string] | undefined;
+    const selected = this.pending.entries().next().value as
+      [string, string] | undefined;
     if (!selected) return;
     const [repo, revision] = selected;
     const path = join(this.directory, `${repo}.json`);
     const previous = readJob(path);
     this.pending.delete(repo);
     this.persist();
-    if (previous?.revision === revision && ["succeeded", "failed"].includes(previous.status)) {
+    if (
+      previous?.revision === revision &&
+      ["succeeded", "failed"].includes(previous.status)
+    ) {
       this.pump();
       return;
     }
@@ -364,9 +397,14 @@ export async function runFactoryWorker(
   const command = factoryBuildCommand(repository, job);
   const current = () => {
     const observed = readJob(path);
-    return !!observed && observed.token === job.token && observed.revision === job.revision;
+    return (
+      !!observed &&
+      observed.token === job.token &&
+      observed.revision === job.revision
+    );
   };
-  if (!current()) throw new Error("Factory job was superseded before preparation");
+  if (!current())
+    throw new Error("Factory job was superseded before preparation");
   let code = 2;
   const stopProof = answerFactoryJobProbe(path, job);
   const publish = (value: FactoryJob) => {
@@ -382,7 +420,15 @@ export async function runFactoryWorker(
       if (!current()) return (code = 2);
       publish({ ...job, pid: process.pid, status: "running", phase: "build" });
       code = await invokeFactory(
-        ["run", "--repo", job.repo, "--revision", job.revision, "--", ...command],
+        [
+          "run",
+          "--repo",
+          job.repo,
+          "--revision",
+          job.revision,
+          "--",
+          ...command,
+        ],
         root,
       );
     }
@@ -401,7 +447,9 @@ export async function runFactoryWorker(
   }
 }
 function safeRevision(value: unknown): string | undefined {
-  return typeof value === "string" && /^[a-f0-9]{40}$/u.test(value) ? value : undefined;
+  return typeof value === "string" && /^[a-f0-9]{40}$/u.test(value)
+    ? value
+    : undefined;
 }
 function safeDate(value: unknown): string | undefined {
   return typeof value === "string" &&
@@ -411,7 +459,10 @@ function safeDate(value: unknown): string | undefined {
     : undefined;
 }
 /** Project bounded operational metadata only; never fetch Git or expose private identity/log data. */
-export async function readRepoSyncStatus(root = infraRoot(), state = sourceSyncStateRoot()) {
+export async function readRepoSyncStatus(
+  root = infraRoot(),
+  state = sourceSyncStateRoot(),
+) {
   const config = await loadSourceSyncConfig(root);
   const repositories = config.repositories.map((repository) => ({
     repo: repository.id,
@@ -422,9 +473,13 @@ export async function readRepoSyncStatus(root = infraRoot(), state = sourceSyncS
     buildDeclared: !!repository.buildCommand?.length,
     buildEnabled: repository.buildEnabled !== false,
   }));
-  const ownerRecord = readPrivate<{ pid?: number; at?: string }>(join(state, "owner.lock"));
+  const ownerRecord = readPrivate<{ pid?: number; at?: string }>(
+    join(state, "owner.lock"),
+  );
   const ownerPid =
-    Number.isSafeInteger(ownerRecord?.pid) && ownerRecord!.pid! > 0 ? ownerRecord!.pid : undefined;
+    Number.isSafeInteger(ownerRecord?.pid) && ownerRecord!.pid! > 0
+      ? ownerRecord!.pid
+      : undefined;
   const owner = {
     state: !existsSync(join(state, "owner.lock"))
       ? "absent"
@@ -443,14 +498,19 @@ export async function readRepoSyncStatus(root = infraRoot(), state = sourceSyncS
     const valid =
       job?.repo === repository.id &&
       safeRevision(job.revision) &&
-      ["starting", "running", "succeeded", "failed", "lost"].includes(job.status) &&
+      ["starting", "running", "succeeded", "failed", "lost"].includes(
+        job.status,
+      ) &&
       ["prepare", "build", "complete"].includes(job.phase);
     if (!valid)
       return {
         repo: repository.id,
-        status: existsSync(join(directory, `${repository.id}.json`)) ? "unverified" : "absent",
+        status: existsSync(join(directory, `${repository.id}.json`))
+          ? "unverified"
+          : "absent",
       };
-    const pid = Number.isSafeInteger(job.pid) && job.pid! > 0 ? job.pid : undefined;
+    const pid =
+      Number.isSafeInteger(job.pid) && job.pid! > 0 ? job.pid : undefined;
     return {
       repo: repository.id,
       revision: job.revision,
@@ -464,7 +524,9 @@ export async function readRepoSyncStatus(root = infraRoot(), state = sourceSyncS
       reconciliationRequired: job.reconciliationRequired === true,
     };
   });
-  const pendingRecord = readPrivate<Record<string, unknown>>(join(directory, "pending.json"));
+  const pendingRecord = readPrivate<Record<string, unknown>>(
+    join(directory, "pending.json"),
+  );
   const pending = Object.fromEntries(
     config.repositories.flatMap((repository) => {
       const revision = safeRevision(pendingRecord?.[repository.id]);
@@ -510,7 +572,8 @@ export async function readRepoSyncStatus(root = infraRoot(), state = sourceSyncS
           at: safeDate(latestRecord.at),
           mode: latestRecord.mode,
           rows: latestRecord.rows.flatMap((row) => {
-            const repository = row && repositories.find((value) => value.repo === row.repo);
+            const repository =
+              row && repositories.find((value) => value.repo === row.repo);
             if (!repository) return [];
             return [
               {
@@ -518,9 +581,14 @@ export async function readRepoSyncStatus(root = infraRoot(), state = sourceSyncS
                 sourceHead: safeRevision(row.sourceHead),
                 destinationHead: safeRevision(row.destinationHead),
                 dirty: typeof row.dirty === "boolean" ? row.dirty : undefined,
-                ahead: Number.isSafeInteger(row.ahead) && row.ahead! >= 0 ? row.ahead : undefined,
+                ahead:
+                  Number.isSafeInteger(row.ahead) && row.ahead! >= 0
+                    ? row.ahead
+                    : undefined,
                 behind:
-                  Number.isSafeInteger(row.behind) && row.behind! >= 0 ? row.behind : undefined,
+                  Number.isSafeInteger(row.behind) && row.behind! >= 0
+                    ? row.behind
+                    : undefined,
                 status: statuses.has(row.status) ? row.status : "unverified",
                 action: actions.has(row.action) ? row.action : "unverified",
               },
@@ -536,7 +604,11 @@ export async function readRepoSyncStatus(root = infraRoot(), state = sourceSyncS
         ? "watching"
         : jobs.some((job) => job.reconciliationRequired)
           ? "reconciliation-required"
-          : jobs.some((job) => job.processAlive && ["starting", "running"].includes(job.status))
+          : jobs.some(
+                (job) =>
+                  job.processAlive &&
+                  ["starting", "running"].includes(job.status),
+              )
             ? "building"
             : "idle",
     repositories,
@@ -546,7 +618,10 @@ export async function readRepoSyncStatus(root = infraRoot(), state = sourceSyncS
     pending,
   };
 }
-export async function runRepoSync(args: string[], root = infraRoot()): Promise<number> {
+export async function runRepoSync(
+  args: string[],
+  root = infraRoot(),
+): Promise<number> {
   if (args[0] === "status") {
     if (args.length > 2 || (args[1] !== undefined && args[1] !== "--json")) {
       console.error("Usage: yolo ops repo-sync status [--json]");
@@ -556,7 +631,9 @@ export async function runRepoSync(args: string[], root = infraRoot()): Promise<n
       console.log(JSON.stringify(await readRepoSyncStatus(root)));
       return 0;
     } catch {
-      console.error("Cannot read source-sync configuration or protected operational metadata");
+      console.error(
+        "Cannot read source-sync configuration or protected operational metadata",
+      );
       return 2;
     }
   }
@@ -595,7 +672,9 @@ export async function runRepoSync(args: string[], root = infraRoot()): Promise<n
                 JSON.stringify({
                   executed: false,
                   factory: config.repositories.map((repository) => {
-                    const row = report.rows.find((value) => value.repo === repository.id);
+                    const row = report.rows.find(
+                      (value) => value.repo === repository.id,
+                    );
                     const revision = row?.sourceHead;
                     if (
                       !revision ||
@@ -605,7 +684,8 @@ export async function runRepoSync(args: string[], root = infraRoot()): Promise<n
                       return {
                         repo: repository.id,
                         buildEnabled: repository.buildEnabled !== false,
-                        reason: "No verified source revision and declared command available",
+                        reason:
+                          "No verified source revision and declared command available",
                       };
                     const job: FactoryJob = {
                       repo: repository.id,
@@ -622,7 +702,10 @@ export async function runRepoSync(args: string[], root = infraRoot()): Promise<n
                       revision,
                       requestedAt: job.requestedAt,
                       sourceDirty: row?.dirty,
-                      command: factoryBuildCommand({ ...repository, buildEnabled: true }, job),
+                      command: factoryBuildCommand(
+                        { ...repository, buildEnabled: true },
+                        job,
+                      ),
                       preparation: [
                         "build-factory",
                         "prepare",

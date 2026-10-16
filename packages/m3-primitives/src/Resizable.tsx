@@ -33,7 +33,10 @@ const useResizableContext = () => {
   return context;
 };
 
-interface ResizableProps extends Omit<PropsWithChildren<UseResizableProps>, "axis"> {
+interface ResizableProps extends Omit<
+  PropsWithChildren<UseResizableProps>,
+  "axis"
+> {
   axis?: UseResizableProps["axis"];
   collapsed?: boolean;
   onCollapseChange?: (val: boolean) => void;
@@ -64,7 +67,13 @@ const Resizable = ({ axis = "x", ...props }: ResizableProps) => {
 
     document.addEventListener("mousemove", handleMouseMove);
     return () => document.removeEventListener("mousemove", handleMouseMove);
-  }, [min, collapsed, onCollapseChange, resizable.isDragging, resizable.position]);
+  }, [
+    min,
+    collapsed,
+    onCollapseChange,
+    resizable.isDragging,
+    resizable.position,
+  ]);
 
   useEffect(() => {
     if (!resizable.isDragging) {
@@ -85,7 +94,11 @@ const Resizable = ({ axis = "x", ...props }: ResizableProps) => {
     [resizable, collapsed],
   );
 
-  return <ResizableContext.Provider value={value}>{props.children}</ResizableContext.Provider>;
+  return (
+    <ResizableContext.Provider value={value}>
+      {props.children}
+    </ResizableContext.Provider>
+  );
 };
 
 const ResizablePanel = (props: HTMLAttributes<HTMLDivElement>) => {
@@ -98,7 +111,10 @@ const ResizablePanel = (props: HTMLAttributes<HTMLDivElement>) => {
  * on hover, focus and drag, with the on-surface state layer (hover 8 %, focus 10 %, dragged
  * 16 %). The orientation follows the separator's `aria-orientation`.
  */
-const ResizableHandle = ({ className, ...props }: HTMLAttributes<HTMLDivElement>) => {
+const ResizableHandle = ({
+  className,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) => {
   const resizable = useResizableContext();
 
   return (
@@ -119,7 +135,8 @@ const ResizableHandle = ({ className, ...props }: HTMLAttributes<HTMLDivElement>
         "aria-[orientation=vertical]:after:inset-y-0 aria-[orientation=vertical]:after:left-1/2 aria-[orientation=vertical]:after:w-1 aria-[orientation=vertical]:after:-translate-x-1/2",
         "aria-[orientation=horizontal]:after:inset-x-0 aria-[orientation=horizontal]:after:top-1/2 aria-[orientation=horizontal]:after:h-1 aria-[orientation=horizontal]:after:-translate-y-1/2",
         "hover:bg-on-surface/8 hover:after:opacity-100 focus-visible:bg-on-surface/10 focus-visible:after:opacity-100",
-        resizable.isDragging && "bg-on-surface/16 after:opacity-100 hover:bg-on-surface/16",
+        resizable.isDragging &&
+          "bg-on-surface/16 after:opacity-100 hover:bg-on-surface/16",
         className,
       )}
       data-dragging={resizable.isDragging || undefined}

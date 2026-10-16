@@ -58,7 +58,9 @@ const registryPath = (c: TargetContext): string =>
   `Registry::${uninstallKey(c).replace(/^HKCU/, "HKEY_CURRENT_USER")}`;
 
 /** Per-user desktop install: copy the .exe, Start menu and desktop shortcuts, Apps & features entry (HKCU). */
-export const installAppScript = (c: TargetContext): string => `# ${GENERATED_NOTE}
+export const installAppScript = (
+  c: TargetContext,
+): string => `# ${GENERATED_NOTE}
 # Installs ${c.name} for the current user, no elevation: the executable under %LOCALAPPDATA%\\Programs, Start menu
 # and desktop shortcuts, and an Apps & features entry. Nothing runs until you do; bun windows-check.ts verifies it.
 [CmdletBinding()]
@@ -102,7 +104,9 @@ New-ItemProperty -Path $key -Name NoRepair -Value 1 -PropertyType DWord -Force |
 Write-Host "installed $target"
 `;
 
-export const uninstallAppScript = (c: TargetContext): string => `# ${GENERATED_NOTE}
+export const uninstallAppScript = (
+  c: TargetContext,
+): string => `# ${GENERATED_NOTE}
 # Removes the per-user install of ${c.name}: shortcuts, Apps & features entry and install folder.
 $ErrorActionPreference = 'Stop'
 $key = '${registryPath(c)}'
@@ -138,13 +142,19 @@ export const pngSvg = (png: Uint8Array, size: number): string =>
 export async function iconFile(c: TargetContext): Promise<TargetFile> {
   const own = c.windows?.icon;
   if (own) {
-    if (!c.appDir) throw new Error("m3-bun: windows.icon needs the app directory");
+    if (!c.appDir)
+      throw new Error("m3-bun: windows.icon needs the app directory");
     const path = resolve(c.appDir, own);
-    if (!existsSync(path)) throw new Error(`m3-bun: windows.icon ${own} does not exist`);
+    if (!existsSync(path))
+      throw new Error(`m3-bun: windows.icon ${own} does not exist`);
     const ext = extname(path).toLowerCase();
     if (ext === ".ico")
-      return { path: "icons/icon.ico", content: new Uint8Array(readFileSync(path)) };
-    if (ext !== ".svg") throw new Error(`m3-bun: windows.icon must be .ico or .svg, got ${own}`);
+      return {
+        path: "icons/icon.ico",
+        content: new Uint8Array(readFileSync(path)),
+      };
+    if (ext !== ".svg")
+      throw new Error(`m3-bun: windows.icon must be .ico or .svg, got ${own}`);
     return { path: "icon.svg", content: readFileSync(path, "utf8") };
   }
   if (c.iconSymbol) {
@@ -180,7 +190,10 @@ export async function iconFile(c: TargetContext): Promise<TargetFile> {
       { cause: error },
     );
   }
-  return { path: "icon.svg", content: pngSvg(new Uint8Array(readFileSync(emblem)), 192) };
+  return {
+    path: "icon.svg",
+    content: pngSvg(new Uint8Array(readFileSync(emblem)), 192),
+  };
 }
 
 /** `m3-svg-to-ico <svg> --out <dir>` (@aphrody/material-design-icons, through the Tauri CLI); returns `<dir>/icon.ico`. */
@@ -188,7 +201,9 @@ export function windowsIcon(svg: string, outDir: string): string {
   let cli: string;
   try {
     cli = join(
-      dirname(Bun.resolveSync("@aphrody/material-design-icons", import.meta.dir)),
+      dirname(
+        Bun.resolveSync("@aphrody/material-design-icons", import.meta.dir),
+      ),
       "../scripts/svg-to-ico.ts",
     );
   } catch (error) {
@@ -251,7 +266,9 @@ if ($OpenFirewall) {
 }
 `;
 
-export const uninstallScript = (c: TargetContext): string => `# ${GENERATED_NOTE}
+export const uninstallScript = (
+  c: TargetContext,
+): string => `# ${GENERATED_NOTE}
 [CmdletBinding()]
 param([string]$InstallDir = (Join-Path $env:ProgramFiles '${c.name}'))
 $ErrorActionPreference = 'Stop'
@@ -262,7 +279,9 @@ Get-NetFirewallRule -DisplayName '${c.name}' -ErrorAction SilentlyContinue | Rem
 Write-Host 'removed; ${c.name}.exe and its folder are left in place'
 `;
 
-export const winswXml = (c: TargetContext): string => `<?xml version="1.0" encoding="utf-8"?>
+export const winswXml = (
+  c: TargetContext,
+): string => `<?xml version="1.0" encoding="utf-8"?>
 <!-- ${GENERATED_NOTE} -->
 <service>
   <id>${c.name}</id>

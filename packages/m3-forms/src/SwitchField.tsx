@@ -12,7 +12,13 @@ export interface SwitchFieldProps {
   required?: boolean;
 }
 
-function SwitchField({ name, label, description, disabled, required }: SwitchFieldProps) {
+function SwitchField({
+  name,
+  label,
+  description,
+  disabled,
+  required,
+}: SwitchFieldProps) {
   return (
     <FormField
       name={name}
@@ -23,7 +29,11 @@ function SwitchField({ name, label, description, disabled, required }: SwitchFie
           data-testid={`field-${name}`}
         >
           <div className="flex min-h-14 flex-row items-center justify-between gap-4">
-            <FieldText label={label} description={description} required={required} />
+            <FieldText
+              label={label}
+              description={description}
+              required={required}
+            />
             <FormControl>
               <Switch
                 name={field.name}

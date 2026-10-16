@@ -24,8 +24,13 @@ test("process adapter reports launch failures without throwing", () => {
 test("execFileSync preserves Buffer and text results and throws on failure", () => {
   const args = ["-e", 'process.stdout.write("été")'];
   expect(execFileSync(process.execPath, args)).toEqual(Buffer.from("été"));
-  expect(execFileSync(process.execPath, args, { encoding: "utf8" })).toBe("été");
+  expect(execFileSync(process.execPath, args, { encoding: "utf8" })).toBe(
+    "été",
+  );
   expect(() =>
-    execFileSync(process.execPath, ["-e", 'process.stderr.write("failed"); process.exit(9)']),
+    execFileSync(process.execPath, [
+      "-e",
+      'process.stderr.write("failed"); process.exit(9)',
+    ]),
   ).toThrow("failed");
 });

@@ -17,7 +17,7 @@ export interface GeneratedObject {
 }
 
 export const useObjectGenerationCompleteEvent = (
-  asyncCallback: (event: ObjectGenerationCompleteEvent) => Promise<void>
+  asyncCallback: (event: ObjectGenerationCompleteEvent) => Promise<void>,
 ) => {
   useEffect(() => {
     let isUnmounted = false;
@@ -28,7 +28,7 @@ export const useObjectGenerationCompleteEvent = (
         EVENT_NAME,
         async (wrappedEvent) => {
           await asyncCallback(wrappedEvent.payload.data);
-        }
+        },
       );
 
       if (isUnmounted) {

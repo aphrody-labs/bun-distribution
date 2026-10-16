@@ -1,14 +1,16 @@
-
 import { download } from "@tauri-apps/plugin-upload";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { DownloadUrl, GetDownloadPath } from "./DownloadUrl";
 
-const ASK_LOCATION_BEFORE_DOWNLOAD_KEY = "artcraft_ask_location_before_download";
+const ASK_LOCATION_BEFORE_DOWNLOAD_KEY =
+  "artcraft_ask_location_before_download";
 
 export const getAskLocationBeforeDownload = (): boolean => {
   if (typeof window === "undefined") return false;
   try {
-    return window.localStorage.getItem(ASK_LOCATION_BEFORE_DOWNLOAD_KEY) === "true";
+    return (
+      window.localStorage.getItem(ASK_LOCATION_BEFORE_DOWNLOAD_KEY) === "true"
+    );
   } catch {
     return false;
   }
@@ -60,7 +62,11 @@ export const downloadUrlToPath = async (url: string, path: string) => {
   await download(url, path);
 };
 
-export const downloadFileFromUrl = async (url: string, _mediaClass?: string, model?: string) => {
+export const downloadFileFromUrl = async (
+  url: string,
+  _mediaClass?: string,
+  model?: string,
+) => {
   console.log("GOT THE URL", url);
   try {
     const chosen = await promptDownloadLocationIfNeeded(url, model);

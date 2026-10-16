@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # aphrody-app — Aphrody Tauri desktop host
 
 `aphrody-app` is the Tauri 3 (`tauri-runtime-cef`: CEF + tauri-winit + GTK 4) shell in the root Aphrody OS Cargo workspace.
@@ -9,11 +10,11 @@ streams. The browser version talks to the same protocol over loopback HTTP/SSE.
 
 The trusted main window's core commands include:
 
-| Command | Returns | Use |
-|---|---|---|
-| `aphrody_meta()` | `{ app_version, target_os, target_arch, family }` | header / about info |
-| `aphrody_rpc(request)` | JSON-RPC result | app-server sessions, turns and interruption |
-| `aphrody_shell_window(action)` | native window state | main-only window controls and navigation |
+| Command                        | Returns                                           | Use                                         |
+| ------------------------------ | ------------------------------------------------- | ------------------------------------------- |
+| `aphrody_meta()`               | `{ app_version, target_os, target_arch, family }` | header / about info                         |
+| `aphrody_rpc(request)`         | JSON-RPC result                                   | app-server sessions, turns and interruption |
+| `aphrody_shell_window(action)` | native window state                               | main-only window controls and navigation    |
 
 The shell command takes its invoking `WebviewWindow`, accepts no target label and
 rejects every label except `main`. Remote CEF previews have no capability and
@@ -35,12 +36,12 @@ not copy or delete them during startup.
 
 ## Runtime boundary
 
-| Surface | Owner | Contract |
-|---|---|---|
-| Agent sessions | `aphrody-app-server` | in-process broker; loopback HTTP/SSE for web clients |
-| Web tools | Aphrody kernel | `aphrody_web` Obscura/provider subsystem |
-| Web retrieval and crawl | Aphrody kernel / Obscura | backend capability; no embedded browser or crawler-management view in the public webview |
-| File libraries | `aphrody-drive` + `sd-daemon` | local socket; daemon stays outside this Cargo graph |
+| Surface                 | Owner                         | Contract                                                                                 |
+| ----------------------- | ----------------------------- | ---------------------------------------------------------------------------------------- |
+| Agent sessions          | `aphrody-app-server`          | in-process broker; loopback HTTP/SSE for web clients                                     |
+| Web tools               | Aphrody kernel                | `aphrody_web` Obscura/provider subsystem                                                 |
+| Web retrieval and crawl | Aphrody kernel / Obscura      | backend capability; no embedded browser or crawler-management view in the public webview |
+| File libraries          | `aphrody-drive` + `sd-daemon` | local socket; daemon stays outside this Cargo graph                                      |
 
 ## Capability surface (default-deny)
 

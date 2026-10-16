@@ -8,7 +8,8 @@ import { readGitHead } from "./status";
 import { checkoutRoot } from "@aphrody/paths";
 
 export interface BunApiDomain {
-  readonly id: "web_api" | "server" | "react" | "css" | "img" | "json" | "markdown";
+  readonly id:
+    "web_api" | "server" | "react" | "css" | "img" | "json" | "markdown";
   readonly title: string;
   readonly description: string;
   readonly docMatches: readonly string[];
@@ -43,19 +44,24 @@ async function writeTrackedCatalog(
   mkdirSync(dirname(targetPath), { recursive: true });
   try {
     await Bun.write(draft, content);
-    const formatted = Bun.spawnSync([process.execPath, "fmt", "--write", draft], {
-      windowsHide: true,
-      cwd: rootDir,
-      stdout: "ignore",
-      stderr: "pipe",
-      timeout: 30000,
-    });
+    const formatted = Bun.spawnSync(
+      [process.execPath, "fmt", "--write", draft],
+      {
+        windowsHide: true,
+        cwd: rootDir,
+        stdout: "ignore",
+        stderr: "pipe",
+        timeout: 30000,
+      },
+    );
     if (formatted.exitCode !== 0)
       throw new Error(
         `Bun fmt failed to format the Bun catalog (exit ${formatted.exitCode}): ${formatted.stderr.toString().slice(0, 2048)}`,
       );
     const next = await Bun.file(draft).text();
-    const previous = existsSync(targetPath) ? await Bun.file(targetPath).text() : "";
+    const previous = existsSync(targetPath)
+      ? await Bun.file(targetPath).text()
+      : "";
     if (withoutTimestamps(previous) === withoutTimestamps(next)) {
       rmSync(draft);
     } else {
@@ -74,10 +80,13 @@ export function bunCheckout(
   return dir && existsSync(resolve(dir, "docs")) ? resolve(dir) : undefined;
 }
 
-export async function generateBunCatalog(rootDirArg?: string): Promise<AutonomousGenerationReport> {
+export async function generateBunCatalog(
+  rootDirArg?: string,
+): Promise<AutonomousGenerationReport> {
   const t0 = Bun.nanoseconds();
   const rootDir = rootDirArg ?? yoloHome();
-  const bunRepoDir = rootDirArg === undefined ? bunCheckout() : resolve(rootDir, "vendor/bun");
+  const bunRepoDir =
+    rootDirArg === undefined ? bunCheckout() : resolve(rootDir, "vendor/bun");
   if (!bunRepoDir)
     throw new Error(
       "Bun catalog generation requires the Bun fork checkout (set APHRODY_BUN_CHECKOUT)",
@@ -85,18 +94,25 @@ export async function generateBunCatalog(rootDirArg?: string): Promise<Autonomou
   const bunDocsDir = resolve(bunRepoDir, "docs");
   const bunTypesDir = resolve(bunRepoDir, "packages/bun-types");
   if (!existsSync(bunDocsDir) || !existsSync(bunTypesDir))
-    throw new Error("Bun catalog generation requires vendor/bun docs and bun-types source data");
+    throw new Error(
+      "Bun catalog generation requires vendor/bun docs and bun-types source data",
+    );
   const sourceRevision = await readGitHead(bunRepoDir);
-  if (!sourceRevision) throw new Error("Cannot resolve the vendor/bun source revision");
+  if (!sourceRevision)
+    throw new Error("Cannot resolve the vendor/bun source revision");
 
   const globDocs = new Bun.Glob("**/*.md*");
   const globTypes = new Bun.Glob("*.d.ts");
 
   const allDocs = existsSync(bunDocsDir)
-    ? Array.from(globDocs.scanSync({ cwd: bunDocsDir, onlyFiles: true })).toSorted()
+    ? Array.from(
+        globDocs.scanSync({ cwd: bunDocsDir, onlyFiles: true }),
+      ).toSorted()
     : [];
   const allTypes = existsSync(bunTypesDir)
-    ? Array.from(globTypes.scanSync({ cwd: bunTypesDir, onlyFiles: true })).toSorted()
+    ? Array.from(
+        globTypes.scanSync({ cwd: bunTypesDir, onlyFiles: true }),
+      ).toSorted()
     : [];
 
   const domains: BunApiDomain[] = [
@@ -125,9 +141,17 @@ export async function generateBunCatalog(rootDirArg?: string): Promise<Autonomou
       title: "Native HTTP Server & WebSockets",
       description:
         "High-performance Bun.serve with zero-copy routing, SSE streams, backpressure WebSocket, and TLS",
-      docMatches: allDocs.filter((d) => /server|http|websocket|route|listen/i.test(d)),
+      docMatches: allDocs.filter((d) =>
+        /server|http|websocket|route|listen/i.test(d),
+      ),
       typeMatches: allTypes.filter((t) => /serve|devserver/i.test(t)),
-      keyApis: ["Bun.serve", "Bun.listen", "ServerWebSocket", "Response.json", "Response.redirect"],
+      keyApis: [
+        "Bun.serve",
+        "Bun.listen",
+        "ServerWebSocket",
+        "Response.json",
+        "Response.redirect",
+      ],
     },
     {
       id: "react",
@@ -253,7 +277,10 @@ ${domains
 };
 `;
 
-  const targetPath = resolve(rootDir, "m3/packages/app-ui/src/generated/bun-catalog.ts");
+  const targetPath = resolve(
+    rootDir,
+    "m3/packages/app-ui/src/generated/bun-catalog.ts",
+  );
   await writeTrackedCatalog(targetPath, generatedFileHeader, rootDir);
 
   const elapsedMs = Math.round((Bun.nanoseconds() - t0) / 1_000_000);

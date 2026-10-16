@@ -5,18 +5,72 @@ export const AGE1000_MAP = {
   width: 1200,
   height: 760,
   areas: [
-    { id: "university", label: "Université", x: 70, y: 120, w: 245, h: 210, color: "#315568" },
-    { id: "city", label: "Centre urbain", x: 280, y: 160, w: 600, h: 430, color: "#284258" },
-    { id: "capsule", label: "Quartier Capsule", x: 830, y: 105, w: 300, h: 230, color: "#35536c" },
-    { id: "plaza", label: "Esplanade", x: 870, y: 490, w: 260, h: 180, color: "#274b5c" },
-    { id: "glacier", label: "Porte glaciaire", x: 70, y: 505, w: 245, h: 165, color: "#536a79" },
+    {
+      id: "university",
+      label: "Université",
+      x: 70,
+      y: 120,
+      w: 245,
+      h: 210,
+      color: "#315568",
+    },
+    {
+      id: "city",
+      label: "Centre urbain",
+      x: 280,
+      y: 160,
+      w: 600,
+      h: 430,
+      color: "#284258",
+    },
+    {
+      id: "capsule",
+      label: "Quartier Capsule",
+      x: 830,
+      y: 105,
+      w: 300,
+      h: 230,
+      color: "#35536c",
+    },
+    {
+      id: "plaza",
+      label: "Esplanade",
+      x: 870,
+      y: 490,
+      w: 260,
+      h: 180,
+      color: "#274b5c",
+    },
+    {
+      id: "glacier",
+      label: "Porte glaciaire",
+      x: 70,
+      y: 505,
+      w: 245,
+      h: 165,
+      color: "#536a79",
+    },
   ],
   landmarks: [
-    { id: "university", label: "West City University", x: 115, y: 195, w: 150, h: 86 },
+    {
+      id: "university",
+      label: "West City University",
+      x: 115,
+      y: 195,
+      w: 150,
+      h: 86,
+    },
     { id: "squad", label: "Great Saiya Squad", x: 365, y: 190, w: 165, h: 76 },
     { id: "plaza", label: "Central Plaza", x: 565, y: 320, w: 155, h: 100 },
     { id: "capsule", label: "Capsule Complex", x: 900, y: 175, w: 150, h: 90 },
-    { id: "monorail", label: "Monorail Station", x: 675, y: 525, w: 135, h: 55 },
+    {
+      id: "monorail",
+      label: "Monorail Station",
+      x: 675,
+      y: 525,
+      w: 135,
+      h: 55,
+    },
     { id: "glacier", label: "Glacier Outpost", x: 115, y: 545, w: 150, h: 75 },
   ],
 };
@@ -82,7 +136,12 @@ export function drawAge1000Map(ctx, width, height) {
     ctx.stroke();
     ctx.fillStyle = "#fff";
     ctx.font = "600 15px system-ui";
-    ctx.fillText(place.label, place.x + 12, place.y + place.h / 2 + 5, place.w - 24);
+    ctx.fillText(
+      place.label,
+      place.x + 12,
+      place.y + place.h / 2 + 5,
+      place.w - 24,
+    );
   }
   ctx.fillStyle = "#e1eff8";
   ctx.font = "800 24px system-ui";

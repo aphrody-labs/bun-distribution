@@ -32,7 +32,9 @@ describe("project document serialization", () => {
       },
     ];
 
-    const wire = JSON.parse(JSON.stringify(serializeProjectDocument({ project, media })));
+    const wire = JSON.parse(
+      JSON.stringify(serializeProjectDocument({ project, media })),
+    );
     const restored = deserializeProjectDocument(wire);
 
     expect(restored).not.toBeNull();

@@ -508,19 +508,15 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   camViewCanvasEl: null,
 
   // scene actions
-  addObject: (obj) =>
-    set((s) => ({ objects: [...s.objects, obj] })),
-  addCharacter: (obj) =>
-    set((s) => ({ characters: [...s.characters, obj] })),
-  addShape: (obj) =>
-    set((s) => ({ shapes: [...s.shapes, obj] })),
+  addObject: (obj) => set((s) => ({ objects: [...s.objects, obj] })),
+  addCharacter: (obj) => set((s) => ({ characters: [...s.characters, obj] })),
+  addShape: (obj) => set((s) => ({ shapes: [...s.shapes, obj] })),
   removeSceneObject: (id) =>
     set((s) => ({
       objects: s.objects.filter((o) => o.id !== id),
       characters: s.characters.filter((o) => o.id !== id),
       shapes: s.shapes.filter((o) => o.id !== id),
-      selectedObject:
-        s.selectedObject?.id === id ? null : s.selectedObject,
+      selectedObject: s.selectedObject?.id === id ? null : s.selectedObject,
     })),
   setSelectedObject: (sel) => set({ selectedObject: sel }),
   resetScene: () =>
@@ -561,8 +557,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   setTimelineTracks: (tracks) => set({ timelineTracks: tracks }),
   setTimelineClipLanes: (clipLanes) => set({ timelineClipLanes: clipLanes }),
   setTimelineSelectedKeyframe: (id) => set({ timelineSelectedKeyframeId: id }),
-  setTimelineSelectedClipLane: (id) =>
-    set({ timelineSelectedClipLaneId: id }),
+  setTimelineSelectedClipLane: (id) => set({ timelineSelectedClipLaneId: id }),
   setTimelineEasingKeyframe: (id) => set({ timelineEasingKeyframeId: id }),
   setTimelineEasingClipLane: (id) => set({ timelineEasingClipLaneId: id }),
   setTimelineRevealObjectUuid: (uuid) =>

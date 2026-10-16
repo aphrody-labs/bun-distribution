@@ -55,7 +55,10 @@ function entry(dir: string): string {
 function write(path: string, text: string, value: unknown) {
   const indent = text.match(/^[ \t]+(?=")/m)?.[0] ?? "  ";
   const eol = text.includes("\r\n") ? "\r\n" : "\n";
-  writeFileSync(path, JSON.stringify(value, null, indent).replaceAll("\n", eol) + eol);
+  writeFileSync(
+    path,
+    JSON.stringify(value, null, indent).replaceAll("\n", eol) + eol,
+  );
 }
 
 const fwd = (p: string) => p.replaceAll("\\", "/");
@@ -69,7 +72,9 @@ export async function runWorkspaceDeps(args: string[]): Promise<number> {
   const sibling = flag("--sibling");
   const apply = args.includes("--apply");
   if (!root || !sibling) {
-    console.error("usage: yolo ops workspace-deps --root <repo> --sibling <repo> [--apply]");
+    console.error(
+      "usage: yolo ops workspace-deps --root <repo> --sibling <repo> [--apply]",
+    );
     return 2;
   }
   const local = members(root);
@@ -115,7 +120,9 @@ export async function runWorkspaceDeps(args: string[]): Promise<number> {
         );
       }
     } else {
-      changes.push(`${name}: no tsconfig.json; add one with paths for ${moved.join(", ")}`);
+      changes.push(
+        `${name}: no tsconfig.json; add one with paths for ${moved.join(", ")}`,
+      );
     }
     if (tsconfig) {
       const options = (tsconfig.value.compilerOptions ??= {});
@@ -142,4 +149,5 @@ export async function runWorkspaceDeps(args: string[]): Promise<number> {
   return 0;
 }
 
-if (import.meta.main) process.exit(await runWorkspaceDeps(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runWorkspaceDeps(process.argv.slice(2)));

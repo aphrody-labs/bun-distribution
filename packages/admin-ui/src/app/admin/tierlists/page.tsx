@@ -1,7 +1,10 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/session";
-import { listAllTierlistsAdmin, type TierlistAdminFilter } from "@/lib/tierlists";
+import {
+  listAllTierlistsAdmin,
+  type TierlistAdminFilter,
+} from "@/lib/tierlists";
 import { toggleTierlistFlag, removeTierlist } from "./_actions";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +23,11 @@ function isFilter(v: string | undefined): v is TierlistAdminFilter {
 }
 
 const dateFmt = (d: Date) =>
-  new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+  new Date(d).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 
 /** Petit bouton-formulaire qui bascule un drapeau de la tier list. */
 function FlagButton({
@@ -67,7 +74,11 @@ export default async function AdminTierlistsPage({
   const sp = await searchParams;
   const filter: TierlistAdminFilter = isFilter(sp.filter) ? sp.filter : "all";
   const q = (sp.q ?? "").trim();
-  const { rows, total } = await listAllTierlistsAdmin({ q, filter, limit: 200 });
+  const { rows, total } = await listAllTierlistsAdmin({
+    q,
+    filter,
+    limit: 200,
+  });
 
   const buildHref = (next: Partial<{ q: string; filter: string }>) => {
     const params = new URLSearchParams();
@@ -85,11 +96,14 @@ export default async function AdminTierlistsPage({
         <div>
           <h1 className="text-4xl font-saiyan text-dbz-orange">TIER LISTS</h1>
           <p className="text-sm text-white/50 mt-1">
-            Modère les tier lists de la communauté, mets-en avant les meilleures et crée des tier
-            lists officielles. {total} au total.
+            Modère les tier lists de la communauté, mets-en avant les meilleures
+            et crée des tier lists officielles. {total} au total.
           </p>
         </div>
-        <Link href="/admin/tierlists/new" className="dbz-button !text-base shrink-0">
+        <Link
+          href="/admin/tierlists/new"
+          className="dbz-button !text-base shrink-0"
+        >
           Tier list officielle
         </Link>
       </div>
@@ -112,7 +126,9 @@ export default async function AdminTierlistsPage({
           ))}
         </div>
         <form action="/admin/tierlists" method="get" className="flex gap-2">
-          {filter !== "all" && <input type="hidden" name="filter" value={filter} />}
+          {filter !== "all" && (
+            <input type="hidden" name="filter" value={filter} />
+          )}
           <input
             type="search"
             name="q"
@@ -128,7 +144,9 @@ export default async function AdminTierlistsPage({
 
       {rows.length === 0 ? (
         <div className="dbz-panel p-8 text-center">
-          <p className="font-saiyan text-dbz-yellow text-xl mb-2">AUCUNE TIER LIST</p>
+          <p className="font-saiyan text-dbz-yellow text-xl mb-2">
+            AUCUNE TIER LIST
+          </p>
           <p className="text-sm text-white/50">
             {q || filter !== "all"
               ? "Aucun résultat pour ce filtre."
@@ -151,7 +169,10 @@ export default async function AdminTierlistsPage({
             </thead>
             <tbody className="divide-y-2 divide-dbz-border">
               {rows.map((tl) => (
-                <tr key={tl.id} className="align-top hover:bg-dbz-blue-light/5 transition-colors">
+                <tr
+                  key={tl.id}
+                  className="align-top hover:bg-dbz-blue-light/5 transition-colors"
+                >
                   <td className="p-3">
                     <div className="flex items-center gap-2">
                       {tl.official && (
@@ -186,9 +207,15 @@ export default async function AdminTierlistsPage({
                       </Link>
                     )}
                   </td>
-                  <td className="p-3 text-sm text-white/70">{tl.authorName ?? "—"}</td>
-                  <td className="p-3 text-center text-sm text-white/70">{tl.itemCount}</td>
-                  <td className="p-3 text-center text-sm text-white/70">{tl.likeCount}</td>
+                  <td className="p-3 text-sm text-white/70">
+                    {tl.authorName ?? "—"}
+                  </td>
+                  <td className="p-3 text-center text-sm text-white/70">
+                    {tl.itemCount}
+                  </td>
+                  <td className="p-3 text-center text-sm text-white/70">
+                    {tl.likeCount}
+                  </td>
                   <td className="p-3 text-sm text-gray-400 whitespace-nowrap">
                     {dateFmt(tl.createdAt)}
                   </td>

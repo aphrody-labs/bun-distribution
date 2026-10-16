@@ -34,7 +34,12 @@ export interface TargetContext {
   /** HTTP/2 in the nginx vhost: the `http2 on;` directive of nginx 1.25.1+ (the yolo convention, default) or `listen ... http2`. */
   http2?: "directive" | "listen";
   /** Windows executable metadata; `icon` is relative to the app (`.ico` is used as is, `.svg` is converted). */
-  windows?: { title?: string; publisher?: string; description?: string; icon?: string };
+  windows?: {
+    title?: string;
+    publisher?: string;
+    description?: string;
+    icon?: string;
+  };
   /** Absolute app directory. Targets that read the app (tauri, windows icon) need it. */
   appDir?: string;
   /** Seed colour of the app theme, `#rrggbb` (`theme.seed` of `m3.config.ts`). */
@@ -48,7 +53,9 @@ export interface TargetContext {
 }
 
 /** A generated file; binary payloads (icons, wallpapers) are bytes. */
-export type TargetFile = Omit<GeneratedFile, "content"> & { content: string | Uint8Array };
+export type TargetFile = Omit<GeneratedFile, "content"> & {
+  content: string | Uint8Array;
+};
 
 export interface Target {
   id: string;

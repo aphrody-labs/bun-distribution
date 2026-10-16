@@ -13,7 +13,8 @@
 import { mkdir, open } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
-const viewName = (url: string): string => new URL(url).searchParams.get("view") ?? "main";
+const viewName = (url: string): string =>
+  new URL(url).searchParams.get("view") ?? "main";
 
 export async function runDesktopSmoke(args: string[]): Promise<number> {
   let root = process.cwd();
@@ -40,7 +41,8 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
   const seconds = Number(option("seconds", "60"));
   if (!Number.isInteger(port) || port < 1 || port > 65535)
     throw new Error("--port must be a TCP port");
-  if (!Number.isFinite(seconds) || seconds <= 0) throw new Error("--seconds must be positive");
+  if (!Number.isFinite(seconds) || seconds <= 0)
+    throw new Error("--seconds must be positive");
   const logDir = join(root, "target", "desktop-smoke");
   interface ViewReport {
     url: string;
@@ -59,7 +61,12 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
     webSocketDebuggerUrl: string;
   }): Promise<void> {
     const name = viewName(target.url);
-    const report: ViewReport = { url: target.url, textLength: 0, elements: 0, exceptions: [] };
+    const report: ViewReport = {
+      url: target.url,
+      textLength: 0,
+      elements: 0,
+      exceptions: [],
+    };
     views.set(name, report);
     const ws = new WebSocket(target.webSocketDebuggerUrl);
     sockets.push(ws);
@@ -77,13 +84,18 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
       else if (data.method === "Runtime.exceptionThrown") {
         const details = data.params.exceptionDetails;
         report.exceptions.push(details.exception?.description ?? details.text);
-      } else if (data.method === "Runtime.consoleAPICalled" && data.params.type === "error") {
+      } else if (
+        data.method === "Runtime.consoleAPICalled" &&
+        data.params.type === "error"
+      ) {
         report.exceptions.push(
           `console.error: ${data.params.args.map((arg: any) => arg.value ?? arg.description).join(" ")}`,
         );
       }
     });
-    await new Promise((done) => ws.addEventListener("open", () => done(undefined), { once: true }));
+    await new Promise((done) =>
+      ws.addEventListener("open", () => done(undefined), { once: true }),
+    );
     // Enabling the runtime replays exceptions and console errors raised before attaching.
     await send("Runtime.enable");
     const measure = async () => {
@@ -94,12 +106,18 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
       });
       const value = result?.result?.value;
       if (typeof value !== "string") return;
-      const { text, elements } = JSON.parse(value) as { text: number; elements: number };
+      const { text, elements } = JSON.parse(value) as {
+        text: number;
+        elements: number;
+      };
       report.textLength = Math.max(report.textLength, text);
       report.elements = Math.max(report.elements, elements);
     };
     // Short-lived surfaces (the splash) close after startup: sample every second while open.
-    const timer = setInterval(() => void measure().catch(() => undefined), 1000);
+    const timer = setInterval(
+      () => void measure().catch(() => undefined),
+      1000,
+    );
     ws.addEventListener("close", () => clearInterval(timer));
     for (let i = 0; i < 5; i++) {
       // Retries are sequential by design: each sample must follow the previous one after a delay.
@@ -138,7 +156,9 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
     try {
       // Polling the debugging endpoint is sequential by design: one probe per tick.
       // oxlint-disable-next-line no-await-in-loop -- sequential polling of the debugging endpoint
-      const targets = (await (await fetch(`http://127.0.0.1:${port}/json`)).json()) as any[];
+      const targets = (await (
+        await fetch(`http://127.0.0.1:${port}/json`)
+      ).json()) as any[];
       for (const target of targets) {
         if (
           target.type === "page" &&
@@ -158,7 +178,9 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
   for (const ws of sockets) ws.close();
   if (alive) {
     if (process.platform === "win32")
-      Bun.spawnSync(["taskkill", "/PID", String(child.pid), "/T", "/F"], { windowsHide: true });
+      Bun.spawnSync(["taskkill", "/PID", String(child.pid), "/T", "/F"], {
+        windowsHide: true,
+      });
     else child.kill("SIGTERM");
   }
   await stdout.close();
@@ -166,19 +188,31 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
 
   const expected = ["main", "splash", "pet", "widget", "quickbar"];
   const failures: string[] = [];
-  if (!alive) failures.push(`process exited early with code ${exit.code} (see stderr.log)`);
+  if (!alive)
+    failures.push(
+      `process exited early with code ${exit.code} (see stderr.log)`,
+    );
   for (const name of expected) {
     const view = views.get(name);
     if (!view) failures.push(`${name}: no webview seen`);
     else if (view.elements === 0) failures.push(`${name}: empty body`);
   }
   for (const [name, view] of views) {
-    for (const exception of view.exceptions) failures.push(`${name}: ${exception.split("\n")[0]}`);
+    for (const exception of view.exceptions)
+      failures.push(`${name}: ${exception.split("\n")[0]}`);
   }
 
-  console.log(JSON.stringify({ alive, seconds, views: Object.fromEntries(views) }, null, 2));
+  console.log(
+    JSON.stringify(
+      { alive, seconds, views: Object.fromEntries(views) },
+      null,
+      2,
+    ),
+  );
   if (failures.length > 0) {
-    console.error(`desktop smoke: ${failures.length} failure(s)\n- ${failures.join("\n- ")}`);
+    console.error(
+      `desktop smoke: ${failures.length} failure(s)\n- ${failures.join("\n- ")}`,
+    );
     return 1;
   }
   console.log(
@@ -187,4 +221,5 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
   return 0;
 }
 
-if (import.meta.main) process.exit(await runDesktopSmoke(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runDesktopSmoke(process.argv.slice(2)));

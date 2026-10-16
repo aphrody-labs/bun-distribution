@@ -8,23 +8,42 @@
 // host-side implementation of the adapter contract.
 
 import { useMemo } from "react";
-import { GenerateImage, GenerateImageRequest, LoadWithoutCors } from "@storyteller/tauri-api";
+import {
+  GenerateImage,
+  GenerateImageRequest,
+  LoadWithoutCors,
+} from "@storyteller/tauri-api";
 import { FetchProxy } from "@storyteller/tauri-utils";
-import { MediaFilesApi, StorytellerApiHostStore, UploadImageMedia } from "@storyteller/api";
+import {
+  MediaFilesApi,
+  StorytellerApiHostStore,
+  UploadImageMedia,
+} from "@storyteller/api";
 import type { PageSceneAdapter } from "@storyteller/ui-pagescene";
 import { ToastTypes } from "@storyteller/ui-pagescene";
 import { GetCdnOrigin } from "~/api/GetCdnOrigin";
 import { BucketConfig } from "~/api/BucketConfig";
 import { MediaFilesApi as ArtcraftMediaFilesApi } from "~/Classes/ApiManager";
-import { UploadModal3D, UploadModalImage, UploadModalSplat } from "@storyteller/ui-upload-modal";
+import {
+  UploadModal3D,
+  UploadModalImage,
+  UploadModalSplat,
+} from "@storyteller/ui-upload-modal";
 import { uploadImage as hostUploadImage } from "~/components/reusable/UploadModalMedia/uploadImage";
 import { uploadPlaneFromMediaToken as hostUploadPlaneFromMediaToken } from "~/components/reusable/UploadModalMedia/uploadPlane";
 import { useTabStore } from "~/pages/Stores/TabState";
 import { setLogoutStates } from "~/signals/authentication/utilities";
-import { addToast, authentication, pageHeight, pageWidth, signalScene } from "~/signals";
+import {
+  addToast,
+  authentication,
+  pageHeight,
+  pageWidth,
+  signalScene,
+} from "~/signals";
 import { sceneOutputAdapter } from "./sceneOutputAdapter";
 
-const apiHost = () => StorytellerApiHostStore.getInstance().getApiSchemeAndHost();
+const apiHost = () =>
+  StorytellerApiHostStore.getInstance().getApiSchemeAndHost();
 
 // — Scene file save/load (replaces api_fetchers.ts) ────────────────────
 
@@ -52,12 +71,15 @@ const updateExistingScene = async (file: File, sceneToken: string) => {
   formData.append("uuid_idempotency_token", crypto.randomUUID());
   formData.append("file", file);
 
-  return FetchProxy(`${apiHost()}/v1/media_files/upload/saved_scene/${sceneToken}`, {
-    method: "POST",
-    headers: { Accept: "application/json" },
-    credentials: "include",
-    body: formData,
-  })
+  return FetchProxy(
+    `${apiHost()}/v1/media_files/upload/saved_scene/${sceneToken}`,
+    {
+      method: "POST",
+      headers: { Accept: "application/json" },
+      credentials: "include",
+      body: formData,
+    },
+  )
     .then((res) => res.json())
     .then((res) => (res?.success ? res : { success: false }))
     .catch(() => ({ success: false }));
@@ -80,7 +102,10 @@ const uploadSceneCoverImage = async (blob: Blob, fileName: string) => {
   return response.json();
 };
 
-const setSceneCoverImage = async (sceneToken: string, coverImageToken: string) => {
+const setSceneCoverImage = async (
+  sceneToken: string,
+  coverImageToken: string,
+) => {
   await fetch(`${apiHost()}/v1/media_files/cover_image/${sceneToken}`, {
     method: "POST",
     credentials: "include",
@@ -94,7 +119,9 @@ const setSceneCoverImage = async (sceneToken: string, coverImageToken: string) =
 
 // — Scene load (replaces api_manager.loadSceneState body) ──────────────
 
-const loadSceneState = async (scene_media_file_token: string): Promise<unknown> => {
+const loadSceneState = async (
+  scene_media_file_token: string,
+): Promise<unknown> => {
   const url = `${apiHost()}/v1/media_files/file/${scene_media_file_token}`;
   const response = await fetch(url);
   if (response.status > 200) throw new Error("Failed to load scene");
@@ -159,7 +186,12 @@ export const useTauriPageSceneAdapter = (
 
       uploadAsset: UploadImageMedia,
 
-      saveScene: async ({ saveJson, sceneTitle, sceneToken, sceneThumbnail }) => {
+      saveScene: async ({
+        saveJson,
+        sceneTitle,
+        sceneToken,
+        sceneThumbnail,
+      }) => {
         const file = new File([saveJson], `${sceneTitle}.glb`, {
           type: "application/json",
         });
@@ -170,7 +202,10 @@ export const useTauriPageSceneAdapter = (
         if (uploadSceneResponse["success"] === false) return "";
 
         if (sceneThumbnail) {
-          const image_resp = await uploadSceneCoverImage(sceneThumbnail, "render.png");
+          const image_resp = await uploadSceneCoverImage(
+            sceneThumbnail,
+            "render.png",
+          );
           if (image_resp["success"] === false) return "";
           if (image_resp["media_file_token"]) {
             await setSceneCoverImage(
@@ -251,7 +286,8 @@ export const useTauriPageSceneAdapter = (
         };
       },
 
-      showToast: (level: ToastTypes, message: string) => addToast(level, message),
+      showToast: (level: ToastTypes, message: string) =>
+        addToast(level, message),
 
       getMediaUrlByToken: async (token) => {
         const mediaFilesApi = new MediaFilesApi();

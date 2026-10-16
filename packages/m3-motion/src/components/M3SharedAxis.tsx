@@ -2,7 +2,10 @@ import * as React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { HTMLMotionProps, Transition, Variants } from "motion/react";
 import { m3Easings, m3Durations } from "../easings";
-import { motionVariants, useM3ReducedMotion } from "../hooks/useM3ReducedMotion";
+import {
+  motionVariants,
+  useM3ReducedMotion,
+} from "../hooks/useM3ReducedMotion";
 
 export interface M3SharedAxisProps extends HTMLMotionProps<"div"> {
   /**
@@ -68,9 +71,18 @@ export const M3SharedAxis = React.forwardRef<HTMLDivElement, M3SharedAxisProps>(
         y: 0,
         scale: 1,
         transition: customTransition || {
-          x: { ease: m3Easings.emphasizedDecelerate, duration: m3Durations.medium2 },
-          y: { ease: m3Easings.emphasizedDecelerate, duration: m3Durations.medium2 },
-          scale: { ease: m3Easings.emphasizedDecelerate, duration: m3Durations.medium2 },
+          x: {
+            ease: m3Easings.emphasizedDecelerate,
+            duration: m3Durations.medium2,
+          },
+          y: {
+            ease: m3Easings.emphasizedDecelerate,
+            duration: m3Durations.medium2,
+          },
+          scale: {
+            ease: m3Easings.emphasizedDecelerate,
+            duration: m3Durations.medium2,
+          },
           opacity: { ease: m3Easings.standard, duration: m3Durations.medium2 },
         },
       },
@@ -80,15 +92,27 @@ export const M3SharedAxis = React.forwardRef<HTMLDivElement, M3SharedAxisProps>(
         y: axis === "y" ? (forward ? -translateOffset : translateOffset) : 0,
         scale: axis === "z" ? (forward ? 1 + scaleOffset : 1 - scaleOffset) : 1,
         transition: customTransition || {
-          x: { ease: m3Easings.emphasizedAccelerate, duration: m3Durations.short4 },
-          y: { ease: m3Easings.emphasizedAccelerate, duration: m3Durations.short4 },
-          scale: { ease: m3Easings.emphasizedAccelerate, duration: m3Durations.short4 },
+          x: {
+            ease: m3Easings.emphasizedAccelerate,
+            duration: m3Durations.short4,
+          },
+          y: {
+            ease: m3Easings.emphasizedAccelerate,
+            duration: m3Durations.short4,
+          },
+          scale: {
+            ease: m3Easings.emphasizedAccelerate,
+            duration: m3Durations.short4,
+          },
           opacity: { ease: m3Easings.standard, duration: m3Durations.short4 },
         },
       },
     };
 
-    const resolvedVariants = motionVariants(customVariants ?? defaultVariants, reduced);
+    const resolvedVariants = motionVariants(
+      customVariants ?? defaultVariants,
+      reduced,
+    );
 
     const content = (
       <motion.div
@@ -105,7 +129,9 @@ export const M3SharedAxis = React.forwardRef<HTMLDivElement, M3SharedAxisProps>(
     );
 
     if (inProp !== undefined) {
-      return <AnimatePresence mode="wait">{inProp ? content : null}</AnimatePresence>;
+      return (
+        <AnimatePresence mode="wait">{inProp ? content : null}</AnimatePresence>
+      );
     }
 
     return content;

@@ -399,7 +399,11 @@ export type {
   Corner,
   Edge,
 } from "./lib/preview/element-bounds";
-export { hitTest, getHitElements, resolvePreferredHit } from "./lib/preview/hit-test";
+export {
+  hitTest,
+  getHitElements,
+  resolvePreferredHit,
+} from "./lib/preview/hit-test";
 export {
   snapPosition,
   snapScale,
@@ -488,9 +492,7 @@ export type {
 } from "./lib/timeline/group-resize";
 
 // --- Timeline animation targets + update pipeline ---
-export {
-  resolveAnimationTarget,
-} from "./lib/timeline/animation-targets";
+export { resolveAnimationTarget } from "./lib/timeline/animation-targets";
 export type { AnimationPathDescriptor } from "./lib/timeline/animation-targets";
 export { applyElementUpdate } from "./lib/timeline/update-pipeline";
 export type { ElementUpdateContext } from "./lib/timeline/update-pipeline";
@@ -667,26 +669,38 @@ export type { SceneExporterEvents } from "./lib/services/renderer/scene-exporter
 export { buildScene } from "./lib/services/renderer/scene-builder";
 export type { BuildSceneParams } from "./lib/services/renderer/scene-builder";
 export { BaseNode } from "./lib/services/renderer/nodes/base-node";
-export type { AnyBaseNode, BaseNodeParams } from "./lib/services/renderer/nodes/base-node";
+export type {
+  AnyBaseNode,
+  BaseNodeParams,
+} from "./lib/services/renderer/nodes/base-node";
 export { RootNode } from "./lib/services/renderer/nodes/root-node";
 export type { RootNodeParams } from "./lib/services/renderer/nodes/root-node";
 export { ColorNode } from "./lib/services/renderer/nodes/color-node";
 export type { ColorNodeParams } from "./lib/services/renderer/nodes/color-node";
 export { VideoNode } from "./lib/services/renderer/nodes/video-node";
 export type { VideoNodeParams } from "./lib/services/renderer/nodes/video-node";
-export { ImageNode, loadImageSource } from "./lib/services/renderer/nodes/image-node";
+export {
+  ImageNode,
+  loadImageSource,
+} from "./lib/services/renderer/nodes/image-node";
 export type {
   ImageNodeParams,
   CachedImageSource,
 } from "./lib/services/renderer/nodes/image-node";
-export { StickerNode, loadStickerSource } from "./lib/services/renderer/nodes/sticker-node";
+export {
+  StickerNode,
+  loadStickerSource,
+} from "./lib/services/renderer/nodes/sticker-node";
 export type { StickerNodeParams } from "./lib/services/renderer/nodes/sticker-node";
 export { GraphicNode } from "./lib/services/renderer/nodes/graphic-node";
 export type {
   GraphicNodeParams,
   ResolvedGraphicNodeState,
 } from "./lib/services/renderer/nodes/graphic-node";
-export { TextNode, renderTextToContext } from "./lib/services/renderer/nodes/text-node";
+export {
+  TextNode,
+  renderTextToContext,
+} from "./lib/services/renderer/nodes/text-node";
 export type {
   TextNodeParams,
   ResolvedTextNodeState,
@@ -736,7 +750,11 @@ export { DEFAULT_EXPORT_OPTIONS } from "./lib/export/defaults";
 export { EXPORT_MIME_TYPES } from "./lib/export/mime-types";
 
 // --- Gradients ---
-export { drawCssBackground, parseGradient, GradientParser } from "./lib/gradients";
+export {
+  drawCssBackground,
+  parseGradient,
+  GradientParser,
+} from "./lib/gradients";
 export type {
   GradientAst,
   GradientOrientation,
@@ -770,7 +788,10 @@ export { GraphEditorPopover } from "./lib/timeline/components/graph-editor/popov
 export { useGraphEditorController } from "./lib/timeline/components/graph-editor/use-controller";
 export { TimelineTick } from "./lib/timeline/components/timeline-tick";
 export { DragLine } from "./lib/timeline/components/drag-line";
-export { BezierGraph, BEZIER_GRAPH_MIN_HEIGHT } from "./lib/timeline/components/graph-editor/bezier-graph";
+export {
+  BezierGraph,
+  BEZIER_GRAPH_MIN_HEIGHT,
+} from "./lib/timeline/components/graph-editor/bezier-graph";
 
 // --- Timeline UI store (snapping + ripple toggles, expanded keyframe IDs) ---
 export { useTimelineStore } from "./lib/timeline/timeline-store";
@@ -860,7 +881,6 @@ export {
   savePreset,
   removePreset,
 } from "./lib/timeline/components/graph-editor/custom-presets-store";
-
 
 // --- PreviewPanel + preview canvas surface ---
 // The PreviewPanel is the main top component for the preview viewport. It
@@ -998,9 +1018,7 @@ export { useFullscreen } from "./lib/hooks/use-fullscreen";
 // `usePropertiesStore` (active-tab-per-element-type, transform scale lock).
 export { PropertiesPanel } from "./lib/panels/properties";
 export { usePropertiesStore } from "./lib/panels/properties/stores/properties-store";
-export {
-  getPropertiesConfig,
-} from "./lib/panels/properties/registry";
+export { getPropertiesConfig } from "./lib/panels/properties/registry";
 export type {
   TabContentProps,
   PropertiesTabDef,
@@ -1011,12 +1029,8 @@ export { KeyframeToggle } from "./lib/panels/properties/components/keyframe-togg
 export { ElementParamsTab } from "./lib/panels/properties/components/element-params-tab";
 export { EmptyView as PropertiesEmptyView } from "./lib/panels/properties/empty-view";
 export { useElementPlayhead } from "./lib/panels/properties/hooks/use-element-playhead";
-export {
-  useKeyframedParamProperty,
-} from "./lib/panels/properties/hooks/use-keyframed-param-property";
-export type {
-  KeyframedParamPropertyResult,
-} from "./lib/panels/properties/hooks/use-keyframed-param-property";
+export { useKeyframedParamProperty } from "./lib/panels/properties/hooks/use-keyframed-param-property";
+export type { KeyframedParamPropertyResult } from "./lib/panels/properties/hooks/use-keyframed-param-property";
 export { usePropertyDraft } from "./lib/panels/properties/hooks/use-property-draft";
 
 // --- Section primitive (used by PropertiesPanel + future tab content) ---
@@ -1090,14 +1104,10 @@ export { useActionHandler } from "./lib/actions/use-action-handler";
 export { useKeybindingsListener } from "./lib/actions/use-keybindings";
 export { useKeybindingsStore } from "./lib/actions/keybindings-store";
 export type { KeybindingConflict } from "./lib/actions/keybindings-store";
-export {
-  useKeyboardShortcutsHelp,
-} from "./lib/actions/use-keyboard-shortcuts-help";
+export { useKeyboardShortcutsHelp } from "./lib/actions/use-keyboard-shortcuts-help";
 export type { KeyboardShortcut } from "./lib/actions/use-keyboard-shortcuts-help";
 export { ShortcutsDialog } from "./lib/actions/shortcuts-dialog";
-export {
-  isKey,
-} from "./lib/actions/keybinding";
+export { isKey } from "./lib/actions/keybinding";
 export type {
   Key,
   KeybindingConfig,
@@ -1109,10 +1119,7 @@ export type {
 
 // --- Selection scope (escape-key cancellation registry shared by
 // editor-actions and timeline selection scopes) ---
-export {
-  activateScope,
-  clearActiveScope,
-} from "./lib/selection/scope";
+export { activateScope, clearActiveScope } from "./lib/selection/scope";
 export type { ScopeEntry } from "./lib/selection/scope";
 
 // --- AssetsPanel ---
@@ -1217,9 +1224,7 @@ export { emptySoundsAdapter } from "./lib/adapters/default";
 // via `stickersRegistry.register({ key, definition })` before mounting.
 export { StickersView } from "./lib/stickers/components/assets-view";
 export { useStickersStore } from "./lib/stickers/stickers-store";
-export {
-  STICKER_CATEGORIES,
-} from "./lib/stickers/categories";
+export { STICKER_CATEGORIES } from "./lib/stickers/categories";
 export {
   searchStickers,
   searchAll,
@@ -1234,7 +1239,10 @@ export {
   parseStickerId,
   buildStickerId,
 } from "./lib/stickers";
-export { shapesProvider, parseShapeStickerId } from "./lib/stickers/providers/shapes";
+export {
+  shapesProvider,
+  parseShapeStickerId,
+} from "./lib/stickers/providers/shapes";
 export { logosProvider } from "./lib/stickers/providers/logos";
 export type {
   StickerBrowseResult,

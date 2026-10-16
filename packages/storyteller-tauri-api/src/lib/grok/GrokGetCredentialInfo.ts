@@ -10,7 +10,8 @@ export interface GrokGetCredentialInfoSuccess extends CommandResult {
   payload: GrokGetCredentialInfoPayload;
 }
 
-export const GrokGetCredentialInfo = async (): Promise<GrokGetCredentialInfoSuccess> => {
-  const result = await invoke("grok_get_credential_info_command");
-  return result as GrokGetCredentialInfoSuccess;
-};
+export const GrokGetCredentialInfo =
+  async (): Promise<GrokGetCredentialInfoSuccess> => {
+    const result = await invoke("grok_get_credential_info_command");
+    return result as GrokGetCredentialInfoSuccess;
+  };

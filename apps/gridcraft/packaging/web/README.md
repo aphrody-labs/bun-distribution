@@ -3,12 +3,12 @@
 `gridcraft-web-<version>.zip` (from the GitHub release, or `packaging/web/package.sh`) holds a
 static site in `gridcraft-web-<version>/`:
 
-| File | What it is |
-|---|---|
-| `index.html` | The page. It loads everything through relative URLs. |
-| `gridcraft-web-<hash>.js` | wasm-bindgen glue (generated, ES module) |
-| `gridcraft-web-<hash>_bg.wasm` | The app (compresses to roughly a third with gzip/Brotli) |
-| `_headers`, `.htaccess` | Sample header rules for Netlify/Cloudflare Pages and Apache |
+| File                           | What it is                                                  |
+| ------------------------------ | ----------------------------------------------------------- |
+| `index.html`                   | The page. It loads everything through relative URLs.        |
+| `gridcraft-web-<hash>.js`      | wasm-bindgen glue (generated, ES module)                    |
+| `gridcraft-web-<hash>_bg.wasm` | The app (compresses to roughly a third with gzip/Brotli)    |
+| `_headers`, `.htaccess`        | Sample header rules for Netlify/Cloudflare Pages and Apache |
 
 There is no server-side code. Upload the folder's contents anywhere that serves static files.
 
@@ -58,7 +58,8 @@ Local test: `python3 -m http.server 8765` inside the folder, then open http://lo
   title="GridCraft spreadsheet"
   style="width: 100%; height: 720px; border: 0;"
   allow="fullscreen; clipboard-read; clipboard-write"
-  allowfullscreen>
+  allowfullscreen
+>
 </iframe>
 ```
 

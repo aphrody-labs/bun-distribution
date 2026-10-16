@@ -3,7 +3,10 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 import * as React from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { flushSync } from "react-dom";
-import { GoogleDriveListView, type DriveItem } from "../src/GoogleDriveListView.tsx";
+import {
+  GoogleDriveListView,
+  type DriveItem,
+} from "../src/GoogleDriveListView.tsx";
 
 let root: Root | undefined;
 let host: HTMLElement | undefined;
@@ -40,27 +43,45 @@ describe("production explorer keyboard access", () => {
         viewMode === "list" ? "tbody tr" : '[role="button"]',
       )!;
       flushSync(() =>
-        row.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })),
+        row.dispatchEvent(
+          new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+        ),
       );
       expect(open).toHaveBeenCalledWith(item);
       expect(select).not.toHaveBeenCalled();
-      flushSync(() => row.dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true })));
+      flushSync(() =>
+        row.dispatchEvent(
+          new KeyboardEvent("keydown", { key: " ", bubbles: true }),
+        ),
+      );
       expect(select).toHaveBeenCalledWith(item);
-      expect(row.getAttribute(viewMode === "list" ? "aria-selected" : "aria-pressed")).toBe("true");
+      expect(
+        row.getAttribute(
+          viewMode === "list" ? "aria-selected" : "aria-pressed",
+        ),
+      ).toBe("true");
     });
   }
 
   test("nested action keys do not activate the row and actions remain visible during keyboard focus", () => {
     const open = mock(() => {});
     const action = mock(() => {});
-    const el = render(<GoogleDriveListView items={[item]} onOpen={open} onRowAction={action} />);
-    const download = el.querySelector<HTMLButtonElement>('[aria-label="Download"]')!;
+    const el = render(
+      <GoogleDriveListView items={[item]} onOpen={open} onRowAction={action} />,
+    );
+    const download = el.querySelector<HTMLButtonElement>(
+      '[aria-label="Download"]',
+    )!;
     flushSync(() =>
-      download.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })),
+      download.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+      ),
     );
     expect(open).not.toHaveBeenCalled();
     flushSync(() => download.click());
     expect(action).toHaveBeenCalledWith(item, "download");
-    expect(download.parentElement!.className).toContain("group-focus-within:opacity-100");
+    expect(download.parentElement!.className).toContain(
+      "group-focus-within:opacity-100",
+    );
   });
 });

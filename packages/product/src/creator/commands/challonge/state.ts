@@ -79,7 +79,9 @@ export class StateStore {
   private async write(state: BotState): Promise<void> {
     await mkdir(dirname(this.path), { recursive: true });
     const tmp = `${this.path}.${process.pid}.${Date.now()}.tmp`;
-    await writeFile(tmp, `${JSON.stringify(state, null, 2)}\n`, { mode: 0o600 });
+    await writeFile(tmp, `${JSON.stringify(state, null, 2)}\n`, {
+      mode: 0o600,
+    });
     await rename(tmp, this.path);
   }
 }

@@ -40,7 +40,8 @@ interface Rendered {
   text: string;
 }
 const unitDir = () =>
-  process.env.APHRODY_SYSTEMD_USER_DIR ?? join(homedir(), ".config", "systemd", "user");
+  process.env.APHRODY_SYSTEMD_USER_DIR ??
+  join(homedir(), ".config", "systemd", "user");
 const isUnit = (f: string) => /\.(service|timer|socket|path|target)$/.test(f);
 
 /** The unit catalog and renderer live in yolo (`@aphrody/yolo-core/units`); APHRODY_YOLO_ROOT or ~/aphrody. */
@@ -48,8 +49,12 @@ export function renderedUnits(): Rendered[] {
   const root = process.env.APHRODY_YOLO_ROOT ?? join(homedir(), "aphrody");
   const entry = join(root, "packages/engine/core/src/units/index.ts");
   if (!existsSync(entry))
-    throw new Error(`yolo unit catalog missing: ${entry} (set APHRODY_YOLO_ROOT)`);
-  return (createRequire(import.meta.url)(entry) as { renderAll(): Rendered[] }).renderAll();
+    throw new Error(
+      `yolo unit catalog missing: ${entry} (set APHRODY_YOLO_ROOT)`,
+    );
+  return (
+    createRequire(import.meta.url)(entry) as { renderAll(): Rendered[] }
+  ).renderAll();
 }
 
 export function repoUnits(_c?: Ctx): string[] {
@@ -69,7 +74,9 @@ export function stateOf(
   const dst = join(dir, name);
   if (!existsSync(dst) && !isLink(dst)) return "missing";
   if (isLink(dst)) return "foreign-link";
-  return want && readFileSync(dst, "utf8") === want.text ? "current" : "stale-copy";
+  return want && readFileSync(dst, "utf8") === want.text
+    ? "current"
+    : "stale-copy";
 }
 
 function isLink(p: string): boolean {
@@ -115,11 +122,17 @@ export function check(c: Ctx): number {
     }
     console.log(`unit   ${u.padEnd(46)} ${st}`);
   }
-  const live = existsSync(unitDir()) ? readdirSync(unitDir()).filter(isUnit) : [];
+  const live = existsSync(unitDir())
+    ? readdirSync(unitDir()).filter(isUnit)
+    : [];
   const own = new Set(repoUnits(c));
-  const orphan = live.filter((u) => !own.has(u) && /^(aphrody|shenron|rg)-/.test(u));
+  const orphan = live.filter(
+    (u) => !own.has(u) && /^(aphrody|shenron|rg)-/.test(u),
+  );
   for (const u of orphan)
-    console.log(`unit   ${u.padEnd(46)} live-only (not in the yolo unit catalog)`);
+    console.log(
+      `unit   ${u.padEnd(46)} live-only (not in the yolo unit catalog)`,
+    );
   const tpl = "tools/config/wsl/wsl.conf";
   if (c.exists(tpl) && existsSync("/etc/wsl.conf")) {
     const drift = wslDrift(c.read(tpl), readFileSync("/etc/wsl.conf", "utf8"));
@@ -127,7 +140,8 @@ export function check(c: Ctx): number {
       console.log(`wsl    ${d}`);
       bad++;
     }
-    if (!drift.length) console.log("wsl    /etc/wsl.conf matches tools/config/wsl/wsl.conf");
+    if (!drift.length)
+      console.log("wsl    /etc/wsl.conf matches tools/config/wsl/wsl.conf");
   }
   return bad ? 1 : 0;
 }
@@ -145,7 +159,9 @@ export function install(c: Ctx, only: string[] = []): number {
   const stamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14);
   const wanted = only.length ? only : units;
   for (const u of rendered.filter(
-    (r) => wanted.includes(r.file) || wanted.some((w) => r.file.startsWith(`${w}.d/`)),
+    (r) =>
+      wanted.includes(r.file) ||
+      wanted.some((w) => r.file.startsWith(`${w}.d/`)),
   )) {
     const st = stateOf(c, u.file, dir, rendered);
     if (st === "current") continue;
@@ -159,7 +175,8 @@ export function install(c: Ctx, only: string[] = []): number {
     mkdirSync(dirname(dst), { recursive: true });
     writeFileSync(dst, u.text);
   }
-  if (c.apply) c.run("systemctl", ["--user", "daemon-reload"], { inherit: true });
+  if (c.apply)
+    c.run("systemctl", ["--user", "daemon-reload"], { inherit: true });
   return 0;
 }
 
@@ -180,12 +197,16 @@ export function restart(c: Ctx, needles: string[]): number {
     const text = c.run("systemctl", ["--user", "cat", u]).stdout;
     if (!needles.some((n) => text.includes(n))) continue;
     console.log(`${c.apply ? "restart" : "would restart"} ${u}`);
-    if (c.apply) c.run("systemctl", ["--user", "try-restart", u], { inherit: true });
+    if (c.apply)
+      c.run("systemctl", ["--user", "try-restart", u], { inherit: true });
   }
   return 0;
 }
 
-const LOCAL_JOB_UNITS = ["aphrody-local-mcp.service", "aphrody-jobs-worker-wsl.service"];
+const LOCAL_JOB_UNITS = [
+  "aphrody-local-mcp.service",
+  "aphrody-jobs-worker-wsl.service",
+];
 type LocalRun = (command: string, args: string[]) => SpawnSyncResult;
 const nonnegativeInteger = (value: unknown) =>
   typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
@@ -200,8 +221,14 @@ export function assertLocalJobsReceipt(stdout: string): void {
     };
   };
   const result = envelope.result;
-  const texts = result?.content?.filter((block) => block.type === "text" && block.text) ?? [];
-  if (!result || result.isError === true || (!result.structuredContent && texts.length !== 1))
+  const texts =
+    result?.content?.filter((block) => block.type === "text" && block.text) ??
+    [];
+  if (
+    !result ||
+    result.isError === true ||
+    (!result.structuredContent && texts.length !== 1)
+  )
     throw new Error("Authenticated local native jobs control failed");
   const receipt = (result.structuredContent ?? JSON.parse(texts[0]!.text!)) as {
     error?: unknown;
@@ -229,7 +256,12 @@ export function ownerPrivate(s: { uid: number; mode: number }): boolean {
 
 export function ownedPrivateFile(path: string): string {
   const s = lstatSync(path);
-  if (!s.isFile() || s.isSymbolicLink() || !ownerPrivate(s) || s.size > 2 * 1024 * 1024)
+  if (
+    !s.isFile() ||
+    s.isSymbolicLink() ||
+    !ownerPrivate(s) ||
+    s.size > 2 * 1024 * 1024
+  )
     throw new Error("Expected an owned private regular file");
   return readFileSync(path, "utf8");
 }
@@ -253,7 +285,11 @@ export function durablePrivateWrite(path: string, text: string) {
 }
 
 /** An occupied endpoint is reusable only when its exact selected unit owns every listener. */
-export function assertLocalJobsListener(rows: string, mainPid: string, active: boolean): void {
+export function assertLocalJobsListener(
+  rows: string,
+  mainPid: string,
+  active: boolean,
+): void {
   for (const row of rows.split("\n").filter((line) => line.trim())) {
     const pids = [...row.matchAll(/pid=(\d+)/g)].map((match) => match[1]);
     if (
@@ -263,7 +299,9 @@ export function assertLocalJobsListener(rows: string, mainPid: string, active: b
       !pids.length ||
       pids.some((pid) => pid !== mainPid)
     ) {
-      throw new Error("Refusing a foreign or unidentified local jobs listener on port 8791");
+      throw new Error(
+        "Refusing a foreign or unidentified local jobs listener on port 8791",
+      );
     }
   }
 }
@@ -281,19 +319,27 @@ export async function activateLocalJobs(
   } = {},
 ) {
   if (!/^[a-f0-9]{64}$/.test(pin))
-    throw new Error("Local jobs require an explicit qualified native binary SHA-256");
+    throw new Error(
+      "Local jobs require an explicit qualified native binary SHA-256",
+    );
   if ((options.platform ?? process.platform) !== "linux")
     throw new Error("Local jobs require the Linux user-systemd owner");
   const home = options.home ?? homedir();
   const run =
-    options.run ?? ((command, args) => spawnSync(command, args, { cwd: c.root, timeout: 15000 }));
+    options.run ??
+    ((command, args) =>
+      spawnSync(command, args, { cwd: c.root, timeout: 15000 }));
   const native = join(home, ".local/bin/aphrody"),
     mcp = join(home, ".local/bin/aphrody-mcp");
   for (const path of [native, mcp])
     if (
-      new Bun.CryptoHasher("sha256").update(readFileSync(realpathSync(path))).digest("hex") !== pin
+      new Bun.CryptoHasher("sha256")
+        .update(readFileSync(realpathSync(path)))
+        .digest("hex") !== pin
     )
-      throw new Error("Canonical local native binary differs from its qualified pin");
+      throw new Error(
+        "Canonical local native binary differs from its qualified pin",
+      );
   const help = run(native, ["job", "run", "--help"]);
   if (
     help.status !== 0 ||
@@ -303,15 +349,26 @@ export async function activateLocalJobs(
     throw new Error("Qualified local native jobs capability missing");
   const memory =
     options.availableMemoryBytes ??
-    Number(/^MemAvailable:\s+(\d+)/m.exec(readFileSync("/proc/meminfo", "utf8"))?.[1] ?? 0) * 1024;
+    Number(
+      /^MemAvailable:\s+(\d+)/m.exec(
+        readFileSync("/proc/meminfo", "utf8"),
+      )?.[1] ?? 0,
+    ) * 1024;
   if (memory < 5 * 1024 ** 3)
-    throw new Error("Local jobs require at least 5 GiB available memory before activation");
+    throw new Error(
+      "Local jobs require at least 5 GiB available memory before activation",
+    );
   const privateRoot = realpathSync(join(home, ".aphrody/private"));
   const profile = JSON.parse(
     ownedPrivateFile(join(privateRoot, "mcp-environment/aphrody.json")),
   ) as Record<string, unknown>;
-  if (profile.APHRODY_AGENT_DOMAIN !== "aphrody" || profile.APHRODY_MCP_HTTP_TOKEN)
-    throw new Error("Local MCP profile must preserve Aphrody domain and the separate host bearer");
+  if (
+    profile.APHRODY_AGENT_DOMAIN !== "aphrody" ||
+    profile.APHRODY_MCP_HTTP_TOKEN
+  )
+    throw new Error(
+      "Local MCP profile must preserve Aphrody domain and the separate host bearer",
+    );
   for (const unit of LOCAL_JOB_UNITS) {
     const path = join(unitDir(), unit);
     if (isLink(path)) throw new Error("Refusing a foreign user-unit link");
@@ -319,7 +376,8 @@ export async function activateLocalJobs(
   if (run("systemctl", ["--user", "show-environment"]).status !== 0)
     throw new Error("Local user-systemd owner is unavailable");
   const listeners = run("ss", ["-H", "-ltnp", "sport = :8791"]);
-  if (listeners.status !== 0) throw new Error("Local jobs listener ownership probe failed");
+  if (listeners.status !== 0)
+    throw new Error("Local jobs listener ownership probe failed");
   const owner = run("systemctl", [
     "--user",
     "show",
@@ -330,7 +388,12 @@ export async function activateLocalJobs(
   assertLocalJobsListener(
     listeners.stdout,
     owner.stdout.trim(),
-    run("systemctl", ["--user", "is-active", "--quiet", "aphrody-local-mcp.service"]).status === 0,
+    run("systemctl", [
+      "--user",
+      "is-active",
+      "--quiet",
+      "aphrody-local-mcp.service",
+    ]).status === 0,
   );
   if (!c.apply) {
     console.log(
@@ -342,15 +405,22 @@ export async function activateLocalJobs(
   mkdirSync(credentials, { recursive: true, mode: 0o700 });
   const ds = lstatSync(credentials);
   if (!ds.isDirectory() || ds.isSymbolicLink() || !ownerPrivate(ds))
-    throw new Error("Local jobs credentials directory must be private and owned");
+    throw new Error(
+      "Local jobs credentials directory must be private and owned",
+    );
   const tokenFile = join(credentials, "wsl-mcp.env");
   if (!existsSync(tokenFile))
     durablePrivateWrite(
       tokenFile,
       `APHRODY_MCP_HTTP_TOKEN=${Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("hex")}\n`,
     );
-  const match = /^APHRODY_MCP_HTTP_TOKEN=([a-f0-9]{64})\n?$/.exec(ownedPrivateFile(tokenFile));
-  if (!match) throw new Error("Local MCP requires its existing purpose-bound protected bearer");
+  const match = /^APHRODY_MCP_HTTP_TOKEN=([a-f0-9]{64})\n?$/.exec(
+    ownedPrivateFile(tokenFile),
+  );
+  if (!match)
+    throw new Error(
+      "Local MCP requires its existing purpose-bound protected bearer",
+    );
   const config = join(credentials, "wsl.toml");
   if (existsSync(config)) ownedPrivateFile(config);
   durablePrivateWrite(
@@ -360,13 +430,18 @@ export async function activateLocalJobs(
   const previous = LOCAL_JOB_UNITS.map((unit) => ({
     unit,
     path: join(unitDir(), unit),
-    text: existsSync(join(unitDir(), unit)) ? readFileSync(join(unitDir(), unit), "utf8") : null,
-    active: run("systemctl", ["--user", "is-active", "--quiet", unit]).status === 0,
-    enabled: run("systemctl", ["--user", "is-enabled", "--quiet", unit]).status === 0,
+    text: existsSync(join(unitDir(), unit))
+      ? readFileSync(join(unitDir(), unit), "utf8")
+      : null,
+    active:
+      run("systemctl", ["--user", "is-active", "--quiet", unit]).status === 0,
+    enabled:
+      run("systemctl", ["--user", "is-enabled", "--quiet", unit]).status === 0,
   }));
   let qualification = "unit installation";
   try {
-    if (install(c, LOCAL_JOB_UNITS) !== 0) throw new Error("Local jobs unit installation failed");
+    if (install(c, LOCAL_JOB_UNITS) !== 0)
+      throw new Error("Local jobs unit installation failed");
     if (run("systemctl", ["--user", "daemon-reload"]).status !== 0)
       throw new Error("Local user-systemd reload failed");
     for (const unit of LOCAL_JOB_UNITS)
@@ -381,15 +456,25 @@ export async function activateLocalJobs(
     for (let attempt = 0; attempt < 20 && !ready; attempt++) {
       try {
         ready = (
-          await request("http://127.0.0.1:8791/healthz", { signal: AbortSignal.timeout(1000) })
+          await request("http://127.0.0.1:8791/healthz", {
+            signal: AbortSignal.timeout(1000),
+          })
         ).ok;
       } catch {}
       if (!ready) await Bun.sleep(250);
     }
     if (!ready) throw new Error("Local native MCP health failed");
-    const body = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} });
+    const body = JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/list",
+      params: {},
+    });
     qualification = "MCP authentication guard";
-    for (const authorization of [undefined, "Bearer invalid-local-jobs-probe"]) {
+    for (const authorization of [
+      undefined,
+      "Bearer invalid-local-jobs-probe",
+    ]) {
       const response = await request("http://127.0.0.1:8791/mcp", {
         method: "POST",
         body,
@@ -400,7 +485,8 @@ export async function activateLocalJobs(
         },
         signal: AbortSignal.timeout(3000),
       });
-      if (response.status !== 401) throw new Error("Local MCP authentication guard failed");
+      if (response.status !== 401)
+        throw new Error("Local MCP authentication guard failed");
     }
     qualification = "authenticated native jobs receipt";
     const status = run(native, [
@@ -413,11 +499,14 @@ export async function activateLocalJobs(
       "--args",
       "{}",
     ]);
-    if (status.status !== 0) throw new Error("Authenticated local native jobs request failed");
+    if (status.status !== 0)
+      throw new Error("Authenticated local native jobs request failed");
     assertLocalJobsReceipt(status.stdout);
     qualification = "worker activity";
     for (const unit of LOCAL_JOB_UNITS)
-      if (run("systemctl", ["--user", "is-active", "--quiet", unit]).status !== 0)
+      if (
+        run("systemctl", ["--user", "is-active", "--quiet", unit]).status !== 0
+      )
         throw new Error("Local native worker is inactive");
     console.log(
       `activated local native jobs; client config ${config}; workerReady remains false until a real lease and finish qualify`,
@@ -465,9 +554,13 @@ export function runSystemd(
     }
     case "jobs-clients": {
       if (args.includes("--qualify") && (!c.apply || !ports.nativeJobTransport))
-        throw new Error("Native job qualification requires --apply and the native transport owner");
+        throw new Error(
+          "Native job qualification requires --apply and the native transport owner",
+        );
       const at = args.indexOf("--binary-sha256");
-      const ids = args.flatMap((arg, index) => (arg === "--host" ? [args[index + 1]] : []));
+      const ids = args.flatMap((arg, index) =>
+        arg === "--host" ? [args[index + 1]] : [],
+      );
       if (ids.some((id) => !["vps", "dbfr", "wsl"].includes(id ?? "")))
         throw new Error("Select existing qualified host identities explicitly");
       const hosts = prepareNativeJobHostClients(

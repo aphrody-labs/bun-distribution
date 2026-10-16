@@ -37,7 +37,9 @@ describe("BoardLibraryStore sections", () => {
     const boardId = store.createBoard("B");
     const sectionId = store.createSection(boardId, "   ");
     const board = useBoardLibraryStore.getState().boards[boardId];
-    expect(board.sections.find((s) => s.id === sectionId)?.name).toBe("New section");
+    expect(board.sections.find((s) => s.id === sectionId)?.name).toBe(
+      "New section",
+    );
   });
 
   it("assigns items into a section and back to ungrouped", () => {
@@ -47,10 +49,14 @@ describe("BoardLibraryStore sections", () => {
     const sectionId = store.createSection(boardId);
 
     store.assignItemsToSection(boardId, [itemId], sectionId);
-    expect(useBoardLibraryStore.getState().boards[boardId].items[itemId].sectionId).toBe(sectionId);
+    expect(
+      useBoardLibraryStore.getState().boards[boardId].items[itemId].sectionId,
+    ).toBe(sectionId);
 
     store.assignItemsToSection(boardId, [itemId], null);
-    expect(useBoardLibraryStore.getState().boards[boardId].items[itemId].sectionId).toBeNull();
+    expect(
+      useBoardLibraryStore.getState().boards[boardId].items[itemId].sectionId,
+    ).toBeNull();
   });
 
   it("returns items to the ungrouped flow when their section is deleted", () => {

@@ -1,5 +1,11 @@
 // oxlint-disable-next-line eslint/no-unused-vars -- fixture : Unused est conservé volontairement (nom MUI sans mapping) par le transform.
-import { Close as X, Delete, Facebook, NotARealIconZzz, Unused } from "@mui/icons-material";
+import {
+  Close as X,
+  Delete,
+  Facebook,
+  NotARealIconZzz,
+  Unused,
+} from "@mui/icons-material";
 import Settings from "@mui/icons-material/Settings";
 import AccountCircleOutlined from "@mui/icons-material/AccountCircleOutlined";
 // oxlint-disable-next-line import/no-unassigned-import -- effet de bord voulu : enregistre le custom element md-icon.

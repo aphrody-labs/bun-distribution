@@ -2,8 +2,16 @@
 // Collecte l'instantané du réseau depuis le hub vps : WireGuard (handshakes, adresses publiques), ports TCP des
 // membres, tunnel inverse d'Omar, faits des hôtes Linux (vps local, dbfr par SSH) et bloc NET_LIVE_* poussé par le
 // PC propriétaire. Aucun secret n'est lu : `wg show` est limité aux sous-commandes sans clé privée.
-import { LINUX_SCRIPT, parseKv } from "@aphrody/yolo-core/src/host/net-facts.ts";
-import { parseContainers, type HostSnap, type MemberSnap, type Snapshot } from "./protocol.ts";
+import {
+  LINUX_SCRIPT,
+  parseKv,
+} from "@aphrody/yolo-core/src/host/net-facts.ts";
+import {
+  parseContainers,
+  type HostSnap,
+  type MemberSnap,
+  type Snapshot,
+} from "./protocol.ts";
 
 export interface MemberCfg {
   id: string;
@@ -73,7 +81,8 @@ export function wgView(
   }));
 }
 
-const ipOf = (endpoint: string) => endpoint.replace(/:\d+$/, "").replace(/^\[|\]$/g, "");
+const ipOf = (endpoint: string) =>
+  endpoint.replace(/:\d+$/, "").replace(/^\[|\]$/g, "");
 
 /** Faits poussés par un PC : lignes NET_LIVE_<MEMBRE>_<NOM>=valeur (jamais autre chose). */
 export function pushedFacts(
@@ -84,16 +93,22 @@ export function pushedFacts(
   const facts: Record<string, string> = {};
   let at: string | undefined;
   for (const line of text.split("\n")) {
-    if (line.startsWith("NET_LIVE_AT=")) at = line.slice("NET_LIVE_AT=".length).trim();
+    if (line.startsWith("NET_LIVE_AT="))
+      at = line.slice("NET_LIVE_AT=".length).trim();
     else if (line.startsWith(key)) {
       const eq = line.indexOf("=");
-      facts[line.slice(key.length, eq).toLowerCase()] = line.slice(eq + 1).trim();
+      facts[line.slice(key.length, eq).toLowerCase()] = line
+        .slice(eq + 1)
+        .trim();
     }
   }
   return { facts, at };
 }
 
-export async function collect(cfg: SyncConfig, d: CollectDeps): Promise<Snapshot> {
+export async function collect(
+  cfg: SyncConfig,
+  d: CollectDeps,
+): Promise<Snapshot> {
   const wgRun = (sub: string) => d.run(["wg", "show", "wg1", sub], 8000);
   const [allowed, handshakes, endpoints, transfer] = await Promise.all([
     wgRun("allowed-ips"),
@@ -101,18 +116,24 @@ export async function collect(cfg: SyncConfig, d: CollectDeps): Promise<Snapshot
     wgRun("endpoints"),
     wgRun("transfer"),
   ]);
-  const wg = new Map(wgView(allowed, handshakes, endpoints, transfer).map((p) => [p.address, p]));
+  const wg = new Map(
+    wgView(allowed, handshakes, endpoints, transfer).map((p) => [p.address, p]),
+  );
   const nowS = d.nowS();
   const members: MemberSnap[] = await Promise.all(
     cfg.members.map(async (m) => {
       const peer = wg.get(m.address);
-      const ageS = peer && peer.handshake > 0 ? Math.max(0, nowS - peer.handshake) : null;
+      const ageS =
+        peer && peer.handshake > 0 ? Math.max(0, nowS - peer.handshake) : null;
       const isHub = m.facts === "local";
       const wgUp = isHub || (ageS !== null && ageS < cfg.offlineAfterS);
       const rev = m.reversePorts?.[0];
       const reverse = rev ? await d.probe("127.0.0.1", rev, 1500) : false;
       const results = await Promise.all(
-        cfg.ports.map(async (p) => ({ p, ok: wgUp ? await d.probe(m.address, p, 2500) : false })),
+        cfg.ports.map(async (p) => ({
+          p,
+          ok: wgUp ? await d.probe(m.address, p, 2500) : false,
+        })),
       );
       return {
         id: m.id,
@@ -135,11 +156,20 @@ export async function collect(cfg: SyncConfig, d: CollectDeps): Promise<Snapshot
     cfg.members.map(async (m) => {
       let kv: Record<string, string> = {};
       let factsAt: string | undefined;
-      if (m.facts === "local") kv = parseKv(await d.run(["sh", "-c", FACTS_SCRIPT], 15_000));
+      if (m.facts === "local")
+        kv = parseKv(await d.run(["sh", "-c", FACTS_SCRIPT], 15_000));
       else if (m.facts === "ssh" && m.ssh)
         kv = parseKv(
           await d.run(
-            ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=4", m.ssh, FACTS_SCRIPT],
+            [
+              "ssh",
+              "-o",
+              "BatchMode=yes",
+              "-o",
+              "ConnectTimeout=4",
+              m.ssh,
+              FACTS_SCRIPT,
+            ],
             15_000,
           ),
         );

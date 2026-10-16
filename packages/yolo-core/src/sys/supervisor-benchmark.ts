@@ -4,7 +4,11 @@ import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { hostTarget, libraryFileName, verifyArtifact } from "@aphrody/runtime-sdk/src/artifact.ts";
+import {
+  hostTarget,
+  libraryFileName,
+  verifyArtifact,
+} from "@aphrody/runtime-sdk/src/artifact.ts";
 
 type Mode = "direct" | "native";
 interface Sample {
@@ -29,7 +33,8 @@ interface Options {
   artifact: string;
   sdkDirectory?: string;
 }
-const sha256 = (bytes: Uint8Array) => new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
+const sha256 = (bytes: Uint8Array) =>
+  new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
 const fixture =
   "process.stdout.write(Buffer.from(Array.from({length:4096},(_,i)=>i%251)));process.stderr.write(Buffer.from(Array.from({length:2048},(_,i)=>(250-i%251))));";
 
@@ -122,7 +127,9 @@ export async function runSupervisorBenchmark(options: Options) {
   const artifact = resolve(options.artifact);
   const manifest = verifyArtifact(artifact);
   const library = join(artifact, libraryFileName(manifest));
-  const sdkDirectory = resolve(options.sdkDirectory ?? join(import.meta.dir, "../../../runtime-sdk"));
+  const sdkDirectory = resolve(
+    options.sdkDirectory ?? join(import.meta.dir, "../../../runtime-sdk"),
+  );
   const sdkIndex = join(sdkDirectory, "src/index.ts");
   const sdkModules = join(sdkDirectory, "src/modules.ts");
   const sdkArtifact = join(sdkDirectory, "src/artifact.ts");
@@ -139,40 +146,53 @@ export async function runSupervisorBenchmark(options: Options) {
   await writeFile(script, driver);
   const output = {
     stdoutSha256: sha256(Uint8Array.from({ length: 4096 }, (_, i) => i % 251)),
-    stderrSha256: sha256(Uint8Array.from({ length: 2048 }, (_, i) => 250 - (i % 251))),
+    stderrSha256: sha256(
+      Uint8Array.from({ length: 2048 }, (_, i) => 250 - (i % 251)),
+    ),
   };
   const base = { samples, fixture, sdkDirectory, cwd: temporary, ...output };
   const invoke = async (phase: "cold" | "warm", mode?: Mode) => {
     const started = performance.now();
-    const child = Bun.spawn([process.execPath, script, JSON.stringify({ ...base, phase, mode })], {
-      windowsHide: true,
-      cwd: temporary,
-      env: { ...process.env, YOLO_RUNTIME_LIB: library },
-      stdin: "ignore",
-      stdout: "pipe",
-      stderr: "pipe",
-      timeout: 30_000,
-    });
+    const child = Bun.spawn(
+      [process.execPath, script, JSON.stringify({ ...base, phase, mode })],
+      {
+        windowsHide: true,
+        cwd: temporary,
+        env: { ...process.env, YOLO_RUNTIME_LIB: library },
+        stdin: "ignore",
+        stdout: "pipe",
+        stderr: "pipe",
+        timeout: 30_000,
+      },
+    );
     const [stdout, stderr, code] = await Promise.all([
       new Response(child.stdout).text(),
       new Response(child.stderr).text(),
       child.exited,
     ]);
     const elapsedMs = performance.now() - started;
-    if (code !== 0) throw new Error("Benchmark driver failed: " + stderr.trim());
+    if (code !== 0)
+      throw new Error("Benchmark driver failed: " + stderr.trim());
     return { value: JSON.parse(stdout) as Sample | Pair[], elapsedMs };
   };
   try {
     const cold: Pair[] = [];
     for (let pair = 0; pair < samples; pair++) {
-      const order: Mode[] = pair % 2 === 0 ? ["direct", "native"] : ["native", "direct"];
+      const order: Mode[] =
+        pair % 2 === 0 ? ["direct", "native"] : ["native", "direct"];
       // Each pair depends on the previous one; simultaneous workloads would invalidate the comparison.
       // oxlint-disable-next-line no-await-in-loop
       const first = await invoke("cold", order[0]);
       // oxlint-disable-next-line no-await-in-loop
       const second = await invoke("cold", order[1]);
-      const a = { ...(first.value as Sample), driverElapsedMs: first.elapsedMs };
-      const b = { ...(second.value as Sample), driverElapsedMs: second.elapsedMs };
+      const a = {
+        ...(first.value as Sample),
+        driverElapsedMs: first.elapsedMs,
+      };
+      const b = {
+        ...(second.value as Sample),
+        driverElapsedMs: second.elapsedMs,
+      };
       cold.push({
         pair,
         order,
@@ -195,22 +215,30 @@ export async function runSupervisorBenchmark(options: Options) {
         build,
       },
       sdk: {
-        packageVersion: JSON.parse(await readFile(join(sdkDirectory, "package.json"), "utf8"))
-          .version,
+        packageVersion: JSON.parse(
+          await readFile(join(sdkDirectory, "package.json"), "utf8"),
+        ).version,
         indexSha256: sha256(await readFile(sdkIndex)),
         modulesSha256: sha256(await readFile(sdkModules)),
         artifactSha256: sha256(await readFile(sdkArtifact)),
       },
       protocol: {
         samplesPerModePerPhase: samples,
-        pairOrder: "Alternating direct/native and native/direct; sequential execution",
+        pairOrder:
+          "Alternating direct/native and native/direct; sequential execution",
         cold: "Fresh Bun driver and SDK/native context for each operation; OS page cache retained",
         coldDriverMs:
           "Entire fresh driver process through stdout/stderr collection and exit, including native context unload",
         warm: "One driver with one shared native context; three unmeasured pairs before samples; child collect/release included; final shared-context unload excluded",
         command: [process.execPath, "-e", fixture],
-        stdio: "Both paths ignore stdin and losslessly capture identical stdout/stderr",
-        identity: { exitCode: 0, stdoutBytes: 4096, stderrBytes: 2048, ...output },
+        stdio:
+          "Both paths ignore stdin and losslessly capture identical stdout/stderr",
+        identity: {
+          exitCode: 0,
+          stdoutBytes: 4096,
+          stderrBytes: 2048,
+          ...output,
+        },
         memory:
           "Cold RSS/maximum RSS describe each fresh driver; warm RSS includes both modes and the shared native context, so it cannot establish separate memory gains",
         limit:
@@ -231,7 +259,9 @@ export async function runSupervisorBenchmark(options: Options) {
   }
 }
 
-export async function runSupervisorBenchCli(args: readonly string[]): Promise<number> {
+export async function runSupervisorBenchCli(
+  args: readonly string[],
+): Promise<number> {
   if (args.includes("--help") || args.includes("-h")) {
     console.log(
       "Usage: yolo bench --supervisor --artifact DIR [--sdk-dir DIR] [--samples 10..100] [--json]. Paired fresh/warm process lifecycles; identical disposable fixtures, no build or cache cleanup.",
@@ -245,7 +275,8 @@ export async function runSupervisorBenchCli(args: readonly string[]): Promise<nu
     if (arg !== "--artifact" && arg !== "--sdk-dir" && arg !== "--samples")
       throw new Error("Unknown benchmark option: " + arg);
     const value = args[++index];
-    if (!value || value.startsWith("--")) throw new Error("Missing value for " + arg);
+    if (!value || value.startsWith("--"))
+      throw new Error("Missing value for " + arg);
     if (arg === "--artifact") options.artifact = value;
     else if (arg === "--sdk-dir") options.sdkDirectory = value;
     else options.samples = Number(value);
@@ -261,7 +292,9 @@ if (import.meta.main) {
       return;
     },
     (error: unknown) => {
-      console.error(`yolo bench: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(
+        `yolo bench: ${error instanceof Error ? error.message : String(error)}`,
+      );
       process.exitCode = 2;
     },
   );

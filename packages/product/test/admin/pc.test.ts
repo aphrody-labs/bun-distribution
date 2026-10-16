@@ -3,7 +3,11 @@ import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-import { PC_ACTIONS, runPcAction, serverStatus } from "../../src/admin/commands/pc.ts";
+import {
+  PC_ACTIONS,
+  runPcAction,
+  serverStatus,
+} from "../../src/admin/commands/pc.ts";
 import { saveProfile } from "../../src/admin/lib/profile.ts";
 import { samplePack, testContext } from "./helpers.ts";
 
@@ -23,7 +27,9 @@ test("every action maps to a fixed aphrody argv, never a shell string", () => {
   expect(all).toContain("aphrody winclean call get_disk_info");
   expect(all).toContain("aphrody winclean call wsl_list_distributions");
   expect(all.join(" ")).not.toContain("yolo");
-  expect(all.join(" ")).not.toMatch(/wsl_execute|wsl_send_signal|kill|rm |delete|--apply/i);
+  expect(all.join(" ")).not.toMatch(
+    /wsl_execute|wsl_send_signal|kill|rm |delete|--apply/i,
+  );
 });
 
 test("a status action runs its commands on the PC", async () => {
@@ -31,7 +37,11 @@ test("a status action runs its commands on the PC", async () => {
   withTools(t);
   expect(await runPcAction(t.ctx, "etat")).toBe(0);
   expect(t.sys.calls).toHaveLength(5);
-  expect(t.sys.calls[0]!.argv.slice(1)).toEqual(["winclean", "call", "get_os_info"]);
+  expect(t.sys.calls[0]!.argv.slice(1)).toEqual([
+    "winclean",
+    "call",
+    "get_os_info",
+  ]);
   expect(t.sys.calls[0]!.options.inherit).toBe(true);
 });
 
@@ -69,7 +79,10 @@ test("server health goes through aphrody infra ssh for vps and dbfr only", async
   await saveProfile(
     t.ctx.paths,
     samplePack({
-      hosts: { vps: { address: "198.51.100.1" }, other: { address: "198.51.100.2" } },
+      hosts: {
+        vps: { address: "198.51.100.1" },
+        other: { address: "198.51.100.2" },
+      },
       trainHost: undefined,
     }),
   );

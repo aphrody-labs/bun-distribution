@@ -11,7 +11,11 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from "@aphrody/m3-primitives";
-import { aphrodyRpc, ensureAphrodyInitialized, pickDirectory } from "../../tauri-bridge";
+import {
+  aphrodyRpc,
+  ensureAphrodyInitialized,
+  pickDirectory,
+} from "../../tauri-bridge";
 import {
   hydratePreferences,
   updatePreferences,
@@ -48,7 +52,8 @@ function readModels(response: Record<string, unknown>): AgentModel[] {
   if (!Array.isArray(response.data)) throw new Error("Invalid model catalog");
   const seen = new Set<string>();
   return response.data.flatMap((entry: unknown) => {
-    if (!entry || typeof entry !== "object") throw new Error("Invalid model catalog entry");
+    if (!entry || typeof entry !== "object")
+      throw new Error("Invalid model catalog entry");
     const model = entry as Record<string, unknown>;
     if (typeof model.id !== "string" || !model.id.trim())
       throw new Error("Invalid model identifier");
@@ -115,9 +120,11 @@ export function AgentSettings({
 
   const commit = async (partial: Partial<Preferences>, message: string) => {
     const stored = await services.save(partial);
-    if (partial.defaultModel !== undefined) await services.saveDefaultModel(partial.defaultModel);
+    if (partial.defaultModel !== undefined)
+      await services.saveDefaultModel(partial.defaultModel);
     setPreferences(stored);
-    if (partial.defaultModel !== undefined) useChatStore.getState().setModel(stored.defaultModel);
+    if (partial.defaultModel !== undefined)
+      useChatStore.getState().setModel(stored.defaultModel);
     if (partial.defaultEffort !== undefined)
       useChatStore.getState().setEffort(stored.defaultEffort);
     if (partial.accessMode !== undefined)
@@ -152,7 +159,9 @@ export function AgentSettings({
 
   const saveModel = (model: string) => {
     if (!models.some((entry) => entry.id === model)) return;
-    void perform(() => commit({ defaultModel: model }, "Modèle par défaut enregistré."));
+    void perform(() =>
+      commit({ defaultModel: model }, "Modèle par défaut enregistré."),
+    );
   };
 
   const addFolder = () =>
@@ -168,7 +177,9 @@ export function AgentSettings({
   return (
     <div className="max-w-3xl space-y-8" aria-busy={loading || saving}>
       <h2 className="text-headline-small font-bold text-on-surface">Agent</h2>
-      {loading && <output className="block">Chargement des préférences…</output>}
+      {loading && (
+        <output className="block">Chargement des préférences…</output>
+      )}
       {!loading && loadError && (
         <div className="space-y-3">
           <p role="alert" className="text-error">
@@ -191,9 +202,14 @@ export function AgentSettings({
               Enregistrement impossible. Réessayez.
             </p>
           )}
-          <Card variant="elevated" className="space-y-6 border border-outline-variant/30 p-6">
+          <Card
+            variant="elevated"
+            className="space-y-6 border border-outline-variant/30 p-6"
+          >
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-              <h3 className="text-title-medium font-medium text-on-surface">Modèle par défaut</h3>
+              <h3 className="text-title-medium font-medium text-on-surface">
+                Modèle par défaut
+              </h3>
               {models.length > 0 ? (
                 <DropdownMenuRoot>
                   <DropdownMenuTrigger
@@ -201,8 +217,9 @@ export function AgentSettings({
                     aria-label="Modèle par défaut"
                     className="flex h-12 min-w-[240px] items-center justify-between gap-3 rounded-medium border border-outline-variant bg-surface-container-high px-4 text-label-large text-on-surface"
                   >
-                    {models.find((entry) => entry.id === preferences.defaultModel)?.name ??
-                      "Choisir un modèle"}
+                    {models.find(
+                      (entry) => entry.id === preferences.defaultModel,
+                    )?.name ?? "Choisir un modèle"}
                     <Icon name="expand_more" size={20} />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
@@ -211,7 +228,11 @@ export function AgentSettings({
                       onValueChange={saveModel}
                     >
                       {models.map((model) => (
-                        <DropdownMenuRadioItem key={model.id} value={model.id} disabled={saving}>
+                        <DropdownMenuRadioItem
+                          key={model.id}
+                          value={model.id}
+                          disabled={saving}
+                        >
                           {model.name}
                         </DropdownMenuRadioItem>
                       ))}
@@ -244,7 +265,10 @@ export function AgentSettings({
                 onChange={(event) =>
                   void perform(() =>
                     commit(
-                      { defaultEffort: event.target.value as Preferences["defaultEffort"] },
+                      {
+                        defaultEffort: event.target
+                          .value as Preferences["defaultEffort"],
+                      },
                       "Niveau d'effort enregistré.",
                     ),
                   )
@@ -268,7 +292,10 @@ export function AgentSettings({
                 onChange={(event) =>
                   void perform(() =>
                     commit(
-                      { accessMode: event.target.value as Preferences["accessMode"] },
+                      {
+                        accessMode: event.target
+                          .value as Preferences["accessMode"],
+                      },
                       "Mode d'accès enregistré.",
                     ),
                   )
@@ -276,12 +303,17 @@ export function AgentSettings({
                 className="h-12 min-w-[240px] rounded-medium border border-outline-variant bg-surface-container-high px-4 text-label-large text-on-surface"
               >
                 <option value="read-only">Lecture seule</option>
-                <option value="workspace-write">Demander avant de modifier</option>
+                <option value="workspace-write">
+                  Demander avant de modifier
+                </option>
                 <option value="dangerously-bypass">Accès complet</option>
               </select>
             </div>
           </Card>
-          <Card variant="elevated" className="space-y-4 border border-outline-variant/30 p-6">
+          <Card
+            variant="elevated"
+            className="space-y-4 border border-outline-variant/30 p-6"
+          >
             <div className="flex items-center justify-between gap-4">
               <h3 className="text-title-medium font-medium text-on-surface">
                 Dossiers de confiance
@@ -295,7 +327,9 @@ export function AgentSettings({
                 key={folder}
                 className="flex min-h-12 items-center justify-between gap-3 rounded-medium border border-outline-variant/30 bg-surface-container p-3"
               >
-                <span className="truncate text-body-large text-on-surface">{folder}</span>
+                <span className="truncate text-body-large text-on-surface">
+                  {folder}
+                </span>
                 <button
                   type="button"
                   disabled={saving}

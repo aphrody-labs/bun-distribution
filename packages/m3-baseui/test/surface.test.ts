@@ -11,7 +11,8 @@ import { BUTTON_SIZES, BUTTON_VARIANTS } from "../src/button.tsx";
 import { INPUT_VARIANTS } from "../src/input.tsx";
 
 const pkgDir = join(import.meta.dir, "..");
-const read = (...p: string[]): string => readFileSync(join(pkgDir, ...p), "utf8");
+const read = (...p: string[]): string =>
+  readFileSync(join(pkgDir, ...p), "utf8");
 const manifest = JSON.parse(read("package.json")) as {
   exports: Record<string, string>;
   sideEffects: string[];
@@ -19,9 +20,15 @@ const manifest = JSON.parse(read("package.json")) as {
   dependencies: Record<string, string>;
 };
 
-const baseDir = dirname(fileURLToPath(import.meta.resolve("@base-ui/react/package.json")));
+const baseDir = dirname(
+  fileURLToPath(import.meta.resolve("@base-ui/react/package.json")),
+);
 const baseExports = Object.keys(
-  (JSON.parse(readFileSync(join(baseDir, "package.json"), "utf8")) as { exports: object }).exports,
+  (
+    JSON.parse(readFileSync(join(baseDir, "package.json"), "utf8")) as {
+      exports: object;
+    }
+  ).exports,
 );
 
 /** Base UI entries that are not components: providers, helpers, hooks and types. */
@@ -44,10 +51,15 @@ const pascal = (name: string): string =>
     .map((w) => w[0]!.toUpperCase() + w.slice(1))
     .join("");
 
-const stripComments = (css: string): string => css.replace(/\/\*[\s\S]*?\*\//g, "");
-const cssFiles = readdirSync(join(pkgDir, "css")).filter((f) => f.endsWith(".css"));
+const stripComments = (css: string): string =>
+  css.replace(/\/\*[\s\S]*?\*\//g, "");
+const cssFiles = readdirSync(join(pkgDir, "css")).filter((f) =>
+  f.endsWith(".css"),
+);
 const allCss = stripComments(cssFiles.map((f) => read("css", f)).join("\n"));
-const srcFiles = readdirSync(join(pkgDir, "src")).filter((f) => /\.tsx?$/.test(f));
+const srcFiles = readdirSync(join(pkgDir, "src")).filter((f) =>
+  /\.tsx?$/.test(f),
+);
 const allSrc = srcFiles.map((f) => read("src", f)).join("\n");
 const publicApi = index as Record<string, unknown>;
 
@@ -60,11 +72,19 @@ describe("coverage of Base UI", () => {
 
   for (const name of components) {
     test(`${name} is wrapped part for part`, async () => {
-      const base = (await import(`@base-ui/react/${name}`)) as Record<string, unknown>;
+      const base = (await import(`@base-ui/react/${name}`)) as Record<
+        string,
+        unknown
+      >;
       const [baseName, value] = Object.entries(base)[0]!;
       const isNamespace =
-        typeof value === "object" && value !== null && !("$$typeof" in (value as object));
-      const wrapper = (await import(`../src/${name}.tsx`)) as Record<string, unknown>;
+        typeof value === "object" &&
+        value !== null &&
+        !("$$typeof" in (value as object));
+      const wrapper = (await import(`../src/${name}.tsx`)) as Record<
+        string,
+        unknown
+      >;
       const publicName = `M3${pascal(name)}`;
       if (isNamespace) {
         const parts = Object.keys(value as object);
@@ -81,8 +101,12 @@ describe("coverage of Base UI", () => {
         }
       } else {
         // Single-element primitives and closed forms (`M3Switch`, `M3Checkbox`, `M3Radio`) are named after Base UI's export.
-        expect(typeof (wrapper[`M3${baseName}`] ?? wrapper[publicName])).toBe("function");
-        expect(typeof (publicApi[`M3${baseName}`] ?? publicApi[publicName])).toBe("function");
+        expect(typeof (wrapper[`M3${baseName}`] ?? wrapper[publicName])).toBe(
+          "function",
+        );
+        expect(
+          typeof (publicApi[`M3${baseName}`] ?? publicApi[publicName]),
+        ).toBe("function");
       }
     });
   }
@@ -103,10 +127,14 @@ describe("coverage of Base UI", () => {
 describe("stylesheets", () => {
   test("the aggregate imports core first and every sheet once", () => {
     const aggregate = read("m3-baseui.css");
-    const imports = [...aggregate.matchAll(/@import "\.\/css\/([\w-]+)\.css";/g)].map((m) => m[1]!);
+    const imports = [
+      ...aggregate.matchAll(/@import "\.\/css\/([\w-]+)\.css";/g),
+    ].map((m) => m[1]!);
     expect(imports[0]).toBe("core");
     expect(new Set(imports).size).toBe(imports.length);
-    expect(new Set(imports)).toEqual(new Set(cssFiles.map((f) => f.slice(0, -4))));
+    expect(new Set(imports)).toEqual(
+      new Set(cssFiles.map((f) => f.slice(0, -4))),
+    );
   });
 
   test("each sheet is entirely inside @layer components, so utilities and app CSS win", () => {
@@ -133,19 +161,35 @@ describe("stylesheets", () => {
 
   test("every --md-* token a sheet reads exists in the token sheets or is a colour role", () => {
     const tokens =
-      readFileSync(fileURLToPath(import.meta.resolve("@aphrody/m3-tokens/m3-tokens.css")), "utf8") +
-      readFileSync(fileURLToPath(import.meta.resolve("@aphrody/m3-tokens/expressive.css")), "utf8");
-    const defined = new Set([...tokens.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]!));
+      readFileSync(
+        fileURLToPath(import.meta.resolve("@aphrody/m3-tokens/m3-tokens.css")),
+        "utf8",
+      ) +
+      readFileSync(
+        fileURLToPath(import.meta.resolve("@aphrody/m3-tokens/expressive.css")),
+        "utf8",
+      );
+    const defined = new Set(
+      [...tokens.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]!),
+    );
     for (const role of ROLES)
-      defined.add(`--md-sys-color-${role.replace(/([A-Z])/g, "-$1").toLowerCase()}`);
-    const used = new Set([...allCss.matchAll(/var\((--md-[\w-]+)/g)].map((m) => m[1]!));
+      defined.add(
+        `--md-sys-color-${role.replace(/([A-Z])/g, "-$1").toLowerCase()}`,
+      );
+    const used = new Set(
+      [...allCss.matchAll(/var\((--md-[\w-]+)/g)].map((m) => m[1]!),
+    );
     expect([...used].filter((name) => !defined.has(name))).toEqual([]);
   });
 
   test("every --m3-bui-font-* shorthand that a sheet reads is defined in core.css", () => {
     const core = stripComments(read("css", "core.css"));
-    const defined = new Set([...core.matchAll(/(--m3-bui-font-[\w-]+)\s*:/g)].map((m) => m[1]!));
-    const used = new Set([...allCss.matchAll(/var\((--m3-bui-font-[\w-]+)/g)].map((m) => m[1]!));
+    const defined = new Set(
+      [...core.matchAll(/(--m3-bui-font-[\w-]+)\s*:/g)].map((m) => m[1]!),
+    );
+    const used = new Set(
+      [...allCss.matchAll(/var\((--m3-bui-font-[\w-]+)/g)].map((m) => m[1]!),
+    );
     expect(used.size).toBeGreaterThan(5);
     expect([...used].filter((name) => !defined.has(name))).toEqual([]);
   });
@@ -161,24 +205,33 @@ describe("stylesheets", () => {
     for (const variant of INPUT_VARIANTS.filter((name) => name !== "outlined"))
       emitted.add(`m3-bui-input--${variant}`);
 
-    const ruled = new Set([...allCss.matchAll(/\.(m3-bui-[\w-]+)/g)].map((m) => m[1]!));
+    const ruled = new Set(
+      [...allCss.matchAll(/\.(m3-bui-[\w-]+)/g)].map((m) => m[1]!),
+    );
     // Classes documented for the app to add, not emitted by a wrapper.
     const documented = new Set(["m3-bui-tabs--secondary"]);
 
     expect([...emitted].filter((c) => !ruled.has(c))).toEqual([]);
-    expect([...ruled].filter((c) => !emitted.has(c) && !documented.has(c))).toEqual([]);
+    expect(
+      [...ruled].filter((c) => !emitted.has(c) && !documented.has(c)),
+    ).toEqual([]);
   });
 });
 
 describe("package", () => {
   test("no MUI, emotion or CSS-in-JS residue", () => {
-    expect(allSrc + allCss).not.toMatch(/@mui|\bMui[A-Z]|@emotion|styled-components|makeStyles/);
+    expect(allSrc + allCss).not.toMatch(
+      /@mui|\bMui[A-Z]|@emotion|styled-components|makeStyles/,
+    );
   });
 
   test("every wrapper module is a client boundary; the helper and the barrel are not", () => {
     for (const f of srcFiles) {
       const isBoundary = /^"use client";$/m.test(read("src", f));
-      expect([f, isBoundary]).toEqual([f, f !== "index.ts" && f !== "part.tsx"]);
+      expect([f, isBoundary]).toEqual([
+        f,
+        f !== "index.ts" && f !== "part.tsx",
+      ]);
     }
   });
 

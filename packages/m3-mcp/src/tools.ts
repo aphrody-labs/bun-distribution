@@ -32,28 +32,39 @@ export interface M3Tool {
   run(args: never, signal?: AbortSignal): Promise<ToolResult> | ToolResult;
 }
 
-const text = (t: string): ToolResult => ({ content: [{ type: "text", text: t || "(no result)" }] });
+const text = (t: string): ToolResult => ({
+  content: [{ type: "text", text: t || "(no result)" }],
+});
 
 const themeInput = {
   seed: z.string().describe("Seed colour #rrggbb"),
-  target: z.enum(["windows", "gnome", "cosmic", "chromium", "all"]).default("all"),
+  target: z
+    .enum(["windows", "gnome", "cosmic", "chromium", "all"])
+    .default("all"),
   name: z.string().default("Aphrody"),
 };
 
-const limit = (fallback: number) => z.number().int().min(1).max(500).default(fallback);
+const limit = (fallback: number) =>
+  z.number().int().min(1).max(500).default(fallback);
 
 function tool<S extends z.ZodRawShape>(
   name: string,
   description: string,
   shape: S,
-  run: (args: z.infer<z.ZodObject<S>>, signal?: AbortSignal) => Promise<ToolResult> | ToolResult,
+  run: (
+    args: z.infer<z.ZodObject<S>>,
+    signal?: AbortSignal,
+  ) => Promise<ToolResult> | ToolResult,
 ): M3Tool {
   return { name, description, shape, run: run as M3Tool["run"] };
 }
 
 export const M3_TOOLS: M3Tool[] = [
-  tool("m3_list_packages", "List the aphrody-m3 workspace packages with versions.", {}, () =>
-    text(listPackages().join("\n")),
+  tool(
+    "m3_list_packages",
+    "List the aphrody-m3 workspace packages with versions.",
+    {},
+    () => text(listPackages().join("\n")),
   ),
   tool(
     "m3_token_lookup",
@@ -98,10 +109,14 @@ export const M3_TOOLS: M3Tool[] = [
     async ({ seed, target, name, path }) => {
       const { TARGETS, generate } = await osThemes();
       const targets: readonly Target[] = target === "all" ? TARGETS : [target];
-      const file = generate({ name, seed, mode: "auto" }, targets).find((f) => f.path === path);
+      const file = generate({ name, seed, mode: "auto" }, targets).find(
+        (f) => f.path === path,
+      );
       if (!file) return text(`unknown path ${path}`);
       return text(
-        typeof file.content === "string" ? file.content : `(binary, ${file.content.length} bytes)`,
+        typeof file.content === "string"
+          ? file.content
+          : `(binary, ${file.content.length} bytes)`,
       );
     },
   ),
@@ -120,8 +135,11 @@ export const M3_TOOLS: M3Tool[] = [
       return text(`${r.files.join("\n")}\n\n${r.links.join("\n")}`);
     },
   ),
-  tool("m3_list_templates", "List UI templates, examples and Tauri example apps.", {}, () =>
-    text(listTemplates().join("\n")),
+  tool(
+    "m3_list_templates",
+    "List UI templates, examples and Tauri example apps.",
+    {},
+    () => text(listTemplates().join("\n")),
   ),
   tool(
     "m3_symbol_svg",
@@ -145,7 +163,9 @@ export const M3_TOOLS: M3Tool[] = [
     async ({ name, style, weight, filled }) => {
       const { symbolSvgPath } = await symbols();
       const p = symbolSvgPath(name, style, weight, filled);
-      return existsSync(p) ? text(`${p}\n${readFileSync(p, "utf8")}`) : text(`not found: ${p}`);
+      return existsSync(p)
+        ? text(`${p}\n${readFileSync(p, "utf8")}`)
+        : text(`not found: ${p}`);
     },
   ),
   tool(
@@ -156,7 +176,9 @@ export const M3_TOOLS: M3Tool[] = [
       const { searchSymbols, symbolNames } = await symbols();
       const hits = searchSymbols(query, maximum);
       return text(
-        hits.length > 0 ? hits.join("\n") : `no match among ${symbolNames().length} symbols`,
+        hits.length > 0
+          ? hits.join("\n")
+          : `no match among ${symbolNames().length} symbols`,
       );
     },
   ),
@@ -195,13 +217,20 @@ export const M3_TOOLS: M3Tool[] = [
         new Response(child.stdout).text(),
         new Response(child.stderr).text(),
       ]);
-      return { ...text(`${code}\n${stdout}${stderr}`), ...(code !== 0 ? { isError: true } : {}) };
+      return {
+        ...text(`${code}\n${stdout}${stderr}`),
+        ...(code !== 0 ? { isError: true } : {}),
+      };
     },
   ),
 ];
 
 /** JSON Schema definitions in the shape every MCP client expects from `tools/list`. */
-export function listM3Tools(): { name: string; description: string; inputSchema: unknown }[] {
+export function listM3Tools(): {
+  name: string;
+  description: string;
+  inputSchema: unknown;
+}[] {
   return M3_TOOLS.map((t) => ({
     name: t.name,
     description: t.description,
@@ -222,6 +251,9 @@ export async function callM3Tool(
   try {
     return await found.run(parsed.data as never, signal);
   } catch (error) {
-    return { ...text(error instanceof Error ? error.message : String(error)), isError: true };
+    return {
+      ...text(error instanceof Error ? error.message : String(error)),
+      isError: true,
+    };
   }
 }

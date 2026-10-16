@@ -52,8 +52,7 @@ export const MiscSettingsPane = (_args: MiscSettingsPaneProps) => {
             In the editors, holding Ctrl (⌘ on Mac) alone for a few seconds
             shows a cheatsheet of the keyboard shortcuts. When on, it stays on
             screen after you release the key until you press Esc or click
-            outside it. When off (default), it disappears as soon as you let
-            go.
+            outside it. When off (default), it disappears as soon as you let go.
           </p>
         </div>
         <Switch enabled={cheatsheetSticky} setEnabled={setCheatsheetSticky} />

@@ -95,13 +95,18 @@ function ipToInt(ip: string): number | undefined {
   if (!m) return undefined;
   const parts = m.slice(1).map(Number);
   if (parts.some((p) => p > 255)) return undefined;
-  return ((parts[0]! << 24) | (parts[1]! << 16) | (parts[2]! << 8) | parts[3]!) >>> 0;
+  return (
+    ((parts[0]! << 24) | (parts[1]! << 16) | (parts[2]! << 8) | parts[3]!) >>> 0
+  );
 }
-export function parseCidr(cidr: string): { base: number; bits: number; mask: number } | undefined {
+export function parseCidr(
+  cidr: string,
+): { base: number; bits: number; mask: number } | undefined {
   const [ip, len] = cidr.split("/");
   const base = ip === undefined ? undefined : ipToInt(ip);
   const bits = len === undefined ? 32 : Number(len);
-  if (base === undefined || !Number.isInteger(bits) || bits < 0 || bits > 32) return undefined;
+  if (base === undefined || !Number.isInteger(bits) || bits < 0 || bits > 32)
+    return undefined;
   const mask = bits === 0 ? 0 : (0xffffffff << (32 - bits)) >>> 0;
   return { base: (base & mask) >>> 0, bits, mask };
 }
@@ -140,14 +145,17 @@ export function tunnelProblems(root: string, file = TUNNEL_FILE): string[] {
   const problems: string[] = [];
   const text = readIfExists(root, file);
   if (text === undefined) return [`missing wireguard declaration: ${file}`];
-  if (PRIVATE_KEY_PATTERN.test(text)) problems.push(`${file}: contains private key material`);
+  if (PRIVATE_KEY_PATTERN.test(text))
+    problems.push(`${file}: contains private key material`);
   const t = JSON.parse(text) as Tunnel;
   const subnet = parseCidr(t.subnet);
   if (!subnet || subnet.bits < 16 || subnet.bits > 29)
     problems.push(`${file}: bad subnet ${t.subnet}`);
   for (const net of t.existingNetworks)
     if (cidrsOverlap(t.subnet, net.cidr))
-      problems.push(`${file}: subnet ${t.subnet} overlaps ${net.cidr} (${net.name})`);
+      problems.push(
+        `${file}: subnet ${t.subnet} overlaps ${net.cidr} (${net.name})`,
+      );
   if (t.clientAllowedIps !== t.subnet)
     problems.push(
       `${file}: clientAllowedIps must equal the subnet (split tunnel only), got ${t.clientAllowedIps}`,
@@ -156,32 +164,47 @@ export function tunnelProblems(root: string, file = TUNNEL_FILE): string[] {
     problems.push(
       `${file}: interface ${t.interface} must be a new wgN (wg0 is the historical Shenron link)`,
     );
-  if (t.hub.listenPort === 51820) problems.push(`${file}: listenPort 51820 belongs to wg0`);
-  if (!inCidr(t.hub.address, t.subnet)) problems.push(`${file}: hub address outside the subnet`);
+  if (t.hub.listenPort === 51820)
+    problems.push(`${file}: listenPort 51820 belongs to wg0`);
+  if (!inCidr(t.hub.address, t.subnet))
+    problems.push(`${file}: hub address outside the subnet`);
   if (t.hub.publicKey !== null && !isWgKey(t.hub.publicKey))
     problems.push(`${file}: hub publicKey is not a WireGuard key`);
   const used = new Set<string>([t.hub.address]);
   const keys = new Set<string>();
   for (const p of t.peers) {
     if (!inCidr(p.address, t.subnet))
-      problems.push(`${file}: peer ${p.id} address ${p.address} outside the subnet`);
-    if (used.has(p.address)) problems.push(`${file}: peer ${p.id} duplicate address ${p.address}`);
+      problems.push(
+        `${file}: peer ${p.id} address ${p.address} outside the subnet`,
+      );
+    if (used.has(p.address))
+      problems.push(`${file}: peer ${p.id} duplicate address ${p.address}`);
     used.add(p.address);
     if (p.publicKey !== null) {
       if (!isWgKey(p.publicKey))
         problems.push(`${file}: peer ${p.id} publicKey is not a WireGuard key`);
-      if (keys.has(p.publicKey)) problems.push(`${file}: peer ${p.id} reuses another peer's key`);
+      if (keys.has(p.publicKey))
+        problems.push(`${file}: peer ${p.id} reuses another peer's key`);
       keys.add(p.publicKey);
-    } else if (!p.keyOrigin) problems.push(`${file}: peer ${p.id} has no key and no keyOrigin`);
+    } else if (!p.keyOrigin)
+      problems.push(`${file}: peer ${p.id} has no key and no keyOrigin`);
     if (p.udpSource.mode === "ufw") {
       if (!p.udpSource.ips?.length)
         problems.push(`${file}: peer ${p.id} ufw source without addresses`);
       for (const ip of p.udpSource.ips ?? [])
-        if (ipToInt(ip) === undefined || ip.includes("/") || ip.startsWith("0."))
-          problems.push(`${file}: peer ${p.id} source ${ip} must be one public address`);
+        if (
+          ipToInt(ip) === undefined ||
+          ip.includes("/") ||
+          ip.startsWith("0.")
+        )
+          problems.push(
+            `${file}: peer ${p.id} source ${ip} must be one public address`,
+          );
       const marker = p.udpSource.comment ?? "";
       if (marker !== `${t.firewall.marker}-${p.id}`)
-        problems.push(`${file}: peer ${p.id} comment must be ${t.firewall.marker}-${p.id}`);
+        problems.push(
+          `${file}: peer ${p.id} comment must be ${t.firewall.marker}-${p.id}`,
+        );
     }
   }
   const ids = new Set([t.hub.peer, ...t.peers.map((p) => p.id)]);
@@ -190,12 +213,17 @@ export function tunnelProblems(root: string, file = TUNNEL_FILE): string[] {
     if (s.port !== undefined && (s.port < 1 || s.port > 65535))
       problems.push(`${file}: service ${s.id} bad port`);
     if (s.port !== undefined && t.firewall.neverOpen.includes(s.port))
-      problems.push(`${file}: service ${s.id} opens a never-open port ${s.port}`);
+      problems.push(
+        `${file}: service ${s.id} opens a never-open port ${s.port}`,
+      );
     if (s.port === undefined && s.status !== "pending")
       problems.push(`${file}: service ${s.id} has no port and is not pending`);
     if (!inCidr(s.address, t.subnet))
       problems.push(`${file}: service ${s.id} address outside the subnet`);
-    if (s.expose === "socket-proxyd" && (!s.upstream || !/^127\.0\.0\.1:\d+$/.test(s.upstream)))
+    if (
+      s.expose === "socket-proxyd" &&
+      (!s.upstream || !/^127\.0\.0\.1:\d+$/.test(s.upstream))
+    )
       problems.push(`${file}: service ${s.id} upstream must be loopback`);
     if (s.expose === "socket-proxyd") {
       const ownerAddress =
@@ -203,13 +231,17 @@ export function tunnelProblems(root: string, file = TUNNEL_FILE): string[] {
           ? t.hub.address
           : t.peers.find((peer) => peer.host === s.host)?.address;
       if (s.address !== ownerAddress)
-        problems.push(`${file}: service ${s.id} must listen on its declared owner address`);
+        problems.push(
+          `${file}: service ${s.id} must listen on its declared owner address`,
+        );
     }
   }
   for (const [peer, list] of Object.entries(t.grants)) {
-    if (!ids.has(peer)) problems.push(`${file}: grant for unknown peer ${peer}`);
+    if (!ids.has(peer))
+      problems.push(`${file}: grant for unknown peer ${peer}`);
     for (const id of list)
-      if (!services.has(id)) problems.push(`${file}: grant ${peer} -> unknown service ${id}`);
+      if (!services.has(id))
+        problems.push(`${file}: grant ${peer} -> unknown service ${id}`);
   }
   if (
     !t.firewall.marker ||
@@ -221,9 +253,12 @@ export function tunnelProblems(root: string, file = TUNNEL_FILE): string[] {
   const members = new Set([t.hub.peer, ...t.peers.map((p) => p.id)]);
   for (const m of t.mesh ?? [])
     for (const id of [...m.from, ...m.to]) {
-      if (!members.has(id)) problems.push(`${file}: mesh ${m.id} names unknown member ${id}`);
+      if (!members.has(id))
+        problems.push(`${file}: mesh ${m.id} names unknown member ${id}`);
       if (m.to.includes(id) && t.firewall.meshDenied?.includes(id))
-        problems.push(`${file}: mesh ${m.id} opens every port of ${id}, which is meshDenied`);
+        problems.push(
+          `${file}: mesh ${m.id} opens every port of ${id}, which is meshDenied`,
+        );
     }
   for (const rule of ufwRules(t))
     if (t.firewall.foreignMarkers.some((m) => rule.text.includes(m)))
@@ -233,20 +268,35 @@ export function tunnelProblems(root: string, file = TUNNEL_FILE): string[] {
 
 const KEY_LINE =
   /^((?:[^\s"]|"[^"]*")+)\s+(?:sk-)?(?:ssh-ed25519|ecdsa-sha2-nistp\d+|ssh-rsa)(?:@openssh\.com)?\s+[A-Za-z0-9+/=]+(?:\s.*)?$/;
-export function accountProblems(root: string, accounts: HostAccount[], t?: Tunnel): string[] {
+export function accountProblems(
+  root: string,
+  accounts: HostAccount[],
+  t?: Tunnel,
+): string[] {
   const problems: string[] = [];
   for (const a of accounts) {
     const tag = `account ${a.user}`;
-    for (const f of [a.authorizedKeys, a.sudoers, ...a.sshdDropIns.map((d) => d.file)])
-      if (!existsSync(join(root, f))) problems.push(`${tag}: missing file ${f}`);
+    for (const f of [
+      a.authorizedKeys,
+      a.sudoers,
+      ...a.sshdDropIns.map((d) => d.file),
+    ])
+      if (!existsSync(join(root, f)))
+        problems.push(`${tag}: missing file ${f}`);
     if (a.groups.some((g) => ["postgres", "docker", "sudo", "adm"].includes(g)))
       problems.push(
         `${tag}: no postgres, docker, sudo or adm group (sudo is granted by the sudoers file alone)`,
       );
     const peer = t?.peers.find((p) => p.id === a.user);
     if (peer && !a.allowedFrom.includes(peer.address))
-      problems.push(`${tag}: tunnel address ${peer.address} missing from allowedFrom`);
-    for (const f of [a.authorizedKeys, a.sudoers, ...a.sshdDropIns.map((d) => d.file)]) {
+      problems.push(
+        `${tag}: tunnel address ${peer.address} missing from allowedFrom`,
+      );
+    for (const f of [
+      a.authorizedKeys,
+      a.sudoers,
+      ...a.sshdDropIns.map((d) => d.file),
+    ]) {
       const text = readIfExists(root, f);
       if (text !== undefined && PRIVATE_KEY_PATTERN.test(text))
         problems.push(`${tag}: ${f} contains private key material`);
@@ -267,14 +317,23 @@ export function accountProblems(root: string, accounts: HostAccount[], t?: Tunne
         for (const entry of from.split(","))
           if (!a.allowedFrom.includes(entry))
             problems.push(`${tag}: from=${entry} is not in allowedFrom`);
-      if (!/(^|,)restrict(,|$)/.test(options)) problems.push(`${tag}: key line without restrict`);
+      if (!/(^|,)restrict(,|$)/.test(options))
+        problems.push(`${tag}: key line without restrict`);
     }
     const sudoers = readIfExists(root, a.sudoers) ?? "";
-    const rules = sudoers.split("\n").filter((l) => l.trim() && !l.trim().startsWith("#"));
+    const rules = sudoers
+      .split("\n")
+      .filter((l) => l.trim() && !l.trim().startsWith("#"));
     const grants = rules.filter((l) => !l.startsWith("Defaults"));
     if (grants.length !== 1 || !grants[0]!.startsWith(`${a.user} `))
-      problems.push(`${tag}: sudoers must hold exactly one rule, for ${a.user}`);
-    if (rules.some((l) => l.startsWith("Defaults") && !l.startsWith(`Defaults:${a.user} `)))
+      problems.push(
+        `${tag}: sudoers must hold exactly one rule, for ${a.user}`,
+      );
+    if (
+      rules.some(
+        (l) => l.startsWith("Defaults") && !l.startsWith(`Defaults:${a.user} `),
+      )
+    )
       problems.push(`${tag}: sudoers Defaults must be scoped to ${a.user}`);
     if (rules.some((l) => l.includes("%") || l.includes("#include")))
       problems.push(`${tag}: sudoers must not grant a group or include a file`);
@@ -294,16 +353,26 @@ export function accountProblems(root: string, accounts: HostAccount[], t?: Tunne
     // Forwarding: none, or loopback-only: reverse (-R) onto 127.0.0.1 ports (PermitListen) and local (-L)
     // limited to explicit 127.0.0.1 ports (PermitOpen), never an open or remote destination.
     const forwarding = /^\s*AllowTcpForwarding\s+(\S+)\s*$/m.exec(sshd)?.[1];
-    if (forwarding === "remote" || forwarding === "local" || forwarding === "yes") {
-      const open = /^\s*PermitOpen\s+(.+)$/m.exec(sshd)?.[1]?.trim().split(/\s+/) ?? [];
-      if (open.length === 0 || open.some((o) => o !== "none" && !/^127\.0\.0\.1:\d+$/.test(o)))
+    if (
+      forwarding === "remote" ||
+      forwarding === "local" ||
+      forwarding === "yes"
+    ) {
+      const open =
+        /^\s*PermitOpen\s+(.+)$/m.exec(sshd)?.[1]?.trim().split(/\s+/) ?? [];
+      if (
+        open.length === 0 ||
+        open.some((o) => o !== "none" && !/^127\.0\.0\.1:\d+$/.test(o))
+      )
         problems.push(
           `${tag}: forwarding needs "PermitOpen none" or 127.0.0.1:<port> entries only`,
         );
-      const listen = /^\s*PermitListen\s+(.+)$/m.exec(sshd)?.[1]?.trim().split(/\s+/) ?? [];
+      const listen =
+        /^\s*PermitListen\s+(.+)$/m.exec(sshd)?.[1]?.trim().split(/\s+/) ?? [];
       if (
         forwarding !== "local" &&
-        (listen.length === 0 || listen.some((l) => !/^127\.0\.0\.1:\d+$/.test(l)))
+        (listen.length === 0 ||
+          listen.some((l) => !/^127\.0\.0\.1:\d+$/.test(l)))
       )
         problems.push(
           `${tag}: remote forwarding must list PermitListen 127.0.0.1:<port> entries only`,
@@ -315,7 +384,9 @@ export function accountProblems(root: string, accounts: HostAccount[], t?: Tunne
     if (a.postgresAccess === "sudo-only") {
       const deny = a.sshdDropIns
         .filter((d) => d.hosts.includes("dbfr"))
-        .some((d) => /^DenyUsers\s+postgres\s*$/m.test(readIfExists(root, d.file) ?? ""));
+        .some((d) =>
+          /^DenyUsers\s+postgres\s*$/m.test(readIfExists(root, d.file) ?? ""),
+        );
       if (a.hosts.includes("dbfr") && !deny)
         problems.push(
           `${tag}: postgres is sudo-only but no dbfr sshd drop-in denies the postgres login`,
@@ -332,10 +403,14 @@ export const HUB_KEY_PLACEHOLDER =
 
 function peerById(t: Tunnel, id: string): TunnelPeer {
   const p = t.peers.find((x) => x.id === id);
-  if (!p) throw new Error(`unknown peer: ${id} (${t.peers.map((x) => x.id).join(", ")})`);
+  if (!p)
+    throw new Error(
+      `unknown peer: ${id} (${t.peers.map((x) => x.id).join(", ")})`,
+    );
   return p;
 }
-const envName = (id: string) => `${id.toUpperCase().replaceAll("-", "_")}_PUBLIC_KEY`;
+const envName = (id: string) =>
+  `${id.toUpperCase().replaceAll("-", "_")}_PUBLIC_KEY`;
 
 export interface ClientSections {
   interface: string;
@@ -351,7 +426,9 @@ export function clientSections(
   const p = peerById(t, peerId);
   const hub = hubPublicKey ?? t.hub.publicKey;
   if (hub != null && !isWgKey(hub))
-    throw new Error("hub public key is not a WireGuard key (44 base64 characters, 32 bytes)");
+    throw new Error(
+      "hub public key is not a WireGuard key (44 base64 characters, 32 bytes)",
+    );
   if (t.clientAllowedIps.endsWith("/0"))
     throw new Error("refusing a default route: split tunnel only");
   return {
@@ -372,7 +449,11 @@ export function clientSections(
  * then the Peer section. The app refuses to import a file that has no PrivateKey (conf/parser.go, "An interface must have a private
  * key"), so a key-less `.conf` cannot be a one-click import: the key must be born in the app.
  */
-export function clientPasteBlock(t: Tunnel, peerId: string, hubPublicKey?: string | null): string {
+export function clientPasteBlock(
+  t: Tunnel,
+  peerId: string,
+  hubPublicKey?: string | null,
+): string {
   const s = clientSections(t, peerId, hubPublicKey);
   return `${s.interface.split("\n").slice(1).join("\n")}\n\n${s.peer}\n`;
 }
@@ -384,8 +465,11 @@ export function clientConf(
   privateKey: string,
 ): string {
   if (!isWgKey(privateKey.trim()))
-    throw new Error("private key is not a WireGuard key (44 base64 characters, 32 bytes)");
-  if (!isWgKey(hubPublicKey)) throw new Error("--hub-public-key is required for a complete .conf");
+    throw new Error(
+      "private key is not a WireGuard key (44 base64 characters, 32 bytes)",
+    );
+  if (!isWgKey(hubPublicKey))
+    throw new Error("--hub-public-key is required for a complete .conf");
   const s = clientSections(t, peerId, hubPublicKey);
   const [head, address] = s.interface.split("\n");
   return `${head}\nPrivateKey = ${privateKey.trim()}\n${address}\n\n${s.peer}\n`;
@@ -419,10 +503,20 @@ export function hubConfig(t: Tunnel): HubConfig {
     const key =
       p.publicKey ??
       (() => {
-        needs.push({ peer: p.id, env: envName(p.id), origin: p.publicKeyNote ?? p.keyOrigin });
+        needs.push({
+          peer: p.id,
+          env: envName(p.id),
+          origin: p.publicKeyNote ?? p.keyOrigin,
+        });
         return `\${${envName(p.id)}}`;
       })();
-    lines.push("", `[Peer]`, `# ${p.id}`, `PublicKey = ${key}`, `AllowedIPs = ${p.address}/32`);
+    lines.push(
+      "",
+      `[Peer]`,
+      `# ${p.id}`,
+      `PublicKey = ${key}`,
+      `AllowedIPs = ${p.address}/32`,
+    );
   }
   return { text: `${lines.join("\n")}\n`, needs };
 }
@@ -453,8 +547,19 @@ export interface UfwRule {
 export function ufwRules(t: Tunnel): UfwRule[] {
   const rules: UfwRule[] = [];
   const iface = t.interface;
-  const add = (peer: string, kind: UfwRule["kind"], command: string, service?: string) =>
-    rules.push({ peer, service, kind, command: `ufw ${command}`, text: `ufw ${command}` });
+  const add = (
+    peer: string,
+    kind: UfwRule["kind"],
+    command: string,
+    service?: string,
+  ) =>
+    rules.push({
+      peer,
+      service,
+      kind,
+      command: `ufw ${command}`,
+      text: `ufw ${command}`,
+    });
   for (const p of t.peers)
     if (p.udpSource.mode === "ufw")
       for (const ip of p.udpSource.ips ?? [])
@@ -468,8 +573,16 @@ export function ufwRules(t: Tunnel): UfwRule[] {
     for (const id of ids) {
       const s = services.get(id);
       const p =
-        peerId === t.hub.peer ? { address: t.hub.address } : t.peers.find((x) => x.id === peerId);
-      if (!s || !p || s.status === "pending" || s.port === undefined || s.address === p.address)
+        peerId === t.hub.peer
+          ? { address: t.hub.address }
+          : t.peers.find((x) => x.id === peerId);
+      if (
+        !s ||
+        !p ||
+        s.status === "pending" ||
+        s.port === undefined ||
+        s.address === p.address
+      )
         continue;
       const comment = `comment '${t.firewall.marker}-${peerId}'`;
       // Traffic the hub originates leaves through OUTPUT, which ufw admits: no forwarding rule applies.
@@ -493,8 +606,13 @@ export function ufwRules(t: Tunnel): UfwRule[] {
     for (const from of m.from)
       for (const to of m.to) {
         const src =
-          from === t.hub.peer ? t.hub.address : t.peers.find((x) => x.id === from)?.address;
-        const dst = to === t.hub.peer ? t.hub.address : t.peers.find((x) => x.id === to)?.address;
+          from === t.hub.peer
+            ? t.hub.address
+            : t.peers.find((x) => x.id === from)?.address;
+        const dst =
+          to === t.hub.peer
+            ? t.hub.address
+            : t.peers.find((x) => x.id === to)?.address;
         // Hub-originated traffic leaves through OUTPUT; a member never needs a rule towards itself.
         if (!src || !dst || from === to || from === t.hub.peer) continue;
         const comment = `comment '${t.firewall.marker}-${from}'`;
@@ -519,7 +637,8 @@ export function ufwRules(t: Tunnel): UfwRule[] {
 // ── plan ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 export type WgHost = "vps" | "dbfr" | "wsl" | "windows";
-export type WgPhase = "preflight" | "provision" | "install" | "verify" | "rollback" | "manual";
+export type WgPhase =
+  "preflight" | "provision" | "install" | "verify" | "rollback" | "manual";
 /** `check` blocks the plan, `warn` reports a risk, `info` only reads, `mutate` changes the host, `pending` waits for an input. */
 export type WgKind = "check" | "warn" | "info" | "mutate" | "pending";
 export interface WgStep {
@@ -543,7 +662,10 @@ export interface WgPlan {
   subnet: string;
   hub: string;
   hubConfig: string;
-  clients: Record<string, { interface: string; peer: string; pasteBlock: string }>;
+  clients: Record<
+    string,
+    { interface: string; peer: string; pasteBlock: string }
+  >;
   ufw: UfwRule[];
   sequence: string[];
   pending: string[];
@@ -562,7 +684,8 @@ export interface PlanContext {
 }
 
 const b64 = (text: string) => Buffer.from(text).toString("base64");
-const prefix = (subnet: string) => (subnet.split("/")[0] ?? "").split(".").slice(0, 3).join(".");
+const prefix = (subnet: string) =>
+  (subnet.split("/")[0] ?? "").split(".").slice(0, 3).join(".");
 const dots = (s: string) => s.replaceAll(".", "\\.");
 
 function hubScript(t: Tunnel, cfg: HubConfig): string {
@@ -572,7 +695,10 @@ function hubScript(t: Tunnel, cfg: HubConfig): string {
   const tail = body
     .slice(keyAt + 1)
     .join("\n")
-    .replace(/\$\{(\w+)\}/g, (_m, name: string) => `\${${name}:?${name} is an apply-time input}`);
+    .replace(
+      /\$\{(\w+)\}/g,
+      (_m, name: string) => `\${${name}:?${name} is an apply-time input}`,
+    );
   return [
     `set -eu`,
     `umask 077`,
@@ -605,7 +731,10 @@ function peerScript(t: Tunnel, p: TunnelPeer): string {
       .slice(keyAt + 1)
       .join("\n")
       .replace(/\n+$/, "")
-      .replace("${HUB_PUBLIC_KEY}", "${HUB_PUBLIC_KEY:?HUB_PUBLIC_KEY is an apply-time input}"),
+      .replace(
+        "${HUB_PUBLIC_KEY}",
+        "${HUB_PUBLIC_KEY:?HUB_PUBLIC_KEY is an apply-time input}",
+      ),
     `EOF`,
     `} > /etc/wireguard/${t.interface}.conf.new`,
     `mv /etc/wireguard/${t.interface}.conf.new /etc/wireguard/${t.interface}.conf`,
@@ -635,13 +764,19 @@ export function keyBlobs(keys: string): string[] {
     .filter((b): b is string => Boolean(b));
 }
 
-function accountSteps(ctx: PlanContext, t: Tunnel, host: "vps" | "dbfr"): WgStep[] {
+function accountSteps(
+  ctx: PlanContext,
+  t: Tunnel,
+  host: "vps" | "dbfr",
+): WgStep[] {
   const steps: WgStep[] = [];
   for (const a of ctx.catalog.accounts ?? []) {
     if (!a.hosts.includes(host)) continue;
     const id = (s: string) => `${host}.account.${a.user}.${s}`;
     const keys = readIfExists(ctx.root, a.authorizedKeys) ?? "";
-    const hasKey = keys.split("\n").some((l) => l.trim() && !l.trim().startsWith("#"));
+    const hasKey = keys
+      .split("\n")
+      .some((l) => l.trim() && !l.trim().startsWith("#"));
     steps.push(
       {
         id: id("absent"),
@@ -825,11 +960,18 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
   const clients: WgPlan["clients"] = {};
   for (const p of t.peers) {
     const s = clientSections(t, p.id);
-    clients[p.id] = { interface: s.interface, peer: s.peer, pasteBlock: clientPasteBlock(t, p.id) };
+    clients[p.id] = {
+      interface: s.interface,
+      peer: s.peer,
+      pasteBlock: clientPasteBlock(t, p.id),
+    };
   }
   const rules = ufwRules(t);
   const proxies = t.services.filter(
-    (s) => s.host === t.hub.peer && s.expose === "socket-proxyd" && s.port !== undefined,
+    (s) =>
+      s.host === t.hub.peer &&
+      s.expose === "socket-proxyd" &&
+      s.port !== undefined,
   );
   const pending: string[] = [];
   for (const p of t.peers)
@@ -838,7 +980,9 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
   for (const a of ctx.catalog.accounts ?? []) {
     const keys = readIfExists(ctx.root, a.authorizedKeys) ?? "";
     if (!keys.split("\n").some((l) => l.trim() && !l.trim().startsWith("#")))
-      pending.push(`${a.user}: ssh-ed25519 public key (${a.authorizedKeys} has no key line)`);
+      pending.push(
+        `${a.user}: ssh-ed25519 public key (${a.authorizedKeys} has no key line)`,
+      );
   }
   pending.push(
     `hub: ${t.interface} public key, generated on the vps at apply, needed by every client`,
@@ -850,7 +994,9 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
     ...(ctx.catalog.accounts ?? []).flatMap((a) =>
       (a.findings ?? []).map((f) => `${a.user}: ${f}`),
     ),
-    ...t.services.filter((s) => s.caveat).map((s) => `${s.id} (${s.auth}): ${s.caveat}`),
+    ...t.services
+      .filter((s) => s.caveat)
+      .map((s) => `${s.id} (${s.auth}): ${s.caveat}`),
     "interface and subnet: wg0 is already the live Shenron link (10.8.0.0/24, ufw `Anywhere on wg0 ALLOW IN`), so the hub is a new wg1 on 10.200.77.0/24, UDP 51821",
     "sudo for omar is NOPASSWD:ALL (no Unix password exists) with sudo-rs journaling to journald only; there is no I/O log",
     "omar from= lists 92.170.252.46 and 10.200.77.10 (through the tunnel sshd sees the tunnel address); drop the second to force the public path",
@@ -866,10 +1012,23 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
     note: string,
     run?: string,
     extra: Partial<WgStep> = {},
-  ) => steps.push({ id: `vps.${id}`, host: "vps", phase, kind, note, run, ...extra });
+  ) =>
+    steps.push({
+      id: `vps.${id}`,
+      host: "vps",
+      phase,
+      kind,
+      note,
+      run,
+      ...extra,
+    });
   const wgPre = (host: "vps" | "dbfr" | "wsl") => {
     const checks: { id: string; note: string; run: string }[] = [
-      { id: "tools", note: "wireguard-tools present", run: `command -v wg wg-quick >/dev/null` },
+      {
+        id: "tools",
+        note: "wireguard-tools present",
+        run: `command -v wg wg-quick >/dev/null`,
+      },
       {
         id: "iface-free",
         note: `${t.interface} does not exist yet`,
@@ -931,7 +1090,10 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
     "check",
     "the installed ufw accepts every rule below (ufw --dry-run, nothing is changed)",
     rules
-      .map((r) => `sudo -n ${r.command.replace(/^ufw /, "ufw --dry-run ")} >/dev/null`)
+      .map(
+        (r) =>
+          `sudo -n ${r.command.replace(/^ufw /, "ufw --dry-run ")} >/dev/null`,
+      )
       .join(" && "),
   );
   vps(
@@ -974,11 +1136,16 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
         try {
           ip = (
             await (
-              await fetch("https://api.ipify.org", { signal: AbortSignal.timeout(8000) })
+              await fetch("https://api.ipify.org", {
+                signal: AbortSignal.timeout(8000),
+              })
             ).text()
           ).trim();
         } catch {
-          return { ok: false, detail: "workstation public address unavailable (api.ipify.org)" };
+          return {
+            ok: false,
+            detail: "workstation public address unavailable (api.ipify.org)",
+          };
         }
         const r = await runner("vps", "sudo -n ufw status numbered");
         const line = r.stdout.split("\n").find((l) => l.includes(ip));
@@ -1131,7 +1298,16 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
       note: string,
       run?: string,
       extra: Partial<WgStep> = {},
-    ) => steps.push({ id: `${host}.${id}`, host, phase, kind, note, run, ...extra });
+    ) =>
+      steps.push({
+        id: `${host}.${id}`,
+        host,
+        phase,
+        kind,
+        note,
+        run,
+        ...extra,
+      });
     wgPre(host);
     if (host === "wsl") {
       h(
@@ -1195,7 +1371,9 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
     );
     const localProxies = t.services.filter(
       (service) =>
-        service.host === host && service.expose === "socket-proxyd" && service.port !== undefined,
+        service.host === host &&
+        service.expose === "socket-proxyd" &&
+        service.port !== undefined,
     );
     if (localProxies.length > 0) {
       for (const ext of ["socket", "service"] as const) {
@@ -1223,7 +1401,9 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
             ? t.hub.address
             : t.peers.find((peer) => peer.id === source)?.address;
         if (!sourceAddress || sourceAddress === p.address) continue;
-        for (const service of localProxies.filter((candidate) => services.includes(candidate.id))) {
+        for (const service of localProxies.filter((candidate) =>
+          services.includes(candidate.id),
+        )) {
           h(
             `proxy-ufw.${source}.${service.id}`,
             "install",
@@ -1313,13 +1493,20 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
 
 // ── observe (read-only) and render ───────────────────────────────────────────────────────────────────────────────────────
 
-export const READ_ONLY: ReadonlySet<WgKind> = new Set(["check", "warn", "info"]);
+export const READ_ONLY: ReadonlySet<WgKind> = new Set([
+  "check",
+  "warn",
+  "info",
+]);
 export interface Observed {
   ok: boolean;
   detail: string;
 }
 /** Runs only the read-only steps. A `mutate` step is never executed, whatever the runner. */
-export async function observePlan(plan: WgPlan, runner: Runner): Promise<Map<string, Observed>> {
+export async function observePlan(
+  plan: WgPlan,
+  runner: Runner,
+): Promise<Map<string, Observed>> {
   const out = new Map<string, Observed>();
   for (const s of plan.steps) {
     if (!READ_ONLY.has(s.kind) || (s.run === undefined && !s.probe)) continue;
@@ -1331,16 +1518,26 @@ export async function observePlan(plan: WgPlan, runner: Runner): Promise<Map<str
         continue;
       }
       const r = await runner(s.host, s.run!);
-      const text = `${r.stdout}${r.stderr}`.trim().split("\n").slice(0, 3).join(" | ");
+      const text = `${r.stdout}${r.stderr}`
+        .trim()
+        .split("\n")
+        .slice(0, 3)
+        .join(" | ");
       out.set(s.id, {
         ok: r.code === 0,
         detail:
           r.code !== 0 && s.onFail
             ? s.onFail
-            : text.replace(/^Error: remote command failed with exit code Some\(\d+\):\s*/, ""),
+            : text.replace(
+                /^Error: remote command failed with exit code Some\(\d+\):\s*/,
+                "",
+              ),
       });
     } catch (error) {
-      out.set(s.id, { ok: false, detail: error instanceof Error ? error.message : String(error) });
+      out.set(s.id, {
+        ok: false,
+        detail: error instanceof Error ? error.message : String(error),
+      });
     }
   }
   return out;
@@ -1363,7 +1560,10 @@ export const defaultRunner: Runner = async (host, command) => {
   return { code: await p.exited, stdout, stderr };
 };
 
-export function renderPlan(plan: WgPlan, observed?: Map<string, Observed>): string {
+export function renderPlan(
+  plan: WgPlan,
+  observed?: Map<string, Observed>,
+): string {
   const lines: string[] = [];
   lines.push(
     `wg-plan ${plan.name}: interface ${plan.interface}, subnet ${plan.subnet}, hub ${plan.hub} (plan only, nothing applied)`,
@@ -1406,12 +1606,20 @@ export function renderPlan(plan: WgPlan, observed?: Map<string, Observed>): stri
     }
   }
   lines.push("", "pending inputs:", ...plan.pending.map((p) => `  - ${p}`));
-  lines.push("", "decisions and findings for the owner:", ...plan.decisions.map((d) => `  - ${d}`));
+  lines.push(
+    "",
+    "decisions and findings for the owner:",
+    ...plan.decisions.map((d) => `  - ${d}`),
+  );
   return lines.join("\n");
 }
 
 /** Project only the declared DBFR service proxy, never tunnel bootstrap or account steps. */
-export function selectedProxySteps(t: Tunnel, ctx: PlanContext, serviceId: string): WgStep[] {
+export function selectedProxySteps(
+  t: Tunnel,
+  ctx: PlanContext,
+  serviceId: string,
+): WgStep[] {
   const service = t.services.find((candidate) => candidate.id === serviceId);
   const peer = t.peers.find((candidate) => candidate.host === "dbfr");
   if (
@@ -1451,7 +1659,11 @@ export function selectedProxySteps(t: Tunnel, ctx: PlanContext, serviceId: strin
 
 // ── CLI ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-export async function wgMain(cmd: string, rest: string[], ctx: PlanContext): Promise<void> {
+export async function wgMain(
+  cmd: string,
+  rest: string[],
+  ctx: PlanContext,
+): Promise<void> {
   const flag = (name: string) => rest.includes(`--${name}`);
   const value = (name: string) => {
     const at = rest.indexOf(`--${name}`);
@@ -1460,10 +1672,16 @@ export async function wgMain(cmd: string, rest: string[], ctx: PlanContext): Pro
   const t = loadTunnel(ctx.root);
   if (cmd === "wg-plan") {
     const plan = buildPlan(t, ctx);
-    const observed = flag("observe") ? await observePlan(plan, defaultRunner) : undefined;
+    const observed = flag("observe")
+      ? await observePlan(plan, defaultRunner)
+      : undefined;
     console.log(
       flag("json")
-        ? JSON.stringify({ ...plan, observed: observed && Object.fromEntries(observed) }, null, 2)
+        ? JSON.stringify(
+            { ...plan, observed: observed && Object.fromEntries(observed) },
+            null,
+            2,
+          )
         : renderPlan(plan, observed),
     );
     if (!flag("json"))
@@ -1472,8 +1690,13 @@ export async function wgMain(cmd: string, rest: string[], ctx: PlanContext): Pro
       );
     return;
   }
-  const peer = rest.find((a, i) => !a.startsWith("--") && !rest[i - 1]?.startsWith("--"));
-  if (!peer) throw new Error(`wg-client <peer> (${t.peers.map((p) => p.id).join(", ")})`);
+  const peer = rest.find(
+    (a, i) => !a.startsWith("--") && !rest[i - 1]?.startsWith("--"),
+  );
+  if (!peer)
+    throw new Error(
+      `wg-client <peer> (${t.peers.map((p) => p.id).join(", ")})`,
+    );
   const format = value("format") ?? "sections";
   const hubKey = value("hub-public-key");
   let text: string;

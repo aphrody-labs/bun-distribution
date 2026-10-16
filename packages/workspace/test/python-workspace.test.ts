@@ -3,7 +3,11 @@ import { expect, test } from "bun:test";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { pythonWorkspaceCommands, runPythonWorkspace, supervise } from "../src/python-workspace.ts";
+import {
+  pythonWorkspaceCommands,
+  runPythonWorkspace,
+  supervise,
+} from "../src/python-workspace.ts";
 
 const fixture = join(import.meta.dir, "fixtures/python-workspace.ts");
 const root = "/";
@@ -47,17 +51,28 @@ async function assertStopped(pid: number) {
   throw new Error(`Fixture process ${pid} still runs`);
 }
 
-supervisedTest("measurement preserves failure and resource evidence", async () => {
-  const result = await measure([process.execPath, fixture, "7"], root, silent);
-  expect(result.exitCode).toBe(7);
-  expect(result.success).toBe(false);
-  expect(result.durationMs).toBeGreaterThanOrEqual(0);
-  expect(result).toHaveProperty("resourceUsage");
-  expect(() => JSON.stringify(result)).not.toThrow();
-});
+supervisedTest(
+  "measurement preserves failure and resource evidence",
+  async () => {
+    const result = await measure(
+      [process.execPath, fixture, "7"],
+      root,
+      silent,
+    );
+    expect(result.exitCode).toBe(7);
+    expect(result.success).toBe(false);
+    expect(result.durationMs).toBeGreaterThanOrEqual(0);
+    expect(result).toHaveProperty("resourceUsage");
+    expect(() => JSON.stringify(result)).not.toThrow();
+  },
+);
 
 supervisedTest("missing executable is a structured failure", async () => {
-  const result = await measure(["/nonexistent/aphrody-workspace-command"], root, silent);
+  const result = await measure(
+    ["/nonexistent/aphrody-workspace-command"],
+    root,
+    silent,
+  );
   expect(result.success).toBe(false);
   expect(result.exitCode).toBe(127);
 });
@@ -130,7 +145,10 @@ test("abort before launch cannot execute the command", async () => {
 test("invalid budgets are rejected without executing", async () => {
   for (const timeoutMs of [0, -1, NaN, Infinity, 0.5, 2_147_483_648]) {
     // oxlint-disable-next-line no-await-in-loop -- budgets are checked one by one so each rejection is asserted in order
-    const result = await measure([process.execPath, fixture, "0"], root, { ...silent, timeoutMs });
+    const result = await measure([process.execPath, fixture, "0"], root, {
+      ...silent,
+      timeoutMs,
+    });
     expect(result.exitCode).toBe(2);
   }
 });
@@ -146,58 +164,82 @@ supervisedTest("lossless output refuses overflow explicitly", async () => {
 });
 
 for (const action of ["timeout", "cancel", "orphan"] as const) {
-  supervisedTest(`${action} stops the leader and its SIGTERM-resistant descendant`, async () => {
-    const directory = await mkdtemp(join(tmpdir(), "aphrody-supervisor-"));
-    const controller = new AbortController();
-    const operation = measure(
-      [process.execPath, fixture, action === "orphan" ? "orphan" : "tree", directory],
-      root,
-      {
-        ...silent,
-        signal: controller.signal,
-        timeoutMs: action === "timeout" ? 500 : 3000,
-      },
-    );
-    try {
-      const ownedPids = await pids(directory);
-      if (action === "cancel") controller.abort();
-      const result = await operation;
-      expect(result.reason).toBe(
-        action === "timeout" ? "timeout" : action === "cancel" ? "cancelled" : "exited",
+  supervisedTest(
+    `${action} stops the leader and its SIGTERM-resistant descendant`,
+    async () => {
+      const directory = await mkdtemp(join(tmpdir(), "aphrody-supervisor-"));
+      const controller = new AbortController();
+      const operation = measure(
+        [
+          process.execPath,
+          fixture,
+          action === "orphan" ? "orphan" : "tree",
+          directory,
+        ],
+        root,
+        {
+          ...silent,
+          signal: controller.signal,
+          timeoutMs: action === "timeout" ? 500 : 3000,
+        },
       );
-      expect(result.exitCode).toBe(action === "timeout" ? 124 : action === "cancel" ? 130 : 0);
-      expect(result.durationMs).toBeLessThan(3000);
-      // oxlint-disable-next-line no-await-in-loop -- owned processes are asserted stopped one by one, in spawn order
-      for (const pid of ownedPids) await assertStopped(pid);
-    } finally {
-      controller.abort();
-      await operation;
-      await rm(directory, { recursive: true, force: true });
-    }
-  });
+      try {
+        const ownedPids = await pids(directory);
+        if (action === "cancel") controller.abort();
+        const result = await operation;
+        expect(result.reason).toBe(
+          action === "timeout"
+            ? "timeout"
+            : action === "cancel"
+              ? "cancelled"
+              : "exited",
+        );
+        expect(result.exitCode).toBe(
+          action === "timeout" ? 124 : action === "cancel" ? 130 : 0,
+        );
+        expect(result.durationMs).toBeLessThan(3000);
+        // oxlint-disable-next-line no-await-in-loop -- owned processes are asserted stopped one by one, in spawn order
+        for (const pid of ownedPids) await assertStopped(pid);
+      } finally {
+        controller.abort();
+        await operation;
+        await rm(directory, { recursive: true, force: true });
+      }
+    },
+  );
 }
 
-supervisedTest("missing verified artifact is an explicit prerequisite failure", async () => {
-  const child = Bun.spawn([process.execPath, fixture, "measure"], {
-    windowsHide: true,
-    env: { ...process.env, YOLO_RUNTIME_HOME: "/nonexistent/aphrody-runtime" },
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-  const [output, , exitCode] = await Promise.all([
-    new Response(child.stdout).text(),
-    new Response(child.stderr).text(),
-    child.exited,
-  ]);
-  expect(exitCode).toBe(0);
-  expect(JSON.parse(output).reason).toBe("runtime_unavailable");
-  expect(JSON.parse(output).exitCode).toBe(125);
-});
+supervisedTest(
+  "missing verified artifact is an explicit prerequisite failure",
+  async () => {
+    const child = Bun.spawn([process.execPath, fixture, "measure"], {
+      windowsHide: true,
+      env: {
+        ...process.env,
+        YOLO_RUNTIME_HOME: "/nonexistent/aphrody-runtime",
+      },
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const [output, , exitCode] = await Promise.all([
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+      child.exited,
+    ]);
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(output).reason).toBe("runtime_unavailable");
+    expect(JSON.parse(output).exitCode).toBe(125);
+  },
+);
 
 test.skipIf(process.platform === "linux")(
   "hosts without process-group supervision refuse before loading the runtime",
   async () => {
-    const result = await measure([process.execPath, fixture, "0"], root, silent);
+    const result = await measure(
+      [process.execPath, fixture, "0"],
+      root,
+      silent,
+    );
     expect(result.reason).toBe("unsupported_platform");
     expect(result.exitCode).toBe(125);
     expect(result).not.toHaveProperty("pid");

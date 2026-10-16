@@ -34,12 +34,17 @@ export interface N2bArguments {
 
 function nonempty(value: string, label: string): string {
   if (value.length === 0 || value.includes("\0")) {
-    throw new TypeError(`${label} must be nonempty and contain no NUL character`);
+    throw new TypeError(
+      `${label} must be nonempty and contain no NUL character`,
+    );
   }
   return value;
 }
 
-export function parseN2bArguments(args: readonly string[], cwd = process.cwd()): N2bArguments {
+export function parseN2bArguments(
+  args: readonly string[],
+  cwd = process.cwd(),
+): N2bArguments {
   const { values, positionals } = parseArgs({
     args: [...args],
     strict: true,
@@ -55,7 +60,8 @@ export function parseN2bArguments(args: readonly string[], cwd = process.cwd()):
       help: { type: "boolean", short: "h" },
     },
   });
-  if (positionals.length > 1) throw new TypeError("Expected at most one project path");
+  if (positionals.length > 1)
+    throw new TypeError("Expected at most one project path");
   if (values.fix && values.aggressive) {
     throw new TypeError("--fix and --aggressive are mutually exclusive");
   }
@@ -76,19 +82,30 @@ export function parseN2bArguments(args: readonly string[], cwd = process.cwd()):
       ...(values.jobs === undefined ? {} : { jobs: Number(values.jobs) }),
       ...(values.ignore === undefined
         ? {}
-        : { ignore: values.ignore.map((pattern) => nonempty(pattern, "--ignore")) }),
+        : {
+            ignore: values.ignore.map((pattern) =>
+              nonempty(pattern, "--ignore"),
+            ),
+          }),
     },
   };
 }
 
 export function n2bExitCode(report: NodeProjectReport): number {
-  if (report.files.some((file) => file.findings.some((finding) => finding.severity === "error"))) {
+  if (
+    report.files.some((file) =>
+      file.findings.some((finding) => finding.severity === "error"),
+    )
+  ) {
     return 2;
   }
   return report.mode === "check" && report.findings_total > 0 ? 1 : 0;
 }
 
-export function renderN2bReport(report: NodeProjectReport, dryRun = false): string {
+export function renderN2bReport(
+  report: NodeProjectReport,
+  dryRun = false,
+): string {
   const changed = report.files.filter((file) => file.changed).length;
   const heading = `N2B ${report.mode}${dryRun ? " (dry run)" : ""}: ${report.files_scanned} files scanned, ${report.findings_total} findings, ${changed} files ${dryRun ? "would change" : "changed"}`;
   const findings = report.files.flatMap((file) =>
@@ -100,7 +117,10 @@ export function renderN2bReport(report: NodeProjectReport, dryRun = false): stri
   return [heading, ...findings].join("\n");
 }
 
-export async function runN2bCommand(args: readonly string[], cwd = process.cwd()): Promise<number> {
+export async function runN2bCommand(
+  args: readonly string[],
+  cwd = process.cwd(),
+): Promise<number> {
   try {
     const parsed = parseN2bArguments(args, cwd);
     if (parsed.help) {
@@ -110,7 +130,8 @@ export async function runN2bCommand(args: readonly string[], cwd = process.cwd()
     if (!statSync(parsed.root).isDirectory()) {
       throw new TypeError("Project path must be a directory");
     }
-    const { NativeTooling } = await import("@aphrody/yolo-core/src/compiler/native.ts");
+    const { NativeTooling } =
+      await import("@aphrody/yolo-core/src/compiler/native.ts");
     using tooling = new NativeTooling(
       parsed.libraryPath === undefined ? {} : { path: parsed.libraryPath },
     );
@@ -122,7 +143,9 @@ export async function runN2bCommand(args: readonly string[], cwd = process.cwd()
     );
     return n2bExitCode(report);
   } catch (error) {
-    console.error(`yolo n2b: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(
+      `yolo n2b: ${error instanceof Error ? error.message : String(error)}`,
+    );
     return 2;
   }
 }

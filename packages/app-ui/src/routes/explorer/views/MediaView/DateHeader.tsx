@@ -28,7 +28,9 @@ export function DateHeader({ date }: DateHeaderProps) {
     <div
       ref={ref}
       style={{ height: DATE_HEADER_HEIGHT }}
-      className={clsx("pointer-events-none sticky inset-x-0 -top-px z-10 p-5 text-on-surface")}
+      className={clsx(
+        "pointer-events-none sticky inset-x-0 -top-px z-10 p-5 text-on-surface",
+      )}
     >
       <div
         className={clsx(

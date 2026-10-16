@@ -1,5 +1,11 @@
 import { UsageError } from "../../../shared/args.ts";
-import type { ChallongeClient, Match, Participant, Tournament, TournamentAttrs } from "./client.ts";
+import type {
+  ChallongeClient,
+  Match,
+  Participant,
+  Tournament,
+  TournamentAttrs,
+} from "./client.ts";
 import { BULK_LIMIT, chunk, type SeedEntry } from "./participants.ts";
 import type { TournamentRef } from "./state.ts";
 
@@ -79,8 +85,11 @@ export interface CreateOptions {
   groupStage?: { size?: number; advance?: number };
 }
 
-export function buildTournamentAttributes(o: CreateOptions): Record<string, unknown> {
-  if (!o.name.trim()) throw new UsageError("Le nom du tournoi est obligatoire (--name).");
+export function buildTournamentAttributes(
+  o: CreateOptions,
+): Record<string, unknown> {
+  if (!o.name.trim())
+    throw new UsageError("Le nom du tournoi est obligatoire (--name).");
   const attributes: Record<string, unknown> = {
     name: o.name.trim(),
     tournament_type: TYPE_API[o.type],
@@ -99,7 +108,8 @@ export function buildTournamentAttributes(o: CreateOptions): Record<string, unkn
   }
   const registration: Record<string, unknown> = {};
   if (o.openSignup) registration.open_signup = true;
-  if (o.signupCap !== undefined) registration.signup_cap = positive(o.signupCap, "--signup-cap");
+  if (o.signupCap !== undefined)
+    registration.signup_cap = positive(o.signupCap, "--signup-cap");
   if (o.checkInMinutes !== undefined) {
     if (
       !Number.isInteger(o.checkInMinutes) ||
@@ -110,24 +120,35 @@ export function buildTournamentAttributes(o: CreateOptions): Record<string, unkn
     }
     registration.check_in_duration = o.checkInMinutes;
   }
-  if (Object.keys(registration).length) attributes.registration_options = registration;
-  if (o.thirdPlace) attributes.match_options = { consolation_matches_target_rank: 3 };
+  if (Object.keys(registration).length)
+    attributes.registration_options = registration;
+  if (o.thirdPlace)
+    attributes.match_options = { consolation_matches_target_rank: 3 };
   if (o.grandFinals) {
     if (o.type !== "double_elimination")
-      throw new UsageError("--grand-finals ne s'applique qu'à la double élimination.");
-    attributes.double_elimination_options = { grand_finals_modifier: o.grandFinals };
+      throw new UsageError(
+        "--grand-finals ne s'applique qu'à la double élimination.",
+      );
+    attributes.double_elimination_options = {
+      grand_finals_modifier: o.grandFinals,
+    };
   }
   if (o.swissRounds !== undefined) {
     if (o.type !== "swiss")
       throw new UsageError("--swiss-rounds ne s'applique qu'au format swiss.");
-    attributes.swiss_options = { rounds: positive(o.swissRounds, "--swiss-rounds") };
+    attributes.swiss_options = {
+      rounds: positive(o.swissRounds, "--swiss-rounds"),
+    };
   }
   if (o.groupStage) {
     attributes.group_stage_enabled = true;
     attributes.group_stage_options = {
       stage_type: "round robin",
       group_size: positive(o.groupStage.size ?? 4, "--group-size"),
-      participant_count_to_advance_per_group: positive(o.groupStage.advance ?? 2, "--advance"),
+      participant_count_to_advance_per_group: positive(
+        o.groupStage.advance ?? 2,
+        "--advance",
+      ),
     };
   }
   return attributes;
@@ -143,14 +164,23 @@ function positive(value: number, flag: string): number {
  * URL publique du bracket. Si l'API fournit `full_challonge_url` on l'utilise (champ non documenté : NON VÉRIFIÉ) ;
  * sinon `https://challonge.com/<url>` (le préfixe de communauté n'est pas confirmé par la doc : NON VÉRIFIÉ).
  */
-export function bracketUrl(attributes: TournamentAttrs, community?: string): string {
-  if (typeof attributes.full_challonge_url === "string" && attributes.full_challonge_url)
+export function bracketUrl(
+  attributes: TournamentAttrs,
+  community?: string,
+): string {
+  if (
+    typeof attributes.full_challonge_url === "string" &&
+    attributes.full_challonge_url
+  )
     return attributes.full_challonge_url;
   const slug = attributes.url ?? "";
   return `https://challonge.com/${community ? `${community}/` : ""}${slug}`;
 }
 
-export function tournamentRef(tournament: Tournament, community?: string): TournamentRef {
+export function tournamentRef(
+  tournament: Tournament,
+  community?: string,
+): TournamentRef {
   return {
     id: String(tournament.id),
     url: tournament.attributes.url,
@@ -195,9 +225,13 @@ export async function createTournamentFlow(
   entries: readonly SeedEntry[],
   config: { start?: boolean; community?: string },
 ): Promise<CreateResult> {
-  const tournament = await client.createTournament(buildTournamentAttributes(options));
+  const tournament = await client.createTournament(
+    buildTournamentAttributes(options),
+  );
   const ref = tournamentRef(tournament, config.community);
-  const created = entries.length ? await addParticipants(client, ref.id, entries) : [];
+  const created = entries.length
+    ? await addParticipants(client, ref.id, entries)
+    : [];
   let state = tournament.attributes.state;
   if (config.start) {
     const started = await client.changeState(
@@ -206,11 +240,18 @@ export async function createTournamentFlow(
     );
     state = started?.attributes?.state ?? state;
   }
-  return { tournament: ref, state, participants: entries.length, started: !!config.start, created };
+  return {
+    tournament: ref,
+    state,
+    participants: entries.length,
+    started: !!config.start,
+    created,
+  };
 }
 
 /** Transitions d'état documentées (Change Tournament State) exposées par la CLI. */
-export type StateAction = "start" | "finalize" | "process_checkin" | "abort_checkin";
+export type StateAction =
+  "start" | "finalize" | "process_checkin" | "abort_checkin";
 
 export function stateFor(action: StateAction, groupStage: boolean): string {
   if (!groupStage) return action;
@@ -234,7 +275,8 @@ export interface ParsedScore {
 export function parseScore(text: string): ParsedScore {
   const normalised = text.trim().replace(/\s*([-:])\s*/g, "$1");
   const parts = normalised.split(/[,;\s]+/).filter(Boolean);
-  if (!parts.length) throw new UsageError("Score vide : attendu « 2-1 » ou « 3-1,2-4,3-0 ».");
+  if (!parts.length)
+    throw new UsageError("Score vide : attendu « 2-1 » ou « 3-1,2-4,3-0 ».");
   const sets: [number, number][] = parts.map((part) => {
     const match = /^(\d+)[-:](\d+)$/.exec(part);
     if (!match)
@@ -271,7 +313,11 @@ export interface MatchPlayers {
 export function matchPlayers(match: Match): MatchPlayers {
   const relationships =
     match.attributes.relationships ??
-    (match as unknown as { relationships?: Match["attributes"]["relationships"] }).relationships ??
+    (
+      match as unknown as {
+        relationships?: Match["attributes"]["relationships"];
+      }
+    ).relationships ??
     {};
   const fromRel = (key: string): string | undefined => {
     const id = relationships[key]?.data?.id;
@@ -299,7 +345,9 @@ export async function findMatch(
   if (MATCH_ID.test(wanted)) return client.getMatch(tournamentId, wanted);
   const identifier = wanted.toUpperCase();
   const pick = (matches: Match[]) =>
-    matches.find((m) => String(m.attributes.identifier ?? "").toUpperCase() === identifier);
+    matches.find(
+      (m) => String(m.attributes.identifier ?? "").toUpperCase() === identifier,
+    );
   const open = pick(await client.listMatches(tournamentId, "open"));
   if (open) return open;
   const any = pick(await client.listMatches(tournamentId));
@@ -340,13 +388,20 @@ async function resolveWinner(
   if (text === players.player1) return 0;
   if (text === players.player2) return 1;
   if (/^\d{5,}$/.test(text))
-    throw new UsageError(`--winner ${text} : ce participant ne joue pas ce match.`);
+    throw new UsageError(
+      `--winner ${text} : ce participant ne joue pas ce match.`,
+    );
   const lower = text.toLocaleLowerCase();
-  const names = [0, 1].map((i) => knownNames?.(i === 0 ? players.player1 : players.player2));
-  for (const i of [0, 1] as const) if (names[i]?.toLocaleLowerCase() === lower) return i;
+  const names = [0, 1].map((i) =>
+    knownNames?.(i === 0 ? players.player1 : players.player2),
+  );
+  for (const i of [0, 1] as const)
+    if (names[i]?.toLocaleLowerCase() === lower) return i;
   const participants = await client.listParticipants(tournamentId);
   const nameOf = (id: string) =>
-    participants.find((p) => String(p.id) === id)?.attributes.name?.toLocaleLowerCase();
+    participants
+      .find((p) => String(p.id) === id)
+      ?.attributes.name?.toLocaleLowerCase();
   if (nameOf(players.player1) === lower) return 0;
   if (nameOf(players.player2) === lower) return 1;
   throw new UsageError(
@@ -393,18 +448,28 @@ export async function reportMatch(
       );
   }
   if (!players.player1 || !players.player2)
-    throw new UsageError(`Le match ${identifier ?? matchId} n'a pas ses deux joueurs.`);
+    throw new UsageError(
+      `Le match ${identifier ?? matchId} n'a pas ses deux joueurs.`,
+    );
   const both = { player1: players.player1, player2: players.player2 };
 
   let winnerIndex: 0 | 1 | undefined;
   if (options.tie) {
     if (score.leader !== undefined)
-      throw new UsageError("--tie demandé alors que les scores ne sont pas égaux.");
+      throw new UsageError(
+        "--tie demandé alors que les scores ne sont pas égaux.",
+      );
   } else if (options.winner !== undefined) {
     winnerIndex =
       client.dryRun && !/^(1|2|p1|p2)$/i.test(options.winner.trim())
         ? undefined
-        : await resolveWinner(client, tournamentId, options.winner, both, knownNames);
+        : await resolveWinner(
+            client,
+            tournamentId,
+            options.winner,
+            both,
+            knownNames,
+          );
     if (
       winnerIndex !== undefined &&
       score.leader !== undefined &&
@@ -429,7 +494,10 @@ export async function reportMatch(
     ...(winnerIndex === index ? { advancing: true } : {}),
   });
   const attributes: Record<string, unknown> = {
-    match: [entry(both.player1, score.set1, 0), entry(both.player2, score.set2, 1)],
+    match: [
+      entry(both.player1, score.set1, 0),
+      entry(both.player2, score.set2, 1),
+    ],
   };
   if (options.tie) attributes.tie = true;
   const updated = await client.updateMatch(tournamentId, matchId, attributes);
@@ -439,7 +507,11 @@ export async function reportMatch(
     players,
     score,
     winnerId:
-      winnerIndex === undefined ? undefined : winnerIndex === 0 ? both.player1 : both.player2,
+      winnerIndex === undefined
+        ? undefined
+        : winnerIndex === 0
+          ? both.player1
+          : both.player2,
     tie: !!options.tie,
     state: updated?.attributes?.state,
   };

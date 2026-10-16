@@ -29,15 +29,23 @@ test("only compute and E5 restore, without adopting or recreating existing appli
     );
     expect(result.exitCode).toBe(0);
     const config = JSON.parse(result.stdout.toString());
-    expect(Object.keys(config.services).toSorted()).toEqual(["shenron-compute", "shenron-embed"]);
-    for (const service of Object.values(config.services) as Record<string, unknown>[]) {
+    expect(Object.keys(config.services).toSorted()).toEqual([
+      "shenron-compute",
+      "shenron-embed",
+    ]);
+    for (const service of Object.values(config.services) as Record<
+      string,
+      unknown
+    >[]) {
       expect(service.network_mode).toBe("host");
       expect(service.user).toBe("1000:1000");
       expect(service.read_only).toBe(true);
       expect(service.privileged).not.toBe(true);
       expect(service.ports).toBeUndefined();
     }
-    expect(config.services["shenron-compute"].command).toContain("127.0.0.1:8789");
+    expect(config.services["shenron-compute"].command).toContain(
+      "127.0.0.1:8789",
+    );
     expect(config.services["shenron-embed"].volumes[0].read_only).toBe(true);
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -52,8 +60,14 @@ test("mutable or foreign image references and relative bind roots are refused", 
     envFile: "/etc/private.env",
     apply: false,
   };
-  for (const image of ["aphrody:toolbox", "ubuntu:latest", "aphrody:toolbox-abc"]) {
+  for (const image of [
+    "aphrody:toolbox",
+    "ubuntu:latest",
+    "aphrody:toolbox-abc",
+  ]) {
     expect(() => recoveryCompose({ ...options, image })).toThrow("immutable");
   }
-  expect(() => recoveryCompose({ ...options, home: "relative" })).toThrow("Absolute");
+  expect(() => recoveryCompose({ ...options, home: "relative" })).toThrow(
+    "Absolute",
+  );
 });

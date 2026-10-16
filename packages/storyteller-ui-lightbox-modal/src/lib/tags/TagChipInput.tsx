@@ -149,7 +149,7 @@ export function TagChipInput({
         {chips.map((value) =>
           disabled ? (
             <span key={value.toLowerCase()} className={chipClass(value)}>
-              <TagIcon  className="h-2.5 w-2.5 text-base-fg/40" />
+              <TagIcon className="h-2.5 w-2.5 text-base-fg/40" />
               {value}
             </span>
           ) : (
@@ -164,7 +164,7 @@ export function TagChipInput({
               className={`group/tag ${chipClass(value)} hover:bg-red/15 hover:text-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red`}
             >
               {value}
-              <XIcon  className="h-2.5 w-2.5" />
+              <XIcon className="h-2.5 w-2.5" />
             </button>
           ),
         )}
@@ -184,7 +184,9 @@ export function TagChipInput({
               if (draft.trim()) commit(draft);
             }}
             aria-label="Tags"
-            placeholder={chips.length === 0 ? "Add tags (comma separated)" : "Add tag"}
+            placeholder={
+              chips.length === 0 ? "Add tags (comma separated)" : "Add tag"
+            }
             className="min-w-[7rem] flex-1 bg-transparent py-0.5 text-sm text-base-fg placeholder:text-base-fg/40 focus:outline-none"
           />
         )}
@@ -205,10 +207,12 @@ export function TagChipInput({
               onClick={() => pickSuggestion(suggestion.value)}
               onMouseEnter={() => setHighlightIndex(index)}
               className={`flex w-full items-center gap-2 rounded-[3px] px-2 py-1.5 text-sm text-base-fg transition-colors ${
-                highlight === index ? "bg-ui-controls/60" : "hover:bg-ui-controls/40"
+                highlight === index
+                  ? "bg-ui-controls/60"
+                  : "hover:bg-ui-controls/40"
               }`}
             >
-              <TagIcon  className="text-[10px] text-base-fg/40" />
+              <TagIcon className="text-[10px] text-base-fg/40" />
               <span className="truncate">{suggestion.value}</span>
               <span className="ml-auto text-[11px] text-base-fg/40">
                 {suggestion.useCount}

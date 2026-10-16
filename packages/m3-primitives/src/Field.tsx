@@ -38,15 +38,19 @@ export type FieldControlProps = FieldPrimitive.Control.Props;
 export const FieldControl = FieldPrimitive.Control;
 
 export type FieldDescriptionProps = FieldPrimitive.Description.Props;
-export const FieldDescription = forwardRef<HTMLParagraphElement, FieldDescriptionProps>(
-  ({ className, ...props }, ref) => (
-    <FieldPrimitive.Description
-      ref={ref}
-      className={withClassName("m-0 text-body-small text-on-surface-variant", className)}
-      {...props}
-    />
-  ),
-);
+export const FieldDescription = forwardRef<
+  HTMLParagraphElement,
+  FieldDescriptionProps
+>(({ className, ...props }, ref) => (
+  <FieldPrimitive.Description
+    ref={ref}
+    className={withClassName(
+      "m-0 text-body-small text-on-surface-variant",
+      className,
+    )}
+    {...props}
+  />
+));
 FieldDescription.displayName = "FieldDescription";
 
 export type FieldErrorProps = FieldPrimitive.Error.Props;
@@ -54,7 +58,10 @@ export const FieldError = forwardRef<HTMLParagraphElement, FieldErrorProps>(
   ({ className, ...props }, ref) => (
     <FieldPrimitive.Error
       ref={ref}
-      className={withClassName("m-0 text-body-small font-medium text-error", className)}
+      className={withClassName(
+        "m-0 text-body-small font-medium text-error",
+        className,
+      )}
       {...props}
     />
   ),

@@ -17,7 +17,11 @@ wanted blobs and writes them with an exact-path sparse checkout.
 | `bun run icons:ico <symbol\|file.svg> --out src-tauri/icons` | `tauri icon` pipeline: `icon.ico`, `icon.icns`, PNG set (`yolo m3 svg-to-ico`; npm bin `m3-svg-to-ico`).                                                                                                        |
 
 ```ts
-import { symbolNames, readSymbolSvg, hasSymbol } from "@aphrody/material-design-icons";
+import {
+  symbolNames,
+  readSymbolSvg,
+  hasSymbol,
+} from "@aphrody/material-design-icons";
 
 symbolNames().length; // 4150
 readSymbolSvg("home", "rounded", 400, true);

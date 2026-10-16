@@ -20,7 +20,9 @@ export function toggleMaskInvertedOnElement({
       inverted: !mask.params.inverted,
     },
   });
-  const updatedMasks = currentMasks.map((mask) => (mask.id !== maskId ? mask : toggleMask(mask)));
+  const updatedMasks = currentMasks.map((mask) =>
+    mask.id !== maskId ? mask : toggleMask(mask),
+  );
 
   return { ...element, masks: updatedMasks };
 }

@@ -53,7 +53,9 @@ const bannerIcons = {
 } as const;
 
 export interface BannerProps
-  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof bannerVariants> {
+  extends
+    React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof bannerVariants> {
   showDot?: boolean;
   /** Override the variant's icon (Material Symbols name, element or component); `null` hides it. */
   icon?: IconSource | React.ElementType;
@@ -72,10 +74,13 @@ const Banner = forwardRef<HTMLDivElement, BannerProps>(
         {...props}
       >
         {showDot && <span className={clsx(dotVariants({ variant }))} />}
-        {renderIcon((icon === undefined ? bannerIcons[key] : icon) as IconSource, {
-          size: 20,
-          className: clsx("shrink-0", key === "default" && "text-primary"),
-        })}
+        {renderIcon(
+          (icon === undefined ? bannerIcons[key] : icon) as IconSource,
+          {
+            size: 20,
+            className: clsx("shrink-0", key === "default" && "text-primary"),
+          },
+        )}
         <div className="flex-1">{children}</div>
       </div>
     );

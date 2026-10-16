@@ -32,24 +32,15 @@ export type ColorSession = {
   commit(): void;
 };
 
-export function beginColorSession(
-  editor: Editor,
-  uuid: string,
-): ColorSession {
-  const startObj = editor.activeScene.scene.getObjectByProperty(
-    "uuid",
-    uuid,
-  );
+export function beginColorSession(editor: Editor, uuid: string): ColorSession {
+  const startObj = editor.activeScene.scene.getObjectByProperty("uuid", uuid);
   const before = (startObj?.userData.color as string) ?? "#ffffff";
   return {
     apply(color: string) {
       editor.activeScene.setColor(uuid, color);
     },
     commit() {
-      const endObj = editor.activeScene.scene.getObjectByProperty(
-        "uuid",
-        uuid,
-      );
+      const endObj = editor.activeScene.scene.getObjectByProperty("uuid", uuid);
       const after = (endObj?.userData.color as string) ?? before;
       if (before === after) return;
       editor.history.record(new ColorAction(editor, uuid, before, after));

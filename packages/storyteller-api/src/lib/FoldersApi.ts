@@ -63,7 +63,10 @@ export class FoldersApi extends ApiManager {
   }): Promise<ApiResponse<FolderInfo>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/folders/folder/${folderToken}`;
     return this.get<{ success: boolean; folder: FolderInfo }>({ endpoint })
-      .then((response) => ({ success: response.success, data: response.folder }))
+      .then((response) => ({
+        success: response.success,
+        data: response.folder,
+      }))
       .catch((err) => ({ success: false, errorMessage: err.message }));
   }
 

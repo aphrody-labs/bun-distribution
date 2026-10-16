@@ -5,10 +5,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { SplatMesh } from "@sparkjsdev/spark";
 import { BoneIcon } from "lucide-react";
 import { Select } from "@storyteller/ui-select";
-import {
-  NodeHierarchyHelper,
-  createRigHelper,
-} from "./NodeHierarchyHelper";
+import { NodeHierarchyHelper, createRigHelper } from "./NodeHierarchyHelper";
 import { disposeObject3D } from "./disposeObject3D";
 
 // Dropdown value for the "no animation" choice (models rest in their bind /
@@ -393,7 +390,9 @@ export function Viewer3D({
     let urlExtension = "";
     try {
       const pathname = new URL(modelUrl, window.location.href).pathname;
-      urlExtension = (pathname.match(/\.([a-z0-9]+)$/i)?.[1] ?? "").toLowerCase();
+      urlExtension = (
+        pathname.match(/\.([a-z0-9]+)$/i)?.[1] ?? ""
+      ).toLowerCase();
     } catch {
       // Unparseable URL — fall through to the GLTF attempt below.
     }

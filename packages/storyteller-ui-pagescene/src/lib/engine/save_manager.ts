@@ -367,6 +367,9 @@ function captureCanvasThumbnail(
 ): Promise<Blob | undefined> {
   if (!renderer) return Promise.resolve(undefined);
   return new Promise((resolve) => {
-    renderer.domElement.toBlob((blob) => resolve(blob ?? undefined), "image/png");
+    renderer.domElement.toBlob(
+      (blob) => resolve(blob ?? undefined),
+      "image/png",
+    );
   });
 }

@@ -97,7 +97,8 @@ function selectedWorkspaces(
   const selected = workspaces.filter(
     (workspace) => workspace.id === repository || workspace.name === repository,
   );
-  if (selected.length === 0) throw new Error(`unknown Bun workspace: ${repository}`);
+  if (selected.length === 0)
+    throw new Error(`unknown Bun workspace: ${repository}`);
   return selected;
 }
 
@@ -113,7 +114,9 @@ export async function runPackageOperation(
     options.repository,
   );
   if (operation === "status") {
-    console.log(JSON.stringify({ registry: OFFICIAL_NPM_REGISTRY, workspaces }, null, 2));
+    console.log(
+      JSON.stringify({ registry: OFFICIAL_NPM_REGISTRY, workspaces }, null, 2),
+    );
     return 0;
   }
   let exitCode = 0;
@@ -135,7 +138,10 @@ export async function runPackageOperation(
       }
       continue;
     }
-    const args = operation === "outdated" ? ["outdated", "--frozen-lockfile"] : ["audit", "--json"];
+    const args =
+      operation === "outdated"
+        ? ["outdated", "--frozen-lockfile"]
+        : ["audit", "--json"];
     const child = Bun.spawn([process.execPath, ...args], {
       windowsHide: true,
       cwd: workspace.root,

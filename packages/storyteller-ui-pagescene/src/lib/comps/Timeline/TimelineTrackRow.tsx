@@ -58,7 +58,8 @@ export const TimelineTrackRow = ({
     if (!lane) return 0;
     const rect = lane.getBoundingClientRect();
     // Keyframes live on the timeline's frame grid, same as scrubbing.
-    const fps = editor?.timelineController.getTimeline()?.fps ?? DEFAULT_TIMELINE_FPS;
+    const fps =
+      editor?.timelineController.getTimeline()?.fps ?? DEFAULT_TIMELINE_FPS;
     return quantizeToFrame(
       fractionToTime((clientX - rect.left) / rect.width, duration),
       fps,

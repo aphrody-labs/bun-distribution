@@ -41,7 +41,9 @@ export default function Motion({ adaptive }: PageProps) {
     >
       <output className="text-body-medium block">
         Reduced motion:{" "}
-        {reduced ? "on — states update without animation" : "off — Material motion is active"}
+        {reduced
+          ? "on — states update without animation"
+          : "off — Material motion is active"}
       </output>
       <Section title="Navigation patterns">
         <Card className="flex flex-col gap-4">
@@ -49,7 +51,9 @@ export default function Motion({ adaptive }: PageProps) {
             Transition pattern
             <select
               value={pattern}
-              onChange={(event) => setPattern(event.target.value as M3TransitionPattern)}
+              onChange={(event) =>
+                setPattern(event.target.value as M3TransitionPattern)
+              }
               className="rounded-small border border-outline bg-surface p-3"
             >
               {PATTERNS.map((value) => (
@@ -59,9 +63,12 @@ export default function Motion({ adaptive }: PageProps) {
           </label>
           <div className="min-h-28 overflow-hidden rounded-medium bg-primary-container p-4">
             <M3Transition stateKey={step} pattern={pattern} forward={forward}>
-              <h3 className="text-title-large text-on-primary-container">View {step + 1}</h3>
+              <h3 className="text-title-large text-on-primary-container">
+                View {step + 1}
+              </h3>
               <p className="text-body-large text-on-primary-container">
-                The state key drives entry and exit. Try forward and backward navigation.
+                The state key drives entry and exit. Try forward and backward
+                navigation.
               </p>
             </M3Transition>
           </div>
@@ -89,11 +96,17 @@ export default function Motion({ adaptive }: PageProps) {
       </Section>
       <Section title="Fade and collapse">
         <Card className="flex flex-col gap-4">
-          <Button variant="tonal" onClick={() => setShown((value) => !value)} aria-expanded={shown}>
+          <Button
+            variant="tonal"
+            onClick={() => setShown((value) => !value)}
+            aria-expanded={shown}
+          >
             Toggle content
           </Button>
           <M3Fade in={shown}>
-            <p className="text-body-large">A fade keeps the transition focused on opacity.</p>
+            <p className="text-body-large">
+              A fade keeps the transition focused on opacity.
+            </p>
           </M3Fade>
           <M3Collapse in={shown}>
             <div className="rounded-medium bg-secondary-container p-4 text-on-secondary-container">
@@ -129,7 +142,11 @@ export default function Motion({ adaptive }: PageProps) {
       <Section title="List staggering">
         <Card className="flex flex-col gap-4">
           <div className="flex gap-3">
-            <Button onClick={() => setItems((values) => [...values, (values.at(-1) ?? 0) + 1])}>
+            <Button
+              onClick={() =>
+                setItems((values) => [...values, (values.at(-1) ?? 0) + 1])
+              }
+            >
               Add item
             </Button>
             <Button

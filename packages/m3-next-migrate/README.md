@@ -101,7 +101,11 @@ next-migrate ./components/Hero.tsx ./dist/Hero.tsx
 ## Programmatic API
 
 ```typescript
-import { transformComponent, scanNextDirectory, migrateProject } from "@aphrody/m3-next-migrate";
+import {
+  transformComponent,
+  scanNextDirectory,
+  migrateProject,
+} from "@aphrody/m3-next-migrate";
 
 // Transform component code
 const result = transformComponent(nextSourceCode, {

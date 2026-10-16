@@ -55,13 +55,18 @@ export function excluded(path: string): boolean {
   return EXCLUDED.some((pattern) => pattern.test(path));
 }
 
-export function evaluate(counts: Record<string, number>, baseline: Record<string, number>): Report {
+export function evaluate(
+  counts: Record<string, number>,
+  baseline: Record<string, number>,
+): Report {
   const findings: Finding[] = [];
   const shrunk: string[] = [];
   for (const [file, count] of Object.entries(counts)) {
     const allowed = baseline[file];
-    if (allowed === undefined) findings.push({ kind: "new-file", file, count, baseline: 0 });
-    else if (count > allowed) findings.push({ kind: "regression", file, count, baseline: allowed });
+    if (allowed === undefined)
+      findings.push({ kind: "new-file", file, count, baseline: 0 });
+    else if (count > allowed)
+      findings.push({ kind: "regression", file, count, baseline: allowed });
   }
   for (const [file, allowed] of Object.entries(baseline))
     if ((counts[file] ?? 0) < allowed) shrunk.push(file);
@@ -76,7 +81,9 @@ export function evaluate(counts: Record<string, number>, baseline: Record<string
 }
 
 /** Residue line counts of every tracked text file, keyed by repository path. */
-export async function countResidue(root: string): Promise<Record<string, number>> {
+export async function countResidue(
+  root: string,
+): Promise<Record<string, number>> {
   const listing = await Bun.$`git ls-files -z`.cwd(root).quiet().text();
   const counts: Record<string, number> = {};
   for (const path of listing.split("\0")) {
@@ -91,13 +98,18 @@ export async function countResidue(root: string): Promise<Record<string, number>
     const count = residueLines(new TextDecoder().decode(bytes));
     if (count > 0) counts[path] = count;
   }
-  return Object.fromEntries(Object.entries(counts).toSorted(([a], [b]) => a.localeCompare(b)));
+  return Object.fromEntries(
+    Object.entries(counts).toSorted(([a], [b]) => a.localeCompare(b)),
+  );
 }
 
 if (import.meta.main) {
   const args = new Set(Bun.argv.slice(2));
   const root = resolve(import.meta.dir, "../../../../docs/aphrody");
-  const baselinePath = resolve(root, "tools/config/product-residue.baseline.json");
+  const baselinePath = resolve(
+    root,
+    "tools/config/product-residue.baseline.json",
+  );
   const counts = await countResidue(root);
   if (args.has("--write-baseline"))
     await Bun.write(
@@ -116,7 +128,9 @@ if (import.meta.main) {
         `error ${finding.kind} ${finding.file}: ${finding.count} line(s), baseline ${finding.baseline}`,
       );
     if (report.shrunk.length)
-      console.log(`info ${report.shrunk.length} file(s) below baseline: run --write-baseline`);
+      console.log(
+        `info ${report.shrunk.length} file(s) below baseline: run --write-baseline`,
+      );
     console.log(
       `product-residue: ${report.ok ? "ok" : "FAILED"} (${report.lines} line(s) in ${report.files} file(s))`,
     );

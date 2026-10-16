@@ -29,7 +29,7 @@ export const ExitCameraView = ({ className }: { className?: string }) => {
         className,
       )}
     >
-      <LogOutIcon  className="h-3.5 w-3.5" />
+      <LogOutIcon className="h-3.5 w-3.5" />
       Exit
     </button>
   );

@@ -32,7 +32,12 @@ const SCRIPT_DIR = dirname(import.meta.path);
 const REPO_ROOT = resolve(SCRIPT_DIR, "..", "..", "..", "..", "..");
 const REPO_PLUGIN = join(REPO_ROOT, "plugins/aphrody");
 function installedClaudePlugin(name: string): string | undefined {
-  const registry = join(homedir(), ".claude", "plugins", "installed_plugins.json");
+  const registry = join(
+    homedir(),
+    ".claude",
+    "plugins",
+    "installed_plugins.json",
+  );
   if (!existsSync(registry)) return undefined;
   const { plugins = {} } = JSON.parse(readFileSync(registry, "utf8")) as {
     plugins?: Record<string, Array<{ installPath?: string }>>;
@@ -52,14 +57,16 @@ if (!PLUGIN_ROOT || !existsSync(PLUGIN_ROOT))
   );
 // docs/ of the Bun fork, read in place (Aphrody keeps no copy since lot 13 of M-produit).
 const DOCS_BUN = process.env.N2B_DOCS_BUN ?? (await resolveBunDocs()).dir;
-const COVERAGE_DIR = process.env.N2B_COVERAGE_DIR ?? join(REPO_ROOT, "var/audit/n2b-coverage");
+const COVERAGE_DIR =
+  process.env.N2B_COVERAGE_DIR ?? join(REPO_ROOT, "var/audit/n2b-coverage");
 const THRESHOLD = Number(process.env.COVERAGE_THRESHOLD ?? "80");
 
 const args = new Set(process.argv.slice(2));
 const FORMAT_JSON = args.has("--json");
 const STRICT = args.has("--strict");
 // Progress goes to stderr in --json mode so stdout stays a single JSON document.
-const log = (msg: string) => (FORMAT_JSON ? console.error(msg) : console.log(msg));
+const log = (msg: string) =>
+  FORMAT_JSON ? console.error(msg) : console.log(msg);
 
 // ──────────────────────────────────────────────────────────────────
 // 1. Extract Bun APIs from official docs
@@ -183,8 +190,10 @@ async function scanPlugin(): Promise<Set<string>> {
   const glob = new Glob("{agents,commands,skills,hooks,output-styles}/**/*.md");
   for await (const rel of glob.scan({ cwd: PLUGIN_ROOT })) {
     const text = await Bun.file(join(PLUGIN_ROOT!, rel)).text();
-    for (const m of text.matchAll(API_PATTERNS[0]!)) mentioned.add(`Bun.${m[1]}`);
-    for (const m of text.matchAll(API_PATTERNS[1]!)) mentioned.add(`bun:${m[1]}`);
+    for (const m of text.matchAll(API_PATTERNS[0]!))
+      mentioned.add(`Bun.${m[1]}`);
+    for (const m of text.matchAll(API_PATTERNS[1]!))
+      mentioned.add(`bun:${m[1]}`);
     if (API_PATTERNS[2]!.test(text)) mentioned.add('from "bun"');
   }
   return mentioned;
@@ -209,7 +218,9 @@ async function main() {
 
   log(`📚 Loading n2b rules ...`);
   const rules = await loadN2bRules();
-  const n2bTargetApis = new Set(rules.map((r) => RULE_TO_API[r.id]).filter(Boolean) as string[]);
+  const n2bTargetApis = new Set(
+    rules.map((r) => RULE_TO_API[r.id]).filter(Boolean) as string[],
+  );
 
   log(`🔎 Scanning plugin mentions ...`);
   const pluginApis = await scanPlugin();
@@ -224,7 +235,9 @@ async function main() {
       in_plugin: pluginApis.has(r.api),
       sources_count: r.sources.size,
     }))
-    .toSorted((a, b) => b.sources_count - a.sources_count || a.api.localeCompare(b.api));
+    .toSorted(
+      (a, b) => b.sources_count - a.sources_count || a.api.localeCompare(b.api),
+    );
 
   const total = rows.length;
   const pluginCov = rows.filter((r) => r.in_plugin).length;
@@ -265,10 +278,16 @@ async function main() {
     console.log(`   Doc files scanned        : ${summary.doc_files_scanned}`);
     console.log(`   n2b rules loaded         : ${summary.n2b_rules_loaded}`);
     console.log(`   Unique Bun APIs in docs  : ${summary.unique_apis_in_docs}`);
-    console.log(`   Plugin coverage          : ${pluginCov}/${total} (${pluginPct}%)`);
-    console.log(`   n2b rule coverage        : ${n2bCov}/${total} (${n2bPct}%)`);
+    console.log(
+      `   Plugin coverage          : ${pluginCov}/${total} (${pluginPct}%)`,
+    );
+    console.log(
+      `   n2b rule coverage        : ${n2bCov}/${total} (${n2bPct}%)`,
+    );
     console.log(`   Critical gaps (≥3 docs)  : ${criticalGaps.length}`);
-    console.log(`   Threshold                : ${THRESHOLD}% ${summary.passed ? "✅" : "❌"}`);
+    console.log(
+      `   Threshold                : ${THRESHOLD}% ${summary.passed ? "✅" : "❌"}`,
+    );
     console.log();
     console.log(`   → ${relative(REPO_ROOT, reportPath)}`);
     if (criticalGaps.length > 0) {
@@ -283,7 +302,11 @@ async function main() {
   if (STRICT && !summary.passed) process.exit(1);
 }
 
-function renderMarkdown(summary: any, rows: CoverageRow[], gaps: CoverageRow[]): string {
+function renderMarkdown(
+  summary: any,
+  rows: CoverageRow[],
+  gaps: CoverageRow[],
+): string {
   const lines: string[] = [];
   lines.push(`# n2b coverage report`);
   lines.push("");

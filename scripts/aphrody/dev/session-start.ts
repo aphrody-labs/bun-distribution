@@ -48,6 +48,9 @@ const context = [
 
 console.log(
   JSON.stringify({
-    hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: context },
+    hookSpecificOutput: {
+      hookEventName: "SessionStart",
+      additionalContext: context,
+    },
   }),
 );

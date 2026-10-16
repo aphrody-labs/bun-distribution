@@ -17,7 +17,12 @@ interface MediaViewItemProps {
   allFiles: File[];
   selected: boolean;
   focused: boolean;
-  onSelect: (file: File, files: File[], multi?: boolean, range?: boolean) => void;
+  onSelect: (
+    file: File,
+    files: File[],
+    multi?: boolean,
+    range?: boolean,
+  ) => void;
   size: number;
 }
 
@@ -77,7 +82,9 @@ export const MediaViewItem = memo(function MediaViewItem({
       />
 
       {/* Selection overlay */}
-      {selected && <div className="absolute inset-0 bg-primary/10 pointer-events-none" />}
+      {selected && (
+        <div className="absolute inset-0 bg-primary/10 pointer-events-none" />
+      )}
 
       {/* Video duration badge */}
       {file.video_media_data?.duration_seconds && (

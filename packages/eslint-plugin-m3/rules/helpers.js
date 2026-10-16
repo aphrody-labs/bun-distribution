@@ -45,8 +45,10 @@ export function attrStringValue(attr) {
   if (v.type === "Literal" && typeof v.value === "string") return v.value;
   if (v.type === "JSXExpressionContainer") {
     const e = v.expression;
-    if (e && e.type === "Literal" && typeof e.value === "string") return e.value;
-    if (e && e.type === "TemplateLiteral" && e.quasis.length === 1) return e.quasis[0].value.cooked;
+    if (e && e.type === "Literal" && typeof e.value === "string")
+      return e.value;
+    if (e && e.type === "TemplateLiteral" && e.quasis.length === 1)
+      return e.quasis[0].value.cooked;
   }
   return null;
 }

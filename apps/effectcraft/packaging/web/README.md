@@ -3,15 +3,15 @@
 `effectcraft-web-<version>.zip` (from the GitHub release, or `packaging/web/package.sh`) holds a
 static site in `effectcraft-web-<version>/`:
 
-| File | What it is |
-|---|---|
-| `index.html` | The page. It loads everything through relative URLs. |
-| `effectcraft_web.js` | wasm-bindgen glue (generated, ES module) |
-| `effectcraft_web_bg.wasm` | The app: about 58 MB, about 17 MB with gzip and 10 MB with Brotli (v0.3.1) |
-| `snippets/…/js/host.js` | Browser glue (storage, audio, workers) |
-| `worker.js`, `audio-worklet.js` | Render and frame workers, and audio playback |
-| `sw.js`, `manifest.webmanifest`, icons | Offline install: the service worker and the app manifest |
-| `_headers`, `.htaccess` | Sample header rules for Netlify/Cloudflare Pages and Apache |
+| File                                   | What it is                                                                 |
+| -------------------------------------- | -------------------------------------------------------------------------- |
+| `index.html`                           | The page. It loads everything through relative URLs.                       |
+| `effectcraft_web.js`                   | wasm-bindgen glue (generated, ES module)                                   |
+| `effectcraft_web_bg.wasm`              | The app: about 58 MB, about 17 MB with gzip and 10 MB with Brotli (v0.3.1) |
+| `snippets/…/js/host.js`                | Browser glue (storage, audio, workers)                                     |
+| `worker.js`, `audio-worklet.js`        | Render and frame workers, and audio playback                               |
+| `sw.js`, `manifest.webmanifest`, icons | Offline install: the service worker and the app manifest                   |
+| `_headers`, `.htaccess`                | Sample header rules for Netlify/Cloudflare Pages and Apache                |
 
 There is no server-side code. Upload the folder's contents anywhere that serves static files.
 
@@ -66,7 +66,8 @@ Local test: `python3 -m http.server 8765` inside the folder, then open http://lo
   title="EffectCraft"
   style="width: 100%; height: 720px; border: 0;"
   allow="fullscreen; clipboard-read; clipboard-write"
-  allowfullscreen>
+  allowfullscreen
+>
 </iframe>
 ```
 
@@ -88,11 +89,11 @@ Local test: `python3 -m http.server 8765` inside the folder, then open http://lo
 EffectCraft renders with wgpu. It uses **WebGPU** when the browser has it and falls back to
 **WebGL2** on its own. URL query flags override this, and they work on the iframe `src` too:
 
-| Flag | Effect |
-|---|---|
-| *(none)* | WebGPU if available, otherwise WebGL2 |
+| Flag     | Effect                                                            |
+| -------- | ----------------------------------------------------------------- |
+| _(none)_ | WebGPU if available, otherwise WebGL2                             |
 | `?webgl` | Force the WebGL2 backend (useful when a WebGPU driver misbehaves) |
-| `?cpu` | Force the CPU canvas path (slowest, most compatible) |
+| `?cpu`   | Force the CPU canvas path (slowest, most compatible)              |
 
 For example: `<iframe src="https://example.com/effectcraft/?webgl" ...>`.
 

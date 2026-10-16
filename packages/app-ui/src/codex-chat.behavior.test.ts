@@ -24,8 +24,14 @@ const originalEventInternals = Object.getOwnPropertyDescriptor(
   window,
   "__TAURI_EVENT_PLUGIN_INTERNALS__",
 );
-const originalClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
-const originalExecCommand = Object.getOwnPropertyDescriptor(document, "execCommand");
+const originalClipboard = Object.getOwnPropertyDescriptor(
+  navigator,
+  "clipboard",
+);
+const originalExecCommand = Object.getOwnPropertyDescriptor(
+  document,
+  "execCommand",
+);
 const originalFetch = globalThis.fetch;
 let root: Root | undefined;
 let notification: ((event: { payload: unknown }) => void) | undefined;
@@ -57,7 +63,10 @@ afterAll(() => {
   failure.mockRestore();
 });
 
-type RpcHandler = (method: string, params: Record<string, unknown>) => unknown | Promise<unknown>;
+type RpcHandler = (
+  method: string,
+  params: Record<string, unknown>,
+) => unknown | Promise<unknown>;
 function backend(handler?: RpcHandler) {
   rpcCalls = [];
   notification = undefined;
@@ -85,15 +94,27 @@ function backend(handler?: RpcHandler) {
       },
     },
     core: {
-      invoke: async <T>(command: string, args?: Record<string, unknown>): Promise<T> => {
+      invoke: async <T>(
+        command: string,
+        args?: Record<string, unknown>,
+      ): Promise<T> => {
         if (command === "aphrody_rpc") {
-          const request = args?.request as { method: string; params: Record<string, unknown> };
+          const request = args?.request as {
+            method: string;
+            params: Record<string, unknown>;
+          };
           rpcCalls.push(request);
-          const result = await (handler ?? defaultRpc)(request.method, request.params);
+          const result = await (handler ?? defaultRpc)(
+            request.method,
+            request.params,
+          );
           return { result } as T;
         }
         if (command === "aphrody_system_cwd") return { cwd: "/fixture" } as T;
-        if (command === "aphrody_session_stream" || command === "aphrody_session_unstream")
+        if (
+          command === "aphrody_session_stream" ||
+          command === "aphrody_session_unstream"
+        )
           return null as T;
         if (command === "aphrody_reply") return null as T;
         throw new Error(`Unexpected native command: ${command}`);
@@ -105,10 +126,23 @@ function backend(handler?: RpcHandler) {
 function defaultRpc(method: string): Record<string, unknown> {
   if (method === "initialize" || method === "initialized") return {};
   if (method === "model/list")
-    return { data: [{ id: "fixture-model", provider: "fixture", default: true }] };
+    return {
+      data: [{ id: "fixture-model", provider: "fixture", default: true }],
+    };
   if (method === "thread/list") return { data: [] };
-  if (method === "thread/start" || method === "thread/resume" || method === "thread/read")
-    return { thread: { id: "fixture-thread", model: "fixture-model", cwd: "/fixture", turns: [] } };
+  if (
+    method === "thread/start" ||
+    method === "thread/resume" ||
+    method === "thread/read"
+  )
+    return {
+      thread: {
+        id: "fixture-thread",
+        model: "fixture-model",
+        cwd: "/fixture",
+        turns: [],
+      },
+    };
   throw new Error(`Unexpected RPC: ${method}`);
 }
 
@@ -150,7 +184,11 @@ const chatProps = {
 function route(prompt = "") {
   return createElement(
     MemoryRouter,
-    { initialEntries: [prompt ? `/chat?prompt=${encodeURIComponent(prompt)}` : "/chat"] },
+    {
+      initialEntries: [
+        prompt ? `/chat?prompt=${encodeURIComponent(prompt)}` : "/chat",
+      ],
+    },
     createElement(CodexChatRoute),
   );
 }
@@ -191,7 +229,13 @@ test("message copy waits for the actual native clipboard acknowledgement", async
   await mount(
     createElement(CodexChat, {
       ...chatProps,
-      turns: [{ id: "fixture-assistant", role: "assistant", content: "Fixture response" }],
+      turns: [
+        {
+          id: "fixture-assistant",
+          role: "assistant",
+          content: "Fixture response",
+        },
+      ],
     }),
   );
   await click("Copier le message");
@@ -213,11 +257,20 @@ test("failed message and transcript copy report failure without success", async 
       },
     },
   });
-  Object.defineProperty(document, "execCommand", { configurable: true, value: () => false });
+  Object.defineProperty(document, "execCommand", {
+    configurable: true,
+    value: () => false,
+  });
   await mount(
     createElement(CodexChat, {
       ...chatProps,
-      turns: [{ id: "fixture-assistant", role: "assistant", content: "Fixture response" }],
+      turns: [
+        {
+          id: "fixture-assistant",
+          role: "assistant",
+          content: "Fixture response",
+        },
+      ],
     }),
   );
   await click("Copier le message");
@@ -236,12 +289,16 @@ test("initial connection failure is visible and retry recovers using the real pr
   expect(host.querySelector('[role="alert"]')?.textContent).toContain(
     "Connexion au service indisponible.",
   );
-  expect(host.querySelector<HTMLButtonElement>('[aria-label="Envoyer"]')?.disabled).toBe(true);
+  expect(
+    host.querySelector<HTMLButtonElement>('[aria-label="Envoyer"]')?.disabled,
+  ).toBe(true);
   fail = false;
   await click("Réessayer");
   expect(host.querySelector('[role="alert"]')).toBeNull();
   expect(host.textContent).toContain("fixture-model");
-  expect(host.querySelector<HTMLButtonElement>('[aria-label="Envoyer"]')?.disabled).toBe(false);
+  expect(
+    host.querySelector<HTMLButtonElement>('[aria-label="Envoyer"]')?.disabled,
+  ).toBe(false);
   expect(rpcCalls.some((call) => call.method === "turn/start")).toBe(false);
 });
 
@@ -264,7 +321,10 @@ test("stop queued during turn submission sends the acknowledged native IDs and w
   backend((method, params) => {
     if (method === "turn/start") return started.promise;
     if (method === "turn/interrupt") {
-      expect(params).toEqual({ threadId: "fixture-thread", turnId: "fixture-turn" });
+      expect(params).toEqual({
+        threadId: "fixture-thread",
+        turnId: "fixture-turn",
+      });
       if (rejectInterrupt) throw new Error("Fixture interrupt rejected");
       return { status: "interrupt_requested" };
     }
@@ -273,17 +333,30 @@ test("stop queued during turn submission sends the acknowledged native IDs and w
   await mount(route("Fixture prompt"));
   await click("Envoyer");
   await click("Arrêter la génération");
-  expect(rpcCalls.filter((call) => call.method === "turn/interrupt")).toHaveLength(0);
+  expect(
+    rpcCalls.filter((call) => call.method === "turn/interrupt"),
+  ).toHaveLength(0);
   await act(async () => started.resolve({ turn: { id: "fixture-turn" } }));
-  expect(failure).toHaveBeenCalledWith("Arrêt impossible : Fixture interrupt rejected");
-  expect(host.querySelector('[aria-label="Arrêter la génération"]')).not.toBeNull();
+  expect(failure).toHaveBeenCalledWith(
+    "Arrêt impossible : Fixture interrupt rejected",
+  );
+  expect(
+    host.querySelector('[aria-label="Arrêter la génération"]'),
+  ).not.toBeNull();
   rejectInterrupt = false;
   await click("Arrêter la génération");
-  expect(rpcCalls.filter((call) => call.method === "turn/interrupt")).toHaveLength(2);
-  expect(host.querySelector('[aria-label="Arrêter la génération"]')).not.toBeNull();
+  expect(
+    rpcCalls.filter((call) => call.method === "turn/interrupt"),
+  ).toHaveLength(2);
+  expect(
+    host.querySelector('[aria-label="Arrêter la génération"]'),
+  ).not.toBeNull();
   await emit({
     method: "turn/completed",
-    params: { threadId: "fixture-thread", turn: { id: "fixture-turn", status: "interrupted" } },
+    params: {
+      threadId: "fixture-thread",
+      turn: { id: "fixture-turn", status: "interrupted" },
+    },
   });
   expect(host.querySelector('[aria-label="Arrêter la génération"]')).toBeNull();
 });
@@ -291,7 +364,9 @@ test("stop queued during turn submission sends the acknowledged native IDs and w
 test("approval remains pending on rejected reply and records only a confirmed decision", async () => {
   backend();
   await mount(route());
-  await act(async () => useChatStore.getState().setActiveThreadId("fixture-thread"));
+  await act(async () =>
+    useChatStore.getState().setActiveThreadId("fixture-thread"),
+  );
   const reply = deferred<void>();
   const invoke = window.__TAURI__!.core!.invoke;
   let replyCount = 0;
@@ -314,14 +389,17 @@ test("approval remains pending on rejected reply and records only a confirmed de
   });
   await click("Autoriser une fois");
   expect(host.textContent).not.toContain("Autorisé");
-  expect(host.querySelector<HTMLButtonElement>("button[disabled]")).not.toBeNull();
+  expect(
+    host.querySelector<HTMLButtonElement>("button[disabled]"),
+  ).not.toBeNull();
   await act(async () => reply.reject(new Error("Fixture approval rejected")));
   expect(failure.mock.calls[0]?.[0]).toContain("Fixture approval rejected");
   expect(host.textContent).not.toContain("Autorisé");
   window.__TAURI__!.core!.invoke = async <T>(
     command: string,
     args?: Record<string, unknown>,
-  ): Promise<T> => (command === "aphrody_reply" ? (null as T) : invoke<T>(command, args));
+  ): Promise<T> =>
+    command === "aphrody_reply" ? (null as T) : invoke<T>(command, args);
   await click("Autoriser une fois");
   expect(host.textContent).toContain("Autorisé");
   expect(success).toHaveBeenCalledWith("Action autorisée");
@@ -331,19 +409,29 @@ test("approval remains pending on rejected reply and records only a confirmed de
 test("a missing fork identifier cannot show a success", async () => {
   backend((method) => (method === "thread/fork" ? {} : defaultRpc(method)));
   await mount(route());
-  await act(async () => useChatStore.getState().setActiveThreadId("fixture-thread"));
+  await act(async () =>
+    useChatStore.getState().setActiveThreadId("fixture-thread"),
+  );
   await emit({
     method: "item/completed",
     params: {
       threadId: "fixture-thread",
       turnId: "fixture-turn",
-      item: { id: "fixture-message", type: "agentMessage", text: "Fixture response" },
+      item: {
+        id: "fixture-message",
+        type: "agentMessage",
+        text: "Fixture response",
+      },
     },
   });
   await click("Bifurquer ce chat");
   expect(success).not.toHaveBeenCalled();
-  expect(failure.mock.calls.at(-1)?.[0]).toContain("Le serveur n’a pas créé de nouveau chat.");
-  expect(rpcCalls.find((call) => call.method === "thread/fork")?.params).toEqual({
+  expect(failure.mock.calls.at(-1)?.[0]).toContain(
+    "Le serveur n’a pas créé de nouveau chat.",
+  );
+  expect(
+    rpcCalls.find((call) => call.method === "thread/fork")?.params,
+  ).toEqual({
     threadId: "fixture-thread",
   });
 });
@@ -351,12 +439,18 @@ test("a missing fork identifier cannot show a success", async () => {
 test("clear creates a genuinely empty new-session state and leaves other-thread events isolated", async () => {
   backend();
   await mount(route("/clear"));
-  await act(async () => useChatStore.getState().setActiveThreadId("fixture-thread"));
+  await act(async () =>
+    useChatStore.getState().setActiveThreadId("fixture-thread"),
+  );
   await emit({
     method: "item/completed",
     params: {
       threadId: "fixture-thread",
-      item: { id: "fixture-message", type: "agentMessage", text: "Fixture response" },
+      item: {
+        id: "fixture-message",
+        type: "agentMessage",
+        text: "Fixture response",
+      },
     },
   });
   await click("Envoyer");
@@ -367,7 +461,11 @@ test("clear creates a genuinely empty new-session state and leaves other-thread 
     method: "item/completed",
     params: {
       threadId: "fixture-thread",
-      item: { id: "late-message", type: "agentMessage", text: "Late fixture response" },
+      item: {
+        id: "late-message",
+        type: "agentMessage",
+        text: "Late fixture response",
+      },
     },
   });
   expect(host.textContent).not.toContain("Late fixture response");
@@ -388,9 +486,15 @@ test("persisted user messages restore the actual owner content array", async () 
                   {
                     id: "fixture-user",
                     type: "userMessage",
-                    content: [{ type: "inputText", text: "Fixture restored input" }],
+                    content: [
+                      { type: "inputText", text: "Fixture restored input" },
+                    ],
                   },
-                  { id: "fixture-answer", type: "agentMessage", text: "Fixture restored answer" },
+                  {
+                    id: "fixture-answer",
+                    type: "agentMessage",
+                    text: "Fixture restored answer",
+                  },
                 ],
               },
             ],
@@ -440,9 +544,13 @@ test("sidebar session selection reads and renders the selected real owner histor
       : defaultRpc(method),
   );
   await mount(route());
-  await act(async () => useChatStore.getState().setActiveThreadId("fixture-selected-thread"));
+  await act(async () =>
+    useChatStore.getState().setActiveThreadId("fixture-selected-thread"),
+  );
   expect(host.textContent).toContain("Fixture selected history");
-  expect(rpcCalls.find((call) => call.method === "thread/read")?.params).toEqual({
+  expect(
+    rpcCalls.find((call) => call.method === "thread/read")?.params,
+  ).toEqual({
     threadId: "fixture-selected-thread",
     includeTurns: true,
   });
@@ -452,10 +560,16 @@ test("sidebar session selection reads and renders the selected real owner histor
 
 test("new session invalidates a pending history read without restoring stale messages", async () => {
   const read = deferred<Record<string, unknown>>();
-  backend((method) => (method === "thread/read" ? read.promise : defaultRpc(method)));
+  backend((method) =>
+    method === "thread/read" ? read.promise : defaultRpc(method),
+  );
   await mount(route());
-  await act(async () => useChatStore.getState().setActiveThreadId("fixture-stale-thread"));
-  expect(host.querySelector('output')?.textContent).toContain("Chargement du chat");
+  await act(async () =>
+    useChatStore.getState().setActiveThreadId("fixture-stale-thread"),
+  );
+  expect(host.querySelector("output")?.textContent).toContain(
+    "Chargement du chat",
+  );
   expect(host.querySelector('[aria-label="Arrêter la génération"]')).toBeNull();
   await click("Nouveau chat");
   await act(async () =>
@@ -466,7 +580,11 @@ test("new session invalidates a pending history read without restoring stale mes
           {
             id: "fixture-stale-turn",
             items: [
-              { id: "fixture-stale-message", type: "agentMessage", text: "Fixture stale history" },
+              {
+                id: "fixture-stale-message",
+                type: "agentMessage",
+                text: "Fixture stale history",
+              },
             ],
           },
         ],
@@ -481,7 +599,9 @@ test("new session invalidates a pending history read without restoring stale mes
 test("Tauri uses one ordered native notification transport and preserves legitimate repeated deltas", async () => {
   const commands: string[] = [];
   backend((method) =>
-    method === "turn/start" ? { turn: { id: "fixture-turn" } } : defaultRpc(method),
+    method === "turn/start"
+      ? { turn: { id: "fixture-turn" } }
+      : defaultRpc(method),
   );
   const invoke = window.__TAURI__!.core!.invoke;
   window.__TAURI__!.core!.invoke = async <T>(
@@ -516,7 +636,10 @@ test("Tauri internals-only windows subscribe through the official native event A
   const internals = testWindow as unknown as {
     __TAURI_INTERNALS__?: {
       transformCallback: (callback: unknown) => number;
-      invoke: (command: string, args?: Record<string, unknown>) => Promise<unknown>;
+      invoke: (
+        command: string,
+        args?: Record<string, unknown>,
+      ) => Promise<unknown>;
     };
   };
   window.__TAURI__ = undefined;

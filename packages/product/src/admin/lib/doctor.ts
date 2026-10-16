@@ -43,7 +43,13 @@ const check = (
   detail: string,
   action?: string,
   responsable: Responsible = "omar",
-): Check => ({ id, titre, status, detail, ...(action ? { action, responsable } : {}) });
+): Check => ({
+  id,
+  titre,
+  status,
+  detail,
+  ...(action ? { action, responsable } : {}),
+});
 
 export interface HostProbe {
   user?: string;
@@ -132,15 +138,26 @@ export function readTrainStatus(text: string): {
 } {
   try {
     return {
-      json: JSON.parse(text) as { gpu_lock_active?: boolean; python_train_project?: boolean },
+      json: JSON.parse(text) as {
+        gpu_lock_active?: boolean;
+        python_train_project?: boolean;
+      },
       missing: false,
     };
   } catch {
-    return { missing: /requires --features train|unrecognized subcommand|not found/i.test(text) };
+    return {
+      missing:
+        /requires --features train|unrecognized subcommand|not found/i.test(
+          text,
+        ),
+    };
   }
 }
 
-async function localChecks(ctx: Context, pack: AccessPack | undefined): Promise<Check[]> {
+async function localChecks(
+  ctx: Context,
+  pack: AccessPack | undefined,
+): Promise<Check[]> {
   const { sys, paths } = ctx;
   const out: Check[] = [];
 
@@ -157,7 +174,14 @@ async function localChecks(ctx: Context, pack: AccessPack | undefined): Promise<
 
   const free = await sys.freeBytes(paths.home);
   if (free === undefined)
-    out.push(check("disque", "Espace disque", "attention", "impossible de lire l'espace libre"));
+    out.push(
+      check(
+        "disque",
+        "Espace disque",
+        "attention",
+        "impossible de lire l'espace libre",
+      ),
+    );
   else if (free < 5 * GIB)
     out.push(
       check(
@@ -180,7 +204,10 @@ async function localChecks(ctx: Context, pack: AccessPack | undefined): Promise<
         "omar",
       ),
     );
-  else out.push(check("disque", "Espace disque", "ok", `${formatBytes(free)} libres`));
+  else
+    out.push(
+      check("disque", "Espace disque", "ok", `${formatBytes(free)} libres`),
+    );
 
   const git = findTool(sys, paths, "git");
   if (!git)
@@ -193,9 +220,15 @@ async function localChecks(ctx: Context, pack: AccessPack | undefined): Promise<
         "Choisis « Tout installer ou réparer » dans le menu.",
       ),
     );
-  else out.push(check("git", "Git", "ok", (await toolVersion(sys, git)) ?? "installé"));
+  else
+    out.push(
+      check("git", "Git", "ok", (await toolVersion(sys, git)) ?? "installé"),
+    );
 
-  if (!existsSync(`${paths.repoDir}/.git`) && !existsSync(`${paths.repoDir}\\.git`))
+  if (
+    !existsSync(`${paths.repoDir}/.git`) &&
+    !existsSync(`${paths.repoDir}\\.git`)
+  )
     out.push(
       check(
         "depot",
@@ -206,9 +239,12 @@ async function localChecks(ctx: Context, pack: AccessPack | undefined): Promise<
       ),
     );
   else if (git) {
-    const branch = await sys.run([git, "-C", paths.repoDir, "rev-parse", "--abbrev-ref", "HEAD"], {
-      timeoutMs: 20_000,
-    });
+    const branch = await sys.run(
+      [git, "-C", paths.repoDir, "rev-parse", "--abbrev-ref", "HEAD"],
+      {
+        timeoutMs: 20_000,
+      },
+    );
     out.push(
       branch.code === 0
         ? check(
@@ -291,7 +327,8 @@ async function localChecks(ctx: Context, pack: AccessPack | undefined): Promise<
       timeoutMs: 15_000,
     });
     const state = /STATE\s*:\s*\d+\s+(\w+)/.exec(query.stdout)?.[1];
-    if (state === "RUNNING") out.push(check("tunnel", "Tunnel privé", "ok", `« ${tunnel} » actif`));
+    if (state === "RUNNING")
+      out.push(check("tunnel", "Tunnel privé", "ok", `« ${tunnel} » actif`));
     else if (state)
       out.push(
         check(
@@ -338,7 +375,11 @@ async function componentChecks(
       manifest = undefined;
     }
   }
-  const missing = (name: string, exe: string | undefined, label: string): Check => {
+  const missing = (
+    name: string,
+    exe: string | undefined,
+    label: string,
+  ): Check => {
     if (exe) return check(name, label, "ok", "installé");
     if (manifest && !pickArtifact(manifest, name))
       return check(
@@ -360,11 +401,25 @@ async function componentChecks(
 
   if (aphrody) {
     const version = await toolVersion(sys, aphrody);
-    out.push(check("aphrody", "aphrody", "ok", version ? `version ${version}` : "installé"));
-    const probe = await ctx.mcpProbe(mcpSpec(aphrody, findTool(sys, paths, "aphrody-mcp")));
+    out.push(
+      check(
+        "aphrody",
+        "aphrody",
+        "ok",
+        version ? `version ${version}` : "installé",
+      ),
+    );
+    const probe = await ctx.mcpProbe(
+      mcpSpec(aphrody, findTool(sys, paths, "aphrody-mcp")),
+    );
     out.push(
       probe.ok
-        ? check("mcp", "MCP Aphrody (sur ce PC)", "ok", `répond, ${probe.tools} outils`)
+        ? check(
+            "mcp",
+            "MCP Aphrody (sur ce PC)",
+            "ok",
+            `répond, ${probe.tools} outils`,
+          )
         : check(
             "mcp",
             "MCP Aphrody (sur ce PC)",
@@ -407,7 +462,15 @@ async function componentChecks(
       );
   } else {
     out.push(missing("aphrody", aphrody, "aphrody"));
-    out.push(check("mcp", "MCP Aphrody (sur ce PC)", "attente", "dépend d'aphrody", undefined));
+    out.push(
+      check(
+        "mcp",
+        "MCP Aphrody (sur ce PC)",
+        "attente",
+        "dépend d'aphrody",
+        undefined,
+      ),
+    );
   }
   const result: { checks: Check[]; aphrodyExe?: string } = { checks: out };
   if (aphrody) result.aphrodyExe = aphrody;
@@ -439,7 +502,14 @@ async function hostChecks(
     );
     return out;
   }
-  out.push(check(`reseau-${id}`, `Serveur ${id} : réseau`, "ok", "répond par le tunnel"));
+  out.push(
+    check(
+      `reseau-${id}`,
+      `Serveur ${id} : réseau`,
+      "ok",
+      "répond par le tunnel",
+    ),
+  );
   const result = await runRemote(sys, paths, id, SCRIPTS.sonde, {
     timeoutMs: 60_000,
     args: [host.aphrodyBin, host.repoDir],
@@ -456,7 +526,9 @@ async function hostChecks(
         problem === "cle-refusee"
           ? "Envoie ton fichier de clés à l'équipe (menu « Envoyer mes clés »)."
           : "Envoie le message d'aide à l'équipe.",
-        problem === "cle-refusee" || problem === "hote-inconnu" ? "equipe" : "omar",
+        problem === "cle-refusee" || problem === "hote-inconnu"
+          ? "equipe"
+          : "omar",
       ),
     );
     return out;
@@ -473,7 +545,10 @@ async function hostChecks(
   );
 
   const parts: string[] = [];
-  if (probe.cpu) parts.push(`${probe.cpu} coeurs${probe.load ? ` (charge ${probe.load})` : ""}`);
+  if (probe.cpu)
+    parts.push(
+      `${probe.cpu} coeurs${probe.load ? ` (charge ${probe.load})` : ""}`,
+    );
   if (probe.memTotalKb)
     parts.push(
       `RAM ${formatBytes((probe.memAvailKb ?? 0) * 1024)} libres sur ${formatBytes(probe.memTotalKb * 1024)}`,
@@ -489,7 +564,8 @@ async function hostChecks(
     );
   else if (probe.noGpu) parts.push("pas de carte graphique");
   const diskFree = probe.diskAvailKb ? probe.diskAvailKb * 1024 : undefined;
-  if (diskFree !== undefined) parts.push(`disque ${formatBytes(diskFree)} libres`);
+  if (diskFree !== undefined)
+    parts.push(`disque ${formatBytes(diskFree)} libres`);
   let status: Status = "ok";
   let action: string | undefined;
   if (diskFree !== undefined && diskFree < 5 * GIB) {
@@ -498,7 +574,8 @@ async function hostChecks(
       "Le disque du serveur est presque plein : préviens l'équipe avant de lancer quoi que ce soit.";
   } else if (diskFree !== undefined && diskFree < 20 * GIB) {
     status = "attention";
-    action = "Peu de place sur le serveur : préviens l'équipe avant un gros entraînement.";
+    action =
+      "Peu de place sur le serveur : préviens l'équipe avant un gros entraînement.";
   }
   if (trainHost && probe.noGpu && status === "ok") {
     status = "attention";
@@ -616,29 +693,43 @@ async function serviceChecks(ctx: Context, pack: AccessPack): Promise<Check[]> {
 
 export function verdictOf(checks: Check[]): Report["verdict"] {
   if (checks.some((entry) => entry.status === "echec")) return "pas-pret";
-  if (checks.some((entry) => entry.status === "attention" || entry.status === "attente"))
+  if (
+    checks.some(
+      (entry) => entry.status === "attention" || entry.status === "attente",
+    )
+  )
     return "presque";
   return "pret";
 }
 
-export async function runDoctor(ctx: Context, options: { remote?: boolean } = {}): Promise<Report> {
+export async function runDoctor(
+  ctx: Context,
+  options: { remote?: boolean } = {},
+): Promise<Report> {
   const pack = await loadProfile(ctx.paths);
   const checks: Check[] = [];
   const local = await localChecks(ctx, pack);
   checks.push(...local);
   const components = await componentChecks(ctx, pack);
   checks.push(...components.checks);
-  const tunnelUp = local.some((entry) => entry.id === "tunnel" && entry.status === "ok");
+  const tunnelUp = local.some(
+    (entry) => entry.id === "tunnel" && entry.status === "ok",
+  );
   if (pack && options.remote !== false) {
     const ids = Object.keys(pack.hosts);
-    const perHost = await Promise.all(ids.map((id) => hostChecks(ctx, pack, id, tunnelUp)));
+    const perHost = await Promise.all(
+      ids.map((id) => hostChecks(ctx, pack, id, tunnelUp)),
+    );
     checks.push(...perHost.flat());
     checks.push(...(await serviceChecks(ctx, pack)));
   }
   const trainId = pack ? trainHostId(pack) : undefined;
   const entrainementPret =
     trainId !== undefined &&
-    checks.some((entry) => entry.id === `entrainement-${trainId}` && entry.status === "ok") &&
+    checks.some(
+      (entry) =>
+        entry.id === `entrainement-${trainId}` && entry.status === "ok",
+    ) &&
     !checks.some(
       (entry) =>
         entry.status === "echec" &&
@@ -665,7 +756,9 @@ export function renderReport(report: Report): string[] {
     (entry) => `${MARK_OF[entry.status]} ${entry.titre} : ${entry.detail}`,
   );
   lines.push("");
-  const failures = report.checks.filter((entry) => entry.status === "echec").length;
+  const failures = report.checks.filter(
+    (entry) => entry.status === "echec",
+  ).length;
   const notes = report.checks.filter(
     (entry) => entry.status === "attention" || entry.status === "attente",
   ).length;
@@ -674,7 +767,10 @@ export function renderReport(report: Report): string[] {
     lines.push(
       `RÉSULTAT : PRESQUE PRÊT (${notes} remarque${notes > 1 ? "s" : ""}, rien de bloquant).`,
     );
-  else lines.push(`RÉSULTAT : PAS PRÊT (${failures} point${failures > 1 ? "s" : ""} à régler).`);
+  else
+    lines.push(
+      `RÉSULTAT : PAS PRÊT (${failures} point${failures > 1 ? "s" : ""} à régler).`,
+    );
   lines.push(
     report.entrainementPret
       ? "Entraînement : prêt à être lancé."
@@ -682,17 +778,23 @@ export function renderReport(report: Report): string[] {
   );
   const todo = (who: Responsible) =>
     report.checks.filter(
-      (entry) => entry.responsable === who && entry.action && entry.status !== "ok",
+      (entry) =>
+        entry.responsable === who && entry.action && entry.status !== "ok",
     );
   const mine = todo("omar");
   const team = todo("equipe");
   if (mine.length > 0) {
     lines.push("", "À faire de ton côté :");
-    for (const entry of mine) lines.push(`  - ${entry.titre} : ${entry.action}`);
+    for (const entry of mine)
+      lines.push(`  - ${entry.titre} : ${entry.action}`);
   }
   if (team.length > 0) {
-    lines.push("", "À signaler à l'équipe (menu « Message d'aide pour l'équipe ») :");
-    for (const entry of team) lines.push(`  - ${entry.titre} : ${entry.action}`);
+    lines.push(
+      "",
+      "À signaler à l'équipe (menu « Message d'aide pour l'équipe ») :",
+    );
+    for (const entry of team)
+      lines.push(`  - ${entry.titre} : ${entry.action}`);
   }
   return lines;
 }

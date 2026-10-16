@@ -6,7 +6,13 @@ import { SQL } from "bun";
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { EntryRecord, PeSummary } from "./analyze.ts";
-import { hash52, pathKey, readSecret, stateValue, type Config } from "./config.ts";
+import {
+  hash52,
+  pathKey,
+  readSecret,
+  stateValue,
+  type Config,
+} from "./config.ts";
 
 export const MIGRATIONS_DIR = join(import.meta.dir, "migrations");
 
@@ -31,7 +37,9 @@ export type Migration = {
   sql: string;
 };
 
-export async function loadMigrations(dir = MIGRATIONS_DIR): Promise<Migration[]> {
+export async function loadMigrations(
+  dir = MIGRATIONS_DIR,
+): Promise<Migration[]> {
   const out: Migration[] = [];
   for (const f of readdirSync(dir)
     .filter((x) => /^\d{4}_[a-z0-9_]+\.sql$/.test(x))
@@ -46,12 +54,15 @@ export async function loadMigrations(dir = MIGRATIONS_DIR): Promise<Migration[]>
     });
   }
   const versions = out.map((m) => m.version);
-  if (new Set(versions).size !== versions.length) throw new Error("numéros de migration dupliqués");
+  if (new Set(versions).size !== versions.length)
+    throw new Error("numéros de migration dupliqués");
   return out;
 }
 
 /** Applies pending migrations under an advisory lock; an applied migration whose checksum changed is an error. */
-export async function migrate(sql: SQL): Promise<{ applied: string[]; current: number }> {
+export async function migrate(
+  sql: SQL,
+): Promise<{ applied: string[]; current: number }> {
   const migrations = await loadMigrations();
   const applied: string[] = [];
   await sql.begin(async (tx) => {
@@ -66,7 +77,8 @@ export async function migrate(sql: SQL): Promise<{ applied: string[]; current: n
     for (const m of migrations) {
       const sha = done.get(m.version);
       if (sha !== undefined) {
-        if (sha !== m.sha256) throw new Error(`migration ${m.file} modifiée après application`);
+        if (sha !== m.sha256)
+          throw new Error(`migration ${m.file} modifiée après application`);
         continue;
       }
       await tx.unsafe(m.sql);
@@ -128,7 +140,9 @@ export async function upsertEntries(
   usn: bigint | null = null,
 ): Promise<{ nodes: number; pe: number[] }> {
   if (!records.length) return { nodes: 0, pe: [] };
-  const rows = records.map((r) => nodeRow(r, usn === null ? null : usn.toString()));
+  const rows = records.map((r) =>
+    nodeRow(r, usn === null ? null : usn.toString()),
+  );
   const peIds: number[] = [];
   await sql.begin(async (tx) => {
     const ids: { id: string; path_lc: string }[] = [];
@@ -136,7 +150,9 @@ export async function upsertEntries(
     for (const unchanged of [false, true]) {
       const part = rows.filter((r) => r.unchanged === unchanged);
       if (!part.length) continue;
-      const content = unchanged ? "" : "sha256 = excluded.sha256, ads = excluded.ads,";
+      const content = unchanged
+        ? ""
+        : "sha256 = excluded.sha256, ads = excluded.ads,";
       ids.push(
         ...(await tx.unsafe(
           `INSERT INTO windex.fs_node AS f (path, path_lc, parent_lc, parent_id, name, ext, is_dir, frn, size, attrs,
@@ -165,7 +181,10 @@ export async function upsertEntries(
       .filter((r) => !r.pe && !r.unchanged && !r.dir)
       .map((r) => idOf.get(pathKey(r.path)));
     if (notPe.length) {
-      await tx.unsafe(`DELETE FROM windex.pe WHERE node_id = ANY($1::bigint[])`, [pgArray(notPe)]);
+      await tx.unsafe(
+        `DELETE FROM windex.pe WHERE node_id = ANY($1::bigint[])`,
+        [pgArray(notPe)],
+      );
     }
     if (!pe.length) return;
     const peRows = pe.map((r) => peRow(idOf.get(pathKey(r.path))!, r.pe!));
@@ -187,12 +206,14 @@ export async function upsertEntries(
          warnings = excluded.warnings, catalog_checked = excluded.catalog_checked`,
       [peRows],
     );
-    await tx.unsafe(`DELETE FROM windex.pe_import WHERE node_id = ANY($1::bigint[])`, [
-      pgArray(nodeIds),
-    ]);
-    await tx.unsafe(`DELETE FROM windex.pe_export WHERE node_id = ANY($1::bigint[])`, [
-      pgArray(nodeIds),
-    ]);
+    await tx.unsafe(
+      `DELETE FROM windex.pe_import WHERE node_id = ANY($1::bigint[])`,
+      [pgArray(nodeIds)],
+    );
+    await tx.unsafe(
+      `DELETE FROM windex.pe_export WHERE node_id = ANY($1::bigint[])`,
+      [pgArray(nodeIds)],
+    );
     const imports = pe.flatMap((r) => {
       const id = idOf.get(pathKey(r.path))!;
       // One row per (module, delay); a module imported twice in the same table is merged.
@@ -292,7 +313,10 @@ export async function pendingCatalog(
     await sql`SELECT p.node_id::text AS id, f.path FROM windex.pe p JOIN windex.fs_node f ON f.id = p.node_id
     WHERE NOT p.catalog_checked AND p.node_id > ${after} AND f.path_lc >= ${lo} AND f.path_lc < ${hi}
     ORDER BY p.node_id LIMIT ${limit}`;
-  return rows.map((r: { id: string; path: string }) => ({ id: Number(r.id), path: r.path }));
+  return rows.map((r: { id: string; path: string }) => ({
+    id: Number(r.id),
+    path: r.path,
+  }));
 }
 
 /** Stores catalog lookup results (null: listed in no catalog) and marks the images checked. */
@@ -343,7 +367,11 @@ async function dropEdges(sql: SQL, ids: (string | number)[]): Promise<void> {
 }
 
 /** Deletes the entries of a root not seen since `since` (removed while no watcher ran). */
-export async function sweep(sql: SQL, root: string, since: Date): Promise<number> {
+export async function sweep(
+  sql: SQL,
+  root: string,
+  since: Date,
+): Promise<number> {
   const [lo, hi] = subtreeRange(root);
   return await sql.begin(async (tx) => {
     const rows = await tx`DELETE FROM windex.fs_node
@@ -374,7 +402,10 @@ export async function previousState(
       FROM windex.fs_node WHERE path_lc > ${last} AND path_lc < ${hi} AND NOT is_dir AND error IS NULL
       ORDER BY path_lc LIMIT ${page}`;
     for (const r of rows) {
-      out.set(hash52(r.path_lc), stateValue(Number(r.size), r.m === null ? null : Number(r.m)));
+      out.set(
+        hash52(r.path_lc),
+        stateValue(Number(r.size), r.m === null ? null : Number(r.m)),
+      );
     }
     if (rows.length < page) break;
     last = rows.at(-1).path_lc;
@@ -422,7 +453,10 @@ export async function deletePath(sql: SQL, path: string): Promise<number> {
 }
 
 /** Re-resolves the importers of host modules that just appeared (`kernelbase.dll` created after its importers). */
-export async function refreshImporters(sql: SQL, names: string[]): Promise<void> {
+export async function refreshImporters(
+  sql: SQL,
+  names: string[],
+): Promise<void> {
   if (!names.length) return;
   const lit = `{${names.map((n) => `"${n.toLowerCase().replaceAll('"', "")}"`).join(",")}}`;
   await sql.unsafe(`SELECT windex.refresh_importers($1::text[])`, [lit]);
@@ -448,7 +482,11 @@ export async function getNode(
 }
 
 /** Moves a path and its subtree (rename); returns rows updated. */
-export async function movePath(sql: SQL, from: string, to: string): Promise<number> {
+export async function movePath(
+  sql: SQL,
+  from: string,
+  to: string,
+): Promise<number> {
   const a = pathKey(from);
   const b = pathKey(to);
   const [lo, hi] = subtreeRange(from);
@@ -458,7 +496,8 @@ export async function movePath(sql: SQL, from: string, to: string): Promise<numb
     const cut = to.lastIndexOf("\\");
     const name = to.slice(cut + 1);
     const parentLc = pathKey(cut > 2 ? to.slice(0, cut) : to.slice(0, 3));
-    const one = await tx`UPDATE windex.fs_node SET path = ${to}, path_lc = ${b}, name = ${name},
+    const one =
+      await tx`UPDATE windex.fs_node SET path = ${to}, path_lc = ${b}, name = ${name},
         parent_lc = ${parentLc}, parent_id = (SELECT id FROM windex.fs_node WHERE path_lc = ${parentLc}), seen_at = now()
       WHERE path_lc = ${a}`;
     const sub = await tx`UPDATE windex.fs_node SET
@@ -480,7 +519,13 @@ export async function refreshPeEdges(sql: SQL, ids: number[]): Promise<void> {
 
 export async function setVolume(
   sql: SQL,
-  v: { letter: string; serial?: string; journalId: bigint; nextUsn: bigint; mftRecords?: number },
+  v: {
+    letter: string;
+    serial?: string;
+    journalId: bigint;
+    nextUsn: bigint;
+    mftRecords?: number;
+  },
 ): Promise<void> {
   await sql`INSERT INTO windex.volume (letter, serial, journal_id, next_usn, mft_records, updated_at)
     VALUES (${v.letter}, ${v.serial ?? null}, ${v.journalId.toString()}, ${v.nextUsn.toString()},
@@ -499,13 +544,23 @@ export async function getVolume(
   return r ? { journalId: BigInt(r.j), nextUsn: BigInt(r.n) } : undefined;
 }
 
-export type Root = { path: string; hashMode: "all" | "pe" | "none"; graph: boolean };
+export type Root = {
+  path: string;
+  hashMode: "all" | "pe" | "none";
+  graph: boolean;
+};
 
 /** Registers a root (the watcher applies changes below registered roots only) and its last scan statistics. */
 export async function upsertRoot(
   sql: SQL,
   root: Root,
-  stats?: { entries: number; files: number; pe: number; errors: number; ms: number },
+  stats?: {
+    entries: number;
+    files: number;
+    pe: number;
+    errors: number;
+    ms: number;
+  },
 ): Promise<void> {
   await sql`INSERT INTO windex.root (path_lc, path, hash_mode, graph, scanned_at, entries, files, pe_files, errors,
       duration_ms)
@@ -521,10 +576,13 @@ export async function upsertRoot(
 }
 
 export async function roots(sql: SQL): Promise<Root[]> {
-  const rows = await sql`SELECT path, hash_mode, graph FROM windex.root ORDER BY length(path_lc)`;
-  return rows.map((r: { path: string; hash_mode: Root["hashMode"]; graph: boolean }) => ({
-    path: r.path,
-    hashMode: r.hash_mode,
-    graph: r.graph,
-  }));
+  const rows =
+    await sql`SELECT path, hash_mode, graph FROM windex.root ORDER BY length(path_lc)`;
+  return rows.map(
+    (r: { path: string; hash_mode: Root["hashMode"]; graph: boolean }) => ({
+      path: r.path,
+      hashMode: r.hash_mode,
+      graph: r.graph,
+    }),
+  );
 }

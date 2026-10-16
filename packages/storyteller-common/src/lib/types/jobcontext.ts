@@ -1,4 +1,3 @@
-
 export interface JobContextType {
   jobTokens: string[];
   addJobToken: (token: string) => void;

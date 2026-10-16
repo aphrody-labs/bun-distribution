@@ -53,7 +53,9 @@ export const useChatStore = create<ChatStoreState>((set) => ({
   setActiveThreadId: (id) =>
     set((state) => ({
       activeThreadId: id,
-      unreadThreadIds: id ? { ...state.unreadThreadIds, [id]: false } : state.unreadThreadIds,
+      unreadThreadIds: id
+        ? { ...state.unreadThreadIds, [id]: false }
+        : state.unreadThreadIds,
     })),
 
   setSessionTitle: (title) => set(() => ({ sessionTitle: title })),
@@ -97,7 +99,10 @@ export const useChatStore = create<ChatStoreState>((set) => ({
     }),
 }));
 
-export function getProjectGroups(threads: ThreadItem[], expandedProjects: Record<string, boolean>) {
+export function getProjectGroups(
+  threads: ThreadItem[],
+  expandedProjects: Record<string, boolean>,
+) {
   const groups: Record<string, ThreadItem[]> = {};
 
   for (const t of threads) {

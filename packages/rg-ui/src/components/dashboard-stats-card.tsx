@@ -5,20 +5,20 @@ import type { LucideIcon } from "lucide-react";
 import { cn } from "../lib/utils";
 
 interface DashboardStatsCardProps {
-	title?: string;
-	label?: string; // Alias for Azalee
-	value: string | number;
-	/** Composant Lucide, ou nœud déjà rendu (ex. une icône applicative). */
-	icon: LucideIcon | React.ReactNode;
-	description?: string;
-	href?: string;
-	trend?: {
-		value: number;
-		label?: string;
-	};
-	accent?: "primary" | "emerald" | "sky" | "rose" | "amber" | "violet";
-	accentColor?: string; // Legacy alias for Azalee
-	className?: string;
+  title?: string;
+  label?: string; // Alias for Azalee
+  value: string | number;
+  /** Composant Lucide, ou nœud déjà rendu (ex. une icône applicative). */
+  icon: LucideIcon | React.ReactNode;
+  description?: string;
+  href?: string;
+  trend?: {
+    value: number;
+    label?: string;
+  };
+  accent?: "primary" | "emerald" | "sky" | "rose" | "amber" | "violet";
+  accentColor?: string; // Legacy alias for Azalee
+  className?: string;
 }
 
 /**
@@ -31,12 +31,12 @@ interface DashboardStatsCardProps {
  * design system, donc vers une couleur qui suit le thème.
  */
 const accentVariants = {
-	primary: "bg-primary/10 text-primary",
-	emerald: "bg-succes/10 text-succes",
-	sky: "bg-info/10 text-info",
-	rose: "bg-rg-rose/10 text-rg-rose",
-	amber: "bg-alerte/15 text-alerte",
-	violet: "bg-secondary/15 text-secondary-foreground",
+  primary: "bg-primary/10 text-primary",
+  emerald: "bg-succes/10 text-succes",
+  sky: "bg-info/10 text-info",
+  rose: "bg-rg-rose/10 text-rg-rose",
+  amber: "bg-alerte/15 text-alerte",
+  violet: "bg-secondary/15 text-secondary-foreground",
 };
 
 /**
@@ -46,14 +46,14 @@ const accentVariants = {
  * icônes `lucide-react` sont des `forwardRef`, donc des objets.
  */
 function renderIcone(icone: React.ReactNode | LucideIcon): React.ReactNode {
-	if (!icone) {
-		return null;
-	}
-	if (isValidElement(icone)) {
-		return icone;
-	}
-	const Composant = icone as React.ComponentType<{ className?: string }>;
-	return <Composant className="size-5" />;
+  if (!icone) {
+    return null;
+  }
+  if (isValidElement(icone)) {
+    return icone;
+  }
+  const Composant = icone as React.ComponentType<{ className?: string }>;
+  return <Composant className="size-5" />;
 }
 
 /**
@@ -75,63 +75,70 @@ function renderIcone(icone: React.ReactNode | LucideIcon): React.ReactNode {
  * Shared Metric/Stats card for Dashboards.
  */
 export function DashboardStatsCard({
-	title,
-	label,
-	value,
-	icon,
-	description,
-	href,
-	trend,
-	accent = "primary",
-	accentColor,
-	className,
+  title,
+  label,
+  value,
+  icon,
+  description,
+  href,
+  trend,
+  accent = "primary",
+  accentColor,
+  className,
 }: DashboardStatsCardProps) {
-	const Icon = icon;
-	const displayTitle = title || label || "";
-	const finalAccent = (accentColor || accent) as keyof typeof accentVariants;
+  const Icon = icon;
+  const displayTitle = title || label || "";
+  const finalAccent = (accentColor || accent) as keyof typeof accentVariants;
 
-	const content = (
-		<div
-			className={cn(
-				"group relative overflow-hidden rounded-xl border border-border bg-card p-6 transition-all hover:shadow-md",
-				className
-			)}
-		>
-			<div className="flex items-center justify-between">
-				<div
-					className={cn("rounded-lg p-2.5", accentVariants[finalAccent] || accentVariants.primary)}
-				>
-					{/* La branche « chaîne » s'appuyait sur une police `material-icons`
+  const content = (
+    <div
+      className={cn(
+        "group relative overflow-hidden rounded-xl border border-border bg-card p-6 transition-all hover:shadow-md",
+        className,
+      )}
+    >
+      <div className="flex items-center justify-between">
+        <div
+          className={cn(
+            "rounded-lg p-2.5",
+            accentVariants[finalAccent] || accentVariants.primary,
+          )}
+        >
+          {/* La branche « chaîne » s'appuyait sur une police `material-icons`
 					    qui n'est déclarée dans aucune des deux apps : le nom de l'icône
 					    s'affichait en toutes lettres, débordant de son carré de 20px.
 					    On n'accepte plus qu'un composant Lucide ou un nœud déjà rendu. */}
-					{renderIcone(Icon)}
-				</div>
-				{trend && (
-					<span
-						className={cn(
-							"text-xs font-medium",
-							trend.value > 0 ? "text-succes" : "text-destructive"
-						)}
-					>
-						{trend.value > 0 ? "+" : ""}
-						{trend.value}%
-					</span>
-				)}
-			</div>
-			<div className="mt-4">
-				<p className="text-sm font-medium text-muted-foreground">{displayTitle}</p>
-				<h3 className="text-2xl font-bold tracking-tight text-foreground">
-					{typeof value === "number" ? value.toLocaleString("fr-FR") : value}
-				</h3>
-				{description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
-			</div>
-		</div>
-	);
+          {renderIcone(Icon)}
+        </div>
+        {trend && (
+          <span
+            className={cn(
+              "text-xs font-medium",
+              trend.value > 0 ? "text-succes" : "text-destructive",
+            )}
+          >
+            {trend.value > 0 ? "+" : ""}
+            {trend.value}%
+          </span>
+        )}
+      </div>
+      <div className="mt-4">
+        <p className="text-sm font-medium text-muted-foreground">
+          {displayTitle}
+        </p>
+        <h3 className="text-2xl font-bold tracking-tight text-foreground">
+          {typeof value === "number" ? value.toLocaleString("fr-FR") : value}
+        </h3>
+        {description && (
+          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+        )}
+      </div>
+    </div>
+  );
 
-	if (href) {
-		return <Link href={href}>{content}</Link>;
-	}
+  if (href) {
+    return <Link href={href}>{content}</Link>;
+  }
 
-	return content;
+  return content;
 }

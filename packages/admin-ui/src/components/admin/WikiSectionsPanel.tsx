@@ -63,11 +63,36 @@ interface Section {
 }
 
 /** Types d'entités liables (table → libellé). */
-const LINKABLE_ENTITIES: { table: string; label: string; nameCol: string; imageCol: string }[] = [
-  { table: "db_characters", label: "Personnages", nameCol: "name", imageCol: "image" },
-  { table: "db_planets", label: "Cosmologie", nameCol: "name", imageCol: "image" },
-  { table: "db_techniques", label: "Techniques", nameCol: "name", imageCol: "image" },
-  { table: "db_transformations", label: "Transformations", nameCol: "name", imageCol: "image" },
+const LINKABLE_ENTITIES: {
+  table: string;
+  label: string;
+  nameCol: string;
+  imageCol: string;
+}[] = [
+  {
+    table: "db_characters",
+    label: "Personnages",
+    nameCol: "name",
+    imageCol: "image",
+  },
+  {
+    table: "db_planets",
+    label: "Cosmologie",
+    nameCol: "name",
+    imageCol: "image",
+  },
+  {
+    table: "db_techniques",
+    label: "Techniques",
+    nameCol: "name",
+    imageCol: "image",
+  },
+  {
+    table: "db_transformations",
+    label: "Transformations",
+    nameCol: "name",
+    imageCol: "image",
+  },
   { table: "db_races", label: "Races", nameCol: "name", imageCol: "image" },
   { table: "db_sagas", label: "Sagas", nameCol: "name", imageCol: "image" },
   { table: "db_arcs", label: "Arcs", nameCol: "name", imageCol: "image" },
@@ -108,7 +133,11 @@ export function WikiSectionsPanel({
   const groupNames = useMemo(
     () =>
       Array.from(
-        new Set(sections.map((s) => s.groupLabel?.trim()).filter((g): g is string => !!g)),
+        new Set(
+          sections
+            .map((s) => s.groupLabel?.trim())
+            .filter((g): g is string => !!g),
+        ),
       ).toSorted(),
     [sections],
   );
@@ -137,7 +166,9 @@ export function WikiSectionsPanel({
   const reorder = useMutation({
     mutationFn: async (orderedIds: number[]) => {
       await Promise.all(
-        orderedIds.map((id, i) => client.patch(`/db_wiki_sections/${id}`, { sortOrder: i })),
+        orderedIds.map((id, i) =>
+          client.patch(`/db_wiki_sections/${id}`, { sortOrder: i }),
+        ),
       );
     },
     onSuccess: invalidate,
@@ -182,17 +213,21 @@ export function WikiSectionsPanel({
       </div>
 
       <p className="text-xs text-white/50">
-        Blocs affichés en catégories sélectionnables sur la fiche (« Histoire », « Personnalité », «
-        Anecdotes », « PWS »…). Dès qu&apos;une fiche a des sections ici, elles définissent
-        <strong className="text-white/70"> seules</strong> ses catégories (le champ « Article »
-        n&apos;est plus affiché) : masquage, ordre et édition font foi. Techniques et
-        transformations restent gérées dans « Relations ».
+        Blocs affichés en catégories sélectionnables sur la fiche (« Histoire »,
+        « Personnalité », « Anecdotes », « PWS »…). Dès qu&apos;une fiche a des
+        sections ici, elles définissent
+        <strong className="text-white/70"> seules</strong> ses catégories (le
+        champ « Article » n&apos;est plus affiché) : masquage, ordre et édition
+        font foi. Techniques et transformations restent gérées dans « Relations
+        ».
       </p>
 
       {query.isError ? (
         <p className="text-xs text-red-400">Chargement des sections échoué.</p>
       ) : sections.length === 0 ? (
-        <p className="text-xs italic text-white/50">Aucune section pour l&apos;instant.</p>
+        <p className="text-xs italic text-white/50">
+          Aucune section pour l&apos;instant.
+        </p>
       ) : (
         <div className="space-y-2">
           {sections.map((s, i) => (
@@ -256,7 +291,9 @@ export function WikiSectionsPanel({
             <Plus className="h-4 w-4" /> Ajouter
           </button>
         </div>
-        {add.isError && <p className="text-xs text-red-400">Ajout échoué. Réessaie.</p>}
+        {add.isError && (
+          <p className="text-xs text-red-400">Ajout échoué. Réessaie.</p>
+        )}
       </div>
     </div>
   );
@@ -309,7 +346,9 @@ function SectionRow({
   });
   const toggleVisible = useMutation({
     mutationFn: () =>
-      client.patch(`/db_wiki_sections/${section.id}`, { visible: !section.visible }),
+      client.patch(`/db_wiki_sections/${section.id}`, {
+        visible: !section.visible,
+      }),
     onSuccess: onChanged,
   });
   const remove = useMutation({
@@ -317,7 +356,9 @@ function SectionRow({
     onSuccess: onChanged,
   });
 
-  const dot = ACCENTS.find((a) => a.key === (section.accent ?? "orange"))?.dot ?? "bg-dbz-orange";
+  const dot =
+    ACCENTS.find((a) => a.key === (section.accent ?? "orange"))?.dot ??
+    "bg-dbz-orange";
 
   return (
     <div className="rounded border border-dbz-border bg-dbz-card/40">
@@ -386,7 +427,8 @@ function SectionRow({
             title="Supprimer"
             aria-label={`Supprimer la section « ${section.label} »`}
             onClick={() => {
-              if (window.confirm(`Supprimer la section « ${section.label} » ?`)) remove.mutate();
+              if (window.confirm(`Supprimer la section « ${section.label} » ?`))
+                remove.mutate();
             }}
             className="rounded p-1 text-red-400 hover:text-red-300"
           >
@@ -400,7 +442,11 @@ function SectionRow({
             aria-label={`${open ? "Replier" : "Éditer"} la section « ${section.label} »`}
             aria-expanded={open}
           >
-            {open ? <ChevronHaut className="h-4 w-4" /> : <ChevronBas className="h-4 w-4" />}
+            {open ? (
+              <ChevronHaut className="h-4 w-4" />
+            ) : (
+              <ChevronBas className="h-4 w-4" />
+            )}
           </button>
         </div>
       </div>
@@ -453,11 +499,12 @@ function SectionRow({
             </label>
           </div>
           <p className="text-[11px] text-white/50 -mt-1">
-            Le <strong className="text-white/60">groupe parent</strong> devient l&apos;onglet de la
-            barre du haut (ex. « PWS »). Le <strong className="text-white/60">titre</strong>{" "}
-            ci-dessus est la sous-section affichée en dessous (ex. « Vitesse », « Puissance
-            d&apos;attaque »). Laisse vide pour une catégorie de 1er niveau (« Histoire », «
-            Anecdotes »…).
+            Le <strong className="text-white/60">groupe parent</strong> devient
+            l&apos;onglet de la barre du haut (ex. « PWS »). Le{" "}
+            <strong className="text-white/60">titre</strong> ci-dessus est la
+            sous-section affichée en dessous (ex. « Vitesse », « Puissance
+            d&apos;attaque »). Laisse vide pour une catégorie de 1er niveau («
+            Histoire », « Anecdotes »…).
           </p>
           <MarkdownField
             value={body}
@@ -477,7 +524,9 @@ function SectionRow({
               {save.isPending ? "Enregistrement…" : "Enregistrer la section"}
             </button>
             {save.isError && (
-              <span className="text-xs text-red-400">Échec de l&apos;enregistrement.</span>
+              <span className="text-xs text-red-400">
+                Échec de l&apos;enregistrement.
+              </span>
             )}
             {save.isSuccess && !dirty && (
               <span className="text-xs text-green-400">Enregistré.</span>
@@ -490,7 +539,10 @@ function SectionRow({
 }
 
 /** Ligne brute renvoyée par le CRUD wiki (colonnes camelCase). */
-type EntityRow = Record<string, unknown> & { id?: number | string; slug?: string };
+type EntityRow = Record<string, unknown> & {
+  id?: number | string;
+  slug?: string;
+};
 
 /**
  * Éditeur de « pages wiki affiliées » d'une section : chaque lien = une carte
@@ -507,7 +559,8 @@ function WikiSectionLinksEditor({
   const [picking, setPicking] = useState(false);
   const [table, setTable] = useState(LINKABLE_ENTITIES[0].table);
   const [q, setQ] = useState("");
-  const spec = LINKABLE_ENTITIES.find((e) => e.table === table) ?? LINKABLE_ENTITIES[0];
+  const spec =
+    LINKABLE_ENTITIES.find((e) => e.table === table) ?? LINKABLE_ENTITIES[0];
   const client = apiAt(crudBase(table));
 
   const list = useQuery({
@@ -525,7 +578,9 @@ function WikiSectionLinksEditor({
         row: r,
         name: String(r[spec.nameCol] ?? "").trim(),
       }))
-      .filter((x) => x.name && (!needle || x.name.toLowerCase().includes(needle)));
+      .filter(
+        (x) => x.name && (!needle || x.name.toLowerCase().includes(needle)),
+      );
     return named.slice(0, 40);
   }, [list.data, q, spec.nameCol]);
 
@@ -533,7 +588,8 @@ function WikiSectionLinksEditor({
     const href = publicEntityUrl(table, row);
     if (!href) return;
     const rawImg = row[spec.imageCol];
-    const image = typeof rawImg === "string" && rawImg ? assetUrl(rawImg) : undefined;
+    const image =
+      typeof rawImg === "string" && rawImg ? assetUrl(rawImg) : undefined;
     if (links.some((l) => l.href === href)) return; // pas de doublon
     onChange([...links, { href, label: name, image }]);
   }
@@ -545,8 +601,8 @@ function WikiSectionLinksEditor({
         <span className="text-white/50">({links.length})</span>
       </div>
       <p className="mb-2 text-[11px] text-white/50">
-        Cartes avec photo renvoyant vers d&apos;autres fiches wiki (ex. affilier des personnages à
-        une catégorie « Powerscaling »).
+        Cartes avec photo renvoyant vers d&apos;autres fiches wiki (ex. affilier
+        des personnages à une catégorie « Powerscaling »).
       </p>
 
       {links.length > 0 && (
@@ -566,7 +622,9 @@ function WikiSectionLinksEditor({
               ) : (
                 <div className="h-9 w-9 shrink-0 rounded bg-dbz-card" />
               )}
-              <span className="min-w-0 flex-1 truncate text-xs text-white/85">{l.label}</span>
+              <span className="min-w-0 flex-1 truncate text-xs text-white/85">
+                {l.label}
+              </span>
               <button
                 type="button"
                 title="Retirer"
@@ -620,17 +678,25 @@ function WikiSectionLinksEditor({
           </div>
           {list.isLoading ? (
             <p className="py-3 text-center text-xs text-white/50">
-              <Chargement className="mr-1 inline h-3 w-3 animate-spin" /> Chargement…
+              <Chargement className="mr-1 inline h-3 w-3 animate-spin" />{" "}
+              Chargement…
             </p>
           ) : (
             <div className="max-h-56 space-y-1 overflow-y-auto">
               {results.length === 0 ? (
-                <p className="py-2 text-center text-xs italic text-white/50">Aucun résultat.</p>
+                <p className="py-2 text-center text-xs italic text-white/50">
+                  Aucun résultat.
+                </p>
               ) : (
                 results.map(({ row, name }) => {
                   const rawImg = row[spec.imageCol];
-                  const img = typeof rawImg === "string" && rawImg ? assetUrl(rawImg) : null;
-                  const already = links.some((l) => l.href === publicEntityUrl(table, row));
+                  const img =
+                    typeof rawImg === "string" && rawImg
+                      ? assetUrl(rawImg)
+                      : null;
+                  const already = links.some(
+                    (l) => l.href === publicEntityUrl(table, row),
+                  );
                   return (
                     <button
                       key={String(row.id)}
@@ -649,9 +715,13 @@ function WikiSectionLinksEditor({
                       ) : (
                         <div className="h-8 w-8 rounded bg-dbz-card" />
                       )}
-                      <span className="min-w-0 flex-1 truncate text-xs text-white/85">{name}</span>
+                      <span className="min-w-0 flex-1 truncate text-xs text-white/85">
+                        {name}
+                      </span>
                       {already ? (
-                        <span className="text-[9px] uppercase text-white/50">ajouté</span>
+                        <span className="text-[9px] uppercase text-white/50">
+                          ajouté
+                        </span>
                       ) : (
                         <Plus className="h-3.5 w-3.5 text-dbz-orange" />
                       )}
@@ -663,7 +733,11 @@ function WikiSectionLinksEditor({
           )}
         </div>
       ) : (
-        <button type="button" onClick={() => setPicking(true)} className="btn btn-ghost">
+        <button
+          type="button"
+          onClick={() => setPicking(true)}
+          className="btn btn-ghost"
+        >
           <Plus className="h-4 w-4" /> Lier une page wiki
         </button>
       )}

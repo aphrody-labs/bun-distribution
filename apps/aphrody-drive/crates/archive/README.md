@@ -56,6 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Integrated with Spacedrive
 
 See `core/src/data/` for the Spacedrive integration wrapper that adds:
+
 - Library-scoped lifecycle
 - Job system integration
 - Event bus integration
@@ -129,6 +130,7 @@ fields = [
 ```
 
 **Field types:**
+
 - `String` - Short text (up to 1KB)
 - `Text` - Long text (unlimited)
 - `Integer` - i64
@@ -139,6 +141,7 @@ fields = [
 - `ForeignKey` - Reference to another type
 
 **Field flags:**
+
 - `indexed: true` - Create FTS5 index for full-text search
 - `embedded: true` - Generate vector embeddings for semantic search
 - `unique: true` - Enforce uniqueness constraint
@@ -153,7 +156,7 @@ Adapters communicate via stdin/stdout using line-delimited JSON.
 Config object sent once at startup:
 
 ```json
-{"email": "user@example.com", "cursor": "abc123"}
+{ "email": "user@example.com", "cursor": "abc123" }
 ```
 
 ### Output (stdout)
@@ -167,6 +170,7 @@ Stream of operation objects:
 ```
 
 **Operations:**
+
 - `upsert` - Insert or update record
 - `delete` - Delete record
 - `link` - Create relationship between records
@@ -176,7 +180,7 @@ Stream of operation objects:
 Adapters maintain cursor state for incremental sync:
 
 ```json
-{"op": "cursor", "value": "next-page-token-xyz"}
+{ "op": "cursor", "value": "next-page-token-xyz" }
 ```
 
 The engine persists cursor state and provides it on next sync.
@@ -184,6 +188,7 @@ The engine persists cursor state and provides it on next sync.
 ## Dependencies
 
 **Core:**
+
 - `sqlx` - SQLite database operations
 - `toml` - Schema parsing
 - `serde` / `serde_json` - Serialization
@@ -192,10 +197,12 @@ The engine persists cursor state and provides it on next sync.
 - `blake3` - Content hashing
 
 **Search:**
+
 - `lancedb` - Vector database
 - `fastembed` - Embedding model
 
 **Safety (optional):**
+
 - `ort` - ONNX Runtime for Prompt Guard 2
 - `tokenizers` - Text tokenization
 - `hf-hub` - Model downloads
@@ -213,6 +220,7 @@ The engine persists cursor state and provides it on next sync.
 - Embedding generation: ~100 records/sec (CPU bound)
 
 **Memory:**
+
 - Engine overhead: ~10MB
 - Per-source overhead: ~5MB
 - LanceDB cache: ~50MB

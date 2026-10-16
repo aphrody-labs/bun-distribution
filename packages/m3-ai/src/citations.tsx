@@ -11,7 +11,12 @@ import type { Components } from "react-markdown";
 import { type ChatLabels, formatLabel, resolveChatLabels } from "./chatLabels";
 import { ChatIcon } from "./chatIcons";
 import { focusRing } from "./internal";
-import { Markdown, type MarkdownLinkHandler, externalLinkProps, isExternalHref } from "./Markdown";
+import {
+  Markdown,
+  type MarkdownLinkHandler,
+  externalLinkProps,
+  isExternalHref,
+} from "./Markdown";
 
 /** One numbered passage an answer cites (`citations` of a grounded chat response). */
 export interface Citation {
@@ -32,7 +37,10 @@ const MARKER = /(?<![\]\\!])\[(\d{1,4})\](?!\()/g;
  * `[[n]](#citation-n)`. Code spans and fenced blocks are left untouched, as are markers
  * without a matching citation.
  */
-export function linkCitationMarkers(content: string, citations: readonly Citation[]): string {
+export function linkCitationMarkers(
+  content: string,
+  citations: readonly Citation[],
+): string {
   if (citations.length === 0) return content;
   const known = new Set(citations.map((citation) => citation.n));
   return content
@@ -41,7 +49,9 @@ export function linkCitationMarkers(content: string, citations: readonly Citatio
       index % 2 === 1
         ? part
         : part.replace(MARKER, (match, digits: string) =>
-            known.has(Number(digits)) ? `[\\[${digits}\\]](${CITATION_HREF}${digits})` : match,
+            known.has(Number(digits))
+              ? `[\\[${digits}\\]](${CITATION_HREF}${digits})`
+              : match,
           ),
     )
     .join("");
@@ -50,7 +60,9 @@ export function linkCitationMarkers(content: string, citations: readonly Citatio
 /** The numbers cited in `content`, in order of first appearance. */
 export function citedNumbers(content: string): number[] {
   const seen: number[] = [];
-  for (const part of content.split(CODE_SPANS).filter((_, index) => index % 2 === 0)) {
+  for (const part of content
+    .split(CODE_SPANS)
+    .filter((_, index) => index % 2 === 0)) {
     for (const match of part.matchAll(MARKER)) {
       const n = Number(match[1]);
       if (!seen.includes(n)) seen.push(n);
@@ -67,7 +79,12 @@ export interface CitationChipProps {
 }
 
 /** Inline citation marker: a dense M3 assist chip showing `n`, labelled with the source title. */
-export function CitationChip({ citation, labels, onSelect, className }: CitationChipProps) {
+export function CitationChip({
+  citation,
+  labels,
+  onSelect,
+  className,
+}: CitationChipProps) {
   const l = resolveChatLabels(labels);
   const label = `${formatLabel(l.citation, { n: citation.n })}: ${citation.title}`;
   const chipClass = clsx(
@@ -117,7 +134,13 @@ function citationComponents(
       if (href?.startsWith(CITATION_HREF)) {
         const citation = byNumber.get(Number(href.slice(CITATION_HREF.length)));
         if (citation)
-          return <CitationChip citation={citation} labels={labels} onSelect={onCitationSelect} />;
+          return (
+            <CitationChip
+              citation={citation}
+              labels={labels}
+              onSelect={onCitationSelect}
+            />
+          );
       }
       return (
         <a
@@ -185,7 +208,12 @@ export interface CitationListProps {
 }
 
 /** The numbered sources of an answer, as an M3 list on `surface-container-low`. */
-export function CitationList({ citations, labels, onSelect, className }: CitationListProps) {
+export function CitationList({
+  citations,
+  labels,
+  onSelect,
+  className,
+}: CitationListProps) {
   if (citations.length === 0) return null;
   const l = resolveChatLabels(labels);
   const sorted = [...citations];
@@ -198,7 +226,9 @@ export function CitationList({ citations, labels, onSelect, className }: Citatio
         className,
       )}
     >
-      <h3 className="px-4 pb-1 text-label-large text-on-surface-variant">{l.sources}</h3>
+      <h3 className="px-4 pb-1 text-label-large text-on-surface-variant">
+        {l.sources}
+      </h3>
       <ol className="m-0 list-none p-0">
         {sorted.map((citation) => {
           const body = (
@@ -210,7 +240,11 @@ export function CitationList({ citations, labels, onSelect, className }: Citatio
                 {citation.title}
               </span>
               {citation.url || onSelect ? (
-                <ChatIcon name="open_in_new" size={18} className="text-on-surface-variant" />
+                <ChatIcon
+                  name="open_in_new"
+                  size={18}
+                  className="text-on-surface-variant"
+                />
               ) : null}
             </>
           );
@@ -246,7 +280,9 @@ export function CitationList({ citations, labels, onSelect, className }: Citatio
                   {body}
                 </a>
               ) : (
-                <div className="flex min-h-12 items-center gap-3 px-4 py-1">{body}</div>
+                <div className="flex min-h-12 items-center gap-3 px-4 py-1">
+                  {body}
+                </div>
               )}
             </li>
           );
@@ -264,7 +300,11 @@ export interface RefusalNoticeProps {
 }
 
 /** `refusal: true`: the answer is not established in the sources (M3 tonal note, not an error). */
-export function RefusalNotice({ labels, detail, className }: RefusalNoticeProps) {
+export function RefusalNotice({
+  labels,
+  detail,
+  className,
+}: RefusalNoticeProps) {
   const l = resolveChatLabels(labels);
   return (
     <div
@@ -274,7 +314,11 @@ export function RefusalNotice({ labels, detail, className }: RefusalNoticeProps)
         className,
       )}
     >
-      <ChatIcon name="info" size={20} className="mt-0.5 text-on-surface-variant" />
+      <ChatIcon
+        name="info"
+        size={20}
+        className="mt-0.5 text-on-surface-variant"
+      />
       <div className="min-w-0">
         <p className="m-0 text-title-small text-on-surface">{l.refusalTitle}</p>
         <p className="m-0 mt-0.5 text-body-medium text-on-surface-variant">

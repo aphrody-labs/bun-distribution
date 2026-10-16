@@ -64,7 +64,9 @@ test("cache clears content of Adobe media cache only with --apply and refuses wh
   const project = join(appData, "Adobe", "Common", "project.prproj");
   await writeFile(project, "keep");
 
-  const busy = fakeIo([{ name: "Adobe Premiere Pro", pid: 9, bytes: 1 }], { APPDATA: appData });
+  const busy = fakeIo([{ name: "Adobe Premiere Pro", pid: 9, bytes: 1 }], {
+    APPDATA: appData,
+  });
   expect(await cache(busy.io, true, 0, [])).toBe(1);
   expect(await readdir(mediaCache)).toEqual(["a.cfa"]);
 

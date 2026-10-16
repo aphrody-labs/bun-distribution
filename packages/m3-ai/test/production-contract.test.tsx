@@ -5,7 +5,10 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 import * as React from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { flushSync } from "react-dom";
-import { ModelOptionList, groupModelsByProvider } from "../src/ModelSelector.tsx";
+import {
+  ModelOptionList,
+  groupModelsByProvider,
+} from "../src/ModelSelector.tsx";
 import type { ModelOption } from "../src/types.ts";
 import { GeminiPersonalContextEdit } from "../src/GeminiPersonalContextEdit.tsx";
 import { GoogleSpotlightBar } from "../src/GoogleSpotlightBar.tsx";
@@ -52,10 +55,16 @@ describe("production model selector accessibility", () => {
     const selected = mock(() => {});
     flushSync(() =>
       root!.render(
-        <ModelOptionList grouped={groupModelsByProvider(models)} value="b" onSelect={selected} />,
+        <ModelOptionList
+          grouped={groupModelsByProvider(models)}
+          value="b"
+          onSelect={selected}
+        />,
       ),
     );
-    const options = [...host.querySelectorAll<HTMLButtonElement>('[role="option"]')];
+    const options = [
+      ...host.querySelectorAll<HTMLButtonElement>('[role="option"]'),
+    ];
     expect(options.map((option) => option.tabIndex)).toEqual([-1, 0, -1]);
     flushSync(() => options[1]!.focus());
     key("ArrowDown");
@@ -79,7 +88,10 @@ function mount(element: React.ReactNode) {
   flushSync(() => root!.render(element));
 }
 
-function editControl(control: HTMLInputElement | HTMLTextAreaElement, value: string) {
+function editControl(
+  control: HTMLInputElement | HTMLTextAreaElement,
+  value: string,
+) {
   const prototype =
     control instanceof HTMLTextAreaElement
       ? HTMLTextAreaElement.prototype
@@ -87,7 +99,9 @@ function editControl(control: HTMLInputElement | HTMLTextAreaElement, value: str
   const setValue = Object.getOwnPropertyDescriptor(prototype, "value")!.set!;
   flushSync(() => {
     setValue.call(control, value);
-    const propKey = Object.keys(control).find((k) => k.startsWith("__reactProps$"));
+    const propKey = Object.keys(control).find((k) =>
+      k.startsWith("__reactProps$"),
+    );
     if (propKey) {
       // oxlint-disable-next-line @typescript-eslint/no-explicit-any
       const props = (control as unknown as Record<string, any>)[propKey];
@@ -149,9 +163,9 @@ describe("production controlled AI editors and actions", () => {
     await Bun.sleep(20);
     const textarea = document.querySelector<HTMLTextAreaElement>("textarea")!;
     editControl(textarea, "  New context  ");
-    const save = [...document.querySelectorAll<HTMLButtonElement>("button")].find(
-      (button) => button.textContent === "Save",
-    )!;
+    const save = [
+      ...document.querySelectorAll<HTMLButtonElement>("button"),
+    ].find((button) => button.textContent === "Save")!;
     expect(save.disabled).toBe(false);
     flushSync(() => save.click());
     await Bun.sleep(10);
@@ -171,12 +185,16 @@ describe("production controlled AI editors and actions", () => {
     );
     mount(render("Initial query"));
     const search = host!.querySelector("search")!;
-    expect(search.getAttribute("aria-label")).toBe("Google Spotlight Assistant");
+    expect(search.getAttribute("aria-label")).toBe(
+      "Google Spotlight Assistant",
+    );
     const input = search.querySelector("input")!;
     editControl(input, "Proposed query");
     expect(changes).toEqual(["Proposed query"]);
     flushSync(() =>
-      input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })),
+      input.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+      ),
     );
     expect(submissions).toEqual(["Initial query"]);
     // Observe the controlled DOM at the owner's React commit. Synthetic happy-dom
@@ -186,7 +204,9 @@ describe("production controlled AI editors and actions", () => {
     flushSync(() => root!.render(render("Accepted query")));
     expect(input.value).toBe("Accepted query");
     flushSync(() =>
-      input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })),
+      input.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+      ),
     );
     expect(submissions).toEqual(["Initial query", "Accepted query"]);
   });
@@ -199,7 +219,11 @@ describe("production controlled AI editors and actions", () => {
       title: "Inspect source",
       status: "running",
       timestamp: "Live",
-      envelope: { kind: "ask", topic: "inspection", body: "Local source summary" },
+      envelope: {
+        kind: "ask",
+        topic: "inspection",
+        body: "Local source summary",
+      },
     };
     const selected = mock(() => {});
     mount(<A2ATaskTimeline steps={[step]} onSelectStep={selected} />);
@@ -207,7 +231,9 @@ describe("production controlled AI editors and actions", () => {
     expect(button.type).toBe("button");
     expect(button.tabIndex).toBe(0);
     expect(button.getAttribute("aria-expanded")).toBe("false");
-    const region = document.getElementById(button.getAttribute("aria-controls")!)!;
+    const region = document.getElementById(
+      button.getAttribute("aria-controls")!,
+    )!;
     expect(region.hidden).toBe(true);
     expect(button.textContent).toContain("Live");
     expect(button.textContent).not.toContain("Invalid Date");

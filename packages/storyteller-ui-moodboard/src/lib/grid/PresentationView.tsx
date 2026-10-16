@@ -42,7 +42,7 @@ export const PresentationView = ({ items, onClose }: Props) => {
         onClick={onClose}
         className="absolute right-5 top-5 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 backdrop-blur-md transition-colors hover:bg-white/15 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
       >
-        <XIcon  className="h-4 w-4" />
+        <XIcon className="h-4 w-4" />
       </button>
 
       {count === 0 ? (
@@ -57,9 +57,7 @@ export const PresentationView = ({ items, onClose }: Props) => {
             <>
               <Arrow
                 side="left"
-                onClick={() =>
-                  setIndex((i) => (i - 1 + count) % count)
-                }
+                onClick={() => setIndex((i) => (i - 1 + count) % count)}
               />
               <Arrow
                 side="right"

@@ -11,7 +11,11 @@
 
 import React, { useState, useRef, useMemo } from "react";
 import { clsx } from "clsx";
-import { AppRenderer, type SandboxConfig, type McpUiHostContext } from "@aphrody/mcp-ui";
+import {
+  AppRenderer,
+  type SandboxConfig,
+  type McpUiHostContext,
+} from "@aphrody/mcp-ui";
 
 export interface McpAppCardProps {
   toolName: string;
@@ -45,7 +49,8 @@ export const McpAppCard: React.FC<McpAppCardProps> = ({
   // Host context with Material Design 3 tokens
   const hostContext: McpUiHostContext = useMemo(() => {
     const isDark =
-      typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches;
     return {
       theme: isDark ? "dark" : "light",
       locale: typeof navigator !== "undefined" ? navigator.language : "en-US",
@@ -55,7 +60,9 @@ export const McpAppCard: React.FC<McpAppCardProps> = ({
 
   // Fallback default sandbox proxy URL
   const resolvedSandbox: SandboxConfig = useMemo(() => {
-    const url = sandboxUrl ? new URL(sandboxUrl) : new URL("https://mcpui.dev/sandbox_proxy.html");
+    const url = sandboxUrl
+      ? new URL(sandboxUrl)
+      : new URL("https://mcpui.dev/sandbox_proxy.html");
     return {
       url,
       permissions: "allow-scripts allow-forms allow-same-origin",
@@ -70,7 +77,9 @@ export const McpAppCard: React.FC<McpAppCardProps> = ({
         "bg-[var(--md-sys-color-surface-container-low,#f7f2fa)]",
         "border-[var(--md-sys-color-outline-variant,#cac4d0)]",
         "text-[var(--md-sys-color-on-surface,#1d1b20)]",
-        isExpanded ? "fixed inset-4 z-50 shadow-2xl" : "relative w-full shadow-sm",
+        isExpanded
+          ? "fixed inset-4 z-50 shadow-2xl"
+          : "relative w-full shadow-sm",
         className,
       )}
     >
@@ -83,7 +92,9 @@ export const McpAppCard: React.FC<McpAppCardProps> = ({
 
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold tracking-tight">{title || toolName}</span>
+              <span className="text-xs font-semibold tracking-tight">
+                {title || toolName}
+              </span>
               <span className="rounded-full bg-[var(--md-sys-color-surface-container-high,#ece6f0)] px-2 py-0.2 text-[10px] font-mono text-[var(--md-sys-color-on-surface-variant,#49454f)]">
                 mcp-ui
               </span>
@@ -99,7 +110,9 @@ export const McpAppCard: React.FC<McpAppCardProps> = ({
         {/* Action icons */}
         <div className="flex items-center gap-1">
           <div className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
-            <span className="material-symbols-outlined text-xs">verified_user</span>
+            <span className="material-symbols-outlined text-xs">
+              verified_user
+            </span>
             <span>Sandboxed</span>
           </div>
 
@@ -125,7 +138,9 @@ export const McpAppCard: React.FC<McpAppCardProps> = ({
       >
         {hasError ? (
           <div className="flex h-full flex-col items-center justify-center p-6 text-center text-xs text-[var(--md-sys-color-error,#b3261e)]">
-            <span className="material-symbols-outlined text-3xl mb-1">error</span>
+            <span className="material-symbols-outlined text-3xl mb-1">
+              error
+            </span>
             <span className="font-semibold">MCP App Render Error</span>
             <p className="mt-1 font-mono text-[11px] opacity-80">{hasError}</p>
           </div>

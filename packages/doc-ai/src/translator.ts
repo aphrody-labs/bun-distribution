@@ -1,7 +1,11 @@
 import type { LlmClient } from "./llm.js";
 import { resolveClient } from "./llm.js";
 import { withRetry, type RetryOptions } from "./retry.js";
-import { extractStatus, isRetryableStatus, isTransientNetworkError } from "./retry.js";
+import {
+  extractStatus,
+  isRetryableStatus,
+  isTransientNetworkError,
+} from "./retry.js";
 import { LlmError, ParseError, toMessage } from "./errors.js";
 import type { TargetLanguage } from "./validate.js";
 
@@ -10,7 +14,10 @@ import type { TargetLanguage } from "./validate.js";
  * network-backed; the offline pipeline defaults to a deterministic no-op so it
  * never touches the network.
  */
-export type SegmentTranslator = (text: string, targetLanguage: TargetLanguage) => Promise<string>;
+export type SegmentTranslator = (
+  text: string,
+  targetLanguage: TargetLanguage,
+) => Promise<string>;
 
 /**
  * Deterministic no-op segment translator: returns the input unchanged. This is
@@ -24,7 +31,10 @@ export const noopSegmentTranslator: SegmentTranslator = async (text) => text;
  * endpoint. NOT used by default; callers must opt in explicitly. Exposed for
  * environments that want machine translation without an LLM key.
  */
-export async function freeTranslate(text: string, targetLanguage: TargetLanguage): Promise<string> {
+export async function freeTranslate(
+  text: string,
+  targetLanguage: TargetLanguage,
+): Promise<string> {
   if (!text.trim()) return text;
   const url = `https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&sl=auto&tl=${targetLanguage}&q=${encodeURIComponent(text)}`;
 
@@ -38,17 +48,22 @@ export async function freeTranslate(text: string, targetLanguage: TargetLanguage
     });
   }
   if (!response.ok) {
-    throw new LlmError(`Free translation request failed: ${response.statusText}`, {
-      status: response.status,
-      retryable: isRetryableStatus(response.status),
-    });
+    throw new LlmError(
+      `Free translation request failed: ${response.statusText}`,
+      {
+        status: response.status,
+        retryable: isRetryableStatus(response.status),
+      },
+    );
   }
   let result: unknown;
   try {
     result = await response.json();
     return (result as [Array<[string]>])[0].map((x) => x[0]).join("");
   } catch (err) {
-    throw new ParseError("Failed to parse free translation response", { cause: err });
+    throw new ParseError("Failed to parse free translation response", {
+      cause: err,
+    });
   }
 }
 
@@ -63,7 +78,10 @@ interface TranslationJob {
  * blocks, frontmatter (except title/description/summary values), HTML comments
  * and table divider rows are left untouched. Pure and deterministic.
  */
-export function planMarkdownJobs(content: string): { lines: string[]; jobs: TranslationJob[] } {
+export function planMarkdownJobs(content: string): {
+  lines: string[];
+  jobs: TranslationJob[];
+} {
   const lines = content.split("\n");
   const translatedLines = [...lines];
   const jobs: TranslationJob[] = [];
@@ -87,7 +105,10 @@ export function planMarkdownJobs(content: string): { lines: string[]; jobs: Tran
       if (match) {
         const [, key, val] = match;
         const valTrim = val.trim();
-        if ((key === "title" || key === "description" || key === "summary") && valTrim) {
+        if (
+          (key === "title" || key === "description" || key === "summary") &&
+          valTrim
+        ) {
           const isQuoted =
             (valTrim.startsWith('"') && valTrim.endsWith('"')) ||
             (valTrim.startsWith("'") && valTrim.endsWith("'"));
@@ -97,7 +118,8 @@ export function planMarkdownJobs(content: string): { lines: string[]; jobs: Tran
             lineIndex: i,
             text: cleanVal,
             apply: (transVal) => {
-              translatedLines[i] = `${key}: ${isQuoted ? `"${transVal}"` : transVal}`;
+              translatedLines[i] =
+                `${key}: ${isQuoted ? `"${transVal}"` : transVal}`;
             },
           });
         }
@@ -121,7 +143,11 @@ export function planMarkdownJobs(content: string): { lines: string[]; jobs: Tran
     }
 
     // Preserving markdown tables divider line: |---|---|
-    if (trimmed.startsWith("|") && trimmed.includes("-") && !trimmed.match(/[a-zA-Z]/)) {
+    if (
+      trimmed.startsWith("|") &&
+      trimmed.includes("-") &&
+      !trimmed.match(/[a-zA-Z]/)
+    ) {
       continue;
     }
 
@@ -237,7 +263,10 @@ export async function translateMarkdownOffline(
           const trans = await translate(job.text, targetLanguage);
           job.apply(trans);
         } catch (err) {
-          warn(`Failed to translate line ${job.lineIndex}: "${job.text}"`, toMessage(err));
+          warn(
+            `Failed to translate line ${job.lineIndex}: "${job.text}"`,
+            toMessage(err),
+          );
         }
       }),
     );
@@ -247,7 +276,10 @@ export async function translateMarkdownOffline(
 }
 
 /** Build the LLM prompt for full-document translation. */
-export function buildTranslatePrompt(content: string, targetLanguage: TargetLanguage): string {
+export function buildTranslatePrompt(
+  content: string,
+  targetLanguage: TargetLanguage,
+): string {
   return `You are a professional documentation translator.
 Translate the following Markdown documentation into ${targetLanguage === "fr" ? "French" : "English"}.
 Ensure you strictly follow these rules:
@@ -309,7 +341,9 @@ export async function translateMarkdown(
 ): Promise<string> {
   const warn = options.warn ?? ((m, d) => console.warn(m, d));
   const client =
-    options.client !== undefined ? options.client : resolveClient(options.env ?? process.env);
+    options.client !== undefined
+      ? options.client
+      : resolveClient(options.env ?? process.env);
 
   if (!client && options.requireOnline) {
     throw new LlmError("Online translation requires a configured LLM client.");
@@ -317,9 +351,15 @@ export async function translateMarkdown(
 
   if (client) {
     try {
-      const text = await translateMarkdownLLM(content, targetLanguage, client, options.retry ?? {});
+      const text = await translateMarkdownLLM(
+        content,
+        targetLanguage,
+        client,
+        options.retry ?? {},
+      );
       if (text && text.trim()) return text;
-      if (options.requireOnline) throw new LlmError("LLM returned empty translation.");
+      if (options.requireOnline)
+        throw new LlmError("LLM returned empty translation.");
       warn("LLM returned empty translation, falling back to offline pipeline.");
     } catch (err) {
       if (options.requireOnline) throw err;

@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { bindMeshOrbitControls } from "./mesh-orbit-controls";
-import { createElement, useState, useEffect, useRef, Suspense, useCallback } from "react";
+import {
+  createElement,
+  useState,
+  useEffect,
+  useRef,
+  Suspense,
+  useCallback,
+} from "react";
 import type { File } from "@aphrody/drive-client";
 import { usePlatform } from "../../contexts/PlatformContext";
 import { File as FileComponent } from "../../routes/explorer/File";
@@ -153,7 +160,13 @@ function GaussianSplatViewer({
     // Dernières versions des callbacks, lues au moment de l'appel sans relancer le viewer
     onResetReadyRef.current = onResetReady;
     onDistanceCalculatedRef.current = onDistanceCalculated;
-  }, [swayAmount, swaySpeed, cameraDistance, onResetReady, onDistanceCalculated]);
+  }, [
+    swayAmount,
+    swaySpeed,
+    cameraDistance,
+    onResetReady,
+    onDistanceCalculated,
+  ]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -184,7 +197,9 @@ function GaussianSplatViewer({
           progressiveLoad: true,
           splatAlphaRemovalThreshold: 5,
           onProgress: (percent: number, label: string, _status: string) => {
-            console.log(`[GaussianSplatViewer] Load progress: ${percent}% - ${label}`);
+            console.log(
+              `[GaussianSplatViewer] Load progress: ${percent}% - ${label}`,
+            );
           },
         });
 
@@ -265,32 +280,36 @@ function GaussianSplatViewer({
                 viewer.raycaster.intersectSplatMesh(viewer.splatMesh, outHits);
 
                 if (outHits.length > 0) {
-                  console.log(`[GaussianSplatViewer] ✓ Raycast SUCCESS (attempt ${retryCount})!`, {
-                    hitCount: outHits.length,
-                    allHits: outHits.map((h: any, i: number) => ({
-                      index: i,
-                      origin: {
-                        x: h.origin?.x,
-                        y: h.origin?.y,
-                        z: h.origin?.z,
+                  console.log(
+                    `[GaussianSplatViewer] ✓ Raycast SUCCESS (attempt ${retryCount})!`,
+                    {
+                      hitCount: outHits.length,
+                      allHits: outHits.map((h: any, i: number) => ({
+                        index: i,
+                        origin: {
+                          x: h.origin?.x,
+                          y: h.origin?.y,
+                          z: h.origin?.z,
+                        },
+                        distance: h.distance,
+                      })),
+                      cameraPosition: {
+                        x: viewer.camera.position.x,
+                        y: viewer.camera.position.y,
+                        z: viewer.camera.position.z,
                       },
-                      distance: h.distance,
-                    })),
-                    cameraPosition: {
-                      x: viewer.camera.position.x,
-                      y: viewer.camera.position.y,
-                      z: viewer.camera.position.z,
+                      calculatedCenter: {
+                        x: viewer.splatMesh.calculatedSceneCenter.x,
+                        y: viewer.splatMesh.calculatedSceneCenter.y,
+                        z: viewer.splatMesh.calculatedSceneCenter.z,
+                      },
                     },
-                    calculatedCenter: {
-                      x: viewer.splatMesh.calculatedSceneCenter.x,
-                      y: viewer.splatMesh.calculatedSceneCenter.y,
-                      z: viewer.splatMesh.calculatedSceneCenter.z,
-                    },
-                  });
+                  );
 
                   // Use the CLOSEST hit (smallest distance)
                   const closestHit = outHits.reduce(
-                    (closest: any, hit: any) => (hit.distance < closest.distance ? hit : closest),
+                    (closest: any, hit: any) =>
+                      hit.distance < closest.distance ? hit : closest,
                     outHits[0],
                   );
 
@@ -327,7 +346,10 @@ function GaussianSplatViewer({
 
                     // Provide reset function to parent
                     onResetReadyRef.current?.(() => {
-                      if (initialRaycastFocalPointRef.current && viewerRef.current) {
+                      if (
+                        initialRaycastFocalPointRef.current &&
+                        viewerRef.current
+                      ) {
                         const resetViewer = viewerRef.current;
                         const initial = initialRaycastFocalPointRef.current;
                         const current = resetViewer.controls.target;
@@ -359,7 +381,8 @@ function GaussianSplatViewer({
                         resetViewer.previousCameraTarget.copy(current);
                         resetViewer.nextCameraTarget.copy(initial);
                         resetViewer.transitioningCameraTarget = true;
-                        resetViewer.transitioningCameraTargetStartTime = performance.now() / 1000;
+                        resetViewer.transitioningCameraTargetStartTime =
+                          performance.now() / 1000;
                       }
                     });
                   }
@@ -380,7 +403,10 @@ function GaussianSplatViewer({
                   // Notify parent to sync the distance slider
                   onDistanceCalculatedRef.current?.(actualDistance);
 
-                  console.log("[GaussianSplatViewer] Calculated orbital distance:", actualDistance);
+                  console.log(
+                    "[GaussianSplatViewer] Calculated orbital distance:",
+                    actualDistance,
+                  );
 
                   // Update controls target
                   viewer.controls.target.copy(intersectionPoint);
@@ -454,7 +480,11 @@ function GaussianSplatViewer({
 
     // Wait for viewer to be ready AND raycast to complete, then start animation
     const startAnimation = () => {
-      if (!viewerReadyRef.current || !viewerRef.current || !raycastCompleteRef.current) {
+      if (
+        !viewerReadyRef.current ||
+        !viewerRef.current ||
+        !raycastCompleteRef.current
+      ) {
         // Not ready yet, check again soon
         startTimeoutId = setTimeout(startAnimation, 100) as unknown as number;
         return;
@@ -494,7 +524,9 @@ function GaussianSplatViewer({
       });
 
       // Get the initial focal point from controls (already set to splat center)
-      const initialFocalPoint = controls ? controls.target.clone() : { x: 0, y: 0, z: 0 };
+      const initialFocalPoint = controls
+        ? controls.target.clone()
+        : { x: 0, y: 0, z: 0 };
 
       console.log("[Animation Start] Initial focal point:", initialFocalPoint);
 
@@ -517,7 +549,8 @@ function GaussianSplatViewer({
         const elapsed = (Date.now() - startTime) / 1000;
         // Back and forth sway, not continuous rotation
         // Read from refs so values update live without restarting animation
-        const angle = Math.sin(elapsed * swaySpeedRef.current) * swayAmountRef.current;
+        const angle =
+          Math.sin(elapsed * swaySpeedRef.current) * swayAmountRef.current;
 
         // Handle smooth focal point transition
         const transition = focalPointTransitionRef.current;
@@ -525,10 +558,15 @@ function GaussianSplatViewer({
 
         if (transition.active) {
           const now = Date.now();
-          const progress = Math.min((now - transition.startTime) / transition.duration, 1);
+          const progress = Math.min(
+            (now - transition.startTime) / transition.duration,
+            1,
+          );
           // Smooth easing function
           const eased =
-            progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+            progress < 0.5
+              ? 2 * progress * progress
+              : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
           // Lerp focal point
           const from = transition.startFocalPoint;
@@ -583,8 +621,10 @@ function GaussianSplatViewer({
           }
 
           // Normal orbital animation with interpolated distance
-          camera.position.x = focalPoint.x + Math.sin(angle) * currentCameraDistanceRef.current;
-          camera.position.z = focalPoint.z + -Math.cos(angle) * currentCameraDistanceRef.current;
+          camera.position.x =
+            focalPoint.x + Math.sin(angle) * currentCameraDistanceRef.current;
+          camera.position.z =
+            focalPoint.z + -Math.cos(angle) * currentCameraDistanceRef.current;
           camera.position.y = focalPoint.y;
         }
 
@@ -606,11 +646,16 @@ function GaussianSplatViewer({
             Math.abs(oldTarget.y - focalPoint.y) > 0.001 ||
             Math.abs(oldTarget.z - focalPoint.z) > 0.001;
           if (targetChanged) {
-            console.log("[Animation] Controls.target changed from", oldTarget, "to", {
-              x: focalPoint.x,
-              y: focalPoint.y,
-              z: focalPoint.z,
-            });
+            console.log(
+              "[Animation] Controls.target changed from",
+              oldTarget,
+              "to",
+              {
+                x: focalPoint.x,
+                y: focalPoint.y,
+                z: focalPoint.z,
+              },
+            );
           }
         }
 
@@ -725,7 +770,11 @@ export function MeshViewerUI({
           activeAccent={true}
         />
         {onResetFocalPoint && (
-          <CircleButton icon="restart_alt" onClick={onResetFocalPoint} title="Reset focal point" />
+          <CircleButton
+            icon="restart_alt"
+            onClick={onResetFocalPoint}
+            title="Reset focal point"
+          />
         )}
         <CircleButton
           icon={autoRotate ? "pause" : "play_arrow"}
@@ -743,7 +792,9 @@ export function MeshViewerUI({
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
               {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- le Slider de m3-primitives ne transmet pas d'id à son input natif ; le nom accessible est porté par aria-label */}
-              <label className="text-label-medium text-on-surface-variant">Sway amount</label>
+              <label className="text-label-medium text-on-surface-variant">
+                Sway amount
+              </label>
               <span className="text-label-medium text-on-surface-variant font-mono tabular-nums">
                 {swayAmount.toFixed(2)}
               </span>
@@ -764,7 +815,9 @@ export function MeshViewerUI({
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
               {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- le Slider de m3-primitives ne transmet pas d'id à son input natif ; le nom accessible est porté par aria-label */}
-              <label className="text-label-medium text-on-surface-variant">Speed</label>
+              <label className="text-label-medium text-on-surface-variant">
+                Speed
+              </label>
               <span className="text-label-medium text-on-surface-variant font-mono tabular-nums">
                 {swaySpeed.toFixed(2)}
               </span>
@@ -785,7 +838,9 @@ export function MeshViewerUI({
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
               {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- le Slider de m3-primitives ne transmet pas d'id à son input natif ; le nom accessible est porté par aria-label */}
-              <label className="text-label-medium text-on-surface-variant">Distance</label>
+              <label className="text-label-medium text-on-surface-variant">
+                Distance
+              </label>
               <span className="text-label-medium text-on-surface-variant font-mono tabular-nums">
                 {cameraDistance.toFixed(2)}
               </span>
@@ -823,12 +878,18 @@ export function MeshViewer({
   const [isGaussianSplat, setIsGaussianSplat] = useState(!!splatUrl);
   const [splatFailed, setSplatFailed] = useState(false);
   // Chargement différé de 50 ms, par couple (fichier, sidecar) ; ready passe à true à l'échéance
-  const [loadState, setLoadState] = useState({ fileId, splatUrl, ready: false });
+  const [loadState, setLoadState] = useState({
+    fileId,
+    splatUrl,
+    ready: false,
+  });
   const shouldLoad = loadState.ready;
   const [loading, setLoading] = useState(!splatUrl);
   const resetFocalPointRef = useRef<(() => void) | null>(null);
-  const [internalCameraDistance, setInternalCameraDistance] = useState(cameraDistanceProp);
-  const [prevCameraDistanceProp, setPrevCameraDistanceProp] = useState(cameraDistanceProp);
+  const [internalCameraDistance, setInternalCameraDistance] =
+    useState(cameraDistanceProp);
+  const [prevCameraDistanceProp, setPrevCameraDistanceProp] =
+    useState(cameraDistanceProp);
 
   // Sync internal distance with prop changes (unless we've overridden it)
   if (cameraDistanceProp !== prevCameraDistanceProp) {
@@ -843,7 +904,8 @@ export function MeshViewer({
   }
 
   // Un sidecar splat est connu d'avance : sa présence fixe le mode, sans passer par un effet
-  const physicalPath: string | undefined = (file.sd_path as any)?.Physical?.path;
+  const physicalPath: string | undefined = (file.sd_path as any)?.Physical
+    ?.path;
   // URL du fichier, dérivée une fois la temporisation écoulée (pas d'état intermédiaire)
   const fileUrl =
     shouldLoad && platform.convertFileSrc && physicalPath
@@ -852,7 +914,8 @@ export function MeshViewer({
   const activeMeshUrl = splatUrl || fileUrl;
   const activeIsGaussianSplat = !!splatUrl || isGaussianSplat;
   // Une fois la temporisation écoulée, un fichier sans chemin physique ne se charge pas : l'attente prend fin
-  const noPhysicalPath = shouldLoad && !!platform.convertFileSrc && !physicalPath;
+  const noPhysicalPath =
+    shouldLoad && !!platform.convertFileSrc && !physicalPath;
   const activeLoading = !splatUrl && loading && !noPhysicalPath;
 
   // Use props for control values, but use internal state for distance (can be overridden by raycast)
@@ -924,9 +987,13 @@ export function MeshViewer({
 
         // Gaussian Splat detection
         const hasSH =
-          header.includes("f_dc_0") || header.includes("sh0") || header.includes("sh_0");
+          header.includes("f_dc_0") ||
+          header.includes("sh0") ||
+          header.includes("sh_0");
         const hasScale =
-          header.includes("scale_0") || header.includes("scale_1") || header.includes("scale_2");
+          header.includes("scale_0") ||
+          header.includes("scale_1") ||
+          header.includes("scale_2");
         const hasOpacity = header.includes("opacity");
         const hasRotation =
           header.includes("rot_0") ||
@@ -959,7 +1026,9 @@ export function MeshViewer({
         <div className="text-center">
           <FileComponent.Thumb file={file} size={200} />
           {activeLoading && (
-            <div className="mt-4 text-body-medium text-on-surface-variant">Loading 3D model...</div>
+            <div className="mt-4 text-body-medium text-on-surface-variant">
+              Loading 3D model...
+            </div>
           )}
         </div>
       </div>
@@ -995,7 +1064,10 @@ export function MeshViewer({
           }}
         />
       ) : (
-        <Canvas camera={{ position: [0, 0, 5], fov: 50 }} style={{ width: "100%", height: "100%" }}>
+        <Canvas
+          camera={{ position: [0, 0, 5], fov: 50 }}
+          style={{ width: "100%", height: "100%" }}
+        >
           {createElement("ambientLight" as any, { intensity: 0.5 })}
           {createElement("spotLight" as any, {
             position: [10, 10, 10],

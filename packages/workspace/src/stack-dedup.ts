@@ -59,7 +59,11 @@ export interface DuplicateFiles {
 
 export interface JsFindings {
   /** Declared, never imported (types, peers and optional dependencies excluded). */
-  unusedDependencies: { package: string; path: string; dependencies: string[] }[];
+  unusedDependencies: {
+    package: string;
+    path: string;
+    dependencies: string[];
+  }[];
   versionSpecDifferences: Record<string, Record<string, string>>;
   /** Packages that nothing in the workspace imports or declares. */
   withoutDependents: { package: string; path: string; files: number }[];
@@ -94,7 +98,11 @@ const parseVersion = (version: string) => {
 export function compareVersions(a: string, b: string): number {
   const left = parseVersion(a);
   const right = parseVersion(b);
-  for (let index = 0; index < Math.max(left.nums.length, right.nums.length); index += 1) {
+  for (
+    let index = 0;
+    index < Math.max(left.nums.length, right.nums.length);
+    index += 1
+  ) {
     const diff = (left.nums[index] ?? 0) - (right.nums[index] ?? 0);
     if (diff !== 0) return diff;
   }
@@ -115,7 +123,10 @@ function graph(meta: CargoMetadataLite) {
   return { packages, edges, workspace: new Set(meta.workspace_members) };
 }
 
-function reach(starts: Iterable<string>, edges: Map<string, string[]>): Set<string> {
+function reach(
+  starts: Iterable<string>,
+  edges: Map<string, string[]>,
+): Set<string> {
   const seen = new Set<string>();
   const stack = [...starts];
   while (stack.length > 0) {
@@ -134,7 +145,9 @@ export function crateTable(meta: CargoMetadataLite, root: string): CrateRow[] {
   for (const id of workspace) {
     for (const next of edges.get(id) ?? []) {
       if (!workspace.has(next)) continue;
-      (dependents.get(next) ?? dependents.set(next, new Set()).get(next)!).add(id);
+      (dependents.get(next) ?? dependents.set(next, new Set()).get(next)!).add(
+        id,
+      );
     }
   }
   const everything = reach(workspace, edges);
@@ -155,30 +168,41 @@ export function crateTable(meta: CargoMetadataLite, root: string): CrateRow[] {
     const remaining = [...workspace].filter((other) => !closure.has(other));
     const kept = reach(remaining, edges);
     let frees = 0;
-    for (const other of everything) if (!workspace.has(other) && !kept.has(other)) frees += 1;
+    for (const other of everything)
+      if (!workspace.has(other) && !kept.has(other)) frees += 1;
     rows.push({
       name: entry.name,
       path: relative(root, dirname(entry.manifest_path)).replaceAll("\\", "/"),
-      kinds: [...new Set(entry.targets.flatMap((target) => target.kind))].toSorted(),
+      kinds: [
+        ...new Set(entry.targets.flatMap((target) => target.kind)),
+      ].toSorted(),
       publishable:
-        entry.publish === undefined || entry.publish === null || entry.publish.length > 0,
+        entry.publish === undefined ||
+        entry.publish === null ||
+        entry.publish.length > 0,
       dependents: [...(dependents.get(id) ?? [])]
         .map((dependent) => packages.get(dependent)?.name ?? dependent)
         .toSorted(),
       freesPackages: frees,
     });
   }
-  return rows.toSorted((a, b) => b.freesPackages - a.freesPackages || a.name.localeCompare(b.name));
+  return rows.toSorted(
+    (a, b) => b.freesPackages - a.freesPackages || a.name.localeCompare(b.name),
+  );
 }
 
 /** Older versions of a package that one of our own crates asks for directly: fixable by bumping our manifest. */
-export function olderVersionsPulledDirectly(meta: CargoMetadataLite): OlderVersion[] {
+export function olderVersionsPulledDirectly(
+  meta: CargoMetadataLite,
+): OlderVersion[] {
   const { packages, edges, workspace } = graph(meta);
   const byName = new Map<string, string[]>();
   for (const id of edges.keys()) {
     const entry = packages.get(id);
     if (!entry || workspace.has(id)) continue;
-    (byName.get(entry.name) ?? byName.set(entry.name, []).get(entry.name)!).push(id);
+    (
+      byName.get(entry.name) ?? byName.set(entry.name, []).get(entry.name)!
+    ).push(id);
   }
   const out: OlderVersion[] = [];
   for (const [name, ids] of byName) {
@@ -197,7 +221,8 @@ export function olderVersionsPulledDirectly(meta: CargoMetadataLite): OlderVersi
     }
   }
   return out.toSorted(
-    (a, b) => a.name.localeCompare(b.name) || compareVersions(a.version, b.version),
+    (a, b) =>
+      a.name.localeCompare(b.name) || compareVersions(a.version, b.version),
   );
 }
 
@@ -250,7 +275,11 @@ export async function trackedFiles(
       continue;
     }
     if (size < minBytes) continue;
-    out.push({ path, size, hash: createHash("sha1").update(readFileSync(full)).digest("hex") });
+    out.push({
+      path,
+      size,
+      hash: createHash("sha1").update(readFileSync(full)).digest("hex"),
+    });
   }
   return out;
 }
@@ -291,7 +320,8 @@ export function jsFindings(summary: ImportsSummary): JsFindings {
       path: entry.path,
       dependencies: entry.sourceUnmatchedDependencies.filter(
         (dependency) =>
-          !dependency.startsWith("@types/") && !(dependency in entry.peerDependencies),
+          !dependency.startsWith("@types/") &&
+          !(dependency in entry.peerDependencies),
       ),
     }))
     .filter((entry) => entry.dependencies.length > 0)
@@ -301,7 +331,11 @@ export function jsFindings(summary: ImportsSummary): JsFindings {
     versionSpecDifferences: summary.versionSpecDifferences,
     withoutDependents: summary.packages
       .filter((entry) => !used.has(entry.name) && entry.sourceFiles > 0)
-      .map((entry) => ({ package: entry.name, path: entry.path, files: entry.sourceFiles }))
+      .map((entry) => ({
+        package: entry.name,
+        path: entry.path,
+        files: entry.sourceFiles,
+      }))
       .toSorted((a, b) => a.path.localeCompare(b.path)),
   };
 }
@@ -311,7 +345,9 @@ export function librariesWithoutDependents(rows: CrateRow[]): string[] {
   return rows
     .filter(
       (row) =>
-        row.dependents.length === 0 && !row.kinds.includes("bin") && !row.kinds.includes("cdylib"),
+        row.dependents.length === 0 &&
+        !row.kinds.includes("bin") &&
+        !row.kinds.includes("cdylib"),
     )
     .map((row) => row.name)
     .toSorted();
@@ -358,19 +394,28 @@ export async function buildReport(options: {
     scope,
     rust: {
       workspaceCrates: all.length,
-      thirdPartyPackages: [...everything].filter((id) => !metadata.workspace_members.includes(id))
+      thirdPartyPackages: [...everything].filter(
+        (id) => !metadata.workspace_members.includes(id),
+      ).length,
+      namesWithSeveralVersions: [...names.values()].filter((count) => count > 1)
         .length,
-      namesWithSeveralVersions: [...names.values()].filter((count) => count > 1).length,
       crates,
-      olderVersionsPulledDirectly: olderVersionsPulledDirectly(metadata).filter((entry) =>
-        entry.pulledBy.some((crate) => inScope(pathOf.get(crate) ?? "", scope)),
+      olderVersionsPulledDirectly: olderVersionsPulledDirectly(metadata).filter(
+        (entry) =>
+          entry.pulledBy.some((crate) =>
+            inScope(pathOf.get(crate) ?? "", scope),
+          ),
       ),
       withoutDependents: librariesWithoutDependents(crates),
     },
     js: {
-      unusedDependencies: js.unusedDependencies.filter((entry) => inScope(entry.path, scope)),
+      unusedDependencies: js.unusedDependencies.filter((entry) =>
+        inScope(entry.path, scope),
+      ),
       versionSpecDifferences: js.versionSpecDifferences,
-      withoutDependents: js.withoutDependents.filter((entry) => inScope(entry.path, scope)),
+      withoutDependents: js.withoutDependents.filter((entry) =>
+        inScope(entry.path, scope),
+      ),
     },
     assets: {
       groups: duplicates.length,
@@ -422,7 +467,9 @@ export function renderReport(report: StackReport, top = 15): string {
     `tracked exact duplicates: ${report.assets.groups} groups, ${(report.assets.wastedBytes / 1e6).toFixed(1)} MB`,
   );
   for (const group of report.assets.duplicates.slice(0, top))
-    lines.push(`  ${(group.bytes / 1e6).toFixed(2)} MB  ${group.copies.join(" | ")}`);
+    lines.push(
+      `  ${(group.bytes / 1e6).toFixed(2)} MB  ${group.copies.join(" | ")}`,
+    );
   return lines.join("\n");
 }
 
@@ -444,7 +491,10 @@ async function cargoMetadata(root: string): Promise<CargoMetadataLite> {
     new Response(child.stdout).text(),
     new Response(child.stderr).text(),
   ]);
-  if (code !== 0) throw new Error(`cargo metadata failed: ${stderr.trim().split("\n").at(-1)}`);
+  if (code !== 0)
+    throw new Error(
+      `cargo metadata failed: ${stderr.trim().split("\n").at(-1)}`,
+    );
   return JSON.parse(stdout) as CargoMetadataLite;
 }
 
@@ -458,7 +508,8 @@ export async function runStackDedup(args: string[]): Promise<number> {
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
     if (arg === "--root") root = args[(index += 1)] ?? "";
-    else if (arg === "--scope") scope = (args[(index += 1)] ?? "").split(",").filter(Boolean);
+    else if (arg === "--scope")
+      scope = (args[(index += 1)] ?? "").split(",").filter(Boolean);
     else if (arg === "--metadata") metadataPath = args[(index += 1)];
     else if (arg === "--out") out = args[(index += 1)];
     else if (arg === "--min-bytes") minBytes = Number(args[(index += 1)]);
@@ -470,7 +521,8 @@ export async function runStackDedup(args: string[]): Promise<number> {
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }
-  if (!root || !Number.isFinite(minBytes)) throw new Error("invalid --root or --min-bytes");
+  if (!root || !Number.isFinite(minBytes))
+    throw new Error("invalid --root or --min-bytes");
   root = resolve(root);
   const metadata =
     metadataPath && existsSync(metadataPath)

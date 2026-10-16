@@ -19,7 +19,11 @@ export type ToolName =
  * Installed tools are looked up on PATH first, then in their usual folders: right after `winget install` the PATH of the
  * running process is stale, so the usual folders are what finds Git or WireGuard in the same session.
  */
-export function findTool(sys: System, paths: KitPaths, name: ToolName): string | undefined {
+export function findTool(
+  sys: System,
+  paths: KitPaths,
+  name: ToolName,
+): string | undefined {
   const systemRoot = sys.env.SystemRoot ?? "C:\\Windows";
   const candidates: Record<ToolName, string[]> = {
     git: [
@@ -30,12 +34,17 @@ export function findTool(sys: System, paths: KitPaths, name: ToolName): string |
     ssh: [join(systemRoot, "System32", "OpenSSH", "ssh.exe")],
     sshKeygen: [join(systemRoot, "System32", "OpenSSH", "ssh-keygen.exe")],
     "aphrody-mcp": [join(paths.home, ".local", "bin", "aphrody-mcp.exe")],
-    aphrody: [join(paths.home, ".local", "bin", "aphrody.exe"), ...latestAphrodyBuilds(paths)],
+    aphrody: [
+      join(paths.home, ".local", "bin", "aphrody.exe"),
+      ...latestAphrodyBuilds(paths),
+    ],
     claude: [
       join(paths.home, ".local", "bin", "claude.exe"),
       join(paths.appData, "npm", "claude.cmd"),
     ],
-    winget: [join(paths.localAppData, "Microsoft", "WindowsApps", "winget.exe")],
+    winget: [
+      join(paths.localAppData, "Microsoft", "WindowsApps", "winget.exe"),
+    ],
   };
   const lookup: Record<ToolName, string> = {
     git: "git",
@@ -57,7 +66,10 @@ function latestAphrodyBuilds(paths: KitPaths): string[] {
   const base = join(paths.home, ".local", "lib", "aphrody");
   try {
     return readdirSync(base)
-      .map((release) => ({ release, mtime: statSync(join(base, release)).mtimeMs }))
+      .map((release) => ({
+        release,
+        mtime: statSync(join(base, release)).mtimeMs,
+      }))
       .toSorted((a, b) => b.mtime - a.mtime)
       .map((entry) => join(base, entry.release, "aphrody.exe"));
   } catch {
@@ -70,7 +82,12 @@ export function parseVersion(output: string): string | undefined {
   return /\b(\d+\.\d+\.\d+)\b/.exec(output)?.[1];
 }
 
-export async function toolVersion(sys: System, exe: string): Promise<string | undefined> {
+export async function toolVersion(
+  sys: System,
+  exe: string,
+): Promise<string | undefined> {
   const result = await sys.run([exe, "--version"], { timeoutMs: 20_000 });
-  return result.code === 0 ? parseVersion(`${result.stdout} ${result.stderr}`) : undefined;
+  return result.code === 0
+    ? parseVersion(`${result.stdout} ${result.stderr}`)
+    : undefined;
 }

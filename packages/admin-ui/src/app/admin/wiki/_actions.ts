@@ -27,7 +27,9 @@ export async function createCategory(formData: FormData) {
   const order = Number(formData.get("order") ?? 0);
   if (!name) return;
   const slug = slugify(name);
-  await db.insert(schema.wikiCategories).values({ name, slug, parentId, order });
+  await db
+    .insert(schema.wikiCategories)
+    .values({ name, slug, parentId, order });
   revalidatePath("/admin/wiki");
   revalidatePath("/wiki");
   redirect("/admin/wiki");
@@ -51,7 +53,9 @@ export async function updateCategory(id: string, formData: FormData) {
 
 export async function deleteCategory(id: string) {
   await requireAdmin();
-  await db.delete(schema.wikiCategories).where(eq(schema.wikiCategories.id, id));
+  await db
+    .delete(schema.wikiCategories)
+    .where(eq(schema.wikiCategories.id, id));
   revalidatePath("/admin/wiki");
   revalidatePath("/wiki");
   redirect("/admin/wiki");

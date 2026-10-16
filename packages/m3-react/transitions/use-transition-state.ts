@@ -12,7 +12,8 @@ import * as React from "react";
  * Resolves an MUI-style `timeout` (a single duration or per-direction
  * durations) to the millisecond value for the given direction.
  */
-export type TransitionTimeout = number | { appear?: number; enter?: number; exit?: number };
+export type TransitionTimeout =
+  number | { appear?: number; enter?: number; exit?: number };
 
 export function resolveTimeout(
   timeout: TransitionTimeout | undefined,
@@ -76,7 +77,9 @@ function subscribeReducedMotion(onChange: () => void): () => void {
 function useReducedMotion(): boolean {
   return React.useSyncExternalStore(
     subscribeReducedMotion,
-    () => typeof window !== "undefined" && !!window.matchMedia?.(REDUCED_MOTION_QUERY).matches,
+    () =>
+      typeof window !== "undefined" &&
+      !!window.matchMedia?.(REDUCED_MOTION_QUERY).matches,
     () => false,
   );
 }
@@ -123,9 +126,13 @@ export function useTransitionState(
   });
 
   // Whether the element is in the DOM at all.
-  const [mounted, setMounted] = React.useState(() => inProp || (!mountOnEnter && !unmountOnExit));
+  const [mounted, setMounted] = React.useState(
+    () => inProp || (!mountOnEnter && !unmountOnExit),
+  );
 
-  const timer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const timer = React.useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
   const settlement = React.useRef<(() => void) | undefined>(undefined);
   const clear = () => {
     if (timer.current !== undefined) {
@@ -139,11 +146,16 @@ export function useTransitionState(
     firstRender.current = false;
     // A steady initial state must not start a transition or fire its callback.
     if (initialIn.current !== inProp) initialSteady.current = false;
-    if ((initial && (!inProp || !appear)) || initialSteady.current) return clear;
+    if ((initial && (!inProp || !appear)) || initialSteady.current)
+      return clear;
     let cancelled = false;
     let settled = false;
     let raf: number | undefined;
-    const duration = inProp ? (appearing.current ? appearTimeout : enterTimeout) : exitTimeout;
+    const duration = inProp
+      ? appearing.current
+        ? appearTimeout
+        : enterTimeout
+      : exitTimeout;
     const settle = () => {
       if (cancelled || settled) return;
       settled = true;
@@ -186,7 +198,12 @@ export function useTransitionState(
     if (phase === "entering" || phase === "exiting") settlement.current?.();
   }, [phase]);
 
-  return { mounted, phase, isAppearing: appearing.current, handleTransitionEnd };
+  return {
+    mounted,
+    phase,
+    isAppearing: appearing.current,
+    handleTransitionEnd,
+  };
 }
 
 /** True while the element should be in its "shown" visual state. */
@@ -211,9 +228,13 @@ export function useTransitionProps(
     unmountOnExit = false,
   } = props;
   const reduced = useReducedMotion();
-  const enterMs = reduced ? 0 : resolveTimeout(timeout, "enter", enterFallbackMs);
+  const enterMs = reduced
+    ? 0
+    : resolveTimeout(timeout, "enter", enterFallbackMs);
   const exitMs = reduced ? 0 : resolveTimeout(timeout, "exit", exitFallbackMs);
-  const appearMs = reduced ? 0 : resolveTimeout(timeout, "appear", enterFallbackMs);
+  const appearMs = reduced
+    ? 0
+    : resolveTimeout(timeout, "appear", enterFallbackMs);
   const { mounted, phase, isAppearing } = useTransitionState(inProp, {
     appear,
     mountOnEnter,

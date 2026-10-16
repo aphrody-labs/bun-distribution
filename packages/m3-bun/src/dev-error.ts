@@ -18,7 +18,9 @@ export function failingApi(error: unknown, prefix = "/api"): M3ApiModule {
 /** The default export of the API module at `path`, or a `failingApi` carrying its load error. */
 export async function loadDevApi(path: string): Promise<M3ApiModule> {
   try {
-    const module = (await import(pathToFileURL(path).href)) as { default?: M3ApiModule };
+    const module = (await import(pathToFileURL(path).href)) as {
+      default?: M3ApiModule;
+    };
     return module.default ?? {};
   } catch (error) {
     return failingApi(error);

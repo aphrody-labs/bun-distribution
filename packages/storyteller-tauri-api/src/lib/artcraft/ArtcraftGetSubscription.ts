@@ -6,17 +6,20 @@ export interface ArtcraftGetSubscriptionSuccess extends CommandResult {
 }
 
 export interface ArtcraftGetSubscriptionPayload {
-  active_subscription?: ActiveSubscriptionInfo
+  active_subscription?: ActiveSubscriptionInfo;
 }
 
 export interface ActiveSubscriptionInfo {
-  subscription_token: string,
-  product_slug: string,
-  namespace: string,
-  next_bill_at?: string,
-  subscription_end_at?: string,
+  subscription_token: string;
+  product_slug: string;
+  namespace: string;
+  next_bill_at?: string;
+  subscription_end_at?: string;
 }
 
-export const ArtcraftGetSubscription = async () : Promise<ArtcraftGetSubscriptionSuccess> => {
-  return await invoke("storyteller_get_subscription_command") as ArtcraftGetSubscriptionSuccess;
-}
+export const ArtcraftGetSubscription =
+  async (): Promise<ArtcraftGetSubscriptionSuccess> => {
+    return (await invoke(
+      "storyteller_get_subscription_command",
+    )) as ArtcraftGetSubscriptionSuccess;
+  };

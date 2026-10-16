@@ -22,7 +22,12 @@ export function Switch({
   offClassName,
 }: SwitchProps) {
   return (
-    <HeadlessSwitch checked={enabled} onChange={setEnabled} disabled={disabled} as={Fragment}>
+    <HeadlessSwitch
+      checked={enabled}
+      onChange={setEnabled}
+      disabled={disabled}
+      as={Fragment}
+    >
       {({ checked, disabled }) => (
         <button
           id={id}
@@ -39,7 +44,9 @@ export function Switch({
           <span
             className={clsx(
               "size-4 rounded-[2px] transition",
-              checked ? "translate-x-[22px] bg-black" : "translate-x-1 bg-white/70",
+              checked
+                ? "translate-x-[22px] bg-black"
+                : "translate-x-1 bg-white/70",
             )}
           />
         </button>

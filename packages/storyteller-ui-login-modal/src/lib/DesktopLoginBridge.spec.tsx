@@ -1,5 +1,14 @@
-import { stubGlobal, restoreGlobals } from "../../../../../tools/testing/globals";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  stubGlobal,
+  restoreGlobals,
+} from "../../../../../tools/testing/globals";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
 import { DesktopLoginBridge } from "./DesktopLoginBridge";
 
@@ -65,11 +74,15 @@ describe("desktop native login bridge integration", () => {
   it("creates through IPC and opens the native browser with the matching QR/code", async () => {
     render(<DesktopLoginBridge onSuccess={vi.fn()} />);
     await start("Login with Website");
-    expect(native).toHaveBeenCalledWith("storyteller_create_login_challenge_command");
-    expect(native).toHaveBeenCalledWith("plugin:opener|open_url", { url: APPROVAL_URL });
-    expect(screen.getByRole("img", { name: "Login QR" }).getAttribute("data-value")).toBe(
-      APPROVAL_URL,
+    expect(native).toHaveBeenCalledWith(
+      "storyteller_create_login_challenge_command",
     );
+    expect(native).toHaveBeenCalledWith("plugin:opener|open_url", {
+      url: APPROVAL_URL,
+    });
+    expect(
+      screen.getByRole("img", { name: "Login QR" }).getAttribute("data-value"),
+    ).toBe(APPROVAL_URL);
     expect(screen.getByText("WDJB-MJHT")).toBeTruthy();
   });
 
@@ -79,15 +92,25 @@ describe("desktop native login bridge integration", () => {
     await start("Scan to Login");
     await tick(5000);
     expect(success).not.toHaveBeenCalled();
-    outcome = { status: "redeemed", maybe_failure_type: null, maybe_user: USER };
+    outcome = {
+      status: "redeemed",
+      maybe_failure_type: null,
+      maybe_user: USER,
+    };
     await tick(5000);
-    expect(native).toHaveBeenCalledWith("storyteller_poll_login_challenge_command", {
-      challengeId: CHALLENGE_ID,
-    });
+    expect(native).toHaveBeenCalledWith(
+      "storyteller_poll_login_challenge_command",
+      {
+        challengeId: CHALLENGE_ID,
+      },
+    );
     expect(success).toHaveBeenCalledWith(USER);
-    expect(native).toHaveBeenCalledWith("storyteller_cancel_login_challenge_command", {
-      challengeId: CHALLENGE_ID,
-    });
+    expect(native).toHaveBeenCalledWith(
+      "storyteller_cancel_login_challenge_command",
+      {
+        challengeId: CHALLENGE_ID,
+      },
+    );
     const count = calls("storyteller_poll_login_challenge_command");
     await tick(30_000);
     expect(calls("storyteller_poll_login_challenge_command")).toBe(count);
@@ -110,7 +133,9 @@ describe("desktop native login bridge integration", () => {
     render(<DesktopLoginBridge onSuccess={vi.fn()} />);
     await start("Scan to Login");
     await tick(5000);
-    expect(screen.getByText("Login request expired. Start a new request.")).toBeTruthy();
+    expect(
+      screen.getByText("Login request expired. Start a new request."),
+    ).toBeTruthy();
     expect(calls("storyteller_create_login_challenge_command")).toBe(1);
     expect(calls("storyteller_poll_login_challenge_command")).toBe(0);
     expect(calls("storyteller_cancel_login_challenge_command")).toBe(1);
@@ -119,7 +144,11 @@ describe("desktop native login bridge integration", () => {
   it("backs off a native network failure and retries the same local handle", async () => {
     render(<DesktopLoginBridge onSuccess={vi.fn()} />);
     await start("Scan to Login");
-    native.mockRejectedValueOnce({ message: "Disconnected", status: null, retryable: true });
+    native.mockRejectedValueOnce({
+      message: "Disconnected",
+      status: null,
+      retryable: true,
+    });
     await tick(5000);
     expect(screen.getByText("Connection interrupted. Retrying…")).toBeTruthy();
     await tick(9999);
@@ -141,9 +170,12 @@ describe("desktop native login bridge integration", () => {
     );
     await tick(5000);
     view.unmount();
-    expect(native).toHaveBeenCalledWith("storyteller_cancel_login_challenge_command", {
-      challengeId: CHALLENGE_ID,
-    });
+    expect(native).toHaveBeenCalledWith(
+      "storyteller_cancel_login_challenge_command",
+      {
+        challengeId: CHALLENGE_ID,
+      },
+    );
     await act(async () => {
       resolve({ status: "redeemed", maybe_user: USER });
     });
@@ -163,9 +195,12 @@ describe("desktop native login bridge integration", () => {
     );
     await tick(5000);
     await start("Back");
-    expect(native).toHaveBeenCalledWith("storyteller_cancel_login_challenge_command", {
-      challengeId: CHALLENGE_ID,
-    });
+    expect(native).toHaveBeenCalledWith(
+      "storyteller_cancel_login_challenge_command",
+      {
+        challengeId: CHALLENGE_ID,
+      },
+    );
     await act(async () => {
       resolve({ status: "redeemed", maybe_user: USER });
     });
@@ -187,7 +222,9 @@ describe("desktop native login bridge integration", () => {
     await start("Scan to Login");
     await tick(5000);
     expect(
-      screen.getByText("This login request could not be completed. Start a new request."),
+      screen.getByText(
+        "This login request could not be completed. Start a new request.",
+      ),
     ).toBeTruthy();
   });
 
@@ -195,7 +232,8 @@ describe("desktop native login bridge integration", () => {
     render(<DesktopLoginBridge onSuccess={vi.fn()} />);
     await start("Scan to Login");
     native.mockRejectedValueOnce({
-      message: "http://localhost:12345: Login server rejected the request (HTTP 401)",
+      message:
+        "http://localhost:12345: Login server rejected the request (HTTP 401)",
       status: 401,
       retryable: false,
     });

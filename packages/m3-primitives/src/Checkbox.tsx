@@ -49,7 +49,8 @@ const styles = cva(
   },
 );
 
-export interface CheckBoxProps extends ComponentProps<"input">, VariantProps<typeof styles> {}
+export interface CheckBoxProps
+  extends ComponentProps<"input">, VariantProps<typeof styles> {}
 
 export const CheckBox = forwardRef<HTMLInputElement, CheckBoxProps>(
   ({ className, error, ...props }, ref) => (
@@ -109,12 +110,18 @@ export interface CheckboxRootProps extends Omit<
 }
 
 /** Splits the Radix tri-state value into Base UI's `checked` + `indeterminate`. */
-function checkedProps({ checked, defaultChecked, indeterminate }: CheckboxRootProps) {
+function checkedProps({
+  checked,
+  defaultChecked,
+  indeterminate,
+}: CheckboxRootProps) {
   return {
     checked: checked === undefined ? undefined : checked === true,
-    defaultChecked: defaultChecked === undefined ? undefined : defaultChecked === true,
+    defaultChecked:
+      defaultChecked === undefined ? undefined : defaultChecked === true,
     indeterminate:
-      indeterminate ?? (checked === "indeterminate" || defaultChecked === "indeterminate"),
+      indeterminate ??
+      (checked === "indeterminate" || defaultChecked === "indeterminate"),
   };
 }
 
@@ -123,7 +130,10 @@ function checkedProps({ checked, defaultChecked, indeterminate }: CheckboxRootPr
  * sibling `<label htmlFor>` pointing at `id` works.
  */
 export const CheckboxRoot = forwardRef<HTMLButtonElement, CheckboxRootProps>(
-  ({ className, error, checked, defaultChecked, indeterminate, ...props }, ref) => (
+  (
+    { className, error, checked, defaultChecked, indeterminate, ...props },
+    ref,
+  ) => (
     <CheckboxPrimitive.Root
       ref={ref}
       nativeButton
@@ -172,7 +182,12 @@ export const RadixCheckbox = ({
   error,
   ...props
 }: RadixCheckboxProps) => (
-  <div className={clsx("flex items-center", typeof className === "string" && className)}>
+  <div
+    className={clsx(
+      "flex items-center",
+      typeof className === "string" && className,
+    )}
+  >
     <CheckboxRoot id={props.name} error={error} {...props}>
       <CheckboxIndicator />
     </CheckboxRoot>

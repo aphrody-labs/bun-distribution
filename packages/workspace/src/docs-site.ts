@@ -12,7 +12,10 @@ const MARKER = "aphrody-private-documentation-site-v1";
 const escape = (value: string): string =>
   value.replace(
     /[&<>"']/g,
-    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ]!,
   );
 const inside = (base: string, path: string): boolean =>
   path === base ||
@@ -33,7 +36,8 @@ async function noSymlinks(path: string): Promise<void> {
   for (;;) {
     try {
       // oxlint-disable-next-line no-await-in-loop -- remontée séquentielle de l'arborescence : chaque parent dépend du précédent
-      if ((await lstat(cursor)).isSymbolicLink()) throw new Error(`Symlink refused: ${cursor}`);
+      if ((await lstat(cursor)).isSymbolicLink())
+        throw new Error(`Symlink refused: ${cursor}`);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     }
@@ -53,7 +57,11 @@ function sourcePath(path: string): void {
     throw new Error(`Invalid documentation path: ${path}`);
 }
 
-function localTarget(path: string, destination: string, allowed: Set<string>): string | undefined {
+function localTarget(
+  path: string,
+  destination: string,
+  allowed: Set<string>,
+): string | undefined {
   let decoded: string;
   try {
     decoded = decodeURIComponent(destination.split(/[?#]/, 1)[0] ?? "");
@@ -72,7 +80,11 @@ function localTarget(path: string, destination: string, allowed: Set<string>): s
 }
 
 /** Conservative renderer: all source HTML/MDX is escaped; only allowlisted document links become anchors. */
-function renderMarkdown(text: string, path: string, allowed: Set<string>): string {
+function renderMarkdown(
+  text: string,
+  path: string,
+  allowed: Set<string>,
+): string {
   const inline = (line: string): string => {
     let result = "";
     let cursor = 0;
@@ -102,11 +114,14 @@ function renderMarkdown(text: string, path: string, allowed: Set<string>): strin
     else {
       const heading = /^(#{1,6})\s+(.+)$/.exec(line);
       if (heading)
-        rendered.push(`<h${heading[1]!.length}>${inline(heading[2]!)}</h${heading[1]!.length}>`);
+        rendered.push(
+          `<h${heading[1]!.length}>${inline(heading[2]!)}</h${heading[1]!.length}>`,
+        );
       else if (line.trim()) rendered.push(`<p>${inline(line)}</p>`);
     }
   }
-  if (fence) rendered.push(`<pre><code>${escape(code.join("\n"))}</code></pre>`);
+  if (fence)
+    rendered.push(`<pre><code>${escape(code.join("\n"))}</code></pre>`);
   return rendered.join("\n");
 }
 
@@ -114,14 +129,18 @@ function shell(title: string, navigation: string, body: string): string {
   return `<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; object-src 'none'"><title>${escape(title)}</title><style>body{font:17px/1.65 system-ui;max-width:1100px;margin:2rem auto;padding:0 1rem;color:#243040;background:#fafbfc}nav{border-bottom:1px solid #ccd;padding-bottom:1rem}nav a{margin-right:1rem}a{color:#174f94}pre,code{background:#eef1f5;overflow-wrap:anywhere}pre{padding:1rem;overflow:auto}h1,h2,h3{line-height:1.3}</style></head><body><nav>${navigation}</nav><main>${body}</main></body></html>\n`;
 }
 
-async function filesUnder(directory: string, base = directory): Promise<string[]> {
+async function filesUnder(
+  directory: string,
+  base = directory,
+): Promise<string[]> {
   const paths: string[] = [];
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name);
     if (entry.isSymbolicLink()) throw new Error(`Symlink refused: ${path}`);
     // oxlint-disable-next-line no-await-in-loop -- parcours récursif séquentiel : l'ordre des chemins et le premier refus de symlink sont déterministes
     if (entry.isDirectory()) paths.push(...(await filesUnder(path, base)));
-    else if (entry.isFile()) paths.push(relative(base, path).split(sep).join("/"));
+    else if (entry.isFile())
+      paths.push(relative(base, path).split(sep).join("/"));
     else throw new Error(`Unsupported output entry: ${path}`);
   }
   return paths;
@@ -139,8 +158,11 @@ export async function exportDocumentationSite(
   await noSymlinks(output);
   const cache = join(root, ".cache/documentation-site");
   if (inside(root, output) && !inside(cache, output))
-    throw new Error("Output must be under .cache/documentation-site or outside the repository");
-  if (inside(output, root)) throw new Error("Output cannot contain the repository");
+    throw new Error(
+      "Output must be under .cache/documentation-site or outside the repository",
+    );
+  if (inside(output, root))
+    throw new Error("Output cannot contain the repository");
   const allowed = new Set<string>();
   const loaded: { document: SiteDocument; text: string }[] = [];
   for (const document of documents) {
@@ -166,7 +188,10 @@ export async function exportDocumentationSite(
     "llms-full.txt",
     "robots.txt",
     "export-manifest.json",
-    ...documents.flatMap((document) => [document.path, htmlPath(document.path)]),
+    ...documents.flatMap((document) => [
+      document.path,
+      htmlPath(document.path),
+    ]),
   ];
   let previous: string[] = [];
   try {
@@ -177,14 +202,18 @@ export async function exportDocumentationSite(
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
   }
   if (previous.length) {
-    const manifest = JSON.parse(await readFile(join(output, "export-manifest.json"), "utf8")) as {
+    const manifest = JSON.parse(
+      await readFile(join(output, "export-manifest.json"), "utf8"),
+    ) as {
       kind?: string;
       files?: string[];
     };
     if (
       manifest.kind !== MARKER ||
       !Array.isArray(manifest.files) ||
-      previous.some((file) => !manifest.files!.includes(file) || !generated.includes(file))
+      previous.some(
+        (file) => !manifest.files!.includes(file) || !generated.includes(file),
+      )
     )
       throw new Error("Refusing to overwrite unknown output files");
   }

@@ -23,7 +23,8 @@ import {
 import { hostTarget } from "@aphrody/runtime-sdk/target";
 const owned: string[] = [];
 afterEach(() => {
-  for (const path of owned.splice(0)) rmSync(path, { force: true, recursive: true });
+  for (const path of owned.splice(0))
+    rmSync(path, { force: true, recursive: true });
 });
 const temp = (): string => {
   const path = mkdtempSync(join(tmpdir(), "yolo-desktop-integrity-"));
@@ -32,9 +33,14 @@ const temp = (): string => {
 };
 const sha256 = (bytes: Uint8Array): string =>
   new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
-function fixture(extra: Record<string, string> = {}): { path: string; manifest: DesktopManifest } {
+function fixture(extra: Record<string, string> = {}): {
+  path: string;
+  manifest: DesktopManifest;
+} {
   const path = temp();
-  const bytes = new TextEncoder().encode("not executable; integrity-only hostile-input fixture");
+  const bytes = new TextEncoder().encode(
+    "not executable; integrity-only hostile-input fixture",
+  );
   const revision = "1".repeat(40);
   const manifest: DesktopManifest = {
     schema: "yolo.desktop-artifact/2",
@@ -80,7 +86,9 @@ test("desktop artifact refuses traversal and unverified auxiliary data", () => {
   delete manifest.files["../private"];
   writeFileSync(join(path, "manifest.json"), JSON.stringify(manifest));
   writeFileSync(join(path, "unverified-private-data"), "must not install");
-  expect(() => verifyDesktopArtifact(path)).toThrow("Unverified desktop artifact entry");
+  expect(() => verifyDesktopArtifact(path)).toThrow(
+    "Unverified desktop artifact entry",
+  );
 });
 test("desktop artifact refuses executable symlinks and incompatible targets", () => {
   const { path, manifest } = fixture();
@@ -104,7 +112,9 @@ test("desktop artifact refuses a host that is not CEF and the previous schema", 
   expect(() => verifyDesktopArtifact(path)).toThrow("incompatible");
 });
 test("host metadata refuses an absent native binary", () => {
-  expect(() => inspectDesktopBinary("/__missing_native_desktop_binary__")).toThrow();
+  expect(() =>
+    inspectDesktopBinary("/__missing_native_desktop_binary__"),
+  ).toThrow();
 });
 
 describe("CEF payload with nested paths", () => {
@@ -130,15 +140,24 @@ describe("CEF payload with nested paths", () => {
     }
   });
   test("a nested listed file verifies and a nested stray file is refused", () => {
-    const { path } = fixture({ "libcef.so": "library", "locales/en-US.pak": "strings" });
-    expect(verifyDesktopArtifact(path, false).files["locales/en-US.pak"]?.bytes).toBe(7);
+    const { path } = fixture({
+      "libcef.so": "library",
+      "locales/en-US.pak": "strings",
+    });
+    expect(
+      verifyDesktopArtifact(path, false).files["locales/en-US.pak"]?.bytes,
+    ).toBe(7);
     writeFileSync(join(path, "locales", "fr.pak"), "unlisted");
-    expect(() => verifyDesktopArtifact(path, false)).toThrow("Unverified desktop artifact entry");
+    expect(() => verifyDesktopArtifact(path, false)).toThrow(
+      "Unverified desktop artifact entry",
+    );
   });
   test("an unlisted directory and a symlinked directory are refused", () => {
     const { path } = fixture({ "locales/en-US.pak": "strings" });
     mkdirSync(join(path, "empty-dir"));
-    expect(() => verifyDesktopArtifact(path, false)).toThrow("Unverified desktop artifact entry");
+    expect(() => verifyDesktopArtifact(path, false)).toThrow(
+      "Unverified desktop artifact entry",
+    );
     rmSync(join(path, "empty-dir"), { recursive: true });
     const outside = temp();
     mkdirSync(join(outside, "locales"));
@@ -150,7 +169,9 @@ describe("CEF payload with nested paths", () => {
   test("a modified nested file fails its digest", () => {
     const { path } = fixture({ "locales/en-US.pak": "strings" });
     writeFileSync(join(path, "locales", "en-US.pak"), "STRINGS");
-    expect(() => verifyDesktopArtifact(path, false)).toThrow("integrity mismatch");
+    expect(() => verifyDesktopArtifact(path, false)).toThrow(
+      "integrity mismatch",
+    );
   });
   test("the tree digest changes with any payload file, not only the executable", () => {
     const first = fixture({ "libcef.so": "one" }).manifest;
@@ -161,19 +182,24 @@ describe("CEF payload with nested paths", () => {
 });
 
 const executable = process.env["YOLO_DESKTOP_TEST_BIN"];
-describe.skipIf(executable === undefined)("actual desktop artifact installation", () => {
-  test("real host metadata, copied artifact and idempotent verified activation agree", () => {
-    const artifact = temp();
-    const payload = temp();
-    writeFileSync(join(payload, "libcef.so"), "stand-in for the CEF library");
-    chmodSync(join(payload, "libcef.so"), 0o644);
-    const manifest = writeDesktopManifest(artifact, executable!, true, {
-      payload: { "libcef.so": join(payload, "libcef.so") },
-    });
-    expect(verifyDesktopArtifact(artifact).build).toEqual(manifest.build);
-    const home = temp();
-    const version = installDesktopArtifact(artifact, home);
-    expect(installDesktopArtifact(artifact, home)).toBe(version);
-    expect(verifyDesktopArtifact(join(home, version)).files).toEqual(manifest.files);
-  }, 30_000);
-});
+describe.skipIf(executable === undefined)(
+  "actual desktop artifact installation",
+  () => {
+    test("real host metadata, copied artifact and idempotent verified activation agree", () => {
+      const artifact = temp();
+      const payload = temp();
+      writeFileSync(join(payload, "libcef.so"), "stand-in for the CEF library");
+      chmodSync(join(payload, "libcef.so"), 0o644);
+      const manifest = writeDesktopManifest(artifact, executable!, true, {
+        payload: { "libcef.so": join(payload, "libcef.so") },
+      });
+      expect(verifyDesktopArtifact(artifact).build).toEqual(manifest.build);
+      const home = temp();
+      const version = installDesktopArtifact(artifact, home);
+      expect(installDesktopArtifact(artifact, home)).toBe(version);
+      expect(verifyDesktopArtifact(join(home, version)).files).toEqual(
+        manifest.files,
+      );
+    }, 30_000);
+  },
+);

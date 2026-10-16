@@ -20,7 +20,8 @@ import { LINK_DESTINATIONS, parseLink } from "./open-requests";
 const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
 afterEach(() => {
   clearKitCatalogsForTesting();
-  if (originalWindow) Object.defineProperty(globalThis, "window", originalWindow);
+  if (originalWindow)
+    Object.defineProperty(globalThis, "window", originalWindow);
   else Reflect.deleteProperty(globalThis, "window");
 });
 
@@ -46,9 +47,18 @@ describe("kit bridge (aphrody.kit/1)", () => {
   test("a run folds its events: lines, a question, the answer, the end", () => {
     const events: KitEvent[] = [
       { type: "say", text: "début" },
-      { type: "ask", id: 1, kind: "typed", question: "Tape OUI", expect: "OUI" },
+      {
+        type: "ask",
+        id: 1,
+        kind: "typed",
+        question: "Tape OUI",
+        expect: "OUI",
+      },
     ];
-    let state = events.reduce(reduceRun, { ...idleRun, status: "running" as const });
+    let state = events.reduce(reduceRun, {
+      ...idleRun,
+      status: "running" as const,
+    });
     expect(state.status).toBe("asking");
     expect(state.question?.expect).toBe("OUI");
     state = answered(state);
@@ -61,7 +71,10 @@ describe("kit bridge (aphrody.kit/1)", () => {
       { id: 2, text: "erreur", stream: "err" },
     ]);
     expect(
-      reduceRun({ ...idleRun, status: "running" }, { type: "exit", session: 1, code: null }).status,
+      reduceRun(
+        { ...idleRun, status: "running" },
+        { type: "exit", session: 1, code: null },
+      ).status,
     ).toBe("stopped");
   });
 
@@ -73,8 +86,12 @@ describe("kit bridge (aphrody.kit/1)", () => {
   });
 
   test("Windows-only actions are hidden elsewhere; admin needs the access pack", () => {
-    expect(visibleActions(catalog, "pc").map((action) => action.id)).toEqual(["pc.2"]);
-    expect(visibleActions({ ...catalog, platform: "win32" }, "pc")).toHaveLength(2);
+    expect(visibleActions(catalog, "pc").map((action) => action.id)).toEqual([
+      "pc.2",
+    ]);
+    expect(
+      visibleActions({ ...catalog, platform: "win32" }, "pc"),
+    ).toHaveLength(2);
     expect(kitVisible(catalog, true)).toBe(true);
     expect(kitVisible({ ...catalog, admin: false }, true)).toBe(false);
     expect(kitVisible({ admin: false }, false)).toBe(true);
@@ -93,8 +110,12 @@ describe("kit bridge (aphrody.kit/1)", () => {
           },
           invoke: async (command: string, args: Record<string, unknown>) => {
             calls.push({ command, args });
-            const channel = args.channel as { onmessage: (event: KitEvent) => void };
-            queueMicrotask(() => channel.onmessage({ type: "catalog", catalog }));
+            const channel = args.channel as {
+              onmessage: (event: KitEvent) => void;
+            };
+            queueMicrotask(() =>
+              channel.onmessage({ type: "catalog", catalog }),
+            );
             return 7;
           },
         },
@@ -111,7 +132,9 @@ describe("open requests reach the kit surfaces", () => {
     for (const destination of LINK_DESTINATIONS)
       expect(destinationRoutes[destination]).toBeString();
     expect(routeOf(parseLink("aphrody://admin")!)).toEqual({ to: "/admin" });
-    expect(routeOf(parseLink("aphrody://creator")!)).toEqual({ to: "/creator" });
+    expect(routeOf(parseLink("aphrody://creator")!)).toEqual({
+      to: "/creator",
+    });
     expect(routeOf(parseLink("aphrody://ask?q=bonjour")!)).toEqual({
       to: "/chat",
       state: { initialPrompt: "bonjour" },

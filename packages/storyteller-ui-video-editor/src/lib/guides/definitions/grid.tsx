@@ -4,11 +4,7 @@ import {
   Layout3RowIcon as LayoutThreeRowIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  GRID_MIN,
-  GRID_MAX,
-  DEFAULT_GRID_CONFIG,
-} from "../grid";
+import { GRID_MIN, GRID_MAX, DEFAULT_GRID_CONFIG } from "../grid";
 import { usePreviewStore } from "../../preview/preview-store";
 import { clampRound } from "../../utils/math";
 import { cn } from "../../utils/ui";

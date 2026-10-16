@@ -5,7 +5,14 @@ import {
   discordUserBanner,
 } from "@shenron/config/public-urls";
 import { useQuery } from "@tanstack/react-query";
-import { Crown, Server, ShieldCheck, Mail, AlertCircle, ExternalLink } from "lucide-react";
+import {
+  Crown,
+  Server,
+  ShieldCheck,
+  Mail,
+  AlertCircle,
+  ExternalLink,
+} from "lucide-react";
 import { apiAt, ApiError } from "@aphrody/admin-ui/client";
 const api = apiAt("/api/admin/account");
 
@@ -67,20 +74,31 @@ interface MemberResponse {
  *   - pas d'avatar : avatar par défaut Discord (5 variantes selon `id >> 22 % 6`)
  *   - id manquant : null → fallback initiales côté affichage
  */
-function avatarUrl(user: { id?: string; avatar?: string | null }, size = 256): string | null {
+function avatarUrl(
+  user: { id?: string; avatar?: string | null },
+  size = 256,
+): string | null {
   if (!user.id) return null;
-  return discordUserAvatar(user.id, user.avatar, { size: size as DiscordImageSize });
+  return discordUserAvatar(user.id, user.avatar, {
+    size: size as DiscordImageSize,
+  });
 }
 
-function bannerUrl(user: { id: string; banner: string | null }, size = 1024): string | null {
-  return discordUserBanner(user.id, user.banner, { size: size as DiscordImageSize });
+function bannerUrl(
+  user: { id: string; banner: string | null },
+  size = 1024,
+): string | null {
+  return discordUserBanner(user.id, user.banner, {
+    size: size as DiscordImageSize,
+  });
 }
 
 export default function AccountPage() {
   // Session locale (toujours dispo, peu importe la source d'auth)
   const session = useQuery({
     queryKey: ["auth", "me"],
-    queryFn: () => api.get<{ authenticated: boolean; user?: SessionUser }>("/auth/me"),
+    queryFn: () =>
+      api.get<{ authenticated: boolean; user?: SessionUser }>("/auth/me"),
     staleTime: 60_000,
   });
 
@@ -106,14 +124,17 @@ export default function AccountPage() {
 
   // 1. Pas encore prêt
   if (session.isLoading || me.isLoading) {
-    return <div className="card text-zinc-500">Chargement du profil Discord…</div>;
+    return (
+      <div className="card text-zinc-500">Chargement du profil Discord…</div>
+    );
   }
 
   // 2. Pas de session Discord OAuth → CTA pour se connecter
   if (me.isError || !me.data) {
     const sUser = session.data?.user;
     const isOAuthMissing =
-      me.error instanceof ApiError && (me.error.status === 401 || me.error.status === 503);
+      me.error instanceof ApiError &&
+      (me.error.status === 401 || me.error.status === 503);
     return (
       <div className="space-y-4">
         <SessionCard user={sUser} />
@@ -121,7 +142,9 @@ export default function AccountPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
             <div className="flex-1 space-y-2">
-              <h3 className="font-semibold text-amber-300">Profil Discord indisponible</h3>
+              <h3 className="font-semibold text-amber-300">
+                Profil Discord indisponible
+              </h3>
               <p className="text-sm text-zinc-300">
                 {isOAuthMissing
                   ? "Tu es connecté via le jeton admin (ou Better Auth sans scope identify). Pour afficher ton profil Discord complet (avatar HD, bannière, serveurs, rôles), connecte-toi via OAuth Discord."
@@ -151,7 +174,8 @@ export default function AccountPage() {
                     }
                   }
                   // Fallback legacy si Better Auth indispo
-                  window.location.href = "/signin?callbackUrl=%2Fadmin%2Faccount";
+                  window.location.href =
+                    "/signin?callbackUrl=%2Fadmin%2Faccount";
                 }}
                 className="btn btn-primary inline-flex w-fit items-center gap-2 text-sm"
               >
@@ -202,18 +226,33 @@ export default function AccountPage() {
             </div>
           )}
           <div className="pb-4">
-            <h2 className="text-2xl font-bold">{u.global_name ?? u.username}</h2>
+            <h2 className="text-2xl font-bold">
+              {u.global_name ?? u.username}
+            </h2>
             <p className="text-sm text-zinc-400">@{u.username}</p>
           </div>
         </div>
         <div className="grid gap-3 p-6 sm:grid-cols-2 lg:grid-cols-4">
-          <Field icon={<ShieldCheck className="h-4 w-4" />} label="ID Discord" value={u.id} mono />
+          <Field
+            icon={<ShieldCheck className="h-4 w-4" />}
+            label="ID Discord"
+            value={u.id}
+            mono
+          />
           <Field
             icon={<Mail className="h-4 w-4" />}
             label="Email"
-            value={u.email ? `${u.email}${u.verified ? " ✓" : " (non vérifié)"}` : "—"}
+            value={
+              u.email
+                ? `${u.email}${u.verified ? " ✓" : " (non vérifié)"}`
+                : "—"
+            }
           />
-          <Field icon={<Server className="h-4 w-4" />} label="Locale" value={u.locale ?? "—"} />
+          <Field
+            icon={<Server className="h-4 w-4" />}
+            label="Locale"
+            value={u.locale ?? "—"}
+          />
           <Field
             icon={<Crown className="h-4 w-4" />}
             label="Public flags"
@@ -224,7 +263,9 @@ export default function AccountPage() {
       </div>
 
       {member.isLoading && (
-        <div className="card text-sm text-zinc-500">Chargement des données guild…</div>
+        <div className="card text-sm text-zinc-500">
+          Chargement des données guild…
+        </div>
       )}
       {member.isError && (
         <div className="card border-zinc-800 text-sm text-zinc-500">
@@ -244,13 +285,19 @@ export default function AccountPage() {
             </div>
             <div>
               <dt className="text-zinc-500">Rejoint le</dt>
-              <dd>{new Date(member.data.member.joined_at).toLocaleDateString("fr-FR")}</dd>
+              <dd>
+                {new Date(member.data.member.joined_at).toLocaleDateString(
+                  "fr-FR",
+                )}
+              </dd>
             </div>
             <div>
               <dt className="text-zinc-500">Boost depuis</dt>
               <dd>
                 {member.data.member.premium_since
-                  ? new Date(member.data.member.premium_since).toLocaleDateString("fr-FR")
+                  ? new Date(
+                      member.data.member.premium_since,
+                    ).toLocaleDateString("fr-FR")
                   : "—"}
               </dd>
             </div>
@@ -258,7 +305,8 @@ export default function AccountPage() {
               <dt className="text-zinc-500">Statut</dt>
               <dd>
                 {member.data.member.communication_disabled_until &&
-                new Date(member.data.member.communication_disabled_until) > new Date() ? (
+                new Date(member.data.member.communication_disabled_until) >
+                  new Date() ? (
                   <span className="badge badge-warning">timeout actif</span>
                 ) : member.data.member.pending ? (
                   <span className="badge">en attente</span>
@@ -268,7 +316,9 @@ export default function AccountPage() {
               </dd>
             </div>
             <div className="sm:col-span-3">
-              <dt className="text-zinc-500">Rôles ({member.data.member.roles.length})</dt>
+              <dt className="text-zinc-500">
+                Rôles ({member.data.member.roles.length})
+              </dt>
               <dd className="mt-1 flex flex-wrap gap-1">
                 {member.data.member.roles.length === 0 ? (
                   <span className="text-zinc-500">aucun rôle</span>
@@ -290,7 +340,9 @@ export default function AccountPage() {
           Mes serveurs Discord
           {guilds.data ? ` (${guilds.data.guilds.length})` : ""}
         </h3>
-        {guilds.isLoading && <div className="text-sm text-zinc-500">Chargement…</div>}
+        {guilds.isLoading && (
+          <div className="text-sm text-zinc-500">Chargement…</div>
+        )}
         {guilds.isError && (
           <div className="text-sm text-zinc-500">
             Liste de serveurs indisponible
@@ -300,7 +352,9 @@ export default function AccountPage() {
         {guilds.data && (
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {guilds.data.guilds.length === 0 && (
-              <div className="text-sm text-zinc-500">Aucun serveur partagé.</div>
+              <div className="text-sm text-zinc-500">
+                Aucun serveur partagé.
+              </div>
             )}
             {guilds.data.guilds.map((g) => (
               <div
@@ -312,7 +366,11 @@ export default function AccountPage() {
                 }`}
               >
                 {g.iconUrl ? (
-                  <img src={g.iconUrl} alt="" className="h-10 w-10 rounded-full" />
+                  <img
+                    src={g.iconUrl}
+                    alt=""
+                    className="h-10 w-10 rounded-full"
+                  />
                 ) : (
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800 text-xs font-semibold">
                     {g.name
@@ -329,7 +387,9 @@ export default function AccountPage() {
                   </p>
                   <p className="text-xs text-zinc-500">
                     {g.owner && "👑 "}
-                    {g.approximate_member_count?.toLocaleString("fr-FR") ?? "?"} membres
+                    {g.approximate_member_count?.toLocaleString("fr-FR") ??
+                      "?"}{" "}
+                    membres
                     {g.isCurrent && " · serveur du bot"}
                   </p>
                 </div>
@@ -369,7 +429,9 @@ function SessionCard({ user }: { user: SessionUser | undefined }) {
         )}
         <div className="space-y-1 text-sm">
           <div className="font-semibold">{user.username ?? "Utilisateur"}</div>
-          {user.id && <div className="font-mono text-xs text-zinc-500">{user.id}</div>}
+          {user.id && (
+            <div className="font-mono text-xs text-zinc-500">{user.id}</div>
+          )}
           {user.email && <div className="text-zinc-400">{user.email}</div>}
           <div className="text-xs">
             <span className="badge">{sourceLabel[user.source]}</span>

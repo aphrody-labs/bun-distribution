@@ -61,19 +61,26 @@ export interface Cli {
   /** Run and return stdout; throws with stderr when the command fails. */
   text(args: readonly string[], options?: RunOptions): string;
   /** Pure source projection; shares the native Web parser without network or filesystem access. */
-  dragonBall<T = unknown>(html: string, options: DragonBallProjectionOptions): T;
+  dragonBall<T = unknown>(
+    html: string,
+    options: DragonBallProjectionOptions,
+  ): T;
   /** Install console_error_panic_hook in browser environments for readable panic traces. */
   initPanicHook(): void;
 }
 
 const exec = (args: readonly string[], options: RunOptions = {}): Outcome =>
-  JSON.parse(run([...args], options.stdin ?? "", JSON.stringify(options.files ?? {}))) as Outcome;
+  JSON.parse(
+    run([...args], options.stdin ?? "", JSON.stringify(options.files ?? {})),
+  ) as Outcome;
 
 function open(): Cli {
   const text = (args: readonly string[], options?: RunOptions): string => {
     const out = exec(args, options);
     if (out.code !== 0)
-      throw new Error(out.stderr.trim() || `aphrody pure exited with ${out.code}`);
+      throw new Error(
+        out.stderr.trim() || `aphrody pure exited with ${out.code}`,
+      );
     return out.stdout;
   };
   return {
@@ -83,7 +90,10 @@ function open(): Cli {
     text,
     json: <T = unknown>(args: readonly string[], options?: RunOptions) =>
       JSON.parse(text(args, options)) as T,
-    dragonBall: <T = unknown>(html: string, options: DragonBallProjectionOptions) =>
+    dragonBall: <T = unknown>(
+      html: string,
+      options: DragonBallProjectionOptions,
+    ) =>
       JSON.parse(
         text(
           [
@@ -114,13 +124,17 @@ function open(): Cli {
  * Instantiate the module. In a browser pass nothing (the `.wasm` is fetched next to the glue through
  * `import.meta.url`) or a URL/Response; in Bun/Node pass the bytes.
  */
-export async function loadCliWasm(source?: InitInput | Promise<InitInput>): Promise<Cli> {
+export async function loadCliWasm(
+  source?: InitInput | Promise<InitInput>,
+): Promise<Cli> {
   await init(source === undefined ? undefined : { module_or_path: source });
   return open();
 }
 
 /** Synchronous variant for hosts that already hold the bytes or a compiled module. */
-export function loadCliWasmSync(module: BufferSource | WebAssembly.Module): Cli {
+export function loadCliWasmSync(
+  module: BufferSource | WebAssembly.Module,
+): Cli {
   initSync({ module });
   return open();
 }

@@ -1,2 +1,1 @@
-
-export * from './lib/menu-icon-selector';
+export * from "./lib/menu-icon-selector";

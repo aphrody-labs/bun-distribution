@@ -52,7 +52,11 @@ export function trackDuration(track: PetTrack): number {
  * The frame of `track` shown `elapsedMs` after it started. Looping tracks wrap; a single pass
  * holds its last frame once elapsed. Still tracks always show their first frame.
  */
-export function frameAt(track: PetTrack, elapsedMs: number, loop = true): PetFrame {
+export function frameAt(
+  track: PetTrack,
+  elapsedMs: number,
+  loop = true,
+): PetFrame {
   const frames = track.frames;
   const last = frames[frames.length - 1];
   if (!last) throw new Error("pet track without frames");
@@ -72,8 +76,14 @@ export function frameAt(track: PetTrack, elapsedMs: number, loop = true): PetFra
  * The gaze pose for a pointer at (`dx`, `dy`) from the pet's eyes (screen axes: y grows
  * downwards). Inside `deadzone` pixels the neutral pose is returned.
  */
-export function gazeFrame(dx: number, dy: number, deadzone = 24, data: PetData = PET): PetFrame {
-  const neutral = data.tracks["look-neutral"]?.frames[0] ?? data.tracks.idle?.frames[0];
+export function gazeFrame(
+  dx: number,
+  dy: number,
+  deadzone = 24,
+  data: PetData = PET,
+): PetFrame {
+  const neutral =
+    data.tracks["look-neutral"]?.frames[0] ?? data.tracks.idle?.frames[0];
   if (Math.hypot(dx, dy) < deadzone || data.directions.length === 0) {
     if (!neutral) throw new Error("pet without a neutral pose");
     return neutral;
@@ -81,14 +91,19 @@ export function gazeFrame(dx: number, dy: number, deadzone = 24, data: PetData =
   // 0 degrees = up, clockwise, as in the atlas ring.
   const degrees = (Math.atan2(dx, -dy) * 180) / Math.PI;
   const step = 360 / data.directions.length;
-  const index = Math.round((((degrees % 360) + 360) % 360) / step) % data.directions.length;
+  const index =
+    Math.round((((degrees % 360) + 360) % 360) / step) % data.directions.length;
   const frame = data.directions[index];
   if (!frame) throw new Error("gaze index out of range");
   return frame;
 }
 
 /** CSS background geometry that shows `frame` of an atlas scaled by `scale`. */
-export function spriteStyle(frame: PetFrame, scale: number, atlas: PetAtlas = PET.atlas) {
+export function spriteStyle(
+  frame: PetFrame,
+  scale: number,
+  atlas: PetAtlas = PET.atlas,
+) {
   return {
     width: `${frame.w * scale}px`,
     height: `${frame.h * scale}px`,

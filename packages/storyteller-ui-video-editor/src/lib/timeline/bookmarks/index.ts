@@ -21,4 +21,3 @@ export {
   bookmarkNotesPreviewOverlay,
   getBookmarkPreviewOverlaySource,
 } from "./preview-overlay-source";
-

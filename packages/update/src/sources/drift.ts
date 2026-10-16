@@ -137,7 +137,8 @@ export function cargoGitRemotes(c: Ctx): GitRemote[] {
   return [...repos].map(([url, pins]) => {
     const head = lsRemote(url).head;
     const pinned = [...pins].filter(Boolean);
-    const line = root.split("\n").find((l) => l.includes(url) && /git\s*=/.test(l)) ?? "";
+    const line =
+      root.split("\n").find((l) => l.includes(url) && /git\s*=/.test(l)) ?? "";
     const how: GitRemote["how"] = !line
       ? "transitive"
       : /\btag\s*=/.test(line)
@@ -145,7 +146,8 @@ export function cargoGitRemotes(c: Ctx): GitRemote[] {
         : /\brev\s*=/.test(line)
           ? "rev"
           : "branch";
-    const behind = !!head && !pinned.some((p) => head.startsWith(p.slice(0, 10)));
+    const behind =
+      !!head && !pinned.some((p) => head.startsWith(p.slice(0, 10)));
     return {
       url,
       pinned: pinned.map((p) => p.slice(0, 10)),
@@ -182,7 +184,10 @@ async function ghJson(path: string): Promise<any> {
   return res.json();
 }
 
-export async function forkInfo(repo: string, declaredParent?: string): Promise<ForkInfo> {
+export async function forkInfo(
+  repo: string,
+  declaredParent?: string,
+): Promise<ForkInfo> {
   try {
     const r = await ghJson(`/repos/${repo}`);
     if (!r.fork || !r.parent) {
@@ -220,14 +225,24 @@ export function repoState(cwd: string): string[] {
   let up = git(["rev-list", "--left-right", "--count", "@{u}...HEAD"], cwd);
   if (up.status !== 0) {
     // No tracking branch: fall back to <remote>/<branch> for each remote.
-    for (const remote of git(["remote"], cwd).stdout.split("\n").filter(Boolean)) {
-      up = git(["rev-list", "--left-right", "--count", `${remote}/${branch}...HEAD`], cwd);
+    for (const remote of git(["remote"], cwd)
+      .stdout.split("\n")
+      .filter(Boolean)) {
+      up = git(
+        ["rev-list", "--left-right", "--count", `${remote}/${branch}...HEAD`],
+        cwd,
+      );
       if (up.status === 0) break;
     }
   }
-  const [behind, ahead] = up.status === 0 ? up.stdout.trim().split(/\s+/) : ["?", "?"];
-  const dirty = git(["status", "--porcelain"], cwd).stdout.split("\n").filter(Boolean).length;
-  const stash = git(["stash", "list"], cwd).stdout.split("\n").filter(Boolean).length;
+  const [behind, ahead] =
+    up.status === 0 ? up.stdout.trim().split(/\s+/) : ["?", "?"];
+  const dirty = git(["status", "--porcelain"], cwd)
+    .stdout.split("\n")
+    .filter(Boolean).length;
+  const stash = git(["stash", "list"], cwd)
+    .stdout.split("\n")
+    .filter(Boolean).length;
   out.push(
     `branch ${branch}: ${ahead} ahead / ${behind} behind upstream, ${dirty} changed path(s), ${stash} stash(es)`,
   );
@@ -254,7 +269,11 @@ export function replaceInBlock(
   const block = text.slice(start, next < 0 ? undefined : next);
   const re = new RegExp(`("${field}":\\s*")${from.replace(/[.+]/g, "\\$&")}"`);
   if (!re.test(block)) throw new Error(`${id}: ${field} ${from} not found`);
-  return text.slice(0, start) + block.replace(re, `$1${to}"`) + (next < 0 ? "" : text.slice(next));
+  return (
+    text.slice(0, start) +
+    block.replace(re, `$1${to}"`) +
+    (next < 0 ? "" : text.slice(next))
+  );
 }
 
 export async function bump(c: Ctx, only: string | undefined): Promise<number> {
@@ -262,9 +281,13 @@ export async function bump(c: Ctx, only: string | undefined): Promise<number> {
   const original = c.read(file);
   const manifest = parseManifest(original);
   const root = resolveSourceRoot(c.root, manifest, undefined);
-  const targets = manifest.sources.filter((s) => s.pinned && !s.hold && (!only || s.id === only));
+  const targets = manifest.sources.filter(
+    (s) => s.pinned && !s.hold && (!only || s.id === only),
+  );
   if (only && !targets.length) {
-    console.error(`bump: ${only} is not a bumpable pinned source (unpinned or held)`);
+    console.error(
+      `bump: ${only} is not a bumpable pinned source (unpinned or held)`,
+    );
     return 2;
   }
   let failures = 0;
@@ -272,7 +295,9 @@ export async function bump(c: Ctx, only: string | undefined): Promise<number> {
     const target =
       s.kind === "crate"
         ? // oxlint-disable-next-line no-await-in-loop -- drift probes run one source at a time: each syncs a shared checkout and the registries rate-limit
-          await registries.crate(s.crate!, s.version!.split(".")[0]).catch(() => undefined)
+          await registries
+            .crate(s.crate!, s.version!.split(".")[0])
+            .catch(() => undefined)
         : refHead(s.url!, s.ref ?? "HEAD");
     const current = s.kind === "crate" ? s.version! : s.commit!;
     if (!target || target === current) {
@@ -318,7 +343,8 @@ export async function bump(c: Ctx, only: string | undefined): Promise<number> {
       await syncSource(c.root, root, next);
       // oxlint-disable-next-line no-await-in-loop -- each source is applied to the same root checkout in turn; the next sync depends on the previous result
       const row = await inspect(root, next);
-      if (row.state !== "ok") throw new Error(`state ${row.state}: ${row.detail}`);
+      if (row.state !== "ok")
+        throw new Error(`state ${row.state}: ${row.detail}`);
       console.log(`done   ${s.id}; previous checkout kept at ${kept}`);
     } catch (e) {
       console.error(`ROLLBACK ${s.id}: ${(e as Error).message}`);
@@ -333,7 +359,9 @@ export async function bump(c: Ctx, only: string | undefined): Promise<number> {
       .split("\n")
       .filter((l) =>
         targets.some((s) =>
-          new RegExp(`\\.\\./source/${s.id.replace(/[.+]/g, "\\$&")}["/]`).test(l),
+          new RegExp(`\\.\\./source/${s.id.replace(/[.+]/g, "\\$&")}["/]`).test(
+            l,
+          ),
         ),
       )
       .map((l) => l.split("=")[0]!.trim());
@@ -398,14 +426,18 @@ export async function runSources(c: Ctx, args: string[]): Promise<number> {
         if (f.pinKeys?.upstreamCommit && f.parent && i.branch) {
           const live = refHead(`https://github.com/${f.parent}`, i.branch);
           const recorded = String(
-            c.jsonFile<Record<string, string>>(f.pinFile ?? "", {})[f.pinKeys.upstreamCommit] ?? "",
+            c.jsonFile<Record<string, string>>(f.pinFile ?? "", {})[
+              f.pinKeys.upstreamCommit
+            ] ?? "",
           );
           if (live && recorded) {
             const gap =
               live === recorded
                 ? undefined
                 : // oxlint-disable-next-line no-await-in-loop -- GitHub compare calls are sequential (API rate limits); the report keeps fork order
-                  await ghJson(`/repos/${f.parent}/compare/${recorded}...${live}`).then(
+                  await ghJson(
+                    `/repos/${f.parent}/compare/${recorded}...${live}`,
+                  ).then(
                     (x) => x.ahead_by as number,
                     () => undefined,
                   );
@@ -417,7 +449,9 @@ export async function runSources(c: Ctx, args: string[]): Promise<number> {
         if (f.pinFile && c.exists(f.pinFile)) {
           const pin = c.jsonFile<Record<string, string>>(f.pinFile, {});
           for (const [label, key] of Object.entries(f.pinKeys ?? {}))
-            console.log(`       ${f.pinFile} ${label}: ${String(pin[key] ?? "?").slice(0, 10)}`);
+            console.log(
+              `       ${f.pinFile} ${label}: ${String(pin[key] ?? "?").slice(0, 10)}`,
+            );
         }
       }
       return 0;
@@ -438,12 +472,16 @@ export async function runSources(c: Ctx, args: string[]): Promise<number> {
     }
     case "pull": {
       // Fast-forward tracked git checkouts. Cargo path dependencies are skipped unless --deps (a pull can break the build).
-      const manifest = parseManifest(c.read("tools/config/upstream-sources.json"));
+      const manifest = parseManifest(
+        c.read("tools/config/upstream-sources.json"),
+      );
       const root = resolveSourceRoot(c.root, manifest, undefined);
       const withDeps = rest.includes("--deps");
       let failed = 0;
       let text = c.read("tools/config/upstream-sources.json");
-      for (const s of manifest.sources.filter((x) => x.kind === "git" && !x.pinned)) {
+      for (const s of manifest.sources.filter(
+        (x) => x.kind === "git" && !x.pinned,
+      )) {
         const dir = join(root, s.id);
         if (!existsSync(join(dir, ".git"))) {
           console.log(`skip   ${s.id} (no checkout)`);

@@ -1,5 +1,5 @@
-import { forwardRef } from 'react';
-import type { LucideIcon, LucideProps } from 'lucide-react';
+import { forwardRef } from "react";
+import type { LucideIcon, LucideProps } from "lucide-react";
 
 /**
  * Renders an icon chosen at runtime (`icon={active ? PauseIcon : PlayIcon}`,
@@ -7,12 +7,12 @@ import type { LucideIcon, LucideProps } from 'lucide-react';
  * directly instead: `<PlayIcon className="..." />`.
  */
 
-export interface DynamicIconProps extends Omit<LucideProps, 'ref'> {
+export interface DynamicIconProps extends Omit<LucideProps, "ref"> {
   icon: LucideIcon;
 }
 
 export const DynamicIcon = forwardRef<SVGSVGElement, DynamicIconProps>(
   function DynamicIcon({ icon: IconComponent, ...props }, ref) {
     return <IconComponent ref={ref} {...props} />;
-  }
+  },
 );

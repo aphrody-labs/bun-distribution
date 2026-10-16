@@ -25,7 +25,9 @@ export interface GracefulShutdownConfig {
  * are shut down in predictable order within a safety deadline, preventing ghost "Online"
  * bot presences or dangling TCP connections.
  */
-export function registerGracefulShutdown(config: GracefulShutdownConfig): () => void {
+export function registerGracefulShutdown(
+  config: GracefulShutdownConfig,
+): () => void {
   const logger = config.logger ?? console;
   const timeoutMs = config.timeoutMs ?? 15_000;
   const exitProcess = config.exitProcess ?? true;
@@ -41,7 +43,9 @@ export function registerGracefulShutdown(config: GracefulShutdownConfig): () => 
     );
 
     const hardStop = setTimeout(() => {
-      logger.error?.("[discord-kit] Graceful shutdown deadline exceeded — forcing exit");
+      logger.error?.(
+        "[discord-kit] Graceful shutdown deadline exceeded — forcing exit",
+      );
       if (exitProcess) process.exit(1);
     }, timeoutMs);
     hardStop.unref?.();
@@ -52,7 +56,9 @@ export function registerGracefulShutdown(config: GracefulShutdownConfig): () => 
     if (config.steps) {
       for (const step of config.steps) {
         try {
-          logger.info?.(`[discord-kit] Shutdown step: stopping ${step.name}...`);
+          logger.info?.(
+            `[discord-kit] Shutdown step: stopping ${step.name}...`,
+          );
           // oxlint-disable-next-line no-await-in-loop -- arrêt ordonné : chaque étape de nettoyage doit se terminer avant la suivante
           await step.action();
         } catch (err) {

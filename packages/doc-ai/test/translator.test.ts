@@ -79,7 +79,9 @@ describe("translateMarkdownOffline (deterministic no-op default)", () => {
   });
 
   test("applies an injected segment translator while preserving structure", async () => {
-    const out = await translateMarkdownOffline(DOC, "fr", { segmentTranslator: upper });
+    const out = await translateMarkdownOffline(DOC, "fr", {
+      segmentTranslator: upper,
+    });
     // translatable text is transformed
     expect(out).toContain("# HEADING ONE");
     expect(out).toContain("- LIST ITEM ONE");
@@ -106,7 +108,9 @@ describe("translateMarkdownOffline (deterministic no-op default)", () => {
 
   test("preserves quoting of quoted frontmatter values", async () => {
     const doc = `---\ntitle: "Quoted Title"\n---\n\nbody\n`;
-    const out = await translateMarkdownOffline(doc, "fr", { segmentTranslator: upper });
+    const out = await translateMarkdownOffline(doc, "fr", {
+      segmentTranslator: upper,
+    });
     expect(out).toContain('title: "QUOTED TITLE"');
   });
 
@@ -172,9 +176,9 @@ describe("requireOnline", () => {
     await expect(
       translateMarkdown(DOC, "fr", { client: null, requireOnline: true }),
     ).rejects.toThrow("requires a configured LLM client");
-    await expect(translateMarkdown(DOC, "fr", { env: {}, requireOnline: true })).rejects.toThrow(
-      "requires a configured LLM client",
-    );
+    await expect(
+      translateMarkdown(DOC, "fr", { env: {}, requireOnline: true }),
+    ).rejects.toThrow("requires a configured LLM client");
   });
 
   test("propagates client errors without invoking offline fallback", async () => {

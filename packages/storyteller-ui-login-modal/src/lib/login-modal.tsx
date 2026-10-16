@@ -7,7 +7,12 @@ import type { UserInfo } from "@storyteller/api";
 import { DesktopLoginBridge } from "./DesktopLoginBridge";
 import { LoginSuccess } from "./LoginSuccess";
 import { ArtCraftSignUp } from "./artcraft-signup";
-import { getNativeLoginSession, passwordLogin, passwordSignup, isDesktopLoginError } from "./NativeLoginBridge";
+import {
+  getNativeLoginSession,
+  passwordLogin,
+  passwordSignup,
+  isDesktopLoginError,
+} from "./NativeLoginBridge";
 import { useLoginModalStore } from "./useLoginModalStore";
 
 // Webapp auth-showcase video (swap by passing `videoUrl`).
@@ -61,28 +66,36 @@ export function LoginModal({
   useEffect(() => {
     const generation = ++authGeneration.current;
     let active = true;
-    getNativeLoginSession().then((user) => {
-      if (!active || generation !== authGeneration.current) return;
-      if (user) {
-        setIsLoggedInArtCraft(true);
-        authSuccess.current?.(user);
-        closeModal();
-      } else {
-        setIsLoading(false);
-        setIsSignUp(initialIsSignUp);
-        setErrorMessage("");
-        setShowDiscord(false);
-        setShowSuccess(false);
-        setLoggedInUsername(null);
-        setIsLoggedInArtCraft(false);
+    getNativeLoginSession()
+      .then((user) => {
+        if (!active || generation !== authGeneration.current) return;
+        if (user) {
+          setIsLoggedInArtCraft(true);
+          authSuccess.current?.(user);
+          closeModal();
+        } else {
+          setIsLoading(false);
+          setIsSignUp(initialIsSignUp);
+          setErrorMessage("");
+          setShowDiscord(false);
+          setShowSuccess(false);
+          setLoggedInUsername(null);
+          setIsLoggedInArtCraft(false);
+          useLoginModalStore.getState().openModal();
+        }
+      })
+      .catch((error) => {
+        if (!active || generation !== authGeneration.current) return;
+        setErrorMessage(
+          isDesktopLoginError(error)
+            ? error.message
+            : "Unable to check your account. Please sign in again.",
+        );
         useLoginModalStore.getState().openModal();
-      }
-    }).catch((error) => {
-      if (!active || generation !== authGeneration.current) return;
-      setErrorMessage(isDesktopLoginError(error) ? error.message : "Unable to check your account. Please sign in again.");
-      useLoginModalStore.getState().openModal();
-    });
-    return () => { active = false; };
+      });
+    return () => {
+      active = false;
+    };
   }, [recheckTrigger, closeModal, initialIsSignUp]);
 
   useEffect(() => {
@@ -122,7 +135,7 @@ export function LoginModal({
     username: string,
     email: string,
     password: string,
-    passwordConfirmation: string
+    passwordConfirmation: string,
   ) => {
     setIsLoading(true);
     setErrorMessage("");
@@ -140,7 +153,12 @@ export function LoginModal({
         handleLoginSuccess(user);
       }
     } catch (error) {
-      if (generation === authGeneration.current) setErrorMessage(isDesktopLoginError(error) ? error.message : "An unexpected error occurred. Please try again.");
+      if (generation === authGeneration.current)
+        setErrorMessage(
+          isDesktopLoginError(error)
+            ? error.message
+            : "An unexpected error occurred. Please try again.",
+        );
     } finally {
       if (generation === authGeneration.current) setIsLoading(false);
     }
@@ -207,7 +225,11 @@ export function LoginModal({
   const inOnboarding = showDiscord || showSuccess;
 
   return (
-    <Transition appear show={isOpen} afterLeave={() => setLoggedInUsername(null)}>
+    <Transition
+      appear
+      show={isOpen}
+      afterLeave={() => setLoggedInUsername(null)}
+    >
       <div className="fixed inset-0 z-[100]">
         <TransitionChild
           enter="ease-out duration-300"
@@ -258,7 +280,9 @@ export function LoginModal({
                               ) : (
                                 <>
                                   Welcome{" "}
-                                  <span className="font-serif-italic">back.</span>
+                                  <span className="font-serif-italic">
+                                    back.
+                                  </span>
                                 </>
                               )}
                             </h1>
@@ -269,7 +293,15 @@ export function LoginModal({
                             </p>
                           </div>
 
-                          {!isSignUp && <DesktopLoginBridge onActiveChange={setIsChallengeActive} onStart={() => { authGeneration.current += 1; }} onSuccess={handleLoginSuccess} />}
+                          {!isSignUp && (
+                            <DesktopLoginBridge
+                              onActiveChange={setIsChallengeActive}
+                              onStart={() => {
+                                authGeneration.current += 1;
+                              }}
+                              onSuccess={handleLoginSuccess}
+                            />
+                          )}
                           {!isSignUp && !isChallengeActive && (
                             <div className="mb-6 flex items-center gap-4 before:h-px before:flex-1 before:bg-white/15 after:h-px after:flex-1 after:bg-white/15">
                               <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/40">
@@ -277,13 +309,15 @@ export function LoginModal({
                               </span>
                             </div>
                           )}
-                          {!isChallengeActive && <ArtCraftSignUp
-                            onSubmit={handleAuthSubmit}
-                            isSignUp={isSignUp}
-                            onToggleMode={() => setIsSignUp((prev) => !prev)}
-                            errorMessage={errorMessage}
-                            isLoading={isLoading}
-                          />}
+                          {!isChallengeActive && (
+                            <ArtCraftSignUp
+                              onSubmit={handleAuthSubmit}
+                              isSignUp={isSignUp}
+                              onToggleMode={() => setIsSignUp((prev) => !prev)}
+                              errorMessage={errorMessage}
+                              isLoading={isLoading}
+                            />
+                          )}
                         </div>
                       </div>
 

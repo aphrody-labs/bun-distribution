@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { configureLab, type LabApi, type LabPolicy, type Channel } from "../../src/lab/ai-lab.ts";
+import {
+  configureLab,
+  type LabApi,
+  type LabPolicy,
+  type Channel,
+} from "../../src/lab/ai-lab.ts";
 
 const policy: LabPolicy = {
   guildId: "guild",
@@ -8,8 +13,15 @@ const policy: LabPolicy = {
   researcherRole: "Researcher",
   adminRole: "Admin",
   categories: [
-    { name: "Lab", channels: [{ name: "assistant", topic: "Ask", guide: "Welcome" }] },
-    { name: "Ops", adminOnly: true, channels: [{ name: "ops", topic: "Admin" }] },
+    {
+      name: "Lab",
+      channels: [{ name: "assistant", topic: "Ask", guide: "Welcome" }],
+    },
+    {
+      name: "Ops",
+      adminOnly: true,
+      channels: [{ name: "ops", topic: "Admin" }],
+    },
   ],
   assistant: {
     profile: "aphrody",
@@ -22,11 +34,21 @@ const policy: LabPolicy = {
 function fake(owner = "owner") {
   const channels: Channel[] = [{ id: "existing", name: "general", type: 0 }];
   const roles = [{ id: "admin", name: "Admin", permissions: "8" }];
-  const writes: { path: string; method: string; body: Record<string, unknown> }[] = [];
+  const writes: {
+    path: string;
+    method: string;
+    body: Record<string, unknown>;
+  }[] = [];
   let count = 0;
-  const api: LabApi = async <T>(path: string, method = "GET", body?: unknown): Promise<T> => {
-    if (method !== "GET") writes.push({ path, method, body: body as Record<string, unknown> });
-    if (path === "/guilds/guild") return { id: "guild", owner_id: owner, name: "AI Lab" } as T;
+  const api: LabApi = async <T>(
+    path: string,
+    method = "GET",
+    body?: unknown,
+  ): Promise<T> => {
+    if (method !== "GET")
+      writes.push({ path, method, body: body as Record<string, unknown> });
+    if (path === "/guilds/guild")
+      return { id: "guild", owner_id: owner, name: "AI Lab" } as T;
     if (path === "/users/@me") return { id: "bot" } as T;
     if (path.endsWith("/roles")) {
       if (method === "POST") {
@@ -57,7 +79,9 @@ describe("Discord AI lab policy", () => {
   });
   test("owner mismatch refuses every mutation", async () => {
     const f = fake("stranger");
-    await expect(configureLab(policy, f.api, true)).rejects.toThrow("owner mismatch");
+    await expect(configureLab(policy, f.api, true)).rejects.toThrow(
+      "owner mismatch",
+    );
     expect(f.writes).toHaveLength(0);
   });
   test("existing channels survive and admin category excludes researchers", async () => {
@@ -67,7 +91,9 @@ describe("Discord AI lab policy", () => {
     expect(f.writes.some((w) => w.method === "DELETE")).toBe(false);
     const ops = f.writes.find((w) => w.body.name === "Ops")!;
     expect(
-      (ops.body.permission_overwrites as { id: string }[]).some((o) => o.id === "researcher"),
+      (ops.body.permission_overwrites as { id: string }[]).some(
+        (o) => o.id === "researcher",
+      ),
     ).toBe(false);
   });
   test("rerun reuses objects and does not repost guides", async () => {

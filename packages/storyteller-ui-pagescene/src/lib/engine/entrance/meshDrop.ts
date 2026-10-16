@@ -1,6 +1,12 @@
 import * as THREE from "three";
 import type { EntranceHandle } from "./types";
-import { clamp01, easeInQuart, easeOutBack, easeOutCubic, lerp } from "./easing";
+import {
+  clamp01,
+  easeInQuart,
+  easeOutBack,
+  easeOutCubic,
+  lerp,
+} from "./easing";
 
 // Transform-based "drop onto the ground" entrance for non-splat objects (GLB
 // models, primitives, image planes). Replaces the earlier fragment-clip reveal,
@@ -25,7 +31,9 @@ export function buildMeshDrop(object: THREE.Object3D): EntranceHandle | null {
 
   // Size drives the hop height and the ground-anchor compensation so the motion
   // reads the same for a teacup and a building.
-  const size = new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3());
+  const size = new THREE.Box3()
+    .setFromObject(object)
+    .getSize(new THREE.Vector3());
   const maxDim = Math.max(size.x, size.y, size.z) || 1;
   const halfHeight = Math.max(size.y * 0.5, 1e-3);
   const peak = THREE.MathUtils.clamp(0.22 * maxDim, 0.08, 0.45);

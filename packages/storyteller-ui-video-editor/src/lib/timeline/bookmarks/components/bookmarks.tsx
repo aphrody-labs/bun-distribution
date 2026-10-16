@@ -24,7 +24,10 @@ import { Button } from "../../../components/ui/button";
 import { Label } from "../../../components/ui/label";
 import { uppercase } from "../../../utils/string";
 import { clamp, formatNumberForDisplay } from "../../../utils/math";
-import { timelineTimeToPixels, timelineTimeToSnappedPixels } from "../../pixel-utils";
+import {
+  timelineTimeToPixels,
+  timelineTimeToSnappedPixels,
+} from "../../pixel-utils";
 import {
   type MediaTime,
   mediaTimeFromSeconds,

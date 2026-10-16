@@ -2,7 +2,10 @@ import * as React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { HTMLMotionProps, Transition, Variants } from "motion/react";
 import { m3Easings } from "../easings";
-import { motionVariants, useM3ReducedMotion } from "../hooks/useM3ReducedMotion";
+import {
+  motionVariants,
+  useM3ReducedMotion,
+} from "../hooks/useM3ReducedMotion";
 
 export interface M3FadeThroughProps extends HTMLMotionProps<"div"> {
   /**
@@ -58,7 +61,10 @@ export const M3FadeThrough: React.FC<M3FadeThroughProps> = ({
     },
   };
 
-  const resolvedVariants = motionVariants(customVariants ?? defaultVariants, reduced);
+  const resolvedVariants = motionVariants(
+    customVariants ?? defaultVariants,
+    reduced,
+  );
 
   return (
     <AnimatePresence mode="wait">

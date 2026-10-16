@@ -5,7 +5,12 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { DragonBallLoader } from "@/components/DragonBall";
 import { Enregistrer, Palette, Reinitialiser } from "@/components/icones";
-import { BancNuages, CadreCase, Etoile, PastilleTome } from "@/components/MotifsCouverture";
+import {
+  BancNuages,
+  CadreCase,
+  Etoile,
+  PastilleTome,
+} from "@/components/MotifsCouverture";
 import {
   DEFAULT_SITE_THEME,
   THEME_COLORS,
@@ -39,17 +44,24 @@ import styles from "./DesignEditor.module.css";
 const HEX = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 const GROUPS: readonly { title: string; keys: readonly ThemeColorKey[] }[] = [
   { title: "Signature imprimée", keys: ["orange", "yellow", "red"] },
-  { title: "Papier et surfaces", keys: ["bg", "card", "border", "blue", "blueLight"] },
+  {
+    title: "Papier et surfaces",
+    keys: ["bg", "card", "border", "blue", "blueLight"],
+  },
   { title: "Énergie et états", keys: ["orangeDark", "ember", "ki", "amber"] },
 ];
 
 async function loadTheme(): Promise<{ theme: SiteTheme }> {
-  const response = await fetch("/api/theme-config", { credentials: "same-origin" });
+  const response = await fetch("/api/theme-config", {
+    credentials: "same-origin",
+  });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return response.json();
 }
 
-async function saveTheme(theme: SiteTheme): Promise<{ ok: boolean; theme: SiteTheme }> {
+async function saveTheme(
+  theme: SiteTheme,
+): Promise<{ ok: boolean; theme: SiteTheme }> {
   const response = await fetch("/api/theme-config", {
     method: "PUT",
     credentials: "same-origin",
@@ -70,11 +82,9 @@ function hexToRgb(hex: string): [number, number, number] | null {
       ? [...clean].map((character) => character + character).join("")
       : clean.slice(0, 6);
   if (expanded.length !== 6 || !/^[0-9a-f]{6}$/i.test(expanded)) return null;
-  return [0, 2, 4].map((index) => Number.parseInt(expanded.slice(index, index + 2), 16)) as [
-    number,
-    number,
-    number,
-  ];
+  return [0, 2, 4].map((index) =>
+    Number.parseInt(expanded.slice(index, index + 2), 16),
+  ) as [number, number, number];
 }
 
 function contrast(foreground: string, background: string): number | null {
@@ -83,7 +93,9 @@ function contrast(foreground: string, background: string): number | null {
     if (!rgb) return null;
     const channels = rgb.map((channel) => {
       const value = channel / 255;
-      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+      return value <= 0.04045
+        ? value / 12.92
+        : ((value + 0.055) / 1.055) ** 2.4;
     });
     return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
   };
@@ -163,7 +175,8 @@ function Preview({ theme }: { theme: SiteTheme }) {
       aria-labelledby="theme-preview-title"
     >
       <h2 id="theme-preview-title" className={styles.previewLabel}>
-        <Etoile taille={12} className="text-[var(--color-etoile-rouge)]" /> Épreuve avant impression
+        <Etoile taille={12} className="text-[var(--color-etoile-rouge)]" />{" "}
+        Épreuve avant impression
       </h2>
       <div className={styles.cover}>
         <BancNuages hauteur={52} opacite={0.88} />
@@ -173,23 +186,34 @@ function Preview({ theme }: { theme: SiteTheme }) {
             <span className={styles.wordmarkRed}>BALL</span>
           </h3>
           <p className={styles.coverIntro}>
-            Le brouillon applique les douze jetons sans modifier le site. Les aplats, l'encre et le
-            cadre reprennent les mesures de la couverture de référence.
+            Le brouillon applique les douze jetons sans modifier le site. Les
+            aplats, l'encre et le cadre reprennent les mesures de la couverture
+            de référence.
           </p>
         </div>
         <CadreCase largeur={620} className={styles.sceneFrame}>
           <div className={styles.scene}>
             <div className={styles.sceneCopy}>
               <h3>Une palette qui tient le combat</h3>
-              <p>Surfaces, accent principal, texte secondaire et énergie sont montrés ensemble.</p>
+              <p>
+                Surfaces, accent principal, texte secondaire et énergie sont
+                montrés ensemble.
+              </p>
               <div className={styles.previewActions}>
                 <span className={styles.previewPrimary}>Action principale</span>
-                <span className={styles.previewSecondary}>Action secondaire</span>
+                <span className={styles.previewSecondary}>
+                  Action secondaire
+                </span>
               </div>
             </div>
           </div>
         </CadreCase>
-        <PastilleTome numero="DB" taille={58} className={styles.volumeBadge} decorative />
+        <PastilleTome
+          numero="DB"
+          taille={58}
+          className={styles.volumeBadge}
+          decorative
+        />
         <div className={styles.checks} aria-label="Contrastes de la palette">
           {checks.map(([label, ratio]) => {
             const passes = ratio != null && ratio >= 4.5;
@@ -294,7 +318,11 @@ function Preview({ theme }: { theme: SiteTheme }) {
               max={7}
               label="Selecteur de Dragon Ball (Sphere Dynamique)"
             />
-            <ToriyamaProgress value={78} label="Charge d'Energie Ki (Super Saiyan)" variant="ki" />
+            <ToriyamaProgress
+              value={78}
+              label="Charge d'Energie Ki (Super Saiyan)"
+              variant="ki"
+            />
           </div>
 
           {/* Speech Bubble & Badges */}
@@ -335,7 +363,10 @@ export default function DesignEditor() {
   const query = useQuery({ queryKey: ["theme-config"], queryFn: loadTheme });
   const [theme, setTheme] = useState<SiteTheme | null>(null);
   const [savedTheme, setSavedTheme] = useState<SiteTheme | null>(null);
-  const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    msg: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!query.data?.theme) return;
@@ -353,17 +384,24 @@ export default function DesignEditor() {
     onSuccess: (result) => {
       setTheme(result.theme);
       setSavedTheme(result.theme);
-      setToast({ type: "success", msg: "Thème enregistré et appliqué à tout le site." });
+      setToast({
+        type: "success",
+        msg: "Thème enregistré et appliqué à tout le site.",
+      });
     },
-    onError: (error: Error) => setToast({ type: "error", msg: `Échec : ${error.message}` }),
+    onError: (error: Error) =>
+      setToast({ type: "error", msg: `Échec : ${error.message}` }),
   });
   const dirty = useMemo(
     () =>
-      theme != null && savedTheme != null && JSON.stringify(theme) !== JSON.stringify(savedTheme),
+      theme != null &&
+      savedTheme != null &&
+      JSON.stringify(theme) !== JSON.stringify(savedTheme),
     [theme, savedTheme],
   );
   const valid =
-    theme != null && Object.values(theme.colors).every((value) => HEX.test(value.trim()));
+    theme != null &&
+    Object.values(theme.colors).every((value) => HEX.test(value.trim()));
 
   if (query.isLoading || !theme)
     return (
@@ -372,11 +410,15 @@ export default function DesignEditor() {
       </div>
     );
   if (query.isError)
-    return <div className="text-sm text-red-400">Erreur : {String(query.error)}</div>;
+    return (
+      <div className="text-sm text-red-400">Erreur : {String(query.error)}</div>
+    );
 
   const setColor = (key: ThemeColorKey, value: string) =>
     setTheme((current) =>
-      current ? { ...current, colors: { ...current.colors, [key]: value } } : current,
+      current
+        ? { ...current, colors: { ...current.colors, [key]: value } }
+        : current,
     );
   const apply = () => {
     if (!valid) {
@@ -408,15 +450,19 @@ export default function DesignEditor() {
           </p>
           <h1>Design &amp; thème</h1>
           <p>
-            Compose la palette globale, contrôle ses contrastes dans l'épreuve, puis applique-la au
-            site entier.
+            Compose la palette globale, contrôle ses contrastes dans l'épreuve,
+            puis applique-la au site entier.
           </p>
         </div>
         <div className={styles.mastheadActions}>
           <button
             type="button"
             onClick={() => {
-              if (confirm("Réinitialiser le brouillon aux valeurs mesurées par défaut ?"))
+              if (
+                confirm(
+                  "Réinitialiser le brouillon aux valeurs mesurées par défaut ?",
+                )
+              )
                 setTheme(structuredClone(DEFAULT_SITE_THEME));
             }}
             className="btn btn-ghost text-amber-800"
@@ -430,7 +476,11 @@ export default function DesignEditor() {
             className="btn btn-primary"
           >
             <Enregistrer className="mr-1 h-4 w-4" />{" "}
-            {save.isPending ? "Application…" : dirty ? "Appliquer au site" : "À jour"}
+            {save.isPending
+              ? "Application…"
+              : dirty
+                ? "Appliquer au site"
+                : "À jour"}
           </button>
         </div>
       </header>
@@ -439,7 +489,11 @@ export default function DesignEditor() {
           {GROUPS.map((group) => (
             <fieldset className={styles.group} key={group.title}>
               <legend className={styles.groupLegend}>
-                <Etoile taille={11} className="text-[var(--color-etoile-rouge)]" /> {group.title}
+                <Etoile
+                  taille={11}
+                  className="text-[var(--color-etoile-rouge)]"
+                />{" "}
+                {group.title}
               </legend>
               <div className={styles.colorList}>
                 {group.keys.map((key) => (
@@ -453,12 +507,17 @@ export default function DesignEditor() {
               </div>
             </fieldset>
           ))}
-          <section className={styles.radiusPanel} aria-labelledby="radius-title">
+          <section
+            className={styles.radiusPanel}
+            aria-labelledby="radius-title"
+          >
             <div className={styles.radiusHead}>
               <h2 id="radius-title" className="font-bold text-white">
                 Découpe des coins
               </h2>
-              <output className={styles.radiusValue}>{theme.radius.toFixed(2)} rem</output>
+              <output className={styles.radiusValue}>
+                {theme.radius.toFixed(2)} rem
+              </output>
             </div>
             <label htmlFor="theme-radius" className="sr-only">
               Rayon des coins
@@ -472,14 +531,16 @@ export default function DesignEditor() {
               value={theme.radius}
               onChange={(event) =>
                 setTheme((current) =>
-                  current ? { ...current, radius: Number(event.target.value) } : current,
+                  current
+                    ? { ...current, radius: Number(event.target.value) }
+                    : current,
                 )
               }
               className={styles.range}
             />
             <p className="mt-2 max-w-[55ch] text-xs leading-5 text-zinc-400">
-              0 rem conserve les cases vives du manga ; les valeurs supérieures adoucissent les
-              composants d'interface.
+              0 rem conserve les cases vives du manga ; les valeurs supérieures
+              adoucissent les composants d'interface.
             </p>
           </section>
           {!valid && (

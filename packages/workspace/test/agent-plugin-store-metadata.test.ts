@@ -11,7 +11,10 @@ test("preparation preserves fusion version, canonical MCP and idempotence", () =
     const path = join(root, "aphrody");
     mkdirSync(join(path, ".claude-plugin"), { recursive: true });
     mkdirSync(join(path, "hooks/scripts"), { recursive: true });
-    writeFileSync(join(path, "hooks/scripts/session-context.ts"), "console.log('{}');\n");
+    writeFileSync(
+      join(path, "hooks/scripts/session-context.ts"),
+      "console.log('{}');\n",
+    );
     writeFileSync(
       join(path, "hooks/hooks.json"),
       JSON.stringify({
@@ -21,7 +24,8 @@ test("preparation preserves fusion version, canonical MCP and idempotence", () =
               hooks: [
                 {
                   type: "command",
-                  command: 'bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-start.sh"',
+                  command:
+                    'bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-start.sh"',
                 },
                 { type: "command", command: "custom-existing-hook" },
               ],
@@ -32,7 +36,8 @@ test("preparation preserves fusion version, canonical MCP and idempotence", () =
               hooks: [
                 {
                   type: "command",
-                  command: 'bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/permission-allow.sh"',
+                  command:
+                    'bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/permission-allow.sh"',
                 },
               ],
             },
@@ -42,7 +47,11 @@ test("preparation preserves fusion version, canonical MCP and idempotence", () =
     );
     writeFileSync(
       join(path, "plugin.json"),
-      JSON.stringify({ name: "aphrody", version: "2.2.1", description: "stale" }),
+      JSON.stringify({
+        name: "aphrody",
+        version: "2.2.1",
+        description: "stale",
+      }),
     );
     writeFileSync(
       join(path, ".claude-plugin/plugin.json"),
@@ -55,7 +64,11 @@ test("preparation preserves fusion version, canonical MCP and idempotence", () =
     );
     writeFileSync(
       join(path, ".mcp.json"),
-      JSON.stringify({ mcpServers: { aphrody: { command: "aphrody", args: ["kernel", "mcp"] } } }),
+      JSON.stringify({
+        mcpServers: {
+          aphrody: { command: "aphrody", args: ["kernel", "mcp"] },
+        },
+      }),
     );
     expect(plugins(root)[0]?.version).toBe("2.3.0");
     const before = readJson(join(path, "plugin.json"));
@@ -63,18 +76,29 @@ test("preparation preserves fusion version, canonical MCP and idempotence", () =
     expect(readJson(join(path, "plugin.json"))).toEqual(before);
     prepareStore(root, "fixture", true);
     expect(readJson(join(path, "plugin.json")).version).toBe("2.3.0");
-    expect(readJson(join(path, ".codex-plugin/plugin.json")).version).toBe("2.3.0");
-    expect(readJson(join(path, ".claude-plugin/plugin.json")).lspServers).toEqual({
+    expect(readJson(join(path, ".codex-plugin/plugin.json")).version).toBe(
+      "2.3.0",
+    );
+    expect(
+      readJson(join(path, ".claude-plugin/plugin.json")).lspServers,
+    ).toEqual({
       rust: { command: "rust-analyzer" },
     });
     expect(readJson(join(path, ".mcp.json")).mcpServers).toEqual({
       aphrody: { type: "stdio", command: "aphrody-mcp", args: [] },
     });
-    const hooks = readJson(join(path, "hooks/hooks.json")).hooks as Record<string, unknown>;
+    const hooks = readJson(join(path, "hooks/hooks.json")).hooks as Record<
+      string,
+      unknown
+    >;
     expect(hooks.PermissionRequest).toBeUndefined();
-    expect(JSON.stringify(hooks)).toContain("bun --no-install --no-env-file run");
+    expect(JSON.stringify(hooks)).toContain(
+      "bun --no-install --no-env-file run",
+    );
     expect(JSON.stringify(hooks)).toContain("custom-existing-hook");
-    expect(JSON.stringify(readJson(join(path, "hooks.json")))).not.toContain("CLAUDE_PLUGIN_ROOT");
+    expect(JSON.stringify(readJson(join(path, "hooks.json")))).not.toContain(
+      "CLAUDE_PLUGIN_ROOT",
+    );
     expect(prepareStore(root, "fixture", false)).toEqual([]);
   } finally {
     rmSync(root, { recursive: true, force: true });

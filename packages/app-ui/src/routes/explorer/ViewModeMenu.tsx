@@ -8,7 +8,8 @@ import {
 import { clsx } from "clsx";
 
 /** Vite/Bun inject `import.meta.env`; read it through a typed view so no global declaration is needed. */
-const isDevBuild = (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV === true;
+const isDevBuild =
+  (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV === true;
 
 type ViewMode = "list" | "grid" | "column" | "media" | "size" | "knowledge";
 
@@ -72,8 +73,14 @@ interface ViewModeMenuPanelProps {
   onClose?: () => void;
 }
 
-export function ViewModeMenuPanel({ viewMode, onViewModeChange, onClose }: ViewModeMenuPanelProps) {
-  const availableViews = viewOptions.filter((option) => option.id !== "knowledge" || isDevBuild);
+export function ViewModeMenuPanel({
+  viewMode,
+  onViewModeChange,
+  onClose,
+}: ViewModeMenuPanelProps) {
+  const availableViews = viewOptions.filter(
+    (option) => option.id !== "knowledge" || isDevBuild,
+  );
 
   return (
     <div
@@ -100,10 +107,16 @@ export function ViewModeMenuPanel({ viewMode, onViewModeChange, onClose }: ViewM
                 : "text-on-surface-variant",
             )}
           >
-            <Icon name={option.icon} size={24} filled={viewMode === option.id} />
+            <Icon
+              name={option.icon}
+              size={24}
+              filled={viewMode === option.id}
+            />
             <div className="flex flex-col items-center gap-0.5">
               <div className="text-label-medium">{option.label}</div>
-              <div className="text-label-small opacity-80">{option.keybind}</div>
+              <div className="text-label-small opacity-80">
+                {option.keybind}
+              </div>
             </div>
           </button>
         ))}
@@ -120,7 +133,10 @@ interface ViewModeMenuProps {
 /**
  * 4 Canonical Views button group in TopBar (Parité Spacedrive alpha 0.2 & docs/UI-DESIGN.md §3.2).
  */
-export function ViewModeMenu({ viewMode, onViewModeChange }: ViewModeMenuProps) {
+export function ViewModeMenu({
+  viewMode,
+  onViewModeChange,
+}: ViewModeMenuProps) {
   return (
     <CircleButtonGroup>
       <CircleButton

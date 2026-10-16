@@ -52,8 +52,12 @@ test("source references extract three languages deterministically without execut
     expect(ts).not.toContain("throw");
     expect(ts).not.toContain("hidden");
     expect(ts).toMatch(/SHA-256: `[a-f0-9]{64}`/);
-    expect(outputs.get("docs/apis/generated/rust-api.md")).toContain("not an exhaustive API");
-    expect(outputs.get("docs/apis/generated/rust-api.md")).toContain("//! Crate overview.");
+    expect(outputs.get("docs/apis/generated/rust-api.md")).toContain(
+      "not an exhaustive API",
+    );
+    expect(outputs.get("docs/apis/generated/rust-api.md")).toContain(
+      "//! Crate overview.",
+    );
     const py = outputs.get("docs/apis/generated/python-api.md")!;
     expect(py).toContain("def greet(name: str, *, count: int=1) -> str");
     expect(py).toContain("Client.send");
@@ -69,7 +73,11 @@ test("source references reject malformed ids, unsafe paths and escaping symlinks
   const outside = await mkdtemp(join(tmpdir(), "docs-source-outside-"));
   try {
     await writeFile(join(root, "api.ts"), "export const value: number = 1;");
-    const target = { id: "safe", language: "typescript" as const, paths: ["api.ts"] };
+    const target = {
+      id: "safe",
+      language: "typescript" as const,
+      paths: ["api.ts"],
+    };
     await Promise.all(
       [
         "../api.ts",
@@ -81,17 +89,22 @@ test("source references reject malformed ids, unsafe paths and escaping symlinks
         ".npmrc",
         "a//api.ts",
       ].map((path) =>
-        expect(generateSourceReference(root, [{ ...target, paths: [path] }])).rejects.toThrow(
-          "Unsafe",
-        ),
+        expect(
+          generateSourceReference(root, [{ ...target, paths: [path] }]),
+        ).rejects.toThrow("Unsafe"),
       ),
     );
-    await expect(generateSourceReference(root, [{ ...target, id: "../escape" }])).rejects.toThrow(
-      "Invalid",
-    );
-    await expect(generateSourceReference(root, [target, target])).rejects.toThrow("duplicate");
+    await expect(
+      generateSourceReference(root, [{ ...target, id: "../escape" }]),
+    ).rejects.toThrow("Invalid");
+    await expect(
+      generateSourceReference(root, [target, target]),
+    ).rejects.toThrow("duplicate");
     await mkdir(join(outside, "source"));
-    await writeFile(join(outside, "source", "api.ts"), "export const secret = 1;");
+    await writeFile(
+      join(outside, "source", "api.ts"),
+      "export const secret = 1;",
+    );
     await symlink(join(outside, "source"), join(root, "linked"));
     await expect(
       generateSourceReference(root, [{ ...target, paths: ["linked/api.ts"] }]),

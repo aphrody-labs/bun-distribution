@@ -16,7 +16,9 @@ import { m3BunBuild } from "@aphrody/m3-config/bun-build";
 
 const REPO_ROOT = resolve(import.meta.dir, "../../../../docs/aphrody");
 const UI_ROOT = join(
-  resolve(process.env.APHRODY_MATERIAL_CHECKOUT ?? join(REPO_ROOT, "..", "material")),
+  resolve(
+    process.env.APHRODY_MATERIAL_CHECKOUT ?? join(REPO_ROOT, "..", "material"),
+  ),
   "packages",
 );
 
@@ -49,11 +51,16 @@ function parseArgs(args: string[]): {
   return { targetPackage, minify, all };
 }
 
-async function discoverUiTargets(targetName?: string): Promise<PackageBuildTarget[]> {
+async function discoverUiTargets(
+  targetName?: string,
+): Promise<PackageBuildTarget[]> {
   const targets: PackageBuildTarget[] = [];
   const glob = new Glob("*/package.json");
 
-  for await (const manifestPath of glob.scan({ cwd: UI_ROOT, onlyFiles: true })) {
+  for await (const manifestPath of glob.scan({
+    cwd: UI_ROOT,
+    onlyFiles: true,
+  })) {
     const packageDir = join(UI_ROOT, manifestPath.split("/")[0]!);
     const manifestFile = Bun.file(join(packageDir, "package.json"));
     if (!(await manifestFile.exists())) continue;
@@ -61,7 +68,11 @@ async function discoverUiTargets(targetName?: string): Promise<PackageBuildTarge
     const manifest = await manifestFile.json();
     const pkgName = manifest.name ?? manifestPath.split("/")[0]!;
 
-    if (targetName && pkgName !== targetName && !manifestPath.startsWith(targetName)) {
+    if (
+      targetName &&
+      pkgName !== targetName &&
+      !manifestPath.startsWith(targetName)
+    ) {
       continue;
     }
 
@@ -120,10 +131,15 @@ export async function buildUiPackages(
 
       const elapsed = Math.round(performance.now() - start);
       if (result.success) {
-        console.log(`[ui-build] ✓ ${target.name} (${result.outputs.length} outputs, ${elapsed}ms)`);
+        console.log(
+          `[ui-build] ✓ ${target.name} (${result.outputs.length} outputs, ${elapsed}ms)`,
+        );
         successful++;
       } else {
-        console.error(`[ui-build] ✗ ${target.name} failed:`, result.logs.join("\n"));
+        console.error(
+          `[ui-build] ✗ ${target.name} failed:`,
+          result.logs.join("\n"),
+        );
         failed++;
       }
     } catch (error) {

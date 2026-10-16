@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactElement,
-} from "react";
+import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import type {
   AssetGalleryAdapter,
   MediaKind,
@@ -89,7 +83,9 @@ export function useTauriAssetGalleryAdapter(): AssetGalleryHostBundle {
 
   const handleSelectItem = (id: string) => {
     setSelectedItemIds((prev) =>
-      prev.includes(id) ? prev.filter((existing) => existing !== id) : [...prev, id],
+      prev.includes(id)
+        ? prev.filter((existing) => existing !== id)
+        : [...prev, id],
     );
   };
 

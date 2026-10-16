@@ -1,2 +1,2 @@
-export * from './lib/LoadingBar';
-export * from './lib/LoadingDots';
+export * from "./lib/LoadingBar";
+export * from "./lib/LoadingDots";

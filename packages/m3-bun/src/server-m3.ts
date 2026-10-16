@@ -18,8 +18,18 @@ export interface M3ServerRoutesOptions {
 }
 
 /** `Bun.serve` routes of `@aphrody/m3/server`'s `buildRoutes`, for `startM3Server({ routes })`. */
-export async function m3ServerRoutes(options: M3ServerRoutesOptions): Promise<Bun.Serve.Routes<M3SocketData, string>> {
-  const server = await loadOptional<M3Server>("@aphrody/m3/server", "m3 server routes");
+export async function m3ServerRoutes(
+  options: M3ServerRoutesOptions,
+): Promise<Bun.Serve.Routes<M3SocketData, string>> {
+  const server = await loadOptional<M3Server>(
+    "@aphrody/m3/server",
+    "m3 server routes",
+  );
   const { proxy, pagesDir, routes, cwd } = options;
-  return (await server.buildRoutes({ proxy, pagesDir, routes, cwd })) as Bun.Serve.Routes<M3SocketData, string>;
+  return (await server.buildRoutes({
+    proxy,
+    pagesDir,
+    routes,
+    cwd,
+  })) as Bun.Serve.Routes<M3SocketData, string>;
 }

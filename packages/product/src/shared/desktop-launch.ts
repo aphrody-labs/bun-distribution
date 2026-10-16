@@ -19,8 +19,10 @@ export function desktopCandidates(
   const out: string[] = [];
   if (env.APHRODY_DESKTOP_BIN) out.push(env.APHRODY_DESKTOP_BIN);
   if (platform === "win32") {
-    if (env.LOCALAPPDATA) out.push(join(env.LOCALAPPDATA, "aphrody", `${BINARY}.exe`));
-    if (env.ProgramFiles) out.push(join(env.ProgramFiles, "aphrody", `${BINARY}.exe`));
+    if (env.LOCALAPPDATA)
+      out.push(join(env.LOCALAPPDATA, "aphrody", `${BINARY}.exe`));
+    if (env.ProgramFiles)
+      out.push(join(env.ProgramFiles, "aphrody", `${BINARY}.exe`));
   } else if (platform === "darwin") {
     out.push("/Applications/aphrody.app/Contents/MacOS/aphrody-app");
   } else {
@@ -37,7 +39,9 @@ export function findDesktop(
   which: (name: string) => string | null = Bun.which,
 ): string | undefined {
   return (
-    desktopCandidates(env, platform).find((path) => exists(path)) ?? which(BINARY) ?? undefined
+    desktopCandidates(env, platform).find((path) => exists(path)) ??
+    which(BINARY) ??
+    undefined
   );
 }
 

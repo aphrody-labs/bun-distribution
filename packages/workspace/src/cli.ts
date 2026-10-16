@@ -8,14 +8,21 @@ export const workspaceHelp =
 /** `aphrody workspace <command> [arguments...]`: Workspace commands, then aphrody-infra for the rest. */
 export async function runWorkspace(argv: readonly string[]): Promise<number> {
   const [command, ...rest] = argv;
-  if (command === "optimize") return (await import("./optimize.ts")).runOptimize(rest);
-  if (command === "code-edit") return (await import("./code-edit.ts")).runCodeEdit(rest);
-  if (command === "plugins") return (await import("./agent-plugins.ts")).runAgentPlugins(rest);
+  if (command === "optimize")
+    return (await import("./optimize.ts")).runOptimize(rest);
+  if (command === "code-edit")
+    return (await import("./code-edit.ts")).runCodeEdit(rest);
+  if (command === "plugins")
+    return (await import("./agent-plugins.ts")).runAgentPlugins(rest);
   if (command === "--help" || command === "-h") {
     console.log(workspaceHelp);
     return 0;
   }
-  const result = await runInfra({ args: [...argv], stdout: "inherit", stderr: "inherit" });
+  const result = await runInfra({
+    args: [...argv],
+    stdout: "inherit",
+    stderr: "inherit",
+  });
   return result.exitCode;
 }
 

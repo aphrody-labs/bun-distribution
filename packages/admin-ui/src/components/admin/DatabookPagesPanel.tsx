@@ -81,7 +81,13 @@ function nextAutoNumber(pages: DatabookPageDraft[]): number {
 }
 
 function emptyPage(number: number): DatabookPageDraft {
-  return { _key: newKey(), number: String(number), image: "", text: "", verifiee: false };
+  return {
+    _key: newKey(),
+    number: String(number),
+    image: "",
+    text: "",
+    verifiee: false,
+  };
 }
 
 /** Snapshot comparable (sans _key) pour dirty detection. */
@@ -104,7 +110,9 @@ export function DatabookPagesPanel({ databookId }: { databookId: string }) {
   // chacune avec son champ image : 233 blocs et 233 images sur la fiche la plus
   // fournie. Ingérable — et la transcription de masse rendrait la relecture
   // (11 775 planches) impossible sans « n'afficher que ce qui reste à faire ».
-  const [filtre, setFiltre] = useState<"tous" | "sans-texte" | "avec-texte">("tous");
+  const [filtre, setFiltre] = useState<"tous" | "sans-texte" | "avec-texte">(
+    "tous",
+  );
   const [fenetre, setFenetre] = useState(FENETRE);
 
   const transcrites = pages.filter((p) => p.text.trim().length > 0).length;
@@ -136,7 +144,9 @@ export function DatabookPagesPanel({ databookId }: { databookId: string }) {
   const row = useQuery({
     queryKey: ["wiki-studio", "db_databooks", databookId, "pages"],
     queryFn: () =>
-      client.get<Record<string, unknown>>(`/db_databooks/${encodeURIComponent(databookId)}`),
+      client.get<Record<string, unknown>>(
+        `/db_databooks/${encodeURIComponent(databookId)}`,
+      ),
     refetchOnWindowFocus: false,
     staleTime: Number.POSITIVE_INFINITY,
   });
@@ -162,7 +172,10 @@ export function DatabookPagesPanel({ databookId }: { databookId: string }) {
   }, [toast]);
 
   // Garde anti-fermeture d'onglet avec modifications non sauvées.
-  const dirty = useMemo(() => snapshot(pages) !== savedSnap, [pages, savedSnap]);
+  const dirty = useMemo(
+    () => snapshot(pages) !== savedSnap,
+    [pages, savedSnap],
+  );
   useEffect(() => {
     if (!dirty) return;
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -176,13 +189,21 @@ export function DatabookPagesPanel({ databookId }: { databookId: string }) {
   useEffect(() => {
     if (!scrollNew.current) return;
     scrollNew.current = false;
-    listEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    listEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
   }, [pages.length]);
 
   const save = useMutation({
     mutationFn: async () => {
       const cleaned = pages.map((p, i) => {
-        const out: { number: number; image?: string; text?: string; verifiee?: true } = {
+        const out: {
+          number: number;
+          image?: string;
+          text?: string;
+          verifiee?: true;
+        } = {
           number: parseNumber(p.number, i + 1),
         };
         const img = p.image.trim();
@@ -198,7 +219,9 @@ export function DatabookPagesPanel({ databookId }: { databookId: string }) {
     },
     onSuccess: () => {
       setSavedSnap(snapshot(pages));
-      qc.invalidateQueries({ queryKey: ["wiki-studio", "db_databooks", databookId] });
+      qc.invalidateQueries({
+        queryKey: ["wiki-studio", "db_databooks", databookId],
+      });
       setToast("Pages enregistrées — cache public revalidé.");
     },
     onError: (e: Error) => setToast(`Erreur : ${e.message}`),
@@ -270,7 +293,9 @@ export function DatabookPagesPanel({ databookId }: { databookId: string }) {
       page &&
       (page.image.trim() || page.text.trim()) &&
       typeof window !== "undefined" &&
-      !window.confirm(`Supprimer la page n°${page.number || i + 1} (contenu non vide) ?`)
+      !window.confirm(
+        `Supprimer la page n°${page.number || i + 1} (contenu non vide) ?`,
+      )
     ) {
       return;
     }
@@ -326,10 +351,11 @@ export function DatabookPagesPanel({ databookId }: { databookId: string }) {
           </h3>
           <p className="mt-1 max-w-xl text-[11px] leading-relaxed text-white/50">
             Comme le manga : une planche par page, avec un{" "}
-            <strong className="text-white/60">numéro</strong> (auto, modifiable) et un{" "}
-            <strong className="text-white/60">texte en dessous</strong>. Fixe le nombre de pages
-            d&apos;abord — tu n&apos;es pas obligé de tout remplir. L&apos;ordre de lecture = ordre
-            des slots ; le n° est juste l&apos;étiquette affichée.
+            <strong className="text-white/60">numéro</strong> (auto, modifiable)
+            et un <strong className="text-white/60">texte en dessous</strong>.
+            Fixe le nombre de pages d&apos;abord — tu n&apos;es pas obligé de
+            tout remplir. L&apos;ordre de lecture = ordre des slots ; le n° est
+            juste l&apos;étiquette affichée.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -346,8 +372,8 @@ export function DatabookPagesPanel({ databookId }: { databookId: string }) {
 
       {dupNumbers.size > 0 && (
         <p className="rounded border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-200/90">
-          Numéros en double : {Array.from(dupNumbers).join(", ")}. Tu peux les garder (ex.
-          recto/verso) ou les corriger / renuméroter.
+          Numéros en double : {Array.from(dupNumbers).join(", ")}. Tu peux les
+          garder (ex. recto/verso) ou les corriger / renuméroter.
         </p>
       )}
 
@@ -451,11 +477,18 @@ export function DatabookPagesPanel({ databookId }: { databookId: string }) {
             <span className="font-semibold text-white/70">
               {transcrites}/{pages.length} page(s) transcrite(s)
             </span>
-            <div className="ml-auto flex gap-1" role="group" aria-label="Filtrer les pages">
+            <div
+              className="ml-auto flex gap-1"
+              role="group"
+              aria-label="Filtrer les pages"
+            >
               {(
                 [
                   ["tous", `Toutes (${pages.length})`],
-                  ["sans-texte", `À transcrire (${pages.length - transcrites})`],
+                  [
+                    "sans-texte",
+                    `À transcrire (${pages.length - transcrites})`,
+                  ],
                   ["avec-texte", `Transcrites (${transcrites})`],
                 ] as const
               ).map(([cle, libelle]) => (
@@ -498,7 +531,9 @@ export function DatabookPagesPanel({ databookId }: { databookId: string }) {
                     <div className="mb-3 flex flex-wrap items-center gap-2">
                       <label
                         className={`inline-flex items-center gap-1.5 rounded px-2 py-0.5 ${
-                          isDup ? "bg-amber-500/20 ring-1 ring-amber-400/50" : "bg-dbz-orange/15"
+                          isDup
+                            ? "bg-amber-500/20 ring-1 ring-amber-400/50"
+                            : "bg-dbz-orange/15"
                         }`}
                       >
                         <span className="text-[10px] font-bold uppercase tracking-wider text-dbz-orange/80">
@@ -509,10 +544,13 @@ export function DatabookPagesPanel({ databookId }: { databookId: string }) {
                           inputMode="numeric"
                           className="w-14 border-0 bg-transparent p-0 text-center font-mono text-[12px] font-bold tabular-nums text-dbz-orange outline-none focus:ring-0"
                           value={page.number}
-                          onChange={(e) => update(i, { number: e.target.value })}
+                          onChange={(e) =>
+                            update(i, { number: e.target.value })
+                          }
                           onBlur={() => {
                             const n = Number(page.number);
-                            if (!Number.isFinite(n)) update(i, { number: String(i + 1) });
+                            if (!Number.isFinite(n))
+                              update(i, { number: String(i + 1) });
                             else update(i, { number: String(Math.trunc(n)) });
                           }}
                           aria-label={`Numéro de la page (slot ${i + 1})`}
@@ -521,7 +559,9 @@ export function DatabookPagesPanel({ databookId }: { databookId: string }) {
                       </label>
                       <span className="text-[10px] text-white/50">
                         slot {i + 1}
-                        {displayN !== String(i + 1) ? ` · affiché n°${displayN}` : ""}
+                        {displayN !== String(i + 1)
+                          ? ` · affiché n°${displayN}`
+                          : ""}
                       </span>
                       {!page.image.trim() && !page.text.trim() && (
                         <span className="text-[10px] uppercase tracking-wider text-white/50">
@@ -608,8 +648,8 @@ export function DatabookPagesPanel({ databookId }: { databookId: string }) {
               onClick={() => setFenetre((f) => f + FENETRE)}
               className="mt-4 w-full rounded-lg border border-white/15 py-2 text-xs font-semibold text-white/70 transition-colors hover:border-dbz-orange hover:text-white"
             >
-              Voir {Math.min(FENETRE, affichees.length - fenetre)} page(s) de plus ·{" "}
-              {Math.min(fenetre, affichees.length)}/{affichees.length}
+              Voir {Math.min(FENETRE, affichees.length - fenetre)} page(s) de
+              plus · {Math.min(fenetre, affichees.length)}/{affichees.length}
             </button>
           )}
         </>

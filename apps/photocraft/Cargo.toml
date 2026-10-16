@@ -32,7 +32,13 @@ photocraft-format = { path = "../../crates/photocraft-format" }
 photocraft-automation = { path = "../../crates/photocraft-automation" }
 photocraft-ui-egui = { path = "../../crates/photocraft-ui-egui" }
 photocraft-tablet = { path = "../../crates/photocraft-tablet" }
-eframe = { version = "0.36", default-features = false, features = ["wgpu", "accesskit", "wayland", "x11", "persistence"] }
+eframe = { version = "0.36", default-features = false, features = [
+  "wgpu",
+  "accesskit",
+  "wayland",
+  "x11",
+  "persistence",
+] }
 egui = { version = "0.36", default-features = false }
 serde_json = "1"
 log = "0.4"

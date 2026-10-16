@@ -4,8 +4,16 @@
 // and components/RedundancyVolumeBar.tsx in
 // drive/packages/interface/src/routes/redundancy/.
 
-import type { SearchFilters, VolumeRedundancySummary } from "@aphrody/drive-client";
-import { Button, Icon, m3FocusRing, m3StateLayer } from "@aphrody/m3-primitives";
+import type {
+  SearchFilters,
+  VolumeRedundancySummary,
+} from "@aphrody/drive-client";
+import {
+  Button,
+  Icon,
+  m3FocusRing,
+  m3StateLayer,
+} from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
@@ -59,16 +67,25 @@ function SummaryError({ retry }: { retry: () => void }) {
 }
 
 function SummaryLoading() {
-  return <output className="block p-4 text-body-large text-on-surface-variant">Loading…</output>;
+  return (
+    <output className="block p-4 text-body-large text-on-surface-variant">
+      Loading…
+    </output>
+  );
 }
 
 function VolumeCard({ volume }: { volume: VolumeRedundancySummary }) {
   const classifiedBytes = volume.redundant_bytes + volume.at_risk_bytes;
   const redundantPercent =
-    classifiedBytes > 0 ? Math.min(100, (volume.redundant_bytes / classifiedBytes) * 100) : 0;
+    classifiedBytes > 0
+      ? Math.min(100, (volume.redundant_bytes / classifiedBytes) * 100)
+      : 0;
   const atRiskPercent =
     classifiedBytes > 0
-      ? Math.min(100 - redundantPercent, (volume.at_risk_bytes / classifiedBytes) * 100)
+      ? Math.min(
+          100 - redundantPercent,
+          (volume.at_risk_bytes / classifiedBytes) * 100,
+        )
       : 0;
   const linkClass = clsx(
     "inline-flex min-h-10 items-center rounded-full px-3 text-label-large",
@@ -137,9 +154,14 @@ export function RedundancyDashboard() {
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-medium bg-surface-container-low p-4">
                 <strong className="block text-headline-large font-normal">
-                  {number.format(Math.round(data.library_totals.replication_score * 100))}%
+                  {number.format(
+                    Math.round(data.library_totals.replication_score * 100),
+                  )}
+                  %
                 </strong>
-                <span className="text-body-large text-on-surface-variant">Replication score</span>
+                <span className="text-body-large text-on-surface-variant">
+                  Replication score
+                </span>
               </div>
               <Link
                 to="/redundancy/at-risk"
@@ -177,7 +199,11 @@ export function RedundancyDashboard() {
                 <span>No indexed volumes.</span>
                 <Link
                   to="/sources"
-                  className={clsx("rounded-full px-3 py-2 text-primary", m3StateLayer, m3FocusRing)}
+                  className={clsx(
+                    "rounded-full px-3 py-2 text-primary",
+                    m3StateLayer,
+                    m3FocusRing,
+                  )}
                 >
                   Add source
                 </Link>
@@ -196,8 +222,15 @@ export function RedundancyDashboard() {
   );
 }
 
-function FilteredExplorer({ filters, label }: { filters: SearchFilters; label: string }) {
-  const { enterFilteredMode, exitFilteredMode, mode, setSortBy } = useExplorer();
+function FilteredExplorer({
+  filters,
+  label,
+}: {
+  filters: SearchFilters;
+  label: string;
+}) {
+  const { enterFilteredMode, exitFilteredMode, mode, setSortBy } =
+    useExplorer();
   useEffect(() => {
     enterFilteredMode(filters, label);
     return () => exitFilteredMode();
@@ -224,7 +257,8 @@ export function AtRiskFiles() {
     type: "redundancy.summary",
     input: {},
   });
-  const knownVolume = !volume || data?.volumes.some((v) => v.volume_uuid === volume);
+  const knownVolume =
+    !volume || data?.volumes.some((v) => v.volume_uuid === volume);
   const filters = useMemo<SearchFilters>(
     () => ({
       ...blankFilters,
@@ -286,15 +320,25 @@ export function CompareVolumes() {
   const validB = volumes.some((volume) => volume.volume_uuid === volumeB);
   const ready = validA && validB && volumeA !== volumeB;
   const nameA =
-    volumes.find((volume) => volume.volume_uuid === volumeA)?.display_name || "Volume A";
+    volumes.find((volume) => volume.volume_uuid === volumeA)?.display_name ||
+    "Volume A";
   const nameB =
-    volumes.find((volume) => volume.volume_uuid === volumeB)?.display_name || "Volume B";
+    volumes.find((volume) => volume.volume_uuid === volumeB)?.display_name ||
+    "Volume B";
   const filters = useMemo<SearchFilters | null>(() => {
     if (!ready) return null;
     if (mode === "unique_a")
-      return { ...blankFilters, on_volumes: [volumeA], not_on_volumes: [volumeB] };
+      return {
+        ...blankFilters,
+        on_volumes: [volumeA],
+        not_on_volumes: [volumeB],
+      };
     if (mode === "unique_b")
-      return { ...blankFilters, on_volumes: [volumeB], not_on_volumes: [volumeA] };
+      return {
+        ...blankFilters,
+        on_volumes: [volumeB],
+        not_on_volumes: [volumeA],
+      };
     return { ...blankFilters, on_all_volumes: [volumeA, volumeB] };
   }, [ready, mode, volumeA, volumeB]);
   const label =
@@ -339,7 +383,11 @@ export function CompareVolumes() {
               <span>Two indexed volumes are needed.</span>
               <Link
                 to="/sources"
-                className={clsx("rounded-full px-3 py-2 text-primary", m3StateLayer, m3FocusRing)}
+                className={clsx(
+                  "rounded-full px-3 py-2 text-primary",
+                  m3StateLayer,
+                  m3FocusRing,
+                )}
               >
                 Add source
               </Link>
@@ -388,29 +436,34 @@ export function CompareVolumes() {
                   </label>
                 </div>
                 {ready && (
-                  <fieldset aria-label="Comparison" className="flex min-w-0 flex-wrap gap-2">
-                    {(["unique_a", "shared", "unique_b"] as const).map((option) => (
-                      <button
-                        key={option}
-                        type="button"
-                        aria-pressed={mode === option}
-                        onClick={() => setMode(option)}
-                        className={clsx(
-                          "min-h-10 rounded-full px-4 text-label-large",
-                          m3StateLayer,
-                          m3FocusRing,
-                          mode === option
-                            ? "bg-secondary-container text-on-secondary-container"
-                            : "border border-outline text-on-surface",
-                        )}
-                      >
-                        {option === "unique_a"
-                          ? `On ${nameA}, not ${nameB}`
-                          : option === "shared"
-                            ? "On both"
-                            : `On ${nameB}, not ${nameA}`}
-                      </button>
-                    ))}
+                  <fieldset
+                    aria-label="Comparison"
+                    className="flex min-w-0 flex-wrap gap-2"
+                  >
+                    {(["unique_a", "shared", "unique_b"] as const).map(
+                      (option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          aria-pressed={mode === option}
+                          onClick={() => setMode(option)}
+                          className={clsx(
+                            "min-h-10 rounded-full px-4 text-label-large",
+                            m3StateLayer,
+                            m3FocusRing,
+                            mode === option
+                              ? "bg-secondary-container text-on-secondary-container"
+                              : "border border-outline text-on-surface",
+                          )}
+                        >
+                          {option === "unique_a"
+                            ? `On ${nameA}, not ${nameB}`
+                            : option === "shared"
+                              ? "On both"
+                              : `On ${nameB}, not ${nameA}`}
+                        </button>
+                      ),
+                    )}
                   </fieldset>
                 )}
               </div>
@@ -418,7 +471,9 @@ export function CompareVolumes() {
                 {filters ? (
                   <FilteredExplorer filters={filters} label={label} />
                 ) : (
-                  <p className="p-4 text-body-large text-on-surface-variant">Select two volumes.</p>
+                  <p className="p-4 text-body-large text-on-surface-variant">
+                    Select two volumes.
+                  </p>
                 )}
               </div>
             </>

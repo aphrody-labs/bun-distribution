@@ -33,13 +33,23 @@ export async function consumerView(scene: M3Scene): Promise<void> {
   const image: Image = await loadImage(png);
   const decoded: Image = await loadNativeImage(webp);
   const native: Canvas = await createNativeCanvas(8, 8);
-  const svg: SvgCanvas = await createNativeCanvas(8, 8, SvgExportFlag.NoPrettyXML);
-  const sameModule: typeof createCanvas = (await loadNativeCanvas()).createCanvas;
+  const svg: SvgCanvas = await createNativeCanvas(
+    8,
+    8,
+    SvgExportFlag.NoPrettyXML,
+  );
+  const sameModule: typeof createCanvas = (await loadNativeCanvas())
+    .createCanvas;
   const viaDefault: Canvas = canvasModule.createCanvas(1, 1);
   const fonts: boolean = GlobalFonts.has("Roboto");
-  const surface: M3CanvasSurface = createM3CanvasSurface({ density: "compact" });
+  const surface: M3CanvasSurface = createM3CanvasSurface({
+    density: "compact",
+  });
   // With the DOM lib (this tsconfig), the browser element is exactly HTMLCanvasElement.
-  const element: HTMLCanvasElement = createBrowserCanvas({ width: 4, height: 4 });
+  const element: HTMLCanvasElement = createBrowserCanvas({
+    width: 4,
+    height: 4,
+  });
   const drawn: Canvas = await drawM3Scene(scene);
   // @ts-expect-error the scene contract is the precise Rust mirror, not an open record
   await drawM3Scene({ width: 1, height: 1 });

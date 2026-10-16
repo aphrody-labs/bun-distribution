@@ -60,7 +60,8 @@ export const DESTINATIONS: readonly Destination[] = [
     label: "Theme",
     icon: paletteIcon,
     iconFilled: paletteFilled,
-    summary: "Material You roles from a seed: tokens, Tailwind preset, fonts, a scoped <m3-theme>.",
+    summary:
+      "Material You roles from a seed: tokens, Tailwind preset, fonts, a scoped <m3-theme>.",
     packages: [
       "@aphrody/m3-theme",
       "@aphrody/m3-tokens",
@@ -90,7 +91,8 @@ export const DESTINATIONS: readonly Destination[] = [
     label: "Forms",
     icon: editIcon,
     iconFilled: editFilled,
-    summary: "react-hook-form fields with M3 inputs, validation and descriptions.",
+    summary:
+      "react-hook-form fields with M3 inputs, validation and descriptions.",
     packages: ["@aphrody/m3-forms"],
   },
   {
@@ -106,7 +108,8 @@ export const DESTINATIONS: readonly Destination[] = [
     label: "Motion",
     icon: motionIcon,
     iconFilled: motionFilled,
-    summary: "Springs, easings, shared axis, container transform, list stagger.",
+    summary:
+      "Springs, easings, shared axis, container transform, list stagger.",
     packages: ["@aphrody/m3-motion", "@aphrody/m3-react"],
   },
   {
@@ -114,15 +117,21 @@ export const DESTINATIONS: readonly Destination[] = [
     label: "Icons & fonts",
     icon: symbolsIcon,
     iconFilled: symbolsFilled,
-    summary: "Material Symbols from the forked catalogue, inlined at build time.",
-    packages: ["@aphrody/m3-icons", "@aphrody/material-design-icons", "@aphrody/m3-fonts"],
+    summary:
+      "Material Symbols from the forked catalogue, inlined at build time.",
+    packages: [
+      "@aphrody/m3-icons",
+      "@aphrody/material-design-icons",
+      "@aphrody/m3-fonts",
+    ],
   },
   {
     id: "ai",
     label: "AI",
     icon: smartIcon,
     iconFilled: smartFilled,
-    summary: "A chat transcript, tool calls, markdown and an AG-UI stream from the API.",
+    summary:
+      "A chat transcript, tool calls, markdown and an AG-UI stream from the API.",
     packages: ["@aphrody/m3-ai"],
   },
   {
@@ -138,7 +147,8 @@ export const DESTINATIONS: readonly Destination[] = [
     label: "Design",
     icon: designIcon,
     iconFilled: designFilled,
-    summary: "A design brief parsed and turned into an M3 theme by the design engine.",
+    summary:
+      "A design brief parsed and turned into an M3 theme by the design engine.",
     packages: ["@aphrody/m3-design"],
   },
   {
@@ -146,7 +156,8 @@ export const DESTINATIONS: readonly Destination[] = [
     label: "Next",
     icon: webIcon,
     iconFilled: webFilled,
-    summary: "Metadata, scheme CSS, robots, sitemap and JSON-LD from the Next integration.",
+    summary:
+      "Metadata, scheme CSS, robots, sitemap and JSON-LD from the Next integration.",
     packages: ["@aphrody/m3-next", "@aphrody/m3-next-migrate"],
   },
   {
@@ -154,7 +165,8 @@ export const DESTINATIONS: readonly Destination[] = [
     label: "System",
     icon: terminalIcon,
     iconFilled: terminalFilled,
-    summary: "OS themes, scaffolds, MCP tools, codemods and lint rules, computed by the API.",
+    summary:
+      "OS themes, scaffolds, MCP tools, codemods and lint rules, computed by the API.",
     packages: [
       "@aphrody/m3-os-themes",
       "@aphrody/scaffold",
@@ -168,8 +180,14 @@ export const DESTINATIONS: readonly Destination[] = [
     label: "Brands",
     icon: badgeIcon,
     iconFilled: badgeFilled,
-    summary: "Host-bound UI kits where they resolve, the identity set, canvas and assets.",
-    packages: ["@aphrody/nie-ui", "@aphrody/identity", "@aphrody/canvas", "@aphrody/assets"],
+    summary:
+      "Host-bound UI kits where they resolve, the identity set, canvas and assets.",
+    packages: [
+      "@aphrody/nie-ui",
+      "@aphrody/identity",
+      "@aphrody/canvas",
+      "@aphrody/assets",
+    ],
   },
   {
     id: "adaptive",
@@ -182,7 +200,12 @@ export const DESTINATIONS: readonly Destination[] = [
 ];
 
 /** The destinations the mobile bottom bar shows; the rest sit behind "More". */
-export const PRIMARY_IDS = ["overview", "theme", "components", "adaptive"] as const;
+export const PRIMARY_IDS = [
+  "overview",
+  "theme",
+  "components",
+  "adaptive",
+] as const;
 
 export const MORE_ICON = appsIcon;
 export const MORE_ICON_FILLED = appsFilled;

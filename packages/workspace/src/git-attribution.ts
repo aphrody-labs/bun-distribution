@@ -11,7 +11,12 @@ export function stripAttributionTrailers(message: string): string {
     .replace(/\n+$/g, "")}\n`;
 }
 
-async function git(repo: string, args: string[], input?: string, env?: Record<string, string>) {
+async function git(
+  repo: string,
+  args: string[],
+  input?: string,
+  env?: Record<string, string>,
+) {
   const process = Bun.spawn(["git", "-C", repo, ...args], {
     windowsHide: true,
     stdin: input ? new Blob([input]) : undefined,
@@ -24,7 +29,8 @@ async function git(repo: string, args: string[], input?: string, env?: Record<st
     new Response(process.stdout).text(),
     new Response(process.stderr).text(),
   ]);
-  if (exitCode !== 0) throw new Error(stderr.trim() || `git ${args.join(" ")} failed`);
+  if (exitCode !== 0)
+    throw new Error(stderr.trim() || `git ${args.join(" ")} failed`);
   return stdout;
 }
 
@@ -46,7 +52,8 @@ export async function runGitAttribution(args: string[]): Promise<number> {
   const apply = args.includes("--apply");
   const canonicalAuthor = args.includes("--canonical-author");
   const targetAuthorName = option(args, "--author-name") ?? "aphrody-code";
-  const targetAuthorEmail = option(args, "--author-email") ?? "contact@aphrody.com";
+  const targetAuthorEmail =
+    option(args, "--author-email") ?? "contact@aphrody.com";
 
   const allowed = new Set([
     "--repo",
@@ -72,7 +79,9 @@ export async function runGitAttribution(args: string[]): Promise<number> {
   const repo = resolve(repoOption);
   const oldTip = (await git(repo, ["rev-parse", branch])).trim();
   const range = since ? `${since}..${branch}` : branch;
-  const commits = (await git(repo, ["rev-list", "--reverse", "--topo-order", range]))
+  const commits = (
+    await git(repo, ["rev-list", "--reverse", "--topo-order", range])
+  )
     .trim()
     .split("\n")
     .filter(Boolean);
@@ -97,7 +106,8 @@ export async function runGitAttribution(args: string[]): Promise<number> {
         metadata[3] !== targetAuthorName ||
         metadata[4] !== targetAuthorEmail);
 
-    if (clean.trimEnd() !== message.trimEnd() || authorNeedsRewrite) changed += 1;
+    if (clean.trimEnd() !== message.trimEnd() || authorNeedsRewrite)
+      changed += 1;
     const parents = (metadata[7] ?? "")
       .split(" ")
       .filter(Boolean)
@@ -109,11 +119,19 @@ export async function runGitAttribution(args: string[]): Promise<number> {
       ["commit-tree", metadata[6] ?? "", ...parentArgs],
       clean,
       {
-        GIT_AUTHOR_NAME: canonicalAuthor ? targetAuthorName : (metadata[0] ?? ""),
-        GIT_AUTHOR_EMAIL: canonicalAuthor ? targetAuthorEmail : (metadata[1] ?? ""),
+        GIT_AUTHOR_NAME: canonicalAuthor
+          ? targetAuthorName
+          : (metadata[0] ?? ""),
+        GIT_AUTHOR_EMAIL: canonicalAuthor
+          ? targetAuthorEmail
+          : (metadata[1] ?? ""),
         GIT_AUTHOR_DATE: metadata[2] ?? "",
-        GIT_COMMITTER_NAME: canonicalAuthor ? targetAuthorName : (metadata[3] ?? ""),
-        GIT_COMMITTER_EMAIL: canonicalAuthor ? targetAuthorEmail : (metadata[4] ?? ""),
+        GIT_COMMITTER_NAME: canonicalAuthor
+          ? targetAuthorName
+          : (metadata[3] ?? ""),
+        GIT_COMMITTER_EMAIL: canonicalAuthor
+          ? targetAuthorEmail
+          : (metadata[4] ?? ""),
         GIT_COMMITTER_DATE: metadata[5] ?? "",
       },
     );

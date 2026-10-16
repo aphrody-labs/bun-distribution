@@ -32,13 +32,22 @@ export default {
         if (!isIconButton(name)) return;
 
         // Spread => label potentiellement injecté ailleurs : ne pas alerter.
-        const hasSpread = (node.attributes || []).some((a) => a.type === "JSXSpreadAttribute");
+        const hasSpread = (node.attributes || []).some(
+          (a) => a.type === "JSXSpreadAttribute",
+        );
         if (hasSpread) return;
 
         for (const a of LABEL_ATTRS) {
           const attr = getAttr(node, a);
           // Présent et non vide (aria-label="" ne compte pas).
-          if (attr && !(attr.value && attr.value.type === "Literal" && attr.value.value === "")) {
+          if (
+            attr &&
+            !(
+              attr.value &&
+              attr.value.type === "Literal" &&
+              attr.value.value === ""
+            )
+          ) {
             return;
           }
         }

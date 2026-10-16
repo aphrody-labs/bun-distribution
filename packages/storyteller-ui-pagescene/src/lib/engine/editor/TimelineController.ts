@@ -253,9 +253,7 @@ export class TimelineController {
   // (the first keyframe is always added explicitly).
   autoKeyIfTracked(objectUuid: string): void {
     if (!this.timeline) return;
-    const track = this.timeline.tracks.find(
-      (t) => t.objectUuid === objectUuid,
-    );
+    const track = this.timeline.tracks.find((t) => t.objectUuid === objectUuid);
     if (!track || track.keyframes.length === 0) return;
     this.addKeyframe(objectUuid, this.playhead);
   }

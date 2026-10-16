@@ -12,6 +12,8 @@ export interface GetProviderOrderPayload {
 
 // Returns the Success and Error variants directly.
 // Throws on Network/Tauri errors.
-export const GetProviderOrder = async () : Promise<GetProviderOrderSuccess> => {
-  return await invoke("get_provider_order_command") as GetProviderOrderSuccess;
-}
+export const GetProviderOrder = async (): Promise<GetProviderOrderSuccess> => {
+  return (await invoke(
+    "get_provider_order_command",
+  )) as GetProviderOrderSuccess;
+};

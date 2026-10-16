@@ -9,18 +9,18 @@ import { useState } from "react";
  * retry 1, refetch on focus. Chaque page opt-in son propre refetchInterval.
  */
 export function QueryProvider({ children }: { children: React.ReactNode }) {
-	const [client] = useState(
-		() =>
-			new QueryClient({
-				defaultOptions: {
-					queries: {
-						refetchOnWindowFocus: true,
-						staleTime: 30_000,
-						gcTime: 5 * 60_000,
-						retry: 1,
-					},
-				},
-			})
-	);
-	return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  const [client] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            refetchOnWindowFocus: true,
+            staleTime: 30_000,
+            gcTime: 5 * 60_000,
+            retry: 1,
+          },
+        },
+      }),
+  );
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }

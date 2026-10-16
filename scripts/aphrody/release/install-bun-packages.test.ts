@@ -10,6 +10,10 @@ test("pins only qualified registry versions", () => {
   expect(installSpecs(packages)).toEqual(["@aphrody/fuzzy@0.1.1"]);
 });
 test("refuses an explicitly requested blocked or unknown package", () => {
-  expect(() => installSpecs(packages, ["@aphrody/bun"])).toThrow("not qualified and published");
-  expect(() => installSpecs(packages, ["@aphrody/missing"])).toThrow("not qualified and published");
+  expect(() => installSpecs(packages, ["@aphrody/bun"])).toThrow(
+    "not qualified and published",
+  );
+  expect(() => installSpecs(packages, ["@aphrody/missing"])).toThrow(
+    "not qualified and published",
+  );
 });

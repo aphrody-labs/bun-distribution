@@ -6,7 +6,13 @@ import { usePlatform } from "../../contexts/PlatformContext";
 import { Icon, Button } from "@aphrody/m3-primitives";
 import folderIcon from "@aphrody/assets/icons/FolderNoSpace.png";
 
-function CLICommand({ command, description }: { command: string; description: string }) {
+function CLICommand({
+  command,
+  description,
+}: {
+  command: string;
+  description: string;
+}) {
   const copyToClipboard = () => {
     navigator.clipboard.writeText(command);
   };
@@ -14,7 +20,9 @@ function CLICommand({ command, description }: { command: string; description: st
   return (
     <div className="group relative rounded-small px-3 py-2">
       <code className="text-body-small text-primary">{command}</code>
-      <p className="mt-1 text-body-small text-on-surface-variant">{description}</p>
+      <p className="mt-1 text-body-small text-on-surface-variant">
+        {description}
+      </p>
       <button
         onClick={copyToClipboard}
         className="absolute right-2 top-2 rounded-extra-small p-1 opacity-0 transition-opacity hover:bg-on-surface/8 group-hover:opacity-100"
@@ -33,7 +41,13 @@ export function DaemonDisconnectedOverlay({
   forceShow?: boolean;
   daemonStatus: ReturnType<typeof useDaemonStatus>;
 }) {
-  const { isConnected, isChecking, isInstalled, startDaemon, installAndStartDaemon } = daemonStatus;
+  const {
+    isConnected,
+    isChecking,
+    isInstalled,
+    startDaemon,
+    installAndStartDaemon,
+  } = daemonStatus;
   const [installAsService, setInstallAsService] = useState(isInstalled);
   const [prevIsInstalled, setPrevIsInstalled] = useState(isInstalled);
   const platform = usePlatform();
@@ -45,12 +59,18 @@ export function DaemonDisconnectedOverlay({
   }
 
   useEffect(() => {
-    console.log("[DaemonDisconnectedOverlay] isInstalled changed to:", isInstalled);
+    console.log(
+      "[DaemonDisconnectedOverlay] isInstalled changed to:",
+      isInstalled,
+    );
   }, [isInstalled]);
 
   // Log checkbox state changes
   useEffect(() => {
-    console.log("[DaemonDisconnectedOverlay] installAsService checkbox state:", installAsService);
+    console.log(
+      "[DaemonDisconnectedOverlay] installAsService checkbox state:",
+      installAsService,
+    );
   }, [installAsService]);
 
   const shouldShow = forceShow || !isConnected;
@@ -69,16 +89,26 @@ export function DaemonDisconnectedOverlay({
             <div className="flex items-center gap-2 rounded-full border border-outline-variant bg-surface-container px-3 py-1.5 text-label-medium font-medium">
               <div
                 className={`size-2 rounded-full ${
-                  isChecking ? "bg-warning" : isConnected ? "bg-success" : "bg-error"
+                  isChecking
+                    ? "bg-warning"
+                    : isConnected
+                      ? "bg-success"
+                      : "bg-error"
                 } animate-pulse`}
               />
               <span className="text-on-surface-variant">
-                {isChecking ? "Starting..." : isConnected ? "Connected" : "Disconnected"}
+                {isChecking
+                  ? "Starting..."
+                  : isConnected
+                    ? "Connected"
+                    : "Disconnected"}
               </span>
             </div>
 
             <div className="flex items-center gap-2 rounded-full border border-outline-variant bg-surface-container px-3 py-1.5 text-label-medium font-medium">
-              <div className={`size-2 rounded-full ${isInstalled ? "bg-primary" : "bg-outline"}`} />
+              <div
+                className={`size-2 rounded-full ${isInstalled ? "bg-primary" : "bg-outline"}`}
+              />
               <span className="text-on-surface-variant">
                 {isInstalled ? "Persistent" : "Temporary"}
               </span>
@@ -99,9 +129,9 @@ export function DaemonDisconnectedOverlay({
                   Daemon disconnected
                 </h1>
                 <p className="max-w-xs text-body-medium leading-relaxed text-on-surface-variant">
-                  The Spacedrive daemon is required for the app to function. It runs in the
-                  background, managing your libraries, indexing files, and syncing data across
-                  devices.
+                  The Spacedrive daemon is required for the app to function. It
+                  runs in the background, managing your libraries, indexing
+                  files, and syncing data across devices.
                 </p>
               </div>
 
@@ -123,7 +153,10 @@ export function DaemonDisconnectedOverlay({
                         try {
                           await platform.uninstallDaemonService?.();
                         } catch (error) {
-                          console.error("Failed to uninstall daemon service:", error);
+                          console.error(
+                            "Failed to uninstall daemon service:",
+                            error,
+                          );
                           setInstallAsService(true);
                         }
                       }
@@ -137,7 +170,11 @@ export function DaemonDisconnectedOverlay({
                   <Button aria-label="Help" title="Help" variant="gray">
                     <Icon name="help" size={18} />
                   </Button>
-                  <Button onClick={startDaemon} disabled={isChecking} variant="accent">
+                  <Button
+                    onClick={startDaemon}
+                    disabled={isChecking}
+                    variant="accent"
+                  >
                     {isChecking ? "Starting daemon..." : "Restart Daemon"}
                   </Button>
                 </div>
@@ -150,13 +187,22 @@ export function DaemonDisconnectedOverlay({
               </span>
 
               <div className="space-y-2">
-                <CLICommand command="sd start" description="Start the daemon in background mode" />
+                <CLICommand
+                  command="sd start"
+                  description="Start the daemon in background mode"
+                />
                 <CLICommand
                   command="sd start --foreground"
                   description="Start the daemon in foreground mode (see logs)"
                 />
-                <CLICommand command="sd stop" description="Stop the daemon gracefully" />
-                <CLICommand command="sd restart" description="Restart the daemon" />
+                <CLICommand
+                  command="sd stop"
+                  description="Stop the daemon gracefully"
+                />
+                <CLICommand
+                  command="sd restart"
+                  description="Restart the daemon"
+                />
                 <CLICommand
                   command="sd daemon install"
                   description="Install daemon to start automatically on login (macOS/Linux)"

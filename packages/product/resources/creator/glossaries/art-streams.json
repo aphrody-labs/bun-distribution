@@ -107,7 +107,12 @@
     {
       "kind": "software",
       "id": "csp-blend-glow-dodge",
-      "src": ["覆い焼き(発光)", "覆い焼き（発光）", "Glow dodge mode", "Glow dodge"],
+      "src": [
+        "覆い焼き(発光)",
+        "覆い焼き（発光）",
+        "Glow dodge mode",
+        "Glow dodge"
+      ],
       "en": "Glow dodge",
       "note": "Clip Studio Paint layer blending mode (JP 合成モード '覆い焼き(発光)'). Use the official English UI name.",
       "confidence": "verified",
@@ -125,7 +130,12 @@
     {
       "kind": "software",
       "id": "csp-blend-linear-burn",
-      "src": ["焼き込み(リニア)", "焼き込み（リニア）", "Linear burn mode", "Linear burn"],
+      "src": [
+        "焼き込み(リニア)",
+        "焼き込み（リニア）",
+        "Linear burn mode",
+        "Linear burn"
+      ],
       "en": "Linear burn",
       "note": "Clip Studio Paint layer blending mode (JP 合成モード '焼き込み(リニア)'). Use the official English UI name.",
       "confidence": "verified",
@@ -245,7 +255,12 @@
     {
       "kind": "software",
       "id": "csp-blend-darker-color",
-      "src": ["カラー比較(暗)", "カラー比較（暗）", "Darker color mode", "Darker color"],
+      "src": [
+        "カラー比較(暗)",
+        "カラー比較（暗）",
+        "Darker color mode",
+        "Darker color"
+      ],
       "en": "Darker color",
       "note": "Clip Studio Paint layer blending mode (JP 合成モード 'カラー比較(暗)'). Use the official English UI name.",
       "confidence": "verified",
@@ -254,7 +269,12 @@
     {
       "kind": "software",
       "id": "csp-blend-lighter-color",
-      "src": ["カラー比較(明)", "カラー比較（明）", "Lighter color mode", "Lighter color"],
+      "src": [
+        "カラー比較(明)",
+        "カラー比較（明）",
+        "Lighter color mode",
+        "Lighter color"
+      ],
       "en": "Lighter color",
       "note": "Clip Studio Paint layer blending mode (JP 合成モード 'カラー比較(明)'). Use the official English UI name.",
       "confidence": "verified",
@@ -334,7 +354,12 @@
     {
       "kind": "software",
       "id": "csp-clipping",
-      "src": ["下のレイヤーでクリッピング", "クリッピング", "clipping mask", "clip to layer below"],
+      "src": [
+        "下のレイヤーでクリッピング",
+        "クリッピング",
+        "clipping mask",
+        "clip to layer below"
+      ],
       "en": "clipping mask",
       "alt": ["Clip to Layer Below", "clip to layer", "clipping"],
       "note": "CSP: 'Clip to Layer Below' limits a layer to the drawn area of the layer under it.",
@@ -345,7 +370,13 @@
     {
       "kind": "software",
       "id": "csp-stabilization",
-      "src": ["手ブレ補正", "手ぶれ補正", "stabilization", "stabiliser", "stabilizer"],
+      "src": [
+        "手ブレ補正",
+        "手ぶれ補正",
+        "stabilization",
+        "stabiliser",
+        "stabilizer"
+      ],
       "en": "stabilization",
       "alt": ["stabilizer", "line stabilization", "smoothing"],
       "avoid": ["camera shake correction", "image stabilization"],
@@ -414,7 +445,13 @@
       "id": "genga",
       "src": ["原画", "原画マン", "genga"],
       "en": "key animation",
-      "alt": ["key frames", "keyframes", "key drawings", "genga", "original artwork"],
+      "alt": [
+        "key frames",
+        "keyframes",
+        "key drawings",
+        "genga",
+        "original artwork"
+      ],
       "avoid": ["original picture", "original drawing"],
       "note": "原画 in anime production = key animation (the drawings of key poses). In manga/illustration it can mean the original (hand-drawn) artwork instead.",
       "confidence": "verified",
@@ -424,7 +461,14 @@
     {
       "kind": "term",
       "id": "nakawari",
-      "src": ["中割り", "中割", "動画マン", "in-between", "inbetween", "tweening"],
+      "src": [
+        "中割り",
+        "中割",
+        "動画マン",
+        "in-between",
+        "inbetween",
+        "tweening"
+      ],
       "en": "in-betweening",
       "alt": ["in-betweens", "tweening", "in-between animation", "inbetweens"],
       "avoid": ["middle splitting", "middle dividing"],
@@ -468,7 +512,12 @@
       "id": "kami-sakuga",
       "src": ["神作画"],
       "en": "insane animation",
-      "alt": ["god-tier animation", "peak sakuga", "incredible animation", "amazing animation"],
+      "alt": [
+        "god-tier animation",
+        "peak sakuga",
+        "incredible animation",
+        "amazing animation"
+      ],
       "avoid": ["god drawing", "divine drawing"],
       "note": "神作画 = spectacular animation (fans call such scenes 'peak sakuga').",
       "confidence": "unverified"
@@ -490,7 +539,13 @@
       "id": "nijisousaku",
       "src": ["二次創作", "二次絵", "ファンアート", "fanart", "fan art"],
       "en": "fan art",
-      "alt": ["fanwork", "fan works", "derivative work", "fan creations", "fanart"],
+      "alt": [
+        "fanwork",
+        "fan works",
+        "derivative work",
+        "fan creations",
+        "fanart"
+      ],
       "avoid": ["secondary creation", "second creation"],
       "note": "二次創作 = derivative/fan works based on an existing work (fan art, fan fiction, etc.); for drawings, 'fan art'.",
       "confidence": "verified",
@@ -502,7 +557,12 @@
       "id": "ichijisousaku",
       "src": ["一次創作", "オリジナル作品", "オリキャラ"],
       "en": "original work",
-      "alt": ["original content", "OC", "original characters", "my own characters"],
+      "alt": [
+        "original content",
+        "OC",
+        "original characters",
+        "my own characters"
+      ],
       "avoid": ["primary creation", "first creation"],
       "note": "一次創作 = original (non-derivative) work; オリキャラ = original character (OC).",
       "confidence": "unverified"
@@ -523,7 +583,12 @@
       "id": "tachie",
       "src": ["立ち絵", "立絵"],
       "en": "character standing art",
-      "alt": ["character sprite", "full-body character art", "standing pose", "character art"],
+      "alt": [
+        "character sprite",
+        "full-body character art",
+        "standing pose",
+        "character art"
+      ],
       "avoid": ["standing picture", "stand picture"],
       "note": "立ち絵 = a full-body standing character illustration (visual novels, VTuber models).",
       "confidence": "unverified"
@@ -573,7 +638,13 @@
       "id": "shitanuri",
       "src": ["下塗り", "ベタ塗り", "ベタ"],
       "en": "flats",
-      "alt": ["flat colors", "base colors", "base coat", "flat fill", "solid fill"],
+      "alt": [
+        "flat colors",
+        "base colors",
+        "base coat",
+        "flat fill",
+        "solid fill"
+      ],
       "avoid": ["under-painting", "undercoat paint"],
       "note": "下塗り / ベタ塗り = laying down the flat base colors before shading.",
       "confidence": "unverified"
@@ -681,7 +752,13 @@
       "id": "mosha",
       "src": ["模写", "模写する"],
       "en": "study copy",
-      "alt": ["master study", "copy study", "copying", "studying by copying", "copy"],
+      "alt": [
+        "master study",
+        "copy study",
+        "copying",
+        "studying by copying",
+        "copy"
+      ],
       "avoid": ["tracing paper copy"],
       "note": "模写 = copying an existing picture by hand to learn from it (not tracing).",
       "confidence": "partial",
@@ -721,7 +798,12 @@
       "id": "hentai-flip",
       "src": ["左右反転", "キャンバス反転", "反転"],
       "en": "flip the canvas",
-      "alt": ["horizontal flip", "mirror flip", "flipping the canvas", "flip horizontally"],
+      "alt": [
+        "horizontal flip",
+        "mirror flip",
+        "flipping the canvas",
+        "flip horizontally"
+      ],
       "note": "Artists flip the canvas to spot proportion errors.",
       "ambiguous": true,
       "confidence": "unverified"
@@ -792,7 +874,13 @@
     {
       "kind": "term",
       "id": "fr-couleur",
-      "src": ["mise en couleur", "mise en couleurs", "colorisation", "aplat", "aplats"],
+      "src": [
+        "mise en couleur",
+        "mise en couleurs",
+        "colorisation",
+        "aplat",
+        "aplats"
+      ],
       "en": "coloring",
       "alt": ["flats", "flat colors", "colouring"],
       "note": "French: 'aplat(s)' = flat color areas; 'mise en couleur' = coloring.",

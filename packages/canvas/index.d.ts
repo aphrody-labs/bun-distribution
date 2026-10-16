@@ -1,7 +1,12 @@
 // Declarations only: never import a sibling `.ts` here, or consumers would type-check the shipped
 // sources. The site contract below is re-declared verbatim from `site.d.ts` (vendor.test.ts).
 import type { Render3dPolicy, Scene, Scene3d } from "./scene-types.js";
-import type { Canvas, Image, SvgCanvas, SvgExportFlag } from "./vendor/index.js";
+import type {
+  Canvas,
+  Image,
+  SvgCanvas,
+  SvgExportFlag,
+} from "./vendor/index.js";
 
 export declare const aphrodyCanvasRuntime: "aphrody-canvas/skia";
 export declare const aphrodyCanvasVersion: "1.4.4";
@@ -28,23 +33,36 @@ export type BrowserCanvasElement = typeof globalThis extends {
   ? Element
   : { width: number; height: number; getContext(contextId: string): unknown };
 export declare function isBrowserCanvasAvailable(): boolean;
-export declare function selectCanvasBackend(preferred?: CanvasBackend): CanvasBackend;
-export declare function createM3CanvasSurface(options?: Partial<M3CanvasSurface>): M3CanvasSurface;
+export declare function selectCanvasBackend(
+  preferred?: CanvasBackend,
+): CanvasBackend;
+export declare function createM3CanvasSurface(
+  options?: Partial<M3CanvasSurface>,
+): M3CanvasSurface;
 export declare function configureBrowserCanvas(
   canvas: BrowserCanvasElement,
   options: AphrodyCanvasOptions,
 ): BrowserCanvasElement;
-export declare function createBrowserCanvas(options: AphrodyCanvasOptions): BrowserCanvasElement;
+export declare function createBrowserCanvas(
+  options: AphrodyCanvasOptions,
+): BrowserCanvasElement;
 
 export declare function isNativeCanvasAvailable(): boolean;
-export declare function loadNativeCanvas(): Promise<typeof import("./vendor/index.js")>;
-export declare function createNativeCanvas(width: number, height: number): Promise<Canvas>;
+export declare function loadNativeCanvas(): Promise<
+  typeof import("./vendor/index.js")
+>;
+export declare function createNativeCanvas(
+  width: number,
+  height: number,
+): Promise<Canvas>;
 export declare function createNativeCanvas(
   width: number,
   height: number,
   flag: SvgExportFlag,
 ): Promise<SvgCanvas>;
-export declare function loadNativeImage(source: string | Uint8Array): Promise<Image>;
+export declare function loadNativeImage(
+  source: string | Uint8Array,
+): Promise<Image>;
 export declare function clearNativeCanvasCache(): Promise<void>;
 
 /** Mirrors `aphrody_render::scene::Scene` (drift-checked copy of `@aphrody/bun`'s wire types). */
@@ -55,7 +73,10 @@ export type M3Render3dPolicy = Render3dPolicy;
 /** Requires the optional peer dependency `@aphrody/bun`. */
 export declare function drawM3Scene(scene: M3Scene): Promise<Canvas>;
 /** Requires the optional peer dependency `@aphrody/bun`. */
-export declare function drawM3Scene3d(scene: M3Scene3d, policy?: M3Render3dPolicy): Promise<Canvas>;
+export declare function drawM3Scene3d(
+  scene: M3Scene3d,
+  policy?: M3Render3dPolicy,
+): Promise<Canvas>;
 
 export * from "./vendor/index.js";
 export { default } from "./vendor/index.js";

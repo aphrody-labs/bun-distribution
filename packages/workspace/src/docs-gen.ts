@@ -15,9 +15,20 @@
  *
  * `cargo metadata --no-deps` is read-only: it never builds.
  */
-import { loadRootDocs, renderMemory, renderPlan, renderReadme } from "./root-docs.ts";
+import {
+  loadRootDocs,
+  renderMemory,
+  renderPlan,
+  renderReadme,
+} from "./root-docs.ts";
 import { spawnSync } from "@aphrody/update/process";
-import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 
 type CargoTarget = { name: string; kind: string[]; src_path: string };
@@ -42,16 +53,33 @@ export type Unit = {
   lastCommit: string;
 };
 
-const SKIP_DIRS = new Set(["node_modules", "target", "dist", ".git", ".turbo", ".next", "build"]);
+const SKIP_DIRS = new Set([
+  "node_modules",
+  "target",
+  "dist",
+  ".git",
+  ".turbo",
+  ".next",
+  "build",
+]);
 const posix = (path: string): string => path.replaceAll("\\", "/");
 
 function run(cmd: string, args: string[], cwd: string): string {
-  const result = spawnSync(cmd, args, { cwd, encoding: "utf8", maxBuffer: 512 * 1024 * 1024 });
-  if (result.status !== 0) throw new Error(`${cmd} ${args.join(" ")} failed: ${result.stderr}`);
+  const result = spawnSync(cmd, args, {
+    cwd,
+    encoding: "utf8",
+    maxBuffer: 512 * 1024 * 1024,
+  });
+  if (result.status !== 0)
+    throw new Error(`${cmd} ${args.join(" ")} failed: ${result.stderr}`);
   return result.stdout;
 }
 
-function walkFiles(dir: string, accept: (file: string) => boolean, out: string[] = []): string[] {
+function walkFiles(
+  dir: string,
+  accept: (file: string) => boolean,
+  out: string[] = [],
+): string[] {
   let entries;
   try {
     entries = readdirSync(dir, { withFileTypes: true });
@@ -113,28 +141,42 @@ function rustFacts(dir: string): { tests: boolean; todos: number } {
   return { tests, todos };
 }
 
-function bunFacts(dir: string, manifest: Record<string, unknown>): { tests: boolean } {
+function bunFacts(
+  dir: string,
+  manifest: Record<string, unknown>,
+): { tests: boolean } {
   const scripts = (manifest.scripts ?? {}) as Record<string, string>;
   if (typeof scripts.test === "string" && !/no test|exit 0/.test(scripts.test))
     return { tests: true };
-  const found = walkFiles(dir, (name) => /\.(test|spec)\.[cm]?[jt]sx?$/.test(name));
+  const found = walkFiles(dir, (name) =>
+    /\.(test|spec)\.[cm]?[jt]sx?$/.test(name),
+  );
   return { tests: found.length > 0 };
 }
 
 function cargoMetadata(root: string): CargoMetadata {
   return JSON.parse(
-    run("cargo", ["metadata", "--format-version", "1", "--no-deps", "--locked"], root),
+    run(
+      "cargo",
+      ["metadata", "--format-version", "1", "--no-deps", "--locked"],
+      root,
+    ),
   ) as CargoMetadata;
 }
 
 function workspaceExcludes(root: string): string[] {
   const text = readFileSync(join(root, "Cargo.toml"), "utf8");
-  const block = /\[workspace\][\s\S]*?\bexclude\s*=\s*\[([\s\S]*?)\]/.exec(text)?.[1] ?? "";
-  return [...block.matchAll(/"([^"]+)"/g)].map((m) => m[1] ?? "").filter(Boolean);
+  const block =
+    /\[workspace\][\s\S]*?\bexclude\s*=\s*\[([\s\S]*?)\]/.exec(text)?.[1] ?? "";
+  return [...block.matchAll(/"([^"]+)"/g)]
+    .map((m) => m[1] ?? "")
+    .filter(Boolean);
 }
 
 function bunWorkspaceDirs(root: string): string[] {
-  const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
+  const manifest = JSON.parse(
+    readFileSync(join(root, "package.json"), "utf8"),
+  ) as {
     workspaces?: string[] | { packages?: string[] };
   };
   const patterns = Array.isArray(manifest.workspaces)
@@ -167,7 +209,9 @@ export function collectUnits(root: string): {
       ...new Set(
         pkg.targets
           .flatMap((t) => t.kind)
-          .filter((k) => !["test", "bench", "example", "custom-build"].includes(k)),
+          .filter(
+            (k) => !["test", "bench", "example", "custom-build"].includes(k),
+          ),
       ),
     ].toSorted();
     const facts = rustFacts(dir);
@@ -185,10 +229,9 @@ export function collectUnits(root: string): {
     });
   }
   for (const path of bunWorkspaceDirs(root)) {
-    const manifest = JSON.parse(readFileSync(join(root, path, "package.json"), "utf8")) as Record<
-      string,
-      unknown
-    >;
+    const manifest = JSON.parse(
+      readFileSync(join(root, path, "package.json"), "utf8"),
+    ) as Record<string, unknown>;
     const bin = manifest.bin;
     const kinds = [
       bin ? "bin" : "",
@@ -211,26 +254,40 @@ export function collectUnits(root: string): {
     root,
     units.map((u) => u.path),
   );
-  for (const unit of units) unit.lastCommit = dates.get(unit.path) ?? "uncommitted";
-  units.sort((a, b) => a.domain.localeCompare(b.domain) || a.path.localeCompare(b.path));
+  for (const unit of units)
+    unit.lastCommit = dates.get(unit.path) ?? "uncommitted";
+  units.sort(
+    (a, b) => a.domain.localeCompare(b.domain) || a.path.localeCompare(b.path),
+  );
 
   // Cargo manifests that are not members of the root workspace (excluded or nested workspaces).
-  const members = new Set(units.filter((u) => u.ecosystem === "rust").map((u) => u.path));
+  const members = new Set(
+    units.filter((u) => u.ecosystem === "rust").map((u) => u.path),
+  );
   const tracked = run("git", ["ls-files", "--", "*Cargo.toml"], root)
     .split("\n")
     .filter((f) => f && !f.startsWith("docs/") && existsSync(join(root, f)))
     .map((f) => posix(dirname(f)))
     .filter((d) => d !== "." && !members.has(d));
-  return { units, excludes: workspaceExcludes(root), outside: tracked.toSorted() };
+  return {
+    units,
+    excludes: workspaceExcludes(root),
+    outside: tracked.toSorted(),
+  };
 }
 
 const cell = (s: string): string => s.replaceAll("|", "\\|");
 
-export function renderState(units: Unit[], excludes: string[], outside: string[]): string {
+export function renderState(
+  units: Unit[],
+  excludes: string[],
+  outside: string[],
+): string {
   const domains = [...new Set(units.map((u) => u.domain))].toSorted();
   const count = (d: string, role: Unit["role"]) =>
     units.filter((u) => u.domain === d && u.role === role).length;
-  const total = (role: Unit["role"]) => units.filter((u) => u.role === role).length;
+  const total = (role: Unit["role"]) =>
+    units.filter((u) => u.role === role).length;
   const out: string[] = [
     "<!-- SPDX-License-Identifier: Apache-2.0 -->",
     "<!-- @generated by `bun run docs:gen` (packages/infra/workspace/src/docs-gen.ts). Do not edit; `bun run docs:check` fails when stale. -->",
@@ -303,7 +360,9 @@ function titleOf(file: string): string {
 function docsFiles(root: string): string[] {
   return run("git", ["ls-files", "-z", "--", "docs"], root)
     .split("\0")
-    .filter((f) => f && existsSync(join(root, f)) && statSync(join(root, f)).isFile());
+    .filter(
+      (f) => f && existsSync(join(root, f)) && statSync(join(root, f)).isFile(),
+    );
 }
 
 export function renderDocsIndex(root: string): string {
@@ -352,13 +411,24 @@ export function renderDocsIndex(root: string): string {
       const domain = parts.length > 3 ? (parts[2] ?? "") : "(files)";
       domains.set(domain, [...(domains.get(domain) ?? []), f]);
     }
-    for (const [domain, dl] of [...domains].toSorted((a, b) => a[0].localeCompare(b[0]))) {
-      const dir = top === "(root)" ? "." : domain === "(files)" ? top : `${top}/${domain}`;
+    for (const [domain, dl] of [...domains].toSorted((a, b) =>
+      a[0].localeCompare(b[0]),
+    )) {
+      const dir =
+        top === "(root)"
+          ? "."
+          : domain === "(files)"
+            ? top
+            : `${top}/${domain}`;
       const entry = ["README.md", "INDEX.md", "PLAN.md"]
         .map((n) => `docs/${dir}/${n}`)
         .find((p) => dl.includes(p));
-      const label = CATEGORIES.includes(top) ? top : `${top} (outside the category layout)`;
-      const vendored = domain.startsWith("upstream-") ? " vendored upstream copy" : "";
+      const label = CATEGORIES.includes(top)
+        ? top
+        : `${top} (outside the category layout)`;
+      const vendored = domain.startsWith("upstream-")
+        ? " vendored upstream copy"
+        : "";
       out.push(
         `| ${label} | [${domain}](${dir}/)${vendored} | ${dl.length} | ${entry ? `[${titleOf(join(root, entry)) || entry.split("/").pop()}](${posix(relative("docs", entry))})` : "-"} |`,
       );
@@ -371,7 +441,9 @@ export function renderDocsIndex(root: string): string {
 export function renderLlms(root: string): string {
   const files = docsFiles(root).filter(
     (f) =>
-      /\/(README|PLAN|INDEX)\.md$/.test(f) && !f.includes("/upstream-") && f.split("/").length <= 4,
+      /\/(README|PLAN|INDEX)\.md$/.test(f) &&
+      !f.includes("/upstream-") &&
+      f.split("/").length <= 4,
   );
   const lines = [
     "# Aphrody",
@@ -393,14 +465,20 @@ export function renderLlms(root: string): string {
     "",
     ...files
       .toSorted()
-      .map((f) => `- [${titleOf(join(root, f)) || f}](${relative("docs/reference/ai", f)})`),
+      .map(
+        (f) =>
+          `- [${titleOf(join(root, f)) || f}](${relative("docs/reference/ai", f)})`,
+      ),
     "",
   ];
   return lines.join("\n");
 }
 
 function delegate(root: string, label: string, cmd: string[]): number {
-  const result = spawnSync(cmd[0] ?? "bun", cmd.slice(1), { cwd: root, stdio: "inherit" });
+  const result = spawnSync(cmd[0] ?? "bun", cmd.slice(1), {
+    cwd: root,
+    stdio: "inherit",
+  });
   const code = result.status ?? 1;
   console.log(`${label}: exit ${code}`);
   return code;
@@ -466,10 +544,19 @@ export async function runDocsGen(args: string[]): Promise<number> {
     "--root",
     root,
   ];
-  if (delegate(root, "UPSTREAMS.md", [bun, ...upstreamArgs, ...(check ? [] : ["--apply"])]) !== 0)
+  if (
+    delegate(root, "UPSTREAMS.md", [
+      bun,
+      ...upstreamArgs,
+      ...(check ? [] : ["--apply"]),
+    ]) !== 0
+  )
     failures++;
   if (ecosystem) {
-    const ecoArgs = ["scripts/tools/workspace/ecosystem.ts", ...(check ? ["--check"] : [])];
+    const ecoArgs = [
+      "scripts/tools/workspace/ecosystem.ts",
+      ...(check ? ["--check"] : []),
+    ];
     if (delegate(root, "docs/ecosystem", [bun, ...ecoArgs]) !== 0) failures++;
   }
   if (deps && !check) {

@@ -20,9 +20,7 @@ export const SmartSearchBar = ({
   return (
     <div className="flex min-w-0 items-center gap-2">
       <div className="bg-ui-controls flex h-9 min-w-[200px] transition-all items-center gap-2 rounded-xl border border-ui-controls px-3 focus-within:ring-2 focus-within:ring-primary/50">
-        <SearchIcon
-          
-          className="h-3.5 w-3.5 text-base-fg/45" />
+        <SearchIcon className="h-3.5 w-3.5 text-base-fg/45" />
         <input
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
@@ -36,7 +34,7 @@ export const SmartSearchBar = ({
             onClick={() => onQueryChange("")}
             className="rounded-full text-base-fg/45 transition-colors hover:text-base-fg focus:outline-none focus-visible:text-base-fg focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <XIcon  className="h-3.5 w-3.5" />
+            <XIcon className="h-3.5 w-3.5" />
           </button>
         )}
       </div>

@@ -1,4 +1,9 @@
-import { CaretRight, DotsSixVertical, PencilSimple, Trash } from "@phosphor-icons/react";
+import {
+  CaretRight,
+  DotsSixVertical,
+  PencilSimple,
+  Trash,
+} from "@phosphor-icons/react";
 import { clsx } from "clsx";
 import { useState } from "react";
 import { useContextMenu } from "../../hooks/useContextMenu";
@@ -143,7 +148,10 @@ export function GroupHeader({
           className="flex-1 flex items-center gap-2 py-2 text-label-small font-semibold tracking-wider opacity-60 text-outline hover:text-on-surface transition-colors min-h-[32px]"
         >
           <CaretRight
-            className={clsx("transition-transform", !isCollapsed && "rotate-90")}
+            className={clsx(
+              "transition-transform",
+              !isCollapsed && "rotate-90",
+            )}
             size={10}
             weight="bold"
           />

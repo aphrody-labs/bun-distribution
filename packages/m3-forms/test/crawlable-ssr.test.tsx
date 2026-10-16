@@ -20,21 +20,24 @@ import {
 } from "../src/index";
 
 function Harness({ children }: { children: ReactNode }) {
-  const form = useForm({ defaultValues: { name: "", role: "user", notify: true } });
+  const form = useForm({
+    defaultValues: { name: "", role: "user", notify: true },
+  });
   return (
     <Form {...form}>
       <form>{children}</form>
     </Form>
   );
 }
-const render = (node: ReactNode) => renderToStaticMarkup(<Harness>{node}</Harness>);
+const render = (node: ReactNode) =>
+  renderToStaticMarkup(<Harness>{node}</Harness>);
 
 /** Ids referenced by aria-describedby / for that do not exist in the markup. */
 function danglingRefs(html: string): string[] {
   const ids = new Set([...html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]!));
-  const refs = [...html.matchAll(/ (?:aria-describedby|for)="([^"]+)"/g)].flatMap((m) =>
-    m[1]!.split(/\s+/),
-  );
+  const refs = [
+    ...html.matchAll(/ (?:aria-describedby|for)="([^"]+)"/g),
+  ].flatMap((m) => m[1]!.split(/\s+/));
   return refs.filter((ref) => !ids.has(ref));
 }
 
@@ -50,7 +53,9 @@ describe("crawlable SSR markup (m3-forms)", () => {
   test("no aria-describedby without a description, one with it", () => {
     const bare = render(<InputField name="name" label="Name" />);
     expect(bare).not.toContain("aria-describedby");
-    const described = render(<InputField name="name" label="Name" description="Public name" />);
+    const described = render(
+      <InputField name="name" label="Name" description="Public name" />,
+    );
     expect(described).toMatch(/aria-describedby="[^"]*-form-item-description"/);
     expect(danglingRefs(described)).toEqual([]);
   });
@@ -58,8 +63,16 @@ describe("crawlable SSR markup (m3-forms)", () => {
   test("select and switch fields never leave dangling references", () => {
     const html = render(
       <>
-        <SelectField name="role" label="Role" options={[{ value: "user", label: "User" }]} />
-        <SwitchField name="notify" label="Notify me" description="Weekly summary" />
+        <SelectField
+          name="role"
+          label="Role"
+          options={[{ value: "user", label: "User" }]}
+        />
+        <SwitchField
+          name="notify"
+          label="Notify me"
+          description="Weekly summary"
+        />
       </>,
     );
     expect(danglingRefs(html)).toEqual([]);

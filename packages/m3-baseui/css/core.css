@@ -8,33 +8,43 @@
   :where(:root) {
     --m3-bui-font-headline-small: var(--md-sys-typescale-headline-small-weight)
       var(--md-sys-typescale-headline-small-size) /
-      var(--md-sys-typescale-headline-small-line-height) var(--md-sys-typescale-headline-small-font);
+      var(--md-sys-typescale-headline-small-line-height)
+      var(--md-sys-typescale-headline-small-font);
     --m3-bui-font-headline-large: var(--md-sys-typescale-headline-large-weight)
       var(--md-sys-typescale-headline-large-size) /
-      var(--md-sys-typescale-headline-large-line-height) var(--md-sys-typescale-headline-large-font);
+      var(--md-sys-typescale-headline-large-line-height)
+      var(--md-sys-typescale-headline-large-font);
     --m3-bui-font-title-medium: var(--md-sys-typescale-title-medium-weight)
-      var(--md-sys-typescale-title-medium-size) / var(--md-sys-typescale-title-medium-line-height)
+      var(--md-sys-typescale-title-medium-size) /
+      var(--md-sys-typescale-title-medium-line-height)
       var(--md-sys-typescale-title-medium-font);
     --m3-bui-font-title-small: var(--md-sys-typescale-title-small-weight)
-      var(--md-sys-typescale-title-small-size) / var(--md-sys-typescale-title-small-line-height)
+      var(--md-sys-typescale-title-small-size) /
+      var(--md-sys-typescale-title-small-line-height)
       var(--md-sys-typescale-title-small-font);
     --m3-bui-font-body-large: var(--md-sys-typescale-body-large-weight)
-      var(--md-sys-typescale-body-large-size) / var(--md-sys-typescale-body-large-line-height)
+      var(--md-sys-typescale-body-large-size) /
+      var(--md-sys-typescale-body-large-line-height)
       var(--md-sys-typescale-body-large-font);
     --m3-bui-font-body-medium: var(--md-sys-typescale-body-medium-weight)
-      var(--md-sys-typescale-body-medium-size) / var(--md-sys-typescale-body-medium-line-height)
+      var(--md-sys-typescale-body-medium-size) /
+      var(--md-sys-typescale-body-medium-line-height)
       var(--md-sys-typescale-body-medium-font);
     --m3-bui-font-body-small: var(--md-sys-typescale-body-small-weight)
-      var(--md-sys-typescale-body-small-size) / var(--md-sys-typescale-body-small-line-height)
+      var(--md-sys-typescale-body-small-size) /
+      var(--md-sys-typescale-body-small-line-height)
       var(--md-sys-typescale-body-small-font);
     --m3-bui-font-label-large: var(--md-sys-typescale-label-large-weight)
-      var(--md-sys-typescale-label-large-size) / var(--md-sys-typescale-label-large-line-height)
+      var(--md-sys-typescale-label-large-size) /
+      var(--md-sys-typescale-label-large-line-height)
       var(--md-sys-typescale-label-large-font);
     --m3-bui-font-label-medium: var(--md-sys-typescale-label-medium-weight)
-      var(--md-sys-typescale-label-medium-size) / var(--md-sys-typescale-label-medium-line-height)
+      var(--md-sys-typescale-label-medium-size) /
+      var(--md-sys-typescale-label-medium-line-height)
       var(--md-sys-typescale-label-medium-font);
     --m3-bui-font-label-small: var(--md-sys-typescale-label-small-weight)
-      var(--md-sys-typescale-label-small-size) / var(--md-sys-typescale-label-small-line-height)
+      var(--md-sys-typescale-label-small-size) /
+      var(--md-sys-typescale-label-small-line-height)
       var(--md-sys-typescale-label-small-font);
   }
 
@@ -54,20 +64,28 @@
     background: var(--m3-state, currentColor);
     opacity: 0;
     pointer-events: none;
-    transition: opacity var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+    transition: opacity var(--md-sys-motion-duration-short2)
+      var(--md-sys-motion-easing-standard);
   }
   @media (hover: hover) {
     :is(.m3-bui-state, .m3-bui-item):hover::after {
       opacity: var(--md-sys-state-hover-state-layer-opacity);
     }
   }
-  :is(.m3-bui-state, .m3-bui-item):is(:focus-visible, [data-highlighted])::after {
+  :is(.m3-bui-state, .m3-bui-item):is(
+      :focus-visible,
+      [data-highlighted]
+    )::after {
     opacity: var(--md-sys-state-focus-state-layer-opacity);
   }
   :is(.m3-bui-state, .m3-bui-item):active::after {
     opacity: var(--md-sys-state-pressed-state-layer-opacity);
   }
-  :is(.m3-bui-state, .m3-bui-item):is(:disabled, [data-disabled], [aria-disabled="true"])::after {
+  :is(.m3-bui-state, .m3-bui-item):is(
+      :disabled,
+      [data-disabled],
+      [aria-disabled="true"]
+    )::after {
     opacity: 0;
   }
 
@@ -102,7 +120,8 @@
     outline: none;
     transform-origin: var(--transform-origin);
     transition:
-      opacity var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
+      opacity var(--md-sys-motion-duration-short3)
+        var(--md-sys-motion-easing-standard),
       transform var(--md-sys-motion-duration-short4)
         var(--md-sys-motion-easing-emphasized-decelerate);
   }
@@ -113,7 +132,9 @@
   }
   .m3-bui-popup[data-ending-style] {
     transition-duration: var(--md-sys-motion-duration-short2);
-    transition-timing-function: var(--md-sys-motion-easing-emphasized-accelerate);
+    transition-timing-function: var(
+      --md-sys-motion-easing-emphasized-accelerate
+    );
   }
 
   /* Menu-like item: 48dp, label-large, state layer, selected container. */

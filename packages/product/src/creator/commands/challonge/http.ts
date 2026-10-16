@@ -1,12 +1,19 @@
 /** Petits utilitaires HTTP partagés par les clients Challonge et Discord (aucune dépendance). */
 
-export type Fetch = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
+export type Fetch = (
+  input: string | URL | Request,
+  init?: RequestInit,
+) => Promise<Response>;
 export type Sleep = (ms: number) => Promise<void>;
 
-export const realSleep: Sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+export const realSleep: Sleep = (ms) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 
 /** Remplace chaque secret connu par `***` (les secrets trop courts sont ignorés pour éviter les faux positifs). */
-export function redact(text: string, secrets: readonly (string | undefined)[]): string {
+export function redact(
+  text: string,
+  secrets: readonly (string | undefined)[],
+): string {
   let out = text;
   for (const secret of secrets) {
     if (secret && secret.length >= 4) out = out.split(secret).join("***");
@@ -26,7 +33,10 @@ export function backoffMs(
 }
 
 /** Valeur de `Retry-After` (secondes ou date HTTP) en millisecondes, ou `undefined`. */
-export function retryAfterMs(res: Response, now = Date.now()): number | undefined {
+export function retryAfterMs(
+  res: Response,
+  now = Date.now(),
+): number | undefined {
   const raw = res.headers.get("retry-after");
   if (!raw) return undefined;
   const seconds = Number(raw);

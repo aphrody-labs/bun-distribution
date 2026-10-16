@@ -10,6 +10,8 @@ self.onmessage = async (e) => {
     worker_main(e.data.store);
   } catch (err) {
     // surfaces as the Worker's `error` event on the page, which falls back to inline rendering
-    setTimeout(() => { throw err; });
+    setTimeout(() => {
+      throw err;
+    });
   }
 };

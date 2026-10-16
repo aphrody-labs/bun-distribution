@@ -22,7 +22,8 @@ export const KEEP_SNAPSHOTS = 3;
 export const JOURNAL_MAX_BYTES = 64 << 20;
 export const JOURNAL_DAYS = 14;
 
-export const driveDir = (dir: string, drive: string) => join(dir, drive.slice(0, 1).toLowerCase());
+export const driveDir = (dir: string, drive: string) =>
+  join(dir, drive.slice(0, 1).toLowerCase());
 
 const stamp = (d = new Date()) =>
   d
@@ -42,7 +43,11 @@ export function rotateSnapshots(dir: string, keep = KEEP_SNAPSHOTS): string[] {
 }
 
 /** Removes journals older than `days` (by the day in their name). Returns the removed names. */
-export function rotateJournals(dir: string, days = JOURNAL_DAYS, now = new Date()): string[] {
+export function rotateJournals(
+  dir: string,
+  days = JOURNAL_DAYS,
+  now = new Date(),
+): string[] {
   if (!existsSync(dir)) return [];
   const limit = new Date(now.getTime() - days * 86_400_000)
     .toISOString()
@@ -69,7 +74,10 @@ export class Journal {
 
   private target(day: string): string {
     for (let n = 0; ; n++) {
-      const f = join(this.dir, n ? `journal-${day}-${n}.ndjson` : `journal-${day}.ndjson`);
+      const f = join(
+        this.dir,
+        n ? `journal-${day}-${n}.ndjson` : `journal-${day}.ndjson`,
+      );
       if (!existsSync(f) || statSync(f).size < this.maxBytes) return f;
     }
   }
@@ -77,7 +85,11 @@ export class Journal {
   append(events: object[]): void {
     if (!events.length) return;
     const day = new Date().toISOString().slice(0, 10).replaceAll("-", "");
-    if (this.fd < 0 || !this.file.includes(`journal-${day}`) || this.size >= this.maxBytes) {
+    if (
+      this.fd < 0 ||
+      !this.file.includes(`journal-${day}`) ||
+      this.size >= this.maxBytes
+    ) {
       this.close();
       mkdirSync(this.dir, { recursive: true });
       this.file = this.target(day);
@@ -85,7 +97,10 @@ export class Journal {
       this.size = statSync(this.file).size;
       rotateJournals(this.dir);
     }
-    const text = events.map((e) => JSON.stringify({ v: RECORD_VERSION, ...e })).join("\n") + "\n";
+    const text =
+      events
+        .map((e) => JSON.stringify({ v: RECORD_VERSION, ...e }))
+        .join("\n") + "\n";
     this.size += writeSync(this.fd, text);
   }
 
@@ -181,7 +196,14 @@ export async function exportSnapshot(
     closeSync(fd);
   }
   renameSync(partial, final);
-  const result = { file: final, entries, files, pe, bytes, ms: performance.now() - t0 };
+  const result = {
+    file: final,
+    entries,
+    files,
+    pe,
+    bytes,
+    ms: performance.now() - t0,
+  };
   const latest = join(dir, "latest.json");
   const tmp = `${latest}.tmp`;
   await Bun.write(

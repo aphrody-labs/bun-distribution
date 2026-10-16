@@ -26,14 +26,17 @@ export interface FalKlingImageToVideoSuccess extends CommandResult {
   payload: FalKlingImageToVideoPayload;
 }
 
-export type FalKlingImageToVideoResult = FalKlingImageToVideoSuccess | FalKlingImageToVideoError;
+export type FalKlingImageToVideoResult =
+  FalKlingImageToVideoSuccess | FalKlingImageToVideoError;
 
-export const FalKlingImageToVideo = async (request: FalKlingImageToVideoRequest) : Promise<FalKlingImageToVideoResult> => {
-  let result = await invoke("fal_kling_image_to_video_command", { 
+export const FalKlingImageToVideo = async (
+  request: FalKlingImageToVideoRequest,
+): Promise<FalKlingImageToVideoResult> => {
+  let result = await invoke("fal_kling_image_to_video_command", {
     request: {
       image_media_token: request.image_media_token,
       base64_image: request.base64_image,
-    }
+    },
   });
-  return (result as FalKlingImageToVideoResult);
-}
+  return result as FalKlingImageToVideoResult;
+};

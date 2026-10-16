@@ -1,2 +1,1 @@
-
-export * from './lib/button-icon-select';
+export * from "./lib/button-icon-select";

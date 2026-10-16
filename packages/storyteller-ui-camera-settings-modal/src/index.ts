@@ -1,2 +1,1 @@
-
-export * from './lib/camera-settings-modal';
+export * from "./lib/camera-settings-modal";

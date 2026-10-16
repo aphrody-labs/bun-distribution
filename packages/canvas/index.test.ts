@@ -12,10 +12,14 @@ describe("@aphrody/canvas contract", () => {
   test("selects a deterministic backend", () => {
     expect(selectCanvasBackend("native-skia")).toBe("native-skia");
     expect(selectCanvasBackend("browser")).toBe("browser");
-    expect(selectCanvasBackend()).toBe(isBrowserCanvasAvailable() ? "browser" : "native-skia");
+    expect(selectCanvasBackend()).toBe(
+      isBrowserCanvasAvailable() ? "browser" : "native-skia",
+    );
   });
   test("provides M3 defaults without a UI framework", () => {
-    expect(createM3CanvasSurface({ density: "expanded", colorScheme: "dark" })).toEqual({
+    expect(
+      createM3CanvasSurface({ density: "expanded", colorScheme: "dark" }),
+    ).toEqual({
       color: "var(--md-sys-color-surface, #fffbfe)",
       pixelRatio: 1,
       density: "expanded",

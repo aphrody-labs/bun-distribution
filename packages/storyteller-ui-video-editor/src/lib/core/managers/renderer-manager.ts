@@ -121,9 +121,13 @@ export class RendererManager {
         return { success: false, error: "Failed to create image" };
       }
 
-      const timecode = formatTimecode({ time: renderTime, rate: fps })!.replace(/:/g, "-");
+      const timecode = formatTimecode({ time: renderTime, rate: fps })!.replace(
+        /:/g,
+        "-",
+      );
       const safeName =
-        activeProject.metadata.name.replace(/[<>:"/\\|?*]/g, "-").trim() || "snapshot";
+        activeProject.metadata.name.replace(/[<>:"/\\|?*]/g, "-").trim() ||
+        "snapshot";
       const filename = `${safeName}-${timecode}.png`;
 
       return { success: true, blob, filename };
@@ -193,7 +197,9 @@ export class RendererManager {
       });
 
       exporter.on("progress", (progress) => {
-        const adjustedProgress = includeAudio ? 0.05 + progress * 0.95 : progress;
+        const adjustedProgress = includeAudio
+          ? 0.05 + progress * 0.95
+          : progress;
         onProgress?.({ progress: adjustedProgress });
       });
 

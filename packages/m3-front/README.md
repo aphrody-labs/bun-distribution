@@ -12,7 +12,9 @@ observeWindowClass(); // data-m3-width / data-m3-height / data-m3-nav on <html>
 ```
 
 ```html
-<m3-theme seed="#6750a4" mode="auto" variant="tonalSpot"> ... md-* elements ... </m3-theme>
+<m3-theme seed="#6750a4" mode="auto" variant="tonalSpot">
+  ... md-* elements ...
+</m3-theme>
 ```
 
 `<m3-theme>` scopes the dynamic colour roles to its subtree, follows `prefers-color-scheme` in `auto`, and

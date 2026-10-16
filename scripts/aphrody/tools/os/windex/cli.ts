@@ -5,7 +5,13 @@
 // docs/operations/os/WINDEX.md. Results go to stdout as JSON, progress to stderr.
 import { parseArgs } from "node:util";
 import { cachedNode, cachedQuery, connectRedis } from "./cache.ts";
-import { loadConfig, normalizeRoot, underRoot, type Config, type HashMode } from "./config.ts";
+import {
+  loadConfig,
+  normalizeRoot,
+  underRoot,
+  type Config,
+  type HashMode,
+} from "./config.ts";
 import { ps, up } from "./containers.ts";
 import { driveDir, exportSnapshot } from "./ndjson.ts";
 import { connect, migrate } from "./pg.ts";
@@ -58,7 +64,9 @@ const { values: opt, positionals } = parseArgs({
 const log = (msg: string) =>
   console.error(`[windex ${new Date().toLocaleTimeString("fr-FR")}] ${msg}`);
 const out = (v: unknown) =>
-  console.log(JSON.stringify(v, (_k, x) => (typeof x === "bigint" ? x.toString() : x), 2));
+  console.log(
+    JSON.stringify(v, (_k, x) => (typeof x === "bigint" ? x.toString() : x), 2),
+  );
 
 function defaultsFor(root: string): { hash: HashMode; graph: boolean } {
   const inWindows = underRoot(root, `${root.slice(0, 2)}\\Windows`);
@@ -110,7 +118,8 @@ async function main(): Promise<number> {
       const root = normalizeRoot(opt.root ?? "C:\\Windows\\System32");
       const d = defaultsFor(root);
       const hash = (opt.hash as HashMode | undefined) ?? d.hash;
-      if (!["all", "pe", "none"].includes(hash)) throw new Error(`--hash invalide : ${hash}`);
+      if (!["all", "pe", "none"].includes(hash))
+        throw new Error(`--hash invalide : ${hash}`);
       const pool = new Pool(cfg.workers);
       const redis = await tryRedis(cfg);
       try {
@@ -145,7 +154,12 @@ async function main(): Promise<number> {
       try {
         out(
           await withSql(cfg, (sql) =>
-            catalogPass(sql, pool, opt.root ? normalizeRoot(opt.root) : undefined, log),
+            catalogPass(
+              sql,
+              pool,
+              opt.root ? normalizeRoot(opt.root) : undefined,
+              log,
+            ),
           ),
         );
       } finally {
@@ -179,7 +193,11 @@ async function main(): Promise<number> {
     case "stats": {
       const redis = await connectRedis(cfg);
       try {
-        out(await withSql(cfg, (sql) => cachedQuery(redis, "stats", () => stats(sql))));
+        out(
+          await withSql(cfg, (sql) =>
+            cachedQuery(redis, "stats", () => stats(sql)),
+          ),
+        );
       } finally {
         redis.close();
       }
@@ -201,7 +219,11 @@ async function main(): Promise<number> {
     }
     case "export": {
       const root = normalizeRoot(opt.root ?? "C:\\");
-      out(await withSql(cfg, (sql) => exportSnapshot(sql, root, driveDir(cfg.dir, root))));
+      out(
+        await withSql(cfg, (sql) =>
+          exportSnapshot(sql, root, driveDir(cfg.dir, root)),
+        ),
+      );
       return 0;
     }
     case "status": {
@@ -244,12 +266,15 @@ async function peGraph(sql: ReturnType<typeof connect>, path: string) {
     await sql`SELECT f.id, f.path, p.kind, p.machine, p.signature, p.signer, p.file_version
     FROM windex.fs_node f JOIN windex.pe p ON p.node_id = f.id WHERE f.path_lc = ${path.replaceAll("/", "\\").toLowerCase()}`;
   if (!node) return null;
-  const imports = await sql`SELECT e.label AS module, t.path AS resolved FROM windex.edge e
+  const imports =
+    await sql`SELECT e.label AS module, t.path AS resolved FROM windex.edge e
     JOIN windex.fs_node t ON t.id = e.dst WHERE e.src = ${node.id} AND e.kind = 'imports' ORDER BY e.label`;
-  const unresolved = await sql`SELECT i.module FROM windex.pe_import i WHERE i.node_id = ${node.id}
+  const unresolved =
+    await sql`SELECT i.module FROM windex.pe_import i WHERE i.node_id = ${node.id}
     AND NOT EXISTS (SELECT 1 FROM windex.edge e WHERE e.src = i.node_id AND e.kind = 'imports' AND e.label = i.module)
     ORDER BY i.module`;
-  const importers = await sql`SELECT s.path, e.label AS as_module FROM windex.edge e
+  const importers =
+    await sql`SELECT s.path, e.label AS as_module FROM windex.edge e
     JOIN windex.fs_node s ON s.id = e.src WHERE e.dst = ${node.id} AND e.kind = 'imports' ORDER BY s.path`;
   const services =
     await sql`SELECT s.name, e.kind, e.label FROM windex.edge e JOIN windex.service s ON s.id = e.src

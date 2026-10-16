@@ -2,10 +2,17 @@ import { motion, AnimatePresence } from "motion/react";
 import { m3Durations, m3Easings } from "@aphrody/m3-motion";
 import { clsx } from "clsx";
 import { Button, Icon, m3FocusRing, toast } from "@aphrody/m3-primitives";
-import { useNormalizedQuery, useLibraryMutation } from "../../contexts/SpacedriveContext";
+import {
+  useNormalizedQuery,
+  useLibraryMutation,
+} from "../../contexts/SpacedriveContext";
 import { useSelection } from "./SelectionContext";
 import { useKeybind } from "../../hooks/useKeybind";
-import type { SearchTagsInput, SearchTagsOutput, Tag } from "@aphrody/drive-client";
+import type {
+  SearchTagsInput,
+  SearchTagsOutput,
+  Tag,
+} from "@aphrody/drive-client";
 
 interface TagAssignmentModeProps {
   isActive: boolean;
@@ -21,12 +28,19 @@ interface TagAssignmentModeProps {
  * - Visual feedback for applied tags
  * - Works on selected files
  */
-export function TagAssignmentMode({ isActive, onExit }: TagAssignmentModeProps) {
+export function TagAssignmentMode({
+  isActive,
+  onExit,
+}: TagAssignmentModeProps) {
   const { selectedFiles } = useSelection();
   const applyTag = useLibraryMutation("tags.apply");
 
   // The keyboard palette is the first 10 available tags.
-  const { data: allTags = [] } = useNormalizedQuery<SearchTagsInput, SearchTagsOutput, Tag[]>({
+  const { data: allTags = [] } = useNormalizedQuery<
+    SearchTagsInput,
+    SearchTagsOutput,
+    Tag[]
+  >({
     query: "tags.search",
     input: {
       query: "",
@@ -74,21 +88,43 @@ export function TagAssignmentMode({ isActive, onExit }: TagAssignmentModeProps) 
 
   // Keyboard shortcuts using keybind registry
   useKeybind("explorer.exitTagMode", onExit, { enabled: isActive });
-  useKeybind("explorer.toggleTag1", () => handleToggleTag(0), { enabled: isActive });
-  useKeybind("explorer.toggleTag2", () => handleToggleTag(1), { enabled: isActive });
-  useKeybind("explorer.toggleTag3", () => handleToggleTag(2), { enabled: isActive });
-  useKeybind("explorer.toggleTag4", () => handleToggleTag(3), { enabled: isActive });
-  useKeybind("explorer.toggleTag5", () => handleToggleTag(4), { enabled: isActive });
-  useKeybind("explorer.toggleTag6", () => handleToggleTag(5), { enabled: isActive });
-  useKeybind("explorer.toggleTag7", () => handleToggleTag(6), { enabled: isActive });
-  useKeybind("explorer.toggleTag8", () => handleToggleTag(7), { enabled: isActive });
-  useKeybind("explorer.toggleTag9", () => handleToggleTag(8), { enabled: isActive });
-  useKeybind("explorer.toggleTag10", () => handleToggleTag(9), { enabled: isActive });
+  useKeybind("explorer.toggleTag1", () => handleToggleTag(0), {
+    enabled: isActive,
+  });
+  useKeybind("explorer.toggleTag2", () => handleToggleTag(1), {
+    enabled: isActive,
+  });
+  useKeybind("explorer.toggleTag3", () => handleToggleTag(2), {
+    enabled: isActive,
+  });
+  useKeybind("explorer.toggleTag4", () => handleToggleTag(3), {
+    enabled: isActive,
+  });
+  useKeybind("explorer.toggleTag5", () => handleToggleTag(4), {
+    enabled: isActive,
+  });
+  useKeybind("explorer.toggleTag6", () => handleToggleTag(5), {
+    enabled: isActive,
+  });
+  useKeybind("explorer.toggleTag7", () => handleToggleTag(6), {
+    enabled: isActive,
+  });
+  useKeybind("explorer.toggleTag8", () => handleToggleTag(7), {
+    enabled: isActive,
+  });
+  useKeybind("explorer.toggleTag9", () => handleToggleTag(8), {
+    enabled: isActive,
+  });
+  useKeybind("explorer.toggleTag10", () => handleToggleTag(9), {
+    enabled: isActive,
+  });
 
   // Check if a tag is active (all selected files have it)
   const isTagActive = (tag: Tag) => {
     if (selectedFiles.length === 0) return false;
-    return selectedFiles.every((file) => file.tags?.some((t) => t.id === tag.id));
+    return selectedFiles.every((file) =>
+      file.tags?.some((t) => t.id === tag.id),
+    );
   };
 
   if (!isActive) return null;
@@ -100,12 +136,18 @@ export function TagAssignmentMode({ isActive, onExit }: TagAssignmentModeProps) 
         animate={{
           y: 0,
           opacity: 1,
-          transition: { duration: m3Durations.medium2, ease: m3Easings.emphasizedDecelerate },
+          transition: {
+            duration: m3Durations.medium2,
+            ease: m3Easings.emphasizedDecelerate,
+          },
         }}
         exit={{
           y: 100,
           opacity: 0,
-          transition: { duration: m3Durations.short4, ease: m3Easings.emphasizedAccelerate },
+          transition: {
+            duration: m3Durations.short4,
+            ease: m3Easings.emphasizedAccelerate,
+          },
         }}
         className="absolute bottom-2 left-1 right-1 z-50"
       >
@@ -117,7 +159,8 @@ export function TagAssignmentMode({ isActive, onExit }: TagAssignmentModeProps) 
               <span className="text-title-small text-on-surface">Tag mode</span>
               {selectedFiles.length > 0 && (
                 <span className="text-body-small text-on-surface-variant">
-                  {selectedFiles.length} {selectedFiles.length === 1 ? "item" : "items"}
+                  {selectedFiles.length}{" "}
+                  {selectedFiles.length === 1 ? "item" : "items"}
                 </span>
               )}
             </div>
@@ -152,7 +195,9 @@ export function TagAssignmentMode({ isActive, onExit }: TagAssignmentModeProps) 
                     </kbd>
 
                     {/* Tag Name */}
-                    <span className="truncate max-w-[120px]">{tag.canonical_name}</span>
+                    <span className="truncate max-w-[120px]">
+                      {tag.canonical_name}
+                    </span>
 
                     {/* Active Checkmark */}
                     {active && <Icon name="check" size={16} />}
@@ -162,7 +207,13 @@ export function TagAssignmentMode({ isActive, onExit }: TagAssignmentModeProps) 
             </div>
 
             {/* Exit Button */}
-            <Button aria-label="Done" title="Done" size="sm" variant="filled" onClick={onExit}>
+            <Button
+              aria-label="Done"
+              title="Done"
+              size="sm"
+              variant="filled"
+              onClick={onExit}
+            >
               <Icon name="check" size={18} />
             </Button>
           </div>
@@ -170,7 +221,8 @@ export function TagAssignmentMode({ isActive, onExit }: TagAssignmentModeProps) 
           {/* Help Text */}
           {selectedFiles.length === 0 && (
             <div className="mt-2 text-body-small text-on-surface-variant text-center">
-              Select files to start tagging • Press 1-9/0 to toggle tags • Esc to exit
+              Select files to start tagging • Press 1-9/0 to toggle tags • Esc
+              to exit
             </div>
           )}
         </div>

@@ -31,9 +31,8 @@ const ImageNodeInner = ({ node, draggable, selected, onSelect }: Props) => {
     };
   }, [node.src]);
 
-  const handleSelect = (
-    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
-  ) => onSelect(node.id, e);
+  const handleSelect = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) =>
+    onSelect(node.id, e);
 
   return (
     <>

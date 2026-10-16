@@ -142,7 +142,9 @@ export const uploadPlaneFromMediaToken = async ({
   if (!mediaFileResponse.success || !mediaFileResponse.data) {
     progressCallback({
       status: UploaderStates.assetError,
-      errorMessage: mediaFileResponse.errorMessage || "Could not fetch media file by token.",
+      errorMessage:
+        mediaFileResponse.errorMessage ||
+        "Could not fetch media file by token.",
     });
     return;
   }
@@ -156,7 +158,8 @@ export const uploadPlaneFromMediaToken = async ({
     if (!renameResponse.success) {
       progressCallback({
         status: UploaderStates.assetError,
-        errorMessage: renameResponse.errorMessage || "Could not rename media file.",
+        errorMessage:
+          renameResponse.errorMessage || "Could not rename media file.",
       });
       return;
     }

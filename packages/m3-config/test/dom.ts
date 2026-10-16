@@ -22,4 +22,6 @@ try {
 } catch {}
 
 // Rendering is driven with `flushSync`, not React Testing Library: silence the act() warning.
-(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = false;
+(
+  globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
+).IS_REACT_ACT_ENVIRONMENT = false;

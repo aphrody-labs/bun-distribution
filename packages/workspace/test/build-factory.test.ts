@@ -1,6 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import { chmod, mkdtemp, mkdir, readFile, rm, stat, symlink, writeFile } from "node:fs/promises";
+import {
+  chmod,
+  mkdtemp,
+  mkdir,
+  readFile,
+  rm,
+  stat,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -39,10 +48,22 @@ test("preparation plans restrict source owners, aliases, revisions and sibling w
       url: `git@github-dev:aphrody-labs/${repository}.git`,
       owners: ["aphrody-labs"],
     };
-    const plan = buildFactoryPreparePlan(declared, repository, revision, source);
+    const plan = buildFactoryPreparePlan(
+      declared,
+      repository,
+      revision,
+      source,
+    );
     expect(plan.operation).toBe("prepare");
-    expect(plan.source.url).toBe(`https://github.com/aphrody-labs/${repository}.git`);
-    expect(plan.transport.slice(0, 4)).toEqual(["ssh", "exec", "--host", "vps"]);
+    expect(plan.source.url).toBe(
+      `https://github.com/aphrody-labs/${repository}.git`,
+    );
+    expect(plan.transport.slice(0, 4)).toEqual([
+      "ssh",
+      "exec",
+      "--host",
+      "vps",
+    ]);
     expect(plan.transport[5]).toContain("flock --close");
     expect(plan.transport[5]).toContain("--no-overwrite-ignore");
     expect(plan.transport[5]).toContain("refs/remotes/origin/main");
@@ -55,10 +76,19 @@ test("preparation plans restrict source owners, aliases, revisions and sibling w
     url: "git@github-dev:aphrody-labs/yolo.git",
     owners: ["aphrody-labs"],
   };
-  expect(() => buildFactoryPreparePlan(declared, "iecode", revision, source)).toThrow("limited");
-  expect(() => buildFactoryPreparePlan(declared, "yolo", "main", source)).toThrow("pinned");
   expect(() =>
-    buildFactoryPreparePlan({ ...declared, target: "dbfr" }, "yolo", revision, source),
+    buildFactoryPreparePlan(declared, "iecode", revision, source),
+  ).toThrow("limited");
+  expect(() =>
+    buildFactoryPreparePlan(declared, "yolo", "main", source),
+  ).toThrow("pinned");
+  expect(() =>
+    buildFactoryPreparePlan(
+      { ...declared, target: "dbfr" },
+      "yolo",
+      revision,
+      source,
+    ),
   ).toThrow("canonical");
   expect(() =>
     buildFactoryPreparePlan(
@@ -72,7 +102,10 @@ test("preparation plans restrict source owners, aliases, revisions and sibling w
     buildFactoryPreparePlan(
       {
         ...declared,
-        repositories: { ...declared.repositories, yolo: "/home/ubuntu/apps/unowned/yolo" },
+        repositories: {
+          ...declared.repositories,
+          yolo: "/home/ubuntu/apps/unowned/yolo",
+        },
       },
       "yolo",
       revision,
@@ -86,7 +119,9 @@ test("preparation plans restrict source owners, aliases, revisions and sibling w
     "git@github-dev:unowned/yolo.git",
     "git@github-dev:aphrody-labs/other.git",
   ]) {
-    expect(() => factoryRemoteUrl(url, "yolo", ["aphrody-labs"])).toThrow("declared private");
+    expect(() => factoryRemoteUrl(url, "yolo", ["aphrody-labs"])).toThrow(
+      "declared private",
+    );
   }
 });
 
@@ -112,7 +147,9 @@ test("Bun preparation uses its declared factory allocation and canonical Git rep
   expect(plan.source.url).toBe(source.url);
   expect(plan.transport[5]).toContain("bun-os.source.lock");
   expect(plan.transport[5]).toContain("heavy.lock");
-  expect(plan.transport[5]).toContain("Factory source checkout is dirty; preserved");
+  expect(plan.transport[5]).toContain(
+    "Factory source checkout is dirty; preserved",
+  );
   expect(plan.transport[5]).not.toContain("git reset");
   expect(plan.transport[5]).not.toContain("git clean");
   expect(() =>
@@ -196,7 +233,12 @@ async function preparationFixture() {
       yolo: checkout,
     },
   };
-  const pin = { path: source, remote: "origin", url: remoteUrl, owners: ["aphrody-labs"] };
+  const pin = {
+    path: source,
+    remote: "origin",
+    url: remoteUrl,
+    owners: ["aphrody-labs"],
+  };
   const prepare = async (pinnedRevision: string) => {
     const plan = buildFactoryPreparePlan(declared, "yolo", pinnedRevision, pin);
     // Execute the planned remote body against tiny local Git fixtures; no host or source repository is touched.
@@ -220,7 +262,19 @@ async function preparationFixture() {
     await git(source, "push", "--quiet", "origin", "main");
     return git(source, "rev-parse", "HEAD");
   };
-  return { root, source, remote, checkout, env, git, initial, declared, pin, prepare, commit };
+  return {
+    root,
+    source,
+    remote,
+    checkout,
+    env,
+    git,
+    initial,
+    declared,
+    pin,
+    prepare,
+    commit,
+  };
 }
 
 test.skipIf(process.platform === "win32")(
@@ -232,7 +286,9 @@ test.skipIf(process.platform === "win32")(
       const cacheBefore = await stat(f.declared.cacheRoot);
       expect((await f.prepare(f.initial)).exitCode).toBe(0);
       expect(await f.git(f.checkout, "rev-parse", "HEAD")).toBe(f.initial);
-      expect(await f.git(f.checkout, "config", "--get", "remote.origin.url")).toBe(f.pin.url);
+      expect(
+        await f.git(f.checkout, "config", "--get", "remote.origin.url"),
+      ).toBe(f.pin.url);
       const gitConfig = await readFile(join(f.checkout, ".git/config"), "utf8");
       expect(gitConfig).not.toContain("credential");
       expect(gitConfig).not.toContain("insteadOf");
@@ -262,20 +318,34 @@ test.skipIf(process.platform === "win32")(
       const dirty = await f.prepare(f.initial);
       expect(dirty.exitCode).toBe(2);
       expect(dirty.error).toContain("dirty; preserved");
-      expect(await readFile(join(f.checkout, "source.txt"), "utf8")).toBe("concurrent work\n");
+      expect(await readFile(join(f.checkout, "source.txt"), "utf8")).toBe(
+        "concurrent work\n",
+      );
       await f.git(f.checkout, "restore", "source.txt");
       await mkdir(join(f.source, "ignored"));
-      await writeFile(join(f.source, "ignored/collision.txt"), "new tracked source\n");
+      await writeFile(
+        join(f.source, "ignored/collision.txt"),
+        "new tracked source\n",
+      );
       await f.git(f.source, "add", "-f", "ignored/collision.txt");
       const next = await f.commit("tracked ignored collision");
       await mkdir(join(f.checkout, "ignored"));
-      await writeFile(join(f.checkout, "ignored/collision.txt"), "protected ignored output\n");
-      expect((await f.prepare(next)).exitCode).not.toBe(0);
-      expect(await readFile(join(f.checkout, "ignored/collision.txt"), "utf8")).toBe(
+      await writeFile(
+        join(f.checkout, "ignored/collision.txt"),
         "protected ignored output\n",
       );
+      expect((await f.prepare(next)).exitCode).not.toBe(0);
+      expect(
+        await readFile(join(f.checkout, "ignored/collision.txt"), "utf8"),
+      ).toBe("protected ignored output\n");
       expect(await f.git(f.checkout, "rev-parse", "HEAD")).toBe(f.initial);
-      await f.git(f.checkout, "remote", "set-url", "origin", "git@github-dev:unowned/yolo.git");
+      await f.git(
+        f.checkout,
+        "remote",
+        "set-url",
+        "origin",
+        "git@github-dev:unowned/yolo.git",
+      );
       const foreign = await f.prepare(f.initial);
       expect(foreign.exitCode).toBe(2);
       expect(foreign.error).toContain("origin differs");
@@ -305,7 +375,9 @@ test.skipIf(process.platform === "win32")(
       const rejected = await f.prepare(f.initial);
       expect(rejected.exitCode).toBe(2);
       expect(rejected.error).toContain("not a Git checkout; preserved");
-      expect(await readFile(join(f.checkout, "unowned.txt"), "utf8")).toBe("preserve me");
+      expect(await readFile(join(f.checkout, "unowned.txt"), "utf8")).toBe(
+        "preserve me",
+      );
       await rm(f.checkout, { recursive: true });
       const outside = join(f.root, "outside");
       await mkdir(outside);
@@ -314,7 +386,9 @@ test.skipIf(process.platform === "win32")(
       const symlinked = await f.prepare(f.initial);
       expect(symlinked.exitCode).toBe(2);
       expect(symlinked.error).toContain("resolves elsewhere; preserved");
-      expect(await readFile(join(outside, "sentinel.txt"), "utf8")).toBe("outside source scope");
+      expect(await readFile(join(outside, "sentinel.txt"), "utf8")).toBe(
+        "outside source scope",
+      );
     } finally {
       await rm(f.root, { recursive: true, force: true });
     }
@@ -323,18 +397,31 @@ test.skipIf(process.platform === "win32")(
 
 test("execution-only hosts reject plans and never implicitly enable local builds", () => {
   const runtimeOnly = { ...config, executionOnlyTargets: ["vps"] };
-  expect(() => buildFactoryPlan(runtimeOnly, "aphrody", revision, ["cargo", "test"])).toThrow(
-    "execution-only",
-  );
+  expect(() =>
+    buildFactoryPlan(runtimeOnly, "aphrody", revision, ["cargo", "test"]),
+  ).toThrow("execution-only");
   expect(heavyBuildStatus(runtimeOnly, {}).route).toBe("factory");
-  expect(heavyBuildStatus(runtimeOnly, { APHRODY_BUILD_HOST: "vps" }).route).toBe("factory");
-  expect(heavyBuildStatus(runtimeOnly, { APHRODY_LOCAL_CARGO: "1" }).route).toBe("local");
   expect(
-    heavyBuildStatus(runtimeOnly, { APHRODY_BUILD_HOST: "vps", APHRODY_LOCAL_CARGO: "1" }).route,
+    heavyBuildStatus(runtimeOnly, { APHRODY_BUILD_HOST: "vps" }).route,
   ).toBe("factory");
-  expect(heavyBuildStatus(runtimeOnly, {}).reason).toContain("new factory host");
-  expect(heavyBuildStatus(runtimeOnly, { CLAUDE_CODE_REMOTE: "true" }).route).toBe("local");
-  expect(heavyBuildStatus(runtimeOnly, { APHRODY_CLOUD: "1" }).route).toBe("local");
+  expect(
+    heavyBuildStatus(runtimeOnly, { APHRODY_LOCAL_CARGO: "1" }).route,
+  ).toBe("local");
+  expect(
+    heavyBuildStatus(runtimeOnly, {
+      APHRODY_BUILD_HOST: "vps",
+      APHRODY_LOCAL_CARGO: "1",
+    }).route,
+  ).toBe("factory");
+  expect(heavyBuildStatus(runtimeOnly, {}).reason).toContain(
+    "new factory host",
+  );
+  expect(
+    heavyBuildStatus(runtimeOnly, { CLAUDE_CODE_REMOTE: "true" }).route,
+  ).toBe("local");
+  expect(heavyBuildStatus(runtimeOnly, { APHRODY_CLOUD: "1" }).route).toBe(
+    "local",
+  );
 });
 
 test.skipIf(process.platform === "win32")(
@@ -345,21 +432,45 @@ test.skipIf(process.platform === "win32")(
       const childSource = join(f.root, "child-source");
       const childRemote = join(f.root, "child.git");
       await f.git(f.root, "init", "--quiet", "-b", "main", childSource);
-      await f.git(f.root, "init", "--bare", "--quiet", "-b", "main", childRemote);
+      await f.git(
+        f.root,
+        "init",
+        "--bare",
+        "--quiet",
+        "-b",
+        "main",
+        childRemote,
+      );
       await f.git(childSource, "config", "user.name", "fixture");
       await f.git(childSource, "config", "user.email", "fixture@localhost");
       await writeFile(join(childSource, "source.txt"), "child source\n");
       await writeFile(join(childSource, ".gitignore"), "ignored/\n");
       await f.git(childSource, "add", ".");
       await f.git(childSource, "commit", "--quiet", "-m", "child initial");
-      await f.git(childSource, "remote", "add", "origin", `file://${childRemote}`);
+      await f.git(
+        childSource,
+        "remote",
+        "add",
+        "origin",
+        `file://${childRemote}`,
+      );
       await f.git(childSource, "push", "--quiet", "origin", "main");
-      await f.git(f.source, "submodule", "add", "--quiet", `file://${childRemote}`, "child");
+      await f.git(
+        f.source,
+        "submodule",
+        "add",
+        "--quiet",
+        `file://${childRemote}`,
+        "child",
+      );
       const parent = await f.commit("add child");
       expect((await f.prepare(parent)).exitCode).toBe(0);
       const childCheckout = join(f.checkout, "child");
       await f.git(f.checkout, "config", "submodule.child.ignore", "all");
-      await writeFile(join(childCheckout, "source.txt"), "concurrent child work\n");
+      await writeFile(
+        join(childCheckout, "source.txt"),
+        "concurrent child work\n",
+      );
       const dirty = await f.prepare(parent);
       expect(dirty.exitCode).toBe(2);
       expect(dirty.error).toContain("dirty; preserved");
@@ -368,22 +479,36 @@ test.skipIf(process.platform === "win32")(
       );
       await f.git(childCheckout, "restore", "source.txt");
       await mkdir(join(childSource, "ignored"));
-      await writeFile(join(childSource, "ignored/collision.txt"), "new child source\n");
+      await writeFile(
+        join(childSource, "ignored/collision.txt"),
+        "new child source\n",
+      );
       await f.git(childSource, "add", "-f", "ignored/collision.txt");
       await f.git(childSource, "commit", "--quiet", "-m", "child collision");
       await f.git(childSource, "push", "--quiet", "origin", "main");
       const childNext = await f.git(childSource, "rev-parse", "HEAD");
       await f.git(join(f.source, "child"), "fetch", "origin");
-      await f.git(join(f.source, "child"), "checkout", "--quiet", "--detach", childNext);
+      await f.git(
+        join(f.source, "child"),
+        "checkout",
+        "--quiet",
+        "--detach",
+        childNext,
+      );
       const next = await f.commit("update child");
       await mkdir(join(childCheckout, "ignored"));
-      await writeFile(join(childCheckout, "ignored/collision.txt"), "protected child output\n");
-      const collision = await f.prepare(next);
-      expect(collision.exitCode).not.toBe(0);
-      expect(await readFile(join(childCheckout, "ignored/collision.txt"), "utf8")).toBe(
+      await writeFile(
+        join(childCheckout, "ignored/collision.txt"),
         "protected child output\n",
       );
-      expect(await f.git(childCheckout, "rev-parse", "HEAD")).not.toBe(childNext);
+      const collision = await f.prepare(next);
+      expect(collision.exitCode).not.toBe(0);
+      expect(
+        await readFile(join(childCheckout, "ignored/collision.txt"), "utf8"),
+      ).toBe("protected child output\n");
+      expect(await f.git(childCheckout, "rev-parse", "HEAD")).not.toBe(
+        childNext,
+      );
     } finally {
       await rm(f.root, { recursive: true, force: true });
     }
@@ -397,7 +522,10 @@ test.skipIf(process.platform === "win32")(
     try {
       const root = join(f.root, "owner-config");
       await mkdir(join(root, "tools", "config"), { recursive: true });
-      await writeFile(join(root, "tools/config/build-factory.json"), JSON.stringify(f.declared));
+      await writeFile(
+        join(root, "tools/config/build-factory.json"),
+        JSON.stringify(f.declared),
+      );
       await writeFile(
         join(root, "tools/config/commit-sync.json"),
         JSON.stringify({
@@ -456,7 +584,8 @@ test.skipIf(process.platform === "win32")(
           new Response(child.stderr).text(),
           child.exited,
         ]);
-        if (code !== 0) throw new Error(`Preparation CLI failed: ${output} ${error}`);
+        if (code !== 0)
+          throw new Error(`Preparation CLI failed: ${output} ${error}`);
         return JSON.parse(output);
       };
       expect((await run(false)).executed).toBe(false);
@@ -466,7 +595,12 @@ test.skipIf(process.platform === "win32")(
       expect(applied.success).toBe(true);
       expect(applied.stdout.trim()).toBe("native owner dispatched");
       const invocation = JSON.parse(await readFile(marker, "utf8"));
-      expect(invocation.args.slice(2, 6)).toEqual(["ssh", "exec", "--host", "vps"]);
+      expect(invocation.args.slice(2, 6)).toEqual([
+        "ssh",
+        "exec",
+        "--host",
+        "vps",
+      ]);
       expect(invocation.timeout).toBe("21600");
       expect(invocation.args[7]).toContain("flock --close");
     } finally {
@@ -489,7 +623,10 @@ test.skipIf(process.platform === "win32")(
       await chmod(binary, 0o755);
       const result = await runInfra({
         args: ["ssh", "exec", "--host", "vps", "--cmd", "fixture"],
-        env: { APHRODY_INFRA_BIN: binary, APHRODY_SSH_COMMAND_TIMEOUT_SECS: "21600" },
+        env: {
+          APHRODY_INFRA_BIN: binary,
+          APHRODY_SSH_COMMAND_TIMEOUT_SECS: "21600",
+        },
       });
       expect(result.exitCode).toBe(0);
       expect(result.stdout.trim()).toBe("21600");
@@ -501,15 +638,23 @@ test.skipIf(process.platform === "win32")(
 );
 
 test("factory plans use the existing Infra owner and shared serial lock", () => {
-  const plan = buildFactoryPlan(config, "aphrody", revision, ["bun", "run", "build"]);
+  const plan = buildFactoryPlan(config, "aphrody", revision, [
+    "bun",
+    "run",
+    "build",
+  ]);
   expect(plan.transport.slice(0, 4)).toEqual(["ssh", "exec", "--host", "vps"]);
-  expect(plan.transport[5]).toContain("flock --close -- /home/ubuntu/build/locks/heavy.lock");
+  expect(plan.transport[5]).toContain(
+    "flock --close -- /home/ubuntu/build/locks/heavy.lock",
+  );
   expect(plan.commandTimeoutSeconds).toBe(21600);
   expect(plan.transport[5]).toContain("git rev-parse HEAD");
   expect(plan.transport[5]).toContain("git status --porcelain");
   expect(plan.transport[5]).toContain("BUN_INSTALL_CACHE_DIR=");
   expect(plan.transport[5]).toContain("CARGO_NET_GIT_FETCH_WITH_CLI=true");
-  expect(plan.transport[5]).toContain("APHRODY_CARGO_LOCK_DIR=/home/ubuntu/build/locks");
+  expect(plan.transport[5]).toContain(
+    "APHRODY_CARGO_LOCK_DIR=/home/ubuntu/build/locks",
+  );
   expect(plan.command).toEqual(["bun", "run", "build"]);
 });
 
@@ -518,40 +663,75 @@ test("Yolo shares factory caches while preserving its canonical packaging target
     join(import.meta.dir, "../../../tools/aphrody/config/build-factory.json"),
   ).json();
   expect(declared.repositories.yolo).toBe("/home/ubuntu/src/yolo");
-  const plan = buildFactoryPlan(declared, "yolo", revision, ["just", "runtime-package"]);
+  const plan = buildFactoryPlan(declared, "yolo", revision, [
+    "just",
+    "runtime-package",
+  ]);
   expect(plan.repository).toBe("yolo");
   expect(plan.workspace).toBe(declared.repositories.yolo!);
   expect(plan.transport.slice(0, 4)).toEqual(["ssh", "exec", "--host", "vps"]);
   expect(plan.transport[5]).not.toContain("CARGO_TARGET_DIR=");
-  expect(plan.transport[5]).toContain(`SCCACHE_DIR=${declared.cacheRoot}/sccache`);
+  expect(plan.transport[5]).toContain(
+    `SCCACHE_DIR=${declared.cacheRoot}/sccache`,
+  );
   expect(plan.transport[5]).toContain("git rev-parse HEAD");
   expect(plan.transport[5]).toContain("git status --porcelain");
-  expect(plan.transport[5]).toContain("flock --close -- /home/ubuntu/build/locks/heavy.lock");
+  expect(plan.transport[5]).toContain(
+    "flock --close -- /home/ubuntu/build/locks/heavy.lock",
+  );
   expect(() =>
-    buildFactoryPlan({ ...declared, executionOnlyTargets: ["vps"] }, "yolo", revision, ["just"]),
+    buildFactoryPlan(
+      { ...declared, executionOnlyTargets: ["vps"] },
+      "yolo",
+      revision,
+      ["just"],
+    ),
   ).toThrow("execution-only");
 });
 
 test("factory requires pinned clean source policy and bounded compiler jobs", () => {
-  expect(() => buildFactoryPlan(config, "aphrody", "main", ["bun"])).toThrow("pinned Git");
-  expect(() => buildFactoryPlan(config, "unknown", revision, ["bun"])).toThrow("repository");
+  expect(() => buildFactoryPlan(config, "aphrody", "main", ["bun"])).toThrow(
+    "pinned Git",
+  );
+  expect(() => buildFactoryPlan(config, "unknown", revision, ["bun"])).toThrow(
+    "repository",
+  );
   expect(() =>
-    buildFactoryPlan({ ...config, enabled: false }, "aphrody", revision, ["bun"]),
+    buildFactoryPlan({ ...config, enabled: false }, "aphrody", revision, [
+      "bun",
+    ]),
   ).toThrow("enabled");
   expect(() =>
-    buildFactoryPlan({ ...config, rust: { maxJobs: 1025 } }, "aphrody", revision, ["bun"]),
+    buildFactoryPlan(
+      { ...config, rust: { maxJobs: 1025 } },
+      "aphrody",
+      revision,
+      ["bun"],
+    ),
   ).toThrow("between");
-  expect(() => buildFactoryPlan(config, "aphrody", revision, [])).toThrow("owner command");
+  expect(() => buildFactoryPlan(config, "aphrody", revision, [])).toThrow(
+    "owner command",
+  );
   expect(() =>
-    buildFactoryPlan({ ...config, commandTimeoutSeconds: 86401 }, "aphrody", revision, ["bun"]),
+    buildFactoryPlan(
+      { ...config, commandTimeoutSeconds: 86401 },
+      "aphrody",
+      revision,
+      ["bun"],
+    ),
   ).toThrow("commandTimeoutSeconds");
 });
 
 test("factory quotes owner arguments without expanding shell expressions", () => {
-  const plan = buildFactoryPlan(config, "aphrody", revision, ["bun", "name'$(echo hidden)"]);
+  const plan = buildFactoryPlan(config, "aphrody", revision, [
+    "bun",
+    "name'$(echo hidden)",
+  ]);
   expect(plan.command[1]).toBe("name'$(echo hidden)");
   expect(plan.transport[5]).not.toContain("exec env bun name");
-  expect(() => buildFactoryPlan(config, "aphrody", revision, ["bun", "\0"])).toThrow("NUL");
+  expect(() =>
+    buildFactoryPlan(config, "aphrody", revision, ["bun", "\0"]),
+  ).toThrow("NUL");
 });
 
 test.skipIf(process.platform === "win32")(
@@ -592,18 +772,21 @@ test.skipIf(process.platform === "win32")(
         cacheRoot: join(root, "locks/cache"),
         artifactRoot: join(root, "locks/artifacts"),
         rust: { maxJobs: 1 },
-        resources: { reserveMemoryGiB: 1, reserveDiskGiB: 1, memoryPerJobGiB: 1 },
+        resources: {
+          reserveMemoryGiB: 1,
+          reserveDiskGiB: 1,
+          memoryPerJobGiB: 1,
+        },
       };
       await mkdir(fixtureConfig.cacheRoot);
       await mkdir(fixtureConfig.artifactRoot);
       const literal = "name'$(echo should-not-expand)`echo literal`";
-      const plan = buildFactoryPlan(fixtureConfig, "yolo", await git("rev-parse", "HEAD"), [
-        "bash",
-        "-c",
-        'printf "%s" "$1"',
-        "--",
-        literal,
-      ]);
+      const plan = buildFactoryPlan(
+        fixtureConfig,
+        "yolo",
+        await git("rev-parse", "HEAD"),
+        ["bash", "-c", 'printf "%s" "$1"', "--", literal],
+      );
       const run = async () => {
         const child = Bun.spawn(["bash", "-c", plan.transport[5]!], {
           windowsHide: true,
@@ -657,12 +840,24 @@ test.skipIf(process.platform === "win32")(
   "cargo-serial asks the build-factory owner for the route",
   async () => {
     const script = await Bun.file(
-      join(import.meta.dir, "../../../scripts/aphrody/build/rust/cargo-serial.sh"),
+      join(
+        import.meta.dir,
+        "../../../scripts/aphrody/build/rust/cargo-serial.sh",
+      ),
     ).text();
     expect(script).toContain('build-factory.ts" status --route');
     const child = Bun.spawn(
-      [process.execPath, join(import.meta.dir, "../src/build-factory.ts"), "status", "--route"],
-      { windowsHide: true, env: { ...process.env, APHRODY_BUILD_HOST: "vps" }, stdout: "pipe" },
+      [
+        process.execPath,
+        join(import.meta.dir, "../src/build-factory.ts"),
+        "status",
+        "--route",
+      ],
+      {
+        windowsHide: true,
+        env: { ...process.env, APHRODY_BUILD_HOST: "vps" },
+        stdout: "pipe",
+      },
     );
     expect((await new Response(child.stdout).text()).trim()).toBe("local");
     expect(await child.exited).toBe(0);
@@ -739,7 +934,8 @@ test.skipIf(process.platform === "win32")(
 );
 
 test("factory admits twelve declared jobs only against fresh host reserves", async () => {
-  const { factoryResourcePolicy, admitFactoryResources } = await import("../src/build-factory");
+  const { factoryResourcePolicy, admitFactoryResources } =
+    await import("../src/build-factory");
   const twelve = {
     ...config,
     rust: { maxJobs: 12 },
@@ -752,7 +948,10 @@ test("factory admits twelve declared jobs only against fresh host reserves", asy
     cacheDiskGiB: 488,
     artifactDiskGiB: 488,
   };
-  expect(admitFactoryResources(policy, available)).toEqual({ policy, observed: available });
+  expect(admitFactoryResources(policy, available)).toEqual({
+    policy,
+    observed: available,
+  });
   for (const change of [
     { cpus: 6 },
     { availableMemoryGiB: 19.9 },
@@ -762,7 +961,9 @@ test("factory admits twelve declared jobs only against fresh host reserves", asy
     { availableMemoryGiB: Infinity },
     { cacheDiskGiB: -1 },
   ])
-    expect(() => admitFactoryResources(policy, { ...available, ...change })).toThrow();
+    expect(() =>
+      admitFactoryResources(policy, { ...available, ...change }),
+    ).toThrow();
   const plan = buildFactoryPlan(twelve, "aphrody", revision, ["bun", "build"]);
   expect(plan.transport[5]).toContain("CARGO_BUILD_JOBS=12");
   expect(plan.transport[5]).toContain("availableParallelism()");
@@ -776,9 +977,9 @@ test("factory admits twelve declared jobs only against fresh host reserves", asy
     reserveDiskGiB: 20,
     memoryPerJobGiB: 1,
   });
-  expect(() => factoryResourcePolicy({ ...twelve, resources: { reserveMemoryGiB: NaN } })).toThrow(
-    "reserve",
-  );
+  expect(() =>
+    factoryResourcePolicy({ ...twelve, resources: { reserveMemoryGiB: NaN } }),
+  ).toThrow("reserve");
 });
 
 test.skipIf(process.platform !== "linux")(
@@ -789,7 +990,11 @@ test.skipIf(process.platform !== "linux")(
       const source = join(root, "source");
       await mkdir(source);
       const git = async (...args: string[]) => {
-        const child = Bun.spawn(["git", ...args], { cwd: source, stdout: "pipe", stderr: "pipe" });
+        const child = Bun.spawn(["git", ...args], {
+          cwd: source,
+          stdout: "pipe",
+          stderr: "pipe",
+        });
         const [text, error, code] = await Promise.all([
           new Response(child.stdout).text(),
           new Response(child.stderr).text(),
@@ -811,18 +1016,31 @@ test.skipIf(process.platform !== "linux")(
         lockPath: join(root, "locks/heavy.lock"),
         repositories: { aphrody: source },
         rust: { maxJobs: 1 },
-        resources: { reserveMemoryGiB: 1024, reserveDiskGiB: 1, memoryPerJobGiB: 1 },
+        resources: {
+          reserveMemoryGiB: 1024,
+          reserveDiskGiB: 1,
+          memoryPerJobGiB: 1,
+        },
       };
-      for (const path of [declared.cacheRoot, declared.artifactRoot, join(root, "locks")])
+      for (const path of [
+        declared.cacheRoot,
+        declared.artifactRoot,
+        join(root, "locks"),
+      ])
         // Each parent is independent; no build starts until the complete fixture exists.
         // eslint-disable-next-line no-await-in-loop
         await mkdir(path);
       const marker = join(root, "owner-ran");
-      const plan = buildFactoryPlan(declared, "aphrody", await git("rev-parse", "HEAD"), [
-        process.execPath,
-        "-e",
-        `await Bun.write(${JSON.stringify(marker)},'unexpected')`,
-      ]);
+      const plan = buildFactoryPlan(
+        declared,
+        "aphrody",
+        await git("rev-parse", "HEAD"),
+        [
+          process.execPath,
+          "-e",
+          `await Bun.write(${JSON.stringify(marker)},'unexpected')`,
+        ],
+      );
       const child = Bun.spawn(["bash", "-c", plan.transport[5]!], {
         stdout: "pipe",
         stderr: "pipe",
@@ -838,7 +1056,14 @@ test.skipIf(process.platform !== "linux")(
       expect(await Bun.file(marker).exists()).toBe(false);
       // The same generated command must admit a small real job, not merely reject everything.
       const admitted = buildFactoryPlan(
-        { ...declared, resources: { reserveMemoryGiB: 1, reserveDiskGiB: 1, memoryPerJobGiB: 1 } },
+        {
+          ...declared,
+          resources: {
+            reserveMemoryGiB: 1,
+            reserveDiskGiB: 1,
+            memoryPerJobGiB: 1,
+          },
+        },
         "aphrody",
         await git("rev-parse", "HEAD"),
         [
@@ -856,12 +1081,19 @@ test.skipIf(process.platform !== "linux")(
         new Response(accepted.stderr).text(),
         accepted.exited,
       ]);
-      expect({ stdout: acceptedOut, stderr: acceptedErr, status: acceptedStatus }).toEqual({
+      expect({
+        stdout: acceptedOut,
+        stderr: acceptedErr,
+        status: acceptedStatus,
+      }).toEqual({
         stdout: "",
         stderr: "",
         status: 0,
       });
-      expect(await Bun.file(marker).json()).toEqual({ jobs: "1", ownerJobs: "1" });
+      expect(await Bun.file(marker).json()).toEqual({
+        jobs: "1",
+        ownerJobs: "1",
+      });
     } finally {
       await rm(root, { recursive: true, force: true });
     }

@@ -33,7 +33,10 @@ declare module "runtime:process" {
 
 // Desktop and browser APIs require separately qualified native providers.
 declare module "runtime:desktop" {
-  import type { DesktopOptions, DesktopSession } from "@aphrody/runtime-sdk/desktop";
+  import type {
+    DesktopOptions,
+    DesktopSession,
+  } from "@aphrody/runtime-sdk/desktop";
   export const desktop: {
     open(options: DesktopOptions): Promise<DesktopSession>;
   };

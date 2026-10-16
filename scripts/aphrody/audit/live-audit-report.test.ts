@@ -19,9 +19,15 @@ test("native crawl report carries HTML, statuses, and request errors into the au
     }),
   );
   expect(report.pages).toEqual([
-    { url: "https://example.test/", status: 200, html: "<a href='/next'>Next</a>" },
+    {
+      url: "https://example.test/",
+      status: 200,
+      html: "<a href='/next'>Next</a>",
+    },
   ]);
-  expect(report.errors).toEqual([{ url: "https://example.test/broken", error: "request failed" }]);
+  expect(report.errors).toEqual([
+    { url: "https://example.test/broken", error: "request failed" },
+  ]);
   expect(
     parseCrawlReport(
       JSON.stringify({
@@ -41,6 +47,8 @@ test("native crawl report carries HTML, statuses, and request errors into the au
     ),
   ).toThrow("HTML");
   expect(() =>
-    parseCrawlReport(JSON.stringify({ schema: "legacy.crawl/1", pages: [], errors: [] })),
+    parseCrawlReport(
+      JSON.stringify({ schema: "legacy.crawl/1", pages: [], errors: [] }),
+    ),
   ).toThrow("unsupported");
 });

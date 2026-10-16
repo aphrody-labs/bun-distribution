@@ -1,8 +1,5 @@
 import toast from "react-hot-toast";
-import {
-  FilterMediaClasses,
-  PromptsApi,
-} from "@storyteller/api";
+import { FilterMediaClasses, PromptsApi } from "@storyteller/api";
 import type { Prompts } from "@storyteller/api";
 import {
   DownloadUrl,
@@ -47,7 +44,11 @@ import { useTabStore } from "~/pages/Stores/TabState";
 export const SHARE_URL_BASE = "https://getartcraft.com/media/";
 
 /** Download a media file, prompting for a location when configured to. */
-export async function downloadMediaFileToDisk(url: string, mediaClass?: string, model?: string) {
+export async function downloadMediaFileToDisk(
+  url: string,
+  mediaClass?: string,
+  model?: string,
+) {
   try {
     const chosenPath = await promptDownloadLocationIfNeeded(url, model);
     if (chosenPath === null) {
@@ -127,7 +128,10 @@ export async function downloadMediaFilesToFolder(
 }
 
 /** Seed the video page with `url` as the starting image and switch to it. */
-export async function applyMakeVideoFromImage(url: string, mediaToken?: string) {
+export async function applyMakeVideoFromImage(
+  url: string,
+  mediaToken?: string,
+) {
   try {
     const referenceImage: RefImage = {
       id: Math.random().toString(36).substring(7),
@@ -229,8 +233,13 @@ export function applyRecreateFromPromptData(data: {
 
       // Set model first so the UI syncs sizeOptions / durationOptions
       const videoModel = promptData.maybe_model_type
-        ? useModelsStore.getState().videoModels.find((model) => model.tauriId === promptData.maybe_model_type || model.id === promptData.maybe_model_type)
-          ?? VIDEO_MODELS_BY_ID.get(promptData.maybe_model_type)
+        ? (useModelsStore
+            .getState()
+            .videoModels.find(
+              (model) =>
+                model.tauriId === promptData.maybe_model_type ||
+                model.id === promptData.maybe_model_type,
+            ) ?? VIDEO_MODELS_BY_ID.get(promptData.maybe_model_type))
         : undefined;
       if (videoModel) {
         modelStore.setSelectedModel(ModelPage.ImageToVideo, videoModel);
@@ -263,7 +272,9 @@ export function applyRecreateFromPromptData(data: {
       // Map API resolution (like "one_k") → video store format (like "1080p")
       if (promptData.maybe_resolution && videoModel?.resolutionOptions) {
         const value = videoResolutionValue(promptData.maybe_resolution);
-        const option = videoModel.resolutionOptions.find((option) => videoResolutionValue(option) === value);
+        const option = videoModel.resolutionOptions.find(
+          (option) => videoResolutionValue(option) === value,
+        );
         videoStore.setResolution(option ?? value);
       }
 
@@ -289,8 +300,14 @@ export function applyRecreateFromPromptData(data: {
       }
 
       if (promptData.maybe_model_type) {
-        const model = useModelsStore.getState().imageModels.find((model) => model.tauriId === promptData.maybe_model_type || model.id === promptData.maybe_model_type)
-          ?? IMAGE_MODELS_BY_ID.get(promptData.maybe_model_type);
+        const model =
+          useModelsStore
+            .getState()
+            .imageModels.find(
+              (model) =>
+                model.tauriId === promptData.maybe_model_type ||
+                model.id === promptData.maybe_model_type,
+            ) ?? IMAGE_MODELS_BY_ID.get(promptData.maybe_model_type);
         if (model) modelStore.setSelectedModel(ModelPage.TextToImage, model);
       }
       useTabStore.getState().setActiveTab("IMAGE");

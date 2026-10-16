@@ -1,5 +1,12 @@
 import { describe, expect, it } from "bun:test";
-import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import {
+  chmodSync,
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { bunCheckout } from "../../core/src/vendor/catalog";
@@ -15,7 +22,10 @@ const rootDir = resolve(import.meta.dir, "../../../docs/aphrody");
 const haveBunFork = bunCheckout() !== undefined;
 const cliPkgPath = resolve(rootDir, "packages/engine/yolo/package.json");
 const cliEntryPath = resolve(rootDir, "packages/engine/yolo/src/index.ts");
-const generatedCatalogPath = resolve(rootDir, "m3/packages/app-ui/src/generated/bun-catalog.ts");
+const generatedCatalogPath = resolve(
+  rootDir,
+  "m3/packages/app-ui/src/generated/bun-catalog.ts",
+);
 
 describe("direct native Python tool CLI", () => {
   it.each(["uv", "ruff"])(
@@ -27,10 +37,19 @@ describe("direct native Python tool CLI", () => {
         const project = join(work, "project");
         mkdirSync(tools);
         mkdirSync(project);
-        const executable = join(tools, `${tool}${process.platform === "win32" ? ".exe" : ""}`);
+        const executable = join(
+          tools,
+          `${tool}${process.platform === "win32" ? ".exe" : ""}`,
+        );
         copyFileSync(process.execPath, executable);
         chmodSync(executable, 0o755);
-        const forwarded = ["two words", "--json", "--vu", "native directory", "apostrophe'quote"];
+        const forwarded = [
+          "two words",
+          "--json",
+          "--vu",
+          "native directory",
+          "apostrophe'quote",
+        ];
         const program = `
         const stdin = await new Response(Bun.stdin).text();
         console.log(JSON.stringify({
@@ -41,7 +60,15 @@ describe("direct native Python tool CLI", () => {
         process.exit(7);
       `;
         const proc = Bun.spawn(
-          [process.execPath, cliEntryPath, tool, "-e", program, "--", ...forwarded],
+          [
+            process.execPath,
+            cliEntryPath,
+            tool,
+            "-e",
+            program,
+            "--",
+            ...forwarded,
+          ],
           {
             windowsHide: true,
             cwd: project,
@@ -82,13 +109,21 @@ describe("direct native Python tool CLI", () => {
   it("returns the native missing-tool status without requiring a checkout", async () => {
     const work = mkdtempSync(join(tmpdir(), "aphrody-python-tool-missing-"));
     try {
-      const proc = Bun.spawn([process.execPath, cliEntryPath, "ruff", "--version"], {
-        windowsHide: true,
-        cwd: work,
-        env: { ...process.env, PATH: work, VU_HOME: join(work, "no-artifact"), YOLO_HOME: "" },
-        stdout: "pipe",
-        stderr: "pipe",
-      });
+      const proc = Bun.spawn(
+        [process.execPath, cliEntryPath, "ruff", "--version"],
+        {
+          windowsHide: true,
+          cwd: work,
+          env: {
+            ...process.env,
+            PATH: work,
+            VU_HOME: join(work, "no-artifact"),
+            YOLO_HOME: "",
+          },
+          stdout: "pipe",
+          stderr: "pipe",
+        },
+      );
       const [stdout, stderr, code] = await Promise.all([
         proc.stdout.text(),
         proc.stderr.text(),
@@ -115,15 +150,21 @@ describe("Yolo canonical CLI and native capability owners", () => {
       "@aphrody/yolo-core": "workspace:*",
     });
     const rust = Bun.TOML.parse(
-      await Bun.file(resolve(rootDir, "crates/infra/aphrody/Cargo.toml")).text(),
+      await Bun.file(
+        resolve(rootDir, "crates/infra/aphrody/Cargo.toml"),
+      ).text(),
     );
     expect((rust.package as { name: string }).name).toBe("aphrody");
-    expect(existsSync(resolve(rootDir, "crates/infra/aphrody/package.json"))).toBe(false);
+    expect(
+      existsSync(resolve(rootDir, "crates/infra/aphrody/package.json")),
+    ).toBe(false);
   });
 
   it("should inspect local fork packages programmatically via Bun file checks", async () => {
     const statuses = await inspectPackages();
-    const catalog = await Bun.file(resolve(rootDir, "tools/config/vendor.json")).json();
+    const catalog = await Bun.file(
+      resolve(rootDir, "tools/config/vendor.json"),
+    ).json();
     const names = statuses.map((s) => s.name).toSorted();
     expect(names).toEqual(
       catalog.sources.map((source: { name: string }) => source.name).toSorted(),
@@ -161,21 +202,33 @@ describe("Yolo canonical CLI and native capability owners", () => {
     expect(cargo?.members.some((m) => m.startsWith("crates/"))).toBe(true);
   });
 
-  it.skipIf(!haveBunFork)("searches the Bun docs of the fork checkout", async () => {
-    const proc = Bun.spawn(["bun", cliEntryPath, "docs", "server", "--json"], {
-      windowsHide: true,
-      cwd: rootDir,
-      env: { ...process.env, BUN_DOCS_DIR: resolve(bunCheckout()!, "docs") },
-      stdout: "pipe",
-      stderr: "pipe",
-    });
-    const [stdout, exitCode] = await Promise.all([proc.stdout.text(), proc.exited]);
-    const report = JSON.parse(stdout);
-    expect(report.matches.map((m: { path: string }) => m.path)).toContain(
-      "runtime/http/server.mdx",
-    );
-    expect(exitCode).toBe(0);
-  });
+  it.skipIf(!haveBunFork)(
+    "searches the Bun docs of the fork checkout",
+    async () => {
+      const proc = Bun.spawn(
+        ["bun", cliEntryPath, "docs", "server", "--json"],
+        {
+          windowsHide: true,
+          cwd: rootDir,
+          env: {
+            ...process.env,
+            BUN_DOCS_DIR: resolve(bunCheckout()!, "docs"),
+          },
+          stdout: "pipe",
+          stderr: "pipe",
+        },
+      );
+      const [stdout, exitCode] = await Promise.all([
+        proc.stdout.text(),
+        proc.exited,
+      ]);
+      const report = JSON.parse(stdout);
+      expect(report.matches.map((m: { path: string }) => m.path)).toContain(
+        "runtime/http/server.mdx",
+      );
+      expect(exitCode).toBe(0);
+    },
+  );
 
   it.skipIf(!haveBunFork)(
     "should autonomously scan upstream Bun and generate capability catalog",
@@ -213,8 +266,11 @@ describe("Yolo canonical CLI and native capability owners", () => {
 
       expect(exitCodeStatus).toBe(0);
       expect(stdoutStatus).toContain("=== YOLO Monorepo Status");
-      const catalog = await Bun.file(resolve(rootDir, "tools/config/vendor.json")).json();
-      for (const source of catalog.sources) expect(stdoutStatus).toContain(source.path);
+      const catalog = await Bun.file(
+        resolve(rootDir, "tools/config/vendor.json"),
+      ).json();
+      for (const source of catalog.sources)
+        expect(stdoutStatus).toContain(source.path);
 
       const procBench = Bun.spawn(["bun", cliEntryPath, "bench"], {
         windowsHide: true,
@@ -256,25 +312,35 @@ describe("Yolo canonical CLI and native capability owners", () => {
 
   it("should support --json and --md across commands for Agent-First auditing", async () => {
     // 1. status --json
-    const procStatusJson = Bun.spawn(["bun", cliEntryPath, "status", "--json"], {
-      windowsHide: true,
-      cwd: rootDir,
-      stdout: "pipe",
-      stderr: "pipe",
-    });
-    const statusJson = JSON.parse(await new Response(procStatusJson.stdout).text());
+    const procStatusJson = Bun.spawn(
+      ["bun", cliEntryPath, "status", "--json"],
+      {
+        windowsHide: true,
+        cwd: rootDir,
+        stdout: "pipe",
+        stderr: "pipe",
+      },
+    );
+    const statusJson = JSON.parse(
+      await new Response(procStatusJson.stdout).text(),
+    );
     expect(await procStatusJson.exited).toBe(0);
     expect(statusJson.schema).toBe("yolo.status/1");
     expect(statusJson.packages.length).toBeGreaterThan(0);
 
     // 2. parse --json
-    const procParseJson = Bun.spawn(["bun", cliEntryPath, "parse", cliEntryPath, "--json"], {
-      windowsHide: true,
-      cwd: rootDir,
-      stdout: "pipe",
-      stderr: "pipe",
-    });
-    const parseJson = JSON.parse(await new Response(procParseJson.stdout).text());
+    const procParseJson = Bun.spawn(
+      ["bun", cliEntryPath, "parse", cliEntryPath, "--json"],
+      {
+        windowsHide: true,
+        cwd: rootDir,
+        stdout: "pipe",
+        stderr: "pipe",
+      },
+    );
+    const parseJson = JSON.parse(
+      await new Response(procParseJson.stdout).text(),
+    );
     expect(await procParseJson.exited).toBe(0);
     expect(parseJson.schema).toBe("bun.parse/1");
     expect(parseJson.lines).toBeGreaterThan(50);
@@ -286,7 +352,9 @@ describe("Yolo canonical CLI and native capability owners", () => {
       stdout: "pipe",
       stderr: "pipe",
     });
-    const benchJson = JSON.parse(await new Response(procBenchJson.stdout).text());
+    const benchJson = JSON.parse(
+      await new Response(procBenchJson.stdout).text(),
+    );
     expect(await procBenchJson.exited).toBe(0);
     expect(benchJson.schema).toBe("bun.bench/1");
     expect(benchJson.results[0].opsPerSec).toBeGreaterThan(0);
@@ -348,7 +416,9 @@ describe("YOLO vendoring", () => {
       sources: { name: string; sha: string }[];
       crates: { name: string; package: string; dir: string; version: string }[];
     };
-    const config = Bun.TOML.parse(await Bun.file(resolve(rootDir, "vendor.toml")).text()) as {
+    const config = Bun.TOML.parse(
+      await Bun.file(resolve(rootDir, "vendor.toml")).text(),
+    ) as {
       prefix: string;
       source: { name: string }[];
     };
@@ -367,7 +437,9 @@ describe("YOLO vendoring", () => {
         expect(manifest.package.name).toBe(crate.package);
         // library names stay unchanged so `use tauri::...` keeps compiling
         if (manifest.lib?.name !== undefined) {
-          expect(manifest.lib.name).not.toContain(config.prefix.replace("-", "_"));
+          expect(manifest.lib.name).not.toContain(
+            config.prefix.replace("-", "_"),
+          );
         }
       }),
     );
@@ -377,10 +449,14 @@ describe("YOLO vendoring", () => {
     const { readVendorStatus } = await import("../src/index");
     const status = await readVendorStatus();
     // Every crate of vendor.lock (each checked against crates/ above) is reported.
-    const lock = (await Bun.file(resolve(rootDir, "vendor.lock")).json()) as { crates: unknown[] };
+    const lock = (await Bun.file(resolve(rootDir, "vendor.lock")).json()) as {
+      crates: unknown[];
+    };
     expect(lock.crates.length).toBeGreaterThan(0);
     expect(status?.crates).toBe(lock.crates.length);
-    const declaration = Bun.TOML.parse(await Bun.file(resolve(rootDir, "vendor.toml")).text()) as {
+    const declaration = Bun.TOML.parse(
+      await Bun.file(resolve(rootDir, "vendor.toml")).text(),
+    ) as {
       source: { name: string }[];
     };
     expect(status?.sources.map((source) => source.name).toSorted()).toEqual(
@@ -388,7 +464,9 @@ describe("YOLO vendoring", () => {
     );
     const { readGitHead } = await import("../../core/src/vendor/status");
     const heads = await Promise.all(
-      status!.sources.map((source) => readGitHead(resolve(rootDir, "vendor", source.name))),
+      status!.sources.map((source) =>
+        readGitHead(resolve(rootDir, "vendor", source.name)),
+      ),
     );
     for (const [index, source] of status!.sources.entries()) {
       expect(source.lockedSha).toMatch(/^[a-f0-9]{40}$/);
@@ -438,10 +516,13 @@ describe("YOLO awesome", () => {
   });
 
   it("finds sections by prefix and searches every word", async () => {
-    const { parseAwesome, findSection, searchEntries } = await import("../src/awesome");
+    const { parseAwesome, findSection, searchEntries } =
+      await import("../src/awesome");
     const sections = parseAwesome(readme);
     expect(findSection(sections, "course")?.title).toBe("Courses & Books");
-    expect(searchEntries(sections, "bun types").map((e) => e.name)).toEqual(["Bun Types"]);
+    expect(searchEntries(sections, "bun types").map((e) => e.name)).toEqual([
+      "Bun Types",
+    ]);
     expect(searchEntries(sections, "bun nothing")).toEqual([]);
   });
 
@@ -449,7 +530,16 @@ describe("YOLO awesome", () => {
     const path = resolve(rootDir, ".cache/awesome-test-readme.md");
     await Bun.write(path, readme);
     const proc = Bun.spawn(
-      ["bun", cliEntryPath, "awesome", "search", "docs", "--file", path, "--json"],
+      [
+        "bun",
+        cliEntryPath,
+        "awesome",
+        "search",
+        "docs",
+        "--file",
+        path,
+        "--json",
+      ],
       { windowsHide: true, stdout: "pipe" },
     );
     const out = JSON.parse(await new Response(proc.stdout).text());
@@ -485,40 +575,67 @@ describe("YOLO awesome curation (Rust-based Bun)", () => {
   it("keeps active repositories and drops archived, stale, missing and Zig ones", async () => {
     const { judge } = await import("../src/awesome");
     expect(judge(entry(), facts(), undefined, since).verdict).toBe("keep");
-    expect(judge(entry(), facts({ archived: true }), undefined, since).reason).toMatch(/archived/);
     expect(
-      judge(entry(), facts({ pushedAt: "2026-01-01T00:00:00Z" }), undefined, since).reason,
+      judge(entry(), facts({ archived: true }), undefined, since).reason,
+    ).toMatch(/archived/);
+    expect(
+      judge(
+        entry(),
+        facts({ pushedAt: "2026-01-01T00:00:00Z" }),
+        undefined,
+        since,
+      ).reason,
     ).toMatch(/no activity since 2026-05-14/);
     expect(judge(entry(), "missing", undefined, since).verdict).toBe("drop");
-    expect(judge(entry(), "error", undefined, since).reason).toMatch(/could not be verified/);
-    expect(judge(entry(), facts({ language: "Zig" }), undefined, since).reason).toMatch(/Zig/);
-    expect(judge(entry({ description: "Zig bindings" }), facts(), undefined, since).verdict).toBe(
-      "drop",
+    expect(judge(entry(), "error", undefined, since).reason).toMatch(
+      /could not be verified/,
     );
+    expect(
+      judge(entry(), facts({ language: "Zig" }), undefined, since).reason,
+    ).toMatch(/Zig/);
+    expect(
+      judge(entry({ description: "Zig bindings" }), facts(), undefined, since)
+        .verdict,
+    ).toBe("drop");
   });
 
   it("verifies links inside repositories and external pages", async () => {
     const { judge } = await import("../src/awesome");
-    const tree = entry({ url: "https://github.com/acme/thing/tree/main/examples" });
+    const tree = entry({
+      url: "https://github.com/acme/thing/tree/main/examples",
+    });
     expect(judge(tree, facts(), 404, since).reason).toMatch(/404/);
     expect(judge(tree, facts(), 200, since).verdict).toBe("keep");
     const site = entry({ url: "https://bun.com/docs", github: undefined });
     expect(judge(site, undefined, 200, since).verdict).toBe("keep");
     expect(judge(site, undefined, "error", since).verdict).toBe("drop");
     const blog = entry({ url: "https://blog.example/post", github: undefined });
-    expect(judge(blog, undefined, 200, since).reason).toMatch(/cannot be verified/);
-    const article = entry({ section: "Articles", github: undefined, url: "https://bun.com/blog" });
-    expect(judge(article, undefined, 200, since).reason).toMatch(/before the Rust rewrite/);
+    expect(judge(blog, undefined, 200, since).reason).toMatch(
+      /cannot be verified/,
+    );
+    const article = entry({
+      section: "Articles",
+      github: undefined,
+      url: "https://bun.com/blog",
+    });
+    expect(judge(article, undefined, 200, since).reason).toMatch(
+      /before the Rust rewrite/,
+    );
   });
 
   it("renders a cleaned README with only the kept sections", async () => {
-    const { judge, renderCleanReadme, parseAwesome } = await import("../src/awesome");
+    const { judge, renderCleanReadme, parseAwesome } =
+      await import("../src/awesome");
     const readme = `<p>header</p>\n\n## Contents\n\n- [Tools](#tools)\n\n## Tools\n\n- [A](https://github.com/acme/a) - good\n- [B](https://github.com/acme/b)\n\n## Videos\n\n- [V](https://example.com/v)\n`;
     const entries = parseAwesome(readme).flatMap((s) => s.entries);
     const curated = entries.map((e) =>
       judge(
         e,
-        e.name === "A" ? facts() : e.github ? facts({ archived: true }) : undefined,
+        e.name === "A"
+          ? facts()
+          : e.github
+            ? facts({ archived: true })
+            : undefined,
         200,
         since,
       ),

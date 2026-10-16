@@ -1,1 +1,1 @@
-export { RecentsView } from './RecentsView';
+export { RecentsView } from "./RecentsView";

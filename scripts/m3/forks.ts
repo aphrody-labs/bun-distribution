@@ -45,14 +45,18 @@ export function parseGitmodules(text: string): Fork[] {
   const flush = () => {
     if (!current) return;
     if (!current.path || !current.url)
-      throw new Error(`.gitmodules: submodule "${current.name}" needs path and url`);
+      throw new Error(
+        `.gitmodules: submodule "${current.name}" needs path and url`,
+      );
     forks.push({
       name: current.name,
       path: current.path,
       url: current.url,
       ...(current.branch ? { branch: current.branch } : {}),
       ...(current.upstream ? { upstream: current.upstream } : {}),
-      ...(current.upstreamBranch ? { upstreamBranch: current.upstreamBranch } : {}),
+      ...(current.upstreamBranch
+        ? { upstreamBranch: current.upstreamBranch }
+        : {}),
       ...(current.sparseScript ? { sparseScript: current.sparseScript } : {}),
       sparse: current.sparse ?? [],
       shallow: current.shallow ?? false,
@@ -76,7 +80,8 @@ export function parseGitmodules(text: string): Fork[] {
     else if (key === "branch") current.branch = value;
     else if (key === "upstream") current.upstream = value;
     else if (key === "upstream-branch") current.upstreamBranch = value;
-    else if (key === "sparse") current.sparse = value.split(/\s+/).filter(Boolean);
+    else if (key === "sparse")
+      current.sparse = value.split(/\s+/).filter(Boolean);
     else if (key === "sparse-script") current.sparseScript = value;
     else if (key === "shallow") current.shallow = value === "true";
   }
@@ -119,7 +124,10 @@ export function pinnedSha(repo: string, path: string): string | undefined {
 }
 
 /** Async variant of `git`, for the network calls that run in parallel. */
-export async function gitAsync(cwd: string, ...args: string[]): Promise<GitResult> {
+export async function gitAsync(
+  cwd: string,
+  ...args: string[]
+): Promise<GitResult> {
   const proc = Bun.spawn(["git", ...args], {
     cwd,
     env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
@@ -173,7 +181,9 @@ export async function remoteSha(
     // oxlint-disable-next-line no-await-in-loop
     const res = await gitAsync(cwd, "ls-remote", url, name, `${name}^{}`);
     if (res.code !== 0 || !res.out) continue;
-    const rows = res.out.split("\n").map((l) => l.split("\t") as [string, string]);
+    const rows = res.out
+      .split("\n")
+      .map((l) => l.split("\t") as [string, string]);
     const row = rows.find(([, n]) => n.endsWith("^{}")) ?? rows[0];
     if (row) return row[0];
   }
@@ -199,7 +209,11 @@ export interface ForkStatus {
   };
 }
 
-export async function forkStatus(repo: string, fork: Fork, remote = false): Promise<ForkStatus> {
+export async function forkStatus(
+  repo: string,
+  fork: Fork,
+  remote = false,
+): Promise<ForkStatus> {
   const dir = join(repo, fork.path);
   const pinned = pinnedSha(repo, fork.path);
   const present = existsSync(join(dir, ".git"));
@@ -214,12 +228,16 @@ export async function forkStatus(repo: string, fork: Fork, remote = false): Prom
   };
   if (present) {
     status.head = git(dir, "rev-parse", "HEAD").out || undefined;
-    status.sparse = git(dir, "config", "--get", "core.sparseCheckout").out === "true";
+    status.sparse =
+      git(dir, "config", "--get", "core.sparseCheckout").out === "true";
     // A sparse or still materialising checkout lists absent files as deleted; only count real edits.
     status.dirty = git(dir, "status", "--porcelain", "--untracked-files=no")
       .out.split("\n")
       .filter((l) => l && !l.startsWith(" D") && !l.startsWith("D ")).length;
-    status.moved = status.head !== undefined && pinned !== undefined && status.head !== pinned;
+    status.moved =
+      status.head !== undefined &&
+      pinned !== undefined &&
+      status.head !== pinned;
   }
   if (remote) {
     const [forkTip, upstreamTip] = await Promise.all([
@@ -231,7 +249,9 @@ export async function forkStatus(repo: string, fork: Fork, remote = false): Prom
     status.remote = {
       ...(forkTip.sha ? { fork: forkTip.sha } : {}),
       ...(upstreamTip.sha ? { upstream: upstreamTip.sha } : {}),
-      ...(forkTip.sha && pinned ? { pinIsForkTip: forkTip.sha === pinned } : {}),
+      ...(forkTip.sha && pinned
+        ? { pinIsForkTip: forkTip.sha === pinned }
+        : {}),
       ...(forkTip.sha && upstreamTip.sha
         ? { forkMirrorsUpstream: forkTip.sha === upstreamTip.sha }
         : {}),
@@ -264,15 +284,21 @@ export function planSync(
     blobless?: boolean;
   },
 ): Step[] {
-  if (!fork.upstream) throw new Error(`${fork.name}: no \`upstream\` in .gitmodules`);
+  if (!fork.upstream)
+    throw new Error(`${fork.name}: no \`upstream\` in .gitmodules`);
   const branch = fork.upstreamBranch ?? "HEAD";
   const strategy = options.strategy ?? "ff";
   const steps: Step[] = [];
   if (!options.hasUpstreamRemote)
-    steps.push({ cwd: fork.path, argv: ["remote", "add", "upstream", fork.upstream] });
+    steps.push({
+      cwd: fork.path,
+      argv: ["remote", "add", "upstream", fork.upstream],
+    });
   // A partial or sparse fork never downloads blobs it does not check out: a fetch from a new remote carries no
   // filter of its own, and for the Material Symbols repository that would be every blob (~5 GB).
-  const blobless = options.blobless ?? (fork.sparse.length > 0 || fork.sparseScript !== undefined);
+  const blobless =
+    options.blobless ??
+    (fork.sparse.length > 0 || fork.sparseScript !== undefined);
   steps.push({
     cwd: fork.path,
     argv: [
@@ -294,11 +320,16 @@ export function planSync(
           : ["rebase", target],
   });
   // The delegate owns the sparse set: files the new commit adds are materialised by it, not by git here.
-  if (fork.sparseScript) steps.push({ cwd: ".", bin: "bun", argv: [fork.sparseScript] });
+  if (fork.sparseScript)
+    steps.push({ cwd: ".", bin: "bun", argv: [fork.sparseScript] });
   if (options.push)
     steps.push({
       cwd: fork.path,
-      argv: ["push", "origin", `HEAD:${options.pushBranch ?? fork.branch ?? "main"}`],
+      argv: [
+        "push",
+        "origin",
+        `HEAD:${options.pushBranch ?? fork.branch ?? "main"}`,
+      ],
     });
   if (options.stage) steps.push({ cwd: ".", argv: ["add", "--", fork.path] });
   return steps;
@@ -346,24 +377,32 @@ export function planSparse(
     });
   }
   if (cone.length > 0)
-    steps.push({ cwd: fork.path, argv: ["sparse-checkout", "set", "--cone", ...cone] });
+    steps.push({
+      cwd: fork.path,
+      argv: ["sparse-checkout", "set", "--cone", ...cone],
+    });
   else if (present && sparseNow)
     steps.push({ cwd: fork.path, argv: ["sparse-checkout", "disable"] });
   return steps;
 }
 
 const render = (steps: Step[]) =>
-  steps.map((s) => `  (${s.cwd}) ${s.bin ?? "git"} ${s.argv.join(" ")}`).join("\n");
+  steps
+    .map((s) => `  (${s.cwd}) ${s.bin ?? "git"} ${s.argv.join(" ")}`)
+    .join("\n");
 
 /** Run a program in `cwd`; `bun` is the running Bun. Never prompts, never throws. */
 function exec(cwd: string, bin: string, args: string[]): GitResult {
   if (bin === "git") return git(cwd, ...args);
-  const proc = Bun.spawnSync([bin === "bun" ? process.execPath : bin, ...args], {
-    cwd,
-    env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
-    stdout: "pipe",
-    stderr: "pipe",
-  });
+  const proc = Bun.spawnSync(
+    [bin === "bun" ? process.execPath : bin, ...args],
+    {
+      cwd,
+      env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  );
   return {
     code: proc.exitCode ?? 1,
     out: proc.stdout.toString().trim(),
@@ -375,13 +414,19 @@ function runSteps(repo: string, steps: Step[]): GitResult | undefined {
   for (const step of steps) {
     const res = exec(join(repo, step.cwd), step.bin ?? "git", step.argv);
     if (res.code !== 0)
-      return { ...res, err: `${step.bin ?? "git"} ${step.argv.join(" ")}: ${res.err || res.out}` };
+      return {
+        ...res,
+        err: `${step.bin ?? "git"} ${step.argv.join(" ")}: ${res.err || res.out}`,
+      };
   }
   return undefined;
 }
 
 /** `sparse --check`: a delegated fork is verified by its script (`--check`), a plain one by its cone. */
-function checkSparse(repo: string, fork: Fork): { ok: boolean; message: string } {
+function checkSparse(
+  repo: string,
+  fork: Fork,
+): { ok: boolean; message: string } {
   if (fork.sparseScript) {
     const res = exec(repo, "bun", [fork.sparseScript, "--check"]);
     return {
@@ -391,9 +436,14 @@ function checkSparse(repo: string, fork: Fork): { ok: boolean; message: string }
   }
   if (fork.sparse.length === 0) return { ok: true, message: "" };
   const dir = join(repo, fork.path);
-  const listed = new Set(git(dir, "sparse-checkout", "list").out.split("\n").filter(Boolean));
+  const listed = new Set(
+    git(dir, "sparse-checkout", "list").out.split("\n").filter(Boolean),
+  );
   const missing = fork.sparse.filter((p) => !listed.has(p));
-  return { ok: missing.length === 0, message: `sparse set lacks ${missing.join(", ")}` };
+  return {
+    ok: missing.length === 0,
+    message: `sparse set lacks ${missing.join(", ")}`,
+  };
 }
 
 const USAGE = `forks.ts: submodule and fork management driven by .gitmodules
@@ -433,7 +483,9 @@ export function parseArgv(argv: string[]): Parsed {
 
 /** A submodule by name, path or last path segment (`tailwindcss` for `packages/tailwindcss`). */
 export function findFork(forks: Fork[], name: string): Fork | undefined {
-  return forks.find((f) => f.name === name || f.path === name || f.path.endsWith(`/${name}`));
+  return forks.find(
+    (f) => f.name === name || f.path === name || f.path.endsWith(`/${name}`),
+  );
 }
 
 function select(forks: Fork[], names: string[]): Fork[] {
@@ -449,7 +501,9 @@ function select(forks: Fork[], names: string[]): Fork[] {
 }
 
 function table(rows: string[][]): string {
-  const widths = rows[0]!.map((_, c) => Math.max(...rows.map((r) => r[c]!.length)));
+  const widths = rows[0]!.map((_, c) =>
+    Math.max(...rows.map((r) => r[c]!.length)),
+  );
   return rows
     .map((r) =>
       r
@@ -472,7 +526,9 @@ export async function main(
   const forks = loadForks(repo);
   switch (command) {
     case "list": {
-      const rows = (await Promise.all(forks.map((f) => forkStatus(repo, f)))).map((s, i) =>
+      const rows = (
+        await Promise.all(forks.map((f) => forkStatus(repo, f)))
+      ).map((s, i) =>
         Object.assign({}, forks[i]!, {
           pinned: s.pinned,
           present: s.present,
@@ -497,7 +553,9 @@ export async function main(
     }
     case "status": {
       const selected = select(forks, positionals);
-      const rows = await Promise.all(selected.map((f) => forkStatus(repo, f, flags.has("remote"))));
+      const rows = await Promise.all(
+        selected.map((f) => forkStatus(repo, f, flags.has("remote"))),
+      );
       if (json) {
         out(JSON.stringify(rows, null, 2));
         return 0;
@@ -510,7 +568,9 @@ export async function main(
             "head",
             "state",
             "dirty",
-            ...(flags.has("remote") ? ["fork tip", "upstream tip", "mirrors"] : []),
+            ...(flags.has("remote")
+              ? ["fork tip", "upstream tip", "mirrors"]
+              : []),
           ],
           ...rows.map((s) =>
             [
@@ -538,7 +598,8 @@ export async function main(
       return 0;
     }
     case "sync": {
-      if (positionals.length === 0) throw new Error("sync: name a submodule or `all`");
+      if (positionals.length === 0)
+        throw new Error("sync: name a submodule or `all`");
       const strategy = (flags.get("strategy") as Strategy | undefined) ?? "ff";
       if (!["ff", "merge", "rebase"].includes(strategy))
         throw new Error(`--strategy must be ff, merge or rebase`);
@@ -553,19 +614,22 @@ export async function main(
           );
         // Complete each fork sync and its optional push before changing the next owned Git checkout.
         const pushBranch = flags.has("push")
-          // oxlint-disable-next-line no-await-in-loop
-          ? (fork.branch ?? (await remoteTip(fork.url, undefined, repo)).branch)
+          ? // oxlint-disable-next-line no-await-in-loop
+            (fork.branch ?? (await remoteTip(fork.url, undefined, repo)).branch)
           : undefined;
         const steps = planSync(fork, {
           strategy,
           stage: flags.has("stage"),
           push: flags.has("push"),
           ...(pushBranch ? { pushBranch } : {}),
-          hasUpstreamRemote: git(dir, "remote").out.split("\n").includes("upstream"),
+          hasUpstreamRemote: git(dir, "remote")
+            .out.split("\n")
+            .includes("upstream"),
           blobless:
             fork.sparse.length > 0 ||
             fork.sparseScript !== undefined ||
-            git(dir, "config", "--get", "remote.origin.promisor").out === "true" ||
+            git(dir, "config", "--get", "remote.origin.promisor").out ===
+              "true" ||
             git(dir, "config", "--get", "core.sparseCheckout").out === "true",
         });
         out(
@@ -584,8 +648,13 @@ export async function main(
         if (pushBranch) {
           // The push is a fast-forward of the fork's own branch, never forced.
           git(dir, "fetch", "origin", pushBranch);
-          if (git(dir, "merge-base", "--is-ancestor", "FETCH_HEAD", "HEAD").code !== 0) {
-            out(`${fork.name}: origin/${pushBranch} is not an ancestor of HEAD; not pushing`);
+          if (
+            git(dir, "merge-base", "--is-ancestor", "FETCH_HEAD", "HEAD")
+              .code !== 0
+          ) {
+            out(
+              `${fork.name}: origin/${pushBranch} is not an ancestor of HEAD; not pushing`,
+            );
             code = 1;
             continue;
           }
@@ -611,7 +680,9 @@ export async function main(
       const present = existsSync(join(dir, ".git"));
       let sha: string | undefined;
       if (/^[0-9a-f]{40}$/.test(ref)) sha = ref;
-      else if (present) sha = git(dir, "rev-parse", "--verify", `${ref}^{commit}`).out || undefined;
+      else if (present)
+        sha =
+          git(dir, "rev-parse", "--verify", `${ref}^{commit}`).out || undefined;
       sha ??= await remoteSha(fork!.url, ref, repo);
       if (!sha)
         throw new Error(
@@ -626,9 +697,14 @@ export async function main(
         const checkout = git(dir, "checkout", "--detach", sha);
         if (checkout.code !== 0) {
           const fetched = git(dir, "fetch", "origin", sha);
-          const retry = fetched.code === 0 ? git(dir, "checkout", "--detach", sha) : fetched;
+          const retry =
+            fetched.code === 0
+              ? git(dir, "checkout", "--detach", sha)
+              : fetched;
           if (retry.code !== 0)
-            throw new Error(`${fork!.name}: cannot check out ${sha}: ${retry.err}`);
+            throw new Error(
+              `${fork!.name}: cannot check out ${sha}: ${retry.err}`,
+            );
         }
         const add = git(repo, "add", "--", fork!.path);
         if (add.code !== 0) throw new Error(add.err);
@@ -647,15 +723,20 @@ export async function main(
       return 0;
     }
     case "sparse": {
-      const names = positionals.filter((p) => p === "all" || findFork(forks, p));
+      const names = positionals.filter(
+        (p) => p === "all" || findFork(forks, p),
+      );
       const paths = positionals.filter((p) => !names.includes(p));
-      if (names.length === 0) throw new Error("sparse: name a submodule or `all`");
+      if (names.length === 0)
+        throw new Error("sparse: name a submodule or `all`");
       let code = 0;
       for (const fork of select(forks, names)) {
         const present = existsSync(join(repo, fork.path, ".git"));
         if (flags.has("check")) {
           // Read-only: runs at once. A delegated fork asks its script; a plain one compares the cone.
-          const verdict = present ? checkSparse(repo, fork) : { ok: false, message: "absent" };
+          const verdict = present
+            ? checkSparse(repo, fork)
+            : { ok: false, message: "absent" };
           out(`${fork.name}: ${verdict.ok ? "ok" : verdict.message}`);
           if (!verdict.ok) code = 1;
           continue;
@@ -667,7 +748,12 @@ export async function main(
             paths,
             present,
             present &&
-              git(join(repo, fork.path), "config", "--get", "core.sparseCheckout").out === "true",
+              git(
+                join(repo, fork.path),
+                "config",
+                "--get",
+                "core.sparseCheckout",
+              ).out === "true",
           );
         } catch (error) {
           out(`${fork.name}: ${(error as Error).message}`);

@@ -5,4 +5,6 @@ import { createM3Proxy } from "@aphrody/m3-next/proxy";
 
 export const proxy = createM3Proxy();
 // `matcher` is parsed at compile time: it must be a literal. Pages only: not /api, Next's static and image routes, or files.
-export const config = { matcher: ["/((?!api|_next/static|_next/image|.*\\..*).*)"] };
+export const config = {
+  matcher: ["/((?!api|_next/static|_next/image|.*\\..*).*)"],
+};

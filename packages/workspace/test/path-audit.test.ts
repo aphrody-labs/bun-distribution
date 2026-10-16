@@ -23,7 +23,9 @@ test("path audit is read-only by default and rewrites only safe code paths on ap
     expect(rewritten).toContain('tempPath("example", "file.txt")');
     expect(rewritten).toContain('"/home/example/file.txt"');
     expect(rewritten).toContain('title="/tmp/attribute.txt"');
-    expect(await readFile(ignored, "utf8")).toBe('const path = "/tmp/ignored";\n');
+    expect(await readFile(ignored, "utf8")).toBe(
+      'const path = "/tmp/ignored";\n',
+    );
     await runPathAudit(["--root", root, "--apply"]);
     expect(await readFile(source, "utf8")).toBe(rewritten);
   } finally {

@@ -140,7 +140,7 @@ function removeObject3D(object3D) {
     const obj = this.scene.get_object_by_uuid(uuid);
 
     if (!obj) {
-      return
+      return;
     }
 
     this.removeTransformControls();

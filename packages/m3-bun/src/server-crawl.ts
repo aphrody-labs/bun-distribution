@@ -28,35 +28,64 @@ export function pagePath(file: string): string | undefined {
 
 const next = () => loadOptional<M3Next>("@aphrody/m3-next", "crawl");
 const text = (body: string, type: string) =>
-  new Response(body, { headers: { "Content-Type": type, "Cache-Control": "public, max-age=3600" } });
+  new Response(body, {
+    headers: { "Content-Type": type, "Cache-Control": "public, max-age=3600" },
+  });
 
 /** `/sitemap.xml`, `/robots.txt` and `/llms.txt` routes for the files `paths` (URL paths of the build). */
-export function crawlRoutes(paths: readonly string[], options: M3CrawlOptions & { name: string }): M3Routes {
+export function crawlRoutes(
+  paths: readonly string[],
+  options: M3CrawlOptions & { name: string },
+): M3Routes {
   const disallow = options.disallow ?? [];
   const pages = paths
     .map(pagePath)
     .filter((path): path is string => path !== undefined)
-    .filter(path => !disallow.some(prefix => path.startsWith(prefix)));
+    .filter((path) => !disallow.some((prefix) => path.startsWith(prefix)));
   const routes: M3Routes = {};
   if (!paths.includes("/sitemap.xml"))
     routes["/sitemap.xml"] = async () =>
-      text((await next()).m3SitemapXml(pages, options.origin), "application/xml; charset=utf-8");
+      text(
+        (await next()).m3SitemapXml(pages, options.origin),
+        "application/xml; charset=utf-8",
+      );
   if (!paths.includes("/robots.txt"))
     routes["/robots.txt"] = async () =>
       text(
         (await next()).m3RobotsTxt({
           origin: options.origin,
-          rules: [{ userAgent: "*", allow: ["/"], ...(disallow.length ? { disallow } : {}) }],
+          rules: [
+            {
+              userAgent: "*",
+              allow: ["/"],
+              ...(disallow.length ? { disallow } : {}),
+            },
+          ],
         }),
         "text/plain; charset=utf-8",
       );
   if (!paths.includes("/llms.txt"))
     routes["/llms.txt"] = async () => {
-      const docs = pages.filter(path => path.endsWith(".md"));
-      const html = pages.filter(path => !path.endsWith(".md"));
+      const docs = pages.filter((path) => path.endsWith(".md"));
+      const html = pages.filter((path) => !path.endsWith(".md"));
       const sections = [
-        ...(docs.length ? [{ title: "Docs", links: docs.map(path => ({ title: path, path })) }] : []),
-        ...(html.length ? [{ title: "Pages", links: html.map(path => ({ title: path, path })), optional: true }] : []),
+        ...(docs.length
+          ? [
+              {
+                title: "Docs",
+                links: docs.map((path) => ({ title: path, path })),
+              },
+            ]
+          : []),
+        ...(html.length
+          ? [
+              {
+                title: "Pages",
+                links: html.map((path) => ({ title: path, path })),
+                optional: true,
+              },
+            ]
+          : []),
       ];
       return text(
         (await next()).m3LlmsTxt({

@@ -15,7 +15,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
-import { Bibliotheque, Enregistrer, Illustration, Reinitialiser } from "@/components/icones";
+import {
+  Bibliotheque,
+  Enregistrer,
+  Illustration,
+  Reinitialiser,
+} from "@/components/icones";
 import { DragonBallLoader } from "@/components/DragonBall";
 import { ImageField } from "@aphrody/admin-ui/components/admin/ImageField";
 import { assetUrl } from "@/lib/assets";
@@ -127,7 +132,12 @@ function BannerRow({
               )}
             </div>
           </div>
-          <ImageField value={value} onChange={onChange} subdir="banners" column={label} />
+          <ImageField
+            value={value}
+            onChange={onChange}
+            subdir="banners"
+            column={label}
+          />
           {isCustom && (
             <button
               type="button"
@@ -154,7 +164,9 @@ export function BannersEditor() {
   const lib = useQuery({
     queryKey: ["banner-library"],
     queryFn: async () => {
-      const r = await fetch("/api/admin/banner-library", { credentials: "same-origin" });
+      const r = await fetch("/api/admin/banner-library", {
+        credentials: "same-origin",
+      });
       if (!r.ok) return [] as LibraryItem[];
       const j = (await r.json()) as { items: LibraryItem[] };
       return j.items ?? [];
@@ -162,9 +174,14 @@ export function BannersEditor() {
     staleTime: 60_000,
   });
   const [config, setConfig] = useState<PageBannersConfig | null>(null);
-  const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    msg: string;
+  } | null>(null);
   const [libTarget, setLibTarget] = useState<
-    { kind: "page"; key: PageHeroKey } | { kind: "series"; key: SeriesBannerKey } | null
+    | { kind: "page"; key: PageHeroKey }
+    | { kind: "series"; key: SeriesBannerKey }
+    | null
   >(null);
 
   useEffect(() => {
@@ -181,13 +198,18 @@ export function BannersEditor() {
     mutationFn: () => saveBanners(config as PageBannersConfig),
     onSuccess: (res) => {
       setConfig(res.banners);
-      setToast({ type: "success", msg: "Bannières enregistrées — pages revalidées." });
+      setToast({
+        type: "success",
+        msg: "Bannières enregistrées — pages revalidées.",
+      });
     },
-    onError: (e: Error) => setToast({ type: "error", msg: `Échec : ${e.message}` }),
+    onError: (e: Error) =>
+      setToast({ type: "error", msg: `Échec : ${e.message}` }),
   });
 
   const resetAll = () => {
-    if (!confirm("Réinitialiser toutes les bannières aux valeurs par défaut ?")) return;
+    if (!confirm("Réinitialiser toutes les bannières aux valeurs par défaut ?"))
+      return;
     setConfig(structuredClone(DEFAULT_PAGE_BANNERS));
   };
 
@@ -239,8 +261,9 @@ export function BannersEditor() {
             Bannières des pages
           </h1>
           <p className="mt-1 max-w-xl text-sm text-white/50">
-            Change le fond des billboards et heros (épisodes, films, sagas…). Upload, URL, ou
-            galerie officielle Toei. Les pages publiques se mettent à jour après enregistrement.
+            Change le fond des billboards et heros (épisodes, films, sagas…).
+            Upload, URL, ou galerie officielle Toei. Les pages publiques se
+            mettent à jour après enregistrement.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -261,7 +284,9 @@ export function BannersEditor() {
       </div>
 
       <section className="space-y-3">
-        <h2 className="font-saiyan text-lg uppercase text-dbz-yellow">Pages (heroes)</h2>
+        <h2 className="font-saiyan text-lg uppercase text-dbz-yellow">
+          Pages (heroes)
+        </h2>
         <p className="text-xs text-white/50">
           Image large en tête de chaque landing wiki / catalogue.
         </p>
@@ -283,10 +308,12 @@ export function BannersEditor() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="font-saiyan text-lg uppercase text-dbz-yellow">Séries</h2>
+        <h2 className="font-saiyan text-lg uppercase text-dbz-yellow">
+          Séries
+        </h2>
         <p className="text-xs text-white/50">
-          Utilisées par les vues série (ex. /wiki/episodes/serie/DBZ) et les aperçus sans image
-          d&apos;épisode.
+          Utilisées par les vues série (ex. /wiki/episodes/serie/DBZ) et les
+          aperçus sans image d&apos;épisode.
         </p>
         <div className="space-y-3">
           {SERIES_BANNER_KEYS.map((key) => (
@@ -296,7 +323,10 @@ export function BannersEditor() {
               label={SERIES_BANNER_LABELS[key]}
               hint={key}
               value={config.series[key] ?? ""}
-              defaultValue={DEFAULT_PAGE_BANNERS.series[key] ?? DEFAULT_PAGE_BANNERS.fallback}
+              defaultValue={
+                DEFAULT_PAGE_BANNERS.series[key] ??
+                DEFAULT_PAGE_BANNERS.fallback
+              }
               onChange={(v) => setSeries(key, v)}
               highlighted={focusSeries === key}
               onOpenLibrary={() => setLibTarget({ kind: "series", key })}
@@ -306,7 +336,9 @@ export function BannersEditor() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="font-saiyan text-lg uppercase text-dbz-yellow">Repli global</h2>
+        <h2 className="font-saiyan text-lg uppercase text-dbz-yellow">
+          Repli global
+        </h2>
         <BannerRow
           id="fallback"
           label="Bannière par défaut"
@@ -339,13 +371,19 @@ export function BannersEditor() {
                   ? PAGE_HERO_LABELS[libTarget.key]
                   : SERIES_BANNER_LABELS[libTarget.key]}
               </p>
-              <button type="button" className="btn btn-ghost" onClick={() => setLibTarget(null)}>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setLibTarget(null)}
+              >
                 Fermer
               </button>
             </div>
             <div className="overflow-y-auto p-4">
               {lib.isLoading ? (
-                <p className="py-8 text-center text-sm text-white/50">Chargement…</p>
+                <p className="py-8 text-center text-sm text-white/50">
+                  Chargement…
+                </p>
               ) : (lib.data?.length ?? 0) === 0 ? (
                 <p className="py-8 text-center text-sm text-white/50">
                   Aucune image (toei / dbofficial / wiki/banners).
@@ -366,7 +404,9 @@ export function BannersEditor() {
                         className="aspect-[16/7] w-full object-cover opacity-80 group-hover:opacity-100"
                         loading="lazy"
                       />
-                      <p className="truncate px-2 py-1 text-[10px] text-white/50">{it.name}</p>
+                      <p className="truncate px-2 py-1 text-[10px] text-white/50">
+                        {it.name}
+                      </p>
                     </button>
                   ))}
                 </div>

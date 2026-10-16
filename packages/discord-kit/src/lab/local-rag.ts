@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import { isAbsolute } from "node:path";
-import type { McpInvocation, WebPipelineOptions } from "@aphrody/bun/web/pipeline";
+import type {
+  McpInvocation,
+  WebPipelineOptions,
+} from "@aphrody/bun/web/pipeline";
 
 export interface NativeRagSelection {
   config: string;
@@ -16,8 +19,11 @@ async function nativeMcp(request: McpInvocation, options: WebPipelineOptions) {
   return mcpTool(request, options);
 }
 
-export function ragPayload(result: unknown): { results: Record<string, unknown>[] } {
-  if (!result || typeof result !== "object") throw new Error("Invalid native RAG envelope");
+export function ragPayload(result: unknown): {
+  results: Record<string, unknown>[];
+} {
+  if (!result || typeof result !== "object")
+    throw new Error("Invalid native RAG envelope");
   const call = result as {
     isError?: boolean;
     structuredContent?: unknown;
@@ -29,7 +35,9 @@ export function ragPayload(result: unknown): { results: Record<string, unknown>[
     try {
       payload = JSON.parse(
         (call.content ?? [])
-          .filter((item) => item.type === "text" && typeof item.text === "string")
+          .filter(
+            (item) => item.type === "text" && typeof item.text === "string",
+          )
           .map((item) => item.text)
           .join("\n"),
       );
@@ -44,7 +52,8 @@ export function ragPayload(result: unknown): { results: Record<string, unknown>[
     !("results" in payload) ||
     !Array.isArray(payload.results) ||
     payload.results.some(
-      (item: unknown) => !item || typeof item !== "object" || Array.isArray(item),
+      (item: unknown) =>
+        !item || typeof item !== "object" || Array.isArray(item),
     )
   )
     throw new Error("Native RAG payload unavailable");

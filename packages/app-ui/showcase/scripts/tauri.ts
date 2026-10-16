@@ -19,14 +19,20 @@ export const SHOWCASE_ROOT = resolve(import.meta.dir, "..");
 export const APHRODY_ROOT = resolve(SHOWCASE_ROOT, "../../../..");
 /** The only desktop application; it hosts the showcase window. */
 export const DESKTOP_ROOT = resolve(APHRODY_ROOT, "crates/ui/app");
-export const CARGO_RUNNER = resolve(APHRODY_ROOT, "scripts/build/rust/cargo-serial.sh");
+export const CARGO_RUNNER = resolve(
+  APHRODY_ROOT,
+  "scripts/build/rust/cargo-serial.sh",
+);
 /** Staging directory of the compiled sidecars, inside the ignored Cargo target directory. */
 export const SIDECAR_STAGING = resolve(APHRODY_ROOT, "target/m3-showcase");
 /** `yolo m3 bun`: the m3-bun CLI hosted by the repository's one Bun CLI. */
 const YOLO_CLI = resolve(APHRODY_ROOT, "packages/engine/yolo/src/index.ts");
 
 /** The canonical compiler embeds both UI and API in one executable. */
-export function sidecarCommand(triple: string, root = SIDECAR_STAGING): string[] {
+export function sidecarCommand(
+  triple: string,
+  root = SIDECAR_STAGING,
+): string[] {
   const targets: Record<string, string> = {
     "x86_64-unknown-linux-gnu": "linux-x64",
     "aarch64-unknown-linux-gnu": "linux-arm64",
@@ -86,7 +92,8 @@ export function showcaseHostPlan(
 ): ShowcaseHostPlan {
   const missing: string[] = [];
   const sidecar = args[0] === "sidecar";
-  if (sidecar && !which("cargo")) missing.push("The Rust Cargo toolchain is missing");
+  if (sidecar && !which("cargo"))
+    missing.push("The Rust Cargo toolchain is missing");
   if (sidecar && !which("rustc")) missing.push("The Rust compiler is missing");
   return {
     platform,
@@ -108,7 +115,8 @@ async function runSidecar(): Promise<void> {
       stderr: "inherit",
     });
     const output = await new Response(rust.stdout).text();
-    if ((await rust.exited) !== 0) throw new Error("Cannot qualify the installed Rust host triple");
+    if ((await rust.exited) !== 0)
+      throw new Error("Cannot qualify the installed Rust host triple");
     triple = output.match(/^host: (.+)$/m)?.[1];
   }
   if (!triple) throw new Error("Missing native target triple");
@@ -121,7 +129,8 @@ async function runSidecar(): Promise<void> {
     stderr: "inherit",
   });
   const code = await child.exited;
-  if (code !== 0) throw new Error(`Native API sidecar compilation failed with exit ${code}`);
+  if (code !== 0)
+    throw new Error(`Native API sidecar compilation failed with exit ${code}`);
   // The desktop resolves its sidecar beside its own executable. Metadata runs through the same
   // native Cargo owner, after factory admission.
   const metadata = Bun.spawn(
@@ -139,7 +148,8 @@ async function runSidecar(): Promise<void> {
   const output = await new Response(metadata.stdout).text();
   if ((await metadata.exited) !== 0)
     throw new Error("Cannot qualify the native desktop artifact directory");
-  const targetDir = (JSON.parse(output) as { target_directory: string }).target_directory;
+  const targetDir = (JSON.parse(output) as { target_directory: string })
+    .target_directory;
   const profile = process.env.APHRODY_M3_TAURI_PROFILE ?? "release";
   if (!["debug", "release"].includes(profile))
     throw new Error("Unsupported native desktop artifact profile");
@@ -172,7 +182,8 @@ export async function runTauri(input: string[] = []): Promise<void> {
     APHRODY_ROOT,
   );
   if (dispatched !== undefined) {
-    if (dispatched !== 0) throw new Error(`Native build factory failed with exit ${dispatched}`);
+    if (dispatched !== 0)
+      throw new Error(`Native build factory failed with exit ${dispatched}`);
     return;
   }
   const factory = await readFactoryConfig(APHRODY_ROOT);

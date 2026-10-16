@@ -127,8 +127,9 @@ export const CameraFrame = ({
 
   if (!frame) return null;
 
-  const focalLength = cameras.find((c) => c.id === selectedCameraId)
-    ?.focalLength;
+  const focalLength = cameras.find(
+    (c) => c.id === selectedCameraId,
+  )?.focalLength;
   const right = frame.x + frame.width;
   const bottomEdge = frame.y + frame.height;
 

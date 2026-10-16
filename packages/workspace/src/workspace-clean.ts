@@ -35,10 +35,18 @@ function git(root: string, args: string[]): { code: number; output: string } {
     stdout: "pipe",
     stderr: "pipe",
   });
-  return { code: result.exitCode, output: new TextDecoder().decode(result.stdout) };
+  return {
+    code: result.exitCode,
+    output: new TextDecoder().decode(result.stdout),
+  };
 }
 function disappeared(error: unknown): boolean {
-  return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "ENOENT"
+  );
 }
 async function entries(path: string): Promise<string[]> {
   return readdir(path).catch((error: unknown) => {
@@ -46,7 +54,9 @@ async function entries(path: string): Promise<string[]> {
     throw error;
   });
 }
-export async function measureArtifact(path: string): Promise<{ bytes: number; files: number }> {
+export async function measureArtifact(
+  path: string,
+): Promise<{ bytes: number; files: number }> {
   const info = await lstat(path).catch((error: unknown) => {
     if (disappeared(error)) return undefined;
     throw error;
@@ -65,30 +75,50 @@ export async function measureArtifact(path: string): Promise<{ bytes: number; fi
   }
   return { bytes, files };
 }
-export async function cleanWorkspace(root: string, apply = false): Promise<CleanupReport> {
+export async function cleanWorkspace(
+  root: string,
+  apply = false,
+): Promise<CleanupReport> {
   root = resolve(root);
   const index = git(root, ["ls-files", "-z"]);
   if (index.code !== 0) throw new Error("Cleanup requires a Git worktree");
   const tracked = index.output.split("\0").filter(Boolean);
-  const report: CleanupReport = { root, apply, removed: [], protected: [], bytes: 0, files: 0 };
+  const report: CleanupReport = {
+    root,
+    apply,
+    removed: [],
+    protected: [],
+    bytes: 0,
+    files: 0,
+  };
   async function visit(current: string): Promise<void> {
-    const children = await readdir(current, { withFileTypes: true }).catch((error: unknown) => {
-      if (disappeared(error)) return [];
-      throw error;
-    });
+    const children = await readdir(current, { withFileTypes: true }).catch(
+      (error: unknown) => {
+        if (disappeared(error)) return [];
+        throw error;
+      },
+    );
     for (const entry of children) {
-      if (!entry.isDirectory() || entry.isSymbolicLink() || PRUNED.has(entry.name)) continue;
+      if (
+        !entry.isDirectory() ||
+        entry.isSymbolicLink() ||
+        PRUNED.has(entry.name)
+      )
+        continue;
       const full = join(current, entry.name);
       const local = relative(root, full).replaceAll("\\", "/");
       if (ARTIFACTS.has(entry.name)) {
-        if (tracked.some((file) => file === local || file.startsWith(`${local}/`))) {
+        if (
+          tracked.some((file) => file === local || file.startsWith(`${local}/`))
+        ) {
           report.protected.push(local);
           // oxlint-disable-next-line no-await-in-loop -- parcours en profondeur séquentiel : l'ordre de report.protected est une sortie déterministe
           await visit(full);
           continue;
         }
         // A directory name alone is insufficient evidence that it is generated.
-        const ignored = git(root, ["check-ignore", "-q", "--", `${local}/`]).code === 0;
+        const ignored =
+          git(root, ["check-ignore", "-q", "--", `${local}/`]).code === 0;
         const pythonCache = entry.name === "__pycache__";
         if (ignored || pythonCache) {
           // oxlint-disable-next-line no-await-in-loop -- suppressions séquentielles : l'ordre de report.removed et des rm est une sortie déterministe
@@ -143,4 +173,5 @@ export async function runWorkspaceClean(args: string[]): Promise<number> {
     );
   return 0;
 }
-if (import.meta.main) process.exit(await runWorkspaceClean(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runWorkspaceClean(process.argv.slice(2)));

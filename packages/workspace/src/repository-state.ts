@@ -76,14 +76,24 @@ export async function scanRepository(root: string) {
   const patterns = declared as string[];
   const matches = await Promise.all(
     patterns.map((pattern) =>
-      Array.fromAsync(new Bun.Glob(`${pattern}/package.json`).scan({ cwd: root, onlyFiles: true })),
+      Array.fromAsync(
+        new Bun.Glob(`${pattern}/package.json`).scan({
+          cwd: root,
+          onlyFiles: true,
+        }),
+      ),
     ),
   );
   for (const [index, pattern] of patterns.entries()) {
     if (!matches[index]!.length) unmatched.push(pattern);
   }
   const manifests = await Promise.all(
-    matches.flat().map(async (path) => ({ path, pkg: await Bun.file(join(root, path)).json() })),
+    matches
+      .flat()
+      .map(async (path) => ({
+        path,
+        pkg: await Bun.file(join(root, path)).json(),
+      })),
   );
   for (const { path, pkg } of manifests) {
     bun.push({
@@ -97,8 +107,8 @@ export async function scanRepository(root: string) {
       }),
     });
   }
-  const packages = [...new Map(bun.map((p) => [p.path, p])).values()].toSorted((a, b) =>
-    a.path.localeCompare(b.path),
+  const packages = [...new Map(bun.map((p) => [p.path, p])).values()].toSorted(
+    (a, b) => a.path.localeCompare(b.path),
   );
   const names = new Map<string, string[]>();
   for (const p of packages) {
@@ -123,7 +133,9 @@ export async function scanRepository(root: string) {
     if (path.endsWith("Cargo.toml")) {
       try {
         // oxlint-disable-next-line no-await-in-loop -- lecture séquentielle des manifestes : borne les descripteurs ouverts sur un dépôt entier et garde l'ordre des rapports
-        const manifest = object(Bun.TOML.parse(await readFile(join(root, path), "utf8")));
+        const manifest = object(
+          Bun.TOML.parse(await readFile(join(root, path), "utf8")),
+        );
         const pkg = object(manifest.package);
         const dependencies = {
           ...object(manifest.dependencies),
@@ -131,20 +143,35 @@ export async function scanRepository(root: string) {
           ...object(manifest["build-dependencies"]),
         };
         if (pkg.name)
-          cargo.push({ path, name: String(pkg.name), dependencies: Object.keys(dependencies) });
+          cargo.push({
+            path,
+            name: String(pkg.name),
+            dependencies: Object.keys(dependencies),
+          });
         function walk(value: unknown): void {
           const v = object(value);
           if (typeof v.path === "string") {
             const dest = resolve(root, dirname(path), v.path);
             if (!existsSync(join(dest, "Cargo.toml")))
-              issues.push({ path, target: relative(root, dest), kind: "cargo-path" });
+              issues.push({
+                path,
+                target: relative(root, dest),
+                kind: "cargo-path",
+              });
           }
-          for (const child of Object.values(v)) if (child && typeof child === "object") walk(child);
+          for (const child of Object.values(v))
+            if (child && typeof child === "object") walk(child);
         }
         // Dependency tables only: lib/bin `path` values name source files.
-        for (const key of ["dependencies", "dev-dependencies", "build-dependencies", "target"])
+        for (const key of [
+          "dependencies",
+          "dev-dependencies",
+          "build-dependencies",
+          "target",
+        ])
           walk(manifest[key]);
-        if (path === "Cargo.toml") walk(object(manifest.workspace).dependencies);
+        if (path === "Cargo.toml")
+          walk(object(manifest.workspace).dependencies);
       } catch (error) {
         parseErrors.push({ path, error: String(error) });
       }
@@ -158,7 +185,9 @@ export async function scanRepository(root: string) {
       if (
         !path.startsWith("docs/") &&
         !path.endsWith(".md") &&
-        /(?:\/home\/aphro\/src|src\/aphrody-(?:infra|ai|os|ui|web))/.test(content)
+        /(?:\/home\/aphro\/src|src\/aphrody-(?:infra|ai|os|ui|web))/.test(
+          content,
+        )
       )
         legacyReferences.push({
           path,
@@ -166,7 +195,9 @@ export async function scanRepository(root: string) {
           kind: "active-legacy-reference",
         });
       if (path.endsWith(".md")) {
-        for (const target of markdownLinkDestinations(content.replace(/```[\s\S]*?```/g, ""))) {
+        for (const target of markdownLinkDestinations(
+          content.replace(/```[\s\S]*?```/g, ""),
+        )) {
           if (!target || /^(?:https?:|mailto:|#|\/)/.test(target)) continue;
           let clean: string;
           try {
@@ -177,7 +208,11 @@ export async function scanRepository(root: string) {
           }
           if (!clean) continue;
           // oxlint-disable-next-line no-await-in-loop -- contrôle séquentiel des liens : borne les accès disque et garde l'ordre des rapports
-          if (!(await lstat(resolve(root, dirname(path), clean)).catch(() => undefined)))
+          if (
+            !(await lstat(resolve(root, dirname(path), clean)).catch(
+              () => undefined,
+            ))
+          )
             docsIssues.push({ path, target, kind: "missing-local-link" });
         }
       }
@@ -191,7 +226,10 @@ export async function scanRepository(root: string) {
     git: {
       head: git(root, "rev-parse", "HEAD").trim(),
       branch: git(root, "branch", "--show-current").trim(),
-      status: git(root, "status", "--porcelain=v1").trim().split("\n").filter(Boolean),
+      status: git(root, "status", "--porcelain=v1")
+        .trim()
+        .split("\n")
+        .filter(Boolean),
       remotes: git(root, "remote", "-v").trim().split("\n").filter(Boolean),
     },
     files: {
@@ -214,7 +252,10 @@ export async function scanRepository(root: string) {
       bunPackages: packages.length,
       cargoManifests: cargo.length,
       duplicateGroups: duplicates.length,
-      duplicateBytes: duplicates.reduce((n, g) => n + g.bytes * (g.paths.length - 1), 0),
+      duplicateBytes: duplicates.reduce(
+        (n, g) => n + g.bytes * (g.paths.length - 1),
+        0,
+      ),
       missingCargoPaths: issues.length,
       missingDocLinks: docsIssues.length,
       activeLegacyReferences: legacyReferences.length,
@@ -231,7 +272,9 @@ export async function runRepositoryState(args: string[]): Promise<number> {
     else if (args[i] === "--out") out = args[++i];
     else if (args[i] === "--json") json = true;
     else if (args[i] === "--help") {
-      console.log("Usage: yolo ops repository-state [--root path] [--out report.json] [--json]");
+      console.log(
+        "Usage: yolo ops repository-state [--root path] [--out report.json] [--json]",
+      );
       return 0;
     } else throw new Error(`Unknown argument: ${args[i]}`);
   }
@@ -243,4 +286,5 @@ export async function runRepositoryState(args: string[]): Promise<number> {
   console.log(JSON.stringify(json ? report : report.summary, null, 2));
   return 0;
 }
-if (import.meta.main) process.exit(await runRepositoryState(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runRepositoryState(process.argv.slice(2)));

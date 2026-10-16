@@ -11,7 +11,11 @@ import type {
 import { calculateTotalDuration } from "../../timeline/calculate-duration";
 import { TimelineDragSource } from "../../timeline/drag-source";
 import { findTrackInSceneTracks } from "../../timeline/track-element-update";
-import { lastFrameMediaTime, type MediaTime, ZERO_MEDIA_TIME } from "../../wasm";
+import {
+  lastFrameMediaTime,
+  type MediaTime,
+  ZERO_MEDIA_TIME,
+} from "../../wasm";
 import {
   canElementBeHidden,
   canElementHaveAudio,
@@ -808,7 +812,9 @@ export class TimelineManager {
   }): void {
     const shouldMute = elements.some(({ trackId, elementId }) => {
       const element = this.getElementByRef({ trackId, elementId });
-      return element && canElementHaveAudio(element) && !isElementMuted({ element });
+      return (
+        element && canElementHaveAudio(element) && !isElementMuted({ element })
+      );
     });
 
     const nextUpdates = elements.flatMap(({ trackId, elementId }) => {

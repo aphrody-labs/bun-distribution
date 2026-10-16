@@ -5,8 +5,18 @@ import { readFile } from "node:fs/promises";
 
 type Oracle = { nodes: string[]; edges: string[] };
 type GraphJson = {
-  nodes: Array<{ id: string; label: string; file_type: string; source_file?: string | null }>;
-  links: Array<{ relation: string; source: string; target: string; confidence: string }>;
+  nodes: Array<{
+    id: string;
+    label: string;
+    file_type: string;
+    source_file?: string | null;
+  }>;
+  links: Array<{
+    relation: string;
+    source: string;
+    target: string;
+    confidence: string;
+  }>;
 };
 
 export type Parity = {
@@ -17,7 +27,10 @@ export type Parity = {
   extra: string[];
 };
 
-export function compare(expected: Iterable<string>, actual: Iterable<string>): Parity {
+export function compare(
+  expected: Iterable<string>,
+  actual: Iterable<string>,
+): Parity {
   const left = new Set(expected);
   const right = new Set(actual);
   const missing = [...left].filter((item) => !right.has(item)).toSorted();
@@ -69,7 +82,9 @@ export function report(oracle: Oracle, graph: GraphJson) {
     edges: compare(oracle.edges, actual.edges),
   };
   const relations = [
-    ...new Set([...oracle.edges, ...actual.edges].map((edge) => edge.split("|", 1)[0])),
+    ...new Set(
+      [...oracle.edges, ...actual.edges].map((edge) => edge.split("|", 1)[0]),
+    ),
   ].toSorted();
   const byRelation: Record<string, Parity> = Object.fromEntries(
     relations.map((relation) => [
@@ -81,20 +96,31 @@ export function report(oracle: Oracle, graph: GraphJson) {
     ]),
   );
   const oracleEdges = new Map(
-    oracle.edges.map((edge) => [edge.slice(0, edge.lastIndexOf("|")), edge.split("|").at(-1)]),
+    oracle.edges.map((edge) => [
+      edge.slice(0, edge.lastIndexOf("|")),
+      edge.split("|").at(-1),
+    ]),
   );
   const actualEdges = new Map(
-    actual.edges.map((edge) => [edge.slice(0, edge.lastIndexOf("|")), edge.split("|").at(-1)]),
+    actual.edges.map((edge) => [
+      edge.slice(0, edge.lastIndexOf("|")),
+      edge.split("|").at(-1),
+    ]),
   );
-  const shared = [...oracleEdges.keys()].filter((edge) => actualEdges.has(edge));
+  const shared = [...oracleEdges.keys()].filter((edge) =>
+    actualEdges.has(edge),
+  );
   const confidence = {
     compared: shared.length,
-    matching: shared.filter((edge) => oracleEdges.get(edge) === actualEdges.get(edge)).length,
+    matching: shared.filter(
+      (edge) => oracleEdges.get(edge) === actualEdges.get(edge),
+    ).length,
     agreement:
       shared.length === 0
         ? 1
-        : shared.filter((edge) => oracleEdges.get(edge) === actualEdges.get(edge)).length /
-          shared.length,
+        : shared.filter(
+            (edge) => oracleEdges.get(edge) === actualEdges.get(edge),
+          ).length / shared.length,
   };
   return {
     nodes: overall.nodes,
@@ -119,8 +145,10 @@ const STRUCTURAL_RELATIONS = new Set([
 
 export function failures(result: ReturnType<typeof report>): string[] {
   const failed: string[] = [];
-  if (result.nodes.jaccard < 0.95) failed.push("nodes: Jaccard must be >= 0.95");
-  if (result.topology.jaccard < 0.9) failed.push("edges: topology Jaccard must be >= 0.90");
+  if (result.nodes.jaccard < 0.95)
+    failed.push("nodes: Jaccard must be >= 0.95");
+  if (result.topology.jaccard < 0.9)
+    failed.push("edges: topology Jaccard must be >= 0.90");
   for (const [relation, parity] of Object.entries(result.byRelation)) {
     const minimum = STRUCTURAL_RELATIONS.has(relation) ? 0.95 : 0.9;
     if (parity.jaccard < minimum) {
@@ -147,7 +175,11 @@ async function main(args: string[]) {
   const result = report(oracle, graph);
   const failed = failures(result);
   console.log(
-    JSON.stringify({ ...result, passed: failed.length === 0, failures: failed }, null, 2),
+    JSON.stringify(
+      { ...result, passed: failed.length === 0, failures: failed },
+      null,
+      2,
+    ),
   );
   if (failed.length > 0) process.exitCode = 1;
 }

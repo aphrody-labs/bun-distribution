@@ -37,7 +37,8 @@ export class Edits {
       .sort(
         (a, b) =>
           a.edit.start - b.edit.start ||
-          Number(a.edit.end > a.edit.start) - Number(b.edit.end > b.edit.start) ||
+          Number(a.edit.end > a.edit.start) -
+            Number(b.edit.end > b.edit.start) ||
           a.order - b.order,
       );
     let out = "";

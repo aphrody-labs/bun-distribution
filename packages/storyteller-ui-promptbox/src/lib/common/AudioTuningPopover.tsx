@@ -49,7 +49,7 @@ export function AudioTuningPopover({
     <PopoverMenu
       mode="default"
       panelTitle="Tuning"
-      triggerIcon={<SlidersHorizontalIcon  className="h-3.5 w-3.5" />}
+      triggerIcon={<SlidersHorizontalIcon className="h-3.5 w-3.5" />}
       triggerLabel="Tuning"
     >
       <div className="w-60 space-y-3.5 pb-0.5">

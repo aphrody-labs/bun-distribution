@@ -26,13 +26,17 @@ export interface WorkspacePackage {
 
 /** Workspace members: the root `workspaces` globs minus its `!` exclusions. */
 export function workspacePackages(root: string = REPO): WorkspacePackage[] {
-  const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
+  const manifest = JSON.parse(
+    readFileSync(join(root, "package.json"), "utf8"),
+  ) as {
     workspaces?: { packages?: string[] } | string[];
   };
   const globs = Array.isArray(manifest.workspaces)
     ? manifest.workspaces
     : (manifest.workspaces?.packages ?? []);
-  const excluded = new Set(globs.filter((g) => g.startsWith("!")).map((g) => g.slice(1)));
+  const excluded = new Set(
+    globs.filter((g) => g.startsWith("!")).map((g) => g.slice(1)),
+  );
   const result: WorkspacePackage[] = [];
   for (const glob of globs.filter((g) => !g.startsWith("!"))) {
     const base = glob.replace(/\/\*$/, "");
@@ -41,15 +45,25 @@ export function workspacePackages(root: string = REPO): WorkspacePackage[] {
       const rel = `${base}/${entry}`;
       const file = join(root, rel, "package.json");
       if (excluded.has(rel) || !existsSync(file)) continue;
-      const parsed = JSON.parse(readFileSync(file, "utf8")) as WorkspacePackage["manifest"];
-      result.push({ name: parsed.name, rel, dir: join(root, rel), manifest: parsed });
+      const parsed = JSON.parse(
+        readFileSync(file, "utf8"),
+      ) as WorkspacePackage["manifest"];
+      result.push({
+        name: parsed.name,
+        rel,
+        dir: join(root, rel),
+        manifest: parsed,
+      });
     }
   }
   return result;
 }
 
 /** Workspace dependencies of `pkg` (all dependency kinds), by name. */
-export function workspaceDeps(pkg: WorkspacePackage, known: ReadonlySet<string>): string[] {
+export function workspaceDeps(
+  pkg: WorkspacePackage,
+  known: ReadonlySet<string>,
+): string[] {
   const { dependencies, devDependencies, peerDependencies } = pkg.manifest;
   return [
     ...new Set([
@@ -63,7 +77,9 @@ export function workspaceDeps(pkg: WorkspacePackage, known: ReadonlySet<string>)
 }
 
 /** Packages grouped in dependency levels: every package comes after the packages it depends on. */
-export function levels(packages: readonly WorkspacePackage[]): WorkspacePackage[][] {
+export function levels(
+  packages: readonly WorkspacePackage[],
+): WorkspacePackage[][] {
   const known = new Set(packages.map((p) => p.name));
   const remaining = new Map(packages.map((p) => [p.name, p]));
   const done = new Set<string>();

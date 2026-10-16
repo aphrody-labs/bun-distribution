@@ -6,7 +6,9 @@ import { join } from "node:path";
 
 const roots: string[] = [];
 afterEach(async () => {
-  await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+  await Promise.all(
+    roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
+  );
 });
 
 async function fixture() {
@@ -16,14 +18,17 @@ async function fixture() {
 }
 
 async function context(root: string): Promise<string> {
-  const result = Bun.spawn([process.execPath, join(import.meta.dir, "session-start.ts")], {
-    cwd: root,
-    env: { ...process.env, CLAUDE_PROJECT_DIR: root },
-    windowsHide: true,
-    stdout: "pipe",
-    stderr: "pipe",
-    timeout: 10_000,
-  });
+  const result = Bun.spawn(
+    [process.execPath, join(import.meta.dir, "session-start.ts")],
+    {
+      cwd: root,
+      env: { ...process.env, CLAUDE_PROJECT_DIR: root },
+      windowsHide: true,
+      stdout: "pipe",
+      stderr: "pipe",
+      timeout: 10_000,
+    },
+  );
   const output = await new Response(result.stdout).text();
   expect(await result.exited).toBe(0);
   const response = JSON.parse(output);
@@ -45,12 +50,17 @@ test("session startup uses canonical guidance and preserves the current request 
 });
 
 test("a checkout without START-HERE receives the canonical file checklist", async () => {
-  expect(await context(await fixture())).toContain("AGENTS.md, GOAL.md, PLAN.md and MEMORY.md");
+  expect(await context(await fixture())).toContain(
+    "AGENTS.md, GOAL.md, PLAN.md and MEMORY.md",
+  );
 });
 
 test("session startup reports real local changes", async () => {
   const root = await fixture();
-  const initialized = Bun.spawnSync(["git", "init", "--quiet"], { cwd: root, windowsHide: true });
+  const initialized = Bun.spawnSync(["git", "init", "--quiet"], {
+    cwd: root,
+    windowsHide: true,
+  });
   expect(initialized.exitCode).toBe(0);
   await writeFile(join(root, "work-in-progress.txt"), "Concurrent work");
   expect(await context(root)).toContain("?? work-in-progress.txt");

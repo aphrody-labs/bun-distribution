@@ -13,7 +13,9 @@ import { compactPet, renderModule } from "../src/compact";
 const assets = join(findWorkspaceRoot(), "crates/ui/identity/assets/aphrody");
 const src = join(import.meta.dir, "../src");
 
-const compact = compactPet(await Bun.file(join(assets, "animations.json")).json());
+const compact = compactPet(
+  await Bun.file(join(assets, "animations.json")).json(),
+);
 await Bun.write(join(src, "animations.generated.ts"), renderModule(compact));
 console.log(
   `animations.generated.ts: ${Object.keys(compact.tracks).length} tracks, ${compact.directions.length} directions`,

@@ -12,7 +12,10 @@ export function JobsScreen() {
   // Filter jobs based on toggle
   const filteredJobs = showOnlyRunning
     ? jobs.filter(
-        (job) => job.status === "running" || job.status === "paused" || job.status === "queued",
+        (job) =>
+          job.status === "running" ||
+          job.status === "paused" ||
+          job.status === "queued",
       )
     : jobs;
 
@@ -48,11 +51,17 @@ export function JobsScreen() {
               icon="filter_list"
               active={showOnlyRunning}
               onClick={() => setShowOnlyRunning(!showOnlyRunning)}
-              title={showOnlyRunning ? "Show all jobs" : "Show only active jobs"}
+              title={
+                showOnlyRunning ? "Show all jobs" : "Show only active jobs"
+              }
             />
 
             {/* Back button */}
-            <CircleButton icon="close" onClick={() => navigate(-1)} title="Go back" />
+            <CircleButton
+              icon="close"
+              onClick={() => navigate(-1)}
+              title="Go back"
+            />
           </div>
         </div>
 
@@ -94,7 +103,9 @@ export function JobsScreen() {
         ) : filteredJobs.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <p className="text-body-medium text-on-surface-variant">No jobs found</p>
+              <p className="text-body-medium text-on-surface-variant">
+                No jobs found
+              </p>
             </div>
           </div>
         ) : (
@@ -205,7 +216,9 @@ function JobSection({ title, count, children }: JobSectionProps) {
     <div>
       <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-2 bg-surface-container-low border-b border-outline-variant">
         <h2 className="text-title-small text-on-surface">{title}</h2>
-        <span className="text-body-small text-on-surface-variant">({count})</span>
+        <span className="text-body-small text-on-surface-variant">
+          ({count})
+        </span>
       </div>
       <div>{children}</div>
     </div>

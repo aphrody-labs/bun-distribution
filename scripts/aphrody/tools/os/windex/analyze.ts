@@ -5,7 +5,12 @@ import { closeSync, fstatSync, openSync, readSync, statSync } from "node:fs";
 import { catalogSignature, type CatalogSignature } from "./catalog.ts";
 import { stateValue } from "./config.ts";
 import { looksLikePe, parsePe, type ByteSource, type PeInfo } from "./pe.ts";
-import { alternateStreams, fileAttributes, isWindows, type Stream } from "./win32.ts";
+import {
+  alternateStreams,
+  fileAttributes,
+  isWindows,
+  type Stream,
+} from "./win32.ts";
 
 export type Task = {
   path: string;
@@ -103,7 +108,10 @@ function fdSource(fd: number, size: number): ByteSource {
 }
 
 /** `catalog` is the lookup result (null: listed in no catalog), undefined when the lookup did not run. */
-export function summarize(pe: PeInfo, catalog?: CatalogSignature | null): PeSummary {
+export function summarize(
+  pe: PeInfo,
+  catalog?: CatalogSignature | null,
+): PeSummary {
   const s = pe.version?.strings ?? {};
   return {
     kind: pe.kind,
@@ -126,9 +134,15 @@ export function summarize(pe: PeInfo, catalog?: CatalogSignature | null): PeSumm
     internalName: s.InternalName ?? null,
     copyright: s.LegalCopyright ?? null,
     signature: pe.authenticode ? "embedded" : catalog ? "catalog" : "none",
-    signer: pe.authenticode ? pe.authenticode.signer : (catalog?.signer ?? null),
-    signerIssuer: pe.authenticode ? pe.authenticode.issuer : (catalog?.issuer ?? null),
-    digest: pe.authenticode ? pe.authenticode.digest : (catalog?.digest ?? null),
+    signer: pe.authenticode
+      ? pe.authenticode.signer
+      : (catalog?.signer ?? null),
+    signerIssuer: pe.authenticode
+      ? pe.authenticode.issuer
+      : (catalog?.issuer ?? null),
+    digest: pe.authenticode
+      ? pe.authenticode.digest
+      : (catalog?.digest ?? null),
     catalog: pe.authenticode ? null : (catalog?.catalog ?? null),
     catalogChecked: pe.authenticode !== null || catalog !== undefined,
     exportName: pe.exportName,
@@ -139,7 +153,8 @@ export function summarize(pe: PeInfo, catalog?: CatalogSignature | null): PeSumm
 }
 
 const ms = (ns: bigint) => Number(ns / 1_000_000n);
-const PE_EXT = /\.(exe|dll|sys|ocx|cpl|drv|efi|scr|mui|ax|acm|tsp|com|winmd|node|pyd|mun)$/i;
+const PE_EXT =
+  /\.(exe|dll|sys|ocx|cpl|drv|efi|scr|mui|ax|acm|tsp|com|winmd|node|pyd|mun)$/i;
 
 /** Analyses one filesystem entry; I/O failures are captured in `error`, never thrown. */
 export function analyze(task: Task): EntryRecord {
@@ -204,7 +219,8 @@ export function analyze(task: Task): EntryRecord {
     const head = fdSource(fd, size).read(0, Math.min(size, 4096));
     const isPe = looksLikePe(head);
     const wantHash =
-      size <= task.maxHashBytes && (task.hash === "all" || (task.hash === "pe" && isPe));
+      size <= task.maxHashBytes &&
+      (task.hash === "all" || (task.hash === "pe" && isPe));
     let image: Uint8Array | null = null;
     if (wantHash) {
       const hasher = new Bun.CryptoHasher("sha256");
@@ -226,12 +242,16 @@ export function analyze(task: Task): EntryRecord {
     if (isPe) {
       const name = task.path.slice(task.path.lastIndexOf("\\") + 1);
       const pe = parsePe(
-        image ? { size, read: (o, l) => image!.subarray(o, o + l) } : fdSource(fd, size),
+        image
+          ? { size, read: (o, l) => image!.subarray(o, o + l) }
+          : fdSource(fd, size),
         name,
       );
       if (pe) {
         const catalog =
-          !pe.authenticode && isWindows && task.catalog ? catalogSignature(task.path) : undefined;
+          !pe.authenticode && isWindows && task.catalog
+            ? catalogSignature(task.path)
+            : undefined;
         rec.pe = summarize(pe, catalog);
       }
     }

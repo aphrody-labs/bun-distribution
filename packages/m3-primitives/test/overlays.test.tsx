@@ -5,7 +5,9 @@ import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 // The DOM comes from test/setup.ts (bunfig.toml preload).
-(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 // Motion runs its enter/exit keyframes instantly (happy-dom's WAAPI rejects cancelled animations).
 const { MotionGlobalConfig } = await import("motion/react");
@@ -22,7 +24,15 @@ const ContextMenuModule = await import("../src/ContextMenu");
 const DropdownModule = await import("../src/Dropdown");
 const ToastModule = await import("../src/Toast");
 
-const FILES = ["Dialog", "Popover", "Tooltip", "DropdownMenu", "ContextMenu", "Dropdown", "Toast"];
+const FILES = [
+  "Dialog",
+  "Popover",
+  "Tooltip",
+  "DropdownMenu",
+  "ContextMenu",
+  "Dropdown",
+  "Toast",
+];
 const SPACEUI_VOCABULARY = /\b(bg|text|border)-(app|ink|sidebar|menu|accent)\b/;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -68,9 +78,15 @@ afterEach(async () => {
 describe("sources", () => {
   for (const file of FILES) {
     test(`${file}.tsx carries the fusion header and no SpaceUI leftovers`, async () => {
-      const source = await Bun.file(join(import.meta.dir, "..", "src", `${file}.tsx`)).text();
-      expect(source.startsWith("// SPDX-License-Identifier: Apache-2.0 AND MIT\n")).toBe(true);
-      expect(source).toContain(`packages/aphrody-spaceui/packages/primitives/src/${file}`);
+      const source = await Bun.file(
+        join(import.meta.dir, "..", "src", `${file}.tsx`),
+      ).text();
+      expect(
+        source.startsWith("// SPDX-License-Identifier: Apache-2.0 AND MIT\n"),
+      ).toBe(true);
+      expect(source).toContain(
+        `packages/aphrody-spaceui/packages/primitives/src/${file}`,
+      );
       expect(source).not.toMatch(SPACEUI_VOCABULARY);
       expect(source).not.toMatch(
         /phosphor-icons|framer-motion|react-spring|text-white|brightness-/,
@@ -244,7 +260,9 @@ describe("Tooltip", () => {
     expect(html).toContain("rounded-extra-small");
     expect(html).toContain("min-h-6");
     expect(html).toContain("text-label-small");
-    expect(renderToStaticMarkup(<Kbd>K</Kbd>)).toContain("text-inverse-on-surface");
+    expect(renderToStaticMarkup(<Kbd>K</Kbd>)).toContain(
+      "text-inverse-on-surface",
+    );
   });
 });
 
@@ -326,7 +344,12 @@ describe("ContextMenu", () => {
     expect(contextMenuItemClassNames).toContain("group");
     expect(contextMenuSeparatorClassNames).toBe("my-2 h-px bg-outline-variant");
     const danger = renderToStaticMarkup(
-      <ContextMenuDivItem variant="danger" label="Delete" icon="delete" keybind="⌘⌫" />,
+      <ContextMenuDivItem
+        variant="danger"
+        label="Delete"
+        icon="delete"
+        keybind="⌘⌫"
+      />,
     );
     expect(danger).toContain("text-error");
     expect(danger).toContain(">delete</span>");
@@ -337,7 +360,11 @@ describe("ContextMenu", () => {
     expect(dull).toContain("text-on-surface-variant");
     expect(dull).toContain(">chevron_right</span>");
     const legacy = renderToStaticMarkup(
-      <ContextMenuDivItem label="Legacy" icon={Legacy} iconProps={{ weight: "bold" }} />,
+      <ContextMenuDivItem
+        label="Legacy"
+        icon={Legacy}
+        iconProps={{ weight: "bold" }}
+      />,
     );
     expect(legacy).toContain("data-legacy");
     expectM3(danger + dull + legacy);
@@ -353,7 +380,9 @@ describe("ContextMenu", () => {
         <ContextMenu.Item label="Delete" variant="danger" />
       </ContextMenu.Root>,
     );
-    const target = document.querySelector("[data-testid=target]") as HTMLElement;
+    const target = document.querySelector(
+      "[data-testid=target]",
+    ) as HTMLElement;
     await act(async () => {
       target.dispatchEvent(
         new MouseEvent("contextmenu", {
@@ -396,7 +425,8 @@ describe("Dropdown (Base UI Menu)", () => {
         <Separator />
       </Root>,
     );
-    const trigger = document.querySelector("[data-testid=button]")?.parentElement as HTMLElement;
+    const trigger = document.querySelector("[data-testid=button]")
+      ?.parentElement as HTMLElement;
     expect(trigger).toBeTruthy();
     await act(async () => {
       trigger.click();
@@ -409,7 +439,9 @@ describe("Dropdown (Base UI Menu)", () => {
     expect(html).toContain("bg-surface-container");
     expect(html).toContain("rounded-extra-small");
     expect(html).toContain("shadow-md3-2");
-    expect(html).toContain("bg-secondary-container text-on-secondary-container");
+    expect(html).toContain(
+      "bg-secondary-container text-on-secondary-container",
+    );
     expect(html).toContain(">sort</span>");
   });
 });

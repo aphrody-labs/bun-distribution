@@ -13,13 +13,16 @@ describe("kernel-backed winclean facade", () => {
         .map((t) => t.name)
         .toSorted(),
     ).toEqual([...TOOL_NAMES].toSorted());
-    expect(wc.listTools().find((tool) => tool.name === "analyze_pe")?.inputSchema).toMatchObject({
+    expect(
+      wc.listTools().find((tool) => tool.name === "analyze_pe")?.inputSchema,
+    ).toMatchObject({
       type: "object",
       required: ["path"],
       properties: { path: { type: "string" } },
     });
     expect(
-      wc.listTools().find((tool) => tool.name === "list_directory")?.inputSchema,
+      wc.listTools().find((tool) => tool.name === "list_directory")
+        ?.inputSchema,
     ).toMatchObject({
       type: "object",
       required: ["path"],

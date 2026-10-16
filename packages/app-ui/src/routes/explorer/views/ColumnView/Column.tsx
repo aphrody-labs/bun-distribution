@@ -27,7 +27,12 @@ const ColumnItemWrapper = memo(
     virtualRow: VirtualItem;
     selected: boolean;
     selectedFiles: File[];
-    onSelectFile: (file: File, files: File[], multi?: boolean, range?: boolean) => void;
+    onSelectFile: (
+      file: File,
+      files: File[],
+      multi?: boolean,
+      range?: boolean,
+    ) => void;
     onNavigate: (path: SdPath) => void;
   }) {
     const contextMenu = useFileContextMenu({
@@ -98,7 +103,12 @@ interface ColumnProps {
   path: SdPath | null;
   isSelected: (fileId: string) => boolean;
   selectedFileIds: Set<string>;
-  onSelectFile: (file: File, files: File[], multi?: boolean, range?: boolean) => void;
+  onSelectFile: (
+    file: File,
+    files: File[],
+    multi?: boolean,
+    range?: boolean,
+  ) => void;
   onNavigate: (path: SdPath) => void;
   nextColumnPath?: SdPath;
   columnIndex: number;
@@ -151,7 +161,9 @@ export const Column = memo(function Column({
         className="shrink-0 border-r border-outline-variant flex items-center justify-center"
         style={{ width: `${viewSettings.columnWidth}px` }}
       >
-        <div className="text-body-medium text-on-surface-variant">Loading...</div>
+        <div className="text-body-medium text-on-surface-variant">
+          Loading...
+        </div>
       </div>
     );
   }

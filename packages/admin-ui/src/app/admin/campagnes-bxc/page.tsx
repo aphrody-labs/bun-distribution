@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
-import { Activity, Database, ExternalLink, ImageIcon, ShieldCheck } from "lucide-react";
+import {
+  Activity,
+  Database,
+  ExternalLink,
+  ImageIcon,
+  ShieldCheck,
+} from "lucide-react";
 import { requireAdmin } from "@/lib/session";
 import {
   getBxcImportStats,
@@ -17,9 +23,10 @@ export const metadata: Metadata = {
 
 function formatDate(value: Date | null): string {
   if (!value || Number.isNaN(value.getTime())) return "—";
-  return new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(
-    value,
-  );
+  return new Intl.DateTimeFormat("fr-FR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(value);
 }
 
 function formatBytes(bytes: number | null): string {
@@ -67,26 +74,36 @@ export default async function BxcCampaignsPage() {
               Campagnes & médias en revue
             </h1>
             <p className="mt-3 text-sm leading-6 text-white/65">
-              Les crawls restent des sources candidates : cette surface rend leur état, leurs
-              données importées et leurs assets visibles au staff, sans publication automatique ni
-              attribution inventée.
+              Les crawls restent des sources candidates : cette surface rend
+              leur état, leurs données importées et leurs assets visibles au
+              staff, sans publication automatique ni attribution inventée.
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-xs font-semibold text-emerald-200">
-            <ShieldCheck className="h-4 w-4" /> Publication sous contrôle éditorial
+            <ShieldCheck className="h-4 w-4" /> Publication sous contrôle
+            éditorial
           </div>
         </div>
       </header>
 
-      <section className="grid gap-3 sm:grid-cols-3" aria-label="Synthèse des campagnes">
+      <section
+        className="grid gap-3 sm:grid-cols-3"
+        aria-label="Synthèse des campagnes"
+      >
         <article className="dbz-panel p-4">
           <Activity className="h-5 w-5 text-dbz-orange" />
           <p className="mt-3 font-saiyan text-3xl text-white">
             {campaigns.filter((c) => c.state === "running").length}
           </p>
           <p className="mt-1 text-xs uppercase tracking-wider text-white/50">
-            collecte{campaigns.filter((c) => c.state === "running").length > 1 ? "s" : ""} active
-            {campaigns.filter((c) => c.state === "running").length > 1 ? "s" : ""}
+            collecte
+            {campaigns.filter((c) => c.state === "running").length > 1
+              ? "s"
+              : ""}{" "}
+            active
+            {campaigns.filter((c) => c.state === "running").length > 1
+              ? "s"
+              : ""}
           </p>
         </article>
         <article className="dbz-panel p-4">
@@ -100,20 +117,26 @@ export default async function BxcCampaignsPage() {
         </article>
         <article className="dbz-panel p-4">
           <ImageIcon className="h-5 w-5 text-dbz-yellow" />
-          <p className="mt-3 font-saiyan text-3xl text-white">{assets.length}</p>
+          <p className="mt-3 font-saiyan text-3xl text-white">
+            {assets.length}
+          </p>
           <p className="mt-1 text-xs uppercase tracking-wider text-white/50">
             assets en quarantaine de revue
           </p>
         </article>
       </section>
 
-      <section className="dbz-panel overflow-hidden" aria-labelledby="campaigns-title">
+      <section
+        className="dbz-panel overflow-hidden"
+        aria-labelledby="campaigns-title"
+      >
         <div className="border-b border-white/10 px-5 py-4">
           <h2 id="campaigns-title" className="font-saiyan text-xl text-white">
             Campagnes détectées
           </h2>
           <p className="mt-1 text-sm text-white/50">
-            L’état vient de l’unité systemd quand elle existe, sinon de la dernière écriture SQLite.
+            L’état vient de l’unité systemd quand elle existe, sinon de la
+            dernière écriture SQLite.
           </p>
         </div>
         <div className="divide-y divide-white/8">
@@ -124,7 +147,9 @@ export default async function BxcCampaignsPage() {
             >
               <div>
                 <p className="font-semibold text-white">{campaign.label}</p>
-                <p className="mt-1 font-mono text-xs text-white/45">{campaign.id}</p>
+                <p className="mt-1 font-mono text-xs text-white/45">
+                  {campaign.id}
+                </p>
               </div>
               <div className="flex flex-wrap items-center justify-end gap-4 text-xs text-white/60">
                 <span>
@@ -134,9 +159,12 @@ export default async function BxcCampaignsPage() {
                 </span>
                 {campaign.completedRequests != null && (
                   <span>
-                    {campaign.completedRequests.toLocaleString("fr-FR")} traitées ·{" "}
+                    {campaign.completedRequests.toLocaleString("fr-FR")}{" "}
+                    traitées ·{" "}
                     {campaign.queuedPages?.toLocaleString("fr-FR") ?? 0} en file
-                    {campaign.failedRequests ? ` · ${campaign.failedRequests} en échec` : ""}
+                    {campaign.failedRequests
+                      ? ` · ${campaign.failedRequests} en échec`
+                      : ""}
                   </span>
                 )}
                 <span>{formatBytes(campaign.databaseBytes)}</span>
@@ -151,29 +179,34 @@ export default async function BxcCampaignsPage() {
           ))}
           {campaigns.length === 0 && (
             <p className="px-5 py-8 text-sm text-white/55">
-              Aucune campagne BXC locale détectée. Le cockpit reste disponible dès qu’une file est
-              montée.
+              Aucune campagne BXC locale détectée. Le cockpit reste disponible
+              dès qu’une file est montée.
             </p>
           )}
         </div>
       </section>
 
       <div className="grid gap-7 lg:grid-cols-[1.05fr_.95fr]">
-        <section className="dbz-panel overflow-hidden" aria-labelledby="imports-title">
+        <section
+          className="dbz-panel overflow-hidden"
+          aria-labelledby="imports-title"
+        >
           <div className="border-b border-white/10 px-5 py-4">
             <h2 id="imports-title" className="font-saiyan text-xl text-white">
               Dernières données importées
             </h2>
             <p className="mt-1 text-sm text-white/50">
-              Le contenu est indexé comme référence externe, jamais élevé au rang de canon par ce
-              flux.
+              Le contenu est indexé comme référence externe, jamais élevé au
+              rang de canon par ce flux.
             </p>
           </div>
           <ul className="divide-y divide-white/8">
             {imports.map((record) => (
               <li key={record.url} className="px-5 py-3">
                 <div className="flex items-start justify-between gap-3">
-                  <p className="line-clamp-2 text-sm font-medium text-white">{record.title}</p>
+                  <p className="line-clamp-2 text-sm font-medium text-white">
+                    {record.title}
+                  </p>
                   <span className="shrink-0 rounded bg-white/8 px-2 py-1 text-[11px] text-white/60">
                     {record.kind}
                   </span>
@@ -199,14 +232,18 @@ export default async function BxcCampaignsPage() {
             )}
           </ul>
         </section>
-        <section className="dbz-panel overflow-hidden" aria-labelledby="assets-title">
+        <section
+          className="dbz-panel overflow-hidden"
+          aria-labelledby="assets-title"
+        >
           <div className="border-b border-white/10 px-5 py-4">
             <h2 id="assets-title" className="font-saiyan text-xl text-white">
               Aperçu des assets récoltés
             </h2>
             <p className="mt-1 text-sm text-white/50">
-              Aperçus privés, accompagnés de leur URL BXC quand elle est disponible : choisir une
-              attribution et rattacher l’asset avant toute utilisation publique.
+              Aperçus privés, accompagnés de leur URL BXC quand elle est
+              disponible : choisir une attribution et rattacher l’asset avant
+              toute utilisation publique.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-px bg-white/10 sm:grid-cols-3">
@@ -229,7 +266,8 @@ export default async function BxcCampaignsPage() {
                       rel="noreferrer"
                       title={asset.sourceUrl}
                     >
-                      {hostOf(asset.sourceUrl)} <ExternalLink className="h-3 w-3 shrink-0" />
+                      {hostOf(asset.sourceUrl)}{" "}
+                      <ExternalLink className="h-3 w-3 shrink-0" />
                     </a>
                   ) : (
                     <p className="mt-1 text-white/35">Provenance à compléter</p>

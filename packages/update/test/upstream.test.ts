@@ -63,7 +63,9 @@ describe("reference catalogue", () => {
     expect(bad((m) => (m.reference[0].tier = "cache"))).toThrow("tier");
     expect(bad((m) => (m.reference[1].id = "alpha"))).toThrow("duplicate");
     expect(bad((m) => (m.reference[0].id = "dep"))).toThrow("duplicate");
-    expect(bad((m) => (m.reference[0].observedCommit = "abc"))).toThrow("observedCommit");
+    expect(bad((m) => (m.reference[0].observedCommit = "abc"))).toThrow(
+      "observedCommit",
+    );
     expect(bad((m) => delete m.reference[0].purpose)).toThrow("purpose");
   });
 
@@ -93,7 +95,8 @@ describe("nonVital", () => {
 
   test("lists directories that are not vital sources and skips pre-bump leftovers", () => {
     dir = mkdtempSync(join(tmpdir(), "aphrody-nonvital-"));
-    for (const d of ["dep", "alpha", "zeta", "dep.pre-bump-1"]) mkdirSync(join(dir, d));
+    for (const d of ["dep", "alpha", "zeta", "dep.pre-bump-1"])
+      mkdirSync(join(dir, d));
     expect(nonVital(dir, parseManifest(text))).toEqual(["alpha", "zeta"]);
     expect(nonVital(join(dir, "missing"), parseManifest(text))).toEqual([]);
   });

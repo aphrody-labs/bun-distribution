@@ -66,24 +66,28 @@ test("fetchManifest and fetchSums read the published files and refuse odd shapes
   const sums = await fetchSums(BASE, ok);
   expect([...sums.keys()]).toEqual(["aphrody-1.0.0-linux.tar.gz", "other.zip"]);
   expect(sums.get("other.zip")).toBe(SHA);
-  await expect(fetchManifest(BASE, async () => new Response("x", { status: 503 }))).rejects.toThrow(
-    "503",
-  );
+  await expect(
+    fetchManifest(BASE, async () => new Response("x", { status: 503 })),
+  ).rejects.toThrow("503");
   await expect(
     fetchManifest(BASE, async () => Response.json({ schemaVersion: 2 })),
   ).rejects.toThrow("format");
-  await expect(fetchSums(BASE, async () => new Response("", { status: 404 }))).rejects.toThrow(
-    "404",
-  );
+  await expect(
+    fetchSums(BASE, async () => new Response("", { status: 404 })),
+  ).rejects.toThrow("404");
 });
 
 test("pickArtifact matches name, platform and extension", () => {
-  expect(pickArtifact(manifest, "aphrody", "windows-x86_64", ".zip")?.version).toBe("1.0.0");
-  expect(pickArtifact(manifest, "aphrody", "windows-x86_64", ".tar.gz")).toBeUndefined();
+  expect(
+    pickArtifact(manifest, "aphrody", "windows-x86_64", ".zip")?.version,
+  ).toBe("1.0.0");
+  expect(
+    pickArtifact(manifest, "aphrody", "windows-x86_64", ".tar.gz"),
+  ).toBeUndefined();
   expect(pickArtifact(manifest, "yolo")).toBeUndefined();
-  expect(pickArtifact(manifest, "omar-kit", "windows-x86_64", ".tar.gz")?.file).toBe(
-    "omar-kit-0.2.0.tar.gz",
-  );
+  expect(
+    pickArtifact(manifest, "omar-kit", "windows-x86_64", ".tar.gz")?.file,
+  ).toBe("omar-kit-0.2.0.tar.gz");
 });
 
 test("an artifact is trusted only on the site and when SHA256SUMS agrees with the catalogue", () => {
@@ -91,20 +95,34 @@ test("an artifact is trusted only on the site and when SHA256SUMS agrees with th
   const sums = new Map([[artifact.file!, SHA]]);
   expect(() => checkArtifact(BASE, artifact, sums)).not.toThrow();
   expect(() =>
-    checkArtifact(BASE, { ...artifact, url: "https://evil.example/files/a.zip" }, sums),
+    checkArtifact(
+      BASE,
+      { ...artifact, url: "https://evil.example/files/a.zip" },
+      sums,
+    ),
   ).toThrow("hors du site");
   expect(() =>
-    checkArtifact(BASE, { ...artifact, url: `${BASE}.evil.example/files/a.zip` }, sums),
+    checkArtifact(
+      BASE,
+      { ...artifact, url: `${BASE}.evil.example/files/a.zip` },
+      sums,
+    ),
   ).toThrow("hors du site");
-  expect(() => checkArtifact(BASE, artifact, new Map())).toThrow("pas dans SHA256SUMS");
-  expect(() => checkArtifact(BASE, artifact, new Map([[artifact.file!, "c".repeat(64)]]))).toThrow(
-    "pas la même empreinte",
+  expect(() => checkArtifact(BASE, artifact, new Map())).toThrow(
+    "pas dans SHA256SUMS",
   );
+  expect(() =>
+    checkArtifact(BASE, artifact, new Map([[artifact.file!, "c".repeat(64)]])),
+  ).toThrow("pas la même empreinte");
 });
 
 test("toRelease exposes only the update archive in the shape creator-kit's engine installs", () => {
   const release = toRelease(manifest, "omar-kit", "windows-x64")!;
-  expect(release).toMatchObject({ schemaVersion: 1, name: "omar-kit", version: "0.2.0" });
+  expect(release).toMatchObject({
+    schemaVersion: 1,
+    name: "omar-kit",
+    version: "0.2.0",
+  });
   expect(release.artifacts).toHaveLength(1);
   expect(release.artifacts[0]).toMatchObject({
     kind: "update",
@@ -118,7 +136,8 @@ test("toRelease exposes only the update archive in the shape creator-kit's engin
 });
 
 test("one-click selection stays on one immutable release while current changes", async () => {
-  const { downloadsFor, verifiedScript } = await import("../../src/admin/lib/downloads.ts");
+  const { downloadsFor, verifiedScript } =
+    await import("../../src/admin/lib/downloads.ts");
   const { testContext } = await import("./helpers.ts");
   const { createHash } = await import("node:crypto");
   const calls: string[] = [];
@@ -136,7 +155,8 @@ test("one-click selection stays on one immutable release while current changes",
         });
       if (url === `${BASE}/releases/r1/SHA256SUMS`)
         return new Response(`${SHA}  ${manifest.artifacts[1]!.file}\n`);
-      if (url === `${BASE}/releases/r1/install.ps1`) return new Response(script);
+      if (url === `${BASE}/releases/r1/install.ps1`)
+        return new Response(script);
       return new Response("mutable endpoint forbidden", { status: 404 });
     },
   });
@@ -148,12 +168,16 @@ test("one-click selection stays on one immutable release while current changes",
   expect(first.manifest.artifacts[1]!.url).toBe(
     `${BASE}/releases/r1/files/${manifest.artifacts[1]!.file}`,
   );
-  expect(await verifiedScript(first, "install.ps1", ctx.fetchImpl)).toBe(script);
+  expect(await verifiedScript(first, "install.ps1", ctx.fetchImpl)).toBe(
+    script,
+  );
   expect(first.sums.has("install.ps1")).toBe(false);
   await expect(
     verifiedScript(first, "install.ps1", async () => new Response("tampered")),
   ).rejects.toThrow("SHA-256");
-  await expect(verifiedScript(first, "../install.ps1", ctx.fetchImpl)).rejects.toThrow("refusé");
+  await expect(
+    verifiedScript(first, "../install.ps1", ctx.fetchImpl),
+  ).rejects.toThrow("refusé");
 });
 
 test("installer scripts require a valid assetChecksums entry before any download", async () => {
@@ -191,7 +215,10 @@ test("installer scripts require a valid assetChecksums entry before any download
   expect(
     await verifiedScript(
       {
-        manifest: { ...manifest, assetChecksums: { "install.ps1": sha.toUpperCase() } },
+        manifest: {
+          ...manifest,
+          assetChecksums: { "install.ps1": sha.toUpperCase() },
+        },
         base: `${BASE}/releases/r1`,
         sums: new Map(),
       },
@@ -208,7 +235,9 @@ test("unsafe release identifiers and artifact filenames never become download pa
   await Promise.all(
     ["../escape", "r?x", "", "r/evil"].map(async (id) => {
       await expect(
-        fetchManifest(BASE, async () => Response.json({ ...manifest, release: { id } })),
+        fetchManifest(BASE, async () =>
+          Response.json({ ...manifest, release: { id } }),
+        ),
       ).rejects.toThrow("identifiant");
     }),
   );

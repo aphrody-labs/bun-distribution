@@ -11,9 +11,18 @@
  */
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bouclier, Chargement, Croix, Plus, Rafraichir } from "@/components/icones";
+import {
+  Bouclier,
+  Chargement,
+  Croix,
+  Plus,
+  Rafraichir,
+} from "@/components/icones";
 import { api } from "@aphrody/admin-ui/client";
-import { RoleBadge, RoleSelect } from "@aphrody/admin-ui/components/admin/RoleSelect";
+import {
+  RoleBadge,
+  RoleSelect,
+} from "@aphrody/admin-ui/components/admin/RoleSelect";
 
 const TICKET_ACCESS_PREFIX = "tickets.access.";
 
@@ -40,7 +49,8 @@ export function TicketAccessPanel() {
   // CRUD générique plutôt que d'inventer un endpoint dédié.
   const settings = useQuery({
     queryKey: ["settings", "current"],
-    queryFn: () => api.get<{ rows: SettingRow[] }>("/database/guild_settings?limit=500"),
+    queryFn: () =>
+      api.get<{ rows: SettingRow[] }>("/database/guild_settings?limit=500"),
   });
 
   const rolesByKind = useMemo(() => {
@@ -58,11 +68,14 @@ export function TicketAccessPanel() {
     return out;
   }, [settings.data]);
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["settings", "current"] });
+  const invalidate = () =>
+    qc.invalidateQueries({ queryKey: ["settings", "current"] });
 
   const grant = useMutation({
     mutationFn: ({ kind, roleId }: { kind: TicketKind; roleId: string }) =>
-      api.post(`/settings/${TICKET_ACCESS_PREFIX}${kind}.${roleId}`, { value: "1" }),
+      api.post(`/settings/${TICKET_ACCESS_PREFIX}${kind}.${roleId}`, {
+        value: "1",
+      }),
     onSuccess: () => {
       setMsg("Rôle ajouté — actif sur les prochains tickets de ce type.");
       invalidate();
@@ -82,9 +95,13 @@ export function TicketAccessPanel() {
 
   const syncOpen = useMutation({
     mutationFn: () =>
-      api.post<{ ok: boolean; updated: number; skipped: number }>("/tickets/sync-access"),
+      api.post<{ ok: boolean; updated: number; skipped: number }>(
+        "/tickets/sync-access",
+      ),
     onSuccess: (r) =>
-      setMsg(`Tickets ouverts mis à jour : ${r.updated} · inchangés : ${r.skipped}.`),
+      setMsg(
+        `Tickets ouverts mis à jour : ${r.updated} · inchangés : ${r.skipped}.`,
+      ),
     onError: (e: unknown) => setMsg(`Échec : ${String(e)}`),
   });
 
@@ -97,8 +114,9 @@ export function TicketAccessPanel() {
             Accès staff par type de ticket
           </h2>
           <p className="text-[11px] text-white/50">
-            Ces rôles voient et écrivent dans les tickets du type concerné dès leur ouverture. Sans
-            rôle configuré, seul l&apos;auteur du ticket et le staff y ont accès.
+            Ces rôles voient et écrivent dans les tickets du type concerné dès
+            leur ouverture. Sans rôle configuré, seul l&apos;auteur du ticket et
+            le staff y ont accès.
           </p>
         </div>
         <button
@@ -129,8 +147,12 @@ export function TicketAccessPanel() {
                 className="space-y-2 rounded-lg border border-dbz-border bg-black/30 p-3"
               >
                 <div>
-                  <p className="font-saiyan text-sm text-white">{KIND_META[kind].label}</p>
-                  <p className="text-[10px] text-white/50">{KIND_META[kind].hint}</p>
+                  <p className="font-saiyan text-sm text-white">
+                    {KIND_META[kind].label}
+                  </p>
+                  <p className="text-[10px] text-white/50">
+                    {KIND_META[kind].hint}
+                  </p>
                 </div>
 
                 <div className="flex flex-wrap gap-1.5">
@@ -151,7 +173,9 @@ export function TicketAccessPanel() {
                     </span>
                   ))}
                   {roles.length === 0 && (
-                    <span className="text-[11px] text-white/50">Aucun rôle configuré</span>
+                    <span className="text-[11px] text-white/50">
+                      Aucun rôle configuré
+                    </span>
                   )}
                 </div>
 
@@ -159,7 +183,9 @@ export function TicketAccessPanel() {
                   <Plus className="h-3 w-3 shrink-0 text-white/50" />
                   <RoleSelect
                     value=""
-                    onChange={(roleId) => roleId && grant.mutate({ kind, roleId })}
+                    onChange={(roleId) =>
+                      roleId && grant.mutate({ kind, roleId })
+                    }
                     placeholder="— Ajouter un rôle —"
                   />
                 </div>

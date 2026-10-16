@@ -1,4 +1,3 @@
-
 export enum SizeIconOption {
   Landscape,
   Portrait,

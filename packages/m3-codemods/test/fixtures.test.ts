@@ -36,6 +36,8 @@ test("JSX is only recognised in expression position, not in strings, comments or
 
 test("invalid TSX is rejected instead of being rewritten", () => {
   expect(() =>
-    transformSource('import { Button } from "@mui/material"; const x = <Button>;'),
+    transformSource(
+      'import { Button } from "@mui/material"; const x = <Button>;',
+    ),
   ).toThrow("TSX invalide");
 });

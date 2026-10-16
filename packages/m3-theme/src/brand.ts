@@ -17,10 +17,13 @@ export const GEMINI_BRAND_COLORS = Object.freeze({
 } as const);
 
 export const GEMINI_BRAND_GRADIENTS = Object.freeze({
-  spectrumShift: "linear-gradient(74deg, #4285F4 0%, #9B72CB 18%, #D96570 35%, #D96570 50%, #9B72CB 70%, #4285F4 100%)",
-  sparkle: "radial-gradient(circle, rgba(66, 133, 244, 0.15) 0%, rgba(155, 114, 203, 0.1) 50%, transparent 70%)",
+  spectrumShift:
+    "linear-gradient(74deg, #4285F4 0%, #9B72CB 18%, #D96570 35%, #D96570 50%, #9B72CB 70%, #4285F4 100%)",
+  sparkle:
+    "radial-gradient(circle, rgba(66, 133, 244, 0.15) 0%, rgba(155, 114, 203, 0.1) 50%, transparent 70%)",
   warmTone: "linear-gradient(45deg, #FFCC00 0%, #D96570 100%)",
-  shimmer: "linear-gradient(90deg, transparent 0%, color-mix(in srgb, white 35%, transparent) 50%, transparent 100%)",
+  shimmer:
+    "linear-gradient(90deg, transparent 0%, color-mix(in srgb, white 35%, transparent) 50%, transparent 100%)",
 } as const);
 
 export const GEMINI_BRAND_SHAPES = Object.freeze({

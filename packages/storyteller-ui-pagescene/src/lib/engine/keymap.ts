@@ -153,8 +153,7 @@ const timelineStep = (editor: Editor, direction: 1 | -1) => {
   const timeline = editor.timelineController.getTimeline();
   if (!timeline) return;
   const fps = timeline.fps || 30;
-  const next =
-    editor.timelineController.getPlayhead() + direction / fps;
+  const next = editor.timelineController.getPlayhead() + direction / fps;
   seekTimeline(editor, Math.min(timeline.duration, Math.max(0, next)));
 };
 
@@ -280,7 +279,11 @@ export const buildKeymap = (
     for (const binding of forAction(id)) {
       out.push({
         code: binding.code,
-        modifiers: { ctrl: binding.ctrl, shift: binding.shift, alt: binding.alt },
+        modifiers: {
+          ctrl: binding.ctrl,
+          shift: binding.shift,
+          alt: binding.alt,
+        },
         label: def.label,
         group: def.group,
         run,

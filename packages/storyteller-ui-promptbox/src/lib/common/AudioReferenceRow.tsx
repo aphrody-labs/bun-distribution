@@ -5,7 +5,15 @@ import {
   useRef,
   useState,
 } from "react";
-import { FolderOpenIcon, ImageIcon, MusicIcon, PlayIcon, PlusIcon, SquareIcon, XIcon } from "lucide-react";
+import {
+  FolderOpenIcon,
+  ImageIcon,
+  MusicIcon,
+  PlayIcon,
+  PlusIcon,
+  SquareIcon,
+  XIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { toast } from "@storyteller/ui-toaster";
 import { UploaderStates } from "@storyteller/common";
@@ -213,7 +221,7 @@ export const AudioReferenceRow = forwardRef<
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-2 text-base-fg opacity-90">
-          <MusicIcon  className="h-3.5 w-3.5" />
+          <MusicIcon className="h-3.5 w-3.5" />
           <span className="text-sm font-medium">
             Audio Track{" "}
             <span className="font-semibold text-base-fg/60">
@@ -244,7 +252,7 @@ export const AudioReferenceRow = forwardRef<
               disabled={isUploadingAudio}
               className="flex h-9 items-center gap-1.5 rounded-[3px] border border-dashed border-ui-controls-border bg-ui-controls/50 px-3 text-sm text-base-fg/70 transition-colors hover:bg-ui-controls hover:text-base-fg disabled:cursor-wait disabled:opacity-60"
             >
-              <PlusIcon  className="h-3 w-3" />
+              <PlusIcon className="h-3 w-3" />
               {isUploadingAudio ? "Uploading…" : "Add audio"}
             </button>
             {onPickAudioFromLibrary && (
@@ -254,7 +262,7 @@ export const AudioReferenceRow = forwardRef<
                 disabled={isUploadingAudio}
                 className="flex h-9 items-center gap-1.5 rounded-[3px] border border-dashed border-ui-controls-border bg-ui-controls/50 px-3 text-sm text-base-fg/70 transition-colors hover:bg-ui-controls hover:text-base-fg disabled:cursor-wait disabled:opacity-60"
               >
-                <FolderOpenIcon  className="h-3 w-3" />
+                <FolderOpenIcon className="h-3 w-3" />
                 From library
               </button>
             )}
@@ -264,7 +272,7 @@ export const AudioReferenceRow = forwardRef<
         {imageSupported && (
           <>
             <div className="ms-2 flex items-center gap-2 text-base-fg opacity-90">
-              <ImageIcon  className="h-3.5 w-3.5" />
+              <ImageIcon className="h-3.5 w-3.5" />
               <span className="text-sm font-medium">Image</span>
             </div>
             {referenceImages.map((image) => (
@@ -283,9 +291,7 @@ export const AudioReferenceRow = forwardRef<
                   onClick={() => onReferenceImagesChange?.([])}
                   className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100"
                 >
-                  <XIcon
-                    
-                    className="h-3 w-3 text-white" />
+                  <XIcon className="h-3 w-3 text-white" />
                 </button>
               </div>
             ))}
@@ -296,7 +302,7 @@ export const AudioReferenceRow = forwardRef<
                 disabled={isUploadingImage}
                 className="flex h-9 items-center gap-1.5 rounded-[3px] border border-dashed border-ui-controls-border bg-ui-controls/50 px-3 text-sm text-base-fg/70 transition-colors hover:bg-ui-controls hover:text-base-fg disabled:cursor-wait disabled:opacity-60"
               >
-                <PlusIcon  className="h-3 w-3" />
+                <PlusIcon className="h-3 w-3" />
                 {isUploadingImage ? "Uploading…" : "Add image"}
               </button>
             )}
@@ -358,7 +364,7 @@ function AudioRefTile({
         onClick={() => onRemove(audio.id)}
         className="flex h-4 w-4 items-center justify-center rounded-[3px] text-base-fg/40 transition-colors hover:text-base-fg"
       >
-        <XIcon  className="h-2.5 w-2.5" />
+        <XIcon className="h-2.5 w-2.5" />
       </button>
     </div>
   );

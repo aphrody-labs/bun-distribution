@@ -5,10 +5,16 @@ import { createProxy, resolvePort } from "../src/server.ts";
 test("a protocol-relative request path cannot replace the configured proxy host", async () => {
   await using upstream = Bun.serve({
     port: 0,
-    fetch: (request) => Response.json({ upstream: true, path: new URL(request.url).pathname }),
+    fetch: (request) =>
+      Response.json({ upstream: true, path: new URL(request.url).pathname }),
   });
-  await using other = Bun.serve({ port: 0, fetch: () => Response.json({ upstream: false }) });
-  const request = new Request(`http://m3.test//127.0.0.1:${other.port}/secret?x=1`);
+  await using other = Bun.serve({
+    port: 0,
+    fetch: () => Response.json({ upstream: false }),
+  });
+  const request = new Request(
+    `http://m3.test//127.0.0.1:${other.port}/secret?x=1`,
+  );
   const response = await createProxy(upstream.url.href)(request);
   const body = await response.json();
   expect(body.upstream).toBe(true);
@@ -31,14 +37,22 @@ test("proxy strips connection-specific headers and forwards cancellation", async
   const proxy = createProxy(upstream.url.href);
   const response = await proxy(
     new Request("http://m3.test/api", {
-      headers: { connection: "x-private-hop", "x-private-hop": "remove", "x-custom": "keep" },
+      headers: {
+        connection: "x-private-hop",
+        "x-private-hop": "remove",
+        "x-custom": "keep",
+      },
     }),
   );
   expect(await response.json()).toEqual({ private: null, custom: "keep" });
   const controller = new AbortController();
   controller.abort();
   expect(
-    (await proxy(new Request("http://m3.test/api", { signal: controller.signal }))).status,
+    (
+      await proxy(
+        new Request("http://m3.test/api", { signal: controller.signal }),
+      )
+    ).status,
   ).toBe(502);
   expect(requests).toBe(1);
   expect(() => createProxy("file:///private")).toThrow("HTTP or HTTPS");

@@ -13,8 +13,15 @@ function subscribe(listener: () => void): () => void {
 }
 
 /** The current route id and a navigate function. */
-export function useRoute(): { route: string; navigate: (route: string) => void } {
-  const route = useSyncExternalStore(subscribe, () => parseRoute(location.hash), () => "overview");
+export function useRoute(): {
+  route: string;
+  navigate: (route: string) => void;
+} {
+  const route = useSyncExternalStore(
+    subscribe,
+    () => parseRoute(location.hash),
+    () => "overview",
+  );
   const navigate = useCallback((next: string) => {
     location.hash = `#/${next}`;
   }, []);

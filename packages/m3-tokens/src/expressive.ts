@@ -104,11 +104,17 @@ export const EXPRESSIVE_SPRINGS = {
 
 /** Directional corner shapes: `[ltr border-radius, rtl border-radius]` in terms of the corner scale. */
 export const DIRECTIONAL_SHAPES = {
-  "extra-small-top": ["extra-small extra-small none none", "extra-small extra-small none none"],
+  "extra-small-top": [
+    "extra-small extra-small none none",
+    "extra-small extra-small none none",
+  ],
   "large-top": ["large large none none", "large large none none"],
   "large-start": ["large none none large", "none large large none"],
   "large-end": ["none large large none", "large none none large"],
-  "extra-large-top": ["extra-large extra-large none none", "extra-large extra-large none none"],
+  "extra-large-top": [
+    "extra-large extra-large none none",
+    "extra-large extra-large none none",
+  ],
 } as const;
 
 export type DirectionalShape = keyof typeof DIRECTIONAL_SHAPES;

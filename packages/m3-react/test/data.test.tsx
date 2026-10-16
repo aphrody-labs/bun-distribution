@@ -17,9 +17,13 @@ const people: Person[] = Array.from({ length: 60 }, (_, i) => ({
   age: 20 + (i % 40),
 }));
 const col = dataColumns<Person>();
-const columns = [col.accessor("name", { header: "Name" }), col.accessor("age", { header: "Age" })];
+const columns = [
+  col.accessor("name", { header: "Name" }),
+  col.accessor("age", { header: "Age" }),
+];
 
-const cellTexts = (html: string) => [...html.matchAll(/<td[^>]*>([^<]*)<\/td>/g)].map((m) => m[1]);
+const cellTexts = (html: string) =>
+  [...html.matchAll(/<td[^>]*>([^<]*)<\/td>/g)].map((m) => m[1]);
 
 describe("DataTable", () => {
   test("renders a semantic table with headers, a caption and the first page", () => {
@@ -69,9 +73,11 @@ describe("DataTable", () => {
   });
 
   test("an empty table shows the empty label", () => {
-    expect(renderToString(<DataTable data={[]} columns={columns} emptyLabel="Nobody" />)).toContain(
-      "Nobody",
-    );
+    expect(
+      renderToString(
+        <DataTable data={[]} columns={columns} emptyLabel="Nobody" />,
+      ),
+    ).toContain("Nobody");
   });
 
   test("clicking a header sorts, the search field filters", async () => {
@@ -79,7 +85,9 @@ describe("DataTable", () => {
     document.body.append(container);
     const root = createRoot(container);
     await act(async () =>
-      root.render(<DataTable data={people} columns={columns} searchable pageSize={100} />),
+      root.render(
+        <DataTable data={people} columns={columns} searchable pageSize={100} />,
+      ),
     );
     const firstName = () => container.querySelector("tbody td")?.textContent;
     expect(firstName()).toBe("Person 00");
@@ -87,9 +95,14 @@ describe("DataTable", () => {
     await act(async () => sortName.click());
     await act(async () => sortName.click());
     expect(firstName()).toBe("Person 59");
-    const search = container.querySelector<HTMLInputElement>('input[type="search"]')!;
+    const search = container.querySelector<HTMLInputElement>(
+      'input[type="search"]',
+    )!;
     await act(async () => {
-      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+      const setter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )!.set!;
       setter.call(search, "Person 42");
       search.dispatchEvent(new Event("input", { bubbles: true }));
     });

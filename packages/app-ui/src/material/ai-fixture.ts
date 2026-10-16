@@ -22,7 +22,11 @@ function fixtureEvents(prompt: string): BaseEvent[] {
     " packages. The transcript below is rendered from AG-UI events.";
   return [
     { type: EventType.RUN_STARTED, threadId: "material-fixture", runId },
-    { type: EventType.TOOL_CALL_START, toolCallId: "inventory", toolCallName: "package_inventory" },
+    {
+      type: EventType.TOOL_CALL_START,
+      toolCallId: "inventory",
+      toolCallName: "package_inventory",
+    },
     { type: EventType.TOOL_CALL_ARGS, toolCallId: "inventory", delta: "{}" },
     { type: EventType.TOOL_CALL_END, toolCallId: "inventory" },
     {
@@ -30,19 +34,29 @@ function fixtureEvents(prompt: string): BaseEvent[] {
       toolCallId: "inventory",
       messageId: runId + "-inventory",
       role: "tool",
-      content: JSON.stringify({ packages: PACKAGES.length, source: "build inventory" }),
+      content: JSON.stringify({
+        packages: PACKAGES.length,
+        source: "build inventory",
+      }),
     },
     { type: EventType.TEXT_MESSAGE_START, messageId, role: "assistant" },
     ...response
       .match(/.{1,12}/g)!
-      .map((delta) => ({ type: EventType.TEXT_MESSAGE_CONTENT, messageId, delta })),
+      .map((delta) => ({
+        type: EventType.TEXT_MESSAGE_CONTENT,
+        messageId,
+        delta,
+      })),
     { type: EventType.TEXT_MESSAGE_END, messageId },
     { type: EventType.RUN_FINISHED, threadId: "material-fixture", runId },
   ] as BaseEvent[];
 }
 
 /** SSE body of the fixture for `prompt`, one event per tick; `signal` aborts the producer. */
-export function fixtureStream(prompt: string, signal: AbortSignal): ReadableStream<Uint8Array> {
+export function fixtureStream(
+  prompt: string,
+  signal: AbortSignal,
+): ReadableStream<Uint8Array> {
   const encoder = new EventEncoder();
   const events = fixtureEvents(prompt);
   let timer: ReturnType<typeof setInterval> | undefined;
@@ -64,7 +78,9 @@ export function fixtureStream(prompt: string, signal: AbortSignal): ReadableStre
       };
       signal.addEventListener("abort", abort, { once: true });
       timer = setInterval(() => {
-        controller.enqueue(new TextEncoder().encode(encoder.encodeSSE(events[index++])));
+        controller.enqueue(
+          new TextEncoder().encode(encoder.encodeSSE(events[index++])),
+        );
         if (index === events.length) {
           cleanup();
           controller.close();

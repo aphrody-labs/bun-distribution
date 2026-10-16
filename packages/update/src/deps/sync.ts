@@ -17,7 +17,13 @@
  *   baseline   record current consumer gate failures so `fix` only reports regressions
  *   run        plan, facts, fix, changelog (+ apply and memory with --apply)
  */
-import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from "node:fs";
+import {
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  readdirSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "../process.ts";
@@ -64,8 +70,14 @@ export type Commit = {
   breaking: boolean;
 };
 
-export function parseCommit(hash: string, date: string, message: string): Commit | undefined {
-  const m = /^(\w+)(?:\(([^)]*)\))?(!)?:\s*(.+)$/.exec(message.split("\n")[0] ?? "");
+export function parseCommit(
+  hash: string,
+  date: string,
+  message: string,
+): Commit | undefined {
+  const m = /^(\w+)(?:\(([^)]*)\))?(!)?:\s*(.+)$/.exec(
+    message.split("\n")[0] ?? "",
+  );
   if (!m) return undefined;
   return {
     hash,
@@ -87,7 +99,10 @@ export type FixRule = {
   pattern?: string;
 };
 
-export function matchRules(output: string, rules: FixRule[]): { rule: FixRule; lines: string[] }[] {
+export function matchRules(
+  output: string,
+  rules: FixRule[],
+): { rule: FixRule; lines: string[] }[] {
   const lines = output.split("\n");
   const hits: { rule: FixRule; lines: string[] }[] = [];
   for (const rule of rules) {
@@ -105,7 +120,8 @@ export function replaceManagedBlock(text: string, body: string): string {
   const block = `${BLOCK_BEGIN}\n${body.trim()}\n${BLOCK_END}`;
   const a = text.indexOf(BLOCK_BEGIN);
   const b = text.indexOf(BLOCK_END);
-  if (a >= 0 && b > a) return text.slice(0, a) + block + text.slice(b + BLOCK_END.length);
+  if (a >= 0 && b > a)
+    return text.slice(0, a) + block + text.slice(b + BLOCK_END.length);
   return `${text.replace(/\s+$/, "")}\n\n${block}\n`;
 }
 
@@ -130,7 +146,10 @@ export function normaliseErrors(output: string): string[] {
 const UA = { "user-agent": "aphrody-deps-sync (contact@aphrody.com)" };
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function getJson(url: string, headers: Record<string, string> = {}): Promise<any> {
+async function getJson(
+  url: string,
+  headers: Record<string, string> = {},
+): Promise<any> {
   const res = await fetch(url, {
     headers: { ...UA, ...headers },
     signal: AbortSignal.timeout(30_000),
@@ -146,7 +165,10 @@ function githubHeaders(): Record<string, string> {
     if (r.status === 0) token = r.stdout.trim();
   }
   return token
-    ? { authorization: `Bearer ${token}`, accept: "application/vnd.github+json" }
+    ? {
+        authorization: `Bearer ${token}`,
+        accept: "application/vnd.github+json",
+      }
     : { accept: "application/vnd.github+json" };
 }
 
@@ -159,13 +181,17 @@ export const registries = {
     )?.num;
   },
   async npm(name: string): Promise<string | undefined> {
-    const d = await getJson(`https://registry.npmjs.org/${name.replace("/", "%2f")}`);
+    const d = await getJson(
+      `https://registry.npmjs.org/${name.replace("/", "%2f")}`,
+    );
     return d["dist-tags"]?.latest;
   },
   async pypi(name: string): Promise<string | undefined> {
     return (await getJson(`https://pypi.org/pypi/${name}/json`)).info?.version;
   },
-  async github(repo: string): Promise<{ tag: string; body: string; url: string }[]> {
+  async github(
+    repo: string,
+  ): Promise<{ tag: string; body: string; url: string }[]> {
     const rels = await getJson(
       `https://api.github.com/repos/${repo}/releases?per_page=5`,
       githubHeaders(),
@@ -188,7 +214,10 @@ export const registries = {
       : {};
     let id = libId;
     if (!id) {
-      const s = await getJson(`${base}/v1/search?query=${encodeURIComponent(name)}`, headers);
+      const s = await getJson(
+        `${base}/v1/search?query=${encodeURIComponent(name)}`,
+        headers,
+      );
       id = s.results?.[0]?.id;
       if (!id) return "";
     }
@@ -211,8 +240,16 @@ export type Lib = {
   context7?: string;
   topics?: string[];
 };
-export type Change = { ecosystem: string; name: string; from: string; to: string };
-export type Journal = { seen: Record<string, string>; runs: { date: string; changes: Change[] }[] };
+export type Change = {
+  ecosystem: string;
+  name: string;
+  from: string;
+  to: string;
+};
+export type Journal = {
+  seen: Record<string, string>;
+  runs: { date: string; changes: Change[] }[];
+};
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -230,7 +267,9 @@ async function currentVersions(c: Ctx): Promise<Record<string, string>> {
       if (m) out[lib.id] = m[1]!;
     } else if (lib.ecosystem === "npm") {
       const pkg = c.read("package.json");
-      const m = new RegExp(`"${lib.name.replace("/", "\\/")}"\\s*:\\s*"[\\^~]?([^"]+)"`).exec(pkg);
+      const m = new RegExp(
+        `"${lib.name.replace("/", "\\/")}"\\s*:\\s*"[\\^~]?([^"]+)"`,
+      ).exec(pkg);
       if (m) out[lib.id] = m[1]!;
     } else {
       const r = c.run(lib.name, ["--version"]);
@@ -255,7 +294,14 @@ async function plan(c: Ctx): Promise<Change[]> {
     );
   return tauri === 0
     ? []
-    : [{ ecosystem: "cargo", name: "tauri-family", from: "drift", to: "see tauri-sync report" }];
+    : [
+        {
+          ecosystem: "cargo",
+          name: "tauri-family",
+          from: "drift",
+          to: "see tauri-sync report",
+        },
+      ];
 }
 
 async function applyChanges(c: Ctx, changes: Change[]): Promise<void> {
@@ -294,13 +340,17 @@ export function mergeFactSheet(
       merged.set(name, [line]);
     } else if (name) merged.get(name)!.push(line);
   }
-  for (const body of merged.values()) while (body.length && body.at(-1) === "") body.pop();
+  for (const body of merged.values())
+    while (body.length && body.at(-1) === "") body.pop();
   for (const [lib, body] of sections) {
     const trimmed = [...body];
     while (trimmed.length && trimmed.at(-1) === "") trimmed.pop();
     merged.set(lib, trimmed);
   }
-  return [...header, ...[...merged.values()].flatMap((body) => body.concat(""))].join("\n");
+  return [
+    ...header,
+    ...[...merged.values()].flatMap((body) => body.concat("")),
+  ].join("\n");
 }
 
 async function facts(c: Ctx, all: boolean): Promise<string | undefined> {
@@ -323,7 +373,10 @@ async function facts(c: Ctx, all: boolean): Promise<string | undefined> {
       j.seen[lib.id] = cur!;
       continue;
     } // first sighting: record, nothing to compare
-    const lines: string[] = [`## ${lib.name} ${prev ?? "?"} -> ${cur ?? "?"}`, ""];
+    const lines: string[] = [
+      `## ${lib.name} ${prev ?? "?"} -> ${cur ?? "?"}`,
+      "",
+    ];
     if (lib.github) {
       // oxlint-disable-next-line no-await-in-loop -- sections séquentielles : ordre stable des fiches et limite de débit de l'API GitHub
       const rels = await registries.github(lib.github).catch((e: Error) => {
@@ -343,9 +396,16 @@ async function facts(c: Ctx, all: boolean): Promise<string | undefined> {
     }
     for (const topic of lib.topics ?? []) {
       // oxlint-disable-next-line no-await-in-loop -- requêtes Context7 séquentielles : limite de débit de l'API et ordre des sections
-      const doc = await registries.context7(lib.context7, lib.name, topic).catch(() => "");
+      const doc = await registries
+        .context7(lib.context7, lib.name, topic)
+        .catch(() => "");
       if (doc)
-        lines.push("", `### Context7: ${topic}`, "", doc.split("\n").slice(0, 20).join("\n"));
+        lines.push(
+          "",
+          `### Context7: ${topic}`,
+          "",
+          doc.split("\n").slice(0, 20).join("\n"),
+        );
     }
     sections.set(lib.name, lines);
     if (cur) j.seen[lib.id] = cur;
@@ -357,14 +417,20 @@ async function facts(c: Ctx, all: boolean): Promise<string | undefined> {
     return undefined;
   }
   const file = `docs/research/workspace/deps/${today()}.md`;
-  c.write(file, mergeFactSheet(c.exists(file) ? c.read(file) : undefined, header, sections));
+  c.write(
+    file,
+    mergeFactSheet(c.exists(file) ? c.read(file) : undefined, header, sections),
+  );
   console.log(`facts  ${count} librar${count === 1 ? "y" : "ies"} -> ${file}`);
   return file;
 }
 
 // ---------------------------------------------------------------- fix (pre-fix)
 
-function consumerTargets(c: Ctx, onlyChanged: string[]): { cargo: string[]; bun: string[] } {
+function consumerTargets(
+  c: Ctx,
+  onlyChanged: string[],
+): { cargo: string[]; bun: string[] } {
   const w = c.watch();
   const ids = onlyChanged.length
     ? onlyChanged
@@ -380,11 +446,16 @@ function consumerTargets(c: Ctx, onlyChanged: string[]): { cargo: string[]; bun:
 
 function globFiles(c: Ctx, patterns: string[]): string[] {
   const out: string[] = [];
-  for (const p of patterns) for (const f of new Bun.Glob(p).scanSync({ cwd: c.root })) out.push(f);
+  for (const p of patterns)
+    for (const f of new Bun.Glob(p).scanSync({ cwd: c.root })) out.push(f);
   return out;
 }
 
-async function fix(c: Ctx, applyFixes: boolean, record = false): Promise<number> {
+async function fix(
+  c: Ctx,
+  applyFixes: boolean,
+  record = false,
+): Promise<number> {
   const j = c.journal();
   const lastChanged = (j.runs.at(-1)?.changes ?? []).map((x) => x.name);
   const watch = c.watch();
@@ -393,14 +464,22 @@ async function fix(c: Ctx, applyFixes: boolean, record = false): Promise<number>
       (l) =>
         lastChanged.includes(l.name) ||
         lastChanged.some(
-          (n) => l.ecosystem === "cargo" && n.startsWith("tauri") && l.id === "tauri",
+          (n) =>
+            l.ecosystem === "cargo" &&
+            n.startsWith("tauri") &&
+            l.id === "tauri",
         ),
     )
     .map((l) => l.id);
   const targets = consumerTargets(c, ids);
   let output = "";
   for (const d of targets.bun) {
-    const r = c.run("bun", ["check", "--noEmit", "-p", join(d, "tsconfig.json")]);
+    const r = c.run("bun", [
+      "check",
+      "--noEmit",
+      "-p",
+      join(d, "tsconfig.json"),
+    ]);
     output += `\n# ${d}\n${r.stdout}${r.stderr}`;
   }
   if (targets.cargo.length) {
@@ -414,15 +493,23 @@ async function fix(c: Ctx, applyFixes: boolean, record = false): Promise<number>
   const baselineFile = "tools/config/deps/baseline.json";
   const errors = normaliseErrors(output);
   if (record) {
-    c.write(baselineFile, `${JSON.stringify({ recorded: today(), errors }, null, 2)}\n`);
+    c.write(
+      baselineFile,
+      `${JSON.stringify({ recorded: today(), errors }, null, 2)}\n`,
+    );
     console.log(`baseline recorded: ${errors.length} existing error line(s)`);
     return 0;
   }
-  const known = new Set(c.jsonFile<{ errors: string[] }>(baselineFile, { errors: [] }).errors);
+  const known = new Set(
+    c.jsonFile<{ errors: string[] }>(baselineFile, { errors: [] }).errors,
+  );
   const fresh = errors.filter((e) => !known.has(e));
-  const rules = c.jsonFile<{ rules: FixRule[] }>("tools/config/deps/fix-rules.json", {
-    rules: [],
-  }).rules;
+  const rules = c.jsonFile<{ rules: FixRule[] }>(
+    "tools/config/deps/fix-rules.json",
+    {
+      rules: [],
+    },
+  ).rules;
   const hits = matchRules(
     fresh.join("\n") +
       "\n" +
@@ -545,13 +632,17 @@ function changelog(c: Ctx): void {
       lines.push(
         "### Dependency bumps",
         "",
-        ...run.changes.map((x) => `- ${x.ecosystem} ${x.name}: ${x.from} -> ${x.to}`),
+        ...run.changes.map(
+          (x) => `- ${x.ecosystem} ${x.name}: ${x.from} -> ${x.to}`,
+        ),
         "",
       );
     }
   }
   c.write(cfg.output, lines.join("\n"));
-  console.log(`changelog ${commits.length} commit(s) over ${days.length} day(s) -> ${cfg.output}`);
+  console.log(
+    `changelog ${commits.length} commit(s) over ${days.length} day(s) -> ${cfg.output}`,
+  );
 }
 
 // ---------------------------------------------------------------- memory
@@ -571,7 +662,8 @@ async function memory(c: Ctx): Promise<void> {
     "Rules: run `bun run update:deps` (plan) before touching pins; after a bump read `docs/research/workspace/deps/` and",
     "`.coord/shared/deps-fix-*.md`; fix consumers with the briefs, never bulk-update Cargo; never edit CHANGELOG.md by hand.",
   ].join("\n");
-  const base = process.env.APHRODY_WORKSPACES ?? join(homedir(), ".aphrody", "workspaces");
+  const base =
+    process.env.APHRODY_WORKSPACES ?? join(homedir(), ".aphrody", "workspaces");
   const dirs = existsSync(base)
     ? readdirSync(base, { withFileTypes: true })
         .filter((d) => d.isDirectory())
@@ -580,9 +672,15 @@ async function memory(c: Ctx): Promise<void> {
   for (const dir of dirs) {
     const boot = join(dir, "BOOT.md");
     if (existsSync(boot))
-      writeFileSync(boot, replaceManagedBlock(readFileSync(boot, "utf8"), body));
+      writeFileSync(
+        boot,
+        replaceManagedBlock(readFileSync(boot, "utf8"), body),
+      );
     mkdirSync(join(dir, "memory"), { recursive: true });
-    writeFileSync(join(dir, "memory", "deps-state.md"), `# Dependency state\n\n${body}\n`);
+    writeFileSync(
+      join(dir, "memory", "deps-state.md"),
+      `# Dependency state\n\n${body}\n`,
+    );
     console.log(`memory ${dir}`);
   }
   // Canonical user-store boot template: static pointer, no volatile versions.
@@ -601,7 +699,8 @@ export async function runDepsSync(argv: string[]): Promise<number> {
   const flag = (n: string) => argv.includes(n);
   const rootIdx = argv.indexOf("--root");
   const root = resolve(rootIdx >= 0 ? argv[rootIdx + 1]! : process.cwd());
-  const sub = argv.find((a) => !a.startsWith("-") && a !== argv[rootIdx + 1]) ?? "plan";
+  const sub =
+    argv.find((a) => !a.startsWith("-") && a !== argv[rootIdx + 1]) ?? "plan";
   const c = new Ctx(root, flag("--apply"), flag("--json"));
   switch (sub) {
     case "plan":
@@ -628,8 +727,10 @@ export async function runDepsSync(argv: string[]): Promise<number> {
     case "inventory": {
       const inv = await import("./inventory.ts");
       const roots =
-        c.jsonFile<{ inventory?: { pythonRoots?: string[] } }>("tools/config/deps/watch.json", {})
-          .inventory?.pythonRoots ?? [];
+        c.jsonFile<{ inventory?: { pythonRoots?: string[] } }>(
+          "tools/config/deps/watch.json",
+          {},
+        ).inventory?.pythonRoots ?? [];
       const data = await inv.inventory(c.root, {
         pythonRoots: roots.map((r) => r.replace(/^~/, homedir())),
         log: (m) => console.log(`inv    ${m}`),

@@ -12,7 +12,10 @@ export const A2A_ADMIN_TARGETS = [
   { id: "codex", label: "codex (ordre en attente de résultat)" },
   { id: "agycli", label: "agycli (ordre en attente de résultat)" },
   { id: "claude", label: "claude (ordre en attente de résultat)" },
-  { id: "local_model", label: "local_model (ordre en attente d'un worker local)" },
+  {
+    id: "local_model",
+    label: "local_model (ordre en attente d'un worker local)",
+  },
   { id: "broadcast", label: "broadcast (Tous les pairs)" },
 ] as const;
 
@@ -39,7 +42,11 @@ export type A2ADispatchParse =
   | { ok: true; body: A2ADispatchBody }
   | {
       ok: false;
-      error: "invalid_body" | "invalid_target" | "invalid_kind" | "invalid_instruction";
+      error:
+        | "invalid_body"
+        | "invalid_target"
+        | "invalid_kind"
+        | "invalid_instruction";
     };
 
 /** Corps d'un ordre admin : allowlist stricte, aucune clé inconnue n'atteint le hub. */
@@ -51,11 +58,15 @@ export function parseDispatchBody(raw: unknown): A2ADispatchParse {
   if (!targetId) return { ok: false, error: "invalid_target" };
   const kindId = A2A_ADMIN_KINDS.find((entry) => entry.id === kind)?.id;
   if (!kindId) return { ok: false, error: "invalid_kind" };
-  if (typeof instruction !== "string") return { ok: false, error: "invalid_instruction" };
+  if (typeof instruction !== "string")
+    return { ok: false, error: "invalid_instruction" };
   const text = instruction.trim();
   if (!text || text.length > A2A_INSTRUCTION_MAX_CHARS)
     return { ok: false, error: "invalid_instruction" };
-  return { ok: true, body: { target: targetId, kind: kindId, instruction: text } };
+  return {
+    ok: true,
+    body: { target: targetId, kind: kindId, instruction: text },
+  };
 }
 
 export interface Envelope {
@@ -70,7 +81,8 @@ export interface Envelope {
   re?: string;
 }
 
-const text = (value: unknown): string => (typeof value === "string" ? value : "");
+const text = (value: unknown): string =>
+  typeof value === "string" ? value : "";
 
 /**
  * Une ligne de boîte aux lettres est un JSON non fiable : sans `id` ni `from` ce n'est pas une
@@ -79,7 +91,12 @@ const text = (value: unknown): string => (typeof value === "string" ? value : ""
 export function normalizeEnvelope(raw: unknown): Envelope | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const row = raw as Record<string, unknown>;
-  if (typeof row.id !== "string" || !row.id || typeof row.from !== "string" || !row.from)
+  if (
+    typeof row.id !== "string" ||
+    !row.id ||
+    typeof row.from !== "string" ||
+    !row.from
+  )
     return null;
   return {
     ...(typeof row.v === "number" ? { v: row.v } : {}),
@@ -113,7 +130,10 @@ export interface A2AFailure {
  * Transforme une réponse non 2xx de `/api/admin/a2a` en état affichable. Le texte vient du statut et
  * du code d'erreur, jamais d'un message amont : aucune adresse ni aucun chemin interne n'atteint l'écran.
  */
-export function describeA2AFailure(status: number, code?: string | null): A2AFailure {
+export function describeA2AFailure(
+  status: number,
+  code?: string | null,
+): A2AFailure {
   if (status === 401) {
     return {
       kind: "unauthenticated",
@@ -136,10 +156,18 @@ export function describeA2AFailure(status: number, code?: string | null): A2AFai
     };
   }
   if (code === "a2a_upstream_rejected") {
-    return { kind: "rejected", text: "Le hub A2A a refusé l'ordre.", terminal: false };
+    return {
+      kind: "rejected",
+      text: "Le hub A2A a refusé l'ordre.",
+      terminal: false,
+    };
   }
   if (code === "a2a_upstream_error") {
-    return { kind: "upstream", text: "Le hub A2A a répondu en erreur.", terminal: false };
+    return {
+      kind: "upstream",
+      text: "Le hub A2A a répondu en erreur.",
+      terminal: false,
+    };
   }
   if (status === 400 || status === 415) {
     return {
@@ -148,7 +176,11 @@ export function describeA2AFailure(status: number, code?: string | null): A2AFai
       terminal: false,
     };
   }
-  return { kind: "server", text: `Erreur serveur (HTTP ${status}).`, terminal: false };
+  return {
+    kind: "server",
+    text: `Erreur serveur (HTTP ${status}).`,
+    terminal: false,
+  };
 }
 
 export function describeA2ANetworkFailure(): A2AFailure {
@@ -161,7 +193,11 @@ export function describeA2ANetworkFailure(): A2AFailure {
 
 /** Réponse 2xx dont le corps n'a pas la forme attendue (proxy intermédiaire, page HTML…). */
 export function describeA2AUnreadable(): A2AFailure {
-  return { kind: "server", text: "Réponse illisible du serveur.", terminal: false };
+  return {
+    kind: "server",
+    text: "Réponse illisible du serveur.",
+    terminal: false,
+  };
 }
 
 const timeFormat = new Intl.DateTimeFormat("fr-FR", {
@@ -232,7 +268,8 @@ export function createSequentialPoller(options: PollerOptions): Poller {
 
   function schedule(outcome: PollOutcome): void {
     clearTimer();
-    if (stopped || !started || outcome === "halt" || !options.isVisible()) return;
+    if (stopped || !started || outcome === "halt" || !options.isVisible())
+      return;
     const delay = Math.min(maxIntervalMs, options.intervalMs * 2 ** failures);
     timer = timers.set(() => {
       timer = null;

@@ -4,7 +4,9 @@ const catalogSeries = new Set(["DB", "DBS"]);
 export function buildLoreCatalogRequest(series) {
   const normalizedSeries = typeof series === "string" ? series.trim() : "";
   if (!catalogSeries.has(normalizedSeries))
-    return { error: "Choisis Dragon Ball ou Dragon Ball Super dans le catalogue." };
+    return {
+      error: "Choisis Dragon Ball ou Dragon Ball Super dans le catalogue.",
+    };
   return { series: normalizedSeries };
 }
 
@@ -46,11 +48,18 @@ export function normalizeLoreCatalogPayload(payload, series) {
       ? Array.from({ length: 42 }, (_, index) => index + 1)
       : firstNumber === null
         ? []
-        : Array.from({ length: lastNumber - firstNumber + 1 }, (_, index) => firstNumber + index);
-  const missingNumbers = expectedNumbers.filter((number) => !observedNumbers.includes(number));
+        : Array.from(
+            { length: lastNumber - firstNumber + 1 },
+            (_, index) => firstNumber + index,
+          );
+  const missingNumbers = expectedNumbers.filter(
+    (number) => !observedNumbers.includes(number),
+  );
   return {
     series,
-    declaredCount: Number.isSafeInteger(payload.count) ? payload.count : payload.volumes.length,
+    declaredCount: Number.isSafeInteger(payload.count)
+      ? payload.count
+      : payload.volumes.length,
     omittedCount: payload.volumes.length - records.length,
     coverage: {
       observedCount: observedNumbers.length,
@@ -58,14 +67,18 @@ export function normalizeLoreCatalogPayload(payload, series) {
       lastNumber,
       missingNumbers,
       completeStandardSet: series === "DB" && missingNumbers.length === 0,
-      contiguousObservedRange: firstNumber !== null && missingNumbers.length === 0,
+      contiguousObservedRange:
+        firstNumber !== null && missingNumbers.length === 0,
     },
     records,
   };
 }
 
 export function normalizeLoreCoveragePayload(payload) {
-  if (!Number.isSafeInteger(payload?.index?.chunks) || !Array.isArray(payload?.sources))
+  if (
+    !Number.isSafeInteger(payload?.index?.chunks) ||
+    !Array.isArray(payload?.sources)
+  )
     throw new TypeError("Réponse de couverture RAG invalide.");
   const sourceCount = (sourceId, kind) => {
     const entry = payload.sources.find(
@@ -75,7 +88,8 @@ export function normalizeLoreCoveragePayload(payload) {
   };
   return {
     chunks: payload.index.chunks,
-    builtAt: typeof payload.index.builtAt === "string" ? payload.index.builtAt : null,
+    builtAt:
+      typeof payload.index.builtAt === "string" ? payload.index.builtAt : null,
     mangaPagePassages: sourceCount("manga", "manga_page"),
     mangaChapterPassages: sourceCount("db_manga_chapters", "manga_chapter"),
     mangaVolumePassages: sourceCount("db_manga_volumes", "manga_volume"),

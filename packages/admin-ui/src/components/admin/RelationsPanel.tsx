@@ -12,7 +12,13 @@ import { apiAt } from "@aphrody/admin-ui/client";
 import { entityRelations, type RelationSpec } from "@/lib/wiki-fields";
 import { crudBase } from "@/lib/wiki-tables";
 
-export function RelationsPanel({ table, entityId }: { table: string; entityId: string }) {
+export function RelationsPanel({
+  table,
+  entityId,
+}: {
+  table: string;
+  entityId: string;
+}) {
   const specs = entityRelations(table);
   if (specs.length === 0) return null;
 
@@ -22,13 +28,23 @@ export function RelationsPanel({ table, entityId }: { table: string; entityId: s
         <Lien className="h-3.5 w-3.5" /> Relations
       </div>
       {specs.map((spec) => (
-        <RelationEditor key={spec.joinTable + spec.selfCol} spec={spec} entityId={entityId} />
+        <RelationEditor
+          key={spec.joinTable + spec.selfCol}
+          spec={spec}
+          entityId={entityId}
+        />
       ))}
     </div>
   );
 }
 
-function RelationEditor({ spec, entityId }: { spec: RelationSpec; entityId: string }) {
+function RelationEditor({
+  spec,
+  entityId,
+}: {
+  spec: RelationSpec;
+  entityId: string;
+}) {
   const qc = useQueryClient();
   const joinClient = apiAt(crudBase(spec.joinTable));
   const [adding, setAdding] = useState("");
@@ -44,14 +60,16 @@ function RelationEditor({ spec, entityId }: { spec: RelationSpec; entityId: stri
   const options = useQuery({
     queryKey: ["fk-options", spec.targetTable],
     queryFn: () =>
-      apiAt(crudBase(spec.targetTable)).get<{ options: { value: string; label: string }[] }>(
-        `/${spec.targetTable}?as=options`,
-      ),
+      apiAt(crudBase(spec.targetTable)).get<{
+        options: { value: string; label: string }[];
+      }>(`/${spec.targetTable}?as=options`),
     staleTime: 5 * 60_000,
   });
 
   const invalidate = () =>
-    qc.invalidateQueries({ queryKey: ["relations", spec.joinTable, spec.selfCol, entityId] });
+    qc.invalidateQueries({
+      queryKey: ["relations", spec.joinTable, spec.selfCol, entityId],
+    });
 
   const add = useMutation({
     mutationFn: (targetId: string) =>
@@ -65,7 +83,9 @@ function RelationEditor({ spec, entityId }: { spec: RelationSpec; entityId: stri
   const remove = useMutation({
     mutationFn: (targetId: string) => {
       // id composite DANS L'ORDRE pk de la jointure.
-      const id = spec.pkOrder.map((k) => (k === spec.selfCol ? entityId : targetId)).join(",");
+      const id = spec.pkOrder
+        .map((k) => (k === spec.selfCol ? entityId : targetId))
+        .join(",");
       return joinClient.delete(`/${spec.joinTable}/${encodeURIComponent(id)}`);
     },
     onSuccess: invalidate,
@@ -73,7 +93,8 @@ function RelationEditor({ spec, entityId }: { spec: RelationSpec; entityId: stri
 
   const ids = related.data?.ids ?? [];
   const opts = options.data?.options ?? [];
-  const labelFor = (id: string) => opts.find((o) => o.value === id)?.label ?? `#${id}`;
+  const labelFor = (id: string) =>
+    opts.find((o) => o.value === id)?.label ?? `#${id}`;
   const idSet = new Set(ids);
   const available = opts
     .filter((o) => !idSet.has(o.value))
@@ -97,7 +118,9 @@ function RelationEditor({ spec, entityId }: { spec: RelationSpec; entityId: stri
       ) : (
         <div className="mb-2 flex flex-wrap gap-1.5">
           {ids.length === 0 && (
-            <span className="text-xs italic text-white/50">Aucune relation.</span>
+            <span className="text-xs italic text-white/50">
+              Aucune relation.
+            </span>
           )}
           {ids.map((id) => (
             <span
@@ -124,7 +147,9 @@ function RelationEditor({ spec, entityId }: { spec: RelationSpec; entityId: stri
         value={adding}
         // Gate sur `related` aussi : sinon, pendant le chargement, `idSet` est
         // vide → la liste proposerait des paires déjà liées (doublon).
-        disabled={busy || options.isLoading || related.isLoading || related.isError}
+        disabled={
+          busy || options.isLoading || related.isLoading || related.isError
+        }
         onChange={(e) => {
           const v = e.target.value;
           setAdding("");
@@ -132,7 +157,9 @@ function RelationEditor({ spec, entityId }: { spec: RelationSpec; entityId: stri
         }}
       >
         <option value="">
-          {options.isLoading ? "Chargement…" : `+ Lier ${spec.label.toLowerCase()}…`}
+          {options.isLoading
+            ? "Chargement…"
+            : `+ Lier ${spec.label.toLowerCase()}…`}
         </option>
         {available.map((o) => (
           <option key={o.value} value={o.value}>
@@ -142,7 +169,8 @@ function RelationEditor({ spec, entityId }: { spec: RelationSpec; entityId: stri
       </select>
       {options.isError && (
         <p className="mt-1 text-xs text-red-400">
-          Liste des « {spec.label.toLowerCase()} » indisponible (les noms ne s&apos;affichent pas).
+          Liste des « {spec.label.toLowerCase()} » indisponible (les noms ne
+          s&apos;affichent pas).
         </p>
       )}
       {(add.isError || remove.isError) && (

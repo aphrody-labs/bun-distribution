@@ -45,11 +45,16 @@ function serverBlock(
   return { start, end, lines, text: lines.slice(start, end + 1).join("\n") };
 }
 
-const canonicalSource = serverBlock(sourceConf, "server_name source.aphrody.app;").text;
+const canonicalSource = serverBlock(
+  sourceConf,
+  "server_name source.aphrody.app;",
+).text;
 if (!canonicalSource.includes("include snippets/source-tunnel-auth.inc;"))
   throw new Error("Source auth header include is missing");
 if (!canonicalSource.includes("include snippets/bun-os-product-api.inc;"))
-  throw new Error("Source product route was unexpectedly removed from the canonical model");
+  throw new Error(
+    "Source product route was unexpectedly removed from the canonical model",
+  );
 const sourceBlockForLive = canonicalSource.replace(
   "    include snippets/bun-os-product-api.inc;\n",
   "",
@@ -66,15 +71,22 @@ if (!apply) {
       mappedUser: "aphrody-dev",
       trustedBackend: "172.18.0.1/32",
       sourceCertificate: "/etc/letsencrypt/live/source.aphrody.app",
-      liveCompose: "/home/ubuntu/apps/gitea/compose.yaml (selected env keys only)",
-      liveNginx: "/etc/nginx/sites-available/control.aphrody.app.conf (forge blocks only)",
+      liveCompose:
+        "/home/ubuntu/apps/gitea/compose.yaml (selected env keys only)",
+      liveNginx:
+        "/etc/nginx/sites-available/control.aphrody.app.conf (forge blocks only)",
       productRoutesApplied: false,
     }),
   );
   process.exit(0);
 }
 
-const payload = JSON.stringify({ phase, expectedMap, expectedSnippet, sourceBlockForLive });
+const payload = JSON.stringify({
+  phase,
+  expectedMap,
+  expectedSnippet,
+  sourceBlockForLive,
+});
 const remoteTemplate = String.raw`
 const d = JSON.parse(__PAYLOAD__);
 function fail(message) { throw new Error(message); }
@@ -315,7 +327,9 @@ const [stdout, stderr, exitCode] = await Promise.all([
   sshProc.exited,
 ]);
 if (exitCode !== 0) {
-  console.error(`Source tunnel auth ${phase} failed (${exitCode}); remote diagnostics suppressed.`);
+  console.error(
+    `Source tunnel auth ${phase} failed (${exitCode}); remote diagnostics suppressed.`,
+  );
   if (stderr.includes("Permission denied") || stderr.includes("timed out"))
     console.error("SSH or operation boundary rejected or timed out.");
   process.exit(1);

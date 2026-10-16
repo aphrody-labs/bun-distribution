@@ -44,7 +44,9 @@ function hasPreferredEdge({
   return preferredEdges?.[edge] === true;
 }
 
-function pickClosestScaleCandidate<T extends { distance: number; edge: ScaleEdge }>({
+function pickClosestScaleCandidate<
+  T extends { distance: number; edge: ScaleEdge },
+>({
   candidates,
   preferredEdges,
 }: {
@@ -415,8 +417,12 @@ export function snapScaleAxes({
   const EPSILON = 1e-6;
 
   // Current AABB edges at proposed scales
-  const currentAabbHalfW = (baseWidth * proposedScaleX * cosR + baseHeight * proposedScaleY * sinR) / 2;
-  const currentAabbHalfH = (baseWidth * proposedScaleX * sinR + baseHeight * proposedScaleY * cosR) / 2;
+  const currentAabbHalfW =
+    (baseWidth * proposedScaleX * cosR + baseHeight * proposedScaleY * sinR) /
+    2;
+  const currentAabbHalfH =
+    (baseWidth * proposedScaleX * sinR + baseHeight * proposedScaleY * cosR) /
+    2;
   const currentLeftEdge = position.x - currentAabbHalfW;
   const currentRightEdge = position.x + currentAabbHalfW;
   const currentTopEdge = position.y - currentAabbHalfH;
@@ -441,9 +447,17 @@ export function snapScaleAxes({
       preferredEdges,
     });
     if (!best) {
-      return { snappedScale: proposedScale, snapDistance: Infinity, activeLines: [] };
+      return {
+        snappedScale: proposedScale,
+        snapDistance: Infinity,
+        activeLines: [],
+      };
     }
-    return { snappedScale: best.scale, snapDistance: best.distance, activeLines: [best.line] };
+    return {
+      snappedScale: best.scale,
+      snapDistance: best.distance,
+      activeLines: [best.line],
+    };
   }
 
   // sX candidates: snap via vertical targets (left/right AABB edges) — only valid when cosR ≠ 0
@@ -458,12 +472,14 @@ export function snapScaleAxes({
       const distLeft = Math.abs(currentLeftEdge - T);
       if (distLeft <= snapThreshold.x) {
         const scale = (2 * (position.x - T) - yContribW) / (baseWidth * cosR);
-        if (Math.abs(scale) > MIN_SCALE) xCandidates.push({ scale, distance: distLeft, line, edge: "left" });
+        if (Math.abs(scale) > MIN_SCALE)
+          xCandidates.push({ scale, distance: distLeft, line, edge: "left" });
       }
       const distRight = Math.abs(currentRightEdge - T);
       if (distRight <= snapThreshold.x) {
         const scale = (2 * (T - position.x) - yContribW) / (baseWidth * cosR);
-        if (Math.abs(scale) > MIN_SCALE) xCandidates.push({ scale, distance: distRight, line, edge: "right" });
+        if (Math.abs(scale) > MIN_SCALE)
+          xCandidates.push({ scale, distance: distRight, line, edge: "right" });
       }
     }
   }
@@ -474,12 +490,19 @@ export function snapScaleAxes({
       const distTop = Math.abs(currentTopEdge - T);
       if (distTop <= snapThreshold.y) {
         const scale = (2 * (position.y - T) - yContribH) / (baseWidth * sinR);
-        if (Math.abs(scale) > MIN_SCALE) xCandidates.push({ scale, distance: distTop, line, edge: "top" });
+        if (Math.abs(scale) > MIN_SCALE)
+          xCandidates.push({ scale, distance: distTop, line, edge: "top" });
       }
       const distBottom = Math.abs(currentBottomEdge - T);
       if (distBottom <= snapThreshold.y) {
         const scale = (2 * (T - position.y) - yContribH) / (baseWidth * sinR);
-        if (Math.abs(scale) > MIN_SCALE) xCandidates.push({ scale, distance: distBottom, line, edge: "bottom" });
+        if (Math.abs(scale) > MIN_SCALE)
+          xCandidates.push({
+            scale,
+            distance: distBottom,
+            line,
+            edge: "bottom",
+          });
       }
     }
   }
@@ -496,12 +519,14 @@ export function snapScaleAxes({
       const distLeft = Math.abs(currentLeftEdge - T);
       if (distLeft <= snapThreshold.x) {
         const scale = (2 * (position.x - T) - xContribW) / (baseHeight * sinR);
-        if (Math.abs(scale) > MIN_SCALE) yCandidates.push({ scale, distance: distLeft, line, edge: "left" });
+        if (Math.abs(scale) > MIN_SCALE)
+          yCandidates.push({ scale, distance: distLeft, line, edge: "left" });
       }
       const distRight = Math.abs(currentRightEdge - T);
       if (distRight <= snapThreshold.x) {
         const scale = (2 * (T - position.x) - xContribW) / (baseHeight * sinR);
-        if (Math.abs(scale) > MIN_SCALE) yCandidates.push({ scale, distance: distRight, line, edge: "right" });
+        if (Math.abs(scale) > MIN_SCALE)
+          yCandidates.push({ scale, distance: distRight, line, edge: "right" });
       }
     }
   }
@@ -512,19 +537,32 @@ export function snapScaleAxes({
       const distTop = Math.abs(currentTopEdge - T);
       if (distTop <= snapThreshold.y) {
         const scale = (2 * (position.y - T) - xContribH) / (baseHeight * cosR);
-        if (Math.abs(scale) > MIN_SCALE) yCandidates.push({ scale, distance: distTop, line, edge: "top" });
+        if (Math.abs(scale) > MIN_SCALE)
+          yCandidates.push({ scale, distance: distTop, line, edge: "top" });
       }
       const distBottom = Math.abs(currentBottomEdge - T);
       if (distBottom <= snapThreshold.y) {
         const scale = (2 * (T - position.y) - xContribH) / (baseHeight * cosR);
-        if (Math.abs(scale) > MIN_SCALE) yCandidates.push({ scale, distance: distBottom, line, edge: "bottom" });
+        if (Math.abs(scale) > MIN_SCALE)
+          yCandidates.push({
+            scale,
+            distance: distBottom,
+            line,
+            edge: "bottom",
+          });
       }
     }
   }
 
   return {
-    x: bestCandidate({ candidates: xCandidates, proposedScale: proposedScaleX }),
-    y: bestCandidate({ candidates: yCandidates, proposedScale: proposedScaleY }),
+    x: bestCandidate({
+      candidates: xCandidates,
+      proposedScale: proposedScaleX,
+    }),
+    y: bestCandidate({
+      candidates: yCandidates,
+      proposedScale: proposedScaleY,
+    }),
   };
 }
 

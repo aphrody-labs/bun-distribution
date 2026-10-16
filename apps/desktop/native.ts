@@ -1,5 +1,11 @@
 import { join } from "node:path";
-import { assertRuntime, loadConfig, repositoryRoot, resolveBunExecutable, runNative } from "@aphrody/bun-workspace";
+import {
+  assertRuntime,
+  loadConfig,
+  repositoryRoot,
+  resolveBunExecutable,
+  runNative,
+} from "@aphrody/bun-workspace";
 import { buildDesktop, desktopRoot } from "./build.ts";
 
 const command = process.argv[2];
@@ -11,7 +17,8 @@ const config = await loadConfig(repositoryRoot);
 assertRuntime(config);
 const bun = await resolveBunExecutable(config, { root: repositoryRoot });
 const aphrody = Bun.which("aphrody");
-if (!aphrody) throw new Error("Install the native Aphrody CLI before running the desktop.");
+if (!aphrody)
+  throw new Error("Install the native Aphrody CLI before running the desktop.");
 const output = await buildDesktop();
 const nativeConfig =
   command === "dev"
@@ -41,10 +48,12 @@ if (command === "build") {
     windowsHide: true,
   });
   const version = await new Response(rust.stdout).text();
-  if ((await rust.exited) !== 0) throw new Error("Unable to detect the native Rust target.");
+  if ((await rust.exited) !== 0)
+    throw new Error("Unable to detect the native Rust target.");
   const triple = version.match(/^host:\s*(\S+)/m)?.[1];
   if (!triple) throw new Error("rustc -vV did not report a native target.");
-  const filename = "aphrody-server-" + triple + (process.platform === "win32" ? ".exe" : "");
+  const filename =
+    "aphrody-server-" + triple + (process.platform === "win32" ? ".exe" : "");
   const backend = await Bun.build({
     entrypoints: [join(desktopRoot, "server.ts")],
     target: "bun",
@@ -56,10 +65,13 @@ if (command === "build") {
       autoloadPackageJson: false,
     },
   });
-  if (!backend.success) throw new AggregateError(backend.logs, "Bun sidecar compilation failed");
+  if (!backend.success)
+    throw new AggregateError(backend.logs, "Bun sidecar compilation failed");
 }
 const argv = [
-  ...(process.platform === "win32" ? [bun, "msvc", "exec", "--", aphrody] : [aphrody]),
+  ...(process.platform === "win32"
+    ? [bun, "msvc", "exec", "--", aphrody]
+    : [aphrody]),
   "tauri",
   command,
   "--config",

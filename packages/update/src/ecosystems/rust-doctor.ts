@@ -163,8 +163,12 @@ const hasMachineFix = (m: {
   spans?: { suggestion_applicability?: string | null }[];
   children?: unknown[];
 }): boolean =>
-  (m.spans ?? []).some((s) => s.suggestion_applicability === "MachineApplicable") ||
-  (m.children ?? []).some((ch) => hasMachineFix(ch as Parameters<typeof hasMachineFix>[0]));
+  (m.spans ?? []).some(
+    (s) => s.suggestion_applicability === "MachineApplicable",
+  ) ||
+  (m.children ?? []).some((ch) =>
+    hasMachineFix(ch as Parameters<typeof hasMachineFix>[0]),
+  );
 
 /**
  * Compiler and clippy diagnostics of a `--message-format=json` Cargo run, one row per distinct finding (the lib and its
@@ -231,7 +235,8 @@ export function parseDiagnostics(
 export const diagnosticKey = (
   d: { code?: string; file?: string; line?: number; message: string },
   column?: number,
-) => `${d.code ?? ""}|${d.file ?? ""}|${d.line ?? ""}|${column ?? ""}|${d.message}`;
+) =>
+  `${d.code ?? ""}|${d.file ?? ""}|${d.line ?? ""}|${column ?? ""}|${d.message}`;
 
 /** Package name from a Cargo package id (`path+file:///x/dir#name@1.0.0`, `path+file:///x/name#1.0.0`, `registry+...#name@1.0.0`). */
 export function crateFromPackageId(id: string): string {
@@ -243,7 +248,10 @@ export function crateFromPackageId(id: string): string {
   return id.slice(0, hash).replace(/\/+$/, "").split("/").pop() ?? id;
 }
 
-export type FeaturePlan = { enabled: string[]; skipped: { feature: string; reason: string }[] };
+export type FeaturePlan = {
+  enabled: string[];
+  skipped: { feature: string; reason: string }[];
+};
 
 /** Every `package/feature` of the workspace members, minus `default` and the configured skips (`*` wildcards allowed). */
 export function featurePlan(
@@ -252,7 +260,9 @@ export function featurePlan(
 ): FeaturePlan {
   const rules = skip.map((s) => ({ re: glob(s.feature), reason: s.reason }));
   const plan: FeaturePlan = { enabled: [], skipped: [] };
-  for (const p of [...packages].toSorted((a, b) => a.name.localeCompare(b.name))) {
+  for (const p of [...packages].toSorted((a, b) =>
+    a.name.localeCompare(b.name),
+  )) {
     for (const f of Object.keys(p.features).toSorted()) {
       if (f === "default") continue;
       const id = `${p.name}/${f}`;
@@ -284,7 +294,9 @@ export function targetPackages(
     const re = new RegExp(spec.match ?? defaultMatch(spec.triple));
     names = [
       ...packages
-        .filter((p) => p.dependencies.some((d) => d.target && re.test(d.target)))
+        .filter((p) =>
+          p.dependencies.some((d) => d.target && re.test(d.target)),
+        )
         .map((p) => p.name),
       ...(spec.include ?? []),
     ];
@@ -298,9 +310,15 @@ export function targetPackages(
   return { packages: [...new Set(kept)].toSorted(), excluded };
 }
 
-export type TestFailure = { suite: string; name: string; kind: "fail" | "flaky"; message: string };
+export type TestFailure = {
+  suite: string;
+  name: string;
+  kind: "fail" | "flaky";
+  message: string;
+};
 
-const xmlAttr = (tag: string, name: string) => new RegExp(`\\b${name}="([^"]*)"`).exec(tag)?.[1];
+const xmlAttr = (tag: string, name: string) =>
+  new RegExp(`\\b${name}="([^"]*)"`).exec(tag)?.[1];
 const xmlText = (s: string) =>
   s
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
@@ -330,7 +348,9 @@ export function parseJunit(xml: string): {
   const flaky: TestFailure[] = [];
   let tests = 0;
   for (const suite of xml.split(/<testsuite\s/).slice(1)) {
-    const suiteName = xmlText(xmlAttr(suite.slice(0, suite.indexOf(">")), "name") ?? "?");
+    const suiteName = xmlText(
+      xmlAttr(suite.slice(0, suite.indexOf(">")), "name") ?? "?",
+    );
     for (const block of suite.split(/<testcase\s/).slice(1)) {
       tests++;
       const head = block.slice(0, block.indexOf(">") + 1);
@@ -338,16 +358,32 @@ export function parseJunit(xml: string): {
       if (head.endsWith("/>")) continue;
       const body = block.slice(
         head.length,
-        block.includes("</testcase>") ? block.indexOf("</testcase>") : undefined,
+        block.includes("</testcase>")
+          ? block.indexOf("</testcase>")
+          : undefined,
       );
       const fail = /<(failure|error)\b([^>]*)>/.exec(body);
       const fl = /<(flakyFailure|flakyError)\b([^>]*)>/.exec(body);
       const describe = (tag: RegExpExecArray) =>
-        xmlText(xmlAttr(tag[2]!, "message") ?? xmlAttr(tag[2]!, "type") ?? tag[1]!)
+        xmlText(
+          xmlAttr(tag[2]!, "message") ?? xmlAttr(tag[2]!, "type") ?? tag[1]!,
+        )
           .split("\n")[0]!
           .slice(0, 300);
-      if (fail) failures.push({ suite: suiteName, name, kind: "fail", message: describe(fail) });
-      else if (fl) flaky.push({ suite: suiteName, name, kind: "flaky", message: describe(fl) });
+      if (fail)
+        failures.push({
+          suite: suiteName,
+          name,
+          kind: "fail",
+          message: describe(fail),
+        });
+      else if (fl)
+        flaky.push({
+          suite: suiteName,
+          name,
+          kind: "flaky",
+          message: describe(fl),
+        });
     }
   }
   return { tests, failures, flaky };
@@ -358,7 +394,8 @@ export function parseLibtest(text: string): { suite: string; name: string }[] {
   const out: { suite: string; name: string }[] = [];
   let suite = "?";
   for (const l of text.split("\n")) {
-    const s = /^\s*(?:Doc-tests\s+(\S+)|Running\s+(.+?)(?:\s+\(.*\))?)\s*$/.exec(l);
+    const s =
+      /^\s*(?:Doc-tests\s+(\S+)|Running\s+(.+?)(?:\s+\(.*\))?)\s*$/.exec(l);
     if (s) {
       suite = s[1] ?? s[2] ?? suite;
       continue;
@@ -375,16 +412,26 @@ export function parseFmtList(text: string, root: string): string[] {
   for (const raw of text.split("\n")) {
     const l = raw.trim().replace(/^Incorrect newline style in /, "");
     if (!l.endsWith(".rs")) continue;
-    out.add(isAbsolute(l) || l.startsWith("/") ? relative(root, l).replaceAll("\\", "/") : l);
+    out.add(
+      isAbsolute(l) || l.startsWith("/")
+        ? relative(root, l).replaceAll("\\", "/")
+        : l,
+    );
   }
   return [...out].toSorted();
 }
 
 /** Owner crate of a repo-relative file: the member whose directory is the longest prefix. */
-export function crateOfFile(file: string, dirs: [dir: string, name: string][]): string | undefined {
+export function crateOfFile(
+  file: string,
+  dirs: [dir: string, name: string][],
+): string | undefined {
   let best: [string, string] | undefined;
   for (const d of dirs)
-    if ((file === d[0] || file.startsWith(`${d[0]}/`)) && (!best || d[0].length > best[0].length))
+    if (
+      (file === d[0] || file.startsWith(`${d[0]}/`)) &&
+      (!best || d[0].length > best[0].length)
+    )
       best = d;
   return best?.[1];
 }
@@ -402,7 +449,11 @@ export function parsePorcelain(text: string): string[] {
 export function errorLines(log: string, max = 12): string[] {
   const lines = log.split("\n");
   const at = lines.findIndex((l) => /^error(\[E\d+\])?:/.test(l.trim()));
-  return (at < 0 ? lines.filter((l) => l.trim()).slice(-max) : lines.slice(at, at + max))
+  return (
+    at < 0
+      ? lines.filter((l) => l.trim()).slice(-max)
+      : lines.slice(at, at + max)
+  )
     .map((l) => l.trimEnd())
     .filter(Boolean);
 }
@@ -431,7 +482,13 @@ export function exitCode(t: DoctorReport["totals"], strict: boolean): number {
 
 // ---------------------------------------------------------------- IO
 
-type Run = { status: number; out: string; log: string; seconds: number; command: string };
+type Run = {
+  status: number;
+  out: string;
+  log: string;
+  seconds: number;
+  command: string;
+};
 
 class Doctor {
   readonly cfg: DoctorConfig;
@@ -457,24 +514,51 @@ class Doctor {
       tests: { exclude: raw.tests?.exclude ?? [], doc: raw.tests?.doc ?? true },
     };
     mkdirSync(join(c.root, OUT_DIR), { recursive: true });
-    const meta = this.cargo("metadata", ["metadata", "--no-deps", "--format-version", "1"]);
+    const meta = this.cargo("metadata", [
+      "metadata",
+      "--no-deps",
+      "--format-version",
+      "1",
+    ]);
     if (meta.status !== 0)
-      throw new Error(`cargo metadata failed:\n${errorLines(meta.log).join("\n")}`);
-    this.packages = (JSON.parse(meta.out) as { packages: MetaPackage[] }).packages;
-    this.byManifest = new Map(this.packages.map((p) => [p.manifest_path, p.name]));
-    this.dirs = this.packages.map((p) => [relative(c.root, dirname(p.manifest_path)), p.name]);
-    const changed = parsePorcelain(c.run("git", ["status", "--porcelain"]).stdout);
+      throw new Error(
+        `cargo metadata failed:\n${errorLines(meta.log).join("\n")}`,
+      );
+    this.packages = (
+      JSON.parse(meta.out) as { packages: MetaPackage[] }
+    ).packages;
+    this.byManifest = new Map(
+      this.packages.map((p) => [p.manifest_path, p.name]),
+    );
+    this.dirs = this.packages.map((p) => [
+      relative(c.root, dirname(p.manifest_path)),
+      p.name,
+    ]);
+    const changed = parsePorcelain(
+      c.run("git", ["status", "--porcelain"]).stdout,
+    );
     this.dirty = new Set(
-      changed.map((f) => crateOfFile(f, this.dirs)).filter((n): n is string => !!n),
+      changed
+        .map((f) => crateOfFile(f, this.dirs))
+        .filter((n): n is string => !!n),
     );
   }
 
   /** One serialized Cargo command; stdout and stderr are kept under target/update/rust-doctor/<name>.{out,log}. */
-  cargo(name: string, args: string[], env: Record<string, string> = {}, merge = false): Run {
+  cargo(
+    name: string,
+    args: string[],
+    env: Record<string, string> = {},
+    merge = false,
+  ): Run {
     const outFile = join(this.c.root, OUT_DIR, `${name}.out`);
     const logFile = join(this.c.root, OUT_DIR, `${name}.log`);
     const o = openSync(outFile, "w");
-    const e = merge ? o : this.verbose ? ("inherit" as const) : openSync(logFile, "w");
+    const e = merge
+      ? o
+      : this.verbose
+        ? ("inherit" as const)
+        : openSync(logFile, "w");
     const t = Date.now();
     const r = spawnSync("bash", [WRAPPER, ...args], {
       windowsHide: true,
@@ -498,7 +582,11 @@ class Doctor {
   isMember = (d: Diagnostic) => !!d.manifest && this.byManifest.has(d.manifest);
 
   /** Diagnostics of a JSON Cargo run as problems; vendored and out-of-repo crates are notes, never rewritten. */
-  problemsOf(stage: Stage, run: Run, label: string): { problems: Problem[]; diags: Diagnostic[] } {
+  problemsOf(
+    stage: Stage,
+    run: Run,
+    label: string,
+  ): { problems: Problem[]; diags: Diagnostic[] } {
     const diags = parseDiagnostics(run.out, this.crateOf);
     const problems: Problem[] = [];
     for (const d of diags) {
@@ -507,7 +595,9 @@ class Doctor {
       this.reported.add(key);
       const vendored =
         vendoredReason(d.crate, this.cfg.vendored) ??
-        (this.isMember(d) ? undefined : "source checkout outside the workspace");
+        (this.isMember(d)
+          ? undefined
+          : "source checkout outside the workspace");
       problems.push({
         stage,
         severity: d.level === "error" ? "error" : vendored ? "info" : "warning",
@@ -516,7 +606,8 @@ class Doctor {
         file: d.file,
         line: d.line,
         message: d.message,
-        fixable: d.fixable && !vendored && d.level !== "error" ? true : undefined,
+        fixable:
+          d.fixable && !vendored && d.level !== "error" ? true : undefined,
         note: vendored && d.level !== "error" ? vendored : undefined,
       });
     }
@@ -547,7 +638,11 @@ class Doctor {
     const commands: string[] = [];
     const problems: Problem[] = [];
     let fixed = 0;
-    const drift = () => lockPinDrift(parseCargoLock(this.c.read("Cargo.lock")), loadHolds(this.c));
+    const drift = () =>
+      lockPinDrift(
+        parseCargoLock(this.c.read("Cargo.lock")),
+        loadHolds(this.c),
+      );
     if (drift().length && this.fix) {
       const r = restoreLockPins(this.c);
       fixed += r.restored - r.failed;
@@ -561,13 +656,27 @@ class Doctor {
         message: `lock pin drifted: ${d.crate} ${d.from} must stay ${d.to} (tools/config/deps/rust-holds.json)`,
         fixable: true,
       });
-    let sync = this.cargo("lock", ["metadata", "--locked", "--format-version", "1"]);
+    let sync = this.cargo("lock", [
+      "metadata",
+      "--locked",
+      "--format-version",
+      "1",
+    ]);
     commands.push(sync.command);
     if (sync.status !== 0 && this.fix) {
       // Cargo itself brings the lock back in line with the manifests (minimal change, never a bulk update).
-      const repair = this.cargo("lock-repair", ["metadata", "--format-version", "1"]);
+      const repair = this.cargo("lock-repair", [
+        "metadata",
+        "--format-version",
+        "1",
+      ]);
       commands.push(repair.command);
-      sync = this.cargo("lock", ["metadata", "--locked", "--format-version", "1"]);
+      sync = this.cargo("lock", [
+        "metadata",
+        "--locked",
+        "--format-version",
+        "1",
+      ]);
       if (sync.status === 0) fixed++;
     }
     if (sync.status !== 0)
@@ -594,7 +703,12 @@ class Doctor {
   // -------------------------------------------------------------- format
 
   private fmtList(): { run: Run; files: string[] } {
-    const run = this.cargo("format", ["fmt", "--all", "--", "--check", "-l"], {}, true);
+    const run = this.cargo(
+      "format",
+      ["fmt", "--all", "--", "--check", "-l"],
+      {},
+      true,
+    );
     return { run, files: parseFmtList(run.out, this.c.root) };
   }
 
@@ -611,7 +725,12 @@ class Doctor {
   /** `cargo fmt -p <crate>...`: whole packages from their crate roots, so nested modules resolve. */
   private fmtCrates(crates: string[]): Run | undefined {
     return crates.length
-      ? this.cargo("format-fix", ["fmt", ...crates.flatMap((n) => ["-p", n])], {}, true)
+      ? this.cargo(
+          "format-fix",
+          ["fmt", ...crates.flatMap((n) => ["-p", n])],
+          {},
+          true,
+        )
       : undefined;
   }
 
@@ -695,7 +814,9 @@ class Doctor {
         .toSorted();
       if (crates.length) {
         // Suggestions are applied as source edits: crates that were on the formatting policy are put back on it.
-        const unformatted = new Set(this.fmtByCrate(this.fmtList().files).keys());
+        const unformatted = new Set(
+          this.fmtByCrate(this.fmtList().files).keys(),
+        );
         const repair = this.cargo("compile-fix", [
           "clippy",
           "--fix",
@@ -717,7 +838,11 @@ class Doctor {
           );
       }
     }
-    const { problems } = this.problemsOf("compile", run, args.slice(0, 3).join(" "));
+    const { problems } = this.problemsOf(
+      "compile",
+      run,
+      args.slice(0, 3).join(" "),
+    );
     const e = problems.filter((p) => p.severity === "error").length;
     const w = problems.filter((p) => p.severity === "warning").length;
     const f = problems.filter((p) => p.fixable).length;
@@ -764,7 +889,10 @@ class Doctor {
       plan.enabled.join(","),
     ];
     const run = this.cargo("features", args);
-    problems.push(...this.problemsOf("features", run, "cargo check with every feature").problems);
+    problems.push(
+      ...this.problemsOf("features", run, "cargo check with every feature")
+        .problems,
+    );
     const e = problems.filter((p) => p.severity === "error").length;
     const w = problems.filter((p) => p.severity === "warning").length;
     return {
@@ -790,7 +918,9 @@ class Doctor {
     const env: Record<string, string> = { ...spec.env };
     if (spec.runner === "xwin" && !env.PATH && existsSync("/usr/lib")) {
       const llvm = newestLlvm(
-        readdirSync("/usr/lib").filter((d) => existsSync(`/usr/lib/${d}/bin/clang`)),
+        readdirSync("/usr/lib").filter((d) =>
+          existsSync(`/usr/lib/${d}/bin/clang`),
+        ),
       );
       if (llvm) env.PATH = `/usr/lib/${llvm}/bin:${process.env.PATH ?? ""}`;
     }
@@ -820,8 +950,13 @@ class Doctor {
         unproven(`target not installed (rustup target add ${spec.triple})`);
         continue;
       }
-      if (spec.runner === "xwin" && this.c.run("cargo", ["xwin", "--version"]).status !== 0) {
-        unproven("cargo-xwin is not installed (cargo install --locked cargo-xwin)");
+      if (
+        spec.runner === "xwin" &&
+        this.c.run("cargo", ["xwin", "--version"]).status !== 0
+      ) {
+        unproven(
+          "cargo-xwin is not installed (cargo install --locked cargo-xwin)",
+        );
         continue;
       }
       const { packages, excluded } = targetPackages(this.packages, spec);
@@ -843,18 +978,29 @@ class Doctor {
         "--message-format=json",
       ];
       const env = this.targetEnv(spec);
-      const tag = (p: Problem): Problem => ({ ...p, message: `[${spec.triple}] ${p.message}` });
+      const tag = (p: Problem): Problem => ({
+        ...p,
+        message: `[${spec.triple}] ${p.message}`,
+      });
       let failed = 0;
       if (spec.isolate) {
         for (const name of packages) {
-          const run = this.cargo(`target-${spec.triple}-${name}`, [...base, "-p", name], env);
+          const run = this.cargo(
+            `target-${spec.triple}-${name}`,
+            [...base, "-p", name],
+            env,
+          );
           if (run.status === 0) {
-            problems.push(...this.problemsOf("targets", run, name).problems.map(tag));
+            problems.push(
+              ...this.problemsOf("targets", run, name).problems.map(tag),
+            );
             continue;
           }
           failed++;
           // The member's own errors are listed; an error inside a dependency is the reason, reported once per member.
-          const diags = parseDiagnostics(run.out, this.crateOf).filter((d) => d.level === "error");
+          const diags = parseDiagnostics(run.out, this.crateOf).filter(
+            (d) => d.level === "error",
+          );
           const own = diags.filter((d) => this.isMember(d));
           for (const d of own) {
             const key = diagnosticKey(d);
@@ -895,7 +1041,11 @@ class Doctor {
           spec.packages === "workspace" && !excluded.length
             ? ["--workspace"]
             : packages.flatMap((n) => ["-p", n]);
-        const run = this.cargo(`target-${spec.triple}`, [...base, ...scope], env);
+        const run = this.cargo(
+          `target-${spec.triple}`,
+          [...base, ...scope],
+          env,
+        );
         commands.push(
           `cargo ${base.slice(0, spec.runner === "xwin" ? 4 : 3).join(" ")} <${packages.length} package(s)>`,
         );
@@ -934,7 +1084,9 @@ class Doctor {
     }));
     const commands: string[] = [];
     const parts: string[] = [];
-    const filter = this.cfg.tests.exclude.map((x) => `not (${x.filter})`).join(" & ");
+    const filter = this.cfg.tests.exclude
+      .map((x) => `not (${x.filter})`)
+      .join(" & ");
     if (this.c.run("cargo", ["nextest", "--version"]).status === 0) {
       rmSync(join(this.c.root, JUNIT), { force: true });
       const args = [
@@ -964,7 +1116,9 @@ class Doctor {
             crate: f.suite.split("::")[0],
             message: `flaky (passed on retry): ${f.suite} ${f.name}`,
           });
-        parts.push(`${j.tests} test(s), ${j.failures.length} failed, ${j.flaky.length} flaky`);
+        parts.push(
+          `${j.tests} test(s), ${j.failures.length} failed, ${j.flaky.length} flaky`,
+        );
         if (run.status !== 0 && !j.failures.length)
           problems.push({
             stage: "test",
@@ -978,11 +1132,20 @@ class Doctor {
           message: `the test binaries did not build or nextest did not run: ${errorLines(run.out).join(" | ").slice(0, 900)}`,
         });
     } else {
-      const run = this.cargo("test", ["test", "--workspace", "--no-fail-fast"], {}, true);
+      const run = this.cargo(
+        "test",
+        ["test", "--workspace", "--no-fail-fast"],
+        {},
+        true,
+      );
       commands.push(run.command);
       const failed = parseLibtest(run.out);
       for (const f of failed)
-        problems.push({ stage: "test", severity: "error", message: `${f.suite} ${f.name}` });
+        problems.push({
+          stage: "test",
+          severity: "error",
+          message: `${f.suite} ${f.name}`,
+        });
       if (run.status !== 0 && !failed.length)
         problems.push({
           stage: "test",
@@ -1048,7 +1211,12 @@ class Doctor {
         commands: [],
       };
     }
-    const run = this.cargo("deny", ["deny", "--format", "json", "check", "advisories"], {}, true);
+    const run = this.cargo(
+      "deny",
+      ["deny", "--format", "json", "check", "advisories"],
+      {},
+      true,
+    );
     const found = denyAdvisories(run.out);
     const holds = new Map(
       loadAdvisoryHolds(this.c)
@@ -1165,11 +1333,15 @@ function printStage(s: StageResult, verbose: boolean) {
     `doctor  ${s.stage.padEnd(9)} ${s.status.padEnd(8)} ${s.summary}${s.fixed ? `; repaired ${s.fixed}` : ""}  [${s.seconds}s]`,
   );
   const shown = s.problems.filter((p) => verbose || p.severity !== "info");
-  for (const p of shown.slice(0, verbose ? shown.length : 60)) console.log(fmtProblem(p));
+  for (const p of shown.slice(0, verbose ? shown.length : 60))
+    console.log(fmtProblem(p));
   if (!verbose && shown.length > 60)
     console.log(`  ... ${shown.length - 60} more in ${OUT_DIR}/report.json`);
   const notes = s.problems.length - shown.length;
-  if (notes) console.log(`  ${notes} note(s) (vendored, skipped or held; --verbose lists them)`);
+  if (notes)
+    console.log(
+      `  ${notes} note(s) (vendored, skipped or held; --verbose lists them)`,
+    );
 }
 
 /** Entry point for `yolo update rust doctor|fix`. */
@@ -1184,7 +1356,9 @@ export async function runDoctor(c: Ctx, args: string[]): Promise<number> {
     (s) => !(STAGES as readonly string[]).includes(s),
   );
   if (unknown.length) {
-    console.error(`doctor: unknown stage ${unknown.join(", ")}; stages: ${STAGES.join(", ")}`);
+    console.error(
+      `doctor: unknown stage ${unknown.join(", ")}; stages: ${STAGES.join(", ")}`,
+    );
     return 2;
   }
   const fix = args.includes("--fix");

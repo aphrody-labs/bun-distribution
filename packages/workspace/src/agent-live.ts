@@ -7,7 +7,10 @@ import { KernelClient } from "@aphrody/os";
 
 type Json = Record<string, any>;
 export type PackageOwner = { name: string; path: string; kind: "rust" | "bun" };
-export function ownerOf(path: string, owners: PackageOwner[]): PackageOwner | undefined {
+export function ownerOf(
+  path: string,
+  owners: PackageOwner[],
+): PackageOwner | undefined {
   return owners
     .filter((owner) => path === owner.path || path.startsWith(`${owner.path}/`))
     .toSorted((a, b) => b.path.length - a.path.length)[0];
@@ -17,12 +20,16 @@ export function ownerOf(path: string, owners: PackageOwner[]): PackageOwner | un
 export async function liveOwners(root: string): Promise<PackageOwner[]> {
   const pending: Promise<PackageOwner | undefined>[] = [];
   const pkg = await Bun.file(join(root, "package.json")).json();
-  const cargo = Bun.TOML.parse(await Bun.file(join(root, "Cargo.toml")).text()) as Json;
+  const cargo = Bun.TOML.parse(
+    await Bun.file(join(root, "Cargo.toml")).text(),
+  ) as Json;
   const excluded = new Set<string>(cargo.workspace?.exclude ?? []);
   for (const [kind, patterns, filename] of [
     [
       "bun",
-      Array.isArray(pkg.workspaces) ? pkg.workspaces : (pkg.workspaces?.packages ?? []),
+      Array.isArray(pkg.workspaces)
+        ? pkg.workspaces
+        : (pkg.workspaces?.packages ?? []),
       "package.json",
     ],
     ["rust", cargo.workspace?.members ?? [], "Cargo.toml"],
@@ -39,7 +46,9 @@ export async function liveOwners(root: string): Promise<PackageOwner[]> {
             const data =
               kind === "bun"
                 ? await Bun.file(join(root, manifest)).json()
-                : (Bun.TOML.parse(await Bun.file(join(root, manifest)).text()) as Json);
+                : (Bun.TOML.parse(
+                    await Bun.file(join(root, manifest)).text(),
+                  ) as Json);
             const name = kind === "bun" ? data.name : data.package?.name;
             return typeof name === "string" ? { name, path, kind } : undefined;
           })(),
@@ -50,11 +59,18 @@ export async function liveOwners(root: string): Promise<PackageOwner[]> {
   const owners = (await Promise.all(pending)).filter(
     (owner): owner is PackageOwner => owner !== undefined,
   );
-  return [...new Map(owners.map((owner) => [`${owner.kind}:${owner.path}`, owner])).values()];
+  return [
+    ...new Map(
+      owners.map((owner) => [`${owner.kind}:${owner.path}`, owner]),
+    ).values(),
+  ];
 }
 
 /** Bounded, complete JSONL tail; never read a multi-GB transcript in full. */
-export async function tailRecords(path: string, bytes = 256 * 1024): Promise<Json[]> {
+export async function tailRecords(
+  path: string,
+  bytes = 256 * 1024,
+): Promise<Json[]> {
   const file = await open(path, "r");
   try {
     const { size } = await file.stat();
@@ -67,7 +83,9 @@ export async function tailRecords(path: string, bytes = 256 * 1024): Promise<Jso
     return lines.flatMap((line) => {
       try {
         const value = JSON.parse(line);
-        return value && typeof value === "object" && !Array.isArray(value) ? [value] : [];
+        return value && typeof value === "object" && !Array.isArray(value)
+          ? [value]
+          : [];
       } catch {
         return [];
       }
@@ -77,9 +95,14 @@ export async function tailRecords(path: string, bytes = 256 * 1024): Promise<Jso
   }
 }
 
-export function sessionCandidates(process: Json, sources: Json[], root: string): Json[] {
+export function sessionCandidates(
+  process: Json,
+  sources: Json[],
+  root: string,
+): Json[] {
   root = resolve(root);
-  if (typeof process.cwd !== "string" || resolve(process.cwd) !== root) return [];
+  if (typeof process.cwd !== "string" || resolve(process.cwd) !== root)
+    return [];
   return sources.filter(
     (source) =>
       source.agent === process.agent &&
@@ -94,19 +117,25 @@ export function observedRunProcess(run: Json, processes: Json[]): boolean {
       process.pid === run.pid &&
       process.ppid === run.launcher_pid &&
       Number.isFinite(Date.parse(process.start_time)) &&
-      Math.abs(Date.parse(process.start_time) - Date.parse(run.started_at)) < 2000,
+      Math.abs(Date.parse(process.start_time) - Date.parse(run.started_at)) <
+        2000,
   );
 }
 
 /** Tool names and explicit file arguments only; no prompt, reasoning or shell arguments. */
-export function actionMetadata(record: Json, root: string, owners: PackageOwner[]): Json {
+export function actionMetadata(
+  record: Json,
+  root: string,
+  owners: PackageOwner[],
+): Json {
   const result: Json = {
     id: `external:${record.agent}:${record.session_id}:${record.offset}:${record.part ?? 0}`,
     timestamp: record.ts ?? null,
     role: record.role,
     session_id: record.session_id,
   };
-  if (record.role !== "tool_call" || typeof record.text !== "string") return result;
+  if (record.role !== "tool_call" || typeof record.text !== "string")
+    return result;
   const match = record.text.match(/^([\w.:-]+)(?:\s+([\s\S]*))?$/);
   if (!match) return result;
   result.tool = match[1];
@@ -117,9 +146,14 @@ export function actionMetadata(record: Json, root: string, owners: PackageOwner[
     );
     result.files = paths.flatMap((path) => {
       const local = relative(root, resolve(root, path)).replaceAll("\\", "/");
-      if (isAbsolute(local) || local === ".." || local.startsWith("../")) return [];
+      if (isAbsolute(local) || local === ".." || local.startsWith("../"))
+        return [];
       return [
-        { path: local, owner: ownerOf(local, owners) ?? null, relation: "explicit_tool_argument" },
+        {
+          path: local,
+          owner: ownerOf(local, owners) ?? null,
+          relation: "explicit_tool_argument",
+        },
       ];
     });
   } catch {
@@ -135,7 +169,8 @@ async function kernel(tool: string, args: Json): Promise<Json> {
     const value = typeof result === "string" ? JSON.parse(result) : result;
     if (!value || typeof value !== "object" || Array.isArray(value))
       throw new Error(`Kernel ${tool} returned a non-object result`);
-    if (value.error) throw new Error(`Kernel ${tool} returned an error: ${value.error}`);
+    if (value.error)
+      throw new Error(`Kernel ${tool} returned an error: ${value.error}`);
     return value;
   } finally {
     client.close();
@@ -145,7 +180,10 @@ async function kernel(tool: string, args: Json): Promise<Json> {
 export async function collectAgentLive(root: string): Promise<Json> {
   root = resolve(root);
   const issues: string[] = [];
-  const attempt = async (name: string, work: () => Promise<Json>): Promise<Json> => {
+  const attempt = async (
+    name: string,
+    work: () => Promise<Json>,
+  ): Promise<Json> => {
     try {
       return await work();
     } catch (error) {
@@ -156,10 +194,15 @@ export async function collectAgentLive(root: string): Promise<Json> {
   const [git, sync, models, owners] = await Promise.all([
     attempt("kernel.git", () => kernel("github_status", { repo_path: root })),
     attempt("session.sync", async () => {
-      const status = await Bun.file(join(root, ".coord/shared/AGENT-SYNC.json")).json();
-      if (!status.report) throw new Error("native agent-sync has no successful pass");
+      const status = await Bun.file(
+        join(root, ".coord/shared/AGENT-SYNC.json"),
+      ).json();
+      if (!status.report)
+        throw new Error("native agent-sync has no successful pass");
       if (Date.now() - Date.parse(status.last_success_at) > 120_000)
-        issues.push("session.sync: last successful pass is older than 120 seconds");
+        issues.push(
+          "session.sync: last successful pass is older than 120 seconds",
+        );
       return status.report;
     }),
     attempt("kernel.processes", () =>
@@ -178,7 +221,9 @@ export async function collectAgentLive(root: string): Promise<Json> {
   const sessions = await Promise.all(
     sources
       .filter(
-        (source) => typeof source.workspace === "string" && resolve(source.workspace) === root,
+        (source) =>
+          typeof source.workspace === "string" &&
+          resolve(source.workspace) === root,
       )
       .map(async (source) => {
         const mirror = resolve(sync.output_dir, source.mirror);
@@ -199,11 +244,15 @@ export async function collectAgentLive(root: string): Promise<Json> {
           records: source.records,
           actions: records
             .filter(
-              (record) => record.role === "tool_call" && record.session_id === source.session_id,
+              (record) =>
+                record.role === "tool_call" &&
+                record.session_id === source.session_id,
             )
             .slice(-8)
             .map((record) => actionMetadata(record, root, owners)),
-          latest: records.length ? actionMetadata(records.at(-1)!, root, owners) : null,
+          latest: records.length
+            ? actionMetadata(records.at(-1)!, root, owners)
+            : null,
           memory_owner: `external:${source.agent}`,
           memory_relation: "canonical_feed_identity",
         };
@@ -221,12 +270,14 @@ export async function collectAgentLive(root: string): Promise<Json> {
         process_id: `${process.agent}:${process.pid}:${process.started_at ?? "unknown"}`,
         session_link: "candidate_agent_and_cwd",
         ambiguous: candidates.length > 1,
-        candidate_session_ids: [...new Set(candidates.map((source) => source.session_id))],
+        candidate_session_ids: [
+          ...new Set(candidates.map((source) => source.session_id)),
+        ],
       });
     });
-  const mailboxes = (await readdir(join(root, ".coord")).catch(() => [])).filter((file) =>
-    file.endsWith(".jsonl"),
-  );
+  const mailboxes = (
+    await readdir(join(root, ".coord")).catch(() => [])
+  ).filter((file) => file.endsWith(".jsonl"));
   const a2a = (
     await Promise.all(
       mailboxes.map(async (file) => {
@@ -246,8 +297,11 @@ export async function collectAgentLive(root: string): Promise<Json> {
     )
   ).flat();
   const privateRoot = process.env.APHRODY_HOME ?? join(homedir(), ".aphrody");
-  const modelFiles = (await readdir(join(privateRoot, "run")).catch(() => [])).filter(
-    (file) => /^llama-server-.*\.json$/.test(file) && !file.endsWith(".spec.json"),
+  const modelFiles = (
+    await readdir(join(privateRoot, "run")).catch(() => [])
+  ).filter(
+    (file) =>
+      /^llama-server-.*\.json$/.test(file) && !file.endsWith(".spec.json"),
   );
   const localModels = await Promise.all(
     modelFiles.map(async (file) => {
@@ -255,7 +309,8 @@ export async function collectAgentLive(root: string): Promise<Json> {
         Bun.file(join(privateRoot, "run", file)).json(),
       );
       const observed = (models.value ?? []).find(
-        (process: Json) => process.pid === modelState.server_pid && /llama/.test(process.name),
+        (process: Json) =>
+          process.pid === modelState.server_pid && /llama/.test(process.name),
       );
       return {
         role: modelState.role,
@@ -278,14 +333,22 @@ export async function collectAgentLive(root: string): Promise<Json> {
     .slice(-100);
   const runs = await Promise.all(
     runFiles.map(async (file) => {
-      const run = await attempt("a2a.run", () => Bun.file(join(runDir, file)).json());
+      const run = await attempt("a2a.run", () =>
+        Bun.file(join(runDir, file)).json(),
+      );
       const observed = observedRunProcess(run, models.value ?? []);
       return Object.assign({}, run, {
         process_observed: observed,
-        state: run.ended_at ? "finished" : observed ? "running" : "unobserved_or_stale",
+        state: run.ended_at
+          ? "finished"
+          : observed
+            ? "running"
+            : "unobserved_or_stale",
         session:
           sessions.find(
-            (session) => session?.session_id === run.session_id && session?.agent === run.agent,
+            (session) =>
+              session?.session_id === run.session_id &&
+              session?.agent === run.agent,
           ) ?? null,
       });
     }),
@@ -351,7 +414,9 @@ export async function runAgentLive(args: string[]): Promise<number> {
       if (!Number.isFinite(interval) || interval < 1)
         throw new Error("interval must be >= 1 second");
     } else if (arg === "--help" || arg === "-h") {
-      console.log("yolo ops agent-live [--root PATH] [--json] [--watch] [--interval-secs 30]");
+      console.log(
+        "yolo ops agent-live [--root PATH] [--json] [--watch] [--interval-secs 30]",
+      );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }
@@ -375,7 +440,8 @@ export async function runAgentLive(args: string[]): Promise<number> {
       ...snapshot.sessions
         .toSorted(
           (a: Json, b: Json) =>
-            Date.parse(b.latest?.timestamp ?? 0) - Date.parse(a.latest?.timestamp ?? 0),
+            Date.parse(b.latest?.timestamp ?? 0) -
+            Date.parse(a.latest?.timestamp ?? 0),
         )
         .slice(0, 12)
         .map(
@@ -415,7 +481,8 @@ export async function runAgentLive(args: string[]): Promise<number> {
         snapshot.sessions
           .toSorted(
             (a: Json, b: Json) =>
-              Date.parse(b.latest?.timestamp ?? 0) - Date.parse(a.latest?.timestamp ?? 0),
+              Date.parse(b.latest?.timestamp ?? 0) -
+              Date.parse(a.latest?.timestamp ?? 0),
           )
           .slice(0, 12)
           .map((s: Json) => ({
@@ -425,7 +492,9 @@ export async function runAgentLive(args: string[]): Promise<number> {
             tools: s.actions.map((a: Json) => a.tool).join(", "),
             files: s.actions
               .flatMap((a: Json) =>
-                (a.files ?? []).map((f: Json) => `${f.path} (${f.owner?.name ?? "root"})`),
+                (a.files ?? []).map(
+                  (f: Json) => `${f.path} (${f.owner?.name ?? "root"})`,
+                ),
               )
               .join(", "),
           })),

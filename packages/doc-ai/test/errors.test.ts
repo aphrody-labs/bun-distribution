@@ -17,7 +17,9 @@ describe("typed errors", () => {
     expect(new InvalidArgumentsError("x").exitCode).toBe(2);
     expect(new InvalidPathError("x").code).toBe("INVALID_PATH");
     expect(new InvalidPathError("x").exitCode).toBe(1);
-    expect(new InvalidLanguageError("de", ["en", "fr"]).code).toBe("INVALID_LANGUAGE");
+    expect(new InvalidLanguageError("de", ["en", "fr"]).code).toBe(
+      "INVALID_LANGUAGE",
+    );
     expect(new InvalidLanguageError("de", ["en", "fr"]).exitCode).toBe(2);
     expect(new IoError("x").code).toBe("IO_ERROR");
     expect(new ParseError("x").code).toBe("PARSE_ERROR");

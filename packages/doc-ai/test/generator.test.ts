@@ -77,7 +77,9 @@ describe("generateDocsOffline (deterministic)", () => {
 
 describe("generateDocsFromCode (injected client)", () => {
   test("offline path used when client is explicitly null", async () => {
-    const out = await generateDocsFromCode(SAMPLE, "widget.ts", { client: null });
+    const out = await generateDocsFromCode(SAMPLE, "widget.ts", {
+      client: null,
+    });
     expect(out).toContain("# MdWidget (`<md-widget>`)");
   });
 

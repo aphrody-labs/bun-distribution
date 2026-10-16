@@ -158,7 +158,9 @@ export const TimelineClipRow = ({
     if (drag.current && dragUndo.current && editor) {
       commitTimelineEdit(
         editor,
-        drag.current.kind === "move" ? "Move Animation Clip" : "Trim Animation Clip",
+        drag.current.kind === "move"
+          ? "Move Animation Clip"
+          : "Trim Animation Clip",
         dragUndo.current,
       );
     }

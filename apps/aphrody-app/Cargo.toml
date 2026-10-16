@@ -44,7 +44,10 @@ perf = { level = "warn", priority = -1 }
 # it never re-executes its own exe as `__llama-daemon`. Without the feature (no libclang at build
 # time) the supervisor falls back to the detached daemon, which `src/llama_daemon.rs` still serves.
 default = ["in-process"]
-in-process = ["aphrody-app-server/in-process", "aphrody-llama-server/in-process"]
+in-process = [
+  "aphrody-app-server/in-process",
+  "aphrody-llama-server/in-process",
+]
 # Serve the bundled `frontendDist` (ui-dist) instead of `devUrl`. The Tauri CLI enables it for
 # `tauri build`; plain `cargo build`/`cargo run` release builds must pass it explicitly.
 custom-protocol = ["tauri/custom-protocol"]
@@ -74,10 +77,24 @@ aphrody-subsystem = { path = "../../crates/aphrody-subsystem", version = "1.4.4"
 async-trait = "0.1.92"
 yolo-core = "=1.0.0"
 base64 = "0.23.1"
-rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+rustls = { version = "0.23", default-features = false, features = [
+  "ring",
+  "std",
+  "tls12",
+] }
 tauri = { package = "aphrody-tauri", path = "../../toolchains/bun/packages/bun-tauri/crates/aphrody-tauri", version = "1.4.4", default-features = false, features = ["compression", "dynamic-acl", "image-ico", "tray-icon"] }
 tauri-runtime-cef = { package = "aphrody-tauri-runtime-cef", path = "../../toolchains/bun/packages/bun-tauri/crates/aphrody-tauri-runtime-cef", version = "1.4.4" }
-tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
+tokio = { version = "1.53.1", features = [
+  "process",
+  "rt-multi-thread",
+  "macros",
+  "time",
+  "signal",
+  "sync",
+  "fs",
+  "io-util",
+  "full",
+] }
 serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 log = "0.4.34"

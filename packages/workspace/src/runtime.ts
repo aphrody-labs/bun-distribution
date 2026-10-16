@@ -27,7 +27,9 @@ export function infraRoot(): string {
   return findWorkspaceRoot();
 }
 
-async function executable(path: string | null | undefined): Promise<string | undefined> {
+async function executable(
+  path: string | null | undefined,
+): Promise<string | undefined> {
   return path && (await Bun.file(path).exists()) ? path : undefined;
 }
 
@@ -39,7 +41,9 @@ export async function infraExecutable(
   if (environment.APHRODY_INFRA_BIN) {
     const direct = await executable(environment.APHRODY_INFRA_BIN);
     if (!direct)
-      throw new Error(`Configured Infra binary is missing: ${environment.APHRODY_INFRA_BIN}`);
+      throw new Error(
+        `Configured Infra binary is missing: ${environment.APHRODY_INFRA_BIN}`,
+      );
     return [direct];
   }
   if (environment.APHRODY_INFRA_BUILD_FROM_SOURCE === "1") {
@@ -59,7 +63,9 @@ export async function infraExecutable(
   if (environment.APHRODY_BIN) {
     const direct = await executable(environment.APHRODY_BIN);
     if (!direct)
-      throw new Error(`Configured Aphrody binary is missing: ${environment.APHRODY_BIN}`);
+      throw new Error(
+        `Configured Aphrody binary is missing: ${environment.APHRODY_BIN}`,
+      );
     return [direct, "infra"];
   }
   const suffix = process.platform === "win32" ? ".exe" : "";
@@ -101,17 +107,29 @@ export function localHostCommand(
 ): string[] | undefined {
   if (process.platform === "win32" || args.length !== 6) return undefined;
   const [ssh, exec, hostFlag, host, cmdFlag, script] = args;
-  if (ssh !== "ssh" || exec !== "exec" || hostFlag !== "--host" || cmdFlag !== "--cmd")
+  if (
+    ssh !== "ssh" ||
+    exec !== "exec" ||
+    hostFlag !== "--host" ||
+    cmdFlag !== "--cmd"
+  )
     return undefined;
-  if (!host || !script || environment.APHRODY_BUILD_HOST !== host) return undefined;
+  if (!host || !script || environment.APHRODY_BUILD_HOST !== host)
+    return undefined;
   const seconds = Number(environment.APHRODY_SSH_COMMAND_TIMEOUT_SECS ?? "30");
-  const deadline = Number.isInteger(seconds) && seconds >= 1 && seconds <= 86400 ? seconds : 30;
+  const deadline =
+    Number.isInteger(seconds) && seconds >= 1 && seconds <= 86400
+      ? seconds
+      : 30;
   return ["timeout", String(deadline), "bash", "-c", script];
 }
 
 /** Conservative UTF-16 bound including Windows quoting, escaping and the terminating NUL. */
 export function windowsCommandBound(command: readonly string[]): number {
-  return 1 + command.reduce((length, argument) => length + argument.length * 2 + 3, 0);
+  return (
+    1 +
+    command.reduce((length, argument) => length + argument.length * 2 + 3, 0)
+  );
 }
 
 /** Compress only the declared SSH script; arguments never pass through a local shell. */
@@ -122,7 +140,8 @@ export function prepareInfraCommand(
   if (command.some((argument) => argument.includes("\0")))
     throw new Error("Infra arguments cannot contain NUL");
   const prepared = [...command];
-  if (platform !== "win32" || windowsCommandBound(prepared) < 30000) return prepared;
+  if (platform !== "win32" || windowsCommandBound(prepared) < 30000)
+    return prepared;
   const offset = prepared.length - 6;
   if (
     offset < 1 ||
@@ -132,13 +151,14 @@ export function prepareInfraCommand(
     prepared[offset + 4] !== "--cmd"
   )
     throw new Error("Infra invocation exceeds the Windows command-line budget");
-  const encoded = Buffer.from(Bun.gzipSync(Buffer.from(prepared[offset + 5]!, "utf8"))).toString(
-    "base64",
-  );
+  const encoded = Buffer.from(
+    Bun.gzipSync(Buffer.from(prepared[offset + 5]!, "utf8")),
+  ).toString("base64");
   // A sentinel preserves trailing newlines removed by command substitution. pipefail
   // refuses decoder errors; exec preserves the original bash command's exit status.
   const script = `set -o pipefail; payload=$(printf '%s' '${encoded}' | base64 --decode | gzip --decompress && printf '.') || exit 125; exec bash -c "\${payload%.}"`;
-  prepared[offset + 5] = `bash -c ${"'" + script.replaceAll("'", "'\\''") + "'"}`;
+  prepared[offset + 5] =
+    `bash -c ${"'" + script.replaceAll("'", "'\\''") + "'"}`;
   if (windowsCommandBound(prepared) >= 30000)
     throw new Error(
       "Compressed Infra invocation still exceeds the Windows command-line budget; nothing dispatched",
@@ -146,7 +166,9 @@ export function prepareInfraCommand(
   return prepared;
 }
 
-export async function runInfra(invocation: InfraInvocation): Promise<InfraResult> {
+export async function runInfra(
+  invocation: InfraInvocation,
+): Promise<InfraResult> {
   const root = infraRoot();
   const environment = { ...process.env, ...invocation.env };
   const command = prepareInfraCommand(

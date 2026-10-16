@@ -26,10 +26,16 @@ import type { BuildFactoryConfig } from "../src/build-factory.ts";
 // The transient shell, leases and cleanup run on the Linux factory host: procfs, flock(1), sudo and /proc/locks.
 const linuxTest = test.skipIf(process.platform !== "linux");
 const roots: string[] = [];
-afterEach(() => roots.splice(0).forEach((root) => rmSync(root, { recursive: true, force: true })));
+afterEach(() =>
+  roots
+    .splice(0)
+    .forEach((root) => rmSync(root, { recursive: true, force: true })),
+);
 function fixture() {
   // Factory paths are POSIX paths of the Linux host; forward slashes keep them valid on Windows too.
-  const root = mkdtempSync(posix.join(tmpdir(), "aphrody-factory-cleanup-")).replaceAll("\\", "/");
+  const root = mkdtempSync(
+    posix.join(tmpdir(), "aphrody-factory-cleanup-"),
+  ).replaceAll("\\", "/");
   roots.push(root);
   const config: BuildFactoryConfig = {
     schemaVersion: 1,
@@ -74,7 +80,10 @@ test("retired-output allowlist refuses compiler cache, source, traversal and mul
     ).toThrow();
   }
   expect(() =>
-    validateFactoryCleanup(f.config, { ...policy, transientRoot: posix.join(f.root, "other") }),
+    validateFactoryCleanup(f.config, {
+      ...policy,
+      transientRoot: posix.join(f.root, "other"),
+    }),
   ).toThrow();
   const script = factoryCleanupScript(f.config, policy, false);
   expect(script).toContain("processUse");
@@ -82,126 +91,69 @@ test("retired-output allowlist refuses compiler cache, source, traversal and mul
   expect(script).toContain('"apply":false');
 });
 for (const exitCode of [0, 17])
-  linuxTest(`singleton scratch empties after joined command and preserves exit ${exitCode}`, () => {
-    const f = fixture();
-    const script = [
-      "set -euo pipefail",
-      ...factoryTransientShell(f.transient, f.docker, undefined, "/usr/bin/sudo"),
-      'mkdir -p "$TMPDIR/nested"; printf payload > "$TMPDIR/nested/output"',
-      `exit ${exitCode}`,
-    ].join("\n");
-    const result = Bun.spawnSync(["bash", "-c", script], {
-      windowsHide: true,
-      stdout: "pipe",
-      stderr: "pipe",
-    });
-    expect(result.exitCode).toBe(exitCode);
-    expect(result.stderr.toString()).not.toContain("not qualified");
-    expect(readdirSync(f.transient)).toEqual([]);
-  });
-linuxTest("scratch symlink is preserved without entering or deleting its target", () => {
-  const f = fixture();
-  const retained = posix.join(f.root, "retained");
-  mkdirSync(retained);
-  writeFileSync(posix.join(retained, "data"), "keep");
-  symlinkSync(retained, f.transient);
-  const result = Bun.spawnSync(
-    [
-      "bash",
-      "-c",
-      [
+  linuxTest(
+    `singleton scratch empties after joined command and preserves exit ${exitCode}`,
+    () => {
+      const f = fixture();
+      const script = [
         "set -euo pipefail",
-        ...factoryTransientShell(f.transient, f.docker, undefined, "/usr/bin/sudo"),
-      ].join("\n"),
-    ],
-    { windowsHide: true, stderr: "pipe" },
+        ...factoryTransientShell(
+          f.transient,
+          f.docker,
+          undefined,
+          "/usr/bin/sudo",
+        ),
+        'mkdir -p "$TMPDIR/nested"; printf payload > "$TMPDIR/nested/output"',
+        `exit ${exitCode}`,
+      ].join("\n");
+      const result = Bun.spawnSync(["bash", "-c", script], {
+        windowsHide: true,
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      expect(result.exitCode).toBe(exitCode);
+      expect(result.stderr.toString()).not.toContain("not qualified");
+      expect(readdirSync(f.transient)).toEqual([]);
+    },
   );
-  expect(result.exitCode).toBe(2);
-  expect(readdirSync(retained)).toEqual(["data"]);
-});
-linuxTest("live background child keeps scratch until its handle terminates", async () => {
-  const f = fixture();
-  mkdirSync(f.transient);
-  const child = Bun.spawn([process.execPath, "-e", "await Bun.sleep(60000)"], {
-    windowsHide: true,
-    cwd: f.transient,
-    stdout: "ignore",
-    stderr: "ignore",
-  });
-  try {
+linuxTest(
+  "scratch symlink is preserved without entering or deleting its target",
+  () => {
+    const f = fixture();
+    const retained = posix.join(f.root, "retained");
+    mkdirSync(retained);
+    writeFileSync(posix.join(retained, "data"), "keep");
+    symlinkSync(retained, f.transient);
     const result = Bun.spawnSync(
       [
         "bash",
         "-c",
         [
           "set -euo pipefail",
-          ...factoryTransientShell(f.transient, f.docker, undefined, "/usr/bin/sudo"),
-          'printf payload > "$TMPDIR/output"',
+          ...factoryTransientShell(
+            f.transient,
+            f.docker,
+            undefined,
+            "/usr/bin/sudo",
+          ),
         ].join("\n"),
       ],
       { windowsHide: true, stderr: "pipe" },
     );
-    expect(result.exitCode).toBe(3);
-    expect(result.stderr.toString()).toContain("retained for live process");
-    expect(readdirSync(f.transient)).toEqual([]);
-  } finally {
-    child.kill();
-    await child.exited;
-  }
-  const result = Bun.spawnSync(
-    [
-      "bash",
-      "-c",
-      [
-        "set -euo pipefail",
-        ...factoryTransientShell(f.transient, f.docker, undefined, "/usr/bin/sudo"),
-      ].join("\n"),
-    ],
-    { windowsHide: true, stderr: "pipe" },
-  );
-  expect(result.exitCode).toBe(0);
-  expect(readdirSync(f.transient)).toEqual([]);
-});
-
-linuxTest("Docker bind source preserves scratch without a host process handle", () => {
-  const f = fixture();
-  mkdirSync(f.transient);
-  writeFileSync(posix.join(f.transient, "keep"), "payload");
-  writeFileSync(
-    f.docker,
-    `#!/bin/sh\nif [ "$1" = ps ]; then echo container; else printf '%s' '${JSON.stringify([{ Mounts: [{ Source: f.transient }] }])}'; fi\n`,
-  );
-  const result = Bun.spawnSync(
-    [
-      "bash",
-      "-c",
-      [
-        "set -euo pipefail",
-        ...factoryTransientShell(f.transient, f.docker, undefined, "/usr/bin/sudo"),
-      ].join("\n"),
-    ],
-    { windowsHide: true, stderr: "pipe" },
-  );
-  expect(result.exitCode).toBe(3);
-  expect(readdirSync(f.transient)).toEqual(["keep"]);
-});
-
-for (const reference of ["environment", "queued argument"])
-  linuxTest(`live ${reference} preserves scratch before opening an output`, async () => {
+    expect(result.exitCode).toBe(2);
+    expect(readdirSync(retained)).toEqual(["data"]);
+  },
+);
+linuxTest(
+  "live background child keeps scratch until its handle terminates",
+  async () => {
     const f = fixture();
     mkdirSync(f.transient);
-    writeFileSync(posix.join(f.transient, "keep"), "payload");
     const child = Bun.spawn(
-      [
-        process.execPath,
-        "-e",
-        "await Bun.sleep(60000)",
-        ...(reference === "queued argument" ? [f.transient] : []),
-      ],
+      [process.execPath, "-e", "await Bun.sleep(60000)"],
       {
         windowsHide: true,
-        cwd: f.root,
-        env: { ...process.env, ...(reference === "environment" ? { TMPDIR: f.transient } : {}) },
+        cwd: f.transient,
         stdout: "ignore",
         stderr: "ignore",
       },
@@ -213,113 +165,267 @@ for (const reference of ["environment", "queued argument"])
           "-c",
           [
             "set -euo pipefail",
-            ...factoryTransientShell(f.transient, f.docker, undefined, "/usr/bin/sudo"),
+            ...factoryTransientShell(
+              f.transient,
+              f.docker,
+              undefined,
+              "/usr/bin/sudo",
+            ),
+            'printf payload > "$TMPDIR/output"',
           ].join("\n"),
         ],
         { windowsHide: true, stderr: "pipe" },
       );
       expect(result.exitCode).toBe(3);
-      expect(readdirSync(f.transient)).toEqual(["keep"]);
+      expect(result.stderr.toString()).toContain("retained for live process");
+      expect(readdirSync(f.transient)).toEqual([]);
     } finally {
       child.kill();
       await child.exited;
     }
-  });
-
-linuxTest("SIGTERM empties joined scratch and preserves signal exit status", () => {
-  const f = fixture();
-  const result = Bun.spawnSync(
-    [
-      "bash",
-      "-c",
+    const result = Bun.spawnSync(
       [
-        "set -euo pipefail",
-        ...factoryTransientShell(f.transient, f.docker, undefined, "/usr/bin/sudo"),
-        'printf payload > "$TMPDIR/output"',
-        'kill -TERM "$$"',
-      ].join("\n"),
-    ],
-    { windowsHide: true, stderr: "pipe" },
-  );
-  expect(result.exitCode).toBe(143);
-  expect(readdirSync(f.transient)).toEqual([]);
-});
+        "bash",
+        "-c",
+        [
+          "set -euo pipefail",
+          ...factoryTransientShell(
+            f.transient,
+            f.docker,
+            undefined,
+            "/usr/bin/sudo",
+          ),
+        ].join("\n"),
+      ],
+      { windowsHide: true, stderr: "pipe" },
+    );
+    expect(result.exitCode).toBe(0);
+    expect(readdirSync(f.transient)).toEqual([]);
+  },
+);
 
-linuxTest("resource markers cannot impersonate an inherited heavy lock", async () => {
-  const f = fixture();
-  mkdirSync(posix.join(f.root, "locks"));
-  writeFileSync(f.config.lockPath, "");
-  const owner = posix.join(import.meta.dir, "../src/build-factory-cleanup.ts");
-  const env = {
-    ...process.env,
-    APHRODY_FACTORY_RESOURCE: f.transient,
-    APHRODY_FACTORY_LOCK_PATH: f.config.lockPath,
-  };
-  const forged = Bun.spawnSync([process.execPath, owner, "--held"], { windowsHide: true, env });
-  expect(forged.exitCode).toBe(1);
-  const unrelated = Bun.spawn(
-    ["flock", "--close", f.config.lockPath, "bash", "-c", "printf READY; cat >/dev/null"],
-    {
-      windowsHide: true,
-      stdin: "pipe",
-      stdout: "pipe",
+linuxTest(
+  "Docker bind source preserves scratch without a host process handle",
+  () => {
+    const f = fixture();
+    mkdirSync(f.transient);
+    writeFileSync(posix.join(f.transient, "keep"), "payload");
+    writeFileSync(
+      f.docker,
+      `#!/bin/sh\nif [ "$1" = ps ]; then echo container; else printf '%s' '${JSON.stringify([{ Mounts: [{ Source: f.transient }] }])}'; fi\n`,
+    );
+    const result = Bun.spawnSync(
+      [
+        "bash",
+        "-c",
+        [
+          "set -euo pipefail",
+          ...factoryTransientShell(
+            f.transient,
+            f.docker,
+            undefined,
+            "/usr/bin/sudo",
+          ),
+        ].join("\n"),
+      ],
+      { windowsHide: true, stderr: "pipe" },
+    );
+    expect(result.exitCode).toBe(3);
+    expect(readdirSync(f.transient)).toEqual(["keep"]);
+  },
+);
+
+for (const reference of ["environment", "queued argument"])
+  linuxTest(
+    `live ${reference} preserves scratch before opening an output`,
+    async () => {
+      const f = fixture();
+      mkdirSync(f.transient);
+      writeFileSync(posix.join(f.transient, "keep"), "payload");
+      const child = Bun.spawn(
+        [
+          process.execPath,
+          "-e",
+          "await Bun.sleep(60000)",
+          ...(reference === "queued argument" ? [f.transient] : []),
+        ],
+        {
+          windowsHide: true,
+          cwd: f.root,
+          env: {
+            ...process.env,
+            ...(reference === "environment" ? { TMPDIR: f.transient } : {}),
+          },
+          stdout: "ignore",
+          stderr: "ignore",
+        },
+      );
+      try {
+        const result = Bun.spawnSync(
+          [
+            "bash",
+            "-c",
+            [
+              "set -euo pipefail",
+              ...factoryTransientShell(
+                f.transient,
+                f.docker,
+                undefined,
+                "/usr/bin/sudo",
+              ),
+            ].join("\n"),
+          ],
+          { windowsHide: true, stderr: "pipe" },
+        );
+        expect(result.exitCode).toBe(3);
+        expect(readdirSync(f.transient)).toEqual(["keep"]);
+      } finally {
+        child.kill();
+        await child.exited;
+      }
     },
   );
-  const reader = unrelated.stdout.getReader();
-  await reader.read();
-  reader.releaseLock();
-  try {
-    const forgedWhileBusy = Bun.spawnSync([process.execPath, owner, "--held"], {
+
+linuxTest(
+  "SIGTERM empties joined scratch and preserves signal exit status",
+  () => {
+    const f = fixture();
+    const result = Bun.spawnSync(
+      [
+        "bash",
+        "-c",
+        [
+          "set -euo pipefail",
+          ...factoryTransientShell(
+            f.transient,
+            f.docker,
+            undefined,
+            "/usr/bin/sudo",
+          ),
+          'printf payload > "$TMPDIR/output"',
+          'kill -TERM "$$"',
+        ].join("\n"),
+      ],
+      { windowsHide: true, stderr: "pipe" },
+    );
+    expect(result.exitCode).toBe(143);
+    expect(readdirSync(f.transient)).toEqual([]);
+  },
+);
+
+linuxTest(
+  "resource markers cannot impersonate an inherited heavy lock",
+  async () => {
+    const f = fixture();
+    mkdirSync(posix.join(f.root, "locks"));
+    writeFileSync(f.config.lockPath, "");
+    const owner = posix.join(
+      import.meta.dir,
+      "../src/build-factory-cleanup.ts",
+    );
+    const env = {
+      ...process.env,
+      APHRODY_FACTORY_RESOURCE: f.transient,
+      APHRODY_FACTORY_LOCK_PATH: f.config.lockPath,
+    };
+    const forged = Bun.spawnSync([process.execPath, owner, "--held"], {
       windowsHide: true,
       env,
     });
-    expect(forgedWhileBusy.exitCode).toBe(1);
-  } finally {
-    unrelated.stdin.end();
-    await unrelated.exited;
-  }
-  const inherited = Bun.spawnSync(
-    ["flock", "--close", f.config.lockPath, process.execPath, owner, "--held"],
-    {
-      windowsHide: true,
-      env,
-    },
-  );
-  expect(inherited.exitCode).toBe(0);
-});
-
-linuxTest("pooled transient storage reuses only its declared stable kernel lease", async () => {
-  const f = fixture();
-  const pool = posix.join(f.root, "storage");
-  const transient = posix.join(pool, "transient");
-  mkdirSync(pool);
-  mkdirSync(posix.join(f.root, "locks"));
-  const config: BuildFactoryConfig = {
-    ...f.config,
-    cacheRoot: posix.join(pool, "cache"),
-    artifactRoot: posix.join(pool, "artifacts"),
-    cleanup: { transientRoot: transient, retiredOutputs: [], privilegeBinary: "/usr/bin/sudo" },
-  };
-  await withFactoryResource(
-    config,
-    async () => {
-      expect(inheritedFactoryResourceHeld(config)).toBe(true);
-      expect(inheritedFactoryResourceHeld()).toBe(false);
-      expect(
-        inheritedFactoryResourceHeld({ ...config, lockPath: posix.join(f.root, "other.lock") }),
-      ).toBe(false);
-      await withFactoryResource(
-        config,
-        async () => {
-          expect(inheritedFactoryResourceHeld(config)).toBe(true);
+    expect(forged.exitCode).toBe(1);
+    const unrelated = Bun.spawn(
+      [
+        "flock",
+        "--close",
+        f.config.lockPath,
+        "bash",
+        "-c",
+        "printf READY; cat >/dev/null",
+      ],
+      {
+        windowsHide: true,
+        stdin: "pipe",
+        stdout: "pipe",
+      },
+    );
+    const reader = unrelated.stdout.getReader();
+    await reader.read();
+    reader.releaseLock();
+    try {
+      const forgedWhileBusy = Bun.spawnSync(
+        [process.execPath, owner, "--held"],
+        {
+          windowsHide: true,
+          env,
         },
-        f.docker,
       );
-    },
-    f.docker,
-  );
-  expect(Bun.spawnSync(["flock", "--nonblock", config.lockPath, "true"]).exitCode).toBe(0);
-});
+      expect(forgedWhileBusy.exitCode).toBe(1);
+    } finally {
+      unrelated.stdin.end();
+      await unrelated.exited;
+    }
+    const inherited = Bun.spawnSync(
+      [
+        "flock",
+        "--close",
+        f.config.lockPath,
+        process.execPath,
+        owner,
+        "--held",
+      ],
+      {
+        windowsHide: true,
+        env,
+      },
+    );
+    expect(inherited.exitCode).toBe(0);
+  },
+);
+
+linuxTest(
+  "pooled transient storage reuses only its declared stable kernel lease",
+  async () => {
+    const f = fixture();
+    const pool = posix.join(f.root, "storage");
+    const transient = posix.join(pool, "transient");
+    mkdirSync(pool);
+    mkdirSync(posix.join(f.root, "locks"));
+    const config: BuildFactoryConfig = {
+      ...f.config,
+      cacheRoot: posix.join(pool, "cache"),
+      artifactRoot: posix.join(pool, "artifacts"),
+      cleanup: {
+        transientRoot: transient,
+        retiredOutputs: [],
+        privilegeBinary: "/usr/bin/sudo",
+      },
+    };
+    await withFactoryResource(
+      config,
+      async () => {
+        expect(inheritedFactoryResourceHeld(config)).toBe(true);
+        expect(inheritedFactoryResourceHeld()).toBe(false);
+        expect(
+          inheritedFactoryResourceHeld({
+            ...config,
+            lockPath: posix.join(f.root, "other.lock"),
+          }),
+        ).toBe(false);
+        await withFactoryResource(
+          config,
+          async () => {
+            expect(inheritedFactoryResourceHeld(config)).toBe(true);
+          },
+          f.docker,
+        );
+      },
+      f.docker,
+    );
+    expect(
+      Bun.spawnSync(["flock", "--nonblock", config.lockPath, "true"]).exitCode,
+    ).toBe(0);
+  },
+);
 
 linuxTest(
   "direct route holds the kernel lease through nested work and cleans on failure",
@@ -341,13 +447,19 @@ linuxTest(
         async () => {
           expect(process.env.TMPDIR).toBe(f.transient);
           writeFileSync(posix.join(f.transient, "generated"), "temporary");
-          const competitor = Bun.spawnSync(["flock", "--nonblock", config.lockPath, "true"], {
-            windowsHide: true,
-          });
+          const competitor = Bun.spawnSync(
+            ["flock", "--nonblock", config.lockPath, "true"],
+            {
+              windowsHide: true,
+            },
+          );
           expect(competitor.exitCode).toBe(1);
           expect(factoryLeaseHeld(config.lockPath)).toBe(true);
           // A compiler wrapper is a sibling of the guardian, not its descendant.
-          const owner = posix.join(import.meta.dir, "../src/build-factory-cleanup.ts");
+          const owner = posix.join(
+            import.meta.dir,
+            "../src/build-factory-cleanup.ts",
+          );
           const nested = Bun.spawnSync([process.execPath, owner, "--held"], {
             windowsHide: true,
             env: process.env,
@@ -356,14 +468,20 @@ linuxTest(
           const otherRoot = posix.join(f.root, "other");
           mkdirSync(posix.join(otherRoot, "locks"), { recursive: true });
           writeFileSync(posix.join(otherRoot, "locks/heavy.lock"), "");
-          const differentInode = Bun.spawnSync([process.execPath, owner, "--held"], {
-            windowsHide: true,
-            env: {
-              ...process.env,
-              APHRODY_FACTORY_RESOURCE: posix.join(otherRoot, "transient"),
-              APHRODY_FACTORY_LOCK_PATH: posix.join(otherRoot, "locks/heavy.lock"),
+          const differentInode = Bun.spawnSync(
+            [process.execPath, owner, "--held"],
+            {
+              windowsHide: true,
+              env: {
+                ...process.env,
+                APHRODY_FACTORY_RESOURCE: posix.join(otherRoot, "transient"),
+                APHRODY_FACTORY_LOCK_PATH: posix.join(
+                  otherRoot,
+                  "locks/heavy.lock",
+                ),
+              },
             },
-          });
+          );
           expect(differentInode.exitCode).toBe(1);
           await withFactoryResource(
             config,
@@ -379,9 +497,12 @@ linuxTest(
     ).rejects.toThrow("fixture failure");
     expect(process.env.TMPDIR).toBe(previousTmp);
     expect(readdirSync(f.transient)).toEqual([]);
-    const released = Bun.spawnSync(["flock", "--nonblock", config.lockPath, "true"], {
-      windowsHide: true,
-    });
+    const released = Bun.spawnSync(
+      ["flock", "--nonblock", config.lockPath, "true"],
+      {
+        windowsHide: true,
+      },
+    );
     expect(released.exitCode).toBe(0);
   },
 );
@@ -391,12 +512,19 @@ linuxTest(
   async () => {
     const f = fixture();
     mkdirSync(posix.join(f.root, "locks"));
-    const ownerModule = posix.join(import.meta.dir, "../src/build-factory-cleanup.ts");
+    const ownerModule = posix.join(
+      import.meta.dir,
+      "../src/build-factory-cleanup.ts",
+    );
     const runner = posix.join(f.root, "owner.ts");
     const pidFile = posix.join(f.root, "build-child.pid");
     const config = {
       ...f.config,
-      cleanup: { transientRoot: f.transient, retiredOutputs: [], privilegeBinary: "/usr/bin/sudo" },
+      cleanup: {
+        transientRoot: f.transient,
+        retiredOutputs: [],
+        privilegeBinary: "/usr/bin/sudo",
+      },
     };
     writeFileSync(
       runner,
@@ -426,8 +554,9 @@ await withFactoryResource(${JSON.stringify(config)}, async () => {
       await direct.exited;
       await Bun.sleep(100);
       expect(
-        Bun.spawnSync(["flock", "--nonblock", f.config.lockPath, "true"], { windowsHide: true })
-          .exitCode,
+        Bun.spawnSync(["flock", "--nonblock", f.config.lockPath, "true"], {
+          windowsHide: true,
+        }).exitCode,
       ).toBe(1);
       expect(readdirSync(f.transient)).toEqual(["temporary"]);
     } finally {
@@ -439,8 +568,9 @@ await withFactoryResource(${JSON.stringify(config)}, async () => {
       // eslint-disable-next-line no-await-in-loop
       await Bun.sleep(100);
       if (
-        Bun.spawnSync(["flock", "--nonblock", f.config.lockPath, "true"], { windowsHide: true })
-          .exitCode === 0
+        Bun.spawnSync(["flock", "--nonblock", f.config.lockPath, "true"], {
+          windowsHide: true,
+        }).exitCode === 0
       ) {
         released = true;
         break;
@@ -472,37 +602,42 @@ test("process references distinguish retired targets from live sibling prefixes"
     expect(factoryPathReferenced(value, path)).toBe(false);
 });
 
-linuxTest("direct startup refuses a symlink and releases the untouched lease", async () => {
-  const f = fixture();
-  mkdirSync(posix.join(f.root, "locks"));
-  const retained = posix.join(f.root, "retained");
-  mkdirSync(retained);
-  writeFileSync(posix.join(retained, "keep"), "protected");
-  symlinkSync(retained, f.transient);
-  const config = {
-    ...f.config,
-    cleanup: {
-      transientRoot: f.transient,
-      retiredOutputs: [],
-      privilegeBinary: "/usr/bin/sudo" as const,
-    },
-  };
-  let invoked = false;
-  await expect(
-    withFactoryResource(
-      config,
-      async () => {
-        invoked = true;
+linuxTest(
+  "direct startup refuses a symlink and releases the untouched lease",
+  async () => {
+    const f = fixture();
+    mkdirSync(posix.join(f.root, "locks"));
+    const retained = posix.join(f.root, "retained");
+    mkdirSync(retained);
+    writeFileSync(posix.join(retained, "keep"), "protected");
+    symlinkSync(retained, f.transient);
+    const config = {
+      ...f.config,
+      cleanup: {
+        transientRoot: f.transient,
+        retiredOutputs: [],
+        privilegeBinary: "/usr/bin/sudo" as const,
       },
-      f.docker,
-    ),
-  ).rejects.toThrow("isolation");
-  expect(invoked).toBe(false);
-  expect(readdirSync(retained)).toEqual(["keep"]);
-  expect(
-    Bun.spawnSync(["flock", "--nonblock", config.lockPath, "true"], { windowsHide: true }).exitCode,
-  ).toBe(0);
-});
+    };
+    let invoked = false;
+    await expect(
+      withFactoryResource(
+        config,
+        async () => {
+          invoked = true;
+        },
+        f.docker,
+      ),
+    ).rejects.toThrow("isolation");
+    expect(invoked).toBe(false);
+    expect(readdirSync(retained)).toEqual(["keep"]);
+    expect(
+      Bun.spawnSync(["flock", "--nonblock", config.lockPath, "true"], {
+        windowsHide: true,
+      }).exitCode,
+    ).toBe(0);
+  },
+);
 
 linuxTest(
   "surviving child cleanup retains the direct command's original exit code",
@@ -521,13 +656,16 @@ linuxTest(
       config,
       async () => {
         writeFileSync(posix.join(f.transient, "temporary"), "generated");
-        const child = Bun.spawn([process.execPath, "-e", "await Bun.sleep(500)"], {
-          windowsHide: true,
-          cwd: f.transient,
-          stdin: "ignore",
-          stdout: "ignore",
-          stderr: "ignore",
-        });
+        const child = Bun.spawn(
+          [process.execPath, "-e", "await Bun.sleep(500)"],
+          {
+            windowsHide: true,
+            cwd: f.transient,
+            stdin: "ignore",
+            stdout: "ignore",
+            stderr: "ignore",
+          },
+        );
         expect(child.pid).toBeGreaterThan(0);
         return 17;
       },
@@ -536,8 +674,9 @@ linuxTest(
     expect(code).toBe(17);
     expect(readdirSync(f.transient)).toEqual([]);
     expect(
-      Bun.spawnSync(["flock", "--nonblock", config.lockPath, "true"], { windowsHide: true })
-        .exitCode,
+      Bun.spawnSync(["flock", "--nonblock", config.lockPath, "true"], {
+        windowsHide: true,
+      }).exitCode,
     ).toBe(0);
   },
   30000,
@@ -562,7 +701,15 @@ linuxTest(
       async () => {
         writeFileSync(posix.join(f.transient, "temporary"), "generated");
         queued = Bun.spawn(
-          ["flock", config.lockPath, "bash", "-c", "true", "queued-build", f.transient],
+          [
+            "flock",
+            config.lockPath,
+            "bash",
+            "-c",
+            "true",
+            "queued-build",
+            f.transient,
+          ],
           {
             windowsHide: true,
             env: { ...process.env },
@@ -574,7 +721,9 @@ linuxTest(
         await Bun.sleep(100);
         const waiting = (await Bun.file("/proc/locks").text())
           .split("\n")
-          .some((line) => line.includes("->") && line.includes(` ${queued!.pid} `));
+          .some(
+            (line) => line.includes("->") && line.includes(` ${queued!.pid} `),
+          );
         expect(waiting).toBe(true);
         expect(readdirSync(f.transient)).toEqual(["temporary"]);
       },
@@ -615,7 +764,10 @@ await Bun.write(${JSON.stringify(receipt)}, JSON.stringify({tmp:process.env.TMPD
         f.config,
         async () => {
           process.env.CARGO_TARGET_DIR = posix.join(f.root, "cache/cargo/job");
-          process.env.SCCACHE_STARTUP_NOTIFY = posix.join(f.transient, "startup.sock");
+          process.env.SCCACHE_STARTUP_NOTIFY = posix.join(
+            f.transient,
+            "startup.sock",
+          );
           process.env.SCCACHE_IDLE_TIMEOUT = "1";
           await prewarmFactorySccache(f.config, binary);
           expect(JSON.parse(readFileSync(receipt, "utf8"))).toEqual({
@@ -624,7 +776,9 @@ await Bun.write(${JSON.stringify(receipt)}, JSON.stringify({tmp:process.env.TMPD
             idle: "0",
           });
           expect(process.env.TMPDIR).toBe(f.transient);
-          expect(process.env.CARGO_TARGET_DIR).toBe(posix.join(f.root, "cache/cargo/job"));
+          expect(process.env.CARGO_TARGET_DIR).toBe(
+            posix.join(f.root, "cache/cargo/job"),
+          );
           expect(process.env.SCCACHE_IDLE_TIMEOUT).toBe("1");
           const compiler = Bun.spawn(
             [
@@ -632,10 +786,17 @@ await Bun.write(${JSON.stringify(receipt)}, JSON.stringify({tmp:process.env.TMPD
               "-e",
               'await Bun.write(process.env.TMPDIR + "/compiler-output", "job");',
             ],
-            { windowsHide: true, env: { ...process.env }, stdout: "ignore", stderr: "pipe" },
+            {
+              windowsHide: true,
+              env: { ...process.env },
+              stdout: "ignore",
+              stderr: "pipe",
+            },
           );
           expect(await compiler.exited).toBe(0);
-          expect(readFileSync(posix.join(f.transient, "compiler-output"), "utf8")).toBe("job");
+          expect(
+            readFileSync(posix.join(f.transient, "compiler-output"), "utf8"),
+          ).toBe("job");
         },
         f.docker,
       );
@@ -655,21 +816,23 @@ await Bun.write(${JSON.stringify(receipt)}, JSON.stringify({tmp:process.env.TMPD
   },
 );
 
-linuxTest("shared compiler daemon left on a retired cache root is replaced", async () => {
-  const f = fixture();
-  mkdirSync(posix.join(f.root, "locks"), { recursive: true });
-  f.config.cleanup = {
-    transientRoot: f.transient,
-    privilegeBinary: "/usr/bin/sudo",
-    retiredOutputs: [],
-  };
-  const binary = posix.join(f.root, "sccache-fixture");
-  const calls = posix.join(f.root, "calls.log");
-  const state = posix.join(f.root, "server-cache");
-  writeFileSync(state, "/srv/aphrody-build/cache/sccache");
-  writeFileSync(
-    binary,
-    `#!/usr/bin/env bun
+linuxTest(
+  "shared compiler daemon left on a retired cache root is replaced",
+  async () => {
+    const f = fixture();
+    mkdirSync(posix.join(f.root, "locks"), { recursive: true });
+    f.config.cleanup = {
+      transientRoot: f.transient,
+      privilegeBinary: "/usr/bin/sudo",
+      retiredOutputs: [],
+    };
+    const binary = posix.join(f.root, "sccache-fixture");
+    const calls = posix.join(f.root, "calls.log");
+    const state = posix.join(f.root, "server-cache");
+    writeFileSync(state, "/srv/aphrody-build/cache/sccache");
+    writeFileSync(
+      binary,
+      `#!/usr/bin/env bun
 import { appendFileSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 const arg = process.argv[2];
 appendFileSync(${JSON.stringify(calls)}, arg + "\\n");
@@ -681,23 +844,34 @@ if (arg === "--start-server") {
   console.log('Cache location                  Local disk: ' + JSON.stringify(readFileSync(state, "utf8")));
 } else if (arg === "--stop-server") rmSync(state);
 `,
-  );
-  chmodSync(binary, 0o700);
-  await withFactoryResource(f.config, () => prewarmFactorySccache(f.config, binary), f.docker);
-  expect(readFileSync(calls, "utf8").trim().split("\n")).toEqual([
-    "--start-server",
-    "--show-stats",
-    "--stop-server",
-    "--start-server",
-  ]);
-  expect(readFileSync(state, "utf8")).toBe(posix.join(f.root, "cache/sccache"));
-  writeFileSync(calls, "");
-  await withFactoryResource(f.config, () => prewarmFactorySccache(f.config, binary), f.docker);
-  expect(readFileSync(calls, "utf8").trim().split("\n")).toEqual([
-    "--start-server",
-    "--show-stats",
-  ]);
-});
+    );
+    chmodSync(binary, 0o700);
+    await withFactoryResource(
+      f.config,
+      () => prewarmFactorySccache(f.config, binary),
+      f.docker,
+    );
+    expect(readFileSync(calls, "utf8").trim().split("\n")).toEqual([
+      "--start-server",
+      "--show-stats",
+      "--stop-server",
+      "--start-server",
+    ]);
+    expect(readFileSync(state, "utf8")).toBe(
+      posix.join(f.root, "cache/sccache"),
+    );
+    writeFileSync(calls, "");
+    await withFactoryResource(
+      f.config,
+      () => prewarmFactorySccache(f.config, binary),
+      f.docker,
+    );
+    expect(readFileSync(calls, "utf8").trim().split("\n")).toEqual([
+      "--start-server",
+      "--show-stats",
+    ]);
+  },
+);
 
 linuxTest(
   "direct resource CLI passes the acquired job environment to its compiler command",
@@ -710,7 +884,11 @@ linuxTest(
     chmodSync(posix.join(bin, "docker"), 0o700);
     const config = {
       ...f.config,
-      cleanup: { transientRoot: f.transient, privilegeBinary: "/usr/bin/sudo", retiredOutputs: [] },
+      cleanup: {
+        transientRoot: f.transient,
+        privilegeBinary: "/usr/bin/sudo",
+        retiredOutputs: [],
+      },
     };
     const configPath = posix.join(f.root, "factory.json");
     writeFileSync(configPath, JSON.stringify(config));
@@ -733,7 +911,10 @@ linuxTest(
         timeout: 10000,
       },
     );
-    const [exit, error] = await Promise.all([child.exited, new Response(child.stderr).text()]);
+    const [exit, error] = await Promise.all([
+      child.exited,
+      new Response(child.stderr).text(),
+    ]);
     expect(error).toBe("");
     expect(exit).toBe(0);
     expect(JSON.parse(readFileSync(receipt, "utf8"))).toEqual({

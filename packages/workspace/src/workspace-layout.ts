@@ -17,14 +17,20 @@ const EXTERNAL_PACKAGE_ROOTS = ["../bun/packages/", "../material/packages/"];
 /** In-repository roots, or external owner packages without any further escape. */
 export function allowedWorkspace(root: string, workspacePath: string): boolean {
   const segments = workspacePath.split("/");
-  if (segments.some((segment) => segment === "" || segment === ".")) return false;
-  const externalRoot = EXTERNAL_PACKAGE_ROOTS.find((prefix) => workspacePath.startsWith(prefix));
+  if (segments.some((segment) => segment === "" || segment === "."))
+    return false;
+  const externalRoot = EXTERNAL_PACKAGE_ROOTS.find((prefix) =>
+    workspacePath.startsWith(prefix),
+  );
   if (externalRoot) {
     const rest = workspacePath.slice(externalRoot.length);
     const ownerPackages = resolve(root, externalRoot);
     const target = relative(ownerPackages, resolve(root, workspacePath));
     return (
-      rest.length > 0 && !rest.split("/").includes("..") && !!target && !target.startsWith("..")
+      rest.length > 0 &&
+      !rest.split("/").includes("..") &&
+      !!target &&
+      !target.startsWith("..")
     );
   }
   return (
@@ -57,7 +63,9 @@ export async function runWorkspaceLayout(args: string[]): Promise<number> {
     ? rootManifest.workspaces
     : rootManifest.workspaces?.packages;
   if (!Array.isArray(declaredWorkspaces))
-    throw new Error("package.json must declare workspaces or workspaces.packages as an array");
+    throw new Error(
+      "package.json must declare workspaces or workspaces.packages as an array",
+    );
 
   const workspacePatterns = declaredWorkspaces.filter(
     (entry): entry is string => typeof entry === "string",
@@ -66,8 +74,12 @@ export async function runWorkspaceLayout(args: string[]): Promise<number> {
     await Promise.all(
       workspacePatterns.map(async (pattern) => {
         const glob = new Bun.Glob(`${pattern}/package.json`);
-        const manifests = await Array.fromAsync(glob.scan({ cwd: root, onlyFiles: true }));
-        return manifests.map((manifest) => dirname(manifest).replaceAll("\\", "/"));
+        const manifests = await Array.fromAsync(
+          glob.scan({ cwd: root, onlyFiles: true }),
+        );
+        return manifests.map((manifest) =>
+          dirname(manifest).replaceAll("\\", "/"),
+        );
       }),
     )
   ).flat();
@@ -77,9 +89,9 @@ export async function runWorkspaceLayout(args: string[]): Promise<number> {
   const gitmodulesPath = join(root, ".gitmodules");
   if (existsSync(gitmodulesPath)) {
     const gitmodules = readFileSync(gitmodulesPath, "utf8");
-    const submodulePaths = [...gitmodules.matchAll(/^\s*path\s*=\s*(.+)$/gm)].map(
-      (match) => match[1]?.trim() ?? "",
-    );
+    const submodulePaths = [
+      ...gitmodules.matchAll(/^\s*path\s*=\s*(.+)$/gm),
+    ].map((match) => match[1]?.trim() ?? "");
     for (const submodulePath of submodulePaths) {
       const normalized = submodulePath.replaceAll("\\", "/");
       if (!normalized || normalized.includes("..")) {
@@ -117,14 +129,21 @@ export async function runWorkspaceLayout(args: string[]): Promise<number> {
       if (!entry.isDirectory()) continue;
       const workspacePath = `packages/${entry.name}`;
       const packageManifest = join(packagesRoot, entry.name, "package.json");
-      if (existsSync(packageManifest) && !workspacePaths.includes(workspacePath)) {
-        errors.push(`package manifest is not declared as a workspace: ${workspacePath}`);
+      if (
+        existsSync(packageManifest) &&
+        !workspacePaths.includes(workspacePath)
+      ) {
+        errors.push(
+          `package manifest is not declared as a workspace: ${workspacePath}`,
+        );
       }
       if (
         existsSync(join(packagesRoot, entry.name, ".git")) &&
         !declaredSubmodules.has(workspacePath)
       ) {
-        errors.push(`nested Git metadata is not allowed: ${workspacePath}/.git`);
+        errors.push(
+          `nested Git metadata is not allowed: ${workspacePath}/.git`,
+        );
       }
     }
   }
@@ -140,4 +159,5 @@ export async function runWorkspaceLayout(args: string[]): Promise<number> {
   return 0;
 }
 
-if (import.meta.main) process.exit(await runWorkspaceLayout(process.argv.slice(2)));
+if (import.meta.main)
+  process.exit(await runWorkspaceLayout(process.argv.slice(2)));

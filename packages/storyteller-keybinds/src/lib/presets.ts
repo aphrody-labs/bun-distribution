@@ -6,7 +6,10 @@ import { ActionId, Binding, Preset, PresetId } from "./types";
 // other action falls through to BASE regardless of selected preset, so 2D and
 // moodboard are unaffected by preset choice.
 
-const b = (code: string, mods: Omit<Binding, "code"> = {}): Binding => ({ code, ...mods });
+const b = (code: string, mods: Omit<Binding, "code"> = {}): Binding => ({
+  code,
+  ...mods,
+});
 
 export const BASE_BINDINGS: Record<ActionId, Binding[]> = {
   // Global — app-wide trigger layer, preset-independent.
@@ -41,7 +44,10 @@ export const BASE_BINDINGS: Record<ActionId, Binding[]> = {
   "pagescene.edit.toggleSnapping": [b("KeyN")],
   "pagescene.view.toggleGrid": [b("KeyH")],
   "pagescene.edit.undo": [b("KeyZ", { ctrl: true })],
-  "pagescene.edit.redo": [b("KeyZ", { ctrl: true, shift: true }), b("KeyY", { ctrl: true })],
+  "pagescene.edit.redo": [
+    b("KeyZ", { ctrl: true, shift: true }),
+    b("KeyY", { ctrl: true }),
+  ],
   "pagescene.edit.copy": [b("KeyC", { ctrl: true })],
   "pagescene.edit.paste": [b("KeyV", { ctrl: true })],
 
@@ -86,7 +92,10 @@ export const BASE_BINDINGS: Record<ActionId, Binding[]> = {
   "pagedraw.edit.copy": [b("KeyC", { ctrl: true })],
   "pagedraw.edit.paste": [b("KeyV", { ctrl: true })],
   "pagedraw.history.undo": [b("KeyZ", { ctrl: true })],
-  "pagedraw.history.redo": [b("KeyZ", { ctrl: true, shift: true }), b("KeyY", { ctrl: true })],
+  "pagedraw.history.redo": [
+    b("KeyZ", { ctrl: true, shift: true }),
+    b("KeyY", { ctrl: true }),
+  ],
 
   // Moodboard — preset-independent (Figma-style).
   "moodboard.tools.select": [b("KeyV")],
@@ -99,7 +108,10 @@ export const BASE_BINDINGS: Record<ActionId, Binding[]> = {
   "moodboard.edit.ungroup": [b("KeyG", { ctrl: true, shift: true })],
   "moodboard.view.fitToContent": [b("Digit1", { shift: true })],
   "moodboard.history.undo": [b("KeyZ", { ctrl: true })],
-  "moodboard.history.redo": [b("KeyZ", { ctrl: true, shift: true }), b("KeyY", { ctrl: true })],
+  "moodboard.history.redo": [
+    b("KeyZ", { ctrl: true, shift: true }),
+    b("KeyY", { ctrl: true }),
+  ],
   "moodboard.view.resetViewport": [b("Digit0", { ctrl: true })],
 
   // Moodboard grid — Lightroom triage row + viewer navigation.

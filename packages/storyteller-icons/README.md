@@ -4,9 +4,9 @@ Companion lib for [Lucide](https://lucide.dev) icons. Regular icons come straigh
 `lucide-react` — import them directly:
 
 ```tsx
-import { PlayIcon } from 'lucide-react';
+import { PlayIcon } from "lucide-react";
 
-<PlayIcon className="h-4 w-4" />
+<PlayIcon className="h-4 w-4" />;
 ```
 
 This lib holds the pieces Lucide doesn't provide:

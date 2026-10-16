@@ -59,7 +59,10 @@ describe("contrastLevel — higher level improves ratio on key pairs", () => {
             standard[`--md-sys-color-${bg}`]!,
             standard[`--md-sys-color-${fg}`]!,
           );
-          const hiRatio = contrast(high[`--md-sys-color-${bg}`]!, high[`--md-sys-color-${fg}`]!);
+          const hiRatio = contrast(
+            high[`--md-sys-color-${bg}`]!,
+            high[`--md-sys-color-${fg}`]!,
+          );
           if (hiRatio > stdRatio + 0.01) improved++;
           // Never regresses below standard AA (4.5) at high contrast.
           expect(hiRatio).toBeGreaterThanOrEqual(4.5);
@@ -92,9 +95,18 @@ describe("contrastLevel — negative values accepted", () => {
     const med = schemeFromSeed("#6750a4", { contrastLevel: 0.5 });
     const hi = schemeFromSeed("#6750a4", { contrastLevel: 1 });
 
-    const ratioStd = contrast(std["--md-sys-color-surface"]!, std["--md-sys-color-on-surface"]!);
-    const ratioMed = contrast(med["--md-sys-color-surface"]!, med["--md-sys-color-on-surface"]!);
-    const ratioHi = contrast(hi["--md-sys-color-surface"]!, hi["--md-sys-color-on-surface"]!);
+    const ratioStd = contrast(
+      std["--md-sys-color-surface"]!,
+      std["--md-sys-color-on-surface"]!,
+    );
+    const ratioMed = contrast(
+      med["--md-sys-color-surface"]!,
+      med["--md-sys-color-on-surface"]!,
+    );
+    const ratioHi = contrast(
+      hi["--md-sys-color-surface"]!,
+      hi["--md-sys-color-on-surface"]!,
+    );
 
     // Medium should be at least as good as standard.
     expect(ratioMed).toBeGreaterThanOrEqual(ratioStd - 0.1);
@@ -112,7 +124,11 @@ describe("contrastLevel — all variants reach AAA (7:1) on surface/on-surface a
   for (const variant of VARIANTS) {
     for (const dark of [false, true]) {
       test(`${variant} ${dark ? "dark" : "light"} @contrastLevel=1 >= ${AAA}:1`, () => {
-        const scheme = schemeFromSeed("#6750a4", { variant, dark, contrastLevel: 1 });
+        const scheme = schemeFromSeed("#6750a4", {
+          variant,
+          dark,
+          contrastLevel: 1,
+        });
         const ratio = contrast(
           scheme["--md-sys-color-surface"]!,
           scheme["--md-sys-color-on-surface"]!,

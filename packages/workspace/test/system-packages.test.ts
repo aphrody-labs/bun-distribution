@@ -3,7 +3,12 @@ import { expect, test } from "bun:test";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { applyPackages, planPackages, powershell, type Runner } from "../src/system-packages.ts";
+import {
+  applyPackages,
+  planPackages,
+  powershell,
+  type Runner,
+} from "../src/system-packages.ts";
 
 async function fixture() {
   const root = await mkdtemp(join(tmpdir(), "system-packages-"));
@@ -16,10 +21,18 @@ async function fixture() {
       windows: {
         winget: [
           { id: "Git.Git" },
-          { id: "Microsoft.VisualStudio.BuildTools", override: "--add VCTools" },
+          {
+            id: "Microsoft.VisualStudio.BuildTools",
+            override: "--add VCTools",
+          },
         ],
         installers: [
-          { name: "rustup", check: "rustup", url: "https://win.rustup.rs/x86_64", args: ["-y"] },
+          {
+            name: "rustup",
+            check: "rustup",
+            url: "https://win.rustup.rs/x86_64",
+            args: ["-y"],
+          },
           {
             name: "bun",
             check: "bun",
@@ -40,7 +53,10 @@ test("apt plan reads dpkg state and apply installs only what is missing through 
     const runner: Runner = async (argv) => {
       calls.push(argv);
       const installed = argv.at(-1) === "git";
-      return { exitCode: installed ? 0 : 1, stdout: installed ? "install ok installed" : "" };
+      return {
+        exitCode: installed ? 0 : 1,
+        stdout: installed ? "install ok installed" : "",
+      };
     };
     const plan = await planPackages(root, "linux", "wsl", runner);
     expect(plan.entries.map((e) => [e.id, e.state])).toEqual([
@@ -50,7 +66,9 @@ test("apt plan reads dpkg state and apply installs only what is missing through 
     ]);
     expect(plan.missing).toBe(2);
     const applied = await applyPackages(root, plan, runner);
-    expect(applied.map((r) => r.command)).toEqual(["sudo -n apt-get install -y curl clang"]);
+    expect(applied.map((r) => r.command)).toEqual([
+      "sudo -n apt-get install -y curl clang",
+    ]);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -65,7 +83,10 @@ test("Windows plan and apply use one PowerShell 7 process each, through the WinG
       processes.push(argv);
       return {
         exitCode: 0,
-        stdout: JSON.stringify({ winget: ["Git.Git"], tools: { rustup: false, bun: false } }),
+        stdout: JSON.stringify({
+          winget: ["Git.Git"],
+          tools: { rustup: false, bun: false },
+        }),
       };
     };
     const plan = await planPackages(root, "windows", null, runner);
@@ -101,10 +122,19 @@ test("Windows plan and apply use one PowerShell 7 process each, through the WinG
 
 const wslPwshRunner: Runner = async (argv) => {
   if (argv[0] === "sh")
-    return { exitCode: argv[2]?.startsWith("ls") ? 0 : 1, stdout: "someone\nPublic\n" };
+    return {
+      exitCode: argv[2]?.startsWith("ls") ? 0 : 1,
+      stdout: "someone\nPublic\n",
+    };
   if (argv[0] === "wslpath")
-    return { exitCode: 0, stdout: `/mnt/c/${argv[2]?.split("\\").slice(1).join("/")}\n` };
-  return { exitCode: argv[0] === "test" && argv[2]?.includes("someone") ? 0 : 1, stdout: "" };
+    return {
+      exitCode: 0,
+      stdout: `/mnt/c/${argv[2]?.split("\\").slice(1).join("/")}\n`,
+    };
+  return {
+    exitCode: argv[0] === "test" && argv[2]?.includes("someone") ? 0 : 1,
+    stdout: "",
+  };
 };
 
 test("pwsh 7 is found through wslpath when Windows is not on PATH", async () => {

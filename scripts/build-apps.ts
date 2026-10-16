@@ -24,7 +24,10 @@ import {
   type RuntimePin,
   type RuntimeTarget,
 } from "@aphrody/bun-workspace";
-import { validateAssetReference, type AssetReference } from "@aphrody/bun-workspace/assets";
+import {
+  validateAssetReference,
+  type AssetReference,
+} from "@aphrody/bun-workspace/assets";
 import {
   buildAppArtifact,
   hostMatchesTarget,
@@ -39,7 +42,8 @@ import {
 
 type Protocol = AppManifest["engine"]["protocol"];
 type Qualification = NativeArtifactReceipt["qualification"];
-type Stage = "plan" | "source" | "native-build" | "native-receipt" | "compile" | "extract";
+type Stage =
+  "plan" | "source" | "native-build" | "native-receipt" | "compile" | "extract";
 
 interface AppBuildResult {
   appId: string;
@@ -80,7 +84,8 @@ const maxMetadataBytes = 1024 * 1024;
 
 async function readJSON(path: string): Promise<unknown> {
   const file = Bun.file(path);
-  if (!file.size || file.size > maxMetadataBytes) throw new Error("Build metadata must fit within 1 MiB.");
+  if (!file.size || file.size > maxMetadataBytes)
+    throw new Error("Build metadata must fit within 1 MiB.");
   return file.json();
 }
 
@@ -92,20 +97,35 @@ function runtimePin(value: unknown): RuntimePin {
     typeof value.revision !== "string" ||
     !/^[0-9a-f]{40}$/.test(value.revision)
   )
-    throw new Error("An explicit pinned Aphrody Bun 1.4.4 runtime is required.");
-  return { version: value.version, repository: value.repository, revision: value.revision };
+    throw new Error(
+      "An explicit pinned Aphrody Bun 1.4.4 runtime is required.",
+    );
+  return {
+    version: value.version,
+    repository: value.repository,
+    revision: value.revision,
+  };
 }
 
-function deadline(value: string | undefined, fallback: number, maximum: number): number {
+function deadline(
+  value: string | undefined,
+  fallback: number,
+  maximum: number,
+): number {
   const seconds = value === undefined ? fallback : Number(value);
-  if (!Number.isSafeInteger(seconds) || seconds < 1 || seconds > maximum) throw new Error("Invalid build deadline.");
+  if (!Number.isSafeInteger(seconds) || seconds < 1 || seconds > maximum)
+    throw new Error("Invalid build deadline.");
   return seconds * 1000;
 }
 
 function errorDetails(error: unknown): { code: string; message: string } {
   return {
-    code: isObject(error) && typeof error.code === "string" ? error.code : "BUILD_FAILED",
-    message: error instanceof Error ? error.message : "The application build failed.",
+    code:
+      isObject(error) && typeof error.code === "string"
+        ? error.code
+        : "BUILD_FAILED",
+    message:
+      error instanceof Error ? error.message : "The application build failed.",
   };
 }
 
@@ -117,7 +137,9 @@ function nativeHostTarget(): ArtifactTarget {
   const platform = process.platform === "win32" ? "windows" : process.platform;
   const target = `bun-${platform}-${process.arch}`;
   if (process.platform !== "linux") return parseArtifactTarget(target);
-  return parseArtifactTarget(hostMatchesTarget(parseArtifactTarget(target)) ? target : `${target}-musl`);
+  return parseArtifactTarget(
+    hostMatchesTarget(parseArtifactTarget(target)) ? target : `${target}-musl`,
+  );
 }
 
 async function qualifyRuntime(
@@ -144,7 +166,8 @@ async function qualifyRuntime(
       env: { ...Bun.env, BUN_BE_BUN: undefined },
     },
   );
-  const value: unknown = result.code === 0 ? JSON.parse(result.stdout.trim()) : undefined;
+  const value: unknown =
+    result.code === 0 ? JSON.parse(result.stdout.trim()) : undefined;
   if (
     !isObject(value) ||
     value.standalone !== false ||
@@ -154,7 +177,9 @@ async function qualifyRuntime(
     typeof value.revision !== "string" ||
     typeof value.sourceUrl !== "string"
   )
-    throw new Error("The selected Bun executable could not qualify on this native host.");
+    throw new Error(
+      "The selected Bun executable could not qualify on this native host.",
+    );
   const facts: RuntimeFacts = {
     version: value.version,
     revision: value.revision,
@@ -164,8 +189,15 @@ async function qualifyRuntime(
   assertRuntimeFacts(expected, facts);
   const sha256 = await hashFile(executable, { maxBytes: 200 * 1024 * 1024 });
   if (supplied !== undefined) {
-    if (!isObject(supplied) || supplied.target !== target || supplied.sha256 !== sha256 || !isObject(supplied.facts)) {
-      throw new Error("The selected Bun bytes differ from their runtime receipt.");
+    if (
+      !isObject(supplied) ||
+      supplied.target !== target ||
+      supplied.sha256 !== sha256 ||
+      !isObject(supplied.facts)
+    ) {
+      throw new Error(
+        "The selected Bun bytes differ from their runtime receipt.",
+      );
     }
     const previous = supplied.facts;
     if (
@@ -173,10 +205,15 @@ async function qualifyRuntime(
       previous.revision !== facts.revision ||
       previous.sourceUrl !== facts.sourceUrl
     ) {
-      throw new Error("The selected Bun provenance differs from its runtime receipt.");
+      throw new Error(
+        "The selected Bun provenance differs from its runtime receipt.",
+      );
     }
   }
-  return { executable, receipt: { target, sha256, facts, qualification: observed(qualification) } };
+  return {
+    executable,
+    receipt: { target, sha256, facts, qualification: observed(qualification) },
+  };
 }
 
 async function writeJSON(path: string, value: unknown): Promise<void> {
@@ -190,12 +227,15 @@ async function resourceInputs(
 ): Promise<Record<string, NativeFileInput[]>> {
   if (!path) return {};
   const value = await readJSON(path);
-  if (!isObject(value)) throw new Error("Native resources must map application IDs to selected files.");
+  if (!isObject(value))
+    throw new Error(
+      "Native resources must map application IDs to selected files.",
+    );
   const result: Record<string, NativeFileInput[]> = {};
   for (const [id, inputs] of Object.entries(value)) {
     if (!appIds.has(id) || !Array.isArray(inputs) || inputs.length > 63)
       throw new Error("Invalid native application resources.");
-    result[id] = inputs.map(input => {
+    result[id] = inputs.map((input) => {
       if (
         !isObject(input) ||
         typeof input.source !== "string" ||
@@ -203,7 +243,9 @@ async function resourceInputs(
         typeof input.path !== "string" ||
         !["library", "resource", "notice"].includes(String(input.kind))
       )
-        throw new Error("Select absolute native resource inputs and their payload paths.");
+        throw new Error(
+          "Select absolute native resource inputs and their payload paths.",
+        );
       return {
         source: input.source,
         path: input.path,
@@ -239,8 +281,14 @@ async function buildOne(
   try {
     result.stage = "source";
     const coverage = await inspectModuleCoverage(module, options.root);
-    if (coverage.errors.length || coverage.missingTargets.length || coverage.missingWorkspaceMembers.length) {
-      throw new Error("The native source owner has missing Cargo members or targets.");
+    if (
+      coverage.errors.length ||
+      coverage.missingTargets.length ||
+      coverage.missingWorkspaceMembers.length
+    ) {
+      throw new Error(
+        "The native source owner has missing Cargo members or targets.",
+      );
     }
     const output = join(
       options.output,
@@ -248,7 +296,8 @@ async function buildOne(
       result.appId,
       `aphrody-${result.appId}${report.target.startsWith("bun-windows-") ? ".exe" : ""}`,
     );
-    if (await Bun.file(output).exists()) throw new Error("Select a fresh application output path.");
+    if (await Bun.file(output).exists())
+      throw new Error("Select a fresh application output path.");
     result.stage = "native-build";
     console.error(`Aphrody ${result.appId}: native build`);
     const nativeConfig: Config = { ...config, runtime: report.expectedRuntime };
@@ -256,9 +305,12 @@ async function buildOne(
       root: options.root,
       timeoutMs: options.nativeTimeout,
     });
-    if (code !== 0) throw new Error(`The native library build failed (${code}).`);
+    if (code !== 0)
+      throw new Error(`The native library build failed (${code}).`);
     result.stage = "native-receipt";
-    const binary = await resolveModuleBinary(nativeConfig, module.id, { root: options.root });
+    const binary = await resolveModuleBinary(nativeConfig, module.id, {
+      root: options.root,
+    });
     if (dirname(binary).split(/[\\/]/).at(-1) !== "release")
       throw new Error("Cargo did not produce the release engine artifact.");
     const version = await runProcess([binary, "--version"], options.root, {
@@ -267,8 +319,13 @@ async function buildOne(
       stderr: "discard",
     });
     const match =
-      version.code === 0 ? version.stdout.trim().match(/(?:^|\s)(\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?)(?:\s|$)/) : null;
-    if (!match) throw new Error("The native engine did not report its version.");
+      version.code === 0
+        ? version.stdout
+            .trim()
+            .match(/(?:^|\s)(\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?)(?:\s|$)/)
+        : null;
+    if (!match)
+      throw new Error("The native engine did not report its version.");
     result.nativeReceipt = {
       target: report.target,
       sourceRevision: module.revision,
@@ -295,13 +352,18 @@ async function buildOne(
       timeoutMs: options.compileTimeout,
     });
     result.stage = "extract";
-    const doctor = await runProcess([result.artifact.path, "--doctor"], options.root, {
-      timeoutMs: 180_000,
-      maxOutputBytes: 256 * 1024,
-      stderr: "discard",
-      env: { ...Bun.env, BUN_BE_BUN: undefined },
-    });
-    const qualification: unknown = doctor.code === 0 ? JSON.parse(doctor.stdout.trim()) : undefined;
+    const doctor = await runProcess(
+      [result.artifact.path, "--doctor"],
+      options.root,
+      {
+        timeoutMs: 180_000,
+        maxOutputBytes: 256 * 1024,
+        stderr: "discard",
+        env: { ...Bun.env, BUN_BE_BUN: undefined },
+      },
+    );
+    const qualification: unknown =
+      doctor.code === 0 ? JSON.parse(doctor.stdout.trim()) : undefined;
     if (
       !isObject(qualification) ||
       qualification.identity !== "Aphrody / Bun" ||
@@ -313,7 +375,9 @@ async function buildOne(
       !isObject(qualification.runtime) ||
       qualification.runtime.revision !== report.expectedRuntime.revision
     ) {
-      throw new Error("The independent executable failed native extraction qualification.");
+      throw new Error(
+        "The independent executable failed native extraction qualification.",
+      );
     }
     result.extraction = "qualified";
     result.status = "built";
@@ -354,17 +418,23 @@ export async function main(args = Bun.argv.slice(2)): Promise<number> {
     return 0;
   }
   const [action = "plan", ...extra] = positionals;
-  if (extra.length || (action !== "plan" && action !== "build")) throw new Error("Use plan or build.");
+  if (extra.length || (action !== "plan" && action !== "build"))
+    throw new Error("Use plan or build.");
   const root = resolve(values.root ?? repositoryRoot);
   const config = await loadConfig(root);
-  const target = values.target ? parseArtifactTarget(values.target) : nativeHostTarget();
+  const target = values.target
+    ? parseArtifactTarget(values.target)
+    : nativeHostTarget();
   const runtimeTarget = target.slice(4) as RuntimeTarget;
   const expectedRuntime = values["runtime-pin"]
     ? runtimePin(await readJSON(resolve(root, values["runtime-pin"])))
     : runtimePinFor(config, runtimeTarget);
   const mode = values.mode ?? "native";
   const host = values.host ?? hostname();
-  if (!["native", "ssh", "docker"].includes(mode) || !/^[A-Za-z0-9._-]{1,128}$/.test(host))
+  if (
+    !["native", "ssh", "docker"].includes(mode) ||
+    !/^[A-Za-z0-9._-]{1,128}$/.test(host)
+  )
     throw new Error("Select a native host qualification context.");
   const qualification = {
     host,
@@ -372,10 +442,16 @@ export async function main(args = Bun.argv.slice(2)): Promise<number> {
     observedAt: new Date().toISOString(),
   };
   const capabilities = appCapabilities(config);
-  const ids = new Set(capabilities.map(app => app.id));
-  const selected = new Set((values.app ?? []).flatMap(value => value.split(",")));
-  if ([...selected].some(id => !ids.has(id))) throw new Error("Select configured application IDs.");
-  if (values.protocol && !["cli", "cli-json", "jsonl", "mcp-stdio"].includes(values.protocol))
+  const ids = new Set(capabilities.map((app) => app.id));
+  const selected = new Set(
+    (values.app ?? []).flatMap((value) => value.split(",")),
+  );
+  if ([...selected].some((id) => !ids.has(id)))
+    throw new Error("Select configured application IDs.");
+  if (
+    values.protocol &&
+    !["cli", "cli-json", "jsonl", "mcp-stdio"].includes(values.protocol)
+  )
     throw new Error("Select an existing native engine protocol.");
   const report: BuildReport = {
     schemaVersion: 1,
@@ -385,8 +461,8 @@ export async function main(args = Bun.argv.slice(2)): Promise<number> {
     qualification,
     expectedRuntime,
     results: capabilities
-      .filter(app => !selected.size || selected.has(app.id))
-      .map(app => {
+      .filter((app) => !selected.size || selected.has(app.id))
+      .map((app) => {
         const module = findModule(config, app.libraryId);
         return {
           appId: app.id,
@@ -414,23 +490,40 @@ export async function main(args = Bun.argv.slice(2)): Promise<number> {
       config.deployment?.assets.url,
     );
   }
-  const reportPath = resolve(root, values.report ?? ".local/builds/report.json");
+  const reportPath = resolve(
+    root,
+    values.report ?? ".local/builds/report.json",
+  );
   if (action === "build") {
-    if (!report.sharedAssets) throw new Error("Builds require one immutable shared asset manifest reference.");
-    if (!hostMatchesTarget(target)) throw new Error("Native engine builds require their qualified target host.");
+    if (!report.sharedAssets)
+      throw new Error(
+        "Builds require one immutable shared asset manifest reference.",
+      );
+    if (!hostMatchesTarget(target))
+      throw new Error(
+        "Native engine builds require their qualified target host.",
+      );
     assertRuntimeFacts(expectedRuntime, currentRuntimeFacts());
-    const selectedBun = values.bun ? resolve(root, values.bun) : Bun.which("bun");
-    if (!selectedBun) throw new Error("Select the qualified Aphrody Bun executable.");
+    const selectedBun = values.bun
+      ? resolve(root, values.bun)
+      : Bun.which("bun");
+    if (!selectedBun)
+      throw new Error("Select the qualified Aphrody Bun executable.");
     const runtime = await qualifyRuntime(
       selectedBun,
       expectedRuntime,
       target,
       root,
       qualification,
-      values["runtime-receipt"] ? await readJSON(resolve(root, values["runtime-receipt"])) : undefined,
+      values["runtime-receipt"]
+        ? await readJSON(resolve(root, values["runtime-receipt"]))
+        : undefined,
     );
     report.runtimeReceipt = runtime.receipt;
-    const resources = await resourceInputs(values.resources ? resolve(root, values.resources) : undefined, ids);
+    const resources = await resourceInputs(
+      values.resources ? resolve(root, values.resources) : undefined,
+      ids,
+    );
     const output = checkoutPath(root, values.output ?? "build/apps");
     const nativeTimeout = deadline(values["native-timeout"], 1800, 43_200);
     const compileTimeout = deadline(values["compile-timeout"], 180, 600);
@@ -445,7 +538,9 @@ export async function main(args = Bun.argv.slice(2)): Promise<number> {
       });
       await writeJSON(reportPath, report);
     }
-    report.complete = report.results.every(result => result.status === "built");
+    report.complete = report.results.every(
+      (result) => result.status === "built",
+    );
     await writeJSON(reportPath, report);
   } else if (values.report) await writeJSON(reportPath, report);
   console.log(JSON.stringify(report, null, 2));

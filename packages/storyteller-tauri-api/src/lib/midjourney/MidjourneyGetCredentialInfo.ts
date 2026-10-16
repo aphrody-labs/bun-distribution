@@ -10,7 +10,8 @@ export interface MidjourneyGetCredentialInfoSuccess extends CommandResult {
   payload: MidjourneyGetCredentialInfoPayload;
 }
 
-export const MidjourneyGetCredentialInfo = async (): Promise<MidjourneyGetCredentialInfoSuccess> => {
-  const result = await invoke("midjourney_get_credential_info_command");
-  return result as MidjourneyGetCredentialInfoSuccess;
-};
+export const MidjourneyGetCredentialInfo =
+  async (): Promise<MidjourneyGetCredentialInfoSuccess> => {
+    const result = await invoke("midjourney_get_credential_info_command");
+    return result as MidjourneyGetCredentialInfoSuccess;
+  };

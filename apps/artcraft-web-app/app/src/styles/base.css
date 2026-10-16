@@ -843,10 +843,10 @@ img {
   margin: -5px;
   pointer-events: none;
   background:
-    linear-gradient(rgba(242, 241, 238, 0.4), rgba(242, 241, 238, 0.4))
-      center / 1px 11px no-repeat,
-    linear-gradient(rgba(242, 241, 238, 0.4), rgba(242, 241, 238, 0.4))
-      center / 11px 1px no-repeat;
+    linear-gradient(rgba(242, 241, 238, 0.4), rgba(242, 241, 238, 0.4)) center /
+      1px 11px no-repeat,
+    linear-gradient(rgba(242, 241, 238, 0.4), rgba(242, 241, 238, 0.4)) center /
+      11px 1px no-repeat;
 }
 
 /* Contained section borders match the landing without decorative extensions. */

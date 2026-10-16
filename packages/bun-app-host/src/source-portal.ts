@@ -2,7 +2,11 @@
 
 export const sourcePortalOrigin = "https://source.aphrody.app";
 export const sourcePortalApiPath = "/api/v1/repos/search";
-export const sourcePortalOwners = ["aphrody-dev", "aphrody-labs", "aphrody-labs-native"] as const;
+export const sourcePortalOwners = [
+  "aphrody-dev",
+  "aphrody-labs",
+  "aphrody-labs-native",
+] as const;
 
 export type PublicSourceRepository = {
   owner: (typeof sourcePortalOwners)[number];
@@ -58,11 +62,13 @@ function canonicalURL(owner: string, name: string, candidate: unknown): string {
 function validTimestamp(value: unknown): value is string {
   if (typeof value !== "string") return false;
   const timestamp = Date.parse(value);
-  return Number.isFinite(timestamp) && new Date(timestamp).toISOString() === value;
+  return (
+    Number.isFinite(timestamp) && new Date(timestamp).toISOString() === value
+  );
 }
 
 function hasControlCharacters(value: string): boolean {
-  return [...value].some(character => {
+  return [...value].some((character) => {
     const code = character.codePointAt(0)!;
     return code <= 0x1f || code === 0x7f;
   });
@@ -70,7 +76,10 @@ function hasControlCharacters(value: string): boolean {
 
 /** Validate and reconstruct the public-only snapshot; unknown fields are discarded by rejection. */
 export function validateSnapshot(value: unknown): PortalSnapshot {
-  assert(value && typeof value === "object" && !Array.isArray(value), "Invalid source portal snapshot.");
+  assert(
+    value && typeof value === "object" && !Array.isArray(value),
+    "Invalid source portal snapshot.",
+  );
   const snapshot = value as Record<string, unknown>;
   assert(
     keysMatch(snapshot, [
@@ -108,37 +117,65 @@ export function validateSnapshot(value: unknown): PortalSnapshot {
   const seen = new Set<string>();
   let previousName = "";
   for (const item of snapshot.repositories) {
-    assert(item && typeof item === "object" && !Array.isArray(item), "Invalid public repository entry.");
+    assert(
+      item && typeof item === "object" && !Array.isArray(item),
+      "Invalid public repository entry.",
+    );
     const repository = item as Record<string, unknown>;
     assert(
-      keysMatch(repository, ["defaultBranch", "htmlURL", "mirror", "name", "observedAt", "owner"]),
+      keysMatch(repository, [
+        "defaultBranch",
+        "htmlURL",
+        "mirror",
+        "name",
+        "observedAt",
+        "owner",
+      ]),
       "Unsupported public repository fields.",
     );
     const owner = repository.owner;
     const name = repository.name;
     assert(
-      typeof owner === "string" && sourcePortalOwners.includes(owner as (typeof sourcePortalOwners)[number]),
+      typeof owner === "string" &&
+        sourcePortalOwners.includes(
+          owner as (typeof sourcePortalOwners)[number],
+        ),
       "Unexpected public repository owner.",
     );
     assert(
-      typeof name === "string" && /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/.test(name),
+      typeof name === "string" &&
+        /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/.test(name),
       "Invalid public repository name.",
     );
-    assert(typeof repository.mirror === "boolean", "Invalid public repository mirror state.");
+    assert(
+      typeof repository.mirror === "boolean",
+      "Invalid public repository mirror state.",
+    );
     const defaultBranch = repository.defaultBranch;
     assert(
       defaultBranch === null ||
-        (typeof defaultBranch === "string" && defaultBranch.length <= 255 && !hasControlCharacters(defaultBranch)),
+        (typeof defaultBranch === "string" &&
+          defaultBranch.length <= 255 &&
+          !hasControlCharacters(defaultBranch)),
       "Invalid public repository branch.",
     );
-    assert(repository.observedAt === snapshot.observedAt, "Inconsistent public repository timestamp.");
+    assert(
+      repository.observedAt === snapshot.observedAt,
+      "Inconsistent public repository timestamp.",
+    );
     const htmlURL = canonicalURL(owner, name, repository.htmlURL);
-    assert(htmlURL === repository.htmlURL, "Non-canonical public repository URL.");
+    assert(
+      htmlURL === repository.htmlURL,
+      "Non-canonical public repository URL.",
+    );
     const key = `${owner.toLowerCase()}/${name.toLowerCase()}`;
     assert(!seen.has(key), "Duplicate public repository entry.");
     seen.add(key);
     const sortKey = `${owner.toLowerCase()}/${name.toLowerCase()}`;
-    assert(!previousName || previousName < sortKey, "Public repositories are not sorted alphabetically.");
+    assert(
+      !previousName || previousName < sortKey,
+      "Public repositories are not sorted alphabetically.",
+    );
     previousName = sortKey;
     repositories.push({
       owner: owner as (typeof sourcePortalOwners)[number],

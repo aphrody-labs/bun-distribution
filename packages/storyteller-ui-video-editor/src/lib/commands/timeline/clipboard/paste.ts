@@ -1,4 +1,8 @@
-import { Command, createElementSelectionResult, type CommandResult } from "../../base-command";
+import {
+  Command,
+  createElementSelectionResult,
+  type CommandResult,
+} from "../../base-command";
 import { EditorCore } from "../../../core";
 import type { SceneTracks, TimelineElement } from "../../../timeline/types";
 import type { ElementClipboardItem } from "../../../clipboard/types";
@@ -44,7 +48,9 @@ export class PasteCommand extends Command {
 
     const minStart = this.clipboardItems.reduce(
       (earliestStartTime, item) =>
-        item.element.startTime < earliestStartTime ? item.element.startTime : earliestStartTime,
+        item.element.startTime < earliestStartTime
+          ? item.element.startTime
+          : earliestStartTime,
       this.clipboardItems[0].element.startTime,
     );
 
@@ -90,7 +96,9 @@ export class PasteCommand extends Command {
             ? updatedTracks.overlay[placementResult.trackIndex]
             : placementResult.trackIndex === updatedTracks.overlay.length
               ? updatedTracks.main
-              : updatedTracks.audio[placementResult.trackIndex - updatedTracks.overlay.length - 1];
+              : updatedTracks.audio[
+                  placementResult.trackIndex - updatedTracks.overlay.length - 1
+                ];
         if (targetTrack?.id === updatedTracks.main.id) {
           const earliestElement = elementsToAdd.reduce((earliest, element) =>
             element.startTime < earliest.startTime ? element : earliest,

@@ -19,7 +19,8 @@ export const FACTORY_JOB_MAX_TAIL_LINES = 200;
 export const FACTORY_JOB_MAX_TAIL_BYTES = 65536;
 
 function quote(value: string): string {
-  if (value.includes("\0")) throw new Error("Factory job argument contains NUL");
+  if (value.includes("\0"))
+    throw new Error("Factory job argument contains NUL");
   return "'" + value.replaceAll("'", "'\\''") + "'";
 }
 
@@ -30,7 +31,11 @@ function normalized(path: string): string {
 }
 
 function overlap(left: string, right: string): boolean {
-  return left === right || left.startsWith(right + "/") || right.startsWith(left + "/");
+  return (
+    left === right ||
+    left.startsWith(right + "/") ||
+    right.startsWith(left + "/")
+  );
 }
 
 function jobLocation(config: BuildFactoryConfig, jobId: string) {
@@ -49,10 +54,18 @@ function jobLocation(config: BuildFactoryConfig, jobId: string) {
   const locks = posix.dirname(normalized(config.lockPath));
   if (
     overlap(artifactRoot, locks) ||
-    Object.values(config.repositories).some((source) => overlap(artifactRoot, normalized(source)))
+    Object.values(config.repositories).some((source) =>
+      overlap(artifactRoot, normalized(source)),
+    )
   )
-    throw new Error("Factory job artifacts must stay outside all source checkouts and locks");
-  return { artifactRoot, base: posix.join(artifactRoot, "factory-jobs"), jobId };
+    throw new Error(
+      "Factory job artifacts must stay outside all source checkouts and locks",
+    );
+  return {
+    artifactRoot,
+    base: posix.join(artifactRoot, "factory-jobs"),
+    jobId,
+  };
 }
 
 const IMPORTS = String.raw`import { constants, openSync, closeSync, readSync, writeFileSync, readFileSync, readdirSync, lstatSync, realpathSync, mkdirSync, renameSync, linkSync, unlinkSync } from "node:fs";
@@ -345,7 +358,14 @@ function program(source: string, input: unknown): string {
 }
 
 function runner(input: Record<string, unknown>): string {
-  return IMPORTS + "const input = " + JSON.stringify(input) + ";\n" + HELPERS + RUNNER_BODY;
+  return (
+    IMPORTS +
+    "const input = " +
+    JSON.stringify(input) +
+    ";\n" +
+    HELPERS +
+    RUNNER_BODY
+  );
 }
 
 /** New jobs only. The existing owner transport command is executed byte-for-byte unchanged. */
@@ -375,7 +395,9 @@ export function factoryJobPlan(
     existingPlan.commandTimeoutSeconds < 1 ||
     existingPlan.commandTimeoutSeconds > 86400
   )
-    throw new Error("Durable submission requires an intact existing factory owner plan");
+    throw new Error(
+      "Durable submission requires an intact existing factory owner plan",
+    );
   const canonical = buildFactoryPlan(
     config,
     existingPlan.repository,
@@ -383,7 +405,9 @@ export function factoryJobPlan(
     existingPlan.command,
     {
       submodules:
-        existingPlan.sourceScope?.kind === "gitlinks" ? existingPlan.sourceScope.paths : undefined,
+        existingPlan.sourceScope?.kind === "gitlinks"
+          ? existingPlan.sourceScope.paths
+          : undefined,
     },
   );
   if (
@@ -391,7 +415,9 @@ export function factoryJobPlan(
     canonical.workspace !== existingPlan.workspace ||
     canonical.commandTimeoutSeconds !== existingPlan.commandTimeoutSeconds
   )
-    throw new Error("Durable submission requires an intact existing factory owner plan");
+    throw new Error(
+      "Durable submission requires an intact existing factory owner plan",
+    );
   const fingerprint = createHash("sha256")
     .update(
       JSON.stringify({
@@ -430,7 +456,11 @@ export function factoryJobPlan(
       "--host",
       existingPlan.target,
       "--cmd",
-      program(SUBMIT, { ...input, runner: runner(input), submitProgram: SUBMIT_LOCKED }),
+      program(SUBMIT, {
+        ...input,
+        runner: runner(input),
+        submitProgram: SUBMIT_LOCKED,
+      }),
     ],
   };
 }
@@ -443,7 +473,11 @@ export function factoryJobStatusPlan(
 ) {
   const location = jobLocation(config, jobId);
   const tailLines = options.tailLines ?? 0;
-  if (!Number.isSafeInteger(tailLines) || tailLines < 0 || tailLines > FACTORY_JOB_MAX_TAIL_LINES)
+  if (
+    !Number.isSafeInteger(tailLines) ||
+    tailLines < 0 ||
+    tailLines > FACTORY_JOB_MAX_TAIL_LINES
+  )
     throw new Error("Factory log tail must contain 0..200 lines");
   const directory = posix.join(location.base, jobId);
   return {

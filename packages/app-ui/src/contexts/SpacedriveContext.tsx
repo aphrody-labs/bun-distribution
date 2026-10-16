@@ -7,14 +7,14 @@
 
 // Re-export hooks from @aphrody/drive-client (no longer duplicated!)
 export {
-	SpacedriveProvider,
-	useSpacedriveClient,
-	useClient,
-	useCoreQuery,
-	useLibraryQuery,
-	useCoreMutation,
-	useLibraryMutation,
-	useNormalizedQuery,
+  SpacedriveProvider,
+  useSpacedriveClient,
+  useClient,
+  useCoreQuery,
+  useLibraryQuery,
+  useCoreMutation,
+  useLibraryMutation,
+  useNormalizedQuery,
 } from "@aphrody/drive-client/hooks";
 
 // Export client type
@@ -22,9 +22,9 @@ export type { SpacedriveClient } from "@aphrody/drive-client";
 
 // Export commonly used types for convenience
 export type {
-	Location,
-	LocationsListOutput,
-	LibraryInfo,
+  Location,
+  LocationsListOutput,
+  LibraryInfo,
 } from "@aphrody/drive-client";
 
 // Export icon utilities

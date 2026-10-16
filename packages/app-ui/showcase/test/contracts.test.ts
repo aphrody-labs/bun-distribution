@@ -3,7 +3,10 @@ import { afterAll, describe, expect, test } from "bun:test";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { adaptiveFor, parseOverride } from "../../src/material/adaptive/window.ts";
+import {
+  adaptiveFor,
+  parseOverride,
+} from "../../src/material/adaptive/window.ts";
 import { pickNext } from "../../src/material/adaptive/dpad.ts";
 import { parseRoute } from "../src/router.ts";
 import { collect } from "../scripts/inventory.ts";
@@ -49,9 +52,18 @@ describe("adaptive showcase contracts", () => {
       pickNext(
         from,
         [
-          { item: "aligned", box: { left: 0, top: 150, right: 100, bottom: 250 } },
-          { item: "side", box: { left: 200, top: 110, right: 300, bottom: 210 } },
-          { item: "behind", box: { left: 0, top: -150, right: 100, bottom: -50 } },
+          {
+            item: "aligned",
+            box: { left: 0, top: 150, right: 100, bottom: 250 },
+          },
+          {
+            item: "side",
+            box: { left: 200, top: 110, right: 300, bottom: 210 },
+          },
+          {
+            item: "behind",
+            box: { left: 0, top: -150, right: 100, bottom: -50 },
+          },
         ],
         "down",
       ),
@@ -68,7 +80,9 @@ describe("adaptive showcase contracts", () => {
     mkdirSync(join(root, "packages/public"), { recursive: true });
     writeFileSync(
       join(root, "package.json"),
-      JSON.stringify({ workspaces: { packages: ["packages/*", "!packages/private"] } }),
+      JSON.stringify({
+        workspaces: { packages: ["packages/*", "!packages/private"] },
+      }),
     );
     for (const name of ["private", "public"])
       writeFileSync(
@@ -76,12 +90,18 @@ describe("adaptive showcase contracts", () => {
         JSON.stringify({ name: `@fixture/${name}`, version: "1.0.0" }),
       );
     const entries = collect(root);
-    expect(entries.find((entry) => entry.name === "@fixture/private")!.workspace).toBe(false);
-    expect(entries.find((entry) => entry.name === "@fixture/public")!.workspace).toBe(true);
+    expect(
+      entries.find((entry) => entry.name === "@fixture/private")!.workspace,
+    ).toBe(false);
+    expect(
+      entries.find((entry) => entry.name === "@fixture/public")!.workspace,
+    ).toBe(true);
   });
   test("capture planning rejects output traversal and invalid layout input", () => {
     expect(() => plan(["../../outside"])).toThrow("Unknown showcase route");
     expect(() => plan(["overview"], ["bad" as "tv"])).toThrow("Unknown layout");
-    expect(plan(["overview", "adaptive"], ["mobile", "tv"], ["light", "dark"])).toHaveLength(8);
+    expect(
+      plan(["overview", "adaptive"], ["mobile", "tv"], ["light", "dark"]),
+    ).toHaveLength(8);
   });
 });

@@ -53,7 +53,13 @@ const TABLE_LABELS: Record<string, { label: string; group: string }> = {
   db_assets: { label: "Médias & images", group: "Médias" },
 };
 
-const GROUP_ORDER = ["Serveur", "Modération", "Encyclopédie", "Médias", "Audit"];
+const GROUP_ORDER = [
+  "Serveur",
+  "Modération",
+  "Encyclopédie",
+  "Médias",
+  "Audit",
+];
 
 export default function DatabasePage() {
   const router = useRouter();
@@ -91,7 +97,9 @@ export default function DatabasePage() {
           </h1>
         </header>
         <div className="dbz-panel p-8 text-center">
-          <p className="text-dbz-orange font-saiyan text-xl uppercase mb-2">Connexion impossible</p>
+          <p className="text-dbz-orange font-saiyan text-xl uppercase mb-2">
+            Connexion impossible
+          </p>
           <p className="text-white/60 text-sm">
             Impossible de joindre le bot. Vérifiez que le service est en ligne.
           </p>
@@ -118,66 +126,75 @@ export default function DatabasePage() {
           Contenu de l&apos;encyclopédie
         </h1>
         <p className="text-xs text-dbz-blue-light uppercase tracking-widest">
-          {tables.length} sections · cliquez pour consulter et modifier les entrées
+          {tables.length} sections · cliquez pour consulter et modifier les
+          entrées
         </p>
         <p className="mt-2 text-sm text-white/50">
-          Chaque section correspond à une catégorie de données du bot. Les sections en lecture seule
-          ne peuvent pas être modifiées directement.
+          Chaque section correspond à une catégorie de données du bot. Les
+          sections en lecture seule ne peuvent pas être modifiées directement.
         </p>
       </header>
 
-      {GROUP_ORDER.filter((g) => (groups[g]?.length ?? 0) > 0).map((groupName) => (
-        <section key={groupName}>
-          <h2 className="font-saiyan text-lg text-dbz-yellow uppercase tracking-widest mb-4 border-b border-dbz-yellow/20 pb-2">
-            {groupName}
-          </h2>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {groups[groupName].map((t) => {
-              const meta = TABLE_LABELS[t.name];
-              const label = meta?.label ?? t.name;
-              return (
-                <button
-                  key={t.name}
-                  type="button"
-                  onClick={() => router.push(`/admin/database/${t.name}`)}
-                  className="card cursor-pointer text-left transition-colors hover:border-dbz-orange/50 hover:bg-dbz-orange/5 group"
-                >
-                  <div className="mb-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Base className="h-4 w-4 text-dbz-orange/70 group-hover:text-dbz-orange transition-colors" />
-                      <span className="font-saiyan text-sm uppercase tracking-wider text-white group-hover:text-dbz-orange transition-colors">
-                        {label}
-                      </span>
+      {GROUP_ORDER.filter((g) => (groups[g]?.length ?? 0) > 0).map(
+        (groupName) => (
+          <section key={groupName}>
+            <h2 className="font-saiyan text-lg text-dbz-yellow uppercase tracking-widest mb-4 border-b border-dbz-yellow/20 pb-2">
+              {groupName}
+            </h2>
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {groups[groupName].map((t) => {
+                const meta = TABLE_LABELS[t.name];
+                const label = meta?.label ?? t.name;
+                return (
+                  <button
+                    key={t.name}
+                    type="button"
+                    onClick={() => router.push(`/admin/database/${t.name}`)}
+                    className="card cursor-pointer text-left transition-colors hover:border-dbz-orange/50 hover:bg-dbz-orange/5 group"
+                  >
+                    <div className="mb-2 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Base className="h-4 w-4 text-dbz-orange/70 group-hover:text-dbz-orange transition-colors" />
+                        <span className="font-saiyan text-sm uppercase tracking-wider text-white group-hover:text-dbz-orange transition-colors">
+                          {label}
+                        </span>
+                      </div>
+                      {t.readonly && (
+                        <span title="Lecture seule" className="inline-flex">
+                          <Cadenas className="h-3 w-3 text-white/50" />
+                        </span>
+                      )}
                     </div>
-                    {t.readonly && (
-                      <span title="Lecture seule" className="inline-flex">
-                        <Cadenas className="h-3 w-3 text-white/50" />
+                    {t.description && (
+                      <p className="text-xs text-white/50 mb-2">
+                        {t.description}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-2 text-[10px]">
+                      <span className="badge border-dbz-border/60 text-white/50">
+                        <code className="font-mono">{t.name}</code>
                       </span>
-                    )}
-                  </div>
-                  {t.description && <p className="text-xs text-white/50 mb-2">{t.description}</p>}
-                  <div className="flex flex-wrap gap-2 text-[10px]">
-                    <span className="badge border-dbz-border/60 text-white/50">
-                      <code className="font-mono">{t.name}</code>
-                    </span>
-                    {!t.readonly && t.mutableColumns.length > 0 && (
-                      <span className="badge badge-success">
-                        <Crayon className="h-2.5 w-2.5" />
-                        {t.mutableColumns.length} champ
-                        {t.mutableColumns.length > 1 ? "s" : ""} modifiable
-                        {t.mutableColumns.length > 1 ? "s" : ""}
-                      </span>
-                    )}
-                    {t.readonly && (
-                      <span className="badge border-white/20 text-white/50">lecture seule</span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      ))}
+                      {!t.readonly && t.mutableColumns.length > 0 && (
+                        <span className="badge badge-success">
+                          <Crayon className="h-2.5 w-2.5" />
+                          {t.mutableColumns.length} champ
+                          {t.mutableColumns.length > 1 ? "s" : ""} modifiable
+                          {t.mutableColumns.length > 1 ? "s" : ""}
+                        </span>
+                      )}
+                      {t.readonly && (
+                        <span className="badge border-white/20 text-white/50">
+                          lecture seule
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        ),
+      )}
     </div>
   );
 }

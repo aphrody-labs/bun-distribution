@@ -63,7 +63,9 @@ export function ChannelSelect({
     for (const arr of byCat.values()) {
       arr.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
     }
-    const sortedCats = [...cats].toSorted((a, b) => (a.position ?? 0) - (b.position ?? 0));
+    const sortedCats = [...cats].toSorted(
+      (a, b) => (a.position ?? 0) - (b.position ?? 0),
+    );
     return { byCat, sortedCats };
   }, [data, types]);
 

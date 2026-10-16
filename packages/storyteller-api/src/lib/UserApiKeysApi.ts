@@ -47,10 +47,12 @@ export class UserApiKeysApi extends ApiManager {
     if (offset !== undefined) query.set("offset", String(offset));
     const suffix = query.toString() ? `?${query.toString()}` : "";
     const endpoint = `${this.getApiSchemeAndHost()}/v1/api_keys/list${suffix}`;
-    return this.jsonFetch<{
-      success: boolean;
-      api_keys?: ApiKeyInfo[];
-    } & ErrorBody>(endpoint, { method: "GET" })
+    return this.jsonFetch<
+      {
+        success: boolean;
+        api_keys?: ApiKeyInfo[];
+      } & ErrorBody
+    >(endpoint, { method: "GET" })
       .then((response) => {
         if (!response.success) {
           return {
@@ -149,7 +151,11 @@ export class UserApiKeysApi extends ApiManager {
       .catch((err) => ({ success: false, errorMessage: err.message }));
   }
 
-  public DeleteApiKey({ token }: { token: string }): Promise<ApiResponse<null>> {
+  public DeleteApiKey({
+    token,
+  }: {
+    token: string;
+  }): Promise<ApiResponse<null>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/api_keys/${encodeURIComponent(token)}`;
     return this.jsonFetch<{ success: boolean } & ErrorBody>(endpoint, {
       method: "DELETE",

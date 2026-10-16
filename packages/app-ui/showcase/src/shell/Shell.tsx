@@ -3,13 +3,23 @@
 //   desktop (medium and up)    navigation rail (medium, expanded) or standard drawer (large, extra large) beside the content
 //   tv                         10-foot drawer, large type, focus ring, D-pad (arrow keys + Enter + Back) navigation
 import { useM3Theme } from "@aphrody/m3-theme/react";
-import { Component, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  Component,
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import closeIcon from "m3:icons/close";
 import contrastIcon from "m3:icons/contrast";
 import darkIcon from "m3:icons/dark_mode";
 import lightIcon from "m3:icons/light_mode";
 import { attachDpad } from "../../../src/material/adaptive/dpad.ts";
-import { useAdaptive, type AdaptiveState } from "../../../src/material/adaptive/window.ts";
+import {
+  useAdaptive,
+  type AdaptiveState,
+} from "../../../src/material/adaptive/window.ts";
 import { Svg } from "../../../src/material/ui.tsx";
 import { PAGES } from "../../../src/material/pages/index.ts";
 import { useRoute } from "../router.ts";
@@ -26,8 +36,18 @@ const MODE_LABEL = { light: "Light", dark: "Dark", system: "System" } as const;
 
 function ThemeModeButton() {
   const { themeMode, setThemeMode } = useM3Theme();
-  const next = themeMode === "system" ? "light" : themeMode === "light" ? "dark" : "system";
-  const icon = themeMode === "light" ? lightIcon : themeMode === "dark" ? darkIcon : contrastIcon;
+  const next =
+    themeMode === "system"
+      ? "light"
+      : themeMode === "light"
+        ? "dark"
+        : "system";
+  const icon =
+    themeMode === "light"
+      ? lightIcon
+      : themeMode === "dark"
+        ? darkIcon
+        : contrastIcon;
   return (
     <button
       type="button"
@@ -161,7 +181,9 @@ function BottomBar({
   onMore: () => void;
 }) {
   const primary = PRIMARY_IDS.map(findDestination);
-  const moreSelected = !PRIMARY_IDS.includes(route as (typeof PRIMARY_IDS)[number]);
+  const moreSelected = !PRIMARY_IDS.includes(
+    route as (typeof PRIMARY_IDS)[number],
+  );
   return (
     <nav
       aria-label="Destinations"
@@ -297,7 +319,10 @@ function PageSlot({
   );
 }
 
-class PageBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+class PageBoundary extends Component<
+  { children: ReactNode },
+  { failed: boolean }
+> {
   override state = { failed: false };
   static getDerivedStateFromError() {
     return { failed: true };
@@ -342,7 +367,11 @@ export function Shell() {
   }, [current.label]);
 
   return (
-    <div className="flex h-full flex-col bg-surface" data-testid="shell" data-layout={a.mode}>
+    <div
+      className="flex h-full flex-col bg-surface"
+      data-testid="shell"
+      data-layout={a.mode}
+    >
       <a
         href="#main"
         onClick={(event) => {
@@ -355,7 +384,9 @@ export function Shell() {
       </a>
       <TopBar a={a} current={current} />
       <div className="flex min-h-0 flex-1">
-        {a.mode !== "mobile" ? <SideNav a={a} route={current.id} navigate={navigate} /> : null}
+        {a.mode !== "mobile" ? (
+          <SideNav a={a} route={current.id} navigate={navigate} />
+        ) : null}
         <PageSlot a={a} route={current.id}>
           <PageBoundary key={current.id}>
             <Suspense
@@ -371,7 +402,11 @@ export function Shell() {
         </PageSlot>
       </div>
       {a.mode === "mobile" ? (
-        <BottomBar route={current.id} navigate={navigate} onMore={() => setMore(true)} />
+        <BottomBar
+          route={current.id}
+          navigate={navigate}
+          onMore={() => setMore(true)}
+        />
       ) : null}
       {a.mode === "mobile" ? (
         <MoreSheet

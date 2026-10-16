@@ -19,10 +19,15 @@ export interface ToolsCount {
   tools: string[];
 }
 
-async function message(response: Response, id: number): Promise<Record<string, any> | undefined> {
+async function message(
+  response: Response,
+  id: number,
+): Promise<Record<string, any> | undefined> {
   const find = (value: any) =>
     (Array.isArray(value) ? value : [value]).find((item) => item?.id === id);
-  if (!(response.headers.get("content-type") ?? "").includes("text/event-stream")) {
+  if (
+    !(response.headers.get("content-type") ?? "").includes("text/event-stream")
+  ) {
     const text = await response.text();
     return text.trim() ? find(JSON.parse(text)) : undefined;
   }
@@ -42,7 +47,12 @@ async function message(response: Response, id: number): Promise<Record<string, a
       pending += decoder.decode(value, { stream: !done });
       let newline: RegExpExecArray | null;
       while ((newline = /\r\n|\r|\n/.exec(pending))) {
-        if (!done && newline[0] === "\r" && newline.index === pending.length - 1) break;
+        if (
+          !done &&
+          newline[0] === "\r" &&
+          newline.index === pending.length - 1
+        )
+          break;
         const line = pending.slice(0, newline.index);
         pending = pending.slice(newline.index + newline[0].length);
         if (line === "") {
@@ -75,13 +85,19 @@ async function result(
   }
   const reply = await message(response, id);
   if (reply?.error) {
-    throw new Error(`${method}: JSON-RPC ${reply.error.code}: ${reply.error.message}`);
+    throw new Error(
+      `${method}: JSON-RPC ${reply.error.code}: ${reply.error.message}`,
+    );
   }
-  if (!reply?.result) throw new Error(`${method}: no result (HTTP ${response.status})`);
+  if (!reply?.result)
+    throw new Error(`${method}: no result (HTTP ${response.status})`);
   return reply.result;
 }
 
-export async function countTools(url: string, token?: string): Promise<ToolsCount> {
+export async function countTools(
+  url: string,
+  token?: string,
+): Promise<ToolsCount> {
   const base: Record<string, string> = token
     ? { ...HEADERS, authorization: `Bearer ${token}` }
     : HEADERS;
@@ -110,12 +126,18 @@ export async function countTools(url: string, token?: string): Promise<ToolsCoun
       session,
     );
     await initialized.body?.cancel();
-    if (!initialized.ok) throw new Error(`notifications/initialized: HTTP ${initialized.status}`);
+    if (!initialized.ok)
+      throw new Error(`notifications/initialized: HTTP ${initialized.status}`);
     const tools: string[] = [];
     let cursor: string | undefined;
     do {
       const reply = await post(
-        { jsonrpc: "2.0", id: 2, method: "tools/list", params: cursor ? { cursor } : {} },
+        {
+          jsonrpc: "2.0",
+          id: 2,
+          method: "tools/list",
+          params: cursor ? { cursor } : {},
+        },
         session,
       );
       const page = await result(reply, 2, "tools/list");
@@ -142,8 +164,9 @@ if (import.meta.main) {
     return at >= 0 ? args[at + 1] : undefined;
   };
   const url =
-    args.find((a, i) => !a.startsWith("--") && !args[i - 1]?.startsWith("--")) ??
-    "http://127.0.0.1:8789/mcp";
+    args.find(
+      (a, i) => !a.startsWith("--") && !args[i - 1]?.startsWith("--"),
+    ) ?? "http://127.0.0.1:8789/mcp";
   const expect = option("--expect");
   const tokenEnv = option("--token-env");
   try {
@@ -156,10 +179,14 @@ if (import.meta.main) {
     if (names) writeFileSync(names, `${tools.toSorted().join("\n")}\n`);
     if (unique !== tools.length) throw new Error("duplicate tool names");
     if (expect !== undefined && tools.length !== Number(expect)) {
-      throw new Error(`expected ${expect} tools, the server advertises ${tools.length}`);
+      throw new Error(
+        `expected ${expect} tools, the server advertises ${tools.length}`,
+      );
     }
   } catch (error) {
-    console.error(`mcp-tools-count: ${error instanceof Error ? error.message : error}`);
+    console.error(
+      `mcp-tools-count: ${error instanceof Error ? error.message : error}`,
+    );
     process.exit(1);
   }
 }

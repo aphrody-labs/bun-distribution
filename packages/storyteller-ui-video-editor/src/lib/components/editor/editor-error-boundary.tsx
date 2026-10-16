@@ -34,7 +34,9 @@ export class EditorErrorBoundary extends Component<
 > {
   override state: EditorErrorBoundaryState = { error: null, retryKey: 0 };
 
-  static getDerivedStateFromError(error: Error): Partial<EditorErrorBoundaryState> {
+  static getDerivedStateFromError(
+    error: Error,
+  ): Partial<EditorErrorBoundaryState> {
     return { error };
   }
 

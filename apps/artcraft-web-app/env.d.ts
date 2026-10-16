@@ -10,7 +10,10 @@ interface ImportMetaEnv {
 }
 interface ImportMeta {
   readonly env: ImportMetaEnv;
-  glob(pattern: string, options: { query: "?raw"; import: "default"; eager: true }): Record<string, string>;
+  glob(
+    pattern: string,
+    options: { query: "?raw"; import: "default"; eager: true },
+  ): Record<string, string>;
 }
 declare module "*.module.css" {
   const classes: Record<string, string>;

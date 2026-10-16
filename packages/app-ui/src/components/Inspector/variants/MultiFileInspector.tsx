@@ -32,7 +32,10 @@ export function MultiFileInspector({ files }: MultiFileInspectorProps) {
     });
 
     // Get all tags with counts
-    const tagMap = new Map<string, { id: string; name: string; color: string; count: number }>();
+    const tagMap = new Map<
+      string,
+      { id: string; name: string; color: string; count: number }
+    >();
     files.forEach((file) => {
       file.tags?.forEach((tag) => {
         if (tagMap.has(tag.id)) {
@@ -62,7 +65,9 @@ export function MultiFileInspector({ files }: MultiFileInspectorProps) {
 
     return {
       totalSize,
-      kindCounts: Array.from(kindCounts.entries()).toSorted((a, b) => b[1] - a[1]),
+      kindCounts: Array.from(kindCounts.entries()).toSorted(
+        (a, b) => b[1] - a[1],
+      ),
       tags: Array.from(tagMap.values()).toSorted((a, b) => b.count - a.count),
       dateRanges: {
         created:
@@ -114,7 +119,9 @@ export function MultiFileInspector({ files }: MultiFileInspectorProps) {
       {/* File count header */}
       <div className="px-2 pb-2">
         <div className="text-center">
-          <h2 className="text-title-medium text-on-surface">{files.length} Items Selected</h2>
+          <h2 className="text-title-medium text-on-surface">
+            {files.length} Items Selected
+          </h2>
         </div>
       </div>
 
@@ -136,7 +143,10 @@ export function MultiFileInspector({ files }: MultiFileInspectorProps) {
 
       {/* Summary section */}
       <Section title="Summary" icon="file_copy">
-        <InfoRow label="Total size" value={formatBytes(aggregatedData.totalSize)} />
+        <InfoRow
+          label="Total size"
+          value={formatBytes(aggregatedData.totalSize)}
+        />
         <InfoRow label="Items" value={files.length} />
       </Section>
 
@@ -169,7 +179,11 @@ export function MultiFileInspector({ files }: MultiFileInspectorProps) {
                 >
                   <Tag color={tag.color}>
                     {tag.name}
-                    {coverage < 1 && <span className="ml-1 text-label-small">({tag.count})</span>}
+                    {coverage < 1 && (
+                      <span className="ml-1 text-label-small">
+                        ({tag.count})
+                      </span>
+                    )}
                   </Tag>
                 </div>
               );
@@ -179,7 +193,8 @@ export function MultiFileInspector({ files }: MultiFileInspectorProps) {
       )}
 
       {/* Date ranges */}
-      {(aggregatedData.dateRanges.created || aggregatedData.dateRanges.modified) && (
+      {(aggregatedData.dateRanges.created ||
+        aggregatedData.dateRanges.modified) && (
         <Section title="Dates" icon="calendar_today">
           {aggregatedData.dateRanges.created && (
             <InfoRow
@@ -187,7 +202,9 @@ export function MultiFileInspector({ files }: MultiFileInspectorProps) {
               value={
                 aggregatedData.dateRanges.created.earliest ===
                 aggregatedData.dateRanges.created.latest
-                  ? new Date(aggregatedData.dateRanges.created.earliest).toLocaleDateString()
+                  ? new Date(
+                      aggregatedData.dateRanges.created.earliest,
+                    ).toLocaleDateString()
                   : `${new Date(
                       aggregatedData.dateRanges.created.earliest,
                     ).toLocaleDateString()} - ${new Date(
@@ -202,7 +219,9 @@ export function MultiFileInspector({ files }: MultiFileInspectorProps) {
               value={
                 aggregatedData.dateRanges.modified.earliest ===
                 aggregatedData.dateRanges.modified.latest
-                  ? new Date(aggregatedData.dateRanges.modified.earliest).toLocaleDateString()
+                  ? new Date(
+                      aggregatedData.dateRanges.modified.earliest,
+                    ).toLocaleDateString()
                   : `${new Date(
                       aggregatedData.dateRanges.modified.earliest,
                     ).toLocaleDateString()} - ${new Date(

@@ -41,10 +41,22 @@ export interface ParsedArgs {
 }
 
 /** Flags that never take a value. */
-const BOOLEAN_FLAGS = new Set(["dark", "dev", "hmr", "help", "version", "build"]);
+const BOOLEAN_FLAGS = new Set([
+  "dark",
+  "dev",
+  "hmr",
+  "help",
+  "version",
+  "build",
+]);
 /** Flags whose value is optional (`--tauri` alone uses `tauri.uiDist` of the config). */
 const OPTIONAL_VALUE_FLAGS = new Set(["tauri"]);
-const SHORT: Record<string, string> = { h: "help", v: "version", p: "port", o: "out" };
+const SHORT: Record<string, string> = {
+  h: "help",
+  v: "version",
+  p: "port",
+  o: "out",
+};
 
 export const USAGE = `m3 — the @aphrody Material Design 3 framework CLI
 
@@ -115,18 +127,25 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
   return { command: command ?? "help", flags, positionals };
 }
 
-function stringFlag(flags: Record<string, FlagValue>, name: string): string | undefined {
+function stringFlag(
+  flags: Record<string, FlagValue>,
+  name: string,
+): string | undefined {
   const value = flags[name];
   if (value === undefined || value === false) return undefined;
   if (value === true) throw new Error(`--${name} needs a value`);
   return value;
 }
 
-function numberFlag(flags: Record<string, FlagValue>, name: string): number | undefined {
+function numberFlag(
+  flags: Record<string, FlagValue>,
+  name: string,
+): number | undefined {
   const value = stringFlag(flags, name);
   if (value === undefined) return undefined;
   const parsed = Number(value);
-  if (!Number.isFinite(parsed)) throw new Error(`--${name} must be a number, got ${value}`);
+  if (!Number.isFinite(parsed))
+    throw new Error(`--${name} must be a number, got ${value}`);
   return parsed;
 }
 
@@ -179,7 +198,10 @@ export function findWorkspaceRoot(start: string): string | undefined {
 
 async function run(cmd: string[], cwd: string): Promise<number> {
   console.log(`$ ${cmd.join(" ")}  (${cwd})`);
-  const proc = Bun.spawn(cmd, { cwd, stdio: ["inherit", "inherit", "inherit"] });
+  const proc = Bun.spawn(cmd, {
+    cwd,
+    stdio: ["inherit", "inherit", "inherit"],
+  });
   return proc.exited;
 }
 
@@ -242,21 +264,25 @@ export async function runCli(
         routes: config.routes,
         pagesDir: config.pagesDir,
         proxy: config.proxy,
-        port: numberFlag(flags, "port") ?? (Bun.env.PORT ? undefined : config.port),
+        port:
+          numberFlag(flags, "port") ?? (Bun.env.PORT ? undefined : config.port),
         hmr: flags.hmr === false ? false : (config.hmr ?? true),
         cwd: config.dir,
       });
       const proxied = Object.entries(config.proxy).map(
         ([prefix, target]) => `${prefix} -> ${target}`,
       );
-      console.log(`m3 dev: ${server.url}${proxied.length ? ` (proxy ${proxied.join(", ")})` : ""}`);
+      console.log(
+        `m3 dev: ${server.url}${proxied.length ? ` (proxy ${proxied.join(", ")})` : ""}`,
+      );
       return 0;
     }
     case "build": {
       const config = await loadM3Config(cwd, stringFlag(flags, "config"));
       const tauriFlag = flags.tauri;
       let tauri: { uiDist: string } | undefined;
-      if (typeof tauriFlag === "string") tauri = { uiDist: resolve(cwd, tauriFlag) };
+      if (typeof tauriFlag === "string")
+        tauri = { uiDist: resolve(cwd, tauriFlag) };
       else if (tauriFlag === true) {
         if (!config.tauri)
           throw new Error(
@@ -275,11 +301,16 @@ export async function runCli(
         minify: config.minify,
         optimizeImports: config.optimizeImports,
         tauri,
-        plugin: { theme: config.theme, root: config.root, configDir: config.dir },
+        plugin: {
+          theme: config.theme,
+          root: config.root,
+          configDir: config.dir,
+        },
         cwd: config.dir,
       });
       const bytes = result.outputs.reduce((sum, o) => sum + o.bytes, 0);
-      for (const output of result.outputs) console.log(`  ${output.path}  ${output.bytes} B`);
+      for (const output of result.outputs)
+        console.log(`  ${output.path}  ${output.bytes} B`);
       console.log(
         `m3 build: ${result.outputs.length} files, ${bytes} B into ${result.outdir} in ${Math.round(performance.now() - started)} ms`,
       );
@@ -294,7 +325,10 @@ export async function runCli(
       const bundle = stringFlag(flags, "bundle");
       if (bundle) {
         const dir = resolve(cwd, bundle);
-        const files = await writeTokenBundle(dir, { ...theme, root: stringFlag(flags, "root") });
+        const files = await writeTokenBundle(dir, {
+          ...theme,
+          root: stringFlag(flags, "root"),
+        });
         console.log(`m3 tokens: ${files.length} files into ${dir}`);
         return 0;
       }
@@ -323,13 +357,16 @@ export async function runCli(
         );
       const contract = await run(["bun", "run", script], root);
       const tests = await run(
-        script === "check" && resolve(cwd) === root ? ["bun", "run", "test"] : ["bun", "test"],
+        script === "check" && resolve(cwd) === root
+          ? ["bun", "run", "test"]
+          : ["bun", "test"],
         cwd,
       );
       return contract !== 0 ? contract : tests;
     }
     case "new": {
-      if (positionals.length !== 1) throw new Error("m3 new: expected one project directory");
+      if (positionals.length !== 1)
+        throw new Error("m3 new: expected one project directory");
       const target = await createM3Project(resolve(cwd, positionals[0]!));
       console.log(`m3 new: created ${target}`);
       return 0;
@@ -351,7 +388,8 @@ export async function runCli(
       console.log(
         `m3 compile: ${report.outfile} (${report.bytes} B, ${report.files} embedded files, target ${report.target}) in ${report.ms} ms`,
       );
-      for (const warning of report.warnings) console.warn(`m3 compile: ${warning}`);
+      for (const warning of report.warnings)
+        console.warn(`m3 compile: ${warning}`);
       return 0;
     }
     case "desktop": {
@@ -379,7 +417,11 @@ export async function runCli(
         outdir: config.outdir,
         production: true,
         tauri,
-        plugin: { theme: config.theme, root: config.root, configDir: config.dir },
+        plugin: {
+          theme: config.theme,
+          root: config.root,
+          configDir: config.dir,
+        },
         cwd: config.dir,
       });
       console.log(

@@ -6,7 +6,11 @@ const BG = [229, 57, 53];
 const FG = [255, 255, 255];
 const SS = 4; // supersampling per axis
 
-function covered(x: number, y: number, size: number): { bg: boolean; fg: boolean } {
+function covered(
+  x: number,
+  y: number,
+  size: number,
+): { bg: boolean; fg: boolean } {
   const u = x / size;
   const v = y / size;
   const r = 0.22;
@@ -18,7 +22,9 @@ function covered(x: number, y: number, size: number): { bg: boolean; fg: boolean
     [0.5, 0.48],
     [0.68, 0.36],
   ];
-  const fg = bars.some(([yc, w]) => Math.abs(v - yc) <= 0.05 && u >= 0.2 && u <= 0.2 + w);
+  const fg = bars.some(
+    ([yc, w]) => Math.abs(v - yc) <= 0.05 && u >= 0.2 && u <= 0.2 + w,
+  );
   return { bg, fg };
 }
 
@@ -28,7 +34,10 @@ function chunk(type: string, data: Uint8Array): Uint8Array {
   dv.setUint32(0, data.length);
   out.set(new TextEncoder().encode(type), 4);
   out.set(data, 8);
-  dv.setUint32(8 + data.length, Bun.hash.crc32(out.subarray(4, 8 + data.length)));
+  dv.setUint32(
+    8 + data.length,
+    Bun.hash.crc32(out.subarray(4, 8 + data.length)),
+  );
   return out;
 }
 
@@ -49,7 +58,8 @@ function png(size: number): Uint8Array {
       const n = SS * SS;
       const i = y * (size * 4 + 1) + 1 + x * 4;
       const mix = a ? f / a : 0;
-      for (let k = 0; k < 3; k++) raw[i + k] = Math.round(BG[k] * (1 - mix) + FG[k] * mix);
+      for (let k = 0; k < 3; k++)
+        raw[i + k] = Math.round(BG[k] * (1 - mix) + FG[k] * mix);
       raw[i + 3] = Math.round((a / n) * 255);
     }
   }

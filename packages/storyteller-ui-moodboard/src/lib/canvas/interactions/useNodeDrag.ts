@@ -42,7 +42,8 @@ export const useNodeDrag = (nodeId: string): NodeDragHandlers => {
         for (const id of state.rootOrder) {
           if (id === nodeId) continue;
           const n = state.nodes[id];
-          if (n) others.push({ x: n.x, y: n.y, width: n.width, height: n.height });
+          if (n)
+            others.push({ x: n.x, y: n.y, width: n.width, height: n.height });
         }
 
         const threshold = SNAP_SCREEN_PX / state.viewport.zoom;

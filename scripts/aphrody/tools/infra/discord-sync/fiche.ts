@@ -8,17 +8,22 @@ import type { SyncState } from "./protocol.ts";
 
 export const FICHE_NAME = "fiche-aphro-omar.md";
 
-const SECRET = /(private|preshared|password|passwd|secret|token\s*[:=]|bearer\s+[a-z0-9]{8,})/i;
+const SECRET =
+  /(private|preshared|password|passwd|secret|token\s*[:=]|bearer\s+[a-z0-9]{8,})/i;
 
 /** Retire toute ligne qui ressemble à un secret avant publication. */
 export function scrub(text: string): string {
   return text
     .split("\n")
-    .filter((l) => !SECRET.test(l) || /bearer-token|vnc-password|token\)/i.test(l))
+    .filter(
+      (l) => !SECRET.test(l) || /bearer-token|vnc-password|token\)/i.test(l),
+    )
     .join("\n");
 }
 
-export function renderOmarSection(data: Record<string, unknown> | undefined): string {
+export function renderOmarSection(
+  data: Record<string, unknown> | undefined,
+): string {
   if (!data || Object.keys(data).length === 0)
     return "## Déclaré par Omar\n\n_Aucun rapport `fiche` reçu. Omar : poste `APHRODY-SYNC/1 report fiche` avec ton nom d'utilisateur Windows/WSL, tes ports, tes services, tes tâches de boot._\n";
   const lines = Object.entries(data).map(
@@ -50,7 +55,10 @@ export async function syncFiche(
   state: SyncState,
   owner: string | undefined,
   now = new Date(),
-): Promise<{ status: "unchanged" | "edited" | "created" | "absent"; merged?: string }> {
+): Promise<{
+  status: "unchanged" | "edited" | "created" | "absent";
+  merged?: string;
+}> {
   const channel = state.channels.fiche;
   if (!channel || !owner) return { status: "absent" };
   const merged = mergeFiche(owner, state.omarFiche, new Date(0)); // hash indépendant de l'horodatage

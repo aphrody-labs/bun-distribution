@@ -68,11 +68,18 @@ export default function Primitives({ adaptive }: PageProps) {
       <Section title="Controlled inputs">
         <Card className="flex flex-col gap-4">
           <label className="flex items-center gap-3">
-            <CheckBox checked={checked} onChange={(event) => setChecked(event.target.checked)} />
+            <CheckBox
+              checked={checked}
+              onChange={(event) => setChecked(event.target.checked)}
+            />
             Receive a local demonstration newsletter
           </label>
           <label className="flex items-center gap-3">
-            <Switch checked={enabled} onCheckedChange={setEnabled} aria-label="Enable preview" />
+            <Switch
+              checked={enabled}
+              onCheckedChange={setEnabled}
+              aria-label="Enable preview"
+            />
             Preview: {enabled ? "enabled" : "disabled"}
           </label>
           <Slider
@@ -96,15 +103,17 @@ export default function Primitives({ adaptive }: PageProps) {
             </TabsList>
             <TabsContent value="preview" className="pt-4">
               <Badge>Interactive preview</Badge>
-              <p className="mt-3 text-body-large">Use left and right arrows in the tab list.</p>
+              <p className="mt-3 text-body-large">
+                Use left and right arrows in the tab list.
+              </p>
             </TabsContent>
             <TabsContent value="details" className="pt-4">
               <AccordionRoot>
                 <AccordionItem value="accessibility">
                   <AccordionTrigger>Keyboard and focus</AccordionTrigger>
                   <AccordionPanel>
-                    Base UI owns focus movement, expanded state and dismissal. M3 owns typography,
-                    shape and theme roles.
+                    Base UI owns focus movement, expanded state and dismissal.
+                    M3 owns typography, shape and theme roles.
                   </AccordionPanel>
                 </AccordionItem>
               </AccordionRoot>

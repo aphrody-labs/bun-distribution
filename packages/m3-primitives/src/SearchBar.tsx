@@ -32,7 +32,15 @@ const containerSizes = {
 
 export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
   (
-    { value, onChange, onClear, className, placeholder = "Search...", size = "md", ...props },
+    {
+      value,
+      onChange,
+      onClear,
+      className,
+      placeholder = "Search...",
+      size = "md",
+      ...props
+    },
     ref,
   ) => {
     const [internalValue, setInternalValue] = useState("");
@@ -71,7 +79,11 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           className,
         )}
       >
-        <Icon name="search" size={dense ? 20 : 24} className="text-on-surface" />
+        <Icon
+          name="search"
+          size={dense ? 20 : 24}
+          className="text-on-surface"
+        />
         <input
           ref={ref}
           type="text"

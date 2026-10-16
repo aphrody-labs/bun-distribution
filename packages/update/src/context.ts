@@ -29,11 +29,18 @@ export class Ctx {
     return this.exists(p) ? (JSON.parse(this.read(p)) as T) : fallback;
   }
   watch = () =>
-    this.jsonFile<{ libs: Lib[]; consumers: Record<string, { cargo?: string[]; bun?: string[] }> }>(
-      "tools/config/deps/watch.json",
-      { libs: [], consumers: {} },
-    );
-  journal = () => this.jsonFile<Journal>("tools/config/deps/journal.json", { seen: {}, runs: [] });
+    this.jsonFile<{
+      libs: Lib[];
+      consumers: Record<string, { cargo?: string[]; bun?: string[] }>;
+    }>("tools/config/deps/watch.json", { libs: [], consumers: {} });
+  journal = () =>
+    this.jsonFile<Journal>("tools/config/deps/journal.json", {
+      seen: {},
+      runs: [],
+    });
   saveJournal = (j: Journal) =>
-    this.write("tools/config/deps/journal.json", `${JSON.stringify(j, null, 2)}\n`);
+    this.write(
+      "tools/config/deps/journal.json",
+      `${JSON.stringify(j, null, 2)}\n`,
+    );
 }

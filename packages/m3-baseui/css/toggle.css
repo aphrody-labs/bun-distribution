@@ -18,8 +18,10 @@
     cursor: pointer;
     user-select: none;
     transition:
-      background-color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
-      border-radius var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized);
+      background-color var(--md-sys-motion-duration-short3)
+        var(--md-sys-motion-easing-standard),
+      border-radius var(--md-sys-motion-duration-short4)
+        var(--md-sys-motion-easing-emphasized);
   }
   /* Expressive: a selected toggle takes the square shape. */
   .m3-bui-toggle[data-pressed] {
@@ -28,7 +30,11 @@
     color: var(--md-sys-color-on-primary);
   }
   .m3-bui-toggle:is(:disabled, [data-disabled]) {
-    background: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--md-sys-color-on-surface) 12%,
+      transparent
+    );
     color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
     cursor: default;
   }
@@ -58,7 +64,9 @@
     flex-direction: column;
     border-radius: var(--md-sys-shape-corner-large);
   }
-  .m3-bui-toggle-group[data-orientation="vertical"] .m3-bui-toggle + .m3-bui-toggle {
+  .m3-bui-toggle-group[data-orientation="vertical"]
+    .m3-bui-toggle
+    + .m3-bui-toggle {
     border-inline-start: 0;
     border-block-start: 1px solid var(--md-sys-color-outline);
   }

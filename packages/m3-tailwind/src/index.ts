@@ -6,7 +6,10 @@
 // `shape-large-top`, `state-layer`, `motion-expressive-default-spatial`, `compact:`, `m3-open:`) and the
 // runtime `--md-sys-*` custom properties never drift.
 import { readFileSync } from "node:fs";
-import { BREAKPOINTS, HEIGHT_BREAKPOINTS } from "@aphrody/m3-tokens/breakpoints";
+import {
+  BREAKPOINTS,
+  HEIGHT_BREAKPOINTS,
+} from "@aphrody/m3-tokens/breakpoints";
 import { ROLES } from "@aphrody/m3-tokens/dynamic-color";
 import {
   DIRECTIONAL_SHAPES,
@@ -17,7 +20,12 @@ import {
 } from "@aphrody/m3-tokens/expressive";
 import { springToCss } from "./spring";
 
-export { springPosition, springSettleMs, springToCss, type SpringCss } from "./spring";
+export {
+  springPosition,
+  springSettleMs,
+  springToCss,
+  type SpringCss,
+} from "./spring";
 
 const kebab = (s: string): string => s.replace(/([A-Z])/g, "-$1").toLowerCase();
 const sheet = (specifier: string): string =>
@@ -33,7 +41,10 @@ function names(prefix: string, suffix = ":"): string[] {
     const prop = match[1]!;
     if (prop.startsWith(prefix) && (suffix === ":" || prop.endsWith(suffix)))
       found.add(
-        prop.slice(prefix.length, suffix === ":" ? undefined : prop.length - suffix.length),
+        prop.slice(
+          prefix.length,
+          suffix === ":" ? undefined : prop.length - suffix.length,
+        ),
       );
   }
   return [...found];
@@ -50,7 +61,10 @@ export const DURATIONS: readonly string[] = names("--md-sys-motion-duration-");
 /** Elevation levels (`0` to `5`). */
 export const ELEVATIONS: readonly string[] = names("--md-sys-elevation-level");
 /** Interaction states that carry a state-layer opacity. */
-export const STATE_LAYERS: readonly string[] = names("--md-sys-state-", "-state-layer-opacity");
+export const STATE_LAYERS: readonly string[] = names(
+  "--md-sys-state-",
+  "-state-layer-opacity",
+);
 
 export interface SpringDef {
   /** Utility and theme suffix: `fast-spatial`, `expressive-default-spatial`, ... */
@@ -61,7 +75,11 @@ export interface SpringDef {
 
 /** Standard springs (from the token sheet) then the Expressive spatial springs (from `expressive.ts`). */
 const springValue = (name: string, kind: "damping" | "stiffness"): number =>
-  Number(new RegExp(`--md-sys-motion-spring-${name}-${kind}:\\s*([\\d.]+)`).exec(TOKENS)?.[1]);
+  Number(
+    new RegExp(`--md-sys-motion-spring-${name}-${kind}:\\s*([\\d.]+)`).exec(
+      TOKENS,
+    )?.[1],
+  );
 
 export function springDefs(): SpringDef[] {
   const out: SpringDef[] = [];
@@ -96,12 +114,18 @@ const lines = (entries: [string, string][]): string =>
 const rem = (px: number): string => `${px / 16}rem`;
 
 export function colorEntries(): [string, string][] {
-  return ROLES.map((r) => [`--color-${kebab(r)}`, `var(--md-sys-color-${kebab(r)})`]);
+  return ROLES.map((r) => [
+    `--color-${kebab(r)}`,
+    `var(--md-sys-color-${kebab(r)})`,
+  ]);
 }
 
 /** `rounded-*` for the corner scale; directional corners are `shape-*` utilities (a radius list, not a length). */
 export function shapeEntries(): [string, string][] {
-  return SHAPES.map((s) => [`--radius-${s}`, `var(--md-sys-shape-corner-${s})`]);
+  return SHAPES.map((s) => [
+    `--radius-${s}`,
+    `var(--md-sys-shape-corner-${s})`,
+  ]);
 }
 
 export function textEntries(): [string, string][] {
@@ -143,7 +167,10 @@ export function easeEntries(): [string, string][] {
     `var(--md-sys-motion-easing-${e})`,
   ]);
   for (const s of springDefs())
-    out.push([`--ease-spring-${s.name}`, springToCss(s.damping, s.stiffness).easing]);
+    out.push([
+      `--ease-spring-${s.name}`,
+      springToCss(s.damping, s.stiffness).easing,
+    ]);
   return out;
 }
 
@@ -162,7 +189,10 @@ export function durationEntries(): [string, string][] {
 }
 
 export function shadowEntries(): [string, string][] {
-  return ELEVATIONS.map((n) => [`--shadow-elevation-${n}`, `var(--md-sys-elevation-level${n})`]);
+  return ELEVATIONS.map((n) => [
+    `--shadow-elevation-${n}`,
+    `var(--md-sys-elevation-level${n})`,
+  ]);
 }
 
 /** Window size classes as `medium:`, `expanded:`, `large:`, `extra-large:` (min-width, rem). */
@@ -175,7 +205,10 @@ export function breakpointEntries(): [string, string][] {
 /** Corner scale plus directional shapes, the values of the `shape-*` utility. */
 export function shapeUtilityEntries(): [string, string][] {
   return [
-    ...SHAPES.map((s): [string, string] => [`--shape-${s}`, `var(--md-sys-shape-corner-${s})`]),
+    ...SHAPES.map((s): [string, string] => [
+      `--shape-${s}`,
+      `var(--md-sys-shape-corner-${s})`,
+    ]),
     ...DIRECTIONAL_SHAPE_NAMES.map((s): [string, string] => [
       `--shape-${s}`,
       `var(--md-sys-shape-corner-${s})`,
@@ -271,7 +304,8 @@ function motionUtilities(): string {
     .join("\n");
 }
 
-const opacity = (state: string): string => `var(--md-sys-state-${state}-state-layer-opacity)`;
+const opacity = (state: string): string =>
+  `var(--md-sys-state-${state}-state-layer-opacity)`;
 
 /** Utilities: shape, state layer, typescale, spring motion. */
 export function utilitiesCss(): string {

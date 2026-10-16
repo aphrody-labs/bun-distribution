@@ -37,7 +37,9 @@ export function buildSplatSettle(splat: SplatMesh): EntranceHandle | null {
   // a 180° flip, so local +Y is not world up).
   splat.updateWorldMatrix(true, false);
   const worldQuat = splat.getWorldQuaternion(new THREE.Quaternion());
-  const upLocal = new THREE.Vector3(0, 1, 0).applyQuaternion(worldQuat.invert());
+  const upLocal = new THREE.Vector3(0, 1, 0).applyQuaternion(
+    worldQuat.invert(),
+  );
 
   const uProgress = dyno.dynoFloat(0);
   const previousModifier = splat.objectModifier;

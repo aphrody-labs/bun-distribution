@@ -6,12 +6,13 @@ import { useState } from "react";
 import { useShowProviderLoginModalEvent } from "@storyteller/tauri-events";
 import { GenerationProvider } from "@storyteller/common";
 
-interface ProviderSetupModalProps {
-}
+interface ProviderSetupModalProps {}
 
 export function ProviderSetupModal(_props: ProviderSetupModalProps) {
   const [showModal, setShowModal] = useState(false);
-  const [provider, setProvider] = useState<GenerationProvider>(GenerationProvider.Artcraft);
+  const [provider, setProvider] = useState<GenerationProvider>(
+    GenerationProvider.Artcraft,
+  );
 
   useShowProviderLoginModalEvent(async (event) => {
     // Retained native handlers can still emit these events for old tasks.
@@ -101,7 +102,7 @@ export function ProviderSetupModal(_props: ProviderSetupModalProps) {
   );
 }
 
-function getServiceProviderName(provider: GenerationProvider) : string {
+function getServiceProviderName(provider: GenerationProvider): string {
   switch (provider) {
     case GenerationProvider.Grok:
       return "Grok";

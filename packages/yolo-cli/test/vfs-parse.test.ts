@@ -9,7 +9,10 @@ import {
 
 const directories: string[] = [];
 
-async function fixture(source: string | Uint8Array, filename = "fixture.ts"): Promise<string> {
+async function fixture(
+  source: string | Uint8Array,
+  filename = "fixture.ts",
+): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), "yolo-module-parse-"));
   directories.push(directory);
   const path = join(directory, filename);
@@ -19,7 +22,9 @@ async function fixture(source: string | Uint8Array, filename = "fixture.ts"): Pr
 
 afterEach(async () => {
   await Promise.all(
-    directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })),
+    directories
+      .splice(0)
+      .map((directory) => rm(directory, { recursive: true, force: true })),
   );
 });
 
@@ -64,7 +69,12 @@ describe("canonical VFS module parsing", () => {
       "all-types",
       "side-effect",
     ]);
-    expect(parsed.exports).toEqual(["PublicValue", "PublicThing", "*", "namespace"]);
+    expect(parsed.exports).toEqual([
+      "PublicValue",
+      "PublicThing",
+      "*",
+      "namespace",
+    ]);
   });
 
   test("reports public names for defaults, destructured variables and TypeScript declarations", async () => {
@@ -115,7 +125,10 @@ describe("canonical VFS module parsing", () => {
 
   test("supports JSX and declaration files using their filename syntax", async () => {
     const jsx = await parseTsSource(
-      await fixture('import React from "react"; export default <div />;', "fixture.jsx"),
+      await fixture(
+        'import React from "react"; export default <div />;',
+        "fixture.jsx",
+      ),
     );
     expect(jsx.exports).toEqual(["default"]);
     expect(jsx.imports).toEqual(["react"]);

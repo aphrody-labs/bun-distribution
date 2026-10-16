@@ -15,10 +15,38 @@ import {
 } from "../src/build-fleet.ts";
 
 const hosts: FleetHost[] = [
-  { id: "local", os: "win32", local: true, reserveGiB: 4, maxJobs: 4, heavy: true },
-  { id: "omar", os: "win32", local: false, reserveGiB: 4, maxJobs: 2, heavy: true },
-  { id: "vps", os: "linux", local: false, reserveGiB: 4, maxJobs: 6, heavy: true },
-  { id: "dbfr", os: "linux", local: false, reserveGiB: 8, maxJobs: 1, heavy: false },
+  {
+    id: "local",
+    os: "win32",
+    local: true,
+    reserveGiB: 4,
+    maxJobs: 4,
+    heavy: true,
+  },
+  {
+    id: "omar",
+    os: "win32",
+    local: false,
+    reserveGiB: 4,
+    maxJobs: 2,
+    heavy: true,
+  },
+  {
+    id: "vps",
+    os: "linux",
+    local: false,
+    reserveGiB: 4,
+    maxJobs: 6,
+    heavy: true,
+  },
+  {
+    id: "dbfr",
+    os: "linux",
+    local: false,
+    reserveGiB: 8,
+    maxJobs: 1,
+    heavy: false,
+  },
 ];
 const readiness = hosts.map((host) => ({
   host: host.id,
@@ -41,10 +69,12 @@ const build: FleetRequest = {
 
 test("automatic placement preserves OS, capacity and one heavy host lease", () => {
   expect(selectHost(hosts, readiness, build).id).toBe("omar");
-  expect(selectHost(hosts, readiness, build, new Set(["omar"])).id).toBe("local");
-  expect(() => selectHost(hosts, readiness, build, new Set(["omar", "local"]))).toThrow(
-    "No qualified host",
+  expect(selectHost(hosts, readiness, build, new Set(["omar"])).id).toBe(
+    "local",
   );
+  expect(() =>
+    selectHost(hosts, readiness, build, new Set(["omar", "local"])),
+  ).toThrow("No qualified host");
   expect(() =>
     selectHost(
       hosts,
@@ -67,7 +97,12 @@ test("automatic placement preserves OS, capacity and one heavy host lease", () =
     ),
   ).toThrow();
   expect(() =>
-    selectHost(hosts, readiness, { ...build, host: "dbfr", os: "linux", jobs: 1 }),
+    selectHost(hosts, readiness, {
+      ...build,
+      host: "dbfr",
+      os: "linux",
+      jobs: 1,
+    }),
   ).toThrow();
   expect(() =>
     selectHost(
@@ -81,23 +116,34 @@ test("automatic placement preserves OS, capacity and one heavy host lease", () =
 test("request validation rejects mutable pins, unsafe identities and invalid OS/jobs", () => {
   for (const revision of ["main", "a".repeat(39), "../main"])
     expect(() => validateRequest({ ...build, revision })).toThrow("revision");
-  expect(() => validateRequest({ ...build, id: "../secret" })).toThrow("job id");
-  expect(() => validateRequest({ ...build, os: "darwin" as "win32" })).toThrow("OS");
+  expect(() => validateRequest({ ...build, id: "../secret" })).toThrow(
+    "job id",
+  );
+  expect(() => validateRequest({ ...build, os: "darwin" as "win32" })).toThrow(
+    "OS",
+  );
   expect(() => validateRequest({ ...build, jobs: 0 })).toThrow("jobs");
-  expect(() => validateRequest({ ...build, command: ["bun", "bad\0arg"] })).toThrow(
-    "owner command",
-  );
   expect(() =>
-    validateRequest({ ...build, command: ["bun", "bd", "test", "fixture", "-j2"] }),
+    validateRequest({ ...build, command: ["bun", "bad\0arg"] }),
+  ).toThrow("owner command");
+  expect(() =>
+    validateRequest({
+      ...build,
+      command: ["bun", "bd", "test", "fixture", "-j2"],
+    }),
   ).toThrow("precede");
-  expect(() => validateRequest({ ...build, command: ["bun", "bd", "-j8"] })).toThrow("bounded");
-  expect(() => validateRequest({ ...build, command: ["bun", "run", "unknown", "-j2"] })).toThrow(
-    "Unknown owner",
-  );
+  expect(() =>
+    validateRequest({ ...build, command: ["bun", "bd", "-j8"] }),
+  ).toThrow("bounded");
+  expect(() =>
+    validateRequest({ ...build, command: ["bun", "run", "unknown", "-j2"] }),
+  ).toThrow("Unknown owner");
   expect(() =>
     selectHost(
       hosts,
-      readiness.map((r) => Object.assign({}, r, { observed: Date.now() - 60001 })),
+      readiness.map((r) =>
+        Object.assign({}, r, { observed: Date.now() - 60001 }),
+      ),
       build,
     ),
   ).toThrow();
@@ -120,8 +166,12 @@ test("request validation rejects mutable pins, unsafe identities and invalid OS/
 test("Windows transport encodes public source without shell interpolation", () => {
   const source = "console.log('apostrophe; $HOME `shell`')";
   const command = encodedCommand(hosts[1]!, source);
-  expect(command).toStartWith("powershell.exe -NoProfile -NonInteractive -EncodedCommand ");
-  const ps = Buffer.from(command.split(" ").at(-1)!, "base64").toString("utf16le");
+  expect(command).toStartWith(
+    "powershell.exe -NoProfile -NonInteractive -EncodedCommand ",
+  );
+  const ps = Buffer.from(command.split(" ").at(-1)!, "base64").toString(
+    "utf16le",
+  );
   expect(ps).toContain(Buffer.from(source).toString("base64"));
   expect(ps).not.toContain("$HOME");
   expect(encodedCommand(hosts[2]!, source)).toStartWith("bun -e '");
@@ -149,10 +199,14 @@ test("worker preserves stale and foreign leases, requests and dirty source", () 
   expect(script).toContain("fs.openSync(lease,'wx',384)");
   expect(script).toContain("process.env.APHRODY_BUN_CHECKOUT");
   expect(script).toContain("resolveExternalLocks(host.externalLocks||[]");
-  expect(script).toContain("Remote request already exists; reconcile status, never replay");
+  expect(script).toContain(
+    "Remote request already exists; reconcile status, never replay",
+  );
   expect(script).toContain("Source pin differs");
   expect(script).toContain("Source checkout dirty; preserved");
-  expect(script).toContain("JSON.parse(fs.readFileSync(lease,'utf8')).token===token");
+  expect(script).toContain(
+    "JSON.parse(fs.readFileSync(lease,'utf8')).token===token",
+  );
   expect(script).not.toContain("git reset");
   expect(script).not.toContain("git clean");
 });
@@ -168,14 +222,22 @@ test("real isolated worker persists completion, refuses replay and preserves for
     maxJobs: 1,
     heavy: true,
   };
-  const request: FleetRequest = { id: "fixture-probe", kind: "probe", memoryGiB: 0.1, jobs: 1 };
+  const request: FleetRequest = {
+    id: "fixture-probe",
+    kind: "probe",
+    memoryGiB: 0.1,
+    jobs: 1,
+  };
   const run = async (r: FleetRequest) => {
-    const p = Bun.spawn([process.execPath, "-e", workerScript(host, r, "fixture-fingerprint")], {
-      env: { ...process.env, HOME: home, USERPROFILE: home },
-      stdout: "pipe",
-      stderr: "pipe",
-      windowsHide: true,
-    });
+    const p = Bun.spawn(
+      [process.execPath, "-e", workerScript(host, r, "fixture-fingerprint")],
+      {
+        env: { ...process.env, HOME: home, USERPROFILE: home },
+        stdout: "pipe",
+        stderr: "pipe",
+        windowsHide: true,
+      },
+    );
     return {
       stdout: await new Response(p.stdout).text(),
       stderr: await new Response(p.stderr).text(),
@@ -186,7 +248,9 @@ test("real isolated worker persists completion, refuses replay and preserves for
     const completed = await run(request);
     expect(completed.stdout).toContain('"state":"complete"');
     expect(completed.exitCode).toBe(0);
-    const persisted = JSON.parse(await readFile(join(state, request.id + ".json"), "utf8"));
+    const persisted = JSON.parse(
+      await readFile(join(state, request.id + ".json"), "utf8"),
+    );
     expect(persisted.fingerprint).toBe("fixture-fingerprint");
     expect(persisted.processIdentity).toBeTruthy();
     const replay = await run(request);
@@ -214,7 +278,10 @@ test("real refused source pin records terminal failure and releases only owned l
     heavy: true,
   };
   try {
-    const init = Bun.spawn(["git", "init", home], { stdout: "pipe", stderr: "pipe" });
+    const init = Bun.spawn(["git", "init", home], {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
     await init.exited;
     const commit = Bun.spawn(
       [
@@ -240,23 +307,31 @@ test("real refused source pin records terminal failure and releases only owned l
       jobs: 1,
       command: ["bun", "bd", "-j1"],
     };
-    const p = Bun.spawn([process.execPath, "-e", workerScript(host, request, "pin-fingerprint")], {
-      env: { ...process.env, HOME: home, USERPROFILE: home },
-      stdout: "pipe",
-      stderr: "pipe",
-      windowsHide: true,
-    });
+    const p = Bun.spawn(
+      [process.execPath, "-e", workerScript(host, request, "pin-fingerprint")],
+      {
+        env: { ...process.env, HOME: home, USERPROFILE: home },
+        stdout: "pipe",
+        stderr: "pipe",
+        windowsHide: true,
+      },
+    );
     const stdout = await new Response(p.stdout).text();
     await new Response(p.stderr).text();
     expect(stdout).toContain('"state":"failed"');
     expect(await p.exited).toBe(1);
     const result = JSON.parse(
-      await readFile(join(home, ".aphrody/build-fleet/pin-fixture.json"), "utf8"),
+      await readFile(
+        join(home, ".aphrody/build-fleet/pin-fixture.json"),
+        "utf8",
+      ),
     );
     expect(result.state).toBe("failed");
     expect(result.error).toBe("Source pin differs");
     expect(result.exitCode).toBe(1);
-    expect(await Bun.file(join(home, ".aphrody/build-fleet/heavy.lock")).exists()).toBe(false);
+    expect(
+      await Bun.file(join(home, ".aphrody/build-fleet/heavy.lock")).exists(),
+    ).toBe(false);
   } finally {
     await rm(home, { recursive: true, force: true });
   }

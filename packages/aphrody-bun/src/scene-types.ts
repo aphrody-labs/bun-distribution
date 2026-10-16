@@ -19,7 +19,8 @@ export type Corners = { tl: number; tr: number; br: number; bl: number };
 
 export type Rgba8 = { r: number; g: number; b: number; a: number };
 
-export type Paint = { kind: "role"; value: M3Role } | { kind: "fixed"; value: Rgba8 };
+export type Paint =
+  { kind: "role"; value: M3Role } | { kind: "fixed"; value: Rgba8 };
 
 export type Outline = { color: Paint; width: number };
 
@@ -51,11 +52,36 @@ export type SceneNode =
       elevation: number;
       outline?: Outline | null;
     }
-  | { node: "state_layer"; rect: Rect; corners: Corners; content: Paint; state: StateKind }
-  | { node: "ripple"; cx: number; cy: number; radius: number; color: Paint; alpha: number }
-  | { node: "text"; rect: Rect; text: string; style: TypeStyleName; color: Paint }
+  | {
+      node: "state_layer";
+      rect: Rect;
+      corners: Corners;
+      content: Paint;
+      state: StateKind;
+    }
+  | {
+      node: "ripple";
+      cx: number;
+      cy: number;
+      radius: number;
+      color: Paint;
+      alpha: number;
+    }
+  | {
+      node: "text";
+      rect: Rect;
+      text: string;
+      style: TypeStyleName;
+      color: Paint;
+    }
   | { node: "icon"; rect: Rect; path: string; color: Paint }
-  | { node: "image"; rect: Rect; width: number; height: number; rgba: number[] };
+  | {
+      node: "image";
+      rect: Rect;
+      width: number;
+      height: number;
+      rgba: number[];
+    };
 
 /** M3 dynamic-scheme variant name (`aphrody_m3_tokens::scheme::Variant::name()`). */
 export type SchemeVariant =
@@ -88,13 +114,22 @@ export type Scene = {
 export type Vec3 = [number, number, number];
 
 /** Local transform `T * R * S`; rotation is XYZ Euler angles in degrees. */
-export type Transform3d = { translation?: Vec3; rotation_deg?: Vec3; scale?: Vec3 };
+export type Transform3d = {
+  translation?: Vec3;
+  rotation_deg?: Vec3;
+  scale?: Vec3;
+};
 
 export type Projection3d =
   | { kind: "perspective"; fov_y_deg?: number; near?: number; far?: number }
   | { kind: "orthographic"; height?: number; near?: number; far?: number };
 
-export type Camera3d = { eye?: Vec3; target?: Vec3; up?: Vec3; projection?: Projection3d };
+export type Camera3d = {
+  eye?: Vec3;
+  target?: Vec3;
+  up?: Vec3;
+  projection?: Projection3d;
+};
 
 export type Light3d =
   | { light: "ambient"; color: Paint; intensity?: number }
@@ -107,12 +142,23 @@ export type Light3d =
       intensity?: number;
       cast_shadow?: boolean;
     }
-  | { light: "point"; position: Vec3; color: Paint; intensity?: number; range?: number };
+  | {
+      light: "point";
+      position: Vec3;
+      color: Paint;
+      intensity?: number;
+      range?: number;
+    };
 
 export type Geometry3d =
   | { shape: "box"; size?: Vec3 }
   | { shape: "rounded_box"; size?: Vec3; radius?: number; segments?: number }
-  | { shape: "sphere"; radius?: number; width_segments?: number; height_segments?: number }
+  | {
+      shape: "sphere";
+      radius?: number;
+      width_segments?: number;
+      height_segments?: number;
+    }
   | { shape: "plane"; size?: [number, number] }
   | {
       shape: "cylinder";
@@ -129,7 +175,12 @@ export type Geometry3d =
       radial_segments?: number;
       tubular_segments?: number;
     }
-  | { shape: "mesh"; positions: Vec3[]; normals?: Vec3[] | null; indices: number[] };
+  | {
+      shape: "mesh";
+      positions: Vec3[];
+      normals?: Vec3[] | null;
+      indices: number[];
+    };
 
 export type Material3d = {
   base: Paint;
@@ -145,7 +196,12 @@ export type Material3d = {
 
 export type Node3d =
   | { node: "group"; transform?: Transform3d; children?: Node3d[] }
-  | { node: "mesh"; transform?: Transform3d; geometry: Geometry3d; material: Material3d };
+  | {
+      node: "mesh";
+      transform?: Transform3d;
+      geometry: Geometry3d;
+      material: Material3d;
+    };
 
 /** Mirrors `aphrody_render::scene3d::Scene3d`. */
 export type Scene3d = {

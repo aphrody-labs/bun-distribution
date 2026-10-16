@@ -39,8 +39,15 @@ export function ProviderSelector({
   const modelId = model?.id;
   const allowedProviders: GenerationProvider[] = useMemo(() => {
     if (!modelId) return DEFAULT_PROVIDER_OPTIONS;
-    const providers = (providersByModel?.[modelId] ?? model?.getProviders() ?? DEFAULT_PROVIDER_OPTIONS)
-      .filter((provider) => provider !== GenerationProvider.Sora && provider !== GenerationProvider.WorldLabs);
+    const providers = (
+      providersByModel?.[modelId] ??
+      model?.getProviders() ??
+      DEFAULT_PROVIDER_OPTIONS
+    ).filter(
+      (provider) =>
+        provider !== GenerationProvider.Sora &&
+        provider !== GenerationProvider.WorldLabs,
+    );
     return providers.length > 0 ? providers : [GenerationProvider.Artcraft];
   }, [providersByModel, modelId, model]);
 
@@ -48,7 +55,10 @@ export function ProviderSelector({
 
   useEffect(() => {
     if (!modelId) return;
-    if ((!selectedProvider || !allowedProviders.includes(selectedProvider)) && allowedProviders.length > 0) {
+    if (
+      (!selectedProvider || !allowedProviders.includes(selectedProvider)) &&
+      allowedProviders.length > 0
+    ) {
       setSelectedProvider(page, modelId, allowedProviders[0]);
     }
   }, [page, modelId, selectedProvider, allowedProviders, setSelectedProvider]);
@@ -61,7 +71,7 @@ export function ProviderSelector({
         model: undefined,
         provider: p,
       })),
-    [allowedProviders]
+    [allowedProviders],
   );
 
   const list = useMemo(
@@ -70,14 +80,13 @@ export function ProviderSelector({
         ...item,
         selected: (item as any).provider === selectedProvider,
       })),
-    [items, selectedProvider]
+    [items, selectedProvider],
   );
 
   const handleSelect = (item: PopoverItem) => {
     if (!modelId) return;
     const prov: GenerationProvider | undefined = (item as any).provider as
-      | GenerationProvider
-      | undefined;
+      GenerationProvider | undefined;
     if (!prov) return;
     setSelectedProvider(page, modelId, prov);
   };

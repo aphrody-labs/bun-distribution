@@ -15,7 +15,8 @@ export function mergeClassName<S>(
   base: string,
   className: ClassName<S>,
 ): string | ((state: S) => string) {
-  if (typeof className === "function") return (state: S) => cx(base, className(state));
+  if (typeof className === "function")
+    return (state: S) => cx(base, className(state));
   return cx(base, className);
 }
 
@@ -25,8 +26,13 @@ export function mergeClassName<S>(
  * prop, so nothing needs `forwardRef`.
  */
 // oxlint-disable-next-line typescript/no-explicit-any
-export function part<C extends JSXElementConstructor<any>>(Component: C, base: string): C {
-  const Base = Component as JSXElementConstructor<{ className?: ClassName<unknown> }>;
+export function part<C extends JSXElementConstructor<any>>(
+  Component: C,
+  base: string,
+): C {
+  const Base = Component as JSXElementConstructor<{
+    className?: ClassName<unknown>;
+  }>;
   const Part = (props: { className?: ClassName<unknown> }) => (
     <Base {...props} className={mergeClassName(base, props.className)} />
   );

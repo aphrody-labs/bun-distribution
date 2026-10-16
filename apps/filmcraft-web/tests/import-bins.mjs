@@ -3,9 +3,13 @@
 export async function checkImportBins({ evaluate, media, timeoutMs = 120000 }) {
   const report = { gates: {}, cases: [] };
   await evaluate('filmcraft.execute("file.newProject", {name: "Import bins"})');
-  const parent = (await evaluate('filmcraft.execute("file.newBin", {name: "Footage"})')).bin;
+  const parent = (
+    await evaluate('filmcraft.execute("file.newBin", {name: "Footage"})')
+  ).bin;
   const child = (
-    await evaluate(`filmcraft.execute("file.newBin", {name: "Selects", parent: ${parent}})`)
+    await evaluate(
+      `filmcraft.execute("file.newBin", {name: "Selects", parent: ${parent}})`,
+    )
   ).bin;
   await evaluate(
     `(async () => {window.__importBinFixture = new Uint8Array(await (await fetch(${JSON.stringify(media)})).arrayBuffer());})()`,
@@ -32,7 +36,8 @@ export async function checkImportBins({ evaluate, media, timeoutMs = 120000 }) {
       };
       const found = find(project.root);
       if (found !== undefined) return found;
-      if (Date.now() >= deadline) throw new Error(`Import never appeared: ${name}`);
+      if (Date.now() >= deadline)
+        throw new Error(`Import never appeared: ${name}`);
       await Bun.sleep(pollMs);
     }
   };
@@ -73,7 +78,9 @@ export async function checkImportBins({ evaluate, media, timeoutMs = 120000 }) {
     }
     report.delayedReadHits = await evaluate("window.__importBinGate.hits");
     await setBin(parent);
-    await evaluate("window.__importBinGate.release(); window.__pendingBinImport");
+    await evaluate(
+      "window.__importBinGate.release(); window.__pendingBinImport",
+    );
     await check("destinationCapturedBeforeRead", child, "pending.mp4");
   } finally {
     await evaluate(

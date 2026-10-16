@@ -29,7 +29,10 @@ export interface UiCapacity {
   cores: number;
 }
 
-export function qualifyUiAllocation(factory: UiFactory, capacity: UiCapacity): UiAllocation {
+export function qualifyUiAllocation(
+  factory: UiFactory,
+  capacity: UiCapacity,
+): UiAllocation {
   const ui = factory.ui;
   if (!factory.enabled || factory.target !== "vps" || !ui?.enabled)
     throw Error("Canonical factory UI allocation is disabled");
@@ -58,7 +61,8 @@ export function qualifyUiAllocation(factory: UiFactory, capacity: UiCapacity): U
     ui.reserveDiskGiB,
     ui.scratchGiB,
   ])
-    if (!Number.isSafeInteger(value) || value < 1) throw Error("Invalid UI resource limits");
+    if (!Number.isSafeInteger(value) || value < 1)
+      throw Error("Invalid UI resource limits");
   if (
     ui.memoryGiB < 12 ||
     ui.memoryGiB > 16 ||
@@ -76,18 +80,27 @@ export function qualifyUiAllocation(factory: UiFactory, capacity: UiCapacity): U
     factory.rust.maxJobs > 6
   )
     throw Error("Native allocation is unknown");
-  for (const value of [capacity.availableMemoryGiB, capacity.availableDiskGiB, capacity.cores])
-    if (!Number.isFinite(value) || value < 0) throw Error("Unknown factory capacity");
+  for (const value of [
+    capacity.availableMemoryGiB,
+    capacity.availableDiskGiB,
+    capacity.cores,
+  ])
+    if (!Number.isFinite(value) || value < 0)
+      throw Error("Unknown factory capacity");
   if (
     capacity.availableMemoryGiB < ui.memoryGiB + ui.reserveMemoryGiB ||
     capacity.availableDiskGiB < ui.reserveDiskGiB + ui.scratchGiB ||
     capacity.cores < factory.rust.maxJobs + ui.cpus
   )
-    throw Error("Insufficient capacity for UI alongside the declared native allocation");
+    throw Error(
+      "Insufficient capacity for UI alongside the declared native allocation",
+    );
   return ui;
 }
 
-export async function qualifyUiRuntime(configPath: string): Promise<UiAllocation> {
+export async function qualifyUiRuntime(
+  configPath: string,
+): Promise<UiAllocation> {
   if (process.platform !== "linux")
     throw Error("UI execution requires the qualified Linux factory");
   const factory = (await Bun.file(configPath).json()) as UiFactory;
@@ -102,7 +115,8 @@ export async function qualifyUiRuntime(configPath: string): Promise<UiAllocation
     availableDiskGiB: (Number(disk.bavail) * Number(disk.bsize)) / 1073741824,
     cores: cpuRows.length,
   });
-  if (!factoryLeaseHeld(ui.lockPath)) throw Error("The actual UI kernel lease is not held");
+  if (!factoryLeaseHeld(ui.lockPath))
+    throw Error("The actual UI kernel lease is not held");
   const relative = (await Bun.file("/proc/self/cgroup").text())
     .trim()
     .split("\n")
@@ -131,7 +145,15 @@ export async function qualifyUiRuntime(configPath: string): Promise<UiAllocation
 if (import.meta.main) {
   const [action, configPath] = Bun.argv.slice(2);
   if (action !== "qualify" || !configPath || Bun.argv.length !== 4)
-    throw Error("Usage: build-factory-ui.ts qualify <canonical-factory-config>");
+    throw Error(
+      "Usage: build-factory-ui.ts qualify <canonical-factory-config>",
+    );
   const ui = await qualifyUiRuntime(configPath);
-  console.log(JSON.stringify({ schema: "aphrody.ui-allocation/1", qualified: true, ...ui }));
+  console.log(
+    JSON.stringify({
+      schema: "aphrody.ui-allocation/1",
+      qualified: true,
+      ...ui,
+    }),
+  );
 }

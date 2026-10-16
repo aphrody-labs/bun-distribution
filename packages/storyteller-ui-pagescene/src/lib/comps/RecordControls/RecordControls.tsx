@@ -33,7 +33,7 @@ export const RecordControls = () => {
           disabled={busy}
           className="border border-ui-panel-border bg-ui-controls flex items-center gap-2 rounded-[3px] px-5 py-2.5 text-sm font-medium text-base-fg hover:bg-white/10 disabled:opacity-50"
         >
-          <CameraIcon  className="h-3.5 w-3.5" />
+          <CameraIcon className="h-3.5 w-3.5" />
           Capture
         </button>
         <Tooltip
@@ -51,7 +51,7 @@ export const RecordControls = () => {
             disabled={busy || !timelineExists}
             className="flex items-center gap-2 rounded-[3px] bg-red px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:brightness-110 disabled:opacity-50"
           >
-            <CircleIcon  className="h-3 w-3" />
+            <CircleIcon className="h-3 w-3" />
             Record
           </button>
         </Tooltip>

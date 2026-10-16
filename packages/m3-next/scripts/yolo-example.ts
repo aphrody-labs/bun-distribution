@@ -34,7 +34,8 @@ export const YOLO_ROOT = process.env["YOLO_ROOT"] ?? resolve(PKG, "../../..");
 export const YOLO_CLI = join(YOLO_ROOT, "packages/engine/yolo/src/index.ts");
 
 export type Example = "app" | "tauri";
-export const exampleDir = (name: Example): string => join(PKG, "examples", name);
+export const exampleDir = (name: Example): string =>
+  join(PKG, "examples", name);
 
 /** Routes that must answer, with the status each returns. */
 export const ROUTES: Record<Example, [string, number][]> = {
@@ -61,7 +62,8 @@ export function yoloHome(
   mkdirSync(join(home, "m3", "packages"), { recursive: true });
   const target = exampleDir(example);
   try {
-    if (lstatSync(web).isSymbolicLink() && readlinkSync(web) === target) return home;
+    if (lstatSync(web).isSymbolicLink() && readlinkSync(web) === target)
+      return home;
     unlinkSync(web);
   } catch {
     // Absent: create it below.
@@ -77,7 +79,11 @@ export function yoloCommand(
 ): { cmd: string[]; env: Record<string, string | undefined> } {
   return {
     cmd: ["bun", YOLO_CLI, ...args],
-    env: { ...process.env, YOLO_HOME: yoloHome(example), NEXT_TELEMETRY_DISABLED: "1" },
+    env: {
+      ...process.env,
+      YOLO_HOME: yoloHome(example),
+      NEXT_TELEMETRY_DISABLED: "1",
+    },
   };
 }
 
@@ -94,13 +100,23 @@ async function run(
   cwd?: string,
 ): Promise<Timed> {
   const start = performance.now();
-  const proc = Bun.spawn(cmd, { windowsHide: true, env, cwd, stdout: "pipe", stderr: "pipe" });
+  const proc = Bun.spawn(cmd, {
+    windowsHide: true,
+    env,
+    cwd,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const [out, err, exitCode] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
     proc.exited,
   ]);
-  return { exitCode, ms: Math.round(performance.now() - start), output: out + err };
+  return {
+    exitCode,
+    ms: Math.round(performance.now() - start),
+    output: out + err,
+  };
 }
 
 export async function yoloBuild(
@@ -110,7 +126,8 @@ export async function yoloBuild(
 ): Promise<Timed> {
   const dir = exampleDir(example);
   if (cold)
-    for (const out of [".next", "out"]) rmSync(join(dir, out), { recursive: true, force: true });
+    for (const out of [".next", "out"])
+      rmSync(join(dir, out), { recursive: true, force: true });
   const { cmd, env } = yoloCommand(example, verb, "build");
   return run(cmd, env);
 }
@@ -136,11 +153,18 @@ export interface RouteResult {
   ok: boolean;
 }
 
-async function probe(base: string, routes: [string, number][]): Promise<RouteResult[]> {
+async function probe(
+  base: string,
+  routes: [string, number][],
+): Promise<RouteResult[]> {
   const out: RouteResult[] = [];
   for (const [route, expected] of routes) {
     const status =
-      (await fetch(`${base}${route}`, { redirect: "manual" }).catch(() => undefined))?.status ?? 0;
+      (
+        await fetch(`${base}${route}`, { redirect: "manual" }).catch(
+          () => undefined,
+        )
+      )?.status ?? 0;
     out.push({ route, expected, status, ok: status === expected });
   }
   return out;
@@ -171,7 +195,8 @@ async function withServer<T>(
     detached: true,
   });
   try {
-    if (!(await waitFor(url, 90_000))) throw new Error(`${url} did not come up`);
+    if (!(await waitFor(url, 90_000)))
+      throw new Error(`${url} did not come up`);
     return await body();
   } finally {
     try {
@@ -192,11 +217,17 @@ const PORT_DEV = "3217";
 const PORT_START = "3218";
 
 /** `yolo web dev` serves the example; curl each route. */
-export async function yoloServe(example: Example = "app"): Promise<RouteResult[]> {
+export async function yoloServe(
+  example: Example = "app",
+): Promise<RouteResult[]> {
   const { cmd, env } = yoloCommand(example, "web", "dev");
   const base = `http://localhost:${PORT_DEV}`;
-  return withServer(cmd, { ...env, PORT: PORT_DEV }, undefined, `${base}/`, () =>
-    probe(base, ROUTES[example]),
+  return withServer(
+    cmd,
+    { ...env, PORT: PORT_DEV },
+    undefined,
+    `${base}/`,
+    () => probe(base, ROUTES[example]),
   );
 }
 
@@ -227,7 +258,12 @@ const median = (values: number[]): number =>
 export async function yoloBench(
   example: Example = "app",
   runs = 3,
-): Promise<{ cold: number[]; warm: number[]; coldMedian: number; warmMedian: number }> {
+): Promise<{
+  cold: number[];
+  warm: number[];
+  coldMedian: number;
+  warmMedian: number;
+}> {
   const cold: number[] = [];
   const warm: number[] = [];
   for (let i = 0; i < runs; i += 1) {
@@ -299,7 +335,9 @@ if (import.meta.main) {
       break;
     case "start": {
       const { build, routes } = await yoloStart(example);
-      console.log(`yolo web build (${example}) ${build.ms} ms, exit ${build.exitCode}`);
+      console.log(
+        `yolo web build (${example}) ${build.ms} ms, exit ${build.exitCode}`,
+      );
       ok = report(`next start (${example})`, routes);
       break;
     }
@@ -316,7 +354,9 @@ if (import.meta.main) {
       break;
     }
     case "check":
-      ok = (await doBuild("app", "web")) && report("yolo web dev (app)", await yoloServe("app"));
+      ok =
+        (await doBuild("app", "web")) &&
+        report("yolo web dev (app)", await yoloServe("app"));
       if (ok) {
         const { routes } = await yoloStart("app");
         ok = report("next start (app)", routes);

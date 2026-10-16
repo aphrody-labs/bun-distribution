@@ -155,9 +155,7 @@ export async function processMediaAssets({
           }
         } catch (error) {
           const message =
-            error instanceof Error
-              ? error.message
-              : "Could not process video";
+            error instanceof Error ? error.message : "Could not process video";
 
           toast.error(`Couldn't process ${file.name}`, {
             description: message,
@@ -174,8 +172,11 @@ export async function processMediaAssets({
         handle = await mediaSource.uploadLocalFile(file);
         ownsHandle = true;
       }
-      const existingResolvedItem = existing ? existingResolved?.[index] : undefined;
-      resolved = existingResolvedItem ?? (await mediaSource.resolveMedia(handle));
+      const existingResolvedItem = existing
+        ? existingResolved?.[index]
+        : undefined;
+      resolved =
+        existingResolvedItem ?? (await mediaSource.resolveMedia(handle));
 
       processedAssets.push({
         id: handle.id,

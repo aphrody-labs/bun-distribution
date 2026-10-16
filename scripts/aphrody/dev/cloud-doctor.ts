@@ -15,8 +15,15 @@ const standalone =
 
 const out = (cmd: string[]): string | null => {
   try {
-    const r = Bun.spawnSync(cmd, { windowsHide: true, cwd: root, stdout: "pipe", stderr: "pipe" });
-    return r.exitCode === 0 ? (r.stdout.toString().trim().split("\n")[0] ?? null) : null;
+    const r = Bun.spawnSync(cmd, {
+      windowsHide: true,
+      cwd: root,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    return r.exitCode === 0
+      ? (r.stdout.toString().trim().split("\n")[0] ?? null)
+      : null;
   } catch {
     return null;
   }
@@ -37,7 +44,12 @@ const dispatcher = (): string | null => {
     return null;
   }
 };
-const checks: [name: string, value: string | null, required: boolean, qualified?: boolean][] = [
+const checks: [
+  name: string,
+  value: string | null,
+  required: boolean,
+  qualified?: boolean,
+][] = [
   [
     "bun",
     bunVersion === pin ? pin! : bunVersion && `${bunVersion} (pin ${pin})`,
@@ -58,7 +70,9 @@ const checks: [name: string, value: string | null, required: boolean, qualified?
 ];
 
 const aphrodyHome = process.env.APHRODY_HOME ?? join(home, ".aphrody");
-const agentHomeReady = existsSync(join(aphrodyHome, "workspaces/aphrody/AGENTS.md"));
+const agentHomeReady = existsSync(
+  join(aphrodyHome, "workspaces/aphrody/AGENTS.md"),
+);
 checks.push([
   "agent home (~/.aphrody)",
   agentHomeReady
@@ -79,15 +93,20 @@ for (const alias of ["vps", "dbfr"]) {
     continue;
   }
   const ok =
-    Bun.spawnSync(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=6", alias, "true"], {
-      windowsHide: true,
-    }).exitCode === 0;
+    Bun.spawnSync(
+      ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=6", alias, "true"],
+      {
+        windowsHide: true,
+      },
+    ).exitCode === 0;
   checks.push([`ssh ${alias}`, ok ? "reachable" : null, !standalone]);
 }
 let failed = 0;
 for (const [name, value, required, qualified = true] of checks) {
   const ok = qualified && value !== null && value !== "";
   if (!ok && required) failed++;
-  console.log(`${ok ? "ok  " : required ? "FAIL" : "warn"} ${name}: ${value ?? "missing"}`);
+  console.log(
+    `${ok ? "ok  " : required ? "FAIL" : "warn"} ${name}: ${value ?? "missing"}`,
+  );
 }
 process.exit(failed ? 1 : 0);

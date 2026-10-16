@@ -22,7 +22,10 @@ export interface SubscriptionOptions {
 
 export interface Transport {
   sendRequest(request: any): Promise<any>;
-  subscribe(callback: (event: any) => void, options?: SubscriptionOptions): Promise<() => void>;
+  subscribe(
+    callback: (event: any) => void,
+    options?: SubscriptionOptions,
+  ): Promise<() => void>;
   destroy?(): void;
 }
 
@@ -32,11 +35,17 @@ export interface Transport {
  */
 export class TauriTransport implements Transport {
   private invoke: (cmd: string, args?: any) => Promise<any>;
-  private listen: (event: string, handler: (event: any) => void) => Promise<() => void>;
+  private listen: (
+    event: string,
+    handler: (event: any) => void,
+  ) => Promise<() => void>;
 
   constructor(
     invoke: (cmd: string, args?: any) => Promise<any>,
-    listen: (event: string, handler: (event: any) => void) => Promise<() => void>,
+    listen: (
+      event: string,
+      handler: (event: any) => void,
+    ) => Promise<() => void>,
     private eventName = "core-event",
     private scopedEvents = false,
   ) {
@@ -80,7 +89,8 @@ export class TauriTransport implements Transport {
       subscriptionId = await this.invoke("subscribe_to_events", args);
       if (this.scopedEvents) {
         for (const payload of buffered) {
-          if (payload?.subscription_id === subscriptionId) callback(payload.event);
+          if (payload?.subscription_id === subscriptionId)
+            callback(payload.event);
         }
         buffered.length = 0;
       }
@@ -135,7 +145,9 @@ export class HttpTransport implements Transport {
 
     if (!response.ok) {
       const text = await response.text().catch(() => "");
-      throw new Error(`RPC ${response.status} ${response.statusText}${text ? `: ${text}` : ""}`);
+      throw new Error(
+        `RPC ${response.status} ${response.statusText}${text ? `: ${text}` : ""}`,
+      );
     }
 
     return await response.json();

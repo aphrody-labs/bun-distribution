@@ -234,5 +234,4 @@ describe("UserBookmarksApi", () => {
       });
     });
   });
-
 });

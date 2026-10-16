@@ -7,7 +7,10 @@ declare global {
   interface Window {
     __TAURI_INTERNALS__?: {
       invoke: (cmd: string, args?: any) => Promise<any>;
-      transformCallback: (callback?: (response: any) => void, once?: boolean) => number;
+      transformCallback: (
+        callback?: (response: any) => void,
+        once?: boolean,
+      ) => number;
       unregisterCallback: (id: number) => void;
     };
   }
@@ -15,11 +18,16 @@ declare global {
 
 /** Whether the page runs inside a Tauri webview (false during SSR). */
 function detectTauri(): boolean {
-  return typeof window !== "undefined" && window.__TAURI_INTERNALS__ !== undefined;
+  return (
+    typeof window !== "undefined" && window.__TAURI_INTERNALS__ !== undefined
+  );
 }
 
 /** Invoke a Tauri window command, ignoring failures (restricted capability, browser preview). */
-function invokeWindow(command: string, args?: Record<string, unknown>): Promise<unknown> {
+function invokeWindow(
+  command: string,
+  args?: Record<string, unknown>,
+): Promise<unknown> {
   return (
     window.__TAURI_INTERNALS__?.invoke(command, args).catch(() => undefined) ??
     Promise.resolve(undefined)
@@ -68,7 +76,12 @@ interface WindowControlProps {
 }
 
 /** A caption button: hover and keyboard focus show the same M3 state. */
-function WindowControl({ label, onClick, danger = false, children }: WindowControlProps) {
+function WindowControl({
+  label,
+  onClick,
+  danger = false,
+  children,
+}: WindowControlProps) {
   const [active, setActive] = useState(false);
   const on = () => setActive(true);
   const off = () => setActive(false);
@@ -89,7 +102,10 @@ function WindowControl({ label, onClick, danger = false, children }: WindowContr
             : "color-mix(in srgb, var(--md-sys-color-on-surface, #1b1b22) 8%, transparent)"
           : "transparent",
         border: "none",
-        color: active && danger ? "var(--md-sys-color-on-error, #ffffff)" : "inherit",
+        color:
+          active && danger
+            ? "var(--md-sys-color-on-error, #ffffff)"
+            : "inherit",
         cursor: "pointer",
         width: "46px",
         height: "100%",
@@ -134,9 +150,9 @@ export function M3TauriTitlebar({
   if (!forceShow && !isTauri) return null;
 
   const toggleMaximize = () => {
-    void invokeWindow(isMaximized ? "plugin:window|unmaximize" : "plugin:window|maximize").then(
-      () => setIsMaximized(!isMaximized),
-    );
+    void invokeWindow(
+      isMaximized ? "plugin:window|unmaximize" : "plugin:window|maximize",
+    ).then(() => setIsMaximized(!isMaximized));
   };
 
   return (
@@ -197,11 +213,21 @@ export function M3TauriTitlebar({
 
         <WindowControl label="Minimize" onClick={minimizeWindow}>
           <svg width="10" height="1" viewBox="0 0 10 1" aria-hidden="true">
-            <line x1="0" y1="0.5" x2="10" y2="0.5" stroke="currentColor" strokeWidth="1" />
+            <line
+              x1="0"
+              y1="0.5"
+              x2="10"
+              y2="0.5"
+              stroke="currentColor"
+              strokeWidth="1"
+            />
           </svg>
         </WindowControl>
 
-        <WindowControl label={isMaximized ? "Restore" : "Maximize"} onClick={toggleMaximize}>
+        <WindowControl
+          label={isMaximized ? "Restore" : "Maximize"}
+          onClick={toggleMaximize}
+        >
           {isMaximized ? (
             <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
               <path
@@ -228,7 +254,11 @@ export function M3TauriTitlebar({
 
         <WindowControl label="Close" onClick={closeWindow} danger>
           <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
-            <path d="M1.5,1.5 L8.5,8.5 M8.5,1.5 L1.5,8.5" stroke="currentColor" strokeWidth="1" />
+            <path
+              d="M1.5,1.5 L8.5,8.5 M8.5,1.5 L1.5,8.5"
+              stroke="currentColor"
+              strokeWidth="1"
+            />
           </svg>
         </WindowControl>
       </div>

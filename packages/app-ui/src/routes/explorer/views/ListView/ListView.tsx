@@ -20,7 +20,13 @@ import { DragSelect } from "../DragSelect";
 import { useEmptySpaceContextMenu } from "../../hooks/useEmptySpaceContextMenu";
 
 export const ListView = memo(function ListView() {
-  const { sortBy, setSortBy, setCurrentFiles, scrollPosition, setScrollPosition } = useExplorer();
+  const {
+    sortBy,
+    setSortBy,
+    setCurrentFiles,
+    scrollPosition,
+    setScrollPosition,
+  } = useExplorer();
   const {
     focusedIndex,
     setFocusedIndex,
@@ -37,8 +43,10 @@ export const ListView = memo(function ListView() {
   const emptySpaceContextMenu = useEmptySpaceContextMenu();
 
   useLayoutEffect(() => {
-    if (containerRef.current) containerRef.current.scrollTop = scrollPosition.top;
-    if (bodyScrollRef.current) bodyScrollRef.current.scrollLeft = scrollPosition.left;
+    if (containerRef.current)
+      containerRef.current.scrollTop = scrollPosition.top;
+    if (bodyScrollRef.current)
+      bodyScrollRef.current.scrollLeft = scrollPosition.left;
   }, [scrollPosition.top, scrollPosition.left]);
 
   // Get files from centralized hook (handles search, virtual, and directory)
@@ -184,21 +192,34 @@ export const ListView = memo(function ListView() {
                   const canResize = header.column.getCanResize();
 
                   return (
-                    <div key={header.id} className="relative" style={{ width: header.getSize() }}>
+                    <div
+                      key={header.id}
+                      className="relative"
+                      style={{ width: header.getSize() }}
+                    >
                       <button
                         type="button"
                         className={clsx(
                           "flex w-full cursor-pointer select-none items-center gap-1 px-2 py-2 text-label-medium hover:text-on-surface",
-                          isSorted ? "text-on-surface" : "text-on-surface-variant",
+                          isSorted
+                            ? "text-on-surface"
+                            : "text-on-surface-variant",
                         )}
                         onClick={() => handleHeaderClick(header.id)}
                       >
                         <span className="truncate">
-                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
                         </span>
 
                         {isSorted && (
-                          <Icon name="expand_more" size={14} className="text-on-surface-variant" />
+                          <Icon
+                            name="expand_more"
+                            size={14}
+                            className="text-on-surface-variant"
+                          />
                         )}
                       </button>
                       {canResize && (
@@ -259,7 +280,9 @@ export const ListView = memo(function ListView() {
                 const isPreviousSelected = previousRow
                   ? selectedFileIds.has(previousRow.original.id)
                   : false;
-                const isNextSelected = nextRow ? selectedFileIds.has(nextRow.original.id) : false;
+                const isNextSelected = nextRow
+                  ? selectedFileIds.has(nextRow.original.id)
+                  : false;
 
                 return (
                   <TableRow

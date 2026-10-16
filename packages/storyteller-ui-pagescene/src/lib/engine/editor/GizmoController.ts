@@ -104,8 +104,7 @@ export class GizmoController {
   // is always local).
   toggleTransformSpace() {
     if (!this.canToggleSpace()) return;
-    const next =
-      this.deps.getTransformSpace() === "world" ? "local" : "world";
+    const next = this.deps.getTransformSpace() === "world" ? "local" : "world";
     this.deps.setTransformSpace(next);
     this.setSpace(next);
   }

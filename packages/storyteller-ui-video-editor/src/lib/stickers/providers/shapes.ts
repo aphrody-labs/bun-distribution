@@ -73,7 +73,8 @@ function getShapeParams({
   preset: ShapeGraphicPreset;
 }): ParamValues {
   return {
-    ...buildDefaultGraphicInstance({ definitionId: preset.definitionId }).params,
+    ...buildDefaultGraphicInstance({ definitionId: preset.definitionId })
+      .params,
     ...preset.params,
   };
 }
@@ -122,7 +123,11 @@ function toStickerItem({
   };
 }
 
-function filterShapesByQuery({ query }: { query: string }): ShapeGraphicPreset[] {
+function filterShapesByQuery({
+  query,
+}: {
+  query: string;
+}): ShapeGraphicPreset[] {
   const normalizedQuery = query.trim().toLowerCase();
   const presets = getShapePresets();
   if (!normalizedQuery) {

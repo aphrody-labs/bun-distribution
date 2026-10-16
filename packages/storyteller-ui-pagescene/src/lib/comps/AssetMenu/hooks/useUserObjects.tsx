@@ -1,10 +1,7 @@
 import { useCallback, useContext, useState, useRef } from "react";
 import { EngineContext } from "../../../contexts/EngineContext/EngineContext";
 import { FetchStatus } from "../../../enums";
-import type {
-  FilterEngineCategories,
-  FilterMediaType,
-} from "../../../enums";
+import type { FilterEngineCategories, FilterMediaType } from "../../../enums";
 import {
   FetchMediaItemStates,
   fetchUserMediaItems,

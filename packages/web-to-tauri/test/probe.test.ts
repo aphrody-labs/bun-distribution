@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { rm } from "node:fs/promises";
-import { normalizeTarget, probeDirectory, probeUrl, ProbeError } from "../src/probe.ts";
+import {
+  normalizeTarget,
+  probeDirectory,
+  probeUrl,
+  ProbeError,
+} from "../src/probe.ts";
 import { startSite, tempDir, writeTree, type Site } from "./fixtures.ts";
 
 describe("probeUrl", () => {
@@ -67,8 +72,15 @@ describe("probeUrl", () => {
 
   it("describes cookies without their values", async () => {
     const probe = await probeUrl(`${site.a}/home`);
-    expect(probe.cookies.map((cookie) => cookie.name)).toEqual(["sid", "__Host-t"]);
-    expect(probe.cookies[0]).toMatchObject({ secure: true, httpOnly: true, sameSite: "none" });
+    expect(probe.cookies.map((cookie) => cookie.name)).toEqual([
+      "sid",
+      "__Host-t",
+    ]);
+    expect(probe.cookies[0]).toMatchObject({
+      secure: true,
+      httpOnly: true,
+      sameSite: "none",
+    });
     expect(JSON.stringify(probe)).not.toContain("abc123");
   });
 
@@ -79,9 +91,9 @@ describe("probeUrl", () => {
   });
 
   it("rejects unreachable hosts and non-http targets", async () => {
-    await expect(probeUrl("http://127.0.0.1:1/", { timeoutMs: 2000 })).rejects.toBeInstanceOf(
-      ProbeError,
-    );
+    await expect(
+      probeUrl("http://127.0.0.1:1/", { timeoutMs: 2000 }),
+    ).rejects.toBeInstanceOf(ProbeError);
     expect(() => normalizeTarget("ftp://example.com")).toThrow(ProbeError);
     expect(normalizeTarget("example.com").href).toBe("https://example.com/");
   });
@@ -90,7 +102,9 @@ describe("probeUrl", () => {
 describe("probeDirectory", () => {
   const dirs: string[] = [];
   afterAll(async () => {
-    await Promise.all(dirs.map((dir) => rm(dir, { recursive: true, force: true })));
+    await Promise.all(
+      dirs.map((dir) => rm(dir, { recursive: true, force: true })),
+    );
   });
 
   it("recognises a static bundle, its API prefixes and its backend", async () => {
@@ -112,7 +126,9 @@ describe("probeDirectory", () => {
     expect(probe.htmlPages).toBe(1);
     expect(probe.proxyPrefixes).toEqual(["/api", "/graphql"]);
     expect(probe.backends).toEqual(["https://api.acme.test"]);
-    expect(probe.signals.map((signal) => signal.id)).toContain("service-worker");
+    expect(probe.signals.map((signal) => signal.id)).toContain(
+      "service-worker",
+    );
   });
 
   it("never records credentials from .env files", async () => {
@@ -131,11 +147,15 @@ describe("probeDirectory", () => {
     const dir = await tempDir("w2t-server-");
     dirs.push(dir);
     await writeTree(dir, {
-      "package.json": JSON.stringify({ name: "portal", dependencies: { next: "16" } }),
+      "package.json": JSON.stringify({
+        name: "portal",
+        dependencies: { next: "16" },
+      }),
       "next.config.ts": `export default { output: "standalone" };`,
       "app/api/users/route.ts": "export const GET = () => new Response('ok')",
       "app/api/orders/route.ts": "export const GET = () => new Response('ok')",
-      "server.ts": "Bun.serve({ port: Number(process.env.PORT), fetch: () => new Response('ok') })",
+      "server.ts":
+        "Bun.serve({ port: Number(process.env.PORT), fetch: () => new Response('ok') })",
     });
     const probe = await probeDirectory(dir);
     expect(probe.frameworks).toContain("next");
@@ -146,6 +166,8 @@ describe("probeDirectory", () => {
   });
 
   it("fails clearly on a missing directory", async () => {
-    await expect(probeDirectory("/nonexistent/w2t")).rejects.toBeInstanceOf(ProbeError);
+    await expect(probeDirectory("/nonexistent/w2t")).rejects.toBeInstanceOf(
+      ProbeError,
+    );
   });
 });

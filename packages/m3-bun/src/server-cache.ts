@@ -25,7 +25,10 @@ export interface M3Cache {
   /** The cached value of `key`, else `compute()` stored for `ttl` seconds. */
   wrap<T>(key: string, compute: () => T | Promise<T>, ttl?: number): Promise<T>;
   /** A GET handler whose 200 responses are cached by URL (`X-Cache: HIT` or `MISS`); other methods pass through. */
-  route(handler: M3Handler, options?: { ttl?: number; key?: (request: Request) => string }): M3Handler;
+  route(
+    handler: M3Handler,
+    options?: { ttl?: number; key?: (request: Request) => string },
+  ): M3Handler;
   close(): void;
 }
 
@@ -40,8 +43,12 @@ export function m3Cache(options: M3CacheOptions = {}): M3Cache {
   const ttl = options.ttl ?? 60;
   let owned: Bun.RedisClient | undefined;
   const client = (): Bun.RedisClient =>
-    options.client ?? (owned ??= new Bun.RedisClient(options.url ?? Bun.env.REDIS_URL ?? Bun.env.VALKEY_URL));
-  const seconds = (value: number | undefined): number => Math.max(1, Math.round(value ?? ttl));
+    options.client ??
+    (owned ??= new Bun.RedisClient(
+      options.url ?? Bun.env.REDIS_URL ?? Bun.env.VALKEY_URL,
+    ));
+  const seconds = (value: number | undefined): number =>
+    Math.max(1, Math.round(value ?? ttl));
 
   const cache: M3Cache = {
     get client() {
@@ -52,12 +59,21 @@ export function m3Cache(options: M3CacheOptions = {}): M3Cache {
       return raw === null ? undefined : (JSON.parse(raw) as T);
     },
     async set(key, value, lifetime) {
-      await client().set(prefix + key, JSON.stringify(value), "EX", seconds(lifetime));
+      await client().set(
+        prefix + key,
+        JSON.stringify(value),
+        "EX",
+        seconds(lifetime),
+      );
     },
     async delete(key) {
       await client().del(prefix + key);
     },
-    async wrap<T>(key: string, compute: () => T | Promise<T>, lifetime?: number) {
+    async wrap<T>(
+      key: string,
+      compute: () => T | Promise<T>,
+      lifetime?: number,
+    ) {
       const hit = await cache.get<T>(key);
       if (hit !== undefined) return hit;
       const value = await compute();
@@ -65,21 +81,29 @@ export function m3Cache(options: M3CacheOptions = {}): M3Cache {
       return value;
     },
     route(handler, routeOptions = {}) {
-      return async request => {
+      return async (request) => {
         if (request.method !== "GET") return handler(request);
         const key = `response:${routeOptions.key?.(request) ?? new URL(request.url).pathname + new URL(request.url).search}`;
         const hit = await cache.get<Stored>(key);
         if (hit)
           return new Response(hit.body, {
             status: hit.status,
-            headers: { ...(hit.type ? { "Content-Type": hit.type } : {}), "X-Cache": "HIT" },
+            headers: {
+              ...(hit.type ? { "Content-Type": hit.type } : {}),
+              "X-Cache": "HIT",
+            },
           });
         const response = await handler(request);
-        if (response.status !== 200 || response.headers.has("Set-Cookie")) return response;
+        if (response.status !== 200 || response.headers.has("Set-Cookie"))
+          return response;
         const body = await response.text();
         await cache.set(
           key,
-          { status: 200, type: response.headers.get("content-type"), body } satisfies Stored,
+          {
+            status: 200,
+            type: response.headers.get("content-type"),
+            body,
+          } satisfies Stored,
           routeOptions.ttl,
         );
         const headers = new Headers(response.headers);

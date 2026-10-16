@@ -7,7 +7,10 @@ import {
   MdOutlinedButton,
   MdTextButton,
 } from "@aphrody/m3-react/button";
-import { MdOutlinedTextField, MdFilledTextField } from "@aphrody/m3-react/textfield";
+import {
+  MdOutlinedTextField,
+  MdFilledTextField,
+} from "@aphrody/m3-react/textfield";
 import { MdSwitch } from "@aphrody/m3-react/switch";
 import { MdSlider } from "@aphrody/m3-react/slider";
 import { Card, Page, Section } from "../components/ui.tsx";
@@ -33,14 +36,18 @@ export default function Components({ adaptive }: PageProps) {
           <MdElevatedButton onClick={() => setClicks((value) => value + 1)}>
             Elevated
           </MdElevatedButton>
-          <MdFilledButton onClick={() => setClicks((value) => value + 1)}>Filled</MdFilledButton>
+          <MdFilledButton onClick={() => setClicks((value) => value + 1)}>
+            Filled
+          </MdFilledButton>
           <MdFilledTonalButton onClick={() => setClicks((value) => value + 1)}>
             Tonal
           </MdFilledTonalButton>
           <MdOutlinedButton onClick={() => setClicks((value) => value + 1)}>
             Outlined
           </MdOutlinedButton>
-          <MdTextButton onClick={() => setClicks((value) => value + 1)}>Text</MdTextButton>
+          <MdTextButton onClick={() => setClicks((value) => value + 1)}>
+            Text
+          </MdTextButton>
           <output className="text-body-large" aria-live="polite">
             Activations: {clicks}
           </output>
@@ -54,12 +61,16 @@ export default function Components({ adaptive }: PageProps) {
           <MdOutlinedTextField
             label="Outlined name"
             value={name}
-            onInput={(event) => setName((event.currentTarget as HTMLInputElement).value)}
+            onInput={(event) =>
+              setName((event.currentTarget as HTMLInputElement).value)
+            }
           />
           <MdFilledTextField
             label="Filled name"
             value={name}
-            onInput={(event) => setName((event.currentTarget as HTMLInputElement).value)}
+            onInput={(event) =>
+              setName((event.currentTarget as HTMLInputElement).value)
+            }
           />
           <p className="text-body-large">Hello, {name || "visitor"}.</p>
         </Card>
@@ -70,7 +81,10 @@ export default function Components({ adaptive }: PageProps) {
             <MdSwitch
               selected={enabled}
               onChange={(event) =>
-                setEnabled((event.currentTarget as unknown as { selected: boolean }).selected)
+                setEnabled(
+                  (event.currentTarget as unknown as { selected: boolean })
+                    .selected,
+                )
               }
               aria-label="Enable notifications"
             />
@@ -81,7 +95,9 @@ export default function Components({ adaptive }: PageProps) {
             max={100}
             value={volume}
             aria-label="Volume"
-            onInput={(event) => setVolume(Number((event.currentTarget as HTMLInputElement).value))}
+            onInput={(event) =>
+              setVolume(Number((event.currentTarget as HTMLInputElement).value))
+            }
           />
           <output className="text-body-large">Volume: {volume}%</output>
         </Card>

@@ -1,6 +1,6 @@
 import type { Model3DParams } from "./utilities/render3DModel";
 
-export type NodeType = 'rectangle' | 'circle' | 'triangle' | 'image';
+export type NodeType = "rectangle" | "circle" | "triangle" | "image";
 
 export interface NodeProps {
   id: string;
@@ -63,7 +63,7 @@ export class Node {
     height,
     fill,
     type,
-    stroke = 'black',
+    stroke = "black",
     strokeWidth = 1,
     draggable = false,
     imageUrl,
@@ -131,15 +131,15 @@ export class Node {
         resolve();
       };
       img.onerror = reject;
-      img.crossOrigin = 'anonymous';
+      img.crossOrigin = "anonymous";
       img.src = imageUrl;
     });
   }
 
   setImageFromFile(file: File): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (!file.type.startsWith('image/')) {
-        reject(new Error('File is not an image'));
+      if (!file.type.startsWith("image/")) {
+        reject(new Error("File is not an image"));
         return;
       }
 
@@ -157,7 +157,7 @@ export class Node {
           img.onerror = reject;
           img.src = dataUrl;
         } else {
-          reject(new Error('Failed to read file'));
+          reject(new Error("Failed to read file"));
         }
       };
       reader.onerror = reject;
@@ -166,7 +166,7 @@ export class Node {
   }
 
   setImage(source: string | File): Promise<void> {
-    if (typeof source === 'string') {
+    if (typeof source === "string") {
       return this.setImageFromUrl(source);
     } else {
       return this.setImageFromFile(source);

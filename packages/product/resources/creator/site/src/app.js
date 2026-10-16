@@ -10,7 +10,11 @@
       if (!pack) return;
       document.getElementById("download").href = pack.url;
       document.getElementById("meta").textContent =
-        "v" + release.version + " · Windows · " + Math.round(pack.size / 1048576) + " Mo";
+        "v" +
+        release.version +
+        " · Windows · " +
+        Math.round(pack.size / 1048576) +
+        " Mo";
     } catch {}
   })();
 })();

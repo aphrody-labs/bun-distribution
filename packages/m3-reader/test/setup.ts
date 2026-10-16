@@ -13,7 +13,10 @@ plugin({
       async (args) => {
         const source = await Bun.file(args.path).text();
         return {
-          contents: source.replace(/from\s+(['"])react\1/g, `from ${JSON.stringify(react)}`),
+          contents: source.replace(
+            /from\s+(['"])react\1/g,
+            `from ${JSON.stringify(react)}`,
+          ),
           loader: "js",
         };
       },

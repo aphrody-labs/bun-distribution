@@ -45,8 +45,14 @@ export interface UseOpenAIChatResult {
   setMessages: (messages: ChatMessage[]) => void;
 }
 
-export function useOpenAIChat(options: UseOpenAIChatOptions): UseOpenAIChatResult {
-  const [state, dispatch] = useReducer(chatReducer, options.initialMessages, initialChatState);
+export function useOpenAIChat(
+  options: UseOpenAIChatOptions,
+): UseOpenAIChatResult {
+  const [state, dispatch] = useReducer(
+    chatReducer,
+    options.initialMessages,
+    initialChatState,
+  );
   const controller = useRef<AbortController | null>(null);
   const latest = useRef({ options, state });
 
@@ -57,13 +63,18 @@ export function useOpenAIChat(options: UseOpenAIChatOptions): UseOpenAIChatResul
 
   const send = useCallback(async (content: string) => {
     const { options: o, state: s } = latest.current;
-    if (s.status === "streaming" || controller.current || !content.trim()) return;
+    if (s.status === "streaming" || controller.current || !content.trim())
+      return;
     const user: ChatMessage = { id: newMessageId(), role: "user", content };
     const assistantId = newMessageId();
     const abort = new AbortController();
     controller.current = abort;
     dispatch({ type: "start", user, assistantId });
-    let assistant: ChatMessage = { id: assistantId, role: "assistant", content: "" };
+    let assistant: ChatMessage = {
+      id: assistantId,
+      role: "assistant",
+      content: "",
+    };
     try {
       for await (const event of streamChatCompletion({
         baseUrl: o.baseUrl,

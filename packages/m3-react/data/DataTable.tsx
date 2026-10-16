@@ -28,7 +28,11 @@ import { type CSSProperties, type ReactNode, useId, useRef } from "react";
 export const dataTableFeatures = tableFeatures({
   rowSortingFeature,
   sortedRowModel: createSortedRowModel(),
-  sortFns: { alphanumeric: sortFn_alphanumeric, text: sortFn_text, basic: sortFn_basic },
+  sortFns: {
+    alphanumeric: sortFn_alphanumeric,
+    text: sortFn_text,
+    basic: sortFn_basic,
+  },
   columnFilteringFeature,
   globalFilteringFeature,
   filteredRowModel: createFilteredRowModel(),
@@ -37,7 +41,11 @@ export const dataTableFeatures = tableFeatures({
   paginatedRowModel: createPaginatedRowModel(),
 });
 export type DataTableFeatures = typeof dataTableFeatures;
-export type DataColumn<TData extends RowData = any> = ColumnDef<DataTableFeatures, TData, any>;
+export type DataColumn<TData extends RowData = any> = ColumnDef<
+  DataTableFeatures,
+  TData,
+  any
+>;
 
 /** Column helper typed for DataTable: `const col = dataColumns<Person>(); col.accessor("name", { header: "Name" })`. */
 export const dataColumns = <TData extends RowData = any>() =>
@@ -119,7 +127,12 @@ const s = {
     color: "inherit",
     font: "inherit",
   },
-  pager: { display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 },
+  pager: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 8,
+  },
   button: {
     height: 40,
     padding: "0 16px",
@@ -134,7 +147,9 @@ const s = {
 
 const SORT_MARK = { asc: " ▲", desc: " ▼" } as const;
 
-export function DataTable<TData extends RowData = any>(props: DataTableProps<TData>) {
+export function DataTable<TData extends RowData = any>(
+  props: DataTableProps<TData>,
+) {
   const {
     data,
     columns,
@@ -158,7 +173,10 @@ export function DataTable<TData extends RowData = any>(props: DataTableProps<TDa
     globalFilterFn: "includesString",
     initialState: {
       sorting: initialSorting,
-      pagination: { pageIndex: 0, pageSize: virtual ? Number.MAX_SAFE_INTEGER : pageSize },
+      pagination: {
+        pageIndex: 0,
+        pageSize: virtual ? Number.MAX_SAFE_INTEGER : pageSize,
+      },
     },
   });
   const rows = table.getRowModel().rows;
@@ -178,7 +196,9 @@ export function DataTable<TData extends RowData = any>(props: DataTableProps<TDa
   const items = virtual ? virtualizer.getVirtualItems() : undefined;
   const visible = items ? items.map((item) => rows[item.index]!) : rows;
   const padTop = items?.[0]?.start ?? 0;
-  const padBottom = items?.length ? virtualizer.getTotalSize() - items[items.length - 1]!.end : 0;
+  const padBottom = items?.length
+    ? virtualizer.getTotalSize() - items[items.length - 1]!.end
+    : 0;
 
   return (
     <div className={className} style={s.root} data-m3-data-table="">
@@ -195,17 +215,24 @@ export function DataTable<TData extends RowData = any>(props: DataTableProps<TDa
       )}
       <div
         ref={scrollRef}
-        style={virtual ? { ...s.container, height: virtual.height } : s.container}
+        style={
+          virtual ? { ...s.container, height: virtual.height } : s.container
+        }
         data-m3-scroll=""
       >
-        <table style={s.table} aria-rowcount={virtual ? rows.length + 1 : undefined}>
+        <table
+          style={s.table}
+          aria-rowcount={virtual ? rows.length + 1 : undefined}
+        >
           {caption && <caption style={s.caption}>{caption}</caption>}
           <thead>
             {table.getHeaderGroups().map((group) => (
               <tr key={group.id}>
                 {group.headers.map((header) => {
                   const sorted = header.column.getIsSorted();
-                  const label = header.isPlaceholder ? null : <table.FlexRender header={header} />;
+                  const label = header.isPlaceholder ? null : (
+                    <table.FlexRender header={header} />
+                  );
                   return (
                     <th
                       key={header.id}
@@ -242,14 +269,21 @@ export function DataTable<TData extends RowData = any>(props: DataTableProps<TDa
             {padTop > 0 && (
               <tr aria-hidden="true">
                 {/* oxlint-disable-next-line jsx-a11y/control-has-associated-label -- cellule de remplissage de virtualisation (ligne aria-hidden, sans contenu ni contrôle) */}
-                <td colSpan={columnCount} style={{ height: padTop, padding: 0 }} />
+                <td
+                  colSpan={columnCount}
+                  style={{ height: padTop, padding: 0 }}
+                />
               </tr>
             )}
             {visible.map((row) => (
               <tr
                 key={row.id}
                 data-row-id={row.id}
-                onClick={onRowClick ? () => onRowClick(row.original as TData) : undefined}
+                onClick={
+                  onRowClick
+                    ? () => onRowClick(row.original as TData)
+                    : undefined
+                }
                 style={onRowClick ? { cursor: "pointer" } : undefined}
               >
                 {row.getAllCells().map((cell) => (
@@ -263,12 +297,18 @@ export function DataTable<TData extends RowData = any>(props: DataTableProps<TDa
             {padBottom > 0 && (
               <tr aria-hidden="true">
                 {/* oxlint-disable-next-line jsx-a11y/control-has-associated-label -- cellule de remplissage de virtualisation (ligne aria-hidden, sans contenu ni contrôle) */}
-                <td colSpan={columnCount} style={{ height: padBottom, padding: 0 }} />
+                <td
+                  colSpan={columnCount}
+                  style={{ height: padBottom, padding: 0 }}
+                />
               </tr>
             )}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={columnCount} style={{ ...s.td, textAlign: "center" }}>
+                <td
+                  colSpan={columnCount}
+                  style={{ ...s.td, textAlign: "center" }}
+                >
                   {emptyLabel}
                 </td>
               </tr>
@@ -287,7 +327,8 @@ export function DataTable<TData extends RowData = any>(props: DataTableProps<TDa
             Previous
           </button>
           <span>
-            {table.store.state.pagination.pageIndex + 1} / {table.getPageCount()}
+            {table.store.state.pagination.pageIndex + 1} /{" "}
+            {table.getPageCount()}
           </span>
           <button
             type="button"

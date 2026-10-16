@@ -6,18 +6,18 @@ import { useCallback } from "react";
  * Fetches the adapters list once and caches via React Query.
  */
 export function useAdapterIcons() {
-	const { data: adapters } = useLibraryQuery({
-		type: "adapters.list",
-		input: {},
-	});
+  const { data: adapters } = useLibraryQuery({
+    type: "adapters.list",
+    input: {},
+  });
 
-	const getIcon = useCallback(
-		(adapterId: string): string | null => {
-			if (!adapters) return null;
-			return adapters.find((a) => a.id === adapterId)?.icon_svg ?? null;
-		},
-		[adapters],
-	);
+  const getIcon = useCallback(
+    (adapterId: string): string | null => {
+      if (!adapters) return null;
+      return adapters.find((a) => a.id === adapterId)?.icon_svg ?? null;
+    },
+    [adapters],
+  );
 
-	return { getIcon };
+  return { getIcon };
 }

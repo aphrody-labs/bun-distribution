@@ -1,4 +1,3 @@
-
 export enum GenerationServiceProvider {
   Sora = "sora",
   Fal = "fal",

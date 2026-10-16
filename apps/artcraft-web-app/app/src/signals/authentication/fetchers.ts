@@ -104,7 +104,7 @@ export const forceGetUserInfoAndSubcriptions = async () => {
 };
 
 async function getUserInfoAndSubcriptions() {
-  console.log('getUserInfoAndSubcriptions()')
+  console.log("getUserInfoAndSubcriptions()");
   updateAuthStatus(AUTH_STATUS.GET_USER_INFO);
   const usersApi = new UsersApi();
   const sessionResponse = await usersApi.GetSession();
@@ -121,7 +121,7 @@ async function getUserInfoAndSubcriptions() {
     updateAuthStatus(AUTH_STATUS.NO_ACCESS);
     return;
   }
-  
+
   const userToken = sessionResponse.data.user.user_token;
   if (!!userToken) {
     gtagLogin(userToken);

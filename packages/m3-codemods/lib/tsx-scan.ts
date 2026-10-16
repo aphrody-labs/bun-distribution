@@ -20,7 +20,14 @@ export interface JsxAttr {
 
 export type JsxAttrValue =
   | { kind: "string"; start: number; end: number; text: string }
-  | { kind: "expr"; start: number; end: number; exprStart: number; exprEnd: number; empty: boolean }
+  | {
+      kind: "expr";
+      start: number;
+      end: number;
+      exprStart: number;
+      exprEnd: number;
+      empty: boolean;
+    }
   | { kind: "element"; start: number; end: number };
 
 export type JsxChild =
@@ -221,7 +228,12 @@ class Scanner {
         let j = i + 1;
         while (j < s.length && ID_PART.test(s[j]!)) j++;
         const word = s.slice(i, j);
-        if (topLevel && depth === 0 && word === "import" && statementStart(prev)) {
+        if (
+          topLevel &&
+          depth === 0 &&
+          word === "import" &&
+          statementStart(prev)
+        ) {
           const decl = parseImport(s, i);
           if (decl) {
             this.imports.push(decl);
@@ -352,14 +364,24 @@ class Scanner {
           node.end = j + 1;
           return j + 1;
         }
-        const attr: JsxAttr = { spread: false, name: s.slice(start, j), start, end: j };
+        const attr: JsxAttr = {
+          spread: false,
+          name: s.slice(start, j),
+          start,
+          end: j,
+        };
         const k = this.trivia(j);
         if (s[k] === "=") {
           const v = this.trivia(k + 1);
           if (s[v] === '"' || s[v] === "'") {
             const close = s.indexOf(s[v]!, v + 1);
             const end = close === -1 ? s.length : close + 1;
-            attr.value = { kind: "string", start: v, end, text: s.slice(v + 1, end - 1) };
+            attr.value = {
+              kind: "string",
+              start: v,
+              end,
+              text: s.slice(v + 1, end - 1),
+            };
             j = end;
           } else if (s[v] === "{") {
             const close = this.code(v + 1, true);
@@ -462,7 +484,8 @@ function regexAllowed(prev: Prev): boolean {
   }
 }
 
-const IMPORT_FROM = /^import\s+(type\s+)?([\s\S]*?)\s*\bfrom\s*(["'])([^"'\n]*)\3/;
+const IMPORT_FROM =
+  /^import\s+(type\s+)?([\s\S]*?)\s*\bfrom\s*(["'])([^"'\n]*)\3/;
 const IMPORT_BARE = /^import\s*(["'])([^"'\n]*)\1/;
 
 /** Parse the import declaration at `i` (`import` keyword), or null for `import(` / `import.meta`. */
@@ -508,21 +531,44 @@ function parseClause(clause: string): ImportSpec[] {
   const specs: ImportSpec[] = [];
   const text = stripComments(clause).trim();
   const brace = text.indexOf("{");
-  const head = (brace === -1 ? text : text.slice(0, brace)).replace(/,\s*$/, "").trim();
+  const head = (brace === -1 ? text : text.slice(0, brace))
+    .replace(/,\s*$/, "")
+    .trim();
   for (const part of head.split(",").map((p) => p.trim())) {
     if (!part) continue;
     const ns = /^\*\s*as\s+([\w$]+)$/.exec(part);
-    if (ns) specs.push({ kind: "namespace", imported: "*", local: ns[1]!, text: part });
-    else specs.push({ kind: "default", imported: "default", local: part, text: part });
+    if (ns)
+      specs.push({
+        kind: "namespace",
+        imported: "*",
+        local: ns[1]!,
+        text: part,
+      });
+    else
+      specs.push({
+        kind: "default",
+        imported: "default",
+        local: part,
+        text: part,
+      });
   }
   if (brace !== -1) {
     const body = text.slice(brace + 1, text.lastIndexOf("}"));
-    for (const part of body.split(",").map((p) => p.trim().replace(/\s+/g, " "))) {
+    for (const part of body
+      .split(",")
+      .map((p) => p.trim().replace(/\s+/g, " "))) {
       if (!part) continue;
-      const m = /^(?:type )?(?:([\w$]+)|(["'])(.*)\2)(?: as ([\w$]+))?$/.exec(part);
+      const m = /^(?:type )?(?:([\w$]+)|(["'])(.*)\2)(?: as ([\w$]+))?$/.exec(
+        part,
+      );
       if (!m) continue;
       const imported = m[1] ?? m[3]!;
-      specs.push({ kind: "named", imported, local: m[4] ?? imported, text: part });
+      specs.push({
+        kind: "named",
+        imported,
+        local: m[4] ?? imported,
+        text: part,
+      });
     }
   }
   return specs;
@@ -553,10 +599,16 @@ function directives(scanner: Scanner): number {
 export function scanTsx(src: string): ScanResult {
   const scanner = new Scanner(src);
   scanner.code(0, false, true);
-  return { imports: scanner.imports, directivesEnd: directives(scanner), nodes: scanner.nodes };
+  return {
+    imports: scanner.imports,
+    directivesEnd: directives(scanner),
+    nodes: scanner.nodes,
+  };
 }
 
 /** Name of a JSX element when it is a plain identifier (`Button`, `md-icon`), else null. */
 export function jsxName(node: JsxNode): string | null {
-  return node.kind === "element" && /^[A-Za-z_$][\w$-]*$/.test(node.rawName) ? node.rawName : null;
+  return node.kind === "element" && /^[A-Za-z_$][\w$-]*$/.test(node.rawName)
+    ? node.rawName
+    : null;
 }

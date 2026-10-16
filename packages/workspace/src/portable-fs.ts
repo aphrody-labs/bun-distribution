@@ -18,11 +18,15 @@ export function isOwnerOnly(mode: number): boolean {
  * Rename `temporary` (a fresh symlink) over the existing symlink `pointer`. POSIX does this atomically;
  * Windows refuses to rename over a directory link (EPERM), so the old link is unlinked first there.
  */
-export async function replaceSymlink(temporary: string, pointer: string): Promise<void> {
+export async function replaceSymlink(
+  temporary: string,
+  pointer: string,
+): Promise<void> {
   try {
     await rename(temporary, pointer);
   } catch (error) {
-    if (POSIX_MODES || (error as NodeJS.ErrnoException).code !== "EPERM") throw error;
+    if (POSIX_MODES || (error as NodeJS.ErrnoException).code !== "EPERM")
+      throw error;
     if (!(await lstat(pointer)).isSymbolicLink()) throw error;
     await unlink(pointer);
     await rename(temporary, pointer);

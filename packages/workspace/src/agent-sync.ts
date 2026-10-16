@@ -8,7 +8,11 @@ import { setTimeout as delay } from "node:timers/promises";
 
 type ObjectValue = Record<string, any>;
 export interface SyncClient {
-  call(tool: string, args: Record<string, any>, timeoutMs?: number): Promise<unknown>;
+  call(
+    tool: string,
+    args: Record<string, any>,
+    timeoutMs?: number,
+  ): Promise<unknown>;
   close(): void;
 }
 
@@ -27,20 +31,30 @@ export async function syncAgentPass(
   memory: boolean,
   live = true,
 ) {
-  if (!["aphrody", "dbfr", "ie"].includes(domain)) throw new Error("invalid domain");
+  if (!["aphrody", "dbfr", "ie"].includes(domain))
+    throw new Error("invalid domain");
   const environment = object(
-    await client.call("nu_eval", { code: "$env.APHRODY_AGENT_DOMAIN?", timeout_secs: 5 }, 10_000),
+    await client.call(
+      "nu_eval",
+      { code: "$env.APHRODY_AGENT_DOMAIN?", timeout_secs: 5 },
+      10_000,
+    ),
   );
   if (environment.value !== domain)
     throw new Error(`kernel domain differs from selected ${domain} profile`);
-  const report = object(await client.call("sync_external_agents", { live, memory }, 60_000));
+  const report = object(
+    await client.call("sync_external_agents", { live, memory }, 60_000),
+  );
   const expected = join(
     process.env.APHRODY_HOME || homedir() + "/.aphrody",
     "workspaces",
     domain,
     "sessions",
   );
-  if (typeof report.output_dir !== "string" || resolve(report.output_dir) !== resolve(expected))
+  if (
+    typeof report.output_dir !== "string" ||
+    resolve(report.output_dir) !== resolve(expected)
+  )
     throw new Error("sync output differs from the selected domain store");
   // Publish metadata only. Transcripts and private conversation values stay in their store.
   return {
@@ -83,8 +97,10 @@ export async function runAgentSync(args: string[]): Promise<number> {
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }
-  if (!Number.isFinite(interval) || interval < 1) throw new Error("interval must be >= 1 second");
-  if (!["aphrody", "dbfr", "ie"].includes(domain)) throw new Error("invalid domain");
+  if (!Number.isFinite(interval) || interval < 1)
+    throw new Error("interval must be >= 1 second");
+  if (!["aphrody", "dbfr", "ie"].includes(domain))
+    throw new Error("invalid domain");
   const stop = new AbortController();
   let client: SyncClient | undefined;
   const interrupt = () => {
@@ -108,7 +124,12 @@ export async function runAgentSync(args: string[]): Promise<number> {
         client ??= await KernelClient.connect(undefined, "aphrody-agent-sync");
         if (stop.signal.aborted) break;
         const probeLive = Date.now() >= nextProbeAt;
-        const nextReport = await syncAgentPass(client, domain, memory, probeLive);
+        const nextReport = await syncAgentPass(
+          client,
+          domain,
+          memory,
+          probeLive,
+        );
         if (probeLive) {
           nextProbeAt = Date.now() + 30_000;
           liveSampledAt = new Date().toISOString();
@@ -141,10 +162,14 @@ export async function runAgentSync(args: string[]): Promise<number> {
       if (json) console.log(JSON.stringify(status));
       if (!watch) return failures ? 1 : 0;
       // Sequential calls and bounded backoff; retry uses the owner's exactly-once offsets.
-      const seconds = failures ? Math.min(30, interval * 2 ** Math.min(failures, 5)) : interval;
-      await delay(seconds * 1000, undefined, { signal: stop.signal }).catch((failure) => {
-        if (!stop.signal.aborted) throw failure;
-      });
+      const seconds = failures
+        ? Math.min(30, interval * 2 ** Math.min(failures, 5))
+        : interval;
+      await delay(seconds * 1000, undefined, { signal: stop.signal }).catch(
+        (failure) => {
+          if (!stop.signal.aborted) throw failure;
+        },
+      );
     } while (!stop.signal.aborted);
     return 0;
   } finally {

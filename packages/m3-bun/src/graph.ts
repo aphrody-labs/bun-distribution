@@ -11,7 +11,8 @@ import type { M3App } from "./config.ts";
 import { sha256 } from "./util.ts";
 
 /** Registry of an app when no path is given: next to its config, out of the build directory. */
-export const graphPath = (app: M3App): string => join(app.dir, ".m3-bun", "graph.sqlite");
+export const graphPath = (app: M3App): string =>
+  join(app.dir, ".m3-bun", "graph.sqlite");
 
 /** Repository id of an app in the registry. */
 export const repositoryId = (app: M3App): string => `m3-app:${app.name}`;
@@ -57,15 +58,21 @@ const output = (path: string, entry: string): string => {
   return `output:${clean === entry ? "index.html" : clean}`;
 };
 
-const isVirtual = (path: string): boolean => /^[a-z][a-z0-9+.-]*:/i.test(path) && !/^[a-z]:[\\/]/i.test(path);
+const isVirtual = (path: string): boolean =>
+  /^[a-z][a-z0-9+.-]*:/i.test(path) && !/^[a-z]:[\\/]/i.test(path);
 
 /**
  * The metafile as graph nodes and links. Inputs are `input:<path relative to dir>` (the metafile keys them by the
  * working directory; virtual modules keep their `m3:` specifier), outputs `output:<path in the build directory>`; links are the imports (relation: the import kind)
  * and `bundled-into` from an input to every output it contributed bytes to.
  */
-export function moduleGraph(metafile: BuildMetafile, entry: string, dir: string = process.cwd()): ModuleGraph {
-  const local = (path: string): string => (isVirtual(path) ? path : relative(dir, resolve(path)).replaceAll("\\", "/"));
+export function moduleGraph(
+  metafile: BuildMetafile,
+  entry: string,
+  dir: string = process.cwd(),
+): ModuleGraph {
+  const local = (path: string): string =>
+    isVirtual(path) ? path : relative(dir, resolve(path)).replaceAll("\\", "/");
   const nodes: ModuleGraph["nodes"] = [];
   const links: ModuleGraph["links"] = [];
   const external = new Set<string>();
@@ -97,7 +104,13 @@ export function moduleGraph(metafile: BuildMetafile, entry: string, dir: string 
     }
   }
   for (const path of external)
-    nodes.push({ id: `external:${path}`, label: path, file_type: "external", provenance: "EXTRACTED", bytes: 0 });
+    nodes.push({
+      id: `external:${path}`,
+      label: path,
+      file_type: "external",
+      provenance: "EXTRACTED",
+      bytes: 0,
+    });
   for (const [path, built] of Object.entries(metafile.outputs)) {
     const id = output(path, entry);
     nodes.push({
@@ -153,25 +166,52 @@ export async function recordBuild(
 ): Promise<GraphRecord> {
   using registry = await openGraph(path);
   const { app, manifest } = report;
-  const repository = registry.repository(app.name, "m3-app", app.dir, null, { version: app.version });
-  const runId = registry.startRun("m3-bun.build", process.argv.slice(1), app.dir, {
-    buildId: manifest.buildId,
-    minify: manifest.minify,
-    bun: manifest.bun,
+  const repository = registry.repository(app.name, "m3-app", app.dir, null, {
+    version: app.version,
   });
+  const runId = registry.startRun(
+    "m3-bun.build",
+    process.argv.slice(1),
+    app.dir,
+    {
+      buildId: manifest.buildId,
+      minify: manifest.minify,
+      bun: manifest.bun,
+    },
+  );
   try {
-    registry.sample(runId, "build", `bun ${manifest.bun}`, 0, report.ms, manifest.buildId);
+    registry.sample(
+      runId,
+      "build",
+      `bun ${manifest.bun}`,
+      0,
+      report.ms,
+      manifest.buildId,
+    );
     for (const file of manifest.files) {
       // oxlint-disable-next-line no-await-in-loop -- The registry hashes one artifact at a time from a stream.
-      await registry.artifact(join(report.outdir, file.path), "m3-bun.output", runId, {
-        path: file.path,
-        gzipBytes: file.gzipBytes,
-      });
+      await registry.artifact(
+        join(report.outdir, file.path),
+        "m3-bun.output",
+        runId,
+        {
+          path: file.path,
+          gzipBytes: file.gzipBytes,
+        },
+      );
     }
-    const graph = moduleGraph(metafile, relative(app.dir, app.m3.entry).replaceAll("\\", "/"), app.dir);
+    const graph = moduleGraph(
+      metafile,
+      relative(app.dir, app.m3.entry).replaceAll("\\", "/"),
+      app.dir,
+    );
     const hash = sha256(JSON.stringify(graph));
     const imported = await registry.importGraph(repository, graph, hash);
-    registry.finishRun(runId, 0, `${manifest.files.length} files, build ${manifest.buildId}`);
+    registry.finishRun(
+      runId,
+      0,
+      `${manifest.files.length} files, build ${manifest.buildId}`,
+    );
     return {
       path: registry.path,
       repositoryId: repository,
@@ -187,7 +227,10 @@ export async function recordBuild(
 }
 
 /** The `bun:graphx` markdown report of an app's builds. */
-export async function graphReport(app: M3App, path = graphPath(app)): Promise<string> {
+export async function graphReport(
+  app: M3App,
+  path = graphPath(app),
+): Promise<string> {
   using registry = await openGraph(path);
   const { markdown } = await import("bun:graphx");
   return await markdown(registry, { repository: repositoryId(app) });
@@ -201,12 +244,27 @@ export async function dependents(
 ): Promise<{ label: string; kind: string; depth: number }[]> {
   using registry = await openGraph(path);
   const snapshot = registry.getSnapshot(repositoryId(app));
-  if (!snapshot) throw new Error(`m3-bun graph: no build of ${app.name} recorded in ${path} (m3-bun build --graph)`);
-  const node = registry.getNode(`${snapshot.id}:input:${file.replaceAll("\\", "/")}`);
-  if (!node) throw new Error(`m3-bun graph: ${file} is not an input of build snapshot ${snapshot.id}`);
-  const { nodes } = await registry.traverse(node.id, { direction: "incoming", maxDepth: 32 });
-  const bundled = await registry.traverse(node.id, { direction: "outgoing", kind: "bundled-into", maxDepth: 1 });
-  return [...nodes, ...bundled.nodes.filter(n => n.depth > 0)]
-    .filter(n => n.depth > 0)
-    .map(n => ({ label: n.label, kind: n.kind, depth: n.depth }));
+  if (!snapshot)
+    throw new Error(
+      `m3-bun graph: no build of ${app.name} recorded in ${path} (m3-bun build --graph)`,
+    );
+  const node = registry.getNode(
+    `${snapshot.id}:input:${file.replaceAll("\\", "/")}`,
+  );
+  if (!node)
+    throw new Error(
+      `m3-bun graph: ${file} is not an input of build snapshot ${snapshot.id}`,
+    );
+  const { nodes } = await registry.traverse(node.id, {
+    direction: "incoming",
+    maxDepth: 32,
+  });
+  const bundled = await registry.traverse(node.id, {
+    direction: "outgoing",
+    kind: "bundled-into",
+    maxDepth: 1,
+  });
+  return [...nodes, ...bundled.nodes.filter((n) => n.depth > 0)]
+    .filter((n) => n.depth > 0)
+    .map((n) => ({ label: n.label, kind: n.kind, depth: n.depth }));
 }

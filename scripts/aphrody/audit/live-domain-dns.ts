@@ -16,10 +16,20 @@ type Record = {
 };
 type Declared = {
   registrar?: { nameServers: string[] };
-  dns: { zone: string; zoneId: string; nameServers: string[]; records: Record[] };
+  dns: {
+    zone: string;
+    zoneId: string;
+    nameServers: string[];
+    records: Record[];
+  };
   applications?: { id: string; hostname: string; alias: string }[];
   productDomains?: { id: string; hostname: string; owner: string }[];
-  worker?: { owner: string; name: string; routes: string[]; customDomains: string[] };
+  worker?: {
+    owner: string;
+    name: string;
+    routes: string[];
+    customDomains: string[];
+  };
 };
 
 const path = process.argv[2] ?? "tools/config/cloudflare/aphrody.com.json";
@@ -28,7 +38,10 @@ const declared: Declared = JSON.parse(await Bun.file(manifestPath).text());
 if (declared.applications) {
   const aphrodyRoot = resolve(dirname(manifestPath), "../../..");
   const bunOsRoot = resolve(aphrodyRoot, "../bun-os");
-  const capabilitiesPath = join(bunOsRoot, "packages/bun-workspace/src/capabilities.ts");
+  const capabilitiesPath = join(
+    bunOsRoot,
+    "packages/bun-workspace/src/capabilities.ts",
+  );
   const configPath = join(bunOsRoot, "aphrody.config.json");
   const distributionAppsPath = join(bunOsRoot, "infra/apps.json");
   if (!(await Bun.file(capabilitiesPath).exists()))
@@ -45,10 +58,17 @@ if (declared.applications) {
       if (!alias) throw new Error(`Application alias missing for ${app.id}`);
       return { id: app.id, hostname, alias };
     });
-  if (JSON.stringify(declared.applications) !== JSON.stringify(expectedApplications))
-    throw new Error("Application hostnames differ from the Bun OS capability owner");
+  if (
+    JSON.stringify(declared.applications) !==
+    JSON.stringify(expectedApplications)
+  )
+    throw new Error(
+      "Application hostnames differ from the Bun OS capability owner",
+    );
 
-  const distributionApps = JSON.parse(await Bun.file(distributionAppsPath).text()).apps as {
+  const distributionApps = JSON.parse(
+    await Bun.file(distributionAppsPath).text(),
+  ).apps as {
     id: string;
     hostname?: string;
   }[];
@@ -58,8 +78,13 @@ if (declared.applications) {
   const actualProductDomains = (declared.productDomains ?? []).filter(
     (domain) => domain.owner === "bun-os",
   );
-  if (JSON.stringify(actualProductDomains) !== JSON.stringify(expectedProductDomains))
-    throw new Error("Product hostnames differ from the Bun OS distribution owner");
+  if (
+    JSON.stringify(actualProductDomains) !==
+    JSON.stringify(expectedProductDomains)
+  )
+    throw new Error(
+      "Product hostnames differ from the Bun OS distribution owner",
+    );
 
   const expectedRoutes = expectedApplications.map(
     (app: { hostname: string }) => `${app.hostname}/*`,
@@ -79,12 +104,19 @@ if (declared.applications) {
     JSON.stringify(declared.worker?.customDomains?.toSorted()) !==
     JSON.stringify(expectedCustomDomains.toSorted())
   )
-    throw new Error("Worker custom domains differ from product and application hostnames");
+    throw new Error(
+      "Worker custom domains differ from product and application hostnames",
+    );
 
-  const workerConfigPath = resolve(aphrodyRoot, "../bun/packages/web/cloudflare/wrangler.jsonc");
+  const workerConfigPath = resolve(
+    aphrodyRoot,
+    "../bun/packages/web/cloudflare/wrangler.jsonc",
+  );
   if (!(await Bun.file(workerConfigPath).exists()))
     throw new Error("Bun Worker configuration is unavailable");
-  const workerConfig = Bun.JSONC.parse(await Bun.file(workerConfigPath).text()) as {
+  const workerConfig = Bun.JSONC.parse(
+    await Bun.file(workerConfigPath).text(),
+  ) as {
     name: string;
     routes: { pattern: string; custom_domain?: boolean; zone_id?: string }[];
   };
@@ -100,13 +132,16 @@ if (declared.applications) {
     (pattern: string) => `${pattern}:${declared.dns.zoneId}`,
   );
   const actualConfiguredRoutes = configuredRoutes.map(
-    (route: { pattern: string; zone_id?: string }) => `${route.pattern}:${route.zone_id}`,
+    (route: { pattern: string; zone_id?: string }) =>
+      `${route.pattern}:${route.zone_id}`,
   );
   if (
     JSON.stringify(actualConfiguredRoutes.toSorted()) !==
     JSON.stringify(expectedConfiguredRoutes.toSorted())
   )
-    throw new Error("Bun Worker routes differ from the Aphrody Infra domain contract");
+    throw new Error(
+      "Bun Worker routes differ from the Aphrody Infra domain contract",
+    );
   const expectedCustomDomainSet = new Set(expectedCustomDomains);
   const configuredCustomDomainSet = new Set(configuredCustomDomains);
   const missingCustomDomains = expectedCustomDomains.filter(
@@ -134,7 +169,8 @@ if (declared.applications) {
   );
 }
 const strip = (v: string) => v.replace(/\.$/, "");
-const sorted = (xs: unknown[]) => JSON.stringify(xs.map((x) => JSON.stringify(x)).toSorted());
+const sorted = (xs: unknown[]) =>
+  JSON.stringify(xs.map((x) => JSON.stringify(x)).toSorted());
 
 // Canonical value per (name,type) group, matching the shape produced by `answer()`.
 const groups = new Map<string, Record[]>();
@@ -144,24 +180,36 @@ for (const r of declared.dns.records) {
 }
 const expectedOf = (rs: Record[]): string => {
   const type = rs[0]!.type;
-  if (type === "MX") return sorted(rs.map((r) => [r.priority, strip(r.content!)]));
+  if (type === "MX")
+    return sorted(rs.map((r) => [r.priority, strip(r.content!)]));
   if (type === "SRV")
     return sorted(
-      rs.map((r) => [r.data!.priority, r.data!.weight, r.data!.port, strip(r.data!.target)]),
+      rs.map((r) => [
+        r.data!.priority,
+        r.data!.weight,
+        r.data!.port,
+        strip(r.data!.target),
+      ]),
     );
   if (type === "TXT") return sorted(rs.map((r) => r.content!));
   return sorted(rs.map((r) => strip(r.content!)));
 };
 const answer = (type: string, a: any[]): string => {
-  if (type === "MX") return sorted(a.map((x) => [x.priority, strip(x.exchange)]));
-  if (type === "SRV") return sorted(a.map((x) => [x.priority, x.weight, x.port, strip(x.name)]));
+  if (type === "MX")
+    return sorted(a.map((x) => [x.priority, strip(x.exchange)]));
+  if (type === "SRV")
+    return sorted(a.map((x) => [x.priority, x.weight, x.port, strip(x.name)]));
   if (type === "TXT") return sorted(a.map((x) => x.join("")));
   return sorted(a.map((x) => strip(String(x))));
 };
 
 const serversOf = async (hosts: string[]) =>
   (await Promise.all(hosts.map((h) => dns.resolve4(h)))).flat();
-const query = async (server: string, name: string, type: string): Promise<string> => {
+const query = async (
+  server: string,
+  name: string,
+  type: string,
+): Promise<string> => {
   const r = new dns.Resolver();
   r.setServers([server]);
   try {
@@ -175,7 +223,9 @@ const sets = {
   ...(declared.registrar ? { registrar: declared.registrar.nameServers } : {}),
   cloudflare: declared.dns.nameServers,
 };
-const live = (await dns.resolveNs(declared.dns.zone).catch(() => [] as string[]))
+const live = (
+  await dns.resolveNs(declared.dns.zone).catch(() => [] as string[])
+)
   .toSorted()
   .join(",");
 const is = (s: string[]) => s.toSorted().join(",") === live;
@@ -190,8 +240,8 @@ const checks = await Promise.all(
   Object.entries(sets)
     .filter(
       ([, hosts]) =>
-        hosts.toSorted().join(",") !== declared.dns.nameServers.toSorted().join(",") ||
-        !sets.registrar,
+        hosts.toSorted().join(",") !==
+          declared.dns.nameServers.toSorted().join(",") || !sets.registrar,
     )
     .map(async ([label, hosts]) => {
       const servers = await serversOf(hosts);
@@ -202,16 +252,22 @@ const checks = await Promise.all(
           const want = proxied ? "proxied DNS answer" : expectedOf(rs);
           const got = await Promise.all(
             servers.map((s) =>
-              proxied ? query(s, name, type === "CNAME" ? "A" : type) : query(s, name, type),
+              proxied
+                ? query(s, name, type === "CNAME" ? "A" : type)
+                : query(s, name, type),
             ),
           );
-          const bad = got.filter((g) => (proxied ? g.startsWith("ERR:") : g !== want));
+          const bad = got.filter((g) =>
+            proxied ? g.startsWith("ERR:") : g !== want,
+          );
           return bad.length
             ? `DIFF ${label} ${type} ${name} want=${want} got=${bad.join(" | ")}`
             : null;
         }),
       );
-      console.log(`${label}: ${groups.size} record sets checked on ${servers.length} servers`);
+      console.log(
+        `${label}: ${groups.size} record sets checked on ${servers.length} servers`,
+      );
       return diffsOf.filter((d): d is string => d !== null);
     }),
 );

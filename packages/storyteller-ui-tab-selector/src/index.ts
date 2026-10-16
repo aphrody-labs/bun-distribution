@@ -1,2 +1,1 @@
-
-export * from './lib/tab-selector';
+export * from "./lib/tab-selector";

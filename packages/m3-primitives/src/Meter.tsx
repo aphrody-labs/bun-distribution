@@ -29,7 +29,10 @@ export const MeterLabel = forwardRef<HTMLSpanElement, MeterLabelProps>(
   ({ className, ...props }, ref) => (
     <MeterPrimitive.Label
       ref={ref}
-      className={withClassName("text-label-medium font-medium text-on-surface", className)}
+      className={withClassName(
+        "text-label-medium font-medium text-on-surface",
+        className,
+      )}
       {...props}
     />
   ),
@@ -41,7 +44,10 @@ export const MeterTrack = forwardRef<HTMLDivElement, MeterTrackProps>(
   ({ className, ...props }, ref) => (
     <MeterPrimitive.Track
       ref={ref}
-      className={withClassName("relative h-2 w-full overflow-hidden rounded-full bg-surface-variant", className)}
+      className={withClassName(
+        "relative h-2 w-full overflow-hidden rounded-full bg-surface-variant",
+        className,
+      )}
       {...props}
     />
   ),
@@ -65,7 +71,10 @@ export const MeterIndicator = forwardRef<HTMLDivElement, MeterIndicatorProps>(
       <MeterPrimitive.Indicator
         ref={ref}
         className={withClassName(
-          clsx("h-full rounded-full transition-all duration-300 ease-standard", toneStyles),
+          clsx(
+            "h-full rounded-full transition-all duration-300 ease-standard",
+            toneStyles,
+          ),
           className,
         )}
         {...props}
@@ -80,7 +89,10 @@ export const MeterValue = forwardRef<HTMLSpanElement, MeterValueProps>(
   ({ className, ...props }, ref) => (
     <MeterPrimitive.Value
       ref={ref}
-      className={withClassName("text-label-small font-mono text-on-surface-variant", className)}
+      className={withClassName(
+        "text-label-small font-mono text-on-surface-variant",
+        className,
+      )}
       {...props}
     />
   ),
@@ -94,9 +106,18 @@ export interface MeterProps extends MeterPrimitive.Root.Props {
 }
 
 /** Pre-composed M3 Meter with label, track, indicator and formatted value. */
-export function Meter({ label, showValue = true, tone = "primary", ...props }: MeterProps) {
+export function Meter({
+  label,
+  showValue = true,
+  tone = "primary",
+  ...props
+}: MeterProps) {
   return (
-    <MeterRoot tone={tone} aria-label={typeof label === "string" ? label : undefined} {...props}>
+    <MeterRoot
+      tone={tone}
+      aria-label={typeof label === "string" ? label : undefined}
+      {...props}
+    >
       {(label || showValue) && (
         <div className="flex items-center justify-between">
           {label && <MeterLabel>{label}</MeterLabel>}

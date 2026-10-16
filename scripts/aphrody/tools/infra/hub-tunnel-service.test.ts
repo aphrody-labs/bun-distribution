@@ -11,7 +11,9 @@ test.skipIf(process.platform !== "win32")(
     const fixture = mkdtempSync(join(tmpdir(), "hub-tunnel-owner-"));
     const marker = join(fixture, "child.json");
     const wrapper = join(fixture, "wrapper.ts");
-    const runnerPath = fileURLToPath(new URL("./hub-tunnel-service.ts", import.meta.url));
+    const runnerPath = fileURLToPath(
+      new URL("./hub-tunnel-service.ts", import.meta.url),
+    );
     const childCode = `const s=Bun.serve({hostname:"127.0.0.1",port:0,fetch:()=>new Response("ready")});await Bun.write(${JSON.stringify(marker)},JSON.stringify({pid:process.pid,url:s.url.href}));await new Promise(()=>{});`;
     await Bun.write(
       wrapper,
@@ -37,11 +39,16 @@ test.skipIf(process.platform !== "win32")(
         }),
       ]);
       watcher.close();
-      const child = (await Bun.file(marker).json()) as { pid: number; url: string };
+      const child = (await Bun.file(marker).json()) as {
+        pid: number;
+        url: string;
+      };
       expect((await fetch(child.url)).status).toBe(200);
       runner.kill("SIGKILL");
       await runner.exited;
-      await expect(fetch(child.url, { signal: AbortSignal.timeout(1000) })).rejects.toThrow();
+      await expect(
+        fetch(child.url, { signal: AbortSignal.timeout(1000) }),
+      ).rejects.toThrow();
     } finally {
       if (runner.exitCode === null) runner.kill("SIGKILL");
       await runner.exited;

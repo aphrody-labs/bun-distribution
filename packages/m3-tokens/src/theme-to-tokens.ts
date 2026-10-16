@@ -22,7 +22,11 @@
 //    source. The source of each mode is honoured when provided.
 // -----------------------------------------------------------------------------
 
-import { themeFromSourceColor, argbFromHex, hexFromArgb } from "@material/material-color-utilities";
+import {
+  themeFromSourceColor,
+  argbFromHex,
+  hexFromArgb,
+} from "@material/material-color-utilities";
 
 // ---------------------------------------------------------------------------
 // MUI theme shape (subset we read). Loosely typed: every field is optional.
@@ -167,7 +171,8 @@ export function normalizeHex(input: unknown): string | null {
 }
 
 /** Pick black/white text for a background by approximate relative luminance. */
-const linearizeSrgb = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+const linearizeSrgb = (c: number) =>
+  c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
 
 function onColorFor(hex: string): string {
   const n = normalizeHex(hex);
@@ -175,7 +180,10 @@ function onColorFor(hex: string): string {
   const r = parseInt(n.slice(1, 3), 16) / 255;
   const g = parseInt(n.slice(3, 5), 16) / 255;
   const b = parseInt(n.slice(5, 7), 16) / 255;
-  const L = 0.2126 * linearizeSrgb(r) + 0.7152 * linearizeSrgb(g) + 0.0722 * linearizeSrgb(b);
+  const L =
+    0.2126 * linearizeSrgb(r) +
+    0.7152 * linearizeSrgb(g) +
+    0.0722 * linearizeSrgb(b);
   return L > 0.5 ? "#000000" : "#ffffff";
 }
 
@@ -183,7 +191,10 @@ function onColorFor(hex: string): string {
 // Colour roles for one mode
 // ---------------------------------------------------------------------------
 
-function buildScheme(palette: MuiPalette, mode: "light" | "dark"): Record<string, string> {
+function buildScheme(
+  palette: MuiPalette,
+  mode: "light" | "dark",
+): Record<string, string> {
   const sourceHex = normalizeHex(palette?.primary?.main) || "#6750a4";
   const roles: Record<string, string> = {};
 
@@ -244,7 +255,10 @@ function cssLen(x: number | string): string {
   return typeof x === "number" ? `${x}px` : String(x);
 }
 
-function cssLineHeight(lh: number | string, fontSize?: number | string): string {
+function cssLineHeight(
+  lh: number | string,
+  fontSize?: number | string,
+): string {
   if (typeof lh === "number" && lh < 4) {
     if (typeof fontSize === "number") return `${(lh * fontSize).toFixed(2)}px`;
     return `${lh}em`;
@@ -265,7 +279,8 @@ function buildTypescale(typography?: MuiTypography): Record<string, string> {
     if (v?.lineHeight != null)
       out[`${token}-line-height`] = cssLineHeight(v.lineHeight, v.fontSize);
     if (v?.fontWeight != null) out[`${token}-weight`] = String(v.fontWeight);
-    if (v?.letterSpacing != null) out[`${token}-tracking`] = cssLen(v.letterSpacing);
+    if (v?.letterSpacing != null)
+      out[`${token}-tracking`] = cssLen(v.letterSpacing);
   }
   return out;
 }
@@ -273,7 +288,9 @@ function buildTypescale(typography?: MuiTypography): Record<string, string> {
 function buildShape(shape?: MuiShape): Record<string, string> {
   if (!shape || shape.borderRadius == null) return {};
   const r =
-    typeof shape.borderRadius === "number" ? shape.borderRadius : parseFloat(shape.borderRadius);
+    typeof shape.borderRadius === "number"
+      ? shape.borderRadius
+      : parseFloat(shape.borderRadius);
   if (!isFinite(r)) return {};
   const ratio = r / 4; // 4 = MUI default borderRadius
   const out: Record<string, string> = {};
@@ -288,8 +305,13 @@ function buildShape(shape?: MuiShape): Record<string, string> {
 // CSS emission
 // ---------------------------------------------------------------------------
 
-function emitColorBlock(selector: string, roles: Record<string, string>): string {
-  const lines = Object.entries(roles).map(([t, v]) => `  --md-sys-color-${t}: ${v};`);
+function emitColorBlock(
+  selector: string,
+  roles: Record<string, string>,
+): string {
+  const lines = Object.entries(roles).map(
+    ([t, v]) => `  --md-sys-color-${t}: ${v};`,
+  );
   return `${selector} {\n${lines.join("\n")}\n}`;
 }
 
@@ -299,7 +321,9 @@ function emitMiscBlock(
   shape: Record<string, string>,
 ): string {
   const lines = [
-    ...Object.entries(typescale).map(([t, v]) => `  --md-sys-typescale-${t}: ${v};`),
+    ...Object.entries(typescale).map(
+      ([t, v]) => `  --md-sys-typescale-${t}: ${v};`,
+    ),
     ...Object.entries(shape).map(([t, v]) => `  --md-sys-shape-${t}: ${v};`),
   ];
   if (lines.length === 0) return "";
