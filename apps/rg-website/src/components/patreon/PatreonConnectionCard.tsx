@@ -24,6 +24,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { authClient } from "@/lib/auth-client";
+import { useLanguage } from "@/components/providers/language-provider";
+import { uiMessage, type UiMessageKey } from "@rosegriffon/i18n";
 
 interface Props {
   isLinked: boolean;
@@ -33,6 +35,8 @@ interface Props {
 const PROMO_DISMISSED_KEY = "rg.patreon_promo_dismissed";
 
 export function PatreonConnectionCard({ isLinked, hasDiscord }: Props) {
+  const { language } = useLanguage();
+  const message = (key: UiMessageKey) => uiMessage(language, key);
   const [busy, setBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [promoOpen, setPromoOpen] = useState(false);
@@ -106,14 +110,14 @@ export function PatreonConnectionCard({ isLinked, hasDiscord }: Props) {
             </div>
             <div className="min-w-0">
               <p className="font-semibold text-foreground">
-                Compte Patreon
+                {message("account.patreon.title")}
                 {isLinked ? (
                   <span className="ml-2 inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-300">
-                    Connecté
+                    {message("account.patreon.status.linked")}
                   </span>
                 ) : (
                   <span className="ml-2 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                    Non lié
+                    {message("account.patreon.status.unlinked")}
                   </span>
                 )}
               </p>
@@ -129,7 +133,7 @@ export function PatreonConnectionCard({ isLinked, hasDiscord }: Props) {
           {isLinked ? (
             <Button variant="outline" size="sm" onClick={() => setConfirmOpen(true)} disabled={busy}>
               <X className="mr-2 size-4" />
-              Déconnecter
+              {message("account.patreon.action.disconnect")}
             </Button>
           ) : (
             <Button
@@ -139,7 +143,7 @@ export function PatreonConnectionCard({ isLinked, hasDiscord }: Props) {
               className="bg-[#FF424D] text-white hover:bg-[#e63b46]"
             >
               {busy ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Link2 className="mr-2 size-4" />}
-              Lier mon Patreon
+              {message("account.patreon.action.link")}
             </Button>
           )}
         </CardContent>
@@ -148,13 +152,13 @@ export function PatreonConnectionCard({ isLinked, hasDiscord }: Props) {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Déconnecter Patreon ?</AlertDialogTitle>
+            <AlertDialogTitle>{message("account.patreon.confirmDisconnect.title")}</AlertDialogTitle>
             <AlertDialogDescription>
               Votre tier ne sera plus synchronisé automatiquement. Vous pourrez relier le compte à tout moment.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>Annuler</AlertDialogCancel>
+            <AlertDialogCancel disabled={busy}>{message("common.action.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={e => {
                 e.preventDefault();
@@ -164,7 +168,7 @@ export function PatreonConnectionCard({ isLinked, hasDiscord }: Props) {
               className="bg-rose-500 hover:bg-rose-600"
             >
               {busy ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-              Déconnecter
+              {message("account.patreon.action.disconnect")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -195,7 +199,7 @@ export function PatreonConnectionCard({ isLinked, hasDiscord }: Props) {
               className="bg-[#FF424D] text-white hover:bg-[#e63b46]"
             >
               {busy ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Link2 className="mr-2 size-4" />}
-              Lier mon Patreon
+              {message("account.patreon.action.link")}
             </Button>
           </DialogFooter>
         </DialogContent>

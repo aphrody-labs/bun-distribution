@@ -13,6 +13,7 @@ export {
   type TextDirection,
 } from "./registry";
 export { negotiateAcceptLanguage, parseAcceptLanguage, type LanguagePreference } from "./accept-language";
+export { UI_MESSAGES, uiMessage, type UiMessageKey } from "./messages";
 export { resolveLocale, type LocaleResolutionInput, type LocaleSource, type ResolvedLocale } from "./resolution";
 export {
   createIntlFormatters,
