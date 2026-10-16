@@ -6,6 +6,7 @@ members = [
   "crates/aphrody-sprite-sheet",
   "crates/aphrody-softraster",
   "crates/aphrody-render",
+  "crates/re",
   "crates/aphrody-m3-reproduce",
   "crates/aphrody-identity",
   "crates/aphrody-drive",
@@ -653,6 +654,7 @@ zbus = { version = "=5.19.0", default-features = false }
 # Vendored crates carried by PdfCraft (patch notes in apps/pdfcraft/vendor/README.md).
 # DesignCraft's former winit git patch (skylartaylor/winit 3d51077) is superseded by this vendored copy.
 [patch.crates-io]
+bun-re = { path = "crates/re" }
 simdutf = { path = "crates/simdutf" }
 rfb-encodings = { path = "crates/rfb-encodings" }
 aphrody-m3-tokens = { path = "crates/aphrody-m3-tokens" }

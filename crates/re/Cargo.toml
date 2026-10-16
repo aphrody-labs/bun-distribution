@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: Apache-2.0
+# Single Bun OS reverse-engineering core. Merges bun-re (aphrody-labs/aphrody re, Apache-2.0)
+# with the game-asset helpers of shenron-re (Apache-2.0). aphrody-nie-re is a thin adapter over this crate.
+# The crates.io name `bun-re` is kept so `aphrody-re = { package = "bun-re" }` consumers resolve here
+# through [patch.crates-io] and keep their `aphrody_re::` paths.
+[package]
+name = "bun-re"
+version = "1.0.0-canary"
+edition = "2024"
+rust-version = "1.97"
+license = "Apache-2.0"
+publish = true
+repository = "https://github.com/aphrody-labs/bun-os"
+description = "Reverse engineering core: PE/ELF/Mach-O triage, strings, x86-64 disassembly, ASAR/Electron/Go/Adobe/Android/Steam/minidump inspection, CPK/CRILAYLA archives, AOB scanning and live memory. Pure Rust."
+
+[lib]
+name = "bun_re"
+crate-type = ["rlib"]
+
+[lints]
+workspace = true
+
+[features]
+magika = ["dep:magika"]
+leveldb = ["dep:rusty-leveldb", "dep:tempfile"]
+yara = ["dep:yara-x"]
+
+[dependencies]
+goblin     = { version = "0.10", default-features = false, features = ["std", "endian_fd", "pe32", "pe64", "elf32", "elf64"] }
+sha2       = "0.11.0"
+md-5       = "0.11.0"
+sha1       = "0.11.0"
+aes        = "0.9.3"
+flate2     = "1.1.10"
+crc32fast  = { version = "1.5", default-features = false }
+hex        = "0.4"
+serde      = { version = "1.0.228", default-features = false, features = ["derive", "std"] }
+serde_json = "1.0.150"
+thiserror  = "2.0.20"
+iced-x86   = "1.21"
+memchr     = "2"
+regex      = "1.11"
+zerocopy   = { version = "0.8", features = ["derive"] }
+magika     = { version = "1.1.0", optional = true }
+rusty-leveldb = { version = "4", optional = true, default-features = false, features = ["fs"] }
+tempfile   = { version = "3.27.0", optional = true }
+walkdir    = "2.5.0"
+yara-x     = { version = "=1.7.0", optional = true, default-features = false }
+
+[dev-dependencies]
+serde_json = "1.0.150"
+tempfile   = "3.27.0"
+googletest = "0.14"
+criterion  = { version = "0.8.2", features = ["html_reports"] }
+
+[[bench]]
+name    = "triage"
+harness = false
+
+[package.metadata.cargo-machete]
+ignored = ["magika", "yara-x"]
