@@ -17,8 +17,9 @@
 // Resolution order:
 //   1. $APHRODY_ORT_DYLIB        — explicit override, used verbatim
 //   2. $ORT_DYLIB_PATH           — the variable `ort` itself documents
-//   3. ~/.aphrody/runtimes/onnxruntime-*/lib/<dylib>  — newest match wins
-//   4. the loader's own search path (system install)
+//   3. a system package (/usr/lib, /usr/local/lib; Bun OS: extra/onnxruntime-cpu)
+//   4. ~/.aphrody/runtimes/onnxruntime-*/lib/<dylib>  — newest match wins
+//   5. the loader's own search path (system install)
 
 use std::path::{Path, PathBuf};
 
@@ -41,6 +42,8 @@ pub enum RuntimeSource {
     Override(PathBuf),
     /// `$ORT_DYLIB_PATH`.
     OrtEnv(PathBuf),
+    /// Installed by the distribution in a system library directory.
+    System(PathBuf),
     /// Installed under `~/.aphrody/runtimes`.
     Managed(PathBuf),
     /// Left to the platform loader; no explicit path.
@@ -52,7 +55,7 @@ impl RuntimeSource {
     #[must_use]
     pub fn path(&self) -> Option<&Path> {
         match self {
-            Self::Override(p) | Self::OrtEnv(p) | Self::Managed(p) => Some(p),
+            Self::Override(p) | Self::OrtEnv(p) | Self::System(p) | Self::Managed(p) => Some(p),
             Self::SystemSearchPath => None,
         }
     }
@@ -63,6 +66,7 @@ impl RuntimeSource {
         match self {
             Self::Override(_) => "APHRODY_ORT_DYLIB",
             Self::OrtEnv(_) => "ORT_DYLIB_PATH",
+            Self::System(_) => "system package",
             Self::Managed(_) => "managed (~/.aphrody/runtimes)",
             Self::SystemSearchPath => "system search path",
         }
@@ -107,6 +111,14 @@ pub fn discover() -> RuntimeSource {
         {
             return wrap(PathBuf::from(raw));
         }
+    }
+
+    if let Some(found) = crate::llama::SYSTEM_LIB_DIRS
+        .iter()
+        .map(|dir| Path::new(dir).join(DYLIB_NAME))
+        .find(|path| path.is_file())
+    {
+        return RuntimeSource::System(found);
     }
 
     if let Some(found) = find_managed() {

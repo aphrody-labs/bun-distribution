@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "kind": "bun-os-webapps",
+  "launcher": "/usr/bin/bunos-webapp",
+  "install": "/usr/share/bun/apps/<id>",
+  "apps": [
+    {
+      "id": "artcraft",
+      "name": "ArtCraft",
+      "path": "apps/artcraft-web-app",
+      "build": "build",
+      "dist": "dist",
+      "categories": "Graphics;"
+    },
+    {
+      "id": "m3-showcase",
+      "name": "M3 Showcase",
+      "path": "apps/m3-showcase",
+      "build": "build",
+      "dist": "dist",
+      "categories": "Development;"
+    },
+    {
+      "id": "m3-web",
+      "name": "M3 Web",
+      "path": "apps/m3-web",
+      "build": "build",
+      "dist": "dist",
+      "categories": "Development;"
+    }
+  ]
+}

@@ -34,28 +34,30 @@ declared in `.gitmodules` but not checked out on the workstation.
 
 ## Runtime: fork `toolchains/bun`
 
-| Component                                                                            | Size                            | Origin                                           | OS integration                                                                          | Build                                                                |
-| ------------------------------------------------------------------------------------ | ------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `bun` binary                                                                         | 4.0 GiB source, ~193 MiB binary | aphrody-labs/bun `46709d6993`                    | `pacman-bunos` `bun-aphrody` (`factory/usr/pkgs`, `/usr` basePackages) → `/usr/bin/bun` | fork release asset; source: `bun scripts/build.ts --profile=release` |
-| WebKit/JSC                                                                           | ~80 MiB prebuilt                | aphrody-labs/WebKit autobuild (fallback oven-sh) | `static-in` bun-aphrody                                                                 | downloaded by the build                                              |
-| ICU                                                                                  | ~35 MiB                         | unicode-org via WebKit prebuilt                  | `static-in` bun-aphrody                                                                 | bundled in the prebuilt                                              |
-| lol-html                                                                             | small                           | oven-sh fork (`vendor/lolhtml`)                  | `static-in` bun-aphrody                                                                 | cargo                                                                |
-| BoringSSL, mimalloc, libuv, tinycc, lsquic                                           | ~60 MiB sources                 | oven-sh forks, litespeedtech                     | `static-in` bun-aphrody                                                                 | build deps                                                           |
-| zlib-ng, zstd, brotli, libdeflate, c-ares, libarchive, sqlite, image codecs, highway | ~40 MiB sources                 | upstreams                                        | `static-in` bun-aphrody                                                                 | build deps                                                           |
-| brave, mullvad, uv vendor                                                            | 134 MiB                         | brave, mullvad, astral forks                     | `static-in` bun-aphrody                                                                 | cargo path deps                                                      |
-| windows-rs                                                                           | Windows only                    | microsoft                                        | `excluded`                                                                              |                                                                      |
-| CEF (`src/browser/cef-rs`)                                                           | ~250 MiB download               | chromiumembedded                                 | `remaining`: cef-rs 154.5.0 pins its own CEF; switch to extra/cef when majors match     |                                                                      |
-| `bun-video-native`                                                                   | 324 MiB package tree            | fork                                             | `pacman-bunos` `bun-video-native` → `/usr/lib/bun`                                      | cargo-serial `--features libav`                                      |
+| Component                                                                            | Size                            | Origin                                           | OS integration                                                                                                                          | Build                                                                |
+| ------------------------------------------------------------------------------------ | ------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `bun` binary                                                                         | 4.0 GiB source, ~193 MiB binary | aphrody-labs/bun `46709d6993`                    | `pacman-bunos` `bun-aphrody` (`factory/usr/pkgs`, `/usr` basePackages) → `/usr/bin/bun`                                                 | fork release asset; source: `bun scripts/build.ts --profile=release` |
+| WebKit/JSC                                                                           | ~80 MiB prebuilt                | aphrody-labs/WebKit autobuild (fallback oven-sh) | `static-in` bun-aphrody                                                                                                                 | downloaded by the build                                              |
+| ICU                                                                                  | ~35 MiB                         | unicode-org via WebKit prebuilt                  | `static-in` bun-aphrody                                                                                                                 | bundled in the prebuilt                                              |
+| lol-html                                                                             | small                           | oven-sh fork (`vendor/lolhtml`)                  | `static-in` bun-aphrody                                                                                                                 | cargo                                                                |
+| BoringSSL, mimalloc, libuv, tinycc, lsquic                                           | ~60 MiB sources                 | oven-sh forks, litespeedtech                     | `static-in` bun-aphrody                                                                                                                 | build deps                                                           |
+| zlib-ng, zstd, brotli, libdeflate, c-ares, libarchive, sqlite, image codecs, highway | ~40 MiB sources                 | upstreams                                        | `static-in` bun-aphrody                                                                                                                 | build deps                                                           |
+| brave, mullvad, uv vendor                                                            | 134 MiB                         | brave, mullvad, astral forks                     | `static-in` bun-aphrody                                                                                                                 | cargo path deps                                                      |
+| windows-rs                                                                           | Windows only                    | microsoft                                        | `excluded`                                                                                                                              |                                                                      |
+| CEF (`src/browser/cef-rs`)                                                           | ~250 MiB download               | chromiumembedded                                 | `remaining`: extra/cef is 152.0.6, cef-rs pins 154.5.0 (major-versioned API); build with `CEF_PATH=/usr/lib/cef` once extra reaches 154 |                                                                      |
+| `bun-video-native`                                                                   | 324 MiB package tree            | fork                                             | `pacman-bunos` `bun-video-native` → `/usr/lib/bun`                                                                                      | cargo-serial `--features libav`                                      |
 
 ### Shared-library choices
 
 - WebKit/JSC, ICU, BoringSSL, mimalloc, libuv, tinycc stay bundled: they are
   patched forks or ABI-coupled to JSC (`webkit2gtk` and system `openssl` are not
   substitutes). System ICU is used only by local WebKit builds.
-- zlib, zstd, brotli, libdeflate, c-ares, libarchive, sqlite and the image
-  codecs exist in Arch, but the Bun build pins and links them statically;
-  moving them to system linking needs a build option in
-  `scripts/build/deps` first. Kept bundled.
+- zlib, zstd, brotli and sqlite: `bun scripts/build.ts --system-deps=zlib,zstd,brotli,sqlite3`
+  (linux-gnu only) skips their pinned build and links `-lz`, `-lzstd`,
+  `-lbrotli*`; `sqlite3` turns off `staticSqlite` so bun:sqlite dlopens the
+  system library. Default builds stay static; the option is not yet exercised
+  by a full build. libdeflate, c-ares, libarchive and the image codecs stay
+  bundled.
 - `bun-video-native` uses `ffmpeg-sys-next` without its `build` feature, so it
   links system `ffmpeg` (extra) through pkg-config: no vendored ffmpeg.
 
@@ -101,10 +103,11 @@ first launch.
 
 ## npm packages and apps
 
-| Component                                     | Size             | OS integration                           |
-| --------------------------------------------- | ---------------- | ---------------------------------------- |
-| `toolchains/bun/packages/aphrody-migrated/m3` | 2.9 GiB          | `excluded`: dev workspace output         |
-| `apps/`, `packages/`                          | 269 MiB, 267 MiB | `remaining`: no OS launcher contract yet |
+| Component                                               | Size         | OS integration                                                                                                                                                                                                                   |
+| ------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `toolchains/bun/packages/aphrody-migrated/m3`           | 2.9 GiB      | `excluded`: dev workspace output                                                                                                                                                                                                 |
+| `apps/` static web apps (artcraft, m3-showcase, m3-web) | 269 MiB tree | `pacman-bunos` `bun-os-webapps`: `/usr/share/bun/apps/<id>`, `/usr/bin/bunos-webapp` (Bun.serve on 127.0.0.1 + Chromium `--app` or xdg-open), `/usr/share/applications/bunos-<id>.desktop`; list in `factory/bunos/webapps.json` |
+| Next.js apps, rg-bot, iecode-web                        |              | `remaining`: need a server or wasm launcher contract                                                                                                                                                                             |
 
 ## Licences
 
@@ -114,10 +117,20 @@ PKGBUILD that does not.
 
 ## Remaining gaps
 
-- The `/usr` image uses the fork (`bun-aphrody`), but the OCI images still pin
-  the oven-sh 1.4.3 zip until the aphrody-labs release tag has stable Linux
-  assets.
 - The `/usr` builder does not consume `bunos.compositionPackages` yet.
-- `aphrody` should probe the system `llama-cpp`, `onnxruntime-cpu` and
-  `whisper-cpp` libraries before its `$APHRODY_RUNTIMES_DIR` download.
-- CEF, PowerShell and the web apps, for the reasons above.
+- CEF, PowerShell and the server-side web apps, for the reasons above.
+
+## System runtimes first
+
+`aphrody` resolves llama.cpp (binaries and `libllama.so`), ONNX Runtime and
+whisper.cpp from `/usr/bin`, `/usr/local/bin`, `/usr/lib`, `/usr/lib64` and
+`/usr/local/lib` after the explicit environment overrides and before
+`$APHRODY_RUNTIMES_DIR` (`crates/aphrody-infer/src/llama.rs`,
+`crates/aphrody-infer/src/runtime.rs`,
+`crates/aphrody-voice/src/stt/whisper_cpp.rs`).
+
+## Qualification
+
+`bun-os-fonts` built on the vps in `archlinux:base-devel`:
+`bun-os-fonts-r1-1-any.pkg.tar.zst`, 1.1 GB, 3900 font files, licences
+installed under `/usr/share/licenses/bun-os-fonts`.

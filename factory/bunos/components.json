@@ -20,7 +20,8 @@
     "/usr/lib/tmpfiles.d",
     "/usr/lib/environment.d",
     "/usr/lib/systemd/user",
-    "/usr/share/icons"
+    "/usr/share/icons",
+    "/usr/share/applications"
   ],
   "compositionPackages": {
     "server": ["aphrody"],
@@ -28,7 +29,8 @@
       "aphrody",
       "bun-video-native",
       "bun-os-fonts",
-      "material-design-icons-bunos"
+      "material-design-icons-bunos",
+      "bun-os-webapps"
     ],
     "gaming": ["aphrody", "bun-video-native", "bun-os-fonts"]
   },
@@ -145,7 +147,7 @@
       "kind": "native-sys",
       "integration": {
         "mode": "remaining",
-        "reason": "extra/cef exists, but cef-rs 154.5.0 pins its own CEF build (download-cef); optional tauri-runtime-cef only. Switch when extra/cef matches the pinned major"
+        "reason": "extra/cef is 152.0.6 while cef-rs pins CEF 154.5.0; CEF API is major-versioned, so keep download-cef until extra/cef reaches 154, then build with CEF_PATH=/usr/lib/cef"
       }
     },
     {
@@ -445,9 +447,13 @@
       "origin": "aphrody-labs/bun-distribution",
       "kind": "npm",
       "integration": {
-        "mode": "remaining",
-        "reason": "Web apps without an OS install contract; package individually when each gets a launcher"
-      }
+        "mode": "pacman-bunos",
+        "package": "bun-os-webapps",
+        "launcher": "/usr/bin/bunos-webapp",
+        "apps": "factory/bunos/webapps.json"
+      },
+      "build": "bun run build per app; static dist served on 127.0.0.1 by bunos-webapp, one .desktop per app",
+      "remainingApps": "Next.js apps (azalee-web, rg-website), rg-bot and iecode-web need a server or wasm launcher contract"
     }
   ]
 }

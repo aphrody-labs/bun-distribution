@@ -119,6 +119,17 @@ for (const [composition, list] of Object.entries<string[]>(
 }
 if (usr.bunos?.manifest !== "factory/bunos/components.json")
   missing.push("factory/usr/manifest.json: bunos entry not wired");
+const webapps = await Bun.file(join(here, "webapps.json")).json();
+for (const app of webapps.apps) {
+  const pkg = Bun.file(join(root, app.path, "package.json"));
+  if (!(await pkg.exists()))
+    errors.push(`webapps ${app.id}: ${app.path}/package.json missing`);
+  else if (!(await pkg.json()).scripts?.[app.build])
+    errors.push(`webapps ${app.id}: no "${app.build}" script`);
+  if (!/^[a-z0-9-]+$/.test(app.id))
+    errors.push(`webapps ${app.id}: invalid id`);
+}
+
 const shared = usr.localRepository?.packages;
 if (shared) {
   const glob = new Bun.Glob("*/PKGBUILD");

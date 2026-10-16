@@ -1,0 +1,30 @@
+#!/usr/bin/bun
+// Serve a Bun OS web app from /usr/share/bun/apps/<id> on a loopback port and
+// open it as an app window (Chromium-family --app when present, else xdg-open).
+import { join, normalize } from "node:path";
+
+const id = process.argv[2];
+const root = join("/usr/share/bun/apps", id ?? "");
+if (!id || /[\/]/.test(id) || !(await Bun.file(join(root, "index.html")).exists())) {
+  console.error(`usage: bunos-webapp <id>  (installed: ${[...new Bun.Glob("*/index.html").scanSync("/usr/share/bun/apps")].map(p => p.split("/")[0]).join(", ")})`);
+  process.exit(2);
+}
+
+const server = Bun.serve({
+  hostname: "127.0.0.1",
+  port: 0,
+  async fetch(request) {
+    const path = normalize(decodeURIComponent(new URL(request.url).pathname)).replace(/^([\/]\.\.)+/, "");
+    const file = Bun.file(join(root, path));
+    if (path !== "/" && (await file.exists())) return new Response(file);
+    return new Response(Bun.file(join(root, "index.html")));
+  },
+});
+
+const url = server.url.href;
+const browser = ["chromium", "google-chrome-stable", "brave", "microsoft-edge-stable"].find(name => Bun.which(name));
+const viewer = Bun.spawn(browser ? [browser, `--app=${url}`, `--user-data-dir=${process.env.XDG_STATE_HOME ?? `${process.env.HOME}/.local/state`}/bunos-webapp/${id}`] : ["xdg-open", url], {
+  stdio: ["ignore", "inherit", "inherit"],
+});
+await viewer.exited;
+if (browser) server.stop();

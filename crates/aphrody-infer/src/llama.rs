@@ -146,12 +146,25 @@ pub fn resolve(tool: LlamaTool) -> Option<LlamaSource> {
         return Some(LlamaSource::EnvDir(found));
     }
 
+    // A distribution package (Bun OS: extra/llama-cpp) wins over the managed
+    // download, so the system copy is the one kept up to date by pacman.
+    if let Some(found) = SYSTEM_BIN_DIRS.iter().find_map(|dir| in_dir(Path::new(dir), tool)) {
+        return Some(LlamaSource::Path(found));
+    }
+
     if let Some(found) = find_managed(tool) {
         return Some(LlamaSource::Managed(found));
     }
 
     which_on_path(&tool.file_name()).map(LlamaSource::Path)
 }
+
+/// System binary directories probed before the managed runtimes.
+const SYSTEM_BIN_DIRS: &[&str] = if cfg!(unix) { &["/usr/bin", "/usr/local/bin"] } else { &[] };
+
+/// System library directories probed before the managed runtimes.
+pub(crate) const SYSTEM_LIB_DIRS: &[&str] =
+    if cfg!(unix) { &["/usr/lib", "/usr/lib64", "/usr/local/lib"] } else { &[] };
 
 /// Which tools are available, for a capability report.
 #[must_use]
@@ -244,6 +257,8 @@ pub enum LibraryOrigin {
     EnvDir,
     /// The directory of `$APHRODY_LLAMA_BIN`.
     BinEnv,
+    /// Installed by the distribution in a system library directory.
+    System,
     /// Found under `~/.aphrody/runtimes/llama-*`.
     Managed,
 }
@@ -256,6 +271,7 @@ impl LibraryOrigin {
             Self::LibDirEnv => "APHRODY_LLAMA_LIB_DIR",
             Self::EnvDir => "APHRODY_LLAMA_DIR",
             Self::BinEnv => "APHRODY_LLAMA_BIN (directory)",
+            Self::System => "system package",
             Self::Managed => "managed (~/.aphrody/runtimes)",
         }
     }
@@ -374,6 +390,11 @@ pub fn resolve_library() -> Option<LlamaLibrary> {
     if let Some(bin) = non_empty_env("APHRODY_LLAMA_BIN")
         && let Some(parent) = Path::new(&bin).parent()
         && let Some(found) = library_in(parent, LibraryOrigin::BinEnv)
+    {
+        return Some(found);
+    }
+    if let Some(found) =
+        SYSTEM_LIB_DIRS.iter().find_map(|dir| library_in(Path::new(dir), LibraryOrigin::System))
     {
         return Some(found);
     }

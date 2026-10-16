@@ -185,6 +185,12 @@ pub fn resolve() -> Option<WhisperSource> {
     {
         return Some(WhisperSource::EnvDir(found));
     }
+    // A distribution package (Bun OS: extra/whisper-cpp) wins over the
+    // managed download.
+    let system: &[&str] = if cfg!(unix) { &["/usr/bin", "/usr/local/bin"] } else { &[] };
+    if let Some(found) = system.iter().find_map(|dir| in_dir(Path::new(dir))) {
+        return Some(WhisperSource::Path(found));
+    }
     if let Some(found) = runtimes_dir().as_deref().and_then(find_managed_in) {
         return Some(WhisperSource::Managed(found));
     }

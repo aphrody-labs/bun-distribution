@@ -1,0 +1,41 @@
+# Bun OS web apps: static builds served on loopback by bunos-webapp, one .desktop entry each.
+pkgname=bun-os-webapps
+pkgver=0.1.0
+pkgrel=1
+_commit=8229a6909216d3d38e7ada42dfc6c471b0237fbc
+pkgdesc='Bun OS web apps with desktop launchers (bunos-webapp)'
+arch=('any')
+url='https://github.com/aphrody-labs/bun-distribution'
+license=('Apache-2.0' 'MIT')
+depends=('bun-aphrody' 'xdg-utils')
+optdepends=('chromium: open apps in their own window')
+makedepends=('git')
+options=('!strip' '!debug')
+source=("bun-os::git+https://github.com/aphrody-labs/bun-distribution.git#commit=${_commit}"
+        'bunos-webapp')
+sha256sums=('SKIP' 'SKIP')
+
+build() {
+  cd bun-os
+  git submodule update --init --depth 1 toolchains/bun
+  bun install --frozen-lockfile
+  bun -e 'for (const app of (await Bun.file("factory/bunos/webapps.json").json()).apps) {
+    const run = Bun.spawnSync(["bun", "run", app.build], { cwd: app.path, stdio: ["ignore", "inherit", "inherit"] });
+    if (run.exitCode !== 0) throw new Error(`${app.id}: build failed`);
+  }'
+}
+
+package() {
+  cd bun-os
+  install -Dm755 "$srcdir/bunos-webapp" "$pkgdir/usr/bin/bunos-webapp"
+  bun -e 'const out = process.argv[1];
+    for (const app of (await Bun.file("factory/bunos/webapps.json").json()).apps) {
+      const target = `${out}/usr/share/bun/apps/${app.id}`;
+      Bun.spawnSync(["mkdir", "-p", target]);
+      if (Bun.spawnSync(["cp", "-a", `${app.path}/${app.dist}/.`, `${target}/`]).exitCode) throw new Error(`${app.id}: no ${app.dist}`);
+      await Bun.write(`${out}/usr/share/applications/bunos-${app.id}.desktop`,
+        `[Desktop Entry]\nType=Application\nName=${app.name}\nExec=bunos-webapp ${app.id}\nIcon=applications-internet\nCategories=${app.categories}\nTerminal=false\n`);
+    }' "$pkgdir"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 LICENSE-APACHE "$pkgdir/usr/share/licenses/$pkgname/LICENSE-APACHE"
+}
