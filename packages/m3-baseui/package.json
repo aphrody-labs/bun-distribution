@@ -1,7 +1,7 @@
 {
   "name": "@aphrody/m3-baseui",
   "version": "1.4.4",
-  "description": "Base UI (aphrody-labs fork, packages/base-ui) with Material 3 styling: every Base UI primitive wrapped with M3 token classes; static CSS, no CSS-in-JS runtime, per-component modules and sheets.",
+  "description": "Base UI with Material 3 styling: every Base UI primitive wrapped with M3 token classes; pinned upstream sources in vendor/base-ui, consumer uses the root catalog package.",
   "license": "Apache-2.0",
   "author": "aphrody-code",
   "repository": {

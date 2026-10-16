@@ -3,6 +3,24 @@
   "sourceRoot": "..",
   "components": [
     {
+      "id": "base-ui",
+      "checkout": "vendor/base-ui",
+      "repository": "mui/base-ui",
+      "owner": "Pinned in-tree upstream source; root leaf integration remains pending",
+      "integration": "imported-upstream",
+      "integratedRevision": "9fe5ff124bc384da1ec5357677eeb80cfd7a120b",
+      "sourceRevision": "3a53aa71c12774e19e6523b6bda91fc13e8d80aa"
+    },
+    {
+      "id": "tailwindcss",
+      "checkout": "vendor/tailwindcss",
+      "repository": "tailwindlabs/tailwindcss",
+      "owner": "Pinned in-tree upstream source; root leaves, Cargo and native artifacts remain pending",
+      "integration": "imported-upstream",
+      "integratedRevision": "9fe5ff124bc384da1ec5357677eeb80cfd7a120b",
+      "sourceRevision": "d5f915c3641fb3f7bd223d3c40b20e75b506bbe0"
+    },
+    {
       "id": "bun-os",
       "checkout": ".",
       "repository": "aphrody-labs/bun-distribution",

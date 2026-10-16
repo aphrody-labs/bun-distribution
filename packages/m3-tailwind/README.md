@@ -39,7 +39,6 @@ Springs: CSS has no spring easing and a cubic-bezier cannot overshoot, so each s
 sampled into a 33-stop `linear()` with its settle time (`src/spring.ts`); the Expressive spatial springs keep their bounce.
 
 `bun run generate` rewrites `preset.css`; the tests check it is up to date, that every token the preset reads exists in
-the token sheets, and compile one utility per family with `@tailwindcss/node`. The Tailwind fork in `packages/tailwindcss`
-is the source of the `tailwindcss` catalog version.
+the token sheets, and compile one utility per family with `@tailwindcss/node` from the root catalog. Pinned upstream sources live in `vendor/tailwindcss`; local leaf, Cargo/NAPI and artifact integration remains unqualified. The consumer currently uses installed catalog packages, not that source tree.
 
 `bun test test/`, `bun run typecheck`.

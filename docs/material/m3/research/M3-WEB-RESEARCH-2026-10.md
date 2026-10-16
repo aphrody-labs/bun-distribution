@@ -48,7 +48,7 @@ re-verification before being treated as contract.
 - Links: [Tailwind v4 announcement](https://tailwindcss.com/blog/tailwindcss-v4),
   [semantic tokens with @theme inline](https://kuray.dev/blog/ui-ux-design/design-system-tailwind-v4-semantic-tokens-072025),
   [designtoken.md Tailwind](https://designtoken.md/frameworks/tailwind).
-- Fork: `packages/tailwindcss`. Headless primitives: `packages/base-ui`
+- Pinned upstream sources: `vendor/tailwindcss` and `vendor/base-ui`. Consumers currently use installed catalog packages; local source integration remains pending.
   ([base-ui.com](https://base-ui.com/)).
 
 ## Tauri icons

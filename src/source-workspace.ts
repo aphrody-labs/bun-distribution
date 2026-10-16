@@ -9,8 +9,9 @@ type Component = {
   checkout: string;
   repository: string;
   owner: string;
-  integration: "root" | "pinned-source" | "merged-history" | "absorbed-source";
+  integration: "root" | "pinned-source" | "merged-history" | "absorbed-source" | "imported-upstream";
   integratedRevision?: string;
+  sourceRevision?: string;
 };
 
 async function git(checkout: string, args: string[]) {
@@ -50,9 +51,12 @@ async function inventory() {
       !/^[\w.-]+\/[\w.-]+$/.test(component.repository) ||
       !component.checkout ||
       isAbsolute(component.checkout) ||
-      !["root", "pinned-source", "merged-history", "absorbed-source"].includes(component.integration) ||
-      (["merged-history", "absorbed-source"].includes(component.integration) &&
-        !/^[a-f0-9]{40}$/.test(component.integratedRevision ?? ""))
+      !["root", "pinned-source", "merged-history", "absorbed-source", "imported-upstream"].includes(
+        component.integration,
+      ) ||
+      (["merged-history", "absorbed-source", "imported-upstream"].includes(component.integration) &&
+        !/^[a-f0-9]{40}$/.test(component.integratedRevision ?? "")) ||
+      (component.integration === "imported-upstream" && !/^[a-f0-9]{40}$/.test(component.sourceRevision ?? ""))
     )
       throw new Error("Invalid source workspace component");
     ids.add(component.id);
@@ -66,7 +70,7 @@ export async function sourceWorkspaceLocations(config: Config = {}) {
   return {
     ...Object.fromEntries(
       catalog.components
-        .filter(component => component.integration === "pinned-source")
+        .filter(component => component.integration === "pinned-source" || component.integration === "imported-upstream")
         .map(component => [component.id, resolve(packageRoot, component.checkout)]),
     ),
     ...config.checkouts,
@@ -89,17 +93,24 @@ export async function inspectSourceWorkspace(config: Config = {}) {
   for (const component of catalog.components) {
     const checkout = resolve(config.checkouts?.[component.id] ?? resolve(packageRoot, component.checkout));
     const source = lock.repositories.find(item => item.id === component.id && !item.parent);
-    const present = existsSync(join(checkout, ".git"));
-    const [head, status] = present
-      ? await Promise.all([
-          git(checkout, ["rev-parse", "HEAD"]),
-          git(checkout, ["status", "--porcelain=v1", "-z", "--untracked-files=all"]),
-        ])
-      : [];
+    const upstreamSource = component.integration === "imported-upstream";
+    const present = existsSync(join(checkout, upstreamSource ? "UPSTREAM.json" : ".git"));
+    const provenance =
+      upstreamSource && present
+        ? ((await Bun.file(join(checkout, "UPSTREAM.json")).json()) as { upstream: string; internalizedFrom: string })
+        : null;
+    const [head, status] =
+      present && !upstreamSource
+        ? await Promise.all([
+            git(checkout, ["rev-parse", "HEAD"]),
+            git(checkout, ["status", "--porcelain=v1", "-z", "--untracked-files=all"]),
+          ])
+        : [];
     const inspected = head?.code === 0 && status?.code === 0;
     const revision = inspected ? head.stdout.trim() : null;
     const clean = inspected ? status.stdout.length === 0 : null;
-    const imported = component.integration === "merged-history" || component.integration === "absorbed-source";
+    const imported =
+      component.integration === "merged-history" || component.integration === "absorbed-source" || upstreamSource;
     const inherited = imported
       ? (await git(packageRoot, ["merge-base", "--is-ancestor", component.integratedRevision!, "HEAD"])).code === 0
       : null;
@@ -108,24 +119,52 @@ export async function inspectSourceWorkspace(config: Config = {}) {
       ...component,
       path: checkout,
       physicalPath: present ? await realpath(checkout) : null,
-      type: component.integration === "root" ? "distribution" : "source-repository",
+      type:
+        component.integration === "root"
+          ? "distribution"
+          : upstreamSource
+            ? "in-tree-upstream-source"
+            : "source-repository",
       present,
       inspected,
       revision,
       clean,
-      sourceRevision: source?.revision ?? null,
-      sourceMount: source?.mount ?? null,
+      sourceRevision: component.sourceRevision ?? source?.revision ?? null,
+      sourceMount: upstreamSource ? component.checkout : (source?.mount ?? null),
       submodule: false,
-      upstream: null,
-      sourceCovered: component.integration === "root" || (imported ? inherited : pinned),
-      matchesSourcePin: source ? revision === source.revision : null,
-      cargoOwner: component.integration === "root" || imported ? "." : component.id,
-      bunOwner: component.integration === "root" || imported ? "." : component.id,
-      buildOwner: imported ? "bun-os" : component.id,
-      releaseOwner: imported ? "bun-os" : component.id,
+      upstream: provenance?.upstream ?? null,
+      sourceCovered:
+        component.integration === "root" ||
+        (imported
+          ? inherited && (!upstreamSource || provenance?.internalizedFrom === component.sourceRevision)
+          : pinned),
+      matchesSourcePin: upstreamSource
+        ? provenance?.internalizedFrom === component.sourceRevision
+        : source
+          ? revision === source.revision
+          : null,
+      cargoOwner: upstreamSource
+        ? component.checkout
+        : component.integration === "root" || imported
+          ? "."
+          : component.id,
+      bunOwner: upstreamSource ? component.checkout : component.integration === "root" || imported ? "." : component.id,
+      buildOwner: upstreamSource ? component.id : imported ? "bun-os" : component.id,
+      releaseOwner: upstreamSource ? component.id : imported ? "bun-os" : component.id,
       targets: "owner-defined",
       qualification: "source-inventory-only",
       migrationState: component.integration,
+      ...(upstreamSource
+        ? {
+            pendingQualification: [
+              "leaf-workspace-migration",
+              "cargo-ownership",
+              "native-build",
+              "full-upstream-history",
+            ],
+            consumerIntegration: "installed-catalog-packages",
+          }
+        : {}),
     });
   }
   const sourceRoot = resolve(packageRoot, catalog.sourceRoot);

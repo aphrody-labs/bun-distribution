@@ -3,25 +3,27 @@
 `.gitmodules` is the only registry of the repository's submodules, and `scripts/forks.ts` is the only tool that
 manages them (`bun run forks <command>`). It replaces ad hoc `git submodule` incantations and per-fork notes.
 
-| Path | Kind | Upstream |
-| --- | --- | --- |
-| `packages/tailwindcss` | fork | `tailwindlabs/tailwindcss` |
-| `packages/base-ui` | fork | `mui/base-ui` |
-| `vendor/material-web` | fork | `material-components/material-web` |
-| `vendor/material-color-utilities` | fork | `material-foundation/material-color-utilities` |
-| `vendor/material-design-icons` | fork, sparse set owned by `packages/material-design-icons/scripts/sync-catalogue.ts` | `google/material-design-icons` |
-| `packages/nie-ui` | first-party package (own repository, no upstream) | none |
+| Path                              | Kind                                                                                 | Upstream                                       |
+| --------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------- |
+| `vendor/tailwindcss`              | tracked in-tree upstream source, not a gitlink                                       | `tailwindlabs/tailwindcss`                     |
+| `vendor/base-ui`                  | tracked in-tree upstream source, not a gitlink                                       | `mui/base-ui`                                  |
+| `vendor/material-web`             | fork                                                                                 | `material-components/material-web`             |
+| `vendor/material-color-utilities` | fork                                                                                 | `material-foundation/material-color-utilities` |
+| `vendor/material-design-icons`    | fork, sparse set owned by `packages/material-design-icons/scripts/sync-catalogue.ts` | `google/material-design-icons`                 |
+| `packages/nie-ui`                 | first-party package (own repository, no upstream)                                    | none                                           |
+
+Base UI and Tailwind retain their `UPSTREAM.json` source pins, licenses and imported source history. Their ownership is recorded in `infra/source-workspace.json`; the submodule commands below do not manage them. Root leaf integration, Tailwind Cargo/native artifacts and full upstream history qualification remain pending. Consumers currently resolve installed root catalog packages.
 
 ## `.gitmodules` keys
 
 Git reads `path`, `url`, `branch` and `shallow`. The tool adds four keys that git ignores:
 
-| Key | Meaning |
-| --- | --- |
-| `upstream` | URL of the original project the fork tracks |
-| `upstream-branch` | its branch (default: the remote `HEAD`) |
-| `sparse` | space-separated cone paths to check out; empty means everything |
-| `sparse-script` | a script (repository-relative) that owns the fork's sparse set; `sparse` and `sync` run `bun <script>` for that fork and never call `sparse-checkout` themselves |
+| Key               | Meaning                                                                                                                                                          |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `upstream`        | URL of the original project the fork tracks                                                                                                                      |
+| `upstream-branch` | its branch (default: the remote `HEAD`)                                                                                                                          |
+| `sparse`          | space-separated cone paths to check out; empty means everything                                                                                                  |
+| `sparse-script`   | a script (repository-relative) that owns the fork's sparse set; `sparse` and `sync` run `bun <script>` for that fork and never call `sparse-checkout` themselves |
 
 The pin of a submodule is the gitlink commit of the superproject, never a branch name: `forks.ts pin` changes it.
 

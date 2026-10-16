@@ -2,7 +2,7 @@
 
 # `@aphrody/m3-baseui`
 
-Material 3 for [Base UI](https://base-ui.com) (`@base-ui/react`; the aphrody-labs fork lives in `packages/base-ui`). Base UI
+Material 3 for [Base UI](https://base-ui.com) (`@base-ui/react` from the root catalog; pinned upstream sources live in `vendor/base-ui`). Base UI
 keeps behaviour, accessibility and the `data-*` state attributes; this package adds the M3 classes and the stylesheets that
 paint them from the `--md-sys-*` tokens. Every Base UI primitive is wrapped: 38 components, 0 CSS-in-JS, no MUI.
 
@@ -89,6 +89,6 @@ the focus ring, the popup surface and the menu item.
   directional `extra-large-top` and `large-start|end` corners, the switch thumb grows 16, 24 and 28dp.
 - Tailwind v4 users get the matching variants from `@aphrody/m3-tailwind` (`m3-open:`, `m3-on:`, `m3-highlighted:`, ...).
 
-To build against the fork, point the catalog `@base-ui/react` entry at it (`bun link` from `packages/base-ui/packages/react`).
+The imported source owner is not wired into the consumer build. Local source integration requires migrating its React and utils leaves, their configuration and quality gates into the root workspace first.
 
 `bun test`, `bun run typecheck`, `bun run lint`.
