@@ -1,1 +1,0 @@
-I'll search for that now. [TOOL_CALLS][{"name": "search", "arguments": {"query": "async rust"}}] Let me know if that's not what you meant.

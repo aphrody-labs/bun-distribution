@@ -1,6 +1,0 @@
-<tool_call>
-{"name": "apply_patch", "arguments": {"input": "*** Begin Patch
-*** Add File: hello.txt
-+hello world
-*** End Patch"}}
-</tool_call>

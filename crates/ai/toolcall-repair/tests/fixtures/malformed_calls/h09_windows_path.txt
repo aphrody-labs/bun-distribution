@@ -1,1 +1,0 @@
-<tool_call>{"name": "create_file", "arguments": {"path": "C:\data\output.txt", "content": "done"}}</tool_call>

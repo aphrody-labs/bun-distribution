@@ -1,1 +1,0 @@
-[{"name": "set_retry", "arguments": {"attempts": 3, "backoff": 1.5}}]

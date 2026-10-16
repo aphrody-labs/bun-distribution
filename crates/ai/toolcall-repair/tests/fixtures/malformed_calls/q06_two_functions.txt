@@ -1,6 +1,0 @@
-<tool_call><function=read_file><parameter=path>
-a.txt
-</parameter></function></tool_call>
-<tool_call><function=read_file><parameter=path>
-b.txt
-</parameter></function></tool_call>
