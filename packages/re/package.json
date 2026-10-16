@@ -5,6 +5,12 @@
   "type": "module",
   "license": "Apache-2.0",
   "description": "Bun OS reverse-engineering tools (pipeline CLI, Steam indexer, MCP tools, local API).",
+  "engines": {
+    "bun": "=1.4.4"
+  },
+  "scripts": {
+    "typecheck": "bun check src/pipeline/cli.ts src/pipeline/index.ts src/steam/cli.ts src/steam/index.ts --threads=2 --no-pretty"
+  },
   "bin": {
     "re-pipeline": "src/pipeline/cli.ts",
     "re-steam": "src/steam/cli.ts"

@@ -4217,6 +4217,17 @@
         "@aphrody/bun-types": "workspace:*",
       },
     },
+    "packages/re": {
+      "name": "@bun-os/re",
+      "version": "1.4.4",
+      "dependencies": {
+        "@aphrody/paths": "workspace:*",
+      },
+      "bin": {
+        "re-pipeline": "src/pipeline/cli.ts",
+        "re-steam": "src/steam/cli.ts",
+      },
+    },
     "packages/replica": {
       "name": "@aphrody/replica",
       "version": "1.4.4",
@@ -6518,6 +6529,8 @@
     "@bufbuild/protobuf": ["@bufbuild/protobuf@2.16.0", "", {}, "sha512-FWa0sPlqYGJgpTs6OxBRcL/AW4JT0OIO+W1ajerluoTVh8CV0B7XM1qsNCRgnkSCkRCgOICKHRQlY17jrsm0+Q=="],
 
     "@bun-os/package-converter": ["@bun-os/package-converter@workspace:packages/package-converter"],
+
+    "@bun-os/re": ["@bun-os/re@workspace:packages/re"],
 
     "@casl/ability": ["@casl/ability@7.0.2", "", { "dependencies": { "@ucast/mongo2js": "^2.0.0" } }, "sha512-NOYbLTaw080a1Na4CpBtyGpL+i9NZhtGGt/tPrrNpLEv8EawFusHZCgc58ewyPBiZ0NER0iudB0et+IP8xJbLg=="],
 

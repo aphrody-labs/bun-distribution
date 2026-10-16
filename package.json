@@ -88,6 +88,7 @@
     "packages/product",
     "packages/replica",
     "packages/rag-core",
+    "packages/re",
     "packages/rg-app-shell",
     "packages/rg-assets",
     "packages/rg-auth",
