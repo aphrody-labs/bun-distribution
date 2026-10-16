@@ -31,10 +31,10 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust", version = "1.4.4" }
+aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust" }
 async-trait = "0.1.92"
 futures = "0.3.34"
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 bytes = "1.12.1"
 thiserror = "2.0.20"
@@ -47,11 +47,11 @@ tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros"
 serde_json = "1.0.151"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-aphrody-proc = { path = "../aphrody-proc", version = "1.4.4", features = ["tokio"] }
+aphrody-proc = { path = "../aphrody-proc", features = ["tokio"] }
 tokio = { version = "1.53.1", features = ["process","rt-multi-thread","macros","time","signal","sync","fs","io-util","full","rt"] }
 reqwest = { version = "0.13.5", features = ["rustls-no-provider","json","stream","form","query","charset","http2","system-proxy","blocking","cookies","gzip","brotli","deflate","socks","multipart"], default-features = false }
 whisper-rs = { version = "0.16", optional = true }
-aphrody-models = { path = "../aphrody-models", version = "1.4.4", features = [] }
+aphrody-models = { path = "../aphrody-models", features = [] }
 tempfile = { version = "3.27.0" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

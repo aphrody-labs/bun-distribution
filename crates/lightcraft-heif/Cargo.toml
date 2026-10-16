@@ -6,7 +6,7 @@ edition = "2024"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-heic-rs = { version = "=0.1.4", default-features = false, features = ["std"] }
+heic-rs = { version = "0.1.4", default-features = false, features = ["std"] }
 
 [features]
 # `lightcraft_heif::testdata`: lossless synthetic HEIF files, for the tests of the crates above.

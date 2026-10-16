@@ -23,16 +23,16 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-a2a-coord = { path = "../aphrody-a2a-coord", version = "1.4.4", features = [] }
+aphrody-a2a-coord = { path = "../aphrody-a2a-coord", features = [] }
 portable-pty = "0.8"
-aphrody-terminal-core = { path = "../../toolchains/bun/packages/web/rust/integrations/crates/shell/terminal-core", version = "1.4.4", features = [] }
+aphrody-terminal-core = { path = "../../toolchains/bun/packages/web/rust/integrations/crates/shell/terminal-core", features = [] }
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full", "net"] }
 tokio-tungstenite = { version = "0.30", features = [] }
 futures-util = { version = "0.3", features = [] }
 anyhow = "1.0.104"
 thiserror = "2.0.20"
 tracing = "0.1.44"
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 url = { version = "2.5.8", features = ["serde"] }
 getrandom = "0.4"

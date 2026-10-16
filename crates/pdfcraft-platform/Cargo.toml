@@ -21,6 +21,6 @@ todo = "warn"
 [dependencies]
 
 [dev-dependencies]
-zbus = { version = "=5.19.0", default-features = false, features = ["async-io"] }
+zbus = { version = "5.19.0", default-features = false, features = ["async-io"] }
 async-channel = "2"
 futures-lite = "2"

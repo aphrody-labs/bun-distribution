@@ -32,7 +32,7 @@ sys-locale = { version = "0.3", features = ["js"] }
 
 [dev-dependencies]
 egui_kittest = { version = "0.36", features = ["wgpu", "snapshot"] }
-zip = { version = "3", default-features = false, features = ["deflate"] }
+zip = { workspace = true }
 
 [build-dependencies]
 serde_json = { version = "1", features = ["float_roundtrip"] }

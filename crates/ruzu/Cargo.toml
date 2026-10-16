@@ -25,10 +25,10 @@ path = "src/main.rs"
 # Ubuntu 22.04 ships GTK 4.6. Keep the frontend on that API baseline; newer
 # FileDialog, AlertDialog, ColorDialogButton, and FileLauncher calls go through
 # local compatibility adapters.
-gtk = { version = "0.9", package = "gtk4", features = ["v4_6"] }
+gtk = { version = "0.11", package = "gtk4", features = ["v4_6"] }
 # Same cairo as gtk4 re-exports, with `png` so the controller drawings can be
 # rendered to a file in tests and compared against upstream by eye.
-cairo-rs = { version = "0.20", features = ["png"] }
+cairo-rs = { version = "0.21", features = ["png"] }
 log = { version = "0.4.28", default-features = false }
 sdl3-sys = { workspace = true }
 serde_json = { version = "1", default-features = false }
@@ -36,7 +36,7 @@ ash = { workspace = true }
 libc = "0.2"
 getrandom = "0.2"
 tempfile = { version = "3" }
-zip = { version = "4.2", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+zip = { workspace = true, features = ["deflate-flate2-zlib-rs"] }
 
 # ruzu's data-directory resolver, for "Open ruzu Folder" (upstream uses
 # `Common::FS::GetYuzuPathString(YuzuPath::YuzuDir)`).

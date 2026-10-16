@@ -23,12 +23,12 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-agent-proto = { path = "../aphrody-agent-proto", version = "1.4.4", features = [] }
-aphrody-agent-home = { path = "../aphrody-agent-home", version = "1.4.4", features = [] }
-aphrody-model-client = { path = "../aphrody-model-client", version = "1.4.4", features = [] }
-aphrody-toolcall = { path = "../aphrody-toolcall", version = "1.4.4", features = [] }
-aphrody-rollout = { path = "../aphrody-rollout", version = "1.4.4", features = [] }
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+aphrody-agent-proto = { path = "../aphrody-agent-proto", features = [] }
+aphrody-agent-home = { path = "../aphrody-agent-home", features = [] }
+aphrody-model-client = { path = "../aphrody-model-client", features = [] }
+aphrody-toolcall = { path = "../aphrody-toolcall", features = [] }
+aphrody-rollout = { path = "../aphrody-rollout", features = [] }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 thiserror = "2.0.20"
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }

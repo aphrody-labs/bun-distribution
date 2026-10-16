@@ -16,7 +16,7 @@ too_many_arguments = "allow"
 type_complexity = "allow"
 
 [dependencies]
-craft-ui = { path = "../craft-ui", version = "0.1.0", features = ["serde"] }
+craft-ui = { path = "../craft-ui", features = ["serde"] }
 designcraft-geom = { path = "../designcraft-geom" }
 designcraft-color = { path = "../designcraft-color" }
 designcraft-doc = { path = "../designcraft-doc" }
@@ -37,7 +37,7 @@ log = "0.4"
 [dev-dependencies]
 tempfile = "3"
 designcraft-idml = { path = "../designcraft-idml" }
-zip = { version = "3", default-features = false, features = ["deflate"] }
+zip = { workspace = true }
 egui_kittest = { version = "0.36", features = ["wgpu", "snapshot"] }
 designcraft-fonts = { path = "../designcraft-fonts", features = ["testing"] }
 

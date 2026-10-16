@@ -20,9 +20,9 @@ name = "cadcraft-web"
 path = "src/main.rs"
 
 [dependencies]
-cadcraft-engine = { path = "../../crates/cadcraft-engine", version = "=1.4.4" }
-cadcraft-ui-egui = { path = "../../crates/cadcraft-ui-egui", version = "=1.4.4" }
-cadcraft-io = { path = "../../crates/cadcraft-io", version = "=1.4.4" }
+cadcraft-engine = { path = "../../crates/cadcraft-engine" }
+cadcraft-ui-egui = { path = "../../crates/cadcraft-ui-egui" }
+cadcraft-io = { path = "../../crates/cadcraft-io" }
 egui = "0.36"
 log = "0.4"
 serde_json = { version = "1", features = ["float_roundtrip"] }

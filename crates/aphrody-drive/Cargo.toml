@@ -34,17 +34,17 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [build-dependencies]
-tauri-plugin = { package = "aphrody-tauri-plugin", path = "../../toolchains/bun/packages/bun-tauri/crates/aphrody-tauri-plugin", version = "1.4.4", features = ["build"] }
+tauri-plugin = { package = "aphrody-tauri-plugin", path = "../../toolchains/bun/packages/bun-tauri/crates/aphrody-tauri-plugin", features = ["build"] }
 
 [dependencies]
-aphrody-proc = { path = "../aphrody-proc", version = "1.4.4", features = [] }
-aphrody-kernel = { path = "../aphrody-kernel", version = "1.4.4", default-features = false, features = [] }
-aphrody-subsystem = { path = "../aphrody-subsystem", version = "1.4.4" }
-tauri = { package = "aphrody-tauri", path = "../../toolchains/bun/packages/bun-tauri/crates/aphrody-tauri", version = "1.4.4", default-features = false, features = ["compression"] }
+aphrody-proc = { path = "../aphrody-proc", features = [] }
+aphrody-kernel = { path = "../aphrody-kernel", default-features = false, features = [] }
+aphrody-subsystem = { path = "../aphrody-subsystem" }
+tauri = { package = "aphrody-tauri", path = "../../toolchains/bun/packages/bun-tauri/crates/aphrody-tauri", default-features = false, features = ["compression"] }
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
 tokio-util = { version = "0.7", features = ["io"] }
 axum = { version = "0.8", default-features = false, features = ["json", "query", "tokio", "http1", "http2"] }
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 log = "0.4.34"
 dirs = "7.0.0"

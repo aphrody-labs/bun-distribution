@@ -25,7 +25,7 @@ perf = { level = "warn", priority = -1 }
 [dependencies]
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full", "rt"] }
 reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 thiserror = "2.0.20"
 tracing = "0.1.44"

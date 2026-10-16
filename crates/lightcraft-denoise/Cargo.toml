@@ -24,7 +24,7 @@ rawnind-model = ["lightcraft-denoise-core/rawnind-model"]
 
 [dependencies]
 lightcraft-denoise-core = { path = "../lightcraft-denoise-core" }
-faer = { package = "faer-core", version = "=0.17.1", default-features = false, features = ["std"], optional = true }
+faer = { package = "faer-core", version = "0.17.1", default-features = false, features = ["std"], optional = true }
 lightcraft-raster = { path = "../lightcraft-raster" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }

@@ -20,7 +20,7 @@ designcraft-color = { path = "../designcraft-color" }
 designcraft-doc = { path = "../designcraft-doc" }
 thiserror = "2"
 quick-xml = "0.38"
-zip = { version = "3", default-features = false, features = ["deflate"] }
+zip = { workspace = true }
 
 [dev-dependencies]
 designcraft-compose = { path = "../designcraft-compose" }

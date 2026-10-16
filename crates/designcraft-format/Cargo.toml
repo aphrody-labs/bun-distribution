@@ -18,5 +18,5 @@ type_complexity = "allow"
 designcraft-doc = { path = "../designcraft-doc" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
-zip = { version = "3", default-features = false, features = ["deflate"] }
+zip = { workspace = true }
 thiserror = "2"

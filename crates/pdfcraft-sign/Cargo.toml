@@ -21,9 +21,9 @@ todo = "warn"
 # every test binary (each UI test binary had a 500-600 MB PDB on Windows, #454).
 
 [dependencies]
-pdfcraft-cos = { path = "../pdfcraft-cos", version = "0.7.0" }
-pdfcraft-annot = { path = "../pdfcraft-annot", version = "0.7.0" }
-pdfcraft-fonts = { path = "../pdfcraft-fonts", version = "0.7.0" }
+pdfcraft-cos = { path = "../pdfcraft-cos" }
+pdfcraft-annot = { path = "../pdfcraft-annot" }
+pdfcraft-fonts = { path = "../pdfcraft-fonts" }
 thiserror = "2"
 base64 = "0.22"
 sha1 = "0.11"
@@ -35,7 +35,7 @@ bp256 = { version = "0.14", default-features = false, features = ["arithmetic", 
 bp384 = { version = "0.14", default-features = false, features = ["arithmetic", "ecdsa", "std"] }
 ecdsa = { version = "0.17", default-features = false, features = ["algorithm", "der"] }
 crypto-bigint = { version = "0.7", default-features = false, features = ["alloc"] }
-rsa = { version = "=0.10.0-rc.18", default-features = false, features = ["std", "hazmat"] }
+rsa = { version = "0.10.0-rc.18", default-features = false, features = ["std", "hazmat"] }
 pbkdf2 = { version = "0.13", default-features = false, features = ["hmac"] }
 hmac = "0.13"
 aes = "0.9"

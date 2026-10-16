@@ -23,14 +23,14 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust", version = "1.4.4" }
-aphrody-toolcall = { path = "../aphrody-toolcall", version = "1.4.4", features = [] }
-aphrody-config = { path = "../aphrody-config", version = "1.4.4", features = [] }
+aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust" }
+aphrody-toolcall = { path = "../aphrody-toolcall", features = [] }
+aphrody-config = { path = "../aphrody-config", features = [] }
 async-trait = "0.1.92"
 base64 = "0.23.1"
 futures-util = { version = "0.3", features = [] }
 reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 thiserror = "2.0.20"
 tracing = "0.1.44"
@@ -41,8 +41,8 @@ rustls = { version = "0.23", default-features = false, features = ["ring", "std"
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-aphrody-proc = { path = "../aphrody-proc", version = "1.4.4", features = [] }
-aphrody-web-service = { path = "../../toolchains/bun/packages/web/rust/crates/web-service", version = "1.4.4", features = ["render"] }
+aphrody-proc = { path = "../aphrody-proc", features = [] }
+aphrody-web-service = { path = "../../toolchains/bun/packages/web/rust/crates/web-service", features = ["render"] }
 tokio = { version = "1.53.1", features = ["process","rt-multi-thread","macros","time","signal","sync","fs","io-util","full"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

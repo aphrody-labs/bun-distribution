@@ -23,8 +23,8 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-proc = { path = "../aphrody-proc", version = "1.4.4", features = [] }
-aphrody-store = { path = "../aphrody-store", version = "1.4.4", features = [] }
+aphrody-proc = { path = "../aphrody-proc", features = [] }
+aphrody-store = { path = "../aphrody-store", features = [] }
 clap = { version = "4.6.6", features = ["derive", "env", "color"] }
 oxc_allocator = "0.153.0"
 oxc_ast = "0.153.0"
@@ -32,10 +32,10 @@ oxc_ast_visit = "0.153.0"
 oxc_parser = "0.153.0"
 oxc_span = "0.153.0"
 oxc_syntax = "0.153.0"
-tree-sitter = "0.27"
+tree-sitter = { workspace = true }
 tree-sitter-rust = "0.24"
 rusqlite = { version = "0.40", features = ["bundled"] }
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 thiserror = "2.0.20"
 

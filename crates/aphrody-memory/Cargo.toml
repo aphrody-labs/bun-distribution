@@ -29,7 +29,7 @@ default = []
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full", "rt"] }
 async-trait = "0.1.92"
 futures = "0.3.34"
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 thiserror = "2.0.20"
 chrono = { version = "0.4", features = ["serde"] }
@@ -38,10 +38,10 @@ time = { version = "0.3", features = ["macros", "formatting", "parsing", "serde"
 tracing = "0.1.44"
 reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
 rusqlite = { version = "0.40", features = ["bundled"] }
-aphrody-sql = { path = "../aphrody-sql", version = "1.4.4", default-features = false, features = ["sqlite"] }
-aphrody-web-index = { path = "../../toolchains/bun/src/browser/crates/index", version = "1.4.4", package = "bun_browser_index" }
-aphrody-agent-home = { path = "../aphrody-agent-home", version = "1.4.4", features = [] }
-aphrody-models = { path = "../aphrody-models", version = "1.4.4", features = [] }
+aphrody-sql = { path = "../aphrody-sql", default-features = false, features = ["sqlite"] }
+aphrody-web-index = { path = "../../toolchains/bun/src/browser/crates/index", package = "bun_browser_index" }
+aphrody-agent-home = { path = "../aphrody-agent-home", features = [] }
+aphrody-models = { path = "../aphrody-models", features = [] }
 
 [dev-dependencies]
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }

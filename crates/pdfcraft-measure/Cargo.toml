@@ -19,9 +19,9 @@ todo = "warn"
 # every test binary (each UI test binary had a 500-600 MB PDB on Windows, #454).
 
 [dependencies]
-pdfcraft-cos = { path = "../pdfcraft-cos", version = "0.7.0" }
-pdfcraft-model = { path = "../pdfcraft-model", version = "0.7.0" }
-pdfcraft-content = { path = "../pdfcraft-content", version = "0.7.0" }
-pdfcraft-annot = { path = "../pdfcraft-annot", version = "0.7.0" }
+pdfcraft-cos = { path = "../pdfcraft-cos" }
+pdfcraft-model = { path = "../pdfcraft-model" }
+pdfcraft-content = { path = "../pdfcraft-content" }
+pdfcraft-annot = { path = "../pdfcraft-annot" }
 serde = { version = "1", features = ["derive", "rc"] }
 thiserror = "2"

@@ -29,8 +29,8 @@ filmcraft-project = { path = "../filmcraft-project" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
 thiserror = "2"
-candle-core = { version = "0.9", default-features = false, optional = true }
-candle-nn = { version = "0.9", default-features = false, optional = true }
+candle-core = { workspace = true, optional = true }
+candle-nn = { workspace = true, optional = true }
 rayon = "1"
 ureq = { version = "3", default-features = false, features = ["rustls-no-provider", "platform-verifier"], optional = true }
 rustls = { version = "0.23", default-features = false, optional = true }

@@ -19,7 +19,7 @@ default = ["oxc"]
 oxc = ["dep:oxc_allocator", "dep:oxc_ast", "dep:oxc_parser", "dep:oxc_span"]
 
 [dependencies]
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 thiserror = "2.0.20"
 blake3 = "1.8.7"

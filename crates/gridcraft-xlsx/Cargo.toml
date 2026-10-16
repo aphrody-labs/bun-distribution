@@ -25,7 +25,7 @@ gridcraft-formula = { path = "../gridcraft-formula" }
 gridcraft-model = { path = "../gridcraft-model" }
 thiserror = "2"
 quick-xml = "0.41"
-zip = { version = "3", default-features = false, features = ["deflate"] }
+zip = { workspace = true }
 aes = { version = "0.9", default-features = false }
 sha1 = { version = "0.11", default-features = false }
 sha2 = { version = "0.11", default-features = false }

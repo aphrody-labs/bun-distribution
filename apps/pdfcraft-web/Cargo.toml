@@ -20,7 +20,7 @@ todo = "warn"
 # every test binary (each UI test binary had a 500-600 MB PDB on Windows, #454).
 
 [dependencies]
-pdfcraft-ui-egui = { path = "../../crates/pdfcraft-ui-egui", version = "0.7.0" }
+pdfcraft-ui-egui = { path = "../../crates/pdfcraft-ui-egui" }
 eframe = { version = "0.36", default-features = false, features = [
   "default_fonts",
   "glow",

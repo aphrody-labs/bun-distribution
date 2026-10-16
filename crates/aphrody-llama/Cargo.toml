@@ -13,7 +13,7 @@ publish = true
 [dependencies]
 encoding_rs = "0.8.41"
 enumflags2 = "0.7.12"
-aphrody-llama-sys = { path = "../aphrody-llama-sys", version = "1.4.4" }
+aphrody-llama-sys = { path = "../aphrody-llama-sys" }
 thiserror = "2.0.20"
 tracing = "0.1.44"
 tracing-core = "0.1.36"

@@ -28,8 +28,8 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-translate-core = { path = "../aphrody-translate-core", version = "1.4.4", features = [] }
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+aphrody-translate-core = { path = "../aphrody-translate-core", features = [] }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 anyhow = "1.0.104"
 tracing = "0.1.44"
@@ -42,7 +42,7 @@ urlencoding = "2"
 ignored = ["wasm-bindgen", "wasm-bindgen-futures"]
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-aphrody-proc = { path = "../aphrody-proc", version = "1.4.4", features = ["tokio"] }
+aphrody-proc = { path = "../aphrody-proc", features = ["tokio"] }
 clap = { version = "4.6.6", features = ["derive","env","color"] }
 tokio = { version = "1.53.1", features = ["process","rt-multi-thread","macros","time","signal","sync","fs","io-util","full"] }
 reqwest = { version = "0.13.5", features = ["rustls-no-provider","json","stream","form","query","charset","http2","system-proxy","blocking","cookies","gzip","brotli","deflate","socks","multipart"], default-features = false }

@@ -31,6 +31,6 @@ default = []
 sqlite = ["aphrody-ocr-core/sqlite"]
 
 [dependencies]
-aphrody-ocr-core = { path = "../aphrody-ocr-core", version = "1.4.4", features = [] }
-aphrody-ocr-onnx = { path = "../aphrody-ocr-onnx", version = "1.4.4", features = [] }
-aphrody-ocr-vlm = { path = "../aphrody-ocr-vlm", version = "1.4.4", features = [] }
+aphrody-ocr-core = { path = "../aphrody-ocr-core", features = [] }
+aphrody-ocr-onnx = { path = "../aphrody-ocr-onnx", features = [] }
+aphrody-ocr-vlm = { path = "../aphrody-ocr-vlm", features = [] }

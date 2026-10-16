@@ -12,15 +12,15 @@ name = "aphrody_infra"
 path = "src/lib.rs"
 
 [dependencies]
-aphrody-proc = { path = "../aphrody-proc", version = "1.4.4", features = [] }
+aphrody-proc = { path = "../aphrody-proc", features = [] }
 anyhow = "1.0.104"
-aphrody-git = { package = "bun_git", path = "../../toolchains/bun/src/bun-os/git" }
-aphrody-ssh = { path = "../aphrody-ssh", version = "1.4.4", features = [] }
-aphrody-ovh = { path = "../aphrody-ovh", version = "1.4.4" }
-aphrody-vpn = { path = "../aphrody-vpn", version = "1.4.4", features = [] }
-aphrody-remote-desktop = { path = "../aphrody-remote-desktop", version = "1.4.4", features = ["vnc"] }
-aphrody-wireguard = { path = "../aphrody-wireguard", version = "1.4.4", features = [] }
-aphrody-yolo = { path = "../aphrody-yolo", version = "1.4.4" }
+aphrody-git = { package = "bun_git", path = "../../toolchains/bun/src/git" }
+aphrody-ssh = { path = "../aphrody-ssh", features = [] }
+aphrody-ovh = { path = "../aphrody-ovh" }
+aphrody-vpn = { path = "../aphrody-vpn", features = [] }
+aphrody-remote-desktop = { path = "../aphrody-remote-desktop", features = ["vnc"] }
+aphrody-wireguard = { path = "../aphrody-wireguard", features = [] }
+aphrody-yolo = { path = "../aphrody-yolo" }
 base64 = "0.23.1"
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.6.6", features = ["derive", "env", "color"] }
@@ -32,7 +32,7 @@ rcgen = { version = "0.14", default-features = false, features = ["crypto", "pem
 regex = { version = "1.11", features = [] }
 ring = "0.17"
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 tar = "0.4.46"
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }

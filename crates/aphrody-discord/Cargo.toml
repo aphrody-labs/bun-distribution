@@ -9,16 +9,16 @@ repository = "https://github.com/aphrody-labs/aphrody"
 description = "Native Aphrody Discord engine: Ed25519 interaction verification, REST client, AI answer embeds, Web extraction and timed shell receipts."
 
 [dependencies]
-aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust", version = "1.4.4" }
-aphrody-proc = { path = "../aphrody-proc", version = "1.4.4", features = ["tokio"] }
+aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust" }
+aphrody-proc = { path = "../aphrody-proc", features = ["tokio"] }
 anyhow = "1.0.104"
-aphrody-web-extract = { path = "../../toolchains/bun/src/browser/crates/extract", version = "1.4.4", package = "bun_browser_extract", optional = true }
+aphrody-web-extract = { path = "../../toolchains/bun/src/browser/crates/extract", package = "bun_browser_extract", optional = true }
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.6.6", features = ["derive", "env", "color"], optional = true }
 hex = { version = "0.4", features = [] }
 reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
 ring = "0.17"
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
 tracing = "0.1.44"

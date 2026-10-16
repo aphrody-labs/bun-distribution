@@ -19,7 +19,7 @@ wordcraft-doc = { path = "../wordcraft-doc" }
 wordcraft-geom = { path = "../wordcraft-geom" }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "bmp", "tiff"] }
 quick-xml = "0.41"
-zip = { version = "3", default-features = false, features = ["deflate"] }
+zip = { workspace = true }
 log = "0.4"
 
 [dev-dependencies]

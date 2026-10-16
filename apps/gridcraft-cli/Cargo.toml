@@ -24,5 +24,5 @@ gridcraft-engine = { path = "../../crates/gridcraft-engine" }
 gridcraft-mcp = { path = "../../crates/gridcraft-mcp" }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 log = "0.4"
-zip = { version = "3", default-features = false, features = ["deflate"] }
+zip = { workspace = true }
 quick-xml = "0.41"

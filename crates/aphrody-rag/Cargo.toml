@@ -29,14 +29,14 @@ ort = ["dep:aphrody-embed", "aphrody-embed/embeddings"]
 native = ["dep:aphrody-embed", "aphrody-embed/native"]
 
 [dependencies]
-aphrody-embed = { path = "../aphrody-embed", version = "1.4.4", default-features = false, features = [], optional = true }
-aphrody-rag-core = { path = "../aphrody-rag-core", version = "1.4.4", features = [] }
-aphrody-toolcall = { path = "../aphrody-toolcall", version = "1.4.4", features = [] }
-aphrody-config = { path = "../aphrody-config", version = "1.4.4", features = [] }
-aphrody-models = { path = "../aphrody-models", version = "1.4.4", features = [] }
-aphrody-code-graph = { path = "../aphrody-code-graph", version = "1.4.4", features = [] }
-aphrody-store = { path = "../aphrody-store", version = "1.4.4", features = [] }
-aphrody-sql = { path = "../aphrody-sql", version = "1.4.4", default-features = false, features = ["postgres", "sqlite"] }
+aphrody-embed = { path = "../aphrody-embed", default-features = false, features = [], optional = true }
+aphrody-rag-core = { path = "../aphrody-rag-core", features = [] }
+aphrody-toolcall = { path = "../aphrody-toolcall", features = [] }
+aphrody-config = { path = "../aphrody-config", features = [] }
+aphrody-models = { path = "../aphrody-models", features = [] }
+aphrody-code-graph = { path = "../aphrody-code-graph", features = [] }
+aphrody-store = { path = "../aphrody-store", features = [] }
+aphrody-sql = { path = "../aphrody-sql", default-features = false, features = ["postgres", "sqlite"] }
 async-trait = "0.1.92"
 blake3 = "1.8.7"
 clap = { version = "4.6.6", features = ["derive", "env", "color"] }
@@ -46,7 +46,7 @@ rayon = "1.12.0"
 reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 rusqlite = { version = "0.40", features = ["bundled"] }
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 sha2 = "0.11.0"
 thiserror = "2.0.20"

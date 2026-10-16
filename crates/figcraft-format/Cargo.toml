@@ -27,7 +27,7 @@ figcraft-doc = { path = "../figcraft-doc" }
 figcraft-pathops = { path = "../figcraft-pathops" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
-zip = { version = "2", default-features = false, features = ["deflate"] }
+zip = { workspace = true }
 flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
 ruzstd = { version = "0.9", default-features = false, features = ["std"] }
 sha2 = "0.10"

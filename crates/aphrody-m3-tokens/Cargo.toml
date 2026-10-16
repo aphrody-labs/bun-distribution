@@ -29,11 +29,11 @@ image   = ["std", "dep:image"]
 serde   = ["dep:serde"]
 
 [dependencies]
-base64 = { version = "=0.23.1", optional = true }
-image = { version = "=0.25.10", optional = true, features = ["png", "jpeg"] }
-serde = { version = "=1.0.229", optional = true, default-features = false, features = ["derive"] }
+base64 = { version = "0.23.1", optional = true }
+image = { version = "0.25.10", optional = true, features = ["png", "jpeg"] }
+serde = { workspace = true, optional = true }
 
 [dev-dependencies]
-read-fonts = { version = "=0.44.0", default-features = false, features = ["std"] }
-serde = { version = "=1.0.229", default-features = false, features = ["derive", "std"] }
-serde_json = { version = "=1.0.151", features = ["float_roundtrip"] }
+read-fonts = { version = "0.44.0", default-features = false, features = ["std"] }
+serde = { workspace = true }
+serde_json = { workspace = true, features = ["float_roundtrip"] }

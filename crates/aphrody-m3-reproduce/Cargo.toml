@@ -36,7 +36,7 @@ cli     = ["image", "crawl", "network", "dep:clap"]
 
 [dependencies]
 aphrody-m3-tokens = { git = "https://github.com/aphrody-labs/material", rev = "e858361dfd2597b067eea56d471ff4caab7442f8", version = "1.4.4", features = [] }
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 thiserror = "2.0.20"
 regex = { version = "1.11", features = [], optional = true }

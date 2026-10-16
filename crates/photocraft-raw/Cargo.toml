@@ -23,7 +23,7 @@ zune-core = "0.5"
 [dev-dependencies]
 photocraft-raw = { path = "", features = ["testgen"] }
 png = "0.18"
-zune-jpegxl = { version = "=0.5.2", default-features = false, features = ["std"] }
+zune-jpegxl = { version = "0.5.2", default-features = false, features = ["std"] }
 zune-core = "0.5"
 
 [lints.rust]

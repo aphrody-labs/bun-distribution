@@ -23,11 +23,11 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust", version = "1.4.4" }
-aphrody-toolcall = { path = "../aphrody-toolcall", version = "1.4.4", features = [] }
-aphrody-patch = { path = "../aphrody-patch", version = "1.4.4", features = [] }
+aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust" }
+aphrody-toolcall = { path = "../aphrody-toolcall", features = [] }
+aphrody-patch = { path = "../aphrody-patch", features = [] }
 aphrody-jev = { git = "https://github.com/aphrody-labs/bun", rev = "892ea1ae93820a9ea839027ff466f44f732ccfa8", version = "1.4.4", default-features = false, features = ["client"] }
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 async-trait = "0.1.92"
 
@@ -37,16 +37,16 @@ tempfile = "3.27.0"
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-aphrody-proc = { path = "../aphrody-proc", version = "1.4.4", features = ["tokio"] }
-aphrody-agent-proto = { path = "../aphrody-agent-proto", version = "1.4.4", features = [] }
-aphrody-guard = { path = "../aphrody-guard", version = "1.4.4", features = [] }
-aphrody-winclean = { package = "bun-windows-winclean", path = "../../toolchains/bun/packages/bun-windows-winclean", version = "1.4.4", features = [] }
-aphrody-google = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/google", version = "1.4.4", features = [] }
-aphrody-web-service = { path = "../../toolchains/bun/packages/web/rust/crates/web-service", version = "1.4.4", features = ["render"] }
-aphrody-gemini-web = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/gemini-web", version = "1.4.4", features = [] }
-obscura-net = { path = "../../toolchains/bun/packages/web/rust/crates/obscura-net", version = "1.4.4", features = [] }
-aphrody-remote-desktop = { path = "../aphrody-remote-desktop", version = "1.4.4", features = ["vnc-client"] }
-aphrody-term = { path = "../aphrody-term", version = "1.4.4", features = [] }
+aphrody-proc = { path = "../aphrody-proc", features = ["tokio"] }
+aphrody-agent-proto = { path = "../aphrody-agent-proto", features = [] }
+aphrody-guard = { path = "../aphrody-guard", features = [] }
+aphrody-winclean = { package = "bun-windows-winclean", path = "../../toolchains/bun/packages/bun-windows-winclean", features = [] }
+aphrody-google = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/google", features = [] }
+aphrody-web-service = { path = "../../toolchains/bun/packages/web/rust/crates/web-service", features = ["render"] }
+aphrody-gemini-web = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/gemini-web", features = [] }
+obscura-net = { path = "../../toolchains/bun/packages/web/rust/crates/obscura-net", features = [] }
+aphrody-remote-desktop = { path = "../aphrody-remote-desktop", features = ["vnc-client"] }
+aphrody-term = { path = "../aphrody-term", features = [] }
 anyhow = { version = "1.0.104" }
 thiserror = { version = "2.0.20" }
 tokio = { version = "1.53.1", features = ["process","rt-multi-thread","macros","time","signal","sync","fs","io-util","full"] }

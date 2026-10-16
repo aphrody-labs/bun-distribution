@@ -26,9 +26,9 @@ filmcraft-tts-text = { path = "../filmcraft-tts-text", optional = true }
 filmcraft-audio-dsp = { path = "../filmcraft-audio-dsp", optional = true }
 serde = { version = "1", features = ["derive", "rc"] }
 thiserror = "2"
-candle-core = { version = "0.9", default-features = false, optional = true }
-candle-nn = { version = "0.9", default-features = false, optional = true }
-zip = { version = "7", default-features = false, optional = true }
+candle-core = { workspace = true, optional = true }
+candle-nn = { workspace = true, optional = true }
+zip = { workspace = true, optional = true }
 serde_json = { version = "1", optional = true }
 
 [[example]]

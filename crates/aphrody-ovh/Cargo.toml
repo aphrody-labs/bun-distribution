@@ -9,14 +9,14 @@ repository = "https://github.com/aphrody-labs/aphrody"
 description = "Native OVHcloud engine: OAuth2 service account and SHA-1 signing, services, domains, DNS, VPS, email and IAM management."
 
 [dependencies]
-aphrody-proc = { path = "../aphrody-proc", version = "1.4.4", features = [] }
+aphrody-proc = { path = "../aphrody-proc", features = [] }
 anyhow = "1.0.104"
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.6.6", features = ["derive", "env", "color"] }
 reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
 ring = "0.17"
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 
 [dev-dependencies]

@@ -121,4 +121,4 @@ tempfile = { workspace = true }
 aphrody-x = { workspace = true, features = ["test-support"] }
 
 [dependencies]
-aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust", version = "1.4.4" }
+aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust" }

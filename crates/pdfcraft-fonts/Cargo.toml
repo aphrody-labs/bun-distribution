@@ -19,7 +19,7 @@ todo = "warn"
 # every test binary (each UI test binary had a 500-600 MB PDB on Windows, #454).
 
 [dependencies]
-pdfcraft-cos = { path = "../pdfcraft-cos", version = "0.7.0" }
+pdfcraft-cos = { path = "../pdfcraft-cos" }
 skrifa = "0.44"
 harfrust = "0.12"
 unicode-bidi = "0.3"

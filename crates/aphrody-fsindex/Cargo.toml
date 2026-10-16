@@ -23,8 +23,8 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust", version = "1.4.4" }
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust" }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 thiserror = "2.0.20"
 walkdir = "2.5.0"
 rusqlite = { version = "0.40", features = ["bundled"] }

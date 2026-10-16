@@ -1,5 +1,5 @@
 # Integration manifest for crates/aphrody-jev in the Bun OS workspace.
-# The root must declare `futures = { version = "=0.3.34", default-features = false, features = ["std", "async-await"] }`.
+# The root must declare `futures = { version = "0.3.34", default-features = false, features = ["std", "async-await"] }`.
 [package]
 name = "aphrody-jev"
 version.workspace = true

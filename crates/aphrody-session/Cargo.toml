@@ -29,7 +29,7 @@ default = []
 memory = ["dep:aphrody-memory"]
 
 [dependencies]
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 thiserror = "2.0.20"
 tracing = "0.1.44"
@@ -48,5 +48,5 @@ ignored = ["tracing"]
 tokio = { version = "1.53.1", features = ["process","rt-multi-thread","macros","time","signal","sync","fs","io-util","full","rt"] }
 dirs = { version = "7.0.0" }
 sysinfo = { version = "0.39.6", features = ["system","disk"], default-features = false }
-aphrody-models = { path = "../aphrody-models", version = "1.4.4", features = [] }
-aphrody-memory = { path = "../aphrody-memory", version = "1.4.4", features = [], optional = true }
+aphrody-models = { path = "../aphrody-models", features = [] }
+aphrody-memory = { path = "../aphrody-memory", features = [], optional = true }

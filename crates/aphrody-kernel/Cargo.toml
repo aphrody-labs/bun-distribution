@@ -31,12 +31,12 @@ builtins = [
 ]
 
 [dependencies]
-aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust", version = "1.4.4" }
-aphrody-proc = { path = "../aphrody-proc", version = "1.4.4", features = ["tokio"] }
-aphrody-subsystem = { path = "../aphrody-subsystem", version = "1.4.4" }
-aphrody-kernel-client = { path = "../aphrody-kernel-client", version = "1.4.4" }
-aphrody-toolchains = { path = "../aphrody-toolchains", version = "1.4.4", features = [] }
-aphrody-winclean = { package = "bun-windows-winclean", path = "../../toolchains/bun/packages/bun-windows-winclean", version = "1.4.4", features = [] }
+aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust" }
+aphrody-proc = { path = "../aphrody-proc", features = ["tokio"] }
+aphrody-subsystem = { path = "../aphrody-subsystem" }
+aphrody-kernel-client = { path = "../aphrody-kernel-client" }
+aphrody-toolchains = { path = "../aphrody-toolchains", features = [] }
+aphrody-winclean = { package = "bun-windows-winclean", path = "../../toolchains/bun/packages/bun-windows-winclean", features = [] }
 async-trait = "0.1.92"
 gix = { version = "0.88", default-features = false, features = ["sha1", "basic", "extras", "comfort", "max-performance-safe", "revision", "index", "worktree-mutation"] }
 reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
@@ -46,12 +46,12 @@ thiserror = "2.0.20"
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full", "rt"] }
 tracing = "0.1.44"
 log = "0.4.34"
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 chrono = { version = "0.4", features = ["serde"] }
 shlex = "2.0"
 anyhow = { version = "1.0.104", optional = true }
-aphrody-bun-docs = { path = "../aphrody-bun-docs", version = "1.4.4", features = [], optional = true }
-aphrody-nu = { path = "../aphrody-nu", version = "1.4.4", features = [], optional = true }
+aphrody-bun-docs = { path = "../aphrody-bun-docs", features = [], optional = true }
+aphrody-nu = { path = "../aphrody-nu", features = [], optional = true }
 clap = { version = "4.6.6", features = ["derive", "env", "color"], optional = true }
 
 [dev-dependencies]

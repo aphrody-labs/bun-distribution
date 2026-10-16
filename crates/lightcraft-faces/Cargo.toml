@@ -20,8 +20,8 @@ excessive_precision = "allow"
 default = []
 
 [dependencies]
-ndarray = { version = "=0.17.2", default-features = false, features = ["std"] }
-matrixmultiply = { version = "=0.3.11", default-features = false, features = ["std", "avx512"] }
+ndarray = { version = "0.17.2", default-features = false, features = ["std"] }
+matrixmultiply = { version = "0.3.11", default-features = false, features = ["std", "avx512"] }
 web-time = "1"
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }

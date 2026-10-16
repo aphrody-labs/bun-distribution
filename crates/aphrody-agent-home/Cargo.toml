@@ -30,9 +30,9 @@ default = []
 git = ["dep:gix"]
 
 [dependencies]
-aphrody-models = { path = "../aphrody-models", version = "1.4.4", features = [] }
-aphrody-config = { path = "../aphrody-config", version = "1.4.4", features = [] }
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+aphrody-models = { path = "../aphrody-models", features = [] }
+aphrody-config = { path = "../aphrody-config", features = [] }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 thiserror = "2.0.20"
 blake3 = { version = "1", default-features = false }

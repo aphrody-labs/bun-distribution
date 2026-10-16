@@ -29,8 +29,8 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-a2a = { path = "../aphrody-a2a", version = "1.4.4", features = [] }
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+aphrody-a2a = { path = "../aphrody-a2a", features = [] }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 prost = { version = "0.14", features = [] }
 prost-types = "0.14"
 pbjson = "0.9"

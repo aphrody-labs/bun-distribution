@@ -19,8 +19,8 @@ todo = "warn"
 # every test binary (each UI test binary had a 500-600 MB PDB on Windows, #454).
 
 [dependencies]
-pdfcraft-crypt = { path = "../pdfcraft-crypt", version = "0.7.0" }
-pdfcraft-filters = { path = "../pdfcraft-filters", version = "0.7.0" }
+pdfcraft-crypt = { path = "../pdfcraft-crypt" }
+pdfcraft-filters = { path = "../pdfcraft-filters" }
 thiserror = "2"
 
 [dev-dependencies]

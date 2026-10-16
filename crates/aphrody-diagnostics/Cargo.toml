@@ -23,12 +23,12 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-agent-home = { path = "../aphrody-agent-home", version = "1.4.4", features = [] }
-aphrody-antigravity = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/antigravity", version = "1.4.4", features = [] }
-aphrody-config = { path = "../aphrody-config", version = "1.4.4", features = [] }
-aphrody-kernel = { path = "../aphrody-kernel", version = "1.4.4", default-features = false, features = [] }
-aphrody-llama-server = { path = "../aphrody-llama-server", version = "1.4.4", features = [] }
-aphrody-models = { path = "../aphrody-models", version = "1.4.4", features = [] }
+aphrody-agent-home = { path = "../aphrody-agent-home", features = [] }
+aphrody-antigravity = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/antigravity", features = [] }
+aphrody-config = { path = "../aphrody-config", features = [] }
+aphrody-kernel = { path = "../aphrody-kernel", default-features = false, features = [] }
+aphrody-llama-server = { path = "../aphrody-llama-server", features = [] }
+aphrody-models = { path = "../aphrody-models", features = [] }
 chrono = { version = "0.4", features = ["serde"] }
 miette = { version = "7", features = ["fancy"] }
 reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }

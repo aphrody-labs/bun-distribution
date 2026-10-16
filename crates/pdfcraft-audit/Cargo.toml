@@ -21,10 +21,10 @@ todo = "warn"
 # every test binary (each UI test binary had a 500-600 MB PDB on Windows, #454).
 
 [dependencies]
-pdfcraft-cos = { path = "../pdfcraft-cos", version = "0.7.0" }
-pdfcraft-content = { path = "../pdfcraft-content", version = "0.7.0" }
-pdfcraft-edit = { path = "../pdfcraft-edit", version = "0.7.0" }
-pdfcraft-model = { path = "../pdfcraft-model", version = "0.7.0" }
+pdfcraft-cos = { path = "../pdfcraft-cos" }
+pdfcraft-content = { path = "../pdfcraft-content" }
+pdfcraft-edit = { path = "../pdfcraft-edit" }
+pdfcraft-model = { path = "../pdfcraft-model" }
 thiserror = "2"
 
 [dev-dependencies]

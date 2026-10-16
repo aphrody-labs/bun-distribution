@@ -47,7 +47,7 @@ env_logger = { version = "0.11", default-features = false, features = [
 ctrlc = { version = "3", features = ["termination"] }
 
 [dev-dependencies]
-zip = { version = "2", default-features = false, features = ["deflate"] }
+zip = { workspace = true }
 wat = "1.261"
 figcraft-engine = { path = "../../crates/figcraft-engine" }
 figcraft-doc = { path = "../../crates/figcraft-doc" }

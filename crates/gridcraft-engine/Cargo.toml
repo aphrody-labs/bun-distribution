@@ -32,4 +32,4 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg"]
 
 [dev-dependencies]
 gridcraft-xlsx = { path = "../gridcraft-xlsx", features = ["test-support"] }
-zip = { version = "3", default-features = false, features = ["deflate"] }
+zip = { workspace = true }

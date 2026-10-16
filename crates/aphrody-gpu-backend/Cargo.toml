@@ -36,6 +36,6 @@ cuda = ["hub", "dep:cudarc"]
 [dependencies]
 wgpu = { version = "30.0.1", default-features = false }
 pollster = { version = "1.0.1", optional = true }
-serde = { version = "1.0.229", features = ["derive", "std"], default-features = false, optional = true }
+serde = { version = "1.0.228", features = ["derive", "std"], default-features = false, optional = true }
 serde_json = { version = "1.0.151", optional = true }
 cudarc = { version = "0.19.10", default-features = false, features = ["std", "driver", "nvrtc", "dynamic-loading", "cuda-13040"], optional = true }
