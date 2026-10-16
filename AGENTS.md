@@ -1,14 +1,10 @@
-# AGENTS.md
+# Craft library provenance
 
-Shared Rust libraries for the Craft Apps. The shared standards live in
-[craftrules](https://github.com/storytold/craftrules) (`../../craftrules` on a dev machine): read its
-`AGENTS.md`, then `standards/never-crash.md`, `standards/engineering.md` and `standards/licensing.md`.
+The six Rust libraries now belong to the flat Bun OS crates listed in
+[README.md](README.md). Edit and qualify code in those owners through the
+root Bun OS workspace. Do not restore a nested Cargo workspace, duplicate
+crate implementation, toolchain, lockfile or standalone build workflow here.
 
-- **Never crash.** Every crate's `lib.rs` starts with
-  `#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]`.
-  No `unsafe` (the workspace forbids it).
-- **New crates** go in `crates/<name>`, named `craft-<name>`, inherit the workspace package fields
-  and lints, and are listed in `[workspace.dependencies]`.
-- **No app code.** A crate here must be useful to more than one app and must not depend on any app.
-- **Before merging:** `cargo fmt --check`, `cargo clippy --workspace --all-targets -- -D warnings`,
-  `cargo test --workspace`.
+Preserve this repository's history, shared documentation, licenses, NOTICE
+and ATTRIBUTION.md. Preserve each consumer's selected features during its
+separate transition to the root workspace aliases.
