@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // `m3-bun create <template> <dir>`: a new project from `@aphrody/scaffold`, the single scaffolder of the UI stack
-// (`web`, `app`, `spa`, `example`). It writes nothing over existing files and, like `aphrody-scaffold`, only into a
+// (`web`, `app`, `example`). It writes nothing over existing files and, like `aphrody-scaffold`, only into a
 // declared member of the Aphrody/M3 workspace.
 import type { TemplateName } from "@aphrody/scaffold";
 import { basename, resolve } from "node:path";
@@ -27,12 +27,8 @@ export interface CreateReport {
 }
 
 /** The templates `m3-bun create` offers, with their summaries. */
-export async function createTemplates(): Promise<
-  ReadonlyArray<{ name: TemplateName; summary: string }>
-> {
-  return (
-    await loadTool("@aphrody/scaffold", () => import("@aphrody/scaffold"))
-  ).TEMPLATES;
+export async function createTemplates(): Promise<ReadonlyArray<{ name: TemplateName; summary: string }>> {
+  return (await loadTool("@aphrody/scaffold", () => import("@aphrody/scaffold"))).TEMPLATES;
 }
 
 type Scaffold = typeof import("@aphrody/scaffold");
@@ -52,26 +48,20 @@ function scaffoldRequest(
         target: options.target ?? "vite",
         modernizeM3: true,
       };
-    case "spa":
-      return { template: "spa", name };
     case "web":
       return { template: "web", name, m3Version: scaffold.ownerM3Version() };
     default:
       throw new Error(
-        `m3-bun create: unknown template ${String(options.template)} (${scaffold.TEMPLATES.map((t) => t.name).join(", ")})`,
+        `m3-bun create: unknown template ${String(options.template)} (${scaffold.TEMPLATES.map(t => t.name).join(", ")})`,
       );
   }
 }
 
 /** Render a template and, unless `dryRun`, write it with `scaffold()`. */
 export async function createApp(options: CreateOptions): Promise<CreateReport> {
-  const scaffold = await loadTool(
-    "@aphrody/scaffold",
-    () => import("@aphrody/scaffold"),
-  );
+  const scaffold = await loadTool("@aphrody/scaffold", () => import("@aphrody/scaffold"));
   const dir = resolve(options.dir);
-  const name =
-    options.name ?? scaffold.npmName(basename(dir)) ?? scaffold.EXAMPLE_NAME;
+  const name = options.name ?? scaffold.npmName(basename(dir)) ?? scaffold.EXAMPLE_NAME;
   const request = scaffoldRequest(options, name, scaffold);
   if (options.dryRun) {
     return {

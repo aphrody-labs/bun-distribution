@@ -63,7 +63,9 @@ from the runner.
 ## Product workflow
 
 Pushes to `main` and `os` run source checks. Checkout uses direct submodules and
-retains their pinned revisions. Installation runs `bun install --frozen-lockfile`
-followed by the shared-install owner `scripts/node-modules.ts`. Native builds
+retains their pinned revisions. Use the root setup owner: it prepares the pinned
+Material Web archive with its public types before `bun install --frozen-lockfile`,
+then invokes the shared-install owner `scripts/node-modules.ts`. Bare frozen
+installation requires that archive to have already been assembled. Native builds
 remain limited to an explicit dispatch with `build=true`, after host admission.
 This preparation does not qualify a complete job or a native build.

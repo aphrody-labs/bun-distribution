@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import type { M3CssConfig } from "../src/native.ts";
 
 /** The aphrody-m3 checkout: `packages/m3-fonts/fonts/upstream` holds the pinned fonts
- * (`bun scripts/fonts-sync.ts`, run by this package's `test` script), so the suite runs the same in
+ * (`bun scripts/m3/fonts-sync.ts`, run by this package's `test` script), so the suite runs the same in
  * a standalone, aphrody, yolo or iecode checkout. */
 export const REPO_ROOT = resolve(import.meta.dir, "../../..");
 /** The fixture application. */
@@ -22,9 +22,7 @@ export function fakeCss() {
 }
 
 /** A fresh temporary directory, removed by the returned disposer. */
-export async function tempDir(
-  prefix = "m3-test-",
-): Promise<{ dir: string; [Symbol.asyncDispose](): Promise<void> }> {
+export async function tempDir(prefix = "m3-test-"): Promise<{ dir: string; [Symbol.asyncDispose](): Promise<void> }> {
   const dir = await mkdtemp(join(tmpdir(), prefix));
   return {
     dir,

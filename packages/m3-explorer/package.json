@@ -40,7 +40,6 @@
   },
   "dependencies": {
     "@aphrody/m3-primitives": "workspace:*",
-    "@aphrody/web-source": "workspace:*",
     "clsx": "catalog:"
   },
   "devDependencies": {

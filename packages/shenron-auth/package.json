@@ -1,0 +1,87 @@
+{
+  "name": "@shenron/auth",
+  "version": "1.4.4",
+  "private": true,
+  "description": "Briques Better Auth partagées (site Next, bot Bun, API) : secret, origines, cookies, fournisseur Discord, handler Request/Response",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./origins": "./src/origins.ts",
+    "./a2a": "./src/a2a.ts",
+    "./crypto": "./src/crypto.ts",
+    "./tokens": "./src/tokens.ts",
+    "./acting-user": "./src/acting-user.ts",
+    "./staff": "./src/staff.ts",
+    "./ports": "./src/ports.ts",
+    "./guards": "./src/guards.ts",
+    "./options": "./src/options.ts",
+    "./policy": "./src/policy.ts",
+    "./agent-keys": "./src/agent-keys.ts",
+    "./next": "./src/next.ts",
+    "./hono": "./src/hono.ts",
+    "./client": "./src/client.ts"
+  },
+  "scripts": {
+    "typecheck": "bun check -p tsconfig.json --noEmit",
+    "lint": "bun lint .",
+    "test": "bun test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@shenron/db": "workspace:*",
+    "@aphrody/bun-types": "catalog:",
+    "@types/react": "catalog:",
+    "better-auth": "catalog:",
+    "hono": "catalog:",
+    "next": "catalog:",
+    "react": "catalog:",
+    "drizzle-orm": "catalog:",
+    "@aphrody/bun-workspace": "workspace:*"
+  },
+  "peerDependencies": {
+    "better-auth": "catalog:",
+    "hono": "catalog:",
+    "next": "catalog:",
+    "react": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "hono": {
+      "optional": true
+    },
+    "next": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "bun": "=1.4.4"
+  },
+  "license": "Apache-2.0",
+  "packageManager": "bun@1.4.4",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/bun-distribution.git",
+    "directory": "packages/shenron-auth"
+  },
+  "bunos": {
+    "runtime": {
+      ".": "server",
+      "./origins": "pure",
+      "./a2a": "server",
+      "./crypto": "server",
+      "./tokens": "server",
+      "./acting-user": "server",
+      "./staff": "pure",
+      "./ports": "pure",
+      "./guards": "server",
+      "./options": "server",
+      "./policy": "pure",
+      "./agent-keys": "server",
+      "./next": "next",
+      "./hono": "hono",
+      "./client": "react"
+    }
+  }
+}

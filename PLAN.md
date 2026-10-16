@@ -2,6 +2,46 @@
 
 ## Current integration checkpoint — 2026-10-16
 
+- Root membership is now 562, with 547 physical inventory entries. The genuine
+  historical `@shenron/auth` and `@shenron/db` owners are flat, retain their
+  ancestor Apache license, and pass native checks (39/35 files). Auth passes
+  94 tests/472 assertions; DB pure and schema/mock contracts pass 28/94 and
+  30/1,080 respectively, without connecting to an external database.
+- Eight Admin UI consumers now use the exact canonical DB schema rather than
+  an absent host re-export. Its diagnostics fall to 412 (previously 435);
+  14 pure/mock tests pass with 102 assertions. Live sessions, the actual DB
+  instance and remaining host services are still missing; Admin UI is not admitted.
+- Restore root-owned Explorer and AI widgets and benchmarks from their own
+  history, removing two wrong source-forwarding dependencies. Their native
+  checks and 111 tests/884 assertions pass. Independent runtime integrations
+  remain pinned, unmigrated source boundaries, not falsely retired duplicates.
+- Material Web now installs from a deterministic, self-contained root archive
+  assembled before frozen installation. All 493 isolated public declarations,
+  existing JavaScript and notices are verified. Three fully inventoried obsolete
+  generated copies were retired; frozen replay does not recreate them.
+  Showcase native checks now pass on 244 and 425 files; both browser builds pass.
+- Correct native M3 commands, font synchronization root, capture tooling,
+  source exports, scaffold ownership/version discovery and declared flat-app
+  guards. Fourteen pinned upstream font inputs verify; font tests pass 10/438
+  with one existing unmaterialized-upstream parity skip. Generated stylesheets
+  again match their canonical generator exactly.
+- Native M3 metafile plumbing passes six tests/199 assertions. An actual
+  Showcase build records 629 artifacts, 3,452 nodes and 7,279 edges; graph report
+  and dependency readback pass. Two graph integration fixtures and one default
+  plugin test remain red because the native FFI library is absent; no generator
+  fallback or skipped assertion was introduced to hide that prerequisite.
+- Root native checking passes on 328 files; M3-Bun passes on 272. Full lint
+  still reports 4,292 warnings and zero errors. The real bot host contract
+  remains red without SHENRON_BOT_ROOT. Full desktop web assembly also remains
+  blocked by missing `#webos-wasm-glue`; successful Showcase builds are not a
+  substitute for that desktop or native application qualification.
+- A single serialized development runtime build is active from the clean
+  pinned toolchain checkout after canonical WinFw source preparation. The dirty
+  external runtime checkout is untouched. Native declarations and release
+  qualification remain pending that actual build; no release is claimed.
+
+## Previous integration checkpoint — 2026-10-16
+
 - Root Bun membership is 560; only Admin UI remains a physical declaration
   gap. Both generated inventories agree on 545 physical entries. Native
   offline frozen installation passes without unrelated dependency upgrades.

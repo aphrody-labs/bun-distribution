@@ -4,7 +4,7 @@
 import { mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { chromium, type Browser } from "@aphrody/bun-webview-page";
-import { pool } from "../../../../scripts/build.ts";
+import { pool } from "../../../../scripts/m3/build.ts";
 import { PAGES } from "../../src/material/pages/index.ts";
 export type Layout = "mobile" | "desktop" | "tv";
 export const VIEWPORTS: Record<Layout, { width: number; height: number }> = {
@@ -18,28 +18,19 @@ export interface Shot {
   scheme: "light" | "dark";
   name: string;
 }
-export const shotName = (
-  route: string,
-  layout: Layout,
-  scheme: "light" | "dark",
-) => `${route}@${layout}-${scheme}`;
+export const shotName = (route: string, layout: Layout, scheme: "light" | "dark") => `${route}@${layout}-${scheme}`;
 export function plan(
   routes: readonly string[],
   layouts: readonly Layout[] = ["mobile", "desktop", "tv"],
   schemes: readonly ("light" | "dark")[] = ["light"],
 ): Shot[] {
-  for (const route of routes)
-    if (!Object.hasOwn(PAGES, route))
-      throw new TypeError(`Unknown showcase route: ${route}`);
-  for (const layout of layouts)
-    if (!Object.hasOwn(VIEWPORTS, layout))
-      throw new TypeError(`Unknown layout: ${layout}`);
+  for (const route of routes) if (!Object.hasOwn(PAGES, route)) throw new TypeError(`Unknown showcase route: ${route}`);
+  for (const layout of layouts) if (!Object.hasOwn(VIEWPORTS, layout)) throw new TypeError(`Unknown layout: ${layout}`);
   for (const scheme of schemes)
-    if (scheme !== "light" && scheme !== "dark")
-      throw new TypeError(`Unknown scheme: ${scheme}`);
-  return routes.flatMap((route) =>
-    layouts.flatMap((layout) =>
-      schemes.map((scheme) => ({
+    if (scheme !== "light" && scheme !== "dark") throw new TypeError(`Unknown scheme: ${scheme}`);
+  return routes.flatMap(route =>
+    layouts.flatMap(layout =>
+      schemes.map(scheme => ({
         route,
         layout,
         scheme,
@@ -71,16 +62,14 @@ export async function capture(
   // Validate before creating output paths, including programmatic callers.
   for (const shot of shots) {
     const expected = plan([shot.route], [shot.layout], [shot.scheme])[0]!;
-    if (shot.name !== expected.name)
-      throw new TypeError("Invalid capture name");
+    if (shot.name !== expected.name) throw new TypeError("Invalid capture name");
   }
   await mkdir(outDir, { recursive: true });
   const own = !browser;
-  const b =
-    browser ?? (await chromium.launch({ headless: true, args: CHROMIUM_ARGS }));
+  const b = browser ?? (await chromium.launch({ headless: true, args: CHROMIUM_ARGS }));
   const origin = new URL(baseUrl).origin;
   try {
-    return await pool(shots, 2, async (shot) => {
+    return await pool(shots, 2, async shot => {
       const context = await b.newContext({
         viewport: VIEWPORTS[shot.layout],
         deviceScaleFactor: 1,
@@ -92,22 +81,18 @@ export async function capture(
       try {
         const page = await context.newPage();
         const consoleErrors: string[] = [];
-        await page.route("**/*", async (route) => {
+        await page.route("**/*", async route => {
           const url = new URL(route.request().url());
-          if (
-            url.origin === origin ||
-            ["data:", "blob:"].includes(url.protocol)
-          )
-            await route.continue();
+          if (url.origin === origin || ["data:", "blob:"].includes(url.protocol)) await route.continue();
           else {
             consoleErrors.push(`External asset: ${url.origin}`);
             await route.abort();
           }
         });
-        page.on("console", (message) => {
+        page.on("console", message => {
           if (message.type() === "error") consoleErrors.push(message.text());
         });
-        page.on("pageerror", (error) => consoleErrors.push(error.message));
+        page.on("pageerror", error => consoleErrors.push(error.message));
         await page.goto(`${baseUrl}/?layout=${shot.layout}#/${shot.route}`, {
           waitUntil: "networkidle",
           timeout: 30_000,
@@ -116,15 +101,9 @@ export async function capture(
         await main.locator("h1").waitFor({ timeout: 20_000 });
         if ((await main.getAttribute("data-route")) !== shot.route)
           throw new Error(`Wrong destination for ${shot.route}`);
-        if (
-          (await page
-            .locator('[data-testid="shell"]')
-            .getAttribute("data-layout")) !== shot.layout
-        )
+        if ((await page.locator('[data-testid="shell"]').getAttribute("data-layout")) !== shot.layout)
           throw new Error(`Wrong layout for ${shot.name}`);
-        if (
-          (await main.locator("h1").textContent())?.includes("Unable to load")
-        )
+        if ((await main.locator("h1").textContent())?.includes("Unable to load"))
           throw new Error(`Page failed: ${shot.route}`);
         await page.evaluate(() => document.fonts.ready.then(() => undefined));
         await page.waitForTimeout(150);
@@ -163,19 +142,10 @@ if (import.meta.main) {
     plan(
       value("routes")?.split(",") ?? Object.keys(PAGES),
       (value("layouts")?.split(",") ?? ["mobile", "desktop", "tv"]) as Layout[],
-      (value("schemes")?.split(",") ?? ["light", "dark"]) as (
-        "light" | "dark"
-      )[],
+      (value("schemes")?.split(",") ?? ["light", "dark"]) as ("light" | "dark")[],
     ),
   );
-  await Bun.write(
-    join(resolve(outArg), "capture.json"),
-    JSON.stringify(results, null, 2) + "\n",
-  );
-  for (const result of results)
-    console.log(
-      `${result.name}: ${result.bytes} B, ${result.consoleErrors.length} errors`,
-    );
-  if (results.some((result) => result.consoleErrors.length > 0))
-    process.exitCode = 1;
+  await Bun.write(join(resolve(outArg), "capture.json"), JSON.stringify(results, null, 2) + "\n");
+  for (const result of results) console.log(`${result.name}: ${result.bytes} B, ${result.consoleErrors.length} errors`);
+  if (results.some(result => result.consoleErrors.length > 0)) process.exitCode = 1;
 }

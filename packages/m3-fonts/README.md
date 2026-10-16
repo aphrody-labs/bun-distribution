@@ -18,7 +18,7 @@ Files:
 - `fonts/*.ttf`, `fonts/*-OFL.txt`: tracked variable sources and licences.
 - `fonts/upstream/`: Google Sans Flex/Code sources (fork `aphrody-labs/fonts` of `google/fonts`) and
   Material Symbols (`material-symbols@0.44.8`, the build the Rust icons module renders). Not tracked:
-  `bun scripts/fonts-sync.ts` at the repository root fetches them, verifying each sha256 and size
+  `bun scripts/m3/fonts-sync.ts` at the repository root fetches them, verifying each sha256 and size
   pinned in `fonts.lock.json` (`--check` verifies only).
 
 Scripts: `gen` (stylesheets from the manifest), `subset` (fontTools through uv, `scripts/subset.py`),

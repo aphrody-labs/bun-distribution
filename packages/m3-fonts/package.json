@@ -36,7 +36,7 @@
     "gen": "bun scripts/generate.ts",
     "subset": "bun scripts/subset.ts",
     "typecheck": "bun check -p tsconfig.json --noEmit",
-    "test": "bun ../../scripts/fonts-sync.ts --quiet && bun test src"
+    "test": "bun ../../scripts/m3/fonts-sync.ts --quiet && bun test src"
   },
   "devDependencies": {
     "@aphrody/m3-config": "workspace:*"

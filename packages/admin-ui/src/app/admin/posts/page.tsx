@@ -6,7 +6,7 @@ import { Crayon, Document, Etoile, Plus } from "@shenron/ui/icones";
 import { Badge } from "@shenron/ui/badge";
 import { Button } from "@shenron/ui/button";
 import { cn } from "@shenron/ui/lib/utils";
-import type { PostStatus } from "@/db/schema";
+import type { PostStatus } from "@shenron/db/schema";
 
 export const dynamic = "force-dynamic";
 

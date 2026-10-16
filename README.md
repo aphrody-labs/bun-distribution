@@ -35,6 +35,13 @@ directories. Nested submodules remain pinned but are fetched only when their
 owning component requires them. Run `bun run workspace --help` for library
 inventory and capability commands.
 
+Setup first assembles `build/packages/material-web.tgz` from the pinned fork's
+versioned JavaScript and public declarations. The deterministic archive includes
+its isolated type tree and licenses, so frozen consumers need no lifecycle
+scripts or source compiler. Use `bun run setup` for a fresh checkout; a bare
+install cannot create this required local artifact. Building refreshed Material
+Web source and qualifying native applications remain separate gates.
+
 `setup --plan` inspects source revisions without installing or checking out
 sources. Setup refuses to move initialized sources at different or conflicted
 revisions, preserving active development before any installation begins.

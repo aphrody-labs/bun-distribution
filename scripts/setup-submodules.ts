@@ -1,4 +1,20 @@
-import { runProcess } from "@aphrody/bun-workspace/process";
+import { resolve } from "node:path";
+import { runProcess } from "../packages/bun-workspace/src/process.ts";
+
+/** Prepare a self-contained package from the pinned, versioned public contract. */
+export function materialWebPreparationPlan(root: string, runtime = process.execPath) {
+  const archive = resolve(root, "build/packages/material-web.tgz");
+  return {
+    archive,
+    commands: [
+      { cwd: root, argv: [runtime, "vendor/material-web/scripts/bootstrap-types.ts"] },
+      {
+        cwd: resolve(root, "vendor/material-web"),
+        argv: [runtime, "pm", "pack", "--ignore-scripts", "--filename", archive, "--quiet"],
+      },
+    ],
+  };
+}
 
 /** Inspect without checking out a different revision in an active source owner. */
 export async function inspectSetupSources(root: string) {

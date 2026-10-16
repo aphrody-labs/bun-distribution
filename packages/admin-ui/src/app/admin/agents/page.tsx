@@ -9,7 +9,7 @@
  */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AGENT_SCOPES } from "@/db/schema";
+import { AGENT_SCOPES } from "@shenron/db/schema";
 import { listAgentAudit, listAgentKeys } from "@/lib/agent-keys";
 import { SCOPE_DESCRIPTIONS } from "@/lib/agent-openapi";
 import { AgentKeysManager } from "./AgentKeysManager";
@@ -38,13 +38,10 @@ export default async function AdminAgentsPage() {
     <div className="mx-auto w-full max-w-5xl space-y-8">
       <header className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-[28px] font-bold tracking-tight text-white">
-            Agents &amp; API
-          </h1>
+          <h1 className="text-[28px] font-bold tracking-tight text-white">Agents &amp; API</h1>
           <p className="mt-1 max-w-[60ch] text-[14px] text-white/50">
-            Clés d&apos;accès des agents à l&apos;API d&apos;écriture. Une clé
-            ne donne que ce qu&apos;on lui coche : proposer une correction,
-            commenter, rédiger un brouillon. Publier est une portée distincte.
+            Clés d&apos;accès des agents à l&apos;API d&apos;écriture. Une clé ne donne que ce qu&apos;on lui coche :
+            proposer une correction, commenter, rédiger un brouillon. Publier est une portée distincte.
           </p>
         </div>
         <div className="flex flex-col items-start gap-1.5 sm:items-end">
@@ -64,11 +61,7 @@ export default async function AdminAgentsPage() {
       </header>
 
       {keys.ok ? (
-        <AgentKeysManager
-          keys={keys.data}
-          scopes={AGENT_SCOPES}
-          scopeDescriptions={SCOPE_DESCRIPTIONS}
-        />
+        <AgentKeysManager keys={keys.data} scopes={AGENT_SCOPES} scopeDescriptions={SCOPE_DESCRIPTIONS} />
       ) : (
         <AgentsLoadFailure
           title="Clés d'agent indisponibles"
@@ -79,13 +72,10 @@ export default async function AdminAgentsPage() {
 
       {/* ---- Journal des appels ------------------------------------------ */}
       <section>
-        <h2 className="text-[15px] font-semibold text-white">
-          Derniers appels
-        </h2>
+        <h2 className="text-[15px] font-semibold text-white">Derniers appels</h2>
         <p className="mt-1 text-[13px] text-white/50">
-          Chaque appel d&apos;agent est journalisé — y compris les refus (jeton
-          invalide, portée manquante, quota atteint). Aucun secret n&apos;y
-          figure.
+          Chaque appel d&apos;agent est journalisé — y compris les refus (jeton invalide, portée manquante, quota
+          atteint). Aucun secret n&apos;y figure.
         </p>
         {!audit.ok ? (
           <div className="mt-3">
@@ -96,9 +86,7 @@ export default async function AdminAgentsPage() {
             />
           </div>
         ) : audit.data.length === 0 ? (
-          <p className="mt-3 text-[14px] text-white/45">
-            Aucun appel pour l&apos;instant.
-          </p>
+          <p className="mt-3 text-[14px] text-white/45">Aucun appel pour l&apos;instant.</p>
         ) : (
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[640px] border-collapse text-[13px]">
@@ -112,11 +100,8 @@ export default async function AdminAgentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {audit.data.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-b border-white/[0.06] text-white/70"
-                  >
+                {audit.data.map(row => (
+                  <tr key={row.id} className="border-b border-white/[0.06] text-white/70">
                     <td className="whitespace-nowrap py-2 pr-4 tabular-nums text-white/45">
                       {dateFormat.format(new Date(row.createdAt))}
                     </td>
@@ -126,11 +111,7 @@ export default async function AdminAgentsPage() {
                     </td>
                     <td
                       className={`py-2 pr-4 tabular-nums ${
-                        row.status >= 500
-                          ? "text-red-400"
-                          : row.status >= 400
-                            ? "text-amber-300"
-                            : "text-emerald-300"
+                        row.status >= 500 ? "text-red-400" : row.status >= 400 ? "text-amber-300" : "text-emerald-300"
                       }`}
                     >
                       {row.status}

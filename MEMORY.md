@@ -1,5 +1,43 @@
 ## Current integration checkpoint — 2026-10-16
 
+The root now declares 562 members and both inventories cover 547 physical
+entries. Genuine historical Auth and DB owners were restored flat with their
+direct ancestor Apache license and unchanged service implementations. Native
+checks cover 39/35 files; Auth passes 94 tests/472 assertions, DB pure contracts
+28/94 and schema/mock contracts 30/1,080. No actual persistence or provider
+connection was qualified. Admin UI imports the real DB schema directly and
+still has 412 diagnostics; actual session/database-instance adapters remain absent.
+
+Explorer/AI source forwarding was replaced by their own root historical
+implementations, not a copy of an active runtime checkout. Their 111 tests and
+884 assertions pass. Material Web's existing public JS/DTS contract is now
+packaged before root installation with all 493 isolated declarations. The
+archive is byte-reproducible (SHA-256
+046c48894bc8f7588f6a381708be6bfca0e032754b743b37eaae1d033ca4e53a).
+Three verified obsolete generated dependency trees were removed; all consumers
+resolve the shared archive after frozen replay. They are reconstructible from
+the canonical artifact and Git; no backup or protected-store cleanup occurred.
+
+Both Showcase browser builds and native checks pass (244/425 files); M3-Bun
+checking covers 272 files and root checking 328. Actual native build graph
+record/readback succeeds with 629 artifacts, 3,452 nodes and 7,279 edges.
+Three FFI-dependent graph/plugin tests still fail, the real bot host contract
+still fails without configuration, and desktop web assembly needs the missing
+`#webos-wasm-glue`. These are not replaced by mocks or weaker qualification.
+Full lint retains 4,292 warnings and zero errors. Font synchronization and its
+canonical generator are repaired; 10 tests pass, with one existing upstream
+checkout parity skip. Source CLI/scaffold contracts now recognize the actual
+Bun OS workspace and reject undeclared or escaping applications.
+
+One serialized development runtime build is running from toolchains/bun
+cf00193085200c8ac673a21b3b4770edc28c0729, containing declaration fix 7893815.
+Canonical WinFw preparation resolved the initial configure failure. Its output
+is build/runtime-windows-x64; no overlapping build or external dirty-checkout
+mutation was performed. Declaration emission, complete native application
+execution, complete setup and public release remain unqualified.
+
+## Previous integration checkpoint — 2026-10-16
+
 The root declares 560 Bun members; Admin UI is the remaining physical
 declaration gap. Offline frozen installation passes. Both inventories cover
 545 physical entries. Showcase browser source bundling now passes after using

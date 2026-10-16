@@ -1,15 +1,17 @@
 #!/usr/bin/env bun
 import { resolve } from "node:path";
-import { inspectCargoWorkspace, loadConfig } from "@aphrody/bun-workspace";
-import { runProcess } from "@aphrody/bun-workspace/process";
-import { inspectSetupSources } from "./setup-submodules.ts";
+import { mkdir } from "node:fs/promises";
+import { inspectCargoWorkspace, loadConfig } from "../packages/bun-workspace/src/index.ts";
+import { runProcess } from "../packages/bun-workspace/src/process.ts";
+import { inspectSetupSources, materialWebPreparationPlan } from "./setup-submodules.ts";
 
 const root = resolve(import.meta.dir, "..");
 const args = Bun.argv.slice(2);
 if (args.length && (args.length !== 1 || args[0] !== "--plan")) throw new Error("Usage: bun scripts/setup.ts [--plan]");
 const sources = await inspectSetupSources(root);
+const material = materialWebPreparationPlan(root);
 if (args[0] === "--plan") {
-  console.log(JSON.stringify({ root, sources, qualification: "source-preflight-only" }, null, 2));
+  console.log(JSON.stringify({ root, sources, material, qualification: "source-preflight-only" }, null, 2));
   process.exit(0);
 }
 if (!sources.ready)
@@ -22,8 +24,8 @@ const env = {
   CARGO_INSTALL_ROOT: resolve(root, "install"),
 };
 
-async function run(argv: string[], processEnv: Record<string, string | undefined> = env): Promise<void> {
-  const result = await runProcess(argv, root, {
+async function run(argv: string[], processEnv: Record<string, string | undefined> = env, cwd = root): Promise<void> {
+  const result = await runProcess(argv, cwd, {
     timeoutMs: 1_800_000,
     maxOutputBytes: 128 * 1024 * 1024,
     stdin: "inherit",
@@ -77,6 +79,8 @@ if (process.platform === "win32" && requiresForge) {
   submoduleEnv = { ...qualificationEnv, GIT_SSH_COMMAND: sshCommand };
 }
 await run(["git", "submodule", "update", "--init", "--depth", "1"], submoduleEnv);
+await mkdir(resolve(root, "build/packages"), { recursive: true });
+for (const command of material.commands) await run(command.argv, env, command.cwd);
 await run([process.execPath, "install", "--frozen-lockfile"]);
 await run([process.execPath, "scripts/node-modules.ts"]);
 const cargo = await inspectCargoWorkspace(await loadConfig(root), {

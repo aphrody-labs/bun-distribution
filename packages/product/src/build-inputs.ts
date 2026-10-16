@@ -5,11 +5,11 @@ import { checkoutRoot as resolveCheckoutRoot, findWorkspaceRoot } from "@aphrody
 const sha = (bytes: Uint8Array) => new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
 
 /** Resolve product inputs from the selected execution context, independent of UI package location. */
-export function productBuildContext(env: NodeJS.ProcessEnv = process.env) {
-  const workspaceRoot = findWorkspaceRoot(undefined, env);
+export function productBuildContext(env: NodeJS.ProcessEnv = process.env, from?: string) {
+  const workspaceRoot = findWorkspaceRoot(from, env);
   return {
     workspaceRoot,
-    bunCheckout: resolveCheckoutRoot("bun", env),
+    bunCheckout: resolveCheckoutRoot("bun", { ...env, APHRODY_WORKSPACE_ROOT: workspaceRoot }),
     uiDist: join(workspaceRoot, "apps/aphrody-app/ui-dist"),
     publicAssets: join(workspaceRoot, "tools/aphrody/config/public-assets.json"),
   };

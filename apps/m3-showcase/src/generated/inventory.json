@@ -4652,7 +4652,7 @@
     "kind": "package",
     "workspace": true,
     "private": false,
-    "exports": 16,
+    "exports": 17,
     "bin": [
       "m3-next-migrate",
       "next-migrate"
@@ -5340,6 +5340,28 @@
     "workspace": true,
     "private": false,
     "exports": 1,
+    "bin": []
+  },
+  {
+    "name": "@shenron/auth",
+    "version": "1.4.4",
+    "description": "Briques Better Auth partagées (site Next, bot Bun, API) : secret, origines, cookies, fournisseur Discord, handler Request/Response",
+    "dir": "packages/shenron-auth",
+    "kind": "package",
+    "workspace": true,
+    "private": true,
+    "exports": 15,
+    "bin": []
+  },
+  {
+    "name": "@shenron/db",
+    "version": "1.4.4",
+    "description": "PostgreSQL partagé Shenron : schéma Drizzle, pool postgres-js (Next) et driver Bun.SQL (scripts, API), indépendant du framework",
+    "dir": "packages/shenron-db",
+    "kind": "package",
+    "workspace": true,
+    "private": true,
+    "exports": 18,
     "bin": []
   },
   {

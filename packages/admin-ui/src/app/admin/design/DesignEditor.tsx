@@ -12,7 +12,7 @@ import {
   THEME_COLOR_VARS,
   type SiteTheme,
   type ThemeColorKey,
-} from "@/lib/site-theme";
+} from "../../../lib/site-theme";
 import {
   DragonBallSphere,
   DragonRadarDisplay,

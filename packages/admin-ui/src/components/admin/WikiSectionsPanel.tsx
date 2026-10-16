@@ -30,7 +30,7 @@ import { useMemo, useState } from "react";
 import { MarkdownField } from "@aphrody/admin-ui/components/admin/MarkdownField";
 import { apiAt } from "@aphrody/admin-ui/client";
 import { assetUrl } from "@/lib/assets";
-import { SECTION_ACCENT_OPTIONS } from "@/lib/wiki-section-accents";
+import { SECTION_ACCENT_OPTIONS } from "../../lib/wiki-section-accents";
 import {
   PWS_GROUP_PRESETS,
   publicEntityUrl,

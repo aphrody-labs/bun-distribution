@@ -2,13 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/session";
-import {
-  createAgentKey,
-  parseScopes,
-  revokeAgentKey,
-  updateAgentKeyScopes,
-} from "@/lib/agent-keys";
-import type { AgentScope } from "@/db/schema";
+import { createAgentKey, parseScopes, revokeAgentKey, updateAgentKeyScopes } from "@/lib/agent-keys";
+import type { AgentScope } from "@shenron/db/schema";
 
 /**
  * Actions des clés d'agent.
@@ -19,9 +14,7 @@ import type { AgentScope } from "@/db/schema";
  * redirection perdrait la seule copie du secret.
  */
 
-export type CreateResult =
-  | { ok: true; token: string; name: string; prefix: string }
-  | { ok: false; error: string };
+export type CreateResult = { ok: true; token: string; name: string; prefix: string } | { ok: false; error: string };
 
 export async function createAgentKeyAction(input: {
   name: string;
@@ -31,8 +24,7 @@ export async function createAgentKeyAction(input: {
 }): Promise<CreateResult> {
   const me = await requireAdmin();
   const name = input.name.trim();
-  if (name.length < 3)
-    return { ok: false, error: "Donne un nom d'au moins 3 caractères." };
+  if (name.length < 3) return { ok: false, error: "Donne un nom d'au moins 3 caractères." };
 
   const scopes: AgentScope[] = parseScopes(input.scopes);
   if (scopes.length === 0) {
@@ -66,9 +58,7 @@ export async function createAgentKeyAction(input: {
   }
 }
 
-export async function revokeAgentKeyAction(
-  id: string,
-): Promise<{ ok: boolean; error?: string }> {
+export async function revokeAgentKeyAction(id: string): Promise<{ ok: boolean; error?: string }> {
   await requireAdmin();
   let done: boolean;
   try {
@@ -81,15 +71,10 @@ export async function revokeAgentKeyAction(
     };
   }
   revalidatePath("/admin/agents");
-  return done
-    ? { ok: true }
-    : { ok: false, error: "Clé inconnue ou déjà révoquée." };
+  return done ? { ok: true } : { ok: false, error: "Clé inconnue ou déjà révoquée." };
 }
 
-export async function updateScopesAction(
-  id: string,
-  scopes: string[],
-): Promise<{ ok: boolean; error?: string }> {
+export async function updateScopesAction(id: string, scopes: string[]): Promise<{ ok: boolean; error?: string }> {
   await requireAdmin();
   const next = parseScopes(scopes);
   if (next.length === 0) {
@@ -105,8 +90,7 @@ export async function updateScopesAction(
     console.error("[admin] modification portées clé agent", err);
     return {
       ok: false,
-      error:
-        "Modification impossible : base de données indisponible, réessayez.",
+      error: "Modification impossible : base de données indisponible, réessayez.",
     };
   }
   revalidatePath("/admin/agents");

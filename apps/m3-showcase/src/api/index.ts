@@ -14,7 +14,7 @@ import {
   m3SitemapXml,
   withM3,
 } from "@aphrody/m3-next/source";
-import { renderTemplate, TEMPLATES } from "@aphrody/scaffold";
+import { ownerM3Version, renderTemplate, TEMPLATES } from "@aphrody/scaffold";
 import { transformSource, type MigrationKind } from "@aphrody/m3-codemods";
 import lintPlugin from "@aphrody/eslint-plugin-m3";
 import googleSansCode from "@aphrody/m3-fonts/fonts/web/GoogleSansCode-latin.woff2" with { type: "file" };
@@ -274,7 +274,7 @@ export default defineM3Api({
     const sample = renderTemplate({
       template: "web",
       name: "m3-demo",
-      m3Version: "3.3.3",
+      m3Version: ownerM3Version(),
     });
     return json({
       themeFiles: files.map(file => ({

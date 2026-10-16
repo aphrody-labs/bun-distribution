@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { posts } from "@/db/schema";
+import { posts } from "@shenron/db/schema";
 import { requireAdmin } from "@/lib/session";
 import {
   isSlugAvailable,
@@ -53,10 +53,7 @@ export async function deletePost(formData: FormData): Promise<void> {
  * l'admin voie le conflit AVANT d'enregistrer (et non un slug silencieusement
  * suffixé après coup).
  */
-export async function checkSlug(
-  slug: string,
-  currentId?: string,
-): Promise<{ available: boolean; normalized: string }> {
+export async function checkSlug(slug: string, currentId?: string): Promise<{ available: boolean; normalized: string }> {
   await requireAdmin();
   return isSlugAvailable(slug, currentId);
 }

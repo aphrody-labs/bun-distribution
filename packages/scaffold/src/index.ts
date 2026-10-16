@@ -10,13 +10,10 @@
  *
  * The Tauri 3 shell (`tauriShell`) is also what `web-to-tauri` writes around a wrapped site.
  */
-import {
-  assertNativeShellOwner,
-  assertPrivateOwnerWorkspace,
-} from "./workspace";
+import { assertNativeShellOwner, assertPrivateOwnerWorkspace } from "./workspace";
 import { writeFiles, type FileMap, type WriteMode } from "./files.ts";
 import { appFiles, type AppTemplateOptions } from "./templates/app.ts";
-import { webFiles, type WebTemplateOptions } from "./templates/web.ts";
+import { ownerM3Version, webFiles, type WebTemplateOptions } from "./templates/web.ts";
 
 export * from "./files.ts";
 export * from "./workspace";
@@ -32,7 +29,7 @@ export {
   type TauriEngine,
   type TauriShellOptions,
 } from "./tauri.ts";
-export { appFiles, webFiles, type AppTemplateOptions, type WebTemplateOptions };
+export { appFiles, ownerM3Version, webFiles, type AppTemplateOptions, type WebTemplateOptions };
 
 /** Name of the canonical example project. */
 export const EXAMPLE_NAME = "aphrody-example";
@@ -91,15 +88,9 @@ export function renderTemplate(request: ScaffoldRequest): FileMap {
 }
 
 /** Renders a template and writes it. Returns the paths written. */
-export async function scaffold(
-  outDir: string,
-  request: ScaffoldRequest,
-  mode: WriteMode = "empty",
-): Promise<string[]> {
+export async function scaffold(outDir: string, request: ScaffoldRequest, mode: WriteMode = "empty"): Promise<string[]> {
   assertPrivateOwnerWorkspace(outDir);
   if (request.template !== "web")
-    assertNativeShellOwner(
-      request.template === "example" ? "tauri" : (request.target ?? "tauri"),
-    );
+    assertNativeShellOwner(request.template === "example" ? "tauri" : (request.target ?? "tauri"));
   return writeFiles(outDir, renderTemplate(request), mode);
 }

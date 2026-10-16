@@ -48,7 +48,6 @@
     "@aphrody/m3-motion": "workspace:*",
     "@aphrody/m3-primitives": "workspace:*",
     "@aphrody/mcp-ui": "catalog:",
-    "@aphrody/web-source": "workspace:*",
     "clsx": "catalog:",
     "motion": "catalog:",
     "react-markdown": "catalog:",

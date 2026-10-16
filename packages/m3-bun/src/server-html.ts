@@ -5,7 +5,7 @@
 // script for `system`, and `theme-color` metas from the scheme surface of the seed.
 import { loadOptional } from "./server-optional.ts";
 
-type M3Next = typeof import("@aphrody/m3-next");
+type M3Next = typeof import("@aphrody/m3-next/source");
 export type M3ThemeMode = "light" | "dark" | "system";
 
 export interface M3ThemeOptions {
@@ -29,9 +29,7 @@ export interface M3ResolvedTheme {
 
 /** A fresh CSP nonce (128 random bits, base64). */
 export function createNonce(): string {
-  return Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString(
-    "base64",
-  );
+  return Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString("base64");
 }
 
 /** `csp` with `'nonce-…'` allowed in `script-src` (added from `default-src` when the policy has no `script-src`). */
@@ -39,19 +37,13 @@ export function cspWithNonce(csp: string, nonce: string): string {
   const source = `'nonce-${nonce}'`;
   const directives = csp
     .split(";")
-    .map((directive) => directive.trim())
+    .map(directive => directive.trim())
     .filter(Boolean);
-  const index = directives.findIndex((directive) =>
-    /^script-src(\s|$)/i.test(directive),
-  );
+  const index = directives.findIndex(directive => /^script-src(\s|$)/i.test(directive));
   if (index >= 0) directives[index] = `${directives[index]} ${source}`;
   else {
-    const fallback = directives.find((directive) =>
-      /^default-src(\s|$)/i.test(directive),
-    );
-    directives.push(
-      `script-src${fallback ? fallback.slice("default-src".length) : " 'self'"} ${source}`,
-    );
+    const fallback = directives.find(directive => /^default-src(\s|$)/i.test(directive));
+    directives.push(`script-src${fallback ? fallback.slice("default-src".length) : " 'self'"} ${source}`);
   }
   return directives.join("; ");
 }
@@ -59,20 +51,12 @@ export function cspWithNonce(csp: string, nonce: string): string {
 const themeColors = new Map<string, { light: string; dark: string }>();
 
 /** The theme of a request, from its cookie (`Bun.CookieMap`), with the helpers of `@aphrody/m3-next`. */
-export async function resolveTheme(
-  cookies: Bun.CookieMap,
-  options: M3ThemeOptions = {},
-): Promise<M3ResolvedTheme> {
-  const next = await loadOptional<M3Next>("@aphrody/m3-next", "theme");
-  const name = next.validateThemeCookieName(
-    options.cookie ?? next.M3_THEME_COOKIE,
-  );
+export async function resolveTheme(cookies: Bun.CookieMap, options: M3ThemeOptions = {}): Promise<M3ResolvedTheme> {
+  const next = await loadOptional<M3Next>("@aphrody/m3-next/source", "theme");
+  const name = next.validateThemeCookieName(options.cookie ?? next.M3_THEME_COOKIE);
   const current = cookies.get(name);
   const mode = next.parseThemeMode(current, options.defaultMode ?? "system");
-  const seed =
-    options.seed === false
-      ? undefined
-      : (options.seed ?? next.M3_BASELINE_SEED);
+  const seed = options.seed === false ? undefined : (options.seed ?? next.M3_BASELINE_SEED);
   let colors = seed === undefined ? undefined : themeColors.get(seed);
   if (seed !== undefined && !colors) {
     colors = next.m3ThemeColors({ seed });
@@ -93,22 +77,15 @@ export interface HtmlInjection {
 }
 
 const escapeAttribute = (value: string): string =>
-  value
-    .replaceAll("&", "&amp;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("<", "&lt;");
+  value.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;");
 
 /** `response` (HTML) rewritten with the nonce and the theme; headers are kept. */
-export function injectHtml(
-  response: Response,
-  { nonce, theme }: HtmlInjection,
-): Response {
+export function injectHtml(response: Response, { nonce, theme }: HtmlInjection): Response {
   const rewriter = new HTMLRewriter();
   if (nonce)
     rewriter.on("script", {
       element(element) {
-        if (!element.hasAttribute("nonce"))
-          element.setAttribute("nonce", nonce);
+        if (!element.hasAttribute("nonce")) element.setAttribute("nonce", nonce);
       },
     });
   if (theme) {
@@ -118,12 +95,10 @@ export function injectHtml(
         if (theme.mode !== "system") {
           const classes = (element.getAttribute("class") ?? "")
             .split(/\s+/)
-            .filter((name) => name && name !== "dark" && name !== "light");
+            .filter(name => name && name !== "dark" && name !== "light");
           element.setAttribute("class", [...classes, theme.mode].join(" "));
         }
-        const style = (element.getAttribute("style") ?? "")
-          .replace(/color-scheme\s*:[^;]*;?/g, "")
-          .trim();
+        const style = (element.getAttribute("style") ?? "").replace(/color-scheme\s*:[^;]*;?/g, "").trim();
         element.setAttribute(
           "style",
           `${style}${style && !style.endsWith(";") ? ";" : ""}color-scheme:${theme.colorScheme}`,

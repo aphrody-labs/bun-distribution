@@ -4,7 +4,7 @@
 // the `@aphrody/m3-fonts` package. Two layouts are recognised: an Aphrody OS checkout
 // (`crates/ui/bun/icons/material-symbols`, `assets/fonts/google-sans-flex`) and an aphrody-m3 checkout
 // whose `packages/m3-fonts/fonts/upstream` holds the same files, pinned and fetched by
-// `bun scripts/fonts-sync.ts` (standalone, yolo and iecode checkouts). The root is discovered by
+// `bun scripts/m3/fonts-sync.ts` in the selected checkout. The root is discovered by
 // walking up from a start directory; `APHRODY_OS_ROOT` or an explicit `root` option override it.
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -20,10 +20,8 @@ const M3_SANS_FLEX_DIR = `${M3_FONTS_UPSTREAM_DIR}/google-sans-flex`;
 
 /** Whether `dir` holds the fonts in the Aphrody OS layout (`os`) or the aphrody-m3 layout (`m3`). */
 export function fontLayout(dir: string): "os" | "m3" | undefined {
-  if (existsSync(join(dir, SYMBOLS_DIR, "material-symbols-outlined.woff2")))
-    return "os";
-  if (existsSync(join(dir, M3_SYMBOLS_DIR, "material-symbols-outlined.woff2")))
-    return "m3";
+  if (existsSync(join(dir, SYMBOLS_DIR, "material-symbols-outlined.woff2"))) return "os";
+  if (existsSync(join(dir, M3_SYMBOLS_DIR, "material-symbols-outlined.woff2"))) return "m3";
   return undefined;
 }
 
@@ -53,7 +51,7 @@ export function resolveRepoRoot(root?: string): string {
   const found = findRepoRoot(process.cwd()) ?? findRepoRoot(import.meta.dir);
   if (!found) {
     throw new Error(
-      `@aphrody/m3: cannot find ${SYMBOLS_DIR} or ${M3_SYMBOLS_DIR} above ${process.cwd()}; run \`bun scripts/fonts-sync.ts\` in aphrody-m3, pass \`root\` or set APHRODY_OS_ROOT`,
+      `@aphrody/m3: cannot find ${SYMBOLS_DIR} or ${M3_SYMBOLS_DIR} above ${process.cwd()}; run \`bun scripts/m3/fonts-sync.ts\` in the selected workspace, pass \`root\` or set APHRODY_OS_ROOT`,
     );
   }
   return found;
@@ -67,10 +65,7 @@ export function fontPaths(root: string) {
   return {
     symbolsDir: symbols,
     symbols: Object.fromEntries(
-      SYMBOL_STYLES.map((style) => [
-        style,
-        join(symbols, `material-symbols-${style}.woff2`),
-      ]),
+      SYMBOL_STYLES.map(style => [style, join(symbols, `material-symbols-${style}.woff2`)]),
     ) as Record<SymbolStyle, string>,
     sansFlexDir,
     sansFlex: join(sansFlexDir, "GoogleSansFlex-Variable.ttf"),

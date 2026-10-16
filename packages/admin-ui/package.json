@@ -164,6 +164,7 @@
     "./app/admin/account/page": "./src/app/admin/account/page.tsx"
   },
   "dependencies": {
+    "@shenron/db": "workspace:*",
     "@rosegriffon/config": "workspace:*",
     "@shenron/ui": "workspace:*",
     "@tanstack/react-query": "catalog:",

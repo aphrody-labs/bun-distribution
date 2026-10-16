@@ -14,14 +14,9 @@
  *     portée fait réfléchir à ce qu'on donne.
  */
 import { useState, useTransition } from "react";
-import {
-  createAgentKeyAction,
-  revokeAgentKeyAction,
-  updateScopesAction,
-  type CreateResult,
-} from "./_actions";
+import { createAgentKeyAction, revokeAgentKeyAction, updateScopesAction, type CreateResult } from "./_actions";
 import type { AgentKeyView } from "@/lib/agent-keys";
-import type { AgentScope } from "@/db/schema";
+import type { AgentScope } from "@shenron/db/schema";
 
 const dateFormat = new Intl.DateTimeFormat("fr-FR", {
   day: "2-digit",
@@ -31,8 +26,7 @@ const dateFormat = new Intl.DateTimeFormat("fr-FR", {
   minute: "2-digit",
 });
 
-const fmt = (iso: string | null) =>
-  iso ? dateFormat.format(new Date(iso)) : "—";
+const fmt = (iso: string | null) => (iso ? dateFormat.format(new Date(iso)) : "—");
 
 export function AgentKeysManager({
   keys,
@@ -44,10 +38,7 @@ export function AgentKeysManager({
   scopeDescriptions: Record<string, string>;
 }) {
   const [pending, startTransition] = useTransition();
-  const [created, setCreated] = useState<Extract<
-    CreateResult,
-    { ok: true }
-  > | null>(null);
+  const [created, setCreated] = useState<Extract<CreateResult, { ok: true }> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [note, setNote] = useState("");
@@ -56,7 +47,7 @@ export function AgentKeysManager({
   const [copied, setCopied] = useState(false);
 
   function toggle(scope: string): void {
-    setPicked((prev) => {
+    setPicked(prev => {
       const next = new Set(prev);
       if (next.has(scope)) next.delete(scope);
       else next.add(scope);
@@ -91,12 +82,9 @@ export function AgentKeysManager({
       {/* ---- Jeton fraîchement créé ------------------------------------- */}
       {created && (
         <div className="rounded-lg border-2 border-dbz-orange/60 bg-dbz-orange/[0.07] p-5">
-          <h2 className="text-[15px] font-bold text-white">
-            Clé « {created.name} » créée — copie-la maintenant
-          </h2>
+          <h2 className="text-[15px] font-bold text-white">Clé « {created.name} » créée — copie-la maintenant</h2>
           <p className="mt-1.5 text-[13px] text-white/60">
-            Ce jeton ne sera plus affiché : seul son hachage est conservé. Si tu
-            le perds, il faudra en créer un autre.
+            Ce jeton ne sera plus affiché : seul son hachage est conservé. Si tu le perds, il faudra en créer un autre.
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <code className="min-w-0 flex-1 break-all rounded border border-white/15 bg-black/40 px-3 py-2 font-mono text-[13px] text-dbz-orange">
@@ -108,11 +96,7 @@ export function AgentKeysManager({
                 navigator.clipboard
                   .writeText(created.token)
                   .then(() => setCopied(true))
-                  .catch(() =>
-                    setError(
-                      "Copie refusée par le navigateur — sélectionne le texte.",
-                    ),
-                  );
+                  .catch(() => setError("Copie refusée par le navigateur — sélectionne le texte."));
               }}
               className="toriyama-btn !text-[0.75rem]"
             >
@@ -126,8 +110,8 @@ export function AgentKeysManager({
       <section className="rounded-lg border border-white/10 bg-white/[0.02] p-5">
         <h2 className="text-[15px] font-semibold text-white">Nouvelle clé</h2>
         <p className="mt-1 text-[13px] text-white/50">
-          Le nom signe publiquement les écritures de l&apos;agent (il apparaît à
-          côté de ses commentaires et sur ses brouillons d&apos;articles).
+          Le nom signe publiquement les écritures de l&apos;agent (il apparaît à côté de ses commentaires et sur ses
+          brouillons d&apos;articles).
         </p>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -137,7 +121,7 @@ export function AgentKeysManager({
             </span>
             <input
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={e => setName(e.target.value)}
               maxLength={80}
               placeholder="Rédacteur Daima"
               className="h-11 w-full rounded-md border border-white/15 bg-black/30 px-3 text-[14px] text-white placeholder:text-white/30"
@@ -149,7 +133,7 @@ export function AgentKeysManager({
             </span>
             <input
               value={quota}
-              onChange={(e) => setQuota(e.target.value.replace(/[^0-9]/g, ""))}
+              onChange={e => setQuota(e.target.value.replace(/[^0-9]/g, ""))}
               inputMode="numeric"
               placeholder="120"
               className="h-11 w-full rounded-md border border-white/15 bg-black/30 px-3 text-[14px] text-white placeholder:text-white/30"
@@ -161,7 +145,7 @@ export function AgentKeysManager({
             </span>
             <input
               value={note}
-              onChange={(e) => setNote(e.target.value)}
+              onChange={e => setNote(e.target.value)}
               maxLength={500}
               placeholder="Ingest des chapitres Daima, tourne sur le VPS"
               className="h-11 w-full rounded-md border border-white/15 bg-black/30 px-3 text-[14px] text-white placeholder:text-white/30"
@@ -170,11 +154,9 @@ export function AgentKeysManager({
         </div>
 
         <fieldset className="mt-5">
-          <legend className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/50">
-            Portées
-          </legend>
+          <legend className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/50">Portées</legend>
           <div className="grid gap-2 sm:grid-cols-2">
-            {scopes.map((scope) => (
+            {scopes.map(scope => (
               <label
                 key={scope}
                 className={`flex cursor-pointer items-start gap-2.5 rounded-md border p-3 transition-colors ${
@@ -190,9 +172,7 @@ export function AgentKeysManager({
                   className="mt-0.5 size-4 accent-[var(--color-dbz-orange)]"
                 />
                 <span className="min-w-0">
-                  <code className="block font-mono text-[13px] text-white">
-                    {scope}
-                  </code>
+                  <code className="block font-mono text-[13px] text-white">{scope}</code>
                   <span className="mt-0.5 block text-[12px] leading-snug text-white/55">
                     {scopeDescriptions[scope]}
                   </span>
@@ -222,28 +202,22 @@ export function AgentKeysManager({
 
       {/* ---- Clés existantes --------------------------------------------- */}
       <section>
-        <h2 className="text-[15px] font-semibold text-white">
-          Clés existantes
-        </h2>
+        <h2 className="text-[15px] font-semibold text-white">Clés existantes</h2>
         {keys.length === 0 ? (
           <p className="mt-3 text-[14px] text-white/50">
             Aucune clé. Les agents ne peuvent rien écrire pour l&apos;instant.
           </p>
         ) : (
           <ul className="mt-3 space-y-3">
-            {keys.map((key) => (
+            {keys.map(key => (
               <li
                 key={key.id}
                 className={`rounded-lg border p-4 ${
-                  key.revokedAt
-                    ? "border-white/10 opacity-55"
-                    : "border-white/15 bg-white/[0.02]"
+                  key.revokedAt ? "border-white/10 opacity-55" : "border-white/15 bg-white/[0.02]"
                 }`}
               >
                 <header className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                  <span className="text-[15px] font-semibold text-white">
-                    {key.name}
-                  </span>
+                  <span className="text-[15px] font-semibold text-white">{key.name}</span>
                   <code className="rounded bg-black/40 px-2 py-0.5 font-mono text-[12px] text-white/50">
                     {key.prefix}…
                   </code>
@@ -256,13 +230,11 @@ export function AgentKeysManager({
                       active
                     </span>
                   )}
-                  <span className="ml-auto text-[12px] tabular-nums text-white/40">
-                    {key.calls24h} appel(s) / 24 h
-                  </span>
+                  <span className="ml-auto text-[12px] tabular-nums text-white/40">{key.calls24h} appel(s) / 24 h</span>
                 </header>
 
                 <div className="mt-2.5 flex flex-wrap gap-1.5">
-                  {key.scopes.map((s) => (
+                  {key.scopes.map(s => (
                     <code
                       key={s}
                       className="rounded border border-white/15 px-1.5 py-0.5 font-mono text-[11px] text-white/70"
@@ -272,9 +244,7 @@ export function AgentKeysManager({
                   ))}
                 </div>
 
-                {key.note && (
-                  <p className="mt-2.5 text-[13px] text-white/55">{key.note}</p>
-                )}
+                {key.note && <p className="mt-2.5 text-[13px] text-white/55">{key.note}</p>}
 
                 <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-[12px] text-white/45 sm:grid-cols-3">
                   <div>
@@ -300,8 +270,7 @@ export function AgentKeysManager({
                         setError(null);
                         startTransition(async () => {
                           const res = await revokeAgentKeyAction(key.id);
-                          if (!res.ok)
-                            setError(res.error ?? "Révocation impossible.");
+                          if (!res.ok) setError(res.error ?? "Révocation impossible.");
                         });
                       }}
                       className="text-white/60 hover:text-red-300 disabled:opacity-40"
@@ -319,12 +288,9 @@ export function AgentKeysManager({
                           startTransition(async () => {
                             const res = await updateScopesAction(
                               key.id,
-                              key.scopes.filter(
-                                (s) => s !== "publish:articles",
-                              ),
+                              key.scopes.filter(s => s !== "publish:articles"),
                             );
-                            if (!res.ok)
-                              setError(res.error ?? "Modification impossible.");
+                            if (!res.ok) setError(res.error ?? "Modification impossible.");
                           });
                         }}
                         className="text-white/60 hover:text-amber-300 disabled:opacity-40"

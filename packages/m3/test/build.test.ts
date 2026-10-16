@@ -7,24 +7,44 @@ import { buildM3, rewriteHtmlReference, TAURI_LAYOUT } from "../src/build.ts";
 import { FIXTURE, fakeCss, REPO_ROOT, tempDir } from "./helpers.ts";
 
 describe("buildM3", () => {
+  test("requested native metafile records real input imports and output contributions", async () => {
+    await using tmp = await tempDir();
+    await Bun.write(join(tmp.dir, "dependency.ts"), "export const value = 42;\n");
+    await Bun.write(join(tmp.dir, "main.ts"), 'import { value } from "./dependency.ts"; console.log(value);\n');
+    const result = await buildM3({ entry: "main.ts", cwd: tmp.dir, outdir: "dist", plugin: false, metafile: true });
+    const meta = result.metafile;
+    if (!meta) throw new Error("Native build omitted requested metadata");
+    const dependency = Object.keys(meta.inputs).find(path => path.replaceAll("\\", "/").endsWith("dependency.ts"));
+    const main = Object.entries(meta.inputs).find(([path]) => path.replaceAll("\\", "/").endsWith("main.ts"));
+    if (!dependency || !main) throw new Error("Native metadata omitted fixture sources");
+    expect(meta.inputs[dependency]!.bytes).toBeGreaterThan(0);
+    expect(main[1].imports.some(item => item.path.replaceAll("\\", "/").endsWith("dependency.ts"))).toBe(true);
+    const output = Object.values(meta.outputs).find(item => dependency in item.inputs);
+    if (!output) throw new Error("Native metadata omitted dependency contribution");
+    expect(output.inputs[dependency]!.bytesInOutput).toBeGreaterThan(0);
+    expect(result.outputs.some(item => item.bytes === output.bytes)).toBe(true);
+    expect(await Bun.file(join(result.outdir, result.outputs[0]!.path)).exists()).toBe(true);
+    const without = await buildM3({
+      entry: "main.ts",
+      cwd: tmp.dir,
+      outdir: "without",
+      plugin: false,
+      metafile: false,
+    });
+    expect(without.metafile).toBeUndefined();
+  });
   test("Tauri mode writes index.html, app.js, app.css and fonts/ without hashes", async () => {
     await using tmp = await tempDir();
     const uiDist = join(tmp.dir, "ui-dist");
     const result = await buildM3({
       entry: join(FIXTURE, "index.html"),
       tauri: { uiDist },
+      metafile: true,
       plugin: { css: fakeCss().css, theme: {}, root: REPO_ROOT },
     });
     expect(result.outdir).toBe(uiDist);
     const top = (await readdir(uiDist)).toSorted();
-    expect(top).toEqual(
-      [
-        TAURI_LAYOUT.style,
-        TAURI_LAYOUT.script,
-        TAURI_LAYOUT.fonts,
-        TAURI_LAYOUT.html,
-      ].toSorted(),
-    );
+    expect(top).toEqual([TAURI_LAYOUT.style, TAURI_LAYOUT.script, TAURI_LAYOUT.fonts, TAURI_LAYOUT.html].toSorted());
     expect((await readdir(join(uiDist, "fonts"))).toSorted()).toEqual([
       "GoogleSansFlex-Variable.ttf",
       "logo.svg",
@@ -36,11 +56,9 @@ describe("buildM3", () => {
     expect(html).toContain('href="./app.css"');
     expect(html).not.toContain("main");
     const css = await Bun.file(join(uiDist, "app.css")).text();
-    expect(css).toMatch(
-      /url\("?\.\/fonts\/material-symbols-outlined\.woff2"?\)/,
-    );
+    expect(css).toMatch(/url\("?\.\/fonts\/material-symbols-outlined\.woff2"?\)/);
     expect(css).toContain("--fixture-primary");
-    expect(result.outputs.map((o) => o.path).toSorted()).toEqual([
+    expect(result.outputs.map(o => o.path).toSorted()).toEqual([
       "app.css",
       "app.js",
       "fonts/GoogleSansFlex-Variable.ttf",
@@ -48,7 +66,12 @@ describe("buildM3", () => {
       "fonts/material-symbols-outlined.woff2",
       "index.html",
     ]);
-    expect(result.outputs.every((o) => o.bytes > 0)).toBe(true);
+    expect(result.outputs.every(o => o.bytes > 0)).toBe(true);
+    if (!result.metafile) throw new Error("Tauri build omitted native metadata");
+    for (const path of Object.keys(result.metafile.outputs)) {
+      expect(result.outputs.some(output => output.path === path.replace(/^\.\//, ""))).toBe(true);
+      expect(await Bun.file(join(uiDist, path)).exists()).toBe(true);
+    }
   });
 
   test("static mode minifies into outdir with hashed chunks and cleans it first", async () => {
@@ -64,7 +87,7 @@ describe("buildM3", () => {
     });
     expect(existsSync(join(outdir, "stale.txt"))).toBe(false);
     expect(existsSync(join(outdir, "index.html"))).toBe(true);
-    const js = result.outputs.find((o) => o.path.endsWith(".js"));
+    const js = result.outputs.find(o => o.path.endsWith(".js"));
     expect(js?.path).toMatch(/-[a-z0-9]+\.js$/);
   });
 
@@ -76,29 +99,22 @@ describe("buildM3", () => {
     const icons = Array.from({ length: 40 }, (_, i) => `i${i}`);
     for (const icon of icons) {
       // oxlint-disable-next-line no-await-in-loop -- Materialize the bounded icon fixtures before the serial build comparisons.
-      await Bun.write(
-        join(src, `${icon}.svg`),
-        `<svg xmlns="http://www.w3.org/2000/svg" id="${icon}"/>`,
-      );
+      await Bun.write(join(src, `${icon}.svg`), `<svg xmlns="http://www.w3.org/2000/svg" id="${icon}"/>`);
       // oxlint-disable-next-line no-await-in-loop -- Complete the matching PNG fixture before advancing to the next icon.
-      await Bun.write(
-        join(src, `${icon}.png`),
-        new Uint8Array([0x89, 0x50, 0x4e, 0x47, icon.length]),
-      );
+      await Bun.write(join(src, `${icon}.png`), new Uint8Array([0x89, 0x50, 0x4e, 0x47, icon.length]));
     }
-    const lines = (form: (icon: string) => string) =>
-      icons.map(form).join("\n");
+    const lines = (form: (icon: string) => string) => icons.map(form).join("\n");
     await Bun.write(
       join(src, "plain.ts"),
-      lines((i) => `export const ${i} = () => import("./${i}.svg");`),
+      lines(i => `export const ${i} = () => import("./${i}.svg");`),
     );
     await Bun.write(
       join(src, "plain-png.ts"),
-      lines((i) => `export const ${i} = () => import("./${i}.png");`),
+      lines(i => `export const ${i} = () => import("./${i}.png");`),
     );
     await Bun.write(
       join(src, "urls.ts"),
-      `${lines((i) => `import ${i} from "./${i}.svg?url";\nimport ${i}p from "./${i}.png?url";`)}\nexport default [${icons.flatMap((i) => [i, `${i}p`]).join(", ")}];`,
+      `${lines(i => `import ${i} from "./${i}.svg?url";\nimport ${i}p from "./${i}.png?url";`)}\nexport default [${icons.flatMap(i => [i, `${i}p`]).join(", ")}];`,
     );
     // Both import orders, so either module can win the race.
     await Bun.write(
@@ -133,32 +149,24 @@ describe("buildM3", () => {
       // oxlint-disable-next-line no-await-in-loop -- Read this completed build before comparing the next independently ordered run.
       const js = await Bun.file(join(uiDist, TAURI_LAYOUT.script)).text();
       runs.push({
-        files: result.outputs.map((o) => o.path).toSorted(),
+        files: result.outputs.map(o => o.path).toSorted(),
         js: new Bun.CryptoHasher("sha256").update(js).digest("hex"),
       });
       // The chosen forms: every svg is a fonts/ file, every png an inline data URL.
       expect(js).not.toContain("data:image/svg+xml");
-      for (const icon of icons)
-        expect(result.outputs.map((o) => o.path)).toContain(
-          `fonts/${icon}.svg`,
-        );
+      for (const icon of icons) expect(result.outputs.map(o => o.path)).toContain(`fonts/${icon}.svg`);
       expect(js.match(/data:image\/png;base64,/g)?.length).toBe(icons.length);
     }
     for (const run of runs.slice(1)) expect(run).toEqual(runs[0]!);
   });
 
   test("Tauri mode rejects several entries", async () => {
-    await expect(
-      buildM3({ entry: ["a.html", "b.html"], tauri: { uiDist: "x" } }),
-    ).rejects.toThrow("exactly one");
-    await expect(
-      buildM3({ entry: "a.ts", tauri: { uiDist: "x" } }),
-    ).rejects.toThrow(".html");
+    await expect(buildM3({ entry: ["a.html", "b.html"], tauri: { uiDist: "x" } })).rejects.toThrow("exactly one");
+    await expect(buildM3({ entry: "a.ts", tauri: { uiDist: "x" } })).rejects.toThrow(".html");
   });
 
   test("rewriteHtmlReference touches src/href attributes only", () => {
-    const html =
-      '<script src="./main.js"></script><link href="main.js"><p>main.js</p>';
+    const html = '<script src="./main.js"></script><link href="main.js"><p>main.js</p>';
     expect(rewriteHtmlReference(html, "main.js", "app.js")).toBe(
       '<script src="./app.js"></script><link href="./app.js"><p>main.js</p>',
     );

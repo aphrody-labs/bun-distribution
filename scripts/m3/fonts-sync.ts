@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // fonts-sync.ts: fetch the upstream font sources pinned in packages/m3-fonts/fonts.lock.json.
 //
-//   bun scripts/fonts-sync.ts [--check] [--json] [--quiet]
+//   bun scripts/m3/fonts-sync.ts [--check] [--json] [--quiet]
 //
 // Files land in packages/m3-fonts/fonts/upstream/ (git-ignored; no Git LFS). Each one is verified by
 // sha256 and size before it is written, and an existing file that matches is left alone, so the
@@ -12,19 +12,12 @@
 //   material-symbols  the npm tarball, checked against its sha512 integrity, then extracted
 // --check verifies without fetching: exit 1 when a file is missing or differs.
 import { createHash } from "node:crypto";
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join } from "node:path";
+import { REPO } from "./lib/workspace.ts";
 
-export const REPO = resolve(dirname(import.meta.path), "..");
+export { REPO };
 export const FONTS_PACKAGE = join(REPO, "packages/m3-fonts");
 export const LOCK_FILE = join(FONTS_PACKAGE, "fonts.lock.json");
 export const UPSTREAM_DIR = join(FONTS_PACKAGE, "fonts/upstream");
@@ -60,18 +53,13 @@ export interface Result {
   from?: string;
 }
 
-export const readLock = (file = LOCK_FILE): LockFile =>
-  JSON.parse(readFileSync(file, "utf8"));
+export const readLock = (file = LOCK_FILE): LockFile => JSON.parse(readFileSync(file, "utf8"));
 
-export const sha256 = (bytes: Uint8Array): string =>
-  createHash("sha256").update(bytes).digest("hex");
+export const sha256 = (bytes: Uint8Array): string => createHash("sha256").update(bytes).digest("hex");
 
 /** Raw URL of a google-fonts entry (each path segment percent-encoded: `[`, `]`, `,`). */
 export function rawUrl(lock: LockFile, entry: LockEntry): string {
-  return (
-    lock.sources["google-fonts"].raw +
-    entry.path.split("/").map(encodeURIComponent).join("/")
-  );
+  return lock.sources["google-fonts"].raw + entry.path.split("/").map(encodeURIComponent).join("/");
 }
 
 /** Whether `bytes` are the pinned content of `entry`. */
@@ -89,34 +77,25 @@ export function status(entry: LockEntry, dir = UPSTREAM_DIR): Status {
 export function validateLock(lock: LockFile): string[] {
   const errors: string[] = [];
   const seen = new Set<string>();
-  if (!/^[0-9a-f]{40}$/.test(lock.sources["google-fonts"].commit))
-    errors.push("google-fonts.commit is not a full SHA");
-  if (
-    !lock.sources["google-fonts"].raw.includes(
-      lock.sources["google-fonts"].commit,
-    )
-  )
+  if (!/^[0-9a-f]{40}$/.test(lock.sources["google-fonts"].commit)) errors.push("google-fonts.commit is not a full SHA");
+  if (!lock.sources["google-fonts"].raw.includes(lock.sources["google-fonts"].commit))
     errors.push("google-fonts.raw is not pinned to commit");
   if (!lock.sources["material-symbols"].integrity.startsWith("sha512-"))
     errors.push("material-symbols.integrity is not sha512");
   for (const e of lock.files) {
     if (seen.has(e.dest)) errors.push(`duplicate dest ${e.dest}`);
     seen.add(e.dest);
-    if (!(e.source in lock.sources))
-      errors.push(`${e.dest}: unknown source ${e.source}`);
-    if (!/^[0-9a-f]{64}$/.test(e.sha256))
-      errors.push(`${e.dest}: sha256 not pinned`);
+    if (!(e.source in lock.sources)) errors.push(`${e.dest}: unknown source ${e.source}`);
+    if (!/^[0-9a-f]{64}$/.test(e.sha256)) errors.push(`${e.dest}: sha256 not pinned`);
     if (!(e.bytes > 0)) errors.push(`${e.dest}: bytes not pinned`);
-    if (e.dest.includes("..") || e.dest.startsWith("/"))
-      errors.push(`${e.dest}: dest escapes fonts/upstream`);
+    if (e.dest.includes("..") || e.dest.startsWith("/")) errors.push(`${e.dest}: dest escapes fonts/upstream`);
   }
   return errors;
 }
 
 async function download(url: string): Promise<Uint8Array> {
   const response = await fetch(url, { redirect: "follow" });
-  if (!response.ok)
-    throw new Error(`GET ${url}: ${response.status} ${response.statusText}`);
+  if (!response.ok) throw new Error(`GET ${url}: ${response.status} ${response.statusText}`);
   return new Uint8Array(await response.arrayBuffer());
 }
 
@@ -127,10 +106,7 @@ function materialSymbols(lock: LockFile): Promise<string> {
     const source = lock.sources["material-symbols"];
     const bytes = await download(source.tarball);
     const digest = `sha512-${createHash("sha512").update(bytes).digest("base64")}`;
-    if (digest !== source.integrity)
-      throw new Error(
-        `${source.package}: integrity ${digest} != ${source.integrity}`,
-      );
+    if (digest !== source.integrity) throw new Error(`${source.package}: integrity ${digest} != ${source.integrity}`);
     const dir = mkdtempSync(join(tmpdir(), "m3-fonts-sync-"));
     const tgz = join(dir, "package.tgz");
     writeFileSync(tgz, bytes);
@@ -138,8 +114,7 @@ function materialSymbols(lock: LockFile): Promise<string> {
       stdout: "pipe",
       stderr: "pipe",
     });
-    if (tar.exitCode !== 0)
-      throw new Error(`tar: ${tar.stderr.toString().trim()}`);
+    if (tar.exitCode !== 0) throw new Error(`tar: ${tar.stderr.toString().trim()}`);
     process.on("exit", () => rmSync(dir, { recursive: true, force: true }));
     return dir;
   })();
@@ -153,15 +128,10 @@ export async function obtain(
   repo = REPO,
 ): Promise<{ bytes: Uint8Array; from: string; action: "fetched" | "copied" }> {
   if (entry.source === "google-fonts") {
-    const local = join(
-      repo,
-      lock.sources["google-fonts"].submodule,
-      entry.path,
-    );
+    const local = join(repo, lock.sources["google-fonts"].submodule, entry.path);
     if (existsSync(local)) {
       const bytes = new Uint8Array(readFileSync(local));
-      if (matches(entry, bytes))
-        return { bytes, from: local, action: "copied" };
+      if (matches(entry, bytes)) return { bytes, from: local, action: "copied" };
     }
     const url = rawUrl(lock, entry);
     return { bytes: await download(url), from: url, action: "fetched" };
@@ -169,9 +139,7 @@ export async function obtain(
   const dir = await materialSymbols(lock);
   const file = join(dir, entry.path);
   if (!existsSync(file))
-    throw new Error(
-      `${lock.sources["material-symbols"].package}: ${entry.path} not in the tarball`,
-    );
+    throw new Error(`${lock.sources["material-symbols"].package}: ${entry.path} not in the tarball`);
   return {
     bytes: new Uint8Array(readFileSync(file)),
     from: lock.sources["material-symbols"].tarball,
@@ -180,9 +148,7 @@ export async function obtain(
 }
 
 /** Bring every entry to its pinned content (or only report, with `check`). */
-export async function sync(
-  options: { check?: boolean; lock?: LockFile; dir?: string } = {},
-): Promise<Result[]> {
+export async function sync(options: { check?: boolean; lock?: LockFile; dir?: string } = {}): Promise<Result[]> {
   const lock = options.lock ?? readLock();
   const dir = options.dir ?? UPSTREAM_DIR;
   const errors = validateLock(lock);
@@ -215,23 +181,17 @@ if (import.meta.main) {
   const check = args.includes("--check");
   try {
     const results = await sync({ check });
-    const bad = results.filter((r) => r.status !== "ok");
+    const bad = results.filter(r => r.status !== "ok");
     const flags = new Set(args);
-    if (flags.has("--json"))
-      console.log(
-        JSON.stringify({ dir: UPSTREAM_DIR, check, results }, null, 2),
-      );
+    if (flags.has("--json")) console.log(JSON.stringify({ dir: UPSTREAM_DIR, check, results }, null, 2));
     else if (!args.includes("--quiet") || bad.length) {
       for (const r of results)
         if (r.action || r.status !== "ok" || !args.includes("--quiet"))
           console.log(
-            `${r.status.padEnd(8)} ${r.action ?? ""} ${r.dest}${r.from ? ` <- ${r.from}` : ""}`.replace(
-              / {2,}/g,
-              " ",
-            ),
+            `${r.status.padEnd(8)} ${r.action ?? ""} ${r.dest}${r.from ? ` <- ${r.from}` : ""}`.replace(/ {2,}/g, " "),
           );
       console.log(
-        `fonts-sync: ${results.length - bad.length}/${results.length} files pinned in ${UPSTREAM_DIR}${bad.length ? ` (${bad.length} ${check ? "missing or different: run bun scripts/fonts-sync.ts" : "failed"})` : ""}`,
+        `fonts-sync: ${results.length - bad.length}/${results.length} files pinned in ${UPSTREAM_DIR}${bad.length ? ` (${bad.length} ${check ? "missing or different: run bun scripts/m3/fonts-sync.ts" : "failed"})` : ""}`,
       );
     }
     process.exit(bad.length ? 1 : 0);

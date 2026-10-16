@@ -16,6 +16,13 @@ test("selected product inputs point to the existing desktop and public asset own
   expect(await Bun.file(join(inputs.uiDist, "index.html")).exists()).toBe(true);
   expect(inputs.publicAssets).toBe(join(root, "tools/aphrody/config/public-assets.json"));
   expect((await Bun.file(inputs.publicAssets).json()).schemaVersion).toBe(1);
+  const sourceInputs = productBuildContext(
+    { NODE_ENV: "test", APHRODY_ROOT: join(root, "nonexistent-other-checkout") },
+    import.meta.dir,
+  );
+  expect(sourceInputs.workspaceRoot).toBe(root);
+  expect(sourceInputs.bunCheckout).toBe(join(root, "toolchains/bun"));
+  expect(sourceInputs.uiDist).toBe(inputs.uiDist);
 });
 
 test("current committed build inputs retain immutable historical transfer provenance", () => {
@@ -77,7 +84,7 @@ test("current committed build inputs retain immutable historical transfer proven
     symlinkSync(join(outside, "docs.json"), join(root, docs));
     expect(() => canonicalBunInputs(root, revision)).toThrow("escapes the checkout");
   } finally {
-    rmSync(root, { recursive: true, force: true });
-    rmSync(outside, { recursive: true, force: true });
+    rmSync(root, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+    rmSync(outside, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
   }
-});
+}, 30_000);

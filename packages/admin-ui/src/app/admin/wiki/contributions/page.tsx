@@ -22,7 +22,7 @@ import {
   CONTRIBUTABLE_COLUMNS,
   CONTRIBUTION_STATUS_LABELS,
   type ContributionStatusKey,
-} from "@/lib/contributions-shared";
+} from "../../../../lib/contributions-shared";
 
 interface Row {
   id: string;

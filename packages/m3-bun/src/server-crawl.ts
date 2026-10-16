@@ -5,7 +5,7 @@
 import type { M3Routes } from "./api.ts";
 import { loadOptional } from "./server-optional.ts";
 
-type M3Next = typeof import("@aphrody/m3-next");
+type M3Next = typeof import("@aphrody/m3-next/source");
 
 export interface M3CrawlOptions {
   /** Public origin, `https://example.com`: the files hold absolute URLs. */
@@ -26,29 +26,23 @@ export function pagePath(file: string): string | undefined {
   return undefined;
 }
 
-const next = () => loadOptional<M3Next>("@aphrody/m3-next", "crawl");
+const next = () => loadOptional<M3Next>("@aphrody/m3-next/source", "crawl");
 const text = (body: string, type: string) =>
   new Response(body, {
     headers: { "Content-Type": type, "Cache-Control": "public, max-age=3600" },
   });
 
 /** `/sitemap.xml`, `/robots.txt` and `/llms.txt` routes for the files `paths` (URL paths of the build). */
-export function crawlRoutes(
-  paths: readonly string[],
-  options: M3CrawlOptions & { name: string },
-): M3Routes {
+export function crawlRoutes(paths: readonly string[], options: M3CrawlOptions & { name: string }): M3Routes {
   const disallow = options.disallow ?? [];
   const pages = paths
     .map(pagePath)
     .filter((path): path is string => path !== undefined)
-    .filter((path) => !disallow.some((prefix) => path.startsWith(prefix)));
+    .filter(path => !disallow.some(prefix => path.startsWith(prefix)));
   const routes: M3Routes = {};
   if (!paths.includes("/sitemap.xml"))
     routes["/sitemap.xml"] = async () =>
-      text(
-        (await next()).m3SitemapXml(pages, options.origin),
-        "application/xml; charset=utf-8",
-      );
+      text((await next()).m3SitemapXml(pages, options.origin), "application/xml; charset=utf-8");
   if (!paths.includes("/robots.txt"))
     routes["/robots.txt"] = async () =>
       text(
@@ -66,14 +60,14 @@ export function crawlRoutes(
       );
   if (!paths.includes("/llms.txt"))
     routes["/llms.txt"] = async () => {
-      const docs = pages.filter((path) => path.endsWith(".md"));
-      const html = pages.filter((path) => !path.endsWith(".md"));
+      const docs = pages.filter(path => path.endsWith(".md"));
+      const html = pages.filter(path => !path.endsWith(".md"));
       const sections = [
         ...(docs.length
           ? [
               {
                 title: "Docs",
-                links: docs.map((path) => ({ title: path, path })),
+                links: docs.map(path => ({ title: path, path })),
               },
             ]
           : []),
@@ -81,7 +75,7 @@ export function crawlRoutes(
           ? [
               {
                 title: "Pages",
-                links: html.map((path) => ({ title: path, path })),
+                links: html.map(path => ({ title: path, path })),
                 optional: true,
               },
             ]

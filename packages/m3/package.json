@@ -83,9 +83,9 @@
     "access": "public"
   },
   "scripts": {
-    "build": "bun ../../scripts/build.ts build --only $npm_package_name",
+    "build": "bun ../../scripts/m3/build.ts build --only @aphrody/m3",
     "typecheck": "bun check -p tsconfig.json --noEmit",
-    "test": "bun ../../scripts/fonts-sync.ts --quiet && bun test"
+    "test": "bun ../../scripts/m3/fonts-sync.ts --quiet && bun test"
   },
   "dependencies": {
     "@aphrody/bun": "^3.3.0",

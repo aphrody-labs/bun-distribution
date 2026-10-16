@@ -14,7 +14,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { hideCommentAction, pinCommentAction, restoreCommentAction } from "./_actions";
-import { SOCIAL_KIND_LABELS, type SocialKind } from "@/lib/social-shared";
+import { SOCIAL_KIND_LABELS, type SocialKind } from "../../../../lib/social-shared";
 import { Coeur } from "@shenron/ui/icones";
 
 export interface QueueRow {

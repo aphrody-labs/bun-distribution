@@ -4,13 +4,11 @@
     "target": "ES2023",
     "lib": ["ES2024", "DOM", "DOM.Iterable"],
     "customConditions": ["bun"],
-    "types": ["bun", "node"],
+    "types": ["@aphrody/bun-types", "node"],
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
     "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "paths": {
-      "@aphrody/m3-next": ["../../m3-next/src/index.ts"],
-      "@aphrody/m3-reader": ["../../m3-reader/src/index.ts"]
-    }
+    "noUnusedParameters": true
   },
   "include": ["src/**/*", "scripts/**/*", "test/**/*", "m3.config.ts"]
 }

@@ -2,7 +2,28 @@ import { afterAll, expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { inspectSetupSources } from "./setup-submodules.ts";
+import { inspectSetupSources, materialWebPreparationPlan } from "./setup-submodules.ts";
+
+test("setup assembles isolated public Material types before frozen dependency installation", async () => {
+  const root = resolve(import.meta.dir, "..");
+  const plan = materialWebPreparationPlan(root, "selected-bun");
+  expect(plan.archive).toBe(resolve(root, "build/packages/material-web.tgz"));
+  expect(plan.commands).toEqual([
+    { cwd: root, argv: ["selected-bun", "vendor/material-web/scripts/bootstrap-types.ts"] },
+    {
+      cwd: resolve(root, "vendor/material-web"),
+      argv: ["selected-bun", "pm", "pack", "--ignore-scripts", "--filename", plan.archive, "--quiet"],
+    },
+  ]);
+  const setup = await Bun.file(resolve(root, "scripts/setup.ts")).text();
+  const prepare = setup.indexOf("for (const command of material.commands)");
+  const install = setup.indexOf('await run([process.execPath, "install", "--frozen-lockfile"])');
+  expect(prepare).toBeGreaterThan(0);
+  expect(install).toBeGreaterThan(prepare);
+  const manifest = await Bun.file(resolve(root, "package.json")).json();
+  expect(manifest.catalog["@aphrody/material-web"]).toBe("file:build/packages/material-web.tgz");
+  expect(await Bun.file(resolve(root, plan.commands[0]!.argv[1]!)).exists()).toBe(true);
+});
 
 const fixture = await mkdtemp(join(tmpdir(), "bun-os-setup-sources-"));
 const source = join(fixture, "source");

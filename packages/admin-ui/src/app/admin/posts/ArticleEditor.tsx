@@ -29,7 +29,7 @@ import { Switch } from "@shenron/ui/switch";
 import { ImageField } from "@aphrody/admin-ui/components/admin/ImageField";
 import { slugify } from "@/lib/slug";
 import { cn } from "@shenron/ui/lib/utils";
-import type { PostContentDoc, PostStatus } from "@/db/schema";
+import type { PostContentDoc, PostStatus } from "@shenron/db/schema";
 import { checkSlug, deletePost, savePost, type PostInput } from "./_actions";
 
 /** Longueurs au-delà desquelles Google tronque en général l'affichage. */
