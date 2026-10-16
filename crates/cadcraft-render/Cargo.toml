@@ -1,0 +1,33 @@
+[package]
+name = "cadcraft-render"
+description = "CADCraft rendering: display lists (linetypes, hatches, text, blocks, dimensions) and a CPU rasteriser"
+workspace = "../.."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT OR Apache-2.0"
+repository = "https://source.aphrody.app/aphrody-dev/bun-crate-cadcraft-render"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+cadcraft-geom = { workspace = true }
+cadcraft-color = { workspace = true }
+cadcraft-doc = { workspace = true }
+cadcraft-fonts = { workspace = true }
+tiny-skia = { workspace = true }
+lyon_tessellation = { workspace = true }
+
+# Display lists of large drawings are built on all cores (not on the web, which has no threads).
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rayon = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true, features = ["float_roundtrip"] }

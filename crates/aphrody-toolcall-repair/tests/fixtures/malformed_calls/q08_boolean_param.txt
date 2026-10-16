@@ -1,0 +1,5 @@
+<tool_call><function=set_flag><parameter=enabled>
+true
+</parameter><parameter=name>
+dry_run
+</parameter></function></tool_call>

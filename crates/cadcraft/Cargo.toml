@@ -1,0 +1,53 @@
+[package]
+name = "cadcraft"
+description = "CADCraft desktop app"
+workspace = "../.."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT OR Apache-2.0"
+repository = "https://source.aphrody.app/aphrody-dev/bun-crate-cadcraft"
+publish = false
+default-run = "cadcraft"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+cadcraft-engine = { workspace = true }
+cadcraft-ui-egui = { workspace = true }
+cadcraft-io = { workspace = true }
+eframe = { workspace = true, features = ["default_fonts", "wgpu", "accesskit", "wayland", "x11", "links", "persistence"] }
+egui = { workspace = true }
+serde_json = { workspace = true }
+log = { workspace = true }
+
+[build-dependencies]
+winresource = { workspace = true }
+
+[target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
+winit = { workspace = true, features = ["x11"] }
+# View ▸ Theme ▸ System: the desktop's light/dark choice from the XDG desktop portal
+# (desktop_theme.rs). Already in Cargo.lock through accesskit; pinned to that version so nothing
+# is built twice.
+zbus = { workspace = true, features = ["async-io", "blocking-api"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rfd = { workspace = true }
+sys-locale = { workspace = true }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+muda = { workspace = true }
+
+# Rust HID backends: no proprietary SDK or C HID library.
+[target.'cfg(target_os = "windows")'.dependencies]
+hidapi = { workspace = true, features = ["windows-native"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+hidapi = { workspace = true, features = ["linux-native-basic-udev"] }

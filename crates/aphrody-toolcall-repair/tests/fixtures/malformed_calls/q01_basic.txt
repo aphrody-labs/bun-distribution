@@ -1,0 +1,6 @@
+<tool_call><function=write_file><parameter=path>
+notes/todo.md
+</parameter><parameter=content>
+- [ ] write tests
+- [ ] ship it
+</parameter></function></tool_call>

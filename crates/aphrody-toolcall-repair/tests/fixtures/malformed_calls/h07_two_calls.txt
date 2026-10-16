@@ -1,0 +1,9 @@
+I'll do this in two steps.
+
+<tool_call>
+{"name": "read_file", "arguments": {"path": "a.txt"}}
+</tool_call>
+
+<tool_call>
+{"name": "read_file", "arguments": {"path": "b.txt"}}
+</tool_call>

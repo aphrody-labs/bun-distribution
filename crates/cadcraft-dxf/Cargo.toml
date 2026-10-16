@@ -1,0 +1,23 @@
+[package]
+name = "cadcraft-dxf"
+description = "Standalone DXF tag reader/writer (ASCII and binary, pre-2007 code pages), from the published DXF reference"
+workspace = "../.."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT OR Apache-2.0"
+repository = "https://source.aphrody.app/aphrody-dev/bun-crate-cadcraft-dxf"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+thiserror = { workspace = true }
+log = { workspace = true }
+encoding_rs = { workspace = true }

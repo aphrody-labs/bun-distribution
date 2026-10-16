@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+workspace = "../.."
+name = "aphrody-app-protocol"
+publish                = true
+version.workspace = true
+edition.workspace      = true
+rust-version.workspace = true
+authors = ["aphrody-code"]
+homepage = "https://source.aphrody.app/aphrody-dev/bun-crate-aphrody-app-protocol"
+repository = "https://source.aphrody.app/aphrody-dev/bun-crate-aphrody-app-protocol"
+license = "Apache-2.0"
+readme                 = "README.md"
+description            = "Pure, wasm32-safe Codex app-server v2 protocol types: JSON-RPC wire types, Tier-1 request/response pairs, server notifications, approvals, and aphrody/* protocol extensions."
+keywords               = ["codex", "app-server", "json-rpc", "protocol", "wasm"]
+categories             = ["encoding", "wasm", "api-bindings"]
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+serde      = { workspace = true, features = ["default", "derive"] }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = { workspace = true, features = ["default"] }

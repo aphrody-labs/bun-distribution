@@ -1,0 +1,2 @@
+<tool_call>
+{"name": "write_file", "arguments": {"path": "notes.txt", "content": "remember to buy milk"

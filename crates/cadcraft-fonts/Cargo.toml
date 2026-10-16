@@ -1,0 +1,24 @@
+[package]
+name = "cadcraft-fonts"
+description = "CADCraft text: the built-in single-stroke drafting font and TEXT/MTEXT layout"
+workspace = "../.."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT OR Apache-2.0"
+repository = "https://source.aphrody.app/aphrody-dev/bun-crate-cadcraft-fonts"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+cadcraft-geom = { workspace = true }
+skrifa = { workspace = true, features = ["std", "autohint_shaping"] }
+harfrust = { workspace = true }
+unicode-bidi = { workspace = true }

@@ -1,0 +1,22 @@
+[package]
+name = "cadcraft-dwg"
+description = "CADCraft DWG bridge: converts DWG to and from DXF bytes using the acadrust crate (MPL-2.0, used unmodified)"
+workspace = "../.."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT OR Apache-2.0"
+repository = "https://source.aphrody.app/aphrody-dev/bun-crate-cadcraft-dwg"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# MPL-2.0: used as an unmodified dependency only (see plan/adr/0001 and NOTICE).
+acadrust = { workspace = true }

@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+workspace = "../.."
+name = "aphrody-http-error"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors = ["aphrody-code"]
+homepage = "https://source.aphrody.app/aphrody-dev/bun-crate-aphrody-http-error"
+repository = "https://source.aphrody.app/aphrody-dev/bun-crate-aphrody-http-error"
+license = "Apache-2.0"
+description            = "One JSON error envelope ({\"error\":{\"code\",\"message\",\"data\"}}) shared by Aphrody's own HTTP surfaces."
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+axum       = { workspace = true, features = ["json"] }
+serde      = { workspace = true, features = ["default", "derive"] }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }

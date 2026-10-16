@@ -1,0 +1,25 @@
+[package]
+name = "cadcraft-doc"
+description = "CADCraft drawing database: entities, symbol tables, blocks, layouts, copy-on-write store"
+workspace = "../.."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT OR Apache-2.0"
+repository = "https://source.aphrody.app/aphrody-dev/bun-crate-cadcraft-doc"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+cadcraft-geom = { workspace = true }
+cadcraft-color = { workspace = true }
+serde = { workspace = true, features = ["rc"] }
+serde_json = { workspace = true, features = ["float_roundtrip"] }
+thiserror = { workspace = true }

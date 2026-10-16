@@ -1,0 +1,1 @@
+[{"name": "write_file", "arguments": {"path": "src/lib.rs", "content": "fn main() {\n    println!(\"hello\");\n}"}}]

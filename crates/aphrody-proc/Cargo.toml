@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+workspace = "../.."
+name = "aphrody-proc"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors = ["aphrody-code"]
+homepage = "https://source.aphrody.app/aphrody-dev/bun-crate-aphrody-proc"
+repository = "https://source.aphrody.app/aphrody-dev/bun-crate-aphrody-proc"
+license = "Apache-2.0"
+description = "Process supervision primitives shared by the llama-server supervisor, the command sandbox and the training runner: process groups that die with their owner (Linux session + killpg, Windows Job Object with KILL_ON_JOB_CLOSE), detached daemons, liveness probes, elevated execution without a new console window (Sudo for Windows inline, UAC, sudo-rs), free-port allocation, advisory file locks and the single-GPU lease (shared for inference, exclusive for training)."
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+serde = { workspace = true, features = ["default"] }
+serde_json = { workspace = true, features = ["default"] }
+thiserror = { workspace = true, features = ["default"] }
+tracing = { workspace = true, features = ["default"] }
+
+# Tokio process support is host-only; wasm32 has no process support.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { workspace = true, optional = true, features = ["full"] }
+
+[target.'cfg(unix)'.dependencies]
+rustix = { workspace = true }
+
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = [
+    "default",
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_System_Console",
+    "Win32_System_JobObjects",
+    "Win32_System_Registry",
+    "Win32_System_Threading",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[features]
+tokio = ["dep:tokio"]
+
+[dev-dependencies]
+pretty_assertions = { workspace = true, features = ["default"] }
+tempfile = { workspace = true, features = ["default"] }

@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "binaries": {
+    "aphrody": {
+      "env": [
+        {
+          "canonical": "APHRODY_BIN"
+        }
+      ]
+    },
+    "aphrody-mcp": {
+      "env": [
+        {
+          "canonical": "APHRODY_AI_MCP_BIN"
+        }
+      ]
+    }
+  },
+  "gateways": {
+    "ai-http": {
+      "env": [
+        {
+          "canonical": "APHRODY_AI_HTTP_URL"
+        },
+        {
+          "canonical": "APHRODY_AI_HTTP_TOKEN"
+        }
+      ]
+    }
+  },
+  "capabilities": {
+    "chat": {
+      "env": [
+        {
+          "canonical": "APHRODY_AI_CHAT_BASE_URL"
+        },
+        {
+          "canonical": "APHRODY_AI_CHAT_MODEL"
+        },
+        {
+          "canonical": "APHRODY_AI_CHAT_API_KEY"
+        }
+      ]
+    },
+    "code": {
+      "env": [
+        {
+          "canonical": "APHRODY_AI_CODE_MODEL"
+        }
+      ]
+    },
+    "reasoning": {
+      "env": [
+        {
+          "canonical": "APHRODY_AI_REASONING_MODEL"
+        }
+      ]
+    },
+    "small": {
+      "env": [
+        {
+          "canonical": "APHRODY_AI_SMALL_MODEL"
+        }
+      ]
+    },
+    "vision": {
+      "env": [
+        {
+          "canonical": "APHRODY_AI_VISION_BASE_URL"
+        },
+        {
+          "canonical": "APHRODY_AI_VISION_MODEL"
+        }
+      ]
+    },
+    "ocr": {
+      "env": [
+        {
+          "canonical": "APHRODY_AI_OCR_MODEL"
+        }
+      ]
+    },
+    "stt": {
+      "env": [
+        {
+          "canonical": "APHRODY_AI_STT_MODEL"
+        }
+      ]
+    },
+    "embed": {
+      "env": [
+        {
+          "canonical": "APHRODY_AI_EMBED_BASE_URL"
+        },
+        {
+          "canonical": "APHRODY_AI_EMBED_MODEL"
+        },
+        {
+          "canonical": "APHRODY_AI_EMBED_DIMENSIONS"
+        }
+      ]
+    },
+    "rerank": {
+      "env": [
+        {
+          "canonical": "APHRODY_AI_RERANK_BASE_URL"
+        },
+        {
+          "canonical": "APHRODY_AI_RERANK_MODEL"
+        }
+      ]
+    }
+  }
+}

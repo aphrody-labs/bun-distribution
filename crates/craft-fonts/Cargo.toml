@@ -1,0 +1,17 @@
+[package]
+workspace = "../.."
+name = "craft-fonts"
+description = "The Crafting Apps' shared font assets: the manifest, finding a craft-fonts checkout, and loading or embedding the fonts."
+version.workspace = true
+edition.workspace = true
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/storytold/craft-fonts"
+rust-version.workspace = true
+publish = false
+
+[features]
+# Compile every font in the manifest into the binary (about 24 MB).
+embed = []
+
+[lints.rust]
+unsafe_code = "forbid"

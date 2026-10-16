@@ -1,0 +1,1 @@
+[TOOL_CALLS][{"name": "a", "arguments": {}}, {"name": "b", "arguments": {"x": 1}}]

@@ -1,0 +1,27 @@
+[package]
+name = "craft-settings"
+workspace = "../.."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/aphrody-labs/craft-libs"
+description = "Shared settings storage for the Craft suite: platform folders, config.toml, atomic saves, recovery and migration"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+
+[dependencies]
+craft-atomic = { workspace = true }
+serde = { workspace = true }
+toml_edit = { workspace = true, features = ["serde"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+dirs = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

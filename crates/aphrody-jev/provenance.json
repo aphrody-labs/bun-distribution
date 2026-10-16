@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "repository": "https://github.com/aphrody-labs/aphrody",
+  "revision": "170702f02085b392377dbc9749f1b3cc8db9efbf",
+  "sourcePath": "crates/ai/jev",
+  "license": "Apache-2.0",
+  "combinedSHA256": "351f6a00055bbb01ffdcb4acfc5e039a5b40ac801a7ebcd7c951c648a2a6726f",
+  "hashMethod": "UTF-8 sorted source path + NUL + SHA256(original bytes) + NUL",
+  "originalFiles": [
+    {
+      "path": "crates/ai/jev/Cargo.toml",
+      "sha256": "a896c49237ea65a0864f47724feac55a84f2f6df0fd3a1970a4899d02024434d"
+    },
+    {
+      "path": "crates/ai/jev/README.md",
+      "sha256": "88ede62974b9c8ec1d92b337fa601f933a6c382b051869cf929f13d0c8055fad"
+    },
+    {
+      "path": "crates/ai/jev/src/cli.rs",
+      "sha256": "e4bed06a6cb7a8ceca421dcbf9883617109d7ef0f728aa9f98a23d76f7980bdc"
+    },
+    {
+      "path": "crates/ai/jev/src/decision.rs",
+      "sha256": "2423d4ca040d3610dae940519f928a859520daa6b9aedf07cc15084008287f04"
+    },
+    {
+      "path": "crates/ai/jev/src/lib.rs",
+      "sha256": "99bde7f11672d8b23f7b12999122af46cd0d20d1663c8aa966a160404ea571ee"
+    },
+    {
+      "path": "crates/ai/jev/src/native.rs",
+      "sha256": "a2f34db108451a0ed18884912b4e95c9ad3dbb8d33bea990be38fe40751198b5"
+    },
+    {
+      "path": "crates/ai/jev/src/rag.rs",
+      "sha256": "389e8d1526c43c9d51ee759d1c6da9874e938dd7730440c1faa5203b1a5d4132"
+    },
+    {
+      "path": "crates/ai/jev/src/server.rs",
+      "sha256": "17247ca9df0fee6bfea2a65d2b1b93eba6ae555e054c4bf8252bd2e3115380bc"
+    },
+    {
+      "path": "crates/ai/jev/src/types.rs",
+      "sha256": "eddf3b4864a1022f26ec182ef7b0d65ca4d040ef92038a8415b717915ccaafdb"
+    },
+    {
+      "path": "crates/ai/jev/src/validate.rs",
+      "sha256": "d923f8f34f717592e6977d71dd027291bb6b13b76024f429d66080c29f499990"
+    },
+    {
+      "path": "crates/ai/jev/tests/native.rs",
+      "sha256": "57cdbb1543684685627be088777ca1b3887f4e957cc599c07244056bebf5eae9"
+    },
+    {
+      "path": "crates/ai/jev/tests/rag.rs",
+      "sha256": "fe740050076dfd6928c9464bfb42b69324a512f68f3cc63cf0df348c50136ed2"
+    },
+    {
+      "path": "crates/ai/jev/tests/router.rs",
+      "sha256": "01ff30262ce58c98599ccc1d5a7fe7de8b4fe26ab2a4a1cc4ad9c5153e3964e5"
+    },
+    {
+      "path": "crates/ai/jev/tests/server.rs",
+      "sha256": "4638f5b469fb3e499b83c1fd2bc33be02b21d49d9d8c79f8292bbb7affb82cd8"
+    }
+  ],
+  "protocolOrigin": {
+    "repository": "https://github.com/aphrody-labs/bun",
+    "revision": "c62d01d81506a8b78b1d39b44d17edc81b4a6355",
+    "path": "src/runtime/yolo/mod.rs",
+    "license": "MIT",
+    "sha256": "4680a8d6ebec867fda3233299ce769959e3c3d0df7c1e55c807c2a9f0ae59018",
+    "hashMethod": "SHA256(git blob bytes at revision:path)",
+    "adaptations": [
+      "Public core API; safe standalone answer and primitive guards; runtime reexport"
+    ]
+  },
+  "officialSDK": {
+    "package": "@typesafe-ai/sdk",
+    "version": "0.6.0",
+    "repository": "https://github.com/typesafe-ai/typesafe-sdk-js",
+    "declarationsSHA256": "e54673ef76353afcaea6f422cd80df658a7852c321ed3d5084ce4d0e063833a4",
+    "docs": "https://docs.typesafe.ai/llms.txt"
+  }
+}

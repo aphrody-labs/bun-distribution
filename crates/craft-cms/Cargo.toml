@@ -1,0 +1,24 @@
+[package]
+name = "craft-cms"
+workspace = "../.."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/aphrody-labs/craft-libs"
+description = "Pure-Rust ICC v2/v4 colour management: profile parsing and writing, transforms, rendering intents, black point compensation"
+# The FOGRA39 measurement data and the tests that read it stay in the repository.
+exclude = ["tests/data", "tests/fogra39.rs"]
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rayon = { workspace = true }
+
+[dev-dependencies]
+moxcms = { workspace = true }

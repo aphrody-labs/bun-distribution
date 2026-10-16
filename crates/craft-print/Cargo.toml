@@ -1,0 +1,38 @@
+[package]
+name = "craft-print"
+workspace = "../.."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/aphrody-labs/craft-libs"
+description = "System PDF print spooler for the Craft apps: CUPS and Windows"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+
+[target.'cfg(windows)'.dependencies]
+# Printing without starting anything (storytold/pdfcraft#1107): the printer list (EnumPrinters)
+# and the job (Windows.Data.Pdf drawn with Direct2D into the XPS print API, options as a
+# PrintTicket) are safe wrappers over Win32 and WinRT (BSD-3-Clause). Its default `pdfium`
+# feature downloads PDFium at build time and is off. The maintained BSD-3-Clause fork
+# preserves terminal failures/cancellation and bounds the completion notification wait.
+# Pinned to an immutable revision; review before bumping.
+winprint = { workspace = true }
+# GetDefaultPrinter (MIT).
+winsafe = { workspace = true, features = ["winspool"] }
+# The job file's private folder.
+tempfile = { workspace = true }
+# Reading the PrintTicket and PrintCapabilities the driver hands back.
+roxmltree = { workspace = true }
+# Inflating the print-ready PDF's cross-reference and object streams (src/sheets.rs).
+miniz_oxide = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+roxmltree = { workspace = true }
+miniz_oxide = { workspace = true }

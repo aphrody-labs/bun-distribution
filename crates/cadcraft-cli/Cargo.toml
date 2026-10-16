@@ -1,0 +1,26 @@
+[package]
+name = "cadcraft-cli"
+description = "CADCraft command-line tool: info, convert, run scripts, export, commands, MCP server"
+workspace = "../.."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT OR Apache-2.0"
+repository = "https://source.aphrody.app/aphrody-dev/bun-crate-cadcraft-cli"
+publish = false
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+cadcraft-engine = { workspace = true }
+cadcraft-io = { workspace = true }
+cadcraft-mcp = { workspace = true }
+cadcraft-render = { workspace = true }
+serde_json = { workspace = true, features = ["float_roundtrip"] }
