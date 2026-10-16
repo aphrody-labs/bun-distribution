@@ -1,0 +1,55 @@
+{
+  "name": "@rosegriffon/types",
+  "version": "1.4.4",
+  "private": false,
+  "description": "Types métier partagés (roles, user, discord) — source unique de vérité bot/azalee/website",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./roles": "./src/roles.ts",
+    "./user": "./src/user.ts",
+    "./discord": "./src/discord.ts",
+    "./discord-hierarchie": "./src/discord-hierarchie.ts",
+    "./bot": "./src/bot.ts",
+    "./profil": "./src/profil.ts",
+    "./experience": "./src/experience.ts",
+    "./cron": "./src/cron.ts",
+    "./article": "./src/article.ts",
+    "./stats": "./src/stats.ts",
+    "./visitor": "./src/visitor.ts",
+    "./event": "./src/event.ts",
+    "./stream": "./src/stream.ts",
+    "./team": "./src/team.ts",
+    "./instagram": "./src/instagram.ts",
+    "./schemas": "./src/schemas.ts",
+    "./shop": "./src/shop.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "test": "bun test src",
+    "lint": "bun lint src",
+    "type-check": "bun check --noEmit",
+    "typecheck": "bun check --noEmit"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@rosegriffon/config": "workspace:*",
+    "@aphrody/bun-types": "workspace:*"
+  },
+  "peerDependencies": {
+    "@rosegriffon/db": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  },
+  "license": "Apache-2.0",
+  "files": [
+    "src",
+    "tsconfig.json"
+  ]
+}

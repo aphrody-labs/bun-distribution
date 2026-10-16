@@ -1,0 +1,15 @@
+[package]
+description = "PowerPC instruction disassembly for Wii analysis."
+name = "aphrody-wii-disasm"
+version = "0.1.1"
+edition.workspace = true
+publish = true
+license = "GPL-3.0-only"
+build = "build.rs"
+
+[lib]
+name = "disasm"
+path = "src/lib.rs"
+
+[build-dependencies]
+chipi-build.workspace = true

@@ -1,0 +1,41 @@
+[package]
+name = "aphrody-wii-runtime"
+version = "0.1.1"
+edition.workspace = true
+publish = true
+license = "GPL-3.0-only"
+description = "Retained Gecko Wii/GameCube interpreter and device runtime"
+build = "build.rs"
+
+[lib]
+name = "aphrody_wii_runtime"
+path = "src/lib.rs"
+
+[features]
+default = []
+hooks = []
+hooks-mut-traps = ["hooks"]
+fps-counter = []
+gx-stats = []
+rendersink-blackbox = []
+
+[build-dependencies]
+chipi-build.workspace = true
+
+[dependencies]
+aphrody-wii.workspace = true
+chapa.workspace = true
+dff = { package = "aphrody-wii-dff", path = "../aphrody-wii-dff" }
+image = { package = "aphrody-wii-image", path = "../aphrody-wii-image", default-features = false }
+disasm = { package = "aphrody-wii-disasm", path = "../aphrody-wii-disasm" }
+tracing = { version = "0.1" }
+glam = { workspace = true, features = ["bytemuck"] }
+bytemuck.workspace = true
+twox-hash.workspace = true
+crossbeam-channel.workspace = true
+multiversion.workspace = true
+rustc-hash = { workspace = true, features = ["std"] }
+smallvec.workspace = true
+crc32fast = { workspace = true, features = ["std"] }
+zerocopy = { workspace = true, features = ["derive"] }
+zstd.workspace = true

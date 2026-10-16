@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-model-view"
+description = "Frameless, transparent native 3D view of a glTF/GLB/OBJ model or Scene3d file on the desktop (Tauri + aphrody-tauri-3d); reloads live when the file changes."
+version = "1.0.0-canary"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+publish = false
+
+[[bin]]
+name = "aphrody-model-view"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+[build-dependencies]
+tauri-build = { workspace = true }
+
+[features]
+# Debug bridge for aphrody-web / aphrody-tauri-mcp (loopback, token, debug builds only).
+debug-bridge = ["aphrody-tauri-wrap/debug-bridge"]
+
+[dependencies]
+aphrody-tauri-3d = { workspace = true }
+aphrody-tauri-wrap = { workspace = true, default-features = false }
+log = { version = "0.4.28", default-features = false }
+tauri = { workspace = true }
+tauri-runtime-wry = { workspace = true }

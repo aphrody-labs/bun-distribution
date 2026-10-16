@@ -1,0 +1,29 @@
+{
+  "name": "@aphrody/nie-web",
+  "version": "1.4.4",
+  "private": false,
+  "description": "NIE web/site: wasm bindings (nie-wasm-web), engine/game loaders, build/audit/release/tools scripts of the former nie-web app, viewer assets.",
+  "license": "UNLICENSED",
+  "files": [
+    "assets",
+    "audit",
+    "build",
+    "docs",
+    "release",
+    "src",
+    "tools"
+  ],
+  "type": "module",
+  "exports": {
+    "./engine": "./src/nie-engine.ts",
+    "./game": "./src/nie-game.ts",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

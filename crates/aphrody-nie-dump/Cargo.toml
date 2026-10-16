@@ -1,0 +1,17 @@
+[package]
+name = "aphrody-nie-dump"
+description = "Minidump reader for nie.exe: re-exports aphrody_re::minidump and adds the game image base"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+# Only the generic minidump reader of aphrody-os (pure Rust, no rusqlite): `inacord` links this
+# crate, so it must not pull the rest of the RE stack.
+[dependencies]
+aphrody-os-re.workspace = true

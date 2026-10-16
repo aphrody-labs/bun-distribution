@@ -1,0 +1,61 @@
+{
+  "name": "@aphrody/iecode-web",
+  "version": "1.4.4",
+  "private": false,
+  "license": "GPL-3.0-only",
+  "files": [
+    ".gitignore",
+    "README.md",
+    "crate",
+    "src",
+    "tests",
+    "webpack.config.js",
+    "wii",
+    "pkg",
+    "LICENSE.GPL-3.0",
+    "WASM-SOURCE.md",
+    "corresponding-source.tgz"
+  ],
+  "exports": {
+    "./package.json": "./package.json",
+    "./shaders": "./src/shaders/screen.ts",
+    "./wasm/ds": "./pkg/aphrody_dust_web.js",
+    "./wasm/ds.wasm": "./pkg/aphrody_dust_web_bg.wasm",
+    "./wasm/wii": "./wii/pkg/gecko_web.js",
+    "./wasm/wii.wasm": "./wii/pkg/gecko_web_bg.wasm"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "watch": "bun run build:wasm && webpack -w",
+    "build": "bun run build:wasm && webpack",
+    "start": "bun run build:wasm && webpack serve",
+    "build:wii": "bun ../../scripts/iecode/build/build-emulator-web.ts",
+    "build:ds": "bun ../../scripts/iecode/build/build-emulator-web.ts --ds",
+    "build:wasm": "bun run build:ds && bun run build:wii",
+    "typecheck": "bun check --noEmit -p src/ui/tsconfig.json && bun check --noEmit -p src/emu/tsconfig.json && bun check --noEmit -p src/renderer_3d/tsconfig.json"
+  },
+  "devDependencies": {
+    "@fortawesome/fontawesome-free": "catalog:",
+    "@typescript/typescript6": "catalog:",
+    "clean-webpack-plugin": "catalog:",
+    "copy-webpack-plugin": "catalog:",
+    "css-loader": "catalog:",
+    "css-minimizer-webpack-plugin": "catalog:",
+    "fork-ts-checker-webpack-plugin": "catalog:",
+    "less": "catalog:",
+    "less-loader": "catalog:",
+    "mini-css-extract-plugin": "catalog:",
+    "raw-loader": "catalog:",
+    "ts-loader": "catalog:",
+    "typescript": "catalog:",
+    "webpack": "catalog:",
+    "webpack-cli": "catalog:",
+    "webpack-dev-server": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

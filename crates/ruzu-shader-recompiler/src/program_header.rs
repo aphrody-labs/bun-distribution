@@ -1,0 +1,352 @@
+// SPDX-FileCopyrightText: 2025 ruzu contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+//! Port of `shader_recompiler/program_header.h`
+//!
+//! Nvidia Shader Program Header (SPH) as documented in:
+//! http://download.nvidia.com/open-gpu-doc/Shader-Program-Header/1/Shader-Program-Header.html
+
+/// Output topology for geometry shaders (from SPH).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(u32)]
+pub enum OutputTopology {
+    PointList = 1,
+    LineStrip = 6,
+    TriangleStrip = 7,
+}
+
+impl Default for OutputTopology {
+    fn default() -> Self {
+        OutputTopology::PointList
+    }
+}
+
+/// Pixel interpolation map type.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(u8)]
+pub enum PixelImap {
+    Unused = 0,
+    Constant = 1,
+    Perspective = 2,
+    ScreenLinear = 3,
+}
+
+impl Default for PixelImap {
+    fn default() -> Self {
+        PixelImap::Unused
+    }
+}
+
+impl PixelImap {
+    pub fn from_u8(val: u8) -> Self {
+        match val & 0x3 {
+            0 => PixelImap::Unused,
+            1 => PixelImap::Constant,
+            2 => PixelImap::Perspective,
+            3 => PixelImap::ScreenLinear,
+            _ => unreachable!(),
+        }
+    }
+}
+
+/// Shader Program Header.
+///
+/// This is a 0x50 byte structure at the start of every shader binary.
+/// Represented as raw bytes with accessor methods rather than bitfields
+/// since Rust does not have native bitfield support.
+#[derive(Clone)]
+#[repr(C)]
+pub struct ProgramHeader {
+    pub raw: [u32; 20], // 0x50 bytes = 20 u32s
+}
+
+// Verify size matches upstream static_assert(sizeof(ProgramHeader) == 0x50)
+const _: () = assert!(std::mem::size_of::<ProgramHeader>() == 0x50);
+
+impl Default for ProgramHeader {
+    fn default() -> Self {
+        Self { raw: [0u32; 20] }
+    }
+}
+
+impl std::fmt::Debug for ProgramHeader {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ProgramHeader")
+            .field("sph_type", &self.sph_type())
+            .field("version", &self.version())
+            .field("shader_type", &self.shader_type())
+            .field("mrt_enable", &self.mrt_enable())
+            .field("kills_pixels", &self.kills_pixels())
+            .field("does_global_store", &self.does_global_store())
+            .field("geometry_passthrough", &self.geometry_passthrough())
+            .finish()
+    }
+}
+
+impl ProgramHeader {
+    fn vtg_byte(&self, offset: usize) -> u8 {
+        debug_assert!(offset < 0x3c);
+        let absolute = 0x14 + offset;
+        ((self.raw[absolute / 4] >> ((absolute % 4) * 8)) & 0xff) as u8
+    }
+
+    fn vtg_u16(&self, offset: usize) -> u16 {
+        u16::from_le_bytes([self.vtg_byte(offset), self.vtg_byte(offset + 1)])
+    }
+
+    // ---- common0 (raw[0]) ----
+    pub fn sph_type(&self) -> u32 {
+        self.raw[0] & 0x1F
+    }
+    pub fn version(&self) -> u32 {
+        (self.raw[0] >> 5) & 0x1F
+    }
+    pub fn shader_type(&self) -> u32 {
+        (self.raw[0] >> 10) & 0xF
+    }
+    pub fn mrt_enable(&self) -> bool {
+        (self.raw[0] >> 14) & 1 != 0
+    }
+    pub fn kills_pixels(&self) -> bool {
+        (self.raw[0] >> 15) & 1 != 0
+    }
+    pub fn does_global_store(&self) -> bool {
+        (self.raw[0] >> 16) & 1 != 0
+    }
+    pub fn sass_version(&self) -> u32 {
+        (self.raw[0] >> 17) & 0xF
+    }
+    pub fn geometry_passthrough(&self) -> bool {
+        (self.raw[0] >> 24) & 1 != 0
+    }
+    pub fn does_load_or_store(&self) -> bool {
+        (self.raw[0] >> 26) & 1 != 0
+    }
+    pub fn does_fp64(&self) -> bool {
+        (self.raw[0] >> 27) & 1 != 0
+    }
+    pub fn stream_out_mask(&self) -> u32 {
+        (self.raw[0] >> 28) & 0xF
+    }
+
+    // ---- common1 (raw[1]) ----
+    pub fn shader_local_memory_low_size(&self) -> u32 {
+        self.raw[1] & 0x00FF_FFFF
+    }
+    pub fn per_patch_attribute_count(&self) -> u32 {
+        (self.raw[1] >> 24) & 0xFF
+    }
+
+    // ---- common2 (raw[2]) ----
+    pub fn shader_local_memory_high_size(&self) -> u32 {
+        self.raw[2] & 0x00FF_FFFF
+    }
+    pub fn threads_per_input_primitive(&self) -> u32 {
+        (self.raw[2] >> 24) & 0xFF
+    }
+
+    // ---- common3 (raw[3]) ----
+    pub fn shader_local_memory_crs_size(&self) -> u32 {
+        self.raw[3] & 0x00FF_FFFF
+    }
+    pub fn output_topology(&self) -> OutputTopology {
+        match (self.raw[3] >> 24) & 0xF {
+            1 => OutputTopology::PointList,
+            6 => OutputTopology::LineStrip,
+            7 => OutputTopology::TriangleStrip,
+            _ => OutputTopology::PointList,
+        }
+    }
+
+    // ---- common4 (raw[4]) ----
+    pub fn max_output_vertices(&self) -> u32 {
+        self.raw[4] & 0xFFF
+    }
+    pub fn store_req_start(&self) -> u32 {
+        (self.raw[4] >> 12) & 0xFF
+    }
+    pub fn store_req_end(&self) -> u32 {
+        (self.raw[4] >> 24) & 0xFF
+    }
+
+    /// Total local memory size (combined low and high).
+    pub fn local_memory_size(&self) -> u64 {
+        self.shader_local_memory_low_size() as u64
+            | ((self.shader_local_memory_high_size() as u64) << 24)
+    }
+
+    // ---- VTG (vertex/tessellation/geometry) imap/omap accessors ----
+    // Offsets within raw[] for VTG section (starts at raw[5]):
+    //   raw[5..7]  = ImapSystemValuesA (3 bytes) + imap_systemb (1 byte)
+    //   raw[8..11] = imap_generic_vector (16 bytes)
+    //   raw[12]    = ImapColor (2 bytes) + clip_distances etc (2 bytes)
+    //   etc.
+
+    /// Get imap_systemb raw byte for VTG shaders.
+    pub fn vtg_imap_systemb(&self) -> u8 {
+        self.vtg_byte(3)
+    }
+
+    pub fn vtg_imap_systemc(&self) -> u16 {
+        self.vtg_u16(22)
+    }
+
+    /// Get the input generic vector bytes (16 bytes starting at offset 0x18).
+    pub fn vtg_imap_generic_vector(&self) -> [u8; 16] {
+        let mut result = [0u8; 16];
+        for (index, byte) in result.iter_mut().enumerate() {
+            *byte = self.vtg_byte(4 + index);
+        }
+        result
+    }
+
+    /// Check if an input generic attribute component is active (VTG).
+    pub fn vtg_input_generic(&self, index: usize) -> [bool; 4] {
+        let vec = self.vtg_imap_generic_vector();
+        let data = vec[index >> 1] >> ((index % 2) * 4);
+        [
+            (data & 1) != 0,
+            (data & 2) != 0,
+            (data & 4) != 0,
+            (data & 8) != 0,
+        ]
+    }
+
+    /// Get omap_generic_vector bytes (16 bytes).
+    pub fn vtg_omap_generic_vector(&self) -> [u8; 16] {
+        let mut result = [0u8; 16];
+        for (index, byte) in result.iter_mut().enumerate() {
+            *byte = self.vtg_byte(34 + index);
+        }
+        result
+    }
+
+    pub fn vtg_omap_systemb(&self) -> u8 {
+        self.vtg_byte(33)
+    }
+
+    pub fn vtg_omap_systemc(&self) -> u16 {
+        self.vtg_u16(52)
+    }
+
+    /// Check if an output generic attribute component is active (VTG).
+    pub fn vtg_output_generic(&self, index: usize) -> [bool; 4] {
+        let vec = self.vtg_omap_generic_vector();
+        let data = vec[index >> 1] >> ((index % 2) * 4);
+        [
+            (data & 1) != 0,
+            (data & 2) != 0,
+            (data & 4) != 0,
+            (data & 8) != 0,
+        ]
+    }
+
+    // ---- PS (pixel/fragment) accessors ----
+
+    /// Get the pixel omap target bitmask.
+    pub fn ps_omap_target(&self) -> u32 {
+        // PS omap is at a specific offset within the union
+        self.raw[18]
+    }
+
+    /// Check if the given render target has output components enabled.
+    pub fn ps_enabled_output_components(&self, rt: u32) -> [bool; 4] {
+        let bits = self.ps_omap_target() >> (rt * 4);
+        [
+            (bits & 1) != 0,
+            (bits & 2) != 0,
+            (bits & 4) != 0,
+            (bits & 8) != 0,
+        ]
+    }
+
+    /// Check if a render target has any output components.
+    pub fn ps_has_output_components(&self, rt: u32) -> bool {
+        let bits = self.ps_omap_target() >> (rt * 4);
+        (bits & 0xf) != 0
+    }
+
+    /// Get the PS generic input interpolation map for one generic attribute.
+    ///
+    /// Mirrors upstream `ProgramHeader::ps.GenericInputMap(attribute)`.
+    /// In the PS union, `imap_generic_vector[32]` starts immediately after
+    /// `ImapSystemValuesA` + `imap_systemb`, i.e. at raw word 6.
+    pub fn ps_generic_input_map(&self, attribute: u32) -> [PixelImap; 4] {
+        debug_assert!(attribute < 32);
+        let word = self.raw[6 + (attribute as usize / 4)];
+        let vector = ((word >> ((attribute % 4) * 8)) & 0xff) as u8;
+        [
+            PixelImap::from_u8(vector),
+            PixelImap::from_u8(vector >> 2),
+            PixelImap::from_u8(vector >> 4),
+            PixelImap::from_u8(vector >> 6),
+        ]
+    }
+
+    /// Whether a PS generic input vector has any active component.
+    pub fn ps_is_generic_vector_active(&self, attribute: u32) -> bool {
+        debug_assert!(attribute < 32);
+        let word = self.raw[6 + (attribute as usize / 4)];
+        ((word >> ((attribute % 4) * 8)) & 0xff) != 0
+    }
+
+    /// Get the PS omap sample_mask bit.
+    pub fn ps_omap_sample_mask(&self) -> bool {
+        self.raw[19] & 1 != 0
+    }
+
+    /// Get the PS omap depth bit.
+    pub fn ps_omap_depth(&self) -> bool {
+        (self.raw[19] >> 1) & 1 != 0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{PixelImap, ProgramHeader};
+
+    #[test]
+    fn ps_generic_input_map_decodes_one_byte_per_attribute() {
+        let mut sph = ProgramHeader::default();
+        sph.raw[6] = 0b11_10_01_00 | (0b10_10_10_10 << 8);
+
+        assert_eq!(
+            sph.ps_generic_input_map(0),
+            [
+                PixelImap::Unused,
+                PixelImap::Constant,
+                PixelImap::Perspective,
+                PixelImap::ScreenLinear,
+            ]
+        );
+        assert_eq!(
+            sph.ps_generic_input_map(1),
+            [
+                PixelImap::Perspective,
+                PixelImap::Perspective,
+                PixelImap::Perspective,
+                PixelImap::Perspective,
+            ]
+        );
+        assert!(sph.ps_is_generic_vector_active(0));
+        assert!(sph.ps_is_generic_vector_active(1));
+        assert!(!sph.ps_is_generic_vector_active(2));
+    }
+
+    #[test]
+    fn vtg_accessors_decode_upstream_byte_offsets() {
+        let mut sph = ProgramHeader::default();
+        sph.raw[5] = 0xaa << 24;
+        sph.raw[6] = 0b1010;
+        sph.raw[10] = 0x55aa << 16;
+        sph.raw[13] = (0xbb << 8) | (0b0101 << 16);
+        sph.raw[18] = 0xaa55;
+
+        assert_eq!(sph.vtg_imap_systemb(), 0xaa);
+        assert_eq!(sph.vtg_imap_systemc(), 0x55aa);
+        assert_eq!(sph.vtg_omap_systemb(), 0xbb);
+        assert_eq!(sph.vtg_omap_systemc(), 0xaa55);
+        assert_eq!(sph.vtg_input_generic(0), [false, true, false, true]);
+        assert_eq!(sph.vtg_output_generic(0), [true, false, true, false]);
+    }
+}

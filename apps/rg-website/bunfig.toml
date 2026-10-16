@@ -1,0 +1,4 @@
+# Tests website : globals DOM (document/window) via happy-dom (cf. https://bun.com/docs/test/dom).
+# Le preload happydom.ts vit a cote de ce bunfig.
+[test]
+preload = ["./happydom.ts"]

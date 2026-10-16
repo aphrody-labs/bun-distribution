@@ -1,0 +1,54 @@
+{
+  "name": "@rosegriffon/cron",
+  "version": "1.4.4",
+  "private": false,
+  "description": "Daemon de tâches planifiées (cron) pour la maintenance DB, CDN et API",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "test": "bun test src",
+    "start": "bun src/index.ts",
+    "qa:website": "bun src/index.ts --run website:qa",
+    "build": "bun build src/index.ts --compile --minify --sourcemap --bytecode --format esm --outfile dist/rg-cron",
+    "type-check": "bun check -p tsconfig.typecheck.json --noEmit",
+    "lint": "bun lint -c ../rg-config/oxlintrc.json src",
+    "typecheck": "bun check -p tsconfig.typecheck.json --noEmit"
+  },
+  "dependencies": {
+    "@aphrody/agent-browser": "catalog:",
+    "@aphrody/paths": "catalog:",
+    "@aphrody/x": "catalog:",
+    "@asteasolutions/zod-to-openapi": "catalog:",
+    "@rosegriffon/assets": "workspace:*",
+    "@rosegriffon/auth": "workspace:*",
+    "@rosegriffon/db": "workspace:*",
+    "@rosegriffon/discord-sync": "workspace:*",
+    "@rosegriffon/inagle": "workspace:*",
+    "@rosegriffon/types": "workspace:*",
+    "cheerio": "catalog:",
+    "discord.js": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  },
+  "license": "Apache-2.0",
+  "files": [
+    ".npmignore",
+    "src",
+    "tsconfig.json",
+    "tsconfig.typecheck.json",
+    "types"
+  ]
+}

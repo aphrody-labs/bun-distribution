@@ -1,0 +1,1609 @@
+use std::{
+    backtrace::Backtrace,
+    collections::{BTreeMap, HashMap, btree_map, hash_map},
+    fmt::Display,
+    io::{self, BufWriter, Write},
+    num::{NonZeroUsize, ParseIntError},
+    ops::Range,
+    path::Path,
+    slice,
+};
+
+use crate::crypto::dsprot;
+use serde::{Deserialize, Serialize};
+use snafu::{Snafu, ensure};
+
+use super::{ParseContext, config::Config, module::ModuleKind, split_attributes};
+use crate::{
+    decomp::analysis::{
+        functions::Function,
+        jump_table::{JumpTable, JumpTableKind},
+    },
+    decomp::config::{CommentedLine, Comments, iter_comma_separated, iter_words},
+    decomp::util::{
+        io::{FileError, create_file},
+        parse::parse_u32,
+    },
+};
+
+pub struct SymbolMaps {
+    symbol_maps: BTreeMap<ModuleKind, SymbolMap>,
+}
+
+#[derive(Debug, Snafu)]
+pub enum SymbolMapsParseError {
+    #[snafu(transparent)]
+    SymbolMapParse { source: SymbolMapParseError },
+}
+
+#[derive(Debug, Snafu)]
+pub enum SymbolMapsWriteError {
+    #[snafu(display("Symbol map not found for {module}:\n{backtrace}"))]
+    SymbolMapNotFound { module: ModuleKind, backtrace: Backtrace },
+    #[snafu(transparent)]
+    SymbolMapWrite { source: SymbolMapWriteError },
+}
+
+impl SymbolMaps {
+    pub fn new() -> Self {
+        Self { symbol_maps: BTreeMap::new() }
+    }
+
+    pub fn get(&self, module: ModuleKind) -> Option<&SymbolMap> {
+        self.symbol_maps.get(&module)
+    }
+
+    pub fn get_mut(&mut self, module: ModuleKind) -> &mut SymbolMap {
+        self.symbol_maps.entry(module).or_insert_with(SymbolMap::new)
+    }
+
+    pub fn from_config<P: AsRef<Path>>(
+        config_path: P,
+        config: &Config,
+    ) -> Result<Self, SymbolMapsParseError> {
+        let config_path = config_path.as_ref();
+
+        let mut symbol_maps = SymbolMaps::new();
+        symbol_maps
+            .get_mut(ModuleKind::Arm9)
+            .load(config_path.join(&config.main_module.symbols))?;
+        for autoload in &config.autoloads {
+            symbol_maps
+                .get_mut(ModuleKind::Autoload(autoload.kind))
+                .load(config_path.join(&autoload.module.symbols))?;
+        }
+        for overlay in &config.overlays {
+            symbol_maps
+                .get_mut(ModuleKind::Overlay(overlay.id))
+                .load(config_path.join(&overlay.module.symbols))?;
+        }
+
+        Ok(symbol_maps)
+    }
+
+    pub fn to_files<P: AsRef<Path>>(
+        &self,
+        config: &Config,
+        config_path: P,
+    ) -> Result<(), SymbolMapsWriteError> {
+        let config_path = config_path.as_ref();
+        self.get(ModuleKind::Arm9)
+            .ok_or_else(|| SymbolMapNotFoundSnafu { module: ModuleKind::Arm9 }.build())?
+            .to_file(config_path.join(&config.main_module.symbols))?;
+        for autoload in &config.autoloads {
+            let module = ModuleKind::Autoload(autoload.kind);
+            self.get(module)
+                .ok_or_else(|| SymbolMapNotFoundSnafu { module }.build())?
+                .to_file(config_path.join(&autoload.module.symbols))?;
+        }
+        for overlay in &config.overlays {
+            let module = ModuleKind::Overlay(overlay.id);
+            self.get(module)
+                .ok_or_else(|| SymbolMapNotFoundSnafu { module }.build())?
+                .to_file(config_path.join(&overlay.module.symbols))?;
+        }
+
+        Ok(())
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (ModuleKind, &'_ SymbolMap)> {
+        self.symbol_maps.iter().map(|(module, symbol_map)| (*module, symbol_map))
+    }
+
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (ModuleKind, &'_ mut SymbolMap)> {
+        self.symbol_maps.iter_mut().map(|(module, symbol_map)| (*module, symbol_map))
+    }
+
+    pub fn find_symbols_by_name(
+        &self,
+        name: &str,
+    ) -> impl Iterator<Item = (ModuleKind, SymbolId, &Symbol)> {
+        self.symbol_maps.iter().flat_map(|(module, symbol_map)| {
+            symbol_map
+                .for_name(name)
+                .into_iter()
+                .flat_map(move |symbols| symbols.map(|(id, symbol)| (*module, id, symbol)))
+        })
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct SymbolId(NonZeroUsize);
+
+#[deprecated(note = "use SymbolId instead")]
+pub type SymbolIndex = SymbolId;
+
+pub struct SymbolMap {
+    symbols: SymbolVec,
+    symbols_by_address: BTreeMap<u32, Vec<SymbolId>>,
+    symbols_by_name: HashMap<String, Vec<SymbolId>>,
+}
+
+#[derive(Debug, Snafu)]
+pub enum SymbolMapParseError {
+    #[snafu(transparent)]
+    File { source: FileError },
+    #[snafu(transparent)]
+    Io { source: io::Error },
+    #[snafu(transparent)]
+    SymbolParse { source: SymbolParseError },
+}
+
+#[derive(Debug, Snafu)]
+pub enum SymbolMapWriteError {
+    #[snafu(transparent)]
+    File { source: FileError },
+    #[snafu(transparent)]
+    Io { source: io::Error },
+}
+
+#[derive(Debug, Snafu)]
+pub enum SymbolMapError {
+    #[snafu(display("multiple symbols at {address:#010x}: {name}, {other_name}:\n{backtrace}"))]
+    MultipleSymbols { address: u32, name: String, other_name: String, backtrace: Backtrace },
+    #[snafu(display(
+        "multiple symbols with name '{name}': {old_address:#010x}, {new_address:#010x}:\n{backtrace}"
+    ))]
+    DuplicateName { name: String, new_address: u32, old_address: u32, backtrace: Backtrace },
+    #[snafu(display("no symbol at {address:#010x} to rename to '{new_name}':\n{backtrace}"))]
+    NoSymbolToRename { address: u32, new_name: String, backtrace: Backtrace },
+    #[snafu(display(
+        "there must be exactly one symbol at {address:#010x} to rename to '{new_name}':\n{backtrace}"
+    ))]
+    RenameMultiple { address: u32, new_name: String, backtrace: Backtrace },
+}
+
+impl SymbolMap {
+    pub fn new() -> Self {
+        Self::from_symbols(vec![])
+    }
+
+    pub fn from_symbols(symbols: Vec<Symbol>) -> Self {
+        let mut symbols_by_address = BTreeMap::<u32, Vec<_>>::new();
+        let mut symbols_by_name = HashMap::<String, Vec<_>>::new();
+
+        let symbols = SymbolVec::from_symbols(symbols);
+
+        for (id, symbol) in symbols.iter() {
+            symbols_by_address.entry(symbol.addr).or_default().push(*id);
+            symbols_by_name.entry(symbol.name.clone()).or_default().push(*id);
+        }
+
+        Self { symbols, symbols_by_address, symbols_by_name }
+    }
+
+    pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self, SymbolMapParseError> {
+        let mut symbol_map = Self::new();
+        symbol_map.load(path)?;
+        Ok(symbol_map)
+    }
+
+    pub fn load<P: AsRef<Path>>(&mut self, path: P) -> Result<(), SymbolMapParseError> {
+        let path = path.as_ref();
+        let mut context = ParseContext { file_path: path.to_str().unwrap().to_string(), row: 0 };
+
+        let lines = CommentedLine::read(path)?;
+        for line in lines {
+            let line = line?;
+            context.row = line.row;
+
+            let Some(symbol) = Symbol::parse(line, &context)? else { continue };
+            self.add(symbol);
+        }
+        Ok(())
+    }
+
+    pub fn to_file<P: AsRef<Path>>(&self, path: P) -> Result<(), SymbolMapWriteError> {
+        let path = path.as_ref();
+
+        let file = create_file(path)?;
+        let mut writer = BufWriter::new(file);
+
+        for ids in self.symbols_by_address.values() {
+            for &id in ids {
+                let symbol = self.get(id).unwrap();
+                if symbol.should_write() {
+                    writeln!(writer, "{symbol}")?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn for_address(
+        &self,
+        address: u32,
+    ) -> Option<impl DoubleEndedIterator<Item = (SymbolId, &Symbol)> + ExactSizeIterator> {
+        Some(self.symbols_by_address.get(&address)?.iter().map(|&id| (id, self.get(id).unwrap())))
+    }
+
+    pub fn by_address(&self, address: u32) -> Result<Option<(SymbolId, &Symbol)>, SymbolMapError> {
+        let Some(mut symbols) = self.for_address(address) else {
+            return Ok(None);
+        };
+        let (id, symbol) = symbols.next().unwrap();
+        if let Some((_, other)) = symbols.next() {
+            return MultipleSymbolsSnafu {
+                address,
+                name: symbol.name.clone(),
+                other_name: other.name.clone(),
+            }
+            .fail();
+        }
+        Ok(Some((id, symbol)))
+    }
+
+    pub fn first_at_address(&self, address: u32) -> Option<(SymbolId, &Symbol)> {
+        self.for_address(address)?.next()
+    }
+
+    pub fn for_name(
+        &self,
+        name: &str,
+    ) -> Option<impl DoubleEndedIterator<Item = (SymbolId, &Symbol)> + ExactSizeIterator> {
+        Some(self.symbols_by_name.get(name)?.iter().map(|&id| (id, self.get(id).unwrap())))
+    }
+
+    pub fn by_name(&self, name: &str) -> Result<Option<(SymbolId, &Symbol)>, SymbolMapError> {
+        let Some(mut symbols) = self.for_name(name) else {
+            return Ok(None);
+        };
+        let (id, symbol) = symbols.next().unwrap();
+        if let Some((_, other)) = symbols.next() {
+            return DuplicateNameSnafu { name, new_address: symbol.addr, old_address: other.addr }
+                .fail();
+        }
+        Ok(Some((id, symbol)))
+    }
+
+    pub fn iter_by_address(&self, range: Range<u32>) -> SymbolIterator<'_> {
+        SymbolIterator {
+            symbols_by_address: self.symbols_by_address.range(range),
+            ids: [].iter(),
+            symbols: &self.symbols,
+        }
+    }
+
+    /// Returns the first symbol before the given address, or multiple symbols if they are at the same address.
+    pub fn first_symbol_before(&self, max_address: u32) -> Option<Vec<(SymbolId, &Symbol)>> {
+        self.symbols_by_address.range(0..=max_address).rev().find_map(|(_, ids)| {
+            let symbols = ids
+                .iter()
+                .filter_map(|&id| {
+                    let symbol = self.get(id).unwrap();
+                    symbol.is_external().then_some((id, symbol))
+                })
+                .collect::<Vec<_>>();
+            (!symbols.is_empty()).then_some(symbols)
+        })
+    }
+
+    /// Returns the first symbol after the given address, or multiple symbols if they are at the same address.
+    pub fn first_symbol_after(&self, min_address: u32) -> Option<Vec<(SymbolId, &Symbol)>> {
+        self.symbols_by_address.range(min_address + 1..).find_map(|(_, ids)| {
+            let symbols = ids
+                .iter()
+                .filter_map(|&id| {
+                    let symbol = self.get(id).unwrap();
+                    symbol.is_external().then_some((id, symbol))
+                })
+                .collect::<Vec<_>>();
+            (!symbols.is_empty()).then_some(symbols)
+        })
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &'_ Symbol> {
+        self.symbols_by_address.values().flat_map(|ids| ids.iter()).map(|&id| self.get(id).unwrap())
+    }
+
+    #[deprecated(note = "use ids_by_address instead")]
+    pub fn indices_by_address(&self) -> impl Iterator<Item = &SymbolId> {
+        self.ids_by_address()
+    }
+
+    pub fn ids_by_address(&self) -> impl Iterator<Item = &SymbolId> {
+        self.symbols_by_address.values().flat_map(|ids| ids.iter())
+    }
+
+    pub fn get(&self, id: SymbolId) -> Option<&Symbol> {
+        self.symbols.get(id)
+    }
+
+    pub fn get_mut(&mut self, id: SymbolId) -> Option<&mut Symbol> {
+        self.symbols.get_mut(id)
+    }
+
+    /// Returns the symbol containing the given address and the symbol's size.
+    pub fn get_symbol_containing(
+        &self,
+        addr: u32,
+        section_end: u32,
+    ) -> Result<Option<(&Symbol, u32)>, SymbolMapError> {
+        let Some(symbols) = self.first_symbol_before(addr) else {
+            return Ok(None);
+        };
+        let (_, symbol) = symbols.first().unwrap();
+        let Some(symbols) = self.first_symbol_after(symbol.addr) else {
+            return Ok(Some((symbol, symbol.size(section_end))));
+        };
+        let next_symbol = symbols.first().unwrap().1;
+
+        Ok(Some((symbol, symbol.size(next_symbol.addr.min(section_end)))))
+    }
+
+    pub fn add(&mut self, symbol: Symbol) -> (SymbolId, &Symbol) {
+        let (id, symbol) = self.symbols.add(symbol);
+        self.symbols_by_address.entry(symbol.addr).or_default().push(id);
+        self.symbols_by_name.entry(symbol.name.clone()).or_default().push(id);
+        (id, symbol)
+    }
+
+    pub fn add_if_new_address(
+        &mut self,
+        symbol: Symbol,
+    ) -> Result<(SymbolId, &Symbol), SymbolMapError> {
+        if self.symbols_by_address.contains_key(&symbol.addr) {
+            Ok(self.by_address(symbol.addr)?.unwrap())
+        } else {
+            Ok(self.add(symbol))
+        }
+    }
+
+    pub fn get_function(
+        &self,
+        address: u32,
+    ) -> Result<Option<(SymFunction, &Symbol)>, SymbolMapError> {
+        let Some(symbols) = self.for_address(address & !1) else {
+            return Ok(None);
+        };
+        let mut symbols = symbols.filter(|(_, sym)| matches!(sym.kind, SymbolKind::Function(_)));
+        let Some((_, symbol)) = symbols.next() else {
+            return Ok(None);
+        };
+        if let Some((_, other)) = symbols.next() {
+            return MultipleSymbolsSnafu {
+                address,
+                name: symbol.name.clone(),
+                other_name: other.name.clone(),
+            }
+            .fail();
+        }
+
+        Ok(match &symbol.kind {
+            SymbolKind::Function(function) => Some((function.clone(), symbol)),
+            _ => None,
+        })
+    }
+
+    pub fn get_function_mut(
+        &mut self,
+        address: u32,
+    ) -> Result<Option<&mut Symbol>, SymbolMapError> {
+        let Some(symbols) = self.symbols_by_address.get_mut(&(address & !1)) else {
+            return Ok(None);
+        };
+
+        let mut symbols = symbols
+            .iter()
+            .filter(|&&id| matches!(self.symbols.get(id).unwrap().kind, SymbolKind::Function(_)));
+        let Some(&id) = symbols.next() else {
+            return Ok(None);
+        };
+        if let Some(&other_id) = symbols.next() {
+            let symbol = self.get(id).unwrap();
+            let other = self.get(other_id).unwrap();
+            return MultipleSymbolsSnafu {
+                address,
+                name: symbol.name.clone(),
+                other_name: other.name.clone(),
+            }
+            .fail();
+        }
+        let symbol = self.get_mut(id).unwrap();
+
+        Ok(Some(symbol))
+    }
+
+    pub fn get_function_containing(&self, addr: u32) -> Option<(SymFunction, &Symbol)> {
+        self.symbols_by_address
+            .range(0..=addr)
+            .rev()
+            .filter_map(|(_, ids)| {
+                let &id = ids.first()?;
+                let symbol = self.get(id).unwrap();
+                if let SymbolKind::Function(func) = &symbol.kind {
+                    Some((func.clone(), symbol))
+                } else {
+                    None
+                }
+            })
+            .take_while(|(func, sym)| func.contains(sym, addr))
+            .next()
+    }
+
+    pub fn functions(&self) -> impl Iterator<Item = (SymFunction, &'_ Symbol)> {
+        FunctionSymbolIterator {
+            symbols_by_address: self.symbols_by_address.values(),
+            ids: [].iter(),
+            symbols: &self.symbols,
+        }
+    }
+
+    pub fn clone_functions(&self) -> Vec<(SymFunction, Symbol)> {
+        self.functions().map(|(function, symbol)| (function, symbol.clone())).collect()
+    }
+
+    pub fn data_symbols(&self) -> impl Iterator<Item = (SymData, &'_ Symbol)> {
+        self.symbols.iter().filter_map(|(_, symbol)| {
+            if let SymbolKind::Data(sym_data) = symbol.kind {
+                Some((sym_data, symbol))
+            } else {
+                None
+            }
+        })
+    }
+
+    pub fn bss_symbols(&self) -> impl Iterator<Item = (SymBss, &'_ Symbol)> {
+        self.symbols.iter().filter_map(|(_, symbol)| {
+            if let SymbolKind::Bss(sym_bss) = symbol.kind { Some((sym_bss, symbol)) } else { None }
+        })
+    }
+
+    pub fn label_name(addr: u32) -> String {
+        format!(".L_{addr:08x}")
+    }
+
+    pub fn add_label(
+        &mut self,
+        addr: u32,
+        thumb: bool,
+    ) -> Result<(SymbolId, &Symbol), SymbolMapError> {
+        let name = Self::label_name(addr);
+        self.add_if_new_address(Symbol::new_label(name, addr, thumb))
+    }
+
+    /// See [`SymLabel::external`].
+    pub fn add_external_label(
+        &mut self,
+        addr: u32,
+        thumb: bool,
+    ) -> Result<(SymbolId, &Symbol), SymbolMapError> {
+        let name = Self::label_name(addr);
+        if let Some((existing_id, _)) = self.by_address(addr)? {
+            let existing_symbol = self.get_mut(existing_id).unwrap();
+            if let SymbolKind::Label(existing_label) = &mut existing_symbol.kind {
+                existing_label.external = true;
+                Ok((existing_id, existing_symbol))
+            } else {
+                MultipleSymbolsSnafu {
+                    address: addr,
+                    name,
+                    other_name: existing_symbol.name.clone(),
+                }
+                .fail()
+            }
+        } else {
+            Ok(self.add(Symbol::new_external_label(name, addr, thumb)))
+        }
+    }
+
+    pub fn get_label(&self, addr: u32) -> Result<Option<&Symbol>, SymbolMapError> {
+        Ok(self
+            .by_address(addr)?
+            .and_then(|(_, s)| (matches!(s.kind, SymbolKind::Label { .. })).then_some(s)))
+    }
+
+    pub fn add_pool_constant(&mut self, addr: u32) -> Result<(SymbolId, &Symbol), SymbolMapError> {
+        let name = Self::label_name(addr);
+        self.add_if_new_address(Symbol::new_pool_constant(name, addr))
+    }
+
+    pub fn get_pool_constant(&self, addr: u32) -> Result<Option<&Symbol>, SymbolMapError> {
+        Ok(self
+            .by_address(addr)?
+            .and_then(|(_, s)| (s.kind == SymbolKind::PoolConstant).then_some(s)))
+    }
+
+    pub fn get_jump_table(
+        &self,
+        addr: u32,
+    ) -> Result<Option<(SymJumpTable, &Symbol)>, SymbolMapError> {
+        Ok(self.by_address(addr)?.and_then(|(_, s)| match s.kind {
+            SymbolKind::JumpTable(jump_table) => Some((jump_table, s)),
+            _ => None,
+        }))
+    }
+
+    fn make_unambiguous(&mut self, addr: u32) -> Result<(), SymbolMapError> {
+        if let Some(id) = self
+            .by_address(addr)?
+            .filter(|(_, symbol)| matches!(symbol.kind, SymbolKind::Data(_) | SymbolKind::Bss(_)))
+            .map(|(id, _)| id)
+        {
+            self.get_mut(id).unwrap().ambiguous = false;
+        }
+        Ok(())
+    }
+
+    pub fn add_function(&mut self, function: &Function) -> (SymbolId, &Symbol) {
+        self.add(Symbol::from_function(function))
+    }
+
+    pub fn add_unknown_function(
+        &mut self,
+        name: String,
+        addr: u32,
+        thumb: bool,
+    ) -> (SymbolId, &Symbol) {
+        self.add(Symbol::new_unknown_function(name, addr & !1, thumb))
+    }
+
+    pub fn add_jump_table(
+        &mut self,
+        table: &JumpTable,
+    ) -> Result<(SymbolId, &Symbol), SymbolMapError> {
+        let name = Self::label_name(table.address);
+        self.add_if_new_address(Symbol::new_jump_table(name, table.address, table.size, table.kind))
+    }
+
+    pub fn add_data(
+        &mut self,
+        name: Option<String>,
+        addr: u32,
+        data: SymData,
+    ) -> Result<(SymbolId, &Symbol), SymbolMapError> {
+        let name = name.unwrap_or_else(|| Self::label_name(addr));
+        self.make_unambiguous(addr)?;
+        self.add_if_new_address(Symbol::new_data(name, addr, data, false))
+    }
+
+    pub fn add_ambiguous_data(
+        &mut self,
+        name: Option<String>,
+        addr: u32,
+        data: SymData,
+    ) -> Result<(SymbolId, &Symbol), SymbolMapError> {
+        let name = name.unwrap_or_else(|| Self::label_name(addr));
+        self.add_if_new_address(Symbol::new_data(name, addr, data, true))
+    }
+
+    pub fn add_skip_data(
+        &mut self,
+        name: Option<String>,
+        addr: u32,
+        data: SymData,
+    ) -> Result<(SymbolId, &Symbol), SymbolMapError> {
+        let name = name.unwrap_or_else(|| Self::label_name(addr));
+        self.add_if_new_address(Symbol::new_skip_data(name, addr, data, true))
+    }
+
+    pub fn get_data(&self, addr: u32) -> Result<Option<(SymData, &Symbol)>, SymbolMapError> {
+        Ok(self.by_address(addr)?.and_then(|(_, s)| match s.kind {
+            SymbolKind::Data(data) => Some((data, s)),
+            _ => None,
+        }))
+    }
+
+    pub fn add_bss(
+        &mut self,
+        name: Option<String>,
+        addr: u32,
+        data: SymBss,
+    ) -> Result<(SymbolId, &Symbol), SymbolMapError> {
+        let name = name.unwrap_or_else(|| Self::label_name(addr));
+        self.make_unambiguous(addr)?;
+        self.add_if_new_address(Symbol::new_bss(name, addr, data, false))
+    }
+
+    pub fn add_ambiguous_bss(
+        &mut self,
+        name: Option<String>,
+        addr: u32,
+        data: SymBss,
+    ) -> Result<(SymbolId, &Symbol), SymbolMapError> {
+        let name = name.unwrap_or_else(|| Self::label_name(addr));
+        self.add_if_new_address(Symbol::new_bss(name, addr, data, true))
+    }
+
+    /// Renames a symbol at the given address to the new name.
+    ///
+    /// Returns true if the symbol was renamed, or false if it was already named the same.
+    pub fn rename_by_address(
+        &mut self,
+        address: u32,
+        new_name: &str,
+    ) -> Result<bool, SymbolMapError> {
+        let symbol_ids = self
+            .symbols_by_address
+            .get(&address)
+            .ok_or_else(|| NoSymbolToRenameSnafu { address, new_name }.build())?;
+        ensure!(symbol_ids.len() == 1, RenameMultipleSnafu { address, new_name });
+
+        let symbol_id = symbol_ids[0];
+        let name = &self.symbols.get(symbol_id).unwrap().name;
+        if name == new_name {
+            return Ok(false);
+        }
+
+        match self.symbols_by_name.entry(name.clone()) {
+            hash_map::Entry::Occupied(mut entry) => {
+                let symbol_ids = entry.get_mut();
+                if symbol_ids.len() == 1 {
+                    entry.remove();
+                } else {
+                    // Remove the to-be-renamed symbol's ID from the list of IDs of symbols with the same name
+                    let pos = symbol_ids.iter().position(|&id| id == symbol_id).unwrap();
+                    symbol_ids.remove(pos);
+                }
+            },
+            hash_map::Entry::Vacant(_) => {
+                panic!(
+                    "No symbol name entry found for '{name}' when trying to rename to '{new_name}'"
+                );
+            },
+        }
+
+        match self.symbols_by_name.entry(new_name.to_string()) {
+            hash_map::Entry::Occupied(mut entry) => {
+                entry.get_mut().push(symbol_id);
+            },
+            hash_map::Entry::Vacant(entry) => {
+                entry.insert(vec![symbol_id]);
+            },
+        }
+
+        self.get_mut(symbol_id).unwrap().name = new_name.to_string();
+
+        Ok(true)
+    }
+
+    pub fn remove(&mut self, id: SymbolId) -> Option<Symbol> {
+        let symbol = self.symbols.remove(id)?;
+
+        match self.symbols_by_address.entry(symbol.addr) {
+            btree_map::Entry::Vacant(_) => {},
+            btree_map::Entry::Occupied(mut entry) => {
+                let ids = entry.get_mut();
+                ids.retain(|&id_| id_ != id);
+                if ids.is_empty() {
+                    entry.remove();
+                }
+            },
+        }
+
+        match self.symbols_by_name.entry(symbol.name.clone()) {
+            hash_map::Entry::Vacant(_) => {},
+            hash_map::Entry::Occupied(mut entry) => {
+                let ids = entry.get_mut();
+                ids.retain(|&id_| id_ != id);
+                if ids.is_empty() {
+                    entry.remove();
+                }
+            },
+        }
+
+        Some(symbol)
+    }
+}
+
+struct SymbolVec(Vec<(SymbolId, Symbol)>);
+
+impl SymbolVec {
+    fn from_symbols(symbols: Vec<Symbol>) -> Self {
+        let symbols = symbols
+            .into_iter()
+            .enumerate()
+            .map(|(i, symbol)| (SymbolId(NonZeroUsize::MIN.saturating_add(i)), symbol))
+            .collect::<Vec<_>>();
+        Self(symbols)
+    }
+
+    fn iter(&self) -> impl Iterator<Item = &(SymbolId, Symbol)> {
+        self.0.iter()
+    }
+
+    fn index_of(&self, id: SymbolId) -> Option<usize> {
+        self.0.binary_search_by_key(&id, |(id, _)| *id).ok()
+    }
+
+    fn get(&self, id: SymbolId) -> Option<&Symbol> {
+        let index = self.index_of(id)?;
+        Some(&self.0[index].1)
+    }
+
+    fn get_mut(&mut self, id: SymbolId) -> Option<&mut Symbol> {
+        let index = self.index_of(id)?;
+        Some(&mut self.0[index].1)
+    }
+
+    fn next_id(&self) -> SymbolId {
+        if let Some((last, _)) = self.0.last() {
+            SymbolId(last.0.saturating_add(1))
+        } else {
+            SymbolId(NonZeroUsize::MIN)
+        }
+    }
+
+    fn add(&mut self, symbol: Symbol) -> (SymbolId, &Symbol) {
+        let id = self.next_id();
+        self.0.push((id, symbol));
+        (id, &self.0.last().unwrap().1)
+    }
+
+    fn remove(&mut self, id: SymbolId) -> Option<Symbol> {
+        let index = self.index_of(id)?;
+        Some(self.0.remove(index).1)
+    }
+}
+
+pub struct SymbolIterator<'a> {
+    symbols_by_address: btree_map::Range<'a, u32, Vec<SymbolId>>,
+    ids: slice::Iter<'a, SymbolId>,
+    symbols: &'a SymbolVec,
+}
+
+impl<'a> Iterator for SymbolIterator<'a> {
+    type Item = (SymbolId, &'a Symbol);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if let Some(&id) = self.ids.next() {
+                break Some((id, self.symbols.get(id).unwrap()));
+            } else if let Some((_, ids)) = self.symbols_by_address.next() {
+                self.ids = ids.iter();
+                continue;
+            }
+            break None;
+        }
+    }
+}
+
+impl DoubleEndedIterator for SymbolIterator<'_> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        loop {
+            if let Some(&id) = self.ids.next_back() {
+                break Some((id, self.symbols.get(id).unwrap()));
+            } else if let Some((_, ids)) = self.symbols_by_address.next_back() {
+                self.ids = ids.iter();
+                continue;
+            }
+            break None;
+        }
+    }
+}
+
+pub struct FunctionSymbolIterator<'a, I: Iterator<Item = &'a Vec<SymbolId>>> {
+    symbols_by_address: I, //btree_map::Values<'a, u32, Vec<SymbolId>>,
+    ids: slice::Iter<'a, SymbolId>,
+    symbols: &'a SymbolVec,
+}
+
+impl<'a, I: Iterator<Item = &'a Vec<SymbolId>>> FunctionSymbolIterator<'a, I> {
+    fn next_function(&mut self) -> Option<(SymFunction, &'a Symbol)> {
+        for &id in self.ids.by_ref() {
+            let symbol = self.symbols.get(id).unwrap();
+            if let SymbolKind::Function(function) = &symbol.kind {
+                return Some((function.clone(), symbol));
+            }
+        }
+        None
+    }
+}
+
+impl<'a, I: Iterator<Item = &'a Vec<SymbolId>>> Iterator for FunctionSymbolIterator<'a, I> {
+    type Item = (SymFunction, &'a Symbol);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(function) = self.next_function() {
+            return Some(function);
+        }
+        while let Some(ids) = self.symbols_by_address.next() {
+            self.ids = ids.iter();
+            if let Some(function) = self.next_function() {
+                return Some(function);
+            }
+        }
+        None
+    }
+}
+
+#[derive(Clone, Serialize, Debug)]
+pub struct Symbol {
+    pub name: String,
+    pub kind: SymbolKind,
+    pub addr: u32,
+    /// If true, this symbol is involved in an ambiguous external reference to one of many overlays
+    #[serde(skip_serializing_if = "is_false", default)]
+    pub ambiguous: bool,
+    /// The scope of this symbol: global, local, etc.
+    #[serde(skip_serializing_if = "SymbolScope::is_global", default)]
+    pub scope: SymbolScope,
+    /// If true, this symbol will not be delinked or written to symbols.txt
+    /// Used for symbols that are found during code analysis but whose size are accounted for by their function
+    #[serde(skip, default)]
+    pub skip: bool,
+    #[serde(skip, default)]
+    pub comments: Comments,
+}
+
+#[derive(Debug, Snafu)]
+pub enum SymbolParseError {
+    #[snafu(transparent)]
+    SymbolKindParse { source: SymbolKindParseError },
+    #[snafu(display("{context}: failed to parse address '{value}': {error}\n{backtrace}"))]
+    ParseAddress {
+        context: ParseContext,
+        value: String,
+        error: ParseIntError,
+        backtrace: Backtrace,
+    },
+    #[snafu(display(
+        "{context}: unknown symbol attribute '{key}', expected 'kind', 'addr', 'ambiguous', 'local' or 'weak':\n{backtrace}"
+    ))]
+    UnknownAttribute { context: ParseContext, key: String, backtrace: Backtrace },
+    #[snafu(display("{context}: missing '{attribute}' attribute:\n{backtrace}"))]
+    MissingAttribute { context: ParseContext, attribute: String, backtrace: Backtrace },
+    #[snafu(display("{context}: the symbol cannot be both {old} and {new}:\n{backtrace}"))]
+    DoubleScope { context: ParseContext, old: SymbolScope, new: SymbolScope, backtrace: Backtrace },
+}
+
+impl Symbol {
+    fn parse(
+        line: CommentedLine,
+        context: &ParseContext,
+    ) -> Result<Option<Self>, SymbolParseError> {
+        let mut words = iter_words(&line.text);
+        let Some(name) = words.next() else { return Ok(None) };
+
+        let mut kind = None;
+        let mut addr = None;
+        let mut ambiguous = false;
+        let mut scope = None;
+        for (key, value) in split_attributes(words, ':') {
+            match key {
+                "kind" => kind = Some(SymbolKind::parse(value, context)?),
+                "addr" => {
+                    addr = Some(
+                        parse_u32(value)
+                            .map_err(|error| ParseAddressSnafu { context, value, error }.build())?,
+                    );
+                },
+                "ambiguous" => ambiguous = true,
+                "local" => {
+                    if let Some(scope) = scope {
+                        return DoubleScopeSnafu { context, old: scope, new: SymbolScope::Local }
+                            .fail();
+                    }
+                    scope = Some(SymbolScope::Local);
+                },
+                "weak" => {
+                    if let Some(scope) = scope {
+                        return DoubleScopeSnafu { context, old: scope, new: SymbolScope::Weak }
+                            .fail();
+                    }
+                    scope = Some(SymbolScope::Weak);
+                },
+                _ => return UnknownAttributeSnafu { context, key }.fail(),
+            }
+        }
+
+        let name = name.to_string();
+        let kind =
+            kind.ok_or_else(|| MissingAttributeSnafu { context, attribute: "kind" }.build())?;
+        let addr =
+            addr.ok_or_else(|| MissingAttributeSnafu { context, attribute: "addr" }.build())?;
+        let scope = scope.unwrap_or(SymbolScope::Global);
+
+        Ok(Some(Symbol {
+            name,
+            kind,
+            addr,
+            ambiguous,
+            scope,
+            skip: false,
+            comments: line.comments,
+        }))
+    }
+
+    pub fn should_write(&self) -> bool {
+        !self.skip && self.kind.should_write()
+    }
+
+    pub fn from_function(function: &Function) -> Self {
+        Self {
+            name: function.name().to_string(),
+            kind: SymbolKind::Function(SymFunction {
+                mode: InstructionMode::from_thumb(function.is_thumb()),
+                size: function.size(),
+                unknown: false,
+                dsprot: if let encryption = function.dsprot_encryption()
+                    && encryption != dsprot::EncryptionType::None
+                {
+                    Some(DsProtFunctionData { encryption, code_size: function.code_size() })
+                } else {
+                    None
+                },
+                dsprot_ranges: function.dsprot_encrypted_ranges().to_vec(),
+            }),
+            addr: function.first_instruction_address() & !1,
+            ambiguous: false,
+            scope: SymbolScope::Global,
+            skip: false,
+            comments: Comments::new(),
+        }
+    }
+
+    pub fn new_unknown_function(name: String, addr: u32, thumb: bool) -> Self {
+        Self {
+            name,
+            kind: SymbolKind::Function(SymFunction {
+                mode: InstructionMode::from_thumb(thumb),
+                size: 0,
+                unknown: true,
+                dsprot: None,
+                dsprot_ranges: Vec::new(),
+            }),
+            addr,
+            ambiguous: false,
+            scope: SymbolScope::Global,
+            skip: false,
+            comments: Comments::new(),
+        }
+    }
+
+    pub fn new_label(name: String, addr: u32, thumb: bool) -> Self {
+        Self {
+            name,
+            kind: SymbolKind::Label(SymLabel {
+                external: false,
+                mode: InstructionMode::from_thumb(thumb),
+            }),
+            addr,
+            ambiguous: false,
+            scope: SymbolScope::Local,
+            skip: false,
+            comments: Comments::new(),
+        }
+    }
+
+    pub fn new_external_label(name: String, addr: u32, thumb: bool) -> Self {
+        Self {
+            name,
+            kind: SymbolKind::Label(SymLabel {
+                external: true,
+                mode: InstructionMode::from_thumb(thumb),
+            }),
+            addr,
+            ambiguous: false,
+            scope: SymbolScope::Global,
+            skip: false,
+            comments: Comments::new(),
+        }
+    }
+
+    pub fn new_pool_constant(name: String, addr: u32) -> Self {
+        Self {
+            name,
+            kind: SymbolKind::PoolConstant,
+            addr,
+            ambiguous: false,
+            scope: SymbolScope::Local,
+            skip: false,
+            comments: Comments::new(),
+        }
+    }
+
+    pub fn new_jump_table(name: String, addr: u32, size: u32, kind: JumpTableKind) -> Self {
+        Self {
+            name,
+            kind: SymbolKind::JumpTable(SymJumpTable { size, kind }),
+            addr,
+            ambiguous: false,
+            scope: SymbolScope::Local,
+            skip: false,
+            comments: Comments::new(),
+        }
+    }
+
+    pub fn new_data(name: String, addr: u32, data: SymData, ambiguous: bool) -> Symbol {
+        Self {
+            name,
+            kind: SymbolKind::Data(data),
+            addr,
+            ambiguous,
+            scope: SymbolScope::Global,
+            skip: false,
+            comments: Comments::new(),
+        }
+    }
+
+    pub fn new_skip_data(name: String, addr: u32, data: SymData, ambiguous: bool) -> Symbol {
+        Self {
+            name,
+            kind: SymbolKind::Data(data),
+            addr,
+            ambiguous,
+            scope: SymbolScope::Global,
+            skip: true,
+            comments: Comments::new(),
+        }
+    }
+
+    pub fn new_bss(name: String, addr: u32, data: SymBss, ambiguous: bool) -> Symbol {
+        Self {
+            name,
+            kind: SymbolKind::Bss(data),
+            addr,
+            ambiguous,
+            scope: SymbolScope::Global,
+            skip: false,
+            comments: Comments::new(),
+        }
+    }
+
+    pub fn size(&self, max_address: u32) -> u32 {
+        self.kind.size(max_address - self.addr)
+    }
+
+    pub fn is_external(&self) -> bool {
+        match self.kind {
+            SymbolKind::Label(SymLabel { external, .. }) => external,
+            SymbolKind::PoolConstant => false,
+            SymbolKind::JumpTable(_) => false,
+            _ => true,
+        }
+    }
+}
+
+impl Display for Symbol {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.comments.display_pre_comments())?;
+        write!(f, "{} kind:{} addr:{:#010x}", self.name, self.kind, self.addr)?;
+        if !self.scope.is_global() {
+            write!(f, " {}", self.scope)?;
+        }
+        if self.ambiguous {
+            write!(f, " ambiguous")?;
+        }
+        write!(f, "{}", self.comments.display_post_comment())?;
+        Ok(())
+    }
+}
+
+#[derive(Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Debug)]
+pub enum SymbolScope {
+    /// The symbol is global and can be accessed from other translation units
+    #[default]
+    Global,
+    /// The symbol is local to its translation unit and will not cause duplicate symbol definitions in the linker
+    Local,
+    /// The symbol is weak and can be overriden by a non-weak symbol with the same name
+    Weak,
+}
+
+impl SymbolScope {
+    pub fn is_global(&self) -> bool {
+        *self == SymbolScope::Global
+    }
+
+    pub fn is_local(&self) -> bool {
+        *self == SymbolScope::Local
+    }
+
+    pub fn is_weak(&self) -> bool {
+        *self == SymbolScope::Weak
+    }
+}
+
+impl Display for SymbolScope {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SymbolScope::Global => write!(f, "global"),
+            SymbolScope::Local => write!(f, "local"),
+            SymbolScope::Weak => write!(f, "weak"),
+        }
+    }
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+pub enum SymbolKind {
+    Undefined,
+    Function(SymFunction),
+    Label(SymLabel),
+    PoolConstant,
+    JumpTable(SymJumpTable),
+    Data(SymData),
+    Bss(SymBss),
+}
+
+#[derive(Debug, Snafu)]
+pub enum SymbolKindParseError {
+    #[snafu(transparent)]
+    SymFunctionParse { source: SymFunctionParseError },
+    #[snafu(transparent)]
+    SymDataParse { source: SymDataParseError },
+    #[snafu(transparent)]
+    SymBssParse { source: SymBssParseError },
+    #[snafu(transparent)]
+    SymLabelParse { source: SymLabelParseError },
+    #[snafu(display(
+        "{context}: unknown symbol kind '{kind}', must be one of: function, data, bss, label:\n{backtrace}"
+    ))]
+    UnknownKind { context: ParseContext, kind: String, backtrace: Backtrace },
+}
+
+impl SymbolKind {
+    fn parse(text: &str, context: &ParseContext) -> Result<Self, SymbolKindParseError> {
+        let (kind, options) = text.split_once('(').unwrap_or((text, ""));
+        let options = options.strip_suffix(')').unwrap_or(options);
+
+        match kind {
+            "function" => Ok(Self::Function(SymFunction::parse(options, context)?)),
+            "data" => Ok(Self::Data(SymData::parse(options, context)?)),
+            "bss" => Ok(Self::Bss(SymBss::parse(options, context)?)),
+            "label" => Ok(Self::Label(SymLabel::parse(options, context)?)),
+            _ => UnknownKindSnafu { context, kind }.fail(),
+        }
+    }
+
+    fn should_write(&self) -> bool {
+        match self {
+            SymbolKind::Undefined => false,
+            SymbolKind::Function(_) => true,
+            SymbolKind::Label(label) => label.external,
+            SymbolKind::PoolConstant => false,
+            SymbolKind::JumpTable(_) => false,
+            SymbolKind::Data(_) => true,
+            SymbolKind::Bss(_) => true,
+        }
+    }
+
+    pub fn size(&self, max_size: u32) -> u32 {
+        match self {
+            SymbolKind::Undefined => 0,
+            SymbolKind::Function(function) => function.size,
+            SymbolKind::Label(_) => 0,
+            SymbolKind::PoolConstant => 0, // actually 4, but pool constants are just labels
+            SymbolKind::JumpTable(_) => 0,
+            SymbolKind::Data(data) => data.size().unwrap_or(max_size),
+            SymbolKind::Bss(bss) => bss.size.unwrap_or(max_size),
+        }
+    }
+}
+
+impl Display for SymbolKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SymbolKind::Undefined => {},
+            SymbolKind::Function(function) => write!(f, "function({function})")?,
+            SymbolKind::Data(data) => write!(f, "data({data})")?,
+            SymbolKind::Bss(bss) => write!(f, "bss{bss}")?,
+            SymbolKind::Label(label) => write!(f, "label({label})")?,
+            SymbolKind::PoolConstant => {},
+            SymbolKind::JumpTable(_) => {},
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+pub struct SymFunction {
+    pub mode: InstructionMode,
+    /// Total size, including constant pool.
+    pub size: u32,
+    /// Is `true` for functions that were not found during function analysis, but are being called
+    /// from somewhere.
+    #[serde(skip_serializing_if = "is_false", default)]
+    pub unknown: bool,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub dsprot: Option<DsProtFunctionData>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub dsprot_ranges: Vec<dsprot::EncryptedRange>,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+pub struct DsProtFunctionData {
+    pub encryption: dsprot::EncryptionType,
+    /// Size of code, excluding constant pool.
+    pub code_size: u32,
+}
+
+#[derive(Debug, Snafu)]
+pub enum SymFunctionParseError {
+    #[snafu(display("{context}: failed to parse size '{value}': {error}\n{backtrace}"))]
+    ParseFunctionSize {
+        context: ParseContext,
+        value: String,
+        error: ParseIntError,
+        backtrace: Backtrace,
+    },
+    #[snafu(display(
+        "{context}: unknown function attribute '{key}', must be one of: size, unknown, arm, thumb:\n{backtrace}"
+    ))]
+    UnknownFunctionAttribute { context: ParseContext, key: String, backtrace: Backtrace },
+    #[snafu(transparent)]
+    InstructionModeParse { source: InstructionModeParseError },
+    #[snafu(display("{context}: function must have an instruction mode: arm or thumb"))]
+    MissingInstructionMode { context: ParseContext, backtrace: Backtrace },
+    #[snafu(display("{context}: missing '{attribute}' attribute:\n{backtrace}"))]
+    MissingFunctionAttribute { context: ParseContext, attribute: String, backtrace: Backtrace },
+    #[snafu(display("{context}: failed to parse '{value}' as an integer: {error}\n{backtrace}"))]
+    ParseInt { context: ParseContext, value: String, error: ParseIntError, backtrace: Backtrace },
+    #[snafu(display(
+        "{context}: invalid DS Protect encryption range format '{value}'\n{backtrace}"
+    ))]
+    ParseDsProtRange { context: ParseContext, value: String, backtrace: Backtrace },
+}
+
+impl SymFunction {
+    fn parse(options: &str, context: &ParseContext) -> Result<Self, SymFunctionParseError> {
+        let mut size = None;
+        let mut mode = None;
+        let mut unknown = false;
+        let mut dsprot = None;
+        let mut dsprot_ranges = Vec::new();
+
+        for (key, value) in split_attributes(iter_comma_separated(options), '=') {
+            if value.is_empty() {
+                match key {
+                    "unknown" => unknown = true,
+                    _ => mode = Some(InstructionMode::parse(key, context)?),
+                }
+            } else {
+                match key {
+                    "size" => {
+                        size = Some(parse_u32(value).map_err(|error| {
+                            ParseFunctionSizeSnafu { context, value, error }.build()
+                        })?);
+                    },
+                    "dsprot" => {
+                        if let Some((code_size, seed_key)) = value.split_once(',') {
+                            let code_size = parse_u32(code_size).map_err(|error| {
+                                ParseIntSnafu { context, value: code_size, error }.build()
+                            })?;
+                            let seed_key = parse_u32(seed_key).map_err(|error| {
+                                ParseIntSnafu { context, value: seed_key, error }.build()
+                            })?;
+                            dsprot = Some(DsProtFunctionData {
+                                encryption: dsprot::EncryptionType::Keyed(seed_key),
+                                code_size,
+                            });
+                        } else {
+                            let code_size = parse_u32(value)
+                                .map_err(|error| ParseIntSnafu { context, value, error }.build())?;
+                            dsprot = Some(DsProtFunctionData {
+                                encryption: dsprot::EncryptionType::Unkeyed,
+                                code_size,
+                            });
+                        }
+                    },
+                    "dsprot_range" => {
+                        let Some((range, seed_key)) = value.split_once(',') else {
+                            return ParseDsProtRangeSnafu { context, value }.fail();
+                        };
+                        let Some((start, end)) = range.split_once("..") else {
+                            return ParseDsProtRangeSnafu { context, value }.fail();
+                        };
+                        dsprot_ranges.push(dsprot::EncryptedRange {
+                            start_address: parse_u32(start).map_err(|error| {
+                                ParseIntSnafu { context, value: start, error }.build()
+                            })?,
+                            end_address: parse_u32(end).map_err(|error| {
+                                ParseIntSnafu { context, value: end, error }.build()
+                            })?,
+                            seed_key: parse_u32(seed_key).map_err(|error| {
+                                ParseIntSnafu { context, value: seed_key, error }.build()
+                            })?,
+                        });
+                    },
+                    _ => return UnknownFunctionAttributeSnafu { context, key }.fail(),
+                }
+            }
+        }
+
+        Ok(Self {
+            mode: mode.ok_or_else(|| MissingInstructionModeSnafu { context }.build())?,
+            size: size.ok_or_else(|| {
+                MissingFunctionAttributeSnafu { context, attribute: "size" }.build()
+            })?,
+            unknown,
+            dsprot,
+            dsprot_ranges,
+        })
+    }
+
+    fn contains(&self, sym: &Symbol, addr: u32) -> bool {
+        if self.unknown {
+            // Unknown functions have no size
+            sym.addr == addr
+        } else {
+            let start = sym.addr;
+            let end = start + self.size;
+            addr >= start && addr < end
+        }
+    }
+}
+
+impl Display for SymFunction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{},size={:#x}", self.mode, self.size)?;
+        if self.unknown {
+            write!(f, ",unknown")?;
+        }
+        if let Some(dsprot) = &self.dsprot {
+            match dsprot.encryption {
+                dsprot::EncryptionType::None => {},
+                dsprot::EncryptionType::Unkeyed => {
+                    write!(f, ",dsprot={:#x}", dsprot.code_size)?;
+                },
+                dsprot::EncryptionType::Keyed(seed_key) => {
+                    write!(f, ",dsprot=({:#x},{:#x})", dsprot.code_size, seed_key)?;
+                },
+            }
+        }
+        for range in &self.dsprot_ranges {
+            write!(
+                f,
+                ",dsprot_range=({:#010x}..{:#010x},{:#x})",
+                range.start_address, range.end_address, range.seed_key
+            )?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+pub struct SymLabel {
+    /// If true, the label is not used by the function itself, but accessed externally. Such labels are only discovered
+    /// during relocation analysis, which is not performed by the dis/delink subcommands. External label symbols are
+    /// therefore included in symbols.txt, hence this boolean.
+    #[serde(skip_serializing_if = "is_false", default)]
+    pub external: bool,
+    pub mode: InstructionMode,
+}
+
+#[derive(Debug, Snafu)]
+pub enum SymLabelParseError {
+    #[snafu(transparent)]
+    InstructionModeParse { source: InstructionModeParseError },
+}
+
+impl SymLabel {
+    fn parse(options: &str, context: &ParseContext) -> Result<Self, SymLabelParseError> {
+        Ok(Self { external: true, mode: InstructionMode::parse(options, context)? })
+    }
+}
+
+impl Display for SymLabel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.mode)
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+pub enum InstructionMode {
+    Arm,
+    Thumb,
+}
+
+#[derive(Debug, Snafu)]
+pub enum InstructionModeParseError {
+    #[snafu(display(
+        "{context}: expected instruction mode 'arm' or 'thumb' but got '{value}':\n{backtrace}"
+    ))]
+    UnknownInstructionMode { context: ParseContext, value: String, backtrace: Backtrace },
+}
+
+impl InstructionMode {
+    fn parse(value: &str, context: &ParseContext) -> Result<Self, InstructionModeParseError> {
+        match value {
+            "arm" => Ok(Self::Arm),
+            "thumb" => Ok(Self::Thumb),
+            _ => UnknownInstructionModeSnafu { context, value }.fail(),
+        }
+    }
+
+    pub fn from_thumb(thumb: bool) -> Self {
+        if thumb { Self::Thumb } else { Self::Arm }
+    }
+
+    pub fn into_thumb(self) -> Option<bool> {
+        match self {
+            Self::Arm => Some(false),
+            Self::Thumb => Some(true),
+        }
+    }
+}
+
+impl Display for InstructionMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Arm => write!(f, "arm"),
+            Self::Thumb => write!(f, "thumb"),
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+pub struct SymJumpTable {
+    pub size: u32,
+    pub kind: JumpTableKind,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+pub enum SymData {
+    Any,
+    Byte { count: Option<u32> },
+    Short { count: Option<u32> },
+    Word { count: Option<u32> },
+}
+
+#[derive(Debug, Snafu)]
+pub enum SymDataParseError {
+    #[snafu(display(
+        "{context}: expected data kind 'any', 'byte', 'short' or 'word' but got nothing:\n{backtrace}"
+    ))]
+    EmptyData { context: ParseContext, backtrace: Backtrace },
+    #[snafu(display("{context}: failed to parse count '{value}': {error}\n{backtrace}"))]
+    ParseCount { context: ParseContext, value: String, error: ParseIntError, backtrace: Backtrace },
+    #[snafu(display("{context}: unexpected characters after ']':\n{backtrace}"))]
+    CharacterAfterArray { context: ParseContext, backtrace: Backtrace },
+    #[snafu(display("{context}: data type 'any' cannot be an array:\n{backtrace}"))]
+    ArrayOfAny { context: ParseContext, backtrace: Backtrace },
+    #[snafu(display(
+        "{context}: expected data kind 'any', 'byte', 'short' or 'word' but got '{kind}':\n{backtrace}"
+    ))]
+    UnknownDataKind { context: ParseContext, kind: String, backtrace: Backtrace },
+}
+
+impl SymData {
+    fn parse(kind: &str, context: &ParseContext) -> Result<Self, SymDataParseError> {
+        if kind.is_empty() {
+            return EmptyDataSnafu { context }.fail();
+        }
+
+        let (kind, rest) = kind.split_once('[').unwrap_or((kind, ""));
+        let (count, rest) = rest
+            .split_once(']')
+            .map(|(count, rest)| {
+                let count = if count.is_empty() {
+                    Ok(None)
+                } else {
+                    parse_u32(count)
+                        .map(Some)
+                        .map_err(|error| ParseCountSnafu { context, value: count, error }.build())
+                };
+                (count, rest)
+            })
+            .unwrap_or((Ok(Some(1)), rest));
+        let count = count?;
+
+        if !rest.is_empty() {
+            return CharacterAfterArraySnafu { context }.fail();
+        }
+
+        match kind {
+            "any" => {
+                if count == Some(1) {
+                    Ok(Self::Any)
+                } else {
+                    ArrayOfAnySnafu { context }.fail()
+                }
+            },
+            "short" => Ok(Self::Short { count }),
+            "byte" => Ok(Self::Byte { count }),
+            "word" => Ok(Self::Word { count }),
+            kind => UnknownDataKindSnafu { context, kind }.fail(),
+        }
+    }
+
+    pub fn count(self) -> Option<u32> {
+        match self {
+            Self::Any => None,
+            Self::Byte { count } => count,
+            Self::Short { count } => count,
+            Self::Word { count } => count,
+        }
+    }
+
+    pub fn element_size(self) -> u32 {
+        match self {
+            Self::Any => 1,
+            Self::Byte { .. } => 1,
+            Self::Short { .. } => 2,
+            Self::Word { .. } => 4,
+        }
+    }
+
+    pub fn size(&self) -> Option<u32> {
+        self.count().map(|count| self.element_size() * count)
+    }
+}
+
+impl Display for SymData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Any => write!(f, "any"),
+            Self::Byte { count: Some(1) } => write!(f, "byte"),
+            Self::Short { count: Some(1) } => write!(f, "short"),
+            Self::Word { count: Some(1) } => write!(f, "word"),
+            Self::Byte { count: Some(count) } => write!(f, "byte[{count}]"),
+            Self::Short { count: Some(count) } => write!(f, "short[{count}]"),
+            Self::Word { count: Some(count) } => write!(f, "word[{count}]"),
+            Self::Byte { count: None } => write!(f, "byte[]"),
+            Self::Short { count: None } => write!(f, "short[]"),
+            Self::Word { count: None } => write!(f, "word[]"),
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+pub struct SymBss {
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub size: Option<u32>,
+}
+
+#[derive(Debug, Snafu)]
+pub enum SymBssParseError {
+    #[snafu(display("{context}: failed to parse size '{value}': {error}\n{backtrace}"))]
+    ParseBssSize {
+        context: ParseContext,
+        value: String,
+        error: ParseIntError,
+        backtrace: Backtrace,
+    },
+    #[snafu(display("{context}: unknown attribute '{key}', must be one of: size:\n{backtrace}'"))]
+    UnknownBssAttribute { context: ParseContext, key: String, backtrace: Backtrace },
+}
+
+impl SymBss {
+    fn parse(options: &str, context: &ParseContext) -> Result<Self, SymBssParseError> {
+        let mut size = None;
+        for (key, value) in split_attributes(iter_comma_separated(options), '=') {
+            match key {
+                "size" => {
+                    size =
+                        Some(parse_u32(value).map_err(|error| {
+                            ParseBssSizeSnafu { context, value, error }.build()
+                        })?);
+                },
+                _ => return UnknownBssAttributeSnafu { context, key }.fail(),
+            }
+        }
+        Ok(Self { size })
+    }
+}
+
+impl Display for SymBss {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(size) = self.size {
+            write!(f, "(size={size:#x})")?;
+        }
+        Ok(())
+    }
+}
+
+fn is_false(b: &bool) -> bool {
+    !b
+}

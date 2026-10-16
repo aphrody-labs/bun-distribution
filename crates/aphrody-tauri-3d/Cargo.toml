@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-tauri-3d"
+description = "Native 3D layer for Tauri v2: the aphrody-render wgpu scene presented under a transparent M3 webview (DirectComposition on Windows)."
+version = "1.0.0-canary"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+publish = false
+# Tauri plugin convention: tauri-build reads the permission files through
+# `DEP_APHRODY_TAURI_3D_PERMISSION_FILES_PATH`.
+links = "aphrody-3d"
+
+[lints]
+workspace = true
+
+[build-dependencies]
+tauri-plugin = { workspace = true, features = ["build"] }
+
+[dependencies]
+aphrody-m3-tokens = { workspace = true }
+aphrody-render = { workspace = true, features = ["gpu"] }
+log = { version = "0.4.28", default-features = false }
+raw-window-handle = "0.6"
+serde = { version = "1", default-features = false, features = ["std"] }
+serde_json = { version = "1", default-features = false }
+tauri = { workspace = true }
+
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = [
+  "Win32_Foundation",
+  "Win32_Graphics_Dxgi",
+  "Win32_Graphics_DirectComposition",
+] }

@@ -1,0 +1,41 @@
+{
+  "name": "@rosegriffon/storage",
+  "version": "1.4.4",
+  "private": false,
+  "type": "module",
+  "main": "server.ts",
+  "exports": {
+    ".": "./server.ts",
+    "./server": "./server.ts"
+  },
+  "scripts": {
+    "type-check": "bun check --noEmit",
+    "test": "bun test .",
+    "start": "bun server.ts",
+    "dev": "bun --watch server.ts",
+    "typecheck": "bun check --noEmit"
+  },
+  "dependencies": {
+    "@rosegriffon/db": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  },
+  "license": "Apache-2.0",
+  "files": [
+    "multipart.test.ts",
+    "multipart.ts",
+    "permissions.test.ts",
+    "permissions.ts",
+    "server.ts",
+    "tsconfig.json"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  }
+}

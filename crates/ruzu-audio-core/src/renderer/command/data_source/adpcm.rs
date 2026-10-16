@@ -1,0 +1,311 @@
+use crate::adsp::apps::audio_renderer::command_list_processor::MemoryHandle;
+use crate::common::common::{CpuAddr, SampleFormat, SrcQuality};
+use crate::common::wave_buffer::WaveBufferVersion2;
+use crate::renderer::command::data_source::decode::{
+    decode_from_wave_buffers, mix_buffer_range, read_voice_state_mut, DataSourceCommand,
+    DecodeFromWaveBuffersArgs,
+};
+use crate::renderer::command::util::write_copy;
+use std::fmt::Write;
+
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
+pub struct AdpcmDataSourceVersion1Payload {
+    pub src_quality: SrcQuality,
+    pub _padding0: u8,
+    pub output_index: i16,
+    pub flags: u16,
+    pub _padding1: [u8; 2],
+    pub sample_rate: u32,
+    pub pitch: f32,
+    pub wave_buffers: [WaveBufferVersion2; 4],
+    pub voice_state: CpuAddr,
+    pub data_address: CpuAddr,
+    pub data_size: u64,
+}
+
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
+pub struct AdpcmDataSourceVersion2Payload {
+    pub src_quality: SrcQuality,
+    pub _padding0: u8,
+    pub output_index: i16,
+    pub flags: u16,
+    pub _padding1: [u8; 2],
+    pub sample_rate: u32,
+    pub pitch: f32,
+    pub channel_index: i8,
+    pub channel_count: i8,
+    pub _padding2: [u8; 6],
+    pub wave_buffers: [WaveBufferVersion2; 4],
+    pub voice_state: CpuAddr,
+    pub data_address: CpuAddr,
+    pub data_size: u64,
+}
+
+impl AdpcmDataSourceVersion1Payload {
+    pub fn process(
+        &self,
+        memory: &MemoryHandle,
+        mix_buffers: &mut [i32],
+        sample_count: usize,
+        target_sample_rate: u32,
+    ) {
+        process_adpcm_data_source_version1_command(
+            self,
+            memory,
+            mix_buffers,
+            sample_count,
+            target_sample_rate,
+        );
+    }
+
+    pub fn verify(&self) -> bool {
+        verify_adpcm_data_source_version1_command(self)
+    }
+
+    pub fn dump(&self, target_sample_rate: u32, dump: &mut String) {
+        dump_adpcm_data_source_version1_command(self, target_sample_rate, dump);
+    }
+}
+
+impl AdpcmDataSourceVersion2Payload {
+    pub fn process(
+        &self,
+        memory: &MemoryHandle,
+        mix_buffers: &mut [i32],
+        sample_count: usize,
+        target_sample_rate: u32,
+    ) {
+        process_adpcm_data_source_version2_command(
+            self,
+            memory,
+            mix_buffers,
+            sample_count,
+            target_sample_rate,
+        );
+    }
+
+    pub fn verify(&self) -> bool {
+        verify_adpcm_data_source_version2_command(self)
+    }
+
+    pub fn dump(&self, target_sample_rate: u32, dump: &mut String) {
+        dump_adpcm_data_source_version2_command(self, target_sample_rate, dump);
+    }
+}
+
+pub fn write_adpcm_data_source_version1_payload(
+    command: &DataSourceCommand,
+    output: &mut [u8],
+) -> usize {
+    let mut payload: AdpcmDataSourceVersion1Payload = unsafe { std::mem::zeroed() };
+    payload.src_quality = command.src_quality;
+    payload._padding0 = 0;
+    payload.output_index = command.output_index;
+    payload.flags = command.flags;
+    payload._padding1 = [0; 2];
+    payload.sample_rate = command.sample_rate;
+    payload.pitch = command.pitch;
+    payload.wave_buffers = command.wave_buffers;
+    payload.voice_state = command.voice_state;
+    payload.data_address = command.data_address;
+    payload.data_size = command.data_size;
+    write_copy(&payload, output)
+}
+
+pub fn write_adpcm_data_source_version2_payload(
+    command: &DataSourceCommand,
+    output: &mut [u8],
+) -> usize {
+    let mut payload: AdpcmDataSourceVersion2Payload = unsafe { std::mem::zeroed() };
+    payload.src_quality = command.src_quality;
+    payload._padding0 = 0;
+    payload.output_index = command.output_index;
+    payload.flags = command.flags;
+    payload._padding1 = [0; 2];
+    payload.sample_rate = command.sample_rate;
+    payload.pitch = command.pitch;
+    payload.channel_index = command.channel_index;
+    payload.channel_count = command.channel_count;
+    payload._padding2 = [0; 6];
+    payload.wave_buffers = command.wave_buffers;
+    payload.voice_state = command.voice_state;
+    payload.data_address = command.data_address;
+    payload.data_size = command.data_size;
+    write_copy(&payload, output)
+}
+
+pub fn process_adpcm_data_source_version1_command(
+    payload: &AdpcmDataSourceVersion1Payload,
+    memory: &MemoryHandle,
+    mix_buffers: &mut [i32],
+    sample_count: usize,
+    target_sample_rate: u32,
+) {
+    let trace_decode = std::env::var_os("RUZU_TRACE_DECODE").is_some();
+    if trace_decode {
+        log::info!(
+            "process_adpcm_v1 ENTER output_index={} sample_count={} target_rate={} voice_state_addr=0x{:X} data_addr=0x{:X} data_size={} mix_buffers_len={}",
+            payload.output_index,
+            sample_count,
+            target_sample_rate,
+            payload.voice_state,
+            payload.data_address,
+            payload.data_size,
+            mix_buffers.len(),
+        );
+        for (i, wb) in payload.wave_buffers.iter().enumerate() {
+            log::info!(
+                "  wave_buffer[{}] buffer=0x{:X} buffer_size={} start_offset={} end_offset={} looping={}",
+                i, wb.buffer, wb.buffer_size, wb.start_offset, wb.end_offset, wb.looping
+            );
+        }
+    }
+    // SAFETY: bail out early if the wave buffer addresses look like unmapped
+    // guest virtual addresses (high heap area 0x80000000+) that would segfault
+    // when dereferenced as host pointers. Tracking issue: ruzu's audio_core
+    // memory pool translation isn't fully wired up yet.
+    if std::env::var_os("RUZU_AUDIO_DECODE_SKIP_UNMAPPED").is_some() {
+        for wb in &payload.wave_buffers {
+            if wb.buffer != 0 && wb.buffer >= 0x10_0000_0000 {
+                if trace_decode {
+                    log::warn!(
+                        "process_adpcm_v1 SKIP: wave buffer at 0x{:X} looks unmapped",
+                        wb.buffer
+                    );
+                }
+                return;
+            }
+        }
+        if payload.data_address != 0 && payload.data_address >= 0x10_0000_0000 {
+            if trace_decode {
+                log::warn!(
+                    "process_adpcm_v1 SKIP: data_address 0x{:X} looks unmapped",
+                    payload.data_address
+                );
+            }
+            return;
+        }
+    }
+    let Some(output_range) = mix_buffer_range(mix_buffers, payload.output_index, sample_count)
+    else {
+        if trace_decode {
+            log::warn!("process_adpcm_v1 BAIL: mix_buffer_range returned None (output_index={} sample_count={} mix_buffers_len={})", payload.output_index, sample_count, mix_buffers.len());
+        }
+        return;
+    };
+    let Some(voice_state) = read_voice_state_mut(payload.voice_state) else {
+        if trace_decode {
+            log::warn!("process_adpcm_v1 BAIL: read_voice_state_mut returned None (voice_state_addr=0x{:X})", payload.voice_state);
+        }
+        return;
+    };
+
+    let mut wave_buffers = payload.wave_buffers;
+    for wave_buffer in &mut wave_buffers {
+        wave_buffer.loop_start_offset = wave_buffer.start_offset;
+        wave_buffer.loop_end_offset = wave_buffer.end_offset;
+        wave_buffer.loop_count = if wave_buffer.looping { -1 } else { 0 };
+    }
+
+    decode_from_wave_buffers(
+        memory,
+        DecodeFromWaveBuffersArgs {
+            sample_format: SampleFormat::Adpcm,
+            output: &mut mix_buffers[output_range],
+            voice_state,
+            wave_buffers: &wave_buffers,
+            channel: 0,
+            channel_count: 1,
+            src_quality: payload.src_quality,
+            pitch: payload.pitch,
+            source_sample_rate: payload.sample_rate,
+            target_sample_rate,
+            sample_count: sample_count as u32,
+            data_address: payload.data_address,
+            data_size: payload.data_size,
+            is_voice_played_sample_count_reset_at_loop_point_supported: (payload.flags & 1) != 0,
+            is_voice_pitch_and_src_skipped_supported: (payload.flags & 2) != 0,
+        },
+    );
+}
+
+pub fn process_adpcm_data_source_version2_command(
+    payload: &AdpcmDataSourceVersion2Payload,
+    memory: &MemoryHandle,
+    mix_buffers: &mut [i32],
+    sample_count: usize,
+    target_sample_rate: u32,
+) {
+    let Some(output_range) = mix_buffer_range(mix_buffers, payload.output_index, sample_count)
+    else {
+        return;
+    };
+    let Some(voice_state) = read_voice_state_mut(payload.voice_state) else {
+        return;
+    };
+
+    decode_from_wave_buffers(
+        memory,
+        DecodeFromWaveBuffersArgs {
+            sample_format: SampleFormat::Adpcm,
+            output: &mut mix_buffers[output_range],
+            voice_state,
+            wave_buffers: &payload.wave_buffers,
+            channel: 0,
+            channel_count: 1,
+            src_quality: payload.src_quality,
+            pitch: payload.pitch,
+            source_sample_rate: payload.sample_rate,
+            target_sample_rate,
+            sample_count: sample_count as u32,
+            data_address: payload.data_address,
+            data_size: payload.data_size,
+            is_voice_played_sample_count_reset_at_loop_point_supported: (payload.flags & 1) != 0,
+            is_voice_pitch_and_src_skipped_supported: (payload.flags & 2) != 0,
+        },
+    );
+}
+
+pub fn verify_adpcm_data_source_version1_command(
+    _payload: &AdpcmDataSourceVersion1Payload,
+) -> bool {
+    true
+}
+
+pub fn verify_adpcm_data_source_version2_command(
+    _payload: &AdpcmDataSourceVersion2Payload,
+) -> bool {
+    true
+}
+
+pub fn dump_adpcm_data_source_version1_command(
+    payload: &AdpcmDataSourceVersion1Payload,
+    target_sample_rate: u32,
+    dump: &mut String,
+) {
+    let _ = writeln!(
+        dump,
+        "AdpcmDataSourceVersion1Command\n\toutput_index {:02X} source sample rate {} target sample rate {} src quality {:?}",
+        payload.output_index,
+        payload.sample_rate,
+        target_sample_rate,
+        payload.src_quality
+    );
+}
+
+pub fn dump_adpcm_data_source_version2_command(
+    payload: &AdpcmDataSourceVersion2Payload,
+    target_sample_rate: u32,
+    dump: &mut String,
+) {
+    let _ = writeln!(
+        dump,
+        "AdpcmDataSourceVersion2Command\n\toutput_index {:02X} source sample rate {} target sample rate {} src quality {:?}",
+        payload.output_index,
+        payload.sample_rate,
+        target_sample_rate,
+        payload.src_quality
+    );
+}

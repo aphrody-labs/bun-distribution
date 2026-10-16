@@ -1,0 +1,85 @@
+{
+  "name": "iecode",
+  "services": {
+    "steamcmd": {
+      "build": {
+        "context": "../..",
+        "dockerfile": "config/container/Dockerfile.steamcmd"
+      },
+      "image": "iecode-steamcmd:local",
+      "profiles": ["steamcmd"],
+      "init": true,
+      "stdin_open": true,
+      "tty": true,
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "${IEVR_GAME_DIR:?Set IEVR_GAME_DIR to the remote game-data path}",
+          "target": "/var/lib/iecode/data"
+        },
+        "ie-steam-state:/var/lib/steamcmd",
+        "ie-proton-runtime:/var/lib/proton"
+      ],
+      "working_dir": "/var/lib/iecode/data"
+    },
+    "steam-client": {
+      "build": {
+        "context": "../..",
+        "dockerfile": "config/container/Dockerfile.steam-client"
+      },
+      "image": "iecode-steam-client:local",
+      "profiles": ["steam-client"],
+      "init": true,
+      "restart": "unless-stopped",
+      "shm_size": "1gb",
+      "security_opt": [
+        "apparmor=iecode-steam-client",
+        "seccomp=seccomp-steam-client.json"
+      ],
+      "ports": [
+        {
+          "target": 6080,
+          "published": "6080",
+          "host_ip": "127.0.0.1",
+          "protocol": "tcp"
+        }
+      ],
+      "volumes": [
+        "ie-steam-client-state:/home/steam",
+        {
+          "type": "bind",
+          "source": "${IEVR_GAME_DIR:?Set IEVR_GAME_DIR to the remote game-data path}",
+          "target": "/home/steam/iecode/data",
+          "read_only": true
+        },
+        {
+          "type": "volume",
+          "source": "ie-proton-runtime",
+          "target": "/home/steam/.local/share/Steam/steamapps",
+          "read_only": true
+        }
+      ],
+      "healthcheck": {
+        "test": ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:6080/vnc.html"],
+        "interval": "30s",
+        "timeout": "5s",
+        "retries": 3,
+        "start_period": "60s"
+      }
+    }
+  },
+  "volumes": {
+    "ie-product-data": {
+      "labels": { "io.aphrody.profile": "ie", "io.aphrody.workspace": "iecode" }
+    },
+    "ie-proton-runtime": {
+      "labels": { "io.aphrody.profile": "ie", "io.aphrody.workspace": "iecode", "io.aphrody.store": "steam-proton-runtime" }
+    },
+    "ie-steam-state": {
+      "labels": { "io.aphrody.profile": "ie", "io.aphrody.workspace": "iecode", "io.aphrody.store": "steam-auth" }
+    },
+    "ie-steam-client-state": {
+      "labels": { "io.aphrody.profile": "ie", "io.aphrody.workspace": "iecode", "io.aphrody.store": "steam-client-auth" }
+    }
+  }
+}

@@ -1,0 +1,40 @@
+[package]
+name = "common"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+log = { version = "0.4.28", default-features = false }
+thiserror = { version = "2" }
+bitflags.workspace = true
+bytemuck.workspace = true
+lz4_flex.workspace = true
+zstd = "0.13"
+libc = "0.2"
+parking_lot.workspace = true
+context.workspace = true
+toml = { version = "0.9.8" }
+fastrand.workspace = true
+env_filter = "1.0"
+
+[build-dependencies]
+cc = "1"
+libc = "0.2"
+
+[dev-dependencies]
+# tests/build_script.rs compiles build.rs to exercise version detection.
+cc = "1"
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["libloaderapi"] }
+windows-sys = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_Kernel",
+    "Win32_System_Memory",
+    "Win32_System_Com",
+    "Win32_System_SystemServices",
+    "Win32_System_Threading",
+    "Win32_UI_Shell",
+] }

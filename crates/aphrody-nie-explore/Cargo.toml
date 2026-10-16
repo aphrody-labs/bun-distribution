@@ -1,0 +1,50 @@
+[package]
+name = "aphrody-nie-explore"
+description = "Moteur partagé d'aperçu/description des entrées VFS (CPK) par format — utilisé par `nie vfs cat` (aphrody-nie-cli) et l'app desktop `nie-explorer` (Tauri)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = ["host"]
+# Filesystem search and the instrumented Lua VM are native tooling. Format dispatch, parsers,
+# and pure-Rust Lua bytecode summaries remain available to WebAssembly without this feature.
+host = [
+    "dep:anyhow",
+    "dep:base64",
+    "dep:globset",
+    "dep:grep-regex",
+    "dep:grep-searcher",
+    "dep:ignore",
+    "dep:aphrody-nie-sql",
+    "aphrody-nie-lua/vm",
+    "aphrody-nie-lua/analysis",
+]
+
+[dependencies]
+aphrody-nie-sql = { workspace = true, optional = true }
+anyhow = { version = "1", optional = true }
+base64 = { version = "0.22.1", optional = true }
+globset = { workspace = true, optional = true }
+grep-regex = { workspace = true, optional = true }
+grep-searcher = { workspace = true, optional = true }
+ignore = { workspace = true, optional = true }
+aphrody-nie-formats = { workspace = true, features = ["serde", "textures", "images", "audio-decode"], default-features = true }
+# Introspection best-effort des scripts `.lua.bin` (VM Lua 5.2 réelle, mlua vendored) —
+# stubs tous les globals hôtes et collecte ceux référencés, sans jamais exécuter la vraie
+# logique moteur (cf. `aphrody_nie_lua::discover_host_calls`).
+aphrody-nie-lua = { workspace = true, default-features = false }
+# Pont générique T2B/RDBN → JSON (forme "entries"/"lists" des dumps inagle) qui débloque LES
+# ~100 parseurs spécialisés de aphrody-nie-data (chara_base/chara_text/skill/growth/item/aura/…) contre
+# les octets VFS LIVE, sans dump externe : ils consomment tous la même forme `&serde_json::Value`.
+aphrody-nie-data = { workspace = true, features = ["serde", "std"] }
+# Le catalogue des cinématiques (`cinema`) est un DTO partagé par la CLI, le serveur HTTP et
+# la page /videos d'azalée : il doit se sérialiser à l'identique des trois côtés.
+serde = { version = "1", default-features = false, features = ["std", "derive"] }
+serde_json = { version = "1", default-features = false, features = ["std"] }

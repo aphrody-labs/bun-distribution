@@ -1,0 +1,28 @@
+[package]
+license.workspace = true
+name = "aphrody-nie-tasks"
+description = "Cancelable, pausable asynchronous job orchestration with progress reporting."
+version.workspace = true
+edition.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = ["host"]
+host = ["dep:async-trait", "dep:tokio", "dep:tracing", "dep:uuid"]
+
+[dependencies]
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "sync", "macros", "time", "net"], optional = true }
+async-trait = { version = "0.1", optional = true }
+uuid = { version = "1", features = ["v4", "serde"], optional = true }
+thiserror = { version = "2" }
+tracing = { version = "0.1", optional = true }
+serde = { version = "1", default-features = false, features = ["std", "derive"] }
+serde_json = { version = "1" }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "sync", "macros", "time", "net", "test-util"] }

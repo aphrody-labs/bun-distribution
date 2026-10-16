@@ -1,0 +1,33 @@
+[package]
+description = "Wii WebAssembly browser adapter."
+name = "aphrody-wii-web"
+version = "0.1.1"
+edition.workspace = true
+publish = true
+license = "GPL-3.0-only"
+
+[lib]
+name = "gecko_web"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+debug = ["dep:dbglib", "dep:egui-phosphor"]
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+gecko = { package = "aphrody-wii-runtime", path = "../../crates/aphrody-wii-runtime", default-features = false }
+image = { package = "aphrody-wii-image", path = "../../crates/aphrody-wii-image", default-features = false }
+backend-wgpu = { package = "aphrody-wii-render", path = "../../crates/aphrody-wii-render" }
+aphrody-wii.workspace = true
+dbglib = { package = "aphrody-wii-debug", path = "../../crates/aphrody-wii-debug", optional = true }
+egui-phosphor = { workspace = true, optional = true, features = ["fill"] }
+wgpu.workspace = true
+winit = { version = "0.30.8", default-features = false, features = ["rwh_06", "android-native-activity"] }
+egui = { version = "0.36.2" }
+egui-wgpu = { version = "0.36.2", default-features = false }
+egui-winit = { workspace = true, features = ["links"] }
+wasm-bindgen.workspace = true
+wasm-bindgen-futures.workspace = true
+web-sys = { workspace = true, features = ["Document", "Window", "Element", "HtmlCanvasElement", "HtmlInputElement", "File", "FileReader", "Blob", "Event", "Performance", "console"] }
+console_error_panic_hook.workspace = true
+getrandom = { version = "0.3.4", default-features = false, features = ["wasm_js"] }

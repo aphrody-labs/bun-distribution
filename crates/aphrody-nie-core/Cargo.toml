@@ -1,0 +1,39 @@
+[package]
+name = "aphrody-nie-core"
+description = "Logique de jeu reversée en Rust pur (ballon, IA tactique, états de match, calcul gardien, stats joueur)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+thiserror = { version = "2" }
+serde = { version = "1", default-features = false, features = ["std", "derive"], optional = true }
+# serde_json est utilisé uniquement pour charger les tables de données réelles
+# embarquées (`growth`, `exp`, `skill`, `aura`). Compatible wasm32 (alloc).
+serde_json = { version = "1", optional = true }
+# aphrody-nie-data : types de données IEVR (formation, chara_param, growth…).
+# no_std+alloc — compatible std (features additives dans Cargo).
+aphrody-nie-data.workspace = true
+# aphrody-nie-geom : Vec2/Vec3 POD partagés (source unique, dédup Phase 2). La convention « y=hauteur »
+# d'IEVR est portée dans le CODE de aphrody-nie-core (le type reste axis-agnostique).
+aphrody-nie-geom.workspace = true
+
+[features]
+# `data` active le chargement des tables réelles IEVR embarquées via include_str!.
+# Activée par défaut car c'est le cœur des modules growth/exp/skill/aura.
+# Le chargement utilise des structs `#[derive(serde::Deserialize)]` → `data`
+# tire `serde` (avec derive) ET `serde_json`.
+default = ["data"]
+serde = ["dep:serde", "aphrody-nie-geom/serde"]
+data = ["dep:serde", "dep:serde_json", "aphrody-nie-geom/serde"]
+real-azalee = ["data"]
+
+[dev-dependencies]
+# Accès serde_json dans les tests d'intégration (chargement des vrais fichiers).
+serde_json = { version = "1" }

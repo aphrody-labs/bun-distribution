@@ -1,0 +1,10 @@
+{
+	"extends": "../rg-config/tsconfig-base.json",
+	"compilerOptions": {
+		"declaration": false,
+		"noEmit": true,
+		"types": ["bun"]
+	},
+	"include": ["src/**/*.ts", "test/**/*.ts"],
+	"exclude": ["node_modules", "dist"]
+}

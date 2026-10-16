@@ -1,0 +1,333 @@
+//! Port of zuyu/src/core/hle/kernel/k_page_group.h and k_page_group.cpp
+//! Status: COMPLET
+//! Derniere synchro: 2026-03-21
+
+use std::sync::{Arc, Mutex};
+
+use super::k_dynamic_resource_manager::KBlockInfoManager;
+use super::k_memory_block::PAGE_SIZE;
+use super::k_memory_manager::KMemoryManager;
+
+// ---------------------------------------------------------------------------
+// KBlockInfo
+// ---------------------------------------------------------------------------
+
+/// Port of Kernel::KBlockInfo.
+#[repr(C)]
+#[derive(Debug, Clone)]
+pub struct KBlockInfo {
+    /// Ruzu's vector owns list ordering; retain Eden's pointer-sized first
+    /// field so slab capacity and object layout remain 0x10 bytes.
+    _next: u64,
+    m_page_index: u32,
+    m_num_pages: u32,
+}
+
+impl KBlockInfo {
+    pub fn new() -> Self {
+        Self {
+            _next: 0,
+            m_page_index: 0,
+            m_num_pages: 0,
+        }
+    }
+
+    pub fn initialize(&mut self, addr: u64, np: usize) {
+        debug_assert!(addr % PAGE_SIZE as u64 == 0);
+        debug_assert!(np as u32 as usize == np);
+        self.m_page_index = (addr / PAGE_SIZE as u64) as u32;
+        self.m_num_pages = np as u32;
+    }
+
+    pub fn get_address(&self) -> u64 {
+        self.m_page_index as u64 * PAGE_SIZE as u64
+    }
+    pub fn get_num_pages(&self) -> usize {
+        self.m_num_pages as usize
+    }
+    pub fn get_size(&self) -> usize {
+        self.get_num_pages() * PAGE_SIZE
+    }
+    pub fn get_end_address(&self) -> u64 {
+        (self.m_page_index as u64 + self.m_num_pages as u64) * PAGE_SIZE as u64
+    }
+    pub fn get_last_address(&self) -> u64 {
+        self.get_end_address() - 1
+    }
+
+    pub fn is_equivalent_to(&self, rhs: &KBlockInfo) -> bool {
+        self.m_page_index == rhs.m_page_index && self.m_num_pages == rhs.m_num_pages
+    }
+
+    pub fn is_strictly_before(&self, addr: u64) -> bool {
+        let end = self.get_end_address();
+        if self.m_page_index != 0 && end == 0 {
+            return false;
+        }
+        end < addr
+    }
+
+    pub fn try_concatenate(&mut self, addr: u64, np: usize) -> bool {
+        if addr != 0 && addr == self.get_end_address() {
+            self.m_num_pages += np as u32;
+            true
+        } else {
+            false
+        }
+    }
+}
+
+impl Default for KBlockInfo {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+const _: () = assert!(std::mem::size_of::<KBlockInfo>() == 0x10);
+
+// ---------------------------------------------------------------------------
+// KPageGroup
+// ---------------------------------------------------------------------------
+
+/// Port of Kernel::KPageGroup.
+///
+/// Upstream holds `KernelCore& m_kernel` and `KBlockInfoManager* m_manager`.
+/// Rust uses a `Vec<Box<KBlockInfo>>` instead of an intrusive list, but each
+/// node is allocated from and returned to the selected `KBlockInfoManager`.
+/// The memory-manager reference is fetched through the global kernel accessor
+/// (`kernel::get_kernel_mut()`) at Open/Close time.
+pub struct KPageGroup {
+    blocks: Vec<Box<KBlockInfo>>,
+    block_info_manager: Option<Arc<KBlockInfoManager>>,
+    /// Whether Open/Close should drive ref-count callbacks via the global
+    /// kernel accessor. Runtime constructors keep this true, matching upstream
+    /// `KPageGroup(KernelCore&, KBlockInfoManager*)`.
+    kernel_owned: bool,
+}
+
+impl KPageGroup {
+    /// Create a page group attached to the global kernel. Matches upstream
+    /// `KPageGroup(KernelCore& kernel, KBlockInfoManager* m)`. Open/Close
+    /// route to `KernelCore::memory_manager_mut().{open,close,open_first}`.
+    pub fn new() -> Self {
+        Self {
+            blocks: Vec::new(),
+            block_info_manager: super::kernel::get_kernel_ref()
+                .and_then(|kernel| kernel.get_block_info_manager()),
+            kernel_owned: true,
+        }
+    }
+
+    pub fn with_block_info_manager(manager: Option<Arc<KBlockInfoManager>>) -> Self {
+        Self {
+            blocks: Vec::new(),
+            block_info_manager: manager,
+            kernel_owned: true,
+        }
+    }
+
+    /// Backwards-compatible constructor for callsites already audited as
+    /// upstream-owned page groups.
+    pub fn with_kernel() -> Self {
+        Self::new()
+    }
+
+    /// Backwards-compatible constructor; the Arc parameter is ignored — the
+    /// group always reaches the kernel through the global accessor.
+    /// Behaves identically to `new`.
+    pub fn with_memory_manager(_mm: Arc<Mutex<KMemoryManager>>) -> Self {
+        Self::new()
+    }
+
+    pub fn finalize(&mut self) {
+        if let Some(manager) = &self.block_info_manager {
+            for block in self.blocks.drain(..) {
+                manager.free(block);
+            }
+        } else {
+            self.blocks.clear();
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.blocks.is_empty()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &KBlockInfo> {
+        self.blocks.iter().map(Box::as_ref)
+    }
+
+    pub fn add_block(&mut self, addr: u64, num_pages: usize) -> Result<(), ()> {
+        if num_pages == 0 {
+            return Ok(());
+        }
+        debug_assert!(addr < addr + num_pages as u64 * PAGE_SIZE as u64);
+
+        // Try to concatenate with the last block.
+        if let Some(last) = self.blocks.last_mut() {
+            if last.try_concatenate(addr, num_pages) {
+                return Ok(());
+            }
+        }
+
+        // Allocate a new block.
+        let mut new_block = match &self.block_info_manager {
+            Some(manager) => manager.allocate().ok_or(())?,
+            None => Box::new(KBlockInfo::new()),
+        };
+        new_block.initialize(addr, num_pages);
+        self.blocks.push(new_block);
+        Ok(())
+    }
+
+    pub fn get_num_pages(&self) -> usize {
+        let mut total = 0;
+        for block in &self.blocks {
+            total += block.get_num_pages();
+        }
+        total
+    }
+
+    /// Increment reference count for all blocks.
+    /// Port of upstream `KPageGroup::Open`.
+    /// Delegates to `KMemoryManager::Open(addr, num_pages)` for each block.
+    pub fn open(&self) {
+        if !self.kernel_owned {
+            return;
+        }
+        if let Some(kernel) = super::kernel::get_kernel_mut() {
+            let mm = kernel.memory_manager_mut();
+            for block in &self.blocks {
+                mm.open(block.get_address(), block.get_num_pages());
+            }
+        }
+    }
+
+    /// Increment reference count for all blocks (first reference).
+    /// Port of upstream `KPageGroup::OpenFirst`.
+    pub fn open_first(&self) {
+        if !self.kernel_owned {
+            return;
+        }
+        if let Some(kernel) = super::kernel::get_kernel_mut() {
+            let mm = kernel.memory_manager_mut();
+            for block in &self.blocks {
+                mm.open_first(block.get_address(), block.get_num_pages());
+            }
+        }
+    }
+
+    /// Decrement reference count for all blocks.
+    /// Port of upstream `KPageGroup::Close`.
+    pub fn close(&self) {
+        if !self.kernel_owned {
+            return;
+        }
+        if let Some(kernel) = super::kernel::get_kernel_mut() {
+            let mm = kernel.memory_manager_mut();
+            for block in &self.blocks {
+                mm.close(block.get_address(), block.get_num_pages());
+            }
+        }
+    }
+
+    /// Decrement reference count and reset the page group.
+    /// Port of upstream `KPageGroup::CloseAndReset`.
+    pub fn close_and_reset(&mut self) {
+        if self.kernel_owned {
+            if let Some(kernel) = super::kernel::get_kernel_mut() {
+                let mm = kernel.memory_manager_mut();
+                for block in self.blocks.drain(..) {
+                    mm.close(block.get_address(), block.get_num_pages());
+                    if let Some(manager) = &self.block_info_manager {
+                        manager.free(block);
+                    }
+                }
+                return;
+            }
+        }
+        self.finalize();
+    }
+
+    pub fn is_equivalent_to(&self, rhs: &KPageGroup) -> bool {
+        if self.blocks.len() != rhs.blocks.len() {
+            return false;
+        }
+        for (a, b) in self.blocks.iter().zip(rhs.blocks.iter()) {
+            if !a.is_equivalent_to(b) {
+                return false;
+            }
+        }
+        true
+    }
+}
+
+impl Default for KPageGroup {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Drop for KPageGroup {
+    fn drop(&mut self) {
+        self.finalize();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// KScopedPageGroup
+// ---------------------------------------------------------------------------
+
+/// RAII guard that opens a page group on construction and closes it on drop.
+/// Port of upstream `Kernel::KScopedPageGroup`.
+pub struct KScopedPageGroup<'a> {
+    pg: Option<&'a KPageGroup>,
+}
+
+impl<'a> KScopedPageGroup<'a> {
+    /// Create a scoped page group. Opens the page group immediately.
+    /// If `not_first` is true, calls `Open()`; otherwise calls `OpenFirst()`.
+    pub fn new(pg: &'a KPageGroup, not_first: bool) -> Self {
+        if not_first {
+            pg.open();
+        } else {
+            pg.open_first();
+        }
+        Self { pg: Some(pg) }
+    }
+
+    /// Cancel the close — prevents `Close()` on drop.
+    pub fn cancel_close(&mut self) {
+        self.pg = None;
+    }
+}
+
+impl Drop for KScopedPageGroup<'_> {
+    fn drop(&mut self) {
+        if let Some(pg) = self.pg {
+            pg.close();
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn block_nodes_return_to_selected_manager_on_finalize() {
+        let manager = Arc::new({
+            let mut manager = KBlockInfoManager::new();
+            manager.initialize(1024);
+            manager
+        });
+        let mut group = KPageGroup::with_block_info_manager(Some(Arc::clone(&manager)));
+
+        group.add_block(0x1000, 1).unwrap();
+        group.add_block(0x3000, 1).unwrap();
+        assert_eq!(manager.get_used(), 2);
+
+        group.finalize();
+        assert_eq!(manager.get_used(), 0);
+    }
+}

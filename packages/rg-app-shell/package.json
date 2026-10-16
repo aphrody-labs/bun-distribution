@@ -1,0 +1,49 @@
+{
+  "name": "@rosegriffon/app-shell",
+  "version": "1.4.4",
+  "private": false,
+  "description": "Chrome applicatif partagé de website (navigation, barre latérale, barre supérieure, pied de page)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./routes-next": "./src/lib/routes-next.ts"
+  },
+  "scripts": {
+    "lint": "bun lint -c ../rg-config/oxlintrc.json src",
+    "type-check": "bun check --noEmit",
+    "test": "bun test test",
+    "typecheck": "bun check --noEmit"
+  },
+  "dependencies": {
+    "@rosegriffon/ui": "npm:@aphrody/rg-ui@1.0.4",
+    "lucide-react": "catalog:",
+    "next-themes": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  },
+  "license": "Apache-2.0",
+  "files": [
+    "src",
+    "test",
+    "tsconfig.json"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  }
+}

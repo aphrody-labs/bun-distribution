@@ -1,0 +1,40 @@
+name: iecode
+services:
+  postgres:
+    image: postgres@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+    labels:
+      io.aphrody.profile: ie
+      io.aphrody.workspace: iecode
+    environment:
+      POSTGRES_USER: iecode
+      POSTGRES_DB: iecode
+      POSTGRES_PASSWORD_FILE: /run/secrets/ie-postgres-password
+    secrets:
+      - ie-postgres-password
+    ports:
+      - "127.0.0.1::5432"
+    volumes:
+      - ie-postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U iecode -d iecode"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  bun:
+    image: ghcr.io/aphrody-labs/bun@sha256:8b12917085a44f30c1dbee201c62a206be2b2e38b11c2ed2cffbfafa2b091489
+    profiles: [runtime]
+    labels:
+      io.aphrody.profile: ie
+      io.aphrody.workspace: iecode
+    entrypoint: [bun]
+    command: [--version]
+    read_only: true
+    tmpfs: [/tmp]
+secrets:
+  ie-postgres-password:
+    file: ${IECODE_PG_PASSWORD_FILE:?Use the isolated IE profile runtime secret file}
+volumes:
+  ie-postgres-data:
+    labels:
+      io.aphrody.profile: ie
+      io.aphrody.workspace: iecode

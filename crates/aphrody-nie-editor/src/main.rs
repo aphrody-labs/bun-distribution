@@ -1,0 +1,403 @@
+//! Éditeur NIE natif : document partagé, inspection et viewport sur le même device GPU que l'UI.
+use anyhow::{Context, Result};
+use aphrody_nie_editor::EditorSession;
+use aphrody_nie_render3d::{
+    document::{SceneDocumentV2, SceneObjectV2},
+    glb,
+    gpu::{Backend, Camera, GpuModel, GpuRenderer},
+};
+use clap::Parser;
+use eframe::{egui, egui_wgpu, wgpu};
+use std::{collections::HashMap, path::PathBuf};
+
+#[derive(Parser)]
+#[command(about = "Éditeur 3D NIE natif — DirectX 12 / Vulkan / OpenGL")]
+struct Cli {
+    /// Modèle GLB à importer au démarrage.
+    #[arg(long)]
+    glb: Option<PathBuf>,
+    /// Projet JSON à ouvrir ou à créer.
+    #[arg(long)]
+    project: Option<PathBuf>,
+    /// Backend strict : dx12 sur Windows, vulkan sur Linux par défaut ; gl disponible.
+    #[arg(long)]
+    backend: Option<Backend>,
+}
+
+fn main() -> Result<()> {
+    let cli = Cli::parse();
+    let backend = cli.backend.unwrap_or_default();
+    let mut setup = egui_wgpu::WgpuSetupCreateNew::without_display_handle();
+    setup.instance_descriptor.backends = backend.backends();
+    let options = eframe::NativeOptions {
+        viewport: egui::ViewportBuilder::default().with_inner_size([1280., 800.]),
+        renderer: eframe::Renderer::Wgpu,
+        wgpu_options: egui_wgpu::WgpuConfiguration {
+            wgpu_setup: setup.into(),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    eframe::run_native(
+        "NIE Studio",
+        options,
+        Box::new(move |cc| Ok(Box::new(Studio::new(cc, cli)?))),
+    )
+    .map_err(|e| anyhow::anyhow!("éditeur natif : {e}"))
+}
+
+struct Studio {
+    renderer: GpuRenderer,
+    render_state: egui_wgpu::RenderState,
+    gpu_model: Option<GpuModel>,
+    /// The composed scene, kept for picking: the GPU holds the uploaded copy, not the triangles.
+    pickable: Option<glb::Model>,
+    /// Which object produced each primitive of `pickable`, parallel to its primitives.
+    owners: Vec<String>,
+    texture: Option<egui::TextureId>,
+    /// Dimensions physiques de la vue inscrite auprès d'egui. La texture cible est persistante
+    /// entre deux redimensionnements : éviter de la réenregistrer à chaque frame.
+    texture_size: Option<[u32; 2]>,
+    session: EditorSession,
+    pending_edit: Option<SceneDocumentV2>,
+    assets: HashMap<String, glb::Model>,
+    camera: Camera,
+    framing: Option<([f32; 3], f32)>,
+    asset_path: String,
+    project_path: String,
+    status: String,
+    dirty: bool,
+}
+
+impl Studio {
+    fn new(cc: &eframe::CreationContext<'_>, cli: Cli) -> Result<Self> {
+        cc.egui_ctx.set_visuals(egui::Visuals::dark());
+        let state = cc.wgpu_render_state.clone().context("device GPU absent")?;
+        let info = state.adapter.get_info();
+        println!(
+            "NIE Studio backend={:?} adapter={:?} type={:?}",
+            info.backend, info.name, info.device_type
+        );
+        let mut studio = Self {
+            renderer: GpuRenderer::from_device(info, state.device.clone(), state.queue.clone()),
+            render_state: state,
+            gpu_model: None,
+            pickable: None,
+            owners: Vec::new(),
+            texture: None,
+            texture_size: None,
+            session: EditorSession::default(),
+            pending_edit: None,
+            assets: HashMap::new(),
+            camera: Camera::default(),
+            framing: None,
+            asset_path: String::new(),
+            project_path: cli
+                .project
+                .as_ref()
+                .map(|p| p.to_string_lossy().into_owned())
+                .unwrap_or_default(),
+            status: "Importez un GLB ou ouvrez un projet NIE.".into(),
+            dirty: true,
+        };
+        if let Some(path) = cli.project.filter(|p| p.exists()) {
+            studio.open_project(&path)?;
+        }
+        if let Some(path) = cli.glb {
+            studio.import(&path)?;
+        }
+        Ok(studio)
+    }
+
+    fn checkpoint(&mut self, before: SceneDocumentV2) {
+        match self.session.commit(before) {
+            Ok(true) => self.dirty = true,
+            Ok(false) => {},
+            Err(error) => self.status = error.to_string(),
+        }
+    }
+
+    fn import(&mut self, path: &std::path::Path) -> Result<()> {
+        let path = path.canonicalize().with_context(|| format!("asset {}", path.display()))?;
+        let key = path.to_string_lossy().into_owned();
+        let model = glb::parse(&std::fs::read(&path)?)?;
+        self.session.add_object(SceneObjectV2 {
+            // Vide : la session frappe l'identifiant, qui est une donnée du document.
+            id: String::new(),
+            parent: None,
+            name: path.file_stem().unwrap_or_default().to_string_lossy().into_owned(),
+            asset: key.clone(),
+            position: [0.; 3],
+            rotation: [0., 0., 0., 1.],
+            scale: [1.; 3],
+            visible: true,
+        })?;
+        self.assets.insert(key, model);
+        self.framing = None;
+        self.dirty = true;
+        self.status = "Modèle importé dans la scène.".into();
+        Ok(())
+    }
+
+    fn open_project(&mut self, path: &std::path::Path) -> Result<()> {
+        let bytes = std::fs::read(path)?;
+        let session = EditorSession::from_json(&bytes)?;
+        let mut assets = HashMap::new();
+        for object in &session.document().objects {
+            let asset = path.parent().unwrap_or(std::path::Path::new(".")).join(&object.asset);
+            assets.insert(object.asset.clone(), glb::parse(&std::fs::read(asset)?)?);
+        }
+        self.session = session;
+        self.assets = assets;
+        self.pending_edit = None;
+        self.framing = None;
+        self.dirty = true;
+        self.status = "Projet ouvert.".into();
+        Ok(())
+    }
+
+    fn rebuild(&mut self) -> Result<()> {
+        let (model, owners) = self.session.document().compose_indexed(|path| {
+            self.assets.get(path).cloned().with_context(|| format!("asset manquant : {path}"))
+        })?;
+        let mut gpu_model = self.renderer.upload(&model);
+        let (center, radius) =
+            *self.framing.get_or_insert_with(|| aphrody_nie_render3d::render::bounds(&model));
+        gpu_model.set_framing(center, radius.max(0.001))?;
+        self.gpu_model = Some(gpu_model);
+        self.pickable = Some(glb::Model { primitives: model.primitives, textures: Vec::new() });
+        self.owners = owners;
+        self.dirty = false;
+        Ok(())
+    }
+}
+
+impl Studio {
+    /// Select the object under a pixel of the rendered texture.
+    ///
+    /// Inverts the frame against the framing the GPU model was drawn with, not against the
+    /// bounds of the current scene: `framing` is kept across rebuilds so the view does not jump
+    /// on every edit, and a ray cast from recomputed bounds would miss what is on screen.
+    fn pick_at(&mut self, x: f32, y: f32, size: [u32; 2]) {
+        let (Some(model), Some((center, radius))) = (&self.pickable, self.framing) else {
+            return;
+        };
+        let camera = self.camera.clamped();
+        let basis = aphrody_nie_render3d::pick::orbital_basis(
+            center,
+            radius.max(0.001),
+            camera.yaw,
+            camera.pitch,
+            camera.distance,
+        );
+        let ray = aphrody_nie_render3d::pick::ray_for_pixel_orbital(&basis, x, y, size[0], size[1]);
+        let hit = aphrody_nie_render3d::pick::pick(model, &ray);
+        let owner = hit.and_then(|hit| self.owners.get(hit.primitive));
+        self.session.select_by_id(owner.map(String::as_str));
+    }
+
+    fn studio_ui(&mut self, ui: &mut egui::Ui) {
+        let mut result: Result<()> = Ok(());
+        ui.horizontal(|ui| {
+            ui.heading("NIE Studio");
+            ui.label(format!(
+                "{:?} · {}",
+                self.renderer.adapter_info().backend,
+                self.renderer.adapter_info().name
+            ));
+        });
+        ui.horizontal(|ui| {
+            ui.label("GLB");
+            ui.text_edit_singleline(&mut self.asset_path);
+            if ui.button("Importer").clicked() {
+                result = self.import(&PathBuf::from(&self.asset_path));
+            }
+            if ui.add_enabled(self.session.can_undo(), egui::Button::new("Annuler")).clicked() {
+                self.dirty = self.session.undo();
+            }
+            if ui.add_enabled(self.session.can_redo(), egui::Button::new("Rétablir")).clicked() {
+                self.dirty = self.session.redo();
+            }
+        });
+        ui.horizontal(|ui| {
+            ui.label("Projet");
+            ui.text_edit_singleline(&mut self.project_path);
+            if ui.button("Ouvrir").clicked() {
+                result = self.open_project(&PathBuf::from(&self.project_path));
+            }
+            if ui.button("Enregistrer").clicked() {
+                result = (|| {
+                    std::fs::write(&self.project_path, self.session.to_json_pretty()?)?;
+                    self.status = "Projet enregistré.".into();
+                    Ok(())
+                })();
+            }
+            if ui.button("Recadrer").clicked() {
+                self.camera = Camera::default();
+                self.framing = None;
+                self.dirty = true;
+            }
+        });
+        ui.separator();
+        let before = self.session.document().clone();
+        let mut duplicate_requested = false;
+        let mut remove_requested = false;
+        egui::Panel::left("hierarchie").default_size(280.).show(ui, |pane| {
+            pane.heading("Scène");
+            let mut requested_selection = None;
+            for (index, object) in self.session.document().objects.iter().enumerate() {
+                if pane
+                    .selectable_label(self.session.selected() == Some(index), &object.name)
+                    .clicked()
+                {
+                    requested_selection = Some(index);
+                }
+            }
+            if let Some(index) = requested_selection {
+                self.session.select(Some(index)).expect("listed object exists");
+            }
+            if let Some(index) = self.session.selected() {
+                let object = &mut self.session.document_mut().objects[index];
+                pane.separator();
+                pane.heading("Inspecteur");
+                pane.text_edit_singleline(&mut object.name);
+                pane.checkbox(&mut object.visible, "Visible");
+                for axis in 0..3 {
+                    pane.horizontal(|ui| {
+                        ui.label(["X", "Y", "Z"][axis]);
+                        ui.add(
+                            egui::DragValue::new(&mut object.position[axis])
+                                .speed(0.01)
+                                .range(-1e6..=1e6),
+                        );
+                    });
+                }
+                // Le document porte un quaternion complet ; cet éditeur n'expose que le
+                // lacet, donc il le lit et ne le réécrit qu'une fois déplacé — sinon il
+                // écraserait à chaque image une inclinaison posée ailleurs.
+                let mut yaw = object.yaw_degrees();
+                if pane
+                    .add(egui::Slider::new(&mut yaw, -180.0..=180.0).text("Rotation Y"))
+                    .changed()
+                {
+                    object.set_yaw_degrees(yaw);
+                }
+                for axis in 0..3 {
+                    pane.add(
+                        egui::Slider::new(&mut object.scale[axis], 0.01..=10.)
+                            .text(format!("Échelle {}", ["X", "Y", "Z"][axis])),
+                    );
+                }
+                duplicate_requested = pane.button("Dupliquer").clicked();
+                remove_requested = pane.button("Supprimer").clicked();
+            }
+        });
+        if before != *self.session.document() && ui.input(|input| input.pointer.primary_down()) {
+            self.pending_edit.get_or_insert(before);
+            self.dirty = true;
+        } else if !ui.input(|input| input.pointer.primary_down()) {
+            if let Some(start) = self.pending_edit.take() {
+                self.checkpoint(start);
+            } else {
+                self.checkpoint(before);
+            }
+        }
+        // Finish the interactive edit before recording a separate object operation.
+        if duplicate_requested {
+            result = self.session.duplicate_selected([1.0, 0.0, 0.0]).map(|_| {
+                self.dirty = true;
+            });
+        } else if remove_requested {
+            result = self.session.remove_selected().map(|_| {
+                self.dirty = true;
+            });
+        }
+        if self.dirty
+            && let Err(error) = self.rebuild()
+        {
+            self.status = error.to_string();
+        }
+        egui::CentralPanel::default().show(ui, |pane| {
+            let size = pane.available_size().max(egui::vec2(1., 1.));
+            if let Some(model) = &self.gpu_model {
+                let pixels = pane.ctx().pixels_per_point();
+                let texture_size = [(size.x * pixels) as u32, (size.y * pixels) as u32];
+                match self.renderer.render_to_texture(
+                    model,
+                    self.camera,
+                    texture_size[0],
+                    texture_size[1],
+                ) {
+                    Ok(view) => {
+                        let mut painter = self.render_state.renderer.write();
+                        let id = if let Some(id) = self.texture {
+                            if self.texture_size != Some(texture_size) {
+                                painter.update_egui_texture_from_wgpu_texture(
+                                    &self.render_state.device,
+                                    view,
+                                    wgpu::FilterMode::Linear,
+                                    id,
+                                );
+                                self.texture_size = Some(texture_size);
+                            }
+                            id
+                        } else {
+                            let id = painter.register_native_texture(
+                                &self.render_state.device,
+                                view,
+                                wgpu::FilterMode::Linear,
+                            );
+                            self.texture = Some(id);
+                            self.texture_size = Some(texture_size);
+                            id
+                        };
+                        drop(painter);
+                        let response = pane
+                            .add(egui::Image::new((id, size)).sense(egui::Sense::click_and_drag()));
+                        if response.clicked()
+                            && let Some(pointer) = response.interact_pointer_pos()
+                        {
+                            let local = pointer - response.rect.min;
+                            self.pick_at(
+                                local.x / size.x * texture_size[0] as f32,
+                                local.y / size.y * texture_size[1] as f32,
+                                texture_size,
+                            );
+                        }
+                        if response.dragged() {
+                            let delta = pane.input(|i| i.pointer.delta());
+                            self.camera.yaw -= delta.x * 0.008;
+                            self.camera.pitch += delta.y * 0.008;
+                            self.camera = self.camera.clamped();
+                            pane.ctx().request_repaint();
+                        }
+                        if response.hovered() {
+                            let scroll = pane.input(|i| i.smooth_scroll_delta.y);
+                            if scroll != 0. {
+                                self.camera.distance *= (-scroll * 0.002).exp();
+                                self.camera = self.camera.clamped();
+                                pane.ctx().request_repaint();
+                            }
+                        }
+                    },
+                    Err(error) => self.status = error.to_string(),
+                }
+            }
+        });
+        if let Err(error) = result {
+            self.status = error.to_string();
+        }
+        ui.label(&self.status);
+        for dropped in ui.ctx().input(|i| i.raw.dropped_files.clone()) {
+            if let Err(error) = self.import(dropped.path()) {
+                self.status = error.to_string();
+            }
+        }
+    }
+}
+
+impl eframe::App for Studio {
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        egui::CentralPanel::default().show(ui, |ui| self.studio_ui(ui));
+    }
+}

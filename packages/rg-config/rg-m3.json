@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "generator": "aphrody-m3-tokens",
+  "variant": "tonal-spot",
+  "contrast": 0,
+  "themes": [
+    {
+      "id": "rosegriffon-light",
+      "seed": "#e91e63",
+      "dark": false,
+      "selectors": [":root.theme-rg", ".theme-rg"]
+    },
+    {
+      "id": "rosegriffon-dark",
+      "seed": "#e91e63",
+      "dark": true,
+      "selectors": [":root.theme-rg-dark", ".theme-rg-dark"]
+    },
+    {
+      "id": "achillea",
+      "seed": "#6d00ce",
+      "dark": true,
+      "selectors": [":root.achillea", ":root.theme-achillea", ".achillea", ".theme-achillea"]
+    },
+    {
+      "id": "azalee-light",
+      "seed": "#f89c5a",
+      "dark": false,
+      "selectors": [":root.azalee-light", ":root.theme-azalee-light", ".azalee-light", ".theme-azalee-light"]
+    },
+    {
+      "id": "azalee-dark",
+      "seed": "#f89c5a",
+      "dark": true,
+      "selectors": [":root.azalee-dark", ":root.theme-azalee-dark", ".azalee-dark", ".theme-azalee-dark"]
+    }
+  ]
+}

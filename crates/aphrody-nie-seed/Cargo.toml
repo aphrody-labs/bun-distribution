@@ -1,0 +1,34 @@
+[package]
+name = "aphrody-nie-seed"
+description = "Import du savoir fusionné (index Ghidra aphrody-nie-index.json, RTTI, formats iecode, hash→nom inagle) comme ancres de la boucle RE nie"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = ["host"]
+host = [
+    "dep:anyhow",
+    "dep:aphrody-nie-index",
+    "dep:rusqlite",
+    "dep:tracing",
+]
+
+[dependencies]
+aphrody-nie-index = { workspace = true, optional = true, default-features = true }
+aphrody-nie-formats = { workspace = true, default-features = true }
+serde = { version = "1", default-features = false, features = ["std", "derive"] }
+serde_json = { version = "1" }
+thiserror = { version = "2" }
+anyhow = { version = "1", optional = true }
+tracing = { version = "0.1", optional = true }
+rusqlite = { workspace = true, optional = true, features = ["bundled"] }
+
+[dev-dependencies]
+tempfile = { version = "3" }

@@ -1,0 +1,315 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-09",
+  "producer": "iecode",
+  "registry": "https://registry.npmjs.org",
+  "sourceCommit": "4d6bcede56d04a5960eff4d1d0c0c1291cd37b8b",
+  "packages": [
+    {
+      "name": "ieverse",
+      "version": "1.0.3",
+      "integrity": "sha512-SSk/egLmamDek+MXEPxTbxGl885rCTy51lnbm76jrr5o1CwwLLUTe+Q7PHoDJAKA+qKm7iTnDgN07xHojHITBw==",
+      "registryIntegrity": "sha512-SSk/egLmamDek+MXEPxTbxGl885rCTy51lnbm76jrr5o1CwwLLUTe+Q7PHoDJAKA+qKm7iTnDgN07xHojHITBw==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "iecode-homebrew",
+      "version": "0.1.3",
+      "integrity": "sha512-m+GK8K3UdZ7vM1kDm3fotjaiDlmhhzcKxjtUYHphGOsH8DmBpeim264JrWR8ADE0XyqLXUsUd5n7VQ3JvctFpQ==",
+      "registryIntegrity": "sha512-m+GK8K3UdZ7vM1kDm3fotjaiDlmhhzcKxjtUYHphGOsH8DmBpeim264JrWR8ADE0XyqLXUsUd5n7VQ3JvctFpQ==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/azalee",
+      "version": "1.0.9",
+      "integrity": "sha512-0kHhioJW+VHP9qA9tKwViHjqDhoZKvjlv7in7NutfnkQTKeclv1nCmhLrHKgyu/U0Juf5gaI3btyjcVMG+UfNA==",
+      "registryIntegrity": "sha512-0kHhioJW+VHP9qA9tKwViHjqDhoZKvjlv7in7NutfnkQTKeclv1nCmhLrHKgyu/U0Juf5gaI3btyjcVMG+UfNA==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/inagle",
+      "version": "2.0.9",
+      "integrity": "sha512-0AXLHLpRlHrCiP4MN1O/aAcwHNjXl71Aoz9Rmy6/8+uXz1H6FnJEvNe3VbU68XPQw28SQvsGnp+Oz93wDxWJsw==",
+      "registryIntegrity": "sha512-0AXLHLpRlHrCiP4MN1O/aAcwHNjXl71Aoz9Rmy6/8+uXz1H6FnJEvNe3VbU68XPQw28SQvsGnp+Oz93wDxWJsw==",
+      "tarballStatus": 200,
+      "verified": true,
+      "registry": "https://registry.npmjs.org",
+      "install": true,
+      "frozenInstall": true,
+      "exports": 114,
+      "defaultAssetsLocal": true,
+      "externalDatabaseDefault": false,
+      "sourceCommit": "f9b47d3be5b4e59291b5c8d2df186b4cd6cfe731"
+    },
+    {
+      "name": "@rosegriffon/inagle-cross",
+      "version": "1.0.7",
+      "integrity": "sha512-4ZPv7ScjYQZWA1hAL7C7n6RfrSzgj4IO4GqKiHtEIOh+Ay7jaRYaBETpr8efMiG/MJXunNEMk4d4evG0Cefvkw==",
+      "registryIntegrity": "sha512-4ZPv7ScjYQZWA1hAL7C7n6RfrSzgj4IO4GqKiHtEIOh+Ay7jaRYaBETpr8efMiG/MJXunNEMk4d4evG0Cefvkw==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/website",
+      "version": "1.0.3",
+      "integrity": "sha512-Dgod6e6LpjaZQzM1lCpLYmQwAjB88XN0WCqGkpBrUFvg76+bXWpf9OdYZLgse4IarIuhlXQrwsz+WcIzEWYTZA==",
+      "registryIntegrity": "sha512-Dgod6e6LpjaZQzM1lCpLYmQwAjB88XN0WCqGkpBrUFvg76+bXWpf9OdYZLgse4IarIuhlXQrwsz+WcIzEWYTZA==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/identity",
+      "version": "1.0.3",
+      "integrity": "sha512-9FyafpIiJ8S9Mdjyyt4CpEer9/KktPeizhFF9sT9WTXTjfMKRo5/OrPHobKQXjAUCujnIT0af4X25DCgWzEw9g==",
+      "registryIntegrity": "sha512-9FyafpIiJ8S9Mdjyyt4CpEer9/KktPeizhFF9sT9WTXTjfMKRo5/OrPHobKQXjAUCujnIT0af4X25DCgWzEw9g==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/preferences",
+      "version": "1.0.5",
+      "integrity": "sha512-mJgFJxmTk7+VZx/KsdcRQeZci2EYd2NM5DNZn3rFG770xRRitSod92Em7mbZoMUeLG94NWZ8A9U22t6cVoT2tg==",
+      "registryIntegrity": "sha512-mJgFJxmTk7+VZx/KsdcRQeZci2EYd2NM5DNZn3rFG770xRRitSod92Em7mbZoMUeLG94NWZ8A9U22t6cVoT2tg==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/achillea-client",
+      "version": "1.0.3",
+      "integrity": "sha512-f5npkomp5hP/fCS5B4AXrE06qmRGrfFtV3NilrMHMER4vyBjM4Qa70MKAexz7xcTDLrp2oOy9rienZXH8ddSfg==",
+      "registryIntegrity": "sha512-f5npkomp5hP/fCS5B4AXrE06qmRGrfFtV3NilrMHMER4vyBjM4Qa70MKAexz7xcTDLrp2oOy9rienZXH8ddSfg==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/discord-sync",
+      "version": "0.1.2",
+      "integrity": "sha512-M1hHUakW+a9KhQfRvNcZWLqORCitHwav0BIKAO8JaeT0GmYeUhxqyqMPiLY/BrXMdkHwnsDFTfTOoET4DKcfbw==",
+      "registryIntegrity": "sha512-M1hHUakW+a9KhQfRvNcZWLqORCitHwav0BIKAO8JaeT0GmYeUhxqyqMPiLY/BrXMdkHwnsDFTfTOoET4DKcfbw==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/app-shell",
+      "version": "1.0.3",
+      "integrity": "sha512-8DAu49ekYJ/xZPazXDggqkmiyWysfRbbDWiR5LFNLV4TVLJhRqOT/xCtTFSUwQxu0eKAdVvRr7+Yh0A5FDRADA==",
+      "registryIntegrity": "sha512-8DAu49ekYJ/xZPazXDggqkmiyWysfRbbDWiR5LFNLV4TVLJhRqOT/xCtTFSUwQxu0eKAdVvRr7+Yh0A5FDRADA==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/config",
+      "version": "1.0.5",
+      "integrity": "sha512-qqFvtgaG4wDZgMCbS8K8fop5pEVYKFaCjqAxLBPrCGVwAmyoYPyeyMyfyplEpVrqGa9eBbUjSUddz9EPEtYWGg==",
+      "registryIntegrity": "sha512-qqFvtgaG4wDZgMCbS8K8fop5pEVYKFaCjqAxLBPrCGVwAmyoYPyeyMyfyplEpVrqGa9eBbUjSUddz9EPEtYWGg==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/assets",
+      "version": "1.0.5",
+      "integrity": "sha512-ybtjaBOB4GTiZUgDxNXrHeRd2z0p5QdqcGS3R4jRtRXSp6/gS8KC5scplLLEXQe53CaobyJ86NKV1Ynr21MrOA==",
+      "registryIntegrity": "sha512-ybtjaBOB4GTiZUgDxNXrHeRd2z0p5QdqcGS3R4jRtRXSp6/gS8KC5scplLLEXQe53CaobyJ86NKV1Ynr21MrOA==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/db",
+      "version": "1.0.6",
+      "integrity": "sha512-ijIth0XdNYsnZbJuTu8NoJ4K9H/+X7FBBqGb84WJK2DoVJPI41BueDuyuMXAb4qAB78Y7RJ6kLYapAfa/JUlcQ==",
+      "registryIntegrity": "sha512-ijIth0XdNYsnZbJuTu8NoJ4K9H/+X7FBBqGb84WJK2DoVJPI41BueDuyuMXAb4qAB78Y7RJ6kLYapAfa/JUlcQ==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/achillea-types",
+      "version": "1.0.3",
+      "integrity": "sha512-ySbeOhxBaPkhYWMONmyohdwvVuhse006lJRZYmaMTSwFt5Jdtpj0e6S0QL88DSqM2CMzOtWo7dl2HAYuaGs1dA==",
+      "registryIntegrity": "sha512-ySbeOhxBaPkhYWMONmyohdwvVuhse006lJRZYmaMTSwFt5Jdtpj0e6S0QL88DSqM2CMzOtWo7dl2HAYuaGs1dA==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/bot",
+      "version": "1.0.3",
+      "integrity": "sha512-gvVRqRC+/lrSROqB8zmWi5mjHKtIvtrcBYPQ+swFBWNnR42vzttyHTJxjOlMIbmL0K6ZMvr/7OtvMLWSprb1vw==",
+      "registryIntegrity": "sha512-gvVRqRC+/lrSROqB8zmWi5mjHKtIvtrcBYPQ+swFBWNnR42vzttyHTJxjOlMIbmL0K6ZMvr/7OtvMLWSprb1vw==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/achillea-contract",
+      "version": "1.0.4",
+      "integrity": "sha512-p3fhosksl11JinURD8XrThvbg/0T2KEexjaFn5NeLhlFzunAyQU/gE2NnPpceUv1pmRFJqhB1r4g5JetLLqs3g==",
+      "registryIntegrity": "sha512-p3fhosksl11JinURD8XrThvbg/0T2KEexjaFn5NeLhlFzunAyQU/gE2NnPpceUv1pmRFJqhB1r4g5JetLLqs3g==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/achillea-core",
+      "version": "1.0.3",
+      "integrity": "sha512-BiTPK9uC2I1t2lugEn0x62A565YidJP0K2rZ/XdGHTgNNIYLyuY3y7eCTbrmM/dNoO2o1BMXPhQSrRB1TV7zLw==",
+      "registryIntegrity": "sha512-BiTPK9uC2I1t2lugEn0x62A565YidJP0K2rZ/XdGHTgNNIYLyuY3y7eCTbrmM/dNoO2o1BMXPhQSrRB1TV7zLw==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/realtime",
+      "version": "1.0.3",
+      "integrity": "sha512-Ei9GdLxqZ+ZOxWih0eAKe5UzO3+jIT0P+IR2heqgkiGwNRAm8gHbsetRzDnKAdIebBAuzkq1vua6ryI7laYUmQ==",
+      "registryIntegrity": "sha512-Ei9GdLxqZ+ZOxWih0eAKe5UzO3+jIT0P+IR2heqgkiGwNRAm8gHbsetRzDnKAdIebBAuzkq1vua6ryI7laYUmQ==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/storage",
+      "version": "1.0.3",
+      "integrity": "sha512-JzfsL0DX/Z2MCl5cSGl32+TVJqXQUdoZVOKXW3DdBtK0NeJZbEiOAA9DIlX7yX8SKJ2s5OJoomEV9wO9bGH45g==",
+      "registryIntegrity": "sha512-JzfsL0DX/Z2MCl5cSGl32+TVJqXQUdoZVOKXW3DdBtK0NeJZbEiOAA9DIlX7yX8SKJ2s5OJoomEV9wO9bGH45g==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/auth",
+      "version": "1.0.6",
+      "integrity": "sha512-m8qgC8MS607wSX96u3TVpZnwUcxZgWUxnKm6XG7JTll69piRD/as+UPchKNtHhrpGPeW2q7h5Zd4MxZ1BWdo+g==",
+      "registryIntegrity": "sha512-m8qgC8MS607wSX96u3TVpZnwUcxZgWUxnKm6XG7JTll69piRD/as+UPchKNtHhrpGPeW2q7h5Zd4MxZ1BWdo+g==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/types",
+      "version": "1.0.5",
+      "integrity": "sha512-uARRB7jxOTc0tFDhFriwyucNuNG0RpVH5f8afwUN14ALNMPRjR0kFfJWnFe1dqSKXgW/8kMVPDjWJSiGkG+TnQ==",
+      "registryIntegrity": "sha512-uARRB7jxOTc0tFDhFriwyucNuNG0RpVH5f8afwUN14ALNMPRjR0kFfJWnFe1dqSKXgW/8kMVPDjWJSiGkG+TnQ==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/i18n",
+      "version": "1.0.3",
+      "integrity": "sha512-RiSPV87UWemifTYY0VMvtyRbbnI1lM2VAzH+RCUDMLDJEucp2zJwVg8ESQ21HNjAARwtl1Ec6vFcy3QTVxzwwA==",
+      "registryIntegrity": "sha512-RiSPV87UWemifTYY0VMvtyRbbnI1lM2VAzH+RCUDMLDJEucp2zJwVg8ESQ21HNjAARwtl1Ec6vFcy3QTVxzwwA==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/search",
+      "version": "1.0.3",
+      "integrity": "sha512-ufOA1IVasEpMBbS51jzErfZS1h0xgdXYydI2aY+7jldbpPZC+qvK2zDQMuVfCHg12s2sXi5vMP30vKcdC/+ONQ==",
+      "registryIntegrity": "sha512-ufOA1IVasEpMBbS51jzErfZS1h0xgdXYydI2aY+7jldbpPZC+qvK2zDQMuVfCHg12s2sXi5vMP30vKcdC/+ONQ==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/cdn",
+      "version": "1.0.3",
+      "integrity": "sha512-wSoJH4nIQyOHK36sX/ryE9jA2wZb+Fy2Pdi6xcLJ9f8wqgBOPFuYFdIIUigiZB4joUyDW4IawhERDL7ecqzbJA==",
+      "registryIntegrity": "sha512-wSoJH4nIQyOHK36sX/ryE9jA2wZb+Fy2Pdi6xcLJ9f8wqgBOPFuYFdIIUigiZB4joUyDW4IawhERDL7ecqzbJA==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/cron",
+      "version": "1.0.3",
+      "integrity": "sha512-ksKe11kEpSRj1XC/tdW1/vF1wlEgsUjg5/1bRPRL7fOH6+I7HKFpJh6PxOyQ4oZlTeebWCHapCGWlpp69xB9zw==",
+      "registryIntegrity": "sha512-ksKe11kEpSRj1XC/tdW1/vF1wlEgsUjg5/1bRPRL7fOH6+I7HKFpJh6PxOyQ4oZlTeebWCHapCGWlpp69xB9zw==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@aphrody/nie-web",
+      "version": "0.1.2",
+      "integrity": "sha512-p7ItihhdETJJhusNctpYhDV84mNHJtKZNnjexfKX2ZUUtKRIGmwswJd6u1u+DFpk3NBgM369RmKucRAET5XNYQ==",
+      "registryIntegrity": "sha512-p7ItihhdETJJhusNctpYhDV84mNHJtKZNnjexfKX2ZUUtKRIGmwswJd6u1u+DFpk3NBgM369RmKucRAET5XNYQ==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/menu-render-webgpu",
+      "version": "0.1.2",
+      "integrity": "sha512-W9w7WahCqsZUip/xvXZLc3SyY/bcGVRrbChbb2sclZht5eF3bSIqI3ZrFtLHZlJ4glPznu7a5IL80hRfq+tARA==",
+      "registryIntegrity": "sha512-W9w7WahCqsZUip/xvXZLc3SyY/bcGVRrbChbb2sclZht5eF3bSIqI3ZrFtLHZlJ4glPznu7a5IL80hRfq+tARA==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@rosegriffon/menu-render",
+      "version": "0.1.2",
+      "integrity": "sha512-KfvgekpDbknnksL9y9PWYBpzxSLGXQvFJBUXNSvN/1nYX0AWi7tVpxnDrais9OYVpD+YQLEnX0WN1Ld6JfmwqA==",
+      "registryIntegrity": "sha512-KfvgekpDbknnksL9y9PWYBpzxSLGXQvFJBUXNSvN/1nYX0AWi7tVpxnDrais9OYVpD+YQLEnX0WN1Ld6JfmwqA==",
+      "tarballStatus": 200,
+      "verified": true
+    },
+    {
+      "name": "@aphrody/inagle-ui",
+      "version": "0.1.2",
+      "integrity": "sha512-5+pvxHd/EERb3KoLKDnRl+ri4pL2Ad7YIHRaGfQ+LsEQ60OoD9OaURhFOFY4vSFCtEQ+Jeix3QLLP3tiKmNSmw==",
+      "registryIntegrity": "sha512-5+pvxHd/EERb3KoLKDnRl+ri4pL2Ad7YIHRaGfQ+LsEQ60OoD9OaURhFOFY4vSFCtEQ+Jeix3QLLP3tiKmNSmw==",
+      "tarballStatus": 200,
+      "verified": true
+    }
+  ],
+  "pending": ["@aphrody/iecode-web", "@aphrody/nie-ui"],
+  "qualification": "canonical registry metadata and downloaded tarball SHA512; package publication does not qualify every product runtime",
+  "sourceCommitQualification": "Initial 30-package snapshot; per-package sourceCommit identifies later qualified patches.",
+  "cleanConsumer": {
+    "packageCount": 30,
+    "initialSnapshotCommit": "4d6bcede56d04a5960eff4d1d0c0c1291cd37b8b",
+    "installedPackages": 866,
+    "frozenCheckedInstalls": 887,
+    "resolvedPackages": 962,
+    "frozenInstall": true,
+    "imports": [
+      {
+        "spec": "@rosegriffon/achillea-types",
+        "exports": 34,
+        "pass": true
+      },
+      {
+        "spec": "@rosegriffon/achillea-contract",
+        "exports": 20,
+        "pass": true
+      },
+      {
+        "spec": "@rosegriffon/preferences",
+        "exports": 15,
+        "pass": true
+      },
+      {
+        "spec": "@rosegriffon/menu-render",
+        "exports": 1,
+        "pass": true
+      },
+      {
+        "spec": "@rosegriffon/menu-render/lua-host",
+        "exports": 5,
+        "pass": true
+      },
+      {
+        "spec": "@rosegriffon/menu-render-webgpu",
+        "exports": 28,
+        "pass": true
+      },
+      {
+        "spec": "@aphrody/nie-web/engine",
+        "exports": 9,
+        "pass": true
+      },
+      {
+        "spec": "@rosegriffon/inagle",
+        "exports": 114,
+        "pass": true
+      },
+      {
+        "spec": "@rosegriffon/inagle-cross",
+        "exports": 11,
+        "pass": true
+      }
+    ],
+    "officialBunTypes": false
+  }
+}

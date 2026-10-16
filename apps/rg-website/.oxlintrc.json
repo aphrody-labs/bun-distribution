@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../node_modules/oxlint/configuration_schema.json",
+  "extends": ["../../packages/rg-config/oxlintrc.json"],
+  "settings": {
+    "next": {
+      "rootDir": "."
+    }
+  },
+  "rules": {
+    "nextjs/no-img-element": "warn",
+    "jsx-a11y/anchor-is-valid": "off",
+    "typescript/no-non-null-assertion": "warn",
+    "react/exhaustive-deps": "warn"
+  }
+}

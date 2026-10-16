@@ -1,0 +1,36 @@
+[package]
+name = "aphrody-nie-ocgen"
+description = "Pipeline de génération 3D d'un personnage original : références mesurées → CHARA_EDIT_PARAM → composition → plan d'assemblage"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-nie-data = { workspace = true, features = ["serde", "std"] }
+aphrody-nie-formats = { workspace = true, default-features = false, features = ["std", "textures"] }
+serde = { version = "1", default-features = false, features = ["std", "derive"] }
+serde_json = { version = "1" }
+thiserror = { version = "2" }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
+clap = { workspace = true, features = ["derive"], optional = true }
+
+[dev-dependencies]
+
+[features]
+default = []
+# The command surface. Kept optional so a host embedding the library does not pull clap.
+cli = ["dep:clap"]
+# Payload BC7 des icônes (le format du jeu). Tire `intel_tex_2`, dont les noyaux ISPC ne sont
+# livrés que pour MSVC : le link échoue sur la cible windows-gnu, d.où une feature et non un défaut.
+bc7 = ["aphrody-nie-formats/textures-encode"]
+
+[[bin]]
+name = "aphrody-nie-ocgen"
+path = "src/main.rs"
+required-features = ["cli"]

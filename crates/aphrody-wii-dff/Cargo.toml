@@ -1,0 +1,11 @@
+[package]
+description = "Portable Wii DFF container parsing and serialization."
+name = "aphrody-wii-dff"
+version = "0.1.1"
+edition.workspace = true
+publish = true
+license = "GPL-3.0-only"
+
+[lib]
+name = "dff"
+path = "src/lib.rs"

@@ -1,0 +1,60 @@
+# Rose Griffon
+
+> Association française dédiée à la communauté Inazuma Eleven. Rose Griffon rassemble les fans francophones autour d'événements, de projets créatifs et de contenus sur la licence Inazuma Eleven (LEVEL-5).
+
+Site officiel : https://rosegriffon.fr
+Wiki Azalée (Inazuma Eleven: Victory Road) : https://rosegriffon.fr/wiki
+Développeur & fondateur : yoyo — https://x.com/yoyo__goat
+Généré le : 2026-09-22
+
+## Pages principales
+
+- [Accueil](https://rosegriffon.fr/) : présentation de l'association Rose Griffon.
+- [Communauté](https://rosegriffon.fr/community) : bureau, équipes, partenaires et membres du Discord.
+- [À propos](https://rosegriffon.fr/a-propos) : qui sommes-nous, comment rejoindre.
+- [Projets](https://rosegriffon.fr/projets) : projets créatifs de la communauté (Nostalgie, émotes, muraux, outils).
+- [Événements](https://rosegriffon.fr/evenements) : tournois, rencontres et événements communautaires.
+- [Actualités](https://rosegriffon.fr/news) : articles et actualités de l'association.
+- [Nous soutenir](https://rosegriffon.fr/nous-soutenir) : soutenir Rose Griffon.
+
+## Réseaux & liens
+
+- Wiki Azalée : https://rosegriffon.fr/wiki
+- X / Twitter Azalée : https://x.com/Azalee_IE
+- Développeur (yoyo) : https://x.com/yoyo__goat
+
+## Ressources
+
+- [Sitemap](https://rosegriffon.fr/sitemap.xml)
+- [robots.txt](https://rosegriffon.fr/robots.txt)
+
+# Azalée — Wiki Inazuma Eleven: Victory Road
+
+> Wiki francophone consacré à Inazuma Eleven: Victory Road (IEVR), maintenu par l'association Rose Griffon. Base de données complète : personnages, techniques, objets, auras, tactiques et actualités.
+
+Wiki : https://rosegriffon.fr/wiki
+Association : Rose Griffon — https://rosegriffon.fr
+Développeur & fondateur : yoyo — https://x.com/yoyo__goat
+Généré le : 2026-09-22
+
+## Sections principales
+
+- [Personnages](https://rosegriffon.fr/wiki/chara) : fiches des joueurs et personnages.
+- [Techniques](https://rosegriffon.fr/wiki/skill) : techniques spéciales (tirs, dribbles, blocs, gardiens).
+- [Objets](https://rosegriffon.fr/wiki/item) : objets et équipements.
+- [Auras](https://rosegriffon.fr/wiki/aura) : esprits guerriers, totems, miximax, éveils, changements de mode.
+- [Passifs](https://rosegriffon.fr/wiki/passive) : compétences passives.
+- [Tactiques](https://rosegriffon.fr/wiki/tactic) : tactiques d'équipe.
+- [Actualités](https://rosegriffon.fr/news) : news et patch-notes du jeu.
+- [Outils](https://rosegriffon.fr/wiki/tools) : comparateur, équipe aléatoire, traducteur.
+
+## Réseaux & liens
+
+- Site Rose Griffon : https://rosegriffon.fr
+- X / Twitter Azalée : https://x.com/Azalee_IE
+- Développeur (yoyo) : https://x.com/yoyo__goat
+
+## Ressources
+
+- [Sitemap](https://rosegriffon.fr/sitemap.xml)
+- [robots.txt](https://rosegriffon.fr/robots.txt)

@@ -1,0 +1,18 @@
+[package]
+name = "aphrody-nie-render"
+description = "Façade de rendu nie: 2D, 3D CPU/GPU, GUI et WASM"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-nie-formats = { workspace = true, features = ["std"] }
+aphrody-nie-render3d = { workspace = true, default-features = false }
+aphrody-nie-runtime.workspace = true
+

@@ -1,0 +1,10 @@
+[package]
+license-file = "LICENSE.libctru"
+name = "aphrody-ctr"
+version = "0.1.1"
+edition.workspace = true
+publish = true
+description = "Pure Nintendo 3DS PICA command encoding and register stream decoding"
+
+[lints]
+workspace = true

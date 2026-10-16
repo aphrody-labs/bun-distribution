@@ -1,0 +1,108 @@
+use std::{
+    fmt::Display,
+    path::{Path, PathBuf},
+};
+
+use anyhow::{Context, Result, bail};
+use aphrody_dust_core::decomp::config::{
+    config::{Config, ConfigModule},
+    module::ModuleKind,
+};
+use clap::Args;
+
+use crate::{
+    cmd::ModuleFilterArgs,
+    util::io::{FileError, read_file},
+};
+
+/// Verifies that built modules are matching the base ROM.
+#[derive(Args)]
+pub struct CheckModules {
+    /// Path to config.yaml.
+    #[arg(long, short = 'c')]
+    pub config_path: PathBuf,
+
+    /// Return failing exit code if a module doesn't pass the checks.
+    #[arg(long, short = 'f')]
+    pub fail: bool,
+
+    #[command(flatten)]
+    pub module_filter: ModuleFilterArgs,
+}
+
+#[derive(PartialEq, Eq)]
+enum CheckResult {
+    ChecksumFailed,
+    Ok, // OK
+}
+
+impl CheckModules {
+    pub fn run(&self) -> Result<()> {
+        let config = Config::from_file(&self.config_path)?;
+        let config_path = self.config_path.parent().unwrap();
+
+        let mut success = true;
+
+        if self.module_filter.has(ModuleKind::Arm9) {
+            success &=
+                Self::print_check_module(&config.main_module, ModuleKind::Arm9, config_path)?;
+        }
+        for autoload in &config.autoloads {
+            if self.module_filter.has(ModuleKind::Autoload(autoload.kind)) {
+                success &= Self::print_check_module(
+                    &autoload.module,
+                    ModuleKind::Autoload(autoload.kind),
+                    config_path,
+                )?;
+            }
+        }
+        for overlay in &config.overlays {
+            if self.module_filter.has(ModuleKind::Overlay(overlay.id)) {
+                success &= Self::print_check_module(
+                    &overlay.module,
+                    ModuleKind::Overlay(overlay.id),
+                    config_path,
+                )?;
+            }
+        }
+
+        if self.fail && !success {
+            bail!("Some module(s) didn't pass the checks.");
+        }
+
+        Ok(())
+    }
+
+    fn print_check_module(
+        module: &ConfigModule,
+        module_kind: ModuleKind,
+        config_path: &Path,
+    ) -> Result<bool> {
+        let result = Self::check_module(module, config_path)?;
+        log::info!("Check {module_kind}: {result}");
+        Ok(result == CheckResult::Ok)
+    }
+
+    fn check_module(module: &ConfigModule, config_path: &Path) -> Result<CheckResult> {
+        let base_hash = u64::from_str_radix(&module.hash, 16)
+            .with_context(|| format!("Invalid hash '{}'", module.hash))?;
+
+        let code = match read_file(config_path.join(&module.object)) {
+            Ok(code) => code,
+            Err(FileError::FileNotFound { .. }) => vec![],
+            Err(e) => return Err(e.into()),
+        };
+        let code_hash = fxhash::hash64(&code);
+
+        if code_hash == base_hash { Ok(CheckResult::Ok) } else { Ok(CheckResult::ChecksumFailed) }
+    }
+}
+
+impl Display for CheckResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CheckResult::ChecksumFailed => write!(f, "checksum failed"),
+            CheckResult::Ok => write!(f, "OK"),
+        }
+    }
+}

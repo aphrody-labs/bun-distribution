@@ -1,0 +1,14 @@
+[package]
+description = "Procedural macros for IECODE emulator utilities."
+license-file = "../../docs/licenses/iecode/licenses/dust/LICENSE"
+name = "aphrody-emu-utils-macros"
+version = "0.0.1"
+edition = "2021"
+publish = true
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "2.0", features = ["full"] }
+quote = "1.0"
+proc-macro2 = "1.0"

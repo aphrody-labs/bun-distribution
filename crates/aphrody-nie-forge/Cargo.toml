@@ -1,0 +1,48 @@
+[package]
+name = "aphrody-nie-forge"
+description = "Forge de nie.exe — découpe, régénère et mesure le binaire produit depuis le workspace Rust"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "aphrody_nie_forge"
+path = "src/lib.rs"
+
+[[bin]]
+name = "aphrody-nie-forge"
+path = "src/main.rs"
+# Le binaire lit `var/nie.sqlite` (noms et bornes) : il exige la feature.
+# La bibliotheque, elle, reste liable sans — c'est ce qui permet a
+# `nie-explorer` de l'embarquer sans dupliquer le moteur SQLite.
+required-features = ["redb"]
+
+[dependencies]
+aphrody-nie-pe = { workspace = true, default-features = true }
+aphrody-nie-asm = { workspace = true, default-features = true }
+iced-x86.workspace = true
+anyhow = { version = "1" }
+clap = { workspace = true, optional = true, features = ["derive", "color", "env"] }
+serde = { version = "1", default-features = false, features = ["std", "derive"] }
+serde_json = { version = "1" }
+# Base de connaissance RE (var/nie.sqlite) : noms de fonctions et bornes .pdata.
+# OPTIONNELLE : `rusqlite` porte `links = "sqlite3"`, que Cargo interdit de dupliquer. Sans
+# cela, `nie-explorer` (qui lie `sqlx-sqlite` via tauri-plugin-sql) ne peut pas lier ce crate
+# du tout — or il n'a besoin que du recouvrement, du registre et du rapport, tous purs.
+rusqlite = { workspace = true, optional = true, features = ["bundled"] }
+
+[features]
+default = ["redb"]
+# Lecture de `var/nie.sqlite` (module `redb`). Le binaire `aphrody-nie-forge` en a besoin ;
+# `nie-explorer` la desactive pour n'embarquer qu'un seul moteur SQLite.
+redb = ["dep:clap", "dep:rusqlite"]
+
+[dev-dependencies]
+tempfile = { version = "3" }
+
+[lints]
+workspace = true

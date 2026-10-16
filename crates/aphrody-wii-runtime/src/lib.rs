@@ -1,0 +1,31 @@
+pub mod audio;
+pub mod boot;
+pub mod common;
+pub mod dvd;
+pub mod flipper;
+#[cfg(feature = "fps-counter")]
+pub mod fps;
+pub mod gamecube;
+pub mod gekko;
+pub mod hollywood;
+pub mod host;
+pub mod input;
+pub mod ipl;
+pub mod jit;
+pub mod mmio;
+pub mod paths;
+#[cfg(any(feature = "jit-stats", feature = "profile", feature = "gx-stats"))]
+pub mod profile;
+pub mod savestate;
+pub mod scheduler;
+pub mod starlet;
+pub mod system;
+pub mod wii;
+
+pub use gamecube::GameCube;
+pub use input::{HostInput, InputSink};
+pub use system::{ExecutionMode, GC, System, SystemId, WII};
+pub use wii::Wii;
+
+#[cfg(feature = "hooks")]
+pub mod hooks;

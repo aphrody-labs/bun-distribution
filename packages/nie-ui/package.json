@@ -1,0 +1,30 @@
+{
+  "name": "@aphrody/nie-ui",
+  "version": "1.4.4",
+  "private": true,
+  "description": "NIE UI and design, unified: emulator web UI (src), menu renderers, NIE web/site libraries and scripts, pixel-perfect tooling, skills, docs and the Rust crates (rust/).",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/bun-os.git",
+    "directory": "packages/nie-ui"
+  },
+  "type": "module",
+  "exports": {
+    "./ui": "./src/ui/ui.ts",
+    "./styles/main.less": "./src/styles/main.less"
+  },
+  "scripts": {
+    "lint": "bun lint src packages",
+    "fmt:check": "bun fmt --check src",
+    "typecheck": "bun run --filter '*' typecheck",
+    "typecheck:ui": "bun check -p src/ui/tsconfig.json --noEmit",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "noEmit": false,
+    "rewriteRelativeImportExtensions": true,
+    "declaration": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": false,
+    "skipLibCheck": true,
+    "types": ["bun", "pg", "node"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/**/*.test.ts",
+    "src/zukan/scripts",
+    // Script de maintenance one-shot : importe en dur `../../../db/src/service.js`
+    // (source d'un autre workspace, hors `rootDir` → TS6059). Aucun consommateur
+    // du `dist` (lancé via `bun src/zukan/map-missing-skill-videos.ts`). Exclu du build.
+    "src/zukan/map-missing-skill-videos.ts"
+  ]
+}

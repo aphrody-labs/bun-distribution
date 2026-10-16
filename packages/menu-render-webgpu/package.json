@@ -1,0 +1,52 @@
+{
+  "name": "@rosegriffon/menu-render-webgpu",
+  "version": "1.4.4",
+  "private": false,
+  "description": "Renderer WebGPU 2D pixel-perfect pour les écrans de menu IEVR (quads texturés instanciés, projection ortho 1280×720, sampler nearest, premultiplied alpha, blend par drawType, z-order painter par drawPriority). Fallback DOM <GameMenu> de @rosegriffon/menu-render.",
+  "license": "UNLICENSED",
+  "files": [
+    "src",
+    "test",
+    "tsconfig.json"
+  ],
+  "type": "module",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "lint": "bun lint src",
+    "lint:fix": "bun lint src --fix",
+    "test": "bun test",
+    "clean": "rm -rf *.tsbuildinfo",
+    "typecheck": "bun check --noEmit"
+  },
+  "dependencies": {
+    "@rosegriffon/menu-render": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@webgpu/types": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

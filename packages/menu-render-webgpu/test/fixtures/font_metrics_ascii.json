@@ -1,0 +1,1444 @@
+{
+  "Encoding": "shift_jis",
+  "Entries": [
+    {
+      "Name": "INF_0",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 46 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 71 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 25 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 7469 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 4096 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2048 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_0",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 32 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 32 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 16 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_1",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 33 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 33 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 14 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 7 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 11 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_2",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 34 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 34 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 33 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 13 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 17 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_3",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 35 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 35 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 58 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 30 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 31 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_4",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 36 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 36 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 100 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 33 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 36 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_5",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 37 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 37 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 145 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 40 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 44 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_6",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 197 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 40 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_7",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 39 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 39 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 247 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 7 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 10 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_8",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 40 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 40 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 266 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 13 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 17 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_9",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 41 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 41 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 291 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 13 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 17 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_10",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 42 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 42 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 316 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 19 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 21 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_11",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 43 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 43 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 347 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 28 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 30 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_12",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 44 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 44 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 387 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 7 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 12 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_13",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 45 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 45 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 406 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 17 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 20 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_14",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 46 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 46 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 435 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 7 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 12 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_15",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 47 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 47 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 454 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 20 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 21 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_16",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 48 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 48 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 486 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 31 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_17",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 49 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 49 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 529 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 15 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 8 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_18",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 50 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 50 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 556 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 31 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_19",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 51 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 51 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 599 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 32 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_20",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 52 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 52 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 643 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 35 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_21",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 53 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 53 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 690 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 32 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_22",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 54 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 54 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 734 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 32 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_23",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 55 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 55 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 778 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 32 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_24",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 56 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 56 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 822 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 33 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_25",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 57 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 57 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 867 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 32 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_26",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 58 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 58 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 911 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 7 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 13 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_27",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 59 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 59 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 930 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 7 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 13 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_28",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 60 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 60 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 949 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 24 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 28 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_29",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 61 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 61 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 985 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 29 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 32 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_30",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 62 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 62 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1026 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 24 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 28 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_31",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 63 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 63 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1062 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 33 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 37 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_32",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 64 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 64 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1107 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 41 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_33",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 65 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 65 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1157 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 39 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_34",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 66 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 66 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1207 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 31 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 4 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 37 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_35",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 67 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 67 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1250 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 34 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 40 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_36",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 68 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 68 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1296 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 33 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 4 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 40 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_37",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 69 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 69 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1341 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 30 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 4 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 35 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_38",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 70 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 70 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1383 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 29 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 4 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 34 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_39",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 71 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 71 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1424 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 34 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 40 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_40",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 72 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 72 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1470 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 32 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 4 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 40 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_41",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 73 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 73 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1514 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 6 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 4 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 13 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_42",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 74 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 74 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1532 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 29 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 34 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_43",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 75 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 75 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1573 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 32 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 4 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 36 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_44",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 76 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 76 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1617 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 29 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 4 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 34 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_45",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 77 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 77 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1658 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 4 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 46 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_46",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 78 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 78 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1708 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 32 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 4 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 40 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_47",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 79 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 79 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1752 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 35 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 41 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_48",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 80 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 80 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1799 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 31 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 4 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_49",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 81 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 81 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1842 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 35 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 41 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_50",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 82 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 82 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1889 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 33 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 4 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_51",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 83 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 83 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1934 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 34 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 37 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_52",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 84 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 84 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 1980 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 35 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 36 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_53",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 85 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 85 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2027 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 34 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 40 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_54",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 86 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 86 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2073 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 37 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_55",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 87 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 87 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2122 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 47 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 48 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_56",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 88 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 88 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2181 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 37 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_57",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 89 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 89 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2230 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 37 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_58",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 90 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 90 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2279 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 34 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 35 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_59",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 91 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 91 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2325 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 12 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 4 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 17 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_60",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 92 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 92 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2349 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 19 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 18 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_61",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 93 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 93 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2380 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 13 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 17 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_62",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 94 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 94 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2405 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 21 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 24 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_63",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 95 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 95 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2438 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 23 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 23 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_64",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 96 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 96 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2473 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 12 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 14 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_65",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 97 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 97 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2497 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 27 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 31 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_66",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 98 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 98 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2536 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 27 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 33 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_67",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 99 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 99 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2575 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 28 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 32 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_68",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 100 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 100 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2615 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 27 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 33 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_69",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 101 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 101 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2654 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 29 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 32 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_70",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 102 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 102 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2695 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 20 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 21 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_71",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 103 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 103 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2727 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 32 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 33 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_72",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 104 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 104 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2771 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 26 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 32 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_73",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 105 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 105 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2809 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 7 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 12 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_74",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 106 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 106 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2828 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 13 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 16 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_75",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 107 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 107 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2853 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 26 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 4 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 30 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_76",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 108 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 108 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2891 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 6 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 4 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 13 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_77",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 109 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 109 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2909 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 38 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 4 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 46 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_78",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 110 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 110 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2959 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 26 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 32 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_79",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 111 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 111 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 2997 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 28 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 32 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_80",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 112 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 112 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 3037 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 28 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 33 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_81",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 113 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 113 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 3077 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 27 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 33 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_82",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 114 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 114 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 3116 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 19 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 23 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_83",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 115 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 115 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 3147 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 27 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 30 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_84",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 116 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 116 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 3186 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 20 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 22 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_85",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 117 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 117 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 3218 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 26 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 32 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_86",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 118 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 118 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 3256 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 29 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 30 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_87",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 119 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 119 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 3297 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 40 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 41 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_88",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 120 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 120 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 3349 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 29 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 30 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_89",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 121 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 121 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 3390 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 28 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 29 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_90",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 122 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 122 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 3430 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 26 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 28 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_91",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 123 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 123 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 3468 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 11 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 14 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_92",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 124 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 124 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 3491 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 5 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 3 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 11 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_93",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 125 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 125 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 3508 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 12 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 14 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    },
+    {
+      "Name": "CHR_94",
+      "EndTerminator": true,
+      "Variables": [
+        { "Name": "Variable_0", "Type": "Int", "Value": 0 },
+        { "Name": "Variable_1", "Type": "Int", "Value": 126 },
+        { "Name": "Variable_2", "Type": "Int", "Value": 126 },
+        { "Name": "Variable_3", "Type": "Int", "Value": 3532 },
+        { "Name": "Variable_4", "Type": "Int", "Value": 1 },
+        { "Name": "Variable_5", "Type": "Int", "Value": 21 },
+        { "Name": "Variable_6", "Type": "Int", "Value": 2 },
+        { "Name": "Variable_7", "Type": "Int", "Value": 24 },
+        { "Name": "Variable_8", "Type": "Int", "Value": 0 }
+      ]
+    }
+  ]
+}

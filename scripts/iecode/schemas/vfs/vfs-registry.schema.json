@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rosegriffon.fr/schemas/vfs/vfs-registry.schema.json",
+  "title": "VfsFormatRegistry",
+  "description": "Canonical schema for the Inazuma Eleven: Victory Road VFS format registry and cross-language descriptors.",
+  "type": "object",
+  "required": ["version", "engine", "formats"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "engine": {
+      "type": "string",
+      "enum": ["aphrody-nie-formats", "IECODE.Core.CriFs"]
+    },
+    "formats": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/FormatEntry"
+      }
+    }
+  },
+  "$defs": {
+    "FormatEntry": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "magicHex",
+        "magicAscii",
+        "extension",
+        "mimeType",
+        "category",
+        "endianness",
+        "encryptionSupported",
+        "compressionSupported",
+        "description",
+        "headerLayout"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "name": {
+          "type": "string"
+        },
+        "magicHex": {
+          "type": "string",
+          "pattern": "^0x[0-9A-Fa-f]{8}$"
+        },
+        "magicAscii": {
+          "type": "string"
+        },
+        "rawUint32Le": {
+          "type": "integer"
+        },
+        "rawUint32Be": {
+          "type": "integer"
+        },
+        "extension": {
+          "type": "string",
+          "pattern": "^\\.[a-z0-9.]+$"
+        },
+        "mimeType": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["texture", "model", "container", "config", "audio", "video", "script", "system", "collision"]
+        },
+        "endianness": {
+          "type": "string",
+          "enum": ["little", "big", "mixed"]
+        },
+        "encryptionSupported": {
+          "type": "boolean"
+        },
+        "compressionSupported": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string"
+        },
+        "headerLayout": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["offsetHex", "offsetDec", "type", "name", "description"],
+            "properties": {
+              "offsetHex": { "type": "string" },
+              "offsetDec": { "type": "integer" },
+              "type": { "type": "string" },
+              "name": { "type": "string" },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "crossLanguageTypes": {
+          "type": "object",
+          "properties": {
+            "rust": { "type": "string" },
+            "typescript": { "type": "string" },
+            "csharp": { "type": "string" },
+            "python": { "type": "string" },
+            "c": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

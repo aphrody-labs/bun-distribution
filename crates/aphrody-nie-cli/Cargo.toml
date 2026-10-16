@@ -1,0 +1,82 @@
+[package]
+name = "aphrody-nie-cli"
+description = "Binaire `nie` : pilote la boucle RE (seed, propagate, coverage) et la frontière redis"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+autobins = false
+
+[[bin]]
+name = "nie"
+path = "src/bin.rs"
+
+[lib]
+path = "src/main.rs"
+
+[package.metadata.aphrody-package]
+binary = "nie"
+install-package = "aphrody-nie-cli"
+supported-os = ["linux", "macos", "windows"]
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-nie-index = { workspace = true, default-features = true }
+aphrody-nie-seed = { workspace = true, default-features = true }
+aphrody-nie-queue = { workspace = true, default-features = true }
+aphrody-nie-re = { workspace = true, default-features = true }
+aphrody-nie-trace = { workspace = true, default-features = true }
+aphrody-nie-computer-use = { workspace = true, default-features = true }
+aphrody-nie-data = { workspace = true, features = ["serde", "std"] }
+aphrody-nie-formats = { workspace = true, features = ["serde", "textures", "audio-decode", "images", "remote-vfs"], default-features = true }
+aphrody-nie-explore = { workspace = true, default-features = true }
+aphrody-nie-viola.workspace = true
+aphrody-nie-launcher.workspace = true
+aphrody-nie-steam = { workspace = true, default-features = true }
+aphrody-nie-net = { workspace = true, features = ["transport"] }
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "sync", "macros", "time", "net"] }
+futures-util.workspace = true
+tokio-tungstenite.workspace = true
+reqwest = { version = "0.13.4", default-features = false, features = ["http2", "rustls", "stream"] }
+aphrody-nie-lua = { workspace = true, default-features = true }
+aphrody-nie-save.workspace = true
+aphrody-nie-wiki.workspace = true
+aphrody-nie-zukan.workspace = true
+aphrody-nie-app.workspace = true
+aphrody-nie-core.workspace = true
+aphrody-nie-runtime.workspace = true
+aphrody-nie-render3d = { workspace = true, features = ["gpu"] }
+aphrody-nie-ocgen = { workspace = true, features = ["cli"] }
+clap = { workspace = true, features = ["derive", "color", "env"] }
+anyhow = { version = "1" }
+tracing = { version = "0.1" }
+tracing-subscriber = { version = "0.3.20", default-features = false, features = ["fmt", "env-filter", "ansi", "tracing-log"] }
+sha2 = { version = "0.10" }
+hex.workspace = true
+base64 = { version = "0.22.1" }
+redis = { workspace = true, features = ["r2d2"] }
+serde = { version = "1", default-features = false, features = ["std", "derive"] }
+serde_json = { version = "1" }
+schemars.workspace = true
+rmcp = { workspace = true, features = ["server", "transport-io", "macros", "schemars"] }
+rayon = { version = "1.5.3" }
+
+# `nie strings` : géométrie du PE (sections, ImageBase) et décodage de .text.
+goblin.workspace = true
+iced-x86.workspace = true
+
+# pré-décodage sprites menu (g4tx -> DDS -> RGBA -> PNG)
+# default-features=false pour exclure `encode` (intel_tex_2 / C++ ISPC = linker error)
+image_dds = { workspace = true, features = ["ddsfile", "image"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "bmp", "tiff"] }
+png = { version = "0.18" }
+
+# `nie find` / `nie grep` : recherche de fichiers et de contenu sur le disque.
+ignore.workspace = true
+globset.workspace = true
+grep-searcher.workspace = true
+grep-regex.workspace = true

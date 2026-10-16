@@ -1,0 +1,41 @@
+# syntax=docker/dockerfile:1
+ARG BASE_IMAGE=ubuntu@sha256:88a381d5b5eeb2b35d3ad70925a362c37ce569daf43ede89ff818ec20e4d3794
+FROM ${BASE_IMAGE}
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN dpkg --add-architecture i386 \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+      ca-certificates curl dbus-x11 dbus-daemon \
+      libgl1:amd64 libgl1:i386 \
+      libgl1-mesa-dri:amd64 libgl1-mesa-dri:i386 \
+      libglx-mesa0:amd64 libglx-mesa0:i386 \
+      libegl1:amd64 libegl1:i386 \
+      libvulkan1:amd64 libvulkan1:i386 \
+      mesa-vulkan-drivers:amd64 mesa-vulkan-drivers:i386 \
+      novnc openbox websockify x11vnc xvfb \
+      xdg-desktop-portal xdg-desktop-portal-gtk \
+    && curl --fail --location --silent --show-error \
+      https://repo.steampowered.com/steam/archive/stable/steam.gpg \
+      --output /usr/share/keyrings/steam.gpg \
+    && printf '%s\n' \
+      'deb [arch=amd64,i386 signed-by=/usr/share/keyrings/steam.gpg] https://repo.steampowered.com/steam/ stable steam' \
+      > /etc/apt/sources.list.d/steam-stable.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+      -o Dpkg::Options::=--force-confdef \
+      -o Dpkg::Options::=--force-confold \
+      steam-launcher steam-libs-amd64 steam-libs-i386:i386
+
+RUN useradd --create-home --uid 1001 --user-group --shell /bin/sh steam \
+    && install -d --owner=steam --group=steam /home/steam
+
+ENV HOME=/home/steam \
+    DISPLAY=:0
+
+COPY config/container/steam-client-entrypoint.sh /usr/local/bin/steam-client-entrypoint
+RUN chmod 0755 /usr/local/bin/steam-client-entrypoint
+
+EXPOSE 6080
+ENTRYPOINT ["/usr/local/bin/steam-client-entrypoint"]

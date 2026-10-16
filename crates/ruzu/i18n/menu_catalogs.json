@@ -1,0 +1,27 @@
+{
+  "fr": {
+    "Unable to read the installed firmware": "Impossible de lire le firmware installé",
+    "The installed firmware could not be read with the configured keys. Install matching prod.keys and firmware dumped from your console. If the keys are correct, reinstall the complete firmware. The game has not been started.": "Le firmware installé ne peut pas être lu avec les clés configurées. Installez un fichier prod.keys et un firmware compatibles, extraits de votre console. Si les clés sont correctes, réinstallez le firmware complet. Le jeu n’a pas été démarré.",
+    "&Clear Recent Files": "&Effacer les fichiers récents",
+    "File \"%1\" not found": "Fichier \"%1\" non trouvé",
+    "Interface text scaling:": "Mise à l’échelle du texte :",
+    "Manual": "Manuel",
+    "Interface text size (%):": "Taille du texte de l’interface (%) :",
+    "Configure Game": "Configurer le jeu",
+    "Create Shortcut": "Créer un raccourci",
+    "Add to Desktop": "Ajouter au bureau",
+    "Add to Applications Menu": "Ajouter au menu des applications",
+    "Add to Applications Folder": "Ajouter au dossier Applications",
+    "Start Game without Custom Configuration": "Démarrer le jeu sans configuration custom",
+    "Open Save Data Location": "Ouvrir l'emplacement des données de sauvegarde",
+    "Open Mod Data Location": "Ouvrir l'emplacement des données des mods",
+    "Open Transferable Pipeline Cache": "Ouvrir le cache de pipelines transférable",
+    "Launch &Applet": "Lancer une &applet",
+    "&Home Menu": "Menu &HOME",
+    "Home Menu": "Menu HOME",
+    "&Browse Public Game Lobby": "&Parcourir le menu des jeux publics",
+    "&Direct Connect to Room": "&Connexion directe au salon",
+    "&Leave Room": "&Quitter le salon",
+    "&Show Current Room": "&Afficher le salon actuel"
+  }
+}

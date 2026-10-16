@@ -1,0 +1,53 @@
+//! Assemble un GLB texturé (g4md+g4mg+g4tx) et l'écrit sur disque — même recette que
+//! `apps/inacord/src-tauri/src/lib.rs::vfs_glb_preview_png_b64` (bouton « Aperçu 3D »
+//! de nie-explorer), en CLI pour vérification/scripting hors app.
+//! Usage : `cargo run -p aphrody-nie-formats --example model_glb_preview -- <mesh.g4md> <mesh.g4mg> <mesh.g4tx|-> <out.glb>`
+//! Le troisième argument accepte `-` : certains meshes du jeu (`base_normal_02`,
+//! `base_normal_03`, `base_big_00`) n'ont pas de `.g4tx` à leur nom, et leur
+//! géométrie doit rester exportable sans texture plutôt qu'échouer.
+//! Rendu ensuite en PNG via : `cargo run -p aphrody-nie-render3d -- --glb <out.glb> --out <out.png> --frames 1`
+
+use aphrody_nie_formats::assemble::{
+    EmbeddedTexture, GenericModelInput, MeshComponent, assemble_generic_model,
+};
+
+fn main() {
+    let a: Vec<String> = std::env::args().collect();
+    let g4md = std::fs::read(&a[1]).expect("lecture g4md");
+    let g4mg = std::fs::read(&a[2]).expect("lecture g4mg");
+    let g4tx = if a[3] == "-" { None } else { Some(std::fs::read(&a[3]).expect("lecture g4tx")) };
+    let out = &a[4];
+
+    let stem = std::path::Path::new(&a[1])
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("model")
+        .to_string();
+
+    let mut model = assemble_generic_model(GenericModelInput {
+        code: stem.clone(),
+        g4md,
+        g4mg,
+        component: MeshComponent::Generic,
+    })
+    .expect("assemblage GLB");
+
+    if let Some(png) = g4tx.as_ref().and_then(|tx| {
+        aphrody_nie_formats::g4tx_decode::decode_best_to_png(
+            tx,
+            aphrody_nie_formats::g4tx_decode::basename_of(&a[3]),
+        )
+    }) {
+        model.embedded_textures.push(EmbeddedTexture {
+            component: MeshComponent::Generic,
+            name: format!("{stem}_tex"),
+            png_bytes: png,
+        });
+    } else {
+        eprintln!("(aucune texture embarquée : {})", a[3]);
+    }
+
+    let glb = model.to_glb_embedded();
+    std::fs::write(out, &glb).expect("écriture glb");
+    println!("GLB écrit -> {out} ({} octets)", glb.len());
+}

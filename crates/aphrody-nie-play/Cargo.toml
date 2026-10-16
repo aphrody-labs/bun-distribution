@@ -1,0 +1,26 @@
+[package]
+name = "aphrody-nie-play"
+description = "Front-end HEADLESS/GOLDEN du jeu nie : exécute la machine à états de aphrody-nie-app via un flow scripté + un Renderer CPU, et écrit le playthrough en PNG/MP4 déterministes. Le match vient de la vraie FSM aphrody-nie-core."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "aphrody-nie-play"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow = { version = "1" }
+clap = { workspace = true, features = ["derive", "color", "env"] }
+png = { version = "0.18" }
+aphrody-nie-app.workspace = true
+aphrody-nie-formats = { workspace = true, default-features = true }
+aphrody-nie-core.workspace = true
+aphrody-nie-runtime.workspace = true
+rusqlite = { workspace = true, features = ["bundled"] }

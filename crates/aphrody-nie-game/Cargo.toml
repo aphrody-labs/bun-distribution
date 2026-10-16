@@ -1,0 +1,59 @@
+[package]
+name = "aphrody-nie-game"
+description = "Hôte GUI natif wgpu — rend les vrais assets IEVR (pilier D1/C4 pixel-perfect)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "aphrody-nie-game"
+path = "src/main.rs"
+
+[dependencies]
+# Feature `textures` = décodeur G4TX/DDS → RGBA8/PNG partagé (`aphrody_nie_formats::g4tx_decode`).
+aphrody-nie-formats = { workspace = true, features = ["textures"], default-features = true }
+# VM Lua 5.2 réelle : exécute les vrais scripts de menu du jeu pour générer le layout au runtime
+# (driver reversé OnInit/OnSetupLayer/OnOpenLayer → MenuState), comme nie.exe. API safe seulement.
+aphrody-nie-lua = { workspace = true, default-features = true }
+# Modèles de données + résolveur de texte universel : résout les libellés STATIQUES de menu
+# (`TextComponent.hashes` → `menu_text`) pour l'export de layout (cf. DESIGN.md §7).
+aphrody-nie-data.workspace = true
+# Le CŒUR du jeu : machine à états d'écrans (`flow::Screen`), rendu abstrait et police. `--play`
+# se contente de la brancher sur une fenêtre — même FSM que le front web, aucune réimplémentation.
+aphrody-nie-app.workspace = true
+aphrody-nie-core = { workspace = true, features = ["data"] }
+# Atteint jusqu'ici transitivement par `aphrody-nie-app::flow::Screen::Match`, alors que l'hôte utilise
+# désormais sa cadence (`TICK_DT`) et son accumulateur (`FixedStep`) directement : une
+# dépendance qu'on nomme est une dépendance qu'on peut voir.
+aphrody-nie-runtime.workspace = true
+# Le type `Model` traverse l'API de `aphrody_nie_app::match3d` (vue 3D du match) : nommable ici.
+aphrody-nie-render3d.workspace = true
+anyhow = { version = "1" }
+clap = { workspace = true, features = ["derive", "color", "env"] }
+tracing = { version = "0.1" }
+tracing-subscriber = { version = "0.3.20", default-features = false, features = ["fmt", "env-filter", "ansi", "tracing-log"] }
+aphrody-gpu-backend.workspace = true
+aphrody-bevy.workspace = true
+pollster.workspace = true
+bytemuck = { workspace = true, features = ["derive"] }
+# Encodage PNG des captures/exports (le décodage DDS/BCn est passé dans aphrody-nie-formats).
+png = { version = "0.18" }
+# Export du layout de menu (JSON contrat `@rose-griffon/menu-render` pour azalee).
+serde = { version = "1", default-features = false, features = ["std", "derive"] }
+serde_json = { version = "1" }
+# Dump exhaustif des packs (example dump_packs) : parallélisme CPU par-CPK (rayon),
+# accès mmap RAM-borné (memmap2), garde-fou disque via statvfs (libc, Linux/WSL).
+rayon = { version = "1.5.3" }
+memmap2.workspace = true
+libc = { version = "0.2.185", default-features = false }
+
+[dev-dependencies]
+# Example `dump_g4tx` + test `menu_render_gate` réfèrent les variantes `ImageFormat` en direct
+# (le décodage applicatif passe par aphrody_nie_formats::g4tx_decode, mais ces cibles de dev nomment l'enum).
+image_dds.workspace = true

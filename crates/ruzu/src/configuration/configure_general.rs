@@ -1,0 +1,449 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Rust/GTK4 counterpart of
+// `/home/vricosti/Dev/emulators/zuyu/src/yuzu/configuration/configure_general.cpp`
+// (`ConfigureGeneral`), whose widget tree lives in `configure_general.ui`.
+//
+// The page holds two groups:
+//   * "General" — the emulation-behaviour settings followed by the frontend
+//     Gamemode and X11 rows in upstream setting-id order;
+//   * "External Content" — host directories scanned for updates and DLC.
+// plus a "Reset All Settings" button pinned to the bottom.
+//
+// Upstream builds these rows generically through
+// `ConfigurationShared::Builder::BuildWidget`, driven by the settings registry.
+// The Rust port constructs them explicitly (see `shared_widget`'s module note),
+// so the row list here is the literal contents of `configure_general.ui`.
+
+use std::cell::RefCell;
+use std::rc::Rc;
+
+use gtk::glib;
+use gtk::prelude::*;
+
+use crate::uisettings;
+
+use super::configure_dialog::Page;
+use super::shared_translation as tr;
+use super::shared_widget as w;
+
+/// Build the General tab — upstream `ConfigureGeneral`.
+pub fn page(runtime_lock: bool, on_reset: impl Fn() + 'static) -> Page {
+    let (scroller, column) = w::page();
+
+    // --- "General" group -------------------------------------------------
+    let (general_group, general) = w::group("General");
+
+    let confirm_index =
+        uisettings::with(|v| tr::index_of(tr::CONFIRM_STOP, v.confirm_before_stopping.get_value()));
+    let (confirm_row, confirm) = w::combo_row(
+        "Confirm before stopping emulation",
+        &tr::labels(tr::CONFIRM_STOP),
+        confirm_index,
+    );
+    general.append(&confirm_row);
+
+    let pause_background = w::check_row(
+        "Pause emulation when in background",
+        uisettings::with(|v| *v.pause_when_in_background.get_value()),
+    );
+    general.append(&pause_background);
+
+    let hide_mouse = w::check_row(
+        "Hide mouse on inactivity",
+        uisettings::with(|v| *v.hide_mouse.get_value()),
+    );
+    general.append(&hide_mouse);
+
+    let disable_controller_applet = w::check_row(
+        "Disable controller applet",
+        uisettings::with(|v| *v.controller_applet_disabled.get_value()),
+    );
+    general.append(&disable_controller_applet);
+
+    let select_user_on_boot = w::check_row(
+        "Prompt for user on game boot",
+        uisettings::with(|v| *v.select_user_on_boot.get_value()),
+    );
+    general.append(&select_user_on_boot);
+
+    let enable_gamemode = w::check_row(
+        "Enable Gamemode",
+        uisettings::with(|values| *values.enable_gamemode.get_value()),
+    );
+    general.append(&enable_gamemode);
+
+    #[cfg(target_os = "linux")]
+    let force_x11 = {
+        let force_x11 = w::check_row(
+            "Force X11 as Graphics Backend",
+            uisettings::with(|values| *values.gui_force_x11.get_value()),
+        );
+        general.append(&force_x11);
+        force_x11
+    };
+
+    column.append(&general_group);
+
+    // --- "External Content" group ---------------------------------------
+    let (external_group, external) = w::group("External Content");
+    let description = gtk::Label::new(Some(&crate::i18n::tr(
+        "Add directories to scan for DLCs and Updates without installing to NAND",
+    )));
+    description.set_xalign(0.0);
+    description.set_wrap(true);
+    external.append(&description);
+
+    let external_dirs = Rc::new(RefCell::new(
+        common::settings::values().external_content_dirs.clone(),
+    ));
+    let external_list = gtk::ListBox::new();
+    external_list.set_selection_mode(gtk::SelectionMode::Single);
+    external_list.add_css_class("boxed-list");
+    for directory in external_dirs.borrow().iter() {
+        append_external_directory_row(&external_list, directory);
+    }
+    let external_scroll = gtk::ScrolledWindow::builder()
+        .hscrollbar_policy(gtk::PolicyType::Automatic)
+        .vscrollbar_policy(gtk::PolicyType::Automatic)
+        .min_content_height(170)
+        .hexpand(true)
+        .vexpand(true)
+        .child(&external_list)
+        .build();
+    external_scroll.set_has_frame(true);
+    external.append(&external_scroll);
+
+    let add_external = gtk::Button::with_label(&crate::i18n::tr("Add Directory"));
+    let remove_external = gtk::Button::with_label(&crate::i18n::tr("Remove Selected"));
+    remove_external.set_sensitive(false);
+    let external_buttons = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    external_buttons.append(&add_external);
+    external_buttons.append(&remove_external);
+    external.append(&external_buttons);
+
+    external_list.connect_row_selected(glib::clone!(
+        #[weak]
+        remove_external,
+        move |_, row| remove_external.set_sensitive(row.is_some())
+    ));
+    remove_external.connect_clicked(glib::clone!(
+        #[weak]
+        external_list,
+        #[strong]
+        external_dirs,
+        move |_| {
+            let Some(row) = external_list.selected_row() else {
+                return;
+            };
+            let index = row.index() as usize;
+            external_list.remove(&row);
+            if index < external_dirs.borrow().len() {
+                external_dirs.borrow_mut().remove(index);
+            }
+        }
+    ));
+    add_external.connect_clicked(glib::clone!(
+        #[weak]
+        external_list,
+        #[strong]
+        external_dirs,
+        move |button| {
+            let parent = button.root().and_downcast::<gtk::Window>();
+            let external_list = external_list.clone();
+            let external_dirs = Rc::clone(&external_dirs);
+            crate::gtk_compat::select_folder(
+                parent.as_ref(),
+                "Select External Content Directory...",
+                move |selected| {
+                    let Some(path) = selected.and_then(|file| file.path()) else {
+                        return;
+                    };
+                    let path = normalize_external_directory(&path);
+                    if external_dirs.borrow().contains(&path) {
+                        let parent = external_list.root().and_downcast::<gtk::Window>();
+                        crate::gtk_compat::show_message(
+                            parent.as_ref(),
+                            "Directory Already Added",
+                            "This directory is already in the list.",
+                        );
+                        return;
+                    }
+                    external_dirs.borrow_mut().push(path.clone());
+                    append_external_directory_row(&external_list, &path);
+                },
+            );
+        }
+    ));
+    column.append(&external_group);
+
+    // --- "Reset All Settings" --------------------------------------------
+    // Upstream pins this button bottom-left of the page (a `QSpacerItem` sits
+    // between it and the groups above), so it sits below the scrolling column
+    // rather than immediately after the Linux group.
+    let reset = gtk::Button::with_label("Reset All Settings");
+    reset.set_halign(gtk::Align::Start);
+    reset.set_margin_top(8);
+    reset.set_margin_bottom(10);
+    reset.set_margin_start(10);
+    let on_reset = Rc::new(on_reset);
+    reset.connect_clicked(move |button| {
+        let question = gtk::MessageDialog::builder()
+            .modal(true)
+            .message_type(gtk::MessageType::Question)
+            .text(crate::i18n::tr("Reset All Settings"))
+            .secondary_text(crate::i18n::tr(
+                "This resets all settings and removes all per-game configurations. Game directories, profiles, and input profiles will not be deleted. Proceed?",
+            ))
+            .build();
+        if let Some(parent) = button.root().and_downcast::<gtk::Window>() {
+            question.set_transient_for(Some(&parent));
+            question.set_destroy_with_parent(true);
+        }
+        question.add_button(&crate::i18n::tr("No"), gtk::ResponseType::No);
+        question.add_button(&crate::i18n::tr("Yes"), gtk::ResponseType::Yes);
+        question.set_default_response(gtk::ResponseType::No);
+        let on_reset = Rc::clone(&on_reset);
+        question.connect_response(move |question, response| {
+            question.close();
+            if response == gtk::ResponseType::Yes {
+                on_reset();
+            }
+        });
+        question.present();
+    });
+
+    let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    root.append(&scroller);
+    root.append(&reset);
+    #[cfg(target_os = "linux")]
+    let last_general = &force_x11;
+    #[cfg(not(target_os = "linux"))]
+    let last_general = &enable_gamemode;
+    install_external_content_navigation(&root, last_general, &external_list, &external_buttons, &add_external, &reset);
+
+    let confirm_before_stopping_policy = uisettings::with(|v| w::SettingEditPolicy::for_setting(
+        &v.confirm_before_stopping, runtime_lock, true,
+    ));
+    confirm_row.set_sensitive(confirm_before_stopping_policy.sensitive);
+    let pause_when_in_background_policy = uisettings::with(|v| w::SettingEditPolicy::for_setting(
+        &v.pause_when_in_background, runtime_lock, true,
+    ));
+    pause_background.set_sensitive(pause_when_in_background_policy.sensitive);
+    let hide_mouse_policy = uisettings::with(|v| w::SettingEditPolicy::for_setting(
+        &v.hide_mouse, runtime_lock, true,
+    ));
+    hide_mouse.set_sensitive(hide_mouse_policy.sensitive);
+    let controller_applet_disabled_policy = uisettings::with(|v| w::SettingEditPolicy::for_setting(
+        &v.controller_applet_disabled, runtime_lock, true,
+    ));
+    disable_controller_applet.set_sensitive(controller_applet_disabled_policy.sensitive);
+    let select_user_on_boot_policy = uisettings::with(|v| w::SettingEditPolicy::for_setting(
+        &v.select_user_on_boot, runtime_lock, true,
+    ));
+    select_user_on_boot.set_sensitive(select_user_on_boot_policy.sensitive);
+    let enable_gamemode_policy = uisettings::with(|v| w::SettingEditPolicy::new(
+        &v.enable_gamemode, runtime_lock, true,
+    ));
+    enable_gamemode.set_sensitive(enable_gamemode_policy.sensitive);
+    #[cfg(target_os = "linux")]
+    let gui_force_x11_policy = uisettings::with(|v| w::SettingEditPolicy::for_setting(
+        &v.gui_force_x11, runtime_lock, true,
+    ));
+    #[cfg(target_os = "linux")]
+    force_x11.set_sensitive(gui_force_x11_policy.sensitive);
+
+    Page::new("General", root, move || {
+        let confirm_value = tr::value_at(tr::CONFIRM_STOP, confirm.selected());
+        let pause = pause_background.is_active();
+        let hide = hide_mouse.is_active();
+        let no_controller_applet = disable_controller_applet.is_active();
+        let select_user = select_user_on_boot.is_active();
+        let gamemode = enable_gamemode.is_active();
+        #[cfg(target_os = "linux")]
+        let use_x11 = force_x11.is_active();
+
+        uisettings::with_mut(|v| {
+            confirm_before_stopping_policy.apply_setting(&mut v.confirm_before_stopping, confirm_value);
+            pause_when_in_background_policy.apply_setting(&mut v.pause_when_in_background, pause);
+            hide_mouse_policy.apply_setting(&mut v.hide_mouse, hide);
+            controller_applet_disabled_policy.apply_setting(&mut v.controller_applet_disabled, no_controller_applet);
+            select_user_on_boot_policy.apply_setting(&mut v.select_user_on_boot, select_user);
+            enable_gamemode_policy.apply(&mut v.enable_gamemode, gamemode);
+            #[cfg(target_os = "linux")]
+            gui_force_x11_policy.apply_setting(&mut v.gui_force_x11, use_x11);
+        });
+
+        let new_external_dirs = external_dirs.borrow().clone();
+        let changed = {
+            let mut settings = common::settings::values_mut();
+            if settings.external_content_dirs == new_external_dirs {
+                false
+            } else {
+                settings.external_content_dirs = new_external_dirs.clone();
+                true
+            }
+        };
+        if changed {
+            crate::util::game::reset_metadata(None, false);
+            uisettings::request_game_list_reload();
+        }
+    })
+}
+
+fn append_external_directory_row(list: &gtk::ListBox, directory: &str) {
+    let label = gtk::Label::new(Some(directory));
+    label.set_xalign(0.0);
+    label.set_margin_top(4);
+    label.set_margin_bottom(4);
+    label.set_margin_start(6);
+    label.set_margin_end(6);
+    label.set_selectable(false);
+    list.append(&label);
+}
+
+fn normalize_external_directory(path: &std::path::Path) -> String {
+    let mut normalized = path.to_string_lossy().into_owned();
+    if !normalized.ends_with(std::path::MAIN_SEPARATOR) {
+        normalized.push(std::path::MAIN_SEPARATOR);
+    }
+    normalized
+}
+
+// The nested external-content scroller must not trap vertical navigation when
+// empty or at a list boundary. Keep these page-specific transitions here.
+fn install_external_content_navigation(
+    root: &gtk::Box, last_general: &gtk::CheckButton, list: &gtk::ListBox,
+    buttons: &gtk::Box, add: &gtk::Button, reset: &gtk::Button,
+) {
+    let shortcuts = gtk::ShortcutController::new();
+    shortcuts.set_name(Some("ruzu-directional-navigation"));
+    shortcuts.set_propagation_phase(gtk::PropagationPhase::Capture);
+    for key in [gtk::gdk::Key::Up, gtk::gdk::Key::Down] {
+        let (last_general, list, buttons, add, reset) =
+            (last_general.downgrade(), list.downgrade(), buttons.downgrade(), add.downgrade(), reset.downgrade());
+        let action = gtk::CallbackAction::new(move |widget, _| {
+            let (Some(last_general), Some(list), Some(buttons), Some(add), Some(reset)) =
+                (last_general.upgrade(), list.upgrade(), buttons.upgrade(), add.upgrade(), reset.upgrade())
+            else { return glib::Propagation::Proceed; };
+            let focus = widget.root().and_downcast::<gtk::Window>()
+                .and_then(|window| gtk::prelude::GtkWindowExt::focus(&window));
+            let Some(focus) = focus else { return glib::Propagation::Proceed; };
+            let down = key == gtk::gdk::Key::Down;
+            let target: Option<gtk::Widget> = if focus == last_general && down {
+                Some(list.row_at_index(0).map(|row| row.upcast()).unwrap_or_else(|| add.clone().upcast()))
+            } else if focus == reset && !down {
+                Some(add.clone().upcast())
+            } else if focus.is_ancestor(&buttons) {
+                if down { Some(reset.clone().upcast()) } else {
+                    Some(list.last_child().unwrap_or_else(|| last_general.clone().upcast()))
+                }
+            } else if focus == list || focus.is_ancestor(&list) {
+                let row = focus.clone().downcast::<gtk::ListBoxRow>().ok()
+                    .or_else(|| focus.ancestor(gtk::ListBoxRow::static_type()).and_downcast::<gtk::ListBoxRow>());
+                if down && row.as_ref().is_none_or(|row| list.row_at_index(row.index() + 1).is_none()) {
+                    Some(add.clone().upcast())
+                } else if !down && row.as_ref().is_none_or(|row| row.index() == 0) {
+                    Some(last_general.clone().upcast())
+                } else { None }
+            } else { None };
+            if target.is_some_and(|target| target.is_sensitive() && target.grab_focus()) {
+                glib::Propagation::Stop
+            } else { glib::Propagation::Proceed }
+        });
+        shortcuts.add_shortcut(gtk::Shortcut::new(
+            Some(gtk::KeyvalTrigger::new(key, gtk::gdk::ModifierType::empty())), Some(action)));
+    }
+    root.add_controller(shortcuts);
+}
+
+#[cfg(test)]
+mod tests {
+    use gtk::prelude::*;
+
+    #[test]
+    #[ignore = "requires GTK on the platform main thread and a display"]
+    fn external_content_does_not_trap_vertical_focus() {
+        use crate::util::controller_navigation::{navigate_window, NavigationKey as Key};
+        gtk::init().unwrap();
+        common::settings::values_mut().external_content_dirs.clear();
+        let page = super::page(true, || panic!("navigation must not reset settings"));
+        fn collect(widget: &gtk::Widget, result: &mut Vec<gtk::Widget>) {
+            result.push(widget.clone());
+            let mut child = widget.first_child();
+            while let Some(current) = child {
+                collect(&current, result);
+                child = current.next_sibling();
+            }
+        }
+        let mut widgets = Vec::new();
+        collect(&page.widget, &mut widgets);
+        let last = widgets.iter().filter_map(|w| w.downcast_ref::<gtk::CheckButton>()).last().unwrap();
+        let list = widgets.iter().find_map(|w| w.downcast_ref::<gtk::ListBox>()).unwrap();
+        let button = |label: &str| widgets.iter().filter_map(|w| w.downcast_ref::<gtk::Button>())
+            .find(|b| b.label().as_deref() == Some(label)).unwrap();
+        let add = button(&crate::i18n::tr("Add Directory"));
+        let reset = button("Reset All Settings");
+        let window = gtk::Window::builder().default_width(700).default_height(420).child(&page.widget).build();
+        window.present();
+        let context = gtk::glib::MainContext::default();
+        while context.pending() { context.iteration(false); }
+        let assert_focus = |widget: &gtk::Widget| {
+            assert_eq!(gtk::prelude::GtkWindowExt::focus(&window).as_ref(), Some(widget));
+        };
+        last.grab_focus();
+        navigate_window(&window, Key::Down);
+        assert_focus(add.upcast_ref());
+        navigate_window(&window, Key::Down);
+        assert_focus(reset.upcast_ref());
+        navigate_window(&window, Key::Up);
+        assert_focus(add.upcast_ref());
+        navigate_window(&window, Key::Up);
+        assert_focus(last.upcast_ref());
+        for path in ["/synthetic/first", "/synthetic/second"] {
+            super::append_external_directory_row(list, path);
+        }
+        while context.pending() { context.iteration(false); }
+        last.grab_focus();
+        navigate_window(&window, Key::Down);
+        assert_focus(list.row_at_index(0).unwrap().upcast_ref());
+        navigate_window(&window, Key::Down);
+        assert_focus(list.row_at_index(1).unwrap().upcast_ref());
+        navigate_window(&window, Key::Down);
+        assert_focus(add.upcast_ref());
+        navigate_window(&window, Key::Up);
+        assert_focus(list.row_at_index(1).unwrap().upcast_ref());
+        navigate_window(&window, Key::Up);
+        navigate_window(&window, Key::Up);
+        assert_focus(last.upcast_ref());
+        assert!(common::settings::values().external_content_dirs.is_empty());
+        window.destroy();
+    }
+    use super::*;
+
+    #[test]
+    fn general_runtime_permissions_match_upstream() {
+        let mut values = uisettings::Values::default();
+        assert!(values.confirm_before_stopping.runtime_modifiable);
+        for setting in [
+            &mut values.pause_when_in_background,
+            &mut values.hide_mouse,
+            &mut values.select_user_on_boot,
+        ] {
+            let original = *setting.get_value();
+            let policy = w::SettingEditPolicy::for_setting(setting, false, true);
+            assert!(policy.sensitive);
+            policy.apply_setting(setting, !original);
+            assert_eq!(*setting.get_value(), !original);
+        }
+        let policy = w::SettingEditPolicy::for_setting(
+            &values.controller_applet_disabled, false, true,
+        );
+        assert!(!policy.sensitive);
+        policy.apply_setting(&mut values.controller_applet_disabled, true);
+        assert!(!*values.controller_applet_disabled.get_value());
+        assert!(!w::SettingEditPolicy::new(&values.enable_gamemode, false, true).sensitive);
+        #[cfg(target_os = "linux")]
+        assert!(!w::SettingEditPolicy::for_setting(&values.gui_force_x11, false, true).sensitive);
+    }
+}

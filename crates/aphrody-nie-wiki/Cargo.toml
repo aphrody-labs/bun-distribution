@@ -1,0 +1,24 @@
+[package]
+name = "aphrody-nie-wiki"
+description = "Explore IEVR game data from the SQLite mirror"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow = { version = "1" }
+thiserror = { version = "2" }
+serde = { version = "1", default-features = false, features = ["std", "derive"] }
+serde_json = { version = "1" }
+rusqlite = { workspace = true, features = ["bundled"] }
+tracing = { version = "0.1" }
+redis = { workspace = true, features = ["r2d2"] }
+rand.workspace = true
+# NB : interpolation de stats réimplémentée localement (StatBlock 2-segments f64, model.rs/query.rs) —
+# divergence VOULUE de aphrody-nie-core (3-segments f32, le miroir SQLite n'a pas le palier lv30) → pas de dép aphrody-nie-core.

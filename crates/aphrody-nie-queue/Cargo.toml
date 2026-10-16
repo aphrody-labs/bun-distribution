@@ -1,0 +1,23 @@
+[package]
+name = "aphrody-nie-queue"
+description = "Bounded deduplicated BFS frontiers for the nie reverse-engineering loop"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = ["host"]
+# Redis and host diagnostics are native integrations. The bounded in-memory BFS planner remains
+# available without them, including on wasm32.
+host = ["dep:redis", "dep:thiserror", "dep:tracing"]
+
+[dependencies]
+redis = { workspace = true, optional = true, features = ["r2d2"] }
+thiserror = { version = "2", optional = true }
+tracing = { version = "0.1", optional = true }

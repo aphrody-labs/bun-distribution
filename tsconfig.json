@@ -43,6 +43,7 @@
     "apps/desktop/dist",
     "apps/desktop/src-tauri",
     "scripts/aphrody",
+    "scripts/iecode",
     "scripts/m3"
   ]
 }

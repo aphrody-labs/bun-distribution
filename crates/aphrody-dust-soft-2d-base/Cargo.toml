@@ -1,0 +1,12 @@
+[package]
+description = "Shared Nintendo DS software 2D rendering primitives."
+license-file = "../../docs/licenses/iecode/licenses/dust/LICENSE"
+name = "aphrody-dust-soft-2d-base"
+version = "0.0.1"
+edition = "2021"
+publish = true
+[features]
+
+[dependencies]
+aphrody-dust-core = { path = "../aphrody-dust-core" }
+proc-bitfield = { workspace = true }

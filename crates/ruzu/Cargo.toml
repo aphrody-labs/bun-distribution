@@ -1,0 +1,113 @@
+# GTK4 launcher — Rust counterpart of the upstream Qt frontend at
+# `/Users/vricosti/Dev/emulators/zuyu/src/yuzu` (the `yuzu` GUI application).
+#
+# Upstream builds a `yuzu` executable from `src/yuzu`; this crate builds the
+# equivalent `ruzu` executable, using GTK4 instead of Qt.
+[package]
+name = "ruzu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+build = "build.rs"
+
+[lints.rust]
+# `objc` 0.2 expands this legacy feature probe in downstream crates.
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("cargo-clippy"))'] }
+
+[[bin]]
+name = "ruzu"
+path = "src/main.rs"
+
+[dependencies]
+# gtk4-rs bindings. The `gtk4` crate is imported under the `gtk` alias, which
+# is the convention used throughout the gtk4-rs ecosystem/examples. The
+# Ubuntu 22.04 ships GTK 4.6. Keep the frontend on that API baseline; newer
+# FileDialog, AlertDialog, ColorDialogButton, and FileLauncher calls go through
+# local compatibility adapters.
+gtk = { version = "0.9", package = "gtk4", features = ["v4_6"] }
+# Same cairo as gtk4 re-exports, with `png` so the controller drawings can be
+# rendered to a file in tests and compared against upstream by eye.
+cairo-rs = { version = "0.20", features = ["png"] }
+log = { version = "0.4.28", default-features = false }
+sdl3-sys = { workspace = true }
+serde_json = { version = "1", default-features = false }
+ash = { workspace = true }
+libc = "0.2"
+getrandom = "0.2"
+tempfile = { version = "3" }
+zip = { version = "4.2", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+
+# ruzu's data-directory resolver, for "Open ruzu Folder" (upstream uses
+# `Common::FS::GetYuzuPathString(YuzuPath::YuzuDir)`).
+common = { path = "../ruzu-common" }
+
+# Emulator core, for the in-process boot / EmuWindow (Phase 1). Renamed to
+# `ruzu_core` because the crate's package name `core` shadows the std `core`
+# crate — the same rename `ruzu_cmd` uses.
+ruzu_core = { package = "core", path = "../ruzu-core" }
+
+# Input drivers. Upstream's `GMainWindow` owns the `InputSubsystem` and hands
+# it to `GRenderWindow`, which forwards key events into it.
+input_common = { workspace = true }
+
+# The emulated controller the Controls preview reads its live values from,
+# upstream's `Core::HID::EmulatedController`.
+hid_core = { path = "../ruzu-hid-core" }
+
+# Shared frontend helpers (content install / verification), the ruzu port of
+# upstream's `src/frontend_common`.
+frontend_common = { path = "../ruzu-frontend-common" }
+
+# Video/audio subsystems, created in the boot subsystem factory (Phase 1b),
+# mirroring `ruzu_cmd`'s Vulkan boot path.
+video_core = { workspace = true }
+audio_core = { path = "../ruzu-audio-core" }
+parking_lot = { workspace = true }
+network.workspace = true
+web_service.workspace = true
+
+# macOS-only: embed a CAMetalLayer into the GTK window's NSView so the Vulkan
+# (MoltenVK) renderer can present into the launcher window, like upstream's
+# `GRenderWindow` embeds a render surface into the Qt window. `objc` matches
+# the version already used by `ruzu_cmd`.
+[target.'cfg(target_os = "macos")'.dependencies]
+objc = "0.2"
+cocoa = "0.25"
+core-graphics = "0.23"
+core-foundation = "0.9"
+
+# Linux: the render surface is a native X11 child window embedded in the GTK
+# window, mirroring upstream's `RenderWidget` (a `WA_NativeWindow` child of
+# `GRenderWindow`) and the CAMetalLayer sub-view used on macOS.
+[target.'cfg(target_os = "linux")'.dependencies]
+# The `xlib` feature exposes `X11Display::xdisplay()`, the `Display*` that
+# `WindowSystemInfo::display_connection` needs for `VkXlibSurfaceCreateInfoKHR`.
+gdk4-x11 = { version = "0.9", features = ["xlib"] }
+gdk4-wayland = { version = "0.9", features = ["wayland_crate", "egl", "v4_4"] }
+wayland-client = "0.31"
+wayland-egl = "0.32"
+khronos-egl = { version = "6", features = ["dynamic"] }
+x11 = { version = "2", features = ["glx", "xlib"] }
+
+# Windows: create the same native child render window that upstream gets from
+# `RenderWidget::setAttribute(Qt::WA_NativeWindow)`, then hand its HWND to
+# `VkWin32SurfaceCreateInfoKHR`.
+[target.'cfg(target_os = "windows")'.dependencies]
+junction = "2.0"
+windows-sys = { version = "0.59", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Dwm",
+    "Win32_Globalization",
+    "Win32_System_Com",
+    "Win32_System_Console",
+    "Win32_System_Threading",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Registry",
+    "Win32_UI_Shell",
+    "Win32_UI_HiDpi",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[build-dependencies]
+embed-resource = "3.0.6"

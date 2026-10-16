@@ -1,0 +1,39 @@
+# IECODE Web
+
+`apps/iecode-web` is the sole active browser frontend. Its TypeScript UI and Rust/WASM adapter
+live together here; reusable JavaScript/TypeScript libraries belong in
+`packages/`. The Rust adapter is a member of the root Cargo workspace.
+
+| Console | Current browser capability | Rust owner |
+| --- | --- | --- |
+| Nintendo DS/DSi | Dust emulation with WebGPU presentation and WebGL fallback | `crates/emu/core`, `crates/emu/render/*` |
+| Wii | Checked Wii DOL boot with Broadway interpreter and WebGPU presentation; keyboard Wiimote buttons, shake and pointer | `apps/iecode-web/wii/crate`, `crates/emu/wii`, `aphrody-labs/bun-engine/plugins/emulation` |
+| Switch | Tegra block-linear texture primitives; browser execution pending | `aphrody-labs/bun-engine/plugins/emulation`, `crates/emu/ruzu` |
+| Nintendo 3DS | PICA commands and SHBIN parsing; browser execution pending | `crates/aphrody-ctr` |
+
+The console switcher shows the current capability of each owner. It does not
+offer a game launcher for a console whose CPU, devices and renderer are not yet
+integrated. The remaining execution gates are in
+[`docs/emulation/MULTICONSOLE-RUST-MIGRATION.md`](../../docs/emulation/MULTICONSOLE-RUST-MIGRATION.md).
+
+## Build
+
+Run `bun run build:web` from the repository root. Both browser adapters build
+from the root Cargo lockfile through `scripts/iecode/build/build-emulator-web.ts`; install
+the `wasm32-unknown-unknown` Rust target and the wasm-bindgen CLI version listed
+in Cargo.lock. DS retains compiler features and uses a bounded per-command
+`RUSTC_BOOTSTRAP=1`. `bun run --cwd apps/iecode-web build:wii` builds only Wii;
+`bun scripts/iecode/build/build-emulator-web.ts --dev` selects a debug Wii artifact.
+Generated bindings and output stay ignored. Semantic checks use TypeScript 7
+from the workspace catalog; webpack loaders explicitly use the official
+`@typescript/typescript6` compiler API compatibility package.
+
+Wii currently accepts homebrew DOLs and an optional caller-supplied DSP ROM.
+It does not provide Wii disc loading or browser NAND persistence. Keyboard:
+Z/X = A/B, 1/2, Enter = Plus, Minus, Home, arrows and Space = shake;
+the pointer drives IR aim. Selecting another console unloads the Wii frame.
+
+The explicit browser gate is `IECODE_BROWSER=/path/to/chromium bun run
+test:wii:browser`. It checks malformed input rejection, three actual Broadway
+frames and a WebGPU canvas using an original generated instruction fixture.
+It does not establish game compatibility or rendering fidelity.

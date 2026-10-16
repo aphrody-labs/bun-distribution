@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+"$schema" = "schemas/schema.json"
+
+[default]
+description = "Attach a native 3D layer to the calling window and drive its scene, model, viewport and camera."
+permissions = [
+  "allow-attach",
+  "allow-detach",
+  "allow-set-scene",
+  "allow-load-model",
+  "allow-set-viewport",
+  "allow-orbit",
+  "allow-info",
+]

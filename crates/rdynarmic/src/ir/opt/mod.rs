@@ -1,0 +1,19 @@
+pub mod a32_constant_memory_reads;
+pub mod a32_get_set_elimination;
+pub mod a64_callback_config;
+pub mod a64_get_set_elimination;
+pub mod constant_propagation;
+pub mod dead_code_elimination;
+pub mod identity_removal;
+pub mod polyfill;
+pub mod verification;
+
+pub use a32_constant_memory_reads::a32_constant_memory_reads;
+pub use a32_get_set_elimination::a32_get_set_elimination;
+pub use a64_callback_config::a64_callback_config;
+pub use a64_get_set_elimination::a64_get_set_elimination;
+pub use constant_propagation::constant_propagation;
+pub use dead_code_elimination::dead_code_elimination;
+pub use identity_removal::identity_removal;
+pub use polyfill::{polyfill, PolyfillOptions};
+pub use verification::verification_pass;

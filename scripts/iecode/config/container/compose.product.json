@@ -1,0 +1,22 @@
+{
+  "name": "iecode",
+  "services": {
+    "product": {
+      "image": "${IECODE_PRODUCT_IMAGE:?Use the sealed immutable IECODE image}",
+      "labels": { "io.aphrody.profile": "ie", "io.aphrody.workspace": "iecode" },
+      "read_only": true,
+      "init": true,
+      "cap_drop": ["ALL"],
+      "security_opt": ["no-new-privileges:true"],
+      "tmpfs": ["/tmp:rw,nosuid,size=256m"],
+      "volumes": ["ie-product-data:/var/lib/iecode"],
+      "profiles": ["product"],
+      "command": ["--version"]
+    }
+  },
+  "volumes": {
+    "ie-product-data": {
+      "labels": { "io.aphrody.profile": "ie", "io.aphrody.workspace": "iecode" }
+    }
+  }
+}

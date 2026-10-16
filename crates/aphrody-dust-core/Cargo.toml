@@ -1,0 +1,81 @@
+[package]
+description = "Nintendo DS emulation core with integrated ROM and static-analysis APIs."
+license-file = "../../docs/licenses/iecode/licenses/dust/LICENSE"
+name = "aphrody-dust-core"
+version = "0.0.1"
+edition.workspace = true
+autotests = false
+publish = true
+[features]
+default = []
+log = ["dep:slog"]
+
+# Bus fallback toggling (to temporarily switch to slow memory handlers for breakpoint checking or
+# JIT block invalidation)
+bft-r = []
+bft-w = []
+jit = ["bft-w"]
+pu-checks = []
+interp-timing-details = []
+interp-pipeline = []
+interp-pipeline-accurate-reloads = ["interp-pipeline"]
+interp-arm9-interlocks = ["interp-pipeline"]
+interp-r15-write-checks = []
+3d-hi-res-coords = []
+disasm = []
+serde = ["dep:serde"]
+xq-audio = []
+channel-audio-capture = []
+debugger-hooks = ["bft-r", "bft-w"]
+
+# Cartridge parsing, editing, encryption and image/banner support.
+nds-rom = [
+    "dep:bitfield-struct", "dep:bitreader", "dep:bytemuck", "dep:crc",
+    "dep:derive_more", "dep:encoding_rs", "dep:image", "dep:log",
+    "dep:rust-bitwriter", "dep:serde", "dep:serde-saphyr", "dep:sha1",
+    "dep:snafu"
+]
+# Static analysis, symbols, relocations and project configuration for DS binaries.
+nds-decomp = ["nds-rom", "dep:unarm", "dep:strum", "dep:strum_macros"]
+# Complete ROM editing and decompilation surface used by the unified Dust CLI.
+nds-complete = ["nds-rom", "nds-decomp"]
+
+[dependencies]
+aphrody-emu-utils = { workspace = true }
+proc-bitfield = { workspace = true }
+bitflags = "2.6"
+cfg-if = "1.0"
+slog = { version = "2.7", optional = true }
+serde = { version = "1", default-features = false, features = ["std", "derive"], optional = true }
+bitfield-struct = { workspace = true, optional = true }
+bitreader = { workspace = true, optional = true }
+bytemuck = { workspace = true, optional = true }
+crc = { workspace = true, optional = true }
+derive_more = { workspace = true, optional = true }
+encoding_rs = { version = "0.8", optional = true }
+image = { version = "0.25", default-features = false, features = ["png"], optional = true }
+log = { version = "0.4.28", default-features = false, optional = true }
+rust-bitwriter = { workspace = true, optional = true }
+serde-saphyr = { workspace = true, optional = true }
+sha1 = { workspace = true, optional = true }
+snafu = { workspace = true, optional = true }
+strum = { workspace = true, optional = true }
+strum_macros = { workspace = true, optional = true }
+unarm = { workspace = true, optional = true }
+
+[build-dependencies]
+arm-decoder = { git = "https://github.com/kelpsyberry/arm-decoder" }
+
+[dev-dependencies]
+anyhow = { version = "1" }
+env_logger = { workspace = true }
+
+[[test]]
+name = "test_dsprot"
+path = "tests/test_dsprot.rs"
+required-features = ["nds-rom"]
+
+[[test]]
+name = "test_extract_build"
+path = "tests/test_extract_build.rs"
+required-features = ["nds-rom"]

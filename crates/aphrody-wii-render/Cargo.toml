@@ -1,0 +1,31 @@
+[package]
+description = "Wii graphics command rendering adapter."
+name = "aphrody-wii-render"
+version = "0.1.1"
+edition.workspace = true
+publish = true
+license = "GPL-3.0-only"
+
+[lib]
+name = "backend_wgpu"
+
+[features]
+default = []
+renderdoc-capture = ["dep:renderdoc"]
+hotpath = ["dep:hotpath", "hotpath/hotpath", "hotpath/crossbeam"]
+dump-wgsl = []
+gx-stats = ["gecko/gx-stats"]
+
+[dependencies]
+wgpu.workspace = true
+bytemuck = { workspace = true, features = ["derive"] }
+gecko = { package = "aphrody-wii-runtime", path = "../aphrody-wii-runtime", default-features = false }
+chapa.workspace = true
+wesl.workspace = true
+glam = { workspace = true, features = ["bytemuck", "i32", "u32"] }
+crossbeam-channel.workspace = true
+tracing = { version = "0.1" }
+rustc-hash.workspace = true
+png = { version = "0.18" }
+renderdoc = { workspace = true, optional = true }
+hotpath = { workspace = true, optional = true }

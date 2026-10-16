@@ -1,0 +1,31 @@
+[package]
+name = "aphrody-nie-editor"
+default-run = "aphrody-nie-editor"
+description = "Native NIE 3D editor with a shared DirectX 12, Vulkan, or OpenGL viewport"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "aphrody-nie-editor"
+path = "src/main.rs"
+required-features = ["host"]
+
+[features]
+default = ["host"]
+host = ["dep:clap", "dep:eframe", "aphrody-nie-render3d/gpu"]
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-nie-render3d.workspace = true
+# Version follows the root egui/wgpu 30 catalog.
+eframe = { version = "0.36.2", default-features = false, features = ["default_fonts", "wgpu", "x11", "wayland"], optional = true }
+serde_json = { version = "1" }
+
+anyhow = { version = "1" }
+clap = { workspace = true, optional = true, features = ["derive", "color", "env"] }

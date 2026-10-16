@@ -1,0 +1,2797 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Rust counterpart of
+// `/home/vricosti/Dev/emulators/eden/src/qt_common/config/qt_config.cpp`
+// (`Config::ReadUIValues` / `Config::SaveUIValues` and the Qt-owned control
+// values).
+//
+// Upstream persists `UISettings::values.game_dirs` with
+// `QSettings::beginWriteArray("gamedirs")`, which writes a `size` key plus one
+// group of keys per entry. `beginReadArray` then iterates `0..size` and ignores
+// higher-numbered keys, so removing a directory only rewrites `size` and leaves
+// the old group behind. Both halves of that behaviour matter and are reproduced
+// here.
+//
+// The file written is **ruzu's own** config (`RuzuPath::ConfigDir`), never
+// yuzu's — legacy configurations are read once by
+// `crate::user_data_migration` through the copy-only migration worker and are
+// never written to afterwards.
+
+use std::io;
+use std::path::{Path, PathBuf};
+
+use common::fs::path_util::{get_ruzu_path, RuzuPath};
+use common::settings_input::{
+    native_analog, native_button, native_motion, ControllerType, PlayerInput,
+    JOYCON_BODY_NEON_BLUE, JOYCON_BODY_NEON_RED, JOYCON_BUTTONS_NEON_BLUE, JOYCON_BUTTONS_NEON_RED,
+};
+use frontend_common::config::{adjust_output_string, BaseConfig, ConfigType};
+use input_common::main_common::{generate_analog_param_from_keys, generate_keyboard_param};
+
+use crate::uisettings::{self, GameDir};
+
+/// Key prefix for every game-directory setting.
+const GAMEDIRS_PREFIX: &str = "Paths\\gamedirs\\";
+
+/// Key prefix for upstream `Settings::values.external_content_dirs`.
+const EXTERNAL_CONTENT_DIRS_PREFIX: &str = "Paths\\external_content_dirs\\";
+
+/// Upstream `QtConfig::ReadUIGamelistValues` opens the `UiGameList` category and
+/// reads a `favorites` array of `program_id` entries. `TranslateCategory` renders
+/// that category as `UIGameList`, and the group is a key prefix inside `[UI]`
+/// rather than a section of its own — the same shape as `Paths\gamedirs\`.
+const FAVORITES_PREFIX: &str = "UIGameList\\favorites\\";
+
+/// The INI section the game-directory keys live in. Upstream's `QSettings`
+/// group for the whole UI config is `UI`, and the `Paths\` part is a key
+/// prefix inside it, not a section of its own.
+const UI_SECTION: &str = "[UI]";
+
+/// Path of ruzu's own configuration file.
+pub fn config_path() -> PathBuf {
+    get_ruzu_path(RuzuPath::ConfigDir).join("qt-config.ini")
+}
+
+/// QtConfig::ReloadAllValues / ReadQtValues. Keep the complete frontend reload
+/// in its configuration owner so startup and a defaults reset use the same path.
+/// The existing GTK readers remain specialized by category, as upstream.
+pub fn reload_all_values() {
+    if let Err(error) = repair_directory_array_sections(&config_path()) {
+        log::error!("Could not repair directory-array configuration: {error}");
+    }
+    let game_dirs = load_game_dirs();
+    log::info!("Loaded {} configured game directory(ies)", game_dirs.len());
+    uisettings::with_mut(|values| values.game_dirs = game_dirs);
+    load_roms_path();
+    load_recent_files();
+    load_external_content_dirs();
+    let favorited_ids = load_favorited_ids();
+    uisettings::with_mut(|values| values.favorited_ids = favorited_ids);
+    load_favorites_expanded();
+    load_ui_language();
+    load_view_values();
+    load_multiplayer_values();
+    load_global_values();
+    load_control_values();
+    load_shortcut_values();
+}
+
+/// Repair the old Ruzu writer's misplaced arrays before strict UI readers run.
+/// Eden has no corresponding migration: its writer already owns the UI section.
+/// The transform is idempotent; a valid UI array takes precedence over stray data.
+fn repaired_directory_array_sections(contents: &str) -> Option<String> {
+    let family = |line: &str| -> Option<usize> {
+        let (key, _) = line.trim().split_once('=')?;
+        [GAMEDIRS_PREFIX, EXTERNAL_CONTENT_DIRS_PREFIX]
+            .iter().position(|prefix| key.starts_with(prefix))
+    };
+    let mut in_ui = false;
+    let mut canonical = [false; 2];
+    let mut misplaced = [Vec::new(), Vec::new()];
+    let mut retained = Vec::new();
+    for line in contents.lines() {
+        if line.trim().starts_with('[') {
+            in_ui = line.trim() == UI_SECTION;
+        }
+        if let Some(index) = family(line) {
+            if in_ui {
+                canonical[index] = true;
+            } else {
+                misplaced[index].push(line.to_owned());
+                continue;
+            }
+        }
+        retained.push(line.to_owned());
+    }
+    if misplaced.iter().all(Vec::is_empty) { return None; }
+    let mut moved = Vec::new();
+    for (index, lines) in misplaced.into_iter().enumerate() {
+        if !canonical[index] { moved.extend(lines); }
+    }
+    if !moved.is_empty() {
+        let insert_at = match retained.iter().position(|line| line.trim() == UI_SECTION) {
+            Some(index) => index + 1,
+            None => {
+                retained.push(UI_SECTION.to_owned());
+                retained.len()
+            }
+        };
+        retained.splice(insert_at..insert_at, moved);
+    }
+    let mut repaired = retained.join("\n");
+    if contents.ends_with('\n') { repaired.push('\n'); }
+    Some(repaired)
+}
+
+fn repair_directory_array_sections(path: &Path) -> io::Result<bool> {
+    use std::io::Write;
+    let contents = match std::fs::read_to_string(path) {
+        Ok(contents) => contents,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(false),
+        Err(error) => return Err(error),
+    };
+    let Some(repaired) = repaired_directory_array_sections(&contents) else { return Ok(false); };
+    let parent = path.parent().ok_or_else(|| io::Error::other("configuration has no parent"))?;
+    let mut backup = tempfile::Builder::new()
+        .prefix("qt-config.ini.before-directory-section-repair-").suffix(".bak")
+        .tempfile_in(parent)?;
+    backup.write_all(contents.as_bytes())?;
+    backup.as_file().sync_all()?;
+    let (_, backup_path) = backup.keep().map_err(|error| error.error)?;
+    let mut replacement = tempfile::NamedTempFile::new_in(parent)?;
+    replacement.write_all(repaired.as_bytes())?;
+    replacement.as_file().sync_all()?;
+    replacement.persist(path).map_err(|error| error.error)?;
+    log::info!("Repaired directory arrays in UI; original configuration saved to {}", backup_path.display());
+    Ok(true)
+}
+
+/// Read the generic global categories through upstream's `Config::ReadValues`
+/// owner. Qt-owned controls are loaded separately after this pass, matching
+/// `QtConfig::ReadQtValues` ordering.
+pub fn load_global_values() {
+    let path = config_path();
+    let mut config = BaseConfig::new(ConfigType::GlobalConfig);
+    config.initialize(&path);
+}
+
+// Mechanical shared preflight for this module's read/modify/write adapters.
+// Eden retains its parsed Config object; Rust must not replace unreadable input
+// with an empty document before updating one category.
+fn read_configuration_for_update(path: &Path) -> io::Result<String> {
+    match std::fs::read_to_string(path) {
+        Ok(contents) => Ok(contents),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(String::new()),
+        Err(error) => Err(error),
+    }
+}
+
+/// Persist the generic global categories through upstream's
+/// `Config::SaveValues` owner. Qt-owned controls and UI values are written by
+/// their specialized writers after this pass.
+pub fn save_global_values() -> io::Result<()> {
+    let path = config_path();
+    read_configuration_for_update(&path)?;
+    let mut config = BaseConfig::new(ConfigType::GlobalConfig);
+    // Upstream writes through the already-loaded, long-lived `QtConfig`
+    // object. Reden reconstructs this adapter for each save, so load only the
+    // INI document here: `initialize` would reload the old on-disk values into
+    // `Settings::values` and discard the dialog changes before saving them.
+    config.set_up_ini(&path);
+    config.save_values();
+    config.write_to_ini()
+}
+
+/// Read frontend shortcuts through upstream `QtConfig::ReadShortcutValues`.
+pub fn load_shortcut_values() {
+    let contents = std::fs::read_to_string(config_path()).unwrap_or_default();
+    let shortcuts = parse_shortcut_values(&contents);
+    uisettings::with_mut(|ui| ui.shortcuts = shortcuts);
+}
+
+fn parse_shortcut_values(contents: &str) -> Vec<uisettings::Shortcut> {
+    let values = parse_section_values(&contents, "Shortcuts");
+    uisettings::DEFAULT_HOTKEYS
+        .iter()
+        .map(|default| {
+            let prefix = format!("{}\\{}", default.group, default.name);
+            uisettings::Shortcut {
+                name: default.name.to_owned(),
+                group: default.group.to_owned(),
+                keyseq: read_section_string_setting(
+                    &values,
+                    &format!("{prefix}\\KeySeq"),
+                    default.keyseq,
+                ),
+                controller_keyseq: read_section_string_setting(
+                    &values,
+                    &format!("{prefix}\\Controller_KeySeq"),
+                    default.controller_keyseq,
+                ),
+                // Upstream deliberately takes context from the default rather
+                // than the INI because the historical serialized Qt enum was
+                // ambiguous for WidgetWithChildrenShortcut.
+                context: default.context,
+                repeat: values
+                    .get(&format!("{prefix}\\Repeat"))
+                    .filter(|_| {
+                        values
+                            .get(&format!("{prefix}\\Repeat\\default"))
+                            .is_some_and(|value| !is_true(value))
+                    })
+                    .map(|value| is_true(value))
+                    .unwrap_or(default.repeat),
+            }
+        })
+        .collect()
+}
+
+/// Persist frontend shortcuts through upstream `QtConfig::SaveShortcutValues`.
+pub fn save_shortcut_values() -> io::Result<()> {
+    let path = config_path();
+    let mut contents = read_configuration_for_update(&path)?;
+    let shortcuts = uisettings::with(|ui| ui.shortcuts.clone());
+    for (shortcut, default) in shortcuts.iter().zip(uisettings::DEFAULT_HOTKEYS) {
+        let prefix = format!("{}\\{}", shortcut.group, shortcut.name);
+        contents = replace_section_setting(
+            &contents,
+            "Shortcuts",
+            &format!("{prefix}\\KeySeq"),
+            &shortcut.keyseq,
+            shortcut.keyseq == default.keyseq,
+        );
+        contents = replace_section_setting(
+            &contents,
+            "Shortcuts",
+            &format!("{prefix}\\Controller_KeySeq"),
+            &shortcut.controller_keyseq,
+            shortcut.controller_keyseq == default.controller_keyseq,
+        );
+        contents = replace_section_setting(
+            &contents,
+            "Shortcuts",
+            &format!("{prefix}\\Context"),
+            &shortcut.context.to_string(),
+            shortcut.context == default.context,
+        );
+        contents = replace_section_setting(
+            &contents,
+            "Shortcuts",
+            &format!("{prefix}\\Repeat"),
+            &shortcut.repeat.to_string(),
+            shortcut.repeat == default.repeat,
+        );
+    }
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(path, contents)
+}
+
+/// Persist the four settings owned by upstream `ConfigureTasDialog`.
+pub fn save_tas_values() -> io::Result<()> {
+    save_tas_values_to(&config_path())
+}
+
+fn save_tas_values_to(path: &Path) -> io::Result<()> {
+    let mut contents = read_configuration_for_update(path)?;
+    let values = common::settings::values();
+    for (key, value, default) in [
+        (
+            "pause_tas_on_load",
+            *values.pause_tas_on_load.get_value(),
+            *values.pause_tas_on_load.get_default(),
+        ),
+        (
+            "tas_enable",
+            *values.tas_enable.get_value(),
+            *values.tas_enable.get_default(),
+        ),
+        (
+            "tas_loop",
+            *values.tas_loop.get_value(),
+            *values.tas_loop.get_default(),
+        ),
+        (
+            "tas_show_recording_dialog",
+            *values.tas_show_recording_dialog.get_value(),
+            *values.tas_show_recording_dialog.get_default(),
+        ),
+    ] {
+        contents = replace_section_setting(
+            &contents,
+            "Controls",
+            key,
+            &value.to_string(),
+            value == default,
+        );
+    }
+    drop(values);
+    contents = replace_section_setting(
+        &contents,
+        "Data%20Storage",
+        "tas_directory",
+        &common::fs::path_util::get_ruzu_path_string(RuzuPath::TASDir),
+        false,
+    );
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(path, contents)
+}
+
+fn replace_section_setting(
+    contents: &str,
+    section: &str,
+    key: &str,
+    value: &str,
+    is_default: bool,
+) -> String {
+    let mut lines: Vec<String> = contents.lines().map(str::to_owned).collect();
+    let header = format!("[{section}]");
+    let start = lines.iter().position(|line| line.trim() == header);
+    let start = match start {
+        Some(start) => start,
+        None => {
+            if !lines.is_empty() && !lines.last().is_some_and(String::is_empty) {
+                lines.push(String::new());
+            }
+            lines.push(header);
+            lines.len() - 1
+        }
+    };
+    let end = lines[start + 1..]
+        .iter()
+        .position(|line| line.trim().starts_with('['))
+        .map_or(lines.len(), |offset| start + 1 + offset);
+    let assignments = [
+        (format!("{key}\\default="), is_default.to_string()),
+        (format!("{key}="), value.to_owned()),
+    ];
+    let mut insert_at = end;
+    for (prefix, rendered) in assignments {
+        if let Some(index) = (start + 1..end).find(|&index| lines[index].starts_with(&prefix)) {
+            lines[index] = format!("{prefix}{rendered}");
+        } else {
+            lines.insert(insert_at, format!("{prefix}{rendered}"));
+            insert_at += 1;
+        }
+    }
+    let mut output = lines.join("\n");
+    output.push('\n');
+    output
+}
+
+/// Read `UISettings::values.language`, the `Paths\language` entry owned by
+/// upstream `Config::ReadUIValues`.
+pub fn load_ui_language() {
+    let contents = std::fs::read_to_string(config_path()).unwrap_or_default();
+    let language = read_ui_string_setting(&contents, "Paths\\language", "");
+    uisettings::with_mut(|values| values.language.set_value(language));
+}
+
+/// Read recent_files from upstream QtConfig::ReadPathValues.
+pub fn load_recent_files() {
+    let contents = std::fs::read_to_string(config_path()).unwrap_or_default();
+    uisettings::with_mut(|values| values.recent_files = read_recent_files(&contents));
+}
+
+fn read_recent_files(contents: &str) -> Vec<String> {
+    parse_section_values(contents, UI_SECTION)
+        .get("Paths\\recentFiles")
+        .map(|value| unquote(value).split(", ").filter(|path| !path.is_empty())
+            .map(str::to_owned).collect())
+        .unwrap_or_default()
+}
+
+/// QtConfig::SavePathValues stores recentFiles without a default marker.
+pub fn save_recent_files() -> io::Result<()> {
+    let path = config_path();
+    let contents = read_configuration_for_update(&path)?;
+    let files = uisettings::with(|values| values.recent_files.join(", "));
+    let updated = replace_ui_setting(&contents, "Paths\\recentFiles", &files, None);
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(path, updated)
+}
+
+/// Read `UISettings::values.roms_path` from upstream `QtConfig::ReadPathValues`.
+pub fn load_roms_path() {
+    let contents = std::fs::read_to_string(config_path()).unwrap_or_default();
+    let roms_path = read_ui_string_setting(&contents, "Paths\\romsPath", "");
+    uisettings::with_mut(|values| values.roms_path = roms_path);
+}
+
+/// Read upstream's checkable `View` action state from `Category::Ui`.
+pub fn load_view_values() {
+    let contents = std::fs::read_to_string(config_path()).unwrap_or_default();
+    uisettings::with_mut(|values| read_ui_values(&contents, values));
+}
+
+/// Match QtConfig's UI/UIGameList/Screenshots groups and Config's UiAudio group.
+/// The GTK registry lives separately from common::settings, so BaseConfig cannot
+/// discover these settings through the core registry.
+fn ui_setting_location(setting: &dyn common::settings_setting::BasicSetting) -> (&'static str, String) {
+    use common::settings_enums::Category;
+    if setting.category() == Category::UiAudio {
+        return ("Audio", setting.label().to_owned());
+    }
+    let prefix = match setting.category() {
+        Category::UiGameList => "UIGameList\\",
+        Category::Screenshots => "Screenshots\\",
+        _ => "",
+    };
+    ("UI", format!("{prefix}{}", setting.label()))
+}
+
+fn read_ui_values(contents: &str, values: &mut uisettings::Values) {
+    let ui = parse_section_values(contents, "UI");
+    let audio = parse_section_values(contents, "Audio");
+    values.for_each_ui_setting_mut(|setting| {
+        let (section, key) = ui_setting_location(setting);
+        let document = if section == "Audio" { &audio } else { &ui };
+        let default = setting.default_to_string();
+        let value = if matches!(default.as_str(), "true" | "false") {
+            read_ui_bool_setting(document, &key, default == "true").to_string()
+        } else {
+            read_section_string_setting(document, &key, &default)
+        };
+        setting.load_string(&value);
+    });
+    let theme = read_section_string_setting(&ui, "theme", "colorful");
+    // Preserve an explicitly customized percentage from pre-Auto configs.
+    if !ui.contains_key("font_scale_auto") && *values.font_scale.get_value() != 100 {
+        values.font_scale_auto.set_value(false);
+    }
+    let display = uisettings::THEMES.iter().find(|(name, internal)| *name == theme || *internal == theme)
+        .map(|(name, _)| *name).unwrap_or(&theme);
+    values.theme.set_value(display.to_owned());
+    // Upstream's screenshot_path is a plain string without a default marker.
+    values.screenshot_path.set_value(ui.get("Screenshots\\screenshot_path")
+        .map(|value| unquote(value).to_owned()).unwrap_or_default());
+}
+
+/// Read the multiplayer fields owned by upstream
+/// `QtConfig::ReadMultiplayerValues`.
+pub fn load_multiplayer_values() {
+    let contents = std::fs::read_to_string(config_path()).unwrap_or_default();
+    uisettings::with_mut(|ui| read_multiplayer_values(&contents, ui));
+}
+
+fn read_multiplayer_values(contents: &str, ui: &mut uisettings::Values) {
+    let values = parse_section_values(contents, UI_SECTION);
+    ui.for_each_multiplayer_setting_mut(|setting| {
+        let key = format!("Multiplayer\\{}", setting.label());
+        let default = setting.default_to_string();
+        let value = if matches!(default.as_str(), "true" | "false") {
+            read_ui_bool_setting(&values, &key, default == "true").to_string()
+        } else if values.get(&format!("{key}\\default")).is_none_or(|value| is_true(value)) {
+            default
+        } else {
+            values.get(&key).map(|value| decode_multiplayer_value(value))
+                .unwrap_or_else(|| setting.default_to_string())
+        };
+        setting.load_string(&value);
+    });
+    for (array, field, list) in [
+        ("username_ban_list", "username", &mut ui.multiplayer_ban_list.0),
+        ("ip_ban_list", "ip", &mut ui.multiplayer_ban_list.1),
+    ] {
+        let prefix = format!("Multiplayer\\{array}");
+        let size = values.get(&format!("{prefix}\\size"))
+            .and_then(|value| value.parse::<usize>().ok()).unwrap_or(0);
+        list.clear();
+        for index in 1..=size {
+            // Ban entries are plain array values, not defaulted settings.
+            // Eden's IP reader mistakenly reads "username" without advancing
+            // its index. Read the indexed "ip" keys emitted by its writer.
+            list.push(values.get(&format!("{prefix}\\{index}\\{field}"))
+                .map(|value| decode_multiplayer_value(value)).unwrap_or_default());
+        }
+    }
+}
+
+/// Persist the multiplayer fields through upstream
+/// `QtConfig::SaveMultiplayerValues`'s `Category::Multiplayer` writer.
+pub fn save_multiplayer_values() -> io::Result<()> {
+    let path = config_path();
+    let contents = read_configuration_for_update(&path)?;
+    let contents = uisettings::with_mut(|ui| write_multiplayer_values(&contents, ui));
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(path, contents)
+}
+
+fn write_multiplayer_values(contents: &str, ui: &mut uisettings::Values) -> String {
+    // Remove only owned array keys in UI; shrinking a list must not leave stale
+    // bans that can reappear later, and other sections must remain untouched.
+    let mut in_ui = false;
+    let mut contents = contents.lines().filter(|line| {
+        let line = line.trim();
+        if line.starts_with('[') { in_ui = line == UI_SECTION; }
+        !in_ui || !line.split_once('=').is_some_and(|(key, _)|
+            key.starts_with("Multiplayer\\username_ban_list\\") || key.starts_with("Multiplayer\\ip_ban_list\\"))
+    }).collect::<Vec<_>>().join("\n");
+    ui.for_each_multiplayer_setting_mut(|setting| {
+        contents = replace_ui_string_setting(&contents,
+            &format!("Multiplayer\\{}", setting.label()),
+            &encode_multiplayer_value(&setting.to_string_global()),
+            &encode_multiplayer_value(&setting.default_to_string()));
+    });
+    for (array, field, list) in [
+        ("username_ban_list", "username", &ui.multiplayer_ban_list.0),
+        ("ip_ban_list", "ip", &ui.multiplayer_ban_list.1),
+    ] {
+        let prefix = format!("Multiplayer\\{array}");
+        contents = replace_ui_setting(&contents, &format!("{prefix}\\size"), &list.len().to_string(), None);
+        for (index, value) in list.iter().enumerate() {
+            contents = replace_ui_setting(&contents, &format!("{prefix}\\{}\\{field}", index + 1), &encode_multiplayer_value(value), None);
+        }
+    }
+    contents
+}
+
+// Keep scalar numbers/bools and legacy simple strings in their existing form.
+// Quoted escapes preserve multiline GUI text on ONE physical INI line. The
+// newline/backslash/quote form matches QSettings; Eden's current SimpleIni
+// writer does not escape line breaks and cannot roundtrip that input safely.
+fn encode_multiplayer_value(value: &str) -> String {
+    if value.trim() != value || value.chars().any(|c| c.is_control() || matches!(c, '\\' | '"' | ',' | ';' | '=')) {
+        serde_json::to_string(value).expect("serializing a string cannot fail")
+    } else {
+        value.to_owned()
+    }
+}
+
+fn decode_multiplayer_value(value: &str) -> String {
+    // Legacy SimpleIni strings may have unescaped backslashes inside quotes.
+    // Decode valid escaped strings; otherwise preserve the legacy content.
+    serde_json::from_str::<String>(value).unwrap_or_else(|_| unquote(value).to_owned())
+}
+
+/// Persist frontend UI values through upstream `QtConfig::SaveUIValues`'s
+/// generic `Category::Ui` / `Category::UiGeneral` writer.
+pub fn save_view_values() -> io::Result<()> {
+    save_view_values_to(&config_path())
+}
+
+fn save_view_values_to(path: &Path) -> io::Result<()> {
+    let contents = read_configuration_for_update(path)?;
+    let updated = uisettings::with_mut(|values| save_ui_values(&contents, values));
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(path, updated)
+}
+
+fn save_ui_values(contents: &str, values: &mut uisettings::Values) -> String {
+    let mut contents = contents.to_owned();
+    values.for_each_ui_setting_mut(|setting| {
+        let (section, key) = ui_setting_location(setting);
+        let value = setting.to_string_global();
+        contents = replace_section_setting(&contents, section, &key, &value,
+            value == setting.default_to_string());
+    });
+    let theme = values.theme.get_value();
+    let internal = uisettings::THEMES.iter().find(|(name, internal)| *name == theme || *internal == theme)
+        .map(|(_, internal)| *internal).unwrap_or(theme);
+    contents = replace_ui_string_setting(&contents, "theme", internal, "colorful");
+    let path = frontend_common::config::adjust_output_string(values.screenshot_path.get_value());
+    replace_ui_setting(&contents, "Screenshots\\screenshot_path", &path, None)
+}
+
+fn read_ui_bool_setting(
+    values: &std::collections::BTreeMap<String, String>,
+    key: &str,
+    default: bool,
+) -> bool {
+    if values
+        .get(&format!("{key}\\default"))
+        .is_none_or(|value| is_true(value))
+    {
+        default
+    } else {
+        values
+            .get(key)
+            .map(|value| is_true(value))
+            .unwrap_or(default)
+    }
+}
+
+fn read_ui_u32_setting(
+    values: &std::collections::BTreeMap<String, String>,
+    key: &str,
+    default: u32,
+) -> u32 {
+    if values
+        .get(&format!("{key}\\default"))
+        .is_none_or(|value| is_true(value))
+    {
+        return default;
+    }
+    values
+        .get(key)
+        .and_then(|value| value.parse::<u32>().ok())
+        .unwrap_or(default)
+}
+
+/// Persist the selected interface locale through upstream's
+/// `Config::SaveUIValues` key and default marker.
+pub fn save_ui_language() -> io::Result<()> {
+    let path = config_path();
+    let contents = read_configuration_for_update(&path)?;
+    let language = uisettings::with(|values| values.language.get_value().clone());
+    let updated = replace_ui_string_setting(&contents, "Paths\\language", &language, "");
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(path, updated)
+}
+
+/// Persist `UISettings::values.roms_path` through upstream
+/// `QtConfig::SavePathValues`'s `romsPath` key.
+pub fn save_roms_path() -> io::Result<()> {
+    let path = config_path();
+    let contents = read_configuration_for_update(&path)?;
+    let roms_path = uisettings::with(|values| values.roms_path.clone());
+    let updated = replace_ui_string_setting(&contents, "Paths\\romsPath", &roms_path, "");
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(path, updated)
+}
+
+fn read_ui_string_setting(contents: &str, key: &str, default: &str) -> String {
+    let values = parse_section_values(contents, UI_SECTION);
+    if values
+        .get(&format!("{key}\\default"))
+        .is_none_or(|value| is_true(value))
+    {
+        return default.to_string();
+    }
+    values
+        .get(key)
+        .map(|value| unquote(value).to_string())
+        .unwrap_or_else(|| default.to_string())
+}
+
+fn read_section_string_setting(
+    values: &std::collections::BTreeMap<String, String>,
+    key: &str,
+    default: &str,
+) -> String {
+    if values
+        .get(&format!("{key}\\default"))
+        .is_none_or(|value| is_true(value))
+    {
+        return default.to_owned();
+    }
+    values
+        .get(key)
+        .map(|value| unquote(value).to_owned())
+        .unwrap_or_else(|| default.to_owned())
+}
+
+fn replace_ui_string_setting(contents: &str, key: &str, value: &str, default: &str) -> String {
+    replace_ui_setting(contents, key, value, Some(default))
+}
+
+/// Config::WriteStringSetting distinguishes a plain path from a defaulted setting.
+fn replace_ui_setting(contents: &str, key: &str, value: &str, default: Option<&str>) -> String {
+    let default_key = format!("{key}\\default");
+    let mut rendered = Vec::new();
+    if let Some(default) = default {
+        rendered.push(format!("{default_key}={}", value == default));
+    }
+    rendered.push(format!("{key}={value}"));
+    let mut output = Vec::new();
+    let mut in_ui = false;
+    let mut saw_ui = false;
+    let mut written = false;
+
+    for line in contents.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with('[') {
+            if in_ui && !written {
+                output.extend(rendered.iter().cloned());
+                written = true;
+            }
+            in_ui = trimmed == UI_SECTION;
+            saw_ui |= in_ui;
+            output.push(line.to_string());
+            continue;
+        }
+        let owned = trimmed
+            .split_once('=')
+            .is_some_and(|(found, _)| found.trim() == key || found.trim() == default_key);
+        if in_ui && owned {
+            if !written {
+                output.extend(rendered.iter().cloned());
+                written = true;
+            }
+            continue;
+        }
+        output.push(line.to_string());
+    }
+
+    if !written {
+        if !saw_ui {
+            if !output.is_empty() {
+                output.push(String::new());
+            }
+            output.push(UI_SECTION.to_string());
+        }
+        output.extend(rendered);
+    }
+
+    let mut text = output.join("\n");
+    text.push('\n');
+    text
+}
+
+fn parse_section_values(
+    contents: &str,
+    section: &str,
+) -> std::collections::BTreeMap<String, String> {
+    let mut values = std::collections::BTreeMap::new();
+    let mut in_section = false;
+    let section_header = if section.starts_with('[') {
+        section.to_string()
+    } else {
+        format!("[{section}]")
+    };
+    for line in contents.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with('[') {
+            in_section = trimmed == section_header;
+            continue;
+        }
+        if !in_section {
+            continue;
+        }
+        if let Some((key, value)) = trimmed.split_once('=') {
+            values.insert(key.trim().to_string(), value.trim().to_string());
+        }
+    }
+    values
+}
+
+/// Read the configured game directories — upstream `Config::ReadUIValues`'s
+/// `gamedirs` array.
+pub fn load_game_dirs() -> Vec<GameDir> {
+    game_dirs_with_defaults(&std::fs::read_to_string(config_path()).unwrap_or_default())
+}
+
+/// ReadPathValues' empty-array fallback. Imports still use parse_game_dirs so
+/// importing a file without game paths does not fabricate source directories.
+fn game_dirs_with_defaults(contents: &str) -> Vec<GameDir> {
+    let mut directories = parse_game_dirs(contents);
+    if directories.is_empty() {
+        directories.extend(["SDMC", "UserNAND", "SysNAND"].map(|path| GameDir {
+            path: path.into(), deep_scan: false, expanded: true,
+        }));
+        let mut config = BaseConfig::new(ConfigType::GlobalConfig);
+        config.load_ini(contents);
+        config.begin_group("UI");
+        config.begin_group("Paths");
+        let legacy = config.read_string_setting("gameListRootDir", Some("."));
+        if legacy != "." {
+            directories.push(GameDir { path: legacy,
+                deep_scan: config.read_boolean_setting("gameListDeepScan", Some(false)), expanded: true });
+        }
+    }
+    directories
+}
+
+/// Read `Settings::values.external_content_dirs` from the QSettings array
+/// owned by upstream `QtConfig::ReadUIValues`.
+pub fn load_external_content_dirs() {
+    let directories = match std::fs::read_to_string(config_path()) {
+        Ok(contents) => parse_external_content_dirs(&contents),
+        Err(_) => Vec::new(),
+    };
+    common::settings::values_mut().external_content_dirs = directories;
+}
+
+/// Persist `Settings::values.external_content_dirs` through upstream
+/// `QtConfig::SaveUIValues`'s `external_content_dirs` array.
+pub fn save_external_content_dirs(directories: &[String]) -> io::Result<()> {
+    let path = config_path();
+    let contents = read_configuration_for_update(&path)?;
+    let updated = replace_external_content_dirs(&contents, directories);
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(path, updated)
+}
+
+pub fn parse_external_content_dirs(contents: &str) -> Vec<String> {
+    use std::collections::BTreeMap;
+
+    let mut config = BaseConfig::new(ConfigType::GlobalConfig);
+    config.load_ini(contents);
+    config.begin_group("UI");
+
+    let mut size: Option<u32> = None;
+    let mut directories = BTreeMap::new();
+    let mut in_ui = false;
+    for line in contents.lines() {
+        let line = line.trim();
+        if line.starts_with('[') {
+            in_ui = line == UI_SECTION;
+            continue;
+        }
+        if !in_ui { continue; }
+        let Some((key, value)) = line.split_once('=') else {
+            continue;
+        };
+        let Some(rest) = key.strip_prefix(EXTERNAL_CONTENT_DIRS_PREFIX) else {
+            continue;
+        };
+        let Some((index, field)) = rest.split_once('\\') else {
+            if rest == "size" {
+                size = value.trim().parse().ok();
+            }
+            continue;
+        };
+        let Ok(index) = index.parse::<u32>() else {
+            continue;
+        };
+        if field == "path" {
+            let path = config.read_string_setting(key, None);
+            if !path.is_empty() {
+                directories.insert(index, path);
+            }
+        }
+    }
+    directories
+        .into_iter()
+        .filter(|(index, _)| size.is_none_or(|size| *index <= size))
+        .map(|(_, path)| path)
+        .collect()
+}
+
+fn replace_external_content_dirs(contents: &str, directories: &[String]) -> String {
+    let had_trailing_newline = contents.is_empty() || contents.ends_with('\n');
+    let is_external_dir_line = |line: &str| {
+        line.trim()
+            .split_once('=')
+            .is_some_and(|(key, _)| key.starts_with(EXTERNAL_CONTENT_DIRS_PREFIX))
+    };
+
+    let mut out = Vec::new();
+    let mut block_written = false;
+    for line in contents.lines() {
+        if is_external_dir_line(line) {
+            continue;
+        }
+        out.push(line.to_string());
+        if line.trim() == UI_SECTION && !block_written {
+            out.extend(render_external_content_dirs(directories));
+            block_written = true;
+        }
+    }
+    if !block_written {
+        if !out.iter().any(|line| line.trim() == UI_SECTION) {
+            if !out.is_empty() {
+                out.push(String::new());
+            }
+            out.push(UI_SECTION.to_string());
+        }
+        out.extend(render_external_content_dirs(directories));
+    }
+
+    let mut text = out.join("\n");
+    if had_trailing_newline && !text.is_empty() {
+        text.push('\n');
+    }
+    text
+}
+
+fn render_external_content_dirs(directories: &[String]) -> Vec<String> {
+    let mut lines = Vec::with_capacity(directories.len() + 1);
+    lines.push(format!(
+        "{EXTERNAL_CONTENT_DIRS_PREFIX}size={}",
+        directories.len()
+    ));
+    for (position, path) in directories.iter().enumerate() {
+        let path = adjust_output_string(path);
+        lines.push(format!(
+            "{EXTERNAL_CONTENT_DIRS_PREFIX}{}\\path={path}",
+            position + 1
+        ));
+    }
+    lines
+}
+
+/// Read game-directory paths from another yuzu-schema frontend config without
+/// loading any of its other settings.
+pub fn load_game_dirs_from(path: &Path) -> io::Result<Vec<GameDir>> {
+    std::fs::read_to_string(path).map(|contents| parse_game_dirs(&contents))
+}
+
+/// Merge only the source frontend's configured game-directory paths into
+/// Ruzu. Existing Ruzu entries win when the same path is already present.
+pub fn import_game_dirs_from(path: &Path) -> io::Result<usize> {
+    let source = load_game_dirs_from(path)?;
+    let (merged, imported) = merge_game_dirs(load_game_dirs(), source);
+    save_game_dirs(&merged)?;
+    Ok(imported)
+}
+
+fn merge_game_dirs(mut existing: Vec<GameDir>, source: Vec<GameDir>) -> (Vec<GameDir>, usize) {
+    let mut imported = 0;
+    for directory in source {
+        if existing
+            .iter()
+            .any(|current| current.path == directory.path)
+        {
+            continue;
+        }
+        existing.push(directory);
+        imported += 1;
+    }
+    (existing, imported)
+}
+
+/// Persist `dirs` back into ruzu's config — upstream `Config::SaveUIValues`.
+///
+/// Every other key in the file is preserved byte-for-byte: only the
+/// `Paths\gamedirs\…` lines are replaced, in place, at the position the first
+/// one occupied.
+pub fn save_game_dirs(dirs: &[GameDir]) -> io::Result<()> {
+    let path = config_path();
+    let contents = read_configuration_for_update(&path)?;
+    let updated = replace_game_dirs(&contents, dirs);
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(&path, updated)
+}
+
+/// Read the favorited program IDs — upstream `QtConfig::ReadUIGamelistValues`.
+pub fn load_favorited_ids() -> Vec<u64> {
+    match std::fs::read_to_string(config_path()) {
+        Ok(contents) => parse_favorited_ids(&contents),
+        Err(_) => Vec::new(),
+    }
+}
+
+/// Read upstream `UISettings::values.favorites_expanded` from UiGameList.
+pub fn load_favorites_expanded() {
+    let contents = std::fs::read_to_string(config_path()).unwrap_or_default();
+    let ui = parse_section_values(&contents, UI_SECTION);
+    uisettings::with_mut(|values| {
+        let default = *values.favorites_expanded.get_default();
+        values.favorites_expanded.set_value(read_ui_bool_setting(
+            &ui,
+            "UIGameList\\favorites_expanded",
+            default,
+        ));
+    });
+}
+
+/// Persist upstream `UISettings::values.favorites_expanded` in UiGameList.
+pub fn save_favorites_expanded() -> io::Result<()> {
+    let path = config_path();
+    let contents = read_configuration_for_update(&path)?;
+    let (value, default) = uisettings::with(|values| {
+        (
+            *values.favorites_expanded.get_value(),
+            *values.favorites_expanded.get_default(),
+        )
+    });
+    let updated = replace_section_setting(
+        &contents,
+        "UI",
+        "UIGameList\\favorites_expanded",
+        &value.to_string(),
+        value == default,
+    );
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(path, updated)
+}
+
+/// Persist `ids` back into ruzu's config — upstream `QtConfig::SaveUIGamelistValues`.
+///
+/// As with [`save_game_dirs`], every other key is preserved byte-for-byte and the
+/// rewritten block takes the position of the first old line.
+pub fn save_favorited_ids(ids: &[u64]) -> io::Result<()> {
+    let path = config_path();
+    let contents = read_configuration_for_update(&path)?;
+    let updated = replace_favorited_ids(&contents, ids);
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(&path, updated)
+}
+
+/// Upstream reads the array with `ReadUnsignedIntegerSetting`, so the on-disk value
+/// is an unsigned decimal program ID.
+pub fn parse_favorited_ids(contents: &str) -> Vec<u64> {
+    use std::collections::BTreeMap;
+
+    let mut size: Option<u32> = None;
+    let mut ids: BTreeMap<u32, u64> = BTreeMap::new();
+
+    for line in contents.lines() {
+        let line = line.trim();
+        let Some((key, value)) = line.split_once('=') else {
+            continue;
+        };
+        let Some(rest) = key.strip_prefix(FAVORITES_PREFIX) else {
+            continue;
+        };
+        let Some((index_str, field)) = rest.split_once('\\') else {
+            if rest == "size" {
+                size = value.trim().parse().ok();
+            }
+            continue;
+        };
+        let Ok(index) = index_str.parse::<u32>() else {
+            continue;
+        };
+        // `…\default` suffixes are metadata, not the value.
+        if field == "program_id" {
+            if let Ok(program_id) = value.trim().parse::<u64>() {
+                ids.insert(index, program_id);
+            }
+        }
+    }
+
+    ids.into_iter()
+        // yuzu's arrays are 1-based on disk, so `size = N` covers 1..=N.
+        .filter(|(index, _)| size.is_none_or(|size| *index <= size))
+        .map(|(_, program_id)| program_id)
+        .collect()
+}
+
+/// Return `contents` with its `UIGameList\favorites\…` lines replaced by `ids`.
+fn replace_favorited_ids(contents: &str, ids: &[u64]) -> String {
+    let had_trailing_newline = contents.is_empty() || contents.ends_with('\n');
+
+    let is_favorite_line = |line: &str| {
+        line.trim()
+            .split_once('=')
+            .is_some_and(|(key, _)| key.starts_with(FAVORITES_PREFIX))
+    };
+
+    let mut out: Vec<String> = Vec::new();
+    let mut block_written = false;
+    for line in contents.lines() {
+        if is_favorite_line(line) {
+            if !block_written {
+                out.extend(render_favorited_ids(ids));
+                block_written = true;
+            }
+            continue;
+        }
+        out.push(line.to_string());
+    }
+
+    if !block_written {
+        if !out.iter().any(|line| line.trim() == UI_SECTION) {
+            if !out.is_empty() {
+                out.push(String::new());
+            }
+            out.push(UI_SECTION.to_string());
+        }
+        out.extend(render_favorited_ids(ids));
+    }
+
+    let mut text = out.join("\n");
+    if had_trailing_newline && !text.is_empty() {
+        text.push('\n');
+    }
+    text
+}
+
+fn render_favorited_ids(ids: &[u64]) -> Vec<String> {
+    let mut lines = Vec::with_capacity(ids.len() + 1);
+    lines.push(format!("{FAVORITES_PREFIX}size={}", ids.len()));
+    for (position, program_id) in ids.iter().enumerate() {
+        // 1-based on disk, matching what yuzu writes.
+        lines.push(format!(
+            "{FAVORITES_PREFIX}{}\\program_id={program_id}",
+            position + 1
+        ));
+    }
+    lines
+}
+
+/// The INI section the per-player control bindings live in.
+const CONTROLS_SECTION: &str = "[Controls]";
+
+const QT_KEY_LEFT: i32 = 0x0100_0012;
+const QT_KEY_UP: i32 = 0x0100_0013;
+const QT_KEY_RIGHT: i32 = 0x0100_0014;
+const QT_KEY_DOWN: i32 = 0x0100_0015;
+const QT_KEY_SHIFT: i32 = 0x0100_0020;
+
+/// Upstream `QtConfig::default_buttons`.
+pub(super) const DEFAULT_BUTTONS: [i32; native_button::NUM_BUTTONS] = [
+    b'C' as i32,
+    b'X' as i32,
+    b'V' as i32,
+    b'Z' as i32,
+    b'F' as i32,
+    b'G' as i32,
+    b'Q' as i32,
+    b'E' as i32,
+    b'R' as i32,
+    b'T' as i32,
+    b'M' as i32,
+    b'N' as i32,
+    QT_KEY_LEFT,
+    QT_KEY_UP,
+    QT_KEY_RIGHT,
+    QT_KEY_DOWN,
+    b'Q' as i32,
+    b'E' as i32,
+    0,
+    0,
+    b'Q' as i32,
+    b'E' as i32,
+];
+
+/// Upstream `QtConfig::default_motions`.
+pub(super) const DEFAULT_MOTIONS: [i32; native_motion::NUM_MOTIONS] = [b'7' as i32, b'8' as i32];
+
+/// QtConfig::default_ringcon_analogs.
+pub(super) const DEFAULT_RINGCON_ANALOGS: [i32; 2] = [b'A' as i32, b'D' as i32];
+
+/// QtConfig::ReadHidbusValues, using the already parsed Controls section.
+fn read_hidbus_values(values: &std::collections::BTreeMap<String, String>) -> String {
+    values.get("ring_controller").filter(|value| !value.is_empty()
+         && values.get("ring_controller\\default").is_some_and(|flag|
+             matches!(flag.to_ascii_lowercase().as_str(), "false" | "no" | "off" | "0"))).cloned()
+        .unwrap_or_else(|| generate_analog_param_from_keys(
+            0, 0, DEFAULT_RINGCON_ANALOGS[0], DEFAULT_RINGCON_ANALOGS[1], 0, 0.05,
+        ))
+}
+
+/// QtConfig::SaveHidbusValues. The Controls writer owns quoting/default flags.
+fn save_hidbus_values(entries: &mut Vec<(String, String)>, binding: &str) {
+    entries.push(("ring_controller".to_string(), binding.to_string()));
+}
+
+/// Upstream `QtConfig::default_analogs`.
+pub(super) const DEFAULT_ANALOGS: [[i32; 4]; native_analog::NUM_ANALOGS] = [
+    [b'W' as i32, b'S' as i32, b'A' as i32, b'D' as i32],
+    [b'I' as i32, b'K' as i32, b'J' as i32, b'L' as i32],
+];
+
+/// Upstream `QtConfig::default_stick_mod`.
+pub(super) const DEFAULT_STICK_MOD: [i32; native_analog::NUM_ANALOGS] = [QT_KEY_SHIFT, 0];
+
+/// Read every player's bindings — upstream `QtConfig::ReadQtPlayerValues`,
+/// called once per player from `Config::ReadControlValues`.
+pub fn load_control_values() {
+    // A missing file is the first launch, and it still has to go through the
+    // loop below: upstream's `ReadBooleanSetting` applies its `player_index == 0`
+    // default whether or not the file exists, and `PlayerInput::default()`
+    // starts every player disconnected. Returning early here left player 1
+    // unusable until the user ticked the box by hand.
+    let contents = std::fs::read_to_string(config_path()).unwrap_or_default();
+    let values = parse_controls(&contents);
+
+    let mut settings = common::settings::values_mut();
+    let players = settings.players.get_value_mut();
+    for (index, player) in players.iter_mut().enumerate() {
+        load_player_values(player, index, &values);
+    }
+    settings.ringcon_analogs = read_hidbus_values(&values);
+}
+
+fn load_player_values(
+    player: &mut PlayerInput,
+    index: usize,
+    values: &std::collections::BTreeMap<String, String>,
+) {
+    let prefix = format!("player_{index}_");
+    load_player_bindings(player, &prefix, values);
+
+    player.connected = read_bool(values, &format!("{prefix}connected"), index == 0);
+    player.controller_type = values
+        .get(&format!("{prefix}type"))
+        .and_then(|value| value.parse::<u8>().ok())
+        .and_then(|value| ControllerType::try_from(value).ok())
+        .unwrap_or(ControllerType::ProController);
+    player.vibration_enabled = read_bool(values, &format!("{prefix}vibration_enabled"), true);
+    player.vibration_strength = read_number(values, &format!("{prefix}vibration_strength"), 100);
+    player.body_color_left = read_number(
+        values,
+        &format!("{prefix}body_color_left"),
+        JOYCON_BODY_NEON_BLUE,
+    );
+    player.body_color_right = read_number(
+        values,
+        &format!("{prefix}body_color_right"),
+        JOYCON_BODY_NEON_RED,
+    );
+    player.button_color_left = read_number(
+        values,
+        &format!("{prefix}button_color_left"),
+        JOYCON_BUTTONS_NEON_BLUE,
+    );
+    player.button_color_right = read_number(
+        values,
+        &format!("{prefix}button_color_right"),
+        JOYCON_BUTTONS_NEON_RED,
+    );
+    player.profile_name = values
+        .get(&format!("{prefix}profile_name"))
+        .cloned()
+        .unwrap_or_default();
+}
+
+/// Upstream `QtConfig::ReadQtPlayerValues`: bindings use a `player_N_`
+/// prefix in the global config and no prefix in an input-profile config.
+fn load_player_bindings(
+    player: &mut PlayerInput,
+    prefix: &str,
+    values: &std::collections::BTreeMap<String, String>,
+) {
+    for (slot, name) in native_button::MAPPING.iter().enumerate() {
+        let default = generate_keyboard_param(DEFAULT_BUTTONS[slot]);
+        player.buttons[slot] = values
+            .get(&format!("{prefix}{name}"))
+            .filter(|value| !value.is_empty())
+            .cloned()
+            .unwrap_or(default);
+    }
+
+    for (slot, name) in native_analog::MAPPING.iter().enumerate() {
+        let keys = DEFAULT_ANALOGS[slot];
+        let default = generate_analog_param_from_keys(
+            keys[0],
+            keys[1],
+            keys[2],
+            keys[3],
+            DEFAULT_STICK_MOD[slot],
+            0.5,
+        );
+        player.analogs[slot] = values
+            .get(&format!("{prefix}{name}"))
+            .filter(|value| !value.is_empty())
+            .cloned()
+            .unwrap_or(default);
+    }
+
+    for (slot, name) in native_motion::MAPPING.iter().enumerate() {
+        let default = generate_keyboard_param(DEFAULT_MOTIONS[slot]);
+        player.motions[slot] = values
+            .get(&format!("{prefix}{name}"))
+            .filter(|value| !value.is_empty())
+            .cloned()
+            .unwrap_or(default);
+    }
+}
+
+fn read_bool(
+    values: &std::collections::BTreeMap<String, String>,
+    key: &str,
+    default: bool,
+) -> bool {
+    values
+        .get(key)
+        .map(|value| value == "true" || value == "1")
+        .unwrap_or(default)
+}
+
+fn read_number<T>(values: &std::collections::BTreeMap<String, String>, key: &str, default: T) -> T
+where
+    T: std::str::FromStr,
+{
+    values
+        .get(key)
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(default)
+}
+
+/// Persist every player's bindings — upstream `QtConfig::SaveQtPlayerValues`.
+///
+/// Only the `[Controls]` keys this function owns are rewritten; every other
+/// line in the file is preserved, the same way `save_game_dirs` leaves the rest
+/// of the INI alone.
+pub fn save_control_values() -> io::Result<()> {
+    let path = config_path();
+    let contents = read_configuration_for_update(&path)?;
+
+    let mut entries: Vec<(String, String)> = Vec::new();
+    {
+        let settings = common::settings::values();
+        for (index, player) in settings.players.get_value().iter().enumerate() {
+            append_player_entries(&mut entries, index, player);
+        }
+        save_hidbus_values(&mut entries, &settings.ringcon_analogs);
+    }
+
+    let updated = replace_controls(&contents, &entries);
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(&path, updated)
+}
+
+/// Load the custom player-profile selection and bindings for one title.
+/// Maps to `QtConfig(ConfigType::PerGameConfig)` plus
+/// `Config::ReadControlValues` / `QtConfig::ReadQtControlPlayerValues`.
+pub fn load_per_game_control_values(path: &std::path::Path) {
+    let contents = std::fs::read_to_string(path).unwrap_or_default();
+    let values = parse_controls(&contents);
+
+    let mut settings = common::settings::values_mut();
+    settings.players.set_global(false);
+    let global_players = settings.players.get_value_explicit(true).clone();
+    let players = settings.players.get_value_mut();
+    for (index, player) in players.iter_mut().enumerate() {
+        let profile_key = format!("player_{index}_profile_name");
+        let profile_name = values.get(&profile_key).cloned().unwrap_or_default();
+        if profile_name.is_empty() {
+            *player = global_players[index].clone();
+            player.profile_name.clear();
+        } else {
+            load_player_values(player, index, &values);
+        }
+    }
+}
+
+/// Save only players that select a custom profile for this title.
+/// Upstream `Config::SavePlayerValues` returns before writing when the profile
+/// name is empty in a per-game configuration.
+pub fn save_per_game_control_values(path: &std::path::Path) -> io::Result<()> {
+    let contents = read_configuration_for_update(path)?;
+    let mut entries = Vec::new();
+    {
+        let settings = common::settings::values();
+        for (index, player) in settings.players.get_value().iter().enumerate() {
+            if !player.profile_name.is_empty() {
+                append_player_entries(&mut entries, index, player);
+            }
+        }
+    }
+
+    let updated = replace_controls(&contents, &entries);
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(path, updated)
+}
+
+/// Upstream `QtConfig::ReadQtControlPlayerValues` for
+/// `ConfigType::InputProfile`.
+pub(crate) fn load_input_profile(contents: &str, player: &mut PlayerInput) {
+    let values = parse_profile_controls(contents);
+    load_player_bindings(player, "", &values);
+    player.controller_type = values
+        .get("type")
+        .and_then(|value| value.parse::<u8>().ok())
+        .and_then(|value| ControllerType::try_from(value).ok())
+        .unwrap_or(ControllerType::ProController);
+}
+
+/// Upstream `QtConfig::SaveQtControlPlayerValues` for
+/// `ConfigType::InputProfile`.
+pub(crate) fn serialize_input_profile(player: &PlayerInput) -> String {
+    let mut entries = Vec::new();
+    entries.push((
+        "type".to_string(),
+        (player.controller_type as u8).to_string(),
+    ));
+    for (slot, name) in native_button::MAPPING.iter().enumerate() {
+        entries.push((name.to_string(), player.buttons[slot].clone()));
+    }
+    for (slot, name) in native_analog::MAPPING.iter().enumerate() {
+        entries.push((name.to_string(), player.analogs[slot].clone()));
+    }
+    for (slot, name) in native_motion::MAPPING.iter().enumerate() {
+        entries.push((name.to_string(), player.motions[slot].clone()));
+    }
+    replace_controls("", &entries)
+}
+
+fn append_player_entries(entries: &mut Vec<(String, String)>, index: usize, player: &PlayerInput) {
+    let prefix = format!("player_{index}_");
+    for (slot, name) in native_button::MAPPING.iter().enumerate() {
+        entries.push((format!("{prefix}{name}"), player.buttons[slot].clone()));
+    }
+    for (slot, name) in native_analog::MAPPING.iter().enumerate() {
+        entries.push((format!("{prefix}{name}"), player.analogs[slot].clone()));
+    }
+    for (slot, name) in native_motion::MAPPING.iter().enumerate() {
+        entries.push((format!("{prefix}{name}"), player.motions[slot].clone()));
+    }
+    entries.push((format!("{prefix}connected"), player.connected.to_string()));
+    entries.push((
+        format!("{prefix}type"),
+        (player.controller_type as u8).to_string(),
+    ));
+    entries.push((
+        format!("{prefix}vibration_enabled"),
+        player.vibration_enabled.to_string(),
+    ));
+    entries.push((
+        format!("{prefix}vibration_strength"),
+        player.vibration_strength.to_string(),
+    ));
+    entries.push((
+        format!("{prefix}body_color_left"),
+        player.body_color_left.to_string(),
+    ));
+    entries.push((
+        format!("{prefix}body_color_right"),
+        player.body_color_right.to_string(),
+    ));
+    entries.push((
+        format!("{prefix}button_color_left"),
+        player.button_color_left.to_string(),
+    ));
+    entries.push((
+        format!("{prefix}button_color_right"),
+        player.button_color_right.to_string(),
+    ));
+    entries.push((format!("{prefix}profile_name"), player.profile_name.clone()));
+}
+
+/// Parse player bindings and the global ring binding from `[Controls]`.
+///
+/// Upstream writes each binding as a `key\default=` line followed by the value,
+/// quoted because the parameter string contains commas. Both the quotes and the
+/// companion `\default` line are handled here; keys whose `\default` is `true`
+/// still carry their value, so player keys are read like any other. The ring
+/// binding retains its marker for `ReadHidbusValues` default selection.
+pub fn parse_controls(contents: &str) -> std::collections::BTreeMap<String, String> {
+    let mut values = std::collections::BTreeMap::new();
+    let mut in_section = false;
+
+    for line in contents.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with('[') {
+            in_section = trimmed == CONTROLS_SECTION;
+            continue;
+        }
+        if !in_section {
+            continue;
+        }
+        let Some((key, value)) = trimmed.split_once('=') else {
+            continue;
+        };
+        let key = key.trim();
+        // `key\default=` is metadata about the neighbouring key, not a binding.
+        if key == "ring_controller" || key == "ring_controller\\default" {
+            values.insert(key.to_string(), unquote(value.trim()).to_string());
+            continue;
+        }
+        if key.ends_with("\\default") || !key.starts_with("player_") {
+            continue;
+        }
+        values.insert(key.to_string(), unquote(value.trim()).to_string());
+    }
+
+    values
+}
+
+fn parse_profile_controls(contents: &str) -> std::collections::BTreeMap<String, String> {
+    let mut values = std::collections::BTreeMap::new();
+    let mut in_section = false;
+
+    for line in contents.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with('[') {
+            in_section = trimmed == CONTROLS_SECTION;
+            continue;
+        }
+        if !in_section {
+            continue;
+        }
+        let Some((key, value)) = trimmed.split_once('=') else {
+            continue;
+        };
+        let key = key.trim();
+        if key.ends_with("\\default") {
+            continue;
+        }
+        values.insert(key.to_string(), unquote(value.trim()).to_string());
+    }
+    values
+}
+
+/// Replace player bindings and, when supplied, the global ring binding.
+///
+/// The rewritten block is dropped where the first existing binding sat, so a
+/// hand-edited file keeps its shape; a file with no `[Controls]` section at all
+/// gains one at the end.
+pub fn replace_controls(contents: &str, entries: &[(String, String)]) -> String {
+    let is_binding = |line: &str| {
+        let trimmed = line.trim();
+        let Some((key, _)) = trimmed.split_once('=') else {
+            return false;
+        };
+        key.trim().starts_with("player_")
+            || (entries.iter().any(|(key, _)| key == "ring_controller")
+                && matches!(key.trim(), "ring_controller" | "ring_controller\\default"))
+    };
+
+    let rendered: Vec<String> = entries
+        .iter()
+        .flat_map(|(key, value)| {
+            // Upstream's `WriteStringSetting` emits the `\default` marker first;
+            // a binding written from the dialog is never the built-in default.
+            [
+                format!("{key}\\default=false"),
+                format!("{key}=\"{value}\""),
+            ]
+        })
+        .collect();
+
+    let mut output: Vec<String> = Vec::new();
+    let mut in_section = false;
+    let mut written = false;
+    let mut saw_section = false;
+
+    for line in contents.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with('[') {
+            // Leaving `[Controls]` without having met a binding: append here so
+            // the keys land in their own section rather than the next one.
+            if in_section && !written {
+                output.extend(rendered.iter().cloned());
+                written = true;
+            }
+            in_section = trimmed == CONTROLS_SECTION;
+            saw_section |= in_section;
+            output.push(line.to_string());
+            continue;
+        }
+        if in_section && is_binding(line) {
+            if !written {
+                output.extend(rendered.iter().cloned());
+                written = true;
+            }
+            continue;
+        }
+        output.push(line.to_string());
+    }
+
+    if !written {
+        if !saw_section {
+            output.push(CONTROLS_SECTION.to_string());
+        }
+        output.extend(rendered);
+    }
+
+    let mut text = output.join("\n");
+    text.push('\n');
+    text
+}
+
+/// Strip the surrounding quotes yuzu writes around values containing commas.
+fn unquote(value: &str) -> &str {
+    value
+        .strip_prefix('"')
+        .and_then(|rest| rest.strip_suffix('"'))
+        .unwrap_or(value)
+}
+
+/// Parse the `Paths\gamedirs\…` block of a yuzu-schema INI.
+///
+/// `Paths\gamedirs\size` is authoritative: entries numbered above it are stale
+/// leftovers from a previously longer array and must be ignored, exactly as
+/// `QSettings::beginReadArray` ignores them. A stale entry nested inside a live
+/// one would otherwise make every game under it appear twice.
+pub fn parse_game_dirs(contents: &str) -> Vec<GameDir> {
+    use std::collections::BTreeMap;
+
+    let mut config = BaseConfig::new(ConfigType::GlobalConfig);
+    config.load_ini(contents);
+    config.begin_group("UI");
+
+    let mut size: Option<u32> = None;
+    let mut paths: BTreeMap<u32, String> = BTreeMap::new();
+    let mut deep: BTreeMap<u32, bool> = BTreeMap::new();
+    let mut expanded: BTreeMap<u32, bool> = BTreeMap::new();
+    let mut in_ui = false;
+
+    for line in contents.lines() {
+        let line = line.trim();
+        if line.starts_with('[') {
+            in_ui = line == UI_SECTION;
+            continue;
+        }
+        if !in_ui { continue; }
+        let Some((key, value)) = line.split_once('=') else {
+            continue;
+        };
+        let Some(rest) = key.strip_prefix(GAMEDIRS_PREFIX) else {
+            continue;
+        };
+        let Some((index_str, field)) = rest.split_once('\\') else {
+            if rest == "size" {
+                size = value.trim().parse().ok();
+            }
+            continue;
+        };
+        let Ok(index) = index_str.parse::<u32>() else {
+            continue;
+        };
+        // `…\default` suffixes record whether the value is at its default; they
+        // are metadata, not the value, and must not override it.
+        match field {
+            "path" => {
+                paths.insert(index, config.read_string_setting(key, None));
+            }
+            "deep_scan" => {
+                deep.insert(index, is_true(value));
+            }
+            "expanded" => {
+                expanded.insert(index, is_true(value));
+            }
+            _ => {}
+        }
+    }
+
+    paths
+        .into_iter()
+        // yuzu's arrays are 1-based on disk, so `size = N` covers 1..=N.
+        .filter(|(index, _)| size.is_none_or(|size| *index <= size))
+        .map(|(index, path)| GameDir {
+            path,
+            deep_scan: deep.get(&index).copied().unwrap_or(false),
+            expanded: expanded.get(&index).copied().unwrap_or(true),
+        })
+        .collect()
+}
+
+/// Return `contents` with its `Paths\gamedirs\…` lines replaced by `dirs`.
+fn replace_game_dirs(contents: &str, dirs: &[GameDir]) -> String {
+    let had_trailing_newline = contents.is_empty() || contents.ends_with('\n');
+
+    let is_gamedir_line = |line: &str| {
+        line.trim()
+            .split_once('=')
+            .is_some_and(|(key, _)| key.starts_with(GAMEDIRS_PREFIX))
+    };
+
+    let mut out: Vec<String> = Vec::new();
+    let mut block_written = false;
+    for line in contents.lines() {
+        if is_gamedir_line(line) {
+            continue;
+        }
+        out.push(line.to_string());
+        if line.trim() == UI_SECTION && !block_written {
+            out.extend(render_game_dirs(dirs));
+            block_written = true;
+        }
+    }
+
+    if !block_written {
+        // No existing block: append under `[UI]`, creating the section if the
+        // file does not have one yet.
+        if !out.iter().any(|line| line.trim() == UI_SECTION) {
+            if !out.is_empty() {
+                out.push(String::new());
+            }
+            out.push(UI_SECTION.to_string());
+        }
+        out.extend(render_game_dirs(dirs));
+    }
+
+    let mut text = out.join("\n");
+    if had_trailing_newline && !text.is_empty() {
+        text.push('\n');
+    }
+    text
+}
+
+/// Render the `Paths\gamedirs\…` lines for `dirs`, in upstream's key order and
+/// with the `…\default` markers `QSettings` writes alongside each value.
+fn render_game_dirs(dirs: &[GameDir]) -> Vec<String> {
+    let mut lines = Vec::with_capacity(dirs.len() * 5 + 1);
+    lines.push(format!("{GAMEDIRS_PREFIX}size={}", dirs.len()));
+    for (position, dir) in dirs.iter().enumerate() {
+        // 1-based on disk, matching what yuzu writes.
+        let index = position + 1;
+        lines.push(format!("{GAMEDIRS_PREFIX}{index}\\path={}", adjust_output_string(&dir.path)));
+        lines.push(format!(
+            "{GAMEDIRS_PREFIX}{index}\\deep_scan\\default={}",
+            !dir.deep_scan
+        ));
+        lines.push(format!(
+            "{GAMEDIRS_PREFIX}{index}\\deep_scan={}",
+            dir.deep_scan
+        ));
+        lines.push(format!(
+            "{GAMEDIRS_PREFIX}{index}\\expanded\\default={}",
+            dir.expanded
+        ));
+        lines.push(format!(
+            "{GAMEDIRS_PREFIX}{index}\\expanded={}",
+            dir.expanded
+        ));
+    }
+    lines
+}
+
+/// INI booleans, which yuzu writes as `true` / `false` but older configs may
+/// carry as `1` / `0`.
+fn is_true(value: &str) -> bool {
+    matches!(value.trim(), "true" | "1")
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn recent_files_persist_and_reload_from_disk() {
+        const CHILD: &str = "RUZU_TEST_RECENT_FILES_CONFIG";
+        if let Some(root) = std::env::var_os(CHILD) {
+            common::fs::path_util::set_ruzu_path(RuzuPath::ConfigDir, Path::new(&root));
+            std::fs::write(config_path(), "[Other]\nkeep=true\n").unwrap();
+            let files = vec!["/homebrew/Free Demo.nro".to_owned(), "C:\\homebrew\\brick.nro".to_owned()];
+            uisettings::with_mut(|values| values.recent_files = files.clone());
+            save_recent_files().unwrap();
+            uisettings::with_mut(|values| values.recent_files.clear());
+            load_recent_files();
+            assert_eq!(uisettings::with(|values| values.recent_files.clone()), files);
+            uisettings::with_mut(|values| values.recent_files.clear());
+            save_recent_files().unwrap();
+            load_recent_files();
+            assert!(uisettings::with(|values| values.recent_files.is_empty()));
+            assert!(std::fs::read_to_string(config_path()).unwrap().contains("keep=true"));
+            return;
+        }
+        let root = tempfile::tempdir().unwrap();
+        let status = std::process::Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", "configuration::qt_config::tests::recent_files_persist_and_reload_from_disk", "--test-threads=1"])
+            .env(CHILD, root.path()).status().unwrap();
+        assert!(status.success());
+    }
+
+    #[test]
+    fn recent_files_round_trip_uses_upstream_plain_paths_key() {
+        use super::*;
+        let contents = "[UI]\nPaths\\recentFiles=old.nro\nPaths\\recentFiles\\default=true\nPaths\\romsPath=/homebrew\n[Other]\nkeep=true\n";
+        let files = [r"C:\homebrew\Free Demo.nro", "/homebrew/brick.nro"];
+        let updated = replace_ui_setting(contents, "Paths\\recentFiles", &files.join(", "), None);
+        assert_eq!(read_recent_files(&updated), files);
+        assert!(updated.contains("Paths\\romsPath=/homebrew"));
+        assert!(updated.contains("[Other]\nkeep=true"));
+        assert!(!updated.contains("recentFiles\\default"));
+        let cleared = replace_ui_setting(&updated, "Paths\\recentFiles", "", None);
+        assert!(read_recent_files(&cleared).is_empty());
+        assert_eq!(read_recent_files("[UI]\nPaths\\recentFiles=\"demo.nro, , next.nro\"\n"),
+            ["demo.nro", "next.nro"]);
+        assert!(read_recent_files("").is_empty());
+    }
+    #[test]
+    fn debug_controller_bindings_survive_disk_reload() {
+        use super::*;
+        const CHILD: &str = "RUZU_TEST_DEBUG_BINDINGS_DISK";
+        if std::env::var_os(CHILD).is_none() {
+            let root = tempfile::tempdir().unwrap();
+            assert!(std::process::Command::new(std::env::current_exe().unwrap())
+                .args(["--exact", "configuration::qt_config::tests::debug_controller_bindings_survive_disk_reload"])
+                .env(CHILD, root.path())
+                .env("XDG_CONFIG_HOME", root.path().join("config"))
+                .env("XDG_DATA_HOME", root.path().join("data"))
+                .env("XDG_CACHE_HOME", root.path().join("cache"))
+                .status().unwrap().success());
+            return;
+        }
+        let root = PathBuf::from(std::env::var_os(CHILD).unwrap());
+        common::fs::path_util::set_ruzu_path(RuzuPath::ConfigDir, &root);
+        load_control_values();
+        let hid = hid_core::hid_core::HIDCore::new();
+        let controller = hid.get_emulated_controller_by_index(9);
+        let button = common::param_package::ParamPackage::from_serialized("engine:keyboard,code:71");
+        let stick = common::param_package::ParamPackage::from_serialized("engine:analog_from_button,left:engine$0keyboard$1code$065");
+        {
+            let mut controller = controller.lock();
+            controller.set_button_param(0, button.clone());
+            controller.set_stick_param(0, stick.clone());
+            controller.save_current_config();
+        }
+        save_control_values().unwrap();
+        let disk = parse_controls(&std::fs::read_to_string(config_path()).unwrap());
+        assert_eq!(disk["player_9_button_a"], button.serialize());
+        assert_eq!(disk["player_9_lstick"], stick.serialize());
+        {
+            let mut settings = common::settings::values_mut();
+            settings.players.get_value_mut()[9].buttons[0].clear();
+            settings.players.get_value_mut()[9].analogs[0].clear();
+        }
+        load_control_values();
+        let mut controller = controller.lock();
+        controller.reload_from_settings();
+        let loaded_button = controller.get_button_param(0);
+        assert_eq!(loaded_button.get_str("engine", ""), "keyboard");
+        assert_eq!(loaded_button.get_int("code", -1), 71);
+        let loaded_stick = controller.get_stick_param(0);
+        assert_eq!(loaded_stick.get_str("engine", ""), "analog_from_button");
+        assert_eq!(loaded_stick.get_str("left", ""), stick.get_str("left", ""));
+    }
+
+    #[test]
+    fn ring_binding_round_trip_defaults_and_replacement() {
+        use super::*;
+        let default = read_hidbus_values(&parse_controls(""));
+        let params = common::param_package::ParamPackage::from_serialized(&default);
+        assert_eq!(params.get_str("engine", ""), "analog_from_button");
+        for (direction, key) in [("left", b'A'), ("right", b'D')] {
+            let button = common::param_package::ParamPackage::from_serialized(&params.get_str(direction, ""));
+            assert_eq!(button.get_int("code", 0), key as i32);
+        }
+        for input in ["[Controls]\nring_controller=\"\"\n",
+             "[Controls]\nring_controller=\"engine:sdl,axis_x:3\"\n",
+            "[Controls]\nring_controller=\"engine:sdl,axis_x:3\"\nring_controller\\default=true\n"] {
+            let restored = read_hidbus_values(&parse_controls(input));
+            let restored = common::param_package::ParamPackage::from_serialized(&restored);
+            assert_eq!(restored.get_str("engine", ""), "analog_from_button");
+            assert_eq!(restored.get_float("modifier_scale", 0.0), 0.05);
+            for (direction, key) in [("left", b'A'), ("right", b'D')] {
+                let button = common::param_package::ParamPackage::from_serialized(&restored.get_str(direction, ""));
+                assert_eq!(button.get_int("code", 0), key as i32);
+            }
+        }
+        let binding = "engine:sdl,port:0,axis_x:3,axis_y:4,deadzone:0.25";
+        let mut entries = Vec::new();
+        save_hidbus_values(&mut entries, binding);
+        let contents = "[Controls]\nring_controller=old\nring_controller\\default=true\nmouse_enabled=true\n[Other]\nring_controller=unrelated\n";
+        let saved = replace_controls(contents, &entries);
+        assert_eq!(read_hidbus_values(&parse_controls(&saved)), binding);
+        assert!(saved.contains("mouse_enabled=true"));
+        assert!(saved.contains("[Other]\nring_controller=unrelated"));
+        assert_eq!(replace_controls(&saved, &entries), saved);
+        // Per-game/profile writes that do not own the ring binding preserve it.
+        assert!(replace_controls(&saved, &[]).contains(binding));
+    }
+    use super::*;
+
+    #[test]
+    fn specialized_writers_preserve_unreadable_ini() {
+        const CHILD: &str = "RUZU_TEST_UNREADABLE_SETTINGS_WRITERS";
+        if let Some(root) = std::env::var_os(CHILD) {
+            common::fs::path_util::set_ruzu_path(RuzuPath::ConfigDir, Path::new(&root));
+            let path = config_path();
+            std::fs::write(&path, [0xff, 0xfe]).unwrap();
+            let writers: &[fn() -> io::Result<()>] = &[
+                save_global_values, save_shortcut_values, save_tas_values,
+                save_multiplayer_values, save_view_values, save_ui_language,
+                save_roms_path, save_recent_files, save_favorites_expanded, save_control_values,
+                || save_external_content_dirs(&[]), || save_game_dirs(&[]),
+                || save_favorited_ids(&[]), || save_per_game_control_values(&config_path()),
+            ];
+            for (index, writer) in writers.iter().enumerate() {
+                assert!(writer().is_err(), "writer {index} accepted invalid UTF-8");
+                assert_eq!(std::fs::read(&path).unwrap(), [0xff, 0xfe]);
+            }
+            assert_eq!(read_configuration_for_update(&Path::new(&root).join("missing.ini")).unwrap(), "");
+            return;
+        }
+        let root = tempfile::tempdir().unwrap();
+        let status = std::process::Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", "configuration::qt_config::tests::specialized_writers_preserve_unreadable_ini", "--test-threads=1"])
+            .env(CHILD, root.path())
+            .status().unwrap();
+        assert!(status.success());
+    }
+
+    #[test]
+    fn runtime_settings_round_trip_preserves_global_values_and_unrelated_keys() {
+        const CHILD: &str = "RUZU_TEST_RUNTIME_SETTINGS_SAVE";
+        let Some(root) = std::env::var_os(CHILD) else {
+            let root = tempfile::tempdir().unwrap();
+            assert!(std::process::Command::new(std::env::current_exe().unwrap())
+                .args(["--exact", "configuration::qt_config::tests::runtime_settings_round_trip_preserves_global_values_and_unrelated_keys", "--test-threads=1"])
+                .env(CHILD, root.path()).status().unwrap().success());
+            return;
+        };
+        use common::settings_enums::{AntiAliasing, ConsoleMode, GpuAccuracy, RendererBackend, ScalingFilter};
+        common::fs::path_util::set_ruzu_path(RuzuPath::ConfigDir, Path::new(&root));
+        std::fs::write(config_path(), "[UI]\ncustom_marker=preserved\n").unwrap();
+        {
+            let mut values = common::settings::values_mut();
+            values.renderer_backend.set_global(true);
+            values.renderer_backend.set_value(RendererBackend::Vulkan);
+            values.gpu_accuracy.set_value(GpuAccuracy::High);
+            values.use_docked_mode.set_value(ConsoleMode::Handheld);
+            values.scaling_filter.set_value(ScalingFilter::NearestNeighbor);
+            values.anti_aliasing.set_value(AntiAliasing::Fxaa);
+            values.volume.set_value(37);
+            values.audio_muted.set_value(true);
+            // An active per-title renderer must never leak into the global file.
+            values.renderer_backend.set_global(false);
+            values.renderer_backend.set_value(RendererBackend::Null);
+        }
+        save_global_values().unwrap();
+        assert!(std::fs::read_to_string(config_path()).unwrap().contains("custom_marker=preserved"));
+        {
+            let mut values = common::settings::values_mut();
+            assert_eq!(*values.renderer_backend.get_value(), RendererBackend::Null);
+            values.renderer_backend.set_global(true);
+            values.renderer_backend.set_value(RendererBackend::OpenGlGlsl);
+            values.gpu_accuracy.set_value(GpuAccuracy::Low);
+            values.use_docked_mode.set_value(ConsoleMode::Docked);
+            values.scaling_filter.set_value(ScalingFilter::Bilinear);
+            values.anti_aliasing.set_value(AntiAliasing::None);
+            values.volume.set_value(100);
+            values.audio_muted.set_value(false);
+        }
+        load_global_values();
+        let values = common::settings::values();
+        assert_eq!(*values.renderer_backend.get_value(), RendererBackend::Vulkan);
+        assert_eq!(*values.gpu_accuracy.get_value(), GpuAccuracy::High);
+        assert_eq!(*values.use_docked_mode.get_value(), ConsoleMode::Handheld);
+        assert_eq!(*values.scaling_filter.get_value(), ScalingFilter::NearestNeighbor);
+        assert_eq!(*values.anti_aliasing.get_value(), AntiAliasing::Fxaa);
+        assert_eq!(*values.volume.get_value(), 37);
+        assert!(*values.audio_muted.get_value());
+    }
+
+    #[test]
+    fn complete_reload_reads_core_and_frontend_in_an_isolated_process() {
+        const CHILD: &str = "RUZU_TEST_COMPLETE_CONFIG_RELOAD";
+        if let Some(root) = std::env::var_os(CHILD) {
+            let root = PathBuf::from(root);
+            common::fs::path_util::set_ruzu_path(RuzuPath::ConfigDir, &root);
+            let document = concat!(
+                "[Audio]\nvolume\\default=false\nvolume=42\n",
+                "audio_muted\\default=false\naudio_muted=true\n",
+                "muteWhenInBackground\\default=false\nmuteWhenInBackground=true\n",
+                "[UI]\nhideInactiveMouse\\default=false\nhideInactiveMouse=false\n",
+                "Paths\\gamedirs\\size=1\n",
+                "Paths\\gamedirs\\1\\path=/synthetic/homebrew\n",
+                "[Controls]\nring_controller\\default=false\n",
+                "ring_controller=\"engine:sdl,axis_x:3\"\n",
+            );
+            std::fs::write(config_path(), document).unwrap();
+            reload_all_values();
+            assert_eq!(*common::settings::values().volume.get_value(), 42);
+            {
+                let values = common::settings::values();
+                assert!(*values.audio_muted.get_value());
+                assert_eq!(common::settings::volume(&values), 0.0);
+            }
+            assert_eq!(common::settings::values().ringcon_analogs, "engine:sdl,axis_x:3");
+            common::settings::values_mut().ringcon_analogs = "engine:sdl,axis_x:4".into();
+            save_control_values().unwrap();
+            common::settings::values_mut().ringcon_analogs.clear();
+            load_control_values();
+            assert_eq!(common::settings::values().ringcon_analogs, "engine:sdl,axis_x:4");
+            uisettings::with(|values| {
+                assert!(*values.mute_when_in_background.get_value());
+                assert!(!*values.hide_mouse.get_value());
+                assert_eq!(values.game_dirs.len(), 1);
+                assert_eq!(values.game_dirs[0].path, "/synthetic/homebrew");
+                assert!(!values.shortcuts.is_empty());
+            });
+            // Re-read an empty document as the reset path will: stale live
+            // values must not survive simply because an INI key is absent.
+            std::fs::write(config_path(), "").unwrap();
+            reload_all_values();
+            assert_eq!(*common::settings::values().volume.get_value(), 100);
+            {
+                let values = common::settings::values();
+                assert!(!*values.audio_muted.get_value());
+                assert_eq!(common::settings::volume(&values), 1.0);
+            }
+            uisettings::with(|values| {
+                assert!(!*values.mute_when_in_background.get_value());
+                assert!(*values.hide_mouse.get_value());
+                assert_eq!(values.game_dirs.iter().map(|dir| dir.path.as_str()).collect::<Vec<_>>(), ["SDMC", "UserNAND", "SysNAND"]);
+            });
+            return;
+        }
+        let root = tempfile::tempdir().unwrap();
+        let status = std::process::Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", "configuration::qt_config::tests::complete_reload_reads_core_and_frontend_in_an_isolated_process", "--test-threads=1"])
+            .env(CHILD, root.path())
+            .env("XDG_CONFIG_HOME", root.path().join("config"))
+            .env("XDG_DATA_HOME", root.path().join("data"))
+            .env("XDG_CACHE_HOME", root.path().join("cache"))
+            .status()
+            .unwrap();
+        assert!(status.success());
+    }
+
+    #[test]
+    fn all_frontend_scalar_settings_survive_disk_roundtrip() {
+        let mut source = uisettings::Values::default();
+        let mut expected = std::collections::BTreeMap::new();
+        source.for_each_ui_setting_mut(|setting| {
+            let default = setting.default_to_string();
+            let custom = match default.as_str() {
+                "true" => "false".to_owned(),
+                "false" => "true".to_owned(),
+                _ => (default.parse::<u64>().unwrap() + 1).to_string(),
+            };
+            setting.load_string(&custom);
+            assert_ne!(setting.to_string_global(), default, "{} did not change", setting.label());
+            expected.insert(ui_setting_location(setting), custom);
+        });
+        source.theme.set_value("Dark".into());
+        source.screenshot_path.set_value("/tmp/screenshots, test".into());
+        let untouched = "[Renderer]\nbackend=1\n[UI]\nPaths\\gamedirs\\size=0\n";
+        let document = save_ui_values(untouched, &mut source);
+        assert!(document.contains("backend=1"));
+        assert!(document.contains("Paths\\gamedirs\\size=0"));
+        assert!(document.contains("theme=qdarkstyle"));
+        assert!(document.contains("UIGameList\\game_icon_size=65"));
+        assert!(document.contains("Screenshots\\screenshot_height=1"));
+        assert!(!document.contains("Screenshots\\screenshot_path\\default"));
+        assert_eq!(parse_section_values(&document, "Audio")["muteWhenInBackground"], "true");
+        let temporary = tempfile::tempdir().unwrap();
+        let path = temporary.path().join("qt-config.ini");
+        std::fs::write(&path, document).unwrap();
+        let mut loaded = uisettings::Values::default();
+        read_ui_values(&std::fs::read_to_string(path).unwrap(), &mut loaded);
+        loaded.for_each_ui_setting_mut(|setting| {
+            assert_eq!(setting.to_string_global(), expected[&ui_setting_location(setting)], "{}", setting.label());
+        });
+        assert_eq!(loaded.theme.get_value(), "Dark");
+        assert_eq!(loaded.screenshot_path.get_value(), "/tmp/screenshots, test");
+        assert!(expected.len() >= 27);
+    }
+
+    #[test]
+    fn missing_keys_warning_preference_roundtrips_and_defaults_to_visible() {
+        let mut source = uisettings::Values::default();
+        assert!(!*source.hide_missing_keys_warning.get_value());
+        source.hide_missing_keys_warning.set_value(true);
+        let document = save_ui_values("", &mut source);
+        let mut loaded = uisettings::Values::default();
+        read_ui_values(&document, &mut loaded);
+        assert!(*loaded.hide_missing_keys_warning.get_value());
+        read_ui_values("", &mut loaded);
+        assert!(!*loaded.hide_missing_keys_warning.get_value());
+    }
+
+    #[test]
+    fn interface_font_scale_roundtrip_and_default() {
+        let mut source = uisettings::Values::default();
+        read_ui_values("", &mut source);
+        assert_eq!(*source.font_scale.get_value(), 100);
+        assert!(*source.font_scale_auto.get_value());
+        for percent in [50, 100, 125, 150, 175, 200] {
+            source.font_scale.set_value(percent);
+            let document = save_ui_values("", &mut source);
+            let mut loaded = uisettings::Values::default();
+            read_ui_values(&document, &mut loaded);
+            assert_eq!(*loaded.font_scale.get_value(), percent);
+            assert!(*loaded.font_scale_auto.get_value());
+        }
+        source.font_scale_auto.set_value(false);
+        let document = save_ui_values("", &mut source);
+        read_ui_values(&document, &mut source);
+        assert!(!*source.font_scale_auto.get_value());
+        read_ui_values("[UI]\nfont_scale=150\nfont_scale\\default=false\n", &mut source);
+        assert!(!*source.font_scale_auto.get_value(), "preserve legacy manual customization");
+        read_ui_values("[UI]\nfont_scale=100\nfont_scale\\default=true\n", &mut source);
+        assert!(*source.font_scale_auto.get_value());
+    }
+
+    #[test]
+    fn empty_game_directory_array_uses_installed_roots_and_legacy_path() {
+        let defaults = game_dirs_with_defaults("");
+        assert_eq!(defaults.iter().map(|dir| dir.path.as_str()).collect::<Vec<_>>(), ["SDMC", "UserNAND", "SysNAND"]);
+        assert!(defaults.iter().all(|dir| dir.expanded && !dir.deep_scan));
+        let legacy = game_dirs_with_defaults("[UI]\nPaths\\gameListRootDir=/homebrew\nPaths\\gameListRootDir\\default=false\nPaths\\gameListDeepScan=true\nPaths\\gameListDeepScan\\default=false\n");
+        assert_eq!(legacy.len(), 4);
+        assert_eq!(legacy[3].path, "/homebrew");
+        assert!(legacy[3].deep_scan);
+        let existing = game_dirs_with_defaults("[UI]\nPaths\\gamedirs\\size=1\nPaths\\gamedirs\\1\\path=/homebrew\n");
+        assert_eq!(existing.len(), 1, "do not replace an explicitly configured list");
+        assert!(parse_game_dirs("").is_empty(), "source import does not synthesize directories");
+    }
+
+    #[test]
+    fn frontend_reader_honors_defaults_legacy_bools_and_upstream_plain_paths() {
+        let mut values = uisettings::Values::default();
+        read_ui_values(concat!("[UI]\n",
+            "pauseWhenInBackground\\default=false\npauseWhenInBackground=1\n",
+            "hideInactiveMouse\\default=true\nhideInactiveMouse=false\n",
+            "UIGameList\\game_icon_size\\default=false\nUIGameList\\game_icon_size=broken\n",
+            "Screenshots\\screenshot_path=\"C:/Screenshots, test\"\n",
+            "theme\\default=false\ntheme=colorful_dark\n"), &mut values);
+        assert!(*values.pause_when_in_background.get_value());
+        assert!(*values.hide_mouse.get_value());
+        assert_eq!(*values.game_icon_size.get_value(), 64);
+        assert_eq!(values.theme.get_value(), "Dark Colorful");
+        assert_eq!(values.screenshot_path.get_value(), "C:/Screenshots, test");
+    }
+
+    #[test]
+    fn saving_ui_propagates_unreadable_configuration_errors() {
+        let temporary = tempfile::tempdir().unwrap();
+        // A directory instead of a file is a deterministic read error, even under root.
+        assert!(save_view_values_to(temporary.path()).is_err());
+        let path = temporary.path().join("invalid.ini");
+        std::fs::write(&path, [0xff, 0xfe]).unwrap();
+        assert!(save_view_values_to(&path).is_err());
+        assert_eq!(std::fs::read(path).unwrap(), [0xff, 0xfe]);
+    }
+
+    #[test]
+    fn saving_tas_preserves_unreadable_configuration() {
+        let temporary = tempfile::tempdir().unwrap();
+        assert!(save_tas_values_to(temporary.path()).is_err());
+        let path = temporary.path().join("invalid.ini");
+        std::fs::write(&path, [0xff, 0xfe]).unwrap();
+        assert!(save_tas_values_to(&path).is_err());
+        assert_eq!(std::fs::read(&path).unwrap(), [0xff, 0xfe]);
+    }
+
+    #[test]
+    fn shortcut_reader_honors_default_markers_and_custom_empty_bindings() {
+        let input = concat!(
+            "[Shortcuts]\n",
+            "Main Window\\Audio Mute/Unmute\\KeySeq\\default=false\n",
+            "Main Window\\Audio Mute/Unmute\\KeySeq=Ctrl+F12\n",
+            "Main Window\\Audio Volume Down\\KeySeq\\default=true\n",
+            "Main Window\\Audio Volume Down\\KeySeq=F1\n",
+            "Main Window\\Audio Volume Up\\KeySeq\\default=false\n",
+            "Main Window\\Audio Volume Up\\KeySeq=\n",
+        );
+        let shortcuts = parse_shortcut_values(input);
+
+        assert_eq!(shortcuts[0].keyseq, "Ctrl+F12");
+        assert_eq!(shortcuts[1].keyseq, "-");
+        assert_eq!(shortcuts[2].keyseq, "");
+    }
+
+    #[test]
+    fn view_boolean_settings_honor_default_markers() {
+        let values = parse_section_values(
+            "[UI]\nshowFilterBar\\default=false\nshowFilterBar=false\nshowStatusBar\\default=true\nshowStatusBar=false\n",
+            "UI",
+        );
+        assert!(!read_ui_bool_setting(&values, "showFilterBar", true));
+        assert!(read_ui_bool_setting(&values, "showStatusBar", true));
+        assert!(read_ui_bool_setting(&values, "missing", true));
+    }
+
+    #[test]
+    fn view_boolean_writer_uses_upstream_ui_keys() {
+        let updated = replace_section_setting("", "UI", "showFilterBar", "false", false);
+        assert!(updated.contains("[UI]"));
+        assert!(updated.contains("showFilterBar\\default=false"));
+        assert!(updated.contains("showFilterBar=false"));
+    }
+
+    #[test]
+    fn linux_backend_preferences_use_upstream_ui_keys() {
+        let updated = replace_section_setting("", "UI", "gui_force_x11", "true", false);
+        let updated =
+            replace_section_setting(&updated, "UI", "gui_hide_backend_warning", "true", false);
+        let values = parse_section_values(&updated, "UI");
+        assert!(read_ui_bool_setting(&values, "gui_force_x11", false));
+        assert!(read_ui_bool_setting(
+            &values,
+            "gui_hide_backend_warning",
+            false
+        ));
+    }
+
+    #[test]
+    fn gamemode_uses_current_upstream_ui_general_key() {
+        let updated = replace_section_setting("", "UI", "enable_gamemode", "false", false);
+        let values = parse_section_values(&updated, "UI");
+        assert!(!read_ui_bool_setting(&values, "enable_gamemode", true));
+        assert!(!updated.contains("[Linux]"));
+    }
+
+    #[test]
+    fn favorites_expanded_uses_upstream_game_list_key() {
+        let key = "UIGameList\\favorites_expanded";
+        let updated = replace_section_setting("", "UI", key, "false", false);
+        let values = parse_section_values(&updated, "UI");
+
+        assert!(!read_ui_bool_setting(&values, key, true));
+        assert!(updated.contains("UIGameList\\favorites_expanded\\default=false"));
+        assert!(updated.contains("UIGameList\\favorites_expanded=false"));
+    }
+
+    #[test]
+    fn tas_setting_replacement_preserves_sections_and_default_marker() {
+        let original = "[Controls]\ntas_enable\\default=true\ntas_enable=false\n[UI]\nfoo=bar\n";
+        let updated = replace_section_setting(original, "Controls", "tas_enable", "true", false);
+
+        assert!(updated.contains("tas_enable\\default=false"));
+        assert!(updated.contains("tas_enable=true"));
+        assert!(updated.contains("[UI]\nfoo=bar"));
+        assert_eq!(updated.matches("tas_enable=").count(), 1);
+    }
+
+    /// The binding a real Xbox pad produces, as yuzu writes it.
+    const SDL_BINDING: &str = "engine:sdl,port:0,guid:030000005e040000000b000015050000,button:1";
+
+    #[test]
+    fn ui_language_honors_default_marker() {
+        assert_eq!(
+            read_ui_string_setting(
+                "[UI]\nPaths\\language\\default=false\nPaths\\language=fr\n",
+                "Paths\\language",
+                "",
+            ),
+            "fr"
+        );
+        assert_eq!(
+            read_ui_string_setting(
+                "[UI]\nPaths\\language\\default=true\nPaths\\language=fr\n",
+                "Paths\\language",
+                "",
+            ),
+            ""
+        );
+    }
+
+    #[test]
+    fn ui_language_replacement_preserves_other_sections() {
+        let updated = replace_ui_string_setting(
+            "[UI]\nPaths\\language\\default=false\nPaths\\language=en\n[System]\nlanguage_index=2\n",
+            "Paths\\language",
+            "ja_JP",
+            "",
+        );
+        assert!(updated.contains("Paths\\language\\default=false"));
+        assert!(updated.contains("Paths\\language=ja_JP"));
+        assert!(updated.contains("[System]\nlanguage_index=2"));
+        assert_eq!(updated.matches("Paths\\language=").count(), 1);
+    }
+
+    #[test]
+    fn roms_path_uses_upstream_paths_key_and_default_marker() {
+        let updated = replace_ui_string_setting(
+            "[UI]\nPaths\\language=en\n",
+            "Paths\\romsPath",
+            "/games/homebrew",
+            "",
+        );
+        assert_eq!(
+            read_ui_string_setting(&updated, "Paths\\romsPath", ""),
+            "/games/homebrew"
+        );
+        assert!(updated.contains("Paths\\romsPath\\default=false"));
+        assert_eq!(updated.matches("Paths\\romsPath=").count(), 1);
+    }
+
+    /// Upstream defaults `player.connected` to `player_index == 0`, and applies
+    /// that default whether or not a config file exists. Bailing out on a
+    /// missing file left player 1 disconnected on a fresh install.
+    #[test]
+    fn player_one_is_connected_on_a_first_launch() {
+        let values = parse_controls("");
+        let mut player_one = PlayerInput::default();
+        let mut player_two = PlayerInput::default();
+        load_player_values(&mut player_one, 0, &values);
+        load_player_values(&mut player_two, 1, &values);
+
+        assert!(player_one.connected);
+        assert!(!player_two.connected);
+        assert!(player_one.buttons.iter().all(|binding| !binding.is_empty()));
+        assert!(player_one.analogs.iter().all(|binding| !binding.is_empty()));
+        assert!(player_one.motions.iter().all(|binding| !binding.is_empty()));
+
+        let button_a = common::param_package::ParamPackage::from_serialized(&player_one.buttons[0]);
+        assert_eq!(button_a.get_str("engine", ""), "keyboard");
+        assert_eq!(button_a.get_int("code", -1), i32::from(b'C'));
+    }
+
+    /// A stored `connected` beats the default, in both directions.
+    #[test]
+    fn a_stored_connected_flag_wins_over_the_default() {
+        let values =
+            parse_controls("[Controls]\nplayer_0_connected=false\nplayer_1_connected=true\n");
+        let mut players = std::array::from_fn::<_, 3, _>(|_| PlayerInput::default());
+        for (index, player) in players.iter_mut().enumerate() {
+            load_player_values(player, index, &values);
+        }
+        assert!(!players[0].connected);
+        assert!(players[1].connected);
+        assert!(!players[2].connected);
+    }
+
+    #[test]
+    fn player_metadata_survives_a_save_and_reload() {
+        let mut source = PlayerInput::default();
+        source.connected = true;
+        source.controller_type = ControllerType::GameCube;
+        source.vibration_enabled = false;
+        source.vibration_strength = 63;
+        source.body_color_left = 1;
+        source.body_color_right = 2;
+        source.button_color_left = 3;
+        source.button_color_right = 4;
+        source.profile_name = "arcade".to_string();
+        source.buttons[0] = SDL_BINDING.to_string();
+
+        let mut entries = Vec::new();
+        append_player_entries(&mut entries, 0, &source);
+        let values = parse_controls(&replace_controls("", &entries));
+        let mut loaded = PlayerInput::default();
+        load_player_values(&mut loaded, 0, &values);
+
+        assert!(loaded.connected);
+        assert_eq!(loaded.controller_type, ControllerType::GameCube);
+        assert!(!loaded.vibration_enabled);
+        assert_eq!(loaded.vibration_strength, 63);
+        assert_eq!(loaded.body_color_left, 1);
+        assert_eq!(loaded.body_color_right, 2);
+        assert_eq!(loaded.button_color_left, 3);
+        assert_eq!(loaded.button_color_right, 4);
+        assert_eq!(loaded.profile_name, "arcade");
+        assert_eq!(loaded.buttons[0], SDL_BINDING);
+    }
+
+    #[test]
+    fn input_profile_uses_unprefixed_control_keys() {
+        let mut source = PlayerInput::default();
+        source.controller_type = ControllerType::GameCube;
+        source.buttons[0] = SDL_BINDING.to_string();
+
+        let written = serialize_input_profile(&source);
+        assert!(written.contains("type=\"5\""));
+        assert!(written.contains(&format!("button_a=\"{SDL_BINDING}\"")));
+        assert!(!written.contains("player_0_"));
+
+        let mut loaded = PlayerInput::default();
+        load_input_profile(&written, &mut loaded);
+        assert_eq!(loaded.controller_type, ControllerType::GameCube);
+        assert_eq!(loaded.buttons[0], SDL_BINDING);
+    }
+
+    #[test]
+    fn control_bindings_survive_a_save_and_reload() {
+        // The whole point of the Controls page: what the dialog wrote must come
+        // back byte-for-byte on the next launch.
+        let entries = vec![
+            ("player_0_button_a".to_string(), SDL_BINDING.to_string()),
+            (
+                "player_0_lstick".to_string(),
+                "engine:sdl,axis_x:0,axis_y:1,offset_x:-0.03".to_string(),
+            ),
+        ];
+        let written = replace_controls("", &entries);
+        let parsed = parse_controls(&written);
+
+        assert_eq!(
+            parsed.get("player_0_button_a").map(String::as_str),
+            Some(SDL_BINDING)
+        );
+        assert_eq!(
+            parsed.get("player_0_lstick").map(String::as_str),
+            Some("engine:sdl,axis_x:0,axis_y:1,offset_x:-0.03")
+        );
+    }
+
+    #[test]
+    fn bindings_are_quoted_so_their_commas_survive() {
+        // A parameter string is a comma-separated list; written bare it would
+        // still round-trip through this parser but would break every other INI
+        // reader, yuzu's included.
+        let entries = vec![("player_0_button_a".to_string(), SDL_BINDING.to_string())];
+        let written = replace_controls("", &entries);
+        assert!(written.contains(&format!("player_0_button_a=\"{SDL_BINDING}\"")));
+        // Upstream pairs each key with its `\default` marker.
+        assert!(written.contains("player_0_button_a\\default=false"));
+    }
+
+    #[test]
+    fn saving_controls_leaves_the_rest_of_the_file_alone() {
+        // `save_control_values` shares the config file with every other
+        // setting; clobbering a neighbouring section would lose them.
+        let original = "[UI]\nPaths\\gamedirs\\size=1\n[Controls]\nplayer_0_button_a\\default=false\nplayer_0_button_a=\"old\"\ntouchscreen_enabled=true\n[Core]\nuse_multi_core=true\n";
+        let entries = vec![("player_0_button_a".to_string(), "new".to_string())];
+        let updated = replace_controls(original, &entries);
+
+        assert!(updated.contains("Paths\\gamedirs\\size=1"));
+        assert!(updated.contains("touchscreen_enabled=true"));
+        assert!(updated.contains("use_multi_core=true"));
+        assert!(updated.contains("player_0_button_a=\"new\""));
+        assert!(!updated.contains("\"old\""));
+    }
+
+    #[test]
+    fn a_config_without_a_controls_section_gains_one() {
+        let entries = vec![("player_0_button_a".to_string(), "x".to_string())];
+        let updated = replace_controls("[UI]\nsomething=1\n", &entries);
+        assert!(updated.contains("[Controls]"));
+        assert!(updated.contains("something=1"));
+
+        // And the new keys must land inside that section, not before it.
+        let section = updated.find("[Controls]").unwrap();
+        let key = updated.find("player_0_button_a").unwrap();
+        assert!(key > section);
+    }
+
+    #[test]
+    fn bindings_from_another_section_are_not_read_as_controls() {
+        // `player_` keys only mean a binding inside [Controls]; a same-named key
+        // elsewhere must not leak in.
+        let contents =
+            "[UI]\nplayer_0_button_a=\"decoy\"\n[Controls]\nplayer_0_button_b=\"real\"\n";
+        let parsed = parse_controls(contents);
+        assert!(!parsed.contains_key("player_0_button_a"));
+        assert_eq!(
+            parsed.get("player_0_button_b").map(String::as_str),
+            Some("real")
+        );
+    }
+
+    #[test]
+    fn the_default_marker_is_not_mistaken_for_a_binding() {
+        let contents = "[Controls]\nplayer_0_button_a\\default=false\nplayer_0_button_a=\"v\"\n";
+        let parsed = parse_controls(contents);
+        assert_eq!(parsed.len(), 1);
+        assert_eq!(
+            parsed.get("player_0_button_a").map(String::as_str),
+            Some("v")
+        );
+    }
+
+    /// A config with a stale 5th entry nested inside the 4th — the shape a
+    /// removed-then-re-added game directory leaves behind.
+    const CONFIG_WITH_STALE_ENTRY: &str = concat!(
+        "[UI]\n",
+        "Paths\\gamedirs\\size=4\n",
+        "Paths\\gamedirs\\1\\path=SDMC\n",
+        "Paths\\gamedirs\\1\\deep_scan=false\n",
+        "Paths\\gamedirs\\2\\path=UserNAND\n",
+        "Paths\\gamedirs\\3\\path=SysNAND\n",
+        "Paths\\gamedirs\\4\\path=/games/roms\n",
+        "Paths\\gamedirs\\4\\deep_scan\\default=false\n",
+        "Paths\\gamedirs\\4\\deep_scan=true\n",
+        "Paths\\gamedirs\\5\\path=/games/roms/Mario Kart 8 Deluxe [NSP]\n",
+        "Paths\\gamedirs\\5\\deep_scan=false\n",
+    );
+
+    fn dir(path: &str, deep_scan: bool) -> GameDir {
+        GameDir {
+            path: path.to_string(),
+            deep_scan,
+            expanded: true,
+        }
+    }
+
+    #[test]
+    fn stale_entries_past_size_are_ignored() {
+        let dirs = parse_game_dirs(CONFIG_WITH_STALE_ENTRY);
+        assert_eq!(dirs.len(), 4);
+        assert!(!dirs.iter().any(|d| d.path.contains("Mario Kart")));
+    }
+
+    #[test]
+    fn provider_tokens_are_kept_but_flagged_as_non_paths() {
+        let dirs = parse_game_dirs(CONFIG_WITH_STALE_ENTRY);
+        assert!(!dirs[0].is_filesystem_path()); // SDMC
+        assert!(dirs[3].is_filesystem_path()); // /games/roms
+    }
+
+    #[test]
+    fn default_suffixed_keys_do_not_override_the_value() {
+        // `…\deep_scan\default=false` must not win over `…\deep_scan=true`.
+        let dirs = parse_game_dirs(CONFIG_WITH_STALE_ENTRY);
+        assert!(dirs[3].deep_scan);
+    }
+
+    #[test]
+    fn missing_size_keeps_every_entry() {
+        let config = "[UI]\nPaths\\gamedirs\\1\\path=/a\nPaths\\gamedirs\\2\\path=/b\n";
+        assert_eq!(parse_game_dirs(config).len(), 2);
+    }
+
+    #[test]
+    fn round_trips_through_save_and_load() {
+        let dirs = vec![dir("/games/a", true), dir("/games/b", false)];
+        let written = replace_game_dirs("[UI]\n", &dirs);
+        assert_eq!(parse_game_dirs(&written), dirs);
+    }
+
+    #[test]
+    fn external_content_directories_round_trip_with_upstream_array_shape() {
+        let directories = vec![
+            "/updates/homebrew/".to_string(),
+            "/dlc/open-source-title/".to_string(),
+        ];
+        let written = replace_external_content_dirs("[UI]\nUnrelated=value\n", &directories);
+        assert_eq!(parse_external_content_dirs(&written), directories);
+        assert!(written.contains("Paths\\external_content_dirs\\1\\path=/updates/homebrew/"));
+        assert!(written.contains("Paths\\external_content_dirs\\2\\path=/dlc/open-source-title/"));
+        assert!(written.contains("Unrelated=value"));
+    }
+
+    #[test]
+    fn directory_arrays_read_quoted_paths_like_upstream() {
+        let contents = concat!(
+            "[UI]\n",
+            "Paths\\gamedirs\\size=1\n",
+            "Paths\\gamedirs\\1\\path=\"D:/Games/Homebrew, packs\"\n",
+            "Paths\\external_content_dirs\\size=2\n",
+            "Paths\\external_content_dirs\\1\\path=\"//server/share/Updates, packs\"\n",
+            "Paths\\external_content_dirs\\2\\path=\"\"\n",
+        );
+        assert_eq!(parse_game_dirs(contents)[0].path, "D:/Games/Homebrew, packs");
+        assert_eq!(parse_external_content_dirs(contents), vec!["//server/share/Updates, packs"]);
+    }
+
+    #[test]
+    fn directory_arrays_outside_ui_are_ignored_and_writes_target_ui() {
+        let document = concat!(
+            "[UI]\ntheme=default\n[WebService]\n",
+            "Paths\\gamedirs\\size=2\n",
+            "Paths\\gamedirs\\1\\path=SDMC\n",
+            "Paths\\gamedirs\\2\\path=\"D:/Games/Homebrew, packs\"\n",
+            "Paths\\external_content_dirs\\size=1\n",
+            "Paths\\external_content_dirs\\1\\path=\"D:/Updates, packs\"\n",
+        );
+        assert!(parse_game_dirs(document).is_empty());
+        assert!(parse_external_content_dirs(document).is_empty());
+        let dirs = vec![GameDir { path: "D:/Games/Homebrew".to_owned(), deep_scan: true, expanded: true }];
+        for original in [document, "[UI]\ntheme=default\n[WebService]\nenable_telemetry=false\n"] {
+            let written = replace_game_dirs(original, &dirs);
+            let written = replace_external_content_dirs(&written, &["D:/Updates".to_owned()]);
+            assert_eq!(parse_game_dirs(&written)[0].path, dirs[0].path);
+            assert_eq!(parse_external_content_dirs(&written), vec!["D:/Updates"]);
+            assert!(!written.split("[WebService]").nth(1).unwrap().contains("Paths\\"));
+        }
+    }
+
+    #[test]
+    fn directory_section_repair_is_backed_up_and_idempotent() {
+        let root = tempfile::tempdir().unwrap();
+        let path = root.path().join("qt-config.ini");
+        let original = concat!(
+            "[UI]\ntheme=default\n[WebService]\nenable_telemetry=false\n",
+            "Paths\\gamedirs\\size=1\nPaths\\gamedirs\\1\\path=\"D:/Homebrew, games\"\n",
+            "Paths\\external_content_dirs\\size=1\nPaths\\external_content_dirs\\1\\path=D:/Updates\n",
+        );
+        std::fs::write(&path, original).unwrap();
+        assert!(repair_directory_array_sections(&path).unwrap());
+        let repaired = std::fs::read_to_string(&path).unwrap();
+        assert_eq!(parse_game_dirs(&repaired)[0].path, "D:/Homebrew, games");
+        assert_eq!(parse_external_content_dirs(&repaired), vec!["D:/Updates"]);
+        assert!(repaired.contains("[WebService]\nenable_telemetry=false"));
+        let backups: Vec<_> = std::fs::read_dir(root.path()).unwrap()
+            .map(|entry| entry.unwrap().path()).filter(|file| file != &path).collect();
+        assert_eq!(backups.len(), 1);
+        assert_eq!(std::fs::read_to_string(&backups[0]).unwrap(), original);
+        assert!(!repair_directory_array_sections(&path).unwrap());
+        assert_eq!(std::fs::read_dir(root.path()).unwrap().count(), 2);
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), repaired);
+    }
+
+    #[test]
+    fn directory_section_repair_preserves_canonical_ui_and_handles_missing_ui() {
+        let document = concat!("[UI]\nPaths\\gamedirs\\size=0\n[WebService]\n",
+            "Paths\\gamedirs\\size=1\nPaths\\gamedirs\\1\\path=D:/Stale\n");
+        let repaired = repaired_directory_array_sections(document).unwrap();
+        assert!(parse_game_dirs(&repaired).is_empty());
+        assert!(!repaired.contains("D:/Stale"));
+        assert!(repaired_directory_array_sections(&repaired).is_none());
+        let document = "[WebService]\nPaths\\gamedirs\\size=1\nPaths\\gamedirs\\1\\path=D:/Homebrew\n";
+        let repaired = repaired_directory_array_sections(document).unwrap();
+        assert_eq!(parse_game_dirs(&repaired)[0].path, "D:/Homebrew");
+    }
+
+    #[test]
+    fn directory_arrays_write_paths_with_upstream_quoting_and_slashes() {
+        let path = r"D:\Games\Homebrew, packs";
+        let dirs = vec![GameDir { path: path.to_owned(), deep_scan: true, expanded: true }];
+        let document = replace_game_dirs("[UI]\n", &dirs);
+        assert!(document.contains("path=\"D:/Games/Homebrew, packs\""));
+        assert_eq!(parse_game_dirs(&document)[0].path, "D:/Games/Homebrew, packs");
+        let document = replace_external_content_dirs("[UI]\n", &[path.to_owned()]);
+        assert!(document.contains("path=\"D:/Games/Homebrew, packs\""));
+        assert_eq!(parse_external_content_dirs(&document), vec!["D:/Games/Homebrew, packs"]);
+    }
+
+    #[test]
+    fn external_content_array_ignores_stale_entries_past_size() {
+        let contents = concat!(
+            "[UI]\n",
+            "Paths\\external_content_dirs\\size=1\n",
+            "Paths\\external_content_dirs\\1\\path=/updates/homebrew/\n",
+            "Paths\\external_content_dirs\\2\\path=/stale/\n",
+        );
+        assert_eq!(
+            parse_external_content_dirs(contents),
+            vec!["/updates/homebrew/".to_string()]
+        );
+    }
+
+    #[test]
+    fn game_directory_import_merges_by_path_and_preserves_ruzu_values() {
+        let existing = vec![dir("/games/homebrew", false)];
+        let source = vec![
+            dir("/games/homebrew", true),
+            dir("/games/homebrew-extra", true),
+        ];
+        let (merged, imported) = merge_game_dirs(existing.clone(), source);
+        assert_eq!(imported, 1);
+        assert_eq!(merged[0], existing[0]);
+        assert_eq!(merged[1], dir("/games/homebrew-extra", true));
+    }
+
+    #[test]
+    fn writing_preserves_every_other_key() {
+        let original = concat!(
+            "[Controls]\n",
+            "player_0_type=0\n",
+            "[UI]\n",
+            "Paths\\gamedirs\\size=1\n",
+            "Paths\\gamedirs\\1\\path=/old\n",
+            "Multiplayer\\nickname=vric\n",
+        );
+        let updated = replace_game_dirs(original, &[dir("/new", false)]);
+        assert!(updated.contains("player_0_type=0"));
+        assert!(updated.contains("Multiplayer\\nickname=vric"));
+        assert!(updated.contains("[Controls]"));
+        assert!(updated.contains("Paths\\gamedirs\\1\\path=/new"));
+        assert!(!updated.contains("/old"));
+    }
+
+    #[test]
+    fn multiplayer_fields_round_trip_with_upstream_ui_keys() {
+        let mut contents = "[UI]\nUnrelated=value\n".to_string();
+        contents = replace_ui_string_setting(&contents, "Multiplayer\\nickname", "Player One", "");
+        contents =
+            replace_ui_string_setting(&contents, "Multiplayer\\filter_text", "preferred room", "");
+        contents = replace_section_setting(
+            &contents,
+            "UI",
+            "Multiplayer\\filter_games_owned",
+            "true",
+            false,
+        );
+        contents = replace_section_setting(
+            &contents,
+            "UI",
+            "Multiplayer\\filter_games_hide_empty",
+            "true",
+            false,
+        );
+        contents = replace_section_setting(
+            &contents,
+            "UI",
+            "Multiplayer\\filter_games_hide_full",
+            "false",
+            false,
+        );
+        contents = replace_ui_string_setting(&contents, "Multiplayer\\ip", "room.example.org", "");
+        contents = replace_section_setting(&contents, "UI", "Multiplayer\\port", "24873", false);
+
+        let values = parse_section_values(&contents, UI_SECTION);
+        assert_eq!(
+            read_ui_string_setting(&contents, "Multiplayer\\nickname", ""),
+            "Player One"
+        );
+        assert_eq!(
+            read_ui_string_setting(&contents, "Multiplayer\\ip", ""),
+            "room.example.org"
+        );
+        assert_eq!(
+            read_ui_string_setting(&contents, "Multiplayer\\filter_text", ""),
+            "preferred room"
+        );
+        assert!(read_ui_bool_setting(
+            &values,
+            "Multiplayer\\filter_games_owned",
+            false
+        ));
+        assert!(read_ui_bool_setting(
+            &values,
+            "Multiplayer\\filter_games_hide_empty",
+            false
+        ));
+        assert!(!read_ui_bool_setting(
+            &values,
+            "Multiplayer\\filter_games_hide_full",
+            true
+        ));
+        assert_eq!(
+            read_ui_u32_setting(&values, "Multiplayer\\port", 24872),
+            24873
+        );
+        assert!(contents.contains("Unrelated=value"));
+    }
+
+    #[test]
+    fn hosting_settings_and_ban_arrays_round_trip_and_shrink() {
+        let mut source = uisettings::Values::default();
+        source.multiplayer_room_nickname.set_value("SyntheticHost".into());
+        source.multiplayer_room_name.set_value("Synthetic room".into());
+        source.multiplayer_max_player.set_value(4);
+        source.multiplayer_room_port.set_value(25000);
+        source.multiplayer_host_type.set_value(1);
+        source.multiplayer_game_id.set_value(u64::MAX);
+        source.multiplayer_room_description.set_value("First line\n[Core]\nuse_multi_core=false\nbackslash \\n and \"quotes\" é".into());
+        source.multiplayer_ban_list = (vec!["UserOne".into(), "UserTwo".into()],
+            vec!["192.0.2.1".into(), "192.0.2.2".into()]);
+        let untouched = "[Renderer]\nbackend=1\n[UI]\nUnrelated=value\n";
+        let document = write_multiplayer_values(untouched, &mut source);
+        assert!(document.contains("backend=1"));
+        assert!(document.contains("Unrelated=value"));
+        assert!(!document.lines().any(|line| line == "[Core]"));
+        assert!(!document.lines().any(|line| line == "use_multi_core=false"));
+        // Verified against Qt6 QSettings's actual INI output, not only our
+        // own reader/writer agreeing with each other.
+        assert!(document.contains(r#"Multiplayer\room_description="First line\n[Core]\nuse_multi_core=false\nbackslash \\n and \"quotes\" é""#));
+        assert!(document.contains("Multiplayer\\ip_ban_list\\2\\ip=192.0.2.2"));
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("qt-config.ini");
+        std::fs::write(&path, &document).unwrap();
+        let mut restored = uisettings::Values::default();
+        read_multiplayer_values(&std::fs::read_to_string(path).unwrap(), &mut restored);
+        let mut expected = std::collections::BTreeMap::new();
+        source.for_each_multiplayer_setting_mut(|setting| {
+            expected.insert(setting.label().to_owned(), setting.to_string_global());
+        });
+        restored.for_each_multiplayer_setting_mut(|setting| {
+            assert_eq!(setting.to_string_global(), expected[setting.label()], "{}", setting.label());
+        });
+        assert_eq!(restored.multiplayer_ban_list, source.multiplayer_ban_list);
+        source.multiplayer_ban_list = (Vec::new(), vec!["192.0.2.3".into()]);
+        let document = write_multiplayer_values(&document, &mut source);
+        assert!(!document.contains("192.0.2.1"));
+        assert!(!document.contains("192.0.2.2"));
+        assert!(!document.contains("UserOne"));
+        read_multiplayer_values(&document, &mut restored);
+        assert_eq!(restored.multiplayer_ban_list, source.multiplayer_ban_list);
+        read_multiplayer_values("[UI]\n", &mut restored);
+        assert_eq!(*restored.multiplayer_max_player.get_value(), 8);
+        assert_eq!(*restored.multiplayer_room_port.get_value(), 24872);
+        assert!(restored.multiplayer_ban_list.1.is_empty());
+        read_multiplayer_values(concat!("[UI]\n",
+            "Multiplayer\\filter_games_owned\\default=false\nMultiplayer\\filter_games_owned=1\n",
+            "Multiplayer\\max_player\\default=false\nMultiplayer\\max_player=255\n",
+            "Multiplayer\\host_type\\default=false\nMultiplayer\\host_type=255\n"), &mut restored);
+        assert!(*restored.multiplayer_filter_games_owned.get_value());
+        assert_eq!(*restored.multiplayer_max_player.get_value(), 8);
+        assert_eq!(*restored.multiplayer_host_type.get_value(), 1);
+    }
+
+    #[test]
+    fn writing_removes_stale_entries_rather_than_leaving_them() {
+        // The whole point of rewriting in place: entry 5 must not survive, or
+        // the next reader with a larger `size` would pick it up again.
+        let updated = replace_game_dirs(CONFIG_WITH_STALE_ENTRY, &[dir("/games/roms", true)]);
+        assert!(!updated.contains("Mario Kart 8 Deluxe [NSP]"));
+        assert_eq!(parse_game_dirs(&updated), vec![dir("/games/roms", true)]);
+    }
+
+    #[test]
+    fn block_is_written_once_at_the_first_old_position() {
+        let updated = replace_game_dirs(CONFIG_WITH_STALE_ENTRY, &[dir("/games/roms", true)]);
+        assert_eq!(updated.matches("Paths\\gamedirs\\size=").count(), 1);
+    }
+
+    #[test]
+    fn ui_section_is_created_when_absent() {
+        let updated = replace_game_dirs("[Controls]\nplayer_0_type=0\n", &[dir("/a", false)]);
+        assert!(updated.contains("[UI]"));
+        // The new keys must land after the section header, not before it.
+        let ui = updated.find("[UI]").unwrap();
+        let key = updated.find("Paths\\gamedirs\\size=").unwrap();
+        assert!(ui < key);
+    }
+
+    #[test]
+    fn empty_list_writes_size_zero() {
+        let updated = replace_game_dirs(CONFIG_WITH_STALE_ENTRY, &[]);
+        assert!(updated.contains("Paths\\gamedirs\\size=0"));
+        assert_eq!(parse_game_dirs(&updated), Vec::new());
+    }
+
+    #[test]
+    fn indices_are_one_based_like_yuzu() {
+        let updated = replace_game_dirs("[UI]\n", &[dir("/a", false), dir("/b", false)]);
+        assert!(updated.contains("Paths\\gamedirs\\1\\path=/a"));
+        assert!(updated.contains("Paths\\gamedirs\\2\\path=/b"));
+        assert!(!updated.contains("Paths\\gamedirs\\0\\"));
+    }
+}

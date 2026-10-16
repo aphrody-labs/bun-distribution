@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rosegriffon.fr/schemas/vfs/cpk.schema.json",
+  "title": "CpkArchiveSchema",
+  "description": "Validation schema for CRI Middleware CPK package file structure and @UTF directory listing.",
+  "type": "object",
+  "required": ["magic", "fileCount", "files"],
+  "properties": {
+    "magic": {
+      "type": "string",
+      "const": "CPK "
+    },
+    "fileCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "sectorSize": {
+      "type": "integer",
+      "default": 2048
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "fileSize", "extractSize"],
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "dirName": { "type": "string" },
+          "fileSize": { "type": "integer", "minimum": 0 },
+          "extractSize": { "type": "integer", "minimum": 0 },
+          "isCompressed": { "type": "boolean" },
+          "isEncrypted": { "type": "boolean" },
+          "fileOffset": { "type": "integer", "minimum": 0 }
+        }
+      }
+    }
+  }
+}

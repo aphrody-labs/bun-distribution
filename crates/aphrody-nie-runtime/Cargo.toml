@@ -1,0 +1,34 @@
+[package]
+name = "aphrody-nie-runtime"
+description = "Moteur de jeu nie : boucle intégrée monde + physique + rendu top-down → frames/MP4 (headless, déterministe)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "aphrody-nie-runtime"
+path = "src/main.rs"
+
+[[bin]]
+name = "nie-match3d"
+path = "src/bin/match3d.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-nie-core.workspace = true
+aphrody-nie-formats = { workspace = true, features = ["std"] }
+aphrody-nie-render3d.workspace = true
+# Encodage vidéo : les deux binaires de cette crate produisent une séquence, et passaient par
+# deux copies du même appel à ffmpeg.
+aphrody-nie-video.workspace = true
+# aphrody-nie-geom : Vec2/Vec3 POD partagés (source unique, dédup Phase 2). Convention « z=hauteur »
+# de aphrody-nie-runtime portée dans le CODE (le type reste axis-agnostique ; cf. landmine #4).
+aphrody-nie-geom.workspace = true
+clap = { workspace = true, features = ["derive", "color", "env"] }
+anyhow = { version = "1" }
+png = { version = "0.18" }

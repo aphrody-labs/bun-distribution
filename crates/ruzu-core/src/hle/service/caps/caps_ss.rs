@@ -1,0 +1,238 @@
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+//! Port of zuyu/src/core/hle/service/caps/caps_ss.h
+//! Port of zuyu/src/core/hle/service/caps/caps_ss.cpp
+//!
+//! IScreenShotService — "caps:ss".
+
+use std::collections::BTreeMap;
+use std::sync::{Arc, Mutex};
+
+use super::caps_manager::AlbumManager;
+use super::caps_types::{
+    AlbumFileId, AlbumReportOption, ApplicationAlbumEntry, ScreenShotAttribute,
+};
+use crate::hle::result::{ResultCode, RESULT_SUCCESS};
+use crate::hle::service::hle_ipc::{HLERequestContext, SessionRequestHandler};
+use crate::hle::service::ipc_helpers::{RequestParser, ResponseBuilder};
+use crate::hle::service::service::{build_handler_map, FunctionInfo, ServiceFramework};
+
+/// IPC command table for IScreenShotService.
+pub mod commands {
+    pub const SAVE_SCREEN_SHOT: u32 = 201;
+    pub const SAVE_EDITED_SCREEN_SHOT: u32 = 202;
+    pub const SAVE_SCREEN_SHOT_EX0: u32 = 203;
+    pub const SAVE_EDITED_SCREEN_SHOT_EX0: u32 = 204;
+    pub const SAVE_EDITED_SCREEN_SHOT_EX1: u32 = 206;
+    pub const SAVE_SCREEN_SHOT_OF_MOVIE_EX1: u32 = 208;
+    pub const UNKNOWN_1000: u32 = 1000;
+}
+
+/// IScreenShotService.
+///
+/// Corresponds to `IScreenShotService` in upstream caps_ss.h / caps_ss.cpp.
+pub struct IScreenShotService {
+    handlers: BTreeMap<u32, FunctionInfo>,
+    handlers_tipc: BTreeMap<u32, FunctionInfo>,
+    manager: Arc<Mutex<AlbumManager>>,
+}
+
+impl IScreenShotService {
+    pub fn new(album_manager: Arc<Mutex<AlbumManager>>) -> Self {
+        let handlers = build_handler_map(&[
+            (201, None, "SaveScreenShot"),
+            (202, None, "SaveEditedScreenShot"),
+            (
+                203,
+                Some(Self::save_screen_shot_ex0_handler),
+                "SaveScreenShotEx0",
+            ),
+            (204, None, "SaveEditedScreenShotEx0"),
+            (
+                206,
+                Some(Self::save_edited_screen_shot_ex1_handler),
+                "SaveEditedScreenShotEx1",
+            ),
+            (208, None, "SaveScreenShotOfMovieEx1"),
+            (1000, None, "Unknown1000"),
+        ]);
+
+        Self {
+            handlers,
+            handlers_tipc: BTreeMap::new(),
+            manager: album_manager,
+        }
+    }
+
+    /// SaveScreenShotEx0 (cmd 203).
+    ///
+    /// Corresponds to upstream `IScreenShotService::SaveScreenShotEx0`.
+    pub fn save_screen_shot_ex0(
+        &self,
+        _attribute: &ScreenShotAttribute,
+        report_option: AlbumReportOption,
+        aruid: u64,
+        image_data_buffer: &[u8],
+    ) -> Result<ApplicationAlbumEntry, ResultCode> {
+        log::info!(
+            "SaveScreenShotEx0 called, report_option={:?}, image_data_buffer_size={}, applet_resource_user_id={}",
+            report_option,
+            image_data_buffer.len(),
+            aruid,
+        );
+
+        let mut manager = self.manager.lock().unwrap();
+        manager.flip_vertically_on_write(false);
+        let mut entry = ApplicationAlbumEntry::default();
+        let result = manager.save_screen_shot(
+            &mut entry,
+            _attribute,
+            report_option,
+            image_data_buffer,
+            aruid,
+        );
+        if result.is_success() {
+            Ok(entry)
+        } else {
+            Err(result)
+        }
+    }
+
+    fn save_screen_shot_ex0_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+        let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
+        let mut request = RequestParser::new(ctx);
+        let attribute = request.pop_raw::<ScreenShotAttribute>();
+        let report_option = AlbumReportOption(request.pop_i32());
+        request.pop_u32();
+        let aruid = request.pop_u64();
+        let image_data = ctx.read_buffer(0);
+
+        let (result, entry) =
+            match service.save_screen_shot_ex0(&attribute, report_option, aruid, &image_data) {
+                Ok(entry) => (RESULT_SUCCESS, entry),
+                Err(result) => (result, ApplicationAlbumEntry::default()),
+            };
+        let mut response = ResponseBuilder::new(ctx, 10, 0, 0);
+        response.push_result(result);
+        response.push_raw(&entry);
+    }
+
+    fn save_edited_screen_shot_ex1_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
+        let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
+        let mut request = RequestParser::new(ctx);
+        let attribute = request.pop_raw::<ScreenShotAttribute>();
+        let width = request.pop_u64();
+        let height = request.pop_u64();
+        let thumbnail_width = request.pop_u64();
+        let thumbnail_height = request.pop_u64();
+        let file_id = request.pop_raw::<AlbumFileId>();
+        let image_data = ctx.read_buffer(1);
+        let thumbnail_image_data = ctx.read_buffer(2);
+
+        let (result, entry) = match service.save_edited_screen_shot_ex1(
+            &attribute,
+            width,
+            height,
+            thumbnail_width,
+            thumbnail_height,
+            &file_id,
+            &[0; 0x400],
+            &image_data,
+            &thumbnail_image_data,
+        ) {
+            Ok(entry) => (RESULT_SUCCESS, entry),
+            Err(result) => (result, ApplicationAlbumEntry::default()),
+        };
+        let mut response = ResponseBuilder::new(ctx, 10, 0, 0);
+        response.push_result(result);
+        response.push_raw(&entry);
+    }
+
+    /// SaveEditedScreenShotEx1 (cmd 206).
+    ///
+    /// Corresponds to upstream `IScreenShotService::SaveEditedScreenShotEx1`.
+    pub fn save_edited_screen_shot_ex1(
+        &self,
+        _attribute: &ScreenShotAttribute,
+        width: u64,
+        height: u64,
+        thumbnail_width: u64,
+        thumbnail_height: u64,
+        file_id: &AlbumFileId,
+        _application_data_buffer: &[u8; 0x400],
+        image_data_buffer: &[u8],
+        thumbnail_image_data_buffer: &[u8],
+    ) -> Result<ApplicationAlbumEntry, ResultCode> {
+        log::info!(
+            "SaveEditedScreenShotEx1 called, width={}, height={}, thumbnail_width={}, thumbnail_height={}, \
+             application_id={:#018x}, storage={:?}, type={:?}, \
+             image_data_buffer_size={}, thumbnail_image_buffer_size={}",
+            width,
+            height,
+            thumbnail_width,
+            thumbnail_height,
+            file_id.application_id,
+            file_id.storage,
+            file_id.content_type,
+            image_data_buffer.len(),
+            thumbnail_image_data_buffer.len(),
+        );
+
+        let mut manager = self.manager.lock().unwrap();
+        manager.flip_vertically_on_write(false);
+        let mut entry = ApplicationAlbumEntry::default();
+        let result =
+            manager.save_edited_screen_shot(&mut entry, _attribute, file_id, image_data_buffer);
+        if result.is_success() {
+            Ok(entry)
+        } else {
+            Err(result)
+        }
+    }
+}
+
+impl SessionRequestHandler for IScreenShotService {
+    fn handle_sync_request(&self, ctx: &mut HLERequestContext) -> ResultCode {
+        ServiceFramework::handle_sync_request_impl(self, ctx)
+    }
+
+    fn service_name(&self) -> &str {
+        "caps:ss"
+    }
+}
+
+impl ServiceFramework for IScreenShotService {
+    fn get_service_name(&self) -> &str {
+        "caps:ss"
+    }
+
+    fn handlers(&self) -> &BTreeMap<u32, FunctionInfo> {
+        &self.handlers
+    }
+
+    fn handlers_tipc(&self) -> &BTreeMap<u32, FunctionInfo> {
+        &self.handlers_tipc
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn save_screen_shot_ex0_is_registered() {
+        let service = IScreenShotService::new(Arc::new(Mutex::new(AlbumManager::new())));
+        for command_id in [203, 206] {
+            assert!(service
+                .handlers
+                .get(&command_id)
+                .unwrap()
+                .handler_callback
+                .is_some());
+        }
+    }
+}

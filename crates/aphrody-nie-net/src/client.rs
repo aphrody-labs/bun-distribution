@@ -1,0 +1,258 @@
+//! Asynchronous WebSocket client for nie online multiplayer.
+
+use futures_util::{SinkExt, StreamExt};
+use tokio::sync::mpsc;
+use tokio_tungstenite::connect_async;
+use tokio_tungstenite::tungstenite::Message;
+
+use crate::protocol::{
+    Inacode, KizunaAvatar, MatchMode, NET_PROTOCOL_VERSION, NetMessage, PlacedTownCharacter,
+    PlacedTownObject, PlayerTickInput, RoomConfig, UtSquadSummary,
+};
+
+/// Send result retaining the complete rejected message without a large stack error.
+pub type SendResult = Result<(), Box<mpsc::error::SendError<NetMessage>>>;
+
+/// Active network multiplayer client session.
+pub struct NetClient {
+    tx: mpsc::UnboundedSender<NetMessage>,
+    rx: mpsc::UnboundedReceiver<NetMessage>,
+    player_id: Option<String>,
+}
+
+impl NetClient {
+    /// Connects to a aphrody-nie-net multiplayer server with a default 10-second timeout.
+    pub async fn connect(url: &str, player_name: &str) -> anyhow::Result<Self> {
+        Self::connect_with_timeout(url, player_name, std::time::Duration::from_secs(10)).await
+    }
+
+    /// Connects to a aphrody-nie-net multiplayer server at given WebSocket URL with explicit timeout.
+    pub async fn connect_with_timeout(
+        url: &str,
+        player_name: &str,
+        timeout_dur: std::time::Duration,
+    ) -> anyhow::Result<Self> {
+        let (ws_stream, _) = tokio::time::timeout(timeout_dur, connect_async(url))
+            .await
+            .map_err(|_| anyhow::anyhow!("Connection to {url} timed out after {timeout_dur:?}"))?
+            .map_err(|e| anyhow::anyhow!("Failed to connect to {url}: {e}"))?;
+        let (mut ws_sender, mut ws_receiver) = ws_stream.split();
+
+        let (inbound_tx, inbound_rx) = mpsc::unbounded_channel::<NetMessage>();
+        let (outbound_tx, mut outbound_rx) = mpsc::unbounded_channel::<NetMessage>();
+
+        // Outbound send task
+        tokio::spawn(async move {
+            while let Some(msg) = outbound_rx.recv().await {
+                if let Ok(json) = serde_json::to_string(&msg)
+                    && ws_sender.send(Message::Text(json.into())).await.is_err()
+                {
+                    break;
+                }
+            }
+        });
+
+        // Inbound receive task
+        let client_inbound = inbound_tx.clone();
+        tokio::spawn(async move {
+            while let Some(msg_res) = ws_receiver.next().await {
+                if let Ok(Message::Text(text)) = msg_res
+                    && let Ok(net_msg) = serde_json::from_str::<NetMessage>(&text)
+                    && client_inbound.send(net_msg).is_err()
+                {
+                    break;
+                }
+            }
+        });
+
+        // Handshake
+        let hello = NetMessage::Hello {
+            client_version: NET_PROTOCOL_VERSION.to_string(),
+            player_name: player_name.to_string(),
+        };
+        outbound_tx.send(hello)?;
+
+        let mut client = Self { tx: outbound_tx, rx: inbound_rx, player_id: None };
+
+        // Wait for Welcome with bounded timeout
+        let handshake_deadline = std::time::Duration::from_secs(5).min(timeout_dur);
+        match tokio::time::timeout(handshake_deadline, client.next_message()).await {
+            Ok(Some(NetMessage::Welcome { player_id, .. })) => {
+                client.player_id = Some(player_id);
+            },
+            Ok(Some(NetMessage::Error { message })) => {
+                anyhow::bail!("Server rejected handshake: {message}");
+            },
+            Ok(Some(other)) => {
+                anyhow::bail!("Expected Welcome message from server, received: {other:?}");
+            },
+            Ok(None) => {
+                anyhow::bail!("Server closed connection before handshake completed");
+            },
+            Err(_) => {
+                anyhow::bail!("Handshake timed out waiting for Welcome message");
+            },
+        }
+
+        Ok(client)
+    }
+
+    /// Returns assigned player ID.
+    #[must_use]
+    pub fn player_id(&self) -> Option<&str> {
+        self.player_id.as_deref()
+    }
+
+    /// Returns true if the client session is still connected to the server.
+    #[must_use]
+    pub fn is_connected(&self) -> bool {
+        !self.tx.is_closed()
+    }
+
+    /// Sends a protocol message to the server.
+    pub fn send(&self, msg: NetMessage) -> SendResult {
+        self.tx.send(msg).map_err(Box::new)
+    }
+
+    /// Awaits the next incoming protocol message from the server.
+    pub async fn next_message(&mut self) -> Option<NetMessage> {
+        self.rx.recv().await
+    }
+
+    /// Requests creation of a new room with configuration.
+    pub fn create_room(&self, config: RoomConfig) -> SendResult {
+        self.send(NetMessage::CreateRoom { config })
+    }
+
+    /// Requests joining an existing room by Inacode.
+    pub fn join_room(&self, inacode: Inacode, password: Option<String>) -> SendResult {
+        self.send(NetMessage::JoinRoom { inacode, password })
+    }
+
+    /// Toggles ready state in current room.
+    pub fn set_ready(&self, ready: bool) -> SendResult {
+        self.send(NetMessage::SetReady { ready })
+    }
+
+    /// Sends player tick input.
+    pub fn send_input(&self, tick: u64, input: PlayerTickInput) -> SendResult {
+        self.send(NetMessage::InputTick { tick, input })
+    }
+
+    /// Sends ping measurement.
+    pub fn ping(&self, seq: u64) -> SendResult {
+        let client_time_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_millis() as u64)
+            .unwrap_or(0);
+        self.send(NetMessage::Ping { seq, client_time_ms })
+    }
+
+    /// Enqueues for automated matchmaking.
+    pub fn queue_match(&self, mode: MatchMode, rank_points: u32) -> SendResult {
+        self.send(NetMessage::QueueMatch { mode, rank_points })
+    }
+
+    /// Cancels matchmaking queue.
+    pub fn cancel_queue(&self) -> SendResult {
+        self.send(NetMessage::CancelQueue)
+    }
+
+    /// Updates custom player avatar.
+    pub fn update_avatar(&self, avatar: KizunaAvatar) -> SendResult {
+        self.send(NetMessage::UpdateAvatar { avatar })
+    }
+
+    /// Enters a Kizuna Town (own town if `None`, or friend's town).
+    pub fn join_kizuna_town(&self, town_owner_id: Option<String>) -> SendResult {
+        self.send(NetMessage::JoinKizunaTown { town_owner_id })
+    }
+
+    /// Synchronizes avatar movement inside Kizuna Town.
+    pub fn send_town_move(&self, position: [f32; 3], velocity: [f32; 3], yaw: f32) -> SendResult {
+        self.send(NetMessage::TownMove { position, velocity, yaw })
+    }
+
+    /// Displays a stamp/emote in Kizuna Town.
+    pub fn send_town_emote(&self, stamp_id: u32) -> SendResult {
+        self.send(NetMessage::TownEmote { stamp_id })
+    }
+
+    /// Sends a chat message to all players visiting the current Kizuna Town.
+    pub fn send_town_chat(&self, message: &str) -> SendResult {
+        self.send(NetMessage::TownChat { message: message.to_string() })
+    }
+
+    /// Places a decoration/pitch object in own Kizuna Town.
+    pub fn place_town_object(&self, object: PlacedTownObject) -> SendResult {
+        self.send(NetMessage::TownPlaceObject { object })
+    }
+
+    /// Removes a placed object in own Kizuna Town.
+    pub fn remove_town_object(&self, instance_id: &str) -> SendResult {
+        self.send(NetMessage::TownRemoveObject { instance_id: instance_id.to_string() })
+    }
+
+    /// Places a recruited character in own Kizuna Town.
+    pub fn place_town_character(&self, character: PlacedTownCharacter) -> SendResult {
+        self.send(NetMessage::TownPlaceCharacter { character })
+    }
+
+    /// Removes a recruited character in own Kizuna Town.
+    pub fn remove_town_character(&self, instance_id: &str) -> SendResult {
+        self.send(NetMessage::TownRemoveCharacter { instance_id: instance_id.to_string() })
+    }
+
+    /// Challenges a visiting friend in Kizuna Town to a direct match.
+    pub fn challenge_town_player(&self, target_player_id: &str, mode: MatchMode) -> SendResult {
+        self.send(NetMessage::TownChallenge {
+            target_player_id: target_player_id.to_string(),
+            mode,
+        })
+    }
+
+    /// Responds to an incoming match challenge from another player in Kizuna Town.
+    pub fn respond_town_challenge(&self, from_player_id: &str, accept: bool) -> SendResult {
+        self.send(NetMessage::TownChallengeResponse {
+            from_player_id: from_player_id.to_string(),
+            accept,
+        })
+    }
+
+    /// Updates player's Ultimate Team squad summary in the persistent hub.
+    pub fn update_squad_summary(&self, squad: UtSquadSummary) -> SendResult {
+        self.send(NetMessage::UpdateSquadSummary { squad })
+    }
+
+    /// Requests to inspect another player's Ultimate Team squad in town.
+    pub fn inspect_player_squad(&self, target_player_id: &str) -> SendResult {
+        self.send(NetMessage::TownInspectSquad { target_player_id: target_player_id.to_string() })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::Duration;
+
+    #[test]
+    fn closed_sender_preserves_rejected_message() {
+        let (tx, outbound_rx) = mpsc::unbounded_channel();
+        drop(outbound_rx);
+        let (_inbound_tx, rx) = mpsc::unbounded_channel();
+        let client = NetClient { tx, rx, player_id: None };
+        let error = client.ping(73).expect_err("closed receiver");
+        assert!(matches!(error.0, NetMessage::Ping { seq: 73, .. }));
+    }
+
+    #[tokio::test]
+    async fn test_connect_with_timeout_fails_on_unreachable_server() {
+        let res = NetClient::connect_with_timeout(
+            "ws://127.0.0.1:49999",
+            "TestPlayer",
+            Duration::from_millis(150),
+        )
+        .await;
+        assert!(res.is_err());
+    }
+}

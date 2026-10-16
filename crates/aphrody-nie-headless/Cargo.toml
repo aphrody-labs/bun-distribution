@@ -1,0 +1,35 @@
+[package]
+name = "aphrody-nie-headless"
+description = "Runner CLI headless : détecte un format IEVR et affiche un résumé JSON sans moteur Windows"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "aphrody-nie-headless"
+path = "src/main.rs"
+required-features = ["host"]
+
+[features]
+default = ["host"]
+host = ["dep:clap", "dep:aphrody-nie-core", "dep:aphrody-nie-data"]
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-nie-formats = { workspace = true, default-features = true }
+aphrody-nie-data = { workspace = true, optional = true }
+aphrody-nie-core = { workspace = true, optional = true }
+clap = { workspace = true, optional = true, features = ["derive", "color", "env"] }
+anyhow = { version = "1" }
+serde = { version = "1", default-features = false, features = ["std", "derive"] }
+serde_json = { version = "1" }
+
+[dev-dependencies]
+assert_cmd.workspace = true
+tempfile = { version = "3" }
+serde_json = { version = "1" }

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rosegriffon.fr/schemas/vfs/live-save.schema.json",
+  "title": "LiveSaveContainerSchema",
+  "description": "Validation schema for decrypted Level-5 Lives save file headers and 0xEEFF blob payloads.",
+  "type": "object",
+  "required": ["magic", "saveVersion", "const2", "blobCount", "blobs"],
+  "properties": {
+    "magic": {
+      "type": "string",
+      "const": "0x9DCE66C3"
+    },
+    "saveVersion": {
+      "type": "integer"
+    },
+    "const2": {
+      "type": "string",
+      "const": "0x2EC3031F"
+    },
+    "blobCount": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "blobs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["blobIndex", "blobMagic", "size"],
+        "properties": {
+          "blobIndex": { "type": "integer" },
+          "blobMagic": { "type": "string", "const": "0xEEFF" },
+          "size": { "type": "integer", "minimum": 0 },
+          "description": { "type": "string" }
+        }
+      }
+    }
+  }
+}

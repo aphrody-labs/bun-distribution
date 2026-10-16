@@ -1,0 +1,293 @@
+use std::{
+    fs::{File, create_dir_all},
+    io::{BufWriter, Write},
+    path::{Path, PathBuf},
+};
+
+use anyhow::{Context, Result};
+use aphrody_dust_core::decomp::config::{
+    config::Config,
+    delinks::{DelinkFile, Delinks},
+    module::Module,
+    section::{Section, SectionKind},
+    symbol::{InstructionMode, Symbol, SymbolKind, SymbolMaps},
+};
+use aphrody_dust_core::rom::Rom;
+use clap::Args;
+
+use crate::{
+    analysis::functions::FunctionExt,
+    cmd::ModuleFilterArgs,
+    config::{
+        delinks::{DelinksMap, DelinksMapOptions},
+        symbol::{SymDataExt, SymbolLookup},
+    },
+    util::io::create_file,
+};
+
+/// Disassembles an extracted ROM.
+#[derive(Args)]
+pub struct Disassemble {
+    /// Path to config.yaml.
+    #[arg(long, short = 'c')]
+    pub config_path: PathBuf,
+
+    /// Assembly code output path.
+    #[arg(long, short = 'a')]
+    pub asm_path: PathBuf,
+
+    /// Disassemble with Unified Assembler Language (UAL) syntax.
+    #[arg(long, short = 'u')]
+    pub ual: bool,
+
+    #[command(flatten)]
+    pub module_filter: ModuleFilterArgs,
+}
+
+impl Disassemble {
+    pub fn run(&self) -> Result<()> {
+        let config = Config::from_file(&self.config_path)?;
+        let config_path = self.config_path.parent().unwrap();
+
+        let delinks_map = DelinksMap::from_config(
+            &config,
+            config_path,
+            DelinksMapOptions {
+                // Set to false because we want to disassemble migrated sections like .dtcm in the same
+                // file. Setting this to true actually creates two files, but one gets overwritten and
+                // deleted by the other.
+                migrate_sections: false,
+                generate_gap_files: true,
+            },
+        )?;
+
+        let rom = config.load_rom(config_path)?;
+
+        let mut symbol_maps = SymbolMaps::from_config(config_path, &config)?;
+        for delinks in delinks_map.iter() {
+            // DelinksMap always loads autoload modules, skip disassembling them if not specified
+            if self.module_filter.has(delinks.module_kind()) {
+                self.disassemble_module(&config, delinks, &mut symbol_maps, &rom)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn disassemble_module(
+        &self,
+        config: &Config,
+        delinks: &Delinks,
+        symbol_maps: &mut SymbolMaps,
+        rom: &Rom,
+    ) -> Result<()> {
+        let config_path = self.config_path.parent().unwrap();
+
+        let module = config.load_module(config_path, symbol_maps, delinks.module_kind(), rom)?;
+
+        for file in &delinks.files {
+            let (file_path, _) = file.split_file_ext();
+            let out_path = self.asm_path.join(file_path).with_extension("s");
+            self.create_assembly_file(&module, file, out_path, symbol_maps)?;
+        }
+
+        Ok(())
+    }
+
+    fn create_assembly_file<P: AsRef<Path>>(
+        &self,
+        module: &Module,
+        delink_file: &DelinkFile,
+        path: P,
+        symbol_maps: &SymbolMaps,
+    ) -> Result<()> {
+        let path = path.as_ref();
+
+        create_dir_all(path.parent().unwrap())?;
+        let asm_file = create_file(path)?;
+        let mut writer = BufWriter::new(asm_file);
+
+        self.disassemble(module, delink_file, &mut writer, symbol_maps)?;
+
+        Ok(())
+    }
+
+    fn disassemble(
+        &self,
+        module: &Module,
+        delink_file: &DelinkFile,
+        writer: &mut BufWriter<File>,
+        symbol_maps: &SymbolMaps,
+    ) -> Result<()> {
+        if self.ual {
+            writeln!(writer, "    .syntax unified")?;
+        }
+
+        writeln!(writer, "    .include \"macros/function.inc\"")?;
+        writeln!(writer)?;
+
+        let symbol_map = symbol_maps.get(module.kind()).unwrap();
+
+        for section in delink_file.sections.sorted_by_address() {
+            // write section directive
+            match section.name() {
+                ".text" => writeln!(writer, "    .text")?,
+                _ => writeln!(writer, "    .section {}, 4, 1, 4", section.name())?,
+            }
+
+            let code = section.code_from_module(module)?;
+            let mut offset = 0; // offset within section
+
+            let symbol_lookup = SymbolLookup {
+                module_kind: module.kind(),
+                symbol_map,
+                symbol_maps,
+                relocations: Some(module.relocations()),
+            };
+
+            let mut symbol_iter = symbol_map.iter_by_address(section.address_range()).peekable();
+            while let Some((_, symbol)) = symbol_iter.next() {
+                debug_assert!(
+                    symbol.addr >= section.start_address() && symbol.addr < section.end_address()
+                );
+                match &symbol.kind {
+                    SymbolKind::Function(sym_function) => {
+                        if section.kind() == SectionKind::Bss {
+                            log::error!(
+                                "Can't disassemble function at {:#010x} in {} because it's in uninitialized section {}",
+                                symbol.addr,
+                                module.kind(),
+                                section.name()
+                            );
+                            continue;
+                        }
+
+                        let code = code.with_context(|| {
+                            format!(
+                                "No code to dump for function at {:#010x} in {}",
+                                symbol.addr,
+                                module.kind()
+                            )
+                        })?;
+                        if sym_function.unknown {
+                            let function_offset = symbol.addr - section.start_address();
+                            if offset < function_offset {
+                                Self::dump_bytes(code, offset, function_offset, writer)?;
+                                writeln!(writer)?;
+                                offset = function_offset;
+                            }
+
+                            writeln!(writer, "    .global {}", symbol.name)?;
+                            match sym_function.mode {
+                                InstructionMode::Arm => {
+                                    writeln!(writer, "    arm_func_start {}", symbol.name)?
+                                },
+                                InstructionMode::Thumb => {
+                                    writeln!(writer, "    thumb_func_start {}", symbol.name)?
+                                },
+                            }
+                            writeln!(writer, "{}: ; {:#010x}", symbol.name, symbol.addr)?;
+                        } else {
+                            let function = module.get_function(symbol.addr).with_context(|| format!(
+                                "Tried to disassemble function symbol '{}' at {:#010x} but the function was not found in the module",
+                                symbol.name,
+                                symbol.addr,
+                            ))?;
+
+                            let function_offset =
+                                function.start_address() - section.start_address();
+                            if offset < function_offset {
+                                Self::dump_bytes(code, offset, function_offset, writer)?;
+                                writeln!(writer)?;
+                            }
+
+                            function.write_assembly(
+                                writer,
+                                &symbol_lookup,
+                                module.code(),
+                                module.base_address(),
+                                self.ual,
+                            )?;
+                            offset = function.end_address() - section.start_address();
+                        }
+                    },
+                    SymbolKind::Data(data) => {
+                        let start = (symbol.addr - section.start_address()) as usize;
+
+                        let size = data.size().unwrap_or_else(|| {
+                            Self::size_to_next_symbol(
+                                section,
+                                symbol,
+                                symbol_iter.peek().map(|(_, s)| s),
+                            )
+                        });
+
+                        let end = start + size as usize;
+                        let bytes = &code.unwrap()[start..end];
+                        write!(writer, "{}:", symbol.name)?;
+
+                        if symbol.ambiguous {
+                            write!(writer, " ; ambiguous")?;
+                        }
+                        writeln!(writer)?;
+
+                        data.write_assembly(writer, symbol, bytes, &symbol_lookup)?;
+                        offset = end as u32;
+                    },
+                    SymbolKind::Bss(bss) => {
+                        let size = bss.size.unwrap_or_else(|| {
+                            Self::size_to_next_symbol(
+                                section,
+                                symbol,
+                                symbol_iter.peek().map(|(_, s)| s),
+                            )
+                        });
+                        writeln!(writer, "{}: .space {:#x}", symbol.name, size)?;
+                        offset += size;
+                    },
+                    _ => {},
+                }
+            }
+
+            let end_offset = section.end_address() - section.start_address();
+            if offset < end_offset {
+                if let Some(code) = code {
+                    Self::dump_bytes(code, offset, end_offset, writer)?;
+                    writeln!(writer)?;
+                } else {
+                    writeln!(writer, "    .space {:#x}", end_offset - offset)?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn size_to_next_symbol(section: &Section, symbol: &Symbol, next: Option<&&Symbol>) -> u32 {
+        if let Some(next_symbol) = next {
+            next_symbol.addr.min(section.end_address()) - symbol.addr
+        } else {
+            section.end_address() - symbol.addr
+        }
+    }
+
+    fn dump_bytes(
+        code: &[u8],
+        mut offset: u32,
+        end_offset: u32,
+        writer: &mut BufWriter<File>,
+    ) -> Result<()> {
+        while offset < end_offset {
+            write!(writer, "    .byte ")?;
+            for i in 0..16.min(end_offset - offset) {
+                if i != 0 {
+                    write!(writer, ", ")?;
+                }
+                write!(writer, "0x{:02x}", code[offset as usize])?;
+                offset += 1;
+            }
+            writeln!(writer)?;
+        }
+        Ok(())
+    }
+}

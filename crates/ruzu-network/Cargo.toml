@@ -1,0 +1,11 @@
+[package]
+name = "network"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+common.workspace = true
+log = { version = "0.4.28", default-features = false }
+parking_lot.workspace = true
+rusty_enet = "0.4"
+web_service.workspace = true

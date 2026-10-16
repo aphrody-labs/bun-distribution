@@ -1,0 +1,237 @@
+{
+  "name": "@rosegriffon/inagle",
+  "version": "1.4.4",
+  "private": false,
+  "description": "Universal Game Data API for Inazuma Eleven: Victory Road — parsers, types, and tools for IEVR game data",
+  "keywords": [
+    "cfg-bin",
+    "game-data",
+    "iecode",
+    "ievr",
+    "inazuma-eleven",
+    "parser",
+    "victory-road",
+    "zukan"
+  ],
+  "homepage": "https://azalee.rosegriffon.fr",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/bun-os.git",
+    "directory": "packages/inagle"
+  },
+  "bin": {
+    "inagle": "./src/cli.ts"
+  },
+  "files": [
+    ".bun-tag-43c4d670f029ab89",
+    ".bun-tag-9a11b90f58fca0c8",
+    "LICENSE",
+    "data",
+    "docs",
+    "scripts",
+    "src",
+    "supabase",
+    "tests",
+    "tsconfig.build.json",
+    "tsconfig.json",
+    "types"
+  ],
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./cli": {
+      "types": "./src/cli/index.ts",
+      "import": "./src/cli/index.ts",
+      "default": "./src/cli/index.ts"
+    },
+    "./api": {
+      "types": "./src/api/index.ts",
+      "import": "./src/api/index.ts",
+      "default": "./src/api/index.ts"
+    },
+    "./types": {
+      "types": "./src/types/index.ts",
+      "import": "./src/types/index.ts",
+      "default": "./src/types/index.ts"
+    },
+    "./ffi": {
+      "types": "./src/ffi/index.ts",
+      "import": "./src/ffi/index.ts",
+      "default": "./src/ffi/index.ts"
+    },
+    "./steam": {
+      "types": "./src/steam/index.ts",
+      "import": "./src/steam/index.ts",
+      "default": "./src/steam/index.ts"
+    },
+    "./core": {
+      "types": "./src/core/index.ts",
+      "import": "./src/core/index.ts",
+      "default": "./src/core/index.ts"
+    },
+    "./db": {
+      "types": "./src/db/index.ts",
+      "import": "./src/db/index.ts",
+      "default": "./src/db/index.ts"
+    },
+    "./ui": {
+      "types": "./src/ui/index.ts",
+      "import": "./src/ui/index.ts",
+      "default": "./src/ui/index.ts"
+    },
+    "./dotnet": {
+      "types": "./src/dotnet/index.ts",
+      "import": "./src/dotnet/index.ts",
+      "default": "./src/dotnet/index.ts"
+    },
+    "./docs": {
+      "types": "./src/docs/index.ts",
+      "import": "./src/docs/index.ts",
+      "default": "./src/docs/index.ts"
+    },
+    "./docs/*": {
+      "types": "./src/docs/*.ts",
+      "import": "./src/docs/*.ts",
+      "default": "./src/docs/*.ts"
+    },
+    "./formats": {
+      "types": "./src/formats/index.ts",
+      "import": "./src/formats/index.ts",
+      "default": "./src/formats/index.ts"
+    },
+    "./formats/*": {
+      "types": "./src/formats/*.ts",
+      "import": "./src/formats/*.ts",
+      "default": "./src/formats/*.ts"
+    },
+    "./game": {
+      "types": "./src/game/index.ts",
+      "import": "./src/game/index.ts",
+      "default": "./src/game/index.ts"
+    },
+    "./game/*": {
+      "types": "./src/game/*.ts",
+      "import": "./src/game/*.ts",
+      "default": "./src/game/*.ts"
+    },
+    "./cpk": {
+      "types": "./src/cpk/index.ts",
+      "import": "./src/cpk/index.ts",
+      "default": "./src/cpk/index.ts"
+    },
+    "./cpk/*": {
+      "types": "./src/cpk/*.ts",
+      "import": "./src/cpk/*.ts",
+      "default": "./src/cpk/*.ts"
+    },
+    "./text": {
+      "types": "./src/text/index.ts",
+      "import": "./src/text/index.ts",
+      "default": "./src/text/index.ts"
+    },
+    "./text/*": {
+      "types": "./src/text/*.ts",
+      "import": "./src/text/*.ts",
+      "default": "./src/text/*.ts"
+    },
+    "./game-text": {
+      "types": "./src/game-text/index.ts",
+      "import": "./src/game-text/index.ts",
+      "default": "./src/game-text/index.ts"
+    },
+    "./game-text/*": {
+      "types": "./src/game-text/*.ts",
+      "import": "./src/game-text/*.ts",
+      "default": "./src/game-text/*.ts"
+    },
+    "./wiki": {
+      "types": "./src/wiki/index.ts",
+      "import": "./src/wiki/index.ts",
+      "default": "./src/wiki/index.ts"
+    },
+    "./wiki/*": {
+      "types": "./src/wiki/*.ts",
+      "import": "./src/wiki/*.ts",
+      "default": "./src/wiki/*.ts"
+    },
+    "./asset-manifest": {
+      "types": "./src/data/asset-manifest.generated.ts",
+      "import": "./src/data/asset-manifest.generated.ts",
+      "default": "./src/data/asset-manifest.generated.ts"
+    },
+    "./*": {
+      "types": "./src/*.ts",
+      "import": "./src/*.ts",
+      "default": "./src/*.ts"
+    },
+    "./zukan/catalog": "./src/zukan/catalog.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "build": "bun check -p tsconfig.build.json",
+    "cli": "bun src/cli.ts",
+    "push": "bun src/cli.ts push",
+    "import:cfgbin:postgres": "bun scripts/import-cfgbin-postgres.ts",
+    "import:passives:postgres": "bun scripts/import-passives-postgres.ts",
+    "import:passive-sheets:postgres": "bun scripts/import-passive-sheets-postgres.ts",
+    "import:formations:postgres": "bun scripts/import-formations-postgres.ts",
+    "import:skill-cutins:postgres": "bun scripts/import-skill-cutins-postgres.ts",
+    "import:asset-manifests:postgres": "bun scripts/import-asset-manifests-postgres.ts",
+    "import:cross-catalog:postgres": "bun scripts/import-cross-catalog-postgres.ts",
+    "import:cpk-index:postgres": "bun scripts/import-cpk-index-postgres.ts",
+    "import:game-text:postgres": "bun scripts/import-game-text-postgres.ts",
+    "prepublishOnly": "bun run build",
+    "test": "bun test",
+    "lint": "bun lint -A style -A pedantic -A restriction src",
+    "lint:fix": "bun lint -A style -A pedantic -A restriction --fix src",
+    "type-check": "bun check -p tsconfig.json --noEmit",
+    "typecheck": "bun check -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@aphrody/runtime-sdk": "catalog:",
+    "@leeoniya/ufuzzy": "catalog:",
+    "@rosegriffon/assets": "workspace:*",
+    "@rosegriffon/db": "workspace:*",
+    "cheerio": "catalog:",
+    "commander": "catalog:",
+    "dotenv": "catalog:",
+    "drizzle-orm": "catalog:",
+    "kuroshiro": "catalog:",
+    "kuroshiro-analyzer-kuromoji": "catalog:",
+    "picocolors": "catalog:",
+    "sharp": "catalog:",
+    "wanakana": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@types/node": "catalog:",
+    "@types/pg": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "@aphrody/agent-browser": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "@aphrody/agent-browser": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  },
+  "trustedDependencies": [
+    "esbuild"
+  ]
+}

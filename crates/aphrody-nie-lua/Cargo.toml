@@ -1,0 +1,47 @@
+[package]
+name = "aphrody-nie-lua"
+description = "VM Lua 5.2 réelle (mlua, PUC-Rio 5.2.4 vendored) — exécute les vrais scripts .lua.bin du jeu (logique de menus/scènes). Cœur de la boucle moteur."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# VM Lua 5.2 = celle exacte du moteur Level-5 « Lives » (PUC-Rio 5.2.4 vendored).
+# Charge directement le bytecode .lua.bin du jeu (mlua, MIT).
+mlua = { workspace = true, optional = true, features = ["lua52", "vendored"] }
+thiserror = { version = "2" }
+
+# Sérialisation des types de `bytecode` : un chunk décodé doit pouvoir sortir en
+# JSON (`nie decode` sur un `.lua.bin`), pas seulement en désassemblage texte.
+serde = { version = "1", default-features = false, features = ["std", "derive"] }
+
+# Analyse statique des sources Lua décompilées : AST concret, sans exécuter le code.
+# `tree-sitter-lua` 0.5 n'expose que `LanguageFn` (via `tree-sitter-language`) et se
+# valide contre `tree-sitter` 0.26 — les deux versions doivent rester alignées, un
+# écart d'ABI de grammaire se manifeste par un `set_language` qui échoue à l'exécution.
+# Optionnelles (feature `analysis`) : ce sont les seules dépendances C hors mlua, et
+# `aphrody-nie-formats` ne veut que le décodeur de bytecode, pur Rust.
+tree-sitter = { workspace = true, optional = true }
+tree-sitter-lua = { workspace = true, optional = true }
+
+[dev-dependencies]
+aphrody-nie-formats = { workspace = true, default-features = true }
+# Le relevé `menu_host_gap` a besoin de la liste des calques d'un écran, que `menu_setting`
+# décode. La prendre plutôt que la relire à la main : une seconde lecture du même fichier
+# dériverait de celle que le site et le navigateur emploient.
+aphrody-nie-data.workspace = true
+
+[features]
+# La VM (mlua, Lua 5.2 vendored en C) — activée par défaut : tous les consommateurs actuels
+# l'attendent. Sans elle, seuls `bytecode` et `static_analysis` restent, purs Rust : c'est ce
+# qui permet de compiler le décodeur de bytecode pour wasm32, où Lua en C ne se construit pas.
+default = ["vm", "analysis"]
+vm = ["dep:mlua"]
+# Analyse statique des sources Lua (module `static_analysis`) — tire tree-sitter (C).
+analysis = ["dep:tree-sitter", "dep:tree-sitter-lua"]

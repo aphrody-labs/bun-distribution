@@ -1,0 +1,1633 @@
+use std::{
+    backtrace::Backtrace,
+    borrow::Cow,
+    collections::{BTreeMap, BTreeSet},
+    fmt::{Display, Formatter},
+};
+
+use crate::crypto::dsprot;
+use snafu::Snafu;
+use unarm::{
+    AddrLdrStr, BlxTarget, Cond, DefUseArgument, Ins, LdmStmMode, LdrStrOffset, Op2, Op2Imm,
+    ParseEndian, ParseMode, Parser, Reg, RegList, ShiftImm, ShiftOp, ShiftReg, parse_thumb,
+};
+
+use super::{
+    function_branch::FunctionBranchState,
+    function_start::is_valid_function_start,
+    illegal_code::IllegalCodeState,
+    inline_table::{InlineTable, InlineTableState},
+    jump_table::{JumpTable, JumpTableState},
+    secure_area::SecureAreaState,
+};
+use crate::{
+    decomp::analysis::illegal_code::ILLEGAL_CODE_PATTERNS,
+    decomp::config::symbol::{SymbolMap, SymbolMapError},
+    decomp::util::bytes::FromSlice,
+};
+
+// All keys in the types below are instruction addresses
+pub type Labels = BTreeSet<u32>;
+pub type PoolConstants = BTreeMap<u32, PoolConstant>;
+pub type JumpTables = BTreeMap<u32, JumpTable>;
+pub type InlineTables = BTreeMap<u32, InlineTable>;
+pub type FunctionCalls = BTreeMap<u32, CalledFunction>;
+pub type DataLoads = BTreeMap<u32, u32>;
+
+#[derive(Debug, Clone)]
+pub struct Function {
+    name: String,
+    start_address: u32,
+    end_address: u32,
+    first_instruction_address: u32,
+    /// End of code, start of constant pool.
+    last_instruction_address: u32,
+    thumb: bool,
+    labels: Labels,
+    pool_constants: PoolConstants,
+    jump_tables: JumpTables,
+    inline_tables: InlineTables,
+    function_calls: FunctionCalls,
+    dsprot_encryption: dsprot::EncryptionType,
+    dsprot_encrypted_ranges: Vec<dsprot::EncryptedRange>,
+}
+
+#[derive(Debug, Snafu)]
+pub enum FunctionAnalysisError {
+    #[snafu(transparent)]
+    IntoFunction { source: IntoFunctionError },
+    #[snafu(transparent)]
+    SymbolMap { source: SymbolMapError },
+    #[snafu(display(
+        "Cannot parse function at {function_address:#010x} because it is out of bounds {min_address:#010x}..{max_address:#010x}"
+    ))]
+    FunctionOutOfBounds { function_address: u32, min_address: u32, max_address: u32 },
+}
+
+pub const UNARM_OPTIONS: unarm::Options = unarm::Options {
+    version: unarm::Version::V5Te,
+    extensions: unarm::Extensions::none(),
+    av: false,
+    r9_use: unarm::R9Use::R9,
+    sl: false,
+    fp: false,
+    ip: true,
+    ual: true,
+};
+
+impl Function {
+    pub fn size(&self) -> u32 {
+        self.end_address - self.first_instruction_address
+    }
+
+    fn is_thumb_function(address: u32, code: &[u8]) -> bool {
+        if (address & 3) != 0 {
+            // Not 4-aligned, must be Thumb
+            true
+        } else if code.len() < 4 {
+            // Can't contain a full ARM instruction
+            true
+        } else if code[3] & 0xf0 == 0xe0 {
+            // First instruction has the AL condition code, must be ARM
+            false
+        } else {
+            // Thumb otherwise
+            true
+        }
+    }
+
+    #[allow(clippy::match_like_matches_macro)]
+    fn is_entry_instruction(ins: &Ins) -> bool {
+        if ins.is_conditional() {
+            return false;
+        }
+
+        match ins {
+            Ins::Push { cond: _, regs } if regs.contains(Reg::Lr) => true,
+            _ => false,
+        }
+    }
+
+    fn is_branch(ins: &Ins) -> Option<u32> {
+        if let Ins::B { cond: _, target } = ins { Some(target.addr) } else { None }
+    }
+
+    fn is_pool_load(ins: &Ins, address: u32, thumb: bool) -> Option<(u32, Reg)> {
+        if let Ins::Ldr {
+            cond: _,
+            rd,
+            addr: AddrLdrStr::Pre { rn: Reg::Pc, offset: LdrStrOffset::Imm(offset), writeback: _ },
+        } = ins
+            && *rd != Reg::Pc
+        {
+            // ldr *, [pc + *]
+            let load_address = (address as i32 + offset) as u32 & !3;
+            let load_address = load_address + if thumb { 4 } else { 8 };
+            Some((load_address, *rd))
+        } else {
+            None
+        }
+    }
+
+    fn is_function_call(ins: &Ins, ins_code: u32, thumb: bool) -> Option<CalledFunction> {
+        match ins {
+            Ins::Bl { cond: _, target } => {
+                Some(CalledFunction { ins: ins.clone(), ins_code, address: target.addr, thumb })
+            },
+            Ins::Blx { cond: _, target: BlxTarget::Direct(target) } => Some(CalledFunction {
+                ins: ins.clone(),
+                ins_code,
+                address: target.addr,
+                thumb: !thumb,
+            }),
+            _ => None,
+        }
+    }
+
+    /// Builds a function consisting of a single unconditional branch to the start of another
+    /// function. Returns [`None`] if not applicable.
+    fn as_trampoline(
+        options: &FunctionParseOptions,
+        mode: ParseMode,
+        found_functions: &BTreeMap<u32, Function>,
+    ) -> Option<Function> {
+        let start_address = options.start_address;
+        let offset = start_address.checked_sub(options.base_address)? as usize;
+        let code = options.module_code.get(offset..)?;
+        let mut parser = Parser::new(code, mode, ParseEndian::Little, UNARM_OPTIONS.clone());
+        parser.set_pc(start_address);
+        let address = parser.pc();
+        let ins = parser.next()?;
+        if ins.is_conditional() {
+            return None;
+        }
+        let destination = Self::is_branch(&ins)?;
+        if destination < options.module_start_address || destination >= options.module_end_address {
+            return None;
+        }
+        let inside_known_function = found_functions
+            .range(..destination)
+            .next_back()
+            .is_some_and(|(_, function)| destination < function.end_address());
+        if inside_known_function {
+            // Not a trampoline, it branches to the middle of another function
+            return None;
+        }
+
+        let thumb = mode == ParseMode::Thumb;
+        let valid_destination = Function::parse_function(FunctionParseOptions {
+            name: "trampoline_destination".to_string(),
+            start_address: destination,
+            base_address: options.base_address,
+            module_code: options.module_code,
+            known_end_address: None,
+            module_start_address: options.module_start_address,
+            module_end_address: options.module_end_address,
+            existing_functions: None,
+            dsprot_encrypted_ranges: &[],
+            check_defs_uses: true,
+            parse_options: ParseFunctionOptions { thumb: Some(thumb) },
+        })
+        .is_ok();
+        if !valid_destination {
+            // Fake branch, not valid code at branch destination
+            return None;
+        }
+
+        let ins_code = {
+            let ins_size = parser.pc() - address;
+            match ins_size {
+                2 => u16::from_le_slice(code) as u32,
+                4 => u32::from_le_slice(code),
+                _ => 0,
+            }
+        };
+
+        let end_address = start_address + instruction_size(mode);
+        let mut function_calls = FunctionCalls::new();
+        function_calls
+            .insert(address, CalledFunction { ins, ins_code, address: destination, thumb });
+        Some(Function {
+            name: options.name.clone(),
+            start_address,
+            end_address: options.known_end_address.unwrap_or(end_address),
+            first_instruction_address: start_address,
+            last_instruction_address: end_address,
+            thumb,
+            labels: Labels::new(),
+            pool_constants: PoolConstants::new(),
+            jump_tables: JumpTables::new(),
+            inline_tables: InlineTables::new(),
+            function_calls,
+            dsprot_encryption: dsprot::EncryptionType::None,
+            dsprot_encrypted_ranges: Vec::new(),
+        })
+    }
+
+    fn function_parser_loop(
+        parser: Parser<'_>,
+        options: FunctionParseOptions,
+        found_functions: &BTreeMap<u32, Function>,
+    ) -> Result<Function, FunctionAnalysisError> {
+        let mode = parser.mode();
+        match Self::function_parser_loop_inner(parser, &options, found_functions) {
+            Ok(function) => Ok(function),
+            Err(error) => {
+                // Trampolines have no return instruction and is usually followed by data, leading
+                // to this error. We only check for trampolines here as regular functions can start
+                // with `b <label>` but should not trigger analysis errors.
+                if let Some(trampoline) = Self::as_trampoline(&options, mode, found_functions) {
+                    Ok(trampoline)
+                } else {
+                    Err(error)
+                }
+            },
+        }
+    }
+
+    fn function_parser_loop_inner(
+        mut parser: Parser<'_>,
+        options: &FunctionParseOptions,
+        found_functions: &BTreeMap<u32, Function>,
+    ) -> Result<Function, FunctionAnalysisError> {
+        let thumb = parser.mode() == ParseMode::Thumb;
+        let mut context = ParseFunctionContext::new(thumb, options, found_functions);
+
+        let address = parser.pc();
+        let Some(ins) = parser.next() else {
+            return Err(FunctionAnalysisError::IntoFunction {
+                source: NoEpilogueSnafu.build().into(),
+            });
+        };
+        let ins_size = parser.pc() - address;
+        if !is_valid_function_start(&ins, thumb) {
+            return Err(FunctionAnalysisError::IntoFunction {
+                source: InvalidStartSnafu { address, ins }.build().into(),
+            });
+        }
+
+        let state = context.handle_ins(&mut parser, address, ins, ins_size);
+        let mut function = if state.ended() {
+            return Ok(context.into_function(state)?);
+        } else {
+            loop {
+                let address = parser.pc();
+                let Some(ins) = parser.next() else {
+                    break context.into_function(ParseFunctionState::Done)?;
+                };
+                let ins_size = parser.pc() - address;
+                let state = context.handle_ins(&mut parser, address, ins, ins_size);
+                if state.ended() {
+                    break context.into_function(state)?;
+                }
+            }
+        };
+
+        if let Some((first_pool_address, _)) = function.pool_constants.first_key_value()
+            && *first_pool_address < function.start_address
+        {
+            log::info!(
+                "Function at {:#010x} was adjusted to include pre-code constant pool at {:#010x}",
+                function.start_address,
+                first_pool_address
+            );
+
+            function.first_instruction_address = function.start_address;
+            function.start_address = *first_pool_address;
+        }
+
+        Ok(function)
+    }
+
+    pub fn parse_function(
+        options: FunctionParseOptions,
+    ) -> Result<Function, FunctionAnalysisError> {
+        let FunctionParseOptions {
+            start_address, base_address, module_code, parse_options, ..
+        } = &options;
+
+        let start = (start_address - base_address) as usize;
+        let function_code = module_code.get(start..).ok_or_else(|| {
+            FunctionOutOfBoundsSnafu {
+                function_address: *start_address,
+                min_address: *base_address,
+                max_address: base_address + module_code.len() as u32,
+            }
+            .build()
+        })?;
+        let thumb = parse_options
+            .thumb
+            .unwrap_or(Function::is_thumb_function(*start_address, function_code));
+        let parse_mode = if thumb { ParseMode::Thumb } else { ParseMode::Arm };
+        let mut parser =
+            Parser::new(function_code, parse_mode, ParseEndian::Little, UNARM_OPTIONS.clone());
+        parser.set_pc(*start_address);
+
+        Self::function_parser_loop(parser, options, &BTreeMap::new())
+    }
+
+    pub fn find_functions(
+        options: FindFunctionsOptions,
+    ) -> Result<BTreeMap<u32, Function>, FunctionAnalysisError> {
+        let FindFunctionsOptions {
+            default_name_prefix,
+            base_address,
+            module_code,
+            symbol_map,
+            module_start_address,
+            module_end_address,
+            search_options,
+        } = options;
+
+        let mut functions = BTreeMap::new();
+
+        let start_address = search_options.start_address.unwrap_or(base_address);
+        assert_eq!((start_address & 1), 0);
+        let start_offset = start_address - base_address;
+        let end_address =
+            search_options.end_address.unwrap_or(base_address + module_code.len() as u32);
+        let end_offset = end_address - base_address;
+        let module_code = &module_code[..end_offset as usize];
+        let mut function_code = &module_code[start_offset as usize..end_offset as usize];
+
+        log::debug!(
+            "Searching for functions from {start_address:#010x} to {end_address:#010x}"
+        );
+
+        // Upper bound for function search
+        let last_function_address = search_options.last_function_address.unwrap_or(end_address);
+        let mut upper_bounds = BTreeSet::new();
+
+        // Used to limit how far to search for valid function starts, see `max_function_start_search_distance`
+        let mut prev_valid_address = start_address;
+        let mut address = start_address;
+
+        while !function_code.is_empty()
+            && address <= *upper_bounds.first().unwrap_or(&last_function_address)
+        {
+            if let Some(function_addresses) = &search_options.function_addresses {
+                if let Some(&next_address) = function_addresses.range(address..).next() {
+                    address = next_address;
+                    function_code = &module_code[(address - base_address) as usize..];
+                } else {
+                    break;
+                }
+            }
+
+            for illegal_pattern in ILLEGAL_CODE_PATTERNS {
+                if function_code.starts_with(illegal_pattern) {
+                    address += illegal_pattern.len() as u32;
+                    function_code = &module_code[(address - base_address) as usize..];
+                    continue;
+                }
+            }
+
+            // Skip if more than 8 consecutive valid pointer values, as that is most certainly not
+            // valid code at that point
+            let mut function_code_iter = function_code;
+            let mut pointer_count = 0;
+            while function_code_iter.len() > 4 {
+                let word: u32 = u32::from_le_slice(function_code_iter);
+                function_code_iter = &function_code_iter[4..];
+                if (0x01ff8000..0x02400000).contains(&word) || word == 0 {
+                    pointer_count += 1;
+                } else {
+                    break;
+                }
+            }
+            if pointer_count >= 8 {
+                address += pointer_count * 4;
+                function_code = &module_code[(address - base_address) as usize..];
+                continue;
+            }
+
+            let thumb = Function::is_thumb_function(address, function_code);
+
+            let parse_mode = if thumb { ParseMode::Thumb } else { ParseMode::Arm };
+            let mut parser =
+                Parser::new(function_code, parse_mode, ParseEndian::Little, UNARM_OPTIONS.clone());
+            parser.set_pc(address);
+
+            let (name, new) = if let Some((_, symbol)) = symbol_map.by_address(address)? {
+                (symbol.name.clone(), false)
+            } else {
+                (format!("{default_name_prefix}{address:08x}"), true)
+            };
+
+            let overriden_size =
+                search_options.overriden_function_sizes.and_then(|sizes| sizes.get(&address));
+
+            let start_address = address;
+            let function_result = Function::function_parser_loop(
+                parser,
+                FunctionParseOptions {
+                    name,
+                    start_address,
+                    base_address,
+                    module_code,
+                    known_end_address: None,
+                    module_start_address,
+                    module_end_address,
+                    existing_functions: search_options.existing_functions,
+                    dsprot_encrypted_ranges: search_options.dsprot_encrypted_ranges,
+                    // Some DS Protect function's sizes are overriden, and there are instances of
+                    // "illegal" register usage  in DS Protect functions (obfuscated code)
+                    check_defs_uses: search_options.check_defs_uses && overriden_size.is_none(),
+                    parse_options: Default::default(),
+                },
+                &functions,
+            );
+            let mut function = match function_result {
+                Ok(function) => function,
+                Err(FunctionAnalysisError::IntoFunction {
+                    source: IntoFunctionError::ParseFunction { source },
+                }) if search_options.function_addresses.is_some() => {
+                    // Skip to next candidate function instead of terminating search.
+                    log::debug!(
+                        "Skipping function candidate at {address:#010x} that failed to parse: {source}"
+                    );
+                    address += instruction_size(parse_mode);
+                    function_code = &module_code[(address - base_address) as usize..];
+                    continue;
+                },
+                Err(FunctionAnalysisError::IntoFunction {
+                    source: IntoFunctionError::ParseFunction { source },
+                }) => {
+                    match source {
+                        ParseFunctionError::IllegalIns {
+                            address: illegal_address,
+                            ins,
+                            reason,
+                        } => {
+                            let search_limit = prev_valid_address
+                                .saturating_add(search_options.max_function_start_search_distance);
+                            let limit_reached = address >= search_limit;
+
+                            if limit_reached {
+                                if thumb {
+                                    log::debug!(
+                                        "Terminating function analysis due to illegal instruction at {:#010x} starting from {:#010x}: {} ({})",
+                                        illegal_address,
+                                        start_address,
+                                        ins.display(&UNARM_OPTIONS),
+                                        reason,
+                                    );
+                                } else {
+                                    log::debug!(
+                                        "Terminating function analysis due to illegal instruction at {:#010x} starting from {:#010x}: {} ({})",
+                                        illegal_address,
+                                        start_address,
+                                        ins.display(&UNARM_OPTIONS),
+                                        reason,
+                                    );
+                                }
+                                break;
+                            }
+                            // It's possible that we've attempted to analyze pool constants as code, which can happen if the
+                            // function has a constant pool ahead of its code.
+                            address = (address + 1).next_multiple_of(4);
+                            function_code = &module_code[(address - base_address) as usize..];
+                            continue;
+                        },
+                        ParseFunctionError::NoEpilogue => {
+                            log::debug!(
+                                "Terminating function analysis due to no epilogue in function starting from {address:#010x}"
+                            );
+                            break;
+                        },
+                        ParseFunctionError::InvalidStart { address: start_address, ins } => {
+                            let search_limit = prev_valid_address
+                                .saturating_add(search_options.max_function_start_search_distance);
+                            let limit_reached = address >= search_limit;
+
+                            if limit_reached {
+                                log::debug!(
+                                    "Terminating function analysis due to invalid function start at {start_address:#010x}: {ins}"
+                                );
+                                break;
+                            } else {
+                                let ins_size = instruction_size(parse_mode) as usize;
+                                address += ins_size as u32;
+                                function_code = &function_code[ins_size..];
+                                continue;
+                            }
+                        },
+                    }
+                },
+                Err(e) => return Err(e),
+            };
+            // A function was found
+
+            // Override function size
+            if let Some(overriden_size) = overriden_size {
+                function.end_address = function.start_address + overriden_size;
+            }
+
+            // Assign DS Protect encryption type
+            if let Some(encryption) = search_options
+                .dsprot_encrypted_functions
+                .and_then(|funcs| funcs.get(&function.start_address))
+            {
+                function.dsprot_encryption = *encryption;
+            }
+
+            // Find encrypted ranges contained by this function
+            for range in search_options.dsprot_encrypted_ranges {
+                if range.start_address >= function.start_address
+                    && range.end_address < function.end_address
+                {
+                    function.dsprot_encrypted_ranges.push(range.clone());
+                }
+            }
+
+            if new {
+                symbol_map.add_function(&function);
+            }
+            function.add_local_symbols_to_map(symbol_map)?;
+
+            address = function.end_address.next_multiple_of(4); // align by 4 in case of Thumb function ending on 2-byte boundary
+            prev_valid_address = function.end_address;
+            function_code = &module_code[(address - base_address) as usize..];
+
+            // Invalidate upper bounds if they are inside the function
+            let invalid_upper_bounds: Vec<u32> =
+                upper_bounds.range(..=function.end_address).copied().collect();
+            for invalid_upper_bound in invalid_upper_bounds {
+                upper_bounds.remove(&invalid_upper_bound);
+                log::debug!(
+                    "Invalidating upper bound {:#010x} inside function {:#010x}",
+                    invalid_upper_bound,
+                    function.start_address
+                );
+            }
+
+            // Look for pointers to data in this module, to use as an upper bound for finding functions
+            if search_options.use_data_as_upper_bound {
+                for pool_constant in function.iter_pool_constants() {
+                    let pointer_value = pool_constant.value & !1;
+                    if upper_bounds.contains(&pointer_value) {
+                        continue;
+                    }
+                    if pointer_value < address {
+                        continue;
+                    }
+
+                    match &pool_constant.usage {
+                        // Not data, skip
+                        PoolConstantUsage::Call => continue,
+                        // Maybe data, run basic check for whether it is code
+                        PoolConstantUsage::Other => {
+                            let offset = (pointer_value - base_address) as usize;
+                            if offset >= module_code.len() {
+                                continue;
+                            }
+
+                            let thumb =
+                                Function::is_thumb_function(pointer_value, &module_code[offset..]);
+                            let mut parser = Parser::new(
+                                &module_code[offset..],
+                                if thumb { ParseMode::Thumb } else { ParseMode::Arm },
+                                ParseEndian::Little,
+                                UNARM_OPTIONS.clone(),
+                            );
+                            parser.set_pc(pointer_value);
+                            let ins = parser.next().unwrap();
+                            if is_valid_function_start(&ins, thumb) {
+                                continue;
+                            }
+                        },
+                    }
+
+                    // The pool constant points to data, limit the upper bound
+                    upper_bounds.insert(pointer_value);
+                    log::debug!(
+                        "Upper bound found: address to data at {:#010x} from pool constant at {:#010x} from function {}",
+                        pool_constant.value,
+                        pool_constant.address,
+                        function.name
+                    );
+                }
+            }
+
+            functions.insert(function.first_instruction_address, function);
+        }
+        Ok(functions)
+    }
+
+    pub fn add_local_symbols_to_map(
+        &self,
+        symbol_map: &mut SymbolMap,
+    ) -> Result<(), SymbolMapError> {
+        for address in &self.labels {
+            symbol_map.add_label(*address, self.thumb)?;
+        }
+        for address in self.pool_constants.keys() {
+            symbol_map.add_pool_constant(*address)?;
+        }
+        for jump_table in self.jump_tables() {
+            symbol_map.add_jump_table(jump_table)?;
+        }
+        for inline_table in self.inline_tables().values() {
+            symbol_map.add_skip_data(None, inline_table.address, (*inline_table).into())?;
+        }
+        Ok(())
+    }
+
+    pub fn find_secure_area_functions(
+        module_code: &[u8],
+        base_addr: u32,
+        symbol_map: &mut SymbolMap,
+    ) -> BTreeMap<u32, Function> {
+        let mut functions = BTreeMap::new();
+
+        let mut address = base_addr;
+        let mut state = SecureAreaState::default();
+        for ins_code in module_code.as_chunks::<2>().0 {
+            let ins_code = u16::from_le_slice(ins_code);
+            let (ins, _) = parse_thumb(ins_code as u32, address, &UNARM_OPTIONS);
+
+            state = state.handle(address, &ins);
+            if let Some(function) = state.get_function() {
+                let function = Function {
+                    name: function.name().to_string(),
+                    start_address: function.start(),
+                    end_address: function.end(),
+                    first_instruction_address: function.start(),
+                    last_instruction_address: function.end(),
+                    thumb: true,
+                    labels: Labels::new(),
+                    pool_constants: PoolConstants::new(),
+                    jump_tables: JumpTables::new(),
+                    inline_tables: InlineTables::new(),
+                    function_calls: FunctionCalls::new(),
+                    dsprot_encryption: dsprot::EncryptionType::None,
+                    dsprot_encrypted_ranges: Vec::new(),
+                };
+                symbol_map.add_function(&function);
+                functions.insert(function.first_instruction_address, function);
+            }
+
+            address += 2;
+        }
+
+        functions
+    }
+
+    pub fn parser<'a>(&'a self, module_code: &'a [u8], base_address: u32) -> Parser<'a> {
+        let mut parser = Parser::new(
+            self.code(module_code, base_address),
+            if self.thumb { ParseMode::Thumb } else { ParseMode::Arm },
+            ParseEndian::Little,
+            UNARM_OPTIONS.clone(),
+        );
+        parser.set_pc(self.start_address);
+        parser
+    }
+
+    pub fn code<'a>(&self, module_code: &'a [u8], base_address: u32) -> &'a [u8] {
+        let start = (self.start_address - base_address) as usize;
+        let end = (self.end_address - base_address) as usize;
+        &module_code[start..end]
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn start_address(&self) -> u32 {
+        self.start_address
+    }
+
+    pub fn end_address(&self) -> u32 {
+        self.end_address
+    }
+
+    pub fn first_instruction_address(&self) -> u32 {
+        self.first_instruction_address
+    }
+
+    pub fn is_thumb(&self) -> bool {
+        self.thumb
+    }
+
+    pub fn labels(&self) -> impl Iterator<Item = &u32> {
+        self.labels.iter()
+    }
+
+    pub fn jump_tables(&self) -> impl Iterator<Item = &JumpTable> {
+        self.jump_tables.values()
+    }
+
+    pub fn inline_tables(&self) -> &InlineTables {
+        &self.inline_tables
+    }
+
+    pub fn get_inline_table_at(&self, address: u32) -> Option<&InlineTable> {
+        Self::inline_table_at(&self.inline_tables, address)
+    }
+
+    fn inline_table_at(inline_tables: &InlineTables, address: u32) -> Option<&InlineTable> {
+        inline_tables
+            .values()
+            .find(|table| address >= table.address && address < table.address + table.size)
+    }
+
+    pub fn pool_constants(&self) -> &PoolConstants {
+        &self.pool_constants
+    }
+
+    pub fn iter_pool_constants(&self) -> impl Iterator<Item = &PoolConstant> {
+        self.pool_constants.values()
+    }
+
+    pub fn function_calls(&self) -> &FunctionCalls {
+        &self.function_calls
+    }
+
+    pub fn dsprot_encryption(&self) -> dsprot::EncryptionType {
+        self.dsprot_encryption
+    }
+
+    pub fn dsprot_encrypted_ranges(&self) -> &[dsprot::EncryptedRange] {
+        &self.dsprot_encrypted_ranges
+    }
+
+    pub fn last_instruction_address(&self) -> u32 {
+        self.last_instruction_address
+    }
+
+    /// The size of the code, measured from the first to the last instruction. Note that this
+    /// excludes the final constant pool after the end of the function, BUT not any constant pools
+    /// in the middle. This function was intended for DS Protect support, where no middle constant
+    /// pools exist.
+    pub(crate) fn code_size(&self) -> u32 {
+        self.last_instruction_address - self.first_instruction_address
+    }
+}
+
+#[derive(Default)]
+pub struct FunctionParseOptions<'a> {
+    pub name: String,
+    pub start_address: u32,
+    pub base_address: u32,
+    pub module_code: &'a [u8],
+    pub known_end_address: Option<u32>,
+    pub module_start_address: u32,
+    pub module_end_address: u32,
+    pub existing_functions: Option<&'a BTreeMap<u32, Function>>,
+    /// DS Protect version 1.00 to 1.22 puts fake `bl` instructions in some of its functions to mark
+    /// the start and end of a range of encrypted code. Supplying a list of encrypted ranges will
+    /// prevent fake [`Function::function_calls`] entries from being made.
+    pub dsprot_encrypted_ranges: &'a [dsprot::EncryptedRange],
+
+    /// Whether to check that all registers used in the instruction are defined
+    pub check_defs_uses: bool,
+
+    pub parse_options: ParseFunctionOptions,
+}
+
+pub struct FindFunctionsOptions<'a> {
+    pub default_name_prefix: &'a str,
+    pub base_address: u32,
+    pub module_code: &'a [u8],
+    pub symbol_map: &'a mut SymbolMap,
+    pub module_start_address: u32,
+    pub module_end_address: u32,
+
+    pub search_options: &'a FunctionSearchOptions<'a>,
+}
+
+struct ParseFunctionContext<'a> {
+    name: &'a str,
+    start_address: u32,
+    thumb: bool,
+    end_address: Option<u32>,
+    known_end_address: Option<u32>,
+    labels: Labels,
+    pool_constants: PoolConstants,
+    jump_tables: JumpTables,
+    inline_tables: InlineTables,
+    function_calls: FunctionCalls,
+
+    module_start_address: u32,
+    module_end_address: u32,
+    existing_functions: Option<&'a BTreeMap<u32, Function>>,
+    found_functions: &'a BTreeMap<u32, Function>,
+    dsprot_encrypted_ranges: &'a [dsprot::EncryptedRange],
+    base_address: u32,
+    /// The code for this module, starting at `base_address`
+    code: &'a [u8],
+
+    /// Address of last conditional instruction, so we can detect the final return instruction
+    last_conditional_destination: Option<u32>,
+    /// Address of last pool constant, to get the function's true end address
+    last_pool_address: Option<u32>,
+    /// State machine for detecting jump tables and adding them as symbols
+    jump_table_state: JumpTableState,
+    jump_table_end_address: Option<u32>,
+    /// State machine for detecting branches (B, not BL) to other functions
+    function_branch_state: FunctionBranchState,
+    /// State machine for detecting inline data tables within the function
+    inline_table_state: InlineTableState,
+    /// State machine for detecting illegal code sequences
+    illegal_code_state: IllegalCodeState,
+
+    /// Whether to check that all registers used in the instruction are defined
+    check_defs_uses: bool,
+    defined_registers: BTreeSet<Reg>,
+    register_values: [Option<(u32, RegValueSrc)>; 16],
+
+    prev_ins: Option<Ins>,
+    prev_address: Option<u32>,
+}
+
+#[derive(Clone, Copy)]
+pub enum RegValueSrc {
+    PoolConstant(u32),
+}
+
+#[derive(Debug, Snafu)]
+pub enum IntoFunctionError {
+    #[snafu(display("Cannot turn parse context into function before parsing is done"))]
+    NotDone { backtrace: Backtrace },
+    #[snafu(transparent)]
+    ParseFunction { source: ParseFunctionError },
+}
+
+impl<'a> ParseFunctionContext<'a> {
+    pub fn new(
+        thumb: bool,
+        options: &'a FunctionParseOptions<'a>,
+        found_functions: &'a BTreeMap<u32, Function>,
+    ) -> Self {
+        let FunctionParseOptions {
+            name,
+            start_address,
+            base_address,
+            known_end_address,
+            module_start_address,
+            module_end_address,
+            existing_functions,
+            check_defs_uses,
+            module_code,
+            dsprot_encrypted_ranges,
+            ..
+        } = options;
+
+        let mut defined_registers = BTreeSet::new();
+        // Could be arguments
+        defined_registers.insert(Reg::R0);
+        defined_registers.insert(Reg::R1);
+        defined_registers.insert(Reg::R2);
+        defined_registers.insert(Reg::R3);
+        // Always defined
+        defined_registers.insert(Reg::Sp);
+        defined_registers.insert(Reg::Lr);
+        defined_registers.insert(Reg::Pc);
+        // Could be used as a scratch register
+        defined_registers.insert(Reg::R12);
+        // Sometimes not callee-saved
+        defined_registers.insert(Reg::R10);
+        defined_registers.insert(Reg::R11);
+
+        Self {
+            name,
+            start_address: *start_address,
+            thumb,
+            end_address: None,
+            known_end_address: *known_end_address,
+            labels: Labels::new(),
+            pool_constants: PoolConstants::new(),
+            jump_tables: JumpTables::new(),
+            inline_tables: InlineTables::new(),
+            function_calls: FunctionCalls::new(),
+
+            module_start_address: *module_start_address,
+            module_end_address: *module_end_address,
+            existing_functions: *existing_functions,
+            found_functions,
+            dsprot_encrypted_ranges,
+            base_address: *base_address,
+            code: module_code,
+
+            last_conditional_destination: None,
+            last_pool_address: None,
+            jump_table_state: if thumb {
+                JumpTableState::Thumb(Default::default())
+            } else {
+                JumpTableState::Arm(Default::default())
+            },
+            jump_table_end_address: None,
+            function_branch_state: Default::default(),
+            inline_table_state: Default::default(),
+            illegal_code_state: Default::default(),
+
+            check_defs_uses: *check_defs_uses,
+            defined_registers,
+            register_values: [None; 16],
+
+            prev_ins: None,
+            prev_address: None,
+        }
+    }
+
+    fn handle_ins_inner(
+        &mut self,
+        parser: &mut Parser,
+        address: u32,
+        ins: &Ins,
+        ins_size: u32,
+    ) -> ParseFunctionState {
+        if self.pool_constants.contains_key(&address) {
+            parser.goto(address + 4);
+            return ParseFunctionState::Continue;
+        }
+        if let Some(inline_table) = Function::inline_table_at(&self.inline_tables, address) {
+            parser.goto(inline_table.address + inline_table.size);
+            return ParseFunctionState::Continue;
+        }
+
+        self.jump_table_state = self.jump_table_state.handle(
+            address,
+            ins,
+            &mut self.jump_tables,
+            &self.register_values,
+        );
+        if let Some(table_end_address) = self.jump_table_state.table_end_address() {
+            self.last_conditional_destination =
+                self.last_conditional_destination.max(Some(table_end_address));
+            self.jump_table_end_address = Some(table_end_address);
+        }
+
+        let ins_code = {
+            let offset = (address - self.base_address) as usize;
+            match ins_size {
+                2 => u16::from_le_slice(&self.code[offset..]) as u32,
+                4 => u32::from_le_slice(&self.code[offset..]),
+                _ => 0,
+            }
+        };
+        if self.thumb
+            && let Some((label, second_label)) =
+                self.jump_table_state.get_labels(address, ins_code as u16)
+        {
+            self.labels.insert(label);
+            self.last_conditional_destination = self.last_conditional_destination.max(Some(label));
+            if let Some(second_label) = second_label {
+                self.labels.insert(second_label);
+                self.last_conditional_destination =
+                    self.last_conditional_destination.max(Some(second_label));
+            }
+        }
+
+        if self.jump_table_state.is_numerical_jump_offset() {
+            // Not an instruction, continue
+            return ParseFunctionState::Continue;
+        }
+
+        self.illegal_code_state = self.illegal_code_state.handle(ins, self.thumb);
+        if let IllegalCodeState::Illegal { reason } = self.illegal_code_state {
+            return ParseFunctionState::IllegalIns {
+                address,
+                ins: ins.clone(),
+                reason: reason.into(),
+            };
+        }
+
+        if let Some(destination) = Function::is_branch(ins) {
+            if destination < self.start_address
+                && let Some((_, function)) = self.found_functions.range(..=destination).last()
+                && function.start_address < destination
+                && self.thumb != function.is_thumb()
+            {
+                // Instruction mode must match
+                return ParseFunctionState::IllegalIns {
+                    address,
+                    ins: ins.clone(),
+                    reason: "branch into opposite instruction mode".into(),
+                };
+            }
+
+            if !(0x01ff8000..0x03000000).contains(&destination) {
+                // Branch goes outside of program
+                return ParseFunctionState::IllegalIns {
+                    address,
+                    ins: ins.clone(),
+                    reason: "branch outside of program".into(),
+                };
+            }
+        }
+
+        // Check register usage
+        #[allow(clippy::single_match)] // Remove this line if more cases are added
+        match &ins {
+            Ins::Bx { cond: Cond::Al, rm } => {
+                if let Some((_, src)) = &self.register_values[*rm as usize] {
+                    match src {
+                        RegValueSrc::PoolConstant(pool_address) => {
+                            self.pool_constants.get_mut(pool_address).unwrap().usage =
+                                PoolConstantUsage::Call;
+                        },
+                    }
+                }
+            },
+            _ => {},
+        }
+
+        // Clear tracked register values
+        for def in ins.defs() {
+            match def {
+                DefUseArgument::Reg(reg) => {
+                    self.register_values[reg as usize] = None;
+                },
+                DefUseArgument::RegList(reg_list) => {
+                    for reg in reg_list.iter() {
+                        self.register_values[reg as usize] = None;
+                    }
+                },
+                _ => {},
+            }
+        }
+
+        let in_conditional_block =
+            if let Some(last_conditional_destination) = self.last_conditional_destination {
+                address < last_conditional_destination
+            } else {
+                false
+            };
+        let is_return = self.is_return(address, ins, self.prev_ins.as_ref());
+        if !in_conditional_block && is_return {
+            let end_address = address + ins_size;
+            if self.is_long_branch_destination(end_address) {
+                // The next instruction is the destination of a long branch, so this is not the
+                // final return instruction after all
+                self.last_conditional_destination =
+                    self.last_conditional_destination.max(Some(end_address));
+            } else {
+                if let Some(destination) = Function::is_branch(ins) {
+                    let outside_function =
+                        destination < self.start_address || destination >= end_address;
+                    if outside_function {
+                        // Tail call
+                        self.function_calls.insert(
+                            address,
+                            CalledFunction {
+                                ins: ins.clone(),
+                                ins_code,
+                                address: destination,
+                                thumb: self.thumb,
+                            },
+                        );
+                    }
+                }
+
+                // We're not inside a conditional code block, so this is the final return instruction
+                self.end_address = Some(end_address);
+                return ParseFunctionState::Done;
+            }
+        }
+
+        if address > self.start_address
+            && Function::is_entry_instruction(ins)
+            && let Some(prev_ins) = &self.prev_ins
+            && Function::is_branch(prev_ins).is_some()
+        {
+            let is_conditional = in_conditional_block || prev_ins.is_conditional();
+            if is_conditional {
+                // Tail call
+                self.end_address = Some(address);
+                return ParseFunctionState::Done;
+            }
+        }
+
+        self.function_branch_state = self.function_branch_state.handle(ins);
+        if let Some(destination) = Function::is_branch(ins) {
+            let in_current_module =
+                destination >= self.module_start_address && destination < self.module_end_address;
+            if !in_current_module {
+                // Tail call
+                self.function_calls.insert(
+                    address,
+                    CalledFunction {
+                        ins: ins.clone(),
+                        ins_code,
+                        address: destination,
+                        thumb: self.thumb,
+                    },
+                );
+            } else if self.function_branch_state.is_function_branch()
+                || self
+                    .existing_functions
+                    .is_some_and(|functions| functions.contains_key(&destination))
+            {
+                if !ins.is_conditional() && !in_conditional_block {
+                    // This is an unconditional backwards function branch, which means this function has ended
+                    self.end_address = Some(address + ins_size);
+                    return ParseFunctionState::Done;
+                }
+                // TODO: Always run this (move it outside of else block). SectionExt::relocatable_code must take condition
+                // code into account so the game matches after linking
+                self.function_calls.insert(
+                    address,
+                    CalledFunction {
+                        ins: ins.clone(),
+                        ins_code,
+                        address: destination,
+                        thumb: self.thumb,
+                    },
+                );
+            } else {
+                // Normal branch instruction, insert a label
+                if let Some(state) = self.handle_label(
+                    destination,
+                    address,
+                    parser,
+                    ins_size,
+                    ins,
+                    in_conditional_block,
+                ) {
+                    return state;
+                }
+            }
+        }
+
+        if let Some((pool_address, register)) = Function::is_pool_load(ins, address, self.thumb) {
+            let start = (pool_address - self.base_address) as usize;
+            let Some(bytes) = self.code.get(start..) else {
+                log::debug!(
+                    "Illegal instruction at {address:#010x}: Pool load goes outside module"
+                );
+                return ParseFunctionState::IllegalIns {
+                    address,
+                    ins: ins.clone(),
+                    reason: "pool load goes outside module".into(),
+                };
+            };
+            let const_value = u32::from_le_slice(bytes);
+            self.register_values[register as usize] =
+                Some((const_value, RegValueSrc::PoolConstant(pool_address)));
+
+            self.pool_constants.insert(
+                pool_address,
+                PoolConstant {
+                    address: pool_address,
+                    value: const_value,
+                    usage: PoolConstantUsage::Other,
+                },
+            );
+            self.last_pool_address = self.last_pool_address.max(Some(pool_address));
+        }
+
+        self.inline_table_state = self.inline_table_state.handle(self.thumb, address, ins);
+        if let Some(table) = self.inline_table_state.get_table() {
+            log::debug!("Inline table found at {:#x}, size {:#x}", table.address, table.size);
+            self.inline_tables.insert(table.address, table);
+        }
+
+        if let Some(called_function) = Function::is_function_call(ins, ins_code, self.thumb) {
+            let is_fake = self.dsprot_encrypted_ranges.iter().any(|r| {
+                // The fake `bl` range markers are immediately before and after the encrypted range
+                address == r.start_address - 4 || address == r.end_address
+            });
+
+            if !is_fake {
+                self.function_calls.insert(address, called_function);
+            }
+        }
+
+        if self.check_defs_uses && !Self::is_nop(ins) {
+            if let Some(regs) = Self::is_push(ins) {
+                // Add all caller-saved registers to the defined set
+                regs.iter().for_each(|reg| {
+                    self.defined_registers.insert(reg);
+                });
+            }
+
+            // Verify that all registers used in the instruction are defined
+            for usage in ins.uses() {
+                let illegal_reg = match usage {
+                    DefUseArgument::Reg(reg) => {
+                        if !self.thumb
+                            && let Ins::Str {
+                                cond: _,
+                                rd,
+                                addr:
+                                    AddrLdrStr::Pre {
+                                        rn: Reg::Sp,
+                                        offset: LdrStrOffset::Imm(_),
+                                        writeback: false,
+                                    },
+                            } = &ins
+                        {
+                            // There are instance of `str Rd, [sp, #imm]` where Rd is not defined.
+                            // Potential UB bug in mwccarm.
+                            self.defined_registers.insert(*rd);
+                            continue;
+                        }
+
+                        (!self.defined_registers.contains(&reg)).then_some(reg)
+                    },
+                    DefUseArgument::RegList(reg_list) => {
+                        reg_list.iter().find(|reg| !self.defined_registers.contains(reg))
+                    },
+                    _ => continue,
+                };
+                if let Some(illegal_reg) = illegal_reg {
+                    return ParseFunctionState::IllegalIns {
+                        address,
+                        ins: ins.clone(),
+                        reason: format!("used {illegal_reg:?} when it has an undefined value")
+                            .into(),
+                    };
+                }
+            }
+            if !is_return {
+                for def in ins.defs() {
+                    match def {
+                        DefUseArgument::Reg(reg) => {
+                            self.defined_registers.insert(reg);
+                        },
+                        DefUseArgument::RegList(reg_list) => {
+                            for reg in reg_list.iter() {
+                                self.defined_registers.insert(reg);
+                            }
+                        },
+                        _ => continue,
+                    }
+                }
+            }
+        }
+
+        ParseFunctionState::Continue
+    }
+
+    pub fn handle_ins(
+        &mut self,
+        parser: &mut Parser,
+        address: u32,
+        ins: Ins,
+        ins_size: u32,
+    ) -> ParseFunctionState {
+        let state = self.handle_ins_inner(parser, address, &ins, ins_size);
+        self.prev_ins = Some(ins);
+        self.prev_address = Some(address);
+        state
+    }
+
+    fn handle_label(
+        &mut self,
+        destination: u32,
+        address: u32,
+        parser: &mut Parser,
+        ins_size: u32,
+        ins: &Ins,
+        in_conditional_block: bool,
+    ) -> Option<ParseFunctionState> {
+        self.labels.insert(destination);
+        let is_table_jump = self.jump_table_end_address.is_some_and(|end| address < end);
+        if in_conditional_block || ins.is_conditional() || is_table_jump {
+            self.last_conditional_destination =
+                self.last_conditional_destination.max(Some(destination));
+        }
+
+        let next_address = address + ins_size;
+        if self.pool_constants.contains_key(&next_address) {
+            let branch_backwards = destination <= address;
+
+            // Load instructions in ARM mode can have an offset of up to ±4kB. Therefore, some functions must
+            // emit pool constants in the middle so they can all be accessed by PC-relative loads. There will
+            // also be branch instruction right before, so that the pool constants don't get executed.
+
+            // Sometimes, the pre-pool branch is conveniently placed at an actual branch in the code, and
+            // leads even further than the end of the pool constants. In that case we should already have found
+            // a label at a lower address.
+            let after_pools = if let Some(after_pools) =
+                self.labels.range(parser.pc()..).next().copied()
+            {
+                if after_pools > address + 0x1000 {
+                    log::warn!(
+                        "Massive gap from constant pool at {next_address:#x} to next label at {after_pools:#x}"
+                    );
+                }
+                after_pools
+            } else if !branch_backwards {
+                // Backwards branch with no further branch labels. This type of function contains some kind of infinite loop,
+                // hence the lack of return instruction as the final instruction.
+                self.end_address = Some(next_address);
+                return Some(ParseFunctionState::Done);
+            } else {
+                let after_pools = (next_address..)
+                    .step_by(4)
+                    .find(|addr| !self.pool_constants.contains_key(addr))
+                    .unwrap();
+                log::warn!(
+                    "No label past constant pool at {next_address:#x}, jumping to first address not occupied by a pool constant ({after_pools:#x})"
+                );
+                after_pools
+            };
+            assert!(
+                after_pools >= parser.pc(),
+                "In function at {:#010x}: tried to jump forwards from {:#010x} past constant pool but went backwards to {:#010x}",
+                self.start_address,
+                address,
+                after_pools,
+            );
+            parser.goto(after_pools);
+        }
+
+        None
+    }
+
+    fn is_long_branch_destination(&self, address: u32) -> bool {
+        self.last_pool_address.is_some_and(|last_pool_address| address < last_pool_address)
+            && self.function_calls.values().any(|called| called.address == address)
+            && !self.is_entry_instruction_at(address)
+    }
+
+    fn is_entry_instruction_at(&self, address: u32) -> bool {
+        let Some(offset) = address.checked_sub(self.base_address) else {
+            return false;
+        };
+        let Some(code) = self.code.get(offset as usize..) else {
+            return false;
+        };
+        let mut parser = Parser::new(
+            code,
+            if self.thumb { ParseMode::Thumb } else { ParseMode::Arm },
+            ParseEndian::Little,
+            UNARM_OPTIONS.clone(),
+        );
+        parser.set_pc(address);
+        let Some(ins) = parser.next() else {
+            return false;
+        };
+        Function::is_entry_instruction(&ins)
+    }
+
+    fn into_function(self, state: ParseFunctionState) -> Result<Function, IntoFunctionError> {
+        match state {
+            ParseFunctionState::Continue => {
+                return NotDoneSnafu.fail();
+            },
+            ParseFunctionState::IllegalIns { address, ins, reason } => {
+                return IllegalInsSnafu { address, ins, reason }.fail()?;
+            },
+            ParseFunctionState::Done => {},
+        }
+        let Some(end_address) = self.end_address else {
+            return NoEpilogueSnafu.fail()?;
+        };
+
+        let last_instruction_address = end_address;
+        let end_address = self
+            .known_end_address
+            .unwrap_or(end_address.max(self.last_pool_address.map_or(0, |a| a + 4)));
+        if end_address > self.module_end_address {
+            return NoEpilogueSnafu.fail()?;
+        }
+
+        Ok(Function {
+            name: self.name.to_string(),
+            start_address: self.start_address,
+            end_address,
+            first_instruction_address: self.start_address,
+            last_instruction_address,
+            thumb: self.thumb,
+            labels: self.labels,
+            pool_constants: self.pool_constants,
+            jump_tables: self.jump_tables,
+            inline_tables: self.inline_tables,
+            function_calls: self.function_calls,
+            dsprot_encryption: dsprot::EncryptionType::None,
+            dsprot_encrypted_ranges: Vec::new(),
+        })
+    }
+
+    fn is_return(&self, address: u32, ins: &Ins, prev_ins: Option<&Ins>) -> bool {
+        if !ins.is_conditional() {
+            match ins {
+                // bx *
+                Ins::Bx { cond: Cond::Al, .. } => true,
+                // mov pc, *
+                Ins::Mov { s: false, cond: Cond::Al, rd: Reg::Pc, .. } => true,
+                // ldmia *, {..., pc}
+                Ins::Ldm { mode: LdmStmMode::Ia, cond: Cond::Al, regs, .. }
+                    if regs.contains(Reg::Pc) =>
+                {
+                    true
+                },
+                // pop {..., pc}
+                Ins::Pop { cond: Cond::Al, regs } if regs.contains(Reg::Pc) => true,
+                // backwards branch or self-loop
+                Ins::B { cond: Cond::Al, target } if target.addr <= address => true,
+                // subs pc, lr, *
+                Ins::Sub { s: true, cond: Cond::Al, rd: Reg::Pc, rn: Reg::Lr, .. } => true,
+                // ldr pc, *
+                Ins::Ldr { cond: Cond::Al, rd: Reg::Pc, .. } => true,
+                // eor pc, r*, r*, ror r*
+                // Yeah this makes no sense but it's real and exists at 0x020d2888 of ov022 in the
+                // European version of Mario & Luigi: Bowser's Inside Story
+                Ins::Eor {
+                    s: false,
+                    cond: Cond::Al,
+                    rd: Reg::Pc,
+                    op2: Op2::ShiftReg(ShiftReg { shift_op: ShiftOp::Ror, .. }),
+                    ..
+                } => true,
+                // add pc, r*, r*, lsl #*
+                // Another weird one from Bowser's Inside Story's ITCM module (0x01ff84f8 in EU version)
+                // An exception is `add pc, pc, r*, lsl #0x2` which is for jump tables and not a return
+                Ins::Add {
+                    s: false,
+                    cond: Cond::Al,
+                    rd: Reg::Pc,
+                    rn,
+                    op2: Op2::ShiftImm(ShiftImm { shift_op: ShiftOp::Lsl, .. }),
+                    ..
+                } if *rn != Reg::Pc => true,
+                _ => false,
+            }
+        } else if let Some(prev_ins) = prev_ins {
+            match (prev_ins, ins) {
+                // adds r0, r0, #4
+                // bne ...
+                // Exists in DS Protect, it's an unconditional return obfuscated as a conditional
+                // branch.
+                (
+                    Ins::Add {
+                        s: true,
+                        cond: Cond::Al,
+                        rd: Reg::R0,
+                        rn: Reg::R0,
+                        op2: Op2::Imm(Op2Imm { imm: 4, .. }),
+                        ..
+                    },
+                    Ins::B { cond: Cond::Ne, .. },
+                ) => true,
+                _ => false,
+            }
+        } else {
+            false
+        }
+    }
+
+    fn is_nop(ins: &Ins) -> bool {
+        match ins {
+            // mov rx, rx
+            Ins::Mov {
+                s: false,
+                cond: _,
+                rd,
+                op2: Op2::ShiftImm(ShiftImm { rm, imm: 0, .. }),
+                ..
+            } if rd == rm => true,
+            _ => false,
+        }
+    }
+
+    fn is_push(ins: &Ins) -> Option<&RegList> {
+        match ins {
+            Ins::Stm { mode: _, cond: _, rn: Reg::Sp, writeback: _, regs, user_mode: _ }
+            | Ins::Push { cond: _, regs } => Some(regs),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct ParseFunctionOptions {
+    /// Whether the function is in Thumb or ARM mode, or None if it should be detected automatically.
+    pub thumb: Option<bool>,
+}
+
+enum ParseFunctionState {
+    Continue,
+    IllegalIns { address: u32, ins: Ins, reason: Cow<'static, str> },
+    Done,
+}
+
+impl ParseFunctionState {
+    pub fn ended(&self) -> bool {
+        match self {
+            Self::Continue => false,
+            Self::IllegalIns { .. } | Self::Done => true,
+        }
+    }
+}
+
+#[derive(Debug, Snafu)]
+pub enum ParseFunctionError {
+    #[snafu(display("Illegal instruction at {address:#010x}, {reason}: {ins:?}"))]
+    IllegalIns { address: u32, ins: Ins, reason: Cow<'static, str> },
+    #[snafu(display("No epilogue found"))]
+    NoEpilogue,
+    #[snafu(display("Illegal function start at {address:#010x}: {ins}"))]
+    InvalidStart { address: u32, ins: DisplayIns },
+}
+
+#[derive(Debug)]
+pub struct DisplayIns(Ins);
+
+impl From<Ins> for DisplayIns {
+    fn from(value: Ins) -> Self {
+        Self(value)
+    }
+}
+
+impl Display for DisplayIns {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0.display(&UNARM_OPTIONS))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Function, FunctionParseOptions};
+
+    #[test]
+    fn arm_self_loop_ends_function() {
+        const BASE_ADDRESS: u32 = 0x020a608c;
+        const CODE: [u8; 8] = [
+            0xfe, 0xff, 0xff, 0xea, // b BASE_ADDRESS
+            0x1e, 0xff, 0x2f, 0xe1, // bx lr
+        ];
+
+        let function = Function::parse_function(FunctionParseOptions {
+            name: "self_loop".into(),
+            start_address: BASE_ADDRESS,
+            base_address: BASE_ADDRESS,
+            module_code: &CODE,
+            module_start_address: BASE_ADDRESS,
+            module_end_address: BASE_ADDRESS + CODE.len() as u32,
+            ..Default::default()
+        })
+        .unwrap();
+
+        assert_eq!(function.end_address(), BASE_ADDRESS + 4);
+    }
+}
+
+#[derive(Default)]
+pub struct FunctionSearchOptions<'a> {
+    /// Address to start searching from. Defaults to the base address.
+    pub start_address: Option<u32>,
+    /// Last address that a function can start from. Defaults to [`Self::end_address`].
+    pub last_function_address: Option<u32>,
+    /// Address to end the search. Defaults to the base address plus code size.
+    pub end_address: Option<u32>,
+    /// If zero, end the search when an illegal starting instruction is found. Otherwise, continue searching for a valid
+    /// function start for up to this many bytes. Set to [`u32::MAX`] to search until the end of the module.
+    pub max_function_start_search_distance: u32,
+    /// If true, pointers to data will be used to limit the upper bound address.
+    pub use_data_as_upper_bound: bool,
+    /// Only functions starting at these addresses will be analyzed. Used for .init functions.
+    /// Note: This will override `keep_searching_for_valid_function_start`, they are not intended to be used together.
+    pub function_addresses: Option<&'a BTreeSet<u32>>,
+    /// If a branch instruction branches into one of these functions, it will be treated as a function branch instead of
+    /// inserting a label at the branch destination.
+    /// If the function branch is unconditional, it will also be treated as a tail call and terminate the analysis of the
+    /// current function.
+    pub existing_functions: Option<&'a BTreeMap<u32, Function>>,
+    /// Whether to treat instructions using undefined registers as illegal.
+    pub check_defs_uses: bool,
+    /// Maps function address to function size. This will override the size of analyzed functions.
+    /// Used for DS Protect functions.
+    pub overriden_function_sizes: Option<&'a BTreeMap<u32, u32>>,
+    /// Maps function address to DS Protect encryption type. The caller ensures that these functions
+    /// have been decrypted. Functions with a matching address will receive the corresponding
+    /// encryption type in [`Function::dsprot_encryption`].
+    pub dsprot_encrypted_functions: Option<&'a BTreeMap<u32, dsprot::EncryptionType>>,
+    /// Contains address ranges that were encrypted by DS Protect. The caller ensures these address
+    /// ranges have been decrypted. The ranges will be distributed to the analyzed functions in
+    /// [`Function::dsprot_encrypted_ranges`].
+    pub dsprot_encrypted_ranges: &'a [dsprot::EncryptedRange],
+}
+
+#[derive(Clone, Debug)]
+pub struct CalledFunction {
+    pub ins: Ins,
+    pub ins_code: u32,
+    pub address: u32,
+    pub thumb: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct PoolConstant {
+    pub address: u32,
+    pub value: u32,
+    pub usage: PoolConstantUsage,
+}
+
+#[derive(Debug, Clone)]
+pub enum PoolConstantUsage {
+    Call,
+    Other,
+}
+
+pub fn instruction_size(mode: ParseMode) -> u32 {
+    match mode {
+        ParseMode::Arm => 4,
+        ParseMode::Thumb => 2,
+        ParseMode::Data => 4,
+    }
+}

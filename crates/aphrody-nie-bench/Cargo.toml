@@ -1,0 +1,28 @@
+[package]
+name = "aphrody-nie-bench"
+description = "Banc d'essai inter-langages : mesure les hot paths du dépôt en Rust, et produit les échantillons que les harnais C++/C#/TS rejouent"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "aphrody-nie-bench"
+path = "src/main.rs"
+required-features = ["host"]
+
+[features]
+default = ["host"]
+host = ["dep:anyhow", "dep:clap"]
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-nie-formats = { workspace = true, default-features = true }
+anyhow = { version = "1", optional = true }
+clap = { workspace = true, optional = true, features = ["derive", "color", "env"] }
+serde = { version = "1", default-features = false, features = ["std", "derive"] }
+thiserror = { version = "2" }

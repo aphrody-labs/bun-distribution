@@ -1,0 +1,64 @@
+[package]
+name = "aphrody-nie-render3d"
+description = "Renderer 3D du moteur nie : charge un GLB réel (assets CPK) et le rend en perspective (rastérisation CPU z-buffer + éclairage) → PNG/MP4 turntable, headless"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "aphrody-nie-render3d"
+path = "src/main.rs"
+# La bibliothèque ne dépend pas d'un analyseur d'arguments : c'est ce qui la rend embarquable
+# dans un module WebAssembly, où `clap` ne serait que du poids mort dans le budget d'octets.
+required-features = ["cli"]
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-nie-core.workspace = true
+aphrody-softraster.workspace = true
+# L'algèbre : une seule arithmétique matricielle, en `scalar-math` (SIMD désactivé) pour que
+# l'ordre des opérations flottantes reste figé sur le chemin de fidélité.
+glam.workspace = true
+anyhow = { version = "1" }
+clap = { workspace = true, optional = true, features = ["derive", "color", "env"] }
+serde_json = { version = "1" }
+serde = { version = "1", default-features = false, features = ["std", "derive"] }
+png = { version = "0.18" }
+bcdec_rs.workspace = true
+aphrody-gpu-backend = { workspace = true, optional = true }
+pollster = { workspace = true, optional = true }
+bytemuck = { workspace = true, optional = true, features = ["derive"] }
+# Optionnelle et tirée par `cli` : seule l'exécutable encode une vidéo. La bibliothèque reste
+# embarquable dans `aphrody-nie-wasm` sans elle, au même titre que `clap`.
+aphrody-nie-video = { workspace = true, optional = true }
+
+[dev-dependencies]
+aphrody-nie-formats = { workspace = true, default-features = true }
+
+# Rendu GPU (wgpu) du viewport — optionnel : les consommateurs headless (golden CPU, CLI turntable)
+# ne doivent pas tirer wgpu/pollster. Version de wgpu ALIGNÉE sur `aphrody-nie-game` (=29.0.3), l'autre hôte
+# GPU du workspace : deux versions majeures de wgpu dans un même binaire dupliqueraient le backend.
+[features]
+default = ["cli"]
+# L'exécutable en ligne de commande. Séparé pour que `aphrody-nie-wasm` puisse embarquer le rastériseur
+# CPU sans embarquer `clap`.
+cli = ["dep:clap", "dep:aphrody-nie-video"]
+gpu = ["dep:aphrody-gpu-backend", "dep:pollster", "dep:bytemuck"]
+# Présentation canvas facultative ; aucun backend GPU ajouté aux consommateurs CPU par défaut.
+webgpu = ["gpu", "aphrody-gpu-backend/webgpu", "dep:web-sys"]
+# Le backend WebGL 2, qui fait tourner le MÊME renderer là où WebGPU manque.
+#
+# MESURÉ le 2026-09-12 : l'activer dans `aphrody-nie-wasm` fait passer son module de 4 518 833 à
+# 6 865 774 octets (+2,24 Mio) et dépasse de 574 318 octets le budget de 6 Mio que
+# `apps/nie-web/scripts/build-wasm.ts` impose — un budget qui protège le téléchargement de CHAQUE
+# visiteur, pas seulement de ceux qui ouvrent un modèle. D'où `aphrody-nie-viewer-web` : un module
+# séparé, qui ne porte QUE le viewer et n'est chargé que par un navigateur sans WebGPU.
+webgl = ["webgpu", "aphrody-gpu-backend/webgl"]
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+web-sys = { workspace = true, optional = true, features = ["HtmlCanvasElement"] }

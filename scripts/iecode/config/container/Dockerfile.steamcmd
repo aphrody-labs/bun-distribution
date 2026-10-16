@@ -1,0 +1,21 @@
+# syntax=docker/dockerfile:1
+ARG BASE_IMAGE=ubuntu@sha256:88a381d5b5eeb2b35d3ad70925a362c37ce569daf43ede89ff818ec20e4d3794
+FROM ${BASE_IMAGE}
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl lib32gcc-s1 lib32stdc++6 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/steamcmd
+RUN curl --fail --location --silent --show-error \
+      https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz \
+      --output /tmp/steamcmd_linux.tar.gz \
+    && echo 'CEBF0046BFD08CF45DA6BC094AE47AA39EBF4155E5EDE41373B579B8F1071E7C  /tmp/steamcmd_linux.tar.gz' | sha256sum --check \
+    && tar -xzf /tmp/steamcmd_linux.tar.gz -C /opt/steamcmd \
+    && rm /tmp/steamcmd_linux.tar.gz \
+    && chmod +x /opt/steamcmd/steamcmd.sh
+
+ENV HOME=/var/lib/steamcmd
+COPY config/container/steamcmd-entrypoint.sh /usr/local/bin/steamcmd-entrypoint
+RUN chmod 0755 /usr/local/bin/steamcmd-entrypoint
+ENTRYPOINT ["/usr/local/bin/steamcmd-entrypoint"]

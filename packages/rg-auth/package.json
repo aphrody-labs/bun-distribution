@@ -1,0 +1,55 @@
+{
+  "name": "@rosegriffon/auth",
+  "version": "1.4.4",
+  "private": false,
+  "description": "Shared authentication logic and guards for Rose Griffon apps",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts",
+    "./elysia": "./src/elysia.ts",
+    "./achillea-session": "./src/achillea-session.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "type-check": "bun check --noEmit",
+    "test": "bun test src",
+    "lint": "bun lint -c ../rg-config/oxlintrc.json src",
+    "typecheck": "bun check --noEmit"
+  },
+  "dependencies": {
+    "@better-auth/agent-auth": "catalog:",
+    "@better-auth/api-key": "catalog:",
+    "@better-auth/oauth-provider": "catalog:",
+    "@better-auth/passkey": "catalog:",
+    "@rosegriffon/achillea-core": "workspace:*",
+    "@rosegriffon/db": "workspace:*",
+    "@rosegriffon/types": "workspace:*",
+    "better-auth": "catalog:",
+    "nodemailer": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@types/nodemailer": "catalog:",
+    "next": "catalog:",
+    "react": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  },
+  "license": "Apache-2.0",
+  "files": [
+    "README.md",
+    "src",
+    "tsconfig.json",
+    "vitest.config.ts"
+  ]
+}

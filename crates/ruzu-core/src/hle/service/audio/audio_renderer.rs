@@ -1,0 +1,608 @@
+//! Port of zuyu/src/core/hle/service/audio/audio_renderer.h and audio_renderer.cpp
+//!
+//! IAudioRenderer service.
+
+use crate::core::AudioRendererSessionInterface;
+use std::collections::BTreeMap;
+use std::sync::{Arc, Mutex, Weak};
+
+use crate::hle::kernel::k_event::KEvent;
+use crate::hle::kernel::k_process::ProcessLock;
+use crate::hle::kernel::k_readable_event::KReadableEvent;
+use crate::hle::kernel::kernel::KernelCore;
+use crate::hle::result::{ResultCode, RESULT_SUCCESS};
+use crate::hle::service::cmif_serialization::{write_out_array_bytes, CmifRequest, CmifResponse};
+use crate::hle::service::hle_ipc::{HLERequestContext, SessionRequestHandler};
+use crate::hle::service::service::{build_handler_map, FunctionInfo, ServiceFramework};
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+/// IPC command table for IAudioRenderer:
+///
+/// | Cmd | Name                              |
+/// |-----|-----------------------------------|
+/// | 0   | GetSampleRate                     |
+/// | 1   | GetSampleCount                    |
+/// | 2   | GetMixBufferCount                 |
+/// | 3   | GetState                          |
+/// | 4   | RequestUpdate                     |
+/// | 5   | Start                             |
+/// | 6   | Stop                              |
+/// | 7   | QuerySystemEvent                  |
+/// | 8   | SetRenderingTimeLimit             |
+/// | 9   | GetRenderingTimeLimit             |
+/// | 10  | RequestUpdateAuto                 |
+/// | 11  | ExecuteAudioRendererRendering     |
+/// | 12  | SetVoiceDropParameter             |
+/// | 13  | GetVoiceDropParameter             |
+pub struct IAudioRenderer {
+    handlers: BTreeMap<u32, FunctionInfo>,
+    handlers_tipc: BTreeMap<u32, FunctionInfo>,
+    renderer: Mutex<Box<dyn AudioRendererSessionInterface>>,
+    owner_process: Weak<ProcessLock>,
+    rendered_event_object_id: u64,
+    rendered_readable_event_object_id: u64,
+    // Service-owned writable endpoint, matching Eden's `rendered_event` lifetime.
+    #[allow(dead_code)]
+    rendered_event: Arc<Mutex<KEvent>>,
+}
+
+static AUDIO_UPDATE_TRACE_COUNT: AtomicUsize = AtomicUsize::new(0);
+
+fn should_trace_audio_update_decoded() -> bool {
+    std::env::var_os("RUZU_TRACE_AUDIO_UPDATE_DECODED").is_some()
+        && AUDIO_UPDATE_TRACE_COUNT.fetch_add(1, Ordering::Relaxed) < 64
+}
+
+fn read_le_u32(data: &[u8], offset: usize) -> Option<u32> {
+    let bytes = data.get(offset..offset + 4)?;
+    Some(u32::from_le_bytes(bytes.try_into().ok()?))
+}
+
+fn read_le_u64(data: &[u8], offset: usize) -> Option<u64> {
+    let bytes = data.get(offset..offset + 8)?;
+    Some(u64::from_le_bytes(bytes.try_into().ok()?))
+}
+
+impl IAudioRenderer {
+    pub fn new(
+        renderer: Box<dyn AudioRendererSessionInterface>,
+        owner_process: Arc<ProcessLock>,
+        rendered_event_object_id: u64,
+        rendered_readable_event_object_id: u64,
+        rendered_event: Arc<Mutex<KEvent>>,
+        rendered_readable_event: Arc<Mutex<KReadableEvent>>,
+    ) -> Self {
+        let handlers = build_handler_map(&[
+            (0, Some(Self::get_sample_rate_handler), "GetSampleRate"),
+            (1, Some(Self::get_sample_count_handler), "GetSampleCount"),
+            (
+                2,
+                Some(Self::get_mix_buffer_count_handler),
+                "GetMixBufferCount",
+            ),
+            (3, Some(Self::get_state_handler), "GetState"),
+            (4, Some(Self::request_update_handler), "RequestUpdate"),
+            (5, Some(Self::start_handler), "Start"),
+            (6, Some(Self::stop_handler), "Stop"),
+            (
+                7,
+                Some(Self::query_system_event_handler),
+                "QuerySystemEvent",
+            ),
+            (
+                8,
+                Some(Self::set_rendering_time_limit_handler),
+                "SetRenderingTimeLimit",
+            ),
+            (
+                9,
+                Some(Self::get_rendering_time_limit_handler),
+                "GetRenderingTimeLimit",
+            ),
+            (
+                10,
+                Some(Self::request_update_auto_handler),
+                "RequestUpdateAuto",
+            ),
+            (11, None, "ExecuteAudioRendererRendering"),
+            (
+                12,
+                Some(Self::set_voice_drop_parameter_handler),
+                "SetVoiceDropParameter",
+            ),
+            (
+                13,
+                Some(Self::get_voice_drop_parameter_handler),
+                "GetVoiceDropParameter",
+            ),
+        ]);
+        // Pass the readable event Arc and process Arc directly to the audio
+        // renderer system so it can signal events with proper Mutex synchronization
+        // instead of the unsafe raw process pointer path.
+        renderer.set_rendered_readable_event(Arc::clone(&rendered_readable_event));
+        renderer.set_process_arc(Arc::clone(&owner_process));
+
+        Self {
+            handlers,
+            handlers_tipc: BTreeMap::new(),
+            renderer: Mutex::new(renderer),
+            owner_process: Arc::downgrade(&owner_process),
+            rendered_event_object_id,
+            rendered_readable_event_object_id,
+            rendered_event,
+        }
+    }
+
+    pub(crate) fn create_rendered_event(
+        kernel: &KernelCore,
+        owner_process: &Arc<ProcessLock>,
+    ) -> (u64, u64, Arc<Mutex<KEvent>>, Arc<Mutex<KReadableEvent>>) {
+        let rendered_event_object_id = kernel.create_new_object_id() as u64;
+        let rendered_readable_event_object_id = kernel.create_new_object_id() as u64;
+
+        let mut event = KEvent::new();
+        let mut readable_event = KReadableEvent::new();
+
+        let owner_process_id = owner_process.lock().unwrap().get_process_id();
+        event.initialize(owner_process_id, rendered_readable_event_object_id);
+        readable_event.initialize(rendered_event_object_id, rendered_readable_event_object_id);
+
+        let event = Arc::new(Mutex::new(event));
+        let readable_event = Arc::new(Mutex::new(readable_event));
+
+        {
+            let mut owner = owner_process.lock().unwrap();
+            owner.register_event_object(rendered_event_object_id, Arc::clone(&event));
+            owner.register_readable_event_object(
+                rendered_readable_event_object_id,
+                Arc::clone(&readable_event),
+            );
+        }
+
+        if std::env::var_os("RUZU_TRACE_AUDIO_EVENT").is_some() {
+            log::info!(
+                "IAudioRenderer::create_rendered_event event_object_id={} readable_event_object_id={}",
+                rendered_event_object_id,
+                rendered_readable_event_object_id
+            );
+        }
+
+        (
+            rendered_event_object_id,
+            rendered_readable_event_object_id,
+            event,
+            readable_event,
+        )
+    }
+
+    fn as_self(this: &dyn ServiceFramework) -> &Self {
+        unsafe { &*(this as *const dyn ServiceFramework as *const Self) }
+    }
+
+    fn get_sample_rate_handler(_this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+        let svc = Self::as_self(_this);
+        log::debug!("IAudioRenderer::GetSampleRate");
+        let mut response = CmifResponse::new(ctx, 3, 0, 0);
+        response.push_result(RESULT_SUCCESS);
+        response.push_u32(svc.renderer.lock().unwrap().get_sample_rate());
+    }
+
+    fn get_sample_count_handler(_this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+        let svc = Self::as_self(_this);
+        log::debug!("IAudioRenderer::GetSampleCount");
+        let mut response = CmifResponse::new(ctx, 3, 0, 0);
+        response.push_result(RESULT_SUCCESS);
+        response.push_u32(svc.renderer.lock().unwrap().get_sample_count());
+    }
+
+    fn get_mix_buffer_count_handler(_this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+        let svc = Self::as_self(_this);
+        log::debug!("IAudioRenderer::GetMixBufferCount");
+        let mut response = CmifResponse::new(ctx, 3, 0, 0);
+        response.push_result(RESULT_SUCCESS);
+        response.push_u32(svc.renderer.lock().unwrap().get_mix_buffer_count());
+    }
+
+    fn get_state_handler(_this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+        let svc = Self::as_self(_this);
+        log::debug!("IAudioRenderer::GetState");
+        let mut response = CmifResponse::new(ctx, 3, 0, 0);
+        response.push_result(RESULT_SUCCESS);
+        response.push_u32(svc.renderer.lock().unwrap().get_state());
+    }
+
+    /// Port of upstream `IAudioRenderer::RequestUpdate` → delegates to RequestUpdateAuto.
+    fn request_update_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+        log::trace!(
+            "IAudioRenderer::RequestUpdate tid={:?}",
+            crate::hle::kernel::kernel::get_current_thread_pointer()
+                .map(|thread| thread.lock().unwrap().get_thread_id())
+        );
+        Self::request_update_impl(this, ctx);
+    }
+
+    fn request_update_auto_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+        log::trace!(
+            "IAudioRenderer::RequestUpdateAuto tid={:?}",
+            crate::hle::kernel::kernel::get_current_thread_pointer()
+                .map(|thread| thread.lock().unwrap().get_thread_id())
+        );
+        Self::request_update_impl(this, ctx);
+    }
+
+    /// Common implementation for RequestUpdate and RequestUpdateAuto.
+    fn request_update_impl(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+        let svc = Self::as_self(this);
+        let input = if ctx.can_read_buffer(0) {
+            ctx.read_buffer(0)
+        } else {
+            Vec::new()
+        };
+        let mut output = vec![0u8; ctx.get_write_buffer_size(0)];
+        let mut performance = vec![0u8; ctx.get_write_buffer_size(1)];
+        let result =
+            svc.renderer
+                .lock()
+                .unwrap()
+                .request_update(&input, &mut performance, &mut output);
+        log::trace!(
+            "IAudioRenderer::RequestUpdate buffers input={} output={} performance={} result=0x{:08X}",
+            input.len(),
+            output.len(),
+            performance.len(),
+            result.get_inner_value()
+        );
+        // RUZU_DUMP_AUDIO_UPDATE=N: write the full output buffer of call N to
+        // /tmp/ruzu-audio-update-N.bin for byte-diff against zuyu.
+        if let Ok(target_str) = std::env::var("RUZU_DUMP_AUDIO_UPDATE") {
+            if let Ok(target) = target_str.parse::<u64>() {
+                use std::sync::atomic::{AtomicU64, Ordering};
+                static COUNT: AtomicU64 = AtomicU64::new(0);
+                let n = COUNT.fetch_add(1, Ordering::Relaxed) + 1;
+                if n == target {
+                    let path = format!("/tmp/ruzu-audio-update-{}.bin", target);
+                    if let Err(e) = std::fs::write(&path, &output) {
+                        log::error!("RUZU_DUMP_AUDIO_UPDATE: failed to write {}: {}", path, e);
+                    } else {
+                        log::info!(
+                            "RUZU_DUMP_AUDIO_UPDATE: wrote {} bytes to {}",
+                            output.len(),
+                            path
+                        );
+                    }
+                }
+            }
+        }
+        // RUZU_DUMP_AUDIO_UPDATE_RANGE=start-end (inclusive): write both input and
+        // output buffers of calls in [start, end] to /tmp/ruzu-audio-update-N-{in,out}.bin
+        // for byte-diff against an equivalent zuyu capture.
+        if let Ok(range_str) = std::env::var("RUZU_DUMP_AUDIO_UPDATE_RANGE") {
+            if let Some((start_str, end_str)) = range_str.split_once('-') {
+                if let (Ok(start), Ok(end)) = (start_str.parse::<u64>(), end_str.parse::<u64>()) {
+                    use std::sync::atomic::{AtomicU64, Ordering};
+                    static RANGE_COUNT: AtomicU64 = AtomicU64::new(0);
+                    let n = RANGE_COUNT.fetch_add(1, Ordering::Relaxed) + 1;
+                    if n >= start && n <= end {
+                        let in_path = format!("/tmp/ruzu-audio-update-{}-in.bin", n);
+                        let out_path = format!("/tmp/ruzu-audio-update-{}-out.bin", n);
+                        let _ = std::fs::write(&in_path, &input);
+                        let _ = std::fs::write(&out_path, &output);
+                        log::info!(
+                            "RUZU_DUMP_AUDIO_UPDATE_RANGE: call={} in={}B out={}B result=0x{:08X}",
+                            n,
+                            input.len(),
+                            output.len(),
+                            result.get_inner_value()
+                        );
+                    }
+                }
+            }
+        }
+        if std::env::var_os("RUZU_LOG_AUDIO_UPDATE_BYTES").is_some() && output.len() >= 0x1A00 {
+            let words: Vec<u32> = output
+                .chunks_exact(4)
+                .take(0x680)
+                .map(|chunk| u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]))
+                .collect();
+            log::info!(
+                "IAudioRenderer::RequestUpdate header_w0_15=[{:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X}]",
+                words[0], words[1], words[2], words[3], words[4], words[5], words[6], words[7],
+                words[8], words[9], words[10], words[11], words[12], words[13], words[14], words[15]
+            );
+            log::info!(
+                "IAudioRenderer::RequestUpdate mempool_w16_31=[{:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X}]",
+                words[16], words[17], words[18], words[19], words[20], words[21], words[22], words[23],
+                words[24], words[25], words[26], words[27], words[28], words[29], words[30], words[31]
+            );
+            // Voices section starts at 0x40 + memory_pool_size (0x18E0) = 0x1920 → word index 0x648
+            let v0 = 0x648usize;
+            log::info!(
+                "IAudioRenderer::RequestUpdate voices_first16=[{:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X}]",
+                words[v0], words[v0+1], words[v0+2], words[v0+3], words[v0+4], words[v0+5], words[v0+6], words[v0+7],
+                words[v0+8], words[v0+9], words[v0+10], words[v0+11], words[v0+12], words[v0+13], words[v0+14], words[v0+15]
+            );
+        }
+        if should_trace_audio_update_decoded() && output.len() >= 0x30 {
+            let behaviour_size = read_le_u32(&output, 0x04).unwrap_or(0);
+            let memory_pool_size = read_le_u32(&output, 0x08).unwrap_or(0);
+            let voices_size = read_le_u32(&output, 0x0C).unwrap_or(0);
+            let effects_size = read_le_u32(&output, 0x14).unwrap_or(0);
+            let sinks_size = read_le_u32(&output, 0x1C).unwrap_or(0);
+            let performance_size = read_le_u32(&output, 0x20).unwrap_or(0);
+            let render_info_size = read_le_u32(&output, 0x28).unwrap_or(0);
+            let total_size = read_le_u32(&output, 0x3C).unwrap_or(0);
+
+            let behavior_offset = 0x40usize
+                .saturating_add(memory_pool_size as usize)
+                .saturating_add(voices_size as usize)
+                .saturating_add(effects_size as usize)
+                .saturating_add(sinks_size as usize)
+                .saturating_add(performance_size as usize);
+            let render_info_offset = behavior_offset.saturating_add(behaviour_size as usize);
+            let error_count = read_le_u32(&output, behavior_offset.saturating_add(0xA0));
+            let frames_elapsed = read_le_u64(&output, render_info_offset);
+
+            log::info!(
+                "IAudioRenderer::RequestUpdate decoded total_size=0x{:X} behavior_size=0x{:X} memory_pool_size=0x{:X} voices_size=0x{:X} effects_size=0x{:X} sinks_size=0x{:X} perf_size=0x{:X} render_info_size=0x{:X} behavior_offset=0x{:X} render_info_offset=0x{:X} error_count={:?} frames_elapsed={:?}",
+                total_size,
+                behaviour_size,
+                memory_pool_size,
+                voices_size,
+                effects_size,
+                sinks_size,
+                performance_size,
+                render_info_size,
+                behavior_offset,
+                render_info_offset,
+                error_count,
+                frames_elapsed
+            );
+        }
+        if result.is_success() {
+            write_out_array_bytes(ctx, 0, &output);
+            write_out_array_bytes(ctx, 1, &performance);
+        }
+        let mut response = CmifResponse::new(ctx, 2, 0, 0);
+        response.push_result(result);
+    }
+
+    fn start_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+        let svc = Self::as_self(this);
+        log::info!("IAudioRenderer::Start");
+        svc.renderer.lock().unwrap().start();
+        let mut response = CmifResponse::new(ctx, 2, 0, 0);
+        response.push_result(RESULT_SUCCESS);
+    }
+
+    fn stop_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+        let svc = Self::as_self(this);
+        log::debug!("IAudioRenderer::Stop");
+        svc.renderer.lock().unwrap().stop();
+        let mut response = CmifResponse::new(ctx, 2, 0, 0);
+        response.push_result(RESULT_SUCCESS);
+    }
+
+    /// Port of upstream `IAudioRenderer::QuerySystemEvent`.
+    ///
+    /// Upstream returns `&rendered_event->GetReadableEvent()` as a copy handle.
+    /// Rust creates the KReadableEvent with the service and defers copy-handle
+    /// allocation to IPC write-back, matching upstream `OutCopyHandle`.
+    fn query_system_event_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+        log::info!("IAudioRenderer::QuerySystemEvent");
+        let svc = Self::as_self(this);
+        if !svc.renderer.lock().unwrap().supports_system_event() {
+            CmifResponse::result_only(
+                ctx,
+                ResultCode::from_module_description(
+                    crate::hle::result::ErrorModule::Audio,
+                    crate::hle::service::audio::errors::RESULT_NOT_SUPPORTED.1,
+                ),
+            );
+            return;
+        }
+
+        if std::env::var_os("RUZU_TRACE_AUDIO_EVENT").is_some() {
+            log::info!(
+                "IAudioRenderer::QuerySystemEvent readable_event_object_id={} deferred_handle",
+                svc.rendered_readable_event_object_id
+            );
+        }
+
+        let mut response = CmifResponse::new(ctx, 2, 1, 0);
+        response.push_result(RESULT_SUCCESS);
+        response.push_copy_object_id(svc.rendered_readable_event_object_id);
+    }
+
+    fn set_rendering_time_limit_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+        let svc = Self::as_self(this);
+        log::debug!("IAudioRenderer::SetRenderingTimeLimit");
+        let mut request = CmifRequest::new(ctx);
+        let rendering_time_limit = request.u32();
+        svc.renderer
+            .lock()
+            .unwrap()
+            .set_rendering_time_limit(rendering_time_limit);
+        let mut response = CmifResponse::new(ctx, 2, 0, 0);
+        response.push_result(RESULT_SUCCESS);
+    }
+
+    fn get_rendering_time_limit_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+        let svc = Self::as_self(this);
+        log::debug!("IAudioRenderer::GetRenderingTimeLimit");
+        let mut response = CmifResponse::new(ctx, 3, 0, 0);
+        response.push_result(RESULT_SUCCESS);
+        response.push_u32(svc.renderer.lock().unwrap().get_rendering_time_limit());
+    }
+
+    fn set_voice_drop_parameter_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+        let svc = Self::as_self(this);
+        log::debug!("IAudioRenderer::SetVoiceDropParameter");
+        let mut request = CmifRequest::new(ctx);
+        let value = request.f32();
+        svc.renderer.lock().unwrap().set_voice_drop_parameter(value);
+        let mut response = CmifResponse::new(ctx, 2, 0, 0);
+        response.push_result(RESULT_SUCCESS);
+    }
+
+    fn get_voice_drop_parameter_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+        let svc = Self::as_self(this);
+        log::debug!("IAudioRenderer::GetVoiceDropParameter");
+        let mut response = CmifResponse::new(ctx, 3, 0, 0);
+        response.push_result(RESULT_SUCCESS);
+        response.push_f32(svc.renderer.lock().unwrap().get_voice_drop_parameter());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::AudioRendererSessionInterface;
+    use crate::hle::kernel::k_process::KProcess;
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+
+    struct TestAudioRendererSession {
+        finalize_calls: Arc<AtomicUsize>,
+        finalize_saw_registered_event: Arc<AtomicBool>,
+        owner_process: Weak<ProcessLock>,
+        readable_event_id: u64,
+    }
+
+    impl AudioRendererSessionInterface for TestAudioRendererSession {
+        fn get_sample_rate(&self) -> u32 {
+            48_000
+        }
+
+        fn get_sample_count(&self) -> u32 {
+            240
+        }
+
+        fn get_mix_buffer_count(&self) -> u32 {
+            2
+        }
+
+        fn get_state(&self) -> u32 {
+            0
+        }
+
+        fn request_update(
+            &self,
+            _input: &[u8],
+            _performance: &mut [u8],
+            _output: &mut [u8],
+        ) -> ResultCode {
+            RESULT_SUCCESS
+        }
+
+        fn start(&self) {}
+
+        fn stop(&self) {}
+
+        fn finalize(&self) {
+            self.finalize_calls.fetch_add(1, Ordering::SeqCst);
+            let event_is_registered = self.owner_process.upgrade().is_some_and(|owner| {
+                owner
+                    .lock()
+                    .unwrap()
+                    .get_readable_event_by_object_id(self.readable_event_id)
+                    .is_some()
+            });
+            self.finalize_saw_registered_event
+                .store(event_is_registered, Ordering::SeqCst);
+        }
+
+        fn supports_system_event(&self) -> bool {
+            true
+        }
+
+        fn set_process(&self, _process: *mut KProcess) {}
+
+        fn set_rendering_time_limit(&self, _rendering_time_limit: u32) {}
+
+        fn get_rendering_time_limit(&self) -> u32 {
+            0
+        }
+
+        fn set_voice_drop_parameter(&self, _voice_drop_parameter: f32) {}
+
+        fn get_voice_drop_parameter(&self) -> f32 {
+            0.0
+        }
+    }
+
+    #[test]
+    fn service_registers_upstream_command_ids() {
+        let owner_process = Arc::new(ProcessLock::from_value(KProcess::new()));
+        let kernel = KernelCore::new();
+        let (event_id, readable_event_id, event, readable_event) =
+            IAudioRenderer::create_rendered_event(&kernel, &owner_process);
+        let event_observer = Arc::clone(&event);
+        let readable_event_observer = Arc::clone(&readable_event);
+        let finalize_calls = Arc::new(AtomicUsize::new(0));
+        let finalize_saw_registered_event = Arc::new(AtomicBool::new(false));
+        let renderer = Box::new(TestAudioRendererSession {
+            finalize_calls: Arc::clone(&finalize_calls),
+            finalize_saw_registered_event: Arc::clone(&finalize_saw_registered_event),
+            owner_process: Arc::downgrade(&owner_process),
+            readable_event_id,
+        });
+        let service = IAudioRenderer::new(
+            renderer,
+            Arc::clone(&owner_process),
+            event_id,
+            readable_event_id,
+            event,
+            readable_event,
+        );
+
+        for cmd in [0_u32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] {
+            assert!(service.handlers.contains_key(&cmd));
+        }
+        assert!(service.handlers[&11].handler_callback.is_none());
+
+        assert_eq!(Arc::strong_count(&event_observer), 3);
+        assert_eq!(Arc::strong_count(&readable_event_observer), 2);
+        drop(service);
+        assert_eq!(finalize_calls.load(Ordering::SeqCst), 1);
+        assert!(finalize_saw_registered_event.load(Ordering::SeqCst));
+        assert_eq!(Arc::strong_count(&event_observer), 1);
+        assert_eq!(Arc::strong_count(&readable_event_observer), 1);
+        assert!(owner_process
+            .lock()
+            .unwrap()
+            .get_readable_event_by_object_id(readable_event_id)
+            .is_none());
+    }
+}
+
+impl Drop for IAudioRenderer {
+    fn drop(&mut self) {
+        self.renderer.lock().unwrap().finalize();
+        if let Some(owner_process) = self.owner_process.upgrade() {
+            let mut owner = owner_process.lock().unwrap();
+            owner.unregister_readable_event_object_by_object_id(
+                self.rendered_readable_event_object_id,
+            );
+            owner.unregister_event_object_by_object_id(self.rendered_event_object_id);
+        }
+    }
+}
+
+impl SessionRequestHandler for IAudioRenderer {
+    fn handle_sync_request(&self, context: &mut HLERequestContext) -> ResultCode {
+        ServiceFramework::handle_sync_request_impl(self, context)
+    }
+}
+
+impl ServiceFramework for IAudioRenderer {
+    fn get_service_name(&self) -> &str {
+        "IAudioRenderer"
+    }
+
+    fn handlers(&self) -> &BTreeMap<u32, FunctionInfo> {
+        &self.handlers
+    }
+
+    fn handlers_tipc(&self) -> &BTreeMap<u32, FunctionInfo> {
+        &self.handlers_tipc
+    }
+}

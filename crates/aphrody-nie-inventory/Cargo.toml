@@ -1,0 +1,36 @@
+[package]
+name                   = "aphrody-nie-inventory"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace = true
+publish = true
+description            = "IEVR (Inazuma Eleven Victory Road) reverse-engineering analysis tools — consumes binary inventory JSON for static catalog work."
+
+[[bin]]
+name = "ievr-tools"
+path = "src/main.rs"
+
+[lib]
+name = "ievr_tools"
+path = "src/lib.rs"
+
+[features]
+default = []
+integration = [] # Legacy feature selector; aphrody-re has no integration feature.
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow = { version = "1" }
+aphrody-re.workspace = true
+serde = { version = "1", default-features = false, features = ["std", "derive"] }
+serde_json = { version = "1" }
+clap = { workspace = true, features = ["derive", "color", "env"] }
+byteorder.workspace = true
+hex.workspace = true
+
+[package.metadata.cargo-machete]
+ignored = []

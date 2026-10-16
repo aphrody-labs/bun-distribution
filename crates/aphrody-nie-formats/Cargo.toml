@@ -1,0 +1,121 @@
+[package]
+name = "aphrody-nie-formats"
+description = "Parsers de formats Level-5 (CPK, cfg.bin, G4*, CriLayla, Criware) portés en Rust no_std-friendly pour nie headless + wasm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# `sprite_sheet` : la feuille (CSS/SVG/JSON) vit dans aphrody-ui ; ce dépôt n'y ajoute que la
+# lecture des régions d'un `.g4tx` (`depuis_g4tx`).
+aphrody-sprite-sheet = { workspace = true, optional = true }
+# (thiserror retiré, Phase 3 : FormatError/AssembleError implémentent core::error::Error à la main → no_std-ready)
+# Chemin rapide de `cfgbin::crc32` pour les gros tampons ; la table reste le chemin court et
+# le seul chemin en `no_std`.
+# Algèbre matricielle unique (`scalar-math`, SIMD désactivé) : `g4sk` composait ses squelettes
+# avec sa propre implémentation, dans une convention différente de celle du rendu.
+glam.workspace = true
+crc32fast = { workspace = true, optional = true }
+serde = { version = "1", default-features = false, features = ["std", "derive"], optional = true }
+serde_json = { version = "1" }
+aes.workspace = true
+# Décodage des textures DDS/BCn — feature `textures` uniquement (off par défaut).
+# `default-features = false` = décodeur pur Rust, compatible no_std/wasm32.
+image_dds = { workspace = true, optional = true }
+png = { version = "0.18", optional = true }
+# Encodeurs d'images de sortie (module `image_out`, feature `images`). Pur Rust, MIT/Apache :
+# WebP passe par `image-webp` (VP8L lossless), GIF par `gif`, JPEG par `jpeg-encoder`.
+# `default-features = false` retire rayon → pas de pool de threads imposé aux consommateurs.
+# Le PNG **ne passe pas par ici** : il garde la crate `png` (cf. `image_out.rs`).
+image = { version = "0.25", default-features = false, features = ["png", "webp", "gif", "jpeg", "bmp", "tga", "tiff", "qoi"], optional = true }
+# Décodage HCA chiffré (feature `audio-decode` uniquement, off par défaut).
+# `default-features = false` = pur Rust, compatible wasm32 (aphrody-nie-wasm le prouve).
+cridecoder = { workspace = true, optional = true }
+# Decodeur de bytecode Lua 5.2 (feature `lua`) : c'est le format des 1 197 `.lua.bin` du jeu.
+# `default-features = false` coupe la VM (mlua, Lua en C) ET l'analyse statique (tree-sitter) —
+# il ne reste que `aphrody_nie_lua::bytecode`, pur Rust, donc wasm-compatible.
+# Le cycle avec la dev-dependency `aphrody-nie-formats` de aphrody-nie-lua est legal (Cargo n'interdit que les
+# cycles de dependances NORMALES) et verifie ici : `cargo check -p aphrody-nie-lua` passe.
+aphrody-nie-lua = { workspace = true, optional = true, default-features = false }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tempfile = { version = "3", optional = true }
+aphrody-ssh = { workspace = true, optional = true }
+russh = { workspace = true, optional = true }
+russh-sftp = { workspace = true, optional = true }
+reqwest = { version = "0.13.4", default-features = false, features = ["blocking", "rustls"], optional = true }
+tokio = { version = "1", features = ["rt-multi-thread", "io-util", "time"], optional = true }
+scraper = { workspace = true, optional = true }
+percent-encoding = { workspace = true, optional = true }
+
+[features]
+# `default = ["std"]` → build par défaut = crate std (consommateurs INCHANGÉS).
+# `--no-default-features` → `#![no_std]` strict (cœur de parseurs alloc-only, pour aphrody-nie-data).
+default = ["std", "lua"]
+remote-vfs = ["std", "dep:aphrody-ssh", "dep:russh", "dep:russh-sftp", "dep:reqwest", "dep:tokio", "dep:scraper", "dep:percent-encoding"]
+std = ["dep:crc32fast", "crc32fast/std", "dep:aphrody-sprite-sheet", "dep:tempfile"]
+# Bytecode Lua 5.2 (`.lua.bin`) branche sur `decode` — via `aphrody-nie-lua`, source unique du decodeur.
+lua = ["std", "dep:aphrody-nie-lua"]
+serde = ["dep:serde"]
+# Décodeur G4TX/DDS → RGBA8/PNG unique (module `g4tx_decode`). Tire `image_dds` (std) → implique `std`.
+textures = ["std", "dep:image_dds", "dep:png"]
+# Encodage d'une image décodée vers les formats d'échange (WebP lossless, GIF, JPEG, BMP, TGA,
+# TIFF, QOI). Tire `image` (std) → implique `std`. Le PNG reste hors de cette feature.
+images = ["std", "dep:image", "dep:png"]
+# Encodage RGBA → bloc compressé BCn (BC7 notamment), via `image_dds/encode` (→ `intel_tex_2`).
+# Hors du chemin par défaut : `intel_tex_2` embarque du code ISPC et alourdit le build. Sert à
+# **remplacer une texture du jeu dans son format d'origine**, seule façon de réécrire un `.g4tx`
+# compressé sans changer la taille des données — donc sans toucher aux offsets ni aux régions.
+textures-encode = ["textures", "image_dds/encode"]
+# Décodeur audio Criware → WAV (HCA + ADX/AWB/ACB) — source unique (cri_audio::decode_to_wav).
+# Tire `cridecoder` (std::io) → implique `std`.
+audio-decode = ["std", "dep:cridecoder"]
+# Tests golden sur fragments RÉELS (copyright Level-5, gitignoré). Chargent via std::fs → implique `std`.
+real-fixtures = ["std"]
+
+# `model_glb_preview` appelle `g4tx_decode`, qui vit derrière la feature `textures`.
+# Sans cette déclaration, `cargo test -p aphrody-nie-formats` (features par défaut) échoue à compiler
+# l'exemple — le workspace complet le masquait en unifiant les features.
+[[example]]
+name = "model_glb_preview"
+required-features = ["textures"]
+
+[[example]]
+name = "menu_presentation_export"
+required-features = ["textures", "serde"]
+
+[[example]]
+name = "probe_g4tg"
+required-features = ["textures"]
+
+[[example]]
+name = "probe_g4tg_swizzle"
+required-features = ["textures"]
+
+# `g4tx_patch_region` réencode en BC7 (`SurfaceRgba8::encode`), qui vit derrière `image_dds/encode`.
+# Sans cette déclaration, `cargo test -p aphrody-nie-formats --features textures` échoue à compiler
+# l'exemple — donc n'exécute AUCUN test du crate — alors que l'exemple lui-même documente
+# `--features textures-encode` dans son en-tête.
+[[example]]
+name = "g4tx_patch_region"
+required-features = ["textures-encode"]
+
+# `luabin_reel` vérifie que le bytecode Lua produit bien du JSON : il lui faut `serde`, qui
+# n'est PAS dans `default`. Sans cette déclaration, son `#![cfg(…)]` vidait le fichier et
+# `cargo test -p aphrody-nie-formats` affichait « ok. 0 passed » — un vert qui n'a rien exécuté, alors
+# que le test compte 2 cas et passe sous `--features serde`. `required-features` rend
+# l'exigence explicite : cargo écarte la cible au lieu d'en produire une coquille verte.
+[[test]]
+name = "luabin_reel"
+required-features = ["serde", "lua"]
+
+[dev-dependencies]
+# Encodage PNG pour les examples/tests (atlas, anim, scène de dialogue) — indépendant
+# de la feature `textures` (qui ne gate que le décodeur DDS de la lib).
+png = { version = "0.18" }

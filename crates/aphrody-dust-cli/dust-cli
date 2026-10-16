@@ -1,0 +1,501 @@
+#!/usr/bin/env python3
+"""CLI bridge for driving a headless Dust (Nintendo DS emulator) instance for reverse
+engineering. Talks newline-delimited JSON to the `cli-server` feature's TCP bridge
+(vendor/dust-imgui-frontend-archive/src/emu/cli_server.rs). See tools/dust-cli/README.md.
+"""
+import argparse
+import json
+import os
+import socket
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+STATE_FILE = Path(".dust-cli-state.json")
+LOG_FILE = Path(".dust-cli.log")
+
+
+def find_binary():
+    env = os.environ.get("DUST_DESKTOP_BIN")
+    if env:
+        return env
+    # A binary shipped alongside this script (how install.sh lays out the skill bundle: bin/dust-cli
+    # next to bin/dust-desktop) wins over whatever the current project happens to have built.
+    here = Path(__file__).resolve().parent
+    candidates = [here / "dust-desktop", here.parent / "bin" / "dust-desktop"]
+    candidates += [Path("target/release/dust-desktop"), Path("target/debug/dust-desktop")]
+    for candidate in candidates:
+        if candidate.exists():
+            return str(candidate)
+    return "dust-desktop"
+
+
+def load_state():
+    if not STATE_FILE.exists():
+        print("No active session (run 'launch' first)", file=sys.stderr)
+        sys.exit(1)
+    return json.loads(STATE_FILE.read_text())
+
+
+def send(request, timeout=None):
+    state = load_state()
+    with socket.create_connection(("127.0.0.1", state["port"]), timeout=timeout) as sock:
+        sock.sendall((json.dumps(request) + "\n").encode())
+        sock.settimeout(timeout)
+        buf = b""
+        while not buf.endswith(b"\n"):
+            chunk = sock.recv(65536)
+            if not chunk:
+                break
+            buf += chunk
+    if not buf:
+        print("No response from dust-desktop (is it still running?)", file=sys.stderr)
+        sys.exit(1)
+    resp = json.loads(buf.decode())
+    if not resp.get("ok", True):
+        print(resp.get("error", resp), file=sys.stderr)
+        sys.exit(1)
+    return resp
+
+
+def parse_addr(addr):
+    addr = addr.lstrip("$").lstrip("0x") if addr.lower().startswith("0x") else addr.lstrip("$")
+    return int(addr, 16)
+
+
+def cmd_launch(args):
+    binary = args.dust_desktop_bin or find_binary()
+    cli_args = [
+        binary,
+        "--headless",
+        "--rom",
+        str(Path(args.rom).resolve()),
+        "--addr",
+        args.addr,
+        "--model",
+        args.model,
+    ]
+    if args.arm7_bios:
+        cli_args += ["--arm7-bios", args.arm7_bios]
+    if args.arm9_bios:
+        cli_args += ["--arm9-bios", args.arm9_bios]
+    if args.firmware:
+        cli_args += ["--firmware", args.firmware]
+
+    log = open(LOG_FILE, "wb")
+    proc = subprocess.Popen(cli_args, stdout=log, stderr=subprocess.STDOUT)
+
+    port = None
+    deadline = time.time() + 10
+    while time.time() < deadline:
+        if proc.poll() is not None:
+            log.flush()
+            print(
+                f"dust-desktop exited early (code {proc.returncode}); see {LOG_FILE}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        text = LOG_FILE.read_text(errors="replace")
+        for line in text.splitlines():
+            if line.startswith("PORT "):
+                port = int(line.split()[1])
+                break
+        if port is not None:
+            break
+        time.sleep(0.05)
+
+    if port is None:
+        print(f"Timed out waiting for dust-desktop to start; see {LOG_FILE}", file=sys.stderr)
+        sys.exit(1)
+
+    STATE_FILE.write_text(
+        json.dumps({"pid": proc.pid, "port": port, "rom": str(Path(args.rom).resolve())})
+    )
+    print(f"launched pid={proc.pid} port={port}")
+
+
+def cmd_break(args):
+    print(send({"cmd": "break", "addr": parse_addr(args.addr), "core": args.core}))
+
+
+def cmd_unbreak(args):
+    print(send({"cmd": "unbreak", "addr": parse_addr(args.addr), "core": args.core}))
+
+
+def cmd_breaks(args):
+    resp = send({"cmd": "breaks", "core": args.core})
+    for addr in resp.get("breakpoints", []):
+        print(f"0x{addr:08x}")
+
+
+def cmd_watch(args):
+    print(
+        send(
+            {
+                "cmd": "watch",
+                "addr": parse_addr(args.addr),
+                "size": args.size,
+                "rw": args.rw,
+                "core": args.core,
+            }
+        )
+    )
+
+
+def cmd_unwatch(args):
+    print(
+        send(
+            {
+                "cmd": "unwatch",
+                "addr": parse_addr(args.addr),
+                "size": args.size,
+                "rw": args.rw,
+                "core": args.core,
+            }
+        )
+    )
+
+
+def print_stop(resp):
+    stop = resp.get("stop")
+    if not stop:
+        print(resp)
+        return
+    kind = stop.get("stop")
+    if kind in ("breakpoint", "step"):
+        line = f"{kind} core={stop['core']} pc=0x{stop['pc']:08x}"
+    elif kind == "watchpoint":
+        line = f"watchpoint core={stop['core']} addr=0x{stop['addr']:08x} rw={stop['rw']}"
+    else:
+        line = kind
+    if resp.get("frames") is not None:
+        line += f" frames={resp['frames']}"
+    remaining = resp.get("touch_remaining")
+    if remaining:
+        line += f" touch_remaining={remaining}"
+    print(line)
+
+
+def cmd_continue(args):
+    print_stop(send({"cmd": "continue"}, timeout=None))
+
+
+def cmd_step(args):
+    print_stop(send({"cmd": "step", "core": args.core}))
+
+
+def cmd_pause(args):
+    print(send({"cmd": "pause"}, timeout=5))
+
+
+def cmd_regs(args):
+    resp = send({"cmd": "regs", "core": args.core})
+    regs = resp["regs"]
+    if args.json:
+        print(json.dumps(regs))
+        return
+    print(f"pc:   0x{regs['pc']:08x}")
+    for i, value in enumerate(regs["gprs"]):
+        print(f"r{i}:{'  ' if i < 10 else ' '} 0x{value:08x}")
+    print(f"cpsr: 0x{regs['cpsr']:08x}")
+
+
+def cmd_set_reg(args):
+    print(send({"cmd": "set_reg", "core": args.core, "reg": args.reg, "value": parse_addr(args.value)}))
+
+
+def cmd_read(args):
+    resp = send({"cmd": "read", "addr": parse_addr(args.addr), "len": args.length, "core": args.core})
+    if args.raw:
+        sys.stdout.buffer.write(bytes(resp["bytes"]))
+        return
+    addr = parse_addr(args.addr)
+    for i, byte in enumerate(resp["bytes"]):
+        print(f"{addr + i:08x}: {byte:02x}")
+
+
+def cmd_write(args):
+    if args.bytes_hex:
+        data = bytes.fromhex(args.bytes_hex.replace(" ", ""))
+    else:
+        data = sys.stdin.buffer.read()
+    print(send({"cmd": "write", "addr": parse_addr(args.addr), "bytes": list(data), "core": args.core}))
+
+
+def cmd_press(args):
+    print(send({"cmd": "press", "keys": args.keys}))
+
+
+def cmd_release(args):
+    print(send({"cmd": "release", "keys": args.keys}))
+
+
+def cmd_run(args):
+    print_stop(send({"cmd": "run", "frames": args.frames}, timeout=None))
+
+
+def parse_point(text):
+    """A point as "x,y" (or "x y" after shell splitting), in bottom-screen pixels by default."""
+    parts = text.replace(",", " ").split()
+    if len(parts) != 2:
+        raise argparse.ArgumentTypeError(f"expected a point as 'x,y', got {text!r}")
+    return [int(parts[0]), int(parts[1])]
+
+
+def cmd_touch(args):
+    print(send({"cmd": "touch", "x": args.x, "y": args.y, "raw": args.raw}))
+
+
+def cmd_release_touch(args):
+    print(send({"cmd": "release_touch"}))
+
+
+def cmd_tap(args):
+    print_stop(
+        send(
+            {
+                "cmd": "tap",
+                "x": args.x,
+                "y": args.y,
+                "raw": args.raw,
+                "hold_frames": args.hold_frames,
+                "release_frames": args.release_frames,
+            },
+            timeout=None,
+        )
+    )
+
+
+def cmd_drag(args):
+    request = {
+        "cmd": "drag",
+        "points": args.points,
+        "raw": args.raw,
+        "hold_start_frames": args.hold_start_frames,
+        "hold_end_frames": args.hold_end_frames,
+        "release": not args.no_release,
+        "release_frames": args.release_frames,
+    }
+    if args.duration_frames is not None:
+        request["duration_frames"] = args.duration_frames
+    print_stop(send(request, timeout=None))
+
+
+def cmd_touch_script(args):
+    if args.file == "-":
+        samples = json.load(sys.stdin)
+    else:
+        samples = json.loads(Path(args.file).read_text())
+    print_stop(send({"cmd": "touch_script", "samples": samples, "raw": args.raw}, timeout=None))
+
+
+def cmd_touch_state(args):
+    resp = send({"cmd": "touch_state"})
+    state = resp["touch"]
+    if args.json:
+        print(json.dumps(state))
+        return
+    where = f"({state['x']}, {state['y']}) adc=({state['adc_x']}, {state['adc_y']})"
+    print(f"pen {'down' if state['pen_down'] else 'up'} at {where}")
+    print(f"queued gesture frames: {state['queued_frames']}")
+
+
+def cmd_screenshot(args):
+    path = args.path or "screenshot.png"
+    resp = send({"cmd": "screenshot", "path": str(Path(path).resolve())})
+    print(resp.get("path", resp))
+
+
+def cmd_checkpoint(args):
+    print(send({"cmd": "checkpoint"}))
+
+
+def cmd_save_replay(args):
+    resp = send({"cmd": "save_replay", "path": str(Path(args.path).resolve())})
+    print(resp.get("path", resp))
+
+
+def cmd_replay(args):
+    print(send({"cmd": "replay", "path": str(Path(args.path).resolve())}))
+
+
+def cmd_kill(args):
+    try:
+        send({"cmd": "kill"}, timeout=2)
+    except Exception:
+        pass
+    if STATE_FILE.exists():
+        STATE_FILE.unlink()
+    print("killed")
+
+
+def main():
+    parser = argparse.ArgumentParser(prog="dust-cli")
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    def core_arg(p):
+        p.add_argument("--core", choices=["arm7", "arm9"], default="arm9")
+
+    p = sub.add_parser("launch")
+    p.add_argument("rom")
+    p.add_argument("--addr", default="127.0.0.1:0")
+    p.add_argument("--model", choices=["ds", "lite", "ique", "iquelite", "dsi"], default="lite")
+    p.add_argument("--arm7-bios")
+    p.add_argument("--arm9-bios")
+    p.add_argument("--firmware")
+    p.add_argument("--dust-desktop-bin")
+    p.set_defaults(func=cmd_launch)
+
+    p = sub.add_parser("break")
+    p.add_argument("addr")
+    core_arg(p)
+    p.set_defaults(func=cmd_break)
+
+    p = sub.add_parser("unbreak")
+    p.add_argument("addr")
+    core_arg(p)
+    p.set_defaults(func=cmd_unbreak)
+
+    p = sub.add_parser("breaks")
+    core_arg(p)
+    p.set_defaults(func=cmd_breaks)
+
+    p = sub.add_parser("watch")
+    p.add_argument("addr")
+    p.add_argument("--size", type=int, default=1)
+    p.add_argument("--rw", choices=["r", "w", "both"], default="w")
+    core_arg(p)
+    p.set_defaults(func=cmd_watch)
+
+    p = sub.add_parser("unwatch")
+    p.add_argument("addr")
+    p.add_argument("--size", type=int, default=1)
+    p.add_argument("--rw", choices=["r", "w", "both"], default="w")
+    core_arg(p)
+    p.set_defaults(func=cmd_unwatch)
+
+    p = sub.add_parser("continue")
+    p.set_defaults(func=cmd_continue)
+
+    p = sub.add_parser("step")
+    core_arg(p)
+    p.set_defaults(func=cmd_step)
+
+    p = sub.add_parser("pause")
+    p.set_defaults(func=cmd_pause)
+
+    p = sub.add_parser("regs")
+    p.add_argument("--json", action="store_true")
+    core_arg(p)
+    p.set_defaults(func=cmd_regs)
+
+    p = sub.add_parser("set-reg")
+    p.add_argument("reg")
+    p.add_argument("value")
+    core_arg(p)
+    p.set_defaults(func=cmd_set_reg)
+
+    p = sub.add_parser("read")
+    p.add_argument("addr")
+    p.add_argument("length", type=int)
+    p.add_argument("--raw", action="store_true")
+    core_arg(p)
+    p.set_defaults(func=cmd_read)
+
+    p = sub.add_parser("write")
+    p.add_argument("addr")
+    p.add_argument("--bytes-hex")
+    core_arg(p)
+    p.set_defaults(func=cmd_write)
+
+    p = sub.add_parser("press")
+    p.add_argument("keys", nargs="+")
+    p.set_defaults(func=cmd_press)
+
+    p = sub.add_parser("release")
+    p.add_argument("keys", nargs="+")
+    p.set_defaults(func=cmd_release)
+
+    p = sub.add_parser("run", help="emulate exactly N frames (or until a breakpoint stops it)")
+    p.add_argument("frames", type=int)
+    p.set_defaults(func=cmd_run)
+
+    def raw_arg(p):
+        p.add_argument(
+            "--raw",
+            action="store_true",
+            help="coordinates are raw 12-bit panel readings, not bottom-screen pixels",
+        )
+
+    p = sub.add_parser("touch", help="put the pen down at a point and leave it there")
+    p.add_argument("x", type=int)
+    p.add_argument("y", type=int)
+    raw_arg(p)
+    p.set_defaults(func=cmd_touch)
+
+    p = sub.add_parser("release-touch")
+    p.set_defaults(func=cmd_release_touch)
+
+    p = sub.add_parser("tap", help="touch down, hold, and release at one point")
+    p.add_argument("x", type=int)
+    p.add_argument("y", type=int)
+    raw_arg(p)
+    p.add_argument("--hold-frames", type=int, default=6)
+    p.add_argument("--release-frames", type=int, default=2)
+    p.set_defaults(func=cmd_tap)
+
+    p = sub.add_parser("drag", help="stroke the stylus through two or more points")
+    p.add_argument("points", nargs="+", type=parse_point, metavar="X,Y")
+    raw_arg(p)
+    p.add_argument(
+        "--duration-frames",
+        type=int,
+        help="frames the moving part of the stroke takes (default: scaled to the path length)",
+    )
+    p.add_argument("--hold-start-frames", type=int, default=4)
+    p.add_argument("--hold-end-frames", type=int, default=4)
+    p.add_argument("--release-frames", type=int, default=2)
+    p.add_argument(
+        "--no-release",
+        action="store_true",
+        help="leave the pen down at the last point instead of lifting it",
+    )
+    p.set_defaults(func=cmd_drag)
+
+    p = sub.add_parser(
+        "touch-script",
+        help='per-frame timeline as JSON: [{"x":..,"y":..,"frames":..}, {"frames":..}, ...]',
+    )
+    p.add_argument("file", help="JSON file, or '-' for stdin")
+    raw_arg(p)
+    p.set_defaults(func=cmd_touch_script)
+
+    p = sub.add_parser("touch-state")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_touch_state)
+
+    p = sub.add_parser("screenshot")
+    p.add_argument("path", nargs="?")
+    p.set_defaults(func=cmd_screenshot)
+
+    p = sub.add_parser("checkpoint")
+    p.set_defaults(func=cmd_checkpoint)
+
+    p = sub.add_parser("save-replay")
+    p.add_argument("path")
+    p.set_defaults(func=cmd_save_replay)
+
+    p = sub.add_parser("replay")
+    p.add_argument("path")
+    p.set_defaults(func=cmd_replay)
+
+    p = sub.add_parser("kill")
+    p.set_defaults(func=cmd_kill)
+
+    args = parser.parse_args()
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()

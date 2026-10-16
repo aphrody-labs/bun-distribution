@@ -1,0 +1,114 @@
+[package]
+name = "aphrody-nie-wasm"
+description = "Bindings WebAssembly pour le savoir nie vérifié : aphrody-nie-formats (detect/CRILAYLA/@UTF/G4*), aphrody-nie-core (stats growth + FSM de match) et aphrody-nie-data (lookup skill/aura/item) exposés au navigateur via wasm-bindgen"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+# cdylib pour wasm-bindgen ; rlib pour que `cargo build --workspace` (natif) reste vert.
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[lints]
+workspace = true
+
+[dependencies]
+# Features : `textures` = décodeur G4TX/DDS partagé (`aphrody_nie_formats::g4tx_decode`) ;
+# `audio-decode` = décodeur audio HCA/ADX/AWB/ACB partagé (`cri_audio::decode_to_wav`).
+# `image_dds`/`png`/`cridecoder` arrivent transitivement (pur Rust, compatibles wasm32).
+aphrody-nie-formats = { workspace = true, features = ["serde", "textures", "audio-decode"], default-features = true }
+# aphrody-nie-core (calcul de stats/growth + machine à états de match) et aphrody-nie-data (lookup
+# skill/aura/item) avec la feature `serde` pour sérialiser les résultats en JSON côté
+# navigateur. Déclarés en path direct : ces deux crates ne sont pas (encore) dans la
+# `[workspace.dependencies]` racine.
+aphrody-nie-core = { workspace = true, features = ["serde", "data"] }
+aphrody-nie-data = { workspace = true, features = ["serde"] }
+aphrody-nie-save = { workspace = true, features = ["serde"] }
+# Le rendu 3D des VRAIS modèles du jeu. `default-features = false` retire `clap` (l'exécutable)
+# et laisse le rastériseur CPU pur Rust : aucun GPU requis, et c'est exactement le code dont les
+# tests golden natifs vérifient la sortie.
+aphrody-nie-render3d.workspace = true
+# Decodeur de bytecode Lua 5.2 SANS la VM : `default-features = false` retire mlua (Lua
+# vendored en C), qui ne se construit pas pour wasm32. Le module `bytecode` est pur Rust.
+aphrody-nie-lua = { workspace = true, default-features = false }
+# aphrody-nie-app : le JEU jouable (FSM GameState + rendu CPU framebuffer). Cœur wasm-safe
+# (l'I/O assets est gatée hors wasm) → expose `WasmGame` pour le canvas navigateur.
+aphrody-nie-app.workspace = true
+# `aphrody-nie-runtime` provides the deterministic local match simulation and top-down renderer exposed by
+# `WasmMatch`; it is not the native executable's match engine. `aphrody-nie-render3d` follows separately.
+aphrody-nie-runtime.workspace = true
+# Camera state, projection/view matrices and the verified interpolation controller are pure
+# Rust. Host process memory and SQLite tooling stay excluded from the browser dependency graph.
+aphrody-nie-camera = { workspace = true, default-features = false }
+# Shared VFS content dispatcher. Native filesystem search and the Lua VM remain behind
+# aphrody-nie-explore's disabled `host` feature; browser bytes use the same portable parsers as the CLI.
+aphrody-nie-explore = { workspace = true, default-features = false }
+# Pure-Rust PE/ELF triage used to inspect a user-supplied executable entirely in the browser.
+aphrody-nie-pe-inspect.workspace = true
+# Pure-Rust MSVC-dialect x86-64 assembler used by the browser inspection/forge surface.
+aphrody-nie-asm.workspace = true
+# Byte-exact executable comparison from the PE forge, without its optional serde surface.
+aphrody-nie-pe.workspace = true
+# Bounded x86-64 lifting and blocker diagnostics from the executable forge. Database-backed
+# reference storage stays outside the browser through the disabled `redb` feature.
+aphrody-nie-forge = { workspace = true, default-features = false }
+# Safe in-memory minidump parsing; the browser wrapper exposes metadata only and never copies
+# captured process memory back into JavaScript.
+aphrody-nie-dump.workspace = true
+# Detailed, bounded PE/COFF section/import/export inspection over uploaded bytes.
+# Portable `.pdata` inspection; SQLite/Redis propagation and host dump recovery stay disabled.
+aphrody-nie-re = { workspace = true, default-features = false }
+# Portable AOB scanning only; live process memory and patching remain behind the host feature.
+aphrody-nie-trace = { workspace = true, default-features = false }
+# Pure official-encyclopedia matching; network, SQLite and CLI dependencies stay host-only.
+aphrody-nie-zukan = { workspace = true, default-features = false }
+# Validated format-catalog parsing; database/path ingestion remains behind the host feature.
+aphrody-nie-seed = { workspace = true, default-features = false }
+# Portable task lifecycle snapshots; Tokio workers and UUID generation stay host-only.
+aphrody-nie-tasks = { workspace = true, default-features = false }
+# Deterministic in-memory BFS frontier; the shared Redis backend remains host-only.
+aphrody-nie-queue = { workspace = true, default-features = false }
+# Credential-free depot selection/collision planning; Steam network and filesystem access stay host-only.
+aphrody-nie-steam = { workspace = true, default-features = false }
+# Deterministic, bounded cross-language benchmark samples; clocks and filesystem harnesses stay host-only.
+aphrody-nie-bench = { workspace = true, default-features = false }
+# Bounded offline image address/range inspection; process, SQLite and network probes stay host-only.
+aphrody-nie-computer-use = { workspace = true, default-features = false }
+# Deterministic search over caller-owned reverse-engineering knowledge; SQLite and Redis stay host-only.
+aphrody-nie-index = { workspace = true, default-features = false }
+# Canonical detailed format inspection extracted from the headless CLI binding.
+aphrody-nie-headless = { workspace = true, default-features = false }
+# Portable validated scene editing and bounded undo/redo; native GUI/GPU bindings stay host-only.
+aphrody-nie-editor = { workspace = true, default-features = false }
+# Bounded T2B character/model catalogs extracted from the HTTP binding.
+aphrody-nie-model-serve = { workspace = true, default-features = false }
+# Online multiplayer protocol, Inacode validation, and deterministic rollback simulation.
+aphrody-nie-net = { workspace = true, default-features = false }
+serde = { version = "1", default-features = false, features = ["std", "derive"] }
+serde_json = { version = "1" }
+# (cridecoder arrive via aphrody-nie-formats feature `audio-decode` — plus de dép directe)
+
+# wasm-bindgen est épinglé à une version EXACTE dans le Cargo.toml racine : le CLI
+# `wasm-bindgen` doit porter la même, sinon les bindings générés sont rejetés.
+# Gate via cfg(target_arch = "wasm32") dans le code source.
+wasm-bindgen.workspace = true
+wasm-bindgen-futures.workspace = true
+console_error_panic_hook.workspace = true
+web-time.workspace = true
+parking_lot.workspace = true
+
+
+# Browser entropy support for transitive getrandom 0.3 consumers.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.3.4", default-features = false, features = ["wasm_js"] }
+web-sys = { workspace = true, optional = true, features = ["HtmlCanvasElement"] }
+
+[features]
+default = []
+# Présentation WebGPU du viewport 3D. Le rastériseur CPU, lui, n'est derrière AUCUNE feature :
+# c'est le seul rendu 3D qu'un moteur sans WebGPU puisse faire, et c'est celui dont la sortie
+# est vérifiée par les tests golden natifs de `aphrody-nie-render3d`.
+webgpu = ["aphrody-nie-render3d/webgpu", "dep:web-sys"]

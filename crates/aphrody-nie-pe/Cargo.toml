@@ -1,0 +1,22 @@
+[package]
+name = "aphrody-nie-pe"
+description = "Lecture/écriture byte-exacte du PE64 nie.exe + découpage du fichier en unités de forge"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+thiserror = { version = "2" }
+sha2 = { version = "0.10" }
+serde = { version = "1", default-features = false, features = ["std", "derive"], optional = true }
+
+[features]
+default = ["serde"]
+serde = ["dep:serde"]
+
+[lints]
+workspace = true

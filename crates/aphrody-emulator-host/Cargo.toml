@@ -1,0 +1,22 @@
+[package]
+license-file = "../../docs/licenses/iecode/licenses/dust/LICENSE"
+name = "aphrody-emulator-host"
+version = "0.1.1"
+edition.workspace = true
+publish = true
+description = "Explicit Bevy scheduling for IECODE emulator cores"
+
+[dependencies]
+iecode-bevy-app = { workspace = true }
+iecode-bevy-ecs = { workspace = true }
+aphrody-dust-core = { path = "../aphrody-dust-core" }
+
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+iecode-bevy-app = { workspace = true, features = ["web"] }
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+aphrody-dust-soft-2d = { path = "../aphrody-dust-soft-2d" }
+aphrody-dust-soft-3d = { path = "../aphrody-dust-soft-3d" }

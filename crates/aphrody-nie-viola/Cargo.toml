@@ -1,0 +1,25 @@
+[package]
+name = "aphrody-nie-viola"
+description = "Opérations de modding LEVEL-5 (dump, pack, merge, crypto Criware) en Rust — périmètre de l'outil Viola, ordonnancement et empreinte mémoire revus"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# `aphrody-nie-formats` porte les formats (CPK, cfg.bin, VFS) et reste no_std/wasm-compatible : c'est
+# précisément pourquoi l'orchestration parallèle (rayon) et le mappage mémoire (memmap2) vivent
+# ici et non là-bas — les y ajouter casserait `aphrody-nie-wasm`.
+aphrody-nie-formats = { workspace = true, default-features = true }
+rayon = { version = "1.5.3" }
+memmap2.workspace = true
+# Le manifeste de reprise du dump (une liste de noms de packs), le journal des échecs, et le
+# manifeste de mod — qui est un format de fichier public, donc décrit par des types plutôt que
+# par du parsing manuel.
+serde_json = { version = "1" }
+serde = { version = "1", default-features = false, features = ["std", "derive"] }

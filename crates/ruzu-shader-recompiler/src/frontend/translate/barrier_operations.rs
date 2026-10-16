@@ -1,0 +1,61 @@
+// SPDX-FileCopyrightText: 2025 ruzu contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+//! Port of `frontend/maxwell/translate/impl/barrier_operations.cpp`
+
+use super::{bit, field, TranslatorVisitor};
+
+pub fn membar(v: &mut TranslatorVisitor<'_>, insn: u64) {
+    if field(insn, 8, 2) == 0 {
+        v.ir.workgroup_memory_barrier();
+    } else {
+        v.ir.device_memory_barrier();
+    }
+}
+
+pub fn depbar(_v: &mut TranslatorVisitor<'_>) {}
+
+/// BAR — Barrier synchronization.
+///
+/// Matches upstream `TranslatorVisitor::BAR(u64 insn)`.
+/// Only BAR.SYNC with imm_a=0, imm_b=0, pred=PT is supported (as in upstream).
+pub fn bar(v: &mut TranslatorVisitor<'_>, insn: u64) {
+    // Upstream mode detection:
+    // BAR.SYNC  = bits masked with 0x0000009B00000000 == 0x0000008000000000
+    // BAR.ARRIVE = 0x0000008100000000
+    // etc.
+    let mode_bits = insn & 0x0000_009B_0000_0000u64;
+    let is_sync = mode_bits == 0x0000_0080_0000_0000u64;
+    // Upstream `TranslatorVisitor::BAR` throws NotImplementedException
+    // for any mode other than SYNC and for any non-zero/non-immediate
+    // input A/B (only `BAR.SYNC 0x0, 0x0` is implemented). We panic to
+    // match.
+    if !is_sync {
+        panic!("BAR: unsupported mode bits 0x{:016X}", insn);
+    }
+
+    let is_a_imm = bit(insn, 43);
+    let is_b_imm = bit(insn, 44);
+    let imm_a = field(insn, 8, 8);
+    let imm_b = field(insn, 20, 12);
+    let neg_pred = bit(insn, 42);
+    let pred = field(insn, 39, 3);
+
+    if !is_a_imm {
+        panic!("BAR: non-immediate input A not implemented");
+    }
+    if imm_a != 0 {
+        panic!("BAR: non-zero input A not implemented");
+    }
+    if !is_b_imm {
+        panic!("BAR: non-immediate input B not implemented");
+    }
+    if imm_b != 0 {
+        panic!("BAR: non-zero input B not implemented");
+    }
+    if pred != 7 && neg_pred {
+        panic!("BAR: non-true input predicate not implemented");
+    }
+
+    v.ir.barrier();
+}

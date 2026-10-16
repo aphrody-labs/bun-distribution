@@ -1,0 +1,25 @@
+[package]
+name = "input_common"
+version.workspace = true
+edition.workspace = true
+
+[features]
+default = []
+# Mirrors Eden's ENABLE_LIBUSB compilation boundary. The USB transport and
+# InputSubsystem registration must be ported before this can be enabled by a
+# frontend build.
+libusb = []
+# The SDL3 HID owner and protocol wiring are not ported yet. The mapping-only
+# `joycon` engine remains available without this feature for config parity.
+joycon-hid = []
+
+[dependencies]
+common.workspace = true
+libc = { version = "0.2.185", default-features = false }
+log = { version = "0.4.28", default-features = false }
+bitflags.workspace = true
+parking_lot.workspace = true
+sdl3-sys.workspace = true
+
+# SDL3 backs the upstream `sdl` input engine guarded by HAVE_SDL3. The raw
+# bindings share the workspace's statically built SDL runtime on every target.

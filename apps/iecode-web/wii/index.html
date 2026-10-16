@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wii</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #111; color: #eee; font: 1rem system-ui, sans-serif; }
+    #setup { min-height: 100dvh; display: grid; place-content: center; gap: 1rem; padding: 1.5rem; }
+    #setup[hidden] { display: none; }
+    label { display: grid; gap: .5rem; }
+    button, input { font: inherit; }
+    button { padding: .75rem; }
+    canvas { display: block; width: 100vw; height: 100dvh; }
+    #status { max-width: 32rem; }
+  </style>
+</head>
+<body>
+  <section id="setup" aria-labelledby="title">
+    <h1 id="title">Wii</h1>
+    <label>Homebrew (.dol)<input type="file" id="input-rom" accept=".dol"></label>
+    <label>DSP ROM (optional)<input type="file" id="input-dsp" accept=".bin"></label>
+    <button id="start" disabled>Start</button>
+    <p id="status" role="status" aria-live="polite"></p>
+  </section>
+  <script type="module">
+    const rom = document.getElementById('input-rom');
+    const dsp = document.getElementById('input-dsp');
+    const start = document.getElementById('start');
+    const status = document.getElementById('status');
+    rom.addEventListener('change', () => { start.disabled = !rom.files.length; });
+    start.addEventListener('click', async () => {
+      if (!rom.files.length) return;
+      start.disabled = true;
+      status.textContent = 'Loading…';
+      try {
+        if (!navigator.gpu) throw new Error('WebGPU is required to run Wii.');
+        const [runtime, data, dspData] = await Promise.all([
+          import('./pkg/gecko_web.js'),
+          rom.files[0].arrayBuffer(),
+          dsp.files[0]?.arrayBuffer(),
+        ]);
+        await runtime.default();
+        runtime.start_wii_emulator(new Uint8Array(data), dspData ? new Uint8Array(dspData) : undefined);
+        document.getElementById('setup').hidden = true;
+        status.textContent = '';
+      } catch (error) {
+        status.textContent = error instanceof Error ? error.message : String(error);
+        start.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

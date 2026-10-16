@@ -1,0 +1,54 @@
+{
+  "name": "@rosegriffon/menu-render",
+  "version": "1.4.4",
+  "private": false,
+  "description": "React menu renderer with a caller-supplied Lua runtime and game-host adapter.",
+  "license": "UNLICENSED",
+  "files": [
+    "README.md",
+    "src",
+    "tsconfig.json"
+  ],
+  "type": "module",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./lua-host": "./src/lua-host.ts",
+    "./use-lua-screen": "./src/use-lua-screen.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "lint": "bun lint -A style -A pedantic -A restriction src",
+    "lint:fix": "bun lint -A style -A pedantic -A restriction src --fix",
+    "demo": "bun src/demo/server.ts",
+    "clean": "rm -rf *.tsbuildinfo",
+    "typecheck": "bun check --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "fengari": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

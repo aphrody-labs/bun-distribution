@@ -1,0 +1,727 @@
+mod schedule;
+pub use schedule::{
+    DEFAULT_BATCH_DURATION, Event, EventSlotIndex, Schedule, Timestamp, event_slots,
+};
+pub mod input;
+pub mod swram;
+
+use crate::{
+    Model,
+    audio::{self, Audio},
+    cpu::{
+        self, Arm7Data, Arm9Data, CoreData, Schedule as _,
+        arm7::{self, Arm7},
+        arm9::{self, Arm9, cp15::Cp15},
+        bus::CpuAccess,
+    },
+    dldi::{self, Dldi},
+    ds_slot::{self, DsSlot},
+    flash::Flash,
+    gpu::{self, Gpu, engine_3d::Engine3d},
+    ipc::Ipc,
+    rtc::{self, Rtc},
+    spi,
+    utils::{ReadSavestate, Savestate, WriteSavestate, mem_prelude::*, schedule::RawTimestamp},
+    wifi::WiFi,
+};
+#[cfg(feature = "xq-audio")]
+use core::num::NonZeroU32;
+use input::Input;
+use swram::Swram;
+
+proc_bitfield::bitfield! {
+    #[derive(Clone, Copy, PartialEq, Eq, Savestate)]
+    pub struct LocalExMemControl(pub u8): Debug {
+        pub gba_slot_sram_access_time: u8 @ 0..=1,
+        pub gba_slot_rom_1st_access_time: u8 @ 2..=3,
+        pub gba_slot_rom_2nd_access_time: bool @ 4,
+        pub gba_slot_phi_pin_out: u8 @ 5..=6,
+    }
+}
+
+impl LocalExMemControl {
+    pub(crate) fn gba_rom_halfword(self, addr: u32) -> u16 {
+        let value = (addr >> 1) as u16;
+        match self.gba_slot_rom_1st_access_time() {
+            0 => value | 0xFE08,
+            1 | 2 => value,
+            _ => 0xFFFF,
+        }
+    }
+
+    pub(crate) fn gba_rom_word(self, addr: u32) -> u32 {
+        let value = (addr >> 1 & 0xFFFF) | (addr >> 1 | 1) << 16;
+        match self.gba_slot_rom_1st_access_time() {
+            0 => value | 0xFE08_FE08,
+            1 | 2 => value,
+            _ => 0xFFFF_FFFF,
+        }
+    }
+}
+
+proc_bitfield::bitfield! {
+    #[derive(Clone, Copy, PartialEq, Eq, Savestate)]
+    pub struct GlobalExMemControl(pub u16): Debug {
+        pub arm7_gba_slot_access: bool @ 7,
+        pub arm7_ds_slot_access: bool @ 11,
+        pub sync_main_mem: bool @ 14,
+        pub arm7_main_mem_priority: bool @ 15,
+    }
+}
+
+proc_bitfield::bitfield! {
+    #[derive(Clone, Copy, PartialEq, Eq, Savestate)]
+    pub struct AudioWifiPowerControl(pub u8): Debug {
+        pub speaker_enabled: bool @ 0,
+        pub wifi_enabled: bool @ 1,
+    }
+}
+
+mod bounded {
+    use crate::utils::{bounded_int_lit, bounded_int_savestate};
+    bounded_int_lit!(pub struct MainMemMask(u32), min 0x3F_FFFF, max 0x7F_FFFF);
+    bounded_int_savestate!(MainMemMask(u32));
+}
+pub use bounded::*;
+
+#[derive(Savestate)]
+#[load(in_place_only, post = "self.post_load(save)?")]
+#[store(post = "self.post_store(save)?")]
+pub struct Emu<E: cpu::Engine> {
+    #[allow(dead_code)]
+    pub(crate) global_engine_data: E::GlobalData,
+    pub arm7: Arm7<E>,
+    pub arm9: Arm9<E>,
+    #[savestate(skip)]
+    main_mem: OwnedBytesCellPtr<0x80_0000>,
+    #[savestate(skip)]
+    main_mem_mask: MainMemMask,
+    pub swram: Swram,
+    pub schedule: Schedule,
+    global_ex_mem_control: GlobalExMemControl,
+    pub ipc: Ipc,
+    pub ds_slot: DsSlot,
+    pub spi: spi::Controller,
+    pub rtc: Rtc,
+    pub gpu: Gpu,
+    pub input: Input,
+    pub audio_wifi_power_control: AudioWifiPowerControl,
+    pub audio: Audio,
+    pub wifi: WiFi,
+    #[savestate(skip)]
+    pub dldi: Option<Dldi>,
+    rcnt: u16, // TODO: Move to SIO
+    is_debugger: bool,
+    #[cfg(feature = "debugger-hooks")]
+    #[savestate(skip)]
+    frame_finished: bool,
+}
+
+impl<E: cpu::Engine> Emu<E> {
+    fn post_load<S: ReadSavestate>(&mut self, save: &mut S) -> Result<(), S::Error> {
+        save.start_field(b"main_mem")?;
+        if self.is_debugger {
+            self.main_mem_mask = MainMemMask::new(0x7F_FFFF);
+            save.load_into(&mut self.main_mem)?;
+        } else {
+            self.main_mem_mask = MainMemMask::new(0x3F_FFFF);
+            save.load_into(unsafe {
+                &mut *self.main_mem.as_bytes_mut_ptr().cast::<Bytes<0x40_0000>>()
+            })?;
+        }
+
+        E::Arm7Data::post_load(self);
+        E::Arm9Data::post_load(self);
+        self.swram.recalc(&mut self.arm7, &mut self.arm9);
+        self.gpu.vram.restore_mappings(&mut self.arm7, &mut self.arm9);
+        arm9::cp15::Cp15::post_load(self);
+        #[cfg(feature = "xq-audio")]
+        Audio::update_next_scaled_sample_index(self);
+
+        Ok(())
+    }
+
+    fn post_store<S: WriteSavestate>(&mut self, save: &mut S) -> Result<(), S::Error> {
+        save.start_field(b"main_mem")?;
+        if self.is_debugger {
+            save.store(&mut self.main_mem)
+        } else {
+            save.store(unsafe { &mut *self.main_mem.as_bytes_mut_ptr().cast::<Bytes<0x40_0000>>() })
+        }
+    }
+}
+
+pub struct Builder {
+    #[cfg(feature = "log")]
+    pub logger: slog::Logger,
+
+    pub firmware: Flash,
+    pub ds_rom: Option<Box<dyn ds_slot::rom::Contents>>,
+    pub ds_spi: ds_slot::spi::Spi,
+    pub audio_backend: Box<dyn audio::Backend>,
+    pub mic_backend: Option<Box<dyn spi::tsc::MicBackend>>,
+    pub rtc_backend: Box<dyn rtc::Backend>,
+    pub renderer_2d: Box<dyn gpu::engine_2d::Renderer>,
+    pub renderer_3d_tx: Box<dyn gpu::engine_3d::RendererTx>,
+    pub dldi_provider: Option<Box<dyn dldi::Provider>>,
+
+    pub arm7_bios: Option<Box<Bytes<{ arm7::BIOS_SIZE }>>>,
+    pub arm9_bios: Option<Box<Bytes<{ arm9::BIOS_SIZE }>>>,
+    pub model: Model,
+    pub is_debugger: bool,
+    pub direct_boot: bool,
+    pub batch_duration: u32,
+    pub first_launch: bool,
+    pub audio_sample_chunk_size: u16,
+    #[cfg(feature = "xq-audio")]
+    pub audio_custom_sample_rate: Option<NonZeroU32>,
+    #[cfg(feature = "xq-audio")]
+    pub audio_channel_interp_method: audio::ChannelInterpMethod,
+}
+
+pub enum BuildError {
+    MissingRom,
+    MissingSysFiles,
+    RomCreation(ds_slot::rom::normal::CreationError),
+    RomNeedsDecryptionButNoBiosProvided,
+}
+
+impl Builder {
+    #[inline]
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        firmware: Flash,
+        ds_rom: Option<Box<dyn ds_slot::rom::Contents>>,
+        ds_spi: ds_slot::spi::Spi,
+        audio_backend: Box<dyn audio::Backend>,
+        mic_backend: Option<Box<dyn spi::tsc::MicBackend>>,
+        rtc_backend: Box<dyn rtc::Backend>,
+        renderer_2d: Box<dyn gpu::engine_2d::Renderer>,
+        renderer_3d_tx: Box<dyn gpu::engine_3d::RendererTx>,
+        dldi_provider: Option<Box<dyn dldi::Provider>>,
+        #[cfg(feature = "log")] logger: slog::Logger,
+    ) -> Self {
+        Builder {
+            #[cfg(feature = "log")]
+            logger,
+
+            firmware,
+            ds_rom,
+            ds_spi,
+            audio_backend,
+            mic_backend,
+            rtc_backend,
+            renderer_2d,
+            renderer_3d_tx,
+            dldi_provider,
+
+            arm7_bios: None,
+            arm9_bios: None,
+            model: Model::Ds,
+            is_debugger: false,
+            direct_boot: true,
+            batch_duration: DEFAULT_BATCH_DURATION,
+            first_launch: false,
+            audio_sample_chunk_size: audio::DEFAULT_OUTPUT_SAMPLE_CHUNK_SIZE,
+            #[cfg(feature = "xq-audio")]
+            audio_custom_sample_rate: None,
+            #[cfg(feature = "xq-audio")]
+            audio_channel_interp_method: audio::ChannelInterpMethod::Nearest,
+        }
+    }
+
+    pub fn build<E: cpu::Engine>(mut self, engine: E) -> Result<Emu<E>, BuildError> {
+        if (self.arm7_bios.is_none() || self.arm9_bios.is_none()) && !self.direct_boot {
+            return Err(BuildError::MissingSysFiles);
+        }
+
+        let dldi = self
+            .ds_rom
+            .as_mut()
+            .zip(self.dldi_provider)
+            .and_then(|(ds_rom, dldi_provider)| Dldi::new_if_supported(ds_rom, dldi_provider));
+
+        let mut ds_rom = match self.ds_rom {
+            Some(contents) => ds_slot::rom::Rom::Normal(
+                ds_slot::rom::normal::Normal::new(
+                    contents,
+                    self.arm7_bios.as_deref(),
+                    self.model,
+                    #[cfg(feature = "log")]
+                    self.logger.new(slog::o!("ds_rom" => "normal")),
+                )
+                .map_err(BuildError::RomCreation)?,
+            ),
+            None => ds_slot::rom::Rom::Empty(ds_slot::rom::Empty::new(
+                #[cfg(feature = "log")]
+                self.logger.new(slog::o!("ds_rom" => "empty")),
+            )),
+        };
+
+        ds_rom
+            .setup(self.direct_boot)
+            .map_err(|()| BuildError::RomNeedsDecryptionButNoBiosProvided)?;
+
+        let (global_engine_data, arm7_engine_data, arm9_engine_data) = engine.into_data();
+        let mut arm7 = Arm7::new(
+            arm7_engine_data,
+            self.arm7_bios.map(Into::into),
+            #[cfg(feature = "log")]
+            self.logger.new(slog::o!("cpu" => "arm7")),
+        );
+        let mut arm9 = Arm9::new(
+            arm9_engine_data,
+            self.arm9_bios.map(|bios| {
+                let buf = OwnedBytesCellPtr::new_zeroed();
+                (unsafe { buf.as_mut_arr() })[..arm9::BIOS_SIZE].copy_from_slice(&**bios);
+                buf
+            }),
+            #[cfg(feature = "log")]
+            self.logger.new(slog::o!("cpu" => "arm9")),
+        );
+        let mut global_schedule = Schedule::new(Timestamp(self.batch_duration as RawTimestamp));
+        let mut emu = Emu {
+            global_engine_data,
+            main_mem: OwnedBytesCellPtr::new_zeroed(),
+            main_mem_mask: MainMemMask::new(if self.is_debugger { 0x7F_FFFF } else { 0x3F_FFFF }),
+            swram: Swram::new(),
+            global_ex_mem_control: GlobalExMemControl(0x6000),
+            ipc: Ipc::new(),
+            ds_slot: DsSlot::new(ds_rom, self.ds_spi, &mut arm7.schedule, &mut arm9.schedule),
+            spi: spi::Controller::new(
+                self.model,
+                self.firmware,
+                self.mic_backend,
+                &mut arm7.schedule,
+                &mut global_schedule,
+                #[cfg(feature = "log")]
+                self.logger.new(slog::o!("spi" => "")),
+            ),
+            rtc: Rtc::new(
+                self.rtc_backend,
+                self.first_launch,
+                #[cfg(feature = "log")]
+                self.logger.new(slog::o!("rtc" => "")),
+            ),
+            gpu: Gpu::new(
+                self.renderer_2d,
+                self.renderer_3d_tx,
+                &mut arm9.schedule,
+                &mut global_schedule,
+                #[cfg(feature = "log")]
+                &self.logger.new(slog::o!("gpu" => "")),
+            ),
+            input: Input::new(),
+            audio_wifi_power_control: AudioWifiPowerControl(0),
+            audio: Audio::new(
+                self.audio_backend,
+                &mut arm7.schedule,
+                self.audio_sample_chunk_size,
+                #[cfg(feature = "xq-audio")]
+                self.audio_custom_sample_rate,
+                #[cfg(feature = "xq-audio")]
+                self.audio_channel_interp_method,
+                #[cfg(feature = "log")]
+                self.logger.new(slog::o!("audio" => "")),
+            ),
+            wifi: WiFi::new(),
+            dldi,
+            rcnt: 0,
+            schedule: global_schedule,
+            arm7,
+            arm9,
+            is_debugger: self.is_debugger,
+            #[cfg(feature = "debugger-hooks")]
+            frame_finished: true,
+        };
+        Arm7::setup(&mut emu);
+        Arm9::setup(&mut emu);
+        emu.swram.recalc(&mut emu.arm7, &mut emu.arm9);
+        E::Arm7Data::setup(&mut emu);
+        E::Arm9Data::setup(&mut emu);
+        if self.direct_boot {
+            emu.setup_direct_boot().map_err(|()| BuildError::MissingRom)?;
+        }
+        Ok(emu)
+    }
+}
+
+#[cfg(feature = "debugger-hooks")]
+bitflags::bitflags! {
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    pub struct CoreMask: u8 {
+        const ARM7 = 1 << 0;
+        const ARM9 = 1 << 1;
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RunOutput {
+    FrameFinished,
+    Shutdown,
+    #[cfg(feature = "debugger-hooks")]
+    StoppedByDebugHook,
+    #[cfg(feature = "debugger-hooks")]
+    CyclesOver(CoreMask),
+}
+
+impl<E: cpu::Engine> Emu<E> {
+    fn setup_direct_boot(&mut self) -> Result<(), ()> {
+        // TODO: More accurate direct boot
+
+        let ds_slot::rom::Rom::Normal(ds_slot_rom) = &self.ds_slot.rom else {
+            return Err(());
+        };
+
+        let chip_id = ds_slot_rom.chip_id();
+        let mut header_bytes = Bytes::new([0; 0x170]);
+        // NOTE: The ROM file's size is ensured beforehand, this should never panic.
+        ds_slot_rom.contents().read_header(&mut header_bytes);
+        let header = ds_slot::rom::header::Header::new(&header_bytes);
+
+        macro_rules! write_main_mem {
+            ($addr: expr, $value: expr) => {
+                unsafe {
+                    self.main_mem
+                        .write_le_unchecked($addr & self.main_mem_mask.get() as usize, $value);
+                }
+            };
+            (copy $range_start: literal..$range_end: literal, $slice: expr) => {
+                unsafe {
+                    self.main_mem.as_mut_arr()[($range_start & self.main_mem_mask.get() as usize)
+                        ..($range_end & self.main_mem_mask.get() as usize)]
+                        .copy_from_slice($slice);
+                }
+            };
+        }
+
+        // –––––––––––––––– Main RAM init values  ––––––––––––––––
+
+        // TODO: "Fragments of NDS9 firmware boot code" at 0x3F_EE00..0x3F_EF68
+
+        // Chip ID 1
+        write_main_mem!(0x7F_F800, chip_id);
+        // Chip ID 2
+        write_main_mem!(0x7F_F804, chip_id);
+        // DS cart header CRC
+        write_main_mem!(0x7F_F808, header.header_crc());
+        // DS cart secure area CRC
+        write_main_mem!(0x7F_F80A, header.secure_area_crc());
+        // Missing/bad DS cart CRC (0 == OK, TODO: Actually check? Does the game even boot?)
+        write_main_mem!(0x7F_F80C, 0_u16);
+        // DS cart secure area bad (0 == OK, TODO: Actually check)
+        write_main_mem!(0x7F_F80E, 0_u16);
+        // Boot handler task number
+        write_main_mem!(0x7F_F810, 0xFFFF_u16);
+        // Secure area disable (0 == normal, TODO: Detect)
+        write_main_mem!(0x7F_F812, 0_u16);
+        // SIO debug connection present (1 == present, TODO: Support it?)
+        write_main_mem!(0x7F_F814, 0);
+        // RTC status (0 == OK)
+        write_main_mem!(0x7F_F816, 0_u16);
+        // "Random LSB from SIO debug detect handshake"
+        write_main_mem!(0x7F_F818, 0);
+        // NDS7 BIOS CRC
+        write_main_mem!(0x7F_F850, 0x5835_u16);
+        // Copy of NDS7 RAM address (?)
+        write_main_mem!(0x7F_F860, header.arm7_ram_addr());
+        // Firmware user settings bad (0 == OK)
+        write_main_mem!(0x7F_F864, 0);
+        // Firmware user settings FLASH address
+        write_main_mem!(0x7F_F868, (self.spi.firmware.contents().read_le::<u16>(0x20) as u32) << 3);
+        // Firmware part 5 (data/graphics) CRC16
+        write_main_mem!(0x7F_F874, self.spi.firmware.contents().read_le::<u16>(0x26));
+        // Firmware part 3/4 (arm7/9 GUI/Wi-Fi code) CRC16, zero at cart boot time
+        write_main_mem!(0x7F_F876, 0_u16);
+        // Last message from NDS9 to NDS7
+        write_main_mem!(0x7F_F880, 7_u32);
+        // NDS7 boot task
+        write_main_mem!(0x7F_F884, 6_u32);
+
+        // Copies of some things at 0x7F_F800
+
+        // Chip ID 1
+        write_main_mem!(0x7F_FC00, chip_id);
+        // Chip ID 2
+        write_main_mem!(0x7F_FC04, chip_id);
+        // DS cart header CRC
+        write_main_mem!(0x7F_FC08, header.header_crc());
+        // DS cart secure area CRC
+        write_main_mem!(0x7F_FC0A, header.secure_area_crc());
+        // Missing/bad DS cart CRC (0 == OK)
+        write_main_mem!(0x7F_FC0C, 0_u16);
+        // DS cart secure area bad (0 == OK)
+        write_main_mem!(0x7F_FC0E, 0_u16);
+        // NDS7 BIOS CRC
+        write_main_mem!(0x7F_FC10, 0x5835_u16);
+        // Secure area disable (0 == normal, TODO: Detect)
+        write_main_mem!(0x7F_FC12, 0_u16);
+        // SIO debug connection present (1 == present, TODO: Support it?)
+        write_main_mem!(0x7F_FC14, 0);
+        // RTC status (0 == OK)
+        write_main_mem!(0x7F_FC16, 0_u8);
+        // "Random LSB from SIO debug detect handshake"
+        write_main_mem!(0x7F_FC17, 0);
+
+        // TODO: GBA cart header data at 0x7F_FC30..0x7F_FC3C
+
+        // Frame counter value (currently a random fixed value)
+        write_main_mem!(0x7F_FC3C, 0x332_u32);
+        // Boot indicator (1 = normal, 2 = Wi-Fi (?))
+        write_main_mem!(0x7F_FC40, 1_u16);
+
+        // Newest firmware user settings copy
+        write_main_mem!(
+            copy 0x7F_FC80..0x7F_FCF0,
+            &spi::firmware::newest_user_settings(self.spi.firmware.contents())[..0x70]
+        );
+
+        write_main_mem!(copy 0x7F_FE00..0x7F_FF70, &*header_bytes);
+
+        // –––––––––––––––– ARM7 WRAM init values ––––––––––––––––
+
+        // TODO: "Fragments of NDS7 firmware boot code" at 0xF700
+
+        self.arm7.wram.write_le(0xF980, 0xFBDD_37BB_u32);
+
+        // ––––––––––––––––  I/O register values  ––––––––––––––––
+
+        self.arm7.write_bios_prot(0x1204);
+        self.arm7.set_post_boot_flag(true);
+        self.arm9.set_post_boot_flag(arm9::PostBootFlag(1));
+        self.audio.write_bias(0x200);
+        Cp15::write_dtcm_control(self, arm9::cp15::TcmControl(0x0300_000A));
+        Cp15::write_itcm_control(self, arm9::cp15::TcmControl(0x20));
+        Cp15::write_control(self, arm9::cp15::Control(0x0005_2078));
+        self.swram.write_control(swram::Control(3), &mut self.arm7, &mut self.arm9);
+        self.gpu.write_power_control(gpu::PowerControl(0x820F));
+
+        // –––––––––––––––    Program boot code    –––––––––––––––
+
+        let mut arm7_loaded_data = BoxedByteSlice::new_zeroed(header.arm7_size() as usize);
+        self.ds_slot
+            .rom
+            .contents()
+            .expect("DS slot ROM contents should have been initialized")
+            .read_slice_wrapping(header.arm7_rom_offset(), &mut arm7_loaded_data);
+        for (&byte, addr) in arm7_loaded_data.iter().zip(header.arm7_ram_addr()..) {
+            arm7::bus::write_8::<CpuAccess, _>(self, addr, byte);
+        }
+        E::Arm7Data::setup_direct_boot(self, header.arm7_entry_addr());
+
+        let mut arm9_loaded_data = BoxedByteSlice::new_zeroed(header.arm9_size() as usize);
+        self.ds_slot
+            .rom
+            .contents()
+            .expect("DS slot ROM contents should have been initialized")
+            .read_slice_wrapping(header.arm9_rom_offset(), &mut arm9_loaded_data);
+        for (&byte, addr) in arm9_loaded_data.iter().zip(header.arm9_ram_addr()..) {
+            arm9::bus::write_8::<CpuAccess, _>(self, addr, byte);
+        }
+        E::Arm9Data::setup_direct_boot(self, header.arm9_entry_addr());
+
+        Ok(())
+    }
+
+    #[inline]
+    pub fn is_debugger(&self) -> bool {
+        self.is_debugger
+    }
+
+    #[inline]
+    pub fn main_mem(&self) -> &OwnedBytesCellPtr<0x80_0000> {
+        &self.main_mem
+    }
+
+    #[inline]
+    pub fn main_mem_mask(&self) -> MainMemMask {
+        self.main_mem_mask
+    }
+
+    #[inline]
+    pub fn global_ex_mem_control(&self) -> GlobalExMemControl {
+        self.global_ex_mem_control
+    }
+
+    #[inline]
+    pub fn write_global_ex_mem_control(&mut self, value: GlobalExMemControl) {
+        self.global_ex_mem_control.0 = (value.0 & 0x8880) | 0x6000;
+        self.ds_slot.update_access(value.arm7_ds_slot_access());
+    }
+
+    #[inline]
+    pub fn audio_wifi_power_control(&self) -> AudioWifiPowerControl {
+        self.audio_wifi_power_control
+    }
+
+    #[inline]
+    pub fn write_audio_wifi_power_control(&mut self, value: AudioWifiPowerControl) {
+        self.audio_wifi_power_control.0 = value.0 & 3;
+    }
+
+    #[inline]
+    pub fn rcnt(&self) -> u16 {
+        self.rcnt
+    }
+
+    #[inline]
+    pub fn write_rcnt(&mut self, value: u16) {
+        self.rcnt = value & 0xC1FF;
+    }
+
+    #[inline]
+    pub fn request_shutdown(&mut self) {
+        self.spi.power.request_shutdown(&mut self.arm7.schedule, &mut self.schedule);
+    }
+}
+
+macro_rules! run {
+    ($emu: expr, $engine: ty $(, $cycles: expr)?) => {
+        let mut batch_end_time = $emu.schedule.batch_end_time();
+        $(
+            #[cfg(feature = "debugger-hooks")]
+            let batch_start_time = $emu.schedule.cur_time();
+            #[cfg(feature = "debugger-hooks")]
+            {
+                batch_end_time = batch_end_time.min(
+                    batch_start_time + Timestamp($cycles[0].min($cycles[1])),
+                );
+            }
+        )*
+
+        macro_rules! run_core {
+            ($core: expr, $engine_data: ty, $run: expr) => {
+                #[cfg(feature = "debugger-hooks")]
+                let is_stopped = $core.is_stopped;
+                #[cfg(not(feature = "debugger-hooks"))]
+                let is_stopped = false;
+                if is_stopped {
+                    $core.schedule.set_cur_time(batch_end_time.into());
+                } else {
+                    $run
+                }
+            };
+        }
+
+        run_core!($emu.arm9, <$engine>::Arm9Data, {
+            if $emu.gpu.engine_3d.gx_fifo_stalled() {
+                <$engine>::Arm9Data::run_stalled_until($emu, batch_end_time.into());
+            } else {
+                <$engine>::Arm9Data::run_until($emu, batch_end_time.into());
+                batch_end_time = batch_end_time.min(Timestamp::from($emu.arm9.schedule.cur_time()));
+            }
+            $(
+                #[cfg(feature = "debugger-hooks")]
+                {
+                    $cycles[1] -= batch_end_time.0 - batch_start_time.0;
+                }
+            )*
+        });
+
+        run_core!($emu.arm7, <$engine>::Arm7Data, {
+            <$engine>::Arm7Data::run_until($emu, batch_end_time.into());
+            batch_end_time = batch_end_time.min(Timestamp::from($emu.arm7.schedule.cur_time()));
+            $(
+                #[cfg(feature = "debugger-hooks")]
+                {
+                    $cycles[0] -= batch_end_time.0 - batch_start_time.0;
+                }
+            )*
+        });
+
+        $emu.schedule.set_cur_time(batch_end_time);
+        while let Some((event, time)) = $emu.schedule.pop_pending_event() {
+            match event {
+                Event::Gpu(event) => match event {
+                    gpu::Event::EndHDraw => Gpu::end_hdraw($emu, time),
+                    gpu::Event::EndHBlank => Gpu::end_hblank($emu, time),
+                    gpu::Event::FinishFrame => {
+                        Gpu::end_hblank($emu, time);
+                        #[cfg(feature = "debugger-hooks")]
+                        {
+                            $emu.frame_finished = true;
+                        }
+                        #[cfg(not(feature = "debugger-hooks"))]
+                        return RunOutput::FrameFinished;
+                    }
+                },
+                Event::Shutdown => {
+                    return RunOutput::Shutdown;
+                }
+                Event::Engine3dCommandFinished => Engine3d::process_next_command($emu),
+            }
+        }
+        #[cfg(feature = "debugger-hooks")]
+        {
+            if $emu.arm7.was_stopped_by_debug_hook || $emu.arm9.was_stopped_by_debug_hook {
+                return RunOutput::StoppedByDebugHook;
+            }
+            if $emu.frame_finished {
+                return RunOutput::FrameFinished;
+            }
+        }
+    };
+}
+
+impl<E: cpu::Engine> Emu<E> {
+    #[cfg(feature = "debugger-hooks")]
+    #[inline(never)]
+    fn run_for_cycles(&mut self, cycles: &mut [RawTimestamp; 2]) -> RunOutput {
+        loop {
+            run!(self, E, cycles);
+            if cycles[0] == 0 || cycles[1] == 0 {
+                let mut core_mask = CoreMask::empty();
+                if cycles[0] == 0 {
+                    core_mask |= CoreMask::ARM7;
+                }
+                if cycles[1] == 0 {
+                    core_mask |= CoreMask::ARM9;
+                }
+                return RunOutput::CyclesOver(core_mask);
+            }
+        }
+    }
+
+    #[cfg(feature = "debugger-hooks")]
+    #[inline(never)]
+    pub fn run_with_cycles(&mut self, cycles: &mut [RawTimestamp; 2]) -> RunOutput {
+        if core::mem::replace(&mut self.frame_finished, false) {
+            self.spi.tsc.start_frame(self.schedule.cur_time());
+        }
+        if (cycles[0] != 0 && !self.arm7.is_stopped) || (cycles[1] != 0 && !self.arm9.is_stopped) {
+            self.arm7.was_stopped_by_debug_hook = false;
+            self.arm9.was_stopped_by_debug_hook = false;
+            let mut new_cycles = cycles.map(|c| if c == 0 { RawTimestamp::MAX } else { c });
+            let output = self.run_for_cycles(&mut new_cycles);
+            for i in 0..2 {
+                if cycles[i] != 0 {
+                    cycles[i] = new_cycles[i];
+                }
+            }
+            return output;
+        }
+        loop {
+            run!(self, E);
+        }
+    }
+
+    #[inline(never)]
+    pub fn run(&mut self) -> RunOutput {
+        self.spi.tsc.start_frame(self.schedule.cur_time());
+        #[cfg(feature = "debugger-hooks")]
+        {
+            // Must be cleared here, exactly as `run_with_cycles` does: with `debugger-hooks` the
+            // `run!` macro signals a finished frame by *setting* this flag and returning at the
+            // bottom of the batch, so leaving it set makes every subsequent `run()` return
+            // `FrameFinished` after a single scheduler batch (it starts out `true`, so this hit
+            // every call). Frame budgets and per-frame touch gestures both silently degrade to
+            // microseconds of emulated time when that happens.
+            self.frame_finished = false;
+            self.arm7.was_stopped_by_debug_hook = false;
+            self.arm9.was_stopped_by_debug_hook = false;
+        }
+        loop {
+            run!(self, E);
+        }
+    }
+}

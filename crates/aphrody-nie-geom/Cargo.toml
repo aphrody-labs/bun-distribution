@@ -1,0 +1,22 @@
+[package]
+license.workspace = true
+name = "aphrody-nie-geom"
+description = "Shared POD geometry types (Vec2/Vec3) and scalar math for the IECODE workspace."
+version.workspace = true
+edition.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = ["std"]
+# Enables methods requiring `f32::sqrt`/`hypot` (length/normalize/len/norm).
+# Disabled, the crate remains strict `#![no_std]` for POD and scalar arithmetic consumers.
+std = []
+serde = ["dep:serde"]
+
+[dependencies]
+serde = { version = "1", default-features = false, features = ["std", "derive"], optional = true }

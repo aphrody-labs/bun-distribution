@@ -1,0 +1,249 @@
+# INAZUMA ELEVEN: VICTORY ROAD — EXHAUSTIVE TECHNICAL SPECIFICATION & KNOWLEDGE BASE
+Version: 2.0.4 | Date: 2026-10-01 | Architecture: Bun 1.4+ / Rust 1.85+ / .NET 10 NativeAOT
+
+================================================================================
+1. SYSTEM ARCHITECTURE & CROSS-LANGUAGE RUNTIME
+================================================================================
+The IECODE ecosystem unifies three high-performance runtimes into a single coherent pipeline:
+1. TypeScript / Bun (packages/inagle):
+   - Fast user-facing CLI (inagle vfs, inagle format, inagle zukan, inagle wiki).
+   - High-throughput web API and wiki query engine.
+   - Dynamic FFI bindings via `bun:ffi` communicating with both Rust and .NET.
+2. Rust NIE C-ABI (crates/nie/aphrody-nie-ffi -> target/release/libiecode.so):
+   - High-efficiency SIMD-accelerated CRILAYLA decompression and compression.
+   - CRI position-aware XOR stream cipher and Viola fixed-key decrypter.
+   - Relational database binary (RDBN / T2B cfg.bin) parsing into zero-copy JSON strings.
+   - G4TX Level-5 texture decoding into raw RGBA8 pixel buffers and PNG streams.
+   - Level-5 Lives save container (002AB8F4-*) decrypt/encrypt with CRC32 block checksums.
+3. C# .NET 10 NativeAOT (src/IECODE/Ffi -> IECODE.Ffi.so):
+   - CriFs CPK container builder and unpacker with comprehensive TOC/@UTF rebuilding.
+   - NativeAOT unmanaged exports via [UnmanagedCallersOnly] attribute.
+   - Full Node-API [JSExport] support for native Node.js / Bun addon loading.
+
+--------------------------------------------------------------------------------
+Rust C-ABI Export Symbols (libiecode.so):
+--------------------------------------------------------------------------------
+- const char* nie_version(void)
+- uint32_t nie_crc32(const uint8_t* data, size_t length)
+- uint32_t nie_crc32_iso(const uint8_t* data, size_t length)
+- int32_t nie_cpk_probe_header(const uint8_t* data, size_t length)
+- int32_t nie_cpk_decrypt_block(uint8_t* data, size_t length, uint64_t offset, uint32_t key)
+- int32_t nie_crilayla_decompress(const uint8_t* src, size_t src_len, uint8_t* dst, size_t dst_len, size_t* out_decompressed)
+- int32_t nie_rdbn_probe_header(const uint8_t* data, size_t length)
+- int32_t nie_rdbn_decode_json(const uint8_t* data, size_t length, char* out_json, size_t json_capacity, size_t* out_len)
+- int32_t nie_g4tx_probe_header(const uint8_t* data, size_t length)
+- int32_t nie_g4tx_to_png(const uint8_t* data, size_t length, uint8_t* out_png, size_t png_capacity, size_t* out_len)
+- int32_t nie_lives_decrypt(const char* filename, const uint8_t* src, size_t src_len, uint8_t* dst, size_t dst_cap, size_t* out_len)
+- int32_t nie_lives_encrypt(const char* filename, const uint8_t* src, size_t src_len, uint8_t* dst, size_t dst_cap, size_t* out_len)
+- void nie_free_string(char* ptr)
+
+--------------------------------------------------------------------------------
+.NET 10 NativeAOT C-ABI Export Symbols (IECODE.Ffi.so):
+--------------------------------------------------------------------------------
+- const char* iecode_core_version(void)
+- int32_t iecode_crifs_probe_cpk(const uint8_t* data, size_t length)
+- int32_t iecode_crifs_extract_cpk(const char* cpk_path, const char* out_dir)
+- int32_t iecode_crifs_create_cpk(const char* input_dir, const char* cpk_out_path, int32_t compress)
+- int32_t iecode_rdbn_to_json(const uint8_t* data, size_t length, char* out_json, size_t cap)
+- void iecode_free_string(char* ptr)
+
+================================================================================
+2. VICTORY ROAD VIRTUAL FILE SYSTEM (VFS) SPECIFICATION
+================================================================================
+The game accesses all assets through a hybrid VFS composed of two layers:
+1. Mounted CRI CPK Packages (located in `data/packs/`):
+   - Mapped at startup by reading `cpk_list.cfg.bin`.
+   - `cpk_list.cfg.bin` is encrypted with the Viola fixed XOR key: 0x1717E18E.
+   - Individual CPK archives are encrypted with a position-aware XOR stream cipher
+     where key = CRC32_ISO3309(filename).
+   - High-throughput read requests are decoded into an in-memory LRU block cache.
+2. Loose File Dump Overlay:
+   - When running development builds or unpacked assets, the engine probes disk
+     paths directly before falling back to mounted CPK containers.
+
+--------------------------------------------------------------------------------
+All 28 Recognized Authoritative Binary Formats:
+--------------------------------------------------------------------------------
+| ID | Magic Hex | ASCII | Extension | Category | Endian | Encrypted | Compressed | Description |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 0x58543447 | G4TX | .g4tx    | texture   | LE | No | Yes | Level-5 Texture Container (main DDS BCn textures + atlas sprite subregions) |
+| 2 | 0x444D3447 | G4MD | .g4md    | model     | LE | No | Yes | Level-5 3D Model Data (meshes, bone indices, vertex buffers, materials) |
+| 3 | 0x474D3447 | G4MG | .g4mg    | model     | LE | No | Yes | Level-5 Model Group (collection of submeshes and LOD levels) |
+| 4 | 0x544D3447 | G4MT | .g4mt    | model     | LE | No | No | Level-5 Material Properties (shaders, blend modes, diffuse/specular colors) |
+| 5 | 0x4B533447 | G4SK | .g4sk    | model     | LE | No | No | Level-5 Skeleton & Bone Hierarchy (quaternions, bind poses, transform trees) |
+| 6 | 0x4B503447 | G4PK | .g4pk    | container | LE | No | Yes | Level-5 Package Container (multi-resource bundle for characters and stadiums) |
+| 7 | 0x41523447 | G4RA | .g4ra    | container | LE | No | Yes | Level-5 Resource Archive (compact asset bundle indexed in nie.exe) |
+| 8 | 0x20494741 | AGI  | .agi     | model     | LE | No | Yes | Level-5 Animation Graphic Interface (timeline tracks, animation nodes) |
+| 9 | 0x424A424F | OBJB | .objb    | config    | LE | No | Yes | Level-5 Object Binary (scene layout descriptors, actor placements) |
+| 10 | 0x4C435850 | PXCL | .pxcl    | system    | LE | No | No | Level-5 Pixel Collision & Physics Hull (hitboxes, boundary colliders) |
+| 11 | 0x4E424452 | RDBN | .cfg.bin | config    | LE | Yes | Yes | Level-5 Relational Database Binary (T2B structured binary data sheets) |
+| 12 | 0x5346454D | MEVS | .mevbin  | script    | LE | No | Yes | Level-5 Motion Event Script (choreographed cutscenes, camera paths, audio cues) |
+| 13 | 0x4D433447 | G4CM | .g4cm    | script    | LE | No | No | Level-5 Camera Track & Spline Path (cinematic parameters, FOV transitions) |
+| 14 | 0x204B5043 | CPK  | .cpk     | container | BE | Yes | Yes | CRI Middleware File Package (TOC, ITOC, ETOC, @UTF directory descriptors) |
+| 15 | 0x32534641 | AFS2 | .afs2    | audio     | LE | Yes | No | Criware Audio Archive (AWB wavebank containers) |
+| 16 | 0x00465455 | @UTF | .utf     | container | BE | Yes | No | CRI Universal Table Format (schema, column flags, string pools, row vectors) |
+| 17 | 0x20534444 | DDS  | .dds     | texture   | LE | No | No | DirectDraw Surface (raw BC1/BC2/BC3/BC4/BC5/BC7 compressed texture payload) |
+| 18 | 0x474E5089 | PNG | .png     | texture   | BE | No | Yes | Portable Network Graphics (decoded atlas glyphs, UI elements, web exports) |
+| 19 | 0x46464952 | RIFF | .wav     | audio     | LE | No | No | Resource Interchange File Format (PCM and ADPCM audio tracks) |
+| 20 | 0x4B435058 | XPCK | .xpck    | container | LE | No | Yes | Level-5 XPCK Package (legacy DS/3DS/Switch container format) |
+| 21 | 0x41534658 | XFSA | .xfsa    | container | LE | No | Yes | Level-5 XFSA Archive (file system archive with hash-addressed records) |
+| 22 | 0x4159414C | LAYL | .crilayla | container | LE | No | Yes | CRI Layla Reverse-Bitstream LZSS Compressed Container (16-byte header + bitstream + 0x100 raw) |
+| 23 | 0x46424341 | @ACB | .acb     | audio     | BE | Yes | No | Criware Audio Cue Sheet (cue mappings, sound triggers, DSP effects) |
+| 24 | 0x20534D43 | CRID | .usm     | video     | BE | Yes | No | CRI Movie 2 Container (video stream, multi-track audio, subtitle packets) |
+| 25 | 0x564E3447 | G4NV | .g4nv    | system    | LE | No | No | Level-5 Navigation Mesh (stadium and field locomotion polygons) |
+| 26 | 0x004C4F43 | COL  | .col     | system    | LE | No | No | Level-5 Collision mesh data |
+| 27 | 0x534C4F43 | COLS | .cols    | system    | LE | No | No | Level-5 Collision Set (stadium boundaries, goal posts, ball bouncing volumes) |
+| 28 | 0x9DCE66C3 | LIVE | .live    | system    | LE | Yes | No | Level-5 Lives Save Container (002AB8F4-* CRC32-keyed XOR stream cipher, 0xEEFF blobs) |
+
+--------------------------------------------------------------------------------
+CRI CPK Pack Mounting Rules:
+--------------------------------------------------------------------------------
+| Pack Name | Filename Mask | Key Derivation | Priority | Compressed | Description |
+|---|---|---|---|---|---|
+| common.cpk       | *common*.cpk     | filename-crc32  |  100 | Yes | Core game database, character tables (chara_base), item configs, skill definitions, and growth curves |
+| menu.cpk         | *menu*.cpk       | filename-crc32  |   90 | Yes | UI layouts, T2B menu settings, 200_icon sprites, portrait textures, and font atlases |
+| model.cpk        | *model*.cpk      | filename-crc32  |   80 | Yes | 3D player models (G4MD), team kits, stadium geometries, and animation tracks (AGI) |
+| dx11.cpk         | *dx11*.cpk       | filename-crc32  |   70 | Yes | DirectX 11 compiled shaders, material descriptors, and GPU texture streams |
+| sound_asset.cpk  | *sound*.cpk      | filename-crc32  |   60 | No | HCA voice lines, character dialogue, match commentary, and crowd atmosphere |
+| movie.cpk        | *movie*.cpk      | filename-crc32  |   50 | No | Full-motion cutscenes, anime openings, and special moves (Hissatsu) USM video sequences |
+| event.cpk        | *event*.cpk      | filename-crc32  |   40 | Yes | Story mode cutscenes, MEVBIN choreography scripts, and chapter dialogue triggers |
+| cpk_list.cfg.bin | cpk_list.cfg.bin | viola-fixed     | 1000 | No | Master VFS manifest mapping internal paths to CPK pack files. Encrypted with Viola key 0x1717E18E |
+
+--------------------------------------------------------------------------------
+Top-Level Directory Topology:
+--------------------------------------------------------------------------------
+| Path | Primary Ext | Est. Files | Description |
+|---|---|---|---|
+| data/common/     | .cfg.bin |  1420 | Authoritative relational database configs (RDBN format) powering all game rules, player statistics, and drop tables. |
+| data/menu/       | .g4tx    |  3866 | User interface assets, HUD compositions, sprite sheets, font glyphs, and localized texture cards. |
+| data/model/      | .g4md    | 12400 | 3D skinned meshes, bone palettes, skeleton hierarchies, material definitions, and animation bindings. |
+| data/event/      | .mevbin  |  5173 | Cinematic cutscenes, camera choreography, dialogue synchronizers, and story progression state trees. |
+| data/audio/      | .acb     |   850 | Criware CRI Atom Craft audio cue sheets, HCA stream banks, music loops, and synchronized voice tracks. |
+| data/saves/      | .live    |    10 | Player career saves, team rosters, gacha inventory, and trophy progress encrypted with CRC32 filename cipher. |
+
+--------------------------------------------------------------------------------
+Cryptographic & Compression Algorithms:
+--------------------------------------------------------------------------------
+1. CRILAYLA Reverse Bitstream LZSS:
+   - Header is 16 bytes:
+     + 0x00..0x08: ASCII "CRILAYLA"
+     + 0x08..0x0C: uint32 LE uncompressed size
+     + 0x0C..0x10: uint32 LE compressed payload size
+   - The bitstream is read strictly backwards from the last compressed byte towards
+     offset 0x10.
+   - Ring buffer history size is 0x100 (256) bytes.
+   - Control bits: 0 = literal byte (8 bits); 1 = dictionary match (offset + length).
+2. CRI Position-Aware XOR Stream Cipher:
+   - Applied in 4-byte quads.
+   - Given file offset and 32-bit key, quad_mask = key ^ ((offset * 0x41C64E6D + 0x3039) & 0xFFFFFFFF).
+   - Plaintext[i] = Ciphertext[i] ^ quad_mask[i % 4].
+3. Level-5 Lives Save Cryptography:
+   - Filenames are formatted as `002AB8F4-<CATEGORY>LIVE` (Steam App ID 2799860 = 0x2AB8F4).
+   - Key derivation: seed = CRC32_Reflected(filename_ascii).
+   - Decrypted file starts with sentinel uint32 LE `0x9DCE66C3` at offset 0x00 and `0x2EC3031F` at 0x08.
+   - Subsequent payload chunks are prefixed with big-endian uint16 `0xEEFF` followed by 32-bit chunk length.
+
+================================================================================
+3. NIE.EXE REVERSE ENGINEERING DISASSEMBLY REFERENCE
+================================================================================
+Target Binary: nie.exe (Internal name: nie1v2.exe)
+Binary Architecture: x86_64 PE32+
+Image Base: 0x140000000
+Total Cataloged Functions: 117,068 (from .pdata exception directory)
+
+--------------------------------------------------------------------------------
+Verified Cryptographic Constants:
+--------------------------------------------------------------------------------
+| Name | Hex Value | Decimal | Verified | Usage |
+|---|---|---|---|---|
+| VIOLA_FIXED_KEY          | 0x1717E18E   | 387441038  | Yes | Fixed CRI XOR encryption key for cpk_list.cfg.bin and standalone Level-5 packages (discovered by Viola). |
+| LEVEL5_CRC32_POLYNOMIAL  | 0xEDB88320   | 3988292384 | Yes | Standard IEEE 802.3 reflected CRC32 polynomial for RDBN hash dictionaries and CPK filename key derivation. |
+| CRI_ENCRYPTED_TABLE_MAGIC | 0xF5F39E1F   | 4126383647 | Yes | Magic header sentinel indicating an encrypted CRI @UTF table block. |
+| LIVES_SAVE_HEADER_MAGIC  | 0x9DCE66C3   | 2647549635 | Yes | Sentinel u32 LE placed at offset 0x00 of decrypted Lives save containers (002AB8F4-*). |
+| LIVES_SAVE_CONST2        | 0x2EC3031F   | 784532255  | Yes | Constant u32 LE at offset 0x08 of decrypted Lives save header (bytes: 1F 03 C3 2E). |
+| LIVES_BLOB_MAGIC         | 0xEEFF       | 61183      | Yes | Big-endian u16 sentinel starting every concatenated payload blob in Lives saves. |
+| STEAM_APP_ID             | 0x2AB8F4     | 2799860    | Yes | Official Steam App ID for Inazuma Eleven: Victory Road (hexadecimal prefix for save files: 002AB8F4). |
+
+--------------------------------------------------------------------------------
+Critical Function Offsets & Signatures:
+--------------------------------------------------------------------------------
+| Symbol | Address | Subsystem | Signature |
+|---|---|---|---|
+| GameTickLoop             | 0x1406d5840   | game-loop   | `void __fastcall GameTickLoop(void* engineContext, float deltaTime)` |
+| CharaControllerUpdate    | 0x1404ecd60   | controller  | `void __fastcall CharaControllerUpdate(void* playerEntity, void* inputState, float dt)` |
+| CriFsStreamDecryptBlock  | 0x1405a1120   | crypto      | `void __fastcall CriFsStreamDecryptBlock(uint8_t* buffer, size_t length, uint64_t fileOffset, uint32_t key)` |
+| CriLaylaDecompressStream | 0x1405b3890   | vfs         | `int32_t __fastcall CriLaylaDecompressStream(const uint8_t* input, uint8_t* output, size_t uncompressedSize)` |
+| RdbnTableLookup          | 0x1403c8040   | vfs         | `void* __fastcall RdbnTableLookup(const uint8_t* rdbnBuffer, uint32_t tableHash, uint32_t entryHash)` |
+| G4txDecodeTexture        | 0x1404b2a80   | render      | `void* __fastcall G4txDecodeTexture(const uint8_t* g4txData, size_t dataSize, int32_t textureIndex)` |
+| LuaHostInit              | 0x14072f910   | lua         | `void* __fastcall LuaHostInit(void* memoryPool)` |
+| CRand_MT19937_Next       | 0x14081c200   | prng        | `uint32_t __fastcall CRand_MT19937_Next(void* crandState)` |
+
+--------------------------------------------------------------------------------
+Reconstructed RTTI Class Hierarchy:
+--------------------------------------------------------------------------------
+| Qualified Name | VTable Offset | Base Classes | Description |
+|---|---|---|---|
+| Level5::Engine::Object | 0x140AC4000 | (none) | Polymorphic base class for all engine actors, components, and resource handles. |
+| Level5::Game::CharaController | 0x140AC68A0 | Level5::Engine::Object | High-level player controller managing motion states (dash, dribble, slide tackle, shoot charge). |
+| Level5::Game::BallPhysics | 0x140AC7120 | Level5::Engine::Object | Aerodynamic and turf friction simulation for the soccer ball, including spin and pass trajectories. |
+| Level5::Resource::VfsManager | 0x140AD1400 | Level5::Engine::Object | Global filesystem coordinator mounting CPK pack archives and routing relative logical paths. |
+| Level5::Resource::CpkArchive | 0x140AD2200 | Level5::Engine::Object | CRI Middleware CPK container handle with memory-mapped file views and decryption context. |
+| Level5::Graphics::RenderScene | 0x140AE0100 | Level5::Engine::Object | Scene graph renderer managing camera viewports, shadow cascades, and lighting buffers. |
+| Level5::Graphics::SkinnedMesh | 0x140AE1880 | Level5::Engine::Object | GPU skinning mesh processor packing 32 bones into 96 vec4 matrix registers (renderObj + 0x1D98). |
+| CriWare::Atom::SoundPlayer | 0x140AF4900 | (none) | CRI Atom Craft sound playback service managing voice categories, BGM ducking, and 3D positional audio. |
+
+--------------------------------------------------------------------------------
+Runtime Memory Structures & Layouts:
+--------------------------------------------------------------------------------
+1. BonePalette (0x600 / 1536 bytes):
+   - Stored at `renderObj + 0x1D98`.
+   - Layout: 32 bone transforms, each taking 3 vec4 registers (mat3x4 affine matrix).
+   - Total: 32 * 3 = 96 vec4 = 1536 bytes.
+2. FontGlyph (0x0C / 12 bytes):
+   - +0x00: uint16 u (X coordinate in font texture atlas)
+   - +0x02: uint16 v (Y coordinate in font texture atlas)
+   - +0x04: uint8 width
+   - +0x05: uint8 height
+   - +0x06: int8 offsetX
+   - +0x07: int8 offsetY
+   - +0x08: int8 advanceX
+   - +0x09: uint8 pageIndex (0 to 3)
+   - +0x0A: uint16 padding
+3. RdbnHeader (0x50 / 80 bytes):
+   - +0x00: uint32 magic = 0x4E424452 ("RDBN")
+   - +0x04: uint16 headerSize = 0x50
+   - +0x06: uint16 version = 0x01
+   - +0x08: uint32 tableCount
+   - +0x0C: uint32 stringPoolOffset
+   - +0x10: uint32 stringPoolSize
+   - +0x14: uint32 dataSectionOffset
+   - +0x18: uint32 dataSectionSize
+   - +0x1C..0x50: CRC32 checksums, schema validation flags, and column index descriptors.
+
+================================================================================
+4. CONSUMPTION GUIDE FOR AUTONOMOUS AGENTS & DEVELOPERS
+================================================================================
+Using Inagle in Bun TypeScript:
+--------------------------------------------------------------------------------
+```typescript
+import { Inagle } from "@rosegriffon/inagle";
+import { nieCrc32, nieDecompressCrilayla } from "@rosegriffon/inagle/ffi";
+import { IecodeDotnet } from "@rosegriffon/inagle/dotnet";
+import { getVfsCatalog, resolveFormat } from "@rosegriffon/inagle/docs";
+
+// 1. Inspect format magic
+const fmt = resolveFormat("G4TX");
+console.log(fmt?.description); // Level-5 Texture Container
+
+// 2. High-speed CRILAYLA decompression via Rust FFI
+const decompressed = nieDecompressCrilayla(compressedCpkBuffer);
+
+// 3. Extract CRI CPK via .NET NativeAOT
+await IecodeDotnet.extractCpk("data/packs/common.cpk", "output/common");
+```
+
+CLI Commands:
+- `bun run cli vfs inspect <path>`: Probes header magic and dumps metadata.
+- `bun run cli vfs unpack <cpk> <out>`: Extracts CPK using Rust/C# acceleration.
+- `bun run cli zukan chara <id>`: Prints full character profile and growth curve.
+- `bun run cli wiki query "<sql>"`: Runs read-only queries against mirror database.

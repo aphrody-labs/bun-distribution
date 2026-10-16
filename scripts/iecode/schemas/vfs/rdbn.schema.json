@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rosegriffon.fr/schemas/vfs/rdbn.schema.json",
+  "title": "RdbnDatabaseSchema",
+  "description": "Validation schema for Level-5 RDBN (cfg.bin / T2B) relational database sheets.",
+  "type": "object",
+  "required": ["magic", "headerSize", "version", "tableCount", "tables"],
+  "properties": {
+    "magic": {
+      "type": "string",
+      "const": "RDBN"
+    },
+    "headerSize": {
+      "type": "integer",
+      "const": 80
+    },
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "tableCount": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "tables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["tableHash", "tableName", "rowCount", "columnCount", "rows"],
+        "properties": {
+          "tableHash": { "type": "string" },
+          "tableName": { "type": "string" },
+          "rowCount": { "type": "integer", "minimum": 0 },
+          "columnCount": { "type": "integer", "minimum": 1 },
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "type"],
+              "properties": {
+                "name": { "type": "string" },
+                "type": { "type": "string" }
+              }
+            }
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    }
+  }
+}

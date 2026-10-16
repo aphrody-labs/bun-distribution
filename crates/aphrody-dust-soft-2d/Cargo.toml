@@ -1,0 +1,14 @@
+[package]
+description = "Nintendo DS software 2D rendering adapter."
+license-file = "../../docs/licenses/iecode/licenses/dust/LICENSE"
+name = "aphrody-dust-soft-2d"
+version = "0.0.1"
+edition = "2021"
+publish = true
+[features]
+threaded = ["crossbeam-channel"]
+
+[dependencies]
+aphrody-dust-core = { path = "../aphrody-dust-core" }
+aphrody-dust-soft-2d-base = { path = "../aphrody-dust-soft-2d-base" }
+crossbeam-channel = { version = "0.5", optional = true }

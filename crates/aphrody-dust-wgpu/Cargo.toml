@@ -1,0 +1,24 @@
+[package]
+description = "Nintendo DS wgpu rendering adapter."
+license-file = "../../docs/licenses/iecode/licenses/dust/LICENSE"
+name = "aphrody-dust-wgpu"
+version = "0.1.1"
+edition = "2024"
+publish = true
+[features]
+threaded = []
+
+[dependencies]
+ahash = { workspace = true }
+crossbeam-channel = { workspace = true }
+aphrody-dust-core = { path = "../aphrody-dust-core", features = ["3d-hi-res-coords"] }
+aphrody-dust-soft-2d-base = { path = "../aphrody-dust-soft-2d-base" }
+aphrody-dust-soft-3d = { path = "../aphrody-dust-soft-3d" }
+aphrody-emu-utils = { workspace = true }
+aphrody-gpu-backend = { workspace = true }
+parking_lot = { workspace = true }
+proc-bitfield = { workspace = true }
+
+# Forward browser entropy support to ahash's existing getrandom dependency.
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+getrandom = { version = "0.3.4", default-features = false, features = ["wasm_js"] }

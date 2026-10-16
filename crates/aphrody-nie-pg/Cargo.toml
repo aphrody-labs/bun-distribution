@@ -1,0 +1,29 @@
+[package]
+name = "aphrody-nie-pg"
+description = "Import des cfg.bin du VFS IEVR (RDBN et T2B) dans PostgreSQL, schéma `nie`, sans étape JSON"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+real-fixtures = ["aphrody-nie-formats/real-fixtures"]
+
+[dependencies]
+aphrody-nie-formats = { workspace = true, features = ["std"] }
+tokio-postgres = { workspace = true }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+futures-util = { workspace = true }
+sha2 = { version = "0.10" }
+thiserror = { version = "2" }
+anyhow = { version = "1" }
+clap = { workspace = true, features = ["derive", "env"] }
+
+[[bin]]
+name = "aphrody-nie-pg"
+path = "src/main.rs"

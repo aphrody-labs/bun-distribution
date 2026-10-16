@@ -1,0 +1,18 @@
+[package]
+description = "Wii emulator debugging interfaces."
+name = "aphrody-wii-debug"
+version = "0.1.1"
+edition.workspace = true
+publish = true
+license = "GPL-3.0-only"
+
+[lib]
+name = "dbglib"
+
+[dependencies]
+gecko = { package = "aphrody-wii-runtime", path = "../aphrody-wii-runtime", default-features = false, features = ["hooks"] }
+disasm = { package = "aphrody-wii-disasm", path = "../aphrody-wii-disasm" }
+image = { package = "aphrody-wii-image", path = "../aphrody-wii-image", default-features = false }
+egui = { version = "0.36.2" }
+glam.workspace = true
+egui-phosphor = { workspace = true, features = ["fill"] }

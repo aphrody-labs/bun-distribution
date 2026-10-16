@@ -1,0 +1,1153 @@
+//! Native Model Context Protocol binding for every `nie` CLI command.
+
+use std::borrow::Cow;
+
+use rmcp::{
+    ErrorData, ServerHandler, ServiceExt,
+    handler::server::router::tool::{AsyncTool, ToolBase, ToolRouter},
+    handler::server::wrapper::Parameters,
+    schemars, tool, tool_handler, tool_router,
+    transport::stdio,
+};
+use serde_json::{Value, json};
+
+use crate::CapturedCommand;
+
+mod bridge;
+
+use bridge::BridgeControl;
+
+/// Arguments appended after the command represented by an MCP tool.
+///
+/// This deliberately preserves Clap as the single schema for every nested
+/// command and flag. A model can pass exactly the same tail it would pass to
+/// the terminal while execution stays in process through [`crate::dispatch`].
+#[derive(Debug, Default, serde::Deserialize, schemars::JsonSchema)]
+pub struct CliToolRequest {
+    /// Arguments after the top-level command, excluding `nie` and the
+    /// command itself. Example for `cli_vfs`: `["find", "--ext", "g4tx", "."]`.
+    #[serde(default)]
+    pub args: Vec<String>,
+}
+
+/// Native, stateless MCP service. Domain state is opened by the same library
+/// functions as the CLI so clients never observe a second implementation.
+#[derive(Debug, Clone, Default)]
+pub struct NieMcpServer {
+    bridge: BridgeControl,
+}
+
+impl NieMcpServer {
+    async fn execute(command: &'static str, request: CliToolRequest) -> CapturedCommand {
+        match tokio::task::spawn_blocking(move || {
+            crate::execute_captured(command.to_owned(), request.args)
+        })
+        .await
+        {
+            Ok(result) => result,
+            Err(error) => CapturedCommand::failed(format!("CLI worker failed: {error}")),
+        }
+    }
+}
+
+macro_rules! define_cli_tools {
+    ($(($type_name:ident, $tool_name:literal, $command:literal, $description:literal)),+ $(,)?) => {
+        $(
+            struct $type_name;
+
+            impl ToolBase for $type_name {
+                type Parameter = CliToolRequest;
+                type Output = CapturedCommand;
+                type Error = ErrorData;
+
+                fn name() -> Cow<'static, str> {
+                    $tool_name.into()
+                }
+
+                fn description() -> Option<Cow<'static, str>> {
+                    Some($description.into())
+                }
+            }
+
+            impl AsyncTool<NieMcpServer> for $type_name {
+                async fn invoke(
+                    _service: &NieMcpServer,
+                    request: CliToolRequest,
+                ) -> Result<CapturedCommand, ErrorData> {
+                    Ok(NieMcpServer::execute($command, request).await)
+                }
+            }
+        )+
+
+        impl NieMcpServer {
+            fn tool_router() -> ToolRouter<Self> {
+                ToolRouter::new()$(.with_async_tool::<$type_name>())+
+            }
+        }
+    };
+}
+
+define_cli_tools!(
+    (
+        CliOc,
+        "cli_oc",
+        "oc",
+        "Generate an original 3D character (morphology, chara_edit, measured colours) through `nie oc`; pass the exact CLI argument tail in `args`."
+    ),
+    (
+        CliComputerUse,
+        "cli_computer_use",
+        "computer-use",
+        "Run `nie computer-use` in process. Pass the exact CLI argument tail in `args`; supports read-and-write operations in YOLO mode."
+    ),
+    (
+        CliMod,
+        "cli_mod",
+        "mod",
+        "Run any `nie mod` workflow in process. This tool may write or install mod files; inspect the selected subcommand before calling."
+    ),
+    (
+        CliLauncher,
+        "cli_launcher",
+        "launcher",
+        "Run IEVR Ultimate Team launcher operations: team decrypt/encrypt, package info, save parking/injection, EAC bypass, and UT packs/players/formations."
+    ),
+    (
+        CliViola,
+        "cli_viola",
+        "viola",
+        "Run any native Viola archive operation in process, including dump, verify, pack, merge, and crypto."
+    ),
+    (
+        CliFormat,
+        "cli_format",
+        "format",
+        "Detect Level-5 formats for a file or directory through the canonical CLI library."
+    ),
+    (
+        CliDecode,
+        "cli_decode",
+        "decode",
+        "Decode Level-5 files through the same dispatch shared by the CLI, FFI, and explorer."
+    ),
+    (
+        CliRefreshTypedJson,
+        "cli_refresh_typed_json",
+        "refresh-typed-json",
+        "Regenerate typed iecode JSON sidecars for cfg.bin files. This tool writes files."
+    ),
+    (
+        CliSteam,
+        "cli_steam",
+        "steam",
+        "Run Steam list, download, or sync operations. Download and sync mutate the selected installation."
+    ),
+    (
+        CliInfo,
+        "cli_info",
+        "info",
+        "Inspect the game installation, executable fingerprint, VFS mount, and launch chain."
+    ),
+    (
+        CliLocales,
+        "cli_locales",
+        "locales",
+        "Inventory the locale tags and localized VFS resources present in the game installation."
+    ),
+    (
+        CliConvert,
+        "cli_convert",
+        "convert",
+        "Convert a disk or VFS asset to an exchange format through aphrody-nie-formats."
+    ),
+    (
+        CliRender,
+        "cli_render",
+        "render",
+        "Render GLB assets to PNG or GIF through aphrody-nie-render3d."
+    ),
+    (CliLua, "cli_lua", "lua", "Statically inspect Lua source files without executing them."),
+    (
+        CliLuaRun,
+        "cli_lua_run",
+        "lua-run",
+        "Execute a Lua 5.2 game chunk in the bounded native sandbox."
+    ),
+    (
+        CliLuaAudit,
+        "cli_lua_audit",
+        "lua-audit",
+        "Audit the game Lua corpus against the bounded native runtime."
+    ),
+    (
+        CliNet,
+        "cli_net",
+        "net",
+        "Drive the online suite: WebSocket server, rooms, deterministic match simulation, ladder and ELO."
+    ),
+    (
+        CliSeed,
+        "cli_seed",
+        "seed",
+        "Seed the reverse-engineering database from structured inputs. This tool writes the selected database."
+    ),
+    (
+        CliSeedUi,
+        "cli_seed_ui",
+        "seed-ui",
+        "Index UI assets into the reverse-engineering database. This tool writes the selected database."
+    ),
+    (
+        CliStrings,
+        "cli_strings",
+        "strings",
+        "Extract and optionally index ASCII and UTF-16 strings from nie.exe."
+    ),
+    (
+        CliFind,
+        "cli_find",
+        "find",
+        "Find repository or data files with the canonical ignore and glob semantics."
+    ),
+    (
+        CliGrep,
+        "cli_grep",
+        "grep",
+        "Search file contents with the canonical regex and ignore semantics."
+    ),
+    (
+        CliImg,
+        "cli_img",
+        "img",
+        "Run native image inspection, resize, crop, conversion, composition, contact-sheet, or diff operations."
+    ),
+    (
+        CliPlay,
+        "cli_play",
+        "play",
+        "Run the headless game engine: simulate or render a screen, menu, or match for a bounded number of frames."
+    ),
+    (
+        CliMode,
+        "cli_mode",
+        "mode",
+        "Index, measure, export, or inspect game mode and menu coverage."
+    ),
+    (CliIcons, "cli_icons", "icons", "Index, inspect, or extract icon atlas regions."),
+    (
+        CliAvatar,
+        "cli_avatar",
+        "avatar",
+        "Inspect and export avatar recipes, parts, presets, regions, sheets, UVs, or icons."
+    ),
+    (
+        CliOcgen,
+        "cli_ocgen",
+        "ocgen",
+        "Generate an original character in 3D: morphology, chara_edit parts, and measured colours."
+    ),
+    (
+        CliAtlas,
+        "cli_atlas",
+        "atlas",
+        "Query or rebuild the single index over every reverse-engineering surface: files, crates, Markdown claims, knowledge-base digest, forge units, binaries, tools, metrics, and the ranked road to 100 %. `build` and `sync` write the atlas database and its Redis mirror; `status`, `search`, `gaps`, `next`, `docs`, and `dupes` are read-only."
+    ),
+    (
+        CliCoverage,
+        "cli_coverage",
+        "coverage",
+        "Report reverse-engineering classification coverage."
+    ),
+    (
+        CliQueue,
+        "cli_queue",
+        "queue",
+        "Operate the reverse-engineering Redis frontier. Push and reset mutate queue state."
+    ),
+    (
+        CliPropagate,
+        "cli_propagate",
+        "propagate",
+        "Propagate reverse-engineering classifications in the selected database."
+    ),
+    (CliRtti, "cli_rtti", "rtti", "Extract and index MSVC RTTI from nie.exe."),
+    (
+        CliIndex,
+        "cli_index",
+        "index",
+        "Index executable metadata into the reverse-engineering database."
+    ),
+    (
+        CliDisasm,
+        "cli_disasm",
+        "disasm",
+        "Disassemble indexed executable functions through iced-x86."
+    ),
+    (CliPdata, "cli_pdata", "pdata", "Parse and index the PE exception-function table."),
+    (
+        CliRebuild,
+        "cli_rebuild",
+        "rebuild",
+        "Rebuild the reverse-engineering database through the canonical pipeline. This tool mutates the database."
+    ),
+    (
+        CliRecover,
+        "cli_recover",
+        "recover",
+        "Recover reverse-engineering metadata, optionally applying changes to the selected database."
+    ),
+    (
+        CliSave,
+        "cli_save",
+        "save",
+        "Read, decrypt, encrypt, or edit IEVR save files. Non-read subcommands write data."
+    ),
+    (
+        CliWiki,
+        "cli_wiki",
+        "wiki",
+        "Query characters, skills, items, teams, comparisons, search, SQL, and deterministic team generation."
+    ),
+    (CliUniformMap, "cli_uniform_map", "uniform-map", "Build the VFS uniform-to-model mapping."),
+    (CliTextures, "cli_textures", "textures", "Decode or index the game texture corpus."),
+    (
+        CliMenuPredecode,
+        "cli_menu_predecode",
+        "menu-predecode",
+        "Predecode menu sprites for UI consumption."
+    ),
+    (
+        CliMem,
+        "cli_mem",
+        "mem",
+        "Inspect and mutate live nie.exe memory: maps, reads, writes, dumps, scans, Lua fields, palettes, or explicit EAC patches in YOLO read-and-write mode."
+    ),
+    (
+        CliVfs,
+        "cli_vfs",
+        "vfs",
+        "Run every VFS operation: list, find, stat, read, extract, stats, format parsing, character, and move lookup."
+    ),
+    (CliVn, "cli_vn", "vn", "Inspect or export visual-novel casting and assets."),
+    (CliVideo, "cli_video", "video", "Inspect, list, export, or catalogue game videos."),
+    (
+        CliLive,
+        "cli_live",
+        "live",
+        "Drive the real nie.exe under Proton: resolved environment, prerequisite report, prefix setup, launch, attach, and a launch-and-read probe."
+    ),
+);
+
+#[derive(Debug, Default, serde::Deserialize, schemars::JsonSchema)]
+struct VfsListRequest {
+    prefix: Option<String>,
+    limit: Option<usize>,
+}
+
+#[derive(Debug, Default, serde::Deserialize, schemars::JsonSchema)]
+struct VfsSearchRequest {
+    query: String,
+    limit: Option<usize>,
+}
+
+#[derive(Debug, Default, serde::Deserialize, schemars::JsonSchema)]
+struct PathRequest {
+    path: String,
+}
+
+#[derive(Debug, Default, serde::Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+struct VfsCatRequest {
+    path: String,
+    max_bytes: Option<usize>,
+}
+
+#[derive(Debug, Default, serde::Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+struct AssetRequest {
+    path: String,
+    decode: Option<String>,
+    max_bytes: Option<usize>,
+}
+
+#[derive(Debug, Default, serde::Deserialize, schemars::JsonSchema)]
+struct QueryRequest {
+    sql: String,
+    limit: Option<usize>,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct WikiCardRequest {
+    id: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct WikiSearchRequest {
+    query: String,
+    limit: Option<usize>,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ZukanRankRequest {
+    entry: Value,
+    candidates: Value,
+    max_results: u32,
+}
+
+#[derive(Debug, Default, serde::Deserialize, schemars::JsonSchema)]
+struct FunctionRequest {
+    name: Option<String>,
+    vaddr: Option<String>,
+}
+
+#[derive(Debug, Default, serde::Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+struct RepoReadRequest {
+    path: String,
+    max_bytes: Option<u64>,
+}
+
+#[derive(Debug, Default, serde::Deserialize, schemars::JsonSchema)]
+struct ExplorerNavigateRequest {
+    prefix: String,
+    select: Option<String>,
+}
+
+#[derive(Debug, Default, serde::Deserialize, schemars::JsonSchema)]
+struct ExplorerTabRequest {
+    tab: String,
+}
+
+#[derive(Debug, Default, serde::Deserialize, schemars::JsonSchema)]
+struct ExplorerToastRequest {
+    message: String,
+    kind: Option<String>,
+}
+
+#[derive(Debug, Default, serde::Deserialize, schemars::JsonSchema)]
+struct GameLaunchRequest {
+    #[serde(default)]
+    args: Vec<String>,
+}
+
+fn json_text(value: Value) -> String {
+    serde_json::to_string_pretty(&value).unwrap_or_else(|error| {
+        json!({ "error": format!("JSON serialization failed: {error}") }).to_string()
+    })
+}
+
+fn error_text(error: impl std::fmt::Display) -> String {
+    json_text(json!({ "error": error.to_string() }))
+}
+
+type CompatibilityResult = Result<String, String>;
+
+async fn blocking_json<F>(operation: F) -> CompatibilityResult
+where
+    F: FnOnce() -> anyhow::Result<Value> + Send + 'static,
+{
+    match tokio::task::spawn_blocking(operation).await {
+        Ok(Ok(value)) => Ok(json_text(value)),
+        Ok(Err(error)) => Err(error_text(error)),
+        Err(error) => Err(error_text(format!("blocking MCP worker failed: {error}"))),
+    }
+}
+
+fn re_database_path() -> std::path::PathBuf {
+    aphrody_nie_index::resolve_re_database_path(std::env::var_os("NIE_SQLITE").map(Into::into))
+}
+
+fn open_re_database() -> anyhow::Result<aphrody_nie_index::rusqlite::Connection> {
+    use aphrody_nie_index::rusqlite::OpenFlags;
+
+    let path = re_database_path();
+    anyhow::ensure!(path.is_file(), "RE database not found: {}", path.display());
+    aphrody_nie_index::rusqlite::Connection::open_with_flags(
+        &path,
+        OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+    )
+    .map_err(|error| anyhow::anyhow!("open {} read-only: {error}", path.display()))
+}
+
+fn safe_vfs_path(path: &str) -> Result<&str, String> {
+    let path = path.trim();
+    if path.is_empty()
+        || path.starts_with('/')
+        || path.contains('\\')
+        || path.chars().any(|character| character.is_control())
+        || path.split('/').any(|part| part == "..")
+    {
+        return Err("invalid VFS path".to_owned());
+    }
+    Ok(path)
+}
+
+async fn fetch_model_asset(request: AssetRequest) -> CompatibilityResult {
+    let base =
+        std::env::var("MODEL_SERVE_URL").unwrap_or_else(|_| "http://127.0.0.1:8790".to_owned());
+    fetch_model_asset_from(request, &base).await
+}
+
+async fn fetch_model_asset_from(request: AssetRequest, base: &str) -> CompatibilityResult {
+    use base64::Engine as _;
+    use futures_util::StreamExt as _;
+
+    let result = async {
+        let cap = request.max_bytes.unwrap_or(256 * 1024).clamp(1, 8 * 1024 * 1024);
+        let raw = request.path.trim();
+        anyhow::ensure!(
+            !raw.is_empty() && raw.len() <= 1_024 && !raw.contains("..") && !raw.contains('\0'),
+            "invalid model code"
+        );
+        let without_extension =
+            raw.strip_suffix(".glb").or_else(|| raw.strip_suffix(".GLB")).unwrap_or(raw);
+        let code = without_extension.rsplit('/').next().unwrap_or_default();
+        anyhow::ensure!(!code.is_empty(), "invalid model code");
+        let mut url = reqwest::Url::parse(base.trim_end_matches('/'))?;
+        {
+            let mut segments = url
+                .path_segments_mut()
+                .map_err(|()| anyhow::anyhow!("MODEL_SERVE_URL cannot be a base URL"))?;
+            segments.push("model-full").push(&format!("{code}.glb"));
+        }
+        let url_text = url.to_string();
+        let response = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(30))
+            .build()?
+            .get(url.clone())
+            .send()
+            .await?;
+        let status = response.status();
+        let content_type = response
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok())
+            .map(str::to_owned);
+        let announced_length = response.content_length();
+        if status.is_success() && announced_length.is_some_and(|length| length > cap as u64) {
+            return Ok(json!({
+                "path": raw,
+                "decode": "model",
+                "url": url_text,
+                "http_status": status.as_u16(),
+                "content_type": content_type,
+                "content_length": announced_length,
+                "truncated": true,
+                "source": "model-serve",
+                "note": format!("content exceeds maxBytes {cap}; use the model-serve URL")
+            }));
+        }
+
+        let read_cap = if status.is_success() { cap } else { 4_096 };
+        let mut bytes =
+            Vec::with_capacity(announced_length.unwrap_or(0).min(read_cap as u64) as usize);
+        let mut stream = response.bytes_stream();
+        let mut truncated = false;
+        while let Some(chunk) = stream.next().await {
+            let chunk = chunk?;
+            let remaining = read_cap.saturating_sub(bytes.len());
+            if chunk.len() > remaining {
+                bytes.extend_from_slice(&chunk[..remaining]);
+                truncated = true;
+                break;
+            }
+            bytes.extend_from_slice(&chunk);
+        }
+        let content_length = announced_length.unwrap_or(bytes.len() as u64);
+        let mut value = json!({
+            "path": raw,
+            "decode": "model",
+            "url": url_text,
+            "http_status": status.as_u16(),
+            "content_type": content_type,
+            "content_length": content_length,
+            "truncated": truncated,
+            "source": "model-serve"
+        });
+        if !status.is_success() {
+            value["note"] = Value::String(format!(
+                "model-serve returned {status}: {}",
+                String::from_utf8_lossy(&bytes).trim().chars().take(300).collect::<String>()
+            ));
+        } else if truncated {
+            value["note"] =
+                Value::String(format!("content exceeds maxBytes {cap}; use the model-serve URL"));
+        } else {
+            value["base64"] =
+                Value::String(base64::engine::general_purpose::STANDARD.encode(&bytes));
+        }
+        Ok::<_, anyhow::Error>(value)
+    }
+    .await;
+    result.map(json_text).map_err(error_text)
+}
+
+#[tool_router(router = compatibility_router)]
+impl NieMcpServer {
+    #[tool(
+        name = "wiki_character_card",
+        description = "Read an exact character card with native stat anchors, learned skills and auras from the configured wiki mirror. No network access or writes."
+    )]
+    async fn wiki_character_card(
+        &self,
+        Parameters(request): Parameters<WikiCardRequest>,
+    ) -> CompatibilityResult {
+        blocking_json(move || {
+            anyhow::ensure!(
+                !request.id.is_empty() && request.id.len() <= 256,
+                "Invalid character ID"
+            );
+            let conn = aphrody_nie_wiki::mirror::open(None)
+                .map_err(|_| anyhow::anyhow!("Wiki data is unavailable"))?;
+            let card = aphrody_nie_wiki::cards::character(&conn, &request.id)
+                .map_err(|_| anyhow::anyhow!("Character card could not be read"))?
+                .ok_or_else(|| anyhow::anyhow!("Character was not found"))?;
+            Ok(serde_json::to_value(card)?)
+        })
+        .await
+    }
+
+    #[tool(
+        name = "wiki_search",
+        description = "Search characters, techniques and items using the shared read-only wiki query owner."
+    )]
+    async fn wiki_search(
+        &self,
+        Parameters(request): Parameters<WikiSearchRequest>,
+    ) -> CompatibilityResult {
+        blocking_json(move || {
+            let limit = request.limit.unwrap_or(20);
+            anyhow::ensure!((1..=100).contains(&limit), "Require limit between 1 and 100");
+            anyhow::ensure!(
+                !request.query.trim().is_empty() && request.query.len() <= 256,
+                "Invalid search query"
+            );
+            let conn = aphrody_nie_wiki::mirror::open(None)
+                .map_err(|_| anyhow::anyhow!("Wiki data is unavailable"))?;
+            let result = aphrody_nie_wiki::query::search_all(&conn, &request.query, limit)
+                .map_err(|_| anyhow::anyhow!("Wiki search could not be completed"))?;
+            Ok(serde_json::to_value(result)?)
+        })
+        .await
+    }
+
+    #[tool(
+        name = "zukan_rank",
+        description = "Rank supplied official-encyclopedia entries against supplied candidates with the shared bounded native matcher. Suggestions only; no identity assignment, network request or write."
+    )]
+    async fn zukan_rank(
+        &self,
+        Parameters(request): Parameters<ZukanRankRequest>,
+    ) -> CompatibilityResult {
+        blocking_json(move || {
+            let output = aphrody_nie_zukan::api::rank_json(
+                &request.entry.to_string(),
+                &request.candidates.to_string(),
+                request.max_results,
+            )
+            .map_err(anyhow::Error::msg)?;
+            Ok(serde_json::from_str(&output)?)
+        })
+        .await
+    }
+
+    #[tool(
+        name = "aphrody_api_health",
+        description = "Report the health of the native nie MCP process and its in-process CLI binding."
+    )]
+    async fn compatibility_health(&self) -> CompatibilityResult {
+        let base = std::env::var("NIE_APHRODY_API_URL")
+            .unwrap_or_else(|_| "http://127.0.0.1:8085".to_owned());
+        let url = format!("{}/api/v1/health", base.trim_end_matches('/'));
+        let result = async {
+            let client =
+                reqwest::Client::builder().timeout(std::time::Duration::from_secs(5)).build()?;
+            let mut response = client.get(&url).send().await;
+            if response.as_ref().map_or(true, |r| r.status().is_server_error()) {
+                tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+                if let Ok(retry_resp) = client.get(&url).send().await {
+                    response = Ok(retry_resp);
+                }
+            }
+            let response = response?;
+            let status = response.status();
+            let body = response.text().await?;
+            anyhow::ensure!(
+                status.is_success(),
+                "nie-site returned {status}: {}",
+                body.chars().take(500).collect::<String>()
+            );
+            let health: Value = serde_json::from_str(&body)
+                .map_err(|error| anyhow::anyhow!("nie-site returned invalid JSON: {error}"))?;
+            Ok::<_, anyhow::Error>(json!({
+                "url": url,
+                "status": status.as_u16(),
+                "health": health,
+                "mcp_runtime": "rust-native"
+            }))
+        }
+        .await;
+        result.map(json_text).map_err(error_text)
+    }
+
+    #[tool(
+        name = "vfs_list",
+        description = "List immediate directories and files under a VFS prefix. Compatibility name retained from the Bun server."
+    )]
+    async fn compatibility_vfs_list(
+        &self,
+        Parameters(request): Parameters<VfsListRequest>,
+    ) -> CompatibilityResult {
+        let limit = request.limit.unwrap_or(200).clamp(1, 5_000);
+        let prefix = request.prefix.unwrap_or_default();
+        let prefix = prefix.trim_matches('/').to_owned();
+        blocking_json(move || {
+            let vfs = super::open_vfs(None)?;
+            Ok(aphrody_nie_explore::mcp_vfs::list(&vfs, &prefix, limit))
+        })
+        .await
+    }
+
+    #[tool(
+        name = "vfs_search",
+        description = "Search VFS paths by case-insensitive substring or glob. Compatibility name retained from the Bun server."
+    )]
+    async fn compatibility_vfs_search(
+        &self,
+        Parameters(request): Parameters<VfsSearchRequest>,
+    ) -> CompatibilityResult {
+        let limit = request.limit.unwrap_or(100).clamp(1, 2_000);
+        let query = request.query.trim().to_owned();
+        blocking_json(move || {
+            anyhow::ensure!(!query.is_empty() && query.len() <= 16 * 1024, "invalid query");
+            let vfs = super::open_vfs(None)?;
+            aphrody_nie_explore::mcp_vfs::search(&vfs, &query, limit)
+        })
+        .await
+    }
+
+    #[tool(
+        name = "vfs_stat",
+        description = "Return VFS metadata for an exact file or folder prefix."
+    )]
+    async fn compatibility_vfs_stat(
+        &self,
+        Parameters(request): Parameters<PathRequest>,
+    ) -> CompatibilityResult {
+        blocking_json(move || {
+            let vfs = super::open_vfs(None)?;
+            aphrody_nie_explore::mcp_vfs::stat(&vfs, &request.path)
+        })
+        .await
+    }
+
+    #[tool(
+        name = "vfs_cat",
+        description = "Read bounded bytes from one VFS file and return UTF-8 text or base64."
+    )]
+    async fn compatibility_vfs_cat(
+        &self,
+        Parameters(request): Parameters<VfsCatRequest>,
+    ) -> CompatibilityResult {
+        blocking_json(move || {
+            let cap = request.max_bytes.unwrap_or(256 * 1024).clamp(1, 8 * 1024 * 1024);
+            let vfs = super::open_vfs(None)?;
+            aphrody_nie_explore::mcp_vfs::cat(&vfs, &request.path, cap)
+        })
+        .await
+    }
+
+    #[tool(
+        name = "asset_get",
+        description = "Read and decode a VFS asset in process as raw bytes, JSON, PNG, or WAV; model codes use the bounded native HTTP client for aphrody-nie-model-serve."
+    )]
+    async fn compatibility_asset_get(
+        &self,
+        Parameters(request): Parameters<AssetRequest>,
+    ) -> CompatibilityResult {
+        if request.decode.as_deref() == Some("model") {
+            return fetch_model_asset(request).await;
+        }
+        blocking_json(move || {
+            let decode = request.decode.as_deref().unwrap_or("raw");
+            let cap = request.max_bytes.unwrap_or(256 * 1024).clamp(1, 8 * 1024 * 1024);
+            let vfs = super::open_vfs(None)?;
+            aphrody_nie_explore::mcp_vfs::asset(&vfs, &request.path, decode, cap)
+        })
+        .await
+    }
+
+    #[tool(
+        name = "re_query",
+        description = "Run a read-only SQL query through the canonical `nie wiki db` library path."
+    )]
+    async fn compatibility_re_query(
+        &self,
+        Parameters(request): Parameters<QueryRequest>,
+    ) -> CompatibilityResult {
+        let limit = request.limit.unwrap_or(50).clamp(1, 1_000);
+        blocking_json(move || {
+            let connection = open_re_database()?;
+            let page = aphrody_nie_wiki::query::exec_readonly_sql_page(
+                &connection,
+                &request.sql,
+                aphrody_nie_wiki::query::SqliteQueryOptions::re_database(limit),
+            )?;
+            Ok(json!({ "rows": page.rows, "truncated": page.truncated, "columns": page.columns }))
+        })
+        .await
+    }
+
+    #[tool(
+        name = "re_function",
+        description = "Find reverse-engineered functions by name fragment or virtual address."
+    )]
+    async fn compatibility_re_function(
+        &self,
+        Parameters(request): Parameters<FunctionRequest>,
+    ) -> CompatibilityResult {
+        blocking_json(move || {
+            let connection = open_re_database()?;
+            let address = request
+                .vaddr
+                .as_deref()
+                .filter(|v| !v.trim().is_empty())
+                .map(super::parse_addr)
+                .transpose()
+                .map_err(anyhow::Error::msg)?;
+            let mut report = aphrody_nie_wiki::query::re_function_report(
+                &connection,
+                request.name.as_deref(),
+                address,
+            )?;
+            report["query"] = json!({"name":request.name,"vaddr":request.vaddr});
+            Ok(report)
+        })
+        .await
+    }
+
+    #[tool(
+        name = "re_coverage",
+        description = "Return the current reverse-engineering coverage report from the canonical CLI library."
+    )]
+    async fn compatibility_re_coverage(&self) -> CompatibilityResult {
+        blocking_json(move || {
+            let connection = open_re_database()?;
+            aphrody_nie_wiki::query::re_coverage_report(&connection)
+        })
+        .await
+    }
+
+    #[tool(
+        name = "repo_read",
+        description = "Read one bounded source or documentation file through aphrody-nie-explore's confined repository API."
+    )]
+    async fn compatibility_repo_read(
+        &self,
+        Parameters(request): Parameters<RepoReadRequest>,
+    ) -> CompatibilityResult {
+        blocking_json(move || {
+            let root = std::env::var_os("NIE_REPO")
+                .or_else(|| std::env::var_os("NIE_REPO"))
+                .map(std::path::PathBuf::from)
+                .unwrap_or_else(|| {
+                    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../..")
+                });
+            let file = aphrody_nie_explore::depot::Depot::ouvrir(root)
+                .and_then(|depot| depot.lire(&request.path, request.max_bytes))
+                .map_err(anyhow::Error::msg)?;
+            Ok(json!({
+                "path": file.chemin,
+                "abs_path": file.chemin_absolu,
+                "size": file.taille,
+                "truncated": file.tronque,
+                "binary": file.binaire,
+                "content": file.contenu,
+                "note": file.note
+            }))
+        })
+        .await
+    }
+
+    #[tool(
+        name = "explorer_status",
+        description = "Report whether the native loopback bridge is listening and whether an Inacord explorer client is connected."
+    )]
+    async fn compatibility_explorer_status(&self) -> CompatibilityResult {
+        Ok(json_text(self.bridge.status().await))
+    }
+
+    #[tool(
+        name = "explorer_navigate",
+        description = "Navigate the connected explorer to a VFS prefix and optionally select one entry."
+    )]
+    async fn compatibility_explorer_navigate(
+        &self,
+        Parameters(request): Parameters<ExplorerNavigateRequest>,
+    ) -> CompatibilityResult {
+        if request.prefix.contains('\0')
+            || request.select.as_deref().is_some_and(|value| value.contains('\0'))
+        {
+            return Err(error_text("invalid explorer path"));
+        }
+        self.bridge
+            .send(json!({ "cmd": "navigate", "prefix": request.prefix, "select": request.select }))
+            .await
+            .map(json_text)
+            .map_err(error_text)
+    }
+
+    #[tool(
+        name = "explorer_open",
+        description = "Open one VFS file in the connected explorer detail panel."
+    )]
+    async fn compatibility_explorer_open(
+        &self,
+        Parameters(request): Parameters<PathRequest>,
+    ) -> CompatibilityResult {
+        let path = match safe_vfs_path(&request.path) {
+            Ok(path) => path,
+            Err(error) => return Err(error_text(error)),
+        };
+        self.bridge
+            .send(json!({ "cmd": "open", "path": path }))
+            .await
+            .map(json_text)
+            .map_err(error_text)
+    }
+
+    #[tool(
+        name = "explorer_tab",
+        description = "Switch the connected explorer to one known tab: editor, explorer, search, data, cpk, save, mods, re, lua, or settings."
+    )]
+    async fn compatibility_explorer_tab(
+        &self,
+        Parameters(request): Parameters<ExplorerTabRequest>,
+    ) -> CompatibilityResult {
+        const TABS: [&str; 10] = [
+            "editor", "explorer", "search", "data", "cpk", "save", "mods", "re", "lua", "settings",
+        ];
+        if !TABS.contains(&request.tab.as_str()) {
+            return Err(error_text("unknown explorer tab"));
+        }
+        self.bridge
+            .send(json!({ "cmd": "tab", "tab": request.tab }))
+            .await
+            .map(json_text)
+            .map_err(error_text)
+    }
+
+    #[tool(
+        name = "explorer_toast",
+        description = "Display an info, success, or error notification in the connected explorer."
+    )]
+    async fn compatibility_explorer_toast(
+        &self,
+        Parameters(request): Parameters<ExplorerToastRequest>,
+    ) -> CompatibilityResult {
+        let kind = request.kind.as_deref().unwrap_or("info");
+        if request.message.is_empty() || request.message.contains('\0') {
+            return Err(error_text("invalid toast message"));
+        }
+        if !["info", "success", "error"].contains(&kind) {
+            return Err(error_text("unknown toast kind"));
+        }
+        self.bridge
+            .send(json!({ "cmd": "toast", "message": request.message, "kind": kind }))
+            .await
+            .map(json_text)
+            .map_err(error_text)
+    }
+
+    #[tool(
+        name = "game_launch",
+        description = "Launch nie.exe from the repository root without waiting and return its process ID."
+    )]
+    async fn compatibility_game_launch(
+        &self,
+        Parameters(request): Parameters<GameLaunchRequest>,
+    ) -> CompatibilityResult {
+        let result = tokio::task::spawn_blocking(move || launch_game(request.args)).await;
+        match result {
+            Ok(Ok(value)) => Ok(json_text(value)),
+            Ok(Err(error)) => Err(error_text(error)),
+            Err(error) => Err(error_text(format!("game launch worker failed: {error}"))),
+        }
+    }
+}
+
+fn launch_game(args: Vec<String>) -> anyhow::Result<Value> {
+    anyhow::ensure!(args.len() <= 128, "too many game arguments");
+    anyhow::ensure!(
+        args.iter().all(|arg| arg.len() <= 16 * 1024 && !arg.contains('\0')),
+        "invalid game argument"
+    );
+    let root = std::env::var_os("NIE_REPO")
+        .or_else(|| std::env::var_os("NIE_REPO"))
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.."));
+    let configured = std::env::var_os("NIE_GAME_EXE")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| std::path::PathBuf::from("nie.exe"));
+    let executable = if configured.is_absolute() { configured } else { root.join(configured) };
+    anyhow::ensure!(executable.is_file(), "executable not found: {}", executable.display());
+    let mut child = std::process::Command::new(&executable)
+        .args(&args)
+        .current_dir(&root)
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .spawn()?;
+    let pid = child.id();
+    let _ = std::thread::Builder::new().name(format!("nie-game-reaper-{pid}")).spawn(move || {
+        let _ = child.wait();
+    });
+    Ok(json!({
+        "ok": true,
+        "exe": executable,
+        "pid": pid,
+        "args": args
+    }))
+}
+
+impl NieMcpServer {
+    fn all_tools() -> ToolRouter<Self> {
+        Self::tool_router() + Self::compatibility_router()
+    }
+}
+
+#[tool_handler(router = Self::all_tools())]
+impl ServerHandler for NieMcpServer {
+    fn get_info(&self) -> rmcp::model::ServerConfig {
+        let mut implementation = rmcp::model::Implementation::default();
+        "aphrody-nie-game".clone_into(&mut implementation.name);
+        env!("CARGO_PKG_VERSION").clone_into(&mut implementation.version);
+
+        let mut info = rmcp::model::ServerConfig::default();
+        info.protocol_version = rmcp::model::ProtocolVersion::V_2024_11_05;
+        info.capabilities = rmcp::model::ServerCapabilities::builder().enable_tools().build();
+        info.server_info = implementation;
+        info.instructions = Some(
+            "Native Rust MCP binding for the complete nie CLI. Each cli_* tool executes the corresponding top-level command in process and accepts the exact argument tail in `args`. Responses contain success, stdout, stderr, and error fields. Call tools/list for the authoritative surface."
+                .to_owned(),
+        );
+        info
+    }
+}
+
+/// Serve the complete native tool catalogue over stdio.
+pub async fn serve_stdio() -> anyhow::Result<()> {
+    let server = NieMcpServer::default();
+    server.bridge.start().await;
+    let service = server.serve(stdio()).await?;
+    service.waiting().await?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn router_covers_every_non_mcp_top_level_command() {
+        use clap::CommandFactory as _;
+
+        let tools = NieMcpServer::all_tools().list_all();
+        assert_eq!(tools.len(), 67);
+        let commands = crate::Cli::command()
+            .get_subcommands()
+            .map(clap::Command::get_name)
+            .filter(|name| *name != "mcp")
+            .map(str::to_owned)
+            .collect::<Vec<_>>();
+        assert_eq!(commands.len(), 47);
+        for command in commands {
+            let tool_name = format!("cli_{}", command.replace('-', "_"));
+            assert!(
+                tools.iter().any(|tool| tool.name == tool_name),
+                "missing MCP tool for `nie {command}`"
+            );
+        }
+        assert!(tools.iter().all(|tool| tool.input_schema.contains_key("properties")));
+    }
+
+    #[test]
+    fn captured_command_never_leaks_to_process_stdout() {
+        let result = crate::execute_captured("info".to_owned(), vec!["--json".to_owned()]);
+        assert!(result.success, "{:?}", result.error);
+        assert!(result.stdout.contains("\"binaire\""));
+    }
+
+    #[test]
+    fn compatibility_paths_keep_the_legacy_vfs_contract() {
+        assert_eq!(safe_vfs_path("data/dx11/file.g4tx"), Ok("data/dx11/file.g4tx"));
+        assert!(safe_vfs_path("/data/file.g4tx").is_err());
+        assert!(safe_vfs_path("data\\file.g4tx").is_err());
+        assert!(safe_vfs_path("data/../file.g4tx").is_err());
+    }
+
+    #[test]
+    fn portable_mcp_tools_delegate_to_shared_owners() {
+        let source = include_str!("mcp.rs");
+        for call in [
+            "aphrody_nie_explore::mcp_vfs::list(",
+            "aphrody_nie_explore::mcp_vfs::search(",
+            "aphrody_nie_explore::mcp_vfs::stat(",
+            "aphrody_nie_explore::mcp_vfs::cat(",
+            "aphrody_nie_explore::mcp_vfs::asset(",
+            "aphrody_nie_wiki::query::re_function_report(",
+            "aphrody_nie_wiki::query::re_coverage_report(",
+        ] {
+            assert!(source.contains(call), "missing shared-owner call {call}");
+        }
+    }
+
+    #[tokio::test]
+    async fn model_asset_compatibility_uses_the_bounded_native_http_client() {
+        use std::io::{Read as _, Write as _};
+
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("loopback listener");
+        let address = listener.local_addr().expect("listener address");
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("model request");
+            let mut request = [0_u8; 1_024];
+            let length = stream.read(&mut request).expect("read request");
+            let request = String::from_utf8_lossy(&request[..length]);
+            assert!(request.starts_with("GET /model-full/c01000010.glb HTTP/1.1"));
+            stream
+                .write_all(
+                    b"HTTP/1.1 200 OK\r\nContent-Type: model/gltf-binary\r\nContent-Length: 3\r\nConnection: close\r\n\r\nglb",
+                )
+                .expect("write response");
+        });
+
+        let response = fetch_model_asset_from(
+            AssetRequest {
+                path: "characters/c01000010.glb".to_owned(),
+                decode: Some("model".to_owned()),
+                max_bytes: Some(32),
+            },
+            &format!("http://{address}"),
+        )
+        .await
+        .expect("model asset response");
+        server.join().expect("model server");
+        let value: Value = serde_json::from_str(&response).expect("JSON response");
+        assert_eq!(value["source"], "model-serve");
+        assert_eq!(value["http_status"], 200);
+        assert_eq!(value["content_length"], 3);
+        assert_eq!(value["base64"], "Z2xi");
+        assert_eq!(value["truncated"], false);
+    }
+
+    #[test]
+    fn native_server_is_reachable_from_the_nie_cli() {
+        use clap::Parser as _;
+
+        let cli = crate::Cli::try_parse_from(["nie", "mcp"]).expect("parse MCP command");
+        assert!(matches!(cli.cmd, crate::Cmd::Mcp));
+    }
+}

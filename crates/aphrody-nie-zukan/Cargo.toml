@@ -1,0 +1,46 @@
+[package]
+name = "aphrody-nie-zukan"
+description = "Level-5 Inagle encyclopedia ingestion, parsing, and matching"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = ["host"]
+host = [
+    "dep:clap",
+    "dep:aphrody-web-crawl",
+    "dep:rusqlite",
+    "dep:tracing-subscriber",
+]
+
+[dependencies]
+anyhow = { version = "1" }
+thiserror = { version = "2" }
+serde = { version = "1", default-features = false, features = ["std", "derive"] }
+serde_json = { version = "1" }
+tracing = { version = "0.1" }
+# Central pin narrows ^0.3 to =0.3.22; the existing unified lock already selects 0.3.22.
+tracing-subscriber = { version = "0.3.20", default-features = false, features = ["fmt", "env-filter", "ansi", "tracing-log"], optional = true }
+clap = { workspace = true, optional = true, features = ["derive", "color", "env"] }
+rusqlite = { workspace = true, optional = true, features = ["bundled"] }
+
+# Aphrody Web owns HTTP transport, retries and host pacing.
+aphrody-web-crawl = { workspace = true, optional = true }
+scraper.workspace = true
+
+# Encoding
+base64 = { version = "0.22.1" }
+percent-encoding.workspace = true
+# The synchronous binding delegates its runtime to Aphrody Web.
+
+[[bin]]
+name = "aphrody-nie-zukan"
+path = "src/bin/nie_zukan.rs"
+required-features = ["host"]

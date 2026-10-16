@@ -1,0 +1,19 @@
+[package]
+license.workspace = true
+name = "aphrody-nie-emu"
+description = "Canonical emulator backend registry and capability contracts for Inazuma Eleven"
+version.workspace = true
+edition.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-dust-core.workspace = true
+serde = { version = "1", default-features = false, features = ["std", "derive"] }
+
+[dev-dependencies]
+serde_json = { version = "1" }

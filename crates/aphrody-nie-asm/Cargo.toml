@@ -1,0 +1,20 @@
+[package]
+name = "aphrody-nie-asm"
+description = "Encodeur x86-64 (dialecte MSVC) — régénère les corps de fonctions de nie.exe depuis une source symbolique"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+serde = { version = "1", default-features = false, features = ["std", "derive"], optional = true }
+
+[features]
+default = ["serde"]
+serde = ["dep:serde"]
+
+[lints]
+workspace = true

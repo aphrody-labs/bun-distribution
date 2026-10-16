@@ -1,0 +1,74 @@
+[package]
+name = "aphrody-nie-model-serve"
+description = "Portable IEVR model catalogs and menu compositor with an optional live GLB HTTP server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "aphrody-nie-model-serve"
+path = "src/main.rs"
+required-features = ["host"]
+
+[features]
+default = ["host"]
+# Filesystem, SQLite, TCP, tracing and CLI bindings. The reusable catalog and menu-rendering
+# library stays available with `--no-default-features`, including on wasm32.
+host = [
+    "dep:anyhow",
+    "dep:clap",
+    "dep:aphrody-nie-data",
+    "dep:aphrody-nie-explore",
+    "dep:rusqlite",
+    "dep:serde_json",
+    "dep:sha2",
+    "dep:tracing",
+    "dep:tracing-subscriber",
+    "aphrody-nie-formats/audio-decode",
+    "aphrody-nie-formats/images",
+]
+# Active les tests de décodage audio sur les vrais fichiers AWB/HCA IEVR (non distribués).
+# Convention identique à `real-saves` (aphrody-nie-save) et `real-fixtures` (aphrody-nie-formats).
+# Lancer : cargo test -p aphrody-nie-model-serve --features real-audio
+real-audio = ["host"]
+
+[lints]
+workspace = true
+
+[dependencies]
+# Features : `textures` = décodeur G4TX/DDS partagé (`aphrody_nie_formats::g4tx_decode`) ;
+# `audio-decode` = décodeur audio HCA/ADX/AWB/ACB partagé (`cri_audio::decode_to_wav`).
+aphrody-nie-formats = { workspace = true, features = ["std", "serde", "textures"] }
+# Parseurs typés des familles game-data (formation, skill, item, mission…) :
+# alimentent la route `/typed` qui décode un cfg.bin en structures de jeu nommées.
+aphrody-nie-data = { workspace = true, optional = true, features = ["serde"] }
+# Vue « dossier » du VFS, rôles de dossiers et table des formats d'export : la MÊME logique que
+# celle qu'utilise l'app desktop (`vfs_ls`), exposée ici en JSON pour que l'explorateur web
+# d'azalée lise le vrai VFS au lieu d'un index SQLite figé régénéré à la main.
+aphrody-nie-explore = { workspace = true, optional = true, default-features = true }
+# (cridecoder arrive via aphrody-nie-formats feature `audio-decode` — plus de dép directe)
+anyhow = { version = "1", optional = true }
+serde = { version = "1", default-features = false, features = ["std", "derive"] }
+serde_json = { version = "1", optional = true }
+rusqlite = { workspace = true, optional = true, features = ["bundled"] }
+tracing = { version = "0.1", optional = true }
+tracing-subscriber = { version = "0.3.20", default-features = false, features = ["fmt", "env-filter", "ansi", "tracing-log"], optional = true }
+clap = { workspace = true, optional = true, features = ["derive", "color", "env"] }
+# Empreinte SHA-256 du GLB servi, citée dans chaque rapport d'assemblage.
+sha2 = { version = "0.10", optional = true }
+
+[[example]]
+name = "diag_g4pkm_transforms"
+required-features = ["host"]
+
+[[example]]
+name = "probe_g4tx_dds"
+required-features = ["host"]
+
+[dev-dependencies]
+# Example `probe_g4tx_dds` réfère l'enum `ImageFormat` en direct (le décodage applicatif
+# passe par aphrody_nie_formats::g4tx_decode, mais cette cible de dev nomme l'enum).
+image_dds.workspace = true

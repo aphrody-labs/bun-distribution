@@ -1,0 +1,577 @@
+use std::{
+    collections::BTreeMap,
+    io::BufWriter,
+    path::{Path, PathBuf},
+};
+
+use anyhow::{Context, Result, bail};
+use aphrody_dust_core::decomp::config::{
+    config::Config,
+    delinks::{DelinkFile, Delinks},
+    link_time_const::LinkTimeConst,
+    module::ModuleKind,
+    relocations::RelocationKind,
+    section::{MigrateSection, Section, SectionKind},
+    symbol::{InstructionMode, SymFunction, SymLabel, SymbolKind},
+};
+use aphrody_dust_core::rom::{Rom, raw::AutoloadKind};
+use clap::Args;
+use dsd_object::{Architecture, BinaryFormat, Endianness, RelocationFlags};
+
+use super::Lcf;
+use crate::{
+    config::{
+        delinks::{DelinksMap, DelinksMapOptions},
+        program::Program,
+        relocation::{RelocationKindExt, RelocationModuleExt},
+        section::SectionExt,
+        symbol::SymbolExt,
+    },
+    util::io::{create_dir_all, create_file},
+};
+
+/// Delinks an extracted ROM into relocatable ELF files.
+#[derive(Args)]
+pub struct Delink {
+    /// Path to config.yaml.
+    #[arg(long, short = 'c')]
+    pub config_path: PathBuf,
+
+    /// Emit all mapping symbols, not just code-related ones.
+    #[arg(long, short = 'M')]
+    pub all_mapping_symbols: bool,
+
+    #[command(flatten)]
+    pub module_filter: ModuleFilterArgs,
+}
+
+#[derive(Args, Default)]
+pub struct ModuleFilterArgs {
+    /// Include main program and exclude unspecified modules.
+    #[arg(long)]
+    pub main: bool,
+
+    /// Include overlay(s) and exclude unspecified modules.
+    #[arg(long)]
+    pub overlay: Vec<u16>,
+
+    /// Include ITCM and exclude unspecified modules.
+    #[arg(long)]
+    pub itcm: bool,
+
+    /// Include DTCM and exclude unspecified modules.
+    #[arg(long)]
+    pub dtcm: bool,
+
+    /// Include autoload(s) and exclude unspecified modules.
+    #[arg(long)]
+    pub autoload: Vec<u32>,
+}
+
+struct Delinker<'a> {
+    rom: Rom<'a>,
+    program: Program,
+    elf_path: PathBuf,
+    all_mapping_symbols: bool,
+}
+
+impl Delink {
+    pub fn run(&self) -> Result<()> {
+        let config = Config::from_file(&self.config_path)?;
+        let config_path = self.config_path.parent().unwrap();
+
+        let delinks_map = DelinksMap::from_config(
+            &config,
+            config_path,
+            DelinksMapOptions { migrate_sections: true, generate_gap_files: true },
+        )?;
+
+        let rom = config.load_rom(config_path)?;
+
+        let elf_path = config_path.join(&config.delinks_path);
+
+        let program = Program::from_config(config_path, &config, &rom)?;
+        let mut delinker =
+            Delinker { rom, program, elf_path, all_mapping_symbols: self.all_mapping_symbols };
+
+        for delinks in delinks_map.iter() {
+            // DelinksMap always loads autoload modules, skip delinking them if not specified
+            if self.module_filter.has(delinks.module_kind()) {
+                delinker.delink_module(delinks)?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+impl ModuleFilterArgs {
+    pub fn all() -> Self {
+        Self::default()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        !self.main
+            && self.overlay.is_empty()
+            && !self.itcm
+            && !self.dtcm
+            && self.autoload.is_empty()
+    }
+
+    pub fn has(&self, module: ModuleKind) -> bool {
+        if self.is_empty() {
+            return true;
+        }
+        match module {
+            ModuleKind::Arm9 => self.main,
+            ModuleKind::Overlay(id) => self.overlay.contains(&id),
+            ModuleKind::Autoload(AutoloadKind::Itcm) => self.itcm,
+            ModuleKind::Autoload(AutoloadKind::Dtcm) => self.dtcm,
+            ModuleKind::Autoload(AutoloadKind::Unknown(index)) => self.autoload.contains(&index),
+        }
+    }
+}
+
+impl<'a> Delinker<'a> {
+    fn delink_module(&mut self, delinks: &Delinks) -> Result<()> {
+        let symbol_map = self.program.symbol_maps().get(delinks.module_kind()).unwrap();
+
+        for file in &delinks.files {
+            if file.sections.len() > 0 && file.sections.iter().all(|s| s.migration().is_some()) {
+                // File was migrated, it will be delinked from its source module
+                continue;
+            }
+
+            for section in file.sections.iter() {
+                let module = self.program.by_module_kind(delinks.module_kind()).unwrap();
+                let (symbol_map, section_end) = if let Some(migrate_section) =
+                    MigrateSection::parse(section.name(), delinks.module_kind())?
+                {
+                    let section_end = match migrate_section.module_kind() {
+                        ModuleKind::Arm9 => self.rom.arm9().end_address()?,
+                        ModuleKind::Overlay(id) => {
+                            self.rom.arm7_overlays()[id as usize].end_address()
+                        },
+                        ModuleKind::Autoload(autoload_kind) => self
+                            .rom
+                            .arm9()
+                            .autoloads()?
+                            .iter()
+                            .find_map(|a| (a.kind() == autoload_kind).then_some(a.end_address()))
+                            .context("Failed to find end address of autoload")?,
+                    };
+
+                    let symbol_map =
+                        self.program.symbol_maps().get(migrate_section.module_kind()).unwrap();
+                    (symbol_map, section_end)
+                } else {
+                    let (_, module_section) = module.sections().by_name(section.name()).unwrap();
+                    (symbol_map, module_section.end_address())
+                };
+
+                if let Some((symbol, size)) =
+                    symbol_map.get_symbol_containing(section.end_address() - 1, section_end)?
+                    && symbol.addr >= section.start_address()
+                    && symbol.addr < section.end_address()
+                    && symbol.addr + size > section.end_address()
+                {
+                    bail!(
+                        "Last symbol '{}' in section '{}' of file '{}' has the range {:#010x}..{:#010x} but is not contained within the file's section range ({:#010x}..{:#010x})",
+                        symbol.name,
+                        section.name(),
+                        file.name,
+                        symbol.addr,
+                        symbol.addr + size,
+                        section.start_address(),
+                        section.end_address(),
+                    );
+                }
+            }
+
+            let (file_path, _) = file.split_file_ext();
+            self.create_elf_file(
+                file,
+                delinks.module_kind(),
+                self.elf_path.join(format!("{file_path}.o")),
+            )?;
+        }
+
+        Ok(())
+    }
+
+    fn create_elf_file<P: AsRef<Path>>(
+        &self,
+        delink_file: &DelinkFile,
+        module_kind: ModuleKind,
+        path: P,
+    ) -> Result<()> {
+        let path = path.as_ref();
+
+        create_dir_all(path.parent().unwrap())?;
+
+        let object = self.delink(delink_file, module_kind)?;
+        let file = create_file(path)?;
+        let writer = BufWriter::new(file);
+        object.write_stream(writer).unwrap();
+
+        Ok(())
+    }
+
+    fn delink(
+        &'a self,
+        delink_file: &'a DelinkFile,
+        module_kind: ModuleKind,
+    ) -> Result<dsd_object::write::Object<'a>> {
+        let mut delink_object = DelinkObject::new(&self.program, module_kind);
+
+        for file_section in delink_file.sections.iter() {
+            if file_section.migration().is_some() {
+                // Skip sections that were migrated into this module, those sections will be
+                // delinked from the source module
+                continue;
+            }
+            delink_object.define_section(file_section, module_kind, self.all_mapping_symbols)?;
+        }
+        for file_section in delink_file.migrated_sections.iter() {
+            delink_object.define_section(file_section, module_kind, self.all_mapping_symbols)?;
+        }
+
+        let mut error = false;
+
+        // Must start a new loop here so we can know which section a symbol ID belongs to
+        for file_section in delink_file.sections.iter() {
+            error |= delink_object.define_relocations(file_section, module_kind)?;
+        }
+        for file_section in delink_file.migrated_sections.iter() {
+            error |= delink_object.define_relocations(file_section, module_kind)?;
+        }
+        if error {
+            bail!("Failed to delink '{}', see errors above", delink_file.name);
+        }
+
+        Ok(delink_object.into_object())
+    }
+}
+
+struct DelinkObject<'a> {
+    object: dsd_object::write::Object<'a>,
+    // Maps address to ObjSection
+    obj_sections: BTreeMap<u32, dsd_object::write::SectionId>,
+    // Maps address and module to ObjSymbol
+    obj_symbols: BTreeMap<(u32, ModuleKind), dsd_object::write::SymbolId>,
+    // Maps overlay ID to ObjSymbol
+    overlay_id_symbols: BTreeMap<u32, dsd_object::write::SymbolId>,
+    link_time_const_symbols: BTreeMap<LinkTimeConst, dsd_object::write::SymbolId>,
+
+    program: &'a Program,
+    current_module: ModuleKind,
+}
+
+impl<'a> DelinkObject<'a> {
+    fn new(program: &'a Program, current_module: ModuleKind) -> Self {
+        let mut object = dsd_object::write::Object::new(
+            BinaryFormat::Elf,
+            Architecture::Arm,
+            Endianness::Little,
+        );
+        object.elf_is_rela = Some(true);
+
+        Self {
+            object,
+            obj_sections: BTreeMap::new(),
+            obj_symbols: BTreeMap::new(),
+            overlay_id_symbols: BTreeMap::new(),
+            link_time_const_symbols: BTreeMap::new(),
+            program,
+            current_module,
+        }
+    }
+
+    fn define_section(
+        &mut self,
+        file_section: &Section,
+        src_module: ModuleKind,
+        all_mapping_symbols: bool,
+    ) -> Result<(), anyhow::Error> {
+        let symbol_module =
+            if let Some(migration) = MigrateSection::parse(file_section.name(), src_module)? {
+                migration.module_kind()
+            } else {
+                self.current_module
+            };
+        let module = self.program.by_module_kind(symbol_module).unwrap();
+
+        let code = file_section
+            .relocatable_code(module)
+            .with_context(|| format!("when delinking module {}", self.current_module))?
+            .unwrap_or_else(Vec::new);
+        let name = file_section.source_name().as_bytes().to_vec();
+        let kind = match file_section.kind() {
+            SectionKind::Code => dsd_object::SectionKind::Text,
+            SectionKind::Data => dsd_object::SectionKind::Data,
+            SectionKind::Rodata => dsd_object::SectionKind::ReadOnlyData,
+            SectionKind::Bss => dsd_object::SectionKind::UninitializedData,
+        };
+        let obj_section_id = self.object.add_section(vec![], name.clone(), kind);
+        let section = self.object.section_mut(obj_section_id);
+        if file_section.kind().is_initialized() {
+            let alignment = if file_section.kind().is_executable() { 4 } else { 1 };
+            section.set_data(code, alignment);
+        } else {
+            section.append_bss(file_section.size().into(), 1);
+        }
+        self.object.add_symbol(dsd_object::write::Symbol {
+            name, // same name as section
+            value: 0,
+            size: 0,
+            kind: dsd_object::SymbolKind::Section,
+            scope: dsd_object::SymbolScope::Compilation,
+            weak: false,
+            section: dsd_object::write::SymbolSection::Section(obj_section_id),
+            flags: dsd_object::SymbolFlags::None,
+        });
+        let search_symbol_map =
+            self.program.symbol_maps().get(symbol_module).context("Failed to find symbol map")?;
+        let mut symbols = search_symbol_map
+            .iter_by_address(file_section.address_range())
+            .filter(|(_, s)| !s.skip)
+            .peekable();
+        while let Some((_, symbol)) = symbols.next() {
+            // Get symbol data
+            let max_address = symbols.peek().map_or(file_section.end_address(), |(_, s)| s.addr);
+            let scope = symbol.get_obj_symbol_scope();
+            let value = u64::from(symbol.addr - file_section.start_address());
+            let flags = symbol.get_obj_symbol_flags();
+
+            // Create symbol
+            let symbol_section = dsd_object::write::SymbolSection::Section(obj_section_id);
+            let symbol_id = self.object.add_symbol(dsd_object::write::Symbol {
+                name: symbol.name.clone().into_bytes(),
+                value,
+                size: symbol.size(max_address).into(),
+                kind: dsd_object::SymbolKind::Unknown, // doesn't matter, overriden by `flags.st_info`
+                scope,
+                weak: false, // overriden by `flags.st_info`
+                section: symbol_section,
+                flags,
+            });
+
+            let is_thumb = matches!(
+                symbol.kind,
+                SymbolKind::Function(SymFunction { mode: InstructionMode::Thumb, .. })
+                    | SymbolKind::Label(SymLabel { mode: InstructionMode::Thumb, .. })
+            );
+            let thumb_bit = if is_thumb { 1 } else { 0 };
+            self.obj_symbols.insert((symbol.addr | thumb_bit, symbol_module), symbol_id);
+
+            if all_mapping_symbols
+                || matches!(
+                    symbol.kind,
+                    SymbolKind::Function(_) | SymbolKind::Label(_) | SymbolKind::PoolConstant
+                )
+            {
+                // Create mapping symbol
+                if let Some(name) = symbol.mapping_symbol_name() {
+                    self.object.add_symbol(dsd_object::write::Symbol {
+                        name: name.to_string().into_bytes(),
+                        value,
+                        size: 0,
+                        kind: dsd_object::SymbolKind::Label,
+                        scope: dsd_object::SymbolScope::Compilation,
+                        weak: false,
+                        section: symbol_section,
+                        flags: dsd_object::SymbolFlags::None,
+                    });
+                }
+            }
+        }
+        self.obj_sections.insert(file_section.start_address(), obj_section_id);
+        Ok(())
+    }
+
+    fn define_relocations(
+        &mut self,
+        file_section: &Section,
+        src_module: ModuleKind,
+    ) -> Result<bool, anyhow::Error> {
+        let symbol_map = self.program.symbol_maps().get(self.current_module).unwrap();
+
+        let mut error = false;
+
+        let obj_section_id = *self
+            .obj_sections
+            .get(&file_section.start_address())
+            .with_context(|| {
+                format!(
+                    "Failed to find ObjSection {} in module {} while delinking",
+                    file_section.name(),
+                    self.current_module
+                )
+            })
+            .unwrap();
+        let module_kind = MigrateSection::parse(file_section.name(), src_module)?
+            .map_or(self.current_module, |m| m.module_kind());
+        let module = self.program.by_module_kind(module_kind).unwrap();
+        for (_, relocation) in module.relocations().iter_range(file_section.address_range()) {
+            // Get relocation data
+            let offset = relocation.from_address() - file_section.start_address();
+            let dest_addr = relocation.to_address();
+
+            let symbol_id = match relocation.kind() {
+                RelocationKind::ArmCall
+                | RelocationKind::ThumbCall
+                | RelocationKind::ArmCallThumb
+                | RelocationKind::ThumbCallArm
+                | RelocationKind::ArmBranch
+                | RelocationKind::Load => {
+                    // Normal symbol relocation
+                    let Some(reloc_module) = relocation.module().first_module() else {
+                        log::warn!(
+                            "No module for relocation from {:#010x} in {} to {:#010x}",
+                            relocation.from_address(),
+                            module.kind(),
+                            dest_addr,
+                        );
+                        continue;
+                    };
+
+                    // Get destination symbol
+                    let thumb_bit = if relocation.kind().calls_thumb_fn() { 1 } else { 0 };
+                    let symbol_key = (dest_addr | thumb_bit, reloc_module);
+                    if let Some(obj_symbol) = self.obj_symbols.get(&symbol_key) {
+                        // Use existing symbol
+                        *obj_symbol
+                    } else {
+                        // Get external symbol data
+                        let external_symbol_map =
+                            self.program.symbol_maps().get(reloc_module).unwrap();
+                        let symbol = if let Some((_, symbol)) =
+                            external_symbol_map.first_at_address(dest_addr)
+                        {
+                            symbol
+                        } else if let Some((_, symbol)) =
+                            external_symbol_map.get_function(dest_addr)?
+                        {
+                            symbol
+                        } else {
+                            log::error!(
+                                "No symbol found for relocation from {:#010x} in {} to {:#010x} in {}",
+                                relocation.from_address(),
+                                module.kind(),
+                                dest_addr,
+                                reloc_module
+                            );
+                            if let Some(&(_, symbol)) = external_symbol_map
+                                .first_symbol_before(dest_addr)
+                                .unwrap_or_default()
+                                .first()
+                            {
+                                log::error!(
+                                    "Perhaps you want to reference the symbol {} with 'to:{:#010x} add:{:#x}' instead?",
+                                    symbol.name,
+                                    symbol.addr,
+                                    i64::from(dest_addr - symbol.addr) + relocation.addend()
+                                );
+                            }
+                            error = true;
+                            continue;
+                        };
+
+                        if symbol.scope.is_local() {
+                            let (reloc_base, offset) = relocation
+                                .find_symbol_location(symbol_map)
+                                .map_or(("<unknown>", 0), |(symbol, offset)| {
+                                    (symbol.name.as_str(), offset)
+                                });
+                            log::error!(
+                                "Imported symbol {} at {:#010x} in {} is local, it cannot be used in relocation from {:#010x} in {} ({} + {:#x})",
+                                symbol.name,
+                                dest_addr,
+                                reloc_module,
+                                relocation.from_address(),
+                                module.kind(),
+                                reloc_base,
+                                offset,
+                            );
+                            error = true;
+                            continue;
+                        }
+
+                        // Add external symbol to section
+                        let kind = relocation.kind().as_obj_symbol_kind();
+                        let symbol_section = dsd_object::write::SymbolSection::Undefined;
+                        let symbol_id = self.object.add_symbol(dsd_object::write::Symbol {
+                            name: symbol.name.clone().into_bytes(),
+                            value: 0,
+                            size: 0,
+                            kind,
+                            scope: dsd_object::SymbolScope::Compilation,
+                            weak: true,
+                            section: symbol_section,
+                            flags: dsd_object::SymbolFlags::None,
+                        });
+                        self.obj_symbols.insert(symbol_key, symbol_id);
+                        symbol_id
+                    }
+                },
+                RelocationKind::OverlayId => {
+                    let overlay_id = dest_addr;
+                    if let Some(symbol_id) = self.overlay_id_symbols.get(&overlay_id) {
+                        *symbol_id
+                    } else {
+                        // Create overlay ID symbol
+                        let symbol_id = self.object.add_symbol(dsd_object::write::Symbol {
+                            name: Lcf::overlay_id_symbol_name(overlay_id as u16).into_bytes(),
+                            value: 0,
+                            size: 0,
+                            kind: dsd_object::SymbolKind::Unknown,
+                            scope: dsd_object::SymbolScope::Compilation,
+                            weak: false,
+                            section: dsd_object::write::SymbolSection::Undefined,
+                            flags: dsd_object::SymbolFlags::None,
+                        });
+                        self.overlay_id_symbols.insert(dest_addr, symbol_id);
+                        symbol_id
+                    }
+                },
+                RelocationKind::LinkTimeConst(link_time_const) => {
+                    if let Some(symbol_id) = self.link_time_const_symbols.get(&link_time_const) {
+                        *symbol_id
+                    } else {
+                        // Create linker variable symbol
+                        let symbol_id = self.object.add_symbol(dsd_object::write::Symbol {
+                            name: link_time_const.to_string().into_bytes(),
+                            value: 0,
+                            size: 0,
+                            kind: dsd_object::SymbolKind::Unknown,
+                            scope: dsd_object::SymbolScope::Compilation,
+                            weak: false,
+                            section: dsd_object::write::SymbolSection::Undefined,
+                            flags: dsd_object::SymbolFlags::None,
+                        });
+                        self.link_time_const_symbols.insert(link_time_const, symbol_id);
+                        symbol_id
+                    }
+                },
+            };
+
+            // Create relocation
+            let r_type = relocation.kind().as_elf_relocation_type();
+            let addend = relocation.addend();
+            self.object.add_relocation(
+                obj_section_id,
+                dsd_object::write::Relocation {
+                    offset: u64::from(offset),
+                    symbol: symbol_id,
+                    addend,
+                    flags: RelocationFlags::Elf { r_type },
+                },
+            )?;
+        }
+        Ok(error)
+    }
+
+    fn into_object(self) -> dsd_object::write::Object<'a> {
+        self.object
+    }
+}

@@ -1,0 +1,1009 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Rose Griffon Inagle Universal Game Data & Reverse Engineering API",
+    "version": "2.0.4",
+    "description": "Authoritative OpenAPI 3.1 specification for Inazuma Eleven: Victory Road game data, VFS virtual file system, and nie.exe reverse-engineering services across Bun, Rust NIE crates, and C# IECODE.Core.",
+    "contact": {
+      "name": "Aphrody Code & Rose Griffon Team",
+      "url": "https://azalee.rosegriffon.fr",
+      "email": "contact@aphrody.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://azalee.rosegriffon.fr",
+      "description": "Production Rose Griffon API"
+    },
+    {
+      "url": "http://localhost:3000",
+      "description": "Local Bun Development Server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Characters",
+      "description": "Character catalog, base stats, growth curves, and variants"
+    },
+    {
+      "name": "Skills",
+      "description": "Special moves (Hissatsu), passives, and animations"
+    },
+    {
+      "name": "Teams",
+      "description": "Team formations, kits, tactics, and emblems"
+    },
+    {
+      "name": "Items",
+      "description": "Equipment, consumables, manuals, and spirits"
+    },
+    {
+      "name": "VFS",
+      "description": "Victory Road Virtual File System: CPK packs, @UTF schemas, and decompression"
+    },
+    {
+      "name": "Reverse Engineering",
+      "description": "Authoritative nie.exe offsets, RTTI classes, and cryptographic constants"
+    },
+    {
+      "name": "Saves",
+      "description": "Lives save container encryption, decryption, and payload parsing"
+    },
+    {
+      "name": "Wiki",
+      "description": "Structured SQL query endpoints and drop tables"
+    }
+  ],
+  "paths": {
+    "/api/characters": {
+      "summary": "List characters",
+      "description": "Query characters with optional filtering by element, position, or name search.",
+      "get": {
+        "tags": ["Characters"],
+        "summary": "List characters",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            },
+            "description": "Max items to return"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            },
+            "description": "Pagination offset"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Name search filter"
+          },
+          {
+            "name": "element",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Element ID (1=Wind, 2=Wood, 3=Fire, 4=Earth)"
+          },
+          {
+            "name": "position",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Position ID (1=GK, 2=DF, 3=MF, 4=FW)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of matching characters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Character"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/characters/{id}": {
+      "summary": "Get character by ID",
+      "description": "Retrieves complete character profile including growth curve and skill tree.",
+      "get": {
+        "tags": ["Characters"],
+        "summary": "Get character by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Character identifier (e.g. c01000010)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Character profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Character"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Character not found"
+          }
+        }
+      }
+    },
+    "/api/skills": {
+      "summary": "List skills",
+      "get": {
+        "tags": ["Skills"],
+        "summary": "List skills",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "element",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of skills",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Skill"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/skills/{id}": {
+      "summary": "Get skill by ID",
+      "get": {
+        "tags": ["Skills"],
+        "summary": "Get skill by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Skill details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Skill"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vfs/formats": {
+      "summary": "List recognized binary formats",
+      "description": "Returns all 28 binary formats recognized and parsed by IECODE and NIE.",
+      "get": {
+        "tags": ["VFS"],
+        "summary": "List supported binary formats",
+        "responses": {
+          "200": {
+            "description": "List of format descriptors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VfsFormatDescriptor"
+                  },
+                  "example": [
+                    {
+                      "id": 1,
+                      "magicHex": "0x58543447",
+                      "magicAscii": "G4TX",
+                      "extension": ".g4tx",
+                      "description": "Level-5 Texture Container (main DDS BCn textures + atlas sprite subregions)",
+                      "isBigEndian": false,
+                      "category": "texture",
+                      "encryptionSupported": false,
+                      "compressionSupported": true
+                    },
+                    {
+                      "id": 2,
+                      "magicHex": "0x444D3447",
+                      "magicAscii": "G4MD",
+                      "extension": ".g4md",
+                      "description": "Level-5 3D Model Data (meshes, bone indices, vertex buffers, materials)",
+                      "isBigEndian": false,
+                      "category": "model",
+                      "encryptionSupported": false,
+                      "compressionSupported": true
+                    },
+                    {
+                      "id": 3,
+                      "magicHex": "0x474D3447",
+                      "magicAscii": "G4MG",
+                      "extension": ".g4mg",
+                      "description": "Level-5 Model Group (collection of submeshes and LOD levels)",
+                      "isBigEndian": false,
+                      "category": "model",
+                      "encryptionSupported": false,
+                      "compressionSupported": true
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vfs/probe": {
+      "summary": "Probe binary format by magic bytes",
+      "description": "Examines header bytes and returns the matching format descriptor if known.",
+      "post": {
+        "tags": ["VFS"],
+        "summary": "Probe binary format",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "magicHex": {
+                    "type": "string",
+                    "description": "Hexadecimal magic (e.g. '0x58543447')"
+                  },
+                  "magicAscii": {
+                    "type": "string",
+                    "description": "ASCII magic header (e.g. 'G4TX')"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Identified format descriptor or null",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VfsFormatDescriptor"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vfs/packs": {
+      "summary": "List VFS pack rules",
+      "description": "Lists all CRI CPK pack routing rules, priority orders, and decryption mechanisms.",
+      "get": {
+        "tags": ["VFS"],
+        "summary": "List pack rules",
+        "responses": {
+          "200": {
+            "description": "List of pack mapping rules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VfsPackRule"
+                  },
+                  "example": [
+                    {
+                      "packName": "common.cpk",
+                      "filenameMask": "*common*.cpk",
+                      "keyDerivation": "filename-crc32",
+                      "mountPriority": 100,
+                      "description": "Core game database, character tables (chara_base), item configs, skill definitions, and growth curves",
+                      "isCompressed": true
+                    },
+                    {
+                      "packName": "menu.cpk",
+                      "filenameMask": "*menu*.cpk",
+                      "keyDerivation": "filename-crc32",
+                      "mountPriority": 90,
+                      "description": "UI layouts, T2B menu settings, 200_icon sprites, portrait textures, and font atlases",
+                      "isCompressed": true
+                    },
+                    {
+                      "packName": "model.cpk",
+                      "filenameMask": "*model*.cpk",
+                      "keyDerivation": "filename-crc32",
+                      "mountPriority": 80,
+                      "description": "3D player models (G4MD), team kits, stadium geometries, and animation tracks (AGI)",
+                      "isCompressed": true
+                    },
+                    {
+                      "packName": "dx11.cpk",
+                      "filenameMask": "*dx11*.cpk",
+                      "keyDerivation": "filename-crc32",
+                      "mountPriority": 70,
+                      "description": "DirectX 11 compiled shaders, material descriptors, and GPU texture streams",
+                      "isCompressed": true
+                    },
+                    {
+                      "packName": "sound_asset.cpk",
+                      "filenameMask": "*sound*.cpk",
+                      "keyDerivation": "filename-crc32",
+                      "mountPriority": 60,
+                      "description": "HCA voice lines, character dialogue, match commentary, and crowd atmosphere",
+                      "isCompressed": false
+                    },
+                    {
+                      "packName": "movie.cpk",
+                      "filenameMask": "*movie*.cpk",
+                      "keyDerivation": "filename-crc32",
+                      "mountPriority": 50,
+                      "description": "Full-motion cutscenes, anime openings, and special moves (Hissatsu) USM video sequences",
+                      "isCompressed": false
+                    },
+                    {
+                      "packName": "event.cpk",
+                      "filenameMask": "*event*.cpk",
+                      "keyDerivation": "filename-crc32",
+                      "mountPriority": 40,
+                      "description": "Story mode cutscenes, MEVBIN choreography scripts, and chapter dialogue triggers",
+                      "isCompressed": true
+                    },
+                    {
+                      "packName": "cpk_list.cfg.bin",
+                      "filenameMask": "cpk_list.cfg.bin",
+                      "keyDerivation": "viola-fixed",
+                      "mountPriority": 1000,
+                      "description": "Master VFS manifest mapping internal paths to CPK pack files. Encrypted with Viola key 0x1717E18E",
+                      "isCompressed": false
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vfs/files/{path}": {
+      "summary": "Read file from VFS",
+      "description": "Fetches a file by logical path, resolving through mounted CPKs or loose dump overlays.",
+      "get": {
+        "tags": ["VFS"],
+        "summary": "Read VFS file",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Logical file path (e.g. data/common/chara/chara_base.cfg.bin)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File payload stream",
+            "content": {
+              "application/octet-stream": {}
+            }
+          },
+          "404": {
+            "description": "File not found in any mounted VFS source"
+          }
+        }
+      }
+    },
+    "/api/nie/re/constants": {
+      "summary": "Get nie.exe cryptographic constants",
+      "description": "Returns verified cryptographic keys and polynomials reverse-engineered from nie.exe.",
+      "get": {
+        "tags": ["Reverse Engineering"],
+        "summary": "Get crypto constants",
+        "responses": {
+          "200": {
+            "description": "List of verified cryptographic constants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NieCryptoConstant"
+                  },
+                  "example": [
+                    {
+                      "name": "VIOLA_FIXED_KEY",
+                      "hexValue": "0x1717E18E",
+                      "intValue": 387441038,
+                      "usage": "Fixed CRI XOR encryption key for cpk_list.cfg.bin and standalone Level-5 packages (discovered by Viola).",
+                      "verifiedInGameDump": true
+                    },
+                    {
+                      "name": "LEVEL5_CRC32_POLYNOMIAL",
+                      "hexValue": "0xEDB88320",
+                      "intValue": 3988292384,
+                      "usage": "Standard IEEE 802.3 reflected CRC32 polynomial for RDBN hash dictionaries and CPK filename key derivation.",
+                      "verifiedInGameDump": true
+                    },
+                    {
+                      "name": "CRI_ENCRYPTED_TABLE_MAGIC",
+                      "hexValue": "0xF5F39E1F",
+                      "intValue": 4126383647,
+                      "usage": "Magic header sentinel indicating an encrypted CRI @UTF table block.",
+                      "verifiedInGameDump": true
+                    },
+                    {
+                      "name": "LIVES_SAVE_HEADER_MAGIC",
+                      "hexValue": "0x9DCE66C3",
+                      "intValue": 2647549635,
+                      "usage": "Sentinel u32 LE placed at offset 0x00 of decrypted Lives save containers (002AB8F4-*).",
+                      "verifiedInGameDump": true
+                    },
+                    {
+                      "name": "LIVES_SAVE_CONST2",
+                      "hexValue": "0x2EC3031F",
+                      "intValue": 784532255,
+                      "usage": "Constant u32 LE at offset 0x08 of decrypted Lives save header (bytes: 1F 03 C3 2E).",
+                      "verifiedInGameDump": true
+                    },
+                    {
+                      "name": "LIVES_BLOB_MAGIC",
+                      "hexValue": "0xEEFF",
+                      "intValue": 61183,
+                      "usage": "Big-endian u16 sentinel starting every concatenated payload blob in Lives saves.",
+                      "verifiedInGameDump": true
+                    },
+                    {
+                      "name": "STEAM_APP_ID",
+                      "hexValue": "0x2AB8F4",
+                      "intValue": 2799860,
+                      "usage": "Official Steam App ID for Inazuma Eleven: Victory Road (hexadecimal prefix for save files: 002AB8F4).",
+                      "verifiedInGameDump": true
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/nie/re/offsets": {
+      "summary": "Get critical function offsets in nie.exe",
+      "description": "Returns disassembler anchors, function boundary addresses, and signatures in nie.exe.",
+      "get": {
+        "tags": ["Reverse Engineering"],
+        "summary": "Get function offsets",
+        "responses": {
+          "200": {
+            "description": "List of critical function offsets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NieMemoryOffset"
+                  },
+                  "example": [
+                    {
+                      "symbol": "GameTickLoop",
+                      "addressHex": "0x1406d5840",
+                      "runtimePc": "5375875136",
+                      "subsystem": "game-loop",
+                      "description": "Main game tick loop orchestrating 60 Hz physics update, animation blending, and entity state synchronization.",
+                      "callingConvention": "__fastcall",
+                      "signature": "void __fastcall GameTickLoop(void* engineContext, float deltaTime)"
+                    },
+                    {
+                      "symbol": "CharaControllerUpdate",
+                      "addressHex": "0x1404ecd60",
+                      "runtimePc": "5373873504",
+                      "subsystem": "controller",
+                      "description": "Player movement, kinematic resolution, ball possession calculations, and user input mapping.",
+                      "callingConvention": "__fastcall",
+                      "signature": "void __fastcall CharaControllerUpdate(void* playerEntity, void* inputState, float dt)"
+                    },
+                    {
+                      "symbol": "CriFsStreamDecryptBlock",
+                      "addressHex": "0x1405a1120",
+                      "runtimePc": "5374611744",
+                      "subsystem": "crypto",
+                      "description": "Position-aware XOR stream cipher implementation decrypting 4-byte quads based on file offset.",
+                      "callingConvention": "__fastcall",
+                      "signature": "void __fastcall CriFsStreamDecryptBlock(uint8_t* buffer, size_t length, uint64_t fileOffset, uint32_t key)"
+                    },
+                    {
+                      "symbol": "CriLaylaDecompressStream",
+                      "addressHex": "0x1405b3890",
+                      "runtimePc": "5374687376",
+                      "subsystem": "vfs",
+                      "description": "Reverse bitstream LZSS decompressor processing byte-by-byte from end of stream into preallocated buffer.",
+                      "callingConvention": "__fastcall",
+                      "signature": "int32_t __fastcall CriLaylaDecompressStream(const uint8_t* input, uint8_t* output, size_t uncompressedSize)"
+                    },
+                    {
+                      "symbol": "RdbnTableLookup",
+                      "addressHex": "0x1403c8040",
+                      "runtimePc": "5372674112",
+                      "subsystem": "vfs",
+                      "description": "Binary search in RDBN table header resolving 32-bit CRC hashes to column offsets and row pointers.",
+                      "callingConvention": "__fastcall",
+                      "signature": "void* __fastcall RdbnTableLookup(const uint8_t* rdbnBuffer, uint32_t tableHash, uint32_t entryHash)"
+                    },
+                    {
+                      "symbol": "G4txDecodeTexture",
+                      "addressHex": "0x1404b2a80",
+                      "runtimePc": "5373635200",
+                      "subsystem": "render",
+                      "description": "G4TX header parsing, DDS texture extraction, and GPU resource registration.",
+                      "callingConvention": "__fastcall",
+                      "signature": "void* __fastcall G4txDecodeTexture(const uint8_t* g4txData, size_t dataSize, int32_t textureIndex)"
+                    },
+                    {
+                      "symbol": "LuaHostInit",
+                      "addressHex": "0x14072f910",
+                      "runtimePc": "5376243984",
+                      "subsystem": "lua",
+                      "description": "Initializes Lua 5.1/5.2 C host environment for UI animations, dialogue branching, and menu state machines.",
+                      "callingConvention": "__fastcall",
+                      "signature": "void* __fastcall LuaHostInit(void* memoryPool)"
+                    },
+                    {
+                      "symbol": "CRand_MT19937_Next",
+                      "addressHex": "0x14081c200",
+                      "runtimePc": "5377212928",
+                      "subsystem": "prng",
+                      "description": "Deterministic Mersenne Twister MT19937 pseudorandom number generator step function.",
+                      "callingConvention": "__fastcall",
+                      "signature": "uint32_t __fastcall CRand_MT19937_Next(void* crandState)"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/nie/re/rtti": {
+      "summary": "Get reconstructed RTTI hierarchy",
+      "description": "Returns MSVC RTTI polymorphic classes and vtable offsets identified in nie.exe.",
+      "get": {
+        "tags": ["Reverse Engineering"],
+        "summary": "Get RTTI classes",
+        "responses": {
+          "200": {
+            "description": "List of reconstructed RTTI classes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NieRttiClass"
+                  },
+                  "example": [
+                    {
+                      "name": "Object",
+                      "namespace": "Level5::Engine",
+                      "vtableOffsetHex": "0x140AC4000",
+                      "baseClasses": [],
+                      "description": "Polymorphic base class for all engine actors, components, and resource handles."
+                    },
+                    {
+                      "name": "CharaController",
+                      "namespace": "Level5::Game",
+                      "vtableOffsetHex": "0x140AC68A0",
+                      "baseClasses": ["Level5::Engine::Object"],
+                      "description": "High-level player controller managing motion states (dash, dribble, slide tackle, shoot charge)."
+                    },
+                    {
+                      "name": "BallPhysics",
+                      "namespace": "Level5::Game",
+                      "vtableOffsetHex": "0x140AC7120",
+                      "baseClasses": ["Level5::Engine::Object"],
+                      "description": "Aerodynamic and turf friction simulation for the soccer ball, including spin and pass trajectories."
+                    },
+                    {
+                      "name": "VfsManager",
+                      "namespace": "Level5::Resource",
+                      "vtableOffsetHex": "0x140AD1400",
+                      "baseClasses": ["Level5::Engine::Object"],
+                      "description": "Global filesystem coordinator mounting CPK pack archives and routing relative logical paths."
+                    },
+                    {
+                      "name": "CpkArchive",
+                      "namespace": "Level5::Resource",
+                      "vtableOffsetHex": "0x140AD2200",
+                      "baseClasses": ["Level5::Engine::Object"],
+                      "description": "CRI Middleware CPK container handle with memory-mapped file views and decryption context."
+                    },
+                    {
+                      "name": "RenderScene",
+                      "namespace": "Level5::Graphics",
+                      "vtableOffsetHex": "0x140AE0100",
+                      "baseClasses": ["Level5::Engine::Object"],
+                      "description": "Scene graph renderer managing camera viewports, shadow cascades, and lighting buffers."
+                    },
+                    {
+                      "name": "SkinnedMesh",
+                      "namespace": "Level5::Graphics",
+                      "vtableOffsetHex": "0x140AE1880",
+                      "baseClasses": ["Level5::Engine::Object"],
+                      "description": "GPU skinning mesh processor packing 32 bones into 96 vec4 matrix registers (renderObj + 0x1D98)."
+                    },
+                    {
+                      "name": "SoundPlayer",
+                      "namespace": "CriWare::Atom",
+                      "vtableOffsetHex": "0x140AF4900",
+                      "baseClasses": [],
+                      "description": "CRI Atom Craft sound playback service managing voice categories, BGM ducking, and 3D positional audio."
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/saves/decrypt": {
+      "summary": "Decrypt Lives save file",
+      "description": "Decrypts a Level-5 Lives save container (002AB8F4-*) using CRC32 filename stream cipher.",
+      "post": {
+        "tags": ["Saves"],
+        "summary": "Decrypt save container",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "filename": {
+                    "type": "string",
+                    "description": "Save container filename (e.g. 002AB8F4-USERDATALIVE)"
+                  },
+                  "payloadBase64": {
+                    "type": "string",
+                    "description": "Base64-encoded encrypted file content"
+                  }
+                },
+                "required": ["filename", "payloadBase64"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Decrypted payload and extracted EEFF blobs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "magic": {
+                      "type": "string"
+                    },
+                    "blobCount": {
+                      "type": "integer"
+                    },
+                    "unpackedBytesBase64": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Character": {
+        "type": "object",
+        "title": "Character",
+        "description": "Canonical Inazuma Eleven: Victory Road character entity.",
+        "properties": {
+          "charaId": {
+            "type": "string",
+            "description": "Unique character ID (e.g. 'c01000010')"
+          },
+          "name": {
+            "type": "string",
+            "description": "Localized display name"
+          },
+          "element": {
+            "type": "integer",
+            "description": "Element ID (1=Wind, 2=Wood, 3=Fire, 4=Earth)"
+          },
+          "position": {
+            "type": "integer",
+            "description": "Position ID (1=GK, 2=DF, 3=MF, 4=FW)"
+          },
+          "rarity": {
+            "type": "integer",
+            "description": "Base rarity tier (1 to 5)"
+          },
+          "kick": {
+            "type": "integer"
+          },
+          "dribble": {
+            "type": "integer"
+          },
+          "block": {
+            "type": "integer"
+          },
+          "catch": {
+            "type": "integer"
+          },
+          "speed": {
+            "type": "integer"
+          },
+          "technique": {
+            "type": "integer"
+          },
+          "stamina": {
+            "type": "integer"
+          },
+          "lucky": {
+            "type": "integer"
+          }
+        },
+        "required": ["charaId", "name", "element", "position", "rarity"]
+      },
+      "Skill": {
+        "type": "object",
+        "title": "Skill",
+        "description": "Canonical special move (Hissatsu) or passive skill.",
+        "properties": {
+          "skillId": {
+            "type": "string",
+            "description": "Skill identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Localized skill name"
+          },
+          "element": {
+            "type": "integer",
+            "description": "Element affinity"
+          },
+          "tpCost": {
+            "type": "integer",
+            "description": "Tension point cost"
+          },
+          "power": {
+            "type": "integer",
+            "description": "Base move power rating"
+          },
+          "category": {
+            "type": "string",
+            "description": "Category (Shoot, Dribble, Block, Catch)"
+          }
+        },
+        "required": ["skillId", "name", "element", "tpCost", "power"]
+      },
+      "VfsFormatDescriptor": {
+        "type": "object",
+        "title": "VfsFormatDescriptor",
+        "description": "Binary file format descriptor recognized by IECODE and NIE.",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Internal format identifier"
+          },
+          "magicHex": {
+            "type": "string",
+            "description": "4-byte magic number in hexadecimal (e.g. '0x58543447')"
+          },
+          "magicAscii": {
+            "type": "string",
+            "description": "ASCII representation of the magic header (e.g. 'G4TX')"
+          },
+          "extension": {
+            "type": "string",
+            "description": "Canonical file extension (e.g. '.g4tx')"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable format explanation"
+          },
+          "isBigEndian": {
+            "type": "boolean",
+            "description": "True if byte order is big-endian"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "texture",
+              "model",
+              "config",
+              "audio",
+              "video",
+              "container",
+              "script",
+              "system"
+            ]
+          },
+          "encryptionSupported": {
+            "type": "boolean",
+            "description": "True if format supports encryption"
+          },
+          "compressionSupported": {
+            "type": "boolean",
+            "description": "True if format supports CRILAYLA or LZSS compression"
+          }
+        },
+        "required": ["id", "magicHex", "magicAscii", "extension", "description", "category"]
+      },
+      "VfsPackRule": {
+        "type": "object",
+        "title": "VfsPackRule",
+        "description": "CRI CPK pack file mapping rule in the Victory Road VFS.",
+        "properties": {
+          "packName": {
+            "type": "string",
+            "description": "Target CPK archive filename"
+          },
+          "filenameMask": {
+            "type": "string",
+            "description": "Wildcard mask matching input files"
+          },
+          "keyDerivation": {
+            "type": "string",
+            "enum": ["filename-crc32", "viola-fixed", "none"]
+          },
+          "mountPriority": {
+            "type": "integer",
+            "description": "Mount priority order (higher numbers resolve first)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Purpose and content of this pack"
+          },
+          "isCompressed": {
+            "type": "boolean",
+            "description": "Whether contained streams use CRILAYLA compression"
+          }
+        },
+        "required": ["packName", "filenameMask", "keyDerivation", "mountPriority"]
+      },
+      "NieCryptoConstant": {
+        "type": "object",
+        "title": "NieCryptoConstant",
+        "description": "Cryptographic constant reverse-engineered from nie.exe.",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "hexValue": {
+            "type": "string"
+          },
+          "intValue": {
+            "type": "number"
+          },
+          "usage": {
+            "type": "string"
+          },
+          "verifiedInGameDump": {
+            "type": "boolean"
+          }
+        },
+        "required": ["name", "hexValue", "usage", "verifiedInGameDump"]
+      },
+      "NieMemoryOffset": {
+        "type": "object",
+        "title": "NieMemoryOffset",
+        "description": "Disassembled function entry point or memory address in nie.exe.",
+        "properties": {
+          "symbol": {
+            "type": "string"
+          },
+          "addressHex": {
+            "type": "string"
+          },
+          "subsystem": {
+            "type": "string",
+            "enum": ["game-loop", "controller", "render", "vfs", "audio", "crypto", "prng", "lua"]
+          },
+          "description": {
+            "type": "string"
+          },
+          "callingConvention": {
+            "type": "string"
+          },
+          "signature": {
+            "type": "string"
+          }
+        },
+        "required": ["symbol", "addressHex", "subsystem", "description"]
+      },
+      "NieRttiClass": {
+        "type": "object",
+        "title": "NieRttiClass",
+        "description": "Reconstructed MSVC RTTI polymorphic class in nie.exe.",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "namespace": {
+            "type": "string"
+          },
+          "vtableOffsetHex": {
+            "type": "string"
+          },
+          "baseClasses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": ["name", "namespace", "vtableOffsetHex", "baseClasses", "description"]
+      }
+    }
+  }
+}

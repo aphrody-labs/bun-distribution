@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../../node_modules/oxlint/configuration_schema.json",
+  "extends": ["../../packages/rg-config/oxlintrc.json"],
+  "settings": {
+    "next": {
+      "rootDir": "."
+    }
+  },
+  "ignorePatterns": ["lib/nie-wasm-web/**", "public/vendor/**"],
+  "rules": {
+    "no-unused-vars": "error",
+    "typescript/no-explicit-any": "off"
+  },
+  "overrides": [
+    {
+      "files": ["scripts/**", "data/**"],
+      "rules": {
+        "no-console": "off",
+        "typescript/no-explicit-any": "off"
+      }
+    }
+  ]
+}

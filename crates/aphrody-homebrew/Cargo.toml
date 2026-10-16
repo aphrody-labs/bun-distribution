@@ -1,0 +1,17 @@
+[package]
+license.workspace = true
+name = "aphrody-homebrew"
+version = "0.1.1"
+edition.workspace = true
+publish = true
+description = "Rust build orchestration and stable ABI types for IECODE Nintendo homebrew"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "aphrody-homebrew"
+path = "src/main.rs"
+
+[lints]
+workspace = true

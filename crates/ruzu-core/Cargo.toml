@@ -1,0 +1,55 @@
+[package]
+name = "core"
+version.workspace = true
+edition.workspace = true
+
+[features]
+debug-logs = []
+step_tracer = []
+
+[dependencies]
+common = { path = "../ruzu-common" }
+hid_core = { path = "../ruzu-hid-core" }
+network = { path = "../ruzu-network" }
+aes.workspace = true
+bitflags.workspace = true
+cipher.workspace = true
+ctr.workspace = true
+hmac.workspace = true
+hex.workspace = true
+flate2 = "1"
+image = { version = "0.25", default-features = false, features = ["png"] }
+libc = "0.2"
+log = { version = "0.4.28", default-features = false }
+lz4_flex.workspace = true
+rdynarmic = { workspace = true }
+memmap2.workspace = true
+parking_lot.workspace = true
+thiserror = { version = "2" }
+serde_json = { version = "1", default-features = false }
+serde = "1"
+sha2 = { version = "0.10" }
+md-5.workspace = true
+
+[target.'cfg(not(target_os = "openbsd"))'.dependencies]
+openssl.workspace = true
+
+[target.'cfg(target_os = "openbsd")'.dependencies]
+# OpenBSD 7.9 ships LibreSSL 4.3, newer than openssl-sys currently accepts.
+openssl = { workspace = true, features = ["vendored"] }
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = [
+    "ifdef",
+    "inaddr",
+    "iphlpapi",
+    "ipifcons",
+    "iptypes",
+    "libloaderapi",
+    "memoryapi",
+    "netioapi",
+    "winerror",
+    "winnt",
+    "winsock2",
+    "ws2def",
+] }

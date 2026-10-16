@@ -1,0 +1,1441 @@
+//! **Décodeur de bytecode Lua 5.2** — lit un `.lua.bin` du jeu et le rend intelligible.
+//!
+//! Le moteur Level-5 « Lives » livre sa logique de menus/scènes **uniquement compilée** (~616
+//! `.lua.bin` sous `data/common/script/lua/`) : aucune source n'est distribuée. [`crate::new_vm`]
+//! sait déjà *exécuter* ces chunks, ce qui suffit pour reproduire un comportement, mais pas pour
+//! le **comprendre** — il n'y a rien à lire, à commenter, ni à comparer entre deux versions du jeu.
+//!
+//! Ce module ouvre le conteneur : en-tête, prototypes imbriqués, constantes, instructions,
+//! variables locales et upvalues, plus un **désassemblage** textuel lisible.
+//!
+//! ## Portée honnête : désassembleur, pas décompilateur
+//!
+//! On produit un listing d'instructions annoté (opérandes résolues, constantes et noms de locales
+//! substitués quand ils sont connus) — pas du Lua source reconstruit. Reconstruire du source exige
+//! de réassembler le flot de contrôle (boucles, conditions, expressions imbriquées) à partir des
+//! sauts : c'est un travail distinct, et prétendre le contraire produirait du code faux d'aspect
+//! plausible. Les tables de débogage (`lineinfo`, `locvars`) sont conservées : ce sont elles qui
+//! rendent le listing lisible, et elles alimenteraient un décompilateur ultérieur.
+//!
+//! ## Format
+//!
+//! PUC-Rio Lua 5.2.4, tel que produit par `luac` et consommé par `lundump.c`. Les tailles
+//! (`size_t`, `Instruction`, `lua_Number`) sont lues dans l'en-tête plutôt que supposées : le jeu
+//! est 32 bits sur certaines cibles et 64 bits sur d'autres, et un `size_t` mal deviné décale tout
+//! le reste du fichier.
+
+use std::collections::BTreeMap;
+use std::fmt::Write as _;
+
+use serde::Serialize;
+use thiserror::Error;
+
+/// Erreurs de décodage du conteneur bytecode.
+#[derive(Debug, Error)]
+pub enum BytecodeError {
+    /// Signature `\x1bLua` + version `0x52` absente.
+    #[error("pas un bytecode Lua 5.2 (signature/version inattendue)")]
+    BadSignature,
+    /// En-tête incohérent (tailles non gérées).
+    #[error("en-tête bytecode non géré : {0}")]
+    UnsupportedHeader(String),
+    /// Fin de tampon atteinte au milieu d'un champ.
+    #[error("fin de données inattendue à l'offset {0}")]
+    UnexpectedEof(usize),
+    /// Valeur hors domaine (type de constante inconnu, etc.).
+    #[error("donnée invalide à l'offset {offset} : {reason}")]
+    Invalid {
+        /// Position dans le tampon.
+        offset: usize,
+        /// Cause lisible.
+        reason: String,
+    },
+}
+
+/// En-tête d'un chunk (`lundump.c`, `LoadHeader`).
+#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+pub struct Header {
+    /// Version encodée (`0x52` pour Lua 5.2).
+    pub version: u8,
+    /// Format officiel = 0.
+    pub format: u8,
+    /// `true` si petit-boutiste.
+    pub little_endian: bool,
+    /// Taille d'un `int` C, en octets.
+    pub size_int: u8,
+    /// Taille d'un `size_t` C, en octets.
+    pub size_size_t: u8,
+    /// Taille d'une instruction, en octets (toujours 4).
+    pub size_instruction: u8,
+    /// Taille d'un `lua_Number`, en octets (8 = double).
+    pub size_number: u8,
+    /// `true` si les nombres sont entiers (build exotique), `false` = flottants.
+    pub number_is_integral: bool,
+}
+
+/// Constante du pool d'un prototype.
+#[derive(Serialize, Debug, Clone, PartialEq)]
+pub enum Constant {
+    /// `nil`.
+    Nil,
+    /// Booléen.
+    Boolean(bool),
+    /// Nombre (toujours rendu en `f64`, y compris sur un build entier).
+    Number(f64),
+    /// Chaîne. Les octets sont conservés tels quels : les scripts du jeu contiennent des libellés
+    /// non-UTF-8 (encodage japonais hérité), qu'une conversion lossy corromprait silencieusement.
+    String(Vec<u8>),
+}
+
+impl Constant {
+    /// Rendu court pour le listing.
+    #[must_use]
+    pub fn display(&self) -> String {
+        match self {
+            Self::Nil => "nil".to_string(),
+            Self::Boolean(b) => b.to_string(),
+            Self::Number(n) => {
+                // Un entier exact s'affiche sans `.0` — c'est ce que fait `luac -l`, et ça rend
+                // les indices de table lisibles.
+                if n.fract() == 0.0 && n.abs() < 1e15 {
+                    format!("{}", *n as i64)
+                } else {
+                    format!("{n}")
+                }
+            },
+            Self::String(bytes) => format!("{:?}", String::from_utf8_lossy(bytes)),
+        }
+    }
+}
+
+/// Description d'un upvalue (`instack` + index).
+#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
+pub struct UpvalDesc {
+    /// `true` si l'upvalue vient du registre de la fonction englobante, `false` s'il vient de ses
+    /// propres upvalues.
+    pub in_stack: bool,
+    /// Index du registre ou de l'upvalue source.
+    pub index: u8,
+}
+
+/// Variable locale du bloc de débogage.
+#[derive(Serialize, Debug, Clone, PartialEq)]
+pub struct LocVar {
+    /// Nom déclaré.
+    pub name: String,
+    /// Première instruction où la variable est vivante.
+    pub start_pc: u32,
+    /// Première instruction où elle ne l'est plus.
+    pub end_pc: u32,
+}
+
+/// Un prototype de fonction — l'unité compilée de Lua.
+#[derive(Serialize, Debug, Clone, PartialEq)]
+pub struct Prototype {
+    /// Ligne de début (`0` pour le chunk principal).
+    pub line_defined: u32,
+    /// Ligne de fin.
+    pub last_line_defined: u32,
+    /// Nombre de paramètres fixes.
+    pub num_params: u8,
+    /// Indicateur `...`.
+    pub is_vararg: u8,
+    /// Taille de pile requise.
+    pub max_stack_size: u8,
+    /// Instructions encodées (32 bits).
+    pub code: Vec<u32>,
+    /// Pool de constantes.
+    pub constants: Vec<Constant>,
+    /// Fonctions imbriquées.
+    pub protos: Vec<Prototype>,
+    /// Upvalues.
+    pub upvalues: Vec<UpvalDesc>,
+    /// Nom de source (débogage), vide si dépouillé.
+    pub source: String,
+    /// Ligne de chaque instruction (débogage), vide si dépouillé.
+    pub line_info: Vec<u32>,
+    /// Variables locales (débogage).
+    pub loc_vars: Vec<LocVar>,
+    /// Noms d'upvalues (débogage).
+    pub upvalue_names: Vec<String>,
+}
+
+impl Prototype {
+    /// Nombre total d'instructions, prototypes imbriqués compris.
+    #[must_use]
+    pub fn total_instructions(&self) -> usize {
+        self.code.len() + self.protos.iter().map(Self::total_instructions).sum::<usize>()
+    }
+
+    /// Nombre total de prototypes imbriqués (récursif).
+    #[must_use]
+    pub fn total_protos(&self) -> usize {
+        self.protos.len() + self.protos.iter().map(Self::total_protos).sum::<usize>()
+    }
+}
+
+/// Un chunk complet : en-tête + prototype principal.
+#[derive(Serialize, Debug, Clone, PartialEq)]
+pub struct Chunk {
+    /// En-tête décodé.
+    pub header: Header,
+    /// Fonction principale.
+    pub main: Prototype,
+}
+
+// ─── Opcodes Lua 5.2 ─────────────────────────────────────────────────────────────────────────
+
+/// Noms des 40 opcodes de Lua 5.2, **dans l'ordre de `lopcodes.h`**. L'ordre est significatif :
+/// c'est l'index qui identifie l'instruction, pas le nom.
+pub const OPCODE_NAMES: [&str; 40] = [
+    "MOVE", "LOADK", "LOADKX", "LOADBOOL", "LOADNIL", "GETUPVAL", "GETTABUP", "GETTABLE",
+    "SETTABUP", "SETUPVAL", "SETTABLE", "NEWTABLE", "SELF", "ADD", "SUB", "MUL", "DIV", "MOD",
+    "POW", "UNM", "NOT", "LEN", "CONCAT", "JMP", "EQ", "LT", "LE", "TEST", "TESTSET", "CALL",
+    "TAILCALL", "RETURN", "FORLOOP", "FORPREP", "TFORCALL", "TFORLOOP", "SETLIST", "CLOSURE",
+    "VARARG", "EXTRAARG",
+];
+
+/// Mode d'encodage des opérandes (`lopcodes.h`).
+#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OpMode {
+    /// `A B C`
+    ABC,
+    /// `A Bx`
+    ABx,
+    /// `A sBx`
+    AsBx,
+    /// `Ax`
+    Ax,
+}
+
+/// Mode d'encodage de chaque opcode, dans le même ordre que [`OPCODE_NAMES`].
+const OP_MODES: [OpMode; 40] = [
+    OpMode::ABC,  // MOVE
+    OpMode::ABx,  // LOADK
+    OpMode::ABx,  // LOADKX
+    OpMode::ABC,  // LOADBOOL
+    OpMode::ABC,  // LOADNIL
+    OpMode::ABC,  // GETUPVAL
+    OpMode::ABC,  // GETTABUP
+    OpMode::ABC,  // GETTABLE
+    OpMode::ABC,  // SETTABUP
+    OpMode::ABC,  // SETUPVAL
+    OpMode::ABC,  // SETTABLE
+    OpMode::ABC,  // NEWTABLE
+    OpMode::ABC,  // SELF
+    OpMode::ABC,  // ADD
+    OpMode::ABC,  // SUB
+    OpMode::ABC,  // MUL
+    OpMode::ABC,  // DIV
+    OpMode::ABC,  // MOD
+    OpMode::ABC,  // POW
+    OpMode::ABC,  // UNM
+    OpMode::ABC,  // NOT
+    OpMode::ABC,  // LEN
+    OpMode::ABC,  // CONCAT
+    OpMode::AsBx, // JMP
+    OpMode::ABC,  // EQ
+    OpMode::ABC,  // LT
+    OpMode::ABC,  // LE
+    OpMode::ABC,  // TEST
+    OpMode::ABC,  // TESTSET
+    OpMode::ABC,  // CALL
+    OpMode::ABC,  // TAILCALL
+    OpMode::ABC,  // RETURN
+    OpMode::AsBx, // FORLOOP
+    OpMode::AsBx, // FORPREP
+    OpMode::ABC,  // TFORCALL
+    OpMode::AsBx, // TFORLOOP
+    OpMode::ABC,  // SETLIST
+    OpMode::ABx,  // CLOSURE
+    OpMode::ABC,  // VARARG
+    OpMode::Ax,   // EXTRAARG
+];
+
+/// Une instruction décodée en champs.
+#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Instruction {
+    /// Mot brut de 32 bits.
+    pub raw: u32,
+    /// Index d'opcode (0..39).
+    pub opcode: u8,
+    /// Champ A.
+    pub a: u32,
+    /// Champ B (mode ABC).
+    pub b: u32,
+    /// Champ C (mode ABC).
+    pub c: u32,
+    /// Champ Bx (modes ABx).
+    pub bx: u32,
+    /// Champ sBx signé (modes AsBx).
+    pub sbx: i32,
+    /// Champ Ax (mode Ax).
+    pub ax: u32,
+}
+
+/// Décale/masque conformément à `lopcodes.h` : `OP` sur 6 bits, `A` sur 8, `C` sur 9, `B` sur 9.
+#[must_use]
+pub fn decode_instruction(raw: u32) -> Instruction {
+    let opcode = (raw & 0x3F) as u8;
+    let a = (raw >> 6) & 0xFF;
+    let c = (raw >> 14) & 0x1FF;
+    let b = (raw >> 23) & 0x1FF;
+    let bx = (raw >> 14) & 0x3FFFF;
+    // `sBx` est un `Bx` biaisé de `MAXARG_sBx` = (2^18-1)/2.
+    let sbx = bx as i32 - 131_071;
+    let ax = (raw >> 6) & 0x3FF_FFFF;
+    Instruction { raw, opcode, a, b, c, bx, sbx, ax }
+}
+
+impl Instruction {
+    /// Nom lisible de l'opcode, ou `OP_<n>` si hors table (bytecode corrompu ou dialecte modifié).
+    #[must_use]
+    pub fn name(&self) -> String {
+        OPCODE_NAMES
+            .get(self.opcode as usize)
+            .map_or_else(|| format!("OP_{}", self.opcode), |s| (*s).to_string())
+    }
+
+    /// Mode d'encodage, `ABC` par défaut pour un opcode inconnu.
+    #[must_use]
+    pub fn mode(&self) -> OpMode {
+        OP_MODES.get(self.opcode as usize).copied().unwrap_or(OpMode::ABC)
+    }
+}
+
+/// Un opérande B/C en mode ABC peut désigner un registre ou une constante : le bit 8 (`BITRK`)
+/// distingue les deux. `luac -l` note les constantes `-n` ; on est plus explicite.
+fn rk(operand: u32, constants: &[Constant]) -> String {
+    const BITRK: u32 = 1 << 8;
+    if operand & BITRK != 0 {
+        let idx = (operand & !BITRK) as usize;
+        constants
+            .get(idx)
+            .map_or_else(|| format!("K{idx}?"), |k| format!("K{idx}({})", k.display()))
+    } else {
+        format!("R{operand}")
+    }
+}
+
+// ─── Lecture ─────────────────────────────────────────────────────────────────────────────────
+
+struct Reader<'a> {
+    data: &'a [u8],
+    pos: usize,
+    little_endian: bool,
+    size_size_t: usize,
+    size_int: usize,
+}
+
+impl<'a> Reader<'a> {
+    fn take(&mut self, n: usize) -> Result<&'a [u8], BytecodeError> {
+        let Some(end) = self.pos.checked_add(n) else {
+            return Err(BytecodeError::UnexpectedEof(self.pos));
+        };
+        if end > self.data.len() {
+            return Err(BytecodeError::UnexpectedEof(self.pos));
+        }
+        let out = &self.data[self.pos..end];
+        self.pos = end;
+        Ok(out)
+    }
+
+    fn u8(&mut self) -> Result<u8, BytecodeError> {
+        Ok(self.take(1)?[0])
+    }
+
+    fn u32(&mut self) -> Result<u32, BytecodeError> {
+        let b = self.take(4)?;
+        let arr = [b[0], b[1], b[2], b[3]];
+        Ok(if self.little_endian { u32::from_le_bytes(arr) } else { u32::from_be_bytes(arr) })
+    }
+
+    /// Lit un `int` C dont la taille vient de l'en-tête.
+    fn int(&mut self) -> Result<u32, BytecodeError> {
+        match self.size_int {
+            4 => self.u32(),
+            8 => {
+                let v = self.size_t()?;
+                Ok(v as u32)
+            },
+            n => Err(BytecodeError::UnsupportedHeader(format!("sizeof(int) = {n}"))),
+        }
+    }
+
+    fn size_t(&mut self) -> Result<u64, BytecodeError> {
+        let n = self.size_size_t;
+        let b = self.take(n)?;
+        let mut v: u64 = 0;
+        if self.little_endian {
+            for (i, byte) in b.iter().enumerate() {
+                v |= u64::from(*byte) << (8 * i);
+            }
+        } else {
+            for byte in b {
+                v = (v << 8) | u64::from(*byte);
+            }
+        }
+        Ok(v)
+    }
+
+    fn number(&mut self) -> Result<f64, BytecodeError> {
+        let b = self.take(8)?;
+        let arr = [b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]];
+        Ok(if self.little_endian { f64::from_le_bytes(arr) } else { f64::from_be_bytes(arr) })
+    }
+
+    /// Chaîne Lua : `size_t` de longueur (0 = NULL), octets **terminaison `\0` comprise**.
+    fn string_bytes(&mut self) -> Result<Vec<u8>, BytecodeError> {
+        let size = self.size_t()?;
+        if size == 0 {
+            return Ok(Vec::new());
+        }
+        let size = usize::try_from(size).map_err(|_| BytecodeError::Invalid {
+            offset: self.pos,
+            reason: "taille de chaîne size_t hors de la plateforme".to_string(),
+        })?;
+        let raw = self.take(size)?;
+        // Le `\0` final fait partie de la longueur écrite mais pas de la chaîne.
+        Ok(raw[..raw.len().saturating_sub(1)].to_vec())
+    }
+
+    fn string(&mut self) -> Result<String, BytecodeError> {
+        Ok(String::from_utf8_lossy(&self.string_bytes()?).into_owned())
+    }
+}
+
+/// Décode un chunk `.lua.bin` complet.
+///
+/// # Errors
+/// [`BytecodeError`] si la signature manque, si l'en-tête décrit un format non géré, ou si le
+/// tampon est tronqué.
+pub fn parse(data: &[u8]) -> Result<Chunk, BytecodeError> {
+    if data.len() < 18 || data[..4] != [0x1B, 0x4C, 0x75, 0x61] || data[4] != 0x52 {
+        return Err(BytecodeError::BadSignature);
+    }
+
+    let header = Header {
+        version: data[4],
+        format: data[5],
+        little_endian: data[6] == 1,
+        size_int: data[7],
+        size_size_t: data[8],
+        size_instruction: data[9],
+        size_number: data[10],
+        number_is_integral: data[11] != 0,
+    };
+
+    if header.format != 0 {
+        return Err(BytecodeError::UnsupportedHeader(format!(
+            "format = {} (attendu 0)",
+            header.format
+        )));
+    }
+    if data[6] > 1 {
+        return Err(BytecodeError::UnsupportedHeader(format!(
+            "endianness = {} (attendu 0 ou 1)",
+            data[6]
+        )));
+    }
+    if !matches!(header.size_int, 4 | 8) {
+        return Err(BytecodeError::UnsupportedHeader(format!("sizeof(int) = {}", header.size_int)));
+    }
+    if !matches!(header.size_size_t, 4 | 8) {
+        return Err(BytecodeError::UnsupportedHeader(format!(
+            "sizeof(size_t) = {}",
+            header.size_size_t
+        )));
+    }
+    if header.size_instruction != 4 {
+        return Err(BytecodeError::UnsupportedHeader(format!(
+            "sizeof(Instruction) = {}",
+            header.size_instruction
+        )));
+    }
+    if header.size_number != 8 || header.number_is_integral {
+        return Err(BytecodeError::UnsupportedHeader(format!(
+            "lua_Number : taille {} intégral {}",
+            header.size_number, header.number_is_integral
+        )));
+    }
+
+    // `LUAC_TAIL` (6 octets) suit l'en-tête depuis 5.2 : il détecte les transferts qui abîment les
+    // fins de ligne. On le saute sans l'exiger — un chunk réencodé par un outil tiers peut l'omettre.
+    let mut pos = 12;
+    const LUAC_TAIL: [u8; 6] = [0x19, 0x93, b'\r', b'\n', 0x1A, b'\n'];
+    if data.len() >= pos + 6 && data[pos..pos + 6] == LUAC_TAIL {
+        pos += 6;
+    }
+
+    let mut reader = Reader {
+        data,
+        pos,
+        little_endian: header.little_endian,
+        size_size_t: header.size_size_t as usize,
+        size_int: header.size_int as usize,
+    };
+
+    let main = read_prototype(&mut reader)?;
+    Ok(Chunk { header, main })
+}
+
+fn read_prototype(r: &mut Reader<'_>) -> Result<Prototype, BytecodeError> {
+    let line_defined = r.int()?;
+    let last_line_defined = r.int()?;
+    let num_params = r.u8()?;
+    let is_vararg = r.u8()?;
+    let max_stack_size = r.u8()?;
+
+    let code_len = r.int()? as usize;
+    let mut code = Vec::with_capacity(code_len.min(1 << 20));
+    for _ in 0..code_len {
+        code.push(r.u32()?);
+    }
+
+    let const_len = r.int()? as usize;
+    let mut constants = Vec::with_capacity(const_len.min(1 << 20));
+    for _ in 0..const_len {
+        let tag = r.u8()?;
+        constants.push(match tag {
+            0 => Constant::Nil,
+            1 => Constant::Boolean(r.u8()? != 0),
+            3 => Constant::Number(r.number()?),
+            4 => Constant::String(r.string_bytes()?),
+            other => {
+                return Err(BytecodeError::Invalid {
+                    offset: r.pos,
+                    reason: format!("type de constante inconnu {other}"),
+                });
+            },
+        });
+    }
+
+    let proto_len = r.int()? as usize;
+    let mut protos = Vec::with_capacity(proto_len.min(1 << 16));
+    for _ in 0..proto_len {
+        protos.push(read_prototype(r)?);
+    }
+
+    let upval_len = r.int()? as usize;
+    let mut upvalues = Vec::with_capacity(upval_len.min(1 << 16));
+    for _ in 0..upval_len {
+        let in_stack = r.u8()? != 0;
+        let index = r.u8()?;
+        upvalues.push(UpvalDesc { in_stack, index });
+    }
+
+    // Bloc de débogage — vide si le chunk a été dépouillé (`luac -s`).
+    let source = r.string()?;
+    let line_count = r.int()? as usize;
+    let mut line_info = Vec::with_capacity(line_count.min(1 << 20));
+    for _ in 0..line_count {
+        line_info.push(r.int()?);
+    }
+
+    let locvar_count = r.int()? as usize;
+    let mut loc_vars = Vec::with_capacity(locvar_count.min(1 << 16));
+    for _ in 0..locvar_count {
+        let name = r.string()?;
+        let start_pc = r.int()?;
+        let end_pc = r.int()?;
+        loc_vars.push(LocVar { name, start_pc, end_pc });
+    }
+
+    let upname_count = r.int()? as usize;
+    let mut upvalue_names = Vec::with_capacity(upname_count.min(1 << 16));
+    for _ in 0..upname_count {
+        upvalue_names.push(r.string()?);
+    }
+
+    Ok(Prototype {
+        line_defined,
+        last_line_defined,
+        num_params,
+        is_vararg,
+        max_stack_size,
+        code,
+        constants,
+        protos,
+        upvalues,
+        source,
+        line_info,
+        loc_vars,
+        upvalue_names,
+    })
+}
+
+// ─── Réencodage ──────────────────────────────────────────────────────────────────────────────
+
+/// Écrit un chunk avec les tailles de plateforme d'un en-tête donné.
+struct Writer {
+    out: Vec<u8>,
+    little_endian: bool,
+    size_size_t: usize,
+    size_int: usize,
+}
+
+impl Writer {
+    fn u8(&mut self, value: u8) {
+        self.out.push(value);
+    }
+
+    fn u32(&mut self, value: u32) {
+        let bytes = if self.little_endian { value.to_le_bytes() } else { value.to_be_bytes() };
+        self.out.extend_from_slice(&bytes);
+    }
+
+    /// Un entier de `width` octets, dans l'ordre de l'en-tête. Sert pour `int` comme pour `size_t`.
+    fn sized(&mut self, value: u64, width: usize) {
+        let full = if self.little_endian { value.to_le_bytes() } else { value.to_be_bytes() };
+        if self.little_endian {
+            self.out.extend_from_slice(&full[..width]);
+        } else {
+            self.out.extend_from_slice(&full[8 - width..]);
+        }
+    }
+
+    fn int(&mut self, value: u32) {
+        self.sized(u64::from(value), self.size_int);
+    }
+
+    fn size_t(&mut self, value: u64) {
+        self.sized(value, self.size_size_t);
+    }
+
+    fn number(&mut self, value: f64) {
+        let bits = value.to_bits();
+        let bytes = if self.little_endian { bits.to_le_bytes() } else { bits.to_be_bytes() };
+        self.out.extend_from_slice(&bytes);
+    }
+
+    /// Une chaîne Lua : longueur `size_t` INCLUANT le `\0` final, puis les octets et ce `\0`.
+    /// Une longueur nulle est la chaîne absente, et n'écrit aucun octet — c'est ainsi qu'un chunk
+    /// dépouillé (`luac -s`) note ses noms de débogage manquants.
+    fn string_bytes(&mut self, value: &[u8]) {
+        if value.is_empty() {
+            self.size_t(0);
+            return;
+        }
+        self.size_t(value.len() as u64 + 1);
+        self.out.extend_from_slice(value);
+        self.out.push(0);
+    }
+}
+
+fn write_prototype(w: &mut Writer, proto: &Prototype) {
+    w.int(proto.line_defined);
+    w.int(proto.last_line_defined);
+    w.u8(proto.num_params);
+    w.u8(proto.is_vararg);
+    w.u8(proto.max_stack_size);
+
+    w.int(proto.code.len() as u32);
+    for instruction in &proto.code {
+        w.u32(*instruction);
+    }
+
+    w.int(proto.constants.len() as u32);
+    for constant in &proto.constants {
+        match constant {
+            Constant::Nil => w.u8(0),
+            Constant::Boolean(value) => {
+                w.u8(1);
+                w.u8(u8::from(*value));
+            },
+            Constant::Number(value) => {
+                w.u8(3);
+                w.number(*value);
+            },
+            Constant::String(bytes) => {
+                w.u8(4);
+                w.string_bytes(bytes);
+            },
+        }
+    }
+
+    w.int(proto.protos.len() as u32);
+    for nested in &proto.protos {
+        write_prototype(w, nested);
+    }
+
+    w.int(proto.upvalues.len() as u32);
+    for upvalue in &proto.upvalues {
+        w.u8(u8::from(upvalue.in_stack));
+        w.u8(upvalue.index);
+    }
+
+    w.string_bytes(proto.source.as_bytes());
+    w.int(proto.line_info.len() as u32);
+    for line in &proto.line_info {
+        w.int(*line);
+    }
+
+    w.int(proto.loc_vars.len() as u32);
+    for local in &proto.loc_vars {
+        w.string_bytes(local.name.as_bytes());
+        w.int(local.start_pc);
+        w.int(local.end_pc);
+    }
+
+    w.int(proto.upvalue_names.len() as u32);
+    for name in &proto.upvalue_names {
+        w.string_bytes(name.as_bytes());
+    }
+}
+
+/// Réencode un chunk déjà décodé, avec les tailles que porte son en-tête.
+///
+/// C'est l'inverse exact de [`parse`] : mêmes champs, même ordre, même convention de chaîne
+/// (longueur `size_t` incluant le `\0`, zéro pour une chaîne absente).
+#[must_use]
+pub fn encode(chunk: &Chunk) -> Vec<u8> {
+    let mut w = Writer {
+        out: Vec::with_capacity(4096),
+        little_endian: chunk.header.little_endian,
+        size_size_t: chunk.header.size_size_t as usize,
+        size_int: chunk.header.size_int as usize,
+    };
+    w.out.extend_from_slice(&[0x1B, 0x4C, 0x75, 0x61]);
+    w.out.push(chunk.header.version);
+    w.out.push(chunk.header.format);
+    w.out.push(u8::from(chunk.header.little_endian));
+    w.out.push(chunk.header.size_int);
+    w.out.push(chunk.header.size_size_t);
+    w.out.push(chunk.header.size_instruction);
+    w.out.push(chunk.header.size_number);
+    w.out.push(u8::from(chunk.header.number_is_integral));
+    w.out.extend_from_slice(&[0x19, 0x93, b'\r', b'\n', 0x1A, b'\n']);
+    write_prototype(&mut w, &chunk.main);
+    w.out
+}
+
+/// Réencode un chunk pour une plateforme dont `size_t` et `int` ont d'autres tailles.
+///
+/// ## Pourquoi cette fonction existe
+///
+/// Le bytecode Lua 5.2 n'est pas portable : son en-tête déclare `sizeof(int)`, `sizeof(size_t)`
+/// et `sizeof(lua_Number)`, et le CORPS écrit chaque longueur de chaîne sur `size_t` octets. Un
+/// chunk précompilé pour un Lua 64 bits est donc refusé par une VM 32 bits —
+/// `incompatible precompiled chunk` — et c'est exactement ce que rencontre la VM WebAssembly du
+/// dépôt face aux `.lua.bin` du jeu, qui sont des chunks 64 bits.
+///
+/// Transcoder n'est pas « corriger l'en-tête » : il faut relire tout le corps et le réécrire avec
+/// les nouvelles largeurs.
+///
+/// ## Ce qui n'est PAS conservé
+///
+/// Les noms de débogage (`source`, variables locales, upvalues) sont décodés en `String` par
+/// [`parse`], donc en UTF-8 avec remplacement. Un nom non-UTF-8 ne survivrait pas au tour. Les
+/// constantes chaînes, elles, gardent leurs octets bruts — ce sont elles qui portent les libellés
+/// du jeu.
+///
+/// # Errors
+/// [`BytecodeError`] quand le chunk d'entrée ne se décode pas.
+pub fn transcode(data: &[u8], size_int: u8, size_size_t: u8) -> Result<Vec<u8>, BytecodeError> {
+    let mut chunk = parse(data)?;
+    chunk.header.size_int = size_int;
+    chunk.header.size_size_t = size_size_t;
+    Ok(encode(&chunk))
+}
+
+// ─── Lectures de globals ─────────────────────────────────────────────────────────────────────
+
+/// Nombre d'éléments qu'un constructeur de table écoule par `SETLIST`, `LFIELDS_PER_FLUSH`
+/// de `lvm.c`. Le champ `C` de `SETLIST` est le numéro de lot, pas l'index du premier élément.
+const LFIELDS_PER_FLUSH: u32 = 50;
+
+/// Ce que devient la valeur d'une lecture de global.
+///
+/// Un audit à l'exécution ne voit qu'un nom indéfini ; il ne dit pas si la valeur sert. La
+/// distinction décide du travail : une valeur consommée demande qu'on la fournisse, une valeur
+/// écoulée dans une partie tableau que rien n'indexe ne demande rien.
+#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GlobalReadSink {
+    /// La valeur alimente la partie TABLEAU d'un constructeur (`t = { a, b, c }`), à l'index
+    /// 1-based donné. C'est la forme que prend, en Lua, une liste de noms de champs écrite sans
+    /// valeur : le constructeur lit les globals homonymes, tous indéfinis.
+    TableArrayItem {
+        /// Index 1-based de l'élément dans le tableau construit.
+        index: u32,
+    },
+    /// Tout autre usage : appel, opérande, champ nommé, argument, retour.
+    Other,
+}
+
+/// Une lecture de global relevée statiquement dans un chunk.
+#[derive(Serialize, Debug, Clone, PartialEq)]
+pub struct GlobalRead {
+    /// Nom lu, octets bruts du pool de constantes.
+    pub name: Vec<u8>,
+    /// Prototype où la lecture a lieu, dans la notation du désassembleur (`main`, `main:38`).
+    pub function: String,
+    /// Index de l'instruction dans ce prototype.
+    pub pc: u32,
+    /// Ce que devient la valeur.
+    pub sink: GlobalReadSink,
+}
+
+impl GlobalRead {
+    /// Nom rendu en texte. Un identifiant Lua est ASCII ; la conversion reste permissive pour ne
+    /// pas perdre une lecture dont la clé serait une chaîne exotique.
+    #[must_use]
+    pub fn name_utf8(&self) -> std::borrow::Cow<'_, str> {
+        String::from_utf8_lossy(&self.name)
+    }
+}
+
+/// Relève toute lecture de global du chunk — `GETTABUP` dont la table est `_ENV` et la clé une
+/// constante chaîne — et classe chacune par ce que devient sa valeur.
+///
+/// `_ENV` est identifié par propagation et non par son nom : les chunks du jeu sont dépouillés
+/// de leur table de débogage (`upvalue_names` vide). Le chunk principal d'un programme Lua 5.2 a
+/// exactement un upvalue, `_ENV` ; un prototype imbriqué hérite du même upvalue lorsqu'il le
+/// capture depuis son parent (`in_stack == false`).
+#[must_use]
+pub fn global_reads(chunk: &Chunk) -> Vec<GlobalRead> {
+    let mut out = Vec::new();
+    // Le chunk principal porte `_ENV` en upvalue 0 : c'est la définition du format, pas une
+    // heuristique. Un chunk sans upvalue n'accède à aucun global.
+    let env = if chunk.main.upvalues.is_empty() { None } else { Some(0) };
+    collect_global_reads(&chunk.main, "main", env, &mut out);
+    out
+}
+
+fn collect_global_reads(p: &Prototype, label: &str, env: Option<u32>, out: &mut Vec<GlobalRead>) {
+    if let Some(env) = env {
+        scan_proto_global_reads(p, label, env, out);
+    }
+    for (index, nested) in p.protos.iter().enumerate() {
+        // Un imbriqué ne voit `_ENV` que s'il le reprend d'un upvalue du parent. Une capture
+        // depuis la pile (`in_stack`) désigne un local, jamais l'environnement du chunk.
+        let nested_env = env.and_then(|parent_env| {
+            nested
+                .upvalues
+                .iter()
+                .position(|desc| !desc.in_stack && u32::from(desc.index) == parent_env)
+        });
+        let nested_env = nested_env.and_then(|i| u32::try_from(i).ok());
+        collect_global_reads(nested, &format!("{label}:{index}"), nested_env, out);
+    }
+}
+
+/// Constructeur de table ouvert : son registre de base, et ce qui a écrit chacun de ses slots.
+struct OpenConstructor {
+    base: u32,
+    /// Décalage de slot → index dans `out` de la lecture qui l'a écrit en dernier. `None` quand
+    /// le dernier écrivain n'est pas une lecture de global.
+    slots: BTreeMap<u32, Option<usize>>,
+}
+
+fn scan_proto_global_reads(p: &Prototype, label: &str, env: u32, out: &mut Vec<GlobalRead>) {
+    let mut open: Vec<OpenConstructor> = Vec::new();
+
+    for (pc, raw) in p.code.iter().enumerate() {
+        let ins = decode_instruction(*raw);
+        let name = ins.name();
+
+        // Toute écriture de registre invalide le slot qu'elle touche : seul le DERNIER écrivain
+        // avant l'écoulement fournit l'élément.
+        if let Some((first, last)) = written_registers(&ins)
+            && let Some(top) = open.last_mut()
+        {
+            let from = first.max(top.base + 1);
+            if last >= from {
+                // Une écriture multiple (`CALL`, `VARARG`, `LOADNIL`) peut couvrir la pile
+                // entière ; on ne retient que les slots déjà connus, plus celui qu'on écrit.
+                let known: Vec<u32> = top
+                    .slots
+                    .keys()
+                    .copied()
+                    .filter(|offset| {
+                        let register = top.base + offset;
+                        register >= from && register <= last
+                    })
+                    .collect();
+                for offset in known {
+                    top.slots.insert(offset, None);
+                }
+                if first > top.base && first <= last {
+                    top.slots.insert(first - top.base, None);
+                }
+            }
+        }
+
+        match name.as_str() {
+            "NEWTABLE" => open.push(OpenConstructor { base: ins.a, slots: BTreeMap::new() }),
+            "GETTABUP" if ins.b == env => {
+                const BITRK: u32 = 1 << 8;
+                if ins.c & BITRK == 0 {
+                    continue;
+                }
+                let Some(Constant::String(key)) = p.constants.get((ins.c & !BITRK) as usize) else {
+                    continue;
+                };
+                let index = out.len();
+                out.push(GlobalRead {
+                    name: key.clone(),
+                    function: label.to_string(),
+                    pc: u32::try_from(pc).unwrap_or(u32::MAX),
+                    sink: GlobalReadSink::Other,
+                });
+                if let Some(top) = open.last_mut()
+                    && ins.a > top.base
+                {
+                    top.slots.insert(ins.a - top.base, Some(index));
+                }
+            },
+            "SETLIST" => {
+                let Some(position) = open.iter().rposition(|c| c.base == ins.a) else {
+                    continue;
+                };
+                // Tout constructeur ouvert AU-DESSUS de celui qu'on écoule est terminé : ses
+                // éléments viennent d'être empilés comme valeurs de celui-ci.
+                open.truncate(position + 1);
+                // Le constructeur écoulé, lui, reste ouvert : au-delà de 50 éléments Lua émet
+                // plusieurs `SETLIST` sur la même table, et le refermer perdrait les lots
+                // suivants.
+                let constructor = std::mem::replace(
+                    &mut open[position],
+                    OpenConstructor { base: ins.a, slots: BTreeMap::new() },
+                );
+                // `B == 0` écoule jusqu'au sommet de pile : le dernier élément est un appel à
+                // retours multiples, et le nombre d'éléments n'est pas lisible statiquement.
+                // `C == 0` porte le numéro de lot dans l'`EXTRAARG` suivant.
+                if ins.b == 0 {
+                    continue;
+                }
+                let batch = if ins.c == 0 {
+                    p.code.get(pc + 1).map_or(1, |next| decode_instruction(*next).ax)
+                } else {
+                    ins.c
+                };
+                let Some(first) = batch.checked_sub(1).map(|b| b * LFIELDS_PER_FLUSH) else {
+                    continue;
+                };
+                for (offset, writer) in &constructor.slots {
+                    if *offset > ins.b {
+                        continue;
+                    }
+                    if let Some(index) = writer {
+                        out[*index].sink = GlobalReadSink::TableArrayItem { index: first + offset };
+                    }
+                }
+            },
+            _ => {},
+        }
+    }
+}
+
+/// Registres écrits par une instruction, bornes incluses. `None` quand elle n'en écrit aucun.
+///
+/// Les formes à écriture variable (`CALL` à retours multiples, `VARARG` sans compte) rendent une
+/// borne haute saturée : elles écrasent la pile jusqu'au sommet.
+fn written_registers(ins: &Instruction) -> Option<(u32, u32)> {
+    match ins.name().as_str() {
+        "MOVE" | "LOADK" | "LOADKX" | "LOADBOOL" | "GETUPVAL" | "GETTABUP" | "GETTABLE"
+        | "NEWTABLE" | "ADD" | "SUB" | "MUL" | "DIV" | "MOD" | "POW" | "UNM" | "NOT" | "LEN"
+        | "CONCAT" | "TESTSET" | "FORPREP" | "TFORLOOP" | "CLOSURE" => Some((ins.a, ins.a)),
+        "SELF" => Some((ins.a, ins.a + 1)),
+        "LOADNIL" => Some((ins.a, ins.a + ins.b)),
+        "FORLOOP" => Some((ins.a, ins.a + 3)),
+        // `C == 1` ne rend aucune valeur, donc n'écrit aucun registre ; `C == 0` en rend un
+        // nombre variable et écrase la pile jusqu'au sommet.
+        "CALL" | "TAILCALL" => match ins.c {
+            0 => Some((ins.a, u32::MAX)),
+            1 => None,
+            c => Some((ins.a, ins.a + c - 2)),
+        },
+        "VARARG" => match ins.b {
+            0 => Some((ins.a, u32::MAX)),
+            1 => None,
+            b => Some((ins.a, ins.a + b - 2)),
+        },
+        "TFORCALL" => Some((ins.a + 3, ins.a + 2 + ins.c)),
+        _ => None,
+    }
+}
+
+// ─── Désassemblage ───────────────────────────────────────────────────────────────────────────
+
+/// Produit un listing lisible du chunk, prototypes imbriqués compris.
+///
+/// Format proche de `luac -l -l`, enrichi : les opérandes constantes sont résolues en valeur, et
+/// la ligne source est rappelée quand la table de débogage est présente.
+#[must_use]
+pub fn disassemble(chunk: &Chunk) -> String {
+    let mut out = String::new();
+    let _ = writeln!(
+        out,
+        "; Lua {:#04x} — {}-boutiste, int {} o, size_t {} o, number {} o",
+        chunk.header.version,
+        if chunk.header.little_endian { "petit" } else { "gros" },
+        chunk.header.size_int,
+        chunk.header.size_size_t,
+        chunk.header.size_number
+    );
+    disassemble_proto(&chunk.main, "main", 0, &mut out);
+    out
+}
+
+fn disassemble_proto(p: &Prototype, label: &str, depth: usize, out: &mut String) {
+    let pad = "  ".repeat(depth);
+    let _ = writeln!(
+        out,
+        "\n{pad}function {label} ({} params, {} upvalues, {} slots, lignes {}-{})",
+        p.num_params,
+        p.upvalues.len(),
+        p.max_stack_size,
+        p.line_defined,
+        p.last_line_defined
+    );
+    if !p.source.is_empty() {
+        let _ = writeln!(out, "{pad}; source : {}", p.source);
+    }
+
+    for (pc, raw) in p.code.iter().enumerate() {
+        let ins = decode_instruction(*raw);
+        let line = p.line_info.get(pc).map_or_else(String::new, |l| format!("[{l}]"));
+        let extra_arg = (ins.name() == "LOADKX")
+            .then(|| p.code.get(pc + 1).map(|raw| decode_instruction(*raw).ax))
+            .flatten();
+        let operands = format_operands(&ins, p, pc, extra_arg);
+        let _ = writeln!(out, "{pad}  {pc:>4} {line:>7} {:<10} {operands}", ins.name());
+    }
+
+    if !p.loc_vars.is_empty() {
+        let _ = writeln!(
+            out,
+            "{pad}  ; locales : {}",
+            p.loc_vars.iter().map(|v| v.name.as_str()).collect::<Vec<_>>().join(", ")
+        );
+    }
+    if !p.upvalue_names.is_empty() {
+        let _ = writeln!(out, "{pad}  ; upvalues : {}", p.upvalue_names.join(", "));
+    }
+
+    for (i, sub) in p.protos.iter().enumerate() {
+        disassemble_proto(sub, &format!("{label}:{i}"), depth + 1, out);
+    }
+}
+
+/// Formate les opérandes selon le mode de l'instruction, en résolvant ce qui peut l'être.
+fn format_operands(
+    ins: &Instruction,
+    p: &Prototype,
+    pc: usize,
+    loadkx_extra_arg: Option<u32>,
+) -> String {
+    let k = &p.constants;
+    match ins.mode() {
+        OpMode::ABx => {
+            // LOADK/CLOSURE indexent directement leur pool. LOADKX prend son index dans
+            // l'EXTRAARG immédiatement suivant (Lua 5.2, `OP_LOADKX`).
+            let name = ins.name();
+            if name == "CLOSURE" {
+                format!("R{} := closure #{}", ins.a, ins.bx)
+            } else if name == "LOADKX" {
+                let index = loadkx_extra_arg.unwrap_or(ins.bx);
+                let value =
+                    k.get(index as usize).map_or_else(|| "?".to_string(), Constant::display);
+                format!("R{} := K{}({value}) via EXTRAARG", ins.a, index)
+            } else {
+                let value =
+                    k.get(ins.bx as usize).map_or_else(|| "?".to_string(), Constant::display);
+                format!("R{} := K{}({value})", ins.a, ins.bx)
+            }
+        },
+        OpMode::AsBx => {
+            // Les sauts Lua sont relatifs à l'instruction suivante, pas au début du prototype.
+            // Garder le PC dans le listing évite de fabriquer un graphe de contrôle faux.
+            let target = (pc as i64) + 1 + i64::from(ins.sbx);
+            format!("A={} sBx={} (→ pc {})", ins.a, ins.sbx, target)
+        },
+        OpMode::Ax => format!("Ax={}", ins.ax),
+        OpMode::ABC => {
+            let name = ins.name();
+            match name.as_str() {
+                // Les accès de table par upvalue portent le nom du global dans C : c'est la forme
+                // la plus fréquente et la plus parlante d'un script de menu (`GETTABUP 0 _ENV "X"`).
+                "GETTABUP" => format!("R{} := Up{}[{}]", ins.a, ins.b, rk(ins.c, k)),
+                "SETTABUP" => format!("Up{}[{}] := {}", ins.a, rk(ins.b, k), rk(ins.c, k)),
+                "GETTABLE" => format!("R{} := R{}[{}]", ins.a, ins.b, rk(ins.c, k)),
+                "SETTABLE" => format!("R{}[{}] := {}", ins.a, rk(ins.b, k), rk(ins.c, k)),
+                "CALL" | "TAILCALL" => {
+                    let args =
+                        if ins.b == 0 { "vararg".to_string() } else { (ins.b - 1).to_string() };
+                    let returns =
+                        if ins.c == 0 { "multret".to_string() } else { (ins.c - 1).to_string() };
+                    format!("R{}(...) — {} args, {} retours", ins.a, args, returns)
+                },
+                "RETURN" => {
+                    let returns = if ins.b == 0 {
+                        "multret".to_string()
+                    } else {
+                        format!("{} valeur(s)", ins.b - 1)
+                    };
+                    format!("retourne R{}..{} ({returns})", ins.a, ins.b)
+                },
+                "MOVE" => format!("R{} := R{}", ins.a, ins.b),
+                _ => format!("A={} B={} C={}", ins.a, ins.b, ins.c),
+            }
+        },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Réencoder ce qu'on vient de décoder rend EXACTEMENT les mêmes octets.
+    ///
+    /// C'est la seule preuve qui vaille pour un encodeur : s'il diverge d'un octet, il invente.
+    /// Le chunk vient de la VM elle-même — donc de PUC-Rio 5.2.4, pas d'une idée du format.
+    #[cfg(feature = "vm")]
+    #[test]
+    fn reencoder_un_chunk_rend_les_memes_octets() {
+        let lua = crate::new_vm();
+        let dumped = lua
+            .load("local t = {1, 2.5, 'trois'} local function g(x) return t[x] end return g")
+            .set_name("aller-retour")
+            .into_function()
+            .expect("compilation")
+            .dump(false);
+
+        let chunk = parse(&dumped).expect("décodage");
+        assert_eq!(encode(&chunk), dumped, "le réencodage doit être byte-exact");
+    }
+
+    /// Transcoder vers une plateforme 32 bits change les largeurs ET reste relisible.
+    ///
+    /// C'est ce que réclame la VM WebAssembly : les `.lua.bin` du jeu sont des chunks 64 bits,
+    /// qu'un Lua 32 bits refuse (`incompatible precompiled chunk`).
+    #[cfg(feature = "vm")]
+    #[test]
+    fn transcoder_vers_32_bits_reste_relisible() {
+        let lua = crate::new_vm();
+        let dumped = lua
+            .load("local s = 'une chaîne assez longue pour peser' return function() return s end")
+            .set_name("transcodage")
+            .into_function()
+            .expect("compilation")
+            .dump(false);
+
+        let origine = parse(&dumped).expect("décodage");
+        let transcode_32 = transcode(&dumped, 4, 4).expect("transcodage");
+        let relu = parse(&transcode_32).expect("le chunk 32 bits se relit");
+
+        assert_eq!(relu.header.size_size_t, 4);
+        assert_eq!(relu.header.size_int, 4);
+        // Et rien du CONTENU n'a bougé : mêmes instructions, mêmes constantes, même arbre.
+        assert_eq!(relu.main.code, origine.main.code);
+        assert_eq!(relu.main.constants, origine.main.constants);
+        assert_eq!(relu.main.protos.len(), origine.main.protos.len());
+        if origine.header.size_size_t == 8 {
+            assert!(
+                transcode_32.len() < dumped.len(),
+                "des longueurs sur 4 octets au lieu de 8 raccourcissent le chunk"
+            );
+        }
+    }
+
+    /// Décode un chunk produit par la VM elle-même : `mlua` compile une source connue, on relit le
+    /// bytecode et on vérifie qu'on retrouve la structure attendue.
+    ///
+    /// Ce test ne dépend d'aucun asset du jeu — il vérifie le décodeur contre la MÊME
+    /// implémentation Lua que celle du moteur (PUC-Rio 5.2.4 vendored), donc contre la vérité.
+    #[cfg(feature = "vm")]
+    #[test]
+    fn decode_un_chunk_produit_par_la_vm() {
+        let lua = crate::new_vm();
+        let dumped = lua
+            .load("local function f(a, b) return a + b end return f(1, 2)")
+            .set_name("essai")
+            .into_function()
+            .expect("compilation")
+            .dump(false);
+
+        let chunk = parse(&dumped).expect("décodage du bytecode");
+        assert_eq!(chunk.header.version, 0x52);
+        assert_eq!(chunk.header.size_instruction, 4);
+
+        // Une fonction imbriquée (`f`) doit apparaître dans les prototypes du chunk principal.
+        assert_eq!(
+            chunk.main.protos.len(),
+            1,
+            "la fonction locale doit être un prototype imbriqué"
+        );
+        let f = &chunk.main.protos[0];
+        assert_eq!(f.num_params, 2, "f prend deux paramètres");
+
+        // Le corps de `f` doit contenir une addition puis un retour.
+        let ops: Vec<String> = f.code.iter().map(|c| decode_instruction(*c).name()).collect();
+        assert!(ops.contains(&"ADD".to_string()), "opcodes de f : {ops:?}");
+        assert!(ops.contains(&"RETURN".to_string()), "opcodes de f : {ops:?}");
+
+        // Le listing doit être non vide et nommer les opcodes.
+        let listing = disassemble(&chunk);
+        assert!(listing.contains("ADD"), "listing :\n{listing}");
+        assert!(listing.contains("function main"), "listing :\n{listing}");
+    }
+
+    #[cfg(feature = "vm")]
+    #[test]
+    fn listing_resout_les_sauts_depuis_le_pc_et_les_arites_lua() {
+        let lua = crate::new_vm();
+        let dumped = lua
+            .load("local x = ...; if x then return x, 2 end return 0")
+            .set_name("controle")
+            .into_function()
+            .expect("compilation")
+            .dump(false);
+        let listing = disassemble(&parse(&dumped).expect("décodage"));
+        assert!(listing.contains("→ pc "), "cible de saut absente :\n{listing}");
+        assert!(
+            listing.contains("retourne") && listing.contains("valeur(s)"),
+            "arité Lua absente :\n{listing}"
+        );
+    }
+
+    #[test]
+    fn listing_resout_loadkx_avec_son_extraarg() {
+        let chunk = Chunk {
+            header: Header {
+                version: 0x52,
+                format: 0,
+                little_endian: true,
+                size_int: 4,
+                size_size_t: 8,
+                size_instruction: 4,
+                size_number: 8,
+                number_is_integral: false,
+            },
+            main: Prototype {
+                line_defined: 0,
+                last_line_defined: 0,
+                num_params: 0,
+                is_vararg: 0,
+                max_stack_size: 2,
+                // OP_LOADKX = 2, OP_EXTRAARG = 39 ; A=0, Ax=1.
+                code: vec![2, (1 << 6) | 39],
+                constants: vec![Constant::Nil, Constant::Number(42.0)],
+                protos: Vec::new(),
+                upvalues: Vec::new(),
+                source: String::new(),
+                line_info: Vec::new(),
+                loc_vars: Vec::new(),
+                upvalue_names: Vec::new(),
+            },
+        };
+        let listing = disassemble(&chunk);
+        assert!(listing.contains("K1(42) via EXTRAARG"), "LOADKX mal résolu :\n{listing}");
+    }
+
+    #[test]
+    fn rejette_un_tampon_qui_nest_pas_du_bytecode() {
+        assert!(matches!(
+            parse(b"-- juste du texte Lua\nreturn 1\n"),
+            Err(BytecodeError::BadSignature)
+        ));
+    }
+
+    #[cfg(feature = "vm")]
+    #[test]
+    fn rejette_un_en_tete_lua_incoherent_sans_paniquer() {
+        let lua = crate::new_vm();
+        let dumped = lua.load("return 1").into_function().expect("compilation").dump(false);
+
+        let mut bad_format = dumped.clone();
+        bad_format[5] = 1;
+        assert!(matches!(
+            parse(&bad_format),
+            Err(BytecodeError::UnsupportedHeader(message)) if message.contains("format")
+        ));
+
+        let mut bad_size = dumped;
+        bad_size[8] = 3;
+        assert!(matches!(
+            parse(&bad_size),
+            Err(BytecodeError::UnsupportedHeader(message)) if message.contains("size_t")
+        ));
+    }
+
+    #[test]
+    fn reader_refuse_un_take_avec_overflow() {
+        let mut reader = Reader {
+            data: &[0u8; 1],
+            pos: usize::MAX,
+            little_endian: true,
+            size_size_t: 8,
+            size_int: 4,
+        };
+        assert!(matches!(reader.take(1), Err(BytecodeError::UnexpectedEof(usize::MAX))));
+    }
+
+    /// Décode les VRAIS `.lua.bin` du jeu présents localement (`data/lua_scripts/`).
+    ///
+    /// `#[ignore]` : dépend du dépôt d'assets, absent d'une CI. Lancer avec
+    /// `cargo test -p aphrody-nie-lua -- --ignored`.
+    #[test]
+    #[ignore = "nécessite les assets du jeu (data/lua_scripts)"]
+    fn decode_les_vrais_scripts_du_jeu() {
+        let dir = aphrody_nie_formats::vfs::resolve_game_dir().join("data/lua_scripts");
+        if !dir.is_dir() {
+            eprintln!("skip : {} introuvable (définir NIE_GAME_DIR)", dir.display());
+            return;
+        }
+        let entries: Vec<_> = std::fs::read_dir(&dir)
+            .expect("lecture de data/lua_scripts")
+            .filter_map(Result::ok)
+            .filter(|e| e.path().to_string_lossy().ends_with(".lua.bin"))
+            .collect();
+        assert!(!entries.is_empty(), "aucun .lua.bin trouvé");
+
+        let mut ok = 0usize;
+        let mut failures: Vec<String> = Vec::new();
+        let mut total_instructions = 0usize;
+
+        for entry in &entries {
+            let data = std::fs::read(entry.path()).expect("lecture");
+            match parse(&data) {
+                Ok(chunk) => {
+                    total_instructions += chunk.main.total_instructions();
+                    // Un désassemblage ne doit jamais paniquer, quel que soit le script.
+                    let listing = disassemble(&chunk);
+                    assert!(!listing.is_empty());
+                    ok += 1;
+                },
+                Err(e) => failures.push(format!("{} : {e}", entry.path().display())),
+            }
+        }
+
+        eprintln!(
+            "décodés {ok}/{} scripts réels, {total_instructions} instructions au total",
+            entries.len()
+        );
+        for f in failures.iter().take(10) {
+            eprintln!("  échec {f}");
+        }
+        assert!(failures.is_empty(), "{} échecs de décodage", failures.len());
+    }
+
+    /// Une liste de NOMS dans un constructeur de table lit des globals, et la valeur n'aboutit
+    /// nulle part d'autre que dans la partie tableau.
+    ///
+    /// C'est la forme exacte que prennent dix des treize « lectures hôtes manquantes » relevées
+    /// sur le corpus du jeu (`LiberationPieceInfo` dans `ability_learning_board_menu`). Les
+    /// distinguer d'une valeur réellement consommée évite d'aller inventer un contexte natif pour
+    /// une valeur que rien ne lit.
+    #[cfg(feature = "vm")]
+    #[test]
+    fn une_liste_de_noms_se_classe_en_element_de_tableau() {
+        let lua = crate::new_vm();
+        let dumped = lua
+            .load("Piece = { pieceIdx, layerIdx, pieceType }")
+            .set_name("liste-de-noms")
+            .into_function()
+            .expect("compilation")
+            .dump(false);
+
+        let chunk = parse(&dumped).expect("décodage");
+        let reads = global_reads(&chunk);
+        let classement: Vec<(String, GlobalReadSink)> =
+            reads.iter().map(|read| (read.name_utf8().into_owned(), read.sink)).collect();
+
+        assert_eq!(
+            classement,
+            vec![
+                ("pieceIdx".to_string(), GlobalReadSink::TableArrayItem { index: 1 }),
+                ("layerIdx".to_string(), GlobalReadSink::TableArrayItem { index: 2 }),
+                ("pieceType".to_string(), GlobalReadSink::TableArrayItem { index: 3 }),
+            ]
+        );
+    }
+
+    /// La même lecture, consommée pour de bon, ne se classe PAS en élément de tableau.
+    ///
+    /// Sans ce contre-exemple le classement serait inutile : il rendrait « tableau » pour tout,
+    /// et déclarerait sans danger des valeurs dont le jeu dépend.
+    #[cfg(feature = "vm")]
+    #[test]
+    fn une_valeur_consommee_ne_se_classe_pas_en_element_de_tableau() {
+        let lua = crate::new_vm();
+        let dumped = lua
+            .load("Piece = { indice = pieceIdx } return pieceType + 1, { appelee() }")
+            .set_name("valeurs-consommees")
+            .into_function()
+            .expect("compilation")
+            .dump(false);
+
+        let chunk = parse(&dumped).expect("décodage");
+        for read in &global_reads(&chunk) {
+            assert_eq!(
+                read.sink,
+                GlobalReadSink::Other,
+                "{} ne doit pas passer pour un élément de tableau",
+                read.name_utf8()
+            );
+        }
+    }
+
+    /// Un constructeur de plus de 50 éléments s'écoule en plusieurs `SETLIST` : l'index rendu
+    /// doit suivre le numéro de lot, pas repartir de 1.
+    #[cfg(feature = "vm")]
+    #[test]
+    fn un_constructeur_long_numerote_ses_lots() {
+        let lua = crate::new_vm();
+        let mut source = String::from("Longue = { ");
+        for i in 0..60 {
+            let _ = write!(source, "nom{i}, ");
+        }
+        source.push('}');
+        let dumped = lua
+            .load(source)
+            .set_name("constructeur-long")
+            .into_function()
+            .expect("compilation")
+            .dump(false);
+
+        let chunk = parse(&dumped).expect("décodage");
+        let reads = global_reads(&chunk);
+        assert_eq!(reads.len(), 60);
+        for (rang, read) in reads.iter().enumerate() {
+            let attendu = u32::try_from(rang + 1).expect("index");
+            assert_eq!(
+                read.sink,
+                GlobalReadSink::TableArrayItem { index: attendu },
+                "{} est l'élément {attendu}",
+                read.name_utf8()
+            );
+        }
+    }
+
+    /// Les prototypes imbriqués sont couverts, et `_ENV` y est retrouvé sans table de débogage.
+    ///
+    /// Les chunks du jeu sont dépouillés (`upvalue_names` vide) : si la propagation d'`_ENV`
+    /// reposait sur le nom, le relevé serait vide sur le corpus réel tout en passant sur un
+    /// chunk fraîchement compilé.
+    #[cfg(feature = "vm")]
+    #[test]
+    fn les_prototypes_imbriques_sont_couverts_sans_table_de_debogage() {
+        let lua = crate::new_vm();
+        let dumped = lua
+            .load("local function f() return globalLu end return f")
+            .set_name("imbrique")
+            .into_function()
+            .expect("compilation")
+            .dump(true);
+
+        let mut chunk = parse(&dumped).expect("décodage");
+        // Dépouiller explicitement plutôt que de compter sur l'option de `dump` : c'est l'état
+        // des chunks du jeu, et le relevé doit tenir sans aucun nom.
+        chunk.main.upvalue_names.clear();
+        for nested in &mut chunk.main.protos {
+            nested.upvalue_names.clear();
+        }
+        let reads = global_reads(&chunk);
+        assert_eq!(reads.len(), 1);
+        assert_eq!(reads[0].name_utf8(), "globalLu");
+        assert_eq!(reads[0].function, "main:0");
+        assert_eq!(reads[0].sink, GlobalReadSink::Other);
+    }
+}

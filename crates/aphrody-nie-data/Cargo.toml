@@ -1,0 +1,172 @@
+[package]
+name = "aphrody-nie-data"
+description = "Modèles de données de jeu IEVR portés en Rust pur (skills, auras, chara_param, items, growth/exp tables, passifs) depuis le pipeline inagle — no_std+alloc, wasm-friendly"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# serde_json en mode no_std+alloc (parse des dumps cfg.bin.json) — pas de std requis.
+# Version alignée sur la racine (Cargo.lock = 1.0.150) ; on ne peut pas hériter du workspace
+# tout en désactivant default-features, d'où la déclaration directe.
+serde_json = { version = "1", default-features = false, features = ["alloc"] }
+serde = { version = "1", default-features = false, features = ["std", "derive"], optional = true }
+
+[features]
+default = []
+# Dérive Serialize/Deserialize sur les structs publiques.
+serde = ["dep:serde"]
+# Active std pour les binaires (réactive les features std de serde_json).
+std = ["serde_json/std"]
+
+[[bin]]
+name = "export_passives"
+path = "src/bin/export_passives.rs"
+required-features = ["serde", "std"]
+
+[[bin]]
+name = "export_formations"
+path = "src/bin/export_formations.rs"
+required-features = ["serde", "std"]
+
+[[bin]]
+name = "export_skills"
+path = "src/bin/export_skills.rs"
+required-features = ["serde", "std"]
+
+# `aphrody-nie-data` n'active par defaut que `std` : `serde` est optionnelle, et tout
+# `aphrody_nie_data::typed` est derriere elle. Ces 24 tests l'appellent sans la declarer, si bien que
+# `cargo clippy -p aphrody-nie-data --lib --tests` — le portail de verification documente dans
+# CLAUDE.md — ECHOUAIT a compiler (E0433), au lieu de sauter proprement. Avec
+# `required-features`, le harnais saute le test ET dit pourquoi.
+
+[[test]]
+name = "avatar_resolve_golden"
+path = "tests/avatar_resolve_golden.rs"
+required-features = ["serde"]
+
+[[test]]
+name = "ai_type_golden"
+path = "tests/ai_type_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "enjoy_mode_team_golden"
+path = "tests/enjoy_mode_team_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "event_bustup_golden"
+path = "tests/event_bustup_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "event_map_tag_golden"
+path = "tests/event_map_tag_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "event_subtitle_golden"
+path = "tests/event_subtitle_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "flag_config_golden"
+path = "tests/flag_config_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "game_quest_golden"
+path = "tests/game_quest_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "happen_event_npc_golden"
+path = "tests/happen_event_npc_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "menu_setting_prefix_golden"
+path = "tests/menu_setting_prefix_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "phase_set_golden"
+path = "tests/phase_set_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "soccer_dispatch_golden"
+path = "tests/soccer_dispatch_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "soccer_drop_golden"
+path = "tests/soccer_drop_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "soccer_fixed_reward_golden"
+path = "tests/soccer_fixed_reward_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "soccer_map_env_golden"
+path = "tests/soccer_map_env_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "soccer_opponent_golden"
+path = "tests/soccer_opponent_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "soccer_placement_golden"
+path = "tests/soccer_placement_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "soccer_player_record_golden"
+path = "tests/soccer_player_record_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "soccer_rank_golden"
+path = "tests/soccer_rank_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "soccer_suggest_golden"
+path = "tests/soccer_suggest_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "system_unlock_golden"
+path = "tests/system_unlock_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "talk_select_golden"
+path = "tests/talk_select_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "trial_take_over_golden"
+path = "tests/trial_take_over_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "trigger_golden"
+path = "tests/trigger_golden.rs"
+required-features = ["serde", "std"]
+
+[[test]]
+name = "typed_corpus_golden"
+path = "tests/typed_corpus_golden.rs"
+required-features = ["serde", "std"]

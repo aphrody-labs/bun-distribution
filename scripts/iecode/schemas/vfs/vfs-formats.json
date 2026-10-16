@@ -1,0 +1,765 @@
+{
+  "$schema": "./vfs-registry.schema.json",
+  "version": "2.0.4",
+  "engine": "aphrody-nie-formats",
+  "totalFormats": 28,
+  "formats": [
+    {
+      "id": 1,
+      "name": "G4TX",
+      "magicHex": "0x58543447",
+      "magicAscii": "G4TX",
+      "rawUint32Le": 1481913415,
+      "rawUint32Be": 1195652184,
+      "extension": ".g4tx",
+      "mimeType": "image/x-level5-g4tx",
+      "category": "texture",
+      "endianness": "little",
+      "encryptionSupported": false,
+      "compressionSupported": true,
+      "description": "Level-5 Texture Container packing DDS BCn textures and sprite atlas subregions",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'G4TX' (0x58543447)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "header_size", "description": "Size of primary header" },
+        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "texture_count", "description": "Number of contained texture records" },
+        { "offsetHex": "0x0C", "offsetDec": 12, "type": "uint32_le", "name": "atlas_subregions_count", "description": "Number of atlas subrectangles" },
+        { "offsetHex": "0x10", "offsetDec": 16, "type": "uint32_le", "name": "data_offset", "description": "Byte offset to raw DDS payload" },
+        { "offsetHex": "0x14", "offsetDec": 20, "type": "uint32_le", "name": "data_size", "description": "Length of texture data payload" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::g4tx::G4txContainer",
+        "typescript": "Inagle.formats.G4txContainer",
+        "csharp": "IECODE.Core.Formats.Level5.G4tx",
+        "python": "niepy.formats.G4txContainer",
+        "c": "iecode_g4tx_header_t"
+      }
+    },
+    {
+      "id": 2,
+      "name": "G4MD",
+      "magicHex": "0x444D3447",
+      "magicAscii": "G4MD",
+      "rawUint32Le": 1145910343,
+      "rawUint32Be": 1195652420,
+      "extension": ".g4md",
+      "mimeType": "model/x-level5-g4md",
+      "category": "model",
+      "endianness": "little",
+      "encryptionSupported": false,
+      "compressionSupported": true,
+      "description": "Level-5 3D Model Metadata (submeshes, vertex buffer layouts, bone bindings)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'G4MD' (0x444D3447)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "version", "description": "Model format revision" },
+        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "submesh_count", "description": "Count of submeshes in model" },
+        { "offsetHex": "0x0C", "offsetDec": 12, "type": "uint32_le", "name": "material_count", "description": "Count of referenced materials" },
+        { "offsetHex": "0x10", "offsetDec": 16, "type": "uint32_le", "name": "mesh_table_offset", "description": "Offset to mesh descriptors" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::g4md::G4md",
+        "typescript": "Inagle.formats.G4md",
+        "csharp": "IECODE.Core.Formats.Level5.G4md",
+        "python": "niepy.formats.G4md",
+        "c": "iecode_g4md_header_t"
+      }
+    },
+    {
+      "id": 3,
+      "name": "G4MG",
+      "magicHex": "0x474D3447",
+      "magicAscii": "G4MG",
+      "rawUint32Le": 1196246087,
+      "rawUint32Be": 1195652423,
+      "extension": ".g4mg",
+      "mimeType": "model/x-level5-g4mg",
+      "category": "model",
+      "endianness": "little",
+      "encryptionSupported": false,
+      "compressionSupported": true,
+      "description": "Level-5 Model Geometry (vertex positions, normals, UVs, and index buffers)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'G4MG' (0x474D3447)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "vertex_count", "description": "Total vertex elements" },
+        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "index_count", "description": "Total index elements" },
+        { "offsetHex": "0x0C", "offsetDec": 12, "type": "uint32_le", "name": "stride", "description": "Vertex byte stride" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::g4mg::G4mg",
+        "typescript": "Inagle.formats.G4mg",
+        "csharp": "IECODE.Core.Formats.Level5.G4mg",
+        "python": "niepy.formats.G4mg",
+        "c": "iecode_g4mg_header_t"
+      }
+    },
+    {
+      "id": 4,
+      "name": "G4MT",
+      "magicHex": "0x544D3447",
+      "magicAscii": "G4MT",
+      "rawUint32Le": 1414345799,
+      "rawUint32Be": 1195652436,
+      "extension": ".g4mt",
+      "mimeType": "model/x-level5-g4mt",
+      "category": "model",
+      "endianness": "little",
+      "encryptionSupported": false,
+      "compressionSupported": false,
+      "description": "Level-5 Material Properties (shaders, blend states, diffuse/specular parameters)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'G4MT' (0x544D3447)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "material_count", "description": "Number of material entries" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::g4mt::G4mt",
+        "typescript": "Inagle.formats.G4mt",
+        "csharp": "IECODE.Core.Formats.Level5.G4mt",
+        "python": "niepy.formats.G4mt",
+        "c": "iecode_g4mt_header_t"
+      }
+    },
+    {
+      "id": 5,
+      "name": "G4SK",
+      "magicHex": "0x4B533447",
+      "magicAscii": "G4SK",
+      "rawUint32Le": 1263744071,
+      "rawUint32Be": 1195651915,
+      "extension": ".g4sk",
+      "mimeType": "model/x-level5-g4sk",
+      "category": "model",
+      "endianness": "little",
+      "encryptionSupported": false,
+      "compressionSupported": false,
+      "description": "Level-5 Skeleton & Bone Hierarchy (quaternions, bind poses, transform trees)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'G4SK' (0x4B533447)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "bone_count", "description": "Number of bones in skeleton" },
+        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "bone_table_offset", "description": "Offset to bone transforms" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::g4sk::G4sk",
+        "typescript": "Inagle.formats.G4sk",
+        "csharp": "IECODE.Core.Formats.Level5.G4sk",
+        "python": "niepy.formats.G4sk",
+        "c": "iecode_g4sk_header_t"
+      }
+    },
+    {
+      "id": 6,
+      "name": "G4PK",
+      "magicHex": "0x4B503447",
+      "magicAscii": "G4PK",
+      "rawUint32Le": 1263547463,
+      "rawUint32Be": 1195651147,
+      "extension": ".g4pk",
+      "mimeType": "application/x-level5-g4pk",
+      "category": "container",
+      "endianness": "little",
+      "encryptionSupported": false,
+      "compressionSupported": true,
+      "description": "Level-5 Package Container (multi-resource bundle for characters and animations)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'G4PK' (0x4B503447)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "file_count", "description": "Contained resource files count" },
+        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "toc_offset", "description": "Offset to table of contents" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::g4pk::G4pk",
+        "typescript": "Inagle.formats.G4pk",
+        "csharp": "IECODE.Core.Formats.Level5.G4pk",
+        "python": "niepy.formats.G4pk",
+        "c": "iecode_g4pk_header_t"
+      }
+    },
+    {
+      "id": 7,
+      "name": "G4RA",
+      "magicHex": "0x41523447",
+      "magicAscii": "G4RA",
+      "rawUint32Le": 1095906375,
+      "rawUint32Be": 1195651649,
+      "extension": ".g4ra",
+      "mimeType": "application/x-level5-g4ra",
+      "category": "container",
+      "endianness": "little",
+      "encryptionSupported": false,
+      "compressionSupported": true,
+      "description": "Level-5 Resource Archive (compact asset bundle indexed in nie.exe)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'G4RA' (0x41523447)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "entry_count", "description": "Resource entries count" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::g4ra::G4ra",
+        "typescript": "Inagle.formats.G4ra",
+        "csharp": "IECODE.Core.Formats.Level5.G4ra",
+        "python": "niepy.formats.G4ra",
+        "c": "iecode_g4ra_header_t"
+      }
+    },
+    {
+      "id": 8,
+      "name": "AGI",
+      "magicHex": "0x20494741",
+      "magicAscii": "AGI ",
+      "rawUint32Le": 541673281,
+      "rawUint32Be": 1095321888,
+      "extension": ".agi",
+      "mimeType": "application/x-level5-agi",
+      "category": "model",
+      "endianness": "little",
+      "encryptionSupported": false,
+      "compressionSupported": true,
+      "description": "Level-5 Animation Graphic Interface (timeline tracks and animation nodes)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'AGI ' (0x20494741)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "frame_count", "description": "Animation total frame count" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::FileFormat::Agi",
+        "typescript": "Inagle.formats.Agi",
+        "csharp": "IECODE.Core.Formats.Level5.Agi",
+        "python": "niepy.formats.Agi",
+        "c": "iecode_agi_header_t"
+      }
+    },
+    {
+      "id": 9,
+      "name": "OBJB",
+      "magicHex": "0x424A424F",
+      "magicAscii": "OBJB",
+      "rawUint32Le": 1112162895,
+      "rawUint32Be": 1330004546,
+      "extension": ".objb",
+      "mimeType": "application/x-level5-objb",
+      "category": "config",
+      "endianness": "little",
+      "encryptionSupported": false,
+      "compressionSupported": true,
+      "description": "Level-5 Object Binary (scene layout descriptors and actor placements)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'OBJB' (0x424A424F)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "object_count", "description": "Actor entries count" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::objbin::Objb",
+        "typescript": "Inagle.formats.Objb",
+        "csharp": "IECODE.Core.Formats.Level5.Objb",
+        "python": "niepy.formats.Objb",
+        "c": "iecode_objb_header_t"
+      }
+    },
+    {
+      "id": 10,
+      "name": "PXCL",
+      "magicHex": "0x4C435850",
+      "magicAscii": "PXCL",
+      "rawUint32Le": 1279473744,
+      "rawUint32Be": 1347639120,
+      "extension": ".pxcl",
+      "mimeType": "application/x-level5-pxcl",
+      "category": "collision",
+      "endianness": "little",
+      "encryptionSupported": false,
+      "compressionSupported": false,
+      "description": "Level-5 Pixel Collision & Physics Hull (hitboxes and boundary colliders)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'PXCL' (0x4C435850)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "hull_count", "description": "Number of collision volumes" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::col::Pxcl",
+        "typescript": "Inagle.formats.Pxcl",
+        "csharp": "IECODE.Core.Formats.Level5.Pxcl",
+        "python": "niepy.formats.Pxcl",
+        "c": "iecode_pxcl_header_t"
+      }
+    },
+    {
+      "id": 11,
+      "name": "RDBN",
+      "magicHex": "0x4E424452",
+      "magicAscii": "RDBN",
+      "rawUint32Le": 1312965714,
+      "rawUint32Be": 1380008782,
+      "extension": ".cfg.bin",
+      "mimeType": "application/x-level5-rdbn",
+      "category": "config",
+      "endianness": "little",
+      "encryptionSupported": true,
+      "compressionSupported": true,
+      "description": "Level-5 Relational Database Binary (T2B structured binary data sheets)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'RDBN' (0x4E424452)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint16_le", "name": "header_size", "description": "Header length (0x50 = 80 bytes)" },
+        { "offsetHex": "0x06", "offsetDec": 6, "type": "uint16_le", "name": "version", "description": "Schema version (0x01)" },
+        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "table_count", "description": "Number of contained tables" },
+        { "offsetHex": "0x0C", "offsetDec": 12, "type": "uint32_le", "name": "string_pool_offset", "description": "Offset to UTF-8 strings" },
+        { "offsetHex": "0x10", "offsetDec": 16, "type": "uint32_le", "name": "string_pool_size", "description": "Length of string pool" },
+        { "offsetHex": "0x14", "offsetDec": 20, "type": "uint32_le", "name": "data_offset", "description": "Offset to row vectors" },
+        { "offsetHex": "0x18", "offsetDec": 24, "type": "uint32_le", "name": "data_size", "description": "Length of row data section" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::cfgbin::Rdbn",
+        "typescript": "Inagle.formats.Rdbn",
+        "csharp": "IECODE.Core.Formats.Level5.Rdbn",
+        "python": "niepy.formats.Rdbn",
+        "c": "iecode_rdbn_header_t"
+      }
+    },
+    {
+      "id": 12,
+      "name": "MEVS",
+      "magicHex": "0x5346454D",
+      "magicAscii": "MEVS",
+      "rawUint32Le": 1397114189,
+      "rawUint32Be": 1296389715,
+      "extension": ".mevbin",
+      "mimeType": "application/x-level5-mevs",
+      "category": "script",
+      "endianness": "little",
+      "encryptionSupported": false,
+      "compressionSupported": true,
+      "description": "Level-5 Motion Event Script (choreographed cutscenes, camera paths, audio cues)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'MEVS' (0x5346454D)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "track_count", "description": "Number of choreography tracks" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::mevbin::Mevbin",
+        "typescript": "Inagle.formats.Mevbin",
+        "csharp": "IECODE.Core.Formats.Level5.Mevbin",
+        "python": "niepy.formats.Mevbin",
+        "c": "iecode_mevs_header_t"
+      }
+    },
+    {
+      "id": 13,
+      "name": "G4CM",
+      "magicHex": "0x4D433447",
+      "magicAscii": "G4CM",
+      "rawUint32Le": 1296258119,
+      "rawUint32Be": 1195651907,
+      "extension": ".g4cm",
+      "mimeType": "application/x-level5-g4cm",
+      "category": "script",
+      "endianness": "little",
+      "encryptionSupported": false,
+      "compressionSupported": false,
+      "description": "Level-5 Camera Track & Spline Path (cinematic parameters, FOV transitions)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'G4CM' (0x4D433447)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "keyframe_count", "description": "Camera spline keyframes" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::g4cm::G4cm",
+        "typescript": "Inagle.formats.G4cm",
+        "csharp": "IECODE.Core.Formats.Level5.G4cm",
+        "python": "niepy.formats.G4cm",
+        "c": "iecode_g4cm_header_t"
+      }
+    },
+    {
+      "id": 14,
+      "name": "CPK",
+      "magicHex": "0x204B5043",
+      "magicAscii": "CPK ",
+      "rawUint32Le": 541806659,
+      "rawUint32Be": 1129073440,
+      "extension": ".cpk",
+      "mimeType": "application/x-crifs-cpk",
+      "category": "container",
+      "endianness": "big",
+      "encryptionSupported": true,
+      "compressionSupported": true,
+      "description": "CRI Middleware File Package (TOC, ITOC, ETOC, @UTF directory descriptors)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_be", "name": "magic", "description": "ASCII 'CPK ' (0x43504B20 BE)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_be", "name": "update_flag", "description": "CRI revision flags" },
+        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint64_be", "name": "utf_table_size", "description": "Length of embedded @UTF header table" },
+        { "offsetHex": "0x10", "offsetDec": 16, "type": "bytes", "name": "utf_header", "description": "Start of @UTF table descriptor" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::cpk::CpkReader",
+        "typescript": "Inagle.formats.CpkReader",
+        "csharp": "IECODE.Core.Formats.Criware.CriFs.Cpk",
+        "python": "niepy.formats.CpkReader",
+        "c": "iecode_cpk_header_t"
+      }
+    },
+    {
+      "id": 15,
+      "name": "AFS2",
+      "magicHex": "0x32534641",
+      "magicAscii": "AFS2",
+      "rawUint32Le": 844334657,
+      "rawUint32Be": 1095914290,
+      "extension": ".afs2",
+      "mimeType": "audio/x-cri-afs2",
+      "category": "audio",
+      "endianness": "little",
+      "encryptionSupported": true,
+      "compressionSupported": false,
+      "description": "Criware Audio Archive (AWB wavebank containers)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'AFS2' (0x32534641)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "version", "description": "AWB version byte array" },
+        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "wave_count", "description": "Count of contained audio streams" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::cri_audio::Awb",
+        "typescript": "Inagle.formats.Afs2",
+        "csharp": "IECODE.Core.Formats.Criware.CriAudio.Afs2",
+        "python": "niepy.formats.Afs2",
+        "c": "iecode_afs2_header_t"
+      }
+    },
+    {
+      "id": 16,
+      "name": "UTF",
+      "magicHex": "0x00465455",
+      "magicAscii": "@UTF",
+      "rawUint32Le": 4609109,
+      "rawUint32Be": 1079194694,
+      "extension": ".utf",
+      "mimeType": "application/x-cri-utf",
+      "category": "container",
+      "endianness": "big",
+      "encryptionSupported": true,
+      "compressionSupported": false,
+      "description": "CRI Universal Table Format (schema, column flags, string pools, row vectors)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_be", "name": "magic", "description": "ASCII '@UTF' (0x40555446 BE)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_be", "name": "table_size", "description": "Total table byte length" },
+        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_be", "name": "rows_offset", "description": "Offset to row array" },
+        { "offsetHex": "0x0C", "offsetDec": 12, "type": "uint32_be", "name": "strings_offset", "description": "Offset to string pool" },
+        { "offsetHex": "0x10", "offsetDec": 16, "type": "uint32_be", "name": "data_offset", "description": "Offset to binary payloads" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::cpk::UtfTable",
+        "typescript": "Inagle.formats.UtfTable",
+        "csharp": "IECODE.Core.Formats.Criware.CriFs.UtfTable",
+        "python": "niepy.formats.UtfTable",
+        "c": "iecode_utf_table_t"
+      }
+    },
+    {
+      "id": 17,
+      "name": "DDS",
+      "magicHex": "0x20534444",
+      "magicAscii": "DDS ",
+      "rawUint32Le": 542327876,
+      "rawUint32Be": 1145656352,
+      "extension": ".dds",
+      "mimeType": "image/vnd-ms.dds",
+      "category": "texture",
+      "endianness": "little",
+      "encryptionSupported": false,
+      "compressionSupported": false,
+      "description": "DirectDraw Surface (raw BC1/BC2/BC3/BC4/BC5/BC7 compressed texture payload)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'DDS ' (0x20534444)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "size", "description": "Header size (0x7C = 124 bytes)" },
+        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "flags", "description": "Surface capability flags" },
+        { "offsetHex": "0x0C", "offsetDec": 12, "type": "uint32_le", "name": "height", "description": "Texture height in pixels" },
+        { "offsetHex": "0x10", "offsetDec": 16, "type": "uint32_le", "name": "width", "description": "Texture width in pixels" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::g4tx::DdsHeader",
+        "typescript": "Inagle.formats.DdsHeader",
+        "csharp": "IECODE.Core.Formats.DirectX.Dds",
+        "python": "niepy.formats.DdsHeader",
+        "c": "iecode_dds_header_t"
+      }
+    },
+    {
+      "id": 18,
+      "name": "PNG",
+      "magicHex": "0x474E5089",
+      "magicAscii": "PNG\r",
+      "rawUint32Le": 1196314761,
+      "rawUint32Be": 2303741511,
+      "extension": ".png",
+      "mimeType": "image/png",
+      "category": "texture",
+      "endianness": "big",
+      "encryptionSupported": false,
+      "compressionSupported": true,
+      "description": "Portable Network Graphics (decoded atlas glyphs, UI elements, web exports)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "bytes", "name": "signature", "description": "Standard 8-byte PNG signature: 89 50 4E 47 0D 0A 1A 0A" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::image_out::PngImage",
+        "typescript": "Inagle.formats.PngImage",
+        "csharp": "IECODE.Core.Formats.Images.Png",
+        "python": "niepy.formats.PngImage",
+        "c": "iecode_png_header_t"
+      }
+    },
+    {
+      "id": 19,
+      "name": "RIFF",
+      "magicHex": "0x46464952",
+      "magicAscii": "RIFF",
+      "rawUint32Le": 1179011410,
+      "rawUint32Be": 1380533830,
+      "extension": ".wav",
+      "mimeType": "audio/wav",
+      "category": "audio",
+      "endianness": "little",
+      "encryptionSupported": false,
+      "compressionSupported": false,
+      "description": "Resource Interchange File Format (PCM and ADPCM audio tracks)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'RIFF' (0x46464952)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "file_size", "description": "Total length minus 8" },
+        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "format", "description": "ASCII 'WAVE'" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::cri_audio::Wav",
+        "typescript": "Inagle.formats.Wav",
+        "csharp": "IECODE.Core.Formats.Audio.Wav",
+        "python": "niepy.formats.Wav",
+        "c": "iecode_riff_header_t"
+      }
+    },
+    {
+      "id": 20,
+      "name": "XPCK",
+      "magicHex": "0x4B533447",
+      "magicAscii": "XPCK",
+      "rawUint32Le": 1263744071,
+      "rawUint32Be": 1481524043,
+      "extension": ".xpck",
+      "mimeType": "application/x-level5-xpck",
+      "category": "container",
+      "endianness": "little",
+      "encryptionSupported": false,
+      "compressionSupported": true,
+      "description": "Level-5 XPCK Package (legacy DS/3DS/Switch container format)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'XPCK' (0x4B435058)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "file_count", "description": "Contained records count" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::FileFormat::Xpck",
+        "typescript": "Inagle.formats.Xpck",
+        "csharp": "IECODE.Core.Formats.Level5.Xpck",
+        "python": "niepy.formats.Xpck",
+        "c": "iecode_xpck_header_t"
+      }
+    },
+    {
+      "id": 21,
+      "name": "XFSA",
+      "magicHex": "0x41534658",
+      "magicAscii": "XFSA",
+      "rawUint32Le": 1096042072,
+      "rawUint32Be": 1481003841,
+      "extension": ".xfsa",
+      "mimeType": "application/x-level5-xfsa",
+      "category": "container",
+      "endianness": "little",
+      "encryptionSupported": false,
+      "compressionSupported": true,
+      "description": "Level-5 XFSA Archive (file system archive with hash-addressed records)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'XFSA' (0x41534658)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "record_count", "description": "Indexed records count" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::FileFormat::Xfsa",
+        "typescript": "Inagle.formats.Xfsa",
+        "csharp": "IECODE.Core.Formats.Level5.Xfsa",
+        "python": "niepy.formats.Xfsa",
+        "c": "iecode_xfsa_header_t"
+      }
+    },
+    {
+      "id": 22,
+      "name": "CRILAYLA",
+      "magicHex": "0x4159414C",
+      "magicAscii": "LAYL",
+      "rawUint32Le": 1096376652,
+      "rawUint32Be": 1129271628,
+      "extension": ".crilayla",
+      "mimeType": "application/x-cri-layla",
+      "category": "container",
+      "endianness": "little",
+      "encryptionSupported": false,
+      "compressionSupported": true,
+      "description": "CRI Layla Reverse-Bitstream LZSS Compressed Container (16-byte header + bitstream + 0x100 raw)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "bytes", "name": "magic", "description": "ASCII 'CRILAYLA' (8 bytes)" },
+        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "uncompressed_size", "description": "Expected uncompressed byte size" },
+        { "offsetHex": "0x0C", "offsetDec": 12, "type": "uint32_le", "name": "compressed_size", "description": "Compressed payload byte length" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::crilayla::CriLayla",
+        "typescript": "Inagle.formats.CriLayla",
+        "csharp": "IECODE.Core.Formats.Criware.CriFs.Compression.CriLayla",
+        "python": "niepy.formats.CriLayla",
+        "c": "iecode_crilayla_header_t"
+      }
+    },
+    {
+      "id": 23,
+      "name": "ACB",
+      "magicHex": "0x46424341",
+      "magicAscii": "@ACB",
+      "rawUint32Le": 1178747713,
+      "rawUint32Be": 1078199106,
+      "extension": ".acb",
+      "mimeType": "audio/x-cri-acb",
+      "category": "audio",
+      "endianness": "big",
+      "encryptionSupported": true,
+      "compressionSupported": false,
+      "description": "Criware Audio Cue Sheet (cue mappings, sound triggers, DSP effects)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_be", "name": "magic", "description": "ASCII '@ACB' (0x40414342 BE)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_be", "name": "table_size", "description": "CRI cue sheet length" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::cri_audio::Acb",
+        "typescript": "Inagle.formats.Acb",
+        "csharp": "IECODE.Core.Formats.Criware.CriAudio.Acb",
+        "python": "niepy.formats.Acb",
+        "c": "iecode_acb_header_t"
+      }
+    },
+    {
+      "id": 24,
+      "name": "USM",
+      "magicHex": "0x20534D43",
+      "magicAscii": "CRID",
+      "rawUint32Le": 542330179,
+      "rawUint32Be": 1129335108,
+      "extension": ".usm",
+      "mimeType": "video/x-cri-usm",
+      "category": "video",
+      "endianness": "big",
+      "encryptionSupported": true,
+      "compressionSupported": false,
+      "description": "CRI Movie 2 Container (video stream, multi-track audio, subtitle packets)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_be", "name": "magic", "description": "ASCII 'CRID' (0x43524944 BE)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_be", "name": "header_size", "description": "Sofdec2 container header length" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::usm::UsmReader",
+        "typescript": "Inagle.formats.UsmReader",
+        "csharp": "IECODE.Core.Formats.Criware.CriMovie.Usm",
+        "python": "niepy.formats.UsmReader",
+        "c": "iecode_usm_header_t"
+      }
+    },
+    {
+      "id": 25,
+      "name": "NAVM",
+      "magicHex": "0x4D56414E",
+      "magicAscii": "NAVM",
+      "rawUint32Le": 1297498446,
+      "rawUint32Be": 1312904782,
+      "extension": ".g4nv",
+      "mimeType": "application/x-level5-g4nv",
+      "category": "system",
+      "endianness": "little",
+      "encryptionSupported": false,
+      "compressionSupported": false,
+      "description": "Level-5 Navigation Mesh (stadium and field locomotion polygons, magic NAVM)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'NAVM' (0x4D56414E)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "polygon_count", "description": "Navmesh polygon nodes" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::navm::Navm",
+        "typescript": "Inagle.formats.Navm",
+        "csharp": "IECODE.Core.Formats.Level5.Navm",
+        "python": "niepy.formats.Navm",
+        "c": "iecode_navm_header_t"
+      }
+    },
+    {
+      "id": 26,
+      "name": "COL",
+      "magicHex": "0x004C4F43",
+      "magicAscii": "COL\0",
+      "rawUint32Le": 4997443,
+      "rawUint32Be": 1129335808,
+      "extension": ".col",
+      "mimeType": "application/x-level5-col",
+      "category": "collision",
+      "endianness": "little",
+      "encryptionSupported": false,
+      "compressionSupported": false,
+      "description": "Level-5 Collision mesh data",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'COL\0' (0x004C4F43)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "vertex_count", "description": "Collision vertices count" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::col::Col",
+        "typescript": "Inagle.formats.Col",
+        "csharp": "IECODE.Core.Formats.Level5.Col",
+        "python": "niepy.formats.Col",
+        "c": "iecode_col_header_t"
+      }
+    },
+    {
+      "id": 27,
+      "name": "COLS",
+      "magicHex": "0x534C4F43",
+      "magicAscii": "COLS",
+      "rawUint32Le": 1397509955,
+      "rawUint32Be": 1129335891,
+      "extension": ".cols",
+      "mimeType": "application/x-level5-cols",
+      "category": "collision",
+      "endianness": "little",
+      "encryptionSupported": false,
+      "compressionSupported": false,
+      "description": "Level-5 Collision Set (stadium boundaries, goal posts, ball bouncing volumes)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'COLS' (0x534C4F43)" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "volume_count", "description": "Bounding box volumes count" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_formats::col::Cols",
+        "typescript": "Inagle.formats.Cols",
+        "csharp": "IECODE.Core.Formats.Level5.Cols",
+        "python": "niepy.formats.Cols",
+        "c": "iecode_cols_header_t"
+      }
+    },
+    {
+      "id": 28,
+      "name": "LIVE",
+      "magicHex": "0x9DCE66C3",
+      "magicAscii": "LIVE",
+      "rawUint32Le": 2647549635,
+      "rawUint32Be": 3285098179,
+      "extension": ".live",
+      "mimeType": "application/x-level5-live",
+      "category": "system",
+      "endianness": "little",
+      "encryptionSupported": true,
+      "compressionSupported": false,
+      "description": "Level-5 Lives Save Container (002AB8F4-* CRC32-keyed XOR stream cipher, 0xEEFF blobs)",
+      "headerLayout": [
+        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "Magic sentinel 0x9DCE66C3" },
+        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "save_version", "description": "Save format version" },
+        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "const2", "description": "Sentinel 0x2EC3031F (1F 03 C3 2E)" },
+        { "offsetHex": "0x0C", "offsetDec": 12, "type": "uint32_le", "name": "blob_count", "description": "Number of concatenated 0xEEFF blobs" }
+      ],
+      "crossLanguageTypes": {
+        "rust": "aphrody_nie_save::LivesContainer",
+        "typescript": "Inagle.formats.LiveSave",
+        "csharp": "IECODE.Core.Formats.Level5.LiveSave",
+        "python": "niepy.formats.LiveSave",
+        "c": "iecode_live_header_t"
+      }
+    }
+  ]
+}

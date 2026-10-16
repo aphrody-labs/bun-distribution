@@ -1,0 +1,48 @@
+{
+  "schema": "iecode.cloudflare-product/1",
+  "owner": "aphrody-infra",
+  "zone": "aphrody.com",
+  "runtimeHost": "dbfr",
+  "runtime": "bun@1.4.3-aphrody.4",
+  "buckets": [
+    { "name": "iecode-vfs", "binding": "VFS", "jurisdiction": "eu", "public": false },
+    { "name": "rg-assets", "binding": "RG", "jurisdiction": "eu", "public": false }
+  ],
+  "surfaces": [
+    {
+      "domain": "nie.aphrody.com",
+      "product": "nie",
+      "content": ["rust-docs", "crate-artifacts", "wasm"],
+      "bucket": "iecode-vfs",
+      "prefix": "nie/releases/"
+    },
+    {
+      "domain": "iecode.aphrody.com",
+      "product": "iecode",
+      "content": ["emulators", "m3-downloads", "native-libraries", "wasm"],
+      "bucket": "iecode-vfs",
+      "prefix": "iecode/releases/"
+    },
+    {
+      "domain": "rg.aphrody.com",
+      "product": "rg",
+      "content": ["next-standalone", "bun-executables", "packages", "assets"],
+      "bucket": "rg-assets",
+      "prefix": "releases/"
+    }
+  ],
+  "database": {
+    "projectName": "rg",
+    "region": "aws-eu-central-1",
+    "auth": "existing-self-managed-better-auth",
+    "sources": ["rg-postgres-dump", "inagle-sqlite-mirror"],
+    "migrationBranchRequired": true
+  },
+  "publication": {
+    "immutablePrefixes": true,
+    "checksumReadbackRequired": true,
+    "publicObjectsRequireExplicitManifest": true,
+    "protectedData": "private-storage-only",
+    "dnsRequiresQualifiedOrigins": true
+  }
+}

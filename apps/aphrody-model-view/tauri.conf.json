@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/tauri-v3.0.0-alpha.3/crates/tauri-schema-generator/schemas/config.schema.json",
+  "productName": "aphrody-model-view",
+  "identifier": "dev.aphrody.modelview",
+  "build": { "frontendDist": "ui" },
+  "app": {
+    "macOSPrivateApi": true,
+    "withGlobalTauri": true,
+    "windows": [],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": { "active": false, "icon": ["icons/32x32.png", "icons/128x128.png", "icons/icon.ico"] }
+}
