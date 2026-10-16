@@ -24,7 +24,7 @@ const usage = `Bun OS factory
   wasm --out DIR [--config FILE]
   image --out DIR --profile full|perf --target linux-x64|linux-arm64 --tag TAG
 
-Config: { "checkouts": { "material": "../material", "cosmic-epoch": "../cosmic" } }
+Config: { "checkouts": { "material": "libraries/material", "bun": "toolchains/bun", "cosmic-epoch": "../cosmic" } }
 Checkout paths resolve relative to the config file. Bun resolves from explicit configuration or the installed executable.
 Sources contain committed, pinned files and every locked submodule; protected stores are never copied.
 WASM builds libm3's portable API. Native Bun/JSC and the Linux compositor require their native targets.`;

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "workspaces": {
     "os": "..",
-    "material": "../../material"
+    "material": "../libraries/material"
   },
   "storage": {
     "assets": {

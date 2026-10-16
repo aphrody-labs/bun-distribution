@@ -10,7 +10,7 @@ import { sourceWorkspaceLocations } from "./source-workspace.ts";
 
 export const packageRoot = resolve(import.meta.dir, "..");
 export function materialCheckout(config: Config = {}): string {
-  const checkout = resolve(config.checkouts?.material ?? join(packageRoot, "../material"));
+  const checkout = resolve(config.checkouts?.material ?? join(packageRoot, "libraries/material"));
   if (
     !existsSync(join(checkout, "crates/libm3/Cargo.toml")) ||
     !existsSync(join(checkout, "crates/m3-tokens/Cargo.toml"))
@@ -21,7 +21,7 @@ export function materialCheckout(config: Config = {}): string {
 export function runtimeCheckout(config: Config = {}): string {
   const explicitCheckout = config.checkouts?.bun;
   const configured = explicitCheckout ?? Bun.env.APHRODY_BUN_CHECKOUT;
-  const workspaceCheckout = resolve(packageRoot, "../bun");
+  const workspaceCheckout = resolve(packageRoot, "toolchains/bun");
   if (configured) {
     const root = resolve(configured);
     if (!existsSync(join(root, "scripts/build.ts")))
