@@ -10,15 +10,7 @@
  */
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import {
-  Document,
-  FlecheDroite,
-  Historique,
-  IllustrationAbsente,
-  Oeil,
-  Plus,
-  Presse,
-} from "@/components/icones";
+import { Document, FlecheDroite, Historique, IllustrationAbsente, Oeil, Plus, Presse } from "@shenron/ui/icones";
 import { TABLE_LABELS } from "@/lib/db-labels";
 import { isStudioTable } from "@/lib/wiki-fields";
 
@@ -109,10 +101,7 @@ function relTime(iso: string): string {
 function richness(s: CmsEntityStat): number {
   const publicRows = s.total - (s.hasVisibility ? s.hidden : 0);
   if (publicRows <= 0) return 0;
-  const missing =
-    (s.imageCol ? s.missingImage : 0) +
-    (s.descCol ? s.missingDesc : 0) +
-    (s.jaCol ? s.missingJa : 0);
+  const missing = (s.imageCol ? s.missingImage : 0) + (s.descCol ? s.missingDesc : 0) + (s.jaCol ? s.missingJa : 0);
   const slots = (s.imageCol ? 1 : 0) + (s.descCol ? 1 : 0) + (s.jaCol ? 1 : 0);
   if (!slots) return 100;
   return Math.max(0, Math.round(100 * (1 - missing / (slots * publicRows))));
@@ -123,8 +112,7 @@ function EntityCard({ s }: { s: CmsEntityStat }) {
   const kanji = ENTITY_KANJI[s.table] ?? "";
   const studio = isStudioTable(s.table);
   const pct = richness(s);
-  const barColor =
-    pct >= 80 ? "bg-green-400" : pct >= 50 ? "bg-dbz-yellow" : "bg-dbz-red";
+  const barColor = pct >= 80 ? "bg-green-400" : pct >= 50 ? "bg-dbz-yellow" : "bg-dbz-red";
   return (
     <div className="dbz-panel group relative overflow-hidden p-4">
       <span
@@ -135,12 +123,8 @@ function EntityCard({ s }: { s: CmsEntityStat }) {
       </span>
       <div className="relative z-10">
         <div className="flex items-baseline justify-between gap-2">
-          <h3 className="font-saiyan text-lg uppercase tracking-wider text-white">
-            {label}
-          </h3>
-          <span className="tabular-nums font-scouter text-2xl text-dbz-orange">
-            {s.total}
-          </span>
+          <h3 className="font-saiyan text-lg uppercase tracking-wider text-white">{label}</h3>
+          <span className="tabular-nums font-scouter text-2xl text-dbz-orange">{s.total}</span>
         </div>
 
         {/* Barre de richesse du contenu */}
@@ -150,10 +134,7 @@ function EntityCard({ s }: { s: CmsEntityStat }) {
             <span className="tabular-nums">{pct}%</span>
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded bg-dbz-bg">
-            <div
-              className={`h-full ${barColor} transition-all`}
-              style={{ width: `${pct}%` }}
-            />
+            <div className={`h-full ${barColor} transition-all`} style={{ width: `${pct}%` }} />
           </div>
         </div>
 
@@ -199,9 +180,7 @@ function EntityCard({ s }: { s: CmsEntityStat }) {
             (!s.descCol || s.missingDesc === 0) &&
             (!s.jaCol || s.missingJa === 0) &&
             (!s.hasVisibility || s.hidden === 0) && (
-              <span className="rounded border border-green-500/30 px-1.5 py-0.5 text-green-300/80">
-                Complet
-              </span>
+              <span className="rounded border border-green-500/30 px-1.5 py-0.5 text-green-300/80">Complet</span>
             )}
         </div>
 
@@ -215,11 +194,7 @@ function EntityCard({ s }: { s: CmsEntityStat }) {
             <FlecheDroite className="h-3 w-3" />
           </Link>
           <Link
-            href={
-              studio
-                ? `/admin/wiki/studio/${s.table}/new`
-                : `/admin/database/${s.table}`
-            }
+            href={studio ? `/admin/wiki/studio/${s.table}/new` : `/admin/database/${s.table}`}
             className="inline-flex items-center justify-center gap-1 rounded border border-dbz-orange/40 bg-dbz-orange/10 px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-dbz-orange transition-colors hover:bg-dbz-orange/20"
             title="Créer une entrée"
           >
@@ -261,19 +236,17 @@ export function WikiManager({
   const filtered = useMemo(() => {
     if (!needle) return categories;
     return categories
-      .map((c) => {
-        const pages = c.pages.filter((p) => match(p.title) || match(p.slug));
+      .map(c => {
+        const pages = c.pages.filter(p => match(p.title) || match(p.slug));
         const children = c.children
-          .map((sub) => ({
+          .map(sub => ({
             ...sub,
-            pages: sub.pages.filter((p) => match(p.title) || match(p.slug)),
+            pages: sub.pages.filter(p => match(p.title) || match(p.slug)),
           }))
-          .filter((sub) => match(sub.name) || sub.pages.length > 0);
+          .filter(sub => match(sub.name) || sub.pages.length > 0);
         return { ...c, pages, children };
       })
-      .filter(
-        (c) => match(c.name) || c.pages.length > 0 || c.children.length > 0,
-      );
+      .filter(c => match(c.name) || c.pages.length > 0 || c.children.length > 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categories, needle]);
 
@@ -281,28 +254,19 @@ export function WikiManager({
     <div className="mx-auto w-full max-w-6xl">
       <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="font-saiyan text-4xl text-dbz-orange">
-            GESTION DU WIKI
-          </h1>
+          <h1 className="font-saiyan text-4xl text-dbz-orange">GESTION DU WIKI</h1>
           <p className="mt-1 font-mono text-xs text-dbz-blue-light">
-            {totals.entities.toLocaleString("fr-FR")} fiches · {totals.cats}{" "}
-            catégorie
+            {totals.entities.toLocaleString("fr-FR")} fiches · {totals.cats} catégorie
             {totals.cats > 1 ? "s" : ""} · {totals.pages} page
             {totals.pages > 1 ? "s" : ""} libre
             {totals.pages > 1 ? "s" : ""}
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Link
-            href="/admin/wiki/todo"
-            className="dbz-button-ghost inline-flex items-center gap-2"
-          >
+          <Link href="/admin/wiki/todo" className="dbz-button-ghost inline-flex items-center gap-2">
             <Presse className="h-4 w-4" />À COMPLÉTER
           </Link>
-          <Link
-            href="/admin/wiki/history"
-            className="dbz-button-ghost inline-flex items-center gap-2"
-          >
+          <Link href="/admin/wiki/history" className="dbz-button-ghost inline-flex items-center gap-2">
             <Historique className="h-4 w-4" />
             HISTORIQUE
           </Link>
@@ -317,15 +281,13 @@ export function WikiManager({
 
       {/* Cartes de complétude par entité */}
       <section className="mb-10">
-        <h2 className="mb-1 font-saiyan text-2xl uppercase tracking-widest text-dbz-yellow">
-          Encyclopédie
-        </h2>
+        <h2 className="mb-1 font-saiyan text-2xl uppercase tracking-widest text-dbz-yellow">Encyclopédie</h2>
         <p className="mb-4 text-sm text-gray-400">
-          Complétude du contenu par type de fiche. Repère d'un coup d'œil ce
-          qu'il reste à illustrer, rédiger ou publier.
+          Complétude du contenu par type de fiche. Repère d'un coup d'œil ce qu'il reste à illustrer, rédiger ou
+          publier.
         </p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {stats.map((s) => (
+          {stats.map(s => (
             <EntityCard key={s.table} s={s} />
           ))}
         </div>
@@ -335,9 +297,7 @@ export function WikiManager({
       {recent.length > 0 && (
         <section className="mb-10">
           <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="font-saiyan text-2xl uppercase tracking-widest text-dbz-yellow">
-              Dernières modifications
-            </h2>
+            <h2 className="font-saiyan text-2xl uppercase tracking-widest text-dbz-yellow">Dernières modifications</h2>
             <Link
               href="/admin/wiki/history"
               className="text-xs font-bold uppercase tracking-wider text-dbz-orange/80 hover:text-dbz-orange"
@@ -346,24 +306,16 @@ export function WikiManager({
             </Link>
           </div>
           <ul className="dbz-panel divide-y divide-dbz-border/40">
-            {recent.map((r) => {
+            {recent.map(r => {
               const meta = ACTION_LABEL[r.action] ?? {
                 label: r.action,
                 cls: "text-white/60",
               };
               const label = TABLE_LABELS[r.tableName] ?? r.tableName;
-              const canStudio =
-                isStudioTable(r.tableName) && !r.rowId.includes(":");
+              const canStudio = isStudioTable(r.tableName) && !r.rowId.includes(":");
               return (
-                <li
-                  key={r.id}
-                  className="flex flex-wrap items-center gap-x-2 gap-y-1 px-4 py-2.5 text-sm"
-                >
-                  <span
-                    className={`text-[11px] font-bold uppercase tracking-wider ${meta.cls}`}
-                  >
-                    {meta.label}
-                  </span>
+                <li key={r.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 px-4 py-2.5 text-sm">
+                  <span className={`text-[11px] font-bold uppercase tracking-wider ${meta.cls}`}>{meta.label}</span>
                   {canStudio ? (
                     <Link
                       href={`/admin/wiki/studio/${r.tableName}/${encodeURIComponent(r.rowId)}`}
@@ -372,18 +324,12 @@ export function WikiManager({
                       {r.label || `#${r.rowId}`}
                     </Link>
                   ) : (
-                    <span className="font-semibold text-white">
-                      {r.label || `#${r.rowId}`}
-                    </span>
+                    <span className="font-semibold text-white">{r.label || `#${r.rowId}`}</span>
                   )}
                   <span className="text-[11px] text-white/50">{label}</span>
                   <span className="ml-auto text-[11px] text-white/50">
-                    {r.editorName ? (
-                      <span className="text-white/60">{r.editorName}</span>
-                    ) : (
-                      "système"
-                    )}{" "}
-                    · {relTime(r.createdAt)}
+                    {r.editorName ? <span className="text-white/60">{r.editorName}</span> : "système"} ·{" "}
+                    {relTime(r.createdAt)}
                   </span>
                 </li>
               );
@@ -394,11 +340,9 @@ export function WikiManager({
 
       {/* Outils & tables utilitaires */}
       <section className="mb-10">
-        <h2 className="mb-3 font-saiyan text-2xl uppercase tracking-widest text-dbz-yellow">
-          Outils
-        </h2>
+        <h2 className="mb-3 font-saiyan text-2xl uppercase tracking-widest text-dbz-yellow">Outils</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {TOOLS.map((e) => (
+          {TOOLS.map(e => (
             <Link
               key={e.href}
               href={e.href}
@@ -417,17 +361,13 @@ export function WikiManager({
 
       {/* Pages libres — table WikiPage (markdown + HTML + images custom). */}
       <div className="mb-4 flex items-baseline justify-between border-t border-dbz-border pt-8">
-        <h2 className="font-saiyan text-2xl uppercase tracking-widest text-dbz-yellow">
-          Pages libres
-        </h2>
-        <p className="text-xs text-gray-500">
-          Articles 100% custom (markdown, mise en page, images)
-        </p>
+        <h2 className="font-saiyan text-2xl uppercase tracking-widest text-dbz-yellow">Pages libres</h2>
+        <p className="text-xs text-gray-500">Articles 100% custom (markdown, mise en page, images)</p>
       </div>
 
       <input
         value={q}
-        onChange={(e) => setQ(e.target.value)}
+        onChange={e => setQ(e.target.value)}
         placeholder="Rechercher une page ou une catégorie…"
         className="mb-6 w-full border-2 border-dbz-border bg-dbz-bg p-3 text-white outline-none focus:border-dbz-orange"
       />
@@ -436,21 +376,17 @@ export function WikiManager({
         {filtered.length === 0 ? (
           <div className="dbz-panel p-8 text-center">
             <p className="font-saiyan text-2xl uppercase text-dbz-blue-light">
-              {needle
-                ? "Aucun résultat"
-                : "Aucune catégorie. Créez la première."}
+              {needle ? "Aucun résultat" : "Aucune catégorie. Créez la première."}
             </p>
           </div>
         ) : (
-          filtered.map((cat) => (
+          filtered.map(cat => (
             <div key={cat.id} className="dbz-panel space-y-4 p-6">
               <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
                 <div>
                   <h2 className="font-saiyan text-2xl text-dbz-yellow">
                     {cat.name}
-                    <span className="ml-2 font-mono text-sm text-gray-500">
-                      ({cat.pages.length})
-                    </span>
+                    <span className="ml-2 font-mono text-sm text-gray-500">({cat.pages.length})</span>
                   </h2>
                   <p className="mt-1 font-mono text-xs text-dbz-blue-light">
                     /{cat.slug} · order: {cat.order}
@@ -474,11 +410,8 @@ export function WikiManager({
 
               {cat.pages.length > 0 && (
                 <ul className="ml-4 space-y-1 border-l-2 border-dbz-border pl-4">
-                  {cat.pages.map((p) => (
-                    <li
-                      key={p.id}
-                      className="group flex items-center justify-between gap-3"
-                    >
+                  {cat.pages.map(p => (
+                    <li key={p.id} className="group flex items-center justify-between gap-3">
                       <Link
                         href={`/wiki/${cat.slug}/${p.slug}`}
                         className="truncate text-sm text-gray-300 transition-colors hover:text-dbz-orange"
@@ -506,17 +439,12 @@ export function WikiManager({
 
               {cat.children.length > 0 && (
                 <div className="ml-4 space-y-3">
-                  {cat.children.map((sub) => (
-                    <div
-                      key={sub.id}
-                      className="border-l-2 border-dbz-blue/50 pl-4"
-                    >
+                  {cat.children.map(sub => (
+                    <div key={sub.id} className="border-l-2 border-dbz-blue/50 pl-4">
                       <div className="mb-2 flex items-center justify-between">
                         <h3 className="font-saiyan text-lg text-dbz-blue-light">
                           {sub.name}
-                          <span className="ml-2 font-mono text-xs text-gray-500">
-                            ({sub.pages.length})
-                          </span>
+                          <span className="ml-2 font-mono text-xs text-gray-500">({sub.pages.length})</span>
                         </h3>
                         <Link
                           href={`/admin/wiki/category/${sub.id}`}
@@ -526,11 +454,8 @@ export function WikiManager({
                         </Link>
                       </div>
                       <ul className="space-y-1 text-sm">
-                        {sub.pages.map((p) => (
-                          <li
-                            key={p.id}
-                            className="group flex justify-between gap-3"
-                          >
+                        {sub.pages.map(p => (
+                          <li key={p.id} className="group flex justify-between gap-3">
                             <Link
                               href={`/wiki/${cat.slug}/${sub.slug}/${p.slug}`}
                               className="truncate text-gray-400 transition-colors hover:text-dbz-orange"

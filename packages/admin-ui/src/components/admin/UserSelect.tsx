@@ -12,7 +12,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Croix, Recherche } from "@/components/icones";
+import { Croix, Recherche } from "@shenron/ui/icones";
 import { api } from "@aphrody/admin-ui/client";
 
 interface Member {
@@ -57,31 +57,23 @@ export function UserSelect({
   // Résout le membre sélectionné (id → libellé) pour l'affichage compact.
   const selectedQuery = useQuery({
     queryKey: ["discord", "member", value],
-    queryFn: () =>
-      api.get<{ members: Member[] }>(
-        `/discord/members?search=${encodeURIComponent(value)}&limit=5`,
-      ),
+    queryFn: () => api.get<{ members: Member[] }>(`/discord/members?search=${encodeURIComponent(value)}&limit=5`),
     staleTime: 60_000,
     enabled: !!value,
   });
-  const selected =
-    selectedQuery.data?.members.find((m) => m.id === value) ?? null;
+  const selected = selectedQuery.data?.members.find(m => m.id === value) ?? null;
 
   // Recherche live (dropdown).
   const search = useQuery({
     queryKey: ["discord", "members", "search", debounced],
-    queryFn: () =>
-      api.get<{ members: Member[] }>(
-        `/discord/members?search=${encodeURIComponent(debounced)}&limit=25`,
-      ),
+    queryFn: () => api.get<{ members: Member[] }>(`/discord/members?search=${encodeURIComponent(debounced)}&limit=25`),
     staleTime: 30_000,
     enabled: open && debounced.trim().length >= 1,
   });
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
-      if (boxRef.current && !boxRef.current.contains(e.target as Node))
-        setOpen(false);
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
@@ -93,19 +85,11 @@ export function UserSelect({
     <div ref={boxRef} className={`relative ${className ?? ""}`}>
       {value && !open ? (
         <div className="flex items-center gap-2 rounded-lg border border-dbz-border bg-dbz-bg/60 px-2 py-1.5">
-          {selected?.avatar && (
-            <img
-              src={selected.avatar}
-              alt=""
-              className="h-6 w-6 rounded-full"
-            />
-          )}
+          {selected?.avatar && <img src={selected.avatar} alt="" className="h-6 w-6 rounded-full" />}
           <span className="min-w-0 flex-1 truncate text-sm">
             {selected ? (
               <>
-                <span className="font-semibold text-white">
-                  {selected.displayName}
-                </span>{" "}
+                <span className="font-semibold text-white">{selected.displayName}</span>{" "}
                 <span className="text-white/50">@{selected.username}</span>
               </>
             ) : (
@@ -141,7 +125,7 @@ export function UserSelect({
           <input
             className="w-full bg-transparent py-1.5 text-sm outline-none placeholder:text-white/50"
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={e => setQ(e.target.value)}
             onFocus={() => setOpen(true)}
             placeholder={placeholder}
             disabled={disabled}
@@ -151,20 +135,14 @@ export function UserSelect({
       )}
       {open && (
         <div className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-dbz-border bg-dbz-card shadow-xl">
-          {search.isLoading && (
-            <p className="p-2 text-xs text-zinc-500">Recherche…</p>
-          )}
+          {search.isLoading && <p className="p-2 text-xs text-zinc-500">Recherche…</p>}
           {!search.isLoading && debounced.trim().length < 1 && (
-            <p className="p-2 text-xs text-zinc-500">
-              Tape un pseudo, un nom d'affichage ou un ID.
-            </p>
+            <p className="p-2 text-xs text-zinc-500">Tape un pseudo, un nom d'affichage ou un ID.</p>
           )}
-          {!search.isLoading &&
-            debounced.trim().length >= 1 &&
-            results.length === 0 && (
-              <p className="p-2 text-xs text-zinc-500">Aucun membre trouvé.</p>
-            )}
-          {results.map((m) => (
+          {!search.isLoading && debounced.trim().length >= 1 && results.length === 0 && (
+            <p className="p-2 text-xs text-zinc-500">Aucun membre trouvé.</p>
+          )}
+          {results.map(m => (
             <button
               key={m.id}
               type="button"
@@ -175,17 +153,11 @@ export function UserSelect({
               }}
               className="flex w-full items-center gap-2 px-2 py-1.5 text-left hover:bg-dbz-orange/10"
             >
-              {m.avatar && (
-                <img src={m.avatar} alt="" className="h-7 w-7 rounded-full" />
-              )}
+              {m.avatar && <img src={m.avatar} alt="" className="h-7 w-7 rounded-full" />}
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold text-white">
                   {m.displayName}
-                  {m.bot && (
-                    <span className="ml-1 rounded bg-dbz-blue/50 px-1 text-[9px] uppercase">
-                      bot
-                    </span>
-                  )}
+                  {m.bot && <span className="ml-1 rounded bg-dbz-blue/50 px-1 text-[9px] uppercase">bot</span>}
                 </span>
                 <span className="block truncate text-[11px] text-white/50">
                   @{m.username} · {m.id}

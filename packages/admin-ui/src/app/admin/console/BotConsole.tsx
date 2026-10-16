@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Diese, Envoyer, Rafraichir } from "@/components/icones";
+import { Diese, Envoyer, Rafraichir } from "@shenron/ui/icones";
 import { api, ApiError } from "@aphrody/admin-ui/client";
 import { PlainField } from "@/components/editor/PlainField";
 
@@ -68,7 +68,7 @@ export function BotConsole() {
   const sendable = useMemo(
     () =>
       (channelsQ.data?.channels ?? [])
-        .filter((c) => SENDABLE_TYPES.has(c.type))
+        .filter(c => SENDABLE_TYPES.has(c.type))
         .toSorted((a, b) => (a.position ?? 0) - (b.position ?? 0)),
     [channelsQ.data],
   );
@@ -76,26 +76,21 @@ export function BotConsole() {
   const messagesQ = useQuery({
     queryKey: ["console-messages", channelId],
     queryFn: () =>
-      api.get<{ channelName: string | null; messages: Message[] }>(
-        `/discord/messages?channelId=${channelId}&limit=50`,
-      ),
+      api.get<{ channelName: string | null; messages: Message[] }>(`/discord/messages?channelId=${channelId}&limit=50`),
     enabled: !!channelId,
     refetchInterval: channelId ? 5_000 : false,
   });
 
   const sendM = useMutation({
-    mutationFn: (vars: {
-      channelId: string;
-      content: string;
-      persona: string;
-    }) => api.post<{ ok: boolean; url?: string }>("/discord/send", vars),
-    onSuccess: (res) => {
+    mutationFn: (vars: { channelId: string; content: string; persona: string }) =>
+      api.post<{ ok: boolean; url?: string }>("/discord/send", vars),
+    onSuccess: res => {
       setContent("");
       setSendError(null);
       setSentUrl(res?.url ?? null);
       void qc.invalidateQueries({ queryKey: ["console-messages", channelId] });
     },
-    onError: (e) => {
+    onError: e => {
       setSentUrl(null);
       setSendError(e instanceof ApiError ? e.message : "Échec de l'envoi.");
     },
@@ -118,14 +113,10 @@ export function BotConsole() {
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6">
       <header>
-        <h1 className="text-4xl font-saiyan text-dbz-orange mb-2">
-          CONSOLE BOTS
-        </h1>
+        <h1 className="text-4xl font-saiyan text-dbz-orange mb-2">CONSOLE BOTS</h1>
         <p className="text-sm text-dbz-blue-light">
-          Lis les messages d'un salon et publie un message. Le bot n'a qu'un
-          seul client Gateway : quel que soit l'alias choisi, le message est
-          publié par le compte Shenron. Les messages se rafraîchissent toutes
-          les 5&nbsp;s.
+          Lis les messages d'un salon et publie un message. Le bot n'a qu'un seul client Gateway : quel que soit l'alias
+          choisi, le message est publié par le compte Shenron. Les messages se rafraîchissent toutes les 5&nbsp;s.
         </p>
       </header>
 
@@ -135,7 +126,7 @@ export function BotConsole() {
           Salon
           <select
             value={channelId}
-            onChange={(e) => {
+            onChange={e => {
               setChannelId(e.target.value);
               setSentUrl(null);
               setSendError(null);
@@ -143,7 +134,7 @@ export function BotConsole() {
             className="rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm text-white outline-none focus:border-dbz-orange"
           >
             <option value="">— Choisir un salon —</option>
-            {sendable.map((c) => (
+            {sendable.map(c => (
               <option key={c.id} value={c.id}>
                 #{c.name}
                 {c.type === 5 ? " (annonces)" : ""}
@@ -155,10 +146,10 @@ export function BotConsole() {
           Alias d'expéditeur (sans effet sur l'identité affichée)
           <select
             value={persona}
-            onChange={(e) => setPersona(e.target.value)}
+            onChange={e => setPersona(e.target.value)}
             className="rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm text-white outline-none focus:border-dbz-orange"
           >
-            {PERSONAS.map((p) => (
+            {PERSONAS.map(p => (
               <option key={p.id} value={p.id}>
                 {p.name}
               </option>
@@ -167,19 +158,14 @@ export function BotConsole() {
         </label>
       </div>
 
-      {channelsQ.isError && (
-        <p className="text-sm text-rose-400">
-          Impossible de charger les salons.
-        </p>
-      )}
+      {channelsQ.isError && <p className="text-sm text-rose-400">Impossible de charger les salons.</p>}
 
       {/* Fil de messages */}
       <div className="rounded-xl border border-white/10 bg-black/40">
         <div className="flex items-center justify-between border-b border-white/10 px-4 py-2">
           <span className="flex items-center gap-2 text-sm font-bold text-white/80">
             <Diese className="h-4 w-4 text-white/50" />
-            {messagesQ.data?.channelName ??
-              (channelId ? "Salon" : "Aucun salon sélectionné")}
+            {messagesQ.data?.channelName ?? (channelId ? "Salon" : "Aucun salon sélectionné")}
           </span>
           <button
             type="button"
@@ -187,43 +173,26 @@ export function BotConsole() {
             disabled={!channelId}
             className="flex items-center gap-1 rounded-md border border-white/15 px-2 py-1 text-[12px] text-white/60 hover:border-white/40 disabled:opacity-40"
           >
-            <Rafraichir
-              className={`h-3.5 w-3.5 ${messagesQ.isFetching ? "animate-spin" : ""}`}
-            />
+            <Rafraichir className={`h-3.5 w-3.5 ${messagesQ.isFetching ? "animate-spin" : ""}`} />
             Rafraîchir
           </button>
         </div>
         <div className="flex max-h-[50vh] flex-col gap-3 overflow-y-auto p-4">
-          {!channelId && (
-            <p className="text-sm italic text-white/50">
-              Sélectionne un salon pour voir les messages.
-            </p>
-          )}
-          {channelId && messagesQ.isLoading && (
-            <p className="text-sm italic text-white/50">Chargement…</p>
-          )}
+          {!channelId && <p className="text-sm italic text-white/50">Sélectionne un salon pour voir les messages.</p>}
+          {channelId && messagesQ.isLoading && <p className="text-sm italic text-white/50">Chargement…</p>}
           {channelId && messagesQ.data?.messages.length === 0 && (
-            <p className="text-sm italic text-white/50">
-              Aucun message récent.
-            </p>
+            <p className="text-sm italic text-white/50">Aucun message récent.</p>
           )}
-          {messagesQ.data?.messages.map((m) => (
+          {messagesQ.data?.messages.map(m => (
             <div key={m.id} className="flex gap-2.5">
               {m.authorAvatar ? (
-                <img
-                  src={m.authorAvatar}
-                  alt=""
-                  className="h-8 w-8 shrink-0 rounded-full"
-                  loading="lazy"
-                />
+                <img src={m.authorAvatar} alt="" className="h-8 w-8 shrink-0 rounded-full" loading="lazy" />
               ) : (
                 <div className="h-8 w-8 shrink-0 rounded-full bg-white/10" />
               )}
               <div className="min-w-0">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-semibold text-white/90">
-                    {m.authorName}
-                  </span>
+                  <span className="text-sm font-semibold text-white/90">{m.authorName}</span>
                   {m.authorBot && (
                     <span className="rounded bg-dbz-blue/30 px-1 text-[10px] font-bold uppercase text-dbz-blue-light">
                       bot
@@ -239,15 +208,13 @@ export function BotConsole() {
                 <p className="whitespace-pre-wrap break-words text-sm text-white/75">
                   {m.content || (
                     <span className="italic text-white/50">
-                      {m.embedCount > 0 || m.attachments.length > 0
-                        ? "[pièce jointe / embed]"
-                        : "[message vide]"}
+                      {m.embedCount > 0 || m.attachments.length > 0 ? "[pièce jointe / embed]" : "[message vide]"}
                     </span>
                   )}
                 </p>
                 {m.attachments.length > 0 && (
                   <div className="mt-1 flex flex-wrap gap-1">
-                    {m.attachments.map((a) => (
+                    {m.attachments.map(a => (
                       <a
                         key={a.url}
                         href={a.url}
@@ -285,14 +252,8 @@ export function BotConsole() {
             <Envoyer className="h-4 w-4" />
             {sendM.isPending ? "Envoi…" : "Envoyer"}
           </button>
-          <span className="text-[12px] text-white/50">
-            {content.length}/2000
-          </span>
-          {sendError && (
-            <span className="text-[13px] font-semibold text-rose-400">
-              {sendError}
-            </span>
-          )}
+          <span className="text-[12px] text-white/50">{content.length}/2000</span>
+          {sendError && <span className="text-[13px] font-semibold text-rose-400">{sendError}</span>}
           {sentUrl && (
             <a
               href={sentUrl}

@@ -7,15 +7,10 @@
  * suppression. Lecture/écriture via /api/admin/reports (Postgres site).
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bulle, Chargement, Corbeille, Drapeau } from "@/components/icones";
+import { Bulle, Chargement, Corbeille, Drapeau } from "@shenron/ui/icones";
 import Link from "next/link";
 import { useState } from "react";
-import {
-  reportCategoryLabel,
-  REPORT_STATUSES,
-  reportStatusLabel,
-  type ReportRow,
-} from "@/lib/report-types";
+import { reportCategoryLabel, REPORT_STATUSES, reportStatusLabel, type ReportRow } from "@/lib/report-types";
 import { PlainField } from "@/components/editor/PlainField";
 
 type ReportsResponse = {
@@ -32,7 +27,7 @@ async function fetchReports(status: string): Promise<ReportsResponse> {
   return res.json() as Promise<ReportsResponse>;
 }
 
-const STATUS_TONE: Record<string, string> = {
+const STATUS_TONE = {
   orange: "border-dbz-orange/50 bg-dbz-orange/10 text-dbz-orange",
   blue: "border-dbz-blue-light/50 bg-dbz-blue-light/10 text-dbz-blue-light",
   green: "border-green-500/50 bg-green-500/10 text-green-400",
@@ -40,8 +35,18 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 function toneFor(status: string): string {
-  const s = REPORT_STATUSES.find((x) => x.key === status);
-  return STATUS_TONE[s?.tone ?? "muted"] ?? STATUS_TONE.muted;
+  const s = REPORT_STATUSES.find(x => x.key === status);
+  const tone = s?.tone;
+  switch (tone) {
+    case "orange":
+      return STATUS_TONE.orange;
+    case "blue":
+      return STATUS_TONE.blue;
+    case "green":
+      return STATUS_TONE.green;
+    default:
+      return STATUS_TONE.muted;
+  }
 }
 
 function fmtDate(iso: string): string {
@@ -67,11 +72,10 @@ export default function SignalementsPage() {
     queryKey: key,
     queryFn: () => fetchReports(filter),
     refetchInterval: 60_000,
-    placeholderData: (prev) => prev,
+    placeholderData: prev => prev,
   });
 
-  const invalidate = () =>
-    qc.invalidateQueries({ queryKey: ["admin-reports"] });
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-reports"] });
 
   const items = q.data?.items ?? [];
   const counts = q.data?.counts ?? {};
@@ -92,15 +96,14 @@ export default function SignalementsPage() {
           Signalements
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/60">
-          Remontées « Signaler une erreur » des membres connectés. Traite-les
-          comme des tickets : ouvert → en cours → résolu. Distinct des tickets
-          de support Discord.
+          Remontées « Signaler une erreur » des membres connectés. Traite-les comme des tickets : ouvert → en cours →
+          résolu. Distinct des tickets de support Discord.
         </p>
       </div>
 
       {/* Filtres par statut */}
       <div className="flex flex-wrap gap-2">
-        {FILTERS.map((f) => (
+        {FILTERS.map(f => (
           <button
             key={f.key}
             type="button"
@@ -121,16 +124,12 @@ export default function SignalementsPage() {
             </span>
           </button>
         ))}
-        {q.isFetching && (
-          <Chargement className="h-4 w-4 animate-spin self-center text-white/50" />
-        )}
+        {q.isFetching && <Chargement className="h-4 w-4 animate-spin self-center text-white/50" />}
       </div>
 
       {q.isError && (
         <div className="card border-dbz-red/40">
-          <p className="text-sm text-dbz-red">
-            Impossible de charger les signalements.
-          </p>
+          <p className="text-sm text-dbz-red">Impossible de charger les signalements.</p>
         </div>
       )}
 
@@ -138,16 +137,13 @@ export default function SignalementsPage() {
         <div className="dbz-panel py-16 text-center">
           <Drapeau className="mx-auto mb-3 h-8 w-8 text-white/20" />
           <p className="font-saiyan uppercase tracking-widest text-white/50">
-            Aucun signalement{" "}
-            {filter !== "all" ? reportStatusLabel(filter).toLowerCase() : ""}
+            Aucun signalement {filter !== "all" ? reportStatusLabel(filter).toLowerCase() : ""}
           </p>
-          <p className="mt-1 text-sm text-white/50">
-            Les remontées des membres apparaîtront ici.
-          </p>
+          <p className="mt-1 text-sm text-white/50">Les remontées des membres apparaîtront ici.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {items.map((r) => (
+          {items.map(r => (
             <ReportCard key={r.id} report={r} onChanged={invalidate} />
           ))}
         </div>
@@ -156,13 +152,7 @@ export default function SignalementsPage() {
   );
 }
 
-function ReportCard({
-  report,
-  onChanged,
-}: {
-  report: ReportRow;
-  onChanged: () => void;
-}) {
+function ReportCard({ report, onChanged }: { report: ReportRow; onChanged: () => void }) {
   const [note, setNote] = useState(report.adminNote ?? "");
 
   const patch = useMutation({
@@ -172,7 +162,7 @@ function ReportCard({
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
         body: JSON.stringify({ id: report.id, ...body }),
-      }).then((res) => {
+      }).then(res => {
         if (!res.ok) throw new Error(`patch ${res.status}`);
       }),
     onSuccess: onChanged,
@@ -183,7 +173,7 @@ function ReportCard({
       fetch(`/api/admin/reports?id=${report.id}`, {
         method: "DELETE",
         credentials: "same-origin",
-      }).then((res) => {
+      }).then(res => {
         if (!res.ok) throw new Error(`delete ${res.status}`);
       }),
     onSuccess: onChanged,
@@ -212,9 +202,7 @@ function ReportCard({
         >
           {report.path}
         </Link>
-        <span className="ml-auto text-[11px] text-white/50">
-          {fmtDate(report.createdAt)}
-        </span>
+        <span className="ml-auto text-[11px] text-white/50">{fmtDate(report.createdAt)}</span>
       </div>
 
       {/* Message */}
@@ -227,9 +215,7 @@ function ReportCard({
         <span>
           Par <span className="text-white/75">{report.username ?? "?"}</span>
         </span>
-        {report.discordId && (
-          <span className="font-mono">Discord ID : {report.discordId}</span>
-        )}
+        {report.discordId && <span className="font-mono">Discord ID : {report.discordId}</span>}
         {report.resolvedBy && <span>· traité par {report.resolvedBy}</span>}
       </div>
 
@@ -258,7 +244,7 @@ function ReportCard({
 
       {/* Actions statut + suppression */}
       <div className="flex flex-wrap items-center gap-1.5 border-t border-white/10 pt-3">
-        {REPORT_STATUSES.map((s) => (
+        {REPORT_STATUSES.map(s => (
           <button
             key={s.key}
             type="button"
@@ -277,8 +263,7 @@ function ReportCard({
           type="button"
           disabled={busy}
           onClick={() => {
-            if (window.confirm("Supprimer définitivement ce signalement ?"))
-              remove.mutate();
+            if (window.confirm("Supprimer définitivement ce signalement ?")) remove.mutate();
           }}
           className="ml-auto inline-flex items-center gap-1 rounded border border-white/15 px-2.5 py-1 text-xs text-red-400 transition-colors hover:border-dbz-red hover:text-red-300 disabled:opacity-40"
         >

@@ -15,12 +15,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
-import {
-  Bibliotheque,
-  Enregistrer,
-  Illustration,
-  Reinitialiser,
-} from "@/components/icones";
+import { Bibliotheque, Enregistrer, Illustration, Reinitialiser } from "@shenron/ui/icones";
 import { DragonBallLoader } from "@/components/DragonBall";
 import { ImageField } from "@aphrody/admin-ui/components/admin/ImageField";
 import { assetUrl } from "@/lib/assets";
@@ -41,9 +36,7 @@ async function loadBanners(): Promise<{ banners: PageBannersConfig }> {
   return r.json();
 }
 
-async function saveBanners(
-  banners: PageBannersConfig,
-): Promise<{ ok: boolean; banners: PageBannersConfig }> {
+async function saveBanners(banners: PageBannersConfig): Promise<{ ok: boolean; banners: PageBannersConfig }> {
   const r = await fetch("/api/banner-config", {
     method: "PUT",
     credentials: "same-origin",
@@ -93,11 +86,7 @@ function BannerRow({
   }, [highlighted]);
 
   return (
-    <div
-      ref={ref}
-      id={id}
-      className={`dbz-panel overflow-hidden ${highlighted ? "ring-2 ring-dbz-orange/70" : ""}`}
-    >
+    <div ref={ref} id={id} className={`dbz-panel overflow-hidden ${highlighted ? "ring-2 ring-dbz-orange/70" : ""}`}>
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start">
         <div className="relative h-20 w-full shrink-0 overflow-hidden rounded border border-dbz-border bg-black/40 sm:w-36">
           {preview ? (
@@ -116,11 +105,7 @@ function BannerRow({
             </div>
             <div className="flex items-center gap-2">
               {onOpenLibrary && (
-                <button
-                  type="button"
-                  onClick={onOpenLibrary}
-                  className="btn btn-ghost h-7 px-2 text-xs"
-                >
+                <button type="button" onClick={onOpenLibrary} className="btn btn-ghost h-7 px-2 text-xs">
                   <Bibliotheque className="h-3.5 w-3.5" />
                   Galerie
                 </button>
@@ -132,12 +117,7 @@ function BannerRow({
               )}
             </div>
           </div>
-          <ImageField
-            value={value}
-            onChange={onChange}
-            subdir="banners"
-            column={label}
-          />
+          <ImageField value={value} onChange={onChange} subdir="banners" column={label} />
           {isCustom && (
             <button
               type="button"
@@ -179,9 +159,7 @@ export function BannersEditor() {
     msg: string;
   } | null>(null);
   const [libTarget, setLibTarget] = useState<
-    | { kind: "page"; key: PageHeroKey }
-    | { kind: "series"; key: SeriesBannerKey }
-    | null
+    { kind: "page"; key: PageHeroKey } | { kind: "series"; key: SeriesBannerKey } | null
   >(null);
 
   useEffect(() => {
@@ -196,20 +174,18 @@ export function BannersEditor() {
 
   const save = useMutation({
     mutationFn: () => saveBanners(config as PageBannersConfig),
-    onSuccess: (res) => {
+    onSuccess: res => {
       setConfig(res.banners);
       setToast({
         type: "success",
         msg: "Bannières enregistrées — pages revalidées.",
       });
     },
-    onError: (e: Error) =>
-      setToast({ type: "error", msg: `Échec : ${e.message}` }),
+    onError: (e: Error) => setToast({ type: "error", msg: `Échec : ${e.message}` }),
   });
 
   const resetAll = () => {
-    if (!confirm("Réinitialiser toutes les bannières aux valeurs par défaut ?"))
-      return;
+    if (!confirm("Réinitialiser toutes les bannières aux valeurs par défaut ?")) return;
     setConfig(structuredClone(DEFAULT_PAGE_BANNERS));
   };
 
@@ -229,10 +205,9 @@ export function BannersEditor() {
     );
   }
 
-  const setPage = (key: PageHeroKey, v: string) =>
-    setConfig((c) => (c ? { ...c, pages: { ...c.pages, [key]: v } } : c));
+  const setPage = (key: PageHeroKey, v: string) => setConfig(c => (c ? { ...c, pages: { ...c.pages, [key]: v } } : c));
   const setSeries = (key: SeriesBannerKey, v: string) =>
-    setConfig((c) => (c ? { ...c, series: { ...c.series, [key]: v } } : c));
+    setConfig(c => (c ? { ...c, series: { ...c.series, [key]: v } } : c));
 
   const pickFromLib = (value: string) => {
     if (!libTarget) return;
@@ -257,13 +232,10 @@ export function BannersEditor() {
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-saiyan text-2xl uppercase tracking-wider text-dbz-orange">
-            Bannières des pages
-          </h1>
+          <h1 className="font-saiyan text-2xl uppercase tracking-wider text-dbz-orange">Bannières des pages</h1>
           <p className="mt-1 max-w-xl text-sm text-white/50">
-            Change le fond des billboards et heros (épisodes, films, sagas…).
-            Upload, URL, ou galerie officielle Toei. Les pages publiques se
-            mettent à jour après enregistrement.
+            Change le fond des billboards et heros (épisodes, films, sagas…). Upload, URL, ou galerie officielle Toei.
+            Les pages publiques se mettent à jour après enregistrement.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -271,12 +243,7 @@ export function BannersEditor() {
             <Reinitialiser className="h-4 w-4" />
             Tout réinitialiser
           </button>
-          <button
-            type="button"
-            onClick={() => save.mutate()}
-            disabled={save.isPending}
-            className="btn btn-primary"
-          >
+          <button type="button" onClick={() => save.mutate()} disabled={save.isPending} className="btn btn-primary">
             <Enregistrer className="h-4 w-4" />
             {save.isPending ? "Enregistrement…" : "Enregistrer"}
           </button>
@@ -284,14 +251,10 @@ export function BannersEditor() {
       </div>
 
       <section className="space-y-3">
-        <h2 className="font-saiyan text-lg uppercase text-dbz-yellow">
-          Pages (heroes)
-        </h2>
-        <p className="text-xs text-white/50">
-          Image large en tête de chaque landing wiki / catalogue.
-        </p>
+        <h2 className="font-saiyan text-lg uppercase text-dbz-yellow">Pages (heroes)</h2>
+        <p className="text-xs text-white/50">Image large en tête de chaque landing wiki / catalogue.</p>
         <div className="space-y-3">
-          {PAGE_HERO_KEYS.map((key) => (
+          {PAGE_HERO_KEYS.map(key => (
             <BannerRow
               key={key}
               id={`page-${key}`}
@@ -299,7 +262,7 @@ export function BannersEditor() {
               hint={key}
               value={config.pages[key] ?? ""}
               defaultValue={DEFAULT_PAGE_BANNERS.pages[key]}
-              onChange={(v) => setPage(key, v)}
+              onChange={v => setPage(key, v)}
               highlighted={focusPage === key}
               onOpenLibrary={() => setLibTarget({ kind: "page", key })}
             />
@@ -308,26 +271,20 @@ export function BannersEditor() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="font-saiyan text-lg uppercase text-dbz-yellow">
-          Séries
-        </h2>
+        <h2 className="font-saiyan text-lg uppercase text-dbz-yellow">Séries</h2>
         <p className="text-xs text-white/50">
-          Utilisées par les vues série (ex. /wiki/episodes/serie/DBZ) et les
-          aperçus sans image d&apos;épisode.
+          Utilisées par les vues série (ex. /wiki/episodes/serie/DBZ) et les aperçus sans image d&apos;épisode.
         </p>
         <div className="space-y-3">
-          {SERIES_BANNER_KEYS.map((key) => (
+          {SERIES_BANNER_KEYS.map(key => (
             <BannerRow
               key={key}
               id={`series-${key}`}
               label={SERIES_BANNER_LABELS[key]}
               hint={key}
               value={config.series[key] ?? ""}
-              defaultValue={
-                DEFAULT_PAGE_BANNERS.series[key] ??
-                DEFAULT_PAGE_BANNERS.fallback
-              }
-              onChange={(v) => setSeries(key, v)}
+              defaultValue={DEFAULT_PAGE_BANNERS.series[key] ?? DEFAULT_PAGE_BANNERS.fallback}
+              onChange={v => setSeries(key, v)}
               highlighted={focusSeries === key}
               onOpenLibrary={() => setLibTarget({ kind: "series", key })}
             />
@@ -336,26 +293,19 @@ export function BannersEditor() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="font-saiyan text-lg uppercase text-dbz-yellow">
-          Repli global
-        </h2>
+        <h2 className="font-saiyan text-lg uppercase text-dbz-yellow">Repli global</h2>
         <BannerRow
           id="fallback"
           label="Bannière par défaut"
           hint="fallback — séries inconnues"
           value={config.fallback}
           defaultValue={DEFAULT_PAGE_BANNERS.fallback}
-          onChange={(v) => setConfig((c) => (c ? { ...c, fallback: v } : c))}
+          onChange={v => setConfig(c => (c ? { ...c, fallback: v } : c))}
         />
       </section>
 
       <div className="flex justify-end border-t border-dbz-border/40 pt-4">
-        <button
-          type="button"
-          onClick={() => save.mutate()}
-          disabled={save.isPending}
-          className="btn btn-primary"
-        >
+        <button type="button" onClick={() => save.mutate()} disabled={save.isPending} className="btn btn-primary">
           <Enregistrer className="h-4 w-4" />
           {save.isPending ? "Enregistrement…" : "Enregistrer"}
         </button>
@@ -367,30 +317,22 @@ export function BannersEditor() {
             <div className="flex items-center justify-between border-b border-dbz-border/50 p-4">
               <p className="font-saiyan text-sm uppercase text-dbz-orange">
                 Galerie ·{" "}
-                {libTarget.kind === "page"
-                  ? PAGE_HERO_LABELS[libTarget.key]
-                  : SERIES_BANNER_LABELS[libTarget.key]}
+                {libTarget.kind === "page" ? PAGE_HERO_LABELS[libTarget.key] : SERIES_BANNER_LABELS[libTarget.key]}
               </p>
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={() => setLibTarget(null)}
-              >
+              <button type="button" className="btn btn-ghost" onClick={() => setLibTarget(null)}>
                 Fermer
               </button>
             </div>
             <div className="overflow-y-auto p-4">
               {lib.isLoading ? (
-                <p className="py-8 text-center text-sm text-white/50">
-                  Chargement…
-                </p>
+                <p className="py-8 text-center text-sm text-white/50">Chargement…</p>
               ) : (lib.data?.length ?? 0) === 0 ? (
                 <p className="py-8 text-center text-sm text-white/50">
                   Aucune image (toei / dbofficial / wiki/banners).
                 </p>
               ) : (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                  {(lib.data ?? []).map((it) => (
+                  {(lib.data ?? []).map(it => (
                     <button
                       key={it.value}
                       type="button"
@@ -404,9 +346,7 @@ export function BannersEditor() {
                         className="aspect-[16/7] w-full object-cover opacity-80 group-hover:opacity-100"
                         loading="lazy"
                       />
-                      <p className="truncate px-2 py-1 text-[10px] text-white/50">
-                        {it.name}
-                      </p>
+                      <p className="truncate px-2 py-1 text-[10px] text-white/50">{it.name}</p>
                     </button>
                   ))}
                 </div>

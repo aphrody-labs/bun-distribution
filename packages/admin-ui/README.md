@@ -15,6 +15,12 @@ these sources. Page configuration stays literal in host route adapters to
 preserve Next's static route analysis. Server actions and client boundaries are
 retained in the canonical modules.
 
+## Bun OS source qualification
+
+`bun run typecheck` uses the shared strict Next.js configuration and native Bun checker. Shared UI primitives resolve through the declared `@shenron/ui` public exports, not an application-specific alias.
+
+The imported package still requires the authenticated host's `@/lib/*`, `@/db/schema` and host-only components. That host is not present in this checkout. The strict source gate therefore remains failing: this package is not yet independently buildable or qualified for persistence. No replacement session, database schema, server action, mock adapter or authentication bypass is supplied here. Installing the declared UI dependencies alone does not provide the missing host services. The historical host qualification below does not qualify the current Bun OS checkout.
+
 The former bot SPA now redirects to the same authenticated administration. Its
 unique audit, logs, account and ticket access controls are included here. Account
 requests use the host's server-side Discord OAuth adapter; bearer tokens never

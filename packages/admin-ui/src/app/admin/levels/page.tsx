@@ -21,14 +21,11 @@ import {
   Reinitialiser,
   Tendance,
   Trophee,
-} from "@/components/icones";
+} from "@shenron/ui/icones";
 import { type FormEvent, useRef, useState } from "react";
 import { api } from "@aphrody/admin-ui/client";
 import { formatDuration } from "@aphrody/admin-ui/format";
-import {
-  RoleBadge,
-  RoleSelect,
-} from "@aphrody/admin-ui/components/admin/RoleSelect";
+import { RoleBadge, RoleSelect } from "@aphrody/admin-ui/components/admin/RoleSelect";
 import { RolePicker } from "@aphrody/admin-ui/components/admin/RolePicker";
 import { formatZeni } from "@/lib/zeni";
 
@@ -73,8 +70,7 @@ const RACE_OPTIONS: { id: string; label: string }[] = [
   { id: "majin", label: "Majin" },
 ];
 
-const raceLabel = (race: string): string =>
-  RACE_OPTIONS.find((r) => r.id === race)?.label ?? race;
+const raceLabel = (race: string): string => RACE_OPTIONS.find(r => r.id === race)?.label ?? race;
 
 interface TopUser {
   id: string;
@@ -111,12 +107,7 @@ function ConfirmDialog({
             <h3 className="font-semibold text-white">{title}</h3>
             <p className="mt-1 text-sm text-zinc-400">{message}</p>
           </div>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="ml-auto btn btn-ghost px-1 py-1"
-            aria-label="Fermer"
-          >
+          <button type="button" onClick={onCancel} className="ml-auto btn btn-ghost px-1 py-1" aria-label="Fermer">
             <Croix className="h-4 w-4" />
           </button>
         </div>
@@ -144,8 +135,7 @@ export default function LevelsPage() {
   });
   const distribution = useQuery({
     queryKey: ["levels", "distribution"],
-    queryFn: () =>
-      api.get<{ buckets: DistributionBucket[] }>("/levels/distribution"),
+    queryFn: () => api.get<{ buckets: DistributionBucket[] }>("/levels/distribution"),
   });
   const rewards = useQuery({
     queryKey: ["levels", "rewards"],
@@ -165,11 +155,9 @@ export default function LevelsPage() {
           <h2 className="text-lg font-semibold">Niveaux et XP</h2>
         </div>
         <p className="mt-1 text-sm text-zinc-400">
-          Cette page vous permet de consulter les paliers d&apos;expérience, la
-          répartition des joueurs, gérer les récompenses de niveau et modifier
-          manuellement l&apos;XP ou les zénis d&apos;un membre. Le palier ultime
-          &laquo;&nbsp;It&apos;s over 9 millions&nbsp;!&nbsp;&raquo; correspond
-          à 9&nbsp;000&nbsp;000 XP.
+          Cette page vous permet de consulter les paliers d&apos;expérience, la répartition des joueurs, gérer les
+          récompenses de niveau et modifier manuellement l&apos;XP ou les zénis d&apos;un membre. Le palier ultime
+          &laquo;&nbsp;It&apos;s over 9 millions&nbsp;!&nbsp;&raquo; correspond à 9&nbsp;000&nbsp;000 XP.
         </p>
       </div>
 
@@ -182,19 +170,9 @@ export default function LevelsPage() {
 
       <XpTuningCard config={config.data} loading={config.isLoading} />
       <ThresholdCurveCard />
-      <ThresholdsCard
-        config={config.data}
-        distribution={distribution.data?.buckets}
-        loading={distribution.isLoading}
-      />
-      <RewardsCard
-        rewards={rewards.data?.rewards ?? []}
-        loading={rewards.isLoading}
-      />
-      <RaceRewardsCard
-        rewards={raceRewards.data?.rewards ?? []}
-        loading={raceRewards.isLoading}
-      />
+      <ThresholdsCard config={config.data} distribution={distribution.data?.buckets} loading={distribution.isLoading} />
+      <RewardsCard rewards={rewards.data?.rewards ?? []} loading={rewards.isLoading} />
+      <RaceRewardsCard rewards={raceRewards.data?.rewards ?? []} loading={raceRewards.isLoading} />
       <TopsCard />
       <ManualActionsCard />
     </div>
@@ -313,7 +291,7 @@ const TUNING_SECTIONS: TuningSection[] = [
     icon: Couronne,
     hint: "Le texte des avantages affiché par /race n'est pas recalculé : à reprendre si ces valeurs changent.",
     fields: [
-      ...RACE_OPTIONS.flatMap((r) => [
+      ...RACE_OPTIONS.flatMap(r => [
         { key: `xp.race.${r.id}.message`, label: `${r.label} · XP écrit` },
         { key: `xp.race.${r.id}.voice`, label: `${r.label} · XP vocal` },
         { key: `race.${r.id}.zeni`, label: `${r.label} · zénis` },
@@ -346,16 +324,9 @@ const TUNING_SECTIONS: TuningSection[] = [
 ];
 
 const XP_BOOST_ROLE_PREFIX = "xp.boost.role.";
-const tuningInput =
-  "w-full rounded border border-zinc-700 bg-zinc-900 px-2 py-1 font-mono text-xs text-white";
+const tuningInput = "w-full rounded border border-zinc-700 bg-zinc-900 px-2 py-1 font-mono text-xs text-white";
 
-function XpTuningCard({
-  config,
-  loading,
-}: {
-  config: ConfigResponse | undefined;
-  loading: boolean;
-}) {
+function XpTuningCard({ config, loading }: { config: ConfigResponse | undefined; loading: boolean }) {
   const qc = useQueryClient();
   const schema = useQuery({
     queryKey: ["settings", "schema"],
@@ -370,21 +341,17 @@ function XpTuningCard({
     void qc.invalidateQueries({ queryKey: ["settings"] });
   };
   const dropDrafts = (keys: string[]) =>
-    setDrafts((d) =>
-      Object.fromEntries(Object.entries(d).filter(([k]) => !keys.includes(k))),
-    );
+    setDrafts(d => Object.fromEntries(Object.entries(d).filter(([k]) => !keys.includes(k))));
 
   const save = useMutation({
     mutationFn: async (entries: [string, string][]) => {
-      for (const [key, value] of entries)
-        await api.post("/services/settings/set", { key, value });
+      for (const [key, value] of entries) await api.post("/services/settings/set", { key, value });
     },
     onSuccess: (_, entries) => {
       setErr(null);
       dropDrafts(entries.map(([k]) => k));
     },
-    onError: (e) =>
-      setErr(e instanceof Error ? e.message : "Échec de l'enregistrement."),
+    onError: e => setErr(e instanceof Error ? e.message : "Échec de l'enregistrement."),
     onSettled: refresh,
   });
   const reset = useMutation({
@@ -393,8 +360,7 @@ function XpTuningCard({
       setErr(null);
       dropDrafts([key]);
     },
-    onError: (e) =>
-      setErr(e instanceof Error ? e.message : "Échec de la remise à zéro."),
+    onError: e => setErr(e instanceof Error ? e.message : "Échec de la remise à zéro."),
     onSettled: refresh,
   });
 
@@ -407,14 +373,11 @@ function XpTuningCard({
     );
   if (!config) return null;
 
-  const defs = new Map((schema.data?.keys ?? []).map((k) => [k.key, k]));
+  const defs = new Map((schema.data?.keys ?? []).map(k => [k.key, k]));
   const saved = (key: string) => {
-    const raw =
-      config.overrides[key] ?? config.defaults[key] ?? defs.get(key)?.default;
+    const raw = config.overrides[key] ?? config.defaults[key] ?? defs.get(key)?.default;
     const value = raw === undefined ? "" : String(raw);
-    return defs.get(key)?.type === "bool"
-      ? String(/^(true|1)$/i.test(value))
-      : value;
+    return defs.get(key)?.type === "bool" ? String(/^(true|1)$/i.test(value)) : value;
   };
   const read = (key: string) => drafts[key] ?? saved(key);
   const pending = save.isPending || reset.isPending;
@@ -426,44 +389,30 @@ function XpTuningCard({
         Gains, bonus et multiplicateurs d&apos;XP
       </h3>
       <p className="mb-3 text-xs text-zinc-500">
-        Chaque valeur s&apos;applique au gain suivant (cache du bot : 30 s). Une
-        valeur personnalisée se remet au défaut d&apos;un clic. Les membres
-        voient leurs multiplicateurs avec <code>/boosts</code> sur Discord.
+        Chaque valeur s&apos;applique au gain suivant (cache du bot : 30 s). Une valeur personnalisée se remet au défaut
+        d&apos;un clic. Les membres voient leurs multiplicateurs avec <code>/boosts</code> sur Discord.
       </p>
 
       <XpSimulation read={read} />
 
       <div className="space-y-3">
-        {TUNING_SECTIONS.map((section) => {
+        {TUNING_SECTIONS.map(section => {
           const Icon = section.icon;
-          const dirty = section.fields.filter(
-            (f) =>
-              drafts[f.key] !== undefined && drafts[f.key] !== saved(f.key),
-          );
+          const dirty = section.fields.filter(f => drafts[f.key] !== undefined && drafts[f.key] !== saved(f.key));
           return (
-            <section
-              key={section.id}
-              className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3"
-            >
+            <section key={section.id} className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
               <div className="flex items-center gap-2 text-sm font-semibold text-zinc-200">
                 <Icon className="h-4 w-4 text-brand-400" />
                 {section.title}
               </div>
-              <p className="mb-3 mt-0.5 text-xs text-zinc-500">
-                {section.hint}
-              </p>
+              <p className="mb-3 mt-0.5 text-xs text-zinc-500">{section.hint}</p>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {section.fields.map((f) => {
+                {section.fields.map(f => {
                   const def = defs.get(f.key);
                   const overridden = config.overrides[f.key] !== undefined;
-                  const onChange = (v: string) =>
-                    setDrafts((d) => ({ ...d, [f.key]: v }));
+                  const onChange = (v: string) => setDrafts(d => ({ ...d, [f.key]: v }));
                   return (
-                    <div
-                      key={f.key}
-                      className="rounded-lg border border-zinc-800 p-2"
-                      title={def?.description}
-                    >
+                    <div key={f.key} className="rounded-lg border border-zinc-800 p-2" title={def?.description}>
                       <div className="mb-1 flex items-center justify-between gap-2 text-xs text-zinc-400">
                         <label htmlFor={f.key}>{f.label}</label>
                         {overridden && (
@@ -484,7 +433,7 @@ function XpTuningCard({
                           id={f.key}
                           className={tuningInput}
                           value={read(f.key)}
-                          onChange={(e) => onChange(e.target.value)}
+                          onChange={e => onChange(e.target.value)}
                         >
                           <option value="true">Activé</option>
                           <option value="false">Désactivé</option>
@@ -493,23 +442,17 @@ function XpTuningCard({
                         <input
                           id={f.key}
                           className={tuningInput}
-                          type={
-                            def?.type === "int" || def?.type === "float"
-                              ? "number"
-                              : "text"
-                          }
+                          type={def?.type === "int" || def?.type === "float" ? "number" : "text"}
                           step={def?.type === "float" ? "0.05" : "1"}
                           min={def?.min}
                           max={def?.max}
                           value={read(f.key)}
-                          onChange={(e) => onChange(e.target.value)}
+                          onChange={e => onChange(e.target.value)}
                         />
                       )}
                       <p className="mt-1 text-[10px] text-zinc-600">
-                        défaut :{" "}
-                        {def?.default === undefined ? "—" : String(def.default)}
-                        {def?.min !== undefined &&
-                          ` · de ${def.min} à ${def.max ?? "∞"}`}
+                        défaut : {def?.default === undefined ? "—" : String(def.default)}
+                        {def?.min !== undefined && ` · de ${def.min} à ${def.max ?? "∞"}`}
                       </p>
                     </div>
                   );
@@ -519,20 +462,16 @@ function XpTuningCard({
                 <button
                   type="button"
                   disabled={dirty.length === 0 || pending}
-                  onClick={() =>
-                    save.mutate(dirty.map((f) => [f.key, drafts[f.key]!]))
-                  }
+                  onClick={() => save.mutate(dirty.map(f => [f.key, drafts[f.key]!]))}
                   className="inline-flex items-center gap-1 rounded bg-brand-600 px-3 py-1 text-xs font-bold text-white hover:bg-brand-500 disabled:opacity-40"
                 >
                   <Enregistrer className="h-3.5 w-3.5" />
-                  {save.isPending
-                    ? "Enregistrement…"
-                    : `Enregistrer${dirty.length ? ` (${dirty.length})` : ""}`}
+                  {save.isPending ? "Enregistrement…" : `Enregistrer${dirty.length ? ` (${dirty.length})` : ""}`}
                 </button>
                 {dirty.length > 0 && !pending && (
                   <button
                     type="button"
-                    onClick={() => dropDrafts(section.fields.map((f) => f.key))}
+                    onClick={() => dropDrafts(section.fields.map(f => f.key))}
                     className="text-xs text-zinc-500 hover:text-zinc-300"
                   >
                     Annuler
@@ -570,9 +509,7 @@ function XpSimulation({ read }: { read: (key: string) => string }) {
       1 + n("xp.voice.group.bonus_per_member") * Math.max(0, members - 1),
     );
   const voice = (members: number, mult: number, share: number) =>
-    members < minMembers || share <= 0
-      ? 0
-      : Math.floor(perMinute * Math.min(cap, group(members) * mult) * share);
+    members < minMembers || share <= 0 ? 0 : Math.floor(perMinute * Math.min(cap, group(members) * mult) * share);
   const night = on("xp.night.enabled");
   const nightVoice = night ? n("xp.night.voice_multiplier") : 1;
   const sleepcall = night && on("xp.sleepcall.enabled");
@@ -616,19 +553,12 @@ function XpSimulation({ read }: { read: (key: string) => string }) {
 
   return (
     <div className="mb-3 rounded-lg border border-zinc-800 p-3">
-      <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-        Simulation hors rôle et race
-      </p>
+      <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500">Simulation hors rôle et race</p>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {cases.map((c) => (
-          <div
-            key={c.label}
-            className="flex items-baseline justify-between gap-2 text-xs"
-          >
+        {cases.map(c => (
+          <div key={c.label} className="flex items-baseline justify-between gap-2 text-xs">
             <span className="text-zinc-400">{c.label}</span>
-            <span className="font-mono font-bold text-brand-400">
-              {c.value}
-            </span>
+            <span className="font-mono font-bold text-brand-400">{c.value}</span>
           </div>
         ))}
       </div>
@@ -636,13 +566,7 @@ function XpSimulation({ read }: { read: (key: string) => string }) {
   );
 }
 
-function XpRoleBoostEditor({
-  overrides,
-  onChanged,
-}: {
-  overrides: Record<string, string>;
-  onChanged: () => void;
-}) {
+function XpRoleBoostEditor({ overrides, onChanged }: { overrides: Record<string, string>; onChanged: () => void }) {
   const [roleId, setRoleId] = useState("");
   const [multiplier, setMultiplier] = useState("1.5");
   const [err, setErr] = useState<string | null>(null);
@@ -661,8 +585,7 @@ function XpRoleBoostEditor({
         value: e.multiplier,
       }),
     onSuccess: () => setErr(null),
-    onError: (e) =>
-      setErr(e instanceof Error ? e.message : "Échec de l'enregistrement."),
+    onError: e => setErr(e instanceof Error ? e.message : "Échec de l'enregistrement."),
     onSettled: onChanged,
   });
   const unset = useMutation({
@@ -670,26 +593,20 @@ function XpRoleBoostEditor({
       api.post("/services/settings/unset", {
         key: `${XP_BOOST_ROLE_PREFIX}${id}`,
       }),
-    onError: (e) =>
-      setErr(e instanceof Error ? e.message : "Échec de la suppression."),
+    onError: e => setErr(e instanceof Error ? e.message : "Échec de la suppression."),
     onSettled: onChanged,
   });
 
   return (
     <details className="mt-3 rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
-      <summary className="cursor-pointer text-sm font-semibold text-zinc-200">
-        Rôles boostés ({entries.length})
-      </summary>
+      <summary className="cursor-pointer text-sm font-semibold text-zinc-200">Rôles boostés ({entries.length})</summary>
       <p className="mb-3 mt-1 text-xs text-zinc-500">
-        Multiplicateur par rôle. Un membre qui porte plusieurs rôles boostés
-        prend le plus fort, sans cumul avec le boost booster.
+        Multiplicateur par rôle. Un membre qui porte plusieurs rôles boostés prend le plus fort, sans cumul avec le
+        boost booster.
       </p>
       <div className="grid gap-2 sm:grid-cols-2">
-        {entries.map((e) => (
-          <div
-            key={e.roleId}
-            className="flex items-center gap-2 rounded border border-zinc-800 px-2 py-1"
-          >
+        {entries.map(e => (
+          <div key={e.roleId} className="flex items-center gap-2 rounded border border-zinc-800 px-2 py-1">
             <span className="min-w-0 flex-1 truncate text-xs">
               <RoleBadge roleId={e.roleId} />
             </span>
@@ -699,7 +616,7 @@ function XpRoleBoostEditor({
               min="0.05"
               defaultValue={e.multiplier}
               aria-label="Multiplicateur"
-              onBlur={(ev) => {
+              onBlur={ev => {
                 if (ev.target.value && ev.target.value !== e.multiplier)
                   set.mutate({ roleId: e.roleId, multiplier: ev.target.value });
               }}
@@ -724,7 +641,7 @@ function XpRoleBoostEditor({
           step="0.05"
           min="0.05"
           value={multiplier}
-          onChange={(e) => setMultiplier(e.target.value)}
+          onChange={e => setMultiplier(e.target.value)}
           aria-label="Multiplicateur du nouveau rôle"
           className={tuningInput}
         />
@@ -774,14 +691,13 @@ function ThresholdCurveCard() {
       api.put<{ ok: boolean; thresholds: Threshold[] }>("/levels/thresholds", {
         thresholds: next,
       }),
-    onSuccess: (res) => {
+    onSuccess: res => {
       setErr(null);
       setRows(res.thresholds);
       void qc.invalidateQueries({ queryKey: ["levels"] });
       void qc.invalidateQueries({ queryKey: ["levels", "config"] });
     },
-    onError: (e) =>
-      setErr(e instanceof Error ? e.message : "Échec de l'enregistrement."),
+    onError: e => setErr(e instanceof Error ? e.message : "Échec de l'enregistrement."),
   });
 
   function edit(i: number, field: keyof Threshold, value: number) {
@@ -805,10 +721,9 @@ function ThresholdCurveCard() {
         Courbe de niveaux — paliers XP éditables
       </h3>
       <p className="mb-3 text-xs text-zinc-500">
-        Définissez l&apos;XP requis pour chaque niveau. La progression de tous
-        les joueurs se recale immédiatement (recalcul du niveau + rôles de
-        palier au prochain gain d&apos;XP). Jusqu&apos;à 50 paliers ; l&apos;XP
-        doit croître avec le niveau.
+        Définissez l&apos;XP requis pour chaque niveau. La progression de tous les joueurs se recale immédiatement
+        (recalcul du niveau + rôles de palier au prochain gain d&apos;XP). Jusqu&apos;à 50 paliers ; l&apos;XP doit
+        croître avec le niveau.
       </p>
 
       {query.isLoading ? (
@@ -825,7 +740,7 @@ function ThresholdCurveCard() {
           {current
             .slice()
             .toSorted((a, b) => a.level - b.level)
-            .map((t) => {
+            .map(t => {
               const idx = current.indexOf(t);
               return (
                 <div key={idx} className="flex items-center gap-3">
@@ -833,14 +748,14 @@ function ThresholdCurveCard() {
                     type="number"
                     min={1}
                     value={t.level}
-                    onChange={(e) => edit(idx, "level", Number(e.target.value))}
+                    onChange={e => edit(idx, "level", Number(e.target.value))}
                     className="w-20 rounded border border-zinc-700 bg-zinc-900 px-2 py-1 font-mono text-xs text-white"
                   />
                   <input
                     type="number"
                     min={0}
                     value={t.xp}
-                    onChange={(e) => edit(idx, "xp", Number(e.target.value))}
+                    onChange={e => edit(idx, "xp", Number(e.target.value))}
                     className="flex-1 rounded border border-zinc-700 bg-zinc-900 px-2 py-1 font-mono text-xs text-white"
                   />
                   <button
@@ -883,9 +798,7 @@ function ThresholdCurveCard() {
                 Annuler
               </button>
             )}
-            {save.isSuccess && !dirty && (
-              <span className="text-xs text-green-400">Enregistré ✓</span>
-            )}
+            {save.isSuccess && !dirty && <span className="text-xs text-green-400">Enregistré ✓</span>}
           </div>
           {err && <p className="text-xs text-red-400">{err}</p>}
         </div>
@@ -905,10 +818,7 @@ function ThresholdsCard({
 }) {
   if (!config) return null;
   const total = (distribution ?? []).reduce((s, b) => s + b.count, 0);
-  const max = Math.max(
-    ...(distribution ?? [{ count: 1 }]).map((b) => b.count),
-    1,
-  );
+  const max = Math.max(...(distribution ?? [{ count: 1 }]).map(b => b.count), 1);
 
   return (
     <div className="card">
@@ -917,8 +827,7 @@ function ThresholdsCard({
         Paliers DBZ — répartition des joueurs
       </h3>
       <p className="mb-3 text-xs text-zinc-500">
-        Chaque barre représente le nombre de joueurs dans ce palier d&apos;XP.
-        Total :{" "}
+        Chaque barre représente le nombre de joueurs dans ce palier d&apos;XP. Total :{" "}
         <strong>
           {total} joueur{total !== 1 ? "s" : ""}
         </strong>{" "}
@@ -932,14 +841,12 @@ function ThresholdsCard({
       )}
       <div className="space-y-2">
         {config.thresholds.map((t, i) => {
-          const bucket = distribution?.find((b) => b.level === t.level);
+          const bucket = distribution?.find(b => b.level === t.level);
           const minXp = i === 0 ? 0 : config.thresholds[i - 1]!.xp;
           const count = bucket?.count ?? 0;
           return (
             <div key={t.level} className="flex items-center gap-3">
-              <span className="w-20 font-mono text-xs text-zinc-400">
-                niveau {t.level}
-              </span>
+              <span className="w-20 font-mono text-xs text-zinc-400">niveau {t.level}</span>
               <span className="w-32 text-right font-mono text-xs text-zinc-500">
                 {minXp.toLocaleString("fr-FR")} – {t.xp.toLocaleString("fr-FR")}
               </span>
@@ -955,24 +862,20 @@ function ThresholdsCard({
             </div>
           );
         })}
-        {distribution?.find((b) => b.level === 11)?.count ? (
+        {distribution?.find(b => b.level === 11)?.count ? (
           <div className="flex items-center gap-3">
-            <span className="w-20 font-mono text-xs text-amber-400">
-              au-delà
-            </span>
-            <span className="w-32 text-right font-mono text-xs text-zinc-500">
-              &gt; 9 000 000
-            </span>
+            <span className="w-20 font-mono text-xs text-amber-400">au-delà</span>
+            <span className="w-32 text-right font-mono text-xs text-zinc-500">&gt; 9 000 000</span>
             <div className="relative h-5 flex-1 overflow-hidden rounded bg-zinc-800">
               <div
                 className="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all"
                 style={{
-                  width: `${((distribution?.find((b) => b.level === 11)?.count ?? 0) / max) * 100}%`,
+                  width: `${((distribution?.find(b => b.level === 11)?.count ?? 0) / max) * 100}%`,
                 }}
               />
             </div>
             <span className="w-20 text-right font-mono text-xs text-amber-400">
-              {distribution?.find((b) => b.level === 11)?.count}
+              {distribution?.find(b => b.level === 11)?.count}
             </span>
           </div>
         ) : null}
@@ -981,13 +884,7 @@ function ThresholdsCard({
   );
 }
 
-function RewardsCard({
-  rewards,
-  loading,
-}: {
-  rewards: LevelReward[];
-  loading: boolean;
-}) {
+function RewardsCard({ rewards, loading }: { rewards: LevelReward[]; loading: boolean }) {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<LevelReward | null>(null);
   const [adding, setAdding] = useState(false);
@@ -1004,13 +901,7 @@ function RewardsCard({
     // qu'écrire (upsert) ou supprimer par niveau. On écrit la nouvelle entrée PUIS
     // on retire l'ancienne — dans cet ordre, un échec entre les deux laisse un
     // doublon visible plutôt qu'une récompense perdue.
-    mutationFn: async ({
-      reward: r,
-      ancienNiveau,
-    }: {
-      reward: LevelReward;
-      ancienNiveau?: number;
-    }) => {
+    mutationFn: async ({ reward: r, ancienNiveau }: { reward: LevelReward; ancienNiveau?: number }) => {
       await api.post("/levels/rewards", {
         level: r.level,
         roleId: r.roleId,
@@ -1045,15 +936,10 @@ function RewardsCard({
             Récompenses de palier ({rewards.length})
           </h3>
           <p className="mt-0.5 text-xs text-zinc-500">
-            Rôles et bonus zénis attribués automatiquement à chaque montée de
-            niveau.
+            Rôles et bonus zénis attribués automatiquement à chaque montée de niveau.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setAdding(true)}
-          className="btn btn-primary"
-        >
+        <button type="button" onClick={() => setAdding(true)} className="btn btn-primary">
           <Plus className="h-3 w-3" />
           Ajouter une récompense
         </button>
@@ -1101,17 +987,13 @@ function RewardsCard({
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800">
-              {rewards.map((r) => (
+              {rewards.map(r => (
                 <tr key={r.level}>
-                  <td className="px-3 py-2 font-bold text-brand-400">
-                    {r.level}
-                  </td>
+                  <td className="px-3 py-2 font-bold text-brand-400">{r.level}</td>
                   <td className="px-3 py-2 text-sm">
                     <RoleBadge roleId={r.roleId} />
                   </td>
-                  <td className="px-3 py-2 text-right font-mono text-xs">
-                    {r.xpThreshold.toLocaleString("fr-FR")}
-                  </td>
+                  <td className="px-3 py-2 text-right font-mono text-xs">{r.xpThreshold.toLocaleString("fr-FR")}</td>
                   <td className="px-3 py-2 text-right font-mono text-xs text-amber-400">
                     +{r.zeniBonus.toLocaleString("fr-FR")}
                   </td>
@@ -1145,10 +1027,8 @@ function RewardsCard({
       {(editing || adding) && (
         <RewardForm
           initial={editing ?? undefined}
-          niveauxPris={rewards.map((r) => r.level)}
-          onSubmit={(r) =>
-            upsert.mutate({ reward: r, ancienNiveau: editing?.level })
-          }
+          niveauxPris={rewards.map(r => r.level)}
+          onSubmit={r => upsert.mutate({ reward: r, ancienNiveau: editing?.level })}
           onCancel={() => {
             setEditing(null);
             setAdding(false);
@@ -1179,21 +1059,15 @@ function RewardForm({
 }) {
   const [level, setLevel] = useState(String(initial?.level ?? ""));
   const [roleId, setRoleId] = useState(initial?.roleId ?? "");
-  const [xpThreshold, setXpThreshold] = useState(
-    String(initial?.xpThreshold ?? ""),
-  );
-  const [zeniBonus, setZeniBonus] = useState(
-    String(initial?.zeniBonus ?? "1000"),
-  );
+  const [xpThreshold, setXpThreshold] = useState(String(initial?.xpThreshold ?? ""));
+  const [zeniBonus, setZeniBonus] = useState(String(initial?.zeniBonus ?? "1000"));
   const [conflit, setConflit] = useState<string | null>(null);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const cible = Number(level);
     if (niveauxPris.includes(cible) && cible !== initial?.level) {
-      setConflit(
-        `Le niveau ${cible} a déjà une récompense : modifie-la directement plutôt que de l'écraser.`,
-      );
+      setConflit(`Le niveau ${cible} a déjà une récompense : modifie-la directement plutôt que de l'écraser.`);
       return;
     }
     setConflit(null);
@@ -1206,10 +1080,7 @@ function RewardForm({
   };
 
   return (
-    <form
-      onSubmit={submit}
-      className="mt-3 space-y-3 rounded-lg border border-zinc-800 bg-zinc-950/40 p-3"
-    >
+    <form onSubmit={submit} className="mt-3 space-y-3 rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
       <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
         {initial ? "Modifier la récompense" : "Nouvelle récompense"}
       </h4>
@@ -1226,39 +1097,33 @@ function RewardForm({
             type="number"
             min="1"
             value={level}
-            onChange={(e) => setLevel(e.target.value)}
+            onChange={e => setLevel(e.target.value)}
             required
           />
         </div>
         <div className="sm:col-span-3">
-          <label className="mb-1 block text-xs text-zinc-400">
-            Rôle Discord à attribuer
-          </label>
+          <label className="mb-1 block text-xs text-zinc-400">Rôle Discord à attribuer</label>
           <RolePicker value={roleId} onChange={setRoleId} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-400">
-            Seuil XP requis
-          </label>
+          <label className="mb-1 block text-xs text-zinc-400">Seuil XP requis</label>
           <input
             className="input"
             type="number"
             min="0"
             value={xpThreshold}
-            onChange={(e) => setXpThreshold(e.target.value)}
+            onChange={e => setXpThreshold(e.target.value)}
             required
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-400">
-            Bonus zénis offerts
-          </label>
+          <label className="mb-1 block text-xs text-zinc-400">Bonus zénis offerts</label>
           <input
             className="input"
             type="number"
             min="0"
             value={zeniBonus}
-            onChange={(e) => setZeniBonus(e.target.value)}
+            onChange={e => setZeniBonus(e.target.value)}
             required
           />
         </div>
@@ -1276,13 +1141,7 @@ function RewardForm({
   );
 }
 
-function RaceRewardsCard({
-  rewards,
-  loading,
-}: {
-  rewards: RaceReward[];
-  loading: boolean;
-}) {
+function RaceRewardsCard({ rewards, loading }: { rewards: RaceReward[]; loading: boolean }) {
   const qc = useQueryClient();
   const [race, setRace] = useState<string>(RACE_OPTIONS[0]!.id);
   const [level, setLevel] = useState("");
@@ -1302,21 +1161,10 @@ function RaceRewardsCard({
   const upsert = useMutation({
     // Même règle que pour les récompenses : on écrit la nouvelle clé, PUIS on
     // retire l'ancienne si la race ou le niveau a changé.
-    mutationFn: async ({
-      entree,
-      ancienne,
-    }: {
-      entree: RaceReward;
-      ancienne: RaceReward | null;
-    }) => {
+    mutationFn: async ({ entree, ancienne }: { entree: RaceReward; ancienne: RaceReward | null }) => {
       await api.post("/levels/race-rewards", entree);
-      if (
-        ancienne &&
-        (ancienne.race !== entree.race || ancienne.level !== entree.level)
-      ) {
-        await api.delete(
-          `/levels/race-rewards/${ancienne.race}/${ancienne.level}`,
-        );
+      if (ancienne && (ancienne.race !== entree.race || ancienne.level !== entree.level)) {
+        await api.delete(`/levels/race-rewards/${ancienne.race}/${ancienne.level}`);
       }
     },
     onSuccess: () => {
@@ -1328,8 +1176,7 @@ function RaceRewardsCard({
     },
   });
 
-  const existe = (ra: string, lv: number) =>
-    rewards.some((r) => r.race === ra && r.level === lv);
+  const existe = (ra: string, lv: number) => rewards.some(r => r.race === ra && r.level === lv);
 
   const modifier = (r: RaceReward) => {
     setEditing(r);
@@ -1348,8 +1195,7 @@ function RaceRewardsCard({
   };
 
   const remove = useMutation({
-    mutationFn: (r: RaceReward) =>
-      api.delete(`/levels/race-rewards/${r.race}/${r.level}`),
+    mutationFn: (r: RaceReward) => api.delete(`/levels/race-rewards/${r.race}/${r.level}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["levels", "race-rewards"] });
       showSuccess("Rôle de palier supprimé.");
@@ -1359,12 +1205,9 @@ function RaceRewardsCard({
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const lv = Number(level);
-    const memeCle =
-      editing != null && editing.race === race && editing.level === lv;
+    const memeCle = editing != null && editing.race === race && editing.level === lv;
     if (editing && !memeCle && existe(race, lv)) {
-      setConflit(
-        `Le palier ${lv} (${raceLabel(race)}) existe déjà — modifie-le directement.`,
-      );
+      setConflit(`Le palier ${lv} (${raceLabel(race)}) existe déjà — modifie-le directement.`);
       return;
     }
     setConflit(null);
@@ -1375,12 +1218,10 @@ function RaceRewardsCard({
   const remplace = !editing && level !== "" && existe(race, Number(level));
 
   // Regroupe par race (dans l'ordre canonique) puis trie par niveau.
-  const grouped = RACE_OPTIONS.map((opt) => ({
+  const grouped = RACE_OPTIONS.map(opt => ({
     ...opt,
-    rows: rewards
-      .filter((r) => r.race === opt.id)
-      .toSorted((a, b) => a.level - b.level),
-  })).filter((g) => g.rows.length > 0);
+    rows: rewards.filter(r => r.race === opt.id).toSorted((a, b) => a.level - b.level),
+  })).filter(g => g.rows.length > 0);
 
   return (
     <div className="card">
@@ -1389,11 +1230,9 @@ function RaceRewardsCard({
           Rôles de palier par race ({rewards.length})
         </h3>
         <p className="mt-0.5 text-xs text-zinc-500">
-          Rôle de transformation attribué à chaque montée de palier, propre à
-          chaque race. C&apos;est cette table qui pilote les rôles distribués
-          lors des level-up (indépendante des bonus zénis ci-dessus). Une race
-          sans palier configuré ne reçoit ni ne perd aucun rôle de
-          transformation.
+          Rôle de transformation attribué à chaque montée de palier, propre à chaque race. C&apos;est cette table qui
+          pilote les rôles distribués lors des level-up (indépendante des bonus zénis ci-dessus). Une race sans palier
+          configuré ne reçoit ni ne perd aucun rôle de transformation.
         </p>
       </div>
 
@@ -1428,9 +1267,7 @@ function RaceRewardsCard({
             : "Ajouter / modifier un palier de race"}
         </h4>
         {conflit && (
-          <div className="rounded border border-red-500/40 bg-red-500/10 p-2 text-xs text-red-400">
-            {conflit}
-          </div>
+          <div className="rounded border border-red-500/40 bg-red-500/10 p-2 text-xs text-red-400">{conflit}</div>
         )}
         {upsert.isError && (
           <div className="rounded border border-red-500/40 bg-red-500/10 p-2 text-xs text-red-400">
@@ -1440,12 +1277,8 @@ function RaceRewardsCard({
         <div className="grid gap-3 sm:grid-cols-4">
           <div>
             <label className="mb-1 block text-xs text-zinc-400">Race</label>
-            <select
-              className="input"
-              value={race}
-              onChange={(e) => setRace(e.target.value)}
-            >
-              {RACE_OPTIONS.map((r) => (
+            <select className="input" value={race} onChange={e => setRace(e.target.value)}>
+              {RACE_OPTIONS.map(r => (
                 <option key={r.id} value={r.id}>
                   {r.label}
                 </option>
@@ -1453,22 +1286,18 @@ function RaceRewardsCard({
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-zinc-400">
-              Niveau (palier)
-            </label>
+            <label className="mb-1 block text-xs text-zinc-400">Niveau (palier)</label>
             <input
               className="input"
               type="number"
               min="1"
               value={level}
-              onChange={(e) => setLevel(e.target.value)}
+              onChange={e => setLevel(e.target.value)}
               required
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs text-zinc-400">
-              Rôle Discord à attribuer
-            </label>
+            <label className="mb-1 block text-xs text-zinc-400">Rôle Discord à attribuer</label>
             <RolePicker value={roleId} onChange={setRoleId} />
           </div>
         </div>
@@ -1478,23 +1307,9 @@ function RaceRewardsCard({
               Annuler
             </button>
           )}
-          <button
-            type="submit"
-            disabled={!level || !roleId || upsert.isPending}
-            className="btn btn-primary"
-          >
-            {editing ? (
-              <Enregistrer className="h-3 w-3" />
-            ) : (
-              <Plus className="h-3 w-3" />
-            )}
-            {upsert.isPending
-              ? "Enregistrement…"
-              : editing
-                ? "Enregistrer"
-                : remplace
-                  ? "Remplacer"
-                  : "Ajouter"}
+          <button type="submit" disabled={!level || !roleId || upsert.isPending} className="btn btn-primary">
+            {editing ? <Enregistrer className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+            {upsert.isPending ? "Enregistrement…" : editing ? "Enregistrer" : remplace ? "Remplacer" : "Ajouter"}
           </button>
         </div>
       </form>
@@ -1510,7 +1325,7 @@ function RaceRewardsCard({
         </div>
       ) : (
         <div className="space-y-4">
-          {grouped.map((g) => (
+          {grouped.map(g => (
             <div key={g.id}>
               <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-brand-400">
                 {g.label} ({g.rows.length})
@@ -1520,25 +1335,19 @@ function RaceRewardsCard({
                   <thead className="text-xs uppercase tracking-wide text-zinc-500">
                     <tr>
                       <th className="px-3 py-2 text-left">Palier</th>
-                      <th className="px-3 py-2 text-left">
-                        Rôle Discord attribué
-                      </th>
+                      <th className="px-3 py-2 text-left">Rôle Discord attribué</th>
                       <th className="px-3 py-2" />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-800">
-                    {g.rows.map((r) => (
+                    {g.rows.map(r => (
                       <tr
                         key={`${r.race}-${r.level}`}
                         className={
-                          editing?.race === r.race && editing?.level === r.level
-                            ? "bg-zinc-800/60"
-                            : undefined
+                          editing?.race === r.race && editing?.level === r.level ? "bg-zinc-800/60" : undefined
                         }
                       >
-                        <td className="px-3 py-2 font-bold text-brand-400">
-                          {r.level}
-                        </td>
+                        <td className="px-3 py-2 font-bold text-brand-400">{r.level}</td>
                         <td className="px-3 py-2 text-sm">
                           <RoleBadge roleId={r.roleId} />
                         </td>
@@ -1580,10 +1389,7 @@ function TopsCard() {
   const [limit, setLimit] = useState(10);
   const top = useQuery({
     queryKey: ["levels", "top", metric, limit],
-    queryFn: () =>
-      api.get<{ users: TopUser[] }>(
-        `/levels/top?metric=${metric}&limit=${limit}`,
-      ),
+    queryFn: () => api.get<{ users: TopUser[] }>(`/levels/top?metric=${metric}&limit=${limit}`),
   });
 
   const formatMetric = (u: TopUser): string => {
@@ -1612,11 +1418,9 @@ function TopsCard() {
   return (
     <div className="card">
       <div className="mb-3 flex flex-wrap items-center gap-3">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
-          Classement rapide
-        </h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">Classement rapide</h3>
         <div className="flex flex-wrap gap-1">
-          {metrics.map((m) => (
+          {metrics.map(m => (
             <button
               key={m.k}
               type="button"
@@ -1627,12 +1431,8 @@ function TopsCard() {
             </button>
           ))}
         </div>
-        <select
-          className="input ml-auto w-32"
-          value={limit}
-          onChange={(e) => setLimit(Number(e.target.value))}
-        >
-          {[10, 25, 50].map((n) => (
+        <select className="input ml-auto w-32" value={limit} onChange={e => setLimit(Number(e.target.value))}>
+          {[10, 25, 50].map(n => (
             <option key={n} value={n}>
               Top {n}
             </option>
@@ -1656,34 +1456,21 @@ function TopsCard() {
       <div className="space-y-1.5">
         {top.data?.users.map((u, i) => (
           <div key={u.id} className="flex items-center gap-3 text-sm">
-            <span className="w-8 text-right font-mono text-xs text-zinc-500">
-              #{i + 1}
-            </span>
-            <span
-              className="w-44 truncate font-mono text-xs text-zinc-300"
-              title={u.id}
-            >
+            <span className="w-8 text-right font-mono text-xs text-zinc-500">#{i + 1}</span>
+            <span className="w-44 truncate font-mono text-xs text-zinc-300" title={u.id}>
               {u.id.slice(0, 6)}…{u.id.slice(-4)}
-              <span
-                className="ml-1 text-[10px] text-zinc-600"
-                title={`ID Discord complet : ${u.id}`}
-              >
+              <span className="ml-1 text-[10px] text-zinc-600" title={`ID Discord complet : ${u.id}`}>
                 ({u.id})
               </span>
             </span>
             <span className="flex-1 truncate text-xs text-zinc-400">
-              niveau {u.lastLevelReached} · {u.xp.toLocaleString("fr-FR")} XP ·{" "}
-              {formatZeni(u.zeni)}
+              niveau {u.lastLevelReached} · {u.xp.toLocaleString("fr-FR")} XP · {formatZeni(u.zeni)}
             </span>
-            <span className="text-right font-mono text-sm text-brand-400">
-              {formatMetric(u)}
-            </span>
+            <span className="text-right font-mono text-sm text-brand-400">{formatMetric(u)}</span>
           </div>
         ))}
         {top.data?.users.length === 0 && (
-          <p className="text-sm italic text-zinc-500">
-            Aucun joueur enregistré pour cette métrique.
-          </p>
+          <p className="text-sm italic text-zinc-500">Aucun joueur enregistré pour cette métrique.</p>
         )}
       </div>
     </div>
@@ -1706,7 +1493,7 @@ function ManualActionsCard() {
         mode,
         amount: Number(amount),
       }),
-    onSuccess: (data) => {
+    onSuccess: data => {
       const d = data as {
         ok?: boolean;
         newXp?: number;
@@ -1720,7 +1507,7 @@ function ManualActionsCard() {
         msg: `Modification appliquée. Nouvelle valeur : ${newVal?.toLocaleString("fr-FR") ?? "—"} ${target === "xp" ? "XP" : "zénis"}.`,
       });
     },
-    onError: (err) =>
+    onError: err =>
       setLastResult({
         ok: false,
         msg: `Erreur : ${err instanceof Error ? err.message : String(err)}`,
@@ -1739,65 +1526,43 @@ function ManualActionsCard() {
         Modification manuelle d&apos;un joueur
       </h3>
       <p className="text-xs text-zinc-500">
-        Permet d&apos;ajouter, retirer ou définir directement l&apos;XP ou les
-        zénis d&apos;un membre. Renseignez son identifiant Discord (suite de
-        chiffres visible dans les paramètres Discord avec le mode développeur
-        activé).
+        Permet d&apos;ajouter, retirer ou définir directement l&apos;XP ou les zénis d&apos;un membre. Renseignez son
+        identifiant Discord (suite de chiffres visible dans les paramètres Discord avec le mode développeur activé).
       </p>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="lg:col-span-2">
-          <label className="mb-1 block text-xs text-zinc-400">
-            Identifiant Discord du joueur
-          </label>
+          <label className="mb-1 block text-xs text-zinc-400">Identifiant Discord du joueur</label>
           <UserSelect value={userId} onChange={setUserId} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-400">
-            Ce que l&apos;on modifie
-          </label>
-          <select
-            className="input"
-            value={target}
-            onChange={(e) => setTarget(e.target.value as "xp" | "zeni")}
-          >
+          <label className="mb-1 block text-xs text-zinc-400">Ce que l&apos;on modifie</label>
+          <select className="input" value={target} onChange={e => setTarget(e.target.value as "xp" | "zeni")}>
             <option value="xp">Points d&apos;expérience (XP)</option>
             <option value="zeni">Zénis (monnaie)</option>
           </select>
         </div>
         <div>
           <label className="mb-1 block text-xs text-zinc-400">Opération</label>
-          <select
-            className="input"
-            value={mode}
-            onChange={(e) => setMode(e.target.value as "add" | "set")}
-          >
+          <select className="input" value={mode} onChange={e => setMode(e.target.value as "add" | "set")}>
             <option value="add">Ajouter / retirer</option>
             <option value="set">Définir exactement</option>
           </select>
         </div>
         <div className="lg:col-span-2">
-          <label className="mb-1 block text-xs text-zinc-400">
-            Montant (négatif pour retirer)
-          </label>
+          <label className="mb-1 block text-xs text-zinc-400">Montant (négatif pour retirer)</label>
           <input
             className="input"
             type="number"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={e => setAmount(e.target.value)}
             placeholder={mode === "add" ? "ex. 1000 ou -500" : "ex. 50000"}
             required
           />
         </div>
       </div>
-      <button
-        type="submit"
-        disabled={!userId || !amount || mutation.isPending}
-        className="btn btn-primary"
-      >
+      <button type="submit" disabled={!userId || !amount || mutation.isPending} className="btn btn-primary">
         <Enregistrer className="h-3 w-3" />
-        {mutation.isPending
-          ? "Application en cours…"
-          : "Appliquer la modification"}
+        {mutation.isPending ? "Application en cours…" : "Appliquer la modification"}
       </button>
       {lastResult && (
         <div

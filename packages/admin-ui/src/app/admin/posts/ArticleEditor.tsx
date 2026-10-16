@@ -20,15 +20,15 @@ import type { JSONContent } from "@tiptap/react";
 
 import { ShenronEditor } from "@/components/editor";
 import { PlainField } from "@/components/editor/PlainField";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Badge } from "@shenron/ui/badge";
+import { Button } from "@shenron/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@shenron/ui/card";
+import { Input } from "@shenron/ui/input";
+import { Label } from "@shenron/ui/label";
+import { Switch } from "@shenron/ui/switch";
 import { ImageField } from "@aphrody/admin-ui/components/admin/ImageField";
 import { slugify } from "@/lib/slug";
-import { cn } from "@/lib/utils";
+import { cn } from "@shenron/ui/lib/utils";
 import type { PostContentDoc, PostStatus } from "@/db/schema";
 import { checkSlug, deletePost, savePost, type PostInput } from "./_actions";
 
@@ -65,36 +65,23 @@ function toLocalInput(iso: string | null): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function ArticleEditor({
-  initial,
-  siteUrl,
-}: {
-  initial: ArticleDraft;
-  siteUrl: string;
-}) {
+export function ArticleEditor({ initial, siteUrl }: { initial: ArticleDraft; siteUrl: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   const [draft, setDraft] = useState<ArticleDraft>(initial);
-  const [dateInput, setDateInput] = useState(() =>
-    toLocalInput(initial.publishedAt),
-  );
+  const [dateInput, setDateInput] = useState(() => toLocalInput(initial.publishedAt));
   // L'admin a-t-il repris la main sur le slug ? Tant que non, il suit le titre.
   const [slugTouched, setSlugTouched] = useState(Boolean(initial.slug));
-  const [slugState, setSlugState] = useState<
-    "idle" | "checking" | "free" | "taken"
-  >("idle");
+  const [slugState, setSlugState] = useState<"idle" | "checking" | "free" | "taken">("idle");
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [dirty, setDirty] = useState(false);
 
-  const set = useCallback(
-    <K extends keyof ArticleDraft>(key: K, value: ArticleDraft[K]) => {
-      setDraft((d) => ({ ...d, [key]: value }));
-      setDirty(true);
-    },
-    [],
-  );
+  const set = useCallback(<K extends keyof ArticleDraft>(key: K, value: ArticleDraft[K]) => {
+    setDraft(d => ({ ...d, [key]: value }));
+    setDirty(true);
+  }, []);
 
   // --- Slug ---------------------------------------------------------------
   const effectiveSlug = slugTouched ? draft.slug : slugify(draft.title);
@@ -126,7 +113,7 @@ export function ArticleEditor({
   }, [dirty]);
 
   const onDocChange = useCallback((doc: PostContentDoc) => {
-    setDraft((d) => ({ ...d, doc }));
+    setDraft(d => ({ ...d, doc }));
     setDirty(true);
   }, []);
 
@@ -162,7 +149,7 @@ export function ArticleEditor({
         }
         setDirty(false);
         setSavedAt(new Date());
-        setDraft((d) => ({ ...d, id: res.id, slug: res.slug, status }));
+        setDraft(d => ({ ...d, id: res.id, slug: res.slug, status }));
         setSlugTouched(true);
         // Création : on bascule sur l'URL d'édition pour que le rechargement
         // ou un partage de lien retombe sur le bon article.
@@ -185,12 +172,8 @@ export function ArticleEditor({
     return () => window.removeEventListener("keydown", onKey);
   }, [submit, draft.status]);
 
-  const seoTitlePreview =
-    draft.seoTitle?.trim() || draft.title || "Titre de l'article";
-  const seoDescPreview =
-    draft.seoDescription?.trim() ||
-    draft.excerpt?.trim() ||
-    "Résumé de l'article…";
+  const seoTitlePreview = draft.seoTitle?.trim() || draft.title || "Titre de l'article";
+  const seoDescPreview = draft.seoDescription?.trim() || draft.excerpt?.trim() || "Résumé de l'article…";
 
   return (
     <div className="mx-auto w-full max-w-[1500px]">
@@ -206,16 +189,11 @@ export function ArticleEditor({
 
         <StatusBadge status={draft.status} publishedAt={dateInput} />
 
-        {dirty && (
-          <span className="text-[12px] text-amber-300">
-            Modifications non enregistrées
-          </span>
-        )}
+        {dirty && <span className="text-[12px] text-amber-300">Modifications non enregistrées</span>}
         {!dirty && savedAt && (
           <span className="inline-flex items-center gap-1.5 text-[12px] text-emerald-300">
             <Check className="size-3.5" />
-            Enregistré à{" "}
-            {savedAt.toLocaleTimeString("fr-FR", { timeStyle: "short" })}
+            Enregistré à {savedAt.toLocaleTimeString("fr-FR", { timeStyle: "short" })}
           </span>
         )}
 
@@ -231,33 +209,16 @@ export function ArticleEditor({
               Voir en ligne
             </a>
           )}
-          <Button
-            variant="outline"
-            size="lg"
-            disabled={pending}
-            onClick={() => submit("draft")}
-          >
+          <Button variant="outline" size="lg" disabled={pending} onClick={() => submit("draft")}>
             Enregistrer le brouillon
           </Button>
           <Button
             size="lg"
             disabled={pending || slugState === "taken"}
-            onClick={() =>
-              submit(
-                dateInput && new Date(dateInput) > new Date()
-                  ? "scheduled"
-                  : "published",
-              )
-            }
+            onClick={() => submit(dateInput && new Date(dateInput) > new Date() ? "scheduled" : "published")}
           >
-            {pending ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Save className="size-4" />
-            )}
-            {dateInput && new Date(dateInput) > new Date()
-              ? "Programmer"
-              : "Publier"}
+            {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            {dateInput && new Date(dateInput) > new Date() ? "Programmer" : "Publier"}
           </Button>
         </div>
       </div>
@@ -279,10 +240,9 @@ export function ArticleEditor({
             <input
               id="title"
               value={draft.title}
-              onChange={(e) => {
+              onChange={e => {
                 set("title", e.target.value);
-                if (!slugTouched)
-                  setDraft((d) => ({ ...d, slug: slugify(e.target.value) }));
+                if (!slugTouched) setDraft(d => ({ ...d, slug: slugify(e.target.value) }));
               }}
               placeholder="Titre de l'article"
               className="w-full border-0 bg-transparent px-1 text-[32px] font-bold leading-tight tracking-tight text-white outline-none placeholder:text-white/25"
@@ -293,7 +253,7 @@ export function ArticleEditor({
             value={effectiveSlug}
             state={slugState}
             siteUrl={siteUrl}
-            onChange={(v) => {
+            onChange={v => {
               setSlugTouched(true);
               set("slug", v);
             }}
@@ -305,7 +265,7 @@ export function ArticleEditor({
             // `PostContentDoc` est typé large côté base (jsonb) ; la validité réelle
             // du document est vérifiée par ProseMirror au montage.
             value={initial.doc as JSONContent | null}
-            onChangeDoc={(doc) => onDocChange(doc as PostContentDoc)}
+            onChangeDoc={doc => onDocChange(doc as PostContentDoc)}
             uploadSubdir="articles"
             autosaveKey={`post:${initial.id ?? "nouveau"}`}
             autosaveLabel={draft.title || "Article sans titre"}
@@ -332,14 +292,13 @@ export function ArticleEditor({
                   id="publishedAt"
                   type="datetime-local"
                   value={dateInput}
-                  onChange={(e) => {
+                  onChange={e => {
                     setDateInput(e.target.value);
                     setDirty(true);
                   }}
                 />
                 <p className="text-[12px] text-white/50">
-                  Une date future programme l&apos;article : il sortira tout
-                  seul le moment venu.
+                  Une date future programme l&apos;article : il sortira tout seul le moment venu.
                 </p>
               </div>
 
@@ -348,7 +307,7 @@ export function ArticleEditor({
                 label="Article à la une"
                 hint="Affiché en tête du journal, en grand format."
                 checked={draft.featured}
-                onChange={(v) => set("featured", v)}
+                onChange={v => set("featured", v)}
               />
             </CardContent>
           </Card>
@@ -360,7 +319,7 @@ export function ArticleEditor({
             <CardContent className="space-y-3">
               <ImageField
                 value={draft.cover ?? ""}
-                onChange={(cover) => set("cover", cover || null)}
+                onChange={cover => set("cover", cover || null)}
                 subdir="articles"
                 column="couverture"
               />
@@ -369,7 +328,7 @@ export function ArticleEditor({
                 <Input
                   id="coverAlt"
                   value={draft.coverAlt ?? ""}
-                  onChange={(e) => set("coverAlt", e.target.value)}
+                  onChange={e => set("coverAlt", e.target.value)}
                   placeholder="Ce que montre l'image"
                 />
                 <p className="text-[12px] text-white/50">
@@ -381,7 +340,7 @@ export function ArticleEditor({
                 <Input
                   id="coverCaption"
                   value={draft.coverCaption ?? ""}
-                  onChange={(e) => set("coverCaption", e.target.value)}
+                  onChange={e => set("coverCaption", e.target.value)}
                   placeholder="Crédit ou contexte (optionnel)"
                 />
               </div>
@@ -403,14 +362,14 @@ export function ArticleEditor({
                   minRows={4}
                   maxRows={10}
                   value={draft.excerpt}
-                  onChange={(v) => set("excerpt", v)}
+                  onChange={v => set("excerpt", v)}
                   placeholder="Le paragraphe d'accroche affiché dans les listes et sous le titre."
                 />
                 <p className="text-[12px] text-white/50">
                   Laissé vide, il est généré depuis le début de l&apos;article.
                 </p>
               </div>
-              <TagInput tags={draft.tags} onChange={(t) => set("tags", t)} />
+              <TagInput tags={draft.tags} onChange={t => set("tags", t)} />
             </CardContent>
           </Card>
 
@@ -422,29 +381,21 @@ export function ArticleEditor({
               {/* Aperçu du résultat de recherche — l'admin voit ce que Google affichera. */}
               <div className="rounded-lg border border-white/10 bg-white p-3">
                 <p className="truncate text-[12px] text-[#4d5156]">
-                  {siteUrl.replace(/^https?:\/\//, "")} › actualites ›{" "}
-                  {effectiveSlug || "…"}
+                  {siteUrl.replace(/^https?:\/\//, "")} › actualites › {effectiveSlug || "…"}
                 </p>
-                <p className="truncate text-[16px] leading-snug text-[#1a0dab]">
-                  {seoTitlePreview}
-                </p>
-                <p className="line-clamp-2 text-[13px] leading-snug text-[#4d5156]">
-                  {seoDescPreview}
-                </p>
+                <p className="truncate text-[16px] leading-snug text-[#1a0dab]">{seoTitlePreview}</p>
+                <p className="line-clamp-2 text-[13px] leading-snug text-[#4d5156]">{seoDescPreview}</p>
               </div>
 
               <div className="space-y-1.5">
                 <div className="flex items-baseline justify-between">
                   <Label htmlFor="seoTitle">Titre SEO</Label>
-                  <Counter
-                    value={(draft.seoTitle ?? draft.title).length}
-                    limit={SEO_TITLE_LIMIT}
-                  />
+                  <Counter value={(draft.seoTitle ?? draft.title).length} limit={SEO_TITLE_LIMIT} />
                 </div>
                 <Input
                   id="seoTitle"
                   value={draft.seoTitle ?? ""}
-                  onChange={(e) => set("seoTitle", e.target.value)}
+                  onChange={e => set("seoTitle", e.target.value)}
                   placeholder={draft.title || "Reprend le titre de l'article"}
                 />
               </div>
@@ -452,17 +403,14 @@ export function ArticleEditor({
               <div className="space-y-1.5">
                 <div className="flex items-baseline justify-between">
                   <Label htmlFor="seoDescription">Méta description</Label>
-                  <Counter
-                    value={(draft.seoDescription ?? draft.excerpt).length}
-                    limit={SEO_DESC_LIMIT}
-                  />
+                  <Counter value={(draft.seoDescription ?? draft.excerpt).length} limit={SEO_DESC_LIMIT} />
                 </div>
                 <PlainField
                   id="seoDescription"
                   minRows={3}
                   maxRows={8}
                   value={draft.seoDescription ?? ""}
-                  onChange={(v) => set("seoDescription", v)}
+                  onChange={v => set("seoDescription", v)}
                   placeholder="Reprend le chapô si laissé vide"
                 />
               </div>
@@ -472,7 +420,7 @@ export function ArticleEditor({
                 <Input
                   id="canonicalUrl"
                   value={draft.canonicalUrl ?? ""}
-                  onChange={(e) => set("canonicalUrl", e.target.value)}
+                  onChange={e => set("canonicalUrl", e.target.value)}
                   placeholder="À remplir seulement si republié depuis un autre site"
                   className="font-mono text-[12px]"
                 />
@@ -482,7 +430,7 @@ export function ArticleEditor({
                 label="Masquer aux moteurs"
                 hint="Pose noindex : l'article reste accessible par son lien mais sort de Google."
                 checked={draft.noindex}
-                onChange={(v) => set("noindex", v)}
+                onChange={v => set("noindex", v)}
               />
             </CardContent>
           </Card>
@@ -495,10 +443,8 @@ export function ArticleEditor({
                 variant="destructive"
                 size="lg"
                 className="w-full"
-                onClick={(e) => {
-                  if (
-                    !confirm(`Supprimer définitivement « ${draft.title} » ?`)
-                  ) {
+                onClick={e => {
+                  if (!confirm(`Supprimer définitivement « ${draft.title} » ?`)) {
                     e.preventDefault();
                   }
                 }}
@@ -516,17 +462,10 @@ export function ArticleEditor({
 
 /* -------------------------------------------------------------------------- */
 
-function StatusBadge({
-  status,
-  publishedAt,
-}: {
-  status: PostStatus;
-  publishedAt: string;
-}) {
+function StatusBadge({ status, publishedAt }: { status: PostStatus; publishedAt: string }) {
   const isFuture = publishedAt ? new Date(publishedAt) > new Date() : false;
   if (status === "draft") return <Badge variant="secondary">Brouillon</Badge>;
-  if (status === "scheduled" || isFuture)
-    return <Badge variant="warning">Programmé</Badge>;
+  if (status === "scheduled" || isFuture) return <Badge variant="warning">Programmé</Badge>;
   return <Badge variant="success">Publié</Badge>;
 }
 
@@ -543,18 +482,14 @@ function SlugField({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
-      <span className="shrink-0 font-mono text-[12px] text-white/50">
-        {siteUrl.replace(/^https?:\/\//, "")}/news/
-      </span>
+      <span className="shrink-0 font-mono text-[12px] text-white/50">{siteUrl.replace(/^https?:\/\//, "")}/news/</span>
       <input
         value={value}
-        onChange={(e) => onChange(slugify(e.target.value))}
+        onChange={e => onChange(slugify(e.target.value))}
         placeholder="slug-de-l-article"
         className="min-w-0 flex-1 border-0 bg-transparent font-mono text-[12px] text-white outline-none placeholder:text-white/25"
       />
-      {state === "checking" && (
-        <Loader2 className="size-3.5 animate-spin text-white/50" />
-      )}
+      {state === "checking" && <Loader2 className="size-3.5 animate-spin text-white/50" />}
       {state === "free" && (
         <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400">
           <Check className="size-3.5" /> disponible
@@ -569,20 +504,13 @@ function SlugField({
   );
 }
 
-function TagInput({
-  tags,
-  onChange,
-}: {
-  tags: string[];
-  onChange: (t: string[]) => void;
-}) {
+function TagInput({ tags, onChange }: { tags: string[]; onChange: (t: string[]) => void }) {
   const [value, setValue] = useState("");
 
   const add = () => {
     const t = value.trim().replace(/\s+/g, " ");
     if (!t) return;
-    if (!tags.some((x) => x.toLowerCase() === t.toLowerCase()))
-      onChange([...tags, t]);
+    if (!tags.some(x => x.toLowerCase() === t.toLowerCase())) onChange([...tags, t]);
     setValue("");
   };
 
@@ -591,7 +519,7 @@ function TagInput({
       <Label htmlFor="tag-input">Thèmes</Label>
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {tags.map((tag) => (
+          {tags.map(tag => (
             <span
               key={tag}
               className="inline-flex items-center gap-1 rounded-md border border-white/15 bg-white/[0.06] py-0.5 pl-2 pr-1 text-[12px] text-white/80"
@@ -599,7 +527,7 @@ function TagInput({
               {tag}
               <button
                 type="button"
-                onClick={() => onChange(tags.filter((t) => t !== tag))}
+                onClick={() => onChange(tags.filter(t => t !== tag))}
                 className="grid size-4 place-items-center rounded text-white/50 hover:text-white"
                 aria-label={`Retirer ${tag}`}
               >
@@ -612,20 +540,17 @@ function TagInput({
       <Input
         id="tag-input"
         value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => {
+        onChange={e => setValue(e.target.value)}
+        onKeyDown={e => {
           if (e.key === "Enter" || e.key === ",") {
             e.preventDefault();
             add();
           }
           // Retour arrière sur un champ vide : retire le dernier thème.
-          if (e.key === "Backspace" && !value && tags.length)
-            onChange(tags.slice(0, -1));
+          if (e.key === "Backspace" && !value && tags.length) onChange(tags.slice(0, -1));
         }}
         onBlur={add}
-        placeholder={
-          tags.length >= 8 ? "Maximum atteint" : "Ajouter un thème puis Entrée"
-        }
+        placeholder={tags.length >= 8 ? "Maximum atteint" : "Ajouter un thème puis Entrée"}
         disabled={tags.length >= 8}
       />
     </div>
@@ -647,11 +572,7 @@ function ToggleRow({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <Switch
-        checked={checked}
-        onCheckedChange={onChange}
-        className="mt-0.5 shrink-0"
-      />
+      <Switch checked={checked} onCheckedChange={onChange} className="mt-0.5 shrink-0" />
       <div className="min-w-0">
         <p className="flex items-center gap-1.5 text-[13px] font-medium text-white">
           {icon}
@@ -668,12 +589,7 @@ function Counter({ value, limit }: { value: number; limit: number }) {
   // Zone d'alerte à 90 % : on prévient avant la troncature, pas après.
   const near = !over && value > limit * 0.9;
   return (
-    <span
-      className={cn(
-        "text-[11px] tabular-nums",
-        over ? "text-red-400" : near ? "text-amber-400" : "text-white/50",
-      )}
-    >
+    <span className={cn("text-[11px] tabular-nums", over ? "text-red-400" : near ? "text-amber-400" : "text-white/50")}>
       {value}/{limit}
     </span>
   );

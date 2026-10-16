@@ -22,10 +22,7 @@ import {
 } from "lucide-react";
 import { api } from "@aphrody/admin-ui/client";
 import { formatBytes, formatDuration, fmtNum } from "@aphrody/admin-ui/format";
-import {
-  useBots,
-  type BotSummary,
-} from "@aphrody/admin-ui/components/admin/BotSelector";
+import { useBots, type BotSummary } from "@aphrody/admin-ui/components/admin/BotSelector";
 
 type MonitoringResponse = {
   botStatus: { online: boolean; uptime: number | null };
@@ -72,8 +69,7 @@ async function getLiveDashboard(): Promise<LiveDashboardResponse> {
   const response = await fetch("/api/admin/dashboard-live", {
     cache: "no-store",
   });
-  if (!response.ok)
-    throw new Error(`Sonde live indisponible (HTTP ${response.status})`);
+  if (!response.ok) throw new Error(`Sonde live indisponible (HTTP ${response.status})`);
   return response.json() as Promise<LiveDashboardResponse>;
 }
 
@@ -116,10 +112,7 @@ const QUICK_ACTIONS = [
   },
 ];
 
-const SERVICE_COPY: Record<
-  LiveService["id"],
-  { label: string; description: string }
-> = {
+const SERVICE_COPY: Record<LiveService["id"], { label: string; description: string }> = {
   api: {
     label: "Application du bot",
     description: "Permet au site et à Discord de communiquer.",
@@ -157,24 +150,19 @@ export default function DashboardPage() {
     refetchIntervalInBackground: false,
   });
 
-  const onlineCount = bots.data?.bots.filter((bot) => bot.online).length ?? 0;
+  const onlineCount = bots.data?.bots.filter(bot => bot.online).length ?? 0;
   const totalCount = bots.data?.bots.length ?? 0;
   const avgPing =
     bots.data && onlineCount > 0
       ? Math.round(
-          bots.data.bots
-            .filter((bot) => bot.online)
-            .reduce((sum, bot) => sum + Math.max(0, bot.wsPing), 0) /
+          bots.data.bots.filter(bot => bot.online).reduce((sum, bot) => sum + Math.max(0, bot.wsPing), 0) /
             Math.max(1, onlineCount),
         )
       : null;
   const hasError = bots.isError || health.isError || stats.isError;
   const unavailableServices =
-    live.data?.services.filter(
-      (service) => service.state === "down" || service.state === "degraded",
-    ) ?? [];
-  const allLiveServicesHealthy =
-    live.data?.services.length === 4 && unavailableServices.length === 0;
+    live.data?.services.filter(service => service.state === "down" || service.state === "degraded") ?? [];
+  const allLiveServicesHealthy = live.data?.services.length === 4 && unavailableServices.length === 0;
   const refresh = () => {
     void bots.refetch();
     void health.refetch();
@@ -191,8 +179,7 @@ export default function DashboardPage() {
             Bonjour, voici votre espace de pilotage
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-white/60">
-            Retrouvez ici ce qui fonctionne, ce qui mérite votre attention et
-            les actions les plus utiles.
+            Retrouvez ici ce qui fonctionne, ce qui mérite votre attention et les actions les plus utiles.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -218,8 +205,7 @@ export default function DashboardPage() {
         >
           <p className="flex items-start gap-2">
             <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" />
-            Certains indicateurs ne répondent pas. Les valeurs manquantes ne
-            sont pas interprétées comme des zéros.
+            Certains indicateurs ne répondent pas. Les valeurs manquantes ne sont pas interprétées comme des zéros.
           </p>
           <button
             type="button"
@@ -237,24 +223,16 @@ export default function DashboardPage() {
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-blue-300">
-              Actualisé automatiquement
-            </p>
-            <h2
-              id="live-operations-title"
-              className="mt-1 text-lg font-semibold text-white"
-            >
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-blue-300">Actualisé automatiquement</p>
+            <h2 id="live-operations-title" className="mt-1 text-lg font-semibold text-white">
               Est-ce que tout fonctionne ?
             </h2>
             <p className="mt-1 text-sm text-white/50">
-              Nous vérifions les éléments indispensables au fonctionnement du
-              site et du bot.
+              Nous vérifions les éléments indispensables au fonctionnement du site et du bot.
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs text-white/45">
-            <Radio
-              className={`h-3.5 w-3.5 ${live.isFetching ? "animate-pulse text-blue-300" : ""}`}
-            />
+            <Radio className={`h-3.5 w-3.5 ${live.isFetching ? "animate-pulse text-blue-300" : ""}`} />
             {live.data
               ? `Mesuré à ${new Date(live.data.sampledAt).toLocaleTimeString("fr-FR")}`
               : "Connexion aux sondes…"}
@@ -265,8 +243,7 @@ export default function DashboardPage() {
             role="alert"
             className="mt-4 rounded-xl border border-amber-300/25 bg-amber-300/[.08] p-3 text-sm text-amber-100"
           >
-            Les sondes live sont indisponibles. Les autres métriques conservent
-            leur dernière valeur connue.
+            Les sondes live sont indisponibles. Les autres métriques conservent leur dernière valeur connue.
           </p>
         ) : (
           <>
@@ -276,14 +253,9 @@ export default function DashboardPage() {
               loading={!live.data}
             />
             <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {live.data?.services.map((service) => (
-                <LiveServiceCard key={service.id} service={service} />
-              )) ??
+              {live.data?.services.map(service => <LiveServiceCard key={service.id} service={service} />) ??
                 Array.from({ length: 4 }, (_, index) => (
-                  <div
-                    key={index}
-                    className="h-28 animate-pulse rounded-xl bg-white/[.04]"
-                  />
+                  <div key={index} className="h-28 animate-pulse rounded-xl bg-white/[.04]" />
                 ))}
             </div>
             <AgentActivity agents={live.data?.agents} />
@@ -294,19 +266,13 @@ export default function DashboardPage() {
       <section aria-labelledby="quick-actions-title">
         <div className="flex items-center justify-between">
           <div>
-            <h2
-              id="quick-actions-title"
-              className="text-lg font-semibold text-white"
-            >
+            <h2 id="quick-actions-title" className="text-lg font-semibold text-white">
               Accès rapides
             </h2>
-            <p className="mt-1 text-sm text-white/50">
-              Les opérations les plus fréquentes
-            </p>
+            <p className="mt-1 text-sm text-white/50">Les opérations les plus fréquentes</p>
           </div>
           <span className="hidden text-sm text-white/45 sm:inline-flex sm:items-center sm:gap-1">
-            {QUICK_ACTIONS.length} raccourcis{" "}
-            <ArrowUpRight className="h-4 w-4" />
+            {QUICK_ACTIONS.length} raccourcis <ArrowUpRight className="h-4 w-4" />
           </span>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -321,9 +287,7 @@ export default function DashboardPage() {
               </span>
               <div className="min-w-0">
                 <p className="font-medium text-white">{label}</p>
-                <p className="mt-1 text-sm leading-5 text-white/55">
-                  {description}
-                </p>
+                <p className="mt-1 text-sm leading-5 text-white/55">{description}</p>
               </div>
             </Link>
           ))}
@@ -333,15 +297,10 @@ export default function DashboardPage() {
       <section aria-labelledby="system-health-title">
         <div className="mb-4 flex items-end justify-between">
           <div>
-            <h2
-              id="system-health-title"
-              className="text-lg font-semibold text-white"
-            >
+            <h2 id="system-health-title" className="text-lg font-semibold text-white">
               Votre communauté en un coup d’œil
             </h2>
-            <p className="mt-1 text-sm text-white/50">
-              Les chiffres utiles pour suivre votre serveur.
-            </p>
+            <p className="mt-1 text-sm text-white/50">Les chiffres utiles pour suivre votre serveur.</p>
           </div>
           <span className="inline-flex items-center gap-1.5 text-xs text-white/45">
             <RefreshCw className="h-3.5 w-3.5" /> Mise à jour auto
@@ -359,19 +318,14 @@ export default function DashboardPage() {
             </MetricHelp>
           </KpiCard>
           <KpiCard label="Joueurs en base" icon={<Users className="h-5 w-5" />}>
-            <Metric
-              value={stats.data ? fmtNum(stats.data.stats.totalUsers) : "—"}
-            />
+            <Metric value={stats.data ? fmtNum(stats.data.stats.totalUsers) : "—"} />
             <MetricHelp>
               {stats.data
                 ? `${fmtNum(stats.data.stats.totalActiveUsers)} actifs · ${fmtNum(stats.data.stats.totalGuilds)} serveur${stats.data.stats.totalGuilds > 1 ? "s" : ""}`
                 : "—"}
             </MetricHelp>
           </KpiCard>
-          <KpiCard
-            label="Réactivité du bot"
-            icon={<Activity className="h-5 w-5" />}
-          >
+          <KpiCard label="Réactivité du bot" icon={<Activity className="h-5 w-5" />}>
             <Metric value={avgPing ?? "—"} suffix=" ms" />
             <MetricHelp>
               {avgPing === null
@@ -381,26 +335,12 @@ export default function DashboardPage() {
                   : "Le bot répond plus lentement que d’habitude"}
             </MetricHelp>
           </KpiCard>
-          <KpiCard
-            label="Ressources utilisées"
-            icon={<Cpu className="h-5 w-5" />}
-          >
+          <KpiCard label="Ressources utilisées" icon={<Cpu className="h-5 w-5" />}>
             <Metric
-              value={
-                health.data
-                  ? formatBytes(health.data.pid.rss).split(" ")[0]
-                  : "—"
-              }
-              suffix={
-                health.data
-                  ? ` ${formatBytes(health.data.pid.rss).split(" ")[1]}`
-                  : ""
-              }
+              value={health.data ? (formatBytes(health.data.pid.rss).split(" ")[0] ?? "—") : "—"}
+              suffix={health.data ? ` ${formatBytes(health.data.pid.rss).split(" ")[1]}` : ""}
             />
-            <MetricHelp>
-              Utilisation par le bot ; un détail n’est utile qu’en cas de
-              ralentissement.
-            </MetricHelp>
+            <MetricHelp>Utilisation par le bot ; un détail n’est utile qu’en cas de ralentissement.</MetricHelp>
           </KpiCard>
         </div>
       </section>
@@ -409,69 +349,45 @@ export default function DashboardPage() {
         <h2 id="bots-title" className="text-lg font-semibold text-white">
           Bots connectés à Discord
         </h2>
-        <p className="mt-1 text-sm text-white/50">
-          Chaque carte représente un bot qui peut répondre aux membres.
-        </p>
+        <p className="mt-1 text-sm text-white/50">Chaque carte représente un bot qui peut répondre aux membres.</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {bots.isPending ? (
             Array.from({ length: 3 }, (_, index) => (
-              <div
-                key={index}
-                className="h-28 animate-pulse rounded-xl bg-white/[.04]"
-              />
+              <div key={index} className="h-28 animate-pulse rounded-xl bg-white/[.04]" />
             ))
           ) : bots.isError ? (
             <EmptyState text="Inventaire des bots indisponible." />
           ) : bots.data.bots.length ? (
-            bots.data.bots.map((bot) => <BotCard key={bot.id} bot={bot} />)
+            bots.data.bots.map(bot => <BotCard key={bot.id} bot={bot} />)
           ) : (
             <EmptyState text="Aucun client Gateway déclaré." />
           )}
         </div>
       </section>
 
-      <section
-        aria-labelledby="host-title"
-        className="rounded-xl border border-white/10 bg-white/[.025] p-4 md:p-6"
-      >
+      <section aria-labelledby="host-title" className="rounded-xl border border-white/10 bg-white/[.025] p-4 md:p-6">
         <h2 id="host-title" className="text-lg font-semibold text-white">
           Machine hôte
         </h2>
         {health.data ? (
           <dl className="mt-4 grid gap-x-8 sm:grid-cols-2">
-            <HostMetric
-              label="Système d’exploitation"
-              value={health.data.host.platform}
-            />
+            <HostMetric label="Système d’exploitation" value={health.data.host.platform} />
             <HostMetric label="Cœurs CPU" value={health.data.host.cpu.count} />
             <HostMetric
               label="Mémoire"
               value={`${formatBytes(health.data.host.memory.used)} / ${formatBytes(health.data.host.memory.total)} (${health.data.host.memory.usage} %)`}
             />
-            <HostMetric
-              label="Temps de fonctionnement"
-              value={formatDuration(health.data.host.uptime * 1000)}
-            />
+            <HostMetric label="Temps de fonctionnement" value={formatDuration(health.data.host.uptime * 1000)} />
           </dl>
         ) : (
-          <p className="mt-4 text-sm text-white/50">
-            Connexion à la machine hôte…
-          </p>
+          <p className="mt-4 text-sm text-white/50">Connexion à la machine hôte…</p>
         )}
       </section>
     </div>
   );
 }
 
-function KpiCard({
-  label,
-  icon,
-  children,
-}: {
-  label: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
+function KpiCard({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <article className="rounded-xl border border-white/10 bg-white/[.025] p-4 md:p-5">
       <div className="flex items-center gap-3 text-white/60">
@@ -483,13 +399,7 @@ function KpiCard({
   );
 }
 
-function Metric({
-  value,
-  suffix = "",
-}: {
-  value: string | number;
-  suffix?: string;
-}) {
+function Metric({ value, suffix = "" }: { value: string | number; suffix?: string }) {
   return (
     <p className="font-mono text-3xl font-semibold tracking-tight text-white tabular-nums">
       {value}
@@ -502,13 +412,7 @@ function MetricHelp({ children }: { children: React.ReactNode }) {
   return <p className="mt-2 text-sm leading-5 text-white/50">{children}</p>;
 }
 
-function HostMetric({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
+function HostMetric({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-4 border-t border-white/10 py-3 text-sm">
       <dt className="text-white/50">{label}</dt>
@@ -518,11 +422,7 @@ function HostMetric({
 }
 
 function EmptyState({ text }: { text: string }) {
-  return (
-    <p className="rounded-xl border border-dashed border-white/10 p-5 text-sm text-white/50">
-      {text}
-    </p>
-  );
+  return <p className="rounded-xl border border-dashed border-white/10 p-5 text-sm text-white/50">{text}</p>;
 }
 
 function LiveSummary({
@@ -534,10 +434,7 @@ function LiveSummary({
   unavailableCount: number;
   loading: boolean;
 }) {
-  if (loading)
-    return (
-      <div className="mt-4 h-12 animate-pulse rounded-xl bg-white/[.04]" />
-    );
+  if (loading) return <div className="mt-4 h-12 animate-pulse rounded-xl bg-white/[.04]" />;
   const message = healthy
     ? "Tout fonctionne normalement. Aucune intervention n’est nécessaire."
     : unavailableCount > 0
@@ -547,9 +444,7 @@ function LiveSummary({
     <p
       className={`mt-4 flex items-start gap-2 rounded-xl p-3 text-sm ${healthy ? "bg-emerald-400/10 text-emerald-100" : "bg-amber-300/[.08] text-amber-100"}`}
     >
-      <span
-        className={`mt-1 h-2 w-2 shrink-0 rounded-full ${healthy ? "bg-emerald-400" : "bg-amber-300"}`}
-      />
+      <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${healthy ? "bg-emerald-400" : "bg-amber-300"}`} />
       {message}
     </p>
   );
@@ -587,25 +482,17 @@ function LiveServiceCard({ service }: { service: LiveService }) {
       <h3 className="mt-4 text-sm font-medium text-white">{copy.label}</h3>
       <p className="mt-1 text-sm leading-5 text-white/50">{copy.description}</p>
       <details className="mt-3 text-xs text-white/45">
-        <summary className="cursor-pointer text-white/60 hover:text-white">
-          Voir le détail technique
-        </summary>
+        <summary className="cursor-pointer text-white/60 hover:text-white">Voir le détail technique</summary>
         <p className="mt-2 break-words">
           {service.detail}
-          {service.latencyMs === null
-            ? ""
-            : ` · réponse en ${service.latencyMs} ms`}
+          {service.latencyMs === null ? "" : ` · réponse en ${service.latencyMs} ms`}
         </p>
       </details>
     </article>
   );
 }
 
-function AgentActivity({
-  agents,
-}: {
-  agents: LiveDashboardResponse["agents"] | undefined;
-}) {
+function AgentActivity({ agents }: { agents: LiveDashboardResponse["agents"] | undefined }) {
   return (
     <div className="mt-4 flex flex-col gap-3 rounded-xl border border-white/10 bg-black/10 p-4 lg:flex-row lg:items-center lg:justify-between">
       <div className="flex items-start gap-3">
@@ -625,11 +512,8 @@ function AgentActivity({
       </div>
       <div className="flex flex-wrap gap-2">
         {agents?.activePeers.length ? (
-          agents.activePeers.map((peer) => (
-            <span
-              key={peer}
-              className="rounded-lg bg-white/[.08] px-2.5 py-1 text-xs text-white/70"
-            >
+          agents.activePeers.map(peer => (
+            <span key={peer} className="rounded-lg bg-white/[.08] px-2.5 py-1 text-xs text-white/70">
               {peer}
             </span>
           ))
@@ -648,11 +532,7 @@ function BotCard({ bot }: { bot: BotSummary }) {
       title={bot.username ?? bot.name}
     >
       {bot.avatar ? (
-        <img
-          src={bot.avatar}
-          alt=""
-          className={`h-12 w-12 shrink-0 rounded-full ${bot.online ? "" : "grayscale"}`}
-        />
+        <img src={bot.avatar} alt="" className={`h-12 w-12 shrink-0 rounded-full ${bot.online ? "" : "grayscale"}`} />
       ) : (
         <div className="h-12 w-12 shrink-0 rounded-full bg-white/10" />
       )}
@@ -667,16 +547,14 @@ function BotCard({ bot }: { bot: BotSummary }) {
         <p className="mt-1 text-sm text-white/50">
           {bot.online ? (
             <>
-              {bot.wsPing} ms · actif depuis{" "}
-              {bot.uptime ? formatDuration(bot.uptime) : "—"}
+              {bot.wsPing} ms · actif depuis {bot.uptime ? formatDuration(bot.uptime) : "—"}
             </>
           ) : (
             "Hors ligne"
           )}
         </p>
         <p className="mt-2 text-sm text-white/65">
-          {bot.commandCount} commande{bot.commandCount > 1 ? "s" : ""} ·{" "}
-          {bot.guildCount} serveur
+          {bot.commandCount} commande{bot.commandCount > 1 ? "s" : ""} · {bot.guildCount} serveur
           {bot.guildCount > 1 ? "s" : ""}
         </p>
       </div>

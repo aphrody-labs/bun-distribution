@@ -12,13 +12,10 @@ import {
   FlecheBas,
   FlecheHaut,
   Plus,
-} from "@/components/icones";
+} from "@shenron/ui/icones";
 import { useEffect, useState } from "react";
 import { api } from "@aphrody/admin-ui/client";
-import {
-  RoleSelect,
-  RoleBadge,
-} from "@aphrody/admin-ui/components/admin/RoleSelect";
+import { RoleSelect, RoleBadge } from "@aphrody/admin-ui/components/admin/RoleSelect";
 
 /**
  * Éditeur visuel de la hiérarchie staff (paramètre `moderation.hierarchy`).
@@ -32,15 +29,12 @@ export default function HierarchyPage() {
 
   const hierarchy = useQuery({
     queryKey: ["moderation", "hierarchy"],
-    queryFn: () =>
-      api.get<{ levels: string[][]; raw: string }>("/moderation/hierarchy"),
+    queryFn: () => api.get<{ levels: string[][]; raw: string }>("/moderation/hierarchy"),
   });
 
   const save = useMutation({
-    mutationFn: (levels: string[][]) =>
-      api.put<{ ok: boolean }>("/moderation/hierarchy", { levels }),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["moderation", "hierarchy"] }),
+    mutationFn: (levels: string[][]) => api.put<{ ok: boolean }>("/moderation/hierarchy", { levels }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["moderation", "hierarchy"] }),
   });
 
   const [draft, setDraft] = useState<string[][]>([]);
@@ -53,11 +47,11 @@ export default function HierarchyPage() {
   }, [hierarchy.data]);
 
   const addLevel = () => {
-    setDraft((d) => [...d, []]);
+    setDraft(d => [...d, []]);
     setDirty(true);
   };
   const removeLevel = (idx: number) => {
-    setDraft((d) => d.filter((_, i) => i !== idx));
+    setDraft(d => d.filter((_, i) => i !== idx));
     setDirty(true);
   };
   const moveLevel = (idx: number, delta: -1 | 1) => {
@@ -70,14 +64,12 @@ export default function HierarchyPage() {
   };
   const addRole = (idx: number, roleId: string) => {
     if (!roleId) return;
-    if (draft.some((lvl) => lvl.includes(roleId))) return;
-    setDraft((d) => d.map((lvl, i) => (i === idx ? [...lvl, roleId] : lvl)));
+    if (draft.some(lvl => lvl.includes(roleId))) return;
+    setDraft(d => d.map((lvl, i) => (i === idx ? [...lvl, roleId] : lvl)));
     setDirty(true);
   };
   const removeRole = (idx: number, roleId: string) => {
-    setDraft((d) =>
-      d.map((lvl, i) => (i === idx ? lvl.filter((r) => r !== roleId) : lvl)),
-    );
+    setDraft(d => d.map((lvl, i) => (i === idx ? lvl.filter(r => r !== roleId) : lvl)));
     setDirty(true);
   };
 
@@ -95,11 +87,10 @@ export default function HierarchyPage() {
           <h2 className="text-lg font-semibold">Hiérarchie du staff</h2>
         </div>
         <p className="mt-1 text-sm text-zinc-400">
-          Définit qui peut sanctionner qui. Le niveau <strong>0</strong> est le
-          plus haut (administrateurs), le niveau le plus bas est celui des
-          modérateurs débutants. Un membre du staff ne peut sanctionner que des
-          membres d&apos;un niveau <em>plus bas</em> que le sien. Les
-          propriétaires du serveur et les développeurs du bot passent toujours.
+          Définit qui peut sanctionner qui. Le niveau <strong>0</strong> est le plus haut (administrateurs), le niveau
+          le plus bas est celui des modérateurs débutants. Un membre du staff ne peut sanctionner que des membres
+          d&apos;un niveau <em>plus bas</em> que le sien. Les propriétaires du serveur et les développeurs du bot
+          passent toujours.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <button type="button" className="btn btn-ghost" onClick={addLevel}>
@@ -115,11 +106,7 @@ export default function HierarchyPage() {
             {save.isPending ? "Enregistrement…" : "Enregistrer la hiérarchie"}
           </button>
           {dirty && (
-            <button
-              type="button"
-              className="btn btn-ghost text-zinc-400"
-              onClick={reset}
-            >
+            <button type="button" className="btn btn-ghost text-zinc-400" onClick={reset}>
               <Croix className="h-3 w-3" /> Annuler les modifications
             </button>
           )}
@@ -130,8 +117,7 @@ export default function HierarchyPage() {
           )}
           {save.isError && (
             <span className="flex items-center gap-1 text-xs text-red-400">
-              <Alerte className="inline h-3 w-3" />{" "}
-              {(save.error as Error)?.message}
+              <Alerte className="inline h-3 w-3" /> {(save.error as Error)?.message}
             </span>
           )}
         </div>
@@ -158,8 +144,7 @@ export default function HierarchyPage() {
         <div className="card text-center text-zinc-500">
           <p>Aucun niveau défini.</p>
           <p className="mt-1 text-xs">
-            Sans hiérarchie configurée, les sanctions ne sont limitées que par
-            la garde <code>ModOnly</code>.
+            Sans hiérarchie configurée, les sanctions ne sont limitées que par la garde <code>ModOnly</code>.
           </p>
         </div>
       ) : (
@@ -170,9 +155,9 @@ export default function HierarchyPage() {
               index={idx}
               roles={lvl}
               total={draft.length}
-              onAddRole={(r) => addRole(idx, r)}
-              onRemoveRole={(r) => removeRole(idx, r)}
-              onMove={(d) => moveLevel(idx, d)}
+              onAddRole={r => addRole(idx, r)}
+              onRemoveRole={r => removeRole(idx, r)}
+              onMove={d => moveLevel(idx, d)}
               onRemove={() => removeLevel(idx)}
             />
           ))}
@@ -185,9 +170,7 @@ export default function HierarchyPage() {
           <summary className="cursor-pointer text-xs text-zinc-500">
             Voir la configuration brute stockée dans la base de données
           </summary>
-          <pre className="mt-2 overflow-auto rounded bg-zinc-950 p-3 text-xs">
-            {JSON.stringify(draft, null, 2)}
-          </pre>
+          <pre className="mt-2 overflow-auto rounded bg-zinc-950 p-3 text-xs">{JSON.stringify(draft, null, 2)}</pre>
         </details>
       )}
     </div>
@@ -222,9 +205,7 @@ function LevelCard({
   return (
     <div className="card">
       <div className="flex items-center gap-2">
-        <span className="rounded bg-brand-500/20 px-2 py-1 text-sm font-semibold text-brand-300">
-          {levelLabel}
-        </span>
+        <span className="rounded bg-brand-500/20 px-2 py-1 text-sm font-semibold text-brand-300">{levelLabel}</span>
         <div className="ml-auto flex items-center gap-1">
           <button
             type="button"
@@ -254,16 +235,12 @@ function LevelCard({
           </button>
         </div>
       </div>
-      <p className="mt-1 text-xs text-zinc-500">
-        Les rôles Discord assignés à ce niveau de staff :
-      </p>
+      <p className="mt-1 text-xs text-zinc-500">Les rôles Discord assignés à ce niveau de staff :</p>
       <div className="mt-2 flex flex-wrap gap-2">
         {roles.length === 0 && (
-          <span className="text-xs italic text-zinc-500">
-            Aucun rôle — ajoutez-en un ci-dessous.
-          </span>
+          <span className="text-xs italic text-zinc-500">Aucun rôle — ajoutez-en un ci-dessous.</span>
         )}
-        {roles.map((r) => (
+        {roles.map(r => (
           <span
             key={r}
             className="inline-flex items-center gap-1 rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs"

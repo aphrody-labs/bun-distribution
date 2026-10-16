@@ -7,14 +7,7 @@
  * supporté par SmartField / buildSubmitBody).
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Chargement,
-  ChevronBas,
-  ChevronHaut,
-  Corbeille,
-  Enregistrer,
-  Plus,
-} from "@/components/icones";
+import { Chargement, ChevronBas, ChevronHaut, Corbeille, Enregistrer, Plus } from "@shenron/ui/icones";
 import { useEffect, useState } from "react";
 import { apiAt } from "@aphrody/admin-ui/client";
 import { crudBase } from "@/lib/wiki-tables";
@@ -40,12 +33,12 @@ function normalizeStats(raw: unknown): CharacterStat[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .filter((s): s is Record<string, unknown> => !!s && typeof s === "object")
-    .map((s) => ({
+    .map(s => ({
       label: String(s.label ?? "").trim(),
       value: String(s.value ?? "").trim(),
       accent: typeof s.accent === "string" && s.accent ? s.accent : undefined,
     }))
-    .filter((s) => s.label || s.value);
+    .filter(s => s.label || s.value);
 }
 
 export function CharacterStatsPanel({ characterId }: { characterId: string }) {
@@ -56,10 +49,7 @@ export function CharacterStatsPanel({ characterId }: { characterId: string }) {
 
   const row = useQuery({
     queryKey: ["wiki-studio", "db_characters", characterId, "stats"],
-    queryFn: () =>
-      client.get<Record<string, unknown>>(
-        `/db_characters/${encodeURIComponent(characterId)}`,
-      ),
+    queryFn: () => client.get<Record<string, unknown>>(`/db_characters/${encodeURIComponent(characterId)}`),
     staleTime: 30_000,
   });
 
@@ -76,12 +66,12 @@ export function CharacterStatsPanel({ characterId }: { characterId: string }) {
   const save = useMutation({
     mutationFn: async () => {
       const cleaned = stats
-        .map((s) => ({
+        .map(s => ({
           label: s.label.trim(),
           value: s.value.trim(),
           ...(s.accent ? { accent: s.accent } : {}),
         }))
-        .filter((s) => s.label && s.value);
+        .filter(s => s.label && s.value);
       return client.put(`/db_characters/${encodeURIComponent(characterId)}`, {
         stats: cleaned,
       });
@@ -96,14 +86,18 @@ export function CharacterStatsPanel({ characterId }: { characterId: string }) {
   });
 
   const update = (i: number, patch: Partial<CharacterStat>) =>
-    setStats((arr) => arr.map((s, j) => (j === i ? { ...s, ...patch } : s)));
+    setStats(arr => arr.map((s, j) => (j === i ? { ...s, ...patch } : s)));
 
   const move = (i: number, dir: -1 | 1) =>
-    setStats((arr) => {
+    setStats(arr => {
       const j = i + dir;
       if (j < 0 || j >= arr.length) return arr;
       const next = arr.slice();
-      [next[i], next[j]] = [next[j], next[i]];
+      const current = next[i];
+      const target = next[j];
+      if (current === undefined || target === undefined) return arr;
+      next[i] = target;
+      next[j] = current;
       return next;
     });
 
@@ -119,19 +113,14 @@ export function CharacterStatsPanel({ characterId }: { characterId: string }) {
     <div className="dbz-panel space-y-3 p-5">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-dbz-blue-light">
-            Stats (cartes scouter)
-          </p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-dbz-blue-light">Stats (cartes scouter)</p>
           <p className="mt-0.5 text-[11px] text-white/50">
-            En plus du Ki / Ki max — ex. Vitesse, Rang, Puissance
-            d&apos;attaque…
+            En plus du Ki / Ki max — ex. Vitesse, Rang, Puissance d&apos;attaque…
           </p>
         </div>
         <button
           type="button"
-          onClick={() =>
-            setStats((s) => [...s, { label: "", value: "", accent: "orange" }])
-          }
+          onClick={() => setStats(s => [...s, { label: "", value: "", accent: "orange" }])}
           className="btn btn-ghost px-2 text-xs"
         >
           <Plus className="h-3.5 w-3.5" />
@@ -143,8 +132,7 @@ export function CharacterStatsPanel({ characterId }: { characterId: string }) {
 
       {stats.length === 0 ? (
         <p className="py-4 text-center text-xs italic text-white/50">
-          Aucune stat custom. Ki / Ki max restent gérés dans le formulaire
-          principal.
+          Aucune stat custom. Ki / Ki max restent gérés dans le formulaire principal.
         </p>
       ) : (
         <ul className="space-y-2">
@@ -160,7 +148,7 @@ export function CharacterStatsPanel({ characterId }: { characterId: string }) {
                     className="input mt-1 w-full text-sm"
                     value={s.label}
                     placeholder="Vitesse"
-                    onChange={(e) => update(i, { label: e.target.value })}
+                    onChange={e => update(i, { label: e.target.value })}
                   />
                 </label>
                 <label className="block text-[10px] font-semibold uppercase tracking-wider text-white/50">
@@ -169,7 +157,7 @@ export function CharacterStatsPanel({ characterId }: { characterId: string }) {
                     className="input mt-1 w-full font-mono text-sm"
                     value={s.value}
                     placeholder="60 000 000"
-                    onChange={(e) => update(i, { value: e.target.value })}
+                    onChange={e => update(i, { value: e.target.value })}
                   />
                 </label>
                 <label className="block text-[10px] font-semibold uppercase tracking-wider text-white/50">
@@ -177,9 +165,9 @@ export function CharacterStatsPanel({ characterId }: { characterId: string }) {
                   <select
                     className="input mt-1 w-full text-sm"
                     value={s.accent ?? "orange"}
-                    onChange={(e) => update(i, { accent: e.target.value })}
+                    onChange={e => update(i, { accent: e.target.value })}
                   >
-                    {ACCENTS.map((a) => (
+                    {ACCENTS.map(a => (
                       <option key={a.value} value={a.value}>
                         {a.label}
                       </option>
@@ -208,9 +196,7 @@ export function CharacterStatsPanel({ characterId }: { characterId: string }) {
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
-                    setStats((arr) => arr.filter((_, j) => j !== i))
-                  }
+                  onClick={() => setStats(arr => arr.filter((_, j) => j !== i))}
                   className="btn btn-ghost px-2 text-red-400"
                   title="Supprimer"
                 >
@@ -222,17 +208,8 @@ export function CharacterStatsPanel({ characterId }: { characterId: string }) {
         </ul>
       )}
 
-      <button
-        type="button"
-        onClick={() => save.mutate()}
-        disabled={save.isPending}
-        className="btn btn-primary w-full"
-      >
-        {save.isPending ? (
-          <Chargement className="h-4 w-4 animate-spin" />
-        ) : (
-          <Enregistrer className="h-4 w-4" />
-        )}
+      <button type="button" onClick={() => save.mutate()} disabled={save.isPending} className="btn btn-primary w-full">
+        {save.isPending ? <Chargement className="h-4 w-4 animate-spin" /> : <Enregistrer className="h-4 w-4" />}
         {save.isPending ? "Enregistrement…" : "Enregistrer les stats"}
       </button>
     </div>

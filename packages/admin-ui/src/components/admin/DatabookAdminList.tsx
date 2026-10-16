@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { LienExterne } from "@/components/icones";
+import { LienExterne } from "@shenron/ui/icones";
 import { DbRowActions } from "@aphrody/admin-ui/components/admin/DbCrud";
 import { assetCdnUrl } from "@aphrody/admin-ui/app/admin/db-universe/_lib";
 import { toMillis } from "@/lib/epoch";
@@ -59,18 +59,8 @@ function norm(value: string): string {
     .toLowerCase();
 }
 
-function Row({
-  d,
-  fmtDate,
-}: {
-  d: AdminDatabook;
-  fmtDate: (v: number | null) => string;
-}) {
-  const coverUrl = d.cover
-    ? /^https?:\/\//.test(d.cover)
-      ? d.cover
-      : assetCdnUrl(d.cover)
-    : null;
+function Row({ d, fmtDate }: { d: AdminDatabook; fmtDate: (v: number | null) => string }) {
+  const coverUrl = d.cover ? (/^https?:\/\//.test(d.cover) ? d.cover : assetCdnUrl(d.cover)) : null;
   const hasDesc = !!d.description?.trim();
   const isVisible = d.visible !== false;
   const pages = pagesCount(d.pages);
@@ -99,15 +89,9 @@ function Row({
         >
           {d.title}
         </Link>
-        {d.title_ja && (
-          <div className="font-jp mt-0.5 text-xs text-dbz-yellow/75">
-            {d.title_ja}
-          </div>
-        )}
+        {d.title_ja && <div className="font-jp mt-0.5 text-xs text-dbz-yellow/75">{d.title_ja}</div>}
         <div className="mt-1 flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-mono uppercase text-dbz-orange">
-            {categoryBadge(d)}
-          </span>
+          <span className="text-[10px] font-mono uppercase text-dbz-orange">{categoryBadge(d)}</span>
           {d.source_url && (
             <a
               href={d.source_url}
@@ -130,20 +114,14 @@ function Row({
           </a>
         </div>
       </td>
-      <td className="p-2 text-[11px] text-white/55">
-        {fmtDate(d.published_at)}
-      </td>
+      <td className="p-2 text-[11px] text-white/55">{fmtDate(d.published_at)}</td>
       <td className="p-2 text-xs text-white/70">{d.author ?? "—"}</td>
       <td className="p-2 text-center">
         <span
           className={`inline-block h-2 w-2 rounded-full ${hasDesc ? "bg-green-400" : "bg-white/20"}`}
           title={hasDesc ? "Description renseignée" : "Description manquante"}
         />
-        {pages > 0 && (
-          <span className="ml-1 text-[10px] font-mono text-dbz-orange/80">
-            {pages}p
-          </span>
-        )}
+        {pages > 0 && <span className="ml-1 text-[10px] font-mono text-dbz-orange/80">{pages}p</span>}
       </td>
       <td className="p-2 text-center">
         <span
@@ -167,40 +145,24 @@ function Table({ group }: { group: Group }) {
         className="mb-3 border-b-2 border-dbz-yellow/30 pb-2 font-saiyan text-2xl uppercase text-dbz-yellow"
       >
         {group.label}{" "}
-        <span className="font-sans text-sm font-normal normal-case text-white/50">
-          {group.items.length}
-        </span>
+        <span className="font-sans text-sm font-normal normal-case text-white/50">{group.items.length}</span>
       </h2>
       <div className="overflow-x-auto rounded-lg border border-dbz-border/30">
         <table className="w-full min-w-[760px]">
           <caption className="sr-only">{group.label}</caption>
           <thead>
             <tr className="border-b-2 border-dbz-border/60">
-              <th className="w-14 p-2 text-left text-xs uppercase tracking-widest text-dbz-blue-light">
-                Cover
-              </th>
-              <th className="p-2 text-left text-xs uppercase tracking-widest text-dbz-blue-light">
-                Titre
-              </th>
-              <th className="w-28 p-2 text-left text-xs uppercase tracking-widest text-dbz-blue-light">
-                Date
-              </th>
-              <th className="w-32 p-2 text-left text-xs uppercase tracking-widest text-dbz-blue-light">
-                Auteur
-              </th>
-              <th className="w-20 p-2 text-center text-xs uppercase tracking-widest text-dbz-blue-light">
-                Contenu
-              </th>
-              <th className="w-16 p-2 text-center text-xs uppercase tracking-widest text-dbz-blue-light">
-                Vis.
-              </th>
-              <th className="w-24 p-2 text-right text-xs uppercase tracking-widest text-dbz-blue-light">
-                Actions
-              </th>
+              <th className="w-14 p-2 text-left text-xs uppercase tracking-widest text-dbz-blue-light">Cover</th>
+              <th className="p-2 text-left text-xs uppercase tracking-widest text-dbz-blue-light">Titre</th>
+              <th className="w-28 p-2 text-left text-xs uppercase tracking-widest text-dbz-blue-light">Date</th>
+              <th className="w-32 p-2 text-left text-xs uppercase tracking-widest text-dbz-blue-light">Auteur</th>
+              <th className="w-20 p-2 text-center text-xs uppercase tracking-widest text-dbz-blue-light">Contenu</th>
+              <th className="w-16 p-2 text-center text-xs uppercase tracking-widest text-dbz-blue-light">Vis.</th>
+              <th className="w-24 p-2 text-right text-xs uppercase tracking-widest text-dbz-blue-light">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {group.items.map((d) => (
+            {group.items.map(d => (
               <Row key={d.id} d={d} fmtDate={fmtDate} />
             ))}
           </tbody>
@@ -219,46 +181,31 @@ export function DatabookAdminList({
 }) {
   const [query, setQuery] = useState("");
   const [scope, setScope] = useState("all");
-  const [state, setState] = useState<
-    "all" | "visible" | "hidden" | "missing-pages" | "missing-description"
-  >("all");
+  const [state, setState] = useState<"all" | "visible" | "hidden" | "missing-pages" | "missing-description">("all");
   const [page, setPage] = useState(1);
   const filtered = useMemo(() => {
     const q = norm(query.trim());
-    return items.filter((d) => {
-      if (scope !== "all" && (d.category ?? "").toLowerCase() !== scope)
-        return false;
+    return items.filter(d => {
+      if (scope !== "all" && (d.category ?? "").toLowerCase() !== scope) return false;
       if (state === "visible" && d.visible === false) return false;
       if (state === "hidden" && d.visible !== false) return false;
       if (state === "missing-pages" && pagesCount(d.pages) > 0) return false;
-      if (state === "missing-description" && d.description?.trim())
-        return false;
-      return (
-        !q ||
-        norm(
-          `${d.title} ${d.title_ja ?? ""} ${d.author ?? ""} ${d.category ?? ""}`,
-        ).includes(q)
-      );
+      if (state === "missing-description" && d.description?.trim()) return false;
+      return !q || norm(`${d.title} ${d.title_ja ?? ""} ${d.author ?? ""} ${d.category ?? ""}`).includes(q);
     });
   }, [items, query, scope, state]);
   useEffect(() => setPage(1), [query, scope, state]);
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const current = Math.min(page, pages);
-  const visible = filtered.slice(
-    (current - 1) * PAGE_SIZE,
-    current * PAGE_SIZE,
-  );
+  const visible = filtered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
   const grouped = groups
-    .map((g) => ({
+    .map(g => ({
       ...g,
-      items: visible.filter((d) => (d.category ?? "").toLowerCase() === g.key),
+      items: visible.filter(d => (d.category ?? "").toLowerCase() === g.key),
     }))
-    .filter((g) => g.items.length > 0);
-  const other = visible.filter(
-    (d) => !groups.some((g) => (d.category ?? "").toLowerCase() === g.key),
-  );
-  if (other.length)
-    grouped.push({ key: "other", label: "Autres", items: other });
+    .filter(g => g.items.length > 0);
+  const other = visible.filter(d => !groups.some(g => (d.category ?? "").toLowerCase() === g.key));
+  if (other.length) grouped.push({ key: "other", label: "Autres", items: other });
   return (
     <>
       <div className="dbz-panel mb-8 grid gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
@@ -267,20 +214,16 @@ export function DatabookAdminList({
           <input
             type="search"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={e => setQuery(e.target.value)}
             placeholder="Titre, japonais, auteur…"
             className="input h-10 w-full"
           />
         </label>
         <label className="flex items-center gap-2 text-xs text-white/60">
           <span className="sr-only">Filtrer par catégorie</span>
-          <select
-            value={scope}
-            onChange={(e) => setScope(e.target.value)}
-            className="input h-10"
-          >
+          <select value={scope} onChange={e => setScope(e.target.value)} className="input h-10">
             <option value="all">Toutes catégories</option>
-            {groups.map((g) => (
+            {groups.map(g => (
               <option key={g.key} value={g.key}>
                 {g.label}
               </option>
@@ -289,11 +232,7 @@ export function DatabookAdminList({
         </label>
         <label className="flex items-center gap-2 text-xs text-white/60">
           <span className="sr-only">Filtrer par état</span>
-          <select
-            value={state}
-            onChange={(e) => setState(e.target.value as typeof state)}
-            className="input h-10"
-          >
+          <select value={state} onChange={e => setState(e.target.value as typeof state)} className="input h-10">
             <option value="all">Tous les états</option>
             <option value="visible">Visibles</option>
             <option value="hidden">Masqués</option>
@@ -301,31 +240,22 @@ export function DatabookAdminList({
             <option value="missing-description">Sans description</option>
           </select>
         </label>
-        <p
-          className="text-xs tabular-nums text-dbz-orange sm:col-span-3"
-          aria-live="polite"
-        >
-          {filtered.length} résultat{filtered.length > 1 ? "s" : ""} · page{" "}
-          {current}/{pages}
+        <p className="text-xs tabular-nums text-dbz-orange sm:col-span-3" aria-live="polite">
+          {filtered.length} résultat{filtered.length > 1 ? "s" : ""} · page {current}/{pages}
         </p>
       </div>
       {grouped.length ? (
-        grouped.map((g) => <Table key={g.key} group={g} />)
+        grouped.map(g => <Table key={g.key} group={g} />)
       ) : (
-        <div className="dbz-panel p-12 text-center text-sm text-white/50">
-          Aucune entrée ne correspond aux filtres.
-        </div>
+        <div className="dbz-panel p-12 text-center text-sm text-white/50">Aucune entrée ne correspond aux filtres.</div>
       )}
       {pages > 1 && (
-        <nav
-          className="mb-10 flex items-center justify-center gap-2"
-          aria-label="Pagination des databooks"
-        >
+        <nav className="mb-10 flex items-center justify-center gap-2" aria-label="Pagination des databooks">
           <button
             type="button"
             className="btn btn-ghost h-9 px-3 text-xs"
             disabled={current === 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            onClick={() => setPage(p => Math.max(1, p - 1))}
           >
             Précédente
           </button>
@@ -336,7 +266,7 @@ export function DatabookAdminList({
             type="button"
             className="btn btn-ghost h-9 px-3 text-xs"
             disabled={current === pages}
-            onClick={() => setPage((p) => Math.min(pages, p + 1))}
+            onClick={() => setPage(p => Math.min(pages, p + 1))}
           >
             Suivante
           </button>

@@ -13,12 +13,12 @@ import {
   Plus,
   Recherche,
   Sac,
-} from "@/components/icones";
+} from "@shenron/ui/icones";
 import { type FormEvent, useMemo, useState } from "react";
 import { api } from "@aphrody/admin-ui/client";
 import { RoleBadge } from "@aphrody/admin-ui/components/admin/RoleSelect";
 import { RolePicker } from "@aphrody/admin-ui/components/admin/RolePicker";
-import { cn } from "@/lib/utils";
+import { cn } from "@shenron/ui/lib/utils";
 import { PlainField } from "@/components/editor/PlainField";
 import { formatZeni } from "@/lib/zeni";
 
@@ -34,10 +34,7 @@ export interface ShopItem {
   enabled: boolean | number;
 }
 
-const TYPE_META: Record<
-  ShopItem["type"],
-  { label: string; color: string; kanji: string }
-> = {
+const TYPE_META: Record<ShopItem["type"], { label: string; color: string; kanji: string }> = {
   title: { label: "Titre", color: "text-purple-400", kanji: "号" },
   badge: { label: "Badge", color: "text-fuchsia-400", kanji: "章" },
   card: { label: "Carte de profil", color: "text-amber-400", kanji: "札" },
@@ -133,12 +130,7 @@ function ConfirmDialog({
             <h3 className="font-semibold text-white">{title}</h3>
             <p className="mt-1 text-sm text-zinc-400">{message}</p>
           </div>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="ml-auto btn btn-ghost px-1 py-1"
-            aria-label="Fermer"
-          >
+          <button type="button" onClick={onCancel} className="ml-auto btn btn-ghost px-1 py-1" aria-label="Fermer">
             <Croix className="h-4 w-4" />
           </button>
         </div>
@@ -172,8 +164,7 @@ export default function ShopPage() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<ShopItem | null>(null);
   const [creating, setCreating] = useState(false);
-  const [creatingDefaultType, setCreatingDefaultType] =
-    useState<ShopItem["type"]>("title");
+  const [creatingDefaultType, setCreatingDefaultType] = useState<ShopItem["type"]>("title");
   const [search, setSearch] = useState("");
   const [mainTab, setMainTab] = useState<MainTab>("titles_and_badges");
   const [subFilter, setSubFilter] = useState<"all" | "title" | "badge">("all");
@@ -188,11 +179,9 @@ export default function ShopPage() {
   const items = useQuery({
     queryKey: ["shop", "items"],
     queryFn: async () => {
-      const res = await api.get<{ rows: ShopItem[]; total: number }>(
-        "/database/shop_items?limit=500",
-      );
+      const res = await api.get<{ rows: ShopItem[]; total: number }>("/database/shop_items?limit=500");
       // Normaliser roleId et enabled pour chaque ligne
-      const rows = (res.rows ?? []).map((r) => ({
+      const rows = (res.rows ?? []).map(r => ({
         ...r,
         roleId: r.roleId ?? r.role_id ?? null,
         enabled: Boolean(r.enabled),
@@ -206,9 +195,7 @@ export default function ShopPage() {
       try {
         return await api.delete(`/shop/${encodeURIComponent(key)}`);
       } catch {
-        return await api.delete(
-          `/database/shop_items/${encodeURIComponent(key)}`,
-        );
+        return await api.delete(`/database/shop_items/${encodeURIComponent(key)}`);
       }
     },
     onSuccess: () => {
@@ -223,12 +210,9 @@ export default function ShopPage() {
       try {
         return await api.patch(`/shop/${encodeURIComponent(item.key)}`);
       } catch {
-        return await api.put(
-          `/database/shop_items/${encodeURIComponent(item.key)}`,
-          {
-            enabled: newEnabled,
-          },
-        );
+        return await api.put(`/database/shop_items/${encodeURIComponent(item.key)}`, {
+          enabled: newEnabled,
+        });
       }
     },
     onSuccess: () => {
@@ -246,7 +230,7 @@ export default function ShopPage() {
   const allRows = useMemo(() => items.data?.rows ?? [], [items.data?.rows]);
 
   const filtered = useMemo(() => {
-    return allRows.filter((r) => {
+    return allRows.filter(r => {
       // Onglet Titres & Badges fusionnés
       if (mainTab === "titles_and_badges") {
         if (r.type !== "title" && r.type !== "badge") return false;
@@ -257,11 +241,7 @@ export default function ShopPage() {
 
       if (search) {
         const s = search.toLowerCase();
-        if (
-          !r.key.toLowerCase().includes(s) &&
-          !r.name.toLowerCase().includes(s)
-        )
-          return false;
+        if (!r.key.toLowerCase().includes(s) && !r.name.toLowerCase().includes(s)) return false;
       }
       return true;
     });
@@ -270,7 +250,7 @@ export default function ShopPage() {
   const stats = useMemo(() => {
     return {
       total: allRows.length,
-      enabled: allRows.filter((r) => Boolean(r.enabled)).length,
+      enabled: allRows.filter(r => Boolean(r.enabled)).length,
       byType: allRows.reduce(
         (acc, r) => {
           acc[r.type] = (acc[r.type] ?? 0) + 1;
@@ -278,9 +258,7 @@ export default function ShopPage() {
         },
         {} as Record<string, number>,
       ),
-      titlesAndBadges: allRows.filter(
-        (r) => r.type === "title" || r.type === "badge",
-      ).length,
+      titlesAndBadges: allRows.filter(r => r.type === "title" || r.type === "badge").length,
     };
   }, [allRows]);
 
@@ -304,42 +282,27 @@ export default function ShopPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Sac className="h-5 w-5 text-brand-400" />
-            <h2 className="text-lg font-semibold">
-              Gestion de la Boutique Shenron
-            </h2>
+            <h2 className="text-lg font-semibold">Gestion de la Boutique Shenron</h2>
             <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400">
               {stats.total} articles · {stats.enabled} actifs
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="btn btn-secondary text-xs"
-              onClick={() => openCreate("badge")}
-            >
+            <button type="button" className="btn btn-secondary text-xs" onClick={() => openCreate("badge")}>
               <Plus className="h-3 w-3" /> Nouveau Badge
             </button>
-            <button
-              type="button"
-              className="btn btn-secondary text-xs"
-              onClick={() => openCreate("title")}
-            >
+            <button type="button" className="btn btn-secondary text-xs" onClick={() => openCreate("title")}>
               <Plus className="h-3 w-3" /> Nouveau Titre
             </button>
-            <button
-              type="button"
-              className="btn btn-primary text-xs"
-              onClick={() => openCreate("card")}
-            >
+            <button type="button" className="btn btn-primary text-xs" onClick={() => openCreate("card")}>
               <Plus className="h-3 w-3" /> Créer un article
             </button>
           </div>
         </div>
 
         <p className="text-xs text-zinc-400">
-          Gérez les cosmétiques achetables avec des Zénis. Un article masqué
-          reste en base pour les inventaires existants mais n&apos;apparaît plus
-          à la vente.
+          Gérez les cosmétiques achetables avec des Zénis. Un article masqué reste en base pour les inventaires
+          existants mais n&apos;apparaît plus à la vente.
         </p>
 
         {/* Onglets principaux de navigation avec fusion Titres & Badges */}
@@ -426,9 +389,7 @@ export default function ShopPage() {
             )}
           >
             <span>Tous les types</span>
-            <span className="ml-1 rounded-full bg-zinc-800 px-1.5 py-0.2 text-[10px] text-zinc-400">
-              {stats.total}
-            </span>
+            <span className="ml-1 rounded-full bg-zinc-800 px-1.5 py-0.2 text-[10px] text-zinc-400">{stats.total}</span>
           </button>
         </div>
 
@@ -436,9 +397,7 @@ export default function ShopPage() {
         {mainTab === "titles_and_badges" && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-purple-500/20 bg-purple-950/20 p-3">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-purple-300">
-                Distinctions honorifiques :
-              </span>
+              <span className="text-xs font-semibold text-purple-300">Distinctions honorifiques :</span>
               <div className="flex gap-1">
                 <button
                   type="button"
@@ -479,8 +438,7 @@ export default function ShopPage() {
               </div>
             </div>
             <span className="text-[11px] text-zinc-400">
-              Badges d&apos;emblèmes (Kame, Kaiô...) et Titres textuels
-              honorifiques (Budokai, Capsule...)
+              Badges d&apos;emblèmes (Kame, Kaiô...) et Titres textuels honorifiques (Budokai, Capsule...)
             </span>
           </div>
         )}
@@ -493,7 +451,7 @@ export default function ShopPage() {
               className="input w-full pl-9 text-xs"
               placeholder="Rechercher par nom ou identifiant (slug)…"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={e => setSearch(e.target.value)}
             />
           </div>
           <div className="text-xs text-zinc-500">
@@ -521,12 +479,11 @@ export default function ShopPage() {
 
       {/* Grille d'articles */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((item) => {
+        {filtered.map(item => {
           const meta = parseMeta(item.meta);
           const isEnabled = Boolean(item.enabled);
           const badgePath = (meta?.badgePath as string) || null;
-          const bannerPath =
-            (meta?.bannerPath as string) || (meta?.bgFile as string) || null;
+          const bannerPath = (meta?.bannerPath as string) || (meta?.bgFile as string) || null;
           const cardAccent = (meta?.accent as string) || null;
 
           return (
@@ -552,13 +509,9 @@ export default function ShopPage() {
                   </div>
                   <div className="flex items-center gap-1">
                     {isEnabled ? (
-                      <span className="badge badge-success text-[10px]">
-                        Actif
-                      </span>
+                      <span className="badge badge-success text-[10px]">Actif</span>
                     ) : (
-                      <span className="badge badge-error text-[10px]">
-                        Masqué
-                      </span>
+                      <span className="badge badge-error text-[10px]">Masqué</span>
                     )}
                   </div>
                 </div>
@@ -612,12 +565,8 @@ export default function ShopPage() {
                     <div
                       className="relative flex h-20 items-center justify-between overflow-hidden p-3"
                       style={{
-                        background: cardAccent
-                          ? `linear-gradient(135deg, ${cardAccent}33, #0a0a0c)`
-                          : "#121215",
-                        borderLeft: cardAccent
-                          ? `4px solid ${cardAccent}`
-                          : undefined,
+                        background: cardAccent ? `linear-gradient(135deg, ${cardAccent}33, #0a0a0c)` : "#121215",
+                        borderLeft: cardAccent ? `4px solid ${cardAccent}` : undefined,
                       }}
                     >
                       {bannerPath && (
@@ -628,16 +577,10 @@ export default function ShopPage() {
                         />
                       )}
                       <div className="relative z-10">
-                        <span className="text-[10px] uppercase tracking-wider text-amber-300/80">
-                          Fond de carte
-                        </span>
-                        <p className="text-xs font-bold text-white truncate">
-                          {item.name}
-                        </p>
+                        <span className="text-[10px] uppercase tracking-wider text-amber-300/80">Fond de carte</span>
+                        <p className="text-xs font-bold text-white truncate">{item.name}</p>
                       </div>
-                      <span className="relative z-10 font-saiyan text-2xl text-amber-400">
-                        札
-                      </span>
+                      <span className="relative z-10 font-saiyan text-2xl text-amber-400">札</span>
                     </div>
                   )}
 
@@ -647,9 +590,7 @@ export default function ShopPage() {
                         <span
                           className="h-3.5 w-3.5 rounded-full"
                           style={{
-                            background: item.name
-                              .toLowerCase()
-                              .includes("rouge")
+                            background: item.name.toLowerCase().includes("rouge")
                               ? "#ef4444"
                               : item.name.toLowerCase().includes("bleu")
                                 ? "#3b82f6"
@@ -657,50 +598,34 @@ export default function ShopPage() {
                                   ? "#22c55e"
                                   : item.name.toLowerCase().includes("orange")
                                     ? "#f97316"
-                                    : item.name
-                                          .toLowerCase()
-                                          .includes("violet") ||
+                                    : item.name.toLowerCase().includes("violet") ||
                                         item.name.toLowerCase().includes("rose")
                                       ? "#a855f7"
                                       : item.name.toLowerCase().includes("noir")
                                         ? "#18181b"
-                                        : item.name
-                                              .toLowerCase()
-                                              .includes("blanc")
+                                        : item.name.toLowerCase().includes("blanc")
                                           ? "#fafafa"
                                           : "#eab308",
                           }}
                         />
-                        <span className="text-xs font-medium text-white">
-                          {item.name}
-                        </span>
+                        <span className="text-xs font-medium text-white">{item.name}</span>
                       </div>
                     </div>
                   )}
                 </div>
 
                 {/* Titre & slug */}
-                <h3 className="font-semibold text-white leading-tight truncate">
-                  {item.name}
-                </h3>
-                <code className="block truncate text-[10px] text-zinc-500 mt-0.5">
-                  {item.key}
-                </code>
+                <h3 className="font-semibold text-white leading-tight truncate">{item.name}</h3>
+                <code className="block truncate text-[10px] text-zinc-500 mt-0.5">{item.key}</code>
 
-                {item.description && (
-                  <p className="mt-1.5 line-clamp-2 text-xs text-zinc-400">
-                    {item.description}
-                  </p>
-                )}
+                {item.description && <p className="mt-1.5 line-clamp-2 text-xs text-zinc-400">{item.description}</p>}
               </div>
 
               {/* Prix, Rôle & Actions */}
               <div className="mt-3 pt-2 border-t border-zinc-800/70">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
-                    <span className="badge badge-warning text-xs font-mono">
-                      {formatZeni(item.price ?? 0)}
-                    </span>
+                    <span className="badge badge-warning text-xs font-mono">{formatZeni(item.price ?? 0)}</span>
                     {item.roleId && <RoleBadge roleId={item.roleId} />}
                   </div>
 
@@ -711,15 +636,9 @@ export default function ShopPage() {
                     disabled={toggleEnabled.isPending}
                     className={cn(
                       "btn btn-ghost px-2 py-1 text-[11px]",
-                      isEnabled
-                        ? "text-emerald-400 hover:text-emerald-300"
-                        : "text-zinc-500 hover:text-zinc-300",
+                      isEnabled ? "text-emerald-400 hover:text-emerald-300" : "text-zinc-500 hover:text-zinc-300",
                     )}
-                    title={
-                      isEnabled
-                        ? "Désactiver (masquer)"
-                        : "Activer (rendre visible)"
-                    }
+                    title={isEnabled ? "Désactiver (masquer)" : "Activer (rendre visible)"}
                   >
                     {isEnabled ? (
                       <Alimentation className="h-3.5 w-3.5" />
@@ -753,9 +672,7 @@ export default function ShopPage() {
 
         {filtered.length === 0 && !items.isLoading && (
           <div className="col-span-full card text-center text-zinc-500 py-12">
-            {search
-              ? "Aucun article ne correspond à cette recherche."
-              : "Aucun article dans cette section."}
+            {search ? "Aucun article ne correspond à cette recherche." : "Aucun article dans cette section."}
           </div>
         )}
       </div>
@@ -771,11 +688,7 @@ export default function ShopPage() {
           }}
           onSaved={() => {
             qc.invalidateQueries({ queryKey: ["shop"] });
-            showSuccess(
-              editing
-                ? "Article modifié avec succès."
-                : "Article créé avec succès.",
-            );
+            showSuccess(editing ? "Article modifié avec succès." : "Article créé avec succès.");
           }}
         />
       )}
@@ -833,17 +746,14 @@ function ShopItemEditor({
       try {
         return await api.put(`/shop/${encodeURIComponent(payload.key)}`, data);
       } catch {
-        return await api.put(
-          `/database/shop_items/${encodeURIComponent(payload.key)}`,
-          data,
-        );
+        return await api.put(`/database/shop_items/${encodeURIComponent(payload.key)}`, data);
       }
     },
     onSuccess: () => {
       onSaved();
       onClose();
     },
-    onError: (err) => setError((err as Error).message),
+    onError: err => setError((err as Error).message),
   });
 
   const submit = (e: FormEvent) => {
@@ -854,9 +764,7 @@ function ShopItemEditor({
       return;
     }
     if (!/^[a-z0-9_-]+$/.test(draft.key)) {
-      setError(
-        "L'identifiant doit contenir uniquement des lettres minuscules, chiffres, tirets ou underscores.",
-      );
+      setError("L'identifiant doit contenir uniquement des lettres minuscules, chiffres, tirets ou underscores.");
       return;
     }
     if (draft.meta) {
@@ -903,24 +811,15 @@ function ShopItemEditor({
             <span className="font-saiyan text-lg text-brand-400">
               {(TYPE_META[draft.type] ?? FALLBACK_TYPE_META).kanji}
             </span>
-            <h3 className="text-lg font-semibold">
-              {isCreate ? "Créer un article" : `Modifier « ${draft.name} »`}
-            </h3>
+            <h3 className="text-lg font-semibold">{isCreate ? "Créer un article" : `Modifier « ${draft.name} »`}</h3>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="ml-auto btn btn-ghost px-2"
-            aria-label="Fermer"
-          >
+          <button type="button" onClick={onClose} className="ml-auto btn btn-ghost px-2" aria-label="Fermer">
             <Croix className="h-4 w-4" />
           </button>
         </div>
 
         {error && (
-          <div className="rounded border border-red-500/40 bg-red-500/10 p-2.5 text-xs text-red-400">
-            {error}
-          </div>
+          <div className="rounded border border-red-500/40 bg-red-500/10 p-2.5 text-xs text-red-400">{error}</div>
         )}
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -932,28 +831,20 @@ function ShopItemEditor({
             <input
               className="input w-full font-mono text-xs"
               value={draft.key}
-              onChange={(e) => setDraft({ ...draft, key: e.target.value })}
+              onChange={e => setDraft({ ...draft, key: e.target.value })}
               disabled={!isCreate}
               placeholder={
-                draft.type === "title"
-                  ? "title_budokai"
-                  : draft.type === "badge"
-                    ? "badge_kame"
-                    : "card_goku"
+                draft.type === "title" ? "title_budokai" : draft.type === "badge" ? "badge_kame" : "card_goku"
               }
             />
           </div>
 
           <div>
-            <label className="block text-xs text-zinc-400 mb-1">
-              Type d&apos;article
-            </label>
+            <label className="block text-xs text-zinc-400 mb-1">Type d&apos;article</label>
             <select
               className="input w-full"
               value={draft.type}
-              onChange={(e) =>
-                setDraft({ ...draft, type: e.target.value as ShopItem["type"] })
-              }
+              onChange={e => setDraft({ ...draft, type: e.target.value as ShopItem["type"] })}
             >
               <optgroup label="Distinctions (Unifié)">
                 <option value="title">📜 Titre honorifique</option>
@@ -968,18 +859,12 @@ function ShopItemEditor({
           </div>
 
           <div className="sm:col-span-2">
-            <label className="block text-xs text-zinc-400 mb-1">
-              Nom affiché dans la boutique
-            </label>
+            <label className="block text-xs text-zinc-400 mb-1">Nom affiché dans la boutique</label>
             <input
               className="input w-full"
               value={draft.name}
-              onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-              placeholder={
-                draft.type === "title"
-                  ? "Champion du Tenkaichi Budokai"
-                  : "Nom du cosmétique"
-              }
+              onChange={e => setDraft({ ...draft, name: e.target.value })}
+              placeholder={draft.type === "title" ? "Champion du Tenkaichi Budokai" : "Nom du cosmétique"}
             />
           </div>
 
@@ -990,7 +875,7 @@ function ShopItemEditor({
                 Emblèmes vectoriels officiels prédéfinis :
               </span>
               <div className="flex flex-wrap gap-1.5">
-                {BADGE_PRESETS.map((bp) => (
+                {BADGE_PRESETS.map(bp => (
                   <button
                     key={bp.path}
                     type="button"
@@ -1011,7 +896,7 @@ function ShopItemEditor({
                 Thèmes de cartes prédéfinis (moteur CardService) :
               </span>
               <div className="flex flex-wrap gap-1.5">
-                {CARD_THEME_PRESETS.map((cp) => (
+                {CARD_THEME_PRESETS.map(cp => (
                   <button
                     key={cp.id}
                     type="button"
@@ -1026,12 +911,10 @@ function ShopItemEditor({
           )}
 
           <div className="sm:col-span-2">
-            <label className="block text-xs text-zinc-400 mb-1">
-              Description (optionnelle)
-            </label>
+            <label className="block text-xs text-zinc-400 mb-1">Description (optionnelle)</label>
             <PlainField
               value={draft.description ?? ""}
-              onChange={(v) => setDraft({ ...draft, description: v })}
+              onChange={v => setDraft({ ...draft, description: v })}
               minRows={2}
               maxRows={6}
               placeholder="Détails, origine canon ou citation…"
@@ -1039,24 +922,18 @@ function ShopItemEditor({
           </div>
 
           <div>
-            <label className="block text-xs text-zinc-400 mb-1">
-              Prix en zénis
-            </label>
+            <label className="block text-xs text-zinc-400 mb-1">Prix en zénis</label>
             <input
               className="input w-full font-mono"
               type="number"
               min={0}
               value={draft.price}
-              onChange={(e) =>
-                setDraft({ ...draft, price: Number(e.target.value) || 0 })
-              }
+              onChange={e => setDraft({ ...draft, price: Number(e.target.value) || 0 })}
             />
           </div>
 
           <div>
-            <label className="block text-xs text-zinc-400 mb-1">
-              Visibilité dans la boutique
-            </label>
+            <label className="block text-xs text-zinc-400 mb-1">Visibilité dans la boutique</label>
             <button
               type="button"
               className={`btn ${draft.enabled ? "btn-primary" : "btn-ghost"} w-full justify-center`}
@@ -1068,43 +945,33 @@ function ShopItemEditor({
                 </>
               ) : (
                 <>
-                  <AlimentationCoupee className="h-3.5 w-3.5" /> Masqué
-                  (inactif)
+                  <AlimentationCoupee className="h-3.5 w-3.5" /> Masqué (inactif)
                 </>
               )}
             </button>
           </div>
 
           {/* Rôle Discord associé : disponible pour couleurs, titres ET badges */}
-          {(draft.type === "color" ||
-            draft.type === "title" ||
-            draft.type === "badge") && (
+          {(draft.type === "color" || draft.type === "title" || draft.type === "badge") && (
             <div className="sm:col-span-2">
               <label className="block text-xs text-zinc-400 mb-1">
                 Rôle Discord attribué à l&apos;achat / équipement
                 <span className="ml-1 text-zinc-500">
-                  {draft.type === "color"
-                    ? "(obligatoire pour couleur)"
-                    : "(optionnel pour titre/badge)"}
+                  {draft.type === "color" ? "(obligatoire pour couleur)" : "(optionnel pour titre/badge)"}
                 </span>
               </label>
-              <RolePicker
-                value={draft.roleId ?? ""}
-                onChange={(v) => setDraft({ ...draft, roleId: v || null })}
-              />
+              <RolePicker value={draft.roleId ?? ""} onChange={v => setDraft({ ...draft, roleId: v || null })} />
             </div>
           )}
 
           <div className="sm:col-span-2">
             <label className="block text-xs text-zinc-400 mb-1">
               Données Méta (JSON optionnel)
-              <span className="ml-1 text-zinc-500">
-                — badgePath, bannerPath, themeId, accent…
-              </span>
+              <span className="ml-1 text-zinc-500">— badgePath, bannerPath, themeId, accent…</span>
             </label>
             <PlainField
               value={draft.meta ?? ""}
-              onChange={(v) => setDraft({ ...draft, meta: v || null })}
+              onChange={v => setDraft({ ...draft, meta: v || null })}
               minRows={3}
               maxRows={10}
               monospace
@@ -1115,17 +982,9 @@ function ShopItemEditor({
         </div>
 
         <div className="flex items-center gap-2 border-t border-zinc-800 pt-3">
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={save.isPending}
-          >
+          <button type="submit" className="btn btn-primary" disabled={save.isPending}>
             <Enregistrer className="h-3.5 w-3.5" />
-            {save.isPending
-              ? "Enregistrement…"
-              : isCreate
-                ? "Créer l'article"
-                : "Enregistrer les modifications"}
+            {save.isPending ? "Enregistrement…" : isCreate ? "Créer l'article" : "Enregistrer les modifications"}
           </button>
           <button type="button" className="btn btn-ghost" onClick={onClose}>
             Annuler

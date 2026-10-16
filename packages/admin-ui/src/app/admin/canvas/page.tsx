@@ -13,7 +13,7 @@ import {
   Plus,
   Rafraichir,
   Telecharger,
-} from "@/components/icones";
+} from "@shenron/ui/icones";
 import { type FormEvent, type ReactNode, useMemo, useState } from "react";
 import { Sketch } from "@uiw/react-color";
 import { api, proxyAsset } from "@aphrody/admin-ui/client";
@@ -74,43 +74,23 @@ const ASSET_DIR_LABELS: Record<string, string> = {
   wiki: "Uploads wiki",
 };
 
-const PROFILE_THEMES = [
-  "default",
-  "goku",
-  "vegeta",
-  "kaio",
-  "ssj",
-  "blue",
-  "rose",
-  "ultra",
-];
+const PROFILE_THEMES = ["default", "goku", "vegeta", "kaio", "ssj", "blue", "rose", "ultra"];
 
 const CANVAS_DESCRIPTIONS: Record<string, string> = {
-  profile:
-    "Carte de profil personnalisée avec avatar, niveau, barre d'XP et thème DBZ.",
+  profile: "Carte de profil personnalisée avec avatar, niveau, barre d'XP et thème DBZ.",
   scan: "Lecture du niveau de Ki d'un membre, basée sur son XP.",
   scouter: "Scouter humoristique (Gaydar de Bulma ou Racism-o-mètre).",
   fusion: "Carte de fusion entre deux membres.",
   leaderboard: "Classement graphique des meilleurs joueurs.",
 };
 
-function TabBtn({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
+function TabBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={`font-saiyan text-sm uppercase tracking-wider px-4 py-2 -mb-px border-b-2 transition-colors ${
-        active
-          ? "border-dbz-orange text-dbz-orange"
-          : "border-transparent text-white/50 hover:text-white/70"
+        active ? "border-dbz-orange text-dbz-orange" : "border-transparent text-white/50 hover:text-white/70"
       }`}
     >
       {children}
@@ -128,28 +108,22 @@ export default function CanvasPage() {
 
   const members = useQuery({
     queryKey: ["discord", "members"],
-    queryFn: () =>
-      api.get<{ members: DiscordMember[] }>("/discord/members?limit=200"),
+    queryFn: () => api.get<{ members: DiscordMember[] }>("/discord/members?limit=200"),
   });
 
   const [selected, setSelected] = useState("profile");
 
   const sampleUserId = useMemo(
-    () =>
-      (members.data?.members ?? []).find((m) => !m.id.startsWith("0"))?.id ??
-      "",
+    () => (members.data?.members ?? []).find(m => !m.id.startsWith("0"))?.id ?? "",
     [members.data],
   );
 
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-4xl font-saiyan text-dbz-orange mb-2">
-          CANVAS & THÈMES
-        </h1>
+        <h1 className="text-4xl font-saiyan text-dbz-orange mb-2">CANVAS & THÈMES</h1>
         <p className="text-sm text-white/60 mb-1">
-          Prévisualisez les images générées par le bot et éditez les thèmes des
-          cartes de profil.
+          Prévisualisez les images générées par le bot et éditez les thèmes des cartes de profil.
         </p>
         <p className="text-xs text-white/50 uppercase tracking-widest">
           Rendu en direct via Skia · mise en cache 60 secondes
@@ -203,9 +177,7 @@ function PreviewSection({
     return (
       <div className="dbz-panel p-8 text-center">
         <p className="font-saiyan text-dbz-orange text-xl mb-2">CHARGEMENT…</p>
-        <p className="text-sm text-white/50">
-          Récupération des canvases disponibles.
-        </p>
+        <p className="text-sm text-white/50">Récupération des canvases disponibles.</p>
       </div>
     );
 
@@ -214,8 +186,7 @@ function PreviewSection({
       <div className="dbz-panel p-8 text-center border-l-4 border-red-500">
         <p className="font-saiyan text-red-400 text-xl mb-2">ERREUR</p>
         <p className="text-sm text-white/50">
-          Impossible de charger la liste des canvases. Vérifiez que le bot est
-          en ligne.
+          Impossible de charger la liste des canvases. Vérifiez que le bot est en ligne.
         </p>
       </div>
     );
@@ -227,7 +198,7 @@ function PreviewSection({
           Choisissez le type d&apos;image à prévisualiser
         </p>
         <div className="flex flex-wrap gap-2">
-          {list.map((c) => (
+          {list.map(c => (
             <button
               key={c.id}
               type="button"
@@ -241,8 +212,8 @@ function PreviewSection({
       </div>
 
       {list
-        .filter((c) => c.id === selected)
-        .map((c) => (
+        .filter(c => c.id === selected)
+        .map(c => (
           <CanvasPreview key={c.id} def={c} members={members} />
         ))}
     </div>
@@ -309,13 +280,10 @@ function ThemesSection({ sampleUserId }: { sampleUserId: string }) {
       <div className="dbz-panel p-4 flex items-center gap-3">
         <Palette className="h-5 w-5 text-dbz-orange" />
         <div className="flex-1">
-          <p className="font-saiyan text-dbz-yellow text-sm uppercase">
-            Thèmes des cartes de profil
-          </p>
+          <p className="font-saiyan text-dbz-yellow text-sm uppercase">Thèmes des cartes de profil</p>
           <p className="text-xs text-white/50">
-            Couleurs et fond utilisés par la commande de profil. Les
-            modifications sont appliquées en direct (cache bot purgé à
-            l&apos;enregistrement).
+            Couleurs et fond utilisés par la commande de profil. Les modifications sont appliquées en direct (cache bot
+            purgé à l&apos;enregistrement).
           </p>
         </div>
         <button
@@ -339,93 +307,46 @@ function ThemesSection({ sampleUserId }: { sampleUserId: string }) {
       )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {rows.map((t) => (
-          <ThemeCard
-            key={t.id}
-            theme={t}
-            sampleUserId={sampleUserId}
-            onEdit={() => setEditing(t)}
-          />
+        {rows.map(t => (
+          <ThemeCard key={t.id} theme={t} sampleUserId={sampleUserId} onEdit={() => setEditing(t)} />
         ))}
         {!themes.isLoading && rows.length === 0 && (
           <div className="dbz-panel p-6 col-span-full text-center text-sm text-white/50">
-            Aucun thème en base. Créez-en un — il s&apos;ajoutera aux thèmes
-            intégrés du bot.
+            Aucun thème en base. Créez-en un — il s&apos;ajoutera aux thèmes intégrés du bot.
           </div>
         )}
       </div>
 
       {(editing || creating) && (
-        <ThemeEditor
-          theme={editing}
-          sampleUserId={sampleUserId}
-          onClose={closeEditor}
-          onSaved={onSaved}
-        />
+        <ThemeEditor theme={editing} sampleUserId={sampleUserId} onClose={closeEditor} onSaved={onSaved} />
       )}
     </div>
   );
 }
 
-function ThemeCard({
-  theme,
-  sampleUserId,
-  onEdit,
-}: {
-  theme: CardTheme;
-  sampleUserId: string;
-  onEdit: () => void;
-}) {
+function ThemeCard({ theme, sampleUserId, onEdit }: { theme: CardTheme; sampleUserId: string; onEdit: () => void }) {
   const previewUrl = sampleUserId
-    ? proxyAsset(
-        `/canvas/profile/${sampleUserId}?theme=${encodeURIComponent(theme.id)}`,
-      )
+    ? proxyAsset(`/canvas/profile/${sampleUserId}?theme=${encodeURIComponent(theme.id)}`)
     : "";
 
   return (
-    <div
-      className={`dbz-panel p-3 space-y-2 ${theme.enabled ? "" : "opacity-50"}`}
-    >
+    <div className={`dbz-panel p-3 space-y-2 ${theme.enabled ? "" : "opacity-50"}`}>
       <div className="flex items-center gap-2">
-        <span className="font-saiyan text-dbz-yellow text-sm uppercase truncate">
-          {theme.name}
-        </span>
+        <span className="font-saiyan text-dbz-yellow text-sm uppercase truncate">{theme.name}</span>
         {!theme.enabled && (
-          <span className="text-[10px] uppercase text-red-400 border border-red-500/40 rounded px-1">
-            Masqué
-          </span>
+          <span className="text-[10px] uppercase text-red-400 border border-red-500/40 rounded px-1">Masqué</span>
         )}
         <code className="ml-auto text-[10px] text-white/50">{theme.id}</code>
       </div>
       <div className="flex gap-1">
-        {[
-          theme.accent,
-          theme.aura,
-          theme.bgGrad1,
-          theme.bgGrad2,
-          theme.bgGrad3,
-        ].map((c, i) => (
-          <span
-            key={i}
-            className="h-4 flex-1 rounded-sm border border-black/30"
-            style={{ background: c }}
-            title={c}
-          />
+        {[theme.accent, theme.aura, theme.bgGrad1, theme.bgGrad2, theme.bgGrad3].map((c, i) => (
+          <span key={i} className="h-4 flex-1 rounded-sm border border-black/30" style={{ background: c }} title={c} />
         ))}
       </div>
       {previewUrl && (
-        <img
-          src={previewUrl}
-          alt={theme.name}
-          className="w-full rounded border border-dbz-border"
-          loading="lazy"
-        />
+        <img src={previewUrl} alt={theme.name} className="w-full rounded border border-dbz-border" loading="lazy" />
       )}
-      <button
-        type="button"
-        className="dbz-button-ghost !text-xs !py-1 !px-3 w-full"
-        onClick={onEdit}
-      >
+      <button type="button" className="dbz-button-ghost !text-xs !py-1 !px-3 w-full" onClick={onEdit}>
         Modifier
       </button>
     </div>
@@ -434,15 +355,7 @@ function ThemeCard({
 
 /** Pastille couleur + popover Sketch (@uiw/react-color) : saturation, teinte,
  *  champs HEX/RGB, presets DBZ + eyedropper natif. Stocke du hex 6 digits. */
-function SwatchPicker({
-  label,
-  value,
-  onChange,
-}: {
-  label?: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
+function SwatchPicker({ label, value, onChange }: { label?: string; value: string; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false);
   const valid = /^#[0-9a-fA-F]{6}$/.test(value) ? value : "#000000";
 
@@ -456,13 +369,10 @@ function SwatchPicker({
       <div className="relative">
         <button
           type="button"
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => setOpen(o => !o)}
           className="flex w-full items-center gap-2 border-2 border-dbz-border bg-dbz-bg p-1.5 hover:border-dbz-orange transition-colors"
         >
-          <span
-            className="h-6 w-6 shrink-0 rounded border border-black/40"
-            style={{ background: valid }}
-          />
+          <span className="h-6 w-6 shrink-0 rounded border border-black/40" style={{ background: valid }} />
           <code className="text-xs font-mono text-white/70">{value}</code>
         </button>
         {open && (
@@ -510,26 +420,22 @@ function GradientBar({
         }}
       />
       <div className="grid grid-cols-3 gap-2">
-        <SwatchPicker value={stops[0]} onChange={(v) => onStop(0, v)} />
-        <SwatchPicker value={stops[1]} onChange={(v) => onStop(1, v)} />
-        <SwatchPicker value={stops[2]} onChange={(v) => onStop(2, v)} />
+        <SwatchPicker value={stops[0]} onChange={v => onStop(0, v)} />
+        <SwatchPicker value={stops[1]} onChange={v => onStop(1, v)} />
+        <SwatchPicker value={stops[2]} onChange={v => onStop(2, v)} />
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-[10px] uppercase tracking-widest text-dbz-blue-light">
-          Angle {angle}°
-        </span>
+        <span className="text-[10px] uppercase tracking-widest text-dbz-blue-light">Angle {angle}°</span>
         <input
           type="range"
           min={0}
           max={360}
           value={angle}
-          onChange={(e) => onAngle(Number(e.target.value))}
+          onChange={e => onAngle(Number(e.target.value))}
           className="flex-1 accent-dbz-orange"
         />
       </div>
-      <p className="text-[10px] text-white/50">
-        Dégradé utilisé seulement si aucune image de fond n&apos;est définie.
-      </p>
+      <p className="text-[10px] text-white/50">Dégradé utilisé seulement si aucune image de fond n&apos;est définie.</p>
     </div>
   );
 }
@@ -558,9 +464,7 @@ function RangeField({
     <div>
       <label className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-dbz-blue-light mb-1">
         <span>{label}</span>
-        <span className="text-dbz-yellow">
-          {format ? format(value) : value}
-        </span>
+        <span className="text-dbz-yellow">{format ? format(value) : value}</span>
       </label>
       <input
         type="range"
@@ -568,7 +472,7 @@ function RangeField({
         max={max}
         step={step}
         value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
+        onChange={e => onChange(Number(e.target.value))}
         className="w-full accent-dbz-orange"
       />
       {hint && <p className="mt-0.5 text-[10px] text-white/50">{hint}</p>}
@@ -602,17 +506,16 @@ function ThemeEditor({
     },
     onSuccess: () => {
       // La carte rendue lit la DB : on rafraîchit l'aperçu après écriture.
-      setBust((b) => b + 1);
+      setBust(b => b + 1);
       onSaved();
     },
-    onError: (err) => setError((err as Error).message),
+    onError: err => setError((err as Error).message),
   });
 
   const del = useMutation({
-    mutationFn: () =>
-      api.delete(`/card-themes/${encodeURIComponent(draft.id)}`),
+    mutationFn: () => api.delete(`/card-themes/${encodeURIComponent(draft.id)}`),
     onSuccess: onSaved,
-    onError: (err) => setError((err as Error).message),
+    onError: err => setError((err as Error).message),
   });
 
   const submit = (e: FormEvent) => {
@@ -623,9 +526,7 @@ function ThemeEditor({
       return;
     }
     if (!/^[a-z0-9_-]+$/.test(draft.id)) {
-      setError(
-        "L'identifiant doit contenir uniquement des lettres minuscules, chiffres, tirets ou underscores.",
-      );
+      setError("L'identifiant doit contenir uniquement des lettres minuscules, chiffres, tirets ou underscores.");
       return;
     }
     save.mutate(draft);
@@ -633,24 +534,14 @@ function ThemeEditor({
 
   const previewUrl =
     sampleUserId && !isCreate
-      ? proxyAsset(
-          `/canvas/profile/${sampleUserId}?theme=${encodeURIComponent(draft.id)}&_=${bust}`,
-        )
+      ? proxyAsset(`/canvas/profile/${sampleUserId}?theme=${encodeURIComponent(draft.id)}&_=${bust}`)
       : "";
 
   return (
     <>
-      {picker && (
-        <AssetPickerModal
-          onPick={(path) => set({ bgFile: path })}
-          onClose={() => setPicker(false)}
-        />
-      )}
+      {picker && <AssetPickerModal onPick={path => set({ bgFile: path })} onClose={() => setPicker(false)} />}
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur">
-        <form
-          onSubmit={submit}
-          className="dbz-panel w-full max-w-3xl p-5 space-y-4 max-h-[92vh] overflow-y-auto"
-        >
+        <form onSubmit={submit} className="dbz-panel w-full max-w-3xl p-5 space-y-4 max-h-[92vh] overflow-y-auto">
           <div className="flex items-center gap-2">
             <h3 className="font-saiyan text-dbz-orange text-lg uppercase">
               {isCreate ? "Nouveau thème" : `Modifier « ${draft.name} »`}
@@ -666,9 +557,7 @@ function ThemeEditor({
           </div>
 
           {error && (
-            <div className="rounded border border-red-500/40 bg-red-500/10 p-2 text-xs text-red-400">
-              {error}
-            </div>
+            <div className="rounded border border-red-500/40 bg-red-500/10 p-2 text-xs text-red-400">{error}</div>
           )}
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -680,7 +569,7 @@ function ThemeEditor({
                 className="w-full bg-dbz-bg border-2 border-dbz-border focus:border-dbz-orange p-2 text-xs font-mono disabled:opacity-50"
                 value={draft.id}
                 disabled={!isCreate}
-                onChange={(e) => set({ id: e.target.value })}
+                onChange={e => set({ id: e.target.value })}
                 placeholder="goku"
               />
             </div>
@@ -691,21 +580,13 @@ function ThemeEditor({
               <input
                 className="w-full bg-dbz-bg border-2 border-dbz-border focus:border-dbz-orange p-2 text-sm"
                 value={draft.name}
-                onChange={(e) => set({ name: e.target.value })}
+                onChange={e => set({ name: e.target.value })}
                 placeholder="Goku"
               />
             </div>
 
-            <SwatchPicker
-              label="Accent (ring, highlights)"
-              value={draft.accent}
-              onChange={(v) => set({ accent: v })}
-            />
-            <SwatchPicker
-              label="Aura (avatar, barre XP)"
-              value={draft.aura}
-              onChange={(v) => set({ aura: v })}
-            />
+            <SwatchPicker label="Accent (ring, highlights)" value={draft.accent} onChange={v => set({ accent: v })} />
+            <SwatchPicker label="Aura (avatar, barre XP)" value={draft.aura} onChange={v => set({ aura: v })} />
 
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-widest text-dbz-blue-light mb-1">
@@ -715,9 +596,7 @@ function ThemeEditor({
                 type="button"
                 onClick={() => set({ enabled: !draft.enabled })}
                 className={`w-full flex items-center justify-center gap-1.5 p-2 text-sm border-2 ${
-                  draft.enabled
-                    ? "border-dbz-orange text-dbz-orange"
-                    : "border-dbz-border text-white/50"
+                  draft.enabled ? "border-dbz-orange text-dbz-orange" : "border-dbz-border text-white/50"
                 }`}
               >
                 {draft.enabled ? (
@@ -739,7 +618,7 @@ function ThemeEditor({
               <input
                 className="w-full bg-dbz-bg border-2 border-dbz-border focus:border-dbz-orange p-2 text-xs font-mono"
                 value={draft.textShadow}
-                onChange={(e) => set({ textShadow: e.target.value })}
+                onChange={e => set({ textShadow: e.target.value })}
                 placeholder="rgba(0,0,0,0.8)"
               />
             </div>
@@ -751,16 +630,8 @@ function ThemeEditor({
               <GradientBar
                 stops={[draft.bgGrad1, draft.bgGrad2, draft.bgGrad3]}
                 angle={draft.gradientAngle}
-                onStop={(i, v) =>
-                  set(
-                    i === 0
-                      ? { bgGrad1: v }
-                      : i === 1
-                        ? { bgGrad2: v }
-                        : { bgGrad3: v },
-                  )
-                }
-                onAngle={(deg) => set({ gradientAngle: deg })}
+                onStop={(i, v) => set(i === 0 ? { bgGrad1: v } : i === 1 ? { bgGrad2: v } : { bgGrad3: v })}
+                onAngle={deg => set({ gradientAngle: deg })}
               />
             </div>
 
@@ -775,7 +646,7 @@ function ThemeEditor({
                 <input
                   className="w-full bg-dbz-bg border-2 border-dbz-border focus:border-dbz-orange p-2 text-xs font-mono"
                   value={draft.bgFile ?? ""}
-                  onChange={(e) => set({ bgFile: e.target.value || null })}
+                  onChange={e => set({ bgFile: e.target.value || null })}
                   placeholder="assets/banners/banner-09.png"
                 />
                 <button
@@ -812,8 +683,8 @@ function ThemeEditor({
               min={0}
               max={1}
               step={0.01}
-              onChange={(v) => set({ overlayOpacity: v })}
-              format={(v) => `${Math.round(v * 100)}%`}
+              onChange={v => set({ overlayOpacity: v })}
+              format={v => `${Math.round(v * 100)}%`}
               hint="Voile noir sur l'image — lisibilité du texte"
             />
             <RangeField
@@ -822,8 +693,8 @@ function ThemeEditor({
               min={0}
               max={0.4}
               step={0.01}
-              onChange={(v) => set({ tintStrength: v })}
-              format={(v) => `${Math.round(v * 100)}%`}
+              onChange={v => set({ tintStrength: v })}
+              format={v => `${Math.round(v * 100)}%`}
               hint="Colore l'image avec la couleur d'aura"
             />
           </div>
@@ -832,31 +703,23 @@ function ThemeEditor({
           {previewUrl ? (
             <div>
               <div className="flex items-center justify-between mb-1">
-                <p className="text-[10px] text-white/50 uppercase tracking-widest">
-                  Aperçu (état enregistré)
-                </p>
+                <p className="text-[10px] text-white/50 uppercase tracking-widest">Aperçu (état enregistré)</p>
                 <button
                   type="button"
-                  onClick={() => setBust((b) => b + 1)}
+                  onClick={() => setBust(b => b + 1)}
                   className="dbz-button-ghost !text-[10px] !py-0.5 !px-2 flex items-center gap-1"
                 >
                   <Rafraichir className="h-3 w-3" /> Rafraîchir
                 </button>
               </div>
-              <img
-                src={previewUrl}
-                alt={draft.name}
-                className="w-full rounded border border-dbz-border"
-              />
+              <img src={previewUrl} alt={draft.name} className="w-full rounded border border-dbz-border" />
               <p className="mt-1 text-[10px] text-white/50">
                 Enregistrez pour voir vos changements de couleurs/fond ici.
               </p>
             </div>
           ) : (
             isCreate && (
-              <p className="text-[10px] text-white/50">
-                L&apos;aperçu sera disponible après la première création.
-              </p>
+              <p className="text-[10px] text-white/50">L&apos;aperçu sera disponible après la première création.</p>
             )
           )}
 
@@ -867,17 +730,9 @@ function ThemeEditor({
               className="dbz-button !text-xs !py-1.5 !px-4 flex items-center gap-1.5"
             >
               <Enregistrer className="h-3 w-3" />
-              {save.isPending
-                ? "Enregistrement…"
-                : isCreate
-                  ? "Créer le thème"
-                  : "Enregistrer"}
+              {save.isPending ? "Enregistrement…" : isCreate ? "Créer le thème" : "Enregistrer"}
             </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="dbz-button-ghost !text-xs !py-1.5 !px-4"
-            >
+            <button type="button" onClick={onClose} className="dbz-button-ghost !text-xs !py-1.5 !px-4">
               Annuler
             </button>
             {!isCreate && (
@@ -911,19 +766,12 @@ function ThemeEditor({
  * (clic = sélection), sinon clic = copie du chemin relatif. Images chargées en
  * direct depuis le bot (botAsset → bot.dragonballfr.com/assets/, public, sans auth).
  */
-function AssetGrid({
-  dir,
-  onPick,
-}: {
-  dir: string;
-  onPick?: (path: string) => void;
-}) {
+function AssetGrid({ dir, onPick }: { dir: string; onPick?: (path: string) => void }) {
   const [copied, setCopied] = useState<string | null>(null);
 
   const assets = useQuery({
     queryKey: ["assets", dir],
-    queryFn: () =>
-      api.get<AssetListResponse>(`/assets/list?dir=${encodeURIComponent(dir)}`),
+    queryFn: () => api.get<AssetListResponse>(`/assets/list?dir=${encodeURIComponent(dir)}`),
   });
 
   const files = assets.data?.files ?? [];
@@ -955,15 +803,11 @@ function AssetGrid({
       </div>
     );
   if (files.length === 0)
-    return (
-      <div className="dbz-panel p-6 text-center text-sm text-white/50">
-        Aucune image dans ce dossier.
-      </div>
-    );
+    return <div className="dbz-panel p-6 text-center text-sm text-white/50">Aucune image dans ce dossier.</div>;
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-      {files.map((f) => (
+      {files.map(f => (
         <button
           key={f.path}
           type="button"
@@ -971,16 +815,9 @@ function AssetGrid({
           title={onPick ? `Choisir ${f.name}` : `Copier ${f.path}`}
           className="group relative overflow-hidden rounded border border-dbz-border bg-black/30 text-left hover:border-dbz-orange transition-colors"
         >
-          <img
-            src={botAsset(f.path)}
-            alt={f.name}
-            className="aspect-video w-full object-cover"
-            loading="lazy"
-          />
+          <img src={botAsset(f.path)} alt={f.name} className="aspect-video w-full object-cover" loading="lazy" />
           <div className="p-1.5">
-            <code className="block truncate text-[10px] text-white/50">
-              {f.name}
-            </code>
+            <code className="block truncate text-[10px] text-white/50">{f.name}</code>
           </div>
           {copied === f.path && (
             <span className="absolute inset-x-0 top-0 bg-emerald-600/90 text-center text-[10px] py-0.5 text-white">
@@ -998,15 +835,14 @@ function AssetGallery({ onPick }: { onPick?: (path: string) => void }) {
 
   const list = useQuery({
     queryKey: ["assets", dir],
-    queryFn: () =>
-      api.get<AssetListResponse>(`/assets/list?dir=${encodeURIComponent(dir)}`),
+    queryFn: () => api.get<AssetListResponse>(`/assets/list?dir=${encodeURIComponent(dir)}`),
   });
   const dirs = list.data?.dirs ?? Object.keys(ASSET_DIR_LABELS);
 
   return (
     <div className="space-y-4">
       <div className="dbz-panel p-3 flex flex-wrap items-center gap-2">
-        {dirs.map((d) => (
+        {dirs.map(d => (
           <button
             key={d}
             type="button"
@@ -1017,42 +853,25 @@ function AssetGallery({ onPick }: { onPick?: (path: string) => void }) {
             {list.data && dir === d ? ` (${list.data.count})` : ""}
           </button>
         ))}
-        {!onPick && (
-          <span className="ml-auto text-[10px] text-white/50">
-            Cliquez une image pour copier son chemin
-          </span>
-        )}
+        {!onPick && <span className="ml-auto text-[10px] text-white/50">Cliquez une image pour copier son chemin</span>}
       </div>
       <AssetGrid dir={dir} onPick={onPick} />
     </div>
   );
 }
 
-function AssetPickerModal({
-  onPick,
-  onClose,
-}: {
-  onPick: (path: string) => void;
-  onClose: () => void;
-}) {
+function AssetPickerModal({ onPick, onClose }: { onPick: (path: string) => void; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4 backdrop-blur">
       <div className="dbz-panel w-full max-w-4xl p-5 space-y-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center gap-2">
-          <h3 className="font-saiyan text-dbz-orange text-lg uppercase">
-            Choisir une image de fond
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="ml-auto dbz-button-ghost !px-2 !py-1"
-            aria-label="Fermer"
-          >
+          <h3 className="font-saiyan text-dbz-orange text-lg uppercase">Choisir une image de fond</h3>
+          <button type="button" onClick={onClose} className="ml-auto dbz-button-ghost !px-2 !py-1" aria-label="Fermer">
             <Croix className="h-4 w-4" />
           </button>
         </div>
         <AssetGallery
-          onPick={(path) => {
+          onPick={path => {
             onPick(path);
             onClose();
           }}
@@ -1062,16 +881,8 @@ function AssetPickerModal({
   );
 }
 
-function CanvasPreview({
-  def,
-  members,
-}: {
-  def: CanvasDef;
-  members: DiscordMember[];
-}) {
-  const [params, setParams] = useState<Record<string, string>>(() =>
-    initialParams(def, members),
-  );
+function CanvasPreview({ def, members }: { def: CanvasDef; members: DiscordMember[] }) {
+  const [params, setParams] = useState<Record<string, string>>(() => initialParams(def, members));
   const [bust, setBust] = useState(0);
 
   const url = useMemo(() => buildUrl(def, params, bust), [def, params, bust]);
@@ -1082,12 +893,8 @@ function CanvasPreview({
       {/* Panneau paramètres */}
       <div className="dbz-panel p-5 space-y-4 lg:col-span-1">
         <div>
-          <h3 className="font-saiyan text-dbz-yellow text-base uppercase mb-0.5">
-            {def.name}
-          </h3>
-          <p className="text-xs text-white/50">
-            {CANVAS_DESCRIPTIONS[def.id] ?? def.description}
-          </p>
+          <h3 className="font-saiyan text-dbz-yellow text-base uppercase mb-0.5">{def.name}</h3>
+          <p className="text-xs text-white/50">{CANVAS_DESCRIPTIONS[def.id] ?? def.description}</p>
         </div>
 
         {def.id === "profile" && (
@@ -1095,7 +902,7 @@ function CanvasPreview({
             <MemberField
               label="Membre"
               value={params.userId ?? ""}
-              onChange={(v) => setParams({ ...params, userId: v })}
+              onChange={v => setParams({ ...params, userId: v })}
             />
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-widest text-dbz-blue-light mb-1">
@@ -1104,11 +911,9 @@ function CanvasPreview({
               <select
                 className="w-full bg-dbz-bg border-2 border-dbz-border focus:border-dbz-orange p-2 text-sm"
                 value={params.theme ?? "default"}
-                onChange={(e) =>
-                  setParams({ ...params, theme: e.target.value })
-                }
+                onChange={e => setParams({ ...params, theme: e.target.value })}
               >
-                {PROFILE_THEMES.map((t) => (
+                {PROFILE_THEMES.map(t => (
                   <option key={t} value={t}>
                     {t.charAt(0).toUpperCase() + t.slice(1)}
                   </option>
@@ -1122,7 +927,7 @@ function CanvasPreview({
           <MemberField
             label="Membre à scanner"
             value={params.userId ?? ""}
-            onChange={(v) => setParams({ ...params, userId: v })}
+            onChange={v => setParams({ ...params, userId: v })}
           />
         )}
 
@@ -1131,7 +936,7 @@ function CanvasPreview({
             <MemberField
               label="Cible du scouter"
               value={params.userId ?? ""}
-              onChange={(v) => setParams({ ...params, userId: v })}
+              onChange={v => setParams({ ...params, userId: v })}
             />
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-widest text-dbz-blue-light mb-1">
@@ -1140,7 +945,7 @@ function CanvasPreview({
               <select
                 className="w-full bg-dbz-bg border-2 border-dbz-border focus:border-dbz-orange p-2 text-sm"
                 value={params.type ?? "gay"}
-                onChange={(e) => setParams({ ...params, type: e.target.value })}
+                onChange={e => setParams({ ...params, type: e.target.value })}
               >
                 <option value="gay">Gaydar de Bulma (rose)</option>
                 <option value="raciste">Racism-o-mètre (rouge)</option>
@@ -1156,7 +961,7 @@ function CanvasPreview({
                 max="101"
                 className="w-full accent-dbz-orange"
                 value={params.pct ?? "50"}
-                onChange={(e) => setParams({ ...params, pct: e.target.value })}
+                onChange={e => setParams({ ...params, pct: e.target.value })}
               />
             </div>
           </>
@@ -1164,16 +969,8 @@ function CanvasPreview({
 
         {def.id === "fusion" && (
           <>
-            <MemberField
-              label="Membre A"
-              value={params.a ?? ""}
-              onChange={(v) => setParams({ ...params, a: v })}
-            />
-            <MemberField
-              label="Membre B"
-              value={params.b ?? ""}
-              onChange={(v) => setParams({ ...params, b: v })}
-            />
+            <MemberField label="Membre A" value={params.a ?? ""} onChange={v => setParams({ ...params, a: v })} />
+            <MemberField label="Membre B" value={params.b ?? ""} onChange={v => setParams({ ...params, b: v })} />
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-widest text-dbz-blue-light mb-1">
                 État de la fusion
@@ -1181,9 +978,7 @@ function CanvasPreview({
               <select
                 className="w-full bg-dbz-bg border-2 border-dbz-border focus:border-dbz-orange p-2 text-sm"
                 value={params.state ?? "success"}
-                onChange={(e) =>
-                  setParams({ ...params, state: e.target.value })
-                }
+                onChange={e => setParams({ ...params, state: e.target.value })}
               >
                 <option value="propose">Proposition de fusion</option>
                 <option value="success">Fusion réussie</option>
@@ -1196,7 +991,7 @@ function CanvasPreview({
               <input
                 className="w-full bg-dbz-bg border-2 border-dbz-border focus:border-dbz-orange p-2 text-sm"
                 value={params.name ?? ""}
-                onChange={(e) => setParams({ ...params, name: e.target.value })}
+                onChange={e => setParams({ ...params, name: e.target.value })}
                 placeholder="ex : Gokuetto"
               />
             </div>
@@ -1212,9 +1007,7 @@ function CanvasPreview({
               <select
                 className="w-full bg-dbz-bg border-2 border-dbz-border focus:border-dbz-orange p-2 text-sm"
                 value={params.metric ?? "xp"}
-                onChange={(e) =>
-                  setParams({ ...params, metric: e.target.value })
-                }
+                onChange={e => setParams({ ...params, metric: e.target.value })}
               >
                 <option value="xp">Points d&apos;expérience (XP)</option>
                 <option value="zeni">Zénis (monnaie)</option>
@@ -1230,9 +1023,7 @@ function CanvasPreview({
                 max="20"
                 className="w-full accent-dbz-orange"
                 value={params.limit ?? "10"}
-                onChange={(e) =>
-                  setParams({ ...params, limit: e.target.value })
-                }
+                onChange={e => setParams({ ...params, limit: e.target.value })}
               />
             </div>
           </>
@@ -1262,17 +1053,10 @@ function CanvasPreview({
 
       {/* Aperçu visuel */}
       <div className="dbz-panel p-5 lg:col-span-2">
-        <h3 className="font-saiyan text-dbz-blue-light text-base uppercase mb-3">
-          Aperçu
-        </h3>
+        <h3 className="font-saiyan text-dbz-blue-light text-base uppercase mb-3">Aperçu</h3>
         <div className="flex items-center justify-center rounded border border-dbz-border bg-black/30 p-4 min-h-[200px]">
           {isValid ? (
-            <img
-              src={url}
-              alt={def.name}
-              className="max-w-full rounded"
-              loading="lazy"
-            />
+            <img src={url} alt={def.name} className="max-w-full rounded" loading="lazy" />
           ) : (
             <p className="text-sm text-white/50 text-center">
               Renseignez les paramètres à gauche pour afficher l&apos;aperçu.
@@ -1281,9 +1065,7 @@ function CanvasPreview({
         </div>
         {isValid && (
           <div className="mt-3">
-            <p className="text-[10px] text-white/50 uppercase tracking-widest mb-1">
-              URL générée (pour intégration)
-            </p>
+            <p className="text-[10px] text-white/50 uppercase tracking-widest mb-1">URL générée (pour intégration)</p>
             <code className="block break-all rounded bg-black/40 p-2 text-[10px] text-white/50 border border-dbz-border">
               {url}
             </code>
@@ -1294,34 +1076,17 @@ function CanvasPreview({
   );
 }
 
-function MemberField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (id: string) => void;
-}) {
+function MemberField({ label, value, onChange }: { label: string; value: string; onChange: (id: string) => void }) {
   return (
     <div>
-      <label className="block text-[10px] font-bold uppercase tracking-widest text-dbz-blue-light mb-1">
-        {label}
-      </label>
-      <UserSelect
-        value={value}
-        onChange={onChange}
-        placeholder="Rechercher un membre…"
-      />
+      <label className="block text-[10px] font-bold uppercase tracking-widest text-dbz-blue-light mb-1">{label}</label>
+      <UserSelect value={value} onChange={onChange} placeholder="Rechercher un membre…" />
     </div>
   );
 }
 
-function initialParams(
-  def: CanvasDef,
-  members: DiscordMember[],
-): Record<string, string> {
-  const firstMember = members.find((m) => !m.id.startsWith("0"))?.id ?? "";
+function initialParams(def: CanvasDef, members: DiscordMember[]): Record<string, string> {
+  const firstMember = members.find(m => !m.id.startsWith("0"))?.id ?? "";
   switch (def.id) {
     case "profile":
       return { userId: firstMember, theme: "default" };
@@ -1344,18 +1109,13 @@ function initialParams(
 }
 
 function paramsValid(def: CanvasDef, params: Record<string, string>): boolean {
-  if (def.id === "profile" || def.id === "scan" || def.id === "scouter")
-    return !!params.userId;
+  if (def.id === "profile" || def.id === "scan" || def.id === "scouter") return !!params.userId;
   if (def.id === "fusion") return !!params.a && !!params.b;
   if (def.id === "leaderboard") return true;
   return false;
 }
 
-function buildUrl(
-  def: CanvasDef,
-  params: Record<string, string>,
-  bust: number,
-): string {
+function buildUrl(def: CanvasDef, params: Record<string, string>, bust: number): string {
   const sp = new URLSearchParams();
   let path = "";
   switch (def.id) {

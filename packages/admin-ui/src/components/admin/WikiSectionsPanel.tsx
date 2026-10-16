@@ -25,7 +25,7 @@ import {
   OeilBarre,
   Plus,
   Recherche,
-} from "@/components/icones";
+} from "@shenron/ui/icones";
 import { useMemo, useState } from "react";
 import { MarkdownField } from "@aphrody/admin-ui/components/admin/MarkdownField";
 import { apiAt } from "@aphrody/admin-ui/client";
@@ -63,12 +63,13 @@ interface Section {
 }
 
 /** Types d'entités liables (table → libellé). */
-const LINKABLE_ENTITIES: {
+type LinkableEntity = {
   table: string;
   label: string;
   nameCol: string;
   imageCol: string;
-}[] = [
+};
+const LINKABLE_ENTITIES: [LinkableEntity, ...LinkableEntity[]] = [
   {
     table: "db_characters",
     label: "Personnages",
@@ -131,25 +132,12 @@ export function WikiSectionsPanel({
   const sections = useMemo(() => query.data?.items ?? [], [query.data]);
   // Sous-catégories déjà utilisées → suggestions (datalist) dans chaque éditeur.
   const groupNames = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          sections
-            .map((s) => s.groupLabel?.trim())
-            .filter((g): g is string => !!g),
-        ),
-      ).toSorted(),
+    () => Array.from(new Set(sections.map(s => s.groupLabel?.trim()).filter((g): g is string => !!g))).toSorted(),
     [sections],
   );
 
   const add = useMutation({
-    mutationFn: (preset: {
-      key: string;
-      label: string;
-      accent: string;
-      groupLabel?: string;
-      sortOrder?: number;
-    }) =>
+    mutationFn: (preset: { key: string; label: string; accent: string; groupLabel?: string; sortOrder?: number }) =>
       client.post(`/db_wiki_sections`, {
         entityType,
         entityId,
@@ -165,11 +153,7 @@ export function WikiSectionsPanel({
 
   const reorder = useMutation({
     mutationFn: async (orderedIds: number[]) => {
-      await Promise.all(
-        orderedIds.map((id, i) =>
-          client.patch(`/db_wiki_sections/${id}`, { sortOrder: i }),
-        ),
-      );
+      await Promise.all(orderedIds.map((id, i) => client.patch(`/db_wiki_sections/${id}`, { sortOrder: i })));
     },
     onSuccess: invalidate,
   });
@@ -177,8 +161,12 @@ export function WikiSectionsPanel({
   function move(index: number, dir: -1 | 1) {
     const next = index + dir;
     if (next < 0 || next >= sections.length) return;
-    const ids = sections.map((s) => s.id);
-    [ids[index], ids[next]] = [ids[next], ids[index]];
+    const ids = sections.map(s => s.id);
+    const currentId = ids[index];
+    const nextId = ids[next];
+    if (currentId === undefined || nextId === undefined) return;
+    ids[index] = nextId;
+    ids[next] = currentId;
     reorder.mutate(ids);
   }
 
@@ -213,21 +201,16 @@ export function WikiSectionsPanel({
       </div>
 
       <p className="text-xs text-white/50">
-        Blocs affichés en catégories sélectionnables sur la fiche (« Histoire »,
-        « Personnalité », « Anecdotes », « PWS »…). Dès qu&apos;une fiche a des
-        sections ici, elles définissent
-        <strong className="text-white/70"> seules</strong> ses catégories (le
-        champ « Article » n&apos;est plus affiché) : masquage, ordre et édition
-        font foi. Techniques et transformations restent gérées dans « Relations
-        ».
+        Blocs affichés en catégories sélectionnables sur la fiche (« Histoire », « Personnalité », « Anecdotes », « PWS
+        »…). Dès qu&apos;une fiche a des sections ici, elles définissent
+        <strong className="text-white/70"> seules</strong> ses catégories (le champ « Article » n&apos;est plus affiché)
+        : masquage, ordre et édition font foi. Techniques et transformations restent gérées dans « Relations ».
       </p>
 
       {query.isError ? (
         <p className="text-xs text-red-400">Chargement des sections échoué.</p>
       ) : sections.length === 0 ? (
-        <p className="text-xs italic text-white/50">
-          Aucune section pour l&apos;instant.
-        </p>
+        <p className="text-xs italic text-white/50">Aucune section pour l&apos;instant.</p>
       ) : (
         <div className="space-y-2">
           {sections.map((s, i) => (
@@ -257,7 +240,7 @@ export function WikiSectionsPanel({
           >
             <Plus className="h-3 w-3" /> Pack PWS
           </button>
-          {SECTION_PRESETS.map((p) => (
+          {SECTION_PRESETS.map(p => (
             <button
               key={p.key}
               type="button"
@@ -274,8 +257,8 @@ export function WikiSectionsPanel({
             className="input flex-1 text-sm"
             placeholder="Section personnalisée…"
             value={customLabel}
-            onChange={(e) => setCustomLabel(e.target.value)}
-            onKeyDown={(e) => {
+            onChange={e => setCustomLabel(e.target.value)}
+            onKeyDown={e => {
               if (e.key === "Enter") {
                 e.preventDefault();
                 addCustom();
@@ -291,9 +274,7 @@ export function WikiSectionsPanel({
             <Plus className="h-4 w-4" /> Ajouter
           </button>
         </div>
-        {add.isError && (
-          <p className="text-xs text-red-400">Ajout échoué. Réessaie.</p>
-        )}
+        {add.isError && <p className="text-xs text-red-400">Ajout échoué. Réessaie.</p>}
       </div>
     </div>
   );
@@ -356,9 +337,7 @@ function SectionRow({
     onSuccess: onChanged,
   });
 
-  const dot =
-    ACCENTS.find((a) => a.key === (section.accent ?? "orange"))?.dot ??
-    "bg-dbz-orange";
+  const dot = ACCENTS.find(a => a.key === (section.accent ?? "orange"))?.dot ?? "bg-dbz-orange";
 
   return (
     <div className="rounded border border-dbz-border bg-dbz-card/40">
@@ -366,7 +345,7 @@ function SectionRow({
         <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
         <button
           type="button"
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => setOpen(o => !o)}
           className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-white/90 hover:text-dbz-orange"
         >
           {section.groupLabel?.trim() && (
@@ -383,9 +362,7 @@ function SectionRow({
             </span>
           )}
           {!section.visible && (
-            <span className="ml-2 text-[10px] uppercase tracking-widest text-white/50">
-              masquée
-            </span>
+            <span className="ml-2 text-[10px] uppercase tracking-widest text-white/50">masquée</span>
           )}
         </button>
         <div className="flex shrink-0 items-center gap-0.5 text-white/50">
@@ -416,19 +393,14 @@ function SectionRow({
             onClick={() => toggleVisible.mutate()}
             className="rounded p-1 hover:text-white"
           >
-            {section.visible ? (
-              <Oeil className="h-3.5 w-3.5" />
-            ) : (
-              <OeilBarre className="h-3.5 w-3.5" />
-            )}
+            {section.visible ? <Oeil className="h-3.5 w-3.5" /> : <OeilBarre className="h-3.5 w-3.5" />}
           </button>
           <button
             type="button"
             title="Supprimer"
             aria-label={`Supprimer la section « ${section.label} »`}
             onClick={() => {
-              if (window.confirm(`Supprimer la section « ${section.label} » ?`))
-                remove.mutate();
+              if (window.confirm(`Supprimer la section « ${section.label} » ?`)) remove.mutate();
             }}
             className="rounded p-1 text-red-400 hover:text-red-300"
           >
@@ -436,17 +408,13 @@ function SectionRow({
           </button>
           <button
             type="button"
-            onClick={() => setOpen((o) => !o)}
+            onClick={() => setOpen(o => !o)}
             className="rounded p-1 hover:text-white"
             title={open ? "Replier" : "Éditer"}
             aria-label={`${open ? "Replier" : "Éditer"} la section « ${section.label} »`}
             aria-expanded={open}
           >
-            {open ? (
-              <ChevronHaut className="h-4 w-4" />
-            ) : (
-              <ChevronBas className="h-4 w-4" />
-            )}
+            {open ? <ChevronHaut className="h-4 w-4" /> : <ChevronBas className="h-4 w-4" />}
           </button>
         </div>
       </div>
@@ -455,25 +423,15 @@ function SectionRow({
         <div className="space-y-3 border-t border-white/10 p-3">
           <div className="flex flex-wrap gap-3">
             <label className="flex-1">
-              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-white/50">
-                Titre
-              </span>
-              <input
-                className="input text-sm"
-                value={label}
-                onChange={(e) => setLabel(e.target.value)}
-              />
+              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-white/50">Titre</span>
+              <input className="input text-sm" value={label} onChange={e => setLabel(e.target.value)} />
             </label>
             <label>
               <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-white/50">
                 Accent
               </span>
-              <select
-                className="input text-sm"
-                value={accent}
-                onChange={(e) => setAccent(e.target.value)}
-              >
-                {ACCENTS.map((a) => (
+              <select className="input text-sm" value={accent} onChange={e => setAccent(e.target.value)}>
+                {ACCENTS.map(a => (
                   <option key={a.key} value={a.key}>
                     {a.label}
                   </option>
@@ -489,29 +447,22 @@ function SectionRow({
                 list="wiki-section-groups"
                 placeholder="ex. PWS"
                 value={groupLabel}
-                onChange={(e) => setGroupLabel(e.target.value)}
+                onChange={e => setGroupLabel(e.target.value)}
               />
               <datalist id="wiki-section-groups">
-                {groups.map((g) => (
+                {groups.map(g => (
                   <option key={g} value={g} />
                 ))}
               </datalist>
             </label>
           </div>
           <p className="text-[11px] text-white/50 -mt-1">
-            Le <strong className="text-white/60">groupe parent</strong> devient
-            l&apos;onglet de la barre du haut (ex. « PWS »). Le{" "}
-            <strong className="text-white/60">titre</strong> ci-dessus est la
-            sous-section affichée en dessous (ex. « Vitesse », « Puissance
-            d&apos;attaque »). Laisse vide pour une catégorie de 1er niveau («
+            Le <strong className="text-white/60">groupe parent</strong> devient l&apos;onglet de la barre du haut (ex. «
+            PWS »). Le <strong className="text-white/60">titre</strong> ci-dessus est la sous-section affichée en
+            dessous (ex. « Vitesse », « Puissance d&apos;attaque »). Laisse vide pour une catégorie de 1er niveau («
             Histoire », « Anecdotes »…).
           </p>
-          <MarkdownField
-            value={body}
-            onChange={setBody}
-            subdir={uploadSubdir(table)}
-            preview={false}
-          />
+          <MarkdownField value={body} onChange={setBody} subdir={uploadSubdir(table)} preview={false} />
           <WikiSectionLinksEditor links={links} onChange={setLinks} />
           <div className="flex items-center gap-2">
             <button
@@ -523,14 +474,8 @@ function SectionRow({
               <Enregistrer className="h-4 w-4" />
               {save.isPending ? "Enregistrement…" : "Enregistrer la section"}
             </button>
-            {save.isError && (
-              <span className="text-xs text-red-400">
-                Échec de l&apos;enregistrement.
-              </span>
-            )}
-            {save.isSuccess && !dirty && (
-              <span className="text-xs text-green-400">Enregistré.</span>
-            )}
+            {save.isError && <span className="text-xs text-red-400">Échec de l&apos;enregistrement.</span>}
+            {save.isSuccess && !dirty && <span className="text-xs text-green-400">Enregistré.</span>}
           </div>
         </div>
       )}
@@ -559,8 +504,7 @@ function WikiSectionLinksEditor({
   const [picking, setPicking] = useState(false);
   const [table, setTable] = useState(LINKABLE_ENTITIES[0].table);
   const [q, setQ] = useState("");
-  const spec =
-    LINKABLE_ENTITIES.find((e) => e.table === table) ?? LINKABLE_ENTITIES[0];
+  const spec = LINKABLE_ENTITIES.find(e => e.table === table) ?? LINKABLE_ENTITIES[0];
   const client = apiAt(crudBase(table));
 
   const list = useQuery({
@@ -574,13 +518,11 @@ function WikiSectionLinksEditor({
     const rows = list.data?.rows ?? [];
     const needle = q.trim().toLowerCase();
     const named = rows
-      .map((r) => ({
+      .map(r => ({
         row: r,
         name: String(r[spec.nameCol] ?? "").trim(),
       }))
-      .filter(
-        (x) => x.name && (!needle || x.name.toLowerCase().includes(needle)),
-      );
+      .filter(x => x.name && (!needle || x.name.toLowerCase().includes(needle)));
     return named.slice(0, 40);
   }, [list.data, q, spec.nameCol]);
 
@@ -588,9 +530,8 @@ function WikiSectionLinksEditor({
     const href = publicEntityUrl(table, row);
     if (!href) return;
     const rawImg = row[spec.imageCol];
-    const image =
-      typeof rawImg === "string" && rawImg ? assetUrl(rawImg) : undefined;
-    if (links.some((l) => l.href === href)) return; // pas de doublon
+    const image = typeof rawImg === "string" && rawImg ? assetUrl(rawImg) : undefined;
+    if (links.some(l => l.href === href)) return; // pas de doublon
     onChange([...links, { href, label: name, image }]);
   }
 
@@ -601,8 +542,8 @@ function WikiSectionLinksEditor({
         <span className="text-white/50">({links.length})</span>
       </div>
       <p className="mb-2 text-[11px] text-white/50">
-        Cartes avec photo renvoyant vers d&apos;autres fiches wiki (ex. affilier
-        des personnages à une catégorie « Powerscaling »).
+        Cartes avec photo renvoyant vers d&apos;autres fiches wiki (ex. affilier des personnages à une catégorie «
+        Powerscaling »).
       </p>
 
       {links.length > 0 && (
@@ -613,18 +554,11 @@ function WikiSectionLinksEditor({
               className="group relative flex items-center gap-2 rounded border border-dbz-border bg-dbz-bg/60 p-1.5"
             >
               {l.image ? (
-                <img
-                  src={l.image}
-                  alt=""
-                  className="h-9 w-9 shrink-0 rounded object-cover"
-                  loading="lazy"
-                />
+                <img src={l.image} alt="" className="h-9 w-9 shrink-0 rounded object-cover" loading="lazy" />
               ) : (
                 <div className="h-9 w-9 shrink-0 rounded bg-dbz-card" />
               )}
-              <span className="min-w-0 flex-1 truncate text-xs text-white/85">
-                {l.label}
-              </span>
+              <span className="min-w-0 flex-1 truncate text-xs text-white/85">{l.label}</span>
               <button
                 type="button"
                 title="Retirer"
@@ -646,12 +580,12 @@ function WikiSectionLinksEditor({
               className="input text-xs"
               aria-label="Type de fiche à lier"
               value={table}
-              onChange={(e) => {
+              onChange={e => {
                 setTable(e.target.value);
                 setQ("");
               }}
             >
-              {LINKABLE_ENTITIES.map((e) => (
+              {LINKABLE_ENTITIES.map(e => (
                 <option key={e.table} value={e.table}>
                   {e.label}
                 </option>
@@ -664,39 +598,27 @@ function WikiSectionLinksEditor({
                 aria-label="Rechercher une fiche à lier"
                 placeholder="Rechercher une fiche…"
                 value={q}
-                onChange={(e) => setQ(e.target.value)}
+                onChange={e => setQ(e.target.value)}
                 autoFocus
               />
             </div>
-            <button
-              type="button"
-              onClick={() => setPicking(false)}
-              className="btn btn-ghost shrink-0"
-            >
+            <button type="button" onClick={() => setPicking(false)} className="btn btn-ghost shrink-0">
               Fermer
             </button>
           </div>
           {list.isLoading ? (
             <p className="py-3 text-center text-xs text-white/50">
-              <Chargement className="mr-1 inline h-3 w-3 animate-spin" />{" "}
-              Chargement…
+              <Chargement className="mr-1 inline h-3 w-3 animate-spin" /> Chargement…
             </p>
           ) : (
             <div className="max-h-56 space-y-1 overflow-y-auto">
               {results.length === 0 ? (
-                <p className="py-2 text-center text-xs italic text-white/50">
-                  Aucun résultat.
-                </p>
+                <p className="py-2 text-center text-xs italic text-white/50">Aucun résultat.</p>
               ) : (
                 results.map(({ row, name }) => {
                   const rawImg = row[spec.imageCol];
-                  const img =
-                    typeof rawImg === "string" && rawImg
-                      ? assetUrl(rawImg)
-                      : null;
-                  const already = links.some(
-                    (l) => l.href === publicEntityUrl(table, row),
-                  );
+                  const img = typeof rawImg === "string" && rawImg ? assetUrl(rawImg) : null;
+                  const already = links.some(l => l.href === publicEntityUrl(table, row));
                   return (
                     <button
                       key={String(row.id)}
@@ -706,22 +628,13 @@ function WikiSectionLinksEditor({
                       className="flex w-full items-center gap-2 rounded p-1 text-left hover:bg-white/5 disabled:opacity-40"
                     >
                       {img ? (
-                        <img
-                          src={img}
-                          alt=""
-                          className="h-8 w-8 rounded object-cover"
-                          loading="lazy"
-                        />
+                        <img src={img} alt="" className="h-8 w-8 rounded object-cover" loading="lazy" />
                       ) : (
                         <div className="h-8 w-8 rounded bg-dbz-card" />
                       )}
-                      <span className="min-w-0 flex-1 truncate text-xs text-white/85">
-                        {name}
-                      </span>
+                      <span className="min-w-0 flex-1 truncate text-xs text-white/85">{name}</span>
                       {already ? (
-                        <span className="text-[9px] uppercase text-white/50">
-                          ajouté
-                        </span>
+                        <span className="text-[9px] uppercase text-white/50">ajouté</span>
                       ) : (
                         <Plus className="h-3.5 w-3.5 text-dbz-orange" />
                       )}
@@ -733,11 +646,7 @@ function WikiSectionLinksEditor({
           )}
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={() => setPicking(true)}
-          className="btn btn-ghost"
-        >
+        <button type="button" onClick={() => setPicking(true)} className="btn btn-ghost">
           <Plus className="h-4 w-4" /> Lier une page wiki
         </button>
       )}

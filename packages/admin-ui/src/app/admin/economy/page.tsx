@@ -17,7 +17,7 @@ import {
   Rafraichir,
   Tendance,
   Trophee,
-} from "@/components/icones";
+} from "@shenron/ui/icones";
 import { useState } from "react";
 import { api } from "@aphrody/admin-ui/client";
 import { fmtNum } from "@aphrody/admin-ui/format";
@@ -84,12 +84,7 @@ function ConfirmDialog({
             <h3 className="font-semibold text-white">{title}</h3>
             <p className="mt-1 text-sm text-zinc-400">{message}</p>
           </div>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="ml-auto btn btn-ghost px-1 py-1"
-            aria-label="Fermer"
-          >
+          <button type="button" onClick={onCancel} className="ml-auto btn btn-ghost px-1 py-1" aria-label="Fermer">
             <Croix className="h-4 w-4" />
           </button>
         </div>
@@ -123,45 +118,32 @@ export default function AdminEconomyPage() {
 
   const top = useQuery({
     queryKey: ["economy", "top"],
-    queryFn: () =>
-      api.get<{ rows: UserRow[] }>("/economy/leaderboard?limit=20"),
+    queryFn: () => api.get<{ rows: UserRow[] }>("/economy/leaderboard?limit=20"),
   });
 
   const txs = useQuery({
     queryKey: ["economy", "txs"],
-    queryFn: () =>
-      api.get<{ rows: TransactionRow[] }>("/economy/transactions?limit=50"),
+    queryFn: () => api.get<{ rows: TransactionRow[] }>("/economy/transactions?limit=50"),
   });
 
   const settings = useQuery({
     queryKey: ["settings", "all"],
-    queryFn: () =>
-      api.get<{ rows: { key: string; value: string }[] }>(
-        "/database/guild_settings?limit=200",
-      ),
+    queryFn: () => api.get<{ rows: { key: string; value: string }[] }>("/database/guild_settings?limit=200"),
     staleTime: 30_000,
   });
   const channels = useQuery({
     queryKey: ["discord", "channels"],
-    queryFn: () =>
-      api.get<{ channels: { id: string; name: string; type: number }[] }>(
-        "/discord/channels",
-      ),
+    queryFn: () => api.get<{ channels: { id: string; name: string; type: number }[] }>("/discord/channels"),
     staleTime: 30_000,
   });
 
-  const channelZeniId = settings.data?.rows.find(
-    (r) => r.key === "channel.zeni",
-  )?.value;
-  const channelZeniName = channels.data?.channels.find(
-    (c) => c.id === channelZeniId,
-  )?.name;
+  const channelZeniId = settings.data?.rows.find(r => r.key === "channel.zeni")?.value;
+  const channelZeniName = channels.data?.channels.find(c => c.id === channelZeniId)?.name;
 
   // /api/services/settings/set et /api/services/settings/unset sont des actions
   // enregistrées dans service-registry.ts — l'endpoint est POST /services/:service/:action
   const setSetting = useMutation({
-    mutationFn: ({ key, value }: { key: string; value: string }) =>
-      api.post("/services/settings/set", { key, value }),
+    mutationFn: ({ key, value }: { key: string; value: string }) => api.post("/services/settings/set", { key, value }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["settings"] });
       showSuccess("Salon des récompenses mis à jour.");
@@ -176,20 +158,15 @@ export default function AdminEconomyPage() {
   });
 
   const give = useMutation({
-    mutationFn: (body: {
-      mode: "user" | "role" | "all";
-      userId?: string;
-      roleId?: string;
-      amount: number;
-    }) => api.post<{ ok: boolean; applied?: number }>("/economy/give", body),
-    onSuccess: (data) => {
+    mutationFn: (body: { mode: "user" | "role" | "all"; userId?: string; roleId?: string; amount: number }) =>
+      api.post<{ ok: boolean; applied?: number }>("/economy/give", body),
+    onSuccess: data => {
       qc.invalidateQueries({ queryKey: ["economy"] });
       showSuccess(`Distribution réussie sur ${data.applied ?? 0} membre(s).`);
     },
   });
   const setBalance = useMutation({
-    mutationFn: (body: { userId: string; amount: number }) =>
-      api.post("/economy/set", body),
+    mutationFn: (body: { userId: string; amount: number }) => api.post("/economy/set", body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["economy"] });
       showSuccess("Solde modifié avec succès.");
@@ -213,9 +190,8 @@ export default function AdminEconomyPage() {
           </button>
         </div>
         <p className="mt-1 text-sm text-zinc-400">
-          Vue d&apos;ensemble de la monnaie du serveur : circulation des zénis,
-          classement des membres les plus riches, historique des transactions et
-          opérations administratives.
+          Vue d&apos;ensemble de la monnaie du serveur : circulation des zénis, classement des membres les plus riches,
+          historique des transactions et opérations administratives.
         </p>
       </div>
 
@@ -234,9 +210,8 @@ export default function AdminEconomyPage() {
           Salon des notifications de récompense
         </h3>
         <p className="mb-3 text-xs text-zinc-500">
-          Les notifications de zénis (quête quotidienne, drop aléatoire,
-          victoire dans un jeu) sont envoyées dans ce salon. Laissez vide pour
-          les désactiver. Les modèles de messages sont éditables sur la page{" "}
+          Les notifications de zénis (quête quotidienne, drop aléatoire, victoire dans un jeu) sont envoyées dans ce
+          salon. Laissez vide pour les désactiver. Les modèles de messages sont éditables sur la page{" "}
           <strong>Messages</strong>.
         </p>
         <div className="flex items-center gap-2">
@@ -249,7 +224,7 @@ export default function AdminEconomyPage() {
             <select
               className="input flex-1"
               value={channelZeniId ?? ""}
-              onChange={(e) => {
+              onChange={e => {
                 const v = e.target.value;
                 if (!v) unsetSetting.mutate("channel.zeni");
                 else setSetting.mutate({ key: "channel.zeni", value: v });
@@ -257,19 +232,15 @@ export default function AdminEconomyPage() {
             >
               <option value="">— Désactivé (aucune notification) —</option>
               {channels.data?.channels
-                .filter((c) => c.type === 0)
-                .map((c) => (
+                .filter(c => c.type === 0)
+                .map(c => (
                   <option key={c.id} value={c.id}>
                     #{c.name}
                   </option>
                 ))}
             </select>
           )}
-          {channelZeniName && (
-            <span className="badge badge-success">
-              Actif : #{channelZeniName}
-            </span>
-          )}
+          {channelZeniName && <span className="badge badge-success">Actif : #{channelZeniName}</span>}
         </div>
       </div>
 
@@ -335,38 +306,24 @@ export default function AdminEconomyPage() {
             Impossible de charger le classement. Réessayez.
           </div>
         )}
-        {top.data?.rows.length === 0 && (
-          <p className="text-sm text-zinc-500">Aucun membre enregistré.</p>
-        )}
+        {top.data?.rows.length === 0 && <p className="text-sm text-zinc-500">Aucun membre enregistré.</p>}
         <div className="space-y-1">
           {top.data?.rows.map((u, i) => (
-            <div
-              key={u.id}
-              className="flex items-center gap-3 rounded p-2 hover:bg-zinc-800/40"
-            >
-              <span className="w-8 text-right font-mono text-sm text-zinc-500">
-                #{i + 1}
-              </span>
-              <span
-                className="flex-1 truncate text-xs text-zinc-300 font-mono"
-                title={`ID Discord : ${u.id}`}
-              >
+            <div key={u.id} className="flex items-center gap-3 rounded p-2 hover:bg-zinc-800/40">
+              <span className="w-8 text-right font-mono text-sm text-zinc-500">#{i + 1}</span>
+              <span className="flex-1 truncate text-xs text-zinc-300 font-mono" title={`ID Discord : ${u.id}`}>
                 {u.displayName ?? (
                   <>
                     {u.id.slice(0, 6)}…{u.id.slice(-4)}
-                    <span className="ml-1 text-zinc-600 text-[10px]">
-                      ({u.id})
-                    </span>
+                    <span className="ml-1 text-zinc-600 text-[10px]">({u.id})</span>
                   </>
                 )}
               </span>
-              <span className="font-mono text-sm font-semibold text-amber-400">
-                {fmtNum(u.zeni)} z
-              </span>
+              <span className="font-mono text-sm font-semibold text-amber-400">{fmtNum(u.zeni)} z</span>
               <EditBalanceButton
                 userId={u.id}
                 current={u.zeni}
-                onSave={(amount) => setBalance.mutate({ userId: u.id, amount })}
+                onSave={amount => setBalance.mutate({ userId: u.id, amount })}
               />
             </div>
           ))}
@@ -380,21 +337,14 @@ export default function AdminEconomyPage() {
           Distribution de zénis
         </h3>
         <p className="mb-3 text-xs text-zinc-500">
-          Donnez ou retirez des zénis à un membre, à tous les membres d&apos;un
-          rôle Discord ou à l&apos;ensemble du serveur. Un montant négatif
-          retire des zénis. Toutes les opérations sont enregistrées dans
-          l&apos;historique.
+          Donnez ou retirez des zénis à un membre, à tous les membres d&apos;un rôle Discord ou à l&apos;ensemble du
+          serveur. Un montant négatif retire des zénis. Toutes les opérations sont enregistrées dans l&apos;historique.
         </p>
-        <BulkGiveForm
-          onSubmit={(body) => give.mutate(body)}
-          pending={give.isPending}
-        />
+        <BulkGiveForm onSubmit={body => give.mutate(body)} pending={give.isPending} />
         {give.isError && (
           <p className="mt-2 flex items-center gap-1 text-xs text-red-400">
             <Alerte className="h-3 w-3" />
-            {give.error instanceof Error
-              ? give.error.message
-              : String(give.error)}
+            {give.error instanceof Error ? give.error.message : String(give.error)}
           </p>
         )}
       </div>
@@ -406,8 +356,7 @@ export default function AdminEconomyPage() {
           Historique des transactions
         </h3>
         <p className="mb-3 text-xs text-zinc-500">
-          Les 50 dernières opérations économiques (achats, montées de niveau,
-          dons administrateurs…).
+          Les 50 dernières opérations économiques (achats, montées de niveau, dons administrateurs…).
         </p>
         {txs.isLoading && (
           <div className="flex items-center gap-2 text-zinc-500 text-sm">
@@ -415,44 +364,26 @@ export default function AdminEconomyPage() {
             Chargement…
           </div>
         )}
-        {txs.data?.rows.length === 0 && (
-          <p className="text-zinc-500 text-sm">
-            Aucune transaction pour le moment.
-          </p>
-        )}
+        {txs.data?.rows.length === 0 && <p className="text-zinc-500 text-sm">Aucune transaction pour le moment.</p>}
         <div className="space-y-1 max-h-[500px] overflow-y-auto">
-          {txs.data?.rows.map((t) => {
+          {txs.data?.rows.map(t => {
             const meta = ACTION_LABEL[t.action] ?? {
               label: t.action,
               color: "text-zinc-400",
             };
-            const createdAt = t.createdAt
-              ? new Date(t.createdAt).toLocaleString("fr-FR")
-              : "—";
+            const createdAt = t.createdAt ? new Date(t.createdAt).toLocaleString("fr-FR") : "—";
             return (
-              <div
-                key={t.id}
-                className="rounded border border-zinc-800 bg-zinc-950/40 p-2 text-xs"
-              >
+              <div key={t.id} className="rounded border border-zinc-800 bg-zinc-950/40 p-2 text-xs">
                 <div className="flex items-center gap-2">
-                  <span className={`font-medium ${meta.color}`}>
-                    {meta.label}
-                  </span>
+                  <span className={`font-medium ${meta.color}`}>{meta.label}</span>
                   {t.userId && (
-                    <span
-                      className="text-zinc-400 font-mono"
-                      title={`ID Discord : ${t.userId}`}
-                    >
+                    <span className="text-zinc-400 font-mono" title={`ID Discord : ${t.userId}`}>
                       {t.userId.slice(0, 6)}…{t.userId.slice(-4)}
                     </span>
                   )}
                   <span className="ml-auto text-zinc-500">{createdAt}</span>
                 </div>
-                {t.meta && (
-                  <pre className="mt-1 overflow-x-auto text-zinc-500">
-                    {t.meta}
-                  </pre>
-                )}
+                {t.meta && <pre className="mt-1 overflow-x-auto text-zinc-500">{t.meta}</pre>}
               </div>
             );
           })}
@@ -479,9 +410,7 @@ function StatCard({
     <div className="card">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-xs uppercase tracking-wide text-zinc-500">
-            {label}
-          </p>
+          <p className="text-xs uppercase tracking-wide text-zinc-500">{label}</p>
           <p className="mt-1 font-mono text-2xl font-semibold">{value}</p>
           <p className="mt-1 text-xs text-zinc-500">{sub}</p>
         </div>
@@ -541,7 +470,7 @@ function EditBalanceButton({
           type="number"
           min={0}
           value={val}
-          onChange={(e) => setVal(e.target.value)}
+          onChange={e => setVal(e.target.value)}
           className="input w-24 px-1 py-0 text-xs"
         />
         <button
@@ -572,12 +501,7 @@ function BulkGiveForm({
   onSubmit,
   pending,
 }: {
-  onSubmit: (body: {
-    mode: "user" | "role" | "all";
-    userId?: string;
-    roleId?: string;
-    amount: number;
-  }) => void;
+  onSubmit: (body: { mode: "user" | "role" | "all"; userId?: string; roleId?: string; amount: number }) => void;
   pending: boolean;
 }) {
   const [mode, setMode] = useState<"user" | "role" | "all">("user");
@@ -627,46 +551,36 @@ function BulkGiveForm({
       )}
       <div className="space-y-3">
         <div className="flex gap-2">
-          {(["user", "role", "all"] as const).map((m) => (
+          {(["user", "role", "all"] as const).map(m => (
             <button
               key={m}
               type="button"
               onClick={() => setMode(m)}
               className={`btn ${mode === m ? "btn-primary" : "btn-ghost"}`}
             >
-              {m === "user"
-                ? "1 membre"
-                : m === "role"
-                  ? "Par rôle"
-                  : "Tout le serveur"}
+              {m === "user" ? "1 membre" : m === "role" ? "Par rôle" : "Tout le serveur"}
             </button>
           ))}
         </div>
         <div className="grid gap-2 sm:grid-cols-3">
           {mode === "user" && (
             <div>
-              <label className="mb-1 block text-xs text-zinc-400">
-                Identifiant Discord du membre
-              </label>
+              <label className="mb-1 block text-xs text-zinc-400">Identifiant Discord du membre</label>
               <UserSelect value={userId} onChange={setUserId} />
             </div>
           )}
           {mode === "role" && (
             <div>
-              <label className="mb-1 block text-xs text-zinc-400">
-                Identifiant Discord du rôle
-              </label>
+              <label className="mb-1 block text-xs text-zinc-400">Identifiant Discord du rôle</label>
               <RoleSelect value={roleId} onChange={setRoleId} />
             </div>
           )}
           <div>
-            <label className="mb-1 block text-xs text-zinc-400">
-              Montant (négatif = retrait)
-            </label>
+            <label className="mb-1 block text-xs text-zinc-400">Montant (négatif = retrait)</label>
             <input
               type="number"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={e => setAmount(e.target.value)}
               placeholder="ex. 500 ou -200"
               className="input w-full"
             />

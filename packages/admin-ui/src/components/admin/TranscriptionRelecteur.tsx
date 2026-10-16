@@ -37,11 +37,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TranscriptionTexte } from "@/components/databooks/TranscriptionTexte";
 import { assetUrl } from "@/lib/assets";
-import {
-  aBesoinDeNettoyage,
-  diagnostiquerPlanche,
-  nettoyerOcr,
-} from "@/lib/databooks-format";
+import { aBesoinDeNettoyage, diagnostiquerPlanche, nettoyerOcr } from "@/lib/databooks-format";
 import { PlainField } from "@/components/editor/PlainField";
 
 export interface PlancheRelecture {
@@ -109,7 +105,7 @@ const FILTRES: { cle: Filtre; libelle: string }[] = [
  */
 function estSuspecte(planche: { texte: string; verifiee: boolean }): boolean {
   if (planche.verifiee) return false;
-  return diagnostiquerPlanche(planche.texte).some((a) => !a.reparable);
+  return diagnostiquerPlanche(planche.texte).some(a => !a.reparable);
 }
 
 export function TranscriptionRelecteur({
@@ -173,12 +169,9 @@ export function TranscriptionRelecteur({
     queryKey: ["databook-relecture-ocr", databookId, plancheRelue],
     enabled: plancheRelue !== null,
     queryFn: async (): Promise<RelectureReponse> => {
-      const r = await fetch(
-        `/api/databooks/${databookId}/relecture-ocr?planche=${plancheRelue}`,
-        {
-          cache: "no-store",
-        },
-      );
+      const r = await fetch(`/api/databooks/${databookId}/relecture-ocr?planche=${plancheRelue}`, {
+        cache: "no-store",
+      });
       if (!r.ok) throw new Error("seconde lecture indisponible");
       return r.json();
     },
@@ -188,7 +181,7 @@ export function TranscriptionRelecteur({
 
   const visibles = useMemo(() => {
     if (filtre === "toutes") return planches;
-    return planches.filter((p) =>
+    return planches.filter(p =>
       filtre === "transcrites"
         ? p.texte.trim().length > 0
         : filtre === "a-transcrire"
@@ -197,12 +190,10 @@ export function TranscriptionRelecteur({
     );
   }, [planches, filtre]);
 
-  const [numeroCourant, setNumeroCourant] = useState(
-    () => plancheInitiale ?? planchesInitiales[0]?.numero ?? 0,
-  );
+  const [numeroCourant, setNumeroCourant] = useState(() => plancheInitiale ?? planchesInitiales[0]?.numero ?? 0);
 
-  const courante = planches.find((p) => p.numero === numeroCourant) ?? null;
-  const indexVisible = visibles.findIndex((p) => p.numero === numeroCourant);
+  const courante = planches.find(p => p.numero === numeroCourant) ?? null;
+  const indexVisible = visibles.findIndex(p => p.numero === numeroCourant);
 
   // Dernière position connue dans la liste filtrée. Mémorisée pendant le rendu,
   // donc encore valide au rendu suivant, où la planche a pu sortir du filtre.
@@ -215,9 +206,10 @@ export function TranscriptionRelecteur({
   // on reprend à la position qu'occupait la planche, c'est-à-dire la suivante.
   useEffect(() => {
     if (visibles.length === 0) return;
-    if (!visibles.some((p) => p.numero === numeroCourant)) {
+    if (!visibles.some(p => p.numero === numeroCourant)) {
       const i = Math.min(dernierIndexVisible.current, visibles.length - 1);
-      setNumeroCourant(visibles[i].numero);
+      const suivante = visibles[i];
+      if (suivante) setNumeroCourant(suivante.numero);
     }
   }, [visibles, numeroCourant]);
 
@@ -263,19 +255,12 @@ export function TranscriptionRelecteur({
         }),
       });
       if (!r.ok) {
-        throw new Error(
-          (await r.json().catch(() => null))?.error ??
-            "Enregistrement impossible.",
-        );
+        throw new Error((await r.json().catch(() => null))?.error ?? "Enregistrement impossible.");
       }
       return (await r.json()) as { number: number; text: string | null };
     },
-    onSuccess: (rep) => {
-      setPlanches((arr) =>
-        arr.map((p) =>
-          p.numero === rep.number ? { ...p, texte: rep.text ?? "" } : p,
-        ),
-      );
+    onSuccess: rep => {
+      setPlanches(arr => arr.map(p => (p.numero === rep.number ? { ...p, texte: rep.text ?? "" } : p)));
       setToast(`Planche n°${rep.number} enregistrée.`);
     },
     onError: (e: Error) => setToast(`Erreur : ${e.message}`),
@@ -297,18 +282,12 @@ export function TranscriptionRelecteur({
         body: JSON.stringify({ number: numeroCourant, verifiee }),
       });
       if (!r.ok) {
-        throw new Error(
-          (await r.json().catch(() => null))?.error ?? "Écriture impossible.",
-        );
+        throw new Error((await r.json().catch(() => null))?.error ?? "Écriture impossible.");
       }
       return (await r.json()) as { number: number; verifiee: boolean };
     },
-    onSuccess: (rep) => {
-      setPlanches((arr) =>
-        arr.map((p) =>
-          p.numero === rep.number ? { ...p, verifiee: rep.verifiee } : p,
-        ),
-      );
+    onSuccess: rep => {
+      setPlanches(arr => arr.map(p => (p.numero === rep.number ? { ...p, verifiee: rep.verifiee } : p)));
       setToast(
         rep.verifiee
           ? `Planche n°${rep.number} marquée vérifiée — plus d'avertissement au lecteur.`
@@ -331,9 +310,7 @@ export function TranscriptionRelecteur({
       if (numero === numeroCourant) return;
       if (
         modifie &&
-        !window.confirm(
-          `La planche n°${numeroCourant} a des modifications non enregistrées. Les abandonner ?`,
-        )
+        !window.confirm(`La planche n°${numeroCourant} a des modifications non enregistrées. Les abandonner ?`)
       ) {
         return;
       }
@@ -345,9 +322,8 @@ export function TranscriptionRelecteur({
   const aller = useCallback(
     (delta: -1 | 1) => {
       if (visibles.length === 0) return;
-      const i = visibles.findIndex((p) => p.numero === numeroCourant);
-      const suivant =
-        visibles[Math.min(visibles.length - 1, Math.max(0, i + delta))];
+      const i = visibles.findIndex(p => p.numero === numeroCourant);
+      const suivant = visibles[Math.min(visibles.length - 1, Math.max(0, i + delta))];
       if (suivant) allerVers(suivant.numero);
     },
     [visibles, numeroCourant, allerVers],
@@ -375,12 +351,12 @@ export function TranscriptionRelecteur({
     return () => window.removeEventListener("keydown", onKey);
   }, [aller, brouillon, modifie, enregistrer]);
 
-  const transcrites = planches.filter((p) => p.texte.trim().length > 0).length;
+  const transcrites = planches.filter(p => p.texte.trim().length > 0).length;
   const compteurs: Record<Filtre, number> = {
     toutes: planches.length,
     "a-transcrire": planches.length - transcrites,
     transcrites,
-    suspectes: planches.filter((p) => estSuspecte(p)).length,
+    suspectes: planches.filter(p => estSuspecte(p)).length,
   };
 
   const imageUrl = courante?.image ? assetUrl(courante.image) : null;
@@ -410,25 +386,20 @@ export function TranscriptionRelecteur({
               }`}
             >
               {libelle}
-              <span className="ml-1 tabular-nums text-white/40">
-                {compteurs[cle]}
-              </span>
+              <span className="ml-1 tabular-nums text-white/40">{compteurs[cle]}</span>
             </button>
           ))}
         </div>
 
         {visibles.length === 0 ? (
-          <p className="py-6 text-center text-xs text-white/40">
-            Aucune planche pour ce filtre.
-          </p>
+          <p className="py-6 text-center text-xs text-white/40">Aucune planche pour ce filtre.</p>
         ) : (
           <ol className="-mr-1 grid grid-cols-4 gap-1 overflow-y-auto pr-1">
-            {visibles.map((p) => {
+            {visibles.map(p => {
               const vide = p.texte.trim().length === 0;
               const alerte = !vide && estSuspecte(p);
               const active = p.numero === numeroCourant;
-              const aDesFautesJa =
-                (anomaliesJa.data?.planches?.[p.numero]?.length ?? 0) > 0;
+              const aDesFautesJa = (anomaliesJa.data?.planches?.[p.numero]?.length ?? 0) > 0;
               return (
                 <li key={p.numero}>
                   <button
@@ -443,7 +414,7 @@ export function TranscriptionRelecteur({
                           ? `Planche ${p.numero} — à vérifier`
                           : `Planche ${p.numero} — transcrite`,
                       aDesFautesJa
-                        ? `${anomaliesJa.data!.planches[p.numero].length} graphie(s) japonaise(s) douteuse(s)`
+                        ? `${anomaliesJa.data?.planches[p.numero]?.length ?? 0} graphie(s) japonaise(s) douteuse(s)`
                         : null,
                     ]
                       .filter(Boolean)
@@ -516,9 +487,7 @@ export function TranscriptionRelecteur({
             )}
             <button
               type="button"
-              onClick={() =>
-                setOnglet(onglet === "editer" ? "apercu" : "editer")
-              }
+              onClick={() => setOnglet(onglet === "editer" ? "apercu" : "editer")}
               className="btn btn-ghost h-8 px-2 text-[11px]"
               title="Bascule entre la saisie et le rendu markdown public"
             >
@@ -550,9 +519,7 @@ export function TranscriptionRelecteur({
         </div>
 
         {!courante ? (
-          <p className="py-10 text-center text-sm text-white/50">
-            Aucune planche à afficher.
-          </p>
+          <p className="py-10 text-center text-sm text-white/50">Aucune planche à afficher.</p>
         ) : (
           <div className="grid min-w-0 gap-4 xl:grid-cols-2">
             {/* Scan */}
@@ -600,9 +567,7 @@ export function TranscriptionRelecteur({
                   {brouillon.trim() ? (
                     <TranscriptionTexte texte={brouillon} />
                   ) : (
-                    <p className="text-sm italic text-white/40">
-                      Aucun texte à prévisualiser.
-                    </p>
+                    <p className="text-sm italic text-white/40">Aucun texte à prévisualiser.</p>
                   )}
                 </div>
               )}
@@ -612,7 +577,7 @@ export function TranscriptionRelecteur({
                 {nettoyable && (
                   <button
                     type="button"
-                    onClick={() => setBrouillon((t) => nettoyerOcr(t))}
+                    onClick={() => setBrouillon(t => nettoyerOcr(t))}
                     className="inline-flex items-center gap-1 rounded border border-dbz-border/60 px-2 py-1 font-semibold text-dbz-blue-light transition-colors hover:border-dbz-orange hover:text-dbz-orange"
                     title="Retire les espaces et sauts de ligne superflus, sans toucher au texte"
                   >
@@ -620,9 +585,7 @@ export function TranscriptionRelecteur({
                     Nettoyer la mise en forme
                   </button>
                 )}
-                <span className="ml-auto text-white/30">
-                  Alt + ← / → pour naviguer · Ctrl + S pour enregistrer
-                </span>
+                <span className="ml-auto text-white/30">Alt + ← / → pour naviguer · Ctrl + S pour enregistrer</span>
               </div>
 
               {/* Fautes de lecture japonaises : proposées, jamais appliquées seules. */}
@@ -634,27 +597,18 @@ export function TranscriptionRelecteur({
                     {anomaliesPlanche.length > 1 ? "s" : ""} à vérifier
                   </p>
                   <ul className="space-y-1">
-                    {anomaliesPlanche.map((a) => {
+                    {anomaliesPlanche.map(a => {
                       const present = brouillon.includes(a.lu);
                       return (
-                        <li
-                          key={a.lu}
-                          className="flex flex-wrap items-center gap-1.5 text-[11px]"
-                        >
-                          <code className="font-jp rounded bg-red-500/15 px-1 text-red-200">
-                            {a.lu}
-                          </code>
+                        <li key={a.lu} className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                          <code className="font-jp rounded bg-red-500/15 px-1 text-red-200">{a.lu}</code>
                           <span className="text-white/35">→</span>
-                          <code className="font-jp rounded bg-green-500/15 px-1 text-green-200">
-                            {a.attendu}
-                          </code>
+                          <code className="font-jp rounded bg-green-500/15 px-1 text-green-200">{a.attendu}</code>
                           <span className="text-white/45">{a.fr}</span>
                           <button
                             type="button"
                             disabled={!present}
-                            onClick={() =>
-                              setBrouillon((t) => t.replaceAll(a.lu, a.attendu))
-                            }
+                            onClick={() => setBrouillon(t => t.replaceAll(a.lu, a.attendu))}
                             title={
                               present
                                 ? `Remplacer « ${a.lu} » par « ${a.attendu} » dans cette planche`
@@ -670,9 +624,8 @@ export function TranscriptionRelecteur({
                     })}
                   </ul>
                   <p className="mt-1.5 text-[10px] leading-snug text-white/35">
-                    Suggestions issues du croisement dictionnaire japonais +
-                    lexique du wiki. Environ 15 % sont fausses — le scan à
-                    gauche tranche.
+                    Suggestions issues du croisement dictionnaire japonais + lexique du wiki. Environ 15 % sont fausses
+                    — le scan à gauche tranche.
                   </p>
                 </div>
               )}
@@ -686,9 +639,7 @@ export function TranscriptionRelecteur({
                   </p>
                   {relecture.data?.secondes !== undefined && (
                     <span className="text-[10px] text-white/30">
-                      {relecture.data.cache
-                        ? "en cache"
-                        : `lue en ${relecture.data.secondes} s`}
+                      {relecture.data.cache ? "en cache" : `lue en ${relecture.data.secondes} s`}
                     </span>
                   )}
                   <button
@@ -703,9 +654,7 @@ export function TranscriptionRelecteur({
                     className="ml-auto inline-flex items-center gap-1 rounded border border-dbz-border/60 px-1.5 py-0.5 text-[11px] font-semibold text-white/60 transition-colors hover:border-dbz-orange hover:text-dbz-orange disabled:cursor-not-allowed disabled:opacity-30"
                   >
                     <ScanText className="h-2.5 w-2.5" />
-                    {plancheRelue === numeroCourant && relecture.data
-                      ? "Relire"
-                      : "Lire le scan"}
+                    {plancheRelue === numeroCourant && relecture.data ? "Relire" : "Lire le scan"}
                   </button>
                 </div>
 
@@ -713,38 +662,27 @@ export function TranscriptionRelecteur({
                   <p className="text-[11px] text-white/40">Lecture du scan…</p>
                 ) : plancheRelue !== numeroCourant ? (
                   <p className="text-[10px] leading-snug text-white/35">
-                    Un second moteur (détection + CRNN) relit le scan. Son
-                    vocabulaire est fermé : il ne peut écrire ni caractère
-                    étranger intrus, ni boucle. En revanche il ne restitue pas
-                    la mise en page — à lire comme un avis, pas comme un
-                    remplacement.
+                    Un second moteur (détection + CRNN) relit le scan. Son vocabulaire est fermé : il ne peut écrire ni
+                    caractère étranger intrus, ni boucle. En revanche il ne restitue pas la mise en page — à lire comme
+                    un avis, pas comme un remplacement.
                   </p>
                 ) : relecture.data?.sansScan ? (
-                  <p className="text-[11px] text-white/40">
-                    Aucun scan pour cette planche.
-                  </p>
+                  <p className="text-[11px] text-white/40">Aucun scan pour cette planche.</p>
                 ) : relecture.data?.indisponible ? (
                   <p className="text-[11px] text-amber-300/70">
                     Service de seconde lecture indisponible.
                     {relecture.data.detail ? ` (${relecture.data.detail})` : ""}
                   </p>
                 ) : relecture.error ? (
-                  <p className="text-[11px] text-amber-300/70">
-                    {(relecture.error as Error).message}
-                  </p>
+                  <p className="text-[11px] text-amber-300/70">{(relecture.error as Error).message}</p>
                 ) : relecture.data && relecture.data.regions.length === 0 ? (
-                  <p className="text-[11px] text-white/40">
-                    Aucun texte détecté sur ce scan.
-                  </p>
+                  <p className="text-[11px] text-white/40">Aucun texte détecté sur ce scan.</p>
                 ) : relecture.data ? (
                   <ul className="max-h-64 space-y-0.5 overflow-y-auto pr-1">
                     {relecture.data.regions.map((r, i) => {
                       const deja = brouillon.includes(r.texte);
                       return (
-                        <li
-                          key={`${i}-${r.texte}`}
-                          className="flex items-start gap-1.5 text-[11px]"
-                        >
+                        <li key={`${i}-${r.texte}`} className="flex items-start gap-1.5 text-[11px]">
                           <span
                             className={`mt-[3px] shrink-0 tabular-nums ${
                               r.score >= 0.9
@@ -758,24 +696,14 @@ export function TranscriptionRelecteur({
                             {r.score.toFixed(2)}
                           </span>
                           <code
-                            className={`font-jp flex-1 break-all ${
-                              deja ? "text-white/30" : "text-white/80"
-                            }`}
-                            title={
-                              deja ? "Déjà présent dans le texte" : undefined
-                            }
+                            className={`font-jp flex-1 break-all ${deja ? "text-white/30" : "text-white/80"}`}
+                            title={deja ? "Déjà présent dans le texte" : undefined}
                           >
                             {r.texte}
                           </code>
                           <button
                             type="button"
-                            onClick={() =>
-                              setBrouillon((t) =>
-                                t.trimEnd()
-                                  ? `${t.trimEnd()}\n${r.texte}`
-                                  : r.texte,
-                              )
-                            }
+                            onClick={() => setBrouillon(t => (t.trimEnd() ? `${t.trimEnd()}\n${r.texte}` : r.texte))}
                             title="Ajouter cette région à la fin du texte"
                             className="shrink-0 rounded border border-dbz-border/50 px-1 py-px text-[10px] text-white/40 transition-colors hover:border-dbz-orange hover:text-dbz-orange"
                           >
@@ -789,7 +717,7 @@ export function TranscriptionRelecteur({
               </div>
 
               {/* Acquittement : le juge est mécanique, l'œil tranche. */}
-              {(anomalies.some((a) => !a.reparable) || courante?.verifiee) && (
+              {(anomalies.some(a => !a.reparable) || courante?.verifiee) && (
                 <div
                   className={`mt-2 flex flex-wrap items-center gap-2 rounded border px-2 py-1.5 text-[11px] ${
                     courante?.verifiee
@@ -801,16 +729,14 @@ export function TranscriptionRelecteur({
                     <>
                       <BadgeCheck className="h-3.5 w-3.5 shrink-0" />
                       <span>
-                        Planche vérifiée à la main : les avertissements
-                        ci-dessous sont ignorés, et le lecteur public n&apos;en
-                        voit aucun.
+                        Planche vérifiée à la main : les avertissements ci-dessous sont ignorés, et le lecteur public
+                        n&apos;en voit aucun.
                       </span>
                     </>
                   ) : (
                     <span>
-                      Les signaux ci-dessous sont mécaniques : une couverture
-                      qui ne porte que « 3月号 » et « COVER » les déclenche
-                      alors que sa transcription est exacte.
+                      Les signaux ci-dessous sont mécaniques : une couverture qui ne porte que « 3月号 » et « COVER »
+                      les déclenche alors que sa transcription est exacte.
                     </span>
                   )}
                   <button
@@ -831,16 +757,14 @@ export function TranscriptionRelecteur({
                     ) : (
                       <BadgeCheck className="h-3 w-3" />
                     )}
-                    {courante?.verifiee
-                      ? "Retirer la vérification"
-                      : "Vérifier quand même"}
+                    {courante?.verifiee ? "Retirer la vérification" : "Vérifier quand même"}
                   </button>
                 </div>
               )}
 
               {anomalies.length > 0 && (
                 <ul className="mt-2 space-y-1">
-                  {anomalies.map((a) => (
+                  {anomalies.map(a => (
                     <li
                       key={a.code}
                       className={`flex items-start gap-1.5 rounded border px-2 py-1 text-[11px] ${

@@ -5,6 +5,12 @@
   "description": "Canonical Aphrody M3 administration, served by the existing authenticated Shenron web host",
   "license": "Apache-2.0",
   "type": "module",
+  "engines": {
+    "bun": "1.4.4"
+  },
+  "scripts": {
+    "typecheck": "bun check -p tsconfig.json --threads=2 --no-pretty"
+  },
   "exports": {
     "./app/admin/a2a/A2AViewer": "./src/app/admin/a2a/A2AViewer.tsx",
     "./app/admin/a2a/a2a-view": "./src/app/admin/a2a/a2a-view.ts",

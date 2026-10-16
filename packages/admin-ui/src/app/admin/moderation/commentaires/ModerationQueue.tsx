@@ -13,13 +13,9 @@
  */
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import {
-  hideCommentAction,
-  pinCommentAction,
-  restoreCommentAction,
-} from "./_actions";
+import { hideCommentAction, pinCommentAction, restoreCommentAction } from "./_actions";
 import { SOCIAL_KIND_LABELS, type SocialKind } from "@/lib/social-shared";
-import { Coeur } from "@/components/icones";
+import { Coeur } from "@shenron/ui/icones";
 
 export interface QueueRow {
   id: string;
@@ -65,8 +61,7 @@ export function ModerationQueue({ rows }: { rows: readonly QueueRow[] }) {
   if (rows.length === 0) {
     return (
       <p className="rounded-lg border border-white/10 bg-white/[0.02] p-6 text-[14px] text-white/50">
-        Aucun commentaire pour l&apos;instant. La file se remplira dès la
-        première discussion.
+        Aucun commentaire pour l&apos;instant. La file se remplira dès la première discussion.
       </p>
     );
   }
@@ -79,7 +74,7 @@ export function ModerationQueue({ rows }: { rows: readonly QueueRow[] }) {
         </p>
       )}
 
-      {rows.map((row) => (
+      {rows.map(row => (
         <article
           key={row.id}
           className="rounded-lg border border-white/10 bg-white/[0.02] p-4 transition-colors hover:border-white/20"
@@ -88,21 +83,13 @@ export function ModerationQueue({ rows }: { rows: readonly QueueRow[] }) {
             <span
               className={`rounded-full border px-2 py-[1px] text-[11px] uppercase tracking-wider ${STATUS_STYLES[row.status]}`}
             >
-              {row.status === "visible"
-                ? "en ligne"
-                : row.status === "hidden"
-                  ? "masqué"
-                  : "retiré par l'auteur"}
+              {row.status === "visible" ? "en ligne" : row.status === "hidden" ? "masqué" : "retiré par l'auteur"}
             </span>
             <span className="text-white/70">{row.authorName}</span>
             {row.agentName && (
-              <span className="rounded-full border border-sky-400/40 px-2 text-[11px] text-sky-300">
-                agent
-              </span>
+              <span className="rounded-full border border-sky-400/40 px-2 text-[11px] text-sky-300">agent</span>
             )}
-            <time dateTime={row.createdAt}>
-              {dateFormat.format(new Date(row.createdAt))}
-            </time>
+            <time dateTime={row.createdAt}>{dateFormat.format(new Date(row.createdAt))}</time>
             <span className="text-white/30">·</span>
             <span>
               {SOCIAL_KIND_LABELS[row.targetKind]}
@@ -114,22 +101,15 @@ export function ModerationQueue({ rows }: { rows: readonly QueueRow[] }) {
               </span>
             )}
             {row.pinned && (
-              <span className="rounded-full border border-dbz-orange/40 px-2 text-[11px] text-dbz-orange">
-                épinglé
-              </span>
+              <span className="rounded-full border border-dbz-orange/40 px-2 text-[11px] text-dbz-orange">épinglé</span>
             )}
           </header>
 
-          <p className="mt-2.5 whitespace-pre-wrap text-[14px] leading-relaxed text-white/85">
-            {row.body}
-          </p>
+          <p className="mt-2.5 whitespace-pre-wrap text-[14px] leading-relaxed text-white/85">{row.body}</p>
 
           <footer className="mt-3 flex flex-wrap items-center gap-4 text-[13px]">
             {row.href && (
-              <Link
-                href={`${row.href}#c-${row.id}`}
-                className="text-dbz-orange underline-offset-4 hover:underline"
-              >
+              <Link href={`${row.href}#c-${row.id}`} className="text-dbz-orange underline-offset-4 hover:underline">
                 Voir en contexte ↗
               </Link>
             )}

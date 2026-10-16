@@ -5,14 +5,7 @@
  * depuis le studio du perso plutôt que via la table globale + picker de perso.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Chargement,
-  Corbeille,
-  Croix,
-  Etincelle,
-  LienExterne,
-  Plus,
-} from "@/components/icones";
+import { Chargement, Corbeille, Croix, Etincelle, LienExterne, Plus } from "@shenron/ui/icones";
 import Link from "next/link";
 import { useState } from "react";
 import { ImageField } from "@aphrody/admin-ui/components/admin/ImageField";
@@ -79,40 +72,25 @@ export function TransformationsPanel({ characterId }: { characterId: string }) {
       <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-dbz-blue-light">
         <Etincelle className="h-3.5 w-3.5" /> Transformations
         <span className="text-white/50">({rows.length})</span>
-        {(list.isFetching || busy) && (
-          <Chargement className="h-3 w-3 animate-spin text-white/50" />
-        )}
+        {(list.isFetching || busy) && <Chargement className="h-3 w-3 animate-spin text-white/50" />}
       </div>
 
       <p className="text-xs text-white/50">
-        Formes et évolutions de ce personnage. Ajoutées ici, elles
-        s&apos;affichent sur sa fiche publique et dans l&apos;index des
-        transformations — plus besoin de créer une entrée globale puis de
-        choisir le perso à la main.
+        Formes et évolutions de ce personnage. Ajoutées ici, elles s&apos;affichent sur sa fiche publique et dans
+        l&apos;index des transformations — plus besoin de créer une entrée globale puis de choisir le perso à la main.
       </p>
 
       {list.isError ? (
-        <p className="text-xs text-red-400">
-          Chargement des transformations échoué.
-        </p>
+        <p className="text-xs text-red-400">Chargement des transformations échoué.</p>
       ) : rows.length === 0 && !adding ? (
-        <p className="text-xs italic text-white/50">
-          Aucune transformation pour l&apos;instant.
-        </p>
+        <p className="text-xs italic text-white/50">Aucune transformation pour l&apos;instant.</p>
       ) : (
         <div className="space-y-2">
-          {rows.map((t) => (
-            <div
-              key={t.id}
-              className="flex items-center gap-3 rounded border border-dbz-border bg-dbz-card/60 p-2"
-            >
+          {rows.map(t => (
+            <div key={t.id} className="flex items-center gap-3 rounded border border-dbz-border bg-dbz-card/60 p-2">
               <div className="h-12 w-12 shrink-0 overflow-hidden rounded border border-dbz-border bg-dbz-bg">
                 {t.image ? (
-                  <img
-                    src={assetUrl(t.image)}
-                    alt={t.name}
-                    className="h-full w-full object-cover object-top"
-                  />
+                  <img src={assetUrl(t.image)} alt={t.name} className="h-full w-full object-cover object-top" />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-white/20">
                     <Etincelle className="h-4 w-4" />
@@ -120,14 +98,8 @@ export function TransformationsPanel({ characterId }: { characterId: string }) {
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-white">
-                  {t.name}
-                </p>
-                {t.ki && (
-                  <p className="scouter-text text-[10px] text-dbz-orange">
-                    KI {t.ki}
-                  </p>
-                )}
+                <p className="truncate text-sm font-semibold text-white">{t.name}</p>
+                {t.ki && <p className="scouter-text text-[10px] text-dbz-orange">KI {t.ki}</p>}
               </div>
               <Link
                 href={`/admin/wiki/studio/db_transformations/${t.id}`}
@@ -160,7 +132,7 @@ export function TransformationsPanel({ characterId }: { characterId: string }) {
               className="input text-sm"
               placeholder="ex. Super Saiyan, Ultra Instinct…"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={e => setName(e.target.value)}
               autoFocus
             />
           </label>
@@ -172,19 +144,14 @@ export function TransformationsPanel({ characterId }: { characterId: string }) {
               className="input text-sm"
               placeholder="ex. 3 000 000 000"
               value={ki}
-              onChange={(e) => setKi(e.target.value)}
+              onChange={e => setKi(e.target.value)}
             />
           </label>
           <div>
             <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-white/50">
               Image (optionnel)
             </span>
-            <ImageField
-              value={image}
-              onChange={setImage}
-              subdir={uploadSubdir("db_transformations")}
-              column="image"
-            />
+            <ImageField value={image} onChange={setImage} subdir={uploadSubdir("db_transformations")} column="image" />
           </div>
           <div className="flex gap-2">
             <button

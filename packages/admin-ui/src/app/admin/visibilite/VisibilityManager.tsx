@@ -11,7 +11,7 @@
  */
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Chargement, Oeil, OeilBarre, Recherche } from "@/components/icones";
+import { Chargement, Oeil, OeilBarre, Recherche } from "@shenron/ui/icones";
 import { apiAt } from "@aphrody/admin-ui/client";
 import { assetUrl } from "@/lib/assets";
 
@@ -39,8 +39,7 @@ const TABLES: { name: string; label: string }[] = [
 ];
 
 const client = apiAt("/api/wiki-admin");
-const norm = (s: string) =>
-  s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 export function VisibilityManager() {
   const [table, setTable] = useState(TABLES[0]!.name);
@@ -50,8 +49,7 @@ export function VisibilityManager() {
 
   const list = useQuery({
     queryKey,
-    queryFn: () =>
-      client.get<{ items: VisibilityRow[] }>(`/${table}?as=visibility`),
+    queryFn: () => client.get<{ items: VisibilityRow[] }>(`/${table}?as=visibility`),
     staleTime: 30_000,
   });
 
@@ -59,25 +57,22 @@ export function VisibilityManager() {
   const filtered = useMemo(() => {
     const needle = norm(q.trim());
     if (!needle) return items;
-    return items.filter((it) => norm(it.label).includes(needle));
+    return items.filter(it => norm(it.label).includes(needle));
   }, [items, q]);
 
-  const visibleCount = items.filter((i) => i.visible).length;
+  const visibleCount = items.filter(i => i.visible).length;
   const hiddenCount = items.length - visibleCount;
 
   // Bascule d'une entité — mise à jour optimiste du cache pour un rendu instantané.
   const toggle = useMutation({
-    mutationFn: (v: { id: string; visible: boolean }) =>
-      client.post(`/${table}?as=visibility`, v),
-    onMutate: async (v) => {
+    mutationFn: (v: { id: string; visible: boolean }) => client.post(`/${table}?as=visibility`, v),
+    onMutate: async v => {
       await qc.cancelQueries({ queryKey });
       const prev = qc.getQueryData<{ items: VisibilityRow[] }>(queryKey);
-      qc.setQueryData<{ items: VisibilityRow[] }>(queryKey, (old) =>
+      qc.setQueryData<{ items: VisibilityRow[] }>(queryKey, old =>
         old
           ? {
-              items: old.items.map((it) =>
-                it.id === v.id ? { ...it, visible: v.visible } : it,
-              ),
+              items: old.items.map(it => (it.id === v.id ? { ...it, visible: v.visible } : it)),
             }
           : old,
       );
@@ -90,13 +85,12 @@ export function VisibilityManager() {
 
   // Bascule de masse (toute la table).
   const bulk = useMutation({
-    mutationFn: (visible: boolean) =>
-      client.post(`/${table}?as=visibility`, { all: true, visible }),
+    mutationFn: (visible: boolean) => client.post(`/${table}?as=visibility`, { all: true, visible }),
     onSuccess: () => qc.invalidateQueries({ queryKey }),
   });
 
   const busyBulk = bulk.isPending;
-  const labelTable = TABLES.find((t) => t.name === table)?.label ?? table;
+  const labelTable = TABLES.find(t => t.name === table)?.label ?? table;
 
   // « Tout masquer » retire d'un clic une rubrique entière du site public (les
   // pages détail passent en 404) : on demande la même confirmation que les
@@ -117,7 +111,7 @@ export function VisibilityManager() {
     <div className="space-y-6">
       {/* Sélecteur d'entité */}
       <div className="flex flex-wrap gap-2">
-        {TABLES.map((t) => (
+        {TABLES.map(t => (
           <button
             key={t.name}
             type="button"
@@ -143,7 +137,7 @@ export function VisibilityManager() {
           <input
             type="search"
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={e => setQ(e.target.value)}
             aria-label={`Rechercher dans ${labelTable.toLowerCase()}`}
             placeholder="Rechercher…"
             className="h-9 w-full rounded-lg border border-dbz-border bg-dbz-bg/70 pl-9 pr-3 text-[13px] text-white outline-none placeholder:text-white/50 focus:border-dbz-orange"
@@ -164,11 +158,7 @@ export function VisibilityManager() {
             disabled={busyBulk || items.length === 0}
             className="inline-flex items-center gap-1.5 rounded-lg border border-namek/40 bg-namek/10 px-3 py-1.5 text-[12px] font-semibold text-namek transition-colors hover:bg-namek/20 disabled:opacity-40"
           >
-            {busyBulk ? (
-              <Chargement className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Oeil className="h-3.5 w-3.5" />
-            )}
+            {busyBulk ? <Chargement className="h-3.5 w-3.5 animate-spin" /> : <Oeil className="h-3.5 w-3.5" />}
             Tout afficher
           </button>
           <button
@@ -177,11 +167,7 @@ export function VisibilityManager() {
             disabled={busyBulk || items.length === 0}
             className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-[12px] font-semibold text-white/70 transition-colors hover:bg-white/10 disabled:opacity-40"
           >
-            {busyBulk ? (
-              <Chargement className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <OeilBarre className="h-3.5 w-3.5" />
-            )}
+            {busyBulk ? <Chargement className="h-3.5 w-3.5 animate-spin" /> : <OeilBarre className="h-3.5 w-3.5" />}
             Tout masquer
           </button>
         </div>
@@ -193,25 +179,15 @@ export function VisibilityManager() {
           <Chargement className="h-5 w-5 animate-spin" /> Chargement…
         </div>
       ) : list.isError ? (
-        <p className="dbz-panel py-12 text-center text-red-400">
-          Erreur de chargement. Réessaie.
-        </p>
+        <p className="dbz-panel py-12 text-center text-red-400">Erreur de chargement. Réessaie.</p>
       ) : filtered.length === 0 ? (
         <p className="dbz-panel py-12 text-center text-white/50">
-          {items.length === 0
-            ? "Aucune entité."
-            : "Aucun résultat pour cette recherche."}
+          {items.length === 0 ? "Aucune entité." : "Aucun résultat pour cette recherche."}
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((it) => (
-            <VisibilityCard
-              key={it.id}
-              row={it}
-              onToggle={() =>
-                toggle.mutate({ id: it.id, visible: !it.visible })
-              }
-            />
+          {filtered.map(it => (
+            <VisibilityCard key={it.id} row={it} onToggle={() => toggle.mutate({ id: it.id, visible: !it.visible })} />
           ))}
         </div>
       )}
@@ -219,13 +195,7 @@ export function VisibilityManager() {
   );
 }
 
-function VisibilityCard({
-  row,
-  onToggle,
-}: {
-  row: VisibilityRow;
-  onToggle: () => void;
-}) {
+function VisibilityCard({ row, onToggle }: { row: VisibilityRow; onToggle: () => void }) {
   const { label, image, extra, visible } = row;
   return (
     <button
@@ -258,9 +228,7 @@ function VisibilityCard({
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-display text-[14px] font-semibold text-white">
-          {label}
-        </p>
+        <p className="truncate font-display text-[14px] font-semibold text-white">{label}</p>
         <p className="truncate text-[11px] text-white/50">
           {extra ? `${extra} · ` : ""}#{row.id}
         </p>
@@ -272,11 +240,7 @@ function VisibilityCard({
             : "bg-white/5 text-white/50 group-hover:bg-white/10"
         }`}
       >
-        {visible ? (
-          <Oeil className="h-4 w-4" />
-        ) : (
-          <OeilBarre className="h-4 w-4" />
-        )}
+        {visible ? <Oeil className="h-4 w-4" /> : <OeilBarre className="h-4 w-4" />}
       </span>
     </button>
   );

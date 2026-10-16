@@ -13,7 +13,7 @@
  * que recevra la personne qui a pris le temps de lire une planche.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Chargement, Coche, Croix, LienExterne } from "@/components/icones";
+import { Chargement, Coche, Croix, LienExterne } from "@shenron/ui/icones";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { PlainField } from "@/components/editor/PlainField";
@@ -78,12 +78,7 @@ function diffLignes(avant: string, apres: string) {
   let debut = 0;
   while (debut < a.length && debut < b.length && a[debut] === b[debut]) debut++;
   let fin = 0;
-  while (
-    fin < a.length - debut &&
-    fin < b.length - debut &&
-    a[a.length - 1 - fin] === b[b.length - 1 - fin]
-  )
-    fin++;
+  while (fin < a.length - debut && fin < b.length - debut && a[a.length - 1 - fin] === b[b.length - 1 - fin]) fin++;
   return {
     contexteAvant: a.slice(Math.max(0, debut - 2), debut),
     retire: a.slice(debut, a.length - fin),
@@ -108,11 +103,7 @@ export default function PageContributions() {
   });
 
   const moderer = useMutation({
-    mutationFn: async (v: {
-      id: string;
-      action: "accept" | "reject";
-      note?: string;
-    }) => {
+    mutationFn: async (v: { id: string; action: "accept" | "reject"; note?: string }) => {
       const res = await fetch("/api/admin/wiki-contributions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -131,16 +122,10 @@ export default function PageContributions() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="font-saiyan text-2xl text-white">
-          Contributions de la communauté
-        </h1>
+        <h1 className="font-saiyan text-2xl text-white">Contributions de la communauté</h1>
         <p className="mt-1 text-sm text-white/50">
-          Les corrections proposées depuis les fiches. Une acceptation applique
-          le texte et crédite son auteur dans{" "}
-          <Link
-            href="/admin/wiki/history"
-            className="text-dbz-orange underline-offset-2 hover:underline"
-          >
+          Les corrections proposées depuis les fiches. Une acceptation applique le texte et crédite son auteur dans{" "}
+          <Link href="/admin/wiki/history" className="text-dbz-orange underline-offset-2 hover:underline">
             l&apos;historique
           </Link>
           .
@@ -153,9 +138,7 @@ export default function PageContributions() {
       <details className="rounded-xl border border-white/[0.08] bg-white/[0.02]">
         <summary className="cursor-pointer list-none px-5 py-3.5 font-display text-[14px] font-semibold text-white/85 transition-colors hover:text-white">
           Qui peut contribuer&nbsp;?
-          <span className="ml-2 text-[12px] font-normal text-white/40">
-            rôles et membres autorisés, par périmètre
-          </span>
+          <span className="ml-2 text-[12px] font-normal text-white/40">rôles et membres autorisés, par périmètre</span>
         </summary>
         <div className="border-t border-white/[0.08] p-5">
           <ContributionRightsPanel />
@@ -163,7 +146,7 @@ export default function PageContributions() {
       </details>
 
       <nav className="flex flex-wrap gap-2">
-        {ONGLETS.map((o) => {
+        {ONGLETS.map(o => {
           const n = o.key ? counts[o.key] : undefined;
           const actif = statut === o.key;
           return (
@@ -190,19 +173,15 @@ export default function PageContributions() {
         </p>
       ) : !data?.rows.length ? (
         <p className="rounded-xl border border-white/8 bg-white/[0.02] px-5 py-10 text-center text-sm text-white/40">
-          {statut === "pending"
-            ? "Aucune proposition en attente."
-            : "Rien à afficher pour ce filtre."}
+          {statut === "pending" ? "Aucune proposition en attente." : "Rien à afficher pour ce filtre."}
         </p>
       ) : (
         <ul className="space-y-4">
-          {data.rows.map((r) => (
+          {data.rows.map(r => (
             <CarteContribution
               key={r.id}
               row={r}
-              onModerer={(action, note) =>
-                moderer.mutate({ id: r.id, action, note })
-              }
+              onModerer={(action, note) => moderer.mutate({ id: r.id, action, note })}
               enCours={moderer.isPending}
               erreur={moderer.isError ? (moderer.error as Error).message : null}
             />
@@ -227,10 +206,7 @@ function CarteContribution({
   const [note, setNote] = useState("");
   const [deplie, setDeplie] = useState(false);
   const champ = CONTRIBUTABLE_COLUMNS[row.columnName];
-  const diff = useMemo(
-    () => diffLignes(row.valueBefore ?? "", row.valueAfter),
-    [row.valueBefore, row.valueAfter],
-  );
+  const diff = useMemo(() => diffLignes(row.valueBefore ?? "", row.valueAfter), [row.valueBefore, row.valueAfter]);
 
   return (
     <li className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
@@ -247,9 +223,7 @@ function CarteContribution({
             {row.status !== "pending" ? (
               <>
                 {" · "}
-                <span className="text-white/60">
-                  {CONTRIBUTION_STATUS_LABELS[row.status]}
-                </span>
+                <span className="text-white/60">{CONTRIBUTION_STATUS_LABELS[row.status]}</span>
                 {row.reviewerName ? ` par ${row.reviewerName}` : ""}
               </>
             ) : null}
@@ -277,42 +251,26 @@ function CarteContribution({
         </p>
       )}
 
-      {row.comment ? (
-        <p className="mt-2 text-xs italic leading-relaxed text-white/55">
-          « {row.comment} »
-        </p>
-      ) : null}
+      {row.comment ? <p className="mt-2 text-xs italic leading-relaxed text-white/55">« {row.comment} »</p> : null}
 
       <div className="mt-3 overflow-hidden rounded-lg border border-white/8 bg-black/40 font-mono text-[11px] leading-relaxed">
         {diff.contexteAvant.map((l, i) => (
-          <pre
-            key={`c-${i}`}
-            className="whitespace-pre-wrap px-3 py-0.5 text-white/30"
-          >
+          <pre key={`c-${i}`} className="whitespace-pre-wrap px-3 py-0.5 text-white/30">
             {l || " "}
           </pre>
         ))}
         {diff.retire.slice(0, deplie ? undefined : 12).map((l, i) => (
-          <pre
-            key={`r-${i}`}
-            className="whitespace-pre-wrap bg-dbz-red/10 px-3 py-0.5 text-dbz-red/90"
-          >
+          <pre key={`r-${i}`} className="whitespace-pre-wrap bg-dbz-red/10 px-3 py-0.5 text-dbz-red/90">
             − {l}
           </pre>
         ))}
         {diff.ajoute.slice(0, deplie ? undefined : 12).map((l, i) => (
-          <pre
-            key={`a-${i}`}
-            className="whitespace-pre-wrap bg-emerald-500/10 px-3 py-0.5 text-emerald-300/90"
-          >
+          <pre key={`a-${i}`} className="whitespace-pre-wrap bg-emerald-500/10 px-3 py-0.5 text-emerald-300/90">
             + {l}
           </pre>
         ))}
         {diff.contexteApres.map((l, i) => (
-          <pre
-            key={`d-${i}`}
-            className="whitespace-pre-wrap px-3 py-0.5 text-white/30"
-          >
+          <pre key={`d-${i}`} className="whitespace-pre-wrap px-3 py-0.5 text-white/30">
             {l || " "}
           </pre>
         ))}
@@ -322,8 +280,7 @@ function CarteContribution({
             onClick={() => setDeplie(true)}
             className="w-full bg-white/[0.03] px-3 py-1.5 text-center text-[11px] font-semibold text-white/50 hover:text-white"
           >
-            Afficher les {Math.max(diff.retire.length, diff.ajoute.length) - 12}{" "}
-            lignes restantes
+            Afficher les {Math.max(diff.retire.length, diff.ajoute.length) - 12} lignes restantes
           </button>
         ) : null}
       </div>
@@ -353,19 +310,13 @@ function CarteContribution({
             <button
               type="button"
               disabled={enCours || !note.trim()}
-              title={
-                note.trim()
-                  ? undefined
-                  : "Explique le refus : c'est la seule réponse qu'aura le contributeur."
-              }
+              title={note.trim() ? undefined : "Explique le refus : c'est la seule réponse qu'aura le contributeur."}
               onClick={() => onModerer("reject", note)}
               className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-4 py-2 text-xs font-semibold text-white/70 transition-colors hover:border-dbz-red/50 hover:text-dbz-red disabled:opacity-40"
             >
               <Croix className="h-3.5 w-3.5" /> Refuser
             </button>
-            {erreur ? (
-              <span className="text-xs text-dbz-red">{erreur}</span>
-            ) : null}
+            {erreur ? <span className="text-xs text-dbz-red">{erreur}</span> : null}
           </div>
         </div>
       ) : row.reviewNote ? (

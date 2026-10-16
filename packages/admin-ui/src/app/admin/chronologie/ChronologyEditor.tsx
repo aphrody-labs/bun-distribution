@@ -65,9 +65,7 @@ async function loadData(): Promise<LoadResponse> {
   return r.json();
 }
 
-async function saveData(
-  config: ChronologyConfig,
-): Promise<{ ok: boolean; config: ChronologyConfig }> {
+async function saveData(config: ChronologyConfig): Promise<{ ok: boolean; config: ChronologyConfig }> {
   const r = await fetch("/api/chronologie-config", {
     method: "PUT",
     credentials: "same-origin",
@@ -81,8 +79,7 @@ async function saveData(
   return r.json();
 }
 
-const toISO = (sec: number | null | undefined): string =>
-  sec ? new Date(sec * 1000).toISOString().slice(0, 10) : "";
+const toISO = (sec: number | null | undefined): string => (sec ? new Date(sec * 1000).toISOString().slice(0, 10) : "");
 const fromISO = (s: string): number | undefined => {
   const t = Date.parse(`${s}T00:00:00Z`);
   return Number.isNaN(t) ? undefined : Math.floor(t / 1000);
@@ -154,49 +151,42 @@ export default function ChronologyEditor() {
     });
   }, [items, eraOrder, overrides]);
 
-  const isHidden = useCallback(
-    (key: string) => overrides[key]?.hidden === true,
-    [overrides],
-  );
+  const isHidden = useCallback((key: string) => overrides[key]?.hidden === true, [overrides]);
 
   const stats = useMemo(() => {
     const keys = Object.keys(overrides);
     return {
       total: items.length,
       curated: keys.length,
-      hidden: keys.filter((k) => overrides[k]?.hidden).length,
-      pinned: keys.filter((k) => typeof overrides[k]?.sort === "number").length,
+      hidden: keys.filter(k => overrides[k]?.hidden).length,
+      pinned: keys.filter(k => typeof overrides[k]?.sort === "number").length,
     };
   }, [overrides, items.length]);
 
   // Réordonnancement fiable uniquement quand aucun filtre ne cache d'entrées
   // (sinon un glisser-déposer sauterait des voisins invisibles).
-  const reorderEnabled =
-    !q.trim() && showEpisodes && showMovies && showManga && showHidden;
+  const reorderEnabled = !q.trim() && showEpisodes && showMovies && showManga && showHidden;
 
   // ── Mutations de la config ────────────────────────────────────────────────
-  const patchOverride = useCallback(
-    (key: string, patch: Partial<ChronoOverride>) => {
-      setOverrides((prev) => {
-        const cur: ChronoOverride = { ...prev[key] };
-        for (const [k, v] of Object.entries(patch)) {
-          if (v === undefined || v === null || v === "") {
-            delete (cur as Record<string, unknown>)[k];
-          } else {
-            (cur as Record<string, unknown>)[k] = v;
-          }
+  const patchOverride = useCallback((key: string, patch: Partial<ChronoOverride>) => {
+    setOverrides(prev => {
+      const cur: ChronoOverride = { ...prev[key] };
+      for (const [k, v] of Object.entries(patch)) {
+        if (v === undefined || v === null || v === "") {
+          delete (cur as Record<string, unknown>)[k];
+        } else {
+          (cur as Record<string, unknown>)[k] = v;
         }
-        const next = { ...prev };
-        if (Object.keys(cur).length === 0) delete next[key];
-        else next[key] = cur;
-        return next;
-      });
-    },
-    [],
-  );
+      }
+      const next = { ...prev };
+      if (Object.keys(cur).length === 0) delete next[key];
+      else next[key] = cur;
+      return next;
+    });
+  }, []);
 
   const toggleHide = useCallback((key: string) => {
-    setOverrides((prev) => {
+    setOverrides(prev => {
       const cur: ChronoOverride = { ...prev[key] };
       if (cur.hidden) delete cur.hidden;
       else cur.hidden = true;
@@ -210,7 +200,7 @@ export default function ChronologyEditor() {
   const setEra = useCallback(
     (key: string, era: Era) => {
       const raw = rawByKey.get(key);
-      setOverrides((prev) => {
+      setOverrides(prev => {
         const cur: ChronoOverride = { ...prev[key] };
         // Changer d'ère invalide le rang manuel (il référait l'ancienne ère).
         delete cur.sort;
@@ -229,16 +219,14 @@ export default function ChronologyEditor() {
   // entrée reçoit un rang `sort` = sa position). L'ère devient ainsi figée.
   const move = useCallback(
     (key: string, dir: -1 | 1) => {
-      const target = resolved.find((r) => timelineKey(r) === key);
+      const target = resolved.find(r => timelineKey(r) === key);
       if (!target) return;
-      const groupKeys = resolved
-        .filter((r) => r.era === target.era)
-        .map(timelineKey);
+      const groupKeys = resolved.filter(r => r.era === target.era).map(timelineKey);
       const idx = groupKeys.indexOf(key);
       const j = idx + dir;
       if (j < 0 || j >= groupKeys.length) return;
       [groupKeys[idx], groupKeys[j]] = [groupKeys[j]!, groupKeys[idx]!];
-      setOverrides((prev) => {
+      setOverrides(prev => {
         const next = { ...prev };
         groupKeys.forEach((k, i) => {
           next[k] = { ...next[k], sort: i };
@@ -256,17 +244,17 @@ export default function ChronologyEditor() {
   // qui permet de MÉLANGER librement épisodes / films / tomes de manga.
   const applyReorder = useCallback(
     (draggedKey: string, targetEra: Era, insertAt: number) => {
-      const dragged = resolved.find((r) => timelineKey(r) === draggedKey);
+      const dragged = resolved.find(r => timelineKey(r) === draggedKey);
       if (!dragged) return;
       const sourceEra = dragged.era;
       const targetGroup = resolved
-        .filter((r) => r.era === targetEra)
+        .filter(r => r.era === targetEra)
         .map(timelineKey)
-        .filter((k) => k !== draggedKey);
+        .filter(k => k !== draggedKey);
       const at = Math.max(0, Math.min(insertAt, targetGroup.length));
       targetGroup.splice(at, 0, draggedKey);
 
-      setOverrides((prev) => {
+      setOverrides(prev => {
         const next: Overrides = { ...prev };
         const setField = (k: string, patch: Partial<ChronoOverride>) => {
           const cur: ChronoOverride = { ...next[k], ...patch };
@@ -287,9 +275,9 @@ export default function ChronologyEditor() {
         // Ré-épingle l'ère quittée pour préserver son ordre visuel.
         if (sourceEra !== targetEra) {
           resolved
-            .filter((r) => r.era === sourceEra)
+            .filter(r => r.era === sourceEra)
             .map(timelineKey)
-            .filter((k) => k !== draggedKey)
+            .filter(k => k !== draggedKey)
             .forEach((k, i) => setField(k, { sort: i }));
         }
         for (const k of Object.keys(next)) {
@@ -322,12 +310,9 @@ export default function ChronologyEditor() {
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
       const r = e.currentTarget.getBoundingClientRect();
-      const pos: "before" | "after" =
-        e.clientY - r.top < r.height / 2 ? "before" : "after";
+      const pos: "before" | "after" = e.clientY - r.top < r.height / 2 ? "before" : "after";
       setDropEraTop(null);
-      setDropHint((h) =>
-        h && h.key === key && h.pos === pos ? h : { key, pos },
-      );
+      setDropHint(h => (h && h.key === key && h.pos === pos ? h : { key, pos }));
     },
     [dragKey],
   );
@@ -337,9 +322,9 @@ export default function ChronologyEditor() {
       const dropped = dragKey;
       if (!dropped || dropped === key) return onDragEnd();
       const group = resolved
-        .filter((r) => r.era === era)
+        .filter(r => r.era === era)
         .map(timelineKey)
-        .filter((k) => k !== dropped);
+        .filter(k => k !== dropped);
       const idx = group.indexOf(key);
       const pos = dropHint?.key === key ? dropHint.pos : "before";
       const insertAt = idx < 0 ? group.length : pos === "after" ? idx + 1 : idx;
@@ -370,7 +355,7 @@ export default function ChronologyEditor() {
   );
 
   const resetEntry = useCallback((key: string) => {
-    setOverrides((prev) => {
+    setOverrides(prev => {
       const next = { ...prev };
       delete next[key];
       return next;
@@ -378,7 +363,7 @@ export default function ChronologyEditor() {
   }, []);
 
   const moveEra = (era: Era, dir: -1 | 1) => {
-    setEraOrder((prev) => {
+    setEraOrder(prev => {
       const i = prev.indexOf(era);
       const j = i + dir;
       if (i < 0 || j < 0 || j >= prev.length) return prev;
@@ -390,7 +375,7 @@ export default function ChronologyEditor() {
 
   const save = useMutation({
     mutationFn: () => saveData({ version: 1, eraOrder, overrides }),
-    onSuccess: (res) => {
+    onSuccess: res => {
       setOverrides(res.config.overrides ?? {});
       setEraOrder(res.config.eraOrder ?? [...ERA_ORDER]);
       setToast({
@@ -398,8 +383,7 @@ export default function ChronologyEditor() {
         msg: "Chronologie enregistrée. La page publique est à jour.",
       });
     },
-    onError: (e: Error) =>
-      setToast({ type: "error", msg: `Échec : ${e.message}` }),
+    onError: (e: Error) => setToast({ type: "error", msg: `Échec : ${e.message}` }),
   });
 
   // ── Rendu ─────────────────────────────────────────────────────────────────
@@ -411,11 +395,7 @@ export default function ChronologyEditor() {
     );
   }
   if (query.isError) {
-    return (
-      <div className="text-sm text-red-400">
-        Erreur de chargement : {String(query.error)}
-      </div>
-    );
+    return <div className="text-sm text-red-400">Erreur de chargement : {String(query.error)}</div>;
   }
 
   const needle = q.trim().toLowerCase();
@@ -440,7 +420,7 @@ export default function ChronologyEditor() {
     if (it.era !== lastEra) {
       lastEra = it.era;
       eraIndex = 0;
-      const group = resolved.filter((x) => x.era === it.era);
+      const group = resolved.filter(x => x.era === it.era);
       const anyVisible = group.some(rowVisible);
       if (anyVisible) {
         rows.push(
@@ -450,7 +430,7 @@ export default function ChronologyEditor() {
             count={group.length}
             pos={eraOrder.indexOf(it.era)}
             total={eraOrder.length}
-            onMove={(dir) => moveEra(it.era, dir)}
+            onMove={dir => moveEra(it.era, dir)}
             isDropTarget={reorderEnabled && dropEraTop === it.era}
             onDragOver={reorderEnabled ? onDragOverEra(it.era) : undefined}
             onDrop={reorderEnabled ? onDropEra(it.era) : undefined}
@@ -471,24 +451,24 @@ export default function ChronologyEditor() {
         posInEra={posInEra}
         reorderEnabled={reorderEnabled}
         dragging={dragKey === key}
-        dropBefore={dropHint?.key === key && dropHint.pos === "before"}
-        dropAfter={dropHint?.key === key && dropHint.pos === "after"}
+        dropBefore={dropHint?.key === key && dropHint?.pos === "before"}
+        dropAfter={dropHint?.key === key && dropHint?.pos === "after"}
         onDragStart={onDragStartRow(key)}
         onDragEnd={onDragEnd}
         onDragOver={onDragOverRow(key)}
         onDrop={onDropRow(key, it.era)}
         onToggleExpand={() =>
-          setExpanded((prev) => {
+          setExpanded(prev => {
             const n = new Set(prev);
             if (n.has(key)) n.delete(key);
             else n.add(key);
             return n;
           })
         }
-        onMove={(dir) => move(key, dir)}
+        onMove={dir => move(key, dir)}
         onToggleHide={() => toggleHide(key)}
-        onSetEra={(era) => setEra(key, era)}
-        onSet={(patch) => patchOverride(key, patch)}
+        onSetEra={era => setEra(key, era)}
+        onSet={patch => patchOverride(key, patch)}
         onReset={() => resetEntry(key)}
       />,
     );
@@ -513,17 +493,12 @@ export default function ChronologyEditor() {
       {/* Barre d'action */}
       <div className="dbz-panel flex flex-wrap items-center gap-3 p-4">
         <div className="flex-1 min-w-[240px]">
-          <h2 className="font-saiyan text-lg uppercase text-dbz-orange">
-            Chronologie universelle
-          </h2>
+          <h2 className="font-saiyan text-lg uppercase text-dbz-orange">Chronologie universelle</h2>
           <p className="text-xs text-zinc-400">
-            Ordre officiel de{" "}
-            <strong className="text-white">{stats.total}</strong> entrées ·{" "}
-            {stats.curated} curatée{stats.curated > 1 ? "s" : ""} ·{" "}
-            {stats.hidden} masquée
+            Ordre officiel de <strong className="text-white">{stats.total}</strong> entrées · {stats.curated} curatée
+            {stats.curated > 1 ? "s" : ""} · {stats.hidden} masquée
             {stats.hidden > 1 ? "s" : ""} · {stats.pinned} épinglée
-            {stats.pinned > 1 ? "s" : ""}. Les changements s'appliquent au
-            public après enregistrement.
+            {stats.pinned > 1 ? "s" : ""}. Les changements s'appliquent au public après enregistrement.
           </p>
         </div>
         <a
@@ -538,11 +513,7 @@ export default function ChronologyEditor() {
         <button
           type="button"
           onClick={() => {
-            if (
-              confirm(
-                "Réinitialiser TOUTE la curation (ordre, masquages, dates, notes) ?",
-              )
-            ) {
+            if (confirm("Réinitialiser TOUTE la curation (ordre, masquages, dates, notes) ?")) {
               setOverrides({});
               setEraOrder([...DEFAULT_CHRONOLOGY_CONFIG.eraOrder]);
             }
@@ -551,14 +522,8 @@ export default function ChronologyEditor() {
         >
           <RotateCcw className="mr-1 h-4 w-4" /> Tout auto
         </button>
-        <button
-          type="button"
-          onClick={() => save.mutate()}
-          disabled={save.isPending}
-          className="btn btn-primary"
-        >
-          <Save className="mr-1 h-4 w-4" />{" "}
-          {save.isPending ? "Enregistrement…" : "Enregistrer"}
+        <button type="button" onClick={() => save.mutate()} disabled={save.isPending} className="btn btn-primary">
+          <Save className="mr-1 h-4 w-4" /> {save.isPending ? "Enregistrement…" : "Enregistrer"}
         </button>
       </div>
 
@@ -569,32 +534,28 @@ export default function ChronologyEditor() {
             icon={<Tv className="h-3.5 w-3.5" />}
             label="Épisodes"
             on={showEpisodes}
-            onClick={() => setShowEpisodes((v) => !v)}
+            onClick={() => setShowEpisodes(v => !v)}
           />
           <FilterToggle
             icon={<Film className="h-3.5 w-3.5" />}
             label="Films"
             on={showMovies}
-            onClick={() => setShowMovies((v) => !v)}
+            onClick={() => setShowMovies(v => !v)}
           />
           <FilterToggle
             icon={<BookOpen className="h-3.5 w-3.5" />}
             label="Manga"
             on={showManga}
-            onClick={() => setShowManga((v) => !v)}
+            onClick={() => setShowManga(v => !v)}
           />
         </div>
         <button
           type="button"
-          onClick={() => setShowHidden((v) => !v)}
+          onClick={() => setShowHidden(v => !v)}
           className={`btn btn-ghost px-2 ${showHidden ? "text-zinc-300" : "text-zinc-500"}`}
           title={showHidden ? "Masquées affichées" : "Masquées cachées"}
         >
-          {showHidden ? (
-            <Eye className="mr-1 h-4 w-4" />
-          ) : (
-            <EyeOff className="mr-1 h-4 w-4" />
-          )}
+          {showHidden ? <Eye className="mr-1 h-4 w-4" /> : <EyeOff className="mr-1 h-4 w-4" />}
           Masquées
         </button>
         <div className="relative min-w-[200px] flex-1">
@@ -602,29 +563,25 @@ export default function ChronologyEditor() {
           <input
             type="search"
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={e => setQ(e.target.value)}
             placeholder="Rechercher un titre / une série…"
             className="input w-full pl-9"
           />
         </div>
-        <span className="text-xs text-zinc-500">
-          {visibleCount} affichée(s)
-        </span>
+        <span className="text-xs text-zinc-500">{visibleCount} affichée(s)</span>
       </div>
 
       {reorderEnabled ? (
         <p className="flex items-center gap-2 rounded-lg border border-dbz-blue-light/25 bg-dbz-blue-light/5 px-3 py-2 text-[12px] text-dbz-blue-light/90">
           <GripVertical className="h-4 w-4 shrink-0" />
-          Glisse-dépose une entrée par sa poignée pour la réordonner. Dépose-la
-          dans une AUTRE ère (ou sur son en-tête) pour l'y déplacer — épisodes,
-          films et tomes se mélangent librement.
+          Glisse-dépose une entrée par sa poignée pour la réordonner. Dépose-la dans une AUTRE ère (ou sur son en-tête)
+          pour l'y déplacer — épisodes, films et tomes se mélangent librement.
         </p>
       ) : (
         <p className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-[12px] text-amber-300/90">
           <Info className="h-4 w-4 shrink-0" />
-          Le glisser-déposer est désactivé tant qu'un filtre masque des entrées.
-          Réinitialise la recherche et affiche épisodes + films + manga +
-          masquées pour réordonner.
+          Le glisser-déposer est désactivé tant qu'un filtre masque des entrées. Réinitialise la recherche et affiche
+          épisodes + films + manga + masquées pour réordonner.
         </p>
       )}
 
@@ -651,9 +608,7 @@ function FilterToggle({
       type="button"
       onClick={onClick}
       className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold transition-colors ${
-        on
-          ? "bg-dbz-orange text-black"
-          : "bg-black/30 text-zinc-400 hover:text-white"
+        on ? "bg-dbz-orange text-black" : "bg-black/30 text-zinc-400 hover:text-white"
       }`}
     >
       {icon}
@@ -688,35 +643,19 @@ function EraHeader({
       className={`flex items-center gap-3 rounded-md pt-5 pb-1 transition-colors ${
         isDropTarget ? "bg-white/[0.04] ring-1 ring-inset" : ""
       }`}
-      style={
-        isDropTarget
-          ? { boxShadow: `inset 0 -2px 0 0 ${ERA_ACCENT[era]}` }
-          : undefined
-      }
+      style={isDropTarget ? { boxShadow: `inset 0 -2px 0 0 ${ERA_ACCENT[era]}` } : undefined}
     >
-      <span
-        className="h-4 w-1.5 rounded-full"
-        style={{ backgroundColor: ERA_ACCENT[era] }}
-      />
-      <h3
-        className="font-saiyan text-xl uppercase tracking-wide"
-        style={{ color: ERA_ACCENT[era] }}
-      >
+      <span className="h-4 w-1.5 rounded-full" style={{ backgroundColor: ERA_ACCENT[era] }} />
+      <h3 className="font-saiyan text-xl uppercase tracking-wide" style={{ color: ERA_ACCENT[era] }}>
         {ERA_LABELS[era]}
       </h3>
       <span className="text-[11px] text-zinc-500 font-mono">{count}</span>
       {isDropTarget && (
-        <span
-          className="text-[10px] font-semibold uppercase"
-          style={{ color: ERA_ACCENT[era] }}
-        >
+        <span className="text-[10px] font-semibold uppercase" style={{ color: ERA_ACCENT[era] }}>
           ↓ déposer en tête
         </span>
       )}
-      <span
-        className="flex-1 h-px"
-        style={{ backgroundColor: `${ERA_ACCENT[era]}33` }}
-      />
+      <span className="flex-1 h-px" style={{ backgroundColor: `${ERA_ACCENT[era]}33` }} />
       <div className="flex items-center gap-0.5">
         <button
           type="button"
@@ -838,11 +777,7 @@ function EntryRow({
                 ? "cursor-grab text-zinc-600 hover:text-dbz-orange active:cursor-grabbing"
                 : "cursor-not-allowed text-zinc-800"
             }`}
-            title={
-              reorderEnabled
-                ? "Glisser pour réordonner / mélanger"
-                : "Désactivé (filtres actifs)"
-            }
+            title={reorderEnabled ? "Glisser pour réordonner / mélanger" : "Désactivé (filtres actifs)"}
             aria-label="Glisser pour réordonner"
           >
             <GripVertical className="h-5 w-5" />
@@ -873,35 +808,19 @@ function EntryRow({
         <div className="flex w-16 shrink-0 items-center justify-center">
           {isMovie || isManga ? (
             it.image ? (
-              <img
-                src={assetUrl(it.image)}
-                alt=""
-                loading="lazy"
-                className="h-12 w-8 rounded object-cover"
-              />
+              <img src={assetUrl(it.image)} alt="" loading="lazy" className="h-12 w-8 rounded object-cover" />
             ) : (
               <span
                 className={`flex h-12 w-8 items-center justify-center rounded ${
-                  isManga
-                    ? "bg-pink-500/15 text-pink-300"
-                    : "bg-dbz-orange/15 text-dbz-orange"
+                  isManga ? "bg-pink-500/15 text-pink-300" : "bg-dbz-orange/15 text-dbz-orange"
                 }`}
               >
-                {isManga ? (
-                  <BookOpen className="h-4 w-4" />
-                ) : (
-                  <Film className="h-4 w-4" />
-                )}
+                {isManga ? <BookOpen className="h-4 w-4" /> : <Film className="h-4 w-4" />}
               </span>
             )
           ) : it.image ? (
             <div className="relative h-9 w-16 overflow-hidden rounded bg-black/40">
-              <img
-                src={assetUrl(it.image)}
-                alt=""
-                loading="lazy"
-                className="h-full w-full object-cover"
-              />
+              <img src={assetUrl(it.image)} alt="" loading="lazy" className="h-full w-full object-cover" />
               <span
                 className="absolute left-0.5 top-0.5 rounded bg-black/75 px-1 text-[9px] font-mono font-bold"
                 style={{ color: accent }}
@@ -921,11 +840,7 @@ function EntryRow({
         </div>
 
         {/* Titre + méta */}
-        <button
-          type="button"
-          onClick={onToggleExpand}
-          className="min-w-0 flex-1 text-left"
-        >
+        <button type="button" onClick={onToggleExpand} className="min-w-0 flex-1 text-left">
           <div className="flex items-center gap-2">
             {isMovie && (
               <span className="rounded bg-dbz-orange px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-black">
@@ -949,22 +864,18 @@ function EntryRow({
           <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
             <span>{it.series}</span>
             {it.date && <span>{toISO(it.date)}</span>}
-            {it.note && (
-              <span className="text-dbz-yellow/70 not-italic normal-case">
-                note
-              </span>
-            )}
+            {it.note && <span className="text-dbz-yellow/70 not-italic normal-case">note</span>}
           </div>
         </button>
 
         {/* Ère */}
         <select
           value={it.era}
-          onChange={(e) => onSetEra(e.target.value as Era)}
+          onChange={e => onSetEra(e.target.value as Era)}
           className="input py-1 text-xs w-[7.5rem]"
           title="Ère"
         >
-          {ERA_ORDER.map((era) => (
+          {ERA_ORDER.map(era => (
             <option key={era} value={era}>
               {ERA_LABELS[era]}
             </option>
@@ -976,17 +887,9 @@ function EntryRow({
           type="button"
           onClick={onToggleHide}
           className={`btn btn-ghost px-2 ${hidden ? "text-zinc-500" : "text-emerald-400"}`}
-          title={
-            hidden
-              ? "Entrée masquée — réafficher"
-              : "Masquer de la frise publique"
-          }
+          title={hidden ? "Entrée masquée — réafficher" : "Masquer de la frise publique"}
         >
-          {hidden ? (
-            <EyeOff className="h-4 w-4" />
-          ) : (
-            <Eye className="h-4 w-4" />
-          )}
+          {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
 
         <button
@@ -995,9 +898,7 @@ function EntryRow({
           className="btn btn-ghost px-2"
           aria-label="Déplier ou replier cette ère"
         >
-          <ChevronDown
-            className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`}
-          />
+          <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
         </button>
       </div>
 
@@ -1008,7 +909,7 @@ function EntryRow({
             <input
               type="date"
               value={toISO(it.date)}
-              onChange={(e) =>
+              onChange={e =>
                 onSet({
                   date: e.target.value ? fromISO(e.target.value) : undefined,
                 })
@@ -1016,16 +917,14 @@ function EntryRow({
               className="input mt-1"
             />
             {raw?.date != null && (
-              <span className="mt-0.5 block text-[10px] text-zinc-600">
-                auto : {toISO(raw.date)}
-              </span>
+              <span className="mt-0.5 block text-[10px] text-zinc-600">auto : {toISO(raw.date)}</span>
             )}
           </label>
           <label className="text-xs text-zinc-400">
             Titre (surcharge)
             <input
               value={titleDraft}
-              onChange={(e) => setTitleDraft(e.target.value)}
+              onChange={e => setTitleDraft(e.target.value)}
               onBlur={() => {
                 const v = titleDraft.trim();
                 onSet({ title: v && v !== raw?.title ? v : undefined });
@@ -1046,16 +945,9 @@ function EntryRow({
             />
           </label>
           <div className="sm:col-span-2 flex items-center justify-between">
-            <span className="text-[10px] text-zinc-600 font-mono">
-              {timelineKey(it)}
-            </span>
+            <span className="text-[10px] text-zinc-600 font-mono">{timelineKey(it)}</span>
             <div className="flex items-center gap-2">
-              <a
-                href={it.href}
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-ghost px-2 py-1 text-xs"
-              >
+              <a href={it.href} target="_blank" rel="noreferrer" className="btn btn-ghost px-2 py-1 text-xs">
                 <ExternalLink className="mr-1 h-3 w-3" /> Fiche
               </a>
               <button

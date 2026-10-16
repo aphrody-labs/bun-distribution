@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Crayon, FlecheGauche, LienExterne } from "@/components/icones";
+import { Crayon, FlecheGauche, LienExterne } from "@shenron/ui/icones";
 import { AdminHeader } from "../../db-universe/_Header";
 import {
   TranscriptionRelecteur,
@@ -21,12 +21,7 @@ export const dynamic = "force-dynamic";
 
 type Filtre = "toutes" | "a-transcrire" | "transcrites" | "suspectes";
 
-const FILTRES = new Set<Filtre>([
-  "toutes",
-  "a-transcrire",
-  "transcrites",
-  "suspectes",
-]);
+const FILTRES = new Set<Filtre>(["toutes", "a-transcrire", "transcrites", "suspectes"]);
 
 export default async function RelecturePage({
   params,
@@ -42,18 +37,16 @@ export default async function RelecturePage({
   if (!fiche) notFound();
 
   const { filtre, planche } = await searchParams;
-  const filtreInitial = FILTRES.has(filtre as Filtre)
-    ? (filtre as Filtre)
-    : "toutes";
+  const filtreInitial = FILTRES.has(filtre as Filtre) ? (filtre as Filtre) : "toutes";
   const nPlanche = Number(planche);
 
-  const planches: PlancheRelecture[] = fiche.pages.map((p) => ({
+  const planches: PlancheRelecture[] = fiche.pages.map(p => ({
     numero: p.number,
     image: p.image,
     texte: p.text ?? "",
     verifiee: p.verifiee === true,
   }));
-  const transcrites = planches.filter((p) => p.texte.trim().length > 0).length;
+  const transcrites = planches.filter(p => p.texte.trim().length > 0).length;
 
   return (
     <div className="mx-auto w-full max-w-[1600px]">
@@ -66,10 +59,7 @@ export default async function RelecturePage({
         }
         right={
           <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href="/admin/databooks"
-              className="btn btn-ghost h-9 px-3 text-xs"
-            >
+            <Link href="/admin/databooks" className="btn btn-ghost h-9 px-3 text-xs">
               <FlecheGauche className="h-3.5 w-3.5" />
               Suivi
             </Link>
@@ -96,15 +86,10 @@ export default async function RelecturePage({
 
       {planches.length === 0 ? (
         <div className="dbz-panel p-12 text-center">
-          <p className="mb-1 font-saiyan text-xl uppercase text-white/50">
-            Aucune planche
-          </p>
+          <p className="mb-1 font-saiyan text-xl uppercase text-white/50">Aucune planche</p>
           <p className="text-sm text-white/50">
             Les slots de pages se créent dans le{" "}
-            <Link
-              href={`/admin/wiki/studio/db_databooks/${fiche.id}`}
-              className="text-dbz-orange hover:underline"
-            >
+            <Link href={`/admin/wiki/studio/db_databooks/${fiche.id}`} className="text-dbz-orange hover:underline">
               studio
             </Link>
             , avec les scans.
@@ -116,11 +101,7 @@ export default async function RelecturePage({
           titre={fiche.title}
           planchesInitiales={planches}
           filtreInitial={filtreInitial}
-          plancheInitiale={
-            Number.isSafeInteger(nPlanche) && nPlanche > 0
-              ? nPlanche
-              : undefined
-          }
+          plancheInitiale={Number.isSafeInteger(nPlanche) && nPlanche > 0 ? nPlanche : undefined}
         />
       )}
     </div>

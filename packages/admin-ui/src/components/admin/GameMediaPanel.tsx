@@ -15,15 +15,11 @@ import {
   Film,
   Illustration,
   Plus,
-} from "@/components/icones";
+} from "@shenron/ui/icones";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ImageField } from "@aphrody/admin-ui/components/admin/ImageField";
 import { apiAt } from "@aphrody/admin-ui/client";
-import {
-  extractYoutubeId,
-  youtubeEmbedUrl,
-  youtubeThumbUrl,
-} from "@/lib/youtube";
+import { extractYoutubeId, youtubeEmbedUrl, youtubeThumbUrl } from "@/lib/youtube";
 import { crudBase } from "@/lib/wiki-tables";
 
 export type GameMediaDraft = {
@@ -49,7 +45,7 @@ function normalizeMedia(raw: unknown): GameMediaDraft[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .filter((p): p is Record<string, unknown> => !!p && typeof p === "object")
-    .map((p) => {
+    .map(p => {
       const type = p.type === "youtube" ? "youtube" : "image";
       const url = typeof p.url === "string" ? p.url : "";
       return {
@@ -64,7 +60,7 @@ function normalizeMedia(raw: unknown): GameMediaDraft[] {
 
 function snapshot(items: GameMediaDraft[]): string {
   return JSON.stringify(
-    items.map((p) => ({
+    items.map(p => ({
       type: p.type,
       url: p.url.trim(),
       caption: p.caption.trim() || null,
@@ -89,10 +85,7 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
   // et effaçait sans un mot les médias ajoutés depuis le dernier enregistrement.
   const row = useQuery({
     queryKey: ["wiki-studio", "db_games", gameId, "media"],
-    queryFn: () =>
-      client.get<Record<string, unknown>>(
-        `/db_games/${encodeURIComponent(gameId)}`,
-      ),
+    queryFn: () => client.get<Record<string, unknown>>(`/db_games/${encodeURIComponent(gameId)}`),
     refetchOnWindowFocus: false,
     staleTime: Number.POSITIVE_INFINITY,
   });
@@ -112,10 +105,7 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const dirty = useMemo(
-    () => snapshot(items) !== savedSnap,
-    [items, savedSnap],
-  );
+  const dirty = useMemo(() => snapshot(items) !== savedSnap, [items, savedSnap]);
   useEffect(() => {
     if (!dirty) return;
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -136,9 +126,7 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
           if (p.type === "youtube") {
             const id = extractYoutubeId(url);
             if (!id) {
-              throw new Error(
-                `Lien YouTube invalide (#${idx + 1}). Colle un watch?v= ou youtu.be/…`,
-              );
+              throw new Error(`Lien YouTube invalide (#${idx + 1}). Colle un watch?v= ou youtu.be/…`);
             }
             url = `https://youtu.be/${id}`;
           }
@@ -164,10 +152,8 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
       // Le calcul est fait ICI et non dans l'updater de `setItems` : un updater
       // doit rester pur, et `setSavedSnap` y était un effet de bord que React
       // peut rejouer.
-      const next = items.map((p) =>
-        p.type === "youtube" && p.url.trim()
-          ? { ...p, url: normalizeYoutubeUrl(p.url) }
-          : p,
+      const next = items.map(p =>
+        p.type === "youtube" && p.url.trim() ? { ...p, url: normalizeYoutubeUrl(p.url) } : p,
       );
       setItems(next);
       setSavedSnap(snapshot(next));
@@ -178,11 +164,11 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
   });
 
   const update = (i: number, patch: Partial<GameMediaDraft>) =>
-    setItems((arr) => arr.map((p, j) => (j === i ? { ...p, ...patch } : p)));
+    setItems(arr => arr.map((p, j) => (j === i ? { ...p, ...patch } : p)));
 
   /** Change le type sans perdre l'URL (évite le wipe accidentel au clic). */
   const setType = (i: number, type: "image" | "youtube") => {
-    setItems((arr) =>
+    setItems(arr =>
       arr.map((p, j) => {
         if (j !== i || p.type === type) return p;
         // Si on repasse en youtube et l'URL ressemble déjà à un lien YT, on normalise.
@@ -195,44 +181,39 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
   };
 
   const move = (i: number, dir: -1 | 1) =>
-    setItems((arr) => {
+    setItems(arr => {
       const j = i + dir;
       if (j < 0 || j >= arr.length) return arr;
       const next = arr.slice();
-      [next[i], next[j]] = [next[j], next[i]];
+      const current = next[i];
+      const target = next[j];
+      if (current === undefined || target === undefined) return arr;
+      next[i] = target;
+      next[j] = current;
       return next;
     });
 
   const remove = (i: number) => {
     const item = items[i];
-    if (
-      item?.url.trim() &&
-      typeof window !== "undefined" &&
-      !window.confirm("Supprimer ce média de la galerie ?")
-    ) {
+    if (item?.url.trim() && typeof window !== "undefined" && !window.confirm("Supprimer ce média de la galerie ?")) {
       return;
     }
-    setItems((arr) => arr.filter((_, j) => j !== i));
+    setItems(arr => arr.filter((_, j) => j !== i));
   };
 
   if (row.isLoading) {
     return (
       <div className="dbz-panel flex items-center gap-2 p-5 text-sm text-white/50">
-        <Chargement className="h-4 w-4 animate-spin" /> Chargement de la
-        galerie…
+        <Chargement className="h-4 w-4 animate-spin" /> Chargement de la galerie…
       </div>
     );
   }
 
   if (row.isError) {
-    return (
-      <div className="dbz-panel p-5 text-sm text-red-400">
-        Impossible de charger la galerie de ce jeu.
-      </div>
-    );
+    return <div className="dbz-panel p-5 text-sm text-red-400">Impossible de charger la galerie de ce jeu.</div>;
   }
 
-  const filled = items.filter((p) => p.url.trim()).length;
+  const filled = items.filter(p => p.url.trim()).length;
 
   return (
     <div className="dbz-panel space-y-4 p-5">
@@ -247,15 +228,11 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="font-saiyan text-sm uppercase tracking-wider text-dbz-orange">
-            Galerie médias
-          </h3>
+          <h3 className="font-saiyan text-sm uppercase tracking-wider text-dbz-orange">Galerie médias</h3>
           <p className="mt-1 max-w-xl text-[11px] leading-relaxed text-white/50">
-            Style Steam : screenshots et trailers YouTube sous la description.
-            Ajoute des <strong className="text-white/60">images</strong>{" "}
-            (upload) ou des{" "}
-            <strong className="text-white/60">liens YouTube</strong> (gameplay /
-            trailer).
+            Style Steam : screenshots et trailers YouTube sous la description. Ajoute des{" "}
+            <strong className="text-white/60">images</strong> (upload) ou des{" "}
+            <strong className="text-white/60">liens YouTube</strong> (gameplay / trailer).
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -270,14 +247,14 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
           <button
             type="button"
             className="btn btn-ghost h-8 gap-1 px-2 text-xs"
-            onClick={() => setItems((arr) => [...arr, emptyItem("image")])}
+            onClick={() => setItems(arr => [...arr, emptyItem("image")])}
           >
             <Illustration className="h-3.5 w-3.5" /> Image
           </button>
           <button
             type="button"
             className="btn btn-ghost h-8 gap-1 px-2 text-xs"
-            onClick={() => setItems((arr) => [...arr, emptyItem("youtube")])}
+            onClick={() => setItems(arr => [...arr, emptyItem("youtube")])}
           >
             <Film className="h-3.5 w-3.5" /> YouTube
           </button>
@@ -304,14 +281,9 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
       ) : (
         <ul className="space-y-3">
           {items.map((item, i) => (
-            <li
-              key={item._key}
-              className="rounded-lg border border-dbz-border/40 bg-black/25 p-3 sm:p-4"
-            >
+            <li key={item._key} className="rounded-lg border border-dbz-border/40 bg-black/25 p-3 sm:p-4">
               <div className="mb-3 flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-dbz-blue-light">
-                  #{i + 1}
-                </span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-dbz-blue-light">#{i + 1}</span>
                 {/* Toggle type : fond plein sur l'actif (lisible même si le thème
 								    recolorie --dbz-orange en bleu). aria-pressed pour a11y. */}
                 <div
@@ -319,7 +291,7 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
                   role="group"
                   aria-label="Type de média"
                 >
-                  {(["image", "youtube"] as const).map((t) => {
+                  {(["image", "youtube"] as const).map(t => {
                     const on = item.type === t;
                     return (
                       <button
@@ -328,16 +300,10 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
                         aria-pressed={on}
                         onClick={() => setType(i, t)}
                         className={`inline-flex items-center gap-1 rounded px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors ${
-                          on
-                            ? "bg-dbz-orange text-black shadow-sm"
-                            : "text-white/50 hover:bg-white/5 hover:text-white"
+                          on ? "bg-dbz-orange text-black shadow-sm" : "text-white/50 hover:bg-white/5 hover:text-white"
                         }`}
                       >
-                        {t === "image" ? (
-                          <Illustration className="h-3 w-3" />
-                        ) : (
-                          <Film className="h-3 w-3" />
-                        )}
+                        {t === "image" ? <Illustration className="h-3 w-3" /> : <Film className="h-3 w-3" />}
                         {t === "image" ? "Image" : "YouTube"}
                       </button>
                     );
@@ -374,17 +340,9 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
               </div>
 
               {item.type === "image" ? (
-                <ImageField
-                  value={item.url}
-                  onChange={(url) => update(i, { url })}
-                  subdir="games-media"
-                  column="media"
-                />
+                <ImageField value={item.url} onChange={url => update(i, { url })} subdir="games-media" column="media" />
               ) : (
-                <YoutubeField
-                  value={item.url}
-                  onChange={(url) => update(i, { url })}
-                />
+                <YoutubeField value={item.url} onChange={url => update(i, { url })} />
               )}
 
               <label className="mt-3 block">
@@ -394,7 +352,7 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
                 <input
                   type="text"
                   value={item.caption}
-                  onChange={(e) => update(i, { caption: e.target.value })}
+                  onChange={e => update(i, { caption: e.target.value })}
                   placeholder="Ex. Trailer de lancement, gameplay Super Saiyan…"
                   className="w-full rounded-md border border-dbz-border bg-dbz-bg px-3 py-2 text-sm text-white placeholder:text-white/25 focus:border-dbz-orange focus:outline-none"
                 />
@@ -408,7 +366,7 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
         <button
           type="button"
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-dbz-orange hover:text-white"
-          onClick={() => setItems((arr) => [...arr, emptyItem("image")])}
+          onClick={() => setItems(arr => [...arr, emptyItem("image")])}
         >
           <Plus className="h-3.5 w-3.5" /> Ajouter un média
         </button>
@@ -422,13 +380,7 @@ export function GameMediaPanel({ gameId }: { gameId: string }) {
  * type=text (pas url) pour accepter youtu.be / watch?v= / id brut sans
  * validation HTML5 trop stricte.
  */
-function YoutubeField({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (url: string) => void;
-}) {
+function YoutubeField({ value, onChange }: { value: string; onChange: (url: string) => void }) {
   const trimmed = value.trim();
   const id = trimmed ? extractYoutubeId(trimmed) : null;
   const thumb = id ? youtubeThumbUrl(id) : null;
@@ -447,21 +399,18 @@ function YoutubeField({
           autoComplete="off"
           spellCheck={false}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={e => onChange(e.target.value)}
           onBlur={() => {
             if (id) onChange(`https://youtu.be/${id}`);
           }}
           placeholder="https://youtu.be/… ou youtube.com/watch?v=…"
           className={`w-full rounded-md border bg-dbz-bg px-3 py-2 font-mono text-sm text-white placeholder:text-white/25 focus:outline-none ${
-            invalid
-              ? "border-red-500/60 focus:border-red-400"
-              : "border-dbz-border focus:border-dbz-orange"
+            invalid ? "border-red-500/60 focus:border-red-400" : "border-dbz-border focus:border-dbz-orange"
           }`}
         />
         {invalid && (
           <p className="mt-1 text-[11px] text-red-400">
-            Lien YouTube non reconnu — colle un lien watch, youtu.be, embed ou
-            shorts.
+            Lien YouTube non reconnu — colle un lien watch, youtu.be, embed ou shorts.
           </p>
         )}
       </label>
@@ -488,15 +437,9 @@ function YoutubeField({
             </span>
           </a>
           <div className="min-w-0 flex-1 py-1">
-            <p className="text-[11px] font-display font-semibold uppercase tracking-wider text-dbz-orange">
-              Aperçu OK
-            </p>
-            <p className="mt-0.5 break-all font-mono text-[11px] text-white/50">
-              id&nbsp;: {id}
-            </p>
-            <p className="mt-1 text-[11px] text-white/50">
-              La vignette YouTube s&apos;affiche → le lien est valide.
-            </p>
+            <p className="text-[11px] font-display font-semibold uppercase tracking-wider text-dbz-orange">Aperçu OK</p>
+            <p className="mt-0.5 break-all font-mono text-[11px] text-white/50">id&nbsp;: {id}</p>
+            <p className="mt-1 text-[11px] text-white/50">La vignette YouTube s&apos;affiche → le lien est valide.</p>
           </div>
         </div>
       )}
