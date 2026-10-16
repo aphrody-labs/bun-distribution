@@ -43,7 +43,6 @@ export {};
 const RANGS_ATTENDUS: Readonly<Record<string, number>> = {
   "aphrody-nie-asm": 0,
   "aphrody-nie-data": 0,
-  "aphrody-nie-dump": 0,
   "aphrody-nie-emu": 0,
   "aphrody-nie-geom": 0,
   "aphrody-nie-index": 0,
@@ -61,7 +60,6 @@ const RANGS_ATTENDUS: Readonly<Record<string, number>> = {
   "aphrody-nie-core": 1,
   "aphrody-nie-forge": 1,
   "aphrody-nie-lua": 1,
-  "aphrody-nie-re": 1,
   "aphrody-nie-computer-use": 2,
   "aphrody-nie-formats": 2,
   "aphrody-nie-bench": 3,
@@ -88,7 +86,6 @@ const RANGS_ATTENDUS: Readonly<Record<string, number>> = {
   "aphrody-nie-render": 5,
   "aphrody-nie-game": 6,
   "aphrody-nie-play": 6,
-  "aphrody-nie-steam": 6,
   "aphrody-nie-cli": 7,
   "aphrody-nie-wasm": 7,
   "aphrody-nie-mcp": 8,

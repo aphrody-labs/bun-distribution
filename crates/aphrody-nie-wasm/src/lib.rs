@@ -295,7 +295,7 @@ fn minidump_summary_impl(bytes: &[u8]) -> Result<String, String> {
     if bytes.len() > MAX_MINIDUMP_INPUT_BYTES {
         return Err(format!("minidump input exceeds {MAX_MINIDUMP_INPUT_BYTES} bytes"));
     }
-    let dump = aphrody_nie_dump::Minidump::from_bytes(bytes).map_err(|error| error.to_string())?;
+    let dump = aphrody_re::minidump::Minidump::from_bytes(bytes).map_err(|error| error.to_string())?;
     let summary = dump.summary();
     Ok(serde_json::json!({
         "schemaVersion": 1,
@@ -338,7 +338,7 @@ pub fn ievr_pe_inspect_json(bytes: &[u8]) -> Result<String, String> {
 }
 
 fn pdata_inspect_impl(bytes: &[u8], max_roots: u32) -> Result<String, String> {
-    aphrody_nie_re::pdata::inspect_json(bytes, max_roots)
+    aphrody_re::pdata::inspect_json(bytes, max_roots)
 }
 
 /// Inspects a PE `.pdata` table with exact counters and a bounded root sample.
@@ -682,14 +682,14 @@ fn steam_select_depots_impl(depots_json: &str, selection_json: &str) -> Result<S
     {
         return Err(format!("Steam planning JSON exceeds {MAX_STEAM_PLANNING_JSON_BYTES} bytes"));
     }
-    let depots: Vec<aphrody_nie_steam::planning::DepotRecord> =
+    let depots: Vec<aphrody_re::steam::planning::DepotRecord> =
         serde_json::from_str(depots_json).map_err(|error| error.to_string())?;
-    let selection: aphrody_nie_steam::planning::DepotSelection =
+    let selection: aphrody_re::steam::planning::DepotSelection =
         serde_json::from_str(selection_json).map_err(|error| error.to_string())?;
-    let depot_ids = aphrody_nie_steam::planning::select_depot_ids(
+    let depot_ids = aphrody_re::steam::planning::select_depot_ids(
         &depots,
         &selection,
-        aphrody_nie_steam::planning::PlanningLimits::default(),
+        aphrody_re::steam::planning::PlanningLimits::default(),
     )
     .map_err(|error| error.to_string())?;
     Ok(serde_json::json!({

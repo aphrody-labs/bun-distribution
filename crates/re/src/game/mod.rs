@@ -1,10 +1,59 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Game-asset RE helpers absorbed from `shenron-re` (Apache-2.0, aphrody-labs/shenron):
-//! CRIWARE CPK archives with CRILAYLA decompression, AOB signature scanning and
-//! live process-memory inspection. Format parsers specific to one game stay in
-//! `shenron-re`, which can depend on this module instead of duplicating it.
+//! Game RE engine absorbed from `shenron-re` (Apache-2.0, aphrody-labs/shenron):
+//! CRIWARE CPK archives with CRILAYLA decompression, the Xenoverse 2 VFS, AOB
+//! signature scanning, live process-memory inspection, the DBXV2 binary format
+//! parsers (BAC/BDM/CMS/CUS/EMB/EMD/EMM/ESK/MSG/PUP/SAV), the Dragon Ball game
+//! catalog, Steam install inspection, text extraction and the unified state.
+pub mod catalog;
 pub mod error;
+pub mod formats;
 pub mod fs;
+pub mod inventory;
 pub mod live;
+pub mod steam;
+pub mod text;
+pub mod unified;
+pub mod world;
 
+#[cfg(feature = "wasm")]
+pub mod wasm;
+
+pub use catalog::{
+    CANON_STATUS_DERIVED_GAME, DetectedGame, DragonBallGame, GameEngine, Platform, SaveLocation,
+    filter_by_engine, filter_by_platform, find_game_by_android_package, find_game_by_id,
+    find_game_by_steam_app_id, get_dragon_ball_catalog, scan_all_installed_games,
+    scan_installed_android_packages, scan_installed_steam_games, search_catalog,
+};
 pub use error::{ReError, Result};
+pub use formats::{
+    bac::{BacFile, BacHitbox, BacMove},
+    bdm::{BdmEntry, BdmFile, DamageType},
+    cms::{CmsEntry, CmsFile},
+    cus::{CusFile, CusSkill, SkillCategory},
+    emb::{EmbFile, EmbRgbaTexture, EmbTextureEntry, TexturePixelFormat},
+    emd::{EmdFile, EmdMesh, EmdModelPart, EmdSubmesh, EmdVertex},
+    emm::{EmmFile, EmmMaterial, EmmParameter},
+    esk::{EskBone, EskFile, standard_dbxv2_skeleton},
+    model_assemble::{AssembledCharacterModel, ModelPrimitive},
+    moveset::{CharacterMoveset, MoveFrameData},
+    msg::{MsgEntry, MsgFile},
+    pup::{PupEntry, PupFile},
+    sav::{Dxbv2Cac, Dxbv2Save},
+};
+pub use fs::{
+    cpk::{CpkArchive, CpkEntry},
+    crilayla::{compress_crilayla_mock, decompress_crilayla, decompress_crilayla_raw},
+    vfs::{CacheCpkStats, XenoverseVfs, XenoverseVfsEntry},
+};
+pub use live::aob::AobPattern;
+pub use steam::{
+    Dbxv2Install, STEAM_APP_ID_DB_FIGHTERZ, STEAM_APP_ID_DB_KAKAROT,
+    STEAM_APP_ID_DB_SPARKING_ZERO, STEAM_APP_ID_DBXV1, STEAM_APP_ID_DBXV2,
+    SteamDepotRecord, SteamGameInstall, SteamPlanningLimits, inspect_dbxv2_install,
+    scan_dragon_ball_installs,
+};
+pub use unified::{
+    BinaryFunctionEntry, BinaryReOverview, Dbxv2UnifiedState, LiveWineOverview, ResolvedSkill,
+    SaveOverview, UnifiedCharacterProfile,
+};
+pub use world::xenoverse3::{Xenoverse3Map, xenoverse3_prototype_map};

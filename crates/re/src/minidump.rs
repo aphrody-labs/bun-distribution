@@ -15,7 +15,7 @@
 //! No `unsafe` and no `mmap`: ranges are read on demand with `seek`/`read_exact`, and
 //! every offset and count taken from the file is bounds-checked before use.
 //!
-//! Moved from `nie/crates/forge/nie-dump` on 2026-09-26; `nie-dump` re-exports this module
+//! Moved from `nie/crates/forge/nie-dump` on 2026-09-26; [`crate::nie::dump`] re-exports this module
 //! and only adds the game-specific image base.
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]

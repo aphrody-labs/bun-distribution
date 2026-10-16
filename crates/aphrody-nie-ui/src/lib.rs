@@ -19,7 +19,7 @@
 //! cette dérivation (les valeurs écrites dans le CSS aujourd'hui) et vérifie, en test, que cette
 //! transposition reste synchronisée avec le calcul réel — voir [`color`] et son module de test.
 //! Elle ne redécoupe pas non plus un atlas d'icônes : [`icons`] appelle
-//! `nie_formats::sprite_sheet`, qui le fait déjà.
+//! `aphrody_nie_formats::sprite_sheet`, qui le fait déjà.
 //!
 //! ## Organisation
 //!
@@ -32,7 +32,7 @@
 //!   qu'`apps/nie-web/src/base.css` les emploie déjà.
 //! - [`compose`] : une API minimale pour décrire une tuile ou un panneau du menu à partir des
 //!   jetons qui portent déjà ce rôle — rien n'y est inventé.
-//! - [`icons`] : le pont entre un atlas `.g4tx` d'interface (`nie_formats::sprite_sheet`) et les
+//! - [`icons`] : le pont entre un atlas `.g4tx` d'interface (`aphrody_nie_formats::sprite_sheet`) et les
 //!   jetons de cette crate.
 //! - [`screens`] : l'inventaire typé des 33 captures de référence de `data/menu/` (transposition
 //!   de `manifest.json`, prouvée entrée par entrée quand le dossier est là).

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# MAJ en place de l'install IEVR depuis Steam (depot 2799861), via aphrody-nie-steam.
+# MAJ en place de l'install IEVR depuis Steam (depot 2799861), via bunre-steam (crates/re).
 #
 # Sépare l'auth courte du téléchargement relançable. Le refresh token reste dans
 # le magasin NIE protégé; la longue synchronisation tourne dans une session tmux.
@@ -7,7 +7,7 @@ set -euo pipefail
 umask 077
 
 REPO="${NIE_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
-BIN="$REPO/target/release/aphrody-nie-steam"
+BIN="$REPO/target/release/bunre-steam"
 ENV_FILE="${NIE_STEAM_ENV_FILE:-$HOME/.config/nie/steam.env}"
 if [[ -f "$ENV_FILE" ]]; then
   if grep -Eq '^[[:space:]]*(export[[:space:]]+)?(STEAM_PASSWORD|STEAM_GUARD_CODE)[[:space:]]*=' "$ENV_FILE"; then
@@ -32,7 +32,7 @@ MAX_DOWNLOADS="${NIE_STEAM_MAX_DOWNLOADS:-16}"
 SESSION="${NIE_STEAM_TMUX_SESSION:-ievr-download}"
 LOG="${STEAM_UPDATE_LOG:-$HOME/steam-update-$(date +%Y%m%d-%H%M%S).log}"
 
-[[ -x "$BIN" ]] || { echo "erreur: $BIN absent (cargo build --release -p aphrody-nie-steam)"; exit 1; }
+[[ -x "$BIN" ]] || { echo "erreur: $BIN absent (cargo build --release -p bun-re --features steam-download --bin bunre-steam)"; exit 1; }
 [[ -d "$DEST" ]] || { echo "erreur: dossier install $DEST absent"; exit 1; }
 [[ "$APPID" == "2799860" && "$DEPOT" == "2799861" ]] || {
   echo "erreur: ce script est réservé à l'app IEVR 2799860 et au depot 2799861" >&2

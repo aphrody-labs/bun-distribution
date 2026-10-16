@@ -2352,12 +2352,10 @@ dependencies = [
  "aphrody-nie-net",
  "aphrody-nie-ocgen",
  "aphrody-nie-queue",
- "aphrody-nie-re",
  "aphrody-nie-render3d",
  "aphrody-nie-runtime",
  "aphrody-nie-save",
  "aphrody-nie-seed",
- "aphrody-nie-steam",
  "aphrody-nie-trace",
  "aphrody-nie-viola",
  "aphrody-nie-wiki",
@@ -2395,7 +2393,6 @@ version = "1.4.4"
 dependencies = [
  "anyhow",
  "aphrody-nie-index",
- "aphrody-nie-re",
  "aphrody-nie-trace",
  "hex",
  "rusqlite",
@@ -2421,13 +2418,6 @@ version = "1.4.4"
 dependencies = [
  "serde",
  "serde_json",
-]
-
-[[package]]
-name = "aphrody-nie-dump"
-version = "1.4.4"
-dependencies = [
- "bun-re 1.0.0-canary",
 ]
 
 [[package]]
@@ -2786,20 +2776,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-nie-re"
-version = "1.4.4"
-dependencies = [
- "anyhow",
- "aphrody-nie-dump",
- "aphrody-nie-index",
- "bun-re 1.0.0-canary",
- "goblin 0.10.7",
- "hashbrown 0.17.1",
- "iced-x86",
- "tracing",
-]
-
-[[package]]
 name = "aphrody-nie-render"
 version = "1.4.4"
 dependencies = [
@@ -2886,28 +2862,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-nie-steam"
-version = "1.4.4"
-dependencies = [
- "anyhow",
- "aphrody-nie-net",
- "base64 0.22.1",
- "clap",
- "dirs-next",
- "regex",
- "serde",
- "serde_json",
- "steamroom",
- "steamroom-client",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "zip 8.6.0",
-]
-
-[[package]]
 name = "aphrody-nie-tasks"
 version = "1.4.4"
 dependencies = [
@@ -2979,7 +2933,6 @@ dependencies = [
  "aphrody-nie-computer-use",
  "aphrody-nie-core",
  "aphrody-nie-data",
- "aphrody-nie-dump",
  "aphrody-nie-editor",
  "aphrody-nie-explore",
  "aphrody-nie-forge",
@@ -2992,12 +2945,10 @@ dependencies = [
  "aphrody-nie-pe",
  "aphrody-nie-pe-inspect",
  "aphrody-nie-queue",
- "aphrody-nie-re",
  "aphrody-nie-render3d",
  "aphrody-nie-runtime",
  "aphrody-nie-save",
  "aphrody-nie-seed",
- "aphrody-nie-steam",
  "aphrody-nie-tasks",
  "aphrody-nie-trace",
  "aphrody-nie-zukan",
@@ -7694,6 +7645,7 @@ dependencies = [
  "tracing",
  "url",
 ]
+ "serde-wasm-bindgen",
 
 [[package]]
 name = "bun_browser_crawl"
@@ -32872,6 +32824,17 @@ dependencies = [
  "serde_json",
  "serde_json_canonicalizer",
  "sigstore-bundle",
+[[package]]
+name = "serde-wasm-bindgen"
+version = "0.6.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8302e169f0eddcc139c70f139d19d6467353af16f9fce27e8c30158036a1e16b"
+dependencies = [
+ "js-sys",
+ "serde",
+ "wasm-bindgen",
+]
+
  "sigstore-crypto",
  "sigstore-merkle",
  "sigstore-rekor",

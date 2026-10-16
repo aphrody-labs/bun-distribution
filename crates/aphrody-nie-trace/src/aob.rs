@@ -3,7 +3,7 @@
 //!
 //! Le scanner natif de [`crate::scan_regions`] est *exact-match* ; les signatures reversées
 //! (cf. [`crate::catalog`]) comportent des wildcards façon Cheat-Engine (`44 8B ?? 10`). Ce module
-//! porte le motif à masque (aligné sur `aphrody-nie-re::dump::Pattern`) côté lecture live, plus quelques
+//! porte le motif à masque (aligné sur `aphrody_re::nie::dump::Pattern`) côté lecture live, plus quelques
 //! décodeurs d'opérande pour récupérer un déplacement (`mov eax,[rax+0x1058]`) ou une cible
 //! RIP-relative à partir d'un coup.
 

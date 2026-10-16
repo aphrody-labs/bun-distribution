@@ -38,7 +38,7 @@ use thiserror::Error;
 
 /// Steam application id of Inazuma Eleven: Victory Road.
 ///
-/// Duplicated from `aphrody_nie_steam::IEVR_STEAM_APP_ID` on purpose: this crate depends on nothing but
+/// Duplicated from `aphrody_re::steam::IEVR_STEAM_APP_ID` on purpose: this crate depends on nothing but
 /// `thiserror`, and taking the whole Steam downloader as a dependency to read one integer would
 /// make the memory reader depend on a network stack.
 pub const IEVR_STEAM_APP_ID: u32 = 2_799_860;

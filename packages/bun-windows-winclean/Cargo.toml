@@ -16,7 +16,7 @@ name = "bun_windows_winclean"
 [dependencies]
 aphrody-capture = { git = "https://github.com/aphrody-labs/aphrody.git", rev = "631434e1aa92291f417a09ee19c41056527402b4" }
 aphrody-proc = { git = "https://github.com/aphrody-labs/aphrody.git", rev = "631434e1aa92291f417a09ee19c41056527402b4" }
-aphrody-re = { package = "bun-re", path = "../bun-re", version = "1.0.0-canary" }
+aphrody-re = { package = "bun-re", path = "../../crates/re", version = "1.0.0-canary" }
 base64 = "0.23.1"
 image = { version = "0.25.10", features = ["png", "bmp"] }
 serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }

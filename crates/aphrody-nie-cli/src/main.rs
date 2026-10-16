@@ -2201,7 +2201,7 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Opérations Steam — mêmes noms et mêmes variables d'environnement que le binaire `aphrody-nie-steam`,
+/// Opérations Steam — mêmes noms et mêmes variables d'environnement que le binaire `bunre-steam`,
 /// dont c'est la façade en process.
 #[derive(Subcommand, Debug)]
 enum SteamOp {
@@ -2234,7 +2234,7 @@ enum SteamOp {
 
 /// Options partagées par les trois opérations Steam.
 ///
-/// Les noms de variables d'environnement sont ceux de `aphrody-nie-steam` et de `scripts/tools/data/sync-gamedata.ts`
+/// Les noms de variables d'environnement sont ceux de `bunre-steam` et de `scripts/tools/data/sync-gamedata.ts`
 /// : les changer casserait les appelants existants.
 #[derive(clap::Args, Debug, Clone)]
 struct SteamCommun {
@@ -2275,11 +2275,11 @@ struct SteamCommun {
 
 /// Exécute une opération Steam.
 ///
-/// L'API de `aphrody-nie-steam` est asynchrone alors que la CLI ne l'est pas : on monte un runtime le
+/// L'API de `aphrody_re::steam` est asynchrone alors que la CLI ne l'est pas : on monte un runtime le
 /// temps de l'appel plutôt que de teinter tout `main` en `async` pour trois sous-commandes.
 fn steam_cmd(op: SteamOp) -> anyhow::Result<()> {
-    use aphrody_nie_steam::options::SteamDownloadOptions;
-    use aphrody_nie_steam::{IEVR_STEAM_APP_ID, downloader::SteamDepotDownloader};
+    use aphrody_re::steam::options::SteamDownloadOptions;
+    use aphrody_re::steam::{IEVR_STEAM_APP_ID, downloader::SteamDepotDownloader};
 
     let (app_id, out, c) = match &op {
         SteamOp::List { app_id, commun } => {
@@ -2306,11 +2306,11 @@ fn steam_cmd(op: SteamOp) -> anyhow::Result<()> {
         max_downloads: c.max_downloads,
         verify: !c.no_verify,
         token_store_path: Some(
-            c.token_store.clone().unwrap_or_else(aphrody_nie_steam::token_store::default_path),
+            c.token_store.clone().unwrap_or_else(aphrody_re::steam::token_store::default_path),
         ),
         guard_provider: None,
         // Garde anti-blocage : un depot muet est interrompu au lieu de dormir
-        // indéfiniment (cf. aphrody_nie_steam::options::SteamDownloadOptions::stall_timeout).
+        // indéfiniment (cf. aphrody_re::steam::options::SteamDownloadOptions::stall_timeout).
         stall_timeout: Some(std::time::Duration::from_secs(300)),
     };
 
@@ -3753,7 +3753,7 @@ fn propagate(db_path: &std::path::Path, rounds: usize) -> anyhow::Result<()> {
     let bin: i64 = analysis_binary(db.conn())?;
 
     let stats =
-        aphrody_nie_re::loop_db::propagate_db(&mut db, bin, rounds).context("propagation")?;
+        aphrody_re::nie::loop_db::propagate_db(&mut db, bin, rounds).context("propagation")?;
 
     println!(
         "propagate rounds={} anchors(str/rtti/const)={}/{}/{} cov {:.2}%->{:.2}% (+{} fn)",
@@ -3779,7 +3779,7 @@ fn rtti(db_path: &std::path::Path, exe_path: &std::path::Path) -> anyhow::Result
         std::fs::read(exe_path).with_context(|| format!("lecture {}", exe_path.display()))?;
 
     let stats =
-        aphrody_nie_re::rtti::parse_and_ingest(&mut db, bin, &bytes).context("parsing RTTI")?;
+        aphrody_re::nie::rtti::parse_and_ingest(&mut db, bin, &bytes).context("parsing RTTI")?;
 
     println!(
         "rtti col={} td={} classes={} bases={}",
@@ -3796,7 +3796,7 @@ fn index(db_path: &std::path::Path, exe_path: &std::path::Path) -> anyhow::Resul
         .context("aucun binaire indexé — lancer `nie seed` d'abord")?;
 
     let stats =
-        aphrody_nie_re::indexer::triage_into(&mut db, bin, exe_path).context("indexation PE")?;
+        aphrody_re::nie::indexer::triage_into(&mut db, bin, exe_path).context("indexation PE")?;
 
     println!(
         "index fmt={} sections={} imports={} exports={}",
@@ -3814,7 +3814,7 @@ fn disasm(db_path: &std::path::Path, exe_path: &std::path::Path) -> anyhow::Resu
 
     // A/B : NIE_NO_INDIRECT=1 détecte les LEA (stats) mais ne les insère pas.
     let skip_lea = std::env::var("NIE_NO_INDIRECT").is_ok();
-    let stats = aphrody_nie_re::disasm::recover_call_edges(&mut db, bin, exe_path, skip_lea)
+    let stats = aphrody_re::nie::disasm::recover_call_edges(&mut db, bin, exe_path, skip_lea)
         .context("désassemblage des arêtes d'appel")?;
 
     println!(
@@ -3840,7 +3840,7 @@ fn pdata(db_path: &std::path::Path, exe_path: &std::path::Path) -> anyhow::Resul
         .query_row("SELECT id FROM binary ORDER BY id LIMIT 1", [], |r| r.get(0))
         .context("aucun binaire indexé — lancer `nie seed` d'abord")?;
 
-    let stats = aphrody_nie_re::pdata::discover_into(&mut db, bin, exe_path)
+    let stats = aphrody_re::nie::pdata::discover_into(&mut db, bin, exe_path)
         .context("découverte .pdata")?;
 
     let pct_aligned = if stats.ghidra_total > 0 {
@@ -3884,10 +3884,10 @@ fn recover_cmd(
     let mut db = aphrody_nie_index::Db::open(db_path).context("ouverture base")?;
     let bin = pdata_binary_id(&db)?;
     let mut observe = |step| eprintln!("recover: étape terminée: {step:?}");
-    let report = aphrody_nie_re::workflow::recover_with_observer(
+    let report = aphrody_re::nie::workflow::recover_with_observer(
         &mut db,
         exe_path,
-        &aphrody_nie_re::workflow::RecoverOptions {
+        &aphrody_re::nie::workflow::RecoverOptions {
             binary_id: bin,
             dry_run,
             ghidra_csv: ghidra_csv.map(std::path::Path::to_path_buf),
@@ -3979,10 +3979,10 @@ fn rebuild(
         .conn()
         .query_row("SELECT id FROM binary ORDER BY id LIMIT 1", [], |row| row.get(0))
         .context("aucun binaire indexé — lancer `nie seed` d'abord")?;
-    let report = aphrody_nie_re::workflow::rebuild(
+    let report = aphrody_re::nie::workflow::rebuild(
         &mut db,
         exe_path,
-        aphrody_nie_re::workflow::RebuildOptions {
+        aphrody_re::nie::workflow::RebuildOptions {
             source_binary_id,
             image_base: NIE_IMAGE_BASE,
             rounds,

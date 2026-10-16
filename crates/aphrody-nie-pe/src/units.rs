@@ -229,7 +229,7 @@ impl Cover {
     /// sur `nie.exe` il laisse 1,8 Mo de `.text` en résidu, haché par les seules
     /// bornes de remplissage. Ce résidu n'est pas relevable — une unité peut
     /// commencer au milieu d'une instruction ou couvrir plusieurs fonctions.
-    /// Les feuilles récupérées par l'échafaudage RE (`aphrody_nie_re::recover`) le
+    /// Les feuilles récupérées par l'échafaudage RE (`aphrody_re::nie::recover`) le
     /// découpent correctement.
     ///
     /// Les plages qui chevauchent une plage `.pdata` déjà posée sont ignorées :

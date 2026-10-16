@@ -2,7 +2,7 @@
 /**
  * @file setup-data.ts
  * @description Acquisition and setup tool for Inazuma Eleven: Victory Road game data (App 2799860).
- * Supports native Rust downloader (aphrody-nie-steam), steamcmd, archive decompression, and local linking.
+ * Supports native Rust downloader (bunre-steam), steamcmd, archive decompression, and local linking.
  */
 
 import { existsSync, lstatSync, mkdirSync, symlinkSync, writeFileSync } from "node:fs";
@@ -44,7 +44,7 @@ Usage: bun scripts/iecode/tools/data/setup-data.ts [options]
 
 Methods:
   --method auto      Try local detection/link -> local archive -> native NIE Steam -> steamcmd (default)
-  --method nie       Use native Rust Steam downloader (aphrody-nie-steam, App ${APP_ID}, Depot ${CONTENT_DEPOT_ID})
+  --method nie       Use native Rust Steam downloader (bunre-steam, App ${APP_ID}, Depot ${CONTENT_DEPOT_ID})
   --method steamcmd  Use SteamCMD (/usr/local/bin/steamcmd)
   --method archive   Decompress data.7z or data.tar.zst archive if present
   --method link      Link an existing external Steam installation
@@ -181,7 +181,7 @@ async function runArchiveMethod(): Promise<boolean> {
 
 // Method: NIE native steam downloader
 async function runNieSteamMethod(): Promise<boolean> {
-  console.log("[NIE STEAM] Preparing native Rust Steam downloader (aphrody-nie-steam)...");
+  console.log("[NIE STEAM] Preparing native Rust Steam downloader (bunre-steam)...");
   mkdirSync(targetDest, { recursive: true });
 
   const steamUser = options.user;
@@ -193,7 +193,7 @@ async function runNieSteamMethod(): Promise<boolean> {
 
   const builtBinary = resolve(
     root,
-    `target/release/aphrody-nie-steam${process.platform === "win32" ? ".exe" : ""}`,
+    `target/release/bunre-steam${process.platform === "win32" ? ".exe" : ""}`,
   );
   const hasBinary = existsSync(builtBinary);
 
@@ -223,7 +223,7 @@ async function runNieSteamMethod(): Promise<boolean> {
 
   if (options["dry-run"]) {
     console.log(
-      `[DRY-RUN] Run aphrody-nie-steam sync -o ${targetDest} (Depot ${CONTENT_DEPOT_ID})`,
+      `[DRY-RUN] Run bunre-steam sync -o ${targetDest} (Depot ${CONTENT_DEPOT_ID})`,
     );
     return true;
   }
@@ -237,9 +237,9 @@ async function runNieSteamMethod(): Promise<boolean> {
       stdio: ["inherit", "inherit", "inherit"],
     });
   } else {
-    console.log(`[EXEC] cargo run --release -p aphrody-nie-steam -- ${cmdArgs.join(" ")}`);
+    console.log(`[EXEC] cargo run --release -p bun-re --features steam-download --bin bunre-steam -- ${cmdArgs.join(" ")}`);
     proc = Bun.spawnSync(
-      ["cargo", "run", "--release", "-p", "aphrody-nie-steam", "--", ...cmdArgs],
+      ["cargo", "run", "--release", "-p", "bun-re", "--features", "steam-download", "--bin", "bunre-steam", "--", ...cmdArgs],
       {
         cwd: root,
         env,

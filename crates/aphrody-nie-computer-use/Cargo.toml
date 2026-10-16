@@ -16,16 +16,16 @@ default = ["host"]
 # Filesystem/SQLite validation and live process probes are native bindings. The
 # offline image inspector remains available without this feature, including on
 # `wasm32-unknown-unknown`.
-host = ["dep:rusqlite", "aphrody-nie-re/host", "aphrody-nie-trace/host"]
+host = ["dep:rusqlite", "aphrody-re/nie", "aphrody-nie-trace/host"]
 
 [dependencies]
-anyhow = { version = "1" }
+anyhow = { workspace = true }
 hex.workspace = true
 rusqlite = { workspace = true, optional = true, features = ["bundled"] }
 sha2 = { version = "0.10" }
-serde = { version = "1", default-features = false, features = ["std", "derive"] }
-serde_json = { version = "1" }
-aphrody-nie-re.workspace = true
+serde = { workspace = true, features = ["std", "derive"] }
+serde_json = { workspace = true }
+aphrody-re.workspace = true
 aphrody-nie-trace.workspace = true
 
 [dev-dependencies]

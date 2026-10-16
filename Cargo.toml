@@ -527,7 +527,6 @@ members = [
   "crates/aphrody-nie-computer-use",
   "crates/aphrody-nie-core",
   "crates/aphrody-nie-data",
-  "crates/aphrody-nie-dump",
   "crates/aphrody-nie-editor",
   "crates/aphrody-nie-emu",
   "crates/aphrody-nie-explore",
@@ -552,7 +551,6 @@ members = [
   "crates/aphrody-nie-pg",
   "crates/aphrody-nie-play",
   "crates/aphrody-nie-queue",
-  "crates/aphrody-nie-re",
   "crates/re",
   "crates/aphrody-nie-render",
   "crates/aphrody-nie-render3d",
@@ -560,7 +558,6 @@ members = [
   "crates/aphrody-nie-save",
   "crates/aphrody-nie-seed",
   "crates/aphrody-nie-sql",
-  "crates/aphrody-nie-steam",
   "crates/aphrody-nie-tasks",
   "crates/aphrody-nie-trace",
   "crates/aphrody-nie-ui",
@@ -1155,7 +1152,6 @@ aphrody-nie-cli = { path = "crates/aphrody-nie-cli",  }
 aphrody-nie-computer-use = { default-features = false, path = "crates/aphrody-nie-computer-use",  }
 aphrody-nie-core = { default-features = false, path = "crates/aphrody-nie-core",  }
 aphrody-nie-data = { path = "crates/aphrody-nie-data",  }
-aphrody-nie-dump = { path = "crates/aphrody-nie-dump",  }
 aphrody-nie-editor = { default-features = false, path = "crates/aphrody-nie-editor",  }
 aphrody-nie-explore = { default-features = false, path = "crates/aphrody-nie-explore",  }
 aphrody-nie-ffi = { default-features = false, path = "crates/aphrody-nie-ffi",  }
@@ -1176,14 +1172,12 @@ aphrody-nie-pe = { default-features = false, path = "crates/aphrody-nie-pe",  }
 aphrody-nie-pg = { path = "crates/aphrody-nie-pg",  }
 aphrody-nie-play = { path = "crates/aphrody-nie-play",  }
 aphrody-nie-queue = { default-features = false, path = "crates/aphrody-nie-queue",  }
-aphrody-nie-re = { default-features = false, path = "crates/aphrody-nie-re",  }
 aphrody-nie-render = { path = "crates/aphrody-nie-render",  }
 aphrody-nie-render3d = { default-features = false, path = "crates/aphrody-nie-render3d",  }
 aphrody-nie-ui = { path = "crates/aphrody-nie-ui",  }
 aphrody-nie-runtime = { default-features = false, path = "crates/aphrody-nie-runtime",  }
 aphrody-nie-save = { default-features = false, path = "crates/aphrody-nie-save",  }
 aphrody-nie-seed = { default-features = false, path = "crates/aphrody-nie-seed",  }
-aphrody-nie-steam = { default-features = false, path = "crates/aphrody-nie-steam",  }
 aphrody-nie-trace = { default-features = false, path = "crates/aphrody-nie-trace",  }
 aphrody-nie-viewer-web = { path = "crates/aphrody-nie-viewer-web",  }
 aphrody-nie-viola = { path = "crates/aphrody-nie-viola",  }

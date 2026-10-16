@@ -406,7 +406,7 @@ macro_rules! ext {
 pub const EXTERNALS: &[ExternalAdapter] = &[
     // acquire
     ext!("steamcmd", Acquire, Vendor, "vendor/steamcmd", ["steam"], Probe::Path("vendor/steamcmd"), None),
-    ext!("nie-steam", Acquire, Crate, "crates/aphrody-nie-steam", ["steam"], Probe::Path("crates/aphrody-nie-steam"), None),
+    ext!("re-steam", Acquire, Crate, "crates/re/src/steam", ["steam"], Probe::Path("crates/re/src/steam"), None),
     ext!("adb-pull", Acquire, Command, "adb pull", ["apk", "android"], Probe::Command("adb"), None),
     // unpack
     ext!(
@@ -448,7 +448,8 @@ pub const EXTERNALS: &[ExternalAdapter] = &[
     ext!("nie-formats", Unpack, Crate, "crates/aphrody-nie-formats", ["rom", "raw"], Probe::Path("crates/aphrody-nie-formats"), None),
     // analyze
     ext!("rea", Analyze, Command, "rea", ["*"], Probe::Command("rea"), None),
-    ext!("nie-re", Analyze, Crate, "crates/aphrody-nie-re", ["*"], Probe::Path("crates/aphrody-nie-re"), None),
+    ext!("re-nie", Analyze, Crate, "crates/re/src/nie", ["*"], Probe::Path("crates/re/src/nie"), None),
+    ext!("re-dbxv2", Analyze, Crate, "crates/re/src/game", ["cpk", "dbxv2"], Probe::Path("crates/re/src/game"), None),
     ext!("ntr-ghidra", Analyze, Vendor, "vendor/ntr-ghidra", ["nds", "3ds"], Probe::Path("vendor/ntr-ghidra"), None),
     ext!("wii-disasm", Analyze, Crate, "crates/aphrody-wii-disasm", ["wii", "gamecube"], Probe::Path("crates/aphrody-wii-disasm"), None),
     ext!("bun-engine-nds", Analyze, Crate, "crates/bun-engine-nds", ["nds"], Probe::Path("crates/bun-engine-nds"), None),

@@ -112,13 +112,21 @@ pub mod propagate;
 pub mod wasm;
 
 /// Steam directory discovery, VDF / KeyValues parser, ACF AppManifest parser,
-/// Steam DRM and SteamStub wrapper detection, and library scanning.
+/// Steam DRM and SteamStub wrapper detection, library scanning, depot planning,
+/// and (features `steam-emulator`, `steam-download`) the Steamworks emulator and
+/// native depot download absorbed from `aphrody-nie-steam`.
 ///
 /// Entry points: [`steam::find_steam_installations`], [`steam::parse_vdf`],
 /// [`steam::AppManifest::parse`], [`steam::inspect_steam_drm`].
 pub mod steam;
 
-/// Game-asset RE helpers (CPK/CRILAYLA, AOB, live memory) absorbed from shenron-re.
+/// nie engine RE absorbed from `aphrody-nie-re` and `aphrody-nie-dump`: game minidump helpers
+/// and `.pdata` (always), SQLite indexing, MSVC RTTI/vtable recovery and call-graph labelling
+/// (feature `nie`).
+pub mod nie;
+
+/// Game RE engine absorbed from shenron-re: CPK/CRILAYLA, Xenoverse 2 VFS, AOB, live memory,
+/// DBXV2 format parsers, Dragon Ball catalog, install inspection and unified state.
 pub mod game;
 
 /// Read-only Chromium LevelDB enumerator (opt-in `leveldb` feature, host-only).

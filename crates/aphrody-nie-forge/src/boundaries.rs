@@ -1,7 +1,7 @@
 //! Validation des **bornes de fonctions** venues de l'échafaudage RE.
 //!
 //! `.pdata` ne décrit que les fonctions pourvues de données de déroulement ; le
-//! reste du `.text` est découpé grâce aux feuilles mesurées par `aphrody_nie_re::recover`
+//! reste du `.text` est découpé grâce aux feuilles mesurées par `aphrody_re::nie::recover`
 //! (table `function` de la base). Ces feuilles font gagner beaucoup — sans elles
 //! 1,8 Mo de `.text` reste haché et non relevable — mais elles ne sont pas
 //! infaillibles : **une borne peut tomber au milieu d'une instruction**.

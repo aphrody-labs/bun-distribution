@@ -55,12 +55,11 @@ aphrody-nie-pe.workspace = true
 # Bounded x86-64 lifting and blocker diagnostics from the executable forge. Database-backed
 # reference storage stays outside the browser through the disabled `redb` feature.
 aphrody-nie-forge = { workspace = true, default-features = false }
-# Safe in-memory minidump parsing; the browser wrapper exposes metadata only and never copies
-# captured process memory back into JavaScript.
-aphrody-nie-dump.workspace = true
-# Detailed, bounded PE/COFF section/import/export inspection over uploaded bytes.
-# Portable `.pdata` inspection; SQLite/Redis propagation and host dump recovery stay disabled.
-aphrody-nie-re = { workspace = true, default-features = false }
+# Single RE core (bun-re): safe in-memory minidump parsing (the browser wrapper exposes metadata
+# only and never copies captured process memory back into JavaScript), portable `.pdata`
+# inspection and credential-free Steam depot selection/collision planning. The `nie` and
+# `steam-download` features (SQLite, network, filesystem) stay disabled.
+aphrody-re.workspace = true
 # Portable AOB scanning only; live process memory and patching remain behind the host feature.
 aphrody-nie-trace = { workspace = true, default-features = false }
 # Pure official-encyclopedia matching; network, SQLite and CLI dependencies stay host-only.
@@ -71,8 +70,6 @@ aphrody-nie-seed = { workspace = true, default-features = false }
 aphrody-nie-tasks = { workspace = true, default-features = false }
 # Deterministic in-memory BFS frontier; the shared Redis backend remains host-only.
 aphrody-nie-queue = { workspace = true, default-features = false }
-# Credential-free depot selection/collision planning; Steam network and filesystem access stay host-only.
-aphrody-nie-steam = { workspace = true, default-features = false }
 # Deterministic, bounded cross-language benchmark samples; clocks and filesystem harnesses stay host-only.
 aphrody-nie-bench = { workspace = true, default-features = false }
 # Bounded offline image address/range inspection; process, SQLite and network probes stay host-only.
@@ -87,8 +84,8 @@ aphrody-nie-editor = { workspace = true, default-features = false }
 aphrody-nie-model-serve = { workspace = true, default-features = false }
 # Online multiplayer protocol, Inacode validation, and deterministic rollback simulation.
 aphrody-nie-net = { workspace = true, default-features = false }
-serde = { version = "1", default-features = false, features = ["std", "derive"] }
-serde_json = { version = "1" }
+serde = { workspace = true, features = ["std", "derive"] }
+serde_json = { workspace = true }
 # (cridecoder arrive via aphrody-nie-formats feature `audio-decode` — plus de dép directe)
 
 # wasm-bindgen est épinglé à une version EXACTE dans le Cargo.toml racine : le CLI

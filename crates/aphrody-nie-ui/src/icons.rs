@@ -1,15 +1,15 @@
 //! Le pont entre un atlas d'icônes `.g4tx` et les jetons de cette crate.
 //!
-//! `nie_formats::sprite_sheet` transpose déjà un atlas `.g4tx` d'interface — les rectangles du
+//! `aphrody_nie_formats::sprite_sheet` transpose déjà un atlas `.g4tx` d'interface — les rectangles du
 //! jeu, **recopiés**, jamais recalculés — en CSS/SVG/JSON exploitables (`depuis_g4tx`,
 //! `SpriteSheet::vers_css`…). Ce module ne réimplémente ni le découpage d'atlas ni le calcul de
-//! `background-position` : il APPELLE `nie_formats::sprite_sheet` et augmente son résultat avec
+//! `background-position` : il APPELLE `aphrody_nie_formats::sprite_sheet` et augmente son résultat avec
 //! les jetons de mouvement/géométrie de cette crate — le point où les deux mondes que
 //! l'orchestrateur a mesurés (les icônes du jeu, les jetons de son menu) se rejoignent.
 
 use crate::color::AZURE_ACCENT;
 use crate::tokens::{FAST_DURATION, RADIUS};
-use nie_formats::sprite_sheet::{PREFIXE, SpriteSheet};
+use aphrody_nie_formats::sprite_sheet::{PREFIXE, SpriteSheet};
 
 /// Le CSS d'une feuille de sprites d'interface, jetons compris.
 ///
@@ -45,7 +45,7 @@ pub fn icon_sheet_css(sheet: &SpriteSheet, image_url: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::icon_sheet_css;
-    use nie_formats::sprite_sheet::PREFIXE;
+    use aphrody_nie_formats::sprite_sheet::PREFIXE;
     use std::path::Path;
 
     /// Golden VFS, comme `nie_wasm::tests_sprite_sheet::feuille_de_sprites_d_un_atlas_reel` :
@@ -54,9 +54,9 @@ mod tests {
     /// jeu n'est pas monté sur cette machine — jamais un vert silencieux.
     #[test]
     fn icon_sheet_css_habille_un_atlas_reel_du_jeu() {
-        let dir = nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
         let data_dir = Path::new(&dir).join("data");
-        let mut vfs = nie_formats::vfs::Vfs::new();
+        let mut vfs = aphrody_nie_formats::vfs::Vfs::new();
         if vfs.init(&data_dir).is_err() {
             eprintln!(
                 "skip icon_sheet_css_habille_un_atlas_reel_du_jeu : jeu absent à {}",
@@ -73,9 +73,9 @@ mod tests {
             return;
         };
         let data = vfs.read(&chemin).expect("lecture de l'atlas");
-        let atlas = nie_formats::g4tx::parse(&data).expect("gaiji_game.g4tx est un G4TX valide");
+        let atlas = aphrody_nie_formats::g4tx::parse(&data).expect("gaiji_game.g4tx est un G4TX valide");
         let sheet =
-            nie_formats::sprite_sheet::depuis_g4tx(&atlas, 0).expect("l'atlas porte une texture");
+            aphrody_nie_formats::sprite_sheet::depuis_g4tx(&atlas, 0).expect("l'atlas porte une texture");
 
         let css = icon_sheet_css(&sheet, "/tex/dx11/font/gaiji_game.png");
         eprintln!("{chemin} : {} régions, {} octets de CSS habillé", sheet.len(), css.len());
@@ -91,14 +91,14 @@ mod tests {
     #[test]
     fn icon_sheet_css_sur_une_feuille_vide_ne_panique_pas() {
         // Une texture sans région (image simple) n'est pas une erreur pour
-        // `nie_formats::sprite_sheet` (cf. sa doc) : le pont ne doit pas l'être non plus.
+        // `aphrody_nie_formats::sprite_sheet` (cf. sa doc) : le pont ne doit pas l'être non plus.
         let vide = empty_sprite_sheet();
         let css = icon_sheet_css(&vide, "/tex/exemple.png");
         assert!(css.contains(&format!(".{PREFIXE}-sprite {{")));
     }
 
-    fn empty_sprite_sheet() -> nie_formats::sprite_sheet::SpriteSheet {
-        nie_formats::sprite_sheet::SpriteSheet {
+    fn empty_sprite_sheet() -> aphrody_nie_formats::sprite_sheet::SpriteSheet {
+        aphrody_nie_formats::sprite_sheet::SpriteSheet {
             nom: "exemple".to_string(),
             largeur: 4,
             hauteur: 4,

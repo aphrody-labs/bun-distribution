@@ -29,7 +29,8 @@ pub use offline_image::{
 
 /// Complete static reverse-engineering surface, available through Computer Use.
 pub mod re {
-    pub use aphrody_nie_re::*;
+    pub use aphrody_re::nie::*;
+    pub use aphrody_re::propagate;
 }
 
 /// Complete live-process tracing surface, available through Computer Use.
@@ -221,7 +222,7 @@ impl ReSession {
     }
 }
 
-/// Unified read-and-write facade over `aphrody-nie-re` + `aphrody-nie-trace` in YOLO mode.
+/// Unified read-and-write facade over `bun-re` (nie) + `aphrody-nie-trace` in YOLO mode.
 #[cfg(feature = "host")]
 pub struct NieComputerUse;
 

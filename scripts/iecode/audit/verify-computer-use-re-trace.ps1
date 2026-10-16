@@ -10,7 +10,7 @@ Set-Location $repo
 
 function Invoke-Gate([string]$Package, [string]$Extra) {
     Write-Host "[gate] cargo test -p $Package $Extra"
-    if ($Extra) { & cargo test -p $Package --tests --locked $Extra }
+    if ($Extra) { & cargo test -p $Package --tests --locked @($Extra.Split(" ")) }
     else { & cargo test -p $Package --tests --locked }
     if ($LASTEXITCODE -ne 0) { throw "gate failed: $Package" }
 }
@@ -27,7 +27,7 @@ $row = (& $sqlite.Source -readonly $Database "SELECT id || '|' || base_addr || '
 if ($row -ne '1|5368709120|33918464') { throw "canonical SQLite binary row mismatch: $row" }
 Write-Host "[sqlite] binary_id=1 image_base=0x140000000 size=33918464"
 
-Invoke-Gate 'aphrody-nie-re' '--lib'
+Invoke-Gate 'bun-re' '--lib --features nie'
 Invoke-Gate 'aphrody-nie-trace' ''
 Invoke-Gate 'aphrody-nie-computer-use' 'session_binds_hash_binary_id_and_addresses'
 Invoke-Gate 'aphrody-nie-computer-use' 'session_rejects_wrong_build'
