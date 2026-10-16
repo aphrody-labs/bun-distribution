@@ -27,6 +27,10 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $Root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+$BunOsRoot = if ($env:BUN_OS_ROOT) { (Resolve-Path $env:BUN_OS_ROOT).Path } else { (Resolve-Path (Join-Path $Root '..\..')).Path }
+if (-not (Test-Path (Join-Path $BunOsRoot 'Cargo.toml')) -or -not (Test-Path (Join-Path $BunOsRoot 'Cargo.lock'))) {
+  throw "BUN_OS_ROOT must contain the Bun OS Cargo.toml and Cargo.lock: $BunOsRoot"
+}
 
 function Invoke-Native([string] $What, [scriptblock] $Block) {
   Write-Output "==> $What"
@@ -38,7 +42,7 @@ function Invoke-Native([string] $What, [scriptblock] $Block) {
 $Version = $env:CADCRAFT_VERSION
 if (-not $Version) {
   $inPkg = $false
-  foreach ($line in Get-Content (Join-Path $Root 'Cargo.toml')) {
+  foreach ($line in Get-Content (Join-Path $BunOsRoot 'Cargo.toml')) {
     if ($line -match '^\s*\[') { $inPkg = ($line.Trim() -eq '[workspace.package]'); continue }
     if ($inPkg -and $line -match '^\s*version\s*=\s*"([^"]+)"') { $Version = $Matches[1]; break }
   }
@@ -49,7 +53,7 @@ $MsiVersion = ($Version -split '-')[0]
 
 $Target = switch ($Arch) { 'x64' { 'x86_64-pc-windows-msvc' } 'x86' { 'i686-pc-windows-msvc' } 'arm64' { 'aarch64-pc-windows-msvc' } }
 $Dist = if ($env:DIST) { $env:DIST } else { Join-Path $Root 'dist\release' }
-$TargetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $Root 'target' }
+$TargetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $BunOsRoot 'target' }
 New-Item -ItemType Directory -Force -Path $Dist | Out-Null
 
 if (-not $env:CADCRAFT_BUILD_SHA) { $env:CADCRAFT_BUILD_SHA = (git -C $Root rev-parse HEAD 2>$null) }
@@ -64,7 +68,7 @@ if (-not $SkipBuild) {
   [Environment]::SetEnvironmentVariable($flagVar, '-C target-feature=+crt-static')
   # Fail the build (rather than warn) if the icon/VERSIONINFO can't be embedded.
   $env:CADCRAFT_REQUIRE_WINRES = '1'
-  Invoke-Native "cargo build ($Target)" { cargo build --release --locked -p cadcraft -p cadcraft-cli --target $Target }
+  Invoke-Native "cargo build ($Target)" { cargo build --manifest-path (Join-Path $BunOsRoot 'Cargo.toml') --release --locked -p cadcraft -p cadcraft-cli --target $Target }
 }
 
 $Bin = Join-Path $TargetDir "$Target\release"

@@ -2,15 +2,22 @@
 # Shared setup for the packaging scripts. Source it: `. "$(dirname "$0")/../env.sh"`.
 #
 # Exports:
-#   ROOT                    workspace root
-#   VERSION                 [workspace.package] version from Cargo.toml (override: CADCRAFT_VERSION)
+#   ROOT                    CADCraft source root (assets, packaging files and provenance)
+#   BUN_OS_ROOT             Bun OS Cargo workspace root (override: BUN_OS_ROOT)
+#   VERSION                 [workspace.package] version from Bun OS Cargo.toml (override: CADCRAFT_VERSION)
 #   DIST                    output directory for release artifacts (default: $ROOT/dist/release)
 #   CADCRAFT_BUILD_SHA    git commit baked into the binaries (see crates/engine/src/build_info.rs)
 #   CADCRAFT_BUILD_DATE   UTC build date, YYYY-MM-DD
-#   CARGO_TARGET_DIR        cargo's target dir (default: $ROOT/target)
+#   CARGO_TARGET_DIR        cargo's target dir (default: $BUN_OS_ROOT/target)
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export ROOT
+BUN_OS_ROOT="$(cd "${BUN_OS_ROOT:-$ROOT/../..}" && pwd)"
+if [ ! -f "$BUN_OS_ROOT/Cargo.toml" ] || [ ! -f "$BUN_OS_ROOT/Cargo.lock" ]; then
+  echo "error: BUN_OS_ROOT must contain the Bun OS Cargo.toml and Cargo.lock: $BUN_OS_ROOT" >&2
+  exit 1
+fi
+export BUN_OS_ROOT
 
 # The version lives in exactly one place: `[workspace.package] version` in the root Cargo.toml.
 # (`cargo xtask version` prints the same thing; awk avoids compiling xtask here.)
@@ -18,12 +25,12 @@ workspace_version() {
   awk '
     /^\[/ { in_pkg = ($0 == "[workspace.package]") ; next }
     in_pkg && $1 == "version" { gsub(/[" ]/, "", $3); print $3; exit }
-  ' "$ROOT/Cargo.toml"
+  ' "$BUN_OS_ROOT/Cargo.toml"
 }
 
 VERSION="${CADCRAFT_VERSION:-$(workspace_version)}"
 if [ -z "$VERSION" ]; then
-  echo "error: could not read [workspace.package] version from $ROOT/Cargo.toml" >&2
+  echo "error: could not read [workspace.package] version from $BUN_OS_ROOT/Cargo.toml" >&2
   exit 1
 fi
 export VERSION
@@ -37,7 +44,7 @@ if [ -z "${CADCRAFT_BUILD_SHA:-}" ]; then
 fi
 export CADCRAFT_BUILD_SHA
 export CADCRAFT_BUILD_DATE="${CADCRAFT_BUILD_DATE:-$(date -u +%Y-%m-%d)}"
-export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$ROOT/target}"
+export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$BUN_OS_ROOT/target}"
 
 # Emit a GitHub Actions warning (plain stderr outside Actions).
 warn() {

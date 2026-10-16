@@ -58,7 +58,7 @@ echo "==> CADCraft $VERSION for macOS ($ARCH), identity: $IDENTITY, notarize: $N
 if [ "$SKIP_BUILD" = 0 ]; then
   args=()
   for t in "${TARGETS[@]}"; do args+=(--target "$t"); done
-  (cd "$ROOT" && cargo build --release --locked -p cadcraft -p cadcraft-cli "${args[@]}")
+  cargo build --manifest-path "$BUN_OS_ROOT/Cargo.toml" --release --locked -p cadcraft -p cadcraft-cli "${args[@]}"
 fi
 
 rm -rf "$WORK"

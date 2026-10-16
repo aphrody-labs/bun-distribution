@@ -3,10 +3,12 @@
 # Flatpak builds run offline, so the crate sources must be vendored first. From the repo root:
 #
 #   curl -fsSLO https://raw.githubusercontent.com/flatpak/flatpak-builder-tools/master/cargo/flatpak-cargo-generator.py
-#   python3 flatpak-cargo-generator.py Cargo.lock -o packaging/linux/flatpak/cargo-sources.json
+#   python3 flatpak-cargo-generator.py Cargo.lock -o libraries/cadcraft/packaging/linux/flatpak/cargo-sources.json
 #   flatpak-builder --user --install --force-clean build-flatpak packaging/linux/flatpak/ai.storyteller.cadcraft.yml
 #   flatpak run ai.storyteller.cadcraft
 #
+# Run flatpak-builder from the Bun OS root. Its source tree includes this CADCraft submodule; the
+# package binaries are built from the root workspace while assets remain owned by CADCraft.
 # For Flathub, replace the `dir` source with a `git` source pinned to a release tag and commit.
 # The single-file .flatpak attached to each release comes from ai.storyteller.cadcraft.bundle.yml,
 # which repackages the prebuilt release binaries. Keep runtime-version and finish-args identical.
@@ -44,20 +46,20 @@ modules:
         CARGO_HOME: /run/build/cadcraft/cargo
         CARGO_NET_OFFLINE: 'true'
     build-commands:
-      - cargo --offline build --release --locked -p cadcraft -p cadcraft-cli
+      - cargo --offline build --manifest-path Cargo.toml --release --locked -p cadcraft -p cadcraft-cli
       - install -Dm755 target/release/cadcraft /app/bin/cadcraft
       - install -Dm755 target/release/cadcraft-cli /app/bin/cadcraft-cli
-      - install -Dm644 packaging/linux/ai.storyteller.cadcraft.desktop /app/share/applications/ai.storyteller.cadcraft.desktop
-      - install -Dm644 packaging/linux/ai.storyteller.cadcraft.mime.xml /app/share/mime/packages/ai.storyteller.cadcraft.xml
-      - mkdir -p /app/share/icons && cp -R assets/app-icon/hicolor /app/share/icons/
+      - install -Dm644 libraries/cadcraft/packaging/linux/ai.storyteller.cadcraft.desktop /app/share/applications/ai.storyteller.cadcraft.desktop
+      - install -Dm644 libraries/cadcraft/packaging/linux/ai.storyteller.cadcraft.mime.xml /app/share/mime/packages/ai.storyteller.cadcraft.xml
+      - mkdir -p /app/share/icons && cp -R libraries/cadcraft/assets/app-icon/hicolor /app/share/icons/
       - >-
         version=$(awk '/^\[/{p=($0=="[workspace.package]");next} p&&$1=="version"{gsub(/[" ]/,"",$3);print $3;exit}' Cargo.toml);
         install -d /app/share/metainfo;
         sed -e "s/@VERSION@/$version/" -e "s/@DATE@/$(date -u +%Y-%m-%d)/"
-        packaging/linux/ai.storyteller.cadcraft.metainfo.xml.in > /app/share/metainfo/ai.storyteller.cadcraft.metainfo.xml
+        libraries/cadcraft/packaging/linux/ai.storyteller.cadcraft.metainfo.xml.in > /app/share/metainfo/ai.storyteller.cadcraft.metainfo.xml
     sources:
       - type: dir
-        path: ../../..
+        path: ../../../../..
         skip:
           - target
           - dist

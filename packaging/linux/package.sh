@@ -46,9 +46,9 @@ echo "==> CADCraft $VERSION for Linux $ARCH ($FORMATS)"
 
 if [ "$SKIP_BUILD" = 0 ]; then
   if [ -n "${CROSS_TARGET:-}" ]; then
-    (cd "$ROOT" && cargo build --release --locked -p cadcraft -p cadcraft-cli --target "$CROSS_TARGET")
+    cargo build --manifest-path "$BUN_OS_ROOT/Cargo.toml" --release --locked -p cadcraft -p cadcraft-cli --target "$CROSS_TARGET"
   else
-    (cd "$ROOT" && cargo build --release --locked -p cadcraft -p cadcraft-cli)
+    cargo build --manifest-path "$BUN_OS_ROOT/Cargo.toml" --release --locked -p cadcraft -p cadcraft-cli
   fi
 fi
 BIN="$CARGO_TARGET_DIR/${CROSS_TARGET:+$CROSS_TARGET/}release"
