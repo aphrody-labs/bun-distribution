@@ -1,25 +1,14 @@
 import * as React from "react";
 
-// Classes de fenêtre Material 3 (pixels CSS / dp web).
-// Chaque valeur est la borne INCLUSIVE de la classe qu'elle nomme.
+import { BREAKPOINTS as M3_BREAKPOINTS, classifyWidth, type WindowSizeClass } from "@aphrody/m3-tokens/breakpoints";
 export const BREAKPOINTS = {
-  MEDIUM: 600,
-  EXPANDED: 840,
-  LARGE: 1200,
-  EXTRA_LARGE: 1600,
+  MEDIUM: M3_BREAKPOINTS.medium,
+  EXPANDED: M3_BREAKPOINTS.expanded,
+  LARGE: M3_BREAKPOINTS.large,
+  EXTRA_LARGE: M3_BREAKPOINTS["extra-large"],
 } as const;
-
-export type Breakpoint =
-  "compact" | "medium" | "expanded" | "large" | "extra-large";
-
-/** Résout une largeur disponible, indépendamment du navigateur ou du device. */
-export function breakpointForWidth(width: number): Breakpoint {
-  if (width < BREAKPOINTS.MEDIUM) return "compact";
-  if (width < BREAKPOINTS.EXPANDED) return "medium";
-  if (width < BREAKPOINTS.LARGE) return "expanded";
-  if (width < BREAKPOINTS.EXTRA_LARGE) return "large";
-  return "extra-large";
-}
+export type Breakpoint = WindowSizeClass;
+export const breakpointForWidth = classifyWidth;
 
 export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean>(false);

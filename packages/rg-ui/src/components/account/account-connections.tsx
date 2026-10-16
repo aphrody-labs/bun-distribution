@@ -19,20 +19,9 @@ import {
   AlertDialogTitle,
 } from "../alert-dialog";
 import { Badge } from "../badge";
-import {
-  DiscordIcon,
-  GoogleIcon,
-  PatreonIcon,
-  TwitchIcon,
-} from "../brand-icons";
+import { DiscordIcon, GoogleIcon, PatreonIcon, TwitchIcon } from "../brand-icons";
 import { Button } from "../button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../card";
 import type { AccountLinkedAccount, AccountProviderId } from "./types";
 
 interface ProviderMeta {
@@ -46,8 +35,7 @@ interface ProviderMeta {
 const PROVIDER_META: Record<AccountProviderId, ProviderMeta> = {
   discord: {
     Icon: DiscordIcon,
-    description:
-      "Connexion principale et synchronisation des rôles du serveur.",
+    description: "Connexion principale et synchronisation des rôles du serveur.",
     label: "Discord",
     tone: "bg-discord/10 text-discord",
   },
@@ -90,18 +78,11 @@ interface AccountConnectionsProps {
   accounts: AccountLinkedAccount[];
 }
 
-export function AccountConnections({
-  providers,
-  accounts,
-}: AccountConnectionsProps) {
+export function AccountConnections({ providers, accounts }: AccountConnectionsProps) {
   const [busy, setBusy] = useState<string | null>(null);
-  const [confirmUnlink, setConfirmUnlink] = useState<AccountProviderId | null>(
-    null,
-  );
+  const [confirmUnlink, setConfirmUnlink] = useState<AccountProviderId | null>(null);
 
-  const linkedCount = providers.filter((p) =>
-    accounts.some((a) => a.provider === p.id),
-  ).length;
+  const linkedCount = providers.filter(p => accounts.some(a => a.provider === p.id)).length;
 
   const run = async (key: string, action: () => Promise<void> | void) => {
     setBusy(key);
@@ -109,9 +90,7 @@ export function AccountConnections({
       await action();
     } catch (error) {
       console.error(`[compte] action « ${key} » en échec`, error);
-      toast.error(
-        error instanceof Error ? error.message : "Opération impossible.",
-      );
+      toast.error(error instanceof Error ? error.message : "Opération impossible.");
     } finally {
       setBusy(null);
     }
@@ -122,16 +101,15 @@ export function AccountConnections({
       <CardHeader>
         <CardTitle>Comptes liés</CardTitle>
         <CardDescription>
-          Relie tes comptes externes pour te connecter plus vite et synchroniser
-          tes avantages. Le dernier compte rattaché ne peut pas être dissocié —
-          il ne resterait aucun moyen de se connecter.
+          Relie tes comptes externes pour te connecter plus vite et synchroniser tes avantages. Le dernier compte
+          rattaché ne peut pas être dissocié — il ne resterait aucun moyen de se connecter.
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-3">
-        {providers.map((provider) => {
+        {providers.map(provider => {
           const meta = PROVIDER_META[provider.id];
-          const account = accounts.find((a) => a.provider === provider.id);
+          const account = accounts.find(a => a.provider === provider.id);
           const isLinked = Boolean(account);
           const isLast = isLinked && linkedCount === 1;
 
@@ -146,31 +124,19 @@ export function AccountConnections({
                 </span>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold text-foreground">
-                      {meta.label}
-                    </p>
+                    <p className="font-semibold text-foreground">{meta.label}</p>
                     {isLinked ? (
-                      <Badge className="bg-succes/15 text-succes">
-                        Connecté
-                      </Badge>
+                      <Badge className="bg-succes/15 text-succes">Connecté</Badge>
                     ) : (
-                      <Badge
-                        variant="outline"
-                        className="text-muted-foreground"
-                      >
+                      <Badge variant="outline" className="text-muted-foreground">
                         Non connecté
                       </Badge>
                     )}
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {meta.description}
-                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">{meta.description}</p>
                   {account?.createdAt && (
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Lié le{" "}
-                      {format(new Date(account.createdAt), "d MMMM yyyy", {
-                        locale: fr,
-                      })}
+                      Lié le {format(new Date(account.createdAt), "d MMMM yyyy", { locale: fr })}
                     </p>
                   )}
                 </div>
@@ -182,9 +148,7 @@ export function AccountConnections({
                     size="sm"
                     variant="outline"
                     disabled={busy !== null}
-                    onClick={() =>
-                      run(`${provider.id}:refresh`, provider.onRefresh!)
-                    }
+                    onClick={() => run(`${provider.id}:refresh`, provider.onRefresh!)}
                   >
                     {busy === `${provider.id}:refresh` ? (
                       <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -207,9 +171,7 @@ export function AccountConnections({
                     disabled={busy !== null}
                     onClick={() => run(`${provider.id}:link`, provider.onLink!)}
                   >
-                    {busy === `${provider.id}:link` && (
-                      <Loader2 className="size-4 animate-spin" aria-hidden />
-                    )}
+                    {busy === `${provider.id}:link` && <Loader2 className="size-4 animate-spin" aria-hidden />}
                     Lier
                   </Button>
                 )}
@@ -226,11 +188,7 @@ export function AccountConnections({
                   </Button>
                 )}
 
-                {isLast && (
-                  <p className="text-xs text-muted-foreground">
-                    Compte principal
-                  </p>
-                )}
+                {isLast && <p className="text-xs text-muted-foreground">Compte principal</p>}
               </div>
             </div>
           );
@@ -238,7 +196,7 @@ export function AccountConnections({
 
         <AlertDialog
           open={confirmUnlink !== null}
-          onOpenChange={(open) => {
+          onOpenChange={open => {
             if (!open) {
               setConfirmUnlink(null);
             }
@@ -247,38 +205,28 @@ export function AccountConnections({
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                Dissocier{" "}
-                {confirmUnlink
-                  ? PROVIDER_META[confirmUnlink].label
-                  : "ce compte"}{" "}
-                ?
+                Dissocier {confirmUnlink ? PROVIDER_META[confirmUnlink].label : "ce compte"} ?
               </AlertDialogTitle>
               <AlertDialogDescription>
-                Tu pourras le relier à tout moment. Les données déjà
-                synchronisées restent en base mais ne seront plus rafraîchies.
+                Tu pourras le relier à tout moment. Les données déjà synchronisées restent en base mais ne seront plus
+                rafraîchies.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={busy !== null}>
-                Annuler
-              </AlertDialogCancel>
+              <AlertDialogCancel disabled={busy !== null}>Annuler</AlertDialogCancel>
               <AlertDialogAction
                 disabled={busy !== null}
-                onClick={(event) => {
+                onClick={event => {
                   event.preventDefault();
                   const id = confirmUnlink;
-                  const handler = providers.find((p) => p.id === id)?.onUnlink;
+                  const handler = providers.find(p => p.id === id)?.onUnlink;
                   if (!id || !handler) {
                     return;
                   }
-                  void run(`${id}:unlink`, handler).then(() =>
-                    setConfirmUnlink(null),
-                  );
+                  void run(`${id}:unlink`, handler).then(() => setConfirmUnlink(null));
                 }}
               >
-                {busy?.endsWith(":unlink") && (
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
-                )}
+                {busy?.endsWith(":unlink") && <Loader2 className="size-4 animate-spin" aria-hidden />}
                 Dissocier
               </AlertDialogAction>
             </AlertDialogFooter>

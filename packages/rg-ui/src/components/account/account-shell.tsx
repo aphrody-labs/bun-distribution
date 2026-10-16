@@ -10,10 +10,7 @@ import { Button } from "../button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../tabs";
 import type { AccountTabId } from "./types";
 
-const TAB_META: Record<
-  AccountTabId,
-  { label: string; icon: typeof UserCircle }
-> = {
+const TAB_META: Record<AccountTabId, { label: string; icon: typeof UserCircle }> = {
   address: { icon: Truck, label: "Adresse" },
   connections: { icon: Link2, label: "Connexions" },
   profile: { icon: UserCircle, label: "Profil" },
@@ -37,13 +34,7 @@ interface AccountShellProps {
  * précis reste partageable et le retour navigateur fonctionne. `router.replace`
  * évite d'empiler une entrée d'historique par clic d'onglet.
  */
-export function AccountShell({
-  email,
-  backHref,
-  backLabel = "Retour",
-  initialTab,
-  tabs,
-}: AccountShellProps) {
+export function AccountShell({ email, backHref, backLabel = "Retour", initialTab, tabs }: AccountShellProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [active, setActive] = useState<AccountTabId>(initialTab);
@@ -67,13 +58,10 @@ export function AccountShell({
       )}
 
       <header className="mb-6 space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          Paramètres du compte
-        </h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Paramètres du compte</h1>
         {email && (
           <p className="text-sm break-all text-muted-foreground">
-            Connecté en tant que{" "}
-            <span className="font-medium text-foreground">{email}</span>
+            Connecté en tant que <span className="font-medium text-foreground">{email}</span>
           </p>
         )}
       </header>
@@ -101,11 +89,7 @@ export function AccountShell({
         </TabsList>
 
         {tabs.map(({ id, content }) => (
-          <TabsContent
-            key={id}
-            value={id}
-            className="mt-6 focus-visible:outline-hidden"
-          >
+          <TabsContent key={id} value={id} className="mt-6 focus-visible:outline-hidden">
             {content}
           </TabsContent>
         ))}

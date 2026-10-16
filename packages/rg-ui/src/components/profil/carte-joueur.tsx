@@ -80,25 +80,12 @@ export interface CarteJoueurProps {
  * « matching game exactly ». Une couleur juste mais recopiée finit toujours par
  * diverger.
  */
-const POSTES: Record<string, { abrege: string; nom: string; couleur: string }> =
-  {
-    ATT: {
-      abrege: "FW",
-      couleur: "var(--color-poste-attaquant)",
-      nom: "Attaquant",
-    },
-    DEF: {
-      abrege: "DF",
-      couleur: "var(--color-poste-defenseur)",
-      nom: "Défenseur",
-    },
-    GAR: {
-      abrege: "GK",
-      couleur: "var(--color-poste-gardien)",
-      nom: "Gardien",
-    },
-    MIL: { abrege: "MF", couleur: "var(--color-poste-milieu)", nom: "Milieu" },
-  };
+const POSTES: Record<string, { abrege: string; nom: string; couleur: string }> = {
+  ATT: { abrege: "FW", couleur: "var(--color-poste-attaquant)", nom: "Attaquant" },
+  DEF: { abrege: "DF", couleur: "var(--color-poste-defenseur)", nom: "Défenseur" },
+  GAR: { abrege: "GK", couleur: "var(--color-poste-gardien)", nom: "Gardien" },
+  MIL: { abrege: "MF", couleur: "var(--color-poste-milieu)", nom: "Milieu" },
+};
 
 export function CarteJoueur({
   pseudo,
@@ -116,13 +103,10 @@ export function CarteJoueur({
   actions,
 }: CarteJoueurProps) {
   const elements = useMemo(() => {
-    const connus = new Map(AVAILABLE_BADGES.map((badge) => [badge.id, badge]));
+    const connus = new Map(AVAILABLE_BADGES.map(badge => [badge.id, badge]));
     return (badges ?? [])
-      .map((id) => connus.get(id))
-      .filter(
-        (badge): badge is (typeof AVAILABLE_BADGES)[number] =>
-          badge !== undefined,
-      );
+      .map(id => connus.get(id))
+      .filter((badge): badge is (typeof AVAILABLE_BADGES)[number] => badge !== undefined);
   }, [badges]);
 
   const nomAffiche = nom?.trim() || pseudo;
@@ -133,10 +117,7 @@ export function CarteJoueur({
   const cadrage = Math.min(100, Math.max(0, banniereCadrage ?? 50));
 
   return (
-    <section
-      aria-label={`Carte de ${nomAffiche}`}
-      className="relative isolate w-full"
-    >
+    <section aria-label={`Carte de ${nomAffiche}`} className="relative isolate w-full">
       {/* Le ruban de titre chevauche la carte : il est donc posé AVANT, dans sa
 			    propre pile, et la carte le recouvre par le bas. */}
       {titre && (
@@ -177,14 +158,10 @@ export function CarteJoueur({
           aria-hidden
           className="absolute inset-0 -z-10 opacity-25 mix-blend-overlay"
           style={{
-            backgroundImage:
-              "repeating-linear-gradient(135deg, rgb(255 255 255 / 0.55) 0 10px, transparent 10px 22px)",
+            backgroundImage: "repeating-linear-gradient(135deg, rgb(255 255 255 / 0.55) 0 10px, transparent 10px 22px)",
           }}
         />
-        <div
-          aria-hidden
-          className="absolute inset-0 -z-10 bg-linear-to-r from-black/70 via-black/45 to-black/60"
-        />
+        <div aria-hidden className="absolute inset-0 -z-10 bg-linear-to-r from-black/70 via-black/45 to-black/60" />
 
         <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:gap-6 sm:px-10 sm:py-6">
           {/* Une `<img>` et pas le composant `Avatar` de Radix : celui-ci ne
@@ -213,10 +190,7 @@ export function CarteJoueur({
               className="truncate text-2xl leading-tight font-extrabold text-white sm:text-4xl"
               // Contour sombre : le nom est détouré dans le jeu, et c'est ce qui
               // le fait tenir sur une bannière claire comme sur une sombre.
-              style={{
-                textShadow:
-                  "0 2px 0 rgba(0,0,0,0.75), 0 0 12px rgba(0,0,0,0.45)",
-              }}
+              style={{ textShadow: "0 2px 0 rgba(0,0,0,0.75), 0 0 12px rgba(0,0,0,0.45)" }}
             >
               {nomAffiche}
             </h1>
@@ -237,10 +211,7 @@ export function CarteJoueur({
                           borderColor: `#${role.couleur.toString(16).padStart(6, "0")}`,
                           color: `#${role.couleur.toString(16).padStart(6, "0")}`,
                         }
-                      : {
-                          borderColor: "rgb(255 255 255 / 0.4)",
-                          color: "rgb(255 255 255 / 0.9)",
-                        }
+                      : { borderColor: "rgb(255 255 255 / 0.4)", color: "rgb(255 255 255 / 0.9)" }
                   }
                 >
                   {role.nom}
@@ -248,11 +219,7 @@ export function CarteJoueur({
               )}
             </div>
 
-            {description && (
-              <p className="line-clamp-2 max-w-2xl text-sm leading-snug text-white/90">
-                {description}
-              </p>
-            )}
+            {description && <p className="line-clamp-2 max-w-2xl text-sm leading-snug text-white/90">{description}</p>}
 
             {(elements.length > 0 || posteAffiche || classement) && (
               <ul className="flex flex-wrap items-center gap-1.5 pt-0.5">
@@ -267,11 +234,10 @@ export function CarteJoueur({
                 )}
                 {classement && (
                   <li className="rounded-md border border-white/40 bg-black/35 px-2 py-0.5 text-[11px] font-bold text-white uppercase">
-                    {classement.place}ᵉ /{" "}
-                    {classement.total.toLocaleString("fr-FR")}
+                    {classement.place}ᵉ / {classement.total.toLocaleString("fr-FR")}
                   </li>
                 )}
-                {elements.map((element) => {
+                {elements.map(element => {
                   return (
                     <li
                       key={element.id}
@@ -283,12 +249,7 @@ export function CarteJoueur({
                     >
                       {/* Icône officielle du jeu (`/spirit_type/*.webp`).
 											    eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={element.iconeUrl}
-                        alt=""
-                        aria-hidden
-                        className="size-4"
-                      />
+                      <img src={element.iconeUrl} alt="" aria-hidden className="size-4" />
                       {element.label}
                     </li>
                   );
@@ -301,9 +262,7 @@ export function CarteJoueur({
           {niveau && (
             <div className="shrink-0 border-white/30 text-white sm:border-l sm:pl-6">
               <div className="flex items-end gap-2 sm:flex-col sm:items-end sm:gap-0">
-                <span className="text-xs font-semibold text-white/80 uppercase">
-                  Niv.
-                </span>
+                <span className="text-xs font-semibold text-white/80 uppercase">Niv.</span>
                 <span
                   className="text-3xl leading-none font-extrabold sm:text-5xl"
                   style={{ textShadow: "0 2px 0 rgba(0,0,0,0.6)" }}
@@ -312,9 +271,7 @@ export function CarteJoueur({
                 </span>
               </div>
               <p className="mt-1 text-right text-[11px] font-semibold text-white/80 uppercase">
-                {niveau.restant > 0
-                  ? `Suivant ${niveau.restant.toLocaleString("fr-FR")}`
-                  : "Palier maximum"}
+                {niveau.restant > 0 ? `Suivant ${niveau.restant.toLocaleString("fr-FR")}` : "Palier maximum"}
               </p>
               <p className="mt-1 rounded-md bg-rg-or/90 px-2 py-0.5 text-center text-[11px] font-extrabold tracking-wide text-rg-marine uppercase">
                 {niveau.rang}

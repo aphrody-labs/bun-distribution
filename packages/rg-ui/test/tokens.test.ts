@@ -2,6 +2,8 @@ import { describe, expect, test } from "bun:test";
 
 import {
   analyserBlocs,
+  cascaderTheme,
+  chargerCssAvecImports,
   extraireTokens,
   NOMS_THEMES,
   oklchVersHex,
@@ -13,7 +15,74 @@ import { FORMES, MARQUE, MARQUES_TIERCES, THEMES } from "../src/tokens";
 
 const CHEMIN_CSS = new URL("../src/styles.css", import.meta.url);
 const CHEMIN_TOKENS = new URL("../src/tokens.ts", import.meta.url);
-const css = await Bun.file(CHEMIN_CSS).text();
+const css = await chargerCssAvecImports(CHEMIN_CSS);
+
+describe("imports et cascade CSS d'auteur", () => {
+  const origine = new URL("file:///tokens/styles.css");
+  const lire = (sources: Record<string, string>) => async (url: URL) => {
+    const css = sources[url.pathname];
+    if (css === undefined) throw new Error(`Feuille absente : ${url}`);
+    return css;
+  };
+
+  test("développe les imports imbriqués et répétés à leur ordre source", async () => {
+    const css = await chargerCssAvecImports(
+      origine,
+      lire({
+        "/tokens/styles.css": '@import "./brands.css"; :root { --a: #222222; } @import "./brands.css";',
+        "/tokens/brands.css": '@import "./palette.css"; :root { --b: var(--a); }',
+        "/tokens/palette.css": ":root { --a: #111111; }",
+      }),
+    );
+    expect(cascaderTheme(analyserBlocs(css)).get("--a")).toBe("#111111");
+    expect(analyserBlocs(css).filter(b => b.declarations.has("--a"))).toHaveLength(3);
+  });
+
+  test("ne suit ni commentaires ni import réseau, et signale les cycles et fichiers absents", async () => {
+    expect(
+      await chargerCssAvecImports(
+        origine,
+        lire({ "/tokens/styles.css": '/* @import "./absent.css"; */ :root { --a: red; }' }),
+      ),
+    ).not.toContain("@import");
+    await expect(
+      chargerCssAvecImports(origine, lire({ "/tokens/styles.css": '@import "https://example.invalid/a.css";' })),
+    ).rejects.toThrow("non local");
+    await expect(
+      chargerCssAvecImports(origine, lire({ "/tokens/styles.css": '@import "./absent.css";' })),
+    ).rejects.toThrow("absente");
+    await expect(
+      chargerCssAvecImports(origine, lire({ "/tokens/styles.css": '@import "./styles.css";' })),
+    ).rejects.toThrow("cycle");
+  });
+
+  test("un import sans couche prime une couche ultérieure ; la spécificité précède l'ordre source", async () => {
+    const css = await chargerCssAvecImports(
+      origine,
+      lire({
+        "/tokens/styles.css":
+          '@import "./brands.css"; @layer base { :root.theme-rg { --a: red; } } .theme-rg { --b: red; }',
+        "/tokens/brands.css": ":root.theme-rg { --a: green; --b: green; }",
+      }),
+    );
+    expect(Object.fromEntries(cascaderTheme(analyserBlocs(css), "theme-rg"))).toEqual({
+      "--a": "green",
+      "--b": "green",
+    });
+  });
+
+  test("respecte les couches d'import, leur ordre déclaré et la priorité inverse de important", async () => {
+    const css = await chargerCssAvecImports(
+      origine,
+      lire({
+        "/tokens/styles.css":
+          '@layer first, last; @import "./brands.css" layer(first); @layer last { .theme-rg { --a: red; --b: red !important; } } .theme-rg { --b: blue !important; }',
+        "/tokens/brands.css": ".theme-rg { --a: green; --b: green !important; --b: red; }",
+      }),
+    );
+    expect(Object.fromEntries(cascaderTheme(analyserBlocs(css), "theme-rg"))).toEqual({ "--a": "red", "--b": "green" });
+  });
+});
 
 describe("conversion oklch → sRGB", () => {
   // Valeurs de référence : les trois primaires sRGB exprimées en oklch par
@@ -91,18 +160,25 @@ describe("résolution des var()", () => {
 });
 
 describe("tokens exposés", () => {
-  test("les cinq thèmes officiels sont projetés depuis le CSS", () => {
+  test("les sept thèmes officiels sont projetés depuis le CSS", () => {
     expect(NOMS_THEMES).toEqual([
       "theme-roy",
       "theme-gaelle",
+      "theme-rg",
+      "theme-rg-dark",
       "theme-azalee-light",
       "theme-azalee-dark",
       "theme-achillea",
     ]);
     expect(Object.keys(THEMES)).toEqual([...NOMS_THEMES]);
-    expect(THEMES["theme-azalee-light"].md3.primary).toBe("#f2a93b");
-    expect(THEMES["theme-azalee-light"].md3.secondary).toBe("#a92335");
+    expect(THEMES["theme-azalee-light"].md3.primary).toBe("#8b5023");
     expect(THEMES["theme-azalee-light"].md3.background).toBe("#fff8f5");
+    expect(THEMES["theme-azalee-dark"].md3.primary).toBe("#ffb786");
+    expect(THEMES["theme-achillea"].md3.primary).toBe("#d7bafb");
+    expect(THEMES["theme-rg"].md3.primary).toBe("#8e4957");
+    expect(THEMES["theme-rg-dark"].md3.primary).toBe("#ffb2be");
+    expect(THEMES["theme-rg"].md3.onPrimary).toBe("#ffffff");
+    expect(THEMES["theme-rg-dark"].md3.onPrimary).toBe("#561d2a");
   });
 
   test("aucune couleur ne reste en oklch (Canvas 2D la rendrait noire)", () => {
@@ -115,27 +191,31 @@ describe("tokens exposés", () => {
     expect(valeurs.filter(v => v.includes("var("))).toEqual([]);
   });
 
-  test("les thèmes unifiés exposent les mêmes rôles MD3", () => {
+  test("les sept thèmes conservent les 36 rôles MD3 core et les extensions natives importées", () => {
     const reference = Object.keys(THEMES["theme-roy"].md3).sort();
     expect(reference.length).toBe(36);
     for (const nom of NOMS_THEMES) {
-      expect(Object.keys(THEMES[nom].md3).sort()).toEqual(reference);
+      const roles = Object.keys(THEMES[nom].md3).sort();
+      expect(roles).toEqual(expect.arrayContaining(reference));
+      expect(roles.length).toBe(nom === "theme-roy" || nom === "theme-gaelle" ? 36 : 49);
     }
   });
 
-  test("les thèmes unifiés déclarent le même jeu de variables dans le CSS", () => {
+  test("les sept thèmes déclarent les 68 variables core et conservent les extensions de la cascade complète", () => {
     // Pas seulement après cascade : un rôle qu'un seul thème omet n'est PAS
     // surchargeable dans ce thème et reste figé sur la valeur du `:root`.
     // C'est ce qui rendait `bg-scrim` inerte en Roy/Gaëlle et privait les
     // thèmes Azalée de `--chart-*`.
     const blocs = analyserBlocs(css);
     const varsDuTheme = (nom: string) =>
-      [...(blocs.find(b => b.selecteurs.includes(`.${nom}`))?.declarations.keys() ?? [])].sort();
+      [...new Set(blocs.filter(b => b.selecteurs.includes(`.${nom}`)).flatMap(b => [...b.declarations.keys()]))].sort();
 
     const reference = varsDuTheme(NOMS_THEMES[0]!);
     expect(reference.length).toBe(68);
     for (const nom of NOMS_THEMES) {
-      expect(varsDuTheme(nom)).toEqual(reference);
+      const variables = varsDuTheme(nom);
+      expect(variables).toEqual(expect.arrayContaining(reference));
+      expect(variables.length).toBe(nom === "theme-roy" || nom === "theme-gaelle" ? 68 : 89);
     }
   });
 

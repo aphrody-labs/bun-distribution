@@ -1,8 +1,9 @@
 {
   "name": "@rosegriffon/ui",
-  "version": "1.0.3",
+  "version": "1.4.4",
   "private": true,
-  "description": "Composants shadcn/ui partagés (new-york style, Tailwind v4)",
+  "description": "Shared Rose Griffon UI on Base UI and native Material 3 tokens",
+  "license": "UNLICENSED",
   "type": "module",
   "sideEffects": [
     "*.css"
@@ -13,6 +14,7 @@
     "./lib/utils": "./src/lib/utils.ts",
     "./lib/adsense": "./src/lib/adsense.ts",
     "./styles.css": "./src/styles.css",
+    "./brands.css": "./src/brands.css",
     "./hooks/*": "./src/hooks/*.ts",
     "./*": "./src/components/*.tsx"
   },
@@ -28,33 +30,9 @@
     "typecheck": "bun check --noEmit"
   },
   "dependencies": {
+    "@aphrody/m3-tokens": "workspace:*",
+    "@base-ui/react": "catalog:",
     "@hookform/resolvers": "catalog:",
-    "@radix-ui/react-accordion": "catalog:",
-    "@radix-ui/react-alert-dialog": "catalog:",
-    "@radix-ui/react-aspect-ratio": "catalog:",
-    "@radix-ui/react-avatar": "catalog:",
-    "@radix-ui/react-checkbox": "catalog:",
-    "@radix-ui/react-collapsible": "catalog:",
-    "@radix-ui/react-context-menu": "catalog:",
-    "@radix-ui/react-dialog": "catalog:",
-    "@radix-ui/react-dropdown-menu": "catalog:",
-    "@radix-ui/react-hover-card": "catalog:",
-    "@radix-ui/react-label": "catalog:",
-    "@radix-ui/react-menubar": "catalog:",
-    "@radix-ui/react-navigation-menu": "catalog:",
-    "@radix-ui/react-popover": "catalog:",
-    "@radix-ui/react-progress": "catalog:",
-    "@radix-ui/react-radio-group": "catalog:",
-    "@radix-ui/react-scroll-area": "catalog:",
-    "@radix-ui/react-select": "catalog:",
-    "@radix-ui/react-separator": "catalog:",
-    "@radix-ui/react-slider": "catalog:",
-    "@radix-ui/react-slot": "catalog:",
-    "@radix-ui/react-switch": "catalog:",
-    "@radix-ui/react-tabs": "catalog:",
-    "@radix-ui/react-toggle": "catalog:",
-    "@radix-ui/react-toggle-group": "catalog:",
-    "@radix-ui/react-tooltip": "catalog:",
     "@rosegriffon/db": "workspace:*",
     "@rosegriffon/preferences": "workspace:*",
     "@rosegriffon/types": "workspace:*",
@@ -92,6 +70,6 @@
     "react-dom": "catalog:"
   },
   "engines": {
-    "bun": ">=1.4.2"
+    "bun": "=1.4.4"
   }
 }

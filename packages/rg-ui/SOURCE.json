@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "owner": "packages/rg-ui",
+  "baseHistory": {
+    "repository": "https://github.com/aphrody-labs/aphrody-m3.git",
+    "revision": "f54653807a810c615e6e9361a48945ef120a949c",
+    "prefix": "packages/rg-ui",
+    "retainedInRootHistory": true
+  },
+  "publishedImplementation": {
+    "package": "@aphrody/rg-ui",
+    "version": "1.0.4",
+    "lockIntegrity": "sha512-Gno7XYYjlT+jbvvxz/Dr4UoF5iasHzyDG/FCAh3oODQ67oRuqTX7FmidAcpWKmEqggsIebbP+Gum2E1OAUSBoQ==",
+    "input": "Existing root-installed @rosegriffon/ui alias from the shared lock",
+    "scope": "Base UI components, render adapters, responsive owner, brand CSS and theme sources",
+    "archiveChecksumReverified": false
+  },
+  "integration": {
+    "version": "1.4.4",
+    "source": "One canonical source owner; published implementation replaces the older Radix implementation",
+    "generation": "Keep native Bun formatting and regenerate pure theme projections from CSS",
+    "license": "Published owner-controlled UNLICENSED metadata and existing source notices retained"
+  }
+}

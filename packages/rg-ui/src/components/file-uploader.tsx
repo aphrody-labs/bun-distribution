@@ -26,11 +26,8 @@ export function FileUploader({
 
   const handleFiles = (newFiles: FileList | null) => {
     if (!newFiles) return;
-    const validFiles = Array.from(newFiles).filter((file) => {
-      return (
-        file.size <= maxSize &&
-        (!accept || file.type.match(accept.replace("*", ".*")))
-      );
+    const validFiles = Array.from(newFiles).filter(file => {
+      return file.size <= maxSize && (!accept || file.type.match(accept.replace("*", ".*")));
     });
 
     const updatedFiles = [...files, ...validFiles].slice(0, maxFiles);
@@ -43,17 +40,15 @@ export function FileUploader({
       <div
         className={cn(
           "border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors",
-          dragActive
-            ? "border-primary bg-primary/5"
-            : "border-muted-foreground/25",
+          dragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25",
           "hover:bg-accent/50",
         )}
-        onDragOver={(e) => {
+        onDragOver={e => {
           e.preventDefault();
           setDragActive(true);
         }}
         onDragLeave={() => setDragActive(false)}
-        onDrop={(e) => {
+        onDrop={e => {
           e.preventDefault();
           setDragActive(false);
           handleFiles(e.dataTransfer.files);
@@ -61,12 +56,9 @@ export function FileUploader({
         onClick={() => inputRef.current?.click()}
       >
         <UploadCloud className="h-10 w-10 text-muted-foreground mb-4" />
-        <p className="text-sm text-muted-foreground mb-1">
-          Glissez-déposez ou cliquez pour sélectionner
-        </p>
+        <p className="text-sm text-muted-foreground mb-1">Glissez-déposez ou cliquez pour sélectionner</p>
         <p className="text-xs text-muted-foreground/70">
-          Max {maxSize / 1024 / 1024}MB.{" "}
-          {maxFiles > 1 ? `Jusqu'à ${maxFiles} fichiers.` : ""}
+          Max {maxSize / 1024 / 1024}MB. {maxFiles > 1 ? `Jusqu'à ${maxFiles} fichiers.` : ""}
         </p>
         <input
           ref={inputRef}
@@ -74,7 +66,7 @@ export function FileUploader({
           accept={accept}
           multiple={maxFiles > 1}
           className="hidden"
-          onChange={(e) => handleFiles(e.target.files)}
+          onChange={e => handleFiles(e.target.files)}
           {...props}
         />
       </div>
@@ -82,10 +74,7 @@ export function FileUploader({
       {files.length > 0 && (
         <div className="mt-4 space-y-2">
           {files.map((file, idx) => (
-            <div
-              key={idx}
-              className="flex items-center justify-between p-2 text-sm border rounded-md"
-            >
+            <div key={idx} className="flex items-center justify-between p-2 text-sm border rounded-md">
               <span className="truncate max-w-[80%]">{file.name}</span>
               <button
                 type="button"

@@ -5,13 +5,7 @@ import { useId, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "../button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../card";
 import { Input } from "../input";
 import { Label } from "../label";
 import type { AccountActionResult } from "./types";
@@ -21,10 +15,7 @@ interface AccountEmailCardProps {
   onChangeEmail: (newEmail: string) => Promise<AccountActionResult>;
 }
 
-export function AccountEmailCard({
-  currentEmail,
-  onChangeEmail,
-}: AccountEmailCardProps) {
+export function AccountEmailCard({ currentEmail, onChangeEmail }: AccountEmailCardProps) {
   const fieldId = useId();
   const [newEmail, setNewEmail] = useState("");
   const [pending, setPending] = useState(false);
@@ -42,9 +33,7 @@ export function AccountEmailCard({
         toast.error(res.error);
         return;
       }
-      toast.success(
-        "Ouvre le lien envoyé à ton adresse actuelle pour confirmer le changement.",
-      );
+      toast.success("Ouvre le lien envoyé à ton adresse actuelle pour confirmer le changement.");
       setNewEmail("");
     } catch (error) {
       console.error("[compte] changement d'adresse en échec", error);
@@ -68,21 +57,15 @@ export function AccountEmailCard({
 				    les 33 comptes du site ont tous une adresse vérifiée, personne n'est
 				    dans le cas où le changement s'applique directement. */}
         <CardDescription>
-          Un lien de confirmation part vers ton adresse{" "}
-          <strong>actuelle</strong> : le changement ne prend effet qu'une fois
-          ce lien ouvert. Une vérification est ensuite envoyée à la nouvelle.
+          Un lien de confirmation part vers ton adresse <strong>actuelle</strong> : le changement ne prend effet qu'une
+          fois ce lien ouvert. Une vérification est ensuite envoyée à la nouvelle.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="space-y-4">
           <div className="rounded-lg border border-border bg-muted/40 p-3">
-            <p className="text-xs font-medium text-muted-foreground">
-              Adresse actuelle
-            </p>
-            <p
-              className="truncate font-semibold text-foreground"
-              title={currentEmail ?? undefined}
-            >
+            <p className="text-xs font-medium text-muted-foreground">Adresse actuelle</p>
+            <p className="truncate font-semibold text-foreground" title={currentEmail ?? undefined}>
               {currentEmail ?? "—"}
             </p>
           </div>
@@ -94,14 +77,10 @@ export function AccountEmailCard({
               autoComplete="email"
               placeholder="nouvelle@exemple.com"
               value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
+              onChange={e => setNewEmail(e.target.value)}
             />
           </div>
-          <Button
-            type="submit"
-            disabled={pending || !newEmail}
-            className="w-full rounded-full"
-          >
+          <Button type="submit" disabled={pending || !newEmail} className="w-full rounded-full">
             {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
             Changer l'adresse
           </Button>
@@ -113,16 +92,10 @@ export function AccountEmailCard({
 
 interface AccountPasswordCardProps {
   minLength?: number;
-  onChangePassword: (input: {
-    currentPassword: string;
-    newPassword: string;
-  }) => Promise<AccountActionResult>;
+  onChangePassword: (input: { currentPassword: string; newPassword: string }) => Promise<AccountActionResult>;
 }
 
-export function AccountPasswordCard({
-  minLength = 8,
-  onChangePassword,
-}: AccountPasswordCardProps) {
+export function AccountPasswordCard({ minLength = 8, onChangePassword }: AccountPasswordCardProps) {
   const currentId = useId();
   const newId = useId();
   const confirmId = useId();
@@ -138,17 +111,12 @@ export function AccountPasswordCard({
       return;
     }
     if (next.length < minLength) {
-      toast.error(
-        `Le mot de passe doit contenir au moins ${minLength} caractères.`,
-      );
+      toast.error(`Le mot de passe doit contenir au moins ${minLength} caractères.`);
       return;
     }
     setPending(true);
     try {
-      const res = await onChangePassword({
-        currentPassword: current,
-        newPassword: next,
-      });
+      const res = await onChangePassword({ currentPassword: current, newPassword: next });
       if (res?.error) {
         toast.error(res.error);
         return;
@@ -169,15 +137,11 @@ export function AccountPasswordCard({
     <Card className="h-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <KeyRound
-            className="size-5 shrink-0 text-muted-foreground"
-            aria-hidden
-          />
+          <KeyRound className="size-5 shrink-0 text-muted-foreground" aria-hidden />
           Mot de passe
         </CardTitle>
         <CardDescription>
-          Le mot de passe actuel est obligatoire : le serveur le vérifie avant
-          d'accepter le nouveau.
+          Le mot de passe actuel est obligatoire : le serveur le vérifie avant d'accepter le nouveau.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -190,7 +154,7 @@ export function AccountPasswordCard({
               autoComplete="current-password"
               placeholder="••••••••"
               value={current}
-              onChange={(e) => setCurrent(e.target.value)}
+              onChange={e => setCurrent(e.target.value)}
             />
           </div>
           <div className="space-y-2">
@@ -202,7 +166,7 @@ export function AccountPasswordCard({
               minLength={minLength}
               placeholder="••••••••"
               value={next}
-              onChange={(e) => setNext(e.target.value)}
+              onChange={e => setNext(e.target.value)}
             />
           </div>
           <div className="space-y-2">
@@ -213,17 +177,11 @@ export function AccountPasswordCard({
               autoComplete="new-password"
               placeholder="••••••••"
               value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
+              onChange={e => setConfirm(e.target.value)}
             />
           </div>
-          <p className="text-xs text-muted-foreground">
-            Au moins {minLength} caractères.
-          </p>
-          <Button
-            type="submit"
-            disabled={pending || !current || !next || !confirm}
-            className="w-full rounded-full"
-          >
+          <p className="text-xs text-muted-foreground">Au moins {minLength} caractères.</p>
+          <Button type="submit" disabled={pending || !current || !next || !confirm} className="w-full rounded-full">
             {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
             Changer le mot de passe
           </Button>

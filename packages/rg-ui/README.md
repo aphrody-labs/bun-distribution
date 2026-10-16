@@ -1,12 +1,17 @@
 # `@rosegriffon/ui` — Design System Rose Griffon
 
-Composants partagés du monorepo `rose-griffon/rg`. Construit sur **shadcn/ui new-york** (Radix + Tailwind v4) avec une couche **Material Design 3** complète (tokens couleur, shape, motion, elevation, typescale) et **4 thèmes unifiés** prêts à l'emploi.
+Shared Bun OS source owner for Rose Griffon UI, using Base UI, Tailwind v4 and
+the canonical Material 3 tokens. Seven themes include Rose Griffon light/dark.
+`SOURCE.json` records the preserved import history and published implementation
+used for this migration. Root workspace admission and application qualification
+are separate gates; do not substitute the older Radix source for the currently
+installed UI alias before those gates pass.
 
 ---
 
 ## Installation
 
-Déjà câblé dans le monorepo via `workspace:*`. Pour une nouvelle app :
+Workspace consumers use the following dependency after root admission:
 
 ```jsonc
 // apps/<app>/package.json
@@ -21,7 +26,7 @@ Dans le `globals.css` de l'app :
 
 ```css
 @import "tailwindcss";
-@import "@rosegriffon/ui/styles.css"; /* tokens MD3 + 4 thèmes + utilities Tailwind */
+@import "@rosegriffon/ui/styles.css"; /* MD3 tokens, seven themes and Tailwind utilities */
 ```
 
 Importer les composants :
@@ -222,7 +227,7 @@ Les apps `website` et `azalee` ont des copies locales de certains composants UI.
 
 ## Stack
 
-- **Radix UI** primitives (a11y headless)
+- **Base UI** primitives (headless accessibility)
 - **Tailwind CSS v4.3** (utilities + tokens MD3)
 - **class-variance-authority** (variants typés)
 - **clsx** + **tailwind-merge** via `cn()` helper
