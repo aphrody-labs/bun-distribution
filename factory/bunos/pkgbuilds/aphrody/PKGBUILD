@@ -2,7 +2,7 @@
 pkgname=aphrody
 pkgver=0.1.0
 pkgrel=1
-_commit=8229a6909216d3d38e7ada42dfc6c471b0237fbc
+_commit=7d7b034e80bc5b98399701ea4f9da9c2ba3ef9be
 pkgdesc='Aphrody AI and infrastructure CLI (models, agents, memory, A2A, MCP, hosts)'
 arch=('x86_64')
 url='https://github.com/aphrody-labs/bun-distribution'
