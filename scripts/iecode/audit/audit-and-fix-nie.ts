@@ -13,7 +13,6 @@ process.env.NO_PROXY = `${process.env.NO_PROXY || ""},aphrody.com,.aphrody.com,1
 process.env.no_proxy = process.env.NO_PROXY;
 
 const BASE_URL = "https://nie.aphrody.com";
-const LOCAL_URL = "http://127.0.0.1:8085";
 
 const PAGES_TO_TEST = [
   "/",

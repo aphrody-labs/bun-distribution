@@ -144,7 +144,13 @@ builder.free();
 
 // `visible` vient du REJEU, pas du constructeur : le serveur exécute le Lua, la page passe ici
 // une table vide. Le comparer mesurerait la différence des ENTRÉES, pas celle du code.
-const sansVisible = (o: any[]) => JSON.stringify(o.map(({ visible, ...reste }) => reste));
+const sansVisibleObjets = (o: any[]) =>
+  o.map(object => {
+    const reste = { ...object };
+    delete reste.visible;
+    return reste;
+  });
+const sansVisible = (o: any[]) => JSON.stringify(sansVisibleObjets(o));
 const a = sansVisible(navigateur.objects);
 const b = sansVisible(serveur.objects);
 console.log(`écran ${ECRAN} : ${charges} objbin, ${compagnons} compagnons, ${pages.length} lignes de texte`);
@@ -167,7 +173,6 @@ const structurel = (x: any, y: any): boolean => {
   const cles = [...new Set([...Object.keys(x), ...Object.keys(y)])];
   return cles.some(c => structurel(x[c], y[c]));
 };
-const sansVisibleObjets = (o: any[]) => o.map(({ visible, ...reste }) => reste);
 const ecartsStructurels = sansVisibleObjets(navigateur.objects)
   .map((o, i) => structurel(o, sansVisibleObjets(serveur.objects)[i]))
   .filter(Boolean).length;

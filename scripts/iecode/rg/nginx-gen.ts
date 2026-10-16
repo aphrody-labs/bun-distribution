@@ -24,7 +24,6 @@ interface Catalog {
   internalGateway: string;
 }
 
-const root = join(import.meta.dir, "../../..");
 const catalog = JSON.parse(
   readFileSync(
     join(

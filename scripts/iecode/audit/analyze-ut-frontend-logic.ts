@@ -1,5 +1,3 @@
-import fs from "node:fs";
-
 const js = await Bun.file("var/mirror/ievr-ut/site/ievr-ultimate-team.fly.dev/assets/index-BJtdwxwy.js").text();
 
 function searchKeyword(keyword: string, window = 400) {

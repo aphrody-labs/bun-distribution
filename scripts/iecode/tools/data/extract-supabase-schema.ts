@@ -1,5 +1,3 @@
-import fs from "node:fs";
-
 const content = await Bun.file("var/mirror/ievr-ut/site/ievr-ultimate-team.fly.dev/assets/index-BJtdwxwy.js").text();
 
 console.log("File size:", content.length);
@@ -34,7 +32,21 @@ const stringRegex = /["'`]([a-zA-Z0-9_-]{3,30})["'`]/g;
 const tableCandidates = new Set<string>();
 while ((match = stringRegex.exec(content)) !== null) {
   const s = match[1];
-  if (["jugadores", "equipos", "usuarios", "sobres", "recursos", "partidos", "mercado", "transacciones", "cartas", "alineaciones", "torneos"].some(k => s.includes(k))) {
+  if (
+    [
+      "jugadores",
+      "equipos",
+      "usuarios",
+      "sobres",
+      "recursos",
+      "partidos",
+      "mercado",
+      "transacciones",
+      "cartas",
+      "alineaciones",
+      "torneos",
+    ].some(k => s.includes(k))
+  ) {
     tableCandidates.add(s);
   }
 }

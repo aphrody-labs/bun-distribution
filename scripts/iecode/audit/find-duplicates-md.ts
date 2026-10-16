@@ -23,7 +23,7 @@ for (const f of files) {
   }
 }
 
-const duplicates = Array.from(phraseMap.entries()).filter(([_, files]) => files.length > 1);
+const duplicates = Array.from(phraseMap.entries()).filter(([, files]) => files.length > 1);
 duplicates.sort((a, b) => b[1].length - a[1].length);
 
 console.log(`Found ${duplicates.length} duplicate paragraphs across different md files:`);

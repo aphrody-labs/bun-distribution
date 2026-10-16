@@ -35,7 +35,7 @@ function getLocalRelativePath(urlStr: string): string {
     const parsed = new URL(urlStr);
     let pathname = decodeURIComponent(parsed.pathname);
     if (pathname.startsWith("/")) pathname = pathname.slice(1);
-    
+
     // Prefix by host domain to prevent collisions
     const hostDir = parsed.hostname.replace(/[^a-zA-Z0-9.-]/g, "_");
     return join(hostDir, pathname);
@@ -56,9 +56,10 @@ async function downloadAsset(url: string, index: number, total: number): Promise
   try {
     const res = await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
         "Referer": "https://ievr-ultimate-team.fly.dev/",
-      }
+      },
     });
 
     if (!res.ok) {
@@ -78,7 +79,7 @@ async function downloadAsset(url: string, index: number, total: number): Promise
       localPath: relPath,
       size: buffer.length,
       contentType,
-      sha256: hash
+      sha256: hash,
     };
 
     if ((index + 1) % 25 === 0 || index === total - 1) {
@@ -92,7 +93,6 @@ async function downloadAsset(url: string, index: number, total: number): Promise
 
 async function main() {
   const CONCURRENCY = 10;
-  let running = 0;
   let index = 0;
 
   const queue: Promise<void>[] = [];

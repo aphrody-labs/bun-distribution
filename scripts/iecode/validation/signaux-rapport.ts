@@ -23,7 +23,7 @@
  *   bun --bun scripts/iecode/validation/signaux-rapport.ts --gate var/outputs/gate-zukan/resume.json
  */
 
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const RACINE = resolve(import.meta.dir, "..", "..");
@@ -95,7 +95,7 @@ function signaux(rapport: unknown): Record<string, number> {
 
 function rangs(xs: number[]): number[] {
   const idx = xs.map((v, i) => [v, i] as const).sort((a, b) => a[0] - b[0]);
-  const r = new Array<number>(xs.length);
+  const r: number[] = Array.from({ length: xs.length }, () => 0);
   let i = 0;
   while (i < idx.length) {
     let j = i;
