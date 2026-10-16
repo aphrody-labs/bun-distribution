@@ -1,0 +1,3 @@
+Bun OS overlay files are first-party material under the MIT license of the
+Bun OS workspace. Every installed package keeps its own notice under
+/usr/share/licenses/<package>.

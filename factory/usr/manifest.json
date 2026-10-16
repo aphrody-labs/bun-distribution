@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "kind": "bun-os-usr",
+  "description": "Arch-style merged-usr /usr for Bun OS, assembled from real pacman packages plus Bun OS overlays",
+  "architecture": "x86_64",
+  "packageManager": "pacman/libalpm",
+  "host": "vps",
+  "builderImage": "archlinux:base-devel",
+  "builderImageObservedId": "061679925e5d",
+  "builderPackages": ["arch-install-scripts", "squashfs-tools", "erofs-utils", "cryptsetup", "zstd"],
+  "remoteRoot": "/home/ubuntu/bun-os-usr",
+  "remoteTimeoutSeconds": 3000,
+  "localArtifacts": "~/.local/share/bun-os/usr",
+  "repositories": [
+    {
+      "name": "cachyos",
+      "server": "https://mirror.cachyos.org/repo/$arch/$repo",
+      "keys": ["F3B607488DB35A47"],
+      "keyserver": "hkps://keyserver.ubuntu.com"
+    },
+    {
+      "name": "core",
+      "server": "https://geo.mirror.pkgbuild.com/$repo/os/$arch"
+    },
+    {
+      "name": "extra",
+      "server": "https://geo.mirror.pkgbuild.com/$repo/os/$arch"
+    },
+    {
+      "name": "multilib",
+      "server": "https://geo.mirror.pkgbuild.com/$repo/os/$arch"
+    }
+  ],
+  "chaotic": {
+    "enabled": false,
+    "reason": "Prebuilt AUR binaries are not required by any composition; enable only with an explicit package need."
+  },
+  "basePackages": [
+    "base",
+    "base-devel",
+    "linux-cachyos",
+    "linux-firmware",
+    "systemd",
+    "pacman",
+    "archlinux-keyring",
+    "cachyos-keyring",
+    "cachyos-mirrorlist",
+    "bun",
+    "ca-certificates",
+    "man-db",
+    "man-pages"
+  ],
+  "kernelFallback": "linux",
+  "compositions": {
+    "server": {
+      "profile": "server",
+      "packages": ["openssh"]
+    },
+    "cosmic": {
+      "profile": "desktop",
+      "packages": []
+    },
+    "gaming": {
+      "profile": "gaming",
+      "packages": []
+    }
+  },
+  "hierarchy": {
+    "rootLinks": {
+      "bin": "usr/bin",
+      "sbin": "usr/bin",
+      "lib": "usr/lib",
+      "lib64": "usr/lib"
+    },
+    "usrLinks": {
+      "sbin": "bin",
+      "lib64": "lib"
+    },
+    "usrDirectories": ["bin", "lib", "lib32", "include", "share", "local", "src", "libexec"],
+    "required": [
+      "usr/share/licenses",
+      "usr/share/man",
+      "usr/share/doc",
+      "usr/share/pacman/keyrings",
+      "usr/share/factory",
+      "usr/lib/systemd",
+      "usr/lib/sysusers.d",
+      "usr/lib/tmpfiles.d",
+      "usr/lib/os-release",
+      "usr/bin/bun"
+    ]
+  },
+  "overlay": "factory/usr/overlay",
+  "images": {
+    "formats": ["erofs", "squashfs"],
+    "erofsCompression": "lz4hc,12",
+    "squashfsCompression": "zstd",
+    "verity": "optional"
+  },
+  "rootfs": {
+    "compression": "zstd",
+    "exclude": ["var/cache/pacman/pkg/*", "var/lib/pacman/sync/*"]
+  }
+}

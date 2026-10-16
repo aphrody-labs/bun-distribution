@@ -1,0 +1,17 @@
+#!/usr/bin/bun
+// SPDX-License-Identifier: MIT
+// Bun Shell entry point: `bunsh -c 'cmd'`, `bunsh script.sh [args]` or a `#!/usr/bin/bunsh` shebang.
+import { $ } from "bun";
+
+const [first, ...rest] = Bun.argv.slice(2);
+$.nothrow();
+if (first === "-c") {
+  const result = await $`${{ raw: rest[0] ?? "" }}`;
+  process.exit(result.exitCode);
+}
+if (!first) {
+  console.error("usage: bunsh -c COMMAND | bunsh SCRIPT [ARGS...]");
+  process.exit(2);
+}
+const proc = Bun.spawn([process.execPath, "run", first, ...rest], { stdio: ["inherit", "inherit", "inherit"] });
+process.exit(await proc.exited);

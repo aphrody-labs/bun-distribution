@@ -35,6 +35,7 @@ const usage = `Bun OS factory
   msys2 plan|doctor|lock [--abi msvc-x64|msvc-arm64|msys-x64|ucrt64-x64|clang64-x64|clangarm64-arm64]
         [--msys-source-root DIR] [--msys-root INSTALLED_MSYS2] [--msys-pacman FILE] [--msys-home DIR]
         [--config FILE] [--lock FILE] [--out FILE]
+  factory usr plan|build|fetch [--composition server|cosmic|gaming] [--verity] [--host HOST] [--job ID]
   factory --action plan|host|resolve|rootfs --composition server|desktop|gaming [--snapshot YYYY-MM-DD]
           [--root ABSOLUTE_FACTORY] [--lock FILE] [--executor docker|native]
           [--msys-source-root DIR] [--msys-home DIR]
@@ -53,6 +54,9 @@ WASM builds libm3's portable API. Native Bun/JSC and the Linux compositor requir
 try {
   if (Bun.argv[2] === "server") {
     await runProductCLI(Bun.argv.slice(3));
+  } else if (Bun.argv[2] === "factory" && Bun.argv[3] === "usr") {
+    const { main } = await import("../factory/usr/build.ts");
+    console.log(JSON.stringify(await main(Bun.argv.slice(4)), null, 2));
   } else {
     const { positionals, values } = parseArgs({
       args: Bun.argv.slice(2),
