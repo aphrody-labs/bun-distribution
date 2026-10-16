@@ -444,7 +444,7 @@ pub(crate) async fn run_voice(action: VoiceAction) -> miette::Result<()> {
 }
 
 pub(crate) async fn run_ai_status(json: bool) -> miette::Result<()> {
-    let topology = aphrody_native::NativePlatform::get_topology();
+    let topology = aphrody_native::native::NativePlatform::get_topology();
     let (installed_models, model_store_error) =
         match aphrody_models::ModelStore::open().and_then(|store| store.list()) {
             Ok(models) => (models, None),

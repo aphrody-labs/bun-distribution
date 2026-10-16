@@ -795,7 +795,7 @@ crossbeam-channel = "0.5"
 aphrody-emu-utils = {  path = "crates/aphrody-emu-utils", features = ["triple-buffer", "app"] }
 aphrody-dust-core = {  path = "crates/aphrody-dust-core" }
 aphrody-emulator-host = {  path = "crates/aphrody-emulator-host" }
-aphrody-gpu-backend = { version = "=1.0.0-canary.1", features = ["webgpu"] }
+aphrody-gpu-backend = { path = "crates/aphrody-gpu-backend", features = ["webgpu"] }
 aphrody-wii = { path = "crates/aphrody-wii" }
 aphrody-wii-image = { path = "crates/aphrody-wii-image" }
 aphrody-switch = { path = "crates/aphrody-switch" }
@@ -1133,7 +1133,7 @@ hmac = { version = "0.12" }
 aphrody-re = { package = "bun-re", path = "crates/re", version = "=1.0.0-canary" }
 aphrody-web-crawl = "=1.0.0"
 aphrody-os-re = { package = "bun-re", path = "crates/re", version = "=1.0.0-canary" }
-aphrody-identity = "=1.0.0-canary.1"
+aphrody-identity = { path = "crates/aphrody-identity" }
 aphrody-softraster = "=1.0.0-canary"
 aphrody-sprite-sheet = "=1.0.0-canary"
 aphrody-nie-geom = { path = "crates/aphrody-nie-geom",  }

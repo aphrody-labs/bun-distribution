@@ -105,12 +105,12 @@ bytes = "1.12.1"
 ignored = ["ort"]
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-aphrody-pkg-cli = { package = "bun_pkg_cli", path = "../../toolchains/bun/src/bun-os/pkg/cli" }
+aphrody-pkg-cli = { package = "bun_pkg_cli", path = "../../toolchains/bun/src/pkg/cli" }
 aphrody-site = { path = "../../toolchains/bun/packages/web/rust/crates/site", version = "1.4.4" }
 toml_edit = { version = "0.25.15", features = [] }
 tempfile = { version = "3.27.0" }
 tokio = { version = "1.53.1", features = ["process","rt-multi-thread","macros","time","signal","sync","fs","io-util","full"] }
-aphrody-git = { path = "../../toolchains/bun/src/bun-os/git", version = "1.4.4", features = [] }
+aphrody-git = { package = "bun_git", path = "../../toolchains/bun/src/git" }
 aphrody-ssh = { path = "../aphrody-ssh", version = "1.4.4", features = [] }
 reqwest = { version = "0.13.5", features = ["rustls-no-provider","json","stream","form","query","charset","http2","system-proxy","blocking","cookies","gzip","brotli","deflate","socks","multipart"], default-features = false }
 regex = { version = "1.11", features = [] }
@@ -132,7 +132,7 @@ aphrody-translate = { path = "../aphrody-translate", version = "1.4.4", features
 aphrody-backend = { path = "../aphrody-backend", version = "1.4.4", features = [] }
 aphrody-proc = { path = "../aphrody-proc", version = "1.4.4", features = ["tokio"] }
 rustls = { version = "0.23", default-features = false, features = ["ring","std","tls12"] }
-aphrody-native = { path = "../../toolchains/bun/src/bun-os/native", version = "1.4.4", features = [] }
+aphrody-native = { package = "bun_host", path = "../../toolchains/bun/src/host" }
 aphrody-discord = { path = "../aphrody-discord", version = "1.4.4", features = [] }
 aphrody-terminal-backend = { path = "../aphrody-terminal-backend", version = "1.4.4", features = [] }
 aphrody-term = { path = "../aphrody-term", version = "1.4.4", features = [] }

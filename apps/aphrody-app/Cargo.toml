@@ -71,7 +71,7 @@ aphrody-llama-server = { path = "../../crates/aphrody-llama-server", version = "
 aphrody-models = { path = "../../crates/aphrody-models", version = "1.4.4", features = [] }
 futures-util = { version = "0.3", features = [] }
 thiserror = "2.0.20"
-aphrody-native = { package = "bun_native", path = "../../toolchains/bun/src/bun-os/native" }
+aphrody-native = { package = "bun_host", path = "../../toolchains/bun/src/host" }
 aphrody-sprite-sheet = { path = "../../crates/aphrody-sprite-sheet", version = "1.4.4" }
 aphrody-subsystem = { path = "../../crates/aphrody-subsystem", version = "1.4.4" }
 async-trait = "0.1.92"

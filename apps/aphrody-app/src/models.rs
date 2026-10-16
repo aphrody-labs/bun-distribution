@@ -186,7 +186,7 @@ fn known(value: u32) -> Value {
 /// topology probe, GPU names and VRAM from the in-process `aphrody-models` accelerator probe.
 #[tauri::command]
 pub async fn aphrody_hardware_telemetry(app: AppHandle) -> Result<Value, String> {
-    let topology = tauri::async_runtime::spawn_blocking(aphrody_native::NativePlatform::get_topology)
+    let topology = tauri::async_runtime::spawn_blocking(aphrody_native::native::NativePlatform::get_topology)
         .await
         .map_err(|error| format!("hardware probe: {error}"))?;
     let hub = hub(&app);

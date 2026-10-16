@@ -23,7 +23,7 @@ wasm = []
 
 [dependencies]
 aphrody-m3-tokens = { path = "../aphrody-m3-tokens", version = "1.4.4", features = ["serde"] }
-aphrody-identity = { version = "=1.0.0-canary.1", default-features = false }
+aphrody-identity = { workspace = true, default-features = false }
 taffy = { package = "aphrody-taffy", version = "=0.12.1" }
-aphrody-render = { version = "=1.0.0-canary", optional = true }
+aphrody-render = { workspace = true, optional = true }
 serde = { version = "=1.0.229", default-features = false, features = ["derive", "std"] }
