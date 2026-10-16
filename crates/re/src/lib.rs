@@ -101,6 +101,10 @@ pub mod headers;
 pub mod minidump;
 /// `.pdata` (x86-64 unwind table) root-function discovery over raw PE bytes.
 pub mod pdata;
+/// Cross-OS / BIOS / firmware RE pipeline: typed stage contract, adapter registry, x86 lift to IR,
+/// C and Rust emission, rebuild and verify. Entry point: [`pipeline::run`].
+#[cfg(feature = "pipeline")]
+pub mod pipeline;
 /// Semi-supervised label propagation over a call graph.
 pub mod propagate;
 /// WebAssembly bindings (feature `wasm`).

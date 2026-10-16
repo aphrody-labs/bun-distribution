@@ -1,0 +1,802 @@
+{
+  "$id": "https://aphrody.com/schema/re/ir.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "arch": {
+      "enum": [
+        "x86",
+        "x86_64"
+      ],
+      "type": "string"
+    },
+    "bits": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "entry": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "format": {
+      "enum": [
+        "pe",
+        "elf"
+      ],
+      "type": "string"
+    },
+    "functions": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "addr": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "blocks": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "addr": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "fallthrough": {
+                  "anyOf": [
+                    {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "insns": {
+                  "items": {
+                    "properties": {
+                      "a": {
+                        "oneOf": [
+                          {
+                            "additionalProperties": false,
+                            "properties": {
+                              "bits": {
+                                "minimum": 0,
+                                "type": "integer"
+                              },
+                              "high": {
+                                "type": "boolean"
+                              },
+                              "kind": {
+                                "const": "reg"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "name",
+                              "bits",
+                              "high"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "additionalProperties": false,
+                            "properties": {
+                              "kind": {
+                                "const": "imm"
+                              },
+                              "value": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "value"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "additionalProperties": false,
+                            "properties": {
+                              "base": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "bits": {
+                                "minimum": 0,
+                                "type": "integer"
+                              },
+                              "disp": {
+                                "type": "integer"
+                              },
+                              "index": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "kind": {
+                                "const": "mem"
+                              },
+                              "scale": {
+                                "minimum": 0,
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "base",
+                              "index",
+                              "scale",
+                              "disp",
+                              "bits"
+                            ],
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      "addr": {
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "b": {
+                        "oneOf": [
+                          {
+                            "additionalProperties": false,
+                            "properties": {
+                              "bits": {
+                                "minimum": 0,
+                                "type": "integer"
+                              },
+                              "high": {
+                                "type": "boolean"
+                              },
+                              "kind": {
+                                "const": "reg"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "name",
+                              "bits",
+                              "high"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "additionalProperties": false,
+                            "properties": {
+                              "kind": {
+                                "const": "imm"
+                              },
+                              "value": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "value"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "additionalProperties": false,
+                            "properties": {
+                              "base": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "bits": {
+                                "minimum": 0,
+                                "type": "integer"
+                              },
+                              "disp": {
+                                "type": "integer"
+                              },
+                              "index": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "kind": {
+                                "const": "mem"
+                              },
+                              "scale": {
+                                "minimum": 0,
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "base",
+                              "index",
+                              "scale",
+                              "disp",
+                              "bits"
+                            ],
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      "cond": {
+                        "enum": [
+                          "o",
+                          "no",
+                          "b",
+                          "ae",
+                          "e",
+                          "ne",
+                          "be",
+                          "a",
+                          "s",
+                          "ns",
+                          "l",
+                          "ge",
+                          "le",
+                          "g"
+                        ],
+                        "type": "string"
+                      },
+                      "dst": {
+                        "oneOf": [
+                          {
+                            "additionalProperties": false,
+                            "properties": {
+                              "bits": {
+                                "minimum": 0,
+                                "type": "integer"
+                              },
+                              "high": {
+                                "type": "boolean"
+                              },
+                              "kind": {
+                                "const": "reg"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "name",
+                              "bits",
+                              "high"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "additionalProperties": false,
+                            "properties": {
+                              "kind": {
+                                "const": "imm"
+                              },
+                              "value": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "value"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "additionalProperties": false,
+                            "properties": {
+                              "base": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "bits": {
+                                "minimum": 0,
+                                "type": "integer"
+                              },
+                              "disp": {
+                                "type": "integer"
+                              },
+                              "index": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "kind": {
+                                "const": "mem"
+                              },
+                              "scale": {
+                                "minimum": 0,
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "base",
+                              "index",
+                              "scale",
+                              "disp",
+                              "bits"
+                            ],
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      "ext": {
+                        "enum": [
+                          "none",
+                          "zero",
+                          "sign"
+                        ],
+                        "type": "string"
+                      },
+                      "kind": {
+                        "type": "string"
+                      },
+                      "len": {
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "op": {
+                        "enum": [
+                          "nop",
+                          "mov",
+                          "lea",
+                          "bin",
+                          "un",
+                          "cmp",
+                          "test",
+                          "push",
+                          "pop",
+                          "leave",
+                          "setcc",
+                          "cmovcc",
+                          "call",
+                          "jmp",
+                          "jcc",
+                          "ret",
+                          "unlifted"
+                        ],
+                        "type": "string"
+                      },
+                      "pop": {
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "reason": {
+                        "type": "string"
+                      },
+                      "src": {
+                        "oneOf": [
+                          {
+                            "additionalProperties": false,
+                            "properties": {
+                              "bits": {
+                                "minimum": 0,
+                                "type": "integer"
+                              },
+                              "high": {
+                                "type": "boolean"
+                              },
+                              "kind": {
+                                "const": "reg"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "name",
+                              "bits",
+                              "high"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "additionalProperties": false,
+                            "properties": {
+                              "kind": {
+                                "const": "imm"
+                              },
+                              "value": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "value"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "additionalProperties": false,
+                            "properties": {
+                              "base": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "bits": {
+                                "minimum": 0,
+                                "type": "integer"
+                              },
+                              "disp": {
+                                "type": "integer"
+                              },
+                              "index": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "kind": {
+                                "const": "mem"
+                              },
+                              "scale": {
+                                "minimum": 0,
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "base",
+                              "index",
+                              "scale",
+                              "disp",
+                              "bits"
+                            ],
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      "target": {
+                        "anyOf": [
+                          {
+                            "oneOf": [
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "addr": {
+                                    "minimum": 0,
+                                    "type": "integer"
+                                  },
+                                  "kind": {
+                                    "const": "direct"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "addr"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "index": {
+                                    "minimum": 0,
+                                    "type": "integer"
+                                  },
+                                  "kind": {
+                                    "const": "import"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "index",
+                                  "name"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "kind": {
+                                    "const": "indirect"
+                                  },
+                                  "operand": {
+                                    "oneOf": [
+                                      {
+                                        "additionalProperties": false,
+                                        "properties": {
+                                          "bits": {
+                                            "minimum": 0,
+                                            "type": "integer"
+                                          },
+                                          "high": {
+                                            "type": "boolean"
+                                          },
+                                          "kind": {
+                                            "const": "reg"
+                                          },
+                                          "name": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "name",
+                                          "bits",
+                                          "high"
+                                        ],
+                                        "type": "object"
+                                      },
+                                      {
+                                        "additionalProperties": false,
+                                        "properties": {
+                                          "kind": {
+                                            "const": "imm"
+                                          },
+                                          "value": {
+                                            "type": "integer"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "value"
+                                        ],
+                                        "type": "object"
+                                      },
+                                      {
+                                        "additionalProperties": false,
+                                        "properties": {
+                                          "base": {
+                                            "anyOf": [
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "null"
+                                              }
+                                            ]
+                                          },
+                                          "bits": {
+                                            "minimum": 0,
+                                            "type": "integer"
+                                          },
+                                          "disp": {
+                                            "type": "integer"
+                                          },
+                                          "index": {
+                                            "anyOf": [
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "null"
+                                              }
+                                            ]
+                                          },
+                                          "kind": {
+                                            "const": "mem"
+                                          },
+                                          "scale": {
+                                            "minimum": 0,
+                                            "type": "integer"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "base",
+                                          "index",
+                                          "scale",
+                                          "disp",
+                                          "bits"
+                                        ],
+                                        "type": "object"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "operand"
+                                ],
+                                "type": "object"
+                              }
+                            ]
+                          },
+                          {
+                            "minimum": 0,
+                            "type": "integer"
+                          }
+                        ]
+                      },
+                      "text": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "addr",
+                      "len",
+                      "text",
+                      "op"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": [
+                "addr",
+                "fallthrough",
+                "insns"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "addr",
+          "name",
+          "blocks",
+          "truncated"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "image_base": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "image_end": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "imports": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "lib": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "slot": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "lib",
+          "slot"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "schema_version": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "sections": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "exec": {
+            "type": "boolean"
+          },
+          "file_offset": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "file_size": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "vaddr": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "vsize": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "write": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "vaddr",
+          "vsize",
+          "file_offset",
+          "file_size",
+          "exec",
+          "write"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "format",
+    "arch",
+    "bits",
+    "image_base",
+    "entry",
+    "image_end",
+    "imports",
+    "sections",
+    "functions"
+  ],
+  "title": "Bun OS RE lifted IR module",
+  "type": "object"
+}

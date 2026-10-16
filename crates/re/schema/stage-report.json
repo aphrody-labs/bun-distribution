@@ -1,0 +1,81 @@
+{
+  "$id": "https://aphrody.com/schema/re/stage-report.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "adapter": {
+      "type": "string"
+    },
+    "artifacts": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "bytes": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "path",
+          "bytes"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "detail": {
+      "type": "string"
+    },
+    "metrics": {
+      "additionalProperties": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "type": "object"
+    },
+    "output": {
+      "description": "Stage payload: AcquireOutput, IdentifyOutput, UnpackOutput, TriageReport, LiftOutput or VerifyOutput."
+    },
+    "stage": {
+      "enum": [
+        "acquire",
+        "identify",
+        "unpack",
+        "analyze",
+        "lift",
+        "decompile",
+        "rebuild",
+        "verify"
+      ],
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "partial",
+        "unavailable",
+        "skipped",
+        "failed"
+      ],
+      "type": "string"
+    }
+  },
+  "required": [
+    "stage",
+    "adapter",
+    "status",
+    "detail",
+    "artifacts",
+    "metrics",
+    "output"
+  ],
+  "title": "Bun OS RE pipeline stage report",
+  "type": "object"
+}

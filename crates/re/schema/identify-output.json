@@ -1,0 +1,82 @@
+{
+  "$id": "https://aphrody.com/schema/re/identify-output.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "arch": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "container": {
+      "type": "boolean"
+    },
+    "entry": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "format": {
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "pe",
+        "elf",
+        "macho",
+        "apk",
+        "zip",
+        "iso",
+        "uefi",
+        "bios",
+        "rom",
+        "fdt",
+        "compressed",
+        "raw"
+      ],
+      "type": "string"
+    },
+    "liftable": {
+      "type": "boolean"
+    },
+    "notes": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "platform": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "kind",
+    "format",
+    "arch",
+    "platform",
+    "entry",
+    "liftable",
+    "container",
+    "notes"
+  ],
+  "title": "Identify stage output",
+  "type": "object"
+}

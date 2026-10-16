@@ -1,0 +1,71 @@
+{
+  "$id": "https://aphrody.com/schema/re/adapter.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "handles": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "id": {
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "builtin",
+        "crate",
+        "vendor",
+        "command",
+        "env"
+      ],
+      "type": "string"
+    },
+    "owner": {
+      "type": "string"
+    },
+    "reason": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "stage": {
+      "enum": [
+        "acquire",
+        "identify",
+        "unpack",
+        "analyze",
+        "lift",
+        "decompile",
+        "rebuild",
+        "verify"
+      ],
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "ready",
+        "registered",
+        "unavailable"
+      ],
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "stage",
+    "kind",
+    "owner",
+    "handles",
+    "status",
+    "reason"
+  ],
+  "title": "Bun OS RE pipeline stage adapter",
+  "type": "object"
+}
